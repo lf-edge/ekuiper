@@ -1,0 +1,13 @@
+#Global MQTT configurations
+default:
+  qos: 1
+  sharedsubscription: true
+  servers: [tcp://127.0.0.1:1883]
+  clientid: xstream_client
+  #TODO: Other global configurations
+
+
+#Override the global configurations
+demo_conf: #Conf_key
+  qos: 0
+  servers: [tls://10.211.55.6:1883, tcp://127.0.0.1]
