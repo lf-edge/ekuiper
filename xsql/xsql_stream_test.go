@@ -21,7 +21,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					NICKNAMES ARRAY(STRING),
 					Gender BOOLEAN,
 					ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-				) WITH (DATASOURCE="users", FORMAT="AVRO", KEY="USERID", CONF_KEY="srv1", type="MQTT");`,
+				) WITH (DATASOURCE="users", FORMAT="AVRO", KEY="USERID", CONF_KEY="srv1", type="MQTT", TIMESTAMP="USERID", TIMESTAMP_FORMAT="yyyy-MM-dd''T''HH:mm:ssX'");`,
 			stmt: &StreamStmt{
 				Name: StreamName("demo"),
 				StreamFields: []StreamField{
@@ -43,6 +43,8 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					"KEY" : "USERID",
 					"CONF_KEY" : "srv1",
 					"TYPE" : "MQTT",
+					"TIMESTAMP" : "USERID",
+					"TIMESTAMP_FORMAT" : "yyyy-MM-dd''T''HH:mm:ssX'",
 				},
 			},
 		},

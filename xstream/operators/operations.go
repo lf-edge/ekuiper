@@ -7,8 +7,6 @@ import (
 	"sync"
 )
 
-var log = common.Log
-
 // UnOperation interface represents unary operations (i.e. Map, Filter, etc)
 type UnOperation interface {
 	Apply(ctx context.Context, data interface{}) interface{}
@@ -67,7 +65,7 @@ func (o *UnaryOperator) AddOutput(output chan<- interface{}, name string) {
 	if _, ok := o.outputs[name]; !ok{
 		o.outputs[name] = output
 	}else{
-		log.Error("fail to add output %s, operator %s already has an output of the same name", name, o.name)
+		common.Log.Warnf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
 	}
 }
 
@@ -77,11 +75,11 @@ func (o *UnaryOperator) GetInput() (chan<- interface{}, string) {
 
 // Exec is the entry point for the executor
 func (o *UnaryOperator) Exec(ctx context.Context) (err error) {
-
-	log.Printf("Unary operator %s is started.\n", o.name)
+	log := common.GetLogger(ctx)
+	log.Printf("Unary operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
-		err = fmt.Errorf("No output channel found")
+		err = fmt.Errorf("no output channel found")
 		return
 	}
 
@@ -115,7 +113,7 @@ func (o *UnaryOperator) Exec(ctx context.Context) (err error) {
 				return
 			}
 		case <-ctx.Done():
-			log.Print("UnaryOp %s done.", o.name)
+			log.Printf("UnaryOp %s done.", o.name)
 			return
 		}
 	}()
@@ -124,6 +122,7 @@ func (o *UnaryOperator) Exec(ctx context.Context) (err error) {
 }
 
 func (o *UnaryOperator) doOp(ctx context.Context) {
+	log := common.GetLogger(ctx)
 	if o.op == nil {
 		log.Println("Unary operator missing operation")
 		return
@@ -131,18 +130,14 @@ func (o *UnaryOperator) doOp(ctx context.Context) {
 	exeCtx, cancel := context.WithCancel(ctx)
 
 	defer func() {
-		log.Println("unary operator done, cancelling future items")
+		log.Infof("unary operator %s done, cancelling future items", o.name)
 		cancel()
 	}()
 
 	for {
 		select {
 		// process incoming item
-		case item, opened := <-o.input:
-			if !opened {
-				return
-			}
-
+		case item := <-o.input:
 			result := o.op.Apply(exeCtx, item)
 
 			switch val := result.(type) {
@@ -174,13 +169,15 @@ func (o *UnaryOperator) doOp(ctx context.Context) {
 
 			default:
 				for _, output := range o.outputs{
-					output <- val
+					select {
+					case output <- val:
+					}
 				}
 			}
 
 		// is cancelling
 		case <-exeCtx.Done():
-			log.Println("Cancelling....")
+			log.Printf("unary operator %s cancelling....", o.name)
 			o.mutex.Lock()
 			cancel()
 			o.cancelled = true

@@ -67,12 +67,16 @@ const (
 	SELECT
 	FROM
 	JOIN
-	LEFT
 	INNER
+	LEFT
+	RIGHT
+	FULL
+	CROSS
 	ON
 	WHERE
 	GROUP
 	ORDER
+	HAVING
 	BY
 	ASC
 	DESC
@@ -103,6 +107,8 @@ const (
 	CONF_KEY
 	TYPE
 	STRICT_VALIDATION
+	TIMESTAMP
+	TIMESTAMP_FORMAT
 
 	DD
 	HH
@@ -160,6 +166,7 @@ var tokens = []string{
 	WHERE:  "WHERE",
 	GROUP:  "GROUP",
 	ORDER:  "ORDER",
+	HAVING:  "HAVING",
 	BY:     "BY",
 	ASC:    "ASC",
 	DESC:   "DESC",
@@ -187,6 +194,8 @@ var tokens = []string{
 	CONF_KEY: "CONF_KEY",
 	TYPE: 	  "TYPE",
 	STRICT_VALIDATION: "STRICT_VALIDATION",
+	TIMESTAMP: "TIMESTAMP",
+	TIMESTAMP_FORMAT: "TIMESTAMP_FORMAT",
 
 	AND: "AND",
 	OR:  "OR",
@@ -362,6 +371,8 @@ func (s *Scanner) ScanIdent() (tok Token, lit string) {
 		return OR, lit
 	case "GROUP":
 		return GROUP, lit
+	case "HAVING":
+		return HAVING, lit
 	case "ORDER":
 		return ORDER, lit
 	case "BY":
@@ -374,6 +385,12 @@ func (s *Scanner) ScanIdent() (tok Token, lit string) {
 		return INNER, lit
 	case "LEFT":
 		return LEFT, lit
+	case "RIGHT":
+		return RIGHT, lit
+	case "FULL":
+		return FULL, lit
+	case "CROSS":
+		return CROSS, lit
 	case "JOIN":
 		return JOIN, lit
 	case "ON":
@@ -424,6 +441,10 @@ func (s *Scanner) ScanIdent() (tok Token, lit string) {
 		return FALSE, lit
 	case "STRICT_VALIDATION":
 		return STRICT_VALIDATION, lit
+	case "TIMESTAMP":
+		return TIMESTAMP, lit
+	case "TIMESTAMP_FORMAT":
+		return TIMESTAMP_FORMAT, lit
 	case "DD":
 		return DD, lit
 	case "HH":

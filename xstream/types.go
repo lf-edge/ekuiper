@@ -19,7 +19,7 @@ type Collector interface {
 
 type Sink interface {
 	Collector
-	Open(context context.Context) <-chan error
+	Open(context.Context, chan<- error)
 }
 
 type Operator interface{
@@ -30,4 +30,11 @@ type Operator interface{
 
 type TopNode interface{
 	GetName() string
+}
+
+type Rule struct{
+	Id string `json:"id"`
+	Sql string `json:"sql"`
+	Actions []map[string]interface{} `json:"actions"`
+	Options map[string]interface{} `json:"options"`
 }

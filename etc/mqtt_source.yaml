@@ -1,0 +1,12 @@
+#Global MQTT configurations
+default:
+  qos: 1
+  sharedsubscription: true
+  servers: [tcp://10.211.55.6:1887]
+  #TODO: Other global configurations
+
+
+#Override the global configurations
+demo_conf: #Conf_key
+  qos: 0
+  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]

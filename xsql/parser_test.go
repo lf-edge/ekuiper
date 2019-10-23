@@ -378,6 +378,29 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 
+		{
+			s: `SELECT count(*) FROM tbl`,
+			stmt: &SelectStatement{
+				Fields:    []Field{
+					Field{
+						AName:"",
+						Name: "count",
+						Expr:&Call{
+							Name:"count",
+							Args: []Expr{&StringLiteral{Val:"*"}},
+						},
+					},
+				},
+				Sources: []Source{&Table{Name:"tbl"}},
+			},
+		},
+
+		{
+			s: `SELECT count(*, f1) FROM tbl`,
+			stmt: nil,
+			err:`found ",", expected right paren.`,
+		},
+
 
 		{
 			s: `SELECT "abc" FROM tbl`,
@@ -821,6 +844,33 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY name HAVING count(name) > 3`,
+			stmt: &SelectStatement{
+				Fields:    []Field{
+					Field{ Expr:&FieldRef{Name: "temp"}, Name: "temp", AName:"t"},
+					Field{ Expr:&FieldRef{Name: "name"}, Name: "name", AName:""},
+				},
+				Sources: []Source{&Table{Name:"topic/sensor1"}},
+				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"},},
+				Dimensions:Dimensions{Dimension{Expr:&FieldRef{Name:"name"}}},
+				Having: &BinaryExpr{LHS:&Call{Name:"count", Args:[]Expr{&FieldRef{StreamName:"", Name:"name"}}}, OP: GT, RHS: &IntegerLiteral{Val:3}},
+			},
+		},
+
+		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" HAVING count(name) > 3`,
+			stmt: &SelectStatement{
+				Fields:    []Field{
+					Field{ Expr:&FieldRef{Name: "temp"}, Name: "temp", AName:"t"},
+					Field{ Expr:&FieldRef{Name: "name"}, Name: "name", AName:""},
+				},
+				Sources: []Source{&Table{Name:"topic/sensor1"}},
+				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"},},
+				Having: &BinaryExpr{LHS:&Call{Name:"count", Args:[]Expr{&FieldRef{StreamName:"", Name:"name"}}}, OP: GT, RHS: &IntegerLiteral{Val:3}},
+			},
+		},
+
+		{
 			s: `SELECT s1.temp AS t, name FROM topic/sensor1 AS s1 WHERE t = "dname" GROUP BY s1.temp`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
@@ -1176,9 +1226,10 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 				Sources: []Source{&Table{Name:"tbl"}},
 				Dimensions: Dimensions{
 					Dimension{
-						Expr:&Windows{
+						Expr:&Window{
 							WindowType: TUMBLING_WINDOW,
-							Args:[]Expr{&TimeLiteral{Val:SS}, &IntegerLiteral{Val:10}},
+							Length: &IntegerLiteral{Val:10000},
+							Interval: &IntegerLiteral{Val:0},
 						},
 					},
 				},
@@ -1197,9 +1248,10 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 				Sources: []Source{&Table{Name:"tbl"}},
 				Dimensions: Dimensions{
 					Dimension{
-						Expr:&Windows{
+						Expr:&Window{
 							WindowType: HOPPING_WINDOW,
-							Args:[]Expr{ &TimeLiteral{Val:MI}, &IntegerLiteral{Val:5}, &IntegerLiteral{Val:1}},
+							Length: &IntegerLiteral{Val:3e5},
+							Interval: &IntegerLiteral{Val:6e4},
 						},
 					},
 				},
@@ -1218,9 +1270,10 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 				Sources: []Source{&Table{Name:"tbl"}},
 				Dimensions: Dimensions{
 					Dimension{
-						Expr:&Windows{
+						Expr:&Window{
 							WindowType: SESSION_WINDOW,
-							Args:[]Expr{ &TimeLiteral{Val:HH}, &IntegerLiteral{Val:5}, &IntegerLiteral{Val:1}},
+							Length: &IntegerLiteral{Val:1.8e7},
+							Interval: &IntegerLiteral{Val:3.6e6},
 						},
 					},
 				},
@@ -1239,9 +1292,10 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 				Sources: []Source{&Table{Name:"tbl"}},
 				Dimensions: Dimensions{
 					Dimension{
-						Expr:&Windows{
+						Expr:&Window{
 							WindowType: SLIDING_WINDOW,
-							Args:[]Expr{ &TimeLiteral{Val:MS}, &IntegerLiteral{Val:5}},
+							Length: &IntegerLiteral{Val:5},
+							Interval: &IntegerLiteral{Val:0},
 						},
 					},
 				},
@@ -1456,6 +1510,19 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 		},
 
 		{
+			s: `SELECT demo.* FROM demo`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					Field{
+						Expr: &FieldRef{StreamName:StreamName("demo"), Name: "*"},
+						Name:  "*",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "demo"}},
+			},
+		},
+
+		{
 			s: `SELECT demo.children[2:]->first AS c FROM demo`,
 			stmt: &SelectStatement{
 				Fields: []Field{
@@ -1655,6 +1722,101 @@ func TestParser_ParseJoins(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			s: `SELECT t1.name FROM topic/sensor1 AS t1 RIGHT JOIN topic1/sensor2 AS t2 ON t1.f=t2.k`,
+			stmt: &SelectStatement{
+				Fields:    []Field{
+					Field{
+						Expr: &FieldRef{StreamName:StreamName("t1"), Name:"name"},
+						Name: "name",
+						AName:""},
+				},
+				Sources: []Source{&Table{Name:"topic/sensor1", Alias:"t1"}},
+				Joins: []Join{
+					Join{
+						Name:"topic1/sensor2", Alias: "t2", JoinType: RIGHT_JOIN, Expr: &BinaryExpr{
+							LHS: &FieldRef{StreamName:StreamName("t1"), Name:"f"},
+							OP: EQ,
+							RHS:&FieldRef{StreamName:StreamName("t2"), Name:"k"},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			s: `SELECT t1.name FROM topic/sensor1 AS t1 FULL JOIN topic1/sensor2 AS t2 ON t1.f=t2.k`,
+			stmt: &SelectStatement{
+				Fields:    []Field{
+					Field{
+						Expr: &FieldRef{StreamName:StreamName("t1"), Name:"name"},
+						Name: "name",
+						AName:""},
+				},
+				Sources: []Source{&Table{Name:"topic/sensor1", Alias:"t1"}},
+				Joins: []Join{
+					Join{
+						Name:"topic1/sensor2", Alias: "t2", JoinType: FULL_JOIN, Expr: &BinaryExpr{
+							LHS: &FieldRef{StreamName:StreamName("t1"), Name:"f"},
+							OP: EQ,
+							RHS:&FieldRef{StreamName:StreamName("t2"), Name:"k"},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			s: `SELECT t1.name FROM topic/sensor1 AS t1 CROSS JOIN topic1/sensor2 AS t2 ON t1.f=t2.k`,
+			stmt: nil,
+			err: "On expression is not required for cross join type.\n",
+		},
+
+		{
+			s: `SELECT t1.name FROM topic/sensor1 AS t1 CROSS JOIN topic1/sensor2 AS t2`,
+			stmt: &SelectStatement{
+				Fields:    []Field{
+					Field{
+						Expr: &FieldRef{StreamName:StreamName("t1"), Name:"name"},
+						Name: "name",
+						AName:""},
+				},
+				Sources: []Source{&Table{Name:"topic/sensor1", Alias:"t1"}},
+				Joins: []Join{
+					Join{
+						Name:"topic1/sensor2", Alias: "t2", JoinType: CROSS_JOIN, Expr: nil,
+					},
+				},
+			},
+		},
+
+		{
+			s: `SELECT demo.*, demo2.* FROM demo LEFT JOIN demo2 on demo.f1 = demo2.f2`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					Field{
+						Expr: &FieldRef{StreamName:StreamName("demo"), Name: "*"},
+						Name:  "*",
+						AName: ""},
+					Field{
+						Expr: &FieldRef{StreamName:StreamName("demo2"), Name: "*"},
+						Name:  "*",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "demo"}},
+				Joins: []Join{
+					Join{
+						Name:"demo2", Alias: "", JoinType: LEFT_JOIN, Expr:  &BinaryExpr{
+							LHS: &FieldRef{StreamName:StreamName("demo"), Name:"f1"},
+							OP: EQ,
+							RHS:&FieldRef{StreamName:StreamName("demo2"), Name:"f2"},
+						},
+					},
+				},
+			},
+		},
+
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

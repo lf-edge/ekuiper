@@ -2,19 +2,17 @@ package extensions
 
 import (
 	"context"
+	"encoding/json"
 	"engine/common"
 	"engine/xsql"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-yaml/yaml"
 	"github.com/google/uuid"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"time"
 )
 
-var log = common.Log
 type MQTTSource struct {
 	srv      string
 	tpc      string
@@ -39,26 +37,10 @@ type MQTTConfig struct {
 const confName string = "mqtt_source.yaml"
 
 func NewWithName(name string, topic string, confKey string) (*MQTTSource, error) {
-	confDir, err := common.GetConfLoc()
-	var file string = confDir + confName
-	if err != nil {
-		//Try the development mode, read from workspace
-		file = "xstream/extensions/" + confName
-		if abs, err1 := filepath.Abs(file); err1 != nil {
-			return nil, err1
-		} else {
-			file = abs
-		}
-	}
-
-	b, err := ioutil.ReadFile(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	b := common.LoadConf(confName)
 	var cfg map[string]MQTTConfig
 	if err := yaml.Unmarshal(b, &cfg); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	ms := &MQTTSource{tpc: topic, name: name}
@@ -104,18 +86,19 @@ func (ms *MQTTSource) AddOutput(output chan<- interface{}, name string) {
 	if _, ok := ms.outs[name]; !ok{
 		ms.outs[name] = output
 	}else{
-		log.Error("fail to add output %s, operator %s already has an output of the same name", name, ms.name)
+		common.Log.Warnf("fail to add output %s, operator %s already has an output of the same name", name, ms.name)
 	}
 }
 
 func (ms *MQTTSource) Open(ctx context.Context) error {
+	log := common.GetLogger(ctx)
 	go func() {
 		exeCtx, cancel := context.WithCancel(ctx)
 		opts := MQTT.NewClientOptions().AddBroker(ms.srv)
 
 		if ms.clientid == "" {
 			if uuid, err := uuid.NewUUID(); err != nil {
-				log.Printf("Failed to get uuid, the error is %s.\n", err)
+				log.Printf("Failed to get uuid, the error is %s", err)
 				cancel()
 				return
 			} else {
@@ -127,15 +110,19 @@ func (ms *MQTTSource) Open(ctx context.Context) error {
 
 		h := func(client MQTT.Client, msg MQTT.Message) {
 			if ms.tpc != msg.Topic() {
-				select {
-				case <-exeCtx.Done():
-					log.Println("Done 1.")
-					ms.conn.Disconnect(5000)
-				}
 				return
 			} else {
 				log.Infof("received %s", msg.Payload())
-				tuple := &xsql.Tuple{EmitterName:ms.name, Message:msg.Payload(), Timestamp: common.TimeToUnixMilli(time.Now())}
+
+				result := make(map[string]interface{})
+				//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
+				if e := json.Unmarshal(msg.Payload(), &result); e != nil {
+					log.Errorf("Invalid data format, cannot convert %s into JSON with error %s", string(msg.Payload()), e)
+					return
+				}
+				//Convert the keys to lowercase
+				result = xsql.LowercaseKeyMap(result)
+				tuple := &xsql.Tuple{Emitter: ms.tpc, Message:result, Timestamp: common.TimeToUnixMilli(time.Now())}
 				for _, out := range ms.outs{
 					out <- tuple
 				}
@@ -145,16 +132,24 @@ func (ms *MQTTSource) Open(ctx context.Context) error {
 		opts.SetDefaultPublishHandler(h)
 		c := MQTT.NewClient(opts)
 		if token := c.Connect(); token.Wait() && token.Error() != nil {
-			log.Fatalf("Found error: %s.\n", token.Error())
+			log.Printf("Found error when connecting to %s for %s: %s", ms.srv, ms.name, token.Error())
 			cancel()
+			return
 		}
-		log.Printf("The connection to server %s was established successfully.\n", ms.srv)
+		log.Printf("The connection to server %s was established successfully", ms.srv)
 		ms.conn = c
 		if token := c.Subscribe(ms.tpc, 0, nil); token.Wait() && token.Error() != nil {
-			log.Fatalf("Found error: %s.\n", token.Error())
+			log.Printf("Found error: %s", token.Error())
+			cancel()
+			return
+		}
+		log.Printf("Successfully subscribe to topic %s", ms.tpc)
+		select {
+		case <-exeCtx.Done():
+			log.Println("Mqtt Source Done")
+			ms.conn.Disconnect(5000)
 			cancel()
 		}
-		log.Printf("Successfully subscribe to topic %s.\n", ms.tpc)
 	}()
 
 	return nil

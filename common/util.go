@@ -2,22 +2,32 @@ package common
 
 import (
 	"bytes"
-	"errors"
-	"flag"
+	"context"
 	"fmt"
 	"github.com/dgraph-io/badger"
+	"github.com/go-yaml/yaml"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"os"
-	"time"
+	"path/filepath"
 )
 
-const LogLocation = "stream.log"
+const (
+	logFileName = "stream.log"
+	LoggerKey = "logger"
+	etc_dir = "/etc/"
+	data_dir = "/data/"
+	log_dir = "/log/"
+)
 
 var (
 	Log *logrus.Logger
-	Env string
-
+	Config *XStreamConf
+	IsTesting bool
 	logFile *os.File
+	mockTicker *MockTicker
+	mockTimer *MockTimer
+	mockNow int64
 )
 
 type logRedirect struct {
@@ -40,24 +50,74 @@ func (l *logRedirect) Debugf(f string, v ...interface{}) {
 	Log.Debug(fmt.Sprintf(f, v...))
 }
 
+func GetLogger(ctx context.Context) *logrus.Entry {
+	if ctx != nil{
+		l, ok := ctx.Value(LoggerKey).(*logrus.Entry)
+		if l != nil && ok {
+			return l
+		}
+	}
+	return Log.WithField("caller", "default")
+}
+
+func LoadConf(confName string) []byte {
+	confDir, err := GetConfLoc()
+	if err != nil {
+		Log.Fatal(err)
+	}
+
+	file := confDir + confName
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		Log.Fatal(err)
+	}
+	return b
+}
+
+type XStreamConf struct {
+	Debug bool `yaml:"debug"`
+	Port int `yaml:"port"`
+}
+
+var StreamConf = "xstream.yaml"
+
 func init(){
-	flag.StringVar(&Env, "env", "dev", "set environment to prod or test")
-	flag.Parse()
 	Log = logrus.New()
-	if Env == "prod"{
-		logFile, err := os.OpenFile(LogLocation, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	Log.SetFormatter(&logrus.TextFormatter{
+		DisableColors: true,
+		FullTimestamp: true,
+	})
+	b := LoadConf(StreamConf)
+	var cfg map[string]XStreamConf
+	if err := yaml.Unmarshal(b, &cfg); err != nil {
+		Log.Fatal(err)
+	}
+
+	if c, ok := cfg["basic"]; !ok{
+		Log.Fatal("no basic config in xstream.yaml")
+	}else{
+		Config = &c
+	}
+
+	if !Config.Debug {
+		logDir, err := GetLoc(log_dir)
+		if err != nil {
+			Log.Fatal(err)
+		}
+		file := logDir + logFileName
+		logFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err == nil {
 			Log.Out = logFile
 		} else {
 			Log.Infof("Failed to log to file, using default stderr")
 		}
+	}else{
+		Log.SetLevel(logrus.DebugLevel)
 	}
 }
 
 func DbOpen(dir string) (*badger.DB, error) {
-	opts := badger.DefaultOptions
-	opts.Dir = dir
-	opts.ValueDir = dir
+	opts := badger.DefaultOptions(dir)
 	opts.Logger = &logRedirect{}
 	db, err := badger.Open(opts)
 	return db, err
@@ -75,7 +135,7 @@ func DbSet(db *badger.DB, key string, value string) error {
 		if err != nil {
 			err = txn.Set([]byte(key), []byte(value))
 		}else{
-			err = errors.New(fmt.Sprintf("key %s already exist, delete it before creating a new one", key))
+			err = fmt.Errorf("key %s already exist, delete it before creating a new one", key)
 		}
 
 		return err
@@ -143,36 +203,109 @@ func CloseLogger(){
 	}
 }
 
-func GetConfLoc()(string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	confDir := dir + "/conf/"
-	if _, err := os.Stat(confDir); os.IsNotExist(err) {
-		return "", err
-	}
-
-	return confDir, nil
+func GetConfLoc()(string, error){
+	return GetLoc(etc_dir)
 }
-
 
 func GetDataLoc() (string, error) {
+	return GetLoc(data_dir)
+}
+
+func GetLoc(subdir string)(string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
-	dataDir := dir + "/data/"
-
-	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		if err := os.Mkdir(dataDir, os.ModePerm); err != nil {
-			return "", fmt.Errorf("Find error %s when trying to locate xstream data folder.\n", err)
+	confDir := dir + subdir
+	if _, err := os.Stat(confDir); os.IsNotExist(err) {
+		lastdir := dir
+		for len(dir) > 0 {
+			dir = filepath.Dir(dir)
+			if lastdir == dir {
+				break
+			}
+			confDir = dir + subdir
+			if _, err := os.Stat(confDir); os.IsNotExist(err) {
+				lastdir = dir
+				continue
+			} else {
+				//Log.Printf("Trying to load file from %s", confDir)
+				return confDir, nil
+			}
 		}
+	} else {
+		//Log.Printf("Trying to load file from %s", confDir)
+		return confDir, nil
 	}
 
-	return dataDir, nil
+	return "", fmt.Errorf("conf dir not found")
 }
 
-func TimeToUnixMilli(time time.Time) int64 {
-	return time.UnixNano() / 1e6;
+//Time related. For Mock
+func GetTicker(duration int) Ticker {
+	if IsTesting{
+		if mockTicker == nil{
+			mockTicker = NewMockTicker(duration)
+		}else{
+			mockTicker.SetDuration(duration)
+		}
+		return mockTicker
+	}else{
+		return NewDefaultTicker(duration)
+	}
+}
+
+func GetTimer(duration int) Timer {
+	if IsTesting{
+		if mockTimer == nil{
+			mockTimer = NewMockTimer(duration)
+		}else{
+			mockTimer.SetDuration(duration)
+		}
+		return mockTimer
+	}else{
+		return NewDefaultTimer(duration)
+	}
+}
+
+
+/****** For Test Only ********/
+func GetMockTicker() *MockTicker{
+	return mockTicker
+}
+
+func ResetMockTicker(){
+	if mockTicker != nil{
+		mockTicker.lastTick = 0
+	}
+}
+
+func GetMockTimer() *MockTimer{
+	return mockTimer
+}
+
+func SetMockNow(now int64){
+	mockNow = now
+}
+
+func GetMockNow() int64{
+	return mockNow
+}
+
+/*********** Type Cast Utilities *****/
+//TODO datetime type
+func ToString(input interface{}) string{
+	return fmt.Sprintf("%v", input)
+}
+func ToInt(input interface{}) (int, error){
+	switch t := input.(type) {
+	case float64:
+		return int(t), nil
+	case int64:
+		return int(t), nil
+	case int:
+		return t, nil
+	default:
+		return 0, fmt.Errorf("unsupported type %T of %[1]v", input)
+	}
 }

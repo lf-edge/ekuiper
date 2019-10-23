@@ -1,0 +1,4 @@
+basic:
+  # true|false, with debug level, it prints more debug info
+  debug: false
+  port: 20498

@@ -1,6 +1,7 @@
 package plans
 
 import (
+	"engine/common"
 	"engine/xsql"
 	"fmt"
 	"reflect"
@@ -11,37 +12,207 @@ import (
 func TestFilterPlan_Apply(t *testing.T) {
 	var tests = []struct {
 		sql  string
-		data map[string]interface{}
+		data interface{}
 		result interface{}
 	}{
 		{
 			sql: "SELECT abc FROM tbl WHERE abc*2+3 > 12 AND abc < 20",
-			data: map[string]interface{}{
-				"a" : int64(6),
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"a" : int64(6),
+				},
 			},
 			result: nil,
 		},
 
 		{
-			sql: "SELECT abc FROM tbl WHERE abc*2+3 > 12 AND abc < 20",
-			data: map[string]interface{}{
-				"abc" : int64(6),
+			sql: "SELECT * FROM tbl WHERE abc > def and abc <= ghi",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc" : common.TimeFromUnixMilli(1568854515000),
+					"def" : common.TimeFromUnixMilli(1568853515000),
+					"ghi" : common.TimeFromUnixMilli(1568854515000),
+				},
 			},
-			result: map[string]interface{}{
-				"abc" : int64(6),
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc" : common.TimeFromUnixMilli(1568854515000),
+					"def" : common.TimeFromUnixMilli(1568853515000),
+					"ghi" : common.TimeFromUnixMilli(1568854515000),
+				},
+			},
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE abc*2+3 > 12 AND abc < 20",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc" : int64(6),
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(6),
+				},
 			},
 		},
 
 		{
 			sql: "SELECT abc FROM tbl WHERE abc*2+3 > 12 OR def = \"hello\"",
-			data: map[string]interface{}{
-				"abc" : int64(34),
-				"def" : "hello",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc" : int64(34),
+					"def" : "hello",
+				},
 			},
-			result: map[string]interface{}{
-				"abc" : int64(34),
-				"def" : "hello",
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc" : int64(34),
+					"def" : "hello",
+				},
 			},
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE abc > \"2019-09-19T00:55:15.000Z\"",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc" : common.TimeFromUnixMilli(1568854515678),
+					"def" : "hello",
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc" : common.TimeFromUnixMilli(1568854515678),
+					"def" : "hello",
+				},
+			},
+		},
+
+		{
+			sql: "SELECT abc FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
+			data: xsql.WindowTuplesSet{
+				xsql.WindowTuples{
+					Emitter:"src1",
+					Tuples:[]xsql.Tuple{
+						{
+							Emitter: "src1",
+							Message: xsql.Message{"id1" : 1, "f1" : "v1"},
+						},{
+							Emitter: "src1",
+							Message: xsql.Message{"id1" : 2, "f1" : "v2"},
+						},{
+							Emitter: "src1",
+							Message: xsql.Message{"id1" : 3, "f1" : "v1"},
+						},
+					},
+				},
+			},
+			result: xsql.WindowTuplesSet{
+				xsql.WindowTuples{
+					Emitter:"src1",
+					Tuples:[]xsql.Tuple{
+						{
+							Emitter: "src1",
+							Message: xsql.Message{"id1" : 1, "f1" : "v1"},
+						},{
+							Emitter: "src1",
+							Message: xsql.Message{"id1" : 3, "f1" : "v1"},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			sql: "SELECT abc FROM src1 WHERE f1 = \"v8\" GROUP BY TUMBLINGWINDOW(ss, 10)",
+			data: xsql.WindowTuplesSet{
+				xsql.WindowTuples{
+					Emitter:"src1",
+					Tuples:[]xsql.Tuple{
+						{
+							Emitter: "src1",
+							Message: xsql.Message{ "id1" : 1, "f1" : "v1"},
+						},{
+							Emitter: "src1",
+							Message: xsql.Message{ "id1" : 2, "f1" : "v2"},
+						},{
+							Emitter: "src1",
+							Message: xsql.Message{ "id1" : 3, "f1" : "v1"},
+						},
+					},
+				},
+			},
+			result: nil,
+		},
+
+		{
+			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2 WHERE src1.f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
+			data: xsql.JoinTupleSets{
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1",},},
+						{Emitter: "src2", Message: xsql.Message{ "id2" : 2, "f2" : "w2",},},
+					},
+				},
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "src1", Message: xsql.Message{ "id1" : 2, "f1" : "v2",},},
+						{Emitter: "src2", Message: xsql.Message{ "id2" : 4, "f2" : "w3",},},
+					},
+				},
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "src1", Message: xsql.Message{ "id1" : 3, "f1" : "v1",},},
+					},
+				},
+			},
+			result: xsql.JoinTupleSets{
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1",},},
+						{Emitter: "src2", Message: xsql.Message{ "id2" : 2, "f2" : "w2",},},
+					},
+				},
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "src1", Message: xsql.Message{ "id1" : 3, "f1" : "v1",},},
+					},
+				},
+			},
+		},
+
+		{
+			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2 WHERE src1.f1 = \"v22\" GROUP BY TUMBLINGWINDOW(ss, 10)",
+			data: xsql.JoinTupleSets{
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1",},},
+						{Emitter: "src2", Message: xsql.Message{ "id2" : 2, "f2" : "w2",},},
+					},
+				},
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "src1", Message: xsql.Message{ "id1" : 2, "f1" : "v2",},},
+						{Emitter: "src2", Message: xsql.Message{ "id2" : 4, "f2" : "w3",},},
+					},
+				},
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "src1", Message: xsql.Message{ "id1" : 3, "f1" : "v1",},},
+					},
+				},
+			},
+			result: nil,
 		},
 
 	}

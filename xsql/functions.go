@@ -1,31 +1,70 @@
 package xsql
 
 import (
-	"math"
 	"strings"
 )
 
 type FunctionValuer struct{}
 
-var _ CallValuer = FunctionValuer{}
-
-func (FunctionValuer) Value(key string) (interface{}, bool) {
+func (*FunctionValuer) Value(key string) (interface{}, bool) {
 	return nil, false
 }
 
-func (FunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
+var aggFuncMap = map[string]string{"avg": "",
+	"count": "",
+	"max": "", "min": "",
+	"sum":  "",
+}
+
+var mathFuncMap = map[string]string{"abs": "", "acos": "", "asin": "", "atan": "", "atan2": "",
+	"bitand": "", "bitor": "", "bitxor": "", "bitnot": "",
+	"ceil": "", "cos": "", "cosh": "",
+	"exp": "",
+	"ln":  "", "log": "",
+	"mod":   "",
+	"power": "",
+	"rand":  "", "round": "",
+	"sign": "", "sin": "", "sinh": "", "sqrt": "",
+	"tan": "", "tanh": "",
+}
+
+var strFuncMap = map[string]string{"concat": "",
+	"endswith": "",
+	"format_time": "",
+	"indexof":  "",
+	"length":   "", "lower": "", "lpad": "", "ltrim": "",
+	"numbytes":       "",
+	"regexp_matches": "", "regexp_replace": "", "regexp_substr": "", "rpad": "", "rtrim": "",
+	"substring": "", "startswith": "",
+	"trim":  "",
+	"upper": "",
+}
+
+var convFuncMap = map[string]string{"concat": "", "cast": "", "chr": "",
+	"encode": "",
+	"trunc":  "",
+}
+
+var hashFuncMap = map[string]string{ "md5": "",
+	"sha1": "", "sha256": "", "sha384": "", "sha512": "",
+}
+
+var otherFuncMap = map[string]string{"isNull": "",
+	"newuuid": "", "timestamp": "",
+}
+
+func (*FunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	lowerName := strings.ToLower(name)
-	switch lowerName {
-	case "round":
-		arg0 := args[0].(float64)
-		return math.Round(arg0), true
-	case "abs":
-		arg0 := args[0].(float64)
-		return math.Abs(arg0), true
-	case "pow":
-		arg0, arg1 := args[0].(float64), args[1].(int64)
-		return math.Pow(arg0, float64(arg1)), true
-	default:
-		return nil, false
+	if _, ok := mathFuncMap[lowerName]; ok {
+		return mathCall(name, args)
+	} else if _, ok := strFuncMap[lowerName]; ok {
+		return strCall(lowerName, args)
+	} else if _, ok := convFuncMap[lowerName]; ok {
+		return convCall(lowerName, args)
+	} else if _, ok := hashFuncMap[lowerName]; ok {
+		return hashCall(lowerName, args)
+	} else if _, ok := otherFuncMap[lowerName]; ok {
+		return otherCall(lowerName, args)
 	}
+	return nil, false
 }

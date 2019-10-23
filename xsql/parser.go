@@ -140,6 +140,12 @@ func (p *Parser) Parse() (*SelectStatement, error) {
 		selects.Dimensions = dims
 	}
 
+	if having, err := p.parseHaving(); err != nil {
+		return nil, err
+	} else {
+		selects.Having = having
+	}
+
 	if sorts, err := p.parseSorts(); err != nil {
 		return nil, err
 	} else {
@@ -202,7 +208,7 @@ func (p *Parser) parseSourceLiteral() (string, string, error) {
 func (p *Parser) parseFieldNameSections() ([]string, error) {
 	var fieldNameSects []string
 	for {
-		if tok, lit := p.scanIgnoreWhitespace(); tok == IDENT {
+		if tok, lit := p.scanIgnoreWhitespace(); tok == IDENT || tok == ASTERISK {
 			fieldNameSects = append(fieldNameSects, lit)
 			if tok1, _ := p.scanIgnoreWhitespace(); !tok1.allowedSFNToken() {
 				p.unscan()
@@ -224,16 +230,25 @@ func (p *Parser) parseFieldNameSections() ([]string, error) {
 func (p *Parser) parseJoins() (Joins, error) {
 	var joins Joins
 	for {
-		if tok, lit := p.scanIgnoreWhitespace(); tok == INNER || tok == LEFT {
+		if tok, lit := p.scanIgnoreWhitespace(); tok == INNER || tok == LEFT || tok == RIGHT || tok == FULL || tok == CROSS {
 			if tok1, _ := p.scanIgnoreWhitespace(); tok1 == JOIN {
-				if j, err := p.ParseJoin(); err != nil {
+				var jt JoinType = INNER_JOIN
+				switch tok {
+				case INNER:
+					jt = INNER_JOIN
+				case LEFT:
+					jt = LEFT_JOIN
+				case RIGHT:
+					jt = RIGHT_JOIN
+				case FULL:
+					jt = FULL_JOIN
+				case CROSS:
+					jt = CROSS_JOIN
+				}
+
+				if j, err := p.ParseJoin(jt); err != nil {
 					return nil, err
 				} else {
-					if tok == INNER {
-						j.JoinType = INNER_JOIN
-					} else if tok == LEFT {
-						j.JoinType = LEFT_JOIN
-					}
 					joins = append(joins, *j)
 				}
 			} else {
@@ -250,14 +265,17 @@ func (p *Parser) parseJoins() (Joins, error) {
 	return joins, nil
 }
 
-func (p *Parser) ParseJoin() (*Join, error) {
-	var j = &Join{}
+func (p *Parser) ParseJoin(joinType JoinType) (*Join, error) {
+	var j = &Join{ JoinType : joinType }
 	if src, alias, err := p.parseSourceLiteral(); err != nil {
 		return nil, err
 	} else {
 		j.Name = src
 		j.Alias = alias
 		if tok1, _ := p.scanIgnoreWhitespace(); tok1 == ON {
+			if CROSS_JOIN == joinType {
+				return nil, fmt.Errorf("On expression is not required for cross join type.\n")
+			}
 			if exp, err := p.ParseExpr(); err != nil {
 				return nil, err
 			} else {
@@ -296,6 +314,20 @@ func (p *Parser) parseDimensions() (Dimensions, error) {
 	}
 	return ds, nil
 }
+
+
+func (p *Parser) parseHaving() (Expr, error) {
+	if tok, _ := p.scanIgnoreWhitespace(); tok != HAVING {
+		p.unscan()
+		return nil, nil
+	}
+	expr, err := p.ParseExpr()
+	if err != nil {
+		return nil, err
+	}
+	return expr, nil
+}
+
 
 func (p *Parser) parseSorts() (SortFields, error) {
 	var ss SortFields
@@ -557,9 +589,17 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 	for {
 		if tok, _ := p.scanIgnoreWhitespace(); tok == RPAREN {
 			return &Call{Name: name, Args: args}, nil
+		} else if tok == ASTERISK {
+			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 != RPAREN {
+				return nil, fmt.Errorf("found %q, expected right paren.", lit2)
+			} else {
+				args = append(args, &StringLiteral{Val:"*"})
+				return &Call{Name: name, Args: args}, nil
+			}
 		} else {
 			p.unscan()
 		}
+
 		if exp, err := p.ParseExpr(); err != nil {
 			return nil, err
 		} else {
@@ -576,6 +616,9 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 		return nil, fmt.Errorf("found function call %q, expected ), but with %q.", name, lit)
 	}
 	if wt, error := validateWindows(name, args); wt == NOT_WINDOW {
+		if valErr := validateFuncs(name, args); valErr != nil {
+			return nil, valErr
+		}
 		return &Call{Name: name, Args: args}, nil
 	} else {
 		if error != nil {
@@ -616,17 +659,43 @@ func validateWindow(funcName string, expectLen int, args []Expr) (error) {
 	if len(args) != expectLen {
 		return fmt.Errorf("The arguments for %s should be %d.\n", funcName, expectLen)
 	}
-	if _, ok := args[0].(*TimeLiteral); ok {
-		return nil
-	} else {
+	if _, ok := args[0].(*TimeLiteral); !ok {
 		return fmt.Errorf("The 1st argument for %s is expecting timer literal expression. One value of [dd|hh|mi|ss|ms].\n", funcName)
 	}
+
+	for i := 1; i< len(args); i++ {
+		if _, ok := args[i].(*IntegerLiteral); !ok {
+			return fmt.Errorf("The %d argument for %s is expecting interger literal expression. \n", i, funcName)
+		}
+	}
+	return nil
+
 }
 
-func (p *Parser) ConvertToWindows(wtype WindowType, name string, args []Expr) (*Windows, error) {
-	win := &Windows{WindowType:wtype}
-
-	win.Args = args
+func (p *Parser) ConvertToWindows(wtype WindowType, name string, args []Expr) (*Window, error) {
+	win := &Window{WindowType: wtype}
+	var unit = 1
+	v := args[0].(*TimeLiteral).Val
+	switch v{
+	case DD:
+		unit = 24 * 3600 * 1000
+	case HH:
+		unit = 3600 * 1000
+	case MI:
+		unit = 60 * 1000
+	case SS:
+		unit = 1000
+	case MS:
+		unit = 1
+	default:
+		return nil, fmt.Errorf("Invalid timeliteral %s", v)
+	}
+	win.Length = &IntegerLiteral{Val :  args[1].(*IntegerLiteral).Val * unit}
+	if len(args) > 2{
+		win.Interval = &IntegerLiteral{Val : args[2].(*IntegerLiteral).Val * unit}
+	}else{
+		win.Interval = &IntegerLiteral{Val: 0}
+	}
 	return win, nil
 }
 
@@ -893,7 +962,7 @@ func (p *Parser) parseStreamOptions() (map[string]string, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok == LPAREN {
 		lStack.Push(LPAREN)
 		for {
-			if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == DATASOURCE || tok1 == FORMAT || tok1 == KEY || tok1 == CONF_KEY || tok1 == STRICT_VALIDATION || tok1 == TYPE {
+			if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == DATASOURCE || tok1 == FORMAT || tok1 == KEY || tok1 == CONF_KEY || tok1 == STRICT_VALIDATION || tok1 == TYPE || tok1 == TIMESTAMP || tok1 == TIMESTAMP_FORMAT {
 				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == EQ {
 					if tok3, lit3 := p.scanIgnoreWhitespace(); tok3 == STRING {
 						if tok1 == STRICT_VALIDATION {

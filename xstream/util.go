@@ -2,6 +2,7 @@ package xstream
 
 import (
 	"encoding/json"
+	"engine/common"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -25,7 +26,7 @@ func GetConfAsString(file, key string) (string, error) {
 	} else if val == nil {
 		return "", nil
 	}else {
-		return "", fmt.Errorf("The value %s is not type of string for key %s.\n", val, key )
+		return "", fmt.Errorf("The value %s is not type of string for key %s", val, key )
 	}
 }
 
@@ -39,7 +40,7 @@ func GetConfAsInt(file, key string) (int, error) {
 	if v, ok := val.(float64); ok {
 		return int(v), nil
 	} else {
-		return 0, fmt.Errorf("The value {0} is not type of int for key {1}.\n", )
+		return 0, fmt.Errorf("The value {0} is not type of int for key {1}", )
 	}
 }
 
@@ -53,7 +54,7 @@ func GetConfAsFloat(file, key string) (float64, error) {
 	if v, ok := val.(float64); ok {
 		return v, nil
 	} else {
-		return 0, fmt.Errorf("The value {0} is not type of float for key {1}.\n", )
+		return 0, fmt.Errorf("The value {0} is not type of float for key {1}", )
 	}
 }
 
@@ -67,7 +68,7 @@ func GetConfAsBool(file, key string) (bool, error) {
 	if v, ok := val.(bool); ok {
 		return v, nil
 	} else {
-		return false, fmt.Errorf("The value {0} is not type of bool for key {1}.\n", )
+		return false, fmt.Errorf("The value {0} is not type of bool for key {1}", )
 	}
 }
 
@@ -95,7 +96,7 @@ func initConf(file string) (Conf, error) {
 		if err2 := json.Unmarshal([]byte(byteValue), &conf); err2 != nil {
 			return nil, err2
 		}
-		log.Printf("Successfully to load the configuration file %s.\n", fp)
+		common.Log.Printf("Successfully to load the configuration file %s", fp)
 	} else {
 		//Try as absolute path
 		if f, err1 := os.Open(file); err1 == nil {
@@ -103,9 +104,9 @@ func initConf(file string) (Conf, error) {
 			if err2 := json.Unmarshal([]byte(byteValue), &conf); err2 != nil {
 				return nil, err2
 			}
-			log.Printf("Successfully to load the configuration file %s.\n", file)
+			common.Log.Printf("Successfully to load the configuration file %s", file)
 		} else {
-			return nil, fmt.Errorf("Cannot load configuration file %s.\n", file)
+			return nil, fmt.Errorf("Cannot load configuration file %s", file)
 		}
 	}
 	return conf, nil

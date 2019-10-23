@@ -6,11 +6,10 @@ import (
 	"errors"
 )
 
-var log = common.Log
 // CollectorFunc is a function used to colllect
 // incoming stream data. It can be used as a
 // stream sink.
-type CollectorFunc func(interface{}) error
+type CollectorFunc func(context.Context, interface{}) error
 
 // FuncCollector is a colletor that uses a function
 // to collect data.  The specified function must be
@@ -27,8 +26,8 @@ type FuncCollector struct {
 // Func creates a new value *FuncCollector that
 // will use the specified function parameter to
 // collect streaming data.
-func Func(f CollectorFunc) *FuncCollector {
-	return &FuncCollector{f: f, input: make(chan interface{}, 1024)}
+func Func(name string, f CollectorFunc) *FuncCollector {
+	return &FuncCollector{f: f, name:name, input: make(chan interface{}, 1024)}
 }
 
 func (c *FuncCollector) GetName() string  {
@@ -40,40 +39,29 @@ func (c *FuncCollector) GetInput() (chan<- interface{}, string)  {
 }
 
 // Open is the starting point that starts the collector
-func (c *FuncCollector) Open(ctx context.Context) <-chan error {
+func (c *FuncCollector) Open(ctx context.Context, result chan<- error) {
 	//c.logf = autoctx.GetLogFunc(ctx)
 	//c.errf = autoctx.GetErrFunc(ctx)
-
+	log := common.GetLogger(ctx)
 	log.Println("Opening func collector")
-	result := make(chan error)
 
 	if c.f == nil {
 		err := errors.New("Func collector missing function")
 		log.Println(err)
 		go func() { result <- err }()
-		return result
 	}
 
 	go func() {
-		defer func() {
-			log.Println("Closing func collector")
-			close(result)
-		}()
-
 		for {
 			select {
-			case item, opened := <-c.input:
-				if !opened {
-					return
-				}
-				if err := c.f(item); err != nil {
+			case item := <-c.input:
+				if err := c.f(ctx, item); err != nil {
 					log.Println(err)
 				}
 			case <-ctx.Done():
+				log.Infof("Func collector %s done", c.name)
 				return
 			}
 		}
 	}()
-
-	return result
 }

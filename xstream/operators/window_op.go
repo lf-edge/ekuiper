@@ -5,59 +5,74 @@ import (
 	"engine/common"
 	"engine/xsql"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
 	"time"
 )
 
-type WindowType int
-const (
-	NO_WINDOW WindowType = iota
-	TUMBLING_WINDOW
-	HOPPING_WINDOW
-	SLIDING_WINDOW
-	SESSION_WINDOW
-)
-
 type WindowConfig struct {
-	Type WindowType
-	Length int64
-	Interval int64   //If interval is not set, it is equals to Length
+	Type xsql.WindowType
+	Length int
+	Interval int   //If interval is not set, it is equals to Length
 }
 
 type WindowOperator struct {
 	input       chan interface{}
 	outputs     map[string]chan<- interface{}
 	name 		string
-	ticker 		*time.Ticker
+	ticker 		common.Ticker  //For processing time only
 	window      *WindowConfig
-	interval	int64
+	interval	int
 	triggerTime int64
+	isEventTime bool
+	watermarkGenerator *WatermarkGenerator //For event time only
 }
 
-func NewWindowOp(name string, config *WindowConfig) *WindowOperator {
+func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance int64, streams []string) (*WindowOperator, error) {
 	o := new(WindowOperator)
 
 	o.input = make(chan interface{}, 1024)
 	o.outputs = make(map[string]chan<- interface{})
 	o.name = name
-	o.window = config
-	switch config.Type{
-	case NO_WINDOW:
-	case TUMBLING_WINDOW:
-		o.ticker = time.NewTicker(time.Duration(config.Length) * time.Millisecond)
-		o.interval = config.Length
-	case HOPPING_WINDOW:
-		o.ticker = time.NewTicker(time.Duration(config.Interval) * time.Millisecond)
-		o.interval = config.Interval
-	case SLIDING_WINDOW:
-		o.interval = config.Length
-	case SESSION_WINDOW:
-		o.interval = config.Interval
-	default:
-		log.Errorf("Unsupported window type %d", config.Type)
+	o.isEventTime = isEventTime
+	if w != nil{
+		o.window = &WindowConfig{
+			Type: w.WindowType,
+			Length: w.Length.Val,
+			Interval: w.Interval.Val,
+		}
+	}else{
+		o.window = &WindowConfig{
+			Type: xsql.NOT_WINDOW,
+		}
 	}
 
-	return o
+	if isEventTime{
+		//Create watermark generator
+		if w, err := NewWatermarkGenerator(o.window, lateTolerance, streams, o.input); err != nil{
+			return nil, err
+		}else{
+			o.watermarkGenerator = w
+		}
+	}else{
+		switch o.window.Type{
+		case xsql.NOT_WINDOW:
+		case xsql.TUMBLING_WINDOW:
+			o.ticker = common.GetTicker(o.window.Length)
+			o.interval = o.window.Length
+		case xsql.HOPPING_WINDOW:
+			o.ticker = common.GetTicker(o.window.Interval)
+			o.interval = o.window.Interval
+		case xsql.SLIDING_WINDOW:
+			o.interval = o.window.Length
+		case xsql.SESSION_WINDOW:
+			o.ticker = common.GetTicker(o.window.Length)
+			o.interval = o.window.Interval
+		default:
+			return nil, fmt.Errorf("unsupported window type %d", o.window.Type)
+		}
+	}
+	return o, nil
 }
 
 func (o *WindowOperator) GetName() string {
@@ -68,7 +83,7 @@ func (o *WindowOperator) AddOutput(output chan<- interface{}, name string) {
 	if _, ok := o.outputs[name]; !ok{
 		o.outputs[name] = output
 	}else{
-		log.Error("fail to add output %s, operator %s already has an output of the same name", name, o.name)
+		common.Log.Warnf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
 	}
 }
 
@@ -77,121 +92,165 @@ func (o *WindowOperator) GetInput() (chan<- interface{}, string) {
 }
 
 // Exec is the entry point for the executor
+// input: *xsql.Tuple from preprocessor
+// output: xsql.WindowTuplesSet
 func (o *WindowOperator) Exec(ctx context.Context) (err error) {
-
-	log.Printf("Window operator %s is started.\n", o.name)
+	log := common.GetLogger(ctx)
+	log.Printf("Window operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
 		err = fmt.Errorf("no output channel found")
 		return
 	}
-
-	go func() {
-		var (
-			inputs []*xsql.Tuple
-			c <-chan time.Time
-			timeoutTicker *time.Timer
-			timeout <-chan time.Time
-		)
-
-		if o.ticker != nil {
-			c = o.ticker.C
-		}
-
-		for {
-			select {
-			// process incoming item
-			case item, opened := <-o.input:
-				if !opened {
-					return
-				}
-				if d, ok := item.(*xsql.Tuple); !ok {
-					log.Errorf("Expect xsql.Tuple type.\n")
-					return
-				}else{
-					inputs = append(inputs, d)
-					switch o.window.Type{
-					case NO_WINDOW:
-						inputs = o.trigger(inputs, d.Timestamp)
-					case SLIDING_WINDOW:
-						inputs = o.trigger(inputs, d.Timestamp)
-					case SESSION_WINDOW:
-						if o.ticker == nil{ //Stopped by timeout or init
-							o.ticker = time.NewTicker(time.Duration(o.window.Length) * time.Millisecond)
-							c = o.ticker.C
-						}
-						if timeoutTicker != nil {
-							timeoutTicker.Stop()
-							timeoutTicker.Reset(time.Duration(o.window.Interval) * time.Millisecond)
-						} else {
-							timeoutTicker = time.NewTimer(time.Duration(o.window.Interval) * time.Millisecond)
-							timeout = timeoutTicker.C
-						}
-					}
-				}
-			case now := <-c:
-				if len(inputs) > 0 {
-					log.Infof("triggered by ticker")
-					inputs = o.trigger(inputs, common.TimeToUnixMilli(now))
-				}
-			case now := <-timeout:
-				if len(inputs) > 0 {
-					log.Infof("triggered by timeout")
-					inputs = o.trigger(inputs, common.TimeToUnixMilli(now))
-				}
-				o.ticker.Stop()
-				o.ticker = nil
-			// is cancelling
-			case <-ctx.Done():
-				log.Println("Cancelling....")
-				o.ticker.Stop()
-				return
-			}
-		}
-	}()
+	if o.isEventTime{
+		go o.execEventWindow(ctx)
+	}else{
+		go o.execProcessingWindow(ctx)
+	}
 
 	return nil
 }
 
-func (o *WindowOperator) trigger(inputs []*xsql.Tuple, triggerTime int64) []*xsql.Tuple{
-	log.Printf("window %s triggered at %s", o.name, triggerTime)
-	var delta int64
-	if o.window.Type == HOPPING_WINDOW || o.window.Type == SLIDING_WINDOW {
-		lastTriggerTime := o.triggerTime
-		o.triggerTime = triggerTime
-		if lastTriggerTime <= 0 {
-			delta = math.MaxInt32  //max int, all events for the initial window
-		}else{
-			delta = o.triggerTime - lastTriggerTime - o.window.Interval
-			if delta > 100 && o.window.Interval > 0 {
-				log.Warnf("Possible long computation in window; Previous eviction time: %d, current eviction time: %d", lastTriggerTime, o.triggerTime)
+func (o *WindowOperator) execProcessingWindow(ctx context.Context) {
+	exeCtx, cancel := context.WithCancel(ctx)
+	log := common.GetLogger(ctx)
+	var (
+		inputs []*xsql.Tuple
+		c <-chan time.Time
+		timeoutTicker common.Timer
+		timeout <-chan time.Time
+	)
+
+	if o.ticker != nil {
+		c = o.ticker.GetC()
+	}
+
+	for {
+		select {
+		// process incoming item
+		case item, opened := <-o.input:
+			if !opened {
+				break
 			}
+			if d, ok := item.(*xsql.Tuple); !ok {
+				log.Errorf("Expect xsql.Tuple type")
+				break
+			}else{
+				log.Debugf("Event window receive tuple %s", d.Message)
+				inputs = append(inputs, d)
+				switch o.window.Type{
+				case xsql.NOT_WINDOW:
+					inputs, _ = o.scan(inputs, d.Timestamp, ctx)
+				case xsql.SLIDING_WINDOW:
+					inputs, _ = o.scan(inputs, d.Timestamp, ctx)
+				case xsql.SESSION_WINDOW:
+					if timeoutTicker != nil {
+						timeoutTicker.Stop()
+						timeoutTicker.Reset(time.Duration(o.window.Interval) * time.Millisecond)
+					} else {
+						timeoutTicker = common.GetTimer(o.window.Interval)
+						timeout = timeoutTicker.GetC()
+					}
+				}
+			}
+		case now := <-c:
+			if len(inputs) > 0 {
+				n := common.TimeToUnixMilli(now)
+				//For session window, check if the last scan time is newer than the inputs
+				if o.window.Type == xsql.SESSION_WINDOW{
+					//scan time for session window will record all triggers of the ticker but not the timeout
+					lastTriggerTime := o.triggerTime
+					o.triggerTime = n
+					//Check if the current window has exceeded the max duration, if not continue expand
+					if lastTriggerTime < inputs[0].Timestamp{
+						break
+					}
+				}
+				log.Infof("triggered by ticker")
+				inputs, _ = o.scan(inputs, n, ctx)
+			}
+		case now := <-timeout:
+			if len(inputs) > 0 {
+				log.Infof("triggered by timeout")
+				inputs, _ = o.scan(inputs, common.TimeToUnixMilli(now), ctx)
+				//expire all inputs, so that when timer scan there is no item
+				inputs = make([]*xsql.Tuple, 0)
+			}
+		// is cancelling
+		case <-exeCtx.Done():
+			log.Println("Cancelling window....")
+			if o.ticker != nil{
+				o.ticker.Stop()
+			}
+			cancel()
+			return
 		}
 	}
-	var results xsql.MultiEmitterTuples = make([]xsql.EmitterTuples, 0)
+}
+
+func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx context.Context) ([]*xsql.Tuple, bool){
+	log := common.GetLogger(ctx)
+	log.Printf("window %s triggered at %s", o.name, time.Unix(triggerTime/1000, triggerTime%1000))
+	var delta int64
+	if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
+		delta = o.calDelta(triggerTime, delta, log)
+	}
+	var results xsql.WindowTuplesSet = make([]xsql.WindowTuples, 0)
 	i := 0
 	//Sync table
-	for _, tuple := range inputs{
-		if o.window.Type == HOPPING_WINDOW || o.window.Type == SLIDING_WINDOW {
+	for _, tuple := range inputs {
+		if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
 			diff := o.triggerTime - tuple.Timestamp
-			if diff >= o.window.Length + delta {
+			if diff > int64(o.window.Length)+delta {
 				log.Infof("diff: %d, length: %d, delta: %d", diff, o.window.Length, delta)
 				log.Infof("tuple %s emitted at %d expired", tuple, tuple.Timestamp)
 				//Expired tuple, remove it by not adding back to inputs
 				continue
 			}
-			//All tuples in tumbling window are not added back
+			//Added back all inputs for non expired events
+			inputs[i] = tuple
+			i++
+		} else if tuple.Timestamp > triggerTime {
+			//Only added back early arrived events
 			inputs[i] = tuple
 			i++
 		}
-		results.AddTuple(tuple)
+		if tuple.Timestamp <= triggerTime{
+			results = results.AddTuple(tuple)
+		}
 	}
-	if len(results) > 0{
-		log.Printf("window %s triggered for %d tuples", o.name, len(results))
-		for _, output := range o.outputs{
-			output <- results
+	triggered := false
+	if len(results) > 0 {
+		log.Printf("window %s triggered for %d tuples", o.name, len(inputs))
+		if o.isEventTime{
+			results.Sort()
+		}
+		for _, output := range o.outputs {
+			select {
+			case output <- results:
+				triggered = true
+			default: //TODO need to set buffer
+			}
 		}
 	}
 
-	return inputs[:i]
+	return inputs[:i], triggered
+}
+
+func (o *WindowOperator) calDelta(triggerTime int64, delta int64, log *logrus.Entry) int64 {
+	lastTriggerTime := o.triggerTime
+	o.triggerTime = triggerTime
+	if lastTriggerTime <= 0 {
+		delta = math.MaxInt16 //max int, all events for the initial window
+	} else {
+		if !o.isEventTime && o.window.Interval > 0 {
+			delta = o.triggerTime - lastTriggerTime - int64(o.window.Interval)
+			if delta > 100 {
+				log.Warnf("Possible long computation in window; Previous eviction time: %d, current eviction time: %d", lastTriggerTime, o.triggerTime)
+			}
+		} else {
+			delta = 0
+		}
+	}
+	return delta
 }
