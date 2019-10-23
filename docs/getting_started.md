@@ -2,9 +2,7 @@
 
 ## Download & install
 
-TODO
-
-
+Download the latest release from https://github.com/emqx/edge-rule-engine/releases, and unzip file.
 
 ## Directory structure 
 
