@@ -3,7 +3,7 @@
 ## Highlight
 
 A SQL based lightweight IoT streaming rule engine running at resource constrained edge devices.
-- Native run with small overhead ( ~13MB package), support Linux/Windows/Mac OS
+- Native run with small overhead ( ~7MB package), support Linux/Windows/Mac OS
 - SQL based, easy to use
 - Built-in support for MQTT source
 - Extension - user can customize the rule engine
