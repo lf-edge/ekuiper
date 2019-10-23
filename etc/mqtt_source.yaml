@@ -2,7 +2,7 @@
 default:
   qos: 1
   sharedsubscription: true
-  servers: [tcp://127.0.0.1:1887]
+  servers: [tcp://127.0.0.1:1883]
   #TODO: Other global configurations
 
 
