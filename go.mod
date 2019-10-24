@@ -2,6 +2,7 @@ module engine
 
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
+	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
 	github.com/dgraph-io/badger v2.0.0-rc2+incompatible
 	github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect

@@ -39,5 +39,9 @@ pkg: build
 	cd $(BUILD_PATH); \
 	zip -rq $${package_name}.zip engine; \
 	tar -czf $${package_name}.tar.gz engine; \
-	mv engine.zip engine.tar.gz ../$(PACKAGES_PATH)
+	mv $${package_name}.zip $${package_name}.tar.gz ../$(PACKAGES_PATH)
 	@echo "Package build success"
+
+.PHONY: clean
+clean:
+	rm -rf _build
