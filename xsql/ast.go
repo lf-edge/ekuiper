@@ -1505,3 +1505,50 @@ func IsAggStatement(node Node) (bool) {
 	});
 	return r
 }
+
+func HasAggFuncs(node Node) bool {
+	if node == nil{
+		return false
+	}
+	var r bool = false
+	WalkFunc(node, func(n Node) {
+		if f, ok := n.(*Call); ok {
+			fn := strings.ToLower(f.Name)
+			if _, ok1 := aggFuncMap[fn]; ok1 {
+				r = true
+				return
+			}
+		}
+	});
+	return r
+}
+
+func HasNoAggFuncs(node Node) bool {
+	if node == nil{
+		return false
+	}
+	var r bool = false
+	WalkFunc(node, func(n Node) {
+		if f, ok := n.(*Call); ok {
+			fn := strings.ToLower(f.Name)
+			if _, ok1 := mathFuncMap[fn]; ok1 {
+				r = true
+				return
+			} else if _, ok1 := strFuncMap[fn]; ok1 {
+				r = true
+				return
+			} else if _, ok1 := convFuncMap[fn]; ok1 {
+				r = true
+				return
+			} else if _, ok1 := hashFuncMap[fn]; ok1 {
+				r = true
+				return
+			} else if _, ok1 := otherFuncMap[fn]; ok1 {
+				r = true
+				return
+			}
+		}
+	});
+	return r
+}
+

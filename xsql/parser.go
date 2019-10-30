@@ -159,6 +159,10 @@ func (p *Parser) Parse() (*SelectStatement, error) {
 		return nil, fmt.Errorf("found %q, expected EOF.", lit)
 	}
 
+	if err := Validate(selects); err != nil {
+		return nil, err
+	}
+
 	return selects, nil
 }
 

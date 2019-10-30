@@ -871,6 +871,18 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" HAVING sin(name) > 0.3`,
+			stmt: nil,
+			err: "Not allowed to call none-aggregate functions in HAVING clause.",
+		},
+
+		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE count(name) = 3`,
+			stmt: nil,
+			err: "Not allowed to call aggregate functions in WHERE clause.",
+		},
+
+		{
 			s: `SELECT s1.temp AS t, name FROM topic/sensor1 AS s1 WHERE t = "dname" GROUP BY s1.temp`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
