@@ -254,7 +254,7 @@ GROUP BY column_name
 
 ### HAVING
 
-Specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression. HAVING is typically used in a GROUP BY clause. When GROUP BY is not used, HAVING behaves like a WHERE clause.
+The HAVING clause was added to SQL because the WHERE keyword could not be used with aggregate functions. Specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression. HAVING is typically used in a GROUP BY clause. 
 
 #### Syntax
 

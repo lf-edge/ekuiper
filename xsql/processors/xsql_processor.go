@@ -416,6 +416,12 @@ func (p *RuleProcessor) createTopoWithSources(rule *xstream.Rule, sources []xstr
 				}
 			}
 
+			if selectStmt.Having != nil {
+				havingOp := xstream.Transform(&plans.HavingPlan{selectStmt.Having}, "having")
+				tp.AddOperator(inputs, havingOp)
+				inputs = []xstream.Emitter{havingOp}
+			}
+
 			if selectStmt.SortFields != nil {
 				orderOp := xstream.Transform(&plans.OrderPlan{SortFields:selectStmt.SortFields}, "order")
 				tp.AddOperator(inputs, orderOp)
