@@ -14,15 +14,23 @@ func (p *HavingPlan) Apply(ctx context.Context, data interface{}) interface{} {
 	log := common.GetLogger(ctx)
 	log.Debugf("having plan receive %s", data)
 	switch input := data.(type) {
-	case xsql.Valuer:
-		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, &xsql.FunctionValuer{})}
-		result, ok := ve.Eval(p.Condition).(bool)
-		if ok {
-			if result {
-				return input
+	case xsql.GroupedTuplesSet:
+		r := xsql.GroupedTuplesSet{}
+		for _, v := range input {
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(v, &xsql.FunctionValuer{}, &xsql.AggregateFunctionValuer{Data: v})}
+			result, ok := ve.Eval(p.Condition).(bool)
+			if ok {
+				if result {
+					r = append(r, v)
+				}
+			} else {
+				log.Errorf("invalid condition that returns non-bool value")
+				return nil
 			}
-		} else {
-			log.Errorf("invalid condition that returns non-bool value")
+
+		}
+		if len(r) > 0 {
+			return r
 		}
 	case xsql.WindowTuplesSet:
 		if len(input) != 1 {
