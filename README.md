@@ -11,8 +11,8 @@ A SQL based lightweight IoT streaming rule engine running at resource constraine
 
 ## Document
 
-- [Getting started](docs/getting_started.md)
-- [Reference guide](docs/index.md)
+- [Getting started](docs/en_US/getting_started.md)
+- [Reference guide](docs/en_US/index.md)
 
 ## Build from source code
 
