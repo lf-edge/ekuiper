@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 )
 
@@ -239,6 +240,21 @@ func GetLoc(subdir string)(string, error) {
 	}
 
 	return "", fmt.Errorf("conf dir not found")
+}
+
+func GetAndCreateDataLoc(dir string) (string, error) {
+	dataDir, err := GetDataLoc()
+	if err != nil {
+		return "", err
+	}
+	d := path.Join(path.Dir(dataDir), dir)
+	if _, err := os.Stat(d); os.IsNotExist(err) {
+		err = os.MkdirAll(d, 0755)
+		if err != nil {
+			return "", err
+		}
+	}
+	return d, nil
 }
 
 //Time related. For Mock

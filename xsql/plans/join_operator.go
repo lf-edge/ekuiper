@@ -59,7 +59,7 @@ func getStreamNames(join *xsql.Join) ([]string, error) {
 			}
 			srcs = append(srcs, string(f.StreamName))
 		}
-	});
+	})
 	if len(srcs) != 2 {
 		return nil, fmt.Errorf("Not correct join expression, it requires exactly 2 sources at ON expression.")
 	}

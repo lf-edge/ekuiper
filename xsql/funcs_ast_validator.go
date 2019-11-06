@@ -9,7 +9,7 @@ type AllowTypes struct {
 	types []Literal
 }
 
-func validateFuncs(funcName string, args []Expr) (error) {
+func validateFuncs(funcName string, args []Expr) error {
 	lowerName := strings.ToLower(funcName)
 	if _, ok := mathFuncMap[lowerName]; ok {
 		return validateMathFunc(funcName, args)
@@ -25,7 +25,7 @@ func validateFuncs(funcName string, args []Expr) (error) {
 	return nil
 }
 
-func validateMathFunc(name string, args []Expr) (error) {
+func validateMathFunc(name string, args []Expr) error {
 	len := len(args)
 	switch name {
 	case "abs", "acos", "asin", "atan", "ceil", "cos", "cosh", "exp", "ln", "log", "round", "sign", "sin", "sinh",
@@ -74,7 +74,7 @@ func validateMathFunc(name string, args []Expr) (error) {
 	return nil
 }
 
-func validateStrFunc(name string, args []Expr) (error) {
+func validateStrFunc(name string, args []Expr) error {
 	len := len(args)
 	switch name {
 	case "concat":
@@ -182,7 +182,7 @@ func validateStrFunc(name string, args []Expr) (error) {
 	return nil
 }
 
-func validateConvFunc(name string, args []Expr) (error) {
+func validateConvFunc(name string, args []Expr) error {
 	len := len(args)
 	switch name {
 	case "cast":
@@ -239,7 +239,7 @@ func validateConvFunc(name string, args []Expr) (error) {
 	return nil
 }
 
-func validateHashFunc(name string, args []Expr) (error) {
+func validateHashFunc(name string, args []Expr) error {
 	len := len(args)
 	switch name {
 	case "md5", "sha1", "sha224", "sha256", "sha384", "sha512":
@@ -254,7 +254,7 @@ func validateHashFunc(name string, args []Expr) (error) {
 	return nil
 }
 
-func validateOtherFunc(name string, args []Expr) (error) {
+func validateOtherFunc(name string, args []Expr) error {
 	len := len(args)
 	switch name {
 	case "isNull":
@@ -296,7 +296,7 @@ func produceErrInfo(name string, index int, expect string) (err error) {
 	return
 }
 
-func validateLen(funcName string, exp, actual int) (error) {
+func validateLen(funcName string, exp, actual int) error {
 	if actual != exp {
 		return fmt.Errorf("The arguments for %s should be %d.", funcName, exp)
 	}

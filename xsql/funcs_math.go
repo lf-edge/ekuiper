@@ -11,7 +11,7 @@ func mathCall(name string, args []interface{}) (interface{}, bool) {
 	case "abs":
 		if v, ok := args[0].(int); ok {
 			t := float64(v)
-			var ret int = int(math.Abs(t))
+			var ret = int(math.Abs(t))
 			return ret, true
 		} else if v, ok := args[0].(float64); ok {
 			return math.Abs(v), true

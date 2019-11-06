@@ -150,7 +150,6 @@ func main() {
 								args := strings.Join([]string{"CREATE STREAM ", string(stream)}, " ")
 								return streamProcess(client, args)
 							}
-							return nil
 						} else {
 							return streamProcess(client, "")
 						}
@@ -442,6 +441,6 @@ func main() {
 
 	err = app.Run(os.Args)
 	if err != nil {
-		fmt.Errorf("%s", err)
+		fmt.Printf("%v", err)
 	}
 }

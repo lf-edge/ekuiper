@@ -2,10 +2,9 @@ package xstream
 
 import (
 	"context"
-	"fmt"
 	"engine/xstream/operators"
+	"fmt"
 	"reflect"
-
 )
 
 type unaryFuncForm byte

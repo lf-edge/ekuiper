@@ -28,7 +28,7 @@ var processor *processors.RuleProcessor
 
 type Server int
 
-var QUERY_RULE_ID string = "internal-xstream_query_rule"
+var QUERY_RULE_ID = "internal-xstream_query_rule"
 func (t *Server) CreateQuery(sql string, reply *string) error {
 	if _, ok := registry[QUERY_RULE_ID]; ok {
 		stopQuery()

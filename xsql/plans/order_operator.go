@@ -28,5 +28,4 @@ func (p *OrderPlan) Apply(ctx context.Context, data interface{}) interface{} {
 		log.Errorf("Expect xsql.Valuer or its array type.")
 		return nil
 	}
-	return nil
 }

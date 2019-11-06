@@ -276,7 +276,7 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 		if r := s.read(); r == '-' {
 			s.skipUntilNewline()
 			return COMMENT, ""
-		} else if (r == '>'){
+		} else if r == '>' {
 			return ARROW, tokens[ARROW]
 		} else if isDigit(r) {
 			s.unread()
@@ -587,20 +587,20 @@ func isWhiteSpace(r rune) bool {
 
 func isLetter(ch rune) bool { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') }
 
-func isDigit(ch rune) bool { return (ch >= '0' && ch <= '9') }
+func isDigit(ch rune) bool { return ch >= '0' && ch <= '9' }
 
 func isQuotation(ch rune) bool { return ch == '"' }
 
 func (tok Token) isOperator() bool { return (tok > operatorBeg && tok < operatorEnd) || tok == ASTERISK || tok == LBRACKET }
 
-func (tok Token) isTimeLiteral() bool { return (tok >= DD && tok <= MS) }
+func (tok Token) isTimeLiteral() bool { return tok >= DD && tok <= MS }
 
 func (tok Token) allowedSourceToken() bool {
-	return (tok == IDENT || tok == DIV || tok == HASH || tok == ADD)
+	return tok == IDENT || tok == DIV || tok == HASH || tok == ADD
 }
 
 //Allowed special field name token
-func (tok Token) allowedSFNToken() bool { return (tok == DOT) }
+func (tok Token) allowedSFNToken() bool { return tok == DOT }
 
 func (tok Token) Precedence() int {
 	switch tok {

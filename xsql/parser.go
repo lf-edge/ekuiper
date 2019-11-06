@@ -236,7 +236,7 @@ func (p *Parser) parseJoins() (Joins, error) {
 	for {
 		if tok, lit := p.scanIgnoreWhitespace(); tok == INNER || tok == LEFT || tok == RIGHT || tok == FULL || tok == CROSS {
 			if tok1, _ := p.scanIgnoreWhitespace(); tok1 == JOIN {
-				var jt JoinType = INNER_JOIN
+				var jt = INNER_JOIN
 				switch tok {
 				case INNER:
 					jt = INNER_JOIN
@@ -659,7 +659,7 @@ func validateWindows(name string, args []Expr) (WindowType, error) {
 	return NOT_WINDOW, nil
 }
 
-func validateWindow(funcName string, expectLen int, args []Expr) (error) {
+func validateWindow(funcName string, expectLen int, args []Expr) error {
 	if len(args) != expectLen {
 		return fmt.Errorf("The arguments for %s should be %d.\n", funcName, expectLen)
 	}
@@ -961,7 +961,7 @@ func (p *Parser) parseStreamStructType() (FieldType, error) {
 }
 
 func (p *Parser) parseStreamOptions() (map[string]string, error) {
-	var opts map[string]string = make(map[string]string)
+	var opts = make(map[string]string)
 	lStack := &stack.Stack{}
 	if tok, lit := p.scanIgnoreWhitespace(); tok == LPAREN {
 		lStack.Push(LPAREN)

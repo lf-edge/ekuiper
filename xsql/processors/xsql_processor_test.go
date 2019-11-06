@@ -16,13 +16,10 @@ import (
 
 var BadgerDir string
 func init(){
-	dataDir, err := common.GetDataLoc()
+	BadgerDir, err := common.GetAndCreateDataLoc("test")
 	if err != nil {
 		log.Panic(err)
-	}else{
-		log.Infof("db location is %s", dataDir)
 	}
-	BadgerDir = path.Join(path.Dir(dataDir), "test")
 	log.Infof("badge location is %s", BadgerDir)
 }
 
