@@ -55,6 +55,14 @@ func (p *Preprocessor) Apply(ctx context.Context, data interface{}) interface{} 
 			return nil
 		}
 	}
+
+	//Add the value of special keys
+	for _, v := range xsql.SpecialKeyMapper {
+		if v1, ok := tuple.Message[v]; ok {
+			result[v] = v1
+		}
+	}
+
 	tuple.Message = result
 	if p.isEventTime{
 		if t, ok := result[p.timestampField]; ok{

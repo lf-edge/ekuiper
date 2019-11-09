@@ -56,7 +56,7 @@ Aggregate functions perform a calculation on a set of values and return a single
 | lower    | lower(col1) | Returns the lowercase version of the given String.                                                                         |
 | lpad     | lpad(col1, 2) | Returns the String argument, padded on the left side with the number of spaces specified by the second argument.         |
 | ltrim    | ltrim(col1) | Removes all leading whitespace (tabs and spaces) from the provided String.                                                |
-| numbytes | numbytes(col1) | Returns the number of bytes in the UTF-8 encoding of the provided string.                                         | 
+| numbytes | numbytes(col1) | Returns the number of bytes in the UTF-8 encoding of the provided string.                                         |
 | regexp_matches| regexp_matches(col1, regex) | Returns true if the string (first argument) contains a match for the regular expression.            |
 | regexp_replace| regexp_matches(col1, regex, str) | Replaces all occurrences of the second argument (regular expression) in the first argument with the third argument.                                                          |
 | regexp_substr| regexp_substr(col1, regex) | Finds the first match of the 2nd parameter (regex) in the first parameter.                            |
@@ -64,6 +64,7 @@ Aggregate functions perform a calculation on a set of values and return a single
 | rtrim    | rtrim(col1) | Removes all trailing whitespace (tabs and spaces) from the provided String.                                                |
 | substring| substring(col1, start, end) |  returns the substring of the provided String from the provided Int index (0-based, inclusive) to the end of the String.                                                           |
 | startswith| startswith(col1, str) | Returns Boolean, whether the first string argument starts with the second string argument.                  |
+| split_value | split_value(col1, str_splitter, index) | Split the value of the 1st parameter with the 2nd parameter, and return the value of split array that indexed with the 3rd parameter.<br />``split_value("/test/device001/message","/",0) AS a``, the returned value of function is empty; <br />``split_value("/test/device001/message","/",3) AS a``, the returned value of function is ``message``; |
 | trim      | trim(col1) | Removes all leading and trailing whitespace (tabs and spaces) from the provided String.                                    |
 | upper     | upper(col1)| Returns the uppercase version of the given String.|
 
@@ -86,8 +87,9 @@ Aggregate functions perform a calculation on a set of values and return a single
 | sha512   | sha512(col1)| Hashed value of the argument                   |
 
 ## Other Functions
-| Function | Example     | Description                                    |
-| -------- | ----------- | ---------------------------------------------- |
-| isNull   | isNull(col1)| Returns true if the argument is the Null value.|
-| newuuid  | newuuid()   | Returns a random 16-byte UUID.                 |
-| timestamp| timestamp() | Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970 |
+| Function  | Example      | Description                                                  |
+| --------- | ------------ | ------------------------------------------------------------ |
+| isNull    | isNull(col1) | Returns true if the argument is the Null value.              |
+| newuuid   | newuuid()    | Returns a random 16-byte UUID.                               |
+| timestamp | timestamp()  | Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970 |
+| mqtt      | mqtt(topic)  | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src1.topic)``<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src2.messageid)`` |

@@ -85,6 +85,83 @@ func TestHashFunc_Apply1(t *testing.T) {
 				"a": strings.ToLower("07E547D9586F6A73F73FBAC0435ED76951218FB7D0C8D788A309D785436BBB642E93A252A954F23912547D1E8A3B5ED6E1BFD7097821233FA0538F3DB854FEE6"),
 			}},
 		},
+
+		{
+			sql: "SELECT mqtt(topic) AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					xsql.INTERNAL_MQTT_TOPIC_KEY : "devices/device_001/message",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "devices/device_001/message",
+			}},
+		},
+
+		{
+			sql: "SELECT mqtt(topic) AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					xsql.INTERNAL_MQTT_TOPIC_KEY : "devices/device_001/message",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "devices/device_001/message",
+			}},
+		},
+
+
+	}
+
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	for i, tt := range tests {
+		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+		if err != nil || stmt == nil {
+			t.Errorf("parse sql %s error %v", tt.sql, err)
+		}
+		pp := &ProjectPlan{Fields:stmt.Fields}
+		result := pp.Apply(nil, tt.data)
+		var mapRes []map[string]interface{}
+		if v, ok := result.([]byte); ok {
+			err := json.Unmarshal(v, &mapRes)
+			if err != nil {
+				t.Errorf("Failed to parse the input into map.\n")
+				continue
+			}
+			//fmt.Printf("%t\n", mapRes["rengine_field_0"])
+
+			if !reflect.DeepEqual(tt.result, mapRes) {
+				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
+			}
+		} else {
+			t.Errorf("The returned result is not type of []byte\n")
+		}
+	}
+}
+func TestMqttFunc_Apply2(t *testing.T) {
+	var tests = []struct {
+		sql  string
+		data xsql.JoinTupleSets
+		result []map[string]interface{}
+	}{
+		{
+			sql: "SELECT id1, mqtt(src1.topic) AS a, mqtt(src2.topic) as b FROM src1 LEFT JOIN src2 ON src1.id1 = src2.id1",
+			data: xsql.JoinTupleSets{
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "src1", Message: xsql.Message{ "id1" : "1", "f1" : "v1" , xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type1/device001"},},
+						{Emitter: "src2", Message: xsql.Message{ "id2" : "1", "f2" : "w1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type2/device001" },},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"id1": "1",
+				"a": "devices/type1/device001",
+				"b": "devices/type2/device001",
+			}},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

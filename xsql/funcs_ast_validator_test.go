@@ -387,6 +387,36 @@ func TestFuncValidator(t *testing.T) {
 			err: "Expect string type for 1 parameter of function sha512.",
 		},
 
+		{
+			s: `SELECT mqtt("topic") FROM tbl`,
+			stmt: nil,
+			err: "Expect field reference type for 1 parameter of function mqtt.",
+		},
+
+		{
+			s: `SELECT mqtt(topic1) FROM tbl`,
+			stmt: nil,
+			err: "Parameter of mqtt function can be only topic or messageid.",
+		},
+
+		{
+			s: `SELECT split_value(topic1) FROM tbl`,
+			stmt: nil,
+			err: "the arguments for split_value should be 3",
+		},
+
+		{
+			s: `SELECT split_value(topic1, 3, 1) FROM tbl`,
+			stmt: nil,
+			err: "Expect string type for 2 parameter of function split_value.",
+		},
+
+		{
+			s: `SELECT split_value(topic1, "hello", -1) FROM tbl`,
+			stmt: nil,
+			err: "The index should not be a nagtive integer.",
+		},
+
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

@@ -6,12 +6,16 @@ import (
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
+	"strings"
 )
 
 type MQTTSink struct {
 	srv      string
 	tpc      string
 	clientid string
+	pVersion uint
+	uName 	string
+	password string
 
 	input chan interface{}
 	conn MQTT.Client
@@ -41,7 +45,38 @@ func NewMqttSink(name string, ruleId string, properties interface{}) (*MQTTSink,
 			clientid = uuid.String()
 		}
 	}
-	ms := &MQTTSink{name:name, ruleId: ruleId, input: make(chan interface{}), srv: srv.(string), tpc: tpc.(string), clientid: clientid.(string)}
+	var pVersion uint = 3
+	pVersionStr, ok := ps["protocol_version"];
+	if ok {
+		v, _ := pVersionStr.(string)
+		if v == "3.1" {
+			pVersion = 3
+		} else if v == "3.1.1" {
+			pVersion = 4
+		} else {
+			return nil, fmt.Errorf("Unknown protocol version {0}, the value could be only 3.1 or 3.1.1 (also refers to MQTT version 4).", pVersionStr)
+		}
+	}
+
+	uName := ""
+	un, ok := ps["username"];
+	if ok {
+		v, _ := un.(string)
+		if strings.Trim(v, " ") != "" {
+			uName = v
+		}
+	}
+
+	password := ""
+	pwd, ok := ps["password"];
+	if ok {
+		v, _ := pwd.(string)
+		if strings.Trim(v, " ") != "" {
+			password = v
+		}
+	}
+
+	ms := &MQTTSink{name:name, ruleId: ruleId, input: make(chan interface{}), srv: srv.(string), tpc: tpc.(string), clientid: clientid.(string), pVersion:pVersion, uName:uName, password:password}
 	return ms, nil
 }
 
@@ -59,7 +94,14 @@ func (ms *MQTTSink) Open(ctx context.Context, result chan<- error) {
 
 	go func() {
 		exeCtx, cancel := context.WithCancel(ctx)
-		opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetClientID(ms.clientid)
+		opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetClientID(ms.clientid).SetProtocolVersion(ms.pVersion)
+		if ms.uName != "" {
+			opts = opts.SetUsername(ms.uName)
+		}
+
+		if ms.password != "" {
+			opts = opts.SetPassword(ms.password)
+		}
 
 		c := MQTT.NewClient(opts)
 		if token := c.Connect(); token.Wait() && token.Error() != nil {

@@ -10,6 +10,8 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/google/uuid"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -17,6 +19,10 @@ type MQTTSource struct {
 	srv      string
 	tpc      string
 	clientid string
+	pVersion uint
+	uName 	 string
+	password string
+
 	schema   map[string]interface{}
 
 	outs  map[string]chan<- interface{}
@@ -31,8 +37,10 @@ type MQTTConfig struct {
 	Sharedsubscription string `yaml:"sharedsubscription"`
 	Servers []string `yaml:"servers"`
 	Clientid string `yaml:"clientid"`
+	PVersion string `yaml:"protocolVersion"`
+	Uname string `yaml:"username"`
+	Password string `yaml:"password"`
 }
-
 
 const confName string = "mqtt_source.yaml"
 
@@ -63,6 +71,23 @@ func NewWithName(name string, topic string, confKey string) (*MQTTSource, error)
 	} else {
 		ms.clientid = cfg["default"].Clientid
 	}
+
+	var pversion uint = 3
+	if pv := cfg[confKey].PVersion; pv != "" {
+		if pv == "3.1.1" {
+			pversion = 4
+		}
+	}
+	ms.pVersion = pversion
+
+	if uname := cfg[confKey].Uname; uname != "" {
+		ms.uName = strings.Trim(uname, " ")
+	}
+
+	if password := cfg[confKey].Password; password != "" {
+		ms.password = strings.Trim(password, " ")
+	}
+
 	return ms, nil
 }
 
@@ -94,7 +119,7 @@ func (ms *MQTTSource) Open(ctx context.Context) error {
 	log := common.GetLogger(ctx)
 	go func() {
 		exeCtx, cancel := context.WithCancel(ctx)
-		opts := MQTT.NewClientOptions().AddBroker(ms.srv)
+		opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(ms.pVersion)
 
 		if ms.clientid == "" {
 			if uuid, err := uuid.NewUUID(); err != nil {
@@ -108,24 +133,32 @@ func (ms *MQTTSource) Open(ctx context.Context) error {
 			opts.SetClientID(ms.clientid)
 		}
 
-		h := func(client MQTT.Client, msg MQTT.Message) {
-			if ms.tpc != msg.Topic() {
-				return
-			} else {
-				log.Infof("received %s", msg.Payload())
+		if ms.uName != "" {
+			opts.SetUsername(ms.uName)
+		}
 
-				result := make(map[string]interface{})
-				//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
-				if e := json.Unmarshal(msg.Payload(), &result); e != nil {
-					log.Errorf("Invalid data format, cannot convert %s into JSON with error %s", string(msg.Payload()), e)
-					return
-				}
-				//Convert the keys to lowercase
-				result = xsql.LowercaseKeyMap(result)
-				tuple := &xsql.Tuple{Emitter: ms.tpc, Message:result, Timestamp: common.TimeToUnixMilli(time.Now())}
-				for _, out := range ms.outs{
-					out <- tuple
-				}
+		if ms.password != "" {
+			opts.SetPassword(ms.password)
+		}
+
+
+		h := func(client MQTT.Client, msg MQTT.Message) {
+			log.Infof("received %s", msg.Payload())
+
+			result := make(map[string]interface{})
+			//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
+			if e := json.Unmarshal(msg.Payload(), &result); e != nil {
+				log.Errorf("Invalid data format, cannot convert %s into JSON with error %s", string(msg.Payload()), e)
+				return
+			}
+			//Convert the keys to lowercase
+			result = xsql.LowercaseKeyMap(result)
+			result[xsql.INTERNAL_MQTT_TOPIC_KEY] = msg.Topic()
+			result[xsql.INTERNAL_MQTT_MSG_ID_KEY] = strconv.Itoa(int(msg.MessageID()))
+
+			tuple := &xsql.Tuple{Emitter: ms.tpc, Message:result, Timestamp: common.TimeToUnixMilli(time.Now())}
+			for _, out := range ms.outs{
+				out <- tuple
 			}
 		}
 

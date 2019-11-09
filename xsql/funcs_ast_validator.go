@@ -160,6 +160,24 @@ func validateStrFunc(name string, args []Expr) (error) {
 				}
 			}
 		}
+	case "split_value":
+		if len != 3 {
+			return fmt.Errorf("the arguments for split_value should be 3")
+		}
+		if isNumericArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) {
+			return produceErrInfo(name, 0, "string")
+		}
+		if isNumericArg(args[1]) || isTimeArg(args[1]) || isBooleanArg(args[1]) {
+			return produceErrInfo(name, 1, "string")
+		}
+		if isFloatArg(args[2]) || isTimeArg(args[2]) || isBooleanArg(args[2]) || isStringArg(args[2]) {
+			return produceErrInfo(name, 2, "int")
+		}
+		if s, ok := args[2].(*IntegerLiteral); ok {
+			if s.Val < 0 {
+				return fmt.Errorf("The index should not be a nagtive integer.")
+			}
+		}
 	}
 	return nil
 }
@@ -253,6 +271,18 @@ func validateOtherFunc(name string, args []Expr) (error) {
 	case "newuuid":
 		if err := validateLen(name, 0, len); err != nil {
 			return  err
+		}
+	case "mqtt":
+		if err := validateLen(name, 1, len); err != nil {
+			return err
+		}
+		if isIntegerArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) || isStringArg(args[0]) || isFloatArg(args[0]) {
+			return produceErrInfo(name, 0, "field reference")
+		}
+		if p, ok := args[0].(*FieldRef); ok {
+			if _, ok := SpecialKeyMapper[p.Name]; !ok {
+				return fmt.Errorf("Parameter of mqtt function can be only topic or messageid.")
+			}
 		}
 	}
 	return nil

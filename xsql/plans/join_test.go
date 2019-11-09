@@ -561,6 +561,39 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			},
 		},
 
+		{
+			sql: "SELECT id1, mqtt(src1.topic) AS a, mqtt(src2.topic) as b FROM src1 left join src2 on src1.id1 = src2.id2",
+			data: xsql.WindowTuplesSet{
+				xsql.WindowTuples{
+					Emitter:"src1",
+					Tuples:[]xsql.Tuple{
+						{
+							Emitter: "src1",
+							Message: xsql.Message{ "id1" : 1, "f1" : "v1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type1/device001"},
+						},
+					},
+				},
+
+				xsql.WindowTuples{
+					Emitter:"src2",
+					Tuples:[]xsql.Tuple{
+						{
+							Emitter: "src2",
+							Message: xsql.Message{ "id2" : 1, "f2" : "w1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type2/device001" },
+						},
+					},
+				},
+			},
+			result: xsql.JoinTupleSets{
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1" , xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type1/device001"},},
+						{Emitter: "src2", Message: xsql.Message{ "id2" : 1, "f2" : "w1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type2/device001" },},
+					},
+				},
+			},
+		},
+
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
