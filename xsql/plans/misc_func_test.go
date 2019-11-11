@@ -112,6 +112,20 @@ func TestHashFunc_Apply1(t *testing.T) {
 			}},
 		},
 
+		{
+			sql: "SELECT topic, mqtt(topic) AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"topic" : "fff",
+					xsql.INTERNAL_MQTT_TOPIC_KEY : "devices/device_001/message",
+				},
+			},
+			result: []map[string]interface{}{{
+				"topic": "fff",
+				"a": "devices/device_001/message",
+			}},
+		},
 
 	}
 
