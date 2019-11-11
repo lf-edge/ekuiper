@@ -356,7 +356,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *xstream.Rule, sources []xstr
 				if err != nil {
 					return nil, nil, err
 				}
-				pp, err := plans.NewPreprocessor(streamStmt, isEventTime)
+				pp, err := plans.NewPreprocessor(streamStmt, selectStmt.Fields, isEventTime)
 				if err != nil{
 					return nil, nil, err
 				}
