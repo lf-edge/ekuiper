@@ -153,10 +153,12 @@ func (ms *MQTTSource) Open(ctx context.Context) error {
 			}
 			//Convert the keys to lowercase
 			result = xsql.LowercaseKeyMap(result)
-			result[xsql.INTERNAL_MQTT_TOPIC_KEY] = msg.Topic()
-			result[xsql.INTERNAL_MQTT_MSG_ID_KEY] = strconv.Itoa(int(msg.MessageID()))
 
-			tuple := &xsql.Tuple{Emitter: ms.tpc, Message:result, Timestamp: common.TimeToUnixMilli(time.Now())}
+			meta := make(map[string]interface{})
+			meta[xsql.INTERNAL_MQTT_TOPIC_KEY] = msg.Topic()
+			meta[xsql.INTERNAL_MQTT_MSG_ID_KEY] = strconv.Itoa(int(msg.MessageID()))
+
+			tuple := &xsql.Tuple{Emitter: ms.tpc, Message:result, Timestamp: common.TimeToUnixMilli(time.Now()), Metadata:meta}
 			for _, out := range ms.outs{
 				out <- tuple
 			}

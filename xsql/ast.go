@@ -529,14 +529,35 @@ type Event interface {
 	IsWatermark() bool
 }
 
+type Metadata map[string]interface{}
+
 type Tuple struct {
 	Emitter   string
 	Message   Message
 	Timestamp int64
+	Metadata  Metadata
+}
+
+// Value returns the value for a key in the Message.
+func (m Metadata) Value(key string) (interface{}, bool) {
+	key = strings.ToLower(key)
+	if keys := strings.Split(key, "."); len(keys) == 1 {
+		v, ok := m[key]
+		return v, ok
+	} else if len(keys) == 2 {
+		v, ok := m[keys[1]]
+		return v, ok
+	}
+	common.Log.Println("Invalid key: " + key + ", expect source.field or field.")
+	return nil, false
 }
 
 func (t *Tuple) Value(key string) (interface{}, bool) {
-	return t.Message.Value(key)
+	if v, ok := t.Message.Value(key); ok {
+		return v, ok
+	} else {
+		return t.Metadata.Value(key)
+	}
 }
 
 func (t *Tuple) All(stream string) (interface{}, bool) {
@@ -550,6 +571,11 @@ func (t *Tuple) AggregateEval(expr Expr) []interface{} {
 func (t *Tuple) GetTimestamp() int64 {
 	return t.Timestamp
 }
+
+func (t *Tuple) GetMetadata() Metadata {
+	return t.Metadata
+}
+
 
 func (t *Tuple) IsWatermark() bool {
 	return false
