@@ -2,7 +2,7 @@
 
 ## Data types
 
-In XStream, each column or an expression has a related data type. A data type describes (and constrains) the set of values that a column of that type can hold or an expression of that type can produce.
+In Kuiper, each column or an expression has a related data type. A data type describes (and constrains) the set of values that a column of that type can hold or an expression of that type can produce.
 
 Below is the list of data types supported.
 
@@ -44,7 +44,7 @@ my_stream
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```
 
-The stream will subscribe to MQTT topic ``topic/temperature``, the server connection uses ``servers`` key of ``default`` section in configuration file ``$xstream/etc/mqtt_source.yaml``. 
+The stream will subscribe to MQTT topic ``topic/temperature``, the server connection uses ``servers`` key of ``default`` section in configuration file ``$kuiper/etc/mqtt_source.yaml``. 
 
 - See [MQTT source](../rules/sources/mqtt.md) for more info.
 
@@ -61,7 +61,7 @@ demo (
 	) WITH (datasource="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
 ```
 
-The stream will subscribe to MQTT topic ``test/``, the server connection uses settings of ``demo`` section in configuration file ``$xstream/etc/mqtt_source.yaml``. 
+The stream will subscribe to MQTT topic ``test/``, the server connection uses settings of ``demo`` section in configuration file ``$kuiper/etc/mqtt_source.yaml``. 
 
 - See [MQTT source](../rules/sources/mqtt.md) for more info.
 

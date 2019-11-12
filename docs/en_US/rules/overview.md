@@ -33,14 +33,14 @@ The following 3 parameters are required for creating a rule.
 
 ## id
 
-The identification of the rule. The rule name cannot be duplicated in the same XStream instance.
+The identification of the rule. The rule name cannot be duplicated in the same Kuiper instance.
 
 ## sql
 
 The sql query to run for the rule. 
 
-- XStream provides embeded support MQTT source, see  [MQTT source stream](sources/mqtt.md) for more detailed info.
-- See [SQL](../sqls/overview.md) for more info of XStream SQL.
+- Kuiper provides embeded support MQTT source, see  [MQTT source stream](sources/mqtt.md) for more detailed info.
+- See [SQL](../sqls/overview.md) for more info of Kuiper SQL.
 - Sources can be customized, see [extension](../extension/overview.md) for more detailed info.
 
 ### actions

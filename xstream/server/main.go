@@ -300,7 +300,7 @@ func main() {
 	if e != nil {
 		log.Fatal("Listen error: ", e)
 	}
-	msg := fmt.Sprintf("Serving Rule server on port %d", common.Config.Port)
+	msg := fmt.Sprintf("Serving Kuiper server on port %d", common.Config.Port)
 	log.Info(msg)
 	fmt.Println(msg)
 	// Start accept incoming HTTP connections

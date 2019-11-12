@@ -79,7 +79,7 @@ type XStreamConf struct {
 	Port int `yaml:"port"`
 }
 
-var StreamConf = "xstream.yaml"
+var StreamConf = "kuiper.yaml"
 
 func init(){
 	Log = logrus.New()
@@ -94,7 +94,7 @@ func init(){
 	}
 
 	if c, ok := cfg["basic"]; !ok{
-		Log.Fatal("no basic config in xstream.yaml")
+		Log.Fatal("no basic config in kuiper.yaml")
 	}else{
 		Config = &c
 	}

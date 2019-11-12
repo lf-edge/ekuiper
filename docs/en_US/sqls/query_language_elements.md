@@ -1,11 +1,11 @@
 
 # Query language elements
 
-XStream provides a variety of elements for building queries. They are summarized below.
+Kuiper provides a variety of elements for building queries. They are summarized below.
 
 | Element               | Summary                                                      |
 | --------------------- | ------------------------------------------------------------ |
-| [SELECT](#SELECT)     | SELECT is used to retrieve rows from input streams and enables the selection of one or many columns from one or many input streams in XStream. |
+| [SELECT](#SELECT)     | SELECT is used to retrieve rows from input streams and enables the selection of one or many columns from one or many input streams in Kuiper. |
 | [FROM](#FROM)         | FROM specifies the input stream. The FROM clause is always required for any SELECT statement. |
 | [JOIN](#JOIN)         | JOIN is used to combine records from two or more input streams. JOIN includes LEFT, RIGHT, FULL & CROSS. |
 | [WHERE](#WHERE)       | WHERE specifies the search condition for the rows returned by the query. |
@@ -18,7 +18,7 @@ XStream provides a variety of elements for building queries. They are summarized
 
 ## SELECT
 
-Retrieves rows from input streams and enables the selection of one or many columns from one or many input streams in XStream.
+Retrieves rows from input streams and enables the selection of one or many columns from one or many input streams in Kuiper.
 
 ### Syntax
 
@@ -240,7 +240,7 @@ GROUP BY <group by spec>
 
 **<window_type>**
 
-Specifies any XStream supported Windowing, see [windows](windows.md) for more info.
+Specifies any Kuiper supported Windowing, see [windows](windows.md) for more info.
 
 **< column_expression >**
 

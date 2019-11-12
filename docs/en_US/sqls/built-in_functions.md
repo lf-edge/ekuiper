@@ -1,6 +1,6 @@
 # Functions
 
-XStream has many built-in functions for performing calculations on data.
+Kuiper has many built-in functions for performing calculations on data.
 
 ## Aggregate Functions
 Aggregate functions perform a calculation on a set of values and return a single value. Aggregate functions can be used as expressions only in the following:

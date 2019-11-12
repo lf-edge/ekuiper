@@ -1,6 +1,6 @@
 # MQTT source 
 
-XStream provides built-in support for MQTT source stream, which can subscribe the message from MQTT broker and feed into the XStream processing pipeline.  The configuration file of MQTT source is at ``$xstream/etc/mqtt_source.yaml``. Below is the file format.
+Kuiper provides built-in support for MQTT source stream, which can subscribe the message from MQTT broker and feed into the Kuiper processing pipeline.  The configuration file of MQTT source is at ``$kuiper/etc/mqtt_source.yaml``. Below is the file format.
 
 ```yaml
 #Global MQTT configurations
@@ -27,7 +27,7 @@ The default subscription QoS level.
 
 ### sharedsubscription
 
-Whether use the shared subscription mode or not. If using the shared subscription mode, then if there are multiple XStream process can be load balanced.
+Whether use the shared subscription mode or not. If using the shared subscription mode, then if there are multiple Kuiper process can be load balanced.
 
 ### servers
 

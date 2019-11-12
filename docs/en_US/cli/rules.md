@@ -1,6 +1,6 @@
 # Rules management
 
-The XStream rule command line tools allows you to manage rules, such as create, show, drop, describe, start, stop and restart rules. 
+The Kuiper rule command line tools allows you to manage rules, such as create, show, drop, describe, start, stop and restart rules. 
 
 ## create a rule
 

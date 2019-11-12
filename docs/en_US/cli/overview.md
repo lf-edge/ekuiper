@@ -1,8 +1,8 @@
-The XStream CLI (command line interface) tools provides streams and rules management. 
+The Kuiper CLI (command line interface) tools provides streams and rules management. 
 
-The XStream CLI acts as a client to the XStream server. The XStream server runs the engine that executes the stream or rule queries. This includes processing stream or rule definitions, manage rule status and io.
+The Kuiper CLI acts as a client to the Kuiper server. The Kuiper server runs the engine that executes the stream or rule queries. This includes processing stream or rule definitions, manage rule status and io.
 
-*XStream CLI Architecture*
+*Kuiper CLI Architecture*
 ![CLI Arch](resources/arch.png)
 
 - [Streams](streams.md)

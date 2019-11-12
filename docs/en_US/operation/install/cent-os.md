@@ -6,15 +6,14 @@ This document describes how to install on CentOS.
 
 Unzip the installation package.
 
-``unzip xstream-centos7-v0.0.1.zip``
+``unzip kuiper-centos7-v0.0.1.zip``
 
-Run the ``cli`` to verify XStream is installed successfully or not.
+Run the ``cli`` to verify Kuiper is installed successfully or not.
 
 ```shell
-# cd xstream
+# cd kuiper
 # bin/cli --version
-xstream version 0.0.1
+kuiper version 0.0.1
 ```
 
-If it can print the version, then XStream is installed successfully. 
-
+If it can print the version, then Kuiper is installed successfully. 

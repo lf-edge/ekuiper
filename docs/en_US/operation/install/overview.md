@@ -26,15 +26,15 @@ The ``bin`` directory includes all of executable files. Such as ``cli`` command.
 
 ## etc
 
-The ``etc`` directory contains the configuration files of XStream. Such as MQTT source configurations etc.
+The ``etc`` directory contains the configuration files of Kuiper. Such as MQTT source configurations etc.
 
 ## data
 
-XStream persistences all the definitions of streams and rules, and all of message will be stored in this folder  for long duration operations.
+Kuiper persistences all the definitions of streams and rules, and all of message will be stored in this folder  for long duration operations.
 
 ## plugins
 
-XStream allows users to develop your own plugins, and put these plugins into this folder.  See [extension](../../extension/overview.md) for more info for how to extend the XStream.
+Kuiper allows users to develop your own plugins, and put these plugins into this folder.  See [extension](../../extension/overview.md) for more info for how to extend the Kuiper.
 
 ## log
 
@@ -42,6 +42,6 @@ All of the log files are under this folder. The default log file name is ``strea
 
 # Next steps
 
-- See [getting started](../../getting_started.md) for your first XStream experience.
-- See [CLI tools](../../cli/overview.md) for usage of XStream CLI tools.
+- See [getting started](../../getting_started.md) for your first Kuiper experience.
+- See [CLI tools](../../cli/overview.md) for usage of Kuiper CLI tools.
 

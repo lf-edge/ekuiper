@@ -2,14 +2,14 @@
 
 ## Download & install
 
-Download the latest release from https://github.com/emqx/edge-rule-engine/releases, and unzip file.
+Download the latest release from https://github.com/emqx/kuiper/releases, and unzip file.
 
 ## Directory structure 
 
-Below is the installation directory structure after installing xstream. 
+Below is the installation directory structure after installing Kuiper. 
 
 ```
-xstream_installed_dir
+kuiper_installed_dir
   bin
     server
     cli
@@ -26,23 +26,23 @@ xstream_installed_dir
 
 ## Run the first rule stream
 
-XStream rule is composed by a SQL and multiple actions. XStream SQL is an easy to use SQL-like language to specify the logic of the rule stream. By providing the rule through CLI, a rule stream will be created in the rule engine and run continuously. The user can then manage the rules through CLI.
+Kuiper rule is composed by a SQL and multiple actions. Kuiper SQL is an easy to use SQL-like language to specify the logic of the rule stream. By providing the rule through CLI, a rule stream will be created in the rule engine and run continuously. The user can then manage the rules through CLI.
 
-XStream has a lot of built-in functions and extensions available for complex analysis, and you can find more information about the grammer and its functions from the [XStream SQL reference](sqls/overview.md).
+Kuiper has a lot of built-in functions and extensions available for complex analysis, and you can find more information about the grammer and its functions from the [Kuiper SQL reference](sqls/overview.md).
 
-Let's consider a sample scenario where we are receiving temperature and humidity record from a sensor through MQTT service and we want to issue an alert when the temperature is bigger than 30 degrees celcius in a time window. We can write a XStream rule for the above scenario using the following several steps.
+Let's consider a sample scenario where we are receiving temperature and humidity record from a sensor through MQTT service and we want to issue an alert when the temperature is bigger than 30 degrees celcius in a time window. We can write a Kuiper rule for the above scenario using the following several steps.
 
 ### Prerequisite
 
-We assume there is already a MQTT broker as the data source of XStream server. If you don't have one, EMQX is recommended. Please follow the [EMQ Installation Guide](https://docs.emqx.io/broker/v3/en/install.html) to setup a mqtt broker.
+We assume there is already a MQTT broker as the data source of Kuiper server. If you don't have one, EMQX is recommended. Please follow the [EMQ Installation Guide](https://docs.emqx.io/broker/v3/en/install.html) to setup a mqtt broker.
 
-### Start the XStream Engine Server
+### Start the Kuiper Engine Server
 
-Run bin/server to start the XStream Enginer Server
+Run bin/server to start the Kuiper Server
 ```sh
 $ bin/server
 ```
-You should see a succesul message `Serving Rule server on port 20498` 
+You should see a succesul message `Serving Kuiper server on port 20498` 
 
 ### Defining the input stream
 
@@ -65,17 +65,17 @@ You can use command ``cli show streams`` to see if the ``demo`` stream was creat
 
 ### Testing the stream through query tool
 
-Now the stream is created, it can be tested from ``cli query`` command. The ``xstream`` prompt is displayed as below after typing ``cli query``.
+Now the stream is created, it can be tested from ``cli query`` command. The ``kuiper`` prompt is displayed as below after typing ``cli query``.
 
 ```sh
 $ bin/cli query
-xstream > 
+kuiper > 
 ```
 
-In the ``xstream`` prompt, you can type SQL and validate the SQL against the stream.
+In the ``kuiper`` prompt, you can type SQL and validate the SQL against the stream.
 
 ```sh
-xstream > select count(*), avg(humidity) as avg_hum, max(humidity) as max_hum from demo where temperature > 30 group by TUMBLINGWINDOW(ss, 5);
+kuiper > select count(*), avg(humidity) as avg_hum, max(humidity) as max_hum from demo where temperature > 30 group by TUMBLINGWINDOW(ss, 5);
 
 query is submit successfully.
 ```
@@ -83,7 +83,7 @@ query is submit successfully.
 Now if any data are publish to the MQTT server available at ``tcp://127.0.0.1:1883``, then it prints message as following.
 
 ```
-xstream > [{"avg_hum":41,"count":4,"max_hum":91}]
+kuiper > [{"avg_hum":41,"count":4,"max_hum":91}]
 [{"avg_hum":62,"count":5,"max_hum":96}]
 [{"avg_hum":36,"count":3,"max_hum":63}]
 [{"avg_hum":48,"count":3,"max_hum":71}]

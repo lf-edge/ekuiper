@@ -2,10 +2,10 @@
 
 ## Directory structure 
 
-Below is the installation directory structure after installing xstream. 
+Below is the installation directory structure after installing Kuiper. 
 
 ```
-xstream_installed_dir
+kuiper_installed_dir
   bin
     cli
   etc

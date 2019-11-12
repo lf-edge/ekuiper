@@ -1,5 +1,5 @@
 # Basic configurations
-The configuration file for XStream is at ``$xstream/etc/xstream.yaml``. The configuration file is yaml format.
+The configuration file for Kuiper is at ``$kuiper/etc/kuiper.yaml``. The configuration file is yaml format.
 
 ## Log level
 

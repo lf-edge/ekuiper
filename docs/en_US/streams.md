@@ -37,7 +37,7 @@ CREATE STREAM
 | KEY           | true     | It will be used in future for GROUP BY statements ??         |
 | TYPE     | false    | Is it requried in future if more & more sources are supported? By default, it would be MQTT type. |
 | StrictValidation     | false    | To control validation behavior of message field against stream schema. |
-| KEY_CONF | false | If additional configuration items are requied to be configured, then specify the config key here.<br />XStream currently propose yaml file format. |
+| KEY_CONF | false | If additional configuration items are requied to be configured, then specify the config key here.<br />Kuiper currently propose yaml file format. |
 
 **Introduction for StrictValidation**
 
@@ -80,7 +80,7 @@ CREATE STREAM my_stream
 
 
 
-The configuration of MQTT source is specified with yaml format, and the configuration file location is at ``$xstream/etc/mqtt_source.yaml``.  Below is the file format.
+The configuration of MQTT source is specified with yaml format, and the configuration file location is at ``$kuiper/etc/mqtt_source.yaml``.  Below is the file format.
 
 ```yaml
 #Global MQTT configurations
@@ -150,16 +150,16 @@ my_stream, iot_stream
 
 ### A simple CLI
 
-A simple command line tool is implemented in ``stream/cli/main.go``. To build the command line tool, run command ``go install -x engine/xstream/cli``.
+A simple command line tool is implemented in ``stream/cli/main.go``. To build the command line tool, run command ``go install -x engine/kuiper/cli``.
 
 #### Run sql to manage streams
 
-Run `cli stream` command, after `xstream >` prompt shown, enter stream related sql statements such as create, drop, describe, explain and show stream statements to execute.
+Run `cli stream` command, after `kuiper >` prompt shown, enter stream related sql statements such as create, drop, describe, explain and show stream statements to execute.
 
 ```bash
 cli stream
-xstream > CREATE STREAM sname (count bigint) WITH (source="users", FORMAT="AVRO", KEY="USERID"
-xstream > DESCRIBE STREAM sname
+kuiper > CREATE STREAM sname (count bigint) WITH (source="users", FORMAT="AVRO", KEY="USERID"
+kuiper > DESCRIBE STREAM sname
 ...
 ```
 
@@ -168,7 +168,7 @@ xstream > DESCRIBE STREAM sname
 
 ```bash
 cli query
-xstream > select USERID from demo;
+kuiper > select USERID from demo;
 ...
 ```
 
