@@ -5,6 +5,7 @@ import (
 	"engine/common"
 	"engine/xsql/processors"
 	"engine/xstream"
+	"engine/xstream/api"
 	"engine/xstream/sinks"
 	"fmt"
 	"net"
@@ -105,7 +106,7 @@ func (t *Server) CreateRule(rule *common.Rule, reply *string) error{
 	return nil
 }
 
-func (t *Server) createRuleState(rule *xstream.Rule) (*RuleState, error){
+func (t *Server) createRuleState(rule *api.Rule) (*RuleState, error){
 	if tp, err := processor.ExecInitRule(rule); err != nil{
 		return nil, err
 	}else{

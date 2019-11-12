@@ -3,6 +3,7 @@ package operators
 import (
 	"context"
 	"engine/common"
+	"engine/xstream/nodes"
 	"fmt"
 	"sync"
 )
@@ -61,12 +62,13 @@ func (o *UnaryOperator) SetConcurrency(concurr int) {
 	}
 }
 
-func (o *UnaryOperator) AddOutput(output chan<- interface{}, name string) {
+func (o *UnaryOperator) AddOutput(output chan<- interface{}, name string) (err error){
 	if _, ok := o.outputs[name]; !ok{
 		o.outputs[name] = output
 	}else{
-		common.Log.Warnf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
+		return fmt.Errorf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
 	}
+	return nil
 }
 
 func (o *UnaryOperator) GetInput() (chan<- interface{}, string) {
@@ -143,36 +145,13 @@ func (o *UnaryOperator) doOp(ctx context.Context) {
 			switch val := result.(type) {
 			case nil:
 				continue
-			//case api.StreamError:
-			//	fmt.Println( val)
-			//	fmt.Println( val)
-			//	if item := val.Item(); item != nil {
-			//		select {
-			//		case o.output <- *item:
-			//		case <-exeCtx.Done():
-			//			return
-			//		}
-			//	}
-			//	continue
-			//case api.PanicStreamError:
-			//	util.Logfn(o.logf, val)
-			//	autoctx.Err(o.errf, api.StreamError(val))
-			//	panic(val)
-			//case api.CancelStreamError:
-			//	util.Logfn(o.logf, val)
-			//	autoctx.Err(o.errf, api.StreamError(val))
-			//	return
 			case error:
 				log.Println(val)
 				log.Println(val.Error())
 				continue
 
 			default:
-				for _, output := range o.outputs{
-					select {
-					case output <- val:
-					}
-				}
+				nodes.Broadcast(o.outputs, val)
 			}
 
 		// is cancelling
@@ -186,3 +165,4 @@ func (o *UnaryOperator) doOp(ctx context.Context) {
 		}
 	}
 }
+

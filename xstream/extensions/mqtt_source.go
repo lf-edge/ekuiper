@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"engine/common"
 	"engine/xsql"
+	"engine/xstream/api"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-yaml/yaml"
 	"github.com/google/uuid"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -24,11 +24,7 @@ type MQTTSource struct {
 	password string
 
 	schema   map[string]interface{}
-
-	outs  map[string]chan<- interface{}
 	conn MQTT.Client
-	name 		string
-	//ctx context.Context
 }
 
 
@@ -44,15 +40,14 @@ type MQTTConfig struct {
 
 const confName string = "mqtt_source.yaml"
 
-func NewWithName(name string, topic string, confKey string) (*MQTTSource, error) {
+func NewMQTTSource(topic string, confKey string) (*MQTTSource, error) {
 	b := common.LoadConf(confName)
 	var cfg map[string]MQTTConfig
 	if err := yaml.Unmarshal(b, &cfg); err != nil {
 		return nil, err
 	}
 
-	ms := &MQTTSource{tpc: topic, name: name}
-	ms.outs = make(map[string]chan<- interface{})
+	ms := &MQTTSource{tpc: topic}
 	if srvs := cfg[confKey].Servers; srvs != nil && len(srvs) > 1 {
 		return nil, fmt.Errorf("It only support one server in %s section.", confKey)
 	} else if srvs == nil {
@@ -91,34 +86,14 @@ func NewWithName(name string, topic string, confKey string) (*MQTTSource, error)
 	return ms, nil
 }
 
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !info.IsDir()
-}
-
 func (ms *MQTTSource) WithSchema(schema string) *MQTTSource {
 	return ms
 }
 
-func (ms *MQTTSource) GetName() string {
-	return ms.name
-}
-
-func (ms *MQTTSource) AddOutput(output chan<- interface{}, name string) {
-	if _, ok := ms.outs[name]; !ok{
-		ms.outs[name] = output
-	}else{
-		common.Log.Warnf("fail to add output %s, operator %s already has an output of the same name", name, ms.name)
-	}
-}
-
-func (ms *MQTTSource) Open(ctx context.Context) error {
-	log := common.GetLogger(ctx)
+func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error {
+	log := ctx.GetLogger()
 	go func() {
-		exeCtx, cancel := context.WithCancel(ctx)
+		exeCtx, cancel := context.WithCancel(ctx.GetContext())
 		opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(ms.pVersion)
 
 		if ms.clientid == "" {
@@ -159,15 +134,13 @@ func (ms *MQTTSource) Open(ctx context.Context) error {
 			meta[xsql.INTERNAL_MQTT_MSG_ID_KEY] = strconv.Itoa(int(msg.MessageID()))
 
 			tuple := &xsql.Tuple{Emitter: ms.tpc, Message:result, Timestamp: common.TimeToUnixMilli(time.Now()), Metadata:meta}
-			for _, out := range ms.outs{
-				out <- tuple
-			}
+			consume(tuple)
 		}
 
 		opts.SetDefaultPublishHandler(h)
 		c := MQTT.NewClient(opts)
 		if token := c.Connect(); token.Wait() && token.Error() != nil {
-			log.Printf("Found error when connecting to %s for %s: %s", ms.srv, ms.name, token.Error())
+			log.Printf("Found error when connecting to %s: %s", ms.srv, token.Error())
 			cancel()
 			return
 		}

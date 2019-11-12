@@ -3,16 +3,19 @@ package xstream
 import (
 	"context"
 	"engine/common"
+	"engine/xstream/api"
+	"engine/xstream/contexts"
+	"engine/xstream/nodes"
 	"engine/xstream/operators"
 )
 
 type TopologyNew struct {
-	sources []Source
-	sinks []Sink
+	sources []*nodes.SourceNode
+	sinks []api.Sink
 	ctx context.Context
 	cancel context.CancelFunc
 	drain chan error
-	ops []Operator
+	ops []api.Operator
 	name string
 }
 
@@ -29,12 +32,12 @@ func (s *TopologyNew) Cancel(){
 	s.cancel()
 }
 
-func (s *TopologyNew) AddSrc(src Source) *TopologyNew {
+func (s *TopologyNew) AddSrc(src *nodes.SourceNode) *TopologyNew {
 	s.sources = append(s.sources, src)
 	return s
 }
 
-func (s *TopologyNew) AddSink(inputs []Emitter, snk Sink) *TopologyNew {
+func (s *TopologyNew) AddSink(inputs []api.Emitter, snk api.Sink) *TopologyNew {
 	for _, input := range inputs{
 		input.AddOutput(snk.GetInput())
 	}
@@ -42,7 +45,7 @@ func (s *TopologyNew) AddSink(inputs []Emitter, snk Sink) *TopologyNew {
 	return s
 }
 
-func (s *TopologyNew) AddOperator(inputs []Emitter, operator Operator) *TopologyNew {
+func (s *TopologyNew) AddOperator(inputs []api.Emitter, operator api.Operator) *TopologyNew {
 	for _, input := range inputs{
 		input.AddOutput(operator.GetInput())
 	}
@@ -108,13 +111,14 @@ func (s *TopologyNew) Open() <-chan error {
 
 	// open stream
 	go func() {
-		// open source, if err bail
-		for _, src := range s.sources{
-			if err := src.Open(s.ctx); err != nil {
-				s.drainErr(err)
-				log.Println("Closing stream")
-				return
-			}
+		sinkErr := make(chan error)
+		defer func() {
+			log.Println("Closing sinkErr channel")
+			close(sinkErr)
+		}()
+		// open stream sink, after log sink is ready.
+		for _, snk := range s.sinks{
+			snk.Open(s.ctx, sinkErr)
 		}
 
 		//apply operators, if err bail
@@ -125,15 +129,16 @@ func (s *TopologyNew) Open() <-chan error {
 				return
 			}
 		}
-		sinkErr := make(chan error)
-		defer func() {
-			log.Println("Closing sinkErr channel")
-			close(sinkErr)
-		}()
-		// open stream sink, after log sink is ready.
-		for _, snk := range s.sinks{
-			snk.Open(s.ctx, sinkErr)
+
+		// open source, if err bail
+		for _, node := range s.sources{
+			if err := node.Open(contexts.NewDefaultContext(s.name, node.GetName(), s.ctx)); err != nil {
+				s.drainErr(err)
+				log.Println("Closing stream")
+				return
+			}
 		}
+
 		select {
 		case err := <- sinkErr:
 			log.Println("Closing stream")

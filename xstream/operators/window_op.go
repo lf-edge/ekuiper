@@ -4,6 +4,7 @@ import (
 	"context"
 	"engine/common"
 	"engine/xsql"
+	"engine/xstream/nodes"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"math"
@@ -79,12 +80,13 @@ func (o *WindowOperator) GetName() string {
 	return o.name
 }
 
-func (o *WindowOperator) AddOutput(output chan<- interface{}, name string) {
+func (o *WindowOperator) AddOutput(output chan<- interface{}, name string) error {
 	if _, ok := o.outputs[name]; !ok{
 		o.outputs[name] = output
 	}else{
-		common.Log.Warnf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
+		fmt.Errorf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
 	}
+	return nil
 }
 
 func (o *WindowOperator) GetInput() (chan<- interface{}, string) {
@@ -225,12 +227,9 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx conte
 		if o.isEventTime{
 			results.Sort()
 		}
-		for _, output := range o.outputs {
-			select {
-			case output <- results:
-				triggered = true
-			default: //TODO need to set buffer
-			}
+		err := nodes.Broadcast(o.outputs, results)
+		if err != nil{
+			triggered = true
 		}
 	}
 
