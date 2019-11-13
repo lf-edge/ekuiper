@@ -1,17 +1,16 @@
 package plans
 
 import (
-	"context"
-	"engine/common"
 	"engine/xsql"
+	"engine/xstream/api"
 )
 
 type HavingPlan struct {
 	Condition xsql.Expr
 }
 
-func (p *HavingPlan) Apply(ctx context.Context, data interface{}) interface{} {
-	log := common.GetLogger(ctx)
+func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
+	log := ctx.GetLogger()
 	log.Debugf("having plan receive %s", data)
 	switch input := data.(type) {
 	case xsql.GroupedTuplesSet:
