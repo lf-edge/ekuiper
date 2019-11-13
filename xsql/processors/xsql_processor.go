@@ -219,13 +219,13 @@ func (p *RuleProcessor) ExecInitRule(rule *api.Rule) (*xstream.TopologyNew, erro
 				switch name {
 				case "log":
 					log.Printf("Create log sink with %s", action)
-					tp.AddSink(inputs, sinks.NewLogSink("sink_log", rule.Id))
+					tp.AddSink(inputs, nodes.NewSinkNode("sink_log", sinks.NewLogSink()))
 				case "mqtt":
 					log.Printf("Create mqtt sink with %s", action)
-					if ms, err := sinks.NewMqttSink("mqtt_log", rule.Id, action); err != nil{
+					if ms, err := sinks.NewMqttSink(action); err != nil{
 						return nil, err
 					}else{
-						tp.AddSink(inputs, ms)
+						tp.AddSink(inputs, nodes.NewSinkNode("sink_mqtt", ms))
 					}
 				default:
 					return nil, fmt.Errorf("unsupported action: %s", name)
@@ -240,7 +240,7 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 	if tp, inputs, err := p.createTopo(&api.Rule{Id: ruleid, Sql: sql}); err != nil {
 		return nil, err
 	} else {
-		tp.AddSink(inputs, sinks.NewLogSinkToMemory("sink_log", ruleid))
+		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", sinks.NewLogSinkToMemory()))
 		go func() {
 			select {
 			case err := <-tp.Open():

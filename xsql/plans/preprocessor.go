@@ -1,9 +1,9 @@
 package plans
 
 import (
-	"context"
 	"engine/common"
 	"engine/xsql"
+	"engine/xstream/api"
 	"fmt"
 	"reflect"
 	"strings"
@@ -38,8 +38,8 @@ func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool) (*Preprocesso
  *	input: *xsql.Tuple
  *	output: *xsql.Tuple
  */
-func (p *Preprocessor) Apply(ctx context.Context, data interface{}) interface{} {
-	log := common.GetLogger(ctx)
+func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{} {
+	log := ctx.GetLogger()
 	tuple, ok := data.(*xsql.Tuple)
 	if !ok {
 		log.Errorf("Expect tuple data type")

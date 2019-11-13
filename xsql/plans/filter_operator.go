@@ -1,9 +1,8 @@
 package plans
 
 import (
-	"context"
-	"engine/common"
 	"engine/xsql"
+	"engine/xstream/api"
 )
 
 type FilterPlan struct {
@@ -14,8 +13,8 @@ type FilterPlan struct {
   *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
   *  output: *xsql.Tuple | xsql.WindowTuplesSet | xsql.JoinTupleSets
  */
-func (p *FilterPlan) Apply(ctx context.Context, data interface{}) interface{} {
-	log := common.GetLogger(ctx)
+func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
+	log := ctx.GetLogger()
 	log.Debugf("filter plan receive %s", data)
 	switch input := data.(type) {
 	case xsql.Valuer:

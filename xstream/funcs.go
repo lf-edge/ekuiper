@@ -2,6 +2,7 @@ package xstream
 
 import (
 	"context"
+	"engine/xstream/api"
 	"engine/xstream/operators"
 	"fmt"
 	"reflect"
@@ -34,7 +35,7 @@ func ProcessFunc(f interface{}) (operators.UnFunc, error) {
 
 	fnval := reflect.ValueOf(f)
 
-	return operators.UnFunc(func(ctx context.Context, data interface{}) interface{} {
+	return operators.UnFunc(func(ctx api.StreamContext, data interface{}) interface{} {
 		result := callOpFunc(fnval, ctx, data, funcForm)
 		return result.Interface()
 	}), nil
@@ -63,7 +64,7 @@ func FilterFunc(f interface{}) (operators.UnFunc, error) {
 	}
 
 	fnval := reflect.ValueOf(f)
-	return operators.UnFunc(func(ctx context.Context, data interface{}) interface{} {
+	return operators.UnFunc(func(ctx api.StreamContext, data interface{}) interface{} {
 		result := callOpFunc(fnval, ctx, data, funcForm)
 		predicate := result.Bool()
 		if !predicate {
@@ -103,7 +104,7 @@ func FlatMapFunc(f interface{}) (operators.UnFunc, error) {
 	}
 
 	fnval := reflect.ValueOf(f)
-	return operators.UnFunc(func(ctx context.Context, data interface{}) interface{} {
+	return operators.UnFunc(func(ctx api.StreamContext, data interface{}) interface{} {
 		result := callOpFunc(fnval, ctx, data, funcForm)
 		return result.Interface()
 	}), nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"engine/common"
 	"engine/xsql"
+	"engine/xstream/api"
 	"fmt"
 	"math"
 	"sort"
@@ -62,8 +63,8 @@ func NewWatermarkGenerator(window *WindowConfig, l int64, s []string, stream cha
 	return w, nil
 }
 
-func (w *WatermarkGenerator) track(s string, ts int64, ctx context.Context) bool {
-	log := common.GetLogger(ctx)
+func (w *WatermarkGenerator) track(s string, ts int64, ctx api.StreamContext) bool {
+	log := ctx.GetLogger()
 	log.Infof("watermark generator track event from topic %s at %d", s, ts)
 	currentVal, ok := w.topicToTs[s]
 	if !ok || ts > currentVal {
@@ -79,9 +80,8 @@ func (w *WatermarkGenerator) track(s string, ts int64, ctx context.Context) bool
 	return r
 }
 
-func (w *WatermarkGenerator) start(ctx context.Context) {
-	exeCtx, cancel := context.WithCancel(ctx)
-	log := common.GetLogger(ctx)
+func (w *WatermarkGenerator) start(ctx api.StreamContext) {
+	log := ctx.GetLogger()
 	var c <-chan time.Time
 
 	if w.ticker != nil {
@@ -91,19 +91,18 @@ func (w *WatermarkGenerator) start(ctx context.Context) {
 		select {
 		case <-c:
 			w.trigger(ctx)
-		case <-exeCtx.Done():
+		case <-ctx.Done():
 			log.Println("Cancelling watermark generator....")
 			if w.ticker != nil{
 				w.ticker.Stop()
 			}
-			cancel()
 			return
 		}
 	}
 }
 
-func (w *WatermarkGenerator) trigger(ctx context.Context) {
-	log := common.GetLogger(ctx)
+func (w *WatermarkGenerator) trigger(ctx api.StreamContext) {
+	log := ctx.GetLogger()
 	watermark := w.computeWatermarkTs(ctx)
 	log.Infof("compute watermark event at %d with last %d", watermark, w.lastWatermarkTs)
 	if watermark > w.lastWatermarkTs {
@@ -184,10 +183,10 @@ func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple,current int64, w
 	}
 }
 
-func (o *WindowOperator) execEventWindow(ctx context.Context) {
-	exeCtx, cancel := context.WithCancel(ctx)
-	log := common.GetLogger(ctx)
-	go o.watermarkGenerator.start(ctx)
+func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- error) {
+	exeCtx, cancel := ctx.WithCancel()
+	log := ctx.GetLogger()
+	go o.watermarkGenerator.start(exeCtx)
 	var (
 		inputs []*xsql.Tuple
 		triggered bool
@@ -236,7 +235,7 @@ func (o *WindowOperator) execEventWindow(ctx context.Context) {
 
 			}
 		// is cancelling
-		case <-exeCtx.Done():
+		case <-ctx.Done():
 			log.Println("Cancelling window....")
 			if o.ticker != nil{
 				o.ticker.Stop()

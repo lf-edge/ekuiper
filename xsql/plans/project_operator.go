@@ -1,10 +1,9 @@
 package plans
 
 import (
-	"context"
 	"encoding/json"
-	"engine/common"
 	"engine/xsql"
+	"engine/xstream/api"
 	"fmt"
 	"strconv"
 	"strings"
@@ -19,8 +18,8 @@ type ProjectPlan struct {
  *  input: *xsql.Tuple from preprocessor or filterOp | xsql.WindowTuplesSet from windowOp or filterOp | xsql.JoinTupleSets from joinOp or filterOp
  *  output: []map[string]interface{}
  */
-func (pp *ProjectPlan) Apply(ctx context.Context, data interface{}) interface{} {
-	log := common.GetLogger(ctx)
+func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
+	log := ctx.GetLogger()
 	log.Debugf("project plan receive %s", data)
 	var results []map[string]interface{}
 	switch input := data.(type) {

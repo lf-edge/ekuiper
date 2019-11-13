@@ -2,7 +2,6 @@ package common
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"github.com/dgraph-io/badger"
 	"github.com/go-yaml/yaml"
@@ -15,7 +14,6 @@ import (
 
 const (
 	logFileName = "stream.log"
-	LoggerKey = "logger"
 	etc_dir = "/etc/"
 	data_dir = "/data/"
 	log_dir = "/log/"
@@ -49,16 +47,6 @@ func (l *logRedirect) Warningf(f string, v ...interface{}) {
 
 func (l *logRedirect) Debugf(f string, v ...interface{}) {
 	Log.Debug(fmt.Sprintf(f, v...))
-}
-
-func GetLogger(ctx context.Context) *logrus.Entry {
-	if ctx != nil{
-		l, ok := ctx.Value(LoggerKey).(*logrus.Entry)
-		if l != nil && ok {
-			return l
-		}
-	}
-	return Log.WithField("caller", "default")
 }
 
 func LoadConf(confName string) []byte {

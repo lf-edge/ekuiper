@@ -1,9 +1,8 @@
 package plans
 
 import (
-	"context"
-	"engine/common"
 	"engine/xsql"
+	"engine/xstream/api"
 )
 
 type OrderPlan struct {
@@ -14,8 +13,8 @@ type OrderPlan struct {
   *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
   *  output: *xsql.Tuple | xsql.WindowTuplesSet | xsql.JoinTupleSets
  */
-func (p *OrderPlan) Apply(ctx context.Context, data interface{}) interface{} {
-	log := common.GetLogger(ctx)
+func (p *OrderPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
+	log := ctx.GetLogger()
 	log.Debugf("order plan receive %s", data)
 	sorter := xsql.OrderedBy(p.SortFields)
 	switch input := data.(type) {

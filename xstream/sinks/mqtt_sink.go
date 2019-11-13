@@ -1,8 +1,7 @@
 package sinks
 
 import (
-	"context"
-	"engine/common"
+	"engine/xstream/api"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
@@ -16,15 +15,10 @@ type MQTTSink struct {
 	pVersion uint
 	uName 	string
 	password string
-
-	input chan interface{}
 	conn MQTT.Client
-	ruleId   string
-	name 	 string
-	//ctx context.Context
 }
 
-func NewMqttSink(name string, ruleId string, properties interface{}) (*MQTTSink, error) {
+func NewMqttSink(properties interface{}) (*MQTTSink, error) {
 	ps, ok := properties.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("expect map[string]interface{} type for the mqtt sink properties")
@@ -76,58 +70,46 @@ func NewMqttSink(name string, ruleId string, properties interface{}) (*MQTTSink,
 		}
 	}
 
-	ms := &MQTTSink{name:name, ruleId: ruleId, input: make(chan interface{}), srv: srv.(string), tpc: tpc.(string), clientid: clientid.(string), pVersion:pVersion, uName:uName, password:password}
+	ms := &MQTTSink{srv: srv.(string), tpc: tpc.(string), clientid: clientid.(string), pVersion:pVersion, uName:uName, password:password}
 	return ms, nil
 }
 
-func (ms *MQTTSink) GetName() string {
-	return ms.name
+func (ms *MQTTSink) Open(ctx api.StreamContext) error {
+	log := ctx.GetLogger()
+	log.Printf("Opening mqtt sink for rule %s", ctx.GetRuleId())
+	opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetClientID(ms.clientid)
+	if ms.uName != "" {
+		opts = opts.SetUsername(ms.uName)
+	}
+
+	if ms.password != "" {
+		opts = opts.SetPassword(ms.password)
+	}
+
+	c := MQTT.NewClient(opts)
+	if token := c.Connect(); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("Found error: %s", token.Error())
+	}
+	log.Printf("The connection to server %s was established successfully", ms.srv)
+	ms.conn = c
+	return nil
 }
 
-func (ms *MQTTSink) GetInput() (chan<- interface{}, string)  {
-	return ms.input, ms.name
+func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
+	logger := ctx.GetLogger()
+	c := ms.conn
+	logger.Infof("publish %s", item)
+	if token := c.Publish(ms.tpc, 0, false, item); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("publish error: %s", token.Error())
+	}
+	return nil
 }
 
-func (ms *MQTTSink) Open(ctx context.Context, result chan<- error) {
-	log := common.GetLogger(ctx)
-	log.Printf("Opening mqtt sink for rule %s", ms.ruleId)
-
-	go func() {
-		exeCtx, cancel := context.WithCancel(ctx)
-		opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetClientID(ms.clientid).SetProtocolVersion(ms.pVersion)
-		if ms.uName != "" {
-			opts = opts.SetUsername(ms.uName)
-		}
-
-		if ms.password != "" {
-			opts = opts.SetPassword(ms.password)
-		}
-
-		c := MQTT.NewClient(opts)
-		if token := c.Connect(); token.Wait() && token.Error() != nil {
-			result <- fmt.Errorf("Found error: %s", token.Error())
-			cancel()
-		}
-		log.Printf("The connection to server %s was established successfully", ms.srv)
-		ms.conn = c
-
-		for {
-			select {
-			case item := <-ms.input:
-				log.Infof("publish %s", item)
-				if token := c.Publish(ms.tpc, 0, false, item); token.Wait() && token.Error() != nil {
-					result <- fmt.Errorf("Publish error: %s", token.Error())
-				}
-
-			case <-exeCtx.Done():
-				c.Disconnect(5000)
-				log.Infof("Closing mqtt sink")
-				cancel()
-				return
-			}
-		}
-
-	}()
+func (ms *MQTTSink) Close(ctx api.StreamContext) error {
+	logger := ctx.GetLogger()
+	logger.Infof("Closing mqtt sink")
+	ms.conn.Disconnect(5000)
+	return nil
 }
 
 

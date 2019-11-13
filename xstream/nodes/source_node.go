@@ -21,18 +21,38 @@ func NewSourceNode(name string, source api.Source) *SourceNode{
 	}
 }
 
-func (m *SourceNode) Open(ctx api.StreamContext) error {
+func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	m.ctx = ctx
 	logger := ctx.GetLogger()
 	logger.Debugf("open source node %s", m.name)
-	return m.source.Open(ctx, func(data interface{}){
-		m.Broadcast(data)
-		logger.Debugf("%s consume data %v complete", m.name, data)
-	})
+	go func(){
+		if err := m.source.Open(ctx, func(data interface{}){
+			m.Broadcast(data)
+			logger.Debugf("%s consume data %v complete", m.name, data)
+		}); err != nil{
+			select {
+			case errCh <- err:
+			case <-ctx.Done():
+				if err := m.source.Close(ctx); err != nil{
+					go func() { errCh <- err }()
+				}
+			}
+		}
+		for {
+			select {
+			case <-ctx.Done():
+				logger.Infof("source %s done", m.name)
+				if err := m.source.Close(ctx); err != nil{
+					go func() { errCh <- err }()
+				}
+				return
+			}
+		}
+	}()
 }
 
-func (m *SourceNode) Broadcast(data interface{}) (err error){
-	return Broadcast(m.outs, data)
+func (m *SourceNode) Broadcast(data interface{}) int{
+	return Broadcast(m.outs, data, m.ctx)
 }
 
 func (m *SourceNode) GetName() string{

@@ -427,7 +427,8 @@ func TestSingleSQL(t *testing.T) {
 		if err != nil{
 			t.Error(err)
 		}
-		sink := test.NewMockSink("mockSink", tt.name)
+		mockSink := test.NewMockSink()
+		sink := nodes.NewSinkNode("MockSink", mockSink)
 		tp.AddSink(inputs, sink)
 		count := len(sources)
 		errCh := tp.Open()
@@ -451,7 +452,7 @@ func TestSingleSQL(t *testing.T) {
 				}
 			}
 		}()
-		results := sink.GetResults()
+		results := mockSink.GetResults()
 		var maps [][]map[string]interface{}
 		for _, v := range results{
 			var mapRes []map[string]interface{}
@@ -691,7 +692,8 @@ func TestWindow(t *testing.T) {
 		if err != nil{
 			t.Error(err)
 		}
-		sink := test.NewMockSink("mockSink", tt.name)
+		mockSink := test.NewMockSink()
+		sink := nodes.NewSinkNode("mockSink", mockSink)
 		tp.AddSink(inputs, sink)
 		count := len(sources)
 		errCh := tp.Open()
@@ -715,7 +717,7 @@ func TestWindow(t *testing.T) {
 				}
 			}
 		}()
-		results := sink.GetResults()
+		results := mockSink.GetResults()
 		var maps [][]map[string]interface{}
 		for _, v := range results{
 			var mapRes []map[string]interface{}
@@ -1240,7 +1242,8 @@ func TestEventWindow(t *testing.T) {
 		if err != nil{
 			t.Error(err)
 		}
-		sink := test.NewMockSink("mockSink", tt.name)
+		mockSink := test.NewMockSink()
+		sink := nodes.NewSinkNode("MockSink", mockSink)
 		tp.AddSink(inputs, sink)
 		count := len(sources)
 		errCh := tp.Open()
@@ -1264,7 +1267,7 @@ func TestEventWindow(t *testing.T) {
 				}
 			}
 		}()
-		results := sink.GetResults()
+		results := mockSink.GetResults()
 		var maps [][]map[string]interface{}
 		for _, v := range results{
 			var mapRes []map[string]interface{}

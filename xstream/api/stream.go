@@ -7,8 +7,21 @@ import (
 
 type ConsumeFunc func(data interface{})
 
+type Closable interface {
+	Close(StreamContext) error
+}
+
 type Source interface {
-	Open(context StreamContext, consume ConsumeFunc) error
+	//Should be sync function for normal case. The container will run it in go func
+	Open(StreamContext, ConsumeFunc) error
+	Closable
+}
+
+type Sink interface {
+	//Should be sync function for normal case. The container will run it in go func
+	Open(StreamContext) error
+	Collect(StreamContext, interface{}) error
+	Closable
 }
 
 type Emitter interface {
@@ -31,24 +44,18 @@ type Rule struct {
 }
 
 type StreamContext interface {
-	GetContext() context.Context
+	context.Context
 	GetLogger()  *logrus.Entry
 	GetRuleId() string
 	GetOpId() string
-}
-
-type SinkConnector interface {
-	Open(context.Context, chan<- error)
-}
-
-type Sink interface {
-	Collector
-	SinkConnector
+	WithMeta(ruleId string, opId string) StreamContext
+	WithCancel() (StreamContext, context.CancelFunc)
 }
 
 type Operator interface {
 	Emitter
 	Collector
-	Exec(context context.Context) error
+	Exec(StreamContext, chan<- error)
+	GetName() string
 }
 

@@ -1,21 +1,21 @@
 package nodes
 
-import "fmt"
+import (
+	"engine/xstream/api"
+)
 
-func Broadcast(outputs map[string]chan<- interface{}, val interface{}) (err error) {
+func Broadcast(outputs map[string]chan<- interface{}, val interface{}, ctx api.StreamContext) int {
+	count := 0
+	logger := ctx.GetLogger()
 	for n, out := range outputs {
 		select {
 		case out <- val:
-			//All ok
+			count++
 		default: //TODO channel full strategy?
-			if err != nil {
-				err = fmt.Errorf("%v;channel full for %s", err, n)
-			} else {
-				err = fmt.Errorf("channel full for %s", n)
-			}
+			logger.Errorf("send output from %s to %s fail: channel full", ctx.GetOpId(), n)
 		}
 	}
-	return err
+	return count
 }
 
 

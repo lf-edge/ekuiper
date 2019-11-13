@@ -1,7 +1,6 @@
 package extensions
 
 import (
-	"context"
 	"encoding/json"
 	"engine/common"
 	"engine/xsql"
@@ -92,73 +91,62 @@ func (ms *MQTTSource) WithSchema(schema string) *MQTTSource {
 
 func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error {
 	log := ctx.GetLogger()
-	go func() {
-		exeCtx, cancel := context.WithCancel(ctx.GetContext())
-		opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(ms.pVersion)
 
-		if ms.clientid == "" {
-			if uuid, err := uuid.NewUUID(); err != nil {
-				log.Printf("Failed to get uuid, the error is %s", err)
-				cancel()
-				return
-			} else {
-				opts.SetClientID(uuid.String())
-			}
+	opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(ms.pVersion)
+	if ms.clientid == "" {
+		if uuid, err := uuid.NewUUID(); err != nil {
+			return fmt.Errorf("failed to get uuid, the error is %s", err)
 		} else {
-			opts.SetClientID(ms.clientid)
+			opts.SetClientID(uuid.String())
 		}
+	} else {
+		opts.SetClientID(ms.clientid)
+	}
+	if ms.uName != "" {
+		opts.SetUsername(ms.uName)
+	}
 
-		if ms.uName != "" {
-			opts.SetUsername(ms.uName)
-		}
+	if ms.password != "" {
+		opts.SetPassword(ms.password)
+	}
 
-		if ms.password != "" {
-			opts.SetPassword(ms.password)
-		}
+	h := func(client MQTT.Client, msg MQTT.Message) {
+		log.Infof("received %s", msg.Payload())
 
-
-		h := func(client MQTT.Client, msg MQTT.Message) {
-			log.Infof("received %s", msg.Payload())
-
-			result := make(map[string]interface{})
-			//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
-			if e := json.Unmarshal(msg.Payload(), &result); e != nil {
-				log.Errorf("Invalid data format, cannot convert %s into JSON with error %s", string(msg.Payload()), e)
-				return
-			}
-			//Convert the keys to lowercase
-			result = xsql.LowercaseKeyMap(result)
-
-			meta := make(map[string]interface{})
-			meta[xsql.INTERNAL_MQTT_TOPIC_KEY] = msg.Topic()
-			meta[xsql.INTERNAL_MQTT_MSG_ID_KEY] = strconv.Itoa(int(msg.MessageID()))
-
-			tuple := &xsql.Tuple{Emitter: ms.tpc, Message:result, Timestamp: common.TimeToUnixMilli(time.Now()), Metadata:meta}
-			consume(tuple)
-		}
-
-		opts.SetDefaultPublishHandler(h)
-		c := MQTT.NewClient(opts)
-		if token := c.Connect(); token.Wait() && token.Error() != nil {
-			log.Printf("Found error when connecting to %s: %s", ms.srv, token.Error())
-			cancel()
+		result := make(map[string]interface{})
+		//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
+		if e := json.Unmarshal(msg.Payload(), &result); e != nil {
+			log.Errorf("Invalid data format, cannot convert %s into JSON with error %s", string(msg.Payload()), e)
 			return
 		}
-		log.Printf("The connection to server %s was established successfully", ms.srv)
-		ms.conn = c
-		if token := c.Subscribe(ms.tpc, 0, nil); token.Wait() && token.Error() != nil {
-			log.Printf("Found error: %s", token.Error())
-			cancel()
-			return
-		}
-		log.Printf("Successfully subscribe to topic %s", ms.tpc)
-		select {
-		case <-exeCtx.Done():
-			log.Println("Mqtt Source Done")
-			ms.conn.Disconnect(5000)
-			cancel()
-		}
-	}()
+		//Convert the keys to lowercase
+		result = xsql.LowercaseKeyMap(result)
 
+		meta := make(map[string]interface{})
+		meta[xsql.INTERNAL_MQTT_TOPIC_KEY] = msg.Topic()
+		meta[xsql.INTERNAL_MQTT_MSG_ID_KEY] = strconv.Itoa(int(msg.MessageID()))
+
+		tuple := &xsql.Tuple{Emitter: ms.tpc, Message:result, Timestamp: common.TimeToUnixMilli(time.Now()), Metadata:meta}
+		consume(tuple)
+	}
+	//TODO error listener?
+	opts.SetDefaultPublishHandler(h)
+	c := MQTT.NewClient(opts)
+	if token := c.Connect(); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("found error when connecting to %s: %s", ms.srv, token.Error())
+	}
+	log.Printf("The connection to server %s was established successfully", ms.srv)
+	ms.conn = c
+	if token := c.Subscribe(ms.tpc, 0, nil); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("Found error: %s", token.Error())
+	}
+	log.Printf("Successfully subscribe to topic %s", ms.tpc)
+
+	return nil
+}
+
+func (ms *MQTTSource) Close(ctx api.StreamContext) error{
+	ctx.GetLogger().Println("Mqtt Source Done")
+	ms.conn.Disconnect(5000)
 	return nil
 }

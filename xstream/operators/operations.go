@@ -1,8 +1,7 @@
 package operators
 
 import (
-	"context"
-	"engine/common"
+	"engine/xstream/api"
 	"engine/xstream/nodes"
 	"fmt"
 	"sync"
@@ -10,14 +9,14 @@ import (
 
 // UnOperation interface represents unary operations (i.e. Map, Filter, etc)
 type UnOperation interface {
-	Apply(ctx context.Context, data interface{}) interface{}
+	Apply(ctx api.StreamContext, data interface{}) interface{}
 }
 
 // UnFunc implements UnOperation as type func (context.Context, interface{})
-type UnFunc func(context.Context, interface{}) interface{}
+type UnFunc func(api.StreamContext, interface{}) interface{}
 
 // Apply implements UnOperation.Apply method
-func (f UnFunc) Apply(ctx context.Context, data interface{}) interface{} {
+func (f UnFunc) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	return f(ctx, data)
 }
 
@@ -62,7 +61,7 @@ func (o *UnaryOperator) SetConcurrency(concurr int) {
 	}
 }
 
-func (o *UnaryOperator) AddOutput(output chan<- interface{}, name string) (err error){
+func (o *UnaryOperator) AddOutput(output chan<- interface{}, name string) error{
 	if _, ok := o.outputs[name]; !ok{
 		o.outputs[name] = output
 	}else{
@@ -76,12 +75,12 @@ func (o *UnaryOperator) GetInput() (chan<- interface{}, string) {
 }
 
 // Exec is the entry point for the executor
-func (o *UnaryOperator) Exec(ctx context.Context) (err error) {
-	log := common.GetLogger(ctx)
-	log.Printf("Unary operator %s is started", o.name)
+func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error ) {
+	log := ctx.GetLogger()
+	log.Tracef("Unary operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
-		err = fmt.Errorf("no output channel found")
+		go func(){errCh <- fmt.Errorf("no output channel found")}()
 		return
 	}
 
@@ -98,7 +97,7 @@ func (o *UnaryOperator) Exec(ctx context.Context) (err error) {
 		for i := 0; i < o.concurrency; i++ { // workers
 			go func(wg *sync.WaitGroup) {
 				defer wg.Done()
-				o.doOp(ctx)
+				o.doOp(ctx, errCh)
 			}(&barrier)
 		}
 
@@ -119,17 +118,15 @@ func (o *UnaryOperator) Exec(ctx context.Context) (err error) {
 			return
 		}
 	}()
-
-	return nil
 }
 
-func (o *UnaryOperator) doOp(ctx context.Context) {
-	log := common.GetLogger(ctx)
+func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
+	log := ctx.GetLogger()
 	if o.op == nil {
 		log.Println("Unary operator missing operation")
 		return
 	}
-	exeCtx, cancel := context.WithCancel(ctx)
+	exeCtx, cancel := ctx.WithCancel()
 
 	defer func() {
 		log.Infof("unary operator %s done, cancelling future items", o.name)
@@ -145,17 +142,16 @@ func (o *UnaryOperator) doOp(ctx context.Context) {
 			switch val := result.(type) {
 			case nil:
 				continue
-			case error:
+			case error: //TODO error handling
 				log.Println(val)
 				log.Println(val.Error())
 				continue
-
 			default:
-				nodes.Broadcast(o.outputs, val)
+				nodes.Broadcast(o.outputs, val, ctx)
 			}
 
 		// is cancelling
-		case <-exeCtx.Done():
+		case <-ctx.Done():
 			log.Printf("unary operator %s cancelling....", o.name)
 			o.mutex.Lock()
 			cancel()

@@ -11,8 +11,8 @@ import (
 
 type TopologyNew struct {
 	sources []*nodes.SourceNode
-	sinks []api.Sink
-	ctx context.Context
+	sinks []*nodes.SinkNode
+	ctx api.StreamContext
 	cancel context.CancelFunc
 	drain chan error
 	ops []api.Operator
@@ -37,7 +37,7 @@ func (s *TopologyNew) AddSrc(src *nodes.SourceNode) *TopologyNew {
 	return s
 }
 
-func (s *TopologyNew) AddSink(inputs []api.Emitter, snk api.Sink) *TopologyNew {
+func (s *TopologyNew) AddSink(inputs []api.Emitter, snk *nodes.SinkNode) *TopologyNew {
 	for _, input := range inputs{
 		input.AddOutput(snk.GetInput())
 	}
@@ -60,7 +60,7 @@ func Transform(op operators.UnOperation, name string) *operators.UnaryOperator {
 }
 
 func (s *TopologyNew) Map(f interface{}) *TopologyNew {
-	log := common.GetLogger(s.ctx)
+	log := s.ctx.GetLogger()
 	op, err := MapFunc(f)
 	if err != nil {
 		log.Println(err)
@@ -94,9 +94,9 @@ func (s *TopologyNew) Transform(op operators.UnOperation) *TopologyNew {
 // stream starts execution.
 func (s *TopologyNew) prepareContext() {
 	if s.ctx == nil || s.ctx.Err() != nil {
-		s.ctx, s.cancel = context.WithCancel(context.Background())
 		contextLogger := common.Log.WithField("rule", s.name)
-		s.ctx = context.WithValue(s.ctx, common.LoggerKey, contextLogger)
+		ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
+		s.ctx, s.cancel = ctx.WithCancel()
 	}
 }
 
@@ -106,41 +106,34 @@ func (s *TopologyNew) drainErr(err error) {
 
 func (s *TopologyNew) Open() <-chan error {
 	s.prepareContext() // ensure context is set
-	log := common.GetLogger(s.ctx)
+	log := s.ctx.GetLogger()
 	log.Println("Opening stream")
 
 	// open stream
 	go func() {
-		sinkErr := make(chan error)
+		streamErr := make(chan error)
 		defer func() {
-			log.Println("Closing sinkErr channel")
-			close(sinkErr)
+			log.Println("Closing streamErr channel")
+			close(streamErr)
 		}()
 		// open stream sink, after log sink is ready.
 		for _, snk := range s.sinks{
-			snk.Open(s.ctx, sinkErr)
+			snk.Open(s.ctx.WithMeta(s.name, snk.GetName()), streamErr)
 		}
 
 		//apply operators, if err bail
 		for _, op := range s.ops {
-			if err := op.Exec(s.ctx); err != nil {
-				s.drainErr(err)
-				log.Println("Closing stream")
-				return
-			}
+			op.Exec(s.ctx.WithMeta(s.name, op.GetName()), streamErr)
 		}
 
 		// open source, if err bail
 		for _, node := range s.sources{
-			if err := node.Open(contexts.NewDefaultContext(s.name, node.GetName(), s.ctx)); err != nil {
-				s.drainErr(err)
-				log.Println("Closing stream")
-				return
-			}
+			node.Open(s.ctx.WithMeta(s.name, node.GetName()), streamErr)
 		}
 
 		select {
-		case err := <- sinkErr:
+		case err := <-streamErr:
+			//TODO error handling
 			log.Println("Closing stream")
 			s.drain <- err
 		}
