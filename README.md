@@ -1,8 +1,8 @@
-# Rule Engine for Edge
+# A lightweight IoT edge analytic software
 
 ## Highlight
 
-A SQL based lightweight IoT streaming rule engine running at resource constrained edge devices.
+A SQL based lightweight IoT analytics/streaming software running at resource constrained edge devices.
 - Native run with small overhead ( ~7MB package), support Linux/Windows/Mac OS
 - SQL based, easy to use
 - Built-in support for MQTT source
@@ -11,8 +11,8 @@ A SQL based lightweight IoT streaming rule engine running at resource constraine
 
 ## Document
 
-- [Getting started](docs/getting_started.md)
-- [Reference guide](docs/index.md)
+- [Getting started](docs/en_US/getting_started.md)
+- [Reference guide](docs/en_US/index.md)
 
 ## Build from source code
 

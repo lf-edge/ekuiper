@@ -159,6 +159,10 @@ func (p *Parser) Parse() (*SelectStatement, error) {
 		return nil, fmt.Errorf("found %q, expected EOF.", lit)
 	}
 
+	if err := Validate(selects); err != nil {
+		return nil, err
+	}
+
 	return selects, nil
 }
 
@@ -232,7 +236,7 @@ func (p *Parser) parseJoins() (Joins, error) {
 	for {
 		if tok, lit := p.scanIgnoreWhitespace(); tok == INNER || tok == LEFT || tok == RIGHT || tok == FULL || tok == CROSS {
 			if tok1, _ := p.scanIgnoreWhitespace(); tok1 == JOIN {
-				var jt JoinType = INNER_JOIN
+				var jt = INNER_JOIN
 				switch tok {
 				case INNER:
 					jt = INNER_JOIN
@@ -588,13 +592,13 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 	var args []Expr
 	for {
 		if tok, _ := p.scanIgnoreWhitespace(); tok == RPAREN {
-			return &Call{Name: name, Args: args}, nil
+			return Call{Name: name, Args: args}.rewrite_func(), nil
 		} else if tok == ASTERISK {
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 != RPAREN {
 				return nil, fmt.Errorf("found %q, expected right paren.", lit2)
 			} else {
 				args = append(args, &StringLiteral{Val:"*"})
-				return &Call{Name: name, Args: args}, nil
+				return Call{Name: name, Args: args}.rewrite_func(), nil
 			}
 		} else {
 			p.unscan()
@@ -619,7 +623,7 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 		if valErr := validateFuncs(name, args); valErr != nil {
 			return nil, valErr
 		}
-		return &Call{Name: name, Args: args}, nil
+		return Call{Name: name, Args: args}.rewrite_func(), nil
 	} else {
 		if error != nil {
 			return nil, error
@@ -655,7 +659,7 @@ func validateWindows(name string, args []Expr) (WindowType, error) {
 	return NOT_WINDOW, nil
 }
 
-func validateWindow(funcName string, expectLen int, args []Expr) (error) {
+func validateWindow(funcName string, expectLen int, args []Expr) error {
 	if len(args) != expectLen {
 		return fmt.Errorf("The arguments for %s should be %d.\n", funcName, expectLen)
 	}
@@ -957,7 +961,7 @@ func (p *Parser) parseStreamStructType() (FieldType, error) {
 }
 
 func (p *Parser) parseStreamOptions() (map[string]string, error) {
-	var opts map[string]string = make(map[string]string)
+	var opts = make(map[string]string)
 	lStack := &stack.Stack{}
 	if tok, lit := p.scanIgnoreWhitespace(); tok == LPAREN {
 		lStack.Push(LPAREN)

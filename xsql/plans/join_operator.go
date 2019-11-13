@@ -1,9 +1,9 @@
 package plans
 
 import (
-	"context"
 	"engine/common"
 	"engine/xsql"
+	"engine/xstream/api"
 	"fmt"
 )
 
@@ -15,8 +15,8 @@ type JoinPlan struct {
 
 // input:  xsql.WindowTuplesSet from windowOp, window is required for join
 // output: xsql.JoinTupleSets
-func (jp *JoinPlan) Apply(ctx context.Context, data interface{}) interface{} {
-	log := common.GetLogger(ctx)
+func (jp *JoinPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
+	log := ctx.GetLogger()
 	var input xsql.WindowTuplesSet
 	if d, ok := data.(xsql.WindowTuplesSet); !ok {
 		log.Errorf("Expect WindowTuplesSet type.\n")
@@ -59,7 +59,7 @@ func getStreamNames(join *xsql.Join) ([]string, error) {
 			}
 			srcs = append(srcs, string(f.StreamName))
 		}
-	});
+	})
 	if len(srcs) != 2 {
 		return nil, fmt.Errorf("Not correct join expression, it requires exactly 2 sources at ON expression.")
 	}

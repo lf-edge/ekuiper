@@ -35,7 +35,7 @@ var strFuncMap = map[string]string{"concat": "",
 	"length":   "", "lower": "", "lpad": "", "ltrim": "",
 	"numbytes":       "",
 	"regexp_matches": "", "regexp_replace": "", "regexp_substr": "", "rpad": "", "rtrim": "",
-	"substring": "", "startswith": "",
+	"substring": "", "startswith": "", "split_value": "",
 	"trim":  "",
 	"upper": "",
 }
@@ -50,7 +50,7 @@ var hashFuncMap = map[string]string{ "md5": "",
 }
 
 var otherFuncMap = map[string]string{"isNull": "",
-	"newuuid": "", "timestamp": "",
+	"newuuid": "", "timestamp": "", "mqtt": "",
 }
 
 func (*FunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {

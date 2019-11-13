@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"engine/common"
 	"engine/xsql"
-	"engine/xstream"
+	"engine/xstream/api"
+	"engine/xstream/nodes"
 	"engine/xstream/test"
 	"fmt"
 	"path"
@@ -16,13 +17,10 @@ import (
 
 var BadgerDir string
 func init(){
-	dataDir, err := common.GetDataLoc()
+	BadgerDir, err := common.GetAndCreateDataLoc("test")
 	if err != nil {
 		log.Panic(err)
-	}else{
-		log.Infof("db location is %s", dataDir)
 	}
-	BadgerDir = path.Join(path.Dir(dataDir), "test")
 	log.Infof("badge location is %s", BadgerDir)
 }
 
@@ -147,7 +145,7 @@ func dropStreams(t *testing.T){
 	}
 }
 
-func getMockSource(name string, done chan<- struct{}, size int) *test.MockSource{
+func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNode{
 	var data []*xsql.Tuple
 	switch name{
 	case "demo":
@@ -349,7 +347,7 @@ func getMockSource(name string, done chan<- struct{}, size int) *test.MockSource
 			},
 		}
 	}
-	return test.NewMockSource(data[:size], name, done, false)
+	return nodes.NewSourceNode(name, test.NewMockSource(data[:size], done, false))
 }
 
 func TestSingleSQL(t *testing.T) {
@@ -411,7 +409,7 @@ func TestSingleSQL(t *testing.T) {
 	for i, tt := range tests {
 		p := NewRuleProcessor(BadgerDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
-		var sources []xstream.Source
+		var sources []*nodes.SourceNode
 		if stmt, err := xsql.Language.Parse(parser); err != nil{
 			t.Errorf("parse sql %s error: %s", tt.sql , err)
 		}else {
@@ -425,11 +423,12 @@ func TestSingleSQL(t *testing.T) {
 				}
 			}
 		}
-		tp, inputs, err := p.createTopoWithSources(&xstream.Rule{Id:tt.name, Sql: tt.sql}, sources)
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql}, sources)
 		if err != nil{
 			t.Error(err)
 		}
-		sink := test.NewMockSink("mockSink", tt.name)
+		mockSink := test.NewMockSink()
+		sink := nodes.NewSinkNode("MockSink", mockSink)
 		tp.AddSink(inputs, sink)
 		count := len(sources)
 		errCh := tp.Open()
@@ -453,7 +452,7 @@ func TestSingleSQL(t *testing.T) {
 				}
 			}
 		}()
-		results := sink.GetResults()
+		results := mockSink.GetResults()
 		var maps [][]map[string]interface{}
 		for _, v := range results{
 			var mapRes []map[string]interface{}
@@ -675,7 +674,7 @@ func TestWindow(t *testing.T) {
 	for i, tt := range tests {
 		p := NewRuleProcessor(BadgerDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
-		var sources []xstream.Source
+		var sources []*nodes.SourceNode
 		if stmt, err := xsql.Language.Parse(parser); err != nil{
 			t.Errorf("parse sql %s error: %s", tt.sql , err)
 		}else {
@@ -689,11 +688,12 @@ func TestWindow(t *testing.T) {
 				}
 			}
 		}
-		tp, inputs, err := p.createTopoWithSources(&xstream.Rule{Id:tt.name, Sql: tt.sql}, sources)
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql}, sources)
 		if err != nil{
 			t.Error(err)
 		}
-		sink := test.NewMockSink("mockSink", tt.name)
+		mockSink := test.NewMockSink()
+		sink := nodes.NewSinkNode("mockSink", mockSink)
 		tp.AddSink(inputs, sink)
 		count := len(sources)
 		errCh := tp.Open()
@@ -717,7 +717,7 @@ func TestWindow(t *testing.T) {
 				}
 			}
 		}()
-		results := sink.GetResults()
+		results := mockSink.GetResults()
 		var maps [][]map[string]interface{}
 		for _, v := range results{
 			var mapRes []map[string]interface{}
@@ -782,7 +782,7 @@ func dropEventStreams(t *testing.T){
 	}
 }
 
-func getEventMockSource(name string, done chan<- struct{}, size int) *test.MockSource{
+func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNode{
 	var data []*xsql.Tuple
 	switch name{
 	case "demoE":
@@ -1011,7 +1011,7 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *test.MockS
 			},
 		}
 	}
-	return test.NewMockSource(data[:size], name, done, true)
+	return nodes.NewSourceNode(name, test.NewMockSource(data[:size], done, true))
 }
 
 func TestEventWindow(t *testing.T) {
@@ -1218,7 +1218,7 @@ func TestEventWindow(t *testing.T) {
 	for i, tt := range tests {
 		p := NewRuleProcessor(BadgerDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
-		var sources []xstream.Source
+		var sources []*nodes.SourceNode
 		if stmt, err := xsql.Language.Parse(parser); err != nil{
 			t.Errorf("parse sql %s error: %s", tt.sql , err)
 		}else {
@@ -1232,7 +1232,7 @@ func TestEventWindow(t *testing.T) {
 				}
 			}
 		}
-		tp, inputs, err := p.createTopoWithSources(&xstream.Rule{
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{
 			Id:tt.name, Sql: tt.sql,
 			Options: map[string]interface{}{
 				"isEventTime": true,
@@ -1242,7 +1242,8 @@ func TestEventWindow(t *testing.T) {
 		if err != nil{
 			t.Error(err)
 		}
-		sink := test.NewMockSink("mockSink", tt.name)
+		mockSink := test.NewMockSink()
+		sink := nodes.NewSinkNode("MockSink", mockSink)
 		tp.AddSink(inputs, sink)
 		count := len(sources)
 		errCh := tp.Open()
@@ -1266,7 +1267,7 @@ func TestEventWindow(t *testing.T) {
 				}
 			}
 		}()
-		results := sink.GetResults()
+		results := mockSink.GetResults()
 		var maps [][]map[string]interface{}
 		for _, v := range results{
 			var mapRes []map[string]interface{}

@@ -1,9 +1,9 @@
 package plans
 
 import (
-	"context"
 	"engine/common"
 	"engine/xsql"
+	"engine/xstream/api"
 	"fmt"
 	"reflect"
 	"strings"
@@ -12,13 +12,14 @@ import (
 
 type Preprocessor struct {
 	streamStmt  *xsql.StreamStmt
+	fields xsql.Fields
 	isEventTime bool
 	timestampField string
 	timestampFormat string
 }
 
-func NewPreprocessor(s *xsql.StreamStmt, iet bool) (*Preprocessor, error){
-	p := &Preprocessor{streamStmt: s, isEventTime: iet}
+func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool) (*Preprocessor, error){
+	p := &Preprocessor{streamStmt: s, fields: fs, isEventTime: iet}
 	if iet {
 		if tf, ok := s.Options["TIMESTAMP"]; ok{
 			p.timestampField = tf
@@ -37,8 +38,8 @@ func NewPreprocessor(s *xsql.StreamStmt, iet bool) (*Preprocessor, error){
  *	input: *xsql.Tuple
  *	output: *xsql.Tuple
  */
-func (p *Preprocessor) Apply(ctx context.Context, data interface{}) interface{} {
-	log := common.GetLogger(ctx)
+func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{} {
+	log := ctx.GetLogger()
 	tuple, ok := data.(*xsql.Tuple)
 	if !ok {
 		log.Errorf("Expect tuple data type")
@@ -55,6 +56,18 @@ func (p *Preprocessor) Apply(ctx context.Context, data interface{}) interface{} 
 			return nil
 		}
 	}
+
+	//If the field has alias name, then evaluate the alias field before transfer it to proceeding operators, and put it into result.
+	//Otherwise, the GROUP BY, ORDER BY statement cannot get the value.
+	for _, f := range p.fields {
+		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)) {
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, &xsql.FunctionValuer{})}
+			if v := ve.Eval(f.Expr); v != nil {
+				result[f.AName] = v
+			}
+		}
+	}
+
 	tuple.Message = result
 	if p.isEventTime{
 		if t, ok := result[p.timestampField]; ok{

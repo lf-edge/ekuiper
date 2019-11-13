@@ -7,7 +7,9 @@ import (
 	"engine/xsql"
 	"engine/xsql/plans"
 	"engine/xstream"
+	"engine/xstream/api"
 	"engine/xstream/extensions"
+	"engine/xstream/nodes"
 	"engine/xstream/operators"
 	"engine/xstream/sinks"
 	"fmt"
@@ -156,7 +158,7 @@ func NewRuleProcessor(d string) *RuleProcessor {
 	return processor
 }
 
-func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*xstream.Rule, error) {
+func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 	rule, err := p.getRuleByJson(name, ruleJson)
 	if err != nil {
 		return nil, err
@@ -176,7 +178,7 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*xstream.Rule, error)
 	return rule, nil
 }
 
-func (p *RuleProcessor) GetRuleByName(name string) (*xstream.Rule, error) {
+func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
 	db, err := common.DbOpen(path.Join(p.badgerDir, "rule"))
 	if err != nil {
 		return nil, err
@@ -189,8 +191,8 @@ func (p *RuleProcessor) GetRuleByName(name string) (*xstream.Rule, error) {
 	return p.getRuleByJson(name, s)
 }
 
-func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*xstream.Rule, error) {
-	var rule xstream.Rule
+func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) {
+	var rule api.Rule
 	if err := json.Unmarshal([]byte(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("parse rule %s error : %s", ruleJson, err)
 	}
@@ -208,7 +210,7 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*xstream.Rule, err
 	return &rule, nil
 }
 
-func (p *RuleProcessor) ExecInitRule(rule *xstream.Rule) (*xstream.TopologyNew, error) {
+func (p *RuleProcessor) ExecInitRule(rule *api.Rule) (*xstream.TopologyNew, error) {
 	if tp, inputs, err := p.createTopo(rule); err != nil {
 		return nil, err
 	}else{
@@ -217,13 +219,13 @@ func (p *RuleProcessor) ExecInitRule(rule *xstream.Rule) (*xstream.TopologyNew, 
 				switch name {
 				case "log":
 					log.Printf("Create log sink with %s", action)
-					tp.AddSink(inputs, sinks.NewLogSink("sink_log", rule.Id))
+					tp.AddSink(inputs, nodes.NewSinkNode("sink_log", sinks.NewLogSink()))
 				case "mqtt":
 					log.Printf("Create mqtt sink with %s", action)
-					if ms, err := sinks.NewMqttSink("mqtt_log", rule.Id, action); err != nil{
+					if ms, err := sinks.NewMqttSink(action); err != nil{
 						return nil, err
 					}else{
-						tp.AddSink(inputs, ms)
+						tp.AddSink(inputs, nodes.NewSinkNode("sink_mqtt", ms))
 					}
 				default:
 					return nil, fmt.Errorf("unsupported action: %s", name)
@@ -235,10 +237,10 @@ func (p *RuleProcessor) ExecInitRule(rule *xstream.Rule) (*xstream.TopologyNew, 
 }
 
 func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, error) {
-	if tp, inputs, err := p.createTopo(&xstream.Rule{Id: ruleid, Sql: sql}); err != nil {
+	if tp, inputs, err := p.createTopo(&api.Rule{Id: ruleid, Sql: sql}); err != nil {
 		return nil, err
 	} else {
-		tp.AddSink(inputs, sinks.NewLogSinkToMemory("sink_log", ruleid))
+		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", sinks.NewLogSinkToMemory()))
 		go func() {
 			select {
 			case err := <-tp.Open():
@@ -306,12 +308,12 @@ func (p *RuleProcessor) ExecDrop(name string) (string, error) {
 	}
 }
 
-func (p *RuleProcessor) createTopo(rule *xstream.Rule) (*xstream.TopologyNew, []xstream.Emitter, error) {
+func (p *RuleProcessor) createTopo(rule *api.Rule) (*xstream.TopologyNew, []api.Emitter, error) {
 	return p.createTopoWithSources(rule, nil)
 }
 
 //For test to mock source
-func (p *RuleProcessor) createTopoWithSources(rule *xstream.Rule, sources []xstream.Source) (*xstream.TopologyNew, []xstream.Emitter, error){
+func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.SourceNode) (*xstream.TopologyNew, []api.Emitter, error){
 	name := rule.Id
 	sql := rule.Sql
 	var isEventTime bool
@@ -340,7 +342,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *xstream.Rule, sources []xstr
 			return nil, nil, fmt.Errorf("sql %s is not a select statement", sql)
 		} else {
 			tp := xstream.NewWithName(name)
-			var inputs []xstream.Emitter
+			var inputs []api.Emitter
 			streamsFromStmt := xsql.GetStreams(selectStmt)
 			if !shouldCreateSource && len(streamsFromStmt) != len(sources){
 				return nil, nil, fmt.Errorf("invalid parameter sources or streams, the length cannot match the statement, expect %d sources", len(streamsFromStmt))
@@ -356,23 +358,24 @@ func (p *RuleProcessor) createTopoWithSources(rule *xstream.Rule, sources []xstr
 				if err != nil {
 					return nil, nil, err
 				}
-				pp, err := plans.NewPreprocessor(streamStmt, isEventTime)
+				pp, err := plans.NewPreprocessor(streamStmt, selectStmt.Fields, isEventTime)
 				if err != nil{
 					return nil, nil, err
 				}
 				if shouldCreateSource{
-					mqs, err := extensions.NewWithName(string(streamStmt.Name), streamStmt.Options["DATASOURCE"], streamStmt.Options["CONF_KEY"])
+					mqs, err := extensions.NewMQTTSource(streamStmt.Options["DATASOURCE"], streamStmt.Options["CONF_KEY"])
 					if err != nil {
 						return nil, nil, err
 					}
-					tp.AddSrc(mqs)
+					node := nodes.NewSourceNode(string(streamStmt.Name), mqs)
+					tp.AddSrc(node)
 					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s)
-					tp.AddOperator([]xstream.Emitter{mqs}, preprocessorOp)
+					tp.AddOperator([]api.Emitter{node}, preprocessorOp)
 					inputs = append(inputs, preprocessorOp)
 				}else{
 					tp.AddSrc(sources[i])
 					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s)
-					tp.AddOperator([]xstream.Emitter{sources[i]}, preprocessorOp)
+					tp.AddOperator([]api.Emitter{sources[i]}, preprocessorOp)
 					inputs = append(inputs, preprocessorOp)
 				}
 			}
@@ -386,7 +389,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *xstream.Rule, sources []xstr
 						return nil, nil, err
 					}
 					tp.AddOperator(inputs, wop)
-					inputs = []xstream.Emitter{wop}
+					inputs = []api.Emitter{wop}
 				}
 			}
 
@@ -395,7 +398,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *xstream.Rule, sources []xstr
 				//TODO concurrency setting by command
 				//joinOp.SetConcurrency(3)
 				tp.AddOperator(inputs, joinOp)
-				inputs = []xstream.Emitter{joinOp}
+				inputs = []api.Emitter{joinOp}
 			}
 
 			if selectStmt.Condition != nil {
@@ -403,7 +406,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *xstream.Rule, sources []xstr
 				//TODO concurrency setting by command
 				// filterOp.SetConcurrency(3)
 				tp.AddOperator(inputs, filterOp)
-				inputs = []xstream.Emitter{filterOp}
+				inputs = []api.Emitter{filterOp}
 			}
 
 			var ds xsql.Dimensions
@@ -412,20 +415,26 @@ func (p *RuleProcessor) createTopoWithSources(rule *xstream.Rule, sources []xstr
 				if ds != nil && len(ds) > 0 {
 					aggregateOp := xstream.Transform(&plans.AggregatePlan{Dimensions: ds}, "aggregate")
 					tp.AddOperator(inputs, aggregateOp)
-					inputs = []xstream.Emitter{aggregateOp}
+					inputs = []api.Emitter{aggregateOp}
 				}
+			}
+
+			if selectStmt.Having != nil {
+				havingOp := xstream.Transform(&plans.HavingPlan{selectStmt.Having}, "having")
+				tp.AddOperator(inputs, havingOp)
+				inputs = []xstream.Emitter{havingOp}
 			}
 
 			if selectStmt.SortFields != nil {
 				orderOp := xstream.Transform(&plans.OrderPlan{SortFields:selectStmt.SortFields}, "order")
 				tp.AddOperator(inputs, orderOp)
-				inputs = []xstream.Emitter{orderOp}
+				inputs = []api.Emitter{orderOp}
 			}
 
 			if selectStmt.Fields != nil {
 				projectOp := xstream.Transform(&plans.ProjectPlan{Fields: selectStmt.Fields, IsAggregate: xsql.IsAggStatement(selectStmt)}, "project")
 				tp.AddOperator(inputs, projectOp)
-				inputs = []xstream.Emitter{projectOp}
+				inputs = []api.Emitter{projectOp}
 			}
 			return tp, inputs, nil
 		}

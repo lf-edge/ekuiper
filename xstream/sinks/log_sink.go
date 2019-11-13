@@ -1,8 +1,7 @@
 package sinks
 
 import (
-	"context"
-	"engine/common"
+	"engine/xstream/api"
 	"engine/xstream/collectors"
 	"fmt"
 	"sync"
@@ -11,10 +10,10 @@ import (
 
 // log action, no properties now
 // example: {"log":{}}
-func NewLogSink(name string, ruleId string) *collectors.FuncCollector {
-	return collectors.Func(name, func(ctx context.Context, data interface{}) error {
-		log := common.GetLogger(ctx)
-		log.Printf("sink result for rule %s: %s", ruleId, data)
+func NewLogSink() *collectors.FuncCollector {
+	return collectors.Func(func(ctx api.StreamContext, data interface{}) error {
+		log := ctx.GetLogger()
+		log.Printf("sink result for rule %s: %s", ctx.GetRuleId(), data)
 		return nil
 	})
 }
@@ -27,9 +26,9 @@ type QueryResult struct {
 
 var QR = &QueryResult{LastFetch:time.Now()}
 
-func NewLogSinkToMemory(name string, ruleId string) *collectors.FuncCollector {
+func NewLogSinkToMemory() *collectors.FuncCollector {
 	QR.Results = make([]string, 10)
-	return collectors.Func(name, func(ctx context.Context, data interface{}) error {
+	return collectors.Func(func(ctx api.StreamContext, data interface{}) error {
 		QR.Mux.Lock()
 		QR.Results = append(QR.Results, fmt.Sprintf("%s", data))
 		QR.Mux.Unlock()

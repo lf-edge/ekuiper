@@ -1,9 +1,10 @@
 package operators
 
 import (
-	"context"
 	"engine/common"
 	"engine/xsql"
+	"engine/xstream/api"
+	"engine/xstream/nodes"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"math"
@@ -79,12 +80,13 @@ func (o *WindowOperator) GetName() string {
 	return o.name
 }
 
-func (o *WindowOperator) AddOutput(output chan<- interface{}, name string) {
+func (o *WindowOperator) AddOutput(output chan<- interface{}, name string) error {
 	if _, ok := o.outputs[name]; !ok{
 		o.outputs[name] = output
 	}else{
-		common.Log.Warnf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
+		fmt.Errorf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
 	}
+	return nil
 }
 
 func (o *WindowOperator) GetInput() (chan<- interface{}, string) {
@@ -94,26 +96,23 @@ func (o *WindowOperator) GetInput() (chan<- interface{}, string) {
 // Exec is the entry point for the executor
 // input: *xsql.Tuple from preprocessor
 // output: xsql.WindowTuplesSet
-func (o *WindowOperator) Exec(ctx context.Context) (err error) {
-	log := common.GetLogger(ctx)
+func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error ){
+	log := ctx.GetLogger()
 	log.Printf("Window operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
-		err = fmt.Errorf("no output channel found")
+		go func(){errCh <- fmt.Errorf("no output channel found")}()
 		return
 	}
 	if o.isEventTime{
-		go o.execEventWindow(ctx)
+		go o.execEventWindow(ctx, errCh)
 	}else{
-		go o.execProcessingWindow(ctx)
+		go o.execProcessingWindow(ctx, errCh)
 	}
-
-	return nil
 }
 
-func (o *WindowOperator) execProcessingWindow(ctx context.Context) {
-	exeCtx, cancel := context.WithCancel(ctx)
-	log := common.GetLogger(ctx)
+func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<- error) {
+	log := ctx.GetLogger()
 	var (
 		inputs []*xsql.Tuple
 		c <-chan time.Time
@@ -177,19 +176,18 @@ func (o *WindowOperator) execProcessingWindow(ctx context.Context) {
 				inputs = make([]*xsql.Tuple, 0)
 			}
 		// is cancelling
-		case <-exeCtx.Done():
+		case <-ctx.Done():
 			log.Println("Cancelling window....")
 			if o.ticker != nil{
 				o.ticker.Stop()
 			}
-			cancel()
 			return
 		}
 	}
 }
 
-func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx context.Context) ([]*xsql.Tuple, bool){
-	log := common.GetLogger(ctx)
+func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, bool){
+	log := ctx.GetLogger()
 	log.Printf("window %s triggered at %s", o.name, time.Unix(triggerTime/1000, triggerTime%1000))
 	var delta int64
 	if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
@@ -225,12 +223,10 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx conte
 		if o.isEventTime{
 			results.Sort()
 		}
-		for _, output := range o.outputs {
-			select {
-			case output <- results:
-				triggered = true
-			default: //TODO need to set buffer
-			}
+		count := nodes.Broadcast(o.outputs, results, ctx)
+		//TODO deal with partial fail
+		if count > 0{
+			triggered = true
 		}
 	}
 

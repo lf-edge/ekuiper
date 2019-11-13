@@ -201,7 +201,14 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 		}
 	case "timestamp":
 		return common.TimeToUnixMilli(time.Now()), true
+	case "mqtt":
+		if v, ok := args[0].(string); ok {
+			return v, true
+		}
+		return nil, false
 	default:
 		return fmt.Errorf("unknown function name %s", name), false
 	}
 }
+
+

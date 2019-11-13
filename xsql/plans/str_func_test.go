@@ -353,6 +353,70 @@ func TestStrFunc_Apply1(t *testing.T) {
 				"a": "NYCNICKS",
 			}},
 		},
+
+		{
+			sql: `SELECT split_value(a,"/",0) AS a FROM test1`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a" : "test/device001/message",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "test",
+			}},
+		},
+
+		{
+			sql: `SELECT split_value(a,"/",1) AS a FROM test1`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a" : "test/device001/message",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "device001",
+			}},
+		},
+
+		{
+			sql: `SELECT split_value(a,"/",2) AS a FROM test1`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a" : "test/device001/message",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "message",
+			}},
+		},
+
+		{
+			sql: `SELECT split_value(a,"/",0) AS a, split_value(a,"/",3) AS b FROM test1`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a" : "/test/device001/message",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "",
+				"b": "message",
+			}},
+		},
+
+		{
+			sql: `SELECT split_value(a,"/",3) AS a FROM test1`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a" : "test/device001/message",
+				},
+			},
+			result: []map[string]interface{}{map[string]interface {}{}},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

@@ -102,6 +102,15 @@ func strCall(name string, args []interface{}) (interface{}, bool) {
 	case "startswith":
 		arg0, arg1 := common.ToString(args[0]), common.ToString(args[1])
 		return strings.HasPrefix(arg0, arg1), true
+	case "split_value":
+		arg0, arg1 := common.ToString(args[0]), common.ToString(args[1])
+		ss := strings.Split(arg0, arg1)
+		v, _ := common.ToInt(args[2])
+		if v > (len(ss) - 1) {
+			return fmt.Errorf("%d out of index array (size = %d)", v, ss), false
+		} else {
+			return ss[v], true
+		}
 	case "trim":
 		arg0 := common.ToString(args[0])
 		return strings.TrimSpace(arg0), true

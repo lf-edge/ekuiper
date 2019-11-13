@@ -3,16 +3,19 @@ package xstream
 import (
 	"context"
 	"engine/common"
+	"engine/xstream/api"
+	"engine/xstream/contexts"
+	"engine/xstream/nodes"
 	"engine/xstream/operators"
 )
 
 type TopologyNew struct {
-	sources []Source
-	sinks []Sink
-	ctx context.Context
+	sources []*nodes.SourceNode
+	sinks []*nodes.SinkNode
+	ctx api.StreamContext
 	cancel context.CancelFunc
 	drain chan error
-	ops []Operator
+	ops []api.Operator
 	name string
 }
 
@@ -29,12 +32,12 @@ func (s *TopologyNew) Cancel(){
 	s.cancel()
 }
 
-func (s *TopologyNew) AddSrc(src Source) *TopologyNew {
+func (s *TopologyNew) AddSrc(src *nodes.SourceNode) *TopologyNew {
 	s.sources = append(s.sources, src)
 	return s
 }
 
-func (s *TopologyNew) AddSink(inputs []Emitter, snk Sink) *TopologyNew {
+func (s *TopologyNew) AddSink(inputs []api.Emitter, snk *nodes.SinkNode) *TopologyNew {
 	for _, input := range inputs{
 		input.AddOutput(snk.GetInput())
 	}
@@ -42,7 +45,7 @@ func (s *TopologyNew) AddSink(inputs []Emitter, snk Sink) *TopologyNew {
 	return s
 }
 
-func (s *TopologyNew) AddOperator(inputs []Emitter, operator Operator) *TopologyNew {
+func (s *TopologyNew) AddOperator(inputs []api.Emitter, operator api.Operator) *TopologyNew {
 	for _, input := range inputs{
 		input.AddOutput(operator.GetInput())
 	}
@@ -57,7 +60,7 @@ func Transform(op operators.UnOperation, name string) *operators.UnaryOperator {
 }
 
 func (s *TopologyNew) Map(f interface{}) *TopologyNew {
-	log := common.GetLogger(s.ctx)
+	log := s.ctx.GetLogger()
 	op, err := MapFunc(f)
 	if err != nil {
 		log.Println(err)
@@ -91,9 +94,9 @@ func (s *TopologyNew) Transform(op operators.UnOperation) *TopologyNew {
 // stream starts execution.
 func (s *TopologyNew) prepareContext() {
 	if s.ctx == nil || s.ctx.Err() != nil {
-		s.ctx, s.cancel = context.WithCancel(context.Background())
 		contextLogger := common.Log.WithField("rule", s.name)
-		s.ctx = context.WithValue(s.ctx, common.LoggerKey, contextLogger)
+		ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
+		s.ctx, s.cancel = ctx.WithCancel()
 	}
 }
 
@@ -103,39 +106,34 @@ func (s *TopologyNew) drainErr(err error) {
 
 func (s *TopologyNew) Open() <-chan error {
 	s.prepareContext() // ensure context is set
-	log := common.GetLogger(s.ctx)
+	log := s.ctx.GetLogger()
 	log.Println("Opening stream")
 
 	// open stream
 	go func() {
-		// open source, if err bail
-		for _, src := range s.sources{
-			if err := src.Open(s.ctx); err != nil {
-				s.drainErr(err)
-				log.Println("Closing stream")
-				return
-			}
+		streamErr := make(chan error)
+		defer func() {
+			log.Println("Closing streamErr channel")
+			close(streamErr)
+		}()
+		// open stream sink, after log sink is ready.
+		for _, snk := range s.sinks{
+			snk.Open(s.ctx.WithMeta(s.name, snk.GetName()), streamErr)
 		}
 
 		//apply operators, if err bail
 		for _, op := range s.ops {
-			if err := op.Exec(s.ctx); err != nil {
-				s.drainErr(err)
-				log.Println("Closing stream")
-				return
-			}
+			op.Exec(s.ctx.WithMeta(s.name, op.GetName()), streamErr)
 		}
-		sinkErr := make(chan error)
-		defer func() {
-			log.Println("Closing sinkErr channel")
-			close(sinkErr)
-		}()
-		// open stream sink, after log sink is ready.
-		for _, snk := range s.sinks{
-			snk.Open(s.ctx, sinkErr)
+
+		// open source, if err bail
+		for _, node := range s.sources{
+			node.Open(s.ctx.WithMeta(s.name, node.GetName()), streamErr)
 		}
+
 		select {
-		case err := <- sinkErr:
+		case err := <-streamErr:
+			//TODO error handling
 			log.Println("Closing stream")
 			s.drain <- err
 		}

@@ -18,7 +18,7 @@ func main() {
 			}
 			srcs = append(srcs, string(f.StreamName))
 		}
-	});
+	})
 
 	for _, src := range srcs {
 		fmt.Println(src)

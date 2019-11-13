@@ -1,10 +1,9 @@
 package plans
 
 import (
-	"context"
 	"encoding/json"
-	"engine/common"
 	"engine/xsql"
+	"engine/xstream/api"
 	"fmt"
 	"strconv"
 	"strings"
@@ -19,8 +18,8 @@ type ProjectPlan struct {
  *  input: *xsql.Tuple from preprocessor or filterOp | xsql.WindowTuplesSet from windowOp or filterOp | xsql.JoinTupleSets from joinOp or filterOp
  *  output: []map[string]interface{}
  */
-func (pp *ProjectPlan) Apply(ctx context.Context, data interface{}) interface{} {
-	log := common.GetLogger(ctx)
+func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
+	log := ctx.GetLogger()
 	log.Debugf("project plan receive %s", data)
 	var results []map[string]interface{}
 	switch input := data.(type) {
@@ -78,29 +77,36 @@ func (pp *ProjectPlan) getVE(tuple xsql.DataValuer, agg xsql.AggregateData) *xsq
 func project(fs xsql.Fields, ve *xsql.ValuerEval) map[string]interface{} {
 	result := make(map[string]interface{})
 	for _, f := range fs {
-		v := ve.Eval(f.Expr)
-		if _, ok := f.Expr.(*xsql.Wildcard); ok || f.Name == "*"{
-			switch val := v.(type) {
-			case map[string]interface{} :
-				for k, v := range val{
-					if _, ok := result[k]; !ok{
-						result[k] = v
-					}
-				}
-			case xsql.Message:
-				for k, v := range val{
-					if _, ok := result[k]; !ok{
-						result[k] = v
-					}
-				}
-			default:
-				fmt.Printf("Wildcarder does not return map")
-			}
+		//Avoid to re-evaluate for non-agg field has alias name, which was already evaluated in pre-processor operator.
+		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)){
+			fr := &xsql.FieldRef{StreamName:"", Name:f.AName}
+			v := ve.Eval(fr);
+			result[f.AName] = v
 		} else {
-			if v != nil {
-				n := assignName(f.Name, f.AName, result)
-				if _, ok := result[n]; !ok{
-					result[n] = v
+			v := ve.Eval(f.Expr)
+			if _, ok := f.Expr.(*xsql.Wildcard); ok || f.Name == "*"{
+				switch val := v.(type) {
+				case map[string]interface{} :
+					for k, v := range val{
+						if _, ok := result[k]; !ok{
+							result[k] = v
+						}
+					}
+				case xsql.Message:
+					for k, v := range val{
+						if _, ok := result[k]; !ok{
+							result[k] = v
+						}
+					}
+				default:
+					fmt.Printf("Wildcarder does not return map")
+				}
+			} else {
+				if v != nil {
+					n := assignName(f.Name, f.AName, result)
+					if _, ok := result[n]; !ok{
+						result[n] = v
+					}
 				}
 			}
 		}

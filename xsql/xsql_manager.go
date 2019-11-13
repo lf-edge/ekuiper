@@ -29,7 +29,7 @@ func (t *ParseTree) Handle(tok Token, fn func(*Parser) (Statement, error)) {
 
 
 func (pt *ParseTree) Parse(p *Parser) (Statement, error) {
-	tok, _ := p.scanIgnoreWhitespace();
+	tok, _ := p.scanIgnoreWhitespace()
 	p.unscan()
 	if f, ok  := pt.Handlers[tok]; ok {
 		return f(p)

@@ -38,7 +38,7 @@ func streamProcess(client *rpc.Client, args string) error {
 
 func main() {
 	app := cli.NewApp()
-	app.Version = "0.1"
+	app.Version = "0.0.3"
 
 	//nflag := []cli.Flag { cli.StringFlag{
 	//		Name: "name, n",
@@ -84,7 +84,7 @@ func main() {
 				ticker := time.NewTicker(time.Millisecond * 300)
 				defer ticker.Stop()
 				for {
-					fmt.Print("xstream > ")
+					fmt.Print("kuiper > ")
 
 					text, _ := reader.ReadString('\n')
 					inputs = append(inputs, text)
@@ -150,7 +150,6 @@ func main() {
 								args := strings.Join([]string{"CREATE STREAM ", string(stream)}, " ")
 								return streamProcess(client, args)
 							}
-							return nil
 						} else {
 							return streamProcess(client, "")
 						}
@@ -427,8 +426,8 @@ func main() {
 	}
 
 
-	app.Name = "xstream"
-	app.Usage = "The command line tool for EMQ X stream."
+	app.Name = "Kuiper"
+	app.Usage = "The command line tool for EMQ X Kuiper."
 
 	app.Action = func(c *cli.Context) error {
 		cli.ShowSubcommandHelp(c)
@@ -442,6 +441,6 @@ func main() {
 
 	err = app.Run(os.Args)
 	if err != nil {
-		fmt.Errorf("%s", err)
+		fmt.Printf("%v", err)
 	}
 }

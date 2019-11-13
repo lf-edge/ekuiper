@@ -16,14 +16,14 @@ func TestFuncValidator(t *testing.T) {
 	}{
 		{
 			s: `SELECT abs(1) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "abs", Expr:&Call{Name:"abs", Args: []Expr{&IntegerLiteral{Val:1}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "abs", Expr: &Call{Name: "abs", Args: []Expr{&IntegerLiteral{Val: 1}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
 
 		{
 			s: `SELECT abs(field1) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "abs", Expr:&Call{Name:"abs", Args: []Expr{&FieldRef{Name:"field1"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "abs", Expr: &Call{Name: "abs", Args: []Expr{&FieldRef{Name: "field1"}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -36,7 +36,7 @@ func TestFuncValidator(t *testing.T) {
 
 		{
 			s: `SELECT abs(1.1) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "abs", Expr:&Call{Name:"abs", Args: []Expr{&NumberLiteral{Val:1.1}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "abs", Expr: &Call{Name: "abs", Args: []Expr{&NumberLiteral{Val: 1.1}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -63,14 +63,14 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT sin(1) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "sin", Expr:&Call{Name:"sin", Args: []Expr{&IntegerLiteral{Val:1}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "sin", Expr: &Call{Name: "sin", Args: []Expr{&IntegerLiteral{Val: 1}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
 
 		{
 			s: `SELECT sin(1.1) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "sin", Expr:&Call{Name:"sin", Args: []Expr{&NumberLiteral{Val:1.1}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "sin", Expr: &Call{Name: "sin", Args: []Expr{&NumberLiteral{Val: 1.1}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -95,14 +95,14 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT tanh(1) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "tanh", Expr:&Call{Name:"tanh", Args: []Expr{&IntegerLiteral{Val:1}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "tanh", Expr: &Call{Name: "tanh", Args: []Expr{&IntegerLiteral{Val: 1}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
 
 		{
 			s: `SELECT tanh(1.1) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "tanh", Expr:&Call{Name:"tanh", Args: []Expr{&NumberLiteral{Val:1.1}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "tanh", Expr: &Call{Name: "tanh", Args: []Expr{&NumberLiteral{Val: 1.1}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -128,7 +128,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT bitxor(1, 2) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "bitxor", Expr:&Call{Name:"bitxor", Args: []Expr{&IntegerLiteral{Val:1}, &IntegerLiteral{Val:2}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "bitxor", Expr: &Call{Name: "bitxor", Args: []Expr{&IntegerLiteral{Val: 1}, &IntegerLiteral{Val: 2}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -160,7 +160,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT bitnot(1) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "bitnot", Expr:&Call{Name:"bitnot", Args: []Expr{&IntegerLiteral{Val:1}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "bitnot", Expr: &Call{Name: "bitnot", Args: []Expr{&IntegerLiteral{Val: 1}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -180,7 +180,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT mod(1, 2) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "mod", Expr:&Call{Name:"mod", Args: []Expr{&IntegerLiteral{Val:1}, &IntegerLiteral{Val:2}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "mod", Expr: &Call{Name: "mod", Args: []Expr{&IntegerLiteral{Val: 1}, &IntegerLiteral{Val: 2}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -206,7 +206,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT concat(field, "hello") FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "concat", Expr:&Call{Name:"concat", Args: []Expr{&FieldRef{Name:"field"}, &StringLiteral{Val:"hello"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "concat", Expr: &Call{Name: "concat", Args: []Expr{&FieldRef{Name: "field"}, &StringLiteral{Val: "hello"}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -232,7 +232,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT regexp_matches(field, "hello") FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "regexp_matches", Expr:&Call{Name:"regexp_matches", Args: []Expr{&FieldRef{Name:"field"}, &StringLiteral{Val:"hello"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "regexp_matches", Expr: &Call{Name: "regexp_matches", Args: []Expr{&FieldRef{Name: "field"}, &StringLiteral{Val: "hello"}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -252,7 +252,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT regexp_replace(field, "hello", "h") FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "regexp_replace", Expr:&Call{Name:"regexp_replace", Args: []Expr{&FieldRef{Name:"field"}, &StringLiteral{Val:"hello"}, &StringLiteral{Val:"h"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "regexp_replace", Expr: &Call{Name: "regexp_replace", Args: []Expr{&FieldRef{Name: "field"}, &StringLiteral{Val: "hello"}, &StringLiteral{Val: "h"}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -266,7 +266,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT trim(field) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "trim", Expr:&Call{Name:"trim", Args: []Expr{&FieldRef{Name:"field"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "trim", Expr: &Call{Name: "trim", Args: []Expr{&FieldRef{Name: "field"}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -280,7 +280,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT rpad(field, 3) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "rpad", Expr:&Call{Name:"rpad", Args: []Expr{&FieldRef{Name:"field"}, &IntegerLiteral{Val:3}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "rpad", Expr: &Call{Name: "rpad", Args: []Expr{&FieldRef{Name: "field"}, &IntegerLiteral{Val: 3}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -294,7 +294,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT substring(field, 3, 4) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "substring", Expr:&Call{Name:"substring", Args: []Expr{&FieldRef{Name:"field"}, &IntegerLiteral{Val:3}, &IntegerLiteral{Val:4}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "substring", Expr: &Call{Name: "substring", Args: []Expr{&FieldRef{Name: "field"}, &IntegerLiteral{Val: 3}, &IntegerLiteral{Val: 4}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -320,7 +320,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT cast(field, "bigint") FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "cast", Expr:&Call{Name:"cast", Args: []Expr{&FieldRef{Name:"field"}, &StringLiteral{Val:"bigint"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "cast", Expr: &Call{Name: "cast", Args: []Expr{&FieldRef{Name: "field"}, &StringLiteral{Val: "bigint"}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -334,7 +334,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT chr(field) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "chr", Expr:&Call{Name:"chr", Args: []Expr{&FieldRef{Name:"field"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "chr", Expr: &Call{Name: "chr", Args: []Expr{&FieldRef{Name: "field"}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -348,7 +348,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT encode(field, "base64") FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "encode", Expr:&Call{Name:"encode", Args: []Expr{&FieldRef{Name:"field"}, &StringLiteral{Val:"base64"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "encode", Expr: &Call{Name: "encode", Args: []Expr{&FieldRef{Name: "field"}, &StringLiteral{Val: "base64"}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -362,7 +362,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT trunc(field, 3) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "trunc", Expr:&Call{Name:"trunc", Args: []Expr{&FieldRef{Name:"field"}, &IntegerLiteral{Val:3}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "trunc", Expr: &Call{Name: "trunc", Args: []Expr{&FieldRef{Name: "field"}, &IntegerLiteral{Val: 3}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -376,7 +376,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT sha512(field) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{Field{ AName:"",  Name: "sha512", Expr:&Call{Name:"sha512", Args: []Expr{&FieldRef{Name:"field"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "sha512", Expr: &Call{Name: "sha512", Args: []Expr{&FieldRef{Name: "field"}}}}},
 				Sources: []Source{&Table{Name:"tbl"}},
 			},
 		},
@@ -385,6 +385,36 @@ func TestFuncValidator(t *testing.T) {
 			s: `SELECT sha512(20) FROM tbl`,
 			stmt: nil,
 			err: "Expect string type for 1 parameter of function sha512.",
+		},
+
+		{
+			s: `SELECT mqtt("topic") FROM tbl`,
+			stmt: nil,
+			err: "Expect field reference type for 1 parameter of function mqtt.",
+		},
+
+		{
+			s: `SELECT mqtt(topic1) FROM tbl`,
+			stmt: nil,
+			err: "Parameter of mqtt function can be only topic or messageid.",
+		},
+
+		{
+			s: `SELECT split_value(topic1) FROM tbl`,
+			stmt: nil,
+			err: "the arguments for split_value should be 3",
+		},
+
+		{
+			s: `SELECT split_value(topic1, 3, 1) FROM tbl`,
+			stmt: nil,
+			err: "Expect string type for 2 parameter of function split_value.",
+		},
+
+		{
+			s: `SELECT split_value(topic1, "hello", -1) FROM tbl`,
+			stmt: nil,
+			err: "The index should not be a nagtive integer.",
 		},
 
 	}

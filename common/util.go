@@ -2,19 +2,18 @@ package common
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"github.com/dgraph-io/badger"
 	"github.com/go-yaml/yaml"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 )
 
 const (
 	logFileName = "stream.log"
-	LoggerKey = "logger"
 	etc_dir = "/etc/"
 	data_dir = "/data/"
 	log_dir = "/log/"
@@ -50,16 +49,6 @@ func (l *logRedirect) Debugf(f string, v ...interface{}) {
 	Log.Debug(fmt.Sprintf(f, v...))
 }
 
-func GetLogger(ctx context.Context) *logrus.Entry {
-	if ctx != nil{
-		l, ok := ctx.Value(LoggerKey).(*logrus.Entry)
-		if l != nil && ok {
-			return l
-		}
-	}
-	return Log.WithField("caller", "default")
-}
-
 func LoadConf(confName string) []byte {
 	confDir, err := GetConfLoc()
 	if err != nil {
@@ -79,7 +68,7 @@ type XStreamConf struct {
 	Port int `yaml:"port"`
 }
 
-var StreamConf = "xstream.yaml"
+var StreamConf = "kuiper.yaml"
 
 func init(){
 	Log = logrus.New()
@@ -94,7 +83,7 @@ func init(){
 	}
 
 	if c, ok := cfg["basic"]; !ok{
-		Log.Fatal("no basic config in xstream.yaml")
+		Log.Fatal("no basic config in kuiper.yaml")
 	}else{
 		Config = &c
 	}
@@ -239,6 +228,21 @@ func GetLoc(subdir string)(string, error) {
 	}
 
 	return "", fmt.Errorf("conf dir not found")
+}
+
+func GetAndCreateDataLoc(dir string) (string, error) {
+	dataDir, err := GetDataLoc()
+	if err != nil {
+		return "", err
+	}
+	d := path.Join(path.Dir(dataDir), dir)
+	if _, err := os.Stat(d); os.IsNotExist(err) {
+		err = os.MkdirAll(d, 0755)
+		if err != nil {
+			return "", err
+		}
+	}
+	return d, nil
 }
 
 //Time related. For Mock

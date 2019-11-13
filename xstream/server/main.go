@@ -5,6 +5,7 @@ import (
 	"engine/common"
 	"engine/xsql/processors"
 	"engine/xstream"
+	"engine/xstream/api"
 	"engine/xstream/sinks"
 	"fmt"
 	"net"
@@ -28,7 +29,7 @@ var processor *processors.RuleProcessor
 
 type Server int
 
-var QUERY_RULE_ID string = "internal-xstream_query_rule"
+var QUERY_RULE_ID = "internal-xstream_query_rule"
 func (t *Server) CreateQuery(sql string, reply *string) error {
 	if _, ok := registry[QUERY_RULE_ID]; ok {
 		stopQuery()
@@ -105,7 +106,7 @@ func (t *Server) CreateRule(rule *common.Rule, reply *string) error{
 	return nil
 }
 
-func (t *Server) createRuleState(rule *xstream.Rule) (*RuleState, error){
+func (t *Server) createRuleState(rule *api.Rule) (*RuleState, error){
 	if tp, err := processor.ExecInitRule(rule); err != nil{
 		return nil, err
 	}else{
@@ -300,7 +301,7 @@ func main() {
 	if e != nil {
 		log.Fatal("Listen error: ", e)
 	}
-	msg := fmt.Sprintf("Serving Rule server on port %d", common.Config.Port)
+	msg := fmt.Sprintf("Serving Kuiper server on port %d", common.Config.Port)
 	log.Info(msg)
 	fmt.Println(msg)
 	// Start accept incoming HTTP connections

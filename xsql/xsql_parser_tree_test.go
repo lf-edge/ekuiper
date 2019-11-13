@@ -20,7 +20,7 @@ func TestParser_ParseTree(t *testing.T) {
 			stmt: &StreamStmt{
 				Name: StreamName("demo"),
 				StreamFields: []StreamField{
-					StreamField{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
+					{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
 				},
 				Options: map[string]string{
 					"DATASOURCE" : "users",

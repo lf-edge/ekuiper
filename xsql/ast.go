@@ -529,14 +529,35 @@ type Event interface {
 	IsWatermark() bool
 }
 
+type Metadata map[string]interface{}
+
 type Tuple struct {
 	Emitter   string
 	Message   Message
 	Timestamp int64
+	Metadata  Metadata
+}
+
+// Value returns the value for a key in the Message.
+func (m Metadata) Value(key string) (interface{}, bool) {
+	key = strings.ToLower(key)
+	if keys := strings.Split(key, "."); len(keys) == 1 {
+		v, ok := m[key]
+		return v, ok
+	} else if len(keys) == 2 {
+		v, ok := m[keys[1]]
+		return v, ok
+	}
+	common.Log.Println("Invalid key: " + key + ", expect source.field or field.")
+	return nil, false
 }
 
 func (t *Tuple) Value(key string) (interface{}, bool) {
-	return t.Message.Value(key)
+	if v, ok := t.Message.Value(key); ok {
+		return v, ok
+	} else {
+		return t.Metadata.Value(key)
+	}
 }
 
 func (t *Tuple) All(stream string) (interface{}, bool) {
@@ -550,6 +571,11 @@ func (t *Tuple) AggregateEval(expr Expr) []interface{} {
 func (t *Tuple) GetTimestamp() int64 {
 	return t.Timestamp
 }
+
+func (t *Tuple) GetMetadata() Metadata {
+	return t.Metadata
+}
+
 
 func (t *Tuple) IsWatermark() bool {
 	return false
@@ -954,7 +980,6 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 	default:
 		return nil
 	}
-	return nil
 }
 
 
@@ -1486,8 +1511,8 @@ func toFloat64(para interface{}) float64 {
 	return 0
 }
 
-func IsAggStatement(node Node) (bool) {
-	var r bool = false
+func IsAggStatement(node Node) bool {
+	var r = false
 	WalkFunc(node, func(n Node) {
 		if f, ok := n.(*Call); ok {
 			fn := strings.ToLower(f.Name)
@@ -1502,6 +1527,52 @@ func IsAggStatement(node Node) (bool) {
 				return
 			}
 		}
+	})
+	return r
+}
+func HasAggFuncs(node Node) bool {
+	if node == nil{
+		return false
+	}
+	var r bool = false
+	WalkFunc(node, func(n Node) {
+		if f, ok := n.(*Call); ok {
+			fn := strings.ToLower(f.Name)
+			if _, ok1 := aggFuncMap[fn]; ok1 {
+				r = true
+				return
+			}
+		}
 	});
 	return r
 }
+
+func HasNoAggFuncs(node Node) bool {
+	if node == nil{
+		return false
+	}
+	var r bool = false
+	WalkFunc(node, func(n Node) {
+		if f, ok := n.(*Call); ok {
+			fn := strings.ToLower(f.Name)
+			if _, ok1 := mathFuncMap[fn]; ok1 {
+				r = true
+				return
+			} else if _, ok1 := strFuncMap[fn]; ok1 {
+				r = true
+				return
+			} else if _, ok1 := convFuncMap[fn]; ok1 {
+				r = true
+				return
+			} else if _, ok1 := hashFuncMap[fn]; ok1 {
+				r = true
+				return
+			} else if _, ok1 := otherFuncMap[fn]; ok1 {
+				r = true
+				return
+			}
+		}
+	});
+	return r
+}
+

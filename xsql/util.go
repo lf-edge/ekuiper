@@ -49,7 +49,7 @@ func GetStreams(stmt *SelectStatement) (result []string){
 	return
 }
 
-func LowercaseKeyMap(m map[string]interface{}) (map[string]interface{}) {
+func LowercaseKeyMap(m map[string]interface{}) map[string]interface{} {
 	m1 := make(map[string]interface{})
 	for k, v := range m {
 		if m2, ok := v.(map[string]interface{}); ok {
