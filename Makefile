@@ -7,39 +7,46 @@ GOPROXY ?= https://goproxy.io
 GOOS ?= ""
 GOARCH ?= ""
 
+VERSION := $(shell git describe --tags --always)
+PACKAGE_NAME := kuiper-$(VERSION)
+ifeq ($(GOOS), "")
+	PACKAGE_NAME := $(PACKAGE_NAME)-$(shell uname -s | tr "[A-Z]" "[a-z]")
+else
+	PACKAGE_NAME := $(PACKAGE_NAME)-$(GOOS)
+endif
+ifeq ($(GOARCH), "")
+	PACKAGE_NAME := $(PACKAGE_NAME)-$(shell uname -m)
+else
+	PACKAGE_NAME := $(PACKAGE_NAME)-$(GOARCH)
+endif
+
 .PHONY: build
 build:
-	@mkdir -p $(BUILD_PATH)/kuiper/bin
-	@mkdir -p $(BUILD_PATH)/kuiper/etc
-	@mkdir -p $(BUILD_PATH)/kuiper/data
-	@mkdir -p $(BUILD_PATH)/kuiper/plugins
-	@mkdir -p $(BUILD_PATH)/kuiper/log
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/etc
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/data
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/log
 
-	@cp -r etc/* $(BUILD_PATH)/kuiper/etc
+	@cp -r etc/* $(BUILD_PATH)/$(PACKAGE_NAME)/etc
 
 	@if [ ! -z $(GOOS) ] && [ ! -z $(GOARCH) ];then \
-		GO111MODULE=on GOPROXY=https://goproxy.io GOOS=$(GOOS) $(GOARCH)=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w" -o cli xstream/cli/main.go; \
-		GO111MODULE=on GOPROXY=https://goproxy.io GOOS=$(GOOS) $(GOARCH)=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w" -o server xstream/server/main.go; \
+		GO111MODULE=on GOPROXY=https://goproxy.io GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w" -o cli xstream/cli/main.go; \
+		GO111MODULE=on GOPROXY=https://goproxy.io GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w" -o server xstream/server/main.go; \
 	else \
 		GO111MODULE=on GOPROXY=https://goproxy.io CGO_ENABLED=0 go build -ldflags="-s -w" -o cli xstream/cli/main.go; \
 		GO111MODULE=on GOPROXY=https://goproxy.io CGO_ENABLED=0 go build -ldflags="-s -w" -o server xstream/server/main.go; \
 	fi
 	@if [ ! -z $$(which upx) ]; then upx ./cli; upx ./server; fi
-	@mv ./cli ./server $(BUILD_PATH)/kuiper/bin
+	@mv ./cli ./server $(BUILD_PATH)/$(PACKAGE_NAME)/bin
 	@echo "Build successfully"
 
 .PHONY: pkg
 pkg: build
 	@mkdir -p $(PACKAGES_PATH)
-	@if [ ! -z $(GOOS) ] && [ ! -z $(GOARCH) ];then \
-		package_name=kuiper_$(GOARCH); \
-	else \
-		package_name=kuiper; \
-	fi; \
-	cd $(BUILD_PATH); \
-	zip -rq $${package_name}.zip kuiper; \
-	tar -czf $${package_name}.tar.gz kuiper; \
-	mv $${package_name}.zip $${package_name}.tar.gz ../$(PACKAGES_PATH)
+	@cd $(BUILD_PATH) && zip -rq $(PACKAGE_NAME).zip $(PACKAGE_NAME)
+	@cd $(BUILD_PATH) && tar -czf $(PACKAGE_NAME).tar.gz $(PACKAGE_NAME)
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME).zip $(BUILD_PATH)/$(PACKAGE_NAME).tar.gz $(PACKAGES_PATH)
 	@echo "Package build success"
 
 .PHONY: clean
