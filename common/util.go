@@ -272,6 +272,16 @@ func GetTimer(duration int) Timer {
 	}
 }
 
+func ProcessPath(p string) (string, error) {
+	if abs, err := filepath.Abs(p); err != nil {
+		return "", nil
+	} else {
+		if _, err := os.Stat(abs); os.IsNotExist(err) {
+			return "", err;
+		}
+		return abs, nil
+	}
+}
 
 /****** For Test Only ********/
 func GetMockTicker() *MockTicker{

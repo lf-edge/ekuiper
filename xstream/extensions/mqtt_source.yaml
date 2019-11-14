@@ -1,13 +1,15 @@
 #Global MQTT configurations
 default:
   qos: 1
-  sharedsubscription: true
+  sharedSubscription: true
   servers: [tcp://127.0.0.1:1883]
-  clientid: xstream_client
-  #TODO: Other global configurations
+  #username: user1
+  #password: password
+  #certificationPath: /var/kuiper/xyz-certificate.pem
+  #privateKeyPath: /var/kuiper/xyz-private.pem.key
 
 
 #Override the global configurations
 demo_conf: #Conf_key
   qos: 0
-  servers: [tls://10.211.55.6:1883, tcp://127.0.0.1]
+  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]

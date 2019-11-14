@@ -6,15 +6,19 @@ Kuiper provides built-in support for MQTT source stream, which can subscribe the
 #Global MQTT configurations
 default:
   qos: 1
-  sharedsubscription: true
+  sharedSubscription: true
   servers: [tcp://127.0.0.1:1883]
-  #TODO: Other global configurations
+  #username: user1
+  #password: password
+  #certificationPath: /var/kuiper/xyz-certificate.pem
+  #privateKeyPath: /var/kuiper/xyz-private.pem.key
 
 
 #Override the global configurations
-demo: #Conf_key
+demo_conf: #Conf_key
   qos: 0
-  servers: [tcp://10.211.55.6:1883]
+  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
+
 ```
 
 ## Global MQTT configurations
@@ -25,13 +29,29 @@ Use can specify the global MQTT settings here. The configuration items specified
 
 The default subscription QoS level.
 
-### sharedsubscription
+### sharedSubscription
 
-Whether use the shared subscription mode or not. If using the shared subscription mode, then if there are multiple Kuiper process can be load balanced.
+Whether use the shared subscription mode or not. If using the shared subscription mode, then there are multiple Kuiper process can be load balanced.
 
 ### servers
 
 The server list for MQTT message broker. Currently, only ``ONE`` server can be specified.
+
+### username
+
+The username for MQTT connection. The configuration will not be used if ``certificationPath`` or ``privateKeyPath`` is specified.
+
+### password
+
+The password for MQTT connection. The configuration will not be used if ``certificationPath`` or ``privateKeyPath`` is specified.
+
+### certificationPath
+
+The location of certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the ``server`` command. For example, if you run ``bin/server`` from ``/var/kuiper``, then the base path is ``/var/kuiper``; If you run ``./server`` from ``/var/kuiper/bin``, then the base path is ``/var/kuiper/bin``.  Such as  ``d3807d9fa5-certificate.pem``.
+
+### privateKeyPath
+
+The location of private key path. It can be an absolute path, or a relative path.  For more detailed information, please refer to ``certificationPath``. Such as ``d3807d9fa5-private.pem.key``.
 
 ## Override the default settings
 
