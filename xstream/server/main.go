@@ -36,13 +36,13 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 	}
 	tp, err := processors.NewRuleProcessor(path.Dir(dataDir)).ExecQuery(QUERY_RULE_ID, sql)
 	if err != nil {
-		msg := fmt.Sprintf("failed to create query: %s.", err)
+		msg := fmt.Sprintf("Failed to create query: %s.", err)
 		log.Println(msg)
 		return fmt.Errorf(msg)
 	} else {
 		rs := &RuleState{Name: QUERY_RULE_ID, Topology: tp, Triggered: true}
 		registry[QUERY_RULE_ID] = rs
-		msg := fmt.Sprintf("query is submit successfully.")
+		msg := fmt.Sprintf("Query was submit successfully.")
 		log.Println(msg)
 		*reply = fmt.Sprintf(msg)
 	}
@@ -77,8 +77,7 @@ func (t *Server) GetQueryResult(qid string, reply *string) error {
 func (t *Server) Stream(stream string, reply *string) error{
 	content, err := processors.NewStreamProcessor(stream, path.Join(path.Dir(dataDir), "stream")).Exec()
 	if err != nil {
-		fmt.Printf("stream command error: %s\n", err)
-		return err
+		return fmt.Errorf("Stream command error: %s", err)
 	} else {
 		for _, c := range content{
 			*reply = *reply + fmt.Sprintln(c)
@@ -90,9 +89,9 @@ func (t *Server) Stream(stream string, reply *string) error{
 func (t *Server) CreateRule(rule *common.Rule, reply *string) error{
 	r, err := processor.ExecCreate(rule.Name, rule.Json)
 	if err != nil {
-		return fmt.Errorf("create rule error : %s\n", err)
+		return fmt.Errorf("Create rule error : %s.", err)
 	} else {
-		*reply = fmt.Sprintf("rule %s created", rule.Name)
+		*reply = fmt.Sprintf("Rule %s was created.", rule.Name)
 	}
 	//Start the rule
 	rs, err := t.createRuleState(r)
@@ -123,7 +122,7 @@ func (t *Server) createRuleState(rule *api.Rule) (*RuleState, error){
 func (t *Server) GetStatusRule(name string, reply *string) error{
 	if rs, ok := registry[name]; ok{
 		if !rs.Triggered {
-			*reply = "stopped: canceled manually"
+			*reply = "Stopped: canceled manually."
 			return nil
 		}
 		c := (*rs.Topology).GetContext()
@@ -131,19 +130,19 @@ func (t *Server) GetStatusRule(name string, reply *string) error{
 			err := c.Err()
 			switch err{
 			case nil:
-				*reply = "running"
+				*reply = "Running\n"
 			case context.Canceled:
-				*reply = "stopped: canceled by error"
+				*reply = "Stopped: canceled by error."
 			case context.DeadlineExceeded:
-				*reply = "stopped: deadline exceed"
+				*reply = "Stopped: deadline exceed."
 			default:
-				*reply = "stopped: unknown reason"
+				*reply = "Stopped: unknown reason."
 			}
 		}else{
-			*reply = "stopped: no context found"
+			*reply = "Stopped: no context found."
 		}
 	}else{
-		return fmt.Errorf("rule %s not found", name)
+		return fmt.Errorf("Rule %s is not found", name)
 	}
 	return nil
 }
@@ -165,7 +164,7 @@ func (t *Server) StartRule(name string, reply *string) error{
 	if err != nil{
 		return err
 	}
-	*reply = fmt.Sprintf("rule %s started", name)
+	*reply = fmt.Sprintf("Rule %s was started", name)
 	return nil
 }
 
@@ -186,9 +185,9 @@ func (t *Server) StopRule(name string, reply *string) error{
 	if rs, ok := registry[name]; ok{
 		(*rs.Topology).Cancel()
 		rs.Triggered = false
-		*reply = fmt.Sprintf("rule %s stopped", name)
+		*reply = fmt.Sprintf("Rule %s was stopped.", name)
 	}else{
-		*reply = fmt.Sprintf("rule %s not found", name)
+		*reply = fmt.Sprintf("Rule %s was not found.", name)
 	}
 	return nil
 }
@@ -202,14 +201,14 @@ func (t *Server) RestartRule(name string, reply *string) error{
 	if err != nil{
 		return err
 	}
-	*reply = fmt.Sprintf("rule %s restarted", name)
+	*reply = fmt.Sprintf("Rule %s was restarted.", name)
 	return nil
 }
 
 func (t *Server) DescRule(name string, reply *string) error{
 	r, err := processor.ExecDesc(name)
 	if err != nil {
-		return fmt.Errorf("desc rule error : %s\n", err)
+		return fmt.Errorf("Desc rule error : %s.", err)
 	} else {
 		*reply = r
 	}
@@ -219,7 +218,7 @@ func (t *Server) DescRule(name string, reply *string) error{
 func (t *Server) ShowRules(_ int, reply *string) error{
 	r, err := processor.ExecShow()
 	if err != nil {
-		return fmt.Errorf("show rule error : %s\n", err)
+		return fmt.Errorf("Show rule error : %s.", err)
 	} else {
 		*reply = r
 	}
@@ -229,7 +228,7 @@ func (t *Server) ShowRules(_ int, reply *string) error{
 func (t *Server) DropRule(name string, reply *string) error{
 	r, err := processor.ExecDrop(name)
 	if err != nil {
-		return fmt.Errorf("drop rule error : %s\n", err)
+		return fmt.Errorf("Drop rule error : %s.", err)
 	} else {
 		err := t.StopRule(name, reply)
 		if err != nil{
@@ -301,9 +300,9 @@ func main() {
 	if e != nil {
 		log.Fatal("Listen error: ", e)
 	}
-	msg := fmt.Sprintf("Serving Kuiper server on port %d", common.Config.Port)
+	msg := fmt.Sprintf("Serving kuiper on port %d... \n", common.Config.Port)
 	log.Info(msg)
-	fmt.Println(msg)
+	fmt.Printf(msg)
 	// Start accept incoming HTTP connections
 	err = http.Serve(listener, nil)
 	if err != nil {

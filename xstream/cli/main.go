@@ -21,7 +21,7 @@ type clientConf struct {
 
 var clientYaml = "client.yaml"
 
-func streamProcess(client *rpc.Client, args string) error {
+func streamProcess(client *rpc.Client, args string)  {
 	var reply string
 	if args == ""{
 		args = strings.Join(os.Args[1:], " ")
@@ -29,11 +29,9 @@ func streamProcess(client *rpc.Client, args string) error {
 	err := client.Call("Server.Stream", args, &reply)
 	if err != nil{
 		fmt.Println(err)
-		return err
 	}else{
 		fmt.Println(reply)
 	}
-	return nil
 }
 
 func main() {
@@ -65,7 +63,7 @@ func main() {
 		}
 	}
 
-	fmt.Printf("Connecting to %s:%d \n", config.Host, config.Port)
+	fmt.Printf("Connecting to %s:%d... \n", config.Host, config.Port)
 	// Create a TCP connection to localhost on port 1234
 	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", config.Host, config.Port))
 	if err != nil {
@@ -139,19 +137,21 @@ func main() {
 						sfile := c.String("file")
 						if sfile != "" {
 							if _, err := os.Stat(c.String("file")); os.IsNotExist(err) {
-								fmt.Printf("The specified stream defintion file %s does not existed.", sfile)
+								fmt.Printf("The specified stream defintion file %s does not existed.\n", sfile)
 								return nil
 							}
-							fmt.Printf("Creating a new stream from file %s", sfile)
+							fmt.Printf("Creating a new stream from file %s.\n", sfile)
 							if stream, err := ioutil.ReadFile(sfile); err != nil {
-								fmt.Printf("Failed to read from stream definition file %s", sfile)
+								fmt.Printf("Failed to read from stream definition file %s.\n", sfile)
 								return nil
 							} else {
 								args := strings.Join([]string{"CREATE STREAM ", string(stream)}, " ")
-								return streamProcess(client, args)
+								streamProcess(client, args)
+								return nil
 							}
 						} else {
-							return streamProcess(client, "")
+							streamProcess(client, "")
+							return nil
 						}
 					},
 				},
@@ -169,12 +169,12 @@ func main() {
 						sfile := c.String("file")
 						if sfile != "" {
 							if _, err := os.Stat(c.String("file")); os.IsNotExist(err) {
-								fmt.Printf("The specified rule defenition file %s does not existed.", sfile)
+								fmt.Printf("The specified rule defenition file %s is not existed.\n", sfile)
 								return nil
 							}
-							fmt.Printf("Creating a new rule from file %s", sfile)
+							fmt.Printf("Creating a new rule from file %s.\n", sfile)
 							if rule, err := ioutil.ReadFile(sfile); err != nil {
-								fmt.Printf("Failed to read from rule definition file %s", sfile)
+								fmt.Printf("Failed to read from rule definition file %s.\n", sfile)
 								return nil
 							} else {
 								if len(c.Args()) != 1 {
@@ -224,7 +224,8 @@ func main() {
 					Usage: "describe stream $stream_name",
 					//Flags: nflag,
 					Action: func(c *cli.Context) error {
-						return streamProcess(client, "")
+						streamProcess(client, "")
+						return nil
 					},
 				},
 				{
@@ -259,7 +260,8 @@ func main() {
 					Usage: "drop stream $stream_name",
 					//Flags: nflag,
 					Action: func(c *cli.Context) error {
-						return streamProcess(client, "")
+						streamProcess(client, "")
+						return nil
 					},
 				},
 				{
@@ -295,7 +297,8 @@ func main() {
 					Name:  "streams",
 					Usage: "show streams",
 					Action: func(c *cli.Context) error {
-						return streamProcess(client, "")
+						streamProcess(client, "")
+						return nil
 					},
 				},
 				{
