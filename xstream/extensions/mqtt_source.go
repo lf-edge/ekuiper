@@ -1,6 +1,7 @@
 package extensions
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"engine/common"
 	"engine/xsql"
@@ -21,6 +22,8 @@ type MQTTSource struct {
 	pVersion uint
 	uName 	 string
 	password string
+	certPath string
+	pkeyPath string
 
 	schema   map[string]interface{}
 	conn MQTT.Client
@@ -29,12 +32,14 @@ type MQTTSource struct {
 
 type MQTTConfig struct {
 	Qos string `yaml:"qos"`
-	Sharedsubscription string `yaml:"sharedsubscription"`
+	Sharedsubscription string `yaml:"sharedSubscription"`
 	Servers []string `yaml:"servers"`
 	Clientid string `yaml:"clientid"`
 	PVersion string `yaml:"protocolVersion"`
 	Uname string `yaml:"username"`
 	Password string `yaml:"password"`
+	Certification string `yaml:"certificationPath"`
+	PrivateKPath string `yaml:"privateKeyPath"`
 }
 
 const confName string = "mqtt_source.yaml"
@@ -71,15 +76,36 @@ func NewMQTTSource(topic string, confKey string) (*MQTTSource, error) {
 		if pv == "3.1.1" {
 			pversion = 4
 		}
+	} else {
+		pv = cfg["default"].PVersion
+		if pv == "3.1.1" {
+			pversion = 4
+		}
 	}
 	ms.pVersion = pversion
 
 	if uname := cfg[confKey].Uname; uname != "" {
 		ms.uName = strings.Trim(uname, " ")
+	} else {
+		ms.uName = cfg["default"].Uname
 	}
 
 	if password := cfg[confKey].Password; password != "" {
 		ms.password = strings.Trim(password, " ")
+	} else {
+		ms.password = cfg["default"].Password
+	}
+
+	if cpath := cfg[confKey].Certification; cpath != "" {
+		ms.certPath = cpath
+	} else {
+		ms.certPath = cfg["default"].Certification
+	}
+
+	if pkpath := cfg[confKey].PrivateKPath; pkpath != "" {
+		ms.pkeyPath = pkpath
+	} else {
+		ms.pkeyPath = cfg["default"].PrivateKPath
 	}
 
 	return ms, nil
@@ -88,6 +114,7 @@ func NewMQTTSource(topic string, confKey string) (*MQTTSource, error) {
 func (ms *MQTTSource) WithSchema(schema string) *MQTTSource {
 	return ms
 }
+
 
 func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error {
 	log := ctx.GetLogger()
@@ -102,12 +129,33 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 	} else {
 		opts.SetClientID(ms.clientid)
 	}
-	if ms.uName != "" {
-		opts.SetUsername(ms.uName)
-	}
 
-	if ms.password != "" {
-		opts.SetPassword(ms.password)
+	if ms.certPath != "" || ms.pkeyPath != "" {
+		log.Printf("Connect MQTT broker with certification and keys.")
+		if cp, err := common.ProcessPath(ms.certPath); err == nil {
+			log.Printf("The certification file is %s.", cp)
+			if kp, err1 := common.ProcessPath(ms.pkeyPath); err1 == nil {
+				log.Printf("The private key file is %s.", kp)
+				if cer, err2 := tls.LoadX509KeyPair(cp, kp); err2 != nil {
+					return err2
+				} else {
+					opts.SetTLSConfig(&tls.Config{Certificates: []tls.Certificate{cer}})
+				}
+			} else {
+				return err1
+			}
+		} else {
+			return err
+		}
+	} else {
+		log.Printf("Connect MQTT broker with username and password.")
+		if ms.uName != "" {
+			opts = opts.SetUsername(ms.uName)
+		}
+
+		if ms.password != "" {
+			opts = opts.SetPassword(ms.password)
+		}
 	}
 
 	h := func(client MQTT.Client, msg MQTT.Message) {

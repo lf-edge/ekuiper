@@ -2,12 +2,12 @@ package sinks
 
 import (
 	"crypto/tls"
+	"engine/common"
 	"engine/xstream/api"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
-	"os"
-	"path/filepath"
+	"log"
 	"strings"
 )
 
@@ -46,7 +46,7 @@ func NewMqttSink(properties interface{}) (*MQTTSink, error) {
 		}
 	}
 	var pVersion uint = 3
-	pVersionStr, ok := ps["protocol_version"];
+	pVersionStr, ok := ps["protocolVersion"];
 	if ok {
 		v, _ := pVersionStr.(string)
 		if v == "3.1" {
@@ -77,14 +77,14 @@ func NewMqttSink(properties interface{}) (*MQTTSink, error) {
 	}
 
 	certPath := ""
-	if cp, ok := ps["certification_path"]; ok {
+	if cp, ok := ps["certificationPath"]; ok {
 		if v, ok := cp.(string); ok {
 			certPath = v
 		}
 	}
 
 	pKeyPath := ""
-	if pk, ok := ps["private_key_path"]; ok {
+	if pk, ok := ps["privateKeyPath"]; ok {
 		if v, ok := pk.(string); ok {
 			pKeyPath = v
 		}
@@ -94,26 +94,16 @@ func NewMqttSink(properties interface{}) (*MQTTSink, error) {
 	return ms, nil
 }
 
-func processPath(p string) (string, error) {
-	if abs, err := filepath.Abs(p); err != nil {
-		return "", nil
-	} else {
-		if _, err := os.Stat(abs); os.IsNotExist(err) {
-			return "", err;
-		}
-		return abs, nil
-	}
-}
+
 
 func (ms *MQTTSink) Open(ctx api.StreamContext) error {
-	log := ctx.GetLogger()
 	log.Printf("Opening mqtt sink for rule %s.", ctx.GetRuleId())
 	opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetClientID(ms.clientid)
 
 	if ms.certPath != "" || ms.pkeyPath != "" {
 		log.Printf("Connect MQTT broker with certification and keys.")
-		if cp, err := processPath(ms.certPath); err == nil {
-			if kp, err1 := processPath(ms.pkeyPath); err1 == nil {
+		if cp, err := common.ProcessPath(ms.certPath); err == nil {
+			if kp, err1 := common.ProcessPath(ms.pkeyPath); err1 == nil {
 				if cer, err2 := tls.LoadX509KeyPair(cp, kp); err2 != nil {
 					return err2
 				} else {
