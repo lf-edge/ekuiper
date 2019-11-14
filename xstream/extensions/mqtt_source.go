@@ -147,6 +147,8 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 
 func (ms *MQTTSource) Close(ctx api.StreamContext) error{
 	ctx.GetLogger().Println("Mqtt Source Done")
-	ms.conn.Disconnect(5000)
+	if ms.conn != nil && ms.conn.IsConnected() {
+		ms.conn.Disconnect(5000)
+	}
 	return nil
 }

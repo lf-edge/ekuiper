@@ -108,7 +108,9 @@ func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
 func (ms *MQTTSink) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing mqtt sink")
-	ms.conn.Disconnect(5000)
+	if ms.conn != nil && ms.conn.IsConnected() {
+		ms.conn.Disconnect(5000)
+	}
 	return nil
 }
 
