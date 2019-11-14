@@ -7,7 +7,6 @@ import (
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
-	"log"
 	"strings"
 )
 
@@ -97,11 +96,12 @@ func NewMqttSink(properties interface{}) (*MQTTSink, error) {
 
 
 func (ms *MQTTSink) Open(ctx api.StreamContext) error {
-	log.Printf("Opening mqtt sink for rule %s.", ctx.GetRuleId())
+	log := ctx.GetLogger()
+	log.Infof("Opening mqtt sink for rule %s.", ctx.GetRuleId())
 	opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetClientID(ms.clientid)
 
 	if ms.certPath != "" || ms.pkeyPath != "" {
-		log.Printf("Connect MQTT broker with certification and keys.")
+		log.Infof("Connect MQTT broker with certification and keys.")
 		if cp, err := common.ProcessPath(ms.certPath); err == nil {
 			if kp, err1 := common.ProcessPath(ms.pkeyPath); err1 == nil {
 				if cer, err2 := tls.LoadX509KeyPair(cp, kp); err2 != nil {
@@ -116,7 +116,7 @@ func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 			return err
 		}
 	} else {
-		log.Printf("Connect MQTT broker with username and password.")
+		log.Infof("Connect MQTT broker with username and password.")
 		if ms.uName != "" {
 			opts = opts.SetUsername(ms.uName)
 		}
@@ -130,7 +130,7 @@ func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("Found error: %s", token.Error())
 	}
-	log.Printf("The connection to server %s was established successfully", ms.srv)
+	log.Infof("The connection to server %s was established successfully", ms.srv)
 	ms.conn = c
 	return nil
 }

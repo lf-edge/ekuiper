@@ -131,11 +131,11 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 	}
 
 	if ms.certPath != "" || ms.pkeyPath != "" {
-		log.Printf("Connect MQTT broker with certification and keys.")
+		log.Infof("Connect MQTT broker with certification and keys.")
 		if cp, err := common.ProcessPath(ms.certPath); err == nil {
-			log.Printf("The certification file is %s.", cp)
+			log.Infof("The certification file is %s.", cp)
 			if kp, err1 := common.ProcessPath(ms.pkeyPath); err1 == nil {
-				log.Printf("The private key file is %s.", kp)
+				log.Infof("The private key file is %s.", kp)
 				if cer, err2 := tls.LoadX509KeyPair(cp, kp); err2 != nil {
 					return err2
 				} else {
@@ -148,7 +148,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 			return err
 		}
 	} else {
-		log.Printf("Connect MQTT broker with username and password.")
+		log.Infof("Connect MQTT broker with username and password.")
 		if ms.uName != "" {
 			opts = opts.SetUsername(ms.uName)
 		}
