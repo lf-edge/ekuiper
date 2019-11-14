@@ -356,7 +356,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			for i, s := range streamsFromStmt {
 				streamStmt, err := GetStream(db, s)
 				if err != nil {
-					return nil, nil, err
+					return nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
 				}
 				pp, err := plans.NewPreprocessor(streamStmt, selectStmt.Fields, isEventTime)
 				if err != nil{
