@@ -270,6 +270,8 @@ func init(){
 	}()
 }
 
+var Version string = "unknown"
+
 func main() {
 	server := new(Server)
 	//Start rules
@@ -300,7 +302,7 @@ func main() {
 	if e != nil {
 		log.Fatal("Listen error: ", e)
 	}
-	msg := fmt.Sprintf("Serving kuiper on port %d... \n", common.Config.Port)
+	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d... \n", Version, common.Config.Port)
 	log.Info(msg)
 	fmt.Printf(msg)
 	// Start accept incoming HTTP connections
