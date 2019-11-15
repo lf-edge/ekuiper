@@ -34,9 +34,11 @@ func streamProcess(client *rpc.Client, args string)  {
 	}
 }
 
+var Version string = "unknown"
+
 func main() {
 	app := cli.NewApp()
-	app.Version = "0.0.3"
+	app.Version = Version
 
 	//nflag := []cli.Flag { cli.StringFlag{
 	//		Name: "name, n",
