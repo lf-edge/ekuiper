@@ -150,7 +150,7 @@ my_stream, iot_stream
 
 ### A simple CLI
 
-A simple command line tool is implemented in ``stream/cli/main.go``. To build the command line tool, run command ``go install -x engine/kuiper/cli``.
+A simple command line tool is implemented in ``stream/cli/main.go``. 
 
 #### Run sql to manage streams
 
@@ -158,7 +158,7 @@ Run `cli stream` command, after `kuiper >` prompt shown, enter stream related sq
 
 ```bash
 cli stream
-kuiper > CREATE STREAM sname (count bigint) WITH (source="users", FORMAT="AVRO", KEY="USERID"
+kuiper > CREATE STREAM sname (count bigint) WITH (source="users", FORMAT="AVRO", KEY="USERID")
 kuiper > DESCRIBE STREAM sname
 ...
 ```

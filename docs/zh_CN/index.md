@@ -2,11 +2,11 @@
 
 
 
-Refer to the following topics for guidance on using the XStream.
+请参考以下主题，以获取有关使用Kuiper的指导。
 
-- [Install and operation](operation/overview.md)
-- [Command line interface tools - CLI](cli/overview.md)
-- [XStream SQL reference](sqls/overview.md)
-- [Rules](rules/overview.md)
-- [Extend XStream](extension/overview.md)
+- [安装与操作](operation/overview.md)
+- [命令行界面工具-CLI](cli/overview.md)
+- [Kuiper SQL参考](sqls/overview.md)
+- [规则](rules/overview.md)
+- [扩展Kuiper](extension/overview.md)
 
