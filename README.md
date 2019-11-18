@@ -10,9 +10,13 @@ A SQL based lightweight IoT analytics/streaming software running at resource con
 - RESTful APIs for rules management
 
 ## Document
+English
+- [Getting started](docs/en_US/getting_started.md) 
+- [Reference guide](docs/en_US/index.md) 
 
-- [Getting started](docs/en_US/getting_started.md)
-- [Reference guide](docs/en_US/index.md)
+中文
+- [入门教程](docs/zh_CN/getting_started.md) 
+- [参考指南](docs/zh_CN/index.md)
 
 ## Build from source code
 
