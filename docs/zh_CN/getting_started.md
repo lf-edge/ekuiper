@@ -2,7 +2,7 @@
 
 ## 下载和安装
 
-从https://github.com/emqx/kuiper/releases下载最新版本，并解压缩文件。
+从 https://github.com/emqx/kuiper/release 下载最新版本，并解压缩文件。
 
 ## 目录结构 
 
