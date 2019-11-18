@@ -1,0 +1,45 @@
+{
+  "plugins": [
+    "prism",
+    "-highlight",
+    "-sharing",
+    "simple-page-toc",
+    "anchors",
+    "copy-code-button",
+    "anchor-navigation-ex",
+    "cuav-chapters",
+    "local-pagefooter"
+  ],
+  "pluginsConfig": {
+    "prism": {
+      "lang": {
+        "shell": "bash"
+      }
+    },
+    "anchor-navigation-ex": {
+      "showLevel": false
+    },
+    "local-pagefooter": {
+      "copyright": "© Copyright 2016-2019, EMQ Technologies Co., Ltd.",
+      "islocal": true,
+      "modify_label": "The document reversion time: ",
+      "modify_format": "YYYY-MM-DD HH:mm:ss"
+    }
+  },
+  "styles": {
+    "website": "styles/website.css",
+    "ebook": "styles/ebook.css",
+    "pdf": "styles/pdf.css",
+    "mobi": "styles/mobi.css",
+    "epub": "styles/epub.css"
+  },
+  "title": "Kuiper",
+  "author": "EMQX Team",
+  "language": "zh",
+  "links": {
+    "sharing": {
+      "facebook": false,
+      "twitter": false
+    }
+  }
+}

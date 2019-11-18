@@ -18,6 +18,9 @@ log/*
 
 .git/
 .idea/
+.DS_Store
+_book
+node_modules/
 
 go.sum
 _build
