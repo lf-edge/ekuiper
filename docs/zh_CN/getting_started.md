@@ -61,7 +61,7 @@ default:
   servers: [tcp://127.0.0.1:1883]
 ```
 
-您可以使用cli show stream命令来查看是否创建了demo流。
+您可以使用``cli show streams`` 命令来查看是否创建了demo流。
 
 ### 通过查询工具测试流
 
