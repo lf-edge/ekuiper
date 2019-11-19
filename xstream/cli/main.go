@@ -45,7 +45,10 @@ func main() {
 	//		Usage: "the name of stream",
 	//	}}
 
-	b := common.LoadConf(clientYaml)
+	b, err := common.LoadConf(clientYaml)
+	if err != nil {
+		common.Log.Fatal(err)
+	}
 	var cfg map[string]clientConf
 	var config *clientConf
 	if err := yaml.Unmarshal(b, &cfg); err != nil {

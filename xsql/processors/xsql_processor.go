@@ -14,7 +14,9 @@ import (
 	"engine/xstream/sinks"
 	"fmt"
 	"github.com/dgraph-io/badger"
+	"github.com/go-yaml/yaml"
 	"path"
+	"plugin"
 	"strings"
 )
 
@@ -363,16 +365,16 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 					return nil, nil, err
 				}
 				if shouldCreateSource{
-					mqs, err := extensions.NewMQTTSource(streamStmt.Options["DATASOURCE"], streamStmt.Options["CONF_KEY"])
+					src, err := getSource(streamStmt)
 					if err != nil {
-						return nil, nil, err
+						return nil, nil, fmt.Errorf("fail to get source: %v", err)
 					}
-					node := nodes.NewSourceNode(string(streamStmt.Name), mqs)
+					node := nodes.NewSourceNode(s, src)
 					tp.AddSrc(node)
 					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s)
 					tp.AddOperator([]api.Emitter{node}, preprocessorOp)
 					inputs = append(inputs, preprocessorOp)
-				}else{
+				} else {
 					tp.AddSrc(sources[i])
 					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s)
 					tp.AddOperator([]api.Emitter{sources[i]}, preprocessorOp)
@@ -426,7 +428,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			}
 
 			if selectStmt.SortFields != nil {
-				orderOp := xstream.Transform(&plans.OrderPlan{SortFields:selectStmt.SortFields}, "order")
+				orderOp := xstream.Transform(&plans.OrderPlan{SortFields: selectStmt.SortFields}, "order")
 				tp.AddOperator(inputs, orderOp)
 				inputs = []api.Emitter{orderOp}
 			}
@@ -438,6 +440,49 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			}
 			return tp, inputs, nil
 		}
+	}
+}
+
+func getSource(streamStmt *xsql.StreamStmt) (api.Source, error) {
+	if t, ok := streamStmt.Options["TYPE"]; ok{
+		mod := "plugins/" + t + ".so"
+		plug, err := plugin.Open(mod)
+		if err != nil {
+			return nil, fmt.Errorf("cannot open %s: %v", mod, err)
+		}
+		nf, err := plug.Lookup(t)
+		if err != nil{
+			return nil, fmt.Errorf("cannot find symbol %s, please check if it is exported", t)
+		}
+		s, ok := nf.(api.Source)
+		if !ok {
+			return nil, fmt.Errorf("exported symbol %s is not type of api.Source", t)
+		}
+		conf, err := common.LoadConf(t + ".yaml")
+		props := make(map[string]interface{})
+		if err == nil{
+			cfg := make(map[string]map[string]interface{})
+			if err := yaml.Unmarshal(conf, &cfg); err != nil {
+				log.Warnf("fail to parse yaml for source %s. Return an empty configuration", t)
+			}else{
+				props, ok = cfg[streamStmt.Options["CONF_KEY"]]
+				if !ok {
+					log.Warnf("conf for conf_key %s not found, use default conf instead", streamStmt.Options["CONF_KEY"])
+					props = cfg["default"]
+				}
+			}
+		}else{
+			log.Warnf("config file %s.yaml is not loaded properly. Return an empty configuration", t)
+		}
+		s.Configure(streamStmt.Options["DATASOURCE"], props)
+		log.Tracef("Source %s created", t)
+		return s, nil
+	}else{
+		mqs, err := extensions.NewMQTTSource(streamStmt.Options["DATASOURCE"], streamStmt.Options["CONF_KEY"])
+		if err != nil {
+			return nil, err
+		}
+		return mqs, nil
 	}
 }
 

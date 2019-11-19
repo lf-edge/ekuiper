@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 )
 
 const (
@@ -49,18 +50,18 @@ func (l *logRedirect) Debugf(f string, v ...interface{}) {
 	Log.Debug(fmt.Sprintf(f, v...))
 }
 
-func LoadConf(confName string) []byte {
+func LoadConf(confName string) ([]byte, error) {
 	confDir, err := GetConfLoc()
 	if err != nil {
-		Log.Fatal(err)
+		return nil, err
 	}
 
 	file := confDir + confName
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
-		Log.Fatal(err)
+		return nil, err
 	}
-	return b
+	return b, nil
 }
 
 type XStreamConf struct {
@@ -76,7 +77,10 @@ func init(){
 		DisableColors: true,
 		FullTimestamp: true,
 	})
-	b := LoadConf(StreamConf)
+	b, err := LoadConf(StreamConf)
+	if err != nil {
+		Log.Fatal(err)
+	}
 	var cfg map[string]XStreamConf
 	if err := yaml.Unmarshal(b, &cfg); err != nil {
 		Log.Fatal(err)
@@ -269,6 +273,14 @@ func GetTimer(duration int) Timer {
 		return mockTimer
 	}else{
 		return NewDefaultTimer(duration)
+	}
+}
+
+func GetNowInMilli() int64{
+	if IsTesting {
+		return GetMockNow()
+	}else{
+		return TimeToUnixMilli(time.Now())
 	}
 }
 

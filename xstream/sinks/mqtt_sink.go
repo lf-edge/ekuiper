@@ -93,7 +93,9 @@ func NewMqttSink(properties interface{}) (*MQTTSink, error) {
 	return ms, nil
 }
 
-
+func (ms *MQTTSink) Configure(props map[string]interface{}) error {
+	return nil
+}
 
 func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 	log := ctx.GetLogger()

@@ -41,7 +41,7 @@ func (m *MockSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err e
 					timer.DoTick(d.Timestamp)
 				}
 			}
-			consume(d)
+			consume(d.Message, nil)
 			if m.isEventTime{
 				time.Sleep(1000 * time.Millisecond) //Let window run to make sure timers are set
 			}else{
@@ -59,5 +59,9 @@ func (m *MockSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err e
 }
 
 func (m *MockSource) Close(ctx api.StreamContext) error{
+	return nil
+}
+
+func (m *MockSource) Configure(topic string, props map[string]interface{}) error {
 	return nil
 }

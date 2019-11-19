@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type MQTTSource struct {
@@ -45,7 +44,10 @@ type MQTTConfig struct {
 const confName string = "mqtt_source.yaml"
 
 func NewMQTTSource(topic string, confKey string) (*MQTTSource, error) {
-	b := common.LoadConf(confName)
+	b, err := common.LoadConf(confName)
+	if err != nil {
+		common.Log.Fatal(err)
+	}
 	var cfg map[string]MQTTConfig
 	if err := yaml.Unmarshal(b, &cfg); err != nil {
 		return nil, err
@@ -115,6 +117,9 @@ func (ms *MQTTSource) WithSchema(schema string) *MQTTSource {
 	return ms
 }
 
+func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) error {
+	return nil
+}
 
 func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error {
 	log := ctx.GetLogger()
@@ -173,9 +178,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 		meta := make(map[string]interface{})
 		meta[xsql.INTERNAL_MQTT_TOPIC_KEY] = msg.Topic()
 		meta[xsql.INTERNAL_MQTT_MSG_ID_KEY] = strconv.Itoa(int(msg.MessageID()))
-
-		tuple := &xsql.Tuple{Emitter: ms.tpc, Message:result, Timestamp: common.TimeToUnixMilli(time.Now()), Metadata:meta}
-		consume(tuple)
+		consume(result, meta)
 	}
 	//TODO error listener?
 	opts.SetDefaultPublishHandler(h)

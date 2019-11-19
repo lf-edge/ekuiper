@@ -25,6 +25,11 @@ func Func(f CollectorFunc) *FuncCollector {
 	return &FuncCollector{f: f}
 }
 
+func (c *FuncCollector) Configure(props map[string]interface{}) error{
+	//do nothing
+	return nil
+}
+
 // Open is the starting point that starts the collector
 func (c *FuncCollector) Open(ctx api.StreamContext) error {
 	log := ctx.GetLogger()

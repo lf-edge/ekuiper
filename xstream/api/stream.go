@@ -2,10 +2,11 @@ package api
 
 import (
 	"context"
+	"engine/xsql"
 	"github.com/sirupsen/logrus"
 )
 
-type ConsumeFunc func(data interface{})
+type ConsumeFunc func(xsql.Message, xsql.Metadata)
 
 type Closable interface {
 	Close(StreamContext) error
@@ -14,12 +15,14 @@ type Closable interface {
 type Source interface {
 	//Should be sync function for normal case. The container will run it in go func
 	Open(StreamContext, ConsumeFunc) error
+	Configure(string, map[string]interface{}) error
 	Closable
 }
 
 type Sink interface {
 	//Should be sync function for normal case. The container will run it in go func
 	Open(StreamContext) error
+	Configure(map[string]interface{}) error
 	Collect(StreamContext, interface{}) error
 	Closable
 }
