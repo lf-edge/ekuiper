@@ -13,13 +13,6 @@
     "pdf": "gitbook install && gitbook pdf . _book.pdf"
   },
   "dependencies": {
-    "gitbook-cli": "^2.3.2",
-    "gitbook-plugin-anchor-navigation-ex": "^1.0.14",
-    "gitbook-plugin-anchors": "^0.7.1",
-    "gitbook-plugin-copy-code-button": "^0.0.2",
-    "gitbook-plugin-cuav-chapters": "^1.0.3",
-    "gitbook-plugin-local-pagefooter": "^1.0.5",
-    "gitbook-plugin-prism": "^2.4.0",
-    "gitbook-plugin-simple-page-toc": "^0.1.2"
+    "gitbook-cli": "^2.3.2"
   }
 }
