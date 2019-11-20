@@ -1,0 +1,9 @@
+default:
+  interval: 1000
+  pattern:
+    count: 50
+
+ext:
+  interval: 5000
+  pattern:
+    count: 50

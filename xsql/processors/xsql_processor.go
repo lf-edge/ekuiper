@@ -218,19 +218,10 @@ func (p *RuleProcessor) ExecInitRule(rule *api.Rule) (*xstream.TopologyNew, erro
 	}else{
 		for _, m := range rule.Actions {
 			for name, action := range m {
-				switch name {
-				case "log":
-					log.Printf("Create log sink with %s.", action)
-					tp.AddSink(inputs, nodes.NewSinkNode("sink_log", sinks.NewLogSink()))
-				case "mqtt":
-					log.Printf("Create mqtt sink with %s.", action)
-					if ms, err := sinks.NewMqttSink(action); err != nil{
-						return nil, err
-					}else{
-						tp.AddSink(inputs, nodes.NewSinkNode("sink_mqtt", ms))
-					}
-				default:
-					return nil, fmt.Errorf("unsupported action: %s.", name)
+				if s, err := getSink(name, action); err != nil{
+					return nil, err
+				}else{
+					tp.AddSink(inputs, nodes.NewSinkNode("sink_" + name, s))
 				}
 			}
 		}
@@ -444,45 +435,89 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 }
 
 func getSource(streamStmt *xsql.StreamStmt) (api.Source, error) {
-	if t, ok := streamStmt.Options["TYPE"]; ok{
-		mod := "plugins/" + t + ".so"
-		plug, err := plugin.Open(mod)
+	t, ok := streamStmt.Options["TYPE"]
+	if !ok{
+		t = "mqtt"
+	}
+	switch t {
+	case "mqtt":
+		mqs, err := extensions.NewMQTTSource(streamStmt.Options["DATASOURCE"], streamStmt.Options["CONF_KEY"])
 		if err != nil {
-			return nil, fmt.Errorf("cannot open %s: %v", mod, err)
+			return nil, err
 		}
-		nf, err := plug.Lookup(t)
-		if err != nil{
-			return nil, fmt.Errorf("cannot find symbol %s, please check if it is exported", t)
+		log.Tracef("Source mqtt created")
+		return mqs, nil
+	default:
+		nf, err := getPlugin(t)
+		if err != nil {
+			return nil, err
 		}
 		s, ok := nf.(api.Source)
 		if !ok {
 			return nil, fmt.Errorf("exported symbol %s is not type of api.Source", t)
 		}
-		conf, err := common.LoadConf(t + ".yaml")
-		props := make(map[string]interface{})
-		if err == nil{
-			cfg := make(map[string]map[string]interface{})
-			if err := yaml.Unmarshal(conf, &cfg); err != nil {
-				log.Warnf("fail to parse yaml for source %s. Return an empty configuration", t)
-			}else{
-				props, ok = cfg[streamStmt.Options["CONF_KEY"]]
-				if !ok {
-					log.Warnf("conf for conf_key %s not found, use default conf instead", streamStmt.Options["CONF_KEY"])
-					props = cfg["default"]
-				}
-			}
-		}else{
-			log.Warnf("config file %s.yaml is not loaded properly. Return an empty configuration", t)
-		}
+		props := getConf(t, streamStmt.Options["CONF_KEY"])
 		s.Configure(streamStmt.Options["DATASOURCE"], props)
 		log.Tracef("Source %s created", t)
 		return s, nil
-	}else{
-		mqs, err := extensions.NewMQTTSource(streamStmt.Options["DATASOURCE"], streamStmt.Options["CONF_KEY"])
+	}
+}
+
+func getConf(t string, confkey string) map[string]interface{} {
+	conf, err := common.LoadConf(t + ".yaml")
+	props := make(map[string]interface{})
+	if err == nil {
+		cfg := make(map[string]map[string]interface{})
+		if err := yaml.Unmarshal(conf, &cfg); err != nil {
+			log.Warnf("fail to parse yaml for source %s. Return an empty configuration", t)
+		} else {
+			var ok bool
+			props, ok = cfg[confkey]
+			if !ok {
+				log.Warnf("conf for conf_key %s not found, use default conf instead", confkey)
+				props = cfg["default"]
+			}
+		}
+	} else {
+		log.Warnf("config file %s.yaml is not loaded properly. Return an empty configuration", t)
+	}
+	log.Debugf("get conf for %s with conf key %s: %v", t, confkey, props)
+	return props
+}
+
+func getPlugin(t string) (plugin.Symbol, error) {
+	mod := "plugins/" + t + ".so"
+	plug, err := plugin.Open(mod)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open %s: %v", mod, err)
+	}
+	nf, err := plug.Lookup(t)
+	if err != nil {
+		return nil, fmt.Errorf("cannot find symbol %s, please check if it is exported", t)
+	}
+	return nf, nil
+}
+
+func getSink(name string, action interface{}) (api.Sink, error) {
+	log.Tracef("trying to get sink %s with action %v", name, action)
+	switch name {
+	case "log":
+		return sinks.NewLogSink(), nil
+	case "mqtt":
+		return sinks.NewMqttSink(action)
+	default:
+		nf, err := getPlugin(name)
 		if err != nil {
 			return nil, err
 		}
-		return mqs, nil
+		s, ok := nf.(api.Sink)
+		if !ok {
+			return nil, fmt.Errorf("exported symbol %s is not type of api.Sink", name)
+		}
+		props := getConf(name, "default")
+		s.Configure(props)
+		log.Tracef("Sink %s created", name)
+		return s, nil
 	}
 }
 

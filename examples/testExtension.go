@@ -26,14 +26,26 @@ func main() {
 		panic(err)
 	}
 
-	sql := "SELECT count FROM ext where ext.count > 3"
-
-	tp, err := processors.NewRuleProcessor(BadgerDir).ExecQuery("$$test", sql)
+	rp := processors.NewRuleProcessor(BadgerDir)
+	rp.ExecDrop("$$test1")
+	rs, err := rp.ExecCreate("$$test1", "{\"sql\": \"SELECT count FROM ext where ext.count > 3\",\"actions\": [{\"MemorySink\":  {}}]}")
 	if err != nil {
-		msg := fmt.Sprintf("failed to create query: %s.", err)
+		msg := fmt.Sprintf("failed to create rule: %s.", err)
 		log.Printf(msg)
 	}
+
+	tp, err := rp.ExecInitRule(rs)
+	if err != nil{
+		log.Panicf("fail to init rule: %v", err)
+	}
+
+	go func() {
+		select {
+		case err := <-tp.Open():
+			log.Println(err)
+			tp.Cancel()
+		}
+	}()
 	time.Sleep(5000000 * time.Millisecond)
-	tp.Cancel()
 	log.Infof("exit main program")
 }
