@@ -11,12 +11,12 @@ A SQL based lightweight IoT analytics/streaming software running at resource con
 
 ## Document
 English
-- [Getting started](docs/en_US/getting_started.md) 
-- [Reference guide](docs/en_US/reference.md) 
+- [Getting started](https://docs.emqx.io/kuiper/en/getting_started.html) 
+- [Reference guide](https://docs.emqx.io/kuiper/en/reference.html) 
 
 中文
-- [入门教程](docs/zh_CN/getting_started.md) 
-- [参考指南](docs/zh_CN/reference.md)
+- [入门教程](./getting_started.md) 
+- [参考指南](./index.md)
 
 ## Build from source code
 
