@@ -2,6 +2,7 @@ package common
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/dgraph-io/badger"
 	"github.com/go-yaml/yaml"
@@ -334,4 +335,19 @@ func ToInt(input interface{}) (int, error){
 	default:
 		return 0, fmt.Errorf("unsupported type %T of %[1]v", input)
 	}
+}
+
+/*
+*   Convert a map into a struct. The output parameter must be a pointer to a struct
+*   The struct can have the json meta data
+ */
+func MapToStruct(input map[string]interface{}, output interface{}) error{
+	// convert map to json
+	jsonString, err := json.Marshal(input)
+	if err != nil{
+		return err
+	}
+
+	// convert json to struct
+	return json.Unmarshal(jsonString, output)
 }

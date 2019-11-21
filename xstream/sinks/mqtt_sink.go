@@ -23,23 +23,19 @@ type MQTTSink struct {
 	conn MQTT.Client
 }
 
-func NewMqttSink(properties interface{}) (*MQTTSink, error) {
-	ps, ok := properties.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("expect map[string]interface{} type for the mqtt sink properties")
-	}
+func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 	srv, ok := ps["server"]
 	if !ok {
-		return nil, fmt.Errorf("mqtt sink is missing property server")
+		return fmt.Errorf("mqtt sink is missing property server")
 	}
 	tpc, ok := ps["topic"]
 	if !ok {
-		return nil, fmt.Errorf("mqtt sink is missing property topic")
+		return fmt.Errorf("mqtt sink is missing property topic")
 	}
 	clientid, ok := ps["clientId"]
 	if !ok{
 		if uuid, err := uuid.NewUUID(); err != nil {
-			return nil, fmt.Errorf("mqtt sink fails to get uuid, the error is %s", err)
+			return fmt.Errorf("mqtt sink fails to get uuid, the error is %s", err)
 		}else{
 			clientid = uuid.String()
 		}
@@ -53,7 +49,7 @@ func NewMqttSink(properties interface{}) (*MQTTSink, error) {
 		} else if v == "3.1.1" {
 			pVersion = 4
 		} else {
-			return nil, fmt.Errorf("Unknown protocol version {0}, the value could be only 3.1 or 3.1.1 (also refers to MQTT version 4).", pVersionStr)
+			return fmt.Errorf("unknown protocol version %s, the value could be only 3.1 or 3.1.1 (also refers to MQTT version 4)", pVersionStr)
 		}
 	}
 
@@ -89,11 +85,15 @@ func NewMqttSink(properties interface{}) (*MQTTSink, error) {
 		}
 	}
 
-	ms := &MQTTSink{srv: srv.(string), tpc: tpc.(string), clientid: clientid.(string), pVersion:pVersion, uName:uName, password:password, certPath:certPath, pkeyPath:pKeyPath}
-	return ms, nil
-}
+	ms.srv = srv.(string)
+	ms.tpc = tpc.(string)
+	ms.clientid = clientid.(string)
+	ms.pVersion = pVersion
+	ms.uName = uName
+	ms.password = password
+	ms.certPath = certPath
+	ms.pkeyPath = pKeyPath
 
-func (ms *MQTTSink) Configure(props map[string]interface{}) error {
 	return nil
 }
 

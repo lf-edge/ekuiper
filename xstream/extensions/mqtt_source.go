@@ -8,7 +8,6 @@ import (
 	"engine/xstream/api"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"github.com/go-yaml/yaml"
 	"github.com/google/uuid"
 	"strconv"
 	"strings"
@@ -30,87 +29,15 @@ type MQTTSource struct {
 
 
 type MQTTConfig struct {
-	Qos string `yaml:"qos"`
-	Sharedsubscription string `yaml:"sharedSubscription"`
-	Servers []string `yaml:"servers"`
-	Clientid string `yaml:"clientid"`
-	PVersion string `yaml:"protocolVersion"`
-	Uname string `yaml:"username"`
-	Password string `yaml:"password"`
-	Certification string `yaml:"certificationPath"`
-	PrivateKPath string `yaml:"privateKeyPath"`
-}
-
-const confName string = "mqtt_source.yaml"
-
-func NewMQTTSource(topic string, confKey string) (*MQTTSource, error) {
-	b, err := common.LoadConf(confName)
-	if err != nil {
-		common.Log.Fatal(err)
-	}
-	var cfg map[string]MQTTConfig
-	if err := yaml.Unmarshal(b, &cfg); err != nil {
-		return nil, err
-	}
-
-	ms := &MQTTSource{tpc: topic}
-	if srvs := cfg[confKey].Servers; srvs != nil && len(srvs) > 1 {
-		return nil, fmt.Errorf("It only support one server in %s section.", confKey)
-	} else if srvs == nil {
-		srvs = cfg["default"].Servers
-		if srvs != nil && len(srvs) == 1 {
-			ms.srv = srvs[0]
-		} else {
-			return nil, fmt.Errorf("Wrong configuration in default section!")
-		}
-	} else {
-		ms.srv = srvs[0]
-	}
-
-	if cid := cfg[confKey].Clientid; cid != "" {
-		ms.clientid = cid
-	} else {
-		ms.clientid = cfg["default"].Clientid
-	}
-
-	var pversion uint = 3
-	if pv := cfg[confKey].PVersion; pv != "" {
-		if pv == "3.1.1" {
-			pversion = 4
-		}
-	} else {
-		pv = cfg["default"].PVersion
-		if pv == "3.1.1" {
-			pversion = 4
-		}
-	}
-	ms.pVersion = pversion
-
-	if uname := cfg[confKey].Uname; uname != "" {
-		ms.uName = strings.Trim(uname, " ")
-	} else {
-		ms.uName = cfg["default"].Uname
-	}
-
-	if password := cfg[confKey].Password; password != "" {
-		ms.password = strings.Trim(password, " ")
-	} else {
-		ms.password = cfg["default"].Password
-	}
-
-	if cpath := cfg[confKey].Certification; cpath != "" {
-		ms.certPath = cpath
-	} else {
-		ms.certPath = cfg["default"].Certification
-	}
-
-	if pkpath := cfg[confKey].PrivateKPath; pkpath != "" {
-		ms.pkeyPath = pkpath
-	} else {
-		ms.pkeyPath = cfg["default"].PrivateKPath
-	}
-
-	return ms, nil
+	Qos int `json:"qos"`
+	Sharedsubscription bool `json:"sharedSubscription"`
+	Servers []string `json:"servers"`
+	Clientid string `json:"clientid"`
+	PVersion string `json:"protocolVersion"`
+	Uname string `json:"username"`
+	Password string `json:"password"`
+	Certification string `json:"certificationPath"`
+	PrivateKPath string `json:"privateKeyPath"`
 }
 
 func (ms *MQTTSource) WithSchema(schema string) *MQTTSource {
@@ -118,6 +45,29 @@ func (ms *MQTTSource) WithSchema(schema string) *MQTTSource {
 }
 
 func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) error {
+	cfg := &MQTTConfig{}
+	err := common.MapToStruct(props, cfg)
+	if err != nil {
+		return fmt.Errorf("read properties %v fail with error: %v", props, err)
+	}
+	ms.tpc = topic
+	if srvs := cfg.Servers; srvs != nil && len(srvs) > 0 {
+		ms.srv = srvs[0]
+	} else {
+		return fmt.Errorf("missing server property")
+	}
+
+	ms.clientid = cfg.Clientid
+
+	ms.pVersion = 3
+	if cfg.PVersion == "3.1.1" {
+		ms.pVersion = 4
+	}
+
+	ms.uName = cfg.Uname
+	ms.password = strings.Trim(cfg.PVersion, " ")
+	ms.certPath = cfg.Certification
+	ms.pkeyPath = cfg.PrivateKPath
 	return nil
 }
 

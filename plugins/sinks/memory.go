@@ -1,4 +1,4 @@
-package sinks
+package main
 
 import "engine/xstream/api"
 
@@ -34,4 +34,4 @@ func (m *memory) Configure(props map[string]interface{}) error {
 	return nil
 }
 
-var MemorySink memory
+var Memory memory

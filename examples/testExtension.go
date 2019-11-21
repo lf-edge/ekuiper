@@ -20,7 +20,7 @@ func main() {
 	processors.NewStreamProcessor(demo, path.Join(BadgerDir, "stream")).Exec()
 
 
-	demo = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", TYPE=\"RandomSource\")"
+	demo = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", TYPE=\"random\")"
 	_, err = processors.NewStreamProcessor(demo, path.Join(BadgerDir, "stream")).Exec()
 	if err != nil{
 		panic(err)
@@ -28,7 +28,7 @@ func main() {
 
 	rp := processors.NewRuleProcessor(BadgerDir)
 	rp.ExecDrop("$$test1")
-	rs, err := rp.ExecCreate("$$test1", "{\"sql\": \"SELECT count FROM ext where ext.count > 3\",\"actions\": [{\"MemorySink\":  {}}]}")
+	rs, err := rp.ExecCreate("$$test1", "{\"sql\": \"SELECT count FROM ext where ext.count > 3\",\"actions\": [{\"memory\":  {}}]}")
 	if err != nil {
 		msg := fmt.Sprintf("failed to create rule: %s.", err)
 		log.Printf(msg)

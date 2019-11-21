@@ -1,4 +1,4 @@
-package sources
+package main
 
 import (
 	"context"
@@ -62,4 +62,4 @@ func (s *randomSource) Close(ctx api.StreamContext) error{
 	return nil
 }
 
-var RandomSource randomSource
+var Random randomSource
