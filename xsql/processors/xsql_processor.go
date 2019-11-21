@@ -448,7 +448,7 @@ func getSource(streamStmt *xsql.StreamStmt) (api.Source, error) {
 		log.Tracef("Source mqtt created")
 		return mqs, nil
 	default:
-		nf, err := getPlugin(t)
+		nf, err := getPlugin(t, "sources")
 		if err != nil {
 			return nil, err
 		}
@@ -485,8 +485,8 @@ func getConf(t string, confkey string) map[string]interface{} {
 	return props
 }
 
-func getPlugin(t string) (plugin.Symbol, error) {
-	mod := "plugins/" + t + ".so"
+func getPlugin(t string, ptype string) (plugin.Symbol, error) {
+	mod := "plugins/" + ptype + "/" + t + ".so"
 	plug, err := plugin.Open(mod)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open %s: %v", mod, err)
@@ -506,7 +506,7 @@ func getSink(name string, action interface{}) (api.Sink, error) {
 	case "mqtt":
 		return sinks.NewMqttSink(action)
 	default:
-		nf, err := getPlugin(name)
+		nf, err := getPlugin(name, "sinks")
 		if err != nil {
 			return nil, err
 		}

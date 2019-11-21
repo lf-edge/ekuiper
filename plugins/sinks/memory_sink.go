@@ -1,4 +1,4 @@
-package main
+package sinks
 
 import "engine/xstream/api"
 
