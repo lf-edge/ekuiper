@@ -28,7 +28,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	logger := ctx.GetLogger()
 	logger.Debugf("open source node %s", m.name)
 	go func(){
-		if err := m.source.Open(ctx, func(message xsql.Message, meta xsql.Metadata){
+		if err := m.source.Open(ctx, func(message map[string]interface{}, meta map[string]interface{}){
 			tuple := &xsql.Tuple{Emitter: m.name, Message:message, Timestamp: common.GetNowInMilli(), Metadata:meta}
 			m.Broadcast(tuple)
 			logger.Debugf("%s consume data %v complete", m.name, tuple)

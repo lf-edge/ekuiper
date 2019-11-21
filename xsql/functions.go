@@ -1,6 +1,9 @@
 package xsql
 
 import (
+	"engine/common"
+	"engine/common/plugin_manager"
+	"engine/xstream/api"
 	"strings"
 )
 
@@ -65,6 +68,17 @@ func (*FunctionValuer) Call(name string, args []interface{}) (interface{}, bool)
 		return hashCall(lowerName, args)
 	} else if _, ok := otherFuncMap[lowerName]; ok {
 		return otherCall(lowerName, args)
+	} else {
+		if nf, err := plugin_manager.GetPlugin(name, "functions"); err != nil {
+			return nil, false
+		}else{
+			f, ok := nf.(api.Function)
+			if !ok {
+				return nil, false
+			}
+			result, ok := f.Exec(args)
+			common.Log.Debugf("run custom function %s, get result %v", name, result)
+			return result, ok
+		}
 	}
-	return nil, false
 }

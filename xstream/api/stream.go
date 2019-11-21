@@ -2,12 +2,11 @@ package api
 
 import (
 	"context"
-	"engine/xsql"
 	"github.com/sirupsen/logrus"
 )
 
 //The function to call when data is emitted by the source.
-type ConsumeFunc func(message xsql.Message, metadata xsql.Metadata)
+type ConsumeFunc func(message map[string]interface{}, metadata map[string]interface{})
 
 type Closable interface {
 	Close(ctx StreamContext) error
@@ -65,5 +64,13 @@ type Operator interface {
 	Collector
 	Exec(StreamContext, chan<- error)
 	GetName() string
+}
+
+type Function interface {
+	//The argument is a list of xsql.Expr
+	Validate(args []interface{}) error
+	//Execute the function, return the result and if execution is successful.
+	//If execution fails, return the error and false.
+	Exec(args []interface{}) (interface{}, bool)
 }
 

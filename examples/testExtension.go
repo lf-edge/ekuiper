@@ -28,7 +28,7 @@ func main() {
 
 	rp := processors.NewRuleProcessor(BadgerDir)
 	rp.ExecDrop("$$test1")
-	rs, err := rp.ExecCreate("$$test1", "{\"sql\": \"SELECT count FROM ext where ext.count > 3\",\"actions\": [{\"memory\":  {}}]}")
+	rs, err := rp.ExecCreate("$$test1", "{\"sql\": \"SELECT echo(count) FROM ext where count > 3\",\"actions\": [{\"memory\":  {}}]}")
 	if err != nil {
 		msg := fmt.Sprintf("failed to create rule: %s.", err)
 		log.Printf(msg)

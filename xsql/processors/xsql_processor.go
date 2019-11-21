@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"engine/common"
+	"engine/common/plugin_manager"
 	"engine/xsql"
 	"engine/xsql/plans"
 	"engine/xstream"
@@ -16,9 +17,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/go-yaml/yaml"
 	"path"
-	"plugin"
 	"strings"
-	"unicode"
 )
 
 var log = common.Log
@@ -444,14 +443,13 @@ func getSource(streamStmt *xsql.StreamStmt) (api.Source, error) {
 	if !ok{
 		t = "mqtt"
 	}
-	t = ucFirst(t)
 	var s api.Source
 	switch t {
-	case "Mqtt":
+	case "mqtt":
 		s = &extensions.MQTTSource{}
 		log.Debugf("Source mqtt created")
 	default:
-		nf, err := getPlugin(t, "sources")
+		nf, err := plugin_manager.GetPlugin(t, "sources")
 		if err != nil {
 			return nil, err
 		}
@@ -495,30 +493,16 @@ func getConf(t string, confkey string) map[string]interface{} {
 	return props
 }
 
-func getPlugin(t string, ptype string) (plugin.Symbol, error) {
-	mod := "plugins/" + ptype + "/" + t + ".so"
-	plug, err := plugin.Open(mod)
-	if err != nil {
-		return nil, fmt.Errorf("cannot open %s: %v", mod, err)
-	}
-	nf, err := plug.Lookup(t)
-	if err != nil {
-		return nil, fmt.Errorf("cannot find symbol %s, please check if it is exported", t)
-	}
-	return nf, nil
-}
-
 func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 	log.Tracef("trying to get sink %s with action %v", name, action)
 	var s api.Sink
-	name = ucFirst(name)
 	switch name {
-	case "Log":
+	case "log":
 		s = sinks.NewLogSink()
-	case "Mqtt":
+	case "mqtt":
 		s = &sinks.MQTTSink{}
 	default:
-		nf, err := getPlugin(name, "sinks")
+		nf, err := plugin_manager.GetPlugin(name, "sinks")
 		if err != nil {
 			return nil, err
 		}
@@ -535,12 +519,5 @@ func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 	}
 	log.Debugf("Sink %s created", name)
 	return s, nil
-}
-
-func ucFirst(str string) string {
-	for i, v := range str {
-		return string(unicode.ToUpper(v)) + str[i+1:]
-	}
-	return ""
 }
 
