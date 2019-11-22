@@ -1,6 +1,6 @@
 # MQTT source 
 
-Kuiper provides built-in support for MQTT source stream, which can subscribe the message from MQTT broker and feed into the Kuiper processing pipeline.  The configuration file of MQTT source is at ``$kuiper/etc/mqtt_source.yaml``. Below is the file format.
+Kuiper provides built-in support for MQTT source stream, which can subscribe the message from MQTT broker and feed into the Kuiper processing pipeline.  The configuration file of MQTT source is at ``$kuiper/etc/sources/mqtt.yaml``. Below is the file format.
 
 ```yaml
 #Global MQTT configurations
@@ -62,7 +62,7 @@ If you have a specific connection that need to overwrite the default settings, y
 ```
 demo (
 		...
-	) WITH (datasource="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
+	) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
 ```
 
 The configuration keys used for these specific settings are the same as in ``default`` settings, any values specified in specific settings will overwrite the values in ``default`` section.

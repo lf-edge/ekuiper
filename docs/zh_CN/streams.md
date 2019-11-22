@@ -37,7 +37,7 @@ CREATE STREAM
 | KEY           | true     | 将来将用于GROUP BY语句 ?? |
 | TYPE     | false    | 如果支持越来越多的源，将来是否需要？ 默认情况下，它将是MQTT类型。 |
 | StrictValidation     | 否    | 根据流模式控制消息字段的验证行为。 |
-| KEY_CONF | 否 | 如果需要配置其他配置项，请在此处指定配置键。<br />Kuiper当前建议使用yaml文件格式。 |
+| CONF_KEY | 否 | 如果需要配置其他配置项，请在此处指定配置键。<br />Kuiper当前建议使用yaml文件格式。 |
 
 **StrictValidation介绍**
 
@@ -65,7 +65,7 @@ CREATE STREAM demo (
 		NICKNAMES ARRAY(STRING),
 		Gender BOOLEAN,
 		ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-	) WITH (datasource="topics:test/, demo/test", FORMAT="AVRO", KEY="USERID", KEY_CONF="democonf");
+	) WITH (DATASOURCE="topics:test/, demo/test", FORMAT="AVRO", KEY="USERID", CONF_KEY="democonf");
 ```
 
 

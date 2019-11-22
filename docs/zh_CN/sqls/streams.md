@@ -60,7 +60,7 @@ demo (
 		NICKNAMES ARRAY(STRING),
 		Gender BOOLEAN,
 		ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-	) WITH (datasource="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
+	) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
 ```
 
  流将订阅MQTT主题test /，服务器连接使用配置文件$ kuiper / etc / mqtt_source.yaml中demo部分的设置。
