@@ -7,13 +7,10 @@
   "license": "Apache 2.0",
   "private": true,
   "scripts": {
-    "build:before": "cp ../README.md en_US/ && mv zh_CN/index.md zh_CN/README.md && mv en_US/index.md en_US/reference.md",
-    "build:after": "mv zh_CN/README.md zh_CN/index.md && rm -rf en_US/README.md && mv en_US/reference.md en_US/index.md",
-    "serve": "npm run build:before && gitbook serve",
-    "reset": "npm run build:after",
-    "docs": "npm run build:before && gitbook install && gitbook serve",
-    "html": "npm run build:before && gitbook install && gitbook build . _book && npm run build:after",
-    "pdf": "npm run build:before && gitbook install && gitbook pdf . _book.pdf && npm run build:after"
+    "serve": "gitbook serve",
+    "docs": "gitbook install && gitbook serve",
+    "html": "gitbook install && gitbook build . _book",
+    "pdf": "gitbook install && gitbook pdf . _book.pdf"
   },
   "dependencies": {
     "gitbook-cli": "^2.3.2"
