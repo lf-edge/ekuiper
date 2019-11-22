@@ -1,7 +1,6 @@
-- [Introduction](README.md)
+<!-- - [Introduction](README.md) -->
 - [Getting started](getting_started.md)
-
-## Reference Guide
+<!-- ## Reference Guide -->
 - [Reference Guide](reference.md)
 - [Install and operation](operation/overview.md)
   - [Install instruction](operation/install/overview.md)
