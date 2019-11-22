@@ -1,7 +1,6 @@
-- [Introduction](README.md)
+<!-- - [Introduction](README.md) -->
 - [快速入门](getting_started.md)
-
-## 参考指南
+<!-- ## 参考指南 -->
 - [参考指南](reference.md)
 - [安装与操作](operation/overview.md)
   - [安装说明](operation/install/overview.md)
