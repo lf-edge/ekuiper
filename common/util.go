@@ -3,8 +3,8 @@ package common
 import (
 	"bytes"
 	"fmt"
-	"github.com/dgraph-io/badger"
 	"github.com/go-yaml/yaml"
+	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
@@ -105,78 +105,80 @@ func init(){
 	}
 }
 
-func DbOpen(dir string) (*badger.DB, error) {
-	opts := badger.DefaultOptions(dir)
-	opts.Logger = &logRedirect{}
-	db, err := badger.Open(opts)
-	return db, err
+type KeyValue interface {
+	Open() error
+	Close() error
+	Set(key string, value interface{}) error
+	Get(key string) (interface{}, bool)
+	Delete(key string) error
+	Keys() (keys []string, err error)
 }
 
-func DbClose(db *badger.DB) error {
-	return db.Close()
+type SimpleKVStore struct {
+	path string
+	c *cache.Cache;
 }
 
-func DbSet(db *badger.DB, key string, value string) error {
+var sStore *SimpleKVStore
 
-	err := db.Update(func(txn *badger.Txn) error {
-		_, err := txn.Get([]byte(key))
-		//key not found
-		if err != nil {
-			err = txn.Set([]byte(key), []byte(value))
-		}else{
-			err = fmt.Errorf("key %s already exist, delete it before creating a new one", key)
-		}
-
-		return err
-	})
-	return err
+func GetSimpleKVStore(path string) *SimpleKVStore {
+	if sStore == nil {
+		c := cache.New(cache.NoExpiration, 0)
+		sStore = &SimpleKVStore{path: path, c: c}
+	}
+	return sStore
 }
 
-func DbGet(db *badger.DB, key string) (value string, err error) {
-	err = db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(key))
-		if err != nil {
-			return err
-		}
-
-		err = item.Value(func(val []byte) error {
-			value = string(val)
-			return nil
-		})
-		return err
-	})
-
-	return
-}
-
-func DbDelete(db *badger.DB, key string) error {
-	err := db.Update(func(txn *badger.Txn) error {
-		_, err := txn.Get([]byte(key))
-		//key not found
-		if err != nil {
-			return err
-		}else{
-			err = txn.Delete([]byte(key))
-		}
-		return err
-	})
-	return err
-}
-
-func DbKeys(db *badger.DB) (keys []string, err error) {
-	err = db.View(func(txn *badger.Txn) error {
-		opts := badger.DefaultIteratorOptions
-		opts.PrefetchSize = 10
-		it := txn.NewIterator(opts)
-		defer it.Close()
-		for it.Rewind(); it.Valid(); it.Next() {
-			item := it.Item()
-			k := item.Key()
-			keys = append(keys, string(k))
-		}
+func (m *SimpleKVStore) Open() error  {
+	if _, err := os.Stat(m.path); os.IsNotExist(err) {
 		return nil
-	})
-	return
+	}
+	if e := m.c.LoadFile(m.path); e != nil {
+		return e
+	}
+	return nil
+}
+
+func (m *SimpleKVStore) Close() error  {
+	e := m.saveToFile()
+	m.c.Flush() //Delete all of the values from memory.
+	return e
+}
+
+func (m *SimpleKVStore) saveToFile() error {
+	if e := m.c.SaveFile(m.path); e != nil {
+		return e
+	}
+	return nil
+}
+
+func (m *SimpleKVStore) Set(key string, value interface{}) error  {
+	if m.c == nil {
+		return fmt.Errorf("Cache %s has not been initialized yet.", m.path)
+	}
+	m.c.Set(key, value, cache.NoExpiration)
+	return m.saveToFile()
+}
+
+func (m *SimpleKVStore) Get(key string) (interface{}, bool)  {
+	return m.c.Get(key)
+}
+
+func (m *SimpleKVStore) Delete(key string) error {
+	m.c.Delete(key)
+	return m.saveToFile()
+}
+
+func (m *SimpleKVStore) Keys() (keys []string, err error) {
+	if m.c == nil {
+		return nil, fmt.Errorf("Cache %s has not been initialized yet.", m.path)
+	}
+	its := m.c.Items()
+	keys = make([]string, 0, len(its))
+	for k := range its {
+		keys = append(keys, k)
+	}
+	return keys, nil
 }
 
 func PrintMap(m map[string]string, buff *bytes.Buffer) {
