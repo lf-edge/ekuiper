@@ -14,7 +14,6 @@ import (
 	"path"
 	"strings"
 	"time"
-	_ "net/http/pprof"
 )
 var dataDir string
 var log = common.Log
@@ -274,8 +273,6 @@ func init(){
 var Version string = "unknown"
 
 func main() {
-	go func() { log.Println(http.ListenAndServe("localhost:6060", nil)) }()
-
 	server := new(Server)
 	//Start rules
 	if rules, err := processor.GetAllRules(); err != nil{
