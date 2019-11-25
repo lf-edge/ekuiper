@@ -119,14 +119,21 @@ type SimpleKVStore struct {
 	c *cache.Cache;
 }
 
-var sStore *SimpleKVStore
+
+var stores = make(map[string]*SimpleKVStore)
 
 func GetSimpleKVStore(path string) *SimpleKVStore {
-	if sStore == nil {
+	if s, ok := stores[path]; ok {
+		return s
+	} else {
 		c := cache.New(cache.NoExpiration, 0)
-		sStore = &SimpleKVStore{path: path, c: c}
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			os.MkdirAll(path, os.ModePerm)
+		}
+		sStore := &SimpleKVStore{path: path + "/stores.data", c: c}
+		stores[path] = sStore
+		return sStore
 	}
-	return sStore
 }
 
 func (m *SimpleKVStore) Open() error  {
