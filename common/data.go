@@ -137,7 +137,7 @@ func (t *MockTimer) Stop() bool{
 func (t *MockTimer) SetDuration(d int){
 	t.duration = int64(d)
 	t.createdAt = GetMockNow()
-	Log.Infoln("reset timer created at %v", t.createdAt)
+	Log.Printf("reset timer created at %v", t.createdAt)
 }
 
 func (t *MockTimer) Reset(d time.Duration) bool{
@@ -152,7 +152,7 @@ func (t *MockTimer) Trigger(ti int64) {
 }
 
 func (t *MockTimer) DoTick(c int64) {
-	Log.Infof("do tick at %d, created at", c, t.createdAt)
+	Log.Infof("do tick at %d, created at %v", c, t.createdAt)
 	if t.createdAt > 0 && c >= (t.createdAt + t.duration){
 		Log.Info("trigger timer")
 		t.Trigger(t.createdAt + t.duration)
