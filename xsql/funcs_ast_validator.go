@@ -1,6 +1,8 @@
 package xsql
 
 import (
+	"engine/common/plugin_manager"
+	"engine/xstream/api"
 	"fmt"
 	"strings"
 )
@@ -21,8 +23,21 @@ func validateFuncs(funcName string, args []Expr) error {
 		return validateHashFunc(lowerName, args)
 	} else if _, ok := otherFuncMap[lowerName]; ok {
 		return validateOtherFunc(lowerName, args)
+	} else {
+		if nf, err := plugin_manager.GetPlugin(funcName, "functions"); err != nil {
+			return err
+		}else{
+			f, ok := nf.(api.Function)
+			if !ok {
+				return fmt.Errorf("exported symbol %s is not type of api.Function", funcName)
+			}
+			var targs []interface{}
+			for _, arg := range args{
+				targs = append(targs, arg)
+			}
+			return f.Validate(targs)
+		}
 	}
-	return nil
 }
 
 func validateMathFunc(name string, args []Expr) error {

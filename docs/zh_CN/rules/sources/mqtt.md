@@ -61,7 +61,7 @@ MQTT 连接密码。如果指定了``certificationPath`` 或者 ``privateKeyPath
 ```
 demo (
 		...
-	) WITH (datasource="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
+	) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
 ```
 
 这些特定设置使用的配置键与“默认”设置中的配置键相同，在特定设置中指定的任何值都将覆盖“默认”部分中的值。

@@ -1,6 +1,8 @@
 package nodes
 
 import (
+	"engine/common"
+	"engine/xsql"
 	"engine/xstream/api"
 	"fmt"
 )
@@ -26,9 +28,10 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	logger := ctx.GetLogger()
 	logger.Debugf("open source node %s", m.name)
 	go func(){
-		if err := m.source.Open(ctx, func(data interface{}){
-			m.Broadcast(data)
-			logger.Debugf("%s consume data %v complete", m.name, data)
+		if err := m.source.Open(ctx, func(message map[string]interface{}, meta map[string]interface{}){
+			tuple := &xsql.Tuple{Emitter: m.name, Message:message, Timestamp: common.GetNowInMilli(), Metadata:meta}
+			m.Broadcast(tuple)
+			logger.Debugf("%s consume data %v complete", m.name, tuple)
 		}); err != nil{
 			select {
 			case errCh <- err:

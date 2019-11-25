@@ -58,7 +58,7 @@ demo (
 		NICKNAMES ARRAY(STRING),
 		Gender BOOLEAN,
 		ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-	) WITH (datasource="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
+	) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
 ```
 
 The stream will subscribe to MQTT topic ``test/``, the server connection uses settings of ``demo`` section in configuration file ``$kuiper/etc/mqtt_source.yaml``. 

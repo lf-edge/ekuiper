@@ -36,6 +36,11 @@ func (m *MockSink) Close(ctx api.StreamContext) error {
 	return nil
 }
 
+
+func (m *MockSink) Configure(props map[string]interface{}) error {
+	return nil
+}
+
 func (m *MockSink) GetResults() [][]byte {
 	return m.results
 }

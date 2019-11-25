@@ -2,6 +2,7 @@ package common
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/patrickmn/go-cache"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 )
 
 const (
@@ -49,18 +51,18 @@ func (l *logRedirect) Debugf(f string, v ...interface{}) {
 	Log.Debug(fmt.Sprintf(f, v...))
 }
 
-func LoadConf(confName string) []byte {
+func LoadConf(confName string) ([]byte, error) {
 	confDir, err := GetConfLoc()
 	if err != nil {
-		Log.Fatal(err)
+		return nil, err
 	}
 
 	file := confDir + confName
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
-		Log.Fatal(err)
+		return nil, err
 	}
-	return b
+	return b, nil
 }
 
 type XStreamConf struct {
@@ -76,7 +78,10 @@ func init(){
 		DisableColors: true,
 		FullTimestamp: true,
 	})
-	b := LoadConf(StreamConf)
+	b, err := LoadConf(StreamConf)
+	if err != nil {
+		Log.Fatal(err)
+	}
 	var cfg map[string]XStreamConf
 	if err := yaml.Unmarshal(b, &cfg); err != nil {
 		Log.Fatal(err)
@@ -281,6 +286,14 @@ func GetTimer(duration int) Timer {
 	}
 }
 
+func GetNowInMilli() int64{
+	if IsTesting {
+		return GetMockNow()
+	}else{
+		return TimeToUnixMilli(time.Now())
+	}
+}
+
 func ProcessPath(p string) (string, error) {
 	if abs, err := filepath.Abs(p); err != nil {
 		return "", nil
@@ -331,4 +344,19 @@ func ToInt(input interface{}) (int, error){
 	default:
 		return 0, fmt.Errorf("unsupported type %T of %[1]v", input)
 	}
+}
+
+/*
+*   Convert a map into a struct. The output parameter must be a pointer to a struct
+*   The struct can have the json meta data
+ */
+func MapToStruct(input map[string]interface{}, output interface{}) error{
+	// convert map to json
+	jsonString, err := json.Marshal(input)
+	if err != nil{
+		return err
+	}
+
+	// convert json to struct
+	return json.Unmarshal(jsonString, output)
 }

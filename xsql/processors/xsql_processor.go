@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"engine/common"
+	"engine/common/plugin_manager"
 	"engine/xsql"
 	"engine/xsql/plans"
 	"engine/xstream"
@@ -13,6 +14,7 @@ import (
 	"engine/xstream/operators"
 	"engine/xstream/sinks"
 	"fmt"
+	"github.com/go-yaml/yaml"
 	"path"
 	"strings"
 )
@@ -220,19 +222,14 @@ func (p *RuleProcessor) ExecInitRule(rule *api.Rule) (*xstream.TopologyNew, erro
 	}else{
 		for _, m := range rule.Actions {
 			for name, action := range m {
-				switch name {
-				case "log":
-					log.Printf("Create log sink with %s.", action)
-					tp.AddSink(inputs, nodes.NewSinkNode("sink_log", sinks.NewLogSink()))
-				case "mqtt":
-					log.Printf("Create mqtt sink with %s.", action)
-					if ms, err := sinks.NewMqttSink(action); err != nil{
-						return nil, err
-					}else{
-						tp.AddSink(inputs, nodes.NewSinkNode("sink_mqtt", ms))
-					}
-				default:
-					return nil, fmt.Errorf("unsupported action: %s.", name)
+				props, ok := action.(map[string]interface{})
+				if !ok {
+					return nil, fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
+				}
+				if s, err := getSink(name, props); err != nil{
+					return nil, err
+				}else{
+					tp.AddSink(inputs, nodes.NewSinkNode("sink_" + name, s))
 				}
 			}
 		}
@@ -372,16 +369,16 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 					return nil, nil, err
 				}
 				if shouldCreateSource{
-					mqs, err := extensions.NewMQTTSource(streamStmt.Options["DATASOURCE"], streamStmt.Options["CONF_KEY"])
+					src, err := getSource(streamStmt)
 					if err != nil {
-						return nil, nil, err
+						return nil, nil, fmt.Errorf("fail to get source: %v", err)
 					}
-					node := nodes.NewSourceNode(string(streamStmt.Name), mqs)
+					node := nodes.NewSourceNode(s, src)
 					tp.AddSrc(node)
 					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s)
 					tp.AddOperator([]api.Emitter{node}, preprocessorOp)
 					inputs = append(inputs, preprocessorOp)
-				}else{
+				} else {
 					tp.AddSrc(sources[i])
 					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s)
 					tp.AddOperator([]api.Emitter{sources[i]}, preprocessorOp)
@@ -435,7 +432,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			}
 
 			if selectStmt.SortFields != nil {
-				orderOp := xstream.Transform(&plans.OrderPlan{SortFields:selectStmt.SortFields}, "order")
+				orderOp := xstream.Transform(&plans.OrderPlan{SortFields: selectStmt.SortFields}, "order")
 				tp.AddOperator(inputs, orderOp)
 				inputs = []api.Emitter{orderOp}
 			}
@@ -448,5 +445,88 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			return tp, inputs, nil
 		}
 	}
+}
+
+func getSource(streamStmt *xsql.StreamStmt) (api.Source, error) {
+	t, ok := streamStmt.Options["TYPE"]
+	if !ok{
+		t = "mqtt"
+	}
+	var s api.Source
+	switch t {
+	case "mqtt":
+		s = &extensions.MQTTSource{}
+		log.Debugf("Source mqtt created")
+	default:
+		nf, err := plugin_manager.GetPlugin(t, "sources")
+		if err != nil {
+			return nil, err
+		}
+		s, ok = nf.(api.Source)
+		if !ok {
+			return nil, fmt.Errorf("exported symbol %s is not type of api.Source", t)
+		}
+	}
+	props := getConf(t, streamStmt.Options["CONF_KEY"])
+	err := s.Configure(streamStmt.Options["DATASOURCE"], props)
+	if err != nil{
+		return nil, err
+	}
+	log.Debugf("Source %s created", t)
+	return s, nil
+}
+
+func getConf(t string, confkey string) map[string]interface{} {
+	conf, err := common.LoadConf("sources/" + t + ".yaml")
+	props := make(map[string]interface{})
+	if err == nil {
+		cfg := make(map[string]map[string]interface{})
+		if err := yaml.Unmarshal(conf, &cfg); err != nil {
+			log.Warnf("fail to parse yaml for source %s. Return an empty configuration", t)
+		} else {
+			var ok bool
+			props, ok = cfg["default"]
+			if !ok {
+				log.Warnf("default conf is not found", confkey)
+			}
+			if c, ok := cfg[confkey]; ok {
+				for k, v := range c {
+					props[k] = v
+				}
+			}
+		}
+	} else {
+		log.Warnf("config file %s.yaml is not loaded properly. Return an empty configuration", t)
+	}
+	log.Debugf("get conf for %s with conf key %s: %v", t, confkey, props)
+	return props
+}
+
+func getSink(name string, action map[string]interface{}) (api.Sink, error) {
+	log.Tracef("trying to get sink %s with action %v", name, action)
+	var s api.Sink
+	switch name {
+	case "log":
+		s = sinks.NewLogSink()
+	case "mqtt":
+		s = &sinks.MQTTSink{}
+	default:
+		nf, err := plugin_manager.GetPlugin(name, "sinks")
+		if err != nil {
+			return nil, err
+		}
+		var ok bool
+		s, ok = nf.(api.Sink)
+		if !ok {
+			return nil, fmt.Errorf("exported symbol %s is not type of api.Sink", name)
+		}
+	}
+
+	err := s.Configure(action)
+	if err != nil{
+		return nil, err
+	}
+	log.Debugf("Sink %s created", name)
+	return s, nil
 }
 
