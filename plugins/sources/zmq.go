@@ -76,7 +76,7 @@ func (s *zmqSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err er
 
 func (s *zmqSource) Close(ctx api.StreamContext) error{
 	if s.subscriber != nil{
-		s.subscriber.Close()
+		return s.subscriber.Close()
 	}
 	return nil
 }
