@@ -14,7 +14,6 @@ import (
 	"engine/xstream/operators"
 	"engine/xstream/sinks"
 	"fmt"
-	"github.com/go-yaml/yaml"
 	"path"
 	"strings"
 )
@@ -245,7 +244,7 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 		go func() {
 			select {
 			case err := <-tp.Open():
-				log.Println(err)
+				log.Infof("closing query for error: %v", err)
 				tp.Cancel()
 			}
 		}()
@@ -373,7 +372,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 					if err != nil {
 						return nil, nil, fmt.Errorf("fail to get source: %v", err)
 					}
-					node := nodes.NewSourceNode(s, src)
+					node := nodes.NewSourceNode(s, src, streamStmt.Options)
 					tp.AddSrc(node)
 					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s)
 					tp.AddOperator([]api.Emitter{node}, preprocessorOp)
@@ -456,7 +455,6 @@ func getSource(streamStmt *xsql.StreamStmt) (api.Source, error) {
 	switch t {
 	case "mqtt":
 		s = &extensions.MQTTSource{}
-		log.Debugf("Source mqtt created")
 	default:
 		nf, err := plugin_manager.GetPlugin(t, "sources")
 		if err != nil {
@@ -467,39 +465,8 @@ func getSource(streamStmt *xsql.StreamStmt) (api.Source, error) {
 			return nil, fmt.Errorf("exported symbol %s is not type of api.Source", t)
 		}
 	}
-	props := getConf(t, streamStmt.Options["CONF_KEY"])
-	err := s.Configure(streamStmt.Options["DATASOURCE"], props)
-	if err != nil{
-		return nil, err
-	}
 	log.Debugf("Source %s created", t)
 	return s, nil
-}
-
-func getConf(t string, confkey string) map[string]interface{} {
-	conf, err := common.LoadConf("sources/" + t + ".yaml")
-	props := make(map[string]interface{})
-	if err == nil {
-		cfg := make(map[string]map[string]interface{})
-		if err := yaml.Unmarshal(conf, &cfg); err != nil {
-			log.Warnf("fail to parse yaml for source %s. Return an empty configuration", t)
-		} else {
-			var ok bool
-			props, ok = cfg["default"]
-			if !ok {
-				log.Warnf("default conf is not found", confkey)
-			}
-			if c, ok := cfg[confkey]; ok {
-				for k, v := range c {
-					props[k] = v
-				}
-			}
-		}
-	} else {
-		log.Warnf("config file %s.yaml is not loaded properly. Return an empty configuration", t)
-	}
-	log.Debugf("get conf for %s with conf key %s: %v", t, confkey, props)
-	return props
 }
 
 func getSink(name string, action map[string]interface{}) (api.Sink, error) {

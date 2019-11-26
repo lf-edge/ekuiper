@@ -32,11 +32,11 @@ func TestStreamCreateProcessor(t *testing.T) {
 	}{
 		{
 			s: `SHOW STREAMS;`,
-			r: []string{"no stream definition found"},
+			r: []string{"No stream definition found."},
 		},
 		{
 			s: `EXPLAIN STREAM topic1;`,
-			err: "stream topic1 not found",
+			err: "stream topic1 is not found.",
 		},
 		{
 			s: `CREATE STREAM topic1 (
@@ -47,13 +47,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 					Gender BOOLEAN,
 					ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
 				) WITH (DATASOURCE="users", FORMAT="AVRO", KEY="USERID");`,
-			r: []string{"stream topic1 created"},
-		},
-		{
-			s: `CREATE STREAM topic1 (
-					USERID BIGINT,
-				) WITH (DATASOURCE="users", FORMAT="AVRO", KEY="USERID");`,
-			err: "key topic1 already exist, delete it before creating a new one",
+			r: []string{"Stream topic1 is created."},
 		},
 		{
 			s: `EXPLAIN STREAM topic1;`,
@@ -75,7 +69,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 		},
 		{
 			s: `DESCRIBE STREAM topic1;`,
-			err: "stream topic1 not found",
+			err: "Stream topic1 is not found.",
 		},
 		{
 			s: `DROP STREAM topic1;`,
@@ -347,7 +341,9 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 			},
 		}
 	}
-	return nodes.NewSourceNode(name, test.NewMockSource(data[:size], done, false))
+	return nodes.NewSourceNode(name, test.NewMockSource(data[:size], done, false),  map[string]string{
+		"DATASOURCE": name,
+	})
 }
 
 func TestSingleSQL(t *testing.T) {
@@ -1011,7 +1007,9 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 			},
 		}
 	}
-	return nodes.NewSourceNode(name, test.NewMockSource(data[:size], done, true))
+	return nodes.NewSourceNode(name, test.NewMockSource(data[:size], done, true), map[string]string{
+		"DATASOURCE": name,
+	})
 }
 
 func TestEventWindow(t *testing.T) {
