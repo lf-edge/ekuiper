@@ -2,8 +2,8 @@ package plans
 
 import (
 	"encoding/json"
-	"engine/common"
-	"engine/xsql"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xsql"
 	"fmt"
 	"log"
 	"reflect"

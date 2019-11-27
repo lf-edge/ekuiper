@@ -6,7 +6,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	b64 "encoding/base64"
-	"engine/common"
+	"github.com/emqx/kuiper/common"
 	"fmt"
 	"github.com/google/uuid"
 	"hash"

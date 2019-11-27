@@ -2,8 +2,8 @@ package xstream
 
 import (
 	"context"
-	"engine/xstream/api"
-	"engine/xstream/operators"
+	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/operators"
 	"fmt"
 	"reflect"
 )

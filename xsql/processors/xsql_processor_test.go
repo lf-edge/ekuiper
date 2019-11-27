@@ -2,11 +2,11 @@ package processors
 
 import (
 	"encoding/json"
-	"engine/common"
-	"engine/xsql"
-	"engine/xstream/api"
-	"engine/xstream/nodes"
-	"engine/xstream/test"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xsql"
+	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/nodes"
+	"github.com/emqx/kuiper/xstream/test"
 	"fmt"
 	"path"
 	"reflect"

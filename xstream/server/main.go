@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"engine/common"
-	"engine/xsql/processors"
-	"engine/xstream"
-	"engine/xstream/api"
-	"engine/xstream/sinks"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xsql/processors"
+	"github.com/emqx/kuiper/xstream"
+	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/sinks"
 	"fmt"
 	"net"
 	"net/http"

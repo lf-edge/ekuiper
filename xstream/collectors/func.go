@@ -1,7 +1,7 @@
 package collectors
 
 import (
-	"engine/xstream/api"
+	"github.com/emqx/kuiper/xstream/api"
 	"errors"
 )
 

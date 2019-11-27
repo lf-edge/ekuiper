@@ -1,7 +1,7 @@
 package test
 
 import (
-	"engine/xstream/api"
+	"github.com/emqx/kuiper/xstream/api"
 )
 
 type MockSink struct {

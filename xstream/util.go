@@ -2,7 +2,7 @@ package xstream
 
 import (
 	"encoding/json"
-	"engine/common"
+	"github.com/emqx/kuiper/common"
 	"fmt"
 	"io/ioutil"
 	"os"

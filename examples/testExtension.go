@@ -1,8 +1,8 @@
 package main
 
 import (
-	"engine/common"
-	"engine/xsql/processors"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xsql/processors"
 	"fmt"
 	"path"
 	"time"

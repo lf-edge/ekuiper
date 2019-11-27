@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"engine/xstream/api"
+	"github.com/emqx/kuiper/xstream/api"
 	"time"
 )
 

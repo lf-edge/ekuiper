@@ -1,6 +1,6 @@
 package main
 
-import "engine/xstream/api"
+import "github.com/emqx/kuiper/xstream/api"
 
 type memory struct {
 	results  [][]byte

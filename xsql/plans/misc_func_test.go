@@ -2,7 +2,7 @@ package plans
 
 import (
 	"encoding/json"
-	"engine/xsql"
+	"github.com/emqx/kuiper/xsql"
 	"fmt"
 	"reflect"
 	"strings"

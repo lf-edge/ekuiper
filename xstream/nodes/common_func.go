@@ -1,7 +1,7 @@
 package nodes
 
 import (
-	"engine/xstream/api"
+	"github.com/emqx/kuiper/xstream/api"
 )
 
 func Broadcast(outputs map[string]chan<- interface{}, val interface{}, ctx api.StreamContext) int {

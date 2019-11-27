@@ -3,9 +3,9 @@ package extensions
 import (
 	"crypto/tls"
 	"encoding/json"
-	"engine/common"
-	"engine/xsql"
-	"engine/xstream/api"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xsql"
+	"github.com/emqx/kuiper/xstream/api"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"

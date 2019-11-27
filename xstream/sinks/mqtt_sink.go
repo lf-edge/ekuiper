@@ -2,8 +2,8 @@ package sinks
 
 import (
 	"crypto/tls"
-	"engine/common"
-	"engine/xstream/api"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xstream/api"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
