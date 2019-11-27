@@ -21,6 +21,8 @@ const (
 	log_dir = "/log/"
 )
 
+const KUIPER_BASE_LOCATION_KEY string = "KUIPER_BASE_LOCATION_KEY"
+
 var (
 	Log *logrus.Logger
 	Config *XStreamConf
@@ -219,6 +221,11 @@ func GetLoc(subdir string)(string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	if loc := os.Getenv(KUIPER_BASE_LOCATION_KEY); loc != "" {
+		dir = loc
+	}
+
 	confDir := dir + subdir
 	if _, err := os.Stat(confDir); os.IsNotExist(err) {
 		lastdir := dir
