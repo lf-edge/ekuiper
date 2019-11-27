@@ -166,9 +166,11 @@ func (m *SimpleKVStore) saveToFile() error {
 
 func (m *SimpleKVStore) Set(key string, value interface{}) error  {
 	if m.c == nil {
-		return fmt.Errorf("Cache %s has not been initialized yet.", m.path)
+		return fmt.Errorf("cache %s has not been initialized yet", m.path)
 	}
-	m.c.Set(key, value, cache.NoExpiration)
+	if err := m.c.Add(key, value, cache.NoExpiration); err != nil {
+		return err
+	}
 	return m.saveToFile()
 }
 
@@ -177,7 +179,14 @@ func (m *SimpleKVStore) Get(key string) (interface{}, bool)  {
 }
 
 func (m *SimpleKVStore) Delete(key string) error {
-	m.c.Delete(key)
+	if m.c == nil {
+		return fmt.Errorf("cache %s has not been initialized yet", m.path)
+	}
+	if _, found := m.c.Get(key); found {
+		m.c.Delete(key)
+	}else{
+		return fmt.Errorf("%s is not found", key)
+	}
 	return m.saveToFile()
 }
 

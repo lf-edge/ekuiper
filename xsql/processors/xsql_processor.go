@@ -77,7 +77,7 @@ func (p *StreamProcessor) Exec() (result []string, err error) {
 func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, db common.KeyValue) (string, error) {
 	err := db.Set(string(stmt.Name), p.statement)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Create stream fails: %v.", err)
 	}else{
 		return fmt.Sprintf("Stream %s is created.", stmt.Name), nil
 	}
@@ -117,7 +117,7 @@ func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement,
 }
 
 func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement, db common.KeyValue) (string,error) {
-	_, f := db.Get(string(stmt.Name))
+	_, f := db.Get(stmt.Name)
 	if !f {
 		return "", fmt.Errorf("Stream %s is not found.", stmt.Name)
 	}
@@ -125,9 +125,9 @@ func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement, d
 }
 
 func (p *StreamProcessor) execDropStream(stmt *xsql.DropStreamStatement, db common.KeyValue) (string, error) {
-	err := db.Delete(string(stmt.Name))
+	err := db.Delete(stmt.Name)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Drop stream fails: %v.", err)
 	}else{
 		return fmt.Sprintf("Stream %s is dropped.", stmt.Name), nil
 	}

@@ -15,13 +15,15 @@ import (
 	"time"
 )
 
-var BadgerDir string
-func init(){
-	BadgerDir, err := common.GetAndCreateDataLoc("test")
+var BadgerDir = getBadger()
+
+func getBadger() string{
+	badgerDir, err := common.GetAndCreateDataLoc("test")
 	if err != nil {
 		log.Panic(err)
 	}
-	log.Infof("badge location is %s", BadgerDir)
+	log.Infof("badge location is %s", badgerDir)
+	return badgerDir
 }
 
 func TestStreamCreateProcessor(t *testing.T) {
@@ -32,11 +34,11 @@ func TestStreamCreateProcessor(t *testing.T) {
 	}{
 		{
 			s: `SHOW STREAMS;`,
-			r: []string{"No stream definition found."},
+			r: []string{"No stream definitions are found."},
 		},
 		{
 			s: `EXPLAIN STREAM topic1;`,
-			err: "stream topic1 is not found.",
+			err: "Stream topic1 is not found.",
 		},
 		{
 			s: `CREATE STREAM topic1 (
@@ -48,6 +50,12 @@ func TestStreamCreateProcessor(t *testing.T) {
 					ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
 				) WITH (DATASOURCE="users", FORMAT="AVRO", KEY="USERID");`,
 			r: []string{"Stream topic1 is created."},
+		},
+		{
+			s: `CREATE STREAM topic1 (
+					USERID BIGINT,
+				) WITH (DATASOURCE="users", FORMAT="AVRO", KEY="USERID");`,
+			err: "Create stream fails: Item topic1 already exists.",
 		},
 		{
 			s: `EXPLAIN STREAM topic1;`,
@@ -65,7 +73,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 		},
 		{
 			s: `DROP STREAM topic1;`,
-			r: []string{"stream topic1 dropped"},
+			r: []string{"Stream topic1 is dropped."},
 		},
 		{
 			s: `DESCRIBE STREAM topic1;`,
@@ -73,12 +81,13 @@ func TestStreamCreateProcessor(t *testing.T) {
 		},
 		{
 			s: `DROP STREAM topic1;`,
-			err: "Key not found",
+			err: "Drop stream fails: topic1 is not found.",
 		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	streamDB := path.Join(BadgerDir, "streamTest")
+
+	streamDB := path.Join(getBadger(), "streamTest")
 	for i, tt := range tests {
 		results, err := NewStreamProcessor(tt.s, streamDB).Exec()
 		if !reflect.DeepEqual(tt.err, errstring(err)) {
