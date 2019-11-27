@@ -1,4 +1,4 @@
-module engine
+module github.com/emqx/kuiper
 
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
