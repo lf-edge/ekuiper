@@ -3,6 +3,7 @@ package common
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/patrickmn/go-cache"
@@ -20,8 +21,6 @@ const (
 	data_dir = "/data/"
 	log_dir = "/log/"
 )
-
-const KUIPER_BASE_LOCATION_KEY string = "KUIPER_BASE_LOCATION_KEY"
 
 var (
 	Log *logrus.Logger
@@ -73,6 +72,7 @@ type XStreamConf struct {
 }
 
 var StreamConf = "kuiper.yaml"
+var kpbase = flag.String("kuiper_base", "", "Specify Kuiper base directory")
 
 func init(){
 	Log = logrus.New()
@@ -222,7 +222,8 @@ func GetLoc(subdir string)(string, error) {
 		return "", err
 	}
 
-	if loc := os.Getenv(KUIPER_BASE_LOCATION_KEY); loc != "" {
+	flag.Parse()
+	if loc := *kpbase; loc != "" {
 		dir = loc
 	}
 
