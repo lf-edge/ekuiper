@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"engine/common"
+	"github.com/emqx/kuiper/common"
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/urfave/cli"

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"engine/xsql"
+	"github.com/emqx/kuiper/xsql"
 	"fmt"
 	"strings"
 

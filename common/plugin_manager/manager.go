@@ -1,8 +1,8 @@
 package plugin_manager
 
 import (
-	"engine/common"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"path"
 	"plugin"
 	"unicode"

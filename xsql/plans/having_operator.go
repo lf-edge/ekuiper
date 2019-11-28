@@ -1,8 +1,8 @@
 package plans
 
 import (
-	"engine/xsql"
-	"engine/xstream/api"
+	"github.com/emqx/kuiper/xsql"
+	"github.com/emqx/kuiper/xstream/api"
 )
 
 type HavingPlan struct {

@@ -1,7 +1,7 @@
 package nodes
 
 import (
-	"engine/xstream/api"
+	"github.com/emqx/kuiper/xstream/api"
 )
 
 type SinkNode struct {

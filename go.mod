@@ -1,4 +1,4 @@
-module engine
+module github.com/emqx/kuiper
 
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
@@ -14,3 +14,5 @@ require (
 	github.com/urfave/cli v1.22.0
 	golang.org/x/net v0.0.0-20190909003024-a7b16738d86b // indirect
 )
+
+go 1.13

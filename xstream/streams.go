@@ -2,11 +2,11 @@ package xstream
 
 import (
 	"context"
-	"engine/common"
-	"engine/xstream/api"
-	"engine/xstream/contexts"
-	"engine/xstream/nodes"
-	"engine/xstream/operators"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/contexts"
+	"github.com/emqx/kuiper/xstream/nodes"
+	"github.com/emqx/kuiper/xstream/operators"
 )
 
 type TopologyNew struct {

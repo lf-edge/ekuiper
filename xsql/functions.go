@@ -1,9 +1,9 @@
 package xsql
 
 import (
-	"engine/common"
-	"engine/common/plugin_manager"
-	"engine/xstream/api"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/common/plugin_manager"
+	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
 

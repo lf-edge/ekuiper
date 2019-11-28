@@ -2,8 +2,8 @@ package contexts
 
 import (
 	"context"
-	"engine/common"
-	"engine/xstream/api"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xstream/api"
 	"github.com/sirupsen/logrus"
 	"time"
 )

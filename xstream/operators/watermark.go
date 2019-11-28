@@ -2,9 +2,9 @@ package operators
 
 import (
 	"context"
-	"engine/common"
-	"engine/xsql"
-	"engine/xstream/api"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xsql"
+	"github.com/emqx/kuiper/xstream/api"
 	"fmt"
 	"math"
 	"sort"

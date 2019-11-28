@@ -1,8 +1,8 @@
 package operators
 
 import (
-	"engine/xstream/api"
-	"engine/xstream/nodes"
+	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/nodes"
 	"fmt"
 	"sync"
 )

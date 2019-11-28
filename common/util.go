@@ -3,6 +3,7 @@ package common
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/patrickmn/go-cache"
@@ -71,6 +72,7 @@ type XStreamConf struct {
 }
 
 var StreamConf = "kuiper.yaml"
+var kpbase = flag.String("kuiper_base", "", "Specify Kuiper base directory")
 
 func init(){
 	Log = logrus.New()
@@ -228,6 +230,12 @@ func GetLoc(subdir string)(string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	flag.Parse()
+	if loc := *kpbase; loc != "" {
+		dir = loc
+	}
+
 	confDir := dir + subdir
 	if _, err := os.Stat(confDir); os.IsNotExist(err) {
 		lastdir := dir

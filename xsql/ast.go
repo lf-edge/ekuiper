@@ -1,7 +1,7 @@
 package xsql
 
 import (
-	"engine/common"
+	"github.com/emqx/kuiper/common"
 	"fmt"
 	"math"
 	"sort"

@@ -2,7 +2,7 @@ package xsql
 
 import (
 	"bytes"
-	"engine/common"
+	"github.com/emqx/kuiper/common"
 	"fmt"
 	"regexp"
 	"strings"

@@ -1,8 +1,8 @@
 package plans
 
 import (
-	"engine/common"
-	"engine/xsql"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xsql"
 	"fmt"
 	"reflect"
 	"strings"

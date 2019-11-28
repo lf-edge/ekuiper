@@ -1,8 +1,8 @@
 package sinks
 
 import (
-	"engine/xstream/api"
-	"engine/xstream/collectors"
+	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/collectors"
 	"fmt"
 	"sync"
 	"time"

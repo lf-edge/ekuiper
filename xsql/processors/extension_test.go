@@ -3,8 +3,8 @@ package processors
 import (
 	"bufio"
 	"encoding/json"
-	"engine/common"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"os"
 	"path"
 	"testing"
