@@ -92,7 +92,7 @@ func (p *StreamProcessor) execShowStream(stmt *xsql.ShowStreamsStatement, db com
 }
 
 func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement, db common.KeyValue) (string,error) {
-	s, f := db.Get(string(stmt.Name))
+	s, f := db.Get(stmt.Name)
 	s1, _ := s.(string)
 	if !f {
 		return "", fmt.Errorf("Stream %s is not found.", stmt.Name)

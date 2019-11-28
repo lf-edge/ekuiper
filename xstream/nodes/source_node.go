@@ -6,7 +6,6 @@ import (
 	"engine/xstream/api"
 	"fmt"
 	"github.com/go-yaml/yaml"
-	"github.com/sirupsen/logrus"
 )
 
 type SourceNode struct {
@@ -59,7 +58,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (m *SourceNode) drainError(errCh chan<- error, err error, ctx api.StreamContext, logger *logrus.Entry) {
+func (m *SourceNode) drainError(errCh chan<- error, err error, ctx api.StreamContext, logger api.Logger) {
 	select {
 	case errCh <- err:
 	case <-ctx.Done():

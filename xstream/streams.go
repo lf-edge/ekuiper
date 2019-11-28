@@ -66,7 +66,7 @@ func (s *TopologyNew) Map(f interface{}) *TopologyNew {
 	log := s.ctx.GetLogger()
 	op, err := MapFunc(f)
 	if err != nil {
-		log.Println(err)
+		log.Info(err)
 	}
 	return s.Transform(op)
 }
@@ -110,7 +110,7 @@ func (s *TopologyNew) drainErr(err error) {
 func (s *TopologyNew) Open() <-chan error {
 	s.prepareContext() // ensure context is set
 	log := s.ctx.GetLogger()
-	log.Println("Opening stream")
+	log.Infoln("Opening stream")
 
 	// open stream
 	go func() {

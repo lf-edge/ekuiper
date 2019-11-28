@@ -15,7 +15,7 @@ func NewMockSink() *MockSink{
 
 func (m *MockSink) Open(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
-	log.Trace("Opening mock sink")
+	log.Debugln("Opening mock sink")
 	m.results = make([][]byte, 0)
 	return nil
 }
