@@ -22,15 +22,15 @@ var log = common.Log
 
 type StreamProcessor struct {
 	statement string
-	badgerDir string
+	dbDir     string
 }
 
 //@params s : the sql string of create stream statement
-//@params d : the directory of the badger DB to save the stream info
+//@params d : the directory of the DB to save the stream info
 func NewStreamProcessor(s, d string) *StreamProcessor {
 	processor := &StreamProcessor{
 		statement: s,
-		badgerDir: d,
+		dbDir:     d,
 	}
 	return processor
 }
@@ -43,7 +43,7 @@ func (p *StreamProcessor) Exec() (result []string, err error) {
 		return
 	}
 
-	store := common.GetSimpleKVStore(p.badgerDir)
+	store := common.GetSimpleKVStore(p.dbDir)
 	err = store.Open()
 	if err != nil {
 		return
@@ -150,12 +150,12 @@ func GetStream(m *common.SimpleKVStore, name string) (stmt *xsql.StreamStmt, err
 
 
 type RuleProcessor struct {
-	badgerDir string
+	dbDir string
 }
 
 func NewRuleProcessor(d string) *RuleProcessor {
 	processor := &RuleProcessor{
-		badgerDir: d,
+		dbDir: d,
 	}
 	return processor
 }
@@ -165,7 +165,7 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 	if err != nil {
 		return nil, err
 	}
-	store := common.GetSimpleKVStore(path.Join(p.badgerDir, "rule"))
+	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
 	err = store.Open()
 	if err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 }
 
 func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
-	store := common.GetSimpleKVStore(path.Join(p.badgerDir, "rule"))
+	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
 	err := store.Open()
 	if err != nil {
 		return nil, err
@@ -253,7 +253,7 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 }
 
 func (p *RuleProcessor) ExecDesc(name string) (string, error) {
-	store := common.GetSimpleKVStore(path.Join(p.badgerDir, "rule"))
+	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
 	err := store.Open()
 	if err != nil {
 		return "", err
@@ -288,7 +288,7 @@ func (p *RuleProcessor) ExecShow() (string, error) {
 }
 
 func (p *RuleProcessor) GetAllRules() ([]string, error) {
-	store := common.GetSimpleKVStore(path.Join(p.badgerDir, "rule"))
+	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
 	err := store.Open()
 	if err != nil {
 		return nil, err
@@ -298,7 +298,7 @@ func (p *RuleProcessor) GetAllRules() ([]string, error) {
 }
 
 func (p *RuleProcessor) ExecDrop(name string) (string, error) {
-	store := common.GetSimpleKVStore(path.Join(p.badgerDir, "rule"))
+	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
 	err := store.Open()
 	if err != nil {
 		return "", err
@@ -351,7 +351,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			if !shouldCreateSource && len(streamsFromStmt) != len(sources){
 				return nil, nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
 			}
-			store := common.GetSimpleKVStore(path.Join(p.badgerDir, "stream"))
+			store := common.GetSimpleKVStore(path.Join(p.dbDir, "stream"))
 			err := store.Open()
 			if err != nil {
 				return nil, nil, err

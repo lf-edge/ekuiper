@@ -15,15 +15,15 @@ import (
 	"time"
 )
 
-var BadgerDir = getBadger()
+var DbDir = getDbDir()
 
-func getBadger() string{
-	badgerDir, err := common.GetAndCreateDataLoc("test")
+func getDbDir() string{
+	dbDir, err := common.GetAndCreateDataLoc("test")
 	if err != nil {
 		log.Panic(err)
 	}
-	log.Infof("badge location is %s", badgerDir)
-	return badgerDir
+	log.Infof("db location is %s", dbDir)
+	return dbDir
 }
 
 func TestStreamCreateProcessor(t *testing.T) {
@@ -87,7 +87,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
-	streamDB := path.Join(getBadger(), "streamTest")
+	streamDB := path.Join(getDbDir(), "streamTest")
 	for i, tt := range tests {
 		results, err := NewStreamProcessor(tt.s, streamDB).Exec()
 		if !reflect.DeepEqual(tt.err, errstring(err)) {
@@ -106,7 +106,7 @@ func createStreams(t *testing.T){
 					size BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts");`
-	_, err := NewStreamProcessor(demo, path.Join(BadgerDir, "stream")).Exec()
+	_, err := NewStreamProcessor(demo, path.Join(DbDir, "stream")).Exec()
 	if err != nil{
 		t.Log(err)
 	}
@@ -115,7 +115,7 @@ func createStreams(t *testing.T){
 					hum BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demo1", FORMAT="json", KEY="ts");`
-	_, err = NewStreamProcessor(demo1, path.Join(BadgerDir, "stream")).Exec()
+	_, err = NewStreamProcessor(demo1, path.Join(DbDir, "stream")).Exec()
 	if err != nil{
 		t.Log(err)
 	}
@@ -124,7 +124,7 @@ func createStreams(t *testing.T){
 					hum BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="sessionDemo", FORMAT="json", KEY="ts");`
-	_, err = NewStreamProcessor(sessionDemo, path.Join(BadgerDir, "stream")).Exec()
+	_, err = NewStreamProcessor(sessionDemo, path.Join(DbDir, "stream")).Exec()
 	if err != nil{
 		t.Log(err)
 	}
@@ -132,17 +132,17 @@ func createStreams(t *testing.T){
 
 func dropStreams(t *testing.T){
 	demo := `DROP STREAM demo`
-	_, err := NewStreamProcessor(demo, path.Join(BadgerDir, "stream")).Exec()
+	_, err := NewStreamProcessor(demo, path.Join(DbDir, "stream")).Exec()
 	if err != nil{
 		t.Log(err)
 	}
 	demo1 := `DROP STREAM demo1`
-	_, err = NewStreamProcessor(demo1, path.Join(BadgerDir, "stream")).Exec()
+	_, err = NewStreamProcessor(demo1, path.Join(DbDir, "stream")).Exec()
 	if err != nil{
 		t.Log(err)
 	}
 	sessionDemo := `DROP STREAM sessionDemo`
-	_, err = NewStreamProcessor(sessionDemo, path.Join(BadgerDir, "stream")).Exec()
+	_, err = NewStreamProcessor(sessionDemo, path.Join(DbDir, "stream")).Exec()
 	if err != nil{
 		t.Log(err)
 	}
@@ -412,7 +412,7 @@ func TestSingleSQL(t *testing.T) {
 	done := make(chan struct{})
 	defer close(done)
 	for i, tt := range tests {
-		p := NewRuleProcessor(BadgerDir)
+		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
 		var sources []*nodes.SourceNode
 		if stmt, err := xsql.Language.Parse(parser); err != nil{
@@ -677,7 +677,7 @@ func TestWindow(t *testing.T) {
 	defer close(done)
 	common.ResetMockTicker()
 	for i, tt := range tests {
-		p := NewRuleProcessor(BadgerDir)
+		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
 		var sources []*nodes.SourceNode
 		if stmt, err := xsql.Language.Parse(parser); err != nil{
@@ -745,7 +745,7 @@ func createEventStreams(t *testing.T){
 					size BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demoE", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
-	_, err := NewStreamProcessor(demo, path.Join(BadgerDir, "stream")).Exec()
+	_, err := NewStreamProcessor(demo, path.Join(DbDir, "stream")).Exec()
 	if err != nil{
 		t.Log(err)
 	}
@@ -754,7 +754,7 @@ func createEventStreams(t *testing.T){
 					hum BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demo1E", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
-	_, err = NewStreamProcessor(demo1, path.Join(BadgerDir, "stream")).Exec()
+	_, err = NewStreamProcessor(demo1, path.Join(DbDir, "stream")).Exec()
 	if err != nil{
 		t.Log(err)
 	}
@@ -763,7 +763,7 @@ func createEventStreams(t *testing.T){
 					hum BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="sessionDemoE", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
-	_, err = NewStreamProcessor(sessionDemo, path.Join(BadgerDir, "stream")).Exec()
+	_, err = NewStreamProcessor(sessionDemo, path.Join(DbDir, "stream")).Exec()
 	if err != nil{
 		t.Log(err)
 	}
@@ -771,17 +771,17 @@ func createEventStreams(t *testing.T){
 
 func dropEventStreams(t *testing.T){
 	demo := `DROP STREAM demoE`
-	_, err := NewStreamProcessor(demo, path.Join(BadgerDir, "stream")).Exec()
+	_, err := NewStreamProcessor(demo, path.Join(DbDir, "stream")).Exec()
 	if err != nil{
 		t.Log(err)
 	}
 	demo1 := `DROP STREAM demo1E`
-	_, err = NewStreamProcessor(demo1, path.Join(BadgerDir, "stream")).Exec()
+	_, err = NewStreamProcessor(demo1, path.Join(DbDir, "stream")).Exec()
 	if err != nil{
 		t.Log(err)
 	}
 	sessionDemo := `DROP STREAM sessionDemoE`
-	_, err = NewStreamProcessor(sessionDemo, path.Join(BadgerDir, "stream")).Exec()
+	_, err = NewStreamProcessor(sessionDemo, path.Join(DbDir, "stream")).Exec()
 	if err != nil{
 		t.Log(err)
 	}
@@ -1223,7 +1223,7 @@ func TestEventWindow(t *testing.T) {
 
 	}()
 	for i, tt := range tests {
-		p := NewRuleProcessor(BadgerDir)
+		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
 		var sources []*nodes.SourceNode
 		if stmt, err := xsql.Language.Parse(parser); err != nil{

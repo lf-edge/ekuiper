@@ -18,21 +18,21 @@ func setup() *RuleProcessor {
 
 	os.Remove(CACHE_FILE)
 
-	BadgerDir, err := common.GetAndCreateDataLoc("test")
+	dbDir, err := common.GetAndCreateDataLoc("test")
 	if err != nil {
 		log.Panic(err)
 	}
-	log.Infof("badge location is %s", BadgerDir)
+	log.Infof("db location is %s", dbDir)
 
 	demo := `DROP STREAM ext`
-	NewStreamProcessor(demo, path.Join(BadgerDir, "stream")).Exec()
+	NewStreamProcessor(demo, path.Join(dbDir, "stream")).Exec()
 	demo = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"ext\")"
 
-	_, err = NewStreamProcessor(demo, path.Join(BadgerDir, "stream")).Exec()
+	_, err = NewStreamProcessor(demo, path.Join(dbDir, "stream")).Exec()
 	if err != nil{
 		panic(err)
 	}
-	rp := NewRuleProcessor(BadgerDir)
+	rp := NewRuleProcessor(dbDir)
 	return rp
 }
 
