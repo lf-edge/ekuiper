@@ -68,16 +68,21 @@ func (*FunctionValuer) Call(name string, args []interface{}) (interface{}, bool)
 		return hashCall(lowerName, args)
 	} else if _, ok := otherFuncMap[lowerName]; ok {
 		return otherCall(lowerName, args)
+	} else if _, ok :=  aggFuncMap[lowerName]; ok {
+		return nil, false
 	} else {
-		if nf, err := plugin_manager.GetPlugin(name, "functions"); err != nil {
+		if nf, err := plugin_manager.GetPlugin(lowerName, "functions"); err != nil {
 			return nil, false
 		}else{
 			f, ok := nf.(api.Function)
 			if !ok {
 				return nil, false
 			}
+			if f.IsAggregate(){
+				return nil, false
+			}
 			result, ok := f.Exec(args)
-			common.Log.Debugf("run custom function %s, get result %v", name, result)
+			common.Log.Debugf("run custom function %s, get result %v", lowerName, result)
 			return result, ok
 		}
 	}

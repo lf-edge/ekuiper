@@ -33,7 +33,7 @@ func (c *FuncCollector) Configure(props map[string]interface{}) error{
 // Open is the starting point that starts the collector
 func (c *FuncCollector) Open(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
-	log.Println("Opening func collector")
+	log.Infoln("Opening func collector")
 
 	if c.f == nil {
 		return errors.New("func collector missing function")

@@ -23,6 +23,8 @@ func validateFuncs(funcName string, args []Expr) error {
 		return validateHashFunc(lowerName, args)
 	} else if _, ok := otherFuncMap[lowerName]; ok {
 		return validateOtherFunc(lowerName, args)
+	} else if _, ok := aggFuncMap[lowerName]; ok {
+		return validateAggFunc(lowerName, args)
 	} else {
 		if nf, err := plugin_manager.GetPlugin(funcName, "functions"); err != nil {
 			return err
@@ -298,6 +300,24 @@ func validateOtherFunc(name string, args []Expr) error {
 			if _, ok := SpecialKeyMapper[p.Name]; !ok {
 				return fmt.Errorf("Parameter of mqtt function can be only topic or messageid.")
 			}
+		}
+	}
+	return nil
+}
+
+func validateAggFunc(name string, args []Expr) error {
+	len := len(args)
+	switch name {
+	case "avg", "max", "min", "sum":
+		if err := validateLen(name, 1, len); err != nil {
+			return  err
+		}
+		if isStringArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) {
+			return produceErrInfo(name, 0, "number - float or int")
+		}
+	case "count":
+		if err := validateLen(name, 1, len); err != nil {
+			return err
 		}
 	}
 	return nil

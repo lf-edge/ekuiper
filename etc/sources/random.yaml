@@ -5,5 +5,6 @@ default:
 
 ext:
   interval: 5000
+  seed: 1
   pattern:
     count: 50

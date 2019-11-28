@@ -13,7 +13,7 @@ import (
 func NewLogSink() *collectors.FuncCollector {
 	return collectors.Func(func(ctx api.StreamContext, data interface{}) error {
 		log := ctx.GetLogger()
-		log.Printf("sink result for rule %s: %s", ctx.GetRuleId(), data)
+		log.Infof("sink result for rule %s: %s", ctx.GetRuleId(), data)
 		return nil
 	})
 }

@@ -2,6 +2,9 @@ package xsql
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/common/plugin_manager"
+	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
 
@@ -88,7 +91,20 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 		}
 		return 0, true
 	default:
-		return nil, false
+		if nf, err := plugin_manager.GetPlugin(lowerName, "functions"); err != nil {
+			return nil, false
+		}else{
+			f, ok := nf.(api.Function)
+			if !ok {
+				return nil, false
+			}
+			if !f.IsAggregate(){
+				return nil, false
+			}
+			result, ok := f.Exec(args)
+			common.Log.Debugf("run custom function %s, get result %v", lowerName, result)
+			return result, ok
+		}
 	}
 }
 

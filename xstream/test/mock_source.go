@@ -26,7 +26,7 @@ func NewMockSource(data []*xsql.Tuple, done chan<- struct{}, isEventTime bool) *
 func (m *MockSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err error) {
 	log := ctx.GetLogger()
 
-	log.Trace("mock source starts")
+	log.Debugln("mock source starts")
 	go func(){
 		for _, d := range m.data{
 			log.Infof("mock source is sending data %s", d)

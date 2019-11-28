@@ -92,7 +92,7 @@ func (w *WatermarkGenerator) start(ctx api.StreamContext) {
 		case <-c:
 			w.trigger(ctx)
 		case <-ctx.Done():
-			log.Println("Cancelling watermark generator....")
+			log.Infoln("Cancelling watermark generator....")
 			if w.ticker != nil{
 				w.ticker.Stop()
 			}
@@ -236,7 +236,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 			}
 		// is cancelling
 		case <-ctx.Done():
-			log.Println("Cancelling window....")
+			log.Infoln("Cancelling window....")
 			if o.ticker != nil{
 				o.ticker.Stop()
 			}

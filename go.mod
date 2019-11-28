@@ -9,7 +9,10 @@ require (
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/pebbe/zmq4 v1.0.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/urfave/cli v1.22.0
 	golang.org/x/net v0.0.0-20190909003024-a7b16738d86b // indirect
 )
+
+go 1.13

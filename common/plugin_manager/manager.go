@@ -2,6 +2,8 @@ package plugin_manager
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/common"
+	"path"
 	"plugin"
 	"unicode"
 )
@@ -18,7 +20,11 @@ func GetPlugin(t string, ptype string) (plugin.Symbol, error) {
 	var nf plugin.Symbol
 	nf, ok := registry[key]
 	if !ok {
-		mod := "plugins/" + key + ".so"
+		loc, err := common.GetLoc("/plugins/")
+		if err != nil {
+			return nil, fmt.Errorf("cannot find the plugins folder")
+		}
+		mod := path.Join(loc, ptype, t +".so")
 		plug, err := plugin.Open(mod)
 		if err != nil {
 			return nil, fmt.Errorf("cannot open %s: %v", mod, err)

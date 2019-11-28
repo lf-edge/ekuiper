@@ -20,7 +20,10 @@ type TopologyNew struct {
 }
 
 func NewWithName(name string) *TopologyNew {
-	tp := &TopologyNew{name: name}
+	tp := &TopologyNew{
+		name: name,
+		drain: make(chan error),
+	}
 	return tp
 }
 
@@ -63,7 +66,7 @@ func (s *TopologyNew) Map(f interface{}) *TopologyNew {
 	log := s.ctx.GetLogger()
 	op, err := MapFunc(f)
 	if err != nil {
-		log.Println(err)
+		log.Info(err)
 	}
 	return s.Transform(op)
 }
@@ -107,35 +110,23 @@ func (s *TopologyNew) drainErr(err error) {
 func (s *TopologyNew) Open() <-chan error {
 	s.prepareContext() // ensure context is set
 	log := s.ctx.GetLogger()
-	log.Println("Opening stream")
+	log.Infoln("Opening stream")
 
 	// open stream
 	go func() {
-		streamErr := make(chan error)
-		defer func() {
-			log.Println("Closing streamErr channel")
-			close(streamErr)
-		}()
 		// open stream sink, after log sink is ready.
 		for _, snk := range s.sinks{
-			snk.Open(s.ctx.WithMeta(s.name, snk.GetName()), streamErr)
+			snk.Open(s.ctx.WithMeta(s.name, snk.GetName()), s.drain)
 		}
 
 		//apply operators, if err bail
 		for _, op := range s.ops {
-			op.Exec(s.ctx.WithMeta(s.name, op.GetName()), streamErr)
+			op.Exec(s.ctx.WithMeta(s.name, op.GetName()), s.drain)
 		}
 
 		// open source, if err bail
 		for _, node := range s.sources{
-			node.Open(s.ctx.WithMeta(s.name, node.GetName()), streamErr)
-		}
-
-		select {
-		case err := <-streamErr:
-			//TODO error handling
-			log.Println("Closing stream")
-			s.drain <- err
+			node.Open(s.ctx.WithMeta(s.name, node.GetName()), s.drain)
 		}
 	}()
 

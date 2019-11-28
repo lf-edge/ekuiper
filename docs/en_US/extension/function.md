@@ -16,6 +16,13 @@ To develop a function, the _Validate_ method is firstly to be implemented. This 
 //The argument is a list of xsql.Expr
 Validate(args []interface{}) error
 ```
+There are 2 types of functions: aggregate function and common function. For aggregate function, if the argument is a column, the received value will always be a slice of the column values in a group. The extended function must distinguish the function type by implement _IsAggregate_ method.
+
+```go
+//If this function is an aggregate function. Each parameter of an aggregate function will be a slice
+IsAggregate() bool
+```
+
 The main task for a Function is to implement _exec_ method. The method will be leverage to calculate the result of the function in the SQL. The argument is a slice of the values for the function parameters. You can use them to do the calculation. If the calculation is successful, return the result and true; otherwise, return nil and false. 
 
 ```go

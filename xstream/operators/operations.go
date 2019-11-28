@@ -77,7 +77,7 @@ func (o *UnaryOperator) GetInput() (chan<- interface{}, string) {
 // Exec is the entry point for the executor
 func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error ) {
 	log := ctx.GetLogger()
-	log.Tracef("Unary operator %s is started", o.name)
+	log.Debugf("Unary operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
 		go func(){errCh <- fmt.Errorf("no output channel found")}()
@@ -110,11 +110,11 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error ) {
 		select {
 		case <-wait:
 			if o.cancelled {
-				log.Printf("Component cancelling...")
+				log.Infof("Component cancelling...")
 				return
 			}
 		case <-ctx.Done():
-			log.Printf("UnaryOp %s done.", o.name)
+			log.Infof("UnaryOp %s done.", o.name)
 			return
 		}
 	}()
@@ -123,7 +123,7 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error ) {
 func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	log := ctx.GetLogger()
 	if o.op == nil {
-		log.Println("Unary operator missing operation")
+		log.Infoln("Unary operator missing operation")
 		return
 	}
 	exeCtx, cancel := ctx.WithCancel()
@@ -143,8 +143,8 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			case nil:
 				continue
 			case error: //TODO error handling
-				log.Println(val)
-				log.Println(val.Error())
+				log.Infoln(val)
+				log.Infoln(val.Error())
 				continue
 			default:
 				nodes.Broadcast(o.outputs, val, ctx)
@@ -152,7 +152,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 
 		// is cancelling
 		case <-ctx.Done():
-			log.Printf("unary operator %s cancelling....", o.name)
+			log.Infof("unary operator %s cancelling....", o.name)
 			o.mutex.Lock()
 			cancel()
 			o.cancelled = true
