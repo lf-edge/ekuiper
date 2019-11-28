@@ -50,7 +50,7 @@ func (c *DefaultContext) GetContext() context.Context{
 	return c.ctx
 }
 
-func (c *DefaultContext) GetLogger() *logrus.Entry {
+func (c *DefaultContext) GetLogger() api.Logger {
 	l, ok := c.ctx.Value(LoggerKey).(*logrus.Entry)
 	if l != nil && ok {
 		return l

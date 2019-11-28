@@ -5,6 +5,7 @@ import (
 	"engine/xsql"
 	"engine/xstream/api"
 	"fmt"
+	"github.com/go-yaml/yaml"
 )
 
 type SourceNode struct {
@@ -12,13 +13,15 @@ type SourceNode struct {
 	outs   map[string]chan<- interface{}
 	name   string
 	ctx    api.StreamContext
+	options map[string]string
 }
 
-func NewSourceNode(name string, source api.Source) *SourceNode{
+func NewSourceNode(name string, source api.Source, options map[string]string) *SourceNode {
 	return &SourceNode{
 		source: source,
 		outs: make(map[string]chan<- interface{}),
 		name: name,
+		options: options,
 		ctx: nil,
 	}
 }
@@ -26,32 +29,74 @@ func NewSourceNode(name string, source api.Source) *SourceNode{
 func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	m.ctx = ctx
 	logger := ctx.GetLogger()
-	logger.Debugf("open source node %s", m.name)
+	logger.Debugf("open source node %s with option %v", m.name, m.options)
 	go func(){
-		if err := m.source.Open(ctx, func(message map[string]interface{}, meta map[string]interface{}){
-			tuple := &xsql.Tuple{Emitter: m.name, Message:message, Timestamp: common.GetNowInMilli(), Metadata:meta}
+		props := getConf(m.options["TYPE"], m.options["CONF_KEY"], ctx)
+		err := m.source.Configure(m.options["DATASOURCE"], props)
+		if err != nil{
+			m.drainError(errCh, err, ctx, logger)
+			return
+		}
+		if err := m.source.Open(ctx, func(message map[string]interface{}, meta map[string]interface{}) {
+			tuple := &xsql.Tuple{Emitter: m.name, Message: message, Timestamp: common.GetNowInMilli(), Metadata: meta}
 			m.Broadcast(tuple)
 			logger.Debugf("%s consume data %v complete", m.name, tuple)
-		}); err != nil{
-			select {
-			case errCh <- err:
-			case <-ctx.Done():
-				if err := m.source.Close(ctx); err != nil{
-					go func() { errCh <- err }()
-				}
-			}
+		}); err != nil {
+			m.drainError(errCh, err, ctx, logger)
+			return
 		}
 		for {
 			select {
 			case <-ctx.Done():
 				logger.Infof("source %s done", m.name)
-				if err := m.source.Close(ctx); err != nil{
-					go func() { errCh <- err }()
+				if err := m.source.Close(ctx); err != nil {
+					logger.Warnf("close source fails: %v", err)
 				}
 				return
 			}
 		}
 	}()
+}
+
+func (m *SourceNode) drainError(errCh chan<- error, err error, ctx api.StreamContext, logger api.Logger) {
+	select {
+	case errCh <- err:
+	case <-ctx.Done():
+		if err := m.source.Close(ctx); err != nil {
+			logger.Warnf("close source fails: %v", err)
+		}
+	}
+	return
+}
+
+func getConf(t string, confkey string, ctx api.StreamContext) map[string]interface{} {
+	logger := ctx.GetLogger()
+	if t == ""{
+		t = "mqtt"
+	}
+	conf, err := common.LoadConf("sources/" + t + ".yaml")
+	props := make(map[string]interface{})
+	if err == nil {
+		cfg := make(map[string]map[string]interface{})
+		if err := yaml.Unmarshal(conf, &cfg); err != nil {
+			logger.Warnf("fail to parse yaml for source %s. Return an empty configuration", t)
+		} else {
+			var ok bool
+			props, ok = cfg["default"]
+			if !ok {
+				logger.Warnf("default conf is not found", confkey)
+			}
+			if c, ok := cfg[confkey]; ok {
+				for k, v := range c {
+					props[k] = v
+				}
+			}
+		}
+	} else {
+		logger.Warnf("config file %s.yaml is not loaded properly. Return an empty configuration", t)
+	}
+	logger.Debugf("get conf for %s with conf key %s: %v", t, confkey, props)
+	return props
 }
 
 func (m *SourceNode) Broadcast(data interface{}) int{

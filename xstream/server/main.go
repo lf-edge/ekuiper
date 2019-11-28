@@ -36,9 +36,7 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 	}
 	tp, err := processors.NewRuleProcessor(path.Dir(dataDir)).ExecQuery(QUERY_RULE_ID, sql)
 	if err != nil {
-		msg := fmt.Sprintf("Failed to create query: %s.", err)
-		log.Println(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("failed to create query: %s", err)
 	} else {
 		rs := &RuleState{Name: QUERY_RULE_ID, Topology: tp, Triggered: true}
 		registry[QUERY_RULE_ID] = rs
@@ -174,7 +172,7 @@ func (t *Server) doStartRule(rs *RuleState) error{
 		tp := rs.Topology
 		select {
 		case err := <-tp.Open():
-			log.Println(err)
+			log.Printf("closing rule %s for error: %v", rs.Name, err)
 			tp.Cancel()
 		}
 	}()

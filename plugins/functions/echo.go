@@ -19,4 +19,8 @@ func (f *echo) Exec(args []interface{}) (interface{}, bool) {
 	return result, true
 }
 
+func (f *echo) IsAggregate() bool {
+	return false
+}
+
 var Echo echo

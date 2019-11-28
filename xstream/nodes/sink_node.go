@@ -26,7 +26,12 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	logger.Debugf("open sink node %s", m.name)
 	go func() {
 		if err := m.sink.Open(ctx); err != nil{
-			go func() { result <- err }()
+			go func() {
+				select{
+				case result <- err:
+				case <-ctx.Done():
+				}
+			}()
 			return
 		}
 		for {
@@ -39,7 +44,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 			case <-ctx.Done():
 				logger.Infof("sink node %s done", m.name)
 				if err := m.sink.Close(ctx); err != nil{
-					go func() { result <- err }()
+					logger.Warnf("close sink node %s fails: %v", m.name, err)
 				}
 				return
 			}

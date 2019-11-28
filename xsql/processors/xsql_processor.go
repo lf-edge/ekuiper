@@ -14,7 +14,6 @@ import (
 	"engine/xstream/operators"
 	"engine/xstream/sinks"
 	"fmt"
-	"github.com/go-yaml/yaml"
 	"path"
 	"strings"
 )
@@ -23,15 +22,15 @@ var log = common.Log
 
 type StreamProcessor struct {
 	statement string
-	badgerDir string
+	dbDir     string
 }
 
 //@params s : the sql string of create stream statement
-//@params d : the directory of the badger DB to save the stream info
+//@params d : the directory of the DB to save the stream info
 func NewStreamProcessor(s, d string) *StreamProcessor {
 	processor := &StreamProcessor{
 		statement: s,
-		badgerDir: d,
+		dbDir:     d,
 	}
 	return processor
 }
@@ -44,7 +43,7 @@ func (p *StreamProcessor) Exec() (result []string, err error) {
 		return
 	}
 
-	store := common.GetSimpleKVStore(p.badgerDir)
+	store := common.GetSimpleKVStore(p.dbDir)
 	err = store.Open()
 	if err != nil {
 		return
@@ -78,7 +77,7 @@ func (p *StreamProcessor) Exec() (result []string, err error) {
 func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, db common.KeyValue) (string, error) {
 	err := db.Set(string(stmt.Name), p.statement)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Create stream fails: %v.", err)
 	}else{
 		return fmt.Sprintf("Stream %s is created.", stmt.Name), nil
 	}
@@ -93,7 +92,7 @@ func (p *StreamProcessor) execShowStream(stmt *xsql.ShowStreamsStatement, db com
 }
 
 func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement, db common.KeyValue) (string,error) {
-	s, f := db.Get(string(stmt.Name))
+	s, f := db.Get(stmt.Name)
 	s1, _ := s.(string)
 	if !f {
 		return "", fmt.Errorf("Stream %s is not found.", stmt.Name)
@@ -118,7 +117,7 @@ func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement,
 }
 
 func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement, db common.KeyValue) (string,error) {
-	_, f := db.Get(string(stmt.Name))
+	_, f := db.Get(stmt.Name)
 	if !f {
 		return "", fmt.Errorf("Stream %s is not found.", stmt.Name)
 	}
@@ -126,9 +125,9 @@ func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement, d
 }
 
 func (p *StreamProcessor) execDropStream(stmt *xsql.DropStreamStatement, db common.KeyValue) (string, error) {
-	err := db.Delete(string(stmt.Name))
+	err := db.Delete(stmt.Name)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Drop stream fails: %v.", err)
 	}else{
 		return fmt.Sprintf("Stream %s is dropped.", stmt.Name), nil
 	}
@@ -151,12 +150,12 @@ func GetStream(m *common.SimpleKVStore, name string) (stmt *xsql.StreamStmt, err
 
 
 type RuleProcessor struct {
-	badgerDir string
+	dbDir string
 }
 
 func NewRuleProcessor(d string) *RuleProcessor {
 	processor := &RuleProcessor{
-		badgerDir: d,
+		dbDir: d,
 	}
 	return processor
 }
@@ -166,7 +165,7 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 	if err != nil {
 		return nil, err
 	}
-	store := common.GetSimpleKVStore(path.Join(p.badgerDir, "rule"))
+	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
 	err = store.Open()
 	if err != nil {
 		return nil, err
@@ -183,7 +182,7 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 }
 
 func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
-	store := common.GetSimpleKVStore(path.Join(p.badgerDir, "rule"))
+	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
 	err := store.Open()
 	if err != nil {
 		return nil, err
@@ -245,7 +244,7 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 		go func() {
 			select {
 			case err := <-tp.Open():
-				log.Println(err)
+				log.Infof("closing query for error: %v", err)
 				tp.Cancel()
 			}
 		}()
@@ -254,7 +253,7 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 }
 
 func (p *RuleProcessor) ExecDesc(name string) (string, error) {
-	store := common.GetSimpleKVStore(path.Join(p.badgerDir, "rule"))
+	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
 	err := store.Open()
 	if err != nil {
 		return "", err
@@ -289,7 +288,7 @@ func (p *RuleProcessor) ExecShow() (string, error) {
 }
 
 func (p *RuleProcessor) GetAllRules() ([]string, error) {
-	store := common.GetSimpleKVStore(path.Join(p.badgerDir, "rule"))
+	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
 	err := store.Open()
 	if err != nil {
 		return nil, err
@@ -299,7 +298,7 @@ func (p *RuleProcessor) GetAllRules() ([]string, error) {
 }
 
 func (p *RuleProcessor) ExecDrop(name string) (string, error) {
-	store := common.GetSimpleKVStore(path.Join(p.badgerDir, "rule"))
+	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
 	err := store.Open()
 	if err != nil {
 		return "", err
@@ -352,7 +351,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			if !shouldCreateSource && len(streamsFromStmt) != len(sources){
 				return nil, nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
 			}
-			store := common.GetSimpleKVStore(path.Join(p.badgerDir, "stream"))
+			store := common.GetSimpleKVStore(path.Join(p.dbDir, "stream"))
 			err := store.Open()
 			if err != nil {
 				return nil, nil, err
@@ -373,7 +372,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 					if err != nil {
 						return nil, nil, fmt.Errorf("fail to get source: %v", err)
 					}
-					node := nodes.NewSourceNode(s, src)
+					node := nodes.NewSourceNode(s, src, streamStmt.Options)
 					tp.AddSrc(node)
 					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s)
 					tp.AddOperator([]api.Emitter{node}, preprocessorOp)
@@ -456,7 +455,6 @@ func getSource(streamStmt *xsql.StreamStmt) (api.Source, error) {
 	switch t {
 	case "mqtt":
 		s = &extensions.MQTTSource{}
-		log.Debugf("Source mqtt created")
 	default:
 		nf, err := plugin_manager.GetPlugin(t, "sources")
 		if err != nil {
@@ -467,39 +465,8 @@ func getSource(streamStmt *xsql.StreamStmt) (api.Source, error) {
 			return nil, fmt.Errorf("exported symbol %s is not type of api.Source", t)
 		}
 	}
-	props := getConf(t, streamStmt.Options["CONF_KEY"])
-	err := s.Configure(streamStmt.Options["DATASOURCE"], props)
-	if err != nil{
-		return nil, err
-	}
 	log.Debugf("Source %s created", t)
 	return s, nil
-}
-
-func getConf(t string, confkey string) map[string]interface{} {
-	conf, err := common.LoadConf("sources/" + t + ".yaml")
-	props := make(map[string]interface{})
-	if err == nil {
-		cfg := make(map[string]map[string]interface{})
-		if err := yaml.Unmarshal(conf, &cfg); err != nil {
-			log.Warnf("fail to parse yaml for source %s. Return an empty configuration", t)
-		} else {
-			var ok bool
-			props, ok = cfg["default"]
-			if !ok {
-				log.Warnf("default conf is not found", confkey)
-			}
-			if c, ok := cfg[confkey]; ok {
-				for k, v := range c {
-					props[k] = v
-				}
-			}
-		}
-	} else {
-		log.Warnf("config file %s.yaml is not loaded properly. Return an empty configuration", t)
-	}
-	log.Debugf("get conf for %s with conf key %s: %v", t, confkey, props)
-	return props
 }
 
 func getSink(name string, action map[string]interface{}) (api.Sink, error) {

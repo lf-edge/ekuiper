@@ -2,11 +2,24 @@ package api
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
 )
 
 //The function to call when data is emitted by the source.
 type ConsumeFunc func(message map[string]interface{}, metadata map[string]interface{})
+type Logger interface{
+	Debug(args ...interface{})
+	Info(args ...interface{})
+	Warn(args ...interface{})
+	Error(args ...interface{})
+	Debugln(args ...interface{})
+	Infoln(args ...interface{})
+	Warnln(args ...interface{})
+	Errorln(args ...interface{})
+	Debugf(format string, args ...interface{})
+	Infof(format string, args ...interface{})
+	Warnf(format string, args ...interface{})
+	Errorf(format string, args ...interface{})
+}
 
 type Closable interface {
 	Close(ctx StreamContext) error
@@ -52,7 +65,7 @@ type Rule struct {
 
 type StreamContext interface {
 	context.Context
-	GetLogger()  *logrus.Entry
+	GetLogger() Logger
 	GetRuleId() string
 	GetOpId() string
 	WithMeta(ruleId string, opId string) StreamContext
@@ -72,5 +85,7 @@ type Function interface {
 	//Execute the function, return the result and if execution is successful.
 	//If execution fails, return the error and false.
 	Exec(args []interface{}) (interface{}, bool)
+	//If this function is an aggregate function. Each parameter of an aggregate function will be a slice
+	IsAggregate() bool
 }
 

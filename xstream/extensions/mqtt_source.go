@@ -136,18 +136,18 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("found error when connecting to %s: %s", ms.srv, token.Error())
 	}
-	log.Printf("The connection to server %s was established successfully", ms.srv)
+	log.Infof("The connection to server %s was established successfully", ms.srv)
 	ms.conn = c
 	if token := c.Subscribe(ms.tpc, 0, nil); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("Found error: %s", token.Error())
 	}
-	log.Printf("Successfully subscribe to topic %s", ms.tpc)
+	log.Infof("Successfully subscribe to topic %s", ms.tpc)
 
 	return nil
 }
 
 func (ms *MQTTSource) Close(ctx api.StreamContext) error{
-	ctx.GetLogger().Println("Mqtt Source Done")
+	ctx.GetLogger().Infoln("Mqtt Source Done")
 	if ms.conn != nil && ms.conn.IsConnected() {
 		ms.conn.Disconnect(5000)
 	}

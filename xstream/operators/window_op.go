@@ -6,7 +6,6 @@ import (
 	"engine/xstream/api"
 	"engine/xstream/nodes"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"math"
 	"time"
 )
@@ -98,7 +97,7 @@ func (o *WindowOperator) GetInput() (chan<- interface{}, string) {
 // output: xsql.WindowTuplesSet
 func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error ){
 	log := ctx.GetLogger()
-	log.Printf("Window operator %s is started", o.name)
+	log.Infof("Window operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
 		go func(){errCh <- fmt.Errorf("no output channel found")}()
@@ -177,7 +176,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 			}
 		// is cancelling
 		case <-ctx.Done():
-			log.Println("Cancelling window....")
+			log.Infoln("Cancelling window....")
 			if o.ticker != nil{
 				o.ticker.Stop()
 			}
@@ -188,7 +187,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 
 func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, bool){
 	log := ctx.GetLogger()
-	log.Printf("window %s triggered at %s", o.name, time.Unix(triggerTime/1000, triggerTime%1000))
+	log.Infof("window %s triggered at %s", o.name, time.Unix(triggerTime/1000, triggerTime%1000))
 	var delta int64
 	if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
 		delta = o.calDelta(triggerTime, delta, log)
@@ -219,7 +218,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 	}
 	triggered := false
 	if len(results) > 0 {
-		log.Printf("window %s triggered for %d tuples", o.name, len(inputs))
+		log.Infof("window %s triggered for %d tuples", o.name, len(inputs))
 		if o.isEventTime{
 			results.Sort()
 		}
@@ -233,7 +232,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 	return inputs[:i], triggered
 }
 
-func (o *WindowOperator) calDelta(triggerTime int64, delta int64, log *logrus.Entry) int64 {
+func (o *WindowOperator) calDelta(triggerTime int64, delta int64, log api.Logger) int64 {
 	lastTriggerTime := o.triggerTime
 	o.triggerTime = triggerTime
 	if lastTriggerTime <= 0 {

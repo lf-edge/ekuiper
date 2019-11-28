@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"engine/xstream/api"
+	"math/rand"
 	"time"
 )
 
 //Emit data randomly with only a string field
 type randomSource struct {
 	interval int
+	seed int
 	pattern map[string]interface{}
 	cancel context.CancelFunc
 }
@@ -25,6 +27,11 @@ func (s *randomSource) Configure(topic string, props map[string]interface{}) err
 		s.pattern = make(map[string]interface{})
 		s.pattern["count"] = 50
 	}
+	if i, ok := props["seed"].(int); ok{
+		s.seed = i
+	}else{
+		s.seed = 1
+	}
 	return nil
 }
 
@@ -37,7 +44,7 @@ func (s *randomSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err
 		for{
 			select{
 			case <- t.C:
-				consume(randomize(s.pattern), nil)
+				consume(randomize(s.pattern, s.seed), nil)
 			case <- exeCtx.Done():
 				return
 			}
@@ -46,11 +53,11 @@ func (s *randomSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err
 	return nil
 }
 
-func randomize(p map[string]interface{}) map[string]interface{}{
+func randomize(p map[string]interface{}, seed int) map[string]interface{}{
 	r := make(map[string]interface{})
 	for k, v := range p{
 		vi := v.(int)
-		r[k] = vi + 1
+		r[k] = vi + rand.Intn(seed)
 	}
 	return r
 }
