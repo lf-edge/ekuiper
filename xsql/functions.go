@@ -71,7 +71,8 @@ func (*FunctionValuer) Call(name string, args []interface{}) (interface{}, bool)
 	} else if _, ok :=  aggFuncMap[lowerName]; ok {
 		return nil, false
 	} else {
-		if nf, err := plugin_manager.GetPlugin(lowerName, "functions"); err != nil {
+		common.Log.Debugf("run func %s", name)
+		if nf, err := plugin_manager.GetPlugin(name, "functions"); err != nil {
 			return nil, false
 		}else{
 			f, ok := nf.(api.Function)
@@ -82,7 +83,7 @@ func (*FunctionValuer) Call(name string, args []interface{}) (interface{}, bool)
 				return nil, false
 			}
 			result, ok := f.Exec(args)
-			common.Log.Debugf("run custom function %s, get result %v", lowerName, result)
+			common.Log.Debugf("run custom function %s, get result %v", name, result)
 			return result, ok
 		}
 	}

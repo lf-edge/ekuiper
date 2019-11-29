@@ -1,8 +1,10 @@
 package xsql
 
 import (
-	"github.com/emqx/kuiper/common"
 	"fmt"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/common/plugin_manager"
+	"github.com/emqx/kuiper/xstream/api"
 	"math"
 	"sort"
 	"strings"
@@ -1515,8 +1517,7 @@ func IsAggStatement(node Node) bool {
 	var r = false
 	WalkFunc(node, func(n Node) {
 		if f, ok := n.(*Call); ok {
-			fn := strings.ToLower(f.Name)
-			if _, ok1 := aggFuncMap[fn]; ok1 {
+			if ok := isAggFunc(f); ok {
 				r = true
 				return
 			}
@@ -1530,15 +1531,38 @@ func IsAggStatement(node Node) bool {
 	})
 	return r
 }
+
+func isAggFunc(f *Call) bool {
+	fn := strings.ToLower(f.Name)
+	if _, ok := aggFuncMap[fn]; ok {
+		return true
+	} else if _, ok := strFuncMap[fn]; ok {
+		return false
+	} else if _, ok := convFuncMap[fn]; ok {
+		return false
+	} else if _, ok := hashFuncMap[fn]; ok {
+		return false
+	} else if _, ok := otherFuncMap[fn]; ok {
+		return false
+	} else if _, ok := mathFuncMap[fn]; ok {
+		return false
+	} else {
+		if nf, err := plugin_manager.GetPlugin(f.Name, "functions"); err == nil {
+			if ef, ok := nf.(api.Function); ok && ef.IsAggregate() {
+				return true
+			}
+		}
+	}
+	return false
+}
 func HasAggFuncs(node Node) bool {
 	if node == nil{
 		return false
 	}
-	var r bool = false
+	var r = false
 	WalkFunc(node, func(n Node) {
 		if f, ok := n.(*Call); ok {
-			fn := strings.ToLower(f.Name)
-			if _, ok1 := aggFuncMap[fn]; ok1 {
+			if ok := isAggFunc(f); ok {
 				r = true
 				return
 			}
@@ -1551,28 +1575,15 @@ func HasNoAggFuncs(node Node) bool {
 	if node == nil{
 		return false
 	}
-	var r bool = false
+	var r = false
 	WalkFunc(node, func(n Node) {
 		if f, ok := n.(*Call); ok {
-			fn := strings.ToLower(f.Name)
-			if _, ok1 := mathFuncMap[fn]; ok1 {
-				r = true
-				return
-			} else if _, ok1 := strFuncMap[fn]; ok1 {
-				r = true
-				return
-			} else if _, ok1 := convFuncMap[fn]; ok1 {
-				r = true
-				return
-			} else if _, ok1 := hashFuncMap[fn]; ok1 {
-				r = true
-				return
-			} else if _, ok1 := otherFuncMap[fn]; ok1 {
+			if ok := isAggFunc(f); !ok {
 				r = true
 				return
 			}
 		}
-	});
+	})
 	return r
 }
 

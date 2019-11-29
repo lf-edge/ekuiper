@@ -231,10 +231,10 @@ func GetLoc(subdir string)(string, error) {
 		return "", err
 	}
 
-	flag.Parse()
-	if loc := *kpbase; loc != "" {
-		dir = loc
-	}
+	//flag.Parse()
+	//if loc := *kpbase; loc != "" {
+	//	dir = loc
+	//}
 
 	confDir := dir + subdir
 	if _, err := os.Stat(confDir); os.IsNotExist(err) {

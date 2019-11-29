@@ -114,7 +114,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 	}
 
 	h := func(client MQTT.Client, msg MQTT.Message) {
-		log.Infof("received %s", msg.Payload())
+		log.Debugf("received %s", msg.Payload())
 
 		result := make(map[string]interface{})
 		//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
