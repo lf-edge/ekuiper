@@ -13,7 +13,10 @@ func (f *countPlusOneFunc) Validate(args []interface{}) error{
 }
 
 func (f *countPlusOneFunc) Exec(args []interface{}) (interface{}, bool) {
-	arg := args[0].([]interface{})
+	arg, ok := args[0].([]interface{})
+	if !ok{
+		return fmt.Errorf("arg is not a slice, got %v", args[0]), false
+	}
 	return len(arg) + 1, true
 }
 

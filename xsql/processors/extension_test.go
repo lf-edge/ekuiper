@@ -78,13 +78,18 @@ func TestExtensions(t *testing.T) {
 				tp.Cancel()
 			}
 		}()
-		time.Sleep(5000 * time.Millisecond)
+		time.Sleep(2000 * time.Millisecond)
 		log.Printf("exit main program after 5 seconds")
 		tp.Cancel()
 		results := getResults()
-		var maps []map[string]interface{}
+		if len(results) == 0{
+			t.Errorf("no result found")
+			continue
+		}
+		log.Debugf("get results %v", results)
+		var maps [][]map[string]interface{}
 		for _, v := range results{
-			var mapRes map[string]interface{}
+			var mapRes []map[string]interface{}
 			err := json.Unmarshal([]byte(v), &mapRes)
 			if err != nil {
 				t.Errorf("Failed to parse the input into map")
@@ -94,13 +99,20 @@ func TestExtensions(t *testing.T) {
 		}
 
 		for _, r := range maps{
-			e := (r["e"]).(int)
+			if len(r) != 1{
+				t.Errorf("%d. %q\n\nresult mismatch:\n\ngot=%#v\n\n", i, tt.rj, maps)
+				break
+			}
+			r := r[0]
+			e := int((r["e"]).(float64))
 			if e != 50 && e != 51{
 				t.Errorf("%d. %q\n\nresult mismatch:\n\ngot=%#v\n\n", i, tt.rj, maps)
+				break
 			}
-			p := r["p"].(int)
+			p := int(r["p"].(float64))
 			if p != 2 {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\ngot=%#v\n\n", i, tt.rj, maps)
+				break
 			}
 		}
 	}

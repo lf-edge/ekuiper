@@ -91,7 +91,8 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 		}
 		return 0, true
 	default:
-		if nf, err := plugin_manager.GetPlugin(lowerName, "functions"); err != nil {
+		common.Log.Debugf("run aggregate func %s", name)
+		if nf, err := plugin_manager.GetPlugin(name, "functions"); err != nil {
 			return nil, false
 		}else{
 			f, ok := nf.(api.Function)
@@ -102,7 +103,7 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 				return nil, false
 			}
 			result, ok := f.Exec(args)
-			common.Log.Debugf("run custom function %s, get result %v", lowerName, result)
+			common.Log.Debugf("run custom aggregate function %s, get result %v", name, result)
 			return result, ok
 		}
 	}

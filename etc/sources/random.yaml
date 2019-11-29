@@ -4,7 +4,7 @@ default:
     count: 50
 
 ext:
-  interval: 5000
+  interval: 300
   seed: 1
   pattern:
     count: 50

@@ -3,8 +3,8 @@ package main
 import (
 	"bufio"
 	"context"
-	"engine/xstream/api"
 	"fmt"
+	"github.com/emqx/kuiper/xstream/api"
 	"os"
 	"sync"
 	"time"
@@ -70,6 +70,10 @@ func (m *fileSink) Open(ctx api.StreamContext) error {
 }
 
 func (m *fileSink) save(logger api.Logger) {
+	if len(m.results) == 0 {
+		return
+	}
+	logger.Debugf("file sink is saving to file %s", m.path)
 	var strings []string
 	m.mux.Lock()
 	for _, b := range m.results {
@@ -85,17 +89,18 @@ func (m *fileSink) save(logger api.Logger) {
 		}
 	}
 	w.Flush()
+	logger.Debugf("file sink has saved to file %s", m.path)
 }
 
 func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	if v, ok := item.([]byte); ok {
-		logger.Debugf("memory sink receive %s", item)
+		logger.Debugf("file sink receive %s", item)
 		m.mux.Lock()
 		m.results = append(m.results, v)
 		m.mux.Unlock()
 	}else{
-		logger.Debug("memory sink receive non byte data")
+		logger.Debug("file sink receive non byte data")
 	}
 	return nil
 }

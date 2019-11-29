@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"engine/xstream/api"
 	"fmt"
+	"github.com/emqx/kuiper/xstream/api"
 	zmq "github.com/pebbe/zmq4"
 )
 
