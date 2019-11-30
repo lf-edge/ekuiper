@@ -271,6 +271,7 @@ func init(){
 
 
 func StartUp(Version string) {
+	common.InitConf()
 	server := new(Server)
 	//Start rules
 	if rules, err := processor.GetAllRules(); err != nil{
