@@ -9,4 +9,4 @@ Refer to the following topics for guidance on using the Kuiper.
 - [Kuiper SQL reference](sqls/overview.md)
 - [Rules](rules/overview.md)
 - [Extend Kuiper](extension/overview.md)
-
+- [Plugins](plugins/overview.md)

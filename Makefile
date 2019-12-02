@@ -24,8 +24,12 @@ endif
 build:
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/bin
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/etc
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/etc/sources
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/etc/sinks
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/data
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/sources
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/sinks
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/log
 
 	@cp -r etc/* $(BUILD_PATH)/$(PACKAGE_NAME)/etc
