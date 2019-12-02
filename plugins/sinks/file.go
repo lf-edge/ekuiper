@@ -24,8 +24,8 @@ func (m *fileSink) Configure(props map[string]interface{}) error {
 	m.interval = 1000
 	m.path = "cache"
 	if i, ok := props["interval"]; ok {
-		if i, ok := i.(int); ok {
-			m.interval = i
+		if i, ok := i.(float64); ok {
+			m.interval = int(i)
 		}
 	}
 	if i, ok := props["path"]; ok {
