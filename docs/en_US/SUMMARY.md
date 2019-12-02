@@ -23,3 +23,4 @@
   <!-- - [Source extension]()
   - [Sink/Action extension]()
   - [Functions extension]() -->
+- [Plugins](plugins/overview.md)

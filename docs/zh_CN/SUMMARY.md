@@ -20,3 +20,4 @@
   - [日志动作](rules/sinks/logs.md)
   - [MQTT 动作](rules/sinks/mqtt.md)
 - [扩展 Kuiper](extension/overview.md)
+- [插件](plugins/overview.md)
