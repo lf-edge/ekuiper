@@ -43,10 +43,9 @@ func (m *fileSink) Open(ctx api.StreamContext) error {
 	var f *os.File
 	var err error
 	if _, err := os.Stat(m.path); os.IsNotExist(err) {
-		f, err = os.Create(m.path)
-	}else{
-		f, err = os.Open(m.path)
+		_, err = os.Create(m.path)
 	}
+	f, err = os.OpenFile(m.path, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	if err != nil{
 		return fmt.Errorf("fail to open file sink for %v", err)
 	}
@@ -85,7 +84,7 @@ func (m *fileSink) save(logger api.Logger) {
 	for _, s := range strings {
 		_, err := m.file.WriteString(s)
 		if err != nil {
-			logger.Errorf("file sink fails to write out result: %s", s)
+			logger.Errorf("file sink fails to write out result '%s' with error %s.", s, err)
 		}
 	}
 	w.Flush()
