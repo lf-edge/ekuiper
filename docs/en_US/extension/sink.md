@@ -1,16 +1,16 @@
 # Sink Extension
 
-Sink feed data from Kuiper into external systems. Kuiper has built-in source support for [MQTT broker](../rules/sinks/mqtt.md) and [log sink](../rules/sinks/logs.md). There are still needs to publish data to various external systems include messaging systems and database etc. Sink extension is presented to meet this requirement.
+Sink feed data from Kuiper into external systems. Kuiper has built-in sink support for [MQTT broker](../rules/sinks/mqtt.md) and [log sink](../rules/sinks/logs.md). There are still needs to publish data to various external systems include messaging systems and database etc. Sink extension is presented to meet this requirement.
 
 ## Developing
 
-### Develop a source
+### Develop a sink
 
-To develop a source for Kuiper is to implement [api.Sink](../../../xstream/api/stream.go) interface and export it as a golang plugin.
+To develop a sink for Kuiper is to implement [api.Sink](../../../xstream/api/stream.go) interface and export it as a golang plugin.
 
 Before starting the development, you must [setup the environment for golang plugin](overview.md#setup-the-plugin-developing-environment). 
 
-To develop a source, the _Configure_ method must be implemented. This method will be called once the source is initialized. In this method, a map that contains the configuration in the [rule actions definition](../rules/overview.md#actions) is passed in. Typically, there will be information such as host, port, user and password of the external system. You can use this map to initialize this sink.
+To develop a sink, the _Configure_ method must be implemented. This method will be called once the sink is initialized. In this method, a map that contains the configuration in the [rule actions definition](../rules/overview.md#actions) is passed in. Typically, there will be information such as host, port, user and password of the external system. You can use this map to initialize this sink.
 
 ```go
 //Called during initialization. Configure the sink with the properties from action definition 
@@ -35,7 +35,7 @@ The last method to implement is _Close_ which literally close the connection. It
 Close(ctx StreamContext) error
 ```
 
-As the sink itself is a plugin, it must be in the main package. Given the sink struct name is mySink. At last of the file, the source must be exported as a symbol as below.
+As the sink itself is a plugin, it must be in the main package. Given the sink struct name is mySink. At last of the file, the sink must be exported as a symbol as below.
 
 ```go
 var MySink mySink
@@ -43,7 +43,7 @@ var MySink mySink
 
 The [Memory Sink](../../../plugins/sinks/memory.go) is a good example.
 
-### Package the source
+### Package the sink
 Build the implemented sink as a go plugin and make sure the output so file resides in the plugins/sinks folder.
 
 ```bash
