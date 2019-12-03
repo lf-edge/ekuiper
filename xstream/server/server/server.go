@@ -262,11 +262,12 @@ func init(){
 func StartUp(Version string) {
 	common.InitConf()
 
-	dataDir, err := common.GetDataLoc()
+	dr, err := common.GetDataLoc()
 	if err != nil {
 		log.Panic(err)
 	}else{
-		log.Infof("db location is %s", dataDir)
+		log.Infof("db location is %s", dr)
+		dataDir = dr
 	}
 	processor = processors.NewRuleProcessor(path.Dir(dataDir))
 	registry = make(RuleRegistry)
