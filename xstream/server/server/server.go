@@ -239,17 +239,6 @@ func (t *Server) DropRule(name string, reply *string) error{
 }
 
 func init(){
-	var err error
-	dataDir, err = common.GetDataLoc()
-	if err != nil {
-		log.Panic(err)
-	}else{
-		log.Infof("db location is %s", dataDir)
-	}
-
-	processor = processors.NewRuleProcessor(path.Dir(dataDir))
-	registry = make(RuleRegistry)
-
 	ticker := time.NewTicker(time.Second * 5)
 	go func() {
 		for {
@@ -272,6 +261,17 @@ func init(){
 
 func StartUp(Version string) {
 	common.InitConf()
+
+	var err error
+	dataDir, err = common.GetDataLoc()
+	if err != nil {
+		log.Panic(err)
+	}else{
+		log.Infof("db location is %s", dataDir)
+	}
+	processor = processors.NewRuleProcessor(path.Dir(dataDir))
+	registry = make(RuleRegistry)
+
 	server := new(Server)
 	//Start rules
 	if rules, err := processor.GetAllRules(); err != nil{
