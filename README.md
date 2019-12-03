@@ -32,23 +32,23 @@ English
   $ make
   ```
 
-+ Cross build binary file
-
-  ```shell
-  $ GOOS=linux GOARCH=arm make 
-  ```
-
-#### Get the compressed file
-
 + Get the compressed files
  
-  ```
+  ```shell
   $ make pkg
   ```
 
+#### Cross-build binary file
+
++ Prepare
+
+    + docker version >= 19.03
+
+    + Requires experimental mode to be enabled on the Docker CLI
+
 + Get the cross-build compressed file
 
-  ```
-  $ GOOS=linux GOARCH=arm make pkg
+  ```shell
+  $ make cross_build
   ```
   
