@@ -1,0 +1,5 @@
+FROM golang:1.13.4 AS builder
+
+COPY . /go/kuiper
+
+RUN apt update && apt install -y zip upx && make pkg 
