@@ -262,8 +262,7 @@ func init(){
 func StartUp(Version string) {
 	common.InitConf()
 
-	var err error
-	dataDir, err = common.GetDataLoc()
+	dataDir, err := common.GetDataLoc()
 	if err != nil {
 		log.Panic(err)
 	}else{
