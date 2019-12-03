@@ -289,7 +289,7 @@ func StartUp(Version string) {
 	}
 
 	//Start server
-	err := rpc.Register(server)
+	err = rpc.Register(server)
 	if err != nil {
 		log.Fatal("Format of service Server isn't correct. ", err)
 	}
