@@ -22,6 +22,8 @@ else
 	PACKAGE_NAME := $(PACKAGE_NAME)-$(GOARCH)
 endif
 
+TARGET ?= emqx/kuiper
+
 .PHONY: build
 build:
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/bin
@@ -56,9 +58,12 @@ pkg: build
 	@mv $(BUILD_PATH)/$(PACKAGE_NAME).zip $(BUILD_PATH)/$(PACKAGE_NAME).tar.gz $(PACKAGES_PATH)
 	@echo "Package build success"
 
-.PHONY: cross_build
-cross_build:
+.PHONY:cross_prepare
+cross_prepare:
 	@docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+.PHONY: cross_build
+cross_build: cross_prepare
 	@docker buildx build --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
 	-t cross_build \
 	--output type=tar,dest=cross_build.tar \
@@ -77,13 +82,20 @@ cross_build:
 		&& mv linux_386/go/kuiper/_packages/kuiper-$(VERSION)-$(OS)-x86_64.tar.gz $(PACKAGES_PATH)/kuiper-$(VERSION)-linux-386.tar.gz \
 		&& mv linux_386/go/kuiper/_packages/kuiper-$(VERSION)-$(OS)-x86_64.zip $(PACKAGES_PATH)/kuiper-$(VERSION)-linux-386.zip
 
-	@rm -rf cross_build.tar linux_amd64 linux_arm64 linux_arm_v7 linux_ppc64le linux_386
 	@echo "Cross build success"
 
 .PHONY: docker
 docker:
-	docker build -t emqx/kuiper:$(VERSION) -f .
+	docker build -t $(TARGET):$(VERSION) -f .
+
+.PHONY:cross_docker
+cross_docker: cross_prepare
+	docker buildx build --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+	-t $(TARGET):$(VERSION) \
+	-f docker/Dockerfile . \
+	--push
 
 .PHONY: clean
 clean:
-	@rm -rf _build _packages
+	@rm -rf cross_build.tar linux_amd64 linux_arm64 linux_arm_v7 linux_ppc64le linux_386
+	@rm -rf _build _packages 
