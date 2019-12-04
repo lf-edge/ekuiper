@@ -6,7 +6,9 @@
 
 - **Where to get help**:
 
-  https://emqx.io, or https://github.com/emqx/kuiper
+  Web: https://github.com/emqx/kuiper
+  
+  Documents: https://docs.emqx.io/kuiper/v0.0.2/en/
 
 - **Where to file issues:**
 
@@ -22,7 +24,7 @@
 
 # Image Variants
 
-The `emqx/kuiper` images come in many flavors, each designed for a specific use case.
+The `emqx/kuiper` images come in many flavors, each designed for a specific operate systems.
 
 ## `emqx/kuiper:<tag>`
 
@@ -37,7 +39,7 @@ This is an unstable version. It is an image built according to the commit number
 
 A SQL based lightweight IoT analytics/streaming software running at resource constrained edge devices.
 
-- Native run with small overhead ( ~7MB package), support Linux/Windows/Mac OS
+- Native run with small overhead ( ~7MB package), support Linux/Mac OS
 - SQL based, easy to use
 - Built-in support for MQTT source
 - Extension - user can customize the rule engine
@@ -77,5 +79,5 @@ If you want to configure more options, you can mount the configuration file into
 
 # More
 
-If you'd like to know more about the project, please refer to [doc home](https://github.com/emqx/kuiper/blob/master/docs/en_US/README.md).
+If you'd like to know more about the project, please refer to [Github project](https://github.com/emqx/kuiper/blob/master/docs/en_US/README.md).
 
