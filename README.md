@@ -38,6 +38,12 @@ English
   $ make pkg
   ```
 
++ Get the docker image
+ 
+  ```shell
+  $ make docker
+  ```
+
 #### Cross-build binary file
 
 + Prepare
@@ -51,4 +57,9 @@ English
   ```shell
   $ make cross_build
   ```
-  
+
++ Get the multi-platform images and push to registry
+
+  ```shell
+  $ make cross_docker
+  ```
