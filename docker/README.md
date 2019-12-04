@@ -77,5 +77,5 @@ If you want to configure more options, you can mount the configuration file into
 
 # More
 
-If you'd like to know more about the project, please refer to [doc home](https://github.com/emqx/kuiper/blob/master/docs/en_US/index.md).
+If you'd like to know more about the project, please refer to [doc home](https://github.com/emqx/kuiper/blob/master/docs/en_US/README.md).
 
