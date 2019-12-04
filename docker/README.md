@@ -63,7 +63,7 @@ docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=$MQTT_BROKER_ADDRESS emqx/kui
 
 ### Configuration
 
-Use the environment variable to configure `etc/sources/mqtt.yaml`  on the kuiper container.
+Use the environment variable to configure `etc/sources/mqtt.yaml`  on the Kuiper container.
 
 | Options                    | Default            | Mapped                    |
 | ---------------------------| ------------------ | ------------------------- |
@@ -75,7 +75,7 @@ Use the environment variable to configure `etc/sources/mqtt.yaml`  on the kuiper
 | MQTT_BROKER_CER_PATH |                | default.certificationPath |
 | MQTT_BROKER_KEY_PATH |     | default.privateKeyPath |
 
-If you want to configure more options, you can mount the configuration file into the kuiper container
+If you want to configure more options, you can mount the configuration file into Kuiper container.
 
 # More
 
