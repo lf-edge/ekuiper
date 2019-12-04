@@ -64,7 +64,8 @@ cross_prepare:
 
 .PHONY: cross_build
 cross_build: cross_prepare
-	@docker buildx build --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+	@docker buildx build --no-cache \
+	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
 	-t cross_build \
 	--output type=tar,dest=cross_build.tar \
 	-f ./Dockerfile-by-corss-build .
@@ -86,11 +87,12 @@ cross_build: cross_prepare
 
 .PHONY: docker
 docker:
-	docker build -t $(TARGET):$(VERSION) -f .
+	docker build --no-cache -t $(TARGET):$(VERSION) -f .
 
 .PHONY:cross_docker
 cross_docker: cross_prepare
-	docker buildx build --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+	docker buildx build --no-cache \
+	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
 	-t $(TARGET):$(VERSION) \
 	-f docker/Dockerfile . \
 	--push
