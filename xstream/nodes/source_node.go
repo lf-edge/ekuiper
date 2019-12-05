@@ -74,7 +74,11 @@ func getConf(t string, confkey string, ctx api.StreamContext) map[string]interfa
 	if t == ""{
 		t = "mqtt"
 	}
-	conf, err := common.LoadConf("sources/" + t + ".yaml")
+	confPath := "sources/" + t + ".yaml"
+	if t == "mqtt"{
+		confPath = "mqtt_source.yaml"
+	}
+	conf, err := common.LoadConf(confPath)
 	props := make(map[string]interface{})
 	if err == nil {
 		cfg := make(map[string]map[string]interface{})
