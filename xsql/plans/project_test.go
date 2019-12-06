@@ -283,6 +283,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
 		pp := &ProjectPlan{Fields:stmt.Fields}
+		pp.isTest = true
 		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
@@ -715,7 +716,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
 		pp := &ProjectPlan{Fields:stmt.Fields}
-
+		pp.isTest = true
 		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
@@ -849,7 +850,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 			t.Error(err)
 		}
 		pp := &ProjectPlan{Fields:stmt.Fields}
-
+		pp.isTest = true
 		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
@@ -1070,7 +1071,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			t.Error(err)
 		}
 		pp := &ProjectPlan{Fields:stmt.Fields, IsAggregate: true}
-
+		pp.isTest = true
 		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {

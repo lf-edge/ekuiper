@@ -12,6 +12,8 @@ import (
 type ProjectPlan struct {
 	Fields xsql.Fields
 	IsAggregate bool
+
+	isTest bool
 }
 
 /**
@@ -25,7 +27,7 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 	switch input := data.(type) {
 	case *xsql.Tuple:
 		ve := pp.getVE(input, input)
-		results = append(results, project(pp.Fields, ve))
+		results = append(results, project(pp.Fields, ve, pp.isTest))
 	case xsql.WindowTuplesSet:
 		if len(input) != 1 {
 			log.Infof("WindowTuplesSet with multiple tuples cannot be evaluated")
@@ -34,7 +36,7 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 		ms := input[0].Tuples
 		for _, v := range ms {
 			ve := pp.getVE(&v, input)
-			results = append(results, project(pp.Fields, ve))
+			results = append(results, project(pp.Fields, ve, pp.isTest))
 			if pp.IsAggregate{
 				break
 			}
@@ -43,7 +45,7 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 		ms := input
 		for _, v := range ms {
 			ve := pp.getVE(&v, input)
-			results = append(results, project(pp.Fields, ve))
+			results = append(results, project(pp.Fields, ve, pp.isTest))
 			if pp.IsAggregate{
 				break
 			}
@@ -51,7 +53,7 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 	case xsql.GroupedTuplesSet:
 		for _, v := range input{
 			ve := pp.getVE(v[0], v)
-			results = append(results, project(pp.Fields, ve))
+			results = append(results, project(pp.Fields, ve, pp.isTest))
 		}
 	default:
 		log.Errorf("Expect xsql.Valuer or its array type")
@@ -74,11 +76,11 @@ func (pp *ProjectPlan) getVE(tuple xsql.DataValuer, agg xsql.AggregateData) *xsq
 	}
 }
 
-func project(fs xsql.Fields, ve *xsql.ValuerEval) map[string]interface{} {
+func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) map[string]interface{} {
 	result := make(map[string]interface{})
 	for _, f := range fs {
 		//Avoid to re-evaluate for non-agg field has alias name, which was already evaluated in pre-processor operator.
-		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)){
+		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)) && !isTest{
 			fr := &xsql.FieldRef{StreamName:"", Name:f.AName}
 			v := ve.Eval(fr)
 			result[f.AName] = v
