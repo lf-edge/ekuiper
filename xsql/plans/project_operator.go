@@ -2,9 +2,9 @@ package plans
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -80,7 +80,7 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval) map[string]interface{} {
 		//Avoid to re-evaluate for non-agg field has alias name, which was already evaluated in pre-processor operator.
 		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)){
 			fr := &xsql.FieldRef{StreamName:"", Name:f.AName}
-			v := ve.Eval(fr);
+			v := ve.Eval(fr)
 			result[f.AName] = v
 		} else {
 			v := ve.Eval(f.Expr)
