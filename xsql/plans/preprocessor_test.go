@@ -2,9 +2,10 @@ package plans
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
-	"fmt"
+	"github.com/emqx/kuiper/xstream/contexts"
 	"log"
 	"reflect"
 	"testing"
@@ -63,6 +64,21 @@ func TestPreprocessor_Apply(t *testing.T) {
 				Name: xsql.StreamName("demo"),
 				StreamFields: []xsql.StreamField{
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.FLOAT}},
+					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
+				},
+			},
+			data: []byte(`{"abc": "34", "def" : "hello", "ghi": "50"}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"abc": float64(34),
+				"def": "hello",
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.FLOAT}},
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.BOOLEAN}},
 				},
 			},
@@ -100,6 +116,26 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			},
 		},
+		//Rec type
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.RecType{
+						StreamFields: []xsql.StreamField{
+							{Name: "b", FieldType: &xsql.BasicType{Type: xsql.FLOAT}},
+						},
+					}},
+				},
+			},
+			data: []byte(`{"a": "{\"b\" : \"32\"}"}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": map[string]interface{}{
+					"b": float64(32),
+				},
+			},
+			},
+		},
 		//Array of complex type
 		{
 			stmt: &xsql.StreamStmt{
@@ -122,6 +158,24 @@ func TestPreprocessor_Apply(t *testing.T) {
 						{"b": "hello2"},
 					},
 				},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.ArrayType{
+						Type: xsql.FLOAT,
+					}},
+				},
+			},
+			data: []byte(`{"a": "[\"55\", \"77\"]"}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": []float64{
+					55,
+					77,
+				},
+			},
 			},
 		},
 		//Rec of complex type
@@ -157,6 +211,8 @@ func TestPreprocessor_Apply(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
 	defer common.CloseLogger()
+	contextLogger := common.Log.WithField("rule", "TestPreprocessor_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
 		pp := &Preprocessor{streamStmt: tt.stmt}
@@ -167,7 +223,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			return
 		} else {
 			tuple := &xsql.Tuple{Message:dm}
-			result := pp.Apply(nil, tuple)
+			result := pp.Apply(ctx, tuple)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
 			}
@@ -276,6 +332,8 @@ func TestPreprocessorTime_Apply(t *testing.T){
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
 	defer common.CloseLogger()
+	contextLogger := common.Log.WithField("rule", "TestPreprocessorTime_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
 		pp := &Preprocessor{streamStmt: tt.stmt}
@@ -286,7 +344,7 @@ func TestPreprocessorTime_Apply(t *testing.T){
 			return
 		} else {
 			tuple := &xsql.Tuple{Message:dm}
-			result := pp.Apply(nil, tuple)
+			result := pp.Apply(ctx, tuple)
 			//workaround make sure all the timezone are the same for time vars or the DeepEqual will be false.
 			if rt, ok := result.(*xsql.Tuple); ok{
 				if rtt, ok := rt.Message["abc"].(time.Time); ok{
@@ -424,9 +482,11 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
 	defer common.CloseLogger()
+	contextLogger := common.Log.WithField("rule", "TestPreprocessorEventtime_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
-		pp, err := NewPreprocessor(tt.stmt, true)
+		pp, err := NewPreprocessor(tt.stmt, nil,true)
 		if err != nil{
 			t.Error(err)
 		}
@@ -437,7 +497,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			return
 		} else {
 			tuple := &xsql.Tuple{Message:dm}
-			result := pp.Apply(nil, tuple)
+			result := pp.Apply(ctx, tuple)
 			//workaround make sure all the timezone are the same for time vars or the DeepEqual will be false.
 			if rt, ok := result.(*xsql.Tuple); ok{
 				if rtt, ok := rt.Message["abc"].(time.Time); ok{
