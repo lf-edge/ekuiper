@@ -1,6 +1,6 @@
 # EMQ X Kuiper - An edge lightweight IoT data analytics software
 
-[English](README.MD) | [简体中文](README-CN.md)
+[English](README.md) | [简体中文](README-CN.md)
 
 ## Overview
 

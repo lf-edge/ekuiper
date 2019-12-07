@@ -1,6 +1,6 @@
 # EMQ X Kuiper - 超轻量物联网边缘数据分析软件
 
-[English](README.MD) | [简体中文](README-CN.md)
+[English](README.md) | [简体中文](README-CN.md)
 
 ## 概览
 
