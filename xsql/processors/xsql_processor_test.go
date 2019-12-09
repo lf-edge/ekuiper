@@ -404,6 +404,19 @@ func TestSingleSQL(t *testing.T) {
 					"ts":    float64(1541152488442),
 				}},
 			},
+		}, {
+			name: `rule3`,
+			sql:  `SELECT size as Int8, ts FROM demo where size > 3`,
+			r: [][]map[string]interface{}{
+				{{
+					"Int8":  float64(6),
+					"ts":    float64(1541152486822),
+				}},
+				{{
+					"Int8":  float64(4),
+					"ts":    float64(1541152488442),
+				}},
+			},
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
