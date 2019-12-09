@@ -37,10 +37,12 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 		for {
 			select {
 			case item := <-m.input:
-				if err := m.sink.Collect(ctx, item); err != nil{
-					//TODO deal with publish error
-					logger.Errorf("sink node %s publish %v error: %v", ctx.GetOpId(), item, err)
-				}
+				go func() {
+					if err := m.sink.Collect(ctx, item); err != nil{
+						//TODO deal with publish error
+						logger.Errorf("sink node %s publish %v error: %v", ctx.GetOpId(), item, err)
+					}
+				}()
 			case <-ctx.Done():
 				logger.Infof("sink node %s done", m.name)
 				if err := m.sink.Close(ctx); err != nil{

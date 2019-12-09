@@ -477,6 +477,8 @@ func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 		s = sinks.NewLogSink()
 	case "mqtt":
 		s = &sinks.MQTTSink{}
+	case "rest":
+		s = &sinks.RestSink{}
 	default:
 		nf, err := plugin_manager.GetPlugin(name, "sinks")
 		if err != nil {
