@@ -70,7 +70,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
   - Data order, group, aggregation and join
   - 60+ functions, includes mathematical, string, aggregate and hash etc
   - 4 time windows
-- Highly extensibile 
+- Highly extensibile
   Plugin system is provided,  and it supports to extend at Source, SQL functions and Sink.
   - Source: embedded support for MQTT, and provide extension points for sources
   - Sink: embedded support for MQTT and HTTP, and provide extension points for sinks
