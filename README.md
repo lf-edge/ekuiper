@@ -14,7 +14,9 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 ## Features
 
-- Lightweight: Core server package is only about 3MB, initial memory usage is about 10MB
+- Lightweight
+
+  - Core server package is only about 3MB, initial memory usage is about 10MB
 
 - Cross-platform
 
