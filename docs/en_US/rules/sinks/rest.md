@@ -4,7 +4,7 @@ The action is used for publish output message into a RESTful API.
 
 | Property name     | Optional | Description                                                  |
 | ----------------- | -------- | ------------------------------------------------------------ |
-| method            | true    | The http method for the RESTful API. It is a case insensitive string whose value is among "get", "post", "put", "patch", "delete" and "head". The default value is "get. |
+| method            | true    | The http method for the RESTful API. It is a case insensitive string whose value is among "get", "post", "put", "patch", "delete" and "head". The default value is "get". |
 | url             | false    | The RESTful API endpoint, such as ``https://www.example.com/api/dummy``                  |
 | bodyType          | true     | The type of the body. Currently, 3 types are supported: "none", "raw" and "form". For "get" and "head", no body is required so the default value is "none". For other http methods, the default value is "raw". |
 | timeout   | true     | The timeout (milliseconds) for a http request, defaults to 5000 ms |
