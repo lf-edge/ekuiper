@@ -49,7 +49,9 @@ This is an unstable version. It is an image built according to the commit number
 
 # What is Kuiper
 
-EMQ X Kuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of Kuiper is to migrate the cloud streaming software frameworks (such as Apache Spark，Apache Storm and Apache Flink) to edge side.  Kuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced rule engine, which is based on Source, SQL (business logic) and Sink, rule engine is used for developing streaming applications at edge side.
+EMQ X Kuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of Kuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  Kuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
+
+<!--TODO：an arch picture -->
 
 **User scenarios**
 
@@ -76,7 +78,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 - Management
   - Stream and rule management through CLI
   - Stream and rule management through REST API (In planning)
-  - Easily be integrate with KubeEdge and K3s, which bases Kubernetes
+  - Easily be integrate with [KubeEdge](https://github.com/kubeedge/kubeedge) and [K3s](https://github.com/rancher/k3s), which bases Kubernetes
 - Integration with EMQ X Edge
   Seamless integration with EMQ X Edge, and provided an end to end solution from messaging to analytics. 
 
