@@ -45,5 +45,7 @@ mqtt:
   servers: [tcp://127.0.0.1:1883]
   #username: user1
   #password: password
-  #certificationPath: /var/kuiper/xyz-certificate.pem
-  #privateKeyPath: /var/kuiper/xyz-private.pem.key
+  certificationSecretName: client-cert
+  privateKeySecretName: client-key
+  #certificationPath: /var/kuiper/certificate.pem
+  #privateKeyPath: /var/kuiper/private.pem.key

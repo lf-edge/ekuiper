@@ -55,6 +55,16 @@ spec:
           items:
           - key: mqtt.yaml
             path: mqtt.yaml
+      {{- if .Values.mqtt.certificationSecretName }}
+      - name: kuiper-certification
+        secret:
+          secretName: {{ .Values.mqtt.certificationSecretName }}
+      {{- end }}
+      {{- if .Values.mqtt.privateKeySecretName }}
+      - name: kuiper-private-key
+        secret:
+          secretName: {{ .Values.mqtt.privateKeySecretName }}
+      {{- end }}
       containers:
         - name: kuiper
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
@@ -65,6 +75,16 @@ spec:
           - name: mqtt
             mountPath: "/kuiper/etc/sources/mqtt.yaml"
             subPath: "mqtt.yaml"
+          {{ if .Values.mqtt.certificationSecretName  }}
+          - name: kuiper-certification
+            mountPath: {{ .Values.mqtt.certificationPath | default "/var/kuiper/certificate.pem" }}
+            readOnly: true
+          {{ end }}
+          {{ if .Values.mqtt.privateKeySecretName  }}
+          - name: kuiper-private-key
+            mountPath: {{ .Values.mqtt.privateKeyPath | default "/var/kuiper/private.pem.key" }}
+            readOnly: true
+          {{ end }}
           resources:
           {{- toYaml .Values.resources | nindent 12 }}
     {{- with .Values.nodeSelector }}
@@ -79,10 +99,3 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-
-          # readinessProbe:
-          #   httpGet:
-          #     path: /status
-          #     port: 8080
-          #   initialDelaySeconds: 5
-          #   periodSeconds: 5
