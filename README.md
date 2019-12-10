@@ -31,7 +31,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
   - 60+ functions, includes mathematical, string, aggregate and hash etc
   - 4 time windows
 
-- Highly extensibility 
+- Highly extensibile 
 
   Plugin system is provided,  and it supports to extend at ``Source``, ``SQL functions `` and ``Sink``.
 

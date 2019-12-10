@@ -2,10 +2,10 @@ package sinks
 
 import (
 	"crypto/tls"
-	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/xstream/api"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xstream/api"
 	"github.com/google/uuid"
 	"strings"
 )
@@ -41,7 +41,7 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 		}
 	}
 	var pVersion uint = 3
-	pVersionStr, ok := ps["protocolVersion"];
+	pVersionStr, ok := ps["protocolVersion"]
 	if ok {
 		v, _ := pVersionStr.(string)
 		if v == "3.1" {
@@ -54,7 +54,7 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 	}
 
 	uName := ""
-	un, ok := ps["username"];
+	un, ok := ps["username"]
 	if ok {
 		v, _ := un.(string)
 		if strings.Trim(v, " ") != "" {
@@ -63,7 +63,7 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 	}
 
 	password := ""
-	pwd, ok := ps["password"];
+	pwd, ok := ps["password"]
 	if ok {
 		v, _ := pwd.(string)
 		if strings.Trim(v, " ") != "" {
@@ -155,5 +155,3 @@ func (ms *MQTTSink) Close(ctx api.StreamContext) error {
 	}
 	return nil
 }
-
-
