@@ -4,8 +4,8 @@ Kuiper implemented several plugins.
 
 | Name                  | Description                                                  |
 | --------------------- | ------------------------------------------------------------ |
-| [zmq](sources/zmq.md)   | The source will subscribe to a Zero Mq topic to import the messages into kuiper
-| [random](sources/random.md)   | The source will generate random inputs with a specified pattern
+| [zmq](sources/zmq.md)   | The source will subscribe to a Zero Mq topic to import the messages into kuiper |
+| [random](sources/random.md)   | The source will generate random inputs with a specified pattern |
 
 ## Sinks
 

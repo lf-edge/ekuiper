@@ -1,9 +1,10 @@
 package plans
 
 import (
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
-	"fmt"
+	"github.com/emqx/kuiper/xstream/contexts"
 	"reflect"
 	"strings"
 	"testing"
@@ -365,6 +366,8 @@ func TestOrderPlan_Apply(t *testing.T) {
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestOrderPlan_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil {
@@ -373,7 +376,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 		}
 
 		pp := &OrderPlan{SortFields:stmt.SortFields}
-		result := pp.Apply(nil, tt.data)
+		result := pp.Apply(ctx, tt.data)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}

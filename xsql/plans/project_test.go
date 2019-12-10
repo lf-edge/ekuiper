@@ -2,9 +2,10 @@ package plans
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
-	"fmt"
+	"github.com/emqx/kuiper/xstream/contexts"
 	"reflect"
 	"strings"
 	"testing"
@@ -276,11 +277,14 @@ func TestProjectPlan_Apply1(t *testing.T) {
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestProjectPlan_Apply1")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
 		pp := &ProjectPlan{Fields:stmt.Fields}
-		result := pp.Apply(nil, tt.data)
+		pp.isTest = true
+		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -706,12 +710,14 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestProjectPlan_MultiInput")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
 		pp := &ProjectPlan{Fields:stmt.Fields}
-
-		result := pp.Apply(nil, tt.data)
+		pp.isTest = true
+		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -836,14 +842,16 @@ func TestProjectPlan_Funcs(t *testing.T) {
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestProjectPlan_Funcs")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil{
 			t.Error(err)
 		}
 		pp := &ProjectPlan{Fields:stmt.Fields}
-
-		result := pp.Apply(nil, tt.data)
+		pp.isTest = true
+		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -1055,14 +1063,16 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestProjectPlan_AggFuncs")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil{
 			t.Error(err)
 		}
 		pp := &ProjectPlan{Fields:stmt.Fields, IsAggregate: true}
-
-		result := pp.Apply(nil, tt.data)
+		pp.isTest = true
+		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
