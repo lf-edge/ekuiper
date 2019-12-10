@@ -9,4 +9,5 @@
 - [Kuiper SQL参考](sqls/overview.md)
 - [规则](rules/overview.md)
 - [扩展Kuiper](extension/overview.md)
+- [插件](plugins/overview.md)
 

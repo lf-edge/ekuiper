@@ -2,8 +2,10 @@ package plans
 
 import (
 	"encoding/json"
-	"github.com/emqx/kuiper/xsql"
 	"fmt"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xsql"
+	"github.com/emqx/kuiper/xstream/contexts"
 	"reflect"
 	"strings"
 	"testing"
@@ -453,6 +455,8 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestMathAndConversionFunc_Apply1")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		//fmt.Println("Running test " + strconv.Itoa(i))
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
@@ -463,7 +467,8 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 			continue
 		}
 		pp := &ProjectPlan{Fields:stmt.Fields}
-		result := pp.Apply(nil, tt.data)
+		pp.isTest = true
+		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)

@@ -63,7 +63,7 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{
 		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)) {
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, &xsql.FunctionValuer{})}
 			if v := ve.Eval(f.Expr); v != nil {
-				result[f.AName] = v
+				result[strings.ToLower(f.AName)] = v
 			}
 		}
 	}

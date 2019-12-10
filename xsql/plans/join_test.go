@@ -2,9 +2,10 @@ package plans
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
-	"fmt"
+	"github.com/emqx/kuiper/xstream/contexts"
 	"reflect"
 	"strings"
 	"testing"
@@ -597,6 +598,8 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestLeftJoinPlan_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil {
@@ -608,7 +611,7 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			t.Errorf("statement source is not a table")
 		}else{
 			pp := &JoinPlan{Joins: stmt.Joins, From: table}
-			result := pp.Apply(nil, tt.data)
+			result := pp.Apply(ctx, tt.data)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 			}
@@ -1023,6 +1026,8 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestInnerJoinPlan_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil {
@@ -1034,7 +1039,7 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			t.Errorf("statement source is not a table")
 		}else{
 			pp := &JoinPlan{Joins: stmt.Joins, From: table}
-			result := pp.Apply(nil, tt.data)
+			result := pp.Apply(ctx, tt.data)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 			}
@@ -1151,6 +1156,8 @@ func TestRightJoinPlan_Apply(t *testing.T) {
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestRightJoinPlan_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil {
@@ -1162,7 +1169,7 @@ func TestRightJoinPlan_Apply(t *testing.T) {
 			t.Errorf("statement source is not a table")
 		}else{
 			pp := &JoinPlan{Joins: stmt.Joins, From: table}
-			result := pp.Apply(nil, tt.data)
+			result := pp.Apply(ctx, tt.data)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 			}
@@ -1405,6 +1412,8 @@ func TestFullJoinPlan_Apply(t *testing.T) {
 
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestFullJoinPlan_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil {
@@ -1416,7 +1425,7 @@ func TestFullJoinPlan_Apply(t *testing.T) {
 			t.Errorf("statement source is not a table")
 		}else{
 			pp := &JoinPlan{Joins: stmt.Joins, From: table}
-			result := pp.Apply(nil, tt.data)
+			result := pp.Apply(ctx, tt.data)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 			}
@@ -1535,6 +1544,8 @@ func TestCrossJoinPlan_Apply(t *testing.T) {
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestCrossJoinPlan_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil {
@@ -1546,7 +1557,7 @@ func TestCrossJoinPlan_Apply(t *testing.T) {
 			t.Errorf("statement source is not a table")
 		}else{
 			pp := &JoinPlan{Joins: stmt.Joins, From: table}
-			result := pp.Apply(nil, tt.data)
+			result := pp.Apply(ctx, tt.data)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 			}

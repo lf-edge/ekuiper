@@ -2,9 +2,10 @@ package plans
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
-	"fmt"
+	"github.com/emqx/kuiper/xstream/contexts"
 	"log"
 	"reflect"
 	"testing"
@@ -157,6 +158,8 @@ func TestPreprocessor_Apply(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
 	defer common.CloseLogger()
+	contextLogger := common.Log.WithField("rule", "TestPreprocessor_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
 		pp := &Preprocessor{streamStmt: tt.stmt}
@@ -167,7 +170,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			return
 		} else {
 			tuple := &xsql.Tuple{Message:dm}
-			result := pp.Apply(nil, tuple)
+			result := pp.Apply(ctx, tuple)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
 			}
@@ -276,6 +279,8 @@ func TestPreprocessorTime_Apply(t *testing.T){
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
 	defer common.CloseLogger()
+	contextLogger := common.Log.WithField("rule", "TestPreprocessorTime_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
 		pp := &Preprocessor{streamStmt: tt.stmt}
@@ -286,7 +291,7 @@ func TestPreprocessorTime_Apply(t *testing.T){
 			return
 		} else {
 			tuple := &xsql.Tuple{Message:dm}
-			result := pp.Apply(nil, tuple)
+			result := pp.Apply(ctx, tuple)
 			//workaround make sure all the timezone are the same for time vars or the DeepEqual will be false.
 			if rt, ok := result.(*xsql.Tuple); ok{
 				if rtt, ok := rt.Message["abc"].(time.Time); ok{
@@ -424,9 +429,11 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
 	defer common.CloseLogger()
+	contextLogger := common.Log.WithField("rule", "TestPreprocessorEventtime_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
-		pp, err := NewPreprocessor(tt.stmt, true)
+		pp, err := NewPreprocessor(tt.stmt, nil,true)
 		if err != nil{
 			t.Error(err)
 		}
@@ -437,7 +444,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			return
 		} else {
 			tuple := &xsql.Tuple{Message:dm}
-			result := pp.Apply(nil, tuple)
+			result := pp.Apply(ctx, tuple)
 			//workaround make sure all the timezone are the same for time vars or the DeepEqual will be false.
 			if rt, ok := result.(*xsql.Tuple); ok{
 				if rtt, ok := rt.Message["abc"].(time.Time); ok{
