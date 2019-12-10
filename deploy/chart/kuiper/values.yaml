@@ -1,0 +1,51 @@
+# Default values for kuiper.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: emqx/kuiper
+  pullPolicy: IfNotPresent
+
+persistence:
+  enabled: false
+  size: 20Mi
+  ## If defined, volume.beta.kubernetes.io/storage-class: <storageClass>
+  ## Default: volume.alpha.kubernetes.io/storage-class: default
+  # storageClass: "-"
+  accessMode: ReadWriteOnce
+  ## Existing PersistentVolumeClaims
+  ## The value is evaluated as a template
+  ## So, for example, the name can depend on .Release or .Chart
+  # existingClaim: ""
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+mqtt:
+  #Global MQTT configurations
+  qos: 1
+  sharedSubscription: true
+  servers: [tcp://127.0.0.1:1883]
+  #username: user1
+  #password: password
+  certificationSecretName: client-cert
+  privateKeySecretName: client-key
+  #certificationPath: /var/kuiper/certificate.pem
+  #privateKeyPath: /var/kuiper/private.pem.key
