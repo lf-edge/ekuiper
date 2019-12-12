@@ -1,4 +1,4 @@
-Kuiper can be deployed at  k3s / k8s cluster through Helm chart. Below takes k3s as an example for demonstrating how to deploy k3s:
+Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as an example for demonstrating how to deploy at k3s.
 
 ## Prepare
 

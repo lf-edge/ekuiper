@@ -12,15 +12,15 @@
 
   **<u>Documents</u>**
 
-  - [Getting started](docs/en_US/getting_started.md) 
+  - [Getting started](../../docs/en_US/getting_started.md) 
 
-  - [Reference guide](docs/en_US/reference.md)
-    - [Install and operation](docs/en_US/operation/overview.md)
-    - [Command line interface tools - CLI](docs/en_US/cli/overview.md)
-    - [Kuiper SQL reference](docs/en_US/sqls/overview.md)
-    - [Rules](docs/en_US/rules/overview.md)
-    - [Extend Kuiper](docs/en_US/extension/overview.md)
-    - [Plugins](docs/en_US/plugins/overview.md)
+  - [Reference guide](../../docs/en_US/reference.md)
+    - [Install and operation](../../docs/en_US/operation/overview.md)
+    - [Command line interface tools - CLI](../../docs/en_US/cli/overview.md)
+    - [Kuiper SQL reference](../../docs/en_US/sqls/overview.md)
+    - [Rules](../../docs/en_US/rules/overview.md)
+    - [Extend Kuiper](../../docs/en_US/extension/overview.md)
+    - [Plugins](../../docs/en_US/plugins/overview.md)
 
 - **Where to file issues:**
 
