@@ -1,10 +1,9 @@
-Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。
-下面以 k3s 为例演示如何部署 Kuiper：
+Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为例演示如何部署 Kuiper：
 
 ## Prepare：
 
 + 安装 K3S: 
-  ```
+  ```shell
   $ curl -sfL https://get.k3s.io | sh -
   $ sudo chmod 755 /etc/rancher/k3s/k3s.yaml
   $ kubectl get nodes
@@ -13,7 +12,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。
   ```
 
 + 安装 helm3
-  ```
+  ```shell
   $ curl -sfL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash -
   Downloading https://get.helm.sh/helm-v3.0.1-linux-amd64.tar.gz
   Preparing to install helm into /usr/local/bin
@@ -29,7 +28,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。
 
   + Git clone
 
-    ```
+    ```shell
     $ git clone https://github.com/emqx/kuiper
     $ cd kuiper/deploy/chart/kuiper
     ```
@@ -38,13 +37,13 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。
 
     + 添加Helm repo
 
-      ```
+      ```shell
       $ helm repo add emqx https://repos.emqx.io/charts
       ```
 
     + 查询 Kuiper
 
-      ```
+      ```shell
       helm search kuiper
       NAME     		CHART VERSION	APP VERSION  	DESCRIPTION
       emqx/kuiper	0.0.3	        0.0.3	        A lightweight IoT edge analytic software
@@ -84,7 +83,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。
 
 + 使用 Helm 部署 Kuiper
 
-  ```
+  ```shell
   $ helm install my-kuiper .
   NAME: my-kuiper
   LAST DEPLOYED: Mon Dec  9 09:56:32 2019
@@ -96,7 +95,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。
 
 + 部署成功
 
-  ```
+  ```shell
   $ kubectl get pods
   NAME       READY   STATUS    RESTARTS   AGE
   my-kuiper-0   1/1     Running   0          19s
@@ -113,11 +112,11 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。
 + 编辑 `values.yaml` 文件，设置 `persistence.enabled=true`
 
   + 如果用户部署了 PVC 资源，那么设置 `persistence.existingClaim=your_pv_name`
-+ 如果用户部署了 Storage Classes 资源，那么设置`persistence.storageClass=your_storageClass_name`
-  
+  + 如果用户部署了 Storage Classes 资源，那么设置`persistence.storageClass=your_storageClass_name`
+
 + 使用 Helm 部署 Kuiper
 
-  ```
+  ```shell
   $ helm install my-kuiper .
   NAME: my-kuiper
   LAST DEPLOYED: Mon Dec  9 09:56:32 2019
@@ -129,11 +128,11 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。
 
 + 部署成功
 
-  ```
+  ```shell
   $ kubectl get pods
   NAME       READY   STATUS    RESTARTS   AGE
   my-kuiper-0   1/1     Running   0          19s
-
+  
   $ kubectl exec -it  my-kuiper-0 sh
   /kuiper # ./bin/cli
   Connecting to 127.0.0.1:20498...
@@ -143,25 +142,25 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。
 
 + 使用 `kubectl create secret` 将证书文件和私钥创建成 Secret 资源，`kubectl create secret` 命令的语法如下：
 
-  ```
+  ```shell
   $ kubectl create secret generic your-secret-name --from-file=/path/to/file
   ```
 
   创建证书文件 Secret 资源：
 
-  ```
+  ```shell
   $ kubectl create secret generic client-cert --from-file=certs/client-cert.pem
   ```
 
   创建私钥文件 Secret 资源：
 
-  ```
+  ```shell
   $ kubectl create secret generic client-key --from-file=certs/client-key.pem
   ```
 
   查看 Secret 资源：
 
-  ```
+  ```shell
   $ kubectl get secret
   NAME                                         TYPE                                  DATA   AGE
   client-cert                                  Opaque                                1      25m
@@ -177,7 +176,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。
 
 + 使用 Helm 部署 Kuiper
 
-  ```
+  ```shell
   $ helm install my-kuiper .
   NAME: my-kuiper
   LAST DEPLOYED: Mon Dec  9 09:56:32 2019
@@ -189,7 +188,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。
 
 + 部署成功
 
-  ```
+  ```shell
   $ kubectl get pods
   NAME       READY   STATUS    RESTARTS   AGE
   my-kuiper-0   1/1     Running   0          19s

@@ -51,7 +51,7 @@ This is an unstable version. It is an image built according to the commit number
 
 EMQ X Kuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of Kuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  Kuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
 
-<!--TODO：an arch picture -->
+![Kuiper architect](https://github.com/emqx/kuiper/blob/master/docs/resources/arch.png)
 
 **User scenarios**
 
@@ -60,6 +60,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 **Features**
 
 - Lightweight
+
   - Core server package is only about 3MB, initial memory usage is about 10MB
 - Cross-platform
   - CPU Arch：X86 AMD * 32, X86 AMD * 64; ARM * 32, ARM * 64; PPC
@@ -99,6 +100,13 @@ For example
 ```
 docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=$MQTT_BROKER_ADDRESS emqx/kuiper:latest
 ```
+
+**Resources**
+
+Users can refer to below for how to apply EMQ X Kuiper in edge and integrate with AWS/Azure IoT cloud.
+
+- [Lightweight edge computing EMQ X Kuiper and Azure IoT Hub integration solution](https://www.emqx.io/blog/85)   [简体中文](https://www.emqx.io/cn/blog/87)
+- [Lightweight edge computing EMQ X Kuiper and AWS IoT Hub integration solution](https://www.emqx.io/blog/88)     [简体中文](https://www.emqx.io/cn/blog/94)
 
 ### Configuration
 
