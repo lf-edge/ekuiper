@@ -239,17 +239,6 @@ func (t *Server) DropRule(name string, reply *string) error{
 }
 
 func init(){
-	var err error
-	dataDir, err = common.GetDataLoc()
-	if err != nil {
-		log.Panic(err)
-	}else{
-		log.Infof("db location is %s", dataDir)
-	}
-
-	processor = processors.NewRuleProcessor(path.Dir(dataDir))
-	registry = make(RuleRegistry)
-
 	ticker := time.NewTicker(time.Second * 5)
 	go func() {
 		for {
@@ -271,6 +260,18 @@ func init(){
 
 
 func StartUp(Version string) {
+	common.InitConf()
+
+	dr, err := common.GetDataLoc()
+	if err != nil {
+		log.Panic(err)
+	}else{
+		log.Infof("db location is %s", dr)
+		dataDir = dr
+	}
+	processor = processors.NewRuleProcessor(path.Dir(dataDir))
+	registry = make(RuleRegistry)
+
 	server := new(Server)
 	//Start rules
 	if rules, err := processor.GetAllRules(); err != nil{
@@ -289,7 +290,7 @@ func StartUp(Version string) {
 	}
 
 	//Start server
-	err := rpc.Register(server)
+	err = rpc.Register(server)
 	if err != nil {
 		log.Fatal("Format of service Server isn't correct. ", err)
 	}
