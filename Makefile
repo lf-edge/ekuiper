@@ -87,14 +87,14 @@ cross_build: cross_prepare
 
 .PHONY: docker
 docker:
-	docker build --no-cache -t $(TARGET):$(VERSION) -f deploy/docker/docker-entrypoint.sh.
+	docker build --no-cache -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile .
 
 .PHONY:cross_docker
 cross_docker: cross_prepare
 	docker buildx build --no-cache \
 	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
 	-t $(TARGET):$(VERSION) \
-	-f deploy/docker/docker-entrypoint.sh . \
+	-f deploy/docker/Dockerfile . \
 	--push
 
 .PHONY: clean
