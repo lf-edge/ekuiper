@@ -7,7 +7,7 @@ fi
 
 KUIPER_HOME="/kuiper"
 
-CONFIG="$KUIPER_HOME/etc/sources/mqtt.yaml"
+CONFIG="$KUIPER_HOME/etc/mqtt.yaml"
 
 if [ ! -z "$MQTT_BROKER_ADDRESS" ]; then
     sed -i '/default:/ ,/servers/{/servers/d}' $CONFIG
