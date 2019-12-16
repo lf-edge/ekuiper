@@ -44,7 +44,7 @@ This is an unstable version. It is an image built according to the commit number
 
 EMQ X Kuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of Kuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  Kuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
 
-![Kuiper architect](https://github.com/emqx/kuiper/blob/master/docs/resources/arch.png)
+![Kuiper architect](https://github.com/emqx/kuiper/raw/master/docs/resources/arch.png)
 
 **User scenarios**
 
@@ -148,7 +148,7 @@ Use the environment variable to configure `etc/sources/mqtt.yaml`  on the Kuiper
 
 | Options                    | Default            | Mapped                    |
 | ---------------------------| ------------------ | ------------------------- |
-| MQTT_BROKER_ADDRESS         | 127.0.0.1:1883 | default.servers |
+| MQTT_BROKER_ADDRESS         | tcp://127.0.0.1:1883 | default.servers |
 | MQTT_BROKER_SHARED_SUBSCRIPTION | true   | default.sharedSubscription |
 | MQTT_BROKER_QOS | 1                 | default.qos    |
 | MQTT_BROKER_USERNAME |   | default.username |
