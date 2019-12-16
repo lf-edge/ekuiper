@@ -25,7 +25,7 @@
 
 - **Supported Docker versions**:
 
-  [The latest release](https://github.com/docker/docker-ce/releases/¥tag)
+  [The latest release](https://github.com/docker/docker-ce/releases/latest)
 
 # Image Variants
 
