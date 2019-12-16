@@ -11,7 +11,7 @@ CONFIG="$KUIPER_HOME/etc/mqtt_source.yaml"
 
 if [ ! -z "$MQTT_BROKER_ADDRESS" ]; then
     sed -i '/default:/ ,/servers/{/servers/d}' $CONFIG
-    sed -i "/default:/a\  servers: [tcp://$MQTT_BROKER_ADDRESS]" $CONFIG
+    sed -i "/default:/a\  servers: [$MQTT_BROKER_ADDRESS]" $CONFIG
     echo "default.servers = $MQTT_BROKER_ADDRESS"
 fi
 

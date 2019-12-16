@@ -5,7 +5,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
 + 安装 K3S: 
   ```shell
   $ curl -sfL https://get.k3s.io | sh -
-  $ sudo chmod 755 /etc/rancher/k3s/k3s.yaml
+  $ sudo chmod 644 /etc/rancher/k3s/k3s.yaml
   $ kubectl get nodes
   NAME               STATUS   ROLES    AGE     VERSION
   ip-172-31-16-120   Ready    master   4m31s   v1.16.3-k3s.2
@@ -33,7 +33,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
     $ cd kuiper/deploy/chart/kuiper
     ```
 
-  + Helm repo (TODO)
+  + Helm repo
 
     + 添加Helm repo
 
@@ -44,9 +44,9 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
     + 查询 Kuiper
 
       ```shell
-      helm search kuiper
-      NAME     		CHART VERSION	APP VERSION  	DESCRIPTION
-      emqx/kuiper	0.0.3	        0.0.3	        A lightweight IoT edge analytic software
+      $ helm search repo kuiper
+      NAME       	CHART VERSION	APP VERSION	DESCRIPTION
+      emqx/kuiper	0.0.4        	0.0.4      	A lightweight IoT edge analytic software
       ```
 
 + 可以通过编辑 `values.yaml` 文件或使用 `helm install --set` 命令编辑 Kuiper Helm Chart 的配置
