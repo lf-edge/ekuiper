@@ -11,17 +11,17 @@ import (
 
 type TopologyNew struct {
 	sources []*nodes.SourceNode
-	sinks []*nodes.SinkNode
-	ctx api.StreamContext
-	cancel context.CancelFunc
-	drain chan error
-	ops []api.Operator
-	name string
+	sinks   []*nodes.SinkNode
+	ctx     api.StreamContext
+	cancel  context.CancelFunc
+	drain   chan error
+	ops     []api.Operator
+	name    string
 }
 
 func NewWithName(name string) *TopologyNew {
 	tp := &TopologyNew{
-		name: name,
+		name:  name,
 		drain: make(chan error),
 	}
 	return tp
@@ -31,7 +31,7 @@ func (s *TopologyNew) GetContext() context.Context {
 	return s.ctx
 }
 
-func (s *TopologyNew) Cancel(){
+func (s *TopologyNew) Cancel() {
 	s.cancel()
 }
 
@@ -41,7 +41,7 @@ func (s *TopologyNew) AddSrc(src *nodes.SourceNode) *TopologyNew {
 }
 
 func (s *TopologyNew) AddSink(inputs []api.Emitter, snk *nodes.SinkNode) *TopologyNew {
-	for _, input := range inputs{
+	for _, input := range inputs {
 		input.AddOutput(snk.GetInput())
 	}
 	s.sinks = append(s.sinks, snk)
@@ -49,7 +49,7 @@ func (s *TopologyNew) AddSink(inputs []api.Emitter, snk *nodes.SinkNode) *Topolo
 }
 
 func (s *TopologyNew) AddOperator(inputs []api.Emitter, operator api.Operator) *TopologyNew {
-	for _, input := range inputs{
+	for _, input := range inputs {
 		input.AddOutput(operator.GetInput())
 	}
 	s.ops = append(s.ops, operator)
@@ -115,7 +115,7 @@ func (s *TopologyNew) Open() <-chan error {
 	// open stream
 	go func() {
 		// open stream sink, after log sink is ready.
-		for _, snk := range s.sinks{
+		for _, snk := range s.sinks {
 			snk.Open(s.ctx.WithMeta(s.name, snk.GetName()), s.drain)
 		}
 
@@ -125,10 +125,30 @@ func (s *TopologyNew) Open() <-chan error {
 		}
 
 		// open source, if err bail
-		for _, node := range s.sources{
+		for _, node := range s.sources {
 			node.Open(s.ctx.WithMeta(s.name, node.GetName()), s.drain)
 		}
 	}()
 
 	return s.drain
+}
+
+func (s *TopologyNew) GetMetrics() map[string]interface{} {
+	result := make(map[string]interface{})
+	for _, node := range s.sources {
+		for k, v := range node.GetMetrics() {
+			result[k] = v
+		}
+	}
+	for _, node := range s.ops {
+		for k, v := range node.GetMetrics() {
+			result[k] = v
+		}
+	}
+	for _, node := range s.sinks {
+		for k, v := range node.GetMetrics() {
+			result[k] = v
+		}
+	}
+	return result
 }

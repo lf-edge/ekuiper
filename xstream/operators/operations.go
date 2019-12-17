@@ -28,6 +28,7 @@ type UnaryOperator struct {
 	mutex       sync.RWMutex
 	cancelled   bool
 	name        string
+	statManager *nodes.StatManager
 }
 
 // NewUnary creates *UnaryOperator value
@@ -119,38 +120,63 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
-	log := ctx.GetLogger()
+	logger := ctx.GetLogger()
 	if o.op == nil {
-		log.Infoln("Unary operator missing operation")
+		logger.Infoln("Unary operator missing operation")
 		return
 	}
 	exeCtx, cancel := ctx.WithCancel()
 
 	defer func() {
-		log.Infof("unary operator %s instance %d done, cancelling future items", o.name, ctx.GetInstanceId())
+		logger.Infof("unary operator %s instance %d done, cancelling future items", o.name, ctx.GetInstanceId())
 		cancel()
 	}()
+
+	stats, err := nodes.NewStatManager("op", ctx)
+	if err != nil {
+		select {
+		case errCh <- err:
+		case <-ctx.Done():
+			logger.Infof("unary operator %s cancelling....", o.name)
+			o.mutex.Lock()
+			cancel()
+			o.cancelled = true
+			o.mutex.Unlock()
+		}
+		return
+	}
+	o.statManager = stats
+	outputCount := len(o.outputs)
 
 	for {
 		select {
 		// process incoming item
 		case item := <-o.input:
+			stats.IncTotalRecordsIn()
+			stats.ProcessTimeStart()
 			result := o.op.Apply(exeCtx, item)
 
 			switch val := result.(type) {
 			case nil:
 				continue
 			case error: //TODO error handling
-				log.Infoln(val)
-				log.Infoln(val.Error())
+				logger.Infoln(val)
+				logger.Infoln(val.Error())
+				stats.IncTotalExceptions()
 				continue
 			default:
-				nodes.Broadcast(o.outputs, val, ctx)
+				c := nodes.Broadcast(o.outputs, val, ctx)
+				if c == outputCount {
+					stats.ProcessTimeEnd()
+					stats.IncTotalRecordsOut()
+				} else {
+					logger.Warnf("broadcast to %d outputs but expect %d", c, outputCount)
+					stats.IncTotalExceptions()
+				}
 			}
-
 		// is cancelling
 		case <-ctx.Done():
-			log.Infof("unary operator %s instance %d cancelling....", o.name, ctx.GetInstanceId())
+			logger.Infof("unary operator %s instance %d cancelling....", o.name, ctx.GetInstanceId())
 			o.mutex.Lock()
 			cancel()
 			o.cancelled = true
@@ -158,4 +184,13 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			return
 		}
 	}
+}
+
+func (o *UnaryOperator) GetMetrics() map[string]interface{} {
+	if o.statManager != nil {
+		return o.statManager.GetMetrics()
+	} else {
+		return nil
+	}
+
 }
