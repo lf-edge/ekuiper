@@ -2,12 +2,12 @@ package processors
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
 	"github.com/emqx/kuiper/xstream/test"
-	"fmt"
 	"path"
 	"reflect"
 	"strings"
@@ -17,7 +17,7 @@ import (
 
 var DbDir = getDbDir()
 
-func getDbDir() string{
+func getDbDir() string {
 	dbDir, err := common.GetAndCreateDataLoc("test")
 	if err != nil {
 		log.Panic(err)
@@ -28,16 +28,16 @@ func getDbDir() string{
 
 func TestStreamCreateProcessor(t *testing.T) {
 	var tests = []struct {
-		s    string
-		r    []string
-		err  string
+		s   string
+		r   []string
+		err string
 	}{
 		{
 			s: `SHOW STREAMS;`,
 			r: []string{"No stream definitions are found."},
 		},
 		{
-			s: `EXPLAIN STREAM topic1;`,
+			s:   `EXPLAIN STREAM topic1;`,
 			err: "Stream topic1 is not found.",
 		},
 		{
@@ -76,11 +76,11 @@ func TestStreamCreateProcessor(t *testing.T) {
 			r: []string{"Stream topic1 is dropped."},
 		},
 		{
-			s: `DESCRIBE STREAM topic1;`,
+			s:   `DESCRIBE STREAM topic1;`,
 			err: "Stream topic1 is not found.",
 		},
 		{
-			s: `DROP STREAM topic1;`,
+			s:   `DROP STREAM topic1;`,
 			err: "Drop stream fails: topic1 is not found.",
 		},
 	}
@@ -100,14 +100,14 @@ func TestStreamCreateProcessor(t *testing.T) {
 	}
 }
 
-func createStreams(t *testing.T){
+func createStreams(t *testing.T) {
 	demo := `CREATE STREAM demo (
 					color STRING,
 					size BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts");`
 	_, err := NewStreamProcessor(demo, path.Join(DbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		t.Log(err)
 	}
 	demo1 := `CREATE STREAM demo1 (
@@ -116,7 +116,7 @@ func createStreams(t *testing.T){
 					ts BIGINT
 				) WITH (DATASOURCE="demo1", FORMAT="json", KEY="ts");`
 	_, err = NewStreamProcessor(demo1, path.Join(DbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		t.Log(err)
 	}
 	sessionDemo := `CREATE STREAM sessionDemo (
@@ -125,40 +125,40 @@ func createStreams(t *testing.T){
 					ts BIGINT
 				) WITH (DATASOURCE="sessionDemo", FORMAT="json", KEY="ts");`
 	_, err = NewStreamProcessor(sessionDemo, path.Join(DbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		t.Log(err)
 	}
 }
 
-func dropStreams(t *testing.T){
+func dropStreams(t *testing.T) {
 	demo := `DROP STREAM demo`
 	_, err := NewStreamProcessor(demo, path.Join(DbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		t.Log(err)
 	}
 	demo1 := `DROP STREAM demo1`
 	_, err = NewStreamProcessor(demo1, path.Join(DbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		t.Log(err)
 	}
 	sessionDemo := `DROP STREAM sessionDemo`
 	_, err = NewStreamProcessor(sessionDemo, path.Join(DbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		t.Log(err)
 	}
 }
 
-func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNode{
+func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNode {
 	var data []*xsql.Tuple
-	switch name{
+	switch name {
 	case "demo":
 		data = []*xsql.Tuple{
 			{
 				Emitter: name,
 				Message: map[string]interface{}{
 					"color": "red",
-					"size": 3,
-					"ts": 1541152486013,
+					"size":  3,
+					"ts":    1541152486013,
 				},
 				Timestamp: 1541152486013,
 			},
@@ -166,8 +166,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"color": "blue",
-					"size": 6,
-					"ts": 1541152486822,
+					"size":  6,
+					"ts":    1541152486822,
 				},
 				Timestamp: 1541152486822,
 			},
@@ -175,8 +175,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"color": "blue",
-					"size": 2,
-					"ts": 1541152487632,
+					"size":  2,
+					"ts":    1541152487632,
 				},
 				Timestamp: 1541152487632,
 			},
@@ -184,8 +184,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"color": "yellow",
-					"size": 4,
-					"ts": 1541152488442,
+					"size":  4,
+					"ts":    1541152488442,
 				},
 				Timestamp: 1541152488442,
 			},
@@ -193,8 +193,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"color": "red",
-					"size": 1,
-					"ts": 1541152489252,
+					"size":  1,
+					"ts":    1541152489252,
 				},
 				Timestamp: 1541152489252,
 			},
@@ -205,8 +205,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 25.5,
-					"hum": 65,
-					"ts": 1541152486013,
+					"hum":  65,
+					"ts":   1541152486013,
 				},
 				Timestamp: 1541152486013,
 			},
@@ -214,8 +214,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 27.5,
-					"hum": 59,
-					"ts": 1541152486823,
+					"hum":  59,
+					"ts":   1541152486823,
 				},
 				Timestamp: 1541152486823,
 			},
@@ -223,8 +223,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 28.1,
-					"hum": 75,
-					"ts": 1541152487632,
+					"hum":  75,
+					"ts":   1541152487632,
 				},
 				Timestamp: 1541152487632,
 			},
@@ -232,8 +232,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 27.4,
-					"hum": 80,
-					"ts": 1541152488442,
+					"hum":  80,
+					"ts":   1541152488442,
 				},
 				Timestamp: 1541152488442,
 			},
@@ -241,8 +241,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 25.5,
-					"hum": 62,
-					"ts": 1541152489252,
+					"hum":  62,
+					"ts":   1541152489252,
 				},
 				Timestamp: 1541152489252,
 			},
@@ -253,8 +253,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 25.5,
-					"hum": 65,
-					"ts": 1541152486013,
+					"hum":  65,
+					"ts":   1541152486013,
 				},
 				Timestamp: 1541152486013,
 			},
@@ -262,8 +262,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 27.5,
-					"hum": 59,
-					"ts": 1541152486823,
+					"hum":  59,
+					"ts":   1541152486823,
 				},
 				Timestamp: 1541152486823,
 			},
@@ -271,8 +271,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 28.1,
-					"hum": 75,
-					"ts": 1541152487932,
+					"hum":  75,
+					"ts":   1541152487932,
 				},
 				Timestamp: 1541152487932,
 			},
@@ -280,8 +280,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 27.4,
-					"hum": 80,
-					"ts": 1541152488442,
+					"hum":  80,
+					"ts":   1541152488442,
 				},
 				Timestamp: 1541152488442,
 			},
@@ -289,8 +289,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 25.5,
-					"hum": 62,
-					"ts": 1541152489252,
+					"hum":  62,
+					"ts":   1541152489252,
 				},
 				Timestamp: 1541152489252,
 			},
@@ -298,8 +298,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 26.2,
-					"hum": 63,
-					"ts": 1541152490062,
+					"hum":  63,
+					"ts":   1541152490062,
 				},
 				Timestamp: 1541152490062,
 			},
@@ -307,8 +307,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 26.8,
-					"hum": 71,
-					"ts": 1541152490872,
+					"hum":  71,
+					"ts":   1541152490872,
 				},
 				Timestamp: 1541152490872,
 			},
@@ -316,8 +316,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 28.9,
-					"hum": 85,
-					"ts": 1541152491682,
+					"hum":  85,
+					"ts":   1541152491682,
 				},
 				Timestamp: 1541152491682,
 			},
@@ -325,8 +325,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 29.1,
-					"hum": 92,
-					"ts": 1541152492492,
+					"hum":  92,
+					"ts":   1541152492492,
 				},
 				Timestamp: 1541152492492,
 			},
@@ -334,8 +334,8 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 32.2,
-					"hum": 99,
-					"ts": 1541152493202,
+					"hum":  99,
+					"ts":   1541152493202,
 				},
 				Timestamp: 1541152493202,
 			},
@@ -343,27 +343,28 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 30.9,
-					"hum": 87,
-					"ts": 1541152494112,
+					"hum":  87,
+					"ts":   1541152494112,
 				},
 				Timestamp: 1541152494112,
 			},
 		}
 	}
-	return nodes.NewSourceNodeWithSource(name, test.NewMockSource(data[:size], done, false),  map[string]string{
+	return nodes.NewSourceNodeWithSource(name, test.NewMockSource(data[:size], done, false), map[string]string{
 		"DATASOURCE": name,
 	})
 }
 
 func TestSingleSQL(t *testing.T) {
 	var tests = []struct {
-		name    string
-		sql 	string
+		name string
+		sql  string
 		r    [][]map[string]interface{}
+		m    map[string]interface{}
 	}{
 		{
 			name: `rule1`,
-			sql: `SELECT * FROM demo`,
+			sql:  `SELECT * FROM demo`,
 			r: [][]map[string]interface{}{
 				{{
 					"color": "red",
@@ -391,9 +392,28 @@ func TestSingleSQL(t *testing.T) {
 					"ts":    float64(1541152489252),
 				}},
 			},
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demo_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demo_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demo_records_in_total":   int64(5),
+				"kuiper_op_preprocessor_demo_records_out_total":  int64(5),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(5),
+				"kuiper_op_project_records_out_total":  int64(5),
+
+				"kuiper_sink_MockSink_exceptions_total":  int64(0),
+				"kuiper_sink_MockSink_records_in_total":  int64(5),
+				"kuiper_sink_MockSink_records_out_total": int64(5),
+
+				"kuiper_source_demo_exceptions_total":  int64(0),
+				"kuiper_source_demo_records_in_total":  int64(5),
+				"kuiper_source_demo_records_out_total": int64(5),
+			},
 		}, {
 			name: `rule2`,
-			sql: `SELECT color, ts FROM demo where size > 3`,
+			sql:  `SELECT color, ts FROM demo where size > 3`,
 			r: [][]map[string]interface{}{
 				{{
 					"color": "blue",
@@ -404,18 +424,66 @@ func TestSingleSQL(t *testing.T) {
 					"ts":    float64(1541152488442),
 				}},
 			},
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demo_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demo_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demo_records_in_total":   int64(5),
+				"kuiper_op_preprocessor_demo_records_out_total":  int64(5),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(2),
+				"kuiper_op_project_records_out_total":  int64(2),
+
+				"kuiper_sink_MockSink_exceptions_total":  int64(0),
+				"kuiper_sink_MockSink_records_in_total":  int64(2),
+				"kuiper_sink_MockSink_records_out_total": int64(2),
+
+				"kuiper_source_demo_exceptions_total":  int64(0),
+				"kuiper_source_demo_records_in_total":  int64(5),
+				"kuiper_source_demo_records_out_total": int64(5),
+
+				"kuiper_op_filter_exceptions_total":   int64(0),
+				"kuiper_op_filter_process_latency_ms": int64(0),
+				"kuiper_op_filter_records_in_total":   int64(5),
+				"kuiper_op_filter_records_out_total":  int64(2),
+			},
 		}, {
 			name: `rule3`,
 			sql:  `SELECT size as Int8, ts FROM demo where size > 3`,
 			r: [][]map[string]interface{}{
 				{{
-					"Int8":  float64(6),
-					"ts":    float64(1541152486822),
+					"Int8": float64(6),
+					"ts":   float64(1541152486822),
 				}},
 				{{
-					"Int8":  float64(4),
-					"ts":    float64(1541152488442),
+					"Int8": float64(4),
+					"ts":   float64(1541152488442),
 				}},
+			},
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demo_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demo_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demo_records_in_total":   int64(5),
+				"kuiper_op_preprocessor_demo_records_out_total":  int64(5),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(2),
+				"kuiper_op_project_records_out_total":  int64(2),
+
+				"kuiper_sink_MockSink_exceptions_total":  int64(0),
+				"kuiper_sink_MockSink_records_in_total":  int64(2),
+				"kuiper_sink_MockSink_records_out_total": int64(2),
+
+				"kuiper_source_demo_exceptions_total":  int64(0),
+				"kuiper_source_demo_records_in_total":  int64(5),
+				"kuiper_source_demo_records_out_total": int64(5),
+
+				"kuiper_op_filter_exceptions_total":   int64(0),
+				"kuiper_op_filter_process_latency_ms": int64(0),
+				"kuiper_op_filter_records_in_total":   int64(5),
+				"kuiper_op_filter_records_out_total":  int64(2),
 			},
 		},
 	}
@@ -428,21 +496,21 @@ func TestSingleSQL(t *testing.T) {
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
 		var sources []*nodes.SourceNode
-		if stmt, err := xsql.Language.Parse(parser); err != nil{
-			t.Errorf("parse sql %s error: %s", tt.sql , err)
-		}else {
+		if stmt, err := xsql.Language.Parse(parser); err != nil {
+			t.Errorf("parse sql %s error: %s", tt.sql, err)
+		} else {
 			if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
 				t.Errorf("sql %s is not a select statement", tt.sql)
 			} else {
 				streams := xsql.GetStreams(selectStmt)
-				for _, stream := range streams{
+				for _, stream := range streams {
 					source := getMockSource(stream, done, 5)
 					sources = append(sources, source)
 				}
 			}
 		}
 		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql}, sources)
-		if err != nil{
+		if err != nil {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
@@ -450,17 +518,17 @@ func TestSingleSQL(t *testing.T) {
 		tp.AddSink(inputs, sink)
 		count := len(sources)
 		errCh := tp.Open()
-		func(){
-			for{
-				select{
-				case err = <- errCh:
+		func() {
+			for {
+				select {
+				case err = <-errCh:
 					t.Log(err)
 					tp.Cancel()
 					return
-				case <- done:
+				case <-done:
 					count--
 					log.Infof("%d sources remaining", count)
-					if count <= 0{
+					if count <= 0 {
 						log.Info("stream stopping")
 						time.Sleep(1 * time.Second)
 						tp.Cancel()
@@ -472,7 +540,7 @@ func TestSingleSQL(t *testing.T) {
 		}()
 		results := mockSink.GetResults()
 		var maps [][]map[string]interface{}
-		for _, v := range results{
+		for _, v := range results {
 			var mapRes []map[string]interface{}
 			err := json.Unmarshal(v, &mapRes)
 			if err != nil {
@@ -483,6 +551,14 @@ func TestSingleSQL(t *testing.T) {
 		}
 		if !reflect.DeepEqual(tt.r, maps) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
+			continue
+		}
+		metrics := tp.GetMetrics()
+		for k, v := range tt.m {
+			if v != metrics[k] {
+				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, k, v, metrics[k])
+				break
+			}
 		}
 	}
 }
@@ -490,21 +566,22 @@ func TestSingleSQL(t *testing.T) {
 func TestWindow(t *testing.T) {
 	common.IsTesting = true
 	var tests = []struct {
-		name    string
-		sql 	string
-		size    int
+		name string
+		sql  string
+		size int
 		r    [][]map[string]interface{}
+		m    map[string]interface{}
 	}{
 		{
 			name: `rule1`,
-			sql: `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
+			sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			size: 5,
 			r: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"size":  float64(3),
 					"ts":    float64(1541152486013),
-				},{
+				}, {
 					"color": "blue",
 					"size":  float64(6),
 					"ts":    float64(1541152486822),
@@ -513,11 +590,11 @@ func TestWindow(t *testing.T) {
 					"color": "red",
 					"size":  float64(3),
 					"ts":    float64(1541152486013),
-				},{
+				}, {
 					"color": "blue",
 					"size":  float64(6),
 					"ts":    float64(1541152486822),
-				},{
+				}, {
 					"color": "blue",
 					"size":  float64(2),
 					"ts":    float64(1541152487632),
@@ -526,21 +603,45 @@ func TestWindow(t *testing.T) {
 					"color": "blue",
 					"size":  float64(2),
 					"ts":    float64(1541152487632),
-				},{
+				}, {
 					"color": "yellow",
 					"size":  float64(4),
 					"ts":    float64(1541152488442),
 				}},
 			},
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demo_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demo_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demo_records_in_total":   int64(5),
+				"kuiper_op_preprocessor_demo_records_out_total":  int64(5),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(3),
+				"kuiper_op_project_records_out_total":  int64(3),
+
+				"kuiper_sink_mockSink_exceptions_total":  int64(0),
+				"kuiper_sink_mockSink_records_in_total":  int64(3),
+				"kuiper_sink_mockSink_records_out_total": int64(3),
+
+				"kuiper_source_demo_exceptions_total":  int64(0),
+				"kuiper_source_demo_records_in_total":  int64(5),
+				"kuiper_source_demo_records_out_total": int64(5),
+
+				"kuiper_op_window_exceptions_total":   int64(0),
+				"kuiper_op_window_process_latency_ms": int64(0),
+				"kuiper_op_window_records_in_total":   int64(5),
+				"kuiper_op_window_records_out_total":  int64(3),
+			},
 		}, {
 			name: `rule2`,
-			sql: `SELECT color, ts FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1)`,
+			sql:  `SELECT color, ts FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1)`,
 			size: 5,
 			r: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"ts":    float64(1541152486013),
-				},{
+				}, {
 					"color": "blue",
 					"ts":    float64(1541152486822),
 				}},
@@ -549,137 +650,300 @@ func TestWindow(t *testing.T) {
 					"ts":    float64(1541152488442),
 				}},
 			},
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demo_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demo_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demo_records_in_total":   int64(5),
+				"kuiper_op_preprocessor_demo_records_out_total":  int64(5),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(2),
+				"kuiper_op_project_records_out_total":  int64(2),
+
+				"kuiper_sink_mockSink_exceptions_total":  int64(0),
+				"kuiper_sink_mockSink_records_in_total":  int64(2),
+				"kuiper_sink_mockSink_records_out_total": int64(2),
+
+				"kuiper_source_demo_exceptions_total":  int64(0),
+				"kuiper_source_demo_records_in_total":  int64(5),
+				"kuiper_source_demo_records_out_total": int64(5),
+
+				"kuiper_op_window_exceptions_total":   int64(0),
+				"kuiper_op_window_process_latency_ms": int64(0),
+				"kuiper_op_window_records_in_total":   int64(5),
+				"kuiper_op_window_records_out_total":  int64(3),
+
+				"kuiper_op_filter_exceptions_total":   int64(0),
+				"kuiper_op_filter_process_latency_ms": int64(0),
+				"kuiper_op_filter_records_in_total":   int64(3),
+				"kuiper_op_filter_records_out_total":  int64(2),
+			},
 		}, {
 			name: `rule3`,
-			sql: `SELECT color, temp, ts FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
+			sql:  `SELECT color, temp, ts FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
 			size: 5,
 			r: [][]map[string]interface{}{
 				{{
 					"color": "red",
-					"temp": 25.5,
+					"temp":  25.5,
 					"ts":    float64(1541152486013),
-				}},{{
+				}}, {{
 					"color": "red",
 					"temp":  25.5,
 					"ts":    float64(1541152486013),
-				}},{{
+				}}, {{
 					"color": "red",
 					"temp":  25.5,
 					"ts":    float64(1541152486013),
-				}},{{
-					"color": "blue",
-					"temp": 28.1,
-					"ts":    float64(1541152487632),
-				}},{{
+				}}, {{
 					"color": "blue",
 					"temp":  28.1,
 					"ts":    float64(1541152487632),
-				}},{{
+				}}, {{
 					"color": "blue",
 					"temp":  28.1,
 					"ts":    float64(1541152487632),
-				},{
+				}}, {{
+					"color": "blue",
+					"temp":  28.1,
+					"ts":    float64(1541152487632),
+				}, {
 					"color": "yellow",
 					"temp":  27.4,
 					"ts":    float64(1541152488442),
-				}},{{
+				}}, {{
 					"color": "yellow",
 					"temp":  27.4,
 					"ts":    float64(1541152488442),
-				}},{{
+				}}, {{
 					"color": "yellow",
 					"temp":  27.4,
 					"ts":    float64(1541152488442),
-				},{
+				}, {
 					"color": "red",
 					"temp":  25.5,
 					"ts":    float64(1541152489252),
 				}},
 			},
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demo_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demo_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demo_records_in_total":   int64(5),
+				"kuiper_op_preprocessor_demo_records_out_total":  int64(5),
+
+				"kuiper_op_preprocessor_demo1_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demo1_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demo1_records_in_total":   int64(5),
+				"kuiper_op_preprocessor_demo1_records_out_total":  int64(5),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(8),
+				"kuiper_op_project_records_out_total":  int64(8),
+
+				"kuiper_sink_mockSink_exceptions_total":  int64(0),
+				"kuiper_sink_mockSink_records_in_total":  int64(8),
+				"kuiper_sink_mockSink_records_out_total": int64(8),
+
+				"kuiper_source_demo_exceptions_total":  int64(0),
+				"kuiper_source_demo_records_in_total":  int64(5),
+				"kuiper_source_demo_records_out_total": int64(5),
+
+				"kuiper_source_demo1_exceptions_total":  int64(0),
+				"kuiper_source_demo1_records_in_total":  int64(5),
+				"kuiper_source_demo1_records_out_total": int64(5),
+
+				"kuiper_op_window_exceptions_total":   int64(0),
+				"kuiper_op_window_process_latency_ms": int64(0),
+				"kuiper_op_window_records_in_total":   int64(10),
+				"kuiper_op_window_records_out_total":  int64(10),
+
+				"kuiper_op_join_exceptions_total":   int64(0),
+				"kuiper_op_join_process_latency_ms": int64(0),
+				"kuiper_op_join_records_in_total":   int64(10),
+				"kuiper_op_join_records_out_total":  int64(8),
+			},
 		}, {
 			name: `rule4`,
-			sql: `SELECT color FROM demo GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
+			sql:  `SELECT color FROM demo GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
 			size: 5,
 			r: [][]map[string]interface{}{
 				{{
 					"color": "red",
-				}},{{
-					"color": "blue",
-				},{
-					"color": "red",
-				}},{{
-					"color": "blue",
-				},{
-					"color": "red",
-				}},{{
-					"color": "blue",
-				},{
-					"color": "yellow",
-				}},{{
+				}}, {{
 					"color": "blue",
 				}, {
 					"color": "red",
-				},{
+				}}, {{
+					"color": "blue",
+				}, {
+					"color": "red",
+				}}, {{
+					"color": "blue",
+				}, {
+					"color": "yellow",
+				}}, {{
+					"color": "blue",
+				}, {
+					"color": "red",
+				}, {
 					"color": "yellow",
 				}},
 			},
-		},{
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demo_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demo_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demo_records_in_total":   int64(5),
+				"kuiper_op_preprocessor_demo_records_out_total":  int64(5),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(5),
+				"kuiper_op_project_records_out_total":  int64(5),
+
+				"kuiper_sink_mockSink_exceptions_total":  int64(0),
+				"kuiper_sink_mockSink_records_in_total":  int64(5),
+				"kuiper_sink_mockSink_records_out_total": int64(5),
+
+				"kuiper_source_demo_exceptions_total":  int64(0),
+				"kuiper_source_demo_records_in_total":  int64(5),
+				"kuiper_source_demo_records_out_total": int64(5),
+
+				"kuiper_op_window_exceptions_total":   int64(0),
+				"kuiper_op_window_process_latency_ms": int64(0),
+				"kuiper_op_window_records_in_total":   int64(5),
+				"kuiper_op_window_records_out_total":  int64(5),
+
+				"kuiper_op_aggregate_exceptions_total":   int64(0),
+				"kuiper_op_aggregate_process_latency_ms": int64(0),
+				"kuiper_op_aggregate_records_in_total":   int64(5),
+				"kuiper_op_aggregate_records_out_total":  int64(5),
+
+				"kuiper_op_order_exceptions_total":   int64(0),
+				"kuiper_op_order_process_latency_ms": int64(0),
+				"kuiper_op_order_records_in_total":   int64(5),
+				"kuiper_op_order_records_out_total":  int64(5),
+			},
+		}, {
 			name: `rule5`,
-			sql: `SELECT temp FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1) `,
+			sql:  `SELECT temp FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1) `,
 			size: 11,
 			r: [][]map[string]interface{}{
 				{{
 					"temp": 25.5,
-				},{
+				}, {
 					"temp": 27.5,
-				}},{{
+				}}, {{
 					"temp": 28.1,
-				},{
+				}, {
 					"temp": 27.4,
-				},{
+				}, {
 					"temp": 25.5,
-				}},{{
+				}}, {{
 					"temp": 26.2,
-				},{
+				}, {
 					"temp": 26.8,
-				},{
+				}, {
 					"temp": 28.9,
-				},{
+				}, {
 					"temp": 29.1,
-				},{
+				}, {
 					"temp": 32.2,
 				}},
 			},
-		},{
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_sessionDemo_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_sessionDemo_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_sessionDemo_records_in_total":   int64(11),
+				"kuiper_op_preprocessor_sessionDemo_records_out_total":  int64(11),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(3),
+				"kuiper_op_project_records_out_total":  int64(3),
+
+				"kuiper_sink_mockSink_exceptions_total":  int64(0),
+				"kuiper_sink_mockSink_records_in_total":  int64(3),
+				"kuiper_sink_mockSink_records_out_total": int64(3),
+
+				"kuiper_source_sessionDemo_exceptions_total":  int64(0),
+				"kuiper_source_sessionDemo_records_in_total":  int64(11),
+				"kuiper_source_sessionDemo_records_out_total": int64(11),
+
+				"kuiper_op_window_exceptions_total":   int64(0),
+				"kuiper_op_window_process_latency_ms": int64(0),
+				"kuiper_op_window_records_in_total":   int64(11),
+				"kuiper_op_window_records_out_total":  int64(3),
+			},
+		}, {
 			name: `rule6`,
-			sql: `SELECT max(temp) as m, count(color) as c FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
+			sql:  `SELECT max(temp) as m, count(color) as c FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
 			size: 5,
 			r: [][]map[string]interface{}{
 				{{
 					"m": 25.5,
 					"c": float64(1),
-				}},{{
+				}}, {{
 					"m": 25.5,
 					"c": float64(1),
-				}},{{
+				}}, {{
 					"m": 25.5,
 					"c": float64(1),
-				}},{{
+				}}, {{
 					"m": 28.1,
 					"c": float64(1),
-				}},{{
+				}}, {{
 					"m": 28.1,
 					"c": float64(1),
-				}},{{
+				}}, {{
 					"m": 28.1,
 					"c": float64(2),
-				}},{{
+				}}, {{
 					"m": 27.4,
 					"c": float64(1),
-				}},{{
+				}}, {{
 					"m": 27.4,
 					"c": float64(2),
 				}},
+			},
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demo_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demo_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demo_records_in_total":   int64(5),
+				"kuiper_op_preprocessor_demo_records_out_total":  int64(5),
+
+				"kuiper_op_preprocessor_demo1_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demo1_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demo1_records_in_total":   int64(5),
+				"kuiper_op_preprocessor_demo1_records_out_total":  int64(5),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(8),
+				"kuiper_op_project_records_out_total":  int64(8),
+
+				"kuiper_sink_mockSink_exceptions_total":  int64(0),
+				"kuiper_sink_mockSink_records_in_total":  int64(8),
+				"kuiper_sink_mockSink_records_out_total": int64(8),
+
+				"kuiper_source_demo_exceptions_total":  int64(0),
+				"kuiper_source_demo_records_in_total":  int64(5),
+				"kuiper_source_demo_records_out_total": int64(5),
+
+				"kuiper_source_demo1_exceptions_total":  int64(0),
+				"kuiper_source_demo1_records_in_total":  int64(5),
+				"kuiper_source_demo1_records_out_total": int64(5),
+
+				"kuiper_op_window_exceptions_total":   int64(0),
+				"kuiper_op_window_process_latency_ms": int64(0),
+				"kuiper_op_window_records_in_total":   int64(10),
+				"kuiper_op_window_records_out_total":  int64(10),
+
+				"kuiper_op_join_exceptions_total":   int64(0),
+				"kuiper_op_join_process_latency_ms": int64(0),
+				"kuiper_op_join_records_in_total":   int64(10),
+				"kuiper_op_join_records_out_total":  int64(8),
 			},
 		},
 	}
@@ -693,21 +957,21 @@ func TestWindow(t *testing.T) {
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
 		var sources []*nodes.SourceNode
-		if stmt, err := xsql.Language.Parse(parser); err != nil{
-			t.Errorf("parse sql %s error: %s", tt.sql , err)
-		}else {
+		if stmt, err := xsql.Language.Parse(parser); err != nil {
+			t.Errorf("parse sql %s error: %s", tt.sql, err)
+		} else {
 			if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
 				t.Errorf("sql %s is not a select statement", tt.sql)
 			} else {
 				streams := xsql.GetStreams(selectStmt)
-				for _, stream := range streams{
+				for _, stream := range streams {
 					source := getMockSource(stream, done, tt.size)
 					sources = append(sources, source)
 				}
 			}
 		}
 		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql}, sources)
-		if err != nil{
+		if err != nil {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
@@ -715,17 +979,17 @@ func TestWindow(t *testing.T) {
 		tp.AddSink(inputs, sink)
 		count := len(sources)
 		errCh := tp.Open()
-		func(){
-			for{
-				select{
-				case err = <- errCh:
+		func() {
+			for {
+				select {
+				case err = <-errCh:
 					t.Log(err)
 					tp.Cancel()
 					return
-				case <- done:
+				case <-done:
 					count--
 					log.Infof("%d sources remaining", count)
-					if count <= 0{
+					if count <= 0 {
 						log.Info("stream stopping")
 						time.Sleep(1 * time.Second)
 						tp.Cancel()
@@ -737,7 +1001,7 @@ func TestWindow(t *testing.T) {
 		}()
 		results := mockSink.GetResults()
 		var maps [][]map[string]interface{}
-		for _, v := range results{
+		for _, v := range results {
 			var mapRes []map[string]interface{}
 			err := json.Unmarshal(v, &mapRes)
 			if err != nil {
@@ -749,17 +1013,24 @@ func TestWindow(t *testing.T) {
 		if !reflect.DeepEqual(tt.r, maps) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 		}
+		metrics := tp.GetMetrics()
+		for k, v := range tt.m {
+			if v != metrics[k] {
+				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, k, v, metrics[k])
+				break
+			}
+		}
 	}
 }
 
-func createEventStreams(t *testing.T){
+func createEventStreams(t *testing.T) {
 	demo := `CREATE STREAM demoE (
 					color STRING,
 					size BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demoE", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
 	_, err := NewStreamProcessor(demo, path.Join(DbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		t.Log(err)
 	}
 	demo1 := `CREATE STREAM demo1E (
@@ -768,7 +1039,7 @@ func createEventStreams(t *testing.T){
 					ts BIGINT
 				) WITH (DATASOURCE="demo1E", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
 	_, err = NewStreamProcessor(demo1, path.Join(DbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		t.Log(err)
 	}
 	sessionDemo := `CREATE STREAM sessionDemoE (
@@ -777,40 +1048,40 @@ func createEventStreams(t *testing.T){
 					ts BIGINT
 				) WITH (DATASOURCE="sessionDemoE", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
 	_, err = NewStreamProcessor(sessionDemo, path.Join(DbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		t.Log(err)
 	}
 }
 
-func dropEventStreams(t *testing.T){
+func dropEventStreams(t *testing.T) {
 	demo := `DROP STREAM demoE`
 	_, err := NewStreamProcessor(demo, path.Join(DbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		t.Log(err)
 	}
 	demo1 := `DROP STREAM demo1E`
 	_, err = NewStreamProcessor(demo1, path.Join(DbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		t.Log(err)
 	}
 	sessionDemo := `DROP STREAM sessionDemoE`
 	_, err = NewStreamProcessor(sessionDemo, path.Join(DbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		t.Log(err)
 	}
 }
 
-func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNode{
+func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNode {
 	var data []*xsql.Tuple
-	switch name{
+	switch name {
 	case "demoE":
 		data = []*xsql.Tuple{
 			{
 				Emitter: name,
 				Message: map[string]interface{}{
 					"color": "red",
-					"size": 3,
-					"ts": 1541152486013,
+					"size":  3,
+					"ts":    1541152486013,
 				},
 				Timestamp: 1541152486013,
 			},
@@ -818,8 +1089,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"color": "blue",
-					"size": 2,
-					"ts": 1541152487632,
+					"size":  2,
+					"ts":    1541152487632,
 				},
 				Timestamp: 1541152487632,
 			},
@@ -827,8 +1098,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"color": "red",
-					"size": 1,
-					"ts": 1541152489252,
+					"size":  1,
+					"ts":    1541152489252,
 				},
 				Timestamp: 1541152489252,
 			},
@@ -836,8 +1107,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"color": "blue",
-					"size": 6,
-					"ts": 1541152486822,
+					"size":  6,
+					"ts":    1541152486822,
 				},
 				Timestamp: 1541152486822,
 			},
@@ -845,8 +1116,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"color": "yellow",
-					"size": 4,
-					"ts": 1541152488442,
+					"size":  4,
+					"ts":    1541152488442,
 				},
 				Timestamp: 1541152488442,
 			},
@@ -854,8 +1125,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"color": "yellow",
-					"size": 4,
-					"ts": 1541152492342,
+					"size":  4,
+					"ts":    1541152492342,
 				},
 				Timestamp: 1541152488442,
 			},
@@ -866,8 +1137,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 27.5,
-					"hum": 59,
-					"ts": 1541152486823,
+					"hum":  59,
+					"ts":   1541152486823,
 				},
 				Timestamp: 1541152486823,
 			},
@@ -875,8 +1146,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 25.5,
-					"hum": 65,
-					"ts": 1541152486013,
+					"hum":  65,
+					"ts":   1541152486013,
 				},
 				Timestamp: 1541152486013,
 			},
@@ -884,8 +1155,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 27.4,
-					"hum": 80,
-					"ts": 1541152488442,
+					"hum":  80,
+					"ts":   1541152488442,
 				},
 				Timestamp: 1541152488442,
 			},
@@ -893,8 +1164,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 28.1,
-					"hum": 75,
-					"ts": 1541152487632,
+					"hum":  75,
+					"ts":   1541152487632,
 				},
 				Timestamp: 1541152487632,
 			},
@@ -902,8 +1173,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 25.5,
-					"hum": 62,
-					"ts": 1541152489252,
+					"hum":  62,
+					"ts":   1541152489252,
 				},
 				Timestamp: 1541152489252,
 			},
@@ -911,8 +1182,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 25.5,
-					"hum": 62,
-					"ts": 1541152499252,
+					"hum":  62,
+					"ts":   1541152499252,
 				},
 				Timestamp: 1541152499252,
 			},
@@ -923,8 +1194,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 25.5,
-					"hum": 65,
-					"ts": 1541152486013,
+					"hum":  65,
+					"ts":   1541152486013,
 				},
 				Timestamp: 1541152486013,
 			},
@@ -932,8 +1203,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 28.1,
-					"hum": 75,
-					"ts": 1541152487932,
+					"hum":  75,
+					"ts":   1541152487932,
 				},
 				Timestamp: 1541152487932,
 			},
@@ -941,8 +1212,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 27.5,
-					"hum": 59,
-					"ts": 1541152486823,
+					"hum":  59,
+					"ts":   1541152486823,
 				},
 				Timestamp: 1541152486823,
 			},
@@ -950,8 +1221,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 25.5,
-					"hum": 62,
-					"ts": 1541152489252,
+					"hum":  62,
+					"ts":   1541152489252,
 				},
 				Timestamp: 1541152489252,
 			},
@@ -959,8 +1230,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 27.4,
-					"hum": 80,
-					"ts": 1541152488442,
+					"hum":  80,
+					"ts":   1541152488442,
 				},
 				Timestamp: 1541152488442,
 			},
@@ -968,8 +1239,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 26.2,
-					"hum": 63,
-					"ts": 1541152490062,
+					"hum":  63,
+					"ts":   1541152490062,
 				},
 				Timestamp: 1541152490062,
 			},
@@ -977,8 +1248,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 28.9,
-					"hum": 85,
-					"ts": 1541152491682,
+					"hum":  85,
+					"ts":   1541152491682,
 				},
 				Timestamp: 1541152491682,
 			},
@@ -986,8 +1257,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 26.8,
-					"hum": 71,
-					"ts": 1541152490872,
+					"hum":  71,
+					"ts":   1541152490872,
 				},
 				Timestamp: 1541152490872,
 			},
@@ -995,8 +1266,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 29.1,
-					"hum": 92,
-					"ts": 1541152492492,
+					"hum":  92,
+					"ts":   1541152492492,
 				},
 				Timestamp: 1541152492492,
 			},
@@ -1004,8 +1275,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 30.9,
-					"hum": 87,
-					"ts": 1541152494112,
+					"hum":  87,
+					"ts":   1541152494112,
 				},
 				Timestamp: 1541152494112,
 			},
@@ -1013,8 +1284,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 32.2,
-					"hum": 99,
-					"ts": 1541152493202,
+					"hum":  99,
+					"ts":   1541152493202,
 				},
 				Timestamp: 1541152493202,
 			},
@@ -1022,8 +1293,8 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 				Emitter: name,
 				Message: map[string]interface{}{
 					"temp": 32.2,
-					"hum": 99,
-					"ts": 1541152499202,
+					"hum":  99,
+					"ts":   1541152499202,
 				},
 				Timestamp: 1541152499202,
 			},
@@ -1037,14 +1308,15 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 func TestEventWindow(t *testing.T) {
 	common.IsTesting = true
 	var tests = []struct {
-		name    string
-		sql 	string
-		size    int
+		name string
+		sql  string
+		size int
 		r    [][]map[string]interface{}
+		m    map[string]interface{}
 	}{
 		{
 			name: `rule1`,
-			sql: `SELECT * FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
+			sql:  `SELECT * FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			size: 6,
 			r: [][]map[string]interface{}{
 				{{
@@ -1056,7 +1328,7 @@ func TestEventWindow(t *testing.T) {
 					"color": "red",
 					"size":  float64(3),
 					"ts":    float64(1541152486013),
-				},{
+				}, {
 					"color": "blue",
 					"size":  float64(2),
 					"ts":    float64(1541152487632),
@@ -1065,27 +1337,51 @@ func TestEventWindow(t *testing.T) {
 					"color": "blue",
 					"size":  float64(2),
 					"ts":    float64(1541152487632),
-				},{
+				}, {
 					"color": "yellow",
 					"size":  float64(4),
 					"ts":    float64(1541152488442),
-				}},{{
+				}}, {{
 					"color": "yellow",
 					"size":  float64(4),
 					"ts":    float64(1541152488442),
-				},{
+				}, {
 					"color": "red",
-					"size": float64(1),
-					"ts": float64(1541152489252),
-				}},{{
+					"size":  float64(1),
+					"ts":    float64(1541152489252),
+				}}, {{
 					"color": "red",
-					"size": float64(1),
-					"ts": float64(1541152489252),
+					"size":  float64(1),
+					"ts":    float64(1541152489252),
 				}},
+			},
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demoE_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demoE_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demoE_records_in_total":   int64(6),
+				"kuiper_op_preprocessor_demoE_records_out_total":  int64(6),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(5),
+				"kuiper_op_project_records_out_total":  int64(5),
+
+				"kuiper_sink_MockSink_exceptions_total":  int64(0),
+				"kuiper_sink_MockSink_records_in_total":  int64(5),
+				"kuiper_sink_MockSink_records_out_total": int64(5),
+
+				"kuiper_source_demoE_exceptions_total":  int64(0),
+				"kuiper_source_demoE_records_in_total":  int64(6),
+				"kuiper_source_demoE_records_out_total": int64(6),
+
+				"kuiper_op_window_exceptions_total":   int64(0),
+				"kuiper_op_window_process_latency_ms": int64(0),
+				"kuiper_op_window_records_in_total":   int64(6),
+				"kuiper_op_window_records_out_total":  int64(5),
 			},
 		}, {
 			name: `rule2`,
-			sql: `SELECT color, ts FROM demoE where size > 2 GROUP BY tumblingwindow(ss, 1)`,
+			sql:  `SELECT color, ts FROM demoE where size > 2 GROUP BY tumblingwindow(ss, 1)`,
 			size: 6,
 			r: [][]map[string]interface{}{
 				{{
@@ -1097,112 +1393,274 @@ func TestEventWindow(t *testing.T) {
 					"ts":    float64(1541152488442),
 				}},
 			},
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demoE_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demoE_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demoE_records_in_total":   int64(6),
+				"kuiper_op_preprocessor_demoE_records_out_total":  int64(6),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(2),
+				"kuiper_op_project_records_out_total":  int64(2),
+
+				"kuiper_sink_MockSink_exceptions_total":  int64(0),
+				"kuiper_sink_MockSink_records_in_total":  int64(2),
+				"kuiper_sink_MockSink_records_out_total": int64(2),
+
+				"kuiper_source_demoE_exceptions_total":  int64(0),
+				"kuiper_source_demoE_records_in_total":  int64(6),
+				"kuiper_source_demoE_records_out_total": int64(6),
+
+				"kuiper_op_window_exceptions_total":   int64(0),
+				"kuiper_op_window_process_latency_ms": int64(0),
+				"kuiper_op_window_records_in_total":   int64(6),
+				"kuiper_op_window_records_out_total":  int64(4),
+
+				"kuiper_op_filter_exceptions_total":   int64(0),
+				"kuiper_op_filter_process_latency_ms": int64(0),
+				"kuiper_op_filter_records_in_total":   int64(4),
+				"kuiper_op_filter_records_out_total":  int64(2),
+			},
 		}, {
 			name: `rule3`,
-			sql: `SELECT color, temp, ts FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
+			sql:  `SELECT color, temp, ts FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
 			size: 6,
 			r: [][]map[string]interface{}{
 				{{
 					"color": "red",
-					"temp": 25.5,
+					"temp":  25.5,
 					"ts":    float64(1541152486013),
-				}},{{
+				}}, {{
 					"color": "red",
 					"temp":  25.5,
 					"ts":    float64(1541152486013),
-				}},{{
-					"color": "blue",
-					"temp": 28.1,
-					"ts":    float64(1541152487632),
-				}},{{
+				}}, {{
 					"color": "blue",
 					"temp":  28.1,
 					"ts":    float64(1541152487632),
-				},{
+				}}, {{
+					"color": "blue",
+					"temp":  28.1,
+					"ts":    float64(1541152487632),
+				}, {
 					"color": "yellow",
 					"temp":  27.4,
 					"ts":    float64(1541152488442),
-				}},{{
+				}}, {{
 					"color": "yellow",
 					"temp":  27.4,
 					"ts":    float64(1541152488442),
-				},{
+				}, {
 					"color": "red",
 					"temp":  25.5,
 					"ts":    float64(1541152489252),
 				}},
 			},
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demoE_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demoE_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demoE_records_in_total":   int64(6),
+				"kuiper_op_preprocessor_demoE_records_out_total":  int64(6),
+
+				"kuiper_op_preprocessor_demo1E_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demo1E_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demo1E_records_in_total":   int64(6),
+				"kuiper_op_preprocessor_demo1E_records_out_total":  int64(6),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(5),
+				"kuiper_op_project_records_out_total":  int64(5),
+
+				"kuiper_sink_MockSink_exceptions_total":  int64(0),
+				"kuiper_sink_MockSink_records_in_total":  int64(5),
+				"kuiper_sink_MockSink_records_out_total": int64(5),
+
+				"kuiper_source_demoE_exceptions_total":  int64(0),
+				"kuiper_source_demoE_records_in_total":  int64(6),
+				"kuiper_source_demoE_records_out_total": int64(6),
+
+				"kuiper_source_demo1E_exceptions_total":  int64(0),
+				"kuiper_source_demo1E_records_in_total":  int64(6),
+				"kuiper_source_demo1E_records_out_total": int64(6),
+
+				"kuiper_op_window_exceptions_total":   int64(0),
+				"kuiper_op_window_process_latency_ms": int64(0),
+				"kuiper_op_window_records_in_total":   int64(12),
+				"kuiper_op_window_records_out_total":  int64(5),
+
+				"kuiper_op_join_exceptions_total":   int64(0),
+				"kuiper_op_join_process_latency_ms": int64(0),
+				"kuiper_op_join_records_in_total":   int64(5),
+				"kuiper_op_join_records_out_total":  int64(5),
+			},
 		}, {
 			name: `rule4`,
-			sql: `SELECT color FROM demoE GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
+			sql:  `SELECT color FROM demoE GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
 			size: 6,
 			r: [][]map[string]interface{}{
 				{{
 					"color": "red",
-				}},{{
-					"color": "blue",
-				},{
-					"color": "red",
-				}},{{
-					"color": "blue",
-				},{
-					"color": "yellow",
-				}},{{
+				}}, {{
 					"color": "blue",
 				}, {
 					"color": "red",
-				},{
+				}}, {{
+					"color": "blue",
+				}, {
+					"color": "yellow",
+				}}, {{
+					"color": "blue",
+				}, {
+					"color": "red",
+				}, {
 					"color": "yellow",
 				}},
 			},
-		},{
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demoE_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demoE_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demoE_records_in_total":   int64(6),
+				"kuiper_op_preprocessor_demoE_records_out_total":  int64(6),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(4),
+				"kuiper_op_project_records_out_total":  int64(4),
+
+				"kuiper_sink_MockSink_exceptions_total":  int64(0),
+				"kuiper_sink_MockSink_records_in_total":  int64(4),
+				"kuiper_sink_MockSink_records_out_total": int64(4),
+
+				"kuiper_source_demoE_exceptions_total":  int64(0),
+				"kuiper_source_demoE_records_in_total":  int64(6),
+				"kuiper_source_demoE_records_out_total": int64(6),
+
+				"kuiper_op_window_exceptions_total":   int64(0),
+				"kuiper_op_window_process_latency_ms": int64(0),
+				"kuiper_op_window_records_in_total":   int64(6),
+				"kuiper_op_window_records_out_total":  int64(4),
+
+				"kuiper_op_aggregate_exceptions_total":   int64(0),
+				"kuiper_op_aggregate_process_latency_ms": int64(0),
+				"kuiper_op_aggregate_records_in_total":   int64(4),
+				"kuiper_op_aggregate_records_out_total":  int64(4),
+
+				"kuiper_op_order_exceptions_total":   int64(0),
+				"kuiper_op_order_process_latency_ms": int64(0),
+				"kuiper_op_order_records_in_total":   int64(4),
+				"kuiper_op_order_records_out_total":  int64(4),
+			},
+		}, {
 			name: `rule5`,
-			sql: `SELECT temp FROM sessionDemoE GROUP BY SessionWindow(ss, 2, 1) `,
+			sql:  `SELECT temp FROM sessionDemoE GROUP BY SessionWindow(ss, 2, 1) `,
 			size: 12,
 			r: [][]map[string]interface{}{
 				{{
 					"temp": 25.5,
-				}},{{
+				}}, {{
 					"temp": 28.1,
-				},{
+				}, {
 					"temp": 27.4,
-				},{
+				}, {
 					"temp": 25.5,
-				}},{{
+				}}, {{
 					"temp": 26.2,
-				},{
+				}, {
 					"temp": 26.8,
-				},{
+				}, {
 					"temp": 28.9,
-				},{
+				}, {
 					"temp": 29.1,
-				},{
+				}, {
 					"temp": 32.2,
-				}},{{
+				}}, {{
 					"temp": 30.9,
 				}},
 			},
-		},{
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_sessionDemoE_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_sessionDemoE_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_sessionDemoE_records_in_total":   int64(12),
+				"kuiper_op_preprocessor_sessionDemoE_records_out_total":  int64(12),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(4),
+				"kuiper_op_project_records_out_total":  int64(4),
+
+				"kuiper_sink_MockSink_exceptions_total":  int64(0),
+				"kuiper_sink_MockSink_records_in_total":  int64(4),
+				"kuiper_sink_MockSink_records_out_total": int64(4),
+
+				"kuiper_source_sessionDemoE_exceptions_total":  int64(0),
+				"kuiper_source_sessionDemoE_records_in_total":  int64(12),
+				"kuiper_source_sessionDemoE_records_out_total": int64(12),
+
+				"kuiper_op_window_exceptions_total":   int64(0),
+				"kuiper_op_window_process_latency_ms": int64(0),
+				"kuiper_op_window_records_in_total":   int64(12),
+				"kuiper_op_window_records_out_total":  int64(4),
+			},
+		}, {
 			name: `rule6`,
-			sql: `SELECT max(temp) as m, count(color) as c FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
+			sql:  `SELECT max(temp) as m, count(color) as c FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
 			size: 6,
 			r: [][]map[string]interface{}{
 				{{
 					"m": 25.5,
 					"c": float64(1),
-				}},{{
+				}}, {{
 					"m": 25.5,
 					"c": float64(1),
-				}},{{
+				}}, {{
 					"m": 28.1,
 					"c": float64(1),
-				}},{{
+				}}, {{
 					"m": 28.1,
 					"c": float64(2),
-				}},{{
+				}}, {{
 					"m": 27.4,
 					"c": float64(2),
 				}},
+			},
+			m: map[string]interface{}{
+				"kuiper_op_preprocessor_demoE_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demoE_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demoE_records_in_total":   int64(6),
+				"kuiper_op_preprocessor_demoE_records_out_total":  int64(6),
+
+				"kuiper_op_preprocessor_demo1E_exceptions_total":   int64(0),
+				"kuiper_op_preprocessor_demo1E_process_latency_ms": int64(0),
+				"kuiper_op_preprocessor_demo1E_records_in_total":   int64(6),
+				"kuiper_op_preprocessor_demo1E_records_out_total":  int64(6),
+
+				"kuiper_op_project_exceptions_total":   int64(0),
+				"kuiper_op_project_process_latency_ms": int64(0),
+				"kuiper_op_project_records_in_total":   int64(5),
+				"kuiper_op_project_records_out_total":  int64(5),
+
+				"kuiper_sink_MockSink_exceptions_total":  int64(0),
+				"kuiper_sink_MockSink_records_in_total":  int64(5),
+				"kuiper_sink_MockSink_records_out_total": int64(5),
+
+				"kuiper_source_demoE_exceptions_total":  int64(0),
+				"kuiper_source_demoE_records_in_total":  int64(6),
+				"kuiper_source_demoE_records_out_total": int64(6),
+
+				"kuiper_source_demo1E_exceptions_total":  int64(0),
+				"kuiper_source_demo1E_records_in_total":  int64(6),
+				"kuiper_source_demo1E_records_out_total": int64(6),
+
+				"kuiper_op_window_exceptions_total":  int64(0),
+				"kuiper_op_window_records_in_total":  int64(12),
+				"kuiper_op_window_records_out_total": int64(5),
+
+				"kuiper_op_join_exceptions_total":   int64(0),
+				"kuiper_op_join_process_latency_ms": int64(0),
+				"kuiper_op_join_records_in_total":   int64(5),
+				"kuiper_op_join_records_out_total":  int64(5),
 			},
 		},
 	}
@@ -1215,7 +1673,7 @@ func TestEventWindow(t *testing.T) {
 	//mock ticker
 	realTicker := time.NewTicker(500 * time.Millisecond)
 	tickerDone := make(chan bool)
-	go func(){
+	go func() {
 		ticker := common.GetTicker(1000).(*common.MockTicker)
 		timer := common.GetTimer(1000).(*common.MockTimer)
 		for {
@@ -1239,27 +1697,27 @@ func TestEventWindow(t *testing.T) {
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
 		var sources []*nodes.SourceNode
-		if stmt, err := xsql.Language.Parse(parser); err != nil{
-			t.Errorf("parse sql %s error: %s", tt.sql , err)
-		}else {
+		if stmt, err := xsql.Language.Parse(parser); err != nil {
+			t.Errorf("parse sql %s error: %s", tt.sql, err)
+		} else {
 			if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
 				t.Errorf("sql %s is not a select statement", tt.sql)
 			} else {
 				streams := xsql.GetStreams(selectStmt)
-				for _, stream := range streams{
+				for _, stream := range streams {
 					source := getEventMockSource(stream, done, tt.size)
 					sources = append(sources, source)
 				}
 			}
 		}
 		tp, inputs, err := p.createTopoWithSources(&api.Rule{
-			Id:tt.name, Sql: tt.sql,
+			Id: tt.name, Sql: tt.sql,
 			Options: map[string]interface{}{
-				"isEventTime": true,
+				"isEventTime":   true,
 				"lateTolerance": float64(1000),
 			},
 		}, sources)
-		if err != nil{
+		if err != nil {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
@@ -1267,17 +1725,17 @@ func TestEventWindow(t *testing.T) {
 		tp.AddSink(inputs, sink)
 		count := len(sources)
 		errCh := tp.Open()
-		func(){
-			for{
-				select{
-				case err = <- errCh:
+		func() {
+			for {
+				select {
+				case err = <-errCh:
 					t.Log(err)
 					tp.Cancel()
 					return
-				case <- done:
+				case <-done:
 					count--
 					log.Infof("%d sources remaining", count)
-					if count <= 0{
+					if count <= 0 {
 						log.Info("stream stopping")
 						time.Sleep(1 * time.Second)
 						tp.Cancel()
@@ -1289,7 +1747,7 @@ func TestEventWindow(t *testing.T) {
 		}()
 		results := mockSink.GetResults()
 		var maps [][]map[string]interface{}
-		for _, v := range results{
+		for _, v := range results {
 			var mapRes []map[string]interface{}
 			err := json.Unmarshal(v, &mapRes)
 			if err != nil {
@@ -1300,6 +1758,13 @@ func TestEventWindow(t *testing.T) {
 		}
 		if !reflect.DeepEqual(tt.r, maps) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
+		}
+		metrics := tp.GetMetrics()
+		for k, v := range tt.m {
+			if v != metrics[k] {
+				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, k, v, metrics[k])
+				break
+			}
 		}
 	}
 	realTicker.Stop()
@@ -1313,4 +1778,3 @@ func errstring(err error) string {
 	}
 	return ""
 }
-
