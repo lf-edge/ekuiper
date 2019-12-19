@@ -350,7 +350,7 @@ func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNod
 			},
 		}
 	}
-	return nodes.NewSourceNode(name, test.NewMockSource(data[:size], done, false),  map[string]string{
+	return nodes.NewSourceNodeWithSource(name, test.NewMockSource(data[:size], done, false),  map[string]string{
 		"DATASOURCE": name,
 	})
 }
@@ -1029,7 +1029,7 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 			},
 		}
 	}
-	return nodes.NewSourceNode(name, test.NewMockSource(data[:size], done, true), map[string]string{
+	return nodes.NewSourceNodeWithSource(name, test.NewMockSource(data[:size], done, true), map[string]string{
 		"DATASOURCE": name,
 	})
 }

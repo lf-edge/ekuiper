@@ -38,6 +38,18 @@ func NewSourceNode(name string, options map[string]string) *SourceNode {
 	}
 }
 
+//Only for mock source, do not use it in production
+func NewSourceNodeWithSource(name string, source api.Source, options map[string]string) *SourceNode {
+	return &SourceNode{
+		sources: 	 []api.Source{source},
+		outs:        make(map[string]chan<- interface{}),
+		name:        name,
+		options:     options,
+		ctx:         nil,
+		concurrency: 1,
+	}
+}
+
 func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	m.ctx = ctx
 	logger := ctx.GetLogger()
@@ -51,23 +63,29 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.concurrency = t
 			}
 		}
+		createSource := len(m.sources) == 0
 		logger.Infof("open source node %d instances", m.concurrency)
 		for i := 0; i < m.concurrency; i++ { // workers
 			go func(instance int) {
 				//Do open source instances
-				source, err := getSource(m.sourceType)
-				if err != nil {
-					m.drainError(errCh, err, ctx, logger)
-					return
+				var source api.Source
+				if createSource{
+					source, err := getSource(m.sourceType)
+					if err != nil {
+						m.drainError(errCh, err, ctx, logger)
+						return
+					}
+					err = source.Configure(m.options["DATASOURCE"], props)
+					if err != nil {
+						m.drainError(errCh, err, ctx, logger)
+						return
+					}
+					m.mutex.Lock()
+					m.sources = append(m.sources, source)
+					m.mutex.Unlock()
+				}else{
+					source = m.sources[instance]
 				}
-				err = source.Configure(m.options["DATASOURCE"], props)
-				if err != nil {
-					m.drainError(errCh, err, ctx, logger)
-					return
-				}
-				m.mutex.Lock()
-				m.sources = append(m.sources, source)
-				m.mutex.Unlock()
 				if err := source.Open(ctx.WithInstance(instance), func(message map[string]interface{}, meta map[string]interface{}) {
 					tuple := &xsql.Tuple{Emitter: m.name, Message: message, Timestamp: common.GetNowInMilli(), Metadata: meta}
 					m.Broadcast(tuple)
