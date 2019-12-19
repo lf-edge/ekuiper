@@ -5,14 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/common/plugin_manager"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xsql/plans"
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
 	"github.com/emqx/kuiper/xstream/operators"
-	"github.com/emqx/kuiper/xstream/sinks"
 	"path"
 	"strings"
 )
@@ -222,11 +220,7 @@ func (p *RuleProcessor) ExecInitRule(rule *api.Rule) (*xstream.TopologyNew, erro
 				if !ok {
 					return nil, fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
 				}
-				if s, err := getSink(name, props); err != nil {
-					return nil, err
-				} else {
-					tp.AddSink(inputs, nodes.NewSinkNode("sink_"+name, s))
-				}
+				tp.AddSink(inputs, nodes.NewSinkNode("sink_"+name, name, props))
 			}
 		}
 		return tp, nil
@@ -237,7 +231,7 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 	if tp, inputs, err := p.createTopo(&api.Rule{Id: ruleid, Sql: sql}); err != nil {
 		return nil, err
 	} else {
-		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", sinks.NewLogSinkToMemory()))
+		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", "log", nil ))
 		go func() {
 			select {
 			case err := <-tp.Open():
@@ -437,34 +431,4 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			return tp, inputs, nil
 		}
 	}
-}
-
-func getSink(name string, action map[string]interface{}) (api.Sink, error) {
-	log.Tracef("trying to get sink %s with action %v", name, action)
-	var s api.Sink
-	switch name {
-	case "log":
-		s = sinks.NewLogSink()
-	case "mqtt":
-		s = &sinks.MQTTSink{}
-	case "rest":
-		s = &sinks.RestSink{}
-	default:
-		nf, err := plugin_manager.GetPlugin(name, "sinks")
-		if err != nil {
-			return nil, err
-		}
-		var ok bool
-		s, ok = nf.(api.Sink)
-		if !ok {
-			return nil, fmt.Errorf("exported symbol %s is not type of api.Sink", name)
-		}
-	}
-
-	err := s.Configure(action)
-	if err != nil {
-		return nil, err
-	}
-	log.Debugf("Sink %s created", name)
-	return s, nil
 }

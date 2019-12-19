@@ -446,7 +446,7 @@ func TestSingleSQL(t *testing.T) {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNode("MockSink", mockSink)
+		sink := nodes.NewSinkNodeWithSink("MockSink", mockSink)
 		tp.AddSink(inputs, sink)
 		count := len(sources)
 		errCh := tp.Open()
@@ -711,7 +711,7 @@ func TestWindow(t *testing.T) {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNode("mockSink", mockSink)
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
 		tp.AddSink(inputs, sink)
 		count := len(sources)
 		errCh := tp.Open()
@@ -1263,7 +1263,7 @@ func TestEventWindow(t *testing.T) {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNode("MockSink", mockSink)
+		sink := nodes.NewSinkNodeWithSink("MockSink", mockSink)
 		tp.AddSink(inputs, sink)
 		count := len(sources)
 		errCh := tp.Open()
