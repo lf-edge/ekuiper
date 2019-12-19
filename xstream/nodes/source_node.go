@@ -41,17 +41,19 @@ func NewSourceNode(name string, options map[string]string) *SourceNode {
 func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	m.ctx = ctx
 	logger := ctx.GetLogger()
-	logger.Debugf("open source node %s with option %v", m.name, m.options)
+	logger.Infof("open source node %s with option %v", m.name, m.options)
 	go func() {
 		props := m.getConf(ctx)
 		if c, ok := props["concurrency"]; ok {
-			if f, ok := c.(float64); ok {
-				m.concurrency = int(f)
+			if t, err := common.ToInt(c); err != nil {
+				logger.Warnf("invalid type for concurrency property, should be int but found %t", c)
+			} else {
+				m.concurrency = t
 			}
 		}
-
+		logger.Infof("open source node %d instances", m.concurrency)
 		for i := 0; i < m.concurrency; i++ { // workers
-			go func() {
+			go func(instance int) {
 				//Do open source instances
 				source, err := getSource(m.sourceType)
 				if err != nil {
@@ -66,7 +68,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.mutex.Lock()
 				m.sources = append(m.sources, source)
 				m.mutex.Unlock()
-				if err := source.Open(ctx, func(message map[string]interface{}, meta map[string]interface{}) {
+				if err := source.Open(ctx.WithInstance(instance), func(message map[string]interface{}, meta map[string]interface{}) {
 					tuple := &xsql.Tuple{Emitter: m.name, Message: message, Timestamp: common.GetNowInMilli(), Metadata: meta}
 					m.Broadcast(tuple)
 					logger.Debugf("%s consume data %v complete", m.name, tuple)
@@ -74,7 +76,8 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 					m.drainError(errCh, err, ctx, logger)
 					return
 				}
-			}()
+				logger.Infof("Start source %s instance %d successfully", m.name, instance)
+			}(i)
 		}
 
 		for {

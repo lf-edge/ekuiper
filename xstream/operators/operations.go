@@ -1,9 +1,9 @@
 package operators
 
 import (
+	"fmt"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
-	"fmt"
 	"sync"
 )
 
@@ -20,8 +20,6 @@ func (f UnFunc) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	return f(ctx, data)
 }
 
-
-
 type UnaryOperator struct {
 	op          UnOperation
 	concurrency int
@@ -29,7 +27,7 @@ type UnaryOperator struct {
 	outputs     map[string]chan<- interface{}
 	mutex       sync.RWMutex
 	cancelled   bool
-	name 		string
+	name        string
 }
 
 // NewUnary creates *UnaryOperator value
@@ -61,10 +59,10 @@ func (o *UnaryOperator) SetConcurrency(concurr int) {
 	}
 }
 
-func (o *UnaryOperator) AddOutput(output chan<- interface{}, name string) error{
-	if _, ok := o.outputs[name]; !ok{
+func (o *UnaryOperator) AddOutput(output chan<- interface{}, name string) error {
+	if _, ok := o.outputs[name]; !ok {
 		o.outputs[name] = output
-	}else{
+	} else {
 		return fmt.Errorf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
 	}
 	return nil
@@ -75,12 +73,12 @@ func (o *UnaryOperator) GetInput() (chan<- interface{}, string) {
 }
 
 // Exec is the entry point for the executor
-func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error ) {
+func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log := ctx.GetLogger()
 	log.Debugf("Unary operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
-		go func(){errCh <- fmt.Errorf("no output channel found")}()
+		go func() { errCh <- fmt.Errorf("no output channel found") }()
 		return
 	}
 
@@ -95,10 +93,10 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error ) {
 		barrier.Add(wgDelta)
 
 		for i := 0; i < o.concurrency; i++ { // workers
-			go func(wg *sync.WaitGroup) {
+			go func(wg *sync.WaitGroup, instance int) {
 				defer wg.Done()
-				o.doOp(ctx, errCh)
-			}(&barrier)
+				o.doOp(ctx.WithInstance(instance), errCh)
+			}(&barrier, i)
 		}
 
 		wait := make(chan struct{})
@@ -129,7 +127,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	exeCtx, cancel := ctx.WithCancel()
 
 	defer func() {
-		log.Infof("unary operator %s done, cancelling future items", o.name)
+		log.Infof("unary operator %s instance %d done, cancelling future items", o.name, ctx.GetInstanceId())
 		cancel()
 	}()
 
@@ -152,7 +150,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 
 		// is cancelling
 		case <-ctx.Done():
-			log.Infof("unary operator %s cancelling....", o.name)
+			log.Infof("unary operator %s instance %d cancelling....", o.name, ctx.GetInstanceId())
 			o.mutex.Lock()
 			cancel()
 			o.cancelled = true
@@ -161,4 +159,3 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		}
 	}
 }
-

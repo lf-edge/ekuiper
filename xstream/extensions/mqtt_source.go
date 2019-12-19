@@ -3,11 +3,11 @@ package extensions
 import (
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"fmt"
-	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
 	"strconv"
 	"strings"
@@ -18,26 +18,25 @@ type MQTTSource struct {
 	tpc      string
 	clientid string
 	pVersion uint
-	uName 	 string
+	uName    string
 	password string
 	certPath string
 	pkeyPath string
 
-	schema   map[string]interface{}
-	conn MQTT.Client
+	schema map[string]interface{}
+	conn   MQTT.Client
 }
 
-
 type MQTTConfig struct {
-	Qos int `json:"qos"`
-	Sharedsubscription bool `json:"sharedSubscription"`
-	Servers []string `json:"servers"`
-	Clientid string `json:"clientid"`
-	PVersion string `json:"protocolVersion"`
-	Uname string `json:"username"`
-	Password string `json:"password"`
-	Certification string `json:"certificationPath"`
-	PrivateKPath string `json:"privateKeyPath"`
+	Qos                int      `json:"qos"`
+	Sharedsubscription bool     `json:"sharedSubscription"`
+	Servers            []string `json:"servers"`
+	Clientid           string   `json:"clientid"`
+	PVersion           string   `json:"protocolVersion"`
+	Uname              string   `json:"username"`
+	Password           string   `json:"password"`
+	Certification      string   `json:"certificationPath"`
+	PrivateKPath       string   `json:"privateKeyPath"`
 }
 
 func (ms *MQTTSource) WithSchema(schema string) *MQTTSource {
@@ -114,7 +113,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 	}
 
 	h := func(client MQTT.Client, msg MQTT.Message) {
-		log.Debugf("received %s", msg.Payload())
+		log.Debugf("instance %d received %s", ctx.GetInstanceId(), msg.Payload())
 
 		result := make(map[string]interface{})
 		//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
@@ -146,8 +145,8 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 	return nil
 }
 
-func (ms *MQTTSource) Close(ctx api.StreamContext) error{
-	ctx.GetLogger().Infoln("Mqtt Source Done")
+func (ms *MQTTSource) Close(ctx api.StreamContext) error {
+	ctx.GetLogger().Infof("Mqtt Source instance %d Done", ctx.GetInstanceId())
 	if ms.conn != nil && ms.conn.IsConnected() {
 		ms.conn.Disconnect(5000)
 	}
