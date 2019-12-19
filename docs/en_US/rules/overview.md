@@ -45,7 +45,7 @@ The sql query to run for the rule.
 
 ### actions
 
-Currently, 2 kinds of actions are supported: [log](sinks/logs.md) and [mqtt](sinks/mqtt.md). Each action can define its own properties.
+Currently, 3 kinds of actions are supported: [log](sinks/logs.md), [mqtt](sinks/mqtt.md) and [rest](sinks/rest.md). Each action can define its own properties.
 
 Actions could be customized to support different kinds of outputs, see [extension](../extension/overview.md) for more detailed info.
 

@@ -45,7 +45,7 @@
 
 ### 动作
 
-当前，支持两种操作： [log](sinks/logs.md) 和 [mqtt](sinks/mqtt.md).。 每个动作可以定义自己的属性。
+当前，支持两种操作： [log](sinks/logs.md) 、[mqtt](sinks/mqtt.md) 和 [rest](sinks/rest.md)。 每个动作可以定义自己的属性。
 
 可以自定义动作以支持不同种类的输出，有关更多详细信息，请参见 [extension](../extension/overview.md) 。
 

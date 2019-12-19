@@ -149,4 +149,4 @@ $ bin/cli stop rule ruleDemo
 
 
 
-如果您想了解更多有关该项目的信息，请参考[doc home]()。
+如果您想了解更多有关该项目的信息，请参考[文档中心](reference.md)。

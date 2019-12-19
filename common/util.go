@@ -3,7 +3,6 @@ package common
 import (
 	"bytes"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/patrickmn/go-cache"
@@ -72,14 +71,16 @@ type XStreamConf struct {
 }
 
 var StreamConf = "kuiper.yaml"
-var kpbase = flag.String("kuiper_base", "", "Specify Kuiper base directory")
-
+const KuiperBaseKey = "KuiperBaseKey"
 func init(){
 	Log = logrus.New()
 	Log.SetFormatter(&logrus.TextFormatter{
 		DisableColors: true,
 		FullTimestamp: true,
 	})
+}
+
+func InitConf() {
 	b, err := LoadConf(StreamConf)
 	if err != nil {
 		Log.Fatal(err)
@@ -90,8 +91,8 @@ func init(){
 	}
 
 	if c, ok := cfg["basic"]; !ok{
-		Log.Fatal("no basic config in kuiper.yaml")
-	}else{
+		Log.Fatal("No basic config in kuiper.yaml")
+	} else {
 		Config = &c
 	}
 
@@ -107,7 +108,7 @@ func init(){
 		} else {
 			Log.Infof("Failed to log to file, using default stderr")
 		}
-	}else{
+	} else {
 		Log.SetLevel(logrus.DebugLevel)
 	}
 }
@@ -231,10 +232,10 @@ func GetLoc(subdir string)(string, error) {
 		return "", err
 	}
 
-	//flag.Parse()
-	//if loc := *kpbase; loc != "" {
-	//	dir = loc
-	//}
+	if base := os.Getenv(KuiperBaseKey); base != "" {
+		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
+		dir = base
+	}
 
 	confDir := dir + subdir
 	if _, err := os.Stat(confDir); os.IsNotExist(err) {
