@@ -45,7 +45,12 @@ The sql query to run for the rule.
 
 ### actions
 
-Currently, 3 kinds of actions are supported: [log](sinks/logs.md), [mqtt](sinks/mqtt.md) and [rest](sinks/rest.md). Each action can define its own properties.
+Currently, 3 kinds of actions are supported: [log](sinks/logs.md), [mqtt](sinks/mqtt.md) and [rest](sinks/rest.md). Each action can define its own properties. There are 2 common properties:
+
+| property name | Type & Default Value | Description                                                  |
+| ------------- | -------- | ------------------------------------------------------------ |
+| concurrency | int: 1   | Specify how many instances of the sink will be run. |
+| runAsync        | bool:false   | Whether the sink will run asynchronously for better performance. If it is true, the sink result order is not promised.  |
 
 Actions could be customized to support different kinds of outputs, see [extension](../extension/overview.md) for more detailed info.
 

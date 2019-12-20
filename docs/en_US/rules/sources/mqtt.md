@@ -8,6 +8,7 @@ default:
   qos: 1
   sharedSubscription: true
   servers: [tcp://127.0.0.1:1883]
+  concurrency: 1
   #username: user1
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -28,6 +29,9 @@ Use can specify the global MQTT settings here. The configuration items specified
 ### qos
 
 The default subscription QoS level.
+
+### concurrency
+How many instances will be started. By default, only an instance will be run. If more than one instance is specified, the topic must be a shared subscription topic.
 
 ### sharedSubscription
 

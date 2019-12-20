@@ -8,6 +8,7 @@ default:
   qos: 1
   sharedsubscription: true
   servers: [tcp://127.0.0.1:1883]
+  concurrency: 1
   #username: user1
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -27,6 +28,9 @@ demo: #Conf_key
 ### qos
 
 默认订阅QoS级别。
+
+### concurrency
+设置运行的线程数，默认值为1。如果设置进程数大于1，必须使用共享订阅模式。
 
 ### sharedsubscription
 

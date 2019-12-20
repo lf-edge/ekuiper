@@ -45,7 +45,12 @@
 
 ### 动作
 
-当前，支持两种操作： [log](sinks/logs.md) 、[mqtt](sinks/mqtt.md) 和 [rest](sinks/rest.md)。 每个动作可以定义自己的属性。
+当前，支持两种操作： [log](sinks/logs.md) 、[mqtt](sinks/mqtt.md) 和 [rest](sinks/rest.md)。 每个动作可以定义自己的属性。当前有两个公共属性:
+
+| 属性名 | 类型和默认值 | 描述                                                  |
+| ------------- | -------- | ------------------------------------------------------------ |
+| concurrency | int: 1   | 设置运行的线程数。 |
+| runAsync        | bool:false   | 设置是否异步运行输出操作以提升性能。请注意，异步运行的情况下，输出结果顺序不能保证。  |
 
 可以自定义动作以支持不同种类的输出，有关更多详细信息，请参见 [extension](../extension/overview.md) 。
 
