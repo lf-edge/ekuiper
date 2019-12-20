@@ -56,6 +56,14 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				m.concurrency = t
 			}
 		}
+		runAsync := false
+		if c, ok := m.options["runAsync"]; ok {
+			if t, ok := c.(bool); !ok {
+				logger.Warnf("invalid type for runAsync property, should be bool but found %t", c)
+			} else {
+				runAsync = t
+			}
+		}
 		createSink := len(m.sinks) == 0
 		logger.Infof("open sink node %d instances", m.concurrency)
 		for i := 0; i < m.concurrency; i++ { // workers
@@ -81,12 +89,12 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				for {
 					select {
 					case item := <-m.input:
-						go func() {
-							if err := sink.Collect(ctx, item); err != nil {
-								//TODO deal with publish error
-								logger.Errorf("sink node %s publish %v error: %v", ctx.GetOpId(), item, err)
-							}
-						}()
+						if runAsync{
+							go doCollect(sink, ctx, item, logger)
+						} else {
+							doCollect(sink, ctx, item, logger)
+						}
+
 					case <-ctx.Done():
 						logger.Infof("sink node %s instance %d done", m.name, instance)
 						if err := sink.Close(ctx); err != nil {
@@ -98,6 +106,13 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 			}(i)
 		}
 	}()
+}
+
+func doCollect(sink api.Sink, ctx api.StreamContext, item interface{}, logger api.Logger) {
+	if err := sink.Collect(ctx, item); err != nil {
+		//TODO deal with publish error
+		logger.Errorf("sink node %s publish %v error: %v", ctx.GetOpId(), item, err)
+	}
 }
 
 func getSink(name string, action map[string]interface{}) (api.Sink, error) {
