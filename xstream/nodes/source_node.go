@@ -19,8 +19,9 @@ type SourceNode struct {
 	options     map[string]string
 	concurrency int
 
-	mutex   sync.RWMutex
-	sources []api.Source
+	mutex   	sync.RWMutex
+	sources 	[]api.Source
+	statManagers []*StatManager
 }
 
 func NewSourceNode(name string, options map[string]string) *SourceNode {
@@ -41,11 +42,11 @@ func NewSourceNode(name string, options map[string]string) *SourceNode {
 //Only for mock source, do not use it in production
 func NewSourceNodeWithSource(name string, source api.Source, options map[string]string) *SourceNode {
 	return &SourceNode{
-		sources: 	 []api.Source{source},
-		outs:        make(map[string]chan<- interface{}),
-		name:        name,
-		options:     options,
-		ctx:         nil,
+		sources: 	 []api.Source{  source},
+		outs:    make(map[string]chan<- interface{}),
+		name:    name,
+		options: options,
+		ctx:     nil,
 		concurrency: 1,
 	}
 }
@@ -86,9 +87,28 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				}else{
 					source = m.sources[instance]
 				}
+				stats, err := NewStatManager("source", ctx)
+				if err != nil {
+					m.drainError(errCh, err, ctx, logger)
+					return
+				}
+				m.mutex.Lock()
+				m.statManagers = append(m.statManagers, stats)
+				m.mutex.Unlock()
+
+				outputCount := len(m.outs)
 				if err := source.Open(ctx.WithInstance(instance), func(message map[string]interface{}, meta map[string]interface{}) {
+					stats.IncTotalRecordsIn()
+					stats.ProcessTimeStart()
 					tuple := &xsql.Tuple{Emitter: m.name, Message: message, Timestamp: common.GetNowInMilli(), Metadata: meta}
-					m.Broadcast(tuple)
+					c := m.Broadcast(tuple)
+					if c == outputCount {
+						stats.ProcessTimeEnd()
+						stats.IncTotalRecordsOut()
+					} else {
+						logger.Warnf("broadcast to %d outputs but expect %d", c, outputCount)
+						stats.IncTotalExceptions()
+					}
 					logger.Debugf("%s consume data %v complete", m.name, tuple)
 				}); err != nil {
 					m.drainError(errCh, err, ctx, logger)
@@ -192,4 +212,14 @@ func (m *SourceNode) AddOutput(output chan<- interface{}, name string) (err erro
 		return fmt.Errorf("fail to add output %s, stream node %s already has an output of the same name", name, m.name)
 	}
 	return nil
+}
+
+func (m *SourceNode) GetMetrics() map[string]interface{} {
+	result := make(map[string]interface{})
+	for _, stats := range m.statManagers{
+		for k, v := range stats.GetMetrics(){
+			result[k] = v
+		}
+	}
+	return result
 }

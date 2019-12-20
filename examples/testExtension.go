@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql/processors"
-	"fmt"
 	"path"
 	"time"
 )
@@ -19,10 +19,9 @@ func main() {
 	demo := `DROP STREAM ext`
 	processors.NewStreamProcessor(demo, path.Join(dbDir, "stream")).Exec()
 
-
 	demo = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", TYPE=\"random\")"
 	_, err = processors.NewStreamProcessor(demo, path.Join(dbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 
@@ -35,7 +34,7 @@ func main() {
 	}
 
 	tp, err := rp.ExecInitRule(rs)
-	if err != nil{
+	if err != nil {
 		log.Panicf("fail to init rule: %v", err)
 	}
 

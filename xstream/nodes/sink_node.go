@@ -15,6 +15,7 @@ type SinkNode struct {
 	ctx    api.StreamContext
 	concurrency int
 
+	statManagers []*StatManager
 	sinkType string
 	options map[string]interface{}
 	mutex   sync.RWMutex
@@ -33,14 +34,14 @@ func NewSinkNode(name string, sinkType string, props map[string]interface{}) *Si
 }
 
 //Only for mock source, do not use it in production
-func NewSinkNodeWithSink(name string, sink api.Sink) *SinkNode{
+func NewSinkNodeWithSink(name string, sink api.Sink) *SinkNode {
 	return &SinkNode{
 		input: make(chan interface{}, 1024),
-		name: name,
+		name:  name,
 		sinks: []api.Sink{sink},
 		options: nil,
 		concurrency: 1,
-		ctx: nil,
+		ctx:   nil,
 	}
 }
 
@@ -86,13 +87,22 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 					sink = m.sinks[instance]
 				}
 
+				stats, err := NewStatManager("sink", ctx)
+				if err != nil{
+					m.drainError(result, err, ctx, logger)
+					return
+				}
+				m.mutex.Lock()
+				m.statManagers = append(m.statManagers, stats)
+				m.mutex.Unlock()
+
 				for {
 					select {
 					case item := <-m.input:
 						if runAsync{
-							go doCollect(sink, ctx, item, logger)
+							go doCollect(sink, item, stats, ctx)
 						} else {
-							doCollect(sink, ctx, item, logger)
+							doCollect(sink, item, stats, ctx)
 						}
 
 					case <-ctx.Done():
@@ -108,10 +118,17 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	}()
 }
 
-func doCollect(sink api.Sink, ctx api.StreamContext, item interface{}, logger api.Logger) {
+func doCollect(sink api.Sink, item interface{}, stats *StatManager, ctx api.StreamContext, ) {
+	stats.IncTotalRecordsIn()
+	stats.ProcessTimeStart()
+	logger := ctx.GetLogger()
 	if err := sink.Collect(ctx, item); err != nil {
+		stats.IncTotalExceptions()
 		//TODO deal with publish error
-		logger.Errorf("sink node %s publish %v error: %v", ctx.GetOpId(), item, err)
+		logger.Errorf("sink node %s instance %d publish %v error: %v", ctx.GetOpId(), ctx.GetInstanceId(), item, err)
+	} else {
+		stats.ProcessTimeEnd()
+		stats.IncTotalRecordsOut()
 	}
 }
 
@@ -143,12 +160,22 @@ func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 	return s, nil
 }
 
-func (m *SinkNode) GetName() string{
+func (m *SinkNode) GetName() string {
 	return m.name
 }
 
-func (m *SinkNode) GetInput() (chan<- interface{}, string)  {
+func (m *SinkNode) GetInput() (chan<- interface{}, string) {
 	return m.input, m.name
+}
+
+func (m *SinkNode) GetMetrics() map[string]interface{} {
+	result := make(map[string]interface{})
+	for _, stats := range m.statManagers{
+		for k, v := range stats.GetMetrics(){
+			result[k] = v
+		}
+	}
+	return result
 }
 
 func (m *SinkNode) drainError(errCh chan<- error, err error, ctx api.StreamContext, logger api.Logger) {

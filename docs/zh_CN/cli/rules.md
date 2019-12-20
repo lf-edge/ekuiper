@@ -156,7 +156,7 @@ rule rule1 restarted
 ## 获取规则的状态
 
 该命令用于获取规则的状态。 状态可以是
-- 运行
+- 运行: $metrics
 - 停止: $reason
 
 ```shell
@@ -167,5 +167,13 @@ getstatus rule $rule_name
 
 ```shell
 # bin/cli getstatus rule rule1
-running
+running with metrics:
+{
+    "kuiper_op_filter_0_exceptions_total":0,
+    "kuiper_op_filter_0_last_invocation":“2019-12-20 14:19:14.2084027 +0800 CST m=+2.693030901",
+    "kuiper_op_filter_0_process_latency_ms":0,
+    "kuiper_op_filter_0_records_in_total":2,
+    "kuiper_op_filter_0_records_out_total":2,
+    ... 
+}
 ```

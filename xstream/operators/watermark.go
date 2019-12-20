@@ -2,16 +2,16 @@ package operators
 
 import (
 	"context"
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"fmt"
 	"math"
 	"sort"
 	"time"
 )
 
-type WatermarkTuple struct{
+type WatermarkTuple struct {
 	Timestamp int64
 }
 
@@ -25,25 +25,25 @@ func (t *WatermarkTuple) IsWatermark() bool {
 
 type WatermarkGenerator struct {
 	lastWatermarkTs int64
-	inputTopics []string
-	topicToTs map[string]int64
-	window      *WindowConfig
-	lateTolerance int64
-	interval	int
-	ticker 		common.Ticker
-	stream 	chan<- interface{}
+	inputTopics     []string
+	topicToTs       map[string]int64
+	window          *WindowConfig
+	lateTolerance   int64
+	interval        int
+	ticker          common.Ticker
+	stream          chan<- interface{}
 }
 
-func NewWatermarkGenerator(window *WindowConfig, l int64, s []string, stream chan<- interface{}) (*WatermarkGenerator, error){
+func NewWatermarkGenerator(window *WindowConfig, l int64, s []string, stream chan<- interface{}) (*WatermarkGenerator, error) {
 	w := &WatermarkGenerator{
-		window: window,
-		topicToTs: make(map[string]int64),
+		window:        window,
+		topicToTs:     make(map[string]int64),
 		lateTolerance: l,
-		inputTopics: s,
-		stream: stream,
+		inputTopics:   s,
+		stream:        stream,
 	}
 	//Tickers to update watermark
-	switch window.Type{
+	switch window.Type {
 	case xsql.NOT_WINDOW:
 	case xsql.TUMBLING_WINDOW:
 		w.ticker = common.GetTicker(window.Length)
@@ -71,8 +71,8 @@ func (w *WatermarkGenerator) track(s string, ts int64, ctx api.StreamContext) bo
 		w.topicToTs[s] = ts
 	}
 	r := ts >= w.lastWatermarkTs
-	if r{
-		switch w.window.Type{
+	if r {
+		switch w.window.Type {
 		case xsql.SLIDING_WINDOW:
 			w.trigger(ctx)
 		}
@@ -93,7 +93,7 @@ func (w *WatermarkGenerator) start(ctx api.StreamContext) {
 			w.trigger(ctx)
 		case <-ctx.Done():
 			log.Infoln("Cancelling watermark generator....")
-			if w.ticker != nil{
+			if w.ticker != nil {
 				w.ticker.Stop()
 			}
 			return
@@ -116,12 +116,12 @@ func (w *WatermarkGenerator) trigger(ctx api.StreamContext) {
 	}
 }
 
-func (w *WatermarkGenerator) computeWatermarkTs(ctx context.Context) int64{
+func (w *WatermarkGenerator) computeWatermarkTs(ctx context.Context) int64 {
 	var ts int64
 	if len(w.topicToTs) >= len(w.inputTopics) {
 		ts = math.MaxInt64
 		for _, key := range w.inputTopics {
-			if ts > w.topicToTs[key]{
+			if ts > w.topicToTs[key] {
 				ts = w.topicToTs[key]
 			}
 		}
@@ -130,48 +130,48 @@ func (w *WatermarkGenerator) computeWatermarkTs(ctx context.Context) int64{
 }
 
 //If window end cannot be determined yet, return max int64 so that it can be recalculated for the next watermark
-func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple,current int64, watermark int64, triggered bool) int64{
-	switch w.window.Type{
+func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple, current int64, watermark int64, triggered bool) int64 {
+	switch w.window.Type {
 	case xsql.TUMBLING_WINDOW, xsql.HOPPING_WINDOW:
-		if triggered{
+		if triggered {
 			return current + int64(w.interval)
-		}else{
+		} else {
 			interval := int64(w.interval)
 			nextTs := getEarliestEventTs(inputs, current, watermark)
-			if nextTs == math.MaxInt64 ||  nextTs % interval == 0{
+			if nextTs == math.MaxInt64 || nextTs%interval == 0 {
 				return nextTs
 			}
-			return nextTs + (interval - nextTs % interval)
+			return nextTs + (interval - nextTs%interval)
 		}
 	case xsql.SLIDING_WINDOW:
 		nextTs := getEarliestEventTs(inputs, current, watermark)
 		return nextTs
 	case xsql.SESSION_WINDOW:
-		if len(inputs) > 0{
+		if len(inputs) > 0 {
 			timeout, duration := int64(w.window.Interval), int64(w.window.Length)
 			sort.SliceStable(inputs, func(i, j int) bool {
 				return inputs[i].Timestamp < inputs[j].Timestamp
 			})
 			et := inputs[0].Timestamp
-			tick := et + (duration - et % duration)
-			if et % duration == 0 {
+			tick := et + (duration - et%duration)
+			if et%duration == 0 {
 				tick = et
 			}
 			var p int64
 			for _, tuple := range inputs {
 				var r int64 = math.MaxInt64
-				if p > 0{
-					if tuple.Timestamp - p > timeout{
+				if p > 0 {
+					if tuple.Timestamp-p > timeout {
 						r = p + timeout
 					}
 				}
 				if tuple.Timestamp > tick {
-					if tick - duration > et && tick < r {
+					if tick-duration > et && tick < r {
 						r = tick
 					}
 					tick += duration
 				}
-				if r < math.MaxInt64{
+				if r < math.MaxInt64 {
 					return r
 				}
 				p = tuple.Timestamp
@@ -188,8 +188,8 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 	log := ctx.GetLogger()
 	go o.watermarkGenerator.start(exeCtx)
 	var (
-		inputs []*xsql.Tuple
-		triggered bool
+		inputs          []*xsql.Tuple
+		triggered       bool
 		nextWindowEndTs int64
 		prevWindowEndTs int64
 	)
@@ -198,18 +198,21 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 		select {
 		// process incoming item
 		case item, opened := <-o.input:
+			o.statManager.ProcessTimeStart()
 			if !opened {
+				o.statManager.IncTotalExceptions()
 				break
 			}
 			if d, ok := item.(xsql.Event); !ok {
 				log.Errorf("Expect xsql.Event type")
+				o.statManager.IncTotalExceptions()
 				break
-			}else{
-				if d.IsWatermark(){
+			} else {
+				if d.IsWatermark() {
 					watermarkTs := d.GetTimestamp()
 					windowEndTs := nextWindowEndTs
 					//Session window needs a recalculation of window because its window end depends the inputs
-					if windowEndTs == math.MaxInt64 || o.window.Type == xsql.SESSION_WINDOW || o.window.Type == xsql.SLIDING_WINDOW{
+					if windowEndTs == math.MaxInt64 || o.window.Type == xsql.SESSION_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
 						windowEndTs = o.watermarkGenerator.getNextWindow(inputs, prevWindowEndTs, watermarkTs, triggered)
 					}
 					for windowEndTs <= watermarkTs && windowEndTs >= 0 {
@@ -222,22 +225,23 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 					}
 					nextWindowEndTs = windowEndTs
 					log.Debugf("next window end %d", nextWindowEndTs)
-				}else{
+				} else {
+					o.statManager.IncTotalRecordsIn()
 					tuple, ok := d.(*xsql.Tuple)
-					if !ok{
+					if !ok {
 						log.Infof("receive non tuple element %v", d)
 					}
 					log.Debugf("event window receive tuple %s", tuple.Message)
-					if o.watermarkGenerator.track(tuple.Emitter, d.GetTimestamp(),ctx){
+					if o.watermarkGenerator.track(tuple.Emitter, d.GetTimestamp(), ctx) {
 						inputs = append(inputs, tuple)
 					}
 				}
-
+				o.statManager.ProcessTimeEnd()
 			}
 		// is cancelling
 		case <-ctx.Done():
 			log.Infoln("Cancelling window....")
-			if o.ticker != nil{
+			if o.ticker != nil {
 				o.ticker.Stop()
 			}
 			cancel()
@@ -246,10 +250,10 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 	}
 }
 
-func getEarliestEventTs(inputs []*xsql.Tuple, startTs int64, endTs int64) int64{
+func getEarliestEventTs(inputs []*xsql.Tuple, startTs int64, endTs int64) int64 {
 	var minTs int64 = math.MaxInt64
-	for _, t := range inputs{
-		if t.Timestamp > startTs && t.Timestamp <= endTs && t.Timestamp < minTs{
+	for _, t := range inputs {
+		if t.Timestamp > startTs && t.Timestamp <= endTs && t.Timestamp < minTs {
 			minTs = t.Timestamp
 		}
 	}

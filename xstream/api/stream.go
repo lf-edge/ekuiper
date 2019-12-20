@@ -79,6 +79,7 @@ type Operator interface {
 	Collector
 	Exec(StreamContext, chan<- error)
 	GetName() string
+	GetMetrics() map[string]interface{}
 }
 
 type Function interface {
