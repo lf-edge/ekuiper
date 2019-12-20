@@ -155,8 +155,8 @@ rule rule1 restarted
 
 ## get the status of a rule
 
-The command is used to get the status of the rule. The status can be
-- running
+The command is used to get the status of the rule. If the rule is running, the metrics will be retrieved realtime. The status can be
+- running with metrics: $metrics
 - stopped: $reason
 
 ```shell
@@ -167,5 +167,13 @@ Sample:
 
 ```shell
 # bin/cli getstatus rule rule1
-running
+running with metrics:
+{
+    "kuiper_op_filter_0_exceptions_total":0,
+    "kuiper_op_filter_0_last_invocation":“2019-12-20 14:19:14.2084027 +0800 CST m=+2.693030901",
+    "kuiper_op_filter_0_process_latency_ms":0,
+    "kuiper_op_filter_0_records_in_total":2,
+    "kuiper_op_filter_0_records_out_total":2,
+    ... 
+}
 ```
