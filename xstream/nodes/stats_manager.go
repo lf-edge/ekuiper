@@ -3,6 +3,7 @@ package nodes
 import (
 	"fmt"
 	"github.com/emqx/kuiper/xstream/api"
+	"strconv"
 	"time"
 )
 
@@ -19,6 +20,7 @@ type StatManager struct {
 	prefix           string
 	processTimeStart time.Time
 	opId             string
+	instanceId		 int
 }
 
 const RecordsInTotal = "records_in_total"
@@ -43,6 +45,7 @@ func NewStatManager(opType string, ctx api.StreamContext) (*StatManager, error) 
 		opType: opType,
 		prefix: prefix,
 		opId:   ctx.GetOpId(),
+		instanceId: ctx.GetInstanceId(),
 	}
 	return sm, nil
 }
@@ -74,11 +77,11 @@ func (sm *StatManager) ProcessTimeEnd() {
 
 func (sm *StatManager) GetMetrics() map[string]interface{} {
 	result := make(map[string]interface{})
-	result[sm.prefix+sm.opId+"_"+RecordsInTotal] = sm.totalRecordsIn
-	result[sm.prefix+sm.opId+"_"+RecordsOutTotal] = sm.totalRecordsOut
-	result[sm.prefix+sm.opId+"_"+ExceptionsTotal] = sm.totalExceptions
-	result[sm.prefix+sm.opId+"_"+LastInvocation] = sm.lastInvocation.String()
-	result[sm.prefix+sm.opId+"_"+ProcessLatencyMs] = sm.processLatency
+	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+RecordsInTotal] = sm.totalRecordsIn
+	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+RecordsOutTotal] = sm.totalRecordsOut
+	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+ExceptionsTotal] = sm.totalExceptions
+	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+LastInvocation] = sm.lastInvocation.String()
+	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+ProcessLatencyMs] = sm.processLatency
 
 	return result
 }

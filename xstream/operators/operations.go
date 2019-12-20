@@ -28,7 +28,7 @@ type UnaryOperator struct {
 	mutex       sync.RWMutex
 	cancelled   bool
 	name        string
-	statManager *nodes.StatManager
+	statManagers []*nodes.StatManager
 }
 
 // NewUnary creates *UnaryOperator value
@@ -145,7 +145,9 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		}
 		return
 	}
-	o.statManager = stats
+	o.mutex.Lock()
+	o.statManagers = append(o.statManagers, stats)
+	o.mutex.Unlock()
 	outputCount := len(o.outputs)
 
 	for {
@@ -187,10 +189,11 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (o *UnaryOperator) GetMetrics() map[string]interface{} {
-	if o.statManager != nil {
-		return o.statManager.GetMetrics()
-	} else {
-		return nil
+	result := make(map[string]interface{})
+	for _, stats := range o.statManagers{
+		for k, v := range stats.GetMetrics(){
+			result[k] = v
+		}
 	}
-
+	return result
 }

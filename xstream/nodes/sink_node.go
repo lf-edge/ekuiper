@@ -15,7 +15,7 @@ type SinkNode struct {
 	ctx    api.StreamContext
 	concurrency int
 
-	statManager *StatManager
+	statManagers []*StatManager
 	sinkType string
 	options map[string]interface{}
 	mutex   sync.RWMutex
@@ -49,18 +49,6 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	m.ctx = ctx
 	logger := ctx.GetLogger()
 	logger.Debugf("open sink node %s", m.name)
-	stats, err := NewStatManager("sink", ctx)
-	if err != nil {
-		go func() {
-			select {
-			case result <- err:
-			case <-ctx.Done():
-				m.close(ctx, logger)
-			}
-		}()
-		return
-	}
-	m.statManager = stats
 	go func() {
 		if c, ok := m.options["concurrency"]; ok {
 			if t, err := common.ToInt(c); err != nil {
@@ -98,6 +86,15 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				}else{
 					sink = m.sinks[instance]
 				}
+
+				stats, err := NewStatManager("sink", ctx)
+				if err != nil{
+					m.drainError(result, err, ctx, logger)
+					return
+				}
+				m.mutex.Lock()
+				m.statManagers = append(m.statManagers, stats)
+				m.mutex.Unlock()
 
 				for {
 					select {
@@ -172,12 +169,13 @@ func (m *SinkNode) GetInput() (chan<- interface{}, string) {
 }
 
 func (m *SinkNode) GetMetrics() map[string]interface{} {
-	if m.statManager != nil {
-		return m.statManager.GetMetrics()
-	} else {
-		return nil
+	result := make(map[string]interface{})
+	for _, stats := range m.statManagers{
+		for k, v := range stats.GetMetrics(){
+			result[k] = v
+		}
 	}
-
+	return result
 }
 
 func (m *SinkNode) drainError(errCh chan<- error, err error, ctx api.StreamContext, logger api.Logger) {

@@ -19,9 +19,9 @@ type SourceNode struct {
 	options     map[string]string
 	concurrency int
 
-	mutex   sync.RWMutex
-	sources []api.Source
-	statManager *StatManager
+	mutex   	sync.RWMutex
+	sources 	[]api.Source
+	statManagers []*StatManager
 }
 
 func NewSourceNode(name string, options map[string]string) *SourceNode {
@@ -46,7 +46,8 @@ func NewSourceNodeWithSource(name string, source api.Source, options map[string]
 		outs:    make(map[string]chan<- interface{}),
 		name:    name,
 		options: options,
-		ctx:     nil,concurrency: 1,
+		ctx:     nil,
+		concurrency: 1,
 	}
 }
 
@@ -91,13 +92,18 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 					m.drainError(errCh, err, ctx, logger)
 					return
 				}
-				m.statManager = stats
+				m.mutex.Lock()
+				m.statManagers = append(m.statManagers, stats)
+				m.mutex.Unlock()
+
 				outputCount := len(m.outs)
 				if err := source.Open(ctx.WithInstance(instance), func(message map[string]interface{}, meta map[string]interface{}) {
 					stats.IncTotalRecordsIn()
+					stats.ProcessTimeStart()
 					tuple := &xsql.Tuple{Emitter: m.name, Message: message, Timestamp: common.GetNowInMilli(), Metadata: meta}
 					c := m.Broadcast(tuple)
 					if c == outputCount {
+						stats.ProcessTimeEnd()
 						stats.IncTotalRecordsOut()
 					} else {
 						logger.Warnf("broadcast to %d outputs but expect %d", c, outputCount)
@@ -209,10 +215,11 @@ func (m *SourceNode) AddOutput(output chan<- interface{}, name string) (err erro
 }
 
 func (m *SourceNode) GetMetrics() map[string]interface{} {
-	if m.statManager != nil {
-		return m.statManager.GetMetrics()
-	} else {
-		return nil
+	result := make(map[string]interface{})
+	for _, stats := range m.statManagers{
+		for k, v := range stats.GetMetrics(){
+			result[k] = v
+		}
 	}
-
+	return result
 }
