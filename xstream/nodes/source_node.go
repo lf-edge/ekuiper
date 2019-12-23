@@ -70,8 +70,9 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			go func(instance int) {
 				//Do open source instances
 				var source api.Source
+				var err error
 				if createSource{
-					source, err := getSource(m.sourceType)
+					source, err = getSource(m.sourceType)
 					if err != nil {
 						m.drainError(errCh, err, ctx, logger)
 						return

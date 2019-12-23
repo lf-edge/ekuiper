@@ -70,8 +70,9 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 		for i := 0; i < m.concurrency; i++ { // workers
 			go func(instance int){
 				var sink api.Sink
+				var err error
 				if createSink{
-					sink, err := getSink(m.sinkType, m.options)
+					sink, err = getSink(m.sinkType, m.options)
 					if err != nil{
 						m.drainError(result, err, ctx, logger)
 						return
