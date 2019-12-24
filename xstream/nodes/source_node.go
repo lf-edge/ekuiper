@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/common/plugin_manager"
+	"github.com/emqx/kuiper/common/utils"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/extensions"
@@ -22,6 +23,7 @@ type SourceNode struct {
 	mutex   	sync.RWMutex
 	sources 	[]api.Source
 	statManagers []*StatManager
+	buffer      *utils.DynamicChannelBuffer
 }
 
 func NewSourceNode(name string, options map[string]string) *SourceNode {
@@ -36,6 +38,7 @@ func NewSourceNode(name string, options map[string]string) *SourceNode {
 		options:     options,
 		ctx:         nil,
 		concurrency: 1,
+		buffer:      utils.NewDynamicChannelBuffer(),
 	}
 }
 
@@ -48,6 +51,7 @@ func NewSourceNodeWithSource(name string, source api.Source, options map[string]
 		options: options,
 		ctx:     nil,
 		concurrency: 1,
+		buffer:      utils.NewDynamicChannelBuffer(),
 	}
 }
 
@@ -120,6 +124,9 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				logger.Infof("source %s done", m.name)
 				m.close(ctx, logger)
 				return
+			case data := <- m.buffer.Out:
+				//blocking
+				Broadcast(m.outs, data, ctx)
 			}
 		}
 	}()
@@ -194,7 +201,7 @@ func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
 }
 
 func (m *SourceNode) Broadcast(data interface{}) {
-	Broadcast(m.outs, data, m.ctx)
+	m.buffer.In <- data
 }
 
 func (m *SourceNode) GetName() string {
