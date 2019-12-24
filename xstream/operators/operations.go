@@ -148,7 +148,6 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	o.mutex.Lock()
 	o.statManagers = append(o.statManagers, stats)
 	o.mutex.Unlock()
-	outputCount := len(o.outputs)
 
 	for {
 		select {
@@ -167,14 +166,9 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 				stats.IncTotalExceptions()
 				continue
 			default:
-				c := nodes.Broadcast(o.outputs, val, ctx)
-				if c == outputCount {
-					stats.ProcessTimeEnd()
-					stats.IncTotalRecordsOut()
-				} else {
-					logger.Warnf("broadcast to %d outputs but expect %d", c, outputCount)
-					stats.IncTotalExceptions()
-				}
+				stats.ProcessTimeEnd()
+				nodes.Broadcast(o.outputs, val, ctx)
+				stats.IncTotalRecordsOut()
 			}
 		// is cancelling
 		case <-ctx.Done():

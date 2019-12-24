@@ -97,19 +97,14 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.statManagers = append(m.statManagers, stats)
 				m.mutex.Unlock()
 
-				outputCount := len(m.outs)
 				if err := source.Open(ctx.WithInstance(instance), func(message map[string]interface{}, meta map[string]interface{}) {
 					stats.IncTotalRecordsIn()
 					stats.ProcessTimeStart()
 					tuple := &xsql.Tuple{Emitter: m.name, Message: message, Timestamp: common.GetNowInMilli(), Metadata: meta}
-					c := m.Broadcast(tuple)
-					if c == outputCount {
-						stats.ProcessTimeEnd()
-						stats.IncTotalRecordsOut()
-					} else {
-						logger.Warnf("broadcast to %d outputs but expect %d", c, outputCount)
-						stats.IncTotalExceptions()
-					}
+					stats.ProcessTimeEnd()
+					//blocking
+					m.Broadcast(tuple)
+					stats.IncTotalRecordsOut()
 					logger.Debugf("%s consume data %v complete", m.name, tuple)
 				}); err != nil {
 					m.drainError(errCh, err, ctx, logger)
@@ -198,8 +193,8 @@ func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
 	return props
 }
 
-func (m *SourceNode) Broadcast(data interface{}) int {
-	return Broadcast(m.outs, data, m.ctx)
+func (m *SourceNode) Broadcast(data interface{}) {
+	Broadcast(m.outs, data, m.ctx)
 }
 
 func (m *SourceNode) GetName() string {
