@@ -41,7 +41,7 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 	}
 	tp, err := processors.NewRuleProcessor(path.Dir(dataDir)).ExecQuery(QUERY_RULE_ID, sql)
 	if err != nil {
-		return fmt.Errorf("failed to create query: %s", err)
+		return err
 	} else {
 		rs := &RuleState{Name: QUERY_RULE_ID, Topology: tp, Triggered: true}
 		registry[QUERY_RULE_ID] = rs
@@ -64,6 +64,15 @@ func stopQuery() {
  * qid is not currently used.
  */
 func (t *Server) GetQueryResult(qid string, reply *string) error {
+	if rs, ok := registry[QUERY_RULE_ID]; ok {
+		c := (*rs.Topology).GetContext()
+		if c != nil {
+			if err := c.Err(); err != nil {
+				return err
+			}
+		}
+	}
+
 	sinks.QR.LastFetch = time.Now()
 	sinks.QR.Mux.Lock()
 	if len(sinks.QR.Results) > 0 {
