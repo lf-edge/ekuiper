@@ -40,6 +40,9 @@ func (c *DefaultContext) Done() <-chan struct{} {
 }
 
 func (c *DefaultContext) Err() error {
+	if c.err != nil{
+		return c.err
+	}
 	return c.ctx.Err()
 }
 
@@ -70,10 +73,6 @@ func (c *DefaultContext) GetOpId() string {
 
 func (c *DefaultContext) GetInstanceId() int {
 	return c.instanceId
-}
-
-func (c *DefaultContext) GetError() error {
-	return c.err
 }
 
 func (c *DefaultContext) SetError(err error) {

@@ -66,8 +66,8 @@ func stopQuery() {
 func (t *Server) GetQueryResult(qid string, reply *string) error {
 	if rs, ok := registry[QUERY_RULE_ID]; ok {
 		c := (*rs.Topology).GetContext()
-		if c != nil && c.GetError() != nil{
-			return c.GetError()
+		if c != nil && c.Err() != nil{
+			return c.Err()
 		}
 	}
 
@@ -155,7 +155,7 @@ func (t *Server) GetStatusRule(name string, reply *string) error {
 			case context.DeadlineExceeded:
 				*reply = "Stopped: deadline exceed."
 			default:
-				*reply = "Stopped: unknown reason."
+				*reply = fmt.Sprintf("Stopped: %v.", err)
 			}
 		} else {
 			*reply = "Stopped: no context found."
@@ -193,6 +193,7 @@ func (t *Server) doStartRule(rs *RuleState) error {
 		tp := rs.Topology
 		select {
 		case err := <-tp.Open():
+			tp.GetContext().SetError(err)
 			log.Printf("closing rule %s for error: %v", rs.Name, err)
 			tp.Cancel()
 		}
