@@ -236,6 +236,7 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 			select {
 			case err := <-tp.Open():
 				log.Infof("closing query for error: %v", err)
+				tp.GetContext().SetError(err)
 				tp.Cancel()
 			}
 		}()

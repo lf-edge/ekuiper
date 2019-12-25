@@ -66,10 +66,8 @@ func stopQuery() {
 func (t *Server) GetQueryResult(qid string, reply *string) error {
 	if rs, ok := registry[QUERY_RULE_ID]; ok {
 		c := (*rs.Topology).GetContext()
-		if c != nil {
-			if err := c.Err(); err != nil {
-				return err
-			}
+		if c != nil && c.GetError() != nil{
+			return c.GetError()
 		}
 	}
 
@@ -102,7 +100,7 @@ func (t *Server) CreateRule(rule *common.Rule, reply *string) error {
 	if err != nil {
 		return fmt.Errorf("Create rule error : %s.", err)
 	} else {
-		*reply = fmt.Sprintf("Rule %s was created.", rule.Name)
+		*reply = fmt.Sprintf("Rule %s was created, please use 'cli getstatus rule $rule_name' command to get rule status.", rule.Name)
 	}
 	//Start the rule
 	rs, err := t.createRuleState(r)

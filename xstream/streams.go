@@ -27,7 +27,7 @@ func NewWithName(name string) *TopologyNew {
 	return tp
 }
 
-func (s *TopologyNew) GetContext() context.Context {
+func (s *TopologyNew) GetContext() api.StreamContext {
 	return s.ctx
 }
 
