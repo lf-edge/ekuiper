@@ -15,6 +15,7 @@ type DefaultContext struct {
 	opId       string
 	instanceId int
 	ctx        context.Context
+	err        error
 }
 
 func Background() *DefaultContext {
@@ -39,6 +40,9 @@ func (c *DefaultContext) Done() <-chan struct{} {
 }
 
 func (c *DefaultContext) Err() error {
+	if c.err != nil{
+		return c.err
+	}
 	return c.ctx.Err()
 }
 
@@ -70,6 +74,11 @@ func (c *DefaultContext) GetOpId() string {
 func (c *DefaultContext) GetInstanceId() int {
 	return c.instanceId
 }
+
+func (c *DefaultContext) SetError(err error) {
+	c.err = err
+}
+
 
 func (c *DefaultContext) WithMeta(ruleId string, opId string) api.StreamContext {
 	return &DefaultContext{

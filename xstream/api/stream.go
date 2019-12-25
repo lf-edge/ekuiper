@@ -72,6 +72,7 @@ type StreamContext interface {
 	WithMeta(ruleId string, opId string) StreamContext
 	WithInstance(instanceId int) StreamContext
 	WithCancel() (StreamContext, context.CancelFunc)
+	SetError(e error)
 }
 
 type Operator interface {

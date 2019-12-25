@@ -231,11 +231,12 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 	if tp, inputs, err := p.createTopo(&api.Rule{Id: ruleid, Sql: sql}); err != nil {
 		return nil, err
 	} else {
-		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", "log", nil ))
+		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", "logToMemory", nil ))
 		go func() {
 			select {
 			case err := <-tp.Open():
 				log.Infof("closing query for error: %v", err)
+				tp.GetContext().SetError(err)
 				tp.Cancel()
 			}
 		}()
