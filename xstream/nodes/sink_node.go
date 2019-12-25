@@ -138,6 +138,8 @@ func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 	switch name {
 	case "log":
 		s = sinks.NewLogSink()
+	case "logToMemory":
+		s = sinks.NewLogSinkToMemory()
 	case "mqtt":
 		s = &sinks.MQTTSink{}
 	case "rest":
