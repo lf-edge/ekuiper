@@ -62,8 +62,8 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	go func() {
 		props := m.getConf(ctx)
 		if c, ok := props["concurrency"]; ok {
-			if t, err := common.ToInt(c); err != nil {
-				logger.Warnf("invalid type for concurrency property, should be int but found %t", c)
+			if t, err := common.ToInt(c); err != nil || t <= 0 {
+				logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", c)
 			} else {
 				m.concurrency = t
 			}

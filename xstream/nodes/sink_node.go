@@ -51,8 +51,8 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	logger.Debugf("open sink node %s", m.name)
 	go func() {
 		if c, ok := m.options["concurrency"]; ok {
-			if t, err := common.ToInt(c); err != nil {
-				logger.Warnf("invalid type for concurrency property, should be int but found %t", c)
+			if t, err := common.ToInt(c); err != nil && t <= 0 {
+				logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", c)
 			} else {
 				m.concurrency = t
 			}

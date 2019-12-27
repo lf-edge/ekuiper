@@ -88,35 +88,10 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		o.concurrency = 1
 	}
 
-	go func() {
-		var barrier sync.WaitGroup
-		wgDelta := o.concurrency
-		barrier.Add(wgDelta)
-
-		for i := 0; i < o.concurrency; i++ { // workers
-			go func(wg *sync.WaitGroup, instance int) {
-				defer wg.Done()
-				o.doOp(ctx.WithInstance(instance), errCh)
-			}(&barrier, i)
-		}
-
-		wait := make(chan struct{})
-		go func() {
-			defer close(wait)
-			barrier.Wait()
-		}()
-
-		select {
-		case <-wait:
-			if o.cancelled {
-				log.Infof("Component cancelling...")
-				return
-			}
-		case <-ctx.Done():
-			log.Infof("UnaryOp %s done.", o.name)
-			return
-		}
-	}()
+	for i := 0; i < o.concurrency; i++ { // workers
+		instance := i
+		go o.doOp(ctx.WithInstance(instance), errCh)
+	}
 }
 
 func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
