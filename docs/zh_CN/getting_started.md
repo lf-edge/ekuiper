@@ -6,7 +6,7 @@
 
 ## 目录结构 
 
-以下是安装kuiper之后的安装目录结构。
+以下是安装 Kuiper 之后的安装目录结构。
 
 ```
 kuiper_installed_dir
@@ -28,13 +28,13 @@ kuiper_installed_dir
 
 Kuiper 规则由一个 SQL 和多个操作组成。 Kuiper SQL 是一种易于使用的类 SQL 语言，用于确定规则流的逻辑。 通过命令行提供规则，规则流将在规则引擎中创建并连续运行。用户之后可以通过命令行管理规则。
 
-Kuiper具有许多用于复杂分析的内置函数和扩展，您可以访问 [Kuiper SQL 参考](sqls/overview.md)获取有关语法和其功能的更多信息。
+Kuiper 具有许多用于复杂分析的内置函数和扩展，您可以访问 [Kuiper SQL 参考](sqls/overview.md)获取有关语法和其功能的更多信息。
 
 让我们考虑一个示例场景：我们正在通过 MQTT 服务从传感器接收温度和湿度记录，并且当温度在一个时间窗口中大于30摄氏度时，我们希望发出警报。 我们可以使用以下几个步骤为上述场景编写 Kuiper 规则。
 
 ### 先决条件
 
-我们假设已经有一个 MQTT 消息服务器作为 Kuiper 服务器的数据源。 如果您没有，建议使用 EMQ X。 请按照[EMQ Broker 安装指南](https://docs.emqx.io/broker/v3/en/install.html)设置 MQTT 消息服务器。
+我们假设已经有一个 MQTT 消息服务器作为 Kuiper 服务器的数据源。 如果您没有，建议使用 EMQ X。 请按照 [EMQ Broker 安装指南](https://docs.emqx.io/broker/v3/en/install.html)设置 MQTT 消息服务器。
 
 ### 启动 Kuiper Engine服务器
 
@@ -65,14 +65,14 @@ default:
 
 ### 通过查询工具测试流
 
-现在已经创建了流，可以通过 ``cli query`` 命令对其进行测试。键入``CLI query``后，在``kuiper``提示显示如下。
+现在已经创建了流，可以通过 ``cli query`` 命令对其进行测试。键入``cli query``后，显示 ``kuiper``提示符。
 
 ```sh
 $ bin/cli query
 kuiper > 
 ```
 
-在“ kuiper”提示符下，您可以键入SQL并根据流验证SQL。
+在 ``kuiper``提示符下，您可以键入 SQL 并根据流验证 SQL。
 
 ```sh
 kuiper > select count(*), avg(humidity) as avg_hum, max(humidity) as max_hum from demo where temperature > 30 group by TUMBLINGWINDOW(ss, 5);
