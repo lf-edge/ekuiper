@@ -33,11 +33,11 @@ func NewStatManager(opType string, ctx api.StreamContext) (*StatManager, error) 
 	var prefix string
 	switch opType {
 	case "source":
-		prefix = "kuiper_source_"
+		prefix = "source_"
 	case "op":
-		prefix = "kuiper_op_"
+		prefix = "op_"
 	case "sink":
-		prefix = "kuiper_sink_"
+		prefix = "sink_"
 	default:
 		return nil, fmt.Errorf("invalid opType %s, must be \"source\", \"sink\" or \"op\"", opType)
 	}
