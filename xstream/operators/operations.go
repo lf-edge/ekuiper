@@ -32,12 +32,12 @@ type UnaryOperator struct {
 }
 
 // NewUnary creates *UnaryOperator value
-func New(name string) *UnaryOperator {
+func New(name string, bufferLength int) *UnaryOperator {
 	// extract logger
 	o := new(UnaryOperator)
 
 	o.concurrency = 1
-	o.input = make(chan interface{}, 1024)
+	o.input = make(chan interface{}, bufferLength)
 	o.outputs = make(map[string]chan<- interface{})
 	o.name = name
 	return o

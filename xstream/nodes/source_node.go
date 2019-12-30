@@ -68,6 +68,13 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.concurrency = t
 			}
 		}
+		if c, ok := props["bufferLength"]; ok {
+			if t, err := common.ToInt(c); err != nil || t <= 0 {
+				logger.Warnf("invalid type for bufferLength property, should be positive integer but found %t", c)
+			} else {
+				m.buffer.SetLimit(t)
+			}
+		}
 		createSource := len(m.sources) == 0
 		logger.Infof("open source node %d instances", m.concurrency)
 		for i := 0; i < m.concurrency; i++ { // workers

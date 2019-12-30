@@ -509,7 +509,9 @@ func TestSingleSQL(t *testing.T) {
 				}
 			}
 		}
-		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql}, sources)
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options:map[string]interface{}{
+			"bufferLength": float64(100),
+		}}, sources)
 		if err != nil {
 			t.Error(err)
 		}

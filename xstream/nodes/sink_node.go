@@ -23,8 +23,16 @@ type SinkNode struct {
 }
 
 func NewSinkNode(name string, sinkType string, props map[string]interface{}) *SinkNode{
+	bufferLength := 1024
+	if c, ok := props["bufferLength"]; ok {
+		if t, err := common.ToInt(c); err != nil || t <= 0 {
+			//invalid property bufferLength
+		} else {
+			bufferLength = t
+		}
+	}
 	return &SinkNode{
-		input: make(chan interface{}, 1024),
+		input: make(chan interface{}, bufferLength),
 		name: name,
 		sinkType: sinkType,
 		options: props,
