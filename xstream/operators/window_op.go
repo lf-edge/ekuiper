@@ -29,10 +29,10 @@ type WindowOperator struct {
 	watermarkGenerator *WatermarkGenerator //For event time only
 }
 
-func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance int64, streams []string) (*WindowOperator, error) {
+func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance int64, streams []string, bufferLength int) (*WindowOperator, error) {
 	o := new(WindowOperator)
 
-	o.input = make(chan interface{}, 1024)
+	o.input = make(chan interface{}, bufferLength)
 	o.outputs = make(map[string]chan<- interface{})
 	o.name = name
 	o.isEventTime = isEventTime
@@ -239,17 +239,11 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 			results.Sort()
 		}
 		log.Infof("Sent: %v", results)
-		count := nodes.Broadcast(o.outputs, results, ctx)
-		//TODO deal with partial fail
-		if count > 0 {
-			triggered = true
-		}
-		if count == len(o.outputs) {
-			o.statManager.IncTotalRecordsOut()
-		} else {
-			o.statManager.IncTotalExceptions()
-		}
-		log.Infof("done scan")
+		//blocking if one of the channel is full
+		nodes.Broadcast(o.outputs, results, ctx)
+		triggered = true
+		o.statManager.IncTotalRecordsOut()
+		log.Debugf("done scan")
 	}
 
 	return inputs[:i], triggered

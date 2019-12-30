@@ -54,7 +54,10 @@ A configuration system is supported for Kuiper extension which will automaticall
  
 #### common configuration field
 
-There is a common configuration field ``concurrency`` to specify how many instances will be started to run the source.
+There are 2 common configuration fields.
+ 
+* ``concurrency`` to specify how many instances will be started to run the source.
+* ``bufferLength`` to specify the maximum number of messages to be buffered in the memory. This is used to avoid the extra large memory usage that would cause out of memory error. Notice that the memory usage will be varied to the actual buffer. Increase the length here won't increase the initial memory allocation so it is safe to set a large buffer length. The default value is 102400, that is if each payload size is about 100 bytes, the maximum buffer size will be about 102400 * 100B ~= 10MB.
 
 ### Package the source
 Build the implemented source as a go plugin and make sure the output so file resides in the plugins/sources folder.

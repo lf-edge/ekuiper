@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/common/plugin_manager"
+	"github.com/emqx/kuiper/common/utils"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/extensions"
@@ -22,6 +23,7 @@ type SourceNode struct {
 	mutex   	sync.RWMutex
 	sources 	[]api.Source
 	statManagers []*StatManager
+	buffer      *utils.DynamicChannelBuffer
 }
 
 func NewSourceNode(name string, options map[string]string) *SourceNode {
@@ -36,6 +38,7 @@ func NewSourceNode(name string, options map[string]string) *SourceNode {
 		options:     options,
 		ctx:         nil,
 		concurrency: 1,
+		buffer:      utils.NewDynamicChannelBuffer(),
 	}
 }
 
@@ -48,6 +51,7 @@ func NewSourceNodeWithSource(name string, source api.Source, options map[string]
 		options: options,
 		ctx:     nil,
 		concurrency: 1,
+		buffer:      utils.NewDynamicChannelBuffer(),
 	}
 }
 
@@ -58,10 +62,17 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	go func() {
 		props := m.getConf(ctx)
 		if c, ok := props["concurrency"]; ok {
-			if t, err := common.ToInt(c); err != nil {
-				logger.Warnf("invalid type for concurrency property, should be int but found %t", c)
+			if t, err := common.ToInt(c); err != nil || t <= 0 {
+				logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", c)
 			} else {
 				m.concurrency = t
+			}
+		}
+		if c, ok := props["bufferLength"]; ok {
+			if t, err := common.ToInt(c); err != nil || t <= 0 {
+				logger.Warnf("invalid type for bufferLength property, should be positive integer but found %t", c)
+			} else {
+				m.buffer.SetLimit(t)
 			}
 		}
 		createSource := len(m.sources) == 0
@@ -97,19 +108,14 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.statManagers = append(m.statManagers, stats)
 				m.mutex.Unlock()
 
-				outputCount := len(m.outs)
 				if err := source.Open(ctx.WithInstance(instance), func(message map[string]interface{}, meta map[string]interface{}) {
 					stats.IncTotalRecordsIn()
 					stats.ProcessTimeStart()
 					tuple := &xsql.Tuple{Emitter: m.name, Message: message, Timestamp: common.GetNowInMilli(), Metadata: meta}
-					c := m.Broadcast(tuple)
-					if c == outputCount {
-						stats.ProcessTimeEnd()
-						stats.IncTotalRecordsOut()
-					} else {
-						logger.Warnf("broadcast to %d outputs but expect %d", c, outputCount)
-						stats.IncTotalExceptions()
-					}
+					stats.ProcessTimeEnd()
+					//blocking
+					m.Broadcast(tuple)
+					stats.IncTotalRecordsOut()
 					logger.Debugf("%s consume data %v complete", m.name, tuple)
 				}); err != nil {
 					m.drainError(errCh, err, ctx, logger)
@@ -125,6 +131,9 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				logger.Infof("source %s done", m.name)
 				m.close(ctx, logger)
 				return
+			case data := <- m.buffer.Out:
+				//blocking
+				Broadcast(m.outs, data, ctx)
 			}
 		}
 	}()
@@ -198,8 +207,8 @@ func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
 	return props
 }
 
-func (m *SourceNode) Broadcast(data interface{}) int {
-	return Broadcast(m.outs, data, m.ctx)
+func (m *SourceNode) Broadcast(data interface{}) {
+	m.buffer.In <- data
 }
 
 func (m *SourceNode) GetName() string {

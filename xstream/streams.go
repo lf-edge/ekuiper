@@ -56,41 +56,10 @@ func (s *TopologyNew) AddOperator(inputs []api.Emitter, operator api.Operator) *
 	return s
 }
 
-func Transform(op operators.UnOperation, name string) *operators.UnaryOperator {
-	operator := operators.New(name)
+func Transform(op operators.UnOperation, name string, bufferLength int) *operators.UnaryOperator {
+	operator := operators.New(name, bufferLength)
 	operator.SetOperation(op)
 	return operator
-}
-
-func (s *TopologyNew) Map(f interface{}) *TopologyNew {
-	log := s.ctx.GetLogger()
-	op, err := MapFunc(f)
-	if err != nil {
-		log.Info(err)
-	}
-	return s.Transform(op)
-}
-
-// Filter takes a predicate user-defined func that filters the stream.
-// The specified function must be of type:
-//   func (T) bool
-// If the func returns true, current item continues downstream.
-func (s *TopologyNew) Filter(f interface{}) *TopologyNew {
-	op, err := FilterFunc(f)
-	if err != nil {
-		s.drainErr(err)
-	}
-	return s.Transform(op)
-}
-
-// Transform is the base method used to apply transfomrmative
-// unary operations to streamed elements (i.e. filter, map, etc)
-// It is exposed here for completeness, use the other more specific methods.
-func (s *TopologyNew) Transform(op operators.UnOperation) *TopologyNew {
-	operator := operators.New("default")
-	operator.SetOperation(op)
-	s.ops = append(s.ops, operator)
-	return s
 }
 
 // prepareContext setups internal context before

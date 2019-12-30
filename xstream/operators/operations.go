@@ -32,12 +32,12 @@ type UnaryOperator struct {
 }
 
 // NewUnary creates *UnaryOperator value
-func New(name string) *UnaryOperator {
+func New(name string, bufferLength int) *UnaryOperator {
 	// extract logger
 	o := new(UnaryOperator)
 
 	o.concurrency = 1
-	o.input = make(chan interface{}, 1024)
+	o.input = make(chan interface{}, bufferLength)
 	o.outputs = make(map[string]chan<- interface{})
 	o.name = name
 	return o
@@ -88,35 +88,10 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		o.concurrency = 1
 	}
 
-	go func() {
-		var barrier sync.WaitGroup
-		wgDelta := o.concurrency
-		barrier.Add(wgDelta)
-
-		for i := 0; i < o.concurrency; i++ { // workers
-			go func(wg *sync.WaitGroup, instance int) {
-				defer wg.Done()
-				o.doOp(ctx.WithInstance(instance), errCh)
-			}(&barrier, i)
-		}
-
-		wait := make(chan struct{})
-		go func() {
-			defer close(wait)
-			barrier.Wait()
-		}()
-
-		select {
-		case <-wait:
-			if o.cancelled {
-				log.Infof("Component cancelling...")
-				return
-			}
-		case <-ctx.Done():
-			log.Infof("UnaryOp %s done.", o.name)
-			return
-		}
-	}()
+	for i := 0; i < o.concurrency; i++ { // workers
+		instance := i
+		go o.doOp(ctx.WithInstance(instance), errCh)
+	}
 }
 
 func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
@@ -148,7 +123,6 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	o.mutex.Lock()
 	o.statManagers = append(o.statManagers, stats)
 	o.mutex.Unlock()
-	outputCount := len(o.outputs)
 
 	for {
 		select {
@@ -167,14 +141,9 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 				stats.IncTotalExceptions()
 				continue
 			default:
-				c := nodes.Broadcast(o.outputs, val, ctx)
-				if c == outputCount {
-					stats.ProcessTimeEnd()
-					stats.IncTotalRecordsOut()
-				} else {
-					logger.Warnf("broadcast to %d outputs but expect %d", c, outputCount)
-					stats.IncTotalExceptions()
-				}
+				stats.ProcessTimeEnd()
+				nodes.Broadcast(o.outputs, val, ctx)
+				stats.IncTotalRecordsOut()
 			}
 		// is cancelling
 		case <-ctx.Done():

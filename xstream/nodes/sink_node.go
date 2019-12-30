@@ -23,8 +23,16 @@ type SinkNode struct {
 }
 
 func NewSinkNode(name string, sinkType string, props map[string]interface{}) *SinkNode{
+	bufferLength := 1024
+	if c, ok := props["bufferLength"]; ok {
+		if t, err := common.ToInt(c); err != nil || t <= 0 {
+			//invalid property bufferLength
+		} else {
+			bufferLength = t
+		}
+	}
 	return &SinkNode{
-		input: make(chan interface{}, 1024),
+		input: make(chan interface{}, bufferLength),
 		name: name,
 		sinkType: sinkType,
 		options: props,
@@ -51,8 +59,8 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	logger.Debugf("open sink node %s", m.name)
 	go func() {
 		if c, ok := m.options["concurrency"]; ok {
-			if t, err := common.ToInt(c); err != nil {
-				logger.Warnf("invalid type for concurrency property, should be int but found %t", c)
+			if t, err := common.ToInt(c); err != nil || t <= 0 {
+				logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", c)
 			} else {
 				m.concurrency = t
 			}
