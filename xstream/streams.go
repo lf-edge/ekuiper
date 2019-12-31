@@ -102,22 +102,24 @@ func (s *TopologyNew) Open() <-chan error {
 	return s.drain
 }
 
-func (s *TopologyNew) GetMetrics() map[string]interface{} {
-	result := make(map[string]interface{})
+func (s *TopologyNew) GetMetrics() (keys []string, values []interface{}) {
 	for _, node := range s.sources {
 		for k, v := range node.GetMetrics() {
-			result[k] = v
+			keys = append(keys, k)
+			values = append(values, v)
 		}
 	}
 	for _, node := range s.ops {
 		for k, v := range node.GetMetrics() {
-			result[k] = v
+			keys = append(keys, k)
+			values = append(values, v)
 		}
 	}
 	for _, node := range s.sinks {
 		for k, v := range node.GetMetrics() {
-			result[k] = v
+			keys = append(keys, k)
+			values = append(values, v)
 		}
 	}
-	return result
+	return
 }
