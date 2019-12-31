@@ -163,6 +163,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 				}
 			}
 			o.statManager.ProcessTimeEnd()
+			o.statManager.SetBufferLength(int64(len(o.input)))
 		case now := <-c:
 			if len(inputs) > 0 {
 				o.statManager.ProcessTimeStart()

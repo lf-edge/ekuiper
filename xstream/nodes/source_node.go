@@ -113,9 +113,9 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 					stats.ProcessTimeStart()
 					tuple := &xsql.Tuple{Emitter: m.name, Message: message, Timestamp: common.GetNowInMilli(), Metadata: meta}
 					stats.ProcessTimeEnd()
-					//blocking
 					m.Broadcast(tuple)
 					stats.IncTotalRecordsOut()
+					stats.SetBufferLength(int64(m.getBufferLength()))
 					logger.Debugf("%s consume data %v complete", m.name, tuple)
 				}); err != nil {
 					m.drainError(errCh, err, ctx, logger)
@@ -209,6 +209,10 @@ func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
 
 func (m *SourceNode) Broadcast(data interface{}) {
 	m.buffer.In <- data
+}
+
+func (m *SourceNode) getBufferLength() int {
+	return m.buffer.GetLength()
 }
 
 func (m *SourceNode) GetName() string {

@@ -15,6 +15,7 @@ type StatManager struct {
 	totalExceptions int64
 	processLatency  int64
 	lastInvocation  time.Time
+	bufferLength    int64
 	//configs
 	opType           string //"source", "op", "sink"
 	prefix           string
@@ -28,6 +29,7 @@ const RecordsOutTotal = "records_out_total"
 const ExceptionsTotal = "exceptions_total"
 const ProcessLatencyMs = "process_latency_ms"
 const LastInvocation = "last_invocation"
+const BufferLength   = "buffer_length"
 
 func NewStatManager(opType string, ctx api.StreamContext) (*StatManager, error) {
 	var prefix string
@@ -75,6 +77,10 @@ func (sm *StatManager) ProcessTimeEnd() {
 	}
 }
 
+func (sm *StatManager) SetBufferLength(l int64) {
+	sm.bufferLength = l
+}
+
 func (sm *StatManager) GetMetrics() map[string]interface{} {
 	result := make(map[string]interface{})
 	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+RecordsInTotal] = sm.totalRecordsIn
@@ -84,6 +90,6 @@ func (sm *StatManager) GetMetrics() map[string]interface{} {
 		result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+LastInvocation] = sm.lastInvocation.Format("2006-01-02T15:04:05.999999")
 	}
 	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+ProcessLatencyMs] = sm.processLatency
-
+	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+BufferLength] = sm.bufferLength
 	return result
 }

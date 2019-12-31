@@ -113,7 +113,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 						} else {
 							doCollect(sink, item, stats, ctx)
 						}
-
+						stats.SetBufferLength(int64(len(m.input)))
 					case <-ctx.Done():
 						logger.Infof("sink node %s instance %d done", m.name, instance)
 						if err := sink.Close(ctx); err != nil {

@@ -144,6 +144,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 				stats.ProcessTimeEnd()
 				nodes.Broadcast(o.outputs, val, ctx)
 				stats.IncTotalRecordsOut()
+				stats.SetBufferLength(int64(len(o.input)))
 			}
 		// is cancelling
 		case <-ctx.Done():

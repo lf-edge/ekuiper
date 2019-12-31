@@ -43,3 +43,7 @@ func (b *DynamicChannelBuffer) run() {
 		}
 	}
 }
+
+func (b *DynamicChannelBuffer) GetLength() int {
+	return len(b.buffer)
+}
