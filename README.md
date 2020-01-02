@@ -16,12 +16,12 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 - Lightweight
 
-  - Core server package is only about 3MB, initial memory usage is about 10MB
+  - Core server package is only about 4.5M, initial memory footprint is about 10MB
 
 - Cross-platform
 
   - CPU Arch：X86 AMD * 32, X86 AMD * 64; ARM * 32, ARM * 64; PPC
-  - The popular Linux distributions, MacOS and Docker
+  - The popular Linux distributions, OpenWrt Linux, MacOS and Docker
   - Industrial PC, Raspberry Pi, industrial gateway, home gateway, MEC edge cloud server
 
 - Data analysis support
@@ -49,7 +49,18 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
   Seamless integration with EMQ X Edge, and provided an end to end solution from messaging to analytics. 
 
-<!--Performance result-->
+## Performance test result
+
+### Test scenario
+
+- Using JMeter MQTT plugin to send simulation data to EMQ X Broker, such as: ``{"temperature": 10, "humidity" : 90}``, the value of temperature and humidity are random integer between 0 - 100.
+- Kuiper subscribe from EMQ X Broker, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50 `` 
+- The analysis result are wrote to local file by using [file sink plugin](docs/en_US/plugins/sinks/file.md).
+
+| Devices                                        | Message per second | CPU usage     | Memory usage |
+| ---------------------------------------------- | ------------------ | ------------- | ------------ |
+| Raspberry Pi 3B+                               | 12k                | sys+user: 70% | 20M          |
+| AWS t2.micro( 1 Core * 1 GB) <br />Ubuntu18.04 | 10k                | sys+user: 25% | 20M          |
 
 ## Documents
 
