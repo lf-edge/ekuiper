@@ -158,12 +158,9 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	}
 }
 
-func (o *UnaryOperator) GetMetrics() map[string]interface{} {
-	result := make(map[string]interface{})
-	for _, stats := range o.statManagers{
-		for k, v := range stats.GetMetrics(){
-			result[k] = v
-		}
+func (m *UnaryOperator) GetMetrics() (result [][]interface{}) {
+	for _, stats := range m.statManagers{
+		result = append(result, stats.GetMetrics())
 	}
 	return result
 }

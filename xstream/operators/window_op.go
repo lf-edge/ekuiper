@@ -268,11 +268,12 @@ func (o *WindowOperator) calDelta(triggerTime int64, delta int64, log api.Logger
 	return delta
 }
 
-func (o *WindowOperator) GetMetrics() map[string]interface{} {
+func (o *WindowOperator) GetMetrics() [][]interface{} {
 	if o.statManager != nil {
-		return o.statManager.GetMetrics()
+		return [][]interface{}{
+			o.statManager.GetMetrics(),
+		}
 	} else {
 		return nil
 	}
-
 }

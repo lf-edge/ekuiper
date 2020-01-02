@@ -7,6 +7,7 @@ import (
 	"github.com/emqx/kuiper/xstream/contexts"
 	"github.com/emqx/kuiper/xstream/nodes"
 	"github.com/emqx/kuiper/xstream/operators"
+	"strconv"
 )
 
 type TopologyNew struct {
@@ -104,21 +105,27 @@ func (s *TopologyNew) Open() <-chan error {
 
 func (s *TopologyNew) GetMetrics() (keys []string, values []interface{}) {
 	for _, node := range s.sources {
-		for k, v := range node.GetMetrics() {
-			keys = append(keys, k)
-			values = append(values, v)
+		for ins, metrics := range node.GetMetrics() {
+			for i, v := range metrics{
+				keys = append(keys, "source_" + node.GetName() + "_" + strconv.Itoa(ins) + "_" + nodes.MetricNames[i])
+				values = append(values, v)
+			}
 		}
 	}
 	for _, node := range s.ops {
-		for k, v := range node.GetMetrics() {
-			keys = append(keys, k)
-			values = append(values, v)
+		for ins, metrics := range node.GetMetrics() {
+			for i, v := range metrics{
+				keys = append(keys, "op_" + node.GetName() + "_" + strconv.Itoa(ins) + "_" + nodes.MetricNames[i])
+				values = append(values, v)
+			}
 		}
 	}
 	for _, node := range s.sinks {
-		for k, v := range node.GetMetrics() {
-			keys = append(keys, k)
-			values = append(values, v)
+		for ins, metrics := range node.GetMetrics() {
+			for i, v := range metrics{
+				keys = append(keys, "sink_" + node.GetName() + "_" + strconv.Itoa(ins) + "_" + nodes.MetricNames[i])
+				values = append(values, v)
+			}
 		}
 	}
 	return

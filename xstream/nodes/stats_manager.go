@@ -3,7 +3,6 @@ package nodes
 import (
 	"fmt"
 	"github.com/emqx/kuiper/xstream/api"
-	"strconv"
 	"time"
 )
 
@@ -30,6 +29,8 @@ const ExceptionsTotal = "exceptions_total"
 const ProcessLatencyMs = "process_latency_ms"
 const LastInvocation = "last_invocation"
 const BufferLength   = "buffer_length"
+
+var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ExceptionsTotal, ProcessLatencyMs, BufferLength, LastInvocation}
 
 func NewStatManager(opType string, ctx api.StreamContext) (*StatManager, error) {
 	var prefix string
@@ -81,15 +82,14 @@ func (sm *StatManager) SetBufferLength(l int64) {
 	sm.bufferLength = l
 }
 
-func (sm *StatManager) GetMetrics() map[string]interface{} {
-	result := make(map[string]interface{})
-	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+RecordsInTotal] = sm.totalRecordsIn
-	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+RecordsOutTotal] = sm.totalRecordsOut
-	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+ExceptionsTotal] = sm.totalExceptions
-	if !sm.lastInvocation.IsZero(){
-		result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+LastInvocation] = sm.lastInvocation.Format("2006-01-02T15:04:05.999999")
+func (sm *StatManager) GetMetrics() []interface{} {
+	result := []interface{}{
+		sm.totalRecordsIn, sm.totalRecordsOut, sm.totalExceptions, sm.processLatency, sm.bufferLength,
 	}
-	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+ProcessLatencyMs] = sm.processLatency
-	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+BufferLength] = sm.bufferLength
+
+	if !sm.lastInvocation.IsZero(){
+		result = append(result, sm.lastInvocation.Format("2006-01-02T15:04:05.999999"))
+	}
+
 	return result
 }

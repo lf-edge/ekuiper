@@ -228,12 +228,9 @@ func (m *SourceNode) AddOutput(output chan<- interface{}, name string) (err erro
 	return nil
 }
 
-func (m *SourceNode) GetMetrics() map[string]interface{} {
-	result := make(map[string]interface{})
+func (m *SourceNode) GetMetrics() (result [][]interface{}) {
 	for _, stats := range m.statManagers{
-		for k, v := range stats.GetMetrics(){
-			result[k] = v
-		}
+		result = append(result, stats.GetMetrics())
 	}
 	return result
 }
