@@ -57,10 +57,10 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 - Kuiper subscribe from EMQ X Broker, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50 `` 
 - The analysis result are wrote to local file by using [file sink plugin](docs/en_US/plugins/sinks/file.md).
 
-| Devices                                        | Message per second | CPU usage     | Memory usage |
-| ---------------------------------------------- | ------------------ | ------------- | ------------ |
-| Raspberry Pi 3B+                               | 12k                | sys+user: 70% | 20M          |
-| AWS t2.micro( 1 Core * 1 GB) <br />Ubuntu18.04 | 10k                | sys+user: 25% | 20M          |
+| Devices                                        | Message # per second | CPU usage     | Memory usage |
+| ---------------------------------------------- | -------------------- | ------------- | ------------ |
+| Raspberry Pi 3B+                               | 12k                  | sys+user: 70% | 20M          |
+| AWS t2.micro( 1 Core * 1 GB) <br />Ubuntu18.04 | 10k                  | sys+user: 25% | 20M          |
 
 ## Documents
 
