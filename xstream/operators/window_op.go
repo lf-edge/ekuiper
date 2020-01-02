@@ -239,7 +239,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 		if o.isEventTime {
 			results.Sort()
 		}
-		log.Infof("Sent: %v", results)
+		log.Debugf("Sent: %v", results)
 		//blocking if one of the channel is full
 		nodes.Broadcast(o.outputs, results, ctx)
 		triggered = true
