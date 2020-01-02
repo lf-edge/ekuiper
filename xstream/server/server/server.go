@@ -139,16 +139,23 @@ func (t *Server) GetStatusRule(name string, reply *string) error {
 			err := c.Err()
 			switch err {
 			case nil:
-				metrics, err := json.Marshal((*rs.Topology).GetMetrics())
-				if err != nil {
-					*reply = "Running: failed to get or parse metrics\n"
-				} else {
-					dst := &bytes.Buffer{}
-					if err = json.Indent(dst, metrics, "", "  "); err != nil {
-						*reply = "Running with metrics:\n" + string(metrics)
-					} else {
-						*reply = "Running with metrics:\n" + dst.String()
+				keys, values := (*rs.Topology).GetMetrics()
+				metrics := "{"
+				for i, key := range keys{
+					value := values[i]
+					switch value.(type) {
+					case string:
+						metrics += fmt.Sprintf("\"%s\":%q,", key, value)
+					default:
+						metrics += fmt.Sprintf("\"%s\":%v,", key, value)
 					}
+				}
+				metrics = metrics[:len(metrics) - 1] +  "}"
+				dst := &bytes.Buffer{}
+				if err = json.Indent(dst, []byte(metrics), "", "  "); err != nil {
+					*reply = "Running with metrics:\n" + metrics
+				} else {
+					*reply = "Running with metrics:\n" + dst.String()
 				}
 			case context.Canceled:
 				*reply = "Stopped: canceled by error."
