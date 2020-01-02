@@ -57,6 +57,9 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	m.ctx = ctx
 	logger := ctx.GetLogger()
 	logger.Debugf("open sink node %s", m.name)
+	//reset the states
+	m.sinks = nil
+	m.statManagers = nil
 	go func() {
 		if c, ok := m.options["concurrency"]; ok {
 			if t, err := common.ToInt(c); err != nil || t <= 0 {
