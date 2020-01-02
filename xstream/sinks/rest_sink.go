@@ -7,6 +7,7 @@ import (
 	"github.com/emqx/kuiper/common/templates"
 	"github.com/emqx/kuiper/xstream/api"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -59,7 +60,7 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("rest sink property url %v is not a string", temp)
 	}
-	ms.url = strings.ToLower(strings.Trim(ms.url, ""))
+	ms.url = strings.Trim(ms.url, "")
 
 	temp, ok = ps["headers"]
 	if ok{
@@ -127,8 +128,36 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 func (ms *RestSink) Open(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	ms.client = &http.Client{Timeout: time.Duration(ms.timeout) * time.Millisecond}
-	logger.Debugf("open rest sink with configuration: {method: %s, url: %s, bodyType: %s, timeout: %d,header: %v, sendSingle: %v, dataTemplate: %s", ms.method, ms.url, ms.bodyType, ms.timeout, ms.headers, ms.sendSingle, ms.dataTemplate)
+	logger.Infof("open rest sink with configuration: {method: %s, url: %s, bodyType: %s, timeout: %d,header: %v, sendSingle: %v, dataTemplate: %s", ms.method, ms.url, ms.bodyType, ms.timeout, ms.headers, ms.sendSingle, ms.dataTemplate)
+
+	timeout := time.Duration(1 * time.Second)
+	if u, err := url.Parse(ms.url); err != nil {
+		return err
+	} else {
+		_, err := net.DialTimeout("tcp", u.Host, timeout)
+		if err != nil {
+			logger.Errorf("Target web server unreachable: %s", err)
+			return err
+		} else {
+			logger.Infof("Target web server is available.")
+		}
+	}
 	return nil
+}
+
+type MultiErrors []error
+
+func (me MultiErrors) AddError(err error) (MultiErrors) {
+	me = append(me, err)
+	return me
+}
+
+func (me MultiErrors) Error() string {
+	s := make([]string, len(me))
+	for i, v  := range me {
+		s = append(s, fmt.Sprintf("Error %d with info %s. \n", i, v))
+	}
+	return strings.Join(s, "  ")
 }
 
 func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
@@ -146,8 +175,14 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 			return err
 		}
 		logger.Debugf("receive %d records", len(j))
+		var errs MultiErrors
 		for _, r := range j {
-			ms.send(r, logger)
+			if e := ms.send(r, logger); e != nil {
+				errs = errs.AddError(e)
+			}
+		}
+		if len(errs) != 0 {
+			return errs
 		}
 	}
 	return nil
@@ -245,6 +280,9 @@ func (ms *RestSink) send(v interface{}, logger api.Logger) error {
 	}
 	logger.Debugf("do request: %s %s with %s", ms.method, ms.url, req.Body)
 	resp, err := ms.client.Do(req)
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return fmt.Errorf("rest sink fails to err http return code: %d.", resp.StatusCode)
+	}
 	if err != nil {
 		return fmt.Errorf("rest sink fails to send out the data")
 	} else {
