@@ -393,23 +393,23 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demo_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demo_0_records_in_total":   int64(5),
-				"kuiper_op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(5),
-				"kuiper_op_project_0_records_out_total":  int64(5),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(5),
 
-				"kuiper_sink_MockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_MockSink_0_records_in_total":  int64(5),
-				"kuiper_sink_MockSink_0_records_out_total": int64(5),
+				"sink_MockSink_0_exceptions_total":  int64(0),
+				"sink_MockSink_0_records_in_total":  int64(5),
+				"sink_MockSink_0_records_out_total": int64(5),
 
-				"kuiper_source_demo_0_exceptions_total":  int64(0),
-				"kuiper_source_demo_0_records_in_total":  int64(5),
-				"kuiper_source_demo_0_records_out_total": int64(5),
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
 			},
 		}, {
 			name: `rule2`,
@@ -425,28 +425,28 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demo_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demo_0_records_in_total":   int64(5),
-				"kuiper_op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(2),
-				"kuiper_op_project_0_records_out_total":  int64(2),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(2),
+				"op_project_0_records_out_total":  int64(2),
 
-				"kuiper_sink_MockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_MockSink_0_records_in_total":  int64(2),
-				"kuiper_sink_MockSink_0_records_out_total": int64(2),
+				"sink_MockSink_0_exceptions_total":  int64(0),
+				"sink_MockSink_0_records_in_total":  int64(2),
+				"sink_MockSink_0_records_out_total": int64(2),
 
-				"kuiper_source_demo_0_exceptions_total":  int64(0),
-				"kuiper_source_demo_0_records_in_total":  int64(5),
-				"kuiper_source_demo_0_records_out_total": int64(5),
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
 
-				"kuiper_op_filter_0_exceptions_total":   int64(0),
-				"kuiper_op_filter_0_process_latency_ms": int64(0),
-				"kuiper_op_filter_0_records_in_total":   int64(5),
-				"kuiper_op_filter_0_records_out_total":  int64(2),
+				"op_filter_0_exceptions_total":   int64(0),
+				"op_filter_0_process_latency_ms": int64(0),
+				"op_filter_0_records_in_total":   int64(5),
+				"op_filter_0_records_out_total":  int64(2),
 			},
 		}, {
 			name: `rule3`,
@@ -462,28 +462,28 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demo_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demo_0_records_in_total":   int64(5),
-				"kuiper_op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(2),
-				"kuiper_op_project_0_records_out_total":  int64(2),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(2),
+				"op_project_0_records_out_total":  int64(2),
 
-				"kuiper_sink_MockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_MockSink_0_records_in_total":  int64(2),
-				"kuiper_sink_MockSink_0_records_out_total": int64(2),
+				"sink_MockSink_0_exceptions_total":  int64(0),
+				"sink_MockSink_0_records_in_total":  int64(2),
+				"sink_MockSink_0_records_out_total": int64(2),
 
-				"kuiper_source_demo_0_exceptions_total":  int64(0),
-				"kuiper_source_demo_0_records_in_total":  int64(5),
-				"kuiper_source_demo_0_records_out_total": int64(5),
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
 
-				"kuiper_op_filter_0_exceptions_total":   int64(0),
-				"kuiper_op_filter_0_process_latency_ms": int64(0),
-				"kuiper_op_filter_0_records_in_total":   int64(5),
-				"kuiper_op_filter_0_records_out_total":  int64(2),
+				"op_filter_0_exceptions_total":   int64(0),
+				"op_filter_0_process_latency_ms": int64(0),
+				"op_filter_0_records_in_total":   int64(5),
+				"op_filter_0_records_out_total":  int64(2),
 			},
 		},
 	}
@@ -551,17 +551,34 @@ func TestSingleSQL(t *testing.T) {
 			}
 			maps = append(maps, mapRes)
 		}
-		//if !reflect.DeepEqual(tt.r, maps) {
-		//	t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
-		//	continue
+		keys, values := tp.GetMetrics()
+		//for i, k := range keys{
+		//	log.Printf("%s:%v", k, values[i])
 		//}
-		metrics := tp.GetMetrics()
-		log.Infof("metrics: %v", metrics)
 		for k, v := range tt.m {
-			if v != metrics[k] {
-				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, k, v, metrics[k])
-				break
+			var(
+				index int
+				key   string
+				matched bool
+			)
+			for index, key = range keys{
+				if k == key {
+					if values[index] == v{
+						matched = true
+					}
+					break
+				}
 			}
+			if matched{
+				continue
+			}
+			//do not find
+			if index < len(values){
+				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v(%t)\n\ngot=%#v(%t)\n\n", i, tt.sql, k, v, v, values[index], values[index])
+			}else{
+				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=nil\n\n", i, tt.sql, k, v)
+			}
+			break
 		}
 	}
 }
@@ -613,28 +630,28 @@ func TestWindow(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demo_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demo_0_records_in_total":   int64(5),
-				"kuiper_op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(3),
-				"kuiper_op_project_0_records_out_total":  int64(3),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(3),
+				"op_project_0_records_out_total":  int64(3),
 
-				"kuiper_sink_mockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_mockSink_0_records_in_total":  int64(3),
-				"kuiper_sink_mockSink_0_records_out_total": int64(3),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
 
-				"kuiper_source_demo_0_exceptions_total":  int64(0),
-				"kuiper_source_demo_0_records_in_total":  int64(5),
-				"kuiper_source_demo_0_records_out_total": int64(5),
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
 
-				"kuiper_op_window_0_exceptions_total":   int64(0),
-				"kuiper_op_window_0_process_latency_ms": int64(0),
-				"kuiper_op_window_0_records_in_total":   int64(5),
-				"kuiper_op_window_0_records_out_total":  int64(3),
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(5),
+				"op_window_0_records_out_total":  int64(3),
 			},
 		}, {
 			name: `rule2`,
@@ -654,33 +671,33 @@ func TestWindow(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demo_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demo_0_records_in_total":   int64(5),
-				"kuiper_op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(2),
-				"kuiper_op_project_0_records_out_total":  int64(2),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(2),
+				"op_project_0_records_out_total":  int64(2),
 
-				"kuiper_sink_mockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_mockSink_0_records_in_total":  int64(2),
-				"kuiper_sink_mockSink_0_records_out_total": int64(2),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
 
-				"kuiper_source_demo_0_exceptions_total":  int64(0),
-				"kuiper_source_demo_0_records_in_total":  int64(5),
-				"kuiper_source_demo_0_records_out_total": int64(5),
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
 
-				"kuiper_op_window_0_exceptions_total":   int64(0),
-				"kuiper_op_window_0_process_latency_ms": int64(0),
-				"kuiper_op_window_0_records_in_total":   int64(5),
-				"kuiper_op_window_0_records_out_total":  int64(3),
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(5),
+				"op_window_0_records_out_total":  int64(3),
 
-				"kuiper_op_filter_0_exceptions_total":   int64(0),
-				"kuiper_op_filter_0_process_latency_ms": int64(0),
-				"kuiper_op_filter_0_records_in_total":   int64(3),
-				"kuiper_op_filter_0_records_out_total":  int64(2),
+				"op_filter_0_exceptions_total":   int64(0),
+				"op_filter_0_process_latency_ms": int64(0),
+				"op_filter_0_records_in_total":   int64(3),
+				"op_filter_0_records_out_total":  int64(2),
 			},
 		}, {
 			name: `rule3`,
@@ -730,42 +747,42 @@ func TestWindow(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demo_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demo_0_records_in_total":   int64(5),
-				"kuiper_op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"kuiper_op_preprocessor_demo1_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demo1_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demo1_0_records_in_total":   int64(5),
-				"kuiper_op_preprocessor_demo1_0_records_out_total":  int64(5),
+				"op_preprocessor_demo1_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo1_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo1_0_records_in_total":   int64(5),
+				"op_preprocessor_demo1_0_records_out_total":  int64(5),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(8),
-				"kuiper_op_project_0_records_out_total":  int64(8),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(8),
+				"op_project_0_records_out_total":  int64(8),
 
-				"kuiper_sink_mockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_mockSink_0_records_in_total":  int64(8),
-				"kuiper_sink_mockSink_0_records_out_total": int64(8),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(8),
+				"sink_mockSink_0_records_out_total": int64(8),
 
-				"kuiper_source_demo_0_exceptions_total":  int64(0),
-				"kuiper_source_demo_0_records_in_total":  int64(5),
-				"kuiper_source_demo_0_records_out_total": int64(5),
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
 
-				"kuiper_source_demo1_0_exceptions_total":  int64(0),
-				"kuiper_source_demo1_0_records_in_total":  int64(5),
-				"kuiper_source_demo1_0_records_out_total": int64(5),
+				"source_demo1_0_exceptions_total":  int64(0),
+				"source_demo1_0_records_in_total":  int64(5),
+				"source_demo1_0_records_out_total": int64(5),
 
-				"kuiper_op_window_0_exceptions_total":   int64(0),
-				"kuiper_op_window_0_process_latency_ms": int64(0),
-				"kuiper_op_window_0_records_in_total":   int64(10),
-				"kuiper_op_window_0_records_out_total":  int64(10),
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(10),
+				"op_window_0_records_out_total":  int64(10),
 
-				"kuiper_op_join_0_exceptions_total":   int64(0),
-				"kuiper_op_join_0_process_latency_ms": int64(0),
-				"kuiper_op_join_0_records_in_total":   int64(10),
-				"kuiper_op_join_0_records_out_total":  int64(8),
+				"op_join_0_exceptions_total":   int64(0),
+				"op_join_0_process_latency_ms": int64(0),
+				"op_join_0_records_in_total":   int64(10),
+				"op_join_0_records_out_total":  int64(8),
 			},
 		}, {
 			name: `rule4`,
@@ -795,38 +812,38 @@ func TestWindow(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demo_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demo_0_records_in_total":   int64(5),
-				"kuiper_op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(5),
-				"kuiper_op_project_0_records_out_total":  int64(5),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(5),
 
-				"kuiper_sink_mockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_mockSink_0_records_in_total":  int64(5),
-				"kuiper_sink_mockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
 
-				"kuiper_source_demo_0_exceptions_total":  int64(0),
-				"kuiper_source_demo_0_records_in_total":  int64(5),
-				"kuiper_source_demo_0_records_out_total": int64(5),
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
 
-				"kuiper_op_window_0_exceptions_total":   int64(0),
-				"kuiper_op_window_0_process_latency_ms": int64(0),
-				"kuiper_op_window_0_records_in_total":   int64(5),
-				"kuiper_op_window_0_records_out_total":  int64(5),
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(5),
+				"op_window_0_records_out_total":  int64(5),
 
-				"kuiper_op_aggregate_0_exceptions_total":   int64(0),
-				"kuiper_op_aggregate_0_process_latency_ms": int64(0),
-				"kuiper_op_aggregate_0_records_in_total":   int64(5),
-				"kuiper_op_aggregate_0_records_out_total":  int64(5),
+				"op_aggregate_0_exceptions_total":   int64(0),
+				"op_aggregate_0_process_latency_ms": int64(0),
+				"op_aggregate_0_records_in_total":   int64(5),
+				"op_aggregate_0_records_out_total":  int64(5),
 
-				"kuiper_op_order_0_exceptions_total":   int64(0),
-				"kuiper_op_order_0_process_latency_ms": int64(0),
-				"kuiper_op_order_0_records_in_total":   int64(5),
-				"kuiper_op_order_0_records_out_total":  int64(5),
+				"op_order_0_exceptions_total":   int64(0),
+				"op_order_0_process_latency_ms": int64(0),
+				"op_order_0_records_in_total":   int64(5),
+				"op_order_0_records_out_total":  int64(5),
 			},
 		}, {
 			name: `rule5`,
@@ -856,28 +873,28 @@ func TestWindow(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_sessionDemo_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_sessionDemo_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_sessionDemo_0_records_in_total":   int64(11),
-				"kuiper_op_preprocessor_sessionDemo_0_records_out_total":  int64(11),
+				"op_preprocessor_sessionDemo_0_exceptions_total":   int64(0),
+				"op_preprocessor_sessionDemo_0_process_latency_ms": int64(0),
+				"op_preprocessor_sessionDemo_0_records_in_total":   int64(11),
+				"op_preprocessor_sessionDemo_0_records_out_total":  int64(11),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(3),
-				"kuiper_op_project_0_records_out_total":  int64(3),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(3),
+				"op_project_0_records_out_total":  int64(3),
 
-				"kuiper_sink_mockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_mockSink_0_records_in_total":  int64(3),
-				"kuiper_sink_mockSink_0_records_out_total": int64(3),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
 
-				"kuiper_source_sessionDemo_0_exceptions_total":  int64(0),
-				"kuiper_source_sessionDemo_0_records_in_total":  int64(11),
-				"kuiper_source_sessionDemo_0_records_out_total": int64(11),
+				"source_sessionDemo_0_exceptions_total":  int64(0),
+				"source_sessionDemo_0_records_in_total":  int64(11),
+				"source_sessionDemo_0_records_out_total": int64(11),
 
-				"kuiper_op_window_0_exceptions_total":   int64(0),
-				"kuiper_op_window_0_process_latency_ms": int64(0),
-				"kuiper_op_window_0_records_in_total":   int64(11),
-				"kuiper_op_window_0_records_out_total":  int64(3),
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(11),
+				"op_window_0_records_out_total":  int64(3),
 			},
 		}, {
 			name: `rule6`,
@@ -911,42 +928,42 @@ func TestWindow(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demo_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demo_0_records_in_total":   int64(5),
-				"kuiper_op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"kuiper_op_preprocessor_demo1_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demo1_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demo1_0_records_in_total":   int64(5),
-				"kuiper_op_preprocessor_demo1_0_records_out_total":  int64(5),
+				"op_preprocessor_demo1_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo1_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo1_0_records_in_total":   int64(5),
+				"op_preprocessor_demo1_0_records_out_total":  int64(5),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(8),
-				"kuiper_op_project_0_records_out_total":  int64(8),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(8),
+				"op_project_0_records_out_total":  int64(8),
 
-				"kuiper_sink_mockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_mockSink_0_records_in_total":  int64(8),
-				"kuiper_sink_mockSink_0_records_out_total": int64(8),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(8),
+				"sink_mockSink_0_records_out_total": int64(8),
 
-				"kuiper_source_demo_0_exceptions_total":  int64(0),
-				"kuiper_source_demo_0_records_in_total":  int64(5),
-				"kuiper_source_demo_0_records_out_total": int64(5),
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
 
-				"kuiper_source_demo1_0_exceptions_total":  int64(0),
-				"kuiper_source_demo1_0_records_in_total":  int64(5),
-				"kuiper_source_demo1_0_records_out_total": int64(5),
+				"source_demo1_0_exceptions_total":  int64(0),
+				"source_demo1_0_records_in_total":  int64(5),
+				"source_demo1_0_records_out_total": int64(5),
 
-				"kuiper_op_window_0_exceptions_total":   int64(0),
-				"kuiper_op_window_0_process_latency_ms": int64(0),
-				"kuiper_op_window_0_records_in_total":   int64(10),
-				"kuiper_op_window_0_records_out_total":  int64(10),
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(10),
+				"op_window_0_records_out_total":  int64(10),
 
-				"kuiper_op_join_0_exceptions_total":   int64(0),
-				"kuiper_op_join_0_process_latency_ms": int64(0),
-				"kuiper_op_join_0_records_in_total":   int64(10),
-				"kuiper_op_join_0_records_out_total":  int64(8),
+				"op_join_0_exceptions_total":   int64(0),
+				"op_join_0_process_latency_ms": int64(0),
+				"op_join_0_records_in_total":   int64(10),
+				"op_join_0_records_out_total":  int64(8),
 			},
 		},
 	}
@@ -1016,12 +1033,31 @@ func TestWindow(t *testing.T) {
 		if !reflect.DeepEqual(tt.r, maps) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 		}
-		metrics := tp.GetMetrics()
+		keys, values := tp.GetMetrics()
 		for k, v := range tt.m {
-			if v != metrics[k] {
-				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, k, v, metrics[k])
-				break
+			var(
+				index int
+				key   string
+				matched bool
+			)
+			for index, key = range keys{
+				if k == key {
+					if values[index] == v{
+						matched = true
+					}
+					break
+				}
 			}
+			if matched{
+				continue
+			}
+			//do not find
+			if index < len(values){
+				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v(%t)\n\ngot=%#v(%t)\n\n", i, tt.sql, k, v, v, values[index], values[index])
+			}else{
+				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=nil\n\n", i, tt.sql, k, v)
+			}
+			break
 		}
 	}
 }
@@ -1359,28 +1395,28 @@ func TestEventWindow(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demoE_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demoE_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demoE_0_records_in_total":   int64(6),
-				"kuiper_op_preprocessor_demoE_0_records_out_total":  int64(6),
+				"op_preprocessor_demoE_0_exceptions_total":   int64(0),
+				"op_preprocessor_demoE_0_process_latency_ms": int64(0),
+				"op_preprocessor_demoE_0_records_in_total":   int64(6),
+				"op_preprocessor_demoE_0_records_out_total":  int64(6),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(5),
-				"kuiper_op_project_0_records_out_total":  int64(5),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(5),
 
-				"kuiper_sink_MockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_MockSink_0_records_in_total":  int64(5),
-				"kuiper_sink_MockSink_0_records_out_total": int64(5),
+				"sink_MockSink_0_exceptions_total":  int64(0),
+				"sink_MockSink_0_records_in_total":  int64(5),
+				"sink_MockSink_0_records_out_total": int64(5),
 
-				"kuiper_source_demoE_0_exceptions_total":  int64(0),
-				"kuiper_source_demoE_0_records_in_total":  int64(6),
-				"kuiper_source_demoE_0_records_out_total": int64(6),
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
 
-				"kuiper_op_window_0_exceptions_total":   int64(0),
-				"kuiper_op_window_0_process_latency_ms": int64(0),
-				"kuiper_op_window_0_records_in_total":   int64(6),
-				"kuiper_op_window_0_records_out_total":  int64(5),
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(6),
+				"op_window_0_records_out_total":  int64(5),
 			},
 		}, {
 			name: `rule2`,
@@ -1397,33 +1433,33 @@ func TestEventWindow(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demoE_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demoE_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demoE_0_records_in_total":   int64(6),
-				"kuiper_op_preprocessor_demoE_0_records_out_total":  int64(6),
+				"op_preprocessor_demoE_0_exceptions_total":   int64(0),
+				"op_preprocessor_demoE_0_process_latency_ms": int64(0),
+				"op_preprocessor_demoE_0_records_in_total":   int64(6),
+				"op_preprocessor_demoE_0_records_out_total":  int64(6),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(2),
-				"kuiper_op_project_0_records_out_total":  int64(2),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(2),
+				"op_project_0_records_out_total":  int64(2),
 
-				"kuiper_sink_MockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_MockSink_0_records_in_total":  int64(2),
-				"kuiper_sink_MockSink_0_records_out_total": int64(2),
+				"sink_MockSink_0_exceptions_total":  int64(0),
+				"sink_MockSink_0_records_in_total":  int64(2),
+				"sink_MockSink_0_records_out_total": int64(2),
 
-				"kuiper_source_demoE_0_exceptions_total":  int64(0),
-				"kuiper_source_demoE_0_records_in_total":  int64(6),
-				"kuiper_source_demoE_0_records_out_total": int64(6),
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
 
-				"kuiper_op_window_0_exceptions_total":   int64(0),
-				"kuiper_op_window_0_process_latency_ms": int64(0),
-				"kuiper_op_window_0_records_in_total":   int64(6),
-				"kuiper_op_window_0_records_out_total":  int64(4),
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(6),
+				"op_window_0_records_out_total":  int64(4),
 
-				"kuiper_op_filter_0_exceptions_total":   int64(0),
-				"kuiper_op_filter_0_process_latency_ms": int64(0),
-				"kuiper_op_filter_0_records_in_total":   int64(4),
-				"kuiper_op_filter_0_records_out_total":  int64(2),
+				"op_filter_0_exceptions_total":   int64(0),
+				"op_filter_0_process_latency_ms": int64(0),
+				"op_filter_0_records_in_total":   int64(4),
+				"op_filter_0_records_out_total":  int64(2),
 			},
 		}, {
 			name: `rule3`,
@@ -1461,42 +1497,42 @@ func TestEventWindow(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demoE_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demoE_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demoE_0_records_in_total":   int64(6),
-				"kuiper_op_preprocessor_demoE_0_records_out_total":  int64(6),
+				"op_preprocessor_demoE_0_exceptions_total":   int64(0),
+				"op_preprocessor_demoE_0_process_latency_ms": int64(0),
+				"op_preprocessor_demoE_0_records_in_total":   int64(6),
+				"op_preprocessor_demoE_0_records_out_total":  int64(6),
 
-				"kuiper_op_preprocessor_demo1E_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demo1E_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demo1E_0_records_in_total":   int64(6),
-				"kuiper_op_preprocessor_demo1E_0_records_out_total":  int64(6),
+				"op_preprocessor_demo1E_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo1E_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo1E_0_records_in_total":   int64(6),
+				"op_preprocessor_demo1E_0_records_out_total":  int64(6),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(5),
-				"kuiper_op_project_0_records_out_total":  int64(5),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(5),
 
-				"kuiper_sink_MockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_MockSink_0_records_in_total":  int64(5),
-				"kuiper_sink_MockSink_0_records_out_total": int64(5),
+				"sink_MockSink_0_exceptions_total":  int64(0),
+				"sink_MockSink_0_records_in_total":  int64(5),
+				"sink_MockSink_0_records_out_total": int64(5),
 
-				"kuiper_source_demoE_0_exceptions_total":  int64(0),
-				"kuiper_source_demoE_0_records_in_total":  int64(6),
-				"kuiper_source_demoE_0_records_out_total": int64(6),
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
 
-				"kuiper_source_demo1E_0_exceptions_total":  int64(0),
-				"kuiper_source_demo1E_0_records_in_total":  int64(6),
-				"kuiper_source_demo1E_0_records_out_total": int64(6),
+				"source_demo1E_0_exceptions_total":  int64(0),
+				"source_demo1E_0_records_in_total":  int64(6),
+				"source_demo1E_0_records_out_total": int64(6),
 
-				"kuiper_op_window_0_exceptions_total":   int64(0),
-				"kuiper_op_window_0_process_latency_ms": int64(0),
-				"kuiper_op_window_0_records_in_total":   int64(12),
-				"kuiper_op_window_0_records_out_total":  int64(5),
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(12),
+				"op_window_0_records_out_total":  int64(5),
 
-				"kuiper_op_join_0_exceptions_total":   int64(0),
-				"kuiper_op_join_0_process_latency_ms": int64(0),
-				"kuiper_op_join_0_records_in_total":   int64(5),
-				"kuiper_op_join_0_records_out_total":  int64(5),
+				"op_join_0_exceptions_total":   int64(0),
+				"op_join_0_process_latency_ms": int64(0),
+				"op_join_0_records_in_total":   int64(5),
+				"op_join_0_records_out_total":  int64(5),
 			},
 		}, {
 			name: `rule4`,
@@ -1522,38 +1558,38 @@ func TestEventWindow(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demoE_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demoE_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demoE_0_records_in_total":   int64(6),
-				"kuiper_op_preprocessor_demoE_0_records_out_total":  int64(6),
+				"op_preprocessor_demoE_0_exceptions_total":   int64(0),
+				"op_preprocessor_demoE_0_process_latency_ms": int64(0),
+				"op_preprocessor_demoE_0_records_in_total":   int64(6),
+				"op_preprocessor_demoE_0_records_out_total":  int64(6),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(4),
-				"kuiper_op_project_0_records_out_total":  int64(4),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(4),
+				"op_project_0_records_out_total":  int64(4),
 
-				"kuiper_sink_MockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_MockSink_0_records_in_total":  int64(4),
-				"kuiper_sink_MockSink_0_records_out_total": int64(4),
+				"sink_MockSink_0_exceptions_total":  int64(0),
+				"sink_MockSink_0_records_in_total":  int64(4),
+				"sink_MockSink_0_records_out_total": int64(4),
 
-				"kuiper_source_demoE_0_exceptions_total":  int64(0),
-				"kuiper_source_demoE_0_records_in_total":  int64(6),
-				"kuiper_source_demoE_0_records_out_total": int64(6),
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
 
-				"kuiper_op_window_0_exceptions_total":   int64(0),
-				"kuiper_op_window_0_process_latency_ms": int64(0),
-				"kuiper_op_window_0_records_in_total":   int64(6),
-				"kuiper_op_window_0_records_out_total":  int64(4),
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(6),
+				"op_window_0_records_out_total":  int64(4),
 
-				"kuiper_op_aggregate_0_exceptions_total":   int64(0),
-				"kuiper_op_aggregate_0_process_latency_ms": int64(0),
-				"kuiper_op_aggregate_0_records_in_total":   int64(4),
-				"kuiper_op_aggregate_0_records_out_total":  int64(4),
+				"op_aggregate_0_exceptions_total":   int64(0),
+				"op_aggregate_0_process_latency_ms": int64(0),
+				"op_aggregate_0_records_in_total":   int64(4),
+				"op_aggregate_0_records_out_total":  int64(4),
 
-				"kuiper_op_order_0_exceptions_total":   int64(0),
-				"kuiper_op_order_0_process_latency_ms": int64(0),
-				"kuiper_op_order_0_records_in_total":   int64(4),
-				"kuiper_op_order_0_records_out_total":  int64(4),
+				"op_order_0_exceptions_total":   int64(0),
+				"op_order_0_process_latency_ms": int64(0),
+				"op_order_0_records_in_total":   int64(4),
+				"op_order_0_records_out_total":  int64(4),
 			},
 		}, {
 			name: `rule5`,
@@ -1583,28 +1619,28 @@ func TestEventWindow(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_sessionDemoE_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_sessionDemoE_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_sessionDemoE_0_records_in_total":   int64(12),
-				"kuiper_op_preprocessor_sessionDemoE_0_records_out_total":  int64(12),
+				"op_preprocessor_sessionDemoE_0_exceptions_total":   int64(0),
+				"op_preprocessor_sessionDemoE_0_process_latency_ms": int64(0),
+				"op_preprocessor_sessionDemoE_0_records_in_total":   int64(12),
+				"op_preprocessor_sessionDemoE_0_records_out_total":  int64(12),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(4),
-				"kuiper_op_project_0_records_out_total":  int64(4),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(4),
+				"op_project_0_records_out_total":  int64(4),
 
-				"kuiper_sink_MockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_MockSink_0_records_in_total":  int64(4),
-				"kuiper_sink_MockSink_0_records_out_total": int64(4),
+				"sink_MockSink_0_exceptions_total":  int64(0),
+				"sink_MockSink_0_records_in_total":  int64(4),
+				"sink_MockSink_0_records_out_total": int64(4),
 
-				"kuiper_source_sessionDemoE_0_exceptions_total":  int64(0),
-				"kuiper_source_sessionDemoE_0_records_in_total":  int64(12),
-				"kuiper_source_sessionDemoE_0_records_out_total": int64(12),
+				"source_sessionDemoE_0_exceptions_total":  int64(0),
+				"source_sessionDemoE_0_records_in_total":  int64(12),
+				"source_sessionDemoE_0_records_out_total": int64(12),
 
-				"kuiper_op_window_0_exceptions_total":   int64(0),
-				"kuiper_op_window_0_process_latency_ms": int64(0),
-				"kuiper_op_window_0_records_in_total":   int64(12),
-				"kuiper_op_window_0_records_out_total":  int64(4),
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(12),
+				"op_window_0_records_out_total":  int64(4),
 			},
 		}, {
 			name: `rule6`,
@@ -1629,41 +1665,41 @@ func TestEventWindow(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"kuiper_op_preprocessor_demoE_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demoE_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demoE_0_records_in_total":   int64(6),
-				"kuiper_op_preprocessor_demoE_0_records_out_total":  int64(6),
+				"op_preprocessor_demoE_0_exceptions_total":   int64(0),
+				"op_preprocessor_demoE_0_process_latency_ms": int64(0),
+				"op_preprocessor_demoE_0_records_in_total":   int64(6),
+				"op_preprocessor_demoE_0_records_out_total":  int64(6),
 
-				"kuiper_op_preprocessor_demo1E_0_exceptions_total":   int64(0),
-				"kuiper_op_preprocessor_demo1E_0_process_latency_ms": int64(0),
-				"kuiper_op_preprocessor_demo1E_0_records_in_total":   int64(6),
-				"kuiper_op_preprocessor_demo1E_0_records_out_total":  int64(6),
+				"op_preprocessor_demo1E_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo1E_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo1E_0_records_in_total":   int64(6),
+				"op_preprocessor_demo1E_0_records_out_total":  int64(6),
 
-				"kuiper_op_project_0_exceptions_total":   int64(0),
-				"kuiper_op_project_0_process_latency_ms": int64(0),
-				"kuiper_op_project_0_records_in_total":   int64(5),
-				"kuiper_op_project_0_records_out_total":  int64(5),
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(5),
 
-				"kuiper_sink_MockSink_0_exceptions_total":  int64(0),
-				"kuiper_sink_MockSink_0_records_in_total":  int64(5),
-				"kuiper_sink_MockSink_0_records_out_total": int64(5),
+				"sink_MockSink_0_exceptions_total":  int64(0),
+				"sink_MockSink_0_records_in_total":  int64(5),
+				"sink_MockSink_0_records_out_total": int64(5),
 
-				"kuiper_source_demoE_0_exceptions_total":  int64(0),
-				"kuiper_source_demoE_0_records_in_total":  int64(6),
-				"kuiper_source_demoE_0_records_out_total": int64(6),
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
 
-				"kuiper_source_demo1E_0_exceptions_total":  int64(0),
-				"kuiper_source_demo1E_0_records_in_total":  int64(6),
-				"kuiper_source_demo1E_0_records_out_total": int64(6),
+				"source_demo1E_0_exceptions_total":  int64(0),
+				"source_demo1E_0_records_in_total":  int64(6),
+				"source_demo1E_0_records_out_total": int64(6),
 
-				"kuiper_op_window_0_exceptions_total":  int64(0),
-				"kuiper_op_window_0_records_in_total":  int64(12),
-				"kuiper_op_window_0_records_out_total": int64(5),
+				"op_window_0_exceptions_total":  int64(0),
+				"op_window_0_records_in_total":  int64(12),
+				"op_window_0_records_out_total": int64(5),
 
-				"kuiper_op_join_0_exceptions_total":   int64(0),
-				"kuiper_op_join_0_process_latency_ms": int64(0),
-				"kuiper_op_join_0_records_in_total":   int64(5),
-				"kuiper_op_join_0_records_out_total":  int64(5),
+				"op_join_0_exceptions_total":   int64(0),
+				"op_join_0_process_latency_ms": int64(0),
+				"op_join_0_records_in_total":   int64(5),
+				"op_join_0_records_out_total":  int64(5),
 			},
 		},
 	}
@@ -1762,12 +1798,31 @@ func TestEventWindow(t *testing.T) {
 		if !reflect.DeepEqual(tt.r, maps) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 		}
-		metrics := tp.GetMetrics()
+		keys, values := tp.GetMetrics()
 		for k, v := range tt.m {
-			if v != metrics[k] {
-				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, k, v, metrics[k])
-				break
+			var(
+				index int
+				key   string
+				matched bool
+			)
+			for index, key = range keys{
+				if k == key {
+					if values[index] == v{
+						matched = true
+					}
+					break
+				}
 			}
+			if matched{
+				continue
+			}
+			//do not find
+			if index < len(values){
+				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v(%t)\n\ngot=%#v(%t)\n\n", i, tt.sql, k, v, v, values[index], values[index])
+			}else{
+				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=nil\n\n", i, tt.sql, k, v)
+			}
+			break
 		}
 	}
 	realTicker.Stop()

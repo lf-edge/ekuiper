@@ -3,7 +3,6 @@ package nodes
 import (
 	"fmt"
 	"github.com/emqx/kuiper/xstream/api"
-	"strconv"
 	"time"
 )
 
@@ -15,6 +14,7 @@ type StatManager struct {
 	totalExceptions int64
 	processLatency  int64
 	lastInvocation  time.Time
+	bufferLength    int64
 	//configs
 	opType           string //"source", "op", "sink"
 	prefix           string
@@ -28,16 +28,19 @@ const RecordsOutTotal = "records_out_total"
 const ExceptionsTotal = "exceptions_total"
 const ProcessLatencyMs = "process_latency_ms"
 const LastInvocation = "last_invocation"
+const BufferLength   = "buffer_length"
+
+var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ExceptionsTotal, ProcessLatencyMs, BufferLength, LastInvocation}
 
 func NewStatManager(opType string, ctx api.StreamContext) (*StatManager, error) {
 	var prefix string
 	switch opType {
 	case "source":
-		prefix = "kuiper_source_"
+		prefix = "source_"
 	case "op":
-		prefix = "kuiper_op_"
+		prefix = "op_"
 	case "sink":
-		prefix = "kuiper_sink_"
+		prefix = "sink_"
 	default:
 		return nil, fmt.Errorf("invalid opType %s, must be \"source\", \"sink\" or \"op\"", opType)
 	}
@@ -75,13 +78,18 @@ func (sm *StatManager) ProcessTimeEnd() {
 	}
 }
 
-func (sm *StatManager) GetMetrics() map[string]interface{} {
-	result := make(map[string]interface{})
-	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+RecordsInTotal] = sm.totalRecordsIn
-	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+RecordsOutTotal] = sm.totalRecordsOut
-	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+ExceptionsTotal] = sm.totalExceptions
-	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+LastInvocation] = sm.lastInvocation.String()
-	result[sm.prefix+sm.opId+"_"+strconv.Itoa(sm.instanceId)+"_"+ProcessLatencyMs] = sm.processLatency
+func (sm *StatManager) SetBufferLength(l int64) {
+	sm.bufferLength = l
+}
+
+func (sm *StatManager) GetMetrics() []interface{} {
+	result := []interface{}{
+		sm.totalRecordsIn, sm.totalRecordsOut, sm.totalExceptions, sm.processLatency, sm.bufferLength,
+	}
+
+	if !sm.lastInvocation.IsZero(){
+		result = append(result, sm.lastInvocation.Format("2006-01-02T15:04:05.999999"))
+	}
 
 	return result
 }

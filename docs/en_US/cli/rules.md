@@ -169,11 +169,19 @@ Sample:
 # bin/cli getstatus rule rule1
 running with metrics:
 {
-    "kuiper_op_filter_0_exceptions_total":0,
-    "kuiper_op_filter_0_last_invocation":“2019-12-20 14:19:14.2084027 +0800 CST m=+2.693030901",
-    "kuiper_op_filter_0_process_latency_ms":0,
-    "kuiper_op_filter_0_records_in_total":2,
-    "kuiper_op_filter_0_records_out_total":2,
+    "source_demo_0_records_in_total":5,
+    "source_demo_0_records_out_total":5,
+    "source_demo_0_exceptions_total":0,
+    "source_demo_0_process_latency_ms":0,
+    "source_demo_0_buffer_length":0,
+    "source_demo_0_last_invocation":"2020-01-02T11:28:33.054821",
     ... 
+    "op_filter_0_records_in_total":5,
+    "op_filter_0_records_out_total":2,
+    "op_filter_0_exceptions_total":0,
+    "op_filter_0_process_latency_ms":0,
+    "op_filter_0_buffer_length":0,
+    "op_filter_0_last_invocation":"2020-01-02T11:28:33.054821",
+    ...
 }
 ```
