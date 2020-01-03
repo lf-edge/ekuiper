@@ -10,6 +10,7 @@ import (
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/sinks"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net"
 	"net/http"
 	"net/rpc"
@@ -331,6 +332,10 @@ func StartUp(Version string) {
 	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d... \n", Version, common.Config.Port)
 	log.Info(msg)
 	fmt.Printf(msg)
+	go func(){
+		http.Handle("/metrics", promhttp.Handler())
+		http.ListenAndServe(":2112", nil)
+	}()
 	// Start accept incoming HTTP connections
 	err = http.Serve(listener, nil)
 	if err != nil {
