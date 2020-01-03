@@ -68,6 +68,8 @@ func LoadConf(confName string) ([]byte, error) {
 type XStreamConf struct {
 	Debug bool `yaml:"debug"`
 	Port int `yaml:"port"`
+	Prometheus bool `yaml:"prometheus"`
+	PrometheusPort int `yaml:"prometheusPort"`
 }
 
 var StreamConf = "kuiper.yaml"

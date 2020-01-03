@@ -25,7 +25,7 @@ type WindowOperator struct {
 	interval           int
 	triggerTime        int64
 	isEventTime        bool
-	statManager        *nodes.StatManager
+	statManager        nodes.StatManager
 	watermarkGenerator *WatermarkGenerator //For event time only
 }
 

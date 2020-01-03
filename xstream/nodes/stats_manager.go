@@ -2,12 +2,24 @@ package nodes
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
+	"github.com/prometheus/client_golang/prometheus"
+	"strconv"
 	"time"
 )
 
+type StatManager interface {
+	IncTotalRecordsIn()
+	IncTotalRecordsOut()
+	IncTotalExceptions()
+	ProcessTimeStart()
+	ProcessTimeEnd()
+	SetBufferLength(l int64)
+	GetMetrics() []interface{}
+}
 //The statManager is not thread safe. Make sure it is used in only one instance
-type StatManager struct {
+type DefaultStatManager struct {
 	//metrics
 	totalRecordsIn  int64
 	totalRecordsOut int64
@@ -23,16 +35,17 @@ type StatManager struct {
 	instanceId		 int
 }
 
-const RecordsInTotal = "records_in_total"
-const RecordsOutTotal = "records_out_total"
-const ExceptionsTotal = "exceptions_total"
-const ProcessLatencyMs = "process_latency_ms"
-const LastInvocation = "last_invocation"
-const BufferLength   = "buffer_length"
+type PrometheusStatManager struct{
+	DefaultStatManager
+	//prometheus metrics
+	pTotalRecordsIn  prometheus.Counter
+	pTotalRecordsOut prometheus.Counter
+	pTotalExceptions prometheus.Counter
+	pProcessLatency  prometheus.Gauge
+	pBufferLength	 prometheus.Gauge
+}
 
-var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ExceptionsTotal, ProcessLatencyMs, BufferLength, LastInvocation}
-
-func NewStatManager(opType string, ctx api.StreamContext) (*StatManager, error) {
+func NewStatManager(opType string, ctx api.StreamContext) (StatManager, error) {
 	var prefix string
 	switch opType {
 	case "source":
@@ -44,45 +57,97 @@ func NewStatManager(opType string, ctx api.StreamContext) (*StatManager, error) 
 	default:
 		return nil, fmt.Errorf("invalid opType %s, must be \"source\", \"sink\" or \"op\"", opType)
 	}
-	sm := &StatManager{
-		opType: opType,
-		prefix: prefix,
-		opId:   ctx.GetOpId(),
-		instanceId: ctx.GetInstanceId(),
+
+	var sm StatManager
+	if common.Config != nil && common.Config.Prometheus {
+		ctx.GetLogger().Debugf("Create prometheus stat manager")
+		psm := &PrometheusStatManager{
+			DefaultStatManager: DefaultStatManager{
+				opType: opType,
+				prefix: prefix,
+				opId:   ctx.GetOpId(),
+				instanceId: ctx.GetInstanceId(),
+			},
+		}
+		//assign prometheus
+		mg := GetPrometheusMetrics().GetMetricsGroup(opType)
+		strInId := strconv.Itoa(ctx.GetInstanceId())
+		psm.pTotalRecordsIn = mg.TotalRecordsIn.WithLabelValues(ctx.GetRuleId(), opType, ctx.GetOpId(), strInId)
+		psm.pTotalRecordsOut = mg.TotalRecordsOut.WithLabelValues(ctx.GetRuleId(), opType, ctx.GetOpId(), strInId)
+		psm.pTotalExceptions = mg.TotalExceptions.WithLabelValues(ctx.GetRuleId(), opType, ctx.GetOpId(), strInId)
+		psm.pProcessLatency = mg.ProcessLatency.WithLabelValues(ctx.GetRuleId(), opType, ctx.GetOpId(), strInId)
+		psm.pBufferLength = mg.BufferLength.WithLabelValues(ctx.GetRuleId(), opType, ctx.GetOpId(), strInId)
+		sm = psm
+	}else{
+		sm = &DefaultStatManager{
+			opType: opType,
+			prefix: prefix,
+			opId:   ctx.GetOpId(),
+			instanceId: ctx.GetInstanceId(),
+		}
 	}
 	return sm, nil
 }
 
-func (sm *StatManager) IncTotalRecordsIn() {
+func (sm *DefaultStatManager) IncTotalRecordsIn() {
 	sm.totalRecordsIn++
 }
 
-func (sm *StatManager) IncTotalRecordsOut() {
+func (sm *DefaultStatManager) IncTotalRecordsOut() {
 	sm.totalRecordsOut++
 }
 
-func (sm *StatManager) IncTotalExceptions() {
+func (sm *DefaultStatManager) IncTotalExceptions() {
 	sm.totalExceptions++
 	var t time.Time
 	sm.processTimeStart = t
 }
 
-func (sm *StatManager) ProcessTimeStart() {
+func (sm *DefaultStatManager) ProcessTimeStart() {
 	sm.lastInvocation = time.Now()
 	sm.processTimeStart = sm.lastInvocation
 }
 
-func (sm *StatManager) ProcessTimeEnd() {
+func (sm *DefaultStatManager) ProcessTimeEnd() {
 	if !sm.processTimeStart.IsZero() {
 		sm.processLatency = int64(time.Since(sm.processTimeStart) / time.Millisecond)
 	}
 }
 
-func (sm *StatManager) SetBufferLength(l int64) {
+func (sm *DefaultStatManager) SetBufferLength(l int64) {
 	sm.bufferLength = l
 }
 
-func (sm *StatManager) GetMetrics() []interface{} {
+func (sm *PrometheusStatManager) IncTotalRecordsIn() {
+	sm.totalRecordsIn++
+	sm.pTotalRecordsIn.Inc()
+}
+
+func (sm *PrometheusStatManager) IncTotalRecordsOut() {
+	sm.totalRecordsOut++
+	sm.pTotalRecordsOut.Inc()
+}
+
+func (sm *PrometheusStatManager) IncTotalExceptions() {
+	sm.totalExceptions++
+	sm.pTotalExceptions.Inc()
+	var t time.Time
+	sm.processTimeStart = t
+}
+
+func (sm *PrometheusStatManager) ProcessTimeEnd() {
+	if !sm.processTimeStart.IsZero() {
+		sm.processLatency = int64(time.Since(sm.processTimeStart) / time.Millisecond)
+		sm.pProcessLatency.Set(float64(sm.processLatency))
+	}
+}
+
+func (sm *PrometheusStatManager) SetBufferLength(l int64) {
+	sm.bufferLength = l
+	sm.pBufferLength.Set(float64(l))
+}
+
+func (sm *DefaultStatManager) GetMetrics() []interface{} {
 	result := []interface{}{
 		sm.totalRecordsIn, sm.totalRecordsOut, sm.totalExceptions, sm.processLatency, sm.bufferLength,
 	}

@@ -28,7 +28,7 @@ type UnaryOperator struct {
 	mutex       sync.RWMutex
 	cancelled   bool
 	name        string
-	statManagers []*nodes.StatManager
+	statManagers []nodes.StatManager
 }
 
 // NewUnary creates *UnaryOperator value
