@@ -332,10 +332,21 @@ func StartUp(Version string) {
 	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d... \n", Version, common.Config.Port)
 	log.Info(msg)
 	fmt.Printf(msg)
-	go func(){
-		http.Handle("/metrics", promhttp.Handler())
-		http.ListenAndServe(":2112", nil)
-	}()
+	if common.Config.Prometheus{
+		go func(){
+			port := common.Config.PrometheusPort
+			if port <= 0 {
+				log.Fatal("Miss configuration prometheusPort")
+			}
+			listener, e := net.Listen("tcp", fmt.Sprintf(":%d", port))
+			if e != nil {
+				log.Fatal("Listen prometheus error: ", e)
+			}
+			log.Infof("Serving prometheus metrics on port http://localhost:%d/metrics", port)
+			http.Handle("/metrics", promhttp.Handler())
+			http.Serve(listener, nil)
+		}()
+	}
 	// Start accept incoming HTTP connections
 	err = http.Serve(listener, nil)
 	if err != nil {

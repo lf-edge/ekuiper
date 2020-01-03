@@ -15,7 +15,7 @@ type SinkNode struct {
 	ctx    api.StreamContext
 	concurrency int
 
-	statManagers []*StatManager
+	statManagers []StatManager
 	sinkType string
 	options map[string]interface{}
 	mutex   sync.RWMutex
@@ -57,9 +57,6 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	m.ctx = ctx
 	logger := ctx.GetLogger()
 	logger.Debugf("open sink node %s", m.name)
-	//reset the states
-	m.sinks = nil
-	m.statManagers = nil
 	go func() {
 		if c, ok := m.options["concurrency"]; ok {
 			if t, err := common.ToInt(c); err != nil || t <= 0 {
@@ -130,7 +127,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	}()
 }
 
-func doCollect(sink api.Sink, item interface{}, stats *StatManager, ctx api.StreamContext, ) {
+func doCollect(sink api.Sink, item interface{}, stats StatManager, ctx api.StreamContext, ) {
 	stats.IncTotalRecordsIn()
 	stats.ProcessTimeStart()
 	logger := ctx.GetLogger()
@@ -205,4 +202,6 @@ func (m *SinkNode) close(ctx api.StreamContext, logger api.Logger) {
 			logger.Warnf("close sink fails: %v", err)
 		}
 	}
+	m.sinks = nil
+	m.statManagers = nil
 }
