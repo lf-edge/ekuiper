@@ -87,6 +87,8 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	if o.concurrency < 1 {
 		o.concurrency = 1
 	}
+	//reset status
+	o.statManagers = nil
 
 	for i := 0; i < o.concurrency; i++ { // workers
 		instance := i
