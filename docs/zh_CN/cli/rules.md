@@ -156,7 +156,7 @@ rule rule1 restarted
 ## 获取规则的状态
 
 该命令用于获取规则的状态。 状态可以是
-- 运行
+- 运行: $metrics
 - 停止: $reason
 
 ```shell
@@ -167,5 +167,21 @@ getstatus rule $rule_name
 
 ```shell
 # bin/cli getstatus rule rule1
-running
+running with metrics:
+{
+    "source_demo_0_records_in_total":5,
+    "source_demo_0_records_out_total":5,
+    "source_demo_0_exceptions_total":0,
+    "source_demo_0_process_latency_ms":0,
+    "source_demo_0_buffer_length":0,
+    "source_demo_0_last_invocation":"2020-01-02T11:28:33.054821",
+    ... 
+    "op_filter_0_records_in_total":5,
+    "op_filter_0_records_out_total":2,
+    "op_filter_0_exceptions_total":0,
+    "op_filter_0_process_latency_ms":0,
+    "op_filter_0_buffer_length":0,
+    "op_filter_0_last_invocation":"2020-01-02T11:28:33.054821",
+    ...
+}
 ```

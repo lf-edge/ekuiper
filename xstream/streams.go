@@ -7,31 +7,32 @@ import (
 	"github.com/emqx/kuiper/xstream/contexts"
 	"github.com/emqx/kuiper/xstream/nodes"
 	"github.com/emqx/kuiper/xstream/operators"
+	"strconv"
 )
 
 type TopologyNew struct {
 	sources []*nodes.SourceNode
-	sinks []*nodes.SinkNode
-	ctx api.StreamContext
-	cancel context.CancelFunc
-	drain chan error
-	ops []api.Operator
-	name string
+	sinks   []*nodes.SinkNode
+	ctx     api.StreamContext
+	cancel  context.CancelFunc
+	drain   chan error
+	ops     []api.Operator
+	name    string
 }
 
 func NewWithName(name string) *TopologyNew {
 	tp := &TopologyNew{
-		name: name,
+		name:  name,
 		drain: make(chan error),
 	}
 	return tp
 }
 
-func (s *TopologyNew) GetContext() context.Context {
+func (s *TopologyNew) GetContext() api.StreamContext {
 	return s.ctx
 }
 
-func (s *TopologyNew) Cancel(){
+func (s *TopologyNew) Cancel() {
 	s.cancel()
 }
 
@@ -41,7 +42,7 @@ func (s *TopologyNew) AddSrc(src *nodes.SourceNode) *TopologyNew {
 }
 
 func (s *TopologyNew) AddSink(inputs []api.Emitter, snk *nodes.SinkNode) *TopologyNew {
-	for _, input := range inputs{
+	for _, input := range inputs {
 		input.AddOutput(snk.GetInput())
 	}
 	s.sinks = append(s.sinks, snk)
@@ -49,48 +50,17 @@ func (s *TopologyNew) AddSink(inputs []api.Emitter, snk *nodes.SinkNode) *Topolo
 }
 
 func (s *TopologyNew) AddOperator(inputs []api.Emitter, operator api.Operator) *TopologyNew {
-	for _, input := range inputs{
+	for _, input := range inputs {
 		input.AddOutput(operator.GetInput())
 	}
 	s.ops = append(s.ops, operator)
 	return s
 }
 
-func Transform(op operators.UnOperation, name string) *operators.UnaryOperator {
-	operator := operators.New(name)
+func Transform(op operators.UnOperation, name string, bufferLength int) *operators.UnaryOperator {
+	operator := operators.New(name, bufferLength)
 	operator.SetOperation(op)
 	return operator
-}
-
-func (s *TopologyNew) Map(f interface{}) *TopologyNew {
-	log := s.ctx.GetLogger()
-	op, err := MapFunc(f)
-	if err != nil {
-		log.Info(err)
-	}
-	return s.Transform(op)
-}
-
-// Filter takes a predicate user-defined func that filters the stream.
-// The specified function must be of type:
-//   func (T) bool
-// If the func returns true, current item continues downstream.
-func (s *TopologyNew) Filter(f interface{}) *TopologyNew {
-	op, err := FilterFunc(f)
-	if err != nil {
-		s.drainErr(err)
-	}
-	return s.Transform(op)
-}
-
-// Transform is the base method used to apply transfomrmative
-// unary operations to streamed elements (i.e. filter, map, etc)
-// It is exposed here for completeness, use the other more specific methods.
-func (s *TopologyNew) Transform(op operators.UnOperation) *TopologyNew {
-	operator := operators.New("default")
-	operator.SetOperation(op)
-	s.ops = append(s.ops, operator)
-	return s
 }
 
 // prepareContext setups internal context before
@@ -115,7 +85,7 @@ func (s *TopologyNew) Open() <-chan error {
 	// open stream
 	go func() {
 		// open stream sink, after log sink is ready.
-		for _, snk := range s.sinks{
+		for _, snk := range s.sinks {
 			snk.Open(s.ctx.WithMeta(s.name, snk.GetName()), s.drain)
 		}
 
@@ -125,10 +95,38 @@ func (s *TopologyNew) Open() <-chan error {
 		}
 
 		// open source, if err bail
-		for _, node := range s.sources{
+		for _, node := range s.sources {
 			node.Open(s.ctx.WithMeta(s.name, node.GetName()), s.drain)
 		}
 	}()
 
 	return s.drain
+}
+
+func (s *TopologyNew) GetMetrics() (keys []string, values []interface{}) {
+	for _, node := range s.sources {
+		for ins, metrics := range node.GetMetrics() {
+			for i, v := range metrics{
+				keys = append(keys, "source_" + node.GetName() + "_" + strconv.Itoa(ins) + "_" + nodes.MetricNames[i])
+				values = append(values, v)
+			}
+		}
+	}
+	for _, node := range s.ops {
+		for ins, metrics := range node.GetMetrics() {
+			for i, v := range metrics{
+				keys = append(keys, "op_" + node.GetName() + "_" + strconv.Itoa(ins) + "_" + nodes.MetricNames[i])
+				values = append(values, v)
+			}
+		}
+	}
+	for _, node := range s.sinks {
+		for ins, metrics := range node.GetMetrics() {
+			for i, v := range metrics{
+				keys = append(keys, "sink_" + node.GetName() + "_" + strconv.Itoa(ins) + "_" + nodes.MetricNames[i])
+				values = append(values, v)
+			}
+		}
+	}
+	return
 }

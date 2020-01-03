@@ -1,9 +1,9 @@
 package operators
 
 import (
+	"fmt"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
-	"fmt"
 	"sync"
 )
 
@@ -20,8 +20,6 @@ func (f UnFunc) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	return f(ctx, data)
 }
 
-
-
 type UnaryOperator struct {
 	op          UnOperation
 	concurrency int
@@ -29,16 +27,17 @@ type UnaryOperator struct {
 	outputs     map[string]chan<- interface{}
 	mutex       sync.RWMutex
 	cancelled   bool
-	name 		string
+	name        string
+	statManagers []*nodes.StatManager
 }
 
 // NewUnary creates *UnaryOperator value
-func New(name string) *UnaryOperator {
+func New(name string, bufferLength int) *UnaryOperator {
 	// extract logger
 	o := new(UnaryOperator)
 
 	o.concurrency = 1
-	o.input = make(chan interface{}, 1024)
+	o.input = make(chan interface{}, bufferLength)
 	o.outputs = make(map[string]chan<- interface{})
 	o.name = name
 	return o
@@ -61,10 +60,10 @@ func (o *UnaryOperator) SetConcurrency(concurr int) {
 	}
 }
 
-func (o *UnaryOperator) AddOutput(output chan<- interface{}, name string) error{
-	if _, ok := o.outputs[name]; !ok{
+func (o *UnaryOperator) AddOutput(output chan<- interface{}, name string) error {
+	if _, ok := o.outputs[name]; !ok {
 		o.outputs[name] = output
-	}else{
+	} else {
 		return fmt.Errorf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
 	}
 	return nil
@@ -75,12 +74,12 @@ func (o *UnaryOperator) GetInput() (chan<- interface{}, string) {
 }
 
 // Exec is the entry point for the executor
-func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error ) {
+func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log := ctx.GetLogger()
 	log.Debugf("Unary operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
-		go func(){errCh <- fmt.Errorf("no output channel found")}()
+		go func() { errCh <- fmt.Errorf("no output channel found") }()
 		return
 	}
 
@@ -88,71 +87,70 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error ) {
 	if o.concurrency < 1 {
 		o.concurrency = 1
 	}
+	//reset status
+	o.statManagers = nil
 
-	go func() {
-		var barrier sync.WaitGroup
-		wgDelta := o.concurrency
-		barrier.Add(wgDelta)
-
-		for i := 0; i < o.concurrency; i++ { // workers
-			go func(wg *sync.WaitGroup) {
-				defer wg.Done()
-				o.doOp(ctx, errCh)
-			}(&barrier)
-		}
-
-		wait := make(chan struct{})
-		go func() {
-			defer close(wait)
-			barrier.Wait()
-		}()
-
-		select {
-		case <-wait:
-			if o.cancelled {
-				log.Infof("Component cancelling...")
-				return
-			}
-		case <-ctx.Done():
-			log.Infof("UnaryOp %s done.", o.name)
-			return
-		}
-	}()
+	for i := 0; i < o.concurrency; i++ { // workers
+		instance := i
+		go o.doOp(ctx.WithInstance(instance), errCh)
+	}
 }
 
 func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
-	log := ctx.GetLogger()
+	logger := ctx.GetLogger()
 	if o.op == nil {
-		log.Infoln("Unary operator missing operation")
+		logger.Infoln("Unary operator missing operation")
 		return
 	}
 	exeCtx, cancel := ctx.WithCancel()
 
 	defer func() {
-		log.Infof("unary operator %s done, cancelling future items", o.name)
+		logger.Infof("unary operator %s instance %d done, cancelling future items", o.name, ctx.GetInstanceId())
 		cancel()
 	}()
+
+	stats, err := nodes.NewStatManager("op", ctx)
+	if err != nil {
+		select {
+		case errCh <- err:
+		case <-ctx.Done():
+			logger.Infof("unary operator %s cancelling....", o.name)
+			o.mutex.Lock()
+			cancel()
+			o.cancelled = true
+			o.mutex.Unlock()
+		}
+		return
+	}
+	o.mutex.Lock()
+	o.statManagers = append(o.statManagers, stats)
+	o.mutex.Unlock()
 
 	for {
 		select {
 		// process incoming item
 		case item := <-o.input:
+			stats.IncTotalRecordsIn()
+			stats.ProcessTimeStart()
 			result := o.op.Apply(exeCtx, item)
 
 			switch val := result.(type) {
 			case nil:
 				continue
 			case error: //TODO error handling
-				log.Infoln(val)
-				log.Infoln(val.Error())
+				logger.Infoln(val)
+				logger.Infoln(val.Error())
+				stats.IncTotalExceptions()
 				continue
 			default:
+				stats.ProcessTimeEnd()
 				nodes.Broadcast(o.outputs, val, ctx)
+				stats.IncTotalRecordsOut()
+				stats.SetBufferLength(int64(len(o.input)))
 			}
-
 		// is cancelling
 		case <-ctx.Done():
-			log.Infof("unary operator %s cancelling....", o.name)
+			logger.Infof("unary operator %s instance %d cancelling....", o.name, ctx.GetInstanceId())
 			o.mutex.Lock()
 			cancel()
 			o.cancelled = true
@@ -162,3 +160,9 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	}
 }
 
+func (m *UnaryOperator) GetMetrics() (result [][]interface{}) {
+	for _, stats := range m.statManagers{
+		result = append(result, stats.GetMetrics())
+	}
+	return result
+}

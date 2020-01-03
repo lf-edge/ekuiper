@@ -259,7 +259,7 @@ func GetLoc(subdir string)(string, error) {
 		return confDir, nil
 	}
 
-	return "", fmt.Errorf("conf dir not found")
+	return "", fmt.Errorf("conf dir not found, please set KuiperBaseKey program environment variable correctly.")
 }
 
 func GetAndCreateDataLoc(dir string) (string, error) {

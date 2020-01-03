@@ -3,17 +3,14 @@ package processors
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/common/plugin_manager"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xsql/plans"
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
-	"github.com/emqx/kuiper/xstream/extensions"
 	"github.com/emqx/kuiper/xstream/nodes"
 	"github.com/emqx/kuiper/xstream/operators"
-	"github.com/emqx/kuiper/xstream/sinks"
-	"fmt"
 	"path"
 	"strings"
 )
@@ -34,7 +31,6 @@ func NewStreamProcessor(s, d string) *StreamProcessor {
 	}
 	return processor
 }
-
 
 func (p *StreamProcessor) Exec() (result []string, err error) {
 	parser := xsql.NewParser(strings.NewReader(p.statement))
@@ -78,12 +74,12 @@ func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, db common.KeyV
 	err := db.Set(string(stmt.Name), p.statement)
 	if err != nil {
 		return "", fmt.Errorf("Create stream fails: %v.", err)
-	}else{
+	} else {
 		return fmt.Sprintf("Stream %s is created.", stmt.Name), nil
 	}
 }
 
-func (p *StreamProcessor) execShowStream(stmt *xsql.ShowStreamsStatement, db common.KeyValue) ([]string,error) {
+func (p *StreamProcessor) execShowStream(stmt *xsql.ShowStreamsStatement, db common.KeyValue) ([]string, error) {
 	keys, err := db.Keys()
 	if len(keys) == 0 {
 		keys = append(keys, "No stream definitions are found.")
@@ -91,7 +87,7 @@ func (p *StreamProcessor) execShowStream(stmt *xsql.ShowStreamsStatement, db com
 	return keys, err
 }
 
-func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement, db common.KeyValue) (string,error) {
+func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement, db common.KeyValue) (string, error) {
 	s, f := db.Get(stmt.Name)
 	s1, _ := s.(string)
 	if !f {
@@ -101,7 +97,7 @@ func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement,
 	parser := xsql.NewParser(strings.NewReader(s1))
 	stream, err := xsql.Language.Parse(parser)
 	streamStmt, ok := stream.(*xsql.StreamStmt)
-	if !ok{
+	if !ok {
 		return "", fmt.Errorf("Error resolving the stream %s, the data in db may be corrupted.", stmt.Name)
 	}
 	var buff bytes.Buffer
@@ -116,7 +112,7 @@ func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement,
 	return buff.String(), err
 }
 
-func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement, db common.KeyValue) (string,error) {
+func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement, db common.KeyValue) (string, error) {
 	_, f := db.Get(stmt.Name)
 	if !f {
 		return "", fmt.Errorf("Stream %s is not found.", stmt.Name)
@@ -128,12 +124,12 @@ func (p *StreamProcessor) execDropStream(stmt *xsql.DropStreamStatement, db comm
 	err := db.Delete(stmt.Name)
 	if err != nil {
 		return "", fmt.Errorf("Drop stream fails: %v.", err)
-	}else{
+	} else {
 		return fmt.Sprintf("Stream %s is dropped.", stmt.Name), nil
 	}
 }
 
-func GetStream(m *common.SimpleKVStore, name string) (stmt *xsql.StreamStmt, err error){
+func GetStream(m *common.SimpleKVStore, name string) (stmt *xsql.StreamStmt, err error) {
 	s, f := m.Get(name)
 	if !f {
 		return nil, fmt.Errorf("Cannot find key %s. ", name)
@@ -142,12 +138,11 @@ func GetStream(m *common.SimpleKVStore, name string) (stmt *xsql.StreamStmt, err
 	parser := xsql.NewParser(strings.NewReader(s1))
 	stream, err := xsql.Language.Parse(parser)
 	stmt, ok := stream.(*xsql.StreamStmt)
-	if !ok{
+	if !ok {
 		err = fmt.Errorf("Error resolving the stream %s, the data in db may be corrupted.", name)
 	}
 	return
 }
-
 
 type RuleProcessor struct {
 	dbDir string
@@ -174,7 +169,7 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 	defer store.Close()
 	if err != nil {
 		return nil, err
-	}else{
+	} else {
 		log.Infof("Rule %s is created.", name)
 	}
 
@@ -203,13 +198,13 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	}
 	rule.Id = name
 	//validation
-	if name == ""{
+	if name == "" {
 		return nil, fmt.Errorf("Missing rule id.")
 	}
-	if rule.Sql == ""{
+	if rule.Sql == "" {
 		return nil, fmt.Errorf("Missing rule SQL.")
 	}
-	if rule.Actions == nil || len(rule.Actions) == 0{
+	if rule.Actions == nil || len(rule.Actions) == 0 {
 		return nil, fmt.Errorf("Missing rule actions.")
 	}
 	return &rule, nil
@@ -218,18 +213,14 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 func (p *RuleProcessor) ExecInitRule(rule *api.Rule) (*xstream.TopologyNew, error) {
 	if tp, inputs, err := p.createTopo(rule); err != nil {
 		return nil, err
-	}else{
+	} else {
 		for _, m := range rule.Actions {
 			for name, action := range m {
 				props, ok := action.(map[string]interface{})
 				if !ok {
 					return nil, fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
 				}
-				if s, err := getSink(name, props); err != nil{
-					return nil, err
-				}else{
-					tp.AddSink(inputs, nodes.NewSinkNode("sink_" + name, s))
-				}
+				tp.AddSink(inputs, nodes.NewSinkNode("sink_"+name, name, props))
 			}
 		}
 		return tp, nil
@@ -240,11 +231,12 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 	if tp, inputs, err := p.createTopo(&api.Rule{Id: ruleid, Sql: sql}); err != nil {
 		return nil, err
 	} else {
-		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", sinks.NewLogSinkToMemory()))
+		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", "logToMemory", nil ))
 		go func() {
 			select {
 			case err := <-tp.Open():
 				log.Infof("closing query for error: %v", err)
+				tp.GetContext().SetError(err)
 				tp.Cancel()
 			}
 		}()
@@ -274,14 +266,14 @@ func (p *RuleProcessor) ExecDesc(name string) (string, error) {
 
 func (p *RuleProcessor) ExecShow() (string, error) {
 	keys, err := p.GetAllRules()
-	if err != nil{
+	if err != nil {
 		return "", err
 	}
 	if len(keys) == 0 {
 		keys = append(keys, "No rule definitions are found.")
 	}
 	var result string
-	for _, c := range keys{
+	for _, c := range keys {
 		result = result + fmt.Sprintln(c)
 	}
 	return result, nil
@@ -307,7 +299,7 @@ func (p *RuleProcessor) ExecDrop(name string) (string, error) {
 	err = store.Delete(string(name))
 	if err != nil {
 		return "", err
-	}else{
+	} else {
 		return fmt.Sprintf("Rule %s is dropped.", name), nil
 	}
 }
@@ -317,38 +309,58 @@ func (p *RuleProcessor) createTopo(rule *api.Rule) (*xstream.TopologyNew, []api.
 }
 
 //For test to mock source
-func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.SourceNode) (*xstream.TopologyNew, []api.Emitter, error){
+func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.SourceNode) (*xstream.TopologyNew, []api.Emitter, error) {
 	name := rule.Id
 	sql := rule.Sql
-	var isEventTime bool
-	var lateTol int64
-	if iet, ok := rule.Options["isEventTime"]; ok{
+	var (
+		isEventTime bool
+		lateTol int64
+		concurrency = 1
+		bufferLength = 1024
+	)
+
+	if iet, ok := rule.Options["isEventTime"]; ok {
 		isEventTime, ok = iet.(bool)
-		if !ok{
+		if !ok {
 			return nil, nil, fmt.Errorf("Invalid rule option isEventTime %v, bool type is required.", iet)
 		}
 	}
 	if isEventTime {
-		if l, ok := rule.Options["lateTolerance"]; ok{
-			if fl, ok := l.(float64); ok{
+		if l, ok := rule.Options["lateTolerance"]; ok {
+			if fl, ok := l.(float64); ok {
 				lateTol = int64(fl)
-			}else{
+			} else {
 				return nil, nil, fmt.Errorf("Invalid rule option lateTolerance %v, int type is required.", l)
 			}
 		}
 	}
+	if l, ok := rule.Options["concurrency"]; ok {
+		if fl, ok := l.(float64); ok {
+			concurrency = int(fl)
+		} else {
+			return nil, nil, fmt.Errorf("Invalid rule option concurrency %v, int type is required.", l)
+		}
+	}
+	if l, ok := rule.Options["bufferLength"]; ok {
+		if fl, ok := l.(float64); ok {
+			bufferLength = int(fl)
+		} else {
+			return nil, nil, fmt.Errorf("Invalid rule option bufferLength %v, int type is required.", l)
+		}
+	}
+	log.Infof("Init rule with options {isEventTime: %v, lateTolerance: %d, concurrency: %d, bufferLength: %d", isEventTime, lateTol, concurrency, bufferLength)
 	shouldCreateSource := sources == nil
 	parser := xsql.NewParser(strings.NewReader(sql))
-	if stmt, err := xsql.Language.Parse(parser); err != nil{
-		return nil, nil, fmt.Errorf("Parse SQL %s error: %s.", sql , err)
-	}else {
+	if stmt, err := xsql.Language.Parse(parser); err != nil {
+		return nil, nil, fmt.Errorf("Parse SQL %s error: %s.", sql, err)
+	} else {
 		if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
 			return nil, nil, fmt.Errorf("SQL %s is not a select statement.", sql)
 		} else {
 			tp := xstream.NewWithName(name)
 			var inputs []api.Emitter
 			streamsFromStmt := xsql.GetStreams(selectStmt)
-			if !shouldCreateSource && len(streamsFromStmt) != len(sources){
+			if !shouldCreateSource && len(streamsFromStmt) != len(sources) {
 				return nil, nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
 			}
 			store := common.GetSimpleKVStore(path.Join(p.dbDir, "stream"))
@@ -364,22 +376,20 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 					return nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
 				}
 				pp, err := plans.NewPreprocessor(streamStmt, selectStmt.Fields, isEventTime)
-				if err != nil{
+				if err != nil {
 					return nil, nil, err
 				}
-				if shouldCreateSource{
-					src, err := getSource(streamStmt)
-					if err != nil {
-						return nil, nil, fmt.Errorf("fail to get source: %v", err)
-					}
-					node := nodes.NewSourceNode(s, src, streamStmt.Options)
+				if shouldCreateSource {
+					node := nodes.NewSourceNode(s, streamStmt.Options)
 					tp.AddSrc(node)
-					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s)
+					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s, bufferLength)
+					preprocessorOp.SetConcurrency(concurrency)
 					tp.AddOperator([]api.Emitter{node}, preprocessorOp)
 					inputs = append(inputs, preprocessorOp)
 				} else {
 					tp.AddSrc(sources[i])
-					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s)
+					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s, bufferLength)
+					preprocessorOp.SetConcurrency(concurrency)
 					tp.AddOperator([]api.Emitter{sources[i]}, preprocessorOp)
 					inputs = append(inputs, preprocessorOp)
 				}
@@ -389,7 +399,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			if dimensions != nil {
 				w = dimensions.GetWindow()
 				if w != nil {
-					wop, err := operators.NewWindowOp("window", w, isEventTime, lateTol, streamsFromStmt)
+					wop, err := operators.NewWindowOp("window", w, isEventTime, lateTol, streamsFromStmt, bufferLength)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -399,17 +409,15 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			}
 
 			if w != nil && selectStmt.Joins != nil {
-				joinOp := xstream.Transform(&plans.JoinPlan{Joins: selectStmt.Joins, From: selectStmt.Sources[0].(*xsql.Table)}, "join")
-				//TODO concurrency setting by command
-				//joinOp.SetConcurrency(3)
+				joinOp := xstream.Transform(&plans.JoinPlan{Joins: selectStmt.Joins, From: selectStmt.Sources[0].(*xsql.Table)}, "join", bufferLength)
+				joinOp.SetConcurrency(concurrency)
 				tp.AddOperator(inputs, joinOp)
 				inputs = []api.Emitter{joinOp}
 			}
 
 			if selectStmt.Condition != nil {
-				filterOp := xstream.Transform(&plans.FilterPlan{Condition: selectStmt.Condition}, "filter")
-				//TODO concurrency setting by command
-				// filterOp.SetConcurrency(3)
+				filterOp := xstream.Transform(&plans.FilterPlan{Condition: selectStmt.Condition}, "filter", bufferLength)
+				filterOp.SetConcurrency(concurrency)
 				tp.AddOperator(inputs, filterOp)
 				inputs = []api.Emitter{filterOp}
 			}
@@ -418,26 +426,30 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			if dimensions != nil {
 				ds = dimensions.GetGroups()
 				if ds != nil && len(ds) > 0 {
-					aggregateOp := xstream.Transform(&plans.AggregatePlan{Dimensions: ds}, "aggregate")
+					aggregateOp := xstream.Transform(&plans.AggregatePlan{Dimensions: ds}, "aggregate", bufferLength)
+					aggregateOp.SetConcurrency(concurrency)
 					tp.AddOperator(inputs, aggregateOp)
 					inputs = []api.Emitter{aggregateOp}
 				}
 			}
 
 			if selectStmt.Having != nil {
-				havingOp := xstream.Transform(&plans.HavingPlan{selectStmt.Having}, "having")
+				havingOp := xstream.Transform(&plans.HavingPlan{selectStmt.Having}, "having", bufferLength)
+				havingOp.SetConcurrency(concurrency)
 				tp.AddOperator(inputs, havingOp)
 				inputs = []api.Emitter{havingOp}
 			}
 
 			if selectStmt.SortFields != nil {
-				orderOp := xstream.Transform(&plans.OrderPlan{SortFields: selectStmt.SortFields}, "order")
+				orderOp := xstream.Transform(&plans.OrderPlan{SortFields: selectStmt.SortFields}, "order", bufferLength)
+				orderOp.SetConcurrency(concurrency)
 				tp.AddOperator(inputs, orderOp)
 				inputs = []api.Emitter{orderOp}
 			}
 
 			if selectStmt.Fields != nil {
-				projectOp := xstream.Transform(&plans.ProjectPlan{Fields: selectStmt.Fields, IsAggregate: xsql.IsAggStatement(selectStmt)}, "project")
+				projectOp := xstream.Transform(&plans.ProjectPlan{Fields: selectStmt.Fields, IsAggregate: xsql.IsAggStatement(selectStmt)}, "project", bufferLength)
+				projectOp.SetConcurrency(concurrency)
 				tp.AddOperator(inputs, projectOp)
 				inputs = []api.Emitter{projectOp}
 			}
@@ -445,57 +457,3 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 		}
 	}
 }
-
-func getSource(streamStmt *xsql.StreamStmt) (api.Source, error) {
-	t, ok := streamStmt.Options["TYPE"]
-	if !ok{
-		t = "mqtt"
-	}
-	var s api.Source
-	switch t {
-	case "mqtt":
-		s = &extensions.MQTTSource{}
-	default:
-		nf, err := plugin_manager.GetPlugin(t, "sources")
-		if err != nil {
-			return nil, err
-		}
-		s, ok = nf.(api.Source)
-		if !ok {
-			return nil, fmt.Errorf("exported symbol %s is not type of api.Source", t)
-		}
-	}
-	log.Debugf("Source %s created", t)
-	return s, nil
-}
-
-func getSink(name string, action map[string]interface{}) (api.Sink, error) {
-	log.Tracef("trying to get sink %s with action %v", name, action)
-	var s api.Sink
-	switch name {
-	case "log":
-		s = sinks.NewLogSink()
-	case "mqtt":
-		s = &sinks.MQTTSink{}
-	case "rest":
-		s = &sinks.RestSink{}
-	default:
-		nf, err := plugin_manager.GetPlugin(name, "sinks")
-		if err != nil {
-			return nil, err
-		}
-		var ok bool
-		s, ok = nf.(api.Sink)
-		if !ok {
-			return nil, fmt.Errorf("exported symbol %s is not type of api.Sink", name)
-		}
-	}
-
-	err := s.Configure(action)
-	if err != nil{
-		return nil, err
-	}
-	log.Debugf("Sink %s created", name)
-	return s, nil
-}
-

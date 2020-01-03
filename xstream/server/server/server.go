@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql/processors"
@@ -19,25 +21,27 @@ import (
 var dataDir string
 var log = common.Log
 
-type RuleState struct{
-	Name string
-	Topology *xstream.TopologyNew
+type RuleState struct {
+	Name      string
+	Topology  *xstream.TopologyNew
 	Triggered bool
 }
 type RuleRegistry map[string]*RuleState
+
 var registry RuleRegistry
 var processor *processors.RuleProcessor
 
 type Server int
 
 var QUERY_RULE_ID = "internal-xstream_query_rule"
+
 func (t *Server) CreateQuery(sql string, reply *string) error {
 	if _, ok := registry[QUERY_RULE_ID]; ok {
 		stopQuery()
 	}
 	tp, err := processors.NewRuleProcessor(path.Dir(dataDir)).ExecQuery(QUERY_RULE_ID, sql)
 	if err != nil {
-		return fmt.Errorf("failed to create query: %s", err)
+		return err
 	} else {
 		rs := &RuleState{Name: QUERY_RULE_ID, Topology: tp, Triggered: true}
 		registry[QUERY_RULE_ID] = rs
@@ -60,6 +64,13 @@ func stopQuery() {
  * qid is not currently used.
  */
 func (t *Server) GetQueryResult(qid string, reply *string) error {
+	if rs, ok := registry[QUERY_RULE_ID]; ok {
+		c := (*rs.Topology).GetContext()
+		if c != nil && c.Err() != nil{
+			return c.Err()
+		}
+	}
+
 	sinks.QR.LastFetch = time.Now()
 	sinks.QR.Mux.Lock()
 	if len(sinks.QR.Results) > 0 {
@@ -72,25 +83,24 @@ func (t *Server) GetQueryResult(qid string, reply *string) error {
 	return nil
 }
 
-
-func (t *Server) Stream(stream string, reply *string) error{
+func (t *Server) Stream(stream string, reply *string) error {
 	content, err := processors.NewStreamProcessor(stream, path.Join(path.Dir(dataDir), "stream")).Exec()
 	if err != nil {
 		return fmt.Errorf("Stream command error: %s", err)
 	} else {
-		for _, c := range content{
+		for _, c := range content {
 			*reply = *reply + fmt.Sprintln(c)
 		}
 	}
 	return nil
 }
 
-func (t *Server) CreateRule(rule *common.Rule, reply *string) error{
+func (t *Server) CreateRule(rule *common.Rule, reply *string) error {
 	r, err := processor.ExecCreate(rule.Name, rule.Json)
 	if err != nil {
 		return fmt.Errorf("Create rule error : %s.", err)
 	} else {
-		*reply = fmt.Sprintf("Rule %s was created.", rule.Name)
+		*reply = fmt.Sprintf("Rule %s was created, please use 'cli getstatus rule $rule_name' command to get rule status.", rule.Name)
 	}
 	//Start the rule
 	rs, err := t.createRuleState(r)
@@ -104,13 +114,13 @@ func (t *Server) CreateRule(rule *common.Rule, reply *string) error{
 	return nil
 }
 
-func (t *Server) createRuleState(rule *api.Rule) (*RuleState, error){
-	if tp, err := processor.ExecInitRule(rule); err != nil{
+func (t *Server) createRuleState(rule *api.Rule) (*RuleState, error) {
+	if tp, err := processor.ExecInitRule(rule); err != nil {
 		return nil, err
-	}else{
+	} else {
 		rs := &RuleState{
-			Name: rule.Id,
-			Topology: tp,
+			Name:      rule.Id,
+			Topology:  tp,
 			Triggered: true,
 		}
 		registry[rule.Id] = rs
@@ -118,40 +128,57 @@ func (t *Server) createRuleState(rule *api.Rule) (*RuleState, error){
 	}
 }
 
-func (t *Server) GetStatusRule(name string, reply *string) error{
-	if rs, ok := registry[name]; ok{
+func (t *Server) GetStatusRule(name string, reply *string) error {
+	if rs, ok := registry[name]; ok {
 		if !rs.Triggered {
 			*reply = "Stopped: canceled manually."
 			return nil
 		}
 		c := (*rs.Topology).GetContext()
-		if c != nil{
+		if c != nil {
 			err := c.Err()
-			switch err{
+			switch err {
 			case nil:
-				*reply = "Running\n"
+				keys, values := (*rs.Topology).GetMetrics()
+				metrics := "{"
+				for i, key := range keys{
+					value := values[i]
+					switch value.(type) {
+					case string:
+						metrics += fmt.Sprintf("\"%s\":%q,", key, value)
+					default:
+						metrics += fmt.Sprintf("\"%s\":%v,", key, value)
+					}
+				}
+				metrics = metrics[:len(metrics) - 1] +  "}"
+				dst := &bytes.Buffer{}
+				if err = json.Indent(dst, []byte(metrics), "", "  "); err != nil {
+					*reply = "Running with metrics:\n" + metrics
+				} else {
+					*reply = "Running with metrics:\n" + dst.String()
+				}
 			case context.Canceled:
 				*reply = "Stopped: canceled by error."
 			case context.DeadlineExceeded:
 				*reply = "Stopped: deadline exceed."
 			default:
-				*reply = "Stopped: unknown reason."
+				*reply = fmt.Sprintf("Stopped: %v.", err)
 			}
-		}else{
+		} else {
 			*reply = "Stopped: no context found."
 		}
-	}else{
+	} else {
 		return fmt.Errorf("Rule %s is not found", name)
 	}
 	return nil
 }
 
-func (t *Server) StartRule(name string, reply *string) error{
+func (t *Server) StartRule(name string, reply *string) error {
 	var rs *RuleState
 	rs, ok := registry[name]
-	if !ok{
+	if !ok {
 		r, err := processor.GetRuleByName(name)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 		rs, err = t.createRuleState(r)
@@ -160,19 +187,20 @@ func (t *Server) StartRule(name string, reply *string) error{
 		}
 	}
 	err := t.doStartRule(rs)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	*reply = fmt.Sprintf("Rule %s was started", name)
 	return nil
 }
 
-func (t *Server) doStartRule(rs *RuleState) error{
+func (t *Server) doStartRule(rs *RuleState) error {
 	rs.Triggered = true
 	go func() {
 		tp := rs.Topology
 		select {
 		case err := <-tp.Open():
+			tp.GetContext().SetError(err)
 			log.Printf("closing rule %s for error: %v", rs.Name, err)
 			tp.Cancel()
 		}
@@ -180,31 +208,31 @@ func (t *Server) doStartRule(rs *RuleState) error{
 	return nil
 }
 
-func (t *Server) StopRule(name string, reply *string) error{
-	if rs, ok := registry[name]; ok{
+func (t *Server) StopRule(name string, reply *string) error {
+	if rs, ok := registry[name]; ok {
 		(*rs.Topology).Cancel()
 		rs.Triggered = false
 		*reply = fmt.Sprintf("Rule %s was stopped.", name)
-	}else{
+	} else {
 		*reply = fmt.Sprintf("Rule %s was not found.", name)
 	}
 	return nil
 }
 
-func (t *Server) RestartRule(name string, reply *string) error{
+func (t *Server) RestartRule(name string, reply *string) error {
 	err := t.StopRule(name, reply)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	err = t.StartRule(name, reply)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	*reply = fmt.Sprintf("Rule %s was restarted.", name)
 	return nil
 }
 
-func (t *Server) DescRule(name string, reply *string) error{
+func (t *Server) DescRule(name string, reply *string) error {
 	r, err := processor.ExecDesc(name)
 	if err != nil {
 		return fmt.Errorf("Desc rule error : %s.", err)
@@ -214,7 +242,7 @@ func (t *Server) DescRule(name string, reply *string) error{
 	return nil
 }
 
-func (t *Server) ShowRules(_ int, reply *string) error{
+func (t *Server) ShowRules(_ int, reply *string) error {
 	r, err := processor.ExecShow()
 	if err != nil {
 		return fmt.Errorf("Show rule error : %s.", err)
@@ -224,13 +252,13 @@ func (t *Server) ShowRules(_ int, reply *string) error{
 	return nil
 }
 
-func (t *Server) DropRule(name string, reply *string) error{
+func (t *Server) DropRule(name string, reply *string) error {
 	r, err := processor.ExecDrop(name)
 	if err != nil {
 		return fmt.Errorf("Drop rule error : %s.", err)
 	} else {
 		err := t.StopRule(name, reply)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 	}
@@ -238,7 +266,7 @@ func (t *Server) DropRule(name string, reply *string) error{
 	return nil
 }
 
-func init(){
+func init() {
 	ticker := time.NewTicker(time.Second * 5)
 	go func() {
 		for {
@@ -258,14 +286,13 @@ func init(){
 	}()
 }
 
-
 func StartUp(Version string) {
 	common.InitConf()
 
 	dr, err := common.GetDataLoc()
 	if err != nil {
 		log.Panic(err)
-	}else{
+	} else {
 		log.Infof("db location is %s", dr)
 		dataDir = dr
 	}
@@ -274,16 +301,16 @@ func StartUp(Version string) {
 
 	server := new(Server)
 	//Start rules
-	if rules, err := processor.GetAllRules(); err != nil{
+	if rules, err := processor.GetAllRules(); err != nil {
 		log.Infof("Start rules error: %s", err)
-	}else{
+	} else {
 		log.Info("Starting rules")
 		var reply string
-		for _, rule := range rules{
+		for _, rule := range rules {
 			err = server.StartRule(rule, &reply)
 			if err != nil {
 				log.Info(err)
-			}else{
+			} else {
 				log.Info(reply)
 			}
 		}

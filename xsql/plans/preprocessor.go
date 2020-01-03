@@ -1,11 +1,13 @@
 package plans
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -108,12 +110,24 @@ func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, 
 					r[n] = t.(int)
 				}else if jtype == reflect.Float64{
 					r[n] = int(t.(float64))
+				}else if jtype == reflect.String {
+					if i, err := strconv.Atoi(t.(string)); err != nil{
+						return fmt.Errorf("invalid data type for %s, expect bigint but found %s", n, t)
+					}else{
+						r[n] = i
+					}
 				}else{
 					return fmt.Errorf("invalid data type for %s, expect bigint but found %s", n, t)
 				}
 			case xsql.FLOAT:
 				if jtype == reflect.Float64{
 					r[n] = t.(float64)
+				}else if jtype == reflect.String {
+					if f, err := strconv.ParseFloat(t.(string), 64); err != nil{
+						return fmt.Errorf("invalid data type for %s, expect float but found %s", n, t)
+					}else{
+						r[n] = f
+					}
 				}else{
 					return fmt.Errorf("invalid data type for %s, expect float but found %s", n, t)
 				}
@@ -143,6 +157,12 @@ func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, 
 			case xsql.BOOLEAN:
 				if jtype == reflect.Bool{
 					r[n] = t.(bool)
+				}else if jtype == reflect.String {
+					if i, err := strconv.ParseBool(t.(string)); err != nil{
+						return fmt.Errorf("invalid data type for %s, expect boolean but found %s", n, t)
+					}else{
+						r[n] = i
+					}
 				}else{
 					return fmt.Errorf("invalid data type for %s, expect boolean but found %s", n, t)
 				}
@@ -150,21 +170,37 @@ func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, 
 				return fmt.Errorf("invalid data type for %s, it is not supported yet", st)
 			}
 		case *xsql.ArrayType:
-			if jtype != reflect.Slice{
+			var s []interface{}
+			if jtype == reflect.Slice{
+				s = t.([]interface{})
+			}else if jtype == reflect.String {
+				err := json.Unmarshal([]byte(t.(string)), &s)
+				if err != nil{
+					return fmt.Errorf("invalid data type for %s, expect array but found %s", n, t)
+				}
+			}else{
 				return fmt.Errorf("invalid data type for %s, expect array but found %s", n, t)
 			}
-			if tempArr, err := p.addArrayField(st, t.([]interface{})); err !=nil{
+
+			if tempArr, err := p.addArrayField(st, s); err !=nil{
 				return err
 			}else {
 				r[n] = tempArr
 			}
 		case *xsql.RecType:
-			if jtype != reflect.Map{
+			nextJ := make(map[string]interface{})
+			if jtype == reflect.Map{
+				nextJ, ok = t.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("invalid data type for %s, expect map but found %s", n, t)
+				}
+			}else if jtype == reflect.String {
+				err := json.Unmarshal([]byte(t.(string)), &nextJ)
+				if err != nil{
+					return fmt.Errorf("invalid data type for %s, expect map but found %s", n, t)
+				}
+			}else{
 				return fmt.Errorf("invalid data type for %s, expect struct but found %s", n, t)
-			}
-			nextJ, ok := j[n].(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("invalid data type for %s, expect map but found %s", n, t)
 			}
 			nextR := make(map[string]interface{})
 			for _, nextF := range st.StreamFields {
@@ -190,37 +226,54 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 		switch st := ft.FieldType.(type) { //Only two complex types supported here
 		case *xsql.ArrayType: //TODO handle array of array. Now the type is treated as interface{}
 			var tempSlice [][]interface{}
+			var s []interface{}
 			for i, t := range srcSlice{
-				if reflect.ValueOf(t).Kind() == reflect.Array{
-					if tempArr, err := p.addArrayField(st, t.([]interface{})); err !=nil{
-						return nil, err
-					}else {
-						tempSlice = append(tempSlice, tempArr.([]interface{}))
+				jtype := reflect.ValueOf(t).Kind()
+				if jtype == reflect.Slice || jtype == reflect.Array{
+					s = t.([]interface{})
+				}else if jtype == reflect.String {
+					err := json.Unmarshal([]byte(t.(string)), &s)
+					if err != nil{
+						return nil, fmt.Errorf("invalid data type for [%d], expect array but found %s", i, t)
 					}
 				}else{
 					return nil, fmt.Errorf("invalid data type for [%d], expect array but found %s", i, t)
+				}
+				if tempArr, err := p.addArrayField(st, s); err !=nil{
+					return nil, err
+				}else {
+					tempSlice = append(tempSlice, tempArr.([]interface{}))
 				}
 			}
 			return tempSlice, nil
 		case *xsql.RecType:
 			var tempSlice []map[string]interface{}
 			for i, t := range srcSlice{
-				if reflect.ValueOf(t).Kind() == reflect.Map{
-					j, ok := t.(map[string]interface{})
+				jtype := reflect.ValueOf(t).Kind()
+				j := make(map[string]interface{})
+				var ok bool
+				if jtype == reflect.Map{
+					j, ok = t.(map[string]interface{})
 					if !ok {
 						return nil, fmt.Errorf("invalid data type for [%d], expect map but found %s", i, t)
 					}
-					r := make(map[string]interface{})
-					for _, f := range st.StreamFields {
-						n := f.Name
-						if e := p.addRecField(f.FieldType, r, j, n); e != nil{
-							return nil, e
-						}
+
+				}else if jtype == reflect.String {
+					err := json.Unmarshal([]byte(t.(string)), &j)
+					if err != nil{
+						return nil, fmt.Errorf("invalid data type for [%d], expect map but found %s", i, t)
 					}
-					tempSlice = append(tempSlice, r)
 				}else{
-					return nil, fmt.Errorf("invalid data type for [%d], expect float but found %s", i, t)
+					return nil, fmt.Errorf("invalid data type for [%d], expect map but found %s", i, t)
 				}
+				r := make(map[string]interface{})
+				for _, f := range st.StreamFields {
+					n := f.Name
+					if e := p.addRecField(f.FieldType, r, j, n); e != nil{
+						return nil, e
+					}
+				}
+				tempSlice = append(tempSlice, r)
 			}
 			return tempSlice, nil
 		default:
@@ -233,8 +286,15 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 		case xsql.BIGINT:
 			var tempSlice []int
 			for i, t := range srcSlice {
-				if reflect.ValueOf(t).Kind() == reflect.Float64{
+				jtype := reflect.ValueOf(t).Kind()
+				if jtype == reflect.Float64{
 					tempSlice = append(tempSlice, int(t.(float64)))
+				}else if jtype == reflect.String {
+					if v, err := strconv.Atoi(t.(string)); err != nil{
+						return nil, fmt.Errorf("invalid data type for [%d], expect float but found %s", i, t)
+					}else{
+						tempSlice = append(tempSlice, v)
+					}
 				}else{
 					return nil, fmt.Errorf("invalid data type for [%d], expect float but found %s", i, t)
 				}
@@ -243,8 +303,15 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 		case xsql.FLOAT:
 			var tempSlice []float64
 			for i, t := range srcSlice {
-				if reflect.ValueOf(t).Kind() == reflect.Float64{
+				jtype := reflect.ValueOf(t).Kind()
+				if jtype == reflect.Float64{
 					tempSlice = append(tempSlice, t.(float64))
+				}else if jtype == reflect.String {
+					if f, err := strconv.ParseFloat(t.(string), 64); err != nil{
+						return nil, fmt.Errorf("invalid data type for [%d], expect float but found %s", i, t)
+					}else{
+						tempSlice = append(tempSlice, f)
+					}
 				}else{
 					return nil, fmt.Errorf("invalid data type for [%d], expect float but found %s", i, t)
 				}
@@ -285,8 +352,15 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 		case xsql.BOOLEAN:
 			var tempSlice []bool
 			for i, t := range srcSlice {
-				if reflect.ValueOf(t).Kind() == reflect.Bool{
+				jtype := reflect.ValueOf(t).Kind()
+				if jtype == reflect.Bool{
 					tempSlice = append(tempSlice, t.(bool))
+				}else if jtype == reflect.String {
+					if v, err := strconv.ParseBool(t.(string)); err != nil{
+						return nil, fmt.Errorf("invalid data type for [%d], expect boolean but found %s", i, t)
+					}else{
+						tempSlice = append(tempSlice, v)
+					}
 				}else{
 					return nil, fmt.Errorf("invalid data type for [%d], expect boolean but found %s", i, t)
 				}

@@ -8,6 +8,7 @@ default:
   qos: 1
   sharedSubscription: true
   servers: [tcp://127.0.0.1:1883]
+  concurrency: 1
   #username: user1
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -28,6 +29,9 @@ Use can specify the global MQTT settings here. The configuration items specified
 ### qos
 
 The default subscription QoS level.
+
+### concurrency
+How many instances will be started. By default, only an instance will be run. If more than one instance is specified, the topic must be a shared subscription topic.
 
 ### sharedSubscription
 
@@ -52,6 +56,9 @@ The location of certification path. It can be an absolute path, or a relative pa
 ### privateKeyPath
 
 The location of private key path. It can be an absolute path, or a relative path.  For more detailed information, please refer to ``certificationPath``. Such as ``d3807d9fa5-private.pem.key``.
+
+### bufferLength
+specify the maximum number of messages to be buffered in the memory. This is used to avoid the extra large memory usage that would cause out of memory error. Notice that the memory usage will be varied to the actual buffer. Increase the length here won't increase the initial memory allocation so it is safe to set a large buffer length. The default value is 102400, that is if each payload size is about 100 bytes, the maximum buffer size will be about 102400 * 100B ~= 10MB.
 
 ## Override the default settings
 

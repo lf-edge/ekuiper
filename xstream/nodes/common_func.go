@@ -2,20 +2,23 @@ package nodes
 
 import (
 	"github.com/emqx/kuiper/xstream/api"
+	"sync"
 )
 
-func Broadcast(outputs map[string]chan<- interface{}, val interface{}, ctx api.StreamContext) int {
-	count := 0
+//Blocking broadcast
+func Broadcast(outputs map[string]chan<- interface{}, val interface{}, ctx api.StreamContext) {
 	logger := ctx.GetLogger()
+	var barrier sync.WaitGroup
+	barrier.Add(len(outputs))
 	for n, out := range outputs {
-		select {
-		case out <- val:
-			count++
-		default: //TODO channel full strategy?
-			logger.Errorf("send output from %s to %s fail: channel full", ctx.GetOpId(), n)
-		}
+		go func(wg *sync.WaitGroup){
+			out <- val
+			wg.Done()
+			logger.Debugf("broadcast from %s to %s done", ctx.GetOpId(), n)
+		}(&barrier)
 	}
-	return count
+	logger.Debugf("broadcasting from %s", ctx.GetOpId())
+	barrier.Wait()
 }
 
 

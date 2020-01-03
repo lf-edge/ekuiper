@@ -103,14 +103,19 @@ func main() {
 						err := client.Call("Server.CreateQuery", text, &reply)
 						if err != nil{
 							fmt.Println(err)
-							return err
+							continue
 						} else {
 							fmt.Println(reply)
 							go func() {
 								for {
 									<-ticker.C
 									var result string
-									_ = client.Call("Server.GetQueryResult", "", &result)
+									e := client.Call("Server.GetQueryResult", "", &result)
+									if e != nil {
+										fmt.Println(e)
+										fmt.Print("kuiper > ")
+										return
+									}
 									if result != "" {
 										fmt.Println(result)
 									}

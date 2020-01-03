@@ -37,6 +37,7 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 		if uuid, err := uuid.NewUUID(); err != nil {
 			return fmt.Errorf("mqtt sink fails to get uuid, the error is %s", err)
 		}else{
+
 			clientid = uuid.String()
 		}
 	}
@@ -128,10 +129,26 @@ func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 		}
 	}
 
+	opts.SetAutoReconnect(true)
+	var reconn = false
+	opts.SetConnectionLostHandler(func(client MQTT.Client, e error) {
+		log.Errorf("The connection %s is disconnected due to error %s, will try to re-connect later.", ms.srv + ": " + ms.clientid, e)
+		ms.conn = client
+		reconn = true
+	})
+
+	opts.SetOnConnectHandler(func(client MQTT.Client) {
+		if reconn {
+			log.Infof("The connection is %s re-established successfully.", ms.srv + ": " + ms.clientid)
+		}
+	})
+
 	c := MQTT.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("Found error: %s", token.Error())
 	}
+
+
 	log.Infof("The connection to server %s was established successfully", ms.srv)
 	ms.conn = c
 	return nil

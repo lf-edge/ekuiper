@@ -6,7 +6,7 @@ import (
 
 //The function to call when data is emitted by the source.
 type ConsumeFunc func(message map[string]interface{}, metadata map[string]interface{})
-type Logger interface{
+type Logger interface {
 	Debug(args ...interface{})
 	Info(args ...interface{})
 	Warn(args ...interface{})
@@ -68,8 +68,11 @@ type StreamContext interface {
 	GetLogger() Logger
 	GetRuleId() string
 	GetOpId() string
+	GetInstanceId() int
 	WithMeta(ruleId string, opId string) StreamContext
+	WithInstance(instanceId int) StreamContext
 	WithCancel() (StreamContext, context.CancelFunc)
+	SetError(e error)
 }
 
 type Operator interface {
@@ -77,6 +80,7 @@ type Operator interface {
 	Collector
 	Exec(StreamContext, chan<- error)
 	GetName() string
+	GetMetrics() [][]interface{}
 }
 
 type Function interface {
@@ -88,4 +92,3 @@ type Function interface {
 	//If this function is an aggregate function. Each parameter of an aggregate function will be a slice
 	IsAggregate() bool
 }
-

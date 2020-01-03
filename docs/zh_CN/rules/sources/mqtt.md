@@ -8,6 +8,7 @@ default:
   qos: 1
   sharedsubscription: true
   servers: [tcp://127.0.0.1:1883]
+  concurrency: 1
   #username: user1
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -27,6 +28,9 @@ demo: #Conf_key
 ### qos
 
 默认订阅QoS级别。
+
+### concurrency
+设置运行的协程数，默认值为1。如果设置协程数大于1，必须使用共享订阅模式。
 
 ### sharedsubscription
 
@@ -51,6 +55,10 @@ MQTT 连接密码。如果指定了``certificationPath`` 或者 ``privateKeyPath
 ### privateKeyPath
 
 私钥路径。可以为绝对路径，也可以为相对路径。更详细的信息，请参考 ``certificationPath``. 比如``d3807d9fa5-private.pem.key``.
+
+### bufferLength
+
+指定最大缓存消息数目。该参数主要用于防止内存溢出。实际内存用量会根据当前缓存消息数目动态变化。增大该参数不会增加初始内存分配量，因此设置较大的数值是安全的。该参数默认值为102400；如果每条消息为100字节，则默认情况下，缓存最大占用内存量为102400 * 100B ~= 10MB. 
 
 ## 覆盖默认设置
 

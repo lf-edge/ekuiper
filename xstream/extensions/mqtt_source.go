@@ -3,11 +3,11 @@ package extensions
 import (
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"fmt"
-	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
 	"strconv"
 	"strings"
@@ -18,26 +18,25 @@ type MQTTSource struct {
 	tpc      string
 	clientid string
 	pVersion uint
-	uName 	 string
+	uName    string
 	password string
 	certPath string
 	pkeyPath string
 
-	schema   map[string]interface{}
-	conn MQTT.Client
+	schema map[string]interface{}
+	conn   MQTT.Client
 }
 
-
 type MQTTConfig struct {
-	Qos int `json:"qos"`
-	Sharedsubscription bool `json:"sharedSubscription"`
-	Servers []string `json:"servers"`
-	Clientid string `json:"clientid"`
-	PVersion string `json:"protocolVersion"`
-	Uname string `json:"username"`
-	Password string `json:"password"`
-	Certification string `json:"certificationPath"`
-	PrivateKPath string `json:"privateKeyPath"`
+	Qos                int      `json:"qos"`
+	Sharedsubscription bool     `json:"sharedSubscription"`
+	Servers            []string `json:"servers"`
+	Clientid           string   `json:"clientid"`
+	PVersion           string   `json:"protocolVersion"`
+	Uname              string   `json:"username"`
+	Password           string   `json:"password"`
+	Certification      string   `json:"certificationPath"`
+	PrivateKPath       string   `json:"privateKeyPath"`
 }
 
 func (ms *MQTTSource) WithSchema(schema string) *MQTTSource {
@@ -79,6 +78,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 		if uuid, err := uuid.NewUUID(); err != nil {
 			return fmt.Errorf("failed to get uuid, the error is %s", err)
 		} else {
+			ms.clientid = uuid.String()
 			opts.SetClientID(uuid.String())
 		}
 	} else {
@@ -112,10 +112,36 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 			opts = opts.SetPassword(ms.password)
 		}
 	}
+	opts.SetAutoReconnect(true)
+	var reconn = false
+	opts.SetConnectionLostHandler(func(client MQTT.Client, e error) {
+		log.Errorf("The connection %s is disconnected due to error %s, will try to re-connect later.", ms.srv + ": " + ms.clientid, e)
+		reconn = true
+		subscribe(ms.tpc, client, ctx, consume)
+	})
+	
+	opts.SetOnConnectHandler(func(client MQTT.Client) {
+		if reconn {
+			log.Infof("The connection is %s re-established successfully.", ms.srv + ": " + ms.clientid)
+		}
+	})
 
+	c := MQTT.NewClient(opts)
+	if token := c.Connect(); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("found error when connecting to %s: %s", ms.srv, token.Error())
+	}
+	log.Infof("The connection to server %s was established successfully", ms.srv)
+	ms.conn = c
+	subscribe(ms.tpc, c, ctx, consume)
+	log.Infof("Successfully subscribe to topic %s", ms.srv + ": " + ms.clientid)
+
+	return nil
+}
+
+func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consume api.ConsumeFunc) {
+	log := ctx.GetLogger()
 	h := func(client MQTT.Client, msg MQTT.Message) {
-		log.Debugf("received %s", msg.Payload())
-
+		log.Debugf("instance %d received %s", ctx.GetInstanceId(), msg.Payload())
 		result := make(map[string]interface{})
 		//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
 		if e := json.Unmarshal(msg.Payload(), &result); e != nil {
@@ -130,24 +156,16 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 		meta[xsql.INTERNAL_MQTT_MSG_ID_KEY] = strconv.Itoa(int(msg.MessageID()))
 		consume(result, meta)
 	}
-	//TODO error listener?
-	opts.SetDefaultPublishHandler(h)
-	c := MQTT.NewClient(opts)
-	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("found error when connecting to %s: %s", ms.srv, token.Error())
-	}
-	log.Infof("The connection to server %s was established successfully", ms.srv)
-	ms.conn = c
-	if token := c.Subscribe(ms.tpc, 0, nil); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("Found error: %s", token.Error())
-	}
-	log.Infof("Successfully subscribe to topic %s", ms.tpc)
 
-	return nil
+	if token := client.Subscribe(topic, 0, h); token.Wait() && token.Error() != nil {
+		log.Errorf("Found error: %s", token.Error())
+	} else {
+		log.Infof("Successfully subscribe to topic %s", topic)
+	}
 }
 
-func (ms *MQTTSource) Close(ctx api.StreamContext) error{
-	ctx.GetLogger().Infoln("Mqtt Source Done")
+func (ms *MQTTSource) Close(ctx api.StreamContext) error {
+	ctx.GetLogger().Infof("Mqtt Source instance %d Done", ctx.GetInstanceId())
 	if ms.conn != nil && ms.conn.IsConnected() {
 		ms.conn.Disconnect(5000)
 	}

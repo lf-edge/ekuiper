@@ -64,6 +64,21 @@ func TestPreprocessor_Apply(t *testing.T) {
 				Name: xsql.StreamName("demo"),
 				StreamFields: []xsql.StreamField{
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.FLOAT}},
+					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
+				},
+			},
+			data: []byte(`{"abc": "34", "def" : "hello", "ghi": "50"}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"abc": float64(34),
+				"def": "hello",
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.FLOAT}},
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.BOOLEAN}},
 				},
 			},
@@ -101,6 +116,26 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			},
 		},
+		//Rec type
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.RecType{
+						StreamFields: []xsql.StreamField{
+							{Name: "b", FieldType: &xsql.BasicType{Type: xsql.FLOAT}},
+						},
+					}},
+				},
+			},
+			data: []byte(`{"a": "{\"b\" : \"32\"}"}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": map[string]interface{}{
+					"b": float64(32),
+				},
+			},
+			},
+		},
 		//Array of complex type
 		{
 			stmt: &xsql.StreamStmt{
@@ -123,6 +158,24 @@ func TestPreprocessor_Apply(t *testing.T) {
 						{"b": "hello2"},
 					},
 				},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.ArrayType{
+						Type: xsql.FLOAT,
+					}},
+				},
+			},
+			data: []byte(`{"a": "[\"55\", \"77\"]"}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": []float64{
+					55,
+					77,
+				},
+			},
 			},
 		},
 		//Rec of complex type
