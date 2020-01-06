@@ -2,5 +2,5 @@ basic:
   # true|false, with debug level, it prints more debug info
   debug: false
   port: 20498
-  prometheus: true
+  prometheus: false
   prometheusPort: 20499
