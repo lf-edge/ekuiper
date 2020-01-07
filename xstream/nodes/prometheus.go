@@ -42,7 +42,7 @@ type PrometheusMetrics struct {
 func newPrometheusMetrics() *PrometheusMetrics{
 	var (
 		labelNames = []string{ "rule", "type", "op", "instance" }
-		prefixes = []string{"source", "op", "sink"}
+		prefixes = []string{"kuiper_source", "kuiper_op", "kuiper_sink"}
 	)
 	var vecs []*MetricGroup
 	for _, prefix := range prefixes {
