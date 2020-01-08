@@ -7,19 +7,22 @@ import (
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/sinks"
 	"sync"
+	"time"
 )
 
 type SinkNode struct {
+	//static
 	input  chan interface{}
 	name   string
-	ctx    api.StreamContext
-	concurrency int
-
-	statManagers []StatManager
 	sinkType string
-	options map[string]interface{}
 	mutex   sync.RWMutex
-	sinks []api.Sink
+	//configs (also static for sinks)
+	concurrency int
+	options map[string]interface{}
+	//states varies after restart
+	ctx          api.StreamContext
+	statManagers []StatManager
+	sinks        []api.Sink
 }
 
 func NewSinkNode(name string, sinkType string, props map[string]interface{}) *SinkNode{
@@ -73,6 +76,30 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				runAsync = t
 			}
 		}
+		retryInterval := 1000
+		if c, ok := m.options["retryInterval"]; ok {
+			if t, err := common.ToInt(c); err != nil || t < 0 {
+				logger.Warnf("invalid type for retryInterval property, should be positive integer but found %t", c)
+			} else {
+				retryInterval = t
+			}
+		}
+		cacheLength := 10240
+		if c, ok := m.options["cacheLength"]; ok {
+			if t, err := common.ToInt(c); err != nil || t < 0 {
+				logger.Warnf("invalid type for cacheLength property, should be positive integer but found %t", c)
+			} else {
+				cacheLength = t
+			}
+		}
+		cacheSaveInterval := 1000
+		if c, ok := m.options["cacheSaveInterval"]; ok {
+			if t, err := common.ToInt(c); err != nil || t < 0 {
+				logger.Warnf("invalid type for cacheSaveInterval property, should be positive integer but found %t", c)
+			} else {
+				cacheSaveInterval = t
+			}
+		}
 		createSink := len(m.sinks) == 0
 		logger.Infof("open sink node %d instances", m.concurrency)
 		for i := 0; i < m.concurrency; i++ { // workers
@@ -105,17 +132,19 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				m.statManagers = append(m.statManagers, stats)
 				m.mutex.Unlock()
 
+				cache := NewCache(m.input, cacheLength, cacheSaveInterval)
 				for {
 					select {
-					case item := <-m.input:
+					case data := <- cache.Out:
+						stats.SetBufferLength(int64(cache.Length()))
 						if runAsync{
-							go doCollect(sink, item, stats, ctx)
+							go doCollect(sink, data, stats, retryInterval, cache.Complete, ctx)
 						} else {
-							doCollect(sink, item, stats, ctx)
+							doCollect(sink, data, stats, retryInterval, cache.Complete, ctx)
 						}
-						stats.SetBufferLength(int64(len(m.input)))
 					case <-ctx.Done():
 						logger.Infof("sink node %s instance %d done", m.name, instance)
+						cache.Close()
 						if err := sink.Close(ctx); err != nil {
 							logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
 						}
@@ -127,18 +156,28 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	}()
 }
 
-func doCollect(sink api.Sink, item interface{}, stats StatManager, ctx api.StreamContext, ) {
+func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval int, signalCh chan<- int, ctx api.StreamContext, ) {
 	stats.IncTotalRecordsIn()
 	stats.ProcessTimeStart()
 	logger := ctx.GetLogger()
-	if err := sink.Collect(ctx, item); err != nil {
-		stats.IncTotalExceptions()
-		//TODO deal with publish error
-		logger.Errorf("sink node %s instance %d publish %v error: %v", ctx.GetOpId(), ctx.GetInstanceId(), item, err)
-	} else {
-		stats.ProcessTimeEnd()
-		stats.IncTotalRecordsOut()
+	for{
+		if err := sink.Collect(ctx, item.data); err != nil {
+			stats.IncTotalExceptions()
+			logger.Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), item.data, err)
+			if retryInterval > 0{
+				time.Sleep(time.Duration(retryInterval) * time.Millisecond)
+				logger.Debugf("try again")
+			}else{
+				break
+			}
+		} else {
+			logger.Debugf("success")
+			stats.IncTotalRecordsOut()
+			signalCh <- item.index
+			break
+		}
 	}
+	stats.ProcessTimeEnd()
 }
 
 func getSink(name string, action map[string]interface{}) (api.Sink, error) {
