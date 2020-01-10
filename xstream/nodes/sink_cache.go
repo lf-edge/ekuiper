@@ -85,7 +85,7 @@ func (c *Cache) run(ctx api.StreamContext){
 		return
 	}
 
-	ticker := common.GetTicker(c.saveInterval)
+	ticker := common.NewDefaultTicker(c.saveInterval)
 	for{
 		select {
 		case item := <-c.in:

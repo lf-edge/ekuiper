@@ -533,7 +533,6 @@ func TestSingleSQL(t *testing.T) {
 					if count <= 0 {
 						log.Info("stream stopping")
 						time.Sleep(1 * time.Second)
-						tp.Cancel()
 						return
 					}
 				default:
@@ -584,6 +583,7 @@ func TestSingleSQL(t *testing.T) {
 			}
 			break
 		}
+		tp.Cancel()
 	}
 }
 
