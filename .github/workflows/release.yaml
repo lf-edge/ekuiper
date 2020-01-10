@@ -1,4 +1,4 @@
-name: release
+name: Release
 
 on: [push, pull_request, release]
 
@@ -51,4 +51,32 @@ jobs:
           with:
             name: packages-mac
             path: _packages/.
+        
+    release:
+        runs-on: ubuntu-latest
+
+        needs: [build, build-on-mac]
+
+        steps:
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages-mac
+        - name: update github release
+          if: github.event_name = "release"
+          run: |
+            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
+            mv packages-mac/* packages
+            for var in $(ls packages) ; do
+                .github/workflows/release/upload-github-release-asset.sh owner=emqx repo=kuiper tag=$version filename=$var github_api_token=$(echo ${{ secrets.AccessToken }})
+            done
+        - name: update helm packages
+          if: github.event_name = "release"
+          run: |
+            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
+            if [ ! -z $(echo $version | grep -oE "v[0-9]+\.[0-9]+(\.[0-9]+)?") ] && [ -z $(echo $version | grep -oE "(alpha|beta|rc)\.[0-9]") ]; then
+                curl -H "Authorization: token ${{ secrets.AccessToken }}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" -X POST -d "{\"event_type\":\"update_repos_for_kuiper\",\"client_payload\":{\"version\": \"$version\"}}" https://api.github.com/repos/emqx/emqx-packages-docker/dispatches
+            fi
         
