@@ -1,4 +1,4 @@
-name: Release
+name: Build packages
 
 on:
     push:
@@ -70,6 +70,7 @@ jobs:
         - uses: actions/download-artifact@v1
           with:
             name: packages-mac
+        - uses: actions/checkout@v2
         - name: update github release
           if: github.event_name == 'release'
           run: |
