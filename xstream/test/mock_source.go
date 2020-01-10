@@ -29,7 +29,7 @@ func (m *MockSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err e
 	log.Debugln("mock source starts")
 	go func(){
 		for _, d := range m.data{
-			log.Infof("mock source is sending data %s", d)
+			log.Debugf("mock source is sending data %s", d)
 			if !m.isEventTime{
 				common.SetMockNow(d.Timestamp)
 				ticker := common.GetMockTicker()

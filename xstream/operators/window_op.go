@@ -98,7 +98,7 @@ func (o *WindowOperator) GetInput() (chan<- interface{}, string) {
 // output: xsql.WindowTuplesSet
 func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log := ctx.GetLogger()
-	log.Infof("Window operator %s is started", o.name)
+	log.Debugf("Window operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
 		go func() { errCh <- fmt.Errorf("no output channel found") }()
@@ -145,7 +145,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 				o.statManager.IncTotalExceptions()
 				break
 			} else {
-				log.Infof("Event window receive tuple %s", d.Message)
+				log.Debugf("Event window receive tuple %s", d.Message)
 				inputs = append(inputs, d)
 				switch o.window.Type {
 				case xsql.NOT_WINDOW:
@@ -178,14 +178,14 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 						break
 					}
 				}
-				log.Infof("triggered by ticker")
+				log.Debugf("triggered by ticker")
 				inputs, _ = o.scan(inputs, n, ctx)
 				o.statManager.ProcessTimeEnd()
 			}
 		case now := <-timeout:
 			if len(inputs) > 0 {
 				o.statManager.ProcessTimeStart()
-				log.Infof("triggered by timeout")
+				log.Debugf("triggered by timeout")
 				inputs, _ = o.scan(inputs, common.TimeToUnixMilli(now), ctx)
 				//expire all inputs, so that when timer scan there is no item
 				inputs = make([]*xsql.Tuple, 0)
@@ -204,7 +204,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 
 func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, bool) {
 	log := ctx.GetLogger()
-	log.Infof("window %s triggered at %s", o.name, time.Unix(triggerTime/1000, triggerTime%1000))
+	log.Debugf("window %s triggered at %s", o.name, time.Unix(triggerTime/1000, triggerTime%1000))
 	var delta int64
 	if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
 		delta = o.calDelta(triggerTime, delta, log)
@@ -216,8 +216,8 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 		if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
 			diff := o.triggerTime - tuple.Timestamp
 			if diff > int64(o.window.Length)+delta {
-				log.Infof("diff: %d, length: %d, delta: %d", diff, o.window.Length, delta)
-				log.Infof("tuple %s emitted at %d expired", tuple, tuple.Timestamp)
+				log.Debugf("diff: %d, length: %d, delta: %d", diff, o.window.Length, delta)
+				log.Debugf("tuple %s emitted at %d expired", tuple, tuple.Timestamp)
 				//Expired tuple, remove it by not adding back to inputs
 				continue
 			}
@@ -235,7 +235,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 	}
 	triggered := false
 	if len(results) > 0 {
-		log.Infof("window %s triggered for %d tuples", o.name, len(inputs))
+		log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
 		if o.isEventTime {
 			results.Sort()
 		}

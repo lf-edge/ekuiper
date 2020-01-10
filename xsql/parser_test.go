@@ -198,14 +198,14 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample0("test") FROM tbl`,
+			s: `SELECT length("test") FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample0",
+						Name:  "length",
 						Expr: &Call{
-							Name: "sample0",
+							Name: "length",
 							Args: []Expr{&StringLiteral{Val: "test"}},
 						},
 					},
@@ -215,14 +215,14 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample1(test) FROM tbl`,
+			s: `SELECT length(test) FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample1",
+						Name:  "length",
 						Expr: &Call{
-							Name: "sample1",
+							Name: "length",
 							Args: []Expr{&FieldRef{Name: "test"}},
 						},
 					},
@@ -233,14 +233,14 @@ func TestParser_ParseStatement(t *testing.T) {
 
 
 		{
-			s: `SELECT sample2(123) FROM tbl`,
+			s: `SELECT sin(123) FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample2",
+						Name:  "sin",
 						Expr: &Call{
-							Name: "sample2",
+							Name: "sin",
 							Args: []Expr{&IntegerLiteral{Val: 123}},
 						},
 					},
@@ -250,15 +250,15 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample3(123, "abc") FROM tbl`,
+			s: `SELECT lpad("abc", 123) FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample3",
+						Name:  "lpad",
 						Expr: &Call{
-							Name: "sample3",
-							Args: []Expr{&IntegerLiteral{Val: 123}, &StringLiteral{Val: "abc"}},
+							Name: "lpad",
+							Args: []Expr{&StringLiteral{Val: "abc"}, &IntegerLiteral{Val: 123}},
 						},
 					},
 				},
@@ -267,14 +267,14 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample3() FROM tbl`,
+			s: `SELECT newuuid() FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample3",
+						Name:  "newuuid",
 						Expr: &Call{
-							Name: "sample3",
+							Name: "newuuid",
 							Args: nil,
 						},
 					},
@@ -284,17 +284,16 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample4("abc", 1234, field1) FROM tbl`,
+			s: `SELECT indexof("abc", field1) FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample4",
+						Name:  "indexof",
 						Expr: &Call{
-							Name: "sample4",
+							Name: "indexof",
 							Args: []Expr{
 								&StringLiteral{Val: "abc"},
-								&IntegerLiteral{Val: 1234},
 								&FieldRef{Name: "field1"},
 							},
 						},
@@ -305,17 +304,17 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample2(sample1(test),1) FROM tbl`,
+			s: `SELECT lpad(lower(test),1) FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample2",
+						Name:  "lpad",
 						Expr: &Call{
-							Name: "sample2",
+							Name: "lpad",
 							Args: []Expr{
 								&Call{
-									Name: "sample1",
+									Name: "lower",
 									Args: []Expr{
 										&FieldRef{Name: "test"},
 									},
@@ -330,17 +329,17 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample2(sample1(test),1) AS field1 FROM tbl`,
+			s: `SELECT lpad(lower(test),1) AS field1 FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "field1",
-						Name:  "sample2",
+						Name:  "lpad",
 						Expr: &Call{
-							Name: "sample2",
+							Name: "lpad",
 							Args: []Expr{
 								&Call{
-									Name: "sample1",
+									Name: "lower",
 									Args: []Expr{
 										&FieldRef{Name: "test"},
 									},
@@ -355,17 +354,17 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample2(sample1("test")) FROM tbl`,
+			s: `SELECT length(lower("test")) FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample2",
+						Name:  "length",
 						Expr: &Call{
-							Name: "sample2",
+							Name: "length",
 							Args: []Expr{
 								&Call{
-									Name: "sample1",
+									Name: "lower",
 									Args: []Expr{
 										&StringLiteral{Val: "test"},
 									},
@@ -615,14 +614,14 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample(abc*2 + 3) FROM tbl`,
+			s: `SELECT ln(abc*2 + 3) FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample",
+						Name:  "ln",
 						Expr: &Call{
-							Name: "sample",
+							Name: "ln",
 							Args: []Expr{
 								&BinaryExpr{
 									LHS: &BinaryExpr{
@@ -642,14 +641,14 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample(t1.abc*2 + 3) FROM tbl AS t1`,
+			s: `SELECT ln(t1.abc*2 + 3) FROM tbl AS t1`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample",
+						Name:  "ln",
 						Expr: &Call{
-							Name: "sample",
+							Name: "ln",
 							Args: []Expr{
 								&BinaryExpr{
 									LHS: &BinaryExpr{
@@ -669,15 +668,16 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample(abc*2 + 3, "param2") FROM tbl`,
+			s: `SELECT lpad("param2", abc*2 + 3) FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample",
+						Name:  "lpad",
 						Expr: &Call{
-							Name: "sample",
+							Name: "lpad",
 							Args: []Expr{
+								&StringLiteral{Val: "param2"},
 								&BinaryExpr{
 									LHS: &BinaryExpr{
 										LHS: &FieldRef{Name: "abc"},
@@ -687,7 +687,6 @@ func TestParser_ParseStatement(t *testing.T) {
 									OP:  ADD,
 									RHS: &IntegerLiteral{Val: 3},
 								},
-								&StringLiteral{Val: "param2"},
 							},
 						},
 					},
@@ -725,14 +724,14 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample(.2) FROM tbl`,
+			s: `SELECT sin(.2) FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample",
+						Name:  "sin",
 						Expr: &Call{
-							Name: "sample",
+							Name: "sin",
 							Args: []Expr{&NumberLiteral{Val: 0.2}},
 						},
 					},
@@ -742,15 +741,15 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample(.2, "abc") FROM tbl`,
+			s: `SELECT power(.2, 4) FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample",
+						Name:  "power",
 						Expr: &Call{
-							Name: "sample",
-							Args: []Expr{&NumberLiteral{Val: 0.2}, &StringLiteral{Val: "abc"}},
+							Name: "power",
+							Args: []Expr{&NumberLiteral{Val: 0.2}, &IntegerLiteral{Val: 4}},
 						},
 					},
 				},
@@ -759,15 +758,15 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample(.2, "abc") AS f1 FROM tbl WHERE f1 > 2.2`,
+			s: `SELECT power(.2, 4) AS f1 FROM tbl WHERE f1 > 2.2`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "f1",
-						Name:  "sample",
+						Name:  "power",
 						Expr: &Call{
-							Name: "sample",
-							Args: []Expr{&NumberLiteral{Val: 0.2}, &StringLiteral{Val: "abc"}},
+							Name: "power",
+							Args: []Expr{&NumberLiteral{Val: 0.2}, &IntegerLiteral{Val: 4}},
 						},
 					},
 				},
@@ -896,7 +895,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY sample(name,1)`,
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY lpad(name,1)`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
@@ -905,14 +904,14 @@ func TestParser_ParseStatement(t *testing.T) {
 				Sources: []Source{&Table{Name:"topic/sensor1"}},
 				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"},},
 				Dimensions:Dimensions{Dimension{
-						Expr:&Call{Name:"sample", Args:[]Expr{&FieldRef{Name:"name"}, &IntegerLiteral{Val:1}}},
+						Expr:&Call{Name:"lpad", Args:[]Expr{&FieldRef{Name:"name"}, &IntegerLiteral{Val:1}}},
 					},
 				},
 			},
 		},
 
 		{
-			s: `SELECT temp AS t, name FROM topic/sensor1 AS s1 WHERE name = "dname" GROUP BY sample(s1.name,1)`,
+			s: `SELECT temp AS t, name FROM topic/sensor1 AS s1 WHERE name = "dname" GROUP BY lpad(s1.name,1)`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
@@ -921,14 +920,14 @@ func TestParser_ParseStatement(t *testing.T) {
 				Sources: []Source{&Table{Name:"topic/sensor1", Alias:"s1"}},
 				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"},},
 				Dimensions:Dimensions{Dimension{
-					Expr:&Call{Name:"sample", Args:[]Expr{&FieldRef{StreamName:StreamName("s1"), Name:"name"}, &IntegerLiteral{Val:1}}},
+					Expr:&Call{Name:"lpad", Args:[]Expr{&FieldRef{StreamName:StreamName("s1"), Name:"name"}, &IntegerLiteral{Val:1}}},
 				},
 				},
 			},
 		},
 
 		{
-			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY sample(name,1) ORDER BY name`,
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY lpad(name,1) ORDER BY name`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
@@ -938,7 +937,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"},},
 				Dimensions:Dimensions{
 					Dimension{
-						Expr:&Call{Name:"sample", Args:[]Expr{
+						Expr:&Call{Name:"lpad", Args:[]Expr{
 							&FieldRef{Name:"name"},
 							&IntegerLiteral{Val:1}},
 						},
@@ -949,7 +948,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT temp AS t, name FROM topic/sensor1 AS s1 WHERE s1.name = "dname" GROUP BY sample(s1.name,1) ORDER BY s1.name`,
+			s: `SELECT temp AS t, name FROM topic/sensor1 AS s1 WHERE s1.name = "dname" GROUP BY lpad(s1.name,1) ORDER BY s1.name`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
@@ -959,7 +958,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Condition: &BinaryExpr{LHS: &FieldRef{StreamName:StreamName("s1"), Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"},},
 				Dimensions:Dimensions{
 					Dimension{
-						Expr:&Call{Name:"sample", Args:[]Expr{
+						Expr:&Call{Name:"lpad", Args:[]Expr{
 							&FieldRef{StreamName:StreamName("s1"), Name:"name"},
 							&IntegerLiteral{Val:1}},
 						},
@@ -970,7 +969,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY sample(name,1) ORDER BY name DESC`,
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY lpad(name,1) ORDER BY name DESC`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
@@ -980,7 +979,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"},},
 				Dimensions:Dimensions{
 					Dimension{
-						Expr:&Call{Name:"sample", Args:[]Expr{
+						Expr:&Call{Name:"lpad", Args:[]Expr{
 							&FieldRef{Name:"name"},
 							&IntegerLiteral{Val:1}},
 						},
@@ -1020,7 +1019,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT * FROM topic/sensor1 GROUP BY name, name2,sample(name3,1.8) ORDER BY name DESC, name2 ASC`,
+			s: `SELECT * FROM topic/sensor1 GROUP BY name, name2,power(name3,1.8) ORDER BY name DESC, name2 ASC`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
@@ -1033,7 +1032,7 @@ func TestParser_ParseStatement(t *testing.T) {
 					Dimension{Expr:&FieldRef{Name:"name"}},
 					Dimension{Expr:&FieldRef{Name:"name2"}},
 					Dimension{
-						Expr:&Call{Name:"sample", Args:[]Expr{
+						Expr:&Call{Name:"power", Args:[]Expr{
 							&FieldRef{Name:"name3"},
 							&NumberLiteral{Val:1.8}},
 						},
@@ -1118,15 +1117,15 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample(true, "abc") FROM tbl`,
+			s: `SELECT indexof(field1, "abc") FROM tbl`,
 			stmt: &SelectStatement{
 				Fields:    []Field{
 					{
 						AName: "",
-						Name:  "sample",
+						Name:  "indexof",
 						Expr: &Call{
-							Name: "sample",
-							Args: []Expr{&BooleanLiteral{Val: true}, &StringLiteral{Val: "abc"}},
+							Name: "indexof",
+							Args: []Expr{&FieldRef{Name:"field1"}, &StringLiteral{Val: "abc"}},
 						},
 					},
 				},
@@ -1553,12 +1552,12 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample(demo.children[2:]->first) AS c FROM demo`,
+			s: `SELECT lower(demo.children[2:]->first) AS c FROM demo`,
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
 						Expr: &Call{
-							Name: "sample",
+							Name: "lower",
 							Args: []Expr{
 								&BinaryExpr{
 									LHS: &BinaryExpr{LHS: &FieldRef{StreamName: StreamName("demo"), Name: "children"}, OP: SUBSET, RHS: &ColonExpr{Start: 2, End: -1},
@@ -1568,7 +1567,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 								},
 							},
 						},
-						Name:  "sample",
+						Name:  "lower",
 						AName: "c"},
 				},
 				Sources: []Source{&Table{Name: "demo"}},

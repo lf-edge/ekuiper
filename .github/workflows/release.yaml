@@ -1,0 +1,88 @@
+name: Release
+
+on:
+    push:
+    pull_request:
+    release:
+        types:
+            - published
+            - prereleased
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        
+        steps:
+        - uses: actions/checkout@v2
+        - name: install docker
+          run: |
+            sudo apt-get remove docker docker-engine docker.io containerd runc
+            sudo apt-get update
+            sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            sudo apt-get update
+            sudo apt-get install docker-ce docker-ce-cli containerd.io
+        - name: prepare docker
+          run: |
+            mkdir -p $HOME/.docker
+            echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
+            echo '{ "experimental": true, "storage-driver": "overlay2", "max-concurrent-downloads": 50, "max-concurrent-uploads": 50 }' | sudo tee /etc/docker/daemon.json
+            sudo systemctl restart docker
+            docker version
+            docker buildx create --use --name mybuild
+        - name: build
+          run: make cross_build
+        - uses: actions/upload-artifact@v1
+          with:
+            name: packages
+            path: _packages/.
+
+    build-on-mac:
+        runs-on: macos-latest
+
+        steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-go@v1
+          with:
+            go-version: '1.11.5'
+        - name: prepare
+          run: |
+              /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+              brew install curl zip unzip gnu-sed upx
+              echo "/usr/local/bin:$PATH" >> ~/.bashrc
+        - name: build
+          run: make pkg
+        - uses: actions/upload-artifact@v1
+          with:
+            name: packages-mac
+            path: _packages/.
+        
+    release:
+        runs-on: ubuntu-latest
+
+        needs: [build, build-on-mac]
+
+        steps:
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages-mac
+        - name: update github release
+          if: github.event_name == 'release'
+          run: |
+            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
+            mv packages-mac/* packages
+            for var in $(ls packages) ; do
+                .github/workflows/release/upload-github-release-asset.sh owner=emqx repo=kuiper tag=$version filename=$var github_api_token=$(echo ${{ secrets.AccessToken }})
+            done
+        - name: update helm packages
+          if: github.event_name == 'release'
+          run: |
+            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
+            if [ ! -z $(echo $version | grep -oE "v[0-9]+\.[0-9]+(\.[0-9]+)?") ] && [ -z $(echo $version | grep -oE "(alpha|beta|rc)\.[0-9]") ]; then
+                curl -H "Authorization: token ${{ secrets.AccessToken }}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" -X POST -d "{\"event_type\":\"update_repos_for_kuiper\",\"client_payload\":{\"version\": \"$version\"}}" https://api.github.com/repos/emqx/emqx-packages-docker/dispatches
+            fi
+        

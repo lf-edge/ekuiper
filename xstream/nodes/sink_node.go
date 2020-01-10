@@ -202,6 +202,7 @@ func (m *SinkNode) close(ctx api.StreamContext, logger api.Logger) {
 			logger.Warnf("close sink fails: %v", err)
 		}
 	}
+	//reset the states
 	m.sinks = nil
 	m.statManagers = nil
 }
