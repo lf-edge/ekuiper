@@ -64,20 +64,20 @@ jobs:
         needs: [build, build-on-mac]
 
         steps:
+        - uses: actions/checkout@v2
         - uses: actions/download-artifact@v1
           with:
             name: packages
         - uses: actions/download-artifact@v1
           with:
             name: packages-mac
-        - uses: actions/checkout@v2
         - name: update github release
           if: github.event_name == 'release'
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
-            mv packages-mac/* packages
+            cp -r packages-mac/. packages
             for var in $(ls packages) ; do
-                .github/workflows/release/upload-github-release-asset.sh owner=emqx repo=kuiper tag=$version filename=$var github_api_token=$(echo ${{ secrets.AccessToken }})
+                .github/workflows/release/upload-github-release-asset.sh owner=emqx repo=kuiper tag=$version filename=packages/$var github_api_token=$(echo ${{ secrets.AccessToken }})
             done
         - name: update helm packages
           if: github.event_name == 'release'
