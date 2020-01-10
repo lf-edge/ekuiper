@@ -79,6 +79,19 @@ jobs:
             for var in $(ls packages) ; do
                 .github/workflows/release/upload-github-release-asset.sh owner=emqx repo=kuiper tag=$version filename=packages/$var github_api_token=$(echo ${{ secrets.AccessToken }})
             done
+        - name: create invalidation for cloudfront
+          if: github.event_name == 'release'
+          run: |
+            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
+            curl "https://d1vvhvl2y92vvt.cloudfront.net/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+            aws2 configure set aws_access_key_id ${{ secrets.AwsAccessKeyId }}
+            aws2 configure set aws_secret_access_key ${{ secrets.AwsSecretAccessKey }}
+            aws2 configure set default.region us-west-2
+            aws2 s3 rm --quiet --recursive s3://packages.emqx.io/kuiper/$version
+            aws2 s3 cp --quiet --recursive ./packages s3://packages.emqx.io/kuiper/$version
+            aws2 cloudfront create-invalidation --distribution-id E3TYD0WSP4S14P --paths "/kuiper/$version/*"
         - name: update helm packages
           if: github.event_name == 'release'
           run: |
