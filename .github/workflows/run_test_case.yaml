@@ -11,13 +11,6 @@ jobs:
 
         steps:
         - uses: actions/checkout@v2
-        # - uses: actions/setup-go@v1
-        #   with:
-        #     go-version: '1.11.5'
-        # - name: install lib
-        #   run: |
-        #     sudo sed -e '/.*azure.*/d' /etc/apt/sources.list
-        #     sudo apt-get update && sudo apt-get install libzmq3-dev -y
         - name: install lib
           run: apt-get update && apt-get install libzmq3-dev -y
         - name: run test case
@@ -27,5 +20,5 @@ jobs:
             go build --buildmode=plugin -o plugins/sinks/File.so plugins/sinks/file.go
             go build --buildmode=plugin -o plugins/functions/Echo.so plugins/functions/echo.go
             go build --buildmode=plugin -o plugins/functions/CountPlusOne.so plugins/functions/countPlusOne.go
-            go test ./... || ls -l /data
+            go test ./...
     
