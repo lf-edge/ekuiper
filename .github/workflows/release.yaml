@@ -65,7 +65,7 @@ jobs:
           with:
             name: packages-mac
         - name: update github release
-          if: github.event_name == "release"
+          if: github.event_name == 'release'
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
             mv packages-mac/* packages
@@ -73,7 +73,7 @@ jobs:
                 .github/workflows/release/upload-github-release-asset.sh owner=emqx repo=kuiper tag=$version filename=$var github_api_token=$(echo ${{ secrets.AccessToken }})
             done
         - name: update helm packages
-          if: github.event_name == "release"
+          if: github.event_name == 'release'
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
             if [ ! -z $(echo $version | grep -oE "v[0-9]+\.[0-9]+(\.[0-9]+)?") ] && [ -z $(echo $version | grep -oE "(alpha|beta|rc)\.[0-9]") ]; then
