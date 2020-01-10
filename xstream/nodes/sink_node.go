@@ -132,7 +132,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				m.statManagers = append(m.statManagers, stats)
 				m.mutex.Unlock()
 
-				cache := NewCache(m.input, cacheLength, cacheSaveInterval)
+				cache := NewCache(m.input, cacheLength, cacheSaveInterval, result, ctx)
 				for {
 					select {
 					case data := <- cache.Out:
@@ -144,7 +144,6 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 						}
 					case <-ctx.Done():
 						logger.Infof("sink node %s instance %d done", m.name, instance)
-						cache.Close()
 						if err := sink.Close(ctx); err != nil {
 							logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
 						}

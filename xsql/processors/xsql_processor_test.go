@@ -551,6 +551,10 @@ func TestSingleSQL(t *testing.T) {
 			}
 			maps = append(maps, mapRes)
 		}
+		if !reflect.DeepEqual(tt.r, maps) {
+			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
+			continue
+		}
 		keys, values := tp.GetMetrics()
 		//for i, k := range keys{
 		//	log.Printf("%s:%v", k, values[i])
