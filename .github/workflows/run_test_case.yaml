@@ -9,7 +9,7 @@ job:
         setup:
         - uses: actions/checkout@1
         - uses: actions/setup-go@v1
-        with:
+          with:
             go-version: '1.11.5' # The Go version to download (if necessary) and use.
         - name: run test case
           run: go test
