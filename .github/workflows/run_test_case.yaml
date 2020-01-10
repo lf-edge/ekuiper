@@ -12,7 +12,9 @@ jobs:
           with:
             go-version: '1.11.5'
         - name: install lib
-          run: sudo apt-get update && sudo apt-get install libzmq3-dev -y
+          run: |
+            sudo sed -e '/.*azure.*/d' /etc/apt/sources.list
+            sudo apt-get update && sudo apt-get install libzmq3-dev -y
         - name: run test case
           run: |
             go build --buildmode=plugin -o plugins/sources/Random.so plugins/sources/random.go
