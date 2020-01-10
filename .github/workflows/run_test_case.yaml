@@ -2,7 +2,7 @@ name: Run all test cases
 
 on: [push, pull_request]
 
-job:
+jobs:
     run_test_case:
         runs-on: ubuntu-latest
 
