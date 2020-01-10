@@ -17,5 +17,5 @@ jobs:
             go build --buildmode=plugin -o plugins/sinks/File.so plugins/sinks/file.go
             go build --buildmode=plugin -o plugins/functions/Echo.so plugins/functions/echo.go
             go build --buildmode=plugin -o plugins/functions/CountPlusOne.so plugins/functions/countPlusOne.go  
-            go test ./...
+            sudo go test ./...
     
