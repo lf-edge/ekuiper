@@ -1,9 +1,9 @@
 name: Run test cases
 
 on:
-    - push:
-    - pull_request:
-    - release:
+    push:
+    pull_request:
+    release:
         types:
             - published
             - prereleased
