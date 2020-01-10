@@ -1,10 +1,13 @@
-name: Run all test cases
+name: Run test cases
 
 on: [push, pull_request, release]
 
 jobs:
     run_test_case:
         runs-on: ubuntu-latest
+
+        container:
+            image: golang:1.13
 
         steps:
         - uses: actions/checkout@v2
