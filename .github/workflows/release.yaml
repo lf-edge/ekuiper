@@ -1,0 +1,21 @@
+name: Run all test cases
+
+on: [push, pull_request, release]
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        
+        steps:
+        - uses: actions/checkout@v2
+        - name: prepare docker
+          run: |
+            echo '{ "experimental": "enabled" }' | tee $$HOME/.docker/config.json
+            service docker restart
+            docker buildx create --use --name mybuild
+        - name: build
+          run: make cross_build
+          - uses: actions/upload-artifact@v1
+            with:
+              name: packages
+              path: _packages/.

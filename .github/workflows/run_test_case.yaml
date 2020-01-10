@@ -1,6 +1,6 @@
 name: Run all test cases
 
-on: [push, pull_request]
+on: [push, pull_request, release]
 
 jobs:
     run_test_case:
