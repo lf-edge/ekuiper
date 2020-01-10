@@ -15,7 +15,7 @@ jobs:
             docker buildx create --use --name mybuild
         - name: build
           run: make cross_build
-          - uses: actions/upload-artifact@v1
-            with:
-              name: packages
-              path: _packages/.
+        - uses: actions/upload-artifact@v1
+          with:
+            name: packages
+            path: _packages/.
