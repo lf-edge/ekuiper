@@ -1,4 +1,4 @@
-name: Run all test cases
+name: release
 
 on: [push, pull_request, release]
 
@@ -10,8 +10,8 @@ jobs:
         - uses: actions/checkout@v2
         - name: prepare docker
           run: |
-            echo '{ "experimental": "enabled" }' | tee $$HOME/.docker/config.json
-            service docker restart
+            echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
+            sudo service docker restart
             docker buildx create --use --name mybuild
         - name: build
           run: make cross_build
