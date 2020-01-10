@@ -64,7 +64,7 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 	}
 
 	ms.uName = cfg.Uname
-	ms.password = strings.Trim(cfg.PVersion, " ")
+	ms.password = strings.Trim(cfg.Password, " ")
 	ms.certPath = cfg.Certification
 	ms.pkeyPath = cfg.PrivateKPath
 	return nil
@@ -106,10 +106,14 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 		log.Infof("Connect MQTT broker with username and password.")
 		if ms.uName != "" {
 			opts = opts.SetUsername(ms.uName)
+		} else {
+			log.Infof("The username is empty.")
 		}
 
 		if ms.password != "" {
 			opts = opts.SetPassword(ms.password)
+		} else {
+			log.Infof("The password is empty.")
 		}
 	}
 	opts.SetAutoReconnect(true)
