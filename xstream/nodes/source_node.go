@@ -59,9 +59,6 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	m.ctx = ctx
 	logger := ctx.GetLogger()
 	logger.Infof("open source node %s with option %v", m.name, m.options)
-	//Reset the states
-	m.sources = nil
-	m.statManagers = nil
 	go func() {
 		props := m.getConf(ctx)
 		if c, ok := props["concurrency"]; ok {
@@ -176,6 +173,9 @@ func (m *SourceNode) close(ctx api.StreamContext, logger api.Logger) {
 			logger.Warnf("close source fails: %v", err)
 		}
 	}
+	//Reset the states
+	m.sources = nil
+	m.statManagers = nil
 }
 
 func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
