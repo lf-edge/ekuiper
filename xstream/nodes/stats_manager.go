@@ -89,6 +89,8 @@ func (sm *StatManager) GetMetrics() []interface{} {
 
 	if !sm.lastInvocation.IsZero(){
 		result = append(result, sm.lastInvocation.Format("2006-01-02T15:04:05.999999"))
+	}else{
+		result = append(result, 0)
 	}
 
 	return result

@@ -65,7 +65,7 @@ func NewWatermarkGenerator(window *WindowConfig, l int64, s []string, stream cha
 
 func (w *WatermarkGenerator) track(s string, ts int64, ctx api.StreamContext) bool {
 	log := ctx.GetLogger()
-	log.Infof("watermark generator track event from topic %s at %d", s, ts)
+	log.Debugf("watermark generator track event from topic %s at %d", s, ts)
 	currentVal, ok := w.topicToTs[s]
 	if !ok || ts > currentVal {
 		w.topicToTs[s] = ts
@@ -104,7 +104,7 @@ func (w *WatermarkGenerator) start(ctx api.StreamContext) {
 func (w *WatermarkGenerator) trigger(ctx api.StreamContext) {
 	log := ctx.GetLogger()
 	watermark := w.computeWatermarkTs(ctx)
-	log.Infof("compute watermark event at %d with last %d", watermark, w.lastWatermarkTs)
+	log.Debugf("compute watermark event at %d with last %d", watermark, w.lastWatermarkTs)
 	if watermark > w.lastWatermarkTs {
 		t := &WatermarkTuple{Timestamp: watermark}
 		select {
@@ -112,7 +112,7 @@ func (w *WatermarkGenerator) trigger(ctx api.StreamContext) {
 		default: //TODO need to set buffer
 		}
 		w.lastWatermarkTs = watermark
-		log.Infof("scan watermark event at %d", watermark)
+		log.Debugf("scan watermark event at %d", watermark)
 	}
 }
 
@@ -229,7 +229,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 					o.statManager.IncTotalRecordsIn()
 					tuple, ok := d.(*xsql.Tuple)
 					if !ok {
-						log.Infof("receive non tuple element %v", d)
+						log.Debugf("receive non tuple element %v", d)
 					}
 					log.Debugf("event window receive tuple %s", tuple.Message)
 					if o.watermarkGenerator.track(tuple.Emitter, d.GetTimestamp(), ctx) {
