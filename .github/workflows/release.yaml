@@ -15,7 +15,8 @@ jobs:
             echo '{ "experimental": true, "storage-driver": "overlay2", "max-concurrent-downloads": 50, "max-concurrent-uploads": 50 }' | sudo tee /etc/docker/daemon.json
             sudo systemctl restart docker
             docker version
-            docker buildx create --use --name mybuild
+            docker buildx create --name mybuild
+            docker buildx use mybuild
         - name: build
           run: make cross_build
         - uses: actions/upload-artifact@v1
