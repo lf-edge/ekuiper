@@ -22,9 +22,10 @@ jobs:
           run: apt-get update && apt-get install libzmq3-dev -y
         - name: run test case
           run: |
+            mkdir -p data
             go build --buildmode=plugin -o plugins/sources/Random.so plugins/sources/random.go
             go build --buildmode=plugin -o plugins/sinks/File.so plugins/sinks/file.go
             go build --buildmode=plugin -o plugins/functions/Echo.so plugins/functions/echo.go
             go build --buildmode=plugin -o plugins/functions/CountPlusOne.so plugins/functions/countPlusOne.go
-            go test ./... || ls -l data/
+            go test ./... || ls -l /data
     
