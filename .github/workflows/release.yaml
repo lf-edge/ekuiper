@@ -12,7 +12,7 @@ jobs:
           run: |
             mkdir -p $HOME/.docker
             echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
-            sudo echo '{ "experimental": "enabled"}' | tee /etc/docker/daemon.json 
+            echo '{ "experimental": "enabled"}' | sudo tee /etc/docker/daemon.json 
             sudo service docker restart
             docker buildx create --use --name mybuild
         - name: build
