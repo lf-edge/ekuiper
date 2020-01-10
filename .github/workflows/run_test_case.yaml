@@ -6,7 +6,7 @@ jobs:
     run_test_case:
         runs-on: ubuntu-latest
 
-        setup:
+        steps:
         - uses: actions/checkout@1
         - uses: actions/setup-go@v1
           with:
