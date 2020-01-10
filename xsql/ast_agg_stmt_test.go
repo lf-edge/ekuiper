@@ -14,8 +14,8 @@ func TestIsAggStatement(t *testing.T) {
 		err  string
 	}{
 		{s: `SELECT avg(1) FROM tbl`,agg: true},
-		{s: `SELECT test(1) FROM tbl`,agg: false},
-		{s: `SELECT test(avg(f1)) FROM tbl`,agg: true},
+		{s: `SELECT sin(1) FROM tbl`,agg: false},
+		{s: `SELECT sin(avg(f1)) FROM tbl`,agg: true},
 
 		{s: `SELECT sum(f1) FROM tbl GROUP by f1`,agg: true},
 		{s: `SELECT f1 FROM tbl GROUP by f1`,agg: true},

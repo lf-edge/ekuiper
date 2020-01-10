@@ -119,6 +119,7 @@ type KeyValue interface {
 	Open() error
 	Close() error
 	Set(key string, value interface{}) error
+	Replace(key string, value interface{}) error
 	Get(key string) (interface{}, bool)
 	Delete(key string) error
 	Keys() (keys []string, err error)
@@ -176,6 +177,14 @@ func (m *SimpleKVStore) Set(key string, value interface{}) error  {
 	if err := m.c.Add(key, value, cache.NoExpiration); err != nil {
 		return err
 	}
+	return m.saveToFile()
+}
+
+func (m *SimpleKVStore) Replace(key string, value interface{}) error  {
+	if m.c == nil {
+		return fmt.Errorf("cache %s has not been initialized yet", m.path)
+	}
+	m.c.Set(key, value, cache.NoExpiration)
 	return m.saveToFile()
 }
 
