@@ -23,7 +23,7 @@ func (m *MockSink) Open(ctx api.StreamContext) error {
 func (m *MockSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	if v, ok := item.([]byte); ok {
-		logger.Infof("mock sink receive %s", item)
+		logger.Debugf("mock sink receive %s", item)
 		m.results = append(m.results, v)
 	} else {
 		logger.Info("mock sink receive non byte data")
