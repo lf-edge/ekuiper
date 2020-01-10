@@ -78,9 +78,8 @@ func TestExtensions(t *testing.T) {
 				tp.Cancel()
 			}
 		}()
-		time.Sleep(2000 * time.Millisecond)
+		time.Sleep(5000 * time.Millisecond)
 		log.Printf("exit main program after 5 seconds")
-		tp.Cancel()
 		results := getResults()
 		if len(results) == 0{
 			t.Errorf("no result found")
@@ -115,6 +114,7 @@ func TestExtensions(t *testing.T) {
 				break
 			}
 		}
+		tp.Cancel()
 	}
 }
 

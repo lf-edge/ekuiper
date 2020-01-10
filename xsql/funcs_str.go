@@ -107,7 +107,7 @@ func strCall(name string, args []interface{}) (interface{}, bool) {
 		ss := strings.Split(arg0, arg1)
 		v, _ := common.ToInt(args[2])
 		if v > (len(ss) - 1) {
-			return fmt.Errorf("%d out of index array (size = %d)", v, ss), false
+			return fmt.Errorf("%d out of index array (size = %d)", v, len(ss)), false
 		} else {
 			return ss[v], true
 		}
