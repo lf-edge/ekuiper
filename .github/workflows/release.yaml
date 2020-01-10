@@ -12,8 +12,8 @@ jobs:
           run: |
             mkdir -p $HOME/.docker
             echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
-            echo '{ "experimental": "enabled"}' | sudo tee /etc/docker/daemon.json 
-            sudo service docker restart
+            echo '{ "experimental": "enabled", "storage-driver": "overlay2", "max-concurrent-downloads": 50, "max-concurrent-uploads": 50 }' | sudo tee /etc/docker/daemon.json
+            sudo systemctl restart docker
             docker buildx create --use --name mybuild
         - name: build
           run: make cross_build
