@@ -10,7 +10,7 @@ jobs:
         - uses: actions/checkout@v2
         - name: prepare docker
           run: |
-            touch $HOME/.docker/config.json
+            mkdir -p $HOME/.docker
             echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
             sudo service docker restart
             docker buildx create --use --name mybuild
