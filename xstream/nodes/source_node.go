@@ -173,6 +173,7 @@ func (m *SourceNode) close(ctx api.StreamContext, logger api.Logger) {
 			logger.Warnf("close source fails: %v", err)
 		}
 	}
+	//Reset the states
 	m.sources = nil
 	m.statManagers = nil
 }

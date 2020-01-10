@@ -94,7 +94,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" {
 			if !reflect.DeepEqual(tt.r, results) {
-				t.Errorf("%d. %q\n\nstmt mismatch:\n\ngot=%#v\n\n", i, tt.s, results)
+				t.Errorf("%d. %q\n\nstmt mismatch:\nexp=%s\ngot=%#v\n\n", i, tt.s,tt.r, results)
 			}
 		}
 	}
@@ -1011,8 +1011,6 @@ func TestWindow(t *testing.T) {
 					log.Infof("%d sources remaining", count)
 					if count <= 0 {
 						log.Info("stream stopping")
-						time.Sleep(1 * time.Second)
-						tp.Cancel()
 						return
 					}
 				default:
@@ -1059,6 +1057,7 @@ func TestWindow(t *testing.T) {
 			}
 			break
 		}
+		tp.Cancel()
 	}
 }
 
@@ -1776,8 +1775,6 @@ func TestEventWindow(t *testing.T) {
 					log.Infof("%d sources remaining", count)
 					if count <= 0 {
 						log.Info("stream stopping")
-						time.Sleep(1 * time.Second)
-						tp.Cancel()
 						return
 					}
 				default:
@@ -1799,6 +1796,9 @@ func TestEventWindow(t *testing.T) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 		}
 		keys, values := tp.GetMetrics()
+		//for i, k := range keys{
+		//	log.Printf("%s:%v", k, values[i])
+		//}
 		for k, v := range tt.m {
 			var(
 				index int
@@ -1824,6 +1824,7 @@ func TestEventWindow(t *testing.T) {
 			}
 			break
 		}
+		tp.Cancel()
 	}
 	realTicker.Stop()
 	tickerDone <- true
