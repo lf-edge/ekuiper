@@ -1,0 +1,24 @@
+name: Run test cases
+
+on: [push, pull_request, release]
+
+jobs:
+    run_test_case:
+        runs-on: ubuntu-latest
+
+        container:
+            image: golang:1.13
+
+        steps:
+        - uses: actions/checkout@v2
+        - name: install lib
+          run: apt-get update && apt-get install libzmq3-dev -y
+        - name: run test case
+          run: |
+            mkdir -p data
+            go build --buildmode=plugin -o plugins/sources/Random.so plugins/sources/random.go
+            go build --buildmode=plugin -o plugins/sinks/File.so plugins/sinks/file.go
+            go build --buildmode=plugin -o plugins/functions/Echo.so plugins/functions/echo.go
+            go build --buildmode=plugin -o plugins/functions/CountPlusOne.so plugins/functions/countPlusOne.go
+            go test ./...
+    
