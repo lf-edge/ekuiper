@@ -12,7 +12,7 @@ jobs:
           with:
             go-version: '1.11.5'
         - name: install lib
-          run: sudo apt update && sudo apt-get install libzmq3 -y
+          run: sudo apt-get update && sudo apt-get install libzmq3 -y
         - name: build lib
           run: |
             go build --buildmode=plugin -o plugins/sources/Random.so plugins/sources/random.go
