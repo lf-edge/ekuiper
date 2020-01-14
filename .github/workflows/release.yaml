@@ -32,7 +32,9 @@ jobs:
             docker version
             docker buildx create --use --name mybuild
         - name: build
-          run: make cross_build
+          run: |
+            make cross_build
+            cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
         - uses: actions/upload-artifact@v1
           with:
             name: packages
@@ -52,7 +54,9 @@ jobs:
               brew install curl zip unzip gnu-sed upx
               echo "/usr/local/bin:$PATH" >> ~/.bashrc
         - name: build
-          run: make pkg
+          run: |
+            make pkg
+            cd _packages && for var in $(ls); do openssl dgst -sha256 $var | awk '{print $2}' > $var.sha256; done && cd -
         - uses: actions/upload-artifact@v1
           with:
             name: packages-mac
@@ -68,16 +72,22 @@ jobs:
         - uses: actions/download-artifact@v1
           with:
             name: packages
+            path: _packages
         - uses: actions/download-artifact@v1
           with:
             name: packages-mac
+            path: _packages
+        - name: check packages
+          run: |
+            cd _packages && for var in $( ls |grep -v sha256); do
+              echo "$(cat $var.sha256) $var" | sha256sum -c || exit 1
+            done
         - name: update github release
           if: github.event_name == 'release'
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
-            cp -r packages-mac/. packages
-            for var in $(ls packages) ; do
-                .github/workflows/release/upload-github-release-asset.sh owner=emqx repo=kuiper tag=$version filename=packages/$var github_api_token=$(echo ${{ secrets.AccessToken }})
+            for var in $(ls _packages) ; do
+                .github/workflows/release/upload-github-release-asset.sh owner=emqx repo=kuiper tag=$version filename=_packages/$var github_api_token=$(echo ${{ secrets.AccessToken }})
             done
         - name: create invalidation for cloudfront
           if: github.event_name == 'release'
@@ -90,7 +100,7 @@ jobs:
             aws2 configure set aws_secret_access_key ${{ secrets.AwsSecretAccessKey }}
             aws2 configure set default.region us-west-2
             aws2 s3 rm --quiet --recursive s3://packages.emqx.io/kuiper/$version
-            aws2 s3 cp --quiet --recursive ./packages s3://packages.emqx.io/kuiper/$version
+            aws2 s3 cp --quiet --recursive ./_packages s3://packages.emqx.io/kuiper/$version
             aws2 cloudfront create-invalidation --distribution-id E3TYD0WSP4S14P --paths "/kuiper/$version/*"
         - name: update helm packages
           if: github.event_name == 'release'
