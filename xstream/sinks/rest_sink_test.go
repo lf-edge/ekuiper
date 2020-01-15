@@ -12,17 +12,17 @@ import (
 	"testing"
 )
 
-type request struct{
-	Method string
-	Body   string
+type request struct {
+	Method      string
+	Body        string
 	ContentType string
 }
 
 func TestRestSink_Apply(t *testing.T) {
 	var tests = []struct {
-		config  map[string]interface{}
-		data 	[]map[string]interface{}
-		result  []request
+		config map[string]interface{}
+		data   []map[string]interface{}
+		result []request
 	}{
 		{
 			config: map[string]interface{}{
@@ -30,109 +30,109 @@ func TestRestSink_Apply(t *testing.T) {
 				//"url": "http://localhost/test",  //set dynamically to the test server
 				"sendSingle": true,
 			},
-			data:[]map[string]interface{}{{
-				"ab" : "hello1",
-			},{
-				"ab" : "hello2",
+			data: []map[string]interface{}{{
+				"ab": "hello1",
+			}, {
+				"ab": "hello2",
 			}},
 			result: []request{{
-				Method: "POST",
-				Body: `{"ab":"hello1"}`,
+				Method:      "POST",
+				Body:        `{"ab":"hello1"}`,
 				ContentType: "application/json",
-			},{
-				Method: "POST",
-				Body: `{"ab":"hello2"}`,
+			}, {
+				Method:      "POST",
+				Body:        `{"ab":"hello2"}`,
 				ContentType: "application/json",
-			}},
-		},{
-			config: map[string]interface{}{
-				"method": "post",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-			},
-			data:[]map[string]interface{}{{
-				"ab" : "hello1",
-			},{
-				"ab" : "hello2",
-			}},
-			result: []request{{
-				Method: "POST",
-				Body: `[{"ab":"hello1"},{"ab":"hello2"}]`,
-				ContentType: "application/json",
-			}},
-		},{
-			config: map[string]interface{}{
-				"method": "get",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-			},
-			data:[]map[string]interface{}{{
-				"ab" : "hello1",
-			},{
-				"ab" : "hello2",
-			}},
-			result: []request{{
-				Method: "GET",
-				ContentType: "",
-			}},
-		},{
-			config: map[string]interface{}{
-				"method": "put",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-				"bodyType": "text",
-			},
-			data:[]map[string]interface{}{{
-				"ab" : "hello1",
-			},{
-				"ab" : "hello2",
-			}},
-			result: []request{{
-				Method: "PUT",
-				ContentType: "text/plain",
-				Body: `[{"ab":"hello1"},{"ab":"hello2"}]`,
-			}},
-		},{
-			config: map[string]interface{}{
-				"method": "post",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-				"bodyType": "form",
-			},
-			data:[]map[string]interface{}{{
-				"ab" : "hello1",
-			},{
-				"ab" : "hello2",
-			}},
-			result: []request{{
-				Method: "POST",
-				ContentType: "application/x-www-form-urlencoded;param=value",
-				Body: `result=%5B%7B%22ab%22%3A%22hello1%22%7D%2C%7B%22ab%22%3A%22hello2%22%7D%5D`,
-			}},
-		},{
-			config: map[string]interface{}{
-				"method": "post",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-				"bodyType": "form",
-				"sendSingle": true,
-			},
-			data:[]map[string]interface{}{{
-				"ab" : "hello1",
-			},{
-				"ab" : "hello2",
-			}},
-			result: []request{{
-				Method: "POST",
-				ContentType: "application/x-www-form-urlencoded;param=value",
-				Body: `ab=hello1`,
-			},{
-				Method: "POST",
-				ContentType: "application/x-www-form-urlencoded;param=value",
-				Body: `ab=hello2`,
 			}},
 		}, {
 			config: map[string]interface{}{
 				"method": "post",
 				//"url": "http://localhost/test",  //set dynamically to the test server
-				"bodyType": "json",
+			},
+			data: []map[string]interface{}{{
+				"ab": "hello1",
+			}, {
+				"ab": "hello2",
+			}},
+			result: []request{{
+				Method:      "POST",
+				Body:        `[{"ab":"hello1"},{"ab":"hello2"}]`,
+				ContentType: "application/json",
+			}},
+		}, {
+			config: map[string]interface{}{
+				"method": "get",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+			},
+			data: []map[string]interface{}{{
+				"ab": "hello1",
+			}, {
+				"ab": "hello2",
+			}},
+			result: []request{{
+				Method:      "GET",
+				ContentType: "",
+			}},
+		}, {
+			config: map[string]interface{}{
+				"method": "put",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"bodyType": "text",
+			},
+			data: []map[string]interface{}{{
+				"ab": "hello1",
+			}, {
+				"ab": "hello2",
+			}},
+			result: []request{{
+				Method:      "PUT",
+				ContentType: "text/plain",
+				Body:        `[{"ab":"hello1"},{"ab":"hello2"}]`,
+			}},
+		}, {
+			config: map[string]interface{}{
+				"method": "post",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"bodyType": "form",
+			},
+			data: []map[string]interface{}{{
+				"ab": "hello1",
+			}, {
+				"ab": "hello2",
+			}},
+			result: []request{{
+				Method:      "POST",
+				ContentType: "application/x-www-form-urlencoded;param=value",
+				Body:        `result=%5B%7B%22ab%22%3A%22hello1%22%7D%2C%7B%22ab%22%3A%22hello2%22%7D%5D`,
+			}},
+		}, {
+			config: map[string]interface{}{
+				"method": "post",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"bodyType":   "form",
 				"sendSingle": true,
-				"timeout": float64(1000),
+			},
+			data: []map[string]interface{}{{
+				"ab": "hello1",
+			}, {
+				"ab": "hello2",
+			}},
+			result: []request{{
+				Method:      "POST",
+				ContentType: "application/x-www-form-urlencoded;param=value",
+				Body:        `ab=hello1`,
+			}, {
+				Method:      "POST",
+				ContentType: "application/x-www-form-urlencoded;param=value",
+				Body:        `ab=hello2`,
+			}},
+		}, {
+			config: map[string]interface{}{
+				"method": "post",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"bodyType":   "json",
+				"sendSingle": true,
+				"timeout":    float64(1000),
 			},
 			data: []map[string]interface{}{{
 				"ab": "hello1",
@@ -155,7 +155,7 @@ func TestRestSink_Apply(t *testing.T) {
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 
 	var requests []request
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			fmt.Printf("Error reading body: %v", err)
@@ -164,8 +164,8 @@ func TestRestSink_Apply(t *testing.T) {
 		}
 
 		requests = append(requests, request{
-			Method: r.Method,
-			Body: string(body),
+			Method:      r.Method,
+			Body:        string(body),
 			ContentType: r.Header.Get("Content-Type"),
 		})
 		contextLogger.Debugf(string(body))
@@ -179,7 +179,7 @@ func TestRestSink_Apply(t *testing.T) {
 		s.Configure(tt.config)
 		s.Open(ctx)
 		input, err := json.Marshal(tt.data)
-		if err != nil{
+		if err != nil {
 			t.Errorf("Failed to parse the input into []byte]")
 			continue
 		}
@@ -193,125 +193,125 @@ func TestRestSink_Apply(t *testing.T) {
 
 func TestRestSinkTemplate_Apply(t *testing.T) {
 	var tests = []struct {
-		config  map[string]interface{}
-		data 	[]map[string]interface{}
-		result  []request
+		config map[string]interface{}
+		data   []map[string]interface{}
+		result []request
 	}{
 		{
 			config: map[string]interface{}{
 				"method": "post",
 				//"url": "http://localhost/test",  //set dynamically to the test server
-				"sendSingle": true,
+				"sendSingle":   true,
 				"dataTemplate": `{"wrapper":"w1","content":{{json .}},"ab":"{{.ab}}"}`,
 			},
-			data:[]map[string]interface{}{{
-				"ab" : "hello1",
-			},{
-				"ab" : "hello2",
+			data: []map[string]interface{}{{
+				"ab": "hello1",
+			}, {
+				"ab": "hello2",
 			}},
 			result: []request{{
-				Method: "POST",
-				Body: `{"wrapper":"w1","content":{"ab":"hello1"},"ab":"hello1"}`,
+				Method:      "POST",
+				Body:        `{"wrapper":"w1","content":{"ab":"hello1"},"ab":"hello1"}`,
 				ContentType: "application/json",
-			},{
-				Method: "POST",
-				Body: `{"wrapper":"w1","content":{"ab":"hello2"},"ab":"hello2"}`,
+			}, {
+				Method:      "POST",
+				Body:        `{"wrapper":"w1","content":{"ab":"hello2"},"ab":"hello2"}`,
 				ContentType: "application/json",
-			}},
-		},{
-			config: map[string]interface{}{
-				"method": "post",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-				"dataTemplate": `{"wrapper":"arr","content":{{json .}},"content0":{{json (index . 0)}},ab0":"{{index . 0 "ab"}}"}`,
-			},
-			data:[]map[string]interface{}{{
-				"ab" : "hello1",
-			},{
-				"ab" : "hello2",
-			}},
-			result: []request{{
-				Method: "POST",
-				Body: `{"wrapper":"arr","content":[{"ab":"hello1"},{"ab":"hello2"}],"content0":{"ab":"hello1"},ab0":"hello1"}`,
-				ContentType: "application/json",
-			}},
-		},{
-			config: map[string]interface{}{
-				"method": "get",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-				"dataTemplate": `{"wrapper":"w1","content":{{json .}},"ab":"{{.ab}}"}`,
-			},
-			data:[]map[string]interface{}{{
-				"ab" : "hello1",
-			},{
-				"ab" : "hello2",
-			}},
-			result: []request{{
-				Method: "GET",
-				ContentType: "",
-			}},
-		},{
-			config: map[string]interface{}{
-				"method": "put",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-				"bodyType": "html",
-				"dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>`,
-			},
-			data:[]map[string]interface{}{{
-				"ab" : "hello1",
-			},{
-				"ab" : "hello2",
-			}},
-			result: []request{{
-				Method: "PUT",
-				ContentType: "text/html",
-				Body: `<div>results</div><ul><li>hello1</li><li>hello2</li></ul>`,
-			}},
-		},{
-			config: map[string]interface{}{
-				"method": "post",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-				"bodyType": "form",
-				"dataTemplate": `{"content":{{json .}}}`,
-			},
-			data:[]map[string]interface{}{{
-				"ab" : "hello1",
-			},{
-				"ab" : "hello2",
-			}},
-			result: []request{{
-				Method: "POST",
-				ContentType: "application/x-www-form-urlencoded;param=value",
-				Body: `content=%5B%7B%22ab%22%3A%22hello1%22%7D%2C%7B%22ab%22%3A%22hello2%22%7D%5D`,
-			}},
-		},{
-			config: map[string]interface{}{
-				"method": "post",
-				//"url": "http://localhost/test",  //set dynamically to the test server
-				"bodyType": "form",
-				"sendSingle": true,
-				"dataTemplate": `{"newab":"{{.ab}}"}`,
-			},
-			data:[]map[string]interface{}{{
-				"ab" : "hello1",
-			},{
-				"ab" : "hello2",
-			}},
-			result: []request{{
-				Method: "POST",
-				ContentType: "application/x-www-form-urlencoded;param=value",
-				Body: `newab=hello1`,
-			},{
-				Method: "POST",
-				ContentType: "application/x-www-form-urlencoded;param=value",
-				Body: `newab=hello2`,
 			}},
 		}, {
 			config: map[string]interface{}{
 				"method": "post",
 				//"url": "http://localhost/test",  //set dynamically to the test server
-				"bodyType": "json",
-				"sendSingle": true,
-				"timeout": float64(1000),
+				"dataTemplate": `{"wrapper":"arr","content":{{json .}},"content0":{{json (index . 0)}},ab0":"{{index . 0 "ab"}}"}`,
+			},
+			data: []map[string]interface{}{{
+				"ab": "hello1",
+			}, {
+				"ab": "hello2",
+			}},
+			result: []request{{
+				Method:      "POST",
+				Body:        `{"wrapper":"arr","content":[{"ab":"hello1"},{"ab":"hello2"}],"content0":{"ab":"hello1"},ab0":"hello1"}`,
+				ContentType: "application/json",
+			}},
+		}, {
+			config: map[string]interface{}{
+				"method": "get",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"dataTemplate": `{"wrapper":"w1","content":{{json .}},"ab":"{{.ab}}"}`,
+			},
+			data: []map[string]interface{}{{
+				"ab": "hello1",
+			}, {
+				"ab": "hello2",
+			}},
+			result: []request{{
+				Method:      "GET",
+				ContentType: "",
+			}},
+		}, {
+			config: map[string]interface{}{
+				"method": "put",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"bodyType":     "html",
+				"dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>`,
+			},
+			data: []map[string]interface{}{{
+				"ab": "hello1",
+			}, {
+				"ab": "hello2",
+			}},
+			result: []request{{
+				Method:      "PUT",
+				ContentType: "text/html",
+				Body:        `<div>results</div><ul><li>hello1</li><li>hello2</li></ul>`,
+			}},
+		}, {
+			config: map[string]interface{}{
+				"method": "post",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"bodyType":     "form",
+				"dataTemplate": `{"content":{{json .}}}`,
+			},
+			data: []map[string]interface{}{{
+				"ab": "hello1",
+			}, {
+				"ab": "hello2",
+			}},
+			result: []request{{
+				Method:      "POST",
+				ContentType: "application/x-www-form-urlencoded;param=value",
+				Body:        `content=%5B%7B%22ab%22%3A%22hello1%22%7D%2C%7B%22ab%22%3A%22hello2%22%7D%5D`,
+			}},
+		}, {
+			config: map[string]interface{}{
+				"method": "post",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"bodyType":     "form",
+				"sendSingle":   true,
+				"dataTemplate": `{"newab":"{{.ab}}"}`,
+			},
+			data: []map[string]interface{}{{
+				"ab": "hello1",
+			}, {
+				"ab": "hello2",
+			}},
+			result: []request{{
+				Method:      "POST",
+				ContentType: "application/x-www-form-urlencoded;param=value",
+				Body:        `newab=hello1`,
+			}, {
+				Method:      "POST",
+				ContentType: "application/x-www-form-urlencoded;param=value",
+				Body:        `newab=hello2`,
+			}},
+		}, {
+			config: map[string]interface{}{
+				"method": "post",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"bodyType":     "json",
+				"sendSingle":   true,
+				"timeout":      float64(1000),
 				"dataTemplate": `{"newab":"{{.ab}}"}`,
 			},
 			data: []map[string]interface{}{{
@@ -335,7 +335,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 
 	var requests []request
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			fmt.Printf("Error reading body: %v", err)
@@ -344,8 +344,8 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 		}
 
 		requests = append(requests, request{
-			Method: r.Method,
-			Body: string(body),
+			Method:      r.Method,
+			Body:        string(body),
 			ContentType: r.Header.Get("Content-Type"),
 		})
 		contextLogger.Debugf(string(body))
@@ -359,7 +359,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 		s.Configure(tt.config)
 		s.Open(ctx)
 		input, err := json.Marshal(tt.data)
-		if err != nil{
+		if err != nil {
 			t.Errorf("Failed to parse the input into []byte]")
 			continue
 		}

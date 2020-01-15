@@ -18,15 +18,15 @@ type Ticker interface {
 	Trigger(ti int64)
 }
 
-type DefaultTicker struct{
+type DefaultTicker struct {
 	time.Ticker
 }
 
-func NewDefaultTicker(d int) *DefaultTicker{
+func NewDefaultTicker(d int) *DefaultTicker {
 	return &DefaultTicker{*(time.NewTicker(time.Duration(d) * time.Millisecond))}
 }
 
-func (t *DefaultTicker) GetC() <-chan time.Time{
+func (t *DefaultTicker) GetC() <-chan time.Time {
 	return t.C
 }
 
@@ -35,30 +35,30 @@ func (t *DefaultTicker) Trigger(ti int64) {
 }
 
 type MockTicker struct {
-	c chan time.Time
+	c        chan time.Time
 	duration int64
 	lastTick int64
 }
 
-func NewMockTicker(d int) *MockTicker{
+func NewMockTicker(d int) *MockTicker {
 	if d <= 0 {
 		panic(errors.New("non-positive interval for MockTicker"))
 	}
 	c := make(chan time.Time, 1)
 	t := &MockTicker{
-		c: c,
+		c:        c,
 		duration: int64(d),
 		lastTick: GetMockNow(),
 	}
 	return t
 }
 
-func (t *MockTicker) SetDuration(d int){
+func (t *MockTicker) SetDuration(d int) {
 	t.duration = int64(d)
 	t.lastTick = GetMockNow()
 }
 
-func (t *MockTicker) GetC() <-chan time.Time{
+func (t *MockTicker) GetC() <-chan time.Time {
 	return t.c
 }
 
@@ -76,7 +76,7 @@ func (t *MockTicker) DoTick(c int64) {
 	if t.lastTick == 0 {
 		t.lastTick = c
 	}
-	if c >= (t.lastTick + t.duration){
+	if c >= (t.lastTick + t.duration) {
 		Log.Debugf("trigger tick")
 		t.Trigger(t.lastTick + t.duration)
 	}
@@ -90,15 +90,15 @@ type Timer interface {
 	Trigger(ti int64)
 }
 
-type DefaultTimer struct{
+type DefaultTimer struct {
 	time.Timer
 }
 
-func NewDefaultTimer(d int) *DefaultTimer{
+func NewDefaultTimer(d int) *DefaultTimer {
 	return &DefaultTimer{*(time.NewTimer(time.Duration(d) * time.Millisecond))}
 }
 
-func (t *DefaultTimer) GetC() <-chan time.Time{
+func (t *DefaultTimer) GetC() <-chan time.Time {
 	return t.C
 }
 
@@ -107,42 +107,42 @@ func (t *DefaultTimer) Trigger(ti int64) {
 }
 
 type MockTimer struct {
-	c chan time.Time
-	duration int64
+	c         chan time.Time
+	duration  int64
 	createdAt int64
 }
 
-func NewMockTimer(d int) *MockTimer{
+func NewMockTimer(d int) *MockTimer {
 	if d <= 0 {
 		panic(errors.New("non-positive interval for MockTimer"))
 	}
 	c := make(chan time.Time, 1)
 	t := &MockTimer{
-		c: c,
-		duration: int64(d),
+		c:         c,
+		duration:  int64(d),
 		createdAt: GetMockNow(),
 	}
 	return t
 }
 
-func (t *MockTimer) GetC() <-chan time.Time{
+func (t *MockTimer) GetC() <-chan time.Time {
 	return t.c
 }
 
-func (t *MockTimer) Stop() bool{
+func (t *MockTimer) Stop() bool {
 	t.createdAt = 0
 	return true
 }
 
-func (t *MockTimer) SetDuration(d int){
+func (t *MockTimer) SetDuration(d int) {
 	t.duration = int64(d)
 	t.createdAt = GetMockNow()
 	Log.Debugf("reset timer created at %v", t.createdAt)
 }
 
-func (t *MockTimer) Reset(d time.Duration) bool{
+func (t *MockTimer) Reset(d time.Duration) bool {
 	Log.Debugln("reset timer")
-	t.SetDuration(int(d.Nanoseconds()/1e6))
+	t.SetDuration(int(d.Nanoseconds() / 1e6))
 	return true
 }
 
@@ -153,7 +153,7 @@ func (t *MockTimer) Trigger(ti int64) {
 
 func (t *MockTimer) DoTick(c int64) {
 	Log.Debugf("do tick at %d, created at %v", c, t.createdAt)
-	if t.createdAt > 0 && c >= (t.createdAt + t.duration){
+	if t.createdAt > 0 && c >= (t.createdAt+t.duration) {
 		Log.Info("trigger timer")
 		t.Trigger(t.createdAt + t.duration)
 	}

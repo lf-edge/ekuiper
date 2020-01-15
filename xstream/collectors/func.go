@@ -1,8 +1,8 @@
 package collectors
 
 import (
-	"github.com/emqx/kuiper/xstream/api"
 	"errors"
+	"github.com/emqx/kuiper/xstream/api"
 )
 
 // CollectorFunc is a function used to colllect
@@ -15,7 +15,7 @@ type CollectorFunc func(api.StreamContext, interface{}) error
 // of type:
 //   CollectorFunc
 type FuncCollector struct {
-	f     CollectorFunc
+	f CollectorFunc
 }
 
 // Func creates a new value *FuncCollector that
@@ -25,7 +25,7 @@ func Func(f CollectorFunc) *FuncCollector {
 	return &FuncCollector{f: f}
 }
 
-func (c *FuncCollector) Configure(props map[string]interface{}) error{
+func (c *FuncCollector) Configure(props map[string]interface{}) error {
 	//do nothing
 	return nil
 }

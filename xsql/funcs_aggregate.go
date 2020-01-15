@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type AggregateFunctionValuer struct{
+type AggregateFunctionValuer struct {
 	Data AggregateData
 }
 
@@ -21,15 +21,15 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 	switch lowerName {
 	case "avg":
 		arg0 := args[0].([]interface{})
-		if len(arg0) > 0{
+		if len(arg0) > 0 {
 			v := getFirstValidArg(arg0)
-			switch v.(type){
+			switch v.(type) {
 			case int:
-				return sliceIntTotal(arg0)/len(arg0), true
+				return sliceIntTotal(arg0) / len(arg0), true
 			case int64:
-				return sliceIntTotal(arg0)/len(arg0), true
+				return sliceIntTotal(arg0) / len(arg0), true
 			case float64:
-				return sliceFloatTotal(arg0)/float64(len(arg0)), true
+				return sliceFloatTotal(arg0) / float64(len(arg0)), true
 			default:
 				return fmt.Errorf("invalid data type for avg function"), false
 			}
@@ -40,9 +40,9 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 		return len(arg0), true
 	case "max":
 		arg0 := args[0].([]interface{})
-		if len(arg0) > 0{
+		if len(arg0) > 0 {
 			v := getFirstValidArg(arg0)
-			switch t := v.(type){
+			switch t := v.(type) {
 			case int:
 				return sliceIntMax(arg0, t), true
 			case int64:
@@ -58,9 +58,9 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 		return fmt.Errorf("empty data for max function"), false
 	case "min":
 		arg0 := args[0].([]interface{})
-		if len(arg0) > 0{
+		if len(arg0) > 0 {
 			v := getFirstValidArg(arg0)
-			switch t := v.(type){
+			switch t := v.(type) {
 			case int:
 				return sliceIntMin(arg0, t), true
 			case int64:
@@ -76,9 +76,9 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 		return fmt.Errorf("empty data for max function"), false
 	case "sum":
 		arg0 := args[0].([]interface{})
-		if len(arg0) > 0{
+		if len(arg0) > 0 {
 			v := getFirstValidArg(arg0)
-			switch v.(type){
+			switch v.(type) {
 			case int:
 				return sliceIntTotal(arg0), true
 			case int64:
@@ -94,12 +94,12 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 		common.Log.Debugf("run aggregate func %s", name)
 		if nf, err := plugin_manager.GetPlugin(name, "functions"); err != nil {
 			return nil, false
-		}else{
+		} else {
 			f, ok := nf.(api.Function)
 			if !ok {
 				return nil, false
 			}
-			if !f.IsAggregate(){
+			if !f.IsAggregate() {
 				return nil, false
 			}
 			result, ok := f.Exec(args)
@@ -113,18 +113,18 @@ func (v *AggregateFunctionValuer) GetAllTuples() AggregateData {
 	return v.Data
 }
 
-func getFirstValidArg(s []interface{}) interface{}{
-	for _, v := range s{
-		if v != nil{
+func getFirstValidArg(s []interface{}) interface{} {
+	for _, v := range s {
+		if v != nil {
 			return v
 		}
 	}
 	return nil
 }
 
-func sliceIntTotal(s []interface{}) int{
+func sliceIntTotal(s []interface{}) int {
 	var total int
-	for _, v := range s{
+	for _, v := range s {
 		if v, ok := v.(int); ok {
 			total += v
 		}
@@ -132,17 +132,17 @@ func sliceIntTotal(s []interface{}) int{
 	return total
 }
 
-func sliceFloatTotal(s []interface{}) float64{
+func sliceFloatTotal(s []interface{}) float64 {
 	var total float64
-	for _, v := range s{
+	for _, v := range s {
 		if v, ok := v.(float64); ok {
 			total += v
 		}
 	}
 	return total
 }
-func sliceIntMax(s []interface{}, max int) int{
-	for _, v := range s{
+func sliceIntMax(s []interface{}, max int) int {
+	for _, v := range s {
 		if v, ok := v.(int); ok {
 			if max < v {
 				max = v
@@ -151,8 +151,8 @@ func sliceIntMax(s []interface{}, max int) int{
 	}
 	return max
 }
-func sliceFloatMax(s []interface{}, max float64) float64{
-	for _, v := range s{
+func sliceFloatMax(s []interface{}, max float64) float64 {
+	for _, v := range s {
 		if v, ok := v.(float64); ok {
 			if max < v {
 				max = v
@@ -162,8 +162,8 @@ func sliceFloatMax(s []interface{}, max float64) float64{
 	return max
 }
 
-func sliceStringMax(s []interface{}, max string) string{
-	for _, v := range s{
+func sliceStringMax(s []interface{}, max string) string {
+	for _, v := range s {
 		if v, ok := v.(string); ok {
 			if max < v {
 				max = v
@@ -172,8 +172,8 @@ func sliceStringMax(s []interface{}, max string) string{
 	}
 	return max
 }
-func sliceIntMin(s []interface{}, min int) int{
-	for _, v := range s{
+func sliceIntMin(s []interface{}, min int) int {
+	for _, v := range s {
 		if v, ok := v.(int); ok {
 			if min > v {
 				min = v
@@ -182,8 +182,8 @@ func sliceIntMin(s []interface{}, min int) int{
 	}
 	return min
 }
-func sliceFloatMin(s []interface{}, min float64) float64{
-	for _, v := range s{
+func sliceFloatMin(s []interface{}, min float64) float64 {
+	for _, v := range s {
 		if v, ok := v.(float64); ok {
 			if min > v {
 				min = v
@@ -193,8 +193,8 @@ func sliceFloatMin(s []interface{}, min float64) float64{
 	return min
 }
 
-func sliceStringMin(s []interface{}, min string) string{
-	for _, v := range s{
+func sliceStringMin(s []interface{}, min string) string {
+	for _, v := range s {
 		if v, ok := v.(string); ok {
 			if min < v {
 				min = v

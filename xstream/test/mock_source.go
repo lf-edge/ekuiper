@@ -8,16 +8,16 @@ import (
 )
 
 type MockSource struct {
-	data []*xsql.Tuple
-	done chan<- struct{}
+	data        []*xsql.Tuple
+	done        chan<- struct{}
 	isEventTime bool
 }
 
 // New creates a new CsvSource
 func NewMockSource(data []*xsql.Tuple, done chan<- struct{}, isEventTime bool) *MockSource {
 	mock := &MockSource{
-		data: data,
-		done: done,
+		data:        data,
+		done:        done,
 		isEventTime: isEventTime,
 	}
 	return mock
@@ -27,10 +27,10 @@ func (m *MockSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err e
 	log := ctx.GetLogger()
 
 	log.Debugln("mock source starts")
-	go func(){
-		for _, d := range m.data{
+	go func() {
+		for _, d := range m.data {
 			log.Debugf("mock source is sending data %s", d)
-			if !m.isEventTime{
+			if !m.isEventTime {
 				common.SetMockNow(d.Timestamp)
 				ticker := common.GetMockTicker()
 				timer := common.GetMockTimer()
@@ -47,7 +47,6 @@ func (m *MockSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err e
 			}else{
 				time.Sleep(50 * time.Millisecond) //Let window run to make sure timers are set
 			}
-
 		}
 		if !m.isEventTime {
 			//reset now for the next test
@@ -58,7 +57,7 @@ func (m *MockSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err e
 	return nil
 }
 
-func (m *MockSource) Close(ctx api.StreamContext) error{
+func (m *MockSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 

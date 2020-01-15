@@ -94,7 +94,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" {
 			if !reflect.DeepEqual(tt.r, results) {
-				t.Errorf("%d. %q\n\nstmt mismatch:\nexp=%s\ngot=%#v\n\n", i, tt.s,tt.r, results)
+				t.Errorf("%d. %q\n\nstmt mismatch:\nexp=%s\ngot=%#v\n\n", i, tt.s, tt.r, results)
 			}
 		}
 	}
@@ -509,7 +509,7 @@ func TestSingleSQL(t *testing.T) {
 				}
 			}
 		}
-		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options:map[string]interface{}{
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: map[string]interface{}{
 			"bufferLength": float64(100),
 		}}, sources)
 		if err != nil {
@@ -559,26 +559,26 @@ func TestSingleSQL(t *testing.T) {
 		//	log.Printf("%s:%v", k, values[i])
 		//}
 		for k, v := range tt.m {
-			var(
-				index int
-				key   string
+			var (
+				index   int
+				key     string
 				matched bool
 			)
-			for index, key = range keys{
+			for index, key = range keys {
 				if k == key {
-					if values[index] == v{
+					if values[index] == v {
 						matched = true
 					}
 					break
 				}
 			}
-			if matched{
+			if matched {
 				continue
 			}
 			//do not find
-			if index < len(values){
+			if index < len(values) {
 				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v(%t)\n\ngot=%#v(%t)\n\n", i, tt.sql, k, v, v, values[index], values[index])
-			}else{
+			} else {
 				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=nil\n\n", i, tt.sql, k, v)
 			}
 			break
@@ -1037,26 +1037,26 @@ func TestWindow(t *testing.T) {
 		}
 		keys, values := tp.GetMetrics()
 		for k, v := range tt.m {
-			var(
-				index int
-				key   string
+			var (
+				index   int
+				key     string
 				matched bool
 			)
-			for index, key = range keys{
+			for index, key = range keys {
 				if k == key {
-					if values[index] == v{
+					if values[index] == v {
 						matched = true
 					}
 					break
 				}
 			}
-			if matched{
+			if matched {
 				continue
 			}
 			//do not find
-			if index < len(values){
+			if index < len(values) {
 				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v(%t)\n\ngot=%#v(%t)\n\n", i, tt.sql, k, v, v, values[index], values[index])
-			}else{
+			} else {
 				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=nil\n\n", i, tt.sql, k, v)
 			}
 			break
@@ -1804,26 +1804,26 @@ func TestEventWindow(t *testing.T) {
 		//	log.Printf("%s:%v", k, values[i])
 		//}
 		for k, v := range tt.m {
-			var(
-				index int
-				key   string
+			var (
+				index   int
+				key     string
 				matched bool
 			)
-			for index, key = range keys{
+			for index, key = range keys {
 				if k == key {
-					if values[index] == v{
+					if values[index] == v {
 						matched = true
 					}
 					break
 				}
 			}
-			if matched{
+			if matched {
 				continue
 			}
 			//do not find
-			if index < len(values){
+			if index < len(values) {
 				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v(%t)\n\ngot=%#v(%t)\n\n", i, tt.sql, k, v, v, values[index], values[index])
-			}else{
+			} else {
 				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=nil\n\n", i, tt.sql, k, v)
 			}
 			break

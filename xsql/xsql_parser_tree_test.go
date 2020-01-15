@@ -23,28 +23,28 @@ func TestParser_ParseTree(t *testing.T) {
 					{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"FORMAT" : "JSON",
-					"KEY" : "USERID",
+					"DATASOURCE": "users",
+					"FORMAT":     "JSON",
+					"KEY":        "USERID",
 				},
 			},
 		},
 
 		{
-			s: `SHOW STREAMS`,
+			s:    `SHOW STREAMS`,
 			stmt: &ShowStreamsStatement{},
 		},
 
 		{
-			s: `SHOW STREAMSf`,
+			s:    `SHOW STREAMSf`,
 			stmt: nil,
-			err: `found "STREAMSf", expected keyword streams.`,
+			err:  `found "STREAMSf", expected keyword streams.`,
 		},
 
 		{
-			s: `SHOW STREAMS d`,
+			s:    `SHOW STREAMS d`,
 			stmt: nil,
-			err: `found "d", expected semecolon or EOF.`,
+			err:  `found "d", expected semecolon or EOF.`,
 		},
 
 		{
@@ -70,7 +70,6 @@ func TestParser_ParseTree(t *testing.T) {
 			},
 			err: ``,
 		},
-
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

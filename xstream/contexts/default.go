@@ -40,7 +40,7 @@ func (c *DefaultContext) Done() <-chan struct{} {
 }
 
 func (c *DefaultContext) Err() error {
-	if c.err != nil{
+	if c.err != nil {
 		return c.err
 	}
 	return c.ctx.Err()
@@ -78,7 +78,6 @@ func (c *DefaultContext) GetInstanceId() int {
 func (c *DefaultContext) SetError(err error) {
 	c.err = err
 }
-
 
 func (c *DefaultContext) WithMeta(ruleId string, opId string) api.StreamContext {
 	return &DefaultContext{

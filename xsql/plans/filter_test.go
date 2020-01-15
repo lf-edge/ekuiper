@@ -12,8 +12,8 @@ import (
 
 func TestFilterPlan_Apply(t *testing.T) {
 	var tests = []struct {
-		sql  string
-		data interface{}
+		sql    string
+		data   interface{}
 		result interface{}
 	}{
 		{
@@ -21,7 +21,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "tbl",
 				Message: xsql.Message{
-					"a" : int64(6),
+					"a": int64(6),
 				},
 			},
 			result: nil,
@@ -32,17 +32,17 @@ func TestFilterPlan_Apply(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "tbl",
 				Message: xsql.Message{
-					"abc" : common.TimeFromUnixMilli(1568854515000),
-					"def" : common.TimeFromUnixMilli(1568853515000),
-					"ghi" : common.TimeFromUnixMilli(1568854515000),
+					"abc": common.TimeFromUnixMilli(1568854515000),
+					"def": common.TimeFromUnixMilli(1568853515000),
+					"ghi": common.TimeFromUnixMilli(1568854515000),
 				},
 			},
 			result: &xsql.Tuple{
 				Emitter: "tbl",
 				Message: xsql.Message{
-					"abc" : common.TimeFromUnixMilli(1568854515000),
-					"def" : common.TimeFromUnixMilli(1568853515000),
-					"ghi" : common.TimeFromUnixMilli(1568854515000),
+					"abc": common.TimeFromUnixMilli(1568854515000),
+					"def": common.TimeFromUnixMilli(1568853515000),
+					"ghi": common.TimeFromUnixMilli(1568854515000),
 				},
 			},
 		},
@@ -52,7 +52,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "tbl",
 				Message: xsql.Message{
-					"abc" : int64(6),
+					"abc": int64(6),
 				},
 			},
 			result: &xsql.Tuple{
@@ -68,15 +68,15 @@ func TestFilterPlan_Apply(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "tbl",
 				Message: xsql.Message{
-					"abc" : int64(34),
-					"def" : "hello",
+					"abc": int64(34),
+					"def": "hello",
 				},
 			},
 			result: &xsql.Tuple{
 				Emitter: "tbl",
 				Message: xsql.Message{
-					"abc" : int64(34),
-					"def" : "hello",
+					"abc": int64(34),
+					"def": "hello",
 				},
 			},
 		},
@@ -86,15 +86,15 @@ func TestFilterPlan_Apply(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "tbl",
 				Message: xsql.Message{
-					"abc" : common.TimeFromUnixMilli(1568854515678),
-					"def" : "hello",
+					"abc": common.TimeFromUnixMilli(1568854515678),
+					"def": "hello",
 				},
 			},
 			result: &xsql.Tuple{
 				Emitter: "tbl",
 				Message: xsql.Message{
-					"abc" : common.TimeFromUnixMilli(1568854515678),
-					"def" : "hello",
+					"abc": common.TimeFromUnixMilli(1568854515678),
+					"def": "hello",
 				},
 			},
 		},
@@ -103,31 +103,31 @@ func TestFilterPlan_Apply(t *testing.T) {
 			sql: "SELECT abc FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: xsql.WindowTuplesSet{
 				xsql.WindowTuples{
-					Emitter:"src1",
-					Tuples:[]xsql.Tuple{
+					Emitter: "src1",
+					Tuples: []xsql.Tuple{
 						{
 							Emitter: "src1",
-							Message: xsql.Message{"id1" : 1, "f1" : "v1"},
-						},{
+							Message: xsql.Message{"id1": 1, "f1": "v1"},
+						}, {
 							Emitter: "src1",
-							Message: xsql.Message{"id1" : 2, "f1" : "v2"},
-						},{
+							Message: xsql.Message{"id1": 2, "f1": "v2"},
+						}, {
 							Emitter: "src1",
-							Message: xsql.Message{"id1" : 3, "f1" : "v1"},
+							Message: xsql.Message{"id1": 3, "f1": "v1"},
 						},
 					},
 				},
 			},
 			result: xsql.WindowTuplesSet{
 				xsql.WindowTuples{
-					Emitter:"src1",
-					Tuples:[]xsql.Tuple{
+					Emitter: "src1",
+					Tuples: []xsql.Tuple{
 						{
 							Emitter: "src1",
-							Message: xsql.Message{"id1" : 1, "f1" : "v1"},
-						},{
+							Message: xsql.Message{"id1": 1, "f1": "v1"},
+						}, {
 							Emitter: "src1",
-							Message: xsql.Message{"id1" : 3, "f1" : "v1"},
+							Message: xsql.Message{"id1": 3, "f1": "v1"},
 						},
 					},
 				},
@@ -138,17 +138,17 @@ func TestFilterPlan_Apply(t *testing.T) {
 			sql: "SELECT abc FROM src1 WHERE f1 = \"v8\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: xsql.WindowTuplesSet{
 				xsql.WindowTuples{
-					Emitter:"src1",
-					Tuples:[]xsql.Tuple{
+					Emitter: "src1",
+					Tuples: []xsql.Tuple{
 						{
 							Emitter: "src1",
-							Message: xsql.Message{ "id1" : 1, "f1" : "v1"},
-						},{
+							Message: xsql.Message{"id1": 1, "f1": "v1"},
+						}, {
 							Emitter: "src1",
-							Message: xsql.Message{ "id1" : 2, "f1" : "v2"},
-						},{
+							Message: xsql.Message{"id1": 2, "f1": "v2"},
+						}, {
 							Emitter: "src1",
-							Message: xsql.Message{ "id1" : 3, "f1" : "v1"},
+							Message: xsql.Message{"id1": 3, "f1": "v1"},
 						},
 					},
 				},
@@ -161,32 +161,32 @@ func TestFilterPlan_Apply(t *testing.T) {
 			data: xsql.JoinTupleSets{
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1",},},
-						{Emitter: "src2", Message: xsql.Message{ "id2" : 2, "f2" : "w2",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
+						{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 					},
 				},
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 2, "f1" : "v2",},},
-						{Emitter: "src2", Message: xsql.Message{ "id2" : 4, "f2" : "w3",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
+						{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 					},
 				},
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 3, "f1" : "v1",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 					},
 				},
 			},
 			result: xsql.JoinTupleSets{
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1",},},
-						{Emitter: "src2", Message: xsql.Message{ "id2" : 2, "f2" : "w2",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
+						{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 					},
 				},
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 3, "f1" : "v1",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 					},
 				},
 			},
@@ -197,25 +197,24 @@ func TestFilterPlan_Apply(t *testing.T) {
 			data: xsql.JoinTupleSets{
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1",},},
-						{Emitter: "src2", Message: xsql.Message{ "id2" : 2, "f2" : "w2",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
+						{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 					},
 				},
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 2, "f1" : "v2",},},
-						{Emitter: "src2", Message: xsql.Message{ "id2" : 4, "f2" : "w3",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
+						{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 					},
 				},
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 3, "f1" : "v1",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 					},
 				},
 			},
 			result: nil,
 		},
-
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -228,7 +227,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 			break
 		}
 
-		pp := &FilterPlan{Condition:stmt.Condition}
+		pp := &FilterPlan{Condition: stmt.Condition}
 		result := pp.Apply(ctx, tt.data)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)

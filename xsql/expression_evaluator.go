@@ -1,8 +1,8 @@
 package xsql
 
 import (
-	"github.com/emqx/kuiper/common"
 	"github.com/buger/jsonparser"
+	"github.com/emqx/kuiper/common"
 	"github.com/golang-collections/collections/stack"
 )
 

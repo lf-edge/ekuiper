@@ -29,7 +29,7 @@ func setup() *RuleProcessor {
 	demo = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"ext\")"
 
 	_, err = NewStreamProcessor(demo, path.Join(dbDir, "stream")).Exec()
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 	rp := NewRuleProcessor(dbDir)
@@ -43,14 +43,13 @@ var CACHE_FILE = "cache"
 func TestExtensions(t *testing.T) {
 	log := common.Log
 	var tests = []struct {
-		name    string
-		rj	string
+		name string
+		rj   string
 		r    [][]map[string]interface{}
 	}{
 		{
 			name: `$$test1`,
-			rj: "{\"sql\": \"SELECT echo(count) as e, countPlusOne(count) as p FROM ext where count > 49\",\"actions\": [{\"file\":  {\"path\":\"" + CACHE_FILE + "\"}}]}",
-
+			rj:   "{\"sql\": \"SELECT echo(count) as e, countPlusOne(count) as p FROM ext where count > 49\",\"actions\": [{\"file\":  {\"path\":\"" + CACHE_FILE + "\"}}]}",
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -66,7 +65,7 @@ func TestExtensions(t *testing.T) {
 		}
 
 		tp, err := rp.ExecInitRule(rs)
-		if err != nil{
+		if err != nil {
 			t.Errorf("fail to init rule: %v", err)
 			continue
 		}
@@ -81,13 +80,13 @@ func TestExtensions(t *testing.T) {
 		time.Sleep(5000 * time.Millisecond)
 		log.Printf("exit main program after 5 seconds")
 		results := getResults()
-		if len(results) == 0{
+		if len(results) == 0 {
 			t.Errorf("no result found")
 			continue
 		}
 		log.Debugf("get results %v", results)
 		var maps [][]map[string]interface{}
-		for _, v := range results{
+		for _, v := range results {
 			var mapRes []map[string]interface{}
 			err := json.Unmarshal([]byte(v), &mapRes)
 			if err != nil {
@@ -97,14 +96,14 @@ func TestExtensions(t *testing.T) {
 			maps = append(maps, mapRes)
 		}
 
-		for _, r := range maps{
-			if len(r) != 1{
+		for _, r := range maps {
+			if len(r) != 1 {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\ngot=%#v\n\n", i, tt.rj, maps)
 				break
 			}
 			r := r[0]
 			e := int((r["e"]).(float64))
-			if e != 50 && e != 51{
+			if e != 50 && e != 51 {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\ngot=%#v\n\n", i, tt.rj, maps)
 				break
 			}
@@ -118,15 +117,15 @@ func TestExtensions(t *testing.T) {
 	}
 }
 
-func getResults() []string{
+func getResults() []string {
 	f, err := os.Open(CACHE_FILE)
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
 	result := make([]string, 0)
 	scanner := bufio.NewScanner(f)
-	for scanner.Scan(){
+	for scanner.Scan() {
 		result = append(result, scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {

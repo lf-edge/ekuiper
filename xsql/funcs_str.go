@@ -2,8 +2,8 @@ package xsql
 
 import (
 	"bytes"
-	"github.com/emqx/kuiper/common"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"regexp"
 	"strings"
 	"time"
@@ -34,7 +34,7 @@ func strCall(name string, args []interface{}) (interface{}, bool) {
 	case "lpad":
 		arg0 := common.ToString(args[0])
 		arg1, err := common.ToInt(args[1])
-		if err != nil{
+		if err != nil {
 			return err, false
 		}
 		return strings.Repeat(" ", arg1) + arg0, true
@@ -46,38 +46,38 @@ func strCall(name string, args []interface{}) (interface{}, bool) {
 		return len(arg0), true
 	case "format_time":
 		arg0 := args[0]
-		if t, ok := arg0.(time.Time); ok{
+		if t, ok := arg0.(time.Time); ok {
 			arg1 := common.ToString(args[1])
-			if s, err := common.FormatTime(t, arg1); err==nil{
+			if s, err := common.FormatTime(t, arg1); err == nil {
 				return s, true
 			}
 		}
 		return "", false
 	case "regexp_matches":
 		arg0, arg1 := common.ToString(args[0]), common.ToString(args[1])
-		if matched, err := regexp.MatchString(arg1, arg0); err != nil{
+		if matched, err := regexp.MatchString(arg1, arg0); err != nil {
 			return err, false
-		}else{
+		} else {
 			return matched, true
 		}
 	case "regexp_replace":
 		arg0, arg1, arg2 := common.ToString(args[0]), common.ToString(args[1]), common.ToString(args[2])
-		if re, err := regexp.Compile(arg1); err != nil{
+		if re, err := regexp.Compile(arg1); err != nil {
 			return err, false
-		}else{
+		} else {
 			return re.ReplaceAllString(arg0, arg2), true
 		}
 	case "regexp_substr":
 		arg0, arg1 := common.ToString(args[0]), common.ToString(args[1])
-		if re, err := regexp.Compile(arg1); err != nil{
+		if re, err := regexp.Compile(arg1); err != nil {
 			return err, false
-		}else{
+		} else {
 			return re.FindString(arg0), true
 		}
 	case "rpad":
 		arg0 := common.ToString(args[0])
 		arg1, err := common.ToInt(args[1])
-		if err != nil{
+		if err != nil {
 			return err, false
 		}
 		return arg0 + strings.Repeat(" ", arg1), true
@@ -87,16 +87,16 @@ func strCall(name string, args []interface{}) (interface{}, bool) {
 	case "substring":
 		arg0 := common.ToString(args[0])
 		arg1, err := common.ToInt(args[1])
-		if err != nil{
+		if err != nil {
 			return err, false
 		}
-		if len(args) > 2{
+		if len(args) > 2 {
 			arg2, err := common.ToInt(args[2])
-			if err != nil{
+			if err != nil {
 				return err, false
 			}
 			return arg0[arg1:arg2], true
-		}else{
+		} else {
 			return arg0[arg1:], true
 		}
 	case "startswith":
@@ -121,4 +121,3 @@ func strCall(name string, args []interface{}) (interface{}, bool) {
 		return fmt.Errorf("unknown string function name %s", name), false
 	}
 }
-

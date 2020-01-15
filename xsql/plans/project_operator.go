@@ -10,7 +10,7 @@ import (
 )
 
 type ProjectPlan struct {
-	Fields xsql.Fields
+	Fields      xsql.Fields
 	IsAggregate bool
 
 	isTest bool
@@ -37,7 +37,7 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 		for _, v := range ms {
 			ve := pp.getVE(&v, input)
 			results = append(results, project(pp.Fields, ve, pp.isTest))
-			if pp.IsAggregate{
+			if pp.IsAggregate {
 				break
 			}
 		}
@@ -46,12 +46,12 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 		for _, v := range ms {
 			ve := pp.getVE(&v, input)
 			results = append(results, project(pp.Fields, ve, pp.isTest))
-			if pp.IsAggregate{
+			if pp.IsAggregate {
 				break
 			}
 		}
 	case xsql.GroupedTuplesSet:
-		for _, v := range input{
+		for _, v := range input {
 			ve := pp.getVE(v[0], v)
 			results = append(results, project(pp.Fields, ve, pp.isTest))
 		}
@@ -68,10 +68,10 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 	}
 }
 
-func (pp *ProjectPlan) getVE(tuple xsql.DataValuer, agg xsql.AggregateData) *xsql.ValuerEval{
-	if pp.IsAggregate{
+func (pp *ProjectPlan) getVE(tuple xsql.DataValuer, agg xsql.AggregateData) *xsql.ValuerEval {
+	if pp.IsAggregate {
 		return &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(agg, tuple, &xsql.FunctionValuer{}, &xsql.AggregateFunctionValuer{Data: agg}, &xsql.WildcardValuer{Data: tuple})}
-	}else{
+	} else {
 		return &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, &xsql.FunctionValuer{}, &xsql.WildcardValuer{Data: tuple})}
 	}
 }
@@ -80,23 +80,23 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) map[string]interf
 	result := make(map[string]interface{})
 	for _, f := range fs {
 		//Avoid to re-evaluate for non-agg field has alias name, which was already evaluated in pre-processor operator.
-		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)) && !isTest{
-			fr := &xsql.FieldRef{StreamName:"", Name:f.AName}
+		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)) && !isTest {
+			fr := &xsql.FieldRef{StreamName: "", Name: f.AName}
 			v := ve.Eval(fr)
 			result[f.AName] = v
 		} else {
 			v := ve.Eval(f.Expr)
-			if _, ok := f.Expr.(*xsql.Wildcard); ok || f.Name == "*"{
+			if _, ok := f.Expr.(*xsql.Wildcard); ok || f.Name == "*" {
 				switch val := v.(type) {
-				case map[string]interface{} :
-					for k, v := range val{
-						if _, ok := result[k]; !ok{
+				case map[string]interface{}:
+					for k, v := range val {
+						if _, ok := result[k]; !ok {
 							result[k] = v
 						}
 					}
 				case xsql.Message:
-					for k, v := range val{
-						if _, ok := result[k]; !ok{
+					for k, v := range val {
+						if _, ok := result[k]; !ok {
 							result[k] = v
 						}
 					}
@@ -106,7 +106,7 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) map[string]interf
 			} else {
 				if v != nil {
 					n := assignName(f.Name, f.AName, result)
-					if _, ok := result[n]; !ok{
+					if _, ok := result[n]; !ok {
 						result[n] = v
 					}
 				}
@@ -116,10 +116,9 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) map[string]interf
 	return result
 }
 
-
 const DEFAULT_FIELD_NAME_PREFIX string = "rengine_field_"
 
-func assignName(name, alias string, fields map[string] interface{}) string {
+func assignName(name, alias string, fields map[string]interface{}) string {
 	if result := strings.Trim(alias, " "); result != "" {
 		return result
 	}

@@ -67,7 +67,7 @@ func stopQuery() {
 func (t *Server) GetQueryResult(qid string, reply *string) error {
 	if rs, ok := registry[QUERY_RULE_ID]; ok {
 		c := (*rs.Topology).GetContext()
-		if c != nil && c.Err() != nil{
+		if c != nil && c.Err() != nil {
 			return c.Err()
 		}
 	}
@@ -142,7 +142,7 @@ func (t *Server) GetStatusRule(name string, reply *string) error {
 			case nil:
 				keys, values := (*rs.Topology).GetMetrics()
 				metrics := "{"
-				for i, key := range keys{
+				for i, key := range keys {
 					value := values[i]
 					switch value.(type) {
 					case string:
@@ -151,7 +151,7 @@ func (t *Server) GetStatusRule(name string, reply *string) error {
 						metrics += fmt.Sprintf("\"%s\":%v,", key, value)
 					}
 				}
-				metrics = metrics[:len(metrics) - 1] +  "}"
+				metrics = metrics[:len(metrics)-1] + "}"
 				dst := &bytes.Buffer{}
 				if err = json.Indent(dst, []byte(metrics), "", "  "); err != nil {
 					*reply = "Running with metrics:\n" + metrics
@@ -332,8 +332,8 @@ func StartUp(Version string) {
 	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d... \n", Version, common.Config.Port)
 	log.Info(msg)
 	fmt.Printf(msg)
-	if common.Config.Prometheus{
-		go func(){
+	if common.Config.Prometheus {
+		go func() {
 			port := common.Config.PrometheusPort
 			if port <= 0 {
 				log.Fatal("Miss configuration prometheusPort")

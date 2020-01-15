@@ -10,8 +10,8 @@ type OrderPlan struct {
 }
 
 /**
-  *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
-  *  output: *xsql.Tuple | xsql.WindowTuplesSet | xsql.JoinTupleSets
+ *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
+ *  output: *xsql.Tuple | xsql.WindowTuplesSet | xsql.JoinTupleSets
  */
 func (p *OrderPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	log := ctx.GetLogger()

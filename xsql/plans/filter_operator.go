@@ -10,8 +10,8 @@ type FilterPlan struct {
 }
 
 /**
-  *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
-  *  output: *xsql.Tuple | xsql.WindowTuplesSet | xsql.JoinTupleSets
+ *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
+ *  output: *xsql.Tuple | xsql.WindowTuplesSet | xsql.JoinTupleSets
  */
 func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	log := ctx.GetLogger()
@@ -65,7 +65,7 @@ func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 				return nil
 			}
 		}
-		if len(r) > 0{
+		if len(r) > 0 {
 			return r
 		}
 	default:

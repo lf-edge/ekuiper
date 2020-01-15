@@ -16,23 +16,22 @@ import (
 
 const (
 	logFileName = "stream.log"
-	etc_dir = "/etc/"
-	data_dir = "/data/"
-	log_dir = "/log/"
+	etc_dir     = "/etc/"
+	data_dir    = "/data/"
+	log_dir     = "/log/"
 )
 
 var (
-	Log *logrus.Logger
-	Config *XStreamConf
-	IsTesting bool
-	logFile *os.File
+	Log        *logrus.Logger
+	Config     *XStreamConf
+	IsTesting  bool
+	logFile    *os.File
 	mockTicker *MockTicker
-	mockTimer *MockTimer
-	mockNow int64
+	mockTimer  *MockTimer
+	mockNow    int64
 )
 
 type logRedirect struct {
-
 }
 
 func (l *logRedirect) Errorf(f string, v ...interface{}) {
@@ -66,15 +65,17 @@ func LoadConf(confName string) ([]byte, error) {
 }
 
 type XStreamConf struct {
-	Debug bool `yaml:"debug"`
-	Port int `yaml:"port"`
-	Prometheus bool `yaml:"prometheus"`
-	PrometheusPort int `yaml:"prometheusPort"`
+	Debug          bool `yaml:"debug"`
+	Port           int  `yaml:"port"`
+	Prometheus     bool `yaml:"prometheus"`
+	PrometheusPort int  `yaml:"prometheusPort"`
 }
 
 var StreamConf = "kuiper.yaml"
+
 const KuiperBaseKey = "KuiperBaseKey"
-func init(){
+
+func init() {
 	Log = logrus.New()
 	Log.SetFormatter(&logrus.TextFormatter{
 		DisableColors: true,
@@ -92,7 +93,7 @@ func InitConf() {
 		Log.Fatal(err)
 	}
 
-	if c, ok := cfg["basic"]; !ok{
+	if c, ok := cfg["basic"]; !ok {
 		Log.Fatal("No basic config in kuiper.yaml")
 	} else {
 		Config = &c
@@ -127,9 +128,8 @@ type KeyValue interface {
 
 type SimpleKVStore struct {
 	path string
-	c *cache.Cache;
+	c    *cache.Cache
 }
-
 
 var stores = make(map[string]*SimpleKVStore)
 
@@ -147,7 +147,7 @@ func GetSimpleKVStore(path string) *SimpleKVStore {
 	}
 }
 
-func (m *SimpleKVStore) Open() error  {
+func (m *SimpleKVStore) Open() error {
 	if _, err := os.Stat(m.path); os.IsNotExist(err) {
 		return nil
 	}
@@ -157,7 +157,7 @@ func (m *SimpleKVStore) Open() error  {
 	return nil
 }
 
-func (m *SimpleKVStore) Close() error  {
+func (m *SimpleKVStore) Close() error {
 	e := m.saveToFile()
 	m.c.Flush() //Delete all of the values from memory.
 	return e
@@ -170,7 +170,7 @@ func (m *SimpleKVStore) saveToFile() error {
 	return nil
 }
 
-func (m *SimpleKVStore) Set(key string, value interface{}) error  {
+func (m *SimpleKVStore) Set(key string, value interface{}) error {
 	if m.c == nil {
 		return fmt.Errorf("cache %s has not been initialized yet", m.path)
 	}
@@ -180,7 +180,7 @@ func (m *SimpleKVStore) Set(key string, value interface{}) error  {
 	return m.saveToFile()
 }
 
-func (m *SimpleKVStore) Replace(key string, value interface{}) error  {
+func (m *SimpleKVStore) Replace(key string, value interface{}) error {
 	if m.c == nil {
 		return fmt.Errorf("cache %s has not been initialized yet", m.path)
 	}
@@ -188,7 +188,7 @@ func (m *SimpleKVStore) Replace(key string, value interface{}) error  {
 	return m.saveToFile()
 }
 
-func (m *SimpleKVStore) Get(key string) (interface{}, bool)  {
+func (m *SimpleKVStore) Get(key string) (interface{}, bool) {
 	return m.c.Get(key)
 }
 
@@ -198,7 +198,7 @@ func (m *SimpleKVStore) Delete(key string) error {
 	}
 	if _, found := m.c.Get(key); found {
 		m.c.Delete(key)
-	}else{
+	} else {
 		return fmt.Errorf("%s is not found", key)
 	}
 	return m.saveToFile()
@@ -223,13 +223,13 @@ func PrintMap(m map[string]string, buff *bytes.Buffer) {
 	}
 }
 
-func CloseLogger(){
+func CloseLogger() {
 	if logFile != nil {
 		logFile.Close()
 	}
 }
 
-func GetConfLoc()(string, error){
+func GetConfLoc() (string, error) {
 	return GetLoc(etc_dir)
 }
 
@@ -237,7 +237,7 @@ func GetDataLoc() (string, error) {
 	return GetLoc(data_dir)
 }
 
-func GetLoc(subdir string)(string, error) {
+func GetLoc(subdir string) (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return "", err
@@ -290,35 +290,35 @@ func GetAndCreateDataLoc(dir string) (string, error) {
 
 //Time related. For Mock
 func GetTicker(duration int) Ticker {
-	if IsTesting{
-		if mockTicker == nil{
+	if IsTesting {
+		if mockTicker == nil {
 			mockTicker = NewMockTicker(duration)
-		}else{
+		} else {
 			mockTicker.SetDuration(duration)
 		}
 		return mockTicker
-	}else{
+	} else {
 		return NewDefaultTicker(duration)
 	}
 }
 
 func GetTimer(duration int) Timer {
-	if IsTesting{
-		if mockTimer == nil{
+	if IsTesting {
+		if mockTimer == nil {
 			mockTimer = NewMockTimer(duration)
-		}else{
+		} else {
 			mockTimer.SetDuration(duration)
 		}
 		return mockTimer
-	}else{
+	} else {
 		return NewDefaultTimer(duration)
 	}
 }
 
-func GetNowInMilli() int64{
+func GetNowInMilli() int64 {
 	if IsTesting {
 		return GetMockNow()
-	}else{
+	} else {
 		return TimeToUnixMilli(time.Now())
 	}
 }
@@ -328,41 +328,41 @@ func ProcessPath(p string) (string, error) {
 		return "", nil
 	} else {
 		if _, err := os.Stat(abs); os.IsNotExist(err) {
-			return "", err;
+			return "", err
 		}
 		return abs, nil
 	}
 }
 
 /****** For Test Only ********/
-func GetMockTicker() *MockTicker{
+func GetMockTicker() *MockTicker {
 	return mockTicker
 }
 
-func ResetMockTicker(){
-	if mockTicker != nil{
+func ResetMockTicker() {
+	if mockTicker != nil {
 		mockTicker.lastTick = 0
 	}
 }
 
-func GetMockTimer() *MockTimer{
+func GetMockTimer() *MockTimer {
 	return mockTimer
 }
 
-func SetMockNow(now int64){
+func SetMockNow(now int64) {
 	mockNow = now
 }
 
-func GetMockNow() int64{
+func GetMockNow() int64 {
 	return mockNow
 }
 
 /*********** Type Cast Utilities *****/
 //TODO datetime type
-func ToString(input interface{}) string{
+func ToString(input interface{}) string {
 	return fmt.Sprintf("%v", input)
 }
-func ToInt(input interface{}) (int, error){
+func ToInt(input interface{}) (int, error) {
 	switch t := input.(type) {
 	case float64:
 		return int(t), nil
@@ -379,10 +379,10 @@ func ToInt(input interface{}) (int, error){
 *   Convert a map into a struct. The output parameter must be a pointer to a struct
 *   The struct can have the json meta data
  */
-func MapToStruct(input map[string]interface{}, output interface{}) error{
+func MapToStruct(input map[string]interface{}, output interface{}) error {
 	// convert map to json
 	jsonString, err := json.Marshal(input)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 

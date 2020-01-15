@@ -13,8 +13,8 @@ import (
 
 func TestStrFunc_Apply1(t *testing.T) {
 	var tests = []struct {
-		sql  string
-		data *xsql.Tuple
+		sql    string
+		data   *xsql.Tuple
 		result []map[string]interface{}
 	}{
 		{
@@ -22,9 +22,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "mya",
-					"b" : "myb",
-					"c" : "myc",
+					"a": "mya",
+					"b": "myb",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -37,9 +37,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "mya",
-					"b" : "myb",
-					"c" : "myc",
+					"a": "mya",
+					"b": "myb",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -51,9 +51,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "mya",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "mya",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -65,9 +65,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : common.TimeFromUnixMilli(1568854515000),
-					"b" : "ya",
-					"c" : "myc",
+					"a": common.TimeFromUnixMilli(1568854515000),
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -79,9 +79,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "mya",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "mya",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -93,9 +93,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "中国",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "中国",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -107,9 +107,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "中国",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "中国",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -121,9 +121,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "NYCNicks",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "NYCNicks",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -135,9 +135,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "NYCNicks",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "NYCNicks",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -149,9 +149,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : " \ttrimme\n ",
-					"b" : "ya",
-					"c" : "myc",
+					"a": " \ttrimme\n ",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -163,9 +163,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "中国",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "中国",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -177,9 +177,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "中国",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "中国",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -191,9 +191,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "seafood",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "seafood",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -205,9 +205,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "seafood",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "seafood",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -219,9 +219,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "-ab-axxb-",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "-ab-axxb-",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -233,9 +233,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "seafood",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "seafood",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -247,9 +247,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "NYCNicks",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "NYCNicks",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -261,9 +261,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : " \ttrimme\n ",
-					"b" : "ya",
-					"c" : "myc",
+					"a": " \ttrimme\n ",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -275,9 +275,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "NYCNicks",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "NYCNicks",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -289,9 +289,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "NYCNicks",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "NYCNicks",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -303,9 +303,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "mya",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "mya",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -317,9 +317,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "mya",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "mya",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -331,9 +331,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : " \ttrimme\n ",
-					"b" : "ya",
-					"c" : "myc",
+					"a": " \ttrimme\n ",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -345,9 +345,9 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "NYCNicks",
-					"b" : "ya",
-					"c" : "myc",
+					"a": "NYCNicks",
+					"b": "ya",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -360,7 +360,7 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "test/device001/message",
+					"a": "test/device001/message",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -373,7 +373,7 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "test/device001/message",
+					"a": "test/device001/message",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -386,7 +386,7 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "test/device001/message",
+					"a": "test/device001/message",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -399,7 +399,7 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "/test/device001/message",
+					"a": "/test/device001/message",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -413,10 +413,10 @@ func TestStrFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "test/device001/message",
+					"a": "test/device001/message",
 				},
 			},
-			result: []map[string]interface{}{map[string]interface {}{}},
+			result: []map[string]interface{}{map[string]interface{}{}},
 		},
 	}
 
@@ -428,7 +428,7 @@ func TestStrFunc_Apply1(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectPlan{Fields:stmt.Fields}
+		pp := &ProjectPlan{Fields: stmt.Fields}
 		pp.isTest = true
 		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}

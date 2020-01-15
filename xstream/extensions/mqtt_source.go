@@ -119,14 +119,14 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 	opts.SetAutoReconnect(true)
 	var reconn = false
 	opts.SetConnectionLostHandler(func(client MQTT.Client, e error) {
-		log.Errorf("The connection %s is disconnected due to error %s, will try to re-connect later.", ms.srv + ": " + ms.clientid, e)
+		log.Errorf("The connection %s is disconnected due to error %s, will try to re-connect later.", ms.srv+": "+ms.clientid, e)
 		reconn = true
 		subscribe(ms.tpc, client, ctx, consume)
 	})
-	
+
 	opts.SetOnConnectHandler(func(client MQTT.Client) {
 		if reconn {
-			log.Infof("The connection is %s re-established successfully.", ms.srv + ": " + ms.clientid)
+			log.Infof("The connection is %s re-established successfully.", ms.srv+": "+ms.clientid)
 		}
 	})
 
@@ -137,7 +137,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 	log.Infof("The connection to server %s was established successfully", ms.srv)
 	ms.conn = c
 	subscribe(ms.tpc, c, ctx, consume)
-	log.Infof("Successfully subscribe to topic %s", ms.srv + ": " + ms.clientid)
+	log.Infof("Successfully subscribe to topic %s", ms.srv+": "+ms.clientid)
 
 	return nil
 }

@@ -7,8 +7,8 @@ import (
 type echo struct {
 }
 
-func (f *echo) Validate(args []interface{}) error{
-	if len(args) != 1{
+func (f *echo) Validate(args []interface{}) error {
+	if len(args) != 1 {
 		return fmt.Errorf("echo function only supports 1 parameter but got %d", len(args))
 	}
 	return nil

@@ -231,7 +231,7 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 	if tp, inputs, err := p.createTopo(&api.Rule{Id: ruleid, Sql: sql}); err != nil {
 		return nil, err
 	} else {
-		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", "logToMemory", nil ))
+		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", "logToMemory", nil))
 		go func() {
 			select {
 			case err := <-tp.Open():
@@ -313,9 +313,9 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 	name := rule.Id
 	sql := rule.Sql
 	var (
-		isEventTime bool
-		lateTol int64
-		concurrency = 1
+		isEventTime  bool
+		lateTol      int64
+		concurrency  = 1
 		bufferLength = 1024
 	)
 
