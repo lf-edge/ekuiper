@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -208,9 +209,13 @@ func (m *SimpleKVStore) Keys() (keys []string, err error) {
 }
 
 func PrintMap(m map[string]string, buff *bytes.Buffer) {
-
-	for k, v := range m {
-		buff.WriteString(fmt.Sprintf("%s: %s\n", k, v))
+	si := make([]string, 0, len(m))
+	for s := range m {
+		si = append(si, s)
+	}
+	sort.Strings(si)
+	for _, s := range si {
+		buff.WriteString(fmt.Sprintf("%s: %s\n", s, m[s]))
 	}
 }
 

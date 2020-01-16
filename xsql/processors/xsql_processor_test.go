@@ -1003,11 +1003,17 @@ func TestWindow(t *testing.T) {
 				default:
 				}
 			}
-			for retry := 100; retry > 0; retry-- {
+			retry := 100
+			for ; retry > 0; retry-- {
 				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
 					break
 				}
+				t.Logf("wait to try another %d times", retry)
 				time.Sleep(time.Duration(retry) * time.Millisecond)
+			}
+			if retry == 0 {
+				err := compareMetrics(tp, tt.m, tt.sql)
+				t.Errorf("could not get correct metrics: %v", err)
 			}
 		}()
 		results := mockSink.GetResults()
@@ -1730,11 +1736,17 @@ func TestEventWindow(t *testing.T) {
 			}
 			mockClock := test.GetMockClock()
 			mockClock.Add(1000 * time.Millisecond)
-			for retry := 100; retry > 0; retry-- {
+			retry := 100
+			for ; retry > 0; retry-- {
 				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
 					break
 				}
+				t.Logf("wait to try another %d times", retry)
 				time.Sleep(time.Duration(retry) * time.Millisecond)
+			}
+			if retry == 0 {
+				err := compareMetrics(tp, tt.m, tt.sql)
+				t.Errorf("could not get correct metrics: %v", err)
 			}
 		}()
 		results := mockSink.GetResults()
