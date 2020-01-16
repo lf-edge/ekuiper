@@ -9,12 +9,12 @@ import (
 
 type MockSource struct {
 	data        []*xsql.Tuple
-	done        chan<- struct{}
+	done        <-chan int
 	isEventTime bool
 }
 
 // New creates a new CsvSource
-func NewMockSource(data []*xsql.Tuple, done chan<- struct{}, isEventTime bool) *MockSource {
+func NewMockSource(data []*xsql.Tuple, done <-chan int, isEventTime bool) *MockSource {
 	mock := &MockSource{
 		data:        data,
 		done:        done,
@@ -29,20 +29,16 @@ func (m *MockSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err e
 	log.Debugln("mock source starts")
 	go func() {
 		for _, d := range m.data {
+			<-m.done
 			log.Debugf("mock source is sending data %s", d)
 			if !m.isEventTime {
 				mockClock.Set(common.TimeFromUnixMilli(d.Timestamp))
-			}else {
+			} else {
 				mockClock.Add(1000 * time.Millisecond)
 			}
 			consume(d.Message, nil)
 			time.Sleep(1)
 		}
-		if m.isEventTime{
-			mockClock.Add(1000 * time.Millisecond)
-			time.Sleep(1)
-		}
-		m.done <- struct{}{}
 	}()
 	return nil
 }

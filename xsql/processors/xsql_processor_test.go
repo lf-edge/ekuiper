@@ -149,7 +149,7 @@ func dropStreams(t *testing.T) {
 	}
 }
 
-func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNode {
+func getMockSource(name string, done <-chan int, size int) *nodes.SourceNode {
 	var data []*xsql.Tuple
 	switch name {
 	case "demo":
@@ -361,6 +361,7 @@ func TestSingleSQL(t *testing.T) {
 		name string
 		sql  string
 		r    [][]map[string]interface{}
+		s    string
 		m    map[string]interface{}
 	}{
 		{
@@ -404,14 +405,15 @@ func TestSingleSQL(t *testing.T) {
 				"op_project_0_records_in_total":   int64(5),
 				"op_project_0_records_out_total":  int64(5),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(5),
-				"sink_MockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 			},
+			s: "sink_mockSink_0_records_out_total",
 		}, {
 			name: `rule2`,
 			sql:  `SELECT color, ts FROM demo where size > 3`,
@@ -425,6 +427,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":    float64(1541152488442),
 				}},
 			},
+			s: "op_filter_0_records_in_total",
 			m: map[string]interface{}{
 				"op_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_preprocessor_demo_0_process_latency_ms": int64(0),
@@ -436,9 +439,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_project_0_records_in_total":   int64(2),
 				"op_project_0_records_out_total":  int64(2),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(2),
-				"sink_MockSink_0_records_out_total": int64(2),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -462,6 +465,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":   float64(1541152488442),
 				}},
 			},
+			s: "op_filter_0_records_in_total",
 			m: map[string]interface{}{
 				"op_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_preprocessor_demo_0_process_latency_ms": int64(0),
@@ -473,9 +477,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_project_0_records_in_total":   int64(2),
 				"op_project_0_records_out_total":  int64(2),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(2),
-				"sink_MockSink_0_records_out_total": int64(2),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -491,12 +495,15 @@ func TestSingleSQL(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	createStreams(t)
 	defer dropStreams(t)
-	done := make(chan struct{})
 	//defer close(done)
 	for i, tt := range tests {
+		test.ResetClock(1541152486000)
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
-		var sources []*nodes.SourceNode
+		var (
+			sources []*nodes.SourceNode
+			syncs   []chan int
+		)
 		if stmt, err := xsql.Language.Parse(parser); err != nil {
 			t.Errorf("parse sql %s error: %s", tt.sql, err)
 		} else {
@@ -505,7 +512,9 @@ func TestSingleSQL(t *testing.T) {
 			} else {
 				streams := xsql.GetStreams(selectStmt)
 				for _, stream := range streams {
-					source := getMockSource(stream, done, 5)
+					next := make(chan int)
+					syncs = append(syncs, next)
+					source := getMockSource(stream, next, 5)
 					sources = append(sources, source)
 				}
 			}
@@ -517,27 +526,25 @@ func TestSingleSQL(t *testing.T) {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNodeWithSink("MockSink", mockSink)
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
 		tp.AddSink(inputs, sink)
-		count := len(sources)
 		errCh := tp.Open()
 		func() {
-			for {
+			for i := 0; i < 5; i++ {
+				syncs[i%len(syncs)] <- i
 				select {
 				case err = <-errCh:
 					t.Log(err)
 					tp.Cancel()
 					return
-				case <-done:
-					count--
-					log.Infof("%d sources remaining", count)
-					if count <= 0 {
-						log.Info("stream stopping")
-						time.Sleep(1 * time.Second)
-						return
-					}
 				default:
 				}
+			}
+			for retry := 100; retry > 0; retry-- {
+				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+					break
+				}
+				time.Sleep(time.Duration(retry) * time.Millisecond)
 			}
 		}()
 		results := mockSink.GetResults()
@@ -555,7 +562,7 @@ func TestSingleSQL(t *testing.T) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 			continue
 		}
-		if err := compareMetrics(tp, tt.m, tt.sql); err != nil{
+		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
 			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 		}
 		tp.Cancel()
@@ -948,13 +955,14 @@ func TestWindow(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	createStreams(t)
 	defer dropStreams(t)
-	done := make(chan struct{})
-	defer close(done)
 	for i, tt := range tests {
 		test.ResetClock(1541152486000)
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
-		var sources []*nodes.SourceNode
+		var (
+			sources []*nodes.SourceNode
+			syncs   []chan int
+		)
 		if stmt, err := xsql.Language.Parse(parser); err != nil {
 			t.Errorf("parse sql %s error: %s", tt.sql, err)
 		} else {
@@ -963,7 +971,9 @@ func TestWindow(t *testing.T) {
 			} else {
 				streams := xsql.GetStreams(selectStmt)
 				for _, stream := range streams {
-					source := getMockSource(stream, done, tt.size)
+					next := make(chan int)
+					syncs = append(syncs, next)
+					source := getMockSource(stream, next, tt.size)
 					sources = append(sources, source)
 				}
 			}
@@ -975,23 +985,29 @@ func TestWindow(t *testing.T) {
 		mockSink := test.NewMockSink()
 		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
 		tp.AddSink(inputs, sink)
-		count := len(sources)
 		errCh := tp.Open()
 		func() {
-			for {
+			for i := 0; i < tt.size*len(syncs); i++ {
+				syncs[i%len(syncs)] <- i
+				for {
+					time.Sleep(1)
+					if getMetric(tp, "op_window_0_records_in_total") == (i + 1) {
+						break
+					}
+				}
 				select {
 				case err = <-errCh:
 					t.Log(err)
 					tp.Cancel()
 					return
-				case <-done:
-					count--
-					log.Infof("%d sources remaining", count)
-					if count <= 0 {
-						log.Info("stream stopping")
-						return
-					}
+				default:
 				}
+			}
+			for retry := 100; retry > 0; retry-- {
+				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+					break
+				}
+				time.Sleep(time.Duration(retry) * time.Millisecond)
 			}
 		}()
 		results := mockSink.GetResults()
@@ -1008,7 +1024,7 @@ func TestWindow(t *testing.T) {
 		if !reflect.DeepEqual(tt.r, maps) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 		}
-		if err := compareMetrics(tp, tt.m, tt.sql); err != nil{
+		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
 			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 		}
 		tp.Cancel()
@@ -1063,7 +1079,7 @@ func dropEventStreams(t *testing.T) {
 	}
 }
 
-func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNode {
+func getEventMockSource(name string, done <-chan int, size int) *nodes.SourceNode {
 	var data []*xsql.Tuple
 	switch name {
 	case "demoE":
@@ -1357,9 +1373,9 @@ func TestEventWindow(t *testing.T) {
 				"op_project_0_records_in_total":   int64(5),
 				"op_project_0_records_out_total":  int64(5),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(5),
-				"sink_MockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1395,9 +1411,9 @@ func TestEventWindow(t *testing.T) {
 				"op_project_0_records_in_total":   int64(2),
 				"op_project_0_records_out_total":  int64(2),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(2),
-				"sink_MockSink_0_records_out_total": int64(2),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1464,9 +1480,9 @@ func TestEventWindow(t *testing.T) {
 				"op_project_0_records_in_total":   int64(5),
 				"op_project_0_records_out_total":  int64(5),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(5),
-				"sink_MockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1520,9 +1536,9 @@ func TestEventWindow(t *testing.T) {
 				"op_project_0_records_in_total":   int64(4),
 				"op_project_0_records_out_total":  int64(4),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(4),
-				"sink_MockSink_0_records_out_total": int64(4),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1581,9 +1597,9 @@ func TestEventWindow(t *testing.T) {
 				"op_project_0_records_in_total":   int64(4),
 				"op_project_0_records_out_total":  int64(4),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(4),
-				"sink_MockSink_0_records_out_total": int64(4),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
 
 				"source_sessionDemoE_0_exceptions_total":  int64(0),
 				"source_sessionDemoE_0_records_in_total":  int64(12),
@@ -1632,9 +1648,9 @@ func TestEventWindow(t *testing.T) {
 				"op_project_0_records_in_total":   int64(5),
 				"op_project_0_records_out_total":  int64(5),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(5),
-				"sink_MockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1658,13 +1674,14 @@ func TestEventWindow(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	createEventStreams(t)
 	defer dropEventStreams(t)
-	done := make(chan struct{})
-	defer close(done)
 	for i, tt := range tests {
 		test.ResetClock(1541152486000)
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
-		var sources []*nodes.SourceNode
+		var (
+			sources []*nodes.SourceNode
+			syncs   []chan int
+		)
 		if stmt, err := xsql.Language.Parse(parser); err != nil {
 			t.Errorf("parse sql %s error: %s", tt.sql, err)
 		} else {
@@ -1673,7 +1690,9 @@ func TestEventWindow(t *testing.T) {
 			} else {
 				streams := xsql.GetStreams(selectStmt)
 				for _, stream := range streams {
-					source := getEventMockSource(stream, done, tt.size)
+					next := make(chan int)
+					syncs = append(syncs, next)
+					source := getEventMockSource(stream, next, tt.size)
 					sources = append(sources, source)
 				}
 			}
@@ -1689,25 +1708,33 @@ func TestEventWindow(t *testing.T) {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNodeWithSink("MockSink", mockSink)
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
 		tp.AddSink(inputs, sink)
-		count := len(sources)
 		errCh := tp.Open()
 		func() {
-			for {
+			for i := 0; i < tt.size*len(syncs); i++ {
+				syncs[i%len(syncs)] <- i
+				for {
+					time.Sleep(1)
+					if getMetric(tp, "op_window_0_records_in_total") == (i + 1) {
+						break
+					}
+				}
 				select {
 				case err = <-errCh:
 					t.Log(err)
 					tp.Cancel()
 					return
-				case <-done:
-					count--
-					log.Infof("%d sources remaining", count)
-					if count <= 0 {
-						log.Info("stream stopping")
-						return
-					}
+				default:
 				}
+			}
+			mockClock := test.GetMockClock()
+			mockClock.Add(1000 * time.Millisecond)
+			for retry := 100; retry > 0; retry-- {
+				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+					break
+				}
+				time.Sleep(time.Duration(retry) * time.Millisecond)
 			}
 		}()
 		results := mockSink.GetResults()
@@ -1724,11 +1751,22 @@ func TestEventWindow(t *testing.T) {
 		if !reflect.DeepEqual(tt.r, maps) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 		}
-		if err := compareMetrics(tp, tt.m, tt.sql); err != nil{
+		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
 			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 		}
 		tp.Cancel()
 	}
+}
+
+func getMetric(tp *xstream.TopologyNew, name string) int {
+	keys, values := tp.GetMetrics()
+	for index, key := range keys {
+		if key == name {
+			return int(values[index].(int64))
+		}
+	}
+	fmt.Println("can't find " + name)
+	return 0
 }
 
 func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}, sql string) (err error) {
