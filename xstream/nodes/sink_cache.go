@@ -85,7 +85,7 @@ func (c *Cache) run(ctx api.StreamContext) {
 		return
 	}
 
-	ticker := common.NewDefaultTicker(c.saveInterval)
+	ticker := common.GetTicker(c.saveInterval)
 	for {
 		select {
 		case item := <-c.in:
@@ -100,7 +100,7 @@ func (c *Cache) run(ctx api.StreamContext) {
 		case index := <-c.Complete:
 			c.pending.delete(index)
 			c.changed = true
-		case <-ticker.GetC():
+		case <-ticker.C:
 			if c.pending.length() == 0 {
 				c.pending.reset()
 			}

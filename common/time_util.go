@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"github.com/benbjohnson/clock"
 	"time"
 )
 
@@ -113,7 +114,7 @@ func InterfaceToTime(i interface{}, format string) (time.Time, error) {
 }
 
 func TimeFromUnixMilli(t int64) time.Time {
-	return time.Unix(t/1000, t%1000).UTC()
+	return time.Unix(t/1000, (t%1000)*1e6).UTC()
 }
 
 func ParseTime(t string, f string) (time.Time, error) {
@@ -340,4 +341,17 @@ func convertFormat(f string) (string, error) {
 		}
 	}
 	return out, nil
+}
+
+//Time related. For Mock
+func GetTicker(duration int) *clock.Ticker {
+	return Clock.Ticker(time.Duration(duration) * time.Millisecond)
+}
+
+func GetTimer(duration int) *clock.Timer {
+	return Clock.Timer(time.Duration(duration) * time.Millisecond)
+}
+
+func GetNowInMilli() int64 {
+	return TimeToUnixMilli(Clock.Now())
 }

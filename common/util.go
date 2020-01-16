@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/benbjohnson/clock"
 	"github.com/go-yaml/yaml"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
@@ -11,44 +12,25 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"time"
+	"strings"
 )
 
 const (
-	logFileName = "stream.log"
-	etc_dir     = "/etc/"
-	data_dir    = "/data/"
-	log_dir     = "/log/"
+	logFileName   = "stream.log"
+	etc_dir       = "/etc/"
+	data_dir      = "/data/"
+	log_dir       = "/log/"
+	StreamConf    = "kuiper.yaml"
+	KuiperBaseKey = "KuiperBaseKey"
 )
 
 var (
-	Log        *logrus.Logger
-	Config     *XStreamConf
-	IsTesting  bool
-	logFile    *os.File
-	mockTicker *MockTicker
-	mockTimer  *MockTimer
-	mockNow    int64
+	Log       *logrus.Logger
+	Config    *XStreamConf
+	IsTesting bool
+	Clock     clock.Clock
+	logFile   *os.File
 )
-
-type logRedirect struct {
-}
-
-func (l *logRedirect) Errorf(f string, v ...interface{}) {
-	Log.Error(fmt.Sprintf(f, v...))
-}
-
-func (l *logRedirect) Infof(f string, v ...interface{}) {
-	Log.Info(fmt.Sprintf(f, v...))
-}
-
-func (l *logRedirect) Warningf(f string, v ...interface{}) {
-	Log.Warning(fmt.Sprintf(f, v...))
-}
-
-func (l *logRedirect) Debugf(f string, v ...interface{}) {
-	Log.Debug(fmt.Sprintf(f, v...))
-}
 
 func LoadConf(confName string) ([]byte, error) {
 	confDir, err := GetConfLoc()
@@ -71,16 +53,25 @@ type XStreamConf struct {
 	PrometheusPort int  `yaml:"prometheusPort"`
 }
 
-var StreamConf = "kuiper.yaml"
-
-const KuiperBaseKey = "KuiperBaseKey"
-
 func init() {
 	Log = logrus.New()
 	Log.SetFormatter(&logrus.TextFormatter{
 		DisableColors: true,
 		FullTimestamp: true,
 	})
+	Log.Debugf("init with args %s", os.Args)
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, "-test.") {
+			IsTesting = true
+			break
+		}
+	}
+	if IsTesting {
+		Log.Debugf("running in testing mode")
+		Clock = clock.NewMock()
+	} else {
+		Clock = clock.New()
+	}
 }
 
 func InitConf() {
@@ -288,41 +279,6 @@ func GetAndCreateDataLoc(dir string) (string, error) {
 	return d, nil
 }
 
-//Time related. For Mock
-func GetTicker(duration int) Ticker {
-	if IsTesting {
-		if mockTicker == nil {
-			mockTicker = NewMockTicker(duration)
-		} else {
-			mockTicker.SetDuration(duration)
-		}
-		return mockTicker
-	} else {
-		return NewDefaultTicker(duration)
-	}
-}
-
-func GetTimer(duration int) Timer {
-	if IsTesting {
-		if mockTimer == nil {
-			mockTimer = NewMockTimer(duration)
-		} else {
-			mockTimer.SetDuration(duration)
-		}
-		return mockTimer
-	} else {
-		return NewDefaultTimer(duration)
-	}
-}
-
-func GetNowInMilli() int64 {
-	if IsTesting {
-		return GetMockNow()
-	} else {
-		return TimeToUnixMilli(time.Now())
-	}
-}
-
 func ProcessPath(p string) (string, error) {
 	if abs, err := filepath.Abs(p); err != nil {
 		return "", nil
@@ -332,29 +288,6 @@ func ProcessPath(p string) (string, error) {
 		}
 		return abs, nil
 	}
-}
-
-/****** For Test Only ********/
-func GetMockTicker() *MockTicker {
-	return mockTicker
-}
-
-func ResetMockTicker() {
-	if mockTicker != nil {
-		mockTicker.lastTick = 0
-	}
-}
-
-func GetMockTimer() *MockTimer {
-	return mockTimer
-}
-
-func SetMockNow(now int64) {
-	mockNow = now
-}
-
-func GetMockNow() int64 {
-	return mockNow
 }
 
 /*********** Type Cast Utilities *****/

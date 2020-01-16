@@ -39,7 +39,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"ts": "2019-09-19T00:56:13.000000431Z",
+				"ts": "2019-09-19T00:56:13.431Z",
 			}},
 		},
 		{

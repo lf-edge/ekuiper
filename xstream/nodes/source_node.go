@@ -97,6 +97,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 					m.sources = append(m.sources, source)
 					m.mutex.Unlock()
 				} else {
+					logger.Infof("use instance %d of %d sources", instance, len(m.sources))
 					source = m.sources[instance]
 				}
 				stats, err := NewStatManager("source", ctx)
