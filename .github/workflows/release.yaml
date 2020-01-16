@@ -87,7 +87,7 @@ jobs:
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
             for var in $(ls _packages) ; do
-                .github/workflows/release/upload-github-release-asset.sh owner=emqx repo=kuiper tag=$version filename=_packages/$var github_api_token=$(echo ${{ secrets.AccessToken }})
+              .github/workflows/script/upload_github_release_asset.sh owner=emqx repo=kuiper tag=$version filename=_packages/$var github_api_token=$(echo ${{ secrets.AccessToken }})
             done
         - name: create invalidation for cloudfront
           if: github.event_name == 'release'
