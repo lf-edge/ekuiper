@@ -13,8 +13,8 @@ import (
 
 func TestMathAndConversionFunc_Apply1(t *testing.T) {
 	var tests = []struct {
-		sql  string
-		data *xsql.Tuple
+		sql    string
+		data   *xsql.Tuple
 		result []map[string]interface{}
 	}{
 		{
@@ -22,7 +22,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : -1,
+					"a": -1,
 				},
 			},
 			result: []map[string]interface{}{{
@@ -35,7 +35,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : -1.1,
+					"a": -1.1,
 				},
 			},
 			result: []map[string]interface{}{{
@@ -48,7 +48,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : 1.1,
+					"a": 1.1,
 				},
 			},
 			result: []map[string]interface{}{{
@@ -451,7 +451,6 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				"a": float64(3.00),
 			}},
 		},
-
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -462,11 +461,11 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil && tt.result == nil {
 			continue
-		} else if err != nil && tt.result != nil{
+		} else if err != nil && tt.result != nil {
 			t.Errorf("%q", err)
 			continue
 		}
-		pp := &ProjectPlan{Fields:stmt.Fields}
+		pp := &ProjectPlan{Fields: stmt.Fields}
 		pp.isTest = true
 		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}

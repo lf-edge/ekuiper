@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
+	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
 	"github.com/emqx/kuiper/xstream/test"
@@ -94,7 +95,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" {
 			if !reflect.DeepEqual(tt.r, results) {
-				t.Errorf("%d. %q\n\nstmt mismatch:\nexp=%s\ngot=%#v\n\n", i, tt.s,tt.r, results)
+				t.Errorf("%d. %q\n\nstmt mismatch:\nexp=%s\ngot=%#v\n\n", i, tt.s, tt.r, results)
 			}
 		}
 	}
@@ -148,7 +149,7 @@ func dropStreams(t *testing.T) {
 	}
 }
 
-func getMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNode {
+func getMockSource(name string, done <-chan int, size int) *nodes.SourceNode {
 	var data []*xsql.Tuple
 	switch name {
 	case "demo":
@@ -360,6 +361,7 @@ func TestSingleSQL(t *testing.T) {
 		name string
 		sql  string
 		r    [][]map[string]interface{}
+		s    string
 		m    map[string]interface{}
 	}{
 		{
@@ -403,14 +405,15 @@ func TestSingleSQL(t *testing.T) {
 				"op_project_0_records_in_total":   int64(5),
 				"op_project_0_records_out_total":  int64(5),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(5),
-				"sink_MockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 			},
+			s: "sink_mockSink_0_records_out_total",
 		}, {
 			name: `rule2`,
 			sql:  `SELECT color, ts FROM demo where size > 3`,
@@ -424,6 +427,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":    float64(1541152488442),
 				}},
 			},
+			s: "op_filter_0_records_in_total",
 			m: map[string]interface{}{
 				"op_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_preprocessor_demo_0_process_latency_ms": int64(0),
@@ -435,9 +439,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_project_0_records_in_total":   int64(2),
 				"op_project_0_records_out_total":  int64(2),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(2),
-				"sink_MockSink_0_records_out_total": int64(2),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -461,6 +465,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":   float64(1541152488442),
 				}},
 			},
+			s: "op_filter_0_records_in_total",
 			m: map[string]interface{}{
 				"op_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_preprocessor_demo_0_process_latency_ms": int64(0),
@@ -472,9 +477,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_project_0_records_in_total":   int64(2),
 				"op_project_0_records_out_total":  int64(2),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(2),
-				"sink_MockSink_0_records_out_total": int64(2),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -490,12 +495,15 @@ func TestSingleSQL(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	createStreams(t)
 	defer dropStreams(t)
-	done := make(chan struct{})
 	//defer close(done)
 	for i, tt := range tests {
+		test.ResetClock(1541152486000)
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
-		var sources []*nodes.SourceNode
+		var (
+			sources []*nodes.SourceNode
+			syncs   []chan int
+		)
 		if stmt, err := xsql.Language.Parse(parser); err != nil {
 			t.Errorf("parse sql %s error: %s", tt.sql, err)
 		} else {
@@ -504,39 +512,39 @@ func TestSingleSQL(t *testing.T) {
 			} else {
 				streams := xsql.GetStreams(selectStmt)
 				for _, stream := range streams {
-					source := getMockSource(stream, done, 5)
+					next := make(chan int)
+					syncs = append(syncs, next)
+					source := getMockSource(stream, next, 5)
 					sources = append(sources, source)
 				}
 			}
 		}
-		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options:map[string]interface{}{
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: map[string]interface{}{
 			"bufferLength": float64(100),
 		}}, sources)
 		if err != nil {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNodeWithSink("MockSink", mockSink)
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
 		tp.AddSink(inputs, sink)
-		count := len(sources)
 		errCh := tp.Open()
 		func() {
-			for {
+			for i := 0; i < 5; i++ {
+				syncs[i%len(syncs)] <- i
 				select {
 				case err = <-errCh:
 					t.Log(err)
 					tp.Cancel()
 					return
-				case <-done:
-					count--
-					log.Infof("%d sources remaining", count)
-					if count <= 0 {
-						log.Info("stream stopping")
-						time.Sleep(1 * time.Second)
-						return
-					}
 				default:
 				}
+			}
+			for retry := 100; retry > 0; retry-- {
+				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+					break
+				}
+				time.Sleep(time.Duration(retry) * time.Millisecond)
 			}
 		}()
 		results := mockSink.GetResults()
@@ -554,41 +562,14 @@ func TestSingleSQL(t *testing.T) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 			continue
 		}
-		keys, values := tp.GetMetrics()
-		//for i, k := range keys{
-		//	log.Printf("%s:%v", k, values[i])
-		//}
-		for k, v := range tt.m {
-			var(
-				index int
-				key   string
-				matched bool
-			)
-			for index, key = range keys{
-				if k == key {
-					if values[index] == v{
-						matched = true
-					}
-					break
-				}
-			}
-			if matched{
-				continue
-			}
-			//do not find
-			if index < len(values){
-				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v(%t)\n\ngot=%#v(%t)\n\n", i, tt.sql, k, v, v, values[index], values[index])
-			}else{
-				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=nil\n\n", i, tt.sql, k, v)
-			}
-			break
+		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 		}
 		tp.Cancel()
 	}
 }
 
 func TestWindow(t *testing.T) {
-	common.IsTesting = true
 	var tests = []struct {
 		name string
 		sql  string
@@ -974,13 +955,14 @@ func TestWindow(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	createStreams(t)
 	defer dropStreams(t)
-	done := make(chan struct{})
-	defer close(done)
-	common.ResetMockTicker()
 	for i, tt := range tests {
+		test.ResetClock(1541152486000)
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
-		var sources []*nodes.SourceNode
+		var (
+			sources []*nodes.SourceNode
+			syncs   []chan int
+		)
 		if stmt, err := xsql.Language.Parse(parser); err != nil {
 			t.Errorf("parse sql %s error: %s", tt.sql, err)
 		} else {
@@ -989,7 +971,9 @@ func TestWindow(t *testing.T) {
 			} else {
 				streams := xsql.GetStreams(selectStmt)
 				for _, stream := range streams {
-					source := getMockSource(stream, done, tt.size)
+					next := make(chan int)
+					syncs = append(syncs, next)
+					source := getMockSource(stream, next, tt.size)
 					sources = append(sources, source)
 				}
 			}
@@ -1001,24 +985,35 @@ func TestWindow(t *testing.T) {
 		mockSink := test.NewMockSink()
 		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
 		tp.AddSink(inputs, sink)
-		count := len(sources)
 		errCh := tp.Open()
 		func() {
-			for {
+			for i := 0; i < tt.size*len(syncs); i++ {
+				syncs[i%len(syncs)] <- i
+				for {
+					time.Sleep(1)
+					if getMetric(tp, "op_window_0_records_in_total") == (i + 1) {
+						break
+					}
+				}
 				select {
 				case err = <-errCh:
 					t.Log(err)
 					tp.Cancel()
 					return
-				case <-done:
-					count--
-					log.Infof("%d sources remaining", count)
-					if count <= 0 {
-						log.Info("stream stopping")
-						return
-					}
 				default:
 				}
+			}
+			retry := 100
+			for ; retry > 0; retry-- {
+				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+					break
+				}
+				t.Logf("wait to try another %d times", retry)
+				time.Sleep(time.Duration(retry) * time.Millisecond)
+			}
+			if retry == 0 {
+				err := compareMetrics(tp, tt.m, tt.sql)
+				t.Errorf("could not get correct metrics: %v", err)
 			}
 		}()
 		results := mockSink.GetResults()
@@ -1035,31 +1030,8 @@ func TestWindow(t *testing.T) {
 		if !reflect.DeepEqual(tt.r, maps) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 		}
-		keys, values := tp.GetMetrics()
-		for k, v := range tt.m {
-			var(
-				index int
-				key   string
-				matched bool
-			)
-			for index, key = range keys{
-				if k == key {
-					if values[index] == v{
-						matched = true
-					}
-					break
-				}
-			}
-			if matched{
-				continue
-			}
-			//do not find
-			if index < len(values){
-				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v(%t)\n\ngot=%#v(%t)\n\n", i, tt.sql, k, v, v, values[index], values[index])
-			}else{
-				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=nil\n\n", i, tt.sql, k, v)
-			}
-			break
+		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 		}
 		tp.Cancel()
 	}
@@ -1113,7 +1085,7 @@ func dropEventStreams(t *testing.T) {
 	}
 }
 
-func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.SourceNode {
+func getEventMockSource(name string, done <-chan int, size int) *nodes.SourceNode {
 	var data []*xsql.Tuple
 	switch name {
 	case "demoE":
@@ -1348,7 +1320,6 @@ func getEventMockSource(name string, done chan<- struct{}, size int) *nodes.Sour
 }
 
 func TestEventWindow(t *testing.T) {
-	common.IsTesting = true
 	var tests = []struct {
 		name string
 		sql  string
@@ -1408,9 +1379,9 @@ func TestEventWindow(t *testing.T) {
 				"op_project_0_records_in_total":   int64(5),
 				"op_project_0_records_out_total":  int64(5),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(5),
-				"sink_MockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1446,9 +1417,9 @@ func TestEventWindow(t *testing.T) {
 				"op_project_0_records_in_total":   int64(2),
 				"op_project_0_records_out_total":  int64(2),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(2),
-				"sink_MockSink_0_records_out_total": int64(2),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1515,9 +1486,9 @@ func TestEventWindow(t *testing.T) {
 				"op_project_0_records_in_total":   int64(5),
 				"op_project_0_records_out_total":  int64(5),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(5),
-				"sink_MockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1571,9 +1542,9 @@ func TestEventWindow(t *testing.T) {
 				"op_project_0_records_in_total":   int64(4),
 				"op_project_0_records_out_total":  int64(4),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(4),
-				"sink_MockSink_0_records_out_total": int64(4),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1632,9 +1603,9 @@ func TestEventWindow(t *testing.T) {
 				"op_project_0_records_in_total":   int64(4),
 				"op_project_0_records_out_total":  int64(4),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(4),
-				"sink_MockSink_0_records_out_total": int64(4),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
 
 				"source_sessionDemoE_0_exceptions_total":  int64(0),
 				"source_sessionDemoE_0_records_in_total":  int64(12),
@@ -1683,9 +1654,9 @@ func TestEventWindow(t *testing.T) {
 				"op_project_0_records_in_total":   int64(5),
 				"op_project_0_records_out_total":  int64(5),
 
-				"sink_MockSink_0_exceptions_total":  int64(0),
-				"sink_MockSink_0_records_in_total":  int64(5),
-				"sink_MockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1709,36 +1680,14 @@ func TestEventWindow(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	createEventStreams(t)
 	defer dropEventStreams(t)
-	done := make(chan struct{})
-	defer close(done)
-	common.ResetMockTicker()
-	//mock ticker
-	realTicker := time.NewTicker(500 * time.Millisecond)
-	tickerDone := make(chan bool)
-	go func() {
-		ticker := common.GetTicker(1000).(*common.MockTicker)
-		timer := common.GetTimer(1000).(*common.MockTimer)
-		for {
-			select {
-			case <-tickerDone:
-				log.Infof("real ticker exiting...")
-				return
-			case t := <-realTicker.C:
-				ts := common.TimeToUnixMilli(t)
-				if ticker != nil {
-					go ticker.DoTick(ts)
-				}
-				if timer != nil {
-					go timer.DoTick(ts)
-				}
-			}
-		}
-
-	}()
 	for i, tt := range tests {
+		test.ResetClock(1541152486000)
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
-		var sources []*nodes.SourceNode
+		var (
+			sources []*nodes.SourceNode
+			syncs   []chan int
+		)
 		if stmt, err := xsql.Language.Parse(parser); err != nil {
 			t.Errorf("parse sql %s error: %s", tt.sql, err)
 		} else {
@@ -1747,7 +1696,9 @@ func TestEventWindow(t *testing.T) {
 			} else {
 				streams := xsql.GetStreams(selectStmt)
 				for _, stream := range streams {
-					source := getEventMockSource(stream, done, tt.size)
+					next := make(chan int)
+					syncs = append(syncs, next)
+					source := getEventMockSource(stream, next, tt.size)
 					sources = append(sources, source)
 				}
 			}
@@ -1763,26 +1714,39 @@ func TestEventWindow(t *testing.T) {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNodeWithSink("MockSink", mockSink)
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
 		tp.AddSink(inputs, sink)
-		count := len(sources)
 		errCh := tp.Open()
 		func() {
-			for {
+			for i := 0; i < tt.size*len(syncs); i++ {
+				syncs[i%len(syncs)] <- i
+				for {
+					time.Sleep(1)
+					if getMetric(tp, "op_window_0_records_in_total") == (i + 1) {
+						break
+					}
+				}
 				select {
 				case err = <-errCh:
 					t.Log(err)
 					tp.Cancel()
 					return
-				case <-done:
-					count--
-					log.Infof("%d sources remaining", count)
-					if count <= 0 {
-						log.Info("stream stopping")
-						return
-					}
 				default:
 				}
+			}
+			mockClock := test.GetMockClock()
+			mockClock.Add(1000 * time.Millisecond)
+			retry := 100
+			for ; retry > 0; retry-- {
+				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+					break
+				}
+				t.Logf("wait to try another %d times", retry)
+				time.Sleep(time.Duration(retry) * time.Millisecond)
+			}
+			if retry == 0 {
+				err := compareMetrics(tp, tt.m, tt.sql)
+				t.Errorf("could not get correct metrics: %v", err)
 			}
 		}()
 		results := mockSink.GetResults()
@@ -1799,40 +1763,62 @@ func TestEventWindow(t *testing.T) {
 		if !reflect.DeepEqual(tt.r, maps) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 		}
-		keys, values := tp.GetMetrics()
-		//for i, k := range keys{
-		//	log.Printf("%s:%v", k, values[i])
-		//}
-		for k, v := range tt.m {
-			var(
-				index int
-				key   string
-				matched bool
-			)
-			for index, key = range keys{
-				if k == key {
-					if values[index] == v{
-						matched = true
-					}
-					break
-				}
-			}
-			if matched{
-				continue
-			}
-			//do not find
-			if index < len(values){
-				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v(%t)\n\ngot=%#v(%t)\n\n", i, tt.sql, k, v, v, values[index], values[index])
-			}else{
-				t.Errorf("%d. %q\n\nmetrics mismatch for %s:\n\nexp=%#v\n\ngot=nil\n\n", i, tt.sql, k, v)
-			}
-			break
+		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 		}
 		tp.Cancel()
 	}
-	realTicker.Stop()
-	tickerDone <- true
-	close(tickerDone)
+}
+
+func getMetric(tp *xstream.TopologyNew, name string) int {
+	keys, values := tp.GetMetrics()
+	for index, key := range keys {
+		if key == name {
+			return int(values[index].(int64))
+		}
+	}
+	fmt.Println("can't find " + name)
+	return 0
+}
+
+func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}, sql string) (err error) {
+	keys, values := tp.GetMetrics()
+	//for i, k := range keys{
+	//	log.Printf("%s:%v", k, values[i])
+	//}
+	for k, v := range m {
+		var (
+			index   int
+			key     string
+			matched bool
+		)
+		for index, key = range keys {
+			if k == key {
+				if strings.HasSuffix(k, "process_latency_ms") {
+					if values[index].(int64) >= v.(int64) {
+						matched = true
+						continue
+					} else {
+						break
+					}
+				}
+				if values[index] == v {
+					matched = true
+				}
+				break
+			}
+		}
+		if matched {
+			continue
+		}
+		//do not find
+		if index < len(values) {
+			return fmt.Errorf("metrics mismatch for %s:\n\nexp=%#v(%t)\n\ngot=%#v(%t)\n\n", k, v, v, values[index], values[index])
+		} else {
+			return fmt.Errorf("metrics mismatch for %s:\n\nexp=%#v\n\ngot=nil\n\n", k, v)
+		}
+	}
+	return nil
 }
 
 func errstring(err error) string {

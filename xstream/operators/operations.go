@@ -21,13 +21,13 @@ func (f UnFunc) Apply(ctx api.StreamContext, data interface{}) interface{} {
 }
 
 type UnaryOperator struct {
-	op          UnOperation
-	concurrency int
-	input       chan interface{}
-	outputs     map[string]chan<- interface{}
-	mutex       sync.RWMutex
-	cancelled   bool
-	name        string
+	op           UnOperation
+	concurrency  int
+	input        chan interface{}
+	outputs      map[string]chan<- interface{}
+	mutex        sync.RWMutex
+	cancelled    bool
+	name         string
 	statManagers []nodes.StatManager
 }
 
@@ -161,7 +161,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (m *UnaryOperator) GetMetrics() (result [][]interface{}) {
-	for _, stats := range m.statManagers{
+	for _, stats := range m.statManagers {
 		result = append(result, stats.GetMetrics())
 	}
 	return result

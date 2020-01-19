@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/benbjohnson/clock"
 	"github.com/go-yaml/yaml"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
@@ -11,45 +12,26 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"time"
+	"sort"
+	"strings"
 )
 
 const (
-	logFileName = "stream.log"
-	etc_dir = "/etc/"
-	data_dir = "/data/"
-	log_dir = "/log/"
+	logFileName   = "stream.log"
+	etc_dir       = "/etc/"
+	data_dir      = "/data/"
+	log_dir       = "/log/"
+	StreamConf    = "kuiper.yaml"
+	KuiperBaseKey = "KuiperBaseKey"
 )
 
 var (
-	Log *logrus.Logger
-	Config *XStreamConf
+	Log       *logrus.Logger
+	Config    *XStreamConf
 	IsTesting bool
-	logFile *os.File
-	mockTicker *MockTicker
-	mockTimer *MockTimer
-	mockNow int64
+	Clock     clock.Clock
+	logFile   *os.File
 )
-
-type logRedirect struct {
-
-}
-
-func (l *logRedirect) Errorf(f string, v ...interface{}) {
-	Log.Error(fmt.Sprintf(f, v...))
-}
-
-func (l *logRedirect) Infof(f string, v ...interface{}) {
-	Log.Info(fmt.Sprintf(f, v...))
-}
-
-func (l *logRedirect) Warningf(f string, v ...interface{}) {
-	Log.Warning(fmt.Sprintf(f, v...))
-}
-
-func (l *logRedirect) Debugf(f string, v ...interface{}) {
-	Log.Debug(fmt.Sprintf(f, v...))
-}
 
 func LoadConf(confName string) ([]byte, error) {
 	confDir, err := GetConfLoc()
@@ -66,20 +48,31 @@ func LoadConf(confName string) ([]byte, error) {
 }
 
 type XStreamConf struct {
-	Debug bool `yaml:"debug"`
-	Port int `yaml:"port"`
-	Prometheus bool `yaml:"prometheus"`
-	PrometheusPort int `yaml:"prometheusPort"`
+	Debug          bool `yaml:"debug"`
+	Port           int  `yaml:"port"`
+	Prometheus     bool `yaml:"prometheus"`
+	PrometheusPort int  `yaml:"prometheusPort"`
 }
 
-var StreamConf = "kuiper.yaml"
-const KuiperBaseKey = "KuiperBaseKey"
-func init(){
+func init() {
 	Log = logrus.New()
 	Log.SetFormatter(&logrus.TextFormatter{
 		DisableColors: true,
 		FullTimestamp: true,
 	})
+	Log.Debugf("init with args %s", os.Args)
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, "-test.") {
+			IsTesting = true
+			break
+		}
+	}
+	if IsTesting {
+		Log.Debugf("running in testing mode")
+		Clock = clock.NewMock()
+	} else {
+		Clock = clock.New()
+	}
 }
 
 func InitConf() {
@@ -92,7 +85,7 @@ func InitConf() {
 		Log.Fatal(err)
 	}
 
-	if c, ok := cfg["basic"]; !ok{
+	if c, ok := cfg["basic"]; !ok {
 		Log.Fatal("No basic config in kuiper.yaml")
 	} else {
 		Config = &c
@@ -127,9 +120,8 @@ type KeyValue interface {
 
 type SimpleKVStore struct {
 	path string
-	c *cache.Cache;
+	c    *cache.Cache
 }
-
 
 var stores = make(map[string]*SimpleKVStore)
 
@@ -147,7 +139,7 @@ func GetSimpleKVStore(path string) *SimpleKVStore {
 	}
 }
 
-func (m *SimpleKVStore) Open() error  {
+func (m *SimpleKVStore) Open() error {
 	if _, err := os.Stat(m.path); os.IsNotExist(err) {
 		return nil
 	}
@@ -157,7 +149,7 @@ func (m *SimpleKVStore) Open() error  {
 	return nil
 }
 
-func (m *SimpleKVStore) Close() error  {
+func (m *SimpleKVStore) Close() error {
 	e := m.saveToFile()
 	m.c.Flush() //Delete all of the values from memory.
 	return e
@@ -170,7 +162,7 @@ func (m *SimpleKVStore) saveToFile() error {
 	return nil
 }
 
-func (m *SimpleKVStore) Set(key string, value interface{}) error  {
+func (m *SimpleKVStore) Set(key string, value interface{}) error {
 	if m.c == nil {
 		return fmt.Errorf("cache %s has not been initialized yet", m.path)
 	}
@@ -180,7 +172,7 @@ func (m *SimpleKVStore) Set(key string, value interface{}) error  {
 	return m.saveToFile()
 }
 
-func (m *SimpleKVStore) Replace(key string, value interface{}) error  {
+func (m *SimpleKVStore) Replace(key string, value interface{}) error {
 	if m.c == nil {
 		return fmt.Errorf("cache %s has not been initialized yet", m.path)
 	}
@@ -188,7 +180,7 @@ func (m *SimpleKVStore) Replace(key string, value interface{}) error  {
 	return m.saveToFile()
 }
 
-func (m *SimpleKVStore) Get(key string) (interface{}, bool)  {
+func (m *SimpleKVStore) Get(key string) (interface{}, bool) {
 	return m.c.Get(key)
 }
 
@@ -198,7 +190,7 @@ func (m *SimpleKVStore) Delete(key string) error {
 	}
 	if _, found := m.c.Get(key); found {
 		m.c.Delete(key)
-	}else{
+	} else {
 		return fmt.Errorf("%s is not found", key)
 	}
 	return m.saveToFile()
@@ -217,19 +209,23 @@ func (m *SimpleKVStore) Keys() (keys []string, err error) {
 }
 
 func PrintMap(m map[string]string, buff *bytes.Buffer) {
-
-	for k, v := range m {
-		buff.WriteString(fmt.Sprintf("%s: %s\n", k, v))
+	si := make([]string, 0, len(m))
+	for s := range m {
+		si = append(si, s)
+	}
+	sort.Strings(si)
+	for _, s := range si {
+		buff.WriteString(fmt.Sprintf("%s: %s\n", s, m[s]))
 	}
 }
 
-func CloseLogger(){
+func CloseLogger() {
 	if logFile != nil {
 		logFile.Close()
 	}
 }
 
-func GetConfLoc()(string, error){
+func GetConfLoc() (string, error) {
 	return GetLoc(etc_dir)
 }
 
@@ -237,7 +233,7 @@ func GetDataLoc() (string, error) {
 	return GetLoc(data_dir)
 }
 
-func GetLoc(subdir string)(string, error) {
+func GetLoc(subdir string) (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return "", err
@@ -288,81 +284,23 @@ func GetAndCreateDataLoc(dir string) (string, error) {
 	return d, nil
 }
 
-//Time related. For Mock
-func GetTicker(duration int) Ticker {
-	if IsTesting{
-		if mockTicker == nil{
-			mockTicker = NewMockTicker(duration)
-		}else{
-			mockTicker.SetDuration(duration)
-		}
-		return mockTicker
-	}else{
-		return NewDefaultTicker(duration)
-	}
-}
-
-func GetTimer(duration int) Timer {
-	if IsTesting{
-		if mockTimer == nil{
-			mockTimer = NewMockTimer(duration)
-		}else{
-			mockTimer.SetDuration(duration)
-		}
-		return mockTimer
-	}else{
-		return NewDefaultTimer(duration)
-	}
-}
-
-func GetNowInMilli() int64{
-	if IsTesting {
-		return GetMockNow()
-	}else{
-		return TimeToUnixMilli(time.Now())
-	}
-}
-
 func ProcessPath(p string) (string, error) {
 	if abs, err := filepath.Abs(p); err != nil {
 		return "", nil
 	} else {
 		if _, err := os.Stat(abs); os.IsNotExist(err) {
-			return "", err;
+			return "", err
 		}
 		return abs, nil
 	}
 }
 
-/****** For Test Only ********/
-func GetMockTicker() *MockTicker{
-	return mockTicker
-}
-
-func ResetMockTicker(){
-	if mockTicker != nil{
-		mockTicker.lastTick = 0
-	}
-}
-
-func GetMockTimer() *MockTimer{
-	return mockTimer
-}
-
-func SetMockNow(now int64){
-	mockNow = now
-}
-
-func GetMockNow() int64{
-	return mockNow
-}
-
 /*********** Type Cast Utilities *****/
 //TODO datetime type
-func ToString(input interface{}) string{
+func ToString(input interface{}) string {
 	return fmt.Sprintf("%v", input)
 }
-func ToInt(input interface{}) (int, error){
+func ToInt(input interface{}) (int, error) {
 	switch t := input.(type) {
 	case float64:
 		return int(t), nil
@@ -379,10 +317,10 @@ func ToInt(input interface{}) (int, error){
 *   Convert a map into a struct. The output parameter must be a pointer to a struct
 *   The struct can have the json meta data
  */
-func MapToStruct(input map[string]interface{}, output interface{}) error{
+func MapToStruct(input map[string]interface{}, output interface{}) error {
 	// convert map to json
 	jsonString, err := json.Marshal(input)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 

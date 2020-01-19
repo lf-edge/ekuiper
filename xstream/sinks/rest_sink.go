@@ -16,20 +16,20 @@ import (
 )
 
 type RestSink struct {
-	method      string
-	url         string
-	headers     map[string]string
-	bodyType    string
-	timeout		int64
-	sendSingle  bool
+	method       string
+	url          string
+	headers      map[string]string
+	bodyType     string
+	timeout      int64
+	sendSingle   bool
 	dataTemplate string
 
-	client      *http.Client
-	tp          *template.Template
+	client *http.Client
+	tp     *template.Template
 }
 
 var methodsMap = map[string]bool{"GET": true, "HEAD": true, "POST": true, "PUT": true, "DELETE": true, "PATCH": true}
-var bodyTypeMap = map[string]string{"none":"", "text": "text/plain", "json":"application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
+var bodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
 
 func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	temp, ok := ps["method"]
@@ -39,13 +39,13 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 			return fmt.Errorf("rest sink property method %v is not a string", temp)
 		}
 		ms.method = strings.ToUpper(strings.Trim(ms.method, ""))
-	}else{
+	} else {
 		ms.method = "GET"
 	}
 	if _, ok = methodsMap[ms.method]; !ok {
 		return fmt.Errorf("invalid property method: %s", ms.method)
 	}
-	switch ms.method{
+	switch ms.method {
 	case "GET", "HEAD":
 		ms.bodyType = "none"
 	default:
@@ -63,7 +63,7 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	ms.url = strings.Trim(ms.url, "")
 
 	temp, ok = ps["headers"]
-	if ok{
+	if ok {
 		ms.headers, ok = temp.(map[string]string)
 		if !ok {
 			return fmt.Errorf("rest sink property headers %v is not a map[string][]string", temp)
@@ -71,7 +71,7 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	}
 
 	temp, ok = ps["bodyType"]
-	if ok{
+	if ok {
 		ms.bodyType, ok = temp.(string)
 		if !ok {
 			return fmt.Errorf("rest sink property bodyType %v is not a string", temp)
@@ -85,7 +85,7 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	temp, ok = ps["timeout"]
 	if !ok {
 		ms.timeout = 5000
-	}else{
+	} else {
 		to, ok := temp.(float64)
 		if !ok {
 			return fmt.Errorf("rest sink property timeout %v is not a number", temp)
@@ -94,9 +94,9 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	}
 
 	temp, ok = ps["sendSingle"]
-	if !ok{
+	if !ok {
 		ms.sendSingle = false
-	}else{
+	} else {
 		ms.sendSingle, ok = temp.(bool)
 		if !ok {
 			return fmt.Errorf("rest sink property sendSingle %v is not a bool", temp)
@@ -104,21 +104,21 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	}
 
 	temp, ok = ps["dataTemplate"]
-	if ok{
+	if ok {
 		ms.dataTemplate, ok = temp.(string)
 		if !ok {
 			return fmt.Errorf("rest sink property dataTemplate %v is not a string", temp)
 		}
 	}
 
-	if ms.dataTemplate != ""{
+	if ms.dataTemplate != "" {
 		funcMap := template.FuncMap{
 			"json": templates.JsonMarshal,
 		}
 		temp, err := template.New("restSink").Funcs(funcMap).Parse(ms.dataTemplate)
-		if err != nil{
+		if err != nil {
 			return fmt.Errorf("rest sink property dataTemplate %v is invalid: %v", ms.dataTemplate, err)
-		}else{
+		} else {
 			ms.tp = temp
 		}
 	}
@@ -147,14 +147,14 @@ func (ms *RestSink) Open(ctx api.StreamContext) error {
 
 type MultiErrors []error
 
-func (me MultiErrors) AddError(err error) (MultiErrors) {
+func (me MultiErrors) AddError(err error) MultiErrors {
 	me = append(me, err)
 	return me
 }
 
 func (me MultiErrors) Error() string {
 	s := make([]string, len(me))
-	for i, v  := range me {
+	for i, v := range me {
 		s = append(s, fmt.Sprintf("Error %d with info %s. \n", i, v))
 	}
 	return strings.Join(s, "  ")
@@ -167,9 +167,9 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 		logger.Warnf("rest sink receive non []byte data: %v", item)
 	}
 	logger.Debugf("rest sink receive %s", item)
-	if !ms.sendSingle{
+	if !ms.sendSingle {
 		return ms.send(v, logger)
-	}else{
+	} else {
 		j, err := extractInput(v)
 		if err != nil {
 			return err
@@ -215,21 +215,21 @@ func (ms *RestSink) send(v interface{}, logger api.Logger) error {
 					return err
 				}
 				err = ms.tp.Execute(body, j)
-				if err != nil{
+				if err != nil {
 					return fmt.Errorf("fail to decode content: %v", err)
 				}
-			}else{
+			} else {
 				body = bytes.NewBuffer(t)
 			}
 		case map[string]interface{}:
-			if ms.tp != nil{
+			if ms.tp != nil {
 				err = ms.tp.Execute(body, t)
-				if err != nil{
+				if err != nil {
 					return fmt.Errorf("fail to decode content: %v", err)
 				}
-			}else{
+			} else {
 				content, err := json.Marshal(t)
-				if err != nil{
+				if err != nil {
 					return fmt.Errorf("fail to decode content: %v", err)
 				}
 				body = bytes.NewBuffer(content)
@@ -255,7 +255,7 @@ func (ms *RestSink) send(v interface{}, logger api.Logger) error {
 			case []interface{}, map[string]interface{}:
 				if temp, err := json.Marshal(value); err != nil {
 					return fmt.Errorf("fail to parse fomr value: %v", err)
-				}else{
+				} else {
 					vstr = string(temp)
 				}
 			default:
@@ -294,41 +294,41 @@ func (ms *RestSink) send(v interface{}, logger api.Logger) error {
 func convertToMap(v interface{}, tp *template.Template) (map[string]interface{}, error) {
 	switch t := v.(type) {
 	case []byte:
-		if tp != nil{
+		if tp != nil {
 			j, err := extractInput(t)
 			if err != nil {
 				return nil, err
 			}
 			var output bytes.Buffer
 			err = tp.Execute(&output, j)
-			if err != nil{
+			if err != nil {
 				return nil, fmt.Errorf("fail to decode content: %v", err)
 			}
 			r := make(map[string]interface{})
-			if err := json.Unmarshal(output.Bytes(), &r); err != nil{
+			if err := json.Unmarshal(output.Bytes(), &r); err != nil {
 				return nil, fmt.Errorf("fail to decode content: %v", err)
-			}else{
+			} else {
 				return r, nil
 			}
-		}else{
+		} else {
 			r := make(map[string]interface{})
 			r["result"] = string(t)
 			return r, nil
 		}
 	case map[string]interface{}:
-		if tp != nil{
+		if tp != nil {
 			var output bytes.Buffer
 			err := tp.Execute(&output, t)
-			if err != nil{
+			if err != nil {
 				return nil, fmt.Errorf("fail to decode content: %v", err)
 			}
 			r := make(map[string]interface{})
-			if err := json.Unmarshal(output.Bytes(), &r); err != nil{
+			if err := json.Unmarshal(output.Bytes(), &r); err != nil {
 				return nil, fmt.Errorf("fail to decode content: %v", err)
-			}else{
+			} else {
 				return r, nil
 			}
-		}else{
+		} else {
 			return t, nil
 		}
 	default:

@@ -11,7 +11,7 @@ func Broadcast(outputs map[string]chan<- interface{}, val interface{}, ctx api.S
 	var barrier sync.WaitGroup
 	barrier.Add(len(outputs))
 	for n, out := range outputs {
-		go func(wg *sync.WaitGroup){
+		go func(wg *sync.WaitGroup) {
 			out <- val
 			wg.Done()
 			logger.Debugf("broadcast from %s to %s done", ctx.GetOpId(), n)
@@ -20,5 +20,3 @@ func Broadcast(outputs map[string]chan<- interface{}, val interface{}, ctx api.S
 	logger.Debugf("broadcasting from %s", ctx.GetOpId())
 	barrier.Wait()
 }
-
-

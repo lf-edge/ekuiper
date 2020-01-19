@@ -15,8 +15,8 @@ import (
 func TestPreprocessor_Apply(t *testing.T) {
 
 	var tests = []struct {
-		stmt *xsql.StreamStmt
-		data []byte
+		stmt   *xsql.StreamStmt
+		data   []byte
 		result interface{}
 	}{
 		//Basic type
@@ -27,7 +27,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.BIGINT}},
 				},
 			},
-			data: []byte(`{"a": 6}`),
+			data:   []byte(`{"a": 6}`),
 			result: nil,
 		},
 
@@ -40,8 +40,8 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data: []byte(`{"abc": 6}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-					"abc": int(6),
-				},
+				"abc": int(6),
+			},
 			},
 		},
 		{
@@ -56,7 +56,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			result: &xsql.Tuple{Message: xsql.Message{
 				"abc": float64(34),
 				"def": "hello",
-				},
+			},
 			},
 		},
 		{
@@ -82,7 +82,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.BOOLEAN}},
 				},
 			},
-			data: []byte(`{"abc": 77, "def" : "hello"}`),
+			data:   []byte(`{"abc": 77, "def" : "hello"}`),
 			result: nil,
 		},
 		{
@@ -93,7 +93,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.BOOLEAN}},
 				},
 			},
-			data: []byte(`{"a": {"b" : "hello"}}`),
+			data:   []byte(`{"a": {"b" : "hello"}}`),
 			result: nil,
 		},
 		//Rec type
@@ -110,7 +110,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data: []byte(`{"a": {"b" : "hello"}}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-					"a": map[string]interface{}{
+				"a": map[string]interface{}{
 					"b": "hello",
 				},
 			},
@@ -153,11 +153,11 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data: []byte(`{"a": [{"b" : "hello1"}, {"b" : "hello2"}]}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-					"a": []map[string]interface{}{
-						{"b": "hello1"},
-						{"b": "hello2"},
-					},
+				"a": []map[string]interface{}{
+					{"b": "hello1"},
+					{"b": "hello2"},
 				},
+			},
 			},
 		},
 		{
@@ -197,13 +197,13 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data: []byte(`{"a": {"b" : "hello", "c": {"d": 35.2}}}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-					"a": map[string]interface{}{
-						"b": "hello",
-						"c": map[string]interface{}{
-							"d": int(35),
-						},
+				"a": map[string]interface{}{
+					"b": "hello",
+					"c": map[string]interface{}{
+						"d": int(35),
 					},
 				},
+			},
 			},
 		},
 	}
@@ -222,7 +222,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			log.Fatal(e)
 			return
 		} else {
-			tuple := &xsql.Tuple{Message:dm}
+			tuple := &xsql.Tuple{Message: dm}
 			result := pp.Apply(ctx, tuple)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
@@ -232,10 +232,10 @@ func TestPreprocessor_Apply(t *testing.T) {
 	}
 }
 
-func TestPreprocessorTime_Apply(t *testing.T){
+func TestPreprocessorTime_Apply(t *testing.T) {
 	var tests = []struct {
-		stmt *xsql.StreamStmt
-		data []byte
+		stmt   *xsql.StreamStmt
+		data   []byte
 		result interface{}
 	}{
 		{
@@ -261,7 +261,7 @@ func TestPreprocessorTime_Apply(t *testing.T){
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.DATETIME}},
 				},
 			},
-			data: []byte(`{"abc": "2019-09-19T00:55:1dd5Z", "def" : 111568854573431}`),
+			data:   []byte(`{"abc": "2019-09-19T00:55:1dd5Z", "def" : 111568854573431}`),
 			result: nil,
 		},
 		{
@@ -272,13 +272,13 @@ func TestPreprocessorTime_Apply(t *testing.T){
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.DATETIME}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"FORMAT" : "AVRO",
-					"KEY" : "USERID",
-					"CONF_KEY" : "srv1",
-					"TYPE" : "MQTT",
-					"TIMESTAMP" : "USERID",
-					"TIMESTAMP_FORMAT" : "yyyy-MM-dd 'at' HH:mm:ss'Z'X",
+					"DATASOURCE":       "users",
+					"FORMAT":           "AVRO",
+					"KEY":              "USERID",
+					"CONF_KEY":         "srv1",
+					"TYPE":             "MQTT",
+					"TIMESTAMP":        "USERID",
+					"TIMESTAMP_FORMAT": "yyyy-MM-dd 'at' HH:mm:ss'Z'X",
 				},
 			},
 			data: []byte(`{"abc": "2019-09-19 at 18:55:15Z+07", "def" : 1568854573431}`),
@@ -343,11 +343,11 @@ func TestPreprocessorTime_Apply(t *testing.T){
 			log.Fatal(e)
 			return
 		} else {
-			tuple := &xsql.Tuple{Message:dm}
+			tuple := &xsql.Tuple{Message: dm}
 			result := pp.Apply(ctx, tuple)
 			//workaround make sure all the timezone are the same for time vars or the DeepEqual will be false.
-			if rt, ok := result.(*xsql.Tuple); ok{
-				if rtt, ok := rt.Message["abc"].(time.Time); ok{
+			if rt, ok := result.(*xsql.Tuple); ok {
+				if rtt, ok := rt.Message["abc"].(time.Time); ok {
 					rt.Message["abc"] = rtt.UTC()
 				}
 			}
@@ -362,8 +362,8 @@ func TestPreprocessorTime_Apply(t *testing.T){
 func TestPreprocessorEventtime_Apply(t *testing.T) {
 
 	var tests = []struct {
-		stmt *xsql.StreamStmt
-		data []byte
+		stmt   *xsql.StreamStmt
+		data   []byte
 		result interface{}
 	}{
 		//Basic type
@@ -374,13 +374,13 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.BIGINT}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"FORMAT" : "AVRO",
-					"KEY" : "USERID",
-					"CONF_KEY" : "srv1",
-					"TYPE" : "MQTT",
-					"TIMESTAMP" : "abc",
-					"TIMESTAMP_FORMAT" : "yyyy-MM-dd''T''HH:mm:ssX'",
+					"DATASOURCE":       "users",
+					"FORMAT":           "AVRO",
+					"KEY":              "USERID",
+					"CONF_KEY":         "srv1",
+					"TYPE":             "MQTT",
+					"TIMESTAMP":        "abc",
+					"TIMESTAMP_FORMAT": "yyyy-MM-dd''T''HH:mm:ssX'",
 				},
 			},
 			data: []byte(`{"abc": 1568854515000}`),
@@ -396,11 +396,11 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.BOOLEAN}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"TIMESTAMP" : "abc",
+					"DATASOURCE": "users",
+					"TIMESTAMP":  "abc",
 				},
 			},
-			data: []byte(`{"abc": true}`),
+			data:   []byte(`{"abc": true}`),
 			result: nil,
 		},
 		{
@@ -411,8 +411,8 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"TIMESTAMP" : "def",
+					"DATASOURCE": "users",
+					"TIMESTAMP":  "def",
 				},
 			},
 			data: []byte(`{"abc": 34, "def" : "2019-09-23T02:47:29.754Z", "ghi": 50}`),
@@ -430,8 +430,8 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.DATETIME}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"TIMESTAMP" : "abc",
+					"DATASOURCE": "users",
+					"TIMESTAMP":  "abc",
 				},
 			},
 			data: []byte(`{"abc": "2019-09-19T00:55:15.000Z", "def" : 1568854573431}`),
@@ -449,9 +449,9 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"TIMESTAMP" : "def",
-					"TIMESTAMP_FORMAT" : "yyyy-MM-dd'AT'HH:mm:ss",
+					"DATASOURCE":       "users",
+					"TIMESTAMP":        "def",
+					"TIMESTAMP_FORMAT": "yyyy-MM-dd'AT'HH:mm:ss",
 				},
 			},
 			data: []byte(`{"abc": 34, "def" : "2019-09-23AT02:47:29", "ghi": 50}`),
@@ -469,12 +469,12 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"TIMESTAMP" : "def",
-					"TIMESTAMP_FORMAT" : "yyyy-MM-ddaHH:mm:ss",
+					"DATASOURCE":       "users",
+					"TIMESTAMP":        "def",
+					"TIMESTAMP_FORMAT": "yyyy-MM-ddaHH:mm:ss",
 				},
 			},
-			data: []byte(`{"abc": 34, "def" : "2019-09-23AT02:47:29", "ghi": 50}`),
+			data:   []byte(`{"abc": 34, "def" : "2019-09-23AT02:47:29", "ghi": 50}`),
 			result: nil,
 		},
 	}
@@ -486,8 +486,8 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
-		pp, err := NewPreprocessor(tt.stmt, nil,true)
-		if err != nil{
+		pp, err := NewPreprocessor(tt.stmt, nil, true)
+		if err != nil {
 			t.Error(err)
 		}
 
@@ -496,11 +496,11 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			log.Fatal(e)
 			return
 		} else {
-			tuple := &xsql.Tuple{Message:dm}
+			tuple := &xsql.Tuple{Message: dm}
 			result := pp.Apply(ctx, tuple)
 			//workaround make sure all the timezone are the same for time vars or the DeepEqual will be false.
-			if rt, ok := result.(*xsql.Tuple); ok{
-				if rtt, ok := rt.Message["abc"].(time.Time); ok{
+			if rt, ok := result.(*xsql.Tuple); ok {
+				if rtt, ok := rt.Message["abc"].(time.Time); ok {
 					rt.Message["abc"] = rtt.UTC()
 				}
 			}

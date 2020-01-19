@@ -14,7 +14,7 @@ import (
 
 type CacheTuple struct {
 	index int
-	data interface{}
+	data  interface{}
 }
 
 type LinkedQueue struct {
@@ -22,46 +22,46 @@ type LinkedQueue struct {
 	Tail int
 }
 
-func (l *LinkedQueue) append(item interface{}){
+func (l *LinkedQueue) append(item interface{}) {
 	l.Data[l.Tail] = item
 	l.Tail++
 }
 
-func (l *LinkedQueue) delete(index int){
+func (l *LinkedQueue) delete(index int) {
 	delete(l.Data, index)
 }
 
-func (l *LinkedQueue) reset(){
+func (l *LinkedQueue) reset() {
 	l.Tail = 0
 }
 
-func (l *LinkedQueue) length() int{
+func (l *LinkedQueue) length() int {
 	return len(l.Data)
 }
 
 type Cache struct {
 	//Data and control channels
-	in <-chan interface{}
-	Out chan *CacheTuple
+	in       <-chan interface{}
+	Out      chan *CacheTuple
 	Complete chan int
-	errorCh chan<- error
+	errorCh  chan<- error
 	//states
 	pending *LinkedQueue
 	//serialize
-	key     string  //the key for current cache
+	key     string //the key for current cache
 	store   common.KeyValue
 	changed bool
 	//configs
-	limit int
+	limit        int
 	saveInterval int
 }
 
 func NewCache(in <-chan interface{}, limit int, saveInterval int, errCh chan<- error, ctx api.StreamContext) *Cache {
-	c :=  &Cache{
-		in: in,
-		Out: make(chan *CacheTuple, limit),
+	c := &Cache{
+		in:       in,
+		Out:      make(chan *CacheTuple, limit),
 		Complete: make(chan int),
-		errorCh: errCh,
+		errorCh:  errCh,
 
 		limit:        limit,
 		saveInterval: saveInterval,
@@ -70,7 +70,7 @@ func NewCache(in <-chan interface{}, limit int, saveInterval int, errCh chan<- e
 	return c
 }
 
-func (c *Cache) run(ctx api.StreamContext){
+func (c *Cache) run(ctx api.StreamContext) {
 	logger := ctx.GetLogger()
 	dbDir, err := common.GetAndCreateDataLoc("sink")
 	logger.Debugf("cache saved to %s", dbDir)
@@ -80,13 +80,13 @@ func (c *Cache) run(ctx api.StreamContext){
 	c.store = common.GetSimpleKVStore(path.Join(dbDir, "cache"))
 	c.key = ctx.GetRuleId() + ctx.GetOpId() + strconv.Itoa(ctx.GetInstanceId())
 	//load cache
-	if err :=c.loadCache(); err != nil{
+	if err := c.loadCache(); err != nil {
 		go c.drainError(err)
 		return
 	}
 
-	ticker := common.NewDefaultTicker(c.saveInterval)
-	for{
+	ticker := common.GetTicker(c.saveInterval)
+	for {
 		select {
 		case item := <-c.in:
 			index := c.pending.Tail
@@ -100,14 +100,14 @@ func (c *Cache) run(ctx api.StreamContext){
 		case index := <-c.Complete:
 			c.pending.delete(index)
 			c.changed = true
-		case <- ticker.GetC():
-			if c.pending.length() == 0{
+		case <-ticker.C:
+			if c.pending.length() == 0 {
 				c.pending.reset()
 			}
-			if c.changed{
+			if c.changed {
 				logger.Debugf("save cache")
-				go func(){
-					if err := c.saveCache();err != nil{
+				go func() {
+					if err := c.saveCache(); err != nil {
 						logger.Debugf("%v", err)
 						c.drainError(err)
 					}
@@ -115,7 +115,7 @@ func (c *Cache) run(ctx api.StreamContext){
 				c.changed = false
 			}
 		case <-ctx.Done():
-			if c.changed{
+			if c.changed {
 				c.saveCache()
 			}
 			return
@@ -123,7 +123,7 @@ func (c *Cache) run(ctx api.StreamContext){
 	}
 }
 
-func (c *Cache) loadCache() error{
+func (c *Cache) loadCache() error {
 	c.pending = &LinkedQueue{
 		Data: make(map[int]interface{}),
 		Tail: 0,
@@ -134,7 +134,7 @@ func (c *Cache) loadCache() error{
 		return err
 	}
 	defer c.store.Close()
-	if err == nil{
+	if err == nil {
 		if t, f := c.store.Get(c.key); f {
 			if mt, ok := t.(*LinkedQueue); ok {
 				c.pending = mt
@@ -144,7 +144,7 @@ func (c *Cache) loadCache() error{
 					keys = append(keys, k)
 				}
 				sort.Ints(keys)
-				for _, k := range keys{
+				for _, k := range keys {
 					log.Debugf("send by cache %d", k)
 					c.Out <- &CacheTuple{
 						index: k,
@@ -160,7 +160,7 @@ func (c *Cache) loadCache() error{
 	return nil
 }
 
-func (c *Cache) saveCache() error{
+func (c *Cache) saveCache() error {
 	err := c.store.Open()
 	if err != nil {
 		return err
@@ -169,10 +169,10 @@ func (c *Cache) saveCache() error{
 	return c.store.Replace(c.key, c.pending)
 }
 
-func (c *Cache) drainError(err error){
+func (c *Cache) drainError(err error) {
 	c.errorCh <- err
 }
 
-func (c *Cache) Length() int{
+func (c *Cache) Length() int {
 	return c.pending.length()
 }

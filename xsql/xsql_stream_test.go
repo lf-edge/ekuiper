@@ -38,17 +38,17 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"FORMAT" : "AVRO",
-					"KEY" : "USERID",
-					"CONF_KEY" : "srv1",
-					"TYPE" : "MQTT",
-					"TIMESTAMP" : "USERID",
-					"TIMESTAMP_FORMAT" : "yyyy-MM-dd''T''HH:mm:ssX'",
+					"DATASOURCE":       "users",
+					"FORMAT":           "AVRO",
+					"KEY":              "USERID",
+					"CONF_KEY":         "srv1",
+					"TYPE":             "MQTT",
+					"TIMESTAMP":        "USERID",
+					"TIMESTAMP_FORMAT": "yyyy-MM-dd''T''HH:mm:ssX'",
 				},
 			},
 		},
-		
+
 		{
 			s: `CREATE STREAM demo (
 					USERID BIGINT,
@@ -59,14 +59,14 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"FORMAT" : "JSON",
-					"KEY" : "USERID",
-					"STRICT_VALIDATION" : "true",
+					"DATASOURCE":        "users",
+					"FORMAT":            "JSON",
+					"KEY":               "USERID",
+					"STRICT_VALIDATION": "true",
 				},
 			},
 		},
-		
+
 		{
 			s: `CREATE STREAM demo (
 					ADDRESSES ARRAY(STRUCT(STREET_NAME STRING, NUMBER BIGINT)),
@@ -85,14 +85,14 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"FORMAT" : "AVRO",
-					"KEY" : "USERID",
+					"DATASOURCE":        "users",
+					"FORMAT":            "AVRO",
+					"KEY":               "USERID",
 					"STRICT_VALIDATION": "FAlse",
 				},
 			},
 		},
-		
+
 		{
 			s: `CREATE STREAM demo (
 					ADDRESSES ARRAY(STRUCT(STREET_NAME STRING, NUMBER BIGINT)),
@@ -113,13 +113,13 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					{Name: "birthday", FieldType: &BasicType{Type: DATETIME}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"FORMAT" : "AVRO",
-					"KEY" : "USERID",
+					"DATASOURCE": "users",
+					"FORMAT":     "AVRO",
+					"KEY":        "USERID",
 				},
 			},
 		},
-		
+
 		{
 			s: `CREATE STREAM demo (
 					NAME string,
@@ -142,28 +142,28 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					{Name: "birthday", FieldType: &BasicType{Type: DATETIME}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"FORMAT" : "AVRO",
-					"KEY" : "USERID",
+					"DATASOURCE": "users",
+					"FORMAT":     "AVRO",
+					"KEY":        "USERID",
 				},
 			},
 		},
-		
+
 		{
 			s: `CREATE STREAM demo (
 		
 				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
 			stmt: nil,
-			err: `found ")", expect stream field name.`,
+			err:  `found ")", expect stream field name.`,
 		},
 
 		{
 			s: `CREATE STREAM demo (NAME string)
 				 WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", STRICT_VALIDATION="true1");`, //Invalid STRICT_VALIDATION value
 			stmt: nil,
-			err: `found "true1", expect TRUE/FALSE value in STRICT_VALIDATION option.`,
+			err:  `found "true1", expect TRUE/FALSE value in STRICT_VALIDATION option.`,
 		},
-		
+
 		{
 			s: `CREATE STREAM demo (NAME string) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
 			stmt: &StreamStmt{
@@ -172,63 +172,63 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					{Name: "NAME", FieldType: &BasicType{Type: STRINGS}},
 				},
 				Options: map[string]string{
-					"DATASOURCE" : "users",
-					"FORMAT" : "JSON",
-					"KEY" : "USERID",
+					"DATASOURCE": "users",
+					"FORMAT":     "JSON",
+					"KEY":        "USERID",
 				},
 			},
 		},
-		
+
 		{
 			s: `CREATE STREAM demo (NAME string)) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
 			stmt: &StreamStmt{
-				Name: StreamName("demo"),
+				Name:         StreamName("demo"),
 				StreamFields: nil,
-				Options: nil,
+				Options:      nil,
 			},
 			err: `found ")", expect stream options.`,
 		},
-		
+
 		{
 			s: `CREATE STREAM demo (NAME string) WITHs (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
 			stmt: &StreamStmt{
-				Name: StreamName("demo"),
+				Name:         StreamName("demo"),
 				StreamFields: nil,
-				Options: nil,
+				Options:      nil,
 			},
 			err: `found "WITHs", expected is with.`,
 		},
-		
+
 		{
 			s: `CREATE STREAM demo (NAME integer) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
 			stmt: &StreamStmt{
-				Name: "demo",
+				Name:         "demo",
 				StreamFields: nil,
-				Options: nil,
+				Options:      nil,
 			},
 			err: `found "integer", expect valid stream field types(BIGINT | FLOAT | STRINGS | DATETIME | BOOLEAN | ARRAY | STRUCT).`,
 		},
-		
+
 		{
 			s: `CREATE STREAM demo (NAME string) WITH (sources="users", FORMAT="JSON", KEY="USERID");`,
 			stmt: &StreamStmt{
-				Name: "demo",
+				Name:         "demo",
 				StreamFields: nil,
-				Options: nil,
+				Options:      nil,
 			},
 			err: `found "sources", unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|STRICT_VALIDATION|TYPE).`,
 		},
-		
+
 		{
 			s: `CREATE STREAM demo ((NAME string) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
 			stmt: &StreamStmt{
-				Name: "demo",
+				Name:         "demo",
 				StreamFields: nil,
-				Options: nil,
+				Options:      nil,
 			},
 			err: `found "(", expect stream field name.`,
 		},
-		
+
 		{
 			s: `CREATE STREAM demo (
 					USERID BIGINT,
@@ -247,9 +247,9 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					USERID BIGINT,
 				) WITH ());`,
 			stmt: &StreamStmt{
-				Name: "",
+				Name:         "",
 				StreamFields: nil,
-				Options: nil,
+				Options:      nil,
 			},
 			err: `found ")", expected semicolon or EOF.`,
 		},
@@ -259,13 +259,12 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					USERID BIGINT,
 				) WITH DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
 			stmt: &StreamStmt{
-				Name: "",
+				Name:         "",
 				StreamFields: nil,
-				Options: nil,
+				Options:      nil,
 			},
 			//TODO The error string should be more accurate
 			err: `found "DATASOURCE", expect stream options.`,
-
 		},
 	}
 

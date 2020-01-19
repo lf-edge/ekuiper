@@ -13,36 +13,36 @@ const LastInvocation = "last_invocation"
 const BufferLength = "buffer_length"
 
 var (
-	MetricNames = []string{RecordsInTotal, RecordsOutTotal, ExceptionsTotal, ProcessLatencyMs, BufferLength, LastInvocation}
+	MetricNames        = []string{RecordsInTotal, RecordsOutTotal, ExceptionsTotal, ProcessLatencyMs, BufferLength, LastInvocation}
 	prometheuseMetrics *PrometheusMetrics
-	mutex sync.RWMutex
+	mutex              sync.RWMutex
 )
 
-func GetPrometheusMetrics() *PrometheusMetrics{
+func GetPrometheusMetrics() *PrometheusMetrics {
 	mutex.Lock()
-	if prometheuseMetrics == nil{
+	if prometheuseMetrics == nil {
 		prometheuseMetrics = newPrometheusMetrics()
 	}
 	mutex.Unlock()
 	return prometheuseMetrics
 }
 
-type MetricGroup struct{
-	TotalRecordsIn *prometheus.CounterVec
+type MetricGroup struct {
+	TotalRecordsIn  *prometheus.CounterVec
 	TotalRecordsOut *prometheus.CounterVec
 	TotalExceptions *prometheus.CounterVec
-	ProcessLatency *prometheus.GaugeVec
-	BufferLength   *prometheus.GaugeVec
+	ProcessLatency  *prometheus.GaugeVec
+	BufferLength    *prometheus.GaugeVec
 }
 
 type PrometheusMetrics struct {
 	vecs []*MetricGroup
 }
 
-func newPrometheusMetrics() *PrometheusMetrics{
+func newPrometheusMetrics() *PrometheusMetrics {
 	var (
-		labelNames = []string{ "rule", "type", "op", "instance" }
-		prefixes = []string{"kuiper_source", "kuiper_op", "kuiper_sink"}
+		labelNames = []string{"rule", "type", "op", "instance"}
+		prefixes   = []string{"kuiper_source", "kuiper_op", "kuiper_sink"}
 	)
 	var vecs []*MetricGroup
 	for _, prefix := range prefixes {
@@ -76,11 +76,11 @@ func newPrometheusMetrics() *PrometheusMetrics{
 			BufferLength:    bufferLength,
 		})
 	}
-	return &PrometheusMetrics{vecs:vecs}
+	return &PrometheusMetrics{vecs: vecs}
 }
 
-func (m *PrometheusMetrics) GetMetricsGroup(opType string) *MetricGroup{
-	switch opType{
+func (m *PrometheusMetrics) GetMetricsGroup(opType string) *MetricGroup {
+	switch opType {
 	case "source":
 		return m.vecs[0]
 	case "op":

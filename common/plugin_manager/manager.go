@@ -10,7 +10,7 @@ import (
 
 var registry map[string]plugin.Symbol
 
-func init(){
+func init() {
 	registry = make(map[string]plugin.Symbol)
 }
 
@@ -24,7 +24,7 @@ func GetPlugin(t string, ptype string) (plugin.Symbol, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot find the plugins folder")
 		}
-		mod := path.Join(loc, ptype, t +".so")
+		mod := path.Join(loc, ptype, t+".so")
 		plug, err := plugin.Open(mod)
 		if err != nil {
 			return nil, fmt.Errorf("cannot open %s: %v", mod, err)
@@ -43,4 +43,3 @@ func ucFirst(str string) string {
 	}
 	return ""
 }
-

@@ -270,7 +270,7 @@ func (p *Parser) parseJoins() (Joins, error) {
 }
 
 func (p *Parser) ParseJoin(joinType JoinType) (*Join, error) {
-	var j = &Join{ JoinType : joinType }
+	var j = &Join{JoinType: joinType}
 	if src, alias, err := p.parseSourceLiteral(); err != nil {
 		return nil, err
 	} else {
@@ -319,7 +319,6 @@ func (p *Parser) parseDimensions() (Dimensions, error) {
 	return ds, nil
 }
 
-
 func (p *Parser) parseHaving() (Expr, error) {
 	if tok, _ := p.scanIgnoreWhitespace(); tok != HAVING {
 		p.unscan()
@@ -331,7 +330,6 @@ func (p *Parser) parseHaving() (Expr, error) {
 	}
 	return expr, nil
 }
-
 
 func (p *Parser) parseSorts() (SortFields, error) {
 	var ss SortFields
@@ -527,20 +525,20 @@ func (p *Parser) parseUnaryExpr() (Expr, error) {
 		if v, err := strconv.ParseBool(lit); err != nil {
 			return nil, fmt.Errorf("found %q, invalid boolean value.", lit)
 		} else {
-			return &BooleanLiteral{Val:v}, nil
+			return &BooleanLiteral{Val: v}, nil
 		}
 	} else if tok.isTimeLiteral() {
-		return &TimeLiteral{Val:tok}, nil
+		return &TimeLiteral{Val: tok}, nil
 	}
 
 	return nil, fmt.Errorf("found %q, expected expression.", lit)
 }
 
-func (p *Parser) parseBracketExpr() (Expr, error){
+func (p *Parser) parseBracketExpr() (Expr, error) {
 	tok2, lit2 := p.scanIgnoreWhitespace()
 	if tok2 == RBRACKET {
 		//field[]
-		return &ColonExpr{Start:0, End:-1}, nil
+		return &ColonExpr{Start: 0, End: -1}, nil
 	} else if tok2 == INTEGER {
 		start, err := strconv.Atoi(lit2)
 		if err != nil {
@@ -548,7 +546,7 @@ func (p *Parser) parseBracketExpr() (Expr, error){
 		}
 		if tok3, _ := p.scanIgnoreWhitespace(); tok3 == RBRACKET {
 			//Such as field[2]
-			return &IndexExpr{Index:start}, nil
+			return &IndexExpr{Index: start}, nil
 		} else if tok3 == COLON {
 			//Such as field[2:] or field[2:4]
 			return p.parseColonExpr(start)
@@ -569,12 +567,12 @@ func (p *Parser) parseColonExpr(start int) (Expr, error) {
 		}
 
 		if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == RBRACKET {
-			return &ColonExpr{Start:start, End: end}, nil
+			return &ColonExpr{Start: start, End: end}, nil
 		} else {
 			return nil, fmt.Errorf("Found %q, expected right bracket.", lit1)
 		}
 	} else if tok == RBRACKET {
-		return &ColonExpr{Start:start, End: -1}, nil
+		return &ColonExpr{Start: start, End: -1}, nil
 	}
 	return nil, fmt.Errorf("Found %q, expected right bracket.", lit)
 }
@@ -597,7 +595,7 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 != RPAREN {
 				return nil, fmt.Errorf("found %q, expected right paren.", lit2)
 			} else {
-				args = append(args, &StringLiteral{Val:"*"})
+				args = append(args, &StringLiteral{Val: "*"})
 				return Call{Name: name, Args: args}.rewrite_func(), nil
 			}
 		} else {
@@ -667,7 +665,7 @@ func validateWindow(funcName string, expectLen int, args []Expr) error {
 		return fmt.Errorf("The 1st argument for %s is expecting timer literal expression. One value of [dd|hh|mi|ss|ms].\n", funcName)
 	}
 
-	for i := 1; i< len(args); i++ {
+	for i := 1; i < len(args); i++ {
 		if _, ok := args[i].(*IntegerLiteral); !ok {
 			return fmt.Errorf("The %d argument for %s is expecting interger literal expression. \n", i, funcName)
 		}
@@ -680,7 +678,7 @@ func (p *Parser) ConvertToWindows(wtype WindowType, name string, args []Expr) (*
 	win := &Window{WindowType: wtype}
 	var unit = 1
 	v := args[0].(*TimeLiteral).Val
-	switch v{
+	switch v {
 	case DD:
 		unit = 24 * 3600 * 1000
 	case HH:
@@ -694,10 +692,10 @@ func (p *Parser) ConvertToWindows(wtype WindowType, name string, args []Expr) (*
 	default:
 		return nil, fmt.Errorf("Invalid timeliteral %s", v)
 	}
-	win.Length = &IntegerLiteral{Val :  args[1].(*IntegerLiteral).Val * unit}
-	if len(args) > 2{
-		win.Interval = &IntegerLiteral{Val : args[2].(*IntegerLiteral).Val * unit}
-	}else{
+	win.Length = &IntegerLiteral{Val: args[1].(*IntegerLiteral).Val * unit}
+	if len(args) > 2 {
+		win.Interval = &IntegerLiteral{Val: args[2].(*IntegerLiteral).Val * unit}
+	} else {
 		win.Interval = &IntegerLiteral{Val: 0}
 	}
 	return win, nil

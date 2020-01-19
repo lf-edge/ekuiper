@@ -2,8 +2,8 @@ package xstream
 
 import (
 	"encoding/json"
-	"github.com/emqx/kuiper/common"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,7 +12,7 @@ import (
 
 type Conf map[string]interface{}
 
-var confs = make(map[string] Conf)
+var confs = make(map[string]Conf)
 
 func GetConfAsString(file, key string) (string, error) {
 	val, err := getConfValue(file, key)
@@ -25,8 +25,8 @@ func GetConfAsString(file, key string) (string, error) {
 		return v, nil
 	} else if val == nil {
 		return "", nil
-	}else {
-		return "", fmt.Errorf("The value %s is not type of string for key %s", val, key )
+	} else {
+		return "", fmt.Errorf("The value %s is not type of string for key %s", val, key)
 	}
 }
 
@@ -40,7 +40,7 @@ func GetConfAsInt(file, key string) (int, error) {
 	if v, ok := val.(float64); ok {
 		return int(v), nil
 	} else {
-		return 0, fmt.Errorf("The value {0} is not type of int for key {1}", )
+		return 0, fmt.Errorf("The value {0} is not type of int for key {1}")
 	}
 }
 
@@ -54,7 +54,7 @@ func GetConfAsFloat(file, key string) (float64, error) {
 	if v, ok := val.(float64); ok {
 		return v, nil
 	} else {
-		return 0, fmt.Errorf("The value {0} is not type of float for key {1}", )
+		return 0, fmt.Errorf("The value {0} is not type of float for key {1}")
 	}
 }
 
@@ -68,10 +68,9 @@ func GetConfAsBool(file, key string) (bool, error) {
 	if v, ok := val.(bool); ok {
 		return v, nil
 	} else {
-		return false, fmt.Errorf("The value {0} is not type of bool for key {1}", )
+		return false, fmt.Errorf("The value {0} is not type of bool for key {1}")
 	}
 }
-
 
 func getConfValue(file, key string) (interface{}, error) {
 	if conf, ok := confs[file]; !ok {
@@ -112,7 +111,7 @@ func initConf(file string) (Conf, error) {
 	return conf, nil
 }
 
-func getValue(conf Conf, key string) (interface{}, error)  {
+func getValue(conf Conf, key string) (interface{}, error) {
 	keys := strings.Split(key, ".")
 
 	if len(keys) == 1 {
@@ -122,11 +121,10 @@ func getValue(conf Conf, key string) (interface{}, error)  {
 	nkey := strings.Join(keys[1:], ".")
 	ckey := strings.Join(keys[0:1], "")
 
-	if c, ok := conf[ckey].(map[string]interface {}); ok {
+	if c, ok := conf[ckey].(map[string]interface{}); ok {
 		return getValue(c, nkey)
 	} else {
 
 		return nil, fmt.Errorf("%s does not exsit for key %s.", conf, key)
 	}
 }
-

@@ -18,6 +18,7 @@ type StatManager interface {
 	SetBufferLength(l int64)
 	GetMetrics() []interface{}
 }
+
 //The statManager is not thread safe. Make sure it is used in only one instance
 type DefaultStatManager struct {
 	//metrics
@@ -32,17 +33,17 @@ type DefaultStatManager struct {
 	prefix           string
 	processTimeStart time.Time
 	opId             string
-	instanceId		 int
+	instanceId       int
 }
 
-type PrometheusStatManager struct{
+type PrometheusStatManager struct {
 	DefaultStatManager
 	//prometheus metrics
 	pTotalRecordsIn  prometheus.Counter
 	pTotalRecordsOut prometheus.Counter
 	pTotalExceptions prometheus.Counter
 	pProcessLatency  prometheus.Gauge
-	pBufferLength	 prometheus.Gauge
+	pBufferLength    prometheus.Gauge
 }
 
 func NewStatManager(opType string, ctx api.StreamContext) (StatManager, error) {
@@ -63,9 +64,9 @@ func NewStatManager(opType string, ctx api.StreamContext) (StatManager, error) {
 		ctx.GetLogger().Debugf("Create prometheus stat manager")
 		psm := &PrometheusStatManager{
 			DefaultStatManager: DefaultStatManager{
-				opType: opType,
-				prefix: prefix,
-				opId:   ctx.GetOpId(),
+				opType:     opType,
+				prefix:     prefix,
+				opId:       ctx.GetOpId(),
 				instanceId: ctx.GetInstanceId(),
 			},
 		}
@@ -78,11 +79,11 @@ func NewStatManager(opType string, ctx api.StreamContext) (StatManager, error) {
 		psm.pProcessLatency = mg.ProcessLatency.WithLabelValues(ctx.GetRuleId(), opType, ctx.GetOpId(), strInId)
 		psm.pBufferLength = mg.BufferLength.WithLabelValues(ctx.GetRuleId(), opType, ctx.GetOpId(), strInId)
 		sm = psm
-	}else{
+	} else {
 		sm = &DefaultStatManager{
-			opType: opType,
-			prefix: prefix,
-			opId:   ctx.GetOpId(),
+			opType:     opType,
+			prefix:     prefix,
+			opId:       ctx.GetOpId(),
 			instanceId: ctx.GetInstanceId(),
 		}
 	}
@@ -152,9 +153,9 @@ func (sm *DefaultStatManager) GetMetrics() []interface{} {
 		sm.totalRecordsIn, sm.totalRecordsOut, sm.totalExceptions, sm.processLatency, sm.bufferLength,
 	}
 
-	if !sm.lastInvocation.IsZero(){
+	if !sm.lastInvocation.IsZero() {
 		result = append(result, sm.lastInvocation.Format("2006-01-02T15:04:05.999999"))
-	}else{
+	} else {
 		result = append(result, 0)
 	}
 

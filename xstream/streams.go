@@ -111,24 +111,24 @@ func (s *TopologyNew) Open() <-chan error {
 func (s *TopologyNew) GetMetrics() (keys []string, values []interface{}) {
 	for _, node := range s.sources {
 		for ins, metrics := range node.GetMetrics() {
-			for i, v := range metrics{
-				keys = append(keys, "source_" + node.GetName() + "_" + strconv.Itoa(ins) + "_" + nodes.MetricNames[i])
+			for i, v := range metrics {
+				keys = append(keys, "source_"+node.GetName()+"_"+strconv.Itoa(ins)+"_"+nodes.MetricNames[i])
 				values = append(values, v)
 			}
 		}
 	}
 	for _, node := range s.ops {
 		for ins, metrics := range node.GetMetrics() {
-			for i, v := range metrics{
-				keys = append(keys, "op_" + node.GetName() + "_" + strconv.Itoa(ins) + "_" + nodes.MetricNames[i])
+			for i, v := range metrics {
+				keys = append(keys, "op_"+node.GetName()+"_"+strconv.Itoa(ins)+"_"+nodes.MetricNames[i])
 				values = append(values, v)
 			}
 		}
 	}
 	for _, node := range s.sinks {
 		for ins, metrics := range node.GetMetrics() {
-			for i, v := range metrics{
-				keys = append(keys, "sink_" + node.GetName() + "_" + strconv.Itoa(ins) + "_" + nodes.MetricNames[i])
+			for i, v := range metrics {
+				keys = append(keys, "sink_"+node.GetName()+"_"+strconv.Itoa(ins)+"_"+nodes.MetricNames[i])
 				values = append(values, v)
 			}
 		}

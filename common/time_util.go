@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"github.com/benbjohnson/clock"
 	"time"
 )
 
@@ -66,14 +67,14 @@ func InterfaceToUnixMilli(i interface{}, format string) (int64, error) {
 		var ti time.Time
 		var err error
 		var f = JSISO
-		if format != ""{
+		if format != "" {
 			f, err = convertFormat(format)
-			if err != nil{
+			if err != nil {
 				return 0, err
 			}
 		}
 		ti, err = time.Parse(f, t)
-		if err != nil{
+		if err != nil {
 			return 0, err
 		}
 		return TimeToUnixMilli(ti), nil
@@ -96,14 +97,14 @@ func InterfaceToTime(i interface{}, format string) (time.Time, error) {
 		var ti time.Time
 		var err error
 		var f = JSISO
-		if format != ""{
+		if format != "" {
 			f, err = convertFormat(format)
-			if err != nil{
+			if err != nil {
 				return ti, err
 			}
 		}
 		ti, err = time.Parse(f, t)
-		if err != nil{
+		if err != nil {
 			return ti, err
 		}
 		return ti, nil
@@ -113,21 +114,21 @@ func InterfaceToTime(i interface{}, format string) (time.Time, error) {
 }
 
 func TimeFromUnixMilli(t int64) time.Time {
-	return time.Unix(t/1000, t%1000).UTC()
+	return time.Unix(t/1000, (t%1000)*1e6).UTC()
 }
 
-func ParseTime(t string, f string) (time.Time, error){
-	if f, err := convertFormat(f); err != nil{
+func ParseTime(t string, f string) (time.Time, error) {
+	if f, err := convertFormat(f); err != nil {
 		return time.Now(), err
-	}else{
+	} else {
 		return time.Parse(f, t)
 	}
 }
 
-func FormatTime(time time.Time, f string) (string, error){
-	if f, err := convertFormat(f); err != nil{
+func FormatTime(time time.Time, f string) (string, error) {
+	if f, err := convertFormat(f); err != nil {
 		return "", err
-	}else{
+	} else {
 		return time.Format(f), nil
 	}
 }
@@ -144,7 +145,7 @@ func FormatTime(time time.Time, f string) (string, error){
 //	return f
 //}
 
-func convertFormat(f string) (string, error){
+func convertFormat(f string) (string, error) {
 	formatRune := []rune(f)
 	lenFormat := len(formatRune)
 	out := ""
@@ -152,7 +153,7 @@ func convertFormat(f string) (string, error){
 		switch r := formatRune[i]; r {
 		case 'Y', 'y':
 			j := 1
-			for ; i+j < lenFormat && j<=4; j++ {
+			for ; i+j < lenFormat && j <= 4; j++ {
 				if formatRune[i+j] != r {
 					break
 				}
@@ -170,7 +171,7 @@ func convertFormat(f string) (string, error){
 			out += "AD"
 		case 'M': // M MM MMM MMMM month of year
 			j := 1
-			for ; i+j < lenFormat && j<=4; j++ {
+			for ; i+j < lenFormat && j <= 4; j++ {
 				if formatRune[i+j] != r {
 					break
 				}
@@ -188,7 +189,7 @@ func convertFormat(f string) (string, error){
 			}
 		case 'd': // d dd day of month
 			j := 1
-			for ; i+j < lenFormat && j<=2; j++ {
+			for ; i+j < lenFormat && j <= 2; j++ {
 				if formatRune[i+j] != r {
 					break
 				}
@@ -203,7 +204,7 @@ func convertFormat(f string) (string, error){
 			}
 		case 'E': // M MM MMM MMMM month of year
 			j := 1
-			for ; i+j < lenFormat && j<=4; j++ {
+			for ; i+j < lenFormat && j <= 4; j++ {
 				if formatRune[i+j] != r {
 					break
 				}
@@ -219,7 +220,7 @@ func convertFormat(f string) (string, error){
 			}
 		case 'H': // HH
 			j := 1
-			for ; i+j < lenFormat && j<=2; j++ {
+			for ; i+j < lenFormat && j <= 2; j++ {
 				if formatRune[i+j] != r {
 					break
 				}
@@ -234,14 +235,14 @@ func convertFormat(f string) (string, error){
 			}
 		case 'h': // h hh
 			j := 1
-			for ; i+j < lenFormat && j<=2; j++ {
+			for ; i+j < lenFormat && j <= 2; j++ {
 				if formatRune[i+j] != r {
 					break
 				}
 			}
 			i = i + j - 1
 			switch j {
-			case 1:  // h
+			case 1: // h
 				out += "3"
 			case 2: // hh
 				out += "03"
@@ -265,7 +266,7 @@ func convertFormat(f string) (string, error){
 			}
 		case 's': // s ss
 			j := 1
-			for ; i+j < lenFormat && j<=2 ; j++ {
+			for ; i+j < lenFormat && j <= 2; j++ {
 				if formatRune[i+j] != r {
 					break
 				}
@@ -281,7 +282,7 @@ func convertFormat(f string) (string, error){
 
 		case 'S': // S SS SSS
 			j := 1
-			for ; i+j < lenFormat && j<=3; j++ {
+			for ; i+j < lenFormat && j <= 3; j++ {
 				if formatRune[i+j] != r {
 					break
 				}
@@ -301,7 +302,7 @@ func convertFormat(f string) (string, error){
 			out += "-0700"
 		case 'X': // X XX XXX
 			j := 1
-			for ; i+j < lenFormat && j<=3; j++ {
+			for ; i+j < lenFormat && j <= 3; j++ {
 				if formatRune[i+j] != r {
 					break
 				}
@@ -340,4 +341,17 @@ func convertFormat(f string) (string, error){
 		}
 	}
 	return out, nil
+}
+
+//Time related. For Mock
+func GetTicker(duration int) *clock.Ticker {
+	return Clock.Ticker(time.Duration(duration) * time.Millisecond)
+}
+
+func GetTimer(duration int) *clock.Timer {
+	return Clock.Timer(time.Duration(duration) * time.Millisecond)
+}
+
+func GetNowInMilli() int64 {
+	return TimeToUnixMilli(Clock.Now())
 }

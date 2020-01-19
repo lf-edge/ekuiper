@@ -2,8 +2,8 @@ package main
 
 import (
 	"bufio"
-	"github.com/emqx/kuiper/common"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/go-yaml/yaml"
 	"github.com/urfave/cli"
 	"io/ioutil"
@@ -16,20 +16,20 @@ import (
 
 type clientConf struct {
 	Host string `yaml:"host"`
-	Port int `yaml:"port"`
+	Port int    `yaml:"port"`
 }
 
 var clientYaml = "client.yaml"
 
-func streamProcess(client *rpc.Client, args string)  {
+func streamProcess(client *rpc.Client, args string) {
 	var reply string
-	if args == ""{
+	if args == "" {
 		args = strings.Join(os.Args[1:], " ")
 	}
 	err := client.Call("Server.Stream", args, &reply)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
-	}else{
+	} else {
 		fmt.Println(reply)
 	}
 }
@@ -53,11 +53,11 @@ func main() {
 	var config *clientConf
 	if err := yaml.Unmarshal(b, &cfg); err != nil {
 		fmt.Printf("Failed to load config file with error %s.\n", err)
-	}else{
+	} else {
 		c, ok := cfg["basic"]
-		if !ok{
+		if !ok {
 			fmt.Printf("No basic config in client.yaml, will use the default configuration.\n")
-		}else{
+		} else {
 			config = &c
 		}
 	}
@@ -78,10 +78,10 @@ func main() {
 
 	app.Commands = []cli.Command{
 		{
-			Name:      "query",
-			Aliases:   []string{"query"},
-			Usage:     "query command line",
-			Action:    func(c *cli.Context) error {
+			Name:    "query",
+			Aliases: []string{"query"},
+			Usage:   "query command line",
+			Action: func(c *cli.Context) error {
 				reader := bufio.NewReader(os.Stdin)
 				var inputs []string
 				ticker := time.NewTicker(time.Millisecond * 300)
@@ -101,7 +101,7 @@ func main() {
 					} else {
 						var reply string
 						err := client.Call("Server.CreateQuery", text, &reply)
-						if err != nil{
+						if err != nil {
 							fmt.Println(err)
 							continue
 						} else {
@@ -128,18 +128,18 @@ func main() {
 			},
 		},
 		{
-			Name:      "create",
-			Aliases:   []string{"create"},
-			Usage:     "create stream $stream_name | create stream $stream_name -f $stream_def_file | create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file",
+			Name:    "create",
+			Aliases: []string{"create"},
+			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file",
 
-			Subcommands: []cli.Command {
+			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
 					Usage: "create stream $stream_name [-f stream_def_file]",
-					Flags: []cli.Flag {
+					Flags: []cli.Flag{
 						cli.StringFlag{
-							Name: "file, f",
-							Usage: "the location of stream definition file",
+							Name:     "file, f",
+							Usage:    "the location of stream definition file",
 							FilePath: "/home/mystream.txt",
 						},
 					},
@@ -168,10 +168,10 @@ func main() {
 				{
 					Name:  "rule",
 					Usage: "create rule $rule_name [$rule_json | -f rule_def_file]",
-					Flags: []cli.Flag {
+					Flags: []cli.Flag{
 						cli.StringFlag{
-							Name: "file, f",
-							Usage: "the location of rule definition file",
+							Name:     "file, f",
+							Usage:    "the location of rule definition file",
 							FilePath: "/home/myrule.txt",
 						},
 					},
@@ -222,12 +222,11 @@ func main() {
 					},
 				},
 			},
-
 		},
 		{
-			Name:      "describe",
-			Aliases:   []string{"describe"},
-			Usage:     "describe stream $stream_name | describe rule $rule_name",
+			Name:    "describe",
+			Aliases: []string{"describe"},
+			Usage:   "describe stream $stream_name | describe rule $rule_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -241,7 +240,7 @@ func main() {
 				{
 					Name:  "rule",
 					Usage: "describe rule $rule_name",
-					Action:    func(c *cli.Context) error {
+					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
 							fmt.Printf("Expect rule name.\n")
 							return nil
@@ -261,9 +260,9 @@ func main() {
 		},
 
 		{
-			Name:        "drop",
-			Aliases:     []string{"drop"},
-			Usage:       "drop stream $stream_name | drop rule $rule_name",
+			Name:    "drop",
+			Aliases: []string{"drop"},
+			Usage:   "drop stream $stream_name | drop rule $rule_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -298,9 +297,9 @@ func main() {
 		},
 
 		{
-			Name:      "show",
-			Aliases:   []string{"show"},
-			Usage:     "show streams | show rules",
+			Name:    "show",
+			Aliases: []string{"show"},
+			Usage:   "show streams | show rules",
 
 			Subcommands: []cli.Command{
 				{
@@ -314,7 +313,7 @@ func main() {
 				{
 					Name:  "rules",
 					Usage: "show rules",
-					Action:    func(c *cli.Context) error {
+					Action: func(c *cli.Context) error {
 						var reply string
 						err = client.Call("Server.ShowRules", 0, &reply)
 						if err != nil {
@@ -329,9 +328,9 @@ func main() {
 		},
 
 		{
-			Name:        "getstatus",
-			Aliases:     []string{"getstatus"},
-			Usage:       "getstatus rule $rule_name",
+			Name:    "getstatus",
+			Aliases: []string{"getstatus"},
+			Usage:   "getstatus rule $rule_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "rule",
@@ -356,9 +355,9 @@ func main() {
 			},
 		},
 		{
-			Name:        "start",
-			Aliases:     []string{"start"},
-			Usage:       "start rule $rule_name",
+			Name:    "start",
+			Aliases: []string{"start"},
+			Usage:   "start rule $rule_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "rule",
@@ -383,9 +382,9 @@ func main() {
 			},
 		},
 		{
-			Name:        "stop",
-			Aliases:     []string{"stop"},
-			Usage:       "stop rule $rule_name",
+			Name:    "stop",
+			Aliases: []string{"stop"},
+			Usage:   "stop rule $rule_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "rule",
@@ -410,9 +409,9 @@ func main() {
 			},
 		},
 		{
-			Name:        "restart",
-			Aliases:     []string{"restart"},
-			Usage:       "restart rule $rule_name",
+			Name:    "restart",
+			Aliases: []string{"restart"},
+			Usage:   "restart rule $rule_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "rule",
@@ -437,7 +436,6 @@ func main() {
 			},
 		},
 	}
-
 
 	app.Name = "Kuiper"
 	app.Usage = "The command line tool for EMQ X Kuiper."

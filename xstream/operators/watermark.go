@@ -3,6 +3,7 @@ package operators
 import (
 	"context"
 	"fmt"
+	"github.com/benbjohnson/clock"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
@@ -30,7 +31,7 @@ type WatermarkGenerator struct {
 	window          *WindowConfig
 	lateTolerance   int64
 	interval        int
-	ticker          common.Ticker
+	ticker          *clock.Ticker
 	stream          chan<- interface{}
 }
 
@@ -85,7 +86,7 @@ func (w *WatermarkGenerator) start(ctx api.StreamContext) {
 	var c <-chan time.Time
 
 	if w.ticker != nil {
-		c = w.ticker.GetC()
+		c = w.ticker.C
 	}
 	for {
 		select {

@@ -71,7 +71,7 @@ func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 				return nil
 			}
 		}
-		if len(r) > 0{
+		if len(r) > 0 {
 			return r
 		}
 	default:

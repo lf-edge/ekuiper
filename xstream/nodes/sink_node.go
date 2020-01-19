@@ -12,20 +12,20 @@ import (
 
 type SinkNode struct {
 	//static
-	input  chan interface{}
-	name   string
+	input    chan interface{}
+	name     string
 	sinkType string
-	mutex   sync.RWMutex
+	mutex    sync.RWMutex
 	//configs (also static for sinks)
 	concurrency int
-	options map[string]interface{}
+	options     map[string]interface{}
 	//states varies after restart
 	ctx          api.StreamContext
 	statManagers []StatManager
 	sinks        []api.Sink
 }
 
-func NewSinkNode(name string, sinkType string, props map[string]interface{}) *SinkNode{
+func NewSinkNode(name string, sinkType string, props map[string]interface{}) *SinkNode {
 	bufferLength := 1024
 	if c, ok := props["bufferLength"]; ok {
 		if t, err := common.ToInt(c); err != nil || t <= 0 {
@@ -35,24 +35,24 @@ func NewSinkNode(name string, sinkType string, props map[string]interface{}) *Si
 		}
 	}
 	return &SinkNode{
-		input: make(chan interface{}, bufferLength),
-		name: name,
-		sinkType: sinkType,
-		options: props,
+		input:       make(chan interface{}, bufferLength),
+		name:        name,
+		sinkType:    sinkType,
+		options:     props,
 		concurrency: 1,
-		ctx: nil,
+		ctx:         nil,
 	}
 }
 
 //Only for mock source, do not use it in production
 func NewSinkNodeWithSink(name string, sink api.Sink) *SinkNode {
 	return &SinkNode{
-		input: make(chan interface{}, 1024),
-		name:  name,
-		sinks: []api.Sink{sink},
-		options: nil,
+		input:       make(chan interface{}, 1024),
+		name:        name,
+		sinks:       []api.Sink{sink},
+		options:     nil,
 		concurrency: 1,
-		ctx:   nil,
+		ctx:         nil,
 	}
 }
 
@@ -103,12 +103,12 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 		createSink := len(m.sinks) == 0
 		logger.Infof("open sink node %d instances", m.concurrency)
 		for i := 0; i < m.concurrency; i++ { // workers
-			go func(instance int){
+			go func(instance int) {
 				var sink api.Sink
 				var err error
-				if createSink{
+				if createSink {
 					sink, err = getSink(m.sinkType, m.options)
-					if err != nil{
+					if err != nil {
 						m.drainError(result, err, ctx, logger)
 						return
 					}
@@ -119,12 +119,12 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 						m.drainError(result, err, ctx, logger)
 						return
 					}
-				}else{
+				} else {
 					sink = m.sinks[instance]
 				}
 
 				stats, err := NewStatManager("sink", ctx)
-				if err != nil{
+				if err != nil {
 					m.drainError(result, err, ctx, logger)
 					return
 				}
@@ -135,9 +135,9 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				cache := NewCache(m.input, cacheLength, cacheSaveInterval, result, ctx)
 				for {
 					select {
-					case data := <- cache.Out:
+					case data := <-cache.Out:
 						stats.SetBufferLength(int64(cache.Length()))
-						if runAsync{
+						if runAsync {
 							go doCollect(sink, data, stats, retryInterval, cache.Complete, ctx)
 						} else {
 							doCollect(sink, data, stats, retryInterval, cache.Complete, ctx)
@@ -155,18 +155,18 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	}()
 }
 
-func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval int, signalCh chan<- int, ctx api.StreamContext, ) {
+func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval int, signalCh chan<- int, ctx api.StreamContext) {
 	stats.IncTotalRecordsIn()
 	stats.ProcessTimeStart()
 	logger := ctx.GetLogger()
-	for{
+	for {
 		if err := sink.Collect(ctx, item.data); err != nil {
 			stats.IncTotalExceptions()
 			logger.Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), item.data, err)
-			if retryInterval > 0{
+			if retryInterval > 0 {
 				time.Sleep(time.Duration(retryInterval) * time.Millisecond)
 				logger.Debugf("try again")
-			}else{
+			} else {
 				break
 			}
 		} else {
@@ -218,14 +218,14 @@ func (m *SinkNode) GetInput() (chan<- interface{}, string) {
 }
 
 func (m *SinkNode) GetMetrics() (result [][]interface{}) {
-	for _, stats := range m.statManagers{
+	for _, stats := range m.statManagers {
 		result = append(result, stats.GetMetrics())
 	}
 	return result
 }
 
 func (m *SinkNode) drainError(errCh chan<- error, err error, ctx api.StreamContext, logger api.Logger) {
-	go func(){
+	go func() {
 		select {
 		case errCh <- err:
 		case <-ctx.Done():
