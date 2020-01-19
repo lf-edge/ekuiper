@@ -70,13 +70,13 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 	return nil
 }
 
-func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error {
+func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc, onError api.ErrorFunc) {
 	log := ctx.GetLogger()
 
 	opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(ms.pVersion)
 	if ms.clientid == "" {
 		if uuid, err := uuid.NewUUID(); err != nil {
-			return fmt.Errorf("failed to get uuid, the error is %s", err)
+			onError(fmt.Errorf("failed to get uuid, the error is %s", err))
 		} else {
 			ms.clientid = uuid.String()
 			opts.SetClientID(uuid.String())
@@ -92,15 +92,15 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 			if kp, err1 := common.ProcessPath(ms.pkeyPath); err1 == nil {
 				log.Infof("The private key file is %s.", kp)
 				if cer, err2 := tls.LoadX509KeyPair(cp, kp); err2 != nil {
-					return err2
+					onError(err2)
 				} else {
 					opts.SetTLSConfig(&tls.Config{Certificates: []tls.Certificate{cer}})
 				}
 			} else {
-				return err1
+				onError(err1)
 			}
 		} else {
-			return err
+			onError(err)
 		}
 	} else {
 		log.Infof("Connect MQTT broker with username and password.")
@@ -132,14 +132,12 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) error
 
 	c := MQTT.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("found error when connecting to %s: %s", ms.srv, token.Error())
+		onError(fmt.Errorf("found error when connecting to %s: %s", ms.srv, token.Error()))
 	}
 	log.Infof("The connection to server %s was established successfully", ms.srv)
 	ms.conn = c
 	subscribe(ms.tpc, c, ctx, consume)
 	log.Infof("Successfully subscribe to topic %s", ms.srv+": "+ms.clientid)
-
-	return nil
 }
 
 func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consume api.ConsumeFunc) {

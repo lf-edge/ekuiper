@@ -23,7 +23,7 @@ func NewMockSource(data []*xsql.Tuple, done <-chan int, isEventTime bool) *MockS
 	return mock
 }
 
-func (m *MockSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err error) {
+func (m *MockSource) Open(ctx api.StreamContext, consume api.ConsumeFunc, onError api.ErrorFunc) {
 	log := ctx.GetLogger()
 	mockClock := GetMockClock()
 	log.Debugln("mock source starts")
@@ -40,7 +40,6 @@ func (m *MockSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err e
 			time.Sleep(1)
 		}
 	}()
-	return nil
 }
 
 func (m *MockSource) Close(ctx api.StreamContext) error {

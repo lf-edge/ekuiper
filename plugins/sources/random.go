@@ -35,7 +35,7 @@ func (s *randomSource) Configure(topic string, props map[string]interface{}) err
 	return nil
 }
 
-func (s *randomSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err error) {
+func (s *randomSource) Open(ctx api.StreamContext, consume api.ConsumeFunc, onError api.ErrorFunc) {
 	t := time.NewTicker(time.Duration(s.interval) * time.Millisecond)
 	exeCtx, cancel := ctx.WithCancel()
 	s.cancel = cancel
@@ -50,7 +50,6 @@ func (s *randomSource) Open(ctx api.StreamContext, consume api.ConsumeFunc) (err
 			}
 		}
 	}(exeCtx)
-	return nil
 }
 
 func randomize(p map[string]interface{}, seed int) map[string]interface{} {
