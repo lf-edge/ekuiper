@@ -20,10 +20,10 @@ type SourceNode struct {
 	options     map[string]string
 	concurrency int
 
-	mutex   	sync.RWMutex
-	sources 	[]api.Source
+	mutex        sync.RWMutex
+	sources      []api.Source
 	statManagers []*StatManager
-	buffer      *utils.DynamicChannelBuffer
+	buffer       *utils.DynamicChannelBuffer
 }
 
 func NewSourceNode(name string, options map[string]string) *SourceNode {
@@ -45,11 +45,11 @@ func NewSourceNode(name string, options map[string]string) *SourceNode {
 //Only for mock source, do not use it in production
 func NewSourceNodeWithSource(name string, source api.Source, options map[string]string) *SourceNode {
 	return &SourceNode{
-		sources: 	 []api.Source{  source},
-		outs:    make(map[string]chan<- interface{}),
-		name:    name,
-		options: options,
-		ctx:     nil,
+		sources:     []api.Source{source},
+		outs:        make(map[string]chan<- interface{}),
+		name:        name,
+		options:     options,
+		ctx:         nil,
 		concurrency: 1,
 		buffer:      utils.NewDynamicChannelBuffer(),
 	}
@@ -82,7 +82,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				//Do open source instances
 				var source api.Source
 				var err error
-				if createSource{
+				if createSource {
 					source, err = getSource(m.sourceType)
 					if err != nil {
 						m.drainError(errCh, err, ctx, logger)
@@ -96,7 +96,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 					m.mutex.Lock()
 					m.sources = append(m.sources, source)
 					m.mutex.Unlock()
-				}else{
+				} else {
 					source = m.sources[instance]
 				}
 				stats, err := NewStatManager("source", ctx)
@@ -108,7 +108,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.statManagers = append(m.statManagers, stats)
 				m.mutex.Unlock()
 
-				if err := source.Open(ctx.WithInstance(instance), func(message map[string]interface{}, meta map[string]interface{}) {
+				source.Open(ctx.WithInstance(instance), func(message map[string]interface{}, meta map[string]interface{}) {
 					stats.IncTotalRecordsIn()
 					stats.ProcessTimeStart()
 					tuple := &xsql.Tuple{Emitter: m.name, Message: message, Timestamp: common.GetNowInMilli(), Metadata: meta}
@@ -117,10 +117,9 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 					stats.IncTotalRecordsOut()
 					stats.SetBufferLength(int64(m.getBufferLength()))
 					logger.Debugf("%s consume data %v complete", m.name, tuple)
-				}); err != nil {
+				}, func(err error) {
 					m.drainError(errCh, err, ctx, logger)
-					return
-				}
+				})
 				logger.Infof("Start source %s instance %d successfully", m.name, instance)
 			}(i)
 		}
@@ -131,7 +130,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				logger.Infof("source %s done", m.name)
 				m.close(ctx, logger)
 				return
-			case data := <- m.buffer.Out:
+			case data := <-m.buffer.Out:
 				//blocking
 				Broadcast(m.outs, data, ctx)
 			}
@@ -232,7 +231,7 @@ func (m *SourceNode) AddOutput(output chan<- interface{}, name string) (err erro
 }
 
 func (m *SourceNode) GetMetrics() (result [][]interface{}) {
-	for _, stats := range m.statManagers{
+	for _, stats := range m.statManagers {
 		result = append(result, stats.GetMetrics())
 	}
 	return result
