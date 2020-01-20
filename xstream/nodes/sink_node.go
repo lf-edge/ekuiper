@@ -19,6 +19,7 @@ type SinkNode struct {
 	//configs (also static for sinks)
 	concurrency int
 	options     map[string]interface{}
+	isMock      bool
 	//states varies after restart
 	ctx          api.StreamContext
 	statManagers []StatManager
@@ -53,6 +54,7 @@ func NewSinkNodeWithSink(name string, sink api.Sink) *SinkNode {
 		options:     nil,
 		concurrency: 1,
 		ctx:         nil,
+		isMock:      true,
 	}
 }
 
@@ -100,13 +102,13 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				cacheSaveInterval = t
 			}
 		}
-		createSink := len(m.sinks) == 0
+		m.reset()
 		logger.Infof("open sink node %d instances", m.concurrency)
 		for i := 0; i < m.concurrency; i++ { // workers
 			go func(instance int) {
 				var sink api.Sink
 				var err error
-				if createSink {
+				if !m.isMock {
 					sink, err = getSink(m.sinkType, m.options)
 					if err != nil {
 						m.drainError(result, err, ctx, logger)
@@ -153,6 +155,13 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 			}(i)
 		}
 	}()
+}
+
+func (m *SinkNode) reset() {
+	if !m.isMock {
+		m.sinks = nil
+	}
+	m.statManagers = nil
 }
 
 func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval int, signalCh chan<- int, ctx api.StreamContext) {
@@ -240,7 +249,4 @@ func (m *SinkNode) close(ctx api.StreamContext, logger api.Logger) {
 			logger.Warnf("close sink fails: %v", err)
 		}
 	}
-	//reset the states
-	m.sinks = nil
-	m.statManagers = nil
 }

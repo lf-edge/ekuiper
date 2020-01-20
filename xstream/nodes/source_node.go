@@ -19,6 +19,7 @@ type SourceNode struct {
 	ctx         api.StreamContext
 	options     map[string]string
 	concurrency int
+	isMock      bool
 
 	mutex        sync.RWMutex
 	sources      []api.Source
@@ -52,6 +53,7 @@ func NewSourceNodeWithSource(name string, source api.Source, options map[string]
 		ctx:         nil,
 		concurrency: 1,
 		buffer:      utils.NewDynamicChannelBuffer(),
+		isMock:      true,
 	}
 }
 
@@ -75,14 +77,14 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.buffer.SetLimit(t)
 			}
 		}
-		createSource := len(m.sources) == 0
+		m.reset()
 		logger.Infof("open source node %d instances", m.concurrency)
 		for i := 0; i < m.concurrency; i++ { // workers
 			go func(instance int) {
 				//Do open source instances
 				var source api.Source
 				var err error
-				if createSource {
+				if !m.isMock {
 					source, err = getSource(m.sourceType)
 					if err != nil {
 						m.drainError(errCh, err, ctx, logger)
@@ -139,6 +141,13 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
+func (m *SourceNode) reset() {
+	if !m.isMock {
+		m.sources = nil
+	}
+	m.statManagers = nil
+}
+
 func getSource(t string) (api.Source, error) {
 	var s api.Source
 	var ok bool
@@ -173,9 +182,6 @@ func (m *SourceNode) close(ctx api.StreamContext, logger api.Logger) {
 			logger.Warnf("close source fails: %v", err)
 		}
 	}
-	//Reset the states
-	m.sources = nil
-	m.statManagers = nil
 }
 
 func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
