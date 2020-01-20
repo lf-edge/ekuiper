@@ -35,7 +35,7 @@ func (s *randomSource) Configure(topic string, props map[string]interface{}) err
 	return nil
 }
 
-func (s *randomSource) Open(ctx api.StreamContext, consume api.ConsumeFunc, onError api.ErrorFunc) {
+func (s *randomSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	t := time.NewTicker(time.Duration(s.interval) * time.Millisecond)
 	exeCtx, cancel := ctx.WithCancel()
 	s.cancel = cancel
@@ -44,7 +44,7 @@ func (s *randomSource) Open(ctx api.StreamContext, consume api.ConsumeFunc, onEr
 		for {
 			select {
 			case <-t.C:
-				consume(randomize(s.pattern, s.seed), nil)
+				consumer <- api.NewDefaultSourceTuple(randomize(s.pattern, s.seed), nil)
 			case <-exeCtx.Done():
 				return
 			}

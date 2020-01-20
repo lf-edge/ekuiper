@@ -1,17 +1,19 @@
-package utils
+package nodes
+
+import "github.com/emqx/kuiper/xstream/api"
 
 type DynamicChannelBuffer struct {
-	In     chan interface{}
-	Out    chan interface{}
-	buffer []interface{}
+	In     chan api.SourceTuple
+	Out    chan api.SourceTuple
+	buffer []api.SourceTuple
 	limit  int
 }
 
 func NewDynamicChannelBuffer() *DynamicChannelBuffer {
 	buffer := &DynamicChannelBuffer{
-		In:     make(chan interface{}),
-		Out:    make(chan interface{}),
-		buffer: make([]interface{}, 0),
+		In:     make(chan api.SourceTuple),
+		Out:    make(chan api.SourceTuple),
+		buffer: make([]api.SourceTuple, 0),
 		limit:  102400,
 	}
 	go buffer.run()

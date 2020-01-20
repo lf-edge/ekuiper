@@ -4,9 +4,30 @@ import (
 	"context"
 )
 
-//The function to call when data is emitted by the source.
-type ConsumeFunc func(message map[string]interface{}, metadata map[string]interface{})
-type ErrorFunc func(err error)
+type SourceTuple interface {
+	Message() map[string]interface{}
+	Meta() map[string]interface{}
+}
+
+type DefaultSourceTuple struct {
+	message map[string]interface{}
+	meta    map[string]interface{}
+}
+
+func NewDefaultSourceTuple(message map[string]interface{}, meta map[string]interface{}) *DefaultSourceTuple {
+	return &DefaultSourceTuple{
+		message: message,
+		meta:    meta,
+	}
+}
+
+func (t *DefaultSourceTuple) Message() map[string]interface{} {
+	return t.message
+}
+func (t *DefaultSourceTuple) Meta() map[string]interface{} {
+	return t.meta
+}
+
 type Logger interface {
 	Debug(args ...interface{})
 	Info(args ...interface{})
@@ -28,7 +49,7 @@ type Closable interface {
 
 type Source interface {
 	//Should be sync function for normal case. The container will run it in go func
-	Open(ctx StreamContext, consume ConsumeFunc, onError ErrorFunc)
+	Open(ctx StreamContext, consumer chan<- SourceTuple, errCh chan<- error)
 	//Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties
 	//read from the yaml
 	Configure(datasource string, props map[string]interface{}) error

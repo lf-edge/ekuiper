@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/common/plugin_manager"
-	"github.com/emqx/kuiper/common/utils"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/extensions"
@@ -24,7 +23,6 @@ type SourceNode struct {
 	mutex        sync.RWMutex
 	sources      []api.Source
 	statManagers []StatManager
-	buffer       *utils.DynamicChannelBuffer
 }
 
 func NewSourceNode(name string, options map[string]string) *SourceNode {
@@ -39,7 +37,6 @@ func NewSourceNode(name string, options map[string]string) *SourceNode {
 		options:     options,
 		ctx:         nil,
 		concurrency: 1,
-		buffer:      utils.NewDynamicChannelBuffer(),
 	}
 }
 
@@ -52,7 +49,6 @@ func NewSourceNodeWithSource(name string, source api.Source, options map[string]
 		options:     options,
 		ctx:         nil,
 		concurrency: 1,
-		buffer:      utils.NewDynamicChannelBuffer(),
 		isMock:      true,
 	}
 }
@@ -70,11 +66,12 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.concurrency = t
 			}
 		}
+		bl := 102400
 		if c, ok := props["bufferLength"]; ok {
 			if t, err := common.ToInt(c); err != nil || t <= 0 {
 				logger.Warnf("invalid type for bufferLength property, should be positive integer but found %t", c)
 			} else {
-				m.buffer.SetLimit(t)
+				bl = t
 			}
 		}
 		m.reset()
@@ -111,32 +108,32 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.statManagers = append(m.statManagers, stats)
 				m.mutex.Unlock()
 
-				source.Open(ctx.WithInstance(instance), func(message map[string]interface{}, meta map[string]interface{}) {
-					stats.IncTotalRecordsIn()
-					stats.ProcessTimeStart()
-					tuple := &xsql.Tuple{Emitter: m.name, Message: message, Timestamp: common.GetNowInMilli(), Metadata: meta}
-					stats.ProcessTimeEnd()
-					m.Broadcast(tuple)
-					stats.IncTotalRecordsOut()
-					stats.SetBufferLength(int64(m.getBufferLength()))
-					logger.Debugf("%s consume data %v complete", m.name, tuple)
-				}, func(err error) {
-					m.drainError(errCh, err, ctx, logger)
-				})
+				buffer := NewDynamicChannelBuffer()
+				buffer.SetLimit(bl)
+				errCh := make(chan error)
+				source.Open(ctx.WithInstance(instance), buffer.In, errCh)
 				logger.Infof("Start source %s instance %d successfully", m.name, instance)
+				for {
+					select {
+					case <-ctx.Done():
+						logger.Infof("source %s done", m.name)
+						m.close(ctx, logger)
+						return
+					case err := <-errCh:
+						m.drainError(errCh, err, ctx, logger)
+					case data := <-buffer.Out:
+						stats.IncTotalRecordsIn()
+						stats.ProcessTimeStart()
+						tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: common.GetNowInMilli(), Metadata: data.Meta()}
+						stats.ProcessTimeEnd()
+						//blocking
+						Broadcast(m.outs, tuple, ctx)
+						stats.IncTotalRecordsOut()
+						stats.SetBufferLength(int64(buffer.GetLength()))
+						logger.Debugf("%s consume data %v complete", m.name, tuple)
+					}
+				}
 			}(i)
-		}
-
-		for {
-			select {
-			case <-ctx.Done():
-				logger.Infof("source %s done", m.name)
-				m.close(ctx, logger)
-				return
-			case data := <-m.buffer.Out:
-				//blocking
-				Broadcast(m.outs, data, ctx)
-			}
 		}
 	}()
 }
@@ -214,14 +211,6 @@ func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
 	}
 	logger.Debugf("get conf for %s with conf key %s: %v", m.sourceType, confkey, props)
 	return props
-}
-
-func (m *SourceNode) Broadcast(data interface{}) {
-	m.buffer.In <- data
-}
-
-func (m *SourceNode) getBufferLength() int {
-	return m.buffer.GetLength()
 }
 
 func (m *SourceNode) GetName() string {
