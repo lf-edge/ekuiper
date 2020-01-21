@@ -33,7 +33,7 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 	parser := xsql.NewParser(strings.NewReader(statement))
 	stmt, err := xsql.Language.Parse(parser)
 	if err != nil {
-		return
+		return nil, err
 	}
 	switch s := stmt.(type) {
 	case *xsql.StreamStmt:
@@ -54,6 +54,8 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 		var r string
 		r, err = p.execDropStream(s)
 		result = append(result, r)
+	default:
+		return nil, fmt.Errorf("Invalid stream statement: %s", statement)
 	}
 
 	return
@@ -73,36 +75,36 @@ func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, statement stri
 	}
 }
 
-func (p *StreamProcessor) execShowStream(stmt *xsql.ShowStreamsStatement) ([]string, error) {
-	err := p.db.Open()
+func (p *StreamProcessor) ExecStreamSql(statement string) (string, error) {
+	r, err := p.ExecStmt(statement)
 	if err != nil {
-		return nil, fmt.Errorf("Show stream fails, error when opening db: %v.", err)
+		return "", err
+	} else {
+		return strings.Join(r, "\n"), err
 	}
-	defer p.db.Close()
-	keys, err := p.db.Keys()
+}
+
+func (p *StreamProcessor) execShowStream(stmt *xsql.ShowStreamsStatement) ([]string, error) {
+	keys, err := p.ShowStream()
 	if len(keys) == 0 {
 		keys = append(keys, "No stream definitions are found.")
 	}
 	return keys, err
 }
 
-func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement) (string, error) {
+func (p *StreamProcessor) ShowStream() ([]string, error) {
 	err := p.db.Open()
 	if err != nil {
-		return "", fmt.Errorf("Describe stream fails, error when opening db: %v.", err)
+		return nil, fmt.Errorf("Show stream fails, error when opening db: %v.", err)
 	}
 	defer p.db.Close()
-	s, f := p.db.Get(stmt.Name)
-	s1, _ := s.(string)
-	if !f {
-		return "", fmt.Errorf("Stream %s is not found.", stmt.Name)
-	}
+	return p.db.Keys()
+}
 
-	parser := xsql.NewParser(strings.NewReader(s1))
-	stream, err := xsql.Language.Parse(parser)
-	streamStmt, ok := stream.(*xsql.StreamStmt)
-	if !ok {
-		return "", fmt.Errorf("Error resolving the stream %s, the data in db may be corrupted.", stmt.Name)
+func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement) (string, error) {
+	streamStmt, err := p.DescStream(stmt.Name)
+	if err != nil {
+		return "", err
 	}
 	var buff bytes.Buffer
 	buff.WriteString("Fields\n--------------------------------------------------------------------------------\n")
@@ -114,6 +116,30 @@ func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement)
 	buff.WriteString("\n")
 	common.PrintMap(streamStmt.Options, &buff)
 	return buff.String(), err
+}
+
+func (p *StreamProcessor) DescStream(name string) (*xsql.StreamStmt, error) {
+	err := p.db.Open()
+	if err != nil {
+		return nil, fmt.Errorf("Describe stream fails, error when opening db: %v.", err)
+	}
+	defer p.db.Close()
+	s, f := p.db.Get(name)
+	if !f {
+		return nil, fmt.Errorf("Stream %s is not found.", name)
+	}
+	s1 := s.(string)
+
+	parser := xsql.NewParser(strings.NewReader(s1))
+	stream, err := xsql.Language.Parse(parser)
+	if err != nil {
+		return nil, err
+	}
+	streamStmt, ok := stream.(*xsql.StreamStmt)
+	if !ok {
+		return nil, fmt.Errorf("Error resolving the stream %s, the data in db may be corrupted.", name)
+	}
+	return streamStmt, nil
 }
 
 func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement) (string, error) {
@@ -130,16 +156,20 @@ func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement) (
 }
 
 func (p *StreamProcessor) execDropStream(stmt *xsql.DropStreamStatement) (string, error) {
+	return p.DropStream(stmt.Name)
+}
+
+func (p *StreamProcessor) DropStream(name string) (string, error) {
 	err := p.db.Open()
 	if err != nil {
 		return "", fmt.Errorf("Drop stream fails, error when opening db: %v.", err)
 	}
 	defer p.db.Close()
-	err = p.db.Delete(stmt.Name)
+	err = p.db.Delete(name)
 	if err != nil {
 		return "", fmt.Errorf("Drop stream fails: %v.", err)
 	} else {
-		return fmt.Sprintf("Stream %s is dropped.", stmt.Name), nil
+		return fmt.Sprintf("Stream %s is dropped.", name), nil
 	}
 }
 
