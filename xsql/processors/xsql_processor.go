@@ -242,10 +242,13 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	if err := json.Unmarshal([]byte(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)
 	}
-	rule.Id = name
+
 	//validation
-	if name == "" {
+	if rule.Id == "" {
 		return nil, fmt.Errorf("Missing rule id.")
+	}
+	if name != "" && name != rule.Id {
+		return nil, fmt.Errorf("Name is not consistent with rule id.")
 	}
 	if rule.Sql == "" {
 		return nil, fmt.Errorf("Missing rule SQL.")
@@ -296,7 +299,7 @@ func (p *RuleProcessor) ExecDesc(name string) (string, error) {
 		return "", err
 	}
 	defer p.db.Close()
-	s, f := p.db.Get(string(name))
+	s, f := p.db.Get(name)
 	if !f {
 		return "", fmt.Errorf("Rule %s is not found.", name)
 	}
