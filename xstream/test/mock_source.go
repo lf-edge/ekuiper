@@ -27,19 +27,17 @@ func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple
 	log := ctx.GetLogger()
 	mockClock := GetMockClock()
 	log.Debugln("mock source starts")
-	go func() {
-		for _, d := range m.data {
-			<-m.done
-			log.Debugf("mock source is sending data %s", d)
-			if !m.isEventTime {
-				mockClock.Set(common.TimeFromUnixMilli(d.Timestamp))
-			} else {
-				mockClock.Add(1000 * time.Millisecond)
-			}
-			consumer <- api.NewDefaultSourceTuple(d.Message, nil)
-			time.Sleep(1)
+	for _, d := range m.data {
+		<-m.done
+		log.Debugf("mock source is sending data %s", d)
+		if !m.isEventTime {
+			mockClock.Set(common.TimeFromUnixMilli(d.Timestamp))
+		} else {
+			mockClock.Add(1000 * time.Millisecond)
 		}
-	}()
+		consumer <- api.NewDefaultSourceTuple(d.Message, nil)
+		time.Sleep(1)
+	}
 }
 
 func (m *MockSource) Close(ctx api.StreamContext) error {

@@ -40,45 +40,43 @@ func (s *zmqSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 	logger.Debugf("zmq source subscribe to topic %s", s.topic)
 	exeCtx, cancel := ctx.WithCancel()
 	s.cancel = cancel
-	go func(exeCtx api.StreamContext) {
-		logger.Debugf("start to listen")
-		for {
-			msgs, err := s.subscriber.RecvMessage(0)
-			if err != nil {
-				id, err := s.subscriber.GetIdentity()
-				errCh <- fmt.Errorf("zmq source getting message %s error: %v", id, err)
-			} else {
-				logger.Debugf("zmq source receive %v", msgs)
-				var m string
-				for i, msg := range msgs {
-					if i == 0 && s.topic != "" {
-						continue
-					}
-					m += msg
+	logger.Debugf("start to listen")
+	for {
+		msgs, err := s.subscriber.RecvMessage(0)
+		if err != nil {
+			id, err := s.subscriber.GetIdentity()
+			errCh <- fmt.Errorf("zmq source getting message %s error: %v", id, err)
+		} else {
+			logger.Debugf("zmq source receive %v", msgs)
+			var m string
+			for i, msg := range msgs {
+				if i == 0 && s.topic != "" {
+					continue
 				}
-				meta := make(map[string]interface{})
-				if s.topic != "" {
-					meta["topic"] = msgs[0]
-				}
-				result := make(map[string]interface{})
-				if e := json.Unmarshal([]byte(m), &result); e != nil {
-					logger.Warnf("zmq source message %s is not json", m)
-				} else {
-					consumer <- api.NewDefaultSourceTuple(result, meta)
-				}
+				m += msg
 			}
-			select {
-			case <-exeCtx.Done():
-				logger.Infof("zmq source done")
-				if s.subscriber != nil {
-					s.subscriber.Close()
-				}
-				return
-			default:
-				//do nothing
+			meta := make(map[string]interface{})
+			if s.topic != "" {
+				meta["topic"] = msgs[0]
+			}
+			result := make(map[string]interface{})
+			if e := json.Unmarshal([]byte(m), &result); e != nil {
+				logger.Warnf("zmq source message %s is not json", m)
+			} else {
+				consumer <- api.NewDefaultSourceTuple(result, meta)
 			}
 		}
-	}(exeCtx)
+		select {
+		case <-exeCtx.Done():
+			logger.Infof("zmq source done")
+			if s.subscriber != nil {
+				s.subscriber.Close()
+			}
+			return
+		default:
+			//do nothing
+		}
+	}
 }
 
 func (s *zmqSource) Close(ctx api.StreamContext) error {

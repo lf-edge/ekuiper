@@ -39,17 +39,15 @@ func (s *randomSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 	t := time.NewTicker(time.Duration(s.interval) * time.Millisecond)
 	exeCtx, cancel := ctx.WithCancel()
 	s.cancel = cancel
-	go func(exeCtx api.StreamContext) {
-		defer t.Stop()
-		for {
-			select {
-			case <-t.C:
-				consumer <- api.NewDefaultSourceTuple(randomize(s.pattern, s.seed), nil)
-			case <-exeCtx.Done():
-				return
-			}
+	defer t.Stop()
+	for {
+		select {
+		case <-t.C:
+			consumer <- api.NewDefaultSourceTuple(randomize(s.pattern, s.seed), nil)
+		case <-exeCtx.Done():
+			return
 		}
-	}(exeCtx)
+	}
 }
 
 func randomize(p map[string]interface{}, seed int) map[string]interface{} {

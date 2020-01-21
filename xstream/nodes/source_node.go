@@ -110,8 +110,8 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 
 				buffer := NewDynamicChannelBuffer()
 				buffer.SetLimit(bl)
-				errCh := make(chan error)
-				source.Open(ctx.WithInstance(instance), buffer.In, errCh)
+				sourceErrCh := make(chan error)
+				go source.Open(ctx.WithInstance(instance), buffer.In, sourceErrCh)
 				logger.Infof("Start source %s instance %d successfully", m.name, instance)
 				for {
 					select {
@@ -119,8 +119,9 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						logger.Infof("source %s done", m.name)
 						m.close(ctx, logger)
 						return
-					case err := <-errCh:
+					case err := <-sourceErrCh:
 						m.drainError(errCh, err, ctx, logger)
+						return
 					case data := <-buffer.Out:
 						stats.IncTotalRecordsIn()
 						stats.ProcessTimeStart()
