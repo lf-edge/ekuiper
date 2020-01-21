@@ -17,10 +17,10 @@ func main() {
 	log.Infof("db location is %s", dbDir)
 
 	demo := `DROP STREAM ext`
-	processors.NewStreamProcessor(demo, path.Join(dbDir, "stream")).Exec()
+	processors.NewStreamProcessor(path.Join(dbDir, "stream")).ExecStmt(demo)
 
 	demo = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", TYPE=\"random\")"
-	_, err = processors.NewStreamProcessor(demo, path.Join(dbDir, "stream")).Exec()
+	_, err = processors.NewStreamProcessor(path.Join(dbDir, "stream")).ExecStmt(demo)
 	if err != nil {
 		panic(err)
 	}

@@ -18,22 +18,19 @@ import (
 var log = common.Log
 
 type StreamProcessor struct {
-	statement string
-	dbDir     string
+	dbDir string
 }
 
-//@params s : the sql string of create stream statement
 //@params d : the directory of the DB to save the stream info
-func NewStreamProcessor(s, d string) *StreamProcessor {
+func NewStreamProcessor(d string) *StreamProcessor {
 	processor := &StreamProcessor{
-		statement: s,
-		dbDir:     d,
+		dbDir: d,
 	}
 	return processor
 }
 
-func (p *StreamProcessor) Exec() (result []string, err error) {
-	parser := xsql.NewParser(strings.NewReader(p.statement))
+func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error) {
+	parser := xsql.NewParser(strings.NewReader(statement))
 	stmt, err := xsql.Language.Parse(parser)
 	if err != nil {
 		return
@@ -49,7 +46,7 @@ func (p *StreamProcessor) Exec() (result []string, err error) {
 	switch s := stmt.(type) {
 	case *xsql.StreamStmt:
 		var r string
-		r, err = p.execCreateStream(s, store)
+		r, err = p.execCreateStream(s, store, statement)
 		result = append(result, r)
 	case *xsql.ShowStreamsStatement:
 		result, err = p.execShowStream(s, store)
@@ -70,8 +67,8 @@ func (p *StreamProcessor) Exec() (result []string, err error) {
 	return
 }
 
-func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, db common.KeyValue) (string, error) {
-	err := db.Set(string(stmt.Name), p.statement)
+func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, db common.KeyValue, statement string) (string, error) {
+	err := db.Set(string(stmt.Name), statement)
 	if err != nil {
 		return "", fmt.Errorf("Create stream fails: %v.", err)
 	} else {

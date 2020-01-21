@@ -19,8 +19,15 @@ import (
 	"time"
 )
 
-var dataDir string
-var log = common.Log
+var (
+	dataDir         string
+	log             = common.Log
+	registry        RuleRegistry
+	ruleProcessor   *processors.RuleProcessor
+	streamProcessor *processors.StreamProcessor
+)
+
+const QUERY_RULE_ID = "internal-xstream_query_rule"
 
 type RuleState struct {
 	Name      string
@@ -29,12 +36,7 @@ type RuleState struct {
 }
 type RuleRegistry map[string]*RuleState
 
-var registry RuleRegistry
-var processor *processors.RuleProcessor
-
 type Server int
-
-var QUERY_RULE_ID = "internal-xstream_query_rule"
 
 func (t *Server) CreateQuery(sql string, reply *string) error {
 	if _, ok := registry[QUERY_RULE_ID]; ok {
@@ -85,7 +87,7 @@ func (t *Server) GetQueryResult(qid string, reply *string) error {
 }
 
 func (t *Server) Stream(stream string, reply *string) error {
-	content, err := processors.NewStreamProcessor(stream, path.Join(path.Dir(dataDir), "stream")).Exec()
+	content, err := streamProcessor.ExecStmt(stream)
 	if err != nil {
 		return fmt.Errorf("Stream command error: %s", err)
 	} else {
@@ -97,7 +99,7 @@ func (t *Server) Stream(stream string, reply *string) error {
 }
 
 func (t *Server) CreateRule(rule *common.Rule, reply *string) error {
-	r, err := processor.ExecCreate(rule.Name, rule.Json)
+	r, err := ruleProcessor.ExecCreate(rule.Name, rule.Json)
 	if err != nil {
 		return fmt.Errorf("Create rule error : %s.", err)
 	} else {
@@ -116,7 +118,7 @@ func (t *Server) CreateRule(rule *common.Rule, reply *string) error {
 }
 
 func (t *Server) createRuleState(rule *api.Rule) (*RuleState, error) {
-	if tp, err := processor.ExecInitRule(rule); err != nil {
+	if tp, err := ruleProcessor.ExecInitRule(rule); err != nil {
 		return nil, err
 	} else {
 		rs := &RuleState{
@@ -178,7 +180,7 @@ func (t *Server) StartRule(name string, reply *string) error {
 	var rs *RuleState
 	rs, ok := registry[name]
 	if !ok {
-		r, err := processor.GetRuleByName(name)
+		r, err := ruleProcessor.GetRuleByName(name)
 		if err != nil {
 			return err
 		}
@@ -234,7 +236,7 @@ func (t *Server) RestartRule(name string, reply *string) error {
 }
 
 func (t *Server) DescRule(name string, reply *string) error {
-	r, err := processor.ExecDesc(name)
+	r, err := ruleProcessor.ExecDesc(name)
 	if err != nil {
 		return fmt.Errorf("Desc rule error : %s.", err)
 	} else {
@@ -244,7 +246,7 @@ func (t *Server) DescRule(name string, reply *string) error {
 }
 
 func (t *Server) ShowRules(_ int, reply *string) error {
-	r, err := processor.ExecShow()
+	r, err := ruleProcessor.ExecShow()
 	if err != nil {
 		return fmt.Errorf("Show rule error : %s.", err)
 	} else {
@@ -254,7 +256,7 @@ func (t *Server) ShowRules(_ int, reply *string) error {
 }
 
 func (t *Server) DropRule(name string, reply *string) error {
-	r, err := processor.ExecDrop(name)
+	r, err := ruleProcessor.ExecDrop(name)
 	if err != nil {
 		return fmt.Errorf("Drop rule error : %s.", err)
 	} else {
@@ -297,12 +299,14 @@ func StartUp(Version string) {
 		log.Infof("db location is %s", dr)
 		dataDir = dr
 	}
-	processor = processors.NewRuleProcessor(path.Dir(dataDir))
+	ruleProcessor = processors.NewRuleProcessor(path.Dir(dataDir))
+	streamProcessor = processors.NewStreamProcessor(path.Join(path.Dir(dataDir), "stream"))
+
 	registry = make(RuleRegistry)
 
 	server := new(Server)
 	//Start rules
-	if rules, err := processor.GetAllRules(); err != nil {
+	if rules, err := ruleProcessor.GetAllRules(); err != nil {
 		log.Infof("Start rules error: %s", err)
 	} else {
 		log.Info("Starting rules")
