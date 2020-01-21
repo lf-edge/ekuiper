@@ -50,6 +50,7 @@ func LoadConf(confName string) ([]byte, error) {
 type XStreamConf struct {
 	Debug          bool `yaml:"debug"`
 	Port           int  `yaml:"port"`
+	RestPort       int  `yaml:"restPort"`
 	Prometheus     bool `yaml:"prometheus"`
 	PrometheusPort int  `yaml:"prometheusPort"`
 }

@@ -213,11 +213,11 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 	}
 	defer p.db.Close()
 
-	err = p.db.Set(string(name), ruleJson)
+	err = p.db.Set(rule.Id, ruleJson)
 	if err != nil {
 		return nil, err
 	} else {
-		log.Infof("Rule %s is created.", name)
+		log.Infof("Rule %s is created.", rule.Id)
 	}
 
 	return rule, nil
@@ -244,11 +244,14 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	}
 
 	//validation
-	if rule.Id == "" {
+	if rule.Id == "" && name == "" {
 		return nil, fmt.Errorf("Missing rule id.")
 	}
-	if name != "" && name != rule.Id {
+	if name != "" && rule.Id != "" && name != rule.Id {
 		return nil, fmt.Errorf("Name is not consistent with rule id.")
+	}
+	if rule.Id == "" {
+		rule.Id = name
 	}
 	if rule.Sql == "" {
 		return nil, fmt.Errorf("Missing rule SQL.")
