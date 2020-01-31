@@ -90,7 +90,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 
 	streamDB := path.Join(getDbDir(), "streamTest")
 	for i, tt := range tests {
-		results, err := NewStreamProcessor(tt.s, streamDB).Exec()
+		results, err := NewStreamProcessor(streamDB).ExecStmt(tt.s)
 		if !reflect.DeepEqual(tt.err, errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" {
@@ -102,12 +102,13 @@ func TestStreamCreateProcessor(t *testing.T) {
 }
 
 func createStreams(t *testing.T) {
+	p := NewStreamProcessor(path.Join(DbDir, "stream"))
 	demo := `CREATE STREAM demo (
 					color STRING,
 					size BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts");`
-	_, err := NewStreamProcessor(demo, path.Join(DbDir, "stream")).Exec()
+	_, err := p.ExecStmt(demo)
 	if err != nil {
 		t.Log(err)
 	}
@@ -116,7 +117,7 @@ func createStreams(t *testing.T) {
 					hum BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demo1", FORMAT="json", KEY="ts");`
-	_, err = NewStreamProcessor(demo1, path.Join(DbDir, "stream")).Exec()
+	_, err = p.ExecStmt(demo1)
 	if err != nil {
 		t.Log(err)
 	}
@@ -125,25 +126,26 @@ func createStreams(t *testing.T) {
 					hum BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="sessionDemo", FORMAT="json", KEY="ts");`
-	_, err = NewStreamProcessor(sessionDemo, path.Join(DbDir, "stream")).Exec()
+	_, err = p.ExecStmt(sessionDemo)
 	if err != nil {
 		t.Log(err)
 	}
 }
 
 func dropStreams(t *testing.T) {
+	p := NewStreamProcessor(path.Join(DbDir, "stream"))
 	demo := `DROP STREAM demo`
-	_, err := NewStreamProcessor(demo, path.Join(DbDir, "stream")).Exec()
+	_, err := p.ExecStmt(demo)
 	if err != nil {
 		t.Log(err)
 	}
 	demo1 := `DROP STREAM demo1`
-	_, err = NewStreamProcessor(demo1, path.Join(DbDir, "stream")).Exec()
+	_, err = p.ExecStmt(demo1)
 	if err != nil {
 		t.Log(err)
 	}
 	sessionDemo := `DROP STREAM sessionDemo`
-	_, err = NewStreamProcessor(sessionDemo, path.Join(DbDir, "stream")).Exec()
+	_, err = p.ExecStmt(sessionDemo)
 	if err != nil {
 		t.Log(err)
 	}
@@ -1038,12 +1040,13 @@ func TestWindow(t *testing.T) {
 }
 
 func createEventStreams(t *testing.T) {
+	p := NewStreamProcessor(path.Join(DbDir, "stream"))
 	demo := `CREATE STREAM demoE (
 					color STRING,
 					size BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demoE", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
-	_, err := NewStreamProcessor(demo, path.Join(DbDir, "stream")).Exec()
+	_, err := p.ExecStmt(demo)
 	if err != nil {
 		t.Log(err)
 	}
@@ -1052,7 +1055,7 @@ func createEventStreams(t *testing.T) {
 					hum BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demo1E", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
-	_, err = NewStreamProcessor(demo1, path.Join(DbDir, "stream")).Exec()
+	_, err = p.ExecStmt(demo1)
 	if err != nil {
 		t.Log(err)
 	}
@@ -1061,25 +1064,26 @@ func createEventStreams(t *testing.T) {
 					hum BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="sessionDemoE", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
-	_, err = NewStreamProcessor(sessionDemo, path.Join(DbDir, "stream")).Exec()
+	_, err = p.ExecStmt(sessionDemo)
 	if err != nil {
 		t.Log(err)
 	}
 }
 
 func dropEventStreams(t *testing.T) {
+	p := NewStreamProcessor(path.Join(DbDir, "stream"))
 	demo := `DROP STREAM demoE`
-	_, err := NewStreamProcessor(demo, path.Join(DbDir, "stream")).Exec()
+	_, err := p.ExecStmt(demo)
 	if err != nil {
 		t.Log(err)
 	}
 	demo1 := `DROP STREAM demo1E`
-	_, err = NewStreamProcessor(demo1, path.Join(DbDir, "stream")).Exec()
+	_, err = p.ExecStmt(demo1)
 	if err != nil {
 		t.Log(err)
 	}
 	sessionDemo := `DROP STREAM sessionDemoE`
-	_, err = NewStreamProcessor(sessionDemo, path.Join(DbDir, "stream")).Exec()
+	_, err = p.ExecStmt(sessionDemo)
 	if err != nil {
 		t.Log(err)
 	}

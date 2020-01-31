@@ -17,14 +17,11 @@ To develop a source, the _Configure_ method must be implemented. This method wil
 Configure(datasource string, props map[string]interface{}) error
 ```
 
-The main task for a Source is to implement _open_ method. The implementation should be synchronized to create a connection to the external system. Then run in a separate go routine to continuously receive data from the external system and call the consume function provided as the second parameter for each received message. The consume function accepts a map for the message body and another map for the optional metadata. The meta data could be anything that worth to be recorded. For example, the qualified topic of the message. The first parameter is a StreamContext pointer. You can retrieve the context information and logger etc. from it. It is also an implementation of go context, so you can listen to Done() channel to know if the parent stream has quit.
+The main task for a Source is to implement _open_ method. The implementation should be synchronized to create a connection to the external system. Then continuously receive data from the external system and send the received message to the consumer channel. The consumer channel accepts SourceTuple interface which is composed by a map for the message body and another map for the optional metadata. Typically, use `api.NewDefaultSourceTuple(message, meta)` to create a SourceTuple. The meta data could be anything that worth to be recorded. For example, the qualified topic of the message. The first parameter is a StreamContext pointer. You can retrieve the context information and logger etc. from it. It is also an implementation of go context, so you can listen to Done() channel to know if the parent stream has quit. For any errors happening during the connection or receiving, handle it in this method. If the error cannot be handled, send it to the errCh. By default, the rule will be terminated if any errors received from errCh.
 
 ```go
-//The function to call when data is emitted by the source.
-type ConsumeFunc func(message map[string]interface{}, metadata map[string]interface{})
-
 //Should be sync function for normal case. The container will run it in go func
-Open(ctx StreamContext, consume ConsumeFunc) error
+Open(ctx StreamContext, consumer chan<- SourceTuple, errCh chan<- error)
 ```  
 
 The last method to implement is _Close_ which literally close the connection. It is called when the stream is about to terminate. You could also do any clean up work in this function.

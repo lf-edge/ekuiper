@@ -13,7 +13,6 @@ type MockSource struct {
 	isEventTime bool
 }
 
-// New creates a new CsvSource
 func NewMockSource(data []*xsql.Tuple, done <-chan int, isEventTime bool) *MockSource {
 	mock := &MockSource{
 		data:        data,

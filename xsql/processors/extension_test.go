@@ -24,11 +24,12 @@ func setup() *RuleProcessor {
 	}
 	log.Infof("db location is %s", dbDir)
 
+	p := NewStreamProcessor(path.Join(dbDir, "stream"))
 	demo := `DROP STREAM ext`
-	NewStreamProcessor(demo, path.Join(dbDir, "stream")).Exec()
-	demo = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"ext\")"
+	p.ExecStmt(demo)
 
-	_, err = NewStreamProcessor(demo, path.Join(dbDir, "stream")).Exec()
+	demo = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"ext\")"
+	_, err = p.ExecStmt(demo)
 	if err != nil {
 		panic(err)
 	}
