@@ -63,9 +63,7 @@ func StartUp(Version string) {
 	if e != nil {
 		logger.Fatal("Listen error: ", e)
 	}
-	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d... \n", Version, common.Config.Port)
-	logger.Info(msg)
-	fmt.Printf(msg)
+
 	if common.Config.Prometheus {
 		go func() {
 			port := common.Config.PrometheusPort
@@ -84,11 +82,16 @@ func StartUp(Version string) {
 
 	//Start rest service
 	srv := createRestServer(common.Config.RestPort)
+
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
 			logger.Fatal("Error serving rest service: ", err)
 		}
 	}()
+
+	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on port %d. \n", Version, common.Config.Port, common.Config.RestPort)
+	logger.Info(msg)
+	fmt.Printf(msg)
 
 	// Start accept incoming HTTP connections
 	err = http.Serve(listener, nil)
