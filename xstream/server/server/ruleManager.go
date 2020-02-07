@@ -7,16 +7,39 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
+	"sync"
 )
 
-var registry RuleRegistry
+var registry *RuleRegistry
 
 type RuleState struct {
 	Name      string
 	Topology  *xstream.TopologyNew
 	Triggered bool
 }
-type RuleRegistry map[string]*RuleState
+type RuleRegistry struct {
+	sync.RWMutex
+	internal map[string]*RuleState
+}
+
+func (rr *RuleRegistry) Store(key string, value *RuleState) {
+	rr.Lock()
+	rr.internal[key] = value
+	rr.Unlock()
+}
+
+func (rr *RuleRegistry) Load(key string) (value *RuleState, ok bool) {
+	rr.RLock()
+	result, ok := rr.internal[key]
+	rr.RUnlock()
+	return result, ok
+}
+
+func (rr *RuleRegistry) Delete(key string) {
+	rr.Lock()
+	delete(rr.internal, key)
+	rr.Unlock()
+}
 
 func createRuleState(rule *api.Rule) (*RuleState, error) {
 	if tp, err := ruleProcessor.ExecInitRule(rule); err != nil {
@@ -27,7 +50,7 @@ func createRuleState(rule *api.Rule) (*RuleState, error) {
 			Topology:  tp,
 			Triggered: true,
 		}
-		registry[rule.Id] = rs
+		registry.Store(rule.Id, rs)
 		return rs, nil
 	}
 }
@@ -48,7 +71,7 @@ func doStartRule(rs *RuleState) error {
 
 func getRuleStatus(name string) (string, error) {
 	result := ""
-	if rs, ok := registry[name]; ok {
+	if rs, ok := registry.Load(name); ok {
 		if !rs.Triggered {
 			result = "Stopped: canceled manually."
 			return result, nil
@@ -94,7 +117,7 @@ func getRuleStatus(name string) (string, error) {
 
 func startRule(name string) error {
 	var rs *RuleState
-	rs, ok := registry[name]
+	rs, ok := registry.Load(name)
 	if !ok {
 		r, err := ruleProcessor.GetRuleByName(name)
 		if err != nil {
@@ -113,7 +136,7 @@ func startRule(name string) error {
 }
 
 func stopRule(name string) (result string) {
-	if rs, ok := registry[name]; ok {
+	if rs, ok := registry.Load(name); ok {
 		(*rs.Topology).Cancel()
 		rs.Triggered = false
 		result = fmt.Sprintf("Rule %s was stopped.", name)
