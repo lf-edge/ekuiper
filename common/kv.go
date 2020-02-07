@@ -56,12 +56,11 @@ const (
 )
 
 type SimpleKVStore struct {
-	path   string
-	c      *cache.Cache
+	path string
+	c    *cache.Cache
+	/* These 2 channels must be mapping one by one*/
 	ctrlCh chan CtrlType
 	errCh  chan error
-
-	sync.RWMutex
 }
 
 func NewSimpleKVStore(path string, c *cache.Cache) *SimpleKVStore {
@@ -101,16 +100,23 @@ func (m *SimpleKVStore) run() {
 				err := m.doClose()
 				if err != nil {
 					Log.Error(err)
+					m.errCh <- err
+					break
 				}
 			}
+			m.errCh <- nil
 		case SAVE:
 			//swallow duplicate requests
 			if len(m.ctrlCh) > 0 {
+				m.errCh <- nil
 				break
 			}
 			if e := m.c.SaveFile(m.path); e != nil {
 				Log.Error(e)
+				m.errCh <- e
+				break
 			}
+			m.errCh <- nil
 		}
 	}
 }
@@ -122,7 +128,7 @@ func (m *SimpleKVStore) Open() error {
 
 func (m *SimpleKVStore) Close() error {
 	m.ctrlCh <- CLOSE
-	return nil
+	return <-m.errCh
 }
 
 func (m *SimpleKVStore) doClose() error {
@@ -133,7 +139,7 @@ func (m *SimpleKVStore) doClose() error {
 
 func (m *SimpleKVStore) saveToFile() error {
 	m.ctrlCh <- SAVE
-	return nil
+	return <-m.errCh
 }
 
 func (m *SimpleKVStore) Set(key string, value interface{}) error {
