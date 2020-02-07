@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/benbjohnson/clock"
 	"github.com/go-yaml/yaml"
-	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
@@ -107,106 +106,6 @@ func InitConf() {
 	} else {
 		Log.SetLevel(logrus.DebugLevel)
 	}
-}
-
-type KeyValue interface {
-	Open() error
-	Close() error
-	Set(key string, value interface{}) error
-	Replace(key string, value interface{}) error
-	Get(key string) (interface{}, bool)
-	Delete(key string) error
-	Keys() (keys []string, err error)
-}
-
-type SimpleKVStore struct {
-	path string
-	c    *cache.Cache
-}
-
-var stores = make(map[string]*SimpleKVStore)
-
-func GetSimpleKVStore(path string) *SimpleKVStore {
-	if s, ok := stores[path]; ok {
-		return s
-	} else {
-		c := cache.New(cache.NoExpiration, 0)
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			os.MkdirAll(path, os.ModePerm)
-		}
-		sStore := &SimpleKVStore{path: path + "/stores.data", c: c}
-		stores[path] = sStore
-		return sStore
-	}
-}
-
-func (m *SimpleKVStore) Open() error {
-	if _, err := os.Stat(m.path); os.IsNotExist(err) {
-		return nil
-	}
-	if e := m.c.LoadFile(m.path); e != nil {
-		return e
-	}
-	return nil
-}
-
-func (m *SimpleKVStore) Close() error {
-	e := m.saveToFile()
-	m.c.Flush() //Delete all of the values from memory.
-	return e
-}
-
-func (m *SimpleKVStore) saveToFile() error {
-	if e := m.c.SaveFile(m.path); e != nil {
-		return e
-	}
-	return nil
-}
-
-func (m *SimpleKVStore) Set(key string, value interface{}) error {
-	if m.c == nil {
-		return fmt.Errorf("cache %s has not been initialized yet", m.path)
-	}
-	if err := m.c.Add(key, value, cache.NoExpiration); err != nil {
-		return err
-	}
-	return m.saveToFile()
-}
-
-func (m *SimpleKVStore) Replace(key string, value interface{}) error {
-	if m.c == nil {
-		return fmt.Errorf("cache %s has not been initialized yet", m.path)
-	}
-	m.c.Set(key, value, cache.NoExpiration)
-	return m.saveToFile()
-}
-
-func (m *SimpleKVStore) Get(key string) (interface{}, bool) {
-	return m.c.Get(key)
-}
-
-func (m *SimpleKVStore) Delete(key string) error {
-	if m.c == nil {
-		return fmt.Errorf("cache %s has not been initialized yet", m.path)
-	}
-	if _, found := m.c.Get(key); found {
-		m.c.Delete(key)
-	} else {
-		return fmt.Errorf("%s is not found", key)
-	}
-	return m.saveToFile()
-}
-
-func (m *SimpleKVStore) Keys() (keys []string, err error) {
-	if m.c == nil {
-		return nil, fmt.Errorf("Cache %s has not been initialized yet.", m.path)
-	}
-	its := m.c.Items()
-	keys = make([]string, 0, len(its))
-	for k := range its {
-		keys = append(keys, k)
-	}
-	return keys, nil
 }
 
 func PrintMap(m map[string]string, buff *bytes.Buffer) {
