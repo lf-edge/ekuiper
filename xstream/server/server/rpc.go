@@ -13,7 +13,7 @@ const QUERY_RULE_ID = "internal-xstream_query_rule"
 type Server int
 
 func (t *Server) CreateQuery(sql string, reply *string) error {
-	if _, ok := registry[QUERY_RULE_ID]; ok {
+	if _, ok := registry.Load(QUERY_RULE_ID); ok {
 		stopQuery()
 	}
 	tp, err := ruleProcessor.ExecQuery(QUERY_RULE_ID, sql)
@@ -21,7 +21,7 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 		return err
 	} else {
 		rs := &RuleState{Name: QUERY_RULE_ID, Topology: tp, Triggered: true}
-		registry[QUERY_RULE_ID] = rs
+		registry.Store(QUERY_RULE_ID, rs)
 		msg := fmt.Sprintf("Query was submit successfully.")
 		logger.Println(msg)
 		*reply = fmt.Sprintf(msg)
@@ -30,10 +30,10 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 }
 
 func stopQuery() {
-	if rs, ok := registry[QUERY_RULE_ID]; ok {
+	if rs, ok := registry.Load(QUERY_RULE_ID); ok {
 		logger.Printf("stop the query.")
 		(*rs.Topology).Cancel()
-		delete(registry, QUERY_RULE_ID)
+		registry.Delete(QUERY_RULE_ID)
 	}
 }
 
@@ -41,7 +41,7 @@ func stopQuery() {
  * qid is not currently used.
  */
 func (t *Server) GetQueryResult(qid string, reply *string) error {
-	if rs, ok := registry[QUERY_RULE_ID]; ok {
+	if rs, ok := registry.Load(QUERY_RULE_ID); ok {
 		c := (*rs.Topology).GetContext()
 		if c != nil && c.Err() != nil {
 			return c.Err()
@@ -163,7 +163,7 @@ func init() {
 	go func() {
 		for {
 			<-ticker.C
-			if _, ok := registry[QUERY_RULE_ID]; !ok {
+			if _, ok := registry.Load(QUERY_RULE_ID); !ok {
 				continue
 			}
 

@@ -32,7 +32,7 @@ func StartUp(Version string) {
 	ruleProcessor = processors.NewRuleProcessor(path.Dir(dataDir))
 	streamProcessor = processors.NewStreamProcessor(path.Join(path.Dir(dataDir), "stream"))
 
-	registry = make(RuleRegistry)
+	registry = &RuleRegistry{internal: make(map[string]*RuleState)}
 
 	server := new(Server)
 	//Start rules
