@@ -24,4 +24,4 @@ else
   done
 fi
 
-start_kuiper.sh
+fvt_scripts/start_kuiper.sh
