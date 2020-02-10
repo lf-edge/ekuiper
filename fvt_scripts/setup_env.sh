@@ -24,5 +24,7 @@ else
 fi
 
 rm -rf data/*
+rm -rf log/*
+touch log/kuiper.out
 echo "starting kuiper"
 nohup bin/server  > log/kuiper.out 2>&1 &
