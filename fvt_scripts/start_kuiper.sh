@@ -10,4 +10,5 @@ ls -l $base_dir/bin/server
 echo "starting kuiper at " $base_dir
 cd $base_dir/
 touch log/kuiper.out
+export BUILD_ID=dontKillMe
 nohup bin/server > log/kuiper.out 2>&1 &
