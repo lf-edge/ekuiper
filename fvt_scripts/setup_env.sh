@@ -33,4 +33,4 @@ rm -rf $base_dir/log/*
 touch $base_dir/log/kuiper.out
 
 echo "starting kuiper at " $base_dir
-nohup $base_dir/bin/server > $base_dir/log/kuiper.out 2>&1 &
+$base_dir/bin/server > $base_dir/log/kuiper.out 2>&1 &
