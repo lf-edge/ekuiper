@@ -1,0 +1,16 @@
+{
+  "sql": "SELECT * FROM demo",
+  "actions": [
+    {
+      "log": {}
+    },
+    {
+      "mqtt": {
+        "server": "tcp://127.0.0.1:1883",
+        "topic": "devices/result",
+        "qos": 1,
+        "clientId": "demo_001"
+      }
+    }
+  ]
+}
