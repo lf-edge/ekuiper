@@ -34,4 +34,4 @@ touch $base_dir/log/kuiper.out
 
 ls -l $base_dir/bin/server
 echo "starting kuiper at " $base_dir
-daemonize -E BUILD_ID=dontKillMe nohup $base_dir/bin/server > $base_dir/log/kuiper.out 2>&1 &
+sh 'JENKINS_NODE_COOKIE=dontKillMe nohup $base_dir/bin/server > $base_dir/log/kuiper.out 2>&1 &'
