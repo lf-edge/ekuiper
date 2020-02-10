@@ -3,14 +3,15 @@
 emqx_ids=`ps aux|grep "emqx" | grep "/usr/bin"|awk '{printf $2 " "}'`
 if [ "$emqx_ids" = "" ] ; then
   echo "No emqx broker was started"
+  echo "starting emqx..."
+  systemctl start emqx
 else
-  for pid in $emqx_ids ; do
-    echo "kill emqx: " $pid
-    kill -9 $pid
-  done
+  echo "emqx has already started"
+  #for pid in $emqx_ids ; do
+    #echo "kill emqx: " $pid
+    #kill -9 $pid
+  #done
 fi
-echo "starting emqx..."
-systemctl start emqx
 
 
 pids=`ps aux|grep "server" | grep "bin"|awk '{printf $2 " "}'`
@@ -23,8 +24,13 @@ else
   done
 fi
 
-rm -rf data/*
-rm -rf log/*
-pwd
-echo "starting kuiper"
-nohup bin/server  > kuiper.out 2>&1 &
+ver=`git describe --tags --always`
+os=`uname -s | tr "[A-Z]" "[a-z]"`
+base_dir=_build/kuiper-"$ver"-"$os"-x86_64
+
+rm -rf $base_dir/data/*
+rm -rf $base_dir/log/*
+touch $base_dir/log/kuiper.out
+
+echo "starting kuiper at " $base_dir
+nohup $base_dir/bin/server > $base_dir/log/kuiper.out 2>&1 &
