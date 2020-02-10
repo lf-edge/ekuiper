@@ -34,4 +34,4 @@ touch $base_dir/log/kuiper.out
 
 ls -l $base_dir/bin/server
 echo "starting kuiper at " $base_dir
-nohup $base_dir/bin/server > $base_dir/log/kuiper.out 2>&1 &
+daemonize -E BUILD_ID=dontKillMe $base_dir/bin/server > $base_dir/log/kuiper.out 2>&1 &
