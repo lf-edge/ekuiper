@@ -341,7 +341,7 @@
             <encoding>false</encoding>
             <assertions>true</assertions>
             <subresults>true</subresults>
-            <responseData>false</responseData>
+            <responseData>true</responseData>
             <samplerData>false</samplerData>
             <xml>false</xml>
             <fieldNames>true</fieldNames>
