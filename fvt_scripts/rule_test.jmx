@@ -29,6 +29,11 @@
             <stringProp name="Argument.value">${__property(base,,)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
+          <elementProp name="fvt" elementType="Argument">
+            <stringProp name="Argument.name">fvt</stringProp>
+            <stringProp name="Argument.value">${__property(fvt,,)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
         </collectionProp>
       </Arguments>
       <hashTree/>
@@ -407,7 +412,7 @@
                 </elementProp>
                 <elementProp name="" elementType="Argument">
                   <stringProp name="Argument.name"></stringProp>
-                  <stringProp name="Argument.value">fvt_scripts/rule1.txt</stringProp>
+                  <stringProp name="Argument.value">${fvt}/fvt_scripts/rule1.txt</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
               </collectionProp>
