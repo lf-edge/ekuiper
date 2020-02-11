@@ -21,12 +21,12 @@
           </elementProp>
           <elementProp name="rest_port" elementType="Argument">
             <stringProp name="Argument.name">rest_port</stringProp>
-            <stringProp name="Argument.value">8080</stringProp>
+            <stringProp name="Argument.value">9081</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="k_home" elementType="Argument">
             <stringProp name="Argument.name">k_home</stringProp>
-            <stringProp name="Argument.value">/Users/rockyjin/Downloads/workspace/edge/src/kuiper/_build/kuiper-0.1.1-50-g015bb6a-darwin-x86_64/</stringProp>
+            <stringProp name="Argument.value">${__property(base,,)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>
