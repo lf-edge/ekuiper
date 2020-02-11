@@ -6,7 +6,7 @@ The Kuiper REST api for rules allows you to manage rules, such as create, show, 
 
 The API accepts a JSON content and create and start a rule.
 ```shell
-POST http://localhost:8080/rules
+POST http://localhost:9081/rules
 ```
 Request Sample
 
@@ -26,7 +26,7 @@ Request Sample
 The API is used for displaying all of rules defined in the server.
 
 ```shell
-GET http://localhost:8080/rules
+GET http://localhost:9081/rules
 ```
 
 Response Sample:
@@ -40,7 +40,7 @@ Response Sample:
 The API is used for print the detailed definition of rule.
 
 ```shell
-GET http://localhost:8080/rules/{id}
+GET http://localhost:9081/rules/{id}
 ```
 
 Path parameter `id` is the id or name of the rule.
