@@ -442,7 +442,7 @@
           <boolProp name="mqtt.add_timestamp">false</boolProp>
           <boolProp name="mqtt.debug_response">true</boolProp>
           <stringProp name="mqtt.sample_condition">number of received messages</stringProp>
-          <stringProp name="mqtt.sample_condition_value">30</stringProp>
+          <stringProp name="mqtt.sample_condition_value">1</stringProp>
         </net.xmeter.samplers.SubSampler>
         <hashTree>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="temperature Assertion" enabled="true">
