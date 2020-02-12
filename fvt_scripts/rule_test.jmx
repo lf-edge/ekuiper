@@ -109,7 +109,7 @@
     },&#xd;
     {&#xd;
       &quot;mqtt&quot;: {&#xd;
-        &quot;server&quot;: &quot;tcp://10.211.55.6:1883&quot;,&#xd;
+        &quot;server&quot;: &quot;tcp://127.0.0.1:1883&quot;,&#xd;
         &quot;topic&quot;: &quot;devices/result&quot;,&#xd;
         &quot;qos&quot;: 1,&#xd;
         &quot;clientId&quot;: &quot;demo_001&quot;&#xd;
