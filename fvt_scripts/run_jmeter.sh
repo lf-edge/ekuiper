@@ -34,3 +34,6 @@ echo -e "---------------------------------------------\n"
 
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t fvt_scripts/select_condition_rule.jmx -Dbase="$base_dir" -Dfvt="$fvt_dir" -l select_condition_rule.jtl
 echo -e "---------------------------------------------\n"
+
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t fvt_scripts/select_aggr_rule.jmx -Dbase="$base_dir" -Dfvt="$fvt_dir" -l select_aggr_rule.jtl
+echo -e "---------------------------------------------\n"

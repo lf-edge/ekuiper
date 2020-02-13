@@ -165,7 +165,7 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT * FROM demo WHERE temperature &gt; 30&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT avg(temperature) AS t_av, max(temperature) AS t_max, min(temperature) AS t_min, COUNT(*) As t_count, split_value(mqtt(topic), \&quot;/\&quot;, 1) AS device_id FROM demo GROUP BY device_id, TUMBLINGWINDOW(ss, 5)&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
       &quot;mqtt&quot;: {&#xd;
@@ -403,7 +403,7 @@
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">6</stringProp>
+          <stringProp name="LoopController.loops">1</stringProp>
         </elementProp>
         <stringProp name="ThreadGroup.num_threads">1</stringProp>
         <stringProp name="ThreadGroup.ramp_time">1</stringProp>
@@ -478,41 +478,47 @@
           <stringProp name="mqtt.qos_level">0</stringProp>
           <boolProp name="mqtt.add_timestamp">false</boolProp>
           <boolProp name="mqtt.debug_response">true</boolProp>
-          <stringProp name="mqtt.sample_condition">number of received messages</stringProp>
-          <stringProp name="mqtt.sample_condition_value">1</stringProp>
+          <stringProp name="mqtt.sample_condition">specified elapsed time (ms)</stringProp>
+          <stringProp name="mqtt.sample_condition_value">15000</stringProp>
         </net.xmeter.samplers.SubSampler>
         <hashTree>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="temperature Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$[0].temperature</stringProp>
-            <stringProp name="EXPECTED_VALUE">${temperature}</stringProp>
-            <boolProp name="JSONVALIDATION">true</boolProp>
-            <boolProp name="EXPECT_NULL">false</boolProp>
-            <boolProp name="INVERT">false</boolProp>
-            <boolProp name="ISREGEX">false</boolProp>
-          </JSONPathAssertion>
-          <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="humidity Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$[0].humidity</stringProp>
-            <stringProp name="EXPECTED_VALUE">${humidity}</stringProp>
-            <boolProp name="JSONVALIDATION">true</boolProp>
-            <boolProp name="EXPECT_NULL">false</boolProp>
-            <boolProp name="INVERT">false</boolProp>
-            <boolProp name="ISREGEX">false</boolProp>
-          </JSONPathAssertion>
+          <BeanShellAssertion guiclass="BeanShellAssertionGui" testclass="BeanShellAssertion" testname="BeanShell Assertion" enabled="true">
+            <stringProp name="BeanShellAssertion.query">import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+String response = SampleResult.getResponseDataAsString();
+
+String[] arr =  response.split(&quot;\n&quot;);
+for(int i = 0; i &lt; arr.length; i++) {
+	JSONArray jsonArr = JSONArray.fromObject(arr[i]);
+	for(int j = 0; j &lt; jsonArr.size(); j++) {
+		
+		String deviceid = jsonArr.getJSONObject(j).getString(&quot;device_id&quot;);
+		int count = jsonArr.getJSONObject(j).getInt(&quot;t_count&quot;);
+
+		String oldCount = vars.get(deviceid);
+		if(oldCount == null) {
+			vars.put(deviceid, String.valueOf(count));
+		} else {
+			int c = Integer.parseInt(oldCount);
+			c += count;
+			vars.put(deviceid, String.valueOf(c));
+		}
+	}
+}
+
+String d1 = vars.get(&quot;1&quot;);
+String d2 = vars.get(&quot;2&quot;);
+if(d1 == null || (!&quot;5&quot;.equals(d1)) || d2 == null || (!&quot;5&quot;.equals(d2))) {
+	Failure = true;
+	FailureMessage = &quot;The analyis result is not correct!&quot;;
+}</stringProp>
+            <stringProp name="BeanShellAssertion.filename"></stringProp>
+            <stringProp name="BeanShellAssertion.parameters"></stringProp>
+            <boolProp name="BeanShellAssertion.resetInterpreter">false</boolProp>
+          </BeanShellAssertion>
           <hashTree/>
         </hashTree>
-        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV Data Set Config" enabled="true">
-          <stringProp name="delimiter">,</stringProp>
-          <stringProp name="fileEncoding"></stringProp>
-          <stringProp name="filename">select_condition_iot_data.txt</stringProp>
-          <boolProp name="ignoreFirstLine">false</boolProp>
-          <boolProp name="quotedData">false</boolProp>
-          <boolProp name="recycle">true</boolProp>
-          <stringProp name="shareMode">shareMode.thread</stringProp>
-          <boolProp name="stopThread">false</boolProp>
-          <stringProp name="variableNames">device_id,temperature,humidity</stringProp>
-        </CSVDataSet>
-        <hashTree/>
       </hashTree>
     </hashTree>
   </hashTree>
