@@ -139,6 +139,7 @@ func stopRule(name string) (result string) {
 	if rs, ok := registry.Load(name); ok {
 		(*rs.Topology).Cancel()
 		rs.Triggered = false
+		registry.Delete(name)
 		result = fmt.Sprintf("Rule %s was stopped.", name)
 	} else {
 		result = fmt.Sprintf("Rule %s was not found.", name)
