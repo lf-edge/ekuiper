@@ -118,7 +118,7 @@ func getRuleStatus(name string) (string, error) {
 func startRule(name string) error {
 	var rs *RuleState
 	rs, ok := registry.Load(name)
-	if !ok {
+	if !ok || (!rs.Triggered) {
 		r, err := ruleProcessor.GetRuleByName(name)
 		if err != nil {
 			return err
@@ -139,7 +139,6 @@ func stopRule(name string) (result string) {
 	if rs, ok := registry.Load(name); ok {
 		(*rs.Topology).Cancel()
 		rs.Triggered = false
-		registry.Delete(name)
 		result = fmt.Sprintf("Rule %s was stopped.", name)
 	} else {
 		result = fmt.Sprintf("Rule %s was not found.", name)
