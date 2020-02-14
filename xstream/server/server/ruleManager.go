@@ -95,9 +95,9 @@ func getRuleStatus(name string) (string, error) {
 				metrics = metrics[:len(metrics)-1] + "}"
 				dst := &bytes.Buffer{}
 				if err = json.Indent(dst, []byte(metrics), "", "  "); err != nil {
-					result = "Running with metrics:\n" + metrics
+					result = metrics
 				} else {
-					result = "Running with metrics:\n" + dst.String()
+					result = dst.String()
 				}
 			case context.Canceled:
 				result = "Stopped: canceled by error."
@@ -118,7 +118,7 @@ func getRuleStatus(name string) (string, error) {
 func startRule(name string) error {
 	var rs *RuleState
 	rs, ok := registry.Load(name)
-	if !ok {
+	if !ok || (!rs.Triggered) {
 		r, err := ruleProcessor.GetRuleByName(name)
 		if err != nil {
 			return err

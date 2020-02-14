@@ -7,7 +7,7 @@ The Kuiper REST api for streams allows you to manage the streams, such as create
 The API is used for creating a stream. For more detailed information of stream definition, please refer to [streams](../sqls/streams.md).
 
 ```shell
-POST http://localhost:8080/rules
+POST http://localhost:9081/streams
 ```
 Request sample, the request is a json string with `sql` field.
 
@@ -22,7 +22,7 @@ This API can run any stream sql statements, not only stream creation.
 The API is used for displaying all of streams defined in the server.
 
 ```shell
-GET http://localhost:8080/streams
+GET http://localhost:9081/streams
 ```
 
 Response Sample:
@@ -36,7 +36,7 @@ Response Sample:
 The API is used for print the detailed definition of stream.
 
 ```shell
-GET http://localhost:8080/streams/{id}}
+GET http://localhost:9081/streams/{id}}
 ```
 
 Response Sample:
@@ -70,5 +70,5 @@ Response Sample:
 The API is used for drop the stream definition.
 
 ```shell
-DELETE http://localhost:8080/streams/{id}
+DELETE http://localhost:9081/streams/{id}
 ```
