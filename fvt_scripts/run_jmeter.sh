@@ -43,3 +43,6 @@ echo -e "---------------------------------------------\n"
 
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t fvt_scripts/change_stream_rule.jmx -Dbase="$base_dir" -Dfvt="$fvt_dir" -l change_stream_rule.jtl
 echo -e "---------------------------------------------\n"
+
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t fvt_scripts/select_aggr_rule_order.jmx -Dbase="$base_dir" -Dfvt="$fvt_dir" -l select_aggr_rule_order.jtl
+echo -e "---------------------------------------------\n"
