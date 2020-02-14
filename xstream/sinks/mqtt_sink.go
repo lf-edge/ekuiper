@@ -156,7 +156,7 @@ func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	c := ms.conn
-	logger.Infof("publish %s", item)
+	logger.Debugf("%s publish %s", ctx.GetOpId(), item)
 	if token := c.Publish(ms.tpc, 0, false, item); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("publish error: %s", token.Error())
 	}
