@@ -39,6 +39,17 @@ func (l *LinkedQueue) length() int {
 	return len(l.Data)
 }
 
+func (l *LinkedQueue) clone() *LinkedQueue {
+	result := &LinkedQueue{
+		Data: make(map[int]interface{}),
+		Tail: l.Tail,
+	}
+	for k, v := range l.Data {
+		result.Data[k] = v
+	}
+	return result
+}
+
 type Cache struct {
 	//Data and control channels
 	in       <-chan interface{}
@@ -106,8 +117,9 @@ func (c *Cache) run(ctx api.StreamContext) {
 			}
 			if c.changed {
 				logger.Debugf("save cache")
+				clone := c.pending.clone()
 				go func() {
-					if err := c.saveCache(); err != nil {
+					if err := c.saveCache(clone); err != nil {
 						logger.Debugf("%v", err)
 						c.drainError(err)
 					}
@@ -116,7 +128,7 @@ func (c *Cache) run(ctx api.StreamContext) {
 			}
 		case <-ctx.Done():
 			if c.changed {
-				c.saveCache()
+				c.saveCache(c.pending)
 			}
 			return
 		}
@@ -160,13 +172,13 @@ func (c *Cache) loadCache() error {
 	return nil
 }
 
-func (c *Cache) saveCache() error {
+func (c *Cache) saveCache(p *LinkedQueue) error {
 	err := c.store.Open()
 	if err != nil {
 		return err
 	}
 	defer c.store.Close()
-	return c.store.Replace(c.key, c.pending)
+	return c.store.Replace(c.key, p)
 }
 
 func (c *Cache) drainError(err error) {
