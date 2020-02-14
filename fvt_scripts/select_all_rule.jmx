@@ -36,7 +36,7 @@
           </elementProp>
           <elementProp name="mqtt_srv" elementType="Argument">
             <stringProp name="Argument.name">mqtt_srv</stringProp>
-            <stringProp name="Argument.value">127.0.0.1</stringProp>
+            <stringProp name="Argument.value">10.211.55.6</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>
@@ -167,6 +167,9 @@
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
   &quot;sql&quot;: &quot;SELECT * FROM demo&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
+    {&#xd;
+      &quot;log&quot;: {}&#xd;
+    },&#xd;
     {&#xd;
       &quot;mqtt&quot;: {&#xd;
         &quot;server&quot;: &quot;tcp://${mqtt_srv}:1883&quot;,&#xd;
