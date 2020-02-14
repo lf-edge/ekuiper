@@ -165,7 +165,7 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT temperature, humidity, split_value(mqtt(topic), \&quot;/\&quot;, 1) AS device_id FROM demo GROUP BY TUMBLINGWINDOW(ss, 10) ORDER BY temperature&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT temperature, humidity, split_value(mqtt(topic), \&quot;/\&quot;, 1) AS device_id FROM demo GROUP BY TUMBLINGWINDOW(ss, 10) ORDER BY device_id DESC, temperature&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
       &quot;mqtt&quot;: {&#xd;
@@ -489,9 +489,18 @@ import net.sf.json.JSONObject;
 String response = SampleResult.getResponseDataAsString();
 
 JSONArray jsonArr = JSONArray.fromObject(response);
+
 int oldT = 0;
+String dId = &quot;2&quot;;
+
 for(int j = 0; j &lt; jsonArr.size(); j++) {
+	String deviceId = jsonArr.getJSONObject(j).getString(&quot;device_id&quot;);
 	int temperature = jsonArr.getJSONObject(j).getInt(&quot;temperature&quot;);
+
+	if(!dId.equals(deviceId)){
+		dId = deviceId;
+		oldT = 0;
+	}
 	if(oldT &gt; temperature) {
 		Failure = true;
 		FailureMessage = &quot;The analyis result is not by order.&quot;;
