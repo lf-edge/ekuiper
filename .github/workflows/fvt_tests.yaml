@@ -1,0 +1,39 @@
+name: Run test cases
+
+on:
+    push:
+    pull_request:
+    release:
+        types:
+            - published
+            - prereleased
+
+jobs:
+    fvt_tests:
+        runs-on: ubuntu-latest
+
+        steps:
+        - uses: actions/setup-java@v1
+          with:
+            java-version: '8' # The JDK version to make available on the path.
+            java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
+            architecture: x64 # (x64 or x86) - defaults to x64
+        - name: set up jmeter
+          env:
+            JMETER_VERSION: 5.2.1
+          run: |
+            curl -fsSL -o apache-jmeter-$JMETER_VERSION http://mirrors.tuna.tsinghua.edu.cn/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+            tar -xvf apache-jmeter-$JMETER_VERSION.tgz
+            ln -s /opt/apache-jmeter-5.2.1/ jmeter
+        - name: install emqx
+          run: sudo bash -c "curl https://repos.emqx.io/install_emqx.sh | bash"
+        - uses: actions/setup-go@v1
+          with:
+            go-version: '1.11.5'
+        - uses: actions/checkout@v2
+        - name: build kuiper
+          run: make
+        - name: run fvt tests
+          run: ./fvt_scripts/setup_env.sh
+
+            
