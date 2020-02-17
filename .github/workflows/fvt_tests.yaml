@@ -29,6 +29,7 @@ jobs:
             cd /tmp && tar -xvf apache-jmeter.tgz
             echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
             echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
+            wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/Eluso/mqtt-jmeter/raw/dev/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
             ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
         - name: install emqx
           env:
@@ -39,7 +40,8 @@ jobs:
         - uses: actions/checkout@v2
         - name: build kuiper
           run: make
+        - name: run emqx and kuiper
+          run: sudo ./fvt_scripts/setup_env.sh
         - name: run fvt tests
-          run: |
-            sudo ./fvt_scripts/setup_env.sh
-            sudo ./fvt_scripts/run_jmeter.sh
+          timeout-minutes: 5
+          run: ./fvt_scripts/run_jmeter.sh
