@@ -1,4 +1,4 @@
-name: Run test cases
+name: Run fvt tests
 
 on:
     push:
@@ -22,9 +22,9 @@ jobs:
           env:
             JMETER_VERSION: 5.2.1
           run: |
-            curl -fsSL -o apache-jmeter-$JMETER_VERSION http://mirrors.tuna.tsinghua.edu.cn/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
-            tar -xvf apache-jmeter-$JMETER_VERSION.tgz
-            ln -s /opt/apache-jmeter-5.2.1/ jmeter
+            wget -O /tmp/apache-jmeter.tar.gz http://mirrors.tuna.tsinghua.edu.cn/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+            cd /tmp && tar -xvf apache-jmeter.tgz
+            ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
         - name: install emqx
           run: sudo bash -c "curl https://repos.emqx.io/install_emqx.sh | bash"
         - uses: actions/setup-go@v1
