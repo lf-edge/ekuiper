@@ -29,7 +29,10 @@ jobs:
             cd /tmp && tar -xvf apache-jmeter.tgz
             ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
         - name: install emqx
-          run: sudo bash -c "curl https://repos.emqx.io/install_emqx.sh | bash"
+          run: |
+            sudo apt update
+            sudo apt full-upgrade -y
+            sudo bash -c "curl https://repos.emqx.io/install_emqx.sh | bash"
         - uses: actions/checkout@v2
         - name: build kuiper
           run: make
