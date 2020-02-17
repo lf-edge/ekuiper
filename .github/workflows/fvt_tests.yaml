@@ -29,11 +29,11 @@ jobs:
             cd /tmp && tar -xvf apache-jmeter.tgz
             ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
         - name: install emqx
+          env:
+            EMQX_VERSION: v4.0.2
           run: |
-            sudo apt update
-            sudo apt full-upgrade -y
-            sudo apt update --fix-missing
-            sudo bash -c "curl https://repos.emqx.io/install_emqx.sh | bash"
+            wget -O emqx.deb https://www.emqx.io/downloads/broker/v4.0.2/emqx-ubuntu18.04-${EMQX_VERSION}_amd64.deb
+            sudo dpkg -i emqx.deb
         - uses: actions/checkout@v2
         - name: build kuiper
           run: make
