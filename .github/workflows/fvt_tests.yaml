@@ -38,6 +38,6 @@ jobs:
         - name: build kuiper
           run: make
         - name: run fvt tests
-          run: ./fvt_scripts/setup_env.sh
+          run: sudo ./fvt_scripts/setup_env.sh
 
             
