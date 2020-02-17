@@ -27,6 +27,8 @@ jobs:
           run: |
             wget -O /tmp/apache-jmeter.tgz http://mirrors.tuna.tsinghua.edu.cn/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
             cd /tmp && tar -xvf apache-jmeter.tgz
+            echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
+            echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
             ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
         - name: install emqx
           env:
