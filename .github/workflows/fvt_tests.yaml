@@ -32,6 +32,7 @@ jobs:
           run: |
             sudo apt update
             sudo apt full-upgrade -y
+            sudo apt update --fix-missing
             sudo bash -c "curl https://repos.emqx.io/install_emqx.sh | bash"
         - uses: actions/checkout@v2
         - name: build kuiper
