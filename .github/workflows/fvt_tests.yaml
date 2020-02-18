@@ -25,7 +25,7 @@ jobs:
           env:
             JMETER_VERSION: 5.2.1
           run: |
-            wget -O /tmp/apache-jmeter.tgz http://mirrors.tuna.tsinghua.edu.cn/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+            wget -O /tmp/apache-jmeter.tgz http://mirror.bit.edu.cn/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
             cd /tmp && tar -xvf apache-jmeter.tgz
             echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
             echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
@@ -45,6 +45,10 @@ jobs:
         - name: run fvt tests
           timeout-minutes: 5
           run: ./fvt_scripts/run_jmeter.sh
+        - uses: actions/upload-artifact@v1
+          with:
+            name: jmeter.log
+            path: ./jmeter.log
         - name: checkout out
           run: |
             sudo apt update && sudo apt install -y libxml2-utils
