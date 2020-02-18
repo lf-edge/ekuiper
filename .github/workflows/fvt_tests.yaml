@@ -49,6 +49,8 @@ jobs:
           run: |
             sudo apt update && sudo apt install -y libxml2-utils
             if [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
+                echo -e "---------------------------------------------\n"
+                echo "FVT tests error"
                 exit 1
             fi
             
