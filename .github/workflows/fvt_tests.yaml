@@ -29,7 +29,7 @@ jobs:
             cd /tmp && tar -xvf apache-jmeter.tgz
             echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
             echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
-            wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/Eluso/mqtt-jmeter/raw/dev/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
+            wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/emqx/mqtt-jmeter/raw/master/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
             ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
         - name: install emqx
           env:
@@ -44,4 +44,9 @@ jobs:
           run: sudo ./fvt_scripts/setup_env.sh
         - name: run fvt tests
           timeout-minutes: 5
-          run: ./fvt_scripts/run_jmeter.sh
+          run: |
+            ./fvt_scripts/run_jmeter.sh
+            if [ ! -z $(cat $(ls *.jtl) | grep '<error>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true) ]; then
+                exit 1
+            fi
+            
