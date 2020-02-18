@@ -48,10 +48,11 @@ jobs:
         - uses: actions/upload-artifact@v1
           with:
             name: jmeter.log
-            path: ./jmeter.log
+            path: ./jmeter_logs
         - name: checkout out
           run: |
             sudo apt update && sudo apt install -y libxml2-utils
+            cd jmeter_logs
             if [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
                 echo -e "---------------------------------------------\n"
                 echo "FVT tests error"
