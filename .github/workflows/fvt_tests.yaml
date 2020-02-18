@@ -44,7 +44,7 @@ jobs:
           run: sudo ./fvt_scripts/setup_env.sh
         - name: run fvt tests
           timeout-minutes: 5
-          run: /fvt_scripts/run_jmeter.sh
+          run: ./fvt_scripts/run_jmeter.sh
         - name: checkout out
           run: |
             apt update && apt install -y libxml2-utils
