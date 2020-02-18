@@ -44,9 +44,11 @@ jobs:
           run: sudo ./fvt_scripts/setup_env.sh
         - name: run fvt tests
           timeout-minutes: 5
+          run: /fvt_scripts/run_jmeter.sh
+        - name: checkout out
           run: |
-            ./fvt_scripts/run_jmeter.sh
-            if [ ! -z $(cat $(ls *.jtl) | grep '<error>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true) ]; then
+            apt update && apt install -y libxml2-utils
+            if [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
                 exit 1
             fi
             
