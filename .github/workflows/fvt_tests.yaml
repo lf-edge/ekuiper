@@ -47,7 +47,7 @@ jobs:
           run: ./fvt_scripts/run_jmeter.sh
         - name: checkout out
           run: |
-            apt update && apt install -y libxml2-utils
+            sudo apt update && sudo apt install -y libxml2-utils
             if [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
                 exit 1
             fi
