@@ -132,9 +132,9 @@ func (m *SimpleKVStore) Close() error {
 }
 
 func (m *SimpleKVStore) doClose() error {
-	e := m.c.SaveFile(m.path)
+	//e := m.c.SaveFile(m.path)
 	m.c.Flush() //Delete all of the values from memory.
-	return e
+	return nil
 }
 
 func (m *SimpleKVStore) saveToFile() error {
