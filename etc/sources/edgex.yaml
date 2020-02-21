@@ -1,0 +1,13 @@
+#Global Edgex configurations
+default:
+  protocol: tcp
+  server: localhost
+  port: 5570
+  topic: events
+
+#Override the global configurations
+demo_conf: #Conf_key
+  protocol: tcp
+  server: 10.211.55.6
+  port: 5570
+  topic: events
