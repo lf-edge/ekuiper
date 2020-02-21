@@ -287,6 +287,9 @@ type StreamStmt struct {
 
 func (ss *StreamStmt) node() {}
 func (ss *StreamStmt) Stmt() {}
+func (ss *StreamStmt) isSchemaless() bool{
+	return ss.StreamFields == nil
+}
 
 type FieldType interface {
 	fieldType()

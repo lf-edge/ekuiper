@@ -822,6 +822,17 @@ func (p *Parser) parseStreamFields() (StreamFields, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok == LPAREN {
 		lStack.Push(lit)
 		for {
+			//For the schemaless streams
+			//create stream demo () WITH (FORMAT="JSON", DATASOURCE="demo" TYPE="edgex")
+			if tok1, _ := p.scanIgnoreWhitespace(); tok1 == RPAREN {
+				lStack.Pop()
+				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 != WITH {
+					return nil, fmt.Errorf("found %q, expected is with.", lit2)
+				}
+				return fields, nil
+			} else {
+				p.unscan()
+			}
 			if f, err := p.parseStreamField(); err != nil {
 				return nil, err
 			} else {
