@@ -84,16 +84,18 @@ jobs:
             sudo systemctl restart docker
             docker version
             docker buildx create --use --name mybuild
-        - name: build docker images
+        - name: build docker image
           run: make docker
         - name: build docker images
           if: github.event_name == 'release'
-          run: make cross_docker
+          run: |
+            echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
+            make cross_docker
       
     release:
         runs-on: ubuntu-latest
 
-        needs: [build, build-on-mac, build-docker-images:]
+        needs: [build, build-on-mac, build-docker-images]
 
         steps:
         - uses: actions/checkout@v2
