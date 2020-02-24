@@ -51,12 +51,16 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{
 	log.Debugf("preprocessor receive %s", tuple.Message)
 
 	result := make(map[string]interface{})
-	for _, f := range p.streamStmt.StreamFields {
-		fname := strings.ToLower(f.Name)
-		if e := p.addRecField(f.FieldType, result, tuple.Message, fname); e != nil {
-			log.Errorf("error in preprocessor: %s", e)
-			return nil
+	if p.streamStmt.StreamFields != nil {
+		for _, f := range p.streamStmt.StreamFields {
+			fname := strings.ToLower(f.Name)
+			if e := p.addRecField(f.FieldType, result, tuple.Message, fname); e != nil {
+				log.Errorf("error in preprocessor: %s", e)
+				return nil
+			}
 		}
+	} else {
+		result = tuple.Message
 	}
 
 	//If the field has alias name, then evaluate the alias field before transfer it to proceeding operators, and put it into result.

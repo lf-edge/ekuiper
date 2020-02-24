@@ -30,7 +30,17 @@ func TestPreprocessor_Apply(t *testing.T) {
 			data:   []byte(`{"a": 6}`),
 			result: nil,
 		},
-
+		{
+			stmt: &xsql.StreamStmt{
+				Name:         xsql.StreamName("demo"),
+				StreamFields: nil,
+			},
+			data: []byte(`{"a": 6}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": float64(6),
+			},
+			},
+		},
 		{
 			stmt: &xsql.StreamStmt{
 				Name: xsql.StreamName("demo"),
@@ -40,7 +50,18 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data: []byte(`{"abc": 6}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-				"abc": int(6),
+				"abc": 6,
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name:         xsql.StreamName("demo"),
+				StreamFields: nil,
+			},
+			data: []byte(`{"abc": 6}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"abc": float64(6),
 			},
 			},
 		},
@@ -56,6 +77,19 @@ func TestPreprocessor_Apply(t *testing.T) {
 			result: &xsql.Tuple{Message: xsql.Message{
 				"abc": float64(34),
 				"def": "hello",
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name:         xsql.StreamName("demo"),
+				StreamFields: nil,
+			},
+			data: []byte(`{"abc": 34, "def" : "hello", "ghi": 50}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"abc": float64(34),
+				"def": "hello",
+				"ghi": float64(50),
 			},
 			},
 		},
@@ -95,6 +129,19 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data:   []byte(`{"a": {"b" : "hello"}}`),
 			result: nil,
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name:         xsql.StreamName("demo"),
+				StreamFields: nil,
+			},
+			data: []byte(`{"a": {"b" : "hello"}}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": map[string]interface{}{
+					"b": "hello",
+				},
+			},
+			},
 		},
 		//Rec type
 		{
@@ -136,6 +183,19 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			},
 		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name:         xsql.StreamName("demo"),
+				StreamFields: nil,
+			},
+			data: []byte(`{"a": {"b" : "32"}}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": map[string]interface{}{
+					"b": "32",
+				},
+			},
+			},
+		},
 		//Array of complex type
 		{
 			stmt: &xsql.StreamStmt{
@@ -162,6 +222,20 @@ func TestPreprocessor_Apply(t *testing.T) {
 		},
 		{
 			stmt: &xsql.StreamStmt{
+				Name:         xsql.StreamName("demo"),
+				StreamFields: nil,
+			},
+			data: []byte(`{"a": [{"b" : "hello1"}, {"b" : "hello2"}]}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": []interface{}{
+					map[string]interface{}{"b": "hello1"},
+					map[string]interface{}{"b": "hello2"},
+				},
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
 				Name: xsql.StreamName("demo"),
 				StreamFields: []xsql.StreamField{
 					{Name: "a", FieldType: &xsql.ArrayType{
@@ -174,6 +248,20 @@ func TestPreprocessor_Apply(t *testing.T) {
 				"a": []float64{
 					55,
 					77,
+				},
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name:         xsql.StreamName("demo"),
+				StreamFields: nil,
+			},
+			data: []byte(`{"a": [55, 77]}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": []interface{}{
+					float64(55),
+					float64(77),
 				},
 			},
 			},
@@ -201,6 +289,22 @@ func TestPreprocessor_Apply(t *testing.T) {
 					"b": "hello",
 					"c": map[string]interface{}{
 						"d": int(35),
+					},
+				},
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name:         xsql.StreamName("demo"),
+				StreamFields: nil,
+			},
+			data: []byte(`{"a": {"b" : "hello", "c": {"d": 35.2}}}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": map[string]interface{}{
+					"b": "hello",
+					"c": map[string]interface{}{
+						"d": 35.2,
 					},
 				},
 			},
@@ -250,6 +354,18 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 			result: &xsql.Tuple{Message: xsql.Message{
 				"abc": common.TimeFromUnixMilli(1568854515000),
 				"def": common.TimeFromUnixMilli(1568854573431),
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name:         xsql.StreamName("demo"),
+				StreamFields: nil,
+			},
+			data: []byte(`{"abc": "2019-09-19T00:55:15.000Z", "def" : 1568854573431}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"abc": "2019-09-19T00:55:15.000Z",
+				"def": float64(1568854573431),
 			},
 			},
 		},
@@ -386,6 +502,26 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			data: []byte(`{"abc": 1568854515000}`),
 			result: &xsql.Tuple{Message: xsql.Message{
 				"abc": int(1568854515000),
+			}, Timestamp: 1568854515000,
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name:         xsql.StreamName("demo"),
+				StreamFields: nil,
+				Options: map[string]string{
+					"DATASOURCE":       "users",
+					"FORMAT":           "AVRO",
+					"KEY":              "USERID",
+					"CONF_KEY":         "srv1",
+					"TYPE":             "MQTT",
+					"TIMESTAMP":        "abc",
+					"TIMESTAMP_FORMAT": "yyyy-MM-dd''T''HH:mm:ssX'",
+				},
+			},
+			data: []byte(`{"abc": 1568854515000}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"abc": float64(1568854515000),
 			}, Timestamp: 1568854515000,
 			},
 		},
