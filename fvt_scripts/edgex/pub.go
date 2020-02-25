@@ -9,7 +9,6 @@ import (
 	"github.com/edgexfoundry/go-mod-messaging/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
 	"log"
-	"math/rand"
 	"time"
 )
 var msgConfig1 = types.MessageBusConfig{
@@ -29,16 +28,16 @@ func pubEventClientZeroMq() {
 			log.Fatal(ec)
 		} else {
 			client := coredata.NewEventClient(local.New("test"))
-			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			//r := rand.New(rand.NewSource(time.Now().UnixNano()))
 			for i := 0; i < 10; i++ {
-				temp := r.Intn(100)
-				humd := r.Intn(100)
+				//temp := r.Intn(100)
+				//humd := r.Intn(100)
 
 				var testEvent = models.Event{Device: "demo", Created: 123, Modified: 123, Origin: 123}
 				var testReading1 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name",
-					Name: "Temperature", Value: fmt.Sprintf("%d", temp)}
+					Name: "Temperature", Value: fmt.Sprintf("%d", i*8)}
 				var testReading2 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name",
-					Name: "Humidity", Value: fmt.Sprintf("%d", humd)}
+					Name: "Humidity", Value: fmt.Sprintf("%d", i*9)}
 				testEvent.Readings = append(testEvent.Readings, testReading1, testReading2)
 
 				data, err := client.MarshalEvent(testEvent)

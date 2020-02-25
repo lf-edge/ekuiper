@@ -24,7 +24,7 @@ var testValueDescriptor2 = models.ValueDescriptor{Id: "Humidity", Created: 123, 
 
 func main() {
 	http.HandleFunc(clients.ApiValueDescriptorRoute, Hello)
-	if e := http.ListenAndServe(":8080", nil); e != nil {
+	if e := http.ListenAndServe(":10080", nil); e != nil {
 		log.Fatal(e)
 	}
 }
