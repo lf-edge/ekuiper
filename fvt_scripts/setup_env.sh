@@ -35,4 +35,4 @@ else
   done
 fi
 
-fvt_scripts/start_vdmocker.sh
+fvt_scripts/start_vdmock.sh
