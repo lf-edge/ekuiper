@@ -4,6 +4,7 @@ default:
   server: localhost
   port: 5570
   topic: events
+  serviceServer: http://localhost:8080
 
 #Override the global configurations
 demo_conf: #Conf_key

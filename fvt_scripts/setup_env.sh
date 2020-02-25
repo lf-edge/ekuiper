@@ -24,3 +24,13 @@ else
 fi
 
 fvt_scripts/start_kuiper.sh
+
+pids=`ps aux|grep "vdmocker" | grep "bin"|awk '{printf $2 " "}'`
+if [ "$pids" = "" ] ; then
+   echo "No value descriptor mockup server was started"
+else
+  for pid in $pids ; do
+    echo "kill value descriptor mockup server " $pid
+    kill -9 $pid
+  done
+fi
