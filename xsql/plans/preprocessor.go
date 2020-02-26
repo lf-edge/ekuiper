@@ -44,8 +44,7 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{
 	log := ctx.GetLogger()
 	tuple, ok := data.(*xsql.Tuple)
 	if !ok {
-		log.Errorf("Expect tuple data type")
-		return nil
+		return fmt.Errorf("expect tuple data type")
 	}
 
 	log.Debugf("preprocessor receive %s", tuple.Message)
@@ -55,8 +54,7 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{
 		for _, f := range p.streamStmt.StreamFields {
 			fname := strings.ToLower(f.Name)
 			if e := p.addRecField(f.FieldType, result, tuple.Message, fname); e != nil {
-				log.Errorf("error in preprocessor: %s", e)
-				return nil
+				return fmt.Errorf("error in preprocessor: %s", e)
 			}
 		}
 	} else {
@@ -68,7 +66,10 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{
 	for _, f := range p.fields {
 		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)) {
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, &xsql.FunctionValuer{})}
-			if v := ve.Eval(f.Expr); v != nil {
+			v := ve.Eval(f.Expr)
+			if _, ok := v.(error); ok {
+				return v
+			} else {
 				result[strings.ToLower(f.AName)] = v
 			}
 		}
@@ -78,15 +79,13 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{
 	if p.isEventTime {
 		if t, ok := result[p.timestampField]; ok {
 			if ts, err := common.InterfaceToUnixMilli(t, p.timestampFormat); err != nil {
-				log.Errorf("cannot convert timestamp field %s to timestamp with error %v", p.timestampField, err)
-				return nil
+				return fmt.Errorf("cannot convert timestamp field %s to timestamp with error %v", p.timestampField, err)
 			} else {
 				tuple.Timestamp = ts
 				log.Debugf("preprocessor calculate timstamp %d", tuple.Timestamp)
 			}
 		} else {
-			log.Errorf("cannot find timestamp field %s in tuple %v", p.timestampField, result)
-			return nil
+			return fmt.Errorf("cannot find timestamp field %s in tuple %v", p.timestampField, result)
 		}
 	}
 	return tuple

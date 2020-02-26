@@ -25,9 +25,15 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 	log.Debugf("project plan receive %s", data)
 	var results []map[string]interface{}
 	switch input := data.(type) {
+	case error:
+		return input
 	case *xsql.Tuple:
 		ve := pp.getVE(input, input)
-		results = append(results, project(pp.Fields, ve, pp.isTest))
+		if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
+			return err
+		} else {
+			results = append(results, r)
+		}
 	case xsql.WindowTuplesSet:
 		if len(input) != 1 {
 			log.Infof("WindowTuplesSet with multiple tuples cannot be evaluated")
@@ -36,7 +42,11 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 		ms := input[0].Tuples
 		for _, v := range ms {
 			ve := pp.getVE(&v, input)
-			results = append(results, project(pp.Fields, ve, pp.isTest))
+			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
+				return err
+			} else {
+				results = append(results, r)
+			}
 			if pp.IsAggregate {
 				break
 			}
@@ -45,7 +55,11 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 		ms := input
 		for _, v := range ms {
 			ve := pp.getVE(&v, input)
-			results = append(results, project(pp.Fields, ve, pp.isTest))
+			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
+				return err
+			} else {
+				results = append(results, r)
+			}
 			if pp.IsAggregate {
 				break
 			}
@@ -53,18 +67,20 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 	case xsql.GroupedTuplesSet:
 		for _, v := range input {
 			ve := pp.getVE(v[0], v)
-			results = append(results, project(pp.Fields, ve, pp.isTest))
+			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
+				return err
+			} else {
+				results = append(results, r)
+			}
 		}
 	default:
-		log.Errorf("Expect xsql.Valuer or its array type")
-		return nil
+		return fmt.Errorf("Expect xsql.Valuer or its array type")
 	}
 
 	if ret, err := json.Marshal(results); err == nil {
 		return ret
 	} else {
-		fmt.Printf("Found error: %v", err)
-		return nil
+		return fmt.Errorf("Found error: %v", err)
 	}
 }
 
@@ -76,16 +92,22 @@ func (pp *ProjectPlan) getVE(tuple xsql.DataValuer, agg xsql.AggregateData) *xsq
 	}
 }
 
-func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) map[string]interface{} {
+func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	for _, f := range fs {
 		//Avoid to re-evaluate for non-agg field has alias name, which was already evaluated in pre-processor operator.
 		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)) && !isTest {
 			fr := &xsql.FieldRef{StreamName: "", Name: f.AName}
 			v := ve.Eval(fr)
+			if e, ok := v.(error); ok {
+				return nil, e
+			}
 			result[f.AName] = v
 		} else {
 			v := ve.Eval(f.Expr)
+			if e, ok := v.(error); ok {
+				return nil, e
+			}
 			if _, ok := f.Expr.(*xsql.Wildcard); ok || f.Name == "*" {
 				switch val := v.(type) {
 				case map[string]interface{}:
@@ -101,7 +123,7 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) map[string]interf
 						}
 					}
 				default:
-					fmt.Printf("Wildcarder does not return map")
+					return nil, fmt.Errorf("wildcarder does not return map")
 				}
 			} else {
 				if v != nil {
@@ -113,7 +135,7 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) map[string]interf
 			}
 		}
 	}
-	return result
+	return result, nil
 }
 
 const DEFAULT_FIELD_NAME_PREFIX string = "rengine_field_"

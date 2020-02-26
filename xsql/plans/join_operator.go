@@ -18,16 +18,16 @@ type JoinPlan struct {
 func (jp *JoinPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	log := ctx.GetLogger()
 	var input xsql.WindowTuplesSet
-	if d, ok := data.(xsql.WindowTuplesSet); !ok {
-		log.Errorf("Expect WindowTuplesSet type.\n")
-		return nil
-	} else {
-		log.Debugf("join plan receive %v", d)
-		input = d
+	switch v := data.(type) {
+	case error:
+		return input
+	case xsql.WindowTuplesSet:
+		input = v
+		log.Debugf("join plan receive %v", data)
+	default:
+		return fmt.Errorf("join is only supported in window")
 	}
-
 	result := xsql.JoinTupleSets{}
-
 	for i, join := range jp.Joins {
 		if i == 0 {
 			v, err := jp.evalSet(input, join)

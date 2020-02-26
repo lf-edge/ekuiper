@@ -963,6 +963,9 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 				} else {
 					for i := range expr.Args {
 						args[i] = v.Eval(expr.Args[i])
+						if _, ok := args[i].(error); ok {
+							return args[i]
+						}
 					}
 				}
 			}
@@ -994,9 +997,14 @@ func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 		return v.evalJsonExpr(val, expr.OP, expr.RHS)
 	case []interface{}:
 		return v.evalJsonExpr(val, expr.OP, expr.RHS)
+	case error:
+		return val
 	}
 
 	rhs := v.Eval(expr.RHS)
+	if _, ok := rhs.(error); ok {
+		return rhs
+	}
 	return v.simpleDataEval(lhs, rhs, expr.OP)
 }
 
