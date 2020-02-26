@@ -44,8 +44,8 @@ jobs:
             make
         - name: build edgex
           run: |
-            GO111MODULE=on GOPROXY=https://goproxy.io go build -o edgex_server fvt_scripts/edgex/vd_server.go
-            GO111MODULE=on GOPROXY=https://goproxy.io go build -o edgex_pub fvt_scripts/edgex/pub.go   
+            go build -o edgex_server fvt_scripts/edgex/valuedesc/vd_server.go
+            go build -o edgex_pub fvt_scripts/edgex/pub.go
         - name: run edgex && emqx && kuiper
           run: |
             ./edgex_server
