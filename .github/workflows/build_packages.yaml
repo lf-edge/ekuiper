@@ -61,11 +61,41 @@ jobs:
           with:
             name: packages-mac
             path: _packages/.
+
+    build-docker-images:
+        runs-on: ubuntu-latest
         
+        steps:
+        - uses: actions/checkout@v2
+        - name: install docker
+          run: |
+            sudo apt-get remove docker docker-engine docker.io containerd runc
+            sudo apt-get update
+            sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            sudo apt-get update
+            sudo apt-get install docker-ce docker-ce-cli containerd.io
+        - name: prepare docker
+          run: |
+            mkdir -p $HOME/.docker
+            echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
+            echo '{ "experimental": true, "storage-driver": "overlay2", "max-concurrent-downloads": 50, "max-concurrent-uploads": 50 }' | sudo tee /etc/docker/daemon.json
+            sudo systemctl restart docker
+            docker version
+            docker buildx create --use --name mybuild
+        - name: build docker image
+          run: make docker
+        - name: build docker images
+          if: github.event_name == 'release'
+          run: |
+            echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
+            make cross_docker
+      
     release:
         runs-on: ubuntu-latest
 
-        needs: [build, build-on-mac]
+        needs: [build, build-on-mac, build-docker-images]
 
         steps:
         - uses: actions/checkout@v2

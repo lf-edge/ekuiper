@@ -165,11 +165,8 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT * FROM demo&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT temperature, humidity, split_value(mqtt(topic), \&quot;/\&quot;, 1) AS device_id FROM demo GROUP BY TUMBLINGWINDOW(ss, 10) ORDER BY device_id DESC, temperature&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
-    {&#xd;
-      &quot;log&quot;: {}&#xd;
-    },&#xd;
     {&#xd;
       &quot;mqtt&quot;: {&#xd;
         &quot;server&quot;: &quot;tcp://${mqtt_srv}:1883&quot;,&#xd;
@@ -308,14 +305,18 @@
               <boolProp name="ISREGEX">false</boolProp>
             </JSONPathAssertion>
             <hashTree/>
-            <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
+            <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="false">
               <stringProp name="JSON_PATH">$.sink_sink_mqtt_0_records_in_total</stringProp>
-              <stringProp name="EXPECTED_VALUE">10</stringProp>
+              <stringProp name="EXPECTED_VALUE">6</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
               <boolProp name="EXPECT_NULL">false</boolProp>
               <boolProp name="INVERT">false</boolProp>
               <boolProp name="ISREGEX">false</boolProp>
             </JSONPathAssertion>
+            <hashTree/>
+            <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Constant Timer" enabled="true">
+              <stringProp name="ConstantTimer.delay">5000</stringProp>
+            </ConstantTimer>
             <hashTree/>
           </hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_DropRule" enabled="true">
@@ -402,7 +403,7 @@
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">10</stringProp>
+          <stringProp name="LoopController.loops">1</stringProp>
         </elementProp>
         <stringProp name="ThreadGroup.num_threads">1</stringProp>
         <stringProp name="ThreadGroup.ramp_time">1</stringProp>
@@ -447,18 +448,6 @@
           <stringProp name="filename"></stringProp>
         </ResultCollector>
         <hashTree/>
-        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV Data Set Config" enabled="true">
-          <stringProp name="delimiter">,</stringProp>
-          <stringProp name="fileEncoding"></stringProp>
-          <stringProp name="filename">iot_data.txt</stringProp>
-          <boolProp name="ignoreFirstLine">false</boolProp>
-          <boolProp name="quotedData">false</boolProp>
-          <boolProp name="recycle">true</boolProp>
-          <stringProp name="shareMode">shareMode.group</stringProp>
-          <boolProp name="stopThread">false</boolProp>
-          <stringProp name="variableNames">device_id,temperature,humidity</stringProp>
-        </CSVDataSet>
-        <hashTree/>
         <OnceOnlyController guiclass="OnceOnlyControllerGui" testclass="OnceOnlyController" testname="Once Only Controller" enabled="true"/>
         <hashTree>
           <net.xmeter.samplers.ConnectSampler guiclass="net.xmeter.gui.ConnectSamplerUI" testclass="net.xmeter.samplers.ConnectSampler" testname="MQTT Connect" enabled="true">
@@ -489,27 +478,40 @@
           <stringProp name="mqtt.qos_level">0</stringProp>
           <boolProp name="mqtt.add_timestamp">false</boolProp>
           <boolProp name="mqtt.debug_response">true</boolProp>
-          <stringProp name="mqtt.sample_condition">number of received messages</stringProp>
-          <stringProp name="mqtt.sample_condition_value">1</stringProp>
+          <stringProp name="mqtt.sample_condition">specified elapsed time (ms)</stringProp>
+          <stringProp name="mqtt.sample_condition_value">15000</stringProp>
         </net.xmeter.samplers.SubSampler>
         <hashTree>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="temperature Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$[0].temperature</stringProp>
-            <stringProp name="EXPECTED_VALUE">${temperature}</stringProp>
-            <boolProp name="JSONVALIDATION">true</boolProp>
-            <boolProp name="EXPECT_NULL">false</boolProp>
-            <boolProp name="INVERT">false</boolProp>
-            <boolProp name="ISREGEX">false</boolProp>
-          </JSONPathAssertion>
-          <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="humidity Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$[0].humidity</stringProp>
-            <stringProp name="EXPECTED_VALUE">${humidity}</stringProp>
-            <boolProp name="JSONVALIDATION">true</boolProp>
-            <boolProp name="EXPECT_NULL">false</boolProp>
-            <boolProp name="INVERT">false</boolProp>
-            <boolProp name="ISREGEX">false</boolProp>
-          </JSONPathAssertion>
+          <BeanShellAssertion guiclass="BeanShellAssertionGui" testclass="BeanShellAssertion" testname="BeanShell Assertion" enabled="true">
+            <stringProp name="BeanShellAssertion.query">import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+String response = SampleResult.getResponseDataAsString();
+
+JSONArray jsonArr = JSONArray.fromObject(response);
+
+int oldT = 0;
+String dId = &quot;2&quot;;
+
+for(int j = 0; j &lt; jsonArr.size(); j++) {
+	String deviceId = jsonArr.getJSONObject(j).getString(&quot;device_id&quot;);
+	int temperature = jsonArr.getJSONObject(j).getInt(&quot;temperature&quot;);
+
+	if(!dId.equals(deviceId)){
+		dId = deviceId;
+		oldT = 0;
+	}
+	if(oldT &gt; temperature) {
+		Failure = true;
+		FailureMessage = &quot;The analyis result is not by order.&quot;;
+		break;
+	}
+	oldT = temperature;
+}</stringProp>
+            <stringProp name="BeanShellAssertion.filename"></stringProp>
+            <stringProp name="BeanShellAssertion.parameters"></stringProp>
+            <boolProp name="BeanShellAssertion.resetInterpreter">false</boolProp>
+          </BeanShellAssertion>
           <hashTree/>
         </hashTree>
       </hashTree>
