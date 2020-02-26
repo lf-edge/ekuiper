@@ -47,13 +47,13 @@ jobs:
           run: |
             sudo ./fvt_scripts/setup_env.sh
         - name: run fvt tests
-          timeout-minutes: 10
+          timeout-minutes: 5
           run: ./fvt_scripts/run_jmeter.sh
         - uses: actions/upload-artifact@v1
           if: always()
           with:
             name: kuiper_logs
-            path: ./_build/kuiper-*/log
+            path: ./_build/*/log
         - uses: actions/upload-artifact@v1
           with:
             name: jmeter_logs
