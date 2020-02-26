@@ -1,4 +1,4 @@
-package valuedesc
+package main
 
 import (
 	"encoding/json"
