@@ -43,13 +43,8 @@ jobs:
           run: |
             sudo apt update && sudo apt install pkg-config libczmq-dev -y
             make
-        - name: build edgex
-          run: |
-            go build -o edgex_server fvt_scripts/edgex/valuedesc/vd_server.go
-            go build -o edgex_pub fvt_scripts/edgex/pub.go
         - name: run edgex && emqx && kuiper
           run: |
-            ./edgex_server
             sudo ./fvt_scripts/setup_env.sh
         - name: run fvt tests
           timeout-minutes: 5
