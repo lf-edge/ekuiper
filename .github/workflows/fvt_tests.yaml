@@ -50,8 +50,13 @@ jobs:
           timeout-minutes: 10
           run: ./fvt_scripts/run_jmeter.sh
         - uses: actions/upload-artifact@v1
+          if: always()
           with:
-            name: jmeter.logs
+            name: kuiper_logs
+            path: ./_build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-x86_64/log
+        - uses: actions/upload-artifact@v1
+          with:
+            name: jmeter_logs
             path: ./jmeter_logs
         - name: checkout out
           run: |
