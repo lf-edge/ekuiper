@@ -287,7 +287,7 @@ type StreamStmt struct {
 
 func (ss *StreamStmt) node() {}
 func (ss *StreamStmt) Stmt() {}
-func (ss *StreamStmt) isSchemaless() bool{
+func (ss *StreamStmt) isSchemaless() bool {
 	return ss.StreamFields == nil
 }
 
@@ -997,18 +997,6 @@ func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 	}
 
 	rhs := v.Eval(expr.RHS)
-	if lhs == nil && rhs != nil {
-		// When the LHS is nil and the RHS is a boolean, implicitly cast the
-		// nil to false.
-		if _, ok := rhs.(bool); ok {
-			lhs = false
-		}
-	} else if lhs != nil && rhs == nil {
-		// Implicit cast of the RHS nil to false when the LHS is a boolean.
-		if _, ok := lhs.(bool); ok {
-			rhs = false
-		}
-	}
 	return v.simpleDataEval(lhs, rhs, expr.OP)
 }
 
@@ -1020,12 +1008,10 @@ func (v *ValuerEval) evalJsonExpr(result interface{}, op Token, expr Expr) inter
 				ve := &ValuerEval{Valuer: Message(val)}
 				return ve.Eval(exp)
 			} else {
-				fmt.Printf("The right expression is not a field reference node.\n")
-				return nil
+				return fmt.Errorf("the right expression is not a field reference node")
 			}
 		default:
-			fmt.Printf("%v is an invalid operation.\n", op)
-			return nil
+			return fmt.Errorf("%v is an invalid operation for %T", op, val)
 		}
 	}
 
@@ -1036,56 +1022,77 @@ func (v *ValuerEval) evalJsonExpr(result interface{}, op Token, expr Expr) inter
 			if berVal, ok1 := ber.(*BracketEvalResult); ok1 {
 				if berVal.isIndex() {
 					if berVal.Start >= len(val) {
-						fmt.Printf("Out of index: %d of %d.\n", berVal.Start, len(val))
-						return nil
+						return fmt.Errorf("out of index: %d of %d", berVal.Start, len(val))
 					}
 					return val[berVal.Start]
 				} else {
 					if berVal.Start >= len(val) {
-						fmt.Printf("Start value is out of index: %d of %d.\n", berVal.Start, len(val))
-						return nil
+						return fmt.Errorf("start value is out of index: %d of %d", berVal.Start, len(val))
 					}
 
 					if berVal.End >= len(val) {
-						fmt.Printf("End value is out of index: %d of %d.\n", berVal.End, len(val))
-						return nil
+						return fmt.Errorf("end value is out of index: %d of %d", berVal.End, len(val))
 					}
 					return val[berVal.Start:berVal.End]
 				}
 			} else {
-				fmt.Printf("Invalid evaluation result - %v.\n", berVal)
-				return nil
+				return fmt.Errorf("invalid evaluation result - %v", berVal)
 			}
 		default:
-			fmt.Printf("%v is an invalid operation.\n", op)
-			return nil
+			return fmt.Errorf("%v is an invalid operation for %T", op, val)
 		}
 	}
 	return nil
 }
 
+//lhs and rhs are non-nil
 func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} {
+	if lhs == nil || rhs == nil {
+		switch op {
+		case EQ, LTE, GTE:
+			if lhs == nil && rhs == nil {
+				return true
+			} else {
+				return false
+			}
+		case NEQ:
+			if lhs == nil && rhs == nil {
+				return false
+			} else {
+				return true
+			}
+		case LT, GT:
+			return false
+		default:
+			return nil
+		}
+	}
 	lhs = convertNum(lhs)
 	rhs = convertNum(rhs)
 	// Evaluate if both sides are simple types.
 	switch lhs := lhs.(type) {
 	case bool:
 		rhs, ok := rhs.(bool)
+		if !ok {
+			return invalidOpError(lhs, op, rhs)
+		}
 		switch op {
 		case AND:
-			return ok && (lhs && rhs)
+			return lhs && rhs
 		case OR:
-			return ok && (lhs || rhs)
+			return lhs || rhs
 		case BITWISE_AND:
-			return ok && (lhs && rhs)
+			return lhs && rhs
 		case BITWISE_OR:
-			return ok && (lhs || rhs)
+			return lhs || rhs
 		case BITWISE_XOR:
-			return ok && (lhs != rhs)
+			return lhs != rhs
 		case EQ:
-			return ok && (lhs == rhs)
+			return lhs == rhs
 		case NEQ:
-			return ok && (lhs != rhs)
+			return lhs != rhs
+		default:
+			return invalidOpError(lhs, op, rhs)
 		}
 	case float64:
 		// Try the rhs as a float64, int64, or uint64
@@ -1098,48 +1105,41 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 				rhsf, ok = float64(val), true
 			}
 		}
-
+		if !ok {
+			return invalidOpError(lhs, op, rhs)
+		}
 		rhs := rhsf
 		switch op {
 		case EQ:
-			return ok && (lhs == rhs)
+			return lhs == rhs
 		case NEQ:
-			return ok && (lhs != rhs)
+			return lhs != rhs
 		case LT:
-			return ok && (lhs < rhs)
+			return lhs < rhs
 		case LTE:
-			return ok && (lhs <= rhs)
+			return lhs <= rhs
 		case GT:
-			return ok && (lhs > rhs)
+			return lhs > rhs
 		case GTE:
-			return ok && (lhs >= rhs)
+			return lhs >= rhs
 		case ADD:
-			if !ok {
-				return nil
-			}
 			return lhs + rhs
 		case SUB:
-			if !ok {
-				return nil
-			}
 			return lhs - rhs
 		case MUL:
-			if !ok {
-				return nil
-			}
 			return lhs * rhs
 		case DIV:
-			if !ok {
-				return nil
-			} else if rhs == 0 {
-				return float64(0)
+			if rhs == 0 {
+				return fmt.Errorf("divided by zero")
 			}
 			return lhs / rhs
 		case MOD:
-			if !ok {
-				return nil
+			if rhs == 0 {
+				return fmt.Errorf("divided by zero")
 			}
 			return math.Mod(lhs, rhs)
+		default:
+			return invalidOpError(lhs, op, rhs)
 		}
 	case int64:
 		// Try as a float64 to see if a float cast is required.
@@ -1167,11 +1167,16 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 				return lhs * rhs
 			case DIV:
 				if rhs == 0 {
-					return float64(0)
+					return fmt.Errorf("divided by zero")
 				}
 				return lhs / rhs
 			case MOD:
+				if rhs == 0 {
+					return fmt.Errorf("divided by zero")
+				}
 				return math.Mod(lhs, rhs)
+			default:
+				return invalidOpError(lhs, op, rhs)
 			}
 		case int64:
 			switch op {
@@ -1196,18 +1201,18 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 			case DIV:
 				if v.IntegerFloatDivision {
 					if rhs == 0 {
-						return float64(0)
+						return fmt.Errorf("divided by zero")
 					}
 					return float64(lhs) / float64(rhs)
 				}
 
 				if rhs == 0 {
-					return int64(0)
+					return fmt.Errorf("divided by zero")
 				}
 				return lhs / rhs
 			case MOD:
 				if rhs == 0 {
-					return int64(0)
+					return fmt.Errorf("divided by zero")
 				}
 				return lhs % rhs
 			case BITWISE_AND:
@@ -1216,6 +1221,8 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 				return lhs | rhs
 			case BITWISE_XOR:
 				return lhs ^ rhs
+			default:
+				return invalidOpError(lhs, op, rhs)
 			}
 		case uint64:
 			switch op {
@@ -1251,12 +1258,12 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 				return uint64(lhs) * rhs
 			case DIV:
 				if rhs == 0 {
-					return uint64(0)
+					return fmt.Errorf("divided by zero")
 				}
 				return uint64(lhs) / rhs
 			case MOD:
 				if rhs == 0 {
-					return uint64(0)
+					return fmt.Errorf("divided by zero")
 				}
 				return uint64(lhs) % rhs
 			case BITWISE_AND:
@@ -1265,7 +1272,11 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 				return uint64(lhs) | rhs
 			case BITWISE_XOR:
 				return uint64(lhs) ^ rhs
+			default:
+				return invalidOpError(lhs, op, rhs)
 			}
+		default:
+			return invalidOpError(lhs, op, rhs)
 		}
 	case uint64:
 		// Try as a float64 to see if a float cast is required.
@@ -1293,11 +1304,16 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 				return lhs * rhs
 			case DIV:
 				if rhs == 0 {
-					return float64(0)
+					return fmt.Errorf("divided by zero")
 				}
 				return lhs / rhs
 			case MOD:
+				if rhs == 0 {
+					return fmt.Errorf("divided by zero")
+				}
 				return math.Mod(lhs, rhs)
+			default:
+				return invalidOpError(lhs, op, rhs)
 			}
 		case int64:
 			switch op {
@@ -1333,12 +1349,12 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 				return lhs * uint64(rhs)
 			case DIV:
 				if rhs == 0 {
-					return uint64(0)
+					return fmt.Errorf("divided by zero")
 				}
 				return lhs / uint64(rhs)
 			case MOD:
 				if rhs == 0 {
-					return uint64(0)
+					return fmt.Errorf("divided by zero")
 				}
 				return lhs % uint64(rhs)
 			case BITWISE_AND:
@@ -1347,6 +1363,8 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 				return lhs | uint64(rhs)
 			case BITWISE_XOR:
 				return lhs ^ uint64(rhs)
+			default:
+				return invalidOpError(lhs, op, rhs)
 			}
 		case uint64:
 			switch op {
@@ -1370,12 +1388,12 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 				return lhs * rhs
 			case DIV:
 				if rhs == 0 {
-					return uint64(0)
+					return fmt.Errorf("divided by zero")
 				}
 				return lhs / rhs
 			case MOD:
 				if rhs == 0 {
-					return uint64(0)
+					return fmt.Errorf("divided by zero")
 				}
 				return lhs % rhs
 			case BITWISE_AND:
@@ -1384,51 +1402,37 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 				return lhs | rhs
 			case BITWISE_XOR:
 				return lhs ^ rhs
+			default:
+				return invalidOpError(lhs, op, rhs)
 			}
+		default:
+			return invalidOpError(lhs, op, rhs)
 		}
 	case string:
+		rhss, ok := rhs.(string)
+		if !ok {
+			return invalidOpError(lhs, op, rhs)
+		}
 		switch op {
 		case EQ:
-			rhs, ok := rhs.(string)
-			if !ok {
-				return false
-			}
-			return lhs == rhs
+			return lhs == rhss
 		case NEQ:
-			rhs, ok := rhs.(string)
-			if !ok {
-				return false
-			}
-			return lhs != rhs
+			return lhs != rhss
 		case LT:
-			rhs, ok := rhs.(string)
-			if !ok {
-				return false
-			}
-			return lhs < rhs
+			return lhs < rhss
 		case LTE:
-			rhs, ok := rhs.(string)
-			if !ok {
-				return false
-			}
-			return lhs <= rhs
+			return lhs <= rhss
 		case GT:
-			rhs, ok := rhs.(string)
-			if !ok {
-				return false
-			}
-			return lhs > rhs
+			return lhs > rhss
 		case GTE:
-			rhs, ok := rhs.(string)
-			if !ok {
-				return false
-			}
-			return lhs >= rhs
+			return lhs >= rhss
+		default:
+			return invalidOpError(lhs, op, rhs)
 		}
 	case time.Time:
 		rt, err := common.InterfaceToTime(rhs, "")
 		if err != nil {
-			return false
+			return invalidOpError(lhs, op, rhs)
 		}
 		switch op {
 		case EQ:
@@ -1443,16 +1447,18 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 			return lhs.After(rt)
 		case GTE:
 			return lhs.After(rt) || lhs.Equal(rt)
+		default:
+			return invalidOpError(lhs, op, rhs)
 		}
+	default:
+		return invalidOpError(lhs, op, rhs)
 	}
 
-	// The types were not comparable. If our operation was an equality operation,
-	// return false instead of true.
-	switch op {
-	case EQ, NEQ, LT, LTE, GT, GTE:
-		return false
-	}
-	return nil
+	return invalidOpError(lhs, op, rhs)
+}
+
+func invalidOpError(lhs interface{}, op Token, rhs interface{}) error {
+	return fmt.Errorf("invalid operation %T %s %T", lhs, tokens[op], rhs)
 }
 
 func convertNum(para interface{}) interface{} {
