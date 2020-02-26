@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 emqx_ids=`ps aux|grep "emqx" | grep "/usr/bin"|awk '{printf $2 " "}'`
 if [ "$emqx_ids" = "" ] ; then

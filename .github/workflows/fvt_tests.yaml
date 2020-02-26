@@ -47,7 +47,7 @@ jobs:
           run: |
             sudo ./fvt_scripts/setup_env.sh
         - name: run fvt tests
-          timeout-minutes: 5
+          timeout-minutes: 10
           run: ./fvt_scripts/run_jmeter.sh
         - uses: actions/upload-artifact@v1
           with:

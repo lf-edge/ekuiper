@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 ver=`git describe --tags --always`
 os=`uname -s | tr "[A-Z]" "[a-z]"`
