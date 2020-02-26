@@ -39,7 +39,9 @@ jobs:
             sudo dpkg -i emqx.deb
         - uses: actions/checkout@v2
         - name: build kuiper
-          run: make
+          run: |
+            apt update && apt install pkg-config libczmq-dev -y
+            make
         - name: build edgex
           run: |
             go build -o edgex_server fvt_scripts/edgex/vd_server.go
