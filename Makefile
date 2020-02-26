@@ -1,9 +1,6 @@
 BUILD_PATH ?= _build
 PACKAGES_PATH ?= _packages
 
-GO111MODULE ?= 
-GOPROXY ?= https://goproxy.io
-
 CGO_ENABLED ?= 1
 GOOS ?= ""
 GOARCH ?= ""
@@ -40,11 +37,11 @@ build:
 	@cp -r etc/* $(BUILD_PATH)/$(PACKAGE_NAME)/etc
 
 	@if [ ! -z $(GOOS) ] && [ ! -z $(GOARCH) ] && [ $(CGO_ENABLED) == 0 ];then \
-		GO111MODULE=on GOPROXY=https://goproxy.io GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o cli xstream/cli/main.go; \
-		GO111MODULE=on GOPROXY=https://goproxy.io GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o server xstream/server/main.go; \
+		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o cli xstream/cli/main.go; \
+		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o server xstream/server/main.go; \
 	else \
-		GO111MODULE=on GOPROXY=https://goproxy.io CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o cli xstream/cli/main.go; \
-		GO111MODULE=on GOPROXY=https://goproxy.io CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o server xstream/server/main.go; \
+		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o cli xstream/cli/main.go; \
+		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o server xstream/server/main.go; \
 	fi
 	@if [ ! -z $$(which upx) ]; then upx ./cli; upx ./server; fi
 	@mv ./cli ./server $(BUILD_PATH)/$(PACKAGE_NAME)/bin
