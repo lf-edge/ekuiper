@@ -53,7 +53,7 @@ jobs:
           if: always()
           with:
             name: kuiper_logs
-            path: ./_build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-x86_64/log
+            path: ./_build/kuiper-*/log
         - uses: actions/upload-artifact@v1
           with:
             name: jmeter_logs
