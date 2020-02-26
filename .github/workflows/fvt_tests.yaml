@@ -22,10 +22,11 @@ jobs:
             java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
             architecture: x64 # (x64 or x86) - defaults to x64
         - name: set up jmeter
+          timeout-minutes: 10
           env:
             JMETER_VERSION: 5.2.1
           run: |
-            wget -O /tmp/apache-jmeter.tgz http://mirror.bit.edu.cn/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+            wget -O /tmp/apache-jmeter.tgz http://us.mirrors.quenda.co/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
             cd /tmp && tar -xvf apache-jmeter.tgz
             echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
             echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
