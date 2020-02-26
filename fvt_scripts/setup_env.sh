@@ -4,7 +4,7 @@ emqx_ids=`ps aux|grep "emqx" | grep "/usr/bin"|awk '{printf $2 " "}'`
 if [ "$emqx_ids" = "" ] ; then
   echo "No emqx broker was started"
   echo "starting emqx..."
-  systemctl start emqx
+  emqx start
 else
   echo "emqx has already started"
   #for pid in $emqx_ids ; do
