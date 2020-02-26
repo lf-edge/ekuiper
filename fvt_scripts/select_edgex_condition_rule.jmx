@@ -36,7 +36,7 @@
           </elementProp>
           <elementProp name="mqtt_srv" elementType="Argument">
             <stringProp name="Argument.name">mqtt_srv</stringProp>
-            <stringProp name="Argument.value">127.0.0.1</stringProp>
+            <stringProp name="Argument.value">10.211.55.6</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>
@@ -463,6 +463,23 @@
             <boolProp name="INVERT">false</boolProp>
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
+          <hashTree/>
+          <BeanShellAssertion guiclass="BeanShellAssertionGui" testclass="BeanShellAssertion" testname="temperature value assertion" enabled="true">
+            <stringProp name="BeanShellAssertion.query">import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+String response = SampleResult.getResponseDataAsString();
+JSONArray arr = JSONArray.fromObject(response);
+JSONObject json = arr.getJSONObject(0);
+int temp = json.getInt(&quot;temperature&quot;);
+if(temp &lt;= 30) {
+	Failure = true;
+	FailureMessage = &quot;The temperature result should not be less than 30!&quot;;
+}</stringProp>
+            <stringProp name="BeanShellAssertion.filename"></stringProp>
+            <stringProp name="BeanShellAssertion.parameters"></stringProp>
+            <boolProp name="BeanShellAssertion.resetInterpreter">false</boolProp>
+          </BeanShellAssertion>
           <hashTree/>
         </hashTree>
       </hashTree>
