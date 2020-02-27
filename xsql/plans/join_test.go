@@ -2,6 +2,7 @@ package plans
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
@@ -1672,6 +1673,79 @@ func TestCrossJoinPlan_Apply(t *testing.T) {
 					},
 				},
 			},
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestCrossJoinPlan_Apply")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
+	for i, tt := range tests {
+		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+		if err != nil {
+			t.Errorf("statement parse error %s", err)
+			break
+		}
+
+		if table, ok := stmt.Sources[0].(*xsql.Table); !ok {
+			t.Errorf("statement source is not a table")
+		} else {
+			pp := &JoinPlan{Joins: stmt.Joins, From: table}
+			result := pp.Apply(ctx, tt.data)
+			if !reflect.DeepEqual(tt.result, result) {
+				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
+			}
+		}
+	}
+}
+
+func TestCrossJoinPlanError(t *testing.T) {
+	var tests = []struct {
+		sql    string
+		data   interface{}
+		result interface{}
+	}{
+		{
+			sql:    "SELECT id1 FROM src1 cross join src2",
+			data:   errors.New("an error from upstream"),
+			result: errors.New("an error from upstream"),
+		}, {
+			sql: "SELECT id1 FROM src1 full join src2 on src1.id1 = src2.id2",
+			data: xsql.WindowTuplesSet{
+				xsql.WindowTuples{
+					Emitter: "src1",
+					Tuples: []xsql.Tuple{
+						{
+							Emitter: "src1",
+							Message: xsql.Message{"id1": 1, "f1": "v1"},
+						}, {
+							Emitter: "src1",
+							Message: xsql.Message{"id1": 2, "f1": "v2"},
+						}, {
+							Emitter: "src1",
+							Message: xsql.Message{"id1": 3, "f1": "v3"},
+						},
+					},
+				},
+
+				xsql.WindowTuples{
+					Emitter: "src2",
+					Tuples: []xsql.Tuple{
+						{
+							Emitter: "src2",
+							Message: xsql.Message{"id2": 1, "f2": "w1"},
+						}, {
+							Emitter: "src2",
+							Message: xsql.Message{"id2": "3", "f2": "w2"},
+						}, {
+							Emitter: "src2",
+							Message: xsql.Message{"id2": 4, "f2": "w3"},
+						}, {
+							Emitter: "src2",
+							Message: xsql.Message{"id2": 2, "f2": "w4"},
+						},
+					},
+				},
+			},
+			result: errors.New("run Join error: invalid operation int64(1) = string(3)"),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
