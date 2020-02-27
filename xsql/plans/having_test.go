@@ -183,7 +183,7 @@ func TestHavingPlanError(t *testing.T) {
 					},
 				},
 			},
-			result: errors.New("invalid operation int64 > string"),
+			result: errors.New("run Having error: invalid operation int64(2) > string(str)"),
 		}, {
 			sql:    `SELECT id1 FROM src1 HAVING avg(id1) > "str"`,
 			data:   errors.New("an error from upstream"),

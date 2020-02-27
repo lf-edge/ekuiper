@@ -266,7 +266,7 @@ func TestFilterPlanError(t *testing.T) {
 					"b": "astring",
 				},
 			},
-			result: errors.New("invalid operation int64 = string"),
+			result: errors.New("run Where error: invalid operation int64(6) = string(astring)"),
 		},
 		{
 			sql:    "SELECT a FROM tbl WHERE def = ghi",
@@ -307,7 +307,7 @@ func TestFilterPlanError(t *testing.T) {
 					},
 				},
 			},
-			result: errors.New("WindowTuplesSet with multiple tuples cannot be evaluated"),
+			result: errors.New("run Where error: the input WindowTuplesSet with multiple tuples cannot be evaluated"),
 		},
 
 		{
@@ -329,7 +329,7 @@ func TestFilterPlanError(t *testing.T) {
 					},
 				},
 			},
-			result: errors.New("invalid operation int64 = string"),
+			result: errors.New("run Where error: invalid operation int64(3) = string(v8)"),
 		},
 		{
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2 WHERE src1.f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
@@ -352,7 +352,7 @@ func TestFilterPlanError(t *testing.T) {
 					},
 				},
 			},
-			result: errors.New("invalid operation int64 = string"),
+			result: errors.New("run Where error: invalid operation int64(50) = string(v1)"),
 		},
 	}
 

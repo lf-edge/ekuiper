@@ -322,7 +322,7 @@ func TestAggregatePlanError(t *testing.T) {
 					},
 				},
 			},
-			result: errors.New("invalid operation string * int64"),
+			result: errors.New("run Group By error: invalid operation string(v1) * int64(2)"),
 		},
 	}
 

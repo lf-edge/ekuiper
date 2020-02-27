@@ -1466,7 +1466,7 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 }
 
 func invalidOpError(lhs interface{}, op Token, rhs interface{}) error {
-	return fmt.Errorf("invalid operation %T %s %T", lhs, tokens[op], rhs)
+	return fmt.Errorf("invalid operation %[1]T(%[1]v) %s %[3]T(%[3]v)", lhs, tokens[op], rhs)
 }
 
 func convertNum(para interface{}) interface{} {

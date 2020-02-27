@@ -1342,7 +1342,7 @@ func TestProjectPlanError(t *testing.T) {
 					"a": "val_a",
 				},
 			},
-			result: errors.New("invalid operation string * int64"),
+			result: errors.New("run Select error: invalid operation string(val_a) * int64(5)"),
 		}, {
 			sql: `SELECT a[0]->b AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -1351,7 +1351,7 @@ func TestProjectPlanError(t *testing.T) {
 					"a": "common string",
 				},
 			},
-			result: errors.New("invalid operation string  *xsql.BracketEvalResult"),
+			result: errors.New("run Select error: invalid operation string(common string) [] *xsql.BracketEvalResult(&{0 0})"),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

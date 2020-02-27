@@ -30,20 +30,19 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 	case *xsql.Tuple:
 		ve := pp.getVE(input, input)
 		if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
-			return err
+			return fmt.Errorf("run Select error: %s", err)
 		} else {
 			results = append(results, r)
 		}
 	case xsql.WindowTuplesSet:
 		if len(input) != 1 {
-			log.Infof("WindowTuplesSet with multiple tuples cannot be evaluated")
-			return nil
+			return fmt.Errorf("run Select error: the input WindowTuplesSet with multiple tuples cannot be evaluated)")
 		}
 		ms := input[0].Tuples
 		for _, v := range ms {
 			ve := pp.getVE(&v, input)
 			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
-				return err
+				return fmt.Errorf("run Select error: %s", err)
 			} else {
 				results = append(results, r)
 			}
@@ -68,19 +67,19 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 		for _, v := range input {
 			ve := pp.getVE(v[0], v)
 			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
-				return err
+				return fmt.Errorf("run Select error: %s", err)
 			} else {
 				results = append(results, r)
 			}
 		}
 	default:
-		return fmt.Errorf("Expect xsql.Valuer or its array type")
+		return fmt.Errorf("run Select error: invalid input %[1]T(%[1]v)", input)
 	}
 
 	if ret, err := json.Marshal(results); err == nil {
 		return ret
 	} else {
-		return fmt.Errorf("Found error: %v", err)
+		return fmt.Errorf("run Select error: %v", err)
 	}
 }
 

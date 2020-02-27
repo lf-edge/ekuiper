@@ -23,13 +23,13 @@ func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:
-				return val
+				return fmt.Errorf("run Having error: %s", val)
 			case bool:
 				if val {
 					r = append(r, v)
 				}
 			default:
-				return fmt.Errorf("invalid condition that returns non-bool value")
+				return fmt.Errorf("run Having error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
 		}
 		if len(r) > 0 {
@@ -37,7 +37,7 @@ func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 		}
 	case xsql.WindowTuplesSet:
 		if len(input) != 1 {
-			return fmt.Errorf("WindowTuplesSet with multiple tuples cannot be evaluated")
+			return fmt.Errorf("run Having error: input WindowTuplesSet with multiple tuples cannot be evaluated")
 		}
 		ms := input[0].Tuples
 		r := ms[:0]
@@ -47,13 +47,13 @@ func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:
-				return val
+				return fmt.Errorf("run Having error: %s", val)
 			case bool:
 				if val {
 					r = append(r, v)
 				}
 			default:
-				return fmt.Errorf("invalid condition that returns non-bool value")
+				return fmt.Errorf("run Having error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
 		}
 		if len(r) > 0 {
@@ -69,20 +69,20 @@ func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:
-				return val
+				return fmt.Errorf("run Having error: %s", val)
 			case bool:
 				if val {
 					r = append(r, v)
 				}
 			default:
-				return fmt.Errorf("invalid condition that returns non-bool value")
+				return fmt.Errorf("run Having error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
 		}
 		if len(r) > 0 {
 			return r
 		}
 	default:
-		return fmt.Errorf("expect xsql.Valuer or its array type")
+		return fmt.Errorf("run Having error: invalid input %[1]T(%[1]v)", input)
 	}
 	return nil
 }

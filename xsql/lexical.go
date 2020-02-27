@@ -143,7 +143,8 @@ var tokens = []string{
 	GT:  ">",
 	GTE: ">=",
 
-	ARROW: "->",
+	SUBSET: "[]",
+	ARROW:  "->",
 
 	ASTERISK: "*",
 	COMMA:    ",",

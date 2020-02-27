@@ -25,17 +25,17 @@ func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 		result := ve.Eval(p.Condition)
 		switch r := result.(type) {
 		case error:
-			return r
+			return fmt.Errorf("run Where error: %s", r)
 		case bool:
 			if r {
 				return input
 			}
 		default:
-			return fmt.Errorf("invalid condition that returns non-bool value")
+			return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", r)
 		}
 	case xsql.WindowTuplesSet:
 		if len(input) != 1 {
-			return fmt.Errorf("WindowTuplesSet with multiple tuples cannot be evaluated")
+			return fmt.Errorf("run Where error: the input WindowTuplesSet with multiple tuples cannot be evaluated")
 		}
 		ms := input[0].Tuples
 		r := ms[:0]
@@ -44,13 +44,13 @@ func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:
-				return val
+				return fmt.Errorf("run Where error: %s", val)
 			case bool:
 				if val {
 					r = append(r, v)
 				}
 			default:
-				return fmt.Errorf("invalid condition that returns non-bool value")
+				return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
 		}
 		if len(r) > 0 {
@@ -65,20 +65,20 @@ func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:
-				return val
+				return fmt.Errorf("run Where error: %s", val)
 			case bool:
 				if val {
 					r = append(r, v)
 				}
 			default:
-				return fmt.Errorf("invalid condition that returns non-bool value")
+				return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
 		}
 		if len(r) > 0 {
 			return r
 		}
 	default:
-		return fmt.Errorf("Expect xsql.Valuer or its array type.")
+		return fmt.Errorf("run Where error: invalid input %[1]T(%[1]v)", input)
 	}
 	return nil
 }

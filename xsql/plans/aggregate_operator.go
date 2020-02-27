@@ -25,8 +25,7 @@ func (p *AggregatePlan) Apply(ctx api.StreamContext, data interface{}) interface
 		ms = append(ms, input)
 	case xsql.WindowTuplesSet:
 		if len(input) != 1 {
-			log.Infof("WindowTuplesSet with multiple tuples cannot be evaluated")
-			return nil
+			return fmt.Errorf("run Group By error: the input WindowTuplesSet with multiple tuples cannot be evaluated")
 		}
 		ms = make([]xsql.DataValuer, len(input[0].Tuples))
 		for i, m := range input[0].Tuples {
@@ -41,7 +40,7 @@ func (p *AggregatePlan) Apply(ctx api.StreamContext, data interface{}) interface
 			ms[i] = &t
 		}
 	default:
-		return fmt.Errorf("expect xsql.Valuer or its array type.")
+		return fmt.Errorf("run Group By error: invalid input %[1]T(%[1]v)", input)
 	}
 
 	result := make(map[string]xsql.GroupedTuples)
@@ -51,7 +50,7 @@ func (p *AggregatePlan) Apply(ctx api.StreamContext, data interface{}) interface
 		for _, d := range p.Dimensions {
 			r := ve.Eval(d.Expr)
 			if _, ok := r.(error); ok {
-				return r
+				return fmt.Errorf("run Group By error: %s", r)
 			} else {
 				name += fmt.Sprintf("%v,", r)
 			}
