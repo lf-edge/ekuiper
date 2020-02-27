@@ -112,6 +112,15 @@ func createStreams(t *testing.T) {
 	if err != nil {
 		t.Log(err)
 	}
+	demoE := `CREATE STREAM demoE (
+					color STRING,
+					size BIGINT,
+					ts BIGINT
+				) WITH (DATASOURCE="demoE", FORMAT="json", KEY="ts");`
+	_, err = p.ExecStmt(demoE)
+	if err != nil {
+		t.Log(err)
+	}
 	demo1 := `CREATE STREAM demo1 (
 					temp FLOAT,
 					hum BIGINT,
@@ -139,12 +148,58 @@ func dropStreams(t *testing.T) {
 	if err != nil {
 		t.Log(err)
 	}
+	demoE := `DROP STREAM demoE`
+	_, err = p.ExecStmt(demoE)
+	if err != nil {
+		t.Log(err)
+	}
 	demo1 := `DROP STREAM demo1`
 	_, err = p.ExecStmt(demo1)
 	if err != nil {
 		t.Log(err)
 	}
 	sessionDemo := `DROP STREAM sessionDemo`
+	_, err = p.ExecStmt(sessionDemo)
+	if err != nil {
+		t.Log(err)
+	}
+}
+
+func createSchemalessStreams(t *testing.T) {
+	p := NewStreamProcessor(path.Join(DbDir, "stream"))
+	demo := `CREATE STREAM ldemo (					
+				) WITH (DATASOURCE="ldemo", FORMAT="json");`
+	_, err := p.ExecStmt(demo)
+	if err != nil {
+		t.Log(err)
+	}
+	demo1 := `CREATE STREAM ldemo1 (
+				) WITH (DATASOURCE="ldemo1", FORMAT="json");`
+	_, err = p.ExecStmt(demo1)
+	if err != nil {
+		t.Log(err)
+	}
+	sessionDemo := `CREATE STREAM lsessionDemo (
+				) WITH (DATASOURCE="lsessionDemo", FORMAT="json");`
+	_, err = p.ExecStmt(sessionDemo)
+	if err != nil {
+		t.Log(err)
+	}
+}
+
+func dropSchemalessStreams(t *testing.T) {
+	p := NewStreamProcessor(path.Join(DbDir, "stream"))
+	demo := `DROP STREAM ldemo`
+	_, err := p.ExecStmt(demo)
+	if err != nil {
+		t.Log(err)
+	}
+	demo1 := `DROP STREAM ldemo1`
+	_, err = p.ExecStmt(demo1)
+	if err != nil {
+		t.Log(err)
+	}
+	sessionDemo := `DROP STREAM lsessionDemo`
 	_, err = p.ExecStmt(sessionDemo)
 	if err != nil {
 		t.Log(err)
@@ -197,6 +252,54 @@ func getMockSource(name string, done <-chan int, size int) *nodes.SourceNode {
 				Message: map[string]interface{}{
 					"color": "red",
 					"size":  1,
+					"ts":    1541152489252,
+				},
+				Timestamp: 1541152489252,
+			},
+		}
+	case "demoE":
+		data = []*xsql.Tuple{
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"color": 3,
+					"size":  "red",
+					"ts":    1541152486013,
+				},
+				Timestamp: 1541152486013,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"color": "blue",
+					"size":  6,
+					"ts":    "1541152486822",
+				},
+				Timestamp: 1541152486822,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"color": "blue",
+					"size":  2,
+					"ts":    1541152487632,
+				},
+				Timestamp: 1541152487632,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"color": 7,
+					"size":  4,
+					"ts":    1541152488442,
+				},
+				Timestamp: 1541152488442,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"color": "red",
+					"size":  "blue",
 					"ts":    1541152489252,
 				},
 				Timestamp: 1541152489252,
@@ -492,6 +595,49 @@ func TestSingleSQL(t *testing.T) {
 				"op_filter_0_records_in_total":   int64(5),
 				"op_filter_0_records_out_total":  int64(2),
 			},
+		}, {
+			name: `rule4`,
+			sql:  `SELECT size as Int8, ts FROM demoE where size > 3`,
+			r: [][]map[string]interface{}{
+				{{
+					"error": "error in preprocessor: invalid data type for color, expect string but found int(3)",
+				}},
+				{{
+					"Int8": float64(6),
+					"ts":   float64(1541152486822),
+				}},
+				{{
+					"error": "error in preprocessor: invalid data type for color, expect string but found int(7)",
+				}},
+				{{
+					"error": "error in preprocessor: invalid data type for size, expect bigint but found string(blue)",
+				}},
+			},
+			s: "op_filter_0_records_in_total",
+			m: map[string]interface{}{
+				"op_preprocessor_demoE_0_exceptions_total":   int64(3),
+				"op_preprocessor_demoE_0_process_latency_ms": int64(0),
+				"op_preprocessor_demoE_0_records_in_total":   int64(5),
+				"op_preprocessor_demoE_0_records_out_total":  int64(2),
+
+				"op_project_0_exceptions_total":   int64(3),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(4),
+				"op_project_0_records_out_total":  int64(1),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
+
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(5),
+				"source_demoE_0_records_out_total": int64(5),
+
+				"op_filter_0_exceptions_total":   int64(3),
+				"op_filter_0_process_latency_ms": int64(0),
+				"op_filter_0_records_in_total":   int64(5),
+				"op_filter_0_records_out_total":  int64(1),
+			},
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -517,6 +663,372 @@ func TestSingleSQL(t *testing.T) {
 					next := make(chan int)
 					syncs = append(syncs, next)
 					source := getMockSource(stream, next, 5)
+					sources = append(sources, source)
+				}
+			}
+		}
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: map[string]interface{}{
+			"bufferLength": float64(100),
+		}}, sources)
+		if err != nil {
+			t.Error(err)
+		}
+		mockSink := test.NewMockSink()
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
+		tp.AddSink(inputs, sink)
+		errCh := tp.Open()
+		func() {
+			for i := 0; i < 5; i++ {
+				syncs[i%len(syncs)] <- i
+				select {
+				case err = <-errCh:
+					t.Log(err)
+					tp.Cancel()
+					return
+				default:
+				}
+			}
+			for retry := 100; retry > 0; retry-- {
+				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+					break
+				}
+				time.Sleep(time.Duration(retry) * time.Millisecond)
+			}
+		}()
+		results := mockSink.GetResults()
+		var maps [][]map[string]interface{}
+		for _, v := range results {
+			var mapRes []map[string]interface{}
+			err := json.Unmarshal(v, &mapRes)
+			if err != nil {
+				t.Errorf("Failed to parse the input into map")
+				continue
+			}
+			maps = append(maps, mapRes)
+		}
+		if !reflect.DeepEqual(tt.r, maps) {
+			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
+			continue
+		}
+		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
+		}
+		tp.Cancel()
+	}
+}
+
+func getMockSourceL(name string, done <-chan int, size int) *nodes.SourceNode {
+	var data []*xsql.Tuple
+	switch name {
+	case "ldemo":
+		data = []*xsql.Tuple{
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"color": "red",
+					"size":  3,
+					"ts":    1541152486013,
+				},
+				Timestamp: 1541152486013,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"color": "blue",
+					"size":  "string",
+					"ts":    1541152486822,
+				},
+				Timestamp: 1541152486822,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"size": 2,
+					"ts":   1541152487632,
+				},
+				Timestamp: 1541152487632,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"color": 49,
+					"size":  2,
+					"ts":    1541152488442,
+				},
+				Timestamp: 1541152488442,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"color": "red",
+					"ts":    1541152489252,
+				},
+				Timestamp: 1541152489252,
+			},
+		}
+	case "demo1":
+		data = []*xsql.Tuple{
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 25.5,
+					"hum":  65,
+					"ts":   1541152486013,
+				},
+				Timestamp: 1541152486013,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 27.5,
+					"hum":  59,
+					"ts":   1541152486823,
+				},
+				Timestamp: 1541152486823,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 28.1,
+					"hum":  75,
+					"ts":   1541152487632,
+				},
+				Timestamp: 1541152487632,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 27.4,
+					"hum":  80,
+					"ts":   1541152488442,
+				},
+				Timestamp: 1541152488442,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 25.5,
+					"hum":  62,
+					"ts":   1541152489252,
+				},
+				Timestamp: 1541152489252,
+			},
+		}
+	case "sessionDemo":
+		data = []*xsql.Tuple{
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 25.5,
+					"hum":  65,
+					"ts":   1541152486013,
+				},
+				Timestamp: 1541152486013,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 27.5,
+					"hum":  59,
+					"ts":   1541152486823,
+				},
+				Timestamp: 1541152486823,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 28.1,
+					"hum":  75,
+					"ts":   1541152487932,
+				},
+				Timestamp: 1541152487932,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 27.4,
+					"hum":  80,
+					"ts":   1541152488442,
+				},
+				Timestamp: 1541152488442,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 25.5,
+					"hum":  62,
+					"ts":   1541152489252,
+				},
+				Timestamp: 1541152489252,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 26.2,
+					"hum":  63,
+					"ts":   1541152490062,
+				},
+				Timestamp: 1541152490062,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 26.8,
+					"hum":  71,
+					"ts":   1541152490872,
+				},
+				Timestamp: 1541152490872,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 28.9,
+					"hum":  85,
+					"ts":   1541152491682,
+				},
+				Timestamp: 1541152491682,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 29.1,
+					"hum":  92,
+					"ts":   1541152492492,
+				},
+				Timestamp: 1541152492492,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 2.2,
+					"hum":  99,
+					"ts":   1541152493202,
+				},
+				Timestamp: 1541152493202,
+			},
+			{
+				Emitter: name,
+				Message: map[string]interface{}{
+					"temp": 30.9,
+					"hum":  87,
+					"ts":   1541152494112,
+				},
+				Timestamp: 1541152494112,
+			},
+		}
+	}
+	return nodes.NewSourceNodeWithSource(name, test.NewMockSource(data[:size], done, false), map[string]string{
+		"DATASOURCE": name,
+	})
+}
+func TestSingleSQLError(t *testing.T) {
+	var tests = []struct {
+		name string
+		sql  string
+		r    [][]map[string]interface{}
+		s    string
+		m    map[string]interface{}
+	}{
+		{
+			name: `rule1`,
+			sql:  `SELECT color, ts FROM ldemo where size >= 3`,
+			r: [][]map[string]interface{}{
+				{{
+					"color": "red",
+					"ts":    float64(1541152486013),
+				}},
+				{{
+					"error": "invalid operation string >= int64",
+				}},
+			},
+			s: "op_filter_0_records_in_total",
+			m: map[string]interface{}{
+				"op_preprocessor_ldemo_0_exceptions_total":   int64(0),
+				"op_preprocessor_ldemo_0_process_latency_ms": int64(0),
+				"op_preprocessor_ldemo_0_records_in_total":   int64(5),
+				"op_preprocessor_ldemo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(1),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(2),
+				"op_project_0_records_out_total":  int64(1),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
+
+				"source_ldemo_0_exceptions_total":  int64(0),
+				"source_ldemo_0_records_in_total":  int64(5),
+				"source_ldemo_0_records_out_total": int64(5),
+
+				"op_filter_0_exceptions_total":   int64(1),
+				"op_filter_0_process_latency_ms": int64(0),
+				"op_filter_0_records_in_total":   int64(5),
+				"op_filter_0_records_out_total":  int64(1),
+			},
+		}, {
+			name: `rule2`,
+			sql:  `SELECT size * 5 FROM ldemo`,
+			r: [][]map[string]interface{}{
+				{{
+					"rengine_field_0": float64(15),
+				}},
+				{{
+					"error": "invalid operation string * int64",
+				}},
+				{{
+					"rengine_field_0": float64(10),
+				}},
+				{{
+					"rengine_field_0": float64(10),
+				}},
+				{{}},
+			},
+			s: "op_filter_0_records_in_total",
+			m: map[string]interface{}{
+				"op_preprocessor_ldemo_0_exceptions_total":   int64(0),
+				"op_preprocessor_ldemo_0_process_latency_ms": int64(0),
+				"op_preprocessor_ldemo_0_records_in_total":   int64(5),
+				"op_preprocessor_ldemo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(1),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(4),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_ldemo_0_exceptions_total":  int64(0),
+				"source_ldemo_0_records_in_total":  int64(5),
+				"source_ldemo_0_records_out_total": int64(5),
+			},
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	createSchemalessStreams(t)
+	defer dropSchemalessStreams(t)
+	//defer close(done)
+	for i, tt := range tests {
+		test.ResetClock(1541152486000)
+		p := NewRuleProcessor(DbDir)
+		parser := xsql.NewParser(strings.NewReader(tt.sql))
+		var (
+			sources []*nodes.SourceNode
+			syncs   []chan int
+		)
+		if stmt, err := xsql.Language.Parse(parser); err != nil {
+			t.Errorf("parse sql %s error: %s", tt.sql, err)
+		} else {
+			if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
+				t.Errorf("sql %s is not a select statement", tt.sql)
+			} else {
+				streams := xsql.GetStreams(selectStmt)
+				for _, stream := range streams {
+					next := make(chan int)
+					syncs = append(syncs, next)
+					source := getMockSourceL(stream, next, 5)
 					sources = append(sources, source)
 				}
 			}

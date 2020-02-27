@@ -118,7 +118,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"abc": 77, "def" : "hello"}`),
-			result: errors.New("error in preprocessor: invalid data type for def, expect boolean but found hello"),
+			result: errors.New("error in preprocessor: invalid data type for def, expect boolean but found string(hello)"),
 		},
 		{
 			stmt: &xsql.StreamStmt{
@@ -663,7 +663,7 @@ func TestPreprocessorError(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"abc": "dafsad"}`),
-			result: errors.New("error in preprocessor: invalid data type for abc, expect bigint but found dafsad"),
+			result: errors.New("error in preprocessor: invalid data type for abc, expect bigint but found string(dafsad)"),
 		}, {
 			stmt: &xsql.StreamStmt{
 				Name: xsql.StreamName("demo"),
@@ -694,7 +694,7 @@ func TestPreprocessorError(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"abc": "not a time"}`),
-			result: errors.New("error in preprocessor: invalid data type for abc, expect bigint but found not a time"),
+			result: errors.New("error in preprocessor: invalid data type for abc, expect bigint but found string(not a time)"),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

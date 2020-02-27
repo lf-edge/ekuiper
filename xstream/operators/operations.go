@@ -138,8 +138,8 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			case nil:
 				continue
 			case error: //TODO error handling
-				logger.Infoln(val)
-				logger.Infoln(val.Error())
+				logger.Errorln(val)
+				nodes.Broadcast(o.outputs, val, ctx)
 				stats.IncTotalExceptions()
 				continue
 			default:
