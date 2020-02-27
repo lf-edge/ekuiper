@@ -859,7 +859,7 @@ func (a multiValuer) Call(name string, args []interface{}) (interface{}, bool) {
 			if v, ok := valuer.Call(name, args); ok {
 				return v, true
 			} else {
-				common.Log.Println(fmt.Sprintf("Found error \"%s\" when call func %s.\n", v, name))
+				return fmt.Errorf("found error \"%s\" when call func %s", v, name), false
 			}
 		}
 	}
