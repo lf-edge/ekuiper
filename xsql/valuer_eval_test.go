@@ -21,7 +21,7 @@ func TestComparison(t *testing.T) {
 				"b": float64(72),
 			},
 			r: []interface{}{
-				false, true, errors.New("invalid operation float64 = string"),
+				false, true, errors.New("invalid operation float64(32) = string(string literal)"),
 				false, true, false, true,
 			},
 		}, {
@@ -30,7 +30,7 @@ func TestComparison(t *testing.T) {
 				"b": int64(72),
 			},
 			r: []interface{}{
-				false, true, errors.New("invalid operation int64 = string"),
+				false, true, errors.New("invalid operation int64(32) = string(string literal)"),
 				false, true, false, true,
 			},
 		}, {
@@ -39,7 +39,7 @@ func TestComparison(t *testing.T) {
 				"b": "72",
 			},
 			r: []interface{}{
-				errors.New("invalid operation string > int64"), errors.New("invalid operation string <= int64"), false,
+				errors.New("invalid operation string(32) > int64(72)"), errors.New("invalid operation string(32) <= int64(32)"), false,
 				false, true, false, true,
 			},
 		}, {
@@ -66,7 +66,7 @@ func TestComparison(t *testing.T) {
 				"b": int64(55),
 			},
 			r: []interface{}{
-				false, false, errors.New("invalid operation float64 = string"),
+				false, false, errors.New("invalid operation float64(55) = string(string literal)"),
 				true, false, true, false,
 			},
 		}, {
@@ -75,7 +75,7 @@ func TestComparison(t *testing.T) {
 				"b": int64(1541152388442),
 			},
 			r: []interface{}{
-				true, false, errors.New("invalid operation time.Time = string"),
+				true, false, errors.New("invalid operation time.Time(2018-11-02 09:54:48.442 +0000 UTC) = string(string literal)"),
 				true, false, false, true,
 			},
 		}, {
@@ -84,7 +84,7 @@ func TestComparison(t *testing.T) {
 				"b": "2020-02-26T02:37:21.822Z",
 			},
 			r: []interface{}{
-				true, false, errors.New("invalid operation time.Time = string"),
+				true, false, errors.New("invalid operation time.Time(2018-11-02 09:54:48.442 +0000 UTC) = string(string literal)"),
 				false, true, false, true,
 			},
 		}, {
@@ -93,8 +93,8 @@ func TestComparison(t *testing.T) {
 				"b": testTime,
 			},
 			r: []interface{}{
-				true, false, errors.New("invalid operation int64 = string"),
-				errors.New("invalid operation int64 >= time.Time"), errors.New("invalid operation int64 < time.Time"), errors.New("invalid operation int64 = time.Time"), errors.New("invalid operation int64 != time.Time"),
+				true, false, errors.New("invalid operation int64(1541152388442) = string(string literal)"),
+				errors.New("invalid operation int64(1541152388442) >= time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation int64(1541152388442) < time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation int64(1541152388442) = time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation int64(1541152388442) != time.Time(2018-11-02 09:54:48.442 +0000 UTC)"),
 			},
 		}, {
 			m: map[string]interface{}{
@@ -102,8 +102,8 @@ func TestComparison(t *testing.T) {
 				"b": testTime,
 			},
 			r: []interface{}{
-				errors.New("invalid operation string > int64"), errors.New("invalid operation string <= int64"), false,
-				errors.New("invalid operation string >= time.Time"), errors.New("invalid operation string < time.Time"), errors.New("invalid operation string = time.Time"), errors.New("invalid operation string != time.Time"),
+				errors.New("invalid operation string(2020-02-26T02:37:21.822Z) > int64(72)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) <= int64(32)"), false,
+				errors.New("invalid operation string(2020-02-26T02:37:21.822Z) >= time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) < time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) = time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) != time.Time(2018-11-02 09:54:48.442 +0000 UTC)"),
 			},
 		}, {
 			m: map[string]interface{}{
@@ -119,7 +119,7 @@ func TestComparison(t *testing.T) {
 				"c": "nothing",
 			},
 			r: []interface{}{
-				false, true, errors.New("invalid operation int64 = string"),
+				false, true, errors.New("invalid operation int64(12) = string(string literal)"),
 				false, false, false, true,
 			},
 		},
@@ -179,8 +179,8 @@ func TestCalculation(t *testing.T) {
 				"b": "72",
 			},
 			r: []interface{}{
-				errors.New("invalid operation string + string"), errors.New("invalid operation string * int64"),
-				errors.New("invalid operation string / string"), errors.New("invalid operation string % string"),
+				errors.New("invalid operation string(32) + string(72)"), errors.New("invalid operation string(32) * int64(3)"),
+				errors.New("invalid operation string(32) / string(72)"), errors.New("invalid operation string(32) % string(72)"),
 			},
 		}, {
 			m: map[string]interface{}{
