@@ -938,7 +938,10 @@ func TestSingleSQLError(t *testing.T) {
 					"ts":    float64(1541152486013),
 				}},
 				{{
-					"error": "invalid operation string >= int64",
+					"error": "run Where error: invalid operation string(string) >= int64(3)",
+				}},
+				{{
+					"ts": float64(1541152487632),
 				}},
 			},
 			s: "op_filter_0_records_in_total",
@@ -950,12 +953,12 @@ func TestSingleSQLError(t *testing.T) {
 
 				"op_project_0_exceptions_total":   int64(1),
 				"op_project_0_process_latency_ms": int64(0),
-				"op_project_0_records_in_total":   int64(2),
-				"op_project_0_records_out_total":  int64(1),
+				"op_project_0_records_in_total":   int64(3),
+				"op_project_0_records_out_total":  int64(2),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(2),
-				"sink_mockSink_0_records_out_total": int64(2),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
@@ -964,7 +967,7 @@ func TestSingleSQLError(t *testing.T) {
 				"op_filter_0_exceptions_total":   int64(1),
 				"op_filter_0_process_latency_ms": int64(0),
 				"op_filter_0_records_in_total":   int64(5),
-				"op_filter_0_records_out_total":  int64(1),
+				"op_filter_0_records_out_total":  int64(2),
 			},
 		}, {
 			name: `rule2`,
@@ -974,10 +977,10 @@ func TestSingleSQLError(t *testing.T) {
 					"rengine_field_0": float64(15),
 				}},
 				{{
-					"error": "invalid operation string * int64",
+					"error": "run Select error: invalid operation string(string) * int64(5)",
 				}},
 				{{
-					"rengine_field_0": float64(10),
+					"rengine_field_0": float64(15),
 				}},
 				{{
 					"rengine_field_0": float64(10),

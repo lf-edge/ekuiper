@@ -967,7 +967,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 							Message: xsql.Message{"a": 53.1},
 						}, {
 							Emitter: "src1",
-							Message: xsql.Message{"b": 27.4},
+							Message: xsql.Message{"a": 27.4},
 						}, {
 							Emitter: "src1",
 							Message: xsql.Message{"a": 123123.7},
@@ -977,7 +977,9 @@ func TestProjectPlan_Funcs(t *testing.T) {
 			},
 			result: []map[string]interface{}{{
 				"r": float64(53),
-			}, {}, {
+			}, {
+				"r": float64(27),
+			}, {
 				"r": float64(123124),
 			}},
 		}, {
@@ -1066,7 +1068,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
 			}
 		} else {
-			t.Errorf("The returned result is not type of []byte\n")
+			t.Errorf("%d. The returned result is not type of []byte\n", i)
 		}
 	}
 }

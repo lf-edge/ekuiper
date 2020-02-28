@@ -19,7 +19,7 @@ func (jp *JoinPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	var input xsql.WindowTuplesSet
 	switch v := data.(type) {
 	case error:
-		return input
+		return v
 	case xsql.WindowTuplesSet:
 		input = v
 		log.Debugf("join plan receive %v", data)
