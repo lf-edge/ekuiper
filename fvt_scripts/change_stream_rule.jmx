@@ -24,16 +24,6 @@
             <stringProp name="Argument.value">9081</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
-          <elementProp name="k_home" elementType="Argument">
-            <stringProp name="Argument.name">k_home</stringProp>
-            <stringProp name="Argument.value">${__property(base,,)}</stringProp>
-            <stringProp name="Argument.metadata">=</stringProp>
-          </elementProp>
-          <elementProp name="fvt" elementType="Argument">
-            <stringProp name="Argument.name">fvt</stringProp>
-            <stringProp name="Argument.value">${__property(fvt,,)}</stringProp>
-            <stringProp name="Argument.metadata">=</stringProp>
-          </elementProp>
           <elementProp name="mqtt_srv" elementType="Argument">
             <stringProp name="Argument.name">mqtt_srv</stringProp>
             <stringProp name="Argument.value">127.0.0.1</stringProp>
