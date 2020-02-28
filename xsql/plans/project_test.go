@@ -31,6 +31,16 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			}},
 		},
 		{
+			sql: "SELECT b FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": "val_a",
+				},
+			},
+			result: []map[string]interface{}{{}},
+		},
+		{
 			sql: "SELECT ts FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",

@@ -1820,6 +1820,49 @@ func TestWindowError(t *testing.T) {
 			//		"op_order_0_records_in_total":   int64(5),
 			//		"op_order_0_records_out_total":  int64(5),
 			//	},
+		}, {
+			name: `rule5`,
+			sql:  `SELECT color, size FROM ldemo GROUP BY tumblingwindow(ss, 1) ORDER BY size`,
+			size: 5,
+			r: [][]map[string]interface{}{
+				{{
+					"error": "run Order By error: incompatible types for comparison: int and string",
+				}}, {{
+					"size": float64(3),
+				}}, {{
+					"color": float64(49),
+					"size":  float64(2),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_ldemo_0_exceptions_total":   int64(0),
+				"op_preprocessor_ldemo_0_process_latency_ms": int64(0),
+				"op_preprocessor_ldemo_0_records_in_total":   int64(5),
+				"op_preprocessor_ldemo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(1),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(3),
+				"op_project_0_records_out_total":  int64(2),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+
+				"source_ldemo_0_exceptions_total":  int64(0),
+				"source_ldemo_0_records_in_total":  int64(5),
+				"source_ldemo_0_records_out_total": int64(5),
+
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(5),
+				"op_window_0_records_out_total":  int64(3),
+
+				"op_order_0_exceptions_total":   int64(1),
+				"op_order_0_process_latency_ms": int64(0),
+				"op_order_0_records_in_total":   int64(3),
+				"op_order_0_records_out_total":  int64(2),
+			},
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

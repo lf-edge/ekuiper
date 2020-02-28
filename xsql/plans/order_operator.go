@@ -24,9 +24,11 @@ func (p *OrderPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	case xsql.Valuer:
 		return input
 	case xsql.SortingData:
-		sorter.Sort(input)
+		if err := sorter.Sort(input); err != nil {
+			return fmt.Errorf("run Order By error: %s", err)
+		}
 		return input
 	default:
-		return fmt.Errorf("Expect xsql.Valuer or its array type.")
+		return fmt.Errorf("run Order By error: expect xsql.Valuer or its array type")
 	}
 }

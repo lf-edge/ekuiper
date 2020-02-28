@@ -769,6 +769,7 @@ type SortingData interface {
 type MultiSorter struct {
 	SortingData
 	fields SortFields
+	values []map[string]interface{}
 }
 
 // OrderedBy returns a Sorter that sorts using the less functions, in order.
@@ -786,31 +787,104 @@ func OrderedBy(fields SortFields) *MultiSorter {
 // -1, 0, 1 and reduce the number of calls for greater efficiency: an
 // exercise for the reader.
 func (ms *MultiSorter) Less(i, j int) bool {
-	p, q := ms.SortingData.Index(i), ms.SortingData.Index(j)
-	vep, veq := &ValuerEval{Valuer: MultiValuer(p, &FunctionValuer{})}, &ValuerEval{Valuer: MultiValuer(q, &FunctionValuer{})}
+	p, q := ms.values[i], ms.values[j]
+	v := &ValuerEval{Valuer: MultiValuer(&FunctionValuer{})}
 	for _, field := range ms.fields {
-		vp, ok := vep.Valuer.Value(field.Name)
-		if !ok {
-			return !field.Ascending
-		}
-		vq, ok := veq.Valuer.Value(field.Name)
-		if !ok {
-			return !field.Ascending
+		n := field.Name
+		vp, _ := p[n]
+		vq, _ := q[n]
+		if vp == nil && vq != nil {
+			return false
+		} else if vp != nil && vq == nil {
+			ms.valueSwap(true, i, j)
+			return true
+		} else if vp == nil && vq == nil {
+			return false
 		}
 		switch {
-		case vep.simpleDataEval(vp, vq, LT):
+		case v.simpleDataEval(vp, vq, LT):
+			ms.valueSwap(field.Ascending, i, j)
 			return field.Ascending
-		case veq.simpleDataEval(vq, vp, LT):
+		case v.simpleDataEval(vq, vp, LT):
+			ms.valueSwap(!field.Ascending, i, j)
 			return !field.Ascending
 		}
 	}
 	return false
 }
 
+func (ms *MultiSorter) valueSwap(s bool, i, j int) {
+	if s {
+		ms.values[i], ms.values[j] = ms.values[j], ms.values[i]
+	}
+}
+
 // Sort sorts the argument slice according to the less functions passed to OrderedBy.
-func (ms *MultiSorter) Sort(data SortingData) {
+func (ms *MultiSorter) Sort(data SortingData) error {
 	ms.SortingData = data
+	types := make([]string, len(ms.fields))
+	ms.values = make([]map[string]interface{}, data.Len())
+	//load and validate data
+	for i := 0; i < data.Len(); i++ {
+		ms.values[i] = make(map[string]interface{})
+		p := data.Index(i)
+		vep := &ValuerEval{Valuer: MultiValuer(p, &FunctionValuer{})}
+		for j, field := range ms.fields {
+			n := field.Name
+			vp, _ := vep.Valuer.Value(n)
+			if err, ok := vp.(error); ok {
+				return err
+			} else {
+				if types[j] == "" && vp != nil {
+					types[j] = fmt.Sprintf("%T", vp)
+				}
+				if err := validate(types[j], vp); err != nil {
+					return err
+				} else {
+					ms.values[i][n] = vp
+				}
+			}
+		}
+	}
 	sort.Sort(ms)
+	return nil
+}
+
+func validate(t string, v interface{}) error {
+	if v == nil || t == "" {
+		return nil
+	}
+	vt := fmt.Sprintf("%T", v)
+	switch t {
+	case "int", "int64", "float64", "uint64":
+		if vt == "int" || vt == "int64" || vt == "float64" || vt == "uint64" {
+			return nil
+		} else {
+			return fmt.Errorf("incompatible types for comparison: %s and %s", t, vt)
+		}
+	case "bool":
+		if vt == "bool" {
+			return nil
+		} else {
+			return fmt.Errorf("incompatible types for comparison: %s and %s", t, vt)
+		}
+	case "string":
+		if vt == "string" {
+			return nil
+		} else {
+			return fmt.Errorf("incompatible types for comparison: %s and %s", t, vt)
+		}
+	case "time.Time":
+		_, err := common.InterfaceToTime(v, "")
+		if err != nil {
+			return fmt.Errorf("incompatible types for comparison: %s and %s", t, vt)
+		} else {
+			return nil
+		}
+	default:
+		return fmt.Errorf("incompatible types for comparison: %s and %s", t, vt)
+	}
+	return nil
 }
 
 type EvalResultMessage struct {
