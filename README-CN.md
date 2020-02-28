@@ -49,9 +49,59 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 
   提供了与 EMQ X Edge 的无缝集成，实现在边缘端从消息接入到数据分析端到端的场景实现能力
 
+## 快速入门
+
+1. 从 ``https://hub.docker.com/r/emqx/kuiper/tags`` 拉一个 Kuiper 的 docker 镜像。
+
+2. 设置 Kuiper 源为一个 MQTT 服务器。本例使用位于 ``tcp://broker.emqx.io:1883`` 的 MQTT 服务器， ``broker.emqx.io`` 是一个由 [EMQ](https://www.emqx.io) 提供的公有MQTT 服务器。
+
+   ```shell
+   docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=tcp://broker.emqx.io:1883 emqx/kuiper:$tag
+   ```
+
+3. 创建流（stream）- 流式数据的结构定义，类似于数据库中的表格类型定义。比如说要发送温度与湿度的数据到 ``broker.emqx.io``，这些数据将会被在**本地运行的** Kuiper docker 实例中处理。以下的步骤将创建一个名字为 ``demo``的流，并且数据将会被发送至 ``devices/device_001/messages`` 主题，这里的 ``device_001`` 可以是别的设备，比如 ``device_002``，所有的这些数据会被 ``demo`` 流订阅并处理。
+
+   ```shell
+   -- In host
+   # docker exec -it kuiper /bin/sh
+   
+   -- In docker instance
+   # bin/cli create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="devices/+/messages")'
+   Connecting to 127.0.0.1:20498...
+   Stream demo is created.
+   
+   # bin/cli query
+   Connecting to 127.0.0.1:20498...
+   kuiper > select * from demo where temperature > 30;
+   Query was submit successfully.
+   
+   ```
+
+4. 您可以使用任何[ MQTT 客户端工具](https://www.emqx.io/cn/blog/mqtt-client-tools)来发布传感器数据到服务器 ``tcp://broker.emqx.io:1883``的主题 ``devices/device_001/messages`` 。以下例子使用 ``mosquitto_pub``。
+
+   ```shell
+   # mosquitto_pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages
+   ```
+
+5. 如果一切顺利的话，您可以看到消息打印在容器的 ``bin/cli query`` 窗口里，请试着发布另外一条``温度``小于30的数据，该数据将会被 SQL 规则过滤掉。
+
+   ```shell
+   kuiper > select * from demo WHERE temperature > 30;
+   [{"temperature": 40, "humidity" : 20}]
+   ```
+
+   如有任何问题，请查看日志文件 ``log/stream.log``。
+
+6. 如果想停止测试，在``bin/cli query``命令行窗口中敲 ``ctrl + c `` ，或者输入 ``exit`` 后回车
+
+7. 想了解更多 EMQ X Kuiper 的功能？请参考以下关于在边缘端使用 EMQ X Kuiper 与 AWS / Azure IoT 云集成的案例。
+
+   - [轻量级边缘计算 EMQ X Kuiper 与 AWS IoT 集成方案](https://www.jianshu.com/p/7c0218fd1ee2)
+   - [轻量级边缘计算 EMQ X Kuiper 与 Azure IoT Hub 集成方案](https://www.jianshu.com/p/49b06751355f) 
+
 ## 性能测试结果
 
-### 测试场景
+### 吞吐量测试支持
 
 - 使用 JMeter MQTT 插件来发送数据到 EMQ X 服务器，消息类似于 ``{"temperature": 10, "humidity" : 90}``， 温度与湿度的值是介于 0 ～ 100 之间的随机整数值
 - Kuiper 从 EMQ X 服务器订阅消息，并且通过 SQL 分析数据： ``SELECT * FROM demo WHERE temperature > 50 `` 
@@ -61,6 +111,21 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 | ---------------------------------------------------- | -------------- | --------------- | ---- |
 | 树莓派 3B+                                           | 12k            | sys + user: 70% | 20M  |
 | AWS t2.micro (x86: 1 Core * 1 GB) <br />Ubuntu 18.04 | 10k            | sys + user: 25% | 20M  |
+
+### 最大规则数支持
+
+- 8000 条规则，吞吐量为 800 条消息/秒
+- 配置
+  - AWS 2 核 * 4GB 内存 
+  - Ubuntu
+- 资源消耗
+  - 内存: 89% ~ 72%
+  - CPU: 25%
+  - 400KB - 500KB / 规则
+- 规则
+  - 源: MQTT
+  - SQL: SELECT temperature FROM source WHERE temperature > 20 (90% 数据被过滤) 
+  - 目标: 日志
 
 ## 文档
 
