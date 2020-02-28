@@ -13,8 +13,8 @@ import (
 
 func TestHashFunc_Apply1(t *testing.T) {
 	var tests = []struct {
-		sql  string
-		data *xsql.Tuple
+		sql    string
+		data   *xsql.Tuple
 		result []map[string]interface{}
 	}{
 		{
@@ -22,9 +22,9 @@ func TestHashFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "The quick brown fox jumps over the lazy dog",
-					"b" : "myb",
-					"c" : "myc",
+					"a": "The quick brown fox jumps over the lazy dog",
+					"b": "myb",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -36,9 +36,9 @@ func TestHashFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "The quick brown fox jumps over the lazy dog",
-					"b" : "myb",
-					"c" : "myc",
+					"a": "The quick brown fox jumps over the lazy dog",
+					"b": "myb",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -50,9 +50,9 @@ func TestHashFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "The quick brown fox jumps over the lazy dog",
-					"b" : "myb",
-					"c" : "myc",
+					"a": "The quick brown fox jumps over the lazy dog",
+					"b": "myb",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -64,9 +64,9 @@ func TestHashFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "The quick brown fox jumps over the lazy dog",
-					"b" : "myb",
-					"c" : "myc",
+					"a": "The quick brown fox jumps over the lazy dog",
+					"b": "myb",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -78,9 +78,9 @@ func TestHashFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a" : "The quick brown fox jumps over the lazy dog",
-					"b" : "myb",
-					"c" : "myc",
+					"a": "The quick brown fox jumps over the lazy dog",
+					"b": "myb",
+					"c": "myc",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -93,7 +93,7 @@ func TestHashFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					xsql.INTERNAL_MQTT_TOPIC_KEY : "devices/device_001/message",
+					xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/device_001/message",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -106,7 +106,7 @@ func TestHashFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					xsql.INTERNAL_MQTT_TOPIC_KEY : "devices/device_001/message",
+					xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/device_001/message",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -119,16 +119,15 @@ func TestHashFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"topic" : "fff",
-					xsql.INTERNAL_MQTT_TOPIC_KEY : "devices/device_001/message",
+					"topic":                      "fff",
+					xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/device_001/message",
 				},
 			},
 			result: []map[string]interface{}{{
 				"topic": "fff",
-				"a": "devices/device_001/message",
+				"a":     "devices/device_001/message",
 			}},
 		},
-
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -139,7 +138,7 @@ func TestHashFunc_Apply1(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectPlan{Fields:stmt.Fields}
+		pp := &ProjectPlan{Fields: stmt.Fields}
 		pp.isTest = true
 		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
@@ -161,8 +160,8 @@ func TestHashFunc_Apply1(t *testing.T) {
 }
 func TestMqttFunc_Apply2(t *testing.T) {
 	var tests = []struct {
-		sql  string
-		data xsql.JoinTupleSets
+		sql    string
+		data   xsql.JoinTupleSets
 		result []map[string]interface{}
 	}{
 		{
@@ -170,15 +169,15 @@ func TestMqttFunc_Apply2(t *testing.T) {
 			data: xsql.JoinTupleSets{
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : "1", "f1" : "v1" , xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type1/device001"},},
-						{Emitter: "src2", Message: xsql.Message{ "id2" : "1", "f2" : "w1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type2/device001" },},
+						{Emitter: "src1", Message: xsql.Message{"id1": "1", "f1": "v1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type1/device001"}},
+						{Emitter: "src2", Message: xsql.Message{"id2": "1", "f2": "w1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type2/device001"}},
 					},
 				},
 			},
 			result: []map[string]interface{}{{
 				"id1": "1",
-				"a": "devices/type1/device001",
-				"b": "devices/type2/device001",
+				"a":   "devices/type1/device001",
+				"b":   "devices/type2/device001",
 			}},
 		},
 	}
@@ -191,7 +190,7 @@ func TestMqttFunc_Apply2(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectPlan{Fields:stmt.Fields}
+		pp := &ProjectPlan{Fields: stmt.Fields}
 		pp.isTest = true
 		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}

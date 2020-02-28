@@ -15,8 +15,8 @@ func (*FunctionValuer) Value(key string) (interface{}, bool) {
 
 var aggFuncMap = map[string]string{"avg": "",
 	"count": "",
-	"max": "", "min": "",
-	"sum":  "",
+	"max":   "", "min": "",
+	"sum": "",
 }
 
 var mathFuncMap = map[string]string{"abs": "", "acos": "", "asin": "", "atan": "", "atan2": "",
@@ -32,10 +32,10 @@ var mathFuncMap = map[string]string{"abs": "", "acos": "", "asin": "", "atan": "
 }
 
 var strFuncMap = map[string]string{"concat": "",
-	"endswith": "",
+	"endswith":    "",
 	"format_time": "",
-	"indexof":  "",
-	"length":   "", "lower": "", "lpad": "", "ltrim": "",
+	"indexof":     "",
+	"length":      "", "lower": "", "lpad": "", "ltrim": "",
 	"numbytes":       "",
 	"regexp_matches": "", "regexp_replace": "", "regexp_substr": "", "rpad": "", "rtrim": "",
 	"substring": "", "startswith": "", "split_value": "",
@@ -48,7 +48,7 @@ var convFuncMap = map[string]string{"concat": "", "cast": "", "chr": "",
 	"trunc":  "",
 }
 
-var hashFuncMap = map[string]string{ "md5": "",
+var hashFuncMap = map[string]string{"md5": "",
 	"sha1": "", "sha256": "", "sha384": "", "sha512": "",
 }
 
@@ -68,18 +68,18 @@ func (*FunctionValuer) Call(name string, args []interface{}) (interface{}, bool)
 		return hashCall(lowerName, args)
 	} else if _, ok := otherFuncMap[lowerName]; ok {
 		return otherCall(lowerName, args)
-	} else if _, ok :=  aggFuncMap[lowerName]; ok {
+	} else if _, ok := aggFuncMap[lowerName]; ok {
 		return nil, false
 	} else {
 		common.Log.Debugf("run func %s", name)
 		if nf, err := plugin_manager.GetPlugin(name, "functions"); err != nil {
 			return nil, false
-		}else{
+		} else {
 			f, ok := nf.(api.Function)
 			if !ok {
 				return nil, false
 			}
-			if f.IsAggregate(){
+			if f.IsAggregate() {
 				return nil, false
 			}
 			result, ok := f.Exec(args)

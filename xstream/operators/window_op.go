@@ -2,6 +2,7 @@ package operators
 
 import (
 	"fmt"
+	"github.com/benbjohnson/clock"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
@@ -20,12 +21,12 @@ type WindowOperator struct {
 	input              chan interface{}
 	outputs            map[string]chan<- interface{}
 	name               string
-	ticker             common.Ticker //For processing time only
+	ticker             *clock.Ticker //For processing time only
 	window             *WindowConfig
 	interval           int
 	triggerTime        int64
 	isEventTime        bool
-	statManager        *nodes.StatManager
+	statManager        nodes.StatManager
 	watermarkGenerator *WatermarkGenerator //For event time only
 }
 
@@ -122,12 +123,12 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 	var (
 		inputs        []*xsql.Tuple
 		c             <-chan time.Time
-		timeoutTicker common.Timer
+		timeoutTicker *clock.Timer
 		timeout       <-chan time.Time
 	)
 
 	if o.ticker != nil {
-		c = o.ticker.GetC()
+		c = o.ticker.C
 	}
 
 	for {
@@ -158,7 +159,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 						timeoutTicker.Reset(time.Duration(o.window.Interval) * time.Millisecond)
 					} else {
 						timeoutTicker = common.GetTimer(o.window.Interval)
-						timeout = timeoutTicker.GetC()
+						timeout = timeoutTicker.C
 					}
 				}
 			}
@@ -204,7 +205,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 
 func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, bool) {
 	log := ctx.GetLogger()
-	log.Debugf("window %s triggered at %s", o.name, time.Unix(triggerTime/1000, triggerTime%1000))
+	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
 	var delta int64
 	if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
 		delta = o.calDelta(triggerTime, delta, log)

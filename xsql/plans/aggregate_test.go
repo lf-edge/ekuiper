@@ -12,8 +12,8 @@ import (
 
 func TestAggregatePlan_Apply(t *testing.T) {
 	var tests = []struct {
-		sql  string
-		data interface{}
+		sql    string
+		data   interface{}
 		result xsql.GroupedTuplesSet
 	}{
 		{
@@ -21,8 +21,8 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "tbl",
 				Message: xsql.Message{
-					"abc" : int64(6),
-					"def" : "hello",
+					"abc": int64(6),
+					"def": "hello",
 				},
 			},
 			result: xsql.GroupedTuplesSet{
@@ -30,30 +30,29 @@ func TestAggregatePlan_Apply(t *testing.T) {
 					&xsql.Tuple{
 						Emitter: "tbl",
 						Message: xsql.Message{
-							"abc" : int64(6),
-							"def" : "hello",
+							"abc": int64(6),
+							"def": "hello",
 						},
 					},
 				},
 			},
 		},
 
-
 		{
 			sql: "SELECT abc FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10), f1",
 			data: xsql.WindowTuplesSet{
 				xsql.WindowTuples{
-					Emitter:"src1",
-					Tuples:[]xsql.Tuple{
+					Emitter: "src1",
+					Tuples: []xsql.Tuple{
 						{
 							Emitter: "src1",
-							Message: xsql.Message{ "id1" : 1, "f1" : "v1", },
-						},{
+							Message: xsql.Message{"id1": 1, "f1": "v1"},
+						}, {
 							Emitter: "src1",
-							Message: xsql.Message{ "id1" : 2, "f1" : "v2", },
-						},{
+							Message: xsql.Message{"id1": 2, "f1": "v2"},
+						}, {
 							Emitter: "src1",
-							Message: xsql.Message{ "id1" : 3, "f1" : "v1", },
+							Message: xsql.Message{"id1": 3, "f1": "v1"},
 						},
 					},
 				},
@@ -62,17 +61,17 @@ func TestAggregatePlan_Apply(t *testing.T) {
 				{
 					&xsql.Tuple{
 						Emitter: "src1",
-						Message: xsql.Message{ "id1" : 1, "f1" : "v1", },
+						Message: xsql.Message{"id1": 1, "f1": "v1"},
 					},
 					&xsql.Tuple{
 						Emitter: "src1",
-						Message: xsql.Message{ "id1" : 3, "f1" : "v1", },
+						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
 				{
 					&xsql.Tuple{
 						Emitter: "src1",
-						Message: xsql.Message{ "id1" : 2, "f1" : "v2", },
+						Message: xsql.Message{"id1": 2, "f1": "v2"},
 					},
 				},
 			},
@@ -81,17 +80,17 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			sql: "SELECT abc FROM src1 GROUP BY id1, TUMBLINGWINDOW(ss, 10), f1",
 			data: xsql.WindowTuplesSet{
 				xsql.WindowTuples{
-					Emitter:"src1",
-					Tuples:[]xsql.Tuple{
+					Emitter: "src1",
+					Tuples: []xsql.Tuple{
 						{
 							Emitter: "src1",
-							Message: xsql.Message{ "id1" : 1, "f1" : "v1", },
-						},{
+							Message: xsql.Message{"id1": 1, "f1": "v1"},
+						}, {
 							Emitter: "src1",
-							Message: xsql.Message{ "id1" : 2, "f1" : "v2", },
-						},{
+							Message: xsql.Message{"id1": 2, "f1": "v2"},
+						}, {
 							Emitter: "src1",
-							Message: xsql.Message{ "id1" : 3, "f1" : "v1", },
+							Message: xsql.Message{"id1": 3, "f1": "v1"},
 						},
 					},
 				},
@@ -100,19 +99,19 @@ func TestAggregatePlan_Apply(t *testing.T) {
 				{
 					&xsql.Tuple{
 						Emitter: "src1",
-						Message: xsql.Message{ "id1" : 1, "f1" : "v1", },
+						Message: xsql.Message{"id1": 1, "f1": "v1"},
 					},
 				},
 				{
 					&xsql.Tuple{
 						Emitter: "src1",
-						Message: xsql.Message{ "id1" : 2, "f1" : "v2", },
+						Message: xsql.Message{"id1": 2, "f1": "v2"},
 					},
 				},
 				{
 					&xsql.Tuple{
 						Emitter: "src1",
-						Message: xsql.Message{ "id1" : 3, "f1" : "v1", },
+						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
 			},
@@ -123,19 +122,19 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			data: xsql.JoinTupleSets{
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1",},},
-						{Emitter: "src2", Message: xsql.Message{ "id2" : 2, "f2" : "w2",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
+						{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 					},
 				},
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 2, "f1" : "v2",},},
-						{Emitter: "src2", Message: xsql.Message{ "id2" : 4, "f2" : "w3",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
+						{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 					},
 				},
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 3, "f1" : "v1",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 					},
 				},
 			},
@@ -143,23 +142,23 @@ func TestAggregatePlan_Apply(t *testing.T) {
 				{
 					&xsql.JoinTuple{
 						Tuples: []xsql.Tuple{
-							{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1",},},
-							{Emitter: "src2", Message: xsql.Message{ "id2" : 2, "f2" : "w2",},},
+							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 						},
 					},
 				},
 				{
 					&xsql.JoinTuple{
 						Tuples: []xsql.Tuple{
-							{Emitter: "src1", Message: xsql.Message{ "id1" : 2, "f1" : "v2",},},
-							{Emitter: "src2", Message: xsql.Message{ "id2" : 4, "f2" : "w3",},},
+							{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 						},
 					},
 				},
 				{
 					&xsql.JoinTuple{
 						Tuples: []xsql.Tuple{
-							{Emitter: "src1", Message: xsql.Message{ "id1" : 3, "f1" : "v1",},},
+							{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 						},
 					},
 				},
@@ -170,19 +169,19 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			data: xsql.JoinTupleSets{
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1",},},
-						{Emitter: "src2", Message: xsql.Message{ "id2" : 2, "f2" : "w2",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
+						{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 					},
 				},
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 2, "f1" : "v2",},},
-						{Emitter: "src2", Message: xsql.Message{ "id2" : 4, "f2" : "w3",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
+						{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 					},
 				},
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 3, "f1" : "v1",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 					},
 				},
 			},
@@ -190,21 +189,21 @@ func TestAggregatePlan_Apply(t *testing.T) {
 				{
 					&xsql.JoinTuple{
 						Tuples: []xsql.Tuple{
-							{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1",},},
-							{Emitter: "src2", Message: xsql.Message{ "id2" : 2, "f2" : "w2",},},
+							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 						},
 					},
 					&xsql.JoinTuple{
 						Tuples: []xsql.Tuple{
-							{Emitter: "src1", Message: xsql.Message{ "id1" : 3, "f1" : "v1",},},
+							{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 						},
 					},
 				},
 				{
 					&xsql.JoinTuple{
 						Tuples: []xsql.Tuple{
-							{Emitter: "src1", Message: xsql.Message{ "id1" : 2, "f1" : "v2",},},
-							{Emitter: "src2", Message: xsql.Message{ "id2" : 4, "f2" : "w3",},},
+							{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 						},
 					},
 				},
@@ -215,19 +214,19 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			data: xsql.JoinTupleSets{
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1", "ts": common.TimeFromUnixMilli(1568854515000),},},
-						{Emitter: "src2", Message: xsql.Message{ "id2" : 2, "f2" : "w2",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1", "ts": common.TimeFromUnixMilli(1568854515000)}},
+						{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 					},
 				},
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 2, "f1" : "v2","ts": common.TimeFromUnixMilli(1568854573431),},},
-						{Emitter: "src2", Message: xsql.Message{ "id2" : 4, "f2" : "w3",},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2", "ts": common.TimeFromUnixMilli(1568854573431)}},
+						{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 					},
 				},
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{ "id1" : 3, "f1" : "v1","ts": common.TimeFromUnixMilli(1568854515000),},},
+						{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1", "ts": common.TimeFromUnixMilli(1568854515000)}},
 					},
 				},
 			},
@@ -235,21 +234,21 @@ func TestAggregatePlan_Apply(t *testing.T) {
 				{
 					&xsql.JoinTuple{
 						Tuples: []xsql.Tuple{
-							{Emitter: "src1", Message: xsql.Message{ "id1" : 1, "f1" : "v1", "ts": common.TimeFromUnixMilli(1568854515000),},},
-							{Emitter: "src2", Message: xsql.Message{ "id2" : 2, "f2" : "w2",},},
+							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1", "ts": common.TimeFromUnixMilli(1568854515000)}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 						},
 					},
 					&xsql.JoinTuple{
 						Tuples: []xsql.Tuple{
-							{Emitter: "src1", Message: xsql.Message{ "id1" : 3, "f1" : "v1", "ts": common.TimeFromUnixMilli(1568854515000),},},
+							{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1", "ts": common.TimeFromUnixMilli(1568854515000)}},
 						},
 					},
 				},
 				{
 					&xsql.JoinTuple{
 						Tuples: []xsql.Tuple{
-							{Emitter: "src1", Message: xsql.Message{ "id1" : 2, "f1" : "v2","ts": common.TimeFromUnixMilli(1568854573431),},},
-							{Emitter: "src2", Message: xsql.Message{ "id2" : 4, "f2" : "w3",},},
+							{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2", "ts": common.TimeFromUnixMilli(1568854573431)}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 						},
 					},
 				},
@@ -267,7 +266,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			break
 		}
 
-		pp := &AggregatePlan{Dimensions:stmt.Dimensions.GetGroups()}
+		pp := &AggregatePlan{Dimensions: stmt.Dimensions.GetGroups()}
 		result := pp.Apply(ctx, tt.data)
 		gr, ok := result.(xsql.GroupedTuplesSet)
 		if !ok {
@@ -277,14 +276,14 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, gr)
 		}
 
-		for _, r := range tt.result{
+		for _, r := range tt.result {
 			matched := false
-			for _, gre := range gr{
-				if reflect.DeepEqual(r, gre){
+			for _, gre := range gr {
+				if reflect.DeepEqual(r, gre) {
 					matched = true
 				}
 			}
-			if !matched{
+			if !matched {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, r)
 			}
 		}

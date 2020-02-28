@@ -1,10 +1,9 @@
 package main
 
 import (
-	"github.com/emqx/kuiper/xsql"
 	"fmt"
+	"github.com/emqx/kuiper/xsql"
 	"strings"
-
 )
 
 func main() {
@@ -12,7 +11,7 @@ func main() {
 
 	var srcs []string
 	xsql.WalkFunc(stmt.Joins, func(node xsql.Node) {
-		if f,ok := node.(*xsql.FieldRef); ok {
+		if f, ok := node.(*xsql.FieldRef); ok {
 			if string(f.StreamName) == "" {
 				return
 			}

@@ -70,13 +70,13 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 	return nil
 }
 
-func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc, onError api.ErrorFunc) {
+func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	log := ctx.GetLogger()
 
 	opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(ms.pVersion)
 	if ms.clientid == "" {
 		if uuid, err := uuid.NewUUID(); err != nil {
-			onError(fmt.Errorf("failed to get uuid, the error is %s", err))
+			errCh <- fmt.Errorf("failed to get uuid, the error is %s", err)
 		} else {
 			ms.clientid = uuid.String()
 			opts.SetClientID(uuid.String())
@@ -92,15 +92,15 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc, onErr
 			if kp, err1 := common.ProcessPath(ms.pkeyPath); err1 == nil {
 				log.Infof("The private key file is %s.", kp)
 				if cer, err2 := tls.LoadX509KeyPair(cp, kp); err2 != nil {
-					onError(err2)
+					errCh <- err2
 				} else {
 					opts.SetTLSConfig(&tls.Config{Certificates: []tls.Certificate{cer}})
 				}
 			} else {
-				onError(err1)
+				errCh <- err1
 			}
 		} else {
-			onError(err)
+			errCh <- err
 		}
 	} else {
 		log.Infof("Connect MQTT broker with username and password.")
@@ -121,7 +121,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc, onErr
 	opts.SetConnectionLostHandler(func(client MQTT.Client, e error) {
 		log.Errorf("The connection %s is disconnected due to error %s, will try to re-connect later.", ms.srv+": "+ms.clientid, e)
 		reconn = true
-		subscribe(ms.tpc, client, ctx, consume)
+		subscribe(ms.tpc, client, ctx, consumer)
 	})
 
 	opts.SetOnConnectHandler(func(client MQTT.Client) {
@@ -132,15 +132,15 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consume api.ConsumeFunc, onErr
 
 	c := MQTT.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		onError(fmt.Errorf("found error when connecting to %s: %s", ms.srv, token.Error()))
+		errCh <- fmt.Errorf("found error when connecting to %s: %s", ms.srv, token.Error())
 	}
 	log.Infof("The connection to server %s was established successfully", ms.srv)
 	ms.conn = c
-	subscribe(ms.tpc, c, ctx, consume)
+	subscribe(ms.tpc, c, ctx, consumer)
 	log.Infof("Successfully subscribe to topic %s", ms.srv+": "+ms.clientid)
 }
 
-func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consume api.ConsumeFunc) {
+func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consumer chan<- api.SourceTuple) {
 	log := ctx.GetLogger()
 	h := func(client MQTT.Client, msg MQTT.Message) {
 		log.Debugf("instance %d received %s", ctx.GetInstanceId(), msg.Payload())
@@ -156,7 +156,12 @@ func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consume 
 		meta := make(map[string]interface{})
 		meta[xsql.INTERNAL_MQTT_TOPIC_KEY] = msg.Topic()
 		meta[xsql.INTERNAL_MQTT_MSG_ID_KEY] = strconv.Itoa(int(msg.MessageID()))
-		consume(result, meta)
+		select {
+		case consumer <- api.NewDefaultSourceTuple(result, meta):
+			log.Debugf("send data to source node")
+		case <-ctx.Done():
+			return
+		}
 	}
 
 	if token := client.Subscribe(topic, 0, h); token.Wait() && token.Error() != nil {

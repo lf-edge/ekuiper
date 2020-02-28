@@ -52,6 +52,9 @@ Currently, 3 kinds of actions are supported: [log](sinks/logs.md), [mqtt](sinks/
 | concurrency | int: 1   | Specify how many instances of the sink will be run. If the value is bigger than 1, the order of the messages may not be retained. |
 | bufferLength | int: 1024   | Specify how many messages can be buffered in memory. If the buffered messages exceed the limit, the sink will block message receiving until the buffered messages have been sent out so that the buffered size is less than the limit. |
 | runAsync        | bool:false   | Whether the sink will run asynchronously for better performance. If it is true, the sink result order is not promised.  |
+| retryInterval   | int:1000   | Specify how many milliseconds will the sink retry to send data out if the previous send failed  |
+| cacheLength     | int:10240   | Specify how many messages can be cached. The cached messages will be resent to external system until the data sent out successfully. The cached message will be sent in order except in runAsync or concurrent mode. The cached message will be saved to disk in fixed intervals.  |
+| cacheSaveInterval  | int:1000   | Specify the interval to save cached message to the disk. Notice that, if the rule is closed in plan, all the cached messages will be saved at close. A larger value can reduce the saving overhead but may lose more cache messages when the system is interrupted in error.  |
 
 Actions could be customized to support different kinds of outputs, see [extension](../extension/overview.md) for more detailed info.
 

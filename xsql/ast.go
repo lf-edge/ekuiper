@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-
-
 type Node interface {
 	node()
 }
@@ -35,18 +33,18 @@ type Source interface {
 
 type Sources []Source
 
-func (ss Sources) node(){}
+func (ss Sources) node() {}
 
 type Table struct {
-	Name string
+	Name  string
 	Alias string
 }
 
 func (t *Table) source() {}
-func (ss *Table) node(){}
-
+func (ss *Table) node()  {}
 
 type JoinType int
+
 const (
 	LEFT_JOIN JoinType = iota
 	INNER_JOIN
@@ -63,12 +61,13 @@ type Join struct {
 }
 
 func (j *Join) source() {}
-func (ss *Join) node(){}
+func (ss *Join) node()  {}
 
 type Joins []Join
-func (ss Joins) node(){}
 
-type Statement interface{
+func (ss Joins) node() {}
+
+type Statement interface {
 	Stmt()
 	Node
 }
@@ -79,12 +78,12 @@ type SelectStatement struct {
 	Joins      Joins
 	Condition  Expr
 	Dimensions Dimensions
-	Having	   Expr
+	Having     Expr
 	SortFields SortFields
 }
 
 func (ss *SelectStatement) Stmt() {}
-func (ss *SelectStatement) node(){}
+func (ss *SelectStatement) node() {}
 
 type Literal interface {
 	Expr
@@ -105,7 +104,7 @@ type BracketExpr struct {
 
 type ColonExpr struct {
 	Start int
-	End int
+	End   int
 }
 
 type IndexExpr struct {
@@ -141,7 +140,7 @@ type Dimension struct {
 }
 
 type SortField struct {
-	Name string
+	Name      string
 	Ascending bool
 }
 
@@ -150,62 +149,62 @@ type SortFields []SortField
 type Dimensions []Dimension
 
 func (f *Field) expr() {}
-func (f *Field) node(){}
+func (f *Field) node() {}
 
 func (pe *ParenExpr) expr() {}
-func (pe *ParenExpr) node(){}
+func (pe *ParenExpr) node() {}
 
 func (ae *ArrowExpr) expr() {}
-func (ae *ArrowExpr) node(){}
+func (ae *ArrowExpr) node() {}
 
 func (be *BracketExpr) expr() {}
-func (be *BracketExpr) node(){}
+func (be *BracketExpr) node() {}
 
 func (be *ColonExpr) expr() {}
-func (be *ColonExpr) node(){}
+func (be *ColonExpr) node() {}
 
 func (be *IndexExpr) expr() {}
-func (be *IndexExpr) node(){}
+func (be *IndexExpr) node() {}
 
 func (w *Wildcard) expr() {}
-func (w *Wildcard) node(){}
+func (w *Wildcard) node() {}
 
 func (bl *BooleanLiteral) expr()    {}
 func (bl *BooleanLiteral) literal() {}
-func (bl *BooleanLiteral) node(){}
+func (bl *BooleanLiteral) node()    {}
 
 func (tl *TimeLiteral) expr()    {}
 func (tl *TimeLiteral) literal() {}
-func (tl *TimeLiteral) node(){}
+func (tl *TimeLiteral) node()    {}
 
 func (il *IntegerLiteral) expr()    {}
 func (il *IntegerLiteral) literal() {}
-func (il *IntegerLiteral) node(){}
+func (il *IntegerLiteral) node()    {}
 
 func (nl *NumberLiteral) expr()    {}
 func (nl *NumberLiteral) literal() {}
-func (nl *NumberLiteral) node(){}
+func (nl *NumberLiteral) node()    {}
 
 func (sl *StringLiteral) expr()    {}
 func (sl *StringLiteral) literal() {}
-func (sl *StringLiteral) node(){}
+func (sl *StringLiteral) node()    {}
 
 func (d *Dimension) expr() {}
-func (d *Dimension) node(){}
+func (d *Dimension) node() {}
 
-func (d Dimensions) node(){}
-func (d *Dimensions) GetWindow() *Window{
+func (d Dimensions) node() {}
+func (d *Dimensions) GetWindow() *Window {
 	for _, child := range *d {
-		if w, ok := child.Expr.(*Window); ok{
+		if w, ok := child.Expr.(*Window); ok {
 			return w
 		}
 	}
 	return nil
 }
-func (d *Dimensions) GetGroups() Dimensions{
+func (d *Dimensions) GetGroups() Dimensions {
 	var nd Dimensions
 	for _, child := range *d {
-		if _, ok := child.Expr.(*Window); !ok{
+		if _, ok := child.Expr.(*Window); !ok {
 			nd = append(nd, child)
 		}
 	}
@@ -213,18 +212,18 @@ func (d *Dimensions) GetGroups() Dimensions{
 }
 
 func (sf *SortField) expr() {}
-func (sf *SortField) node(){}
+func (sf *SortField) node() {}
 
-func (sf SortFields) node(){}
+func (sf SortFields) node() {}
 
 type Call struct {
 	Name string
 	Args []Expr
 }
 
-func (c *Call) expr() {}
+func (c *Call) expr()    {}
 func (c *Call) literal() {}
-func (c *Call) node(){}
+func (c *Call) node()    {}
 
 type WindowType int
 
@@ -238,7 +237,7 @@ const (
 
 type Window struct {
 	WindowType WindowType
-	Length	   *IntegerLiteral
+	Length     *IntegerLiteral
 	Interval   *IntegerLiteral
 }
 
@@ -246,47 +245,48 @@ func (w *Window) expr()    {}
 func (w *Window) literal() {}
 func (w *Window) node()    {}
 
-type  SelectStatements []SelectStatement
+type SelectStatements []SelectStatement
 
-func (ss *SelectStatements) node(){}
+func (ss *SelectStatements) node() {}
 
 type Fields []Field
-func (fs Fields) node(){}
+
+func (fs Fields) node() {}
 
 type BinaryExpr struct {
-	OP Token
+	OP  Token
 	LHS Expr
 	RHS Expr
 }
 
 func (fe *BinaryExpr) expr() {}
-func (be *BinaryExpr) node(){}
+func (be *BinaryExpr) node() {}
 
 type FieldRef struct {
 	StreamName StreamName
-	Name  string
+	Name       string
 }
 
 func (fr *FieldRef) expr() {}
-func (fr *FieldRef) node(){}
-
+func (fr *FieldRef) node() {}
 
 // The stream AST tree
 type Options map[string]string
+
 func (o Options) node() {}
 
 type StreamName string
+
 func (sn *StreamName) node() {}
 
 type StreamStmt struct {
-	Name StreamName
+	Name         StreamName
 	StreamFields StreamFields
-	Options Options
+	Options      Options
 }
 
-func (ss *StreamStmt) node(){}
+func (ss *StreamStmt) node() {}
 func (ss *StreamStmt) Stmt() {}
-
 
 type FieldType interface {
 	fieldType()
@@ -300,29 +300,31 @@ type StreamField struct {
 
 type StreamFields []StreamField
 
-func (sf StreamFields) node(){}
+func (sf StreamFields) node() {}
 
 type BasicType struct {
 	Type DataType
 }
+
 func (bt *BasicType) fieldType() {}
-func (bt *BasicType) node(){}
+func (bt *BasicType) node()      {}
 
 type ArrayType struct {
 	Type DataType
 	FieldType
 }
+
 func (at *ArrayType) fieldType() {}
-func (at *ArrayType) node(){}
+func (at *ArrayType) node()      {}
 
 type RecType struct {
 	StreamFields StreamFields
 }
+
 func (rt *RecType) fieldType() {}
-func (rt *RecType) node(){}
+func (rt *RecType) node()      {}
 
 type ShowStreamsStatement struct {
-
 }
 
 type DescribeStreamStatement struct {
@@ -338,17 +340,16 @@ type DropStreamStatement struct {
 }
 
 func (ss *ShowStreamsStatement) Stmt() {}
-func (ss *ShowStreamsStatement) node(){}
+func (ss *ShowStreamsStatement) node() {}
 
 func (dss *DescribeStreamStatement) Stmt() {}
-func (dss *DescribeStreamStatement) node(){}
+func (dss *DescribeStreamStatement) node() {}
 
 func (ess *ExplainStreamStatement) Stmt() {}
-func (ess *ExplainStreamStatement) node(){}
+func (ess *ExplainStreamStatement) node() {}
 
 func (dss *DropStreamStatement) Stmt() {}
-func (dss *DropStreamStatement) node(){}
-
+func (dss *DropStreamStatement) node() {}
 
 type Visitor interface {
 	Visit(Node) Visitor
@@ -442,7 +443,6 @@ func Walk(v Visitor, node Node) {
 	}
 }
 
-
 // WalkFunc traverses a node hierarchy in depth-first order.
 func WalkFunc(node Node, fn func(Node)) {
 	Walk(walkFuncVisitor(fn), node)
@@ -452,13 +452,11 @@ type walkFuncVisitor func(Node)
 
 func (fn walkFuncVisitor) Visit(n Node) Visitor { fn(n); return fn }
 
-
 // Valuer is the interface that wraps the Value() method.
 type Valuer interface {
 	// Value returns the value and existence flag for a given key.
 	Value(key string) (interface{}, bool)
 }
-
 
 // CallValuer implements the Call method for evaluating function calls.
 type CallValuer interface {
@@ -489,13 +487,13 @@ type WildcardValuer struct {
 
 //TODO deal with wildcard of a stream, e.g. SELECT Table.* from Table inner join Table1
 func (wv *WildcardValuer) Value(key string) (interface{}, bool) {
-	if key == ""{
+	if key == "" {
 		return wv.Data.All(key)
-	}else{
+	} else {
 		a := strings.Index(key, ".*")
-		if a <= 0{
+		if a <= 0 {
 			return nil, false
-		}else{
+		} else {
 			return wv.Data.All(key[:a])
 		}
 	}
@@ -578,14 +576,13 @@ func (t *Tuple) GetMetadata() Metadata {
 	return t.Metadata
 }
 
-
 func (t *Tuple) IsWatermark() bool {
 	return false
 }
 
 type WindowTuples struct {
 	Emitter string
-	Tuples []Tuple
+	Tuples  []Tuple
 }
 
 type WindowTuplesSet []WindowTuples
@@ -600,26 +597,26 @@ func (w WindowTuplesSet) GetBySrc(src string) []Tuple {
 }
 
 func (w WindowTuplesSet) Len() int {
-	if len(w) > 0{
+	if len(w) > 0 {
 		return len(w[0].Tuples)
 	}
 	return 0
 }
 func (w WindowTuplesSet) Swap(i, j int) {
-	if len(w) > 0{
+	if len(w) > 0 {
 		s := w[0].Tuples
 		s[i], s[j] = s[j], s[i]
 	}
 }
 func (w WindowTuplesSet) Index(i int) Valuer {
-	if len(w) > 0{
+	if len(w) > 0 {
 		s := w[0].Tuples
 		return &(s[i])
 	}
 	return nil
 }
 
-func (w WindowTuplesSet) AddTuple(tuple *Tuple) WindowTuplesSet{
+func (w WindowTuplesSet) AddTuple(tuple *Tuple) WindowTuplesSet {
 	found := false
 	for i, t := range w {
 		if t.Emitter == tuple.Emitter {
@@ -680,15 +677,15 @@ func (jt *JoinTuple) Value(key string) (interface{}, bool) {
 	switch len(keys) {
 	case 1:
 		if len(tuples) > 1 {
-			for _, tuple := range tuples {	//TODO support key without modifier?
+			for _, tuple := range tuples { //TODO support key without modifier?
 				v, ok := tuple.Message[key]
-				if ok{
+				if ok {
 					return v, ok
 				}
 			}
 			common.Log.Infoln("Wrong key: ", key, ", not found")
 			return nil, false
-		} else{
+		} else {
 			v, ok := tuples[0].Message[key]
 			return v, ok
 		}
@@ -709,17 +706,17 @@ func (jt *JoinTuple) Value(key string) (interface{}, bool) {
 }
 
 func (jt *JoinTuple) All(stream string) (interface{}, bool) {
-	if stream != ""{
-		for _, t := range jt.Tuples{
-			if t.Emitter == stream{
+	if stream != "" {
+		for _, t := range jt.Tuples {
+			if t.Emitter == stream {
 				return t.Message, true
 			}
 		}
-	}else{
+	} else {
 		var r Message = make(map[string]interface{})
-		for _, t := range jt.Tuples{
-			for k, v := range t.Message{
-				if _, ok := r[k]; !ok{
+		for _, t := range jt.Tuples {
+			for k, v := range t.Message {
+				if _, ok := r[k]; !ok {
 					r[k] = v
 				}
 			}
@@ -730,8 +727,9 @@ func (jt *JoinTuple) All(stream string) (interface{}, bool) {
 }
 
 type JoinTupleSets []JoinTuple
-func (s JoinTupleSets) Len() int      { return len(s) }
-func (s JoinTupleSets) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func (s JoinTupleSets) Len() int           { return len(s) }
+func (s JoinTupleSets) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s JoinTupleSets) Index(i int) Valuer { return &(s[i]) }
 
 func (s JoinTupleSets) AggregateEval(expr Expr) []interface{} {
@@ -743,6 +741,7 @@ func (s JoinTupleSets) AggregateEval(expr Expr) []interface{} {
 }
 
 type GroupedTuples []DataValuer
+
 func (s GroupedTuples) AggregateEval(expr Expr) []interface{} {
 	var result []interface{}
 	for _, t := range s {
@@ -752,6 +751,7 @@ func (s GroupedTuples) AggregateEval(expr Expr) []interface{} {
 }
 
 type GroupedTuplesSet []GroupedTuples
+
 func (s GroupedTuplesSet) Len() int           { return len(s) }
 func (s GroupedTuplesSet) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s GroupedTuplesSet) Index(i int) Valuer { return s[i][0] }
@@ -863,14 +863,14 @@ func (a multiValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	return nil, false
 }
 
-type multiAggregateValuer struct{
-	data AggregateData
+type multiAggregateValuer struct {
+	data    AggregateData
 	valuers []Valuer
 }
 
 func MultiAggregateValuer(data AggregateData, valuers ...Valuer) Valuer {
 	return &multiAggregateValuer{
-		data: data,
+		data:    data,
 		valuers: valuers,
 	}
 }
@@ -892,12 +892,12 @@ func (a *multiAggregateValuer) Call(name string, args []interface{}) (interface{
 			if v, ok := a.Call(name, args); ok {
 				return v, true
 			}
-		}else if c, ok := valuer.(CallValuer); ok{
-			if singleArgs == nil{
-				for _, arg := range args{
-					if arg, ok := arg.([]interface{}); ok{
+		} else if c, ok := valuer.(CallValuer); ok {
+			if singleArgs == nil {
+				for _, arg := range args {
+					if arg, ok := arg.([]interface{}); ok {
 						singleArgs = append(singleArgs, arg[0])
-					}else{
+					} else {
 						common.Log.Infof("multiAggregateValuer does not get [][] args but get %v", args)
 						return nil, false
 					}
@@ -944,20 +944,20 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 	case *BooleanLiteral:
 		return expr.Val
 	case *ColonExpr:
-		return &BracketEvalResult{Start:expr.Start, End:expr.End}
+		return &BracketEvalResult{Start: expr.Start, End: expr.End}
 	case *IndexExpr:
-		return &BracketEvalResult{Start:expr.Index, End:expr.Index}
+		return &BracketEvalResult{Start: expr.Index, End: expr.Index}
 	case *Call:
 		if valuer, ok := v.Valuer.(CallValuer); ok {
 			var args []interface{}
 
 			if len(expr.Args) > 0 {
 				args = make([]interface{}, len(expr.Args))
-				if aggreValuer, ok := valuer.(AggregateCallValuer); ok{
+				if aggreValuer, ok := valuer.(AggregateCallValuer); ok {
 					for i := range expr.Args {
 						args[i] = aggreValuer.GetAllTuples().AggregateEval(expr.Args[i])
 					}
-				}else{
+				} else {
 					for i := range expr.Args {
 						args[i] = v.Eval(expr.Args[i])
 					}
@@ -984,7 +984,6 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 	}
 }
 
-
 func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 	lhs := v.Eval(expr.LHS)
 	switch val := lhs.(type) {
@@ -1010,8 +1009,7 @@ func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 	return v.simpleDataEval(lhs, rhs, expr.OP)
 }
 
-
-func (v *ValuerEval) evalJsonExpr(result interface{}, op Token,  expr Expr) interface{} {
+func (v *ValuerEval) evalJsonExpr(result interface{}, op Token, expr Expr) interface{} {
 	if val, ok := result.(map[string]interface{}); ok {
 		switch op {
 		case ARROW:
@@ -1049,7 +1047,7 @@ func (v *ValuerEval) evalJsonExpr(result interface{}, op Token,  expr Expr) inte
 						fmt.Printf("End value is out of index: %d of %d.\n", berVal.End, len(val))
 						return nil
 					}
-					return val[berVal.Start : berVal.End]
+					return val[berVal.Start:berVal.End]
 				}
 			} else {
 				fmt.Printf("Invalid evaluation result - %v.\n", berVal)
@@ -1426,7 +1424,7 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op Token) interface{} 
 		}
 	case time.Time:
 		rt, err := common.InterfaceToTime(rhs, "")
-		if err != nil{
+		if err != nil {
 			return false
 		}
 		switch op {
@@ -1556,7 +1554,7 @@ func isAggFunc(f *Call) bool {
 	return false
 }
 func HasAggFuncs(node Node) bool {
-	if node == nil{
+	if node == nil {
 		return false
 	}
 	var r = false
@@ -1567,12 +1565,12 @@ func HasAggFuncs(node Node) bool {
 				return
 			}
 		}
-	});
+	})
 	return r
 }
 
 func HasNoAggFuncs(node Node) bool {
-	if node == nil{
+	if node == nil {
 		return false
 	}
 	var r = false
@@ -1586,4 +1584,3 @@ func HasNoAggFuncs(node Node) bool {
 	})
 	return r
 }
-

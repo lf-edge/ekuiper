@@ -13,22 +13,22 @@ import (
 )
 
 type Preprocessor struct {
-	streamStmt  *xsql.StreamStmt
-	fields xsql.Fields
-	isEventTime bool
-	timestampField string
+	streamStmt      *xsql.StreamStmt
+	fields          xsql.Fields
+	isEventTime     bool
+	timestampField  string
 	timestampFormat string
 }
 
-func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool) (*Preprocessor, error){
+func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool) (*Preprocessor, error) {
 	p := &Preprocessor{streamStmt: s, fields: fs, isEventTime: iet}
 	if iet {
-		if tf, ok := s.Options["TIMESTAMP"]; ok{
+		if tf, ok := s.Options["TIMESTAMP"]; ok {
 			p.timestampField = tf
-		}else{
+		} else {
 			return nil, fmt.Errorf("preprocessor is set to be event time but stream option TIMESTAMP not found")
 		}
-		if ts, ok := s.Options["TIMESTAMP_FORMAT"]; ok{
+		if ts, ok := s.Options["TIMESTAMP_FORMAT"]; ok {
 			p.timestampFormat = ts
 		}
 	}
@@ -53,7 +53,7 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{
 	result := make(map[string]interface{})
 	for _, f := range p.streamStmt.StreamFields {
 		fname := strings.ToLower(f.Name)
-		if e := p.addRecField(f.FieldType, result, tuple.Message, fname); e != nil{
+		if e := p.addRecField(f.FieldType, result, tuple.Message, fname); e != nil {
 			log.Errorf("error in preprocessor: %s", e)
 			return nil
 		}
@@ -71,16 +71,16 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{
 	}
 
 	tuple.Message = result
-	if p.isEventTime{
-		if t, ok := result[p.timestampField]; ok{
-			if ts, err := common.InterfaceToUnixMilli(t, p.timestampFormat); err != nil{
+	if p.isEventTime {
+		if t, ok := result[p.timestampField]; ok {
+			if ts, err := common.InterfaceToUnixMilli(t, p.timestampFormat); err != nil {
 				log.Errorf("cannot convert timestamp field %s to timestamp with error %v", p.timestampField, err)
 				return nil
-			}else{
+			} else {
 				tuple.Timestamp = ts
 				log.Debugf("preprocessor calculate timstamp %d", tuple.Timestamp)
 			}
-		}else{
+		} else {
 			log.Errorf("cannot find timestamp field %s in tuple %v", p.timestampField, result)
 			return nil
 		}
@@ -88,10 +88,10 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{
 	return tuple
 }
 
-func (p *Preprocessor) parseTime(s string) (time.Time, error){
-	if f, ok := p.streamStmt.Options["TIMESTAMP_FORMAT"]; ok{
+func (p *Preprocessor) parseTime(s string) (time.Time, error) {
+	if f, ok := p.streamStmt.Options["TIMESTAMP_FORMAT"]; ok {
 		return common.ParseTime(s, f)
-	}else{
+	} else {
 		return time.Parse(common.JSISO, s)
 	}
 }
@@ -106,35 +106,35 @@ func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, 
 			case xsql.UNKNOWN:
 				return fmt.Errorf("invalid data type unknown defined for %s, please check the stream definition", t)
 			case xsql.BIGINT:
-				if jtype == reflect.Int{
+				if jtype == reflect.Int {
 					r[n] = t.(int)
-				}else if jtype == reflect.Float64{
+				} else if jtype == reflect.Float64 {
 					r[n] = int(t.(float64))
-				}else if jtype == reflect.String {
-					if i, err := strconv.Atoi(t.(string)); err != nil{
+				} else if jtype == reflect.String {
+					if i, err := strconv.Atoi(t.(string)); err != nil {
 						return fmt.Errorf("invalid data type for %s, expect bigint but found %s", n, t)
-					}else{
+					} else {
 						r[n] = i
 					}
-				}else{
+				} else {
 					return fmt.Errorf("invalid data type for %s, expect bigint but found %s", n, t)
 				}
 			case xsql.FLOAT:
-				if jtype == reflect.Float64{
+				if jtype == reflect.Float64 {
 					r[n] = t.(float64)
-				}else if jtype == reflect.String {
-					if f, err := strconv.ParseFloat(t.(string), 64); err != nil{
+				} else if jtype == reflect.String {
+					if f, err := strconv.ParseFloat(t.(string), 64); err != nil {
 						return fmt.Errorf("invalid data type for %s, expect float but found %s", n, t)
-					}else{
+					} else {
 						r[n] = f
 					}
-				}else{
+				} else {
 					return fmt.Errorf("invalid data type for %s, expect float but found %s", n, t)
 				}
 			case xsql.STRINGS:
-				if jtype == reflect.String{
+				if jtype == reflect.String {
 					r[n] = t.(string)
-				}else{
+				} else {
 					return fmt.Errorf("invalid data type for %s, expect string but found %s", n, t)
 				}
 			case xsql.DATETIME:
@@ -146,24 +146,24 @@ func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, 
 					ai := int64(t.(float64))
 					r[n] = common.TimeFromUnixMilli(ai)
 				case reflect.String:
-					if t, err := p.parseTime(t.(string)); err != nil{
+					if t, err := p.parseTime(t.(string)); err != nil {
 						return fmt.Errorf("invalid data type for %s, cannot convert to datetime: %s", n, err)
-					}else{
+					} else {
 						r[n] = t
 					}
 				default:
 					return fmt.Errorf("invalid data type for %s, expect datatime but find %v", n, t)
 				}
 			case xsql.BOOLEAN:
-				if jtype == reflect.Bool{
+				if jtype == reflect.Bool {
 					r[n] = t.(bool)
-				}else if jtype == reflect.String {
-					if i, err := strconv.ParseBool(t.(string)); err != nil{
+				} else if jtype == reflect.String {
+					if i, err := strconv.ParseBool(t.(string)); err != nil {
 						return fmt.Errorf("invalid data type for %s, expect boolean but found %s", n, t)
-					}else{
+					} else {
 						r[n] = i
 					}
-				}else{
+				} else {
 					return fmt.Errorf("invalid data type for %s, expect boolean but found %s", n, t)
 				}
 			default:
@@ -171,41 +171,41 @@ func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, 
 			}
 		case *xsql.ArrayType:
 			var s []interface{}
-			if jtype == reflect.Slice{
+			if jtype == reflect.Slice {
 				s = t.([]interface{})
-			}else if jtype == reflect.String {
+			} else if jtype == reflect.String {
 				err := json.Unmarshal([]byte(t.(string)), &s)
-				if err != nil{
+				if err != nil {
 					return fmt.Errorf("invalid data type for %s, expect array but found %s", n, t)
 				}
-			}else{
+			} else {
 				return fmt.Errorf("invalid data type for %s, expect array but found %s", n, t)
 			}
 
-			if tempArr, err := p.addArrayField(st, s); err !=nil{
+			if tempArr, err := p.addArrayField(st, s); err != nil {
 				return err
-			}else {
+			} else {
 				r[n] = tempArr
 			}
 		case *xsql.RecType:
 			nextJ := make(map[string]interface{})
-			if jtype == reflect.Map{
+			if jtype == reflect.Map {
 				nextJ, ok = t.(map[string]interface{})
 				if !ok {
 					return fmt.Errorf("invalid data type for %s, expect map but found %s", n, t)
 				}
-			}else if jtype == reflect.String {
+			} else if jtype == reflect.String {
 				err := json.Unmarshal([]byte(t.(string)), &nextJ)
-				if err != nil{
+				if err != nil {
 					return fmt.Errorf("invalid data type for %s, expect map but found %s", n, t)
 				}
-			}else{
+			} else {
 				return fmt.Errorf("invalid data type for %s, expect struct but found %s", n, t)
 			}
 			nextR := make(map[string]interface{})
 			for _, nextF := range st.StreamFields {
 				nextP := strings.ToLower(nextF.Name)
-				if e := p.addRecField(nextF.FieldType, nextR, nextJ, nextP); e != nil{
+				if e := p.addRecField(nextF.FieldType, nextR, nextJ, nextP); e != nil {
 					return e
 				}
 			}
@@ -214,7 +214,7 @@ func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, 
 			return fmt.Errorf("unsupported type %T", st)
 		}
 		return nil
-	}else{
+	} else {
 		return fmt.Errorf("invalid data %s, field %s not found", j, n)
 	}
 }
@@ -227,49 +227,49 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 		case *xsql.ArrayType: //TODO handle array of array. Now the type is treated as interface{}
 			var tempSlice [][]interface{}
 			var s []interface{}
-			for i, t := range srcSlice{
+			for i, t := range srcSlice {
 				jtype := reflect.ValueOf(t).Kind()
-				if jtype == reflect.Slice || jtype == reflect.Array{
+				if jtype == reflect.Slice || jtype == reflect.Array {
 					s = t.([]interface{})
-				}else if jtype == reflect.String {
+				} else if jtype == reflect.String {
 					err := json.Unmarshal([]byte(t.(string)), &s)
-					if err != nil{
+					if err != nil {
 						return nil, fmt.Errorf("invalid data type for [%d], expect array but found %s", i, t)
 					}
-				}else{
+				} else {
 					return nil, fmt.Errorf("invalid data type for [%d], expect array but found %s", i, t)
 				}
-				if tempArr, err := p.addArrayField(st, s); err !=nil{
+				if tempArr, err := p.addArrayField(st, s); err != nil {
 					return nil, err
-				}else {
+				} else {
 					tempSlice = append(tempSlice, tempArr.([]interface{}))
 				}
 			}
 			return tempSlice, nil
 		case *xsql.RecType:
 			var tempSlice []map[string]interface{}
-			for i, t := range srcSlice{
+			for i, t := range srcSlice {
 				jtype := reflect.ValueOf(t).Kind()
 				j := make(map[string]interface{})
 				var ok bool
-				if jtype == reflect.Map{
+				if jtype == reflect.Map {
 					j, ok = t.(map[string]interface{})
 					if !ok {
 						return nil, fmt.Errorf("invalid data type for [%d], expect map but found %s", i, t)
 					}
 
-				}else if jtype == reflect.String {
+				} else if jtype == reflect.String {
 					err := json.Unmarshal([]byte(t.(string)), &j)
-					if err != nil{
+					if err != nil {
 						return nil, fmt.Errorf("invalid data type for [%d], expect map but found %s", i, t)
 					}
-				}else{
+				} else {
 					return nil, fmt.Errorf("invalid data type for [%d], expect map but found %s", i, t)
 				}
 				r := make(map[string]interface{})
 				for _, f := range st.StreamFields {
 					n := f.Name
-					if e := p.addRecField(f.FieldType, r, j, n); e != nil{
+					if e := p.addRecField(f.FieldType, r, j, n); e != nil {
 						return nil, e
 					}
 				}
@@ -279,7 +279,7 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 		default:
 			return nil, fmt.Errorf("unsupported type %T", st)
 		}
-	}else{ //basic type
+	} else { //basic type
 		switch ft.Type {
 		case xsql.UNKNOWN:
 			return nil, fmt.Errorf("invalid data type unknown defined for %s, please checke the stream definition", srcSlice)
@@ -287,15 +287,15 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 			var tempSlice []int
 			for i, t := range srcSlice {
 				jtype := reflect.ValueOf(t).Kind()
-				if jtype == reflect.Float64{
+				if jtype == reflect.Float64 {
 					tempSlice = append(tempSlice, int(t.(float64)))
-				}else if jtype == reflect.String {
-					if v, err := strconv.Atoi(t.(string)); err != nil{
+				} else if jtype == reflect.String {
+					if v, err := strconv.Atoi(t.(string)); err != nil {
 						return nil, fmt.Errorf("invalid data type for [%d], expect float but found %s", i, t)
-					}else{
+					} else {
 						tempSlice = append(tempSlice, v)
 					}
-				}else{
+				} else {
 					return nil, fmt.Errorf("invalid data type for [%d], expect float but found %s", i, t)
 				}
 			}
@@ -304,15 +304,15 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 			var tempSlice []float64
 			for i, t := range srcSlice {
 				jtype := reflect.ValueOf(t).Kind()
-				if jtype == reflect.Float64{
+				if jtype == reflect.Float64 {
 					tempSlice = append(tempSlice, t.(float64))
-				}else if jtype == reflect.String {
-					if f, err := strconv.ParseFloat(t.(string), 64); err != nil{
+				} else if jtype == reflect.String {
+					if f, err := strconv.ParseFloat(t.(string), 64); err != nil {
 						return nil, fmt.Errorf("invalid data type for [%d], expect float but found %s", i, t)
-					}else{
+					} else {
 						tempSlice = append(tempSlice, f)
 					}
-				}else{
+				} else {
 					return nil, fmt.Errorf("invalid data type for [%d], expect float but found %s", i, t)
 				}
 			}
@@ -320,9 +320,9 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 		case xsql.STRINGS:
 			var tempSlice []string
 			for i, t := range srcSlice {
-				if reflect.ValueOf(t).Kind() == reflect.String{
+				if reflect.ValueOf(t).Kind() == reflect.String {
 					tempSlice = append(tempSlice, t.(string))
-				}else{
+				} else {
 					return nil, fmt.Errorf("invalid data type for [%d], expect string but found %s", i, t)
 				}
 			}
@@ -339,9 +339,9 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 					ai := int64(t.(float64))
 					tempSlice = append(tempSlice, common.TimeFromUnixMilli(ai))
 				case reflect.String:
-					if ai, err := p.parseTime(t.(string)); err != nil{
+					if ai, err := p.parseTime(t.(string)); err != nil {
 						return nil, fmt.Errorf("invalid data type for %s, cannot convert to datetime: %s", t, err)
-					}else{
+					} else {
 						tempSlice = append(tempSlice, ai)
 					}
 				default:
@@ -353,15 +353,15 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 			var tempSlice []bool
 			for i, t := range srcSlice {
 				jtype := reflect.ValueOf(t).Kind()
-				if jtype == reflect.Bool{
+				if jtype == reflect.Bool {
 					tempSlice = append(tempSlice, t.(bool))
-				}else if jtype == reflect.String {
-					if v, err := strconv.ParseBool(t.(string)); err != nil{
+				} else if jtype == reflect.String {
+					if v, err := strconv.ParseBool(t.(string)); err != nil {
 						return nil, fmt.Errorf("invalid data type for [%d], expect boolean but found %s", i, t)
-					}else{
+					} else {
 						tempSlice = append(tempSlice, v)
 					}
-				}else{
+				} else {
 					return nil, fmt.Errorf("invalid data type for [%d], expect boolean but found %s", i, t)
 				}
 			}

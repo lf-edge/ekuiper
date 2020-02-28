@@ -1,9 +1,9 @@
 package xsql
 
 import (
+	"fmt"
 	"github.com/emqx/kuiper/common/plugin_manager"
 	"github.com/emqx/kuiper/xstream/api"
-	"fmt"
 	"strings"
 )
 
@@ -28,13 +28,13 @@ func validateFuncs(funcName string, args []Expr) error {
 	} else {
 		if nf, err := plugin_manager.GetPlugin(funcName, "functions"); err != nil {
 			return err
-		}else{
+		} else {
 			f, ok := nf.(api.Function)
 			if !ok {
 				return fmt.Errorf("exported symbol %s is not type of api.Function", funcName)
 			}
 			var targs []interface{}
-			for _, arg := range args{
+			for _, arg := range args {
 				targs = append(targs, arg)
 			}
 			return f.Validate(targs)
@@ -46,18 +46,18 @@ func validateMathFunc(name string, args []Expr) error {
 	len := len(args)
 	switch name {
 	case "abs", "acos", "asin", "atan", "ceil", "cos", "cosh", "exp", "ln", "log", "round", "sign", "sin", "sinh",
-	"sqrt", "tan", "tanh" :
+		"sqrt", "tan", "tanh":
 		if err := validateLen(name, 1, len); err != nil {
-			return  err
+			return err
 		}
 		if isStringArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) {
 			return produceErrInfo(name, 0, "number - float or int")
 		}
 	case "bitand", "bitor", "bitxor":
 		if err := validateLen(name, 2, len); err != nil {
-			return  err
+			return err
 		}
-		if isFloatArg(args[0]) || isStringArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]){
+		if isFloatArg(args[0]) || isStringArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) {
 			return produceErrInfo(name, 0, "int")
 		}
 		if isFloatArg(args[1]) || isStringArg(args[1]) || isTimeArg(args[1]) || isBooleanArg(args[1]) {
@@ -66,26 +66,26 @@ func validateMathFunc(name string, args []Expr) error {
 
 	case "bitnot":
 		if err := validateLen(name, 1, len); err != nil {
-			return  err
+			return err
 		}
-		if isFloatArg(args[0]) || isStringArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0])  {
+		if isFloatArg(args[0]) || isStringArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) {
 			return produceErrInfo(name, 0, "int")
 		}
 
 	case "atan2", "mod", "power":
 		if err := validateLen(name, 2, len); err != nil {
-			return  err
+			return err
 		}
 		if isStringArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) {
 			return produceErrInfo(name, 0, "number - float or int")
 		}
-		if isStringArg(args[1]) || isTimeArg(args[1]) || isBooleanArg(args[1]){
+		if isStringArg(args[1]) || isTimeArg(args[1]) || isBooleanArg(args[1]) {
 			return produceErrInfo(name, 1, "number - float or int")
 		}
 
 	case "rand":
 		if err := validateLen(name, 0, len); err != nil {
-			return  err
+			return err
 		}
 	}
 	return nil
@@ -105,44 +105,44 @@ func validateStrFunc(name string, args []Expr) error {
 		}
 	case "endswith", "indexof", "regexp_matches", "startswith":
 		if err := validateLen(name, 2, len); err != nil {
-			return  err
+			return err
 		}
 		for i := 0; i < 2; i++ {
-			if isNumericArg(args[i]) || isTimeArg(args[i])|| isBooleanArg(args[i]) {
+			if isNumericArg(args[i]) || isTimeArg(args[i]) || isBooleanArg(args[i]) {
 				return produceErrInfo(name, i, "string")
 			}
 		}
 	case "format_time":
 		if err := validateLen(name, 2, len); err != nil {
-			return  err
+			return err
 		}
 
-		if isNumericArg(args[0]) || isStringArg(args[0])|| isBooleanArg(args[0]) {
+		if isNumericArg(args[0]) || isStringArg(args[0]) || isBooleanArg(args[0]) {
 			return produceErrInfo(name, 0, "datetime")
 		}
-		if isNumericArg(args[1]) || isTimeArg(args[1])|| isBooleanArg(args[1]) {
+		if isNumericArg(args[1]) || isTimeArg(args[1]) || isBooleanArg(args[1]) {
 			return produceErrInfo(name, 1, "string")
 		}
 
 	case "regexp_replace":
 		if err := validateLen(name, 3, len); err != nil {
-			return  err
+			return err
 		}
 		for i := 0; i < 3; i++ {
-			if isNumericArg(args[i]) || isTimeArg(args[i])|| isBooleanArg(args[i]) {
+			if isNumericArg(args[i]) || isTimeArg(args[i]) || isBooleanArg(args[i]) {
 				return produceErrInfo(name, i, "string")
 			}
 		}
 	case "length", "lower", "ltrim", "numbytes", "rtrim", "trim", "upper":
 		if err := validateLen(name, 1, len); err != nil {
-			return  err
+			return err
 		}
 		if isNumericArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) {
 			return produceErrInfo(name, 0, "string")
 		}
 	case "lpad", "rpad":
 		if err := validateLen(name, 2, len); err != nil {
-			return  err
+			return err
 		}
 		if isNumericArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) {
 			return produceErrInfo(name, 0, "string")
@@ -168,7 +168,7 @@ func validateStrFunc(name string, args []Expr) error {
 			if sv < 0 {
 				return fmt.Errorf("The start index should not be a nagtive integer.")
 			}
-			if len == 3{
+			if len == 3 {
 				if e, ok1 := args[2].(*IntegerLiteral); ok1 {
 					ev := e.Val
 					if ev < sv {
@@ -204,7 +204,7 @@ func validateConvFunc(name string, args []Expr) error {
 	switch name {
 	case "cast":
 		if err := validateLen(name, 2, len); err != nil {
-			return  err
+			return err
 		}
 		a := args[1]
 		if !isStringArg(a) {
@@ -217,14 +217,14 @@ func validateConvFunc(name string, args []Expr) error {
 		}
 	case "chr":
 		if err := validateLen(name, 1, len); err != nil {
-			return  err
+			return err
 		}
 		if isFloatArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) {
 			return produceErrInfo(name, 0, "int")
 		}
 	case "encode":
 		if err := validateLen(name, 2, len); err != nil {
-			return  err
+			return err
 		}
 
 		if isNumericArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) {
@@ -242,7 +242,7 @@ func validateConvFunc(name string, args []Expr) error {
 		}
 	case "trunc":
 		if err := validateLen(name, 2, len); err != nil {
-			return  err
+			return err
 		}
 
 		if isTimeArg(args[0]) || isBooleanArg(args[0]) || isStringArg(args[0]) {
@@ -287,7 +287,7 @@ func validateOtherFunc(name string, args []Expr) error {
 		}
 	case "newuuid":
 		if err := validateLen(name, 0, len); err != nil {
-			return  err
+			return err
 		}
 	case "mqtt":
 		if err := validateLen(name, 1, len); err != nil {
@@ -310,7 +310,7 @@ func validateAggFunc(name string, args []Expr) error {
 	switch name {
 	case "avg", "max", "min", "sum":
 		if err := validateLen(name, 1, len); err != nil {
-			return  err
+			return err
 		}
 		if isStringArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) {
 			return produceErrInfo(name, 0, "number - float or int")
@@ -322,7 +322,6 @@ func validateAggFunc(name string, args []Expr) error {
 	}
 	return nil
 }
-
 
 // Index is starting from 0
 func produceErrInfo(name string, index int, expect string) (err error) {

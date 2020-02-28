@@ -1,9 +1,9 @@
 package sinks
 
 import (
+	"fmt"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/collectors"
-	"fmt"
 	"sync"
 	"time"
 )
@@ -19,12 +19,12 @@ func NewLogSink() *collectors.FuncCollector {
 }
 
 type QueryResult struct {
-	Results []string
+	Results   []string
 	LastFetch time.Time
-	Mux sync.Mutex
+	Mux       sync.Mutex
 }
 
-var QR = &QueryResult{LastFetch:time.Now()}
+var QR = &QueryResult{LastFetch: time.Now()}
 
 func NewLogSinkToMemory() *collectors.FuncCollector {
 	QR.Results = make([]string, 10)

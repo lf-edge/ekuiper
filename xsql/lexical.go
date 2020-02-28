@@ -47,7 +47,7 @@ const (
 	GTE // >=
 
 	SUBSET //[
-	ARROW //->
+	ARROW  //->
 
 	operatorEnd
 
@@ -56,11 +56,11 @@ const (
 	COMMA     // ,
 	LPAREN    // (
 	RPAREN    // )
-	LBRACKET //[
+	LBRACKET  //[
 	RBRACKET  //]
 	HASH      // #
 	DOT       // .
-	COLON	  //:
+	COLON     //:
 	SEMICOLON //;
 
 	// Keywords
@@ -166,7 +166,7 @@ var tokens = []string{
 	WHERE:  "WHERE",
 	GROUP:  "GROUP",
 	ORDER:  "ORDER",
-	HAVING:  "HAVING",
+	HAVING: "HAVING",
 	BY:     "BY",
 	ASC:    "ASC",
 	DESC:   "DESC",
@@ -188,18 +188,18 @@ var tokens = []string{
 	XARRAY:    "ARRAY",
 	XSTRUCT:   "STRUCT",
 
-	DATASOURCE:   "DATASOURCE",
-	KEY:      "KEY",
-	FORMAT:   "FORMAT",
-	CONF_KEY: "CONF_KEY",
-	TYPE: 	  "TYPE",
+	DATASOURCE:        "DATASOURCE",
+	KEY:               "KEY",
+	FORMAT:            "FORMAT",
+	CONF_KEY:          "CONF_KEY",
+	TYPE:              "TYPE",
 	STRICT_VALIDATION: "STRICT_VALIDATION",
-	TIMESTAMP: "TIMESTAMP",
-	TIMESTAMP_FORMAT: "TIMESTAMP_FORMAT",
+	TIMESTAMP:         "TIMESTAMP",
+	TIMESTAMP_FORMAT:  "TIMESTAMP_FORMAT",
 
-	AND: "AND",
-	OR:  "OR",
-	TRUE: "TRUE",
+	AND:   "AND",
+	OR:    "OR",
+	TRUE:  "TRUE",
 	FALSE: "FALSE",
 
 	DD: "DD",
@@ -591,7 +591,9 @@ func isDigit(ch rune) bool { return ch >= '0' && ch <= '9' }
 
 func isQuotation(ch rune) bool { return ch == '"' }
 
-func (tok Token) isOperator() bool { return (tok > operatorBeg && tok < operatorEnd) || tok == ASTERISK || tok == LBRACKET }
+func (tok Token) isOperator() bool {
+	return (tok > operatorBeg && tok < operatorEnd) || tok == ASTERISK || tok == LBRACKET
+}
 
 func (tok Token) isTimeLiteral() bool { return tok >= DD && tok <= MS }
 
@@ -632,13 +634,13 @@ const (
 )
 
 var dataTypes = []string{
-	BIGINT	: "bigint",
-	FLOAT	: "float",
-	STRINGS	: "string",
+	BIGINT:   "bigint",
+	FLOAT:    "float",
+	STRINGS:  "string",
 	DATETIME: "datetime",
-	BOOLEAN	: "boolean",
-	ARRAY	: "array",
-	STRUCT	: "struct",
+	BOOLEAN:  "boolean",
+	ARRAY:    "array",
+	STRUCT:   "struct",
 }
 
 func (d DataType) isSimpleType() bool {

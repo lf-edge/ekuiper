@@ -6,8 +6,8 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	b64 "encoding/base64"
-	"github.com/emqx/kuiper/common"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/google/uuid"
 	"hash"
 	"io"
@@ -165,7 +165,7 @@ func round(num float64) int {
 
 func toFixed(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
-	return float64(round(num * output)) / output
+	return float64(round(num*output)) / output
 }
 
 func hashCall(name string, args []interface{}) (interface{}, bool) {
@@ -196,7 +196,7 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 	case "newuuid":
 		if uuid, err := uuid.NewUUID(); err != nil {
 			return err, false
-		}else{
+		} else {
 			return uuid.String(), true
 		}
 	case "timestamp":
@@ -210,5 +210,3 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 		return fmt.Errorf("unknown function name %s", name), false
 	}
 }
-
-

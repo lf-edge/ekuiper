@@ -3,7 +3,7 @@ package main
 import "github.com/emqx/kuiper/xstream/api"
 
 type memory struct {
-	results  [][]byte
+	results [][]byte
 }
 
 func (m *memory) Open(ctx api.StreamContext) error {
@@ -18,7 +18,7 @@ func (m *memory) Collect(ctx api.StreamContext, item interface{}) error {
 	if v, ok := item.([]byte); ok {
 		logger.Debugf("memory sink receive %s", item)
 		m.results = append(m.results, v)
-	}else{
+	} else {
 		logger.Debug("memory sink receive non byte data")
 	}
 	return nil
@@ -28,7 +28,6 @@ func (m *memory) Close(ctx api.StreamContext) error {
 	//do nothing
 	return nil
 }
-
 
 func (m *memory) Configure(props map[string]interface{}) error {
 	return nil

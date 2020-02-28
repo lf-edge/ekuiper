@@ -1,15 +1,15 @@
 package plans
 
 import (
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"fmt"
 )
 
 //TODO join expr should only be the equal op between 2 streams like tb1.id = tb2.id
 type JoinPlan struct {
-	From *xsql.Table
+	From  *xsql.Table
 	Joins xsql.Joins
 }
 
@@ -53,7 +53,7 @@ func (jp *JoinPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
 func getStreamNames(join *xsql.Join) ([]string, error) {
 	var srcs []string
 	xsql.WalkFunc(join, func(node xsql.Node) {
-		if f,ok := node.(*xsql.FieldRef); ok {
+		if f, ok := node.(*xsql.FieldRef); ok {
 			if string(f.StreamName) == "" {
 				return
 			}
@@ -120,7 +120,7 @@ func (jp *JoinPlan) evalSet(input xsql.WindowTuplesSet, join xsql.Join) (xsql.Jo
 							merged.AddTuple(right)
 							sets = append(sets, *merged)
 							merged = &xsql.JoinTuple{}
-						}else{
+						} else {
 							merged.AddTuple(right)
 						}
 					}
@@ -168,7 +168,7 @@ func (jp *JoinPlan) evalSetWithRightJoin(input xsql.WindowTuplesSet, join xsql.J
 			temp.AddTuple(right)
 			temp.AddTuple(left)
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, &xsql.FunctionValuer{})}
-			if r, ok  := ve.Eval(join.Expr).(bool); ok {
+			if r, ok := ve.Eval(join.Expr).(bool); ok {
 				if r {
 					merged.AddTuple(left)
 					isJoint = true
@@ -190,8 +190,7 @@ func (jp *JoinPlan) evalSetWithRightJoin(input xsql.WindowTuplesSet, join xsql.J
 	return sets, nil
 }
 
-
-func (jp *JoinPlan) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesSet, join xsql.Join) (interface{}, error)  {
+func (jp *JoinPlan) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesSet, join xsql.Join) (interface{}, error) {
 	var rightStream string
 	if join.Alias == "" {
 		rightStream = join.Name
@@ -203,7 +202,7 @@ func (jp *JoinPlan) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuple
 
 	newSets := xsql.JoinTupleSets{}
 	if join.JoinType == xsql.RIGHT_JOIN {
-		return jp.evalRightJoinSets(set, input, join,false)
+		return jp.evalRightJoinSets(set, input, join, false)
 	}
 	for _, left := range *set {
 		merged := &xsql.JoinTuple{}
@@ -244,7 +243,7 @@ func (jp *JoinPlan) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuple
 	return newSets, nil
 }
 
-func (jp *JoinPlan) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesSet, join xsql.Join, excludeJoint bool) (xsql.JoinTupleSets, error)  {
+func (jp *JoinPlan) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesSet, join xsql.Join, excludeJoint bool) (xsql.JoinTupleSets, error) {
 	var rightStream string
 	if join.Alias == "" {
 		rightStream = join.Name
@@ -270,7 +269,7 @@ func (jp *JoinPlan) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.Window
 		}
 
 		if excludeJoint {
-			if len(merged.Tuples) > 0  && (!isJoint) {
+			if len(merged.Tuples) > 0 && (!isJoint) {
 				newSets = append(newSets, *merged)
 			}
 		} else {

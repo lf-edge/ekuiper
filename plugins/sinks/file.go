@@ -12,12 +12,12 @@ import (
 
 type fileSink struct {
 	interval int
-	path string
+	path     string
 
-	results  [][]byte
-	file *os.File
-	mux sync.Mutex
-	cancel context.CancelFunc
+	results [][]byte
+	file    *os.File
+	mux     sync.Mutex
+	cancel  context.CancelFunc
 }
 
 func (m *fileSink) Configure(props map[string]interface{}) error {
@@ -46,18 +46,18 @@ func (m *fileSink) Open(ctx api.StreamContext) error {
 		_, err = os.Create(m.path)
 	}
 	f, err = os.OpenFile(m.path, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("fail to open file sink for %v", err)
 	}
 	m.file = f
 	t := time.NewTicker(time.Duration(m.interval) * time.Millisecond)
 	exeCtx, cancel := ctx.WithCancel()
 	m.cancel = cancel
-	go func(){
+	go func() {
 		defer t.Stop()
-		for{
-			select{
-			case <- t.C:
+		for {
+			select {
+			case <-t.C:
 				m.save(logger)
 			case <-exeCtx.Done():
 				logger.Info("file sink done")
@@ -98,7 +98,7 @@ func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
 		m.mux.Lock()
 		m.results = append(m.results, v)
 		m.mux.Unlock()
-	}else{
+	} else {
 		logger.Debug("file sink receive non byte data")
 	}
 	return nil
@@ -108,7 +108,7 @@ func (m *fileSink) Close(ctx api.StreamContext) error {
 	if m.cancel != nil {
 		m.cancel()
 	}
-	if m.file != nil{
+	if m.file != nil {
 		m.save(ctx.GetLogger())
 		return m.file.Close()
 	}

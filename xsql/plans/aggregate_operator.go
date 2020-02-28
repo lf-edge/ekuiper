@@ -1,15 +1,14 @@
 package plans
 
 import (
+	"fmt"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"fmt"
 )
 
 type AggregatePlan struct {
 	Dimensions xsql.Dimensions
 }
-
 
 /**
  *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
@@ -51,19 +50,19 @@ func (p *AggregatePlan) Apply(ctx api.StreamContext, data interface{}) interface
 		for _, d := range p.Dimensions {
 			name += fmt.Sprintf("%v,", ve.Eval(d.Expr))
 		}
-		if ts, ok := result[name]; !ok{
+		if ts, ok := result[name]; !ok {
 			result[name] = xsql.GroupedTuples{m}
-		}else{
+		} else {
 			result[name] = append(ts, m)
 		}
 	}
-	if len(result) > 0{
+	if len(result) > 0 {
 		g := make([]xsql.GroupedTuples, 0, len(result))
 		for _, v := range result {
 			g = append(g, v)
 		}
 		return xsql.GroupedTuplesSet(g)
-	}else{
+	} else {
 		return nil
 	}
 }

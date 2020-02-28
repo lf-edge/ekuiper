@@ -18,60 +18,56 @@ import (
 var log = common.Log
 
 type StreamProcessor struct {
-	statement string
-	dbDir     string
+	db common.KeyValue
 }
 
-//@params s : the sql string of create stream statement
 //@params d : the directory of the DB to save the stream info
-func NewStreamProcessor(s, d string) *StreamProcessor {
+func NewStreamProcessor(d string) *StreamProcessor {
 	processor := &StreamProcessor{
-		statement: s,
-		dbDir:     d,
+		db: common.GetSimpleKVStore(d),
 	}
 	return processor
 }
 
-func (p *StreamProcessor) Exec() (result []string, err error) {
-	parser := xsql.NewParser(strings.NewReader(p.statement))
+func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error) {
+	parser := xsql.NewParser(strings.NewReader(statement))
 	stmt, err := xsql.Language.Parse(parser)
 	if err != nil {
-		return
+		return nil, err
 	}
-
-	store := common.GetSimpleKVStore(p.dbDir)
-	err = store.Open()
-	if err != nil {
-		return
-	}
-	defer store.Close()
-
 	switch s := stmt.(type) {
 	case *xsql.StreamStmt:
 		var r string
-		r, err = p.execCreateStream(s, store)
+		r, err = p.execCreateStream(s, statement)
 		result = append(result, r)
 	case *xsql.ShowStreamsStatement:
-		result, err = p.execShowStream(s, store)
+		result, err = p.execShowStream(s)
 	case *xsql.DescribeStreamStatement:
 		var r string
-		r, err = p.execDescribeStream(s, store)
+		r, err = p.execDescribeStream(s)
 		result = append(result, r)
 	case *xsql.ExplainStreamStatement:
 		var r string
-		r, err = p.execExplainStream(s, store)
+		r, err = p.execExplainStream(s)
 		result = append(result, r)
 	case *xsql.DropStreamStatement:
 		var r string
-		r, err = p.execDropStream(s, store)
+		r, err = p.execDropStream(s)
 		result = append(result, r)
+	default:
+		return nil, fmt.Errorf("Invalid stream statement: %s", statement)
 	}
 
 	return
 }
 
-func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, db common.KeyValue) (string, error) {
-	err := db.Set(string(stmt.Name), p.statement)
+func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, statement string) (string, error) {
+	err := p.db.Open()
+	if err != nil {
+		return "", fmt.Errorf("Create stream fails, error when opening db: %v.", err)
+	}
+	defer p.db.Close()
+	err = p.db.Set(string(stmt.Name), statement)
 	if err != nil {
 		return "", fmt.Errorf("Create stream fails: %v.", err)
 	} else {
@@ -79,26 +75,36 @@ func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, db common.KeyV
 	}
 }
 
-func (p *StreamProcessor) execShowStream(stmt *xsql.ShowStreamsStatement, db common.KeyValue) ([]string, error) {
-	keys, err := db.Keys()
+func (p *StreamProcessor) ExecStreamSql(statement string) (string, error) {
+	r, err := p.ExecStmt(statement)
+	if err != nil {
+		return "", err
+	} else {
+		return strings.Join(r, "\n"), err
+	}
+}
+
+func (p *StreamProcessor) execShowStream(stmt *xsql.ShowStreamsStatement) ([]string, error) {
+	keys, err := p.ShowStream()
 	if len(keys) == 0 {
 		keys = append(keys, "No stream definitions are found.")
 	}
 	return keys, err
 }
 
-func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement, db common.KeyValue) (string, error) {
-	s, f := db.Get(stmt.Name)
-	s1, _ := s.(string)
-	if !f {
-		return "", fmt.Errorf("Stream %s is not found.", stmt.Name)
+func (p *StreamProcessor) ShowStream() ([]string, error) {
+	err := p.db.Open()
+	if err != nil {
+		return nil, fmt.Errorf("Show stream fails, error when opening db: %v.", err)
 	}
+	defer p.db.Close()
+	return p.db.Keys()
+}
 
-	parser := xsql.NewParser(strings.NewReader(s1))
-	stream, err := xsql.Language.Parse(parser)
-	streamStmt, ok := stream.(*xsql.StreamStmt)
-	if !ok {
-		return "", fmt.Errorf("Error resolving the stream %s, the data in db may be corrupted.", stmt.Name)
+func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement) (string, error) {
+	streamStmt, err := p.DescStream(stmt.Name)
+	if err != nil {
+		return "", err
 	}
 	var buff bytes.Buffer
 	buff.WriteString("Fields\n--------------------------------------------------------------------------------\n")
@@ -112,20 +118,58 @@ func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement,
 	return buff.String(), err
 }
 
-func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement, db common.KeyValue) (string, error) {
-	_, f := db.Get(stmt.Name)
+func (p *StreamProcessor) DescStream(name string) (*xsql.StreamStmt, error) {
+	err := p.db.Open()
+	if err != nil {
+		return nil, fmt.Errorf("Describe stream fails, error when opening db: %v.", err)
+	}
+	defer p.db.Close()
+	s, f := p.db.Get(name)
+	if !f {
+		return nil, fmt.Errorf("Stream %s is not found.", name)
+	}
+	s1 := s.(string)
+
+	parser := xsql.NewParser(strings.NewReader(s1))
+	stream, err := xsql.Language.Parse(parser)
+	if err != nil {
+		return nil, err
+	}
+	streamStmt, ok := stream.(*xsql.StreamStmt)
+	if !ok {
+		return nil, fmt.Errorf("Error resolving the stream %s, the data in db may be corrupted.", name)
+	}
+	return streamStmt, nil
+}
+
+func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement) (string, error) {
+	err := p.db.Open()
+	if err != nil {
+		return "", fmt.Errorf("Explain stream fails, error when opening db: %v.", err)
+	}
+	defer p.db.Close()
+	_, f := p.db.Get(stmt.Name)
 	if !f {
 		return "", fmt.Errorf("Stream %s is not found.", stmt.Name)
 	}
 	return "TO BE SUPPORTED", nil
 }
 
-func (p *StreamProcessor) execDropStream(stmt *xsql.DropStreamStatement, db common.KeyValue) (string, error) {
-	err := db.Delete(stmt.Name)
+func (p *StreamProcessor) execDropStream(stmt *xsql.DropStreamStatement) (string, error) {
+	return p.DropStream(stmt.Name)
+}
+
+func (p *StreamProcessor) DropStream(name string) (string, error) {
+	err := p.db.Open()
+	if err != nil {
+		return "", fmt.Errorf("Drop stream fails, error when opening db: %v.", err)
+	}
+	defer p.db.Close()
+	err = p.db.Delete(name)
 	if err != nil {
 		return "", fmt.Errorf("Drop stream fails: %v.", err)
 	} else {
-		return fmt.Sprintf("Stream %s is dropped.", stmt.Name), nil
+		return fmt.Sprintf("Stream %s is dropped.", name), nil
 	}
 }
 
@@ -145,12 +189,14 @@ func GetStream(m *common.SimpleKVStore, name string) (stmt *xsql.StreamStmt, err
 }
 
 type RuleProcessor struct {
-	dbDir string
+	db        common.KeyValue
+	rootDbDir string
 }
 
 func NewRuleProcessor(d string) *RuleProcessor {
 	processor := &RuleProcessor{
-		dbDir: d,
+		db:        common.GetSimpleKVStore(path.Join(d, "rule")),
+		rootDbDir: d,
 	}
 	return processor
 }
@@ -160,30 +206,30 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 	if err != nil {
 		return nil, err
 	}
-	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
-	err = store.Open()
+
+	err = p.db.Open()
 	if err != nil {
 		return nil, err
 	}
-	err = store.Set(string(name), ruleJson)
-	defer store.Close()
+	defer p.db.Close()
+
+	err = p.db.Set(rule.Id, ruleJson)
 	if err != nil {
 		return nil, err
 	} else {
-		log.Infof("Rule %s is created.", name)
+		log.Infof("Rule %s is created.", rule.Id)
 	}
 
 	return rule, nil
 }
 
 func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
-	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
-	err := store.Open()
+	err := p.db.Open()
 	if err != nil {
 		return nil, err
 	}
-	defer store.Close()
-	s, f := store.Get(string(name))
+	defer p.db.Close()
+	s, f := p.db.Get(string(name))
 	if !f {
 		return nil, fmt.Errorf("Rule %s is not found.", name)
 	}
@@ -196,10 +242,16 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	if err := json.Unmarshal([]byte(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)
 	}
-	rule.Id = name
+
 	//validation
-	if name == "" {
+	if rule.Id == "" && name == "" {
 		return nil, fmt.Errorf("Missing rule id.")
+	}
+	if name != "" && rule.Id != "" && name != rule.Id {
+		return nil, fmt.Errorf("Name is not consistent with rule id.")
+	}
+	if rule.Id == "" {
+		rule.Id = name
 	}
 	if rule.Sql == "" {
 		return nil, fmt.Errorf("Missing rule SQL.")
@@ -231,7 +283,7 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 	if tp, inputs, err := p.createTopo(&api.Rule{Id: ruleid, Sql: sql}); err != nil {
 		return nil, err
 	} else {
-		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", "logToMemory", nil ))
+		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", "logToMemory", nil))
 		go func() {
 			select {
 			case err := <-tp.Open():
@@ -245,13 +297,12 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 }
 
 func (p *RuleProcessor) ExecDesc(name string) (string, error) {
-	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
-	err := store.Open()
+	err := p.db.Open()
 	if err != nil {
 		return "", err
 	}
-	defer store.Close()
-	s, f := store.Get(string(name))
+	defer p.db.Close()
+	s, f := p.db.Get(name)
 	if !f {
 		return "", fmt.Errorf("Rule %s is not found.", name)
 	}
@@ -280,23 +331,21 @@ func (p *RuleProcessor) ExecShow() (string, error) {
 }
 
 func (p *RuleProcessor) GetAllRules() ([]string, error) {
-	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
-	err := store.Open()
+	err := p.db.Open()
 	if err != nil {
 		return nil, err
 	}
-	defer store.Close()
-	return store.Keys()
+	defer p.db.Close()
+	return p.db.Keys()
 }
 
 func (p *RuleProcessor) ExecDrop(name string) (string, error) {
-	store := common.GetSimpleKVStore(path.Join(p.dbDir, "rule"))
-	err := store.Open()
+	err := p.db.Open()
 	if err != nil {
 		return "", err
 	}
-	defer store.Close()
-	err = store.Delete(string(name))
+	defer p.db.Close()
+	err = p.db.Delete(string(name))
 	if err != nil {
 		return "", err
 	} else {
@@ -313,9 +362,9 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 	name := rule.Id
 	sql := rule.Sql
 	var (
-		isEventTime bool
-		lateTol int64
-		concurrency = 1
+		isEventTime  bool
+		lateTol      int64
+		concurrency  = 1
 		bufferLength = 1024
 	)
 
@@ -363,7 +412,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			if !shouldCreateSource && len(streamsFromStmt) != len(sources) {
 				return nil, nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
 			}
-			store := common.GetSimpleKVStore(path.Join(p.dbDir, "stream"))
+			store := common.GetSimpleKVStore(path.Join(p.rootDbDir, "stream"))
 			err := store.Open()
 			if err != nil {
 				return nil, nil, err

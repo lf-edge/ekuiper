@@ -4,7 +4,7 @@ COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
-RUN apk add upx gcc make git libc-dev binutils-gold && make 
+RUN apk add upx gcc make git libc-dev binutils-gold pkgconfig zeromq-dev && make
 
 FROM alpine:3.10
 

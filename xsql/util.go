@@ -13,7 +13,7 @@ func PrintFieldType(ft FieldType, buff *bytes.Buffer) {
 		buff.WriteString("array(")
 		if t.FieldType != nil {
 			PrintFieldType(t.FieldType, buff)
-		}else{
+		} else {
 			buff.WriteString(t.Type.String())
 		}
 		buff.WriteString(")")
@@ -21,9 +21,9 @@ func PrintFieldType(ft FieldType, buff *bytes.Buffer) {
 		buff.WriteString("struct(")
 		isFirst := true
 		for _, f := range t.StreamFields {
-			if isFirst{
+			if isFirst {
 				isFirst = false
-			}else{
+			} else {
 				buff.WriteString(", ")
 			}
 			buff.WriteString(f.Name + " ")
@@ -33,17 +33,17 @@ func PrintFieldType(ft FieldType, buff *bytes.Buffer) {
 	}
 }
 
-func GetStreams(stmt *SelectStatement) (result []string){
+func GetStreams(stmt *SelectStatement) (result []string) {
 	if stmt == nil {
 		return nil
 	}
-	for _, source := range stmt.Sources{
+	for _, source := range stmt.Sources {
 		if s, ok := source.(*Table); ok {
 			result = append(result, s.Name)
 		}
 	}
 
-	for _, join := range stmt.Joins{
+	for _, join := range stmt.Joins {
 		result = append(result, join.Name)
 	}
 	return

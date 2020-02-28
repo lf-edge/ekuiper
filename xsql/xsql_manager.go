@@ -27,11 +27,10 @@ func (t *ParseTree) Handle(tok Token, fn func(*Parser) (Statement, error)) {
 	t.Keys = append(t.Keys, tok.String())
 }
 
-
 func (pt *ParseTree) Parse(p *Parser) (Statement, error) {
 	tok, _ := p.scanIgnoreWhitespace()
 	p.unscan()
-	if f, ok  := pt.Handlers[tok]; ok {
+	if f, ok := pt.Handlers[tok]; ok {
 		return f(p)
 	}
 	return nil, nil
