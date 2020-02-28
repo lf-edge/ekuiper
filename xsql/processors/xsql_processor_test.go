@@ -1871,7 +1871,6 @@ func TestWindowError(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	createSchemalessStreams(t)
 	defer dropSchemalessStreams(t)
-	common.InitConf()
 	for i, tt := range tests {
 		test.ResetClock(1541152486000)
 		p := NewRuleProcessor(DbDir)
@@ -2730,7 +2729,6 @@ func TestEventWindow(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	createEventStreams(t)
 	defer dropEventStreams(t)
-	common.InitConf()
 	for i, tt := range tests {
 		test.ResetClock(1541152486000)
 		p := NewRuleProcessor(DbDir)
