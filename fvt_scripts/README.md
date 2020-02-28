@@ -39,7 +39,7 @@ Because test scripts uses MQTT broker for source and sink of Kuiper rule, an MQT
 
 **Run JMeter**
 
-For most of scripts, you can just start JMeter by default way, such as ``bin/jmeter.sh`` in Mac or Linux. But some of scripts need to pass some parameters before running them. Please refer to below for detailed.
+For most of scripts, you can just start JMeter by default way, such as ``bin/jmeter.sh`` in Mac or Linux. But some of scripts need to pass some parameters before running them. Please refer to below for detailed. Please make sure you start MQTT broker & Kuiper before running the tests.
 
 ## Scenarios
 
@@ -55,7 +55,7 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   - Specify the ``base`` property in the JMeter command line, the ``base`` is where Kuiper installs. Below is command for starting JMeter.
 
     ```shell
-    bin/jmeter.sh -Dbase="/Users/rockyjin/Downloads/workspace/edge/src/kuiper/_build/kuiper-0.1.1-57-g41ea41b-darwin-x86_64"
+    bin/jmeter.sh -Dbase="/opt/kuiper"
     ```
 
 - [Basic rules test](rule_test.jmx)
