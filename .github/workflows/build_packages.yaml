@@ -95,7 +95,7 @@ jobs:
     release:
         runs-on: ubuntu-latest
 
-        needs: [build, build-on-mac, build-docker-images]
+        needs: [build, build-on-mac]
 
         steps:
         - uses: actions/checkout@v2
@@ -126,12 +126,12 @@ jobs:
             curl "https://d1vvhvl2y92vvt.cloudfront.net/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             sudo ./aws/install
-            aws2 configure set aws_access_key_id ${{ secrets.AwsAccessKeyId }}
-            aws2 configure set aws_secret_access_key ${{ secrets.AwsSecretAccessKey }}
-            aws2 configure set default.region us-west-2
-            aws2 s3 rm --quiet --recursive s3://packages.emqx.io/kuiper/$version
-            aws2 s3 cp --quiet --recursive ./_packages s3://packages.emqx.io/kuiper/$version
-            aws2 cloudfront create-invalidation --distribution-id E3TYD0WSP4S14P --paths "/kuiper/$version/*"
+            aws configure set aws_access_key_id ${{ secrets.AwsAccessKeyId }}
+            aws configure set aws_secret_access_key ${{ secrets.AwsSecretAccessKey }}
+            aws configure set default.region us-west-2
+            aws s3 rm --quiet --recursive s3://packages.emqx.io/kuiper/$version
+            aws s3 cp --quiet --recursive ./_packages s3://packages.emqx.io/kuiper/$version
+            aws cloudfront create-invalidation --distribution-id E3TYD0WSP4S14P --paths "/kuiper/$version/*"
         - name: update helm packages
           if: github.event_name == 'release'
           run: |
