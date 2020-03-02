@@ -141,11 +141,11 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 				o.statManager.IncTotalExceptions()
 				break
 			}
-			if d, ok := item.(*xsql.Tuple); !ok {
-				log.Errorf("Expect xsql.Tuple type")
+			switch d := item.(type) {
+			case error:
+				nodes.Broadcast(o.outputs, d, ctx)
 				o.statManager.IncTotalExceptions()
-				break
-			} else {
+			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
 				inputs = append(inputs, d)
 				switch o.window.Type {
@@ -162,9 +162,12 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 						timeout = timeoutTicker.C
 					}
 				}
+				o.statManager.ProcessTimeEnd()
+				o.statManager.SetBufferLength(int64(len(o.input)))
+			default:
+				nodes.Broadcast(o.outputs, fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d), ctx)
+				o.statManager.IncTotalExceptions()
 			}
-			o.statManager.ProcessTimeEnd()
-			o.statManager.SetBufferLength(int64(len(o.input)))
 		case now := <-c:
 			if len(inputs) > 0 {
 				o.statManager.ProcessTimeStart()

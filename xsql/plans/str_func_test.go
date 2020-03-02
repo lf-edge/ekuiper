@@ -407,17 +407,6 @@ func TestStrFunc_Apply1(t *testing.T) {
 				"b": "message",
 			}},
 		},
-
-		{
-			sql: `SELECT split_value(a,"/",3) AS a FROM test1`,
-			data: &xsql.Tuple{
-				Emitter: "test",
-				Message: xsql.Message{
-					"a": "test/device001/message",
-				},
-			},
-			result: []map[string]interface{}{map[string]interface{}{}},
-		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -444,7 +433,7 @@ func TestStrFunc_Apply1(t *testing.T) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
 			}
 		} else {
-			t.Errorf("The returned result is not type of []byte\n")
+			t.Errorf("%d. The returned result is not type of []byte\n", i)
 		}
 	}
 }

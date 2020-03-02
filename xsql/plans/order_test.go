@@ -1,6 +1,7 @@
 package plans
 
 import (
+	"errors"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
@@ -87,7 +88,64 @@ func TestOrderPlan_Apply(t *testing.T) {
 				},
 			},
 		},
-
+		{
+			sql: "SELECT id1 FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10) ORDER BY id1 DESC",
+			data: xsql.WindowTuplesSet{
+				xsql.WindowTuples{
+					Emitter: "src1",
+					Tuples: []xsql.Tuple{
+						{
+							Emitter: "src1",
+							Message: xsql.Message{"id1": 1, "f1": "v1"},
+						}, {
+							Emitter: "src1",
+							Message: xsql.Message{"f1": "v2"},
+						}, {
+							Emitter: "src1",
+							Message: xsql.Message{"id1": 3, "f1": "v1"},
+						},
+					},
+				},
+			},
+			result: xsql.WindowTuplesSet{
+				xsql.WindowTuples{
+					Emitter: "src1",
+					Tuples: []xsql.Tuple{
+						{
+							Emitter: "src1",
+							Message: xsql.Message{"id1": 3, "f1": "v1"},
+						}, {
+							Emitter: "src1",
+							Message: xsql.Message{"id1": 1, "f1": "v1"},
+						}, {
+							Emitter: "src1",
+							Message: xsql.Message{"f1": "v2"},
+						},
+					},
+				},
+			},
+		},
+		{
+			sql: "SELECT id1 FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10) ORDER BY id1 DESC",
+			data: xsql.WindowTuplesSet{
+				xsql.WindowTuples{
+					Emitter: "src1",
+					Tuples: []xsql.Tuple{
+						{
+							Emitter: "src1",
+							Message: xsql.Message{"id1": 1, "f1": "v1"},
+						}, {
+							Emitter: "src1",
+							Message: xsql.Message{"id1": "2string", "f1": "v2"},
+						}, {
+							Emitter: "src1",
+							Message: xsql.Message{"id1": 3, "f1": "v1"},
+						},
+					},
+				},
+			},
+			result: errors.New("run Order By error: incompatible types for comparison: int and string"),
+		},
 		{
 			sql: "SELECT * FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10) ORDER BY f1, id1 DESC",
 			data: xsql.WindowTuplesSet{
@@ -341,13 +399,6 @@ func TestOrderPlan_Apply(t *testing.T) {
 				{
 					&xsql.JoinTuple{
 						Tuples: []xsql.Tuple{
-							{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
-						},
-					},
-				},
-				{
-					&xsql.JoinTuple{
-						Tuples: []xsql.Tuple{
 							{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
 							{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 						},
@@ -358,6 +409,13 @@ func TestOrderPlan_Apply(t *testing.T) {
 						Tuples: []xsql.Tuple{
 							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
 							{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
+						},
+					},
+				},
+				{
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 						},
 					},
 				},

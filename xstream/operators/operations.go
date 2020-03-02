@@ -137,9 +137,9 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			switch val := result.(type) {
 			case nil:
 				continue
-			case error: //TODO error handling
-				logger.Infoln(val)
-				logger.Infoln(val.Error())
+			case error:
+				logger.Errorf("Operation %s error: %s", ctx.GetOpId(), val)
+				nodes.Broadcast(o.outputs, val, ctx)
 				stats.IncTotalExceptions()
 				continue
 			default:
