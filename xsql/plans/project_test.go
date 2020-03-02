@@ -1040,6 +1040,17 @@ func TestProjectPlan_Funcs(t *testing.T) {
 			}, {
 				"concat": "388.886",
 			}},
+		}, {
+			sql: "SELECT count(a) as r FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": 47.5,
+				},
+			},
+			result: []map[string]interface{}{{
+				"r": float64(1),
+			}},
 		},
 	}
 
@@ -1051,7 +1062,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		pp := &ProjectPlan{Fields: stmt.Fields}
+		pp := &ProjectPlan{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
 		pp.isTest = true
 		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}

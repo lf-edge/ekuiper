@@ -1762,67 +1762,57 @@ func TestWindowError(t *testing.T) {
 				"op_join_0_records_in_total":   int64(10),
 				"op_join_0_records_out_total":  int64(5),
 			},
-			//}, {
-			//	name: `rule4`,
-			//	sql:  `SELECT color FROM ldemo GROUP BY SlidingWindow(ss, 2), color having color > 5`,
-			//	size: 5,
-			//	r: [][]map[string]interface{}{
-			//		{{
-			//			"color": "red",
-			//		}}, {{
-			//			"color": "blue",
-			//		}, {
-			//			"color": "red",
-			//		}}, {{
-			//			"color": "blue",
-			//		}, {
-			//			"color": "red",
-			//		}}, {{
-			//			"color": "blue",
-			//		}, {
-			//			"color": "yellow",
-			//		}}, {{
-			//			"color": "blue",
-			//		}, {
-			//			"color": "red",
-			//		}, {
-			//			"color": "yellow",
-			//		}},
-			//	},
-			//	m: map[string]interface{}{
-			//		"op_preprocessor_demo_0_exceptions_total":   int64(0),
-			//		"op_preprocessor_demo_0_process_latency_ms": int64(0),
-			//		"op_preprocessor_demo_0_records_in_total":   int64(5),
-			//		"op_preprocessor_demo_0_records_out_total":  int64(5),
-			//
-			//		"op_project_0_exceptions_total":   int64(0),
-			//		"op_project_0_process_latency_ms": int64(0),
-			//		"op_project_0_records_in_total":   int64(5),
-			//		"op_project_0_records_out_total":  int64(5),
-			//
-			//		"sink_mockSink_0_exceptions_total":  int64(0),
-			//		"sink_mockSink_0_records_in_total":  int64(5),
-			//		"sink_mockSink_0_records_out_total": int64(5),
-			//
-			//		"source_demo_0_exceptions_total":  int64(0),
-			//		"source_demo_0_records_in_total":  int64(5),
-			//		"source_demo_0_records_out_total": int64(5),
-			//
-			//		"op_window_0_exceptions_total":   int64(0),
-			//		"op_window_0_process_latency_ms": int64(0),
-			//		"op_window_0_records_in_total":   int64(5),
-			//		"op_window_0_records_out_total":  int64(5),
-			//
-			//		"op_aggregate_0_exceptions_total":   int64(0),
-			//		"op_aggregate_0_process_latency_ms": int64(0),
-			//		"op_aggregate_0_records_in_total":   int64(5),
-			//		"op_aggregate_0_records_out_total":  int64(5),
-			//
-			//		"op_order_0_exceptions_total":   int64(0),
-			//		"op_order_0_process_latency_ms": int64(0),
-			//		"op_order_0_records_in_total":   int64(5),
-			//		"op_order_0_records_out_total":  int64(5),
-			//	},
+		}, {
+			name: `rule4`,
+			sql:  `SELECT color FROM ldemo GROUP BY SlidingWindow(ss, 2), color having size >= 2`,
+			size: 5,
+			r: [][]map[string]interface{}{
+				{{
+					"color": "red",
+				}}, {{
+					"error": "run Having error: invalid operation string(string) >= int64(2)",
+				}}, {{
+					"error": "run Having error: invalid operation string(string) >= int64(2)",
+				}}, {{
+					"error": "run Having error: invalid operation string(string) >= int64(2)",
+				}}, {{}, {
+					"color": float64(49),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_ldemo_0_exceptions_total":   int64(0),
+				"op_preprocessor_ldemo_0_process_latency_ms": int64(0),
+				"op_preprocessor_ldemo_0_records_in_total":   int64(5),
+				"op_preprocessor_ldemo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(3),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(2),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_ldemo_0_exceptions_total":  int64(0),
+				"source_ldemo_0_records_in_total":  int64(5),
+				"source_ldemo_0_records_out_total": int64(5),
+
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(5),
+				"op_window_0_records_out_total":  int64(5),
+
+				"op_aggregate_0_exceptions_total":   int64(0),
+				"op_aggregate_0_process_latency_ms": int64(0),
+				"op_aggregate_0_records_in_total":   int64(5),
+				"op_aggregate_0_records_out_total":  int64(5),
+
+				"op_having_0_exceptions_total":   int64(3),
+				"op_having_0_process_latency_ms": int64(0),
+				"op_having_0_records_in_total":   int64(5),
+				"op_having_0_records_out_total":  int64(2),
+			},
 		}, {
 			name: `rule5`,
 			sql:  `SELECT color, size FROM ldemo GROUP BY tumblingwindow(ss, 1) ORDER BY size`,
@@ -2832,9 +2822,9 @@ func getMetric(tp *xstream.TopologyNew, name string) int {
 
 func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}, sql string) (err error) {
 	keys, values := tp.GetMetrics()
-	//for i, k := range keys{
-	//	log.Printf("%s:%v", k, values[i])
-	//}
+	for i, k := range keys {
+		log.Printf("%s:%v", k, values[i])
+	}
 	for k, v := range m {
 		var (
 			index   int
