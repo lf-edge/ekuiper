@@ -9,7 +9,7 @@ import (
 
 func getSource(t string) (api.Source, error) {
 	if t == "edgex" {
-		return &extensions.EdgexZMQSource{}, nil
+		return &extensions.EdgexSource{}, nil
 	}
 	return doGetSource(t)
 }

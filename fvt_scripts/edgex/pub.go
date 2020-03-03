@@ -38,7 +38,19 @@ func pubEventClientZeroMq() {
 					Name: "Temperature", Value: fmt.Sprintf("%d", i*8)}
 				var testReading2 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name",
 					Name: "Humidity", Value: fmt.Sprintf("%d", i*9)}
-				testEvent.Readings = append(testEvent.Readings, testReading1, testReading2)
+
+				var r3 = models.Reading{Name:"b1"}
+				if i % 2 == 0 {
+					r3.Value = "true"
+				} else {
+					r3.Value = "false"
+				}
+
+				r4 := models.Reading{Name:"i1", Value:fmt.Sprintf("%d", i)}
+				r5 := models.Reading{Name:"f1", Value:fmt.Sprintf("%.2f", float64(i)/2.0)}
+				r6 := models.Reading{Name:"j1", Value:`{"field1" : "v1", "field2" : 2}`}
+
+				testEvent.Readings = append(testEvent.Readings, testReading1, testReading2, r3, r4, r5, r6)
 
 				data, err := client.MarshalEvent(testEvent)
 				if err != nil {
