@@ -21,8 +21,11 @@ endif
 
 TARGET ?= emqx/kuiper
 
-.PHONY: all
-all: build_without_edgex
+.PHONY: build
+build: build_without_edgex
+
+.PHONY:pkg
+pkg: pkg_without_edgex
 
 .PHONY: build_prepare
 build_prepare:
@@ -52,6 +55,10 @@ build_without_edgex: build_prepare
 	@mv ./cli ./server $(BUILD_PATH)/$(PACKAGE_NAME)/bin
 	@echo "Build successfully"
 
+.PHONY: pkg_without_edgex
+pkg_without_edgex: build_without_edgex
+	@make real_pkg
+
 .PHONY: build_with_edgex
 build_with_edgex: build_prepare
 	@if [ ! -z $(GOOS) ] && [ ! -z $(GOARCH) ] && [ $(CGO_ENABLED) == 0 ];then \
@@ -65,8 +72,12 @@ build_with_edgex: build_prepare
 	@mv ./cli ./server $(BUILD_PATH)/$(PACKAGE_NAME)/bin
 	@echo "Build successfully"
 
-.PHONY: pkg
-pkg: build_without_edgex
+.PHONY: pkg_whit_edgex
+pkg_whit_edgex: build_with_edgex 
+	@make real_pkg
+
+.PHONY: real_pkg
+real_pkg:
 	@mkdir -p $(PACKAGES_PATH)
 	@cd $(BUILD_PATH) && zip -rq $(PACKAGE_NAME).zip $(PACKAGE_NAME)
 	@cd $(BUILD_PATH) && tar -czf $(PACKAGE_NAME).tar.gz $(PACKAGE_NAME)
