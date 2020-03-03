@@ -49,7 +49,7 @@ jobs:
             ln -s _build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-x86_64/log kuiper_logs
         - name: run fvt tests
           timeout-minutes: 5
-          run: ./fvt_scripts/run_jmeter.sh
+          run: ./fvt_scripts/run_jmeter.sh with_edgex=true
         - uses: actions/upload-artifact@v1
           if: always()
           with:
@@ -109,7 +109,7 @@ jobs:
             ln -s _build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-x86_64/log kuiper_logs
         - name: run fvt tests
           timeout-minutes: 5
-          run: ./fvt_scripts/run_jmeter.sh
+          run: ./fvt_scripts/run_jmeter.sh with_edgex=false
         - uses: actions/upload-artifact@v1
           if: always()
           with:
