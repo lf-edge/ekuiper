@@ -5,7 +5,10 @@ default:
   port: 5570
   topic: events
   serviceServer: http://localhost:10080
-
+#  optional:
+#    ClientId: client1
+#    Username: user1
+#    Password: password
 #Override the global configurations
 demo_conf: #Conf_key
   protocol: tcp

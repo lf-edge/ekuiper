@@ -24,11 +24,6 @@
             <stringProp name="Argument.value">9081</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
-          <elementProp name="k_home" elementType="Argument">
-            <stringProp name="Argument.name">k_home</stringProp>
-            <stringProp name="Argument.value">${__property(base,,)}</stringProp>
-            <stringProp name="Argument.metadata">=</stringProp>
-          </elementProp>
           <elementProp name="fvt" elementType="Argument">
             <stringProp name="Argument.name">fvt</stringProp>
             <stringProp name="Argument.value">${__property(fvt,,)}</stringProp>
@@ -103,7 +98,7 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-&quot;sql&quot; : &quot;create stream demo (temperature float, humidity bigint) WITH (FORMAT=\&quot;JSON\&quot;, DATASOURCE=\&quot;demo\&quot; TYPE=\&quot;edgex\&quot;)&quot;&#xd;
+&quot;sql&quot; : &quot;create stream demo () WITH (FORMAT=\&quot;JSON\&quot;, DATASOURCE=\&quot;demo\&quot; TYPE=\&quot;edgex\&quot;)&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>

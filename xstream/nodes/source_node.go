@@ -153,7 +153,7 @@ func getSource(t string) (api.Source, error) {
 	case "mqtt":
 		s = &extensions.MQTTSource{}
 	case "edgex":
-		s = &extensions.EdgexZMQSource{}
+		s = &extensions.EdgexSource{}
 	default:
 		nf, err := plugin_manager.GetPlugin(t, "sources")
 		if err != nil {
