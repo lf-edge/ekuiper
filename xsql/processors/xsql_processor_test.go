@@ -1764,7 +1764,7 @@ func TestWindowError(t *testing.T) {
 			},
 		}, {
 			name: `rule4`,
-			sql:  `SELECT color FROM ldemo GROUP BY SlidingWindow(ss, 2), color having size >= 2`,
+			sql:  `SELECT color FROM ldemo GROUP BY SlidingWindow(ss, 2), color having size >= 2 order by color`,
 			size: 5,
 			r: [][]map[string]interface{}{
 				{{
@@ -1775,9 +1775,9 @@ func TestWindowError(t *testing.T) {
 					"error": "run Having error: invalid operation string(string) >= int64(2)",
 				}}, {{
 					"error": "run Having error: invalid operation string(string) >= int64(2)",
-				}}, {{}, {
+				}}, {{
 					"color": float64(49),
-				}},
+				}, {}},
 			},
 			m: map[string]interface{}{
 				"op_preprocessor_ldemo_0_exceptions_total":   int64(0),
