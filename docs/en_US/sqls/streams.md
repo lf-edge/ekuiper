@@ -83,5 +83,15 @@ array: zero length array
 struct: null value
 ```
 
+### Schema-less stream
+If the data type of the stream is unknown or varying, we can define it without the fields. This is called schema-less. It is defined by leaving the fields empty.
+```sql
+schemaless_stream 
+  ()
+WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
+```
+
+Schema-less stream field data type will be determined at runtime. If the field is used in an incompatible clause, a runtime error will be thrown and send to the sink. For example, ``where temperature > 30``. Once a temperature is not a number, an error will be sent to the sink.
+
 See [Query languange element](query_language_elements.md) for more inforamtion of SQL language.
 
