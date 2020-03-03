@@ -26,13 +26,6 @@ Tumbling window functions are used to segment a data stream into distinct time s
 
 ![Tumbling Window](resources/tumblingWindow.png)
 
-TODO: 
-
-- TIMESTAMP BY is required?
-- Count function is not supported.21
-
-
-
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, TUMBLINGWINDOW(ss, 10);
 ```
@@ -42,12 +35,6 @@ SELECT count(*) FROM demo GROUP BY ID, TUMBLINGWINDOW(ss, 10);
 Hopping window functions hop forward in time by a fixed period. It may be easy to think of them as Tumbling windows that can overlap, so events can belong to more than one Hopping window result set. To make a Hopping window the same as a Tumbling window, specify the hop size to be the same as the window size.
 
 ![Hopping Window](resources/hoppingWindow.png)
-
-TODO: 
-
-- TIMESTAMP BY is required?
-- Count function is not supported.
-
 
 
 ```sql
@@ -62,10 +49,6 @@ Sliding window functions, unlike Tumbling or Hopping windows, produce an output 
 
 ![Sliding Window](resources/slidingWindow.png)
 
-TODO: 
-
-- TIMESTAMP BY is required?
-- Count function is not supported.
 
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mm, 1);
@@ -79,12 +62,6 @@ Session window functions group events that arrive at similar times, filtering ou
 
 ![Session Window](resources/sessionWindow.png)
 
-TODO: 
-
-- TIMESTAMP BY is required?
-- Count function is not supported.
-
-
 
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mm, 2, 1);
@@ -95,3 +72,20 @@ SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mm, 2, 1);
 A session window begins when the first event occurs. If another event occurs within the specified timeout from the last ingested event, then the window extends to include the new event. Otherwise if no events occur within the timeout, then the window is closed at the timeout.
 
 If events keep occurring within the specified timeout, the session window will keep extending until maximum duration is reached. The maximum duration checking intervals are set to be the same size as the specified max duration. For example, if the max duration is 10, then the checks on if the window exceed maximum duration will happen at t = 0, 10, 20, 30, etc.
+
+## Timestamp Management
+
+Every event has a timestamp associated with it. The timestamp will be used to calculate the window. By default, a timestamp will be added when an event feed into the source which is called `processing time`. We also support to specify a field as the timestamp, which is called `event time`. The timestamp field is specified in the stream definition. In the below definition, the field `ts` is specified as the timestamp field.
+
+``
+CREATE STREAM demo (
+					color STRING,
+					size BIGINT,
+					ts BIGINT
+				) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"
+``
+
+In event time mode, the watermark algorithm is used to calculate a window.
+
+## Runtime error in window
+If the window receive an error (for example, the data type does not comply to the stream definition) from upstream, the error event will be forwarded immediately to the sink. The current window calculation will ignore the error event.
