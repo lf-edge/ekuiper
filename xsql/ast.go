@@ -933,7 +933,7 @@ func (a multiValuer) Call(name string, args []interface{}) (interface{}, bool) {
 			if v, ok := valuer.Call(name, args); ok {
 				return v, true
 			} else {
-				return fmt.Errorf("found error \"%s\" when call func %s", v, name), false
+				return fmt.Errorf("call func %s error: %v", name, v), false
 			}
 		}
 	}
@@ -968,6 +968,8 @@ func (a *multiAggregateValuer) Call(name string, args []interface{}) (interface{
 		if a, ok := valuer.(AggregateCallValuer); ok {
 			if v, ok := a.Call(name, args); ok {
 				return v, true
+			} else {
+				return fmt.Errorf("call func %s error: %v", name, v), false
 			}
 		} else if c, ok := valuer.(CallValuer); ok {
 			if singleArgs == nil {

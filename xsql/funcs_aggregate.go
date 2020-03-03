@@ -24,14 +24,20 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 		if len(arg0) > 0 {
 			v := getFirstValidArg(arg0)
 			switch v.(type) {
-			case int:
-				return sliceIntTotal(arg0) / len(arg0), true
-			case int64:
-				return sliceIntTotal(arg0) / len(arg0), true
+			case int, int64:
+				if r, err := sliceIntTotal(arg0); err != nil {
+					return err, false
+				} else {
+					return r / len(arg0), true
+				}
 			case float64:
-				return sliceFloatTotal(arg0) / float64(len(arg0)), true
+				if r, err := sliceFloatTotal(arg0); err != nil {
+					return err, false
+				} else {
+					return r / float64(len(arg0)), true
+				}
 			default:
-				return fmt.Errorf("invalid data type for avg function"), false
+				return fmt.Errorf("run avg function error: found invalid arg %[1]T(%[1]v)", v), false
 			}
 		}
 		return 0, true
@@ -44,49 +50,87 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 			v := getFirstValidArg(arg0)
 			switch t := v.(type) {
 			case int:
-				return sliceIntMax(arg0, t), true
+				if r, err := sliceIntMax(arg0, t); err != nil {
+					return err, false
+				} else {
+					return r, true
+				}
 			case int64:
-				return sliceIntMax(arg0, int(t)), true
+				if r, err := sliceIntMax(arg0, int(t)); err != nil {
+					return err, false
+				} else {
+					return r, true
+				}
 			case float64:
-				return sliceFloatMax(arg0, t), true
+				if r, err := sliceFloatMax(arg0, t); err != nil {
+					return err, false
+				} else {
+					return r, true
+				}
 			case string:
-				return sliceStringMax(arg0, t), true
+				if r, err := sliceStringMax(arg0, t); err != nil {
+					return err, false
+				} else {
+					return r, true
+				}
 			default:
-				return fmt.Errorf("unsupported data type for avg function"), false
+				return fmt.Errorf("run max function error: found invalid arg %[1]T(%[1]v)", v), false
 			}
 		}
-		return fmt.Errorf("empty data for max function"), false
+		return fmt.Errorf("run max function error: empty data"), false
 	case "min":
 		arg0 := args[0].([]interface{})
 		if len(arg0) > 0 {
 			v := getFirstValidArg(arg0)
 			switch t := v.(type) {
 			case int:
-				return sliceIntMin(arg0, t), true
+				if r, err := sliceIntMin(arg0, t); err != nil {
+					return err, false
+				} else {
+					return r, true
+				}
 			case int64:
-				return sliceIntMin(arg0, int(t)), true
+				if r, err := sliceIntMin(arg0, int(t)); err != nil {
+					return err, false
+				} else {
+					return r, true
+				}
 			case float64:
-				return sliceFloatMin(arg0, t), true
+				if r, err := sliceFloatMin(arg0, t); err != nil {
+					return err, false
+				} else {
+					return r, true
+				}
 			case string:
-				return sliceStringMin(arg0, t), true
+				if r, err := sliceStringMin(arg0, t); err != nil {
+					return err, false
+				} else {
+					return r, true
+				}
 			default:
-				return fmt.Errorf("unsupported data type for avg function"), false
+				return fmt.Errorf("run min function error: found invalid arg %[1]T(%[1]v)", v), false
 			}
 		}
-		return fmt.Errorf("empty data for max function"), false
+		return fmt.Errorf("run min function error: empty data"), false
 	case "sum":
 		arg0 := args[0].([]interface{})
 		if len(arg0) > 0 {
 			v := getFirstValidArg(arg0)
 			switch v.(type) {
-			case int:
-				return sliceIntTotal(arg0), true
-			case int64:
-				return sliceIntTotal(arg0), true
+			case int, int64:
+				if r, err := sliceIntTotal(arg0); err != nil {
+					return err, false
+				} else {
+					return r, true
+				}
 			case float64:
-				return sliceFloatTotal(arg0), true
+				if r, err := sliceFloatTotal(arg0); err != nil {
+					return err, false
+				} else {
+					return r, true
+				}
 			default:
-				return fmt.Errorf("invalid data type for sum function"), false
+				return fmt.Errorf("run sum function error: found invalid arg %[1]T(%[1]v)", v), false
 			}
 		}
 		return 0, true
@@ -122,84 +166,100 @@ func getFirstValidArg(s []interface{}) interface{} {
 	return nil
 }
 
-func sliceIntTotal(s []interface{}) int {
+func sliceIntTotal(s []interface{}) (int, error) {
 	var total int
 	for _, v := range s {
-		if v, ok := v.(int); ok {
-			total += v
+		if vi, ok := v.(int); ok {
+			total += vi
+		} else {
+			return 0, fmt.Errorf("requires int but found %[1]T(%[1]v)", v)
 		}
 	}
-	return total
+	return total, nil
 }
 
-func sliceFloatTotal(s []interface{}) float64 {
+func sliceFloatTotal(s []interface{}) (float64, error) {
 	var total float64
 	for _, v := range s {
-		if v, ok := v.(float64); ok {
-			total += v
+		if vf, ok := v.(float64); ok {
+			total += vf
+		} else {
+			return 0, fmt.Errorf("requires float64 but found %[1]T(%[1]v)", v)
 		}
 	}
-	return total
+	return total, nil
 }
-func sliceIntMax(s []interface{}, max int) int {
+func sliceIntMax(s []interface{}, max int) (int, error) {
 	for _, v := range s {
-		if v, ok := v.(int); ok {
-			if max < v {
-				max = v
+		if vi, ok := v.(int); ok {
+			if max < vi {
+				max = vi
 			}
+		} else {
+			return 0, fmt.Errorf("requires int but found %[1]T(%[1]v)", v)
 		}
 	}
-	return max
+	return max, nil
 }
-func sliceFloatMax(s []interface{}, max float64) float64 {
+func sliceFloatMax(s []interface{}, max float64) (float64, error) {
 	for _, v := range s {
-		if v, ok := v.(float64); ok {
-			if max < v {
-				max = v
+		if vf, ok := v.(float64); ok {
+			if max < vf {
+				max = vf
 			}
+		} else {
+			return 0, fmt.Errorf("requires float64 but found %[1]T(%[1]v)", v)
 		}
 	}
-	return max
-}
-
-func sliceStringMax(s []interface{}, max string) string {
-	for _, v := range s {
-		if v, ok := v.(string); ok {
-			if max < v {
-				max = v
-			}
-		}
-	}
-	return max
-}
-func sliceIntMin(s []interface{}, min int) int {
-	for _, v := range s {
-		if v, ok := v.(int); ok {
-			if min > v {
-				min = v
-			}
-		}
-	}
-	return min
-}
-func sliceFloatMin(s []interface{}, min float64) float64 {
-	for _, v := range s {
-		if v, ok := v.(float64); ok {
-			if min > v {
-				min = v
-			}
-		}
-	}
-	return min
+	return max, nil
 }
 
-func sliceStringMin(s []interface{}, min string) string {
+func sliceStringMax(s []interface{}, max string) (string, error) {
 	for _, v := range s {
-		if v, ok := v.(string); ok {
-			if min < v {
-				min = v
+		if vs, ok := v.(string); ok {
+			if max < vs {
+				max = vs
 			}
+		} else {
+			return "", fmt.Errorf("requires string but found %[1]T(%[1]v)", v)
 		}
 	}
-	return min
+	return max, nil
+}
+func sliceIntMin(s []interface{}, min int) (int, error) {
+	for _, v := range s {
+		if vi, ok := v.(int); ok {
+			if min > vi {
+				min = vi
+			}
+		} else {
+			return 0, fmt.Errorf("requires int but found %[1]T(%[1]v)", v)
+		}
+	}
+	return min, nil
+}
+func sliceFloatMin(s []interface{}, min float64) (float64, error) {
+	for _, v := range s {
+		if vf, ok := v.(float64); ok {
+			if min > vf {
+				min = vf
+			}
+		} else {
+			return 0, fmt.Errorf("requires float64 but found %[1]T(%[1]v)", v)
+		}
+	}
+	return min, nil
+}
+
+func sliceStringMin(s []interface{}, min string) (string, error) {
+	for _, v := range s {
+		if vs, ok := v.(string); ok {
+			if min < vs {
+				min = vs
+			}
+		} else {
+			return "", fmt.Errorf("requires string but found %[1]T(%[1]v)", v)
+		}
+	}
+	return min, nil
 }

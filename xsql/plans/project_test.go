@@ -1280,7 +1280,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 					Tuples: []xsql.Tuple{
 						{
 							Emitter: "src1",
-							Message: xsql.Message{"b": 53},
+							Message: xsql.Message{"a": 53},
 						}, {
 							Emitter: "src1",
 							Message: xsql.Message{"a": 27},
@@ -1292,28 +1292,8 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"sum": float64(123150),
+				"sum": float64(123203),
 			}},
-		}, {
-			sql: "SELECT sum(a) as sum FROM test GROUP BY TumblingWindow(ss, 10)",
-			data: xsql.WindowTuplesSet{
-				xsql.WindowTuples{
-					Emitter: "test",
-					Tuples: []xsql.Tuple{
-						{
-							Emitter: "src1",
-							Message: xsql.Message{"a": "nan"},
-						}, {
-							Emitter: "src1",
-							Message: xsql.Message{"a": 27},
-						}, {
-							Emitter: "src1",
-							Message: xsql.Message{"a": 123123},
-						},
-					},
-				},
-			},
-			result: []map[string]interface{}{{}},
 		},
 	}
 
@@ -1342,7 +1322,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
 			}
 		} else {
-			t.Errorf("The returned result is not type of []byte\n")
+			t.Errorf("%d. %q\n\nThe returned result is not type of []byte: %#v\n", i, tt.sql, result)
 		}
 	}
 }
@@ -1383,7 +1363,7 @@ func TestProjectPlanError(t *testing.T) {
 					"a": "common string",
 				},
 			},
-			result: errors.New("run Select error: found error \"only float64 & int type are supported\" when call func round"),
+			result: errors.New("run Select error: call func round error: only float64 & int type are supported"),
 		}, {
 			sql: `SELECT round(a) as r FROM test`,
 			data: &xsql.Tuple{
@@ -1392,7 +1372,7 @@ func TestProjectPlanError(t *testing.T) {
 					"abc": "common string",
 				},
 			},
-			result: errors.New("run Select error: found error \"only float64 & int type are supported\" when call func round"),
+			result: errors.New("run Select error: call func round error: only float64 & int type are supported"),
 		}, {
 			sql: "SELECT avg(a) as avg FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: xsql.GroupedTuplesSet{
@@ -1437,7 +1417,27 @@ func TestProjectPlanError(t *testing.T) {
 					},
 				},
 			},
-			result: errors.New("run Select error: found error \"%!s(<nil>)\" when call func avg"),
+			result: errors.New("run Select error: call func avg error: requires float64 but found string(dde)"),
+		}, {
+			sql: "SELECT sum(a) as sum FROM test GROUP BY TumblingWindow(ss, 10)",
+			data: xsql.WindowTuplesSet{
+				xsql.WindowTuples{
+					Emitter: "test",
+					Tuples: []xsql.Tuple{
+						{
+							Emitter: "src1",
+							Message: xsql.Message{"a": 53},
+						}, {
+							Emitter: "src1",
+							Message: xsql.Message{"a": "ddd"},
+						}, {
+							Emitter: "src1",
+							Message: xsql.Message{"a": 123123},
+						},
+					},
+				},
+			},
+			result: errors.New("run Select error: call func sum error: requires int but found string(ddd)"),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -1446,7 +1446,7 @@ func TestProjectPlanError(t *testing.T) {
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
-		pp := &ProjectPlan{Fields: stmt.Fields}
+		pp := &ProjectPlan{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
 		pp.isTest = true
 		result := pp.Apply(ctx, tt.data)
 		if !reflect.DeepEqual(tt.result, result) {
