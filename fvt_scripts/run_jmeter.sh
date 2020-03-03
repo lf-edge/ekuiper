@@ -1,4 +1,24 @@
 #!/bin/bash
+# This script accepts the following parameters:
+#
+# * with_edgex
+#
+# Example:
+#
+# ./fvt_scripts/run_jmeter.sh with_edgex=true
+#
+# or
+#
+# ./fvt_scripts/run_jmeter.sh with_edgex=false
+#
+
+set -e
+
+CONFIG=$@
+
+for line in $CONFIG; do
+  eval "$line"
+done
 
 function downloadjar
 {
@@ -47,5 +67,7 @@ echo -e "---------------------------------------------\n"
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t fvt_scripts/select_aggr_rule_order.jmx -l jmeter_logs/select_aggr_rule_order.jtl
 echo -e "---------------------------------------------\n"
 
-/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t fvt_scripts/select_edgex_condition_rule.jmx -Dbase="$base_dir" -Dfvt="$fvt_dir" -l jmeter_logs/select_edgex_condition_rule.jtl
-echo -e "---------------------------------------------\n"
+if test $with_edgex = true; then
+  /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t fvt_scripts/select_edgex_condition_rule.jmx -Dbase="$base_dir" -Dfvt="$fvt_dir" -l jmeter_logs/select_edgex_condition_rule.jtl
+  echo -e "---------------------------------------------\n"
+fi
