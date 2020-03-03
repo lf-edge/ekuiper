@@ -146,14 +146,12 @@ func (m *SourceNode) reset() {
 	m.statManagers = nil
 }
 
-func getSource(t string) (api.Source, error) {
+func doGetSource(t string) (api.Source, error) {
 	var s api.Source
 	var ok bool
 	switch t {
 	case "mqtt":
 		s = &extensions.MQTTSource{}
-	case "edgex":
-		s = &extensions.EdgexSource{}
 	default:
 		nf, err := plugin_manager.GetPlugin(t, "sources")
 		if err != nil {

@@ -19,7 +19,7 @@ func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 	case xsql.GroupedTuplesSet:
 		r := xsql.GroupedTuplesSet{}
 		for _, v := range input {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(v, &xsql.FunctionValuer{}, &xsql.AggregateFunctionValuer{Data: v})}
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(v, v[0], &xsql.FunctionValuer{}, &xsql.AggregateFunctionValuer{Data: v}, &xsql.WildcardValuer{Data: v[0]})}
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:
@@ -42,7 +42,6 @@ func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 		ms := input[0].Tuples
 		r := ms[:0]
 		for _, v := range ms {
-			//ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&v, &xsql.FunctionValuer{})}
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(input, &v, &xsql.FunctionValuer{}, &xsql.AggregateFunctionValuer{Data: input}, &xsql.WildcardValuer{Data: &v})}
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
@@ -64,7 +63,6 @@ func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 		ms := input
 		r := ms[:0]
 		for _, v := range ms {
-			//ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&v, &xsql.FunctionValuer{})}
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(input, &v, &xsql.FunctionValuer{}, &xsql.AggregateFunctionValuer{Data: input}, &xsql.WildcardValuer{Data: &v})}
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {

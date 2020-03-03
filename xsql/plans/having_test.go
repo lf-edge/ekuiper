@@ -112,7 +112,6 @@ func TestHavingPlan_Apply(t *testing.T) {
 			},
 			result: nil,
 		},
-
 		{
 			sql: `SELECT id1 FROM src1 HAVING max(id1) = 1`,
 			data: xsql.WindowTuplesSet{
@@ -134,6 +133,119 @@ func TestHavingPlan_Apply(t *testing.T) {
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 1, "f1": "v1"},
 						},
+					},
+				},
+			},
+		}, {
+			sql: "SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10), f1 having f1 = \"v2\"",
+			data: xsql.GroupedTuplesSet{
+				{
+					&xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 1, "f1": "v1"},
+					},
+					&xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 3, "f1": "v1"},
+					},
+				},
+				{
+					&xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 2, "f1": "v2"},
+					},
+				},
+			},
+			result: xsql.GroupedTuplesSet{
+				{
+					&xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 2, "f1": "v2"},
+					},
+				},
+			},
+		}, {
+			sql: "SELECT count(*) as c, round(a) as r FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color having a > 100",
+			data: xsql.GroupedTuplesSet{
+				{
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33}},
+							{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
+						},
+					},
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 5, "a": 177.51}},
+							{Emitter: "src2", Message: xsql.Message{"id": 5, "color": "w2"}},
+						},
+					},
+				},
+				{
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 2, "a": 89.03}},
+							{Emitter: "src2", Message: xsql.Message{"id": 2, "color": "w1"}},
+						},
+					},
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 4, "a": 14.6}},
+							{Emitter: "src2", Message: xsql.Message{"id": 4, "color": "w1"}},
+						},
+					},
+				},
+			},
+			result: xsql.GroupedTuplesSet{
+				{
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33}},
+							{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
+						},
+					},
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 5, "a": 177.51}},
+							{Emitter: "src2", Message: xsql.Message{"id": 5, "color": "w2"}},
+						},
+					},
+				},
+			},
+		}, {
+			sql: "SELECT * FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10) having a > 100",
+			data: xsql.JoinTupleSets{
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33}},
+						{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
+					},
+				},
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "test", Message: xsql.Message{"id": 1, "a": 68.55}},
+						{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
+					},
+				},
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "test", Message: xsql.Message{"id": 5, "a": 177.51}},
+						{Emitter: "src2", Message: xsql.Message{"id": 5, "color": "w2"}},
+					},
+				},
+			},
+
+			result: xsql.JoinTupleSets{
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33}},
+						{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
+					},
+				},
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "test", Message: xsql.Message{"id": 5, "a": 177.51}},
+						{Emitter: "src2", Message: xsql.Message{"id": 5, "color": "w2"}},
 					},
 				},
 			},
@@ -188,6 +300,27 @@ func TestHavingPlanError(t *testing.T) {
 			sql:    `SELECT id1 FROM src1 HAVING avg(id1) > "str"`,
 			data:   errors.New("an error from upstream"),
 			result: errors.New("an error from upstream"),
+		}, {
+			sql: "SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10), f1 having f1 = \"v2\"",
+			data: xsql.GroupedTuplesSet{
+				{
+					&xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 1, "f1": 3},
+					},
+					&xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 3, "f1": 3},
+					},
+				},
+				{
+					&xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 2, "f1": "v2"},
+					},
+				},
+			},
+			result: errors.New("run Having error: invalid operation int64(3) = string(v2)"),
 		},
 	}
 
