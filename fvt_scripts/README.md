@@ -133,4 +133,30 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
 
   - Another JMeter mock-up user subscribes MQTT result topic, and assert the order for device_id field is descending, and temperature is ascending.
 
-  
+- [EdgeX source with condition](select_edgex_condition_rule.jmx)
+
+  The test script is used for testing [Kuiper EdgeX source](../docs/en_US/rules/sources/edgex.md). To run the script, 
+
+  - A mockup EdgeX value descriptor service should be compiled and run before test.
+
+    ```shell
+    # go build -o fvt_scripts/edgex/valuedesc/vdmocker fvt_scripts/edgex/valuedesc/vd_server.go
+    
+    # fvt_scripts/edgex/valuedesc/vdmocker > vdmocker.out 2>&1 &
+    ```
+
+  - An EdgeX message bus publish tool should be compiled and run during running test.
+
+    ```shell
+    # go build -o fvt_scripts/edgex/pub fvt_scripts/edgex/pub.go
+    ```
+
+  - Run the JMeter with following command, and specify the ``fvt`` property in the JMeter command line, the ``fvt`` is where you develop Kuiper, script will search ``fvt_scripts/edgex/pub`` from the location.
+
+    ```shell
+    bin/jmeter.sh -Dfvt="/Users/rockyjin/Downloads/workspace/edge/src/kuiper"
+    ```
+
+  - The processing SQL is ``SELECT * FROM demo WHERE temperature > 30``, so all of the data that with temperature less than 30 will be fitered. 
+  - Another JMeter mock-up user subscribes MQTT result topic, and assert message number and contents.
+
