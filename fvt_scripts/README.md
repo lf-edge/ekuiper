@@ -158,5 +158,28 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
     ```
 
   - The processing SQL is ``SELECT * FROM demo WHERE temperature > 30``, so all of the data that with temperature less than 30 will be fitered. 
+  
   - Another JMeter mock-up user subscribes MQTT result topic, and assert message number and contents.
+  
+- [Multiple EdgeX source configurations](fvt_scripts/select_edgex_another_bus_rule.jmx)
+
+  The test script is used for testing specifying another EdgeX source configurations in Kuiper.
+
+  - In the ``edgex.yaml`` configuration file, below additional configurations are specified.
+
+  ```yaml
+  application_conf: #Conf_key
+    protocol: tcp
+    server: localhost
+    port: 5571
+    topic: application
+  ```
+
+  - In the create stream statement, test script uses ``CONF_KEY`` keyword to use overrided configuration value that specified in ``edgex.yaml``.
+
+  ```sql
+  CREATE STREAM application () WITH (FORMAT="JSON", TYPE="edgex", CONF_KEY = "application_conf")
+  ```
+
+  - As same steps that required in the ``select_edgex_condition_rule.jmx``, EdgeX value descriptor service & message bus publish tool should be ready.
 
