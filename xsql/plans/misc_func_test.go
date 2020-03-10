@@ -233,6 +233,26 @@ func TestMetaFunc_Apply1(t *testing.T) {
 				"a":     "devices/device_001/message",
 			}},
 		},
+		{
+			sql: "SELECT meta(device) as d, meta(temperature->device) as r FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"temperature": 43.2,
+				},
+				Metadata: xsql.Metadata{
+					"temperature": map[string]interface{}{
+						"id":     "dfadfasfas",
+						"device": "device2",
+					},
+					"device": "gateway",
+				},
+			},
+			result: []map[string]interface{}{{
+				"d": "gateway",
+				"r": "device2",
+			}},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
