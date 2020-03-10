@@ -206,6 +206,8 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 			return v, true
 		}
 		return nil, false
+	case "meta":
+		return args[0], true
 	default:
 		return fmt.Errorf("unknown function name %s", name), false
 	}

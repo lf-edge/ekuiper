@@ -17,6 +17,7 @@ type Parser struct {
 		tok Token
 		lit string
 	}
+	inmeta bool
 }
 
 func (p *Parser) parseCondition() (Expr, error) {
@@ -505,10 +506,17 @@ func (p *Parser) parseUnaryExpr() (Expr, error) {
 		if n, err := p.parseFieldNameSections(); err != nil {
 			return nil, err
 		} else {
-			if len(n) == 2 {
-				return &FieldRef{StreamName: StreamName(n[0]), Name: n[1]}, nil
+			if p.inmeta {
+				if len(n) == 2 {
+					return &MetaRef{StreamName: StreamName(n[0]), Name: n[1]}, nil
+				}
+				return &MetaRef{StreamName: "", Name: n[0]}, nil
+			} else {
+				if len(n) == 2 {
+					return &FieldRef{StreamName: StreamName(n[0]), Name: n[1]}, nil
+				}
+				return &FieldRef{StreamName: "", Name: n[0]}, nil
 			}
-			return &FieldRef{StreamName: StreamName(""), Name: n[0]}, nil
 		}
 	} else if tok == STRING {
 		return &StringLiteral{Val: lit}, nil
@@ -587,6 +595,12 @@ func (p *Parser) parseAs(f *Field) (*Field, error) {
 }
 
 func (p *Parser) parseCall(name string) (Expr, error) {
+	if strings.ToLower(name) == "meta" {
+		p.inmeta = true
+		defer func() {
+			p.inmeta = false
+		}()
+	}
 	var args []Expr
 	for {
 		if tok, _ := p.scanIgnoreWhitespace(); tok == RPAREN {

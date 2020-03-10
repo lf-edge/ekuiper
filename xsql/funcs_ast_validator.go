@@ -301,6 +301,16 @@ func validateOtherFunc(name string, args []Expr) error {
 				return fmt.Errorf("Parameter of mqtt function can be only topic or messageid.")
 			}
 		}
+	case "meta":
+		if err := validateLen(name, 1, len); err != nil {
+			return err
+		}
+		if isIntegerArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) || isStringArg(args[0]) || isFloatArg(args[0]) {
+			return produceErrInfo(name, 0, "meta reference")
+		}
+		if _, ok := args[0].(*MetaRef); !ok {
+			return produceErrInfo(name, 0, "meta reference")
+		}
 	}
 	return nil
 }

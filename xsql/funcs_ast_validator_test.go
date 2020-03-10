@@ -409,11 +409,24 @@ func TestFuncValidator(t *testing.T) {
 			stmt: nil,
 			err:  "Expect string type for 2 parameter of function split_value.",
 		},
-
 		{
 			s:    `SELECT split_value(topic1, "hello", -1) FROM tbl`,
 			stmt: nil,
 			err:  "The index should not be a nagtive integer.",
+		},
+		{
+			s:    `SELECT meta(tbl, "timestamp", 1) FROM tbl`,
+			stmt: nil,
+			err:  "The arguments for meta should be 1.",
+		},
+		{
+			s:    `SELECT meta("src1.device") FROM tbl`,
+			stmt: nil,
+			err:  "Expect meta reference type for 1 parameter of function meta.",
+		},
+		{
+			s:    `SELECT meta(device) FROM tbl`,
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "meta", Expr: &Call{Name: "meta", Args: []Expr{&MetaRef{Name: "device"}}}}}, Sources: []Source{&Table{Name: "tbl"}}},
 		},
 	}
 

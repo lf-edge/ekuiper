@@ -270,6 +270,14 @@ type FieldRef struct {
 func (fr *FieldRef) expr() {}
 func (fr *FieldRef) node() {}
 
+type MetaRef struct {
+	StreamName StreamName
+	Name       string
+}
+
+func (fr *MetaRef) expr() {}
+func (fr *MetaRef) node() {}
+
 // The stream AST tree
 type Options map[string]string
 
@@ -459,6 +467,7 @@ func (fn walkFuncVisitor) Visit(n Node) Visitor { fn(n); return fn }
 type Valuer interface {
 	// Value returns the value and existence flag for a given key.
 	Value(key string) (interface{}, bool)
+	Meta(key string) (interface{}, bool)
 }
 
 // CallValuer implements the Call method for evaluating function calls.
@@ -502,6 +511,10 @@ func (wv *WildcardValuer) Value(key string) (interface{}, bool) {
 	}
 }
 
+func (wv *WildcardValuer) Meta(key string) (interface{}, bool) {
+	return nil, false
+}
+
 /**********************************
 **	Various Data Types for SQL transformation
  */
@@ -524,6 +537,11 @@ func (m Message) Value(key string) (interface{}, bool) {
 		return v, ok
 	}
 	common.Log.Println("Invalid key: " + key + ", expect source.field or field.")
+	return nil, false
+}
+
+func (m Message) Meta(key string) (interface{}, bool) {
+	common.Log.Println("Message cannot get meta")
 	return nil, false
 }
 
@@ -556,11 +574,11 @@ func (m Metadata) Value(key string) (interface{}, bool) {
 }
 
 func (t *Tuple) Value(key string) (interface{}, bool) {
-	if v, ok := t.Message.Value(key); ok {
-		return v, ok
-	} else {
-		return t.Metadata.Value(key)
-	}
+	return t.Message.Value(key)
+}
+
+func (t *Tuple) Meta(key string) (interface{}, bool) {
+	return t.Metadata.Value(key)
 }
 
 func (t *Tuple) All(stream string) (interface{}, bool) {
@@ -698,6 +716,40 @@ func (jt *JoinTuple) Value(key string) (interface{}, bool) {
 		for _, tuple := range tuples {
 			if tuple.Emitter == emitter {
 				v, ok := tuple.Message[key]
+				return v, ok
+			}
+		}
+		return nil, false
+	default:
+		common.Log.Infoln("Wrong key: ", key, ", expect dot in the expression.")
+		return nil, false
+	}
+}
+
+func (jt *JoinTuple) Meta(key string) (interface{}, bool) {
+	keys := strings.Split(key, ".")
+	tuples := jt.Tuples
+	switch len(keys) {
+	case 1:
+		if len(tuples) > 1 {
+			for _, tuple := range tuples { //TODO support key without modifier?
+				v, ok := tuple.Metadata[key]
+				if ok {
+					return v, ok
+				}
+			}
+			common.Log.Infoln("Wrong key: ", key, ", not found")
+			return nil, false
+		} else {
+			v, ok := tuples[0].Metadata[key]
+			return v, ok
+		}
+	case 2:
+		emitter, key := keys[0], keys[1]
+		//TODO should use hash here
+		for _, tuple := range tuples {
+			if tuple.Emitter == emitter {
+				v, ok := tuple.Metadata[key]
 				return v, ok
 			}
 		}
@@ -927,6 +979,15 @@ func (a multiValuer) Value(key string) (interface{}, bool) {
 	return nil, false
 }
 
+func (a multiValuer) Meta(key string) (interface{}, bool) {
+	for _, valuer := range a {
+		if v, ok := valuer.Meta(key); ok {
+			return v, true
+		}
+	}
+	return nil, false
+}
+
 func (a multiValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	for _, valuer := range a {
 		if valuer, ok := valuer.(CallValuer); ok {
@@ -941,30 +1002,21 @@ func (a multiValuer) Call(name string, args []interface{}) (interface{}, bool) {
 }
 
 type multiAggregateValuer struct {
-	data    AggregateData
-	valuers []Valuer
+	data AggregateData
+	multiValuer
 }
 
 func MultiAggregateValuer(data AggregateData, valuers ...Valuer) Valuer {
 	return &multiAggregateValuer{
-		data:    data,
-		valuers: valuers,
+		data:        data,
+		multiValuer: valuers,
 	}
-}
-
-func (a *multiAggregateValuer) Value(key string) (interface{}, bool) {
-	for _, valuer := range a.valuers {
-		if v, ok := valuer.Value(key); ok {
-			return v, true
-		}
-	}
-	return nil, false
 }
 
 //The args is [][] for aggregation
 func (a *multiAggregateValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	var singleArgs []interface{} = nil
-	for _, valuer := range a.valuers {
+	for _, valuer := range a.multiValuer {
 		if a, ok := valuer.(AggregateCallValuer); ok {
 			if v, ok := a.Call(name, args); ok {
 				return v, true
@@ -1058,6 +1110,15 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 			val, _ := v.Valuer.Value(string(expr.StreamName) + "." + expr.Name)
 			return val
 		}
+	case *MetaRef:
+		if expr.StreamName == "" {
+			val, _ := v.Valuer.Meta(expr.Name)
+			return val
+		} else {
+			//The field specified with stream source
+			val, _ := v.Valuer.Meta(string(expr.StreamName) + "." + expr.Name)
+			return val
+		}
 	case *Wildcard:
 		val, _ := v.Valuer.Value("")
 		return val
@@ -1088,10 +1149,11 @@ func (v *ValuerEval) evalJsonExpr(result interface{}, op Token, expr Expr) inter
 	if val, ok := result.(map[string]interface{}); ok {
 		switch op {
 		case ARROW:
-			if exp, ok := expr.(*FieldRef); ok {
+			switch e := expr.(type) {
+			case *FieldRef, *MetaRef:
 				ve := &ValuerEval{Valuer: Message(val)}
-				return ve.Eval(exp)
-			} else {
+				return ve.Eval(e)
+			default:
 				return fmt.Errorf("the right expression is not a field reference node")
 			}
 		default:
