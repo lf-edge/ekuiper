@@ -210,3 +210,56 @@ func TestMqttFunc_Apply2(t *testing.T) {
 		}
 	}
 }
+
+func TestMetaFunc_Apply1(t *testing.T) {
+	var tests = []struct {
+		sql    string
+		data   interface{}
+		result interface{}
+	}{
+		{
+			sql: "SELECT topic, meta(topic) AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"topic": "fff",
+				},
+				Metadata: xsql.Metadata{
+					"topic": "devices/device_001/message",
+				},
+			},
+			result: []map[string]interface{}{{
+				"topic": "fff",
+				"a":     "devices/device_001/message",
+			}},
+		},
+	}
+
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestHashFunc_Apply1")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
+	for i, tt := range tests {
+		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+		if err != nil || stmt == nil {
+			t.Errorf("parse sql %s error %v", tt.sql, err)
+		}
+		pp := &ProjectPlan{Fields: stmt.Fields}
+		pp.isTest = true
+		result := pp.Apply(ctx, tt.data)
+		var mapRes []map[string]interface{}
+		if v, ok := result.([]byte); ok {
+			err := json.Unmarshal(v, &mapRes)
+			if err != nil {
+				t.Errorf("Failed to parse the input into map.\n")
+				continue
+			}
+			//fmt.Printf("%t\n", mapRes["rengine_field_0"])
+
+			if !reflect.DeepEqual(tt.result, mapRes) {
+				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
+			}
+		} else {
+			t.Errorf("The returned result is not type of []byte\n")
+		}
+	}
+}

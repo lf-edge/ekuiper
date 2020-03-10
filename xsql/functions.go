@@ -13,6 +13,10 @@ func (*FunctionValuer) Value(key string) (interface{}, bool) {
 	return nil, false
 }
 
+func (*FunctionValuer) Meta(key string) (interface{}, bool) {
+	return nil, false
+}
+
 var aggFuncMap = map[string]string{"avg": "",
 	"count": "",
 	"max":   "", "min": "",
@@ -53,7 +57,7 @@ var hashFuncMap = map[string]string{"md5": "",
 }
 
 var otherFuncMap = map[string]string{"isNull": "",
-	"newuuid": "", "timestamp": "", "mqtt": "",
+	"newuuid": "", "timestamp": "", "mqtt": "", "meta": "",
 }
 
 func (*FunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {

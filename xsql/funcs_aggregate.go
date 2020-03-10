@@ -16,6 +16,10 @@ func (v AggregateFunctionValuer) Value(key string) (interface{}, bool) {
 	return nil, false
 }
 
+func (v AggregateFunctionValuer) Meta(key string) (interface{}, bool) {
+	return nil, false
+}
+
 func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	lowerName := strings.ToLower(name)
 	switch lowerName {
