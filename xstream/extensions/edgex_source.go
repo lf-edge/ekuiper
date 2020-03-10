@@ -4,7 +4,6 @@ package extensions
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/coredata"
@@ -21,7 +20,6 @@ import (
 type EdgexSource struct {
 	client     messaging.MessageClient
 	vdc        coredata.ValueDescriptorClient
-	device     string
 	topic      string
 	valueDescs map[string]string
 }
@@ -38,12 +36,6 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 	var port = 5570
 	if p, ok := props["port"]; ok {
 		port = p.(int)
-	}
-
-	if "" == strings.Trim(device, " ") {
-		return fmt.Errorf("Device cannot be empty.")
-	} else {
-		es.device = device
 	}
 
 	if tpc, ok := props["topic"]; ok {
@@ -115,35 +107,43 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 						result := make(map[string]interface{})
 						meta := make(map[string]interface{})
 
-						log.Debugf("receive message from device %s vs %s", e.Device, es.device)
-						if e.Device == es.device {
-							for _, r := range e.Readings {
-								if r.Name != "" {
-									if v, err := es.getValue(r, log); err != nil {
-										log.Warnf("fail to get value for %s: %v", r.Name, err)
-									} else {
-										result[strings.ToLower(r.Name)] = v
-									}
+						log.Debugf("receive message from device %s", e.Device)
+						for _, r := range e.Readings {
+							if r.Name != "" {
+								if v, err := es.getValue(r, log); err != nil {
+									log.Warnf("fail to get value for %s: %v", r.Name, err)
+								} else {
+									result[strings.ToLower(r.Name)] = v
 								}
-							}
-							if len(result) > 0 {
-								meta["id"] = e.ID
-								meta["pushed"] = e.Pushed
-								meta["device"] = e.Device
-								meta["created"] = e.Created
-								meta["modified"] = e.Modified
-								meta["origin"] = e.Origin
+								r_meta := map[string]interface{}{}
+								r_meta["id"] = r.Id
+								r_meta["created"] = r.Created
+								r_meta["modified"] = r.Modified
+								r_meta["origin"] = r.Origin
+								r_meta["pushed"] = r.Pushed
+								r_meta["device"] = r.Device
+								meta[strings.ToLower(r.Name)] = r_meta
 							} else {
-								log.Warnf("got an empty result, ignored")
+								log.Warnf("The name of readings should not be empty!")
 							}
 						}
+						if len(result) > 0 {
+							meta["id"] = e.ID
+							meta["pushed"] = e.Pushed
+							meta["device"] = e.Device
+							meta["created"] = e.Created
+							meta["modified"] = e.Modified
+							meta["origin"] = e.Origin
+							meta["CorrelationID"] = env.CorrelationID
 
-						meta["CorrelationID"] = env.CorrelationID
-						select {
-						case consumer <- api.NewDefaultSourceTuple(result, meta):
-							log.Debugf("send data to device node")
-						case <-ctx.Done():
-							return
+							select {
+							case consumer <- api.NewDefaultSourceTuple(result, meta):
+								log.Debugf("send data to device node")
+							case <-ctx.Done():
+								return
+							}
+						} else {
+							log.Warnf("got an empty result, ignored")
 						}
 					}
 				} else {
@@ -163,33 +163,26 @@ func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{
 	logger.Debugf("name %s with type %s", r.Name, t)
 	v := r.Value
 	switch t {
-	case "B", "BOOL", "BOOLEAN":
+	case "BOOL":
 		if r, err := strconv.ParseBool(v); err != nil {
 			return nil, err
 		} else {
 			return r, nil
 		}
-	case "I", "INT", "INT8", "INT16", "INT32", "INT64", "UINT", "UINT8", "UINT16", "UINT32", "UINT64":
+	case "INT8", "INT16", "INT32", "INT64", "UINT8", "UINT16", "UINT32", "UINT64":
 		if r, err := strconv.Atoi(v); err != nil {
 			return nil, err
 		} else {
 			return r, nil
 		}
-	case "F", "FLOAT", "FLOAT16", "FLOAT32", "FLOAT64":
+	case "FLOAT32", "FLOAT64":
 		if r, err := strconv.ParseFloat(v, 64); err != nil {
 			return nil, err
 		} else {
 			return r, nil
 		}
-	case "S", "STRING":
+	case "STRING":
 		return v, nil
-	case "J", "JSON":
-		var a interface{}
-		if err := json.Unmarshal([]byte(v), &a); err != nil {
-			return nil, err
-		} else {
-			return a, nil
-		}
 	default:
 		logger.Warnf("unknown type %s return the string value", t)
 		return v, nil
