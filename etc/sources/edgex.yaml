@@ -1,5 +1,5 @@
 #Global Edgex configurations
-default:y
+default:
   protocol: tcp
   server: localhost
   port: 5570
