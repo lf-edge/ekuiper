@@ -305,9 +305,21 @@ func validateOtherFunc(name string, args []Expr) error {
 		if err := validateLen(name, 1, len); err != nil {
 			return err
 		}
-		if isIntegerArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) || isStringArg(args[0]) || isFloatArg(args[0]) {
-			return produceErrInfo(name, 0, "meta reference")
+		if _, ok := args[0].(*MetaRef); ok {
+			return nil
 		}
+		expr := args[0]
+		for {
+			if be, ok := expr.(*BinaryExpr); ok {
+				if _, ok := be.LHS.(*MetaRef); ok && be.OP == ARROW {
+					return nil
+				}
+				expr = be.LHS
+			} else {
+				break
+			}
+		}
+		return produceErrInfo(name, 0, "meta reference")
 	}
 	return nil
 }
