@@ -117,7 +117,50 @@ func TestAggregatePlan_Apply(t *testing.T) {
 				},
 			},
 		},
-
+		{
+			sql: "SELECT abc FROM src1 GROUP BY meta(topic), TUMBLINGWINDOW(ss, 10)",
+			data: xsql.WindowTuplesSet{
+				xsql.WindowTuples{
+					Emitter: "src1",
+					Tuples: []xsql.Tuple{
+						{
+							Emitter:  "src1",
+							Message:  xsql.Message{"id1": 1, "f1": "v1"},
+							Metadata: xsql.Metadata{"topic": "topic1"},
+						}, {
+							Emitter:  "src1",
+							Message:  xsql.Message{"id1": 2, "f1": "v2"},
+							Metadata: xsql.Metadata{"topic": "topic2"},
+						}, {
+							Emitter:  "src1",
+							Message:  xsql.Message{"id1": 3, "f1": "v1"},
+							Metadata: xsql.Metadata{"topic": "topic1"},
+						},
+					},
+				},
+			},
+			result: xsql.GroupedTuplesSet{
+				{
+					&xsql.Tuple{
+						Emitter:  "src1",
+						Message:  xsql.Message{"id1": 1, "f1": "v1"},
+						Metadata: xsql.Metadata{"topic": "topic1"},
+					},
+					&xsql.Tuple{
+						Emitter:  "src1",
+						Message:  xsql.Message{"id1": 3, "f1": "v1"},
+						Metadata: xsql.Metadata{"topic": "topic1"},
+					},
+				},
+				{
+					&xsql.Tuple{
+						Emitter:  "src1",
+						Message:  xsql.Message{"id1": 2, "f1": "v2"},
+						Metadata: xsql.Metadata{"topic": "topic2"},
+					},
+				},
+			},
+		},
 		{
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2 GROUP BY src2.f2, TUMBLINGWINDOW(ss, 10)",
 			data: xsql.JoinTupleSets{

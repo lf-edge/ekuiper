@@ -34,7 +34,7 @@ func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple
 		} else {
 			mockClock.Add(1000 * time.Millisecond)
 		}
-		consumer <- api.NewDefaultSourceTuple(d.Message, nil)
+		consumer <- api.NewDefaultSourceTuple(d.Message, xsql.Metadata{"topic": "mock"})
 		time.Sleep(1)
 	}
 }

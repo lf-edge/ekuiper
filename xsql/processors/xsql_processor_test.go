@@ -638,6 +638,132 @@ func TestSingleSQL(t *testing.T) {
 				"op_filter_0_records_in_total":   int64(5),
 				"op_filter_0_records_out_total":  int64(1),
 			},
+		}, {
+			name: `rule4`,
+			sql:  `SELECT size as Int8, ts FROM demoE where size > 3`,
+			r: [][]map[string]interface{}{
+				{{
+					"error": "error in preprocessor: invalid data type for color, expect string but found int(3)",
+				}},
+				{{
+					"Int8": float64(6),
+					"ts":   float64(1541152486822),
+				}},
+				{{
+					"error": "error in preprocessor: invalid data type for color, expect string but found int(7)",
+				}},
+				{{
+					"error": "error in preprocessor: invalid data type for size, expect bigint but found string(blue)",
+				}},
+			},
+			s: "op_filter_0_records_in_total",
+			m: map[string]interface{}{
+				"op_preprocessor_demoE_0_exceptions_total":   int64(3),
+				"op_preprocessor_demoE_0_process_latency_ms": int64(0),
+				"op_preprocessor_demoE_0_records_in_total":   int64(5),
+				"op_preprocessor_demoE_0_records_out_total":  int64(2),
+
+				"op_project_0_exceptions_total":   int64(3),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(4),
+				"op_project_0_records_out_total":  int64(1),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
+
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(5),
+				"source_demoE_0_records_out_total": int64(5),
+
+				"op_filter_0_exceptions_total":   int64(3),
+				"op_filter_0_process_latency_ms": int64(0),
+				"op_filter_0_records_in_total":   int64(5),
+				"op_filter_0_records_out_total":  int64(1),
+			},
+		}, {
+			name: `rule5`,
+			sql:  `SELECT meta(topic) as m, ts FROM demo`,
+			r: [][]map[string]interface{}{
+				{{
+					"m":  "mock",
+					"ts": float64(1541152486013),
+				}},
+				{{
+					"m":  "mock",
+					"ts": float64(1541152486822),
+				}},
+				{{
+					"m":  "mock",
+					"ts": float64(1541152487632),
+				}},
+				{{
+					"m":  "mock",
+					"ts": float64(1541152488442),
+				}},
+				{{
+					"m":  "mock",
+					"ts": float64(1541152489252),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(5),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+			},
+			s: "sink_mockSink_0_records_out_total",
+		}, {
+			name: `rule6`,
+			sql:  `SELECT color, ts FROM demo where size > 3 and meta(topic)="mock"`,
+			r: [][]map[string]interface{}{
+				{{
+					"color": "blue",
+					"ts":    float64(1541152486822),
+				}},
+				{{
+					"color": "yellow",
+					"ts":    float64(1541152488442),
+				}},
+			},
+			s: "op_filter_0_records_in_total",
+			m: map[string]interface{}{
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(2),
+				"op_project_0_records_out_total":  int64(2),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"op_filter_0_exceptions_total":   int64(0),
+				"op_filter_0_process_latency_ms": int64(0),
+				"op_filter_0_records_in_total":   int64(5),
+				"op_filter_0_records_out_total":  int64(2),
+			},
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

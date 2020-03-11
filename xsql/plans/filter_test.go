@@ -231,6 +231,27 @@ func TestFilterPlan_Apply(t *testing.T) {
 			},
 			result: nil,
 		},
+		{
+			sql: "SELECT abc FROM tbl WHERE meta(topic) = \"topic1\" ",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"a": int64(6),
+				},
+				Metadata: xsql.Metadata{
+					"topic": "topic1",
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"a": int64(6),
+				},
+				Metadata: xsql.Metadata{
+					"topic": "topic1",
+				},
+			},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
