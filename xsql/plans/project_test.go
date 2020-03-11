@@ -1051,6 +1051,35 @@ func TestProjectPlan_Funcs(t *testing.T) {
 			result: []map[string]interface{}{{
 				"r": float64(1),
 			}},
+		}, {
+			sql: "SELECT meta(test.device) as d FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10)",
+			data: xsql.JoinTupleSets{
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "test", Message: xsql.Message{"id": 1, "a": 65.55}, Metadata: xsql.Metadata{"device": "devicea"}},
+						{Emitter: "test1", Message: xsql.Message{"id": 1, "b": 12}},
+					},
+				},
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "test", Message: xsql.Message{"id": 2, "a": 73.499}, Metadata: xsql.Metadata{"device": "deviceb"}},
+						{Emitter: "test1", Message: xsql.Message{"id": 2, "b": 34}},
+					},
+				},
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "test", Message: xsql.Message{"id": 3, "a": 88.88}, Metadata: xsql.Metadata{"device": "devicec"}},
+						{Emitter: "test1", Message: xsql.Message{"id": 3, "b": 6}},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"d": "devicea",
+			}, {
+				"d": "deviceb",
+			}, {
+				"d": "devicec",
+			}},
 		},
 	}
 
@@ -1293,6 +1322,46 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			},
 			result: []map[string]interface{}{{
 				"sum": float64(123203),
+			}},
+		},
+		{
+			sql: "SELECT count(*) as c, meta(test1.device) as d FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
+			data: xsql.GroupedTuplesSet{
+				{
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33}},
+							{Emitter: "test1", Message: xsql.Message{"id": 1, "color": "w2"}, Metadata: xsql.Metadata{"device": "devicea"}},
+						},
+					},
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 5, "a": 177.51}},
+							{Emitter: "test1", Message: xsql.Message{"id": 5, "color": "w2"}, Metadata: xsql.Metadata{"device": "deviceb"}},
+						},
+					},
+				},
+				{
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 2, "a": 89.03}},
+							{Emitter: "test1", Message: xsql.Message{"id": 2, "color": "w1"}, Metadata: xsql.Metadata{"device": "devicec"}},
+						},
+					},
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 4, "a": 14.6}},
+							{Emitter: "test1", Message: xsql.Message{"id": 4, "color": "w1"}, Metadata: xsql.Metadata{"device": "deviced"}},
+						},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"c": float64(2),
+				"d": "devicea",
+			}, {
+				"c": float64(2),
+				"d": "devicec",
 			}},
 		},
 	}
