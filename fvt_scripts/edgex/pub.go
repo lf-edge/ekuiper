@@ -12,25 +12,19 @@ import (
 	"os"
 	"time"
 )
-var msgConfig1 = types.MessageBusConfig{
-	PublishHost: types.HostInfo{
-		Host:     "*",
-		Port:     5570,
-		Protocol: "tcp",
-	},
-	Type:messaging.ZeroMQ,
-}
 
-var msgConfig2 = types.MessageBusConfig{
-	PublishHost: types.HostInfo{
-		Host:     "*",
-		Port:     5571,
-		Protocol: "tcp",
-	},
-	Type:messaging.ZeroMQ,
-}
+
 
 func pubEventClientZeroMq() {
+	var msgConfig1 = types.MessageBusConfig{
+		PublishHost: types.HostInfo{
+			Host:     "*",
+			Port:     5570,
+			Protocol: "tcp",
+		},
+		Type:messaging.ZeroMQ,
+	}
+
 	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
 		log.Fatal(err)
 	} else {
@@ -81,7 +75,14 @@ func pubEventClientZeroMq() {
 }
 
 func pubToAnother() {
-	msgConfig1.Type = messaging.ZeroMQ
+	var msgConfig2 = types.MessageBusConfig{
+		PublishHost: types.HostInfo{
+			Host:     "*",
+			Port:     5571,
+			Protocol: "tcp",
+		},
+		Type:messaging.ZeroMQ,
+	}
 	if msgClient, err := messaging.NewMessageClient(msgConfig2); err != nil {
 		log.Fatal(err)
 	} else {
@@ -108,8 +109,9 @@ func pubToAnother() {
 		if e := msgClient.Publish(env, "application"); e != nil {
 			log.Fatal(e)
 		} else {
-			fmt.Printf("Pub successful: %s\n", data)
+			fmt.Printf("pubToAnother successful: %s\n", data)
 		}
+		time.Sleep(1 * time.Second)
 	}
 }
 

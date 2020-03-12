@@ -39,6 +39,8 @@ jobs:
             wget -O emqx.deb https://www.emqx.io/downloads/broker/v4.0.2/emqx-ubuntu18.04-${EMQX_VERSION}_amd64.deb
             sudo dpkg -i emqx.deb
         - uses: actions/checkout@v2
+        - name: cat edgex_source.go
+          run: cat xstream/extensions/edgex_source.go
         - name: cat user.properties
           run:  cat /tmp/apache-jmeter-5.2.1/user.properties
         - name: cat edgex.yaml
