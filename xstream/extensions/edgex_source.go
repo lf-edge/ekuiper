@@ -103,7 +103,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 		for {
 			select {
 			case e1 := <-err:
-				log.Warnf("Error when receieving message: %s\n", e1)
+				log.Warnf("Error when receieving message: %v\n", e1)
 				errCh <- e1
 				return
 			case env := <-messages:

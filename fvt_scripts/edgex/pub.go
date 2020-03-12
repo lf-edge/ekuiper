@@ -104,7 +104,7 @@ func pubToAnother() {
 		env := types.NewMessageEnvelope([]byte(data), context.Background())
 		env.ContentType = "application/json"
 
-		if e := msgClient.Publish(env, "application"); e != nil {
+		if e := msgClient.Publish(env, "events"); e != nil {
 			log.Fatal(e)
 		} else {
 			fmt.Printf("pubToAnother successful: %s\n", data)
