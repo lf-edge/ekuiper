@@ -14,4 +14,4 @@ application_conf: #Conf_key
   protocol: tcp
   server: localhost
   port: 5571
-  topic: events
+  topic: application

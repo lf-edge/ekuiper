@@ -9,6 +9,7 @@ import (
 	"github.com/edgexfoundry/go-mod-messaging/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
 	"log"
+	"os"
 	"time"
 )
 
@@ -18,7 +19,7 @@ func pubEventClientZeroMq() {
 	var msgConfig1 = types.MessageBusConfig{
 		PublishHost: types.HostInfo{
 			Host:     "*",
-			Port:     5571,
+			Port:     5570,
 			Protocol: "tcp",
 		},
 		Type:messaging.ZeroMQ,
@@ -105,21 +106,22 @@ func pubToAnother() {
 		env := types.NewMessageEnvelope([]byte(data), context.Background())
 		env.ContentType = "application/json"
 
-		if e := msgClient.Publish(env, "events"); e != nil {
+		if e := msgClient.Publish(env, "application"); e != nil {
 			log.Fatal(e)
 		} else {
 			fmt.Printf("pubToAnother successful: %s\n", data)
 		}
+		time.Sleep(1 * time.Second)
 	}
 }
 
 func main() {
-	//if len(os.Args) == 1 {
+	if len(os.Args) == 1 {
 		pubEventClientZeroMq()
-	//} else if len(os.Args) == 2 {
-	//	if v := os.Args[1]; v == "another" {
-	//		pubToAnother()
-	//	}
-	//}
+	} else if len(os.Args) == 2 {
+		if v := os.Args[1]; v == "another" {
+			pubToAnother()
+		}
+	}
 }
 
