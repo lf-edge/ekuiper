@@ -32,6 +32,10 @@ jobs:
             echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
             wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/emqx/mqtt-jmeter/raw/master/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
             ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
+            echo -e "---------------------------------------------\n"
+            cat /tmp/apache-jmeter-$JMETER_VERSION/user.properties
+            echo -e "---------------------------------------------\n"
+            cat  etc/sources/edgex.yaml
         - name: install emqx
           env:
             EMQX_VERSION: v4.0.2
@@ -56,6 +60,7 @@ jobs:
             name: kuiper_logs_with_edgex
             path: ./kuiper_logs
         - uses: actions/upload-artifact@v1
+          if: always()
           with:
             name: jmeter_logs_with_edgex
             path: ./jmeter_logs
@@ -116,6 +121,7 @@ jobs:
             name: kuiper_logs_without_edgex
             path: ./kuiper_logs
         - uses: actions/upload-artifact@v1
+          if: always()
           with:
             name: jmeter_logs_without_edgex
             path: ./jmeter_logs
