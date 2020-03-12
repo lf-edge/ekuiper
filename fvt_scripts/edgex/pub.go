@@ -24,7 +24,7 @@ var msgConfig1 = types.MessageBusConfig{
 var msgConfig2 = types.MessageBusConfig{
 	PublishHost: types.HostInfo{
 		Host:     "*",
-		Port:     5570,
+		Port:     5571,
 		Protocol: "tcp",
 	},
 	Type:messaging.ZeroMQ,

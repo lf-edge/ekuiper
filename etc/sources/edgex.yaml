@@ -13,5 +13,5 @@ default:
 application_conf: #Conf_key
   protocol: tcp
   server: localhost
-  port: 5570
+  port: 5571
   topic: application
