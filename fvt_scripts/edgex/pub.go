@@ -18,10 +18,19 @@ var msgConfig1 = types.MessageBusConfig{
 		Port:     5570,
 		Protocol: "tcp",
 	},
+	Type:messaging.ZeroMQ,
+}
+
+var msgConfig2 = types.MessageBusConfig{
+	PublishHost: types.HostInfo{
+		Host:     "*",
+		Port:     5571,
+		Protocol: "tcp",
+	},
+	Type:messaging.ZeroMQ,
 }
 
 func pubEventClientZeroMq() {
-	msgConfig1.Type = messaging.ZeroMQ
 	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
 		log.Fatal(err)
 	} else {
@@ -71,31 +80,46 @@ func pubEventClientZeroMq() {
 	}
 }
 
-//func pubErrValue() {
-//	msgConfig1.Type = messaging.ZeroMQ
-//	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
-//		log.Fatal(err)
-//	} else {
-//		if ec := msgClient.Connect(); ec != nil {
-//			log.Fatal(ec)
-//		}
-//		client := coredata.NewEventClient(local.New("test"))
-//		var testEvent = models.Event{Device: "test"}
-//		r1 := models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name",
-//			Name: "Temperature", Value: fmt.Sprintf("%d", i*8)}
-//		r2 := models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name",
-//			Name: "Humidity", Value: fmt.Sprintf("%d", i*9)}
-//
-//	}
-//}
+func pubToAnother() {
+	msgConfig1.Type = messaging.ZeroMQ
+	if msgClient, err := messaging.NewMessageClient(msgConfig2); err != nil {
+		log.Fatal(err)
+	} else {
+		if ec := msgClient.Connect(); ec != nil {
+			log.Fatal(ec)
+		}
+		client := coredata.NewEventClient(local.New("test1"))
+		var testEvent = models.Event{Device: "demo1", Created: 123, Modified: 123, Origin: 123}
+		var r1 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name", Name: "Temperature", Value: "20"}
+		var r2 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name", Name: "Humidity", Value: "30"}
+
+		testEvent.Readings = append(testEvent.Readings, r1, r2)
+
+		data, err := client.MarshalEvent(testEvent)
+		if err != nil {
+			fmt.Errorf("unexpected error MarshalEvent %v", err)
+		} else {
+			fmt.Println(string(data))
+		}
+
+		env := types.NewMessageEnvelope([]byte(data), context.Background())
+		env.ContentType = "application/json"
+
+		if e := msgClient.Publish(env, "application"); e != nil {
+			log.Fatal(e)
+		} else {
+			fmt.Printf("Pub successful: %s\n", data)
+		}
+	}
+}
 
 func main() {
 	if len(os.Args) == 1 {
 		pubEventClientZeroMq()
 	} else if len(os.Args) == 2 {
-		//if v := os.Args[0]; v == "err_value" {
-		//
-		//}
+		if v := os.Args[1]; v == "another" {
+			pubToAnother()
+		}
 	}
 }
 

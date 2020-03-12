@@ -10,8 +10,8 @@ default:
 #    Username: user1
 #    Password: password
 #Override the global configurations
-demo_conf: #Conf_key
+application_conf: #Conf_key
   protocol: tcp
-  server: 10.211.55.6
-  port: 5570
-  topic: events
+  server: localhost
+  port: 5571
+  topic: application
