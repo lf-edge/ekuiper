@@ -24,7 +24,7 @@ var msgConfig1 = types.MessageBusConfig{
 var msgConfig2 = types.MessageBusConfig{
 	PublishHost: types.HostInfo{
 		Host:     "*",
-		Port:     5571,
+		Port:     5570,
 		Protocol: "tcp",
 	},
 	Type:messaging.ZeroMQ,
@@ -81,7 +81,6 @@ func pubEventClientZeroMq() {
 }
 
 func pubToAnother() {
-	msgConfig1.Type = messaging.ZeroMQ
 	if msgClient, err := messaging.NewMessageClient(msgConfig2); err != nil {
 		log.Fatal(err)
 	} else {
