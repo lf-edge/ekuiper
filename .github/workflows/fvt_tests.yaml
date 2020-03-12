@@ -32,10 +32,6 @@ jobs:
             echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
             wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/emqx/mqtt-jmeter/raw/master/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
             ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
-            echo -e "---------------------------------------------\n"
-            cat /tmp/apache-jmeter-$JMETER_VERSION/user.properties
-            echo -e "---------------------------------------------\n"
-            cat  etc/sources/edgex.yaml
         - name: install emqx
           env:
             EMQX_VERSION: v4.0.2
@@ -43,6 +39,10 @@ jobs:
             wget -O emqx.deb https://www.emqx.io/downloads/broker/v4.0.2/emqx-ubuntu18.04-${EMQX_VERSION}_amd64.deb
             sudo dpkg -i emqx.deb
         - uses: actions/checkout@v2
+        - name: cat user.properties
+          run:  cat /tmp/apache-jmeter-5.2.1/user.properties
+        - name: cat edgex.yaml
+          run: cat etc/sources/edgex.yaml
         - name: build kuiper
           run: |
             sudo apt update && sudo apt install pkg-config libczmq-dev -y
