@@ -108,7 +108,7 @@ func pubToAnother() {
 		if e := msgClient.Publish(env, "application"); e != nil {
 			log.Fatal(e)
 		} else {
-			fmt.Printf("Pub successful: %s\n", data)
+			fmt.Printf("pubToAnother successful: %s\n", data)
 		}
 	}
 }
