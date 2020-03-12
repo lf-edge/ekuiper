@@ -107,7 +107,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 				errCh <- e1
 				return
 			case env := <-messages:
-				log.Infof("receive message %s\n", env.Payload)
+				log.Infof("receive message %s, %s\n", string(env.Payload), env.ContentType)
 				if strings.ToLower(env.ContentType) == "application/json" {
 					e := models.Event{}
 					if err := e.UnmarshalJSON(env.Payload); err != nil {
