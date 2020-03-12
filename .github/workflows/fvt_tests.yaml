@@ -39,6 +39,10 @@ jobs:
             wget -O emqx.deb https://www.emqx.io/downloads/broker/v4.0.2/emqx-ubuntu18.04-${EMQX_VERSION}_amd64.deb
             sudo dpkg -i emqx.deb
         - uses: actions/checkout@v2
+        - name: cat user.properties
+          run:  cat /tmp/apache-jmeter-5.2.1/user.properties
+        - name: cat edgex.yaml
+          run: cat etc/sources/edgex.yaml
         - name: build kuiper
           run: |
             sudo apt update && sudo apt install pkg-config libczmq-dev -y
@@ -56,6 +60,7 @@ jobs:
             name: kuiper_logs_with_edgex
             path: ./kuiper_logs
         - uses: actions/upload-artifact@v1
+          if: always()
           with:
             name: jmeter_logs_with_edgex
             path: ./jmeter_logs
@@ -116,6 +121,7 @@ jobs:
             name: kuiper_logs_without_edgex
             path: ./kuiper_logs
         - uses: actions/upload-artifact@v1
+          if: always()
           with:
             name: jmeter_logs_without_edgex
             path: ./jmeter_logs
