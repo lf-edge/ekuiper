@@ -13,18 +13,16 @@ import (
 	"time"
 )
 
-
+var msgConfig1 = types.MessageBusConfig{
+	PublishHost: types.HostInfo{
+		Host:     "*",
+		Port:     5570,
+		Protocol: "tcp",
+	},
+	Type:messaging.ZeroMQ,
+}
 
 func pubEventClientZeroMq() {
-	var msgConfig1 = types.MessageBusConfig{
-		PublishHost: types.HostInfo{
-			Host:     "*",
-			Port:     5570,
-			Protocol: "tcp",
-		},
-		Type:messaging.ZeroMQ,
-	}
-
 	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
 		log.Fatal(err)
 	} else {
@@ -115,12 +113,53 @@ func pubToAnother() {
 	}
 }
 
+func pubMetaSource() {
+	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
+		log.Fatal(err)
+	} else {
+		if ec := msgClient.Connect(); ec != nil {
+			log.Fatal(ec)
+		} else {
+			client := coredata.NewEventClient(local.New("test"))
+
+			evtDevice := []string{"demo1", "demo2"}
+			for i, device := range evtDevice {
+				j := int64(i) + 1
+				testEvent := models.Event{Device: device, Created: 11*j, Modified: 12*j, Origin: 13*j}
+				r1 := models.Reading{Pushed: 22*j, Created: 23*j, Origin: 24*j, Modified: 25*j, Device: "Temperature sensor", Name: "Temperature", Value: fmt.Sprintf("%d", j*8)}
+				r2 := models.Reading{Pushed: 32*j, Created: 33*j, Origin: 34*j, Modified: 35*j, Device: "Humidity sensor", Name: "Humidity", Value: fmt.Sprintf("%d", j*8)}
+
+				testEvent.Readings = append(testEvent.Readings, r1, r2)
+				data, err := client.MarshalEvent(testEvent)
+				if err != nil {
+					fmt.Errorf("unexpected error MarshalEvent %v", err)
+				} else {
+					fmt.Println(string(data))
+				}
+
+				env := types.NewMessageEnvelope([]byte(data), context.Background())
+				env.ContentType = "application/json"
+
+				if e := msgClient.Publish(env, "events"); e != nil {
+					log.Fatal(e)
+				} else {
+					fmt.Printf("Pub successful: %s\n", data)
+				}
+				time.Sleep(1 * time.Second)
+			}
+
+		}
+	}
+}
+
 func main() {
 	if len(os.Args) == 1 {
 		pubEventClientZeroMq()
 	} else if len(os.Args) == 2 {
 		if v := os.Args[1]; v == "another" {
 			pubToAnother()
+		} else if v == "meta" {
+			pubMetaSource()
 		}
 	}
 }
