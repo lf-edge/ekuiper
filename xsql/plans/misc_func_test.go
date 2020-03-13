@@ -92,8 +92,9 @@ func TestHashFunc_Apply1(t *testing.T) {
 			sql: "SELECT mqtt(topic) AS a FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",
-				Message: xsql.Message{
-					xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/device_001/message",
+				Message: xsql.Message{},
+				Metadata: xsql.Metadata{
+					"topic": "devices/device_001/message",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -105,8 +106,9 @@ func TestHashFunc_Apply1(t *testing.T) {
 			sql: "SELECT mqtt(topic) AS a FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",
-				Message: xsql.Message{
-					xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/device_001/message",
+				Message: xsql.Message{},
+				Metadata: xsql.Metadata{
+					"topic": "devices/device_001/message",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -119,8 +121,10 @@ func TestHashFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"topic":                      "fff",
-					xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/device_001/message",
+					"topic": "fff",
+				},
+				Metadata: xsql.Metadata{
+					"topic": "devices/device_001/message",
 				},
 			},
 			result: []map[string]interface{}{{
@@ -169,8 +173,8 @@ func TestMqttFunc_Apply2(t *testing.T) {
 			data: xsql.JoinTupleSets{
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{"id1": "1", "f1": "v1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type1/device001"}},
-						{Emitter: "src2", Message: xsql.Message{"id2": "1", "f2": "w1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type2/device001"}},
+						{Emitter: "src1", Message: xsql.Message{"id1": "1", "f1": "v1"}, Metadata: xsql.Metadata{"topic": "devices/type1/device001"}},
+						{Emitter: "src2", Message: xsql.Message{"id2": "1", "f2": "w1"}, Metadata: xsql.Metadata{"topic": "devices/type2/device001"}},
 					},
 				},
 			},

@@ -294,10 +294,11 @@ func validateOtherFunc(name string, args []Expr) error {
 			return err
 		}
 		if isIntegerArg(args[0]) || isTimeArg(args[0]) || isBooleanArg(args[0]) || isStringArg(args[0]) || isFloatArg(args[0]) {
-			return produceErrInfo(name, 0, "field reference")
+			return produceErrInfo(name, 0, "meta reference")
 		}
-		if p, ok := args[0].(*FieldRef); ok {
-			if _, ok := SpecialKeyMapper[p.Name]; !ok {
+		if p, ok := args[0].(*MetaRef); ok {
+			name := strings.ToLower(p.Name)
+			if name != "topic" && name != "messageid" {
 				return fmt.Errorf("Parameter of mqtt function can be only topic or messageid.")
 			}
 		}

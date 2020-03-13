@@ -620,8 +620,9 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 					Emitter: "src1",
 					Tuples: []xsql.Tuple{
 						{
-							Emitter: "src1",
-							Message: xsql.Message{"id1": 1, "f1": "v1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type1/device001"},
+							Emitter:  "src1",
+							Message:  xsql.Message{"id1": 1, "f1": "v1"},
+							Metadata: xsql.Metadata{"topic": "devices/type1/device001"},
 						},
 					},
 				},
@@ -630,8 +631,9 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 					Emitter: "src2",
 					Tuples: []xsql.Tuple{
 						{
-							Emitter: "src2",
-							Message: xsql.Message{"id2": 1, "f2": "w1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type2/device001"},
+							Emitter:  "src2",
+							Message:  xsql.Message{"id2": 1, "f2": "w1"},
+							Metadata: xsql.Metadata{"topic": "devices/type2/device001"},
 						},
 					},
 				},
@@ -639,8 +641,8 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			result: xsql.JoinTupleSets{
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type1/device001"}},
-						{Emitter: "src2", Message: xsql.Message{"id2": 1, "f2": "w1", xsql.INTERNAL_MQTT_TOPIC_KEY: "devices/type2/device001"}},
+						{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}, Metadata: xsql.Metadata{"topic": "devices/type1/device001"}},
+						{Emitter: "src2", Message: xsql.Message{"id2": 1, "f2": "w1"}, Metadata: xsql.Metadata{"topic": "devices/type2/device001"}},
 					},
 				},
 			},
