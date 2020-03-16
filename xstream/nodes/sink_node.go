@@ -197,7 +197,7 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 	stats.ProcessTimeEnd()
 }
 
-func getSink(name string, action map[string]interface{}) (api.Sink, error) {
+func doGetSink(name string, action map[string]interface{}) (api.Sink, error) {
 	var s api.Sink
 	switch name {
 	case "log":
