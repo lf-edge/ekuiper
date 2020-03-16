@@ -154,8 +154,8 @@ func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consumer
 		result = xsql.LowercaseKeyMap(result)
 
 		meta := make(map[string]interface{})
-		meta[xsql.INTERNAL_MQTT_TOPIC_KEY] = msg.Topic()
-		meta[xsql.INTERNAL_MQTT_MSG_ID_KEY] = strconv.Itoa(int(msg.MessageID()))
+		meta["topic"] = msg.Topic()
+		meta["messageid"] = strconv.Itoa(int(msg.MessageID()))
 		select {
 		case consumer <- api.NewDefaultSourceTuple(result, meta):
 			log.Debugf("send data to source node")

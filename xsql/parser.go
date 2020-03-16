@@ -595,7 +595,7 @@ func (p *Parser) parseAs(f *Field) (*Field, error) {
 }
 
 func (p *Parser) parseCall(name string) (Expr, error) {
-	if strings.ToLower(name) == "meta" {
+	if strings.ToLower(name) == "meta" || strings.ToLower(name) == "mqtt" {
 		p.inmeta = true
 		defer func() {
 			p.inmeta = false
@@ -604,13 +604,13 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 	var args []Expr
 	for {
 		if tok, _ := p.scanIgnoreWhitespace(); tok == RPAREN {
-			return Call{Name: name, Args: args}.rewrite_func(), nil
+			return &Call{Name: name, Args: args}, nil
 		} else if tok == ASTERISK {
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 != RPAREN {
 				return nil, fmt.Errorf("found %q, expected right paren.", lit2)
 			} else {
 				args = append(args, &StringLiteral{Val: "*"})
-				return Call{Name: name, Args: args}.rewrite_func(), nil
+				return &Call{Name: name, Args: args}, nil
 			}
 		} else {
 			p.unscan()
@@ -635,7 +635,7 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 		if valErr := validateFuncs(name, args); valErr != nil {
 			return nil, valErr
 		}
-		return Call{Name: name, Args: args}.rewrite_func(), nil
+		return &Call{Name: name, Args: args}, nil
 	} else {
 		if error != nil {
 			return nil, error

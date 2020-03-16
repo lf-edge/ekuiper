@@ -389,7 +389,7 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT mqtt("topic") FROM tbl`,
 			stmt: nil,
-			err:  "Expect field reference type for 1 parameter of function mqtt.",
+			err:  "Expect meta reference type for 1 parameter of function mqtt.",
 		},
 
 		{
