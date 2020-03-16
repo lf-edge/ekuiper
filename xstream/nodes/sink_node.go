@@ -86,7 +86,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				retryInterval = t
 			}
 		}
-		cacheLength := 10240
+		cacheLength := 1024
 		if c, ok := m.options["cacheLength"]; ok {
 			if t, err := common.ToInt(c); err != nil || t < 0 {
 				logger.Warnf("invalid type for cacheLength property, should be positive integer but found %t", c)
