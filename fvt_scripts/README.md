@@ -183,3 +183,14 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
 
   - As same steps that required in the ``select_edgex_condition_rule.jmx``, EdgeX value descriptor service & message bus publish tool should be ready.
 
+- [EdgeX message bus sink](edgex_sink_rule.jmx)
+
+  The test script verifies EdgeX message bus sink.  Only one message meet the condition of created rule, and it will be sent to EdgeX message bus sink.
+
+  As with the previous 2 testcases, besides to prepare ``vdmocker`` & ``pub`` application, another ``sub`` application should also be prepared.
+
+  ```shell
+  # go build -o fvt_scripts/edgex/sub/sub fvt_scripts/edgex/sub/sub.go 
+  ```
+
+  
