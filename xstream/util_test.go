@@ -36,3 +36,12 @@ func TestConf(t *testing.T) {
 	}
 
 }
+
+func TestConf2(t *testing.T) {
+	var file = "test/testconf.json"
+
+	if v, e := GetConfAsString(file, "conf_string"); e != nil || (v != "test") {
+		t.Errorf("Expect %s, actual %s; error is %s. \n", "test", v, e)
+	}
+
+}

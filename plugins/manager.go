@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"io"
@@ -112,7 +113,10 @@ func findAll(t PluginType, pluginDir string) (result []string, err error) {
 	}
 
 	for _, file := range files {
-		result = append(result, file.Name())
+		baseName := filepath.Base(file.Name())
+		if strings.HasSuffix(baseName, ".so") {
+			result = append(result, lcFirst(baseName[0:len(baseName)-3]))
+		}
 	}
 	return
 }
@@ -155,6 +159,48 @@ func (m *Manager) Register(t PluginType, name string, uri string, callback OnReg
 		return fmt.Errorf("fail to unzip file %s: %s", uri, err)
 	}
 	return nil
+}
+
+func (m *Manager) Delete(t PluginType, name string, callback OnRegistered) (result error) {
+	name = strings.Trim(name, " ")
+	if name == "" {
+		return fmt.Errorf("invalid name %s: should not be empty", name)
+	}
+	found := false
+	for _, n := range m.registry.List(t) {
+		if n == name {
+			found = true
+		}
+	}
+	if !found {
+		return fmt.Errorf("invalid name %s: not exist", name)
+	}
+	var results []string
+	soPath := path.Join(m.pluginDir, pluginFolders[t], ucFirst(name)+".so")
+	_, err := os.Stat(soPath)
+	if err == nil {
+		err = os.Remove(soPath)
+		if err != nil {
+			results = append(results, err.Error())
+		}
+	} else {
+		results = append(results, fmt.Sprintf("can't find %s", soPath))
+	}
+	etcPath := path.Join(m.etcDir, pluginFolders[t], name+".yaml")
+	_, err = os.Stat(etcPath)
+	if err == nil {
+		err = os.Remove(etcPath)
+		if err != nil {
+			results = append(results, err.Error())
+		}
+	} else {
+		results = append(results, fmt.Sprintf("can't find %s", etcPath))
+	}
+	if len(results) > 0 {
+		return errors.New(strings.Join(results, "\n"))
+	} else {
+		return nil
+	}
 }
 
 func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string, error) {
@@ -203,19 +249,20 @@ func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string,
 }
 
 func unzipTo(f *zip.File, fpath string) error {
+	_, err := os.Stat(fpath)
+	if err == nil || !os.IsNotExist(err) {
+		return fmt.Errorf("%s already exist", fpath)
+	}
 
 	if f.FileInfo().IsDir() {
-		// Make Folder
-		os.MkdirAll(fpath, os.ModePerm)
 		return fmt.Errorf("%s: not a file, but a directory", fpath)
 	}
 
-	// Make File
 	if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
 		return err
 	}
 
-	outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_TRUNC, f.Mode())
+	outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 	if err != nil {
 		return err
 	}
@@ -227,10 +274,8 @@ func unzipTo(f *zip.File, fpath string) error {
 
 	_, err = io.Copy(outFile, rc)
 
-	// Close the file without defer to close before next iteration of loop
 	outFile.Close()
 	rc.Close()
-
 	return err
 }
 
@@ -272,6 +317,13 @@ func downloadFile(filepath string, url string) error {
 func ucFirst(str string) string {
 	for i, v := range str {
 		return string(unicode.ToUpper(v)) + str[i+1:]
+	}
+	return ""
+}
+
+func lcFirst(str string) string {
+	for i, v := range str {
+		return string(unicode.ToLower(v)) + str[i+1:]
 	}
 	return ""
 }
