@@ -99,7 +99,7 @@ For more detailed information of configuration file, please refer to [this doc](
 
 ### Create a rule
 
-Let's create a rule that send result data to file, for detailed information of file sink, please refer to [this link](../plugins/sinks/file.md). Create a rule file with any tools, and copy following contents into it. Let's say the file name is ``rule.txt``.  So the below rule will filter all of ``randomnumber`` that is less than 31. The sink result will be published to a public MQTT broker ``broker.emqx.io``. 
+Let's create a rule that send result data to an MQTT broker, for detailed information of MQTT sink, please refer to [this link](../rules/sinks/mqtt.md). You can create a rule file with any tools, and copy following contents into it. Let's say the file name is ``rule.txt``.  So the below rule will filter all of ``randomnumber`` that is less than 31. The sink result will be published to a public MQTT broker ``broker.emqx.io``. 
 
 ```
 {
