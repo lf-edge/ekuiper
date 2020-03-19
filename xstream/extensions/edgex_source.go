@@ -201,12 +201,15 @@ func (es *EdgexSource) fetchAllDataDescriptors() error {
 		return err
 	} else {
 		for _, vd := range vdArr {
-			es.valueDescs[vd.Id] = vd.Type
+			es.valueDescs[vd.Name] = vd.Type
 		}
 		if len(vdArr) == 0 {
 			common.Log.Infof("Cannot find any value descriptors from value descriptor services.")
 		} else {
 			common.Log.Infof("Get %d of value descriptors from service.", len(vdArr))
+			for i, v := range vdArr {
+				common.Log.Debugf("%d: %s - %s ", i, v.Name, v.Type)
+			}
 		}
 	}
 	return nil

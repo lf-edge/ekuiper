@@ -66,7 +66,7 @@ func pubEventClientZeroMq() {
 				} else {
 					fmt.Printf("Pub successful: %s\n", data)
 				}
-				time.Sleep(1 * time.Second)
+				time.Sleep(1500 * time.Millisecond)
 			}
 		}
 	}
@@ -109,7 +109,7 @@ func pubToAnother() {
 		} else {
 			fmt.Printf("pubToAnother successful: %s\n", data)
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(1500 * time.Millisecond)
 	}
 }
 
@@ -145,7 +145,7 @@ func pubMetaSource() {
 				} else {
 					fmt.Printf("Pub successful: %s\n", data)
 				}
-				time.Sleep(1 * time.Second)
+				time.Sleep(1500 * time.Millisecond)
 			}
 
 		}
