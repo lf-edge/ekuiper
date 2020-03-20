@@ -127,7 +127,7 @@ func (m *Manager) Register(t PluginType, name string, uri string, callback OnReg
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
 	}
-	if !isValidUrl(uri) && strings.HasSuffix(uri, ".zip") {
+	if !isValidUrl(uri) || !strings.HasSuffix(uri, ".zip") {
 		return fmt.Errorf("invalid uri %s", uri)
 	}
 
@@ -141,9 +141,9 @@ func (m *Manager) Register(t PluginType, name string, uri string, callback OnReg
 	//clean up: delete zip file and unzip files in error
 	defer func() {
 		os.Remove(zipPath)
-		if len(unzipFiles) == 1 {
+		if t == SOURCE && len(unzipFiles) == 1 { //source that only copy so file
 			os.Remove(unzipFiles[0])
-		} else if len(unzipFiles) == 2 {
+		} else if (t == SOURCE && len(unzipFiles) == 2) || (t != SOURCE && len(unzipFiles) == 1) { //no error
 			m.registry.Store(t, name)
 			callback()
 		}
@@ -176,26 +176,24 @@ func (m *Manager) Delete(t PluginType, name string, callback OnRegistered) (resu
 		return fmt.Errorf("invalid name %s: not exist", name)
 	}
 	var results []string
-	soPath := path.Join(m.pluginDir, pluginFolders[t], ucFirst(name)+".so")
-	_, err := os.Stat(soPath)
-	if err == nil {
-		err = os.Remove(soPath)
-		if err != nil {
-			results = append(results, err.Error())
-		}
-	} else {
-		results = append(results, fmt.Sprintf("can't find %s", soPath))
+	paths := []string{
+		path.Join(m.pluginDir, pluginFolders[t], ucFirst(name)+".so"),
 	}
-	etcPath := path.Join(m.etcDir, pluginFolders[t], name+".yaml")
-	_, err = os.Stat(etcPath)
-	if err == nil {
-		err = os.Remove(etcPath)
-		if err != nil {
-			results = append(results, err.Error())
-		}
-	} else {
-		results = append(results, fmt.Sprintf("can't find %s", etcPath))
+	if t == SOURCE {
+		paths = append(paths, path.Join(m.etcDir, pluginFolders[t], name+".yaml"))
 	}
+	for _, p := range paths {
+		_, err := os.Stat(p)
+		if err == nil {
+			err = os.Remove(p)
+			if err != nil {
+				results = append(results, err.Error())
+			}
+		} else {
+			results = append(results, fmt.Sprintf("can't find %s", p))
+		}
+	}
+
 	if len(results) > 0 {
 		return errors.New(strings.Join(results, "\n"))
 	} else {
@@ -211,40 +209,34 @@ func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string,
 	}
 	defer r.Close()
 
-	soFileName := ucFirst(name) + ".so"
-	confFileName := name + ".yaml"
-	var soFile, confFile *zip.File
-	found := 0
-	for _, file := range r.File {
-		fileName := file.Name
-		if fileName == soFileName {
-			soFile = file
-			found++
-		} else if fileName == confFileName {
-			confFile = file
-			found++
+	files := []string{
+		ucFirst(name) + ".so",
+	}
+	paths := []string{
+		path.Join(m.pluginDir, pluginFolders[t], files[0]),
+	}
+	if t == SOURCE {
+		files = append(files, name+".yaml")
+		paths = append(paths, path.Join(m.etcDir, pluginFolders[t], files[1]))
+	}
+	for i, d := range files {
+		var z *zip.File
+		for _, file := range r.File {
+			fileName := file.Name
+			if fileName == d {
+				z = file
+			}
 		}
-		if found == 2 {
-			break
+		if z == nil {
+			return filenames, fmt.Errorf("invalid zip file: so file or conf file is missing")
 		}
-	}
-	if found < 2 {
-		return filenames, fmt.Errorf("invalid zip file: so file or conf file is missing")
-	}
 
-	soPath := path.Join(m.pluginDir, pluginFolders[t], soFileName)
-	err = unzipTo(soFile, soPath)
-	if err != nil {
-		return filenames, err
+		err = unzipTo(z, paths[i])
+		if err != nil {
+			return filenames, err
+		}
+		filenames = append(filenames, paths[i])
 	}
-	filenames = append(filenames, soPath)
-
-	confPath := path.Join(m.etcDir, pluginFolders[t], confFileName)
-	err = unzipTo(confFile, confPath)
-	if err != nil {
-		return filenames, err
-	}
-	filenames = append(filenames, confPath)
 	return filenames, nil
 }
 

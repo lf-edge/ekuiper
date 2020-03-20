@@ -23,9 +23,42 @@ func TestManager_Register(t *testing.T) {
 			u:   "",
 			err: errors.New("invalid name : should not be empty"),
 		}, {
+			t:   SOURCE,
+			n:   "zipMissConf",
+			u:   endpoint + "/sources/zipMissConf.zip",
+			err: errors.New("fail to unzip file " + endpoint + "/sources/zipMissConf.zip: invalid zip file: so file or conf file is missing"),
+		}, {
+			t:   SINK,
+			n:   "urlerror",
+			u:   endpoint + "/sinks/nozip",
+			err: errors.New("invalid uri " + endpoint + "/sinks/nozip"),
+		}, {
+			t:   SINK,
+			n:   "zipWrongname",
+			u:   endpoint + "/sinks/zipWrongName.zip",
+			err: errors.New("fail to unzip file " + endpoint + "/sinks/zipWrongName.zip: invalid zip file: so file or conf file is missing"),
+		}, {
+			t:   FUNCTION,
+			n:   "zipMissSo",
+			u:   endpoint + "/functions/zipMissSo.zip",
+			err: errors.New("fail to unzip file " + endpoint + "/functions/zipMissSo.zip: invalid zip file: so file or conf file is missing"),
+		}, {
 			t: SOURCE,
 			n: "random2",
 			u: endpoint + "/sources/random2.zip",
+		}, {
+			t: SINK,
+			n: "file",
+			u: endpoint + "/sinks/file.zip",
+		}, {
+			t: FUNCTION,
+			n: "echo",
+			u: endpoint + "/functions/echo.zip",
+		}, {
+			t:   FUNCTION,
+			n:   "echo",
+			u:   endpoint + "/functions/echo.zip",
+			err: errors.New("invalid name echo: duplicate"),
 		},
 	}
 	manager, err := NewPluginManager()
@@ -57,6 +90,12 @@ func TestManager_Delete(t *testing.T) {
 		{
 			t: SOURCE,
 			n: "random2",
+		}, {
+			t: SINK,
+			n: "file",
+		}, {
+			t: FUNCTION,
+			n: "echo",
 		},
 	}
 	manager, err := NewPluginManager()
@@ -64,9 +103,7 @@ func TestManager_Delete(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
-	if len(data) > 3 && manager.pluginDir == "" {
-		t.Errorf("Expect %s, actual %s; error is %s. \n", "test", "3", "3")
-	}
+
 	for i, p := range data {
 		err = manager.Delete(p.t, p.n, func() {})
 		if err != nil {
@@ -81,10 +118,12 @@ func checkFile(pluginDir string, etcDir string, t PluginType, name string) error
 	if err != nil {
 		return err
 	}
-	etcPath := path.Join(etcDir, pluginFolders[t], name+".yaml")
-	_, err = os.Stat(etcPath)
-	if err != nil {
-		return err
+	if t == SOURCE {
+		etcPath := path.Join(etcDir, pluginFolders[t], name+".yaml")
+		_, err = os.Stat(etcPath)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
