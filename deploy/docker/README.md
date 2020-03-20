@@ -144,19 +144,32 @@ docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=$MQTT_BROKER_ADDRESS emqx/kui
 
 ### Configuration
 
-Use the environment variable to configure `etc/sources/mqtt.yaml`  on the Kuiper container.
+Use the environment variable to configure `etc/mqtt_sources.yaml`  on the Kuiper container.
 
-| Options                    | Default            | Mapped                    |
-| ---------------------------| ------------------ | ------------------------- |
-| MQTT_BROKER_ADDRESS         | tcp://127.0.0.1:1883 | default.servers |
-| MQTT_BROKER_SHARED_SUBSCRIPTION | true   | default.sharedSubscription |
-| MQTT_BROKER_QOS | 1                 | default.qos    |
-| MQTT_BROKER_USERNAME |   | default.username |
-| MQTT_BROKER_PASSWORD |                | default.password |
-| MQTT_BROKER_CER_PATH |                | default.certificationPath |
-| MQTT_BROKER_KEY_PATH |     | default.privateKeyPath |
+| Options                         | Default               | Mapped                      |
+| ------------------------------- | --------------------- | --------------------------- |
+| MQTT_BROKER_ADDRESS             | tcp://127.0.0.1:1883  | default.servers             |
+| MQTT_BROKER_SHARED_SUBSCRIPTION | true                  | default.sharedSubscription  |
+| MQTT_BROKER_QOS                 | 1                     | default.qos                 |
+| MQTT_BROKER_USERNAME            |                       | default.username            |
+| MQTT_BROKER_PASSWORD            |                       | default.password            |
+| MQTT_BROKER_CER_PATH            |                       | default.certificationPath   |
+| MQTT_BROKER_KEY_PATH            |                       | default.privateKeyPath      |
 
-If you want to configure more options, you can mount the configuration file into Kuiper container.
+Use the environment variable to configure `etc/sources/edgex.yaml`  on the Kuiper container.
+
+| Options                    | Default                  | Mapped                    |
+| ---------------------------| -------------------------| ------------------------- |
+| EDGEX_PROTOCOL             | tcp                      | default.protocol          |
+| EDGEX_SERVER               | localhost                | default.server            |
+| EDGEX_PORT                 | 5570                     | default.port              |
+| EDGEX_TOPIC                | events                   | default.topic             |
+| EDGEX_SERVICE_SERVER       | http://localhost:10080   | default.serviceServer     |
+
+If you want to configure more options, you can mount the configuration file into Kuiper container, like this:
+```
+$ docker run --name kuiper -v /path/to/mqtt_sources.yaml:/kuiper/etc/mqtt_sources.yaml -v /path/to/edgex.yaml:/kuiper/etc/sources/edgex.yaml emqx/kuiper:$tag
+```
 
 # More
 

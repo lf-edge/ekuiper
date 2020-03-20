@@ -60,7 +60,9 @@ kuiperConfig:
       concurrency: 1
       #username: user1
       #password: password
+      #certificationSecretName: Secret resource name created for certification file
       #certificationPath: /var/kuiper/xyz-certificate.pem
+      #privateKeySecretName: Secret resource name created for certification file
       #privateKeyPath: /var/kuiper/xyz-private.pem.key
     #Override the global configurations
     demo_conf: #Conf_key
