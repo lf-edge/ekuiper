@@ -49,21 +49,31 @@ spec:
           claimName: {{ tpl . $ }}
         {{- end }}
       {{- end }}
-      - name: mqtt
+      - name: kuiper-config
         configMap:
           name: {{ include "kuiper.fullname" . }}
-          # items:
-          # - key: mqtt_source.yaml
-          #   path: mqtt_source.yaml
-      {{- if .Values.mqtt.certificationSecretName }}
+          items:
+          - key: mqtt_source.yaml
+            path: mqtt_source.yaml
+          - key: kuiper.yaml
+            path: kuiper.yaml
+          - key: client.yaml
+            path: client.yaml
+          - key: edgex.yaml
+            path: edgex.yaml
+          - key: random.yaml
+            path: random.yaml
+          - key: zmq.yaml
+            path: zmq.yaml
+      {{- if .Values.kuiperConfig."mqtt_source.yaml".default.certificationSecretName }}
       - name: kuiper-certification
         secret:
-          secretName: {{ .Values.mqtt.certificationSecretName }}
+          secretName: {{ .Values.kuiperConfig."mqtt_source.yaml".default.certificationSecretName }}
       {{- end }}
-      {{- if .Values.mqtt.privateKeySecretName }}
+      {{- if .Values.kuiperConfig."mqtt_source.yaml".default.privateKeySecretName }}
       - name: kuiper-private-key
         secret:
-          secretName: {{ .Values.mqtt.privateKeySecretName }}
+          secretName: {{ .Values.kuiperConfig."mqtt_source.yaml".default.privateKeySecretName }}
       {{- end }}
       containers:
         - name: kuiper
@@ -72,17 +82,32 @@ spec:
           volumeMounts:
           - name: kuiper-data
             mountPath: "/kuiper/data"
-          - name: mqtt
-            mountPath: "/kuiper/etc"
-            # subPath: "mqtt_source.yaml"
-          {{ if .Values.mqtt.certificationSecretName  }}
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/mqtt_source.yaml"
+            subPath: "mqtt_source.yaml"
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/kuiper.yaml"
+            subPath: "kuiper.yaml"
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/client.yaml"
+            subPath: "client.yaml"
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/sources/edgex.yaml"
+            subPath: "edgex.yaml"
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/sources/random.yaml"
+            subPath: "random.yaml"
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/sources/zmq.yaml"
+            subPath: "zmq.yaml"
+          {{ if .Values.kuiperConfig."mqtt_source.yaml".default.certificationSecretName  }}
           - name: kuiper-certification
-            mountPath: {{ .Values.mqtt.certificationPath | default "/var/kuiper/certificate.pem" }}
+            mountPath: {{ .Values.kuiperConfig."mqtt_source.yaml".default.certificationPath | default "/var/kuiper/certificate.pem" }}
             readOnly: true
           {{ end }}
-          {{ if .Values.mqtt.privateKeySecretName  }}
+          {{ if .Values.kuiperConfig."mqtt_source.yaml".default.privateKeySecretName  }}
           - name: kuiper-private-key
-            mountPath: {{ .Values.mqtt.privateKeyPath | default "/var/kuiper/private.pem.key" }}
+            mountPath: {{ .Values.kuiperConfig."mqtt_source.yaml".default.privateKeyPath | default "/var/kuiper/private.pem.key" }}
             readOnly: true
           {{ end }}
           resources:

@@ -6,30 +6,4 @@ metadata:
   labels:
     {{- include "kuiper.labels" . | nindent 4 }}
 data:
-    "sources/edgex.yaml": |
-      {{- toYaml .Values.edgexConfig | nindent 6 }}
-    "sources/random.yaml": |
-      default:
-        interval: 1000
-        pattern:
-          count: 50
-      ext:
-        interval: 300
-        seed: 1
-        pattern:
-          count: 50
-    "sources/zmq.yaml": |
-      #Global Zmq configurations
-      default:
-        server: tcp://127.0.0.1:5563
-    "mqtt_source.yaml": |
-      {{- toYaml .Values.mqttConfig | nindent 6 }}
-    "client.yaml": |
-      basic:
-        host: 127.0.0.1
-        port: 20498
-    "kuiper.yaml": |
-      basic:
-        # true|false, with debug level, it prints more debug info
-        debug: false
-        port: 20498
+    {{- toYaml .Values.kuiperConfig | nindent 4 }}
