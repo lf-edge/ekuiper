@@ -1,16 +1,12 @@
-
-
-[ToC]
-
 # EdgeX rule engine tutorial
 
 ## Overview
 
-In EdgeX Geneva, [EMQ X Kuiper](https://github.com/emqx/kuiper) is used as implementation of rule engine. Before diving into this tutorial, let's spend a little time on learning basic knowledge of Kuiper. Kuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. Kuiper rules are based on ``Source``, ``SQL`` and ``Sink``.
+In EdgeX Geneva, [EMQ X Kuiper](https://github.com/emqx/kuiper) is introduced as implementation of rule engine. Before diving into this tutorial, let's spend a little time on learning basic knowledge of Kuiper. Kuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. Kuiper rules are based on ``Source``, ``SQL`` and ``Sink``.
 
 - Source: The data source of streaming data, such as data from MQTT broker. In EdgeX scenario, the data source is EdgeX message bus, which could be ZeroMQ or MQTT broker.
 - SQL: SQL is where you specify the business logic of streaming data process. Kuiper provides SQL-like statements to allow you to extract, filter & transform data. 
-- Sink: Sinks is ued for sending analysis result to a specified target. For example, send analysis result to another MQTT broker, or an HTTP rest address.
+- Sink: Sink is ued for sending analysis result to a specified target. For example, send analysis result to another MQTT broker, or an HTTP rest address.
 
 ![](../../resources/arch.png)
 
@@ -26,7 +22,7 @@ The tutorial demonstrates how to use Kuiper to process the data from EdgeX messa
 
 ## Kuiper EdgeX integration
 
-EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to exchange information between different micro services. It contains the abstract message bus interface and an implementation for ZeroMQ and MQTT. The integration work for Kuiper & EdgeX includes following 3 parts.
+EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to exchange information between different micro services. It contains the abstract message bus interface and an implementation for ZeroMQ & MQTT (NOTICE:  **ONLY ZeroMQ** message bus is supported in Kuiper rule engine, MQTT will be supported in later versions). The integration work for Kuiper & EdgeX includes following 3 parts. 
 
 - An EdgeX message bus source is extended to  support consuming data from EdgeX message bus.  
 
@@ -36,7 +32,7 @@ EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to ex
   CREATE STREAM demo (temperature bigint) WITH (FORMAT="JSON"...)
   ```
 
-  However, since data type definitions are already specified in EdgeX ``Core contract Service`` , and to improve the using experience, user are NOT necessary to specify data types when creating stream. Kuiper source tries to load all of ``value  descriptors`` from ``Core contract Service`` during initialization, then if with any data sending from message bus, it will be converted into [corresponding data types](../rules/sources/edgex.md).
+  However, since data type definitions are already specified in EdgeX ``Core contract Service`` , and to improve the using experience, user are NOT necessary to specify data types when creating stream. Kuiper source tries to load all of ``value descriptors`` from ``Core contract Service`` during initialization of a rule (so now if you have any updated value descriptors, you will have to **restart the rule**), then if with any data sending from message bus, it will be converted into [corresponding data types](../rules/sources/edgex.md).
 
 - An EdgeX message bus sink is extended to support send analysis result back to EdgeX Message Bus. User can also choose to send analysis result to RestAPI, Kuiper already supported it. 
 
@@ -68,7 +64,26 @@ In this tutorial, we use a very simple mock-up device service. Please follow the
 
 ### Create a stream
 
-The next step is to create a stream that can consuming data from EdgeX message bus. Run following command to enter the running Kuiper docker instance.
+There are two approaches to manage stream, you can use your preferred approach.
+
+#### Option 1: Use Rest API
+
+The next step is to create a stream that can consuming data from EdgeX message bus. Please change ``127.0.0.1`` to your local Kuiper docker IP address.
+
+```shell
+curl -X POST \
+  http://127.0.0.1:9081/streams \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "sql": "create stream demo() WITH (FORMAT=\"JSON\", TYPE=\"edgex\")"
+}'
+```
+
+For other Rest APIs, please refer to [this doc](../restapi/overview.md).
+
+#### Option 2: Use Kuiper CLI
+
+Run following command to enter the running Kuiper docker instance.
 
 ```shell
 docker exec -it kuiper /bin/sh
@@ -80,9 +95,11 @@ Use following command to create a stream named ``demo``.
 bin/cli create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
 ```
 
-Kuiper also provides [RestAPI for streams and rules management](../restapi/overview.md), so you can also use any HTTP client tools (such as ``curl``) to create the streams.
+For other command line tools, please refer to [this doc](../cli/overview.md).
 
-You maybe curious about how Kuiper knows the message bus IP address & port, because such information are not specified in ``CREATE STREAM`` statement. Those configurations are managed in ``etc/sources/edgex.yaml`` , you can type ``cat etc/sources/edgex.yaml`` command to take a look at the contents of file.  If you have different server, ports & service server configurations, please update it accordingly.
+------
+
+Now the stream is created. But you maybe curious about how Kuiper knows the message bus IP address & port, because such information are not specified in ``CREATE STREAM`` statement. Those configurations are managed in ``etc/sources/edgex.yaml`` , you can type ``cat etc/sources/edgex.yaml`` command to take a look at the contents of file.  If you have different server, ports & service server configurations, please update it accordingly.
 
 ```yaml
 #Global Edgex configurations
@@ -99,7 +116,34 @@ For more detailed information of configuration file, please refer to [this doc](
 
 ### Create a rule
 
-Let's create a rule that send result data to an MQTT broker, for detailed information of MQTT sink, please refer to [this link](../rules/sinks/mqtt.md). You can create a rule file with any tools, and copy following contents into it. Let's say the file name is ``rule.txt``.  So the below rule will filter all of ``randomnumber`` that is less than 31. The sink result will be published to a public MQTT broker ``broker.emqx.io``. 
+Let's create a rule that send result data to an MQTT broker, for detailed information of MQTT sink, please refer to [this link](../rules/sinks/mqtt.md).  Similar to create a stream, you can also choose REST or CLI to manage rules. 
+
+So the below rule will filter all of ``randomnumber`` that is less than 31. The sink result will be published to topic ``result`` of public MQTT broker ``broker.emqx.io``. 
+
+#### Option 1: Use Rest API
+
+```shell
+curl -X POST \
+  http://127.0.0.1:9081/rules \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "id": "rule1",
+  "sql": "SELECT * FROM demo WHERE randomnumber > 30",
+  "actions": [
+    {
+      "mqtt": {
+        "server": "tcp://broker.emqx.io:1883",
+        "topic": "result",
+        "clientId": "demo_001"
+      }
+    }
+  ]
+}'
+```
+
+#### Option 2: Use Kuiper CLI
+
+You can create a rule file with any text editor, and copy following contents into it. Let's say the file name is ``rule.txt``.  
 
 ```
 {
@@ -116,8 +160,6 @@ Let's create a rule that send result data to an MQTT broker, for detailed inform
 }
 ```
 
-If you want to send analysis result to another sink, please refer to [other sinks](../rules/overview.md#actions) that supported in Kuiper.
-
 In the running Kuiper instance, and execute following command.
 
 ```shell
@@ -126,6 +168,10 @@ Connecting to 127.0.0.1:20498...
 Creating a new rule from file rule.txt.
 Rule rule1 was created, please use 'cli getstatus rule $rule_name' command to get rule status.
 ```
+
+------
+
+If you want to send analysis result to another sink, please refer to [other sinks](../rules/overview.md#actions) that supported in Kuiper.
 
 Now you can also take a look at the log file under ``log/stream.log``, see detailed info of rule. 
 
@@ -155,7 +201,7 @@ Since all of the analysis result are published to  ``tcp://broker.emqx.io:1883``
 
 You'll find that only those randomnumber larger than 30 will be published to ``result`` topic.
 
-You can also type below command to look at the rule execution status.
+You can also type below command to look at the rule execution status. The corresponding REST API is also available for getting rule status, please check [related docuement](../restapi/overview.md).
 
 ```shell
 # bin/cli getstatus rule rule1
@@ -196,10 +242,16 @@ Connecting to 127.0.0.1:20498...
 
 ### Summary
 
-In this tutorial,  we introduce a very simple use of EdgeX Kuiper rule engine. If you want to explore more powerful features of EMQ X Kuiper, you can refer to below resources.
+In this tutorial,  we introduce a very simple use of EdgeX Kuiper rule engine. If having any issues regarding to use of Kuiper rule engine, you can open issues in EdgeX or Kuiper Github respository.
+
+#### Extended Reading
+
+- Read [EdgeX source](../rules/sources/edgex.md) for more detailed information of configurations and data type conversion.
+- [How to use meta function to extract addtional data from EdgeX message bus?](edgex_meta.md) There are some other information are sent along with device service, such as event created time, event id etc. If you want to use such metadata information in your SQL statements, please refer to this doc.
+- [EdgeX message bus sink doc](../rules/sinks/edgex.md). The document describes how to use EdgeX message bus sink. If you'd like to send the analysis result into message bus, you are probably interested in this article. 
+
+ If you want to explore more features of EMQ X Kuiper, please refer to below resources.
 
 - [Kuiper Github code repository](https://github.com/emqx/kuiper/)
 - [Kuiper reference guide](https://github.com/emqx/kuiper/blob/edgex/docs/en_US/reference.md)
-
-If having any issues regarding to use of Kuiper rule engine, you can open issues in EdgeX or Kuiper Github respository.
 

@@ -141,7 +141,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 							meta["created"] = e.Created
 							meta["modified"] = e.Modified
 							meta["origin"] = e.Origin
-							meta["CorrelationID"] = env.CorrelationID
+							meta["correlationid"] = env.CorrelationID
 
 							select {
 							case consumer <- api.NewDefaultSourceTuple(result, meta):

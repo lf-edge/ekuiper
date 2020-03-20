@@ -89,23 +89,23 @@ The base service address for getting value descriptors, the value of ``serviceSe
 
 ## Override the default settings
 
+In some cases, maybe you want to consume message from multiple topics or event bus.  Kuiper supports to specify another configuration, and use the ``CONF_KEY`` to specify the newly created key when you create a stream.
+
 ```yaml
 #Override the global configurations
-demo_conf: #Conf_key
+demo1: #Conf_key
   protocol: tcp
   server: 10.211.55.6
   port: 5570
   topic: events
 ```
 
-If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with ``demo``.  Then you can specify the configuration with option ``CONF_KEY`` when creating the stream definition (see [stream specs](../../sqls/streams.md) for more info).
+If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with ``demo1``.  Then you can specify the configuration with option ``CONF_KEY`` when creating the stream definition (see [stream specs](../../sqls/streams.md) for more info).
 
 **Sample**
 
 ```
-demo (
-		...
-	) WITH (DATASOURCE="device1", FORMAT="JSON", type="edgex", CONF_KEY="demo");
+create stream demo1() WITH (FORMAT="JSON", type="edgex", CONF_KEY="demo1");
 ```
 
 The configuration keys used for these specific settings are the same as in ``default`` settings, any values specified in specific settings will overwrite the values in ``default`` section.
