@@ -6,4 +6,21 @@ metadata:
   labels:
     {{- include "kuiper.labels" . | nindent 4 }}
 data:
-    {{- toYaml .Values.kuiperConfig | nindent 4 }}
+  "client.yaml": |
+    {{ $client := index .Values "kuiperConfig" "client.yaml" }}
+    {{- toYaml $client | nindent 6 }}
+  "kuiper.yaml": |
+    {{ $kuiper := index .Values "kuiperConfig" "kuiper.yaml" }}
+    {{- toYaml $kuiper | nindent 6 }}
+  "mqtt_source.yaml": |
+    {{ $mqtt := index .Values "kuiperConfig" "mqtt_source.yaml" }}
+    {{- toYaml $mqtt | nindent 6 }}
+  "edgex.yaml": |
+    {{ $edgex := index .Values "kuiperConfig" "sources/edgex.yaml" }}
+    {{- toYaml $edgex | nindent 6 }}
+  "random.yaml": |
+    {{ $random := index .Values "kuiperConfig" "sources/random.yaml" }}
+    {{- toYaml $random | nindent 6 }}
+  "zmq.yaml": |
+    {{ $zmq := index .Values "kuiperConfig" "sources/zmq.yaml" }}
+    {{- toYaml $zmq | nindent 6 }}

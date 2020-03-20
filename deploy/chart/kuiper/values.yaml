@@ -66,7 +66,7 @@ kuiperConfig:
     demo_conf: #Conf_key
       qos: 0
       servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
-  "edgex.yaml":
+  "sources/edgex.yaml":
     #Global Edgex configurations
     default:
       protocol: tcp
@@ -84,7 +84,7 @@ kuiperConfig:
       server: localhost
       port: 5571
       topic: application
-  "random.yaml":
+  "sources/random.yaml":
     default:
       interval: 1000
       pattern:
@@ -94,7 +94,7 @@ kuiperConfig:
       seed: 1
       pattern:
         count: 50
-  "zmq.yaml":
+  "sources/zmq.yaml":
     #Global Zmq configurations
     default:
       server: tcp://127.0.0.1:5563
