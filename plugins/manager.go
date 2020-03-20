@@ -298,6 +298,9 @@ func downloadFile(filepath string, url string) error {
 	if err != nil {
 		return err
 	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("cannot download the file with status: %d %s", resp.StatusCode, resp.Status)
+	}
 	defer resp.Body.Close()
 
 	// Create the file

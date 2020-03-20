@@ -3,6 +3,8 @@ package plugins
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"reflect"
@@ -10,7 +12,12 @@ import (
 )
 
 func TestManager_Register(t *testing.T) {
-	const endpoint = "http://127.0.0.1/plugins"
+	s := httptest.NewServer(
+		http.FileServer(http.Dir("testzips")),
+	)
+	defer s.Close()
+	endpoint := s.URL
+
 	data := []struct {
 		t   PluginType
 		n   string
