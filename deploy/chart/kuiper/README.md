@@ -67,15 +67,7 @@ Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as
   | `nodeSelector`                 | Node selector                                        | {}                       |
   | `tolerations`                  | Tolerations                                          | []                       |
   | `affinity`                     | Affinity                                             | {}                       |
-  | `mqtt.servers`                 | MQTT broker address                                  | `[tcp://127.0.0.1:1883]` |
-  | `mqtt.qos`                     | QoS of message subscription                          | 1                        |
-  | `mqtt.sharedSubscription`      | Use shared subscription or not                       | true                     |
-  | `mqtt.username`                | MQTT connection user name                            |                          |
-  | `mqtt.password`                | MQTT connection password                             |                          |
-  | `mqtt.certificationSecretName` | Secret resource name created for certification file. |                          |
-  | `mqtt.privateKeySecretName`    | Secret resource name created fro private key file    |                          |
-  | `mqtt.certificationPath`       | Certification path for MQTT connection               |                          |
-  | `mqtt.privateKeyPath`          | Private key path for MQTT connection                 |                          |
+  | `kuiperConfig`                 | Configuration file in the Kuiper `etc` directory     |                          |
 
 ## Deploy Kuiper through Helm
 
@@ -169,10 +161,25 @@ Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as
 
 + Open and edit `values.yaml` file
 
-  + Set `mqtt.certificationSecretName` certification Secret resource: `mqtt.certificationSecretName: client-cert`
-  + Set `mqtt.privateKeySecretName` private key Secret resource:`mqtt.privateKeySecretName: client-key`
-  + Set certification file path: `mqtt.certificationPath: /var/kuiper/certificate.pem`
-  + Set private key file path: `mqtt.privateKeyPath: /var/kuiper/private.pem.key`
+  ```shell
+  $ vim value.yaml
+  kuiperConfig:
+  ...
+    "mqtt_source.yaml":
+      #Global MQTT configurations
+      default:
+        qos: 1
+        sharedSubscription: true
+        servers: [tcp://127.0.0.1:1883]
+        concurrency: 1
+        #username: user1
+        #password: password
+        certificationSecretName: client-cert  # Set certification Secret resource name
+        certificationPath: /var/kuiper/certificate.pem # Set certification file path
+        privateKeySecretName: client-key  # Set private key Secret resource name
+        privateKeyPath: /var/kuiper/xyz-private.pem.key # Set private key file path
+  ...
+  ```
 
 + Deploy Kuiper through Helm 
 

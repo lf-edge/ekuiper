@@ -38,14 +38,65 @@ tolerations: []
 
 affinity: {}
 
-mqtt:
-  #Global MQTT configurations
-  qos: 1
-  sharedSubscription: true
-  servers: [tcp://127.0.0.1:1883]
-  #username: user1
-  #password: password
-  certificationSecretName: client-cert
-  privateKeySecretName: client-key
-  #certificationPath: /var/kuiper/certificate.pem
-  #privateKeyPath: /var/kuiper/private.pem.key
+kuiperConfig:
+  "client.yaml":
+    basic:
+      host: 127.0.0.1
+      port: 20498
+  "kuiper.yaml":
+    basic:
+      # true|false, with debug level, it prints more debug info
+      debug: false
+      port: 20498
+      restPort: 9081
+      prometheus: false
+      prometheusPort: 20499
+  "mqtt_source.yaml":
+    #Global MQTT configurations
+    default:
+      qos: 1
+      sharedSubscription: true
+      servers: [tcp://127.0.0.1:1883]
+      concurrency: 1
+      #username: user1
+      #password: password
+      #certificationSecretName: Secret resource name created for certification file
+      #certificationPath: /var/kuiper/xyz-certificate.pem
+      #privateKeySecretName: Secret resource name created for certification file
+      #privateKeyPath: /var/kuiper/xyz-private.pem.key
+    #Override the global configurations
+    demo_conf: #Conf_key
+      qos: 0
+      servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
+  "sources/edgex.yaml":
+    #Global Edgex configurations
+    default:
+      protocol: tcp
+      server: localhost
+      port: 5570
+      topic: events
+      serviceServer: http://localhost:10080
+    #  optional:
+    #    ClientId: client1
+    #    Username: user1
+    #    Password: password
+    #Override the global configurations
+    application_conf: #Conf_key
+      protocol: tcp
+      server: localhost
+      port: 5571
+      topic: application
+  "sources/random.yaml":
+    default:
+      interval: 1000
+      pattern:
+        count: 50
+    ext:
+      interval: 300
+      seed: 1
+      pattern:
+        count: 50
+  "sources/zmq.yaml":
+    #Global Zmq configurations
+    default:
+      server: tcp://127.0.0.1:5563
