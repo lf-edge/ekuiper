@@ -117,13 +117,13 @@ func TestManager_Delete(t *testing.T) {
 }
 
 func checkFile(pluginDir string, etcDir string, t PluginType, name string) error {
-	soPath := path.Join(pluginDir, pluginFolders[t], ucFirst(name)+".so")
+	soPath := path.Join(pluginDir, PluginTypes[t], ucFirst(name)+".so")
 	_, err := os.Stat(soPath)
 	if err != nil {
 		return err
 	}
 	if t == SOURCE {
-		etcPath := path.Join(etcDir, pluginFolders[t], name+".yaml")
+		etcPath := path.Join(etcDir, PluginTypes[t], name+".yaml")
 		_, err = os.Stat(etcPath)
 		if err != nil {
 			return err

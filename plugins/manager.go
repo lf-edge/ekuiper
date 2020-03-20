@@ -32,9 +32,9 @@ const (
 )
 
 var (
-	pluginFolders = []string{"sources", "sinks", "functions"}
-	once          sync.Once
-	singleton     *Manager
+	PluginTypes = []string{"sources", "sinks", "functions"}
+	once        sync.Once
+	singleton   *Manager
 )
 
 //Registry is append only because plugin cannot delete or reload. To delete a plugin, restart the server to reindex
@@ -110,7 +110,7 @@ func NewPluginManager() (*Manager, error) {
 }
 
 func findAll(t PluginType, pluginDir string) (result []string, err error) {
-	dir := path.Join(pluginDir, pluginFolders[t])
+	dir := path.Join(pluginDir, PluginTypes[t])
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return
@@ -183,10 +183,10 @@ func (m *Manager) Delete(t PluginType, name string) (result error) {
 	}
 	var results []string
 	paths := []string{
-		path.Join(m.pluginDir, pluginFolders[t], ucFirst(name)+".so"),
+		path.Join(m.pluginDir, PluginTypes[t], ucFirst(name)+".so"),
 	}
 	if t == SOURCE {
-		paths = append(paths, path.Join(m.etcDir, pluginFolders[t], name+".yaml"))
+		paths = append(paths, path.Join(m.etcDir, PluginTypes[t], name+".yaml"))
 	}
 	for _, p := range paths {
 		_, err := os.Stat(p)
@@ -219,11 +219,11 @@ func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string,
 		ucFirst(name) + ".so",
 	}
 	paths := []string{
-		path.Join(m.pluginDir, pluginFolders[t], files[0]),
+		path.Join(m.pluginDir, PluginTypes[t], files[0]),
 	}
 	if t == SOURCE {
 		files = append(files, name+".yaml")
-		paths = append(paths, path.Join(m.etcDir, pluginFolders[t], files[1]))
+		paths = append(paths, path.Join(m.etcDir, PluginTypes[t], files[1]))
 	}
 	for i, d := range files {
 		var z *zip.File
