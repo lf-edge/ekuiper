@@ -55,17 +55,17 @@ func TestManager_Register(t *testing.T) {
 			u: endpoint + "/sources/random2.zip",
 		}, {
 			t: SINK,
-			n: "file",
-			u: endpoint + "/sinks/file.zip",
+			n: "file2",
+			u: endpoint + "/sinks/file2.zip",
 		}, {
 			t: FUNCTION,
-			n: "echo",
-			u: endpoint + "/functions/echo.zip",
+			n: "echo2",
+			u: endpoint + "/functions/echo2.zip",
 		}, {
 			t:   FUNCTION,
-			n:   "echo",
-			u:   endpoint + "/functions/echo.zip",
-			err: errors.New("invalid name echo: duplicate"),
+			n:   "echo2",
+			u:   endpoint + "/functions/echo2.zip",
+			err: errors.New("invalid name echo2: duplicate"),
 		},
 	}
 	manager, err := NewPluginManager()
@@ -103,10 +103,10 @@ func TestManager_Delete(t *testing.T) {
 			n: "random2",
 		}, {
 			t: SINK,
-			n: "file",
+			n: "file2",
 		}, {
 			t: FUNCTION,
-			n: "echo",
+			n: "echo2",
 		},
 	}
 	manager, err := NewPluginManager()
