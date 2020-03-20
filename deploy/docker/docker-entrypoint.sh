@@ -55,7 +55,7 @@ EDGEX_CONFIG="$KUIPER_HOME/etc/sources/edgex.yaml"
 
 if [ ! -z "$EDGEX_PROTOCOL" ]; then
     sed -i '/default:/ ,/protocol/{/protocol/d}' $EDGEX_CONFIG
-    sed -i "/default:/a\  protocol: [$EDGEX_PROTOCOL]" $EDGEX_CONFIG
+    sed -i "/default:/a\  protocol: $EDGEX_PROTOCOL" $EDGEX_CONFIG
     echo "edgex.default.protocol = $EDGEX_PROTOCOL"
 fi
 
@@ -73,13 +73,13 @@ fi
 
 if [ ! -z "$EDGEX_TOPIC" ]; then
     sed -i '/default:/ ,/topic/{/topic/d}' $EDGEX_CONFIG
-    sed -i "/default:/a\  topic: $EDGEX_TOPIC" $CONFIEDGEX_CONFIGG
+    sed -i "/default:/a\  topic: $EDGEX_TOPIC" $EDGEX_CONFIG
     echo "edgex.default.topic = $EDGEX_TOPIC"
 fi
 
 if [ ! -z "$EDGEX_SERVICE_SERVER" ]; then
     sed -i '/default:/ ,/serviceServer/{/serviceServer/d}' $EDGEX_CONFIG
-    sed -i "/default:/a\  serviceServer: $EDGEX_SERVICE_SERVER" $CEDGEX_CONFIG
+    sed -i "/default:/a\  serviceServer: $EDGEX_SERVICE_SERVER" $EDGEX_CONFIG
     echo "edgex.default.serviceServer = $EDGEX_SERVICE_SERVER"
 fi
 

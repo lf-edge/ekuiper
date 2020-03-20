@@ -6,7 +6,9 @@ metadata:
   labels:
     {{- include "kuiper.labels" . | nindent 4 }}
 data:
-    "random.yaml": |
+    "sources/edgex.yaml": |
+      {{- toYaml .Values.edgexConfig | nindent 6 }}
+    "sources/random.yaml": |
       default:
         interval: 1000
         pattern:
@@ -16,18 +18,12 @@ data:
         seed: 1
         pattern:
           count: 50
-    "zmq.yaml": |
+    "sources/zmq.yaml": |
       #Global Zmq configurations
       default:
         server: tcp://127.0.0.1:5563
-    "mqtt.yaml": |
-      #Global MQTT configurations
-      default:
-        {{- toYaml .Values.mqtt | nindent 8 }}
-      #Override the global configurations
-      demo_conf: #Conf_key
-        qos: 0
-        servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
+    "mqtt_source.yaml": |
+      {{- toYaml .Values.mqttConfig | nindent 6 }}
     "client.yaml": |
       basic:
         host: 127.0.0.1

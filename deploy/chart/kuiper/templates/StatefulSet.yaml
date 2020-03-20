@@ -52,9 +52,9 @@ spec:
       - name: mqtt
         configMap:
           name: {{ include "kuiper.fullname" . }}
-          items:
-          - key: mqtt.yaml
-            path: mqtt.yaml
+          # items:
+          # - key: mqtt_source.yaml
+          #   path: mqtt_source.yaml
       {{- if .Values.mqtt.certificationSecretName }}
       - name: kuiper-certification
         secret:
@@ -73,8 +73,8 @@ spec:
           - name: kuiper-data
             mountPath: "/kuiper/data"
           - name: mqtt
-            mountPath: "/kuiper/etc/sources/mqtt.yaml"
-            subPath: "mqtt.yaml"
+            mountPath: "/kuiper/etc"
+            # subPath: "mqtt_source.yaml"
           {{ if .Values.mqtt.certificationSecretName  }}
           - name: kuiper-certification
             mountPath: {{ .Values.mqtt.certificationPath | default "/var/kuiper/certificate.pem" }}

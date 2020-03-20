@@ -11,7 +11,7 @@ FROM alpine:3.10
 COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
 COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 
-RUN apk add sed
+RUN apk add sed libzmq
 
 WORKDIR /kuiper
 

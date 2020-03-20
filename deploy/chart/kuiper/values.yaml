@@ -38,14 +38,38 @@ tolerations: []
 
 affinity: {}
 
-mqtt:
+mqttConfig:
   #Global MQTT configurations
-  qos: 1
-  sharedSubscription: true
-  servers: [tcp://127.0.0.1:1883]
-  #username: user1
-  #password: password
-  certificationSecretName: client-cert
-  privateKeySecretName: client-key
-  #certificationPath: /var/kuiper/certificate.pem
-  #privateKeyPath: /var/kuiper/private.pem.key
+  default:
+    qos: 1
+    sharedSubscription: true
+    servers: [tcp://127.0.0.1:1883]
+    concurrency: 1
+    #username: user1
+    #password: password
+    #certificationPath: /var/kuiper/xyz-certificate.pem
+    #privateKeyPath: /var/kuiper/xyz-private.pem.key
+  #Override the global configurations
+  demo_conf: #Conf_key
+    qos: 0
+    servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
+
+
+edgexConfig:
+  #Global Edgex configurations
+  default:
+    protocol: tcp
+    server: localhost
+    port: 5570
+    topic: events
+    serviceServer: http://localhost:10080
+  #  optional:
+  #    ClientId: client1
+  #    Username: user1
+  #    Password: password
+  #Override the global configurations
+  application_conf: #Conf_key
+    protocol: tcp
+    server: localhost
+    port: 5571
+    topic: application
