@@ -17,6 +17,12 @@ import (
 	"unicode"
 )
 
+type Plugin struct {
+	Name     string `json:"name"`
+	File     string `json:"file"`
+	Callback string `json:"callback"`
+}
+
 type PluginType int
 
 const (
@@ -30,8 +36,6 @@ var (
 	once          sync.Once
 	singleton     *Manager
 )
-
-type OnRegistered func()
 
 //Registry is append only because plugin cannot delete or reload. To delete a plugin, restart the server to reindex
 type Registry struct {
@@ -121,7 +125,12 @@ func findAll(t PluginType, pluginDir string) (result []string, err error) {
 	return
 }
 
-func (m *Manager) Register(t PluginType, name string, uri string, callback OnRegistered) error {
+func (m *Manager) List(t PluginType) (result []string, err error) {
+	return m.registry.List(t), nil
+}
+
+func (m *Manager) Register(t PluginType, j *Plugin) error {
+	name, uri, cb := j.Name, j.File, j.Callback
 	//Validation
 	name = strings.Trim(name, " ")
 	if name == "" {
@@ -139,15 +148,7 @@ func (m *Manager) Register(t PluginType, name string, uri string, callback OnReg
 	zipPath := path.Join(m.pluginDir, name+".zip")
 	var unzipFiles []string
 	//clean up: delete zip file and unzip files in error
-	defer func() {
-		os.Remove(zipPath)
-		if t == SOURCE && len(unzipFiles) == 1 { //source that only copy so file
-			os.Remove(unzipFiles[0])
-		} else if (t == SOURCE && len(unzipFiles) == 2) || (t != SOURCE && len(unzipFiles) == 1) { //no error
-			m.registry.Store(t, name)
-			callback()
-		}
-	}()
+	defer os.Remove(zipPath)
 	//download
 	err := downloadFile(zipPath, uri)
 	if err != nil {
@@ -156,12 +157,17 @@ func (m *Manager) Register(t PluginType, name string, uri string, callback OnReg
 	//unzip and copy to destination
 	unzipFiles, err = m.unzipAndCopy(t, name, zipPath)
 	if err != nil {
+		if t == SOURCE && len(unzipFiles) == 1 { //source that only copy so file
+			os.Remove(unzipFiles[0])
+		}
 		return fmt.Errorf("fail to unzip file %s: %s", uri, err)
 	}
-	return nil
+
+	m.registry.Store(t, name)
+	return callback(cb)
 }
 
-func (m *Manager) Delete(t PluginType, name string, callback OnRegistered) (result error) {
+func (m *Manager) Delete(t PluginType, name string) (result error) {
 	name = strings.Trim(name, " ")
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
@@ -318,4 +324,8 @@ func lcFirst(str string) string {
 		return string(unicode.ToLower(v)) + str[i+1:]
 	}
 	return ""
+}
+
+func callback(u string) error {
+	return nil
 }
