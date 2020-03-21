@@ -8,6 +8,9 @@ image:
   repository: emqx/kuiper
   pullPolicy: IfNotPresent
 
+service:
+  type: ClusterIP
+
 persistence:
   enabled: false
   size: 20Mi
