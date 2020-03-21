@@ -130,3 +130,38 @@ jobs:
                 echo "FVT tests error"
                 exit 1
             fi
+
+    container_tests:
+      runs-on: ubuntu-latest
+
+      steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo apt-get remove docker docker-engine docker.io containerd runc
+          sudo apt-get update
+          sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+          sudo apt-get update
+          sudo apt-get install docker-ce docker-ce-cli containerd.io
+      - name: install k3s && helm
+        run: |
+          sudo sh -c "curl -sfL https://get.k3s.io | sh -"
+          sudo sh -c "curl -sfL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | sh -"
+      - name: build kuiper for docker
+        run: make docker
+      - name: run kuiper for chart
+        run: |
+          sed -i -r "s/^appVersion: .*$/appVersion: $(git describe --tags --always)/g" deploy/chart/kuiper/Chart.yaml
+          helm install kuiper --set image.pullPolicy=Never .
+      - name: check kuiper
+        timeout-minutes: 1
+        run: |
+          while [ "$(kubectl get StatefulSet -l app.kubernetes.io/name=kuiper -o jsonpath='{.items[0].status.replicas}')" \
+            != "$(kubectl get StatefulSet -l app.kubernetes.io/name=kuiper -o jsonpath='{.items[0].status.readyReplicas}')" ]; do
+            echo "waiting kuiper started"
+            sleep 5
+          done
+          kuiper_address=$(kubectl get svc --namespace default -l app.kubernetes.io/name=kuiper -o jsonpath="{.items[0].spec.clusterIP}")
+          if [ $(curl -w %{http_code} -fsSL -o /dev/null $kuiper_address:9081/rules) != 200 ];then exit 1; fi
