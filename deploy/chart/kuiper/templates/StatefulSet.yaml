@@ -36,8 +36,6 @@ spec:
       labels:
         {{- include "kuiper.selectorLabels" . | nindent 8 }}
     spec:
-      # securityContext:
-      #   fsGroup: 1000
       volumes:
       {{- if not .Values.persistence.enabled }}
       - name: kuiper-data
@@ -81,6 +79,11 @@ spec:
         - name: kuiper
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+          {{ $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
+          - containerPort: {{ $restPort | default 9081 }}
+          {{ $port := index .Values "kuiperConfig" "kuiper.yaml" "basic" "port" }}
+          - containerPort: {{ $port | default 20498 }}
           volumeMounts:
           - name: kuiper-data
             mountPath: "/kuiper/data"
