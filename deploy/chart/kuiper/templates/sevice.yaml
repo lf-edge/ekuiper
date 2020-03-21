@@ -8,13 +8,13 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-  - name: restPort
+  - name: rest-port
     {{ $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
     port:  {{ $restPort | default 9081 }}
     protocol: TCP
     targetPort:  {{ $restPort | default 9081 }}
   - name: port
-    {{ $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "port" }}
+    {{ $port := index .Values "kuiperConfig" "kuiper.yaml" "basic" "port" }}
     port:  {{ $port | default 20498 }}
     protocol: TCP
     targetPort:  {{ $port | default 20498 }}
