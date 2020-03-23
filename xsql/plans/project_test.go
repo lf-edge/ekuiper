@@ -189,6 +189,42 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			}},
 		},
 		{
+			sql: `SELECT a[0]->b AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []map[string]interface{}{
+						{"b": "hello1"},
+						{"b": "hello2"},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": "hello1",
+			}},
+		},
+		{
+			sql: `SELECT a[2:4] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []map[string]interface{}{
+						{"b": "hello1"},
+						{"b": "hello2"},
+						{"b": "hello3"},
+						{"b": "hello4"},
+						{"b": "hello5"},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []interface{}{
+					map[string]interface{}{"b": "hello3"},
+					map[string]interface{}{"b": "hello4"},
+				},
+			}},
+		},
+		{
 			sql: `SELECT a->c->d AS f1 FROM test`,
 			data: &xsql.Tuple{
 				Emitter: "test",
