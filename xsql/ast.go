@@ -6,6 +6,7 @@ import (
 	"github.com/emqx/kuiper/common/plugin_manager"
 	"github.com/emqx/kuiper/xstream/api"
 	"math"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -1111,9 +1112,7 @@ func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 	switch val := lhs.(type) {
 	case map[string]interface{}:
 		return v.evalJsonExpr(val, expr.OP, expr.RHS)
-	case []interface{}:
-		return v.evalJsonExpr(val, expr.OP, expr.RHS)
-	case []map[string]interface {}:
+	case []interface{}, []map[string]interface{}:
 		return v.evalJsonExpr(val, expr.OP, expr.RHS)
 	case error:
 		return val
@@ -1127,7 +1126,8 @@ func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 }
 
 func (v *ValuerEval) evalJsonExpr(result interface{}, op Token, expr Expr) interface{} {
-	if val, ok := result.(map[string]interface{}); ok {
+	switch val := result.(type) {
+	case map[string]interface{}:
 		switch op {
 		case ARROW:
 			switch e := expr.(type) {
@@ -1140,54 +1140,26 @@ func (v *ValuerEval) evalJsonExpr(result interface{}, op Token, expr Expr) inter
 		default:
 			return fmt.Errorf("%v is an invalid operation for %T", op, val)
 		}
-	}
-
-
-	if val, ok := result.([]interface {}); ok {
+	case []interface{}, []map[string]interface{}:
 		switch op {
 		case SUBSET:
+			val := reflect.ValueOf(result)
 			ber := v.Eval(expr)
 			if berVal, ok1 := ber.(*BracketEvalResult); ok1 {
 				if berVal.isIndex() {
-					if berVal.Start >= len(val) {
-						return fmt.Errorf("out of index: %d of %d", berVal.Start, len(val))
+					if berVal.Start >= val.Len() {
+						return fmt.Errorf("out of index: %d of %d", berVal.Start, val.Len())
 					}
-					return val[berVal.Start]
+					return val.Index(berVal.Start).Interface()
 				} else {
-					if berVal.Start >= len(val) {
-						return fmt.Errorf("start value is out of index: %d of %d", berVal.Start, len(val))
+					if berVal.Start >= val.Len() {
+						return fmt.Errorf("start value is out of index: %d of %d", berVal.Start, val.Len())
 					}
 
-					if berVal.End >= len(val) {
-						return fmt.Errorf("end value is out of index: %d of %d", berVal.End, len(val))
+					if berVal.End >= val.Len() {
+						return fmt.Errorf("end value is out of index: %d of %d", berVal.End, val.Len())
 					}
-					return val[berVal.Start:berVal.End]
-				}
-			} else {
-				return fmt.Errorf("invalid evaluation result - %v", berVal)
-			}
-		default:
-			return fmt.Errorf("%v is an invalid operation for %T", op, val)
-		}
-	} else if val, ok := result.([]map[string]interface {}); ok {
-		switch op {
-		case SUBSET:
-			ber := v.Eval(expr)
-			if berVal, ok1 := ber.(*BracketEvalResult); ok1 {
-				if berVal.isIndex() {
-					if berVal.Start >= len(val) {
-						return fmt.Errorf("out of index: %d of %d", berVal.Start, len(val))
-					}
-					return val[berVal.Start]
-				} else {
-					if berVal.Start >= len(val) {
-						return fmt.Errorf("start value is out of index: %d of %d", berVal.Start, len(val))
-					}
-
-					if berVal.End >= len(val) {
-						return fmt.Errorf("end value is out of index: %d of %d", berVal.End, len(val))
-					}
-					return val[berVal.Start:berVal.End]
+					return val.Slice(berVal.Start, berVal.End).Interface()
 				}
 			} else {
 				return fmt.Errorf("invalid evaluation result - %v", berVal)
@@ -1196,7 +1168,6 @@ func (v *ValuerEval) evalJsonExpr(result interface{}, op Token, expr Expr) inter
 			return fmt.Errorf("%v is an invalid operation for %T", op, val)
 		}
 	}
-
 	return nil
 }
 
