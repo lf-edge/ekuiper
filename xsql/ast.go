@@ -1108,10 +1108,13 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 
 func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 	lhs := v.Eval(expr.LHS)
+	fmt.Printf("%T\n", lhs)
 	switch val := lhs.(type) {
 	case map[string]interface{}:
 		return v.evalJsonExpr(val, expr.OP, expr.RHS)
 	case []interface{}:
+		return v.evalJsonExpr(val, expr.OP, expr.RHS)
+	case []map[string]interface {}:
 		return v.evalJsonExpr(val, expr.OP, expr.RHS)
 	case error:
 		return val
@@ -1140,7 +1143,34 @@ func (v *ValuerEval) evalJsonExpr(result interface{}, op Token, expr Expr) inter
 		}
 	}
 
-	if val, ok := result.([]interface{}); ok {
+
+	if val, ok := result.([]interface {}); ok {
+		switch op {
+		case SUBSET:
+			ber := v.Eval(expr)
+			if berVal, ok1 := ber.(*BracketEvalResult); ok1 {
+				if berVal.isIndex() {
+					if berVal.Start >= len(val) {
+						return fmt.Errorf("out of index: %d of %d", berVal.Start, len(val))
+					}
+					return val[berVal.Start]
+				} else {
+					if berVal.Start >= len(val) {
+						return fmt.Errorf("start value is out of index: %d of %d", berVal.Start, len(val))
+					}
+
+					if berVal.End >= len(val) {
+						return fmt.Errorf("end value is out of index: %d of %d", berVal.End, len(val))
+					}
+					return val[berVal.Start:berVal.End]
+				}
+			} else {
+				return fmt.Errorf("invalid evaluation result - %v", berVal)
+			}
+		default:
+			return fmt.Errorf("%v is an invalid operation for %T", op, val)
+		}
+	} else if val, ok := result.([]map[string]interface {}); ok {
 		switch op {
 		case SUBSET:
 			ber := v.Eval(expr)
@@ -1167,6 +1197,7 @@ func (v *ValuerEval) evalJsonExpr(result interface{}, op Token, expr Expr) inter
 			return fmt.Errorf("%v is an invalid operation for %T", op, val)
 		}
 	}
+
 	return nil
 }
 
