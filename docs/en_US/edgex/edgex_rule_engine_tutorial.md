@@ -42,7 +42,7 @@ EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to ex
 
 ### Pull Kuiper Docker and run
 
-It's recommended to use Docker, since related dependency libraries (such ZeroMQ lib) are already installed in Docker images.
+It's **STRONGLY** recommended to use Docker, since related dependency libraries (such ZeroMQ lib) are already installed in Docker images.
 
 ```shell
 docker pull emqx/kuiper:0.2.1
@@ -58,6 +58,16 @@ docker run -d --name kuiper emqx/kuiper:0.2.1
 
 If the docker instance is failed to start, please use ``docker logs kuiper`` to see the log files.
 
+Notice 1: The default EdgeX message bus configuration could be updated when bring-up the Docker instance.  As listed in below, override the default configurations for message bus server, port and service server address for getting value descriptors in Kuiper instance.
+
+```shell
+docker run -d --name kuiper -e EDGEX_SERVER=10.211.55.2 -e EDGEX_PORT=9999 -e EDGEX_SERVICE_SERVER=http://10.211.55.2:8888 emqx/kuiper:0.2.1
+```
+
+For more detailed supported Docer environment varialbles, please refer to [this link](https://hub.docker.com/r/emqx/kuiper).
+
+*Notice 2: If you'd like to use Kuiper with EdgeX support seperately (without Docker), you could build Kuiper by yourself with ``make pkg_with_edgex`` command.*
+
 ### Create a device service
 
 In this tutorial, we use a very simple mock-up device service. Please follow the steps in [this doc](https://fuji-docs.edgexfoundry.org/Ch-GettingStartedSDK-Go.html) to develop and run the random number service.  
@@ -72,7 +82,7 @@ The next step is to create a stream that can consuming data from EdgeX message b
 
 ```shell
 curl -X POST \
-  http://127.0.0.1:9081/streams \
+  http://$your_server:9081/streams \
   -H 'Content-Type: application/json' \
   -d '{
   "sql": "create stream demo() WITH (FORMAT=\"JSON\", TYPE=\"edgex\")"
@@ -99,7 +109,7 @@ For other command line tools, please refer to [this doc](../cli/overview.md).
 
 ------
 
-Now the stream is created. But you maybe curious about how Kuiper knows the message bus IP address & port, because such information are not specified in ``CREATE STREAM`` statement. Those configurations are managed in ``etc/sources/edgex.yaml`` , you can type ``cat etc/sources/edgex.yaml`` command to take a look at the contents of file.  If you have different server, ports & service server configurations, please update it accordingly.
+Now the stream is created. But you maybe curious about how Kuiper knows the message bus IP address & port, because such information are not specified in ``CREATE STREAM`` statement. Those configurations are managed in ``etc/sources/edgex.yaml`` , you can type ``cat etc/sources/edgex.yaml`` command to take a look at the contents of file.  If you have different server, ports & service server configurations, please update it accordingly. As mentioned previously, these configurations could be override when bring-up the Docker instances.
 
 ```yaml
 #Global Edgex configurations
@@ -124,7 +134,7 @@ So the below rule will filter all of ``randomnumber`` that is less than 31. The 
 
 ```shell
 curl -X POST \
-  http://127.0.0.1:9081/rules \
+  http://$your_server:9081/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule1",
