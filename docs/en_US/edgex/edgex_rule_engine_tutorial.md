@@ -78,7 +78,7 @@ There are two approaches to manage stream, you can use your preferred approach.
 
 #### Option 1: Use Rest API
 
-The next step is to create a stream that can consume data from EdgeX message bus. Please change ``$your_server`` to your local Kuiper docker IP address.
+The next step is to create a stream that can consume data from EdgeX message bus. Please change ``$your_server`` to Kuiper docker instance IP address.
 
 ```shell
 curl -X POST \
