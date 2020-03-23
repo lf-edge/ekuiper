@@ -1,6 +1,30 @@
 apiVersion: v1
 kind: Service
 metadata:
+  name: {{ include "kuiper.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kuiper.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - name: rest-port
+    {{ $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
+    port:  {{ $restPort | default 9081 }}
+    protocol: TCP
+    targetPort:  {{ $restPort | default 9081 }}
+  - name: port
+    {{ $port := index .Values "kuiperConfig" "kuiper.yaml" "basic" "port" }}
+    port:  {{ $port | default 20498 }}
+    protocol: TCP
+    targetPort:  {{ $port | default 20498 }}
+  selector:
+    {{- include "kuiper.selectorLabels" . | nindent 4 }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: {{ include "kuiper.fullname" . }}-headless
   namespace: {{ .Release.Namespace }}
   labels:

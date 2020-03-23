@@ -67,15 +67,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
   | `nodeSelector`                 | 节点选择                            | {}                       |
   | `tolerations`                  | 污点容忍                            | []                       |
   | `affinity`                     | 节点亲和性                          | {}                       |
-  | `mqtt.servers`                 | mqtt服务器的代理地址                | `[tcp://127.0.0.1:1883]` |
-  | `mqtt.qos`                     | 消息转发的服务质量                  | 1                        |
-  | `mqtt.sharedSubscription`      | 是否使用共享订阅                    | true                     |
-  | `mqtt.username`                | 连接用户名                          |                          |
-  | `mqtt.password`                | 连接密码                            |                          |
-  | `mqtt.certificationSecretName` | 通过证书文件创建的 Secre 资源的名字 |                          |
-  | `mqtt.privateKeySecretName`    | 通过私钥文件创建的 Secre 资源的名字 |                          |
-  | `mqtt.certificationPath`       | 证书路径。必须是绝对路径。          |                          |
-  | `mqtt.privateKeyPath`          | 私钥路径。必须绝对路径。            |                          |
+  | `kuiperConfig`                 | Kuiper `etc` 目录下的配置文件           |                        |
 
 ## 通过 Helm 部署 Kuiper
 
@@ -169,10 +161,25 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
 
 + 编辑 `values.yaml` 文件
 
-  + 设置 `mqtt.certificationSecretName` 为证书文件 Secret 资源： `mqtt.certificationSecretName: client-cert`
-  + 设置 `mqtt.privateKeySecretName` 为私钥文件 Secret 资源：`mqtt.privateKeySecretName: client-key`
-  + 设置证书文件部署路径：`mqtt.certificationPath: /var/kuiper/certificate.pem`
-  + 设置私钥文件部署路径：`mqtt.privateKeyPath: /var/kuiper/private.pem.key`
+  ```shell
+  $ vim value.yaml
+  kuiperConfig:
+  ...
+    "mqtt_source.yaml":
+      #Global MQTT configurations
+      default:
+        qos: 1
+        sharedSubscription: true
+        servers: [tcp://127.0.0.1:1883]
+        concurrency: 1
+        #username: user1
+        #password: password
+        certificationSecretName: client-cert  # 设置证书文件 Secret resource name
+        certificationPath: /var/kuiper/certificate.pem # 设置证书文件部署路径
+        privateKeySecretName: client-key  # 设置私钥文件的 Secret resource name
+        privateKeyPath: /var/kuiper/xyz-private.pem.key # 设置私钥文件部署路径
+  ...
+  ```
 
 + 使用 Helm 部署 Kuiper
 

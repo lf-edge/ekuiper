@@ -6,34 +6,21 @@ metadata:
   labels:
     {{- include "kuiper.labels" . | nindent 4 }}
 data:
-    "random.yaml": |
-      default:
-        interval: 1000
-        pattern:
-          count: 50
-      ext:
-        interval: 300
-        seed: 1
-        pattern:
-          count: 50
-    "zmq.yaml": |
-      #Global Zmq configurations
-      default:
-        server: tcp://127.0.0.1:5563
-    "mqtt.yaml": |
-      #Global MQTT configurations
-      default:
-        {{- toYaml .Values.mqtt | nindent 8 }}
-      #Override the global configurations
-      demo_conf: #Conf_key
-        qos: 0
-        servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
-    "client.yaml": |
-      basic:
-        host: 127.0.0.1
-        port: 20498
-    "kuiper.yaml": |
-      basic:
-        # true|false, with debug level, it prints more debug info
-        debug: false
-        port: 20498
+  "client.yaml": |
+    {{ $client := index .Values "kuiperConfig" "client.yaml" }}
+    {{- toYaml $client | nindent 6 }}
+  "kuiper.yaml": |
+    {{ $kuiper := index .Values "kuiperConfig" "kuiper.yaml" }}
+    {{- toYaml $kuiper | nindent 6 }}
+  "mqtt_source.yaml": |
+    {{ $mqtt := index .Values "kuiperConfig" "mqtt_source.yaml" }}
+    {{- toYaml $mqtt | nindent 6 }}
+  "edgex.yaml": |
+    {{ $edgex := index .Values "kuiperConfig" "sources/edgex.yaml" }}
+    {{- toYaml $edgex | nindent 6 }}
+  "random.yaml": |
+    {{ $random := index .Values "kuiperConfig" "sources/random.yaml" }}
+    {{- toYaml $random | nindent 6 }}
+  "zmq.yaml": |
+    {{ $zmq := index .Values "kuiperConfig" "sources/zmq.yaml" }}
+    {{- toYaml $zmq | nindent 6 }}

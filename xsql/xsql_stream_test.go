@@ -153,8 +153,28 @@ func TestParser_ParseCreateStream(t *testing.T) {
 			s: `CREATE STREAM demo (
 		
 				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
-			stmt: nil,
-			err:  `found ")", expect stream field name.`,
+			stmt: &StreamStmt{
+				Name: StreamName("demo"),
+				StreamFields: nil,
+				Options: map[string]string{
+					"DATASOURCE": "users",
+					"FORMAT":     "JSON",
+					"KEY":        "USERID",
+				},
+			},
+		},
+
+		{
+			s: `CREATE STREAM demo() WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
+			stmt: &StreamStmt{
+				Name: StreamName("demo"),
+				StreamFields: nil,
+				Options: map[string]string{
+					"DATASOURCE": "users",
+					"FORMAT":     "JSON",
+					"KEY":        "USERID",
+				},
+			},
 		},
 
 		{

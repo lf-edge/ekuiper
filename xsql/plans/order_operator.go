@@ -1,6 +1,7 @@
 package plans
 
 import (
+	"fmt"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 )
@@ -18,13 +19,16 @@ func (p *OrderPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	log.Debugf("order plan receive %s", data)
 	sorter := xsql.OrderedBy(p.SortFields)
 	switch input := data.(type) {
+	case error:
+		return input
 	case xsql.Valuer:
 		return input
 	case xsql.SortingData:
-		sorter.Sort(input)
+		if err := sorter.Sort(input); err != nil {
+			return fmt.Errorf("run Order By error: %s", err)
+		}
 		return input
 	default:
-		log.Errorf("Expect xsql.Valuer or its array type.")
-		return nil
+		return fmt.Errorf("run Order By error: expect xsql.Valuer or its array type")
 	}
 }

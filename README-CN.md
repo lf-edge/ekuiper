@@ -147,11 +147,21 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 
 #### 编译
 
-+ 编译二进制：``$ make``
++ 编译二进制：
 
-+ 安装文件打包：`` $ make pkg``
+  - 编译二进制文件: `$ make`
 
-+ Docker 镜像：``$ make docker``
+  - 编译支持 EdgeX 的二进制文件: `$ make build_with_edgex`
+
++ 安装文件打包：
+
+  - 安装文件打包：: `$ make pkg`
+
+  - 支持 EdgeX 的安装文件打包: `$ make pkg_with_edgex`
+
++ Docker 镜像：`$ make docker`
+
+  > Docker 镜像默认支持 EdgeX
 
 
 如果您要实现交叉编译，请参考[此文档](docs/zh_CN/cross-compile.md)。

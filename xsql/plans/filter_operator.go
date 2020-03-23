@@ -1,6 +1,7 @@
 package plans
 
 import (
+	"fmt"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 )
@@ -17,33 +18,39 @@ func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 	log := ctx.GetLogger()
 	log.Debugf("filter plan receive %s", data)
 	switch input := data.(type) {
+	case error:
+		return input
 	case xsql.Valuer:
 		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, &xsql.FunctionValuer{})}
-		result, ok := ve.Eval(p.Condition).(bool)
-		if ok {
-			if result {
+		result := ve.Eval(p.Condition)
+		switch r := result.(type) {
+		case error:
+			return fmt.Errorf("run Where error: %s", r)
+		case bool:
+			if r {
 				return input
 			}
-		} else {
-			log.Errorf("invalid condition that returns non-bool value")
+		default:
+			return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", r)
 		}
 	case xsql.WindowTuplesSet:
 		if len(input) != 1 {
-			log.Infof("WindowTuplesSet with multiple tuples cannot be evaluated")
-			return nil
+			return fmt.Errorf("run Where error: the input WindowTuplesSet with multiple tuples cannot be evaluated")
 		}
 		ms := input[0].Tuples
 		r := ms[:0]
 		for _, v := range ms {
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&v, &xsql.FunctionValuer{})}
-			result, ok := ve.Eval(p.Condition).(bool)
-			if ok {
-				if result {
+			result := ve.Eval(p.Condition)
+			switch val := result.(type) {
+			case error:
+				return fmt.Errorf("run Where error: %s", val)
+			case bool:
+				if val {
 					r = append(r, v)
 				}
-			} else {
-				log.Errorf("invalid condition that returns non-bool value")
-				return nil
+			default:
+				return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
 		}
 		if len(r) > 0 {
@@ -55,22 +62,23 @@ func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 		r := ms[:0]
 		for _, v := range ms {
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&v, &xsql.FunctionValuer{})}
-			result, ok := ve.Eval(p.Condition).(bool)
-			if ok {
-				if result {
+			result := ve.Eval(p.Condition)
+			switch val := result.(type) {
+			case error:
+				return fmt.Errorf("run Where error: %s", val)
+			case bool:
+				if val {
 					r = append(r, v)
 				}
-			} else {
-				log.Errorf("invalid condition that returns non-bool value")
-				return nil
+			default:
+				return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
 		}
 		if len(r) > 0 {
 			return r
 		}
 	default:
-		log.Errorf("Expect xsql.Valuer or its array type.")
-		return nil
+		return fmt.Errorf("run Where error: invalid input %[1]T(%[1]v)", input)
 	}
 	return nil
 }

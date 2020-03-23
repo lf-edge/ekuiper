@@ -16,7 +16,7 @@
         <collectionProp name="Arguments.arguments">
           <elementProp name="srv" elementType="Argument">
             <stringProp name="Argument.name">srv</stringProp>
-            <stringProp name="Argument.value">127.0.0.1</stringProp>
+            <stringProp name="Argument.value">${__property(srv,,127.0.0.1)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="rest_port" elementType="Argument">
@@ -26,7 +26,7 @@
           </elementProp>
           <elementProp name="mqtt_srv" elementType="Argument">
             <stringProp name="Argument.name">mqtt_srv</stringProp>
-            <stringProp name="Argument.value">127.0.0.1</stringProp>
+            <stringProp name="Argument.value">${__property(mqtt_srv,,127.0.0.1)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>
