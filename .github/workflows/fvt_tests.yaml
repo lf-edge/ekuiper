@@ -21,7 +21,7 @@ jobs:
             java-version: '8' # The JDK version to make available on the path.
             java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
             architecture: x64 # (x64 or x86) - defaults to x64
-        - name: set up jmeter
+        - name: install jmeter
           timeout-minutes: 10
           env:
             JMETER_VERSION: 5.2.1
@@ -82,7 +82,7 @@ jobs:
             java-version: '8' # The JDK version to make available on the path.
             java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
             architecture: x64 # (x64 or x86) - defaults to x64
-        - name: set up jmeter
+        - name: install jmeter
           timeout-minutes: 10
           env:
             JMETER_VERSION: 5.2.1
@@ -141,7 +141,7 @@ jobs:
           java-version: '8' # The JDK version to make available on the path.
           java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
           architecture: x64 # (x64 or x86) - defaults to x64
-      - name: set up jmeter
+      - name: install jmeter
         timeout-minutes: 10
         env:
           JMETER_VERSION: 5.2.1
@@ -152,6 +152,15 @@ jobs:
           echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
           wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/emqx/mqtt-jmeter/raw/master/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
           ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
+      - name: setup jmeter
+        timeout-minutes: 10
+        run: |
+          curl -fsSL "/opt/jmeter/lib/json-lib-2.4-jdk15.jar" https://repo1.maven.org/maven2/net/sf/json-lib/json-lib/2.4/json-lib-2.4-jdk15.jar
+          curl -fsSL "/opt/jmeter/lib/commons-beanutils-1.8.0.jar" https://repo1.maven.org/maven2/commons-beanutils/commons-beanutils/1.8.0/commons-beanutils-1.8.0.jar
+          curl -fsSL "/opt/jmeter/lib/commons-collections-3.2.1.jar" https://repo1.maven.org/maven2/commons-collections/commons-collections/3.2.1/commons-collections-3.2.1.jar
+          curl -fsSL "/opt/jmeter/lib/commons-lang-2.5.jar" https://repo1.maven.org/maven2/commons-lang/commons-lang/2.5/commons-lang-2.5.jar
+          curl -fsSL "/opt/jmeter/lib/commons-logging-1.1.1.jar" https://repo1.maven.org/maven2/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar
+          curl -fsSL "/opt/jmeter/lib/ezmorph-1.0.6.jar" https://repo1.maven.org/maven2/net/sf/ezmorph/ezmorph/1.0.6/ezmorph-1.0.6.jar
       - name: install docker
         run: |
           sudo apt-get remove docker docker-engine docker.io containerd runc
