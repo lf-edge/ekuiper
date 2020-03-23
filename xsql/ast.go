@@ -1108,7 +1108,6 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 
 func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 	lhs := v.Eval(expr.LHS)
-	fmt.Printf("%T\n", lhs)
 	switch val := lhs.(type) {
 	case map[string]interface{}:
 		return v.evalJsonExpr(val, expr.OP, expr.RHS)
