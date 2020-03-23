@@ -136,6 +136,22 @@ jobs:
 
       steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+         with:
+           java-version: '8' # The JDK version to make available on the path.
+           java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
+           architecture: x64 # (x64 or x86) - defaults to x64
+       - name: set up jmeter
+         timeout-minutes: 10
+         env:
+           JMETER_VERSION: 5.2.1
+         run: |
+           wget -O /tmp/apache-jmeter.tgz http://us.mirrors.quenda.co/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+           cd /tmp && tar -xvf apache-jmeter.tgz
+           echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
+           echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
+           wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/emqx/mqtt-jmeter/raw/master/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
+           ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
       - name: install docker
         run: |
           sudo apt-get remove docker docker-engine docker.io containerd runc
@@ -161,25 +177,51 @@ jobs:
           helm version
       - name: build kuiper for docker
         run: make docker
-      - name: run kuiper for chart
-        env:
-          KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
-        run: |
-          version=$(git describe --tags --always)
-          sudo docker save emqx/kuiper:$version -o kuier.tar.gz
-          sudo k3s ctr image import kuier.tar.gz
-          sed -i -r "s/^appVersion: .*$/appVersion: $version/g" deploy/chart/kuiper/Chart.yaml
-          sed -i -r 's/  pullPolicy: .*$/  pullPolicy: Never/g' deploy/chart/kuiper/values.yaml     
-          helm install kuiper deploy/chart/kuiper
-      - name: check kuiper
+      - name: run emqx on chart
         env:
           KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
         timeout-minutes: 5
         run: |
+          helm repo add emqx https://repos.emqx.io/charts
+          helm repo update
+          helm install emqx emqx/emqx
+          while [ "$(kubectl get StatefulSet -l app.kubernetes.io/name=emqx -o jsonpath='{.items[0].status.replicas}')" \
+            != "$(kubectl get StatefulSet -l app.kubernetes.io/name=emqx -o jsonpath='{.items[0].status.readyReplicas}')" ]; do
+            echo "waiting emqx started"
+            sleep 10
+          done
+      - name: run kuiper for chart
+        env:
+          KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
+        timeout-minutes: 5
+        run: |
+          version=$(git describe --tags --always)
+          emqx_address=$(kubectl get svc --namespace default emqx -o jsonpath="{.spec.clusterIP}")
+          
+          sudo docker save emqx/kuiper:$version -o kuier.tar.gz
+          sudo k3s ctr image import kuier.tar.gz
+          
+          sed -i -r "s/^appVersion: .*$/appVersion: ${version}/g" deploy/chart/kuiper/Chart.yaml
+          sed -i -r 's/  pullPolicy: .*$/  pullPolicy: Never/g' deploy/chart/kuiper/values.yaml
+          sed -i -r "s/      servers: [.*]$/      servers: [tcp://${emqx_address}:1883]/g" deploy/chart/kuiper/values.yaml
+          
+          helm install kuiper deploy/chart/kuiper
           while [ "$(kubectl get StatefulSet -l app.kubernetes.io/name=kuiper -o jsonpath='{.items[0].status.replicas}')" \
             != "$(kubectl get StatefulSet -l app.kubernetes.io/name=kuiper -o jsonpath='{.items[0].status.readyReplicas}')" ]; do
             echo "waiting kuiper started"
             sleep 10
           done
-          kuiper_address=$(kubectl get svc --namespace default kuiper -o jsonpath="{.spec.clusterIP}")
           if [ $(curl -w %{http_code} -fsSL -o /dev/null $kuiper_address:9081/rules) != 200 ];then exit 1; fi
+      - name: check kuiper
+        env:
+          KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
+        timeout-minutes: 5
+        run: |
+          emqx_address=$(kubectl get svc --namespace default emqx -o jsonpath="{.spec.clusterIP}")
+          kuiper_address=$(kubectl get svc --namespace default kuiper -o jsonpath="{.spec.clusterIP}")
+          /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t fvt_scripts/select_aggr_rule.jmx -Dsrv=${kuiper_address} -Dmqtt_srv=${emqx_address} -l jmeter_logs/select_aggr_rule.jtl -j jmeter_logs/select_aggr_rule.log
+      - uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: jmeter_logs_without_edgex
+          path: ./jmeter_logs
