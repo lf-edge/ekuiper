@@ -2,7 +2,6 @@ package plans
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 )
@@ -18,26 +17,28 @@ type JoinPlan struct {
 func (jp *JoinPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	log := ctx.GetLogger()
 	var input xsql.WindowTuplesSet
-	if d, ok := data.(xsql.WindowTuplesSet); !ok {
-		log.Errorf("Expect WindowTuplesSet type.\n")
-		return nil
-	} else {
-		log.Debugf("join plan receive %v", d)
-		input = d
+	switch v := data.(type) {
+	case error:
+		return v
+	case xsql.WindowTuplesSet:
+		input = v
+		log.Debugf("join plan receive %v", data)
+	default:
+		return fmt.Errorf("run Join error: join is only supported in window")
 	}
-
 	result := xsql.JoinTupleSets{}
-
 	for i, join := range jp.Joins {
 		if i == 0 {
 			v, err := jp.evalSet(input, join)
 			if err != nil {
-				fmt.Println(err)
-				return nil
+				return fmt.Errorf("run Join error: %s", err)
 			}
 			result = v
 		} else {
-			r1, _ := jp.evalJoinSets(&result, input, join)
+			r1, err := jp.evalJoinSets(&result, input, join)
+			if err != nil {
+				return fmt.Errorf("run Join error: %s", err)
+			}
 			if v1, ok := r1.(xsql.JoinTupleSets); ok {
 				result = v1
 			}
@@ -113,8 +114,12 @@ func (jp *JoinPlan) evalSet(input xsql.WindowTuplesSet, join xsql.Join) (xsql.Jo
 				temp.AddTuple(left)
 				temp.AddTuple(right)
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, &xsql.FunctionValuer{})}
-				if r, ok := ve.Eval(join.Expr).(bool); ok {
-					if r {
+				result := ve.Eval(join.Expr)
+				switch val := result.(type) {
+				case error:
+					return nil, val
+				case bool:
+					if val {
 						if join.JoinType == xsql.INNER_JOIN {
 							merged.AddTuple(left)
 							merged.AddTuple(right)
@@ -124,8 +129,8 @@ func (jp *JoinPlan) evalSet(input xsql.WindowTuplesSet, join xsql.Join) (xsql.Jo
 							merged.AddTuple(right)
 						}
 					}
-				} else {
-					common.Log.Infoln("Evaluation error for set.")
+				default:
+					return nil, fmt.Errorf("invalid join condition that returns non-bool value %[1]T(%[1]v)", val)
 				}
 			}
 		}
@@ -135,10 +140,14 @@ func (jp *JoinPlan) evalSet(input xsql.WindowTuplesSet, join xsql.Join) (xsql.Jo
 	}
 
 	if join.JoinType == xsql.FULL_JOIN {
-		if rightJoinSet, err := jp.evalSetWithRightJoin(input, join, true); err == nil && len(rightJoinSet) > 0 {
-			for _, jt := range rightJoinSet {
-				sets = append(sets, jt)
+		if rightJoinSet, err := jp.evalSetWithRightJoin(input, join, true); err == nil {
+			if len(rightJoinSet) > 0 {
+				for _, jt := range rightJoinSet {
+					sets = append(sets, jt)
+				}
 			}
+		} else {
+			return nil, err
 		}
 	}
 	return sets, nil
@@ -168,13 +177,17 @@ func (jp *JoinPlan) evalSetWithRightJoin(input xsql.WindowTuplesSet, join xsql.J
 			temp.AddTuple(right)
 			temp.AddTuple(left)
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, &xsql.FunctionValuer{})}
-			if r, ok := ve.Eval(join.Expr).(bool); ok {
-				if r {
+			result := ve.Eval(join.Expr)
+			switch val := result.(type) {
+			case error:
+				return nil, val
+			case bool:
+				if val {
 					merged.AddTuple(left)
 					isJoint = true
 				}
-			} else {
-				common.Log.Infoln("Evaluation error for set.")
+			default:
+				return nil, fmt.Errorf("invalid join condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
 		}
 		if excludeJoint {
@@ -215,14 +228,20 @@ func (jp *JoinPlan) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuple
 				merged.AddTuple(right)
 			} else {
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&left, &right, &xsql.FunctionValuer{})}
-				if r, ok := ve.Eval(join.Expr).(bool); ok {
-					if r {
+				result := ve.Eval(join.Expr)
+				switch val := result.(type) {
+				case error:
+					return nil, val
+				case bool:
+					if val {
 						if join.JoinType == xsql.INNER_JOIN && !innerAppend {
 							merged.AddTuples(left.Tuples)
 							innerAppend = true
 						}
 						merged.AddTuple(right)
 					}
+				default:
+					return nil, fmt.Errorf("invalid join condition that returns non-bool value %[1]T(%[1]v)", val)
 				}
 			}
 		}
@@ -260,11 +279,17 @@ func (jp *JoinPlan) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.Window
 		isJoint := false
 		for _, left := range *set {
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&right, &left, &xsql.FunctionValuer{})}
-			if r, ok := ve.Eval(join.Expr).(bool); ok {
-				if r {
+			result := ve.Eval(join.Expr)
+			switch val := result.(type) {
+			case error:
+				return nil, val
+			case bool:
+				if val {
 					isJoint = true
 					merged.AddTuples(left.Tuples)
 				}
+			default:
+				return nil, fmt.Errorf("invalid join condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
 		}
 

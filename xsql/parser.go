@@ -17,6 +17,7 @@ type Parser struct {
 		tok Token
 		lit string
 	}
+	inmeta bool
 }
 
 func (p *Parser) parseCondition() (Expr, error) {
@@ -505,10 +506,17 @@ func (p *Parser) parseUnaryExpr() (Expr, error) {
 		if n, err := p.parseFieldNameSections(); err != nil {
 			return nil, err
 		} else {
-			if len(n) == 2 {
-				return &FieldRef{StreamName: StreamName(n[0]), Name: n[1]}, nil
+			if p.inmeta {
+				if len(n) == 2 {
+					return &MetaRef{StreamName: StreamName(n[0]), Name: n[1]}, nil
+				}
+				return &MetaRef{StreamName: "", Name: n[0]}, nil
+			} else {
+				if len(n) == 2 {
+					return &FieldRef{StreamName: StreamName(n[0]), Name: n[1]}, nil
+				}
+				return &FieldRef{StreamName: "", Name: n[0]}, nil
 			}
-			return &FieldRef{StreamName: StreamName(""), Name: n[0]}, nil
 		}
 	} else if tok == STRING {
 		return &StringLiteral{Val: lit}, nil
@@ -587,16 +595,22 @@ func (p *Parser) parseAs(f *Field) (*Field, error) {
 }
 
 func (p *Parser) parseCall(name string) (Expr, error) {
+	if strings.ToLower(name) == "meta" || strings.ToLower(name) == "mqtt" {
+		p.inmeta = true
+		defer func() {
+			p.inmeta = false
+		}()
+	}
 	var args []Expr
 	for {
 		if tok, _ := p.scanIgnoreWhitespace(); tok == RPAREN {
-			return Call{Name: name, Args: args}.rewrite_func(), nil
+			return &Call{Name: name, Args: args}, nil
 		} else if tok == ASTERISK {
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 != RPAREN {
 				return nil, fmt.Errorf("found %q, expected right paren.", lit2)
 			} else {
 				args = append(args, &StringLiteral{Val: "*"})
-				return Call{Name: name, Args: args}.rewrite_func(), nil
+				return &Call{Name: name, Args: args}, nil
 			}
 		} else {
 			p.unscan()
@@ -621,7 +635,7 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 		if valErr := validateFuncs(name, args); valErr != nil {
 			return nil, valErr
 		}
-		return Call{Name: name, Args: args}.rewrite_func(), nil
+		return &Call{Name: name, Args: args}, nil
 	} else {
 		if error != nil {
 			return nil, error
@@ -822,6 +836,17 @@ func (p *Parser) parseStreamFields() (StreamFields, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok == LPAREN {
 		lStack.Push(lit)
 		for {
+			//For the schemaless streams
+			//create stream demo () WITH (FORMAT="JSON", DATASOURCE="demo" TYPE="edgex")
+			if tok1, _ := p.scanIgnoreWhitespace(); tok1 == RPAREN {
+				lStack.Pop()
+				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 != WITH {
+					return nil, fmt.Errorf("found %q, expected is with.", lit2)
+				}
+				return fields, nil
+			} else {
+				p.unscan()
+			}
 			if f, err := p.parseStreamField(); err != nil {
 				return nil, err
 			} else {

@@ -36,8 +36,6 @@ spec:
       labels:
         {{- include "kuiper.selectorLabels" . | nindent 8 }}
     spec:
-      # securityContext:
-      #   fsGroup: 1000
       volumes:
       {{- if not .Values.persistence.enabled }}
       - name: kuiper-data
@@ -49,40 +47,74 @@ spec:
           claimName: {{ tpl . $ }}
         {{- end }}
       {{- end }}
-      - name: mqtt
+      - name: kuiper-config
         configMap:
           name: {{ include "kuiper.fullname" . }}
           items:
-          - key: mqtt.yaml
-            path: mqtt.yaml
-      {{- if .Values.mqtt.certificationSecretName }}
+          - key: mqtt_source.yaml
+            path: mqtt_source.yaml
+          - key: kuiper.yaml
+            path: kuiper.yaml
+          - key: client.yaml
+            path: client.yaml
+          - key: edgex.yaml
+            path: edgex.yaml
+          - key: random.yaml
+            path: random.yaml
+          - key: zmq.yaml
+            path: zmq.yaml
+      {{ $certificationSecretName := index .Values "kuiperConfig" "mqtt_source.yaml" "default" "certificationSecretName" }}
+      {{- if $certificationSecretName }}
       - name: kuiper-certification
         secret:
-          secretName: {{ .Values.mqtt.certificationSecretName }}
+          secretName: {{ $certificationSecretName }}
       {{- end }}
-      {{- if .Values.mqtt.privateKeySecretName }}
+      {{ $privateKeySecretName := index .Values "kuiperConfig" "mqtt_source.yaml" "default" "privateKeySecretName" }}
+      {{- if $privateKeySecretName }}
       - name: kuiper-private-key
         secret:
-          secretName: {{ .Values.mqtt.privateKeySecretName }}
+          secretName: {{ $privateKeySecretName }}
       {{- end }}
       containers:
         - name: kuiper
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+          {{ $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
+          - containerPort: {{ $restPort | default 9081 }}
+          {{ $port := index .Values "kuiperConfig" "kuiper.yaml" "basic" "port" }}
+          - containerPort: {{ $port | default 20498 }}
           volumeMounts:
           - name: kuiper-data
             mountPath: "/kuiper/data"
-          - name: mqtt
-            mountPath: "/kuiper/etc/sources/mqtt.yaml"
-            subPath: "mqtt.yaml"
-          {{ if .Values.mqtt.certificationSecretName  }}
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/mqtt_source.yaml"
+            subPath: "mqtt_source.yaml"
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/kuiper.yaml"
+            subPath: "kuiper.yaml"
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/client.yaml"
+            subPath: "client.yaml"
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/sources/edgex.yaml"
+            subPath: "edgex.yaml"
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/sources/random.yaml"
+            subPath: "random.yaml"
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/sources/zmq.yaml"
+            subPath: "zmq.yaml"
+          {{ $certificationSecretName := index .Values "kuiperConfig" "mqtt_source.yaml" "default" "certificationSecretName" }}
+          {{- if $certificationSecretName }}
           - name: kuiper-certification
-            mountPath: {{ .Values.mqtt.certificationPath | default "/var/kuiper/certificate.pem" }}
+            mountPath: {{ index .Values "kuiperConfig" "mqtt_source.yaml" "default" "certificationPath" | default "/var/kuiper/certificate.pem" }}
             readOnly: true
           {{ end }}
-          {{ if .Values.mqtt.privateKeySecretName  }}
+          {{ $privateKeySecretName := index .Values "kuiperConfig" "mqtt_source.yaml" "default" "privateKeySecretName" }}
+          {{- if $privateKeySecretName }}
           - name: kuiper-private-key
-            mountPath: {{ .Values.mqtt.privateKeyPath | default "/var/kuiper/private.pem.key" }}
+            mountPath: {{ index .Values "kuiperConfig" "mqtt_source.yaml" "default" "privateKeyPath" | default "/var/kuiper/private.pem.key" }}
             readOnly: true
           {{ end }}
           resources:

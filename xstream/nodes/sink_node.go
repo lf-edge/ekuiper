@@ -86,7 +86,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				retryInterval = t
 			}
 		}
-		cacheLength := 10240
+		cacheLength := 1024
 		if c, ok := m.options["cacheLength"]; ok {
 			if t, err := common.ToInt(c); err != nil || t < 0 {
 				logger.Warnf("invalid type for cacheLength property, should be positive integer but found %t", c)
@@ -168,10 +168,19 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 	stats.IncTotalRecordsIn()
 	stats.ProcessTimeStart()
 	logger := ctx.GetLogger()
+	var outdata []byte
+	switch val := item.data.(type) {
+	case []byte:
+		outdata = val
+	case error:
+		outdata = []byte(fmt.Sprintf(`[{"error":"%s"}]`, val.Error()))
+	default:
+		outdata = []byte(fmt.Sprintf(`[{"error":"result is not a string but found %#v"}]`, val))
+	}
 	for {
-		if err := sink.Collect(ctx, item.data); err != nil {
+		if err := sink.Collect(ctx, outdata); err != nil {
 			stats.IncTotalExceptions()
-			logger.Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), item.data, err)
+			logger.Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), outdata, err)
 			if retryInterval > 0 {
 				time.Sleep(time.Duration(retryInterval) * time.Millisecond)
 				logger.Debugf("try again")
@@ -188,7 +197,7 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 	stats.ProcessTimeEnd()
 }
 
-func getSink(name string, action map[string]interface{}) (api.Sink, error) {
+func doGetSink(name string, action map[string]interface{}) (api.Sink, error) {
 	var s api.Sink
 	switch name {
 	case "log":

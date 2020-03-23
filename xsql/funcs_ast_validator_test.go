@@ -389,7 +389,7 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT mqtt("topic") FROM tbl`,
 			stmt: nil,
-			err:  "Expect field reference type for 1 parameter of function mqtt.",
+			err:  "Expect meta reference type for 1 parameter of function mqtt.",
 		},
 
 		{
@@ -409,11 +409,40 @@ func TestFuncValidator(t *testing.T) {
 			stmt: nil,
 			err:  "Expect string type for 2 parameter of function split_value.",
 		},
-
 		{
 			s:    `SELECT split_value(topic1, "hello", -1) FROM tbl`,
 			stmt: nil,
 			err:  "The index should not be a nagtive integer.",
+		},
+		{
+			s:    `SELECT meta(tbl, "timestamp", 1) FROM tbl`,
+			stmt: nil,
+			err:  "The arguments for meta should be 1.",
+		},
+		{
+			s:    `SELECT meta("src1.device") FROM tbl`,
+			stmt: nil,
+			err:  "Expect meta reference type for 1 parameter of function meta.",
+		},
+		{
+			s:    `SELECT meta(device) FROM tbl`,
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "meta", Expr: &Call{Name: "meta", Args: []Expr{&MetaRef{Name: "device"}}}}}, Sources: []Source{&Table{Name: "tbl"}}},
+		},
+		{
+			s:    `SELECT meta(tbl.device) FROM tbl`,
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "meta", Expr: &Call{Name: "meta", Args: []Expr{&MetaRef{StreamName: "tbl", Name: "device"}}}}}, Sources: []Source{&Table{Name: "tbl"}}},
+		},
+		{
+			s: `SELECT meta(device->reading->topic) FROM tbl`,
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "meta", Expr: &Call{Name: "meta", Args: []Expr{&BinaryExpr{
+				OP: ARROW,
+				LHS: &BinaryExpr{
+					OP:  ARROW,
+					LHS: &MetaRef{Name: "device"},
+					RHS: &MetaRef{Name: "reading"},
+				},
+				RHS: &MetaRef{Name: "topic"},
+			}}}}}, Sources: []Source{&Table{Name: "tbl"}}},
 		},
 	}
 

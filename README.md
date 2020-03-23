@@ -147,9 +147,21 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 #### Compile
 
-- Binary: ``$ make``
-- Packages: `` $ make pkg``
-- Docker images: ``$ make docker``
++ Binary: 
+
+  - Binary: `$ make`
+
+  - Binary files that support EdgeX: `$ make build_with_edgex`
+
++ Packages: `` $ make pkg``
+
+  - Packages: `$ make pkg`
+
+  - Packages files that support EdgeX: `$ make pkg_with_edgex`
+
++ Docker images: `$ make docker`
+
+  > Docker images support EdgeX by default
 
 To using cross-compilation, refer to [this doc](docs/en_US/cross-compile.md).
 

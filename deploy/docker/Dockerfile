@@ -4,16 +4,18 @@ COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
-RUN apk add upx gcc make git libc-dev binutils-gold pkgconfig zeromq-dev && make
+RUN apk add upx gcc make git libc-dev binutils-gold pkgconfig zeromq-dev && make build_with_edgex
 
 FROM alpine:3.10
 
 COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
 COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 
-RUN apk add sed
+RUN apk add sed libzmq
 
 WORKDIR /kuiper
+
+EXPOSE 9801 20498
 
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 

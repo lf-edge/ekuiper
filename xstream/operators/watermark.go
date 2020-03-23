@@ -7,6 +7,7 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/nodes"
 	"math"
 	"sort"
 	"time"
@@ -204,11 +205,12 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 				o.statManager.IncTotalExceptions()
 				break
 			}
-			if d, ok := item.(xsql.Event); !ok {
-				log.Errorf("Expect xsql.Event type")
+			switch d := item.(type) {
+			case error:
+				o.statManager.IncTotalRecordsIn()
+				nodes.Broadcast(o.outputs, d, ctx)
 				o.statManager.IncTotalExceptions()
-				break
-			} else {
+			case xsql.Event:
 				if d.IsWatermark() {
 					watermarkTs := d.GetTimestamp()
 					windowEndTs := nextWindowEndTs
@@ -238,6 +240,10 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 					}
 				}
 				o.statManager.ProcessTimeEnd()
+			default:
+				o.statManager.IncTotalRecordsIn()
+				nodes.Broadcast(o.outputs, fmt.Errorf("run Window error: expect xsql.Event type but got %[1]T(%[1]v)", d), ctx)
+				o.statManager.IncTotalExceptions()
 			}
 		// is cancelling
 		case <-ctx.Done():

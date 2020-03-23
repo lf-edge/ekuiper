@@ -39,13 +39,22 @@ The identification of the rule. The rule name cannot be duplicated in the same K
 
 The sql query to run for the rule. 
 
-- Kuiper provides embeded support MQTT source, see  [MQTT source stream](sources/mqtt.md) for more detailed info.
+- Kuiper provides embeded following 2 sources,
+  - MQTT source, see  [MQTT source stream](sources/mqtt.md) for more detailed info.
+  - EdgeX source by default is shipped in [docker images](https://hub.docker.com/r/emqx/kuiper), but NOT included in single download binary files, you use ``make pkg_with_edgex`` command to build a binary package that supports EdgeX source. Please see [EdgeX source stream](sources/edgex.md) for more detailed info.
 - See [SQL](../sqls/overview.md) for more info of Kuiper SQL.
 - Sources can be customized, see [extension](../extension/overview.md) for more detailed info.
 
-### actions
+### sinks/actions
 
-Currently, 3 kinds of actions are supported: [log](sinks/logs.md), [mqtt](sinks/mqtt.md) and [rest](sinks/rest.md). Each action can define its own properties. There are 3 common properties:
+Currently, 3 kinds of sinks/actions are supported:
+
+- [log](sinks/logs.md): Send the result to log file.
+- [mqtt](sinks/mqtt.md): Send the result to an MQTT broker. 
+- [edgex](sinks/edgex.md): Send the result to EdgeX message bus.
+- [rest](sinks/rest.md): Send the result to a Rest HTTP server.
+
+Each action can define its own properties. There are 3 common properties:
 
 | property name | Type & Default Value | Description                                                  |
 | ------------- | -------- | ------------------------------------------------------------ |

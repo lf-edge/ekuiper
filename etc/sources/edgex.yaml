@@ -1,0 +1,17 @@
+#Global Edgex configurations
+default:
+  protocol: tcp
+  server: localhost
+  port: 5570
+  topic: events
+  serviceServer: http://localhost:10080
+#  optional:
+#    ClientId: client1
+#    Username: user1
+#    Password: password
+#Override the global configurations
+application_conf: #Conf_key
+  protocol: tcp
+  server: localhost
+  port: 5571
+  topic: application

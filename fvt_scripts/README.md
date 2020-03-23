@@ -96,7 +96,7 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   - The processing SQL is ``SELECT * FROM demo WHERE temperature > 30``, so all of the data that with temperature less than 30 will be fitered. The script read data from  file ``iot_data.txt``, totally 10 records.
   - Another JMeter mock-up user subscribes MQTT result topic, and expected result are saved in file ``select_condition_iot_data.txt``. If the record cotent is not correct then JMeter response assertion will be failed. If record number is not correct, the script will not be stopped, until CI (continuous integration) pipeline kills it with timeout settings. If you run the script in local, you'll have to stop the test manually.
 
-- [Aggregation rule]()
+- [Aggregation rule](select_aggr_rule.jmx)
 
   The script automated steps described in [this blog](https://www.emqx.io/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution), except for the sink target changes to local EMQ broker (not AWS IoT Hub). 
 
@@ -132,5 +132,65 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
     ```
 
   - Another JMeter mock-up user subscribes MQTT result topic, and assert the order for device_id field is descending, and temperature is ascending.
+
+- [EdgeX source with condition](select_edgex_condition_rule.jmx)
+
+  The test script is used for testing [Kuiper EdgeX source](../docs/en_US/rules/sources/edgex.md). To run the script, 
+
+  - A mockup EdgeX value descriptor service should be compiled and run before test.
+
+    ```shell
+    # go build -o fvt_scripts/edgex/valuedesc/vdmocker fvt_scripts/edgex/valuedesc/vd_server.go
+    
+    # fvt_scripts/edgex/valuedesc/vdmocker > vdmocker.out 2>&1 &
+    ```
+
+  - An EdgeX message bus publish tool should be compiled and run during running test.
+
+    ```shell
+    # go build -o fvt_scripts/edgex/pub fvt_scripts/edgex/pub.go
+    ```
+
+  - Run the JMeter with following command, and specify the ``fvt`` property in the JMeter command line, the ``fvt`` is where you develop Kuiper, script will search ``fvt_scripts/edgex/pub`` from the location.
+
+    ```shell
+    bin/jmeter.sh -Dfvt="/Users/rockyjin/Downloads/workspace/edge/src/kuiper"
+    ```
+
+  - The processing SQL is ``SELECT * FROM demo WHERE temperature > 30``, so all of the data that with temperature less than 30 will be fitered. 
+  
+  - Another JMeter mock-up user subscribes MQTT result topic, and assert message number and contents.
+  
+- [Multiple EdgeX source configurations](fvt_scripts/select_edgex_another_bus_rule.jmx)
+
+  The test script is used for testing specifying another EdgeX source configurations in Kuiper.
+
+  - In the ``edgex.yaml`` configuration file, below additional configurations are specified.
+
+  ```yaml
+  application_conf: #Conf_key
+    protocol: tcp
+    server: localhost
+    port: 5571
+    topic: application
+  ```
+
+  - In the create stream statement, test script uses ``CONF_KEY`` keyword to use overrided configuration value that specified in ``edgex.yaml``.
+
+  ```sql
+  CREATE STREAM application () WITH (FORMAT="JSON", TYPE="edgex", CONF_KEY = "application_conf")
+  ```
+
+  - As same steps that required in the ``select_edgex_condition_rule.jmx``, EdgeX value descriptor service & message bus publish tool should be ready.
+
+- [EdgeX message bus sink](edgex_sink_rule.jmx)
+
+  The test script verifies EdgeX message bus sink.  Only one message meet the condition of created rule, and it will be sent to EdgeX message bus sink.
+
+  As with the previous 2 testcases, besides to prepare ``vdmocker`` & ``pub`` application, another ``sub`` application should also be prepared.
+
+  ```shell
+  # go build -o fvt_scripts/edgex/sub/sub fvt_scripts/edgex/sub/sub.go 
+  ```
 
   
