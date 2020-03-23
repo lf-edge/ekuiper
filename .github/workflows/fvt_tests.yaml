@@ -224,5 +224,5 @@ jobs:
       - uses: actions/upload-artifact@v1
         if: always()
         with:
-          name: jmeter_logs_without_edgex
+          name: jmeter_logs_without_helm
           path: ./jmeter_logs
