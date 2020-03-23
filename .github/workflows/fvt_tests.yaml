@@ -60,7 +60,7 @@ jobs:
           with:
             name: jmeter_logs_with_edgex
             path: ./jmeter_logs
-        - name: checkout out
+        - name: check logs
           run: |
             sudo apt update && sudo apt install -y libxml2-utils
             cd jmeter_logs
@@ -121,7 +121,7 @@ jobs:
           with:
             name: jmeter_logs_without_edgex
             path: ./jmeter_logs
-        - name: checkout out
+        - name: check logs
           run: |
             sudo apt update && sudo apt install -y libxml2-utils
             cd jmeter_logs
@@ -235,3 +235,12 @@ jobs:
         with:
           name: jmeter_logs_without_helm
           path: ./jmeter_logs
+      - name: check logs
+        run: |
+          sudo apt update && sudo apt install -y libxml2-utils
+          cd jmeter_logs
+          if [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
+              echo -e "---------------------------------------------\n"
+              echo "FVT tests error"
+              exit 1
+          fi
