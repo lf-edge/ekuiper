@@ -96,7 +96,7 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   - The processing SQL is ``SELECT * FROM demo WHERE temperature > 30``, so all of the data that with temperature less than 30 will be fitered. The script read data from  file ``iot_data.txt``, totally 10 records.
   - Another JMeter mock-up user subscribes MQTT result topic, and expected result are saved in file ``select_condition_iot_data.txt``. If the record cotent is not correct then JMeter response assertion will be failed. If record number is not correct, the script will not be stopped, until CI (continuous integration) pipeline kills it with timeout settings. If you run the script in local, you'll have to stop the test manually.
 
-- [Aggregation rule]()
+- [Aggregation rule](select_aggr_rule.jmx)
 
   The script automated steps described in [this blog](https://www.emqx.io/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution), except for the sink target changes to local EMQ broker (not AWS IoT Hub). 
 
