@@ -2,10 +2,10 @@
 
 ## Overview
 
-In EdgeX Geneva, [EMQ X Kuiper](https://github.com/emqx/kuiper) is introduced as implementation of rule engine. Before diving into this tutorial, let's spend a little time on learning basic knowledge of Kuiper. Kuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. Kuiper rules are based on ``Source``, ``SQL`` and ``Sink``.
+In EdgeX Geneva, [EMQ X Kuiper - an SQL based rule engine](https://github.com/emqx/kuiper) is integrated with EdgeX. Before diving into this tutorial, let's spend a little time on learning basic knowledge of Kuiper. Kuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. Kuiper rules are based on ``Source``, ``SQL`` and ``Sink``.
 
 - Source: The data source of streaming data, such as data from MQTT broker. In EdgeX scenario, the data source is EdgeX message bus, which could be ZeroMQ or MQTT broker.
-- SQL: SQL is where you specify the business logic of streaming data process. Kuiper provides SQL-like statements to allow you to extract, filter & transform data. 
+- SQL: SQL is where you specify the business logic of streaming data processing. Kuiper provides SQL-like statements to allow you to extract, filter & transform data. 
 - Sink: Sink is ued for sending analysis result to a specified target. For example, send analysis result to another MQTT broker, or an HTTP rest address.
 
 ![](../../resources/arch.png)
@@ -247,7 +247,7 @@ In this tutorial,  we introduce a very simple use of EdgeX Kuiper rule engine. I
 #### Extended Reading
 
 - Read [EdgeX source](../rules/sources/edgex.md) for more detailed information of configurations and data type conversion.
-- [How to use meta function to extract addtional data from EdgeX message bus?](edgex_meta.md) There are some other information are sent along with device service, such as event created time, event id etc. If you want to use such metadata information in your SQL statements, please refer to this doc.
+- [How to use meta function to extract additional data from EdgeX message bus?](edgex_meta.md) There are some other information are sent along with device service, such as event created time, event id etc. If you want to use such metadata information in your SQL statements, please refer to this doc.
 - [EdgeX message bus sink doc](../rules/sinks/edgex.md). The document describes how to use EdgeX message bus sink. If you'd like to send the analysis result into message bus, you are probably interested in this article. 
 
  If you want to explore more features of EMQ X Kuiper, please refer to below resources.
