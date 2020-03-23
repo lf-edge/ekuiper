@@ -222,6 +222,7 @@ jobs:
           done
           kuiper_address=$(kubectl get svc --namespace default kuiper -o jsonpath="{.spec.clusterIP}")
           if [ $(curl -w %{http_code} -fsSL -o /dev/null $kuiper_address:9081/rules) != 200 ];then exit 1; fi
+          kubectl exec kuiper-0 -- cat /kuiper/etc/mqtt_source.yaml
       - name: check kuiper
         env:
           KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
