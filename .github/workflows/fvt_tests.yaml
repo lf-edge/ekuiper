@@ -131,7 +131,7 @@ jobs:
                 exit 1
             fi
 
-    container_tests:
+    fvt_tests_for_container_in_helm:
       runs-on: ubuntu-latest
 
       steps:
