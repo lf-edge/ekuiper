@@ -167,7 +167,7 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 	return callback(cb)
 }
 
-func (m *Manager) Delete(t PluginType, name string) (result error) {
+func (m *Manager) Delete(t PluginType, name string, cb string) error {
 	name = strings.Trim(name, " ")
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
@@ -203,7 +203,7 @@ func (m *Manager) Delete(t PluginType, name string) (result error) {
 	if len(results) > 0 {
 		return errors.New(strings.Join(results, "\n"))
 	} else {
-		return nil
+		return callback(cb)
 	}
 }
 
@@ -292,7 +292,6 @@ func isValidUrl(uri string) bool {
 }
 
 func downloadFile(filepath string, url string) error {
-
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
@@ -330,5 +329,17 @@ func lcFirst(str string) string {
 }
 
 func callback(u string) error {
+	if strings.Trim(u, " ") == "" {
+		return nil
+	} else {
+		resp, err := http.Get(u)
+		if err != nil {
+			return fmt.Errorf("action succeded but callback failed: %v", err)
+		} else {
+			if resp.StatusCode < 200 || resp.StatusCode > 299 {
+				return fmt.Errorf("action succeeded but callback failed: status %s", resp.Status)
+			}
+		}
+	}
 	return nil
 }
