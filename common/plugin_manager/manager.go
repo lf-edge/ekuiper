@@ -33,6 +33,7 @@ func GetPlugin(t string, ptype string) (plugin.Symbol, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot find symbol %s, please check if it is exported", t)
 		}
+		registry[key] = nf
 	}
 	return nf, nil
 }

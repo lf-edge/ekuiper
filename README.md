@@ -112,7 +112,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 | Raspberry Pi 3B+                               | 12k                  | sys+user: 70% | 20M          |
 | AWS t2.micro( 1 Core * 1 GB) <br />Ubuntu18.04 | 10k                  | sys+user: 25% | 20M          |
 
-### Max support rule support
+### Max number of rules support
 
 - 8000 rules with 800 message/second
 - Configurations

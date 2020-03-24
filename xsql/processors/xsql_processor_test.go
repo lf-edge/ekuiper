@@ -2948,9 +2948,9 @@ func getMetric(tp *xstream.TopologyNew, name string) int {
 
 func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}, sql string) (err error) {
 	keys, values := tp.GetMetrics()
-	for i, k := range keys {
-		log.Printf("%s:%v", k, values[i])
-	}
+	//for i, k := range keys {
+	//	log.Printf("%s:%v", k, values[i])
+	//}
 	for k, v := range m {
 		var (
 			index   int

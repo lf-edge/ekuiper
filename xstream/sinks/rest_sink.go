@@ -280,13 +280,13 @@ func (ms *RestSink) send(v interface{}, logger api.Logger) error {
 	}
 	logger.Debugf("do request: %s %s with %s", ms.method, ms.url, req.Body)
 	resp, err := ms.client.Do(req)
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return fmt.Errorf("rest sink fails to err http return code: %d.", resp.StatusCode)
-	}
 	if err != nil {
 		return fmt.Errorf("rest sink fails to send out the data")
 	} else {
 		logger.Debugf("rest sink got response %v", resp)
+		if resp.StatusCode < 200 || resp.StatusCode > 299 {
+			return fmt.Errorf("rest sink fails to err http return code: %d.", resp.StatusCode)
+		}
 	}
 	return nil
 }
