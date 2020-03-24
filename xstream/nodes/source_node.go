@@ -3,7 +3,7 @@ package nodes
 import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/common/plugin_manager"
+	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/extensions"
@@ -153,7 +153,7 @@ func doGetSource(t string) (api.Source, error) {
 	case "mqtt":
 		s = &extensions.MQTTSource{}
 	default:
-		nf, err := plugin_manager.GetPlugin(t, "sources")
+		nf, err := plugins.GetPlugin(t, "sources")
 		if err != nil {
 			return nil, err
 		}

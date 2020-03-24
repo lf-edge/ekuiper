@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"plugin"
 	"strings"
 	"sync"
 	"unicode"
@@ -68,6 +69,32 @@ func (rr *Registry) List(t PluginType) (values []string) {
 //	}
 //	rr.Unlock()
 //}
+
+var symbolRegistry = make(map[string]plugin.Symbol)
+
+func GetPlugin(t string, ptype string) (plugin.Symbol, error) {
+	t = ucFirst(t)
+	key := ptype + "/" + t
+	var nf plugin.Symbol
+	nf, ok := symbolRegistry[key]
+	if !ok {
+		loc, err := common.GetLoc("/plugins/")
+		if err != nil {
+			return nil, fmt.Errorf("cannot find the plugins folder")
+		}
+		mod := path.Join(loc, ptype, t+".so")
+		plug, err := plugin.Open(mod)
+		if err != nil {
+			return nil, fmt.Errorf("cannot open %s: %v", mod, err)
+		}
+		nf, err = plug.Lookup(t)
+		if err != nil {
+			return nil, fmt.Errorf("cannot find symbol %s, please check if it is exported", t)
+		}
+		symbolRegistry[key] = nf
+	}
+	return nf, nil
+}
 
 type Manager struct {
 	pluginDir string
