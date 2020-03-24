@@ -78,7 +78,7 @@ There are two approaches to manage stream, you can use your preferred approach.
 
 #### Option 1: Use Rest API
 
-The next step is to create a stream that can consuming data from EdgeX message bus. Please change ``127.0.0.1`` to your local Kuiper docker IP address.
+The next step is to create a stream that can consume data from EdgeX message bus. Please change ``$your_server`` to Kuiper docker instance IP address.
 
 ```shell
 curl -X POST \
@@ -211,7 +211,7 @@ Since all of the analysis result are published to  ``tcp://broker.emqx.io:1883``
 
 You'll find that only those randomnumber larger than 30 will be published to ``result`` topic.
 
-You can also type below command to look at the rule execution status. The corresponding REST API is also available for getting rule status, please check [related docuement](../restapi/overview.md).
+You can also type below command to look at the rule execution status. The corresponding REST API is also available for getting rule status, please check [related document](../restapi/overview.md).
 
 ```shell
 # bin/cli getstatus rule rule1
