@@ -52,6 +52,7 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 
 func createRestServer(port int) *http.Server {
 	r := mux.NewRouter()
+	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
@@ -78,6 +79,16 @@ func createRestServer(port int) *http.Server {
 	}
 	server.SetKeepAlivesEnabled(false)
 	return server
+}
+
+//The handler for root
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	switch r.Method {
+	case http.MethodGet, http.MethodPost:
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK\n"))
+	}
 }
 
 //list or create streams
