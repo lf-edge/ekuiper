@@ -166,7 +166,7 @@ Use the environment variable to configure `etc/sources/edgex.yaml`  on the Kuipe
 | EDGEX_TOPIC                | events                   | default.topic             |
 | EDGEX_SERVICE_SERVER       | http://localhost:48080   | default.serviceServer     |
 
-All of the configurations should set with corresponding values that set in file ``cmd/core-data/res/configuration.toml``, as listed in below.
+All of the configurations should be set with corresponding values that configured in file ``cmd/core-data/res/configuration.toml`` of EdgeX core-data service, as listed in below.
 
 ```
 [MessageQueue]
