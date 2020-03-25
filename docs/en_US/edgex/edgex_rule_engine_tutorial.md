@@ -61,7 +61,7 @@ If the docker instance is failed to start, please use ``docker logs kuiper`` to 
 Notice 1: The default EdgeX message bus configuration could be updated when bring-up the Docker instance.  As listed in below, override the default configurations for message bus server, port and service server address for getting value descriptors in Kuiper instance.
 
 ```shell
-docker run -d --name kuiper -e EDGEX_SERVER=10.211.55.2 -e EDGEX_PORT=9999 -e EDGEX_SERVICE_SERVER=http://10.211.55.2:8888 emqx/kuiper:0.2.1
+docker run -d --name kuiper -e EDGEX_SERVER=10.211.55.2 -e EDGEX_PORT=5563 -e EDGEX_SERVICE_SERVER=http://10.211.55.2:48080 emqx/kuiper:0.2.1
 ```
 
 For more detailed supported Docer environment varialbles, please refer to [this link](https://hub.docker.com/r/emqx/kuiper).
