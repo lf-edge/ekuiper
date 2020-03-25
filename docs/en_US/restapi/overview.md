@@ -4,4 +4,5 @@ By default, the REST API are running in port 9081. You can change the port in `/
 
 - [Streams](streams.md)
 - [Rules](rules.md)
+- [Plugins](plugins.md)
 

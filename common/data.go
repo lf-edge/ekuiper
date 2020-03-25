@@ -1,5 +1,10 @@
 package common
 
-type Rule struct {
+type RuleDesc struct {
 	Name, Json string
+}
+
+type PluginDesc struct {
+	RuleDesc
+	Type int
 }

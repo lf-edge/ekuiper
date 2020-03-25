@@ -105,7 +105,7 @@ Sample:
 
 ```shell
 # bin/cli drop rule rule1
-rule rule1 dropped
+Rule rule1 is dropped.
 ```
 
 ## start a rule
@@ -120,7 +120,7 @@ Sample:
 
 ```shell
 # bin/cli start rule rule1
-rule rule1 started
+Rule rule1 was started.
 ```
 
 ## stop a rule
@@ -135,7 +135,7 @@ Sample:
 
 ```shell
 # bin/cli stop rule rule1
-rule rule1 stopped
+Rule rule1 was stopped.
 ```
 
 ## restart a rule
@@ -150,7 +150,7 @@ Sample:
 
 ```shell
 # bin/cli restart rule rule1
-rule rule1 restarted
+Rule rule1 was restarted.
 ```
 
 ## get the status of a rule

@@ -3,7 +3,7 @@ package nodes
 import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/common/plugin_manager"
+	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/sinks"
 	"sync"
@@ -209,7 +209,7 @@ func doGetSink(name string, action map[string]interface{}) (api.Sink, error) {
 	case "rest":
 		s = &sinks.RestSink{}
 	default:
-		nf, err := plugin_manager.GetPlugin(name, "sinks")
+		nf, err := plugins.GetPlugin(name, "sinks")
 		if err != nil {
 			return nil, err
 		}

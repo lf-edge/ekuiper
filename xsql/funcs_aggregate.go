@@ -3,7 +3,7 @@ package xsql
 import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/common/plugin_manager"
+	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
@@ -140,7 +140,7 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 		return 0, true
 	default:
 		common.Log.Debugf("run aggregate func %s", name)
-		if nf, err := plugin_manager.GetPlugin(name, "functions"); err != nil {
+		if nf, err := plugins.GetPlugin(name, "functions"); err != nil {
 			return nil, false
 		} else {
 			f, ok := nf.(api.Function)

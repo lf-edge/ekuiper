@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"plugin"
 	"strings"
 	"sync"
 	"unicode"
@@ -68,6 +69,32 @@ func (rr *Registry) List(t PluginType) (values []string) {
 //	}
 //	rr.Unlock()
 //}
+
+var symbolRegistry = make(map[string]plugin.Symbol)
+
+func GetPlugin(t string, ptype string) (plugin.Symbol, error) {
+	t = ucFirst(t)
+	key := ptype + "/" + t
+	var nf plugin.Symbol
+	nf, ok := symbolRegistry[key]
+	if !ok {
+		loc, err := common.GetLoc("/plugins/")
+		if err != nil {
+			return nil, fmt.Errorf("cannot find the plugins folder")
+		}
+		mod := path.Join(loc, ptype, t+".so")
+		plug, err := plugin.Open(mod)
+		if err != nil {
+			return nil, fmt.Errorf("cannot open %s: %v", mod, err)
+		}
+		nf, err = plug.Lookup(t)
+		if err != nil {
+			return nil, fmt.Errorf("cannot find symbol %s, please check if it is exported", t)
+		}
+		symbolRegistry[key] = nf
+	}
+	return nf, nil
+}
 
 type Manager struct {
 	pluginDir string
@@ -167,7 +194,7 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 	return callback(cb)
 }
 
-func (m *Manager) Delete(t PluginType, name string) (result error) {
+func (m *Manager) Delete(t PluginType, name string, cb string) error {
 	name = strings.Trim(name, " ")
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
@@ -203,7 +230,7 @@ func (m *Manager) Delete(t PluginType, name string) (result error) {
 	if len(results) > 0 {
 		return errors.New(strings.Join(results, "\n"))
 	} else {
-		return nil
+		return callback(cb)
 	}
 }
 
@@ -292,14 +319,13 @@ func isValidUrl(uri string) bool {
 }
 
 func downloadFile(filepath string, url string) error {
-
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("cannot download the file with status: %d %s", resp.StatusCode, resp.Status)
+		return fmt.Errorf("cannot download the file with status: %s", resp.Status)
 	}
 	defer resp.Body.Close()
 
@@ -330,5 +356,17 @@ func lcFirst(str string) string {
 }
 
 func callback(u string) error {
+	if strings.Trim(u, " ") == "" {
+		return nil
+	} else {
+		resp, err := http.Get(u)
+		if err != nil {
+			return fmt.Errorf("action succeded but callback failed: %v", err)
+		} else {
+			if resp.StatusCode < 200 || resp.StatusCode > 299 {
+				return fmt.Errorf("action succeeded but callback failed: status %s", resp.Status)
+			}
+		}
+	}
 	return nil
 }

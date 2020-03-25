@@ -3,7 +3,7 @@ package xsql
 import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/common/plugin_manager"
+	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xstream/api"
 	"math"
 	"reflect"
@@ -1680,7 +1680,7 @@ func isAggFunc(f *Call) bool {
 	} else if _, ok := mathFuncMap[fn]; ok {
 		return false
 	} else {
-		if nf, err := plugin_manager.GetPlugin(f.Name, "functions"); err == nil {
+		if nf, err := plugins.GetPlugin(f.Name, "functions"); err == nil {
 			if ef, ok := nf.(api.Function); ok && ef.IsAggregate() {
 				return true
 			}
