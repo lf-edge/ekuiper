@@ -34,7 +34,7 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 	if s, ok := props["server"]; ok {
 		server = s.(string)
 	}
-	var port = 5570
+	var port = 5563
 	if p, ok := props["port"]; ok {
 		port = p.(int)
 	}

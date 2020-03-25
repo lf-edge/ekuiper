@@ -32,7 +32,7 @@ type OptionalConf struct {
 func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 	ems.host = "*"
 	ems.protocol = "tcp"
-	ems.port = 5570
+	ems.port = 5573
 	ems.contentType = "application/json"
 	ems.ptype = messaging.ZeroMQ
 
@@ -54,11 +54,11 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 		} else if pv, ok := port.(float32); ok {
 			ems.port = int(pv)
 		} else {
-			common.Log.Infof("Not valid port value, will use default value '5570'.")
+			common.Log.Infof("Not valid port value, will use default value '5563'.")
 		}
 
 	} else {
-		common.Log.Infof("Not find port conf, will use default value '5570'.")
+		common.Log.Infof("Not find port conf, will use default value '5563'.")
 	}
 
 	if topic, ok := ps["topic"]; ok {

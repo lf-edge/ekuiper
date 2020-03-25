@@ -33,7 +33,7 @@ var vd6 = models.ValueDescriptor{Id: "s1", Name: "s1", Formatting: "%s", Type:"S
 
 func main() {
 	http.HandleFunc(clients.ApiValueDescriptorRoute, Hello)
-	if e := http.ListenAndServe(":10080", nil); e != nil {
+	if e := http.ListenAndServe(":48080", nil); e != nil {
 		log.Fatal(e)
 	}
 }
