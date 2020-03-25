@@ -325,7 +325,7 @@ func downloadFile(filepath string, url string) error {
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("cannot download the file with status: %d %s", resp.StatusCode, resp.Status)
+		return fmt.Errorf("cannot download the file with status: %s", resp.Status)
 	}
 	defer resp.Body.Close()
 
