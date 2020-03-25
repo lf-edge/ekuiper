@@ -7,4 +7,5 @@ The Kuiper CLI acts as a client to the Kuiper server. The Kuiper server runs the
 
 - [Streams](streams.md)
 - [Rules](rules.md)
+- [Plugins](plugins.md)
 

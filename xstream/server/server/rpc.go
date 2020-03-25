@@ -173,7 +173,7 @@ func (t *Server) CreatePlugin(arg *common.PluginDesc, reply *string) error {
 	if err != nil {
 		return fmt.Errorf("Create plugin error: %s", err)
 	} else {
-		*reply = fmt.Sprintf("Create plugin %s successfully", p.Name)
+		*reply = fmt.Sprintf("Plugin %s is created.", p.Name)
 	}
 	return nil
 }
@@ -188,7 +188,7 @@ func (t *Server) DropPlugin(arg *common.PluginDesc, reply *string) error {
 	if err != nil {
 		return fmt.Errorf("Drop plugin error: %s", err)
 	} else {
-		*reply = fmt.Sprintf("Drop plugin %s successfully", p.Name)
+		*reply = fmt.Sprintf("Plugin %s is dropped.", p.Name)
 	}
 	return nil
 }
