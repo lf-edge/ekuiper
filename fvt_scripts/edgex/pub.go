@@ -16,7 +16,7 @@ import (
 var msgConfig1 = types.MessageBusConfig{
 	PublishHost: types.HostInfo{
 		Host:     "*",
-		Port:     5570,
+		Port:     5563,
 		Protocol: "tcp",
 	},
 	Type:messaging.ZeroMQ,

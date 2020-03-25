@@ -162,9 +162,28 @@ Use the environment variable to configure `etc/sources/edgex.yaml`  on the Kuipe
 | ---------------------------| -------------------------| ------------------------- |
 | EDGEX_PROTOCOL             | tcp                      | default.protocol          |
 | EDGEX_SERVER               | localhost                | default.server            |
-| EDGEX_PORT                 | 5570                     | default.port              |
+| EDGEX_PORT                 | 5563                     | default.port              |
 | EDGEX_TOPIC                | events                   | default.topic             |
-| EDGEX_SERVICE_SERVER       | http://localhost:10080   | default.serviceServer     |
+| EDGEX_SERVICE_SERVER       | http://localhost:48080   | default.serviceServer     |
+
+All of the configurations should set with corresponding values that set in file ``cmd/core-data/res/configuration.toml``, as listed in below.
+
+```
+[MessageQueue]
+Protocol = 'tcp'
+Host = '*'
+Port = 5563
+Type = 'zero'
+Topic = 'events'
+```
+
+```
+[Service]
+...
+Host = 'localhost'
+Port = 48080
+...
+```
 
 If you want to configure more options, you can mount the configuration file into Kuiper container, like this:
 ```

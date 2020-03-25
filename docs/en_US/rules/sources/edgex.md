@@ -54,9 +54,9 @@ The configuration file of EdgeX source is at ``$kuiper/etc/sources/edgex.yaml``.
 default:
   protocol: tcp
   server: localhost
-  port: 5570
+  port: 5573
   topic: events
-  serviceServer: http://localhost:10080
+  serviceServer: http://localhost:48080
 #  optional:
 #    ClientId: client1
 #    Username: user1
@@ -77,7 +77,7 @@ The server address of  EdgeX message bus, default value is ``localhost``.
 
 ## port
 
-The port of EdgeX message bus, default value is ``5570``.
+The port of EdgeX message bus, default value is ``5573``.
 
 ## topic
 
@@ -96,7 +96,7 @@ In some cases, maybe you want to consume message from multiple topics or event b
 demo1: #Conf_key
   protocol: tcp
   server: 10.211.55.6
-  port: 5570
+  port: 5571
   topic: events
 ```
 
