@@ -56,7 +56,7 @@ var hashFuncMap = map[string]string{"md5": "",
 	"sha1": "", "sha256": "", "sha384": "", "sha512": "",
 }
 
-var otherFuncMap = map[string]string{"isNull": "",
+var otherFuncMap = map[string]string{"isnull": "",
 	"newuuid": "", "timestamp": "", "mqtt": "", "meta": "",
 }
 
