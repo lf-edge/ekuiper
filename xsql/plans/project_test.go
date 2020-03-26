@@ -158,6 +158,16 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
+					"a": map[string]interface{}(nil),
+				},
+			},
+			result: []map[string]interface{}{{}},
+		},
+		{
+			sql: `SELECT a->b AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
 					"name": "name",
 				},
 			},
@@ -1543,6 +1553,15 @@ func TestProjectPlanError(t *testing.T) {
 				},
 			},
 			result: errors.New("run Select error: call func sum error: requires int but found string(ddd)"),
+		}, {
+			sql: `SELECT a[0]->b AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []map[string]interface{}(nil),
+				},
+			},
+			result: errors.New("run Select error: out of index: 0 of 0"),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

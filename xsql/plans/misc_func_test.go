@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestHashFunc_Apply1(t *testing.T) {
+func TestMiscFunc_Apply1(t *testing.T) {
 	var tests = []struct {
 		sql    string
 		data   *xsql.Tuple
@@ -132,12 +132,51 @@ func TestHashFunc_Apply1(t *testing.T) {
 				"a":     "devices/device_001/message",
 			}},
 		},
+		{
+			sql: "SELECT isNull(arr) as r FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"temperature": 43.2,
+					"arr":         []int{},
+				},
+			},
+			result: []map[string]interface{}{{
+				"r": false,
+			}},
+		},
+		{
+			sql: "SELECT isNull(arr) as r FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"temperature": 43.2,
+					"arr":         []float64(nil),
+				},
+			},
+			result: []map[string]interface{}{{
+				"r": true,
+			}},
+		}, {
+			sql: "SELECT isNull(rec) as r FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"temperature": 43.2,
+					"rec":         map[string]interface{}(nil),
+				},
+			},
+			result: []map[string]interface{}{{
+				"r": true,
+			}},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	contextLogger := common.Log.WithField("rule", "TestHashFunc_Apply1")
+	contextLogger := common.Log.WithField("rule", "TestMiscFunc_Apply1")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
+
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
@@ -260,7 +299,7 @@ func TestMetaFunc_Apply1(t *testing.T) {
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	contextLogger := common.Log.WithField("rule", "TestHashFunc_Apply1")
+	contextLogger := common.Log.WithField("rule", "TestMetaFunc_Apply1")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()

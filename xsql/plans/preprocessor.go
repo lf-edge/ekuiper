@@ -174,7 +174,9 @@ func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, 
 			}
 		case *xsql.ArrayType:
 			var s []interface{}
-			if jtype == reflect.Slice {
+			if t == nil {
+				s = nil
+			} else if jtype == reflect.Slice {
 				s = t.([]interface{})
 			} else if jtype == reflect.String {
 				err := json.Unmarshal([]byte(t.(string)), &s)
@@ -186,13 +188,17 @@ func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, 
 			}
 
 			if tempArr, err := p.addArrayField(st, s); err != nil {
-				return err
+				return fmt.Errorf("fail to parse field %s: %s", n, err)
 			} else {
 				r[n] = tempArr
 			}
 		case *xsql.RecType:
 			nextJ := make(map[string]interface{})
-			if jtype == reflect.Map {
+			if t == nil {
+				nextJ = nil
+				r[n] = nextJ
+				return nil
+			} else if jtype == reflect.Map {
 				nextJ, ok = t.(map[string]interface{})
 				if !ok {
 					return fmt.Errorf("invalid data type for %s, expect map but found %[2]T(%[2]v)", n, t)
@@ -228,11 +234,16 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 	if ft.FieldType != nil { //complex type array or struct
 		switch st := ft.FieldType.(type) { //Only two complex types supported here
 		case *xsql.ArrayType: //TODO handle array of array. Now the type is treated as interface{}
-			var tempSlice [][]interface{}
+			if srcSlice == nil {
+				return [][]interface{}(nil), nil
+			}
 			var s []interface{}
+			var tempSlice reflect.Value
 			for i, t := range srcSlice {
 				jtype := reflect.ValueOf(t).Kind()
-				if jtype == reflect.Slice || jtype == reflect.Array {
+				if t == nil {
+					s = nil
+				} else if jtype == reflect.Slice || jtype == reflect.Array {
 					s = t.([]interface{})
 				} else if jtype == reflect.String {
 					err := json.Unmarshal([]byte(t.(string)), &s)
@@ -245,17 +256,28 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 				if tempArr, err := p.addArrayField(st, s); err != nil {
 					return nil, err
 				} else {
-					tempSlice = append(tempSlice, tempArr.([]interface{}))
+					if !tempSlice.IsValid() {
+						s := reflect.TypeOf(tempArr)
+						tempSlice = reflect.MakeSlice(reflect.SliceOf(s), 0, 0)
+					}
+					tempSlice = reflect.Append(tempSlice, reflect.ValueOf(tempArr))
 				}
 			}
-			return tempSlice, nil
+			return tempSlice.Interface(), nil
 		case *xsql.RecType:
-			var tempSlice []map[string]interface{}
+			if srcSlice == nil {
+				return []map[string]interface{}(nil), nil
+			}
+			tempSlice := make([]map[string]interface{}, 0)
 			for i, t := range srcSlice {
 				jtype := reflect.ValueOf(t).Kind()
 				j := make(map[string]interface{})
 				var ok bool
-				if jtype == reflect.Map {
+				if t == nil {
+					j = nil
+					tempSlice = append(tempSlice, j)
+					continue
+				} else if jtype == reflect.Map {
 					j, ok = t.(map[string]interface{})
 					if !ok {
 						return nil, fmt.Errorf("invalid data type for [%d], expect map but found %[2]T(%[2]v)", i, t)
@@ -287,7 +309,10 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 		case xsql.UNKNOWN:
 			return nil, fmt.Errorf("invalid data type unknown defined for %s, please checke the stream definition", srcSlice)
 		case xsql.BIGINT:
-			var tempSlice []int
+			if srcSlice == nil {
+				return []int(nil), nil
+			}
+			tempSlice := make([]int, 0)
 			for i, t := range srcSlice {
 				jtype := reflect.ValueOf(t).Kind()
 				if jtype == reflect.Float64 {
@@ -304,7 +329,10 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 			}
 			return tempSlice, nil
 		case xsql.FLOAT:
-			var tempSlice []float64
+			if srcSlice == nil {
+				return []float64(nil), nil
+			}
+			tempSlice := make([]float64, 0)
 			for i, t := range srcSlice {
 				jtype := reflect.ValueOf(t).Kind()
 				if jtype == reflect.Float64 {
@@ -321,7 +349,10 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 			}
 			return tempSlice, nil
 		case xsql.STRINGS:
-			var tempSlice []string
+			if srcSlice == nil {
+				return []string(nil), nil
+			}
+			tempSlice := make([]string, 0)
 			for i, t := range srcSlice {
 				if reflect.ValueOf(t).Kind() == reflect.String {
 					tempSlice = append(tempSlice, t.(string))
@@ -331,7 +362,10 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 			}
 			return tempSlice, nil
 		case xsql.DATETIME:
-			var tempSlice []time.Time
+			if srcSlice == nil {
+				return []time.Time(nil), nil
+			}
+			tempSlice := make([]time.Time, 0)
 			for i, t := range srcSlice {
 				jtype := reflect.ValueOf(t).Kind()
 				switch jtype {
@@ -353,7 +387,10 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 			}
 			return tempSlice, nil
 		case xsql.BOOLEAN:
-			var tempSlice []bool
+			if srcSlice == nil {
+				return []bool(nil), nil
+			}
+			tempSlice := make([]bool, 0)
 			for i, t := range srcSlice {
 				jtype := reflect.ValueOf(t).Kind()
 				if jtype == reflect.Bool {
