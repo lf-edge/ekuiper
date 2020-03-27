@@ -184,11 +184,16 @@ func (t *Server) DropPlugin(arg *common.PluginDesc, reply *string) error {
 	if err != nil {
 		return fmt.Errorf("Drop plugin error: %s", err)
 	}
-	err = pluginManager.Delete(pt, p.Name)
+	err = pluginManager.Delete(pt, p.Name, arg.Restart)
 	if err != nil {
 		return fmt.Errorf("Drop plugin error: %s", err)
 	} else {
-		*reply = fmt.Sprintf("Plugin %s is dropped.", p.Name)
+		if arg.Restart {
+			*reply = fmt.Sprintf("Plugin %s is dropped and Kuiper will be stopped.", p.Name)
+		} else {
+			*reply = fmt.Sprintf("Plugin %s is dropped.", p.Name)
+		}
+
 	}
 	return nil
 }

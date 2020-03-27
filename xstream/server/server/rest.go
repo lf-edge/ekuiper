@@ -300,16 +300,22 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType)
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
+	cb := r.URL.Query().Get("restart")
 
 	switch r.Method {
 	case http.MethodDelete:
-		err := pluginManager.Delete(t, name)
+		r := cb == "1"
+		err := pluginManager.Delete(t, name, r)
 		if err != nil {
 			handleError(w, fmt.Errorf("delete %s plugin %s error: %s", plugins.PluginTypes[t], name, err), http.StatusBadRequest, logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf("%s plugin %s is deleted", plugins.PluginTypes[t], name)))
+		result := fmt.Sprintf("%s plugin %s is deleted", plugins.PluginTypes[t], name)
+		if r {
+			result = fmt.Sprintf("%s and Kuiper will be stopped", result)
+		}
+		w.Write([]byte(result))
 	}
 }
 

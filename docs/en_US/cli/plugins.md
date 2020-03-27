@@ -20,7 +20,7 @@ The plugin can be created with two ways.
 Sample:
 
 ```shell
-# bin/cli create plugin source random {"file":"http://127.0.0.1/plugins/sources/random.zip", "callback":"http://mycallback.com"}
+# bin/cli create plugin source random {"file":"http://127.0.0.1/plugins/sources/random.zip"}
 ```
 
 The command create a source plugin named ``random``. 
@@ -33,19 +33,17 @@ Sample:
 # bin/cli create plugin sink plugin1 -f /tmp/plugin1.txt
 ```
 
-Below is the contents of ``rule.txt``.
+Below is the contents of ``plugin1.txt``.
 
 ```json
 {
-  "file":"http://127.0.0.1/plugins/sources/random.zip",
-  "callback":"http://mycallback.com"
+  "file":"http://127.0.0.1/plugins/sources/random.zip"
 }
 ```
 ### parameters
 1. plugin_type: the type of the plugin. Available values are `["source", "sink", "functions"]`
 2. plugin_name: a unique name of the plugin. The name must be the same as the camel case version of the plugin with lowercase first letter. For example, if the exported plugin name is `Random`, then the name of this plugin is `random`.
 3. file: the url of the plugin files. It must be a zip file with: a compiled so file and the yaml file(only required for sources). The name of the files must match the name of the plugin. Please check [Extension](../extension/overview.md) for the naming rule.
-4. callback: optional parameter to specify the url to call once the plugin is created. We will issue a GET request to the callback url.
 
 ## show plugins
 
@@ -68,17 +66,12 @@ function2
 The command is used for drop the plugin.
 
 ```shell
-drop plugin $plugin_type $plugin_name $plugin_json 
+drop plugin $plugin_type $plugin_name -r $restart 
 ```
-In which, `$plugin_json` is optional. Currently, only `callback` parameter is supported in the `plugin_json`
+In which, `-r $restart` is an optional boolean parameter. If it is set to true, the Kuiper server will be stopped for the delete to take effect. The user will need to restart it manually.
 Sample:
 
 ```shell
 # bin/cli drop plugin source random
 Plugin random is dropped.
-```
-
-```shell
-# bin/cli drop plugin sink plugin1 {"callback":"http://mycallback.com"}
-Plugin plugin1 is dropped.
 ```

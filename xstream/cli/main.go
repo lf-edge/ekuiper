@@ -130,7 +130,7 @@ func main() {
 		{
 			Name:    "create",
 			Aliases: []string{"create"},
-			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file",
+			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file | create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file",
 
 			Subcommands: []cli.Command{
 				{
@@ -213,7 +213,7 @@ func main() {
 				},
 				{
 					Name:  "plugin",
-					Usage: "create plugin $plugin_type $plugin_name [$plugin_json | -f rule_def_file]",
+					Usage: "create plugin $plugin_type $plugin_name [$plugin_json | -f plugin_def_file]",
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:     "file, f",
@@ -308,7 +308,7 @@ func main() {
 		{
 			Name:    "drop",
 			Aliases: []string{"drop"},
-			Usage:   "drop stream $stream_name | drop rule $rule_name",
+			Usage:   "drop stream $stream_name | drop rule $rule_name | drop plugin $plugin_type $plugin_name -r $restart",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -341,9 +341,19 @@ func main() {
 				},
 				{
 					Name:  "plugin",
-					Usage: "drop plugin $plugin_type $plugin_name $plugin_json",
-					//Flags: nflag,
+					Usage: "drop plugin $plugin_type $plugin_name -r restart",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "restart, r",
+							Usage: "restart kuiper after the action",
+						},
+					},
 					Action: func(c *cli.Context) error {
+						r := c.String("restart")
+						if r != "true" && r != "false" {
+							fmt.Printf("Expect r to be a boolean value.\n")
+							return nil
+						}
 						if len(c.Args()) < 2 || len(c.Args()) > 3 {
 							fmt.Printf("Expect plugin type and name.\n")
 							return nil
@@ -358,11 +368,10 @@ func main() {
 							RuleDesc: common.RuleDesc{
 								Name: pname,
 							},
-							Type: ptype,
+							Type:    ptype,
+							Restart: r == "true",
 						}
-						if len(c.Args()) == 3 {
-							args.Json = c.Args()[2]
-						}
+
 						var reply string
 						err = client.Call("Server.DropPlugin", args, &reply)
 						if err != nil {

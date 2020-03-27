@@ -15,19 +15,19 @@ DELETE http://127.0.0.1:9081/plugins/sources/random2
 POST http://127.0.0.1:9081/plugins/sinks
 Content-Type: application/json
 
-{"name":"random2","file":"http://127.0.0.1/plugins/sources/random2.zip","callback":"http://www.mycallback.com/callback"}
+{"name":"random2","file":"http://127.0.0.1/plugins/sources/random2.zip"}
 
 ###
 GET http://127.0.0.1:9081/plugins/sinks
 
 ###
-DELETE http://127.0.0.1:9081/plugins/sinks/random2?callback=http%3A%2F%2Fwww.mycallback.com%2Fcallback
+DELETE http://127.0.0.1:9081/plugins/sinks/random2?restart=1
 
 ###
 POST http://127.0.0.1:9081/plugins/functions
 Content-Type: application/json
 
-{"name":"random2","file":"http://127.0.0.1/plugins/sources/random2.zip","callback":""}
+{"name":"random3","file":"https://jbpz.oss-cn-beijing.aliyuncs.com/random3.zip"}
 
 ###
 GET http://127.0.0.1:9081/plugins/functions

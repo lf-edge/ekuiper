@@ -15,6 +15,7 @@ import (
 	"plugin"
 	"strings"
 	"sync"
+	"time"
 	"unicode"
 )
 
@@ -193,7 +194,7 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 	return nil
 }
 
-func (m *Manager) Delete(t PluginType, name string) error {
+func (m *Manager) Delete(t PluginType, name string, restart bool) error {
 	name = strings.Trim(name, " ")
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
@@ -229,6 +230,12 @@ func (m *Manager) Delete(t PluginType, name string) error {
 	if len(results) > 0 {
 		return errors.New(strings.Join(results, "\n"))
 	} else {
+		if restart {
+			go func() {
+				time.Sleep(1 * time.Second)
+				os.Exit(100)
+			}()
+		}
 		return nil
 	}
 }

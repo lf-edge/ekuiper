@@ -115,7 +115,7 @@ func TestManager_Delete(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 
 	for i, p := range data {
-		err = manager.Delete(p.t, p.n)
+		err = manager.Delete(p.t, p.n, false)
 		if err != nil {
 			t.Errorf("%d: delete error : %s\n\n", i, err)
 		}

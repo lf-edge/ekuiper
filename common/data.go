@@ -6,5 +6,6 @@ type RuleDesc struct {
 
 type PluginDesc struct {
 	RuleDesc
-	Type int
+	Type    int
+	Restart bool
 }
