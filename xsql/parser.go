@@ -609,7 +609,11 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 != RPAREN {
 				return nil, fmt.Errorf("found %q, expected right paren.", lit2)
 			} else {
-				args = append(args, &StringLiteral{Val: "*"})
+				if p.inmeta {
+					args = append(args, &MetaRef{StreamName: "", Name: "*"})
+				} else {
+					args = append(args, &StringLiteral{Val: "*"})
+				}
 				return &Call{Name: name, Args: args}, nil
 			}
 		} else {
