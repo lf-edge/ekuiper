@@ -184,7 +184,7 @@ func (t *Server) DropPlugin(arg *common.PluginDesc, reply *string) error {
 	if err != nil {
 		return fmt.Errorf("Drop plugin error: %s", err)
 	}
-	err = pluginManager.Delete(pt, p.Name, p.Callback)
+	err = pluginManager.Delete(pt, p.Name)
 	if err != nil {
 		return fmt.Errorf("Drop plugin error: %s", err)
 	} else {

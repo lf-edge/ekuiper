@@ -300,11 +300,10 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType)
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
-	cb := r.URL.Query().Get("callback")
 
 	switch r.Method {
 	case http.MethodDelete:
-		err := pluginManager.Delete(t, name, cb)
+		err := pluginManager.Delete(t, name)
 		if err != nil {
 			handleError(w, fmt.Errorf("delete %s plugin %s error: %s", plugins.PluginTypes[t], name, err), http.StatusBadRequest, logger)
 			return

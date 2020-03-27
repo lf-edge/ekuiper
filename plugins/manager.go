@@ -19,9 +19,8 @@ import (
 )
 
 type Plugin struct {
-	Name     string `json:"name"`
-	File     string `json:"file"`
-	Callback string `json:"callback"`
+	Name string `json:"name"`
+	File string `json:"file"`
 }
 
 type PluginType int
@@ -157,7 +156,7 @@ func (m *Manager) List(t PluginType) (result []string, err error) {
 }
 
 func (m *Manager) Register(t PluginType, j *Plugin) error {
-	name, uri, cb := j.Name, j.File, j.Callback
+	name, uri := j.Name, j.File
 	//Validation
 	name = strings.Trim(name, " ")
 	if name == "" {
@@ -191,10 +190,10 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 	}
 
 	m.registry.Store(t, name)
-	return callback(cb)
+	return nil
 }
 
-func (m *Manager) Delete(t PluginType, name string, cb string) error {
+func (m *Manager) Delete(t PluginType, name string) error {
 	name = strings.Trim(name, " ")
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
@@ -230,7 +229,7 @@ func (m *Manager) Delete(t PluginType, name string, cb string) error {
 	if len(results) > 0 {
 		return errors.New(strings.Join(results, "\n"))
 	} else {
-		return callback(cb)
+		return nil
 	}
 }
 
@@ -353,20 +352,4 @@ func lcFirst(str string) string {
 		return string(unicode.ToLower(v)) + str[i+1:]
 	}
 	return ""
-}
-
-func callback(u string) error {
-	if strings.Trim(u, " ") == "" {
-		return nil
-	} else {
-		resp, err := http.Get(u)
-		if err != nil {
-			return fmt.Errorf("action succeded but callback failed: %v", err)
-		} else {
-			if resp.StatusCode < 200 || resp.StatusCode > 299 {
-				return fmt.Errorf("action succeeded but callback failed: status %s", resp.Status)
-			}
-		}
-	}
-	return nil
 }
