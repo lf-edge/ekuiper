@@ -542,6 +542,9 @@ func (m Message) Value(key string) (interface{}, bool) {
 }
 
 func (m Message) Meta(key string) (interface{}, bool) {
+	if key == "*" {
+		return map[string]interface{}(m), true
+	}
 	return m.Value(key)
 }
 
@@ -558,6 +561,9 @@ func (m Metadata) Value(key string) (interface{}, bool) {
 }
 
 func (m Metadata) Meta(key string) (interface{}, bool) {
+	if key == "*" {
+		return map[string]interface{}(m), true
+	}
 	msg := Message(m)
 	return msg.Meta(key)
 }
@@ -574,6 +580,9 @@ func (t *Tuple) Value(key string) (interface{}, bool) {
 }
 
 func (t *Tuple) Meta(key string) (interface{}, bool) {
+	if key == "*" {
+		return map[string]interface{}(t.Metadata), true
+	}
 	return t.Metadata.Value(key)
 }
 
