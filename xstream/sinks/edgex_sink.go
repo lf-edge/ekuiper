@@ -134,7 +134,7 @@ func (ems *EdgexMsgBusSink) produceEvents(result []byte) (*models.Event, error) 
 	var m []map[string]interface{}
 	if err := json.Unmarshal(result, &m); err == nil {
 		m1, f := ems.getMeta(m)
-		var event = &models.Event{Device:"", Created:1, Modified:0, Origin:0, ID:"", Pushed:0}
+		var event = &models.Event{}
 		if f {
 			event.Device = m1.getStrVal("device")
 			event.Created = m1.getIntVal("created")
