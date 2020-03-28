@@ -1,4 +1,5 @@
 // +build edgex
+
 package sinks
 
 import (
