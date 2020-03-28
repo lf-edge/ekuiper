@@ -133,7 +133,7 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT * FROM demo WHERE temperature = 72&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT temperature, humidity, meta(*) AS metadt FROM demo WHERE temperature = 72&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
       &quot;edgex&quot;: {&#xd;
@@ -141,6 +141,7 @@
         &quot;host&quot;: &quot;*&quot;,&#xd;
         &quot;port&quot;: 5571,&#xd;
         &quot;topic&quot;: &quot;application&quot;,&#xd;
+        &quot;metadata&quot;: &quot;metadt&quot;,&#xd;
         &quot;contentType&quot;: &quot;application/json&quot;&#xd;
       }&#xd;
     }&#xd;
@@ -416,9 +417,9 @@
           <stringProp name="SystemSampler.directory">${__property(fvt,,)}</stringProp>
         </SystemSampler>
         <hashTree>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="temperature Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.[0].temperature</stringProp>
-            <stringProp name="EXPECTED_VALUE">72</stringProp>
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="device Assertion" enabled="true">
+            <stringProp name="JSON_PATH">$.device</stringProp>
+            <stringProp name="EXPECTED_VALUE">demo</stringProp>
             <boolProp name="JSONVALIDATION">true</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>
@@ -426,8 +427,17 @@
           </JSONPathAssertion>
           <hashTree/>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="humidity Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.[0].humidity</stringProp>
+            <stringProp name="JSON_PATH">$.readings[0].value</stringProp>
             <stringProp name="EXPECTED_VALUE">81</stringProp>
+            <boolProp name="JSONVALIDATION">true</boolProp>
+            <boolProp name="EXPECT_NULL">false</boolProp>
+            <boolProp name="INVERT">false</boolProp>
+            <boolProp name="ISREGEX">false</boolProp>
+          </JSONPathAssertion>
+          <hashTree/>
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="temperature Assertion" enabled="true">
+            <stringProp name="JSON_PATH">$.readings[1].value</stringProp>
+            <stringProp name="EXPECTED_VALUE">72</stringProp>
             <boolProp name="JSONVALIDATION">true</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>
