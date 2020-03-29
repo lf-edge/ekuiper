@@ -51,11 +51,11 @@ Response Sample:
 The API is used for drop the plugin. The kuiper server needs to be restarted to take effect.
 
 ```shell
-DELETE http://localhost:8080/rules/sources/{name}
-DELETE http://localhost:8080/rules/sinks/{name}
-DELETE http://localhost:8080/rules/functions/{name}
+DELETE http://localhost:9081/rules/sources/{name}
+DELETE http://localhost:9081/rules/sinks/{name}
+DELETE http://localhost:9081/rules/functions/{name}
 ```
 The user can pass a query parameter for a callback url. Kuiper will issue a GET request to the callback url after deleting the plugin.
 ```shell
-DELETE http://localhost:8080/rules/sources/{name}?callback=http%3A%2F%2Fwww.mycallback.com%2Fcallback
+DELETE http://localhost:9081/rules/sources/{name}?callback=http%3A%2F%2Fwww.mycallback.com%2Fcallback
 ```
