@@ -45,7 +45,7 @@ EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to ex
 It's **STRONGLY** recommended to use Docker, since related dependency libraries (such ZeroMQ lib) are already installed in Docker images.
 
 ```shell
-docker pull emqx/kuiper:0.3
+docker pull emqx/kuiper:0.3.0
 ```
 
 <u>TODO: After offcially releasing of EdgeX Geneva, the Kuiper docker image will be pulled automatically by EdgeX docker composer files. The command will be updated by then.</u>  
@@ -53,7 +53,7 @@ docker pull emqx/kuiper:0.3
 **Run Docker**
 
 ```
-docker run -d --name kuiper emqx/kuiper:0.3
+docker run -d --name kuiper emqx/kuiper:0.3.0
 ```
 
 If the docker instance is failed to start, please use ``docker logs kuiper`` to see the log files.
