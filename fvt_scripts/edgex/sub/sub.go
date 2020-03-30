@@ -11,7 +11,7 @@ func main() {
 	var msgConfig1 = types.MessageBusConfig{
 		SubscribeHost: types.HostInfo{
 			Host:     "localhost",
-			Port:     5563,
+			Port:     5571,
 			Protocol: "tcp",
 		},
 		Type:messaging.ZeroMQ,
