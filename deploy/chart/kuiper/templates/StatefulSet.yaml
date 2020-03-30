@@ -105,6 +105,12 @@ spec:
           - name: kuiper-config
             mountPath: "/kuiper/etc/sources/zmq.yaml"
             subPath: "zmq.yaml"
+          readinessProbe:
+            httpGet:
+              {{ $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
+              port: {{ $restPort | default 9081 }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
           {{ $certificationSecretName := index .Values "kuiperConfig" "mqtt_source.yaml" "default" "certificationSecretName" }}
           {{- if $certificationSecretName }}
           - name: kuiper-certification
