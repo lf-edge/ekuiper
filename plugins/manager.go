@@ -218,7 +218,7 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 	return nil
 }
 
-func (m *Manager) Delete(t PluginType, name string, restart bool) error {
+func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	name = strings.Trim(name, " ")
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
@@ -249,7 +249,7 @@ func (m *Manager) Delete(t PluginType, name string, restart bool) error {
 	if len(results) > 0 {
 		return errors.New(strings.Join(results, "\n"))
 	} else {
-		if restart {
+		if stop {
 			go func() {
 				time.Sleep(1 * time.Second)
 				os.Exit(100)
@@ -257,6 +257,17 @@ func (m *Manager) Delete(t PluginType, name string, restart bool) error {
 		}
 		return nil
 	}
+}
+func (m *Manager) Get(t PluginType, name string) (map[string]string, bool) {
+	v, ok := m.registry.Get(t, name)
+	if ok {
+		m := map[string]string{
+			"name":    name,
+			"version": v,
+		}
+		return m, ok
+	}
+	return nil, false
 }
 
 func getSoFileName(m *Manager, t PluginType, name string) (string, error) {

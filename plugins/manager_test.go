@@ -124,8 +124,56 @@ func TestManager_List(t *testing.T) {
 		result, err := manager.List(p.t)
 		if err != nil {
 			t.Errorf("%d: list error : %s\n\n", i, err)
+			return
 		}
 		sort.Strings(result)
+		if !reflect.DeepEqual(p.r, result) {
+			t.Errorf("%d: result mismatch:\n  exp=%v\n  got=%v\n\n", i, p.r, result)
+		}
+	}
+}
+
+func TestManager_Desc(t *testing.T) {
+	data := []struct {
+		t PluginType
+		n string
+		r map[string]string
+	}{
+		{
+			t: SOURCE,
+			n: "random2",
+			r: map[string]string{
+				"name":    "random2",
+				"version": "",
+			},
+		}, {
+			t: SOURCE,
+			n: "random3",
+			r: map[string]string{
+				"name":    "random3",
+				"version": "1.0.0",
+			},
+		}, {
+			t: FUNCTION,
+			n: "echo2",
+			r: map[string]string{
+				"name":    "echo2",
+				"version": "",
+			},
+		},
+	}
+	manager, err := NewPluginManager()
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(data))
+
+	for i, p := range data {
+		result, ok := manager.Get(p.t, p.n)
+		if !ok {
+			t.Errorf("%d: get error : not found\n\n", i)
+			return
+		}
 		if !reflect.DeepEqual(p.r, result) {
 			t.Errorf("%d: result mismatch:\n  exp=%v\n  got=%v\n\n", i, p.r, result)
 		}

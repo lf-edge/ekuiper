@@ -272,7 +272,7 @@ func main() {
 		{
 			Name:    "describe",
 			Aliases: []string{"describe"},
-			Usage:   "describe stream $stream_name | describe rule $rule_name",
+			Usage:   "describe stream $stream_name | describe rule $rule_name | describe plugin $plugin_type $plugin_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -302,13 +302,41 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "plugin",
+					Usage: "describe plugin $plugin_type $plugin_name",
+					//Flags: nflag,
+					Action: func(c *cli.Context) error {
+						ptype, err := getPluginType(c.Args()[0])
+						if err != nil {
+							fmt.Printf("%s\n", err)
+							return nil
+						}
+						pname := c.Args()[1]
+						args := &common.PluginDesc{
+							RuleDesc: common.RuleDesc{
+								Name: pname,
+							},
+							Type: ptype,
+						}
+
+						var reply string
+						err = client.Call("Server.DescPlugin", args, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 
 		{
 			Name:    "drop",
 			Aliases: []string{"drop"},
-			Usage:   "drop stream $stream_name | drop rule $rule_name | drop plugin $plugin_type $plugin_name -r $restart",
+			Usage:   "drop stream $stream_name | drop rule $rule_name | drop plugin $plugin_type $plugin_name -r $stop",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -341,15 +369,15 @@ func main() {
 				},
 				{
 					Name:  "plugin",
-					Usage: "drop plugin $plugin_type $plugin_name -r restart",
+					Usage: "drop plugin $plugin_type $plugin_name -s stop",
 					Flags: []cli.Flag{
 						cli.StringFlag{
-							Name:  "restart, r",
-							Usage: "restart kuiper after the action",
+							Name:  "stop, s",
+							Usage: "stop kuiper after the action",
 						},
 					},
 					Action: func(c *cli.Context) error {
-						r := c.String("restart")
+						r := c.String("stop")
 						if r != "true" && r != "false" {
 							fmt.Printf("Expect r to be a boolean value.\n")
 							return nil
@@ -368,8 +396,8 @@ func main() {
 							RuleDesc: common.RuleDesc{
 								Name: pname,
 							},
-							Type:    ptype,
-							Restart: r == "true",
+							Type: ptype,
+							Stop: r == "true",
 						}
 
 						var reply string
