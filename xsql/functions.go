@@ -76,7 +76,7 @@ func (*FunctionValuer) Call(name string, args []interface{}) (interface{}, bool)
 		return nil, false
 	} else {
 		common.Log.Debugf("run func %s", name)
-		if nf, err := plugins.GetPlugin(name, "functions"); err != nil {
+		if nf, err := plugins.GetPlugin(name, plugins.FUNCTION); err != nil {
 			return err, false
 		} else {
 			f, ok := nf.(api.Function)

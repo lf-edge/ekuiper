@@ -26,7 +26,7 @@ func validateFuncs(funcName string, args []Expr) error {
 	} else if _, ok := aggFuncMap[lowerName]; ok {
 		return validateAggFunc(lowerName, args)
 	} else {
-		if nf, err := plugins.GetPlugin(funcName, "functions"); err != nil {
+		if nf, err := plugins.GetPlugin(funcName, plugins.FUNCTION); err != nil {
 			return err
 		} else {
 			f, ok := nf.(api.Function)

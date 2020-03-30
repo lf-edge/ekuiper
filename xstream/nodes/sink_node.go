@@ -209,7 +209,7 @@ func doGetSink(name string, action map[string]interface{}) (api.Sink, error) {
 	case "rest":
 		s = &sinks.RestSink{}
 	default:
-		nf, err := plugins.GetPlugin(name, "sinks")
+		nf, err := plugins.GetPlugin(name, plugins.SINK)
 		if err != nil {
 			return nil, err
 		}

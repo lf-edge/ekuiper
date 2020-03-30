@@ -105,13 +105,13 @@ func TestManager_List(t *testing.T) {
 	}{
 		{
 			t: SOURCE,
-			r: []string{"random2", "random3"},
+			r: []string{"random", "random2", "random3"},
 		}, {
 			t: SINK,
-			r: []string{"file2"},
+			r: []string{"file", "file2"},
 		}, {
 			t: FUNCTION,
-			r: []string{"echo2"},
+			r: []string{"countPlusOne", "echo", "echo2"},
 		},
 	}
 	manager, err := NewPluginManager()

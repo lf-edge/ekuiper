@@ -1689,7 +1689,7 @@ func isAggFunc(f *Call) bool {
 	} else if _, ok := mathFuncMap[fn]; ok {
 		return false
 	} else {
-		if nf, err := plugins.GetPlugin(f.Name, "functions"); err == nil {
+		if nf, err := plugins.GetPlugin(f.Name, plugins.FUNCTION); err == nil {
 			if ef, ok := nf.(api.Function); ok && ef.IsAggregate() {
 				return true
 			}

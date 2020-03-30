@@ -153,7 +153,7 @@ func doGetSource(t string) (api.Source, error) {
 	case "mqtt":
 		s = &extensions.MQTTSource{}
 	default:
-		nf, err := plugins.GetPlugin(t, "sources")
+		nf, err := plugins.GetPlugin(t, plugins.SOURCE)
 		if err != nil {
 			return nil, err
 		}

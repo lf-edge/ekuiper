@@ -85,8 +85,9 @@ func (rr *Registry) Get(t PluginType, name string) (string, bool) {
 
 var symbolRegistry = make(map[string]plugin.Symbol)
 
-func GetPlugin(t string, ptype string) (plugin.Symbol, error) {
-	t = ucFirst(t)
+func GetPlugin(t string, pt PluginType) (plugin.Symbol, error) {
+	ut := ucFirst(t)
+	ptype := PluginTypes[pt]
 	key := ptype + "/" + t
 	var nf plugin.Symbol
 	nf, ok := symbolRegistry[key]
@@ -95,12 +96,20 @@ func GetPlugin(t string, ptype string) (plugin.Symbol, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot find the plugins folder")
 		}
-		mod := path.Join(loc, ptype, t+".so")
+		m, err := NewPluginManager()
+		if err != nil {
+			return nil, fmt.Errorf("fail to initialize the plugin manager")
+		}
+		soFile, err := getSoFileName(m, pt, t)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get the plugin file name: %v", err)
+		}
+		mod := path.Join(loc, ptype, soFile)
 		plug, err := plugin.Open(mod)
 		if err != nil {
 			return nil, fmt.Errorf("cannot open %s: %v", mod, err)
 		}
-		nf, err = plug.Lookup(t)
+		nf, err = plug.Lookup(ut)
 		if err != nil {
 			return nil, fmt.Errorf("cannot find symbol %s, please check if it is exported", t)
 		}
@@ -214,15 +223,11 @@ func (m *Manager) Delete(t PluginType, name string, restart bool) error {
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
 	}
-	v, ok := m.registry.Get(t, name)
-	if !ok {
-		return fmt.Errorf("invalid name %s: not exist", name)
+	soFile, err := getSoFileName(m, t, name)
+	if err != nil {
+		return err
 	}
 	var results []string
-	soFile := ucFirst(name) + ".so"
-	if v != "" {
-		soFile = fmt.Sprintf("%s@v%s.so", ucFirst(name), v)
-	}
 	paths := []string{
 		path.Join(m.pluginDir, PluginTypes[t], soFile),
 	}
@@ -252,6 +257,19 @@ func (m *Manager) Delete(t PluginType, name string, restart bool) error {
 		}
 		return nil
 	}
+}
+
+func getSoFileName(m *Manager, t PluginType, name string) (string, error) {
+	v, ok := m.registry.Get(t, name)
+	if !ok {
+		return "", fmt.Errorf("invalid name %s: not exist", name)
+	}
+
+	soFile := ucFirst(name) + ".so"
+	if v != "" {
+		soFile = fmt.Sprintf("%s@v%s.so", ucFirst(name), v)
+	}
+	return soFile, nil
 }
 
 func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string, string, error) {
