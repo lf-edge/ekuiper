@@ -3,36 +3,45 @@
 POST http://127.0.0.1:9081/plugins/sources
 Content-Type: application/json
 
-{"name":"random2","file":"http://127.0.0.1/plugins/sources/random2.zip","callback":""}
+{"name":"random3","file":"http://127.0.0.1/testzips/sources/random3.zip"}
 
 ###
 GET http://127.0.0.1:9081/plugins/sources
 
 ###
-DELETE http://127.0.0.1:9081/plugins/sources/random2
+GET http://127.0.0.1:9081/plugins/sources/random3
+
+###
+DELETE http://127.0.0.1:9081/plugins/sources/random3
 
 ###
 POST http://127.0.0.1:9081/plugins/sinks
 Content-Type: application/json
 
-{"name":"random2","file":"http://127.0.0.1/plugins/sources/random2.zip","callback":"http://www.mycallback.com/callback"}
+{"name":"file2","file":"http://127.0.0.1/testzips/sinks/file2.zip"}
 
 ###
 GET http://127.0.0.1:9081/plugins/sinks
 
 ###
-DELETE http://127.0.0.1:9081/plugins/sinks/random2?callback=http%3A%2F%2Fwww.mycallback.com%2Fcallback
+GET http://127.0.0.1:9081/plugins/sinks/file2
+
+###
+DELETE http://127.0.0.1:9081/plugins/sinks/file2?stop=1
 
 ###
 POST http://127.0.0.1:9081/plugins/functions
 Content-Type: application/json
 
-{"name":"random2","file":"http://127.0.0.1/plugins/sources/random2.zip","callback":""}
+{"name":"echo2","file":"http://127.0.0.1/testzips/functions/echo2.zip"}
 
 ###
 GET http://127.0.0.1:9081/plugins/functions
 
 ###
-DELETE http://127.0.0.1:9081/plugins/functions/random2
+GET http://127.0.0.1:9081/plugins/functions/echo2
 
-###2217
+###
+DELETE http://127.0.0.1:9081/plugins/functions/echo2
+
+###

@@ -140,7 +140,7 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 		return 0, true
 	default:
 		common.Log.Debugf("run aggregate func %s", name)
-		if nf, err := plugins.GetPlugin(name, "functions"); err != nil {
+		if nf, err := plugins.GetPlugin(name, plugins.FUNCTION); err != nil {
 			return nil, false
 		} else {
 			f, ok := nf.(api.Function)

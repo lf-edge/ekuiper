@@ -63,11 +63,11 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 
 	r.HandleFunc("/plugins/sources", sourcesHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/plugins/sources/{name}", sourceHandler).Methods(http.MethodDelete)
+	r.HandleFunc("/plugins/sources/{name}", sourceHandler).Methods(http.MethodDelete, http.MethodGet)
 	r.HandleFunc("/plugins/sinks", sinksHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/plugins/sinks/{name}", sinkHandler).Methods(http.MethodDelete)
+	r.HandleFunc("/plugins/sinks/{name}", sinkHandler).Methods(http.MethodDelete, http.MethodGet)
 	r.HandleFunc("/plugins/functions", functionsHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete)
+	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet)
 
 	server := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
@@ -300,17 +300,29 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType)
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
-	cb := r.URL.Query().Get("callback")
+	cb := r.URL.Query().Get("stop")
 
 	switch r.Method {
 	case http.MethodDelete:
-		err := pluginManager.Delete(t, name, cb)
+		r := cb == "1"
+		err := pluginManager.Delete(t, name, r)
 		if err != nil {
 			handleError(w, fmt.Errorf("delete %s plugin %s error: %s", plugins.PluginTypes[t], name, err), http.StatusBadRequest, logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf("%s plugin %s is deleted", plugins.PluginTypes[t], name)))
+		result := fmt.Sprintf("%s plugin %s is deleted", plugins.PluginTypes[t], name)
+		if r {
+			result = fmt.Sprintf("%s and Kuiper will be stopped", result)
+		}
+		w.Write([]byte(result))
+	case http.MethodGet:
+		j, ok := pluginManager.Get(t, name)
+		if !ok {
+			handleError(w, fmt.Errorf("describe %s plugin %s error: not found", plugins.PluginTypes[t], name), http.StatusBadRequest, logger)
+			return
+		}
+		jsonResponse(j, w, logger)
 	}
 }
 

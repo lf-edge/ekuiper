@@ -7,4 +7,5 @@ type RuleDesc struct {
 type PluginDesc struct {
 	RuleDesc
 	Type int
+	Stop bool
 }

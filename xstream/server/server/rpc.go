@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
@@ -184,11 +185,16 @@ func (t *Server) DropPlugin(arg *common.PluginDesc, reply *string) error {
 	if err != nil {
 		return fmt.Errorf("Drop plugin error: %s", err)
 	}
-	err = pluginManager.Delete(pt, p.Name, p.Callback)
+	err = pluginManager.Delete(pt, p.Name, arg.Stop)
 	if err != nil {
 		return fmt.Errorf("Drop plugin error: %s", err)
 	} else {
-		*reply = fmt.Sprintf("Plugin %s is dropped.", p.Name)
+		if arg.Stop {
+			*reply = fmt.Sprintf("Plugin %s is dropped and Kuiper will be stopped.", p.Name)
+		} else {
+			*reply = fmt.Sprintf("Plugin %s is dropped.", p.Name)
+		}
+
 	}
 	return nil
 }
@@ -203,6 +209,29 @@ func (t *Server) ShowPlugins(arg int, reply *string) error {
 			l = append(l, "No plugin is found.")
 		}
 		*reply = strings.Join(l, "\n")
+	}
+	return nil
+}
+
+func (t *Server) DescPlugin(arg *common.PluginDesc, reply *string) error {
+	pt := plugins.PluginType(arg.Type)
+	p, err := getPluginByJson(arg)
+	if err != nil {
+		return fmt.Errorf("Describe plugin error: %s", err)
+	}
+	m, ok := pluginManager.Get(pt, p.Name)
+	if !ok {
+		return fmt.Errorf("Describe plugin error: not found")
+	} else {
+		s, err := json.Marshal(m)
+		if err != nil {
+			return fmt.Errorf("Describe plugin error: invalid json %v", m)
+		}
+		dst := &bytes.Buffer{}
+		if err := json.Indent(dst, s, "", "  "); err != nil {
+			return fmt.Errorf("Describe plugin error: indent json error %v", err)
+		}
+		*reply = dst.String()
 	}
 	return nil
 }

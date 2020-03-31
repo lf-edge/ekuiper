@@ -8,32 +8,22 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"sort"
 	"testing"
 )
 
 func TestManager_Register(t *testing.T) {
-	//file server
 	s := httptest.NewServer(
 		http.FileServer(http.Dir("testzips")),
 	)
 	defer s.Close()
 	endpoint := s.URL
-	//callback server
-	h := http.NewServeMux()
-	h.HandleFunc("/callback/", func(res http.ResponseWriter, req *http.Request) {
-		res.WriteHeader(http.StatusOK)
-	})
-	h.HandleFunc("/callbackE/", func(res http.ResponseWriter, req *http.Request) {
-		http.Error(res, "error", 500)
-	})
-	hs := httptest.NewServer(h)
-	defer hs.Close()
 
 	data := []struct {
 		t   PluginType
 		n   string
 		u   string
-		c   string
+		v   string
 		err error
 	}{
 		{
@@ -69,17 +59,11 @@ func TestManager_Register(t *testing.T) {
 			t: SOURCE,
 			n: "random3",
 			u: endpoint + "/sources/random3.zip",
-			c: hs.URL + "/callback",
+			v: "1.0.0",
 		}, {
 			t: SINK,
 			n: "file2",
 			u: endpoint + "/sinks/file2.zip",
-		}, {
-			t:   SINK,
-			n:   "file3",
-			u:   endpoint + "/sinks/file3.zip",
-			c:   hs.URL + "/callbackE",
-			err: errors.New("action succeeded but callback failed: status 500 Internal Server Error"),
 		}, {
 			t: FUNCTION,
 			n: "echo2",
@@ -89,12 +73,6 @@ func TestManager_Register(t *testing.T) {
 			n:   "echo2",
 			u:   endpoint + "/functions/echo2.zip",
 			err: errors.New("invalid name echo2: duplicate"),
-		}, {
-			t:   FUNCTION,
-			n:   "echo3",
-			u:   endpoint + "/functions/echo3.zip",
-			c:   hs.URL + "/nonExist",
-			err: errors.New("action succeeded but callback failed: status 404 Not Found"),
 		},
 	}
 	manager, err := NewPluginManager()
@@ -105,14 +83,13 @@ func TestManager_Register(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 	for i, tt := range data {
 		err = manager.Register(tt.t, &Plugin{
-			Name:     tt.n,
-			File:     tt.u,
-			Callback: tt.c,
+			Name: tt.n,
+			File: tt.u,
 		})
 		if !reflect.DeepEqual(tt.err, err) {
 			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
 		} else if tt.err == nil {
-			err := checkFile(manager.pluginDir, manager.etcDir, tt.t, tt.n)
+			err := checkFile(manager.pluginDir, manager.etcDir, tt.t, tt.n, tt.v)
 			if err != nil {
 				t.Errorf("%d: error : %s\n\n", i, err)
 			}
@@ -121,45 +98,20 @@ func TestManager_Register(t *testing.T) {
 
 }
 
-func TestManager_Delete(t *testing.T) {
-	h := http.NewServeMux()
-	h.HandleFunc("/callback/", func(res http.ResponseWriter, req *http.Request) {
-		res.WriteHeader(http.StatusOK)
-	})
-	h.HandleFunc("/callbackE/", func(res http.ResponseWriter, req *http.Request) {
-		http.Error(res, "error", 500)
-	})
-	s := httptest.NewServer(h)
-	defer s.Close()
+func TestManager_List(t *testing.T) {
 	data := []struct {
-		t   PluginType
-		n   string
-		c   string
-		err error
+		t PluginType
+		r []string
 	}{
 		{
-			t:   SOURCE,
-			n:   "random2",
-			c:   s.URL + "/callbackN",
-			err: errors.New("action succeeded but callback failed: status 404 Not Found"),
-		}, {
-			t: SINK,
-			n: "file2",
-			c: s.URL + "/callback",
-		}, {
-			t:   FUNCTION,
-			n:   "echo2",
-			c:   s.URL + "/callbackE",
-			err: errors.New("action succeeded but callback failed: status 500 Internal Server Error"),
-		}, {
 			t: SOURCE,
-			n: "random3",
+			r: []string{"random", "random2", "random3"},
 		}, {
 			t: SINK,
-			n: "file3",
+			r: []string{"file", "file2"},
 		}, {
 			t: FUNCTION,
-			n: "echo3",
+			r: []string{"countPlusOne", "echo", "echo2"},
 		},
 	}
 	manager, err := NewPluginManager()
@@ -169,15 +121,105 @@ func TestManager_Delete(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 
 	for i, p := range data {
-		err = manager.Delete(p.t, p.n, p.c)
-		if !reflect.DeepEqual(p.err, err) {
-			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, p.err, err)
+		result, err := manager.List(p.t)
+		if err != nil {
+			t.Errorf("%d: list error : %s\n\n", i, err)
+			return
+		}
+		sort.Strings(result)
+		if !reflect.DeepEqual(p.r, result) {
+			t.Errorf("%d: result mismatch:\n  exp=%v\n  got=%v\n\n", i, p.r, result)
 		}
 	}
 }
 
-func checkFile(pluginDir string, etcDir string, t PluginType, name string) error {
-	soPath := path.Join(pluginDir, PluginTypes[t], ucFirst(name)+".so")
+func TestManager_Desc(t *testing.T) {
+	data := []struct {
+		t PluginType
+		n string
+		r map[string]string
+	}{
+		{
+			t: SOURCE,
+			n: "random2",
+			r: map[string]string{
+				"name":    "random2",
+				"version": "",
+			},
+		}, {
+			t: SOURCE,
+			n: "random3",
+			r: map[string]string{
+				"name":    "random3",
+				"version": "1.0.0",
+			},
+		}, {
+			t: FUNCTION,
+			n: "echo2",
+			r: map[string]string{
+				"name":    "echo2",
+				"version": "",
+			},
+		},
+	}
+	manager, err := NewPluginManager()
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(data))
+
+	for i, p := range data {
+		result, ok := manager.Get(p.t, p.n)
+		if !ok {
+			t.Errorf("%d: get error : not found\n\n", i)
+			return
+		}
+		if !reflect.DeepEqual(p.r, result) {
+			t.Errorf("%d: result mismatch:\n  exp=%v\n  got=%v\n\n", i, p.r, result)
+		}
+	}
+}
+
+func TestManager_Delete(t *testing.T) {
+	data := []struct {
+		t   PluginType
+		n   string
+		err error
+	}{
+		{
+			t: SOURCE,
+			n: "random2",
+		}, {
+			t: SINK,
+			n: "file2",
+		}, {
+			t: FUNCTION,
+			n: "echo2",
+		}, {
+			t: SOURCE,
+			n: "random3",
+		},
+	}
+	manager, err := NewPluginManager()
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(data))
+
+	for i, p := range data {
+		err = manager.Delete(p.t, p.n, false)
+		if err != nil {
+			t.Errorf("%d: delete error : %s\n\n", i, err)
+		}
+	}
+}
+
+func checkFile(pluginDir string, etcDir string, t PluginType, name string, version string) error {
+	soName := ucFirst(name) + ".so"
+	if version != "" {
+		soName = fmt.Sprintf("%s@v%s.so", ucFirst(name), version)
+	}
+	soPath := path.Join(pluginDir, PluginTypes[t], soName)
 	_, err := os.Stat(soPath)
 	if err != nil {
 		return err

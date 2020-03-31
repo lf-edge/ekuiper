@@ -13,15 +13,16 @@ import (
 	"path"
 	"path/filepath"
 	"plugin"
+	"regexp"
 	"strings"
 	"sync"
+	"time"
 	"unicode"
 )
 
 type Plugin struct {
-	Name     string `json:"name"`
-	File     string `json:"file"`
-	Callback string `json:"callback"`
+	Name string `json:"name"`
+	File string `json:"file"`
 }
 
 type PluginType int
@@ -41,20 +42,32 @@ var (
 //Registry is append only because plugin cannot delete or reload. To delete a plugin, restart the server to reindex
 type Registry struct {
 	sync.RWMutex
-	internal [][]string
+	internal []map[string]string
 }
 
-func (rr *Registry) Store(t PluginType, value string) {
+func (rr *Registry) Store(t PluginType, name string, version string) {
 	rr.Lock()
-	rr.internal[t] = append(rr.internal[t], value)
+	rr.internal[t][name] = version
 	rr.Unlock()
 }
 
-func (rr *Registry) List(t PluginType) (values []string) {
+func (rr *Registry) List(t PluginType) []string {
 	rr.RLock()
 	result := rr.internal[t]
 	rr.RUnlock()
-	return result
+	keys := make([]string, 0, len(result))
+	for k := range result {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func (rr *Registry) Get(t PluginType, name string) (string, bool) {
+	rr.RLock()
+	result := rr.internal[t]
+	rr.RUnlock()
+	r, ok := result[name]
+	return r, ok
 }
 
 //func (rr *Registry) Delete(t PluginType, value string) {
@@ -72,8 +85,9 @@ func (rr *Registry) List(t PluginType) (values []string) {
 
 var symbolRegistry = make(map[string]plugin.Symbol)
 
-func GetPlugin(t string, ptype string) (plugin.Symbol, error) {
-	t = ucFirst(t)
+func GetPlugin(t string, pt PluginType) (plugin.Symbol, error) {
+	ut := ucFirst(t)
+	ptype := PluginTypes[pt]
 	key := ptype + "/" + t
 	var nf plugin.Symbol
 	nf, ok := symbolRegistry[key]
@@ -82,12 +96,20 @@ func GetPlugin(t string, ptype string) (plugin.Symbol, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot find the plugins folder")
 		}
-		mod := path.Join(loc, ptype, t+".so")
+		m, err := NewPluginManager()
+		if err != nil {
+			return nil, fmt.Errorf("fail to initialize the plugin manager")
+		}
+		soFile, err := getSoFileName(m, pt, t)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get the plugin file name: %v", err)
+		}
+		mod := path.Join(loc, ptype, soFile)
 		plug, err := plugin.Open(mod)
 		if err != nil {
 			return nil, fmt.Errorf("cannot open %s: %v", mod, err)
 		}
-		nf, err = plug.Lookup(t)
+		nf, err = plug.Lookup(ut)
 		if err != nil {
 			return nil, fmt.Errorf("cannot find symbol %s, please check if it is exported", t)
 		}
@@ -116,7 +138,7 @@ func NewPluginManager() (*Manager, error) {
 			return
 		}
 
-		plugins := make([][]string, 3)
+		plugins := make([]map[string]string, 3)
 		for i := 0; i < 3; i++ {
 			names, err := findAll(PluginType(i), dir)
 			if err != nil {
@@ -136,7 +158,8 @@ func NewPluginManager() (*Manager, error) {
 	return singleton, err
 }
 
-func findAll(t PluginType, pluginDir string) (result []string, err error) {
+func findAll(t PluginType, pluginDir string) (result map[string]string, err error) {
+	result = make(map[string]string)
 	dir := path.Join(pluginDir, PluginTypes[t])
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -146,7 +169,8 @@ func findAll(t PluginType, pluginDir string) (result []string, err error) {
 	for _, file := range files {
 		baseName := filepath.Base(file.Name())
 		if strings.HasSuffix(baseName, ".so") {
-			result = append(result, lcFirst(baseName[0:len(baseName)-3]))
+			n, v := parseName(baseName)
+			result[n] = v
 		}
 	}
 	return
@@ -157,7 +181,7 @@ func (m *Manager) List(t PluginType) (result []string, err error) {
 }
 
 func (m *Manager) Register(t PluginType, j *Plugin) error {
-	name, uri, cb := j.Name, j.File, j.Callback
+	name, uri := j.Name, j.File
 	//Validation
 	name = strings.Trim(name, " ")
 	if name == "" {
@@ -182,7 +206,7 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}
 	//unzip and copy to destination
-	unzipFiles, err = m.unzipAndCopy(t, name, zipPath)
+	unzipFiles, version, err := m.unzipAndCopy(t, name, zipPath)
 	if err != nil {
 		if t == SOURCE && len(unzipFiles) == 1 { //source that only copy so file
 			os.Remove(unzipFiles[0])
@@ -190,27 +214,22 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		return fmt.Errorf("fail to unzip file %s: %s", uri, err)
 	}
 
-	m.registry.Store(t, name)
-	return callback(cb)
+	m.registry.Store(t, name, version)
+	return nil
 }
 
-func (m *Manager) Delete(t PluginType, name string, cb string) error {
+func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	name = strings.Trim(name, " ")
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
 	}
-	found := false
-	for _, n := range m.registry.List(t) {
-		if n == name {
-			found = true
-		}
-	}
-	if !found {
-		return fmt.Errorf("invalid name %s: not exist", name)
+	soFile, err := getSoFileName(m, t, name)
+	if err != nil {
+		return err
 	}
 	var results []string
 	paths := []string{
-		path.Join(m.pluginDir, PluginTypes[t], ucFirst(name)+".so"),
+		path.Join(m.pluginDir, PluginTypes[t], soFile),
 	}
 	if t == SOURCE {
 		paths = append(paths, path.Join(m.etcDir, PluginTypes[t], name+".yaml"))
@@ -230,47 +249,89 @@ func (m *Manager) Delete(t PluginType, name string, cb string) error {
 	if len(results) > 0 {
 		return errors.New(strings.Join(results, "\n"))
 	} else {
-		return callback(cb)
+		if stop {
+			go func() {
+				time.Sleep(1 * time.Second)
+				os.Exit(100)
+			}()
+		}
+		return nil
 	}
 }
+func (m *Manager) Get(t PluginType, name string) (map[string]string, bool) {
+	v, ok := m.registry.Get(t, name)
+	if ok {
+		m := map[string]string{
+			"name":    name,
+			"version": v,
+		}
+		return m, ok
+	}
+	return nil, false
+}
 
-func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string, error) {
+func getSoFileName(m *Manager, t PluginType, name string) (string, error) {
+	v, ok := m.registry.Get(t, name)
+	if !ok {
+		return "", fmt.Errorf("invalid name %s: not exist", name)
+	}
+
+	soFile := ucFirst(name) + ".so"
+	if v != "" {
+		soFile = fmt.Sprintf("%s@v%s.so", ucFirst(name), v)
+	}
+	return soFile, nil
+}
+
+func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string, string, error) {
 	var filenames []string
 	r, err := zip.OpenReader(src)
 	if err != nil {
-		return filenames, err
+		return filenames, "", err
 	}
 	defer r.Close()
 
-	files := []string{
-		ucFirst(name) + ".so",
-	}
-	paths := []string{
-		path.Join(m.pluginDir, PluginTypes[t], files[0]),
-	}
+	soPrefix := regexp.MustCompile(fmt.Sprintf(`^%s(@v.*)?\.so$`, ucFirst(name)))
+	var yamlFile, yamlPath, version string
+	expFiles := 1
 	if t == SOURCE {
-		files = append(files, name+".yaml")
-		paths = append(paths, path.Join(m.etcDir, PluginTypes[t], files[1]))
+		yamlFile = name + ".yaml"
+		yamlPath = path.Join(m.etcDir, PluginTypes[t], yamlFile)
+		expFiles = 2
 	}
-	for i, d := range files {
-		var z *zip.File
-		for _, file := range r.File {
-			fileName := file.Name
-			if fileName == d {
-				z = file
+	for _, file := range r.File {
+		fileName := file.Name
+		if yamlFile == fileName {
+			err = unzipTo(file, yamlPath)
+			if err != nil {
+				return filenames, "", err
 			}
+			filenames = append(filenames, yamlPath)
 		}
-		if z == nil {
-			return filenames, fmt.Errorf("invalid zip file: so file or conf file is missing")
+		if soPrefix.Match([]byte(fileName)) {
+			soPath := path.Join(m.pluginDir, PluginTypes[t], fileName)
+			err = unzipTo(file, soPath)
+			if err != nil {
+				return filenames, "", err
+			}
+			filenames = append(filenames, soPath)
+			_, version = parseName(fileName)
 		}
-
-		err = unzipTo(z, paths[i])
-		if err != nil {
-			return filenames, err
-		}
-		filenames = append(filenames, paths[i])
 	}
-	return filenames, nil
+	if len(filenames) != expFiles {
+		return filenames, version, fmt.Errorf("invalid zip file: so file or conf file is missing")
+	}
+	return filenames, version, nil
+}
+
+func parseName(n string) (string, string) {
+	result := strings.Split(n, ".so")
+	result = strings.Split(result[0], "@v")
+	name := lcFirst(result[0])
+	if len(result) > 1 {
+		return name, result[1]
+	}
+	return name, ""
 }
 
 func unzipTo(f *zip.File, fpath string) error {
@@ -353,20 +414,4 @@ func lcFirst(str string) string {
 		return string(unicode.ToLower(v)) + str[i+1:]
 	}
 	return ""
-}
-
-func callback(u string) error {
-	if strings.Trim(u, " ") == "" {
-		return nil
-	} else {
-		resp, err := http.Get(u)
-		if err != nil {
-			return fmt.Errorf("action succeded but callback failed: %v", err)
-		} else {
-			if resp.StatusCode < 200 || resp.StatusCode > 299 {
-				return fmt.Errorf("action succeeded but callback failed: status %s", resp.Status)
-			}
-		}
-	}
-	return nil
 }
