@@ -20,6 +20,8 @@ type MQTTSink struct {
 	certPath string
 	pkeyPath string
 
+	insecureSkipVerify bool
+
 	conn MQTT.Client
 }
 
@@ -86,6 +88,13 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 		}
 	}
 
+	insecureSkipVerify := false
+	if pk, ok := ps["insecureSkipVerify"]; ok {
+		if v, ok := pk.(bool); ok {
+			insecureSkipVerify = v
+		}
+	}
+
 	ms.srv = srv.(string)
 	ms.tpc = tpc.(string)
 	ms.clientid = clientid.(string)
@@ -94,6 +103,7 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 	ms.password = password
 	ms.certPath = certPath
 	ms.pkeyPath = pKeyPath
+	ms.insecureSkipVerify = insecureSkipVerify
 
 	return nil
 }
@@ -110,7 +120,7 @@ func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 				if cer, err2 := tls.LoadX509KeyPair(cp, kp); err2 != nil {
 					return err2
 				} else {
-					opts.SetTLSConfig(&tls.Config{Certificates: []tls.Certificate{cer}})
+					opts.SetTLSConfig(&tls.Config{Certificates: []tls.Certificate{cer}, InsecureSkipVerify: ms.insecureSkipVerify})
 				}
 			} else {
 				return err1
