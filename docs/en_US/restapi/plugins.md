@@ -44,6 +44,27 @@ Response Sample:
 ["plugin1","plugin2"]
 ```
 
+## describe a plugin
+
+The API is used to print out the detailed definition of a plugin.
+
+```shell
+GET http://localhost:9081/plugins/sources/{name}
+GET http://localhost:9081/plugins/sinks/{name}
+GET http://localhost:9081/plugins/functions/{name}
+```
+
+Path parameter `name` is the name of the plugin.
+
+Response Sample: 
+
+```json
+{
+  "name": "plugin1",
+  "version": "1.0.0"
+}
+```
+
 ## drop a plugin
 
 The API is used for drop the plugin. The kuiper server needs to be restarted to take effect.

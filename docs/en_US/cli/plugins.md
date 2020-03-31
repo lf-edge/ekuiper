@@ -61,14 +61,31 @@ function1
 function2
 ```
 
+## describe a plugin
+The command is used to print out the detailed definition of a plugin.
+
+```shell
+describe plugin $plugin_type $plugin_name
+```
+
+Sample: 
+
+```shell
+# bin/cli describe plugin source plugin1
+{
+  "name": "plugin1",
+  "version": "1.0.0"
+}
+```
+
 ## drop a plugin
 
 The command is used for drop the plugin.
 
 ```shell
-drop plugin $plugin_type $plugin_name -r $restart 
+drop plugin $plugin_type $plugin_name -s $stop 
 ```
-In which, `-r $restart` is an optional boolean parameter. If it is set to true, the Kuiper server will be stopped for the delete to take effect. The user will need to restart it manually.
+In which, `-s $stop` is an optional boolean parameter. If it is set to true, the Kuiper server will be stopped for the delete to take effect. The user will need to restart it manually.
 Sample:
 
 ```shell
