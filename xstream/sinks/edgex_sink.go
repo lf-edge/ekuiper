@@ -1,4 +1,3 @@
-// +build edgex
 
 package sinks
 
@@ -26,14 +25,8 @@ type EdgexMsgBusSink struct {
 	deviceName string
 	metadata   string
 
-	optional *OptionalConf
+	optional map[string]string
 	client   messaging.MessageClient
-}
-
-type OptionalConf struct {
-	clientid string
-	username string
-	password string
 }
 
 func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
@@ -81,6 +74,14 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 		common.Log.Infof("Not find contentType conf, will use default value 'application/json'.")
 	}
 
+	if ptype, ok := ps["type"]; ok {
+		ems.ptype = ptype.(string)
+		if ems.ptype != messaging.ZeroMQ && ems.ptype != messaging.MQTT {
+			common.Log.Infof("Specified wrong message type value %s, will use zeromq messagebus.\n", ems.ptype)
+			ems.ptype = messaging.ZeroMQ
+		}
+	}
+
 	if dname, ok := ps["deviceName"]; ok {
 		ems.deviceName = dname.(string)
 	}
@@ -91,17 +92,20 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 
 	if optIntf, ok := ps["optional"]; ok {
 		if opt, ok1 := optIntf.(map[string]interface{}); ok1 {
-			optional := &OptionalConf{}
+			optional := make(map[string]string)
+			for k, v := range opt {
+				//if !xstream.IsAllowedEdgeOptionalKeys(k) {
+				//	return fmt.Errorf("The optional key %s is not allowed. ", k)
+				//}
+				if sv, ok2 := v.(string); ok2 {
+					optional[k] = sv
+				} else {
+					info := fmt.Sprintf("Only string value is allowed for optional value, the value for key %s is not a string.", k)
+					common.Log.Infof(info)
+					return fmt.Errorf(info)
+				}
+			}
 			ems.optional = optional
-			if cid, ok2 := opt["clientid"]; ok2 {
-				optional.clientid = cid.(string)
-			}
-			if uname, ok2 := opt["username"]; ok2 {
-				optional.username = uname.(string)
-			}
-			if password, ok2 := opt["password"]; ok2 {
-				optional.password = password.(string)
-			}
 		}
 	}
 	return nil
@@ -116,6 +120,7 @@ func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 			Protocol: ems.protocol,
 		},
 		Type: ems.ptype,
+		Optional: ems.optional,
 	}
 	log.Infof("Using configuration for EdgeX message bus sink: %+v", conf)
 	if msgClient, err := messaging.NewMessageClient(conf); err != nil {

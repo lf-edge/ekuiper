@@ -113,6 +113,50 @@ func pubToAnother() {
 	}
 }
 
+func pubToMQTT() {
+	var msgConfig2 = types.MessageBusConfig{
+		PublishHost: types.HostInfo{
+			Host:     "10.211.55.6",
+			Port:     1883,
+			Protocol: "tcp",
+		},
+		Optional:map[string]string{
+			"ClientId": "0001_client_id",
+		},
+		Type:messaging.MQTT,
+	}
+	if msgClient, err := messaging.NewMessageClient(msgConfig2); err != nil {
+		log.Fatal(err)
+	} else {
+		if ec := msgClient.Connect(); ec != nil {
+			log.Fatal(ec)
+		}
+		client := coredata.NewEventClient(local.New("test1"))
+		var testEvent = models.Event{Device: "demo1", Created: 123, Modified: 123, Origin: 123}
+		var r1 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name", Name: "Temperature", Value: "20"}
+		var r2 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name", Name: "Humidity", Value: "30"}
+
+		testEvent.Readings = append(testEvent.Readings, r1, r2)
+
+		data, err := client.MarshalEvent(testEvent)
+		if err != nil {
+			fmt.Errorf("unexpected error MarshalEvent %v", err)
+		} else {
+			fmt.Println(string(data))
+		}
+
+		env := types.NewMessageEnvelope([]byte(data), context.Background())
+		env.ContentType = "application/json"
+
+		if e := msgClient.Publish(env, "events"); e != nil {
+			log.Fatal(e)
+		} else {
+			fmt.Printf("pubToAnother successful: %s\n", data)
+		}
+		time.Sleep(1500 * time.Millisecond)
+	}
+}
+
 func pubMetaSource() {
 	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
 		log.Fatal(err)
@@ -160,6 +204,8 @@ func main() {
 			pubToAnother()
 		} else if v == "meta" {
 			pubMetaSource()
+		} else if v == "mqtt" {
+			pubToMQTT()
 		}
 	}
 }
