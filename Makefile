@@ -114,6 +114,7 @@ cross_build: cross_prepare
 .PHONY: docker
 docker:
 	docker build --no-cache -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile .
+	docker build --no-cache -t $(TARGET):$(VERSION)-dev -f deploy/docker/Dockerfile-dev .
 
 .PHONY:cross_docker
 cross_docker: cross_prepare
@@ -121,6 +122,12 @@ cross_docker: cross_prepare
 	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
 	-t $(TARGET):$(VERSION) \
 	-f deploy/docker/Dockerfile . \
+	--push
+
+	docker buildx build --no-cache \
+	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+	-t $(TARGET):$(VERSION)-dev \
+	-f deploy/docker/Dockerfile-dev . \
 	--push
 
 .PHONY: clean

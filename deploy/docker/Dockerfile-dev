@@ -1,0 +1,13 @@
+FROM golang:1.13.4-alpine AS builder
+
+COPY . /go/kuiper
+
+WORKDIR /go/kuiper
+
+RUN apk add upx gcc make git sed libc-dev binutils-gold pkgconfig zeromq-dev libzmq && make build_with_edgex
+
+EXPOSE 9081 20498
+
+ENTRYPOINT ["/go/kuiper/deploy/docker/docker-entrypoint.sh"]
+
+CMD ["/go/kuiper/_build/kuiper-*/bin/server"]
