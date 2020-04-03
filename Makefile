@@ -72,7 +72,7 @@ build_with_edgex: build_prepare
 	@mv ./cli ./server $(BUILD_PATH)/$(PACKAGE_NAME)/bin
 	@echo "Build successfully"
 
-.PHONY: pkg_whit_edgex
+.PHONY: pkg_with_edgex
 pkg_whit_edgex: build_with_edgex 
 	@make real_pkg
 
