@@ -17,6 +17,8 @@ WORKDIR /kuiper
 
 EXPOSE 9081 20498
 
+ENV KUIPER_HOME /kuiper
+
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
 CMD ["./bin/server"]

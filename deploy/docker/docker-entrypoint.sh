@@ -5,7 +5,7 @@ else
     set -e
 fi
 
-KUIPER_HOME="/kuiper"
+KUIPER_HOME=${KUIPER_HOME:-"/kuiper"}
 
 CONFIG="$KUIPER_HOME/etc/mqtt_source.yaml"
 
