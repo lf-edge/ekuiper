@@ -60,11 +60,11 @@ TODO: The docker instance list
 
 #### 方式1: 使用 Rest API
 
-请将 ``$your_server`` 替换为本地运行的 Kuiper 实例的地址。
+请将 ``$kuiper_server`` 替换为本地运行的 Kuiper 实例的地址。
 
 ```shell
 curl -X POST \
-  http://$TODO:9081/streams \
+  http://$kuiper_server:9081/streams \
   -H 'Content-Type: application/json' \
   -d '{
   "sql": "create stream demo() WITH (FORMAT=\"JSON\", TYPE=\"edgex\")"
@@ -110,13 +110,13 @@ default:
 
 让我们创建一条规则，将分析结果发送至 MQTT 服务器，关于 MQTT 目标的相关配置，请参考[这个链接](../rules/sinks/mqtt.md)。与创建流的过程类似，你可以选择使用 REST 或者命令行来管理规则。
 
-以下例子将过滤所有 ``randomnumber`` 小于 31 的数据，分析结果将被发布到公共的 MQTT 服务器 ``broker.emqx.io`` 的主题``result`` 上。 
+以下例子将选出所有 ``events`` 主题上所有的数据，分析结果将被发布到公共的 MQTT 服务器 ``broker.emqx.io`` 的主题``result`` 上。 
 
 #### 选项1: 使用 Rest API
 
 ```shell
 curl -X POST \
-  http://$TODO:9081/rules \
+  http://$kuiper_server:9081/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule1",
@@ -139,7 +139,7 @@ curl -X POST \
 
 ```
 {
-  "sql": "SELECT * from demo where randomnumber > 30",
+  "sql": "SELECT * from demo",
   "actions": [
     {
       "mqtt": {
@@ -166,7 +166,23 @@ Rule rule1 was created, please use 'cli getstatus rule $rule_name' command to ge
 如想将结果发送到别的目标，请参考 Kuiper 中支持的[其它目标](../rules/overview.md#actions)。你现在可以看一下在 ``log/stream.log``中的日志文件，查看规则的详细信息。
 
 ```
-//TODO
+time="2020-04-07T03:33:28Z" level=info msg="db location is /kuiper/data/"
+time="2020-04-07T03:33:28Z" level=info msg="Starting rules"
+time="2020-04-07T03:33:28Z" level=info msg="Serving kuiper (version - 0.2.1) on port 20498, and restful api on port 9081. \n"
+time="2020-04-07T03:35:35Z" level=info msg="Rule rule1 is created."
+time="2020-04-07T03:35:35Z" level=info msg="Init rule with options {isEventTime: false, lateTolerance: 0, concurrency: 1, bufferLength: 1024"
+time="2020-04-07T03:35:35Z" level=info msg="Opening stream" rule=rule1
+time="2020-04-07T03:35:35Z" level=info msg="open source node demo with option map[FORMAT:JSON TYPE:edgex]" rule=rule1
+time="2020-04-07T03:35:35Z" level=info msg="open sink node 1 instances" rule=rule1
+time="2020-04-07T03:35:35Z" level=info msg="open source node 1 instances" rule=rule1
+time="2020-04-07T03:35:35Z" level=info msg="Opening mqtt sink for rule rule1." rule=rule1
+time="2020-04-07T03:35:35Z" level=info msg="Connect to value descriptor service at: http://edgex-core-data:48080/api/v1/valuedescriptor \n"
+time="2020-04-07T03:35:35Z" level=info msg="Use configuration for edgex messagebus {{ 0 } {edgex-core-data 5563 tcp} zero map[]}\n"
+time="2020-04-07T03:35:35Z" level=info msg="Start source demo instance 0 successfully" rule=rule1
+time="2020-04-07T03:35:35Z" level=info msg="The connection to edgex messagebus is established successfully." rule=rule1
+time="2020-04-07T03:35:35Z" level=info msg="Connect MQTT broker with username and password." rule=rule1
+time="2020-04-07T03:35:35Z" level=info msg="Successfully subscribed to edgex messagebus topic events." rule=rule1
+time="2020-04-07T03:35:35Z" level=info msg="The connection to server tcp://broker.emqx.io:1883 was established successfully" rule=rule1
 ```
 
 ### 监控分析结果
@@ -175,11 +191,22 @@ Rule rule1 was created, please use 'cli getstatus rule $rule_name' command to ge
 
 ```shell
 # mosquitto_sub -h broker.emqx.io -t result
-//TODO
+[{"bool":true}]
+[{"bool":false}]
+[{"bool":true}]
+[{"randomvalue_int16":3287}]
+[{"float64":8.41326e+306}]
+[{"randomvalue_int32":-1872949486}]
+[{"randomvalue_int8":-53}]
+[{"int64":-1829499332806053678}]
+[{"int32":-1560624981}]
+[{"int16":8991}]
+[{"int8":-4}]
+[{"bool":true}]
+[{"bool":false}]
+[{"float64":1.737076e+306}]
 ...
 ```
-
-你发现，只有那些 randomnumber 大于 30 被发布到了 ``result`` 主题。
 
 你也可以敲入以下的命令来查看规则执行的状态。相关的查看规则状态的 REST API 也有提供，请检查[相关文档](../restapi/overview.md).
 
@@ -226,16 +253,7 @@ Connecting to 127.0.0.1:20498...
 
 ### 更多练习
 
-目前的规则没有过滤发送给 Kuiper 的任何数据，那么如何过滤数据呢？例如，如果你只关心 ``Int32`` 字段中大于30的数据，请使用[删除规则](../cli/rules.md)，然后将规则更新如下。
-
-```
-{
-  "sql": "SELECT * from demo WHERE Int32 > 30",
-  "actions": [...]
-}
-```
-
-完成更改后，重新部署规则。这时候如果监听 MQTT 服务的结果主题，你可以发现只有 ``Int32`` 字段中大于30的数据被发送至该主题。
+目前的规则没有过滤发送给 Kuiper 的任何数据，那么如何过滤数据呢？请使用[删除规则](../cli/rules.md)，然后试着更改一下 SQL 语句，完成更改后，重新部署规则。这时候如果监听 MQTT 服务的结果主题，检查一下相关的规则是否起作用？
 
 #### 扩展阅读
 
