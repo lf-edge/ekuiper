@@ -221,7 +221,7 @@ jobs:
             sleep 10
           done
           kuiper_address=$(kubectl get svc --namespace default kuiper -o jsonpath="{.spec.clusterIP}")
-          if [ $(curl -w %{http_code} -fsSL -o /dev/null $kuiper_address:9081/rules) != 200 ];then exit 1; fi
+          if [ $(curl -w %{http_code} -fsSL -o /dev/null $kuiper_address:9081) != 200 ];then exit 1; fi
       - name: check kuiper
         env:
           KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"

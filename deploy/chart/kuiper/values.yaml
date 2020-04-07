@@ -76,9 +76,9 @@ kuiperConfig:
     default:
       protocol: tcp
       server: localhost
-      port: 5570
+      port: 5563
       topic: events
-      serviceServer: http://localhost:10080
+      serviceServer: http://localhost:48080
     #  optional:
     #    ClientId: client1
     #    Username: user1

@@ -33,6 +33,16 @@ func TestPreprocessor_Apply(t *testing.T) {
 		},
 		{
 			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.BIGINT}},
+				},
+			},
+			data:   []byte(`{"abc": null}`),
+			result: errors.New("error in preprocessor: invalid data type for abc, expect bigint but found <nil>(<nil>)"),
+		},
+		{
+			stmt: &xsql.StreamStmt{
 				Name:         xsql.StreamName("demo"),
 				StreamFields: nil,
 			},
@@ -164,7 +174,6 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			},
 		},
-		//Rec type
 		{
 			stmt: &xsql.StreamStmt{
 				Name: xsql.StreamName("demo"),
@@ -217,6 +226,113 @@ func TestPreprocessor_Apply(t *testing.T) {
 				"a": []map[string]interface{}{
 					{"b": "hello1"},
 					{"b": "hello2"},
+				},
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.ArrayType{
+						Type: xsql.STRUCT,
+						FieldType: &xsql.RecType{
+							StreamFields: []xsql.StreamField{
+								{Name: "b", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
+							},
+						},
+					}},
+				},
+			},
+			data: []byte(`{"a": []}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": make([]map[string]interface{}, 0),
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.ArrayType{
+						Type: xsql.STRUCT,
+						FieldType: &xsql.RecType{
+							StreamFields: []xsql.StreamField{
+								{Name: "b", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
+							},
+						},
+					}},
+				},
+			},
+			data: []byte(`{"a": null}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": []map[string]interface{}(nil),
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.ArrayType{
+						Type: xsql.STRUCT,
+						FieldType: &xsql.RecType{
+							StreamFields: []xsql.StreamField{
+								{Name: "b", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
+							},
+						},
+					}},
+				},
+			},
+			data: []byte(`{"a": [null, {"b" : "hello2"}]}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": []map[string]interface{}{
+					nil,
+					{"b": "hello2"},
+				},
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.ArrayType{
+						Type: xsql.ARRAY,
+						FieldType: &xsql.ArrayType{
+							Type: xsql.BIGINT,
+						},
+					}},
+				},
+			},
+			data: []byte(`{"a": [[50, 60, 70],[66], [77]]}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": [][]int{
+					{50, 60, 70},
+					{66},
+					{77},
+				},
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.ArrayType{
+						Type: xsql.ARRAY,
+						FieldType: &xsql.ArrayType{
+							Type: xsql.BIGINT,
+						},
+					}},
+				},
+			},
+			data: []byte(`{"a": [null, [66], [77]]}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": [][]int{
+					[]int(nil),
+					{66},
+					{77},
 				},
 			},
 			},
@@ -297,6 +413,93 @@ func TestPreprocessor_Apply(t *testing.T) {
 		},
 		{
 			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.RecType{
+						StreamFields: []xsql.StreamField{
+							{Name: "b", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
+							{Name: "c", FieldType: &xsql.RecType{
+								StreamFields: []xsql.StreamField{
+									{Name: "d", FieldType: &xsql.BasicType{Type: xsql.BIGINT}},
+								},
+							}},
+						},
+					}},
+				},
+			},
+			data: []byte(`{"a": null}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": map[string]interface{}(nil),
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.RecType{
+						StreamFields: []xsql.StreamField{
+							{Name: "b", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
+							{Name: "c", FieldType: &xsql.ArrayType{
+								Type: xsql.FLOAT,
+							}},
+						},
+					}},
+				},
+			},
+			data: []byte(`{"a": {"b" : "hello", "c": [35.2, 38.2]}}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": map[string]interface{}{
+					"b": "hello",
+					"c": []float64{
+						35.2, 38.2,
+					},
+				},
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.RecType{
+						StreamFields: []xsql.StreamField{
+							{Name: "b", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
+							{Name: "c", FieldType: &xsql.ArrayType{
+								Type: xsql.FLOAT,
+							}},
+						},
+					}},
+				},
+			},
+			data: []byte(`{"a": {"b" : "hello", "c": null}}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": map[string]interface{}{
+					"b": "hello",
+					"c": []float64(nil),
+				},
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.RecType{
+						StreamFields: []xsql.StreamField{
+							{Name: "b", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
+							{Name: "c", FieldType: &xsql.ArrayType{
+								Type: xsql.FLOAT,
+							}},
+						},
+					}},
+				},
+			},
+			data:   []byte(`{"a": {"b" : "hello", "c": [null, 35.4]}}`),
+			result: errors.New("error in preprocessor: fail to parse field c: invalid data type for [0], expect float but found <nil>(<nil>)"),
+		},
+		{
+			stmt: &xsql.StreamStmt{
 				Name:         xsql.StreamName("demo"),
 				StreamFields: nil,
 			},
@@ -319,7 +522,6 @@ func TestPreprocessor_Apply(t *testing.T) {
 	contextLogger := common.Log.WithField("rule", "TestPreprocessor_Apply")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
-
 		pp := &Preprocessor{streamStmt: tt.stmt}
 
 		dm := make(map[string]interface{})

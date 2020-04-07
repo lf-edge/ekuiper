@@ -130,7 +130,7 @@ func main() {
 		{
 			Name:    "create",
 			Aliases: []string{"create"},
-			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file",
+			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file | create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file",
 
 			Subcommands: []cli.Command{
 				{
@@ -146,13 +146,8 @@ func main() {
 					Action: func(c *cli.Context) error {
 						sfile := c.String("file")
 						if sfile != "" {
-							if _, err := os.Stat(c.String("file")); os.IsNotExist(err) {
-								fmt.Printf("The specified stream defintion file %s does not existed.\n", sfile)
-								return nil
-							}
-							fmt.Printf("Creating a new stream from file %s.\n", sfile)
-							if stream, err := ioutil.ReadFile(sfile); err != nil {
-								fmt.Printf("Failed to read from stream definition file %s.\n", sfile)
+							if stream, err := readDef(sfile, "stream"); err != nil {
+								fmt.Printf("%s", err)
 								return nil
 							} else {
 								args := strings.Join([]string{"CREATE STREAM ", string(stream)}, " ")
@@ -178,13 +173,8 @@ func main() {
 					Action: func(c *cli.Context) error {
 						sfile := c.String("file")
 						if sfile != "" {
-							if _, err := os.Stat(c.String("file")); os.IsNotExist(err) {
-								fmt.Printf("The specified rule defenition file %s is not existed.\n", sfile)
-								return nil
-							}
-							fmt.Printf("Creating a new rule from file %s.\n", sfile)
-							if rule, err := ioutil.ReadFile(sfile); err != nil {
-								fmt.Printf("Failed to read from rule definition file %s.\n", sfile)
+							if rule, err := readDef(sfile, "rule"); err != nil {
+								fmt.Printf("%s", err)
 								return nil
 							} else {
 								if len(c.Args()) != 1 {
@@ -193,7 +183,7 @@ func main() {
 								}
 								rname := c.Args()[0]
 								var reply string
-								args := &common.Rule{rname, string(rule)}
+								args := &common.RuleDesc{rname, string(rule)}
 								err = client.Call("Server.CreateRule", args, &reply)
 								if err != nil {
 									fmt.Println(err)
@@ -210,7 +200,7 @@ func main() {
 							rname := c.Args()[0]
 							rjson := c.Args()[1]
 							var reply string
-							args := &common.Rule{rname, rjson}
+							args := &common.RuleDesc{rname, rjson}
 							err = client.Call("Server.CreateRule", args, &reply)
 							if err != nil {
 								fmt.Println(err)
@@ -221,12 +211,68 @@ func main() {
 						}
 					},
 				},
+				{
+					Name:  "plugin",
+					Usage: "create plugin $plugin_type $plugin_name [$plugin_json | -f plugin_def_file]",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:     "file, f",
+							Usage:    "the location of plugin definition file",
+							FilePath: "/home/myplugin.txt",
+						},
+					},
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) < 2 {
+							fmt.Printf("Expect plugin type and name.\n")
+							return nil
+						}
+						ptype, err := getPluginType(c.Args()[0])
+						if err != nil {
+							fmt.Printf("%s\n", err)
+							return nil
+						}
+						pname := c.Args()[1]
+						sfile := c.String("file")
+						args := &common.PluginDesc{
+							RuleDesc: common.RuleDesc{
+								Name: pname,
+							},
+							Type: ptype,
+						}
+						if sfile != "" {
+							if len(c.Args()) != 2 {
+								fmt.Printf("Expect plugin type, name.\nBut found %d args:%s.\n", len(c.Args()), c.Args())
+								return nil
+							}
+							if p, err := readDef(sfile, "plugin"); err != nil {
+								fmt.Printf("%s", err)
+								return nil
+							} else {
+								args.Json = string(p)
+							}
+						} else {
+							if len(c.Args()) != 3 {
+								fmt.Printf("Expect plugin type, name and json.\nBut found %d args:%s.\n", len(c.Args()), c.Args())
+								return nil
+							}
+							args.Json = c.Args()[2]
+						}
+						var reply string
+						err = client.Call("Server.CreatePlugin", args, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 		{
 			Name:    "describe",
 			Aliases: []string{"describe"},
-			Usage:   "describe stream $stream_name | describe rule $rule_name",
+			Usage:   "describe stream $stream_name | describe rule $rule_name | describe plugin $plugin_type $plugin_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -256,13 +302,41 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "plugin",
+					Usage: "describe plugin $plugin_type $plugin_name",
+					//Flags: nflag,
+					Action: func(c *cli.Context) error {
+						ptype, err := getPluginType(c.Args()[0])
+						if err != nil {
+							fmt.Printf("%s\n", err)
+							return nil
+						}
+						pname := c.Args()[1]
+						args := &common.PluginDesc{
+							RuleDesc: common.RuleDesc{
+								Name: pname,
+							},
+							Type: ptype,
+						}
+
+						var reply string
+						err = client.Call("Server.DescPlugin", args, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 
 		{
 			Name:    "drop",
 			Aliases: []string{"drop"},
-			Usage:   "drop stream $stream_name | drop rule $rule_name",
+			Usage:   "drop stream $stream_name | drop rule $rule_name | drop plugin $plugin_type $plugin_name -r $stop",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -293,13 +367,56 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "plugin",
+					Usage: "drop plugin $plugin_type $plugin_name -s stop",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "stop, s",
+							Usage: "stop kuiper after the action",
+						},
+					},
+					Action: func(c *cli.Context) error {
+						r := c.String("stop")
+						if r != "true" && r != "false" {
+							fmt.Printf("Expect r to be a boolean value.\n")
+							return nil
+						}
+						if len(c.Args()) < 2 || len(c.Args()) > 3 {
+							fmt.Printf("Expect plugin type and name.\n")
+							return nil
+						}
+						ptype, err := getPluginType(c.Args()[0])
+						if err != nil {
+							fmt.Printf("%s\n", err)
+							return nil
+						}
+						pname := c.Args()[1]
+						args := &common.PluginDesc{
+							RuleDesc: common.RuleDesc{
+								Name: pname,
+							},
+							Type: ptype,
+							Stop: r == "true",
+						}
+
+						var reply string
+						err = client.Call("Server.DropPlugin", args, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 
 		{
 			Name:    "show",
 			Aliases: []string{"show"},
-			Usage:   "show streams | show rules",
+			Usage:   "show streams | show rules | show plugins $plugin_type",
 
 			Subcommands: []cli.Command{
 				{
@@ -316,6 +433,29 @@ func main() {
 					Action: func(c *cli.Context) error {
 						var reply string
 						err = client.Call("Server.ShowRules", 0, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
+				{
+					Name:  "plugins",
+					Usage: "show plugins $plugin_type",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 1 {
+							fmt.Printf("Expect plugin type.\n")
+							return nil
+						}
+						ptype, err := getPluginType(c.Args()[0])
+						if err != nil {
+							fmt.Printf("%s\n", err)
+							return nil
+						}
+						var reply string
+						err = client.Call("Server.ShowPlugins", ptype, &reply)
 						if err != nil {
 							fmt.Println(err)
 						} else {
@@ -453,5 +593,31 @@ func main() {
 	err = app.Run(os.Args)
 	if err != nil {
 		fmt.Printf("%v", err)
+	}
+}
+
+func getPluginType(arg string) (ptype int, err error) {
+	switch arg {
+	case "source":
+		ptype = 0
+	case "sink":
+		ptype = 1
+	case "function":
+		ptype = 2
+	default:
+		err = fmt.Errorf("Invalid plugin type %s, should be \"source\", \"sink\" or \"function\".\n", arg)
+	}
+	return
+}
+
+func readDef(sfile string, t string) ([]byte, error) {
+	if _, err := os.Stat(sfile); os.IsNotExist(err) {
+		return nil, fmt.Errorf("The specified %s defenition file %s is not existed.\n", t, sfile)
+	}
+	fmt.Printf("Creating a new %s from file %s.\n", t, sfile)
+	if rule, err := ioutil.ReadFile(sfile); err != nil {
+		return nil, fmt.Errorf("Failed to read from %s definition file %s.\n", t, sfile)
+	} else {
+		return rule, nil
 	}
 }

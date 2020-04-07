@@ -55,6 +55,7 @@
 | retryInterval   | int:1000   | 设置信息发送失败后重试等待时间，单位为毫秒|
 | cacheLength     | int:10240   | 设置最大消息缓存数量。缓存的消息会一直保留直到消息发送成功。缓存消息将按顺序发送，除非运行在异步或者并发模式下。缓存消息会定期存储到磁盘中。  |
 | cacheSaveInterval  | int:1000   | 设置缓存存储间隔时间，单位为毫秒。需要注意的是，当规则关闭时，缓存会自动存储。该值越大，则缓存保存开销越小，但系统意外退出时缓存丢失的风险变大。 |
+| omitIfEmpty | bool: false | Omit the output if the select result is empty. |
 
 可以自定义动作以支持不同种类的输出，有关更多详细信息，请参见 [extension](../extension/overview.md) 。
 

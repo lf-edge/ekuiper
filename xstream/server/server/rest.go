@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/gorilla/mux"
 	"io"
@@ -51,6 +52,7 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 
 func createRestServer(port int) *http.Server {
 	r := mux.NewRouter()
+	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
@@ -59,6 +61,13 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/rules/{name}/start", startRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
+
+	r.HandleFunc("/plugins/sources", sourcesHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/plugins/sources/{name}", sourceHandler).Methods(http.MethodDelete, http.MethodGet)
+	r.HandleFunc("/plugins/sinks", sinksHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/plugins/sinks/{name}", sinkHandler).Methods(http.MethodDelete, http.MethodGet)
+	r.HandleFunc("/plugins/functions", functionsHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet)
 
 	server := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
@@ -70,6 +79,16 @@ func createRestServer(port int) *http.Server {
 	}
 	server.SetKeepAlivesEnabled(false)
 	return server
+}
+
+//The handler for root
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	switch r.Method {
+	case http.MethodGet, http.MethodPost:
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK\n"))
+	}
 }
 
 //list or create streams
@@ -247,4 +266,92 @@ func restartRuleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf("Rule %s was restarted", name)))
+}
+
+func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType) {
+	defer r.Body.Close()
+	switch r.Method {
+	case http.MethodGet:
+		content, err := pluginManager.List(t)
+		if err != nil {
+			handleError(w, fmt.Errorf("%s plugins list command error: %s", plugins.PluginTypes[t], err), http.StatusBadRequest, logger)
+			return
+		}
+		jsonResponse(content, w, logger)
+	case http.MethodPost:
+		sd := plugins.Plugin{}
+		err := json.NewDecoder(r.Body).Decode(&sd)
+		// Problems decoding
+		if err != nil {
+			handleError(w, fmt.Errorf("Invalid body: Error decoding the %s plugin json: %v", plugins.PluginTypes[t], err), http.StatusBadRequest, logger)
+			return
+		}
+		err = pluginManager.Register(t, &sd)
+		if err != nil {
+			handleError(w, fmt.Errorf("%s plugins create command error: %s", plugins.PluginTypes[t], err), http.StatusBadRequest, logger)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(fmt.Sprintf("%s plugin %s is created", plugins.PluginTypes[t], sd.Name)))
+	}
+}
+
+func pluginHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+	cb := r.URL.Query().Get("stop")
+
+	switch r.Method {
+	case http.MethodDelete:
+		r := cb == "1"
+		err := pluginManager.Delete(t, name, r)
+		if err != nil {
+			handleError(w, fmt.Errorf("delete %s plugin %s error: %s", plugins.PluginTypes[t], name, err), http.StatusBadRequest, logger)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		result := fmt.Sprintf("%s plugin %s is deleted", plugins.PluginTypes[t], name)
+		if r {
+			result = fmt.Sprintf("%s and Kuiper will be stopped", result)
+		}
+		w.Write([]byte(result))
+	case http.MethodGet:
+		j, ok := pluginManager.Get(t, name)
+		if !ok {
+			handleError(w, fmt.Errorf("describe %s plugin %s error: not found", plugins.PluginTypes[t], name), http.StatusBadRequest, logger)
+			return
+		}
+		jsonResponse(j, w, logger)
+	}
+}
+
+//list or create source plugin
+func sourcesHandler(w http.ResponseWriter, r *http.Request) {
+	pluginsHandler(w, r, plugins.SOURCE)
+}
+
+//delete a source plugin
+func sourceHandler(w http.ResponseWriter, r *http.Request) {
+	pluginHandler(w, r, plugins.SOURCE)
+}
+
+//list or create sink plugin
+func sinksHandler(w http.ResponseWriter, r *http.Request) {
+	pluginsHandler(w, r, plugins.SINK)
+}
+
+//delete a sink plugin
+func sinkHandler(w http.ResponseWriter, r *http.Request) {
+	pluginHandler(w, r, plugins.SINK)
+}
+
+//list or create function plugin
+func functionsHandler(w http.ResponseWriter, r *http.Request) {
+	pluginsHandler(w, r, plugins.FUNCTION)
+}
+
+//delete a function plugin
+func functionHandler(w http.ResponseWriter, r *http.Request) {
+	pluginHandler(w, r, plugins.FUNCTION)
 }

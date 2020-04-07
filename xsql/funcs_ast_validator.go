@@ -2,7 +2,7 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/common/plugin_manager"
+	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
@@ -26,7 +26,7 @@ func validateFuncs(funcName string, args []Expr) error {
 	} else if _, ok := aggFuncMap[lowerName]; ok {
 		return validateAggFunc(lowerName, args)
 	} else {
-		if nf, err := plugin_manager.GetPlugin(funcName, "functions"); err != nil {
+		if nf, err := plugins.GetPlugin(funcName, plugins.FUNCTION); err != nil {
 			return err
 		} else {
 			f, ok := nf.(api.Function)

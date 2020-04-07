@@ -1,8 +1,11 @@
 package server
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xstream/sinks"
 	"strings"
 	"time"
@@ -72,7 +75,7 @@ func (t *Server) Stream(stream string, reply *string) error {
 	return nil
 }
 
-func (t *Server) CreateRule(rule *common.Rule, reply *string) error {
+func (t *Server) CreateRule(rule *common.RuleDesc, reply *string) error {
 	r, err := ruleProcessor.ExecCreate(rule.Name, rule.Json)
 	if err != nil {
 		return fmt.Errorf("Create rule error : %s.", err)
@@ -156,6 +159,92 @@ func (t *Server) DropRule(name string, reply *string) error {
 	}
 	*reply = r
 	return nil
+}
+
+func (t *Server) CreatePlugin(arg *common.PluginDesc, reply *string) error {
+	pt := plugins.PluginType(arg.Type)
+	p, err := getPluginByJson(arg)
+	if err != nil {
+		return fmt.Errorf("Create plugin error: %s", err)
+	}
+	if p.File == "" {
+		return fmt.Errorf("Create plugin error: Missing plugin file url.")
+	}
+	err = pluginManager.Register(pt, p)
+	if err != nil {
+		return fmt.Errorf("Create plugin error: %s", err)
+	} else {
+		*reply = fmt.Sprintf("Plugin %s is created.", p.Name)
+	}
+	return nil
+}
+
+func (t *Server) DropPlugin(arg *common.PluginDesc, reply *string) error {
+	pt := plugins.PluginType(arg.Type)
+	p, err := getPluginByJson(arg)
+	if err != nil {
+		return fmt.Errorf("Drop plugin error: %s", err)
+	}
+	err = pluginManager.Delete(pt, p.Name, arg.Stop)
+	if err != nil {
+		return fmt.Errorf("Drop plugin error: %s", err)
+	} else {
+		if arg.Stop {
+			*reply = fmt.Sprintf("Plugin %s is dropped and Kuiper will be stopped.", p.Name)
+		} else {
+			*reply = fmt.Sprintf("Plugin %s is dropped.", p.Name)
+		}
+
+	}
+	return nil
+}
+
+func (t *Server) ShowPlugins(arg int, reply *string) error {
+	pt := plugins.PluginType(arg)
+	l, err := pluginManager.List(pt)
+	if err != nil {
+		return fmt.Errorf("Drop plugin error: %s", err)
+	} else {
+		if len(l) == 0 {
+			l = append(l, "No plugin is found.")
+		}
+		*reply = strings.Join(l, "\n")
+	}
+	return nil
+}
+
+func (t *Server) DescPlugin(arg *common.PluginDesc, reply *string) error {
+	pt := plugins.PluginType(arg.Type)
+	p, err := getPluginByJson(arg)
+	if err != nil {
+		return fmt.Errorf("Describe plugin error: %s", err)
+	}
+	m, ok := pluginManager.Get(pt, p.Name)
+	if !ok {
+		return fmt.Errorf("Describe plugin error: not found")
+	} else {
+		s, err := json.Marshal(m)
+		if err != nil {
+			return fmt.Errorf("Describe plugin error: invalid json %v", m)
+		}
+		dst := &bytes.Buffer{}
+		if err := json.Indent(dst, s, "", "  "); err != nil {
+			return fmt.Errorf("Describe plugin error: indent json error %v", err)
+		}
+		*reply = dst.String()
+	}
+	return nil
+}
+
+func getPluginByJson(arg *common.PluginDesc) (*plugins.Plugin, error) {
+	var p plugins.Plugin
+	if arg.Json != "" {
+		if err := json.Unmarshal([]byte(arg.Json), &p); err != nil {
+			return nil, fmt.Errorf("Parse plugin %s error : %s.", arg.Json, err)
+		}
+	}
+	p.Name = arg.Name
+	return &p, nil
 }
 
 func init() {

@@ -15,7 +15,9 @@ RUN apk add sed libzmq
 
 WORKDIR /kuiper
 
-EXPOSE 9801 20498
+EXPOSE 9081 20498
+
+ENV KUIPER_HOME /kuiper
 
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 

@@ -1,0 +1,47 @@
+###
+
+POST http://127.0.0.1:9081/plugins/sources
+Content-Type: application/json
+
+{"name":"random3","file":"http://127.0.0.1/testzips/sources/random3.zip"}
+
+###
+GET http://127.0.0.1:9081/plugins/sources
+
+###
+GET http://127.0.0.1:9081/plugins/sources/random3
+
+###
+DELETE http://127.0.0.1:9081/plugins/sources/random3
+
+###
+POST http://127.0.0.1:9081/plugins/sinks
+Content-Type: application/json
+
+{"name":"file2","file":"http://127.0.0.1/testzips/sinks/file2.zip"}
+
+###
+GET http://127.0.0.1:9081/plugins/sinks
+
+###
+GET http://127.0.0.1:9081/plugins/sinks/file2
+
+###
+DELETE http://127.0.0.1:9081/plugins/sinks/file2?stop=1
+
+###
+POST http://127.0.0.1:9081/plugins/functions
+Content-Type: application/json
+
+{"name":"echo2","file":"http://127.0.0.1/testzips/functions/echo2.zip"}
+
+###
+GET http://127.0.0.1:9081/plugins/functions
+
+###
+GET http://127.0.0.1:9081/plugins/functions/echo2
+
+###
+DELETE http://127.0.0.1:9081/plugins/functions/echo2
+
+###

@@ -3,7 +3,7 @@ package xsql
 import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/common/plugin_manager"
+	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xstream/api"
 	"math"
 	"reflect"
@@ -542,6 +542,9 @@ func (m Message) Value(key string) (interface{}, bool) {
 }
 
 func (m Message) Meta(key string) (interface{}, bool) {
+	if key == "*" {
+		return map[string]interface{}(m), true
+	}
 	return m.Value(key)
 }
 
@@ -558,6 +561,9 @@ func (m Metadata) Value(key string) (interface{}, bool) {
 }
 
 func (m Metadata) Meta(key string) (interface{}, bool) {
+	if key == "*" {
+		return map[string]interface{}(m), true
+	}
 	msg := Message(m)
 	return msg.Meta(key)
 }
@@ -574,6 +580,9 @@ func (t *Tuple) Value(key string) (interface{}, bool) {
 }
 
 func (t *Tuple) Meta(key string) (interface{}, bool) {
+	if key == "*" {
+		return map[string]interface{}(t.Metadata), true
+	}
 	return t.Metadata.Value(key)
 }
 
@@ -1680,7 +1689,7 @@ func isAggFunc(f *Call) bool {
 	} else if _, ok := mathFuncMap[fn]; ok {
 		return false
 	} else {
-		if nf, err := plugin_manager.GetPlugin(f.Name, "functions"); err == nil {
+		if nf, err := plugins.GetPlugin(f.Name, plugins.FUNCTION); err == nil {
 			if ef, ok := nf.(api.Function); ok && ef.IsAggregate() {
 				return true
 			}
