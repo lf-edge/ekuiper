@@ -102,6 +102,15 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				cacheSaveInterval = t
 			}
 		}
+		omitIfEmpty := false
+		if c, ok := m.options["omitIfEmpty"]; ok {
+			if t, ok := c.(bool); !ok {
+				logger.Warnf("invalid type for omitIfEmpty property, should be a bool value 'true/false'.", c)
+			} else {
+				omitIfEmpty = t
+			}
+		}
+
 		m.reset()
 		logger.Infof("open sink node %d instances", m.concurrency)
 		for i := 0; i < m.concurrency; i++ { // workers
@@ -140,9 +149,9 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 					case data := <-cache.Out:
 						stats.SetBufferLength(int64(cache.Length()))
 						if runAsync {
-							go doCollect(sink, data, stats, retryInterval, cache.Complete, ctx)
+							go doCollect(sink, data, stats, retryInterval, omitIfEmpty, cache.Complete, ctx)
 						} else {
-							doCollect(sink, data, stats, retryInterval, cache.Complete, ctx)
+							doCollect(sink, data, stats, retryInterval, omitIfEmpty,cache.Complete, ctx)
 						}
 					case <-ctx.Done():
 						logger.Infof("sink node %s instance %d done", m.name, instance)
@@ -164,7 +173,7 @@ func (m *SinkNode) reset() {
 	m.statManagers = nil
 }
 
-func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval int, signalCh chan<- int, ctx api.StreamContext) {
+func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval int, omitIfEmpty bool, signalCh chan<- int, ctx api.StreamContext) {
 	stats.IncTotalRecordsIn()
 	stats.ProcessTimeStart()
 	logger := ctx.GetLogger()
@@ -178,6 +187,9 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 		outdata = []byte(fmt.Sprintf(`[{"error":"result is not a string but found %#v"}]`, val))
 	}
 	for {
+		if omitIfEmpty && string(outdata) == "[{}]" {
+			break
+		}
 		if err := sink.Collect(ctx, outdata); err != nil {
 			stats.IncTotalExceptions()
 			logger.Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), outdata, err)
