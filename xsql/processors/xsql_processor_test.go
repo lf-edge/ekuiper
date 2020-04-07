@@ -1111,6 +1111,7 @@ func TestSingleSQLError(t *testing.T) {
 				{{
 					"rengine_field_0": float64(10),
 				}},
+				{{}},
 			},
 			s: "op_filter_0_records_in_total",
 			m: map[string]interface{}{

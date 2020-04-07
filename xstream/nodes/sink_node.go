@@ -102,7 +102,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				cacheSaveInterval = t
 			}
 		}
-		omitIfEmpty := true
+		omitIfEmpty := false
 		if c, ok := m.options["omitIfEmpty"]; ok {
 			if t, ok := c.(bool); !ok {
 				logger.Warnf("invalid type for omitIfEmpty property, should be a bool value 'true/false'.", c)
