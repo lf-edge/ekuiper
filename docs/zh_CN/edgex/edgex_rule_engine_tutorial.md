@@ -113,7 +113,7 @@ bin/cli create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
 default:
   protocol: tcp
   server: localhost
-  port: 5563
+  port: 5566
   topic: events
   serviceServer: http://localhost:48080
 .....  
