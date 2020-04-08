@@ -117,7 +117,7 @@ Now the stream is created. But you maybe curious about how Kuiper knows the mess
 default:
   protocol: tcp
   server: localhost
-  port: 5563
+  port: 5566
   topic: events
   serviceServer: http://localhost:48080
 .....  
