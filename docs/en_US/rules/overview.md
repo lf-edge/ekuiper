@@ -53,6 +53,7 @@ Currently, 3 kinds of sinks/actions are supported:
 - [mqtt](sinks/mqtt.md): Send the result to an MQTT broker. 
 - [edgex](sinks/edgex.md): Send the result to EdgeX message bus.
 - [rest](sinks/rest.md): Send the result to a Rest HTTP server.
+- [nop](sinks/nop.md): Send the result to a nop operation.
 
 Each action can define its own properties. There are 3 common properties:
 

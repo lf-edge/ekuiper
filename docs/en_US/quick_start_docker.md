@@ -1,0 +1,49 @@
+## 5 minutes quick start
+
+1. Pull a Kuiper Docker image from ``https://hub.docker.com/r/emqx/kuiper/tags``.
+
+2. Set Kuiper source to an MQTT server. This sample uses server locating at ``tcp://broker.emqx.io:1883``. ``broker.emqx.io`` is a public MQTT test server hosted by [EMQ](https://www.emqx.io).
+
+   ```shell
+   docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=tcp://broker.emqx.io:1883 emqx/kuiper:$tag
+   ```
+
+3. Create a stream - the stream is your stream data schema, similar to table definition in database. Let's say the temperature & humidity data are sent to ``broker.emqx.io``, and those data will be processed in your **LOCAL RUN** Kuiper docker instance.  Below steps will create a stream named ``demo``, and data are sent to ``devices/device_001/messages`` topic, while ``device_001`` could be other devices, such as ``device_002``, all of those data will be subscribed and handled by ``demo`` stream.
+
+   ```shell
+   -- In host
+   # docker exec -it kuiper /bin/sh
+   
+   -- In docker instance
+   # bin/cli create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="devices/+/messages")'
+   Connecting to 127.0.0.1:20498...
+   Stream demo is created.
+   
+   # bin/cli query
+   Connecting to 127.0.0.1:20498...
+   kuiper > select * from demo where temperature > 30;
+   Query was submit successfully.
+   
+   ```
+
+4. Publish sensor data to topic ``devices/device_001/messages`` of server ``tcp://broker.emqx.io:1883`` with any [MQTT client tools](https://medium.com/@emqtt/mqtt-client-tools-215ff7a17ad). Below sample uses ``mosquitto_pub``. 
+
+   ```shell
+   # mosquitto_pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages
+   ```
+
+5. If everything goes well,  you can see the message is print on docker ``bin/cli query`` window. Please try to publish another message with ``temperature`` less than 30, and it will be filtered by WHERE condition of the SQL. 
+
+   ```
+   kuiper > select * from demo WHERE temperature > 30;
+   [{"temperature": 40, "humidity" : 20}]
+   ```
+
+   If having any problems, please take a look at ``log/stream.log``.
+
+6. To stop the test, just press ``ctrl + c `` in ``bin/cli query`` command console, or input `exit` and press enter.
+
+7. Next for exploring more powerful features of EMQ X  Kuiper? Refer to below for how to apply EMQ X Kuiper in edge and integrate with AWS / Azure IoT cloud.
+
+   - [Lightweight edge computing EMQ X Kuiper and Azure IoT Hub integration solution](https://www.emqx.io/blog/85) 
+   - [Lightweight edge computing EMQ X Kuiper and AWS IoT Hub integration solution](https://www.emqx.io/blog/88)
