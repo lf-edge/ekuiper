@@ -2,7 +2,7 @@
 
 - Build the ``pub.go``, this is used for simulating the data.
     ```shell
-    # go build -o test/pub test/pub.go
+    # go build -o fvt_scripts/edgex/benchmark/pub fvt_scripts/edgex/benchmark/pub.go
     ```
 
 - A mockup EdgeX value descriptor service should be compiled and run before test.
