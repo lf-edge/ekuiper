@@ -101,7 +101,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 ## Performance test result
 
-### Throughput test
+### MQTT throughput test
 
 - Using JMeter MQTT plugin to send simulation data to EMQ X Broker, such as: ``{"temperature": 10, "humidity" : 90}``, the value of temperature and humidity are random integer between 0 - 100.
 - Kuiper subscribe from EMQ X Broker, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50 `` 
@@ -111,6 +111,10 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 | ---------------------------------------------- | -------------------- | ------------- | ------------ |
 | Raspberry Pi 3B+                               | 12k                  | sys+user: 70% | 20M          |
 | AWS t2.micro( 1 Core * 1 GB) <br />Ubuntu18.04 | 10k                  | sys+user: 25% | 20M          |
+
+### EdgeX throughput test
+
+
 
 ### Max number of rules support
 
