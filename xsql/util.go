@@ -1,36 +1,35 @@
 package xsql
 
 import (
-	"bytes"
 	"strings"
 )
 
-func PrintFieldType(ft FieldType, buff *bytes.Buffer) {
+func PrintFieldType(ft FieldType) (result string) {
 	switch t := ft.(type) {
 	case *BasicType:
-		buff.WriteString(t.Type.String())
+		result = t.Type.String()
 	case *ArrayType:
-		buff.WriteString("array(")
+		result = "array("
 		if t.FieldType != nil {
-			PrintFieldType(t.FieldType, buff)
+			result += PrintFieldType(t.FieldType)
 		} else {
-			buff.WriteString(t.Type.String())
+			result += t.Type.String()
 		}
-		buff.WriteString(")")
+		result += ")"
 	case *RecType:
-		buff.WriteString("struct(")
+		result = "struct("
 		isFirst := true
 		for _, f := range t.StreamFields {
 			if isFirst {
 				isFirst = false
 			} else {
-				buff.WriteString(", ")
+				result += ", "
 			}
-			buff.WriteString(f.Name + " ")
-			PrintFieldType(f.FieldType, buff)
+			result = result + f.Name + " " + PrintFieldType(f.FieldType)
 		}
-		buff.WriteString(")")
+		result += ")"
 	}
+	return
 }
 
 func GetStreams(stmt *SelectStatement) (result []string) {

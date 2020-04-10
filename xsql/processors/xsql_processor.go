@@ -110,7 +110,7 @@ func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement)
 	buff.WriteString("Fields\n--------------------------------------------------------------------------------\n")
 	for _, f := range streamStmt.StreamFields {
 		buff.WriteString(f.Name + "\t")
-		xsql.PrintFieldType(f.FieldType, &buff)
+		buff.WriteString(xsql.PrintFieldType(f.FieldType))
 		buff.WriteString("\n")
 	}
 	buff.WriteString("\n")

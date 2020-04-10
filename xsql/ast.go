@@ -1,6 +1,7 @@
 package xsql
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
@@ -308,6 +309,16 @@ type FieldType interface {
 type StreamField struct {
 	Name string
 	FieldType
+}
+
+func (u *StreamField) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		FieldType string
+		Name      string
+	}{
+		FieldType: PrintFieldType(u.FieldType),
+		Name:      u.Name,
+	})
 }
 
 type StreamFields []StreamField
