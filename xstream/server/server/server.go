@@ -67,7 +67,9 @@ func StartUp(Version string) {
 	// Listen to TPC connections on port 1234
 	listener, e := net.Listen("tcp", fmt.Sprintf(":%d", common.Config.Port))
 	if e != nil {
-		logger.Fatal("Listen error: ", e)
+		m := fmt.Sprintf("Listen error: %s", e)
+		fmt.Printf(m)
+		logger.Fatal(m)
 	}
 
 	if common.Config.Prometheus {
