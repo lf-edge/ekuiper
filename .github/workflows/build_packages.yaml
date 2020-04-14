@@ -132,6 +132,11 @@ jobs:
             aws s3 rm --quiet --recursive s3://packages.emqx.io/kuiper/$version
             aws s3 cp --quiet --recursive ./_packages s3://packages.emqx.io/kuiper/$version
             aws cloudfront create-invalidation --distribution-id E3TYD0WSP4S14P --paths "/kuiper/$version/*"
+        - name: update emqx.io
+          if: github.event_name == 'release'
+          run: |
+            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
+            curl -w %{http_code} --insecure -H ${{ secrets.EmqxHeader }} https://admin.emqx.io/api/v1/kuiper_github_release_callback?tag=$version
         - name: update helm packages
           if: github.event_name == 'release'
           run: |
