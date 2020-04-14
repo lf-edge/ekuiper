@@ -144,6 +144,16 @@ docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=$MQTT_BROKER_ADDRESS emqx/kui
 
 ### Configuration
 
+Use the environment variable to configure `etc/kuiper.yaml`  on the Kuiper container.
+
+| Options                         | Default               | Mapped                      |
+| ------------------------------- | --------------------- | --------------------------- |
+| KUIPER_DEBUG                    | false                 | kuiper.basic.debug          |
+| KUIPER_PORT                     | 20498                 | kuiper.basic.port           |
+| KUIPER_REST_PORT                | 9081                  | kuiper.basic.restPort       |
+| KUIPER_PROMETHEUS               | false                 | kuiper.basic.prometheus     |
+| KUIPER_PROMETHEUS_PORT          | 20499                 | kuiper.basic.prometheusPort |
+
 Use the environment variable to configure `etc/mqtt_sources.yaml`  on the Kuiper container.
 
 | Options                         | Default               | Mapped                      |
