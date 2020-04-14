@@ -7,6 +7,20 @@ fi
 
 KUIPER_HOME=${KUIPER_HOME:-"/kuiper"}
 
+CLIENT_CONFIG="$KUIPER_HOME/etc/client.yaml"
+
+if [ ! -z "$CLIENT_HOST" ]; then
+    sed -i '/basic:/ ,/host/{/host/d}' $CLIENT_CONFIG
+    sed -i "/basic:/a\  host: $CLIENT_HOST" $CLIENT_CONFIG
+    echo "kuiper.basic.host = $CLIENT_HOST"
+fi
+
+if [ ! -z "$CLIENT_PORT" ]; then
+    sed -i '/basic:/ ,/port/{/port/d}' $CLIENT_CONFIG
+    sed -i "/basic:/a\  port: $CLIENT_PORT" $CLIENT_CONFIG
+    echo "kuiper.basic.port = $CLIENT_PORT"
+fi
+
 KUIPER_CONFIG="$KUIPER_HOME/etc/kuiper.yaml"
 
 if [ ! -z "$KUIPER_DEBUG" ]; then

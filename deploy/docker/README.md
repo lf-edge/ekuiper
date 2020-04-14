@@ -144,6 +144,13 @@ docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=$MQTT_BROKER_ADDRESS emqx/kui
 
 ### Configuration
 
+Use the environment variable to configure `etc/client.yaml`  on the Kuiper container.
+
+| Options                         | Default               | Mapped                      |
+| ------------------------------- | --------------------- | --------------------------- |
+| CLIENT_HOST                     | 127.0.0.1             | client.basic.debug          |
+| CLIENT_PORT                     | 20498                 | client.basic.port           |
+
 Use the environment variable to configure `etc/kuiper.yaml`  on the Kuiper container.
 
 | Options                         | Default               | Mapped                      |
