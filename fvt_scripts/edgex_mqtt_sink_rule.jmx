@@ -460,19 +460,28 @@
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
           <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="humidity Assertion" enabled="true">
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="reading_0 Assertion" enabled="true">
             <stringProp name="JSON_PATH">$.readings[0].value</stringProp>
             <stringProp name="EXPECTED_VALUE">30</stringProp>
-            <boolProp name="JSONVALIDATION">true</boolProp>
+            <boolProp name="JSONVALIDATION">false</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
           <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="temperature Assertion" enabled="true">
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="reading_1 Assertion" enabled="true">
             <stringProp name="JSON_PATH">$.readings[1].value</stringProp>
             <stringProp name="EXPECTED_VALUE">20</stringProp>
-            <boolProp name="JSONVALIDATION">true</boolProp>
+            <boolProp name="JSONVALIDATION">false</boolProp>
+            <boolProp name="EXPECT_NULL">false</boolProp>
+            <boolProp name="INVERT">false</boolProp>
+            <boolProp name="ISREGEX">false</boolProp>
+          </JSONPathAssertion>
+          <hashTree/>
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="reading_2 Assertion" enabled="true">
+            <stringProp name="JSON_PATH">$.readings[2].value</stringProp>
+            <stringProp name="EXPECTED_VALUE">20</stringProp>
+            <boolProp name="JSONVALIDATION">false</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>
             <boolProp name="ISREGEX">false</boolProp>
