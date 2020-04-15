@@ -72,7 +72,7 @@ build_with_edgex: build_prepare
 	@mv ./cli ./server $(BUILD_PATH)/$(PACKAGE_NAME)/bin
 	@echo "Build successfully"
 
-.PHONY: pkg_whit_edgex
+.PHONY: pkg_with_edgex
 pkg_whit_edgex: build_with_edgex 
 	@make real_pkg
 
@@ -114,6 +114,7 @@ cross_build: cross_prepare
 .PHONY: docker
 docker:
 	docker build --no-cache -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile .
+	docker build --no-cache -t $(TARGET):$(VERSION)-dev -f deploy/docker/Dockerfile-dev .
 
 .PHONY:cross_docker
 cross_docker: cross_prepare
@@ -121,6 +122,12 @@ cross_docker: cross_prepare
 	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
 	-t $(TARGET):$(VERSION) \
 	-f deploy/docker/Dockerfile . \
+	--push
+
+	docker buildx build --no-cache \
+	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+	-t $(TARGET):$(VERSION)-dev \
+	-f deploy/docker/Dockerfile-dev . \
 	--push
 
 .PHONY: clean

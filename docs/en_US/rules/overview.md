@@ -53,6 +53,7 @@ Currently, 3 kinds of sinks/actions are supported:
 - [mqtt](sinks/mqtt.md): Send the result to an MQTT broker. 
 - [edgex](sinks/edgex.md): Send the result to EdgeX message bus.
 - [rest](sinks/rest.md): Send the result to a Rest HTTP server.
+- [nop](sinks/nop.md): Send the result to a nop operation.
 
 Each action can define its own properties. There are 3 common properties:
 
@@ -64,6 +65,7 @@ Each action can define its own properties. There are 3 common properties:
 | retryInterval   | int:1000   | Specify how many milliseconds will the sink retry to send data out if the previous send failed  |
 | cacheLength     | int:10240   | Specify how many messages can be cached. The cached messages will be resent to external system until the data sent out successfully. The cached message will be sent in order except in runAsync or concurrent mode. The cached message will be saved to disk in fixed intervals.  |
 | cacheSaveInterval  | int:1000   | Specify the interval to save cached message to the disk. Notice that, if the rule is closed in plan, all the cached messages will be saved at close. A larger value can reduce the saving overhead but may lose more cache messages when the system is interrupted in error.  |
+| omitIfEmpty | bool: false | If the configuration item is set to true, when SELECT result is empty, then the result will not feed to sink operator. |
 
 Actions could be customized to support different kinds of outputs, see [extension](../extension/overview.md) for more detailed info.
 

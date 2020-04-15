@@ -131,7 +131,6 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, fmt.Errorf("describe stream error: %s", err), http.StatusBadRequest, logger)
 			return
 		}
-		//TODO format data type
 		jsonResponse(content, w, logger)
 	case http.MethodDelete:
 		content, err := streamProcessor.DropStream(name)
