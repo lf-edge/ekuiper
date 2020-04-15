@@ -31,7 +31,7 @@
           </elementProp>
           <elementProp name="mqtt_srv" elementType="Argument">
             <stringProp name="Argument.name">mqtt_srv</stringProp>
-            <stringProp name="Argument.value">10.211.55.6</stringProp>
+            <stringProp name="Argument.value">broker.emqx.io</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>
@@ -138,10 +138,24 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT * FROM demo WHERE temperature = 72&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT meta(*) AS edgex_meta, temperature, humidity, humidity*2 as h1 FROM demo WHERE temperature = 20&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
-    	 &quot;log&quot;: {}&#xd;
+      &quot;edgex&quot;: {&#xd;
+        &quot;protocol&quot;: &quot;tcp&quot;,&#xd;
+        &quot;host&quot;: &quot;${mqtt_srv}&quot;,&#xd;
+        &quot;port&quot;: 1883,&#xd;
+        &quot;topic&quot;: &quot;result&quot;,&#xd;
+        &quot;type&quot;: &quot;mqtt&quot;,&#xd;
+        &quot;metadata&quot;: &quot;edgex_meta&quot;,&#xd;
+        &quot;contentType&quot;: &quot;application/json&quot;,&#xd;
+        &quot;optional&quot;: {&#xd;
+        	&quot;ClientId&quot;: &quot;edgex_message_bus_001&quot;&#xd;
+        }&#xd;
+      }&#xd;
+    },&#xd;
+    {&#xd;
+      &quot;log&quot;:{}&#xd;
     }&#xd;
   ]&#xd;
 }</stringProp>
@@ -222,6 +236,11 @@
                   <stringProp name="Argument.value">mqtt</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
+                <elementProp name="" elementType="Argument">
+                  <stringProp name="Argument.name"></stringProp>
+                  <stringProp name="Argument.value">${mqtt_srv}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
               </collectionProp>
             </elementProp>
             <elementProp name="SystemSampler.environment" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
@@ -258,7 +277,7 @@
           <hashTree>
             <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
               <stringProp name="JSON_PATH">$.source_demo_0_records_in_total</stringProp>
-              <stringProp name="EXPECTED_VALUE">10</stringProp>
+              <stringProp name="EXPECTED_VALUE">1</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
               <boolProp name="EXPECT_NULL">false</boolProp>
               <boolProp name="INVERT">false</boolProp>
@@ -359,7 +378,7 @@
           <hashTree/>
         </hashTree>
       </hashTree>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Result" enabled="false">
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Result" enabled="true">
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
@@ -419,6 +438,11 @@
                 <stringProp name="Argument.value">mqtt</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
+              <elementProp name="" elementType="Argument">
+                <stringProp name="Argument.name"></stringProp>
+                <stringProp name="Argument.value">${mqtt_srv}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
             </collectionProp>
           </elementProp>
           <elementProp name="SystemSampler.environment" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
@@ -429,7 +453,7 @@
         <hashTree>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="device Assertion" enabled="true">
             <stringProp name="JSON_PATH">$.device</stringProp>
-            <stringProp name="EXPECTED_VALUE">demo</stringProp>
+            <stringProp name="EXPECTED_VALUE">demo1</stringProp>
             <boolProp name="JSONVALIDATION">true</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>
@@ -438,7 +462,7 @@
           <hashTree/>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="humidity Assertion" enabled="true">
             <stringProp name="JSON_PATH">$.readings[0].value</stringProp>
-            <stringProp name="EXPECTED_VALUE">81</stringProp>
+            <stringProp name="EXPECTED_VALUE">30</stringProp>
             <boolProp name="JSONVALIDATION">true</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>
@@ -447,7 +471,7 @@
           <hashTree/>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="temperature Assertion" enabled="true">
             <stringProp name="JSON_PATH">$.readings[1].value</stringProp>
-            <stringProp name="EXPECTED_VALUE">72</stringProp>
+            <stringProp name="EXPECTED_VALUE">20</stringProp>
             <boolProp name="JSONVALIDATION">true</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>

@@ -1,3 +1,4 @@
+// +build edgex
 
 package sinks
 
@@ -94,9 +95,6 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 		if opt, ok1 := optIntf.(map[string]interface{}); ok1 {
 			optional := make(map[string]string)
 			for k, v := range opt {
-				//if !xstream.IsAllowedEdgeOptionalKeys(k) {
-				//	return fmt.Errorf("The optional key %s is not allowed. ", k)
-				//}
 				if sv, ok2 := v.(string); ok2 {
 					optional[k] = sv
 				} else {

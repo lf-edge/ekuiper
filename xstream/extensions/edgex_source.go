@@ -1,3 +1,4 @@
+// +build edgex
 
 package extensions
 
@@ -67,9 +68,6 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 		if ops1, ok1 := ops.(map[interface{}]interface{}); ok1 {
 			for k, v := range ops1 {
 				k1 := k.(string)
-				//if !xstream.IsAllowedEdgeOptionalKeys(k1) {
-				//	return fmt.Errorf("The optional key %s is not allowed. ", k1)
-				//}
 				v1 := v.(string)
 				optional[k1] = v1
 			}

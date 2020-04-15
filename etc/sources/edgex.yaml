@@ -29,7 +29,7 @@ application_conf: #Conf_key
 
 mqtt_conf: #Conf_key
   protocol: tcp
-  server: 10.211.55.6
+  server: broker.emqx.io
   port: 1883
   topic: events
   type: mqtt

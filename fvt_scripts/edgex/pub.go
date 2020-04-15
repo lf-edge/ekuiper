@@ -113,10 +113,10 @@ func pubToAnother() {
 	}
 }
 
-func pubToMQTT() {
+func pubToMQTT(host string) {
 	var msgConfig2 = types.MessageBusConfig{
 		PublishHost: types.HostInfo{
-			Host:     "10.211.55.6",
+			Host:     host,
 			Port:     1883,
 			Protocol: "tcp",
 		},
@@ -204,8 +204,11 @@ func main() {
 			pubToAnother()
 		} else if v == "meta" {
 			pubMetaSource()
-		} else if v == "mqtt" {
-			pubToMQTT()
+		}
+	} else if len(os.Args) == 3 {
+		if v := os.Args[1]; v == "mqtt" {
+			//The 2nd parameter is MQTT broker server address
+			pubToMQTT(os.Args[2])
 		}
 	}
 }

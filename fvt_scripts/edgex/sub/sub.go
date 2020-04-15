@@ -51,14 +51,14 @@ func subEventsFromZMQ() {
 	}
 }
 
-func subEventsFromMQTT() {
+func subEventsFromMQTT(host string) {
 	var msgConfig1 = types.MessageBusConfig{
 		SubscribeHost: types.HostInfo{
-			Host:     "10.211.55.6",
+			Host:     host,
 			Port:     1883,
 			Protocol: "tcp",
 		},
-		Type:messaging.MQTT,
+		Type: messaging.MQTT,
 	}
 
 	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
@@ -82,7 +82,7 @@ func subEventsFromMQTT() {
 						common.Log.Errorf("%s\n", e1)
 						return
 					case env := <-messages:
-						count ++
+						count++
 						fmt.Printf("%s\n", env.Payload)
 						if count == 1 {
 							return
@@ -95,13 +95,11 @@ func subEventsFromMQTT() {
 }
 
 func main() {
-
 	if len(os.Args) == 1 {
 		subEventsFromZMQ()
-	} else if len(os.Args) == 2 {
+	} else if len(os.Args) == 3 {
 		if v := os.Args[1]; v == "mqtt" {
-			subEventsFromMQTT()
+			subEventsFromMQTT(os.Args[2])
 		}
 	}
-
 }
