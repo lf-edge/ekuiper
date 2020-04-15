@@ -29,6 +29,18 @@ if [ ! -z "$KUIPER_DEBUG" ]; then
     echo "kuiper.basic.debug = $KUIPER_DEBUG"
 fi
 
+if [ ! -z "$KUIPER_CONSOLE_LOG" ]; then
+    sed -i '/basic:/ ,/consoleLog/{/consoleLog/d}' $KUIPER_CONFIG
+    sed -i "/basic:/a\  consoleLog: $KUIPER_CONSOLE_LOG" $KUIPER_CONFIG
+    echo "kuiper.basic.consoleLog = $KUIPER_CONSOLE_LOG"
+fi
+
+if [ ! -z "$KUIPER_FILE_LOG" ]; then
+    sed -i '/basic:/ ,/fileLog/{/fileLog/d}' $KUIPER_CONFIG
+    sed -i "/basic:/a\  fileLog: $KUIPER_FILE_LOG" $KUIPER_CONFIG
+    echo "kuiper.basic.fileLog = $KUIPER_FILE_LOG"
+fi
+
 if [ ! -z "$KUIPER_PORT" ]; then
     sed -i '/basic:/ ,/port/{/port/d}' $KUIPER_CONFIG
     sed -i "/basic:/a\  port: $KUIPER_PORT" $KUIPER_CONFIG

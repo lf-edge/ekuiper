@@ -156,6 +156,8 @@ Use the environment variable to configure `etc/kuiper.yaml`  on the Kuiper conta
 | Options                         | Default               | Mapped                      |
 | ------------------------------- | --------------------- | --------------------------- |
 | KUIPER_DEBUG                    | false                 | kuiper.basic.debug          |
+| KUIPER_CONSOLE_LOG              | false                 | kuiper.basic.consoleLog     |
+| KUIPER_FILE_LOG                 | true                  | kuiper.basic.fileLog        |
 | KUIPER_PORT                     | 20498                 | kuiper.basic.port           |
 | KUIPER_REST_PORT                | 9081                  | kuiper.basic.restPort       |
 | KUIPER_PROMETHEUS               | false                 | kuiper.basic.prometheus     |
