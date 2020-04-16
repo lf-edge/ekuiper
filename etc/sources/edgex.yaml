@@ -5,7 +5,8 @@ default:
   port: 5563
   topic: events
   serviceServer: http://localhost:48080
-#  Below is optional configurations settings for MQTT
+#  Below is optional configurations settings for mqtt
+#  type: mqtt
 #  optional:
 #    ClientId: "client1"
 #    Username: "user1"

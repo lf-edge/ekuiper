@@ -83,6 +83,31 @@ The topic name of EdgeX message bus,  default value is ``events``.
 
 The base service address for getting value descriptors, the value of ``serviceServer`` will be concatenated to ``/api/v1/valuedescriptor`` to get all of value descriptors of EdgeX server.
 
+## type
+
+The EdgeX message bus type, currently two types of message buses are supported. If specified other values, then will use the default ``zero`` value.
+
+- ``zero``: Use ZeroMQ as EdgeX message bus. 
+- ``mqtt``: Use the MQTT broker as EdgeX message bus.
+
+## optional
+
+If MQTT message bus is used, some other optional configurations can be specified. Please notice that all of values in optional are **<u>string type</u>**, so values for these configurations should be string - such as ``KeepAlive: "5000"``. Below optional configurations are supported, please check MQTT specification for the detailed information.
+
+- ClientId
+
+- Username
+- Password
+- Qos
+- KeepAlive
+- Retained
+- ConnectionPayload
+- CertFile
+- KeyFile
+- CertPEMBlock
+- KeyPEMBlock
+- SkipCertVerify
+
 ## Override the default settings
 
 In some cases, maybe you want to consume message from multiple topics from message bus.  Kuiper supports to specify another configuration, and use the ``CONF_KEY`` to specify the newly created key when you create a stream.

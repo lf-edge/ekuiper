@@ -83,6 +83,31 @@ EdgeX 消息总线上监听的主题名称，缺省为 ``events``.
 
 访问 value descriptors 的基础服务地址，配置项 ``serviceServer`` 的值与 ``/api/v1/valuedescriptor`` 拼接后，用于获取 EdgeX 服务器上定义的所有 value descriptors。
 
+## type
+
+EdgeX 消息总线类型，目前支持两种消息总线。如果指定了错误的消息总线类型，那么会使用缺省 ``zero`` 类型。
+
+- ``zero``：使用 ZeroMQ 类型的消息总线 
+- ``mqtt``：使用 MQTT 服务器作为消息总线
+
+## optional
+
+如果使用了 MQTT 消息总线，还可以指定别的一些可选配置项。请注意，所有在可选的配置项里指定的值都必须为**<u>字符类型</u>**，因此这里出现的所有的配置应该是字符类型的 - 例如 ``KeepAlive: "5000"``。以下为支持的可选的配置列表，您可以参考 MQTT 协议规范来获取更详尽的信息。
+
+- ClientId
+
+- Username
+- Password
+- Qos
+- KeepAlive
+- Retained
+- ConnectionPayload
+- CertFile
+- KeyFile
+- CertPEMBlock
+- KeyPEMBlock
+- SkipCertVerify
+
 ## 重载缺省设置
 
 在某些情况下，你可能想消费来自于多个主题的数据。Kuiper 支持指定别的配置，并且在创建流定义的时候使用 ``CONF_KEY`` 来指定新的配置。

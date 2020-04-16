@@ -11,6 +11,24 @@ The action is used for publish output message into EdgeX message bus.
 | contentType   | true     | The content type of message to be published. If not specified, then use the default value ``application/json``. |
 | metadata      | true     | The property is a field name that allows user to specify a field name of SQL  select clause,  the field name should use ``meta(*) AS xxx``  to select all of EdgeX metadata from message. |
 | deviceName    | true     | Allows user to specify the device name in the event structure that are sent from Kuiper. |
+| type          | true     | The message bus type, two types of message buses are supported, ``zero`` or ``mqtt``, and ``zero`` is the default value. |
+| optional      | true     | If ``mqtt`` message bus type is specified, then some optional values can be specified. Please refer to below for supported optional supported configurations. |
+
+Please notice that all of values in optional are **<u>string type</u>**, so values for these configurations should be string - such as ``KeepAlive: "5000"``. Below optional configurations are supported, please check MQTT specification for the detailed information.
+
+- optional
+  - ClientId
+  - Username
+  - Password
+  - Qos
+  - KeepAlive
+  - Retained
+  - ConnectionPayload
+  - CertFile
+  - KeyFile
+  - CertPEMBlock
+  - KeyPEMBlock
+  - SkipCertVerify
 
 ## Examples
 
@@ -121,3 +139,34 @@ Please notice that,
 - If your SQL has aggregated function, then it does not make sense to keep these metadata, but Kuiper will still fill with metadata from a particular message in the time window. For example, with following SQL, 
 ```SELECT avg(temperature) AS temperature, meta(*) AS edgex_meta FROM ... GROUP BY TUMBLINGWINDOW(ss, 10)```. 
 In this case, there are possibly several messages in the window, the metadata value for ``temperature`` will be filled with value from 1st message that received from bus.
+
+## Send result to MQTT message bus
+
+Below is a rule that send analysis result to MQTT message bus, please notice how to specify ``ClientId`` in ``optional`` configuration.
+
+```json
+{
+  "id": "rule1",
+  "sql": "SELECT meta(*) AS edgex_meta, temperature, humidity, humidity*2 as h1 FROM demo WHERE temperature = 20",
+  "actions": [
+    {
+      "edgex": {
+        "protocol": "tcp",
+        "host": "127.0.0.1",
+        "port": 1883,
+        "topic": "result",
+        "type": "mqtt",
+        "metadata": "edgex_meta",
+        "contentType": "application/json",
+        "optional": {
+        	"ClientId": "edgex_message_bus_001"
+        }
+      }
+    },
+    {
+      "log":{}
+    }
+  ]
+}
+```
+

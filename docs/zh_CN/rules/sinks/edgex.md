@@ -11,6 +11,24 @@
 | contentType | true     | 发布消息的内容类型，如未指定，使用缺省值 ``application/json``. |
 | metadata    | true     | 该属性为一个字段名称，该字段是 SQL SELECT 子句的一个字段名称，这个字段应该类似于 ``meta(*) AS xxx`` ，用于选出消息中所有的 EdgeX 元数据. |
 | deviceName  | true     | 允许用户指定设备名称，该名称将作为从 Kuiper 中发送出来的 Event 结构体的设备名称. |
+| type          | true     | 消息总线类型，目前支持两种类型的消息总线， ``zero`` 或者 ``mqtt``，其中 ``zero`` 为缺省类型。 |
+| optional      | true     | 如果指定了 ``mqtt`` 消息总线，那么还可以指定一下可选的值。请参考以下可选的支持的配置类型。 |
+
+请注意，所有在可选的配置项里指定的值都必须为**<u>字符类型</u>**，因此这里出现的所有的配置应该是字符类型的 - 例如 ``KeepAlive: "5000"``。以下为支持的可选的配置列表，您可以参考 MQTT 协议规范来获取更详尽的信息。
+
+- optional
+  - ClientId
+  - Username
+  - Password
+  - Qos
+  - KeepAlive
+  - Retained
+  - ConnectionPayload
+  - CertFile
+  - KeyFile
+  - CertPEMBlock
+  - KeyPEMBlock
+  - SkipCertVerify
 
 ## 例子
 
@@ -125,3 +143,34 @@
 - 如果你的 SQL 包含了聚合函数，那保留原有的元数据就没有意义，但是 Kuiper 还是会使用时间窗口中的某一条记录的元数据。例如，在下面的 SQL 里，
 ```SELECT avg(temperature) AS temperature, meta(*) AS edgex_meta FROM ... GROUP BY TUMBLINGWINDOW(ss, 10)```. 
 这种情况下，在时间窗口中可能有几条数据，Kuiper 会使用窗口中的第一条数据的元数据来填充 ``temperature`` 的元数据。
+
+## 结果发布到 MQTT 消息总线
+
+以下是将分析结果发送到 MQTT 消息总线的规则，请注意在``optional`` 中是如何指定 ``ClientId`` 的。
+
+```json
+{
+  "id": "rule1",
+  "sql": "SELECT meta(*) AS edgex_meta, temperature, humidity, humidity*2 as h1 FROM demo WHERE temperature = 20",
+  "actions": [
+    {
+      "edgex": {
+        "protocol": "tcp",
+        "host": "127.0.0.1",
+        "port": 1883,
+        "topic": "result",
+        "type": "mqtt",
+        "metadata": "edgex_meta",
+        "contentType": "application/json",
+        "optional": {
+        	"ClientId": "edgex_message_bus_001"
+        }
+      }
+    },
+    {
+      "log":{}
+    }
+  ]
+}
+```
+
