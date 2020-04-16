@@ -59,7 +59,7 @@ $ docker ps
 CONTAINER ID        IMAGE                                                                  COMMAND                  CREATED             STATUS              PORTS                                                                                              NAMES
 5618c93027a9        nexus3.edgexfoundry.org:10004/docker-device-virtual-go:master          "/device-virtual --p…"   37 minutes ago      Up 37 minutes       0.0.0.0:49990->49990/tcp                                                                           edgex-device-virtual
 fabe6b9052f5        nexus3.edgexfoundry.org:10004/docker-edgex-ui-go:master                "./edgex-ui-server"      37 minutes ago      Up 37 minutes       0.0.0.0:4000->4000/tcp                                                                             edgex-ui-go
-83ef687fe546        emqx/kuiper:0.2.1                                                      "/usr/bin/docker-ent…"   37 minutes ago      Up 37 minutes       0.0.0.0:9081->9081/tcp, 0.0.0.0:20498->20498/tcp, 9801/tcp                                         edgex-kuiper
+950135a7041d        emqx/kuiper:0.3.1                                                      "/usr/bin/docker-ent…"   37 minutes ago      Up 37 minutes        0.0.0.0:20498->20498/tcp, 9081/tcp, 0.0.0.0:48075->48075/tcp                                       edgex-kuiper
 c49b0d6f9347        nexus3.edgexfoundry.org:10004/docker-support-scheduler-go:master       "/support-scheduler …"   37 minutes ago      Up 37 minutes       0.0.0.0:48085->48085/tcp                                                                           edgex-support-scheduler
 4265dcc2bb48        nexus3.edgexfoundry.org:10004/docker-core-command-go:master            "/core-command -cp=c…"   37 minutes ago      Up 37 minutes       0.0.0.0:48082->48082/tcp                                                                           edgex-core-command
 4667160e2f41        nexus3.edgexfoundry.org:10004/docker-app-service-configurable:master   "/app-service-config…"   37 minutes ago      Up 37 minutes       48095/tcp, 0.0.0.0:48100->48100/tcp                                                                edgex-app-service-configurable-rules
@@ -78,12 +78,13 @@ ed7ad5ae08b2        nexus3.edgexfoundry.org:10004/docker-edgex-volume:master    
 There are two approaches to manage stream, you can use your preferred approach.
 
 #### Option 1: Use Rest API
+Notice: Rest API of Kuiper in EdgeX uses ``48075`` instead of default ``9081``. So please change 9081 to 48075 in all of documents when you use EdgeX Kuiper Rest API.
 
 The next step is to create a stream that can consume data from EdgeX message bus. Please change ``$kuiper_docker`` to Kuiper docker instance IP address.
 
 ```shell
 curl -X POST \
-  http://$kuiper_docker:9081/streams \
+  http://$kuiper_docker:48075/streams \
   -H 'Content-Type: application/json' \
   -d '{
   "sql": "create stream demo() WITH (FORMAT=\"JSON\", TYPE=\"edgex\")"
@@ -135,7 +136,7 @@ So the below rule will get all of values from ``event`` topic. The sink result w
 
 ```shell
 curl -X POST \
-  http://$kuiper_docker:9081/rules \
+  http://$kuiper_docker:48075/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule1",
@@ -189,7 +190,7 @@ Now you can also take a look at the log file under ``log/stream.log``, see detai
 ```
 time="2020-04-07T03:33:28Z" level=info msg="db location is /kuiper/data/"
 time="2020-04-07T03:33:28Z" level=info msg="Starting rules"
-time="2020-04-07T03:33:28Z" level=info msg="Serving kuiper (version - 0.2.1) on port 20498, and restful api on port 9081. \n"
+time="2020-04-07T03:33:28Z" level=info msg="Serving kuiper (version - 0.2.1) on port 20498, and restful api on port 48075. \n"
 time="2020-04-07T03:35:35Z" level=info msg="Rule rule1 is created."
 time="2020-04-07T03:35:35Z" level=info msg="Init rule with options {isEventTime: false, lateTolerance: 0, concurrency: 1, bufferLength: 1024"
 time="2020-04-07T03:35:35Z" level=info msg="Opening stream" rule=rule1
