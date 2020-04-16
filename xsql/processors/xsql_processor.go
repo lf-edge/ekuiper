@@ -71,7 +71,9 @@ func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, statement stri
 	if err != nil {
 		return "", fmt.Errorf("Create stream fails: %v.", err)
 	} else {
-		return fmt.Sprintf("Stream %s is created.", stmt.Name), nil
+		info := fmt.Sprintf("Stream %s is created.", stmt.Name)
+		log.Printf("%s", info)
+		return info, nil
 	}
 }
 
