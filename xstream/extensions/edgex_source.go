@@ -192,6 +192,8 @@ func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{
 		}
 	case "STRING":
 		return v, nil
+	case "BINARY":
+		return nil, fmt.Errorf("Unsupport for binary type, the value will be ignored.")
 	default:
 		logger.Warnf("unknown type %s return the string value", t)
 		return v, nil
