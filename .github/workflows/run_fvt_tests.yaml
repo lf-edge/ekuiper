@@ -64,7 +64,8 @@ jobs:
           run: |
             sudo apt update && sudo apt install -y libxml2-utils
             cd jmeter_logs
-            if [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
+            if [ ! -z "$(cat *.jtl| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
+               [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
                 echo -e "---------------------------------------------\n"
                 echo "FVT tests error"
                 exit 1
@@ -125,7 +126,8 @@ jobs:
           run: |
             sudo apt update && sudo apt install -y libxml2-utils
             cd jmeter_logs
-            if [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
+            if [ ! -z "$(cat *.jtl| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
+               [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
                 echo -e "---------------------------------------------\n"
                 echo "FVT tests error"
                 exit 1
@@ -246,7 +248,8 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y libxml2-utils
           cd jmeter_logs
-          if [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
+          if [ ! -z "$(cat *.jtl| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
+             [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
               echo -e "---------------------------------------------\n"
               echo "FVT tests error"
               exit 1
