@@ -64,7 +64,7 @@ func init() {
 	Log.SetFormatter(&logrus.TextFormatter{
 		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
 			filename := path.Base(f.File)
-			return fmt.Sprintf("%s()", f.Function), fmt.Sprintf("%s:%d", filename, f.Line)
+			return "", fmt.Sprintf("%s:%d", filename, f.Line)
 		},
 		DisableColors: true,
 		FullTimestamp: true,
