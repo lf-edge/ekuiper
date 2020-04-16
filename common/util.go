@@ -7,10 +7,12 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/go-yaml/yaml"
 	"github.com/sirupsen/logrus"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 )
@@ -48,6 +50,8 @@ func LoadConf(confName string) ([]byte, error) {
 
 type XStreamConf struct {
 	Debug          bool `yaml:"debug"`
+	ConsoleLog     bool `yaml:"consoleLog"`
+	FileLog        bool `yaml:"fileLog"`
 	Port           int  `yaml:"port"`
 	RestPort       int  `yaml:"restPort"`
 	Prometheus     bool `yaml:"prometheus"`
@@ -56,7 +60,12 @@ type XStreamConf struct {
 
 func init() {
 	Log = logrus.New()
+	Log.SetReportCaller(true)
 	Log.SetFormatter(&logrus.TextFormatter{
+		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+			filename := path.Base(f.File)
+			return fmt.Sprintf("%s()", f.Function), fmt.Sprintf("%s:%d", filename, f.Line)
+		},
 		DisableColors: true,
 		FullTimestamp: true,
 	})
@@ -91,20 +100,30 @@ func InitConf() {
 		Config = &c
 	}
 
-	if !Config.Debug {
-		logDir, err := GetLoc(log_dir)
-		if err != nil {
-			Log.Fatal(err)
-		}
-		file := logDir + logFileName
-		logFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		if err == nil {
-			Log.Out = logFile
+	if Config.Debug {
+		Log.SetLevel(logrus.DebugLevel)
+	}
+
+	logDir, err := GetLoc(log_dir)
+	if err != nil {
+		Log.Fatal(err)
+	}
+	file := logDir + logFileName
+	logFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err == nil {
+		if Config.ConsoleLog {
+			if Config.FileLog {
+				mw := io.MultiWriter(os.Stdout, logFile)
+				Log.SetOutput(mw)
+			}
 		} else {
-			Log.Infof("Failed to log to file, using default stderr")
+			if Config.FileLog {
+				Log.SetOutput(logFile)
+			}
 		}
 	} else {
-		Log.SetLevel(logrus.DebugLevel)
+		fmt.Println("Failed to init log file settings...")
+		Log.Infof("Failed to log to file, using default stderr.")
 	}
 }
 

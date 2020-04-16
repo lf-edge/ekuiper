@@ -7,7 +7,7 @@ The Kuiper REST api for plugins allows you to manage plugins, such as create, dr
 
 ## create a plugin
 
-The API accepts a JSON content to create a new plugin. Each plugin type has a standalone endpoint. The supported types are `["sources", "sinks", "functions"`. The plugin is identified by the name. The name must be unique.
+The API accepts a JSON content to create a new plugin. Each plugin type has a standalone endpoint. The supported types are `["sources", "sinks", "functions"]`. The plugin is identified by the name. The name must be unique.
 ```shell
 POST http://localhost:9081/plugins/sources
 POST http://localhost:9081/plugins/sinks

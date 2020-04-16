@@ -5,13 +5,34 @@ default:
   port: 5563
   topic: events
   serviceServer: http://localhost:48080
+#  Below is optional configurations settings for mqtt
+#  type: mqtt
 #  optional:
-#    ClientId: client1
-#    Username: user1
-#    Password: password
+#    ClientId: "client1"
+#    Username: "user1"
+#    Password: "password"
+#    Qos: "1"
+#    KeepAlive: "5000"
+#    Retained: "true/false"
+#    ConnectionPayload: ""
+#    CertFile: ""
+#    KeyFile: ""
+#    CertPEMBlock: ""
+#    KeyPEMBlock: ""
+#    SkipCertVerify: "true/false"
+
 #Override the global configurations
 application_conf: #Conf_key
   protocol: tcp
   server: localhost
   port: 5571
   topic: application
+
+mqtt_conf: #Conf_key
+  protocol: tcp
+  server: 127.0.0.1
+  port: 1883
+  topic: events
+  type: mqtt
+  optional:
+    ClientId: "client1"

@@ -71,7 +71,9 @@ func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, statement stri
 	if err != nil {
 		return "", fmt.Errorf("Create stream fails: %v.", err)
 	} else {
-		return fmt.Sprintf("Stream %s is created.", stmt.Name), nil
+		info := fmt.Sprintf("Stream %s is created.", stmt.Name)
+		log.Printf("%s", info)
+		return info, nil
 	}
 }
 
@@ -110,7 +112,7 @@ func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement)
 	buff.WriteString("Fields\n--------------------------------------------------------------------------------\n")
 	for _, f := range streamStmt.StreamFields {
 		buff.WriteString(f.Name + "\t")
-		xsql.PrintFieldType(f.FieldType, &buff)
+		buff.WriteString(xsql.PrintFieldType(f.FieldType))
 		buff.WriteString("\n")
 	}
 	buff.WriteString("\n")

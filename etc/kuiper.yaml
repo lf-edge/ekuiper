@@ -1,6 +1,10 @@
 basic:
   # true|false, with debug level, it prints more debug info
   debug: false
+  # true|false, if it's set to true, then the log will be print to console
+  consoleLog: false
+  # true|false, if it's set to true, then the log will be print to log file
+  fileLog: true
   port: 20498
   restPort: 9081
   prometheus: false

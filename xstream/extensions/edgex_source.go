@@ -46,10 +46,9 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 	var mbusType = messaging.ZeroMQ
 	if t, ok := props["type"]; ok {
 		mbusType = t.(string)
-	}
-
-	if messaging.ZeroMQ != strings.ToLower(mbusType) {
-		mbusType = messaging.MQTT
+		if mbusType != messaging.ZeroMQ && mbusType != messaging.MQTT {
+			return fmt.Errorf("Specified wrong message type value %s, will use zeromq messagebus.\n", mbusType)
+		}
 	}
 
 	if serviceServer, ok := props["serviceServer"]; ok {
@@ -61,7 +60,7 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 		return fmt.Errorf("The service server cannot be empty.")
 	}
 
-	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: protocol, Host: server, Port: port}, Type: messaging.ZeroMQ}
+	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: protocol, Host: server, Port: port}, Type: mbusType}
 	common.Log.Infof("Use configuration for edgex messagebus %v\n", mbconf)
 
 	var optional = make(map[string]string)
@@ -88,7 +87,10 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	log := ctx.GetLogger()
 	if err := es.client.Connect(); err != nil {
-		errCh <- fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
+		info := fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
+		log.Errorf(info.Error())
+		errCh <- info
+		return
 	}
 	log.Infof("The connection to edgex messagebus is established successfully.")
 	messages := make(chan types.MessageEnvelope)

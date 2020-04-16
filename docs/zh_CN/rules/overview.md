@@ -45,7 +45,7 @@
 
 ### 动作
 
-当前，支持两种操作： [log](sinks/logs.md) 、[mqtt](sinks/mqtt.md) 和 [rest](sinks/rest.md)。 每个动作可以定义自己的属性。当前有三个公共属性:
+当前，支持以下操作： [log](sinks/logs.md) 、[mqtt](sinks/mqtt.md) 、[edgex](sinks/edgex.md)、[rest](sinks/rest.md) 和 [nop](sinks/nop.md)。 每个动作可以定义自己的属性。当前有以下的公共属性:
 
 | 属性名 | 类型和默认值 | 描述                                                  |
 | ------------- | -------- | ------------------------------------------------------------ |

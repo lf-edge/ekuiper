@@ -220,6 +220,8 @@ func doGetSink(name string, action map[string]interface{}) (api.Sink, error) {
 		s = &sinks.MQTTSink{}
 	case "rest":
 		s = &sinks.RestSink{}
+	case "nop":
+		s = &sinks.NopSink{}
 	default:
 		nf, err := plugins.GetPlugin(name, plugins.SINK)
 		if err != nil {
