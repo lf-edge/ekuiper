@@ -48,7 +48,7 @@
 # docker-compose -f ./docker-compose-nexus-redis-no-secty.yml up -d --build
 ```
 
-所哟的容器启动完毕之后，请使用 ``docker ps`` 命令确定所有的容器已经正常启动。
+所有的容器启动完毕之后，请使用 ``docker ps`` 命令确定所有的容器已经正常启动。
 
 ```shell
 $ docker ps
@@ -113,7 +113,7 @@ bin/cli create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
 default:
   protocol: tcp
   server: localhost
-  port: 5563
+  port: 5566
   topic: events
   serviceServer: http://localhost:48080
 .....  

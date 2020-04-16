@@ -83,5 +83,5 @@ SELECT temperature,humidity, meta(id) AS eid,meta(Created) AS ec, meta(temperatu
 Kuper 的 ``meta`` 函数可以用于访问元数据，以下列出了所有在 EdgeX 的 ``Events`` 和 ``Reading`` 中支持的 key，
 
 - Events： id, pushed, device, created, modified, origin, correlationid
-- Readning： id, created, modified, origin, pushed, device
+- Reading： id, created, modified, origin, pushed, device
 
