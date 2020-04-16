@@ -111,7 +111,11 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 				if strings.ToLower(env.ContentType) == "application/json" {
 					e := models.Event{}
 					if err := e.UnmarshalJSON(env.Payload); err != nil {
-						log.Warnf("payload %s unmarshal fail: %v", env.Payload, err)
+						len := len(env.Payload)
+						if len > 200 {
+							len = 200
+						}
+						log.Warnf("payload %s unmarshal fail: %v", env.Payload[0:(len - 1)], err)
 					} else {
 						result := make(map[string]interface{})
 						meta := make(map[string]interface{})
