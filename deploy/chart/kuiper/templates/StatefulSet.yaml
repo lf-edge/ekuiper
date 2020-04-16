@@ -79,6 +79,7 @@ spec:
         - name: kuiper
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["./bin/server"]
           ports:
           {{ $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
           - containerPort: {{ $restPort | default 9081 }}

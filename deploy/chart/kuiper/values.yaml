@@ -50,6 +50,8 @@ kuiperConfig:
     basic:
       # true|false, with debug level, it prints more debug info
       debug: false
+      consoleLog: false
+      fileLog: true
       port: 20498
       restPort: 9081
       prometheus: false
