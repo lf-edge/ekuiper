@@ -23,7 +23,7 @@ Request Sample
 
 ## show rules
 
-The API is used for displaying all of rules defined in the server.
+The API is used for displaying all of rules defined in the server with a brief status.
 
 ```shell
 GET http://localhost:9081/rules
@@ -32,7 +32,16 @@ GET http://localhost:9081/rules
 Response Sample:
 
 ```json
-["rule1","rule2"]
+[
+  {
+    "id": "rule1",
+    "status": "Running"
+  },
+  {
+     "id": "rule2",
+     "status": "Stopped: canceled by error."
+  }
+]
 ```
 
 ## describe a rule
@@ -101,7 +110,7 @@ POST http://localhost:8080/rules/{id}/restart
 ## get the status of a rule
 
 The command is used to get the status of the rule. If the rule is running, the metrics will be retrieved realtime. The status can be
-- running with metrics: $metrics
+- $metrics
 - stopped: $reason
 
 ```shell
@@ -111,7 +120,6 @@ GET http://localhost:8080/rules/{id}/status
 Response Sample:
 
 ```shell
-running with metrics:
 {
     "source_demo_0_records_in_total":5,
     "source_demo_0_records_out_total":5,

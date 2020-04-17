@@ -176,7 +176,7 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(result))
 	case http.MethodGet:
-		content, err := ruleProcessor.GetAllRules()
+		content, err := getAllRulesWithStatus()
 		if err != nil {
 			handleError(w, fmt.Errorf("Show rules error: %s", err), http.StatusBadRequest, logger)
 			return

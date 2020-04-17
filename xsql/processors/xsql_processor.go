@@ -317,21 +317,6 @@ func (p *RuleProcessor) ExecDesc(name string) (string, error) {
 	return fmt.Sprintln(dst.String()), nil
 }
 
-func (p *RuleProcessor) ExecShow() (string, error) {
-	keys, err := p.GetAllRules()
-	if err != nil {
-		return "", err
-	}
-	if len(keys) == 0 {
-		keys = append(keys, "No rule definitions are found.")
-	}
-	var result string
-	for _, c := range keys {
-		result = result + fmt.Sprintln(c)
-	}
-	return result, nil
-}
-
 func (p *RuleProcessor) GetAllRules() ([]string, error) {
 	err := p.db.Open()
 	if err != nil {
