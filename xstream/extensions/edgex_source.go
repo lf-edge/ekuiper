@@ -182,11 +182,17 @@ func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{
 		} else {
 			return r, nil
 		}
-	case "INT8", "INT16", "INT32", "INT64", "UINT8", "UINT16", "UINT32", "UINT64":
+	case "INT8", "INT16", "INT32", "INT64", "UINT8", "UINT16", "UINT32":
 		if r, err := strconv.Atoi(v); err != nil {
 			return nil, err
 		} else {
 			return r, nil
+		}
+	case "UINT64":
+		if u64, err := strconv.ParseUint(v, 10, 64); err != nil {
+			return nil, err
+		} else {
+			return u64, nil
 		}
 	case "FLOAT32", "FLOAT64":
 		if r, err := strconv.ParseFloat(v, 64); err != nil {

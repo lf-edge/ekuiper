@@ -18,16 +18,16 @@ var es = EdgexSource{valueDescs: map[string]string{
 	"i5" : "UINT8",
 	"i6" : "UINT16",
 	"i7" : "UINT32",
-	"i8" : "UINT64",
 	"f1" : "FLOAT32",
 	"f2" : "FLOAT64",
 	"s1" : "String",
+	"i8" : "UINT64", //i8 will be handled by special case
 	},
 }
 
 func TestGetValue_Int(t *testing.T) {
 	var testEvent = models.Event{Device: "test"}
-	for i := 1; i < 9; i++{
+	for i := 1; i < 8; i++{
 		r1 := models.Reading{Name: fmt.Sprintf("i%d", i), Value: "1"}
 		testEvent.Readings = append(testEvent.Readings, r1)
 	}
@@ -39,6 +39,17 @@ func TestGetValue_Int(t *testing.T) {
 			expectOne(t, v)
 		}
 	}
+
+	r1 := models.Reading{Name: "i8", Value: "10796529505058023104"}
+	if v, e := es.getValue(r1, common.Log); e != nil {
+		t.Errorf("%s", e)
+	} else {
+		if v1, ok := v.(uint64); ok {
+			if v1 != 10796529505058023104 {
+				t.Errorf("expected 10796529505058023104, but it's %d.", v1)
+			}
+		}
+	}
 }
 
 func expectOne(t *testing.T, expected interface{}) {
@@ -47,7 +58,7 @@ func expectOne(t *testing.T, expected interface{}) {
 			t.Errorf("expected 1, but it's %d.", v1)
 		}
 	} else {
-		t.Errorf("expected int type, but it's %t.", expected)
+		t.Errorf("expected int type, but it's %T.", expected)
 	}
 }
 
