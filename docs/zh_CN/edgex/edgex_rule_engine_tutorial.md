@@ -126,17 +126,20 @@ default:
 
 让我们创建一条规则，将分析结果发送至 MQTT 服务器，关于 MQTT 目标的相关配置，请参考[这个链接](../rules/sinks/mqtt.md)。与创建流的过程类似，你可以选择使用 REST 或者命令行来管理规则。
 
-以下例子将选出所有 ``events`` 主题上所有的数据，分析结果将被发布到公共的 MQTT 服务器 ``broker.emqx.io`` 的主题``result`` 上。 
+以下例子将选出所有 ``events`` 主题上所有的数据，分析结果将被
+
+- 发布到公共的 MQTT 服务器 ``broker.emqx.io`` 的主题``result`` 上；
+- 打印至日志文件
 
 #### 选项1: 使用 Rest API
 
 ```shell
 curl -X POST \
-  http://$kuiper_server:48075/rules \
+  http://$kuiper_server:9081/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule1",
-  "sql": "SELECT * FROM demo WHERE randomnumber > 30",
+  "sql": "SELECT * FROM demo",
   "actions": [
     {
       "mqtt": {
@@ -144,16 +147,19 @@ curl -X POST \
         "topic": "result",
         "clientId": "demo_001"
       }
+    },
+    {
+      "log":{}
     }
   ]
-}'
+}
 ```
 
 #### 选项2: 使用 Kuiper 命令行
 
 你可以使用任意编辑器来创建一条规则，将下列内容拷贝到编辑器中，并命名为 ``rule.txt``。
 
-```
+```json
 {
   "sql": "SELECT * from demo",
   "actions": [
@@ -163,6 +169,9 @@ curl -X POST \
         "topic": "result",
         "clientId": "demo_001"
       }
+    },
+    {
+      "log":{}
     }
   ]
 }
@@ -182,23 +191,16 @@ Rule rule1 was created, please use 'cli getstatus rule $rule_name' command to ge
 如想将结果发送到别的目标，请参考 Kuiper 中支持的[其它目标](../rules/overview.md#actions)。你现在可以看一下在 ``log/stream.log``中的日志文件，查看规则的详细信息。
 
 ```
-time="2020-04-07T03:33:28Z" level=info msg="db location is /kuiper/data/"
-time="2020-04-07T03:33:28Z" level=info msg="Starting rules"
-time="2020-04-07T03:33:28Z" level=info msg="Serving kuiper (version - 0.2.1) on port 20498, and restful api on port 48075. \n"
-time="2020-04-07T03:35:35Z" level=info msg="Rule rule1 is created."
-time="2020-04-07T03:35:35Z" level=info msg="Init rule with options {isEventTime: false, lateTolerance: 0, concurrency: 1, bufferLength: 1024"
-time="2020-04-07T03:35:35Z" level=info msg="Opening stream" rule=rule1
-time="2020-04-07T03:35:35Z" level=info msg="open source node demo with option map[FORMAT:JSON TYPE:edgex]" rule=rule1
-time="2020-04-07T03:35:35Z" level=info msg="open sink node 1 instances" rule=rule1
-time="2020-04-07T03:35:35Z" level=info msg="open source node 1 instances" rule=rule1
-time="2020-04-07T03:35:35Z" level=info msg="Opening mqtt sink for rule rule1." rule=rule1
-time="2020-04-07T03:35:35Z" level=info msg="Connect to value descriptor service at: http://edgex-core-data:48080/api/v1/valuedescriptor \n"
-time="2020-04-07T03:35:35Z" level=info msg="Use configuration for edgex messagebus {{ 0 } {edgex-core-data 5563 tcp} zero map[]}\n"
-time="2020-04-07T03:35:35Z" level=info msg="Start source demo instance 0 successfully" rule=rule1
-time="2020-04-07T03:35:35Z" level=info msg="The connection to edgex messagebus is established successfully." rule=rule1
-time="2020-04-07T03:35:35Z" level=info msg="Connect MQTT broker with username and password." rule=rule1
-time="2020-04-07T03:35:35Z" level=info msg="Successfully subscribed to edgex messagebus topic events." rule=rule1
-time="2020-04-07T03:35:35Z" level=info msg="The connection to server tcp://broker.emqx.io:1883 was established successfully" rule=rule1
+time="2020-04-17T06:32:24Z" level=info msg="Serving kuiper (version - 0.3.1-4-g9e63fe1) on port 20498, and restful api on port 9081. \n" file="server.go:101"
+time="2020-04-17T06:32:24Z" level=info msg="The connection to edgex messagebus is established successfully." file="edgex_source.go:95" rule=rule1
+time="2020-04-17T06:32:24Z" level=info msg="Successfully subscribed to edgex messagebus topic events." file="edgex_source.go:104" rule=rule1
+time="2020-04-17T06:32:24Z" level=info msg="The connection to server tcp://broker.emqx.io:1883 was established successfully" file="mqtt_sink.go:161" rule=rule1
+time="2020-04-17T06:32:25Z" level=info msg="Get 24 of value descriptors from service." file="edgex_source.go:223"
+time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int32\":-697766590}]" file="log_sink.go:16" rule=rule1
+time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int8\":-47}]" file="log_sink.go:16" rule=rule1
+time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int16\":-318}]" file="log_sink.go:16" rule=rule1
+time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int64\":-8680421421398846880}]" file="log_sink.go:16" rule=rule1
+time="2020-04-17T06:32:31Z" level=info msg="sink result for rule rule1: [{\"bool\":true}]" file="log_sink.go:16" rule=rule1
 ```
 
 ### 监控分析结果
@@ -235,32 +237,31 @@ Connecting to 127.0.0.1:20498...
   "source_demo_0_exceptions_total": 0,
   "source_demo_0_process_latency_ms": 0,
   "source_demo_0_buffer_length": 0,
-  "source_demo_0_last_invocation": "2020-03-19T10:30:09.294337",
+  "source_demo_0_last_invocation": "2020-04-17T10:30:09.294337",
   "op_preprocessor_demo_0_records_in_total": 29,
   "op_preprocessor_demo_0_records_out_total": 29,
   "op_preprocessor_demo_0_exceptions_total": 0,
   "op_preprocessor_demo_0_process_latency_ms": 0,
   "op_preprocessor_demo_0_buffer_length": 0,
-  "op_preprocessor_demo_0_last_invocation": "2020-03-19T10:30:09.294355",
+  "op_preprocessor_demo_0_last_invocation": "2020-04-17T10:30:09.294355",
   "op_filter_0_records_in_total": 29,
   "op_filter_0_records_out_total": 21,
   "op_filter_0_exceptions_total": 0,
   "op_filter_0_process_latency_ms": 0,
   "op_filter_0_buffer_length": 0,
-  "op_filter_0_last_invocation": "2020-03-19T10:30:09.294362",
+  "op_filter_0_last_invocation": "2020-04-17T10:30:09.294362",
   "op_project_0_records_in_total": 21,
   "op_project_0_records_out_total": 21,
   "op_project_0_exceptions_total": 0,
   "op_project_0_process_latency_ms": 0,
   "op_project_0_buffer_length": 0,
-  "op_project_0_last_invocation": "2020-03-19T10:30:09.294382",
+  "op_project_0_last_invocation": "2020-04-17T10:30:09.294382",
   "sink_sink_mqtt_0_records_in_total": 21,
   "sink_sink_mqtt_0_records_out_total": 21,
   "sink_sink_mqtt_0_exceptions_total": 0,
   "sink_sink_mqtt_0_process_latency_ms": 0,
   "sink_sink_mqtt_0_buffer_length": 1,
-  "sink_sink_mqtt_0_last_invocation": "2020-03-19T10:30:09.294423"
-}
+  "sink_sink_mqtt_0_last_invocation": "2020-04-17T10:30:09.294423"
 ```
 
 ### 总结
