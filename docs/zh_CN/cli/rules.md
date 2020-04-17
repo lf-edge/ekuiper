@@ -51,7 +51,7 @@ create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file
 
 ## 展示规则
 
-该命令用于显示服务器中定义的所有规则。
+该命令用于显示服务器中定义的所有规则，包括规则id和当前状态。
 
 ```shell
 show rules
@@ -61,8 +61,16 @@ show rules
 
 ```shell
 # bin/cli show rules
-rule1
-rule2
+[
+  {
+    "id": "rule1",
+    "status": "Running"
+  },
+  {
+     "id": "rule2",
+     "status": "Stopped: canceled by error."
+  }
+]
 ```
 
 ## 描述规则
@@ -167,7 +175,6 @@ getstatus rule $rule_name
 
 ```shell
 # bin/cli getstatus rule rule1
-running with metrics:
 {
     "source_demo_0_records_in_total":5,
     "source_demo_0_records_out_total":5,

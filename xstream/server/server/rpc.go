@@ -137,11 +137,22 @@ func (t *Server) DescRule(name string, reply *string) error {
 }
 
 func (t *Server) ShowRules(_ int, reply *string) error {
-	r, err := ruleProcessor.ExecShow()
+	r, err := getAllRulesWithStatus()
 	if err != nil {
 		return fmt.Errorf("Show rule error : %s.", err)
+	}
+	if len(r) == 0 {
+		*reply = "No rule definitions are found."
 	} else {
-		*reply = r
+		result, err := json.Marshal(r)
+		if err != nil {
+			return fmt.Errorf("Show rule error : %s.", err)
+		}
+		dst := &bytes.Buffer{}
+		if err := json.Indent(dst, result, "", "  "); err != nil {
+			return fmt.Errorf("Show rule error : %s.", err)
+		}
+		*reply = dst.String()
 	}
 	return nil
 }
