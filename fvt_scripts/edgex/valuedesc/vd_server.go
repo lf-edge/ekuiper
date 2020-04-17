@@ -16,6 +16,7 @@ const (
 	desc4 = "Int descriptor"
 	desc5 = "Float descriptor"
 	desc6 = "String descriptor"
+	desc7 = "UInt64 descriptor"
 )
 
 var vd1 = models.ValueDescriptor{Id: "Temperature", Created: 123, Modified: 123, Origin: 123, Name: "Temperature",
@@ -30,6 +31,7 @@ var vd3 = models.ValueDescriptor{Id: "b1", Name: "b1", Formatting: "%t", Type:"B
 var vd4 = models.ValueDescriptor{Id: "i1", Name: "i1", Formatting: "%d", Type:"UINT8", MediaType: clients.ContentTypeJSON}
 var vd5 = models.ValueDescriptor{Id: "f1", Name: "f1", Formatting: "%f", Type:"FLOAT64", MediaType: clients.ContentTypeJSON}
 var vd6 = models.ValueDescriptor{Id: "s1", Name: "s1", Formatting: "%s", Type:"String", MediaType: clients.ContentTypeJSON}
+var vd7 = models.ValueDescriptor{Id: "ui64", Name: "ui64", Formatting: "%d", Type:"UINT64", MediaType: clients.ContentTypeJSON}
 
 func main() {
 	http.HandleFunc(clients.ApiValueDescriptorRoute, Hello)
@@ -57,7 +59,10 @@ func Hello(w http.ResponseWriter, req *http.Request) {
 	descriptor6 := vd6
 	descriptor6.Description = desc6
 
-	descriptors := []models.ValueDescriptor{descriptor1, descriptor2, descriptor3, descriptor4, descriptor5, descriptor6}
+	descriptor7 := vd7
+	descriptor7.Description = desc7
+
+	descriptors := []models.ValueDescriptor{descriptor1, descriptor2, descriptor3, descriptor4, descriptor5, descriptor6, descriptor7}
 
 	data, err := json.Marshal(descriptors)
 	if err != nil {

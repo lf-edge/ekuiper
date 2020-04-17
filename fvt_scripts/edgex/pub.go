@@ -48,8 +48,9 @@ func pubEventClientZeroMq() {
 
 				r4 := models.Reading{Name:"i1", Value:fmt.Sprintf("%d", i)}
 				r5 := models.Reading{Name:"f1", Value:fmt.Sprintf("%.2f", float64(i)/2.0)}
+				r6 := models.Reading{Name:"ui64", Value:"10796529505058023104"}
 
-				testEvent.Readings = append(testEvent.Readings, r1, r2, r3, r4, r5)
+				testEvent.Readings = append(testEvent.Readings, r1, r2, r3, r4, r5, r6)
 
 				data, err := client.MarshalEvent(testEvent)
 				if err != nil {
