@@ -139,7 +139,7 @@ So the below rule will get all of values from ``event`` topic. The sink result w
 
 ```shell
 curl -X POST \
-  http://localhost:48075/rules \
+  http://$kuiper_server:48075/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule1",
