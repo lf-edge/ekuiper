@@ -123,7 +123,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 						result := make(map[string]interface{})
 						meta := make(map[string]interface{})
 
-						log.Debugf("receive message from device %s", e.Device)
+						log.Debugf("receive message %s from device %s", env.Payload, e.Device)
 						for _, r := range e.Readings {
 							if r.Name != "" {
 								if v, err := es.getValue(r, log); err != nil {
@@ -172,6 +172,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 
 func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{}, error) {
 	t, err := es.getType(r.Name, logger)
+	var ot = t
 	if err != nil {
 		return nil, err
 	}
@@ -198,6 +199,9 @@ func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{
 			return u64, nil
 		}
 	case "FLOAT32", "FLOAT64":
+		if r.ValueType == "" {
+			r.ValueType = ot
+		}
 		return es.getFloatValue(r, logger)
 	case "STRING":
 		return v, nil
@@ -219,7 +223,7 @@ func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (inter
 	}
 	switch r.ValueType {
 	case models.ValueTypeFloat32:
-		var value float32
+		var value float64
 
 		switch r.FloatEncoding {
 		case models.Base64Encoding:
@@ -227,21 +231,21 @@ func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (inter
 			if err != nil {
 				return false, fmt.Errorf("unable to Base 64 decode float32 value ('%s'): %s", r.Value, err.Error())
 			}
-
-			err = binary.Read(bytes.NewReader(data), binary.BigEndian, &value)
+			var value1 float32
+			err = binary.Read(bytes.NewReader(data), binary.BigEndian, &value1)
 			if err != nil {
 				return false, fmt.Errorf("unable to decode float32 value bytes: %s", err.Error())
 			}
-
+			value = float64(value1)
 		case models.ENotation:
 			var err error
 			var temp float64
-			temp, err = strconv.ParseFloat(r.Value, 32)
+			temp, err = strconv.ParseFloat(r.Value, 64)
 			if err != nil {
 				return false, fmt.Errorf("unable to parse Float64 eNotation value: %s", err.Error())
 			}
 
-			value = float32(temp)
+			value = float64(temp)
 
 		default:
 			return false, fmt.Errorf("unkown FloatEncoding for float32 value: %s", r.FloatEncoding)
@@ -273,8 +277,9 @@ func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (inter
 		default:
 			return false, fmt.Errorf("unkown FloatEncoding for float64 value: %s", r.FloatEncoding)
 		}
+	default:
+		return nil, fmt.Errorf("unkown value type: %s", r.ValueType)
 	}
-	return nil, fmt.Errorf("unkown FloatEncoding type: %s", r.FloatEncoding)
 }
 
 
