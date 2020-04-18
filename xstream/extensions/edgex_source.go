@@ -1,3 +1,4 @@
+// +build edgex
 
 package extensions
 
@@ -203,7 +204,7 @@ func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{
 	case "BINARY":
 		return nil, fmt.Errorf("Unsupport for binary type, the value will be ignored.")
 	default:
-		logger.Warnf("unknown type %s return the string value", t)
+		logger.Warnf("Not supported type %s, and processed as string value", t)
 		return v, nil
 	}
 }
