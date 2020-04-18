@@ -1,9 +1,11 @@
-// +build edgex
 
 package extensions
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/binary"
 	"fmt"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/coredata"
@@ -195,11 +197,7 @@ func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{
 			return u64, nil
 		}
 	case "FLOAT32", "FLOAT64":
-		if r, err := strconv.ParseFloat(v, 64); err != nil {
-			return nil, err
-		} else {
-			return r, nil
-		}
+		return es.getFloatValue(r, logger)
 	case "STRING":
 		return v, nil
 	case "BINARY":
@@ -209,6 +207,75 @@ func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{
 		return v, nil
 	}
 }
+
+func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (interface{}, error) {
+	if len(r.FloatEncoding) == 0 {
+		if strings.Contains(r.Value, "==") {
+			r.FloatEncoding = models.Base64Encoding
+		} else {
+			r.FloatEncoding = models.ENotation
+		}
+	}
+	switch r.ValueType {
+	case models.ValueTypeFloat32:
+		var value float32
+
+		switch r.FloatEncoding {
+		case models.Base64Encoding:
+			data, err := base64.StdEncoding.DecodeString(r.Value)
+			if err != nil {
+				return false, fmt.Errorf("unable to Base 64 decode float32 value ('%s'): %s", r.Value, err.Error())
+			}
+
+			err = binary.Read(bytes.NewReader(data), binary.BigEndian, &value)
+			if err != nil {
+				return false, fmt.Errorf("unable to decode float32 value bytes: %s", err.Error())
+			}
+
+		case models.ENotation:
+			var err error
+			var temp float64
+			temp, err = strconv.ParseFloat(r.Value, 32)
+			if err != nil {
+				return false, fmt.Errorf("unable to parse Float64 eNotation value: %s", err.Error())
+			}
+
+			value = float32(temp)
+
+		default:
+			return false, fmt.Errorf("unkown FloatEncoding for float32 value: %s", r.FloatEncoding)
+
+		}
+		return value, nil
+
+	case models.ValueTypeFloat64:
+		var value float64
+		switch r.FloatEncoding {
+		case models.Base64Encoding:
+			data, err := base64.StdEncoding.DecodeString(r.Value)
+			if err != nil {
+				return false, fmt.Errorf("unable to Base 64 decode float64 value ('%s'): %s", r.Value, err.Error())
+			}
+
+			err = binary.Read(bytes.NewReader(data), binary.BigEndian, &value)
+			if err != nil {
+				return false, fmt.Errorf("unable to decode float64 value bytes: %s", err.Error())
+			}
+			return value, nil
+		case models.ENotation:
+			var err error
+			value, err = strconv.ParseFloat(r.Value, 64)
+			if err != nil {
+				return false, fmt.Errorf("unable to parse Float64 eNotation value: %s", err.Error())
+			}
+			return value, nil
+		default:
+			return false, fmt.Errorf("unkown FloatEncoding for float64 value: %s", r.FloatEncoding)
+		}
+	}
+	return nil, fmt.Errorf("unkown FloatEncoding type: %s", r.FloatEncoding)
+}
+
 
 func (es *EdgexSource) fetchAllDataDescriptors() error {
 	if vdArr, err := es.vdc.ValueDescriptors(context.Background()); err != nil {
