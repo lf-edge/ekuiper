@@ -121,7 +121,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 #### Preparation
 
-- Go version >= 1.11
+- Go version >= 1.13
 
 #### Compile
 

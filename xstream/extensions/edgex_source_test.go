@@ -18,10 +18,10 @@ var es = EdgexSource{valueDescs: map[string]string{
 	"i5" : "UINT8",
 	"i6" : "UINT16",
 	"i7" : "UINT32",
-	"f1" : "FLOAT32",
-	"f2" : "FLOAT64",
 	"s1" : "String",
-	"i8" : "UINT64", //i8 will be handled by special case
+	"f1" : "Float32", //FLOAT32 will be handled by special case
+	"f2" : "Float64", //FLOAT64 will be handled by special case
+	"i8" : "UINT64",  //UINT64 will be handled by special case
 	},
 }
 
@@ -37,6 +37,17 @@ func TestGetValue_Int(t *testing.T) {
 			t.Errorf("%s", e)
 		} else {
 			expectOne(t, v)
+		}
+	}
+
+	rf_01 := models.Reading{Name:"f1", Value:"fwtOaw=="}
+	if v, e := es.getValue(rf_01, common.Log); e != nil {
+		t.Errorf("%s", e)
+	} else {
+		if v1, ok := v.(float32); ok {
+			if v1 != 1.8516986e+38 {
+				t.Errorf("expected 1.8516986e+38, but it's %f.", v1)
+			}
 		}
 	}
 
@@ -84,7 +95,7 @@ func expectPi(t *testing.T, expected interface{}) {
 			t.Errorf("expected 3.14, but it's %f.", v1)
 		}
 	} else {
-		t.Errorf("expected float type, but it's %t.", expected)
+		t.Errorf("expected float type, but it's %T.", expected)
 	}
 }
 
