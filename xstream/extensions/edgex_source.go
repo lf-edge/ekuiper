@@ -159,7 +159,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 								return
 							}
 						} else {
-							log.Warnf("got an empty result, ignored")
+							log.Warnf("No readings are processed for the event, so ignore it.")
 						}
 					}
 				} else {
