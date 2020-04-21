@@ -459,6 +459,15 @@
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
           <hashTree/>
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="uint64 Assertion" enabled="true">
+            <stringProp name="JSON_PATH">$[0].ui64</stringProp>
+            <stringProp name="EXPECTED_VALUE">10796529505058023104</stringProp>
+            <boolProp name="JSONVALIDATION">true</boolProp>
+            <boolProp name="EXPECT_NULL">false</boolProp>
+            <boolProp name="INVERT">false</boolProp>
+            <boolProp name="ISREGEX">false</boolProp>
+          </JSONPathAssertion>
+          <hashTree/>
           <BeanShellAssertion guiclass="BeanShellAssertionGui" testclass="BeanShellAssertion" testname="temperature value assertion" enabled="true">
             <stringProp name="BeanShellAssertion.query">import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;

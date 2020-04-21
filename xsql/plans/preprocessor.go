@@ -6,6 +6,7 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -112,13 +113,21 @@ func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, 
 				if jtype == reflect.Int {
 					r[n] = t.(int)
 				} else if jtype == reflect.Float64 {
-					r[n] = int(t.(float64))
+					if tt, ok1 := t.(float64); ok1 {
+						if tt > math.MaxInt64 {
+							r[n] = uint64(tt)
+						} else {
+							r[n] = int(tt)
+						}
+					}
 				} else if jtype == reflect.String {
 					if i, err := strconv.Atoi(t.(string)); err != nil {
 						return fmt.Errorf("invalid data type for %s, expect bigint but found %[2]T(%[2]v)", n, t)
 					} else {
 						r[n] = i
 					}
+				} else if jtype == reflect.Uint64 {
+					r[n] = t.(uint64)
 				} else {
 					return fmt.Errorf("invalid data type for %s, expect bigint but found %[2]T(%[2]v)", n, t)
 				}
