@@ -44,11 +44,9 @@ In out tutorial, we will use [Random Integer Device Service](https://github.com/
 
 ### Run EdgeX Docker instances
 
-After the EdgeX Geneva is offcially released, you can just follow steps in [this doc](https://fuji-docs.edgexfoundry.org/Ch-QuickStart.html) to start the service. But now since Kuiper has not been official released yet, you have to download Docker composer file from [here](https://github.com/edgexfoundry/developer-scripts/blob/master/releases/nightly-build/compose-files/docker-compose-nexus-mongo-no-secty.yml), and then bring up EdgeX Docker instances. 
+Go to [EdgeX develop-scripts project](https://github.com/edgexfoundry/developer-scripts/tree/master/releases), and download related Docker compose file for Geneva release,  then bring up EdgeX Docker instances. 
 
 ```shell
-$ wget https://github.com/edgexfoundry/developer-scripts/raw/master/releases/nightly-build/compose-files/docker-compose-nexus-mongo-no-secty.yml
-
 $ docker-compose -f ./docker-compose-nexus-redis-no-secty.yml up -d --build
 ```
 

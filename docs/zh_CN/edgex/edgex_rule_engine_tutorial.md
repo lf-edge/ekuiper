@@ -40,11 +40,9 @@
 
 ## 运行 EdgeX Docker 实例
 
-在 EdgeX Geneva 版本正式发布后，你可以按照[这个文档](https://fuji-docs.edgexfoundry.org/Ch-QuickStart.html)来启动所有的服务。但是因为目前 EdgeX Geneva 还未正式发布，所以如果现在想试用 Kuiper 的话，不得不手工从[这里](https://github.com/edgexfoundry/developer-scripts/blob/master/releases/nightly-build/compose-files/docker-compose-nexus-mongo-no-secty.yml)下载 Docker Composer 文件，然后启动所有的 EdgeX 容器。
+打开 [EdgeX develop-scripts 项目](https://github.com/edgexfoundry/developer-scripts/tree/master/releases)，并且下载 Geneva 版本的 Docker compose file，然后启动所有的 EdgeX 容器。
 
 ```shell
-# wget https://github.com/edgexfoundry/developer-scripts/raw/master/releases/nightly-build/compose-files/docker-compose-nexus-mongo-no-secty.yml
-
 # docker-compose -f ./docker-compose-nexus-redis-no-secty.yml up -d --build
 ```
 
