@@ -800,7 +800,7 @@ func TestSingleSQL(t *testing.T) {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
 		tp.AddSink(inputs, sink)
 		errCh := tp.Open()
 		func() {
@@ -834,6 +834,250 @@ func TestSingleSQL(t *testing.T) {
 		}
 		if !reflect.DeepEqual(tt.r, maps) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
+			continue
+		}
+		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
+		}
+		tp.Cancel()
+	}
+}
+
+func TestSingleSQLTemplate(t *testing.T) {
+	var tests = []struct {
+		name string
+		sql  string
+		r    []map[string]interface{}
+		s    string
+		m    map[string]interface{}
+	}{
+		{
+			name: `rule1`,
+			sql:  `SELECT * FROM demo`,
+			r: []map[string]interface{}{
+				{
+					"c":       "red",
+					"wrapper": "w1",
+				},
+				{
+					"c":       "blue",
+					"wrapper": "w1",
+				},
+				{
+					"c":       "blue",
+					"wrapper": "w1",
+				},
+				{
+					"c":       "yellow",
+					"wrapper": "w1",
+				},
+				{
+					"c":       "red",
+					"wrapper": "w1",
+				},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(5),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+			},
+			s: "sink_mockSink_0_records_out_total",
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	createStreams(t)
+	defer dropStreams(t)
+	//defer close(done)
+	for i, tt := range tests {
+		test.ResetClock(1541152486000)
+		p := NewRuleProcessor(DbDir)
+		parser := xsql.NewParser(strings.NewReader(tt.sql))
+		var (
+			sources []*nodes.SourceNode
+			syncs   []chan int
+		)
+		if stmt, err := xsql.Language.Parse(parser); err != nil {
+			t.Errorf("parse sql %s error: %s", tt.sql, err)
+		} else {
+			if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
+				t.Errorf("sql %s is not a select statement", tt.sql)
+			} else {
+				streams := xsql.GetStreams(selectStmt)
+				for _, stream := range streams {
+					next := make(chan int)
+					syncs = append(syncs, next)
+					source := getMockSource(stream, next, 5)
+					sources = append(sources, source)
+				}
+			}
+		}
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: map[string]interface{}{
+			"bufferLength": float64(100),
+		}}, sources)
+		if err != nil {
+			t.Error(err)
+		}
+		mockSink := test.NewMockSink()
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, map[string]interface{}{
+			"dataTemplate": `{"wrapper":"w1", "c":"{{.color}}"}`,
+			"sendSingle":   true,
+		})
+		tp.AddSink(inputs, sink)
+		errCh := tp.Open()
+		func() {
+			for i := 0; i < 5; i++ {
+				syncs[i%len(syncs)] <- i
+				select {
+				case err = <-errCh:
+					t.Log(err)
+					tp.Cancel()
+					return
+				default:
+				}
+			}
+			for retry := 100; retry > 0; retry-- {
+				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+					break
+				}
+				time.Sleep(time.Duration(retry) * time.Millisecond)
+			}
+		}()
+		results := mockSink.GetResults()
+		var maps []map[string]interface{}
+		for _, v := range results {
+			var mapRes map[string]interface{}
+			err := json.Unmarshal(v, &mapRes)
+			if err != nil {
+				t.Errorf("Failed to parse the input into map")
+				continue
+			}
+			maps = append(maps, mapRes)
+		}
+		if !reflect.DeepEqual(tt.r, maps) {
+			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
+			continue
+		}
+		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
+		}
+		tp.Cancel()
+	}
+}
+
+func TestNoneSingleSQLTemplate(t *testing.T) {
+	var tests = []struct {
+		name string
+		sql  string
+		r    [][]byte
+		s    string
+		m    map[string]interface{}
+	}{
+		{
+			name: `rule1`,
+			sql:  `SELECT * FROM demo`,
+			r: [][]byte{
+				[]byte("<div>results</div><ul><li>red - 3</li></ul>"),
+				[]byte("<div>results</div><ul><li>blue - 6</li></ul>"),
+				[]byte("<div>results</div><ul><li>blue - 2</li></ul>"),
+				[]byte("<div>results</div><ul><li>yellow - 4</li></ul>"),
+				[]byte("<div>results</div><ul><li>red - 1</li></ul>"),
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(5),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+			},
+			s: "sink_mockSink_0_records_out_total",
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	createStreams(t)
+	defer dropStreams(t)
+	//defer close(done)
+	for i, tt := range tests {
+		test.ResetClock(1541152486000)
+		p := NewRuleProcessor(DbDir)
+		parser := xsql.NewParser(strings.NewReader(tt.sql))
+		var (
+			sources []*nodes.SourceNode
+			syncs   []chan int
+		)
+		if stmt, err := xsql.Language.Parse(parser); err != nil {
+			t.Errorf("parse sql %s error: %s", tt.sql, err)
+		} else {
+			if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
+				t.Errorf("sql %s is not a select statement", tt.sql)
+			} else {
+				streams := xsql.GetStreams(selectStmt)
+				for _, stream := range streams {
+					next := make(chan int)
+					syncs = append(syncs, next)
+					source := getMockSource(stream, next, 5)
+					sources = append(sources, source)
+				}
+			}
+		}
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: map[string]interface{}{
+			"bufferLength": float64(100),
+		}}, sources)
+		if err != nil {
+			t.Error(err)
+		}
+		mockSink := test.NewMockSink()
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, map[string]interface{}{
+			"dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.color}} - {{.size}}</li>{{end}}</ul>`,
+		})
+		tp.AddSink(inputs, sink)
+		errCh := tp.Open()
+		func() {
+			for i := 0; i < 5; i++ {
+				syncs[i%len(syncs)] <- i
+				select {
+				case err = <-errCh:
+					t.Log(err)
+					tp.Cancel()
+					return
+				default:
+				}
+			}
+			for retry := 100; retry > 0; retry-- {
+				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+					break
+				}
+				time.Sleep(time.Duration(retry) * time.Millisecond)
+			}
+		}()
+		results := mockSink.GetResults()
+		if !reflect.DeepEqual(tt.r, results) {
+			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, results)
 			continue
 		}
 		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
@@ -1169,7 +1413,7 @@ func TestSingleSQLError(t *testing.T) {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
 		tp.AddSink(inputs, sink)
 		errCh := tp.Open()
 		func() {
@@ -1684,7 +1928,7 @@ func TestWindow(t *testing.T) {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
 		tp.AddSink(inputs, sink)
 		errCh := tp.Open()
 		func() {
@@ -2015,7 +2259,7 @@ func TestWindowError(t *testing.T) {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
 		tp.AddSink(inputs, sink)
 		errCh := tp.Open()
 		func() {
@@ -2879,7 +3123,7 @@ func TestEventWindow(t *testing.T) {
 			t.Error(err)
 		}
 		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink)
+		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
 		tp.AddSink(inputs, sink)
 		errCh := tp.Open()
 		func() {

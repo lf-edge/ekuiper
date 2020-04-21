@@ -4,28 +4,24 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/emqx/kuiper/common/templates"
 	"github.com/emqx/kuiper/xstream/api"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
-	"text/template"
 	"time"
 )
 
 type RestSink struct {
-	method       string
-	url          string
-	headers      map[string]string
-	bodyType     string
-	timeout      int64
-	sendSingle   bool
-	dataTemplate string
+	method     string
+	url        string
+	headers    map[string]string
+	bodyType   string
+	timeout    int64
+	sendSingle bool
 
 	client *http.Client
-	tp     *template.Template
 }
 
 var methodsMap = map[string]bool{"GET": true, "HEAD": true, "POST": true, "PUT": true, "DELETE": true, "PATCH": true}
@@ -103,34 +99,15 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 		}
 	}
 
-	temp, ok = ps["dataTemplate"]
-	if ok {
-		ms.dataTemplate, ok = temp.(string)
-		if !ok {
-			return fmt.Errorf("rest sink property dataTemplate %v is not a string", temp)
-		}
-	}
-
-	if ms.dataTemplate != "" {
-		funcMap := template.FuncMap{
-			"json": templates.JsonMarshal,
-		}
-		temp, err := template.New("restSink").Funcs(funcMap).Parse(ms.dataTemplate)
-		if err != nil {
-			return fmt.Errorf("rest sink property dataTemplate %v is invalid: %v", ms.dataTemplate, err)
-		} else {
-			ms.tp = temp
-		}
-	}
 	return nil
 }
 
 func (ms *RestSink) Open(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	ms.client = &http.Client{Timeout: time.Duration(ms.timeout) * time.Millisecond}
-	logger.Infof("open rest sink with configuration: {method: %s, url: %s, bodyType: %s, timeout: %d,header: %v, sendSingle: %v, dataTemplate: %s", ms.method, ms.url, ms.bodyType, ms.timeout, ms.headers, ms.sendSingle, ms.dataTemplate)
+	logger.Infof("open rest sink with configuration: {method: %s, url: %s, bodyType: %s, timeout: %d,header: %v, sendSingle: %v", ms.method, ms.url, ms.bodyType, ms.timeout, ms.headers, ms.sendSingle)
 
-	timeout := time.Duration(1 * time.Second)
+	timeout := 1 * time.Second
 	if u, err := url.Parse(ms.url); err != nil {
 		return err
 	} else {
@@ -167,33 +144,7 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 		logger.Warnf("rest sink receive non []byte data: %v", item)
 	}
 	logger.Debugf("rest sink receive %s", item)
-	if !ms.sendSingle {
-		return ms.send(v, logger)
-	} else {
-		j, err := extractInput(v)
-		if err != nil {
-			return err
-		}
-		logger.Debugf("receive %d records", len(j))
-		var errs MultiErrors
-		for _, r := range j {
-			if e := ms.send(r, logger); e != nil {
-				errs = errs.AddError(e)
-			}
-		}
-		if len(errs) != 0 {
-			return errs
-		}
-	}
-	return nil
-}
-
-func extractInput(v []byte) ([]map[string]interface{}, error) {
-	var j []map[string]interface{}
-	if err := json.Unmarshal(v, &j); err != nil {
-		return nil, fmt.Errorf("fail to decode the input %s as json: %v", v, err)
-	}
-	return j, nil
+	return ms.send(v, logger)
 }
 
 func (ms *RestSink) send(v interface{}, logger api.Logger) error {
@@ -209,35 +160,10 @@ func (ms *RestSink) send(v interface{}, logger api.Logger) error {
 		var body = &(bytes.Buffer{})
 		switch t := v.(type) {
 		case []byte:
-			if ms.tp != nil {
-				j, err := extractInput(t)
-				if err != nil {
-					return err
-				}
-				err = ms.tp.Execute(body, j)
-				if err != nil {
-					return fmt.Errorf("fail to decode content: %v", err)
-				}
-			} else {
-				body = bytes.NewBuffer(t)
-			}
-		case map[string]interface{}:
-			if ms.tp != nil {
-				err = ms.tp.Execute(body, t)
-				if err != nil {
-					return fmt.Errorf("fail to decode content: %v", err)
-				}
-			} else {
-				content, err := json.Marshal(t)
-				if err != nil {
-					return fmt.Errorf("fail to decode content: %v", err)
-				}
-				body = bytes.NewBuffer(content)
-			}
+			body = bytes.NewBuffer(t)
 		default:
 			return fmt.Errorf("invalid content: %v", v)
 		}
-
 		req, err = http.NewRequest(ms.method, ms.url, body)
 		if err != nil {
 			return fmt.Errorf("fail to create request: %v", err)
@@ -245,7 +171,7 @@ func (ms *RestSink) send(v interface{}, logger api.Logger) error {
 		req.Header.Set("Content-Type", bodyTypeMap[ms.bodyType])
 	case "form":
 		form := url.Values{}
-		im, err := convertToMap(v, ms.tp)
+		im, err := convertToMap(v, ms.sendSingle)
 		if err != nil {
 			return err
 		}
@@ -291,46 +217,18 @@ func (ms *RestSink) send(v interface{}, logger api.Logger) error {
 	return nil
 }
 
-func convertToMap(v interface{}, tp *template.Template) (map[string]interface{}, error) {
+func convertToMap(v interface{}, sendSingle bool) (map[string]interface{}, error) {
 	switch t := v.(type) {
 	case []byte:
-		if tp != nil {
-			j, err := extractInput(t)
-			if err != nil {
-				return nil, err
-			}
-			var output bytes.Buffer
-			err = tp.Execute(&output, j)
-			if err != nil {
-				return nil, fmt.Errorf("fail to decode content: %v", err)
-			}
-			r := make(map[string]interface{})
-			if err := json.Unmarshal(output.Bytes(), &r); err != nil {
+		r := make(map[string]interface{})
+		if err := json.Unmarshal(t, &r); err != nil {
+			if sendSingle {
 				return nil, fmt.Errorf("fail to decode content: %v", err)
 			} else {
-				return r, nil
+				r["result"] = string(t)
 			}
-		} else {
-			r := make(map[string]interface{})
-			r["result"] = string(t)
-			return r, nil
 		}
-	case map[string]interface{}:
-		if tp != nil {
-			var output bytes.Buffer
-			err := tp.Execute(&output, t)
-			if err != nil {
-				return nil, fmt.Errorf("fail to decode content: %v", err)
-			}
-			r := make(map[string]interface{})
-			if err := json.Unmarshal(output.Bytes(), &r); err != nil {
-				return nil, fmt.Errorf("fail to decode content: %v", err)
-			} else {
-				return r, nil
-			}
-		} else {
-			return t, nil
-		}
+		return r, nil
 	default:
 		return nil, fmt.Errorf("invalid content: %v", v)
 	}
