@@ -22,7 +22,7 @@ The tutorial demonstrates how to use Kuiper to process the data from EdgeX messa
 
 ## Kuiper EdgeX integration
 
-EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to exchange information between different micro services. It contains the abstract message bus interface and an implementation for ZeroMQ & MQTT (NOTICE:  **ONLY ZeroMQ** message bus is supported in Kuiper rule engine, MQTT will be supported in later versions). The integration work for Kuiper & EdgeX includes following 3 parts. 
+EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to exchange information between different micro services. It contains the abstract message bus interface and an implementation for ZeroMQ & MQTT. The integration work for Kuiper & EdgeX includes following 3 parts. 
 
 - An EdgeX message bus source is extended to  support consuming data from EdgeX message bus.  
 
