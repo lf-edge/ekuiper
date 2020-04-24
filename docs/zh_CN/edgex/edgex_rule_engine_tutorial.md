@@ -22,7 +22,7 @@
 
 ## Kuiper EdgeX 集成
 
-在不同的微服务之间，EdgeX 使用[消息总线](https://github.com/edgexfoundry/go-mod-messaging)进行数据交换。它包含了一个抽象的消息总线接口，并且实现了 ZeroMQ 与 MQTT (注：Kuiper 目前**只支持 ZeroMQ** 消息总线 ，MQTT 将在后续版本中加入）在不同的微服务之间信息交互的支持。Kuiper 和 EdgeX 的集成工作包含了以下三部分，
+在不同的微服务之间，EdgeX 使用[消息总线](https://github.com/edgexfoundry/go-mod-messaging)进行数据交换。它包含了一个抽象的消息总线接口，并分别实现了 ZeroMQ 与 MQTT，在不同的微服务之间信息交互的支持。Kuiper 和 EdgeX 的集成工作包含了以下三部分，
 
 - 扩展了一个 EdgeX 消息总线源，支持从 EdgeX 消息总线中接收数据  
 
