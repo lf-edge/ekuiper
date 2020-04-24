@@ -246,3 +246,31 @@ func MapToStruct(input map[string]interface{}, output interface{}) error {
 	// convert json to struct
 	return json.Unmarshal(jsonString, output)
 }
+
+func ConvertMap(s map[interface{}]interface{}) map[string]interface{} {
+	r := make(map[string]interface{})
+	for k, v := range s {
+		switch t := v.(type) {
+		case map[interface{}]interface{}:
+			v = ConvertMap(t)
+		case []interface{}:
+			v = ConvertArray(t)
+		}
+		r[fmt.Sprintf("%v", k)] = v
+	}
+	return r
+}
+
+func ConvertArray(s []interface{}) []interface{} {
+	r := make([]interface{}, len(s))
+	for i, e := range s {
+		switch t := e.(type) {
+		case map[interface{}]interface{}:
+			e = ConvertMap(t)
+		case []interface{}:
+			e = ConvertArray(t)
+		}
+		r[i] = e
+	}
+	return r
+}
