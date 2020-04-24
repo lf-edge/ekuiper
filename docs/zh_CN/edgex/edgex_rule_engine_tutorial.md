@@ -181,7 +181,7 @@ curl -X POST \
 # bin/cli create rule rule1 -f rule.txt
 Connecting to 127.0.0.1:20498...
 Creating a new rule from file rule.txt.
-Rule rule1 was created, please use 'cli getstatus rule $rule_name' command to get rule status.
+Rule rule1 was created successfully, please use 'cli getstatus rule rule1' command to get rule status.
 ```
 
 ------
