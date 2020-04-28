@@ -160,7 +160,7 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, fmt.Errorf("Create rule error : %s.", err), http.StatusBadRequest, logger)
 			return
 		} else {
-			result = fmt.Sprintf("Rule %s was created, please use 'cli getstatus rule $rule_name' command to get rule status.", r.Id)
+			result = fmt.Sprintf("Rule %s was created successfully.", r.Id)
 		}
 		//Start the rule
 		rs, err := createRuleState(r)
