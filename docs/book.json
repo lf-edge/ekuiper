@@ -1,6 +1,7 @@
 {
   "plugins": [
     "prism",
+    "edit-link",
     "-highlight",
     "-sharing",
     "simple-page-toc",
@@ -8,7 +9,8 @@
     "copy-code-button",
     "anchor-navigation-ex",
     "cuav-chapters",
-    "local-pagefooter"
+    "local-pagefooter",
+    "github-buttons"
   ],
   "structure": {
     "readme": "getting_started.md"
@@ -18,6 +20,19 @@
       "lang": {
         "shell": "bash"
       }
+    },
+    "edit-link": {
+      "base": "https://github.com/emqx/kuiper/tree/master/docs",
+      "label": "Edit"
+    },
+    "github-buttons": {
+      "buttons": [{
+        "user": "emqx",
+        "repo": "kuiper",
+        "type": "star",
+        "count": true,
+        "size": "small"
+      }]
     },
     "anchor-navigation-ex": {
       "showLevel": false
@@ -37,8 +52,8 @@
     "epub": "styles/epub.css"
   },
   "title": "Kuiper",
-  "author": "EMQX Team",
-  "language": "zh",
+  "author": "EMQ X Team",
+  "language": "zh-hans",
   "links": {
     "sharing": {
       "facebook": false,

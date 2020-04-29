@@ -7,12 +7,21 @@
   "license": "Apache 2.0",
   "private": true,
   "scripts": {
-    "serve": "gitbook serve",
-    "docs": "gitbook install && gitbook serve",
-    "html": "gitbook install && gitbook build . _book",
-    "pdf": "gitbook install && gitbook pdf . _book.pdf"
+    "serve": "node _scripts/make && gitbook serve",
+    "docs": "node _scripts/make && gitbook serve",
+    "html": "npm install && node _scripts/make && gitbook build . _book",
+    "pdf": "gitbook pdf . _book.pdf"
   },
   "dependencies": {
-    "gitbook-cli": "^2.3.2"
+    "gitbook-cli": "^2.3.2",
+    "gitbook-plugin-prism": "*",
+    "gitbook-plugin-simple-page-toc": "*",
+    "gitbook-plugin-anchors": "*",
+    "gitbook-plugin-copy-code-button": "*",
+    "gitbook-plugin-anchor-navigation-ex": "*",
+    "gitbook-plugin-cuav-chapters": "*",
+    "gitbook-plugin-local-pagefooter": "*",
+    "gitbook-plugin-edit-link": "*",
+    "gitbook-plugin-github-buttons": "*"
   }
 }
