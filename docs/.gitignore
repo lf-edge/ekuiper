@@ -2,3 +2,5 @@
 *.pdf
 yarn.lock
 yarn-error.log
+zh_CN/README.md
+en_US/README.md
