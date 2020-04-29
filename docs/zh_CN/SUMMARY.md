@@ -1,7 +1,7 @@
 <!-- - [Introduction](README.md) -->
-- [概要介绍](../../README-CN.md)
+- [概要](../../README-CN.md)
 <!-- ## 参考指南 -->
-- [安装与运维](operation/overview.md)
+- [安装试用](operation/overview.md)
   - [下载安装快速入门](getting_started.md) 
   - [Docker 容器安装教程](quick_start_docker.md) 
   - [EdgeX Foundry 规则引擎教程](edgex/edgex_rule_engine_tutorial.md)
