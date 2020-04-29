@@ -7,10 +7,10 @@
   "license": "Apache 2.0",
   "private": true,
   "scripts": {
-    "serve": "gitbook serve",
-    "docs": "gitbook install && gitbook serve",
-    "html": "npm run install && gitbook build . _book",
-    "pdf": "npx gitbook pdf . _book.pdf"
+    "serve": "node _scripts/make && gitbook serve",
+    "docs": "node _scripts/make && gitbook serve",
+    "html": "npm install && node _scripts/make && gitbook build . _book",
+    "pdf": "gitbook pdf . _book.pdf"
   },
   "dependencies": {
     "gitbook-cli": "^2.3.2",
