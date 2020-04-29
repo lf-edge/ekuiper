@@ -55,7 +55,7 @@ Currently, 3 kinds of sinks/actions are supported:
 - [rest](sinks/rest.md): Send the result to a Rest HTTP server.
 - [nop](sinks/nop.md): Send the result to a nop operation.
 
-Each action can define its own properties. There are 3 common properties:
+Each action can define its own properties. There are several common properties:
 
 | property name | Type & Default Value | Description                                                  |
 | ------------- | -------- | ------------------------------------------------------------ |
@@ -66,6 +66,52 @@ Each action can define its own properties. There are 3 common properties:
 | cacheLength     | int:10240   | Specify how many messages can be cached. The cached messages will be resent to external system until the data sent out successfully. The cached message will be sent in order except in runAsync or concurrent mode. The cached message will be saved to disk in fixed intervals.  |
 | cacheSaveInterval  | int:1000   | Specify the interval to save cached message to the disk. Notice that, if the rule is closed in plan, all the cached messages will be saved at close. A larger value can reduce the saving overhead but may lose more cache messages when the system is interrupted in error.  |
 | omitIfEmpty | bool: false | If the configuration item is set to true, when SELECT result is empty, then the result will not feed to sink operator. |
+| sendSingle        | true     | The output messages are received as an array. This is indicate whether to send the results one by one. If false, the output message will be ``{"result":"${the string of received message}"}``. For example, ``{"result":"[{\"count\":30},"\"count\":20}]"}``. Otherwise, the result message will be sent one by one with the actual field name. For the same example as above, it will send ``{"count":30}``, then send ``{"count":20}`` to the RESTful endpoint.Default to false. |
+| dataTemplate      | true     | The [golang template](https://golang.org/pkg/html/template) format string to specify the output data format. The input of the template is the sink message which is always an array of map. If no data template is specified, the raw input will be the data. |
+
+#### Data Template
+If sendSingle is true, the data template will execute against a record; Otherwise, it will execute against the whole array of records. Typical data templates are:
+
+For example, we have the sink input as 
+```
+[]map[string]interface{}{{
+    "ab" : "hello1",
+},{
+    "ab" : "hello2",
+}}
+```
+
+In sendSingle=true mode:
+- Print out the whole record
+
+```
+"dataTemplate": `{"content":{{json .}}}`,
+```
+- Print out the the ab field
+
+```
+"dataTemplate": `{"content":{{.ab}}}`,
+```
+
+In sendSingle=false mode:
+- Print out the whole record array
+
+```
+"dataTemplate": `{"content":{{json .}}}`,
+```
+- Print out the first record
+```
+"dataTemplate": `{"content":{{json (index . 0)}}}`,
+```
+- Print out the field ab of the first record
+
+```
+"dataTemplate": `{"content":{{index . 0 "ab"}}}`,
+```
+- Print out field ab of each record in the array to html format
+```
+"dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>`,
+```
 
 Actions could be customized to support different kinds of outputs, see [extension](../extension/overview.md) for more detailed info.
 

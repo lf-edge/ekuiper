@@ -231,7 +231,7 @@ func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
 		return nil, err
 	}
 	defer p.db.Close()
-	s, f := p.db.Get(string(name))
+	s, f := p.db.Get(name)
 	if !f {
 		return nil, fmt.Errorf("Rule %s is not found.", name)
 	}

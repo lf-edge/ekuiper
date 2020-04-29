@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"plugin"
@@ -206,7 +207,7 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}
 	//unzip and copy to destination
-	unzipFiles, version, err := m.unzipAndCopy(t, name, zipPath)
+	unzipFiles, version, err := m.install(t, name, zipPath)
 	if err != nil {
 		if t == SOURCE && len(unzipFiles) == 1 { //source that only copy so file
 			os.Remove(unzipFiles[0])
@@ -283,8 +284,10 @@ func getSoFileName(m *Manager, t PluginType, name string) (string, error) {
 	return soFile, nil
 }
 
-func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string, string, error) {
+func (m *Manager) install(t PluginType, name string, src string) ([]string, string, error) {
 	var filenames []string
+	var tempPath = path.Join(m.pluginDir, "temp", PluginTypes[t], name)
+	defer os.RemoveAll(tempPath)
 	r, err := zip.OpenReader(src)
 	if err != nil {
 		return filenames, "", err
@@ -299,6 +302,7 @@ func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string,
 		yamlPath = path.Join(m.etcDir, PluginTypes[t], yamlFile)
 		expFiles = 2
 	}
+	needInstall := false
 	for _, file := range r.File {
 		fileName := file.Name
 		if yamlFile == fileName {
@@ -307,8 +311,7 @@ func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string,
 				return filenames, "", err
 			}
 			filenames = append(filenames, yamlPath)
-		}
-		if soPrefix.Match([]byte(fileName)) {
+		} else if soPrefix.Match([]byte(fileName)) {
 			soPath := path.Join(m.pluginDir, PluginTypes[t], fileName)
 			err = unzipTo(file, soPath)
 			if err != nil {
@@ -316,10 +319,27 @@ func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string,
 			}
 			filenames = append(filenames, soPath)
 			_, version = parseName(fileName)
+		} else { //unzip other files
+			err = unzipTo(file, path.Join(tempPath, fileName))
+			if err != nil {
+				return filenames, "", err
+			}
+			if fileName == "install.sh" {
+				needInstall = true
+			}
 		}
 	}
 	if len(filenames) != expFiles {
 		return filenames, version, fmt.Errorf("invalid zip file: so file or conf file is missing")
+	} else if needInstall {
+		//run install script if there is
+		spath := path.Join(tempPath, "install.sh")
+		out, err := exec.Command("/bin/sh", spath).Output()
+		if err != nil {
+			return filenames, "", err
+		} else {
+			common.Log.Infof("install %s plugin %s log: %s", PluginTypes[t], name, out)
+		}
 	}
 	return filenames, version, nil
 }
