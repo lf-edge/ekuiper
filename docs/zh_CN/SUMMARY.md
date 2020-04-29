@@ -1,6 +1,4 @@
-<!-- - [Introduction](README.md) -->
-- [概要](../../README-CN.md)
-<!-- ## 参考指南 -->
+- [概要](./README.md)
 - [安装试用](operation/overview.md)
   - [下载安装快速入门](getting_started.md) 
   - [Docker 容器安装教程](quick_start_docker.md) 
@@ -22,5 +20,4 @@
 - [扩展 Kuiper](extension/overview.md)
 - [插件](plugins/overview.md)
   - [插件开发教程](plugins/plugins_tutorial.md)
-- [运维](operation/overview.md)
 

@@ -1,1 +1,4 @@
 .lock
+*.pdf
+yarn.lock
+yarn-error.log
