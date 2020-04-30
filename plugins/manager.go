@@ -363,7 +363,9 @@ func parseName(n string) (string, string) {
 func unzipTo(f *zip.File, fpath string) error {
 	_, err := os.Stat(fpath)
 	if err == nil || !os.IsNotExist(err) {
-		return fmt.Errorf("%s already exist", fpath)
+		if err = os.Remove(fpath); err != nil {
+			return fmt.Errorf("failed to delete file %s", fpath)
+		}
 	}
 
 	if f.FileInfo().IsDir() {
