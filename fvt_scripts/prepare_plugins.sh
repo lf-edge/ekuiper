@@ -17,10 +17,12 @@ cp plugins/zmq.yaml .
 zip zmq.zip Zmq.so zmq.yaml
 rm -rf zmq.yaml Zmq.so
 
-rm -rf plugins/service/web/plugins/*
+rm -rf plugins/service/web/plugins/
+mkdir plugins/service/web/plugins/
 mv zmq.zip plugins/service/web/plugins/
 
 cd plugins/service/
 export BUILD_ID=dontKillMe
 
+echo "starting mock http server..."
 nohup ./http_server > http_server.out 2>&1 &
