@@ -26,7 +26,6 @@ jobs:
             go build --buildmode=plugin -o plugins/sinks/File@v1.0.0.so plugins/sinks/file.go
             go build --buildmode=plugin -o plugins/functions/Echo.so plugins/functions/echo.go
             go build --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so plugins/functions/countPlusOne.go
-            go build --buildmode=plugin -o plugins/sources/Zmq.so plugins/sources/zmq.go
             go test ./...
             go test --tags=edgex ./...
     
