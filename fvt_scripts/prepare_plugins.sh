@@ -18,7 +18,7 @@ zip zmq.zip Zmq.so zmq.yaml
 rm -rf zmq.yaml Zmq.so
 
 rm -rf plugins/service/web/plugins/
-mkdir plugins/service/web/plugins/
+mkdir -p plugins/service/web/plugins/
 mv zmq.zip plugins/service/web/plugins/
 
 cd plugins/service/
