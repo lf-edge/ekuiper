@@ -289,8 +289,8 @@
           </HTTPSamplerProxy>
           <hashTree>
             <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
-              <stringProp name="JSON_PATH">$.source_demo_0_records_in_total</stringProp>
-              <stringProp name="EXPECTED_VALUE">20</stringProp>
+              <stringProp name="JSON_PATH">$.sink_sink_rest_0_records_in_total</stringProp>
+              <stringProp name="EXPECTED_VALUE">2</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
               <boolProp name="EXPECT_NULL">false</boolProp>
               <boolProp name="INVERT">false</boolProp>
