@@ -34,6 +34,8 @@ const (
 	FUNCTION
 )
 
+const DELETED = "$deleted"
+
 var (
 	PluginTypes = []string{"sources", "sinks", "functions"}
 	once        sync.Once
@@ -192,11 +194,14 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		return fmt.Errorf("invalid uri %s", uri)
 	}
 
-	for _, n := range m.registry.List(t) {
-		if n == name {
+	if v, ok := m.registry.Get(t, name); ok {
+		if v == DELETED {
+			return fmt.Errorf("invalid name %s: the plugin is marked as deleted but Kuiper is not restarted for the change to take effect yet", name)
+		} else {
 			return fmt.Errorf("invalid name %s: duplicate", name)
 		}
 	}
+
 	zipPath := path.Join(m.pluginDir, name+".zip")
 	var unzipFiles []string
 	//clean up: delete zip file and unzip files in error
@@ -250,6 +255,7 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	if len(results) > 0 {
 		return errors.New(strings.Join(results, "\n"))
 	} else {
+		m.registry.Store(t, name, DELETED)
 		if stop {
 			go func() {
 				time.Sleep(1 * time.Second)

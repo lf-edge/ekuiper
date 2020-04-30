@@ -203,7 +203,7 @@ func (t *Server) DropPlugin(arg *common.PluginDesc, reply *string) error {
 		if arg.Stop {
 			*reply = fmt.Sprintf("Plugin %s is dropped and Kuiper will be stopped.", p.Name)
 		} else {
-			*reply = fmt.Sprintf("Plugin %s is dropped.", p.Name)
+			*reply = fmt.Sprintf("Plugin %s is dropped and Kuiper must restart for the change to take effect.", p.Name)
 		}
 
 	}

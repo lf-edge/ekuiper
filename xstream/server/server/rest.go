@@ -313,6 +313,8 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType)
 		result := fmt.Sprintf("%s plugin %s is deleted", plugins.PluginTypes[t], name)
 		if r {
 			result = fmt.Sprintf("%s and Kuiper will be stopped", result)
+		} else {
+			result = fmt.Sprintf("%s and Kuiper must restart for the change to take effect.", result)
 		}
 		w.Write([]byte(result))
 	case http.MethodGet:
