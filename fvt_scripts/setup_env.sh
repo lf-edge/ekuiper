@@ -37,3 +37,15 @@ else
 fi
 
 fvt_scripts/start_vdmock.sh
+
+pids=`ps aux | grep http_server | grep "./" | awk '{printf $2 " "}'`
+if [ "$pids" = "" ] ; then
+   echo "No http mockup server was started"
+else
+  for pid in $pids ; do
+    echo "kill http mockup server " $pid
+    kill -9 $pid
+  done
+fi
+
+fvt_scripts/prepare_plugins.sh

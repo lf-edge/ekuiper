@@ -84,3 +84,6 @@ if test $with_edgex = true; then
   echo -e "---------------------------------------------\n"
 
 fi
+
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t fvt_scripts/plugin_end_2_end.jmx -Dfvt="$fvt_dir" -l jmeter_logs/plugin_end_2_end.jtl -j jmeter_logs/plugin_end_2_end.log
+echo -e "---------------------------------------------\n"
