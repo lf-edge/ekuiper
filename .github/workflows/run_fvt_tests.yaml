@@ -43,6 +43,7 @@ jobs:
           run: |
             sudo apt update && sudo apt install pkg-config libczmq-dev -y
             make build_with_edgex
+            go build --buildmode=plugin -o plugins/sources/Zmq.so plugins/sources/zmq.go
         - name: run edgex && emqx && kuiper
           run: |
             sudo ./fvt_scripts/setup_env.sh
@@ -105,6 +106,7 @@ jobs:
           run: |
             sudo apt update && sudo apt install pkg-config libczmq-dev -y
             make
+            go build --buildmode=plugin -o plugins/sources/Zmq.so plugins/sources/zmq.go
         - name: run edgex && emqx && kuiper
           run: |
             sudo ./fvt_scripts/setup_env.sh
@@ -187,7 +189,7 @@ jobs:
           sudo ./get_helm.sh
           helm version
       - name: build kuiper for docker
-        run: make docker
+        run: sudo docker build --no-cache -t emqx/kuiper:$(git describe --tags --alway)-alpine -f deploy/docker/Dockerfile-alpine .
       - name: run emqx on chart
         env:
           KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
@@ -209,7 +211,7 @@ jobs:
           version=$(git describe --tags --always)
           emqx_address=$(kubectl get svc --namespace default emqx -o jsonpath="{.spec.clusterIP}")
           
-          sudo docker save emqx/kuiper:$version -o kuier.tar.gz
+          sudo docker save emqx/kuiper:$version-alpine -o kuier.tar.gz
           sudo k3s ctr image import kuier.tar.gz
           
           sed -i -r "s/^appVersion: .*$/appVersion: ${version}/g" deploy/chart/kuiper/Chart.yaml

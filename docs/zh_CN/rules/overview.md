@@ -56,6 +56,53 @@
 | cacheLength     | int:10240   | 设置最大消息缓存数量。缓存的消息会一直保留直到消息发送成功。缓存消息将按顺序发送，除非运行在异步或者并发模式下。缓存消息会定期存储到磁盘中。  |
 | cacheSaveInterval  | int:1000   | 设置缓存存储间隔时间，单位为毫秒。需要注意的是，当规则关闭时，缓存会自动存储。该值越大，则缓存保存开销越小，但系统意外退出时缓存丢失的风险变大。 |
 | omitIfEmpty | bool: false | Omit the output if the select result is empty. |
+| sendSingle        | true     | The output messages are received as an array. This is indicate whether to send the results one by one. If false, the output message will be ``{"result":"${the string of received message}"}``. For example, ``{"result":"[{\"count\":30},"\"count\":20}]"}``. Otherwise, the result message will be sent one by one with the actual field name. For the same example as above, it will send ``{"count":30}``, then send ``{"count":20}`` to the RESTful endpoint.Default to false. |
+| dataTemplate      | true     | The [golang template](https://golang.org/pkg/html/template) format string to specify the output data format. The input of the template is the sink message which is always an array of map. If no data template is specified, the raw input will be the data. |
+
+#### Data Template
+If sendSingle is true, the data template will execute against a record; Otherwise, it will execute against the whole array of records. Typical data templates are:
+
+For example, we have the sink input as 
+```
+[]map[string]interface{}{{
+    "ab" : "hello1",
+},{
+    "ab" : "hello2",
+}}
+```
+
+In sendSingle=true mode:
+- Print out the whole record
+
+```
+"dataTemplate": `{"content":{{json .}}}`,
+```
+- Print out the the ab field
+
+```
+"dataTemplate": `{"content":{{.ab}}}`,
+```
+
+In sendSingle=false mode:
+- Print out the whole record array
+
+```
+"dataTemplate": `{"content":{{json .}}}`,
+```
+- Print out the first record
+```
+"dataTemplate": `{"content":{{json (index . 0)}}}`,
+```
+- Print out the field ab of the first record
+
+```
+"dataTemplate": `{"content":{{index . 0 "ab"}}}`,
+```
+- Print out field ab of each record in the array to html format
+```
+"dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>`,
+```
+
 
 可以自定义动作以支持不同种类的输出，有关更多详细信息，请参见 [extension](../extension/overview.md) 。
 

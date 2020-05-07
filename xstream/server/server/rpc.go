@@ -80,7 +80,7 @@ func (t *Server) CreateRule(rule *common.RuleDesc, reply *string) error {
 	if err != nil {
 		return fmt.Errorf("Create rule error : %s.", err)
 	} else {
-		*reply = fmt.Sprintf("Rule %s was created, please use 'cli getstatus rule $rule_name' command to get rule status.", rule.Name)
+		*reply = fmt.Sprintf("Rule %s was created successfully, please use 'bin/cli getstatus rule %s' command to get rule status.", rule.Name, rule.Name)
 	}
 	//Start the rule
 	rs, err := createRuleState(r)
@@ -203,7 +203,7 @@ func (t *Server) DropPlugin(arg *common.PluginDesc, reply *string) error {
 		if arg.Stop {
 			*reply = fmt.Sprintf("Plugin %s is dropped and Kuiper will be stopped.", p.Name)
 		} else {
-			*reply = fmt.Sprintf("Plugin %s is dropped.", p.Name)
+			*reply = fmt.Sprintf("Plugin %s is dropped and Kuiper must restart for the change to take effect.", p.Name)
 		}
 
 	}

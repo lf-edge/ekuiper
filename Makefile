@@ -114,7 +114,8 @@ cross_build: cross_prepare
 .PHONY: docker
 docker:
 	docker build --no-cache -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile .
-	docker build --no-cache -t $(TARGET):$(VERSION)-dev -f deploy/docker/Dockerfile-dev .
+	docker build --no-cache -t $(TARGET):$(VERSION)-slim -f deploy/docker/Dockerfile-slim .
+	docker build --no-cache -t $(TARGET):$(VERSION)-alpine -f deploy/docker/Dockerfile-alpine .
 
 .PHONY:cross_docker
 cross_docker: cross_prepare
@@ -126,8 +127,14 @@ cross_docker: cross_prepare
 
 	docker buildx build --no-cache \
 	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
-	-t $(TARGET):$(VERSION)-dev \
-	-f deploy/docker/Dockerfile-dev . \
+	-t $(TARGET):$(VERSION)-slim \
+	-f deploy/docker/Dockerfile-slim . \
+	--push
+
+	docker buildx build --no-cache \
+	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+	-t $(TARGET):$(VERSION)-alpine \
+	-f deploy/docker/Dockerfile-alpine . \
 	--push
 
 .PHONY: clean

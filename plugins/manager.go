@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"plugin"
@@ -32,6 +33,8 @@ const (
 	SINK
 	FUNCTION
 )
+
+const DELETED = "$deleted"
 
 var (
 	PluginTypes = []string{"sources", "sinks", "functions"}
@@ -191,11 +194,14 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		return fmt.Errorf("invalid uri %s", uri)
 	}
 
-	for _, n := range m.registry.List(t) {
-		if n == name {
+	if v, ok := m.registry.Get(t, name); ok {
+		if v == DELETED {
+			return fmt.Errorf("invalid name %s: the plugin is marked as deleted but Kuiper is not restarted for the change to take effect yet", name)
+		} else {
 			return fmt.Errorf("invalid name %s: duplicate", name)
 		}
 	}
+
 	zipPath := path.Join(m.pluginDir, name+".zip")
 	var unzipFiles []string
 	//clean up: delete zip file and unzip files in error
@@ -206,7 +212,7 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}
 	//unzip and copy to destination
-	unzipFiles, version, err := m.unzipAndCopy(t, name, zipPath)
+	unzipFiles, version, err := m.install(t, name, zipPath)
 	if err != nil {
 		if t == SOURCE && len(unzipFiles) == 1 { //source that only copy so file
 			os.Remove(unzipFiles[0])
@@ -249,6 +255,7 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	if len(results) > 0 {
 		return errors.New(strings.Join(results, "\n"))
 	} else {
+		m.registry.Store(t, name, DELETED)
 		if stop {
 			go func() {
 				time.Sleep(1 * time.Second)
@@ -283,8 +290,10 @@ func getSoFileName(m *Manager, t PluginType, name string) (string, error) {
 	return soFile, nil
 }
 
-func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string, string, error) {
+func (m *Manager) install(t PluginType, name string, src string) ([]string, string, error) {
 	var filenames []string
+	var tempPath = path.Join(m.pluginDir, "temp", PluginTypes[t], name)
+	defer os.RemoveAll(tempPath)
 	r, err := zip.OpenReader(src)
 	if err != nil {
 		return filenames, "", err
@@ -299,6 +308,7 @@ func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string,
 		yamlPath = path.Join(m.etcDir, PluginTypes[t], yamlFile)
 		expFiles = 2
 	}
+	needInstall := false
 	for _, file := range r.File {
 		fileName := file.Name
 		if yamlFile == fileName {
@@ -307,8 +317,7 @@ func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string,
 				return filenames, "", err
 			}
 			filenames = append(filenames, yamlPath)
-		}
-		if soPrefix.Match([]byte(fileName)) {
+		} else if soPrefix.Match([]byte(fileName)) {
 			soPath := path.Join(m.pluginDir, PluginTypes[t], fileName)
 			err = unzipTo(file, soPath)
 			if err != nil {
@@ -316,10 +325,27 @@ func (m *Manager) unzipAndCopy(t PluginType, name string, src string) ([]string,
 			}
 			filenames = append(filenames, soPath)
 			_, version = parseName(fileName)
+		} else { //unzip other files
+			err = unzipTo(file, path.Join(tempPath, fileName))
+			if err != nil {
+				return filenames, "", err
+			}
+			if fileName == "install.sh" {
+				needInstall = true
+			}
 		}
 	}
 	if len(filenames) != expFiles {
 		return filenames, version, fmt.Errorf("invalid zip file: so file or conf file is missing")
+	} else if needInstall {
+		//run install script if there is
+		spath := path.Join(tempPath, "install.sh")
+		out, err := exec.Command("/bin/sh", spath).Output()
+		if err != nil {
+			return filenames, "", err
+		} else {
+			common.Log.Infof("install %s plugin %s log: %s", PluginTypes[t], name, out)
+		}
 	}
 	return filenames, version, nil
 }
@@ -337,7 +363,9 @@ func parseName(n string) (string, string) {
 func unzipTo(f *zip.File, fpath string) error {
 	_, err := os.Stat(fpath)
 	if err == nil || !os.IsNotExist(err) {
-		return fmt.Errorf("%s already exist", fpath)
+		if err = os.Remove(fpath); err != nil {
+			return fmt.Errorf("failed to delete file %s", fpath)
+		}
 	}
 
 	if f.FileInfo().IsDir() {

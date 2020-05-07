@@ -1,0 +1,15 @@
+default:
+  interval: 1000
+  ashost: 192.168.1.100
+  sysnr: "02"
+  client: "900"
+  user: SPERF
+  passwd: PASSPASS
+  params:
+    QUERY_TABLE: VBAP
+    ROWCOUNT: 10
+    FIELDS: [
+      FIELDNAME: MANDT,
+      FIELDNAME: VBELN,
+      FIELDNAME: POSNR,
+    ]

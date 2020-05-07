@@ -174,16 +174,32 @@ func TestRestSink_Apply(t *testing.T) {
 	defer ts.Close()
 	for i, tt := range tests {
 		requests = nil
+		ss, ok := tt.config["sendSingle"]
+		if !ok {
+			ss = false
+		}
 		s := &RestSink{}
 		tt.config["url"] = ts.URL
 		s.Configure(tt.config)
 		s.Open(ctx)
-		input, err := json.Marshal(tt.data)
-		if err != nil {
-			t.Errorf("Failed to parse the input into []byte]")
-			continue
+		if ss.(bool) {
+			for _, d := range tt.data {
+				input, err := json.Marshal(d)
+				if err != nil {
+					t.Errorf("Failed to parse the input into []byte]")
+					continue
+				}
+				s.Collect(ctx, input)
+			}
+		} else {
+			input, err := json.Marshal(tt.data)
+			if err != nil {
+				t.Errorf("Failed to parse the input into []byte]")
+				continue
+			}
+			s.Collect(ctx, input)
 		}
-		s.Collect(ctx, input)
+
 		s.Close(ctx)
 		if !reflect.DeepEqual(tt.result, requests) {
 			t.Errorf("%d \tresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.result, requests)
@@ -194,7 +210,7 @@ func TestRestSink_Apply(t *testing.T) {
 func TestRestSinkTemplate_Apply(t *testing.T) {
 	var tests = []struct {
 		config map[string]interface{}
-		data   []map[string]interface{}
+		data   [][]byte
 		result []request
 	}{
 		{
@@ -204,11 +220,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 				"sendSingle":   true,
 				"dataTemplate": `{"wrapper":"w1","content":{{json .}},"ab":"{{.ab}}"}`,
 			},
-			data: []map[string]interface{}{{
-				"ab": "hello1",
-			}, {
-				"ab": "hello2",
-			}},
+			data: [][]byte{[]byte(`{"wrapper":"w1","content":{"ab":"hello1"},"ab":"hello1"}`), []byte(`{"wrapper":"w1","content":{"ab":"hello2"},"ab":"hello2"}`)},
 			result: []request{{
 				Method:      "POST",
 				Body:        `{"wrapper":"w1","content":{"ab":"hello1"},"ab":"hello1"}`,
@@ -224,11 +236,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 				//"url": "http://localhost/test",  //set dynamically to the test server
 				"dataTemplate": `{"wrapper":"arr","content":{{json .}},"content0":{{json (index . 0)}},ab0":"{{index . 0 "ab"}}"}`,
 			},
-			data: []map[string]interface{}{{
-				"ab": "hello1",
-			}, {
-				"ab": "hello2",
-			}},
+			data: [][]byte{[]byte(`{"wrapper":"arr","content":[{"ab":"hello1"},{"ab":"hello2"}],"content0":{"ab":"hello1"},ab0":"hello1"}`)},
 			result: []request{{
 				Method:      "POST",
 				Body:        `{"wrapper":"arr","content":[{"ab":"hello1"},{"ab":"hello2"}],"content0":{"ab":"hello1"},ab0":"hello1"}`,
@@ -240,11 +248,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 				//"url": "http://localhost/test",  //set dynamically to the test server
 				"dataTemplate": `{"wrapper":"w1","content":{{json .}},"ab":"{{.ab}}"}`,
 			},
-			data: []map[string]interface{}{{
-				"ab": "hello1",
-			}, {
-				"ab": "hello2",
-			}},
+			data: [][]byte{[]byte(`{"wrapper":"w1","content":{"ab":"hello1"},"ab":"hello1"}`)},
 			result: []request{{
 				Method:      "GET",
 				ContentType: "",
@@ -256,11 +260,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 				"bodyType":     "html",
 				"dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>`,
 			},
-			data: []map[string]interface{}{{
-				"ab": "hello1",
-			}, {
-				"ab": "hello2",
-			}},
+			data: [][]byte{[]byte(`<div>results</div><ul><li>hello1</li><li>hello2</li></ul>`)},
 			result: []request{{
 				Method:      "PUT",
 				ContentType: "text/html",
@@ -273,11 +273,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 				"bodyType":     "form",
 				"dataTemplate": `{"content":{{json .}}}`,
 			},
-			data: []map[string]interface{}{{
-				"ab": "hello1",
-			}, {
-				"ab": "hello2",
-			}},
+			data: [][]byte{[]byte(`{"content":[{"ab":"hello1"},{"ab":"hello2"}]}`)},
 			result: []request{{
 				Method:      "POST",
 				ContentType: "application/x-www-form-urlencoded;param=value",
@@ -291,11 +287,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 				"sendSingle":   true,
 				"dataTemplate": `{"newab":"{{.ab}}"}`,
 			},
-			data: []map[string]interface{}{{
-				"ab": "hello1",
-			}, {
-				"ab": "hello2",
-			}},
+			data: [][]byte{[]byte(`{"newab":"hello1"}`), []byte(`{"newab":"hello2"}`)},
 			result: []request{{
 				Method:      "POST",
 				ContentType: "application/x-www-form-urlencoded;param=value",
@@ -314,11 +306,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 				"timeout":      float64(1000),
 				"dataTemplate": `{"newab":"{{.ab}}"}`,
 			},
-			data: []map[string]interface{}{{
-				"ab": "hello1",
-			}, {
-				"ab": "hello2",
-			}},
+			data: [][]byte{[]byte(`{"newab":"hello1"}`), []byte(`{"newab":"hello2"}`)},
 			result: []request{{
 				Method:      "POST",
 				Body:        `{"newab":"hello1"}`,
@@ -358,12 +346,9 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 		tt.config["url"] = ts.URL
 		s.Configure(tt.config)
 		s.Open(ctx)
-		input, err := json.Marshal(tt.data)
-		if err != nil {
-			t.Errorf("Failed to parse the input into []byte]")
-			continue
+		for _, d := range tt.data {
+			s.Collect(ctx, d)
 		}
-		s.Collect(ctx, input)
 		s.Close(ctx)
 		if !reflect.DeepEqual(tt.result, requests) {
 			t.Errorf("%d \tresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.result, requests)
