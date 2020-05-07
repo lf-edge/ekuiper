@@ -33,15 +33,17 @@ The `emqx/kuiper` images come in many flavors, each designed for a specific use 
 
 ## `emqx/kuiper:<tag>`
 
-This is the defacto image. If you are unsure about what your needs  are, you probably want to use this one. It is designed to be used both  as a throw away container (mount your source code and start the  container to start your app), as well as the base to build other images  off of.
+This is the defacto image, which is based on Debian and it also includes a Golang build environment. If you are unsure about what your needs  are, you probably want to use this one. It is designed to be used both as a throw away container (mount your source code, compile plugins for Kuiper,  and start the  container to run your app), as well as the base to build other images.
+
+Notice: This image is the equivalent to development image of `x.x.x-dev` in 0.3.x versions.
 
 ## `emqx/kuiper:<tag>-slim`
 
-This image does only contains the minimal packages needed to run `kuiper`
+This image is also based on Debian, and only contains the minimal packages needed to run `kuiper`. The difference between with previous image (`emqx/kuiper:<tag>`) is that this image does not include Golang development environment. The typical usage of this image would be deploy the plugins compiled in previous Docker image instances.
 
 ## `emqx/kuiper:<tag>-alpine`
 
-This image is based on the popular [Alpine Linux project](http://alpinelinux.org), available in [the `alpine` official image](https://hub.docker.com/_/alpine). Alpine Linux is much smaller than most distribution base images (~5MB), and thus leads to much slimmer images in general.
+This image is based on the popular [Alpine Linux project](http://alpinelinux.org), available in [the `alpine` official image](https://hub.docker.com/_/alpine). Alpine Linux is much smaller than most distribution base images (~5MB), and thus leads to much slimmer images in general. 
 
 This variant is highly recommended when final image size being as  small as possible is desired. The main caveat to note is that it does  use [musl libc](http://www.musl-libc.org) instead of [glibc and friends](http://www.etalabs.net/compare_libcs.html), so certain software might run into issues depending on the depth of  their libc requirements. However, most software doesn't have an issue  with this, so this variant is usually a very safe choice. See [this Hacker News comment thread](https://news.ycombinator.com/item?id=10782897) for more discussion of the issues that might arise and some pro/con comparisons of using Alpine-based images.
 
