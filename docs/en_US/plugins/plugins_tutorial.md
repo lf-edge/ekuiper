@@ -156,7 +156,7 @@ Developers can locally compile Kuiper and the plugin for debugging, which steps 
 
 ### Docker compile
 
-From 0.3.0, Kuiper provides development docker image (`kuiper:x.x.x-dev`). Compared with the running version, the development version provides the development environment of Go, which lets users compile the plugin that can be completely compatible with the officially published version of Kuiper. The compiling steps in docker are as follows:
+Kuiper provides different docker images for different purpose. The development docker image should be used for compiling plugins. From 0.4.0, the kuiper image with tag x.x.x (e.g. `kuiper:0.4.0`) is the development docker image. For 0.3.x, kuiper image with tag x.x.x-dev (e.g. `kuiper:0.3.0-dev`) is the development docker image. Compared with the running version, the development version provides the development environment of Go, which lets users compile the plugin that can be completely compatible with the officially published version of Kuiper. The compiling steps in docker are as follows:
 1. Run docker of the development version of Kuiper. Users need to mount the local plugin directory to the directory in docker, and then they can access and compile the plugin project in docker. The author's plugin project is located in the local `/var/git` directory. We map the local directory `/var/git` to the `/home` directory in docker by using the following commands.
     ```go
     docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/home emqx/kuiper:0.3.0-dev
@@ -208,6 +208,7 @@ Please refer [Docker compile](#docker编译) for the compilation process.
 Users can use [REST API](https://github.com/emqx/kuiper/blob/master/docs/en_US/restapi/plugins.md) or [CLI](https://github.com/emqx/kuiper/blob/master/docs/en_US/cli/plugins.md) to manage plugins. The following takes the REST API as an example to deploy the plugin compiled in the previous step to the production environment. 
 
 1. Package the plugin and put it into the http server. Package the file `.so` of the plugin compiled in the previous step and the default configuration file (only required for source) `.yaml` into a `.zip` file (assuming that the file is `mysqlSink.zip`). Put this file into the http server that the production environment can also access. 
+    - Some plugin may depend on libs that are not installed on Kuiper environment. The user can either install them manually in the Kuiper server or put the install script and dependencies in the plugin zip and let the plugin management system do the installation. Please refer to [ Plugin File Format](../restapi/plugins.md#plugin-file-format) for detail.
 2. Use REST API to create plugins:
    ```
    POST http://{$production_kuiper_ip}:9081/plugins/sinks
