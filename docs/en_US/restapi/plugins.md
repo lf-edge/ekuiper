@@ -1,4 +1,3 @@
-# Plugins management
 
 The Kuiper REST api for plugins allows you to manage plugins, such as create, drop and list plugins. Notice that, drop a plugin will need to restart kuiper to take effect. To update a plugin, do the following:
 1. Drop the plugin.
@@ -25,8 +24,50 @@ Request Sample
 ### Parameters
 
 1. name: a unique name of the plugin. The name must be the same as the camel case version of the plugin with lowercase first letter. For example, if the exported plugin name is `Random`, then the name of this plugin is `random`.
-2. file: the url of the plugin files. It must be a zip file with: a compiled so file and the yaml file(only required for sources). The name of the files must match the name of the plugin. Please check [Extension](../extension/overview.md) for the naming rule.
+2. file: the url of the plugin files. It must be a zip file with: a compiled so file and the yaml file(only required for sources). If the plugin depends on some external dependencies, a bash script named install.sh can be provided to do the dependency installation. The name of the files must match the name of the plugin. Please check [Extension](../extension/overview.md) for the naming rule.
 
+### Plugin File Format
+A sample zip file for a source named random.zip
+1. Random@v1.0.0.so
+2. random.yaml
+3. install.sh
+4. Various dependency files/folders of install.sh   
+   - mysdk.zip
+   - myconfig.conf  
+
+Notice that, the install.sh will be run that the system may already had the lib or package. Make sure to check the path before. Below is an example install.sh to install a sample sdk lib. 
+```bash
+#!/bin/sh
+dir=/usr/local/mysdk
+cur=$(dirname "$0")
+echo "Base path $cur" 
+if [ -d "$dir" ]; then
+    echo "SDK path $dir exists." 
+else
+    echo "Creating SDK path $dir"
+    mkdir -p $dir
+    echo "Created SDK path $dir"
+fi
+
+apt install --no-upgrade unzip
+if [ -d "$dir/lib" ]; then
+    echo "SDK lib path $dir/lib exists." 
+else
+    echo "Unzip SDK lib to path $dir"
+    unzip $cur/mysdk.zip -d $dir
+    echo "Unzipped SDK lib to path $dir"
+fi
+
+if [ -f "/etc/ld.so.conf.d/myconfig.conf" ]; then
+    echo "/etc/ld.so.conf.d/myconfig.conf exists"
+else
+    echo "Copy conf file"
+    cp $cur/myconfig.conf /etc/ld.so.conf.d/
+    echo "Copied conf file"
+fi
+ldconfig
+echo "Done"
+```
 
 ## show plugins
 
