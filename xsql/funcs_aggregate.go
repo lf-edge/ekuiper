@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
-	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
 
@@ -140,17 +139,13 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 		return 0, true
 	default:
 		common.Log.Debugf("run aggregate func %s", name)
-		if nf, err := plugins.GetPlugin(name, plugins.FUNCTION); err != nil {
+		if nf, err := plugins.GetFunction(name); err != nil {
 			return nil, false
 		} else {
-			f, ok := nf.(api.Function)
-			if !ok {
+			if !nf.IsAggregate() {
 				return nil, false
 			}
-			if !f.IsAggregate() {
-				return nil, false
-			}
-			result, ok := f.Exec(args)
+			result, ok := nf.Exec(args)
 			common.Log.Debugf("run custom aggregate function %s, get result %v", name, result)
 			return result, ok
 		}

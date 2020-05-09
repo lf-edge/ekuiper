@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
-	"github.com/emqx/kuiper/xstream/api"
 	"math"
 	"reflect"
 	"sort"
@@ -1700,8 +1699,8 @@ func isAggFunc(f *Call) bool {
 	} else if _, ok := mathFuncMap[fn]; ok {
 		return false
 	} else {
-		if nf, err := plugins.GetPlugin(f.Name, plugins.FUNCTION); err == nil {
-			if ef, ok := nf.(api.Function); ok && ef.IsAggregate() {
+		if nf, err := plugins.GetFunction(f.Name); err == nil {
+			if nf.IsAggregate() {
 				return true
 			}
 		}

@@ -3,7 +3,6 @@ package xsql
 import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
-	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
 
@@ -76,17 +75,13 @@ func (*FunctionValuer) Call(name string, args []interface{}) (interface{}, bool)
 		return nil, false
 	} else {
 		common.Log.Debugf("run func %s", name)
-		if nf, err := plugins.GetPlugin(name, plugins.FUNCTION); err != nil {
+		if nf, err := plugins.GetFunction(name); err != nil {
 			return err, false
 		} else {
-			f, ok := nf.(api.Function)
-			if !ok {
+			if nf.IsAggregate() {
 				return nil, false
 			}
-			if f.IsAggregate() {
-				return nil, false
-			}
-			result, ok := f.Exec(args)
+			result, ok := nf.Exec(args)
 			common.Log.Debugf("run custom function %s, get result %v", name, result)
 			return result, ok
 		}

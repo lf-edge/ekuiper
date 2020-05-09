@@ -287,7 +287,10 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 }
 
 func doGetSink(name string, action map[string]interface{}) (api.Sink, error) {
-	var s api.Sink
+	var (
+		s   api.Sink
+		err error
+	)
 	switch name {
 	case "log":
 		s = sinks.NewLogSink()
@@ -300,18 +303,12 @@ func doGetSink(name string, action map[string]interface{}) (api.Sink, error) {
 	case "nop":
 		s = &sinks.NopSink{}
 	default:
-		nf, err := plugins.GetPlugin(name, plugins.SINK)
+		s, err = plugins.GetSink(name)
 		if err != nil {
 			return nil, err
 		}
-		var ok bool
-		s, ok = nf.(api.Sink)
-		if !ok {
-			return nil, fmt.Errorf("exported symbol %s is not type of api.Sink", name)
-		}
 	}
-
-	err := s.Configure(action)
+	err = s.Configure(action)
 	if err != nil {
 		return nil, err
 	}
