@@ -66,4 +66,6 @@ func (s *randomSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-var Random randomSource
+func Random() api.Source {
+	return &randomSource{}
+}
