@@ -10,7 +10,7 @@ import (
 
 // UnOperation interface represents unary operations (i.e. Map, Filter, etc)
 type UnOperation interface {
-	Apply(ctx api.StreamContext, data interface{}) interface{}
+	Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{}
 }
 
 // UnFunc implements UnOperation as type func (context.Context, interface{})
@@ -21,7 +21,7 @@ func (f UnFunc) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	return f(ctx, data)
 }
 
-type Functionerator struct {
+type UnaryOperator struct {
 	op           UnOperation
 	concurrency  int
 	input        chan interface{}
