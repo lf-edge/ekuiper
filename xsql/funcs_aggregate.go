@@ -4,22 +4,24 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
+	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
 
 type AggregateFunctionValuer struct {
-	Data AggregateData
+	Data    AggregateData
+	plugins map[string]api.Function
 }
 
-func (v AggregateFunctionValuer) Value(key string) (interface{}, bool) {
+func (v *AggregateFunctionValuer) Value(key string) (interface{}, bool) {
 	return nil, false
 }
 
-func (v AggregateFunctionValuer) Meta(key string) (interface{}, bool) {
+func (v *AggregateFunctionValuer) Meta(key string) (interface{}, bool) {
 	return nil, false
 }
 
-func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
+func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	lowerName := strings.ToLower(name)
 	switch lowerName {
 	case "avg":
@@ -139,16 +141,24 @@ func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interfac
 		return 0, true
 	default:
 		common.Log.Debugf("run aggregate func %s", name)
-		if nf, err := plugins.GetFunction(name); err != nil {
-			return nil, false
-		} else {
-			if !nf.IsAggregate() {
-				return nil, false
+		var (
+			nf  api.Function
+			ok  bool
+			err error
+		)
+		if nf, ok = v.plugins[name]; !ok {
+			nf, err = plugins.GetFunction(name)
+			if err != nil {
+				return err, false
 			}
-			result, ok := nf.Exec(args)
-			common.Log.Debugf("run custom aggregate function %s, get result %v", name, result)
-			return result, ok
+			v.plugins[name] = nf
 		}
+		if !nf.IsAggregate() {
+			return nil, false
+		}
+		result, ok := nf.Exec(args)
+		common.Log.Debugf("run custom aggregate function %s, get result %v", name, result)
+		return result, ok
 	}
 }
 
