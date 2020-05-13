@@ -9,8 +9,25 @@ import (
 )
 
 type AggregateFunctionValuer struct {
-	Data    AggregateData
+	data    AggregateData
+	fv      *FunctionValuer
 	plugins map[string]api.Function
+}
+
+//Should only be called by stream to make sure a single instance for an operation
+func NewAggregateFunctionValuers() (*FunctionValuer, *AggregateFunctionValuer) {
+	fv := &FunctionValuer{}
+	return fv, &AggregateFunctionValuer{
+		fv: fv,
+	}
+}
+
+func (v *AggregateFunctionValuer) SetData(data AggregateData) {
+	v.data = data
+}
+
+func (v *AggregateFunctionValuer) GetSingleCallValuer() CallValuer {
+	return v.fv
 }
 
 func (v *AggregateFunctionValuer) Value(key string) (interface{}, bool) {
@@ -163,7 +180,7 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 }
 
 func (v *AggregateFunctionValuer) GetAllTuples() AggregateData {
-	return v.Data
+	return v.data
 }
 
 func getFirstValidArg(s []interface{}) interface{} {

@@ -2,6 +2,7 @@ package operators
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
 	"sync"
@@ -20,7 +21,7 @@ func (f UnFunc) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	return f(ctx, data)
 }
 
-type UnaryOperator struct {
+type Functionerator struct {
 	op           UnOperation
 	concurrency  int
 	input        chan interface{}
@@ -125,6 +126,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	o.mutex.Lock()
 	o.statManagers = append(o.statManagers, stats)
 	o.mutex.Unlock()
+	fv, afv := xsql.NewAggregateFunctionValuers()
 
 	for {
 		select {
@@ -132,7 +134,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		case item := <-o.input:
 			stats.IncTotalRecordsIn()
 			stats.ProcessTimeStart()
-			result := o.op.Apply(exeCtx, item)
+			result := o.op.Apply(exeCtx, item, fv, afv)
 
 			switch val := result.(type) {
 			case nil:

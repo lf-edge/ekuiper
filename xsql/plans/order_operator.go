@@ -14,10 +14,10 @@ type OrderPlan struct {
  *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
  *  output: *xsql.Tuple | xsql.WindowTuplesSet | xsql.JoinTupleSets
  */
-func (p *OrderPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
+func (p *OrderPlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("order plan receive %s", data)
-	sorter := xsql.OrderedBy(p.SortFields)
+	sorter := xsql.OrderedBy(p.SortFields, fv)
 	switch input := data.(type) {
 	case error:
 		return input

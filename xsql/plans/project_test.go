@@ -389,7 +389,8 @@ func TestProjectPlan_Apply1(t *testing.T) {
 
 		pp := &ProjectPlan{Fields: stmt.Fields}
 		pp.isTest = true
-		result := pp.Apply(ctx, tt.data)
+		fv, afv := xsql.NewAggregateFunctionValuers()
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -939,7 +940,8 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 
 		pp := &ProjectPlan{Fields: stmt.Fields}
 		pp.isTest = true
-		result := pp.Apply(ctx, tt.data)
+		fv, afv := xsql.NewAggregateFunctionValuers()
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -1139,7 +1141,8 @@ func TestProjectPlan_Funcs(t *testing.T) {
 		}
 		pp := &ProjectPlan{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
 		pp.isTest = true
-		result := pp.Apply(ctx, tt.data)
+		fv, afv := xsql.NewAggregateFunctionValuers()
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -1422,7 +1425,8 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 		}
 		pp := &ProjectPlan{Fields: stmt.Fields, IsAggregate: true}
 		pp.isTest = true
-		result := pp.Apply(ctx, tt.data)
+		fv, afv := xsql.NewAggregateFunctionValuers()
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -1572,7 +1576,8 @@ func TestProjectPlanError(t *testing.T) {
 
 		pp := &ProjectPlan{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
 		pp.isTest = true
-		result := pp.Apply(ctx, tt.data)
+		fv, afv := xsql.NewAggregateFunctionValuers()
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}

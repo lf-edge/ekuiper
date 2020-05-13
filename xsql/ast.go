@@ -492,6 +492,7 @@ type CallValuer interface {
 type AggregateCallValuer interface {
 	CallValuer
 	GetAllTuples() AggregateData
+	GetSingleCallValuer() CallValuer
 }
 
 type Wildcarder interface {
@@ -531,7 +532,7 @@ func (wv *WildcardValuer) Meta(key string) (interface{}, bool) {
  */
 
 type AggregateData interface {
-	AggregateEval(expr Expr) []interface{}
+	AggregateEval(expr Expr, v CallValuer) []interface{}
 }
 
 // Message is a valuer that substitutes values for the mapped interface.
@@ -600,8 +601,8 @@ func (t *Tuple) All(stream string) (interface{}, bool) {
 	return t.Message, true
 }
 
-func (t *Tuple) AggregateEval(expr Expr) []interface{} {
-	return []interface{}{Eval(expr, t)}
+func (t *Tuple) AggregateEval(expr Expr, v CallValuer) []interface{} {
+	return []interface{}{Eval(expr, t, v)}
 }
 
 func (t *Tuple) GetTimestamp() int64 {
@@ -682,13 +683,13 @@ func (w WindowTuplesSet) Sort() {
 	}
 }
 
-func (w WindowTuplesSet) AggregateEval(expr Expr) []interface{} {
+func (w WindowTuplesSet) AggregateEval(expr Expr, v CallValuer) []interface{} {
 	var result []interface{}
 	if len(w) != 1 { //should never happen
 		return nil
 	}
 	for _, t := range w[0].Tuples {
-		result = append(result, Eval(expr, &t))
+		result = append(result, Eval(expr, &t, v))
 	}
 	return result
 }
@@ -786,20 +787,20 @@ func (s JoinTupleSets) Len() int           { return len(s) }
 func (s JoinTupleSets) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s JoinTupleSets) Index(i int) Valuer { return &(s[i]) }
 
-func (s JoinTupleSets) AggregateEval(expr Expr) []interface{} {
+func (s JoinTupleSets) AggregateEval(expr Expr, v CallValuer) []interface{} {
 	var result []interface{}
 	for _, t := range s {
-		result = append(result, Eval(expr, &t))
+		result = append(result, Eval(expr, &t, v))
 	}
 	return result
 }
 
 type GroupedTuples []DataValuer
 
-func (s GroupedTuples) AggregateEval(expr Expr) []interface{} {
+func (s GroupedTuples) AggregateEval(expr Expr, v CallValuer) []interface{} {
 	var result []interface{}
 	for _, t := range s {
-		result = append(result, Eval(expr, t))
+		result = append(result, Eval(expr, t, v))
 	}
 	return result
 }
@@ -820,14 +821,16 @@ type SortingData interface {
 type MultiSorter struct {
 	SortingData
 	fields SortFields
+	valuer CallValuer
 	values []map[string]interface{}
 }
 
 // OrderedBy returns a Sorter that sorts using the less functions, in order.
 // Call its Sort method to sort the data.
-func OrderedBy(fields SortFields) *MultiSorter {
+func OrderedBy(fields SortFields, fv *FunctionValuer) *MultiSorter {
 	return &MultiSorter{
 		fields: fields,
+		valuer: fv,
 	}
 }
 
@@ -839,7 +842,7 @@ func OrderedBy(fields SortFields) *MultiSorter {
 // exercise for the reader.
 func (ms *MultiSorter) Less(i, j int) bool {
 	p, q := ms.values[i], ms.values[j]
-	v := &ValuerEval{Valuer: MultiValuer(&FunctionValuer{})}
+	v := &ValuerEval{Valuer: MultiValuer(ms.valuer)}
 	for _, field := range ms.fields {
 		n := field.Name
 		vp, _ := p[n]
@@ -879,7 +882,7 @@ func (ms *MultiSorter) Sort(data SortingData) error {
 	for i := 0; i < data.Len(); i++ {
 		ms.values[i] = make(map[string]interface{})
 		p := data.Index(i)
-		vep := &ValuerEval{Valuer: MultiValuer(p, &FunctionValuer{})}
+		vep := &ValuerEval{Valuer: MultiValuer(p, ms.valuer)}
 		for j, field := range ms.fields {
 			n := field.Name
 			vp, _ := vep.Valuer.Value(n)
@@ -947,8 +950,8 @@ type EvalResultMessage struct {
 type ResultsAndMessages []EvalResultMessage
 
 // Eval evaluates expr against a map.
-func Eval(expr Expr, m Valuer) interface{} {
-	eval := ValuerEval{Valuer: MultiValuer(m, &FunctionValuer{})}
+func Eval(expr Expr, m Valuer, v CallValuer) interface{} {
+	eval := ValuerEval{Valuer: MultiValuer(m, v)}
 	return eval.Eval(expr)
 }
 
@@ -1003,12 +1006,14 @@ func (a multiValuer) Call(name string, args []interface{}) (interface{}, bool) {
 type multiAggregateValuer struct {
 	data AggregateData
 	multiValuer
+	singleCallValuer CallValuer
 }
 
-func MultiAggregateValuer(data AggregateData, valuers ...Valuer) Valuer {
+func MultiAggregateValuer(data AggregateData, singleCallValuer CallValuer, valuers ...Valuer) Valuer {
 	return &multiAggregateValuer{
-		data:        data,
-		multiValuer: valuers,
+		data:             data,
+		multiValuer:      valuers,
+		singleCallValuer: singleCallValuer,
 	}
 }
 
@@ -1043,6 +1048,10 @@ func (a *multiAggregateValuer) Call(name string, args []interface{}) (interface{
 
 func (a *multiAggregateValuer) GetAllTuples() AggregateData {
 	return a.data
+}
+
+func (a *multiAggregateValuer) GetSingleCallValuer() CallValuer {
+	return a.singleCallValuer
 }
 
 type BracketEvalResult struct {
@@ -1085,7 +1094,7 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 				args = make([]interface{}, len(expr.Args))
 				if aggreValuer, ok := valuer.(AggregateCallValuer); ok {
 					for i := range expr.Args {
-						args[i] = aggreValuer.GetAllTuples().AggregateEval(expr.Args[i])
+						args[i] = aggreValuer.GetAllTuples().AggregateEval(expr.Args[i], aggreValuer.GetSingleCallValuer())
 					}
 				} else {
 					for i := range expr.Args {
