@@ -73,6 +73,7 @@ Each action can define its own properties. There are several common properties:
 If sendSingle is true, the data template will execute against a record; Otherwise, it will execute against the whole array of records. Typical data templates are:
 
 For example, we have the sink input as 
+
 ```
 []map[string]interface{}{{
     "ab" : "hello1",
@@ -99,16 +100,21 @@ In sendSingle=false mode:
 ```
 "dataTemplate": `{"content":{{json .}}}`,
 ```
+
 - Print out the first record
+
 ```
 "dataTemplate": `{"content":{{json (index . 0)}}}`,
 ```
+
 - Print out the field ab of the first record
 
 ```
 "dataTemplate": `{"content":{{index . 0 "ab"}}}`,
 ```
+
 - Print out field ab of each record in the array to html format
+
 ```
 "dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>`,
 ```
