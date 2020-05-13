@@ -78,6 +78,9 @@ func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bo
 		return nil, false
 	} else {
 		common.Log.Debugf("run func %s", name)
+		if fv.plugins == nil {
+			fv.plugins = make(map[string]api.Function)
+		}
 		var (
 			nf  api.Function
 			ok  bool

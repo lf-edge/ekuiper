@@ -158,6 +158,9 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 		return 0, true
 	default:
 		common.Log.Debugf("run aggregate func %s", name)
+		if v.plugins == nil {
+			v.plugins = make(map[string]api.Function)
+		}
 		var (
 			nf  api.Function
 			ok  bool
