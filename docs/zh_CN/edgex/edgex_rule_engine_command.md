@@ -127,6 +127,7 @@ curl -X POST \
       "rest": {
         "url": "http://edgex-core-command:48082/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
         "method": "put",
+        "retryInterval": -1,
         "dataTemplate": "{\"Bool\":\"true\", \"EnableRandomization_Bool\": \"true\"}",
         "sendSingle": true
       }
@@ -156,6 +157,7 @@ curl -X POST \
       "rest": {
         "url": "http://edgex-core-command:48082/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
         "method": "put",
+        "retryInterval": -1,
         "dataTemplate": "{\"Bool\":\"false\", \"EnableRandomization_Bool\": \"false\"}",
         "sendSingle": true
       }
