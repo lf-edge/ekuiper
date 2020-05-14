@@ -54,6 +54,9 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 - [Kuiper 5分钟快速入门](docs/zh_CN/quick_start_docker.md)
 - [EdgeX 规则引擎教程](docs/zh_CN/edgex/edgex_rule_engine_tutorial.md)
 
+## Slack
+加入我们的 [Slack](https://join.slack.com/t/emqx/shared_invite/zt-7xrracuf-GGdbNB1pARtaZKvv6IfTvw)，然后加入 [kuiper](https://emqx.slack.com/archives/C0138SZP23Y) 频道。
+
 ## 性能测试结果
 
 ### MQTT 吞吐量测试支持

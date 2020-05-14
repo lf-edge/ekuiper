@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes how to use Kuiper rule engine to control devices with anlysis result. To make the tutorial simple,  the doc uses [device-virtual](https://github.com/edgexfoundry/device-virtual-go) sample,  it analyzes the data sent from device-virtual services, and then control the device according to the analysis result produced by Kuiper rule engine.
+This document describes how to use Kuiper rule engine to control devices with analysis result. To make the tutorial simple,  the doc uses [device-virtual](https://github.com/edgexfoundry/device-virtual-go) sample,  it analyzes the data sent from device-virtual services, and then control the device according to the analysis result produced by Kuiper rule engine.
 
 ### Scenarios
 
@@ -145,7 +145,7 @@ curl -X POST \
 
 The 2nd rule is monitoring `Random-Integer-Device` device, and if the average value for `int8` with every 20 seconds is larger than 0, then send a command to `Random-Boolean-Device` device service to turn off random generation of bool value.
 
-- The average value for uint8 is caculated every 20 seconds, and if the average value is larger than 0, then send a control command to `Random-Boolean-Device` service.
+- The average value for uint8 is calculated every 20 seconds, and if the average value is larger than 0, then send a control command to `Random-Boolean-Device` service.
 
 ```shell
 curl -X POST \
