@@ -54,6 +54,9 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 - [Kuiper 5 minutes quick start](docs/en_US/quick_start_docker.md)
 - [EdgeX rule engine tutorial](docs/en_US/edgex/edgex_rule_engine_tutorial.md)
 
+## Slack channels
+Join our [Slack](https://join.slack.com/t/emqx/shared_invite/zt-7xrracuf-GGdbNB1pARtaZKvv6IfTvw), and channel name is: **kuiper**
+
 ## Performance test result
 
 ### MQTT throughput test
