@@ -182,7 +182,7 @@ Now both of rules are created, and you can take a look at logs of edgex-kuiper f
 It is probably that the analysis result need to be sent to command rest service as well, how to extract the data from analysis result? For example, below SQL is used for filtering data.
 
 ```sql
-SELECT int8, "true" AS randomization FROM demo WHERE uint8 > 20
+SELECT int8, "true" AS randomization FROM demo WHERE int8 > 20
 ```
 
 The output of the SQL is probably similar as below,

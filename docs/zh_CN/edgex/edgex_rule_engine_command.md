@@ -180,7 +180,7 @@ curl -X POST \
 由于分析结果也需要发送到command rest服务，如何从分析结果中提取数据？通过SQL过滤数据的示例如下所示：
 
 ```sql
-SELECT int8, "true" AS randomization FROM demo WHERE uint8 > 20
+SELECT int8, "true" AS randomization FROM demo WHERE int8 > 20
 ```
 
 SQL的输出内容如下：
