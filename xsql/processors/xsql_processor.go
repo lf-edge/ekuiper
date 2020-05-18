@@ -471,7 +471,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			var ds xsql.Dimensions
 			if dimensions != nil || len(aggregateAlias) > 0 {
 				ds = dimensions.GetGroups()
-				if ds != nil && len(ds) > 0 {
+				if (ds != nil && len(ds) > 0) || len(aggregateAlias) > 0 {
 					aggregateOp := xstream.Transform(&plans.AggregatePlan{Dimensions: ds, Alias: aggregateAlias}, "aggregate", bufferLength)
 					aggregateOp.SetConcurrency(concurrency)
 					tp.AddOperator(inputs, aggregateOp)
