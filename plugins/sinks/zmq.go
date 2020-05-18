@@ -79,4 +79,6 @@ func (m *zmqSink) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-var Zmq zmqSink
+func Zmq() api.Sink {
+	return &zmqSink{}
+}
