@@ -10,7 +10,7 @@ type HavingPlan struct {
 	Condition xsql.Expr
 }
 
-func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
+func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("having plan receive %s", data)
 	switch input := data.(type) {
@@ -19,7 +19,8 @@ func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 	case xsql.GroupedTuplesSet:
 		r := xsql.GroupedTuplesSet{}
 		for _, v := range input {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(v, v[0], &xsql.FunctionValuer{}, &xsql.AggregateFunctionValuer{Data: v}, &xsql.WildcardValuer{Data: v[0]})}
+			afv.SetData(v)
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(v, fv, v[0], fv, afv, &xsql.WildcardValuer{Data: v[0]})}
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:
@@ -41,8 +42,9 @@ func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 		}
 		ms := input[0].Tuples
 		r := ms[:0]
+		afv.SetData(input)
 		for _, v := range ms {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(input, &v, &xsql.FunctionValuer{}, &xsql.AggregateFunctionValuer{Data: input}, &xsql.WildcardValuer{Data: &v})}
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(input, fv, &v, fv, afv, &xsql.WildcardValuer{Data: &v})}
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:
@@ -62,8 +64,9 @@ func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}) interface{} 
 	case xsql.JoinTupleSets:
 		ms := input
 		r := ms[:0]
+		afv.SetData(input)
 		for _, v := range ms {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(input, &v, &xsql.FunctionValuer{}, &xsql.AggregateFunctionValuer{Data: input}, &xsql.WildcardValuer{Data: &v})}
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(input, fv, &v, fv, afv, &xsql.WildcardValuer{Data: &v})}
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:

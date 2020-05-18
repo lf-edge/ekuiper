@@ -14,7 +14,7 @@ type AggregatePlan struct {
  *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
  *  output: xsql.GroupedTuplesSet
  */
-func (p *AggregatePlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
+func (p *AggregatePlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("aggregate plan receive %s", data)
 	var ms []xsql.DataValuer
@@ -46,7 +46,7 @@ func (p *AggregatePlan) Apply(ctx api.StreamContext, data interface{}) interface
 	result := make(map[string]xsql.GroupedTuples)
 	for _, m := range ms {
 		var name string
-		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(m, &xsql.FunctionValuer{})}
+		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(m, fv)}
 		for _, d := range p.Dimensions {
 			r := ve.Eval(d.Expr)
 			if _, ok := r.(error); ok {

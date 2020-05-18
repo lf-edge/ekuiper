@@ -309,9 +309,9 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			t.Errorf("statement parse error %s", err)
 			break
 		}
-
+		fv, afv := xsql.NewAggregateFunctionValuers()
 		pp := &AggregatePlan{Dimensions: stmt.Dimensions.GetGroups()}
-		result := pp.Apply(ctx, tt.data)
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		gr, ok := result.(xsql.GroupedTuplesSet)
 		if !ok {
 			t.Errorf("result is not GroupedTuplesSet")
@@ -378,9 +378,9 @@ func TestAggregatePlanError(t *testing.T) {
 			t.Errorf("statement parse error %s", err)
 			break
 		}
-
+		fv, afv := xsql.NewAggregateFunctionValuers()
 		pp := &AggregatePlan{Dimensions: stmt.Dimensions.GetGroups()}
-		result := pp.Apply(ctx, tt.data)
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}

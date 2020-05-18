@@ -33,4 +33,6 @@ func (m *memory) Configure(props map[string]interface{}) error {
 	return nil
 }
 
-var Memory memory
+func Memory() api.Sink {
+	return &memory{}
+}
