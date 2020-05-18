@@ -551,8 +551,9 @@ func TestAggregatePlanGroupAlias_Apply(t *testing.T) {
 				}
 			}
 		}
+		fv, afv := xsql.NewAggregateFunctionValuers()
 		pp := &AggregatePlan{Dimensions: stmt.Dimensions.GetGroups(), Alias: aggregateAlias}
-		result := pp.Apply(ctx, tt.data)
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		gr, ok := result.(xsql.GroupedTuplesSet)
 		if !ok {
 			t.Errorf("result is not GroupedTuplesSet")
@@ -697,8 +698,9 @@ func TestAggregatePlanAlias_Apply(t *testing.T) {
 				}
 			}
 		}
+		fv, afv := xsql.NewAggregateFunctionValuers()
 		pp := &AggregatePlan{Dimensions: stmt.Dimensions.GetGroups(), Alias: aggregateAlias}
-		result := pp.Apply(ctx, tt.data)
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}

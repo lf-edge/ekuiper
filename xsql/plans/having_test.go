@@ -414,9 +414,9 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 			t.Errorf("statement parse error %s", err)
 			break
 		}
-
+		fv, afv := xsql.NewAggregateFunctionValuers()
 		pp := &HavingPlan{Condition: stmt.Having}
-		result := pp.Apply(ctx, tt.data)
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
