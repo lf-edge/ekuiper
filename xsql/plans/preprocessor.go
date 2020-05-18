@@ -41,7 +41,7 @@ func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool) (*Preprocesso
  *	input: *xsql.Tuple
  *	output: *xsql.Tuple
  */
-func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
+func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	log := ctx.GetLogger()
 	tuple, ok := data.(*xsql.Tuple)
 	if !ok {
@@ -66,7 +66,7 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.F
 	//Otherwise, the GROUP BY, ORDER BY statement cannot get the value.
 	for _, f := range p.fields {
 		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)) {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, fv)}
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, &xsql.FunctionValuer{})}
 			v := ve.Eval(f.Expr)
 			if _, ok := v.(error); ok {
 				return v

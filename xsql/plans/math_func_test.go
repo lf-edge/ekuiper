@@ -467,8 +467,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 		}
 		pp := &ProjectPlan{Fields: stmt.Fields}
 		pp.isTest = true
-		fv, afv := xsql.NewAggregateFunctionValuers()
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)

@@ -7,9 +7,7 @@ import (
 	"strings"
 )
 
-type FunctionValuer struct {
-	plugins map[string]api.Function
-}
+type FunctionValuer struct{}
 
 func (*FunctionValuer) Value(key string) (interface{}, bool) {
 	return nil, false
@@ -62,7 +60,7 @@ var otherFuncMap = map[string]string{"isnull": "",
 	"newuuid": "", "timestamp": "", "mqtt": "", "meta": "",
 }
 
-func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
+func (*FunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	lowerName := strings.ToLower(name)
 	if _, ok := mathFuncMap[lowerName]; ok {
 		return mathCall(name, args)
@@ -78,26 +76,19 @@ func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bo
 		return nil, false
 	} else {
 		common.Log.Debugf("run func %s", name)
-		if fv.plugins == nil {
-			fv.plugins = make(map[string]api.Function)
-		}
-		var (
-			nf  api.Function
-			ok  bool
-			err error
-		)
-		if nf, ok = fv.plugins[name]; !ok {
-			nf, err = plugins.GetFunction(name)
-			if err != nil {
-				return err, false
+		if nf, err := plugins.GetPlugin(name, plugins.FUNCTION); err != nil {
+			return err, false
+		} else {
+			f, ok := nf.(api.Function)
+			if !ok {
+				return nil, false
 			}
-			fv.plugins[name] = nf
+			if f.IsAggregate() {
+				return nil, false
+			}
+			result, ok := f.Exec(args)
+			common.Log.Debugf("run custom function %s, get result %v", name, result)
+			return result, ok
 		}
-		if nf.IsAggregate() {
-			return nil, false
-		}
-		result, ok := nf.Exec(args)
-		common.Log.Debugf("run custom function %s, get result %v", name, result)
-		return result, ok
 	}
 }

@@ -2,7 +2,6 @@ package operators
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
 	"sync"
@@ -10,7 +9,7 @@ import (
 
 // UnOperation interface represents unary operations (i.e. Map, Filter, etc)
 type UnOperation interface {
-	Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{}
+	Apply(ctx api.StreamContext, data interface{}) interface{}
 }
 
 // UnFunc implements UnOperation as type func (context.Context, interface{})
@@ -126,7 +125,6 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	o.mutex.Lock()
 	o.statManagers = append(o.statManagers, stats)
 	o.mutex.Unlock()
-	fv, afv := xsql.NewAggregateFunctionValuers()
 
 	for {
 		select {
@@ -134,7 +132,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		case item := <-o.input:
 			stats.IncTotalRecordsIn()
 			stats.ProcessTimeStart()
-			result := o.op.Apply(exeCtx, item, fv, afv)
+			result := o.op.Apply(exeCtx, item)
 
 			switch val := result.(type) {
 			case nil:

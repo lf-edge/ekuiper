@@ -35,12 +35,10 @@ The last method to implement is _Close_ which literally close the connection. It
 Close(ctx StreamContext) error
 ```
 
-As the sink itself is a plugin, it must be in the main package. Given the sink struct name is mySink. At last of the file, the sink must be exported as a symbol as below. There are [2 types of exported symbol supported](overview.md#plugin-development). For sink extension, states are usually needed, so it is recommended to export a constructor function.
+As the sink itself is a plugin, it must be in the main package. Given the sink struct name is mySink. At last of the file, the sink must be exported as a symbol as below.
 
 ```go
-func MySink() api.Sink {
-	return &mySink{}
-}
+var MySink mySink
 ```
 
 The [Memory Sink](../../../plugins/sinks/memory.go) is a good example.

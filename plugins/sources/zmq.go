@@ -86,6 +86,4 @@ func (s *zmqSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func Zmq() api.Source {
-	return &zmqSource{}
-}
+var Zmq zmqSource

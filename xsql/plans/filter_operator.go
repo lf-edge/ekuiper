@@ -14,14 +14,14 @@ type FilterPlan struct {
  *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
  *  output: *xsql.Tuple | xsql.WindowTuplesSet | xsql.JoinTupleSets
  */
-func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
+func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("filter plan receive %s", data)
 	switch input := data.(type) {
 	case error:
 		return input
 	case xsql.Valuer:
-		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, fv)}
+		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, &xsql.FunctionValuer{})}
 		result := ve.Eval(p.Condition)
 		switch r := result.(type) {
 		case error:
@@ -40,7 +40,7 @@ func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		ms := input[0].Tuples
 		r := ms[:0]
 		for _, v := range ms {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&v, fv)}
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&v, &xsql.FunctionValuer{})}
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:
@@ -61,7 +61,7 @@ func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		ms := input
 		r := ms[:0]
 		for _, v := range ms {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&v, fv)}
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&v, &xsql.FunctionValuer{})}
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:

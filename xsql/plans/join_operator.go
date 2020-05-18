@@ -14,7 +14,7 @@ type JoinPlan struct {
 
 // input:  xsql.WindowTuplesSet from windowOp, window is required for join
 // output: xsql.JoinTupleSets
-func (jp *JoinPlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
+func (jp *JoinPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
 	log := ctx.GetLogger()
 	var input xsql.WindowTuplesSet
 	switch v := data.(type) {
@@ -29,13 +29,13 @@ func (jp *JoinPlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Func
 	result := xsql.JoinTupleSets{}
 	for i, join := range jp.Joins {
 		if i == 0 {
-			v, err := jp.evalSet(input, join, fv)
+			v, err := jp.evalSet(input, join)
 			if err != nil {
 				return fmt.Errorf("run Join error: %s", err)
 			}
 			result = v
 		} else {
-			r1, err := jp.evalJoinSets(&result, input, join, fv)
+			r1, err := jp.evalJoinSets(&result, input, join)
 			if err != nil {
 				return fmt.Errorf("run Join error: %s", err)
 			}
@@ -67,7 +67,7 @@ func getStreamNames(join *xsql.Join) ([]string, error) {
 	return srcs, nil
 }
 
-func (jp *JoinPlan) evalSet(input xsql.WindowTuplesSet, join xsql.Join, fv *xsql.FunctionValuer) (xsql.JoinTupleSets, error) {
+func (jp *JoinPlan) evalSet(input xsql.WindowTuplesSet, join xsql.Join) (xsql.JoinTupleSets, error) {
 	var leftStream, rightStream string
 
 	if join.JoinType != xsql.CROSS_JOIN {
@@ -99,7 +99,7 @@ func (jp *JoinPlan) evalSet(input xsql.WindowTuplesSet, join xsql.Join, fv *xsql
 	sets := xsql.JoinTupleSets{}
 
 	if join.JoinType == xsql.RIGHT_JOIN {
-		return jp.evalSetWithRightJoin(input, join, false, fv)
+		return jp.evalSetWithRightJoin(input, join, false)
 	}
 	for _, left := range lefts {
 		merged := &xsql.JoinTuple{}
@@ -113,7 +113,7 @@ func (jp *JoinPlan) evalSet(input xsql.WindowTuplesSet, join xsql.Join, fv *xsql
 				temp := &xsql.JoinTuple{}
 				temp.AddTuple(left)
 				temp.AddTuple(right)
-				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, fv)}
+				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, &xsql.FunctionValuer{})}
 				result := ve.Eval(join.Expr)
 				switch val := result.(type) {
 				case error:
@@ -140,7 +140,7 @@ func (jp *JoinPlan) evalSet(input xsql.WindowTuplesSet, join xsql.Join, fv *xsql
 	}
 
 	if join.JoinType == xsql.FULL_JOIN {
-		if rightJoinSet, err := jp.evalSetWithRightJoin(input, join, true, fv); err == nil {
+		if rightJoinSet, err := jp.evalSetWithRightJoin(input, join, true); err == nil {
 			if len(rightJoinSet) > 0 {
 				for _, jt := range rightJoinSet {
 					sets = append(sets, jt)
@@ -153,7 +153,7 @@ func (jp *JoinPlan) evalSet(input xsql.WindowTuplesSet, join xsql.Join, fv *xsql
 	return sets, nil
 }
 
-func (jp *JoinPlan) evalSetWithRightJoin(input xsql.WindowTuplesSet, join xsql.Join, excludeJoint bool, fv *xsql.FunctionValuer) (xsql.JoinTupleSets, error) {
+func (jp *JoinPlan) evalSetWithRightJoin(input xsql.WindowTuplesSet, join xsql.Join, excludeJoint bool) (xsql.JoinTupleSets, error) {
 	streams, err := getStreamNames(&join)
 	if err != nil {
 		return nil, err
@@ -176,7 +176,7 @@ func (jp *JoinPlan) evalSetWithRightJoin(input xsql.WindowTuplesSet, join xsql.J
 			temp := &xsql.JoinTuple{}
 			temp.AddTuple(right)
 			temp.AddTuple(left)
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, fv)}
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, &xsql.FunctionValuer{})}
 			result := ve.Eval(join.Expr)
 			switch val := result.(type) {
 			case error:
@@ -203,7 +203,7 @@ func (jp *JoinPlan) evalSetWithRightJoin(input xsql.WindowTuplesSet, join xsql.J
 	return sets, nil
 }
 
-func (jp *JoinPlan) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesSet, join xsql.Join, fv *xsql.FunctionValuer) (interface{}, error) {
+func (jp *JoinPlan) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesSet, join xsql.Join) (interface{}, error) {
 	var rightStream string
 	if join.Alias == "" {
 		rightStream = join.Name
@@ -215,7 +215,7 @@ func (jp *JoinPlan) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuple
 
 	newSets := xsql.JoinTupleSets{}
 	if join.JoinType == xsql.RIGHT_JOIN {
-		return jp.evalRightJoinSets(set, input, join, false, fv)
+		return jp.evalRightJoinSets(set, input, join, false)
 	}
 	for _, left := range *set {
 		merged := &xsql.JoinTuple{}
@@ -227,7 +227,7 @@ func (jp *JoinPlan) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuple
 			if join.JoinType == xsql.CROSS_JOIN {
 				merged.AddTuple(right)
 			} else {
-				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&left, &right, fv)}
+				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&left, &right, &xsql.FunctionValuer{})}
 				result := ve.Eval(join.Expr)
 				switch val := result.(type) {
 				case error:
@@ -252,7 +252,7 @@ func (jp *JoinPlan) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuple
 	}
 
 	if join.JoinType == xsql.FULL_JOIN {
-		if rightJoinSet, err := jp.evalRightJoinSets(set, input, join, true, fv); err == nil && len(rightJoinSet) > 0 {
+		if rightJoinSet, err := jp.evalRightJoinSets(set, input, join, true); err == nil && len(rightJoinSet) > 0 {
 			for _, jt := range rightJoinSet {
 				newSets = append(newSets, jt)
 			}
@@ -262,7 +262,7 @@ func (jp *JoinPlan) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuple
 	return newSets, nil
 }
 
-func (jp *JoinPlan) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesSet, join xsql.Join, excludeJoint bool, fv *xsql.FunctionValuer) (xsql.JoinTupleSets, error) {
+func (jp *JoinPlan) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesSet, join xsql.Join, excludeJoint bool) (xsql.JoinTupleSets, error) {
 	var rightStream string
 	if join.Alias == "" {
 		rightStream = join.Name
@@ -278,7 +278,7 @@ func (jp *JoinPlan) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.Window
 		merged.AddTuple(right)
 		isJoint := false
 		for _, left := range *set {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&right, &left, fv)}
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&right, &left, &xsql.FunctionValuer{})}
 			result := ve.Eval(join.Expr)
 			switch val := result.(type) {
 			case error:

@@ -530,8 +530,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			return
 		} else {
 			tuple := &xsql.Tuple{Message: dm}
-			fv, afv := xsql.NewAggregateFunctionValuers()
-			result := pp.Apply(ctx, tuple, fv, afv)
+			result := pp.Apply(ctx, tuple)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
 			}
@@ -664,8 +663,7 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 			return
 		} else {
 			tuple := &xsql.Tuple{Message: dm}
-			fv, afv := xsql.NewAggregateFunctionValuers()
-			result := pp.Apply(ctx, tuple, fv, afv)
+			result := pp.Apply(ctx, tuple)
 			//workaround make sure all the timezone are the same for time vars or the DeepEqual will be false.
 			if rt, ok := result.(*xsql.Tuple); ok {
 				if rtt, ok := rt.Message["abc"].(time.Time); ok {
@@ -838,8 +836,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			return
 		} else {
 			tuple := &xsql.Tuple{Message: dm}
-			fv, afv := xsql.NewAggregateFunctionValuers()
-			result := pp.Apply(ctx, tuple, fv, afv)
+			result := pp.Apply(ctx, tuple)
 			//workaround make sure all the timezone are the same for time vars or the DeepEqual will be false.
 			if rt, ok := result.(*xsql.Tuple); ok {
 				if rtt, ok := rt.Message["abc"].(time.Time); ok {
@@ -917,8 +914,7 @@ func TestPreprocessorError(t *testing.T) {
 			return
 		} else {
 			tuple := &xsql.Tuple{Message: dm}
-			fv, afv := xsql.NewAggregateFunctionValuers()
-			result := pp.Apply(ctx, tuple, fv, afv)
+			result := pp.Apply(ctx, tuple)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
 			}

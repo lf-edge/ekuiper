@@ -52,7 +52,7 @@ func TestExtensions(t *testing.T) {
 	}{
 		{
 			name: `$$test1`,
-			rj:   "{\"sql\": \"SELECT count(echo(count)) as c, echo(count) as e, countPlusOne(count) as p FROM ext where count > 49\",\"actions\": [{\"file\":  {\"path\":\"" + CACHE_FILE + "\"}}]}",
+			rj:   "{\"sql\": \"SELECT echo(count) as e, countPlusOne(count) as p FROM ext where count > 49\",\"actions\": [{\"file\":  {\"path\":\"" + CACHE_FILE + "\"}}]}",
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -105,11 +105,6 @@ func TestExtensions(t *testing.T) {
 				break
 			}
 			r := r[0]
-			c := int((r["c"]).(float64))
-			if c != 1 {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\ngot=%#v\n\n", i, tt.rj, maps)
-				break
-			}
 			e := int((r["e"]).(float64))
 			if e != 50 && e != 51 {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\ngot=%#v\n\n", i, tt.rj, maps)

@@ -9,36 +9,18 @@ import (
 )
 
 type AggregateFunctionValuer struct {
-	data    AggregateData
-	fv      *FunctionValuer
-	plugins map[string]api.Function
+	Data AggregateData
 }
 
-//Should only be called by stream to make sure a single instance for an operation
-func NewAggregateFunctionValuers() (*FunctionValuer, *AggregateFunctionValuer) {
-	fv := &FunctionValuer{}
-	return fv, &AggregateFunctionValuer{
-		fv: fv,
-	}
-}
-
-func (v *AggregateFunctionValuer) SetData(data AggregateData) {
-	v.data = data
-}
-
-func (v *AggregateFunctionValuer) GetSingleCallValuer() CallValuer {
-	return v.fv
-}
-
-func (v *AggregateFunctionValuer) Value(key string) (interface{}, bool) {
+func (v AggregateFunctionValuer) Value(key string) (interface{}, bool) {
 	return nil, false
 }
 
-func (v *AggregateFunctionValuer) Meta(key string) (interface{}, bool) {
+func (v AggregateFunctionValuer) Meta(key string) (interface{}, bool) {
 	return nil, false
 }
 
-func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
+func (v AggregateFunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	lowerName := strings.ToLower(name)
 	switch lowerName {
 	case "avg":
@@ -158,32 +140,25 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 		return 0, true
 	default:
 		common.Log.Debugf("run aggregate func %s", name)
-		if v.plugins == nil {
-			v.plugins = make(map[string]api.Function)
-		}
-		var (
-			nf  api.Function
-			ok  bool
-			err error
-		)
-		if nf, ok = v.plugins[name]; !ok {
-			nf, err = plugins.GetFunction(name)
-			if err != nil {
-				return err, false
-			}
-			v.plugins[name] = nf
-		}
-		if !nf.IsAggregate() {
+		if nf, err := plugins.GetPlugin(name, plugins.FUNCTION); err != nil {
 			return nil, false
+		} else {
+			f, ok := nf.(api.Function)
+			if !ok {
+				return nil, false
+			}
+			if !f.IsAggregate() {
+				return nil, false
+			}
+			result, ok := f.Exec(args)
+			common.Log.Debugf("run custom aggregate function %s, get result %v", name, result)
+			return result, ok
 		}
-		result, ok := nf.Exec(args)
-		common.Log.Debugf("run custom aggregate function %s, get result %v", name, result)
-		return result, ok
 	}
 }
 
 func (v *AggregateFunctionValuer) GetAllTuples() AggregateData {
-	return v.data
+	return v.Data
 }
 
 func getFirstValidArg(s []interface{}) interface{} {

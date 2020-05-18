@@ -183,8 +183,7 @@ func TestMiscFunc_Apply1(t *testing.T) {
 		}
 		pp := &ProjectPlan{Fields: stmt.Fields}
 		pp.isTest = true
-		fv, afv := xsql.NewAggregateFunctionValuers()
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -236,8 +235,7 @@ func TestMqttFunc_Apply2(t *testing.T) {
 		}
 		pp := &ProjectPlan{Fields: stmt.Fields}
 		pp.isTest = true
-		fv, afv := xsql.NewAggregateFunctionValuers()
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -338,8 +336,7 @@ func TestMetaFunc_Apply1(t *testing.T) {
 		}
 		pp := &ProjectPlan{Fields: stmt.Fields}
 		pp.isTest = true
-		fv, afv := xsql.NewAggregateFunctionValuers()
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		result := pp.Apply(ctx, tt.data)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)

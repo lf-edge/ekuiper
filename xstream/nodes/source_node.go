@@ -147,17 +147,19 @@ func (m *SourceNode) reset() {
 }
 
 func doGetSource(t string) (api.Source, error) {
-	var (
-		s   api.Source
-		err error
-	)
+	var s api.Source
+	var ok bool
 	switch t {
 	case "mqtt":
 		s = &extensions.MQTTSource{}
 	default:
-		s, err = plugins.GetSource(t)
+		nf, err := plugins.GetPlugin(t, plugins.SOURCE)
 		if err != nil {
 			return nil, err
+		}
+		s, ok = nf.(api.Source)
+		if !ok {
+			return nil, fmt.Errorf("exported symbol %s is not type of api.Source", t)
 		}
 	}
 	return s, nil

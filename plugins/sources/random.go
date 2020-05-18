@@ -16,8 +16,8 @@ type randomSource struct {
 }
 
 func (s *randomSource) Configure(topic string, props map[string]interface{}) error {
-	if i, ok := props["interval"].(int); ok {
-		s.interval = i
+	if i, ok := props["interval"].(float64); ok {
+		s.interval = int(i)
 	} else {
 		s.interval = 1000
 	}
@@ -27,8 +27,8 @@ func (s *randomSource) Configure(topic string, props map[string]interface{}) err
 		s.pattern = make(map[string]interface{})
 		s.pattern["count"] = 50
 	}
-	if i, ok := props["seed"].(int); ok {
-		s.seed = i
+	if i, ok := props["seed"].(float64); ok {
+		s.seed = int(i)
 	} else {
 		s.seed = 1
 	}
@@ -66,6 +66,4 @@ func (s *randomSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func Random() api.Source {
-	return &randomSource{}
-}
+var Random randomSource
