@@ -272,13 +272,13 @@ func (p *RuleProcessor) ExecInitRule(rule *api.Rule) (*xstream.TopologyNew, erro
 	if tp, inputs, err := p.createTopo(rule); err != nil {
 		return nil, err
 	} else {
-		for _, m := range rule.Actions {
+		for i, m := range rule.Actions {
 			for name, action := range m {
 				props, ok := action.(map[string]interface{})
 				if !ok {
 					return nil, fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
 				}
-				tp.AddSink(inputs, nodes.NewSinkNode("sink_"+name, name, props))
+				tp.AddSink(inputs, nodes.NewSinkNode(fmt.Sprintf("sink_%s_%d", name, i), name, props))
 			}
 		}
 		return tp, nil
