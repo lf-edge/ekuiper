@@ -150,14 +150,17 @@ func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consumer
 			log.Errorf("Invalid data format, cannot convert %s into JSON with error %s", string(msg.Payload()), e)
 			return
 		}
+		originkey := make(map[string]interface{})
 		//Convert the keys to lowercase
-		result = xsql.LowercaseKeyMap(result)
+		result = xsql.LowercaseKeyMap(result, originkey)
 
 		meta := make(map[string]interface{})
 		meta["topic"] = msg.Topic()
 		meta["messageid"] = strconv.Itoa(int(msg.MessageID()))
+
+
 		select {
-		case consumer <- api.NewDefaultSourceTuple(result, meta):
+		case consumer <- api.NewDefaultSourceTupleWithOrigKey(result, meta, originkey):
 			log.Debugf("send data to source node")
 		case <-ctx.Done():
 			return

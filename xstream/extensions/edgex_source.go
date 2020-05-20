@@ -122,7 +122,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 					} else {
 						result := make(map[string]interface{})
 						meta := make(map[string]interface{})
-
+						origKeys := make(map[string]interface{})
 						log.Debugf("receive message %s from device %s", env.Payload, e.Device)
 						for _, r := range e.Readings {
 							if r.Name != "" {
@@ -139,6 +139,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 								r_meta["pushed"] = r.Pushed
 								r_meta["device"] = r.Device
 								meta[strings.ToLower(r.Name)] = r_meta
+								origKeys[r.Name] = nil
 							} else {
 								log.Warnf("The name of readings should not be empty!")
 							}
@@ -153,7 +154,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 							meta["correlationid"] = env.CorrelationID
 
 							select {
-							case consumer <- api.NewDefaultSourceTuple(result, meta):
+							case consumer <- api.NewDefaultSourceTupleWithOrigKey(result, meta, origKeys):
 								log.Debugf("send data to device node")
 							case <-ctx.Done():
 								return

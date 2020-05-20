@@ -579,11 +579,14 @@ func (m Metadata) Meta(key string) (interface{}, bool) {
 	return msg.Meta(key)
 }
 
+type OriginalKeys map[string]interface{}
+
 type Tuple struct {
-	Emitter   string
-	Message   Message
-	Timestamp int64
-	Metadata  Metadata
+	Emitter      string
+	Message      Message
+	Timestamp    int64
+	Metadata     Metadata
+	OriginalKeys OriginalKeys
 }
 
 func (t *Tuple) Value(key string) (interface{}, bool) {

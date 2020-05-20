@@ -48,14 +48,27 @@ func GetStreams(stmt *SelectStatement) (result []string) {
 	return
 }
 
-func LowercaseKeyMap(m map[string]interface{}) map[string]interface{} {
+func LowercaseKeyMap(m map[string]interface{}, orig map[string]interface{}) map[string]interface{} {
 	m1 := make(map[string]interface{})
 	for k, v := range m {
 		if m2, ok := v.(map[string]interface{}); ok {
-			m1[strings.ToLower(k)] = LowercaseKeyMap(m2)
+			o1 := make(map[string]interface{})
+			orig[k] = o1
+			m1[strings.ToLower(k)] = LowercaseKeyMap(m2, o1)
 		} else {
 			m1[strings.ToLower(k)] = v
+			orig[k] = nil
 		}
 	}
 	return m1
+}
+
+//TODO To handle nested types?
+func GetOriginalKey(lkey string, okeys map[string]interface{}) (bool, string){
+	for k, _ := range okeys {
+		if strings.ToLower(k) == lkey {
+			return true, k
+		}
+	}
+	return false, ""
 }

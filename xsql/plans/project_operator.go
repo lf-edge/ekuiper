@@ -28,8 +28,9 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 	case error:
 		return input
 	case *xsql.Tuple:
+		okeys := input.OriginalKeys
 		ve := pp.getVE(input, input)
-		if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
+		if r, err := project(pp.Fields, ve, okeys, pp.isTest); err != nil {
 			return fmt.Errorf("run Select error: %s", err)
 		} else {
 			results = append(results, r)
@@ -41,7 +42,7 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 		ms := input[0].Tuples
 		for _, v := range ms {
 			ve := pp.getVE(&v, input)
-			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
+			if r, err := project(pp.Fields, ve, nil, pp.isTest); err != nil {
 				return fmt.Errorf("run Select error: %s", err)
 			} else {
 				results = append(results, r)
@@ -54,7 +55,7 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 		ms := input
 		for _, v := range ms {
 			ve := pp.getVE(&v, input)
-			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
+			if r, err := project(pp.Fields, ve, nil, pp.isTest); err != nil {
 				return err
 			} else {
 				results = append(results, r)
@@ -66,7 +67,7 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 	case xsql.GroupedTuplesSet:
 		for _, v := range input {
 			ve := pp.getVE(v[0], v)
-			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
+			if r, err := project(pp.Fields, ve, nil, pp.isTest); err != nil {
 				return fmt.Errorf("run Select error: %s", err)
 			} else {
 				results = append(results, r)
@@ -91,7 +92,7 @@ func (pp *ProjectPlan) getVE(tuple xsql.DataValuer, agg xsql.AggregateData) *xsq
 	}
 }
 
-func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) (map[string]interface{}, error) {
+func project(fs xsql.Fields, ve *xsql.ValuerEval, okeys xsql.OriginalKeys, isTest bool) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	for _, f := range fs {
 		//Avoid to re-evaluate for non-agg field has alias name, which was already evaluated in pre-processor operator.
@@ -112,12 +113,18 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) (map[string]inter
 				case map[string]interface{}:
 					for k, v := range val {
 						if _, ok := result[k]; !ok {
-							result[k] = v
+							if ok, okey := xsql.GetOriginalKey(k, okeys); ok {
+								result[okey] = v
+							} else {
+								result[k] = v
+							}
 						}
 					}
 				case xsql.Message:
 					for k, v := range val {
-						if _, ok := result[k]; !ok {
+						if ok, okey := xsql.GetOriginalKey(k, okeys); ok {
+							result[okey] = v
+						} else {
 							result[k] = v
 						}
 					}
@@ -136,6 +143,8 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) (map[string]inter
 	}
 	return result, nil
 }
+
+
 
 const DEFAULT_FIELD_NAME_PREFIX string = "rengine_field_"
 
