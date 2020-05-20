@@ -332,7 +332,7 @@ func (m *Manager) Get(t PluginType, name string) (map[string]string, bool) {
 func getSoFileName(m *Manager, t PluginType, name string) (string, error) {
 	v, ok := m.registry.Get(t, name)
 	if !ok {
-		return "", fmt.Errorf("invalid name %s: not exist", name)
+		return "", common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("invalid name %s: not exist", name))
 	}
 
 	soFile := ucFirst(name) + ".so"

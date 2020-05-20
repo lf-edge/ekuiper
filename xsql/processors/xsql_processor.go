@@ -128,7 +128,7 @@ func (p *StreamProcessor) DescStream(name string) (*xsql.StreamStmt, error) {
 	defer p.db.Close()
 	s, f := p.db.Get(name)
 	if !f {
-		return nil, fmt.Errorf("Stream %s is not found.", name)
+		return nil, common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("Stream %s is not found.", name))
 	}
 	s1 := s.(string)
 
@@ -158,18 +158,22 @@ func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement) (
 }
 
 func (p *StreamProcessor) execDropStream(stmt *xsql.DropStreamStatement) (string, error) {
-	return p.DropStream(stmt.Name)
+	s, err := p.DropStream(stmt.Name)
+	if err != nil {
+		return s, fmt.Errorf("Drop stream fails: %s.", err)
+	}
+	return s, nil
 }
 
 func (p *StreamProcessor) DropStream(name string) (string, error) {
 	err := p.db.Open()
 	if err != nil {
-		return "", fmt.Errorf("Drop stream fails, error when opening db: %v.", err)
+		return "", fmt.Errorf("error when opening db: %v", err)
 	}
 	defer p.db.Close()
 	err = p.db.Delete(name)
 	if err != nil {
-		return "", fmt.Errorf("Drop stream fails: %v.", err)
+		return "", err
 	} else {
 		return fmt.Sprintf("Stream %s is dropped.", name), nil
 	}
@@ -233,7 +237,7 @@ func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
 	defer p.db.Close()
 	s, f := p.db.Get(name)
 	if !f {
-		return nil, fmt.Errorf("Rule %s is not found.", name)
+		return nil, common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("Rule %s is not found.", name))
 	}
 	s1, _ := s.(string)
 	return p.getRuleByJson(name, s1)
@@ -332,7 +336,7 @@ func (p *RuleProcessor) ExecDrop(name string) (string, error) {
 		return "", err
 	}
 	defer p.db.Close()
-	err = p.db.Delete(string(name))
+	err = p.db.Delete(name)
 	if err != nil {
 		return "", err
 	} else {

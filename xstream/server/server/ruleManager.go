@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"sync"
@@ -149,7 +150,7 @@ func getRuleStatus(name string) (string, error) {
 		}
 		return result, nil
 	} else {
-		return "", fmt.Errorf("Rule %s is not found", name)
+		return "", common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
 	}
 }
 
