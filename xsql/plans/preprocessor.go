@@ -61,8 +61,6 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.F
 	} else {
 		if p.isSelectAll {
 			result = tuple.Message
-		} else {
-			result = xsql.LowercaseKeyMap(tuple.Message)
 		}
 	}
 
