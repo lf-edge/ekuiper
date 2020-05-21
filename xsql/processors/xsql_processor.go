@@ -406,12 +406,22 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			}
 			defer store.Close()
 
+			var alias, aggregateAlias xsql.Fields
+			for _, f := range selectStmt.Fields {
+				if f.AName != "" {
+					if !xsql.HasAggFuncs(f.Expr) {
+						alias = append(alias, f)
+					} else {
+						aggregateAlias = append(aggregateAlias, f)
+					}
+				}
+			}
 			for i, s := range streamsFromStmt {
 				streamStmt, err := GetStream(store, s)
 				if err != nil {
 					return nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
 				}
-				pp, err := plans.NewPreprocessor(streamStmt, selectStmt.Fields, isEventTime)
+				pp, err := plans.NewPreprocessor(streamStmt, alias, isEventTime, selectStmt.Fields.IsSelectAll())
 				if err != nil {
 					return nil, nil, err
 				}
@@ -459,10 +469,10 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			}
 
 			var ds xsql.Dimensions
-			if dimensions != nil {
+			if dimensions != nil || len(aggregateAlias) > 0 {
 				ds = dimensions.GetGroups()
-				if ds != nil && len(ds) > 0 {
-					aggregateOp := xstream.Transform(&plans.AggregatePlan{Dimensions: ds}, "aggregate", bufferLength)
+				if (ds != nil && len(ds) > 0) || len(aggregateAlias) > 0 {
+					aggregateOp := xstream.Transform(&plans.AggregatePlan{Dimensions: ds, Alias: aggregateAlias}, "aggregate", bufferLength)
 					aggregateOp.SetConcurrency(concurrency)
 					tp.AddOperator(inputs, aggregateOp)
 					inputs = []api.Emitter{aggregateOp}

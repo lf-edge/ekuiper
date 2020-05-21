@@ -15,14 +15,15 @@ import (
 
 type Preprocessor struct {
 	streamStmt      *xsql.StreamStmt
-	fields          xsql.Fields
+	aliasFields     xsql.Fields
+	isSelectAll     bool
 	isEventTime     bool
 	timestampField  string
 	timestampFormat string
 }
 
-func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool) (*Preprocessor, error) {
-	p := &Preprocessor{streamStmt: s, fields: fs, isEventTime: iet}
+func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool, isa bool) (*Preprocessor, error) {
+	p := &Preprocessor{streamStmt: s, aliasFields: fs, isEventTime: iet, isSelectAll: isa}
 	if iet {
 		if tf, ok := s.Options["TIMESTAMP"]; ok {
 			p.timestampField = tf
@@ -41,7 +42,7 @@ func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool) (*Preprocesso
  *	input: *xsql.Tuple
  *	output: *xsql.Tuple
  */
-func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{} {
+func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	tuple, ok := data.(*xsql.Tuple)
 	if !ok {
@@ -53,13 +54,12 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{
 	result := make(map[string]interface{})
 	if p.streamStmt.StreamFields != nil {
 		for _, f := range p.streamStmt.StreamFields {
-			fname := strings.ToLower(f.Name)
-			if e := p.addRecField(f.FieldType, result, tuple.Message, fname); e != nil {
+			if e := p.addRecField(f.FieldType, result, tuple.Message, f.Name); e != nil {
 				return fmt.Errorf("error in preprocessor: %s", e)
 			}
 		}
 	} else {
-		if p.fields.IsSelectAll() {
+		if p.isSelectAll {
 			result = tuple.Message
 		} else {
 			result = xsql.LowercaseKeyMap(tuple.Message)
@@ -68,15 +68,13 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{
 
 	//If the field has alias name, then evaluate the alias field before transfer it to proceeding operators, and put it into result.
 	//Otherwise, the GROUP BY, ORDER BY statement cannot get the value.
-	for _, f := range p.fields {
-		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)) {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, &xsql.FunctionValuer{})}
-			v := ve.Eval(f.Expr)
-			if _, ok := v.(error); ok {
-				return v
-			} else {
-				result[strings.ToLower(f.AName)] = v
-			}
+	for _, f := range p.aliasFields {
+		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, fv)}
+		v := ve.Eval(f.Expr)
+		if _, ok := v.(error); ok {
+			return v
+		} else {
+			result[f.AName] = v
 		}
 	}
 
@@ -104,8 +102,8 @@ func (p *Preprocessor) parseTime(s string) (time.Time, error) {
 	}
 }
 
-func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, j map[string]interface{}, n string) error {
-	if t, ok := j[n]; ok {
+func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, j xsql.Message, n string) error {
+	if t, ok := j.Value(n); ok {
 		v := reflect.ValueOf(t)
 		jtype := v.Kind()
 		switch st := ft.(type) {

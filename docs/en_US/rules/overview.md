@@ -86,37 +86,42 @@ In sendSingle=true mode:
 - Print out the whole record
 
 ```
-"dataTemplate": `{"content":{{json .}}}`,
+"dataTemplate": "{\"content\":{{json .}}}",
 ```
-- Print out the the ab field
+- Print out the ab field
 
 ```
-"dataTemplate": `{"content":{{.ab}}}`,
+"dataTemplate": "{\"content\":{{.ab}}}",
+```
+
+if the ab field is a string, add the quotes
+```
+"dataTemplate": "{\"content\":\"{{.ab}}\"}",
 ```
 
 In sendSingle=false mode:
 - Print out the whole record array
 
 ```
-"dataTemplate": `{"content":{{json .}}}`,
+"dataTemplate": "{\"content\":{{json .}}}",
 ```
 
 - Print out the first record
 
 ```
-"dataTemplate": `{"content":{{json (index . 0)}}}`,
+"dataTemplate": "{\"content\":{{json (index . 0)}}}",
 ```
 
 - Print out the field ab of the first record
 
 ```
-"dataTemplate": `{"content":{{index . 0 "ab"}}}`,
+"dataTemplate": "{\"content\":{{index . 0 \"ab\"}}}",
 ```
 
 - Print out field ab of each record in the array to html format
 
 ```
-"dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>`,
+"dataTemplate": "<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>",
 ```
 
 Actions could be customized to support different kinds of outputs, see [extension](../extension/overview.md) for more detailed info.

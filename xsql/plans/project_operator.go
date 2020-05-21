@@ -20,7 +20,7 @@ type ProjectPlan struct {
  *  input: *xsql.Tuple from preprocessor or filterOp | xsql.WindowTuplesSet from windowOp or filterOp | xsql.JoinTupleSets from joinOp or filterOp
  *  output: []map[string]interface{}
  */
-func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{} {
+func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("project plan receive %s", data)
 	var results []map[string]interface{}
@@ -28,7 +28,7 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 	case error:
 		return input
 	case *xsql.Tuple:
-		ve := pp.getVE(input, input)
+		ve := pp.getVE(input, input, fv, afv)
 		if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
 			return fmt.Errorf("run Select error: %s", err)
 		} else {
@@ -40,7 +40,7 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 		}
 		ms := input[0].Tuples
 		for _, v := range ms {
-			ve := pp.getVE(&v, input)
+			ve := pp.getVE(&v, input, fv, afv)
 			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
 				return fmt.Errorf("run Select error: %s", err)
 			} else {
@@ -53,7 +53,7 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 	case xsql.JoinTupleSets:
 		ms := input
 		for _, v := range ms {
-			ve := pp.getVE(&v, input)
+			ve := pp.getVE(&v, input, fv, afv)
 			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
 				return err
 			} else {
@@ -65,7 +65,7 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 		}
 	case xsql.GroupedTuplesSet:
 		for _, v := range input {
-			ve := pp.getVE(v[0], v)
+			ve := pp.getVE(v[0], v, fv, afv)
 			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
 				return fmt.Errorf("run Select error: %s", err)
 			} else {
@@ -83,11 +83,12 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}) interface{
 	}
 }
 
-func (pp *ProjectPlan) getVE(tuple xsql.DataValuer, agg xsql.AggregateData) *xsql.ValuerEval {
+func (pp *ProjectPlan) getVE(tuple xsql.DataValuer, agg xsql.AggregateData, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) *xsql.ValuerEval {
+	afv.SetData(agg)
 	if pp.IsAggregate {
-		return &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(agg, tuple, &xsql.FunctionValuer{}, &xsql.AggregateFunctionValuer{Data: agg}, &xsql.WildcardValuer{Data: tuple})}
+		return &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(agg, fv, tuple, fv, afv, &xsql.WildcardValuer{Data: tuple})}
 	} else {
-		return &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, &xsql.FunctionValuer{}, &xsql.WildcardValuer{Data: tuple})}
+		return &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, fv, &xsql.WildcardValuer{Data: tuple})}
 	}
 }
 
@@ -95,7 +96,7 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) (map[string]inter
 	result := make(map[string]interface{})
 	for _, f := range fs {
 		//Avoid to re-evaluate for non-agg field has alias name, which was already evaluated in pre-processor operator.
-		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)) && !isTest {
+		if f.AName != "" && !isTest {
 			fr := &xsql.FieldRef{StreamName: "", Name: f.AName}
 			v := ve.Eval(fr)
 			if e, ok := v.(error); ok {

@@ -396,8 +396,9 @@ func TestMultiJoinPlan_Apply(t *testing.T) {
 		if table, ok := stmt.Sources[0].(*xsql.Table); !ok {
 			t.Errorf("statement source is not a table")
 		} else {
+			fv, afv := xsql.NewAggregateFunctionValuers()
 			pp := &JoinPlan{Joins: stmt.Joins, From: table}
-			result := pp.Apply(ctx, tt.data)
+			result := pp.Apply(ctx, tt.data, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 			}
