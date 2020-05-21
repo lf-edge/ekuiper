@@ -216,16 +216,15 @@ func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{
 
 func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (interface{}, error) {
 	if len(r.FloatEncoding) == 0 {
-		if strings.Contains(r.Value, "==") {
+		if strings.Contains(r.Value, "=") {
 			r.FloatEncoding = models.Base64Encoding
 		} else {
 			r.FloatEncoding = models.ENotation
 		}
 	}
-	switch r.ValueType {
-	case models.ValueTypeFloat32:
+	switch strings.ToLower(r.ValueType) {
+	case strings.ToLower(models.ValueTypeFloat32):
 		var value float64
-
 		switch r.FloatEncoding {
 		case models.Base64Encoding:
 			data, err := base64.StdEncoding.DecodeString(r.Value)
@@ -254,7 +253,7 @@ func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (inter
 		}
 		return value, nil
 
-	case models.ValueTypeFloat64:
+	case strings.ToLower(models.ValueTypeFloat64):
 		var value float64
 		switch r.FloatEncoding {
 		case models.Base64Encoding:
@@ -279,7 +278,7 @@ func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (inter
 			return false, fmt.Errorf("unkown FloatEncoding for float64 value: %s", r.FloatEncoding)
 		}
 	default:
-		return nil, fmt.Errorf("unkown value type: %s", r.ValueType)
+		return nil, fmt.Errorf("unkown value type: %s, reading:%v", r.ValueType, r)
 	}
 }
 

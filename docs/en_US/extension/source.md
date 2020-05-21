@@ -30,10 +30,12 @@ The last method to implement is _Close_ which literally close the connection. It
 Close(ctx StreamContext) error
 ```
 
-As the source itself is a plugin, it must be in the main package. Given the source struct name is mySource. At last of the file, the source must be exported as a symbol as below.
+As the source itself is a plugin, it must be in the main package. Given the source struct name is mySource. At last of the file, the source must be exported as a symbol as below. There are [2 types of exported symbol supported](overview.md#plugin-development). For source extension, states are usually needed, so it is recommended to export a constructor function.
 
 ```go
-var MySource mySource
+function MySource() api.Source{
+    return &mySource{}
+}
 ```
 
 The [Randome Source](../../../plugins/sources/random.go) is a good example.

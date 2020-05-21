@@ -115,4 +115,6 @@ func (m *fileSink) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-var File fileSink
+func File() api.Sink {
+	return &fileSink{}
+}

@@ -30,7 +30,7 @@ The main task for a Function is to implement _exec_ method. The method will be l
 Exec(args []interface{}) (interface{}, bool)
 ```  
 
-As the function itself is a plugin, it must be in the main package. Given the function struct name is myFunction. At last of the file, the source must be exported as a symbol as below.
+As the function itself is a plugin, it must be in the main package. Given the function struct name is myFunction. At last of the file, the source must be exported as a symbol as below. There are [2 types of exported symbol supported](overview.md#plugin-development). For function extension, if there is no internal state, it is recommended to export a singleton instance.
 
 ```go
 var MyFunction myFunction
