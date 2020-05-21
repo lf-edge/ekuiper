@@ -827,7 +827,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
-		pp, err := NewPreprocessor(tt.stmt, nil, true, false)
+		pp, err := NewPreprocessor(tt.stmt, nil, true)
 		if err != nil {
 			t.Error(err)
 		}

@@ -16,14 +16,13 @@ import (
 type Preprocessor struct {
 	streamStmt      *xsql.StreamStmt
 	aliasFields     xsql.Fields
-	isSelectAll     bool
 	isEventTime     bool
 	timestampField  string
 	timestampFormat string
 }
 
-func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool, isa bool) (*Preprocessor, error) {
-	p := &Preprocessor{streamStmt: s, aliasFields: fs, isEventTime: iet, isSelectAll: isa}
+func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool) (*Preprocessor, error) {
+	p := &Preprocessor{streamStmt: s, aliasFields: fs, isEventTime: iet}
 	if iet {
 		if tf, ok := s.Options["TIMESTAMP"]; ok {
 			p.timestampField = tf
@@ -59,9 +58,7 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.F
 			}
 		}
 	} else {
-		if p.isSelectAll {
-			result = tuple.Message
-		}
+		result = tuple.Message
 	}
 
 	//If the field has alias name, then evaluate the alias field before transfer it to proceeding operators, and put it into result.

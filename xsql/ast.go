@@ -253,17 +253,6 @@ func (ss *SelectStatements) node() {}
 type Fields []Field
 
 func (fs Fields) node() {}
-func (fs Fields) IsSelectAll() bool {
-	if r := (len(fs) == 1); !r {
-		return false
-	} else {
-		f := fs[0]
-		if _, ok := f.Expr.(*Wildcard); ok || f.Name == "*" {
-			return true
-		}
-	}
-	return false
-}
 
 type BinaryExpr struct {
 	OP  Token
@@ -307,9 +296,6 @@ type StreamStmt struct {
 
 func (ss *StreamStmt) node() {}
 func (ss *StreamStmt) Stmt() {}
-func (ss *StreamStmt) IsSchemaless() bool {
-	return ss.StreamFields == nil
-}
 
 type FieldType interface {
 	fieldType()
