@@ -77,12 +77,12 @@
       "op_project_0_process_latency_ms": 0,
       "op_project_0_buffer_length": 0,
       "op_project_0_last_invocation": "2020-04-10T04:26:15.513468",
-      "sink_sink_nop_0_records_in_total": 100000,
-      "sink_sink_nop_0_records_out_total": 100000,
-      "sink_sink_nop_0_exceptions_total": 0,
-      "sink_sink_nop_0_process_latency_ms": 0,
-      "sink_sink_nop_0_buffer_length": 1,
-      "sink_sink_nop_0_last_invocation": "2020-04-10T04:26:15.513501"
+      "sink_nop_0_0_records_in_total": 100000,
+      "sink_nop_0_0_records_out_total": 100000,
+      "sink_nop_0_0_exceptions_total": 0,
+      "sink_nop_0_0_process_latency_ms": 0,
+      "sink_nop_0_0_buffer_length": 1,
+      "sink_nop_0_0_last_invocation": "2020-04-10T04:26:15.513501"
     }
   ubuntu@ip-172-31-5-85:/tmp/kuiper-master/_build/kuiper--linux-x86_64$ bin/cli getstatus rule rule2
     Connecting to 127.0.0.1:20498...
@@ -111,12 +111,12 @@
       "op_project_0_process_latency_ms": 0,
       "op_project_0_buffer_length": 0,
       "op_project_0_last_invocation": "2020-04-10T04:26:15.514639",
-      "sink_sink_nop_0_records_in_total": 100000,
-      "sink_sink_nop_0_records_out_total": 100000,
-      "sink_sink_nop_0_exceptions_total": 0,
-      "sink_sink_nop_0_process_latency_ms": 0,
-      "sink_sink_nop_0_buffer_length": 1,
-      "sink_sink_nop_0_last_invocation": "2020-04-10T04:26:15.514652"
+      "sink_nop_0_0_records_in_total": 100000,
+      "sink_nop_0_0_records_out_total": 100000,
+      "sink_nop_0_0_exceptions_total": 0,
+      "sink_nop_0_0_process_latency_ms": 0,
+      "sink_nop_0_0_buffer_length": 1,
+      "sink_nop_0_0_last_invocation": "2020-04-10T04:26:15.514652"
     }
   ```
 Below is the system usage screenshot,

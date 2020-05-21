@@ -278,7 +278,7 @@ func (p *RuleProcessor) ExecInitRule(rule *api.Rule) (*xstream.TopologyNew, erro
 				if !ok {
 					return nil, fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
 				}
-				tp.AddSink(inputs, nodes.NewSinkNode(fmt.Sprintf("sink_%s_%d", name, i), name, props))
+				tp.AddSink(inputs, nodes.NewSinkNode(fmt.Sprintf("%s_%d", name, i), name, props))
 			}
 		}
 		return tp, nil

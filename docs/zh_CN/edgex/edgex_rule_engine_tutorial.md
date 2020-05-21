@@ -254,12 +254,12 @@ Connecting to 127.0.0.1:20498...
   "op_project_0_process_latency_ms": 0,
   "op_project_0_buffer_length": 0,
   "op_project_0_last_invocation": "2020-04-17T10:30:09.294382",
-  "sink_sink_mqtt_0_records_in_total": 21,
-  "sink_sink_mqtt_0_records_out_total": 21,
-  "sink_sink_mqtt_0_exceptions_total": 0,
-  "sink_sink_mqtt_0_process_latency_ms": 0,
-  "sink_sink_mqtt_0_buffer_length": 1,
-  "sink_sink_mqtt_0_last_invocation": "2020-04-17T10:30:09.294423"
+  "sink_mqtt_0_0_records_in_total": 21,
+  "sink_mqtt_0_0_records_out_total": 21,
+  "sink_mqtt_0_0_exceptions_total": 0,
+  "sink_mqtt_0_0_process_latency_ms": 0,
+  "sink_mqtt_0_0_buffer_length": 1,
+  "sink_mqtt_0_0_last_invocation": "2020-04-17T10:30:09.294423"
 ```
 
 ### 总结
