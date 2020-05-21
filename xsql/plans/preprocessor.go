@@ -15,14 +15,14 @@ import (
 
 type Preprocessor struct {
 	streamStmt      *xsql.StreamStmt
-	fields          xsql.Fields
+	aliasFields     xsql.Fields
 	isEventTime     bool
 	timestampField  string
 	timestampFormat string
 }
 
 func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool) (*Preprocessor, error) {
-	p := &Preprocessor{streamStmt: s, fields: fs, isEventTime: iet}
+	p := &Preprocessor{streamStmt: s, aliasFields: fs, isEventTime: iet}
 	if iet {
 		if tf, ok := s.Options["TIMESTAMP"]; ok {
 			p.timestampField = tf
@@ -64,15 +64,13 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.F
 
 	//If the field has alias name, then evaluate the alias field before transfer it to proceeding operators, and put it into result.
 	//Otherwise, the GROUP BY, ORDER BY statement cannot get the value.
-	for _, f := range p.fields {
-		if f.AName != "" && (!xsql.HasAggFuncs(f.Expr)) {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, fv)}
-			v := ve.Eval(f.Expr)
-			if _, ok := v.(error); ok {
-				return v
-			} else {
-				result[strings.ToLower(f.AName)] = v
-			}
+	for _, f := range p.aliasFields {
+		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, fv)}
+		v := ve.Eval(f.Expr)
+		if _, ok := v.(error); ok {
+			return v
+		} else {
+			result[strings.ToLower(f.AName)] = v
 		}
 	}
 
