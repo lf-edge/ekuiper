@@ -7,29 +7,17 @@ import (
 type SourceTuple interface {
 	Message() map[string]interface{}
 	Meta() map[string]interface{}
-	OriginalKeys() map[string]interface{}
 }
 
 type DefaultSourceTuple struct {
 	message map[string]interface{}
 	meta    map[string]interface{}
-	origkey map[string]interface{}
 }
 
 func NewDefaultSourceTuple(message map[string]interface{}, meta map[string]interface{}) *DefaultSourceTuple {
-	origkey := make(map[string]interface{})
 	return &DefaultSourceTuple{
 		message: message,
 		meta:    meta,
-		origkey: origkey,
-	}
-}
-
-func NewDefaultSourceTupleWithOrigKey(message map[string]interface{}, meta map[string]interface{}, origkeys map[string]interface{}) *DefaultSourceTuple {
-	return &DefaultSourceTuple{
-		message: message,
-		meta:    meta,
-		origkey: origkeys,
 	}
 }
 
@@ -38,9 +26,6 @@ func (t *DefaultSourceTuple) Message() map[string]interface{} {
 }
 func (t *DefaultSourceTuple) Meta() map[string]interface{} {
 	return t.meta
-}
-func (t *DefaultSourceTuple) OriginalKeys() map[string]interface{} {
-	return t.origkey
 }
 
 type Logger interface {

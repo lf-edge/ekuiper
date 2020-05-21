@@ -115,7 +115,7 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-&quot;sql&quot; : &quot;create stream demo (temperature float, humidity bigint) WITH (FORMAT=\&quot;JSON\&quot;, DATASOURCE=\&quot;devices/+/messages\&quot; )&quot;&#xd;
+&quot;sql&quot; : &quot;create stream demo (Temperature float, humidity bigint) WITH (FORMAT=\&quot;JSON\&quot;, DATASOURCE=\&quot;devices/+/messages\&quot; )&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
@@ -259,7 +259,7 @@
               <boolProp name="mqtt.add_timestamp">false</boolProp>
               <stringProp name="mqtt.message_type">String</stringProp>
               <stringProp name="mqtt.message_type_fixed_length">1024</stringProp>
-              <stringProp name="mqtt.message_to_sent">{&quot;Temperature&quot;: ${temperature}, &quot;humidity&quot; : ${humidity}}</stringProp>
+              <stringProp name="mqtt.message_to_sent">{&quot;temperature&quot;: ${temperature}, &quot;Humidity&quot; : ${humidity}}</stringProp>
             </net.xmeter.samplers.PubSampler>
             <hashTree/>
           </hashTree>

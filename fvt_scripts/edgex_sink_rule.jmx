@@ -133,7 +133,7 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT temperature, humidity, meta(*) AS metadt FROM demo WHERE temperature = 72&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT temperature, Humidity, meta(*) AS metadt FROM demo WHERE temperature = 72&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
       &quot;edgex&quot;: {&#xd;
@@ -426,7 +426,7 @@
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
           <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="humidity Assertion" enabled="true">
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="humidity value Assertion" enabled="true">
             <stringProp name="JSON_PATH">$.readings[0].value</stringProp>
             <stringProp name="EXPECTED_VALUE">81</stringProp>
             <boolProp name="JSONVALIDATION">false</boolProp>
@@ -438,6 +438,15 @@
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="temperature Assertion" enabled="true">
             <stringProp name="JSON_PATH">$.readings[1].value</stringProp>
             <stringProp name="EXPECTED_VALUE">72</stringProp>
+            <boolProp name="JSONVALIDATION">false</boolProp>
+            <boolProp name="EXPECT_NULL">false</boolProp>
+            <boolProp name="INVERT">false</boolProp>
+            <boolProp name="ISREGEX">false</boolProp>
+          </JSONPathAssertion>
+          <hashTree/>
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="humidity name Assertion" enabled="true">
+            <stringProp name="JSON_PATH">$.readings[0].name</stringProp>
+            <stringProp name="EXPECTED_VALUE">81</stringProp>
             <boolProp name="JSONVALIDATION">false</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>

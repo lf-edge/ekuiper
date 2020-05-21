@@ -122,14 +122,14 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 					} else {
 						result := make(map[string]interface{})
 						meta := make(map[string]interface{})
-						origKeys := make(map[string]interface{})
+
 						log.Debugf("receive message %s from device %s", env.Payload, e.Device)
 						for _, r := range e.Readings {
 							if r.Name != "" {
 								if v, err := es.getValue(r, log); err != nil {
 									log.Warnf("fail to get value for %s: %v", r.Name, err)
 								} else {
-									result[strings.ToLower(r.Name)] = v
+									result[r.Name] = v
 								}
 								r_meta := map[string]interface{}{}
 								r_meta["id"] = r.Id
@@ -138,8 +138,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 								r_meta["origin"] = r.Origin
 								r_meta["pushed"] = r.Pushed
 								r_meta["device"] = r.Device
-								meta[strings.ToLower(r.Name)] = r_meta
-								origKeys[r.Name] = nil
+								meta[r.Name] = r_meta
 							} else {
 								log.Warnf("The name of readings should not be empty!")
 							}
@@ -154,7 +153,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 							meta["correlationid"] = env.CorrelationID
 
 							select {
-							case consumer <- api.NewDefaultSourceTupleWithOrigKey(result, meta, origKeys):
+							case consumer <- api.NewDefaultSourceTuple(result, meta):
 								log.Debugf("send data to device node")
 							case <-ctx.Done():
 								return
@@ -279,7 +278,7 @@ func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (inter
 			return false, fmt.Errorf("unkown FloatEncoding for float64 value: %s", r.FloatEncoding)
 		}
 	default:
-		return nil, fmt.Errorf("unkown value type: %s", r.ValueType)
+		return nil, fmt.Errorf("unkown value type: %s, %v", r.ValueType, r)
 	}
 }
 

@@ -59,7 +59,11 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}) interface{
 			}
 		}
 	} else {
-		result = tuple.Message
+		if p.fields.IsSelectAll() {
+			result = tuple.Message
+		} else {
+			result = xsql.LowercaseKeyMap(tuple.Message)
+		}
 	}
 
 	//If the field has alias name, then evaluate the alias field before transfer it to proceeding operators, and put it into result.

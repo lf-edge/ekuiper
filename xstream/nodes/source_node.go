@@ -125,7 +125,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 					case data := <-buffer.Out:
 						stats.IncTotalRecordsIn()
 						stats.ProcessTimeStart()
-						tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: common.GetNowInMilli(), Metadata: data.Meta(), OriginalKeys: data.OriginalKeys()}
+						tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: common.GetNowInMilli(), Metadata: data.Meta()}
 						stats.ProcessTimeEnd()
 						//blocking
 						Broadcast(m.outs, tuple, ctx)
