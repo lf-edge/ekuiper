@@ -266,21 +266,28 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 	}
 
 	for _, outdata := range outdatas {
+	outerloop:
 		for {
-			if err := sink.Collect(ctx, outdata); err != nil {
-				stats.IncTotalExceptions()
-				logger.Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), outdata, err)
-				if retryInterval > 0 {
-					time.Sleep(time.Duration(retryInterval) * time.Millisecond)
-					logger.Debugf("try again")
+			select {
+			case <-ctx.Done():
+				logger.Infof("sink node %s instance %d stops data resending", ctx.GetOpId(), ctx.GetInstanceId())
+				return
+			default:
+				if err := sink.Collect(ctx, outdata); err != nil {
+					stats.IncTotalExceptions()
+					logger.Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), outdata, err)
+					if retryInterval > 0 {
+						time.Sleep(time.Duration(retryInterval) * time.Millisecond)
+						logger.Debugf("try again")
+					} else {
+						break outerloop
+					}
 				} else {
-					break
+					logger.Debugf("success")
+					stats.IncTotalRecordsOut()
+					signalCh <- item.index
+					break outerloop
 				}
-			} else {
-				logger.Debugf("success")
-				stats.IncTotalRecordsOut()
-				signalCh <- item.index
-				break
 			}
 		}
 	}
