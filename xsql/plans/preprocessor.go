@@ -53,8 +53,7 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.F
 	result := make(map[string]interface{})
 	if p.streamStmt.StreamFields != nil {
 		for _, f := range p.streamStmt.StreamFields {
-			fname := strings.ToLower(f.Name)
-			if e := p.addRecField(f.FieldType, result, tuple.Message, fname); e != nil {
+			if e := p.addRecField(f.FieldType, result, tuple.Message, f.Name); e != nil {
 				return fmt.Errorf("error in preprocessor: %s", e)
 			}
 		}
@@ -70,7 +69,7 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.F
 		if _, ok := v.(error); ok {
 			return v
 		} else {
-			result[strings.ToLower(f.AName)] = v
+			result[f.AName] = v
 		}
 	}
 
@@ -98,8 +97,8 @@ func (p *Preprocessor) parseTime(s string) (time.Time, error) {
 	}
 }
 
-func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, j map[string]interface{}, n string) error {
-	if t, ok := j[n]; ok {
+func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, j xsql.Message, n string) error {
+	if t, ok := j.Value(n); ok {
 		v := reflect.ValueOf(t)
 		jtype := v.Kind()
 		switch st := ft.(type) {

@@ -129,7 +129,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 								if v, err := es.getValue(r, log); err != nil {
 									log.Warnf("fail to get value for %s: %v", r.Name, err)
 								} else {
-									result[strings.ToLower(r.Name)] = v
+									result[r.Name] = v
 								}
 								r_meta := map[string]interface{}{}
 								r_meta["id"] = r.Id
@@ -138,7 +138,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 								r_meta["origin"] = r.Origin
 								r_meta["pushed"] = r.Pushed
 								r_meta["device"] = r.Device
-								meta[strings.ToLower(r.Name)] = r_meta
+								meta[r.Name] = r_meta
 							} else {
 								log.Warnf("The name of readings should not be empty!")
 							}

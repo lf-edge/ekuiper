@@ -296,9 +296,6 @@ type StreamStmt struct {
 
 func (ss *StreamStmt) node() {}
 func (ss *StreamStmt) Stmt() {}
-func (ss *StreamStmt) isSchemaless() bool {
-	return ss.StreamFields == nil
-}
 
 type FieldType interface {
 	fieldType()
@@ -540,7 +537,17 @@ type Message map[string]interface{}
 
 // Value returns the value for a key in the Message.
 func (m Message) Value(key string) (interface{}, bool) {
-	key = strings.ToLower(key)
+	key1 := strings.ToLower(key)
+	if v, ok := m.valueUtil(key1); ok {
+		return v, ok
+	} else {
+		//Only when with 'SELECT * FROM ...'  and 'schemaless', the key in map is not convert to lower case.
+		//So all of keys in map should be convert to lowercase and then compare them.
+		return m.getIgnoreCase(key)
+	}
+}
+
+func (m Message) valueUtil(key string) (interface{}, bool) {
 	if keys := strings.Split(key, "."); len(keys) == 1 {
 		v, ok := m[key]
 		return v, ok
@@ -549,6 +556,18 @@ func (m Message) Value(key string) (interface{}, bool) {
 		return v, ok
 	}
 	common.Log.Println("Invalid key: " + key + ", expect source.field or field.")
+	return nil, false
+}
+
+func (m Message) getIgnoreCase(key interface{}) (interface{}, bool) {
+	if k, ok := key.(string); ok {
+		key = strings.ToLower(k)
+		for k, v := range m {
+			if strings.ToLower(k) == key {
+				return v, true
+			}
+		}
+	}
 	return nil, false
 }
 

@@ -1,8 +1,6 @@
 package xsql
 
-import (
-	"strings"
-)
+import "strings"
 
 func PrintFieldType(ft FieldType) (result string) {
 	switch t := ft.(type) {

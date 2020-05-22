@@ -6,7 +6,6 @@ import (
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/google/uuid"
 	"strconv"
@@ -150,12 +149,11 @@ func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consumer
 			log.Errorf("Invalid data format, cannot convert %s into JSON with error %s", string(msg.Payload()), e)
 			return
 		}
-		//Convert the keys to lowercase
-		result = xsql.LowercaseKeyMap(result)
 
 		meta := make(map[string]interface{})
 		meta["topic"] = msg.Topic()
 		meta["messageid"] = strconv.Itoa(int(msg.MessageID()))
+
 		select {
 		case consumer <- api.NewDefaultSourceTuple(result, meta):
 			log.Debugf("send data to source node")
