@@ -58,6 +58,14 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
   | `replicaCount`                 | 部署kuiper数量                      | 1                        |
   | `image.repository`             | 拉取镜像名称                        | emqx/kuiper              |
   | `image.pullPolicy`             | 拉取镜像策略                        | IfNotPresent             |
+  | `service.type`  | Kubernetes Service type. |ClusterIP|
+  | `service.kuiper`  | Kuiper 端口 |20498|
+  | `service.restapi`  | Kuiper ReseApi 端口 . |9081|
+  | `service.nodePorts.kuiper`  | Kubernetes node port for Kuiper. |nil|
+  | `service.nodePorts.restapi` | Kubernetes node port for RestAPi. |nil|
+  | `service.loadBalancerIP`  | loadBalancerIP for Service |	nil |
+  | `service.loadBalancerSourceRanges` |	Address(es) that are allowed when service is LoadBalancer |	[] |
+  | `service.annotations` |	Service annotations |	{}(evaluated as a template)|
   | `persistence.enabled`          | 是否启用 PVC                        | false                    |
   | `persistence.storageClass`     | Storage class 名称                  | `nil`                    |
   | `persistence.existingClaim`    | PV 名称                             | ""                       |

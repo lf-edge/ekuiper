@@ -58,6 +58,14 @@ Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as
   | `replicaCount`                 | Deployed Kuiper instance number                      | 1                        |
   | `image.repository`             | Docker image name                                    | emqx/kuiper              |
   | `image.pullPolicy`             | Pull policy                                          | IfNotPresent             |
+  | `service.type`  | Kubernetes Service type. |ClusterIP|
+  | `service.kuiper`  | Port for Kuiper. |20498|
+  | `service.restapi`  | Port for ReseApi. |9081|
+  | `service.nodePorts.kuiper`  | Kubernetes node port for Kuiper. |nil|
+  | `service.nodePorts.restapi` | Kubernetes node port for RestAPi. |nil|
+  | `service.loadBalancerIP`  | loadBalancerIP for Service |	nil |
+  | `service.loadBalancerSourceRanges` |	Address(es) that are allowed when service is LoadBalancer |	[] |
+  | `service.annotations` |	Service annotations |	{}(evaluated as a template)|
   | `persistence.enabled`          | Enable PVC                                           | false                    |
   | `persistence.storageClass`     | Storage class name                                   | `nil`                    |
   | `persistence.existingClaim`    | PV name                                              | ""                       |

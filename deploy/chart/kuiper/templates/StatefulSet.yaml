@@ -82,9 +82,11 @@ spec:
           command: ["./bin/server"]
           ports:
           {{ $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
-          - containerPort: {{ $restPort | default 9081 }}
+          - name: restapi
+            containerPort: {{ $restPort | default 9081 }}
           {{ $port := index .Values "kuiperConfig" "kuiper.yaml" "basic" "port" }}
-          - containerPort: {{ $port | default 20498 }}
+          - name: kuiper
+            containerPort: {{ $port | default 20498 }}
           volumeMounts:
           - name: kuiper-data
             mountPath: "/kuiper/data"
