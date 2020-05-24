@@ -9,7 +9,35 @@ image:
   pullPolicy: IfNotPresent
 
 service:
+  ## Service type
+  ##
   type: ClusterIP
+  ## Port for Kuiper
+  ##
+  kuiper: 20498
+  ## Port for RestApi
+  ##
+  restapi: 9081
+  ## Specify the nodePort(s) value for the LoadBalancer and NodePort service types.
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+  ##
+  nodePorts:
+    kuiper:
+    restapi:
+  ## Set the LoadBalancer service type to internal only.
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
+  ##
+  # loadBalancerIP:
+  ## Load Balancer sources
+  ## ref: https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
+  ## Example:
+  ## loadBalancerSourceRanges:
+  ## - 10.10.10.0/24
+  ##
+  loadBalancerSourceRanges: []
+  ## Provide any additional annotations which may be required. Evaluated as a template
+  ##
+  annotations: {}
 
 persistence:
   enabled: false
