@@ -9,9 +9,9 @@ import (
 )
 
 var fileMap = map[string]string{
-	"edgex":       "/kuiper/etc/sources/edgex.yaml",
-	"mqtt_source": "/kuiper/etc/mqtt_source.yaml",
-	"kuiper":      "/kuiper/etc/kuiper.yaml",
+	"edgex":       "/go/kuiper/etc/sources/edgex.yaml",
+	"mqtt_source": "/go/kuiper/etc/mqtt_source.yaml",
+	"kuiper":      "/go/kuiper/etc/kuiper.yaml",
 }
 
 var file_keys_map = map[string]map[string]string{
@@ -101,10 +101,10 @@ func ProcessEnv(files map[string]map[interface{}]interface{}, vars []string) {
 			fmt.Printf("Find env: %s, start to handle it.\n", e)
 		}
 
-		env_v := strings.ReplaceAll(pair[0], "__", "+")
-		keys := strings.Split(env_v, "_")
+		env_v := strings.ReplaceAll(pair[0], "__", ".")
+		keys := strings.Split(env_v, ".")
 		for i, v := range keys {
-			keys[i] = strings.ReplaceAll(v, "+", "_")
+			keys[i] = v
 		}
 
 		if len(keys) < 2 {
