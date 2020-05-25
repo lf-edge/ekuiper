@@ -9,8 +9,7 @@ import (
 )
 
 var fileMap = map[string]string{
-	//"edgex":       "/kuiper/etc/sources/edgex.yaml",
-	"edgex":       "/tmp/edgex.yaml",
+	"edgex":       "/kuiper/etc/sources/edgex.yaml",
 	"mqtt_source": "/kuiper/etc/mqtt_source.yaml",
 	"kuiper":      "/kuiper/etc/kuiper.yaml",
 }
@@ -43,6 +42,23 @@ var file_keys_map = map[string]map[string]string{
 	},
 }
 
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
+func deleteFile(path string) {
+	// delete file
+	var err = os.Remove(path)
+	if err != nil {
+		return
+	}
+	fmt.Println("File Deleted")
+}
+
 func main() {
 	files := make(map[string]map[interface{}]interface{})
 	ProcessEnv(files, os.Environ())
@@ -52,6 +68,14 @@ func main() {
 		} else {
 			message := fmt.Sprintf("-------------------\nConf file %s: \n %s", f, string(bs))
 			fmt.Println(message)
+			if fname, ok := fileMap[f]; ok {
+				if fileExists(fname) {
+					deleteFile(fname)
+				}
+				if e := ioutil.WriteFile(fname, bs, 0644); e != nil {
+					fmt.Println(e)
+				}
+			}
 		}
 	}
 }
