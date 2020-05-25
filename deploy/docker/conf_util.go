@@ -8,10 +8,12 @@ import (
 	"strings"
 )
 
+var khome = os.Getenv("KUIPER_HOME")
+
 var fileMap = map[string]string{
-	"edgex":       "/go/kuiper/etc/sources/edgex.yaml",
-	"mqtt_source": "/go/kuiper/etc/mqtt_source.yaml",
-	"kuiper":      "/go/kuiper/etc/kuiper.yaml",
+	"edgex":       khome + "etc/sources/edgex.yaml",
+	"mqtt_source": khome + "etc/mqtt_source.yaml",
+	"kuiper":      khome + "etc/kuiper.yaml",
 }
 
 var file_keys_map = map[string]map[string]string{
@@ -60,6 +62,7 @@ func deleteFile(path string) {
 }
 
 func main() {
+	fmt.Println(fileMap["edgex"])
 	files := make(map[string]map[interface{}]interface{})
 	ProcessEnv(files, os.Environ())
 	for f, v := range files {
