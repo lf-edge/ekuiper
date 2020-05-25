@@ -11,9 +11,12 @@ import (
 var khome = os.Getenv("KUIPER_HOME")
 
 var fileMap = map[string]string{
-	"edgex":       khome + "etc/sources/edgex.yaml",
-	"mqtt_source": khome + "etc/mqtt_source.yaml",
-	"kuiper":      khome + "etc/kuiper.yaml",
+	"edgex":       khome + "/etc/sources/edgex.yaml",
+	"random":      khome + "/etc/sources/random.yaml",
+	"zmq":         khome + "/etc/sources/zmq.yaml",
+	"mqtt_source": khome + "/etc/mqtt_source.yaml",
+	"kuiper":      khome + "/etc/kuiper.yaml",
+	"client":      khome + "/etc/client.yaml",
 }
 
 var file_keys_map = map[string]map[string]string{

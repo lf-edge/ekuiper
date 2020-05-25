@@ -141,4 +141,6 @@ if [ ! -z "$EDGEX_SERVICE_SERVER" ]; then
     echo "edgex.default.serviceServer = $EDGEX_SERVICE_SERVER"
 fi
 
+/usr/bin/kuiper_conf_util
+
 exec "$@"
