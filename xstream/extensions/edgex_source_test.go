@@ -178,3 +178,18 @@ func TestWrongValue(t *testing.T) {
 		}
 	}
 }
+
+func TestCastToString(t *testing.T) {
+	if v, ok := castToString(12); v != "12" || !ok {
+		t.Errorf("Failed to cast int.")
+	}
+	if v, ok := castToString(true); v != "true" || !ok {
+		t.Errorf("Failed to cast bool.")
+	}
+	if v, ok := castToString("hello"); v != "hello" || !ok {
+		t.Errorf("Failed to cast string.")
+	}
+	if v, ok := castToString(12.3); v != "12.30" || !ok {
+		t.Errorf("Failed to cast float.")
+	}
+}
