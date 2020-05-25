@@ -126,9 +126,9 @@ func TestProcessEnv(t *testing.T) {
 	}{
 		{
 			vars: []string{
-				"EDGEX_DEFAULT_TYPE=zmq",
-				"EDGEX_DEFAULT_OPTIONAL_CLIENTID=clientid_0000",
-				"EDGEX_APPLICATION__CONF_PROTOCOL=ssl",
+				"EDGEX__DEFAULT__TYPE=zmq",
+				"EDGEX__DEFAULT__OPTIONAL__CLIENTID=clientid_0000",
+				"EDGEX__APPLICATION_CONF__PROTOCOL=ssl",
 			},
 			file: "edgex",
 			expt: map[interface{}]interface{}{
