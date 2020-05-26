@@ -90,6 +90,21 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 
 }
 
+func castToString(v interface{}) (result string, ok bool) {
+	switch v := v.(type) {
+	case int:
+		return strconv.Itoa(v), true
+	case string:
+		return v, true
+	case bool:
+		return strconv.FormatBool(v), true
+	case float64, float32:
+		return fmt.Sprintf("%.2f", v), true
+	default:
+		return "", false
+	}
+}
+
 func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	log := ctx.GetLogger()
 	if err := es.client.Connect(); err != nil {
