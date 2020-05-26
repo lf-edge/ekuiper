@@ -23,7 +23,6 @@ type RestSink struct {
 }
 
 var methodsMap = map[string]bool{"GET": true, "HEAD": true, "POST": true, "PUT": true, "DELETE": true, "PATCH": true}
-var bodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
 
 func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	temp, ok := ps["method"]
@@ -72,7 +71,7 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 		}
 		ms.bodyType = strings.ToLower(strings.Trim(ms.bodyType, ""))
 	}
-	if _, ok = bodyTypeMap[ms.bodyType]; !ok {
+	if _, ok = common.BodyTypeMap[ms.bodyType]; !ok {
 		return fmt.Errorf("invalid property bodyType: %s, should be \"none\" or \"form\"", ms.bodyType)
 	}
 

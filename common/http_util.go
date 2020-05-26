@@ -10,6 +10,7 @@ import (
 	"strings"
 )
 
+var BodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
 func Send(client *http.Client, bodyType string, method string, u string, headers map[string]string, sendSingle bool, v interface{}) ([]byte, error){
 	var req *http.Request
 	var err error
@@ -31,7 +32,7 @@ func Send(client *http.Client, bodyType string, method string, u string, headers
 		if err != nil {
 			return nil, fmt.Errorf("fail to create request: %v", err)
 		}
-		req.Header.Set("Content-Type", bodyType)
+		req.Header.Set("Content-Type", BodyTypeMap[bodyType])
 	case "form":
 		form := url.Values{}
 		im, err := convertToMap(v, sendSingle)

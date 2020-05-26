@@ -104,7 +104,7 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 	if h, ok := props["headers"]; ok {
 		if h1, ok1 := h.(map[interface{}]interface{}); ok1 {
 			for k, v := range h1 {
-				if v1, ok2 := castToString(v); ok2 {
+				if v1, ok2 := CastToString(v); ok2 {
 					hps.headers[k.(string)] = v1
 				}
 			}
@@ -115,21 +115,6 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 
 	common.Log.Infof("Initialized with configurations %#v.", hps)
 	return nil
-}
-
-func castToString(v interface{}) (result string, ok bool) {
-	switch v := v.(type) {
-	case int:
-		return strconv.Itoa(v), true
-	case string:
-		return v, true
-	case bool:
-		return strconv.FormatBool(v), true
-	case float64, float32:
-		return fmt.Sprintf("%.2f", v), true
-	default:
-		return "", false
-	}
 }
 
 func (hps *HTTPPullSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {

@@ -71,7 +71,7 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 		if ops1, ok1 := ops.(map[interface{}]interface{}); ok1 {
 			for k, v := range ops1 {
 				k1 := k.(string)
-				if cv, ok := castToString(v); ok {
+				if cv, ok := CastToString(v); ok {
 					optional[k1] = cv
 				} else {
 					common.Log.Infof("Cannot convert configuration %s: %s to string type.\n", k, v)
@@ -88,21 +88,6 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 		return nil
 	}
 
-}
-
-func castToString(v interface{}) (result string, ok bool) {
-	switch v := v.(type) {
-	case int:
-		return strconv.Itoa(v), true
-	case string:
-		return v, true
-	case bool:
-		return strconv.FormatBool(v), true
-	case float64, float32:
-		return fmt.Sprintf("%.2f", v), true
-	default:
-		return "", false
-	}
 }
 
 func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
