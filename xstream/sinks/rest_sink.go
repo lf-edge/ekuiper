@@ -141,8 +141,21 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 		logger.Warnf("rest sink receive non []byte data: %v", item)
 	}
 	logger.Debugf("rest sink receive %s", item)
-	_, e:= common.Send(logger, ms.client, ms.bodyType, ms.method, ms.url, ms.headers, ms.sendSingle, v)
-	return e
+	resp, err := ms.Send(v, logger)
+	if err != nil {
+		return fmt.Errorf("rest sink fails to send out the data")
+	} else {
+		logger.Debugf("rest sink got response %v", resp)
+		if resp.StatusCode < 200 || resp.StatusCode > 299 {
+			return fmt.Errorf("rest sink fails to err http return code: %d.", resp.StatusCode)
+		}
+	}
+	return nil
+}
+
+func (ms *RestSink) Send(v interface{}, logger api.Logger) (*http.Response, error) {
+	return common.Send(logger, ms.client, ms.bodyType, ms.method, ms.url, ms.headers, ms.sendSingle, v)
+
 }
 
 func (ms *RestSink) Close(ctx api.StreamContext) error {
