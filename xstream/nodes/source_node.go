@@ -154,6 +154,8 @@ func doGetSource(t string) (api.Source, error) {
 	switch t {
 	case "mqtt":
 		s = &extensions.MQTTSource{}
+	case "httppull":
+		s = &extensions.HTTPPullSource{}
 	default:
 		s, err = plugins.GetSource(t)
 		if err != nil {
@@ -190,18 +192,25 @@ func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
 	conf, err := common.LoadConf(confPath)
 	props := make(map[string]interface{})
 	if err == nil {
-		cfg := make(map[string]map[string]interface{})
+		cfg := make(map[interface{}]interface{})
 		if err := yaml.Unmarshal(conf, &cfg); err != nil {
 			logger.Warnf("fail to parse yaml for source %s. Return an empty configuration", m.sourceType)
 		} else {
-			var ok bool
-			props, ok = cfg["default"]
+			def, ok := cfg["default"]
 			if !ok {
 				logger.Warnf("default conf is not found", confkey)
-			}
-			if c, ok := cfg[confkey]; ok {
-				for k, v := range c {
-					props[k] = v
+			} else {
+				if def1, ok1 := def.(map[interface{}]interface{}); ok1 {
+					for k, v := range def1 {
+						props[k.(string)] = v
+					}
+				}
+				if c, ok := cfg[confkey]; ok {
+					if c1, ok := c.(map[interface{}]interface{}); ok {
+						for k, v := range c1 {
+							props[k.(string)] = v
+						}
+					}
 				}
 			}
 		}
