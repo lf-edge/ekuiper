@@ -13,6 +13,7 @@ type KeyValue interface {
 	Set(key string, value interface{}) error
 	Replace(key string, value interface{}) error
 	Get(key string) (interface{}, bool)
+	//Must return *common.Error with NOT_FOUND error
 	Delete(key string) error
 	Keys() (keys []string, err error)
 }
@@ -171,7 +172,7 @@ func (m *SimpleKVStore) Delete(key string) error {
 	if _, found := m.c.Get(key); found {
 		m.c.Delete(key)
 	} else {
-		return fmt.Errorf("%s is not found", key)
+		return NewErrorWithCode(NOT_FOUND, fmt.Sprintf("%s is not found", key))
 	}
 	return m.saveToFile()
 }

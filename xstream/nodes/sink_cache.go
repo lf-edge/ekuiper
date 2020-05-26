@@ -140,6 +140,7 @@ func (c *Cache) run(ctx api.StreamContext) {
 			if c.changed {
 				c.saveCache(c.pending)
 			}
+			logger.Infof("sink node %s instance cache %d done", ctx.GetOpId(), ctx.GetInstanceId())
 			return
 		}
 	}
