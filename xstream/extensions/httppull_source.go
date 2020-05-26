@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -141,9 +142,19 @@ func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 	for {
 		select {
 		case <-ticker.C:
-			if c, e := common.Send(logger, hps.client, hps.bodyType, hps.method, hps.url, hps.headers, true, []byte(hps.body)); e != nil {
+			if resp, e := common.Send(logger, hps.client, hps.bodyType, hps.method, hps.url, hps.headers, true, []byte(hps.body)); e != nil {
 				logger.Warnf("Found error %s when trying to reach %v ", e, hps)
 			} else {
+				logger.Debugf("rest sink got response %v", resp)
+				if resp.StatusCode < 200 || resp.StatusCode > 299 {
+					logger.Warnf("Found error http return code: %d when trying to reach %v ", resp.StatusCode, hps)
+					break
+				}
+				defer resp.Body.Close()
+				c, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					logger.Warnf("Found error %s when trying to reach %v ", err, hps)
+				}
 				if hps.incremental {
 					nmd5 := getMD5Hash(c)
 					if omd5 == nmd5 {

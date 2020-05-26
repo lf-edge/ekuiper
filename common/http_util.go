@@ -12,7 +12,7 @@ import (
 )
 
 var BodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
-func Send(logger api.Logger, client *http.Client, bodyType string, method string, u string, headers map[string]string, sendSingle bool, v interface{}) ([]byte, error){
+func Send(logger api.Logger, client *http.Client, bodyType string, method string, u string, headers map[string]string, sendSingle bool, v interface{}) (*http.Response, error){
 	var req *http.Request
 	var err error
 	switch bodyType {
@@ -70,22 +70,7 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 		}
 	}
 	logger.Debugf("do request: %s %s with %s", method, u, req.Body)
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("rest sink fails to send out the data")
-	} else {
-		Log.Debugf("rest sink got response %v", resp)
-		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			return nil, fmt.Errorf("rest sink fails to err http return code: %d.", resp.StatusCode)
-		}
-		defer resp.Body.Close()
-		if body, err := ioutil.ReadAll(resp.Body); err != nil {
-			return nil, fmt.Errorf("rest sink fails to err response content: %s.", err)
-		} else {
-			return body, nil
-		}
-	}
-	return nil, nil
+	return client.Do(req)
 }
 
 func convertToMap(v interface{}, sendSingle bool) (map[string]interface{}, error) {
