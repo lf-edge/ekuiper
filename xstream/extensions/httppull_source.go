@@ -9,7 +9,6 @@ import (
 	"github.com/emqx/kuiper/xstream/api"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 )
