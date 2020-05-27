@@ -1,7 +1,0 @@
-default:
-  bindAddr: "127.0.0.1:54321"
-  path: "/kuipersource"
-  method: "post"
-  resultSrv: "tcp://127.0.0.1:55563"
-  resultTopic: "default"
-  timeout: 300
