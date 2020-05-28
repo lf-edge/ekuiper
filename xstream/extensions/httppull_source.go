@@ -101,10 +101,10 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 
 	hps.headers = make(map[string]string)
 	if h, ok := props["headers"]; ok {
-		if h1, ok1 := h.(map[interface{}]interface{}); ok1 {
+		if h1, ok1 := h.(map[string]interface{}); ok1 {
 			for k, v := range h1 {
 				if v1, ok2 := CastToString(v); ok2 {
-					hps.headers[k.(string)] = v1
+					hps.headers[k] = v1
 				}
 			}
 		} else {
