@@ -193,4 +193,13 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   # go build -o fvt_scripts/edgex/sub/sub fvt_scripts/edgex/sub/sub.go 
   ```
 
+- [An end to end plugin test](plugin_end_2_end.jmx)
+  The script is an end-2-end plugin test. It requires a mock http server, and also a plugin.
+    ```shell
+    # go build -o fvt_scripts/plugins/service/http_server fvt_scripts/plugins/service/server.go 
+    ```
+
+- [Pull HTTP test](http_pull_rule.jmx)
   
+  The test script verifies HTTP pull source. It sends request to a [server](fvt_scripts/plugins/service/server.go). The script set incremental to true, so it will compare with last result; If response of two requests are the same, then will skip sending out the result.
+  This script also requires to run [server](fvt_scripts/plugins/service/server.go), please refer to last testcase for how to compile and run.

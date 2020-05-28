@@ -71,7 +71,7 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 		if ops1, ok1 := ops.(map[interface{}]interface{}); ok1 {
 			for k, v := range ops1 {
 				k1 := k.(string)
-				if cv, ok := castToString(v); ok {
+				if cv, ok := CastToString(v); ok {
 					optional[k1] = cv
 				} else {
 					common.Log.Infof("Cannot convert configuration %s: %s to string type.\n", k, v)
