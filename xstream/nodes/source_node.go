@@ -201,14 +201,13 @@ func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
 				logger.Warnf("default conf is not found", confkey)
 			} else {
 				if def1, ok1 := def.(map[interface{}]interface{}); ok1 {
-					for k, v := range def1 {
-						props[k.(string)] = v
-					}
+					props = common.ConvertMap(def1)
 				}
 				if c, ok := cfg[confkey]; ok {
 					if c1, ok := c.(map[interface{}]interface{}); ok {
-						for k, v := range c1 {
-							props[k.(string)] = v
+						c2 := common.ConvertMap(c1)
+						for k, v := range c2 {
+							props[k] = v
 						}
 					}
 				}

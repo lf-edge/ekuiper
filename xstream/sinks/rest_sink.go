@@ -141,7 +141,7 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 		logger.Warnf("rest sink receive non []byte data: %v", item)
 	}
 	logger.Debugf("rest sink receive %s", item)
-	_, e:= common.Send(ms.client, ms.bodyType, ms.method, ms.url, ms.headers, ms.sendSingle, v)
+	_, e:= common.Send(logger, ms.client, ms.bodyType, ms.method, ms.url, ms.headers, ms.sendSingle, v)
 	return e
 }
 

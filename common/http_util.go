@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/emqx/kuiper/xstream/api"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -11,7 +12,7 @@ import (
 )
 
 var BodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
-func Send(client *http.Client, bodyType string, method string, u string, headers map[string]string, sendSingle bool, v interface{}) ([]byte, error){
+func Send(logger api.Logger, client *http.Client, bodyType string, method string, u string, headers map[string]string, sendSingle bool, v interface{}) ([]byte, error){
 	var req *http.Request
 	var err error
 	switch bodyType {
@@ -68,7 +69,7 @@ func Send(client *http.Client, bodyType string, method string, u string, headers
 			req.Header.Set(k, v)
 		}
 	}
-	Log.Debugf("do request: %s %s with %s", method, u, req.Body)
+	logger.Debugf("do request: %s %s with %s", method, u, req.Body)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("rest sink fails to send out the data")

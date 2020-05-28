@@ -136,12 +136,13 @@ func (hps *HTTPPullSource) Close(ctx api.StreamContext) error {
 func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	ticker := time.NewTicker(time.Millisecond * time.Duration(hps.interval))
 	logger := ctx.GetLogger()
-	go func() {
-		var omd5 string = ""
-		for {
-			<-ticker.C
-			if c, e := common.Send(hps.client, hps.bodyType, hps.method, hps.url, hps.headers, true, []byte(hps.body)); e != nil {
-				common.Log.Warnf("Found error %s when trying to reach %v ", e, hps)
+	defer ticker.Stop()
+	var omd5 string = ""
+	for {
+		select {
+		case <-ticker.C:
+			if c, e := common.Send(logger, hps.client, hps.bodyType, hps.method, hps.url, hps.headers, true, []byte(hps.body)); e != nil {
+				logger.Warnf("Found error %s when trying to reach %v ", e, hps)
 			} else {
 				if hps.incremental {
 					nmd5 := getMD5Hash(c)
@@ -163,14 +164,12 @@ func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 				select {
 				case consumer <- api.NewDefaultSourceTuple(result, meta):
 					logger.Debugf("send data to device node")
-				case <-ctx.Done():
-					return
 				}
 			}
-
-			//ticker.Stop()
+		case <-ctx.Done():
+			return
 		}
-	}()
+	}
 }
 
 func getMD5Hash(text []byte) string {
