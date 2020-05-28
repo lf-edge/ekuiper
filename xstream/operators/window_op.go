@@ -28,6 +28,7 @@ type WindowOperator struct {
 	isEventTime        bool
 	statManager        nodes.StatManager
 	watermarkGenerator *WatermarkGenerator //For event time only
+	triggerMsgCount    int
 }
 
 func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance int64, streams []string, bufferLength int) (*WindowOperator, error) {
@@ -69,6 +70,8 @@ func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance in
 			o.interval = o.window.Length
 		case xsql.SESSION_WINDOW:
 			o.ticker = common.GetTicker(o.window.Length)
+			o.interval = o.window.Interval
+		case xsql.COUNT_WINDOW:
 			o.interval = o.window.Interval
 		default:
 			return nil, fmt.Errorf("unsupported window type %d", o.window.Type)
@@ -161,6 +164,9 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 						timeoutTicker = common.GetTimer(o.window.Interval)
 						timeout = timeoutTicker.C
 					}
+				case xsql.COUNT_WINDOW:
+					o.triggerMsgCount++
+					inputs, _ = o.scan(inputs, d.Timestamp, ctx)
 				}
 				o.statManager.ProcessTimeEnd()
 				o.statManager.SetBufferLength(int64(len(o.input)))
@@ -209,12 +215,33 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, bool) {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
+	var results xsql.WindowTuplesSet = make([]xsql.WindowTuples, 0)
+	i := 0
+
+	if o.window.Type == xsql.COUNT_WINDOW {
+		if len(o.input) < o.window.Length { //If it's not enough tuples, then continue to wait
+			return inputs, false
+		}
+
+		if o.interval == 0 || o.triggerMsgCount % o.interval == 0 {
+			for i, tuple := range inputs {
+				if i < o.window.Length {
+					results = results.AddTuple(tuple)
+				}
+			}
+			log.Debugf("Sent: %v", results)
+			//blocking if one of the channel is full
+			nodes.Broadcast(o.outputs, results, ctx)
+			o.statManager.IncTotalRecordsOut()
+			log.Debugf("done scan")
+		}
+
+	}
+
 	var delta int64
 	if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
 		delta = o.calDelta(triggerTime, delta, log)
 	}
-	var results xsql.WindowTuplesSet = make([]xsql.WindowTuples, 0)
-	i := 0
 	//Sync table
 	for _, tuple := range inputs {
 		if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
@@ -233,7 +260,10 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 			inputs[i] = tuple
 			i++
 		}
-		if tuple.Timestamp <= triggerTime {
+
+		if o.window.Type == xsql.COUNT_WINDOW {
+
+		} else if tuple.Timestamp <= triggerTime {
 			results = results.AddTuple(tuple)
 		}
 	}

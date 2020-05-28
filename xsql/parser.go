@@ -671,11 +671,33 @@ func validateWindows(name string, args []Expr) (WindowType, error) {
 			return SLIDING_WINDOW, err
 		}
 		return SLIDING_WINDOW, nil
+	case "countwindow":
+		if len(args) == 1 {
+			if para1, ok := args[0].(*IntegerLiteral); ok && para1.Val > 0 {
+				return COUNT_WINDOW, nil
+			} else {
+				return COUNT_WINDOW, fmt.Errorf("Invalid parameter value %s.", args[0])
+			}
+		} else if len(args) == 2 {
+			if para1, ok1 := args[0].(*IntegerLiteral); ok1 {
+				if para2, ok2 := args[1].(*IntegerLiteral); ok2 {
+					if para1.Val < para2.Val {
+						return COUNT_WINDOW, fmt.Errorf("The second parameter value %d should be less than the first parameter %d.", para2.Val, para1.Val)
+					} else{
+						return COUNT_WINDOW, nil
+					}
+				}
+			}
+			return COUNT_WINDOW, fmt.Errorf("Invalid parameter value %s, %s.", args[0], args[1])
+		} else {
+			return COUNT_WINDOW, fmt.Errorf("Invalid parameter count.")
+		}
+
 	}
 	return NOT_WINDOW, nil
 }
 
-func validateWindow(funcName string, expectLen int, args []Expr) error {
+func  validateWindow(funcName string, expectLen int, args []Expr) error {
 	if len(args) != expectLen {
 		return fmt.Errorf("The arguments for %s should be %d.\n", funcName, expectLen)
 	}
@@ -694,6 +716,13 @@ func validateWindow(funcName string, expectLen int, args []Expr) error {
 
 func (p *Parser) ConvertToWindows(wtype WindowType, name string, args []Expr) (*Window, error) {
 	win := &Window{WindowType: wtype}
+	if wtype == COUNT_WINDOW {
+		win.Length = &IntegerLiteral{Val: args[0].(*IntegerLiteral).Val}
+		if len(args) == 2{
+			win.Interval = &IntegerLiteral{Val: args[1].(*IntegerLiteral).Val}
+		}
+		return win, nil
+	}
 	var unit = 1
 	v := args[0].(*TimeLiteral).Val
 	switch v {

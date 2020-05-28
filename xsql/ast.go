@@ -234,6 +234,7 @@ const (
 	HOPPING_WINDOW
 	SLIDING_WINDOW
 	SESSION_WINDOW
+	COUNT_WINDOW
 )
 
 type Window struct {
