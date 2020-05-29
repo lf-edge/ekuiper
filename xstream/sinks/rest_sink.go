@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -17,6 +18,7 @@ type RestSink struct {
 	bodyType   string
 	timeout    int64
 	sendSingle bool
+	debugResp  bool
 
 	client *http.Client
 }
@@ -95,6 +97,15 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 		}
 	}
 
+	temp, ok = ps["debugResp"]
+	if !ok {
+		ms.debugResp = false
+	} else {
+		ms.debugResp, ok = temp.(bool)
+		if !ok {
+			return fmt.Errorf("rest sink property debugResp %v is not a bool", temp)
+		}
+	}
 	return nil
 }
 
@@ -138,6 +149,15 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 		logger.Debugf("rest sink got response %v", resp)
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
 			return fmt.Errorf("rest sink fails to err http return code: %d.", resp.StatusCode)
+		} else {
+			if ms.debugResp {
+				if buf, bodyErr := ioutil.ReadAll(resp.Body); bodyErr != nil {
+					logger.Errorf("%s\n", bodyErr)
+				} else {
+					logger.Infof("Response content: %s\n", string(buf))
+				}
+			}
+
 		}
 	}
 	return nil
