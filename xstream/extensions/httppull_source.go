@@ -45,7 +45,7 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 		if m1, ok1 := m.(string); ok1 {
 			switch strings.ToUpper(m1) {
 			case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete:
-				hps.method = m1
+				hps.method = strings.ToUpper(m1)
 			default:
 				return fmt.Errorf("Not supported HTTP method %s.", m1)
 			}

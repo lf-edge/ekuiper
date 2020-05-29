@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
-	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -104,17 +103,8 @@ func (ms *RestSink) Open(ctx api.StreamContext) error {
 	ms.client = &http.Client{Timeout: time.Duration(ms.timeout) * time.Millisecond}
 	logger.Infof("open rest sink with configuration: {method: %s, url: %s, bodyType: %s, timeout: %d,header: %v, sendSingle: %v", ms.method, ms.url, ms.bodyType, ms.timeout, ms.headers, ms.sendSingle)
 
-	timeout := 1 * time.Second
-	if u, err := url.Parse(ms.url); err != nil {
+	if _, err := url.Parse(ms.url); err != nil {
 		return err
-	} else {
-		_, err := net.DialTimeout("tcp", u.Host, timeout)
-		if err != nil {
-			logger.Errorf("Target web server unreachable: %s", err)
-			return err
-		} else {
-			logger.Infof("Target web server is available.")
-		}
 	}
 	return nil
 }
@@ -155,7 +145,6 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 
 func (ms *RestSink) Send(v interface{}, logger api.Logger) (*http.Response, error) {
 	return common.Send(logger, ms.client, ms.bodyType, ms.method, ms.url, ms.headers, ms.sendSingle, v)
-
 }
 
 func (ms *RestSink) Close(ctx api.StreamContext) error {
