@@ -166,7 +166,25 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 					}
 				case xsql.COUNT_WINDOW:
 					o.triggerMsgCount++
-					inputs, _ = o.scan(inputs, d.Timestamp, ctx)
+					if tl, er := NewTupleList(inputs, o.window.Length); er != nil {
+						errCh <- er
+					} else {
+						needProcess := false
+						if tl.hasMoreCountWindow() {
+							needProcess = true
+						}
+						for i := 0; tl.hasMoreCountWindow(); i++ {
+							tsets := tl.nextCountWindow()
+							log.Debugf("Sent: %v", tsets)
+							//blocking if one of the channel is full
+							nodes.Broadcast(o.outputs, tsets, ctx)
+							o.statManager.IncTotalRecordsOut()
+						}
+						inputs = tl.getRestTuples()
+						if needProcess {
+							o.triggerMsgCount = 0
+						}
+					}
 				}
 				o.statManager.ProcessTimeEnd()
 				o.statManager.SetBufferLength(int64(len(o.input)))
@@ -212,36 +230,67 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 	}
 }
 
+type TupleList struct {
+	tuples []*xsql.Tuple
+	index  int //Current index
+	size   int //The size for count window
+}
+
+func NewTupleList(tuples []*xsql.Tuple, windowSize int) (TupleList, error) {
+	if windowSize <= 0 {
+		return TupleList{}, fmt.Errorf("Window size should not be less than zero.")
+	} else if tuples == nil || len(tuples) == 0 {
+		return TupleList{}, fmt.Errorf("The tuples should not be nil or empty.")
+	}
+	tl := TupleList{tuples: tuples, size: windowSize}
+	return tl, nil
+}
+
+func (tl *TupleList) hasMoreCountWindow() bool {
+	if len(tl.tuples) < tl.size {
+		return false
+	}
+	if (tl.index + tl.size) > len(tl.tuples) {
+		return false
+	}
+	return true
+}
+
+func (tl *TupleList) count() int {
+	if len(tl.tuples) < tl.size {
+		return 0
+	} else {
+		return len(tl.tuples) - tl.size + 1
+	}
+}
+
+func (tl *TupleList) nextCountWindow() xsql.WindowTuplesSet {
+	var results xsql.WindowTuplesSet = make([]xsql.WindowTuples, 0)
+	subT := tl.tuples[tl.index : tl.index+tl.size]
+	for _, tuple := range subT {
+		results = results.AddTuple(tuple)
+	}
+	tl.index = tl.index + 1
+	return results
+}
+
+func (tl *TupleList) getRestTuples() []*xsql.Tuple {
+	if len(tl.tuples) < tl.size {
+		return tl.tuples
+	} else {
+		return tl.tuples[len(tl.tuples)-tl.size+1:]
+	}
+}
+
 func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, bool) {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
-	var results xsql.WindowTuplesSet = make([]xsql.WindowTuples, 0)
-	i := 0
-
-	if o.window.Type == xsql.COUNT_WINDOW {
-		if len(o.input) < o.window.Length { //If it's not enough tuples, then continue to wait
-			return inputs, false
-		}
-
-		if o.interval == 0 || o.triggerMsgCount % o.interval == 0 {
-			for i, tuple := range inputs {
-				if i < o.window.Length {
-					results = results.AddTuple(tuple)
-				}
-			}
-			log.Debugf("Sent: %v", results)
-			//blocking if one of the channel is full
-			nodes.Broadcast(o.outputs, results, ctx)
-			o.statManager.IncTotalRecordsOut()
-			log.Debugf("done scan")
-		}
-
-	}
-
 	var delta int64
 	if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
 		delta = o.calDelta(triggerTime, delta, log)
 	}
+	var results xsql.WindowTuplesSet = make([]xsql.WindowTuples, 0)
+	i := 0
 	//Sync table
 	for _, tuple := range inputs {
 		if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
@@ -260,10 +309,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 			inputs[i] = tuple
 			i++
 		}
-
-		if o.window.Type == xsql.COUNT_WINDOW {
-
-		} else if tuple.Timestamp <= triggerTime {
+		if tuple.Timestamp <= triggerTime {
 			results = results.AddTuple(tuple)
 		}
 	}
