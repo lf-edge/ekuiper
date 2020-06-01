@@ -1895,6 +1895,56 @@ func TestWindow(t *testing.T) {
 				"op_window_0_records_in_total":   int64(5),
 				"op_window_0_records_out_total":  int64(3),
 			},
+		}, {
+			name: `rule8`,
+			sql:  `SELECT color, ts, count(*) as c FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1) having c > 1`,
+			size: 5,
+			r: [][]map[string]interface{}{
+				{{
+					"color": "red",
+					"ts":    float64(1541152486013),
+					"c":     float64(2),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(1),
+				"op_project_0_records_out_total":  int64(1),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(1),
+				"sink_mockSink_0_records_out_total": int64(1),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(5),
+				"op_window_0_records_out_total":  int64(3),
+
+				"op_filter_0_exceptions_total":   int64(0),
+				"op_filter_0_process_latency_ms": int64(0),
+				"op_filter_0_records_in_total":   int64(3),
+				"op_filter_0_records_out_total":  int64(2),
+
+				"op_aggregate_0_exceptions_total":   int64(0),
+				"op_aggregate_0_process_latency_ms": int64(0),
+				"op_aggregate_0_records_in_total":   int64(2),
+				"op_aggregate_0_records_out_total":  int64(2),
+
+				"op_having_0_exceptions_total":   int64(0),
+				"op_having_0_process_latency_ms": int64(0),
+				"op_having_0_records_in_total":   int64(2),
+				"op_having_0_records_out_total":  int64(1),
+			},
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

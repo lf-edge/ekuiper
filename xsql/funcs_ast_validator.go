@@ -3,7 +3,6 @@ package xsql
 import (
 	"fmt"
 	"github.com/emqx/kuiper/plugins"
-	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
 
@@ -26,18 +25,14 @@ func validateFuncs(funcName string, args []Expr) error {
 	} else if _, ok := aggFuncMap[lowerName]; ok {
 		return validateAggFunc(lowerName, args)
 	} else {
-		if nf, err := plugins.GetPlugin(funcName, plugins.FUNCTION); err != nil {
+		if nf, err := plugins.GetFunction(funcName); err != nil {
 			return err
 		} else {
-			f, ok := nf.(api.Function)
-			if !ok {
-				return fmt.Errorf("exported symbol %s is not type of api.Function", funcName)
-			}
 			var targs []interface{}
 			for _, arg := range args {
 				targs = append(targs, arg)
 			}
-			return f.Validate(targs)
+			return nf.Validate(targs)
 		}
 	}
 }

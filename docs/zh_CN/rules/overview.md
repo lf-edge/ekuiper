@@ -39,7 +39,10 @@
 
 为规则运行的sql查询。
 
-- Kuiper支持嵌入式MQTT源，有关更多详细信息，请参阅[MQTT source stream](sources/mqtt.md)。
+- Kuiper内置支持以下 3 种源
+    - MQTT 源，有关更多详细信息，请参阅[MQTT source stream](sources/mqtt.md)。
+    - EdgeX 源缺省是包含在[容器镜像](https://hub.docker.com/r/emqx/kuiper)中发布的，但是没有包含在单独下载的二进制包中，您可以使用 ``make pkg_with_edgex`` 命令来编译出一个支持 EdgeX 源的程序。更多关于它的详细信息，请参考 [EdgeX source stream](sources/edgex.md)。
+    - HTTP 定时拉取源，按照用户指定的时间间隔，定时从 HTTP 服务器中拉取数据，更多详细信息，请参考[这里](sources/http_pull.md) 。 
 - 有关Kuiper SQL的更多信息，请参阅[SQL](../sqls/overview.md)。
 - 可以自定义来源，请参阅 [extension](../extension/overview.md)了解更多详细信息。
 
@@ -52,7 +55,7 @@
 | concurrency | int: 1   | 设置运行的线程数。该参数值大于1时，消息发出的顺序可能无法保证。 |
 | bufferLength | int: 1024   | 设置可缓存消息数目。若缓存消息数超过此限制，sink将阻塞消息接收，直到缓存消息被消费使得缓存消息数目小于限制为止。|
 | runAsync        | bool:false   | 设置是否异步运行输出操作以提升性能。请注意，异步运行的情况下，输出结果顺序不能保证。  |
-| retryInterval   | int:1000   | 设置信息发送失败后重试等待时间，单位为毫秒|
+| retryInterval   | int:1000   | 设置信息发送失败后重试等待时间，单位为毫秒。如果该值的设置 <= 0，那么不会尝试重新发送。 |
 | cacheLength     | int:10240   | 设置最大消息缓存数量。缓存的消息会一直保留直到消息发送成功。缓存消息将按顺序发送，除非运行在异步或者并发模式下。缓存消息会定期存储到磁盘中。  |
 | cacheSaveInterval  | int:1000   | 设置缓存存储间隔时间，单位为毫秒。需要注意的是，当规则关闭时，缓存会自动存储。该值越大，则缓存保存开销越小，但系统意外退出时缓存丢失的风险变大。 |
 | omitIfEmpty | bool: false | Omit the output if the select result is empty. |
@@ -76,38 +79,43 @@ In sendSingle=true mode:
 - Print out the whole record
 
 ```
-"dataTemplate": `{"content":{{json .}}}`,
+"dataTemplate": "{\"content\":{{json .}}}",
 ```
 
-- Print out the the ab field
+- Print out the ab field
 
 ```
-"dataTemplate": `{"content":{{.ab}}}`,
+"dataTemplate": "{\"content\":{{.ab}}}",
+```
+
+if the ab field is a string, add the quotes
+```
+"dataTemplate": "{\"content\":\"{{.ab}}\"}",
 ```
 
 In sendSingle=false mode:
 - Print out the whole record array
 
 ```
-"dataTemplate": `{"content":{{json .}}}`,
+"dataTemplate": "{\"content\":{{json .}}}",
 ```
 
 - Print out the first record
 
 ```
-"dataTemplate": `{"content":{{json (index . 0)}}}`,
+"dataTemplate": "{\"content\":{{json (index . 0)}}}",
 ```
 
 - Print out the field ab of the first record
 
 ```
-"dataTemplate": `{"content":{{index . 0 "ab"}}}`,
+"dataTemplate": "{\"content\":{{index . 0 \"ab\"}}}",
 ```
 
 - Print out field ab of each record in the array to html format
 
 ```
-"dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>`,
+"dataTemplate": "<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>",
 ```
 
 

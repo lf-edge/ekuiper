@@ -26,3 +26,4 @@ go.sum
 _build
 _packages
 jmeter_logs
+kuiper_conf_util

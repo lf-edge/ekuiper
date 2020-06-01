@@ -15,13 +15,13 @@ func TestGetConf_Apply(t *testing.T) {
 		"client":   "900",
 		"user":     "SPERF",
 		"passwd":   "PASSPASS",
-		"params": map[interface{}]interface{}{
+		"params": map[string]interface{}{
 			"QUERY_TABLE": "VBAP",
 			"ROWCOUNT":    10,
 			"FIELDS": []interface{}{
-				map[interface{}]interface{}{"FIELDNAME": "MANDT"},
-				map[interface{}]interface{}{"FIELDNAME": "VBELN"},
-				map[interface{}]interface{}{"FIELDNAME": "POSNR"},
+				map[string]interface{}{"FIELDNAME": "MANDT"},
+				map[string]interface{}{"FIELDNAME": "VBELN"},
+				map[string]interface{}{"FIELDNAME": "POSNR"},
 			},
 		},
 	}

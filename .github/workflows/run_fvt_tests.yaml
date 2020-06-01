@@ -218,6 +218,7 @@ jobs:
           sed -i -r 's/  pullPolicy: .*$/  pullPolicy: Never/g' deploy/chart/kuiper/values.yaml
           sed -i -r "s/      servers: \[.*\]$/      servers: \[tcp:\/\/${emqx_address}:1883\]/g" deploy/chart/kuiper/values.yaml
           
+          helm install kuiper deploy/chart/kuiper --debug --dry-run
           helm install kuiper deploy/chart/kuiper
           while [ "$(kubectl get StatefulSet -l app.kubernetes.io/name=kuiper -o jsonpath='{.items[0].status.replicas}')" \
             != "$(kubectl get StatefulSet -l app.kubernetes.io/name=kuiper -o jsonpath='{.items[0].status.readyReplicas}')" ]; do
@@ -225,7 +226,10 @@ jobs:
             sleep 10
           done
           kuiper_address=$(kubectl get svc --namespace default kuiper -o jsonpath="{.spec.clusterIP}")
-          if [ $(curl -w %{http_code} -fsSL -o /dev/null $kuiper_address:9081) != 200 ];then exit 1; fi
+          if [ $(curl -w %{http_code} -fsSL -o /dev/null $kuiper_address:9081) != 200 ];then
+            kubectl logs kuiper-0
+            exit 1;
+          fi
       - name: check kuiper
         env:
           KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"

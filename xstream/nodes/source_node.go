@@ -147,19 +147,19 @@ func (m *SourceNode) reset() {
 }
 
 func doGetSource(t string) (api.Source, error) {
-	var s api.Source
-	var ok bool
+	var (
+		s   api.Source
+		err error
+	)
 	switch t {
 	case "mqtt":
 		s = &extensions.MQTTSource{}
+	case "httppull":
+		s = &extensions.HTTPPullSource{}
 	default:
-		nf, err := plugins.GetPlugin(t, plugins.SOURCE)
+		s, err = plugins.GetSource(t)
 		if err != nil {
 			return nil, err
-		}
-		s, ok = nf.(api.Source)
-		if !ok {
-			return nil, fmt.Errorf("exported symbol %s is not type of api.Source", t)
 		}
 	}
 	return s, nil
@@ -192,18 +192,24 @@ func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
 	conf, err := common.LoadConf(confPath)
 	props := make(map[string]interface{})
 	if err == nil {
-		cfg := make(map[string]map[string]interface{})
+		cfg := make(map[interface{}]interface{})
 		if err := yaml.Unmarshal(conf, &cfg); err != nil {
 			logger.Warnf("fail to parse yaml for source %s. Return an empty configuration", m.sourceType)
 		} else {
-			var ok bool
-			props, ok = cfg["default"]
+			def, ok := cfg["default"]
 			if !ok {
 				logger.Warnf("default conf is not found", confkey)
-			}
-			if c, ok := cfg[confkey]; ok {
-				for k, v := range c {
-					props[k] = v
+			} else {
+				if def1, ok1 := def.(map[interface{}]interface{}); ok1 {
+					props = common.ConvertMap(def1)
+				}
+				if c, ok := cfg[confkey]; ok {
+					if c1, ok := c.(map[interface{}]interface{}); ok {
+						c2 := common.ConvertMap(c1)
+						for k, v := range c2 {
+							props[k] = v
+						}
+					}
 				}
 			}
 		}

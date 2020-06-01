@@ -25,9 +25,17 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				Message: xsql.Message{
 					"a": "val_a",
 				},
+				Metadata: xsql.Metadata{
+					"id":    45,
+					"other": "mock",
+				},
 			},
 			result: []map[string]interface{}{{
 				"a": "val_a",
+				"__meta": map[string]interface{}{
+					"id":    float64(45),
+					"other": "mock",
+				},
 			}},
 		},
 		{
@@ -387,9 +395,10 @@ func TestProjectPlan_Apply1(t *testing.T) {
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
-		pp := &ProjectPlan{Fields: stmt.Fields}
+		pp := &ProjectPlan{Fields: stmt.Fields, SendMeta: true}
 		pp.isTest = true
-		result := pp.Apply(ctx, tt.data)
+		fv, afv := xsql.NewAggregateFunctionValuers()
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -939,7 +948,8 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 
 		pp := &ProjectPlan{Fields: stmt.Fields}
 		pp.isTest = true
-		result := pp.Apply(ctx, tt.data)
+		fv, afv := xsql.NewAggregateFunctionValuers()
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -1139,7 +1149,8 @@ func TestProjectPlan_Funcs(t *testing.T) {
 		}
 		pp := &ProjectPlan{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
 		pp.isTest = true
-		result := pp.Apply(ctx, tt.data)
+		fv, afv := xsql.NewAggregateFunctionValuers()
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -1171,7 +1182,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				{
 					&xsql.JoinTuple{
 						Tuples: []xsql.Tuple{
-							{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33}},
+							{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33, "c": 2, "r": 122}},
 							{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
 						},
 					},
@@ -1185,7 +1196,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				{
 					&xsql.JoinTuple{
 						Tuples: []xsql.Tuple{
-							{Emitter: "test", Message: xsql.Message{"id": 2, "a": 89.03}},
+							{Emitter: "test", Message: xsql.Message{"id": 2, "a": 89.03, "c": 2, "r": 89}},
 							{Emitter: "src2", Message: xsql.Message{"id": 2, "color": "w1"}},
 						},
 					},
@@ -1206,7 +1217,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			}},
 		},
 		{
-			sql: "SELECT avg(a) as avg FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
+			sql: "SELECT avg(a) FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: xsql.GroupedTuplesSet{
 				{
 					&xsql.JoinTuple{
@@ -1256,7 +1267,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			}},
 		},
 		{
-			sql: "SELECT max(a) as max FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
+			sql: "SELECT max(a) FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: xsql.GroupedTuplesSet{
 				{
 					&xsql.JoinTuple{
@@ -1300,7 +1311,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			}},
 		},
 		{
-			sql: "SELECT min(a) as min FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10)",
+			sql: "SELECT min(a) FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10)",
 			data: xsql.JoinTupleSets{
 				xsql.JoinTuple{
 					Tuples: []xsql.Tuple{
@@ -1326,7 +1337,33 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"min": 68.55,
 			}},
 		}, {
-			sql: "SELECT sum(a) as sum FROM test GROUP BY TumblingWindow(ss, 10)",
+			sql: "SELECT min(a) as m FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10)",
+			data: xsql.JoinTupleSets{
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33, "m": 68.55}},
+						{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
+					},
+				},
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "test", Message: xsql.Message{"id": 1, "a": 68.55}},
+						{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
+					},
+				},
+				xsql.JoinTuple{
+					Tuples: []xsql.Tuple{
+						{Emitter: "test", Message: xsql.Message{"id": 5, "a": 177.51}},
+						{Emitter: "src2", Message: xsql.Message{"id": 5, "color": "w2"}},
+					},
+				},
+			},
+
+			result: []map[string]interface{}{{
+				"m": 68.55,
+			}},
+		}, {
+			sql: "SELECT sum(a) FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: xsql.WindowTuplesSet{
 				xsql.WindowTuples{
 					Emitter: "test",
@@ -1348,7 +1385,29 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"sum": float64(123203),
 			}},
 		}, {
-			sql: "SELECT sum(a) as sum FROM test GROUP BY TumblingWindow(ss, 10)",
+			sql: "SELECT sum(a) as s FROM test GROUP BY TumblingWindow(ss, 10)",
+			data: xsql.WindowTuplesSet{
+				xsql.WindowTuples{
+					Emitter: "test",
+					Tuples: []xsql.Tuple{
+						{
+							Emitter: "src1",
+							Message: xsql.Message{"a": 53, "s": 123203},
+						}, {
+							Emitter: "src1",
+							Message: xsql.Message{"a": 27},
+						}, {
+							Emitter: "src1",
+							Message: xsql.Message{"a": 123123},
+						},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"s": float64(123203),
+			}},
+		}, {
+			sql: "SELECT sum(a) FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: xsql.WindowTuplesSet{
 				xsql.WindowTuples{
 					Emitter: "test",
@@ -1371,7 +1430,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			}},
 		},
 		{
-			sql: "SELECT count(*) as c, meta(test1.device) as d FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
+			sql: "SELECT count(*), meta(test1.device) FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: xsql.GroupedTuplesSet{
 				{
 					&xsql.JoinTuple{
@@ -1403,6 +1462,46 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
+				"count": float64(2),
+				"meta":  "devicea",
+			}, {
+				"count": float64(2),
+				"meta":  "devicec",
+			}},
+		},
+		{
+			sql: "SELECT count(*) as c, meta(test1.device) as d FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
+			data: xsql.GroupedTuplesSet{
+				{
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33, "c": 2, "d": "devicea"}},
+							{Emitter: "test1", Message: xsql.Message{"id": 1, "color": "w2"}, Metadata: xsql.Metadata{"device": "devicea"}},
+						},
+					},
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 5, "a": 177.51}},
+							{Emitter: "test1", Message: xsql.Message{"id": 5, "color": "w2"}, Metadata: xsql.Metadata{"device": "deviceb"}},
+						},
+					},
+				},
+				{
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 2, "a": 89.03, "c": 2, "d": "devicec"}},
+							{Emitter: "test1", Message: xsql.Message{"id": 2, "color": "w1"}, Metadata: xsql.Metadata{"device": "devicec"}},
+						},
+					},
+					&xsql.JoinTuple{
+						Tuples: []xsql.Tuple{
+							{Emitter: "test", Message: xsql.Message{"id": 4, "a": 14.6}},
+							{Emitter: "test1", Message: xsql.Message{"id": 4, "color": "w1"}, Metadata: xsql.Metadata{"device": "deviced"}},
+						},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
 				"c": float64(2),
 				"d": "devicea",
 			}, {
@@ -1421,8 +1520,8 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			t.Error(err)
 		}
 		pp := &ProjectPlan{Fields: stmt.Fields, IsAggregate: true}
-		pp.isTest = true
-		result := pp.Apply(ctx, tt.data)
+		fv, afv := xsql.NewAggregateFunctionValuers()
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
 			err := json.Unmarshal(v, &mapRes)
@@ -1572,7 +1671,8 @@ func TestProjectPlanError(t *testing.T) {
 
 		pp := &ProjectPlan{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
 		pp.isTest = true
-		result := pp.Apply(ctx, tt.data)
+		fv, afv := xsql.NewAggregateFunctionValuers()
+		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}

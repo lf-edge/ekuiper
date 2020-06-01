@@ -3,12 +3,12 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/gorilla/mux"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 )
@@ -33,9 +33,25 @@ func decodeStatementDescriptor(reader io.ReadCloser) (statementDescriptor, error
 }
 
 // Handle applies the specified error and error concept tot he HTTP response writer
-func handleError(w http.ResponseWriter, err error, ec int, logger api.Logger) {
-	message := err.Error()
+func handleError(w http.ResponseWriter, err error, prefix string, logger api.Logger) {
+	message := prefix
+	if message != "" {
+		message += ": "
+	}
+	message += err.Error()
 	logger.Error(message)
+	var ec int
+	switch e := err.(type) {
+	case *common.Error:
+		switch e.Code() {
+		case common.NOT_FOUND:
+			ec = http.StatusNotFound
+		default:
+			ec = http.StatusBadRequest
+		}
+	default:
+		ec = http.StatusBadRequest
+	}
 	http.Error(w, message, ec)
 }
 
@@ -45,7 +61,7 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 	err := enc.Encode(i)
 	// Problems encoding
 	if err != nil {
-		handleError(w, err, http.StatusBadRequest, logger)
+		handleError(w, err, "", logger)
 		return
 	}
 }
@@ -98,19 +114,19 @@ func streamsHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		content, err := streamProcessor.ShowStream()
 		if err != nil {
-			handleError(w, fmt.Errorf("Stream command error: %s", err), http.StatusBadRequest, logger)
+			handleError(w, err, "Stream command error", logger)
 			return
 		}
 		jsonResponse(content, w, logger)
 	case http.MethodPost:
 		v, err := decodeStatementDescriptor(r.Body)
 		if err != nil {
-			handleError(w, fmt.Errorf("Invalid body: %s", err), http.StatusBadRequest, logger)
+			handleError(w, err, "Invalid body", logger)
 			return
 		}
 		content, err := streamProcessor.ExecStreamSql(v.Sql)
 		if err != nil {
-			handleError(w, fmt.Errorf("Stream command error: %s", err), http.StatusBadRequest, logger)
+			handleError(w, err, "Stream command error", logger)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
@@ -128,14 +144,14 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		content, err := streamProcessor.DescStream(name)
 		if err != nil {
-			handleError(w, fmt.Errorf("describe stream error: %s", err), http.StatusBadRequest, logger)
+			handleError(w, err, "describe stream error", logger)
 			return
 		}
 		jsonResponse(content, w, logger)
 	case http.MethodDelete:
 		content, err := streamProcessor.DropStream(name)
 		if err != nil {
-			handleError(w, fmt.Errorf("describe stream error: %s", err), http.StatusBadRequest, logger)
+			handleError(w, err, "delete stream error", logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -150,14 +166,13 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			log.Printf("Error reading body: %v", err)
-			handleError(w, fmt.Errorf("Invalid body: %s", err), http.StatusBadRequest, logger)
+			handleError(w, err, "Invalid body", logger)
 			return
 		}
 		r, err := ruleProcessor.ExecCreate("", string(body))
 		var result string
 		if err != nil {
-			handleError(w, fmt.Errorf("Create rule error : %s.", err), http.StatusBadRequest, logger)
+			handleError(w, err, "Create rule error", logger)
 			return
 		} else {
 			result = fmt.Sprintf("Rule %s was created successfully.", r.Id)
@@ -178,7 +193,7 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		content, err := getAllRulesWithStatus()
 		if err != nil {
-			handleError(w, fmt.Errorf("Show rules error: %s", err), http.StatusBadRequest, logger)
+			handleError(w, err, "Show rules error", logger)
 			return
 		}
 		jsonResponse(content, w, logger)
@@ -195,7 +210,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		rule, err := ruleProcessor.GetRuleByName(name)
 		if err != nil {
-			handleError(w, fmt.Errorf("describe stream error: %s", err), http.StatusBadRequest, logger)
+			handleError(w, err, "describe rule error", logger)
 			return
 		}
 		jsonResponse(rule, w, logger)
@@ -203,7 +218,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		stopRule(name)
 		content, err := ruleProcessor.ExecDrop(name)
 		if err != nil {
-			handleError(w, fmt.Errorf("drop rule error: %s", err), http.StatusBadRequest, logger)
+			handleError(w, err, "delete rule error", logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -219,7 +234,7 @@ func getStatusRuleHandler(w http.ResponseWriter, r *http.Request) {
 
 	content, err := getRuleStatus(name)
 	if err != nil {
-		handleError(w, fmt.Errorf("get rule status error: %s", err), http.StatusBadRequest, logger)
+		handleError(w, err, "get rule status error", logger)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -234,7 +249,7 @@ func startRuleHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := startRule(name)
 	if err != nil {
-		handleError(w, fmt.Errorf("start rule error: %s", err), http.StatusBadRequest, logger)
+		handleError(w, err, "start rule error", logger)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -260,7 +275,7 @@ func restartRuleHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := restartRule(name)
 	if err != nil {
-		handleError(w, fmt.Errorf("restart rule error: %s", err), http.StatusBadRequest, logger)
+		handleError(w, err, "restart rule error", logger)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -273,7 +288,7 @@ func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType
 	case http.MethodGet:
 		content, err := pluginManager.List(t)
 		if err != nil {
-			handleError(w, fmt.Errorf("%s plugins list command error: %s", plugins.PluginTypes[t], err), http.StatusBadRequest, logger)
+			handleError(w, err, fmt.Sprintf("%s plugins list command error", plugins.PluginTypes[t]), logger)
 			return
 		}
 		jsonResponse(content, w, logger)
@@ -282,12 +297,12 @@ func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType
 		err := json.NewDecoder(r.Body).Decode(&sd)
 		// Problems decoding
 		if err != nil {
-			handleError(w, fmt.Errorf("Invalid body: Error decoding the %s plugin json: %v", plugins.PluginTypes[t], err), http.StatusBadRequest, logger)
+			handleError(w, err, fmt.Sprintf("Invalid body: Error decoding the %s plugin json", plugins.PluginTypes[t]), logger)
 			return
 		}
 		err = pluginManager.Register(t, &sd)
 		if err != nil {
-			handleError(w, fmt.Errorf("%s plugins create command error: %s", plugins.PluginTypes[t], err), http.StatusBadRequest, logger)
+			handleError(w, err, fmt.Sprintf("%s plugins create command error", plugins.PluginTypes[t]), logger)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
@@ -306,7 +321,7 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType)
 		r := cb == "1"
 		err := pluginManager.Delete(t, name, r)
 		if err != nil {
-			handleError(w, fmt.Errorf("delete %s plugin %s error: %s", plugins.PluginTypes[t], name, err), http.StatusBadRequest, logger)
+			handleError(w, err, fmt.Sprintf("delete %s plugin %s error", plugins.PluginTypes[t], name), logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -320,7 +335,7 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType)
 	case http.MethodGet:
 		j, ok := pluginManager.Get(t, name)
 		if !ok {
-			handleError(w, fmt.Errorf("describe %s plugin %s error: not found", plugins.PluginTypes[t], name), http.StatusBadRequest, logger)
+			handleError(w, common.NewErrorWithCode(common.NOT_FOUND, "not found"), fmt.Sprintf("describe %s plugin %s error", plugins.PluginTypes[t], name), logger)
 			return
 		}
 		jsonResponse(j, w, logger)

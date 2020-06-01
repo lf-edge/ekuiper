@@ -39,15 +39,16 @@ The identification of the rule. The rule name cannot be duplicated in the same K
 
 The sql query to run for the rule. 
 
-- Kuiper provides embeded following 2 sources,
+- Kuiper provides embeded following 3 sources,
   - MQTT source, see  [MQTT source stream](sources/mqtt.md) for more detailed info.
   - EdgeX source by default is shipped in [docker images](https://hub.docker.com/r/emqx/kuiper), but NOT included in single download binary files, you use ``make pkg_with_edgex`` command to build a binary package that supports EdgeX source. Please see [EdgeX source stream](sources/edgex.md) for more detailed info.
+  - HTTP pull source, regularly pull the contents at user's specified interval time, see [here](sources/http_pull.md) for more detailed info. 
 - See [SQL](../sqls/overview.md) for more info of Kuiper SQL.
 - Sources can be customized, see [extension](../extension/overview.md) for more detailed info.
 
 ### sinks/actions
 
-Currently, 3 kinds of sinks/actions are supported:
+Currently, below kinds of sinks/actions are supported:
 
 - [log](sinks/logs.md): Send the result to log file.
 - [mqtt](sinks/mqtt.md): Send the result to an MQTT broker. 
@@ -62,7 +63,7 @@ Each action can define its own properties. There are several common properties:
 | concurrency | int: 1   | Specify how many instances of the sink will be run. If the value is bigger than 1, the order of the messages may not be retained. |
 | bufferLength | int: 1024   | Specify how many messages can be buffered in memory. If the buffered messages exceed the limit, the sink will block message receiving until the buffered messages have been sent out so that the buffered size is less than the limit. |
 | runAsync        | bool:false   | Whether the sink will run asynchronously for better performance. If it is true, the sink result order is not promised.  |
-| retryInterval   | int:1000   | Specify how many milliseconds will the sink retry to send data out if the previous send failed  |
+| retryInterval   | int:1000   | Specify how many milliseconds will the sink retry to send data out if the previous send failed. If the specified value <= 0, then it will not retry. |
 | cacheLength     | int:10240   | Specify how many messages can be cached. The cached messages will be resent to external system until the data sent out successfully. The cached message will be sent in order except in runAsync or concurrent mode. The cached message will be saved to disk in fixed intervals.  |
 | cacheSaveInterval  | int:1000   | Specify the interval to save cached message to the disk. Notice that, if the rule is closed in plan, all the cached messages will be saved at close. A larger value can reduce the saving overhead but may lose more cache messages when the system is interrupted in error.  |
 | omitIfEmpty | bool: false | If the configuration item is set to true, when SELECT result is empty, then the result will not feed to sink operator. |
@@ -86,37 +87,42 @@ In sendSingle=true mode:
 - Print out the whole record
 
 ```
-"dataTemplate": `{"content":{{json .}}}`,
+"dataTemplate": "{\"content\":{{json .}}}",
 ```
-- Print out the the ab field
+- Print out the ab field
 
 ```
-"dataTemplate": `{"content":{{.ab}}}`,
+"dataTemplate": "{\"content\":{{.ab}}}",
+```
+
+if the ab field is a string, add the quotes
+```
+"dataTemplate": "{\"content\":\"{{.ab}}\"}",
 ```
 
 In sendSingle=false mode:
 - Print out the whole record array
 
 ```
-"dataTemplate": `{"content":{{json .}}}`,
+"dataTemplate": "{\"content\":{{json .}}}",
 ```
 
 - Print out the first record
 
 ```
-"dataTemplate": `{"content":{{json (index . 0)}}}`,
+"dataTemplate": "{\"content\":{{json (index . 0)}}}",
 ```
 
 - Print out the field ab of the first record
 
 ```
-"dataTemplate": `{"content":{{index . 0 "ab"}}}`,
+"dataTemplate": "{\"content\":{{index . 0 \"ab\"}}}",
 ```
 
 - Print out field ab of each record in the array to html format
 
 ```
-"dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>`,
+"dataTemplate": "<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>",
 ```
 
 Actions could be customized to support different kinds of outputs, see [extension](../extension/overview.md) for more detailed info.

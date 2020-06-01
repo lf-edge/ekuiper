@@ -14,7 +14,7 @@ The action is used for publish output message into EdgeX message bus.
 | type          | true     | The message bus type, two types of message buses are supported, ``zero`` or ``mqtt``, and ``zero`` is the default value. |
 | optional      | true     | If ``mqtt`` message bus type is specified, then some optional values can be specified. Please refer to below for supported optional supported configurations. |
 
-Please notice that all of values in optional are **<u>string type</u>**, so values for these configurations should be string - such as ``KeepAlive: "5000"``. Below optional configurations are supported, please check MQTT specification for the detailed information.
+Below optional configurations are supported, please check MQTT specification for the detailed information.
 
 - optional
   - ClientId

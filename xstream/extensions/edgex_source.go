@@ -71,8 +71,11 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 		if ops1, ok1 := ops.(map[interface{}]interface{}); ok1 {
 			for k, v := range ops1 {
 				k1 := k.(string)
-				v1 := v.(string)
-				optional[k1] = v1
+				if cv, ok := CastToString(v); ok {
+					optional[k1] = cv
+				} else {
+					common.Log.Infof("Cannot convert configuration %s: %s to string type.\n", k, v)
+				}
 			}
 		}
 		mbconf.Optional = optional
@@ -85,6 +88,21 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 		return nil
 	}
 
+}
+
+func castToString(v interface{}) (result string, ok bool) {
+	switch v := v.(type) {
+	case int:
+		return strconv.Itoa(v), true
+	case string:
+		return v, true
+	case bool:
+		return strconv.FormatBool(v), true
+	case float64, float32:
+		return fmt.Sprintf("%.2f", v), true
+	default:
+		return "", false
+	}
 }
 
 func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
@@ -129,7 +147,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 								if v, err := es.getValue(r, log); err != nil {
 									log.Warnf("fail to get value for %s: %v", r.Name, err)
 								} else {
-									result[strings.ToLower(r.Name)] = v
+									result[r.Name] = v
 								}
 								r_meta := map[string]interface{}{}
 								r_meta["id"] = r.Id
@@ -138,7 +156,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 								r_meta["origin"] = r.Origin
 								r_meta["pushed"] = r.Pushed
 								r_meta["device"] = r.Device
-								meta[strings.ToLower(r.Name)] = r_meta
+								meta[r.Name] = r_meta
 							} else {
 								log.Warnf("The name of readings should not be empty!")
 							}
@@ -215,16 +233,15 @@ func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{
 
 func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (interface{}, error) {
 	if len(r.FloatEncoding) == 0 {
-		if strings.Contains(r.Value, "==") {
+		if strings.Contains(r.Value, "=") {
 			r.FloatEncoding = models.Base64Encoding
 		} else {
 			r.FloatEncoding = models.ENotation
 		}
 	}
-	switch r.ValueType {
-	case models.ValueTypeFloat32:
+	switch strings.ToLower(r.ValueType) {
+	case strings.ToLower(models.ValueTypeFloat32):
 		var value float64
-
 		switch r.FloatEncoding {
 		case models.Base64Encoding:
 			data, err := base64.StdEncoding.DecodeString(r.Value)
@@ -253,7 +270,7 @@ func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (inter
 		}
 		return value, nil
 
-	case models.ValueTypeFloat64:
+	case strings.ToLower(models.ValueTypeFloat64):
 		var value float64
 		switch r.FloatEncoding {
 		case models.Base64Encoding:
@@ -278,7 +295,7 @@ func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (inter
 			return false, fmt.Errorf("unkown FloatEncoding for float64 value: %s", r.FloatEncoding)
 		}
 	default:
-		return nil, fmt.Errorf("unkown value type: %s", r.ValueType)
+		return nil, fmt.Errorf("unkown value type: %s, reading:%v", r.ValueType, r)
 	}
 }
 

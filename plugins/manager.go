@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xstream/api"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -87,11 +88,14 @@ func (rr *Registry) Get(t PluginType, name string) (string, bool) {
 //}
 
 var symbolRegistry = make(map[string]plugin.Symbol)
+var mu sync.RWMutex
 
-func GetPlugin(t string, pt PluginType) (plugin.Symbol, error) {
+func getPlugin(t string, pt PluginType) (plugin.Symbol, error) {
 	ut := ucFirst(t)
 	ptype := PluginTypes[pt]
 	key := ptype + "/" + t
+	mu.Lock()
+	defer mu.Unlock()
 	var nf plugin.Symbol
 	nf, ok := symbolRegistry[key]
 	if !ok {
@@ -119,6 +123,57 @@ func GetPlugin(t string, pt PluginType) (plugin.Symbol, error) {
 		symbolRegistry[key] = nf
 	}
 	return nf, nil
+}
+
+func GetSource(t string) (api.Source, error) {
+	nf, err := getPlugin(t, SOURCE)
+	if err != nil {
+		return nil, err
+	}
+	var s api.Source
+	switch t := nf.(type) {
+	case api.Source:
+		s = t
+	case func() api.Source:
+		s = t()
+	default:
+		return nil, fmt.Errorf("exported symbol %s is not type of api.Source or function that return api.Source", t)
+	}
+	return s, nil
+}
+
+func GetSink(t string) (api.Sink, error) {
+	nf, err := getPlugin(t, SINK)
+	if err != nil {
+		return nil, err
+	}
+	var s api.Sink
+	switch t := nf.(type) {
+	case api.Sink:
+		s = t
+	case func() api.Sink:
+		s = t()
+	default:
+		return nil, fmt.Errorf("exported symbol %s is not type of api.Sink or function that return api.Sink", t)
+	}
+	return s, nil
+}
+
+func GetFunction(t string) (api.Function, error) {
+	nf, err := getPlugin(t, FUNCTION)
+	if err != nil {
+		return nil, err
+	}
+	var s api.Function
+	switch t := nf.(type) {
+	case api.Function:
+		s = t
+	case func() api.Function:
+		s = t()
+	default:
+		return nil, fmt.Errorf("exported symbol %s is not type of api.Function or function that return api.Function", t)
+	}
+	return s, nil
 }
 
 type Manager struct {
@@ -280,7 +335,7 @@ func (m *Manager) Get(t PluginType, name string) (map[string]string, bool) {
 func getSoFileName(m *Manager, t PluginType, name string) (string, error) {
 	v, ok := m.registry.Get(t, name)
 	if !ok {
-		return "", fmt.Errorf("invalid name %s: not exist", name)
+		return "", common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("invalid name %s: not exist", name))
 	}
 
 	soFile := ucFirst(name) + ".so"
