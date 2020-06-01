@@ -173,7 +173,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 						if tl.hasMoreCountWindow() {
 							needProcess = true
 						}
-						for i := 0; tl.hasMoreCountWindow(); i++ {
+						for ; tl.hasMoreCountWindow(); {
 							tsets := tl.nextCountWindow()
 							log.Debugf("Sent: %v", tsets)
 							//blocking if one of the channel is full
