@@ -11,7 +11,7 @@ RUN make build_with_edgex \
 
 RUN go build  -o kuiper_conf_util deploy/docker/conf_util.go \
     && upx ./kuiper_conf_util \
-    && ln -s /go/kuiper/deploy/kuiper_conf_util /usr/bin/kuiper_conf_util
+    && ln -s /go/kuiper/kuiper_conf_util /usr/bin/kuiper_conf_util
 
 RUN ln -s /go/kuiper/deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 
