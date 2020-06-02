@@ -53,6 +53,17 @@ func TestStreamCreateProcessor(t *testing.T) {
 			r: []string{"Stream topic1 is created."},
 		},
 		{
+			s: `CREATE STREAM ` + "`stream`" + ` (
+					USERID BIGINT,
+					FIRST_NAME STRING,
+					LAST_NAME STRING,
+					NICKNAMES ARRAY(STRING),
+					Gender BOOLEAN,
+					ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
+				) WITH (DATASOURCE="users", FORMAT="AVRO", KEY="USERID");`,
+			r: []string{"Stream stream is created."},
+		},
+		{
 			s: `CREATE STREAM topic1 (
 					USERID BIGINT,
 				) WITH (DATASOURCE="users", FORMAT="AVRO", KEY="USERID");`,
@@ -69,12 +80,12 @@ func TestStreamCreateProcessor(t *testing.T) {
 				"DATASOURCE: users\nFORMAT: AVRO\nKEY: USERID\n"},
 		},
 		{
-			s: `SHOW STREAMS;`,
-			r: []string{"topic1"},
-		},
-		{
 			s: `DROP STREAM topic1;`,
 			r: []string{"Stream topic1 is dropped."},
+		},
+		{
+			s: `SHOW STREAMS;`,
+			r: []string{"stream"},
 		},
 		{
 			s:   `DESCRIBE STREAM topic1;`,
@@ -83,6 +94,10 @@ func TestStreamCreateProcessor(t *testing.T) {
 		{
 			s:   `DROP STREAM topic1;`,
 			err: "Drop stream fails: topic1 is not found.",
+		},
+		{
+			s: "DROP STREAM `stream`;",
+			r: []string{"Stream stream is dropped."},
 		},
 	}
 
@@ -123,7 +138,8 @@ func createStreams(t *testing.T) {
 	}
 	demo1 := `CREATE STREAM demo1 (
 					temp FLOAT,
-					hum BIGINT,
+					hum BIGINT,` +
+		"`from`" + ` STRING,
 					ts BIGINT
 				) WITH (DATASOURCE="demo1", FORMAT="json", KEY="ts");`
 	_, err = p.ExecStmt(demo1)
@@ -312,6 +328,7 @@ func getMockSource(name string, done <-chan int, size int) *nodes.SourceNode {
 				Message: map[string]interface{}{
 					"temp": 25.5,
 					"hum":  65,
+					"from": "device1",
 					"ts":   1541152486013,
 				},
 				Timestamp: 1541152486013,
@@ -321,6 +338,7 @@ func getMockSource(name string, done <-chan int, size int) *nodes.SourceNode {
 				Message: map[string]interface{}{
 					"temp": 27.5,
 					"hum":  59,
+					"from": "device2",
 					"ts":   1541152486823,
 				},
 				Timestamp: 1541152486823,
@@ -330,6 +348,7 @@ func getMockSource(name string, done <-chan int, size int) *nodes.SourceNode {
 				Message: map[string]interface{}{
 					"temp": 28.1,
 					"hum":  75,
+					"from": "device3",
 					"ts":   1541152487632,
 				},
 				Timestamp: 1541152487632,
@@ -339,6 +358,7 @@ func getMockSource(name string, done <-chan int, size int) *nodes.SourceNode {
 				Message: map[string]interface{}{
 					"temp": 27.4,
 					"hum":  80,
+					"from": "device1",
 					"ts":   1541152488442,
 				},
 				Timestamp: 1541152488442,
@@ -348,6 +368,7 @@ func getMockSource(name string, done <-chan int, size int) *nodes.SourceNode {
 				Message: map[string]interface{}{
 					"temp": 25.5,
 					"hum":  62,
+					"from": "device3",
 					"ts":   1541152489252,
 				},
 				Timestamp: 1541152489252,
@@ -764,6 +785,88 @@ func TestSingleSQL(t *testing.T) {
 				"op_filter_0_records_in_total":   int64(5),
 				"op_filter_0_records_out_total":  int64(2),
 			},
+		}, {
+			name: `rule1`,
+			sql:  "SELECT `from` FROM demo1",
+			r: [][]map[string]interface{}{
+				{{
+					"from": "device1",
+				}},
+				{{
+					"from": "device2",
+				}},
+				{{
+					"from": "device3",
+				}},
+				{{
+					"from": "device1",
+				}},
+				{{
+					"from": "device3",
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo1_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo1_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo1_0_records_in_total":   int64(5),
+				"op_preprocessor_demo1_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(5),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_demo1_0_exceptions_total":  int64(0),
+				"source_demo1_0_records_in_total":  int64(5),
+				"source_demo1_0_records_out_total": int64(5),
+			},
+			s: "sink_mockSink_0_records_out_total",
+		}, {
+			name: `rule1`,
+			sql:  "SELECT * FROM demo1 where `from`=\"device1\"",
+			r: [][]map[string]interface{}{
+				{{
+					"temp": float64(25.5),
+					"hum":  float64(65),
+					"from": "device1",
+					"ts":   float64(1541152486013),
+				}},
+				{{
+					"temp": float64(27.4),
+					"hum":  float64(80),
+					"from": "device1",
+					"ts":   float64(1541152488442),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo1_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo1_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo1_0_records_in_total":   int64(5),
+				"op_preprocessor_demo1_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(2),
+				"op_project_0_records_out_total":  int64(2),
+
+				"op_filter_0_exceptions_total":   int64(0),
+				"op_filter_0_process_latency_ms": int64(0),
+				"op_filter_0_records_in_total":   int64(5),
+				"op_filter_0_records_out_total":  int64(2),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
+
+				"source_demo1_0_exceptions_total":  int64(0),
+				"source_demo1_0_records_in_total":  int64(5),
+				"source_demo1_0_records_out_total": int64(5),
+			},
+			s: "sink_mockSink_0_records_out_total",
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
