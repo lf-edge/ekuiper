@@ -90,14 +90,17 @@ jobs:
           run: |
             container_id=$(docker run -d emqx/kuiper:$(git describe --tags --always))
             ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
+            sleep 10
             if [ "$(curl ${ip_address}:9081)" != "OK" ]; then echo "docker image failed"; exit 1; fi
 
-            container_id=$(docker run -d emqx/kuiper:$(git describe --tags --always))-slim
+            container_id=$(docker run -d emqx/kuiper:$(git describe --tags --always)-slim)
             ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
+            sleep 10
             if [ "$(curl ${ip_address}:9081)" != "OK" ]; then echo "docker image failed"; exit 1; fi
 
-            container_id=$(docker run -d emqx/kuiper:$(git describe --tags --always))-alpine
+            container_id=$(docker run -d emqx/kuiper:$(git describe --tags --always)-alpine)
             ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
+            sleep 10
             if [ "$(curl ${ip_address}:9081)" != "OK" ]; then echo "docker image failed"; exit 1; fi
         - name: build docker images
           if: github.event_name == 'release'
