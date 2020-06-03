@@ -353,10 +353,11 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 	name := rule.Id
 	sql := rule.Sql
 	var (
-		isEventTime  bool
-		lateTol      int64
-		concurrency  = 1
-		bufferLength = 1024
+		isEventTime    bool
+		lateTol        int64
+		concurrency    = 1
+		bufferLength   = 1024
+		sendMataToSink = false
 	)
 
 	if iet, ok := rule.Options["isEventTime"]; ok {
@@ -388,6 +389,13 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			return nil, nil, fmt.Errorf("Invalid rule option bufferLength %v, int type is required.", l)
 		}
 	}
+	if l, ok := rule.Options["sendMetaToSink"]; ok {
+		if fl, ok := l.(bool); ok {
+			sendMataToSink = fl
+		} else {
+			return nil, nil, fmt.Errorf("Invalid rule option sendMetaToSink %v, bool type is required.", l)
+		}
+	}
 	log.Infof("Init rule with options {isEventTime: %v, lateTolerance: %d, concurrency: %d, bufferLength: %d", isEventTime, lateTol, concurrency, bufferLength)
 	shouldCreateSource := sources == nil
 	parser := xsql.NewParser(strings.NewReader(sql))
@@ -400,8 +408,12 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			tp := xstream.NewWithName(name)
 			var inputs []api.Emitter
 			streamsFromStmt := xsql.GetStreams(selectStmt)
+			dimensions := selectStmt.Dimensions
 			if !shouldCreateSource && len(streamsFromStmt) != len(sources) {
 				return nil, nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
+			}
+			if sendMataToSink && (len(streamsFromStmt) > 1 || dimensions != nil) {
+				return nil, nil, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
 			}
 			store := common.GetSimpleKVStore(path.Join(p.rootDbDir, "stream"))
 			err := store.Open()
@@ -444,7 +456,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 					inputs = append(inputs, preprocessorOp)
 				}
 			}
-			dimensions := selectStmt.Dimensions
+
 			var w *xsql.Window
 			if dimensions != nil {
 				w = dimensions.GetWindow()
@@ -498,7 +510,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			}
 
 			if selectStmt.Fields != nil {
-				projectOp := xstream.Transform(&plans.ProjectPlan{Fields: selectStmt.Fields, IsAggregate: xsql.IsAggStatement(selectStmt)}, "project", bufferLength)
+				projectOp := xstream.Transform(&plans.ProjectPlan{Fields: selectStmt.Fields, IsAggregate: xsql.IsAggStatement(selectStmt), SendMeta: sendMataToSink}, "project", bufferLength)
 				projectOp.SetConcurrency(concurrency)
 				tp.AddOperator(inputs, projectOp)
 				inputs = []api.Emitter{projectOp}

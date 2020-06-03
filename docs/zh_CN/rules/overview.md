@@ -39,7 +39,10 @@
 
 为规则运行的sql查询。
 
-- Kuiper支持嵌入式MQTT源，有关更多详细信息，请参阅[MQTT source stream](sources/mqtt.md)。
+- Kuiper内置支持以下 3 种源
+    - MQTT 源，有关更多详细信息，请参阅[MQTT source stream](sources/mqtt.md)。
+    - EdgeX 源缺省是包含在[容器镜像](https://hub.docker.com/r/emqx/kuiper)中发布的，但是没有包含在单独下载的二进制包中，您可以使用 ``make pkg_with_edgex`` 命令来编译出一个支持 EdgeX 源的程序。更多关于它的详细信息，请参考 [EdgeX source stream](sources/edgex.md)。
+    - HTTP 定时拉取源，按照用户指定的时间间隔，定时从 HTTP 服务器中拉取数据，更多详细信息，请参考[这里](sources/http_pull.md) 。 
 - 有关Kuiper SQL的更多信息，请参阅[SQL](../sqls/overview.md)。
 - 可以自定义来源，请参阅 [extension](../extension/overview.md)了解更多详细信息。
 

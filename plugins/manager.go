@@ -88,11 +88,14 @@ func (rr *Registry) Get(t PluginType, name string) (string, bool) {
 //}
 
 var symbolRegistry = make(map[string]plugin.Symbol)
+var mu sync.RWMutex
 
 func getPlugin(t string, pt PluginType) (plugin.Symbol, error) {
 	ut := ucFirst(t)
 	ptype := PluginTypes[pt]
 	key := ptype + "/" + t
+	mu.Lock()
+	defer mu.Unlock()
 	var nf plugin.Symbol
 	nf, ok := symbolRegistry[key]
 	if !ok {

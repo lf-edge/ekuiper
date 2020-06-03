@@ -24,6 +24,7 @@ const (
 	log_dir       = "/log/"
 	StreamConf    = "kuiper.yaml"
 	KuiperBaseKey = "KuiperBaseKey"
+	MetaKey       = "__meta"
 )
 
 var (

@@ -3,6 +3,7 @@ package plans
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"strconv"
@@ -12,8 +13,8 @@ import (
 type ProjectPlan struct {
 	Fields      xsql.Fields
 	IsAggregate bool
-
-	isTest bool
+	SendMeta    bool
+	isTest      bool
 }
 
 /**
@@ -32,6 +33,9 @@ func (pp *ProjectPlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.F
 		if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
 			return fmt.Errorf("run Select error: %s", err)
 		} else {
+			if pp.SendMeta && input.Metadata != nil {
+				r[common.MetaKey] = input.Metadata
+			}
 			results = append(results, r)
 		}
 	case xsql.WindowTuplesSet:

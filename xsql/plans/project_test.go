@@ -25,9 +25,17 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				Message: xsql.Message{
 					"a": "val_a",
 				},
+				Metadata: xsql.Metadata{
+					"id":    45,
+					"other": "mock",
+				},
 			},
 			result: []map[string]interface{}{{
 				"a": "val_a",
+				"__meta": map[string]interface{}{
+					"id":    float64(45),
+					"other": "mock",
+				},
 			}},
 		},
 		{
@@ -387,7 +395,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
-		pp := &ProjectPlan{Fields: stmt.Fields}
+		pp := &ProjectPlan{Fields: stmt.Fields, SendMeta: true}
 		pp.isTest = true
 		fv, afv := xsql.NewAggregateFunctionValuers()
 		result := pp.Apply(ctx, tt.data, fv, afv)
