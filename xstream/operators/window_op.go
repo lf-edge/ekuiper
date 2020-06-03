@@ -193,7 +193,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 						log.Error(fmt.Sprintf("Found error when trying to "))
 						errCh <- er
 					} else {
-						log.Info(fmt.Sprintf("It has %d of count window.", tl.count()))
+						log.Debugf(fmt.Sprintf("It has %d of count window.", tl.count()))
 						for ; tl.hasMoreCountWindow(); {
 							tsets := tl.nextCountWindow()
 							log.Debugf("Sent: %v", tsets)
@@ -277,9 +277,7 @@ func (tl *TupleList) hasMoreCountWindow() bool {
 			return false
 		}
 	} else {
-		if (tl.index + tl.size) > len(tl.tuples) {
-			return false
-		}
+		return tl.index == 0
 	}
 	return true
 }
@@ -291,7 +289,7 @@ func (tl *TupleList) count() int {
 		if len(tl.tuples) < tl.size {
 			return 0
 		} else {
-			return len(tl.tuples) - tl.size + 1
+			return 1
 		}
 	}
 }
@@ -303,7 +301,7 @@ func (tl *TupleList) nextCountWindow() xsql.WindowTuplesSet {
 		s := tl.index*tl.size
 		subT = tl.tuples[s : s+tl.size]
 	} else {
-		subT = tl.tuples[tl.index : tl.index+tl.size]
+		subT = tl.tuples[len(tl.tuples) -tl.size : len(tl.tuples)]
 	}
 	for _, tuple := range subT {
 		results = results.AddTuple(tuple)

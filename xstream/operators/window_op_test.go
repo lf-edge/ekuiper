@@ -135,52 +135,8 @@ func TestCountWindow(t *testing.T) {
 				tuples: fivet,
 				size:   3,
 			},
-			expWinCount: 3,
+			expWinCount: 1,
 			winTupleSets: []xsql.WindowTuplesSet{
-				{
-					xsql.WindowTuples{
-						Emitter: "",
-						Tuples: []xsql.Tuple{
-							{
-								Message: map[string]interface{}{
-									"f1": "v1",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f2": "v2",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f3": "v3",
-								},
-							},
-						},
-					},
-				},
-				{
-					xsql.WindowTuples{
-						Emitter: "",
-						Tuples: []xsql.Tuple{
-							{
-								Message: map[string]interface{}{
-									"f2": "v2",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f3": "v3",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f4": "v4",
-								},
-							},
-						},
-					},
-				},
 				{
 					xsql.WindowTuples{
 						Emitter: "",
@@ -223,59 +179,8 @@ func TestCountWindow(t *testing.T) {
 				tuples: fivet,
 				size:   2,
 			},
-			expWinCount: 4,
+			expWinCount: 1,
 			winTupleSets: []xsql.WindowTuplesSet{
-				{
-					xsql.WindowTuples{
-						Emitter: "",
-						Tuples: []xsql.Tuple{
-							{
-								Message: map[string]interface{}{
-									"f1": "v1",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f2": "v2",
-								},
-							},
-						},
-					},
-				},
-				{
-					xsql.WindowTuples{
-						Emitter: "",
-						Tuples: []xsql.Tuple{
-							{
-								Message: map[string]interface{}{
-									"f2": "v2",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f3": "v3",
-								},
-							},
-						},
-					},
-				},
-				{
-					xsql.WindowTuples{
-						Emitter: "",
-						Tuples: []xsql.Tuple{
-							{
-								Message: map[string]interface{}{
-									"f3": "v3",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f4": "v4",
-								},
-							},
-						},
-					},
-				},
 				{
 					xsql.WindowTuples{
 						Emitter: "",

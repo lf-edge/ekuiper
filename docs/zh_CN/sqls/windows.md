@@ -96,43 +96,47 @@ SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mm, 2, 1);
 
 ## 计数窗口
 
-目前支持两种计数窗口：滚动计数窗口与滑动计数窗口，请注意计数窗口不关注时间，只关注事件发生的次数。
+请注意计数窗口不关注时间，只关注事件发生的次数。
 
 ### 滚动计数窗口
 
 滚动计数窗口与一般的滚动窗口类似，在滚动窗口中的事件不重复、不重叠，一个事件不会属于多个滚动窗口。以下是一个长度为 5 的滚动计数窗口。
 
-![](resources/tumbling_count_window.png)
+![](resources/tumblingCountWindow.png)
 
 ```sql
 SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
 ```
 
-这个 SQL 按照 5 次对时间进行分组，并且只获取`temperature` 大于 20 的数据。
+这个 SQL 按照 5 次对事件进行分组，并且只获取`temperature` 大于 20 的数据。
 
-### 滑动计数窗口
+### 其它计数窗口
 
-`COUNTWINDOW(count, interval)`，滑动计数窗口是被 COUNTWINDOW 中的第二个参数触发的，它定义了滑动计数窗口触发所需的事件次数。
+`COUNTWINDOW(count, interval)`，这种计数窗口是被 COUNTWINDOW 中的第二个参数触发的，它定义了计数窗口触发所需的事件次数。
 
 - 如果第二个参数值为 1， 那么每次事件进来的时候都会被触发
 - 第二个参数的值不应该大于第一个参数的值
 
-以下的滑动计数窗口的长度为 5，每 2 个世界触发一次窗口。输出为在目前所有连续的 5 个事件。
+以下为`COUNTWINDOW(5,1)` 的示意图，计数窗口长度为 5， 每接收一个事件就触发一次。
 
-1. 当收到时间 `2`，目前总共有 2 个事件，小于窗口长度 5， 不会触发窗口 
-2. 当收到时间 `4`，目前总共有 2 个事件，小于窗口长度 5， 不会触发窗口 
-3. 当收到时间 `6`，目前总共有 6 个事件，大于窗口长度 5， 有两个窗口包含了 5 个事件
-4. 剩下时间窗口生成与之前的类似
+![](resources/slidingCountWindow_1.png)
 
-![](resources/sliding_count_window.png)
+以下计数窗口的长度为 5，每 2 个事件触发一次窗口。输出为最近的 5 个事件。
+
+1. 当收到事件 `2`，目前总共有 2 个事件，小于窗口长度 5， 不会触发窗口 
+2. 当收到事件 `4`，目前总共有 2 个事件，小于窗口长度 5， 不会触发窗口 
+3. 当收到事件 `6`，目前总共有 6 个事件，大于窗口长度 5， 生成了1个窗口包含了 5 个事件。由于长度为 5，因此第一个事件将被忽略
+4. 剩下窗口生成与之前的类似
+
+![](resources/slidingCountWindow_2.png)
 
 ```sql
 SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT(*) > 2
 ```
 
-SQL 有以下的条件，
+这个 SQL 含有如下条件，
 
-- 它有一个滑动计数窗口，长度为 5， 每接收一个事件就触发一次
+- 有一个计数窗口，长度为 5， 每接收一个事件就触发一次
 - 只获取`temperature` 大于 20 的数据
 - 最后一个条件为消息的条数应该大于 2。如果 `HAVING` 条件为 `COUNT(*)  = 5`， 那么意味着窗口里所有的事件都应该满足 `WHERE` 条件
 

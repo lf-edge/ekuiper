@@ -75,35 +75,39 @@ If events keep occurring within the specified timeout, the session window will k
 
 ## Count window
 
-There are two kinds of count windows are supported:  tumbling count window and sliding count window. Please notice that the count window does not concern time, it only concern about events count.
+Please notice that the count window does not concern time, it only concern about events count.
 
 ### Tumbling count window
 
 Tumbling count window is similar to general tumbling window, events in a tumbling window can not repeat, do not overlap, and an event cannot belong to more than one tumbling window. Below is a count window with 5 events length. 
 
-![](resources/tumbling_count_window.png)
+![](resources/tumblingCountWindow.png)
 
 ```sql
 SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
 ```
 
-The SQL will group events with 5 count, and only get the `temperature` that is great than 20. 
+The SQL will group events with 5 count window, and only get the `temperature` that is great than 20. 
 
-### Sliding count window
+### Other count windows
 
-`COUNTWINDOW(count, interval)`, sliding count window is triggered by the 2nd parameter of COUNTWINDOW, which defines the event number that triggers sliding count window.
+`COUNTWINDOW(count, interval)`,  this kind of count window is triggered by the 2nd parameter of COUNTWINDOW, which defines the event number that triggers count window.
 
 - If the 2nd parameter value is 1, then it will be triggered with every event happen.
-- Value of the 2nd parameter should not be larger than the value of the 1st parameter. 
+- Value of the 2nd parameter should not be larger than the value of the 1st parameter.
 
-Sample in below is a count window that with 5 length, and triggered with every 2 events. The output will be all of consistent 5 events that currently have.
+Below is picture for describing `COUNTWINDOW(5,1)`, the window size is 5, and window is triggered with every event.
+
+![](resources/slidingCountWindow_1.png)
+
+Sample in below is a count window that with 5 length, and triggered with every 2 events. The output will be latest of 5 events that are received.
 
 1. When event `2` is received, currently totally has 2 events, which is less than window size `5`,  so will not trigger window.
 2. When event `4` is received, currently totally has 4 events, which is less than window size `5`,  so will not trigger window.
-3. When event `6` is received, currently totally has 6 events, which is great than window size `5`,  it has 2 windows that include 5 events.
+3. When event `6` is received, currently totally has 6 events, which is great than window size `5`,  it produces a window that include latest 5 events. Because the window size is 5, so the 1st event is ignored in the window.
 4. Rests of windows are generated with the same approach as previous.
 
-![](resources/sliding_count_window.png)
+![](resources/slidingCountWindow_2.png)
 
 ```sql
 SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT(*) > 2
@@ -111,7 +115,7 @@ SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT
 
 The SQL has following conditions,
 
-- It has a sliding count window with 5 length, and triggered every 1 event.
+- It's a count window with 5 length, and triggered every event.
 - It only get events with temperature that is great than 20.
 - Finally it has a condition that message count should be larger than 2. If `HAVING` condition is `COUNT(*)  = 5`, then it means all of values in the window should satisfy `WHERE` condition.
 
