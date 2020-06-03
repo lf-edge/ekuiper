@@ -110,7 +110,6 @@ func (o *WindowOperator) GetInput() (chan<- interface{}, string) {
 // output: xsql.WindowTuplesSet
 func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log := ctx.GetLogger()
-	log.Infof()
 	log.Debugf("Window operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
