@@ -153,6 +153,20 @@ docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=$MQTT_BROKER_ADDRESS emqx/kui
 
 ### Configuration
 
+Kuiper supports using environment variables to modify configuration files in containers
+
+When modifying configuration files through environment variables, the environment variables need to be set according to the prescribed format, for example:
+
+```
+KUIBER__BASIC__DEBUG => basic.debug in etc/kuiper.yaml
+
+MQTT_SOURCES__DEMO_CONF__QOS => demo_conf.qos in etc/mqtt_source.yaml
+```
+
+The environment variables are separated by two "_", the content of the first part after the separation matches the file name of the configuration file, and the remaining content matches the different levels of the configuration item.
+
+At the same time, Kuiper provides some fixed format environment variables to modify specific configurations, but this part of the content will be abolished in subsequent versions, please use with caution.
+
 Use the environment variable to configure `etc/client.yaml`  on the Kuiper container.
 
 | Options                         | Default               | Mapped                      |
