@@ -2,7 +2,7 @@
 
 In time-streaming scenarios, performing operations on the data contained in temporal windows is a common pattern. Kuiper has native support for windowing functions, enabling you to author complex stream processing jobs with minimal effort.
 
-There are four kinds of windows to use: [Tumbling window](#TUMBLING WINDOW), [Hopping window](#Hopping window), [Sliding window](#Sliding window), and [Session window](#Session window). You use the window functions in the GROUP BY clause of the query syntax in your Kuiper queries. 
+There are five kinds of windows to use: [Tumbling window](#TUMBLING WINDOW), [Hopping window](#Hopping window), [Sliding window](#Sliding window), [Session window](#Session window) and [Count Window](#Count window). You use the window functions in the GROUP BY clause of the query syntax in your Kuiper queries. 
 
 All the windowing operations output results at the end of the window. The output of the window will be single event based on the aggregate function used. 
 
@@ -72,6 +72,48 @@ SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mm, 2, 1);
 A session window begins when the first event occurs. If another event occurs within the specified timeout from the last ingested event, then the window extends to include the new event. Otherwise if no events occur within the timeout, then the window is closed at the timeout.
 
 If events keep occurring within the specified timeout, the session window will keep extending until maximum duration is reached. The maximum duration checking intervals are set to be the same size as the specified max duration. For example, if the max duration is 10, then the checks on if the window exceed maximum duration will happen at t = 0, 10, 20, 30, etc.
+
+## Count window
+
+There are two kinds of count windows are supported:  tumbling count window and sliding count window. Please notice that the count window does not concern time, it only concern about events count.
+
+### Tumbling count window
+
+Tumbling count window is similar to general tumbling window, events in a tumbling window can not repeat, do not overlap, and an event cannot belong to more than one tumbling window. Below is a count window with 5 events length. 
+
+![](resources/tumbling_count_window.png)
+
+```sql
+SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
+```
+
+The SQL will group events with 5 count, and only get the `temperature` that is great than 20. 
+
+### Sliding count window
+
+`COUNTWINDOW(count, interval)`, sliding count window is triggered by the 2nd parameter of COUNTWINDOW, which defines the event number that triggers sliding count window.
+
+- If the 2nd parameter value is 1, then it will be triggered with every event happen.
+- Value of the 2nd parameter should not be larger than the value of the 1st parameter. 
+
+Sample in below is a count window that with 5 length, and triggered with every 2 events. The output will be all of consistent 5 events that currently have.
+
+1. When event `2` is received, currently totally has 2 events, which is less than window size `5`,  so will not trigger window.
+2. When event `4` is received, currently totally has 4 events, which is less than window size `5`,  so will not trigger window.
+3. When event `6` is received, currently totally has 6 events, which is great than window size `5`,  it has 2 windows that include 5 events.
+4. Rests of windows are generated with the same approach as previous.
+
+![](resources/sliding_count_window.png)
+
+```sql
+SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT(*) > 2
+```
+
+The SQL has following conditions,
+
+- It has a sliding count window with 5 length, and triggered every 1 event.
+- It only get events with temperature that is great than 20.
+- Finally it has a condition that message count should be larger than 2. If `HAVING` condition is `COUNT(*)  = 5`, then it means all of values in the window should satisfy `WHERE` condition.
 
 ## Timestamp Management
 

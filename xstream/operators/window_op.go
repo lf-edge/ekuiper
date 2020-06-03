@@ -17,6 +17,12 @@ type WindowConfig struct {
 	Interval int //If interval is not set, it is equals to Length
 }
 
+//Return true then it's a tubmling count window;
+//Return false then it's a sliding count window;
+func (wconf *WindowConfig) IsTubmlingCountWindow() bool {
+	return wconf.Interval == 0
+}
+
 type WindowOperator struct {
 	input              chan interface{}
 	outputs            map[string]chan<- interface{}
@@ -28,7 +34,7 @@ type WindowOperator struct {
 	isEventTime        bool
 	statManager        nodes.StatManager
 	watermarkGenerator *WatermarkGenerator //For event time only
-	triggerMsgCount    int
+	msgCount           int
 }
 
 func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance int64, streams []string, bufferLength int) (*WindowOperator, error) {
@@ -42,7 +48,9 @@ func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance in
 		o.window = &WindowConfig{
 			Type:     w.WindowType,
 			Length:   w.Length.Val,
-			Interval: w.Interval.Val,
+		}
+		if w.Interval != nil {
+			o.window.Interval = w.Interval.Val
 		}
 	} else {
 		o.window = &WindowConfig{
@@ -102,6 +110,7 @@ func (o *WindowOperator) GetInput() (chan<- interface{}, string) {
 // output: xsql.WindowTuplesSet
 func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log := ctx.GetLogger()
+	log.Infof()
 	log.Debugf("Window operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
@@ -165,14 +174,27 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 						timeout = timeoutTicker.C
 					}
 				case xsql.COUNT_WINDOW:
-					o.triggerMsgCount++
-					if tl, er := NewTupleList(inputs, o.window.Length); er != nil {
+					o.msgCount++
+					if o.window.IsTubmlingCountWindow() {
+						if o.msgCount < o.window.Length {
+							continue
+						} else {
+							o.msgCount = 0
+						}
+					} else { //It's sliding count window
+						log.Debugf(fmt.Sprintf("msgCount: %d", o.msgCount))
+						if o.msgCount% o.window.Interval != 0 {
+							continue
+						} else {
+							o.msgCount = 0
+						}
+					}
+
+					if tl, er := NewTupleList(inputs, o.window.Length, o.window.Interval); er != nil {
+						log.Error(fmt.Sprintf("Found error when trying to "))
 						errCh <- er
 					} else {
-						needProcess := false
-						if tl.hasMoreCountWindow() {
-							needProcess = true
-						}
+						log.Info(fmt.Sprintf("It has %d of count window.", tl.count()))
 						for ; tl.hasMoreCountWindow(); {
 							tsets := tl.nextCountWindow()
 							log.Debugf("Sent: %v", tsets)
@@ -181,9 +203,6 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 							o.statManager.IncTotalRecordsOut()
 						}
 						inputs = tl.getRestTuples()
-						if needProcess {
-							o.triggerMsgCount = 0
-						}
 					}
 				}
 				o.statManager.ProcessTimeEnd()
@@ -231,18 +250,22 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 }
 
 type TupleList struct {
-	tuples []*xsql.Tuple
-	index  int //Current index
-	size   int //The size for count window
+	tuples     []*xsql.Tuple
+	index      int //Current index
+	size       int //The size for count window
+	isTumbling bool
 }
 
-func NewTupleList(tuples []*xsql.Tuple, windowSize int) (TupleList, error) {
+func NewTupleList(tuples []*xsql.Tuple, windowSize, interval int) (TupleList, error) {
 	if windowSize <= 0 {
 		return TupleList{}, fmt.Errorf("Window size should not be less than zero.")
 	} else if tuples == nil || len(tuples) == 0 {
 		return TupleList{}, fmt.Errorf("The tuples should not be nil or empty.")
 	}
 	tl := TupleList{tuples: tuples, size: windowSize}
+	if interval == 0 {
+		tl.isTumbling = true
+	}
 	return tl, nil
 }
 
@@ -250,23 +273,39 @@ func (tl *TupleList) hasMoreCountWindow() bool {
 	if len(tl.tuples) < tl.size {
 		return false
 	}
-	if (tl.index + tl.size) > len(tl.tuples) {
-		return false
+	if tl.isTumbling {
+		if (tl.index + 1) * tl.size > len(tl.tuples) {
+			return false
+		}
+	} else {
+		if (tl.index + tl.size) > len(tl.tuples) {
+			return false
+		}
 	}
 	return true
 }
 
 func (tl *TupleList) count() int {
-	if len(tl.tuples) < tl.size {
-		return 0
+	if tl.isTumbling {
+		return len(tl.tuples) / tl.size
 	} else {
-		return len(tl.tuples) - tl.size + 1
+		if len(tl.tuples) < tl.size {
+			return 0
+		} else {
+			return len(tl.tuples) - tl.size + 1
+		}
 	}
 }
 
 func (tl *TupleList) nextCountWindow() xsql.WindowTuplesSet {
 	var results xsql.WindowTuplesSet = make([]xsql.WindowTuples, 0)
-	subT := tl.tuples[tl.index : tl.index+tl.size]
+	var subT []*xsql.Tuple
+	if tl.isTumbling {
+		s := tl.index*tl.size
+		subT = tl.tuples[s : s+tl.size]
+	} else {
+		subT = tl.tuples[tl.index : tl.index+tl.size]
+	}
 	for _, tuple := range subT {
 		results = results.AddTuple(tuple)
 	}
@@ -275,10 +314,18 @@ func (tl *TupleList) nextCountWindow() xsql.WindowTuplesSet {
 }
 
 func (tl *TupleList) getRestTuples() []*xsql.Tuple {
-	if len(tl.tuples) < tl.size {
-		return tl.tuples
+	if tl.isTumbling {
+		if len(tl.tuples) < tl.size {
+			return tl.tuples
+		} else {
+			return tl.tuples[tl.index * tl.size:]
+		}
 	} else {
-		return tl.tuples[len(tl.tuples)-tl.size+1:]
+		if len(tl.tuples) < tl.size {
+			return tl.tuples
+		} else {
+			return tl.tuples[len(tl.tuples)-tl.size+1:]
+		}
 	}
 }
 
