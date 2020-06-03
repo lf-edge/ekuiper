@@ -300,7 +300,7 @@
             <hashTree/>
             <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
               <stringProp name="JSON_PATH">$.sink_mqtt_1_0_records_in_total</stringProp>
-              <stringProp name="EXPECTED_VALUE">10</stringProp>
+              <stringProp name="EXPECTED_VALUE">5</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
               <boolProp name="EXPECT_NULL">false</boolProp>
               <boolProp name="INVERT">false</boolProp>
