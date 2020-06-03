@@ -444,6 +444,12 @@ func TestFuncValidator(t *testing.T) {
 				RHS: &MetaRef{Name: "topic"},
 			}}}}}, Sources: []Source{&Table{Name: "tbl"}}},
 		},
+		{
+			s: `SELECT json_path_query(data, 44) AS data
+    FROM characters;`,
+			stmt: nil,
+			err:  "Expect string type for 2 parameter of function json_path_query.",
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
