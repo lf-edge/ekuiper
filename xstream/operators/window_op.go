@@ -28,6 +28,7 @@ type WindowOperator struct {
 	isEventTime        bool
 	statManager        nodes.StatManager
 	watermarkGenerator *WatermarkGenerator //For event time only
+	msgCount           int
 }
 
 func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance int64, streams []string, bufferLength int) (*WindowOperator, error) {
@@ -41,7 +42,12 @@ func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance in
 		o.window = &WindowConfig{
 			Type:     w.WindowType,
 			Length:   w.Length.Val,
-			Interval: w.Interval.Val,
+		}
+		if w.Interval != nil {
+			o.window.Interval = w.Interval.Val
+		} else if o.window.Type == xsql.COUNT_WINDOW {
+			//if no interval value is set and it's count window, then set interval to length value.
+			o.window.Interval = o.window.Length
 		}
 	} else {
 		o.window = &WindowConfig{
@@ -69,6 +75,8 @@ func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance in
 			o.interval = o.window.Length
 		case xsql.SESSION_WINDOW:
 			o.ticker = common.GetTicker(o.window.Length)
+			o.interval = o.window.Interval
+		case xsql.COUNT_WINDOW:
 			o.interval = o.window.Interval
 		default:
 			return nil, fmt.Errorf("unsupported window type %d", o.window.Type)
@@ -161,6 +169,29 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 						timeoutTicker = common.GetTimer(o.window.Interval)
 						timeout = timeoutTicker.C
 					}
+				case xsql.COUNT_WINDOW:
+					o.msgCount++
+					log.Debugf(fmt.Sprintf("msgCount: %d", o.msgCount))
+					if o.msgCount% o.window.Interval != 0 {
+						continue
+					} else {
+						o.msgCount = 0
+					}
+
+					if tl, er := NewTupleList(inputs, o.window.Length); er != nil {
+						log.Error(fmt.Sprintf("Found error when trying to "))
+						errCh <- er
+					} else {
+						log.Debugf(fmt.Sprintf("It has %d of count window.", tl.count()))
+						for ; tl.hasMoreCountWindow(); {
+							tsets := tl.nextCountWindow()
+							log.Debugf("Sent: %v", tsets)
+							//blocking if one of the channel is full
+							nodes.Broadcast(o.outputs, tsets, ctx)
+							o.statManager.IncTotalRecordsOut()
+						}
+						inputs = tl.getRestTuples()
+					}
 				}
 				o.statManager.ProcessTimeEnd()
 				o.statManager.SetBufferLength(int64(len(o.input)))
@@ -204,6 +235,55 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 			return
 		}
 	}
+}
+
+type TupleList struct {
+	tuples     []*xsql.Tuple
+	index      int //Current index
+	size       int //The size for count window
+}
+
+func NewTupleList(tuples []*xsql.Tuple, windowSize int) (TupleList, error) {
+	if windowSize <= 0 {
+		return TupleList{}, fmt.Errorf("Window size should not be less than zero.")
+	} else if tuples == nil || len(tuples) == 0 {
+		return TupleList{}, fmt.Errorf("The tuples should not be nil or empty.")
+	}
+	tl := TupleList{tuples: tuples, size: windowSize}
+	return tl, nil
+}
+
+func (tl *TupleList) hasMoreCountWindow() bool {
+	if len(tl.tuples) < tl.size {
+		return false
+	}
+	return tl.index == 0
+}
+
+func (tl *TupleList) count() int {
+	if len(tl.tuples) < tl.size {
+		return 0
+	} else {
+		return 1
+	}
+}
+
+func (tl *TupleList) nextCountWindow() xsql.WindowTuplesSet {
+	var results xsql.WindowTuplesSet = make([]xsql.WindowTuples, 0)
+	var subT []*xsql.Tuple
+	subT = tl.tuples[len(tl.tuples) -tl.size : len(tl.tuples)]
+	for _, tuple := range subT {
+		results = results.AddTuple(tuple)
+	}
+	tl.index = tl.index + 1
+	return results
+}
+
+func (tl *TupleList) getRestTuples() []*xsql.Tuple {
+	if len(tl.tuples) < tl.size {
+		return tl.tuples
+	}
+	return tl.tuples[len(tl.tuples)-tl.size+1:]
 }
 
 func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, bool) {

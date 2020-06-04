@@ -1369,6 +1369,55 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 			stmt: nil,
 			err:  "The 1st argument for slidingwindow is expecting timer literal expression. One value of [dd|hh|mi|ss|ms].\n",
 		},
+
+		{
+			s: `SELECT f1 FROM tbl GROUP BY COUNTWINDOW(10)`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "f1"},
+						Name:  "f1",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+				Dimensions: Dimensions{
+					Dimension{
+						Expr: &Window{
+							WindowType: COUNT_WINDOW,
+							Length:     &IntegerLiteral{Val: 10},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			s: `SELECT f1 FROM tbl GROUP BY COUNTWINDOW(10, 5)`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "f1"},
+						Name:  "f1",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+				Dimensions: Dimensions{
+					Dimension{
+						Expr: &Window{
+							WindowType: COUNT_WINDOW,
+							Length:     &IntegerLiteral{Val: 10},
+							Interval:   &IntegerLiteral{Val: 5},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			s:    `SELECT f1 FROM tbl GROUP BY COUNTWINDOW(3, 5)`,
+			stmt: nil,
+			err:  "The second parameter value 5 should be less than the first parameter 3.",
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
