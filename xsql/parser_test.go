@@ -26,7 +26,18 @@ func TestParser_ParseStatement(t *testing.T) {
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
-
+		{
+			s: "SELECT `select` FROM tbl",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "select"},
+						Name:  "select",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
+		},
 		{
 			s: `SELECT name FROM topic/sensor1`,
 			stmt: &SelectStatement{
@@ -50,6 +61,18 @@ func TestParser_ParseStatement(t *testing.T) {
 						AName: ""},
 				},
 				Sources: []Source{&Table{Name: "topic/sensor1", Alias: "t1"}},
+			},
+		},
+		{
+			s: "SELECT t1.name FROM topic/sensor1 AS `join`",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{StreamName: StreamName("t1"), Name: "name"},
+						Name:  "name",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "topic/sensor1", Alias: "join"}},
 			},
 		},
 
@@ -1193,6 +1216,35 @@ func TestParser_ParseStatement(t *testing.T) {
 							},
 						},
 						Name:  "sample",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
+		},
+		{
+			s:    "SELECT `half FROM tb",
+			stmt: nil,
+			err:  `found "EOF", expected FROM.`,
+		},
+		{
+			s: "SELECT `space var` FROM tbl",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "space var"},
+						Name:  "space var",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: "SELECT `中文 Chinese` FROM tbl",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "中文 Chinese"},
+						Name:  "中文 Chinese",
 						AName: ""},
 				},
 				Sources: []Source{&Table{Name: "tbl"}},

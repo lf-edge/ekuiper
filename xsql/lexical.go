@@ -239,6 +239,8 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	} else if isDigit(ch) {
 		s.unread()
 		return s.ScanNumber(false, false)
+	} else if isBackquote(ch) {
+		return s.ScanBackquoteIdent()
 	}
 
 	switch ch {
@@ -525,6 +527,19 @@ func (s *Scanner) ScanNumber(startWithDot bool, isNeg bool) (tok Token, lit stri
 	}
 }
 
+func (s *Scanner) ScanBackquoteIdent() (tok Token, lit string) {
+	var buf bytes.Buffer
+	for {
+		ch := s.read()
+		if isBackquote(ch) || ch == eof {
+			break
+		} else {
+			buf.WriteRune(ch)
+		}
+	}
+	return IDENT, buf.String()
+}
+
 func (s *Scanner) skipUntilNewline() {
 	for {
 		if ch := s.read(); ch == '\n' || ch == eof {
@@ -591,6 +606,8 @@ func isLetter(ch rune) bool { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && c
 func isDigit(ch rune) bool { return ch >= '0' && ch <= '9' }
 
 func isQuotation(ch rune) bool { return ch == '"' }
+
+func isBackquote(ch rune) bool { return ch == '`' }
 
 func (tok Token) isOperator() bool {
 	return (tok > operatorBeg && tok < operatorEnd) || tok == ASTERISK || tok == LBRACKET

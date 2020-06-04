@@ -13,7 +13,15 @@ Kuiper provides a variety of elements for building queries. They are summarized 
 | [ORDER BY](#ORDER BY) | Order the rows by values of one or more columns.             |
 | [HAVING](#HAVING)     | HAVING specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression.             |
 |                       |                                                              |
+### Use reserved words
+These elements and other predefined operators, functions are reserved words. To use the reserved words as the column name and the table name etc., they need to be quoted by backtick.
 
+You can also use all kinds of unicode string in the backtick as an SQL element. For example, operator `-`, spaces, and various language characters such as Chinese.
+
+```tsql
+SELECT `select`, `and` from demo
+SELECT `a-b`, `hello world`, `中文Chinese` from demo
+```
 
 
 ## SELECT
