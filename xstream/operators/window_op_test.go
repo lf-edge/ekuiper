@@ -36,27 +36,18 @@ var fivet = []*xsql.Tuple{
 }
 
 func TestNewTupleList(t *testing.T) {
-	_, e := NewTupleList(nil, 0, 0)
+	_, e := NewTupleList(nil, 0)
 	es1 := "Window size should not be less than zero."
 	if !reflect.DeepEqual(es1, e.Error()) {
 		t.Errorf("error mismatch:\n  exp=%s\n  got=%s\n\n", es1, e)
 	}
 
-	_, e = NewTupleList(nil, 2, 0)
+	_, e = NewTupleList(nil, 2)
 	es1 = "The tuples should not be nil or empty."
 	if !reflect.DeepEqual(es1, e.Error()) {
 		t.Errorf("error mismatch:\n  exp=%s\n  got=%s\n\n", es1, e)
 	}
 
-	tl, e := NewTupleList([]*xsql.Tuple{{}}, 2, 0)
-	if !tl.isTumbling {
-		t.Fail()
-	}
-
-	tl, e = NewTupleList([]*xsql.Tuple{{}}, 2, 1)
-	if tl.isTumbling {
-		t.Fail()
-	}
 }
 
 func TestCountWindow(t *testing.T) {
@@ -212,184 +203,6 @@ func TestCountWindow(t *testing.T) {
 			tuplelist: TupleList{
 				tuples: fivet,
 				size:   6,
-			},
-			expWinCount:  0,
-			winTupleSets: nil,
-			expRestTuples: []*xsql.Tuple{
-				{
-					Message: map[string]interface{}{
-						"f1": "v1",
-					},
-				},
-				{
-					Message: map[string]interface{}{
-						"f2": "v2",
-					},
-				},
-				{
-					Message: map[string]interface{}{
-						"f3": "v3",
-					},
-				},
-				{
-					Message: map[string]interface{}{
-						"f4": "v4",
-					},
-				},
-				{
-					Message: map[string]interface{}{
-						"f5": "v5",
-					},
-				},
-			},
-		},
-
-		{
-			tuplelist: TupleList{
-				tuples: fivet,
-				size:   5,
-				isTumbling: true,
-			},
-			expWinCount: 1,
-			winTupleSets: []xsql.WindowTuplesSet{
-				{
-					xsql.WindowTuples{
-						Emitter: "",
-						Tuples: []xsql.Tuple{
-							{
-								Message: map[string]interface{}{
-									"f1": "v1",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f2": "v2",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f3": "v3",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f4": "v4",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f5": "v5",
-								},
-							},
-						},
-					},
-				},
-			},
-			expRestTuples: []*xsql.Tuple{},
-		},
-
-		{
-			tuplelist: TupleList{
-				tuples: fivet,
-				size:   2,
-				isTumbling: true,
-			},
-			expWinCount: 2,
-			winTupleSets: []xsql.WindowTuplesSet{
-				{
-					xsql.WindowTuples{
-						Emitter: "",
-						Tuples: []xsql.Tuple{
-							{
-								Message: map[string]interface{}{
-									"f1": "v1",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f2": "v2",
-								},
-							},
-						},
-					},
-				},
-				{
-					xsql.WindowTuples{
-						Emitter: "",
-						Tuples: []xsql.Tuple{
-							{
-								Message: map[string]interface{}{
-									"f3": "v3",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f4": "v4",
-								},
-							},
-						},
-					},
-				},
-			},
-			expRestTuples: []*xsql.Tuple{
-				{
-					Message: map[string]interface{}{
-						"f5": "v5",
-					},
-				},
-			},
-		},
-
-		{
-			tuplelist: TupleList{
-				tuples:     fivet,
-				size:       3,
-				isTumbling: true,
-			},
-			expWinCount: 1,
-			winTupleSets: []xsql.WindowTuplesSet{
-				{
-					xsql.WindowTuples{
-						Emitter: "",
-						Tuples: []xsql.Tuple{
-							{
-								Message: map[string]interface{}{
-									"f1": "v1",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f2": "v2",
-								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f3": "v3",
-								},
-							},
-						},
-					},
-				},
-			},
-			expRestTuples: []*xsql.Tuple{
-				{
-					Message: map[string]interface{}{
-						"f4": "v4",
-					},
-				},
-				{
-					Message: map[string]interface{}{
-						"f5": "v5",
-					},
-				},
-			},
-		},
-
-		{
-			tuplelist: TupleList{
-				tuples:     fivet,
-				size:       6,
-				isTumbling: true,
 			},
 			expWinCount:  0,
 			winTupleSets: nil,
