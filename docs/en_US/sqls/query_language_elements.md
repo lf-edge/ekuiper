@@ -16,8 +16,11 @@ Kuiper provides a variety of elements for building queries. They are summarized 
 ### Use reserved words
 These elements and other predefined operators, functions are reserved words. To use the reserved words as the column name and the table name etc., they need to be quoted by backtick.
 
+You can also use all kinds of unicode string in the backtick as an SQL element. For example, operator `-`, spaces, and various language characters such as Chinese.
+
 ```tsql
 SELECT `select`, `and` from demo
+SELECT `a-b`, `hello world`, `中文Chinese` from demo
 ```
 
 

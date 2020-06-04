@@ -59,7 +59,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 					LAST_NAME STRING,
 					NICKNAMES ARRAY(STRING),
 					Gender BOOLEAN,
-					ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
+					` + "`地址`" + ` STRUCT(STREET_NAME STRING, NUMBER BIGINT),
 				) WITH (DATASOURCE="users", FORMAT="AVRO", KEY="USERID");`,
 			r: []string{"Stream stream is created."},
 		},

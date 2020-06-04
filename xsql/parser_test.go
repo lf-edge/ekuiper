@@ -1221,6 +1221,35 @@ func TestParser_ParseStatement(t *testing.T) {
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
+		{
+			s:    "SELECT `half FROM tb",
+			stmt: nil,
+			err:  `found "EOF", expected FROM.`,
+		},
+		{
+			s: "SELECT `space var` FROM tbl",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "space var"},
+						Name:  "space var",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: "SELECT `中文 Chinese` FROM tbl",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "中文 Chinese"},
+						Name:  "中文 Chinese",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
