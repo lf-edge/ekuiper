@@ -13,16 +13,6 @@ Kuiper提供了用于构建查询的各种元素。 总结如下。
 | [ORDER BY](#ORDER BY) | 按一列或多列的值对行进行排序。                               |
 | [HAVING](#HAVING)     | HAVING为组或集合指定搜索条件。 HAVING只能与SELECT表达式一起使用。 |
 |                       |                                                              |
-### 使用保留字
-这些元素以及其他预定义的算子，函数等名字都是保留字。若需要使用保留字作为列名，表名等用途，需要用反括号包起来。
-
-任意字符串都可以用反括号包起来以作为SQL语句元素。例如，运算符`-`, 空格以及各种语言的字符，包括中文。
-
-```tsql
-SELECT `select`, `and` from demo
-SELECT `a-b`, `hello world`, `中文Chinese` from demo
-```
-
 
 ## SELECT
 
@@ -312,4 +302,7 @@ SELECT column1, column2, ...
 FROM table_name
 ORDER BY column1, column2, ... ASC|DESC;
 ```
+
+## 使用保留字或特殊字符
+如果你想在 SQL 或者流管理中使用保留关键字，或者特殊字符，请参考 [Kuiper 词法元素](lexical_elements.md).
 
