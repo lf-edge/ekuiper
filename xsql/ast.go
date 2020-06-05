@@ -54,7 +54,7 @@ const (
 	CROSS_JOIN
 )
 
-const COLUMN_SEPARATOR = "\007"
+var COLUMN_SEPARATOR = tokens[COLSEP]
 
 type Join struct {
 	Name     string
@@ -514,7 +514,7 @@ func (wv *WildcardValuer) Value(key string) (interface{}, bool) {
 	if key == "" {
 		return wv.Data.All(key)
 	} else {
-		a := strings.Index(key, ".*")
+		a := strings.Index(key, COLUMN_SEPARATOR+"*")
 		if a <= 0 {
 			return nil, false
 		} else {

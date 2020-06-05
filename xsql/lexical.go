@@ -63,6 +63,7 @@ const (
 	DOT       // .
 	COLON     //:
 	SEMICOLON //;
+	COLSEP    //\007
 
 	// Keywords
 	SELECT
@@ -158,6 +159,7 @@ var tokens = []string{
 	DOT:       ".",
 	SEMICOLON: ";",
 	COLON:     ":",
+	COLSEP:    "\007",
 
 	SELECT: "SELECT",
 	FROM:   "FROM",
