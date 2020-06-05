@@ -983,7 +983,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						},
 					},
 				},
-				SortFields: []SortField{{Name: "s1.name", Ascending: true}},
+				SortFields: []SortField{{Name: "s1\007name", Ascending: true}},
 			},
 		},
 
