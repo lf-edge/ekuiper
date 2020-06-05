@@ -137,7 +137,7 @@ All these functions share the same parameter signatures, among which, the second
 The basic grammar of those expressions is to use the keys part of the JSON objects combined with some elements:
 
 - Dots `.` to move into a tree
-- Brackets `[]` for access to a given array member coupled with a position.
+- Brackets `[]` for access to a given array member coupled with a position. It can also access to a map field.
 - Variables, with `$` representing a JSON text and `@` for result path evaluations.
 
 So for example, when applied to the previous JSON data sample we can reach the following parts of the tree with these expressions:
@@ -146,6 +146,7 @@ So for example, when applied to the previous JSON data sample we can reach the f
 - `$.friends.first` refers to “dale”.
 - `$.friends` refers to the full array of friends.
 - `$.friends[0]` refers to the first friend listed in the previous array (contrary to arrays members are zero-based).
+- `$.friends[0][lastname]` refers to the lastname of the first friend listed. Use bracket if there are reserved words in the field key.
 - `$.friends[? @.age>60].first` or `$.friends[? (@.age>60)].first` refers to the first name of the friends whose age is bigger than 60. Notice that the space between ? and the condition is required even the condition is with braces.
 
 Developers can use the json functions in the SQL statement. Here are some examples.
@@ -167,6 +168,13 @@ SELECT name->last FROM demo where json_path_exists(followers, "$.Group1[? @.age>
 - Select the follower's lastname from group1 whose age is bigger than 30
 ```tsql
 SELECT json_path_exists(followers, "$.Group1[? @.age>30].last") FROM demo
+
+["Miller"]
+```
+
+- Assume there is a field in follows with reserd word like space `my.follower`, use bracket to access it.
+```tsql
+SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
 
 ["Miller"]
 ```

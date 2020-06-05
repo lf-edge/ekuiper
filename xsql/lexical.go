@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"strconv"
 	"strings"
 )
 
@@ -465,18 +466,26 @@ func (s *Scanner) ScanIdent() (tok Token, lit string) {
 
 func (s *Scanner) ScanString() (tok Token, lit string) {
 	var buf bytes.Buffer
-	_ = s.read()
+	ch := s.read()
+	buf.WriteRune(ch)
+	escape := false
 	for {
-		ch := s.read()
-		if ch == '"' {
+		ch = s.read()
+		if ch == '"' && !escape {
+			buf.WriteRune(ch)
 			break
 		} else if ch == eof {
 			return BADSTRING, buf.String()
+		} else if ch == '\\' && !escape {
+			escape = true
+			buf.WriteRune(ch)
 		} else {
+			escape = false
 			buf.WriteRune(ch)
 		}
 	}
-	return STRING, buf.String()
+	r, _ := strconv.Unquote(buf.String())
+	return STRING, r
 }
 
 func (s *Scanner) ScanDigit() (tok Token, lit string) {
