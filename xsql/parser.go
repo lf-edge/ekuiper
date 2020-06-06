@@ -342,7 +342,7 @@ func (p *Parser) parseSorts() (SortFields, error) {
 
 					p.unscan()
 					if name, err := p.parseFieldNameSections(); err == nil {
-						s.Name = strings.Join(name, tokens[DOT])
+						s.Name = strings.Join(name, tokens[COLSEP])
 					} else {
 						return nil, err
 					}
@@ -683,7 +683,7 @@ func validateWindows(name string, args []Expr) (WindowType, error) {
 				if para2, ok2 := args[1].(*IntegerLiteral); ok2 {
 					if para1.Val < para2.Val {
 						return COUNT_WINDOW, fmt.Errorf("The second parameter value %d should be less than the first parameter %d.", para2.Val, para1.Val)
-					} else{
+					} else {
 						return COUNT_WINDOW, nil
 					}
 				}
@@ -697,7 +697,7 @@ func validateWindows(name string, args []Expr) (WindowType, error) {
 	return NOT_WINDOW, nil
 }
 
-func  validateWindow(funcName string, expectLen int, args []Expr) error {
+func validateWindow(funcName string, expectLen int, args []Expr) error {
 	if len(args) != expectLen {
 		return fmt.Errorf("The arguments for %s should be %d.\n", funcName, expectLen)
 	}
@@ -718,7 +718,7 @@ func (p *Parser) ConvertToWindows(wtype WindowType, name string, args []Expr) (*
 	win := &Window{WindowType: wtype}
 	if wtype == COUNT_WINDOW {
 		win.Length = &IntegerLiteral{Val: args[0].(*IntegerLiteral).Val}
-		if len(args) == 2{
+		if len(args) == 2 {
 			win.Interval = &IntegerLiteral{Val: args[1].(*IntegerLiteral).Val}
 		}
 		return win, nil

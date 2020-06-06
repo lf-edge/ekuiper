@@ -58,6 +58,10 @@ var hashFuncMap = map[string]string{"md5": "",
 	"sha1": "", "sha256": "", "sha384": "", "sha512": "",
 }
 
+var jsonFuncMap = map[string]string{
+	"json_path_query": "", "json_path_query_first": "", "json_path_exists": "",
+}
+
 var otherFuncMap = map[string]string{"isnull": "",
 	"newuuid": "", "timestamp": "", "mqtt": "", "meta": "",
 }
@@ -72,6 +76,8 @@ func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bo
 		return convCall(lowerName, args)
 	} else if _, ok := hashFuncMap[lowerName]; ok {
 		return hashCall(lowerName, args)
+	} else if _, ok := jsonFuncMap[lowerName]; ok {
+		return jsonCall(lowerName, args)
 	} else if _, ok := otherFuncMap[lowerName]; ok {
 		return otherCall(lowerName, args)
 	} else if _, ok := aggFuncMap[lowerName]; ok {

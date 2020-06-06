@@ -85,6 +85,14 @@ Aggregate functions perform a calculation on a set of values and return a single
 | sha256   | sha256(col1)| Hashed value of the argument                   |
 | sha384   | sha384(col1)| Hashed value of the argument                   |
 | sha512   | sha512(col1)| Hashed value of the argument                   |
+## JSON Functions
+| Function | Example     | Description                                    |
+| -------- | ----------- | ---------------------------------------------- |
+| json_path_exists      | json_path_exists(col1, "$.name")   | Checks whether JSON path returns any item for the specified JSON value. Return bool value.                   |
+| json_path_query     | json_path_query(col1, "$.name")  | Gets all items returned by JSON path for the specified JSON value.              |
+| json_path_query_first  | json_path_query_first(col1, "$.name")| Gets the first item returned by JSON path for the specified JSON value.                  |
+
+**Please refer to [json path functions](../json_expr.md#json-path-functions) for how to compose a json path.**  
 
 ## Other Functions
 | Function  | Example      | Description                                                  |
