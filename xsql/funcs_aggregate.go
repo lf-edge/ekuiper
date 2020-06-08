@@ -43,21 +43,24 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 	switch lowerName {
 	case "avg":
 		arg0 := args[0].([]interface{})
-		if len(arg0) > 0 {
+		c := getCount(arg0)
+		if c > 0 {
 			v := getFirstValidArg(arg0)
 			switch v.(type) {
 			case int, int64:
 				if r, err := sliceIntTotal(arg0); err != nil {
 					return err, false
 				} else {
-					return r / len(arg0), true
+					return r / c, true
 				}
 			case float64:
 				if r, err := sliceFloatTotal(arg0); err != nil {
 					return err, false
 				} else {
-					return r / float64(len(arg0)), true
+					return r / float64(c), true
 				}
+			case nil:
+				return nil, true
 			default:
 				return fmt.Errorf("run avg function error: found invalid arg %[1]T(%[1]v)", v), false
 			}
@@ -65,7 +68,7 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 		return 0, true
 	case "count":
 		arg0 := args[0].([]interface{})
-		return len(arg0), true
+		return getCount(arg0), true
 	case "max":
 		arg0 := args[0].([]interface{})
 		if len(arg0) > 0 {
@@ -95,6 +98,8 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 				} else {
 					return r, true
 				}
+			case nil:
+				return nil, true
 			default:
 				return fmt.Errorf("run max function error: found invalid arg %[1]T(%[1]v)", v), false
 			}
@@ -129,6 +134,8 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 				} else {
 					return r, true
 				}
+			case nil:
+				return nil, true
 			default:
 				return fmt.Errorf("run min function error: found invalid arg %[1]T(%[1]v)", v), false
 			}
@@ -151,6 +158,8 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 				} else {
 					return r, true
 				}
+			case nil:
+				return nil, true
 			default:
 				return fmt.Errorf("run sum function error: found invalid arg %[1]T(%[1]v)", v), false
 			}
@@ -182,6 +191,16 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 	}
 }
 
+func getCount(s []interface{}) int {
+	c := 0
+	for _, v := range s {
+		if v != nil {
+			c++
+		}
+	}
+	return c
+}
+
 func (v *AggregateFunctionValuer) GetAllTuples() AggregateData {
 	return v.data
 }
@@ -200,7 +219,7 @@ func sliceIntTotal(s []interface{}) (int, error) {
 	for _, v := range s {
 		if vi, ok := v.(int); ok {
 			total += vi
-		} else {
+		} else if v != nil {
 			return 0, fmt.Errorf("requires int but found %[1]T(%[1]v)", v)
 		}
 	}
@@ -212,7 +231,7 @@ func sliceFloatTotal(s []interface{}) (float64, error) {
 	for _, v := range s {
 		if vf, ok := v.(float64); ok {
 			total += vf
-		} else {
+		} else if v != nil {
 			return 0, fmt.Errorf("requires float64 but found %[1]T(%[1]v)", v)
 		}
 	}
@@ -224,7 +243,7 @@ func sliceIntMax(s []interface{}, max int) (int, error) {
 			if max < vi {
 				max = vi
 			}
-		} else {
+		} else if v != nil {
 			return 0, fmt.Errorf("requires int but found %[1]T(%[1]v)", v)
 		}
 	}
@@ -236,7 +255,7 @@ func sliceFloatMax(s []interface{}, max float64) (float64, error) {
 			if max < vf {
 				max = vf
 			}
-		} else {
+		} else if v != nil {
 			return 0, fmt.Errorf("requires float64 but found %[1]T(%[1]v)", v)
 		}
 	}
@@ -249,7 +268,7 @@ func sliceStringMax(s []interface{}, max string) (string, error) {
 			if max < vs {
 				max = vs
 			}
-		} else {
+		} else if v != nil {
 			return "", fmt.Errorf("requires string but found %[1]T(%[1]v)", v)
 		}
 	}
@@ -261,7 +280,7 @@ func sliceIntMin(s []interface{}, min int) (int, error) {
 			if min > vi {
 				min = vi
 			}
-		} else {
+		} else if v != nil {
 			return 0, fmt.Errorf("requires int but found %[1]T(%[1]v)", v)
 		}
 	}
@@ -273,7 +292,7 @@ func sliceFloatMin(s []interface{}, min float64) (float64, error) {
 			if min > vf {
 				min = vf
 			}
-		} else {
+		} else if v != nil {
 			return 0, fmt.Errorf("requires float64 but found %[1]T(%[1]v)", v)
 		}
 	}
@@ -286,7 +305,7 @@ func sliceStringMin(s []interface{}, min string) (string, error) {
 			if min < vs {
 				min = vs
 			}
-		} else {
+		} else if v != nil {
 			return "", fmt.Errorf("requires string but found %[1]T(%[1]v)", v)
 		}
 	}
