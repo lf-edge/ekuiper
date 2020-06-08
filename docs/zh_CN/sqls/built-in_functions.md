@@ -9,11 +9,11 @@ Kuiper具有许多内置函数，可以对数据执行计算。
 
 | Function | Example   | 说明             |
 | -------- | --------- | ---------------- |
-| avg      | avg(col1) | 组中的平均值     |
-| count    | count(*)  | 组中的项目数     |
-| max      | max(col1) | 组中的最大值     |
-| min      | min(col1) | 组中的最小值     |
-| sum      | sum(col1) | 组中所有值的总和 |
+| avg      | avg(col1) | 组中的平均值。空值不参与计算。     |
+| count    | count(*)  | 组中的项目数。空值不参与计算。    |
+| max      | max(col1) | 组中的最大值。空值不参与计算。     |
+| min      | min(col1) | 组中的最小值。空值不参与计算。     |
+| sum      | sum(col1) | 组中所有值的总和。空值不参与计算。 |
 
 ## 数学函数
 | Function | Example     | Description                                    |
