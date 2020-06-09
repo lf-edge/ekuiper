@@ -1221,6 +1221,30 @@ func TestParser_ParseStatement(t *testing.T) {
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
+
+		{
+			s:    `select timestamp() as tp from demo`,
+			stmt: nil,
+			err:  "found \"TIMESTAMP\", expected expression.",
+		},
+
+		{
+			s:    `select tstamp() as tp from demo`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr: &Call{
+							Name: "tstamp",
+							Args: nil,
+						},
+						Name:  "tstamp",
+						AName: "tp"},
+				},
+				Sources: []Source{&Table{Name: "demo"}},
+			},
+			err:  "",
+		},
+
 		{
 			s:    "SELECT `half FROM tb",
 			stmt: nil,

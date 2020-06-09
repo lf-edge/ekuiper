@@ -214,7 +214,7 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 		} else {
 			return uuid.String(), true
 		}
-	case "timestamp":
+	case "tstamp":
 		return common.TimeToUnixMilli(time.Now()), true
 	case "mqtt":
 		if v, ok := args[0].(string); ok {

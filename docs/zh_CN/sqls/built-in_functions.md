@@ -94,10 +94,10 @@ Kuiper具有许多内置函数，可以对数据执行计算。
 
 **Please refer to [json path functions](../json_expr.md#json-path-functions) for how to compose a json path.**  
 ## 其它函数
-| 函数      | 示例         | Description                                                  |
-| --------- | ------------ | ------------------------------------------------------------ |
-| isNull    | isNull(col1) | 如果参数为空值，则返回true。                                 |
-| newuuid   | newuuid()    | 返回一个随机的16字节UUID。                                   |
-| timestamp | timestamp()  | 返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。 |
-| mqtt      | mqtt(topic)  | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src1.topic)``<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src2.messageid)`` |
-| meta      | meta(topic)  | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as ``meta(device)``<br />- A qualified key to specify the stream, such as ``meta(src1.device)`` <br />- A key with arrow for multi level meta data, such as ``meta(src1.reading->device->name)`` This assumes reading is a map structure meta data.|
+| 函数    | 示例         | Description                                                  |
+| ------- | ------------ | ------------------------------------------------------------ |
+| isNull  | isNull(col1) | 如果参数为空值，则返回true。                                 |
+| newuuid | newuuid()    | 返回一个随机的16字节UUID。                                   |
+| tstamp  | tstamp()     | 返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。 |
+| mqtt    | mqtt(topic)  | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src1.topic)``<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src2.messageid)`` |
+| meta    | meta(topic)  | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as ``meta(device)``<br />- A qualified key to specify the stream, such as ``meta(src1.device)`` <br />- A key with arrow for multi level meta data, such as ``meta(src1.reading->device->name)`` This assumes reading is a map structure meta data. |
