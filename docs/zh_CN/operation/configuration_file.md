@@ -27,8 +27,8 @@ basic:
   # REST service port
   restPort: 9081
   restTls:
-    certfile: https-server.crt
-    keyfile: https-server.key
+    certfile: /var/https-server.crt
+    keyfile: /var/https-server.key
 ```
 
 #### restPort
