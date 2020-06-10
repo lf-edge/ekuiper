@@ -20,6 +20,7 @@ RUN apk add sed libzmq
 WORKDIR /kuiper
 
 ENV KUIPER_HOME /kuiper
+ENV KUIPER__BASIC__CONSOLELOG true
 
 EXPOSE 9081 20498
 
