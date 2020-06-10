@@ -49,14 +49,20 @@ func LoadConf(confName string) ([]byte, error) {
 	return b, nil
 }
 
+type tlsConf struct {
+	Certfile string `yaml:"certfile"`
+	Keyfile  string `yaml:"keyfile"`
+}
+
 type XStreamConf struct {
-	Debug          bool `yaml:"debug"`
-	ConsoleLog     bool `yaml:"consoleLog"`
-	FileLog        bool `yaml:"fileLog"`
-	Port           int  `yaml:"port"`
-	RestPort       int  `yaml:"restPort"`
-	Prometheus     bool `yaml:"prometheus"`
-	PrometheusPort int  `yaml:"prometheusPort"`
+	Debug          bool     `yaml:"debug"`
+	ConsoleLog     bool     `yaml:"consoleLog"`
+	FileLog        bool     `yaml:"fileLog"`
+	Port           int      `yaml:"port"`
+	RestPort       int      `yaml:"restPort"`
+	RestTls        *tlsConf `yaml:"restTls"`
+	Prometheus     bool     `yaml:"prometheus"`
+	PrometheusPort int      `yaml:"prometheusPort"`
 }
 
 func init() {
