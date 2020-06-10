@@ -69,14 +69,62 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			skeys:[]string{"default", "optional", "KEEPALIVE"},
-			val: "5000",
+			val: "6000",
 			exp: map[interface{}]interface{}{
 				"default": map[interface{}]interface{} {
 					"protocol": "tcp",
 					"port": 5563,
 					"optional": map[interface{}] interface{} {
 						"ClientId": "client1",
-						"KeepAlive": "5000",
+						"KeepAlive": int64(6000),
+					},
+				},
+			},
+		},
+
+		{
+			config: map[interface{}]interface{}{
+				"default": map[interface{}]interface{} {
+					"protocol": "tcp",
+					"port": 5563,
+					"optional": map[interface{}] interface{} {
+						"ClientId": "client1",
+					},
+				},
+			},
+			skeys:[]string{"default", "optional", "RETAINED"},
+			val: "true",
+			exp: map[interface{}]interface{}{
+				"default": map[interface{}]interface{} {
+					"protocol": "tcp",
+					"port": 5563,
+					"optional": map[interface{}] interface{} {
+						"ClientId": "client1",
+						"Retained": true,
+					},
+				},
+			},
+		},
+
+		{
+			config: map[interface{}]interface{}{
+				"default": map[interface{}]interface{} {
+					"protocol": "tcp",
+					"port": 5563,
+					"optional": map[interface{}] interface{} {
+						"ClientId": "client1",
+					},
+				},
+			},
+			skeys:[]string{"default", "optional", "test"},
+			val: "3.14",
+			exp: map[interface{}]interface{}{
+				"default": map[interface{}]interface{} {
+					"protocol": "tcp",
+					"port": 5563,
+					"optional": map[interface{}] interface{} {
+						"ClientId": "client1",
+						"test": 3.14,
 					},
 				},
 			},

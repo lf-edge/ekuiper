@@ -18,6 +18,7 @@ RUN ln -s /go/kuiper/deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoi
 EXPOSE 9081 20498
 
 ENV KUIPER_HOME /usr/local/kuiper
+ENV KUIPER__BASIC__CONSOLELOG true
 
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 

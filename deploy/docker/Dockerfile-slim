@@ -20,6 +20,7 @@ RUN apt update && apt install -y pkg-config libczmq-dev
 WORKDIR /kuiper
 
 ENV KUIPER_HOME /kuiper
+ENV KUIPER__BASIC__CONSOLELOG true
 
 EXPOSE 9081 20498
 

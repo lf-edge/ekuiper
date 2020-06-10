@@ -5,6 +5,7 @@ import (
 	"github.com/go-yaml/yaml"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -43,6 +44,7 @@ var file_keys_map = map[string]map[string]string{
 		"CONSOLELOG":     "consoleLog",
 		"FILELOG":        "fileLog",
 		"RESTPORT":       "restPort",
+		"RESTTLS":        "restTls",
 		"PROMETHEUSPORT": "prometheusPort",
 	},
 }
@@ -141,7 +143,7 @@ func ProcessEnv(files map[string]map[interface{}]interface{}, vars []string) {
 func Handle(file string, conf map[interface{}]interface{}, skeys []string, val string) {
 	key := getKey(file, skeys[0])
 	if len(skeys) == 1 {
-		conf[key] = val
+		conf[key] = getValueType(val)
 	} else if len(skeys) >= 2 {
 		if v, ok := conf[key]; ok {
 			if v1, ok1 := v.(map[interface{}]interface{}); ok1 {
@@ -163,4 +165,15 @@ func getKey(file string, key string) string{
 	} else {
 		return strings.ToLower(key)
 	}
+}
+
+func getValueType(val string) interface{} {
+	if i, err := strconv.ParseInt(val, 10, 64); err == nil {
+		return i
+	} else if b, err := strconv.ParseBool(val); err == nil {
+		return b
+	} else if f, err := strconv.ParseFloat(val, 64); err == nil {
+		return f
+	}
+	return val
 }
