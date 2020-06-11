@@ -51,7 +51,7 @@ build_without_edgex: build_prepare
 		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o cli xstream/cli/main.go; \
 		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o server xstream/server/main.go; \
 	fi
-	@if [ ! -z $$(which upx) ]; then upx ./cli; upx ./server; fi
+	@if [ ! -z $$(which upx) ] && [ "$$(uname -m)" != "aarch64" ]; then upx ./cli; upx ./server; fi
 	@mv ./cli ./server $(BUILD_PATH)/$(PACKAGE_NAME)/bin
 	@echo "Build successfully"
 
@@ -68,7 +68,7 @@ build_with_edgex: build_prepare
 		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION)" -tags edgex -o cli xstream/cli/main.go; \
 		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION)" -tags edgex -o server xstream/server/main.go; \
 	fi
-	@if [ ! -z $$(which upx) ]; then upx ./cli; upx ./server; fi
+	@if [ ! -z $$(which upx) ] && [ "$$(uname -m)" != "aarch64" ]; then upx ./cli; upx ./server; fi
 	@mv ./cli ./server $(BUILD_PATH)/$(PACKAGE_NAME)/bin
 	@echo "Build successfully"
 
