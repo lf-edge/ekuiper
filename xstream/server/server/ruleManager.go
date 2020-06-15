@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"sync"
+
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
-	"sync"
 )
 
 var registry *RuleRegistry
@@ -75,6 +77,7 @@ func getAllRulesWithStatus() ([]map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	sort.Strings(names)
 	result := make([]map[string]interface{}, len(names))
 	for i, name := range names {
 		s, err := getRuleState(name)
