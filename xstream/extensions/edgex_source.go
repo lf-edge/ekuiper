@@ -64,15 +64,13 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 	}
 
 	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: protocol, Host: server, Port: port}, Type: mbusType}
-	common.Log.Infof("Use configuration for edgex messagebus %v\n", mbconf)
 
 	var optional = make(map[string]string)
 	if ops, ok := props["optional"]; ok {
-		if ops1, ok1 := ops.(map[interface{}]interface{}); ok1 {
+		if ops1, ok1 := ops.(map[string]interface{}); ok1 {
 			for k, v := range ops1 {
-				k1 := k.(string)
 				if cv, ok := CastToString(v); ok {
-					optional[k1] = cv
+					optional[k] = cv
 				} else {
 					common.Log.Infof("Cannot convert configuration %s: %s to string type.\n", k, v)
 				}
@@ -80,6 +78,7 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 		}
 		mbconf.Optional = optional
 	}
+	common.Log.Infof("Use configuration for edgex messagebus %v\n", mbconf)
 
 	if client, err := messaging.NewMessageClient(mbconf); err != nil {
 		return err
