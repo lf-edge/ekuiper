@@ -33,7 +33,7 @@ type HTTPPullSource struct {
 var bodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
 
 func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}) error {
-	hps.url = "http://localhost";
+	hps.url = "http://localhost"
 	if u, ok := props["url"]; ok {
 		if p, ok := u.(string); ok {
 			hps.url = p
@@ -138,7 +138,7 @@ func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 	ticker := time.NewTicker(time.Millisecond * time.Duration(hps.interval))
 	logger := ctx.GetLogger()
 	defer ticker.Stop()
-	var omd5 string = ""
+	var omd5 = ""
 	for {
 		select {
 		case <-ticker.C:

@@ -40,8 +40,8 @@ func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance in
 	o.isEventTime = isEventTime
 	if w != nil {
 		o.window = &WindowConfig{
-			Type:     w.WindowType,
-			Length:   w.Length.Val,
+			Type:   w.WindowType,
+			Length: w.Length.Val,
 		}
 		if w.Interval != nil {
 			o.window.Interval = w.Interval.Val
@@ -172,7 +172,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 				case xsql.COUNT_WINDOW:
 					o.msgCount++
 					log.Debugf(fmt.Sprintf("msgCount: %d", o.msgCount))
-					if o.msgCount% o.window.Interval != 0 {
+					if o.msgCount%o.window.Interval != 0 {
 						continue
 					} else {
 						o.msgCount = 0
@@ -183,7 +183,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 						errCh <- er
 					} else {
 						log.Debugf(fmt.Sprintf("It has %d of count window.", tl.count()))
-						for ; tl.hasMoreCountWindow(); {
+						for tl.hasMoreCountWindow() {
 							tsets := tl.nextCountWindow()
 							log.Debugf("Sent: %v", tsets)
 							//blocking if one of the channel is full
@@ -238,9 +238,9 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 }
 
 type TupleList struct {
-	tuples     []*xsql.Tuple
-	index      int //Current index
-	size       int //The size for count window
+	tuples []*xsql.Tuple
+	index  int //Current index
+	size   int //The size for count window
 }
 
 func NewTupleList(tuples []*xsql.Tuple, windowSize int) (TupleList, error) {
@@ -271,7 +271,7 @@ func (tl *TupleList) count() int {
 func (tl *TupleList) nextCountWindow() xsql.WindowTuplesSet {
 	var results xsql.WindowTuplesSet = make([]xsql.WindowTuples, 0)
 	var subT []*xsql.Tuple
-	subT = tl.tuples[len(tl.tuples) -tl.size : len(tl.tuples)]
+	subT = tl.tuples[len(tl.tuples)-tl.size : len(tl.tuples)]
 	for _, tuple := range subT {
 		results = results.AddTuple(tuple)
 	}

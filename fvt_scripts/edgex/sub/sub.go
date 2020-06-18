@@ -15,7 +15,7 @@ func subEventsFromZMQ() {
 			Port:     5571,
 			Protocol: "tcp",
 		},
-		Type:messaging.ZeroMQ,
+		Type: messaging.ZeroMQ,
 	}
 
 	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
@@ -39,7 +39,7 @@ func subEventsFromZMQ() {
 						common.Log.Errorf("%s\n", e1)
 						return
 					case env := <-messages:
-						count ++
+						count++
 						fmt.Printf("%s\n", env.Payload)
 						if count == 1 {
 							return

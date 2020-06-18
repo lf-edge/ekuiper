@@ -31,6 +31,7 @@ type Sensor struct {
 }
 
 var s = &Sensor{}
+
 func pullSrv(w http.ResponseWriter, req *http.Request) {
 	buf, bodyErr := ioutil.ReadAll(req.Body)
 	if bodyErr != nil {
@@ -41,7 +42,7 @@ func pullSrv(w http.ResponseWriter, req *http.Request) {
 		fmt.Println(string(buf))
 	}
 
-	if count % 2 == 0 {
+	if count%2 == 0 {
 		rand.Seed(time.Now().UnixNano())
 		s.Temperature = rand.Intn(100)
 		s.Humidity = rand.Intn(100)
