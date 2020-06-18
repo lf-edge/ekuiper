@@ -2,13 +2,6 @@
 
 The sink will publish the result into a InfluxDB.
 
-## Precondition
-```shell
-# vi plugins/sinks/influxdb.go
-Modify the following parameters by yourself
-[addrIp,databasename,measurement,tagkey,tagvalue,filed1,filed2..]
-```
-
 ## Compile & deploy plugin
 
 ```shell
@@ -26,7 +19,13 @@ Restart the Kuiper server to activate the plugin.
 
 | Property name | Optional | Description                                                  |
 | ------------- | -------- | ------------------------------------------------------------ |
-
+| addr          | true     | The addr of the InfluxDB |
+| measurement   | true     | The measurement of the InfluxDb (like table name) |
+| username      | false    | The InfluxDB login username |
+| password      | false    | The InfluxDB login password |
+| databasename  | true     | The database of the InfluxDB |
+| tagkey        | true     | The tag key of the InfluxDB |
+| tagvalue      | true     | The tag value of the InfluxDB |
 ## Sample usage
 
 Below is a sample for selecting temperature great than 50 degree, and the files for creating plugin.
@@ -35,11 +34,19 @@ Below is a sample for selecting temperature great than 50 degree, and the files 
 ```json
 {
   "id": "influx",
-  "sql": "SELECT * from  demo_stream where temperature > 50",
+  "sql": "SELECT * from  demo_stream where temperature < 50",
   "actions": [
     {
       "log": {},
-      "influx":{}
+      "influx":{
+       "addr": "http://192.168.100.245:8086",
+       "username": "",
+       "password": "",
+       "measurement": "test",
+       "databasename": "databasename",
+       "tagkey": "tagkey",
+       "tagvalue": "tagvalue"
+      }
     }
   ]
 }

@@ -1,14 +1,6 @@
 # InfluxDB Sink
 
 该插件将分析结果发送到InfluxDB中
-
-## 先决条件
-```shell
-# vi plugins/sinks/influxdb.go
-在influxdb.go文件中修改下面的几个参数为你的值
-[addrIp,databasename,measurement,tagkey,tagvalue,filed1,filed2..]
-```
-
 ## 编译插件&创建插件
 
 ```shell
@@ -26,7 +18,13 @@
 
 | Property name | Optional | Description                                                  |
 | ------------- | -------- | ------------------------------------------------------------ |
-
+| addr          | true     | The addr of the InfluxDB |
+| measurement   | true     | The measurement of the InfluxDb (like table name) |
+| username      | false    | The InfluxDB login username |
+| password      | false    | The InfluxDB login password |
+| databasename  | true     | The database of the InfluxDB |
+| tagkey        | true     | The tag key of the InfluxDB |
+| tagvalue      | true     | The tag value of the InfluxDB |
 ## 示例用法
 
 下面是选择温度大于50度的样本规则，和创建插件时候的配置文件。
@@ -35,11 +33,19 @@
 ```json
 {
   "id": "influx",
-  "sql": "SELECT * from  demo_stream where temperature > 50",
+  "sql": "SELECT * from  demo_stream where temperature < 50",
   "actions": [
     {
       "log": {},
-      "influx":{}
+      "influx":{
+       "addr": "http://192.168.100.245:8086",
+       "username": "",
+       "password": "",
+       "measurement": "test",
+       "databasename": "databasename",
+       "tagkey": "tagkey",
+       "tagvalue": "tagvalue"
+      }
     }
   ]
 }
