@@ -1,18 +1,13 @@
 package main
 
 import (
-"encoding/json"
-api "github.com/emqx/kuiper/xstream/api"
-_ "github.com/influxdata/influxdb1-client/v2"
-client "github.com/influxdata/influxdb1-client/v2"
-"log"
-"time"
+	"encoding/json"
+	api "github.com/emqx/kuiper/xstream/api"
+	_ "github.com/influxdata/influxdb1-client/v2"
+	client "github.com/influxdata/influxdb1-client/v2"
+	"log"
+	"time"
 )
-
-/**
-You can specify the URL，table-name in the configuration file.
-But now I write in this code。
- */
 
 type influxSink struct {
 	url       string
@@ -35,25 +30,22 @@ func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 	cli := connInflux();
 	logger := ctx.GetLogger()
 	if v, ok := data.([]byte); ok {
-		var saveData ListMap
-		json.Unmarshal([]byte(v), &saveData)
+		var out ListMap
+		json.Unmarshal([]byte(v), &out)
 		bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-			//this is database name
 			Database:  "databasename",
-			//default is ns
-			Precision: "ns",
+			Precision: "ns", //default is ns
 		})
 		if err != nil {
 			logger.Debug(err)
 		}
-		//Influx insrt sql （insert test,host=127.0.0.1,monitor_name=test, humidity=25 temperature=20）
-		tags := map[string]string{"moniter_name": "test"}
+		tags := map[string]string{"tagkey": "tagvalue"}
 		fields := map[string]interface{}{
-			"humidity":   saveData[0]["humidity"],
-			"temperature": saveData[0]["temperature"],
+			"filed1": out[0]["filed1"],
+			"filed2": out[0]["filed2"],
 		}
 
-		pt, err := client.NewPoint("test", tags, fields, time.Now())
+		pt, err := client.NewPoint("measurement", tags, fields, time.Now())
 		if err != nil {
 			logger.Debug(err)
 		}
@@ -74,13 +66,11 @@ func (m *influxSink) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-/**
-  Addr is InfluxDB IP
-*/
+
 func connInflux() client.Client {
 	cli, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     "http://149.28.121.58:8086",
-		Username: "admin",
+		Addr:     "addrIp",
+		Username: "",
 		Password: "",
 	})
 	if err != nil {
