@@ -6,7 +6,6 @@ on:
     release:
         types:
             - published
-            - prereleased
 
 jobs:
     fvt_tests_with_edgex:
