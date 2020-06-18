@@ -15,7 +15,6 @@ func getSource(t string) (api.Source, error) {
 	return doGetSource(t)
 }
 
-
 func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 	if name == "edgex" {
 		s := &sinks.EdgexMsgBusSink{}

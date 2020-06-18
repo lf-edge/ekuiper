@@ -10,24 +10,24 @@ import (
 )
 
 var es = EdgexSource{valueDescs: map[string]string{
-	"b1" : "bool",
-	"i1" : "int8",
-	"i2" : "INT16",
-	"i3" : "INT32",
-	"i4" : "INT64",
-	"i5" : "UINT8",
-	"i6" : "UINT16",
-	"i7" : "UINT32",
-	"s1" : "String",
-	"f1" : "Float32", //FLOAT32 will be handled by special case
-	"f2" : "Float64", //FLOAT64 will be handled by special case
-	"i8" : "UINT64",  //UINT64 will be handled by special case
-	},
+	"b1": "bool",
+	"i1": "int8",
+	"i2": "INT16",
+	"i3": "INT32",
+	"i4": "INT64",
+	"i5": "UINT8",
+	"i6": "UINT16",
+	"i7": "UINT32",
+	"s1": "String",
+	"f1": "Float32", //FLOAT32 will be handled by special case
+	"f2": "Float64", //FLOAT64 will be handled by special case
+	"i8": "UINT64",  //UINT64 will be handled by special case
+},
 }
 
 func TestGetValue_Int(t *testing.T) {
 	var testEvent = models.Event{Device: "test"}
-	for i := 1; i < 8; i++{
+	for i := 1; i < 8; i++ {
 		r1 := models.Reading{Name: fmt.Sprintf("i%d", i), Value: "1"}
 		testEvent.Readings = append(testEvent.Readings, r1)
 	}
@@ -40,7 +40,7 @@ func TestGetValue_Int(t *testing.T) {
 		}
 	}
 
-	rf_01 := models.Reading{Name:"f1", Value:"fwtOaw=="}
+	rf_01 := models.Reading{Name: "f1", Value: "fwtOaw=="}
 	if v, e := es.getValue(rf_01, common.Log); e != nil {
 		t.Errorf("%s", e)
 	} else {
@@ -75,7 +75,7 @@ func expectOne(t *testing.T, expected interface{}) {
 
 func TestGetValue_Float(t *testing.T) {
 	var testEvent = models.Event{Device: "test"}
-	for i := 1; i < 3; i++{
+	for i := 1; i < 3; i++ {
 		r1 := models.Reading{Name: fmt.Sprintf("f%d", i), Value: "3.14"}
 		testEvent.Readings = append(testEvent.Readings, r1)
 	}
@@ -98,7 +98,6 @@ func expectPi(t *testing.T, expected interface{}) {
 		t.Errorf("expected float type, but it's %T.", expected)
 	}
 }
-
 
 func TestGetValue_Bool(t *testing.T) {
 	///////////True
@@ -157,7 +156,7 @@ func expectFalse(t *testing.T, expected interface{}) {
 func TestWrongType(t *testing.T) {
 	es1 := EdgexSource{valueDescs: map[string]string{
 		"f": "FLOAT", //A not exsited type
-		},
+	},
 	}
 	r1 := models.Reading{Name: "f", Value: "100"}
 	if v, _ := es1.getValue(r1, common.Log); v != "100" {
@@ -167,8 +166,8 @@ func TestWrongType(t *testing.T) {
 
 func TestWrongValue(t *testing.T) {
 	var testEvent = models.Event{Device: "test"}
-	r1 := models.Reading{Name: "b1", Value: "100"} //100 cannot be converted to a boolean value
-	r2 := models.Reading{Name: "i1", Value: "int"} //'int' string cannot be converted to int value
+	r1 := models.Reading{Name: "b1", Value: "100"}   //100 cannot be converted to a boolean value
+	r2 := models.Reading{Name: "i1", Value: "int"}   //'int' string cannot be converted to int value
 	r3 := models.Reading{Name: "f1", Value: "float"} //'float' string cannot be converted to int value
 	testEvent.Readings = append(testEvent.Readings, r1, r2, r3)
 

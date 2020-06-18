@@ -15,84 +15,84 @@ func Test_MessageValTest(t *testing.T) {
 	}{
 		{
 			key: "key1",
-			message:Message{
+			message: Message{
 				"key1": "val1",
 				"key2": "val2",
 			},
-			exptV: "val1",
+			exptV:  "val1",
 			exptOk: true,
 		},
 
 		{
 			key: "key0",
-			message:Message{
+			message: Message{
 				"key1": "val1",
 				"key2": "val2",
 			},
-			exptV: nil,
+			exptV:  nil,
 			exptOk: false,
 		},
 
 		{
 			key: "key1",
-			message:Message{
+			message: Message{
 				"Key1": "val1",
 				"key2": "val2",
 			},
-			exptV: "val1",
+			exptV:  "val1",
 			exptOk: true,
 		},
 
 		{
 			key: "key1" + COLUMN_SEPARATOR + "subkey",
-			message:Message{
-				"Key1": "val1",
+			message: Message{
+				"Key1":   "val1",
 				"subkey": "subval",
 			},
-			exptV: "subval",
+			exptV:  "subval",
 			exptOk: true,
 		},
 
 		{
 			key: "192.168.0.1",
-			message:Message{
-				"Key1": "val1",
+			message: Message{
+				"Key1":        "val1",
 				"192.168.0.1": "000",
 			},
-			exptV: "000",
+			exptV:  "000",
 			exptOk: true,
 		},
 
 		{
 			key: "parent" + COLUMN_SEPARATOR + "child",
-			message:Message{
-				"key1": "val1",
-				"child": "child_val",
+			message: Message{
+				"key1":         "val1",
+				"child":        "child_val",
 				"parent.child": "demo",
 			},
-			exptV: "child_val",
+			exptV:  "child_val",
 			exptOk: true,
 		},
 
 		{
 			key: "parent.child",
-			message:Message{
-				"key1": "val1",
-				"child": "child_val",
+			message: Message{
+				"key1":         "val1",
+				"child":        "child_val",
 				"parent.child": "demo",
 			},
-			exptV: "demo",
+			exptV:  "demo",
 			exptOk: true,
 		},
 
 		{
 			key: "parent.Child",
-			message:Message{
-				"key1": "val1",
-				"child": "child_val",
+			message: Message{
+				"key1":         "val1",
+				"child":        "child_val",
 				"parent.child": "demo",
 			},
-			exptV: "demo",
+			exptV:  "demo",
 			exptOk: true,
 		},
 	}

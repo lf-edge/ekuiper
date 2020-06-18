@@ -1229,7 +1229,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s:    `select tstamp() as tp from demo`,
+			s: `select tstamp() as tp from demo`,
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
@@ -1242,7 +1242,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []Source{&Table{Name: "demo"}},
 			},
-			err:  "",
+			err: "",
 		},
 
 		{

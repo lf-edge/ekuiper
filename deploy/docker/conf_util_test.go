@@ -14,21 +14,21 @@ func TestHandle(t *testing.T) {
 	}{
 		{
 			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "tcp",
-					"port": 5563,
-					"optional": map[interface{}] interface{} {
+					"port":     5563,
+					"optional": map[interface{}]interface{}{
 						"ClientId": "client1",
 					},
 				},
 			},
-			skeys:[]string{"default", "protocol"},
-			val: "ssl",
+			skeys: []string{"default", "protocol"},
+			val:   "ssl",
 			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "ssl",
-					"port": 5563,
-					"optional": map[interface{}] interface{} {
+					"port":     5563,
+					"optional": map[interface{}]interface{}{
 						"ClientId": "client1",
 					},
 				},
@@ -37,21 +37,21 @@ func TestHandle(t *testing.T) {
 
 		{
 			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "tcp",
-					"port": 5563,
-					"optional": map[interface{}] interface{} {
+					"port":     5563,
+					"optional": map[interface{}]interface{}{
 						"ClientId": "client1",
 					},
 				},
 			},
-			skeys:[]string{"default", "optional", "CLIENTID"},
-			val: "client2",
+			skeys: []string{"default", "optional", "CLIENTID"},
+			val:   "client2",
 			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "tcp",
-					"port": 5563,
-					"optional": map[interface{}] interface{} {
+					"port":     5563,
+					"optional": map[interface{}]interface{}{
 						"ClientId": "client2",
 					},
 				},
@@ -60,22 +60,22 @@ func TestHandle(t *testing.T) {
 
 		{
 			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "tcp",
-					"port": 5563,
-					"optional": map[interface{}] interface{} {
+					"port":     5563,
+					"optional": map[interface{}]interface{}{
 						"ClientId": "client1",
 					},
 				},
 			},
-			skeys:[]string{"default", "optional", "KEEPALIVE"},
-			val: "6000",
+			skeys: []string{"default", "optional", "KEEPALIVE"},
+			val:   "6000",
 			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "tcp",
-					"port": 5563,
-					"optional": map[interface{}] interface{} {
-						"ClientId": "client1",
+					"port":     5563,
+					"optional": map[interface{}]interface{}{
+						"ClientId":  "client1",
 						"KeepAlive": int64(6000),
 					},
 				},
@@ -84,21 +84,21 @@ func TestHandle(t *testing.T) {
 
 		{
 			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "tcp",
-					"port": 5563,
-					"optional": map[interface{}] interface{} {
+					"port":     5563,
+					"optional": map[interface{}]interface{}{
 						"ClientId": "client1",
 					},
 				},
 			},
-			skeys:[]string{"default", "optional", "RETAINED"},
-			val: "true",
+			skeys: []string{"default", "optional", "RETAINED"},
+			val:   "true",
 			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "tcp",
-					"port": 5563,
-					"optional": map[interface{}] interface{} {
+					"port":     5563,
+					"optional": map[interface{}]interface{}{
 						"ClientId": "client1",
 						"Retained": true,
 					},
@@ -108,23 +108,23 @@ func TestHandle(t *testing.T) {
 
 		{
 			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "tcp",
-					"port": 5563,
-					"optional": map[interface{}] interface{} {
+					"port":     5563,
+					"optional": map[interface{}]interface{}{
 						"ClientId": "client1",
 					},
 				},
 			},
-			skeys:[]string{"default", "optional", "test"},
-			val: "3.14",
+			skeys: []string{"default", "optional", "test"},
+			val:   "3.14",
 			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "tcp",
-					"port": 5563,
-					"optional": map[interface{}] interface{} {
+					"port":     5563,
+					"optional": map[interface{}]interface{}{
 						"ClientId": "client1",
-						"test": 3.14,
+						"test":     3.14,
 					},
 				},
 			},
@@ -132,25 +132,25 @@ func TestHandle(t *testing.T) {
 
 		{
 			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "tcp",
-					"port": 5563,
-					"optional": map[interface{}] interface{} {
+					"port":     5563,
+					"optional": map[interface{}]interface{}{
 						"ClientId": "client1",
 					},
 				},
 			},
-			skeys:[]string{"application_conf", "test"},
-			val: "ssl",
+			skeys: []string{"application_conf", "test"},
+			val:   "ssl",
 			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "tcp",
-					"port": 5563,
-					"optional": map[interface{}] interface{} {
+					"port":     5563,
+					"optional": map[interface{}]interface{}{
 						"ClientId": "client1",
 					},
 				},
-				"application_conf": map[interface{}]interface{} {
+				"application_conf": map[interface{}]interface{}{
 					"test": "ssl",
 				},
 			},
@@ -180,15 +180,15 @@ func TestProcessEnv(t *testing.T) {
 			},
 			file: "edgex",
 			expt: map[interface{}]interface{}{
-				"default": map[interface {}]interface{} {
+				"default": map[interface{}]interface{}{
 					"protocol": "tcp",
-					"type": "zmq",
-					"optional": map[interface{}] interface{} {
+					"type":     "zmq",
+					"optional": map[interface{}]interface{}{
 						"ClientId": "clientid_0000",
 					},
 				},
-				"application_conf": map[interface{}]interface{} {
-					"protocol":"ssl",
+				"application_conf": map[interface{}]interface{}{
+					"protocol": "ssl",
 				},
 			},
 		},

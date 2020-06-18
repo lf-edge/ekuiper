@@ -29,11 +29,11 @@ type EdgexSource struct {
 }
 
 func (es *EdgexSource) Configure(device string, props map[string]interface{}) error {
-	var protocol = "tcp";
+	var protocol = "tcp"
 	if p, ok := props["protocol"]; ok {
 		protocol = p.(string)
 	}
-	var server = "localhost";
+	var server = "localhost"
 	if s, ok := props["server"]; ok {
 		server = s.(string)
 	}
@@ -135,7 +135,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 						if len > 200 {
 							len = 200
 						}
-						log.Warnf("payload %s unmarshal fail: %v", env.Payload[0:(len - 1)], err)
+						log.Warnf("payload %s unmarshal fail: %v", env.Payload[0:(len-1)], err)
 					} else {
 						result := make(map[string]interface{})
 						meta := make(map[string]interface{})
@@ -297,7 +297,6 @@ func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (inter
 		return nil, fmt.Errorf("unkown value type: %s, reading:%v", r.ValueType, r)
 	}
 }
-
 
 func (es *EdgexSource) fetchAllDataDescriptors() error {
 	if vdArr, err := es.vdc.ValueDescriptors(context.Background()); err != nil {

@@ -5,7 +5,7 @@ import (
 )
 
 type NopSink struct {
-	log  bool
+	log bool
 }
 
 func (ns *NopSink) Configure(ps map[string]interface{}) error {

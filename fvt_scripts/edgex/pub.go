@@ -19,7 +19,7 @@ var msgConfig1 = types.MessageBusConfig{
 		Port:     5563,
 		Protocol: "tcp",
 	},
-	Type:messaging.ZeroMQ,
+	Type: messaging.ZeroMQ,
 }
 
 func pubEventClientZeroMq() {
@@ -39,16 +39,16 @@ func pubEventClientZeroMq() {
 				var r1 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name", Name: "Temperature", Value: fmt.Sprintf("%d", i*8)}
 				var r2 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name", Name: "Humidity", Value: fmt.Sprintf("%d", i*9)}
 
-				var r3 = models.Reading{Name:"b1"}
-				if i % 2 == 0 {
+				var r3 = models.Reading{Name: "b1"}
+				if i%2 == 0 {
 					r3.Value = "true"
 				} else {
 					r3.Value = "false"
 				}
 
-				r4 := models.Reading{Name:"i1", Value:fmt.Sprintf("%d", i)}
-				r5 := models.Reading{Name:"f1", Value:fmt.Sprintf("%.2f", float64(i)/2.0)}
-				r6 := models.Reading{Name:"ui64", Value:"10796529505058023104"}
+				r4 := models.Reading{Name: "i1", Value: fmt.Sprintf("%d", i)}
+				r5 := models.Reading{Name: "f1", Value: fmt.Sprintf("%.2f", float64(i)/2.0)}
+				r6 := models.Reading{Name: "ui64", Value: "10796529505058023104"}
 
 				testEvent.Readings = append(testEvent.Readings, r1, r2, r3, r4, r5, r6)
 
@@ -80,7 +80,7 @@ func pubToAnother() {
 			Port:     5571,
 			Protocol: "tcp",
 		},
-		Type:messaging.ZeroMQ,
+		Type: messaging.ZeroMQ,
 	}
 	if msgClient, err := messaging.NewMessageClient(msgConfig2); err != nil {
 		log.Fatal(err)
@@ -121,10 +121,10 @@ func pubToMQTT(host string) {
 			Port:     1883,
 			Protocol: "tcp",
 		},
-		Optional:map[string]string{
+		Optional: map[string]string{
 			"ClientId": "0001_client_id",
 		},
-		Type:messaging.MQTT,
+		Type: messaging.MQTT,
 	}
 	if msgClient, err := messaging.NewMessageClient(msgConfig2); err != nil {
 		log.Fatal(err)
@@ -170,9 +170,9 @@ func pubMetaSource() {
 			evtDevice := []string{"demo1", "demo2"}
 			for i, device := range evtDevice {
 				j := int64(i) + 1
-				testEvent := models.Event{Device: device, Created: 11*j, Modified: 12*j, Origin: 13*j}
-				r1 := models.Reading{Pushed: 22*j, Created: 23*j, Origin: 24*j, Modified: 25*j, Device: "Temperature sensor", Name: "Temperature", Value: fmt.Sprintf("%d", j*8)}
-				r2 := models.Reading{Pushed: 32*j, Created: 33*j, Origin: 34*j, Modified: 35*j, Device: "Humidity sensor", Name: "Humidity", Value: fmt.Sprintf("%d", j*8)}
+				testEvent := models.Event{Device: device, Created: 11 * j, Modified: 12 * j, Origin: 13 * j}
+				r1 := models.Reading{Pushed: 22 * j, Created: 23 * j, Origin: 24 * j, Modified: 25 * j, Device: "Temperature sensor", Name: "Temperature", Value: fmt.Sprintf("%d", j*8)}
+				r2 := models.Reading{Pushed: 32 * j, Created: 33 * j, Origin: 34 * j, Modified: 35 * j, Device: "Humidity sensor", Name: "Humidity", Value: fmt.Sprintf("%d", j*8)}
 
 				testEvent.Readings = append(testEvent.Readings, r1, r2)
 				data, err := client.MarshalEvent(testEvent)
@@ -213,4 +213,3 @@ func main() {
 		}
 	}
 }
-
