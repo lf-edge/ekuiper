@@ -1,6 +1,6 @@
 ## 5 minutes quick start
 
-1. Pull a Kuiper Docker image from ``https://hub.docker.com/r/emqx/kuiper/tags``.
+1. Pull a Kuiper Docker image from ``https://hub.docker.com/r/emqx/kuiper/tags``. It's recommended to use `alpine` image in this tutorial (refer to [Kuiper Docker](https://hub.docker.com/r/emqx/kuiper) for the difference of Kuiper Docker image variants). 
 
 2. Set Kuiper source to an MQTT server. This sample uses server locating at ``tcp://broker.emqx.io:1883``. ``broker.emqx.io`` is a public MQTT test server hosted by [EMQ](https://www.emqx.io).
 
