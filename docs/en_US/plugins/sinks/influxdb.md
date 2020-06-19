@@ -28,7 +28,7 @@ Restart the Kuiper server to activate the plugin.
 | tagvalue      | true     | The tag value of the InfluxDB |
 ## Sample usage
 
-Below is a sample for selecting temperature great than 50 degree, and the files for creating plugin.
+Below is a sample for selecting temperature great than 50 degree, and some profiles only for your reference.
 
 ####/tmp/influxRule.txt
 ```json
@@ -54,7 +54,21 @@ Below is a sample for selecting temperature great than 50 degree, and the files 
 ####/tmp/influxPlugin.txt
 ```json
 {
-  "file":"http://localhost:8080/influx.zip"
-}
+   "file":"http://localhost:8080/influx.zip"
+ }
 ```
+#### plugins/go.mod
+```
+module plugins
 
+go 1.14
+
+require (
+        github.com/emqx/kuiper v0.0.0-20200323140757-60d00241372b
+        github.com/influxdata/influxdb-client-go v1.2.0
+        github.com/influxdata/influxdb1-client v0.0.0-20200515024757-02f0bf5dbca3 // indirect
+)
+
+replace github.com/emqx/kuiper => /root/goProject/kuiper
+
+```

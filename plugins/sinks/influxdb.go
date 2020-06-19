@@ -80,7 +80,10 @@ func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
 	if v, ok := data.([]byte); ok {
 		var out ListMap
-		json.Unmarshal([]byte(v), &out)
+		if err := json.Unmarshal([]byte(v), &out); err != nil {
+			logger.Debug("Failed to unmarshal data with error %s.\n", err)
+			return err
+		}
 		bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 			Database:  m.databasename,
 			Precision: "ns", //default is ns
@@ -119,4 +122,7 @@ func (m *influxSink) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-var Influx influxSink
+func Influx() api.Sink {
+	return &influxSink{}
+}
+
