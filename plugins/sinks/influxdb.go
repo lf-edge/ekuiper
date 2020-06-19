@@ -118,6 +118,7 @@ func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 
 func (m *influxSink) Close(ctx api.StreamContext) error {
 	// Close the client
+	// Close the client
 	cli.Close()
 	return nil
 }
