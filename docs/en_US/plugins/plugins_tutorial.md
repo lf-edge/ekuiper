@@ -58,37 +58,45 @@ The Kuiper plugin has three types. The source code can be put into the correspon
 - Create file mysql.go under the sinks directory
 - Edit file mysql.go for implementing the plugin
     -  Implement [api.Sink](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go) interface
-    - Export Symbol: Mysql
+    - Export Symbol: Mysql. It could be a constructor function so that each rule can instantiate an own mysql plugin instance. Or it could be the struct which means every rule will share a singleton of the plugin. If the plugin has states like the connection, the first approach is preferred.
 - Edit go.mod, add Mysql driver module
 
 The complete source code of mysql.go is as follows:
 ```go
 package main
 
+// This is a simplified mysql sink which is for test and tutorial only
+
 import (
 	"database/sql"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type mysqlSink struct {
-	url       string
-	table     string
+type mysqlConfig struct {
+	url           string   `json:"url"`
+	table         string   `json:"table"`
+}
 
-	db        *sql.DB
+type mysqlSink struct {
+	conf *mysqlConfig
+	//The db connection instance
+	db   *sql.DB
 }
 
 func (m *mysqlSink) Configure(props map[string]interface{}) error {
-	if i, ok := props["url"]; ok {
-		if i, ok := i.(string); ok {
-			m.url = i
-		}
+	cfg := &mysqlConfig{}
+	err := common.MapToStruct(props, cfg)
+	if err != nil {
+		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
-	if i, ok := props["table"]; ok {
-		if i, ok := i.(string); ok {
-			m.table = i
-		}
+	if cfg.url == ""{
+		return fmt.Errorf("property url is required")
+	}
+	if cfg.table == ""{
+		return fmt.Errorf("property table is required")
 	}
 	return nil
 }
@@ -96,15 +104,20 @@ func (m *mysqlSink) Configure(props map[string]interface{}) error {
 func (m *mysqlSink) Open(ctx api.StreamContext) (err error) {
 	logger := ctx.GetLogger()
 	logger.Debug("Opening mysql sink")
-	m.db, err = sql.Open("mysql", m.url)
+	m.db, err = sql.Open("mysql", m.conf.url)
 	return
 }
 
+// This is a simplified version of data collect which just insert the received string into hardcoded name column of the db
 func (m *mysqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	if v, ok := item.([]byte); ok {
+		//TODO in production: deal with various data type of the unmarshalled item.
+		// It is a json string of []map[string]interface{} by default;
+		// And it is possible to be any other kind of data if the sink `dataTemplate` is set
 		logger.Debugf("mysql sink receive %s", item)
-		sql := fmt.Sprintf("INSERT INTO %s (`name`) VALUES ('%s')", m.table, v)
+		//TODO hard coded column here. In production, we'd better get the column/value pair from the item
+		sql := fmt.Sprintf("INSERT INTO %s (`name`) VALUES ('%s')", m.conf.table, v)
 		logger.Debugf(sql)
 		insert, err := m.db.Query(sql)
 		if err != nil {
@@ -118,13 +131,16 @@ func (m *mysqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 }
 
 func (m *mysqlSink) Close(ctx api.StreamContext) error {
-	if m.db != nil{
-		m.db.Close()
+	if m.db != nil {
+		return m.db.Close()
 	}
 	return nil
 }
 
-var Mysql mysqlSink
+// export the constructor function to be used to instantiates the plugin
+func Mysql() api.Sink {
+	return &mysqlSink{}
+}
 ```
  The complete code of go.mod is as follows:
  ```go
