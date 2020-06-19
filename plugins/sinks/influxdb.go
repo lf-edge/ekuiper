@@ -9,13 +9,13 @@ import (
 )
 
 type influxSink struct {
-	addr string
-	username string
-	password string
-	measurement string
+	addr         string
+	username     string
+	password     string
+	measurement  string
 	databasename string
-	tagkey string
-	tagvalue string
+	tagkey       string
+	tagvalue     string
 }
 
 var cli client.Client
@@ -58,11 +58,11 @@ func (m *influxSink) Configure(props map[string]interface{}) error {
 			m.tagvalue = i
 		}
 	}
-	return nil;
+	return nil
 }
 
 func (m *influxSink) Open(ctx api.StreamContext) (err error) {
-	logger := ctx.GetLogger();
+	logger := ctx.GetLogger()
 	logger.Debug("Opening influx sink")
 	cli, err = client.NewHTTPClient(client.HTTPConfig{
 		Addr:     m.addr,
@@ -86,7 +86,7 @@ func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 		}
 		bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 			Database:  m.databasename,
-			Precision: "ns", //default is ns
+			Precision: "ns",
 		})
 		if err != nil {
 			logger.Debug(err)
@@ -94,8 +94,8 @@ func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 		}
 		tags := map[string]string{m.tagkey: m.tagvalue}
 		fields := map[string]interface{}{
-			"temperature" : out[0]["temperature"],
-			"humidity": out[0]["humidity"],
+			"temperature": out[0]["temperature"],
+			"humidity":    out[0]["humidity"],
 		}
 
 		pt, err := client.NewPoint(m.measurement, tags, fields, time.Now())
@@ -117,12 +117,10 @@ func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 }
 
 func (m *influxSink) Close(ctx api.StreamContext) error {
-	// Close the client
-	cli.Close();
+	cli.Close()
 	return nil
 }
 
 func Influx() api.Sink {
 	return &influxSink{}
 }
-
