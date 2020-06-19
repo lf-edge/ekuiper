@@ -15,7 +15,7 @@ Kuiper implemented several plugins.
 | --------------------- | ------------------------------------------------------------ |
 | [file](sinks/file.md) | The sink is used for saving analysis result into a specified file. |
 | [zmq](sinks/zmq.md)   | The sink will publish the result into a Zero Mq topic                                                             |
-
+| [influxdb](sinks/influxdb.md)   | The sink will publish the result into a InfluxDB 
 
 
 
