@@ -73,7 +73,7 @@ build_with_edgex: build_prepare
 	@echo "Build successfully"
 
 .PHONY: pkg_with_edgex
-pkg_whit_edgex: build_with_edgex 
+pkg_with_edgex: build_with_edgex
 	@make real_pkg
 
 .PHONY: real_pkg
