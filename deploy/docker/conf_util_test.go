@@ -1,203 +1,179 @@
 package main
 
 import (
-	"reflect"
-	"testing"
+	"fmt"
+	"github.com/go-yaml/yaml"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
 )
 
-func TestHandle(t *testing.T) {
-	var tests = []struct {
-		config map[interface{}]interface{}
-		skeys  []string
-		val    string
-		exp    map[interface{}]interface{}
-	}{
-		{
-			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "tcp",
-					"port":     5563,
-					"optional": map[interface{}]interface{}{
-						"ClientId": "client1",
-					},
-				},
-			},
-			skeys: []string{"default", "protocol"},
-			val:   "ssl",
-			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "ssl",
-					"port":     5563,
-					"optional": map[interface{}]interface{}{
-						"ClientId": "client1",
-					},
-				},
-			},
-		},
+var khome = os.Getenv("KUIPER_HOME")
 
-		{
-			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "tcp",
-					"port":     5563,
-					"optional": map[interface{}]interface{}{
-						"ClientId": "client1",
-					},
-				},
-			},
-			skeys: []string{"default", "optional", "CLIENTID"},
-			val:   "client2",
-			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "tcp",
-					"port":     5563,
-					"optional": map[interface{}]interface{}{
-						"ClientId": "client2",
-					},
-				},
-			},
-		},
+var fileMap = map[string]string{
+	"edgex":       khome + "/etc/sources/edgex.yaml",
+	"random":      khome + "/etc/sources/random.yaml",
+	"zmq":         khome + "/etc/sources/zmq.yaml",
+	"mqtt_source": khome + "/etc/mqtt_source.yaml",
+	"kuiper":      khome + "/etc/kuiper.yaml",
+	"client":      khome + "/etc/client.yaml",
+}
 
-		{
-			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "tcp",
-					"port":     5563,
-					"optional": map[interface{}]interface{}{
-						"ClientId": "client1",
-					},
-				},
-			},
-			skeys: []string{"default", "optional", "KEEPALIVE"},
-			val:   "6000",
-			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "tcp",
-					"port":     5563,
-					"optional": map[interface{}]interface{}{
-						"ClientId":  "client1",
-						"KeepAlive": int64(6000),
-					},
-				},
-			},
-		},
+var file_keys_map = map[string]map[string]string{
+	"edgex": {
+		"CLIENTID":          "ClientId",
+		"USERNAME":          "Username",
+		"PASSWORD":          "Password",
+		"QOS":               "Qos",
+		"KEEPALIVE":         "KeepAlive",
+		"RETAINED":          "Retained",
+		"CONNECTIONPAYLOAD": "ConnectionPayload",
+		"CERTFILE":          "CertFile",
+		"KEYFILE":           "KeyFile",
+		"CERTPEMBLOCK":      "CertPEMBlock",
+		"KEYPEMBLOCK":       "KeyPEMBlock",
+		"SKIPCERTVERIFY":    "SkipCertVerify",
+	},
+	"mqtt_source": {
+		"SHAREDSUBSCRIPTION": "sharedSubscription",
+		"CERTIFICATIONPATH":  "certificationPath",
+		"PRIVATEKEYPATH":     "privateKeyPath",
+	},
+	"kuiper": {
+		"CONSOLELOG":     "consoleLog",
+		"FILELOG":        "fileLog",
+		"RESTPORT":       "restPort",
+		"RESTTLS":        "restTls",
+		"PROMETHEUSPORT": "prometheusPort",
+	},
+}
 
-		{
-			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "tcp",
-					"port":     5563,
-					"optional": map[interface{}]interface{}{
-						"ClientId": "client1",
-					},
-				},
-			},
-			skeys: []string{"default", "optional", "RETAINED"},
-			val:   "true",
-			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "tcp",
-					"port":     5563,
-					"optional": map[interface{}]interface{}{
-						"ClientId": "client1",
-						"Retained": true,
-					},
-				},
-			},
-		},
-
-		{
-			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "tcp",
-					"port":     5563,
-					"optional": map[interface{}]interface{}{
-						"ClientId": "client1",
-					},
-				},
-			},
-			skeys: []string{"default", "optional", "test"},
-			val:   "3.14",
-			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "tcp",
-					"port":     5563,
-					"optional": map[interface{}]interface{}{
-						"ClientId": "client1",
-						"test":     3.14,
-					},
-				},
-			},
-		},
-
-		{
-			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "tcp",
-					"port":     5563,
-					"optional": map[interface{}]interface{}{
-						"ClientId": "client1",
-					},
-				},
-			},
-			skeys: []string{"application_conf", "test"},
-			val:   "ssl",
-			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "tcp",
-					"port":     5563,
-					"optional": map[interface{}]interface{}{
-						"ClientId": "client1",
-					},
-				},
-				"application_conf": map[interface{}]interface{}{
-					"test": "ssl",
-				},
-			},
-		},
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
 	}
+	return !info.IsDir()
+}
 
-	for i, tt := range tests {
-		Handle("edgex", tt.config, tt.skeys, tt.val)
-		if !reflect.DeepEqual(tt.exp, tt.config) {
-			t.Errorf("%d \tresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.exp, tt.config)
+func deleteFile(path string) {
+	// delete file
+	var err = os.Remove(path)
+	if err != nil {
+		return
+	}
+	fmt.Println("File Deleted")
+}
+
+func main() {
+	fmt.Println(fileMap["edgex"])
+	files := make(map[string]map[interface{}]interface{})
+	ProcessEnv(files, os.Environ())
+	for f, v := range files {
+		if bs, err := yaml.Marshal(v); err != nil {
+			fmt.Println(err)
+		} else {
+			message := fmt.Sprintf("-------------------\nConf file %s: \n %s", f, string(bs))
+			fmt.Println(message)
+			if fname, ok := fileMap[f]; ok {
+				if fileExists(fname) {
+					deleteFile(fname)
+				}
+				if e := ioutil.WriteFile(fname, bs, 0644); e != nil {
+					fmt.Println(e)
+				}
+			}
 		}
 	}
 }
 
-func TestProcessEnv(t *testing.T) {
-	fileMap["edgex"] = "test/edgex.yaml"
-	var tests = []struct {
-		vars []string
-		file string
-		expt map[interface{}]interface{}
-	}{
-		{
-			vars: []string{
-				"EDGEX__DEFAULT__TYPE=zmq",
-				"EDGEX__DEFAULT__OPTIONAL__CLIENTID=clientid_0000",
-				"EDGEX__APPLICATION_CONF__PROTOCOL=ssl",
-			},
-			file: "edgex",
-			expt: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
-					"protocol": "tcp",
-					"type":     "zmq",
-					"optional": map[interface{}]interface{}{
-						"ClientId": "clientid_0000",
-					},
-				},
-				"application_conf": map[interface{}]interface{}{
-					"protocol": "ssl",
-				},
-			},
-		},
-	}
-	files := make(map[string]map[interface{}]interface{})
-	for i, tt := range tests {
-		ProcessEnv(files, tt.vars)
-		if !reflect.DeepEqual(tt.expt, files[tt.file]) {
-			t.Errorf("%d \tresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.expt, files[tt.file])
+func ProcessEnv(files map[string]map[interface{}]interface{}, vars []string) {
+	for _, e := range vars {
+		pair := strings.SplitN(e, "=", 2)
+		if len(pair) != 2 {
+			fmt.Printf("invalid env %s, skip it.\n", e)
+			continue
+		}
+
+		valid := false
+		for k, _ := range fileMap {
+			if strings.HasPrefix(pair[0], strings.ToUpper(k)) {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			continue
+		} else {
+			fmt.Printf("Find env: %s, start to handle it.\n", e)
+		}
+
+		env_v := strings.ReplaceAll(pair[0], "__", ".")
+		keys := strings.Split(env_v, ".")
+		for i, v := range keys {
+			keys[i] = v
+		}
+
+		if len(keys) < 2 {
+			fmt.Printf("not concerned env %s, skip it.\n", e)
+			continue
+		} else {
+			k := strings.ToLower(keys[0])
+			if v, ok := files[k]; !ok {
+				if data, err := ioutil.ReadFile(fileMap[k]); err != nil {
+					fmt.Printf("%s\n", err)
+				} else {
+					m := make(map[interface{}]interface{})
+					err = yaml.Unmarshal([]byte(data), &m)
+					if err != nil {
+						fmt.Println(err)
+					}
+					files[k] = m
+					Handle(k, m, keys[1:], pair[1])
+
+				}
+			} else {
+				Handle(k, v, keys[1:], pair[1])
+			}
 		}
 	}
+}
+
+func Handle(file string, conf map[interface{}]interface{}, skeys []string, val string) {
+	key := getKey(file, skeys[0])
+	if len(skeys) == 1 {
+		conf[key] = getValueType(val)
+	} else if len(skeys) >= 2 {
+		if v, ok := conf[key]; ok {
+			if v1, ok1 := v.(map[interface{}]interface{}); ok1 {
+				Handle(file, v1, skeys[1:], val)
+			} else {
+				fmt.Printf("Not expected map: %v\n", v)
+			}
+		} else {
+			v1 := make(map[interface{}]interface{})
+			conf[key] = v1
+			Handle(file, v1, skeys[1:], val)
+		}
+	}
+}
+
+func getKey(file string, key string) string {
+	if m, ok := file_keys_map[file][key]; ok {
+		return m
+	} else {
+		return strings.ToLower(key)
+	}
+}
+
+func getValueType(val string) interface{} {
+	if i, err := strconv.ParseInt(val, 10, 64); err == nil {
+		return i
+	} else if b, err := strconv.ParseBool(val); err == nil {
+		return b
+	} else if f, err := strconv.ParseFloat(val, 64); err == nil {
+		return f
+	}
+	return val
 }
