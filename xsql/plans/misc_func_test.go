@@ -323,15 +323,30 @@ func TestMetaFunc_Apply1(t *testing.T) {
 				},
 			}},
 		},
+		{
+			sql: "SELECT topic, meta(`Light-diming`->device) AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"topic": "fff",
+				},
+				Metadata: xsql.Metadata{
+					"Light-diming": map[string]interface{}{
+						"device": "device2",
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"topic": "fff",
+				"a":     "device2",
+			}},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := common.Log.WithField("rule", "TestMetaFunc_Apply1")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		if i != 2 {
-			continue
-		}
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
@@ -354,6 +369,352 @@ func TestMetaFunc_Apply1(t *testing.T) {
 			}
 		} else {
 			t.Errorf("The returned result is not type of []byte\n")
+		}
+	}
+}
+
+func TestJsonPathFunc_Apply1(t *testing.T) {
+	var tests = []struct {
+		sql    string
+		data   interface{}
+		result interface{}
+	}{
+		{
+			sql: `SELECT json_path_query(equipment, "$.arm_right") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": map[string]interface{}{
+						"rings": []map[string]interface{}{
+							{
+								"name":   "ring of despair",
+								"weight": 0.1,
+							}, {
+								"name":   "ring of strength",
+								"weight": 2.4,
+							},
+						},
+						"arm_right": "Sword of flame",
+						"arm_left":  "Shield of faith",
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "Sword of flame",
+			}},
+		}, {
+			sql: `SELECT json_path_query(equipment, "$.rings[*].weight") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": map[string]interface{}{
+						"rings": []interface{}{
+							map[string]interface{}{
+								"name":   "ring of despair",
+								"weight": 0.1,
+							}, map[string]interface{}{
+								"name":   "ring of strength",
+								"weight": 2.4,
+							},
+						},
+						"arm_right": "Sword of flame",
+						"arm_left":  "Shield of faith",
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": []interface{}{
+					0.1, 2.4,
+				},
+			}},
+		}, {
+			sql: `SELECT json_path_query_first(equipment, "$.rings[*].weight") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": map[string]interface{}{
+						"rings": []interface{}{
+							map[string]interface{}{
+								"name":   "ring of despair",
+								"weight": 0.1,
+							}, map[string]interface{}{
+								"name":   "ring of strength",
+								"weight": 2.4,
+							},
+						},
+						"arm_right": "Sword of flame",
+						"arm_left":  "Shield of faith",
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": 0.1,
+			}},
+		}, {
+			sql: `SELECT json_path_query(equipment, "$.rings[? @.weight>1]") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": map[string]interface{}{
+						"rings": []interface{}{
+							map[string]interface{}{
+								"name":   "ring of despair",
+								"weight": 0.1,
+							}, map[string]interface{}{
+								"name":   "ring of strength",
+								"weight": 2.4,
+							},
+						},
+						"arm_right": "Sword of flame",
+						"arm_left":  "Shield of faith",
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": []interface{}{
+					map[string]interface{}{
+						"name":   "ring of strength",
+						"weight": 2.4,
+					},
+				},
+			}},
+		}, {
+			sql: `SELECT json_path_query(equipment, "$.rings[? @.weight>1].name") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": map[string]interface{}{
+						"rings": []interface{}{
+							map[string]interface{}{
+								"name":   "ring of despair",
+								"weight": 0.1,
+							}, map[string]interface{}{
+								"name":   "ring of strength",
+								"weight": 2.4,
+							},
+						},
+						"arm_right": "Sword of flame",
+						"arm_left":  "Shield of faith",
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": []interface{}{
+					"ring of strength",
+				},
+			}},
+		}, {
+			sql: `SELECT json_path_exists(equipment, "$.rings[? @.weight>5]") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": map[string]interface{}{
+						"rings": []interface{}{
+							map[string]interface{}{
+								"name":   "ring of despair",
+								"weight": 0.1,
+							}, map[string]interface{}{
+								"name":   "ring of strength",
+								"weight": 2.4,
+							},
+						},
+						"arm_right": "Sword of flame",
+						"arm_left":  "Shield of faith",
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": false,
+			}},
+		}, {
+			sql: `SELECT json_path_exists(equipment, "$.ring1") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": map[string]interface{}{
+						"rings": []interface{}{
+							map[string]interface{}{
+								"name":   "ring of despair",
+								"weight": 0.1,
+							}, map[string]interface{}{
+								"name":   "ring of strength",
+								"weight": 2.4,
+							},
+						},
+						"arm_right": "Sword of flame",
+						"arm_left":  "Shield of faith",
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": false,
+			}},
+		}, {
+			sql: `SELECT json_path_exists(equipment, "$.rings") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": map[string]interface{}{
+						"rings": []interface{}{
+							map[string]interface{}{
+								"name":   "ring of despair",
+								"weight": 0.1,
+							}, map[string]interface{}{
+								"name":   "ring of strength",
+								"weight": 2.4,
+							},
+						},
+						"arm_right": "Sword of flame",
+						"arm_left":  "Shield of faith",
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": true,
+			}},
+		}, {
+			sql: `SELECT json_path_query(equipment, "$.rings[? (@.weight>1)].name") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": map[string]interface{}{
+						"rings": []map[string]interface{}{
+							{
+								"name":   "ring of despair",
+								"weight": 0.1,
+							}, {
+								"name":   "ring of strength",
+								"weight": 2.4,
+							},
+						},
+						"arm_right": "Sword of flame",
+						"arm_left":  "Shield of faith",
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": []interface{}{
+					"ring of strength",
+				},
+			}},
+		}, {
+			sql: `SELECT json_path_query(equipment, "$.rings[*]") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": map[string]interface{}{
+						"rings": []float64{
+							0.1, 2.4,
+						},
+						"arm_right": "Sword of flame",
+						"arm_left":  "Shield of faith",
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": []interface{}{
+					0.1, 2.4,
+				},
+			}},
+		}, {
+			sql: `SELECT json_path_query(equipment, "$.rings") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": map[string]interface{}{
+						"rings": []float64{
+							0.1, 2.4,
+						},
+						"arm_right": "Sword of flame",
+						"arm_left":  "Shield of faith",
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": []interface{}{
+					0.1, 2.4,
+				},
+			}},
+		}, {
+			sql: `SELECT json_path_query(equipment, "$[0].rings[1]") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": []map[string]interface{}{
+						{
+							"rings": []float64{
+								0.1, 2.4,
+							},
+							"arm_right": "Sword of flame",
+							"arm_left":  "Shield of faith",
+						},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": 2.4,
+			}},
+		}, {
+			sql: "SELECT json_path_query(equipment, \"$[0][\\\"arm.left\\\"]\") AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment": []map[string]interface{}{
+						{
+							"rings": []float64{
+								0.1, 2.4,
+							},
+							"arm.right": "Sword of flame",
+							"arm.left":  "Shield of faith",
+						},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "Shield of faith",
+			}},
+		},
+	}
+
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := common.Log.WithField("rule", "TestJsonFunc_Apply1")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
+	for i, tt := range tests {
+		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+		if err != nil || stmt == nil {
+			t.Errorf("parse sql %s error %v", tt.sql, err)
+		}
+		pp := &ProjectPlan{Fields: stmt.Fields}
+		pp.isTest = true
+		fv, afv := xsql.NewAggregateFunctionValuers()
+		result := pp.Apply(ctx, tt.data, fv, afv)
+		var mapRes []map[string]interface{}
+		if v, ok := result.([]byte); ok {
+			err := json.Unmarshal(v, &mapRes)
+			if err != nil {
+				t.Errorf("Failed to parse the input into map.\n")
+				continue
+			}
+			//fmt.Printf("%t\n", mapRes["rengine_field_0"])
+
+			if !reflect.DeepEqual(tt.result, mapRes) {
+				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
+			}
+		} else {
+			t.Errorf("The returned result is not type of []byte but found %v", result)
 		}
 	}
 }

@@ -252,6 +252,76 @@ func TestFilterPlan_Apply(t *testing.T) {
 				},
 			},
 		},
+		{
+			sql: `SELECT abc FROM tbl WHERE json_path_exists(samplers, "$[? @.result.throughput==30]")`,
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"samplers": []interface{}{
+						map[string]interface{}{
+							"name": "page1",
+							"result": map[string]interface{}{
+								"throughput": float64(25),
+								"rt":         float64(20),
+							},
+						},
+						map[string]interface{}{
+							"name": "page2",
+							"result": map[string]interface{}{
+								"throughput": float64(30),
+								"rt":         float64(20),
+							},
+						},
+					},
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"samplers": []interface{}{
+						map[string]interface{}{
+							"name": "page1",
+							"result": map[string]interface{}{
+								"throughput": float64(25),
+								"rt":         float64(20),
+							},
+						},
+						map[string]interface{}{
+							"name": "page2",
+							"result": map[string]interface{}{
+								"throughput": float64(30),
+								"rt":         float64(20),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			sql: `SELECT abc FROM tbl WHERE json_path_exists(samplers, "$[? @.result.throughput<20]")`,
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"samplers": []interface{}{
+						map[string]interface{}{
+							"name": "page1",
+							"result": map[string]interface{}{
+								"throughput": 25,
+								"rt":         20,
+							},
+						},
+						map[string]interface{}{
+							"name": "page2",
+							"result": map[string]interface{}{
+								"throughput": 30,
+								"rt":         20,
+							},
+						},
+					},
+				},
+			},
+			result: nil,
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

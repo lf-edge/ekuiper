@@ -57,37 +57,45 @@ Kuiper 插件有三种类型，源代码可放入对应的目录中。插件开�
 - 在 sinks 目录下，新建 mysql.go 文件
 - 编辑 mysql.go 文件以实现插件
     -  实现 [api.Sink](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go)接口
-    - 导出 Symbol：Mysql
+    - 导出 Symbol：Mysql。它既可以是一个“构造函数”，也可以是结构体本身。当导出构造函数时，使用该插件的规则初始化时会用此函数创建该插件的实例；当导出为结构体时，所有使用该插件的规则将公用该插件同一个单例。如果插件有状态，例如数据库连接，建议使用第一种方法。
 - 编辑 go.mod, 添加 mysql 驱动模块
 
 mysql.go 完整代码如下
 ```go
 package main
 
+// 该例子为简化样例，仅建议测试时使用
+
 import (
 	"database/sql"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type mysqlSink struct {
-	url       string
-	table     string
+type mysqlConfig struct {
+	Url   string `json:"url"`
+	Table string `json:"table"`
+}
 
-	db        *sql.DB
+type mysqlSink struct {
+	conf *mysqlConfig
+	//数据库连接实例
+	db   *sql.DB
 }
 
 func (m *mysqlSink) Configure(props map[string]interface{}) error {
-	if i, ok := props["url"]; ok {
-		if i, ok := i.(string); ok {
-			m.url = i
-		}
+	cfg := &mysqlConfig{}
+	err := common.MapToStruct(props, cfg)
+	if err != nil {
+		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
-	if i, ok := props["table"]; ok {
-		if i, ok := i.(string); ok {
-			m.table = i
-		}
+	if cfg.Url == ""{
+		return fmt.Errorf("property Url is required")
+	}
+	if cfg.Table == ""{
+		return fmt.Errorf("property Table is required")
 	}
 	return nil
 }
@@ -95,15 +103,20 @@ func (m *mysqlSink) Configure(props map[string]interface{}) error {
 func (m *mysqlSink) Open(ctx api.StreamContext) (err error) {
 	logger := ctx.GetLogger()
 	logger.Debug("Opening mysql sink")
-	m.db, err = sql.Open("mysql", m.url)
+	m.db, err = sql.Open("mysql", m.conf.Url)
 	return
 }
 
+// 该函数为数据处理简化函数。
 func (m *mysqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	if v, ok := item.([]byte); ok {
+		//TODO 生产环境中需要处理item unmarshall后的各种类型。
+        // 默认的类型为 []map[string]interface{}
+        // 如果sink的`dataTemplate`属性有设置，则可能为各种其他的类型		
 		logger.Debugf("mysql sink receive %s", item)
-		sql := fmt.Sprintf("INSERT INTO %s (`name`) VALUES ('%s')", m.table, v)
+		//TODO 此处列名写死。生产环境中一般可从item中的键值对获取列名
+		sql := fmt.Sprintf("INSERT INTO %s (`name`) VALUES ('%s')", m.conf.Table, v)
 		logger.Debugf(sql)
 		insert, err := m.db.Query(sql)
 		if err != nil {
@@ -117,13 +130,16 @@ func (m *mysqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 }
 
 func (m *mysqlSink) Close(ctx api.StreamContext) error {
-	if m.db != nil{
-		m.db.Close()
+	if m.db != nil {
+		return m.db.Close()
 	}
 	return nil
 }
 
-var Mysql mysqlSink
+// export the constructor function to be used to instantiates the plugin
+func Mysql() api.Sink {
+	return &mysqlSink{}
+}
 ```
  go.mod 完整代码如下
  ```go

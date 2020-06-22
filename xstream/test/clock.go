@@ -5,12 +5,12 @@ import (
 	"github.com/emqx/kuiper/common"
 )
 
-func ResetClock(t int64){
+func ResetClock(t int64) {
 	mock := clock.NewMock()
 	mock.Set(common.TimeFromUnixMilli(t))
 	common.Clock = mock
 }
 
-func GetMockClock() *clock.Mock{
+func GetMockClock() *clock.Mock {
 	return common.Clock.(*clock.Mock)
 }

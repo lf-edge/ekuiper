@@ -26,7 +26,18 @@ func TestParser_ParseStatement(t *testing.T) {
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
-
+		{
+			s: "SELECT `select` FROM tbl",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "select"},
+						Name:  "select",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
+		},
 		{
 			s: `SELECT name FROM topic/sensor1`,
 			stmt: &SelectStatement{
@@ -50,6 +61,18 @@ func TestParser_ParseStatement(t *testing.T) {
 						AName: ""},
 				},
 				Sources: []Source{&Table{Name: "topic/sensor1", Alias: "t1"}},
+			},
+		},
+		{
+			s: "SELECT t1.name FROM topic/sensor1 AS `join`",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{StreamName: StreamName("t1"), Name: "name"},
+						Name:  "name",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "topic/sensor1", Alias: "join"}},
 			},
 		},
 
@@ -960,7 +983,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						},
 					},
 				},
-				SortFields: []SortField{{Name: "s1.name", Ascending: true}},
+				SortFields: []SortField{{Name: "s1\007name", Ascending: true}},
 			},
 		},
 
@@ -1198,6 +1221,59 @@ func TestParser_ParseStatement(t *testing.T) {
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
+
+		{
+			s:    `select timestamp() as tp from demo`,
+			stmt: nil,
+			err:  "found \"TIMESTAMP\", expected expression.",
+		},
+
+		{
+			s: `select tstamp() as tp from demo`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr: &Call{
+							Name: "tstamp",
+							Args: nil,
+						},
+						Name:  "tstamp",
+						AName: "tp"},
+				},
+				Sources: []Source{&Table{Name: "demo"}},
+			},
+			err: "",
+		},
+
+		{
+			s:    "SELECT `half FROM tb",
+			stmt: nil,
+			err:  `found "EOF", expected FROM.`,
+		},
+		{
+			s: "SELECT `space var` FROM tbl",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "space var"},
+						Name:  "space var",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: "SELECT `中文 Chinese` FROM tbl",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "中文 Chinese"},
+						Name:  "中文 Chinese",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -1316,6 +1392,55 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 			s:    `SELECT f1 FROM tbl GROUP BY SLIDINGWINDOW("mi", 5)`,
 			stmt: nil,
 			err:  "The 1st argument for slidingwindow is expecting timer literal expression. One value of [dd|hh|mi|ss|ms].\n",
+		},
+
+		{
+			s: `SELECT f1 FROM tbl GROUP BY COUNTWINDOW(10)`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "f1"},
+						Name:  "f1",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+				Dimensions: Dimensions{
+					Dimension{
+						Expr: &Window{
+							WindowType: COUNT_WINDOW,
+							Length:     &IntegerLiteral{Val: 10},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			s: `SELECT f1 FROM tbl GROUP BY COUNTWINDOW(10, 5)`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "f1"},
+						Name:  "f1",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+				Dimensions: Dimensions{
+					Dimension{
+						Expr: &Window{
+							WindowType: COUNT_WINDOW,
+							Length:     &IntegerLiteral{Val: 10},
+							Interval:   &IntegerLiteral{Val: 5},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			s:    `SELECT f1 FROM tbl GROUP BY COUNTWINDOW(3, 5)`,
+			stmt: nil,
+			err:  "The second parameter value 5 should be less than the first parameter 3.",
 		},
 	}
 

@@ -1,6 +1,6 @@
 ## 5 分钟快速入门
 
-1. 从 ``https://hub.docker.com/r/emqx/kuiper/tags`` 拉一个 Kuiper 的 docker 镜像。
+1. 从 ``https://hub.docker.com/r/emqx/kuiper/tags`` 拉取 Kuiper 的 Docker 镜像。在本教程中推荐使用 `alpine` 镜像（参考 [Kuiper Docker](https://hub.docker.com/r/emqx/kuiper) 的内容了解不同 Kuiper Docker 镜像的区别）。 
 
 2. 设置 Kuiper 源为一个 MQTT 服务器。本例使用位于 ``tcp://broker.emqx.io:1883`` 的 MQTT 服务器， ``broker.emqx.io`` 是一个由 [EMQ](https://www.emqx.io) 提供的公有MQTT 服务器。
 

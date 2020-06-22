@@ -1,12 +1,15 @@
 package xsql
 
 import (
+	"context"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	b64 "encoding/base64"
 	"fmt"
+	"github.com/PaesslerAG/gval"
+	"github.com/PaesslerAG/jsonpath"
 	"github.com/emqx/kuiper/common"
 	"github.com/google/uuid"
 	"hash"
@@ -211,7 +214,7 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 		} else {
 			return uuid.String(), true
 		}
-	case "timestamp":
+	case "tstamp":
 		return common.TimeToUnixMilli(time.Now()), true
 	case "mqtt":
 		if v, ok := args[0].(string); ok {
@@ -223,4 +226,79 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 	default:
 		return fmt.Errorf("unknown function name %s", name), false
 	}
+}
+
+func jsonCall(name string, args []interface{}) (interface{}, bool) {
+	var input interface{}
+	switch reflect.TypeOf(args[0]).Kind() {
+	case reflect.Map:
+		input = convertToInterfaceArr(args[0].(map[string]interface{}))
+	case reflect.Slice:
+		input = convertSlice(args[0])
+	default:
+		return fmt.Errorf("%s function error: the first argument must be a map but got %v", name, args[0]), false
+	}
+	builder := gval.Full(jsonpath.PlaceholderExtension())
+	path, err := builder.NewEvaluable(args[1].(string))
+	if err != nil {
+		return fmt.Errorf("%s function error: %s", name, err), false
+	}
+	result, err := path(context.Background(), input)
+	if err != nil {
+		if name == "json_path_exists" {
+			return false, true
+		}
+		return fmt.Errorf("%s function error: %s", name, err), false
+	}
+	switch name {
+	case "json_path_query":
+		return result, true
+	case "json_path_query_first":
+		if arr, ok := result.([]interface{}); ok {
+			return arr[0], true
+		} else {
+			return fmt.Errorf("%s function error: query result (%v) is not an array", name, result), false
+		}
+	case "json_path_exists":
+		e := true
+		switch reflect.TypeOf(result).Kind() {
+		case reflect.Slice, reflect.Array:
+			e = reflect.ValueOf(result).Len() > 0
+		default:
+			e = result != nil
+		}
+		return e, true
+	}
+	return fmt.Errorf("invalid function name: %s", name), false
+}
+
+func convertToInterfaceArr(orig map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+	for k, v := range orig {
+		switch reflect.TypeOf(v).Kind() {
+		case reflect.Slice:
+			result[k] = convertSlice(v)
+		case reflect.Map:
+			result[k] = convertToInterfaceArr(v.(map[string]interface{}))
+		default:
+			result[k] = v
+		}
+	}
+	return result
+}
+
+func convertSlice(v interface{}) []interface{} {
+	value := reflect.ValueOf(v)
+	tempArr := make([]interface{}, value.Len())
+	for i := 0; i < value.Len(); i++ {
+		item := value.Index(i)
+		if item.Kind() == reflect.Map {
+			tempArr[i] = convertToInterfaceArr(item.Interface().(map[string]interface{}))
+		} else if item.Kind() == reflect.Slice {
+			tempArr[i] = convertSlice(item.Interface())
+		} else {
+			tempArr[i] = item.Interface()
+		}
+	}
+	return tempArr
 }

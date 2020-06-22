@@ -9,11 +9,11 @@ Aggregate functions perform a calculation on a set of values and return a single
 
 | Function | Example     | Description                                    |
 | -------- | ----------- | ---------------------------------------------- |
-| avg      | avg(col1)   | The average of the values in a group           |
-| count    | count(*)    | The number of items in a group                 |
-| max      | max(col1)   | The maximum value in a group                   |
-| min      | min(col1)   | The minimum value in a group                   |
-| sum      | sum(col1)   | The sum of all the values in a group           |
+| avg      | avg(col1)   | The average of the values in a group. The null values will be ignored.          |
+| count    | count(*)    | The number of items in a group. The null values will be ignored.                 |
+| max      | max(col1)   | The maximum value in a group. The null values will be ignored.                  |
+| min      | min(col1)   | The minimum value in a group. The null values will be ignored.                   |
+| sum      | sum(col1)   | The sum of all the values in a group. The null values will be ignored.           |
 
 ## Mathematical Functions
 | Function | Example     | Description                                    |
@@ -85,12 +85,20 @@ Aggregate functions perform a calculation on a set of values and return a single
 | sha256   | sha256(col1)| Hashed value of the argument                   |
 | sha384   | sha384(col1)| Hashed value of the argument                   |
 | sha512   | sha512(col1)| Hashed value of the argument                   |
+## JSON Functions
+| Function | Example     | Description                                    |
+| -------- | ----------- | ---------------------------------------------- |
+| json_path_exists      | json_path_exists(col1, "$.name")   | Checks whether JSON path returns any item for the specified JSON value. Return bool value.                   |
+| json_path_query     | json_path_query(col1, "$.name")  | Gets all items returned by JSON path for the specified JSON value.              |
+| json_path_query_first  | json_path_query_first(col1, "$.name")| Gets the first item returned by JSON path for the specified JSON value.                  |
+
+**Please refer to [json path functions](../json_expr.md#json-path-functions) for how to compose a json path.**  
 
 ## Other Functions
-| Function  | Example      | Description                                                  |
-| --------- | ------------ | ------------------------------------------------------------ |
-| isNull    | isNull(col1) | Returns true if the argument is the Null value.              |
-| newuuid   | newuuid()    | Returns a random 16-byte UUID.                               |
-| timestamp | timestamp()  | Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970 |
-| mqtt      | mqtt(topic)  | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src1.topic)``<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src2.messageid)`` |
-| meta      | meta(topic)  | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as ``meta(device)``<br />- A qualified key to specify the stream, such as ``meta(src1.device)`` <br />- A key with arrow for multi level meta data, such as ``meta(src1.reading->device->name)`` This assumes reading is a map structure meta data.|
+| Function | Example      | Description                                                  |
+| -------- | ------------ | ------------------------------------------------------------ |
+| isNull   | isNull(col1) | Returns true if the argument is the Null value.              |
+| newuuid  | newuuid()    | Returns a random 16-byte UUID.                               |
+| tstamp   | tstamp()     | Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970 |
+| mqtt     | mqtt(topic)  | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src1.topic)``<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src2.messageid)`` |
+| meta     | meta(topic)  | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as ``meta(device)``<br />- A qualified key to specify the stream, such as ``meta(src1.device)`` <br />- A key with arrow for multi level meta data, such as ``meta(src1.reading->device->name)`` This assumes reading is a map structure meta data. |

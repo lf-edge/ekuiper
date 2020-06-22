@@ -6,7 +6,6 @@ on:
     release:
         types:
             - published
-            - prereleased
 
 jobs:
     run_test_case:
@@ -17,6 +16,13 @@ jobs:
 
         steps:
         - uses: actions/checkout@v2
+        - name: run code static check
+          run : |
+            if [ ! -z "$(gofmt -l .)" ];then
+              echo "code static check error"
+              gofmt -l .
+              exit 1
+            fi
         - name: install lib
           run: apt-get update && apt-get install libzmq3-dev -y
         - name: run test case

@@ -20,6 +20,8 @@ func validateFuncs(funcName string, args []Expr) error {
 		return validateConvFunc(lowerName, args)
 	} else if _, ok := hashFuncMap[lowerName]; ok {
 		return validateHashFunc(lowerName, args)
+	} else if _, ok := jsonFuncMap[lowerName]; ok {
+		return validateJsonFunc(lowerName, args)
 	} else if _, ok := otherFuncMap[lowerName]; ok {
 		return validateOtherFunc(lowerName, args)
 	} else if _, ok := aggFuncMap[lowerName]; ok {
@@ -316,6 +318,17 @@ func validateOtherFunc(name string, args []Expr) error {
 			}
 		}
 		return produceErrInfo(name, 0, "meta reference")
+	}
+	return nil
+}
+
+func validateJsonFunc(name string, args []Expr) error {
+	len := len(args)
+	if err := validateLen(name, 2, len); err != nil {
+		return err
+	}
+	if !isStringArg(args[1]) {
+		return produceErrInfo(name, 1, "string")
 	}
 	return nil
 }

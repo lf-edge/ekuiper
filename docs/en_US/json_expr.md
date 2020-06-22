@@ -120,7 +120,64 @@ SELECT followers->Group1[:1]->first FROM demo
 }
 ```
 
+# Json Path functions
 
+Kuiper provides a list of functions to allow to execute json path over struct or array columns or values. The functions are:
+
+```tsql
+json_path_exists(col, jsonpath)
+json_path_query(col, jsonpath)
+json_path_query_first(col, jsonpath)
+```
+
+Please refer to [json functions](sqls/built-in_functions.md#json-functions) for detail.
+
+All these functions share the same parameter signatures, among which, the second parameter is a jsonpath string. The jsonpath grammer used by Kuiper is based on [JsonPath](https://goessner.net/articles/JsonPath/).  
+
+The basic grammar of those expressions is to use the keys part of the JSON objects combined with some elements:
+
+- Dots `.` to move into a tree
+- Brackets `[]` for access to a given array member coupled with a position. It can also access to a map field.
+- Variables, with `$` representing a JSON text and `@` for result path evaluations.
+
+So for example, when applied to the previous JSON data sample we can reach the following parts of the tree with these expressions:
+
+- `$.age` refers to 37.
+- `$.friends.first` refers to “dale”.
+- `$.friends` refers to the full array of friends.
+- `$.friends[0]` refers to the first friend listed in the previous array (contrary to arrays members are zero-based).
+- `$.friends[0][lastname]` refers to the lastname of the first friend listed. Use bracket if [there are reserved words](sqls/lexical_elements.md) or special characters (such as space ' ', '.' and Chinese etc) in the field key.
+- `$.friends[? @.age>60].first` or `$.friends[? (@.age>60)].first` refers to the first name of the friends whose age is bigger than 60. Notice that the space between ? and the condition is required even the condition is with braces.
+
+Developers can use the json functions in the SQL statement. Here are some examples.
+
+- Select the lastname of group1 followers
+```tsql
+SELECT json_path_query(followers, "$.Group1[*].last") FROM demo
+
+["Shavor","Miller"]
+```
+
+- Select the lastname if any of the group1 followers is older than 60
+```tsql
+SELECT name->last FROM demo where json_path_exists(followers, "$.Group1[? @.age>30]")
+
+"Anderson"
+```
+
+- Select the follower's lastname from group1 whose age is bigger than 30
+```tsql
+SELECT json_path_exists(followers, "$.Group1[? @.age>30].last") FROM demo
+
+["Miller"]
+```
+
+- Assume there is a field in follows with reserved words or chars like dot `my.follower`, use bracket to access it.
+```tsql
+SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
+
+["Miller"]
+```
 
 # *Projections*
 
