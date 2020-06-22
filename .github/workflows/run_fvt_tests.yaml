@@ -221,6 +221,11 @@ jobs:
           helm install kuiper deploy/chart/kuiper
           while [ "$(kubectl get StatefulSet -l app.kubernetes.io/name=kuiper -o jsonpath='{.items[0].status.replicas}')" \
             != "$(kubectl get StatefulSet -l app.kubernetes.io/name=kuiper -o jsonpath='{.items[0].status.readyReplicas}')" ]; do
+            echo "=============================="
+            kubectl describe pods kuiper-0
+            echo "=============================="
+            kubectl get pods
+            echo "=============================="
             echo "waiting kuiper started"
             sleep 10
           done
