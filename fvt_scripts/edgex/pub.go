@@ -114,6 +114,46 @@ func pubToAnother() {
 	}
 }
 
+func pubArrayMessage() {
+	var msgConfig2 = types.MessageBusConfig{
+		PublishHost: types.HostInfo{
+			Host:     "*",
+			Port:     5563,
+			Protocol: "tcp",
+		},
+		Type: messaging.ZeroMQ,
+	}
+	if msgClient, err := messaging.NewMessageClient(msgConfig2); err != nil {
+		log.Fatal(err)
+	} else {
+		if ec := msgClient.Connect(); ec != nil {
+			log.Fatal(ec)
+		}
+		client := coredata.NewEventClient(local.New("test1"))
+		var testEvent = models.Event{Device: "demo1", Created: 123, Modified: 123, Origin: 123}
+		var r1 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "bool array", Name: "ba", Value: "[true, true, false]"}
+		var r2 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "int32 array", Name: "ia", Value: "[30, 40, 50]"}
+		var r3 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "float64 array", Name: "fa", Value: "[3.14, 3.1415, 3.1415926]"}
+
+		testEvent.Readings = append(testEvent.Readings, r1, r2, r3)
+
+		data, err := client.MarshalEvent(testEvent)
+		if err != nil {
+			fmt.Errorf("unexpected error MarshalEvent %v", err)
+		} else {
+			fmt.Println(string(data))
+		}
+
+		env := types.NewMessageEnvelope([]byte(data), context.Background())
+		env.ContentType = "application/json"
+
+		if e := msgClient.Publish(env, "events"); e != nil {
+			log.Fatal(e)
+		}
+		time.Sleep(1500 * time.Millisecond)
+	}
+}
+
 func pubToMQTT(host string) {
 	var msgConfig2 = types.MessageBusConfig{
 		PublishHost: types.HostInfo{
@@ -205,6 +245,8 @@ func main() {
 			pubToAnother()
 		} else if v == "meta" {
 			pubMetaSource()
+		} else if v == "array" {
+			pubArrayMessage()
 		}
 	} else if len(os.Args) == 3 {
 		if v := os.Args[1]; v == "mqtt" {
