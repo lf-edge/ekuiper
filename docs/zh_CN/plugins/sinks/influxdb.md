@@ -3,6 +3,11 @@
 该插件将分析结果发送到InfluxDB中
 ## 编译插件&创建插件
 
+在编译之前，请对源代码做如下更改：
+
+- 在 `go.mod` 文件中增加对 InfluxDB 库文件的引用
+-  把文件 `plugins/sinks/influxdb.go` 中的第一行 `// +build influxdb` 删除
+
 ```shell
 # cd $kuiper_src
 # go build --buildmode=plugin -o plugins/sinks/InfluxDB.so plugins/sinks/influxdb.go

@@ -4,6 +4,11 @@ The sink will publish the result into a InfluxDB.
 
 ## Compile & deploy plugin
 
+Please make following update before compile the plugin,
+
+- Add Influxdb library reference in `go.mod`.
+- Remove the first line `// +build influxdb` of file `plugins/sinks/influxdb.go`.
+
 ```shell
 # cd $kuiper_src
 # go build --buildmode=plugin -o plugins/sinks/InfluxDB.so plugins/sinks/influxdb.go

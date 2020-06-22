@@ -1,3 +1,5 @@
+// +build influxdb
+
 package main
 
 import (
