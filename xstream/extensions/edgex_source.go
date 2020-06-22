@@ -1,5 +1,3 @@
-// +build edgex
-
 package extensions
 
 import (
@@ -7,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/coredata"
@@ -219,9 +218,61 @@ func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{
 		if r.ValueType == "" {
 			r.ValueType = ot
 		}
-		return es.getFloatValue(r, logger)
+		return es.getFloatValue(r.FloatEncoding, r.Value, r.ValueType, logger)
 	case "STRING":
 		return v, nil
+	case "BOOLARRAY":
+		var val []bool
+		if e := json.Unmarshal([]byte(v), &val); e == nil {
+			return val, nil
+		} else {
+			return nil, e
+		}
+	case "UINT8ARRAY", "UINT16ARRAY", "UINT32ARRAY", "INT8ARRAY", "INT16ARRAY", "INT32ARRAY", "INT64ARRAY":
+		var val []int
+		if e := json.Unmarshal([]byte(v), &val); e == nil {
+			return val, nil
+		} else {
+			return nil, e
+		}
+	case "UINT64ARRAY":
+		var val []uint64
+		if e := json.Unmarshal([]byte(v), &val); e == nil {
+			return val, nil
+		} else {
+			return nil, e
+		}
+	case "FLOAT32ARRAY", "FLOAT64ARRAY":
+		if r.ValueType == "" {
+			r.ValueType = ot
+		}
+		var val1 []string
+		if e := json.Unmarshal([]byte(v), &val1); e == nil {
+			ret := []float64{}
+			for _, v := range val1 {
+				if fv, err := es.getFloatValue(r.FloatEncoding, v, r.ValueType, logger); err != nil {
+					return nil, err
+				} else {
+					if f, ok := fv.(float64); ok {
+						ret = append(ret, f)
+					} else {
+						return nil, fmt.Errorf("The %v is not a float64 type.", f)
+					}
+				}
+			}
+			return ret, nil
+		} else {
+			var val []float64
+			ret := []float64{}
+			if e := json.Unmarshal([]byte(v), &val); e == nil {
+				for _, v := range val {
+					ret = append(ret, v)
+				}
+				return ret, nil
+			} else {
+				return nil, e
+			}
+		}
 	case "BINARY":
 		return nil, fmt.Errorf("Unsupport for binary type, the value will be ignored.")
 	default:
@@ -230,22 +281,22 @@ func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{
 	}
 }
 
-func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (interface{}, error) {
-	if len(r.FloatEncoding) == 0 {
-		if strings.Contains(r.Value, "=") {
-			r.FloatEncoding = models.Base64Encoding
+func (es *EdgexSource) getFloatValue(FloatEncoding string, Value string, ValueType string, logger api.Logger) (interface{}, error) {
+	if len(FloatEncoding) == 0 {
+		if strings.Contains(Value, "=") {
+			FloatEncoding = models.Base64Encoding
 		} else {
-			r.FloatEncoding = models.ENotation
+			FloatEncoding = models.ENotation
 		}
 	}
-	switch strings.ToLower(r.ValueType) {
-	case strings.ToLower(models.ValueTypeFloat32):
+	switch strings.ToLower(ValueType) {
+	case strings.ToLower(models.ValueTypeFloat32), strings.ToLower(models.ValueTypeFloat32Array):
 		var value float64
-		switch r.FloatEncoding {
+		switch FloatEncoding {
 		case models.Base64Encoding:
-			data, err := base64.StdEncoding.DecodeString(r.Value)
+			data, err := base64.StdEncoding.DecodeString(Value)
 			if err != nil {
-				return false, fmt.Errorf("unable to Base 64 decode float32 value ('%s'): %s", r.Value, err.Error())
+				return false, fmt.Errorf("unable to Base 64 decode float32 value ('%s'): %s", Value, err.Error())
 			}
 			var value1 float32
 			err = binary.Read(bytes.NewReader(data), binary.BigEndian, &value1)
@@ -256,7 +307,7 @@ func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (inter
 		case models.ENotation:
 			var err error
 			var temp float64
-			temp, err = strconv.ParseFloat(r.Value, 64)
+			temp, err = strconv.ParseFloat(Value, 64)
 			if err != nil {
 				return false, fmt.Errorf("unable to parse Float64 eNotation value: %s", err.Error())
 			}
@@ -264,18 +315,18 @@ func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (inter
 			value = float64(temp)
 
 		default:
-			return false, fmt.Errorf("unkown FloatEncoding for float32 value: %s", r.FloatEncoding)
+			return false, fmt.Errorf("unkown FloatEncoding for float32 value: %s", FloatEncoding)
 
 		}
 		return value, nil
 
-	case strings.ToLower(models.ValueTypeFloat64):
+	case strings.ToLower(models.ValueTypeFloat64), strings.ToLower(models.ValueTypeFloat64Array):
 		var value float64
-		switch r.FloatEncoding {
+		switch FloatEncoding {
 		case models.Base64Encoding:
-			data, err := base64.StdEncoding.DecodeString(r.Value)
+			data, err := base64.StdEncoding.DecodeString(Value)
 			if err != nil {
-				return false, fmt.Errorf("unable to Base 64 decode float64 value ('%s'): %s", r.Value, err.Error())
+				return false, fmt.Errorf("unable to Base 64 decode float64 value ('%s'): %s", Value, err.Error())
 			}
 
 			err = binary.Read(bytes.NewReader(data), binary.BigEndian, &value)
@@ -285,16 +336,16 @@ func (es *EdgexSource) getFloatValue(r models.Reading, logger api.Logger) (inter
 			return value, nil
 		case models.ENotation:
 			var err error
-			value, err = strconv.ParseFloat(r.Value, 64)
+			value, err = strconv.ParseFloat(Value, 64)
 			if err != nil {
 				return false, fmt.Errorf("unable to parse Float64 eNotation value: %s", err.Error())
 			}
 			return value, nil
 		default:
-			return false, fmt.Errorf("unkown FloatEncoding for float64 value: %s", r.FloatEncoding)
+			return false, fmt.Errorf("unkown FloatEncoding for float64 value: %s", FloatEncoding)
 		}
 	default:
-		return nil, fmt.Errorf("unkown value type: %s, reading:%v", r.ValueType, r)
+		return nil, fmt.Errorf("unkown value type: %s", ValueType)
 	}
 }
 

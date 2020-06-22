@@ -242,6 +242,115 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			}},
 		},
+
+		{
+			sql: `SELECT a[2:] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []map[string]interface{}{
+						{"b": "hello1"},
+						{"b": "hello2"},
+						{"b": "hello3"},
+						{"b": "hello4"},
+						{"b": "hello5"},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []interface{}{
+					map[string]interface{}{"b": "hello3"},
+					map[string]interface{}{"b": "hello4"},
+					map[string]interface{}{"b": "hello5"},
+				},
+			}},
+		},
+
+		{
+			sql: `SELECT a[2:] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []interface{}{
+						true, false, true, false, true, true,
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []interface{}{
+					true, false, true, true,
+				},
+			}},
+		},
+
+		{
+			sql: `SELECT a[:4] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []interface{}{
+						true, false, true, false, true, true,
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []interface{}{
+					true, false, true, false,
+				},
+			}},
+		},
+
+		{
+			sql: `SELECT a[:4] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": []interface{}{
+						3.14, 3.141, 3.1415, 3.14159, 3.141592, 3.1415926,
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []interface{}{
+					3.14, 3.141, 3.1415, 3.14159,
+				},
+			}},
+		},
+
+		{
+			sql: `SELECT a->b[:4] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": []float64{3.14, 3.141, 3.1415, 3.14159, 3.141592, 3.1415926},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []interface{}{
+					3.14, 3.141, 3.1415, 3.14159,
+				},
+			}},
+		},
+
+		{
+			sql: `SELECT a->b[0:1] AS ab FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": []float64{3.14, 3.141, 3.1415, 3.14159, 3.141592, 3.1415926},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"ab": []interface{}{
+					3.14,
+				},
+			}},
+		},
+
 		{
 			sql: `SELECT a->c->d AS f1 FROM test`,
 			data: &xsql.Tuple{
@@ -424,7 +533,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
 			}
 		} else {
-			t.Errorf("%d. The returned result is not type of []byte\n", i)
+			t.Errorf("%d. The returned result %#v is not type of []byte\n", result, i)
 		}
 	}
 }
