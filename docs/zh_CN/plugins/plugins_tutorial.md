@@ -75,8 +75,8 @@ import (
 )
 
 type mysqlConfig struct {
-	url           string   `json:"url"`
-	table         string   `json:"table"`
+	Url   string `json:"url"`
+	Table string `json:"table"`
 }
 
 type mysqlSink struct {
@@ -91,11 +91,11 @@ func (m *mysqlSink) Configure(props map[string]interface{}) error {
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
-	if cfg.url == ""{
-		return fmt.Errorf("property url is required")
+	if cfg.Url == ""{
+		return fmt.Errorf("property Url is required")
 	}
-	if cfg.table == ""{
-		return fmt.Errorf("property table is required")
+	if cfg.Table == ""{
+		return fmt.Errorf("property Table is required")
 	}
 	return nil
 }
@@ -103,7 +103,7 @@ func (m *mysqlSink) Configure(props map[string]interface{}) error {
 func (m *mysqlSink) Open(ctx api.StreamContext) (err error) {
 	logger := ctx.GetLogger()
 	logger.Debug("Opening mysql sink")
-	m.db, err = sql.Open("mysql", m.conf.url)
+	m.db, err = sql.Open("mysql", m.conf.Url)
 	return
 }
 
@@ -116,7 +116,7 @@ func (m *mysqlSink) Collect(ctx api.StreamContext, item interface{}) error {
         // 如果sink的`dataTemplate`属性有设置，则可能为各种其他的类型		
 		logger.Debugf("mysql sink receive %s", item)
 		//TODO 此处列名写死。生产环境中一般可从item中的键值对获取列名
-		sql := fmt.Sprintf("INSERT INTO %s (`name`) VALUES ('%s')", m.conf.table, v)
+		sql := fmt.Sprintf("INSERT INTO %s (`name`) VALUES ('%s')", m.conf.Table, v)
 		logger.Debugf(sql)
 		insert, err := m.db.Query(sql)
 		if err != nil {
