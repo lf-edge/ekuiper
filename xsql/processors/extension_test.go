@@ -35,6 +35,16 @@ func setup() *RuleProcessor {
 	if err != nil {
 		panic(err)
 	}
+
+	demo = `DROP STREAM ext2`
+	p.ExecStmt(demo)
+
+	demo = "CREATE STREAM ext2 (count bigint) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"dedup\")"
+	_, err = p.ExecStmt(demo)
+	if err != nil {
+		panic(err)
+	}
+
 	rp := NewRuleProcessor(dbDir)
 	return rp
 }
@@ -46,13 +56,19 @@ var CACHE_FILE = "cache"
 func TestExtensions(t *testing.T) {
 	log := common.Log
 	var tests = []struct {
-		name string
-		rj   string
-		r    [][]map[string]interface{}
+		name      string
+		rj        string
+		minLength int
+		maxLength int
 	}{
 		{
-			name: `$$test1`,
-			rj:   "{\"sql\": \"SELECT count(echo(count)) as c, echo(count) as e, countPlusOne(count) as p FROM ext where count > 49\",\"actions\": [{\"file\":  {\"path\":\"" + CACHE_FILE + "\"}}]}",
+			name:      `$$test1`,
+			rj:        "{\"sql\": \"SELECT count(echo(count)) as c, echo(count) as e, countPlusOne(count) as p FROM ext where count > 49\",\"actions\": [{\"file\":  {\"path\":\"" + CACHE_FILE + "\"}}]}",
+			minLength: 5,
+		}, {
+			name:      `$$test2`,
+			rj:        "{\"sql\": \"SELECT count(echo(count)) as c, echo(count) as e, countPlusOne(count) as p FROM ext2\",\"actions\": [{\"file\":  {\"path\":\"" + CACHE_FILE + "\"}}]}",
+			maxLength: 2,
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -60,13 +76,13 @@ func TestExtensions(t *testing.T) {
 	done := make(chan struct{})
 	defer close(done)
 	for i, tt := range tests {
-		rp.ExecDrop("$$test1")
+		rp.ExecDrop(tt.name)
 		rs, err := rp.ExecCreate(tt.name, tt.rj)
 		if err != nil {
 			t.Errorf("failed to create rule: %s.", err)
 			continue
 		}
-
+		os.Create(CACHE_FILE)
 		tp, err := rp.ExecInitRule(rs)
 		if err != nil {
 			t.Errorf("fail to init rule: %v", err)
@@ -78,16 +94,19 @@ func TestExtensions(t *testing.T) {
 			case err := <-tp.Open():
 				log.Println(err)
 				tp.Cancel()
+			case <-time.After(900 * time.Millisecond):
+				tp.Cancel()
 			}
 		}()
-		time.Sleep(5000 * time.Millisecond)
-		log.Printf("exit main program after 5 seconds")
+		time.Sleep(1000 * time.Millisecond)
+		log.Printf("exit main program after a second")
 		results := getResults()
 		if len(results) == 0 {
 			t.Errorf("no result found")
 			continue
 		}
-		log.Debugf("get results %v", results)
+		log.Infof("get results %v", results)
+		os.Remove(CACHE_FILE)
 		var maps [][]map[string]interface{}
 		for _, v := range results {
 			var mapRes []map[string]interface{}
@@ -97,6 +116,20 @@ func TestExtensions(t *testing.T) {
 				continue
 			}
 			maps = append(maps, mapRes)
+		}
+
+		if tt.minLength > 0 {
+			if len(maps) < tt.minLength {
+				t.Errorf("%d. %q\n\nresult length is smaller than minlength:\n\ngot=%#v\n\n", i, tt.rj, maps)
+				break
+			}
+		}
+
+		if tt.maxLength > 0 {
+			if len(maps) > tt.maxLength {
+				t.Errorf("%d. %q\n\nresult length is bigger than maxLength:\n\ngot=%#v\n\n", i, tt.rj, maps)
+				break
+			}
 		}
 
 		for _, r := range maps {
@@ -121,7 +154,6 @@ func TestExtensions(t *testing.T) {
 				break
 			}
 		}
-		tp.Cancel()
 	}
 }
 
@@ -130,7 +162,6 @@ func getResults() []string {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
 	result := make([]string, 0)
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
@@ -139,5 +170,6 @@ func getResults() []string {
 	if err := scanner.Err(); err != nil {
 		panic(err)
 	}
+	f.Close()
 	return result
 }

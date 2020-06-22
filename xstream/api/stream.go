@@ -95,6 +95,12 @@ type StreamContext interface {
 	WithInstance(instanceId int) StreamContext
 	WithCancel() (StreamContext, context.CancelFunc)
 	SetError(e error)
+	//State handling
+	IncrCounter(key string, amount int) error
+	GetCounter(key string) (int, error)
+	PutState(key string, value interface{}) error
+	GetState(key string) (interface{}, error)
+	DeleteState(key string) error
 }
 
 type Operator interface {
