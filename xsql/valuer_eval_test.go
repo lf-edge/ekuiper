@@ -143,7 +143,7 @@ func TestComparison(t *testing.T) {
 	for i, tt := range data {
 		for j, c := range conditions {
 			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: common.GetNowInMilli(), Metadata: nil}
-			ve := &ValuerEval{Valuer: MultiValuer(tuple, &FunctionValuer{})}
+			ve := &ValuerEval{Valuer: MultiValuer(tuple)}
 			result := ve.Eval(c)
 			if !reflect.DeepEqual(tt.r[j], result) {
 				t.Errorf("%d-%d. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, j, tt.r[j], result)
@@ -231,7 +231,7 @@ func TestCalculation(t *testing.T) {
 	for i, tt := range data {
 		for j, c := range projects {
 			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: common.GetNowInMilli(), Metadata: nil}
-			ve := &ValuerEval{Valuer: MultiValuer(tuple, &FunctionValuer{})}
+			ve := &ValuerEval{Valuer: MultiValuer(tuple)}
 			result := ve.Eval(c)
 			if !reflect.DeepEqual(tt.r[j], result) {
 				t.Errorf("%d-%d. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, j, tt.r[j], result)

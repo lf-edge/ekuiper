@@ -12,3 +12,27 @@ Kuiper允许用户自定义不同类型的扩展。
 - [Sink/Action 扩展](#)
 - [函数扩展](#)
 
+### 状态存储
+
+Kuiper扩展通过context参数暴露了一个基于键值对的状态存储接口，可用于所有类型的扩展，包括Source，Sink和Function扩展.
+
+状态为键值对，其中键为string类型而值为任意数据。键的作用域仅为当前扩展的实例。
+
+用户可通过context对象访问状态存储。状态相关方法包括putState, getState, incrCounter, getCounter and deleteState。
+
+以下代码为函数扩展访问状态的实例。该函数将计算传入的单词数，并将累积数目保存在状态中。
+
+```go
+func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
+    logger := ctx.GetLogger()    
+	err := ctx.IncrCounter("allwordcount", len(strings.Split(args[0], args[1])))
+	if err != nil {
+		return err, false
+	}
+	if c, err := ctx.GetCounter("allwordcount"); err != nil   {
+		return err, false
+	} else {
+		return c, true
+	}
+}
+```

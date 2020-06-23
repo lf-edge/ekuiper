@@ -1,21 +1,27 @@
 package xsql
 
 import (
-	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/plugins"
-	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
 
+// ONLY use NewFunctionValuer function to initialize
 type FunctionValuer struct {
-	plugins map[string]api.Function
+	funcPlugins *funcPlugins
 }
 
-func (*FunctionValuer) Value(key string) (interface{}, bool) {
+//Should only be called by stream to make sure a single instance for an operation
+func NewFunctionValuer(p *funcPlugins) *FunctionValuer {
+	fv := &FunctionValuer{
+		funcPlugins: p,
+	}
+	return fv
+}
+
+func (*FunctionValuer) Value(_ string) (interface{}, bool) {
 	return nil, false
 }
 
-func (*FunctionValuer) Meta(key string) (interface{}, bool) {
+func (*FunctionValuer) Meta(_ string) (interface{}, bool) {
 	return nil, false
 }
 
@@ -83,27 +89,17 @@ func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bo
 	} else if _, ok := aggFuncMap[lowerName]; ok {
 		return nil, false
 	} else {
-		common.Log.Debugf("run func %s", name)
-		if fv.plugins == nil {
-			fv.plugins = make(map[string]api.Function)
-		}
-		var (
-			nf  api.Function
-			ok  bool
-			err error
-		)
-		if nf, ok = fv.plugins[name]; !ok {
-			nf, err = plugins.GetFunction(name)
-			if err != nil {
-				return err, false
-			}
-			fv.plugins[name] = nf
+		nf, fctx, err := fv.funcPlugins.GetFuncFromPlugin(name)
+		if err != nil {
+			return err, false
 		}
 		if nf.IsAggregate() {
 			return nil, false
 		}
-		result, ok := nf.Exec(args)
-		common.Log.Debugf("run custom function %s, get result %v", name, result)
+		logger := fctx.GetLogger()
+		logger.Debugf("run func %s", name)
+		result, ok := nf.Exec(args, fctx)
+		logger.Debugf("run custom function %s, get result %v", name, result)
 		return result, ok
 	}
 }

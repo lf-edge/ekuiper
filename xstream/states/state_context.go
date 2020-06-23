@@ -1,6 +1,8 @@
 package states
 
-import "github.com/emqx/kuiper/xstream/api"
+import (
+	"github.com/emqx/kuiper/xstream/api"
+)
 
 type StateType int
 
@@ -20,14 +22,10 @@ type StateContext interface {
 func NewStateContext(st StateType, logger api.Logger) StateContext {
 	switch st {
 	case MEMORY:
-		return &MemoryState{
-			storage: make(map[string]interface{}),
-		}
+		return newMemoryState()
 	default:
 		logger.Warnf("request for invalid state type %d, return MemoryState instead", st)
-		return &MemoryState{
-			storage: make(map[string]interface{}),
-		}
+		return newMemoryState()
 	}
 	return nil
 }

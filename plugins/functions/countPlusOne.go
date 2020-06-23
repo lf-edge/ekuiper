@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/emqx/kuiper/xstream/api"
+)
 
 type countPlusOneFunc struct {
 }
@@ -12,7 +15,7 @@ func (f *countPlusOneFunc) Validate(args []interface{}) error {
 	return nil
 }
 
-func (f *countPlusOneFunc) Exec(args []interface{}) (interface{}, bool) {
+func (f *countPlusOneFunc) Exec(args []interface{}, _ api.FunctionContext) (interface{}, bool) {
 	arg, ok := args[0].([]interface{})
 	if !ok {
 		return fmt.Errorf("arg is not a slice, got %v", args[0]), false
