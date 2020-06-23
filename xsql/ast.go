@@ -1233,7 +1233,7 @@ func (v *ValuerEval) subset(result interface{}, op Token, expr Expr) interface{}
 		}
 
 	default:
-		return fmt.Errorf("%v is an invalid operation for %T", op, val)
+		return fmt.Errorf("%v is an invalid operation for %T", op, result)
 	}
 }
 
