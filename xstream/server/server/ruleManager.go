@@ -60,6 +60,7 @@ func createRuleState(rule *api.Rule) (*RuleState, error) {
 
 func doStartRule(rs *RuleState) error {
 	rs.Triggered = true
+	ruleProcessor.ExecReplaceRuleState(rs.Name, true)
 	go func() {
 		tp := rs.Topology
 		select {
@@ -181,6 +182,7 @@ func stopRule(name string) (result string) {
 	if rs, ok := registry.Load(name); ok && rs.Triggered {
 		(*rs.Topology).Cancel()
 		rs.Triggered = false
+		ruleProcessor.ExecReplaceRuleState(name, false)
 		result = fmt.Sprintf("Rule %s was stopped.", name)
 	} else {
 		result = fmt.Sprintf("Rule %s was not found.", name)
@@ -191,4 +193,24 @@ func stopRule(name string) (result string) {
 func restartRule(name string) error {
 	stopRule(name)
 	return startRule(name)
+}
+
+func recoverRule(name string) string {
+	rule, err := ruleProcessor.GetRuleByName(name)
+	if err != nil {
+		return fmt.Sprintf("%v", err)
+	}
+
+	rs, err := createRuleState(rule)
+	if err != nil {
+		return fmt.Sprintf("%v", err)
+	}
+
+	if rule.Triggered {
+		if err = doStartRule(rs); err != nil {
+			return fmt.Sprintf("%v", err)
+		}
+		return fmt.Sprintf("Rule %s was started.", name)
+	}
+	return stopRule(name)
 }

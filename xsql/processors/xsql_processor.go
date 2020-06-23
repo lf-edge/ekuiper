@@ -229,6 +229,33 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 	return rule, nil
 }
 
+func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (err error) {
+	rule, err := p.GetRuleByName(name)
+	if err != nil {
+		return err
+	}
+
+	rule.Triggered = triggered
+	ruleJson, err := json.Marshal(rule)
+	if err != nil {
+		return fmt.Errorf("Marshal rule %s error : %s.", name, err)
+	}
+
+	err = p.db.Open()
+	if err != nil {
+		return err
+	}
+	defer p.db.Close()
+
+	err = p.db.Replace(name, string(ruleJson))
+	if err != nil {
+		return err
+	} else {
+		log.Infof("Rule %s is replaced.", name)
+	}
+	return err
+}
+
 func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
 	err := p.db.Open()
 	if err != nil {

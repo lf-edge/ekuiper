@@ -48,10 +48,9 @@ func StartUp(Version string) {
 		logger.Info("Starting rules")
 		var reply string
 		for _, rule := range rules {
-			err = server.StartRule(rule, &reply)
-			if err != nil {
-				logger.Info(err)
-			} else {
+			//err = server.StartRule(rule, &reply)
+			reply = recoverRule(rule)
+			if 0 != len(reply) {
 				logger.Info(reply)
 			}
 		}

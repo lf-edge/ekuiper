@@ -79,10 +79,11 @@ type TopNode interface {
 }
 
 type Rule struct {
-	Id      string                   `json:"id"`
-	Sql     string                   `json:"sql"`
-	Actions []map[string]interface{} `json:"actions"`
-	Options map[string]interface{}   `json:"options"`
+	Triggered bool                     `json:"triggered"`
+	Id        string                   `json:"id"`
+	Sql       string                   `json:"sql"`
+	Actions   []map[string]interface{} `json:"actions"`
+	Options   map[string]interface{}   `json:"options"`
 }
 
 type StreamContext interface {
