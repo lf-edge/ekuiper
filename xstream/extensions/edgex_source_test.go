@@ -1,3 +1,5 @@
+// +build edgex
+
 package extensions
 
 import (
