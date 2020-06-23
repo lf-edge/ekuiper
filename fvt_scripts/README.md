@@ -193,6 +193,12 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   # go build -o fvt_scripts/edgex/sub/sub fvt_scripts/edgex/sub/sub.go 
   ```
 
+- [EdgeX array data type](edgex_array_rule.jmx)
+
+  The test script verifies EdgeX array data type support. The rule uses JSON expression in both `SELECT` and `WHERE` clause. The sink result is sent to MQTT broker, and it verifies the project result in sampler assertions.
+
+  This test script, you need to prepare ``vdmocker`` & ``pub`` application.
+
 - [An end to end plugin test](plugin_end_2_end.jmx)
   The script is an end-2-end plugin test. It requires a mock http server, and also a plugin.
     ```shell
