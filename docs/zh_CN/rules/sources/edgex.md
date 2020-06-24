@@ -41,7 +41,19 @@ EdgeX 源会试图取得某个字段的类型，
 
 ### String
 
-如果 ``ValueDescriptor`` 中  ``Type`` 的值为 ``String``，那么 Kuiper 会试着将其转换为 ``String`` 类型。 
+如果 ``ValueDescriptor`` 中  ``Type`` 的值为 ``String``，那么 Kuiper 会试着将其转换为 ``String`` 类型。
+
+### Boolean 数组
+
+EdgeX 中的 `Bool` 数组类型会被转换为 `boolean` 数组。
+
+### Bigint 数组
+
+EdgeX 中所有的 ``INT8`` , ``INT16``, ``INT32``,  ``INT64``,``UINT`` , ``UINT8`` , ``UINT16`` ,  ``UINT32`` , ``UINT64``  数组类型会被转换为 `Bigint` 数组。
+
+### Float 数组
+
+EdgeX 中所有的 ``FLOAT32``, ``FLOAT64``  数组类型会被转换为 `Float` 数组。 
 
 # 全局配置
 
@@ -73,11 +85,11 @@ EdgeX 消息总线的地址，缺省为 ``localhost``
 
 ## port
 
-EdgeX 消息总线的端口，缺省为 ``5573``.
+EdgeX 消息总线的端口，缺省为 ``5573``
 
 ## topic
 
-EdgeX 消息总线上监听的主题名称，缺省为 ``events``.
+EdgeX 消息总线上监听的主题名称，缺省为 ``events``
 
 ## serviceServer
 
