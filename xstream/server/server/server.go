@@ -10,18 +10,22 @@ import (
 	"net/http"
 	"net/rpc"
 	"path"
+	"time"
 )
 
 var (
-	dataDir string
-	logger  = common.Log
-
+	dataDir         string
+	logger          = common.Log
+	startTimeStamp  int64
+	version         = ""
 	ruleProcessor   *processors.RuleProcessor
 	streamProcessor *processors.StreamProcessor
 	pluginManager   *plugins.Manager
 )
 
 func StartUp(Version string) {
+	version = Version
+	startTimeStamp = time.Now().Unix()
 	common.InitConf()
 
 	dr, err := common.GetDataLoc()
