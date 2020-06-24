@@ -201,16 +201,18 @@ func recoverRule(name string) string {
 		return fmt.Sprintf("%v", err)
 	}
 
-	rs, err := createRuleState(rule)
+	if !rule.Triggered {
+		rs := &RuleState{
+			Name: name,
+		}
+		registry.Store(name, rs)
+		return fmt.Sprintf("Rule %s was stoped.", name)
+	}
+
+	err = startRule(name)
 	if err != nil {
 		return fmt.Sprintf("%v", err)
 	}
+	return fmt.Sprintf("Rule %s was started.", name)
 
-	if rule.Triggered {
-		if err = doStartRule(rs); err != nil {
-			return fmt.Sprintf("%v", err)
-		}
-		return fmt.Sprintf("Rule %s was started.", name)
-	}
-	return stopRule(name)
 }
