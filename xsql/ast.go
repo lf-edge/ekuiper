@@ -1189,7 +1189,7 @@ func (v *ValuerEval) evalJsonExpr(result interface{}, op Token, expr Expr) inter
 				return fmt.Errorf("the right expression is not a field reference node")
 			}
 		} else {
-			return fmt.Errorf("the result %v is not a type of map[string]interface{}")
+			return fmt.Errorf("the result %v is not a type of map[string]interface{}", result)
 		}
 	case SUBSET:
 		if isSliceOrArray(result) {
