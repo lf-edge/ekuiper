@@ -32,10 +32,10 @@ CREATE STREAM
 
 | 属性名 | 可选  | 说明                                                |
 | ------------- | -------- | ------------------------------------------------------------ |
-| DATASOURCE | false    | 如果是MQTT数据源，则列出主题名称。 |
-| FORMAT        | false    | json 或Avro.<br />目前，我们仅支持JSON类型 ? |
-| KEY           | true     | 将来将用于GROUP BY语句 ?? |
-| TYPE     | false    | 如果支持越来越多的源，将来是否需要？ 默认情况下，它将是MQTT类型。 |
+| DATASOURCE | 否   | 如果是MQTT数据源，则列出主题名称。 |
+| FORMAT        | 否   | json 或Avro.<br />目前，我们仅支持JSON类型 ? |
+| KEY           | 是    | 将来将用于GROUP BY语句 ?? |
+| TYPE     | 否   | 如果支持越来越多的源，将来是否需要？ 默认情况下，它将是MQTT类型。 |
 | StrictValidation     | 否    | 根据流模式控制消息字段的验证行为。 |
 | CONF_KEY | 否 | 如果需要配置其他配置项，请在此处指定配置键。<br />Kuiper当前建议使用yaml文件格式。 |
 
