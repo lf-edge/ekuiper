@@ -187,9 +187,28 @@ require (
     # go build --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
     ```
 
+在插件项目中可以使用如下shell脚本自动编译及打包插件。修改脚本开头的参数以满足不同环境下的开发调试需求。
+
+```shell script
+#!/bin/sh
+export KUIPER_SOURCE=../kuiper
+export PLUGIN_TARGET=$KUIPER_SOURCE/plugins
+export ETC_TARGET=$KUIPER_SOURCE/etc
+export ZIP_TARGET=plugins
+export VERSION=0.0.1
+
+go mod edit -replace github.com/emqx/kuiper=$KUIPER_SOURCE
+
+go build --buildmode=plugin -o $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so sinks/mysql.go
+
+## zip the output
+mkdir $ZIP_TARGET/sinks
+zip -o $ZIP_TARGET/sinks/mysql.zip $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so
+```
+
 ### 调试运行插件
 
-在本地或 Docker 中启动 Kuiper，创建流和规则，规则的 action 设置为 mysql 即可对自定义的 mysql sink 插件进行测试。创建流和规则的步骤请参考[ Kuiper 文档](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/getting_started.md)。以下提供一个使用了 mysql 插件的规则供参考。
+在本地或 **开发**Docker 中启动 Kuiper，创建流和规则，规则的 action 设置为 mysql 即可对自定义的 mysql sink 插件进行测试。创建流和规则的步骤请参考[ Kuiper 文档](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/getting_started.md)。以下提供一个使用了 mysql 插件的规则供参考。
 ```
 {
   "id": "ruleTest",
@@ -206,7 +225,7 @@ require (
 }
 ```
 
-需要注意的是，插件重新编译后需要重启 Kuiper 才能载入新的版本。
+开发调试中，也可以直接把插件so文件复制到相应plugins目录下，并重启Kuiper进行调试。开发环境的Docker镜像，Kuiper默认在`/usr/local/kuiper`目录下。需要注意的是，插件重新编译后需要重启 Kuiper 才能载入新的版本。
 
 ## 插件部署
 
@@ -216,7 +235,7 @@ Kuiper 生产环境和开发环境如果不同，开发的插件需要重新编�
 
 插件原则上应该与生产环境 Kuiper 采用相同环境进行编译。假设生产环境为 Kuiper docker，则应当采用与生产环境相同版本的 dev docker 环境编译插件。例如，生产环境采用 [emqx/kuiper:0.3.0](https://registry.hub.docker.com/layers/emqx/kuiper/0.3.0/images/sha256-0e3543d33f6f8c56de044d5ff001fd39b9e26f82219ca5fd25605953ed33580e?context=explore)的 docker 镜像，则插件需要在[emqx/kuiper:0.3.0-dev](https://registry.hub.docker.com/layers/emqx/kuiper/0.3.0-dev/images/sha256-a309d3821b55b01dc01c4f4a04e83288bf5526325f0073197387f2ca425260d0?context=explore) 的环境中进行编译。
 
-编译过程请参考[ Docker 编译](#docker编译)。
+编译过程请参考[ Docker 编译](#docker编译)。编译完成的插件可以直接在开发Docker中进行调试。
 
 ### 插件部署
 

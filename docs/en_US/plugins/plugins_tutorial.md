@@ -187,10 +187,28 @@ Kuiper provides different docker images for different purpose. The development d
     # go mod edit -replace github.com/emqx/kuiper=/go/kuiper
     # go build --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
     ```
+You can use below sample shell script in your plugin project to automatically build and package the plugins. Please modify the variables at the beginning of the script to meet the requirements of different environments.
+
+```shell script
+#!/bin/sh
+export KUIPER_SOURCE=../kuiper
+export PLUGIN_TARGET=$KUIPER_SOURCE/plugins
+export ETC_TARGET=$KUIPER_SOURCE/etc
+export ZIP_TARGET=plugins
+export VERSION=0.0.1
+
+go mod edit -replace github.com/emqx/kuiper=$KUIPER_SOURCE
+
+go build --buildmode=plugin -o $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so sinks/mysql.go
+
+## zip the output
+mkdir $ZIP_TARGET/sinks
+zip -o $ZIP_TARGET/sinks/mysql.zip $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so
+```
 
 ### Debug and run the plugin
 
-Run Kuiper in the local or Docker, create streams and rules, set action of the rule to mysql, then users can test the customized mysql sink plugin. Please refer [Kuiper documentation](https://github.com/emqx/kuiper/blob/master/docs/en_US/getting_started.md) for the steps of creating streams and rules. The following provides a rule using the mysql plugin for reference.
+Run Kuiper in the local or **Develop** Docker, create streams and rules, set action of the rule to mysql, then users can test the customized mysql sink plugin. Please refer [Kuiper documentation](https://github.com/emqx/kuiper/blob/master/docs/en_US/getting_started.md) for the steps of creating streams and rules. The following provides a rule using the mysql plugin for reference.
 ```
 {
   "id": "ruleTest",
@@ -207,6 +225,7 @@ Run Kuiper in the local or Docker, create streams and rules, set action of the r
 }
 ```
 
+During development testing, it is also fine to manually copy the compiled .so file and the .yaml file(if any) to the corresponding folders and then restart Kuiper. In development docker image, the default Kuiper location is `/usr/local/kuiper`.
 It should be noted that loading the new version after compiling the plugin again needs to restart Kuiper.
 
 ## Plugin deployment
@@ -217,7 +236,7 @@ If the production environment and development environment are different, the dev
 
 The plugin should use the same environment as the production environment  Kuiper to compile in principle. If the production environment is Kuiper docker, should use the dev docker environment that has the same version as the production environment to compile the plugin. For example, if the production environment uses docker mirroring [emqx/kuiper:0.3.0](https://registry.hub.docker.com/layers/emqx/kuiper/0.3.0/images/sha256-0e3543d33f6f8c56de044d5ff001fd39b9e26f82219ca5fd25605953ed33580e?context=explore), the plugin should be compiled in [emqx/kuiper:0.3.0-dev](https://registry.hub.docker.com/layers/emqx/kuiper/0.3.0-dev/images/sha256-a309d3821b55b01dc01c4f4a04e83288bf5526325f0073197387f2ca425260d0?context=explore) environment.
 
-Please refer [Docker compile](#docker编译) for the compilation process.
+Please refer [Docker compile](#docker编译) for the compilation process. The compiled plugin can be tested in the Development Docker image before deploying.
 
 ### Plugin deployment 
 
