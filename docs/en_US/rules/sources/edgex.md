@@ -35,11 +35,23 @@ If  ``Type`` value of ``ValueDescriptor`` is ``INT8`` , ``INT16``, ``INT32``,  `
 
 ### Float
 
-If  ``Type`` value of ``ValueDescriptor`` is ``FLOAT16`` , ``FLOAT32``, ``FLOAT64``then Kuiper tries to convert to ``Float`` type. 
+If  ``Type`` value of ``ValueDescriptor`` is ``FLOAT32``, ``FLOAT64``, then Kuiper tries to convert to ``Float`` type. 
 
 ### String
 
 If  ``Type`` value of ``ValueDescriptor`` is ``String``, then Kuiper tries to convert to ``String`` type. 
+
+### Boolean array
+
+`Bool` array type in EdgeX will be converted to `boolean` array.
+
+### Bigint array
+
+All of ``INT8`` , ``INT16``, ``INT32``,  ``INT64``,``UINT`` , ``UINT8`` , ``UINT16`` ,  ``UINT32`` , ``UINT64``  array types in EdgeX will be converted to `Bigint` array.
+
+### Float array
+
+All of ``FLOAT32``, ``FLOAT64``  array types in EdgeX will be converted to `Float` array.
 
 # Global configurations
 

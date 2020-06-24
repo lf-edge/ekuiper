@@ -10,13 +10,16 @@ import (
 )
 
 const (
-	desc1 = "Temperature descriptor1"
-	desc2 = "Humidity descriptor2"
-	desc3 = "Boolean descriptor"
-	desc4 = "Int descriptor"
-	desc5 = "Float descriptor"
-	desc6 = "String descriptor"
-	desc7 = "UInt64 descriptor"
+	desc1  = "Temperature descriptor1"
+	desc2  = "Humidity descriptor2"
+	desc3  = "Boolean descriptor"
+	desc4  = "Int descriptor"
+	desc5  = "Float descriptor"
+	desc6  = "String descriptor"
+	desc7  = "UInt64 descriptor"
+	desc8  = "Bool array descriptor"
+	desc9  = "Int array descriptor"
+	desc10 = "Float array descriptor"
 )
 
 var vd1 = models.ValueDescriptor{Id: "Temperature", Created: 123, Modified: 123, Origin: 123, Name: "Temperature",
@@ -32,6 +35,9 @@ var vd4 = models.ValueDescriptor{Id: "i1", Name: "i1", Formatting: "%d", Type: "
 var vd5 = models.ValueDescriptor{Id: "f1", Name: "f1", Formatting: "%f", Type: "FLOAT64", MediaType: clients.ContentTypeJSON}
 var vd6 = models.ValueDescriptor{Id: "s1", Name: "s1", Formatting: "%s", Type: "String", MediaType: clients.ContentTypeJSON}
 var vd7 = models.ValueDescriptor{Id: "ui64", Name: "ui64", Formatting: "%d", Type: "UINT64", MediaType: clients.ContentTypeJSON}
+var vd8 = models.ValueDescriptor{Id: "ba", Name: "ba", Formatting: "%s", Type: "BOOLARRAY", MediaType: clients.ContentTypeJSON}
+var vd9 = models.ValueDescriptor{Id: "ia", Name: "ia", Formatting: "%s", Type: "INT32ARRAY", MediaType: clients.ContentTypeJSON}
+var vd10 = models.ValueDescriptor{Id: "fa", Name: "fa", Formatting: "%s", Type: "FLOAT64ARRAY", MediaType: clients.ContentTypeJSON}
 
 func main() {
 	http.HandleFunc(clients.ApiValueDescriptorRoute, Hello)
@@ -62,7 +68,16 @@ func Hello(w http.ResponseWriter, req *http.Request) {
 	descriptor7 := vd7
 	descriptor7.Description = desc7
 
-	descriptors := []models.ValueDescriptor{descriptor1, descriptor2, descriptor3, descriptor4, descriptor5, descriptor6, descriptor7}
+	descriptor8 := vd8
+	descriptor8.Description = desc8
+
+	descriptor9 := vd9
+	descriptor9.Description = desc9
+
+	descriptor10 := vd10
+	descriptor10.Description = desc10
+
+	descriptors := []models.ValueDescriptor{descriptor1, descriptor2, descriptor3, descriptor4, descriptor5, descriptor6, descriptor7, descriptor8, descriptor9, descriptor10}
 
 	data, err := json.Marshal(descriptors)
 	if err != nil {

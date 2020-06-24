@@ -48,7 +48,7 @@ jobs:
             sudo ./fvt_scripts/setup_env.sh
             ln -s _build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-x86_64/log kuiper_logs
         - name: run fvt tests
-          timeout-minutes: 5
+          timeout-minutes: 8
           run: ./fvt_scripts/run_jmeter.sh with_edgex=true
         - uses: actions/upload-artifact@v1
           if: always()
