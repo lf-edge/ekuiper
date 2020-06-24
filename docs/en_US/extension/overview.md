@@ -52,3 +52,27 @@ Please read below for how to realize the different extensions.
 - [Sink/Action extension](sink.md)
 - [Function extension](function.md)
 
+### State Storage
+
+Kuiper extensions export a key value state storage interface for Source/Sink/Function through the context.
+
+States are key-value pairs, where the key is a string and the value is arbitrary data. Keys are scoped to an individual extension.
+
+You can access states within extensions using the putState, getState, incrCounter, getCounter and deleteState calls on the context object.
+
+Below is an example of a function extension to access states. It will record the accumulate word count across a range of function calls.
+
+```go
+func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
+    logger := ctx.GetLogger()    
+	err := ctx.IncrCounter("allwordcount", len(strings.Split(args[0], args[1])))
+	if err != nil {
+		return err, false
+	}
+	if c, err := ctx.GetCounter("allwordcount"); err != nil   {
+		return err, false
+	} else {
+		return c, true
+	}
+}
+```

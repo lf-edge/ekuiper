@@ -111,7 +111,7 @@ func TestManager_List(t *testing.T) {
 			r: []string{"file", "file2"},
 		}, {
 			t: FUNCTION,
-			r: []string{"countPlusOne", "echo", "echo2"},
+			r: []string{"accumulateWordCount", "countPlusOne", "echo", "echo2"},
 		},
 	}
 	manager, err := NewPluginManager()

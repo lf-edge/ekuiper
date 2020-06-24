@@ -95,6 +95,12 @@ type StreamContext interface {
 	WithInstance(instanceId int) StreamContext
 	WithCancel() (StreamContext, context.CancelFunc)
 	SetError(e error)
+	//State handling
+	IncrCounter(key string, amount int) error
+	GetCounter(key string) (int, error)
+	PutState(key string, value interface{}) error
+	GetState(key string) (interface{}, error)
+	DeleteState(key string) error
 }
 
 type Operator interface {
@@ -105,12 +111,17 @@ type Operator interface {
 	GetMetrics() [][]interface{}
 }
 
+type FunctionContext interface {
+	StreamContext
+	GetFuncId() int
+}
+
 type Function interface {
 	//The argument is a list of xsql.Expr
 	Validate(args []interface{}) error
 	//Execute the function, return the result and if execution is successful.
 	//If execution fails, return the error and false.
-	Exec(args []interface{}) (interface{}, bool)
+	Exec(args []interface{}, ctx FunctionContext) (interface{}, bool)
 	//If this function is an aggregate function. Each parameter of an aggregate function will be a slice
 	IsAggregate() bool
 }

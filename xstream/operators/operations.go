@@ -126,7 +126,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	o.mutex.Lock()
 	o.statManagers = append(o.statManagers, stats)
 	o.mutex.Unlock()
-	fv, afv := xsql.NewAggregateFunctionValuers()
+	fv, afv := xsql.NewFunctionValuersForOp(exeCtx)
 
 	for {
 		select {

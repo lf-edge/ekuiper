@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/xstream/api"
 )
 
 type echo struct {
@@ -14,7 +15,7 @@ func (f *echo) Validate(args []interface{}) error {
 	return nil
 }
 
-func (f *echo) Exec(args []interface{}) (interface{}, bool) {
+func (f *echo) Exec(args []interface{}, _ api.FunctionContext) (interface{}, bool) {
 	result := args[0]
 	return result, true
 }
