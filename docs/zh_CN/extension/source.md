@@ -1,36 +1,36 @@
-# Source Extension
+# 源（Source）扩展 
 
-Sources feed data into Kuiper from other systems. Kuiper has built-in source support for [MQTT broker](../rules/sources/mqtt.md). There are still needs to consume data from various external systems include messaging systems and data pipelines etc. Source extension is presented to meet this requirement.
+源将数据从其他系统反馈到Kuiper。 Kuiper支持 [MQTT消息服务器](../rules/sources/mqtt.md)的内置源。 然而，用户仍然需要从各种外部系统（包括消息传递系统和数据管道等）中获取数据。源扩展正是为了满足此要求。
 
-## Developing
+## 开发
 
-### Develop a source
+### 开发一个源
 
-To develop a source for Kuiper is to implement [api.Source](../../../xstream/api/stream.go) interface and export it as a golang plugin.
+为Kuiper开发源的 是实现[api.Source](../../../xstream/api/stream.go)接口并将其导出为golang插件。
 
-Before starting the development, you must [setup the environment for golang plugin](overview.md#setup-the-plugin-developing-environment). 
+在开始开发之前，您必须[为golang插件设置环境](overview.md#setup-the-plugin-developing-environment)。
 
-To develop a source, the _Configure_ method must be implemented. This method will be called once the source is initialized. In this method, you can retrieve the _DATASOURCE_ property of the stream (which is topic for mqtt and other messaging system) from the first parameter. Then in the second parameter, a map that contains the configuration in your _yaml_ file is passed. See [configuration](#deal-with-configuration) for more detail. Typically, there will be information such as host, port, user and password of the external system. You can use this map to initialize this source.
+要开发源，必须实现_Configure_方法。 初始化源后，将调用此方法。 在此方法中，您可以从第一个参数检索流的_DATASOURCE_属性（这是mqtt和其他消息传递系统的主题）。 然后在第二个参数中，传递包含_yaml_文件中的配置的映射。 有关更多详细信息，请参见 [配置](#deal-with-configuration)。 通常，将有外部系统的信息，例如主机、端口、用户和密码。 您可以使用此映射来初始化此源。
 
 ```go
 //Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties read from the yaml 
 Configure(datasource string, props map[string]interface{}) error
 ```
 
-The main task for a Source is to implement _open_ method. The implementation should be synchronized to create a connection to the external system. Then continuously receive data from the external system and send the received message to the consumer channel. The consumer channel accepts SourceTuple interface which is composed by a map for the message body and another map for the optional metadata. Typically, use `api.NewDefaultSourceTuple(message, meta)` to create a SourceTuple. The meta data could be anything that worth to be recorded. For example, the qualified topic of the message. The first parameter is a StreamContext pointer. You can retrieve the context information and logger etc. from it. It is also an implementation of go context, so you can listen to Done() channel to know if the parent stream has quit. For any errors happening during the connection or receiving, handle it in this method. If the error cannot be handled, send it to the errCh. By default, the rule will be terminated if any errors received from errCh.
+源的主要任务是实现_open_方法，且应该和创建到外部系统的连接保持同步。然后从外部系统连续接收数据，并将接收到的消息发送到消费通道。消费通道接受SourceTuple接口，该接口由消息正文的映射和可选元数据的另一个映射组成。通常，使用`api.NewDefaultSourceTuple(message, meta)`命令创建SourceTuple。元数据可以是任何值得记录的内容。例如，消息的合格主题。第一个参数是StreamContext指针。您可以从中检索上下文信息和日志等。它也是go上下文的实现，因此您可以监听Done（）通道以了解父流是否已退出。对于在连接或接收过程中发生的任何错误，请使用此方法进行处理。如果错误无法处理，请将其发送到errCh。默认情况下，如果从errCh收到任何错误，则该规则将终止。
 
 ```go
 //Should be sync function for normal case. The container will run it in go func
 Open(ctx StreamContext, consumer chan<- SourceTuple, errCh chan<- error)
-```  
+```
 
-The last method to implement is _Close_ which literally close the connection. It is called when the stream is about to terminate. You could also do any clean up work in this function.
+最后要实现的方法是_Close_，它实际上用来关闭连接。 当流即将终止时调用它。 您也可以在此功能中执行任何清理工作。
 
 ```go
 Close(ctx StreamContext) error
 ```
 
-As the source itself is a plugin, it must be in the main package. Given the source struct name is mySource. At last of the file, the source must be exported as a symbol as below. There are [2 types of exported symbol supported](overview.md#plugin-development). For source extension, states are usually needed, so it is recommended to export a constructor function.
+由于源本身是一个插件，因此它必须位于主程序包中。 给定源结构名称为mySource。 在文件的最后，必须将源作为符号导出，如下所示。 有 [2种类型的导出符号](overview.md#plugin-development)。 对于源扩展，通常需要状态，因此建议导出构造函数。
 
 ```go
 function MySource() api.Source{
@@ -38,46 +38,46 @@ function MySource() api.Source{
 }
 ```
 
-The [Randome Source](../../../plugins/sources/random.go) is a good example.
+[Randome Source](../../../plugins/sources/random.go) 是一个很好的示例。
 
-### Deal with configuration
+### 处理配置
 
-Kuiper configurations are formatted as yaml and it provides a centralize location _/etc_ to hold all the configurations. Inside it, a subfolder _sources_ is provided for the source configurations including the extended sources.
+Kuiper配置的格式为yaml，它提供了一个集中位置 _/etc_ 来保存所有配置。 在其中，为源配置提供了一个子文件夹 _sources_，同时也适用于扩展源。
 
-A configuration system is supported for Kuiper extension which will automatically read the configuration in yaml file and feed into the _Configure_ method of the source. If the [CONF_KEY](../streams.md#create-stream) property is specified in the stream, the configuration of that key will be fed. Otherwise, the default configuration is used.
- 
- To use configuration in your source, the following conventions must be followed.
- 1. The name of your configuration file must be the same as the _.so_ file and must be camel case with upper case first letter. For example, MySource.yaml.
- 2. The yaml file must be located inside _etc/sources_
- 3. The format of the yaml file could be found [here](../rules/sources/mqtt.md)
- 
-#### common configuration field
+Kuiper扩展支持配置系统自动读取yaml文件中的配置，并将其输入到源的_Configure_方法中。 如果在流中指定了[CONF_KEY](../streams.md#create-stream) 属性，则将输入该键的配置。 否则，将使用默认配置。
 
-There are 2 common configuration fields.
- 
-* ``concurrency`` to specify how many instances will be started to run the source.
-* ``bufferLength`` to specify the maximum number of messages to be buffered in the memory. This is used to avoid the extra large memory usage that would cause out of memory error. Notice that the memory usage will be varied to the actual buffer. Increase the length here won't increase the initial memory allocation so it is safe to set a large buffer length. The default value is 102400, that is if each payload size is about 100 bytes, the maximum buffer size will be about 102400 * 100B ~= 10MB.
+要在源中使用配置，必须遵循以下约定：
+ 1. 您的配置文件名称必须与_.so_文件相同，并且必须 采用驼峰式命名法， 首字母大写。 例如，MySource.yaml。
+  2. yaml文件必须位于_etc/sources_内。
+  3. 可以在 [此处](../rules/sources/mqtt.md)找到yaml文件的格式。
 
-### Package the source
-Build the implemented source as a go plugin and make sure the output so file resides in the plugins/sources folder.
+#### 通用配置字段
+
+有两个通用配置字段。
+
+* ``concurrency``指定将启动多少实例来运行源。
+* ``bufferLength``指定要在内存中缓冲的最大消息数。 这是为了避免过多的内存使用情况而导致内存不足错误。 请注意，内存使用情况将因实际缓冲区而异。 在此处增加长度不会增加初始内存分配，因此可以安全设置较大的缓冲区长度。 默认值为102400，即如果每个消息体大小约为100个字节，则最大缓冲区大小将约为102400 * 100B〜= 10MB。
+
+### 打包源
+将已实现的源构建为go插件，并确保输出的so文件位于plugins/sources文件夹中。
 
 ```bash
 go build --buildmode=plugin -o plugins/sources/MySource.so plugins/sources/my_source.go
 ```
 
-### Usage
+### 使用
 
-The customized source is specified in a [stream definition](../streams.md#create-stream). The related properties are:
+在[流定义](../streams.md#create-stream)中指定自定义源， 相关属性为：
 
-- TYPE: specify the name of the source, must be camel case.
-- CONF_KEY: specify the key of the configuration to be used.
+- TYPE：指定源名称，必须为驼峰式命名。
+- CONF_KEY：指定要使用的配置键。
 
-If you have developed a source implementation MySource, you should have:
-1. In the plugin file, symbol MySource is exported.
-2. The compiled MySource.so file is located inside _plugins/sources_
-3. If configuration needed, put mySource.yaml inside _etc/sources_
+如果您开发了源实现MySource，则应该具有：
+1. 在插件文件中，将导出符号MySource。
+2. 编译的MySource.so文件位于_plugins/sources_内部。
+3. 如果需要配置，请将mySource.yaml放在_etc/sources_中。
 
-To use it, define a stream:
+要使用它，请定义一个流：
 ```sql
 CREATE STREAM demo (
 		USERID BIGINT,
