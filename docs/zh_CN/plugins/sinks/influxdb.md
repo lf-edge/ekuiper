@@ -21,15 +21,15 @@
 
 ## 属性
 
-| Property name | Optional | Description                                                  |
-| ------------- | -------- | ------------------------------------------------------------ |
-| addr          | true     | The addr of the InfluxDB |
-| measurement   | true     | The measurement of the InfluxDb (like table name) |
-| username      | false    | The InfluxDB login username |
-| password      | false    | The InfluxDB login password |
-| databasename  | true     | The database of the InfluxDB |
-| tagkey        | true     | The tag key of the InfluxDB |
-| tagvalue      | true     | The tag value of the InfluxDB |
+| Property name | Optional | Description              |
+| ------------- | -------- | ------------------------ |
+| addr          | true     | InfluxDB的地址           |
+| measurement   | 是       | InfluxDb的测量（如表名） |
+| username      | false    | InfluxDB登陆用户名       |
+| password      | false    | InfluxDB登陆密码         |
+| databasename  | 是       | InfluxDB的数据库         |
+| tagkey        | 是       | InfluxDB的标签键         |
+| tagvalue      | 是       | InfluxDB的标签值         |
 ## 示例用法
 
 下面是选择温度大于50度的样本规则，和一些配置文件仅供参考。

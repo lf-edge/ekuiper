@@ -1,8 +1,8 @@
-# File Sink
+# 文件目标（Sink）
 
-The sink is used for saving analysis result into a specified file.
+目标（Sink）用于将分析结果保存到指定文件中。
 
-## Compile & deploy plugin
+## 编译和部署插件
 
 ```shell
 # cd $kuiper_src
@@ -10,18 +10,18 @@ The sink is used for saving analysis result into a specified file.
 # cp plugins/sinks/File.so $kuiper_install/plugins/sinks
 ```
 
-Restart the Kuiper server to activate the plugin.
+重新启动Kuiper服务器以激活插件。
 
-## Properties
+## 属性
 
-| Property name | Optional | Description                                                  |
-| ------------- | -------- | ------------------------------------------------------------ |
-| path          | false    | The file path for saving the result, such as ``/tmp/result.txt`` |
-| interval      | true     | The time interval (ms) for writing the analysis result. The default value is 1000, which means write the analysis result with every one second. |
+| 属性名称 | Optional | Description                                                  |
+| -------- | -------- | ------------------------------------------------------------ |
+| path     | 否       | 保存结果的文件路径，例如 ``/tmp/result.txt``                 |
+| interval | true     | 写入分析结果的时间间隔（毫秒）。 默认值为1000，这表示每隔一秒钟写入一次分析结果。 |
 
-## Sample usage
+## 使用示例
 
-Below is a sample for selecting temperature great than 50 degree, and save the result into file ``/tmp/result.txt`` with every 5 seconds.
+下面是一个选择温度大于50度的示例，每5秒将结果保存到文件 ``/tmp/result.txt`` 中。
 
 ```json
 {

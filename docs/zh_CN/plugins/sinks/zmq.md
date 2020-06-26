@@ -1,8 +1,8 @@
-# Zmq Sink
+# Zmq 目标（Sink）
 
-The sink will publish the result into a Zero Mq topic.
+目标（Sink）会将结果发布到Zero Mq 主题中。
 
-## Compile & deploy plugin
+## 编译和部署插件
 
 ```shell
 # cd $kuiper_src
@@ -10,18 +10,18 @@ The sink will publish the result into a Zero Mq topic.
 # cp plugins/sinks/Zmq.so $kuiper_install/plugins/sinks
 ```
 
-Restart the Kuiper server to activate the plugin.
+重新启动Kuiper服务器以激活插件。
 
-## Properties
+## 属性
 
 | Property name | Optional | Description                                                  |
 | ------------- | -------- | ------------------------------------------------------------ |
-| server          | false    | The url of the Zero Mq server |
+| server          | false    | Zero Mq 服务器的URL |
 | topic      | true     | The topic to publish to |
 
-## Sample usage
+## 使用示例
 
-Below is a sample for selecting temperature great than 50 degree, and publish the result into Zero Mq topic "temp".
+下面是一个选择温度大于50度的示例，并将结果发布到Zero Mq 主题 "temp"。
 
 ```json
 {
