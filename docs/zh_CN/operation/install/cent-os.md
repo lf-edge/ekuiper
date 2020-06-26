@@ -1,14 +1,14 @@
 # CentOS
 
-This document describes how to install on CentOS.
+本文件描述如何在CentOS上安装。
 
-## Install from zip
+## 从ZIP文件安装
 
-Unzip the installation package.
+解压安装包。
 
 ``unzip kuiper-centos7-v0.0.1.zip``
 
-Run the ``cli`` to verify Kuiper is installed successfully or not.
+运行cli来验证Kuiper是否已成功安装。
 
 ```shell
 # cd kuiper
@@ -16,5 +16,5 @@ Run the ``cli`` to verify Kuiper is installed successfully or not.
 kuiper version 0.0.1
 ```
 
-If it can print the version, then Kuiper is installed successfully. 
+如果可以打印版本，则说明Kuiper已成功安装。
 
