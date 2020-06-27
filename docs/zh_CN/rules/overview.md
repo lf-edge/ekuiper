@@ -58,14 +58,14 @@
 | retryInterval   | int:1000   | 设置信息发送失败后重试等待时间，单位为毫秒。如果该值的设置 <= 0，那么不会尝试重新发送。 |
 | cacheLength     | int:10240   | 设置最大消息缓存数量。缓存的消息会一直保留直到消息发送成功。缓存消息将按顺序发送，除非运行在异步或者并发模式下。缓存消息会定期存储到磁盘中。  |
 | cacheSaveInterval  | int:1000   | 设置缓存存储间隔时间，单位为毫秒。需要注意的是，当规则关闭时，缓存会自动存储。该值越大，则缓存保存开销越小，但系统意外退出时缓存丢失的风险变大。 |
-| omitIfEmpty | bool: false | Omit the output if the select result is empty. |
-| sendSingle        | true     | The output messages are received as an array. This is indicate whether to send the results one by one. If false, the output message will be ``{"result":"${the string of received message}"}``. For example, ``{"result":"[{\"count\":30},"\"count\":20}]"}``. Otherwise, the result message will be sent one by one with the actual field name. For the same example as above, it will send ``{"count":30}``, then send ``{"count":20}`` to the RESTful endpoint.Default to false. |
-| dataTemplate      | true     | The [golang template](https://golang.org/pkg/html/template) format string to specify the output data format. The input of the template is the sink message which is always an array of map. If no data template is specified, the raw input will be the data. |
+| omitIfEmpty | bool: false | 如果选择结果为空，则忽略输出。 |
+| sendSingle        | true     | 输出消息以数组形式接收，该属性意味着是否将结果一一发送。 如果为false，则输出消息将为``{"result":"${接收消息字符串}"}``。 例如，``{"result":"[{\"count\":30},"\"count\":20}]"}``。否则，结果消息将与实际字段名称一一对应发送。 对于与上述相同的示例，它将发送``{"count":30}``，然后发送``{"count":20}``到RESTful端点。默认为false。 |
+| dataTemplate      | true     | [golang模板](https://golang.org/pkg/html/template)格式字符串，用于指定输出数据格式。 模板的输入是目标消息，该消息始终是映射数组。 如果未指定数据模板，则将数据作为原始输入。 |
 
-#### Data Template
-If sendSingle is true, the data template will execute against a record; Otherwise, it will execute against the whole array of records. Typical data templates are:
+#### 数据模板
+如果sendSingle为true，则数据模板将针对某一条记录执行操作； 否则，它将对整个记录数组执行操作。 典型的数据模板是：
 
-For example, we have the sink input as 
+例如，我们的目标输入为
 
 ```
 []map[string]interface{}{{
@@ -75,44 +75,44 @@ For example, we have the sink input as
 }}
 ```
 
-In sendSingle=true mode:
-- Print out the whole record
+在 sendSingle=true 模式下：
+- 打印整个记录
 
 ```
 "dataTemplate": "{\"content\":{{json .}}}",
 ```
 
-- Print out the ab field
+- 打印ab字段
 
 ```
 "dataTemplate": "{\"content\":{{.ab}}}",
 ```
 
-if the ab field is a string, add the quotes
+如果ab字段是字符串，请添加引号
 ```
 "dataTemplate": "{\"content\":\"{{.ab}}\"}",
 ```
 
-In sendSingle=false mode:
-- Print out the whole record array
+在sendSingle=false模式下：
+- 打印出整个记录数组
 
 ```
 "dataTemplate": "{\"content\":{{json .}}}",
 ```
 
-- Print out the first record
+- 打印出第一条记录
 
 ```
 "dataTemplate": "{\"content\":{{json (index . 0)}}}",
 ```
 
-- Print out the field ab of the first record
+- 打印出第一个记录的字段ab
 
 ```
 "dataTemplate": "{\"content\":{{index . 0 \"ab\"}}}",
 ```
 
-- Print out field ab of each record in the array to html format
+- 将数组中每个记录的字段ab打印为html格式
 
 ```
 "dataTemplate": "<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>",

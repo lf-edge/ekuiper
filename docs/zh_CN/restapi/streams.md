@@ -1,45 +1,45 @@
-# Streams management
+# 流管理
 
-The Kuiper REST api for streams allows you to manage the streams, such as create, describe, show and drop stream definitions.
+Kuiper REST api 可用于管理流，例如创建、描述、显示和删除流定义。
 
-## create a stream
+## 创建流
 
-The API is used for creating a stream. For more detailed information of stream definition, please refer to [streams](../sqls/streams.md).
+该API用于创建流。 有关流定义的更多详细信息，请参考[流](../sqls/streams.md)。
 
 ```shell
 POST http://localhost:9081/streams
 ```
-Request sample, the request is a json string with `sql` field.
+请求样例，请求命令是带有`sql`字段的json字符串。
 
 ```json
 {"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
 ```
 
-This API can run any stream sql statements, not only stream creation.
+该API可以运行任何流sql语句，而不仅可以创建流。
 
-## show streams
+## 显示流
 
-The API is used for displaying all of streams defined in the server.
+该API用于显示服务器中定义的所有流。
 
 ```shell
 GET http://localhost:9081/streams
 ```
 
-Response Sample:
+响应示例：
 
 ```json
 ["mystream"]
 ```
 
-## describe a stream
+## 描述流
 
-The API is used for print the detailed definition of stream.
+该API用于打印流的详细定义。
 
 ```shell
 GET http://localhost:9081/streams/{id}}
 ```
 
-Response Sample:
+响应示例：
 
 ```shell
 {
@@ -65,9 +65,9 @@ Response Sample:
 }
 ```
 
-## drop a stream
+## 删除流
 
-The API is used for drop the stream definition.
+该API用于删除流定义。
 
 ```shell
 DELETE http://localhost:9081/streams/{id}
