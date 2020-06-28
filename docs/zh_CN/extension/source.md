@@ -17,7 +17,7 @@
 Configure(datasource string, props map[string]interface{}) error
 ```
 
-源的主要任务是实现 _open_ 方法，且应该和创建到外部系统的连接保持同步。然后从外部系统连续接收数据，并将接收到的消息发送到消费通道。消费通道接受SourceTuple接口，该接口由消息正文的映射和可选元数据的另一个映射组成。通常，使用`api.NewDefaultSourceTuple(message, meta)`命令创建SourceTuple。元数据可以是任何值得记录的内容。例如，消息的合格主题。第一个参数是StreamContext指针。您可以从中检索上下文信息和日志等。它也是go上下文的实现，因此您可以监听Done（）通道以了解父流是否已退出。对于在连接或接收过程中发生的任何错误，请使用此方法进行处理。如果错误无法处理，请将其发送到errCh。默认情况下，如果从errCh收到任何错误，则该规则将终止。
+源的主要任务是实现 _open_ 方法，且应该和创建到外部系统的连接保持同步。然后从外部系统连续接收数据，并将接收到的消息发送到消费通道。消费通道接受SourceTuple接口，该接口由消息正文的映射和可选元数据的另一个映射组成。通常，使用`api.NewDefaultSourceTuple(message, meta)`命令创建SourceTuple。元数据可以是任何值得记录的内容。例如，消息的合格主题。第一个参数是StreamContext指针。您可以从中检索上下文信息和日志等。它也是go上下文的实现，因此您可以监听Done()通道以了解父流是否已退出。对于在连接或接收过程中发生的任何错误，请使用此方法进行处理。如果错误无法处理，请将其发送到errCh。默认情况下，如果从errCh收到任何错误，则该规则将终止。
 
 ```go
 //Should be sync function for normal case. The container will run it in go func
