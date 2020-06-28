@@ -63,5 +63,5 @@ demo (
 	) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="ext", TYPE="random");
 ```
 
-配置键“ ext”将被使用。
+配置键``ext``将被使用。
 
