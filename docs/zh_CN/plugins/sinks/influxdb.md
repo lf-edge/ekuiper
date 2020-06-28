@@ -21,12 +21,12 @@
 
 ## 属性
 
-| Property name | Optional | Description              |
+| 属性名称| 是否可选 | 描述              |
 | ------------- | -------- | ------------------------ |
-| addr          | true     | InfluxDB的地址           |
+| addr          | 是     | InfluxDB的地址           |
 | measurement   | 是       | InfluxDb的测量（如表名） |
-| username      | false    | InfluxDB登陆用户名       |
-| password      | false    | InfluxDB登陆密码         |
+| username      | 否    | InfluxDB登陆用户名       |
+| password      | 否    | InfluxDB登陆密码         |
 | databasename  | 是       | InfluxDB的数据库         |
 | tagkey        | 是       | InfluxDB的标签键         |
 | tagvalue      | 是       | InfluxDB的标签值         |
