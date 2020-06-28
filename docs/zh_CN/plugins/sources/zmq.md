@@ -43,5 +43,5 @@ demo (
 	) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="test", TYPE="zmq");
 ```
 
-将使用配置键“ test”。 订阅的Zero Mq 主题是``DATASOURCE``中指定的"demo"。
+将使用配置键``test``。 订阅的Zero Mq 主题是``DATASOURCE``中指定的``demo``。
 
