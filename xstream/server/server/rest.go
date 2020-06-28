@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 	"time"
 )
 
@@ -97,13 +98,24 @@ func createRestServer(port int) *http.Server {
 	return server
 }
 
+type information struct {
+	Version       string `json:"version"`
+	Os            string `json:"os"`
+	UpTimeSeconds int64  `json:"upTimeSeconds"`
+}
+
 //The handler for root
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	switch r.Method {
 	case http.MethodGet, http.MethodPost:
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK\n"))
+		info := new(information)
+		info.Version = version
+		info.UpTimeSeconds = time.Now().Unix() - startTimeStamp
+		info.Os = runtime.GOOS
+		byteInfo, _ := json.Marshal(info)
+		w.Write(byteInfo)
 	}
 }
 
