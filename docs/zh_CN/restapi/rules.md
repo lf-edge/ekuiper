@@ -8,7 +8,7 @@ Kuiper REST api可以管理规则，例如创建、显示、删除、描述、�
 ```shell
 POST http://localhost:9081/rules
 ```
-响应示例：
+请求示例：
 
 ```json
 {
