@@ -1,40 +1,40 @@
-# Kuiper lexical elements
+# Kuiper 词汇元素
 
-## Comments
+## 注释
 
-Comment serve as documentation. Comments begin with the character sequence `/*` and stop at the pair `*/`.
+注释被当作文档。 注释以字符序列`/*`开始，并终止于对应的`*/`。
 
-## Tokens
+## 令牌（Tokens）
 
-Kuiper SQL is built up from tokens. There are four classes of tokens:
+Kuiper SQL由令牌构建。 令牌分为四类：
 
-- *identifiers*
-- *keywords*
-- *operators*
-- *literals*
+- *标识符*
+- *关键字*
+- *运算符*
+- *字面量*
 
-*White space* formed from spaces, horizontal tabs, carriage returns, and newlines is ignored except as it separates tokens that would otherwise combine into a single token. While breaking the input into tokens, the next token is the longest sequence of characters that form a valid token.
+由空格、水平制表符、回车符和换行符组成的*空白符*将被忽略，除非它将分隔的令牌分开，否则这些令牌会合并为一个令牌。在将输入分成令牌时，下一个令牌是形成有效令牌的最长字符序列。
 
-## Identifiers
+##  标识符（Identifiers）
 
-Identifiers name entities within a program. An *identifier* is a sequence of one or more letters and digits. An identifier must start with a letter. 
+程序中的标识符命名实体。*标识符*是一个或多个字母和数字的序列。 标识符必须以字母开头。
 
-To use the reserved words as the column name and the stream name etc, they need to be quoted by backtick. You can also use all kinds of unicode string in the backtick as an SQL element. For example, operator `-`, spaces, and various language characters such as Chinese.
+如果要将保留字用作列名和流名等，它们必须用 反撇号将其括起来。 您还可以在反引号中使用各种unicode字符串作为SQL元素。 例如，运算符`-`，空格和各种语言字符（例如中文）。
 
 ```sql
 SELECT `select`, `and` from demo
 SELECT `a-b`, `hello world`, `中文Chinese` from demo
 ```
 
-## Keywords
+## 关键字（Keywords）
 
-**Reserved keywords for rule SQL**: If you'd like to use the following keyword in rule SQL, you will have to use backtick to enclose them.
+**规则SQL的保留关键字**：如果您想在规则SQL中使用以下关键字，则必须使用反撇号将其括起来。
 
 ```
 SELECT, FROM, JOIN, LEFT, INNER, ON, WHERE, GROUP, ORDER, HAVING, BY, ASC, DESC, AND, OR
 ```
 
-The following is an example for using a stream named `from`, which is a reserved keyword in Kuiper.
+以下是使用名为`from`的流的示例，`from`是Kuiper中的保留关键字。
 
 ```sql
 SELECT * FROM demo1 where `from`="device1"
@@ -42,11 +42,13 @@ SELECT * FROM demo1 where `from`="device1"
 
 **Reserved keywords for streams management**: If you'd like to use the following keywords in stream management command, you will have to use backtick to enclose them.
 
+**用于流管理的保留关键字**：如果您想在流管理命令中使用以下关键字，则必须使用反撇号将其括起来。
+
 ```
 CREATE, RROP, EXPLAIN, DESCRIBE, SHOW, STREAM, STREAMS, WITH, BIGINT, FLOAT, STRING, DATETIME, BOOLEAN, ARRAY, STRUCT, DATASOURCE, KEY, FORMAT,CONF_KEY, TYPE, STRICT_VALIDATION, TIMESTAMP, TIMESTAMP_FORMAT
 ```
 
-The following is an example for how to use reserved keywords in stream creation statement.
+以下是如何在流创建语句中使用保留关键字的示例。
 
 ```sql
 CREATE STREAM `stream` (
@@ -59,27 +61,28 @@ CREATE STREAM `stream` (
 				) WITH (DATASOURCE="users", FORMAT="JSON");
 ```
 
-## Operators
+## 运算法（Operators）
 
-Following operators are provided.
+提供了以下运算符。
 
 ```
 +, -, *, /, %, &, |, ^, =, !=, <, <=, >, >=, [], ->, ()
 ```
 
-## Literals
+## 字面量（Literals）
 
-**Boolean literals**
+**布尔字面量**
 
 ```
 TRUE, FALSE
 ```
 
-Example, ` SELECT TRUE AS field1 FROM demo` , the field `field1` always returns `true`.
+例如， ` SELECT TRUE AS field1 FROM demo` ,  `field1`字段 总是返回 `true`.
 
-**Time literals**: Below literals are used in time window, which identify the time unit for windows.
+**时间字面量**： 下面的字面量在时间窗口中使用，用于标识窗口的时间单位。
 
 ```
 DD, HH, MI, SS, MS
 ```
 
+ s

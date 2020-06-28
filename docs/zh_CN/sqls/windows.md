@@ -140,9 +140,9 @@ SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT
 - 只获取`temperature` 大于 20 的数据
 - 最后一个条件为消息的条数应该大于 2。如果 `HAVING` 条件为 `COUNT(*)  = 5`， 那么意味着窗口里所有的事件都应该满足 `WHERE` 条件
 
-## Timestamp Management
+## 时间戳管理
 
-Every event has a timestamp associated with it. The timestamp will be used to calculate the window. By default, a timestamp will be added when an event feed into the source which is called `processing time`. We also support to specify a field as the timestamp, which is called `event time`. The timestamp field is specified in the stream definition. In the below definition, the field `ts` is specified as the timestamp field.
+每个事件都有一个与之关联的时间戳。 时间戳将用于计算窗口。 默认情况下，当事件输入到源时，将添加时间戳，称为`处理时间`。 我们还支持将某个字段指定为时间戳，称为`事件时间`。 时间戳字段在流定义中指定。 在下面的定义中，字段`ts` 被指定为时间戳字段。
 
 ``
 CREATE STREAM demo (
@@ -152,8 +152,8 @@ CREATE STREAM demo (
 				) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"
 ``
 
-In event time mode, the watermark algorithm is used to calculate a window.
+在事件时间模式下，水印算法用于计算窗口。
 
-## Runtime error in window
+## 窗口中的运行时错误
 
-If the window receive an error (for example, the data type does not comply to the stream definition) from upstream, the error event will be forwarded immediately to the sink. The current window calculation will ignore the error event
+如果窗口从上游接收到错误（例如，数据类型不符合流定义），则错误事件将立即转发到目标（sink）。 当前窗口计算将忽略错误事件。

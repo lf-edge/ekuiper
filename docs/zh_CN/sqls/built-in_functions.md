@@ -7,7 +7,7 @@ Kuiper具有许多内置函数，可以对数据执行计算。
 * select语句的select列表（子查询或外部查询）。
 * HAVING子句。
 
-| Function | Example   | 说明             |
+| 函数 | 示例 | 说明             |
 | -------- | --------- | ---------------- |
 | avg      | avg(col1) | 组中的平均值。空值不参与计算。     |
 | count    | count(*)  | 组中的项目数。空值不参与计算。    |
@@ -16,7 +16,7 @@ Kuiper具有许多内置函数，可以对数据执行计算。
 | sum      | sum(col1) | 组中所有值的总和。空值不参与计算。 |
 
 ## 数学函数
-| Function | Example     | Description                                    |
+| 函数 | 示例   | 说明                                  |
 | -------- | ----------- | ---------------------------------------------- |
 | abs      | abs(col1)   | 绝对值             |
 | acos     | acos(col1)  | 弧度数的反余弦值 |
@@ -46,7 +46,7 @@ Kuiper具有许多内置函数，可以对数据执行计算。
 
 ## 字符串函数
 
-| Function | Example     | Description                                    |
+| 函数 | 示例   | 说明                                  |
 | -------- | ----------- | ---------------------------------------------- |
 | concat   | concat(col1...)  | 连接数组或字符串。 此函数接受任意数量的参数并返回String或Array |
 | endswith | endswith(col1, col2) | 返回一个布尔值，该布尔值指示第一个String参数是否以第二个String参数结尾。 |
@@ -69,7 +69,7 @@ Kuiper具有许多内置函数，可以对数据执行计算。
 
 ## 转换函数
 
-| Function | 示例     | Description                                    |
+| 函数 | 示例     | 说明                                  |
 | -------- | ----------- | ---------------------------------------------- |
 | cast     | cast(col,  "bigint") | 将值从一种数据类型转换为另一种数据类型。 支持的类型包括：bigint，float，string，boolean和datetime（现在不支持）。 |
 | chr      | chr(col1)   | 返回与给定Int参数对应的ASCII字符                               |
@@ -77,27 +77,28 @@ Kuiper具有许多内置函数，可以对数据执行计算。
 | trunc    | trunc(dec, int)| 将第一个参数截断为第二个参数指定的小数位数。 如果第二个参数小于零，则将其设置为零。 如果第二个参数大于34，则将其设置为34。从结果中去除尾随零。 |
 
 ## 哈希函数
-| Function | Example      | 说明         |
-| -------- | ------------ | ------------ |
-| md5      | md5(col1)    | 参数的哈希值 |
-| sha1     | sha1(col1)   | 参数的哈希值 |
-| sha256   | sha256(col1) | 参数的哈希值 |
-| sha384   | sha384(col1) | 参数的哈希值 |
-| sha512   | sha512(col1) | 参数的哈希值 |
+| 函数   | 示例         | 说明         |
+| ------ | ------------ | ------------ |
+| md5    | md5(col1)    | 参数的哈希值 |
+| sha1   | sha1(col1)   | 参数的哈希值 |
+| sha256 | sha256(col1) | 参数的哈希值 |
+| sha384 | sha384(col1) | 参数的哈希值 |
+| sha512 | sha512(col1) | 参数的哈希值 |
 
-## JSON Functions
-| Function | Example     | Description                                    |
+## JSON 函数
+| 函数 | 示例   | 说明                                |
 | -------- | ----------- | ---------------------------------------------- |
-| json_path_exists      | json_path_exists(col1, "$.name")   | Checks whether JSON path returns any item for the specified JSON value. Return bool value.                   |
-| json_path_query     | json_path_query(col1, "$.name")  | Gets all items returned by JSON path for the specified JSON value.              |
-| json_path_query_first  | json_path_query_first(col1, "$.name")| Gets the first item returned by JSON path for the specified JSON value.                  |
+| json_path_exists      | json_path_exists(col1, "$.name")   | 检查JSON路径是否返回指定JSON值的任何项目。 返回布尔值。 |
+| json_path_query     | json_path_query(col1, "$.name")  | 获取JSON路径返回的指定JSON值的所有项目。 |
+| json_path_query_first  | json_path_query_first(col1, "$.name")| 获取JSON路径返回的指定JSON值的第一项。 |
 
-**Please refer to [json path functions](../json_expr.md#json-path-functions) for how to compose a json path.**  
+**请参阅 [json路径函数](../json_expr.md#json-path-functions) 了解如何编写json路径。**
+
 ## 其它函数
-| 函数    | 示例         | Description                                                  |
+| 函数    | 示例         | 说明                                                         |
 | ------- | ------------ | ------------------------------------------------------------ |
 | isNull  | isNull(col1) | 如果参数为空值，则返回true。                                 |
 | newuuid | newuuid()    | 返回一个随机的16字节UUID。                                   |
 | tstamp  | tstamp()     | 返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。 |
-| mqtt    | mqtt(topic)  | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src1.topic)``<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src2.messageid)`` |
-| meta    | meta(topic)  | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as ``meta(device)``<br />- A qualified key to specify the stream, such as ``meta(src1.device)`` <br />- A key with arrow for multi level meta data, such as ``meta(src1.reading->device->name)`` This assumes reading is a map structure meta data. |
+| mqtt    | mqtt(topic)  | 返回指定键的MQTT元数据。 当前支持的键包括<br />-topic：返回消息的主题。 如果有多个流源，则在参数中指定源名称。 如``mqtt(src1.topic)``<br />- messageid：返回消息的消息ID。 如果有多个流源，则在参数中指定源名称。 如``mqtt(src2.messageid)`` |
+| meta    | meta(topic)  | 返回指定键的元数据。 键可能是：<br/>-如果from子句中只有一个来源，则为独立键，例如``meta(device)``<br />-用于指定流的合格键，例如``meta(src1.device)`` <br />-用于多级元数据的带有箭头的键，例如``meta(src1.reading->device->name)``。这里假定读取是地图结构元数据。 |
