@@ -1,6 +1,6 @@
 # 函数扩展
 
-在Kuiper SQL语法中，向服务器提供了[许多内置函数](../sqls/built-in_functions.md)，用于各种可重用的业务逻辑。 但是，用户仍然可能需要其他未被内置插件覆盖的可重用的业务逻辑。 提供函数扩展是为了自定义功能。
+在Kuiper SQL语法中，向服务器提供了[许多内置函数](../sqls/built-in_functions.md)，用于各种可重用的业务逻辑。 但是，用户仍然可能需要其他未被内置插件覆盖的可重用的业务逻辑。 提供函数扩展是为了自定义函数。
 
 ## 开发
 
@@ -13,20 +13,20 @@
 为了开发函数，首先要实现 _Validate_ 方法。 在SQL验证期间将调用此方法。 在此方法中，将传递[xsql.Expr](../../../xsql/ast.go)的切片作为参数，该参数包含运行时该函数的参数。 开发人员可以对其进行验证，以检查参数计数和类型等。如果验证成功，则返回nil。 否则，返回一个错误对象。
 
 ```go
-//The argument is a list of xsql.Expr
+//该参数是xsql.Expr的列表
 Validate(args []interface{}) error
 ```
-函数有2种类型：聚合函数和通用函数。 对于聚合函数，如果参数为列，则接收的值将始终是组中列值的一部分。 扩展函数必须通过实施_IsAggregate_方法来区分函数类型。
+函数有2种类型：聚合函数和通用函数。 对于聚合函数，如果参数为列，则接收的值将始终是组中列值的一部分。 扩展函数必须通过实施 _IsAggregate_ 方法来区分函数类型。
 
 ```go
-//If this function is an aggregate function. Each parameter of an aggregate function will be a slice
+//如果此函数是聚合函数。 聚合函数的每个参数将是一个切片
 IsAggregate() bool
 ```
 
-函数的主要任务是实现_exec_方法。 该方法将用于计算SQL中函数的结果。 参数是函数参数值的一部分。 您可以使用它们进行计算。 如果计算成功，则返回结果并返回true； 否则，返回nil和false。
+函数的主要任务是实现 _xec_ 方法。 该方法将用于计算SQL中函数的结果。 参数是函数参数值的一部分。 您可以使用它们进行计算。 如果计算成功，则返回结果并返回true； 否则，返回nil和false。
 
 ```go
-//Execute the function, return the result and if execution is successful.If execution fails, return the error and false. 
+//执行函数，如果执行成功，返回结果，如果执行失败，返回错误和false。. 
 Exec(args []interface{}) (interface{}, bool)
 ```
 
@@ -49,7 +49,7 @@ go build --buildmode=plugin -o plugins/functions/MyFunction.so plugins/functions
 
 如果自定义函数遵循以下约定，则可以直接在规则的SQL中使用。
 
-如果已经开发了函数实现MyFunction，则应该具有：
+如果已经开发了函数实现MyFunction，则应该具有以下规则：
 
 1. 在插件文件中，将导出符号MyFunction。
 2. 编译的MyFunction.so文件位于_plugins/functions_内部
