@@ -2,11 +2,11 @@
 
 该动作用于将输出消息发布到RESTful API中。
 
-| Property name     | Optional | Description                                                  |
+| 属性名称    | 是否可选|描述                                                  |
 | ----------------- | -------- | ------------------------------------------------------------ |
-| method            | true    | RESTful API的http方法。 这是一个不区分大小写的字符串，其值范围为“ get”，“ post”，“ put”，“ patch”，“ delete”和“ head”。 默认值为“ get”。 |
-| url             | false    | RESTful API终端地址，例如 ``https://www.example.com/api/dummy`` |
-| bodyType          | 是    | 消息体的类型。 当前，支持以下类型："none", "json", "text", "html", "xml", "javascript" 和 "form"。 对于“ get”和“ head”，不需要正文，因此默认值为“ none”。 对于其他http方法，默认值为“ json”。对于“ html”，“ xml”和“ javascript”，必须仔细设置dateTemplate以确保格式正确。 |
+| method            | 是   | RESTful API的http方法。 这是一个不区分大小写的字符串，其值范围为``get``，``post``，``put``，``patch``，``delete``和``head``。 默认值为`` get``。 |
+| url             | 否    | RESTful API终端地址，例如 ``https://www.example.com/api/dummy`` |
+| bodyType          | 是    | 消息体的类型。 当前，支持以下类型：``none``, ``json``, ``text``, ``html``, ``xml``, ``javascript`` 和 ``form``。 对于``get``和``head``，不需要正文，因此默认值为``none``。 对于其他http方法，默认值为``json``。对于``html``，``xml``和``javascript``，必须仔细设置dateTemplate以确保格式正确。 |
 | timeout   | 是    | http请求超时的时间（毫秒），默认为5000毫秒 |
 | headers            | 是    | 要为http请求设置的其他标头。 |
 | debugResp | 是 | 控制是否将信息打印到控制台中。 如果将其设置为`true`，则打印响应。 如果设置为`false`，则跳过打印日志。 默认值为`false`。 |
