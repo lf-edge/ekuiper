@@ -14,10 +14,10 @@
 
 ## 属性
 
-| Property name | Optional | Description                                                  |
+|属性名称 | 是否可选 | 描述                                                 |
 | ------------- | -------- | ------------------------------------------------------------ |
-| server          | false    | Zero Mq 服务器的URL |
-| topic      | true     | The topic to publish to |
+| server          | 否    | Zero Mq 服务器的URL |
+| topic      | 是    | 发布的目标主题 |
 
 ## 使用示例
 
