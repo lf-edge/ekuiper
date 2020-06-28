@@ -114,11 +114,8 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		info.Version = version
 		info.UpTimeSeconds = time.Now().Unix() - startTimeStamp
 		info.Os = runtime.GOOS
-		if byteInfo, err := json.Marshal(info); err == nil {
-			w.Write(byteInfo)
-			return
-		}
-		w.Write([]byte("OK\n"))
+		byteInfo, _ := json.Marshal(info)
+		w.Write(byteInfo)
 	}
 }
 
