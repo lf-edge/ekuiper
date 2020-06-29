@@ -18,17 +18,17 @@ import (
 )
 
 const (
-	logFileName   = "stream.log"
-	etc_dir       = "/etc/"
-	data_dir      = "/data/"
-	log_dir       = "/log/"
-  abs_etc_dir    = "/etc/kuiper/"
-  abs_data_dir   = "/var/lib/kuiper/data/"
-  abs_log_dir    = "/var/log/kuiper/"
-  abs_plugin_dir = "/var/lib/kuiper/plugins/"
-	StreamConf    = "kuiper.yaml"
-	KuiperBaseKey = "KuiperBaseKey"
-	MetaKey       = "__meta"
+	logFileName    = "stream.log"
+	etc_dir        = "/etc/"
+	data_dir       = "/data/"
+	log_dir        = "/log/"
+	abs_etc_dir    = "/etc/kuiper/"
+	abs_data_dir   = "/var/lib/kuiper/data/"
+	abs_log_dir    = "/var/log/kuiper/"
+	abs_plugin_dir = "/var/lib/kuiper/plugins/"
+	StreamConf     = "kuiper.yaml"
+	KuiperBaseKey  = "KuiperBaseKey"
+	MetaKey        = "__meta"
 )
 
 var (
@@ -164,31 +164,31 @@ func GetDataLoc() (string, error) {
 }
 
 func getAbsPath(subdir string) (dir string, err error) {
-  switch true {
-  case strings.Contains(subdir, "etc"):
-    dir = abs_etc_dir
-    break
-  case strings.Contains(subdir, "data"):
-    dir = abs_data_dir
-    break
-  case strings.Contains(subdir, "log"):
-    dir = abs_log_dir
-    break
-  case strings.Contains(subdir, "plugins"):
-    dir = abs_plugin_dir
-    break
-  }
-  if _, err = os.Stat(dir); os.IsExist(err) {
-    return dir, nil
-  }
-    return "", err
+	switch true {
+	case strings.Contains(subdir, "etc"):
+		dir = abs_etc_dir
+		break
+	case strings.Contains(subdir, "data"):
+		dir = abs_data_dir
+		break
+	case strings.Contains(subdir, "log"):
+		dir = abs_log_dir
+		break
+	case strings.Contains(subdir, "plugins"):
+		dir = abs_plugin_dir
+		break
+	}
+	if _, err = os.Stat(dir); os.IsExist(err) {
+		return dir, nil
+	}
+	return "", err
 }
 
 func GetLoc(subdir string) (string, error) {
-  dir,err := getAbsPath(subdir)
-  if err == nil{
-    return dir,err
-  }
+	dir, err := getAbsPath(subdir)
+	if err == nil {
+		return dir, err
+	}
 	dir, err = os.Getwd()
 	if err != nil {
 		return "", err
