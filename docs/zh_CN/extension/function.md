@@ -1,59 +1,60 @@
-# Function Extension
+# 函数扩展
 
-In the Kuiper SQL syntax, [many built-in functions](../sqls/built-in_functions.md) are provided to server for various reusable business logic. However, the users still likely need various reusable business logic which are not covered by the built ins. The function extension is presented to customized the functions.
+在 Kuiper SQL 语法中，向服务器提供了[许多内置函数](../sqls/built-in_functions.md)，用于各种可重用的业务逻辑。 但是，用户仍然可能需要其他未被内置插件覆盖的可重用的业务逻辑。 提供函数扩展是为了自定义函数。
 
-## Developing
+## 开发
 
-### Develop a customized function
+### 开发一个定制函数
 
-To develop a function for Kuiper is to implement [api.Function](../../../xstream/api/stream.go) interface and export it as a golang plugin.
+为 Kuiper 开发函数的过程，就是实现 [api.Function](../../../xstream/api/stream.go) 接口并将其导出为 golang 插件。
 
-Before starting the development, you must [setup the environment for golang plugin](overview.md#setup-the-plugin-developing-environment). 
+在开始开发之前，您必须为 [golang 插件设置环境](overview.md#setup-the-plugin-developing-environment)。
 
-To develop a function, the _Validate_ method is firstly to be implemented. This method will be called during SQL validation. In this method, a slice of [xsql.Expr](../../../xsql/ast.go) is passed as the parameter that contains the arguments for this function in the runtime. The developer can do a validation against it to check the argument count and type etc. If validation is successful, return nil. Otherwise, return an error object.
+为了开发函数，首先要实现 _Validate_ 方法。 在 SQL 验证期间将调用此方法。 在此方法中，将传递 [xsql.Expr](../../../xsql/ast.go) 的切片作为参数，该参数包含运行时该函数的参数。 开发人员可以对其进行验证，以检查参数计数和类型等。如果验证成功，则返回 nil。 否则，返回一个错误对象。
 
 ```go
 //The argument is a list of xsql.Expr
 Validate(args []interface{}) error
 ```
-There are 2 types of functions: aggregate function and common function. For aggregate function, if the argument is a column, the received value will always be a slice of the column values in a group. The extended function must distinguish the function type by implement _IsAggregate_ method.
+函数有2种类型：聚合函数和通用函数。 对于聚合函数，如果参数为列，则接收的值将始终是组中列值的一部分。 扩展函数必须通过实施 _IsAggregate_ 方法来区分函数类型。
 
 ```go
 //If this function is an aggregate function. Each parameter of an aggregate function will be a slice
 IsAggregate() bool
 ```
 
-The main task for a Function is to implement _exec_ method. The method will be leverage to calculate the result of the function in the SQL. The argument is a slice of the values for the function parameters. You can use them to do the calculation. If the calculation is successful, return the result and true; otherwise, return nil and false. 
+函数的主要任务是实现 _exec_ 方法。 该方法将用于计算 SQL 中函数的结果。 参数是函数参数值的一部分。 您可以使用它们进行计算。 如果计算成功，则返回结果并返回 true； 否则，返回 nil 和 false。
 
 ```go
-//Execute the function, return the result and if execution is successful.If execution fails, return the error and false. 
+//执行函数，如果执行成功,返回结果，如果执行失败，返回错误和 false。
 Exec(args []interface{}) (interface{}, bool)
-```  
+```
 
-As the function itself is a plugin, it must be in the main package. Given the function struct name is myFunction. At last of the file, the source must be exported as a symbol as below. There are [2 types of exported symbol supported](overview.md#plugin-development). For function extension, if there is no internal state, it is recommended to export a singleton instance.
+由于该函数本身是一个插件，因此必须位于主程序包中。 给定的函数结构名称为 myFunction。 在文件的最后，必须将源文件作为符号导出，如下所示。 有[2种类型的导出符号被支持](overview.md#plugin-development)。 对于函数扩展，如果没有内部状态，建议导出单例实例。
 
 ```go
 var MyFunction myFunction
 ```
 
-The [Echo Function](../../../plugins/functions/echo.go) is a good example.
+[Echo Function](../../../plugins/functions/echo.go) 是一个很好的示例。
 
-### Package the source
-Build the implemented function as a go plugin and make sure the output so file resides in the plugins/functions folder.
+### 源文件打包
+将实现的函数构建为 go 插件，并确保输出 s o文件位于 plugins/functions 文件夹中。
 
 ```bash
 go build --buildmode=plugin -o plugins/functions/MyFunction.so plugins/functions/my_function.go
 ```
 
-### Usage
+### 使用
 
-The customized function can be directly used in the SQL of a rule if it follows the below convention.
+如果自定义函数遵循以下约定，则可以直接在规则的 SQL 中使用。
 
-If you have developed a function implementation MyFunction, you should have:
-1. In the plugin file, symbol MyFunction is exported.
-2. The compiled MyFunction.so file is located inside _plugins/functions_
+如果已经开发了函数实现 MyFunction，则应该具有：
 
-To use it, just call it in the SQL inside a rule definition:
+1. 在插件文件中，将导出符号 MyFunction。
+2. 编译的 MyFunction.so 文件位于 _plugins/functions_ 内部
+
+要使用它，只需在规则定义中的 SQL 中调用它：
 ```json
 {
   "id": "rule1",
