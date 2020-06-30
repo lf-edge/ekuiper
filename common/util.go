@@ -33,7 +33,7 @@ var (
 	IsTesting    bool
 	Clock        clock.Clock
 	logFile      *os.File
-	LoadFileType string
+	LoadFileType = "relative"
 )
 
 func LoadConf(confName string) ([]byte, error) {
@@ -161,7 +161,7 @@ func GetDataLoc() (string, error) {
 	return GetLoc(data_dir)
 }
 
-func getAbsPath(subdir string) (dir string, err error) {
+func absolutePath(subdir string) (dir string, err error) {
 	subdir = strings.TrimLeft(subdir, `/`)
 	subdir = strings.TrimRight(subdir, `/`)
 	fmt.Println("hr:", subdir)
@@ -185,7 +185,7 @@ func getAbsPath(subdir string) (dir string, err error) {
 	return "", err
 }
 
-func getWdPath(subdir string) (string, error) {
+func relativePath(subdir string) (string, error) {
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
 		return "", err
@@ -198,11 +198,14 @@ func getWdPath(subdir string) (string, error) {
 }
 
 func GetLoc(subdir string) (string, error) {
-	if 0 == len(LoadFileType) {
-		return getWdPath(subdir)
+	if "relative" == LoadFileType {
+		return relativePath(subdir)
 	}
 
-	return getAbsPath(subdir)
+	if "absolute" == LoadFileType {
+		return absolutePath(subdir)
+	}
+	return "", fmt.Errorf("Unrecognized loading method.")
 }
 
 /*
