@@ -164,7 +164,6 @@ func GetDataLoc() (string, error) {
 func absolutePath(subdir string) (dir string, err error) {
 	subdir = strings.TrimLeft(subdir, `/`)
 	subdir = strings.TrimRight(subdir, `/`)
-	fmt.Println("hr:", subdir)
 	switch subdir {
 	case "etc":
 		dir = "/etc/kuiper/"
