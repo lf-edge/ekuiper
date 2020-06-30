@@ -18,25 +18,22 @@ import (
 )
 
 const (
-	logFileName    = "stream.log"
-	etc_dir        = "/etc/"
-	data_dir       = "/data/"
-	log_dir        = "/log/"
-	abs_etc_dir    = "/etc/kuiper/"
-	abs_data_dir   = "/var/lib/kuiper/data/"
-	abs_log_dir    = "/var/log/kuiper/"
-	abs_plugin_dir = "/var/lib/kuiper/plugins/"
-	StreamConf     = "kuiper.yaml"
-	KuiperBaseKey  = "KuiperBaseKey"
-	MetaKey        = "__meta"
+	logFileName   = "stream.log"
+	etc_dir       = "/etc/"
+	data_dir      = "/data/"
+	log_dir       = "/log/"
+	StreamConf    = "kuiper.yaml"
+	KuiperBaseKey = "KuiperBaseKey"
+	MetaKey       = "__meta"
 )
 
 var (
-	Log       *logrus.Logger
-	Config    *XStreamConf
-	IsTesting bool
-	Clock     clock.Clock
-	logFile   *os.File
+	Log          *logrus.Logger
+	Config       *XStreamConf
+	IsTesting    bool
+	Clock        clock.Clock
+	logFile      *os.File
+	LoadFileType string
 )
 
 func LoadConf(confName string) ([]byte, error) {
@@ -45,7 +42,8 @@ func LoadConf(confName string) ([]byte, error) {
 		return nil, err
 	}
 
-	file := confDir + confName
+	file := path.Join(confDir, confName)
+	//	file := confDir + confName
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -164,18 +162,21 @@ func GetDataLoc() (string, error) {
 }
 
 func getAbsPath(subdir string) (dir string, err error) {
-	switch true {
-	case strings.Contains(subdir, "etc"):
-		dir = abs_etc_dir
+	subdir = strings.TrimLeft(subdir, `/`)
+	subdir = strings.TrimRight(subdir, `/`)
+	fmt.Println("hr:", subdir)
+	switch subdir {
+	case "etc":
+		dir = "/etc/kuiper/"
 		break
-	case strings.Contains(subdir, "data"):
-		dir = abs_data_dir
+	case "data":
+		dir = "/var/lib/kuiper/data/"
 		break
-	case strings.Contains(subdir, "log"):
-		dir = abs_log_dir
+	case "log":
+		dir = "/var/log/kuiper/"
 		break
-	case strings.Contains(subdir, "plugins"):
-		dir = abs_plugin_dir
+	case "plugins":
+		dir = "/var/lib/kuiper/plugins/"
 		break
 	}
 	if _, err = os.Stat(dir); os.IsExist(err) {
@@ -184,11 +185,28 @@ func getAbsPath(subdir string) (dir string, err error) {
 	return "", err
 }
 
-func GetLoc(subdir string) (string, error) {
-	dir, err := getAbsPath(subdir)
-	if err == nil {
-		return dir, err
+func getWdPath(subdir string) (string, error) {
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		return "", err
 	}
+	dir = path.Join(filepath.Dir(dir), subdir)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return "", fmt.Errorf("conf dir not found : %s", dir)
+	}
+	return dir, nil
+}
+
+func GetLoc(subdir string) (string, error) {
+	if 0 == len(LoadFileType) {
+		return getWdPath(subdir)
+	}
+
+	return getAbsPath(subdir)
+}
+
+/*
+func GetLoc(subdir string) (string, error) {
 	dir, err = os.Getwd()
 	if err != nil {
 		return "", err
@@ -223,7 +241,7 @@ func GetLoc(subdir string) (string, error) {
 
 	return "", fmt.Errorf("conf dir not found, please set KuiperBaseKey program environment variable correctly.")
 }
-
+*/
 func GetAndCreateDataLoc(dir string) (string, error) {
 	dataDir, err := GetDataLoc()
 	if err != nil {
