@@ -2,11 +2,11 @@
 
 ## 下载和安装
 
-从 https://github.com/emqx/kuiper/releases 下载最新版本，并解压缩文件。
-
+方式一：从 https://github.com/emqx/kuiper/releases 下载最新版本，并解压缩文件。
+方式二：通过 apt、yum 等方式安装
 ## 目录结构 
 
-以下是安装 Kuiper 之后的安装目录结构。
+以下是通过方式一安装 Kuiper 之后的安装目录结构。
 
 ```
 kuiper_installed_dir
@@ -22,6 +22,23 @@ kuiper_installed_dir
     ...
   log
     ...
+```
+
+以下是通过方式二安装 Kuiper 之后的安装目录结构。
+
+```
+/usr/lib/kuiper/bin
+  server
+  cli
+/etc/kuiper
+  mqtt_source.yaml
+  ...
+/var/lib/kuiper/data
+  ...
+/var/lib/kuiper/plugins
+  ...
+/var/log/kuiper
+   ...
 ```
 
 ## 运行的第一个规则流
