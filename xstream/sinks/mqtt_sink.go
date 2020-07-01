@@ -15,7 +15,7 @@ type MQTTSink struct {
 	tpc      string
 	clientid string
 	pVersion uint
-	qos      uint
+	qos      byte
 	uName    string
 	password string
 	certPath string
@@ -58,9 +58,9 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 		}
 	}
 
-	var qos uint = 0
+	var qos byte = 0
 	if qos, ok := ps["qos"]; ok {
-		if v, ok := qos.(uint); ok {
+		if v, ok := qos.(byte); ok {
 			qos = v
 		} else if v, ok := qos.(string); ok {
 			if v == "1" {
