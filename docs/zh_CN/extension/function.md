@@ -23,14 +23,14 @@ Validate(args []interface{}) error
 IsAggregate() bool
 ```
 
-函数的 main 任务是实现 _exec_ 方法。 该方法将用于计算 SQL 中函数的结果。 参数是函数参数值的一部分。 您可以使用它们进行计算。 如果计算成功，则返回结果并返回 true； 否则，返回 nil 和 false。
+函数的主任务是实现 _exec_ 方法。 该方法将用于计算 SQL 中函数的结果。 参数是函数参数值的一部分。 您可以使用它们进行计算。 如果计算成功，则返回结果并返回 true； 否则，返回 nil 和 false。
 
 ```go
 //执行函数，如果执行成功,返回结果，如果执行失败，返回错误和 false。
 Exec(args []interface{}) (interface{}, bool)
 ```
 
-由于该函数本身是一个插件，因此必须位于主程序包中。 给定的函数结构名称为 myFunction。 在文件的最后，必须将源文件作为符号导出，如下所示。 有[2种类型的导出符号被支持](overview.md#plugin-development)。 对于函数扩展，如果没有内部状态，建议导出单例实例。
+由于该函数本身是一个插件，因此必须位于 main 程序包中。 给定的函数结构名称为 myFunction。 在文件的最后，必须将源文件作为符号导出，如下所示。 有[2种类型的导出符号被支持](overview.md#plugin-development)。 对于函数扩展，如果没有内部状态，建议导出单例实例。
 
 ```go
 var MyFunction myFunction
