@@ -183,6 +183,7 @@ func absolutePath(subdir string) (dir string, err error) {
 	}
 	return "", err
 }
+
 /*
 func GetLoc(subdir string) (string, error) {
 	if base := os.Getenv(KuiperBaseKey); base != "" {
@@ -213,7 +214,6 @@ func GetLoc(subdir string) (string, error) {
 	}
 	return "", fmt.Errorf("Unrecognized loading method.")
 }
-
 
 func relativePath(subdir string) (dir string, err error) {
 	dir, err = os.Getwd()
