@@ -28,11 +28,12 @@ const (
 )
 
 var (
-	Log       *logrus.Logger
-	Config    *XStreamConf
-	IsTesting bool
-	Clock     clock.Clock
-	logFile   *os.File
+	Log          *logrus.Logger
+	Config       *XStreamConf
+	IsTesting    bool
+	Clock        clock.Clock
+	logFile      *os.File
+	LoadFileType = "relative"
 )
 
 func LoadConf(confName string) ([]byte, error) {
@@ -41,7 +42,8 @@ func LoadConf(confName string) ([]byte, error) {
 		return nil, err
 	}
 
-	file := confDir + confName
+	file := path.Join(confDir, confName)
+	//	file := confDir + confName
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -159,8 +161,62 @@ func GetDataLoc() (string, error) {
 	return GetLoc(data_dir)
 }
 
+func absolutePath(subdir string) (dir string, err error) {
+	subdir = strings.TrimLeft(subdir, `/`)
+	subdir = strings.TrimRight(subdir, `/`)
+	switch subdir {
+	case "etc":
+		dir = "/etc/kuiper/"
+		break
+	case "data":
+		dir = "/var/lib/kuiper/data/"
+		break
+	case "log":
+		dir = "/var/log/kuiper/"
+		break
+	case "plugins":
+		dir = "/var/lib/kuiper/plugins/"
+		break
+	}
+	if _, err = os.Stat(dir); os.IsExist(err) {
+		return dir, nil
+	}
+	return "", err
+}
+
+/*
 func GetLoc(subdir string) (string, error) {
-	dir, err := os.Getwd()
+	if base := os.Getenv(KuiperBaseKey); base != "" {
+		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
+		dir = base
+	} else {
+		dir, err = filepath.Abs(filepath.Dir(os.Args[0]))
+		if err != nil {
+			return "", err
+		}
+		dir = filepath.Dir(dir)
+	}
+
+	dir = path.Join(dir, subdir)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return "", fmt.Errorf("conf dir not found : %s", dir)
+	}
+	return dir, nil
+}
+*/
+func GetLoc(subdir string) (string, error) {
+	if "relative" == LoadFileType {
+		return relativePath(subdir)
+	}
+
+	if "absolute" == LoadFileType {
+		return absolutePath(subdir)
+	}
+	return "", fmt.Errorf("Unrecognized loading method.")
+}
+
+func relativePath(subdir string) (dir string, err error) {
+	dir, err = os.Getwd()
 	if err != nil {
 		return "", err
 	}
