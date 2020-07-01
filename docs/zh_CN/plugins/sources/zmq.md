@@ -1,8 +1,8 @@
-# Zmq Source
+# Zmq 源
 
-The source will subscribe to a Zero Mq topic to import the messages into kuiper
+源将订阅 Zero Mq 主题以将消息导入 kuiper。
 
-## Compile & deploy plugin
+## 编译和部署插件
 
 ```shell
 # cd $kuiper_src
@@ -10,11 +10,11 @@ The source will subscribe to a Zero Mq topic to import the messages into kuiper
 # cp plugins/sources/Zmq.so $kuiper_install/plugins/sources
 ```
 
-Restart the Kuiper server to activate the plugin.
+重新启动 Kuiper 服务器以激活插件。
 
-## Configuration
+## 配置
 
-The configuration for this source is ``$kuiper/etc/sources/zmq.yaml``. The format is as below:
+该源的配置位于 `$kuiper/etc/sources/zmq.yaml`。格式如下：
 
 ```yaml
 #Global Zmq configurations
@@ -23,19 +23,19 @@ default:
 test:
   server: tcp://127.0.0.1:5563
 ```
-### Global configurations
+### 全局配置
 
-Use can specify the global zmq source settings here. The configuration items specified in ``default`` section will be taken as default settings for the source when connects to Zero Mq.
+用户可以在此处指定全局 zmq 源设置。 连接到Zero Mq 时，`default` 部分中指定的配置项目将被用作源的默认设置。
 
 ### server
 
-The url of the Zero Mq server that the source will subscribe to.
+源将订阅的Zero Mq 服务器的 URL。
 
-## Override the default settings
+## 覆盖默认设置
 
-If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with ``test``.  Then you can specify the configuration with option ``CONF_KEY`` when creating the stream definition (see [stream specs](../../sqls/streams.md) for more info).
+如果您有特定的连接需要覆盖默认设置，则可以创建一个自定义部分。 在上一个示例中，我们创建一个名为 `test` 的特定设置。 然后，您可以在创建流定义时使用选项 `CONF_KEY` 指定配置（有关更多信息，请参见 [stream specs](../../sqls/streams.md)）。
 
-## Sample usage
+## 使用示例
 
 ```
 demo (
@@ -43,5 +43,5 @@ demo (
 	) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="test", TYPE="zmq");
 ```
 
-The configuration keys "test" will be used. The Zero Mq topic to subscribe is "demo" as specified in the ``DATASOURCE``.
+将使用配置键 "test"。 订阅的 Zero Mq 主题是 `DATASOURCE` 中指定的 "demo"。
 

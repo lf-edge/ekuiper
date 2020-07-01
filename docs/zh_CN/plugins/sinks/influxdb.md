@@ -1,6 +1,6 @@
-# InfluxDB Sink
+# InfluxDB 目标（Sink）
 
-该插件将分析结果发送到InfluxDB中
+该插件将分析结果发送到 InfluxDB 中。
 ## 编译插件&创建插件
 
 在编译之前，请对源代码做如下更改：
@@ -17,24 +17,24 @@
 # bin/cli create rule influx -f /tmp/influxRule.txt
 ```
 
-重新启动Kuiper服务器以激活插件。
+重新启动 Kuiper 服务器以激活插件。
 
 ## 属性
 
-| Property name | Optional | Description                                                  |
-| ------------- | -------- | ------------------------------------------------------------ |
-| addr          | true     | The addr of the InfluxDB |
-| measurement   | true     | The measurement of the InfluxDb (like table name) |
-| username      | false    | The InfluxDB login username |
-| password      | false    | The InfluxDB login password |
-| databasename  | true     | The database of the InfluxDB |
-| tagkey        | true     | The tag key of the InfluxDB |
-| tagvalue      | true     | The tag value of the InfluxDB |
+| 属性名称     | 会否可选 | 说明                     |
+| ------------ | -------- | ------------------------ |
+| addr         | 是       | InfluxDB的地址           |
+| measurement  | 是       | InfluxDb的测量（如表名） |
+| username     | 否       | InfluxDB登陆用户名       |
+| password     | 否       | InfluxDB登陆密码         |
+| databasename | 是       | InfluxDB的数据库         |
+| tagkey       | 是       | InfluxDB的标签键         |
+| tagvalue     | 是       | InfluxDB的标签值         |
 ## 示例用法
 
 下面是选择温度大于50度的样本规则，和一些配置文件仅供参考。
 
-#### /tmp/influxRule.txt
+#### ####/tmp/influxRule.txt
 ```json
 {
   "id": "influx",
@@ -55,7 +55,7 @@
   ]
 }
 ```
-#### /tmp/influxPlugin.txt
+#### ####/tmp/influxPlugin.txt
 ```json
 {
   "file":"http://localhost:8080/influx.zip"

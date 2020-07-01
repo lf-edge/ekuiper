@@ -1,5 +1,5 @@
 # 基本配置
-Kuiper的配置文件位于$ kuiper / etc / kuiper.yaml中。 配置文件为yaml格式。
+Kuiper 的配置文件位于 `$ kuiper / etc / kuiper.yaml` 中。 配置文件为 yaml 格式。
 
 ## 日志级别
 
@@ -12,15 +12,15 @@ basic:
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
 ```
-## Cli端口
+## Cli 端口
 ```yaml
 basic:
   # CLI port
   port: 20498
 ```
-CLI服务器监听端口
+CLI 服务器监听端口
 
-## REST服务配置
+## REST 服务配置
 
 ```yaml
 basic:
@@ -32,19 +32,19 @@ basic:
 ```
 
 #### restPort
-REST http服务器监听端口
+REST http 服务器监听端口
 
 #### restTls
-TLS证书cert文件和key文件位置。如果restTls选项未配置，则REST服务器将启动为http服务器，否则启动为https服务器。
+TLS 证书 cert 文件和 key 文件位置。如果 restTls 选项未配置，则 REST 服务器将启动为 http 服务器，否则启动为 https 服务器。
 
-## Prometheus配置
+## Prometheus 配置
 
-如果``prometheus``参数设置为true，Kuiper 将把运行指标暴露到prometheus。Prometheus将运行在``prometheusPort``参数指定的端口上。
+如果 `prometheus` 参数设置为 true，Kuiper 将把运行指标暴露到 prometheus。Prometheus 将运行在 `prometheusPort` 参数指定的端口上。
 
 ```yaml
 basic:
   prometheus: true
   prometheusPort: 20499
 ```
-在如上默认配置中，Kuiper暴露于Prometheusd 运行指标可通过``http://localhost:20499/metrics``访问。
+在如上默认配置中，Kuiper 暴露于 Prometheusd 运行指标可通过 `http://localhost:20499/metrics` 访问。
 

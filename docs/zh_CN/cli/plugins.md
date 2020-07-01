@@ -1,59 +1,59 @@
-# Plugins management
+# 插件管理
 
-The Kuiper plugin command line tools allows you to manage plugins, such as create, show and drop plugins. Notice that, drop a plugin will need to restart kuiper to take effect. To update a plugin, do the following:
-1. Drop the plugin.
-2. Restart Kuiper.
-3. Create the plugin with the new configuration.
+Kuiper 插件命令行工具使您可以管理插件，例如创建，显示和删除插件。 请注意，删除插件将需要重新启动kuiper 才能生效。 要更新插件，请执行以下操作：
+1. 删除插件。
+2. 重新启动 Kuiper。
+3. 使用新配置创建插件。
 
-## create a plugin
+## 创建插件
 
-The command is used for creating a plugin.  The plugin's definition is specified with JSON format.
+该命令用于创建插件。 插件的定义以 JSON 格式指定。
 
 ```shell
 create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file
 ```
 
-The plugin can be created with two ways. 
+插件可以通过两种方式创建。
 
-- Specify the plugin definition in command line.
+- 在命令行中指定插件定义。
 
-Sample:
+示例：
 
 ```shell
 # bin/cli create plugin source random {"file":"http://127.0.0.1/plugins/sources/random.zip"}
 ```
 
-The command create a source plugin named ``random``. 
+该命令创建一个名为 `random` 的源插件。
 
-- Specify the plugin definition in a file. If the plugin is complex, or the plugin is already wrote in text files with well organized formats, you can just specify the plugin definition through ``-f`` option.
+- 在文件中指定插件定义。 如果插件很复杂，或者插件已经以规范有序的格式写在文本文件中，则只需通过 `-f` 选项指定插件定义即可。
 
-Sample:
+示例：
 
 ```shell
 # bin/cli create plugin sink plugin1 -f /tmp/plugin1.txt
 ```
 
-Below is the contents of ``plugin1.txt``.
+以下是 `plugin1.txt` 的内容。
 
 ```json
 {
   "file":"http://127.0.0.1/plugins/sources/random.zip"
 }
 ```
-### parameters
-1. plugin_type: the type of the plugin. Available values are `["source", "sink", "functions"]`
-2. plugin_name: a unique name of the plugin. The name must be the same as the camel case version of the plugin with lowercase first letter. For example, if the exported plugin name is `Random`, then the name of this plugin is `random`.
-3. file: the url of the plugin files. It must be a zip file with: a compiled so file and the yaml file(only required for sources). The name of the files must match the name of the plugin. Please check [Extension](../extension/overview.md) for the naming rule.
+### 参数
+1. plugin_type：插件类型，可用值为 `["source", "sink", "functions"]`
+2. plugin_name：插件的唯一名称。名称首字母必须小写。例如，如果导出的插件名称为 `Random`，则此插件的名称为 `Random`。
+3. file：插件文件的网址。 它必须是一个 zip 文件，其中包含：编译后的 so 文件和 yaml 文件（仅源文件需要）。 文件名称必须与插件名称匹配。 关于命名规则，查看 [扩展名](../extension/overview.md) 。
 
-## show plugins
+## 显示插件
 
-The command is used for displaying all plugins defined in the server for a plugin type.
+该命令用于显示服务器中为插件类型定义的所有插件。
 
 ```shell
 show plugins function
 ```
 
-Sample:
+示例：
 
 ```shell
 # bin/cli show plugins function
@@ -61,14 +61,14 @@ function1
 function2
 ```
 
-## describe a plugin
-The command is used to print out the detailed definition of a plugin.
+## 描述插件
+该命令用于打印插件的详细定义。
 
 ```shell
 describe plugin $plugin_type $plugin_name
 ```
 
-Sample: 
+示例：
 
 ```shell
 # bin/cli describe plugin source plugin1
@@ -78,15 +78,16 @@ Sample:
 }
 ```
 
-## drop a plugin
+## 删除插件
 
-The command is used for drop the plugin.
+该命令用于删除插件。
 
 ```shell
 drop plugin $plugin_type $plugin_name -s $stop 
 ```
-In which, `-s $stop` is an optional boolean parameter. If it is set to true, the Kuiper server will be stopped for the delete to take effect. The user will need to restart it manually.
-Sample:
+其中，`-s $stop` 是可选的布尔参数。 如果将其设置为 true，则 Kuiper 服务器将停止，以使删除生效。 用户将需要手动重新启动它。
+
+示例：
 
 ```shell
 # bin/cli drop plugin source random
