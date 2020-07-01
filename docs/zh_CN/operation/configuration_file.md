@@ -35,7 +35,7 @@ basic:
 REST http 服务器监听端口
 
 #### restTls
-TLS证书 cert 文件和 key 文件位置。如果 restTls 选项未配置，则 REST 服务器将启动为 http 服务器，否则启动为 https 服务器。
+TLS 证书 cert 文件和 key 文件位置。如果 restTls 选项未配置，则 REST 服务器将启动为 http 服务器，否则启动为 https 服务器。
 
 ## Prometheus 配置
 
@@ -46,5 +46,5 @@ basic:
   prometheus: true
   prometheusPort: 20499
 ```
-在如上默认配置中，Kuiper暴露于 Prometheusd 运行指标可通过 `http://localhost:20499/metrics` 访问。
+在如上默认配置中，Kuiper 暴露于 Prometheusd 运行指标可通过 `http://localhost:20499/metrics` 访问。
 

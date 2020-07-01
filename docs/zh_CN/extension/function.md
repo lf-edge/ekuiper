@@ -23,7 +23,7 @@ Validate(args []interface{}) error
 IsAggregate() bool
 ```
 
-函数的主要任务是实现 _exec_ 方法。 该方法将用于计算 SQL 中函数的结果。 参数是函数参数值的一部分。 您可以使用它们进行计算。 如果计算成功，则返回结果并返回 true； 否则，返回 nil 和 false。
+函数的 main 任务是实现 _exec_ 方法。 该方法将用于计算 SQL 中函数的结果。 参数是函数参数值的一部分。 您可以使用它们进行计算。 如果计算成功，则返回结果并返回 true； 否则，返回 nil 和 false。
 
 ```go
 //执行函数，如果执行成功,返回结果，如果执行失败，返回错误和 false。
@@ -39,7 +39,7 @@ var MyFunction myFunction
 [Echo Function](../../../plugins/functions/echo.go) 是一个很好的示例。
 
 ### 源文件打包
-将实现的函数构建为 go 插件，并确保输出 s o文件位于 plugins/functions 文件夹中。
+将实现的函数构建为 go 插件，并确保输出 so 文件位于 plugins/functions 文件夹中。
 
 ```bash
 go build --buildmode=plugin -o plugins/functions/MyFunction.so plugins/functions/my_function.go
