@@ -22,7 +22,7 @@ type MQTTSink struct {
 	pkeyPath string
 
 	insecureSkipVerify bool
-	retained bool
+	retained           bool
 
 	conn MQTT.Client
 }
