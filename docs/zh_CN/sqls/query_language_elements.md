@@ -1,22 +1,22 @@
 
 # 查询语言元素
 
-Kuiper提供了用于构建查询的各种元素。 总结如下。
+Kuiper 提供了用于构建查询的各种元素。 总结如下。
 
 | 元素                  | 总结                                                         |
 | --------------------- | ------------------------------------------------------------ |
-| [SELECT](#SELECT)     | SELECT用于从输入流中检索行，并允许从Kuiper中的一个或多个输入流中选择一个或多个列。 |
-| [FROM](#FROM)         | FROM指定输入流。 任何SELECT语句始终需要FROM子句。            |
-| [JOIN](#JOIN)         | JOIN用于合并来自两个或更多输入流的记录。 JOIN包括LEFT，RIGHT，FULL和CROSS。 |
-| [WHERE](#WHERE)       | WHERE指定查询返回的行的搜索条件。                            |
-| [GROUP BY](#GROUP BY) | GROUP BY将一组选定的行分组为一组汇总行，这些汇总行按一个或多个列或表达式的值分组。 |
+| [SELECT](#SELECT)     | SELECT 用于从输入流中检索行，并允许从 Kuiper 中的一个或多个输入流中选择一个或多个列。 |
+| [FROM](#FROM)         | FROM 指定输入流。 任何 SELECT 语句始终需要 FROM 子句。       |
+| [JOIN](#JOIN)         | JOIN 用于合并来自两个或更多输入流的记录。 JOIN 包括 LEFT，RIGHT，FULL 和 CROSS。 |
+| [WHERE](#WHERE)       | WHERE 指定查询返回的行的搜索条件。                           |
+| [GROUP BY](#GROUP BY) | GROUP BY 将一组选定的行分组为一组汇总行，这些汇总行按一个或多个列或表达式的值分组。 |
 | [ORDER BY](#ORDER BY) | 按一列或多列的值对行进行排序。                               |
-| [HAVING](#HAVING)     | HAVING为组或集合指定搜索条件。 HAVING只能与SELECT表达式一起使用。 |
+| [HAVING](#HAVING)     | HAVING 为组或集合指定搜索条件。 HAVING 只能与 SELECT 表达式一起使用。 |
 |                       |                                                              |
 
 ## SELECT
 
-从输入流中检索行，并允许从Kuiper中的一个或多个输入流中选择一个或多个列。
+从输入流中检索行，并允许从 Kuiper 中的一个或多个输入流中选择一个或多个列。
 
 ### 句法
 
@@ -30,7 +30,7 @@ SELECT
 
 ### 参数
 
-指定应返回FROM子句中所有输入流的所有列。 列由输入源返回，如FROM子句中指定的那样，并按它们在传入流中存在的顺序或由ORDER BY子句指定的顺序返回。
+指定应返回 FROM 子句中所有输入流的所有列。 列由输入源返回，如 FROM 子句中指定的那样，并按它们在传入流中存在的顺序或由 ORDER BY 子句指定的顺序返回。
 
 **\***
 
@@ -46,7 +46,7 @@ SELECT
 
 **column_alias**
 
-用替代名称替换查询结果集中的列名称。 别名还用于指定表达式结果的名称。column_alias不能在WHERE、GROUP BY或HAVING子句中使用。
+用替代名称替换查询结果集中的列名称。 别名还用于指定表达式结果的名称。column_alias 不能在 WHERE、GROUP BY 或 HAVING 子句中使用。
 
 **表达式**
 
@@ -54,7 +54,7 @@ SELECT
 
 ## FROM
 
-指定输入流。 任何SELECT语句始终需要FROM子句。
+指定输入流。 任何 SELECT 语句始终需要 FROM 子句。
 
 ### Syntax
 
@@ -70,7 +70,7 @@ FROM source_stream | source_stream AS source_stream_alias
 
 ## JOIN
 
-JOIN用于合并来自两个或更多输入流的记录。 JOIN包括LEFT，RIGHT，FULL和CROSS。
+JOIN 用于合并来自两个或更多输入流的记录。 JOIN 包括 LEFT，RIGHT，FULL 和CROSS。
 
 ### 句法
 
@@ -85,7 +85,7 @@ ON <source_stream|source_stream_alias>.column_name =<source_stream|source_stream
 
 **LEFT**
 
-LEFT JOIN关键字从左流（stream1）返回所有记录，并从右流（stream2）返回匹配的记录。 如果不匹配，则结果从右侧为NULL。
+LEFT JOIN 关键字从左流（stream1）返回所有记录，并从右流（stream2）返回匹配的记录。 如果不匹配，则结果从右侧为 NULL。
 
 ```sql
 SELECT column_name(s)
@@ -96,7 +96,7 @@ ON stream1.column_name = stream2.column_name;
 
 **RIGHT**
 
-JOIN关键字从右侧流（stream2）返回所有记录，并从左侧流（stream1）返回匹配的记录。 如果没有匹配项，则结果从左侧为NULL。
+JOIN 关键字从右侧流（stream2）返回所有记录，并从左侧流（stream1）返回匹配的记录。 如果没有匹配项，则结果从左侧为 NULL。
 
 ```sql
 SELECT column_name(s)
@@ -107,9 +107,9 @@ ON stream1.column_name = stream2.column_name;
 
 **FULL**
 
-当左（stream1）或右（stream2）表记录匹配时，FULL JOIN关键字返回所有记录。
+当左（stream1）或右（stream2）表记录匹配时，FULL JOIN 关键字返回所有记录。
 
-**注意：** FULL JOIN可能返回较大的结果集！
+**注意：** FULL JOIN 可能返回较大的结果集！
 
 ```sql
 SELECT column_name(s)
@@ -121,9 +121,9 @@ WHERE condition;
 
 **CROSS**
 
-CROSS JOIN用于将第一个流（stream1）的每一行与第二个流（stream2）的每一行组合。 这也称为笛卡尔联接，因为它从联接表返回行集的笛卡尔乘积。 假设在stream1中有m 行，在stream2中有 n 行，那么CROSS JOIN的结果将返回m * n 行。
+CROSS JOIN 用于将第一个流（stream1）的每一行与第二个流（stream2）的每一行组合。 这也称为笛卡尔联接，因为它从联接表返回行集的笛卡尔乘积。 假设在 stream1中有 m 行，在stream2 中有 n 行，那么 CROSS JOIN 的结果将返回 m * n 行。
 
-**注意：** CROSS JOIN可能返回非常大的结果集！
+**注意：** CROSS JOIN 可能返回非常大的结果集！
 
 ```sql
 SELECT column_name(s)
@@ -143,7 +143,7 @@ WHERE condition;
 
 ## WHERE
 
-WHERE指定查询返回的行的搜索条件。 WHERE子句仅用于提取满足指定条件的那些记录。
+WHERE 指定查询返回的行的搜索条件。 WHERE 子句仅用于提取满足指定条件的那些记录。
 
 ### 句法
 
@@ -175,11 +175,11 @@ WHERE <search_condition>
 
 **< predicate >**
 
-返回TRUE或FALSE的表达式。
+返回 TRUE 或 FALSE 的表达式。
 
 **表达式**
 
-是列名、常数、函数、变量、标量子查询，或由一个或多个运算符或子查询连接的列名、常数和函数的任意组合。表达式也可以包含CASE表达式。
+是列名、常数、函数、变量、标量子查询，或由一个或多个运算符或子查询连接的列名、常数和函数的任意组合。表达式也可以包含 CASE 表达式。
 
 **=**
 
@@ -219,7 +219,7 @@ WHERE condition;
 
 ## GROUP BY
 
-GROUP BY将一组选定的行分组为一组汇总行，这些汇总行按一个或多个列或表达式的值分组。
+GROUP BY 将一组选定的行分组为一组汇总行，这些汇总行按一个或多个列或表达式的值分组。
 
 ### 句法
 
@@ -252,7 +252,7 @@ GROUP BY column_name
 
 ### HAVING
 
-指定组或集合的搜索条件。 HAVING只能与SELECT表达式一起使用。 HAVING通常在GROUP BY子句中使用。 如果不使用GROUP BY，则HAVING的行为类似于WHERE子句。
+指定组或集合的搜索条件。 HAVING 只能与 SELECT 表达式一起使用。 HAVING 通常在 GROUP BY 子句中使用。 如果不使用 GROUP BY，则 HAVING 的行为类似于WHERE 子句。
 
 #### 句法
 
@@ -280,10 +280,10 @@ SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY name HAV
 ORDER BY column1, column2, ... ASC|DESC
 ```
 
-sql中的ORDER BY语句用于根据一个或多个列对获取的数据进行升序或降序排序。
+sql 中的 ORDER BY 语句用于根据一个或多个列对获取的数据进行升序或降序排序。
 
-- 默认情况下，ORDER BY以**升序对数据进行排序。**
-- 关键字DESC用于按降序排序数据，关键字ASC用于按升序排序。
+- 默认情况下，ORDER BY 以**升序对数据进行排序。**
+- 关键字 DESC 用于按降序排序数据，关键字 ASC 用于按升序排序。
 
 ### 参数
 
