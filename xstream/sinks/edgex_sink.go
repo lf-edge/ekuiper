@@ -117,7 +117,7 @@ func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 			Port:     ems.port,
 			Protocol: ems.protocol,
 		},
-		Type: ems.ptype,
+		Type:     ems.ptype,
 		Optional: ems.optional,
 	}
 	log.Infof("Using configuration for EdgeX message bus sink: %+v", conf)
@@ -198,7 +198,7 @@ func (ems *EdgexMsgBusSink) getMeta(result []map[string]interface{}) (meta, bool
 	return nil, false
 }
 
-func (m meta) getIntVal(k string) (int64) {
+func (m meta) getIntVal(k string) int64 {
 	if v, ok := m[k]; ok {
 		if v1, ok1 := v.(float64); ok1 {
 			return int64(v1)
@@ -207,7 +207,7 @@ func (m meta) getIntVal(k string) (int64) {
 	return 0
 }
 
-func (m meta) getStrVal(k string) (string) {
+func (m meta) getStrVal(k string) string {
 	if v, ok := m[k]; ok {
 		if v1, ok1 := v.(string); ok1 {
 			return v1
@@ -216,7 +216,7 @@ func (m meta) getStrVal(k string) (string) {
 	return ""
 }
 
-func (ems *EdgexMsgBusSink) getMetaValueAsMap(m meta, k string) (map[string]interface{}) {
+func (ems *EdgexMsgBusSink) getMetaValueAsMap(m meta, k string) map[string]interface{} {
 	if v, ok := m[k]; ok {
 		if v1, ok1 := v.(map[string]interface{}); ok1 {
 			return v1

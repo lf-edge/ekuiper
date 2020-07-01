@@ -159,7 +159,7 @@ func Handle(file string, conf map[interface{}]interface{}, skeys []string, val s
 	}
 }
 
-func getKey(file string, key string) string{
+func getKey(file string, key string) string {
 	if m, ok := file_keys_map[file][key]; ok {
 		return m
 	} else {

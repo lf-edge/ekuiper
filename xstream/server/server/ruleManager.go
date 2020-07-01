@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"sync"
+
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
-	"sync"
 )
 
 var registry *RuleRegistry
@@ -43,15 +45,15 @@ func (rr *RuleRegistry) Delete(key string) {
 }
 
 func createRuleState(rule *api.Rule) (*RuleState, error) {
+	rs := &RuleState{
+		Name: rule.Id,
+	}
+	registry.Store(rule.Id, rs)
 	if tp, err := ruleProcessor.ExecInitRule(rule); err != nil {
-		return nil, err
+		return rs, err
 	} else {
-		rs := &RuleState{
-			Name:      rule.Id,
-			Topology:  tp,
-			Triggered: true,
-		}
-		registry.Store(rule.Id, rs)
+		rs.Topology = tp
+		rs.Triggered = true
 		return rs, nil
 	}
 }
@@ -75,6 +77,7 @@ func getAllRulesWithStatus() ([]map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	sort.Strings(names)
 	result := make([]map[string]interface{}, len(names))
 	for i, name := range names {
 		s, err := getRuleState(name)
@@ -100,7 +103,7 @@ func getRuleState(name string) (string, error) {
 func doGetRuleState(rs *RuleState) (string, error) {
 	result := ""
 	if !rs.Triggered {
-		result = "Stopped: canceled manually."
+		result = "Stopped: canceled manually or by error."
 		return result, nil
 	}
 	c := (*rs.Topology).GetContext()
@@ -175,7 +178,7 @@ func startRule(name string) error {
 }
 
 func stopRule(name string) (result string) {
-	if rs, ok := registry.Load(name); ok {
+	if rs, ok := registry.Load(name); ok && rs.Triggered {
 		(*rs.Topology).Cancel()
 		rs.Triggered = false
 		result = fmt.Sprintf("Rule %s was stopped.", name)

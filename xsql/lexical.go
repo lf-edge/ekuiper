@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"strconv"
 	"strings"
 )
 
@@ -62,6 +63,7 @@ const (
 	DOT       // .
 	COLON     //:
 	SEMICOLON //;
+	COLSEP    //\007
 
 	// Keywords
 	SELECT
@@ -157,6 +159,7 @@ var tokens = []string{
 	DOT:       ".",
 	SEMICOLON: ";",
 	COLON:     ":",
+	COLSEP:    "\007",
 
 	SELECT: "SELECT",
 	FROM:   "FROM",
@@ -239,6 +242,8 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	} else if isDigit(ch) {
 		s.unread()
 		return s.ScanNumber(false, false)
+	} else if isBackquote(ch) {
+		return s.ScanBackquoteIdent()
 	}
 
 	switch ch {
@@ -463,18 +468,26 @@ func (s *Scanner) ScanIdent() (tok Token, lit string) {
 
 func (s *Scanner) ScanString() (tok Token, lit string) {
 	var buf bytes.Buffer
-	_ = s.read()
+	ch := s.read()
+	buf.WriteRune(ch)
+	escape := false
 	for {
-		ch := s.read()
-		if ch == '"' {
+		ch = s.read()
+		if ch == '"' && !escape {
+			buf.WriteRune(ch)
 			break
 		} else if ch == eof {
 			return BADSTRING, buf.String()
+		} else if ch == '\\' && !escape {
+			escape = true
+			buf.WriteRune(ch)
 		} else {
+			escape = false
 			buf.WriteRune(ch)
 		}
 	}
-	return STRING, buf.String()
+	r, _ := strconv.Unquote(buf.String())
+	return STRING, r
 }
 
 func (s *Scanner) ScanDigit() (tok Token, lit string) {
@@ -523,6 +536,19 @@ func (s *Scanner) ScanNumber(startWithDot bool, isNeg bool) (tok Token, lit stri
 	} else {
 		return INTEGER, buf.String()
 	}
+}
+
+func (s *Scanner) ScanBackquoteIdent() (tok Token, lit string) {
+	var buf bytes.Buffer
+	for {
+		ch := s.read()
+		if isBackquote(ch) || ch == eof {
+			break
+		} else {
+			buf.WriteRune(ch)
+		}
+	}
+	return IDENT, buf.String()
 }
 
 func (s *Scanner) skipUntilNewline() {
@@ -591,6 +617,8 @@ func isLetter(ch rune) bool { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && c
 func isDigit(ch rune) bool { return ch >= '0' && ch <= '9' }
 
 func isQuotation(ch rune) bool { return ch == '"' }
+
+func isBackquote(ch rune) bool { return ch == '`' }
 
 func (tok Token) isOperator() bool {
 	return (tok > operatorBeg && tok < operatorEnd) || tok == ASTERISK || tok == LBRACKET

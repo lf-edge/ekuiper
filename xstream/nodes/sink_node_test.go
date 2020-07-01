@@ -55,6 +55,19 @@ func TestSinkTemplate_Apply(t *testing.T) {
 			},
 			data:   []byte(`[{"ab":"hello1"},{"ab":"hello2"}]`),
 			result: [][]byte{[]byte(`{"newab":"hello1"}`), []byte(`{"newab":"hello2"}`)},
+		}, {
+			config: map[string]interface{}{
+				"sendSingle":   true,
+				"dataTemplate": `{"__meta":{{json .__meta}},"temp":{{.temperature}}}`,
+			},
+			data:   []byte(`[{"temperature":33,"humidity":70,"__meta": {"messageid":45,"other": "mock"}}]`),
+			result: [][]byte{[]byte(`{"__meta":{"messageid":45,"other":"mock"},"temp":33}`)},
+		}, {
+			config: map[string]interface{}{
+				"dataTemplate": `[{"__meta":{{json (index . 0 "__meta")}},"temp":{{index . 0 "temperature"}}}]`,
+			},
+			data:   []byte(`[{"temperature":33,"humidity":70,"__meta": {"messageid":45,"other": "mock"}}]`),
+			result: [][]byte{[]byte(`[{"__meta":{"messageid":45,"other":"mock"},"temp":33}]`)},
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

@@ -9,11 +9,11 @@ Kuiper具有许多内置函数，可以对数据执行计算。
 
 | Function | Example   | 说明             |
 | -------- | --------- | ---------------- |
-| avg      | avg(col1) | 组中的平均值     |
-| count    | count(*)  | 组中的项目数     |
-| max      | max(col1) | 组中的最大值     |
-| min      | min(col1) | 组中的最小值     |
-| sum      | sum(col1) | 组中所有值的总和 |
+| avg      | avg(col1) | 组中的平均值。空值不参与计算。     |
+| count    | count(*)  | 组中的项目数。空值不参与计算。    |
+| max      | max(col1) | 组中的最大值。空值不参与计算。     |
+| min      | min(col1) | 组中的最小值。空值不参与计算。     |
+| sum      | sum(col1) | 组中所有值的总和。空值不参与计算。 |
 
 ## 数学函数
 | Function | Example     | Description                                    |
@@ -85,10 +85,19 @@ Kuiper具有许多内置函数，可以对数据执行计算。
 | sha384   | sha384(col1) | 参数的哈希值 |
 | sha512   | sha512(col1) | 参数的哈希值 |
 
-## 其它函数
-| 函数      | 示例         | Description                                                  |
-| --------- | ------------ | ------------------------------------------------------------ |
-| isNull    | isNull(col1) | 如果参数为空值，则返回true。                                 |
-| newuuid   | newuuid()    | 返回一个随机的16字节UUID。                                   |
-| timestamp | timestamp()  | 返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。 |
+## JSON Functions
+| Function | Example     | Description                                    |
+| -------- | ----------- | ---------------------------------------------- |
+| json_path_exists      | json_path_exists(col1, "$.name")   | Checks whether JSON path returns any item for the specified JSON value. Return bool value.                   |
+| json_path_query     | json_path_query(col1, "$.name")  | Gets all items returned by JSON path for the specified JSON value.              |
+| json_path_query_first  | json_path_query_first(col1, "$.name")| Gets the first item returned by JSON path for the specified JSON value.                  |
 
+**Please refer to [json path functions](../json_expr.md#json-path-functions) for how to compose a json path.**  
+## 其它函数
+| 函数    | 示例         | Description                                                  |
+| ------- | ------------ | ------------------------------------------------------------ |
+| isNull  | isNull(col1) | 如果参数为空值，则返回true。                                 |
+| newuuid | newuuid()    | 返回一个随机的16字节UUID。                                   |
+| tstamp  | tstamp()     | 返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。 |
+| mqtt    | mqtt(topic)  | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src1.topic)``<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src2.messageid)`` |
+| meta    | meta(topic)  | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as ``meta(device)``<br />- A qualified key to specify the stream, such as ``meta(src1.device)`` <br />- A key with arrow for multi level meta data, such as ``meta(src1.reading->device->name)`` This assumes reading is a map structure meta data. |

@@ -183,16 +183,16 @@ type Manager struct {
 }
 
 func NewPluginManager() (*Manager, error) {
-	var err error
+	var outerErr error
 	once.Do(func() {
 		dir, err := common.GetLoc("/plugins")
 		if err != nil {
-			err = fmt.Errorf("cannot find plugins folder: %s", err)
+			outerErr = fmt.Errorf("cannot find plugins folder: %s", err)
 			return
 		}
 		etcDir, err := common.GetLoc("/etc")
 		if err != nil {
-			err = fmt.Errorf("cannot find etc folder: %s", err)
+			outerErr = fmt.Errorf("cannot find etc folder: %s", err)
 			return
 		}
 
@@ -200,7 +200,7 @@ func NewPluginManager() (*Manager, error) {
 		for i := 0; i < 3; i++ {
 			names, err := findAll(PluginType(i), dir)
 			if err != nil {
-				err = fmt.Errorf("fail to find existing plugins: %s", err)
+				outerErr = fmt.Errorf("fail to find existing plugins: %s", err)
 				return
 			}
 			plugins[i] = names
@@ -213,7 +213,7 @@ func NewPluginManager() (*Manager, error) {
 			registry:  registry,
 		}
 	})
-	return singleton, err
+	return singleton, outerErr
 }
 
 func findAll(t PluginType, pluginDir string) (result map[string]string, err error) {

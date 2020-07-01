@@ -92,12 +92,21 @@ func StartUp(Version string) {
 	srv := createRestServer(common.Config.RestPort)
 
 	go func() {
-		if err := srv.ListenAndServe(); err != nil {
+		var err error
+		if common.Config.RestTls == nil {
+			err = srv.ListenAndServe()
+		} else {
+			err = srv.ListenAndServeTLS(common.Config.RestTls.Certfile, common.Config.RestTls.Keyfile)
+		}
+		if err != nil {
 			logger.Fatal("Error serving rest service: ", err)
 		}
 	}()
-
-	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on port %d. \n", Version, common.Config.Port, common.Config.RestPort)
+	t := "http"
+	if common.Config.RestTls != nil {
+		t = "https"
+	}
+	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://0.0.0.0:%d. \n", Version, common.Config.Port, t, common.Config.RestPort)
 	logger.Info(msg)
 	fmt.Printf(msg)
 

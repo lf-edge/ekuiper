@@ -24,7 +24,7 @@ var msgConfig1 = types.MessageBusConfig{
 		Port:     5563,
 		Protocol: "tcp",
 	},
-	Type:messaging.ZeroMQ,
+	Type: messaging.ZeroMQ,
 }
 
 type data struct {
@@ -54,15 +54,15 @@ func pubEventClientZeroMq(count int, wg *sync.WaitGroup) {
 			log.Fatal(ec)
 		} else {
 			client := coredata.NewEventClient(local.New("test"))
-			index := 0;
+			index := 0
 			for i := 0; i < count; i++ {
-				if i % 10 == 0 {
+				if i%10 == 0 {
 					index = 0
 				}
 
 				var testEvent = models.Event{Device: "demo"}
 				var r1 = models.Reading{Device: "Temperature device", Name: "Temperature", Value: fmt.Sprintf("%d", mockup[index].temperature)}
-				var r2 = models.Reading{Device: "Humidity device", Name: "Humidity", Value: fmt.Sprintf("%d",  mockup[index].humidity)}
+				var r2 = models.Reading{Device: "Humidity device", Name: "Humidity", Value: fmt.Sprintf("%d", mockup[index].humidity)}
 				index++
 
 				testEvent.Readings = append(testEvent.Readings, r1, r2)
@@ -101,7 +101,7 @@ func main() {
 	var wg sync.WaitGroup
 	for i := 0; i < 1; i++ {
 		wg.Add(1)
-		go pubEventClientZeroMq(count ,&wg)
+		go pubEventClientZeroMq(count, &wg)
 	}
 	wg.Wait()
 	t := time.Now()
