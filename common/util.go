@@ -183,8 +183,8 @@ func absolutePath(subdir string) (dir string, err error) {
 	}
 	return "", err
 }
-
-func relativePath(subdir string) (dir string, err error) {
+/*
+func GetLoc(subdir string) (string, error) {
 	if base := os.Getenv(KuiperBaseKey); base != "" {
 		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
 		dir = base
@@ -202,7 +202,7 @@ func relativePath(subdir string) (dir string, err error) {
 	}
 	return dir, nil
 }
-
+*/
 func GetLoc(subdir string) (string, error) {
 	if "relative" == LoadFileType {
 		return relativePath(subdir)
@@ -214,8 +214,8 @@ func GetLoc(subdir string) (string, error) {
 	return "", fmt.Errorf("Unrecognized loading method.")
 }
 
-/*
-func GetLoc(subdir string) (string, error) {
+
+func relativePath(subdir string) (dir string, err error) {
 	dir, err = os.Getwd()
 	if err != nil {
 		return "", err
@@ -250,7 +250,7 @@ func GetLoc(subdir string) (string, error) {
 
 	return "", fmt.Errorf("conf dir not found, please set KuiperBaseKey program environment variable correctly.")
 }
-*/
+
 func GetAndCreateDataLoc(dir string) (string, error) {
 	dataDir, err := GetDataLoc()
 	if err != nil {
