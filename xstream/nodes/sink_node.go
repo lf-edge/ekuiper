@@ -15,19 +15,15 @@ import (
 )
 
 type SinkNode struct {
+	*defaultSinkNode
 	//static
-	input    chan interface{}
-	name     string
 	sinkType string
 	mutex    sync.RWMutex
 	//configs (also static for sinks)
-	concurrency int
-	options     map[string]interface{}
-	isMock      bool
+	options map[string]interface{}
+	isMock  bool
 	//states varies after restart
-	ctx          api.StreamContext
-	statManagers []StatManager
-	sinks        []api.Sink
+	sinks []api.Sink
 }
 
 func NewSinkNode(name string, sinkType string, props map[string]interface{}) *SinkNode {
@@ -40,25 +36,33 @@ func NewSinkNode(name string, sinkType string, props map[string]interface{}) *Si
 		}
 	}
 	return &SinkNode{
-		input:       make(chan interface{}, bufferLength),
-		name:        name,
-		sinkType:    sinkType,
-		options:     props,
-		concurrency: 1,
-		ctx:         nil,
+		defaultSinkNode: &defaultSinkNode{
+			input: make(chan interface{}, bufferLength),
+			defaultNode: &defaultNode{
+				name:        name,
+				concurrency: 1,
+				ctx:         nil,
+			},
+		},
+		sinkType: sinkType,
+		options:  props,
 	}
 }
 
 //Only for mock source, do not use it in production
 func NewSinkNodeWithSink(name string, sink api.Sink, props map[string]interface{}) *SinkNode {
 	return &SinkNode{
-		input:       make(chan interface{}, 1024),
-		name:        name,
-		sinks:       []api.Sink{sink},
-		options:     props,
-		concurrency: 1,
-		ctx:         nil,
-		isMock:      true,
+		defaultSinkNode: &defaultSinkNode{
+			input: make(chan interface{}, 1024),
+			defaultNode: &defaultNode{
+				name:        name,
+				concurrency: 1,
+				ctx:         nil,
+			},
+		},
+		sinks:   []api.Sink{sink},
+		options: props,
+		isMock:  true,
 	}
 }
 
@@ -327,19 +331,14 @@ func doGetSink(name string, action map[string]interface{}) (api.Sink, error) {
 	return s, nil
 }
 
-func (m *SinkNode) GetName() string {
-	return m.name
+//Override defaultNode
+func (m *SinkNode) AddOutput(output chan<- interface{}, name string) error {
+	return fmt.Errorf("fail to add output %s, sink %s cannot add output", name, m.name)
 }
 
-func (m *SinkNode) GetInput() (chan<- interface{}, string) {
-	return m.input, m.name
-}
-
-func (m *SinkNode) GetMetrics() (result [][]interface{}) {
-	for _, stats := range m.statManagers {
-		result = append(result, stats.GetMetrics())
-	}
-	return result
+//Override defaultNode
+func (m *SinkNode) Broadcast(val interface{}) error {
+	return fmt.Errorf("sink %s cannot add broadcast", m.name)
 }
 
 func (m *SinkNode) drainError(errCh chan<- error, err error, ctx api.StreamContext, logger api.Logger) {

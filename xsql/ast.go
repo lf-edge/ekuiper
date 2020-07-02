@@ -1778,3 +1778,11 @@ func HasNoAggFuncs(node Node) bool {
 	})
 	return r
 }
+
+type Qos int
+
+const (
+	AtMostOnce Qos = iota
+	AtLeastOnce
+	ExactlyOnce
+)

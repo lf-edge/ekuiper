@@ -2,6 +2,7 @@ package contexts
 
 import (
 	"context"
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/states"
@@ -133,4 +134,9 @@ func (c *DefaultContext) GetState(key string) (interface{}, error) {
 
 func (c *DefaultContext) DeleteState(key string) error {
 	return c.state.DeleteState(key)
+}
+
+func (c *DefaultContext) SaveState(checkpointId int64) error {
+	fmt.Printf("placeholder for context save state for checkpoint %d", checkpointId)
+	return nil
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
-	"github.com/emqx/kuiper/xstream/operators"
 	"path"
 	"strings"
 )
@@ -488,7 +487,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			if dimensions != nil {
 				w = dimensions.GetWindow()
 				if w != nil {
-					wop, err := operators.NewWindowOp("window", w, isEventTime, lateTol, streamsFromStmt, bufferLength)
+					wop, err := nodes.NewWindowOp("window", w, isEventTime, lateTol, streamsFromStmt, bufferLength)
 					if err != nil {
 						return nil, nil, err
 					}

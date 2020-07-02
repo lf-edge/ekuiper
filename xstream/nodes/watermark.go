@@ -1,4 +1,4 @@
-package operators
+package nodes
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"github.com/emqx/kuiper/xstream/nodes"
 	"math"
 	"sort"
 	"time"
@@ -208,7 +207,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 			switch d := item.(type) {
 			case error:
 				o.statManager.IncTotalRecordsIn()
-				nodes.Broadcast(o.outputs, d, ctx)
+				o.Broadcast(d)
 				o.statManager.IncTotalExceptions()
 			case xsql.Event:
 				if d.IsWatermark() {
@@ -242,7 +241,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 				o.statManager.ProcessTimeEnd()
 			default:
 				o.statManager.IncTotalRecordsIn()
-				nodes.Broadcast(o.outputs, fmt.Errorf("run Window error: expect xsql.Event type but got %[1]T(%[1]v)", d), ctx)
+				o.Broadcast(fmt.Errorf("run Window error: expect xsql.Event type but got %[1]T(%[1]v)", d))
 				o.statManager.IncTotalExceptions()
 			}
 		// is cancelling

@@ -3,27 +3,40 @@ package xstream
 import (
 	"context"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/checkpoints"
 	"github.com/emqx/kuiper/xstream/contexts"
 	"github.com/emqx/kuiper/xstream/nodes"
-	"github.com/emqx/kuiper/xstream/operators"
 	"strconv"
 )
 
 type TopologyNew struct {
-	sources []*nodes.SourceNode
-	sinks   []*nodes.SinkNode
-	ctx     api.StreamContext
-	cancel  context.CancelFunc
-	drain   chan error
-	ops     []api.Operator
-	name    string
+	sources            []*nodes.SourceNode
+	sinks              []*nodes.SinkNode
+	ctx                api.StreamContext
+	cancel             context.CancelFunc
+	drain              chan error
+	ops                []nodes.OperatorNode
+	name               string
+	qos                xsql.Qos
+	checkpointInterval int
+	store              checkpoints.Store
+	coordinator        *checkpoints.Coordinator
 }
 
 func NewWithName(name string) *TopologyNew {
+	return NewWithNameAndQos(name, xsql.AtMostOnce)
+}
+
+func NewWithNameAndQos(name string, qos xsql.Qos) *TopologyNew {
 	tp := &TopologyNew{
 		name:  name,
 		drain: make(chan error),
+		qos:   qos,
+	}
+	if qos >= xsql.AtLeastOnce {
+		tp.store = checkpoints.GetKVStore(name)
 	}
 	return tp
 }
@@ -44,21 +57,23 @@ func (s *TopologyNew) AddSrc(src *nodes.SourceNode) *TopologyNew {
 func (s *TopologyNew) AddSink(inputs []api.Emitter, snk *nodes.SinkNode) *TopologyNew {
 	for _, input := range inputs {
 		input.AddOutput(snk.GetInput())
+		snk.AddInputCount()
 	}
 	s.sinks = append(s.sinks, snk)
 	return s
 }
 
-func (s *TopologyNew) AddOperator(inputs []api.Emitter, operator api.Operator) *TopologyNew {
+func (s *TopologyNew) AddOperator(inputs []api.Emitter, operator nodes.OperatorNode) *TopologyNew {
 	for _, input := range inputs {
 		input.AddOutput(operator.GetInput())
+		operator.AddInputCount()
 	}
 	s.ops = append(s.ops, operator)
 	return s
 }
 
-func Transform(op operators.UnOperation, name string, bufferLength int) *operators.UnaryOperator {
-	operator := operators.New(name, bufferLength)
+func Transform(op nodes.UnOperation, name string, bufferLength int) *nodes.UnaryOperator {
+	operator := nodes.New(name, bufferLength)
 	operator.SetOperation(op)
 	return operator
 }
@@ -85,6 +100,7 @@ func (s *TopologyNew) Open() <-chan error {
 		return s.drain
 	}
 	s.prepareContext() // ensure context is set
+	s.enableCheckpoint()
 	log := s.ctx.GetLogger()
 	log.Infoln("Opening stream")
 	// open stream
@@ -103,9 +119,38 @@ func (s *TopologyNew) Open() <-chan error {
 		for _, node := range s.sources {
 			node.Open(s.ctx.WithMeta(s.name, node.GetName()), s.drain)
 		}
+
+		// activate checkpoint
+		if s.coordinator != nil {
+			s.coordinator.Activate()
+		}
 	}()
 
 	return s.drain
+}
+
+func (s *TopologyNew) enableCheckpoint() error {
+	if s.qos >= xsql.AtLeastOnce {
+		var sources []checkpoints.StreamTask
+		for _, r := range s.sources {
+			sources = append(sources, r)
+		}
+		var ops []checkpoints.NonSourceTask
+		for _, r := range s.ops {
+			ops = append(ops, r)
+		}
+		var sinks []checkpoints.NonSourceTask
+		for _, r := range s.sinks {
+			sinks = append(sinks, r)
+		}
+		c := checkpoints.NewCoordinator(s.name, sources, ops, sinks, s.qos, s.store, s.checkpointInterval, s.ctx)
+		s.coordinator = c
+	}
+	return nil
+}
+
+func (s *TopologyNew) GetCoordinator() *checkpoints.Coordinator {
+	return s.coordinator
 }
 
 func (s *TopologyNew) GetMetrics() (keys []string, values []interface{}) {

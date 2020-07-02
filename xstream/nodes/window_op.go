@@ -1,4 +1,4 @@
-package operators
+package nodes
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"github.com/emqx/kuiper/xstream/nodes"
 	"math"
 	"time"
 )
@@ -18,15 +17,13 @@ type WindowConfig struct {
 }
 
 type WindowOperator struct {
-	input              chan interface{}
-	outputs            map[string]chan<- interface{}
-	name               string
+	*defaultSinkNode
 	ticker             *clock.Ticker //For processing time only
 	window             *WindowConfig
 	interval           int
 	triggerTime        int64
 	isEventTime        bool
-	statManager        nodes.StatManager
+	statManager        StatManager
 	watermarkGenerator *WatermarkGenerator //For event time only
 	msgCount           int
 }
@@ -34,9 +31,13 @@ type WindowOperator struct {
 func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance int64, streams []string, bufferLength int) (*WindowOperator, error) {
 	o := new(WindowOperator)
 
-	o.input = make(chan interface{}, bufferLength)
-	o.outputs = make(map[string]chan<- interface{})
-	o.name = name
+	o.defaultSinkNode = &defaultSinkNode{
+		input: make(chan interface{}, bufferLength),
+		defaultNode: &defaultNode{
+			outputs: make(map[string]chan<- interface{}),
+			name:    name,
+		},
+	}
 	o.isEventTime = isEventTime
 	if w != nil {
 		o.window = &WindowConfig{
@@ -85,27 +86,11 @@ func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance in
 	return o, nil
 }
 
-func (o *WindowOperator) GetName() string {
-	return o.name
-}
-
-func (o *WindowOperator) AddOutput(output chan<- interface{}, name string) error {
-	if _, ok := o.outputs[name]; !ok {
-		o.outputs[name] = output
-	} else {
-		return fmt.Errorf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
-	}
-	return nil
-}
-
-func (o *WindowOperator) GetInput() (chan<- interface{}, string) {
-	return o.input, o.name
-}
-
 // Exec is the entry point for the executor
 // input: *xsql.Tuple from preprocessor
 // output: xsql.WindowTuplesSet
 func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
+	o.ctx = ctx
 	log := ctx.GetLogger()
 	log.Debugf("Window operator %s is started", o.name)
 
@@ -113,7 +98,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		go func() { errCh <- fmt.Errorf("no output channel found") }()
 		return
 	}
-	stats, err := nodes.NewStatManager("op", ctx)
+	stats, err := NewStatManager("op", ctx)
 	if err != nil {
 		go func() { errCh <- err }()
 		return
@@ -151,7 +136,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 			}
 			switch d := item.(type) {
 			case error:
-				nodes.Broadcast(o.outputs, d, ctx)
+				o.Broadcast(d)
 				o.statManager.IncTotalExceptions()
 			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
@@ -187,7 +172,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 							tsets := tl.nextCountWindow()
 							log.Debugf("Sent: %v", tsets)
 							//blocking if one of the channel is full
-							nodes.Broadcast(o.outputs, tsets, ctx)
+							o.Broadcast(tsets)
 							o.statManager.IncTotalRecordsOut()
 						}
 						inputs = tl.getRestTuples()
@@ -196,7 +181,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 				o.statManager.ProcessTimeEnd()
 				o.statManager.SetBufferLength(int64(len(o.input)))
 			default:
-				nodes.Broadcast(o.outputs, fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d), ctx)
+				o.Broadcast(fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d))
 				o.statManager.IncTotalExceptions()
 			}
 		case now := <-c:
@@ -325,7 +310,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 		}
 		log.Debugf("Sent: %v", results)
 		//blocking if one of the channel is full
-		nodes.Broadcast(o.outputs, results, ctx)
+		o.Broadcast(results)
 		triggered = true
 		o.statManager.IncTotalRecordsOut()
 		log.Debugf("done scan")
