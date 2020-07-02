@@ -59,15 +59,12 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 	}
 
 	var qos byte = 0
-	if qos, ok := ps["qos"]; ok {
-		if v, ok := qos.(byte); ok {
-			qos = v
-		} else if v, ok := qos.(string); ok {
-			if v == "1" {
-				qos = 1
-			} else if v == "2" {
-				qos = 2
-			}
+	if qosRec, ok := ps["qos"]; ok {
+		if v, ok := qosRec.(int); ok {
+			qos = byte(v)
+		}
+		if qos != 0 && qos != 1 && qos != 2 {
+			return fmt.Errorf("not valid qos value %v, the value could be only int 0 or 1 or 2", qos)
 		}
 	}
 
