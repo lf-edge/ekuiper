@@ -3,8 +3,8 @@ package checkpoints
 import (
 	"github.com/benbjohnson/clock"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
+	"sync"
 	"time"
 )
 
@@ -72,7 +72,7 @@ func (s *checkpointStore) getLatest() *completedCheckpoint {
 type Coordinator struct {
 	tasksToTrigger          []Responder
 	tasksToWaitFor          []Responder
-	pendingCheckpoints      map[int64]*pendingCheckpoint
+	pendingCheckpoints      *sync.Map
 	completedCheckpoints    *checkpointStore
 	ruleId                  string
 	baseInterval            int
@@ -80,28 +80,31 @@ type Coordinator struct {
 	advanceToEndOfEventTime bool
 	ticker                  *clock.Ticker //For processing time only
 	signal                  chan *Signal
-	store                   Store
+	store                   api.Store
 	ctx                     api.StreamContext
 }
 
-func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTask, sinks []NonSourceTask, qos xsql.Qos, store Store, interval int, ctx api.StreamContext) *Coordinator {
+func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTask, sinks []NonSourceTask, qos api.Qos, store api.Store, interval int, ctx api.StreamContext) *Coordinator {
 	signal := make(chan *Signal, 1024)
 	var allResponders, sourceResponders []Responder
 	for _, r := range sources {
+		r.SetQos(qos)
 		re := NewResponderExecutor(signal, r)
 		allResponders = append(allResponders, re)
 		sourceResponders = append(sourceResponders, re)
 	}
 	for _, r := range operators {
+		r.SetQos(qos)
 		re := NewResponderExecutor(signal, r)
 		handler := createBarrierHandler(re, r.GetInputCount(), qos)
-		r.InitCheckpoint(handler, qos)
+		r.SetBarrierHandler(handler)
 		allResponders = append(allResponders, re)
 	}
 	for _, r := range sinks {
+		r.SetQos(qos)
 		re := NewResponderExecutor(signal, r)
 		handler := NewBarrierTracker(re, r.GetInputCount())
-		r.InitCheckpoint(handler, qos)
+		r.SetBarrierHandler(handler)
 		allResponders = append(allResponders, re)
 	}
 	//5 minutes by default
@@ -111,7 +114,7 @@ func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTa
 	return &Coordinator{
 		tasksToTrigger:     sourceResponders,
 		tasksToWaitFor:     allResponders,
-		pendingCheckpoints: make(map[int64]*pendingCheckpoint),
+		pendingCheckpoints: new(sync.Map),
 		completedCheckpoints: &checkpointStore{
 			maxNum: 3,
 		},
@@ -124,10 +127,10 @@ func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTa
 	}
 }
 
-func createBarrierHandler(re Responder, inputCount int, qos xsql.Qos) BarrierHandler {
-	if qos == xsql.AtLeastOnce {
+func createBarrierHandler(re Responder, inputCount int, qos api.Qos) BarrierHandler {
+	if qos == api.AtLeastOnce {
 		return NewBarrierTracker(re, inputCount)
-	} else if qos == xsql.ExactlyOnce {
+	} else if qos == api.ExactlyOnce {
 		return NewBarrierAligner(re, inputCount)
 	} else {
 		return nil
@@ -136,6 +139,7 @@ func createBarrierHandler(re Responder, inputCount int, qos xsql.Qos) BarrierHan
 
 func (c *Coordinator) Activate() error {
 	logger := c.ctx.GetLogger()
+	logger.Infoln("Start checkpoint coordinator for rule %s", c.ruleId)
 	if c.ticker != nil {
 		c.ticker.Stop()
 	}
@@ -154,18 +158,18 @@ func (c *Coordinator) Activate() error {
 				checkpointId := common.GetNowInMilli()
 				checkpoint := newPendingCheckpoint(checkpointId, c.tasksToWaitFor)
 				logger.Debugf("Create checkpoint %d", checkpointId)
-				c.pendingCheckpoints[checkpointId] = checkpoint
+				c.pendingCheckpoints.Store(checkpointId, checkpoint)
 				//Let the sources send out a barrier
 				for _, r := range c.tasksToTrigger {
-					go func() {
-						if err := r.TriggerCheckpoint(checkpointId); err != nil {
-							logger.Infof("Fail to trigger checkpoint for source %s with error %v", r.GetName(), err)
+					go func(t Responder) {
+						if err := t.TriggerCheckpoint(checkpointId); err != nil {
+							logger.Infof("Fail to trigger checkpoint for source %s with error %v", t.GetName(), err)
 							c.cancel(checkpointId)
 						} else {
 							time.Sleep(time.Duration(c.timeout) * time.Microsecond)
 							c.cancel(checkpointId)
 						}
-					}()
+					}(r)
 				}
 			case s := <-c.signal:
 				switch s.Message {
@@ -177,7 +181,8 @@ func (c *Coordinator) Activate() error {
 					return
 				case ACK:
 					logger.Debugf("Receive ack from %s for checkpoint %d", s.OpId, s.CheckpointId)
-					if checkpoint, ok := c.pendingCheckpoints[s.CheckpointId]; ok {
+					if cp, ok := c.pendingCheckpoints.Load(s.CheckpointId); ok {
+						checkpoint := cp.(*pendingCheckpoint)
 						checkpoint.ack(s.OpId)
 						if checkpoint.isFullyAck() {
 							c.complete(s.CheckpointId)
@@ -211,9 +216,9 @@ func (c *Coordinator) Deactivate() error {
 
 func (c *Coordinator) cancel(checkpointId int64) {
 	logger := c.ctx.GetLogger()
-	if checkpoint, ok := c.pendingCheckpoints[checkpointId]; ok {
-		delete(c.pendingCheckpoints, checkpointId)
-		checkpoint.dispose(true)
+	if checkpoint, ok := c.pendingCheckpoints.Load(checkpointId); ok {
+		c.pendingCheckpoints.Delete(checkpointId)
+		checkpoint.(*pendingCheckpoint).dispose(true)
 	} else {
 		logger.Debugf("Cancel for non existing checkpoint %d. Just ignored", checkpointId)
 	}
@@ -222,23 +227,26 @@ func (c *Coordinator) cancel(checkpointId int64) {
 func (c *Coordinator) complete(checkpointId int64) {
 	logger := c.ctx.GetLogger()
 
-	if ccp, ok := c.pendingCheckpoints[checkpointId]; ok {
+	if ccp, ok := c.pendingCheckpoints.Load(checkpointId); ok {
 		err := c.store.SaveCheckpoint(checkpointId)
 		if err != nil {
 			logger.Infof("Cannot save checkpoint %d due to storage error: %v", checkpointId, err)
 			//TODO handle checkpoint error
 			return
 		}
-		c.completedCheckpoints.add(ccp.finalize())
-		delete(c.pendingCheckpoints, checkpointId)
+		c.completedCheckpoints.add(ccp.(*pendingCheckpoint).finalize())
+		c.pendingCheckpoints.Delete(checkpointId)
 		//Drop the previous pendingCheckpoints
-		for cid, cp := range c.pendingCheckpoints {
+		c.pendingCheckpoints.Range(func(a1 interface{}, a2 interface{}) bool {
+			cid := a1.(int64)
+			cp := a2.(*pendingCheckpoint)
 			if cid < checkpointId {
 				//TODO revisit how to abort a checkpoint, discard callback
 				cp.isDiscarded = true
-				delete(c.pendingCheckpoints, cid)
+				c.pendingCheckpoints.Delete(cid)
 			}
-		}
+			return true
+		})
 		logger.Debugf("Totally complete checkpoint %d", checkpointId)
 	} else {
 		logger.Infof("Cannot find checkpoint %d to complete", checkpointId)

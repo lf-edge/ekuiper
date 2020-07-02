@@ -78,10 +78,6 @@ func NewBarrierAligner(responder Responder, inputCount int) *BarrierAligner {
 }
 
 func (h *BarrierAligner) Process(data *BufferOrEvent, ctx api.StreamContext) bool {
-	if data.Processed {
-		return false
-	}
-
 	switch d := data.Data.(type) {
 	case *Barrier:
 		h.processBarrier(d, ctx)
@@ -90,7 +86,6 @@ func (h *BarrierAligner) Process(data *BufferOrEvent, ctx api.StreamContext) boo
 		//If blocking, save to buffer
 		if h.inputCount > 1 && len(h.blockedChannels) > 0 {
 			if _, ok := h.blockedChannels[data.Channel]; ok {
-				data.Processed = true
 				h.buffer = append(h.buffer, data)
 				return true
 			}
@@ -101,6 +96,7 @@ func (h *BarrierAligner) Process(data *BufferOrEvent, ctx api.StreamContext) boo
 
 func (h *BarrierAligner) processBarrier(b *Barrier, ctx api.StreamContext) {
 	logger := ctx.GetLogger()
+	logger.Debugf("Aligner process barrier %+v", b)
 	if h.inputCount == 1 {
 		if b.CheckpointId > h.currentCheckpointId {
 			h.currentCheckpointId = b.CheckpointId
@@ -121,6 +117,7 @@ func (h *BarrierAligner) processBarrier(b *Barrier, ctx api.StreamContext) {
 			return
 		}
 	} else if b.CheckpointId > h.currentCheckpointId {
+		logger.Debugf("Aligner process new alignment", b)
 		h.beginNewAlignment(b, ctx)
 	} else {
 		return

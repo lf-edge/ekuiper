@@ -128,6 +128,10 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 		select {
 		// process incoming item
 		case item, opened := <-o.input:
+			processed := false
+			if item, processed = o.preprocess(item); processed {
+				break
+			}
 			o.statManager.IncTotalRecordsIn()
 			o.statManager.ProcessTimeStart()
 			if !opened {

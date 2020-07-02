@@ -87,6 +87,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	if err != nil {
 		select {
 		case errCh <- err:
+			logger.Errorf("unary operator %s error %s", o.name, err)
 		case <-ctx.Done():
 			logger.Infof("unary operator %s cancelling....", o.name)
 			o.mutex.Lock()
@@ -105,6 +106,10 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		select {
 		// process incoming item
 		case item := <-o.input:
+			processed := false
+			if item, processed = o.preprocess(item); processed {
+				break
+			}
 			stats.IncTotalRecordsIn()
 			stats.ProcessTimeStart()
 			result := o.op.Apply(exeCtx, item, fv, afv)

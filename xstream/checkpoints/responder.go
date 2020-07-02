@@ -34,6 +34,7 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 	//broadcast barrier
 	re.task.Broadcast(barrier)
 	//Save key state to the global state
+	ctx.Snapshot()
 	go func() {
 		state := ACK
 		err := ctx.SaveState(checkpointId)

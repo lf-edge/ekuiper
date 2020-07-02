@@ -184,6 +184,11 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				for {
 					select {
 					case data := <-cache.Out:
+						if newdata, processed := m.preprocess(data.data); processed {
+							break
+						} else {
+							data.data = newdata
+						}
 						stats.SetBufferLength(int64(cache.Length()))
 						if runAsync {
 							go doCollect(sink, data, stats, retryInterval, omitIfEmpty, sendSingle, tp, cache.Complete, ctx)
@@ -345,6 +350,7 @@ func (m *SinkNode) drainError(errCh chan<- error, err error, ctx api.StreamConte
 	go func() {
 		select {
 		case errCh <- err:
+			ctx.GetLogger().Errorf("error in sink %s", err)
 		case <-ctx.Done():
 			m.close(ctx, logger)
 		}

@@ -15,6 +15,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 )
 
 const (
@@ -339,4 +340,21 @@ func ConvertArray(s []interface{}) []interface{} {
 		r[i] = e
 	}
 	return r
+}
+
+func SyncMapToMap(sm *sync.Map) map[string]interface{} {
+	m := make(map[string]interface{})
+	sm.Range(func(k interface{}, v interface{}) bool {
+		m[k.(string)] = v
+		return true
+	})
+	return m
+}
+
+func MapToSyncMap(m map[string]interface{}) *sync.Map {
+	sm := new(sync.Map)
+	for k, v := range m {
+		sm.Store(k, v)
+	}
+	return sm
 }

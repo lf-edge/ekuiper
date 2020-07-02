@@ -1,7 +1,6 @@
 package checkpoints
 
 import (
-	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 )
 
@@ -9,6 +8,7 @@ type StreamTask interface {
 	Broadcast(data interface{}) error
 	GetName() string
 	GetStreamContext() api.StreamContext
+	SetQos(api.Qos)
 }
 
 type NonSourceTask interface {
@@ -16,13 +16,12 @@ type NonSourceTask interface {
 	GetInputCount() int
 	AddInputCount()
 
-	InitCheckpoint(BarrierHandler, xsql.Qos)
+	SetBarrierHandler(BarrierHandler)
 }
 
 type BufferOrEvent struct {
-	Data      interface{}
-	Channel   string
-	Processed bool
+	Data    interface{}
+	Channel string
 }
 
 type Message int

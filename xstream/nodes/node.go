@@ -2,7 +2,6 @@ package nodes
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/checkpoints"
 	"sync"
@@ -14,7 +13,8 @@ type OperatorNode interface {
 	GetStreamContext() api.StreamContext
 	GetInputCount() int
 	AddInputCount()
-	InitCheckpoint(checkpoints.BarrierHandler, xsql.Qos)
+	SetQos(api.Qos)
+	SetBarrierHandler(checkpoints.BarrierHandler)
 }
 
 type defaultNode struct {
@@ -23,6 +23,7 @@ type defaultNode struct {
 	concurrency  int
 	statManagers []StatManager
 	ctx          api.StreamContext
+	qos          api.Qos
 }
 
 func (o *defaultNode) AddOutput(output chan<- interface{}, name string) error {
@@ -46,6 +47,10 @@ func (o *defaultNode) SetConcurrency(concurr int) {
 	}
 }
 
+func (o *defaultNode) SetQos(qos api.Qos) {
+	o.qos = qos
+}
+
 func (o *defaultNode) GetMetrics() (result [][]interface{}) {
 	for _, stats := range o.statManagers {
 		result = append(result, stats.GetMetrics())
@@ -54,6 +59,17 @@ func (o *defaultNode) GetMetrics() (result [][]interface{}) {
 }
 
 func (o *defaultNode) Broadcast(val interface{}) error {
+	if o.qos >= api.AtLeastOnce {
+		boe := &checkpoints.BufferOrEvent{
+			Data:    val,
+			Channel: o.name,
+		}
+		return o.doBroadcast(boe)
+	}
+	return o.doBroadcast(val)
+}
+
+func (o *defaultNode) doBroadcast(val interface{}) error {
 	logger := o.ctx.GetLogger()
 	var wg sync.WaitGroup
 	wg.Add(len(o.outputs))
@@ -78,7 +94,6 @@ type defaultSinkNode struct {
 	input          chan interface{}
 	barrierHandler checkpoints.BarrierHandler
 	inputCount     int
-	qos            xsql.Qos
 }
 
 func (o *defaultSinkNode) GetInput() (chan<- interface{}, string) {
@@ -93,33 +108,26 @@ func (o *defaultSinkNode) AddInputCount() {
 	o.inputCount++
 }
 
-func (o *defaultSinkNode) InitCheckpoint(bh checkpoints.BarrierHandler, q xsql.Qos) {
+func (o *defaultSinkNode) SetBarrierHandler(bh checkpoints.BarrierHandler) {
 	o.barrierHandler = bh
-	o.qos = q
 }
 
 // return the data and if processed
 func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
-	if o.qos >= xsql.AtLeastOnce {
-		b := data.(*checkpoints.BufferOrEvent)
-		//if it is barrier return true and ignore the further processing
-		//if it is blocked(align handler), return true and then write back to the channel later
-		if o.barrierHandler.Process(b, o.ctx) {
-			return b.Data, false
-		} else {
-			return nil, true
+	if o.qos >= api.AtLeastOnce {
+		logger := o.ctx.GetLogger()
+		logger.Debugf("%s preprocess receive data %+v", o.name, data)
+		b, ok := data.(*checkpoints.BufferOrEvent)
+		if ok {
+			logger.Debugf("data is BufferOrEvent, start barrier handler")
+			//if it is barrier return true and ignore the further processing
+			//if it is blocked(align handler), return true and then write back to the channel later
+			if o.barrierHandler.Process(b, o.ctx) {
+				return nil, true
+			} else {
+				return b.Data, false
+			}
 		}
 	}
 	return data, false
-}
-
-func (o *defaultSinkNode) Broadcast(val interface{}) error {
-	if o.qos >= xsql.AtLeastOnce {
-		boe := &checkpoints.BufferOrEvent{
-			Data:    val,
-			Channel: o.name,
-		}
-		return o.defaultNode.Broadcast(boe)
-	}
-	return o.defaultNode.Broadcast(val)
 }

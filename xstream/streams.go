@@ -3,11 +3,11 @@ package xstream
 import (
 	"context"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/checkpoints"
 	"github.com/emqx/kuiper/xstream/contexts"
 	"github.com/emqx/kuiper/xstream/nodes"
+	"github.com/emqx/kuiper/xstream/states"
 	"strconv"
 )
 
@@ -19,26 +19,28 @@ type TopologyNew struct {
 	drain              chan error
 	ops                []nodes.OperatorNode
 	name               string
-	qos                xsql.Qos
+	qos                api.Qos
 	checkpointInterval int
-	store              checkpoints.Store
+	store              api.Store
 	coordinator        *checkpoints.Coordinator
 }
 
-func NewWithName(name string) *TopologyNew {
-	return NewWithNameAndQos(name, xsql.AtMostOnce)
+func NewWithName(name string) (*TopologyNew, error) {
+	return NewWithNameAndQos(name, api.AtMostOnce, 0)
 }
 
-func NewWithNameAndQos(name string, qos xsql.Qos) *TopologyNew {
+func NewWithNameAndQos(name string, qos api.Qos, checkpointInterval int) (*TopologyNew, error) {
 	tp := &TopologyNew{
-		name:  name,
-		drain: make(chan error),
-		qos:   qos,
+		name:               name,
+		drain:              make(chan error),
+		qos:                qos,
+		checkpointInterval: checkpointInterval,
 	}
-	if qos >= xsql.AtLeastOnce {
-		tp.store = checkpoints.GetKVStore(name)
+	var err error
+	if tp.store, err = states.CreateStore(name, qos); err != nil {
+		return nil, err
 	}
-	return tp
+	return tp, nil
 }
 
 func (s *TopologyNew) GetContext() api.StreamContext {
@@ -107,17 +109,17 @@ func (s *TopologyNew) Open() <-chan error {
 	go func() {
 		// open stream sink, after log sink is ready.
 		for _, snk := range s.sinks {
-			snk.Open(s.ctx.WithMeta(s.name, snk.GetName()), s.drain)
+			snk.Open(s.ctx.WithMeta(s.name, snk.GetName(), s.store), s.drain)
 		}
 
 		//apply operators, if err bail
 		for _, op := range s.ops {
-			op.Exec(s.ctx.WithMeta(s.name, op.GetName()), s.drain)
+			op.Exec(s.ctx.WithMeta(s.name, op.GetName(), s.store), s.drain)
 		}
 
 		// open source, if err bail
 		for _, node := range s.sources {
-			node.Open(s.ctx.WithMeta(s.name, node.GetName()), s.drain)
+			node.Open(s.ctx.WithMeta(s.name, node.GetName(), s.store), s.drain)
 		}
 
 		// activate checkpoint
@@ -130,7 +132,7 @@ func (s *TopologyNew) Open() <-chan error {
 }
 
 func (s *TopologyNew) enableCheckpoint() error {
-	if s.qos >= xsql.AtLeastOnce {
+	if s.qos >= api.AtLeastOnce {
 		var sources []checkpoints.StreamTask
 		for _, r := range s.sources {
 			sources = append(sources, r)

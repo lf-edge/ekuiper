@@ -874,76 +874,89 @@ func TestSingleSQL(t *testing.T) {
 	createStreams(t)
 	defer dropStreams(t)
 	//defer close(done)
-	for i, tt := range tests {
-		test.ResetClock(1541152486000)
-		p := NewRuleProcessor(DbDir)
-		parser := xsql.NewParser(strings.NewReader(tt.sql))
-		var (
-			sources []*nodes.SourceNode
-			syncs   []chan int
-		)
-		if stmt, err := xsql.Language.Parse(parser); err != nil {
-			t.Errorf("parse sql %s error: %s", tt.sql, err)
-		} else {
-			if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
-				t.Errorf("sql %s is not a select statement", tt.sql)
+	options := []*api.RuleOption{
+		{
+			BufferLength: 100,
+		}, {
+			BufferLength:       100,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+		}, {
+			BufferLength:       100,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+		},
+	}
+	for j, opt := range options {
+		for i, tt := range tests {
+			test.ResetClock(1541152486000)
+			p := NewRuleProcessor(DbDir)
+			parser := xsql.NewParser(strings.NewReader(tt.sql))
+			var (
+				sources []*nodes.SourceNode
+				syncs   []chan int
+			)
+			if stmt, err := xsql.Language.Parse(parser); err != nil {
+				t.Errorf("parse sql %s error: %s", tt.sql, err)
 			} else {
-				streams := xsql.GetStreams(selectStmt)
-				for _, stream := range streams {
-					next := make(chan int)
-					syncs = append(syncs, next)
-					source := getMockSource(stream, next, 5)
-					sources = append(sources, source)
+				if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
+					t.Errorf("sql %s is not a select statement", tt.sql)
+				} else {
+					streams := xsql.GetStreams(selectStmt)
+					for _, stream := range streams {
+						next := make(chan int)
+						syncs = append(syncs, next)
+						source := getMockSource(stream, next, 5)
+						sources = append(sources, source)
+					}
 				}
 			}
-		}
-		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: map[string]interface{}{
-			"bufferLength": float64(100),
-		}}, sources)
-		if err != nil {
-			t.Error(err)
-		}
-		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
-		tp.AddSink(inputs, sink)
-		errCh := tp.Open()
-		func() {
-			for i := 0; i < 5; i++ {
-				syncs[i%len(syncs)] <- i
-				select {
-				case err = <-errCh:
-					t.Log(err)
-					tp.Cancel()
-					return
-				default:
-				}
-			}
-			for retry := 100; retry > 0; retry-- {
-				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
-					break
-				}
-				time.Sleep(time.Duration(retry) * time.Millisecond)
-			}
-		}()
-		results := mockSink.GetResults()
-		var maps [][]map[string]interface{}
-		for _, v := range results {
-			var mapRes []map[string]interface{}
-			err := json.Unmarshal(v, &mapRes)
+			tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.name, j), Sql: tt.sql, Options: opt}, sources)
 			if err != nil {
-				t.Errorf("Failed to parse the input into map")
+				t.Error(err)
+			}
+			mockSink := test.NewMockSink()
+			sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
+			tp.AddSink(inputs, sink)
+			errCh := tp.Open()
+			func() {
+				for i := 0; i < 5; i++ {
+					syncs[i%len(syncs)] <- i
+					select {
+					case err = <-errCh:
+						t.Log(err)
+						tp.Cancel()
+						return
+					default:
+					}
+				}
+				for retry := 100; retry > 0; retry-- {
+					if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+						break
+					}
+					time.Sleep(time.Duration(retry) * time.Millisecond)
+				}
+			}()
+			results := mockSink.GetResults()
+			var maps [][]map[string]interface{}
+			for _, v := range results {
+				var mapRes []map[string]interface{}
+				err := json.Unmarshal(v, &mapRes)
+				if err != nil {
+					t.Errorf("Failed to parse the input into map")
+					continue
+				}
+				maps = append(maps, mapRes)
+			}
+			if !reflect.DeepEqual(tt.r, maps) {
+				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 				continue
 			}
-			maps = append(maps, mapRes)
+			if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+				t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
+			}
+			tp.Cancel()
 		}
-		if !reflect.DeepEqual(tt.r, maps) {
-			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
-			continue
-		}
-		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
-			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
-		}
-		tp.Cancel()
 	}
 }
 
@@ -1029,8 +1042,8 @@ func TestSingleSQLTemplate(t *testing.T) {
 				}
 			}
 		}
-		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: map[string]interface{}{
-			"bufferLength": float64(100),
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: &api.RuleOption{
+			BufferLength: 100,
 		}}, sources)
 		if err != nil {
 			t.Error(err)
@@ -1149,8 +1162,8 @@ func TestNoneSingleSQLTemplate(t *testing.T) {
 				}
 			}
 		}
-		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: map[string]interface{}{
-			"bufferLength": float64(100),
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: &api.RuleOption{
+			BufferLength: 100,
 		}}, sources)
 		if err != nil {
 			t.Error(err)
@@ -1510,8 +1523,8 @@ func TestSingleSQLError(t *testing.T) {
 				}
 			}
 		}
-		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: map[string]interface{}{
-			"bufferLength": float64(100),
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: &api.RuleOption{
+			BufferLength: 100,
 		}}, sources)
 		if err != nil {
 			t.Error(err)
@@ -2054,85 +2067,100 @@ func TestWindow(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	createStreams(t)
 	defer dropStreams(t)
-	for i, tt := range tests {
-		test.ResetClock(1541152486000)
-		p := NewRuleProcessor(DbDir)
-		parser := xsql.NewParser(strings.NewReader(tt.sql))
-		var (
-			sources []*nodes.SourceNode
-			syncs   []chan int
-		)
-		if stmt, err := xsql.Language.Parse(parser); err != nil {
-			t.Errorf("parse sql %s error: %s", tt.sql, err)
-		} else {
-			if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
-				t.Errorf("sql %s is not a select statement", tt.sql)
+	options := []*api.RuleOption{
+		{
+			BufferLength: 100,
+		}, {
+			BufferLength:       100,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+		}, {
+			BufferLength:       100,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+		},
+	}
+	for j, opt := range options {
+		for i, tt := range tests {
+			test.ResetClock(1541152486000)
+			p := NewRuleProcessor(DbDir)
+			parser := xsql.NewParser(strings.NewReader(tt.sql))
+			var (
+				sources []*nodes.SourceNode
+				syncs   []chan int
+			)
+			if stmt, err := xsql.Language.Parse(parser); err != nil {
+				t.Errorf("parse sql %s error: %s", tt.sql, err)
 			} else {
-				streams := xsql.GetStreams(selectStmt)
-				for _, stream := range streams {
-					next := make(chan int)
-					syncs = append(syncs, next)
-					source := getMockSource(stream, next, tt.size)
-					sources = append(sources, source)
-				}
-			}
-		}
-		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql}, sources)
-		if err != nil {
-			t.Error(err)
-		}
-		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
-		tp.AddSink(inputs, sink)
-		errCh := tp.Open()
-		func() {
-			for i := 0; i < tt.size*len(syncs); i++ {
-				syncs[i%len(syncs)] <- i
-				for {
-					time.Sleep(1)
-					if getMetric(tp, "op_window_0_records_in_total") == (i + 1) {
-						break
+				if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
+					t.Errorf("sql %s is not a select statement", tt.sql)
+				} else {
+					streams := xsql.GetStreams(selectStmt)
+					for _, stream := range streams {
+						next := make(chan int)
+						syncs = append(syncs, next)
+						source := getMockSource(stream, next, tt.size)
+						sources = append(sources, source)
 					}
 				}
-				select {
-				case err = <-errCh:
-					t.Log(err)
-					tp.Cancel()
-					return
-				default:
-				}
 			}
-			retry := 100
-			for ; retry > 0; retry-- {
-				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
-					break
-				}
-				t.Logf("wait to try another %d times", retry)
-				time.Sleep(time.Duration(retry) * time.Millisecond)
-			}
-			if retry == 0 {
-				err := compareMetrics(tp, tt.m, tt.sql)
-				t.Errorf("could not get correct metrics: %v", err)
-			}
-		}()
-		results := mockSink.GetResults()
-		var maps [][]map[string]interface{}
-		for _, v := range results {
-			var mapRes []map[string]interface{}
-			err := json.Unmarshal(v, &mapRes)
+			tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.name, j), Sql: tt.sql, Options: opt}, sources)
 			if err != nil {
-				t.Errorf("Failed to parse the input into map")
-				continue
+				t.Error(err)
 			}
-			maps = append(maps, mapRes)
+			mockSink := test.NewMockSink()
+			sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
+			tp.AddSink(inputs, sink)
+			errCh := tp.Open()
+			func() {
+				for i := 0; i < tt.size*len(syncs); i++ {
+					syncs[i%len(syncs)] <- i
+					for {
+						time.Sleep(1)
+						if getMetric(tp, "op_window_0_records_in_total") == (i + 1) {
+							break
+						}
+					}
+					select {
+					case err = <-errCh:
+						t.Log(err)
+						tp.Cancel()
+						return
+					default:
+					}
+				}
+				retry := 100
+				for ; retry > 0; retry-- {
+					if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+						break
+					}
+					t.Logf("wait to try another %d times", retry)
+					time.Sleep(time.Duration(retry) * time.Millisecond)
+				}
+				if retry == 0 {
+					err := compareMetrics(tp, tt.m, tt.sql)
+					t.Errorf("could not get correct metrics: %v", err)
+				}
+			}()
+			results := mockSink.GetResults()
+			var maps [][]map[string]interface{}
+			for _, v := range results {
+				var mapRes []map[string]interface{}
+				err := json.Unmarshal(v, &mapRes)
+				if err != nil {
+					t.Errorf("Failed to parse the input into map")
+					continue
+				}
+				maps = append(maps, mapRes)
+			}
+			if !reflect.DeepEqual(tt.r, maps) {
+				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
+			}
+			if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+				t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
+			}
+			tp.Cancel()
 		}
-		if !reflect.DeepEqual(tt.r, maps) {
-			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
-		}
-		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
-			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
-		}
-		tp.Cancel()
 	}
 }
 
@@ -3243,93 +3271,108 @@ func TestEventWindow(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	createEventStreams(t)
 	defer dropEventStreams(t)
-	for i, tt := range tests {
-		test.ResetClock(1541152486000)
-		p := NewRuleProcessor(DbDir)
-		parser := xsql.NewParser(strings.NewReader(tt.sql))
-		var (
-			sources []*nodes.SourceNode
-			syncs   []chan int
-		)
-		if stmt, err := xsql.Language.Parse(parser); err != nil {
-			t.Errorf("parse sql %s error: %s", tt.sql, err)
-		} else {
-			if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
-				t.Errorf("sql %s is not a select statement", tt.sql)
+	options := []*api.RuleOption{
+		{
+			BufferLength: 100,
+			IsEventTime:  true,
+			LateTol:      1000,
+		}, {
+			BufferLength:       100,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+			IsEventTime:        true,
+			LateTol:            1000,
+		}, {
+			BufferLength:       100,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+			IsEventTime:        true,
+			LateTol:            1000,
+		},
+	}
+	for j, opt := range options {
+		for i, tt := range tests {
+			test.ResetClock(1541152486000)
+			p := NewRuleProcessor(DbDir)
+			parser := xsql.NewParser(strings.NewReader(tt.sql))
+			var (
+				sources []*nodes.SourceNode
+				syncs   []chan int
+			)
+			if stmt, err := xsql.Language.Parse(parser); err != nil {
+				t.Errorf("parse sql %s error: %s", tt.sql, err)
 			} else {
-				streams := xsql.GetStreams(selectStmt)
-				for _, stream := range streams {
-					next := make(chan int)
-					syncs = append(syncs, next)
-					source := getEventMockSource(stream, next, tt.size)
-					sources = append(sources, source)
-				}
-			}
-		}
-		tp, inputs, err := p.createTopoWithSources(&api.Rule{
-			Id: tt.name, Sql: tt.sql,
-			Options: map[string]interface{}{
-				"isEventTime":   true,
-				"lateTolerance": float64(1000),
-			},
-		}, sources)
-		if err != nil {
-			t.Error(err)
-		}
-		mockSink := test.NewMockSink()
-		sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
-		tp.AddSink(inputs, sink)
-		errCh := tp.Open()
-		func() {
-			for i := 0; i < tt.size*len(syncs); i++ {
-				syncs[i%len(syncs)] <- i
-				for {
-					time.Sleep(1)
-					if getMetric(tp, "op_window_0_records_in_total") == (i + 1) {
-						break
+				if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
+					t.Errorf("sql %s is not a select statement", tt.sql)
+				} else {
+					streams := xsql.GetStreams(selectStmt)
+					for _, stream := range streams {
+						next := make(chan int)
+						syncs = append(syncs, next)
+						source := getEventMockSource(stream, next, tt.size)
+						sources = append(sources, source)
 					}
 				}
-				select {
-				case err = <-errCh:
-					t.Log(err)
-					tp.Cancel()
-					return
-				default:
-				}
 			}
-			mockClock := test.GetMockClock()
-			mockClock.Add(1000 * time.Millisecond)
-			retry := 100
-			for ; retry > 0; retry-- {
-				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
-					break
-				}
-				t.Logf("wait to try another %d times", retry)
-				time.Sleep(time.Duration(retry) * time.Millisecond)
-			}
-			if retry == 0 {
-				err := compareMetrics(tp, tt.m, tt.sql)
-				t.Errorf("could not get correct metrics: %v", err)
-			}
-		}()
-		results := mockSink.GetResults()
-		var maps [][]map[string]interface{}
-		for _, v := range results {
-			var mapRes []map[string]interface{}
-			err := json.Unmarshal(v, &mapRes)
+			tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.name, j), Sql: tt.sql, Options: opt}, sources)
 			if err != nil {
-				t.Errorf("Failed to parse the input into map")
-				continue
+				t.Error(err)
 			}
-			maps = append(maps, mapRes)
+			mockSink := test.NewMockSink()
+			sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
+			tp.AddSink(inputs, sink)
+			errCh := tp.Open()
+			func() {
+				for i := 0; i < tt.size*len(syncs); i++ {
+					syncs[i%len(syncs)] <- i
+					for {
+						time.Sleep(1)
+						if getMetric(tp, "op_window_0_records_in_total") == (i + 1) {
+							break
+						}
+					}
+					select {
+					case err = <-errCh:
+						t.Log(err)
+						tp.Cancel()
+						return
+					default:
+					}
+				}
+				mockClock := test.GetMockClock()
+				mockClock.Add(1000 * time.Millisecond)
+				retry := 100
+				for ; retry > 0; retry-- {
+					if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+						break
+					}
+					t.Logf("wait to try another %d times", retry)
+					time.Sleep(time.Duration(retry) * time.Millisecond)
+				}
+				if retry == 0 {
+					err := compareMetrics(tp, tt.m, tt.sql)
+					t.Errorf("could not get correct metrics: %v", err)
+				}
+			}()
+			results := mockSink.GetResults()
+			var maps [][]map[string]interface{}
+			for _, v := range results {
+				var mapRes []map[string]interface{}
+				err := json.Unmarshal(v, &mapRes)
+				if err != nil {
+					t.Errorf("Failed to parse the input into map")
+					continue
+				}
+				maps = append(maps, mapRes)
+			}
+			if !reflect.DeepEqual(tt.r, maps) {
+				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
+			}
+			if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+				t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
+			}
+			tp.Cancel()
 		}
-		if !reflect.DeepEqual(tt.r, maps) {
-			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
-		}
-		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
-			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
-		}
-		tp.Cancel()
 	}
 }
 

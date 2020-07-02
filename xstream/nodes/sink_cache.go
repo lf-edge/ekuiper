@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/checkpoints"
 	"io"
 	"path"
 	"sort"
@@ -104,6 +105,15 @@ func (c *Cache) run(ctx api.StreamContext) {
 	for {
 		select {
 		case item := <-c.in:
+			//TODO to be integrated into checkpoints
+			if boe, ok := item.(*checkpoints.BufferOrEvent); ok {
+				if _, ok := boe.Data.(*checkpoints.Barrier); ok {
+					c.Out <- &CacheTuple{
+						data: item,
+					}
+					break
+				}
+			}
 			index := c.pending.Tail
 			c.pending.append(item)
 			//non blocking until limit exceeded

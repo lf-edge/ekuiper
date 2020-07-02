@@ -291,6 +291,9 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	if rule.Actions == nil || len(rule.Actions) == 0 {
 		return nil, fmt.Errorf("Missing rule actions.")
 	}
+	rule.Options.BufferLength = 1024
+	rule.Options.Concurrency = 1
+	rule.Options.CheckpointInterval = 300000 //5 minutes
 	return &rule, nil
 }
 
@@ -378,51 +381,8 @@ func (p *RuleProcessor) createTopo(rule *api.Rule) (*xstream.TopologyNew, []api.
 func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.SourceNode) (*xstream.TopologyNew, []api.Emitter, error) {
 	name := rule.Id
 	sql := rule.Sql
-	var (
-		isEventTime    bool
-		lateTol        int64
-		concurrency    = 1
-		bufferLength   = 1024
-		sendMataToSink = false
-	)
 
-	if iet, ok := rule.Options["isEventTime"]; ok {
-		isEventTime, ok = iet.(bool)
-		if !ok {
-			return nil, nil, fmt.Errorf("Invalid rule option isEventTime %v, bool type is required.", iet)
-		}
-	}
-	if isEventTime {
-		if l, ok := rule.Options["lateTolerance"]; ok {
-			if fl, ok := l.(float64); ok {
-				lateTol = int64(fl)
-			} else {
-				return nil, nil, fmt.Errorf("Invalid rule option lateTolerance %v, int type is required.", l)
-			}
-		}
-	}
-	if l, ok := rule.Options["concurrency"]; ok {
-		if fl, ok := l.(float64); ok {
-			concurrency = int(fl)
-		} else {
-			return nil, nil, fmt.Errorf("Invalid rule option concurrency %v, int type is required.", l)
-		}
-	}
-	if l, ok := rule.Options["bufferLength"]; ok {
-		if fl, ok := l.(float64); ok {
-			bufferLength = int(fl)
-		} else {
-			return nil, nil, fmt.Errorf("Invalid rule option bufferLength %v, int type is required.", l)
-		}
-	}
-	if l, ok := rule.Options["sendMetaToSink"]; ok {
-		if fl, ok := l.(bool); ok {
-			sendMataToSink = fl
-		} else {
-			return nil, nil, fmt.Errorf("Invalid rule option sendMetaToSink %v, bool type is required.", l)
-		}
-	}
-	log.Infof("Init rule with options {isEventTime: %v, lateTolerance: %d, concurrency: %d, bufferLength: %d", isEventTime, lateTol, concurrency, bufferLength)
+	log.Infof("Init rule with options %+v", rule.Options)
 	shouldCreateSource := sources == nil
 	parser := xsql.NewParser(strings.NewReader(sql))
 	if stmt, err := xsql.Language.Parse(parser); err != nil {
@@ -431,18 +391,21 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 		if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
 			return nil, nil, fmt.Errorf("SQL %s is not a select statement.", sql)
 		} else {
-			tp := xstream.NewWithName(name)
+			tp, err := xstream.NewWithNameAndQos(name, rule.Options.Qos, rule.Options.CheckpointInterval)
+			if err != nil {
+				return nil, nil, err
+			}
 			var inputs []api.Emitter
 			streamsFromStmt := xsql.GetStreams(selectStmt)
 			dimensions := selectStmt.Dimensions
 			if !shouldCreateSource && len(streamsFromStmt) != len(sources) {
 				return nil, nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
 			}
-			if sendMataToSink && (len(streamsFromStmt) > 1 || dimensions != nil) {
+			if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || dimensions != nil) {
 				return nil, nil, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
 			}
 			store := common.GetSimpleKVStore(path.Join(p.rootDbDir, "stream"))
-			err := store.Open()
+			err = store.Open()
 			if err != nil {
 				return nil, nil, err
 			}
@@ -463,21 +426,21 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 				if err != nil {
 					return nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
 				}
-				pp, err := plans.NewPreprocessor(streamStmt, alias, isEventTime)
+				pp, err := plans.NewPreprocessor(streamStmt, alias, rule.Options.IsEventTime)
 				if err != nil {
 					return nil, nil, err
 				}
 				if shouldCreateSource {
 					node := nodes.NewSourceNode(s, streamStmt.Options)
 					tp.AddSrc(node)
-					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s, bufferLength)
-					preprocessorOp.SetConcurrency(concurrency)
+					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s, rule.Options.BufferLength)
+					preprocessorOp.SetConcurrency(rule.Options.Concurrency)
 					tp.AddOperator([]api.Emitter{node}, preprocessorOp)
 					inputs = append(inputs, preprocessorOp)
 				} else {
 					tp.AddSrc(sources[i])
-					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s, bufferLength)
-					preprocessorOp.SetConcurrency(concurrency)
+					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s, rule.Options.BufferLength)
+					preprocessorOp.SetConcurrency(rule.Options.Concurrency)
 					tp.AddOperator([]api.Emitter{sources[i]}, preprocessorOp)
 					inputs = append(inputs, preprocessorOp)
 				}
@@ -487,7 +450,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			if dimensions != nil {
 				w = dimensions.GetWindow()
 				if w != nil {
-					wop, err := nodes.NewWindowOp("window", w, isEventTime, lateTol, streamsFromStmt, bufferLength)
+					wop, err := nodes.NewWindowOp("window", w, rule.Options.IsEventTime, rule.Options.LateTol, streamsFromStmt, rule.Options.BufferLength)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -497,15 +460,15 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			}
 
 			if w != nil && selectStmt.Joins != nil {
-				joinOp := xstream.Transform(&plans.JoinPlan{Joins: selectStmt.Joins, From: selectStmt.Sources[0].(*xsql.Table)}, "join", bufferLength)
-				joinOp.SetConcurrency(concurrency)
+				joinOp := xstream.Transform(&plans.JoinPlan{Joins: selectStmt.Joins, From: selectStmt.Sources[0].(*xsql.Table)}, "join", rule.Options.BufferLength)
+				joinOp.SetConcurrency(rule.Options.Concurrency)
 				tp.AddOperator(inputs, joinOp)
 				inputs = []api.Emitter{joinOp}
 			}
 
 			if selectStmt.Condition != nil {
-				filterOp := xstream.Transform(&plans.FilterPlan{Condition: selectStmt.Condition}, "filter", bufferLength)
-				filterOp.SetConcurrency(concurrency)
+				filterOp := xstream.Transform(&plans.FilterPlan{Condition: selectStmt.Condition}, "filter", rule.Options.BufferLength)
+				filterOp.SetConcurrency(rule.Options.Concurrency)
 				tp.AddOperator(inputs, filterOp)
 				inputs = []api.Emitter{filterOp}
 			}
@@ -514,30 +477,30 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			if dimensions != nil || len(aggregateAlias) > 0 {
 				ds = dimensions.GetGroups()
 				if (ds != nil && len(ds) > 0) || len(aggregateAlias) > 0 {
-					aggregateOp := xstream.Transform(&plans.AggregatePlan{Dimensions: ds, Alias: aggregateAlias}, "aggregate", bufferLength)
-					aggregateOp.SetConcurrency(concurrency)
+					aggregateOp := xstream.Transform(&plans.AggregatePlan{Dimensions: ds, Alias: aggregateAlias}, "aggregate", rule.Options.BufferLength)
+					aggregateOp.SetConcurrency(rule.Options.Concurrency)
 					tp.AddOperator(inputs, aggregateOp)
 					inputs = []api.Emitter{aggregateOp}
 				}
 			}
 
 			if selectStmt.Having != nil {
-				havingOp := xstream.Transform(&plans.HavingPlan{selectStmt.Having}, "having", bufferLength)
-				havingOp.SetConcurrency(concurrency)
+				havingOp := xstream.Transform(&plans.HavingPlan{selectStmt.Having}, "having", rule.Options.BufferLength)
+				havingOp.SetConcurrency(rule.Options.Concurrency)
 				tp.AddOperator(inputs, havingOp)
 				inputs = []api.Emitter{havingOp}
 			}
 
 			if selectStmt.SortFields != nil {
-				orderOp := xstream.Transform(&plans.OrderPlan{SortFields: selectStmt.SortFields}, "order", bufferLength)
-				orderOp.SetConcurrency(concurrency)
+				orderOp := xstream.Transform(&plans.OrderPlan{SortFields: selectStmt.SortFields}, "order", rule.Options.BufferLength)
+				orderOp.SetConcurrency(rule.Options.Concurrency)
 				tp.AddOperator(inputs, orderOp)
 				inputs = []api.Emitter{orderOp}
 			}
 
 			if selectStmt.Fields != nil {
-				projectOp := xstream.Transform(&plans.ProjectPlan{Fields: selectStmt.Fields, IsAggregate: xsql.IsAggStatement(selectStmt), SendMeta: sendMataToSink}, "project", bufferLength)
-				projectOp.SetConcurrency(concurrency)
+				projectOp := xstream.Transform(&plans.ProjectPlan{Fields: selectStmt.Fields, IsAggregate: xsql.IsAggStatement(selectStmt), SendMeta: rule.Options.SendMetaToSink}, "project", rule.Options.BufferLength)
+				projectOp.SetConcurrency(rule.Options.Concurrency)
 				tp.AddOperator(inputs, projectOp)
 				inputs = []api.Emitter{projectOp}
 			}
