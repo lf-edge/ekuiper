@@ -2,13 +2,12 @@
 
 ## Download & install
 
-方式一：Download the latest release from https://github.com/emqx/kuiper/releases, and unzip file.
-方式二：通过 apt、yum 等方式安装
+Method one: Download the latest release from https://github.com/emqx/kuiper/releases, and unzip file.
+Method two: Install via apt, yum, etc.
 
 ## Directory structure 
 
-Below is the installation directory structure after installing Kuiper. 
-以下是通过方式一安装 Kuiper 之后的安装目录结构。
+Below is the installation directory structure after installing Kuiper through method one. 
 
 ```
 kuiper_installed_dir
@@ -26,7 +25,7 @@ kuiper_installed_dir
     ...
 ```
 
-以下是通过方式二安装 Kuiper 之后的安装目录结构。
+Below is the installation directory structure after installing Kuiper through method two. 
 
 ```
 /usr/lib/kuiper/bin
