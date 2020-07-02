@@ -1,17 +1,18 @@
-# REST action
+# REST动作
 
-The action is used for publish output message into a RESTful API.
+该动作用于将输出消息发布到 RESTful API 中。
 
-| Property name     | Optional | Description                                                  |
+| 属性名称   | 是否可选 | 说明                                                  |
 | ----------------- | -------- | ------------------------------------------------------------ |
-| method            | true    | The http method for the RESTful API. It is a case insensitive string whose value is among "get", "post", "put", "patch", "delete" and "head". The default value is "get". |
-| url             | false    | The RESTful API endpoint, such as ``https://www.example.com/api/dummy``                  |
-| bodyType          | true     | The type of the body. Currently, these types are supported: "none", "json", "text", "html", "xml", "javascript" and "form". For "get" and "head", no body is required so the default value is "none". For other http methods, the default value is "json" For "html", "xml" and "javascript", the dateTemplate must be carefully set up to make sure the format is correct. |
-| timeout   | true     | The timeout (milliseconds) for a http request, defaults to 5000 ms |
-| headers            | true     | The additional headers to be set for the http request. |
-| debugResp | true | Control if print the information into the console. If set it to `true`, then print response; If set to `false`, then skip print log. The default is `false`. |
+| method            | 是    | RESTful API 的 http 方法。 这是一个不区分大小写的字符串，其值范围为"get"，"post"，"put"，"patch"，"delete" 和 "head"。 默认值为 "get"。 |
+| url             | 否    | RESTful API 终端地址，例如 `https://www.example.com/api/dummy` |
+| bodyType          | 是    | 消息体的类型。 当前，支持以下类型："none", "json", "text", "html", "xml", "javascript"  和 "form"。 对于 "get" 和 "head"，不需要正文，因此默认值为 "none"。 对于其他 http 方法，默认值为 "json"。对于 "html"，"xml" 和 "javascript"，必须仔细设置 dateTemplate 以确保格式正确。 |
+| timeout   | 是    | http 请求超时的时间（毫秒），默认为5000毫秒 |
+| headers            | 是    | 要为 http 请求设置的其他标头。 |
+| debugResp | 是 | 控制是否将信息打印到控制台中。 如果将其设置为 `true`，则打印响应。 如果设置为`false`，则跳过打印日志。 默认值为 `false`。 |
 
-REST service usually requires a specific data format. That can be imposed by the common sink property `dataTemplate`. Please check the [data template](../overview.md#data-template). Below is a sample configuration for connecting to Edgex Foundry core command. The dataTemplate ``{{.key}}`` means it will print out the value of key, that is result[key]. So the template here is to select only field ``key`` in the result and change the field name to ``newKey``. `sendSingle` is another common property. Set to true means that if the result is an array, each element will be sent individually.
+REST 服务通常需要特定的数据格式。 这可以由公共目标属性 `dataTemplate` 强制使用。 请参考[数据模板](../overview.md#data-template)。 以下是用于连接到 Edgex Foundry core 命令的示例配置。dataTemplate`{{.key}}` 表示将打印出键值，即 result [key]。 因此，这里的模板是在结果中仅选择字段 `key` ，并将字段名称更改为 `newKey`。 `sendSingle` 是另一个常见属性。 设置为 true 表示如果结果是数组，则每个元素将单独发送。
+
 ```json
     {
       "rest": {

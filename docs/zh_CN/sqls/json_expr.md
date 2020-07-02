@@ -37,7 +37,7 @@
 
 源引用（`.`）
 
-源引用运算符可用于通过引用源流或表来指定列。 ``->``引用选择嵌套JSON对象中的键。
+源引用运算符可用于通过引用源流或表来指定列。 `->` 引用选择嵌套 JSON 对象中的键。
 
 ```
 SELECT demo.age FROM demo
@@ -90,7 +90,7 @@ SELECT d.friends[0]->last FROM demo AS d
 
 切片允许您选择数组的连续子集。
 
-``field[from:to]`` 如果未指定from，则表示从数组的第一个元素开始; 如果未指定to，则表示以数组的最后一个元素结尾。
+`field[from:to]` 如果未指定 from，则表示从数组的第一个元素开始; 如果未指定 to，则表示以数组的最后一个元素结尾。
 
 ```
 SELECT children[0:1] FROM demo
@@ -136,7 +136,7 @@ SELECT followers->Group1[:1]->first FROM demo
 
 #### 列表和切片映射
 
-通配符表达式创建列表映射，它是JSON数组上的映射。
+通配符表达式创建列表映射，它是 JSON 数组上的映射。
 
 ```
 SELECT demo.friends[*]->first FROM demo

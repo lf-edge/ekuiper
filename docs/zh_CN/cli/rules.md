@@ -1,10 +1,10 @@
 # 规则管理
 
-Kuiper规则命令行工具可以管理规则，例如创建、显示、删除、描述、启动、停止和重新启动规则。
+Kuiper 规则命令行工具可以管理规则，例如创建、显示、删除、描述、启动、停止和重新启动规则。
 
 ## 创建规则
 
-如下命令用于创建规则。 规则的定义以JSON 格式指定，请阅读 [rule](../rules/overview.md) 以获取更多详细信息。
+如下命令用于创建规则。 规则的定义以 JSON 格式指定，请阅读 [rule](../rules/overview.md) 以获取更多详细信息。
 
 ```shell
 create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file
@@ -20,9 +20,9 @@ create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file
 # bin/cli create rule rule1 {"sql": "SELECT * from demo","actions": [{"log":  {}},{"mqtt":  {"server":"tcp://127.0.0.1:1883", "topic":"demoSink"}}]}
 ```
 
-该命令创建一个名为``rule1``的规则。
+该命令创建一个名为 `rule1` 的规则。
 
-- 在文件中明确规则定义。 如果规则很复杂，或者规则已经以组织良好的格式写在文本文件中，则只需通过-f选项指定规则定义即可。
+- 在文件中明确规则定义。 如果规则很复杂，或者规则已经以组织良好的格式写在文本文件中，则只需通过 `-f` 选项指定规则定义即可。
 
 示例：
 
@@ -30,7 +30,7 @@ create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file
 # bin/cli create rule rule1 -f /tmp/rule.txt
 ```
 
-以下是`rule.txt`的内容。
+以下是 `rule.txt` 的内容。
 
 ```json
 {
@@ -51,7 +51,7 @@ create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file
 
 ## 展示规则
 
-该命令用于显示服务器中定义的所有规则，包括规则id和当前状态。
+该命令用于显示服务器中定义的所有规则，包括规则 id 和当前状态。
 
 ```shell
 show rules

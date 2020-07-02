@@ -1,18 +1,19 @@
+Kuiper REST api 允许您管理插件，例如创建、删除和列出插件。 请注意，删除插件将需要重新启动 kuiper 才能生效。 要更新插件，请执行以下操作：
 
-The Kuiper REST api for plugins allows you to manage plugins, such as create, drop and list plugins. Notice that, drop a plugin will need to restart kuiper to take effect. To update a plugin, do the following:
-1. Drop the plugin.
-2. Restart Kuiper.
-3. Create the plugin with the new configuration.
+1. 删除插件。
+2. 重新启动 Kuiper。
+3. 使用新配置创建插件。
 
-## create a plugin
+## 创建插件
 
-The API accepts a JSON content to create a new plugin. Each plugin type has a standalone endpoint. The supported types are `["sources", "sinks", "functions"]`. The plugin is identified by the name. The name must be unique.
+该API接受JSON内容以创建新的插件。 每种插件类型都有一个独立的端点。 支持的类型为 `["源", "目标", "函数"]`。 插件由名称标识。 名称必须唯一。
+
 ```shell
 POST http://localhost:9081/plugins/sources
 POST http://localhost:9081/plugins/sinks
 POST http://localhost:9081/plugins/functions
 ```
-Request Sample
+请求示例：
 
 ```json
 {
@@ -21,21 +22,22 @@ Request Sample
 }
 ```
 
-### Parameters
+### 参数
 
-1. name: a unique name of the plugin. The name must be the same as the camel case version of the plugin with lowercase first letter. For example, if the exported plugin name is `Random`, then the name of this plugin is `random`.
-2. file: the url of the plugin files. It must be a zip file with: a compiled so file and the yaml file(only required for sources). If the plugin depends on some external dependencies, a bash script named install.sh can be provided to do the dependency installation. The name of the files must match the name of the plugin. Please check [Extension](../extension/overview.md) for the naming rule.
+1. name：插件的唯一名称。 名称必须采用首字母小写的驼峰命名法。 例如，如果导出的插件名称为 `Random`，则此插件的名称为 `random`。
+2. file：插件文件的 URL。 它必须是一个 zip 文件，其中包含：编译后的 so 文件和yaml 文件（仅源必需）。 如果插件依赖于某些外部依赖项，则可以提供一个名为install.sh 的 bash 脚本来进行依赖项安装。 文件名称必须与插件名称匹配。 请参考[扩展](../extension/overview.md) 了解命名规则。
 
-### Plugin File Format
-A sample zip file for a source named random.zip
+### 插件文件格式
+名为 random.zip 的源的示例 zip 文件
 1. Random@v1.0.0.so
 2. random.yaml
 3. install.sh
-4. Various dependency files/folders of install.sh   
+4. install.sh 的各种依赖文件/文件夹
    - mysdk.zip
    - myconfig.conf  
 
-Notice that, the install.sh will be run that the system may already had the lib or package. Make sure to check the path before. Below is an example install.sh to install a sample sdk lib. 
+请注意，将在系统可能已经具有库或软件包的情况下运行 install.sh。 确保在运行之前检查路径。 下面是一个示例 install.sh，用于安装示例 sdk 库。 
+
 ```bash
 #!/bin/sh
 dir=/usr/local/mysdk
@@ -69,9 +71,9 @@ ldconfig
 echo "Done"
 ```
 
-## show plugins
+## 显示插件
 
-The API is used for displaying all of plugins defined in the server for a plugin type.
+该 API 用于显示服务器中为插件类型定义的所有插件。
 
 ```shell
 GET http://localhost:9081/plugins/sources
@@ -79,15 +81,15 @@ GET http://localhost:9081/plugins/sinks
 GET http://localhost:9081/plugins/functions
 ```
 
-Response Sample:
+响应示例：
 
 ```json
 ["plugin1","plugin2"]
 ```
 
-## describe a plugin
+## 描述插件
 
-The API is used to print out the detailed definition of a plugin.
+该 API 用于打印插件的详细定义。
 
 ```shell
 GET http://localhost:9081/plugins/sources/{name}
@@ -95,9 +97,9 @@ GET http://localhost:9081/plugins/sinks/{name}
 GET http://localhost:9081/plugins/functions/{name}
 ```
 
-Path parameter `name` is the name of the plugin.
+路径参数 `name` 是插件的名称。
 
-Response Sample: 
+响应示例：
 
 ```json
 {
@@ -106,16 +108,17 @@ Response Sample:
 }
 ```
 
-## drop a plugin
+## 删除插件
 
-The API is used for drop the plugin. The kuiper server needs to be restarted to take effect.
+该 API 用于删除插件。 需要重启 kuiper 服务器才能生效。
 
 ```shell
 DELETE http://localhost:8080/plugins/sources/{name}
 DELETE http://localhost:8080/plugins/sinks/{name}
 DELETE http://localhost:8080/plugins/functions/{name}
 ```
-The user can pass a query parameter to decide if Kuiper should be stopped after a delete in order to make the deletion take effect. The parameter is `restart` and only when the value is `1` will the Kuiper be stopped. The user has to manually restart it.
+用户可以传递查询参数来决定是否应在删除后停止 Kuiper，以使删除生效。 参数是`restart`，只有当值是1时，Kuiper 才停止。 用户必须手动重新启动它。
+
 ```shell
 DELETE http://localhost:8080/plugins/sources/{name}?restart=1
 ```
