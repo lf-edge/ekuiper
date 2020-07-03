@@ -58,9 +58,17 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 
 	temp, ok = ps["headers"]
 	if ok {
-		ms.headers, ok = temp.(map[string]string)
-		if !ok {
-			return fmt.Errorf("rest sink property headers %v is not a map[string]string", temp)
+		ms.headers = make(map[string]string)
+		if m, ok := temp.(map[string]interface{}); ok {
+			for k, v := range m {
+				if v1, ok1 := v.(string); ok1 {
+					ms.headers[k] = v1
+				} else {
+					return fmt.Errorf("header value %s for header %s is not a string", v, k)
+				}
+			}
+		} else {
+			return fmt.Errorf("rest sink property headers %v is not a map[string]interface", temp)
 		}
 	}
 
@@ -144,11 +152,13 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger.Debugf("rest sink receive %s", item)
 	resp, err := ms.Send(v, logger)
 	if err != nil {
-		return fmt.Errorf("rest sink fails to send out the data")
+		return fmt.Errorf("rest sink fails to send out the data: %s", err)
 	} else {
 		logger.Debugf("rest sink got response %v", resp)
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			return fmt.Errorf("rest sink fails to err http return code: %d.", resp.StatusCode)
+			buf, _ := ioutil.ReadAll(resp.Body)
+			logger.Errorf("%s\n", string(buf))
+			return fmt.Errorf("rest sink fails to err http return code: %d and error message %s.", resp.StatusCode, string(buf))
 		} else {
 			if ms.debugResp {
 				if buf, bodyErr := ioutil.ReadAll(resp.Body); bodyErr != nil {
@@ -157,7 +167,6 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 					logger.Infof("Response content: %s\n", string(buf))
 				}
 			}
-
 		}
 	}
 	return nil

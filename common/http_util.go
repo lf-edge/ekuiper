@@ -70,7 +70,7 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 			req.Header.Set(k, v)
 		}
 	}
-	logger.Debugf("do request: %s %s with %s", method, u, req.Body)
+	logger.Debugf("do request: %#v", req)
 	return client.Do(req)
 }
 
