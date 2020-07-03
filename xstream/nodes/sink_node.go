@@ -128,11 +128,15 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				logger.Warnf("invalid type for dateTemplate property, should be a string value.", c)
 			} else {
 				funcMap := template.FuncMap{
-					"json": templates.JsonMarshal,
+					"json":   templates.JsonMarshal,
+					"base64": templates.Base64Encode,
 				}
 				temp, err := template.New("sink").Funcs(funcMap).Parse(t)
 				if err != nil {
-					logger.Warnf("property dataTemplate %v is invalid: %v", t, err)
+					msg := fmt.Sprintf("property dataTemplate %v is invalid: %v", t, err)
+					result <- fmt.Errorf(msg)
+					logger.Warnf(msg)
+					return
 				} else {
 					tp = temp
 				}

@@ -29,7 +29,7 @@ const (
 
 var (
 	Log          *logrus.Logger
-	Config       *XStreamConf
+	Config       *KuiperConf
 	IsTesting    bool
 	Clock        clock.Clock
 	logFile      *os.File
@@ -56,15 +56,21 @@ type tlsConf struct {
 	Keyfile  string `yaml:"keyfile"`
 }
 
-type XStreamConf struct {
-	Debug          bool     `yaml:"debug"`
-	ConsoleLog     bool     `yaml:"consoleLog"`
-	FileLog        bool     `yaml:"fileLog"`
-	Port           int      `yaml:"port"`
-	RestPort       int      `yaml:"restPort"`
-	RestTls        *tlsConf `yaml:"restTls"`
-	Prometheus     bool     `yaml:"prometheus"`
-	PrometheusPort int      `yaml:"prometheusPort"`
+type KuiperConf struct {
+	Basic struct {
+		Debug          bool     `yaml:"debug"`
+		ConsoleLog     bool     `yaml:"consoleLog"`
+		FileLog        bool     `yaml:"fileLog"`
+		Port           int      `yaml:"port"`
+		RestPort       int      `yaml:"restPort"`
+		RestTls        *tlsConf `yaml:"restTls"`
+		Prometheus     bool     `yaml:"prometheus"`
+		PrometheusPort int      `yaml:"prometheusPort"`
+	}
+	Sink struct {
+		CacheThreshold    int `yaml:"cacheThreshold"`
+		CacheTriggerCount int `yaml:"cacheTriggerCount"`
+	}
 }
 
 func init() {
@@ -98,18 +104,15 @@ func InitConf() {
 	if err != nil {
 		Log.Fatal(err)
 	}
-	var cfg map[string]XStreamConf
-	if err := yaml.Unmarshal(b, &cfg); err != nil {
+
+	kc := KuiperConf{}
+	if err := yaml.Unmarshal(b, &kc); err != nil {
 		Log.Fatal(err)
-	}
-
-	if c, ok := cfg["basic"]; !ok {
-		Log.Fatal("No basic config in kuiper.yaml")
 	} else {
-		Config = &c
+		Config = &kc
 	}
 
-	if Config.Debug {
+	if Config.Basic.Debug {
 		Log.SetLevel(logrus.DebugLevel)
 	}
 
@@ -120,13 +123,13 @@ func InitConf() {
 	file := logDir + logFileName
 	logFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
-		if Config.ConsoleLog {
-			if Config.FileLog {
+		if Config.Basic.ConsoleLog {
+			if Config.Basic.FileLog {
 				mw := io.MultiWriter(os.Stdout, logFile)
 				Log.SetOutput(mw)
 			}
 		} else {
-			if Config.FileLog {
+			if Config.Basic.FileLog {
 				Log.SetOutput(logFile)
 			}
 		}

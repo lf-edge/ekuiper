@@ -19,6 +19,7 @@ import (
 var DbDir = getDbDir()
 
 func getDbDir() string {
+	common.InitConf()
 	dbDir, err := common.GetAndCreateDataLoc("test")
 	if err != nil {
 		log.Panic(err)
