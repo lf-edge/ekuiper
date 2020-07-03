@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
-	"github.com/prometheus/common/log"
 	"io"
 	"path"
 	"sort"
@@ -50,6 +49,10 @@ func (l *LinkedQueue) clone() *LinkedQueue {
 	return result
 }
 
+func (l *LinkedQueue) String() string {
+	return fmt.Sprintf("tail: %d, data: %v", l.Tail, l.Data)
+}
+
 type Cache struct {
 	//Data and control channels
 	in       <-chan interface{}
@@ -62,13 +65,10 @@ type Cache struct {
 	key     string //the key for current cache
 	store   common.KeyValue
 	changed bool
-	saved   int
 	//configs
 	limit        int
 	saveInterval int
 }
-
-const THRESHOLD int = 10
 
 func NewCache(in <-chan interface{}, limit int, saveInterval int, errCh chan<- error, ctx api.StreamContext) *Cache {
 	c := &Cache{
@@ -100,6 +100,7 @@ func (c *Cache) run(ctx api.StreamContext) {
 	}
 
 	ticker := common.GetTicker(c.saveInterval)
+	var tcount = 0
 	for {
 		select {
 		case item := <-c.in:
@@ -115,6 +116,7 @@ func (c *Cache) run(ctx api.StreamContext) {
 			c.pending.delete(index)
 			c.changed = true
 		case <-ticker.C:
+			tcount++
 			l := c.pending.length()
 			if l == 0 {
 				c.pending.reset()
@@ -122,23 +124,25 @@ func (c *Cache) run(ctx api.StreamContext) {
 			//If the data is still changing, only do a save when the cache has more than threshold to prevent too much file IO
 			//If the data is not changing in the time slot and have not saved before, save it. This is to prevent the
 			//data won't be saved as the cache never pass the threshold
-			if (c.changed && l > THRESHOLD) || (!c.changed && c.saved != l) {
-				logger.Infof("save cache for rule %s", ctx.GetRuleId())
+			//logger.Infof("ticker %t, l=%d\n", c.changed, l)
+			if (c.changed && l > common.Config.Sink.CacheThreshold) || (tcount == common.Config.Sink.CacheTriggerCount && c.changed) {
+				logger.Infof("save cache for rule %s, %s", ctx.GetRuleId(), c.pending.String())
 				clone := c.pending.clone()
+				c.changed = false
 				go func() {
-					if err := c.saveCache(clone); err != nil {
+					if err := c.saveCache(logger, clone); err != nil {
 						logger.Debugf("%v", err)
 						c.drainError(err)
 					}
 				}()
-				c.saved = l
-			} else if c.changed {
-				c.saved = 0
 			}
-			c.changed = false
+			if tcount >= common.Config.Sink.CacheThreshold {
+				tcount = 0
+			}
 		case <-ctx.Done():
-			if c.changed {
-				c.saveCache(c.pending)
+			err := c.saveCache(logger, c.pending)
+			if err != nil {
+				logger.Warnf("Error found during saving cache: %s \n ", err)
 			}
 			logger.Infof("sink node %s instance cache %d done", ctx.GetOpId(), ctx.GetInstanceId())
 			return
@@ -161,6 +165,7 @@ func (c *Cache) loadCache() error {
 		if t, f := c.store.Get(c.key); f {
 			if mt, ok := t.(*LinkedQueue); ok {
 				c.pending = mt
+				c.changed = true
 				// To store the keys in slice in sorted order
 				var keys []int
 				for k := range mt.Data {
@@ -168,11 +173,11 @@ func (c *Cache) loadCache() error {
 				}
 				sort.Ints(keys)
 				for _, k := range keys {
-					log.Debugf("send by cache %d", k)
-					c.Out <- &CacheTuple{
+					t := &CacheTuple{
 						index: k,
 						data:  mt.Data[k],
 					}
+					c.Out <- t
 				}
 				return nil
 			} else {
@@ -183,7 +188,7 @@ func (c *Cache) loadCache() error {
 	return nil
 }
 
-func (c *Cache) saveCache(p *LinkedQueue) error {
+func (c *Cache) saveCache(logger api.Logger, p *LinkedQueue) error {
 	err := c.store.Open()
 	if err != nil {
 		return err

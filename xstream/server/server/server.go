@@ -65,16 +65,16 @@ func StartUp(Version string) {
 	// Register a HTTP handler
 	rpc.HandleHTTP()
 	// Listen to TPC connections on port 1234
-	listener, e := net.Listen("tcp", fmt.Sprintf(":%d", common.Config.Port))
+	listener, e := net.Listen("tcp", fmt.Sprintf(":%d", common.Config.Basic.Port))
 	if e != nil {
 		m := fmt.Sprintf("Listen error: %s", e)
 		fmt.Printf(m)
 		logger.Fatal(m)
 	}
 
-	if common.Config.Prometheus {
+	if common.Config.Basic.Prometheus {
 		go func() {
-			port := common.Config.PrometheusPort
+			port := common.Config.Basic.PrometheusPort
 			if port <= 0 {
 				logger.Fatal("Miss configuration prometheusPort")
 			}
@@ -89,24 +89,24 @@ func StartUp(Version string) {
 	}
 
 	//Start rest service
-	srv := createRestServer(common.Config.RestPort)
+	srv := createRestServer(common.Config.Basic.RestPort)
 
 	go func() {
 		var err error
-		if common.Config.RestTls == nil {
+		if common.Config.Basic.RestTls == nil {
 			err = srv.ListenAndServe()
 		} else {
-			err = srv.ListenAndServeTLS(common.Config.RestTls.Certfile, common.Config.RestTls.Keyfile)
+			err = srv.ListenAndServeTLS(common.Config.Basic.RestTls.Certfile, common.Config.Basic.RestTls.Keyfile)
 		}
 		if err != nil {
 			logger.Fatal("Error serving rest service: ", err)
 		}
 	}()
 	t := "http"
-	if common.Config.RestTls != nil {
+	if common.Config.Basic.RestTls != nil {
 		t = "https"
 	}
-	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://0.0.0.0:%d. \n", Version, common.Config.Port, t, common.Config.RestPort)
+	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://0.0.0.0:%d. \n", Version, common.Config.Basic.Port, t, common.Config.Basic.RestPort)
 	logger.Info(msg)
 	fmt.Printf(msg)
 

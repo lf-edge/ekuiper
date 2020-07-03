@@ -60,7 +60,7 @@ func NewStatManager(opType string, ctx api.StreamContext) (StatManager, error) {
 	}
 
 	var sm StatManager
-	if common.Config != nil && common.Config.Prometheus {
+	if common.Config != nil && common.Config.Basic.Prometheus {
 		ctx.GetLogger().Debugf("Create prometheus stat manager")
 		psm := &PrometheusStatManager{
 			DefaultStatManager: DefaultStatManager{
