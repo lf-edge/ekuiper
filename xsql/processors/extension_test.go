@@ -17,6 +17,7 @@ import (
 //For Windows, run it in wsl with go test xsql/processors/extension_test.go xsql/processors/xsql_processor.go
 func setup() *RuleProcessor {
 	log := common.Log
+	common.InitConf()
 
 	os.Remove(CACHE_FILE)
 

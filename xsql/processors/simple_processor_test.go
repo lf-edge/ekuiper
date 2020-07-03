@@ -1,11 +1,13 @@
 package processors
 
 import (
+	"github.com/emqx/kuiper/common"
 	"reflect"
 	"testing"
 )
 
 func TestRuleActionParse_Apply(t *testing.T) {
+	common.InitConf()
 	var tests = []struct {
 		ruleStr string
 		result  []map[string]interface{}
