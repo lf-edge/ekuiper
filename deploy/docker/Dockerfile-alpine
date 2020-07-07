@@ -1,4 +1,4 @@
-FROM golang:1.13.10-alpine AS builder
+FROM golang:1.14-alpine AS builder
 
 COPY . /go/kuiper
 
@@ -6,7 +6,7 @@ WORKDIR /go/kuiper
 
 RUN apk add gcc make git libc-dev binutils-gold pkgconfig zeromq-dev 
 RUN go build  -o kuiper_conf_util deploy/docker/conf_util.go \
-    && if [ "$(uname -m)" != "aarch64" ]; then apk add upx && upx ./kuiper_conf_util; fi
+    && if [ "$(uname -m)" == "x86_64" ]; then apk add upx && upx ./kuiper_conf_util; fi
 RUN make build_with_edgex
 
 FROM alpine:3.10

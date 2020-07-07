@@ -14,7 +14,7 @@ jobs:
         steps:
         - uses: actions/setup-go@v1
           with:
-            go-version: '1.13.10'
+            go-version: '1.14'
         - uses: actions/setup-java@v1
           with:
             java-version: '8' # The JDK version to make available on the path.
@@ -77,7 +77,7 @@ jobs:
         steps:
         - uses: actions/setup-go@v1
           with:
-            go-version: '1.13.10'
+            go-version: '1.14'
         - uses: actions/setup-java@v1
           with:
             java-version: '8' # The JDK version to make available on the path.
