@@ -87,12 +87,12 @@ func NewCache(in <-chan interface{}, limit int, saveInterval int, errCh chan<- e
 
 func (c *Cache) run(ctx api.StreamContext) {
 	logger := ctx.GetLogger()
-	dbDir, err := common.GetAndCreateDataLoc("sink")
+	dbDir, err := common.GetDataLoc()
 	logger.Debugf("cache saved to %s", dbDir)
 	if err != nil {
 		c.drainError(err)
 	}
-	c.store = common.GetSimpleKVStore(path.Join(dbDir, "cache"))
+	c.store = common.GetSimpleKVStore(path.Join(dbDir, "sink", "cache"))
 	c.key = ctx.GetRuleId() + ctx.GetOpId() + strconv.Itoa(ctx.GetInstanceId())
 	//load cache
 	if err := c.loadCache(); err != nil {

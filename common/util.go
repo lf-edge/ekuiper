@@ -162,6 +162,20 @@ func GetConfLoc() (string, error) {
 }
 
 func GetDataLoc() (string, error) {
+	if IsTesting {
+		dataDir, err := GetLoc(data_dir)
+		if err != nil {
+			return "", err
+		}
+		d := path.Join(path.Dir(dataDir), "test")
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			err = os.MkdirAll(d, 0755)
+			if err != nil {
+				return "", err
+			}
+		}
+		return d, nil
+	}
 	return GetLoc(data_dir)
 }
 
@@ -229,7 +243,6 @@ func relativePath(subdir string) (dir string, err error) {
 		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
 		dir = base
 	}
-
 	confDir := dir + subdir
 	if _, err := os.Stat(confDir); os.IsNotExist(err) {
 		lastdir := dir
@@ -253,21 +266,6 @@ func relativePath(subdir string) (dir string, err error) {
 	}
 
 	return "", fmt.Errorf("conf dir not found, please set KuiperBaseKey program environment variable correctly.")
-}
-
-func GetAndCreateDataLoc(dir string) (string, error) {
-	dataDir, err := GetDataLoc()
-	if err != nil {
-		return "", err
-	}
-	d := path.Join(path.Dir(dataDir), dir)
-	if _, err := os.Stat(d); os.IsNotExist(err) {
-		err = os.MkdirAll(d, 0755)
-		if err != nil {
-			return "", err
-		}
-	}
-	return d, nil
 }
 
 func ProcessPath(p string) (string, error) {

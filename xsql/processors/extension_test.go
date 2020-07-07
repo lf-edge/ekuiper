@@ -27,7 +27,7 @@ func setup() *RuleProcessor {
 
 	os.Remove(CACHE_FILE)
 
-	dbDir, err := common.GetAndCreateDataLoc("test")
+	dbDir, err := common.GetDataLoc("test")
 	if err != nil {
 		log.Panic(err)
 	}
@@ -249,7 +249,7 @@ func getExtMockSource(name string, done <-chan int, size int) *nodes.SourceNode 
 func setup2() *RuleProcessor {
 	log := common.Log
 
-	dbDir, err := common.GetAndCreateDataLoc("test")
+	dbDir, err := common.GetDataLoc()
 	if err != nil {
 		log.Panic(err)
 	}
@@ -351,8 +351,8 @@ func TestFuncState(t *testing.T) {
 				}
 			}
 		}
-		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: map[string]interface{}{
-			"bufferLength": float64(100),
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: &api.RuleOption{
+			BufferLength: 100,
 		}}, sources)
 		if err != nil {
 			t.Error(err)

@@ -20,7 +20,7 @@ var DbDir = getDbDir()
 
 func getDbDir() string {
 	common.InitConf()
-	dbDir, err := common.GetAndCreateDataLoc("test")
+	dbDir, err := common.GetDataLoc()
 	if err != nil {
 		log.Panic(err)
 	}
@@ -2436,7 +2436,9 @@ func TestWindowError(t *testing.T) {
 				}
 			}
 		}
-		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql}, sources)
+		tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: tt.name, Sql: tt.sql, Options: &api.RuleOption{
+			BufferLength: 100,
+		}}, sources)
 		if err != nil {
 			t.Error(err)
 		}
