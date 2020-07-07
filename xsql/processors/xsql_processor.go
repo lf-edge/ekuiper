@@ -270,7 +270,15 @@ func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
 }
 
 func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) {
-	var rule api.Rule
+	//set default rule options
+	rule := &api.Rule{
+		Options: &api.RuleOption{
+			LateTol:            1000,
+			Concurrency:        1,
+			BufferLength:       1024,
+			CheckpointInterval: 300000, //5 minutes
+		},
+	}
 	if err := json.Unmarshal([]byte(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)
 	}
@@ -291,10 +299,23 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	if rule.Actions == nil || len(rule.Actions) == 0 {
 		return nil, fmt.Errorf("Missing rule actions.")
 	}
-	rule.Options.BufferLength = 1024
-	rule.Options.Concurrency = 1
-	rule.Options.CheckpointInterval = 300000 //5 minutes
-	return &rule, nil
+	if rule.Options == nil {
+		rule.Options = &api.RuleOption{}
+	}
+	//Set default options
+	if rule.Options.CheckpointInterval < 0 {
+		return nil, fmt.Errorf("rule option checkpointInterval %d is invalid, require a positive integer", rule.Options.CheckpointInterval)
+	}
+	if rule.Options.Concurrency < 0 {
+		return nil, fmt.Errorf("rule option concurrency %d is invalid, require a positive integer", rule.Options.Concurrency)
+	}
+	if rule.Options.BufferLength < 0 {
+		return nil, fmt.Errorf("rule option bufferLength %d is invalid, require a positive integer", rule.Options.BufferLength)
+	}
+	if rule.Options.LateTol < 0 {
+		return nil, fmt.Errorf("rule option lateTolerance %d is invalid, require a positive integer", rule.Options.LateTol)
+	}
+	return rule, nil
 }
 
 func (p *RuleProcessor) ExecInitRule(rule *api.Rule) (*xstream.TopologyNew, error) {
