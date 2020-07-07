@@ -1,4 +1,4 @@
-FROM golang:1.13.10 AS builder
+FROM golang:1.14 AS builder
 
 COPY . /go/kuiper
 
