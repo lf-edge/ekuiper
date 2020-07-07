@@ -27,7 +27,7 @@ func setup() *RuleProcessor {
 
 	os.Remove(CACHE_FILE)
 
-	dbDir, err := common.GetDataLoc("test")
+	dbDir, err := common.GetDataLoc()
 	if err != nil {
 		log.Panic(err)
 	}
