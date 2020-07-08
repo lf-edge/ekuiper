@@ -1,7 +1,7 @@
 package util
 
 import (
-  "kuiper/tools/kubeedge/common"
+	"kuiper/tools/kubeedge/common"
 	"testing"
 )
 
