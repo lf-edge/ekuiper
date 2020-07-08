@@ -37,7 +37,7 @@ type KVStore struct {
 func getKVStore(ruleId string) (*KVStore, error) {
 	dr, _ := common.GetDataLoc()
 	db := common.GetSimpleKVStore(path.Join(dr, "checkpoints", ruleId))
-	s := &KVStore{db: db, max: 3}
+	s := &KVStore{db: db, max: 3, mapStore: &sync.Map{}}
 	//read data from badger db
 	if err := s.restore(); err != nil {
 		return nil, err
@@ -56,18 +56,17 @@ func (s *KVStore) restore() error {
 			return fmt.Errorf("invalid checkpoint data: %s", err)
 		} else {
 			s.checkpoints = cs
-			if bytes, ok := s.db.Get(string(cs[len(cs)-1])); ok {
-				if m, err := bytesToMap(bytes.([]byte)); err != nil {
-					return fmt.Errorf("invalid last checkpoint data: %s", err)
-				} else {
-					s.mapStore = m
-					return nil
+			for _, c := range cs {
+				if bytes, ok := s.db.Get(string(c)); ok {
+					if m, err := bytesToMap(bytes.([]byte)); err != nil {
+						return fmt.Errorf("invalid checkpoint data: %s", err)
+					} else {
+						s.mapStore.Store(c, common.MapToSyncMap(m))
+					}
 				}
 			}
 		}
-
 	}
-	s.mapStore = &sync.Map{}
 	return nil
 }
 
@@ -103,7 +102,7 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 			if err != nil {
 				return fmt.Errorf("save checkpoint err, fail to encode states: %s", err)
 			}
-			err = s.db.Set(string(checkpointId), b)
+			err = s.db.Replace(string(checkpointId), b)
 			if err != nil {
 				return fmt.Errorf("save checkpoint err: %v", err)
 			}
@@ -121,7 +120,7 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 			if !ok {
 				return fmt.Errorf("save checkpoint err: fail to encode checkpoint counts")
 			}
-			err = s.db.Set(CheckpointListKey, cs)
+			err = s.db.Replace(CheckpointListKey, cs)
 			if err != nil {
 				return fmt.Errorf("save checkpoint err: %v", err)
 			}
@@ -132,18 +131,27 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 
 //Only run in the initialization
 func (s *KVStore) GetOpState(opId string) (*sync.Map, error) {
-	if sm, ok := s.mapStore.Load(opId); ok {
-		switch m := sm.(type) {
-		case *sync.Map:
-			return m, nil
-		case map[string]interface{}:
-			return common.MapToSyncMap(m), nil
-		default:
-			return nil, fmt.Errorf("invalid state %v stored for op %s: data type is not *sync.Map", sm, opId)
+	if len(s.checkpoints) > 0 {
+		if v, ok := s.mapStore.Load(s.checkpoints[len(s.checkpoints)-1]); ok {
+			if cstore, ok := v.(*sync.Map); !ok {
+				return nil, fmt.Errorf("invalid state %v stored for op %s: data type is not *sync.Map", v, opId)
+			} else {
+				if sm, ok := cstore.Load(opId); ok {
+					switch m := sm.(type) {
+					case *sync.Map:
+						return m, nil
+					case map[string]interface{}:
+						return common.MapToSyncMap(m), nil
+					default:
+						return nil, fmt.Errorf("invalid state %v stored for op %s: data type is not *sync.Map", sm, opId)
+					}
+				}
+			}
+		} else {
+			return nil, fmt.Errorf("store for checkpoint %d not found", s.checkpoints[len(s.checkpoints)-1])
 		}
-	} else {
-		return &sync.Map{}, nil
 	}
+	return &sync.Map{}, nil
 }
 
 func mapToBytes(sm *sync.Map) ([]byte, error) {
@@ -156,14 +164,14 @@ func mapToBytes(sm *sync.Map) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func bytesToMap(input []byte) (*sync.Map, error) {
+func bytesToMap(input []byte) (map[string]interface{}, error) {
 	var result map[string]interface{}
 	buf := bytes.NewBuffer(input)
 	dec := gob.NewDecoder(buf)
 	if err := dec.Decode(&result); err != nil {
 		return nil, err
 	}
-	return common.MapToSyncMap(result), nil
+	return result, nil
 }
 
 func sliceToBytes(s []int64) ([]byte, bool) {

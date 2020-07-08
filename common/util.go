@@ -343,7 +343,7 @@ func ConvertArray(s []interface{}) []interface{} {
 func SyncMapToMap(sm *sync.Map) map[string]interface{} {
 	m := make(map[string]interface{})
 	sm.Range(func(k interface{}, v interface{}) bool {
-		m[k.(string)] = v
+		m[fmt.Sprintf("%v", k)] = v
 		return true
 	})
 	return m

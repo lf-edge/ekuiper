@@ -36,10 +36,14 @@ func cleanStateData() {
 	}
 	c := path.Join(dbDir, "checkpoints")
 	err = os.RemoveAll(c)
-	log.Errorf("%s", err)
+	if err != nil {
+		log.Errorf("%s", err)
+	}
 	s := path.Join(dbDir, "sink")
 	err = os.RemoveAll(s)
-	log.Errorf("%s", err)
+	if err != nil {
+		log.Errorf("%s", err)
+	}
 }
 
 func TestStreamCreateProcessor(t *testing.T) {
