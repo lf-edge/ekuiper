@@ -17,20 +17,16 @@
 
 ### 1.3配置文件格式及含义：
 
-{
-    "ip":"127.0.0.1",	//kuiper ip地址
-    "port":9081,	//kuiper 端口
-    "logPath":"./log/kubeedge.log",	//日志保存路径
-    "commandDir":"./sample/",	//命令文件夹路径
-    "timeout":500,	//执行一条命令超时时间（单位：毫秒）
-    "intervalTime":60	//隔多久检查一次命令文件夹（单位：秒）
-}
+port: 9081  //kuiper 端口
+timeout: 500  //执行一条命令超时时间（单位：毫秒）
+intervalTime: 60  //隔多久检查一次命令文件夹（单位：秒）
+ip: "127.0.0.1" //kuiper ip地址
+logPath: "./log/kubeedge.log" //日志保存路径
+commandDir: "./sample/" //命令文件夹路径
 
 ### 1.4编译程序：
 
-i.在main.go文件所在文件夹下运行命令：go mod init，生产go.mod文件。
-
-ii.执行go build命令，生成可执行程序。
+执行"go build -o tools/kubeedge/kubeedge tools/kubeedge/main.go"命令即可生成kubeedge程序。
 
 ## 2.流的操作示例
 

@@ -3,8 +3,8 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/emqx/kuiper/tools/kubeedge/common"
 	"io/ioutil"
-	"kuiper/tools/kubeedge/common"
 	"os"
 	"path"
 	"strconv"
@@ -28,11 +28,10 @@ func (this *command) getLog() string {
 	return this.strLog
 }
 
-func (this *command) call() bool {
+func (this *command) call(host string) bool {
 	var resp []byte
 	var err error
-	conf := common.GetConf()
-	head := fmt.Sprintf(`http://%s:%d%s`, conf.GetIp(), conf.GetPort(), this.Url)
+	head := host + this.Url
 	body, _ := json.Marshal(this.Data)
 	switch this.Method {
 	case "post", "POST":
@@ -47,7 +46,6 @@ func (this *command) call() bool {
 	default:
 		this.strLog = fmt.Sprintf("no such method : %s", this.Method)
 		return false
-
 	}
 	if nil == err {
 		this.strLog = fmt.Sprintf("%s:%s resp:%s", head, this.Method, string(resp))
@@ -101,6 +99,8 @@ func (this *server) processDir() bool {
 		this.logs = append(this.logs, fmt.Sprintf("read command dir:%v", err))
 		return false
 	}
+	conf := common.GetConf()
+	host := fmt.Sprintf(`http://%s:%d`, conf.GetIp(), conf.GetPort())
 	for _, info := range infos {
 		filePath := path.Join(this.dirCommand, info.Name())
 		file := new(fileData)
@@ -116,7 +116,7 @@ func (this *server) processDir() bool {
 		}
 
 		for _, command := range file.Commands {
-			flag := command.call()
+			flag := command.call(host)
 			this.logs = append(this.logs, command.getLog())
 			if !flag {
 				return false

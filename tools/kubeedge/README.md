@@ -1,3 +1,5 @@
+## 1.程序说明及其配置：
+
 ### 1.1程序说明：
 
 ​    本程序用于处理命令文件夹中的文件，处理完毕后将文件移除。之后程序监控命令文件夹，当命令文件夹下出现文件时重复上述步骤，直到命令文件夹下没有文件为止。程序启动时，用户需要在配置文件中指定命令文件夹的路径，之后用户只需要将编辑好的命令文件放在命令文件夹中即可。
@@ -15,20 +17,16 @@
 
 ### 1.3配置文件格式及含义：
 
-{
-    "ip":"127.0.0.1",	//kuiper ip地址
-    "port":9081,	//kuiper 端口
-    "logPath":"./log/kubeedge.log",	//日志保存路径
-    "commandDir":"./sample/",	//命令文件夹路径
-    "timeout":500,	//执行一条命令超时时间（单位：毫秒）
-    "intervalTime":60	//隔多久检查一次命令文件夹（单位：秒）
-}
+port: 9081  //kuiper 端口
+timeout: 500  //执行一条命令超时时间（单位：毫秒）
+intervalTime: 60  //隔多久检查一次命令文件夹（单位：秒）
+ip: "127.0.0.1" //kuiper ip地址
+logPath: "./log/kubeedge.log" //日志保存路径
+commandDir: "./sample/" //命令文件夹路径
 
 ### 1.4编译程序：
 
-i.在main.go文件所在文件夹下运行命令：go mod init，生产go.mod文件。
-
-ii.执行go build命令，生成可执行程序。
+执行"go build -o tools/kubeedge/kubeedge tools/kubeedge/main.go"命令即可生成kubeedge程序。
 
 ## 2.流的操作示例
 

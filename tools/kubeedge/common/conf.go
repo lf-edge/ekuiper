@@ -148,6 +148,9 @@ func fetchContents(request *http.Request) (data []byte, err error) {
 	if nil != err {
 		return nil, err
 	}
+	if respon.StatusCode < 200 || respon.StatusCode > 299 {
+		return data, fmt.Errorf("http return code: %d and error message %s.", respon.StatusCode, string(data))
+	}
 	return data, err
 }
 
