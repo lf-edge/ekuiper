@@ -1,9 +1,7 @@
 package util
 
 import (
-	//	"fmt"
-	//	"path/filepath"
-	"kubeedge/common"
+  "kuiper/tools/kubeedge/common"
 	"testing"
 )
 

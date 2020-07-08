@@ -30,9 +30,7 @@
 
 i.在main.go文件所在文件夹下运行命令：go mod init，生产go.mod文件。
 
-ii.将go.mod文件中的“module kuiper/tools/kubeedge”替换为“module kubeedge“。
-
-iii.执行go build命令，生成可执行程序。
+ii.执行go build命令，生成可执行程序。
 
 ## 2.流的操作示例
 

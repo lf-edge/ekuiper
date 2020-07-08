@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"kubeedge/common"
+  "kuiper/tools/kubeedge/common"
 	"os"
 	"path"
 	"strconv"

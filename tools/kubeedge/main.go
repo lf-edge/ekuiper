@@ -1,7 +1,7 @@
 package main
 
 import (
-	"kubeedge/util"
+  "kuiper/tools/kubeedge/util"
 )
 
 func main() {
