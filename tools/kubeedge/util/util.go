@@ -1,4 +1,4 @@
-package server
+package util
 
 import (
 	"encoding/json"
@@ -44,6 +44,10 @@ func (this *command) call() bool {
 	case "delete", "DELETE":
 		resp, err = common.Delete(head)
 		break
+	default:
+		this.strLog = fmt.Sprintf("no such method : %s", this.Method)
+		return false
+
 	}
 	if nil == err {
 		this.strLog = fmt.Sprintf("%s:%s resp:%s", head, this.Method, string(resp))
@@ -139,7 +143,7 @@ func (this *server) watchFolders() {
 	}
 }
 
-func Server() {
+func Process() {
 	if len(os.Args) != 2 {
 		common.Log.Fatal("Missing configuration file")
 		return

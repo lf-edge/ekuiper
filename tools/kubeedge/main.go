@@ -1,9 +1,9 @@
 package main
 
 import (
-	"kubeedge/server"
+	"kubeedge/util"
 )
 
 func main() {
-	server.Server()
+	util.Process()
 }

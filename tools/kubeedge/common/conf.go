@@ -2,8 +2,8 @@ package common
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
+	"github.com/go-yaml/yaml"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
@@ -16,12 +16,12 @@ import (
 
 type (
 	config struct {
-		Port         int    `json:"port"`
-		Timeout      int    `json:"timeout"`
-		IntervalTime int    `json:"intervalTime"`
-		Ip           string `json:"ip"`
-		LogPath      string `json:"logPath"`
-		CommandDir   string `json:"commandDir"`
+		Port         int    `yaml:"port"`
+		Timeout      int    `yaml:"timeout"`
+		IntervalTime int    `yaml:"intervalTime"`
+		Ip           string `yaml:"ip"`
+		LogPath      string `yaml:"logPath"`
+		CommandDir   string `yaml:"commandDir"`
 	}
 )
 
@@ -68,7 +68,7 @@ func (this *config) initConfig() bool {
 		fmt.Println("load conf err : ", err)
 		return false
 	}
-	err = json.Unmarshal(sliByte, this)
+	err = yaml.Unmarshal(sliByte, this)
 	if nil != err {
 		fmt.Println("unmashal conf err : ", err)
 		return false
@@ -138,7 +138,7 @@ func (this *config) Init() bool {
 	return true
 }
 
-func download(request *http.Request) (data []byte, err error) {
+func fetchContents(request *http.Request) (data []byte, err error) {
 	respon, err := g_client.Do(request)
 	if nil != err {
 		return nil, err
@@ -156,7 +156,7 @@ func Get(inUrl string) (data []byte, err error) {
 	if nil != err {
 		return nil, err
 	}
-	return download(request)
+	return fetchContents(request)
 }
 
 func Post(inHead, inBody string) (data []byte, err error) {
@@ -165,7 +165,7 @@ func Post(inHead, inBody string) (data []byte, err error) {
 		return nil, err
 	}
 	request.Header.Set("Content-Type", "application/json")
-	return download(request)
+	return fetchContents(request)
 }
 
 func Delete(inUrl string) (data []byte, err error) {
@@ -173,5 +173,5 @@ func Delete(inUrl string) (data []byte, err error) {
 	if nil != err {
 		return nil, err
 	}
-	return download(request)
+	return fetchContents(request)
 }
