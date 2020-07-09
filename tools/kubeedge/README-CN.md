@@ -1,10 +1,10 @@
-## 1.程序说明及其配置：
+## 1 程序说明及其配置：
 
-### 1.1程序说明：
+### 1.1 程序说明：
 
 ​    本程序用于处理命令文件夹中的文件，处理完毕后将文件移除。之后程序监控命令文件夹，当命令文件夹下出现文件时重复上述步骤，直到命令文件夹下没有文件为止。程序启动时，用户需要在配置文件中指定命令文件夹的路径，之后用户只需要将编辑好的命令文件放在命令文件夹中即可。
 
-### 1.2命令文件格式及含义：
+### 1.2 命令文件格式及含义：
 
 | 字段        | 是否必填   | 类型     | 释义         |
 | ----------- | ---------- | -------- | ------------ |
@@ -15,23 +15,24 @@
 | data        | 创建时必填 | json obj | 创建内容     |
 |             |            |          |              |
 
-### 1.3配置文件格式及含义：
-
+### 1.3 配置文件格式及含义：
+```yaml
 port: 9081  //kuiper 端口
 timeout: 500  //执行一条命令超时时间（单位：毫秒）
 intervalTime: 60  //隔多久检查一次命令文件夹（单位：秒）
 ip: "127.0.0.1" //kuiper ip地址
 logPath: "./log/kubeedge.log" //日志保存路径
 commandDir: "./sample/" //命令文件夹路径
+```
+### 1.4 编译程序：
 
-### 1.4编译程序：
+执行 `go build -o tools/kubeedge/kubeedge tools/kubeedge/main.go` 命令即可生成 kubeedge 程序。
 
-执行"go build -o tools/kubeedge/kubeedge tools/kubeedge/main.go"命令即可生成kubeedge程序。
+## 2 流的操作示例
 
-## 2.流的操作示例
+### 2.1 创建流 stream1
 
-### 2.1.创建流stream1
-
+```json
 {
     "commands":[
         {
@@ -43,9 +44,10 @@ commandDir: "./sample/" //命令文件夹路径
             }
         }]
 }
+```
 
-### 2.2.显示流列表
-
+### 2.2 显示流列表
+```json
 {
     "commands":[
         {
@@ -54,9 +56,10 @@ commandDir: "./sample/" //命令文件夹路径
             "method":"get"
         }]
 }
+```
 
-### 2.3.获取流stream1
-
+### 2.3 获取流 stream1
+```json
 {
     "commands":[
         {
@@ -65,9 +68,11 @@ commandDir: "./sample/" //命令文件夹路径
             "method":"get"
         }]
 }
+```
 
-### 2.4.删除流stream1
+### 2.4 删除流 stream1
 
+```json
 {
     "commands":[
         {
@@ -76,11 +81,13 @@ commandDir: "./sample/" //命令文件夹路径
             "method":"delete"
         }]
 }
+```
 
-## 3.规则的操作示例
+## 3 规则的操作示例
 
-### 3.1.创建规则rule1
+### 3.1 创建规则 rule1
 
+```json
 {
     "commands":[
         {
@@ -98,9 +105,11 @@ commandDir: "./sample/" //命令文件夹路径
             }
         }]
 }
+```
 
-### 3.2.显示规则列表
+### 3.2 显示规则列表
 
+```json
 {
     "commands":[
         {
@@ -109,9 +118,11 @@ commandDir: "./sample/" //命令文件夹路径
             "method":"get"
         }]
 }
+```
 
-### 3.3.获取规则rule1
+### 3.3 获取规则 rule1
 
+```json
 {
     "commands":[
         {
@@ -120,9 +131,11 @@ commandDir: "./sample/" //命令文件夹路径
             "method":"get"
         }]
 }
+```
 
-### 3.4.删除规则rule1
+### 3.4 删除规则 rule1
 
+```json
 {
     "commands":[
         {
@@ -132,8 +145,10 @@ commandDir: "./sample/" //命令文件夹路径
         }]
 }
 
-### 3.5.停止规则rule1
+```
+### 3.5 停止规则 rule1
 
+```json
 {
     "commands":[
         {
@@ -142,9 +157,11 @@ commandDir: "./sample/" //命令文件夹路径
             "method":"post"
         }]
 }
+```
 
-### 3.6.启动规则rule1
+### 3.6 启动规则 rule1
 
+```json
 {
     "commands":[
         {
@@ -153,9 +170,11 @@ commandDir: "./sample/" //命令文件夹路径
             "method":"post"
         }]
 }
+```
 
-### 3.7.重启规则rule1
+### 3.7 重启规则 rule1
 
+```json
 {
     "commands":[
         {
@@ -164,9 +183,11 @@ commandDir: "./sample/" //命令文件夹路径
             "method":"post"
         }]
 }
+```
 
-### 3.8.显示规则rule1的状态
+### 3.8 显示规则 rule1 的状态
 
+```json
 {
     "commands":[
         {
@@ -175,9 +196,11 @@ commandDir: "./sample/" //命令文件夹路径
             "method":"get"
         }]
 }
+```
 
-## 4.多命令集合示例：
+## 4 多命令集合示例：
 
+```json
 {
     "commands":[
         {
@@ -275,3 +298,4 @@ commandDir: "./sample/" //命令文件夹路径
             "method":"get"
         }]
 }
+```

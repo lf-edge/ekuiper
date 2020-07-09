@@ -1,18 +1,12 @@
 package util
 
 import (
-	"github.com/emqx/kuiper/tools/kubeedge/common"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	//"fmt"
-	//"strings"
 )
 
 func TestCall(t *testing.T) {
-	conf := common.GetConf()
-	conf.Ip = `127.0.0.1`
-	conf.Port = 9081
 	var tests = []struct {
 		cmd command
 		exp bool
