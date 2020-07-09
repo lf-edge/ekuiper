@@ -130,6 +130,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				funcMap := template.FuncMap{
 					"json":   templates.JsonMarshal,
 					"base64": templates.Base64Encode,
+					"add":    templates.Add,
 				}
 				temp, err := template.New("sink").Funcs(funcMap).Parse(t)
 				if err != nil {

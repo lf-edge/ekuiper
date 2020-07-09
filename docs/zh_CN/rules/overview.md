@@ -63,6 +63,8 @@
 | dataTemplate      | true     | [golang 模板](https://golang.org/pkg/html/template)格式字符串，用于指定输出数据格式。 模板的输入是目标消息，该消息始终是映射数组。 如果未指定数据模板，则将数据作为原始输入。 |
 
 #### 数据模板
+用户可以参考 [Kuiper 中使用 Golang 模版 (template) 定制分析结果](data_template.md) 来获取更多的关于数据模版的使用场景。
+
 如果 sendSingle 为 true，则数据模板将针对某一条记录执行操作； 否则，它将对整个记录数组执行操作。 典型的数据模板是：
 
 例如，我们的目标输入为
@@ -120,6 +122,14 @@
 
 
 可以自定义动作以支持不同种类的输出，有关更多详细信息，请参见 [extension](../extension/overview.md) 。
+
+#### 模版中支持的函数
+
+Kuiper 扩展了几个可以在模版中使用的函数。
+
+- `json para1`: `json` 函数用于将 map 内容转换为 JSON 字符串
+- `base64 para1`: `base64` 函数用于将参数值编码为 base64 字符串
+- `add para1 para2`: `add` 函数用于将两个数值类型的参数相加
 
 ### 选项
 当前的选项包括：

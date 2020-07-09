@@ -71,6 +71,7 @@ Each action can define its own properties. There are several common properties:
 | dataTemplate      | true     | The [golang template](https://golang.org/pkg/html/template) format string to specify the output data format. The input of the template is the sink message which is always an array of map. If no data template is specified, the raw input will be the data. |
 
 #### Data Template
+User can refer to [Use Golang template to customize analaysis result in Kuiper](data_template.md) for more detailed scenarios. 
 If sendSingle is true, the data template will execute against a record; Otherwise, it will execute against the whole array of records. Typical data templates are:
 
 For example, we have the sink input as 
@@ -126,6 +127,14 @@ In sendSingle=false mode:
 ```
 
 Actions could be customized to support different kinds of outputs, see [extension](../extension/overview.md) for more detailed info.
+
+#### Functions supported in template
+
+Kuiper extends several functions that can be used in data template.
+
+- `json para1`: The `json` function is used for convert the map content to a JSON string.
+- `base64 para1`: The `base64` function is used for encoding parameter value to a base64 string.
+- `add para1 para2`: The `add` function is used for adding two numeric value.
 
 ### options
 The current options includes:
