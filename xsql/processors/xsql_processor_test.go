@@ -39,7 +39,7 @@ func cleanStateData() {
 	if err != nil {
 		log.Errorf("%s", err)
 	}
-	s := path.Join(dbDir, "sink")
+	s := path.Join(dbDir, "sink", "cache")
 	err = os.RemoveAll(s)
 	if err != nil {
 		log.Errorf("%s", err)

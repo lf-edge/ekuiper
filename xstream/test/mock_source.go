@@ -36,19 +36,33 @@ func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple
 		}
 		log.Debugf("mock source is waiting", i)
 		select {
-		case j := <-m.done:
-			log.Debugf("mock source receives data %d", j)
+		case j, ok := <-m.done:
+			if ok {
+				log.Debugf("mock source receives data %d", j)
+			} else {
+				log.Debugf("sync channel done at %d", i)
+			}
 		case <-ctx.Done():
 			log.Debugf("mock source open DONE")
 			return
 		}
-		log.Debugf("mock source is sending data %s", d)
+
 		if !m.isEventTime {
 			mockClock.Set(common.TimeFromUnixMilli(d.Timestamp))
+			log.Debugf("set time at %d", d.Timestamp)
 		} else {
 			mockClock.Add(1000 * time.Millisecond)
 		}
+
+		select {
+		case <-ctx.Done():
+			log.Debugf("mock source open DONE")
+			return
+		default:
+		}
+
 		consumer <- api.NewDefaultSourceTuple(d.Message, xsql.Metadata{"topic": "mock"})
+		log.Debugf("mock source is sending data %s", d)
 		m.offset = i + 1
 		time.Sleep(1)
 	}

@@ -36,10 +36,6 @@ func NewWithNameAndQos(name string, qos api.Qos, checkpointInterval int) (*Topol
 		qos:                qos,
 		checkpointInterval: checkpointInterval,
 	}
-	var err error
-	if tp.store, err = states.CreateStore(name, qos); err != nil {
-		return nil, err
-	}
 	return tp, nil
 }
 
@@ -48,6 +44,7 @@ func (s *TopologyNew) GetContext() api.StreamContext {
 }
 
 func (s *TopologyNew) Cancel() {
+	s.store = nil
 	s.cancel()
 }
 
@@ -102,6 +99,11 @@ func (s *TopologyNew) Open() <-chan error {
 		return s.drain
 	}
 	s.prepareContext() // ensure context is set
+	var err error
+	if s.store, err = states.CreateStore(s.name, s.qos); err != nil {
+		s.drainErr(err)
+		return s.drain
+	}
 	s.enableCheckpoint()
 	log := s.ctx.GetLogger()
 	log.Infoln("Opening stream")

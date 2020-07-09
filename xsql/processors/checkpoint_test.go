@@ -1,6 +1,7 @@
 package processors
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
@@ -28,7 +29,7 @@ func TestCheckpointCount(t *testing.T) {
 			name:      `rule1`,
 			sql:       `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			size:      5,
-			breakSize: 2,
+			breakSize: 3,
 			cc:        2,
 			r: [][]map[string]interface{}{
 				{{
@@ -81,6 +82,7 @@ func TestCheckpointCount(t *testing.T) {
 	}
 	for j, opt := range options {
 		for i, tt := range tests {
+			cleanStateData()
 			test.ResetClock(1541152486000)
 			p := NewRuleProcessor(DbDir)
 			parser := xsql.NewParser(strings.NewReader(tt.sql))
@@ -110,6 +112,7 @@ func TestCheckpointCount(t *testing.T) {
 			mockSink := test.NewMockSink()
 			sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
 			tp.AddSink(inputs, sink)
+			mockClock := test.GetMockClock()
 			errCh := tp.Open()
 			func() {
 				for i := 0; i < tt.breakSize*len(syncs); i++ {
@@ -129,52 +132,53 @@ func TestCheckpointCount(t *testing.T) {
 					}
 				}
 
-				mockClock := test.GetMockClock()
-				mockClock.Set(common.TimeFromUnixMilli(int64(1541152486014 + tt.breakSize*1000)))
+				mockClock.Set(common.TimeFromUnixMilli(1541152488000))
+				time.Sleep(100 * time.Millisecond)
 				actual := tp.GetCoordinator().GetCompleteCount()
 				if !reflect.DeepEqual(tt.cc, actual) {
 					t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, j, tt.cc, actual)
 					return
 				}
-				time.Sleep(1000)
+				time.Sleep(100 * time.Millisecond)
 				tp.Cancel()
-				//TODO window memory
-				//	errCh := tp.Open()
-				//	for i := tt.breakSize; i < tt.size*len(syncs); i++ {
-				//		syncs[i%len(syncs)] <- i
-				//		retry := 100
-				//		for ; retry > 0; retry-- {
-				//			time.Sleep(1)
-				//			if getMetric(tp, "op_window_0_records_in_total") == (i - tt.breakSize + 1) {
-				//				break
-				//			}
-				//		}
-				//		select {
-				//		case err = <-errCh:
-				//			t.Log(err)
-				//			tp.Cancel()
-				//			return
-				//		default:
-				//		}
-				//	}
-				//	time.Sleep(1000)
+				time.Sleep(100 * time.Millisecond)
+				errCh := tp.Open()
+				close(syncs[i%len(syncs)])
+				for i := 0; i < tt.size*len(syncs); i++ {
+					common.Log.Debugf("resending data %d", i)
+					retry := 100
+					for ; retry > 0; retry-- {
+						if getMetric(tp, "op_window_0_records_in_total") == i {
+							break
+						}
+						time.Sleep(1)
+					}
+					select {
+					case err = <-errCh:
+						t.Log(err)
+						tp.Cancel()
+						return
+					default:
+					}
+				}
 			}()
-			//results := mockSink.GetResults()
-			//var maps [][]map[string]interface{}
-			//for _, v := range results {
-			//	var mapRes []map[string]interface{}
-			//	err := json.Unmarshal(v, &mapRes)
-			//	if err != nil {
-			//		t.Errorf("Failed to parse the input into map")
-			//		continue
-			//	}
-			//	maps = append(maps, mapRes)
-			//}
-			//if !reflect.DeepEqual(tt.r, maps) {
-			//	t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
-			//}
-			//tp.Cancel()
+			common.Log.Debugf("done sending data")
+			time.Sleep(400 * time.Millisecond)
+			results := mockSink.GetResults()
+			var maps [][]map[string]interface{}
+			for _, v := range results {
+				var mapRes []map[string]interface{}
+				err := json.Unmarshal(v, &mapRes)
+				if err != nil {
+					t.Errorf("Failed to parse the input into map")
+					continue
+				}
+				maps = append(maps, mapRes)
+			}
+			if !reflect.DeepEqual(tt.r, maps) {
+				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
+			}
+			tp.Cancel()
 		}
-		cleanStateData()
 	}
 }

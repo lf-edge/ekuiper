@@ -184,12 +184,27 @@ func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple, current int64, 
 	}
 }
 
-func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- error) {
+func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.Tuple, errCh chan<- error) {
+	//Tickers to update watermark
+	switch o.window.Type {
+	case xsql.NOT_WINDOW:
+	case xsql.TUMBLING_WINDOW:
+		o.ticker = common.GetTicker(o.window.Length)
+		o.interval = o.window.Length
+	case xsql.HOPPING_WINDOW:
+		o.ticker = common.GetTicker(o.window.Interval)
+		o.interval = o.window.Interval
+	case xsql.SLIDING_WINDOW:
+		o.interval = o.window.Length
+	case xsql.SESSION_WINDOW:
+		//Use timeout to update watermark
+		o.ticker = common.GetTicker(o.window.Interval)
+		o.interval = o.window.Interval
+	}
 	exeCtx, cancel := ctx.WithCancel()
 	log := ctx.GetLogger()
 	go o.watermarkGenerator.start(exeCtx)
 	var (
-		inputs          []*xsql.Tuple
 		triggered       bool
 		nextWindowEndTs int64
 		prevWindowEndTs int64
@@ -243,6 +258,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 					}
 				}
 				o.statManager.ProcessTimeEnd()
+				ctx.PutState(WINDOW_INPUTS_KEY, inputs)
 			default:
 				o.statManager.IncTotalRecordsIn()
 				o.Broadcast(fmt.Errorf("run Window error: expect xsql.Event type but got %[1]T(%[1]v)", d))
