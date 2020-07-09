@@ -85,6 +85,11 @@ type TopNode interface {
 	GetName() string
 }
 
+type Rewindable interface {
+	GetOffset() (interface{}, error)
+	Rewind(offset interface{}) error
+}
+
 type RuleOption struct {
 	IsEventTime        bool  `json:"isEventTime"`
 	LateTol            int64 `json:"lateTolerance"`

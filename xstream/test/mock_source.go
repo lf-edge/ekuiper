@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
@@ -11,6 +12,8 @@ type MockSource struct {
 	data        []*xsql.Tuple
 	done        <-chan int
 	isEventTime bool
+
+	offset int
 }
 
 func NewMockSource(data []*xsql.Tuple, done <-chan int, isEventTime bool) *MockSource {
@@ -25,9 +28,20 @@ func NewMockSource(data []*xsql.Tuple, done <-chan int, isEventTime bool) *MockS
 func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	log := ctx.GetLogger()
 	mockClock := GetMockClock()
-	log.Debugln("mock source starts")
-	for _, d := range m.data {
-		<-m.done
+	log.Debugf("mock source starts with offset %d", m.offset)
+	for i, d := range m.data {
+		if i < m.offset {
+			log.Debugf("mock source is skipping %d", i)
+			continue
+		}
+		log.Debugf("mock source is waiting", i)
+		select {
+		case j := <-m.done:
+			log.Debugf("mock source receives data %d", j)
+		case <-ctx.Done():
+			log.Debugf("mock source open DONE")
+			return
+		}
 		log.Debugf("mock source is sending data %s", d)
 		if !m.isEventTime {
 			mockClock.Set(common.TimeFromUnixMilli(d.Timestamp))
@@ -35,11 +49,28 @@ func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple
 			mockClock.Add(1000 * time.Millisecond)
 		}
 		consumer <- api.NewDefaultSourceTuple(d.Message, xsql.Metadata{"topic": "mock"})
+		m.offset = i + 1
 		time.Sleep(1)
 	}
+	log.Debugf("mock source sends out all data")
+}
+
+func (m *MockSource) GetOffset() (interface{}, error) {
+	return m.offset, nil
+}
+
+func (m *MockSource) Rewind(offset interface{}) error {
+	oi, err := common.ToInt(offset)
+	if err != nil {
+		return fmt.Errorf("mock source fails to rewind: %s", err)
+	} else {
+		m.offset = oi
+	}
+	return nil
 }
 
 func (m *MockSource) Close(ctx api.StreamContext) error {
+	m.offset = 0
 	return nil
 }
 

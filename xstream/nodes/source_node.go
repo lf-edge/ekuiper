@@ -36,6 +36,8 @@ func NewSourceNode(name string, options map[string]string) *SourceNode {
 	}
 }
 
+const OFFSET_KEY = "$$offset"
+
 //Only for mock source, do not use it in production
 func NewSourceNodeWithSource(name string, source api.Source, options map[string]string) *SourceNode {
 	return &SourceNode{
@@ -105,6 +107,18 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.statManagers = append(m.statManagers, stats)
 				m.mutex.Unlock()
 
+				if rw, ok := source.(api.Rewindable); ok {
+					if offset, err := ctx.GetState(OFFSET_KEY); err != nil {
+						m.drainError(errCh, err, ctx, logger)
+					} else if offset != nil {
+						logger.Infof("Source rewind from %v", offset)
+						err = rw.Rewind(offset)
+						if err != nil {
+							m.drainError(errCh, err, ctx, logger)
+						}
+					}
+				}
+
 				buffer := NewDynamicChannelBuffer()
 				buffer.SetLimit(bl)
 				sourceErrCh := make(chan error)
@@ -128,6 +142,17 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						m.Broadcast(tuple)
 						stats.IncTotalRecordsOut()
 						stats.SetBufferLength(int64(buffer.GetLength()))
+						if rw, ok := source.(api.Rewindable); ok {
+							if offset, err := rw.GetOffset(); err != nil {
+								m.drainError(errCh, err, ctx, logger)
+							} else {
+								err = ctx.PutState(OFFSET_KEY, offset)
+								if err != nil {
+									m.drainError(errCh, err, ctx, logger)
+								}
+								logger.Debugf("Source save offset %v", offset)
+							}
+						}
 						logger.Debugf("%s consume data %v complete", m.name, tuple)
 					}
 				}
