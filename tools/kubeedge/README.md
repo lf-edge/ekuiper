@@ -1,36 +1,36 @@
-## 1 程序说明及其配置：
+## 1 Program description and configuration:
 
-### 1.1 程序说明：
+### 1.1 Program description:
 
-​    本程序用于处理命令文件夹中的文件，处理完毕后将文件移除。之后程序监控命令文件夹，当命令文件夹下出现文件时重复上述步骤，直到命令文件夹下没有文件为止。程序启动时，用户需要在配置文件中指定命令文件夹的路径，之后用户只需要将编辑好的命令文件放在命令文件夹中即可。
+This program is used to process the files in the command folder and remove the files after processing. After that, the program monitors the command folder and repeats the above steps when there are files in the command folder until there are no files in the command folder. When the program starts, the user needs to specify the path of the command folder in the configuration file, and then the user only needs to place the edited command file in the command folder.
 
-### 1.2 命令文件格式及含义：
+### 1.2 Command file format and meaning:
 
-| 字段        | 是否必填   | 类型     | 释义         |
-| ----------- | ---------- | -------- | ------------ |
-| commands    | 必填       | array    | 命令集合     |
-| url         | 必填       | string   | http请求路径 |
-| method      | 必填       | string   | http请求方法 |
-| description | 选填       | string   | 操作描述     |
-| data        | 创建时必填 | json obj | 创建内容     |
-|             |            |          |              |
+| Field       | Optional           | Type     | Description           |
+| ----------- | ------------------ | -------- | --------------------- |
+| commands    | false              | array    | Command set           |
+| url         | false              | string   | http request path     |
+| method      | false              | string   | http request method   |
+| description | True               | string   | Operation description |
+| data        | false for creation | json obj | Creation content      |
+|             |                    |          |                       |
 
-### 1.3 配置文件格式及含义：
+### 1.3 Configuration file format and meaning:
 ```yaml
-port: 9081  //kuiper 端口
-timeout: 500  //执行一条命令超时时间（单位：毫秒）
-intervalTime: 60  //隔多久检查一次命令文件夹（单位：秒）
-ip: "127.0.0.1" //kuiper ip地址
-logPath: "./log/kubeedge.log" //日志保存路径
-commandDir: "./sample/" //命令文件夹路径
+port: 9081  //kuiper port
+timeout: 500  //Timeout for executing a command (unit: ms)
+intervalTime: 60  //interval of Checking the command folder  (unit: seconds)
+ip: "127.0.0.1" //kuiper ip adress
+logPath: "./log/kubeedge.log" //Log save path
+commandDir: "./sample/" //Command folder path
 ```
-### 1.4 编译程序：
+### 1.4 Compile the program:
 
-执行 `go build -o tools/kubeedge/kubeedge tools/kubeedge/main.go` 命令即可生成 kubeedge 程序。
+Execute the command of `go build -o tools/kubeedge/kubeedge tools/kubeedge/main.go` to generate the kubeedge program.
 
-## 2 流的操作示例
+## 2 Example of stream operation
 
-### 2.1 创建流 stream1
+### 2.1 create stream1
 
 ```json
 {
@@ -46,7 +46,7 @@ commandDir: "./sample/" //命令文件夹路径
 }
 ```
 
-### 2.2 显示流列表
+### 2.2 Show stream list
 ```json
 {
     "commands":[
@@ -58,7 +58,7 @@ commandDir: "./sample/" //命令文件夹路径
 }
 ```
 
-### 2.3 获取流 stream1
+### 2.3 Get stream1
 ```json
 {
     "commands":[
@@ -70,7 +70,7 @@ commandDir: "./sample/" //命令文件夹路径
 }
 ```
 
-### 2.4 删除流 stream1
+### 2.4 Delete stream1
 
 ```json
 {
@@ -83,9 +83,9 @@ commandDir: "./sample/" //命令文件夹路径
 }
 ```
 
-## 3 规则的操作示例
+## 3 Example of rule operation
 
-### 3.1 创建规则 rule1
+### 3.1 Create rule1
 
 ```json
 {
@@ -107,7 +107,7 @@ commandDir: "./sample/" //命令文件夹路径
 }
 ```
 
-### 3.2 显示规则列表
+### 3.2 Show rule list
 
 ```json
 {
@@ -120,7 +120,7 @@ commandDir: "./sample/" //命令文件夹路径
 }
 ```
 
-### 3.3 获取规则 rule1
+### 3.3 Get rule1
 
 ```json
 {
@@ -133,7 +133,7 @@ commandDir: "./sample/" //命令文件夹路径
 }
 ```
 
-### 3.4 删除规则 rule1
+### 3.4 Delete rule1
 
 ```json
 {
@@ -146,7 +146,7 @@ commandDir: "./sample/" //命令文件夹路径
 }
 
 ```
-### 3.5 停止规则 rule1
+### 3.5 Stop rule1
 
 ```json
 {
@@ -159,7 +159,7 @@ commandDir: "./sample/" //命令文件夹路径
 }
 ```
 
-### 3.6 启动规则 rule1
+### 3.6 Start rule1
 
 ```json
 {
@@ -172,7 +172,7 @@ commandDir: "./sample/" //命令文件夹路径
 }
 ```
 
-### 3.7 重启规则 rule1
+### 3.7 Restart rule1
 
 ```json
 {
@@ -185,7 +185,7 @@ commandDir: "./sample/" //命令文件夹路径
 }
 ```
 
-### 3.8 显示规则 rule1 的状态
+### 3.8 Show the status of rule1
 
 ```json
 {
@@ -198,7 +198,7 @@ commandDir: "./sample/" //命令文件夹路径
 }
 ```
 
-## 4 多命令集合示例：
+## 4 Example of multiple command sets:
 
 ```json
 {
