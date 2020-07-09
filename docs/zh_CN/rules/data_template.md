@@ -12,12 +12,6 @@ Golang  模版将一段逻辑应用到数据上，然后按照用户指定的逻
 >
 > 模版的输入文本可以为 UTF-8 编码的任意文本。「`动作` (Actions)」 -- 数据求值或者控制结构  - 是通过  "{{" 和 "}}" 来界定的；所有在`动作`之外的文本会被保持原样到输出，除了 raw strings，`动作`不可跨行（注释除外）。
 
->  Templates are executed by applying them to a data structure. Annotations in the template refer to elements of the data structure (typically a field of a struct or a key in a map) to control execution and derive values to be displayed. Execution of the template walks the structure and sets the cursor, represented by a period '.' and called "dot", to the value at the current location in the structure as execution proceeds.
->
-> The input text for a template is UTF-8-encoded text in any format. "Actions"--data evaluations or control structures--are delimited by "{{" and "}}"; all text outside actions is copied to the output unchanged. Except for raw strings, actions may not span newlines, although comments can.
-
-
-
 ###  动作 (Actions)
 
 Golang 模版提供了一些[内置的动作](https://golang.org/pkg/text/template/#hdr-Actions)，可以让用户写各种控制语句，用于提取内容。比如，
