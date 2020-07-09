@@ -6,14 +6,14 @@ This program is used to process the files in the command folder and remove the f
 
 ### 1.2 Command file format and meaning:
 
-| Field       | Optional   | Type     | Description           |
-| ----------- | ---------- | -------- | --------------------- |
-| commands    | false      | array    | Command set           |
-| url         | True       | string   | http request path     |
-| method      | True       | string   | http request method   |
-| description | True       | string   | Operation description |
-| data        | 创建时必填 | json obj | Creation content      |
-|             |            |          |                       |
+| Field       | Optional           | Type     | Description           |
+| ----------- | ------------------ | -------- | --------------------- |
+| commands    | false              | array    | Command set           |
+| url         | false              | string   | http request path     |
+| method      | false              | string   | http request method   |
+| description | True               | string   | Operation description |
+| data        | false for creation | json obj | Creation content      |
+|             |                    |          |                       |
 
 ### 1.3 Configuration file format and meaning:
 ```yaml
