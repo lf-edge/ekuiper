@@ -2,7 +2,15 @@
 
 ### 1.1 Program description:
 
-This program is used to process the files in the command folder and remove the files after processing. After that, the program monitors the command folder and repeats the above steps when there are files in the command folder until there are no files in the command folder. When the program starts, the user needs to specify the path of the command folder in the configuration file, and then the user only needs to place the edited command file in the command folder.
+​    本程序用于监控并处理命令文件夹中的文件。当程序发现命令文件夹下存在新创建的文件或已更新的文件时，程序将加载这些文件并执行文件中的命令，之后程序将处理过的文件名记录在命令文件夹同级目录的 .history 文件中。 .history 的数据格式如下：
+
+```json
+[
+  {
+        "name":"sample.json",	//已处理过文件的文件名
+        "loadTime":1594362344 //处理文件时的时间戳
+    }]
+```
 
 ### 1.2 Command file format and meaning:
 
@@ -59,6 +67,7 @@ Execute the command of `go build -o tools/kubeedge/kubeedge tools/kubeedge/main.
 ```
 
 ### 2.3 Get stream1
+
 ```json
 {
     "commands":[

@@ -1,6 +1,6 @@
 port: 9081
 timeout: 500
-intervalTime: 60
+intervalTime: 30
 ip: "127.0.0.1"
 logPath: "./log/kubeedge.log"
 commandDir: "./sample/"
