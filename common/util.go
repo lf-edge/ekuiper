@@ -33,7 +33,7 @@ var (
 	IsTesting    bool
 	Clock        clock.Clock
 	logFile      *os.File
-	LoadFileType = ""
+	LoadFileType = "relative"
 )
 
 func LoadConf(confName string) ([]byte, error) {

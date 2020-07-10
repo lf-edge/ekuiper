@@ -23,9 +23,8 @@ var (
 	pluginManager   *plugins.Manager
 )
 
-func StartUp(Version, LoadFileType string) {
+func StartUp(Version string) {
 	version = Version
-	common.LoadFileType = LoadFileType
 	startTimeStamp = time.Now().Unix()
 	common.InitConf()
 
