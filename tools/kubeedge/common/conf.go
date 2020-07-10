@@ -2,6 +2,7 @@ package common
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/sirupsen/logrus"
@@ -148,9 +149,11 @@ func fetchContents(request *http.Request) (data []byte, err error) {
 	if nil != err {
 		return nil, err
 	}
-	if respon.StatusCode < 200 || respon.StatusCode > 299 {
-		return data, fmt.Errorf("http return code: %d and error message %s.", respon.StatusCode, string(data))
-	}
+	/*
+		if respon.StatusCode < 200 || respon.StatusCode > 299 {
+			return data, fmt.Errorf("http return code: %d and error message %s.", respon.StatusCode, string(data))
+		}
+	*/
 	return data, err
 }
 
@@ -177,4 +180,24 @@ func Delete(inUrl string) (data []byte, err error) {
 		return nil, err
 	}
 	return fetchContents(request)
+}
+
+func LoadFileUnmarshal(path string, ret interface{}) error {
+	sliByte, err := ioutil.ReadFile(path)
+	if nil != err {
+		return err
+	}
+	err = json.Unmarshal(sliByte, ret)
+	if nil != err {
+		return err
+	}
+	return nil
+}
+
+func SaveFileMarshal(path string, content interface{}) error {
+	data, err := json.Marshal(content)
+	if nil != err {
+		return err
+	}
+	return ioutil.WriteFile(path, data, 0666)
 }
