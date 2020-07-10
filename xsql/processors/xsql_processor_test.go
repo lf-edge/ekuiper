@@ -907,6 +907,7 @@ func TestSingleSQL(t *testing.T) {
 	}
 	for j, opt := range options {
 		for i, tt := range tests {
+			cleanStateData()
 			test.ResetClock(1541152486000)
 			p := NewRuleProcessor(DbDir)
 			parser := xsql.NewParser(strings.NewReader(tt.sql))
@@ -949,7 +950,7 @@ func TestSingleSQL(t *testing.T) {
 					}
 				}
 				for retry := 100; retry > 0; retry-- {
-					if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+					if err := compareMetrics(tp, tt.m); err == nil {
 						break
 					}
 					time.Sleep(time.Duration(retry) * time.Millisecond)
@@ -970,12 +971,11 @@ func TestSingleSQL(t *testing.T) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 				continue
 			}
-			if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+			if err := compareMetrics(tp, tt.m); err != nil {
 				t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 			}
 			tp.Cancel()
 		}
-		cleanStateData()
 	}
 }
 
@@ -1039,6 +1039,7 @@ func TestSingleSQLTemplate(t *testing.T) {
 	defer dropStreams(t)
 	//defer close(done)
 	for i, tt := range tests {
+		cleanStateData()
 		test.ResetClock(1541152486000)
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
@@ -1086,7 +1087,7 @@ func TestSingleSQLTemplate(t *testing.T) {
 				}
 			}
 			for retry := 100; retry > 0; retry-- {
-				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+				if err := compareMetrics(tp, tt.m); err == nil {
 					break
 				}
 				time.Sleep(time.Duration(retry) * time.Millisecond)
@@ -1107,12 +1108,11 @@ func TestSingleSQLTemplate(t *testing.T) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 			continue
 		}
-		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+		if err := compareMetrics(tp, tt.m); err != nil {
 			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 		}
 		tp.Cancel()
 	}
-	cleanStateData()
 }
 
 func TestNoneSingleSQLTemplate(t *testing.T) {
@@ -1160,6 +1160,7 @@ func TestNoneSingleSQLTemplate(t *testing.T) {
 	defer dropStreams(t)
 	//defer close(done)
 	for i, tt := range tests {
+		cleanStateData()
 		test.ResetClock(1541152486000)
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
@@ -1206,7 +1207,7 @@ func TestNoneSingleSQLTemplate(t *testing.T) {
 				}
 			}
 			for retry := 100; retry > 0; retry-- {
-				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+				if err := compareMetrics(tp, tt.m); err == nil {
 					break
 				}
 				time.Sleep(time.Duration(retry) * time.Millisecond)
@@ -1217,12 +1218,11 @@ func TestNoneSingleSQLTemplate(t *testing.T) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, results)
 			continue
 		}
-		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+		if err := compareMetrics(tp, tt.m); err != nil {
 			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 		}
 		tp.Cancel()
 	}
-	cleanStateData()
 }
 
 func getMockSourceL(name string, done <-chan int, size int) *nodes.SourceNode {
@@ -1522,6 +1522,7 @@ func TestSingleSQLError(t *testing.T) {
 	defer dropSchemalessStreams(t)
 	//defer close(done)
 	for i, tt := range tests {
+		cleanStateData()
 		test.ResetClock(1541152486000)
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
@@ -1566,7 +1567,7 @@ func TestSingleSQLError(t *testing.T) {
 				}
 			}
 			for retry := 100; retry > 0; retry-- {
-				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+				if err := compareMetrics(tp, tt.m); err == nil {
 					break
 				}
 				time.Sleep(time.Duration(retry) * time.Millisecond)
@@ -1587,12 +1588,11 @@ func TestSingleSQLError(t *testing.T) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 			continue
 		}
-		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+		if err := compareMetrics(tp, tt.m); err != nil {
 			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 		}
 		tp.Cancel()
 	}
-	cleanStateData()
 }
 
 func TestWindow(t *testing.T) {
@@ -2104,6 +2104,7 @@ func TestWindow(t *testing.T) {
 	}
 	for j, opt := range options {
 		for i, tt := range tests {
+			cleanStateData()
 			test.ResetClock(1541152486000)
 			p := NewRuleProcessor(DbDir)
 			parser := xsql.NewParser(strings.NewReader(tt.sql))
@@ -2153,14 +2154,14 @@ func TestWindow(t *testing.T) {
 				}
 				retry := 100
 				for ; retry > 0; retry-- {
-					if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+					if err := compareMetrics(tp, tt.m); err == nil {
 						break
 					}
 					t.Logf("wait to try another %d times", retry)
 					time.Sleep(time.Duration(retry) * time.Millisecond)
 				}
 				if retry == 0 {
-					err := compareMetrics(tp, tt.m, tt.sql)
+					err := compareMetrics(tp, tt.m)
 					t.Errorf("could not get correct metrics: %v", err)
 				}
 			}()
@@ -2178,12 +2179,11 @@ func TestWindow(t *testing.T) {
 			if !reflect.DeepEqual(tt.r, maps) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 			}
-			if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+			if err := compareMetrics(tp, tt.m); err != nil {
 				t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 			}
 			tp.Cancel()
 		}
-		cleanStateData()
 	}
 }
 
@@ -2437,6 +2437,7 @@ func TestWindowError(t *testing.T) {
 	createSchemalessStreams(t)
 	defer dropSchemalessStreams(t)
 	for i, tt := range tests {
+		cleanStateData()
 		test.ResetClock(1541152486000)
 		p := NewRuleProcessor(DbDir)
 		parser := xsql.NewParser(strings.NewReader(tt.sql))
@@ -2488,14 +2489,14 @@ func TestWindowError(t *testing.T) {
 			}
 			retry := 100
 			for ; retry > 0; retry-- {
-				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+				if err := compareMetrics(tp, tt.m); err == nil {
 					break
 				}
 				t.Logf("wait to try another %d times", retry)
 				time.Sleep(time.Duration(retry) * time.Millisecond)
 			}
 			if retry == 0 {
-				err := compareMetrics(tp, tt.m, tt.sql)
+				err := compareMetrics(tp, tt.m)
 				t.Errorf("could not get correct metrics: %v", err)
 			}
 		}()
@@ -2513,12 +2514,11 @@ func TestWindowError(t *testing.T) {
 		if !reflect.DeepEqual(tt.r, maps) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 		}
-		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+		if err := compareMetrics(tp, tt.m); err != nil {
 			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 		}
 		tp.Cancel()
 	}
-	cleanStateData()
 }
 
 func createEventStreams(t *testing.T) {
@@ -3318,6 +3318,7 @@ func TestEventWindow(t *testing.T) {
 	}
 	for j, opt := range options {
 		for i, tt := range tests {
+			cleanStateData()
 			test.ResetClock(1541152486000)
 			p := NewRuleProcessor(DbDir)
 			parser := xsql.NewParser(strings.NewReader(tt.sql))
@@ -3369,14 +3370,14 @@ func TestEventWindow(t *testing.T) {
 				mockClock.Add(1000 * time.Millisecond)
 				retry := 100
 				for ; retry > 0; retry-- {
-					if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+					if err := compareMetrics(tp, tt.m); err == nil {
 						break
 					}
 					t.Logf("wait to try another %d times", retry)
 					time.Sleep(time.Duration(retry) * time.Millisecond)
 				}
 				if retry == 0 {
-					err := compareMetrics(tp, tt.m, tt.sql)
+					err := compareMetrics(tp, tt.m)
 					t.Errorf("could not get correct metrics: %v", err)
 				}
 			}()
@@ -3394,12 +3395,11 @@ func TestEventWindow(t *testing.T) {
 			if !reflect.DeepEqual(tt.r, maps) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 			}
-			if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+			if err := compareMetrics(tp, tt.m); err != nil {
 				t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 			}
 			tp.Cancel()
 		}
-		cleanStateData()
 	}
 
 }
@@ -3415,7 +3415,7 @@ func getMetric(tp *xstream.TopologyNew, name string) int {
 	return 0
 }
 
-func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}, sql string) (err error) {
+func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}) (err error) {
 	keys, values := tp.GetMetrics()
 	//for i, k := range keys {
 	//	log.Printf("%s:%v", k, values[i])

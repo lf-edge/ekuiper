@@ -117,7 +117,7 @@ func (w *WatermarkGenerator) trigger(ctx api.StreamContext) {
 	}
 }
 
-func (w *WatermarkGenerator) computeWatermarkTs(ctx context.Context) int64 {
+func (w *WatermarkGenerator) computeWatermarkTs(_ context.Context) int64 {
 	var ts int64
 	if len(w.topicToTs) >= len(w.inputTopics) {
 		ts = math.MaxInt64
@@ -184,7 +184,7 @@ func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple, current int64, 
 	}
 }
 
-func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.Tuple, errCh chan<- error) {
+func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.Tuple, _ chan<- error) {
 	//Tickers to update watermark
 	switch o.window.Type {
 	case xsql.NOT_WINDOW:

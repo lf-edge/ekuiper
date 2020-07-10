@@ -79,7 +79,7 @@ func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance in
 func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	o.ctx = ctx
 	log := ctx.GetLogger()
-	log.Debugf("Window operator %s is started with state %v", o.name, ctx.Snapshot())
+	log.Debugf("Window operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
 		go func() { errCh <- fmt.Errorf("no output channel found") }()
@@ -96,6 +96,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		switch st := s.(type) {
 		case []*xsql.Tuple:
 			inputs = st
+			log.Infof("Restore window state %+v", inputs)
 		case nil:
 			log.Debugf("Restore window state, nothing")
 		default:
@@ -104,7 +105,6 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	} else {
 		log.Warnf("Restore window state fails: %s", err)
 	}
-	log.Infof("Restore window state %+v", inputs)
 	if o.isEventTime {
 		go o.execEventWindow(ctx, inputs, errCh)
 	} else {

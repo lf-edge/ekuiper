@@ -198,7 +198,7 @@ func (c *Cache) loadCache() error {
 	return nil
 }
 
-func (c *Cache) saveCache(logger api.Logger, p *LinkedQueue) error {
+func (c *Cache) saveCache(_ api.Logger, p *LinkedQueue) error {
 	err := c.store.Open()
 	if err != nil {
 		return err

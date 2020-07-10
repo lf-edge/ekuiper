@@ -380,7 +380,7 @@ func TestFuncState(t *testing.T) {
 				}
 			}
 			for retry := 100; retry > 0; retry-- {
-				if err := compareMetrics(tp, tt.m, tt.sql); err == nil {
+				if err := compareMetrics(tp, tt.m); err == nil {
 					break
 				}
 				time.Sleep(time.Duration(retry) * time.Millisecond)
@@ -401,7 +401,7 @@ func TestFuncState(t *testing.T) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
 			continue
 		}
-		if err := compareMetrics(tp, tt.m, tt.sql); err != nil {
+		if err := compareMetrics(tp, tt.m); err != nil {
 			t.Errorf("%d. %q\n\n%v", i, tt.sql, err)
 		}
 		tp.Cancel()

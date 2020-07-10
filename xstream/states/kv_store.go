@@ -19,7 +19,6 @@ func init() {
 /**
 *** mapStore keys
 ***   { "checkpoint1", "checkpoint2" ... "checkpointn" : The complete or incomplete snapshot
-***   "op1", "op2" ... "opn": the current state for all ops
  */
 type KVStore struct {
 	db          common.KeyValue
@@ -32,7 +31,6 @@ type KVStore struct {
 //Store 2 things:
 //"checkpoints":A queue for completed checkpoint id
 //"$checkpointId":A map with key of checkpoint id and value of snapshot(gob serialized)
-//The snapshot is a map also with key of opId and value of map
 //Assume each operator only has one instance
 func getKVStore(ruleId string) (*KVStore, error) {
 	dr, _ := common.GetDataLoc()
@@ -51,14 +49,14 @@ func (s *KVStore) restore() error {
 		return err
 	}
 	defer s.db.Close()
-	if bytes, ok := s.db.Get(CheckpointListKey); ok {
-		if cs, err := bytesToSlice(bytes.([]byte)); err != nil {
+	if b, ok := s.db.Get(CheckpointListKey); ok {
+		if cs, err := bytesToSlice(b.([]byte)); err != nil {
 			return fmt.Errorf("invalid checkpoint data: %s", err)
 		} else {
 			s.checkpoints = cs
 			for _, c := range cs {
-				if bytes, ok := s.db.Get(string(c)); ok {
-					if m, err := bytesToMap(bytes.([]byte)); err != nil {
+				if b2, ok := s.db.Get(string(c)); ok {
+					if m, err := bytesToMap(b2.([]byte)); err != nil {
 						return fmt.Errorf("invalid checkpoint data: %s", err)
 					} else {
 						s.mapStore.Store(c, common.MapToSyncMap(m))
@@ -113,7 +111,7 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 				cp := s.checkpoints[0]
 				s.checkpoints = s.checkpoints[1:]
 				go func() {
-					s.db.Delete(string(cp))
+					_ = s.db.Delete(string(cp))
 				}()
 			}
 			cs, ok := sliceToBytes(s.checkpoints)

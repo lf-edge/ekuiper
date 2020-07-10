@@ -85,7 +85,7 @@ func (p *StreamProcessor) ExecStreamSql(statement string) (string, error) {
 	}
 }
 
-func (p *StreamProcessor) execShowStream(stmt *xsql.ShowStreamsStatement) ([]string, error) {
+func (p *StreamProcessor) execShowStream(_ *xsql.ShowStreamsStatement) ([]string, error) {
 	keys, err := p.ShowStream()
 	if len(keys) == 0 {
 		keys = append(keys, "No stream definitions are found.")

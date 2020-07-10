@@ -31,19 +31,27 @@ func (h *BarrierTracker) Process(data *BufferOrEvent, ctx api.StreamContext) boo
 	return false
 }
 
-func (h *BarrierTracker) SetOutput(output chan<- *BufferOrEvent) {
+func (h *BarrierTracker) SetOutput(_ chan<- *BufferOrEvent) {
 	//do nothing, does not need it
 }
 
-func (h *BarrierTracker) processBarrier(b *Barrier, _ api.StreamContext) {
+func (h *BarrierTracker) processBarrier(b *Barrier, ctx api.StreamContext) {
+	logger := ctx.GetLogger()
 	if h.inputCount == 1 {
-		h.responder.TriggerCheckpoint(b.CheckpointId)
+		err := h.responder.TriggerCheckpoint(b.CheckpointId)
+		if err != nil {
+			logger.Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
+		}
 		return
 	}
 	if c, ok := h.pendingCheckpoints[b.CheckpointId]; ok {
 		c += 1
 		if c == h.inputCount {
-			h.responder.TriggerCheckpoint(b.CheckpointId)
+			err := h.responder.TriggerCheckpoint(b.CheckpointId)
+			if err != nil {
+				logger.Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
+				return
+			}
 			delete(h.pendingCheckpoints, b.CheckpointId)
 			for cid := range h.pendingCheckpoints {
 				if cid < b.CheckpointId {
@@ -100,7 +108,10 @@ func (h *BarrierAligner) processBarrier(b *Barrier, ctx api.StreamContext) {
 	if h.inputCount == 1 {
 		if b.CheckpointId > h.currentCheckpointId {
 			h.currentCheckpointId = b.CheckpointId
-			h.responder.TriggerCheckpoint(b.CheckpointId)
+			err := h.responder.TriggerCheckpoint(b.CheckpointId)
+			if err != nil {
+				logger.Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
+			}
 		}
 		return
 	}
@@ -124,9 +135,13 @@ func (h *BarrierAligner) processBarrier(b *Barrier, ctx api.StreamContext) {
 	}
 	if len(h.blockedChannels) == h.inputCount {
 		logger.Debugf("Received all barriers, triggering checkpoint %d", b.CheckpointId)
-		h.releaseBlocksAndResetBarriers()
-		h.responder.TriggerCheckpoint(b.CheckpointId)
+		err := h.responder.TriggerCheckpoint(b.CheckpointId)
+		if err != nil {
+			logger.Errorf("trigger checkpoint for %s err: %s", h.responder.GetName(), err)
+			return
+		}
 
+		h.releaseBlocksAndResetBarriers()
 		// clean up all the buffer
 		var temp []*BufferOrEvent
 		for _, d := range h.buffer {

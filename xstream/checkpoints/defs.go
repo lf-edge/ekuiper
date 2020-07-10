@@ -24,6 +24,11 @@ type BufferOrEvent struct {
 	Channel string
 }
 
+type StreamCheckpointContext interface {
+	Snapshot() error
+	SaveState(checkpointId int64) error
+}
+
 type Message int
 
 const (

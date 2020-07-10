@@ -42,7 +42,7 @@ func (c *pendingCheckpoint) finalize() *completedCheckpoint {
 	return ccp
 }
 
-func (c *pendingCheckpoint) dispose(releaseState bool) {
+func (c *pendingCheckpoint) dispose(_ bool) {
 	c.isDiscarded = true
 }
 

@@ -124,8 +124,6 @@ type StreamContext interface {
 	PutState(key string, value interface{}) error
 	GetState(key string) (interface{}, error)
 	DeleteState(key string) error
-	Snapshot() error
-	SaveState(checkpointId int64) error
 }
 
 type Operator interface {

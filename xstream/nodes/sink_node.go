@@ -337,12 +337,12 @@ func doGetSink(name string, action map[string]interface{}) (api.Sink, error) {
 }
 
 //Override defaultNode
-func (m *SinkNode) AddOutput(output chan<- interface{}, name string) error {
+func (m *SinkNode) AddOutput(_ chan<- interface{}, name string) error {
 	return fmt.Errorf("fail to add output %s, sink %s cannot add output", name, m.name)
 }
 
 //Override defaultNode
-func (m *SinkNode) Broadcast(val interface{}) error {
+func (m *SinkNode) Broadcast(_ interface{}) error {
 	return fmt.Errorf("sink %s cannot add broadcast", m.name)
 }
 

@@ -29,11 +29,11 @@ func TestState(t *testing.T) {
 		t.Errorf("Get store for rule %s error: %s", ruleId, err)
 		return
 	}
-	ctx := Background().WithMeta("testStateRule", "op1", store)
+	ctx := Background().WithMeta("testStateRule", "op1", store).(*DefaultContext)
 	defer cleanStateData()
 	// Do state function
-	ctx.IncrCounter("key1", 20)
-	ctx.IncrCounter("key1", 1)
+	_ = ctx.IncrCounter("key1", 20)
+	_ = ctx.IncrCounter("key1", 1)
 	v, err := ctx.GetCounter("key1")
 	if err != nil {
 		t.Errorf("%d.Get counter error: %s", i, err)
@@ -70,7 +70,7 @@ func TestState(t *testing.T) {
 		t.Errorf("%d.Snapshot error: %s", i, err)
 		return
 	}
-	rs := ctx.(*DefaultContext).snapshot
+	rs := ctx.snapshot
 	if !reflect.DeepEqual(s, rs) {
 		t.Errorf("%d.Snapshot\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, s, rs)
 	}

@@ -25,10 +25,6 @@ type TopologyNew struct {
 	coordinator        *checkpoints.Coordinator
 }
 
-func NewWithName(name string) (*TopologyNew, error) {
-	return NewWithNameAndQos(name, api.AtMostOnce, 0)
-}
-
 func NewWithNameAndQos(name string, qos api.Qos, checkpointInterval int) (*TopologyNew, error) {
 	tp := &TopologyNew{
 		name:               name,
@@ -44,8 +40,9 @@ func (s *TopologyNew) GetContext() api.StreamContext {
 }
 
 func (s *TopologyNew) Cancel() {
-	s.store = nil
 	s.cancel()
+	s.store = nil
+	s.coordinator = nil
 }
 
 func (s *TopologyNew) AddSrc(src *nodes.SourceNode) *TopologyNew {

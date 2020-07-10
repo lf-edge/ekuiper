@@ -25,7 +25,7 @@ func NewMockSource(data []*xsql.Tuple, done <-chan int, isEventTime bool) *MockS
 	return mock
 }
 
-func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
 	log := ctx.GetLogger()
 	mockClock := GetMockClock()
 	log.Debugf("mock source starts with offset %d", m.offset)
@@ -83,11 +83,11 @@ func (m *MockSource) Rewind(offset interface{}) error {
 	return nil
 }
 
-func (m *MockSource) Close(ctx api.StreamContext) error {
+func (m *MockSource) Close(_ api.StreamContext) error {
 	m.offset = 0
 	return nil
 }
 
-func (m *MockSource) Configure(topic string, props map[string]interface{}) error {
+func (m *MockSource) Configure(_ string, _ map[string]interface{}) error {
 	return nil
 }

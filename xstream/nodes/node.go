@@ -74,11 +74,11 @@ func (o *defaultNode) doBroadcast(val interface{}) error {
 	var wg sync.WaitGroup
 	wg.Add(len(o.outputs))
 	for n, out := range o.outputs {
-		go func(output chan<- interface{}) {
+		go func(name string, output chan<- interface{}) {
 			output <- val
 			wg.Done()
-			logger.Debugf("broadcast from %s to %s done", o.ctx.GetOpId(), n)
-		}(out)
+			logger.Debugf("broadcast from %s to %s done", o.ctx.GetOpId(), name)
+		}(n, out)
 	}
 	logger.Debugf("broadcasting from %s", o.ctx.GetOpId())
 	wg.Wait()
