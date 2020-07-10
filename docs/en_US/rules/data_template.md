@@ -30,7 +30,7 @@ The Golang  template provides some [built-in actions](https://golang.org/pkg/tex
 {{range pipeline}} T1 {{else}} T0 {{end}}
 ```
 
-Readers can see that actions are defined by `{{}}`. During the use of Kuiper’s data templates, the output is generally in JSON format, and the JSON format is defined by `{}`. Therefore, if the readers are not familiar with it, they will find it difficult to understand the functions of Kuiper's data templates. For example, in the following example,
+Readers can see that actions are delimited by `{{}}`. During the use of Kuiper’s data templates, the output is generally in JSON format, and the JSON format is delimited by `{}`. Therefore, if the readers are not familiar with it, they will find it difficult to understand the functions of Kuiper's data templates. For example, in the following example,
 
 ```
 {{if pipeline}} {"field1": true} {{else}}  {"field1": false} {{end}}
@@ -130,7 +130,7 @@ Assuming that the data content flowing into the sink is as follows:
 }
 ```
 
-The demand is:
+The requirement is:
 
 - When a value of `temperature` in the "values" array is found to be less than or equal to `25`, add an attribute named `description` and set its value to `fine`.
 - When a value of `temperature` in the "values" array is found to be greater than `25`, add an attribute named `description` and set its value to `high`.
