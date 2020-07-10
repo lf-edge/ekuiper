@@ -1,12 +1,12 @@
 # Use Golang template to customize analaysis result in Kuiper
 
-## 简介
+## Introduction
 
-用户通过 Kuiper 进行数据分析处理后，使用各种 sink 可以往不同的系统发送数据分析结果。针对同样的分析结果，不同的 sink 需要的格式可能未必一样。比如，在某物联网场景中，当发现某设备温度过高的时候，需要向云端某 rest 服务发送一个请求，同时在本地需要通过 MQTT 协议往设备发送一个控制命令，这两者需要的数据格式可能并不一样，因此，需要对来自于分析的结果进行「二次处理」后，才可以往不同的目标发送针对数据。本文将介绍如何利用 sink 中的数据模版（data  template ）来实现对分析结果的「二次处理」。
+After performing data analysis and processing through Kuiper, users can use various sink to send data analysis result to different systems. For the same analysis results, the format required by different sinks may not be the same. For example, in an Internet of Things scenario, when it is found that the temperature of a device is too high, a request needs to be sent to a rest service in the cloud. At the same time, a control command needs to be sent to the device through the MQTT protocol locally. The data format required by them may not be the same. Therefore, it is necessary to perform "secondary processing" on the results from the analysis before the data is sent to different targets. This article will introduce how to use the data template in the sink to achieve "secondary processing" of the analysis results.
 
-## Golang 模版介绍
+## Golang template introduction
 
-Golang  模版将一段逻辑应用到数据上，然后按照用户指定的逻辑对数据进行格式化输出，Golang 模版常见的使用场景为在网页开发中，比如将 Golang 中的某数据结构进行转换和控制后，将其转换为 HTML 标签输出到浏览器。在Kuiper 使用了 [Golang 的 template（模版）](https://golang.org/pkg/text/template/)对分析结果实现「二次处理」，请参考以下来自于 Golang 的官方介绍。
+The Golang template applies a piece of logic to the data, and then formats and outputs the data according to the logic specified by the user. The common usage scenario of the Golang template is in web development. For example, after converting and controlling a data structure in Golang, it is converted to HTML tags and output to the browser. Kuiper uses [Golang template](https://golang.org/pkg/text/template/) to implement "secondary processing" of the analysis results. Please refer to the following introduction from Golang.
 
 > Templates are executed by applying them to a data structure. Annotations in the template refer to elements of the data structure (typically a field of a struct or a key in a map) to control execution and derive values to be displayed. Execution of the template walks the structure and sets the cursor, represented by a period '.' and called "dot", to the value at the current location in the structure as execution proceeds.
 >
@@ -14,44 +14,44 @@ Golang  模版将一段逻辑应用到数据上，然后按照用户指定的逻
 
 
 
-###  动作 (Actions)
+###  Actions
 
-Golang 模版提供了一些[内置的动作](https://golang.org/pkg/text/template/#hdr-Actions)，可以让用户写各种控制语句，用于提取内容。比如，
+The Golang  template provides some [built-in actions](https://golang.org/pkg/text/template/#hdr-Actions) which allows users to write various control statements to extract content. For example,
 
-- 根据判断条件来输出不同的内容
+- Output different contents according to judgment conditions
 
 ```
 {{if pipeline}} T1 {{else}} T0 {{end}}
 ```
 
-- 循环遍历数据，并进行处理
+- Iterate through  the data and process it
 
 ```
 {{range pipeline}} T1 {{else}} T0 {{end}}
 ```
 
-读者可以看到，动作是用 `{{}}` 界定的，在 Kuiper 的数据模版使用过程中，由于输出一般也是 JSON 格式， 而 JSON 格式是用 `{}` 来界定，因此读者在不太熟悉使用的时候，在使用 Kuiper 的数据模版的功能会觉得比较难以理解。比如以下的例子中，
+Readers can see that actions are defined by `{{}}`. During the use of Kuiper’s data templates, the output is generally in JSON format, and the JSON format is defined by `{}`. Therefore, if the readers are not familiar with it, they will find it difficult to understand the functions of Kuiper's data templates. For example, in the following example,
 
 ```
 {{if pipeline}} {"field1": true} {{else}}  {"field1": false} {{end}}
 ```
 
-上述表达式的意思如下（请注意动作的界定符和 JSON 的界定符）：
+The meaning of the above expression is as follows (please note the delimiter of action and the delimiter of JSON):
 
-- 如果满足了条件 pipeline，则输出 JSON 字符串 `{"field1": true}`
-- 否则输出 JSON 字符串 `{"field1": false}`
+- If the condition pipeline is met, the JSON string `{"field1": true}` is output
+- Otherwise, the JSON string `{"field1": false}` is output
 
-### Kuiper sink 数据格式
+### Kuiper sink data format
 
-Golang 的模版可以作用于各种数据结构，比如 map、切片 (slice)，通道等，而 Kuiper 的 sink 中的数据模版得到的数据类型是固定的，是一个包含了 Golang `map` 切片的数据类型，如下所示。
+The Golang template can be applied to various data structures, such as maps, slices, channels, etc., and the data type obtained by the data template in Kuiper's sink is fixed, which is a data type that contains Golang `map` slices. It is shown as follows.
 
 ```go
 []map[string]interface{}
 ```
 
-### 切片 (slice) 数据按条发送
+### Send slice data by piece
 
-流入 sink 的数据是一个 `map[string]interface{}` 切片的数据结构，但是用户往目标 sink 发送数据的时候，可能是需要单条的数据，而不是所有的数据。比如在这篇 [Kuiper 与 AWS IoT Hub 集成的文章](https://www.emqx.io/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution)中所介绍的，规则产生的样例数据如下所示。
+The data flowing into the sink is a  data structure of `map[string]interface{}` slice. However, when the user sends data to the target sink, it may need a single piece of data instead of all the data. For example, in this article of  [Integration of Kuiper and AWS IoT Hub ](https://www.emqx.io/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution), the sample data generated by the rule is shown below.
 
 ```json
 [
@@ -60,7 +60,7 @@ Golang 的模版可以作用于各种数据结构，比如 map、切片 (slice)�
 ]
 ```
 
-在发送到 sink 的时候，希望每条数据分开发送，首先需要将 sink 的 ``sendSingle`` 设置为 `true`，然后使用数据模版：`{{json .}}`，完整配置如下，用户可以将其拷贝到某 sink 配置的最后。
+When sending to the sink, each piece of data is sent separately. First, you need to set the `sendSingle` of the sink to `true`, and then use the data template: `{{json .}}`. The complete configuration is as follows, and the user can copy it to the end of a sink configuration.
 
 ```json
  ...
@@ -68,19 +68,19 @@ Golang 的模版可以作用于各种数据结构，比如 map、切片 (slice)�
  "dataTemplate": "{{json .}}"
 ```
 
-- 将 ``sendSingle`` 设置为 `true`后，Kuiper 把传递给 sink 的 `[]map[string]interface{}` 数据类型进行遍历处理，对于遍历过程中的每一条数据都会应用用户指定的数据模版
-- `json` 是 Kuiper 提供的函数（用户可以参考 [Kuiper 扩展模版函数](overview.md)来了解更多的 Kuiper 扩展），可以将传入的参数转化为 JSON 字符串输出，对于遍历到的每一条数据，将 map 中的内容转换为 JSON 字符串
+- After setting `sendSingle` to `true`, Kuiper traverses the `[]map[string]interface{}` data type that has been passed to the sink. For each data in the traversal process, the user-specified data template will be applied.
+- `json` is a function provided by Kuiper (users can refer to [Kuiper Extension Template Function](overview.md) for more information of Kuiper extensions), which can convert incoming parameters into JSON string output. For each piece of traversed data, the content in the map is converted to a JSON string
 
-Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置提供的函数](https://golang.org/pkg/text/template/#hdr-Functions)来获取更多函数信息。
+Golang also provides some built-in functions. Users can refer to [More Golang Built-in Functions](https://golang.org/pkg/text/template/#hdr-Functions) for more function information.
 
-### 数据内容转换
+### Data content conversion
 
-还是针对上述例子，需要对返回的 `t_av`（平均温度）做一些转换，转换的基本要求就是根据不同的平均温度，加入不同的描述文字，用于目标 sink 中的处理。规则如下，
+Still for the above example, you need to do some conversion on the returned `t_av` (average temperature). The basic requirement of the conversion is to add different description text according to different average temperatures for processing in the target sink. The rules are as follows,
 
-- 当温度小于 30，描述字段为「Current temperature is`$t_av`,  it's normal.」
-- 当温度大于 30，描述字段为「Current temperature is`$t_av`, it's high.」 
+- When the temperature is less than 30, the description field is "Current temperature is`$t_av`,  it's normal."
+- When the temperature is greater than 30, the description field is "Current temperature is`$t_av`, it's high." 
 
-假设目标 sink 还是需要 JSON 数据，该数据模版的内容如下，
+Assuming that the target sink still needs JSON data, the content of the data template is as follows:
 
 ```json
 ...
@@ -88,7 +88,7 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
 "sendSingle": true,
 ```
 
-在上述的数据模版中，使用了 `{{if pipeline}} T1 {{else if pipeline}} T0 {{end}}` 的内置动作，看上去比较复杂，稍微调整一下，去掉转义并加入缩进后排版如下（注意：在生成 Kuiper 规则的时候，不能传入以下优化后排版的规则）。
+In the above data template, the built-in actions of  `{{if pipeline}} T1 {{else if pipeline}} T0 {{end}}` are used, which looks more complicated. We can do a little adjustment, remove the escape and add abbreviation. The typesetting afterwards is as follows (note: when generating Kuiper rules, the following optimized typesetting rules cannot be passed in).
 
 ```
 {"device_id": {{.device_id}}, "description": "
@@ -100,25 +100,25 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
 }
 ```
 
-使用了 Golang 内置的二元比较函数，
+Use Golang's built-in binary comparison function:
 
-- `lt`： 小于
-- `ge`：大于等于
+- `lt`：less than
+- `ge`：greater or equal to
 
-值得注意的是，在 `lt`  和 `ge` 函数中，第二个参数值的类型应该与 map 中的数据实际的数据类型一致，否则会出错。如在上述的例子中，温度大于 `30` 的情况，因为 map 中实际平均数的类型为 float，因此第二个参数的值需传入 `30.0`，而不是 `30`。
+It is worth noting that in the `lt` and `ge` functions, the type of the second parameter value should be consistent with the actual data type of the data in the map, otherwise an error will occur. As in the above example, when the temperature is greater than `30`, because the type of actual average number in map is float, the value of the second parameter needs to be passed into `30.0`, not `30`.
 
-另外，模版还是应用到切片中每条记录上，所以还是需要将 `sendSingle` 属性设置为 `true`。最终该数据模版针对上述数据产生的内容如下，
+In addition, the template is still applied to each record in the slice, so you still need to set the `sendSingle` attribute to `true`. Finally, the content generated by the data template for the above data is as follows,
 
 ```json
 {"device_id": 1, "description": "Current temperature is 36.25, it's high."}
 {"device_id": 2, "description": "Current temperature is 27, it's normal."}
 ```
 
-### 数据遍历
+### Data traversal
 
-通过给 sink 的 `sendSingle` 属性设置为 `true` ，可以实现把传递给 sink 的切片数据进行遍历。在此处，我们将介绍一些更为复杂的例子，比如在 sink 的结果中，包含了嵌套的数组类型的数据，如何通过在数据模版中提供的遍历功能，自己来实现遍历。
+By setting the `sendSingle` property of the sink to `true`, the slice data passed to the sink can be traversed. Here, we will introduce some more complex examples. For example, for the result of the sink which contains data of the nested array type, how can it realize the traversal by the traversal function provided in the data template.
 
-假设流入 sink 中的数据内容如下所示，
+Assuming that the data content flowing into the sink is as follows:
 
 ```json
 {"device_id":"1", 
@@ -130,23 +130,23 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
 }
 ```
 
-需求为，
+The demand is:
 
-- 当发现 "values" 数组中某个 `temperature` 值小于等于 `25` 的时候，增加一个名为 `description` 的属性，将其值设置为 `fine`。
-- 当发现 "values" 数组中某个 `temperature` 值大于 `25` 的时候，增加一个名为 `description` 的属性，将其值设置为 `high`。
+- When a value of `temperature` in the "values" array is found to be less than or equal to `25`, add an attribute named `description` and set its value to `fine`.
+- When a value of `temperature` in the "values" array is found to be greater than `25`, add an attribute named `description` and set its value to `high`.
 
 ```json
 "sendSingle": true,
 "dataTemplate": "{{$len := len .values}} {{$loopsize := add $len -1}} {\"device_id\": \"{{.device_id}}\", \"description\": [{{range $index, $ele := .values}} {{if le .temperature 25.0}}\"fine\"{{else if gt .temperature 25.0}}\"high\"{{end}} {{if eq $loopsize $index}}]{{else}},{{end}}{{end}}}"
 ```
 
-该数据模板比较复杂，解释如下，
+The data template is relatively complicated, which is explained below:
 
-- `{{$len := len .values}} {{$loopsize := add $len -1}}`，这一段执行了两个表达式，第一个 `len` 函数取得数据中 `values` 的长度，第二个 `add` 将其值减 1 并赋值到变量 `loopsize`：由于 Golang 的表达式中目前还不支持直接将数值减 1 的操作， `add` 是 Kuiper 为实现该功能而扩展的函数。
+- `{{$len := len .values}} {{$loopsize := add $len -1}}`, this section executes two expressions. For the first one, `len` function gets the length of `values` in the data. For the second one, `add` decrements its value by 1 and assigns it to the variable `loopsize`. At present, since the operation of directly decrementing the value by 1 is not supported by  the Golang expression, `add` is a function extended by Kuiper to achieve this function.
 
-- `{\"device_id\": \"{{.device_id}}\", \"description\": [` 这一段模版在作用到样例数据后，生成了 JSON 串 `{"device_id": "1", "description": [ `
+- `{\"device_id\": \"{{.device_id}}\", \"description\": }` This piece of template is applied to the sample data, and a JSON string `{"device_id": "1", "description": } ` is generated.
 
-- `{{range $index, $ele := .values}} {{if le .temperature 25.0}}\"fine\"{{else if gt .temperature 25.0}}\"high\"{{end}} {{if eq $loopsize $index}}]{{else}},{{end}}{{end}}` ，这一段模版看起来比较复杂，但是如果把它调整一下，去掉转义并加入缩进后排版如下，看起来可能会更加清晰（注意：在生成 Kuiper 规则的时候，不能传入以下优化后排版的规则）。
+- `{{range $index, $ele := .values}} {{if le .temperature 25.0}}\"fine\"{{else if gt .temperature 25.0}}\"high\"{{end}} {{if eq $loopsize $index}}]{{else}},{{end}}{{end}}` ,this section of the template looks relatively complicated. However, if we adjust it, remove the escape and add indentation, the  typesetting is as follows which may be clearer (note: when generating the Kuiper rules, the following optimized typesetting rules cannot be passed in).
 
   ```
   {{range $index, $ele := .values}} 
@@ -163,17 +163,17 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
   {{end}}
   ```
 
-  第一个条件判断生成是 `fine`  或者 `high`；第二个条件判断是生成分隔数组的 `,` 还是数组结尾的 `]`。
+  The first condition judges whether to generate `fine` or `high`; the second condition judges whether to generate `,` to separate the array or `]` at the end of the array.
 
-另外，模版还是应用到切片中每条记录上，所以还是需要将 `sendSingle` 属性设置为 `true`。最终该数据模版针对上述数据产生的内容如下，
+In addition, the template is still applied to each record in the slice. Therefore, we still need to set the `sendSingle` attribute to `true`. Finally, the content generated by the data template for the above data is as follows:
 
 ```json
   {"device_id": "1", "description": [ "fine" , "fine" , "high" ]}
 ```
 
-## 总结
+## Summary
 
-通过 Kuiper 提供的数据模版功能可以实现对分析结果的二次处理，以满足不同的 sink 目标的需求。但是读者也可以看到，由于 Golang 模版本身的限制，实现比较复杂的数据转换的时候会比较笨拙，希望将来 Golang 模版的功能可以做得更加强大和灵活，这样可以支持处理更加复杂的需求。目前建议用户可以通过数据模版来实现一些较为简单的数据的转换；如果用户需要对数据进行比较复杂的处理，并且自己扩展了 sink 的情况下，可以在 sink 的实现中直接进行处理。
+The data template function provided by Kuiper can realize the secondary processing of the analysis results to meet the needs of different sink targets. However, readers can also see that due to the limitations of the Golang template, it is awkward to implement more complex data conversion. We hope that the Golang template function can be made more powerful and flexible in the future, which can support more complex requirements. At present, it is recommended that users can implement some simpler data conversion through data templates. If the user needs to perform more complicated processing on the data and extends the sink by himself, it can be directly processed in the sink implementation.
 
-另外，Kuiper 团队在规划将来支持自定义扩展 sink 中的模版函数，这样一些比较复杂的逻辑可以在函数内部实现，用户调用的时候只需一个简单的模版函数调用即可实现。
+In addition, the Kuiper team plans to support custom extended template functions in sinks in the future, so that some more complex logic can be implemented within the function. For the users, they only need a call of a simple template function.
 
