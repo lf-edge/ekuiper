@@ -57,7 +57,6 @@ func (this *command) call(host string) bool {
 type (
 	historyFile struct {
 		Name     string `json:"name"`
-		Size     int64  `json:"size"`
 		LoadTime int64  `json:"loadTime"`
 	}
 	server struct {
@@ -70,9 +69,6 @@ type (
 
 func (this *historyFile) setName(name string) {
 	this.Name = name
-}
-func (this *historyFile) setSize(size int64) {
-	this.Size = size
 }
 func (this *historyFile) setLoadTime(loadTime int64) {
 	this.LoadTime = loadTime
@@ -135,7 +131,7 @@ func (this *server) isUpdate(info os.FileInfo) bool {
 		return true
 	}
 
-	if v.Size != info.Size() || v.LoadTime < info.ModTime().Unix() {
+	if v.LoadTime < info.ModTime().Unix() {
 		return true
 	}
 	return false
@@ -156,7 +152,6 @@ func (this *server) processDir() bool {
 
 		hisFile := new(historyFile)
 		hisFile.setName(info.Name())
-		hisFile.setSize(info.Size())
 		hisFile.setLoadTime(time.Now().Unix())
 		this.mapHistoryFile[info.Name()] = hisFile
 
