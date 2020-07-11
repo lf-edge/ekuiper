@@ -181,10 +181,10 @@ func absolutePath(subdir string) (dir string, err error) {
 		dir = "/var/lib/kuiper/plugins/"
 		break
 	}
-	if _, err = os.Stat(dir); os.IsExist(err) {
-		return dir, nil
+	if 0 == len(dir) {
+		return "", fmt.Errorf("no find such file : %s", subdir)
 	}
-	return "", err
+	return dir, nil
 }
 
 /*
