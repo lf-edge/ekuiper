@@ -1,0 +1,64 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+
+# modified for node_package by dizzyd@basho.com and jared@basho.com
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+## Clear variables that may confound our build of sub-projects; also
+## note that it is necessary to use overlay_vars relative to .. as
+## the generate command EXECUTES in rel/
+build:
+	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=0.5.1 -X main.LoadFileType=absolute" -o cli xstream/cli/main.go
+	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=0.5.1 -X main.LoadFileType=absolute" -o server xstream/server/main.go
+	if [ ! -z $(which upx) ] && [ "$(uname -m)" == "x86_64" ]; then upx ./cli; upx ./server; fi
+
+clean:
+	dh_clean
+	rm -f build
+	# make clean
+
+## dh_shlibdeps was added to figure out the dependencies on shared libraries
+##   and will populate the ${shlibs:Depends} callout in the control file
+install: build
+	dh_testdir
+	dh_testroot
+	dh_prep
+	dh_installdirs
+	mkdir -p debian/kuiper/usr/lib/kuiper/bin
+	mkdir -p debian/kuiper/var/lib/kuiper/data
+	mkdir -p debian/kuiper/var/lib/kuiper/plugins
+	mkdir -p debian/kuiper/var/log/kuiper
+	mkdir -p debian/kuiper/etc/kuiper
+	mkdir -p debian/kuiper/lib/systemd/system
+	
+	cp deploy/packages/service_helper.sh debian/kuiper/usr/lib/kuiper/bin
+	cp cli debian/kuiper/usr/lib/kuiper/bin/
+	cp server debian/kuiper/usr/lib/kuiper/bin/
+	cp -R etc/* debian/kuiper/etc/kuiper/
+	cp -R plugins/* debian/kuiper/var/lib/kuiper/plugins/
+
+	install -m755 debian/kuiper.service debian/kuiper/lib/systemd/system/
+	
+	dh_shlibdeps
+
+# We have nothing to do by default.
+binary-indep: install build-stamp
+build-stamp:
+
+# Build architecture-dependent files here.
+binary-arch: install
+	dh_strip -a
+	dh_compress -a
+	dh_installdeb
+	dh_gencontrol
+	dh_builddeb
+
+binary: binary-indep binary-arch
+
