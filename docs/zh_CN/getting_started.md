@@ -2,11 +2,26 @@
 
 ## 下载和安装
 
-方式一：从 https://github.com/emqx/kuiper/releases 下载最新版本，并解压缩文件。
-方式二：通过 apt、yum 等方式安装
-## 目录结构 
+通过 https://github.com/emqx/kuiper/releases 或 https://www.emqx.io/downloads#kuiper 获取安装包.
 
-以下是通过方式一安装 Kuiper 之后的安装目录结构。
+### zip、tar.gz 压缩包
+
+解压缩 kuiper
+
+```sh
+$ unzip kuiper-$VERISON-$OS-$ARCH.zip
+or
+$ tar -xzf kuiper-$VERISON-$OS-$ARCH.zip
+```
+
+运行 ``bin/server`` 以启动 kuiper 服务器
+
+```sh
+$ bin/server
+```
+ 您应该会看到一条成功的消息：`Serving Rule server on port 20498`
+
+kuiper 的目录结构如下:
 
 ```
 kuiper_installed_dir
@@ -24,7 +39,31 @@ kuiper_installed_dir
     ...
 ```
 
-以下是通过方式二安装 Kuiper 之后的安装目录结构。
+
+#### deb、rpm 安装包
+
+使用相关命令安装 kuiper
+
+```sh
+$ sudo dpkg -i kuiper_$VERSION_$ARCH.deb
+or
+$ sudo rpm -ivh kuiper-$VERSION-1.el7.rpm
+```
+
+运行 `kuiperd` 以启动 kuiper 服务器
+
+```sh
+$ sudo kuiperd
+```
+ 您应该会看到一条成功的消息：`Serving Rule server on port 20498`
+
+ kuiper 也支持 systemctl 启动
+
+ ```sh
+ $ sudo systemctl start kuiper
+ ```
+
+kuiper 的目录结构如下:
 
 ```
 /usr/lib/kuiper/bin
@@ -52,14 +91,6 @@ Kuiper 具有许多用于复杂分析的内置函数和扩展，您可以访问 
 ### 先决条件
 
 我们假设已经有一个 MQTT 消息服务器作为 Kuiper 服务器的数据源。 如果您没有，建议使用 EMQ X。 请按照 [EMQ Broker 安装指南](https://docs.emqx.io/broker/v3/en/install.html)设置 MQTT 消息服务器。
-
-### 启动 Kuiper Engine服务器
-
-运行 ``bin/server`` 以启动 Kuiper 服务器
-```sh
-$ bin/server
-```
- 您应该会看到一条成功的消息：`Serving Rule server on port 20498`
 
 ### 定义输入流
 

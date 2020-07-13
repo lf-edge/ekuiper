@@ -12,7 +12,7 @@ jobs:
         runs-on: ubuntu-latest
         
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v1
         - name: install docker
           run: |
             sudo apt-get remove docker docker-engine docker.io containerd runc
@@ -32,7 +32,7 @@ jobs:
             docker buildx create --use --name mybuild
         - name: build
           run: |
-            make cross_build
+            make all_pkgs
             cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
         - uses: actions/upload-artifact@v1
           with:
@@ -43,7 +43,7 @@ jobs:
         runs-on: macos-latest
 
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v1
         - uses: actions/setup-go@v1
           with:
             go-version: '1.14'
@@ -65,7 +65,7 @@ jobs:
         runs-on: ubuntu-latest
         
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v1
         - name: install docker
           run: |
             sudo apt-get remove docker docker-engine docker.io containerd runc
@@ -113,7 +113,7 @@ jobs:
         needs: [build, build-on-mac]
 
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v1
         - uses: actions/download-artifact@v1
           with:
             name: packages
@@ -157,4 +157,4 @@ jobs:
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
             curl -H "Authorization: token ${{ secrets.AccessToken }}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" -X POST -d "{\"event_type\":\"update_repos_for_kuiper\",\"client_payload\":{\"version\": \"$version\"}}" https://api.github.com/repos/emqx/emqx-packages-docker/dispatches
-        
+
