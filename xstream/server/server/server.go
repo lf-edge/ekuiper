@@ -9,7 +9,10 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
+	"os"
+	"os/signal"
 	"path"
+	"syscall"
 	"time"
 )
 
@@ -36,6 +39,15 @@ func StartUp(Version, LoadFileType string) {
 		logger.Infof("db location is %s", dr)
 		dataDir = dr
 	}
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		logger.Printf("Kuiper is terminated.\n")
+		os.Exit(0)
+	}()
+
 	ruleProcessor = processors.NewRuleProcessor(path.Dir(dataDir))
 	streamProcessor = processors.NewStreamProcessor(path.Join(path.Dir(dataDir), "stream"))
 	pluginManager, err = plugins.NewPluginManager()
