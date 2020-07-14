@@ -92,7 +92,7 @@ func (c *Cache) run(ctx api.StreamContext) {
 	if err != nil {
 		c.drainError(err)
 	}
-	c.store = common.GetSimpleKVStore(path.Join(dbDir, "sink", "cache"))
+	c.store = common.GetSimpleKVStore(path.Join(dbDir, "sink"))
 	c.key = ctx.GetRuleId() + ctx.GetOpId() + strconv.Itoa(ctx.GetInstanceId())
 	//load cache
 	if err := c.loadCache(); err != nil {

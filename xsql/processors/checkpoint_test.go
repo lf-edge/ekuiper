@@ -1,36 +1,30 @@
 package processors
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"github.com/emqx/kuiper/xstream/nodes"
-	"github.com/emqx/kuiper/xstream/test"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 )
 
+type ruleCheckpointTest struct {
+	ruleTest
+	pauseSize   int                    // Stop stream after sending pauseSize source to test checkpoint resume
+	cc          int                    // checkpoint count when paused
+	pauseMetric map[string]interface{} // The metric to check when paused
+}
+
 // Full lifecycle test: Run window rule; trigger checkpoints by mock timer; restart rule; make sure the result is right;
-func TestCheckpointCount(t *testing.T) {
+func TestCheckpoint(t *testing.T) {
 	common.IsTesting = true
-	var tests = []struct {
-		name      string
-		sql       string
-		size      int
-		breakSize int
-		cc        int
-		r         [][]map[string]interface{}
-	}{
-		{
-			name:      `rule1`,
-			sql:       `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
-			size:      5,
-			breakSize: 3,
-			cc:        2,
+	streamList := []string{"demo"}
+	handleStream(false, streamList, t)
+	var tests = []ruleCheckpointTest{{
+		ruleTest: ruleTest{
+			name: `TestCheckpointRule1`,
+			sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			r: [][]map[string]interface{}{
 				{{
 					"color": "red",
@@ -49,10 +43,6 @@ func TestCheckpointCount(t *testing.T) {
 					"color": "blue",
 					"size":  float64(6),
 					"ts":    float64(1541152486822),
-				}, {
-					"color": "blue",
-					"size":  float64(2),
-					"ts":    float64(1541152487632),
 				}},
 				{{
 					"color": "blue",
@@ -63,122 +53,108 @@ func TestCheckpointCount(t *testing.T) {
 					"size":  float64(4),
 					"ts":    float64(1541152488442),
 				}},
+				{{
+					"color": "blue",
+					"size":  float64(2),
+					"ts":    float64(1541152487632),
+				}, {
+					"color": "yellow",
+					"size":  float64(4),
+					"ts":    float64(1541152488442),
+				}, {
+					"color": "red",
+					"size":  float64(1),
+					"ts":    float64(1541152489252),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo_0_records_in_total":  int64(3),
+				"op_preprocessor_demo_0_records_out_total": int64(3),
+
+				"op_project_0_records_in_total":  int64(3),
+				"op_project_0_records_out_total": int64(3),
+
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+
+				"source_demo_0_records_in_total":  int64(3),
+				"source_demo_0_records_out_total": int64(3),
+
+				"op_window_0_records_in_total":  int64(3),
+				"op_window_0_records_out_total": int64(3),
 			},
 		},
+		pauseSize: 3,
+		cc:        2,
+		pauseMetric: map[string]interface{}{
+			"op_preprocessor_demo_0_records_in_total":  int64(3),
+			"op_preprocessor_demo_0_records_out_total": int64(3),
+
+			"op_project_0_records_in_total":  int64(1),
+			"op_project_0_records_out_total": int64(1),
+
+			"sink_mockSink_0_records_in_total":  int64(1),
+			"sink_mockSink_0_records_out_total": int64(1),
+
+			"source_demo_0_records_in_total":  int64(3),
+			"source_demo_0_records_out_total": int64(3),
+
+			"op_window_0_records_in_total":  int64(3),
+			"op_window_0_records_out_total": int64(1),
+		}},
 	}
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	createStreams(t)
-	defer dropStreams(t)
+	handleStream(true, streamList, t)
 	options := []*api.RuleOption{
 		{
 			BufferLength:       100,
 			Qos:                api.AtLeastOnce,
-			CheckpointInterval: 1000,
+			CheckpointInterval: 600,
 		}, {
 			BufferLength:       100,
 			Qos:                api.ExactlyOnce,
-			CheckpointInterval: 1000,
+			CheckpointInterval: 600,
 		},
 	}
 	for j, opt := range options {
-		for i, tt := range tests {
-			cleanStateData()
-			test.ResetClock(1541152486000)
-			p := NewRuleProcessor(DbDir)
-			parser := xsql.NewParser(strings.NewReader(tt.sql))
-			var (
-				sources []*nodes.SourceNode
-				syncs   []chan int
-			)
-			if stmt, err := xsql.Language.Parse(parser); err != nil {
-				t.Errorf("parse sql %s error: %s", tt.sql, err)
-			} else {
-				if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
-					t.Errorf("sql %s is not a select statement", tt.sql)
-				} else {
-					streams := xsql.GetStreams(selectStmt)
-					for _, stream := range streams {
-						next := make(chan int)
-						syncs = append(syncs, next)
-						source := getMockSource(stream, next, tt.size)
-						sources = append(sources, source)
-					}
-				}
-			}
-			tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.name, j), Sql: tt.sql, Options: opt}, sources)
-			if err != nil {
-				t.Error(err)
-			}
-			mockSink := test.NewMockSink()
-			sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, nil)
-			tp.AddSink(inputs, sink)
-			mockClock := test.GetMockClock()
-			errCh := tp.Open()
-			func() {
-				for i := 0; i < tt.breakSize*len(syncs); i++ {
-					syncs[i%len(syncs)] <- i
-					for {
-						time.Sleep(1)
-						if getMetric(tp, "op_window_0_records_in_total") == (i + 1) {
-							break
-						}
-					}
-					select {
-					case err = <-errCh:
-						t.Log(err)
-						tp.Cancel()
-						return
-					default:
-					}
-				}
+		doCheckpointRuleTest(t, tests, j, opt)
+	}
+}
 
-				mockClock.Set(common.TimeFromUnixMilli(1541152488000))
-				time.Sleep(100 * time.Millisecond)
-				actual := tp.GetCoordinator().GetCompleteCount()
-				if !reflect.DeepEqual(tt.cc, actual) {
-					t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, j, tt.cc, actual)
-					return
-				}
-				time.Sleep(100 * time.Millisecond)
-				tp.Cancel()
-				time.Sleep(100 * time.Millisecond)
-				errCh := tp.Open()
-				close(syncs[i%len(syncs)])
-				for i := 0; i < tt.size*len(syncs); i++ {
-					common.Log.Debugf("resending data %d", i)
-					retry := 100
-					for ; retry > 0; retry-- {
-						if getMetric(tp, "op_window_0_records_in_total") == i {
-							break
-						}
-						time.Sleep(1)
-					}
-					select {
-					case err = <-errCh:
-						t.Log(err)
-						tp.Cancel()
-						return
-					default:
-					}
-				}
-			}()
-			common.Log.Debugf("done sending data")
-			time.Sleep(400 * time.Millisecond)
-			results := mockSink.GetResults()
-			var maps [][]map[string]interface{}
-			for _, v := range results {
-				var mapRes []map[string]interface{}
-				err := json.Unmarshal(v, &mapRes)
-				if err != nil {
-					t.Errorf("Failed to parse the input into map")
-					continue
-				}
-				maps = append(maps, mapRes)
-			}
-			if !reflect.DeepEqual(tt.r, maps) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
-			}
-			tp.Cancel()
+func doCheckpointRuleTest(t *testing.T, tests []ruleCheckpointTest, j int, opt *api.RuleOption) {
+	fmt.Printf("The test bucket for option %d size is %d.\n\n", j, len(tests))
+	for i, tt := range tests {
+		datas, dataLength, tp, mockSink, errCh := createStream(t, tt.ruleTest, j, opt, nil)
+		log.Debugf("Start sending first phase data done at %d", common.GetNowInMilli())
+		if err := sendData(t, tt.pauseSize, tt.pauseMetric, datas, errCh, tp, 100); err != nil {
+			t.Errorf("first phase send data error %s", err)
+			break
 		}
+		log.Debugf("Send first phase data done at %d", common.GetNowInMilli())
+		// compare checkpoint count
+		actual := tp.GetCoordinator().GetCompleteCount()
+		var retry int
+		for retry = 100; retry > 0; retry-- {
+			time.Sleep(time.Duration(retry) * time.Millisecond)
+			if reflect.DeepEqual(tt.cc, actual) {
+				break
+			} else {
+				common.Log.Debugf("check checkpointCount error at %d: %d", retry, actual)
+			}
+		}
+		tp.Cancel()
+		if retry == 0 {
+			t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, j, tt.cc, actual)
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+		// resume stream
+		log.Debugf("Resume stream at %d", common.GetNowInMilli())
+		errCh = tp.Open()
+		log.Debugf("After open stream at %d", common.GetNowInMilli())
+		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP); err != nil {
+			t.Errorf("second phase send data error %s", err)
+			break
+		}
+		compareResult(t, mockSink, commonResultFunc, tt.ruleTest, i, tp)
 	}
 }

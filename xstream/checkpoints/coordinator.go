@@ -5,7 +5,6 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	"sync"
-	"time"
 )
 
 type pendingCheckpoint struct {
@@ -85,6 +84,8 @@ type Coordinator struct {
 }
 
 func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTask, sinks []NonSourceTask, qos api.Qos, store api.Store, interval int, ctx api.StreamContext) *Coordinator {
+	logger := ctx.GetLogger()
+	logger.Infof("create new coordinator for rule %s", ruleId)
 	signal := make(chan *Signal, 1024)
 	var allResponders, sourceResponders []Responder
 	for _, r := range sources {
@@ -139,7 +140,7 @@ func createBarrierHandler(re Responder, inputCount int, qos api.Qos) BarrierHand
 
 func (c *Coordinator) Activate() error {
 	logger := c.ctx.GetLogger()
-	logger.Infoln("Start checkpoint coordinator for rule %s", c.ruleId)
+	logger.Infof("Start checkpoint coordinator for rule %s at %d", c.ruleId, common.GetNowInMilli())
 	if c.ticker != nil {
 		c.ticker.Stop()
 	}
@@ -163,11 +164,21 @@ func (c *Coordinator) Activate() error {
 				for _, r := range c.tasksToTrigger {
 					go func(t Responder) {
 						if err := t.TriggerCheckpoint(checkpointId); err != nil {
-							logger.Infof("Fail to trigger checkpoint for source %s with error %v", t.GetName(), err)
+							logger.Infof("Fail to trigger checkpoint for source %s with error %v, cancel it", t.GetName(), err)
 							c.cancel(checkpointId)
 						} else {
-							time.Sleep(time.Duration(c.timeout) * time.Microsecond)
-							c.cancel(checkpointId)
+							timeout := common.GetTicker(c.timeout)
+							select {
+							case <-timeout.C:
+								logger.Debugf("Try to cancel checkpoint %d for timeout", checkpointId)
+								c.cancel(checkpointId)
+							case <-c.ctx.Done():
+								if timeout != nil {
+									timeout.Stop()
+									logger.Infoln("Stop ongoing checkpoint %d", checkpointId)
+									c.cancel(checkpointId)
+								}
+							}
 						}
 					}(r)
 				}
@@ -191,13 +202,14 @@ func (c *Coordinator) Activate() error {
 						logger.Debugf("Receive ack from %s for non existing checkpoint %d", s.OpId, s.CheckpointId)
 					}
 				case DEC:
-					logger.Debugf("Receive dec from %s for checkpoint %d", s.OpId, s.CheckpointId)
+					logger.Debugf("Receive dec from %s for checkpoint %d, cancel it", s.OpId, s.CheckpointId)
 					c.cancel(s.CheckpointId)
 				}
 			case <-c.ctx.Done():
 				logger.Infoln("Cancelling coordinator....")
 				if c.ticker != nil {
 					c.ticker.Stop()
+					logger.Infoln("Stop coordinator ticker")
 				}
 				return
 			}

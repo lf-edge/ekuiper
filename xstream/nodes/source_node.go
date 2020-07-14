@@ -138,6 +138,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						stats.ProcessTimeStart()
 						tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: common.GetNowInMilli(), Metadata: data.Meta()}
 						stats.ProcessTimeEnd()
+						logger.Debugf("source node is sending %+v", tuple)
 						//blocking
 						m.Broadcast(tuple)
 						stats.IncTotalRecordsOut()

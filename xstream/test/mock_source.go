@@ -5,22 +5,21 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
+	"sync"
 	"time"
 )
 
 type MockSource struct {
-	data        []*xsql.Tuple
-	done        <-chan int
-	isEventTime bool
-
+	data   []*xsql.Tuple
 	offset int
+	sync.Mutex
 }
 
-func NewMockSource(data []*xsql.Tuple, done <-chan int, isEventTime bool) *MockSource {
+const TIMELEAP = 200
+
+func NewMockSource(data []*xsql.Tuple) *MockSource {
 	mock := &MockSource{
-		data:        data,
-		done:        done,
-		isEventTime: isEventTime,
+		data: data,
 	}
 	return mock
 }
@@ -28,48 +27,40 @@ func NewMockSource(data []*xsql.Tuple, done <-chan int, isEventTime bool) *MockS
 func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
 	log := ctx.GetLogger()
 	mockClock := GetMockClock()
-	log.Debugf("mock source starts with offset %d", m.offset)
+	log.Infof("%d: mock source %s starts", common.GetNowInMilli(), ctx.GetOpId())
+	log.Debugf("mock source %s starts with offset %d", ctx.GetOpId(), m.offset)
 	for i, d := range m.data {
 		if i < m.offset {
 			log.Debugf("mock source is skipping %d", i)
 			continue
 		}
-		log.Debugf("mock source is waiting", i)
+		log.Debugf("mock source is waiting %d", i)
+		diff := d.Timestamp - common.GetNowInMilli()
+		if diff <= 0 {
+			log.Warnf("Time stamp invalid, current time is %d, but timestamp is %d", common.GetNowInMilli(), d.Timestamp)
+			diff = TIMELEAP
+		}
+		next := mockClock.After(time.Duration(diff) * time.Millisecond)
+		//Mock timer, only send out the data once the mock time goes to the timestamp.
+		//Another mechanism must be imposed to move forward the mock time.
 		select {
-		case j, ok := <-m.done:
-			if ok {
-				log.Debugf("mock source receives data %d", j)
-			} else {
-				log.Debugf("sync channel done at %d", i)
-			}
+		case <-next:
+			m.Lock()
+			m.offset = i + 1
+			consumer <- api.NewDefaultSourceTuple(d.Message, xsql.Metadata{"topic": "mock"})
+			log.Debugf("%d: mock source %s is sending data %d:%s", common.TimeToUnixMilli(mockClock.Now()), ctx.GetOpId(), i, d)
+			m.Unlock()
 		case <-ctx.Done():
 			log.Debugf("mock source open DONE")
 			return
 		}
-
-		if !m.isEventTime {
-			mockClock.Set(common.TimeFromUnixMilli(d.Timestamp))
-			log.Debugf("set time at %d", d.Timestamp)
-		} else {
-			mockClock.Add(1000 * time.Millisecond)
-		}
-
-		select {
-		case <-ctx.Done():
-			log.Debugf("mock source open DONE")
-			return
-		default:
-		}
-
-		consumer <- api.NewDefaultSourceTuple(d.Message, xsql.Metadata{"topic": "mock"})
-		log.Debugf("mock source is sending data %s", d)
-		m.offset = i + 1
-		time.Sleep(1)
 	}
 	log.Debugf("mock source sends out all data")
 }
 
 func (m *MockSource) GetOffset() (interface{}, error) {
+	m.Lock()
+	defer m.Unlock()
 	return m.offset, nil
 }
 

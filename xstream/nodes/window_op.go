@@ -19,17 +19,21 @@ type WindowConfig struct {
 
 type WindowOperator struct {
 	*defaultSinkNode
-	ticker             *clock.Ticker //For processing time only
 	window             *WindowConfig
 	interval           int
-	triggerTime        int64
 	isEventTime        bool
-	statManager        StatManager
 	watermarkGenerator *WatermarkGenerator //For event time only
-	msgCount           int
+
+	statManager StatManager
+	ticker      *clock.Ticker //For processing time only
+	// states
+	triggerTime int64
+	msgCount    int
 }
 
 const WINDOW_INPUTS_KEY = "$$windowInputs"
+const TRIGGER_TIME_KEY = "$$triggerTime"
+const MSG_COUNT_KEY = "$$msgCount"
 
 func init() {
 	gob.Register([]*xsql.Tuple{})
@@ -100,11 +104,28 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		case nil:
 			log.Debugf("Restore window state, nothing")
 		default:
-			errCh <- fmt.Errorf("restore window state %v error, invalid type", st)
+			errCh <- fmt.Errorf("restore window state `inputs` %v error, invalid type", st)
 		}
 	} else {
 		log.Warnf("Restore window state fails: %s", err)
 	}
+	o.triggerTime = 0
+	if s, err := ctx.GetState(TRIGGER_TIME_KEY); err == nil && s != nil {
+		if si, ok := s.(int64); ok {
+			o.triggerTime = si
+		} else {
+			errCh <- fmt.Errorf("restore window state `triggerTime` %v error, invalid type", s)
+		}
+	}
+	o.msgCount = 0
+	if s, err := ctx.GetState(MSG_COUNT_KEY); err == nil && s != nil {
+		if si, ok := s.(int); ok {
+			o.msgCount = si
+		} else {
+			errCh <- fmt.Errorf("restore window state `msgCount` %v error, invalid type", s)
+		}
+	}
+	log.Infof("Start with window state triggerTime: %d, msgCount: %d", o.triggerTime, o.msgCount)
 	if o.isEventTime {
 		go o.execEventWindow(ctx, inputs, errCh)
 	} else {
@@ -138,6 +159,60 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 
 	if o.ticker != nil {
 		c = o.ticker.C
+		//resume previous window
+		if len(inputs) > 0 && o.triggerTime > 0 {
+			nextTick := common.GetNowInMilli() + int64(o.interval)
+			next := o.triggerTime
+			switch o.window.Type {
+			case xsql.TUMBLING_WINDOW, xsql.HOPPING_WINDOW:
+				for {
+					next = next + int64(o.interval)
+					if next > nextTick {
+						break
+					}
+					log.Debugf("triggered by restore inputs")
+					inputs, _ = o.scan(inputs, next, ctx)
+					ctx.PutState(WINDOW_INPUTS_KEY, inputs)
+					ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
+				}
+			case xsql.SESSION_WINDOW:
+				timeout, duration := int64(o.window.Interval), int64(o.window.Length)
+				for {
+					et := inputs[0].Timestamp
+					tick := et + (duration - et%duration)
+					if et%duration == 0 {
+						tick = et
+					}
+					var p int64
+					for _, tuple := range inputs {
+						var r int64 = math.MaxInt64
+						if p > 0 {
+							if tuple.Timestamp-p > timeout {
+								r = p + timeout
+							}
+						}
+						if tuple.Timestamp > tick {
+							if tick-duration > et && tick < r {
+								r = tick
+							}
+							tick += duration
+						}
+						if r < math.MaxInt64 {
+							next = r
+							break
+						}
+						p = tuple.Timestamp
+					}
+					if next > nextTick {
+						break
+					}
+					log.Debugf("triggered by restore inputs")
+					inputs, _ = o.scan(inputs, next, ctx)
+					ctx.PutState(WINDOW_INPUTS_KEY, inputs)
+					ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
+				}
+			}
+		}
 	}
 
 	for {
@@ -201,6 +276,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				o.statManager.ProcessTimeEnd()
 				o.statManager.SetBufferLength(int64(len(o.input)))
 				ctx.PutState(WINDOW_INPUTS_KEY, inputs)
+				ctx.PutState(MSG_COUNT_KEY, o.msgCount)
 			default:
 				o.Broadcast(fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d))
 				o.statManager.IncTotalExceptions()
@@ -223,6 +299,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				inputs, _ = o.scan(inputs, n, ctx)
 				o.statManager.ProcessTimeEnd()
 				ctx.PutState(WINDOW_INPUTS_KEY, inputs)
+				ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
 			}
 		case now := <-timeout:
 			if len(inputs) > 0 {
@@ -233,6 +310,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				inputs = make([]*xsql.Tuple, 0)
 				o.statManager.ProcessTimeEnd()
 				ctx.PutState(WINDOW_INPUTS_KEY, inputs)
+				ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
 			}
 		// is cancelling
 		case <-ctx.Done():
