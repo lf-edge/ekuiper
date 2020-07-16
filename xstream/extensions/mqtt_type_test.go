@@ -18,11 +18,11 @@ func TestCheckType(t *testing.T) {
 		{"temperature": "1", "humidity": 1},
 	}
 
-	topics := []string{`$ke/events/device+device1/data/update`, `$ke/events/device+device2/data/update`}
+	topics := []string{`$ke/events/device/device1/data/update`, `$ke/events/device/device2/data/update`}
 
 	for _, topic := range topics {
 		for _, data := range datas {
-			checkType(mode, data, topic)
+			mode.checkType(data, topic)
 			for k, v := range data {
 				deviceid := topicToDeviceid(topic)
 				modelType := mode.findDataType(deviceid, k)

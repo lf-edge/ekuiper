@@ -8,6 +8,7 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/google/uuid"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -22,7 +23,7 @@ type MQTTSource struct {
 	certPath string
 	pkeyPath string
 
-	model  *deviceModel
+	model  modelVersion
 	schema map[string]interface{}
 	conn   MQTT.Client
 }
@@ -38,6 +39,7 @@ type MQTTConfig struct {
 	Certification      string   `json:"certificationPath"`
 	PrivateKPath       string   `json:"privateKeyPath"`
 	KubeedgeModelFile  string   `json:"kubeedgeModelFile"`
+	KubeedgeVersion    string   `json:"kubeedgeVersion"`
 }
 
 func (ms *MQTTSource) WithSchema(schema string) *MQTTSource {
@@ -70,11 +72,11 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 	ms.pkeyPath = cfg.PrivateKPath
 
 	if 0 != len(cfg.KubeedgeModelFile) {
-		conf, err := common.LoadConf(cfg.KubeedgeModelFile)
+		conf, err := common.LoadConf(path.Join("sources", cfg.KubeedgeModelFile))
 		if nil != err {
 			return err
 		}
-		ms.model = new(deviceModel)
+		ms.model = modelFactory(cfg.KubeedgeVersion)
 		if err = json.Unmarshal(conf, ms.model); err != nil {
 			ms.model = nil
 			return err
@@ -153,7 +155,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 	log.Infof("Successfully subscribe to topic %s", ms.srv+": "+ms.clientid)
 }
 
-func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consumer chan<- api.SourceTuple, model *deviceModel) {
+func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consumer chan<- api.SourceTuple, model modelVersion) {
 	log := ctx.GetLogger()
 	h := func(client MQTT.Client, msg MQTT.Message) {
 		log.Debugf("instance %d received %s", ctx.GetInstanceId(), msg.Payload())
@@ -168,9 +170,11 @@ func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consumer
 		meta["topic"] = msg.Topic()
 		meta["messageid"] = strconv.Itoa(int(msg.MessageID()))
 
-		sliErr := checkType(model, result, msg.Topic())
-		for _, v := range sliErr {
-			log.Errorf(v)
+		if nil != model {
+			sliErr := model.checkType(result, msg.Topic())
+			for _, v := range sliErr {
+				log.Errorf(v)
+			}
 		}
 
 		select {

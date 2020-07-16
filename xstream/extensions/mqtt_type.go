@@ -21,6 +21,13 @@ type (
 	}
 )
 
+type modelVersion interface {
+	checkType(map[string]interface{}, string) []string
+}
+
+func modelFactory(version string) modelVersion {
+	return new(deviceModel)
+}
 func (this *property) getName() string {
 	return this.Name
 }
@@ -115,17 +122,13 @@ func changeType(modelType string, data interface{}) (interface{}, string) {
 	return data, ""
 }
 func topicToDeviceid(topic string) string {
-	sliStr := strings.Split(topic, "+")
-	if 2 != len(sliStr) {
+	sliStr := strings.Split(topic, `/`)
+	if 4 > len(sliStr) {
 		return ""
 	}
-	sliStr = strings.Split(sliStr[1], `/`)
-	if 0 == len(sliStr) {
-		return ""
-	}
-	return sliStr[0]
+	return sliStr[3]
 }
-func checkType(mode *deviceModel, m map[string]interface{}, topic string) []string {
+func (this *deviceModel) checkType(m map[string]interface{}, topic string) []string {
 	var sliErr []string
 	strErr := ""
 	for k, v := range m {
@@ -134,7 +137,7 @@ func checkType(mode *deviceModel, m map[string]interface{}, topic string) []stri
 			sliErr = append(sliErr, fmt.Sprintf("not find deviceid : %s", topic))
 			continue
 		}
-		modelType := mode.findDataType(deviceid, k)
+		modelType := this.findDataType(deviceid, k)
 		if 0 == len(modelType) {
 			continue
 		}

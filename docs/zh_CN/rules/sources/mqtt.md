@@ -13,6 +13,8 @@ default:
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
   #privateKeyPath: /var/kuiper/xyz-private.pem.key
+  kubeedgeVersion: "1.0"
+  kubeedgeModelFile: "mqtt_model.json"
 
 
 #重载全局配置
@@ -55,6 +57,14 @@ MQTT 连接密码。如果指定了 `certificationPath` 或者 `privateKeyPath`�
 ### privateKeyPath
 
 私钥路径。可以为绝对路径，也可以为相对路径。更详细的信息，请参考 `certificationPath`，比如 `d3807d9fa5-private.pem.key`。
+
+### kubeedgeVersion
+
+kubeedge 版本号，不同的版本号对应的文件内容不同。
+
+### kubeedgeModelFile
+
+kubeedge 模版文件名，文件指定放在 etc/sources 文件夹中
 
 ### bufferLength
 
