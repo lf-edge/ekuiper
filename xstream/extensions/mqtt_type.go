@@ -75,7 +75,7 @@ func changeType(modelType string, data interface{}) (interface{}, string) {
 		i, _ := data.(int)
 		switch modelType {
 		case "int":
-			return data, nil
+			return data, ""
 		case "float":
 			data = float64(i)
 		case "boolean":
@@ -89,7 +89,7 @@ func changeType(modelType string, data interface{}) (interface{}, string) {
 		s, _ := data.(string)
 		switch modelType {
 		case "string":
-			return data, nil
+			return data, ""
 		case "float":
 			data, _ = strconv.ParseFloat(s, 64)
 		case "int":
@@ -101,7 +101,7 @@ func changeType(modelType string, data interface{}) (interface{}, string) {
 		f, _ := data.(float64)
 		switch modelType {
 		case "double", "float":
-			return data, nil
+			return data, ""
 		case "int":
 			data = int(f)
 		case "string":
@@ -112,7 +112,7 @@ func changeType(modelType string, data interface{}) (interface{}, string) {
 	default:
 		return data, fmt.Sprintf("not support type : %v", dataType)
 	}
-	return data, nil
+	return data, ""
 }
 func topicToDeviceid(topic string) string {
 	sliStr := strings.Split(topic, "+")
