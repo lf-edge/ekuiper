@@ -22,6 +22,7 @@ type MQTTSource struct {
 	certPath string
 	pkeyPath string
 
+	model  *deviceModel
 	schema map[string]interface{}
 	conn   MQTT.Client
 }
@@ -36,6 +37,7 @@ type MQTTConfig struct {
 	Password           string   `json:"password"`
 	Certification      string   `json:"certificationPath"`
 	PrivateKPath       string   `json:"privateKeyPath"`
+	KubeedgeModelFile  string   `json:"kubeedgeModelFile"`
 }
 
 func (ms *MQTTSource) WithSchema(schema string) *MQTTSource {
@@ -66,6 +68,18 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 	ms.password = strings.Trim(cfg.Password, " ")
 	ms.certPath = cfg.Certification
 	ms.pkeyPath = cfg.PrivateKPath
+
+	if 0 != len(cfg.KubeedgeModelFile) {
+		conf, err := common.LoadConf(cfg.KubeedgeModelFile)
+		if nil != err {
+			return err
+		}
+		ms.model = new(deviceModel)
+		if err = json.Unmarshal(conf, ms.model); err != nil {
+			ms.model = nil
+			return err
+		}
+	}
 	return nil
 }
 
@@ -120,7 +134,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 	opts.SetConnectionLostHandler(func(client MQTT.Client, e error) {
 		log.Errorf("The connection %s is disconnected due to error %s, will try to re-connect later.", ms.srv+": "+ms.clientid, e)
 		reconn = true
-		subscribe(ms.tpc, client, ctx, consumer)
+		subscribe(ms.tpc, client, ctx, consumer, ms.model)
 	})
 
 	opts.SetOnConnectHandler(func(client MQTT.Client) {
@@ -135,11 +149,11 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 	}
 	log.Infof("The connection to server %s was established successfully", ms.srv)
 	ms.conn = c
-	subscribe(ms.tpc, c, ctx, consumer)
+	subscribe(ms.tpc, c, ctx, consumer, ms.model)
 	log.Infof("Successfully subscribe to topic %s", ms.srv+": "+ms.clientid)
 }
 
-func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consumer chan<- api.SourceTuple) {
+func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consumer chan<- api.SourceTuple, model *deviceModel) {
 	log := ctx.GetLogger()
 	h := func(client MQTT.Client, msg MQTT.Message) {
 		log.Debugf("instance %d received %s", ctx.GetInstanceId(), msg.Payload())
@@ -153,6 +167,11 @@ func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consumer
 		meta := make(map[string]interface{})
 		meta["topic"] = msg.Topic()
 		meta["messageid"] = strconv.Itoa(int(msg.MessageID()))
+
+		sliErr := checkType(model, result, msg.Topic())
+		for _, v := range sliErr {
+			log.Errorf(v)
+		}
 
 		select {
 		case consumer <- api.NewDefaultSourceTuple(result, meta):
