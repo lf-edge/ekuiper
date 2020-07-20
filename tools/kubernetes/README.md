@@ -34,7 +34,7 @@ commandDir: "./sample/" //Command folder path
 ```
 ### 1.4 Compile the program:
 
-Execute the command of `go build -o tools/kubernetes/kubernetes tools/kubernetes/main.go` to generate the kubernetes program.
+Execute the command of `go build -o tools/kubernetes/kuiper-kubernetes-tool tools/kubernetes/main.go` to generate the kubernetes program.
 
 ## 2 Example of stream operation
 
