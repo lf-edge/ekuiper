@@ -140,7 +140,7 @@ func (s *TopologyNew) enableCheckpoint() error {
 		for _, r := range s.ops {
 			ops = append(ops, r)
 		}
-		var sinks []checkpoints.NonSourceTask
+		var sinks []checkpoints.SinkTask
 		for _, r := range s.sinks {
 			sinks = append(sinks, r)
 		}

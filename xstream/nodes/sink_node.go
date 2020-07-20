@@ -24,6 +24,7 @@ type SinkNode struct {
 	isMock  bool
 	//states varies after restart
 	sinks []api.Sink
+	tch   chan struct{} //channel to trigger cache saved, will be trigger by checkpoint only
 }
 
 func NewSinkNode(name string, sinkType string, props map[string]interface{}) *SinkNode {
@@ -70,6 +71,9 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	m.ctx = ctx
 	logger := ctx.GetLogger()
 	logger.Debugf("open sink node %s", m.name)
+	if m.qos >= api.AtLeastOnce {
+		m.tch = make(chan struct{})
+	}
 	go func() {
 		if c, ok := m.options["concurrency"]; ok {
 			if t, err := common.ToInt(c); err != nil || t <= 0 {
@@ -179,8 +183,12 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				m.mutex.Lock()
 				m.statManagers = append(m.statManagers, stats)
 				m.mutex.Unlock()
-
-				cache := NewCache(m.input, cacheLength, cacheSaveInterval, result, ctx)
+				var cache *Cache
+				if m.qos >= api.AtLeastOnce {
+					cache = NewCheckpointbasedCache(m.input, cacheLength, m.tch, result, ctx)
+				} else {
+					cache = NewTimebasedCache(m.input, cacheLength, cacheSaveInterval, result, ctx)
+				}
 				for {
 					select {
 					case data := <-cache.Out:
@@ -363,4 +371,13 @@ func (m *SinkNode) close(ctx api.StreamContext, logger api.Logger) {
 			logger.Warnf("close sink fails: %v", err)
 		}
 	}
+	if m.tch != nil {
+		close(m.tch)
+		m.tch = nil
+	}
+}
+
+// Only called when checkpoint enabled
+func (m *SinkNode) SaveCache() {
+	m.tch <- struct{}{}
 }

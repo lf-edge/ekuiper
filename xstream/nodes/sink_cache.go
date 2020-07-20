@@ -62,30 +62,24 @@ type Cache struct {
 	errorCh  chan<- error
 	//states
 	pending *LinkedQueue
-	//serialize
-	key     string //the key for current cache
-	store   common.KeyValue
 	changed bool
-	//configs
-	limit        int
-	saveInterval int
+	//serialize
+	key   string //the key for current cache
+	store common.KeyValue
 }
 
-func NewCache(in <-chan interface{}, limit int, saveInterval int, errCh chan<- error, ctx api.StreamContext) *Cache {
+func NewTimebasedCache(in <-chan interface{}, limit int, saveInterval int, errCh chan<- error, ctx api.StreamContext) *Cache {
 	c := &Cache{
 		in:       in,
 		Out:      make(chan *CacheTuple, limit),
 		Complete: make(chan int),
 		errorCh:  errCh,
-
-		limit:        limit,
-		saveInterval: saveInterval,
 	}
-	go c.run(ctx)
+	go c.timebasedRun(ctx, saveInterval)
 	return c
 }
 
-func (c *Cache) run(ctx api.StreamContext) {
+func (c *Cache) initStore(ctx api.StreamContext) {
 	logger := ctx.GetLogger()
 	dbDir, err := common.GetDataLoc()
 	logger.Debugf("cache saved to %s", dbDir)
@@ -99,21 +93,16 @@ func (c *Cache) run(ctx api.StreamContext) {
 		go c.drainError(err)
 		return
 	}
+}
 
-	ticker := common.GetTicker(c.saveInterval)
+func (c *Cache) timebasedRun(ctx api.StreamContext, saveInterval int) {
+	logger := ctx.GetLogger()
+	c.initStore(ctx)
+	ticker := common.GetTicker(saveInterval)
 	var tcount = 0
 	for {
 		select {
 		case item := <-c.in:
-			//TODO to be integrated into checkpoints
-			if boe, ok := item.(*checkpoints.BufferOrEvent); ok {
-				if _, ok := boe.Data.(*checkpoints.Barrier); ok {
-					c.Out <- &CacheTuple{
-						data: item,
-					}
-					break
-				}
-			}
 			index := c.pending.Tail
 			c.pending.append(item)
 			//non blocking until limit exceeded
@@ -213,4 +202,63 @@ func (c *Cache) drainError(err error) {
 
 func (c *Cache) Length() int {
 	return c.pending.length()
+}
+
+func NewCheckpointbasedCache(in <-chan interface{}, limit int, tch <-chan struct{}, errCh chan<- error, ctx api.StreamContext) *Cache {
+	c := &Cache{
+		in:       in,
+		Out:      make(chan *CacheTuple, limit),
+		Complete: make(chan int),
+		errorCh:  errCh,
+	}
+	go c.checkpointbasedRun(ctx, tch)
+	return c
+}
+
+func (c *Cache) checkpointbasedRun(ctx api.StreamContext, tch <-chan struct{}) {
+	logger := ctx.GetLogger()
+	c.initStore(ctx)
+
+	for {
+		select {
+		case item := <-c.in:
+			// possibility of barrier, ignore if found
+			if boe, ok := item.(*checkpoints.BufferOrEvent); ok {
+				if _, ok := boe.Data.(*checkpoints.Barrier); ok {
+					c.Out <- &CacheTuple{
+						data: item,
+					}
+					logger.Debugf("sink cache send out barrier %v", boe.Data)
+					break
+				}
+			}
+			index := c.pending.Tail
+			c.pending.append(item)
+			//non blocking until limit exceeded
+			c.Out <- &CacheTuple{
+				index: index,
+				data:  item,
+			}
+			logger.Debugf("sink cache send out tuple %v", item)
+			c.changed = true
+		case index := <-c.Complete:
+			c.pending.delete(index)
+			c.changed = true
+		case <-tch:
+			logger.Infof("save cache for rule %s, %s", ctx.GetRuleId(), c.pending.String())
+			clone := c.pending.clone()
+			if c.changed {
+				go func() {
+					if err := c.saveCache(logger, clone); err != nil {
+						logger.Debugf("%v", err)
+						c.drainError(err)
+					}
+				}()
+			}
+			c.changed = false
+		case <-ctx.Done():
+			logger.Infof("sink node %s instance cache %d done", ctx.GetOpId(), ctx.GetInstanceId())
+			return
+		}
+	}
 }

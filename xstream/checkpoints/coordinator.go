@@ -71,6 +71,7 @@ func (s *checkpointStore) getLatest() *completedCheckpoint {
 type Coordinator struct {
 	tasksToTrigger          []Responder
 	tasksToWaitFor          []Responder
+	sinkTasks               []SinkTask
 	pendingCheckpoints      *sync.Map
 	completedCheckpoints    *checkpointStore
 	ruleId                  string
@@ -83,7 +84,7 @@ type Coordinator struct {
 	ctx                     api.StreamContext
 }
 
-func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTask, sinks []NonSourceTask, qos api.Qos, store api.Store, interval int, ctx api.StreamContext) *Coordinator {
+func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTask, sinks []SinkTask, qos api.Qos, store api.Store, interval int, ctx api.StreamContext) *Coordinator {
 	logger := ctx.GetLogger()
 	logger.Infof("create new coordinator for rule %s", ruleId)
 	signal := make(chan *Signal, 1024)
@@ -115,6 +116,7 @@ func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTa
 	return &Coordinator{
 		tasksToTrigger:     sourceResponders,
 		tasksToWaitFor:     allResponders,
+		sinkTasks:          sinks,
 		pendingCheckpoints: new(sync.Map),
 		completedCheckpoints: &checkpointStore{
 			maxNum: 3,
@@ -245,6 +247,10 @@ func (c *Coordinator) complete(checkpointId int64) {
 			logger.Infof("Cannot save checkpoint %d due to storage error: %v", checkpointId, err)
 			//TODO handle checkpoint error
 			return
+		}
+		//sink save cache
+		for _, sink := range c.sinkTasks {
+			sink.SaveCache()
 		}
 		c.completedCheckpoints.add(ccp.(*pendingCheckpoint).finalize())
 		c.pendingCheckpoints.Delete(checkpointId)

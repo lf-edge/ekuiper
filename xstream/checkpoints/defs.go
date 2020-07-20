@@ -19,6 +19,12 @@ type NonSourceTask interface {
 	SetBarrierHandler(BarrierHandler)
 }
 
+type SinkTask interface {
+	NonSourceTask
+
+	SaveCache()
+}
+
 type BufferOrEvent struct {
 	Data    interface{}
 	Channel string
