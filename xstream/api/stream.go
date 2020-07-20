@@ -91,13 +91,13 @@ type Rewindable interface {
 }
 
 type RuleOption struct {
-	IsEventTime        bool  `json:"isEventTime"`
-	LateTol            int64 `json:"lateTolerance"`
-	Concurrency        int   `json:"concurrency"`
-	BufferLength       int   `json:"bufferLength"`
-	SendMetaToSink     bool  `json:"sendMetaToSink"`
-	Qos                Qos   `json:"qos"`
-	CheckpointInterval int   `json:"checkpointInterval"`
+	IsEventTime        bool  `json:"isEventTime" yaml:"isEventTime"`
+	LateTol            int64 `json:"lateTolerance" yaml:"lateTolerance"`
+	Concurrency        int   `json:"concurrency" yaml:"concurrency"`
+	BufferLength       int   `json:"bufferLength" yaml:"bufferLength"`
+	SendMetaToSink     bool  `json:"sendMetaToSink" yaml:"sendMetaToSink"`
+	Qos                Qos   `json:"qos" yaml:"qos"`
+	CheckpointInterval int   `json:"checkpointInterval" yaml:"checkpointInterval"`
 }
 
 type Rule struct {

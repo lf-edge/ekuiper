@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/benbjohnson/clock"
+	"github.com/emqx/kuiper/xstream/api"
 	"github.com/go-yaml/yaml"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -68,6 +69,7 @@ type KuiperConf struct {
 		Prometheus     bool     `yaml:"prometheus"`
 		PrometheusPort int      `yaml:"prometheusPort"`
 	}
+	Rule api.RuleOption
 	Sink struct {
 		CacheThreshold    int `yaml:"cacheThreshold"`
 		CacheTriggerCount int `yaml:"cacheTriggerCount"`
@@ -106,7 +108,14 @@ func InitConf() {
 		Log.Fatal(err)
 	}
 
-	kc := KuiperConf{}
+	kc := KuiperConf{
+		Rule: api.RuleOption{
+			LateTol:            1000,
+			Concurrency:        1,
+			BufferLength:       1024,
+			CheckpointInterval: 300000, //5 minutes
+		},
+	}
 	if err := yaml.Unmarshal(b, &kc); err != nil {
 		Log.Fatal(err)
 	} else {

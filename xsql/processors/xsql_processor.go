@@ -270,14 +270,10 @@ func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
 }
 
 func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) {
+	opt := common.Config.Rule
 	//set default rule options
 	rule := &api.Rule{
-		Options: &api.RuleOption{
-			LateTol:            1000,
-			Concurrency:        1,
-			BufferLength:       1024,
-			CheckpointInterval: 300000, //5 minutes
-		},
+		Options: &opt,
 	}
 	if err := json.Unmarshal([]byte(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)
