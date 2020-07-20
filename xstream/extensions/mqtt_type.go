@@ -66,6 +66,7 @@ func intToBool(i int) bool {
 	return true
 }
 func changeType(modelType string, data interface{}) (interface{}, string) {
+	var err error
 	dataType := reflect.TypeOf(data).Kind()
 	switch dataType {
 	case reflect.Bool:
@@ -98,11 +99,13 @@ func changeType(modelType string, data interface{}) (interface{}, string) {
 		case "string":
 			return data, ""
 		case "float":
-			if data, err := strconv.ParseFloat(s, 64); nil != err {
+			data, err = strconv.ParseFloat(s, 64)
+			if nil != err {
 				return data, fmt.Sprintf("%v", err)
 			}
 		case "int":
-			if data, err := strconv.Atoi(s); nil != err {
+			data, err = strconv.Atoi(s)
+			if nil != err {
 				return data, fmt.Sprintf("%v", err)
 			}
 		default:
