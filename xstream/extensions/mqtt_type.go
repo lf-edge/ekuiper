@@ -98,9 +98,13 @@ func changeType(modelType string, data interface{}) (interface{}, string) {
 		case "string":
 			return data, ""
 		case "float":
-			data, _ = strconv.ParseFloat(s, 64)
+			if data, err := strconv.ParseFloat(s, 64); nil != err {
+				return data, fmt.Sprintf("%v", err)
+			}
 		case "int":
-			data, _ = strconv.Atoi(s)
+			if data, err := strconv.Atoi(s); nil != err {
+				return data, fmt.Sprintf("%v", err)
+			}
 		default:
 			return data, fmt.Sprintf("not support modelType : %s", modelType)
 		}

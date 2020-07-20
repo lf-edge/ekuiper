@@ -75,7 +75,7 @@ go build --buildmode=plugin -o plugins/sources/MySource.so plugins/sources/my_so
 如果您开发了源实现 MySource，则应该具有：
 1. 在插件文件中，将导出符号 MySource。
 2. 编译的 MySource.so 文件位于 _plugins/sources_ 内部。
-3. 如果需要配置，请将 mySource.yaml 放在 _etc/sources_ 中。
+3. 如果需要配置，请将 mySource.yaml 放在 _etc/sources_ 中。kubeedge
 
 要使用它，请定义一个流：
 ```sql
