@@ -39,7 +39,7 @@ func (this *device) getName() string {
 }
 func (this *device) findDataType(name string) string {
 	for _, v := range this.Properties {
-		if v.getName() == name {
+		if strings.ToLower(v.getName()) == strings.ToLower(name) {
 			return v.getDataType()
 		}
 	}
@@ -47,7 +47,7 @@ func (this *device) findDataType(name string) string {
 }
 func (this *deviceModel) findDataType(deviceId, dataName string) string {
 	for _, v := range this.Devices {
-		if v.getName() == deviceId {
+		if strings.ToLower(v.getName()) == strings.ToLower(deviceId) {
 			return v.findDataType(dataName)
 		}
 	}
@@ -144,6 +144,7 @@ func (this *deviceModel) checkType(m map[string]interface{}, topic string) []str
 		m[k], strErr = changeType(modelType, v)
 		if 0 != len(strErr) {
 			sliErr = append(sliErr, strErr)
+			delete(m, k)
 		}
 	}
 	return sliErr
