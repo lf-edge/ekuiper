@@ -29,12 +29,12 @@ port: 9081  //kuiper 端口
 timeout: 500  //执行一条命令超时时间（单位：毫秒）
 intervalTime: 60  //隔多久检查一次命令文件夹（单位：秒）
 ip: "127.0.0.1" //kuiper ip地址
-logPath: "./log/kubeedge.log" //日志保存路径
+logPath: "./log/kubernetes.log" //日志保存路径
 commandDir: "./sample/" //命令文件夹路径
 ```
 ### 1.4 编译程序：
 
-执行 `go build -o tools/kubeedge/kubeedge tools/kubeedge/main.go` 命令即可生成 kubeedge 程序。
+执行 `go build -o tools/kubernetes/kubernetes tools/kubernetes/main.go` 命令即可生成 kubernetes 程序。
 
 ## 2 流的操作示例
 

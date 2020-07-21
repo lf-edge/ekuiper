@@ -29,12 +29,12 @@ port: 9081  //kuiper port
 timeout: 500  //Timeout for executing a command (unit: ms)
 intervalTime: 60  //interval of Checking the command folder  (unit: seconds)
 ip: "127.0.0.1" //kuiper ip adress
-logPath: "./log/kubeedge.log" //Log save path
+logPath: "./log/kubernetes.log" //Log save path
 commandDir: "./sample/" //Command folder path
 ```
 ### 1.4 Compile the program:
 
-Execute the command of `go build -o tools/kubeedge/kubeedge tools/kubeedge/main.go` to generate the kubeedge program.
+Execute the command of `go build -o tools/kubernetes/kubernetes tools/kubernetes/main.go` to generate the kubernetes program.
 
 ## 2 Example of stream operation
 

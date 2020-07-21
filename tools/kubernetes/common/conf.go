@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/go-yaml/yaml"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -13,6 +11,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+
+	"github.com/go-yaml/yaml"
+	"github.com/sirupsen/logrus"
 )
 
 type (

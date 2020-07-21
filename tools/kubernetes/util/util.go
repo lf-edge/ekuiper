@@ -3,12 +3,13 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/emqx/kuiper/tools/kubeedge/common"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/emqx/kuiper/tools/kubernetes/common"
 )
 
 type (

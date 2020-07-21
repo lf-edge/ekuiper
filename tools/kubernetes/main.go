@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/emqx/kuiper/tools/kubeedge/util"
+	"github.com/emqx/kuiper/tools/kubernetes/util"
 )
 
 func main() {
