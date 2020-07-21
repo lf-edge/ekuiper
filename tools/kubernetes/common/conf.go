@@ -81,6 +81,7 @@ func (this *config) initConfig() bool {
 		return false
 	}
 	if _, err = os.Stat(this.CommandDir); os.IsNotExist(err) {
+		fmt.Println("not found dir : ", this.CommandDir)
 		return false
 	}
 
