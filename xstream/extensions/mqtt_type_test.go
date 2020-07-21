@@ -22,13 +22,13 @@ func TestCheckType(t *testing.T) {
 
 	for _, topic := range topics {
 		for _, data := range datas {
-			mode.checkType(data, topic)
+			strErrs := mode.checkType(data, topic)
 			for k, v := range data {
 				deviceid := topicToDeviceid(topic)
 				modelType := mode.findDataType(deviceid, k)
 				dataType := reflect.TypeOf(v).String()
 				if modelType != dataType {
-					t.Errorf("data:%s=%s mode:%s=%s\n", k, dataType, k, modelType)
+					t.Errorf("data:%s=%s mode:%s=%s err:%v\n", k, dataType, k, modelType, strErrs)
 				}
 			}
 		}
