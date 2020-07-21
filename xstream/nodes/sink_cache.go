@@ -88,6 +88,7 @@ func (c *Cache) initStore(ctx api.StreamContext) {
 	}
 	c.store = common.GetSimpleKVStore(path.Join(dbDir, "sink"))
 	c.key = ctx.GetRuleId() + ctx.GetOpId() + strconv.Itoa(ctx.GetInstanceId())
+	logger.Debugf("cache saved to key %s", c.key)
 	//load cache
 	if err := c.loadCache(); err != nil {
 		go c.drainError(err)

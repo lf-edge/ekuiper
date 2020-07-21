@@ -10,6 +10,7 @@ import (
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
+	"os"
 	"path"
 	"strings"
 )
@@ -382,12 +383,61 @@ func (p *RuleProcessor) ExecDrop(name string) (string, error) {
 		return "", err
 	}
 	defer p.db.Close()
+	result := fmt.Sprintf("Rule %s is dropped.", name)
+	if ruleJson, ok := p.db.Get(name); ok {
+		rule, err := p.getRuleByJson(name, ruleJson.(string))
+		if err != nil {
+			return "", err
+		}
+		if err := cleanSinkCache(rule); err != nil {
+			result = fmt.Sprintf("%s. Clean sink cache faile: %s.", result, err)
+		}
+		if err := cleanCheckpoint(name); err != nil {
+			result = fmt.Sprintf("%s. Clean checkpoint cache faile: %s.", result, err)
+		}
+	}
 	err = p.db.Delete(name)
 	if err != nil {
 		return "", err
 	} else {
-		return fmt.Sprintf("Rule %s is dropped.", name), nil
+		return result, nil
 	}
+}
+
+func cleanCheckpoint(name string) error {
+	dbDir, _ := common.GetDataLoc()
+	c := path.Join(dbDir, "checkpoints", name)
+	return os.RemoveAll(c)
+}
+
+func cleanSinkCache(rule *api.Rule) error {
+	dbDir, err := common.GetDataLoc()
+	if err != nil {
+		return err
+	}
+	store := common.GetSimpleKVStore(path.Join(dbDir, "sink"))
+	err = store.Open()
+	if err != nil {
+		return err
+	}
+	defer store.Close()
+	for d, m := range rule.Actions {
+		con := 1
+		for name, action := range m {
+			props, _ := action.(map[string]interface{})
+			if c, ok := props["concurrency"]; ok {
+				if t, err := common.ToInt(c); err == nil && t > 0 {
+					con = t
+				}
+			}
+			for i := 0; i < con; i++ {
+				key := fmt.Sprintf("%s%s_%d%d", rule.Id, name, d, i)
+				common.Log.Debugf("delete cache key %s", key)
+				store.Delete(key)
+			}
+		}
+	}
+	return nil
 }
 
 func (p *RuleProcessor) createTopo(rule *api.Rule) (*xstream.TopologyNew, []api.Emitter, error) {
