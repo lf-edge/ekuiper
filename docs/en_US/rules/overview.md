@@ -54,6 +54,8 @@ The current options includes:
 
 For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](state_and_fault_tolerance).
 
+The rule options can be defined globally in ``etc/kuiper.yaml`` under the ``rules`` section. The options defined in the rule json will override the global setting. 
+
 ## Sources
 
 - Kuiper provides embeded following 3 sources,

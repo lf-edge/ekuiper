@@ -40,6 +40,13 @@ function MySource() api.Source{
 
 The [Randome Source](../../../plugins/sources/random.go) is a good example.
 
+### Rewindable source
+If the [rule checkpoint](../rules/state_and_fault_tolerance.md#source-consideration) is enabled, the source requires to be rewindable. That means the source need to implement both ``api.Source`` and ``api.Rewindable`` interface. 
+
+A typical implementation is to save an ``offset`` as a field of the source. And update the offset value when reading in new value. Notice that, when implementing GetOffset() will be called by Kuiper system which means the offset value can be accessed by multiple go routines. So a lock is required when read or write the offset.
+
+
+
 ### Deal with configuration
 
 Kuiper configurations are formatted as yaml and it provides a centralize location _/etc_ to hold all the configurations. Inside it, a subfolder _sources_ is provided for the source configurations including the extended sources.

@@ -76,3 +76,49 @@ func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionConte
 	}
 }
 ```
+
+The state storage API includes
+
+```go
+/**
+ * Increase the builtin distributed counter referred by key
+ * @param key The name of the key
+ * @param amount The amount to be incremented
+ * @return error if any 
+ */
+IncrCounter(key string, amount int) error
+/**
+ * Retrieve the counter value by key
+ * @param key The name of the key
+ * @return the counter value
+ * @return error if any 
+ */
+GetCounter(key string) (int, error)
+/**
+ * Set or update the state value for the key.
+ *
+ * @param key name of the key
+ * @param value state value of the key
+ * @return error if any 
+ */
+PutState(key string, value interface{}) error
+/**
+ * Retrieve the state value for the key.
+ *
+ * @param key name of the key
+ * @return the state value
+ * @return error if any 
+ */
+GetState(key string) (interface{}, error)
+/**
+ * Delete the state value for the key.
+ *
+ * @param key name of the key
+ * @return error if any 
+ */
+DeleteState(key string) error
+```
+
+#### State data type
+
+The state can be any type. If the rule [checkpoint mechanism](../rules/state_and_fault_tolerance.md) is enabled, the state will be serialized by [golang gob](https://golang.org/pkg/encoding/gob/). So it is required to be gob compatibile. For custom data type, register the type by ``gob.Register(value interface{})`` .
