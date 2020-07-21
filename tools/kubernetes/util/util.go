@@ -210,6 +210,6 @@ func Process() {
 		se.printLogs()
 		return
 	}
-	fmt.Println("Kuiper kubeedge tool is started successfully!")
+	fmt.Println("Kuiper kubernetes tool is started successfully!")
 	se.watchFolders()
 }
