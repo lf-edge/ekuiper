@@ -42,7 +42,7 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 - 管理能力
   - 通过命令行对流、规则和插件进行管理
   - 通过 REST API 也可以对流、规则和插件进行管理
-  - 与 [KubeEdge](https://github.com/kubeedge/kubeedge)、[K3s](https://github.com/rancher/k3s) 等基于边缘 Kubernetes 框架的集成能力
+  - 与 [KubeEdge](https://github.com/kubeedge/kubeedge)、[K3s](https://github.com/rancher/k3s)、[Baetyl](https://github.com/baetyl/baetyl) 等基于边缘 Kubernetes 框架的集成能力
 
 - 与 EMQ X Edge 集成
 
