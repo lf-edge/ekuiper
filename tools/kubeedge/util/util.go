@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 	"time"
 )
 
@@ -146,6 +147,9 @@ func (this *server) processDir() bool {
 	conf := common.GetConf()
 	host := fmt.Sprintf(`http://%s:%d`, conf.GetIp(), conf.GetPort())
 	for _, info := range infos {
+		if !strings.HasSuffix(info.Name(), ".json") {
+			continue
+		}
 		if !this.isUpdate(info) {
 			continue
 		}
