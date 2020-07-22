@@ -515,6 +515,12 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			if dimensions != nil {
 				w = dimensions.GetWindow()
 				if w != nil {
+					if w.Filter != nil {
+						wfilterOp := xstream.Transform(&plans.FilterPlan{Condition: w.Filter}, "windowFilter", rule.Options.BufferLength)
+						wfilterOp.SetConcurrency(rule.Options.Concurrency)
+						tp.AddOperator(inputs, wfilterOp)
+						inputs = []api.Emitter{wfilterOp}
+					}
 					wop, err := nodes.NewWindowOp("window", w, rule.Options.IsEventTime, rule.Options.LateTol, streamsFromStmt, rule.Options.BufferLength)
 					if err != nil {
 						return nil, nil, err

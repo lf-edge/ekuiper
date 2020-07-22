@@ -243,6 +243,7 @@ type Window struct {
 	WindowType WindowType
 	Length     *IntegerLiteral
 	Interval   *IntegerLiteral
+	Filter     Expr
 }
 
 func (w *Window) expr()    {}

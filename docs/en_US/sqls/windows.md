@@ -119,6 +119,15 @@ The SQL has following conditions,
 - It only get events with temperature that is great than 20.
 - Finally it has a condition that message count should be larger than 2. If `HAVING` condition is `COUNT(*)  = 5`, then it means all of values in the window should satisfy `WHERE` condition.
 
+## Filter Window Inputs
+
+In some cases, not all the inputs are needed for the window. Filter clause is presented to filter out input data given the condition. Unlike `where` clause, the filter clause runs before the window partitioning. The result will be different especially for count window. If filter with `where` clause for data with count window of length 3, the output length will vary across windows; while filter with `filter` clause, the output length will be always 3.
+
+The filter clause must follow the window function. The filter clause must be like `FILTER(WHERE expr)`. Example:
+```sql
+SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FITLER(where revenue > 100)
+```
+
 ## Timestamp Management
 
 Every event has a timestamp associated with it. The timestamp will be used to calculate the window. By default, a timestamp will be added when an event feed into the source which is called `processing time`. We also support to specify a field as the timestamp, which is called `event time`. The timestamp field is specified in the stream definition. In the below definition, the field `ts` is specified as the timestamp field.
