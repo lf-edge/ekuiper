@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/benbjohnson/clock"
+	"github.com/emqx/kuiper/xstream/api"
 	"github.com/go-yaml/yaml"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 )
 
 const (
@@ -67,6 +69,7 @@ type KuiperConf struct {
 		Prometheus     bool     `yaml:"prometheus"`
 		PrometheusPort int      `yaml:"prometheusPort"`
 	}
+	Rule api.RuleOption
 	Sink struct {
 		CacheThreshold    int `yaml:"cacheThreshold"`
 		CacheTriggerCount int `yaml:"cacheTriggerCount"`
@@ -105,7 +108,14 @@ func InitConf() {
 		Log.Fatal(err)
 	}
 
-	kc := KuiperConf{}
+	kc := KuiperConf{
+		Rule: api.RuleOption{
+			LateTol:            1000,
+			Concurrency:        1,
+			BufferLength:       1024,
+			CheckpointInterval: 300000, //5 minutes
+		},
+	}
 	if err := yaml.Unmarshal(b, &kc); err != nil {
 		Log.Fatal(err)
 	} else {
@@ -161,6 +171,20 @@ func GetConfLoc() (string, error) {
 }
 
 func GetDataLoc() (string, error) {
+	if IsTesting {
+		dataDir, err := GetLoc(data_dir)
+		if err != nil {
+			return "", err
+		}
+		d := path.Join(path.Dir(dataDir), "test")
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			err = os.MkdirAll(d, 0755)
+			if err != nil {
+				return "", err
+			}
+		}
+		return d, nil
+	}
 	return GetLoc(data_dir)
 }
 
@@ -228,7 +252,6 @@ func relativePath(subdir string) (dir string, err error) {
 		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
 		dir = base
 	}
-
 	confDir := dir + subdir
 	if _, err := os.Stat(confDir); os.IsNotExist(err) {
 		lastdir := dir
@@ -252,21 +275,6 @@ func relativePath(subdir string) (dir string, err error) {
 	}
 
 	return "", fmt.Errorf("conf dir not found, please set KuiperBaseKey program environment variable correctly.")
-}
-
-func GetAndCreateDataLoc(dir string) (string, error) {
-	dataDir, err := GetDataLoc()
-	if err != nil {
-		return "", err
-	}
-	d := path.Join(path.Dir(dataDir), dir)
-	if _, err := os.Stat(d); os.IsNotExist(err) {
-		err = os.MkdirAll(d, 0755)
-		if err != nil {
-			return "", err
-		}
-	}
-	return d, nil
 }
 
 func ProcessPath(p string) (string, error) {
@@ -339,4 +347,21 @@ func ConvertArray(s []interface{}) []interface{} {
 		r[i] = e
 	}
 	return r
+}
+
+func SyncMapToMap(sm *sync.Map) map[string]interface{} {
+	m := make(map[string]interface{})
+	sm.Range(func(k interface{}, v interface{}) bool {
+		m[fmt.Sprintf("%v", k)] = v
+		return true
+	})
+	return m
+}
+
+func MapToSyncMap(m map[string]interface{}) *sync.Map {
+	sm := new(sync.Map)
+	for k, v := range m {
+		sm.Store(k, v)
+	}
+	return sm
 }

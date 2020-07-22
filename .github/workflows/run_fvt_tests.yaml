@@ -212,8 +212,8 @@ jobs:
           
           sudo docker save emqx/kuiper:$version-alpine -o kuier.tar.gz
           sudo k3s ctr image import kuier.tar.gz
-          
-          sed -i -r "s/^appVersion: .*$/appVersion: ${version}/g" deploy/chart/kuiper/Chart.yaml
+
+          sed -i -r "s/^appVersion: .*$/appVersion: \"${version}\"/g" deploy/chart/kuiper/Chart.yaml
           sed -i -r 's/  pullPolicy: .*$/  pullPolicy: Never/g' deploy/chart/kuiper/values.yaml
           sed -i -r "s/      servers: \[.*\]$/      servers: \[tcp:\/\/${emqx_address}:1883\]/g" deploy/chart/kuiper/values.yaml
           

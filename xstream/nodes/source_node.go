@@ -1,7 +1,6 @@
 package nodes
 
 import (
-	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xsql"
@@ -12,17 +11,13 @@ import (
 )
 
 type SourceNode struct {
-	sourceType  string
-	outs        map[string]chan<- interface{}
-	name        string
-	ctx         api.StreamContext
-	options     map[string]string
-	concurrency int
-	isMock      bool
+	*defaultNode
+	sourceType string
+	options    map[string]string
+	isMock     bool
 
-	mutex        sync.RWMutex
-	sources      []api.Source
-	statManagers []StatManager
+	mutex   sync.RWMutex
+	sources []api.Source
 }
 
 func NewSourceNode(name string, options map[string]string) *SourceNode {
@@ -31,25 +26,29 @@ func NewSourceNode(name string, options map[string]string) *SourceNode {
 		t = "mqtt"
 	}
 	return &SourceNode{
-		sourceType:  t,
-		outs:        make(map[string]chan<- interface{}),
-		name:        name,
-		options:     options,
-		ctx:         nil,
-		concurrency: 1,
+		sourceType: t,
+		defaultNode: &defaultNode{
+			name:        name,
+			outputs:     make(map[string]chan<- interface{}),
+			concurrency: 1,
+		},
+		options: options,
 	}
 }
+
+const OFFSET_KEY = "$$offset"
 
 //Only for mock source, do not use it in production
 func NewSourceNodeWithSource(name string, source api.Source, options map[string]string) *SourceNode {
 	return &SourceNode{
-		sources:     []api.Source{source},
-		outs:        make(map[string]chan<- interface{}),
-		name:        name,
-		options:     options,
-		ctx:         nil,
-		concurrency: 1,
-		isMock:      true,
+		sources: []api.Source{source},
+		defaultNode: &defaultNode{
+			name:        name,
+			outputs:     make(map[string]chan<- interface{}),
+			concurrency: 1,
+		},
+		options: options,
+		isMock:  true,
 	}
 }
 
@@ -108,6 +107,18 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.statManagers = append(m.statManagers, stats)
 				m.mutex.Unlock()
 
+				if rw, ok := source.(api.Rewindable); ok {
+					if offset, err := ctx.GetState(OFFSET_KEY); err != nil {
+						m.drainError(errCh, err, ctx, logger)
+					} else if offset != nil {
+						logger.Infof("Source rewind from %v", offset)
+						err = rw.Rewind(offset)
+						if err != nil {
+							m.drainError(errCh, err, ctx, logger)
+						}
+					}
+				}
+
 				buffer := NewDynamicChannelBuffer()
 				buffer.SetLimit(bl)
 				sourceErrCh := make(chan error)
@@ -127,10 +138,22 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						stats.ProcessTimeStart()
 						tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: common.GetNowInMilli(), Metadata: data.Meta()}
 						stats.ProcessTimeEnd()
+						logger.Debugf("source node is sending %+v", tuple)
 						//blocking
-						Broadcast(m.outs, tuple, ctx)
+						m.Broadcast(tuple)
 						stats.IncTotalRecordsOut()
 						stats.SetBufferLength(int64(buffer.GetLength()))
+						if rw, ok := source.(api.Rewindable); ok {
+							if offset, err := rw.GetOffset(); err != nil {
+								m.drainError(errCh, err, ctx, logger)
+							} else {
+								err = ctx.PutState(OFFSET_KEY, offset)
+								if err != nil {
+									m.drainError(errCh, err, ctx, logger)
+								}
+								logger.Debugf("Source save offset %v", offset)
+							}
+						}
 						logger.Debugf("%s consume data %v complete", m.name, tuple)
 					}
 				}
@@ -218,24 +241,4 @@ func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
 	}
 	logger.Debugf("get conf for %s with conf key %s: %v", m.sourceType, confkey, props)
 	return props
-}
-
-func (m *SourceNode) GetName() string {
-	return m.name
-}
-
-func (m *SourceNode) AddOutput(output chan<- interface{}, name string) (err error) {
-	if _, ok := m.outs[name]; !ok {
-		m.outs[name] = output
-	} else {
-		return fmt.Errorf("fail to add output %s, stream node %s already has an output of the same name", name, m.name)
-	}
-	return nil
-}
-
-func (m *SourceNode) GetMetrics() (result [][]interface{}) {
-	for _, stats := range m.statManagers {
-		result = append(result, stats.GetMetrics())
-	}
-	return result
 }
