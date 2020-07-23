@@ -1,7 +1,6 @@
 name: Build packages
 
 on:
-    push:
     pull_request:
     release:
         types:
@@ -106,7 +105,43 @@ jobs:
           run: |
             echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
             make cross_docker
-      
+
+    build-kubernetes-tool:
+        runs-on: ubuntu-latest
+
+        steps:
+        - uses: actions/checkout@v1
+        - name: install docker
+          run: |
+            sudo apt-get remove docker docker-engine docker.io containerd runc
+            sudo apt-get update
+            sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            sudo apt-get update
+            sudo apt-get install docker-ce docker-ce-cli containerd.io
+        - name: prepare docker
+          run: |
+            mkdir -p $HOME/.docker
+            echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
+            echo '{ "experimental": true, "storage-driver": "overlay2", "max-concurrent-downloads": 50, "max-concurrent-uploads": 50, "graph": "/mnt/docker" }' | sudo tee /etc/docker/daemon.json
+            sudo systemctl restart docker
+            docker version
+            docker buildx create --use --name mybuild
+        - name: build docker image
+          run: docker build --no-cache -t emqx/kuiper-kubernetes-tool:$(git describe --tags --always) -f deploy/docker/Dockerfile-kubernetes-tool .
+        - name: test docker image
+          run: |
+            set -e -u -x
+            docker run -d --name kuiper-kubernetes-tool emqx/kuiper-kubernetes-tool:$(git describe --tags --always)
+            sleep 5
+            if [ "$(docker logs kuiper-kubernetes-tool)" != "Kuiper kubernetes tool is started successfully!"  ]; then exit 1; fi
+        - name: push docker image
+          if: github.event_name == 'release'
+          run: |
+            echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
+            docker push emqx/kuiper-kubernetes-tool:$(git describe --tags --always)
+
     release:
         runs-on: ubuntu-latest
 

@@ -1,0 +1,19 @@
+FROM golang:1.14-alpine AS builder
+
+COPY . /go/kuiper
+
+WORKDIR /go/kuiper
+
+RUN go build -o tools/kubernetes/kuiper-kubernetes-tool tools/kubernetes/main.go
+
+FROM alpine:3.12
+
+WORKDIR /kuiper-kubernetes-tool
+
+RUN mkdir -p log
+
+COPY --from=builder /go/kuiper/tools/kubernetes/kuiper-kubernetes-tool .
+COPY --from=builder /go/kuiper/tools/kubernetes/etc etc
+COPY --from=builder /go/kuiper/tools/kubernetes/sample sample
+
+CMD ["./kuiper-kubernetes-tool", "etc/cf.yaml"]

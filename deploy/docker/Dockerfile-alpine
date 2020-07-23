@@ -9,7 +9,7 @@ RUN go build  -o kuiper_conf_util deploy/docker/conf_util.go \
     && if [ "$(uname -m)" == "x86_64" ]; then apk add upx && upx ./kuiper_conf_util; fi
 RUN make build_with_edgex
 
-FROM alpine:3.10
+FROM alpine:3.12
 
 COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 COPY --from=builder /go/kuiper/kuiper_conf_util /usr/bin/kuiper_conf_util
