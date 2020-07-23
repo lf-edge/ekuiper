@@ -497,20 +497,18 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 				if err != nil {
 					return nil, nil, err
 				}
+				var srcNode *nodes.SourceNode
 				if shouldCreateSource {
 					node := nodes.NewSourceNode(s, streamStmt.Options)
-					tp.AddSrc(node)
-					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s, rule.Options.BufferLength)
-					preprocessorOp.SetConcurrency(rule.Options.Concurrency)
-					tp.AddOperator([]api.Emitter{node}, preprocessorOp)
-					inputs = append(inputs, preprocessorOp)
+					srcNode = node
 				} else {
-					tp.AddSrc(sources[i])
-					preprocessorOp := xstream.Transform(pp, "preprocessor_"+s, rule.Options.BufferLength)
-					preprocessorOp.SetConcurrency(rule.Options.Concurrency)
-					tp.AddOperator([]api.Emitter{sources[i]}, preprocessorOp)
-					inputs = append(inputs, preprocessorOp)
+					srcNode = sources[i]
 				}
+				tp.AddSrc(srcNode)
+				preprocessorOp := xstream.Transform(pp, "preprocessor_"+s, rule.Options.BufferLength)
+				preprocessorOp.SetConcurrency(rule.Options.Concurrency)
+				tp.AddOperator([]api.Emitter{srcNode}, preprocessorOp)
+				inputs = append(inputs, preprocessorOp)
 			}
 
 			var w *xsql.Window
