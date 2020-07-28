@@ -116,6 +116,16 @@ SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT
 - 只获取 `temperature`  大于 20 的数据
 - 最后一个条件为消息的条数应该大于 2。如果 `HAVING`  条件为 `COUNT(*)  = 5`， 那么意味着窗口里所有的事件都应该满足 `WHERE` 条件
 
+## 过滤窗口输入
+
+在某些情况下，窗口不需要所有输入。`filter` 子句用于过滤给定条件下的输入数据。与 `where` 子句不同，`filter` 子句在窗口分区之前运行。结果会有所不同，特别是计数窗口。如果对带有长度为 3 的计数窗口的数据使用 `where` 子句进行过滤，则输出长度将随窗口的不同而变化；而使用 `filter` 子句进行筛选时，输出长度将始终为 3。
+
+filter 子句必须跟在 window 函数后面。filter子句必须类似于 `FILTER(WHERE expr)`。例如：
+
+```sql
+SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FITLER(where revenue > 100)
+```
+
 ## 时间戳管理
 
 每个事件都有一个与之关联的时间戳。 时间戳将用于计算窗口。 默认情况下，当事件输入到源时，将添加时间戳，称为`处理时间`。 我们还支持将某个字段指定为时间戳，称为`事件时间`。 时间戳字段在流定义中指定。 在下面的定义中，字段 `ts` 被指定为时间戳字段。
