@@ -97,7 +97,7 @@ cross_build: cross_prepare
 	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
 	-t cross_build \
 	--output type=tar,dest=cross_build.tar \
-	-f ./Dockerfile .
+	-f .ci/Dockerfile .
 
 	@mkdir -p $(PACKAGES_PATH)
 	@tar -xvf cross_build.tar --wildcards linux_amd64/go/kuiper/_packages/ \
@@ -122,7 +122,7 @@ cross_build_for_rpm: cross_prepare
 	--platform=linux/amd64,linux/arm64,linux/386,linux/ppc64le \
 	-t cross_build \
 	--output type=tar,dest=cross_build_for_rpm.tar \
-	-f ./Dockerfile-centos .
+	-f .ci/Dockerfile-centos .
 
 	@mkdir -p $(PACKAGES_PATH)
 	@tar -xvf cross_build_for_rpm.tar --wildcards linux_amd64/go/kuiper/_packages/ \
