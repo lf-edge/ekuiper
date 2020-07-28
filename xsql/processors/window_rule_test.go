@@ -494,6 +494,63 @@ func TestWindow(t *testing.T) {
 				"op_having_0_records_in_total":   int64(2),
 				"op_having_0_records_out_total":  int64(1),
 			},
+		}, {
+			name: `TestWindowRule9`,
+			sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1) FILTER( WHERE size > 2)`,
+			r: [][]map[string]interface{}{
+				{{
+					"color": "red",
+					"size":  float64(3),
+					"ts":    float64(1541152486013),
+				}, {
+					"color": "blue",
+					"size":  float64(6),
+					"ts":    float64(1541152486822),
+				}},
+				{{
+					"color": "red",
+					"size":  float64(3),
+					"ts":    float64(1541152486013),
+				}, {
+					"color": "blue",
+					"size":  float64(6),
+					"ts":    float64(1541152486822),
+				}},
+				{{
+					"color": "yellow",
+					"size":  float64(4),
+					"ts":    float64(1541152488442),
+				}},
+				{{
+					"color": "yellow",
+					"size":  float64(4),
+					"ts":    float64(1541152488442),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(4),
+				"op_project_0_records_out_total":  int64(4),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(3),
+				"op_window_0_records_out_total":  int64(4),
+			},
 		},
 	}
 	handleStream(true, streamList, t)

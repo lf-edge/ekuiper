@@ -1442,6 +1442,76 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 			stmt: nil,
 			err:  "The second parameter value 5 should be less than the first parameter 3.",
 		},
+		{
+			s: `SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER( where revenue > 100 )`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &Wildcard{Token: ASTERISK},
+						Name:  "",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "demo"}},
+				Dimensions: Dimensions{
+					Dimension{
+						Expr: &Window{
+							WindowType: COUNT_WINDOW,
+							Length:     &IntegerLiteral{Val: 3},
+							Interval:   &IntegerLiteral{Val: 1},
+							Filter: &BinaryExpr{
+								LHS: &FieldRef{Name: "revenue"},
+								OP:  GT,
+								RHS: &IntegerLiteral{Val: 100},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			s: `SELECT * FROM demo GROUP BY department, COUNTWINDOW(3,1) FILTER( where revenue > 100 ), year`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &Wildcard{Token: ASTERISK},
+						Name:  "",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "demo"}},
+				Dimensions: Dimensions{
+					Dimension{Expr: &FieldRef{Name: "department"}},
+					Dimension{
+						Expr: &Window{
+							WindowType: COUNT_WINDOW,
+							Length:     &IntegerLiteral{Val: 3},
+							Interval:   &IntegerLiteral{Val: 1},
+							Filter: &BinaryExpr{
+								LHS: &FieldRef{Name: "revenue"},
+								OP:  GT,
+								RHS: &IntegerLiteral{Val: 100},
+							},
+						},
+					},
+					Dimension{Expr: &FieldRef{Name: "year"}},
+				},
+			},
+		},
+		//to be supported
+		{
+			s:    `SELECT sum(f1) FILTER( where revenue > 100 ) FROM tbl GROUP BY year`,
+			stmt: nil,
+			err:  "found \"FILTER\", expected FROM.",
+		},
+		{
+			s:    `SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER where revenue > 100`,
+			stmt: nil,
+			err:  "Found \"WHERE\" after FILTER, expect parentheses.",
+		},
+		{
+			s:    `SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) where revenue > 100`,
+			stmt: nil,
+			err:  "found \"WHERE\", expected EOF.",
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
