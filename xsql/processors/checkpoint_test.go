@@ -131,10 +131,10 @@ func doCheckpointRuleTest(t *testing.T, tests []ruleCheckpointTest, j int, opt *
 		}
 		log.Debugf("Send first phase data done at %d", common.GetNowInMilli())
 		// compare checkpoint count
-		actual := tp.GetCoordinator().GetCompleteCount()
 		var retry int
 		for retry = 100; retry > 0; retry-- {
 			time.Sleep(time.Duration(retry) * time.Millisecond)
+			actual := tp.GetCoordinator().GetCompleteCount()
 			if reflect.DeepEqual(tt.cc, actual) {
 				break
 			} else {
@@ -143,7 +143,7 @@ func doCheckpointRuleTest(t *testing.T, tests []ruleCheckpointTest, j int, opt *
 		}
 		tp.Cancel()
 		if retry == 0 {
-			t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, j, tt.cc, actual)
+			t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, j, tt.cc, tp.GetCoordinator().GetCompleteCount())
 			return
 		}
 		time.Sleep(10 * time.Millisecond)
