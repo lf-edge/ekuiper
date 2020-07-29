@@ -20,6 +20,8 @@ EXPOSE 9081 20498
 ENV KUIPER_HOME /usr/local/kuiper
 ENV KUIPER__BASIC__CONSOLELOG true
 
+WORKDIR /usr/local/kuiper
+VOLUME ["/usr/local/kuiper/etc", "/usr/local/kuiper/data", "/usr/local/kuiper/plugins", "/usr/local/kuiper/log"]
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
-CMD ["sh", "-c", "cd /usr/local/kuiper && ./bin/server"]
+CMD ["./bin/server"]
