@@ -22,17 +22,15 @@ go build --buildmode=plugin -o /$kuiper/plugins/sinks/Taos@v1.0.0.so /$kuiper/pl
 
 ## 规则 Actions 说明
 
-```json
-{
-    "port":0,									//数据库端口
-    "ip":"127.0.0.1",					//数据库ip
-    "user":"root",						//用户名
-    "password":"taosdata",		//密码
-    "database":"dbName",			//数据库名
-    "table":"tableName",			//表名
-    "fields":["time","age"]		//表字段名（可无，无表字段时用数据的key替代）
-}
-```
+| 名称     | 类型     | 是否必填                      | 释义       |
+| -------- | -------- | ----------------------------- | ---------- |
+| ip       | string   | 必填                          | 数据库ip   |
+| port     | int      | 必填                          | 数据库端口 |
+| user     | string   | 必填                          | 用户名     |
+| password | string   | 必填                          | 密码       |
+| database | string   | 必填                          | 数据库名   |
+| table    | string   | 必填                          | 表名       |
+| fields   | []string | 选填（不填时用数据的key替代） | 表字段集合 |
 
 ## 操作示例
 
