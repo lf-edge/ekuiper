@@ -22,6 +22,7 @@ WORKDIR /kuiper
 ENV KUIPER_HOME /kuiper
 ENV KUIPER__BASIC__CONSOLELOG true
 
+VOLUME ["/kuiper/etc", "/kuiper/data", "/kuiper/plugins", "/kuiper/log"]
 EXPOSE 9081 20498
 
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
