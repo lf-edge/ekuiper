@@ -30,6 +30,7 @@
 | databasename | 是       | InfluxDB的数据库         |
 | tagkey       | 是       | InfluxDB的标签键         |
 | tagvalue     | 是       | InfluxDB的标签值         |
+| fields     | 是       | InfluxDB的列名,用","隔开         |
 ## 示例用法
 
 下面是选择温度大于50度的样本规则，和一些配置文件仅供参考。
@@ -49,7 +50,8 @@
        "measurement": "test",
        "databasename": "databasename",
        "tagkey": "tagkey",
-       "tagvalue": "tagvalue"
+       "tagvalue": "tagvalue",
+       "fields": "humidity,temperature,pressure"
       }
     }
   ]
