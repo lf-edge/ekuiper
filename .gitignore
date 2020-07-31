@@ -29,3 +29,6 @@ jmeter_logs
 kuiper_conf_util
 corss_build.tar
 corss_build_for_rpm.tar
+
+*.swp
+*.history

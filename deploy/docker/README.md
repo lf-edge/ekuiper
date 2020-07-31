@@ -165,50 +165,9 @@ MQTT_SOURCES__DEMO_CONF__QOS => demo_conf.qos in etc/mqtt_source.yaml
 
 The environment variables are separated by two "_", the content of the first part after the separation matches the file name of the configuration file, and the remaining content matches the different levels of the configuration item.
 
-At the same time, Kuiper provides some fixed format environment variables to modify specific configurations, but this part of the content will be abolished in subsequent versions, please use with caution.
+### About EdgeX
 
-Use the environment variable to configure `etc/client.yaml`  on the Kuiper container.
-
-| Options                         | Default               | Mapped                      |
-| ------------------------------- | --------------------- | --------------------------- |
-| CLIENT_HOST                     | 127.0.0.1             | client.basic.debug          |
-| CLIENT_PORT                     | 20498                 | client.basic.port           |
-
-Use the environment variable to configure `etc/kuiper.yaml`  on the Kuiper container.
-
-| Options                         | Default               | Mapped                      |
-| ------------------------------- | --------------------- | --------------------------- |
-| KUIPER_DEBUG                    | false                 | kuiper.basic.debug          |
-| KUIPER_CONSOLE_LOG              | false                 | kuiper.basic.consoleLog     |
-| KUIPER_FILE_LOG                 | true                  | kuiper.basic.fileLog        |
-| KUIPER_PORT                     | 20498                 | kuiper.basic.port           |
-| KUIPER_REST_PORT                | 9081                  | kuiper.basic.restPort       |
-| KUIPER_PROMETHEUS               | false                 | kuiper.basic.prometheus     |
-| KUIPER_PROMETHEUS_PORT          | 20499                 | kuiper.basic.prometheusPort |
-
-Use the environment variable to configure `etc/mqtt_sources.yaml`  on the Kuiper container.
-
-| Options                         | Default               | Mapped                      |
-| ------------------------------- | --------------------- | --------------------------- |
-| MQTT_BROKER_ADDRESS             | tcp://127.0.0.1:1883  | default.servers             |
-| MQTT_BROKER_SHARED_SUBSCRIPTION | true                  | default.sharedSubscription  |
-| MQTT_BROKER_QOS                 | 1                     | default.qos                 |
-| MQTT_BROKER_USERNAME            |                       | default.username            |
-| MQTT_BROKER_PASSWORD            |                       | default.password            |
-| MQTT_BROKER_CER_PATH            |                       | default.certificationPath   |
-| MQTT_BROKER_KEY_PATH            |                       | default.privateKeyPath      |
-
-Use the environment variable to configure `etc/sources/edgex.yaml`  on the Kuiper container.
-
-| Options                    | Default                  | Mapped                    |
-| ---------------------------| -------------------------| ------------------------- |
-| EDGEX_PROTOCOL             | tcp                      | default.protocol          |
-| EDGEX_SERVER               | localhost                | default.server            |
-| EDGEX_PORT                 | 5563                     | default.port              |
-| EDGEX_TOPIC                | events                   | default.topic             |
-| EDGEX_SERVICE_SERVER       | http://localhost:48080   | default.serviceServer     |
-
-All of the environment variable should be set with corresponding values that configured in file ``cmd/core-data/res/configuration.toml`` of EdgeX core-data service, as listed in below.
+Regarding the configuration content of `etc/sources/edgex.yaml`, these values are configured in the cmd `cmd/core-data/res/configuration.toml` of the EdgeX core data service, as shown below.
 
 ```
 [MessageQueue]

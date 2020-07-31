@@ -66,6 +66,7 @@ func intToBool(i int) bool {
 	return true
 }
 func changeType(modelType string, data interface{}) (interface{}, string) {
+	var err error
 	dataType := reflect.TypeOf(data).Kind()
 	switch dataType {
 	case reflect.Bool:
@@ -98,9 +99,15 @@ func changeType(modelType string, data interface{}) (interface{}, string) {
 		case "string":
 			return data, ""
 		case "float":
-			data, _ = strconv.ParseFloat(s, 64)
+			data, err = strconv.ParseFloat(s, 64)
+			if nil != err {
+				return data, fmt.Sprintf("%v", err)
+			}
 		case "int":
-			data, _ = strconv.Atoi(s)
+			data, err = strconv.Atoi(s)
+			if nil != err {
+				return data, fmt.Sprintf("%v", err)
+			}
 		default:
 			return data, fmt.Sprintf("not support modelType : %s", modelType)
 		}

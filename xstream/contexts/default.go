@@ -2,10 +2,11 @@ package contexts
 
 import (
 	"context"
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
-	"github.com/emqx/kuiper/xstream/states"
 	"github.com/sirupsen/logrus"
+	"sync"
 	"time"
 )
 
@@ -17,16 +18,16 @@ type DefaultContext struct {
 	instanceId int
 	ctx        context.Context
 	err        error
-
-	state states.StateContext
+	//Only initialized after withMeta set
+	store    api.Store
+	state    *sync.Map
+	snapshot map[string]interface{}
 }
 
 func Background() *DefaultContext {
 	c := &DefaultContext{
 		ctx: context.Background(),
 	}
-	s := states.NewStateContext(states.MEMORY, c.GetLogger())
-	c.state = s
 	return c
 }
 
@@ -84,13 +85,18 @@ func (c *DefaultContext) SetError(err error) {
 	c.err = err
 }
 
-func (c *DefaultContext) WithMeta(ruleId string, opId string) api.StreamContext {
+func (c *DefaultContext) WithMeta(ruleId string, opId string, store api.Store) api.StreamContext {
+	s, err := store.GetOpState(opId)
+	if err != nil {
+		c.GetLogger().Warnf("Initialize context store error for %s: %s", opId, err)
+	}
 	return &DefaultContext{
 		ruleId:     ruleId,
 		opId:       opId,
 		instanceId: 0,
 		ctx:        c.ctx,
-		state:      c.state,
+		store:      store,
+		state:      s,
 	}
 }
 
@@ -116,21 +122,59 @@ func (c *DefaultContext) WithCancel() (api.StreamContext, context.CancelFunc) {
 }
 
 func (c *DefaultContext) IncrCounter(key string, amount int) error {
-	return c.state.IncrCounter(key, amount)
+	if v, ok := c.state.Load(key); ok {
+		if vi, err := common.ToInt(v); err != nil {
+			return fmt.Errorf("state[%s] must be an int", key)
+		} else {
+			c.state.Store(key, vi+amount)
+		}
+	} else {
+		c.state.Store(key, amount)
+	}
+	return nil
 }
 
 func (c *DefaultContext) GetCounter(key string) (int, error) {
-	return c.state.GetCounter(key)
+	if v, ok := c.state.Load(key); ok {
+		if vi, err := common.ToInt(v); err != nil {
+			return 0, fmt.Errorf("state[%s] is not a number, but %v", key, v)
+		} else {
+			return vi, nil
+		}
+	} else {
+		c.state.Store(key, 0)
+		return 0, nil
+	}
 }
 
 func (c *DefaultContext) PutState(key string, value interface{}) error {
-	return c.state.PutState(key, value)
+	c.state.Store(key, value)
+	return nil
 }
 
 func (c *DefaultContext) GetState(key string) (interface{}, error) {
-	return c.state.GetState(key)
+	if v, ok := c.state.Load(key); ok {
+		return v, nil
+	} else {
+		return nil, nil
+	}
 }
 
 func (c *DefaultContext) DeleteState(key string) error {
-	return c.state.DeleteState(key)
+	c.state.Delete(key)
+	return nil
+}
+
+func (c *DefaultContext) Snapshot() error {
+	c.snapshot = common.SyncMapToMap(c.state)
+	return nil
+}
+
+func (c *DefaultContext) SaveState(checkpointId int64) error {
+	err := c.store.SaveState(checkpointId, c.opId, c.snapshot)
+	if err != nil {
+		return err
+	}
+	c.snapshot = nil
+	return nil
 }

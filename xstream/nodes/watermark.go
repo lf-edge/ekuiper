@@ -1,16 +1,12 @@
-package operators
+package nodes
 
 import (
 	"context"
 	"fmt"
-	"github.com/benbjohnson/clock"
-	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"github.com/emqx/kuiper/xstream/nodes"
 	"math"
 	"sort"
-	"time"
 )
 
 type WatermarkTuple struct {
@@ -25,15 +21,18 @@ func (t *WatermarkTuple) IsWatermark() bool {
 	return true
 }
 
+const WATERMARK_KEY = "$$wartermark"
+
 type WatermarkGenerator struct {
+	inputTopics   []string
+	topicToTs     map[string]int64
+	window        *WindowConfig
+	lateTolerance int64
+	interval      int
+	//ticker          *clock.Ticker
+	stream chan<- interface{}
+	//state
 	lastWatermarkTs int64
-	inputTopics     []string
-	topicToTs       map[string]int64
-	window          *WindowConfig
-	lateTolerance   int64
-	interval        int
-	ticker          *clock.Ticker
-	stream          chan<- interface{}
 }
 
 func NewWatermarkGenerator(window *WindowConfig, l int64, s []string, stream chan<- interface{}) (*WatermarkGenerator, error) {
@@ -44,20 +43,16 @@ func NewWatermarkGenerator(window *WindowConfig, l int64, s []string, stream cha
 		inputTopics:   s,
 		stream:        stream,
 	}
-	//Tickers to update watermark
 	switch window.Type {
 	case xsql.NOT_WINDOW:
 	case xsql.TUMBLING_WINDOW:
-		w.ticker = common.GetTicker(window.Length)
 		w.interval = window.Length
 	case xsql.HOPPING_WINDOW:
-		w.ticker = common.GetTicker(window.Interval)
 		w.interval = window.Interval
 	case xsql.SLIDING_WINDOW:
 		w.interval = window.Length
 	case xsql.SESSION_WINDOW:
 		//Use timeout to update watermark
-		w.ticker = common.GetTicker(window.Interval)
 		w.interval = window.Interval
 	default:
 		return nil, fmt.Errorf("unsupported window type %d", window.Type)
@@ -74,33 +69,9 @@ func (w *WatermarkGenerator) track(s string, ts int64, ctx api.StreamContext) bo
 	}
 	r := ts >= w.lastWatermarkTs
 	if r {
-		switch w.window.Type {
-		case xsql.SLIDING_WINDOW:
-			w.trigger(ctx)
-		}
+		w.trigger(ctx)
 	}
 	return r
-}
-
-func (w *WatermarkGenerator) start(ctx api.StreamContext) {
-	log := ctx.GetLogger()
-	var c <-chan time.Time
-
-	if w.ticker != nil {
-		c = w.ticker.C
-	}
-	for {
-		select {
-		case <-c:
-			w.trigger(ctx)
-		case <-ctx.Done():
-			log.Infoln("Cancelling watermark generator....")
-			if w.ticker != nil {
-				w.ticker.Stop()
-			}
-			return
-		}
-	}
 }
 
 func (w *WatermarkGenerator) trigger(ctx api.StreamContext) {
@@ -114,11 +85,12 @@ func (w *WatermarkGenerator) trigger(ctx api.StreamContext) {
 		default: //TODO need to set buffer
 		}
 		w.lastWatermarkTs = watermark
+		ctx.PutState(WATERMARK_KEY, w.lastWatermarkTs)
 		log.Debugf("scan watermark event at %d", watermark)
 	}
 }
 
-func (w *WatermarkGenerator) computeWatermarkTs(ctx context.Context) int64 {
+func (w *WatermarkGenerator) computeWatermarkTs(_ context.Context) int64 {
 	var ts int64
 	if len(w.topicToTs) >= len(w.inputTopics) {
 		ts = math.MaxInt64
@@ -185,21 +157,31 @@ func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple, current int64, 
 	}
 }
 
-func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- error) {
-	exeCtx, cancel := ctx.WithCancel()
+func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.Tuple, errCh chan<- error) {
 	log := ctx.GetLogger()
-	go o.watermarkGenerator.start(exeCtx)
 	var (
-		inputs          []*xsql.Tuple
 		triggered       bool
 		nextWindowEndTs int64
 		prevWindowEndTs int64
 	)
 
+	o.watermarkGenerator.lastWatermarkTs = 0
+	if s, err := ctx.GetState(WATERMARK_KEY); err == nil && s != nil {
+		if si, ok := s.(int64); ok {
+			o.watermarkGenerator.lastWatermarkTs = si
+		} else {
+			errCh <- fmt.Errorf("restore window state `lastWatermarkTs` %v error, invalid type", s)
+		}
+	}
+	log.Infof("Start with window state lastWatermarkTs: %d", o.watermarkGenerator.lastWatermarkTs)
 	for {
 		select {
 		// process incoming item
 		case item, opened := <-o.input:
+			processed := false
+			if item, processed = o.preprocess(item); processed {
+				break
+			}
 			o.statManager.ProcessTimeStart()
 			if !opened {
 				o.statManager.IncTotalExceptions()
@@ -208,7 +190,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 			switch d := item.(type) {
 			case error:
 				o.statManager.IncTotalRecordsIn()
-				nodes.Broadcast(o.outputs, d, ctx)
+				o.Broadcast(d)
 				o.statManager.IncTotalExceptions()
 			case xsql.Event:
 				if d.IsWatermark() {
@@ -240,9 +222,10 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 					}
 				}
 				o.statManager.ProcessTimeEnd()
+				ctx.PutState(WINDOW_INPUTS_KEY, inputs)
 			default:
 				o.statManager.IncTotalRecordsIn()
-				nodes.Broadcast(o.outputs, fmt.Errorf("run Window error: expect xsql.Event type but got %[1]T(%[1]v)", d), ctx)
+				o.Broadcast(fmt.Errorf("run Window error: expect xsql.Event type but got %[1]T(%[1]v)", d))
 				o.statManager.IncTotalExceptions()
 			}
 		// is cancelling
@@ -251,7 +234,6 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, errCh chan<- err
 			if o.ticker != nil {
 				o.ticker.Stop()
 			}
-			cancel()
 			return
 		}
 	}

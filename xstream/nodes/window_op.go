@@ -1,12 +1,12 @@
-package operators
+package nodes
 
 import (
+	"encoding/gob"
 	"fmt"
 	"github.com/benbjohnson/clock"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"github.com/emqx/kuiper/xstream/nodes"
 	"math"
 	"time"
 )
@@ -18,25 +18,37 @@ type WindowConfig struct {
 }
 
 type WindowOperator struct {
-	input              chan interface{}
-	outputs            map[string]chan<- interface{}
-	name               string
-	ticker             *clock.Ticker //For processing time only
+	*defaultSinkNode
 	window             *WindowConfig
 	interval           int
-	triggerTime        int64
 	isEventTime        bool
-	statManager        nodes.StatManager
 	watermarkGenerator *WatermarkGenerator //For event time only
-	msgCount           int
+
+	statManager StatManager
+	ticker      *clock.Ticker //For processing time only
+	// states
+	triggerTime int64
+	msgCount    int
+}
+
+const WINDOW_INPUTS_KEY = "$$windowInputs"
+const TRIGGER_TIME_KEY = "$$triggerTime"
+const MSG_COUNT_KEY = "$$msgCount"
+
+func init() {
+	gob.Register([]*xsql.Tuple{})
 }
 
 func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance int64, streams []string, bufferLength int) (*WindowOperator, error) {
 	o := new(WindowOperator)
 
-	o.input = make(chan interface{}, bufferLength)
-	o.outputs = make(map[string]chan<- interface{})
-	o.name = name
+	o.defaultSinkNode = &defaultSinkNode{
+		input: make(chan interface{}, bufferLength),
+		defaultNode: &defaultNode{
+			outputs: make(map[string]chan<- interface{}),
+			name:    name,
+		},
+	}
 	o.isEventTime = isEventTime
 	if w != nil {
 		o.window = &WindowConfig{
@@ -54,7 +66,6 @@ func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance in
 			Type: xsql.NOT_WINDOW,
 		}
 	}
-
 	if isEventTime {
 		//Create watermark generator
 		if w, err := NewWatermarkGenerator(o.window, lateTolerance, streams, o.input); err != nil {
@@ -62,50 +73,15 @@ func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance in
 		} else {
 			o.watermarkGenerator = w
 		}
-	} else {
-		switch o.window.Type {
-		case xsql.NOT_WINDOW:
-		case xsql.TUMBLING_WINDOW:
-			o.ticker = common.GetTicker(o.window.Length)
-			o.interval = o.window.Length
-		case xsql.HOPPING_WINDOW:
-			o.ticker = common.GetTicker(o.window.Interval)
-			o.interval = o.window.Interval
-		case xsql.SLIDING_WINDOW:
-			o.interval = o.window.Length
-		case xsql.SESSION_WINDOW:
-			o.ticker = common.GetTicker(o.window.Length)
-			o.interval = o.window.Interval
-		case xsql.COUNT_WINDOW:
-			o.interval = o.window.Interval
-		default:
-			return nil, fmt.Errorf("unsupported window type %d", o.window.Type)
-		}
 	}
 	return o, nil
-}
-
-func (o *WindowOperator) GetName() string {
-	return o.name
-}
-
-func (o *WindowOperator) AddOutput(output chan<- interface{}, name string) error {
-	if _, ok := o.outputs[name]; !ok {
-		o.outputs[name] = output
-	} else {
-		return fmt.Errorf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
-	}
-	return nil
-}
-
-func (o *WindowOperator) GetInput() (chan<- interface{}, string) {
-	return o.input, o.name
 }
 
 // Exec is the entry point for the executor
 // input: *xsql.Tuple from preprocessor
 // output: xsql.WindowTuplesSet
 func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
+	o.ctx = ctx
 	log := ctx.GetLogger()
 	log.Debugf("Window operator %s is started", o.name)
 
@@ -113,36 +89,140 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		go func() { errCh <- fmt.Errorf("no output channel found") }()
 		return
 	}
-	stats, err := nodes.NewStatManager("op", ctx)
+	stats, err := NewStatManager("op", ctx)
 	if err != nil {
 		go func() { errCh <- err }()
 		return
 	}
 	o.statManager = stats
-	if o.isEventTime {
-		go o.execEventWindow(ctx, errCh)
+	var inputs []*xsql.Tuple
+	if s, err := ctx.GetState(WINDOW_INPUTS_KEY); err == nil {
+		switch st := s.(type) {
+		case []*xsql.Tuple:
+			inputs = st
+			log.Infof("Restore window state %+v", inputs)
+		case nil:
+			log.Debugf("Restore window state, nothing")
+		default:
+			errCh <- fmt.Errorf("restore window state `inputs` %v error, invalid type", st)
+		}
 	} else {
-		go o.execProcessingWindow(ctx, errCh)
+		log.Warnf("Restore window state fails: %s", err)
+	}
+	o.triggerTime = 0
+	if s, err := ctx.GetState(TRIGGER_TIME_KEY); err == nil && s != nil {
+		if si, ok := s.(int64); ok {
+			o.triggerTime = si
+		} else {
+			errCh <- fmt.Errorf("restore window state `triggerTime` %v error, invalid type", s)
+		}
+	}
+	o.msgCount = 0
+	if s, err := ctx.GetState(MSG_COUNT_KEY); err == nil && s != nil {
+		if si, ok := s.(int); ok {
+			o.msgCount = si
+		} else {
+			errCh <- fmt.Errorf("restore window state `msgCount` %v error, invalid type", s)
+		}
+	}
+	log.Infof("Start with window state triggerTime: %d, msgCount: %d", o.triggerTime, o.msgCount)
+	if o.isEventTime {
+		go o.execEventWindow(ctx, inputs, errCh)
+	} else {
+		go o.execProcessingWindow(ctx, inputs, errCh)
 	}
 }
 
-func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<- error) {
+func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*xsql.Tuple, errCh chan<- error) {
 	log := ctx.GetLogger()
 	var (
-		inputs        []*xsql.Tuple
 		c             <-chan time.Time
 		timeoutTicker *clock.Timer
 		timeout       <-chan time.Time
 	)
+	switch o.window.Type {
+	case xsql.NOT_WINDOW:
+	case xsql.TUMBLING_WINDOW:
+		o.ticker = common.GetTicker(o.window.Length)
+		o.interval = o.window.Length
+	case xsql.HOPPING_WINDOW:
+		o.ticker = common.GetTicker(o.window.Interval)
+		o.interval = o.window.Interval
+	case xsql.SLIDING_WINDOW:
+		o.interval = o.window.Length
+	case xsql.SESSION_WINDOW:
+		o.ticker = common.GetTicker(o.window.Length)
+		o.interval = o.window.Interval
+	case xsql.COUNT_WINDOW:
+		o.interval = o.window.Interval
+	}
 
 	if o.ticker != nil {
 		c = o.ticker.C
+		//resume previous window
+		if len(inputs) > 0 && o.triggerTime > 0 {
+			nextTick := common.GetNowInMilli() + int64(o.interval)
+			next := o.triggerTime
+			switch o.window.Type {
+			case xsql.TUMBLING_WINDOW, xsql.HOPPING_WINDOW:
+				for {
+					next = next + int64(o.interval)
+					if next > nextTick {
+						break
+					}
+					log.Debugf("triggered by restore inputs")
+					inputs, _ = o.scan(inputs, next, ctx)
+					ctx.PutState(WINDOW_INPUTS_KEY, inputs)
+					ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
+				}
+			case xsql.SESSION_WINDOW:
+				timeout, duration := int64(o.window.Interval), int64(o.window.Length)
+				for {
+					et := inputs[0].Timestamp
+					tick := et + (duration - et%duration)
+					if et%duration == 0 {
+						tick = et
+					}
+					var p int64
+					for _, tuple := range inputs {
+						var r int64 = math.MaxInt64
+						if p > 0 {
+							if tuple.Timestamp-p > timeout {
+								r = p + timeout
+							}
+						}
+						if tuple.Timestamp > tick {
+							if tick-duration > et && tick < r {
+								r = tick
+							}
+							tick += duration
+						}
+						if r < math.MaxInt64 {
+							next = r
+							break
+						}
+						p = tuple.Timestamp
+					}
+					if next > nextTick {
+						break
+					}
+					log.Debugf("triggered by restore inputs")
+					inputs, _ = o.scan(inputs, next, ctx)
+					ctx.PutState(WINDOW_INPUTS_KEY, inputs)
+					ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
+				}
+			}
+		}
 	}
 
 	for {
 		select {
 		// process incoming item
 		case item, opened := <-o.input:
+			processed := false
+			if item, processed = o.preprocess(item); processed {
+				break
+			}
 			o.statManager.IncTotalRecordsIn()
 			o.statManager.ProcessTimeStart()
 			if !opened {
@@ -151,7 +231,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 			}
 			switch d := item.(type) {
 			case error:
-				nodes.Broadcast(o.outputs, d, ctx)
+				o.Broadcast(d)
 				o.statManager.IncTotalExceptions()
 			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
@@ -187,7 +267,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 							tsets := tl.nextCountWindow()
 							log.Debugf("Sent: %v", tsets)
 							//blocking if one of the channel is full
-							nodes.Broadcast(o.outputs, tsets, ctx)
+							o.Broadcast(tsets)
 							o.statManager.IncTotalRecordsOut()
 						}
 						inputs = tl.getRestTuples()
@@ -195,8 +275,10 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 				}
 				o.statManager.ProcessTimeEnd()
 				o.statManager.SetBufferLength(int64(len(o.input)))
+				ctx.PutState(WINDOW_INPUTS_KEY, inputs)
+				ctx.PutState(MSG_COUNT_KEY, o.msgCount)
 			default:
-				nodes.Broadcast(o.outputs, fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d), ctx)
+				o.Broadcast(fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d))
 				o.statManager.IncTotalExceptions()
 			}
 		case now := <-c:
@@ -216,6 +298,8 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 				log.Debugf("triggered by ticker")
 				inputs, _ = o.scan(inputs, n, ctx)
 				o.statManager.ProcessTimeEnd()
+				ctx.PutState(WINDOW_INPUTS_KEY, inputs)
+				ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
 			}
 		case now := <-timeout:
 			if len(inputs) > 0 {
@@ -225,6 +309,8 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, errCh chan<
 				//expire all inputs, so that when timer scan there is no item
 				inputs = make([]*xsql.Tuple, 0)
 				o.statManager.ProcessTimeEnd()
+				ctx.PutState(WINDOW_INPUTS_KEY, inputs)
+				ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
 			}
 		// is cancelling
 		case <-ctx.Done():
@@ -325,7 +411,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 		}
 		log.Debugf("Sent: %v", results)
 		//blocking if one of the channel is full
-		nodes.Broadcast(o.outputs, results, ctx)
+		o.Broadcast(results)
 		triggered = true
 		o.statManager.IncTotalRecordsOut()
 		log.Debugf("done scan")

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"sync"
 )
 
 type SourceTuple interface {
@@ -43,6 +44,12 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 }
 
+type Store interface {
+	SaveState(checkpointId int64, opId string, state map[string]interface{}) error
+	SaveCheckpoint(checkpointId int64) error //Save the whole checkpoint state into storage like badger
+	GetOpState(opId string) (*sync.Map, error)
+}
+
 type Closable interface {
 	Close(ctx StreamContext) error
 }
@@ -78,12 +85,27 @@ type TopNode interface {
 	GetName() string
 }
 
+type Rewindable interface {
+	GetOffset() (interface{}, error)
+	Rewind(offset interface{}) error
+}
+
+type RuleOption struct {
+	IsEventTime        bool  `json:"isEventTime" yaml:"isEventTime"`
+	LateTol            int64 `json:"lateTolerance" yaml:"lateTolerance"`
+	Concurrency        int   `json:"concurrency" yaml:"concurrency"`
+	BufferLength       int   `json:"bufferLength" yaml:"bufferLength"`
+	SendMetaToSink     bool  `json:"sendMetaToSink" yaml:"sendMetaToSink"`
+	Qos                Qos   `json:"qos" yaml:"qos"`
+	CheckpointInterval int   `json:"checkpointInterval" yaml:"checkpointInterval"`
+}
+
 type Rule struct {
 	Triggered bool                     `json:"triggered"`
 	Id        string                   `json:"id"`
 	Sql       string                   `json:"sql"`
 	Actions   []map[string]interface{} `json:"actions"`
-	Options   map[string]interface{}   `json:"options"`
+	Options   *RuleOption              `json:"options"`
 }
 
 type StreamContext interface {
@@ -92,7 +114,7 @@ type StreamContext interface {
 	GetRuleId() string
 	GetOpId() string
 	GetInstanceId() int
-	WithMeta(ruleId string, opId string) StreamContext
+	WithMeta(ruleId string, opId string, store Store) StreamContext
 	WithInstance(instanceId int) StreamContext
 	WithCancel() (StreamContext, context.CancelFunc)
 	SetError(e error)
@@ -126,3 +148,11 @@ type Function interface {
 	//If this function is an aggregate function. Each parameter of an aggregate function will be a slice
 	IsAggregate() bool
 }
+
+const (
+	AtMostOnce Qos = iota
+	AtLeastOnce
+	ExactlyOnce
+)
+
+type Qos int

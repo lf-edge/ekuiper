@@ -1,6 +1,7 @@
 package processors
 
 import (
+	"github.com/emqx/kuiper/xstream/api"
 	"reflect"
 	"testing"
 )
@@ -8,7 +9,7 @@ import (
 func TestRuleActionParse_Apply(t *testing.T) {
 	var tests = []struct {
 		ruleStr string
-		result  []map[string]interface{}
+		result  *api.Rule
 	}{
 		{
 			ruleStr: `{
@@ -34,23 +35,92 @@ func TestRuleActionParse_Apply(t *testing.T) {
 				}
 			  ]
 			}`,
-			result: []map[string]interface{}{
-				{
-					"funcName": "RFC_READ_TABLE",
-					"ashost":   "192.168.1.100",
-					"sysnr":    "02",
-					"client":   "900",
-					"user":     "SPERF",
-					"passwd":   "PASSPASS",
-					"params": map[string]interface{}{
-						"QUERY_TABLE": "VBAP",
-						"ROWCOUNT":    float64(10),
-						"FIELDS": []interface{}{
-							map[string]interface{}{"FIELDNAME": "MANDT"},
-							map[string]interface{}{"FIELDNAME": "VBELN"},
-							map[string]interface{}{"FIELDNAME": "POSNR"},
+			result: &api.Rule{
+				Triggered: false,
+				Id:        "ruleTest",
+				Sql:       "SELECT * from demo",
+				Actions: []map[string]interface{}{
+					{
+						"funcName": "RFC_READ_TABLE",
+						"ashost":   "192.168.1.100",
+						"sysnr":    "02",
+						"client":   "900",
+						"user":     "SPERF",
+						"passwd":   "PASSPASS",
+						"params": map[string]interface{}{
+							"QUERY_TABLE": "VBAP",
+							"ROWCOUNT":    float64(10),
+							"FIELDS": []interface{}{
+								map[string]interface{}{"FIELDNAME": "MANDT"},
+								map[string]interface{}{"FIELDNAME": "VBELN"},
+								map[string]interface{}{"FIELDNAME": "POSNR"},
+							},
 						},
 					},
+				},
+				Options: &api.RuleOption{
+					IsEventTime:        false,
+					LateTol:            1000,
+					Concurrency:        1,
+					BufferLength:       1024,
+					SendMetaToSink:     false,
+					Qos:                api.AtMostOnce,
+					CheckpointInterval: 300000,
+				},
+			},
+		}, {
+			ruleStr: `{
+				"id": "ruleTest2",
+				"sql": "SELECT * from demo",
+				"actions": [
+					{
+						"log": ""
+					},
+					{
+						"sap": {
+							"funcName": "RFC_READ_TABLE",
+							"ashost": "192.168.100.10",
+							"sysnr": "02",
+							"client": "900",
+							"user": "uuu",
+							"passwd": "ppp."
+						}
+					}
+				],
+				"options": {
+					"isEventTime": true,
+					"lateTolerance": 1000,
+					"bufferLength": 10240,
+					"qos": 2,
+					"checkpointInterval": 60000
+				}
+			}`,
+			result: &api.Rule{
+				Triggered: false,
+				Id:        "ruleTest2",
+				Sql:       "SELECT * from demo",
+				Actions: []map[string]interface{}{
+					{
+						"log": "",
+					}, {
+						"sap": map[string]interface{}{
+							"funcName": "RFC_READ_TABLE",
+							"ashost":   "192.168.100.10",
+							"sysnr":    "02",
+							"client":   "900",
+							"user":     "uuu",
+							"passwd":   "ppp.",
+						},
+					},
+				},
+				Options: &api.RuleOption{
+					IsEventTime:        true,
+					LateTol:            1000,
+					Concurrency:        1,
+					BufferLength:       10240,
+					SendMetaToSink:     false,
+					Qos:                api.ExactlyOnce,
+					CheckpointInterval: 60000,
 				},
 			},
 		},
@@ -58,12 +128,12 @@ func TestRuleActionParse_Apply(t *testing.T) {
 
 	p := NewRuleProcessor(DbDir)
 	for i, tt := range tests {
-		r, err := p.getRuleByJson("ruleTest", tt.ruleStr)
+		r, err := p.getRuleByJson(tt.result.Id, tt.ruleStr)
 		if err != nil {
 			t.Errorf("get rule error: %s", err)
 		}
-		if !reflect.DeepEqual(tt.result, r.Actions) {
-			t.Errorf("%d \tresult mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, r.Actions)
+		if !reflect.DeepEqual(tt.result, r) {
+			t.Errorf("%d \tresult mismatch:\n\nexp=%+v\n\ngot=%+v\n\n", i, tt.result, r)
 		}
 	}
 

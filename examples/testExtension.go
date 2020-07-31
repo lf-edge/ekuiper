@@ -10,7 +10,7 @@ import (
 
 func main() {
 	log := common.Log
-	dbDir, err := common.GetAndCreateDataLoc("test")
+	dbDir, err := common.GetDataLoc()
 	if err != nil {
 		log.Panic(err)
 	}

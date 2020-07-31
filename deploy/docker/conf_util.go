@@ -61,6 +61,8 @@ func deleteFile(path string) {
 	// delete file
 	var err = os.Remove(path)
 	if err != nil {
+		fmt.Printf("Failed to delete original file: %s due to error %s... The conf util is going to exit.\n", path, err)
+		os.Exit(0)
 		return
 	}
 	fmt.Println("File Deleted")
