@@ -2,14 +2,15 @@
 
 ### 1.1 Program description:
 
-​    本程序用于监控并处理命令文件夹中的文件。当程序发现命令文件夹下存在新创建的文件或已更新的文件时，程序将加载这些文件并执行文件中的命令，之后程序将处理过的文件名记录在命令文件夹同级目录的 .history 文件中。 .history 的数据格式如下：
+The program is used for monitoring and processing files under folder. If program find any newly added or updated files, the program will read the file and execute the commands in the file. For the files are processed, the program saves the file name into .history file, which is at the same folder for the command file. The content of .history is as following:
 
 ```json
 [
   {
-        "name":"sample.json",	//已处理过文件的文件名
-        "loadTime":1594362344 //处理文件时的时间戳
-    }]
+     "name":"sample.json",	//The file name that has been processed
+     "loadTime":1594362344 //The timestamp of processing file
+  }
+]
 ```
 
 ### 1.2 Command file format and meaning:
