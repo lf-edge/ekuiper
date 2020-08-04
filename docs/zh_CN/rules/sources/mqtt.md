@@ -58,17 +58,44 @@ MQTT 连接密码。如果指定了 `certificationPath` 或者 `privateKeyPath`�
 
 私钥路径。可以为绝对路径，也可以为相对路径。更详细的信息，请参考 `certificationPath`，比如 `d3807d9fa5-private.pem.key`。
 
+### bufferLength
+
+指定最大缓存消息数目。该参数主要用于防止内存溢出。实际内存用量会根据当前缓存消息数目动态变化。增大该参数不会增加初始内存分配量，因此设置较大的数值是安全的。该参数默认值为102400；如果每条消息为100字节，则默认情况下，缓存最大占用内存量为102400 * 100B ~= 10MB. 
+
 ### kubeedgeVersion
 
 kubeedge 版本号，不同的版本号对应的文件内容不同。
 
 ### kubeedgeModelFile
 
-kubeedge 模版文件名，文件指定放在 etc/sources 文件夹中
+kubeedge 模版文件名，文件指定放在 etc/sources 文件夹中，样例格式如下：
 
-### bufferLength
+```json
+{
+	"deviceModels": [{
+		"name": "device1",
+		"properties": [{
+			"name": "temperature",
+			"dataType": "int"
+		}, {
+			"name": "temperature-enable",
+			"dataType": "string"
+		}]
+	}]
+}
+```
 
-指定最大缓存消息数目。该参数主要用于防止内存溢出。实际内存用量会根据当前缓存消息数目动态变化。增大该参数不会增加初始内存分配量，因此设置较大的数值是安全的。该参数默认值为102400；如果每条消息为100字节，则默认情况下，缓存最大占用内存量为102400 * 100B ~= 10MB. 
+#### deviceModels.name
+
+设备名称,与订阅主题中的字段匹配，位于第三和第四个“/”之间的内容。例如：$ke/events/device/device1/data/update
+
+#### properties.name
+
+字段名称
+
+#### properties.dataType
+
+期望的字段类型
 
 ## 重载默认设置
 
