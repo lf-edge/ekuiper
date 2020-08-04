@@ -10,14 +10,14 @@
 
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
+PKG_VSN ?= develop
 
 ## Clear variables that may confound our build of sub-projects; also
 ## note that it is necessary to use overlay_vars relative to .. as
 ## the generate command EXECUTES in rel/
 build:
-	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=0.5.1 -X main.LoadFileType=absolute" -o cli xstream/cli/main.go
-	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=0.5.1 -X main.LoadFileType=absolute" -o server xstream/server/main.go
-	if [ ! -z $(which upx) ] && [ "$(uname -m)" == "x86_64" ]; then upx ./cli; upx ./server; fi
+	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(PKG_VSN) -X main.LoadFileType=absolute" -o cli xstream/cli/main.go
+	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(PKG_VSN) -X main.LoadFileType=absolute" -o server xstream/server/main.go
 
 clean:
 	dh_clean

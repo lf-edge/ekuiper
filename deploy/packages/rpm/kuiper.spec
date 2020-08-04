@@ -27,7 +27,6 @@ A lightweight IoT edge analytics software
 cd %{_code_source}
 GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=%{_version}-%{_release} -X main.LoadFileType=absolute" -o %{_code_source}/cli %{_code_source}/xstream/cli/main.go
 GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=%{_version}-%{_release} -X main.LoadFileType=absolute" -o %{_code_source}/server %{_code_source}/xstream/server/main.go
-if [ ! -z $(which upx) ] && [ "$(uname -m)" == "x86_64" ]; then upx ./cli; upx ./server; fi
 cd -
 
 %install
