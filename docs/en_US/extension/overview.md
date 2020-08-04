@@ -52,3 +52,73 @@ Please read below for how to realize the different extensions.
 - [Sink/Action extension](sink.md)
 - [Function extension](function.md)
 
+### State Storage
+
+Kuiper extensions export a key value state storage interface for Source/Sink/Function through the context.
+
+States are key-value pairs, where the key is a string and the value is arbitrary data. Keys are scoped to an individual extension.
+
+You can access states within extensions using the putState, getState, incrCounter, getCounter and deleteState calls on the context object.
+
+Below is an example of a function extension to access states. It will record the accumulate word count across a range of function calls.
+
+```go
+func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
+    logger := ctx.GetLogger()    
+	err := ctx.IncrCounter("allwordcount", len(strings.Split(args[0], args[1])))
+	if err != nil {
+		return err, false
+	}
+	if c, err := ctx.GetCounter("allwordcount"); err != nil   {
+		return err, false
+	} else {
+		return c, true
+	}
+}
+```
+
+The state storage API includes
+
+```go
+/**
+ * Increase the builtin distributed counter referred by key
+ * @param key The name of the key
+ * @param amount The amount to be incremented
+ * @return error if any 
+ */
+IncrCounter(key string, amount int) error
+/**
+ * Retrieve the counter value by key
+ * @param key The name of the key
+ * @return the counter value
+ * @return error if any 
+ */
+GetCounter(key string) (int, error)
+/**
+ * Set or update the state value for the key.
+ *
+ * @param key name of the key
+ * @param value state value of the key
+ * @return error if any 
+ */
+PutState(key string, value interface{}) error
+/**
+ * Retrieve the state value for the key.
+ *
+ * @param key name of the key
+ * @return the state value
+ * @return error if any 
+ */
+GetState(key string) (interface{}, error)
+/**
+ * Delete the state value for the key.
+ *
+ * @param key name of the key
+ * @return error if any 
+ */
+DeleteState(key string) error
+```
+
+#### State data type
+
+The state can be any type. If the rule [checkpoint mechanism](../rules/state_and_fault_tolerance.md) is enabled, the state will be serialized by [golang gob](https://golang.org/pkg/encoding/gob/). So it is required to be gob compatibile. For custom data type, register the type by ``gob.Register(value interface{})`` .

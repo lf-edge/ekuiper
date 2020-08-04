@@ -27,12 +27,18 @@ jobs:
           run: apt-get update && apt-get install libzmq3-dev -y
         - name: run test case
           run: |
+            set -e -u -x
             mkdir -p data
             mkdir -p log
-            go build --buildmode=plugin -o plugins/sources/Random@v1.0.0.so plugins/sources/random.go
+            sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
+            go build --buildmode=plugin -o plugins/sources/Random@v2.0.0.so plugins/sources/random.go
             go build --buildmode=plugin -o plugins/sinks/File@v1.0.0.so plugins/sinks/file.go
             go build --buildmode=plugin -o plugins/functions/Echo.so plugins/functions/echo.go
             go build --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so plugins/functions/countPlusOne.go
-            go test ./...
+            go build --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so plugins/functions/accumulateWordCount.go
             go test --tags=edgex ./...
-    
+        - uses: actions/upload-artifact@v1
+          if: failure()
+          with:
+            name: stream.log
+            path: log/stream.log

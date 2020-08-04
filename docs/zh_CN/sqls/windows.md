@@ -1,14 +1,14 @@
 # 窗口
 
-在时间流场景中，对时态窗口中包含的数据执行操作是一种常见的模式。Kuiper对窗口函数提供本机支持，使您能够以最小的工作量编写复杂的流处理作业。
+在时间流场景中，对时态窗口中包含的数据执行操作是一种常见的模式。Kuiper 对窗口函数提供本机支持，使您能够以最小的工作量编写复杂的流处理作业。
 
-有五种窗口可供使用： [滚动窗口](#TUMBLING WINDOW)， [跳跃窗口](#Hopping window)，[滑动窗口][Sliding window]，[会话窗口](#Session window)和[计数窗口](#计数窗口)。 您可以在Kuiper查询的查询语法的GROUP BY子句中使用窗口函数。
+有五种窗口可供使用： [滚动窗口](#TUMBLING WINDOW)， [跳跃窗口](#Hopping window)，[滑动窗口][Sliding window]，[会话窗口](#Session window)和[计数窗口](#计数窗口)。 您可以在 Kuiper 查询的查询语法的 GROUP BY 子句中使用窗口函数。
 
 所有窗口操作都在窗口的末尾输出结果。窗口的输出将是基于所用聚合函数的单个事件。
 
 ## 时间单位
 
-窗口中可以使用5个时间单位。 例如，``TUMBLINGWINDOW（ss，10）''，这意味着以10秒为间隔的滚动将数据分组。
+窗口中可以使用5个时间单位。 例如，`TUMBLINGWINDOW（ss，10）`，这意味着以10秒为间隔的滚动将数据分组。
 
 DD：天单位
 
@@ -26,27 +26,15 @@ MS ：毫秒单位
 
 ![Tumbling Window](resources/tumblingWindow.png)
 
-待办事项: 
-
-- 是否需要时间戳？
-- 不支持计数功能。21
-
-
-
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, TUMBLINGWINDOW(ss, 10);
 ```
 
 ## 跳跃窗口
 
-跳跃窗口功能会在时间上向前跳一段固定的时间。 将它们视为可能重叠的翻转窗口可能很容易，因此事件可以属于多个跳跃窗口结果集。 要使“跳跃”窗口与“翻转”窗口相同，请将跳跃大小指定为与窗口大小相同。
+跳跃窗口功能会在时间上向前跳一段固定的时间。 将它们视为可能重叠的翻转窗口可能很容易，因此事件可以属于多个跳跃窗口结果集。 要使跳跃窗口与翻转窗口相同，请将跳跃大小指定为与窗口大小相同。
 
 ![Hopping Window](resources/hoppingWindow.png)
-
-待办事项: 
-
-- 是否需要时间戳？
-- 不支持计数功能。
 
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, HOPPINGWINDOW(ss, 10, 5);
@@ -60,11 +48,6 @@ SELECT count(*) FROM demo GROUP BY ID, HOPPINGWINDOW(ss, 10, 5);
 
 ![Sliding Window](resources/slidingWindow.png)
 
-待办事项: 
-
-- 是否需要时间戳？
-- 不支持计数功能。
-
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mm, 1);
 ```
@@ -77,13 +60,6 @@ SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mm, 1);
 
 ![Session Window](resources/sessionWindow.png)
 
-待办事项: 
-
-- 是否需要时间戳？
-- 不支持计数功能。
-
-
-
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mm, 2, 1);
 ```
@@ -92,7 +68,7 @@ SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mm, 2, 1);
 
 当第一个事件发生时，会话窗口开始。 如果从上一次摄取的事件起在指定的超时时间内发生了另一个事件，则窗口将扩展为包括新事件。 否则，如果在超时时间内未发生任何事件，则该窗口将在超时时关闭。
 
-如果事件在指定的超时时间内持续发生，则会话窗口将继续扩展直到达到最大持续时间。 最大持续时间检查间隔设置为与指定的最大持续时间相同的大小。 例如，如果最大持续时间为10，则检查窗口是否超过最大持续时间将在t = 0、10、20、30等处进行。
+如果事件在指定的超时时间内持续发生，则会话窗口将继续扩展直到达到最大持续时间。 最大持续时间检查间隔设置为与指定的最大持续时间相同的大小。 例如，如果最大持续时间为10，则检查窗口是否超过最大持续时间将在 t = 0、10、20、30等处进行。
 
 ## 计数窗口
 
@@ -108,7 +84,7 @@ SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mm, 2, 1);
 SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
 ```
 
-这个 SQL 按照 5 次对事件进行分组，并且只获取`temperature` 大于 20 的数据。
+这个 SQL 按照 5 次对事件进行分组，并且只获取 `temperature`  大于 20 的数据。
 
 ### 其它计数窗口
 
@@ -117,7 +93,7 @@ SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
 - 如果第二个参数值为 1， 那么每次事件进来的时候都会被触发
 - 第二个参数的值不应该大于第一个参数的值
 
-以下为`COUNTWINDOW(5,1)` 的示意图，计数窗口长度为 5， 每接收一个事件就触发一次。
+以下为 `COUNTWINDOW(5,1)`  的示意图，计数窗口长度为 5， 每接收一个事件就触发一次。
 
 ![](resources/slidingCountWindow_1.png)
 
@@ -137,12 +113,22 @@ SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT
 这个 SQL 含有如下条件，
 
 - 有一个计数窗口，长度为 5， 每接收一个事件就触发一次
-- 只获取`temperature` 大于 20 的数据
-- 最后一个条件为消息的条数应该大于 2。如果 `HAVING` 条件为 `COUNT(*)  = 5`， 那么意味着窗口里所有的事件都应该满足 `WHERE` 条件
+- 只获取 `temperature`  大于 20 的数据
+- 最后一个条件为消息的条数应该大于 2。如果 `HAVING`  条件为 `COUNT(*)  = 5`， 那么意味着窗口里所有的事件都应该满足 `WHERE` 条件
 
-## Timestamp Management
+## 过滤窗口输入
 
-Every event has a timestamp associated with it. The timestamp will be used to calculate the window. By default, a timestamp will be added when an event feed into the source which is called `processing time`. We also support to specify a field as the timestamp, which is called `event time`. The timestamp field is specified in the stream definition. In the below definition, the field `ts` is specified as the timestamp field.
+在某些情况下，窗口不需要所有输入。`filter` 子句用于过滤给定条件下的输入数据。与 `where` 子句不同，`filter` 子句在窗口分区之前运行。结果会有所不同，特别是计数窗口。如果对带有长度为 3 的计数窗口的数据使用 `where` 子句进行过滤，则输出长度将随窗口的不同而变化；而使用 `filter` 子句进行筛选时，输出长度将始终为 3。
+
+filter 子句必须跟在 window 函数后面。filter子句必须类似于 `FILTER(WHERE expr)`。例如：
+
+```sql
+SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FITLER(where revenue > 100)
+```
+
+## 时间戳管理
+
+每个事件都有一个与之关联的时间戳。 时间戳将用于计算窗口。 默认情况下，当事件输入到源时，将添加时间戳，称为`处理时间`。 我们还支持将某个字段指定为时间戳，称为`事件时间`。 时间戳字段在流定义中指定。 在下面的定义中，字段 `ts` 被指定为时间戳字段。
 
 ``
 CREATE STREAM demo (
@@ -152,8 +138,8 @@ CREATE STREAM demo (
 				) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"
 ``
 
-In event time mode, the watermark algorithm is used to calculate a window.
+在事件时间模式下，水印算法用于计算窗口。
 
-## Runtime error in window
+## 窗口中的运行时错误
 
-If the window receive an error (for example, the data type does not comply to the stream definition) from upstream, the error event will be forwarded immediately to the sink. The current window calculation will ignore the error event
+如果窗口从上游接收到错误（例如，数据类型不符合流定义），则错误事件将立即转发到目标（sink）。 当前窗口计算将忽略错误事件。

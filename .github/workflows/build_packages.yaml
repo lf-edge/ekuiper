@@ -1,7 +1,6 @@
 name: Build packages
 
 on:
-    push:
     pull_request:
     release:
         types:
@@ -12,7 +11,7 @@ jobs:
         runs-on: ubuntu-latest
         
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v1
         - name: install docker
           run: |
             sudo apt-get remove docker docker-engine docker.io containerd runc
@@ -32,7 +31,7 @@ jobs:
             docker buildx create --use --name mybuild
         - name: build
           run: |
-            make cross_build
+            make all_pkgs
             cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
         - uses: actions/upload-artifact@v1
           with:
@@ -43,7 +42,7 @@ jobs:
         runs-on: macos-latest
 
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v1
         - uses: actions/setup-go@v1
           with:
             go-version: '1.14'
@@ -65,7 +64,7 @@ jobs:
         runs-on: ubuntu-latest
         
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v1
         - name: install docker
           run: |
             sudo apt-get remove docker docker-engine docker.io containerd runc
@@ -90,30 +89,66 @@ jobs:
             container_id=$(docker run -d emqx/kuiper:$(git describe --tags --always))
             ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
             sleep 10
-            if [ "$(curl ${ip_address}:9081)" != "OK" ]; then echo "docker image failed"; exit 1; fi
+            if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
 
             container_id=$(docker run -d emqx/kuiper:$(git describe --tags --always)-slim)
             ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
             sleep 10
-            if [ "$(curl ${ip_address}:9081)" != "OK" ]; then echo "docker image failed"; exit 1; fi
+            if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
 
             container_id=$(docker run -d emqx/kuiper:$(git describe --tags --always)-alpine)
             ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
             sleep 10
-            if [ "$(curl ${ip_address}:9081)" != "OK" ]; then echo "docker image failed"; exit 1; fi
+            if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
         - name: build docker images
           if: github.event_name == 'release'
           run: |
             echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
             make cross_docker
-      
+
+    build-kubernetes-tool:
+        runs-on: ubuntu-latest
+
+        steps:
+        - uses: actions/checkout@v1
+        - name: install docker
+          run: |
+            sudo apt-get remove docker docker-engine docker.io containerd runc
+            sudo apt-get update
+            sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            sudo apt-get update
+            sudo apt-get install docker-ce docker-ce-cli containerd.io
+        - name: prepare docker
+          run: |
+            mkdir -p $HOME/.docker
+            echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
+            echo '{ "experimental": true, "storage-driver": "overlay2", "max-concurrent-downloads": 50, "max-concurrent-uploads": 50, "graph": "/mnt/docker" }' | sudo tee /etc/docker/daemon.json
+            sudo systemctl restart docker
+            docker version
+            docker buildx create --use --name mybuild
+        - name: build docker image
+          run: docker build --no-cache -t emqx/kuiper-kubernetes-tool:$(git describe --tags --always) -f deploy/docker/Dockerfile-kubernetes-tool .
+        - name: test docker image
+          run: |
+            set -e -u -x
+            docker run -d --name kuiper-kubernetes-tool emqx/kuiper-kubernetes-tool:$(git describe --tags --always)
+            sleep 5
+            if [ "$(docker logs kuiper-kubernetes-tool)" != "Kuiper kubernetes tool is started successfully!"  ]; then exit 1; fi
+        - name: push docker image
+          if: github.event_name == 'release'
+          run: |
+            echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
+            docker push emqx/kuiper-kubernetes-tool:$(git describe --tags --always)
+
     release:
         runs-on: ubuntu-latest
 
         needs: [build, build-on-mac]
 
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v1
         - uses: actions/download-artifact@v1
           with:
             name: packages
@@ -157,4 +192,4 @@ jobs:
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
             curl -H "Authorization: token ${{ secrets.AccessToken }}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" -X POST -d "{\"event_type\":\"update_repos_for_kuiper\",\"client_payload\":{\"version\": \"$version\"}}" https://api.github.com/repos/emqx/emqx-packages-docker/dispatches
-        
+

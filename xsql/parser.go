@@ -644,7 +644,18 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 		if error != nil {
 			return nil, error
 		}
-		return p.ConvertToWindows(wt, name, args)
+		win, err := p.ConvertToWindows(wt, args)
+		if err != nil {
+			return nil, error
+		}
+		// parse filter clause
+		f, err := p.parseFilter()
+		if err != nil {
+			return nil, err
+		} else if f != nil {
+			win.Filter = f
+		}
+		return win, nil
 	}
 }
 
@@ -714,7 +725,7 @@ func validateWindow(funcName string, expectLen int, args []Expr) error {
 
 }
 
-func (p *Parser) ConvertToWindows(wtype WindowType, name string, args []Expr) (*Window, error) {
+func (p *Parser) ConvertToWindows(wtype WindowType, args []Expr) (*Window, error) {
 	win := &Window{WindowType: wtype}
 	if wtype == COUNT_WINDOW {
 		win.Length = &IntegerLiteral{Val: args[0].(*IntegerLiteral).Val}
@@ -1054,4 +1065,26 @@ func (p *Parser) parseStreamOptions() (map[string]string, error) {
 		return nil, fmt.Errorf("found %q, expect stream options.", lit)
 	}
 	return opts, nil
+}
+
+// Only support filter on window now
+func (p *Parser) parseFilter() (Expr, error) {
+	if tok, _ := p.scanIgnoreWhitespace(); tok != FILTER {
+		p.unscan()
+		return nil, nil
+	}
+	if tok, lit := p.scanIgnoreWhitespace(); tok != LPAREN {
+		return nil, fmt.Errorf("Found %q after FILTER, expect parentheses.", lit)
+	}
+	if tok, lit := p.scanIgnoreWhitespace(); tok != WHERE {
+		return nil, fmt.Errorf("Found %q after FILTER(, expect WHERE.", lit)
+	}
+	expr, err := p.ParseExpr()
+	if err != nil {
+		return nil, err
+	}
+	if tok, lit := p.scanIgnoreWhitespace(); tok != RPAREN {
+		return nil, fmt.Errorf("Found %q after FILTER, expect right parentheses.", lit)
+	}
+	return expr, nil
 }

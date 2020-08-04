@@ -29,7 +29,7 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
   - 通过 SQL 支持数据抽取、转换和过滤
   - 数据排序、分组、聚合、连接
   - 60+ 各类函数，覆盖数学运算、字符串处理、聚合运算和哈希运算等
-  - 4 类时间窗口
+  - 4 类时间窗口，以及计数窗口
 
 - 高可扩展性
 
@@ -40,10 +40,9 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
   - SQL 函数：内置支持60+常见的函数，提供扩展点可以扩展自定义函数
 
 - 管理能力
-
-  - 命令行对流、规则进行管理
-  - 通过 REST API 也可以对流、规则进行管理（规划中）
-  - 与 [KubeEdge](https://github.com/kubeedge/kubeedge)、[K3s](https://github.com/rancher/k3s) 等基于边缘 Kubernetes 框架的集成能力
+  - 通过命令行对流、规则和插件进行管理
+  - 通过 REST API 也可以对流、规则和插件进行管理
+  - 与 [KubeEdge](https://github.com/kubeedge/kubeedge)、[K3s](https://github.com/rancher/k3s)、[Baetyl](https://github.com/baetyl/baetyl) 等基于边缘 Kubernetes 框架的集成能力
 
 - 与 EMQ X Edge 集成
 

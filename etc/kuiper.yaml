@@ -16,6 +16,16 @@ basic:
   prometheus: false
   prometheusPort: 20499
 
+# The default options for all rules. Each rule can override this setting by defining its own option
+rule:
+  # The qos of the rule. The values can be 0: At most once; 1: At least once; 2: Exactly once
+  # If qos is bigger than 0, the checkpoint mechanism will launch to save states so that they can be
+  # restored for unintended interrupt or planned restart of the rule. The performance may be affected
+  # to enable the checkpoint mechanism
+  qos: 0
+  # The interval in millisecond to run the checkpoint mechanism.
+  checkpointInterval: 300000
+
 sink:
   # The cache persistence threshold size. If the message in sink cache is larger than 10, then it triggers persistence. If you find
   # the remote system is slow to response, or sink throughput is small, then it's recommend to increase below 2 configurations.

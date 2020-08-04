@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/benbjohnson/clock"
+	"github.com/emqx/kuiper/xstream/api"
 	"github.com/go-yaml/yaml"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 )
 
 const (
@@ -28,11 +30,12 @@ const (
 )
 
 var (
-	Log       *logrus.Logger
-	Config    *KuiperConf
-	IsTesting bool
-	Clock     clock.Clock
-	logFile   *os.File
+	Log          *logrus.Logger
+	Config       *KuiperConf
+	IsTesting    bool
+	Clock        clock.Clock
+	logFile      *os.File
+	LoadFileType = "relative"
 )
 
 func LoadConf(confName string) ([]byte, error) {
@@ -41,7 +44,8 @@ func LoadConf(confName string) ([]byte, error) {
 		return nil, err
 	}
 
-	file := confDir + confName
+	file := path.Join(confDir, confName)
+	//	file := confDir + confName
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -65,6 +69,7 @@ type KuiperConf struct {
 		Prometheus     bool     `yaml:"prometheus"`
 		PrometheusPort int      `yaml:"prometheusPort"`
 	}
+	Rule api.RuleOption
 	Sink struct {
 		CacheThreshold    int `yaml:"cacheThreshold"`
 		CacheTriggerCount int `yaml:"cacheTriggerCount"`
@@ -103,7 +108,14 @@ func InitConf() {
 		Log.Fatal(err)
 	}
 
-	kc := KuiperConf{}
+	kc := KuiperConf{
+		Rule: api.RuleOption{
+			LateTol:            1000,
+			Concurrency:        1,
+			BufferLength:       1024,
+			CheckpointInterval: 300000, //5 minutes
+		},
+	}
 	if err := yaml.Unmarshal(b, &kc); err != nil {
 		Log.Fatal(err)
 	} else {
@@ -159,11 +171,79 @@ func GetConfLoc() (string, error) {
 }
 
 func GetDataLoc() (string, error) {
+	if IsTesting {
+		dataDir, err := GetLoc(data_dir)
+		if err != nil {
+			return "", err
+		}
+		d := path.Join(path.Dir(dataDir), "test")
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			err = os.MkdirAll(d, 0755)
+			if err != nil {
+				return "", err
+			}
+		}
+		return d, nil
+	}
 	return GetLoc(data_dir)
 }
 
+func absolutePath(subdir string) (dir string, err error) {
+	subdir = strings.TrimLeft(subdir, `/`)
+	subdir = strings.TrimRight(subdir, `/`)
+	switch subdir {
+	case "etc":
+		dir = "/etc/kuiper/"
+		break
+	case "data":
+		dir = "/var/lib/kuiper/data/"
+		break
+	case "log":
+		dir = "/var/log/kuiper/"
+		break
+	case "plugins":
+		dir = "/var/lib/kuiper/plugins/"
+		break
+	}
+	if 0 == len(dir) {
+		return "", fmt.Errorf("no find such file : %s", subdir)
+	}
+	return dir, nil
+}
+
+/*
 func GetLoc(subdir string) (string, error) {
-	dir, err := os.Getwd()
+	if base := os.Getenv(KuiperBaseKey); base != "" {
+		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
+		dir = base
+	} else {
+		dir, err = filepath.Abs(filepath.Dir(os.Args[0]))
+		if err != nil {
+			return "", err
+		}
+		dir = filepath.Dir(dir)
+	}
+
+	dir = path.Join(dir, subdir)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return "", fmt.Errorf("conf dir not found : %s", dir)
+	}
+	return dir, nil
+}
+*/
+func GetLoc(subdir string) (string, error) {
+	if "relative" == LoadFileType {
+		return relativePath(subdir)
+	}
+
+	if "absolute" == LoadFileType {
+		return absolutePath(subdir)
+	}
+	return "", fmt.Errorf("Unrecognized loading method.")
+}
+
+func relativePath(subdir string) (dir string, err error) {
+	dir, err = os.Getwd()
 	if err != nil {
 		return "", err
 	}
@@ -172,7 +252,6 @@ func GetLoc(subdir string) (string, error) {
 		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
 		dir = base
 	}
-
 	confDir := dir + subdir
 	if _, err := os.Stat(confDir); os.IsNotExist(err) {
 		lastdir := dir
@@ -196,21 +275,6 @@ func GetLoc(subdir string) (string, error) {
 	}
 
 	return "", fmt.Errorf("conf dir not found, please set KuiperBaseKey program environment variable correctly.")
-}
-
-func GetAndCreateDataLoc(dir string) (string, error) {
-	dataDir, err := GetDataLoc()
-	if err != nil {
-		return "", err
-	}
-	d := path.Join(path.Dir(dataDir), dir)
-	if _, err := os.Stat(d); os.IsNotExist(err) {
-		err = os.MkdirAll(d, 0755)
-		if err != nil {
-			return "", err
-		}
-	}
-	return d, nil
 }
 
 func ProcessPath(p string) (string, error) {
@@ -283,4 +347,21 @@ func ConvertArray(s []interface{}) []interface{} {
 		r[i] = e
 	}
 	return r
+}
+
+func SyncMapToMap(sm *sync.Map) map[string]interface{} {
+	m := make(map[string]interface{})
+	sm.Range(func(k interface{}, v interface{}) bool {
+		m[fmt.Sprintf("%v", k)] = v
+		return true
+	})
+	return m
+}
+
+func MapToSyncMap(m map[string]interface{}) *sync.Map {
+	sm := new(sync.Map)
+	for k, v := range m {
+		sm.Store(k, v)
+	}
+	return sm
 }

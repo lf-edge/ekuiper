@@ -1,77 +1,77 @@
-# HTTP pull source 
+# HTTP 提取源
 
-Kuiper provides built-in support for pulling HTTP source stream, which can pull the message from HTTP server broker and feed into the Kuiper processing pipeline.  The configuration file of HTTP pull source is at ``etc/sources/httppull.yaml``. Below is the file format.
+Kuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 Kuiper 处理管道。 HTTP提取源的配置文件位于 `etc/sources/httppull.yaml`中。 以下是文件格式。
 
 ```yaml
-#Global httppull configurations
+#全局httppull配置
 default:
-  # url of the request server address
+  # 请求服务器地址的URL
   url: http://localhost
   # post, get, put, delete
   method: post
-  # The interval between the requests, time unit is ms
+  # 请求之间的间隔，时间单位为 ms
   interval: 10000
-  # The timeout for http request, time unit is ms
+  # http请求超时，时间单位为 ms
   timeout: 5000
-  # If it's set to true, then will compare with last result; If response of two requests are the same, then will skip sending out the result.
-  # The possible setting could be: true/false
+  # 如果将其设置为 true，则将与最后的结果进行比较； 如果两个请求的响应相同，则将跳过发送结果。
+  # 可能的设置可能是：true/false
   incremental: false
-  # The body of request, such as '{"data": "data", "method": 1}'
+  # 请求正文，例如'{"data": "data", "method": 1}'
   body: '{}'
-  # Body type, none|text|json|html|xml|javascript|form
+  # 正文类型, none|text|json|html|xml|javascript|form
   bodyType: json
-  # HTTP headers required for the request
+  # 请求所需的HTTP标头
   headers:
     Accept: application/json
 
-#Override the global configurations
+#重载全局配置
 application_conf: #Conf_key
   incremental: true
   url: http://localhost:9090/pull
 ```
 
-## Global HTTP pull configurations
+## 全局HTTP提取配置
 
-Use can specify the global HTTP pull settings here. The configuration items specified in ``default`` section will be taken as default settings for all HTTP connections. 
+用户可以在此处指定全局 HTTP 提取设置。 `default` 部分中指定的配置项将用作所有HTTP 连接的默认设置。
 
 ### url
 
-The URL where to get the result.
+获取结果的 URL。
 
 ### method
-HTTP method, it could be post, get, put & delete.
+HTTP 方法，它可以是 post、get、put 和 delete。
 
 ### interval
 
-The interval between the requests, time unit is ms.
+请求之间的间隔时间，单位为 ms。
 
 ### timeout
 
-The timeout for http request, time unit is ms.
+http 请求的超时时间，单位为 ms。
 
 ### incremental
 
-If it's set to true, then will compare with last result; If response of two requests are the same, then will skip sending out the result.
+如果将其设置为 true，则将与最后的结果进行比较； 如果两个请求的响应相同，则将跳过发送结果。
 
 ### body
 
-The body of request, such as `'{"data": "data", "method": 1}'`
+请求的正文, 例如 `{"data": "data", "method": 1}`
 
 ### bodyType
 
-Body type, it could be none|text|json|html|xml|javascript|form.
+正文类型,可以是 none|text|json|html|xml|javascript| 格式。
 
 ### headers
 
-The HTTP request headers that you want to send along with the HTTP request.
+需要与 HTTP 请求一起发送的 HTTP 请求标头。
 
 
 
-## Override the default settings
+## 重载默认设置
 
-If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with ``application_conf``.  Then you can specify the configuration with option ``CONF_KEY`` when creating the stream definition (see [stream specs](../../sqls/streams.md) for more info).
+如果您有特定的连接需要重载默认设置，则可以创建一个自定义部分。 在上一个示例中，我们创建了一个名为 `application_conf` 的特定设置。 然后，您可以在创建流定义时使用选项 `CONF_KEY` 指定配置（有关更多信息，请参见 [流规格](../../sqls/streams.md)）。
 
-**Sample**
+**样例**
 
 ```
 demo (
@@ -79,5 +79,5 @@ demo (
 	) WITH (DATASOURCE="test/", FORMAT="JSON", TYPE="httppull", KEY="USERID", CONF_KEY="application_conf");
 ```
 
-The configuration keys used for these specific settings are the same as in ``default`` settings, any values specified in specific settings will overwrite the values in ``default`` section.
+这些特定设置所使用的配置键与 `default` 设置中的配置键相同，在特定设置中指定的任何值都将重载 `default` 部分中的值。
 

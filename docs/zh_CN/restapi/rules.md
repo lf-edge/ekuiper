@@ -1,14 +1,14 @@
-# Rules management
+# 规则管理
 
-The Kuiper REST api for rules allows you to manage rules, such as create, show, drop, describe, start, stop and restart rules. 
+Kuiper REST api 可以管理规则，例如创建、显示、删除、描述、启动、停止和重新启动规则。
 
-## create a rule
+## 创建规则
 
-The API accepts a JSON content and create and start a rule.
+该 API 接受 JSON 内容并创建和启动规则。
 ```shell
 POST http://localhost:9081/rules
 ```
-Request Sample
+请求示例：
 
 ```json
 {
@@ -21,15 +21,15 @@ Request Sample
 ```
 
 
-## show rules
+## 展示规则
 
-The API is used for displaying all of rules defined in the server with a brief status.
+该 API 用于显示服务器中定义的所有规则和简要状态描述。
 
 ```shell
 GET http://localhost:9081/rules
 ```
 
-Response Sample:
+响应示例：
 
 ```json
 [
@@ -44,17 +44,17 @@ Response Sample:
 ]
 ```
 
-## describe a rule
+## 描述规则
 
-The API is used for print the detailed definition of rule.
+该 API 用于打印规则的详细定义。
 
 ```shell
 GET http://localhost:9081/rules/{id}
 ```
 
-Path parameter `id` is the id or name of the rule.
+路径参数  `id` 是规则的 id 或名称。
 
-Response Sample: 
+响应示例：
 
 ```json
 {
@@ -73,51 +73,52 @@ Response Sample:
 }
 ```
 
-## drop a rule
+## 删除规则
 
-The API is used for drop the rule.
+该 API 用于删除规则。
 
 ```shell
 DELETE http://localhost:8080/rules/{id}
 ```
 
 
-## start a rule
+## 启动规则
 
-The API is used to start running the rule.
+该 API 用于开始运行规则。
 
 ```shell
 POST http://localhost:8080/rules/{id}/start
 ```
 
 
-## stop a rule
+## 停止规则
 
-The API is used to stop running the rule.
+该 API 用于停止运行规则。
 
 ```shell
 POST http://localhost:8080/rules/{id}/stop
 ```
 
-## restart a rule
+## 重启规则
 
-The API is used to restart the rule.
+该 API 用于重启规则。
 
 ```shell
 POST http://localhost:8080/rules/{id}/restart
 ```
 
-## get the status of a rule
+## 获取规则的状态
 
-The command is used to get the status of the rule. If the rule is running, the metrics will be retrieved realtime. The status can be
+该命令用于获取规则的状态。 如果规则正在运行，则将实时检索状态指标。 状态可以是：
+
 - $metrics
-- stopped: $reason
+- 停止： $reason
 
 ```shell
 GET http://localhost:8080/rules/{id}/status
 ```
 
-Response Sample:
+响应示例：
 
 ```shell
 {

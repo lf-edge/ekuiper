@@ -2,11 +2,27 @@
 
 ## Download & install
 
-Download the latest release from https://github.com/emqx/kuiper/releases, and unzip file.
+Get the installation package via https://github.com/emqx/kuiper/releases or https://www.emqx.io/downloads#kuiper
 
-## Directory structure 
+### zip、tar.gz compressed package
 
-Below is the installation directory structure after installing Kuiper. 
+Unzip kuiper
+
+```sh
+$ unzip kuiper-$VERISON-$OS-$ARCH.zip
+or
+$ tar -xzf kuiper-$VERISON-$OS-$ARCH.zip
+```
+
+Run `bin/server` to start the kuiper server
+
+```sh
+$ bin/server
+```
+
+You should see a successful message: `Serving Rule server on port 20498`
+
+The directory structure of kuiper is as follows:
 
 ```
 kuiper_installed_dir
@@ -24,6 +40,50 @@ kuiper_installed_dir
     ...
 ```
 
+
+#### deb、rpm installation package
+
+Use related commands to install kuiper
+
+```sh
+$ sudo dpkg -i kuiper_$VERSION_$ARCH.deb
+or
+$ sudo rpm -ivh kuiper-$VERSION-1.el7.rpm
+```
+
+Run `kuiperd` to start the kuiper server
+
+```sh
+$ sudo kuiperd
+```
+
+You should see a successful message: `Serving Rule server on port 20498`
+
+kuiper also supports systemctl startup
+
+ ```sh
+ $ sudo systemctl start kuiper
+ ```
+
+The directory structure of kuiper is as follows:
+
+```
+/usr/lib/kuiper/bin
+  server
+  cli
+/etc/kuiper
+  mqtt_source.yaml
+  ...
+/var/lib/kuiper/data
+  ...
+/var/lib/kuiper/plugins
+  ...
+/var/log/kuiper
+   ...
+```
+
+
+
 ## Run the first rule stream
 
 Kuiper rule is composed by a SQL and multiple actions. Kuiper SQL is an easy to use SQL-like language to specify the logic of the rule stream. By providing the rule through CLI, a rule stream will be created in the rule engine and run continuously. The user can then manage the rules through CLI.
@@ -36,23 +96,15 @@ Let's consider a sample scenario where we are receiving temperature and humidity
 
 We assume there is already a MQTT broker as the data source of Kuiper server. If you don't have one, EMQX is recommended. Please follow the [EMQ Installation Guide](https://docs.emqx.io/broker/v3/en/install.html) to setup a mqtt broker.
 
-### Start the Kuiper Engine Server
-
-Run bin/server to start the Kuiper Server
-```sh
-$ bin/server
-```
-You should see a succesul message `Serving Kuiper server on port 20498` 
-
 ### Defining the input stream
 
 The stream needs to have a name and a schema defining the data that each incoming event should contain. For this scenario, we will use an MQTT source to consume temperature events. The input stream can be defined by SQL language.
 
-We create a stream named demo which consumes mqtt demo topic as specified in the DATASOURCE property.
+We create a stream named `demo` which consumes MQTT `demo` topic as specified in the DATASOURCE property.
 ```sh
 $ bin/cli create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="demo")'
 ```
-The mqtt source will connect to mqtt broker at `tcp://localhost:1883`, if your mqtt broker is in another location, specify it in the `etc/mqtt_source.yaml`.  You can change the servers configuration as in below.
+The MQTT source will connect to MQTT broker at `tcp://localhost:1883`. If your MQTT broker is in another location, specify it in the `etc/mqtt_source.yaml`.  You can change the servers configuration as in below.
 
 ```yaml
 default:
@@ -65,14 +117,14 @@ You can use command ``cli show streams`` to see if the ``demo`` stream was creat
 
 ### Testing the stream through query tool
 
-Now the stream is created, it can be tested from ``cli query`` command. The ``kuiper`` prompt is displayed as below after typing ``cli query``.
+Now the stream is created, it can be tested from ``cli query`` command. The `kuiper` prompt is displayed as below after typing `cli query`.
 
 ```sh
 $ bin/cli query
 kuiper > 
 ```
 
-In the ``kuiper`` prompt, you can type SQL and validate the SQL against the stream.
+In the `kuiper` prompt, you can type SQL and validate the SQL against the stream.
 
 ```sh
 kuiper > select count(*), avg(humidity) as avg_hum, max(humidity) as max_hum from demo where temperature > 30 group by TUMBLINGWINDOW(ss, 5);
@@ -80,7 +132,7 @@ kuiper > select count(*), avg(humidity) as avg_hum, max(humidity) as max_hum fro
 query is submit successfully.
 ```
 
-Now if any data are publish to the MQTT server available at ``tcp://127.0.0.1:1883``, then it prints message as following.
+Now if any data are published to the MQTT server available at ``tcp://127.0.0.1:1883``, then it prints message as following.
 
 ```
 kuiper > [{"avg_hum":41,"count":4,"max_hum":91}]
@@ -110,7 +162,7 @@ As part of the rule, we need to specify the following:
 * sql: the query to run for the rule
 * actions: the output actions for the rule
 
-We can run the cli rule command to create rule and specify the rule definition in a file
+We can run the `cli rule` command to create rule and specify the rule definition in a file
 
 ```sh
 $ bin/cli create rule ruleDemo -f myRule
@@ -124,15 +176,15 @@ The content of `myRule` file. It prints out to the log  for the events where the
     }]
 }
 ```
-You should see a succesul message `rule ruleDemo created` in the stream log. And the rule is now up and running.
+You should see a successful message `rule ruleDemo created` in the stream log, and the rule is now set up and running.
 
 ### Testing the rule
-Now the rule engine is ready to receive events from mqtt demo topic. To test it, just use a mqtt client to publish message to the demo topic. The message should be in json format like this:
+Now the rule engine is ready to receive events from  MQTT `demo`  topic. To test it, just use a MQTT client to publish message to the `demo` topic. The message should be in json format like this:
 ```json
 {"temperature":31.2, "humidity": 77}
 ```
 
-Check the stream log located at `log/stream.log`, you would see the filtered data are printed out. Also, if you send below message, it does not meet the SQL condition, and the message will be filtered.
+Check the stream log located at "`log/stream.log`", and you would see the filtered data are printed out. Also, if you send below message, it does not meet the SQL condition, and the message will be filtered.
 
 ```json
 {"temperature":29, "humidity": 80}

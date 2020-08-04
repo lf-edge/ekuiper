@@ -18,7 +18,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func convCall(name string, args []interface{}) (interface{}, bool) {
@@ -215,7 +214,7 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 			return uuid.String(), true
 		}
 	case "tstamp":
-		return common.TimeToUnixMilli(time.Now()), true
+		return common.GetNowInMilli(), true
 	case "mqtt":
 		if v, ok := args[0].(string); ok {
 			return v, true

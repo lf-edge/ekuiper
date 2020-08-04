@@ -243,6 +243,7 @@ type Window struct {
 	WindowType WindowType
 	Length     *IntegerLiteral
 	Interval   *IntegerLiteral
+	Filter     Expr
 }
 
 func (w *Window) expr()    {}
@@ -1159,12 +1160,12 @@ func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 	switch val := lhs.(type) {
 	case map[string]interface{}:
 		return v.evalJsonExpr(val, expr.OP, expr.RHS)
-	case []interface{}, []map[string]interface{}:
-		return v.evalJsonExpr(val, expr.OP, expr.RHS)
 	case error:
 		return val
 	}
-
+	if isSliceOrArray(lhs) {
+		return v.evalJsonExpr(lhs, expr.OP, expr.RHS)
+	}
 	rhs := v.Eval(expr.RHS)
 	if _, ok := rhs.(error); ok {
 		return rhs
@@ -1172,11 +1173,15 @@ func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 	return v.simpleDataEval(lhs, rhs, expr.OP)
 }
 
+func isSliceOrArray(v interface{}) bool {
+	kind := reflect.ValueOf(v).Kind()
+	return kind == reflect.Array || kind == reflect.Slice
+}
+
 func (v *ValuerEval) evalJsonExpr(result interface{}, op Token, expr Expr) interface{} {
-	switch val := result.(type) {
-	case map[string]interface{}:
-		switch op {
-		case ARROW:
+	switch op {
+	case ARROW:
+		if val, ok := result.(map[string]interface{}); ok {
 			switch e := expr.(type) {
 			case *FieldRef, *MetaRef:
 				ve := &ValuerEval{Valuer: Message(val)}
@@ -1184,38 +1189,46 @@ func (v *ValuerEval) evalJsonExpr(result interface{}, op Token, expr Expr) inter
 			default:
 				return fmt.Errorf("the right expression is not a field reference node")
 			}
-		default:
-			return fmt.Errorf("%v is an invalid operation for %T", op, val)
+		} else {
+			return fmt.Errorf("the result %v is not a type of map[string]interface{}", result)
 		}
-	case []interface{}, []map[string]interface{}:
-		switch op {
-		case SUBSET:
-			val := reflect.ValueOf(result)
-			ber := v.Eval(expr)
-			if berVal, ok1 := ber.(*BracketEvalResult); ok1 {
-				if berVal.isIndex() {
-					if berVal.Start >= val.Len() {
-						return fmt.Errorf("out of index: %d of %d", berVal.Start, val.Len())
-					}
-					return val.Index(berVal.Start).Interface()
-				} else {
-					if berVal.Start >= val.Len() {
-						return fmt.Errorf("start value is out of index: %d of %d", berVal.Start, val.Len())
-					}
-
-					if berVal.End >= val.Len() {
-						return fmt.Errorf("end value is out of index: %d of %d", berVal.End, val.Len())
-					}
-					return val.Slice(berVal.Start, berVal.End).Interface()
-				}
-			} else {
-				return fmt.Errorf("invalid evaluation result - %v", berVal)
-			}
-		default:
-			return fmt.Errorf("%v is an invalid operation for %T", op, val)
+	case SUBSET:
+		if isSliceOrArray(result) {
+			return v.subset(result, expr)
+		} else {
+			return fmt.Errorf("%v is an invalid operation for %T", op, result)
 		}
+	default:
+		return fmt.Errorf("%v is an invalid operation for %T", op, result)
 	}
-	return nil
+}
+
+func (v *ValuerEval) subset(result interface{}, expr Expr) interface{} {
+	val := reflect.ValueOf(result)
+	ber := v.Eval(expr)
+	if berVal, ok1 := ber.(*BracketEvalResult); ok1 {
+		if berVal.isIndex() {
+			if berVal.Start >= val.Len() {
+				return fmt.Errorf("out of index: %d of %d", berVal.Start, val.Len())
+			}
+			return val.Index(berVal.Start).Interface()
+		} else {
+			if berVal.Start >= val.Len() {
+				return fmt.Errorf("start value is out of index: %d of %d", berVal.Start, val.Len())
+			}
+
+			if berVal.End >= val.Len() {
+				return fmt.Errorf("end value is out of index: %d of %d", berVal.End, val.Len())
+			}
+			end := berVal.End
+			if end == -1 {
+				end = val.Len()
+			}
+			return val.Slice(berVal.Start, end).Interface()
+		}
+	} else {
+		return fmt.Errorf("invalid evaluation result - %v", berVal)
+	}
 }
 
 //lhs and rhs are non-nil

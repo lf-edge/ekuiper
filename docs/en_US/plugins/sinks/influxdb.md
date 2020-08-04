@@ -31,6 +31,7 @@ Restart the Kuiper server to activate the plugin.
 | databasename  | true     | The database of the InfluxDB |
 | tagkey        | true     | The tag key of the InfluxDB |
 | tagvalue      | true     | The tag value of the InfluxDB |
+| fields     | true       | The column of the InfluxDB,split with ","  |
 ## Sample usage
 
 Below is a sample for selecting temperature great than 50 degree, and some profiles only for your reference.
@@ -50,7 +51,8 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
        "measurement": "test",
        "databasename": "databasename",
        "tagkey": "tagkey",
-       "tagvalue": "tagvalue"
+       "tagvalue": "tagvalue",
+       "fields": "humidity,temperature,pressure"
       }
     }
   ]

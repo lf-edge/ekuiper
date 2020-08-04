@@ -8,9 +8,9 @@ default:
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
   #privateKeyPath: /var/kuiper/xyz-private.pem.key
+  #kubeedgeVersion: 
+  #kubeedgeModelFile: ""
 
-
-#Override the global configurations
 demo_conf: #Conf_key
   qos: 0
   servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]

@@ -1,0 +1,12 @@
+Source: kuiper
+Section: unknown
+Priority: optional
+Maintainer: kuiper <contact@emqx.io>
+Build-Depends: debhelper (>=9)
+Standards-Version: 3.9.6
+Homepage: https://www.emqx.io
+
+Package: kuiper
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: A lightweight IoT edge analytics software

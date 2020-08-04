@@ -82,6 +82,7 @@ const (
 	BY
 	ASC
 	DESC
+	FILTER
 
 	TRUE
 	FALSE
@@ -387,6 +388,8 @@ func (s *Scanner) ScanIdent() (tok Token, lit string) {
 		return DESC, lit
 	case "ASC":
 		return ASC, lit
+	case "FILTER":
+		return FILTER, lit
 	case "INNER":
 		return INNER, lit
 	case "LEFT":

@@ -3,22 +3,27 @@ package xsql
 import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
 
 type AggregateFunctionValuer struct {
-	data    AggregateData
-	fv      *FunctionValuer
-	plugins map[string]api.Function
+	data        AggregateData
+	fv          *FunctionValuer
+	funcPlugins *funcPlugins
+}
+
+func NewFunctionValuersForOp(ctx api.StreamContext) (*FunctionValuer, *AggregateFunctionValuer) {
+	p := NewFuncPlugins(ctx)
+	return NewAggregateFunctionValuers(p)
 }
 
 //Should only be called by stream to make sure a single instance for an operation
-func NewAggregateFunctionValuers() (*FunctionValuer, *AggregateFunctionValuer) {
-	fv := &FunctionValuer{}
+func NewAggregateFunctionValuers(p *funcPlugins) (*FunctionValuer, *AggregateFunctionValuer) {
+	fv := NewFunctionValuer(p)
 	return fv, &AggregateFunctionValuer{
-		fv: fv,
+		fv:          fv,
+		funcPlugins: p,
 	}
 }
 
@@ -167,25 +172,14 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 		return 0, true
 	default:
 		common.Log.Debugf("run aggregate func %s", name)
-		if v.plugins == nil {
-			v.plugins = make(map[string]api.Function)
-		}
-		var (
-			nf  api.Function
-			ok  bool
-			err error
-		)
-		if nf, ok = v.plugins[name]; !ok {
-			nf, err = plugins.GetFunction(name)
-			if err != nil {
-				return err, false
-			}
-			v.plugins[name] = nf
+		nf, fctx, err := v.funcPlugins.GetFuncFromPlugin(name)
+		if err != nil {
+			return err, false
 		}
 		if !nf.IsAggregate() {
 			return nil, false
 		}
-		result, ok := nf.Exec(args)
+		result, ok := nf.Exec(args, fctx)
 		common.Log.Debugf("run custom aggregate function %s, get result %v", name, result)
 		return result, ok
 	}

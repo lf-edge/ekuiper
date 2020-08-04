@@ -1,10 +1,9 @@
-package operators
+package nodes
 
 import (
 	"fmt"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"github.com/emqx/kuiper/xstream/nodes"
 	"sync"
 )
 
@@ -22,30 +21,24 @@ func (f UnFunc) Apply(ctx api.StreamContext, data interface{}) interface{} {
 }
 
 type UnaryOperator struct {
-	op           UnOperation
-	concurrency  int
-	input        chan interface{}
-	outputs      map[string]chan<- interface{}
-	mutex        sync.RWMutex
-	cancelled    bool
-	name         string
-	statManagers []nodes.StatManager
+	*defaultSinkNode
+	op        UnOperation
+	mutex     sync.RWMutex
+	cancelled bool
 }
 
 // NewUnary creates *UnaryOperator value
 func New(name string, bufferLength int) *UnaryOperator {
-	// extract logger
-	o := new(UnaryOperator)
-
-	o.concurrency = 1
-	o.input = make(chan interface{}, bufferLength)
-	o.outputs = make(map[string]chan<- interface{})
-	o.name = name
-	return o
-}
-
-func (o *UnaryOperator) GetName() string {
-	return o.name
+	return &UnaryOperator{
+		defaultSinkNode: &defaultSinkNode{
+			input: make(chan interface{}, bufferLength),
+			defaultNode: &defaultNode{
+				name:        name,
+				outputs:     make(map[string]chan<- interface{}),
+				concurrency: 1,
+			},
+		},
+	}
 }
 
 // SetOperation sets the executor operation
@@ -53,29 +46,9 @@ func (o *UnaryOperator) SetOperation(op UnOperation) {
 	o.op = op
 }
 
-// SetConcurrency sets the concurrency level for the operation
-func (o *UnaryOperator) SetConcurrency(concurr int) {
-	o.concurrency = concurr
-	if o.concurrency < 1 {
-		o.concurrency = 1
-	}
-}
-
-func (o *UnaryOperator) AddOutput(output chan<- interface{}, name string) error {
-	if _, ok := o.outputs[name]; !ok {
-		o.outputs[name] = output
-	} else {
-		return fmt.Errorf("fail to add output %s, operator %s already has an output of the same name", name, o.name)
-	}
-	return nil
-}
-
-func (o *UnaryOperator) GetInput() (chan<- interface{}, string) {
-	return o.input, o.name
-}
-
 // Exec is the entry point for the executor
 func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
+	o.ctx = ctx
 	log := ctx.GetLogger()
 	log.Debugf("Unary operator %s is started", o.name)
 
@@ -110,10 +83,11 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		cancel()
 	}()
 
-	stats, err := nodes.NewStatManager("op", ctx)
+	stats, err := NewStatManager("op", ctx)
 	if err != nil {
 		select {
 		case errCh <- err:
+			logger.Errorf("unary operator %s error %s", o.name, err)
 		case <-ctx.Done():
 			logger.Infof("unary operator %s cancelling....", o.name)
 			o.mutex.Lock()
@@ -126,12 +100,16 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	o.mutex.Lock()
 	o.statManagers = append(o.statManagers, stats)
 	o.mutex.Unlock()
-	fv, afv := xsql.NewAggregateFunctionValuers()
+	fv, afv := xsql.NewFunctionValuersForOp(exeCtx)
 
 	for {
 		select {
 		// process incoming item
 		case item := <-o.input:
+			processed := false
+			if item, processed = o.preprocess(item); processed {
+				break
+			}
 			stats.IncTotalRecordsIn()
 			stats.ProcessTimeStart()
 			result := o.op.Apply(exeCtx, item, fv, afv)
@@ -141,12 +119,12 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 				continue
 			case error:
 				logger.Errorf("Operation %s error: %s", ctx.GetOpId(), val)
-				nodes.Broadcast(o.outputs, val, ctx)
+				o.Broadcast(val)
 				stats.IncTotalExceptions()
 				continue
 			default:
 				stats.ProcessTimeEnd()
-				nodes.Broadcast(o.outputs, val, ctx)
+				o.Broadcast(val)
 				stats.IncTotalRecordsOut()
 				stats.SetBufferLength(int64(len(o.input)))
 			}
@@ -160,11 +138,4 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			return
 		}
 	}
-}
-
-func (m *UnaryOperator) GetMetrics() (result [][]interface{}) {
-	for _, stats := range m.statManagers {
-		result = append(result, stats.GetMetrics())
-	}
-	return result
 }

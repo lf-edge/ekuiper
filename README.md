@@ -29,7 +29,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
   - Support data extract, transform and filter through SQL 
   - Data order, group, aggregation and join
   - 60+ functions, includes mathematical, string, aggregate and hash etc
-  - 4 time windows
+  - 4 time windows & count window
 
 - Highly extensibile 
 
@@ -42,8 +42,8 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 - Management
 
   - Stream and rule management through CLI
-  - Stream and rule management through REST API (In planning)
-  - Easily be integrate with [KubeEdge](https://github.com/kubeedge/kubeedge) and [K3s](https://github.com/rancher/k3s), which bases Kubernetes
+  - Stream and rule management through REST API
+  - Easily be integrate with [KubeEdge](https://github.com/kubeedge/kubeedge), [K3s](https://github.com/rancher/k3s) and [Baetyl](https://github.com/baetyl/baetyl), which bases Kubernetes
 
 - Integration with EMQ X Edge
 

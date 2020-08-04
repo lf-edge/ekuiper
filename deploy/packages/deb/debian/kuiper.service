@@ -1,0 +1,15 @@
+[Unit]
+Description=emqx daemon
+After=network.target
+
+[Service]
+user=kuiper
+Group=kuiper
+Type=forking
+Environment=HOME=/var/lib/kuiper
+ExecStart=/bin/sh /usr/lib/kuiper/bin/service_helper.sh start
+LimitNOFILE=1048576
+ExecStop=/bin/sh /usr/lib/kuiper/bin/service_helper.sh stop
+
+[Install]
+WantedBy=multi-user.target

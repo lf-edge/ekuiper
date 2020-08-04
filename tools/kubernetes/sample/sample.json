@@ -1,0 +1,97 @@
+{
+    "commands":[
+        {
+            "url":"/streams",
+            "description":"create stream1",
+            "method":"post",
+            "data":{
+                "sql":"create stream stream1 (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\");"
+            }
+        },
+        {
+            "url":"/streams",
+            "description":"create stream2",
+            "method":"post",
+            "data":{
+                "sql":"create stream stream2 (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\");"
+            }
+        },
+        {
+            "url":"/streams",
+            "description":"list stream",
+            "method":"get"
+        },
+        {
+            "url":"/streams/stream1",
+            "description":"get stream1",
+            "method":"get"
+        },
+        {
+            "url":"/streams/stream2",
+            "description":"del stream2",
+            "method":"delete"
+        },
+        {
+            "url":"/rules",
+            "description":"create rule1",
+            "method":"post",
+            "data":{
+                "id":"rule1",
+                "sql":"SELECT * FROM stream1",
+                "actions":[
+                    {
+                        "log":{
+                        }
+                    }]
+            }
+        },
+        {
+            "url":"/rules",
+            "description":"create rule2",
+            "method":"post",
+            "data":{
+                "id":"rule2",
+                "sql":"SELECT * FROM stream1",
+                "actions":[
+                    {
+                        "log":{
+                        }
+                    }]
+            }
+        },
+        {
+            "url":"/rules",
+            "description":"list rule",
+            "method":"get"
+        },
+        {
+            "url":"/rules/rule1",
+            "description":"get rule1",
+            "method":"get"
+        },
+        {
+            "url":"/rules/rule2",
+            "description":"del rule2",
+            "method":"delete"
+        },
+        {
+            "url":"/rules/rule1/stop",
+            "description":"stop rule1",
+            "method":"post"
+        },
+        {
+            "url":"/rules/rule1/start",
+            "description":"start rule1",
+            "method":"post"
+        },
+        {
+            "url":"/rules/rule1/restart",
+            "description":"restart rule1",
+            "method":"post"
+        },
+        {
+            "url":"/rules/rule1/status",
+            "description":"get rule1 status",
+            "method":"get"
+        }]
+}

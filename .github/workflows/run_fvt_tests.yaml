@@ -48,7 +48,7 @@ jobs:
             sudo ./fvt_scripts/setup_env.sh
             ln -s _build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-x86_64/log kuiper_logs
         - name: run fvt tests
-          timeout-minutes: 5
+          timeout-minutes: 8
           run: ./fvt_scripts/run_jmeter.sh with_edgex=true
         - uses: actions/upload-artifact@v1
           if: always()
@@ -59,69 +59,6 @@ jobs:
           if: always()
           with:
             name: jmeter_logs_with_edgex
-            path: ./jmeter_logs
-        - name: check logs
-          run: |
-            sudo apt update && sudo apt install -y libxml2-utils
-            cd jmeter_logs
-            if [ ! -z "$(cat *.jtl| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
-               [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
-                echo -e "---------------------------------------------\n"
-                echo "FVT tests error"
-                exit 1
-            fi
-            
-    fvt_tests_without_edgex:
-        runs-on: ubuntu-latest
-
-        steps:
-        - uses: actions/setup-go@v1
-          with:
-            go-version: '1.14'
-        - uses: actions/setup-java@v1
-          with:
-            java-version: '8' # The JDK version to make available on the path.
-            java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
-            architecture: x64 # (x64 or x86) - defaults to x64
-        - name: install jmeter
-          timeout-minutes: 10
-          env:
-            JMETER_VERSION: 5.2.1
-          run: |
-            wget -O /tmp/apache-jmeter.tgz http://us.mirrors.quenda.co/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
-            cd /tmp && tar -xvf apache-jmeter.tgz
-            echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
-            echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
-            wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/emqx/mqtt-jmeter/raw/master/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
-            ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
-        - name: install emqx
-          env:
-            EMQX_VERSION: v4.0.2
-          run: |
-            wget -O emqx.deb https://www.emqx.io/downloads/broker/v4.0.2/emqx-ubuntu18.04-${EMQX_VERSION}_amd64.deb
-            sudo dpkg -i emqx.deb
-        - uses: actions/checkout@v2
-        - name: build kuiper
-          run: |
-            sudo apt update && sudo apt install pkg-config libczmq-dev -y
-            make
-            go build --buildmode=plugin -o plugins/sources/Zmq.so plugins/sources/zmq.go
-        - name: run edgex && emqx && kuiper
-          run: |
-            sudo ./fvt_scripts/setup_env.sh
-            ln -s _build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-x86_64/log kuiper_logs
-        - name: run fvt tests
-          timeout-minutes: 5
-          run: ./fvt_scripts/run_jmeter.sh with_edgex=false
-        - uses: actions/upload-artifact@v1
-          if: always()
-          with:
-            name: kuiper_logs_without_edgex
-            path: ./kuiper_logs
-        - uses: actions/upload-artifact@v1
-          if: always()
-          with:
-            name: jmeter_logs_without_edgex
             path: ./jmeter_logs
         - name: check logs
           run: |
@@ -212,8 +149,8 @@ jobs:
           
           sudo docker save emqx/kuiper:$version-alpine -o kuier.tar.gz
           sudo k3s ctr image import kuier.tar.gz
-          
-          sed -i -r "s/^appVersion: .*$/appVersion: ${version}/g" deploy/chart/kuiper/Chart.yaml
+
+          sed -i -r "s/^appVersion: .*$/appVersion: \"${version}\"/g" deploy/chart/kuiper/Chart.yaml
           sed -i -r 's/  pullPolicy: .*$/  pullPolicy: Never/g' deploy/chart/kuiper/values.yaml
           sed -i -r "s/      servers: \[.*\]$/      servers: \[tcp:\/\/${emqx_address}:1883\]/g" deploy/chart/kuiper/values.yaml
           

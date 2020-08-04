@@ -1,10 +1,13 @@
 default:
   interval: 1000
-  pattern:
-    count: 50
-
-ext:
-  interval: 300
   seed: 1
   pattern:
     count: 50
+  deduplicate: 0
+
+ext:
+  interval: 100
+
+dedup:
+  interval: 100
+  deduplicate: 50

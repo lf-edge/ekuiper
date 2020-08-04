@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/emqx/kuiper/xstream/api"
-	"github.com/emqx/kuiper/xstream/operators"
+	"github.com/emqx/kuiper/xstream/nodes"
 	"reflect"
 )
 
@@ -22,7 +22,7 @@ const (
 //   func(T) R
 //   where T is the type of incoming item
 //   R the type of returned processed item
-func ProcessFunc(f interface{}) (operators.UnFunc, error) {
+func ProcessFunc(f interface{}) (nodes.UnFunc, error) {
 	fntype := reflect.TypeOf(f)
 
 	funcForm, err := isUnaryFuncForm(fntype)
@@ -35,7 +35,7 @@ func ProcessFunc(f interface{}) (operators.UnFunc, error) {
 
 	fnval := reflect.ValueOf(f)
 
-	return operators.UnFunc(func(ctx api.StreamContext, data interface{}) interface{} {
+	return nodes.UnFunc(func(ctx api.StreamContext, data interface{}) interface{} {
 		result := callOpFunc(fnval, ctx, data, funcForm)
 		return result.Interface()
 	}), nil
@@ -47,7 +47,7 @@ func ProcessFunc(f interface{}) (operators.UnFunc, error) {
 //   func(T)bool - where T is the type of incoming data item, bool is the value of the predicate
 // When the user-defined function returns false, the current processed data item will not
 // be placed in the downstream processing.
-func FilterFunc(f interface{}) (operators.UnFunc, error) {
+func FilterFunc(f interface{}) (nodes.UnFunc, error) {
 	fntype := reflect.TypeOf(f)
 
 	funcForm, err := isUnaryFuncForm(fntype)
@@ -64,7 +64,7 @@ func FilterFunc(f interface{}) (operators.UnFunc, error) {
 	}
 
 	fnval := reflect.ValueOf(f)
-	return operators.UnFunc(func(ctx api.StreamContext, data interface{}) interface{} {
+	return nodes.UnFunc(func(ctx api.StreamContext, data interface{}) interface{} {
 		result := callOpFunc(fnval, ctx, data, funcForm)
 		predicate := result.Bool()
 		if !predicate {
@@ -78,7 +78,7 @@ func FilterFunc(f interface{}) (operators.UnFunc, error) {
 // maps, one-to-one, the incomfing value to a new value.  The user-defined function
 // must be of type:
 //   func(T) R - where T is the incoming item, R is the type of the returned mapped item
-func MapFunc(f interface{}) (operators.UnFunc, error) {
+func MapFunc(f interface{}) (nodes.UnFunc, error) {
 	return ProcessFunc(f)
 }
 
@@ -88,7 +88,7 @@ func MapFunc(f interface{}) (operators.UnFunc, error) {
 //   func (T) R - where R is the original item, R is a slice of decostructed items
 // The slice returned should be restreamed by placing each item onto the stream for
 // downstream processing.
-func FlatMapFunc(f interface{}) (operators.UnFunc, error) {
+func FlatMapFunc(f interface{}) (nodes.UnFunc, error) {
 	fntype := reflect.TypeOf(f)
 
 	funcForm, err := isUnaryFuncForm(fntype)
@@ -104,7 +104,7 @@ func FlatMapFunc(f interface{}) (operators.UnFunc, error) {
 	}
 
 	fnval := reflect.ValueOf(f)
-	return operators.UnFunc(func(ctx api.StreamContext, data interface{}) interface{} {
+	return nodes.UnFunc(func(ctx api.StreamContext, data interface{}) interface{} {
 		result := callOpFunc(fnval, ctx, data, funcForm)
 		return result.Interface()
 	}), nil

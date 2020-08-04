@@ -21,11 +21,14 @@ endif
 
 TARGET ?= emqx/kuiper
 
+export KUIPER_SOURCE := $(shell pwd)
+
 .PHONY: build
 build: build_without_edgex
 
 .PHONY:pkg
 pkg: pkg_without_edgex
+	@if [ "$$(uname -s)" = "Linux" ]; then make -C deploy/packages; fi
 
 .PHONY: build_prepare
 build_prepare:
@@ -45,11 +48,11 @@ build_prepare:
 .PHONY: build_without_edgex
 build_without_edgex: build_prepare
 	@if [ ! -z $(GOOS) ] && [ ! -z $(GOARCH) ] && [ $(CGO_ENABLED) == 0 ];then \
-		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o cli xstream/cli/main.go; \
-		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o server xstream/server/main.go; \
+		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o cli xstream/cli/main.go; \
+		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o server xstream/server/main.go; \
 	else \
-		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o cli xstream/cli/main.go; \
-		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION)" -o server xstream/server/main.go; \
+		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o cli xstream/cli/main.go; \
+		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o server xstream/server/main.go; \
 	fi
 	@if [ ! -z $$(which upx) ] && [ "$$(uname -m)" != "aarch64" ]; then upx ./cli; upx ./server; fi
 	@mv ./cli ./server $(BUILD_PATH)/$(PACKAGE_NAME)/bin
@@ -62,11 +65,11 @@ pkg_without_edgex: build_without_edgex
 .PHONY: build_with_edgex
 build_with_edgex: build_prepare
 	@if [ ! -z $(GOOS) ] && [ ! -z $(GOARCH) ] && [ $(CGO_ENABLED) == 0 ];then \
-		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION)" -tags edgex -o cli xstream/cli/main.go; \
-		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION)" -tags edgex -o server xstream/server/main.go; \
+		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags edgex -o cli xstream/cli/main.go; \
+		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags edgex -o server xstream/server/main.go; \
 	else \
-		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION)" -tags edgex -o cli xstream/cli/main.go; \
-		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION)" -tags edgex -o server xstream/server/main.go; \
+		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags edgex -o cli xstream/cli/main.go; \
+		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags edgex -o server xstream/server/main.go; \
 	fi
 	@if [ ! -z $$(which upx) ] && [ "$$(uname -m)" != "aarch64" ]; then upx ./cli; upx ./server; fi
 	@mv ./cli ./server $(BUILD_PATH)/$(PACKAGE_NAME)/bin
@@ -94,22 +97,51 @@ cross_build: cross_prepare
 	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
 	-t cross_build \
 	--output type=tar,dest=cross_build.tar \
-	-f ./Dockerfile .
+	-f .ci/Dockerfile .
 
 	@mkdir -p $(PACKAGES_PATH)
-	@tar -xvf cross_build.tar --wildcards linux_amd64/go/kuiper/_packages/* \
+	@tar -xvf cross_build.tar --wildcards linux_amd64/go/kuiper/_packages/ \
 		&& mv linux_amd64/go/kuiper/_packages/* $(PACKAGES_PATH)
-	@tar -xvf cross_build.tar --wildcards linux_arm64/go/kuiper/_packages/* \
+	@tar -xvf cross_build.tar --wildcards linux_arm64/go/kuiper/_packages/ \
 		&& mv linux_arm64/go/kuiper/_packages/* $(PACKAGES_PATH)
-	@tar -xvf cross_build.tar --wildcards linux_arm_v7/go/kuiper/_packages/* \
+	@tar -xvf cross_build.tar --wildcards linux_arm_v7/go/kuiper/_packages/ \
 		&& mv linux_arm_v7/go/kuiper/_packages/* $(PACKAGES_PATH)
-	@tar -xvf cross_build.tar --wildcards linux_ppc64le/go/kuiper/_packages/* \
+	@tar -xvf cross_build.tar --wildcards linux_ppc64le/go/kuiper/_packages/ \
 		&& mv linux_ppc64le/go/kuiper/_packages/* $(PACKAGES_PATH)
-	@tar -xvf cross_build.tar --wildcards linux_386/go/kuiper/_packages/* \
+	@tar -xvf cross_build.tar --wildcards linux_386/go/kuiper/_packages/ \
 		&& mv linux_386/go/kuiper/_packages/kuiper-$(VERSION)-$(OS)-x86_64.tar.gz $(PACKAGES_PATH)/kuiper-$(VERSION)-linux-386.tar.gz \
-		&& mv linux_386/go/kuiper/_packages/kuiper-$(VERSION)-$(OS)-x86_64.zip $(PACKAGES_PATH)/kuiper-$(VERSION)-linux-386.zip
+		&& mv linux_386/go/kuiper/_packages/kuiper-$(VERSION)-$(OS)-x86_64.zip $(PACKAGES_PATH)/kuiper-$(VERSION)-linux-386.zip \
+		&& mv linux_386/go/kuiper/_packages/*.deb $(PACKAGES_PATH)
 
+	@rm -f cross_build.tar
 	@echo "Cross build success"
+
+.PHONY: cross_build_for_rpm
+cross_build_for_rpm: cross_prepare
+	@docker buildx build --no-cache \
+	--platform=linux/amd64,linux/arm64,linux/386,linux/ppc64le \
+	-t cross_build \
+	--output type=tar,dest=cross_build_for_rpm.tar \
+	-f .ci/Dockerfile-centos .
+
+	@mkdir -p $(PACKAGES_PATH)
+	@tar -xvf cross_build_for_rpm.tar --wildcards linux_amd64/go/kuiper/_packages/ \
+		&& mv linux_amd64/go/kuiper/_packages/*.rpm $(PACKAGES_PATH)
+	@tar -xvf cross_build_for_rpm.tar --wildcards linux_arm64/go/kuiper/_packages/ \
+		&& mv linux_arm64/go/kuiper/_packages/*.rpm $(PACKAGES_PATH)
+	@tar -xvf cross_build_for_rpm.tar --wildcards linux_ppc64le/go/kuiper/_packages/ \
+		&& mv linux_ppc64le/go/kuiper/_packages/*.rpm $(PACKAGES_PATH)
+	@tar -xvf cross_build_for_rpm.tar --wildcards linux_386/go/kuiper/_packages/ \
+		&& source_pkg=$$(basename linux_386/go/kuiper/_packages/*.rpm |head -1) \
+		&& target_pkg=$$(echo $$source_pkg | sed 's/x86_64/386/g' ) \
+		&& mv linux_386/go/kuiper/_packages/$$source_pkg $(PACKAGES_PATH)/$$target_pkg
+
+	@rm -f cross_build_for_rpm.tar
+	@echo "Cross build rpm packages success"
+
+
+.PHONE: all_pkgs
+all_pkgs: cross_build cross_build_for_rpm
 
 .PHONY: docker
 docker:

@@ -33,7 +33,9 @@
 
 ## 识别码
 
-源引用（`.`）源解引用运算符可用于通过引用源流或表来指定列。'->引用选择嵌套JSON对象中的键。
+源引用 (`.`)
+
+源解引用运算符可用于通过引用源流或表来指定列。`->` 引用选择嵌套 JSON对象中的键。
 
 ```
 SELECT demo.age FROM demo
@@ -83,7 +85,7 @@ SELECT d.friends[0]->last FROM demo AS d
 
 切片允许您选择数组的连续子集。
 
-``field[from:to]`` 如果未指定from，则表示从数组的第一个元素开始; 如果未指定to，则表示以数组的最后一个元素结尾。
+`field[from:to]` 如果未指定 from，则表示从数组的第一个元素开始; 如果未指定 to，则表示以数组的最后一个元素结尾。
 
 ```
 SELECT children[0:1] FROM demo
@@ -120,9 +122,9 @@ SELECT followers->Group1[:1]->first FROM demo
 }
 ```
 
-# Json Path functions
+# Json 路径函数
 
-Kuiper provides a list of functions to allow to execute json path over struct or array columns or values. The functions are:
+Kuiper 提供了一系列函数，以允许通过结构或数组列或值进行 json 路径操作。 这些函数是：
 
 ```tsql
 json_path_exists(col, jsonpath)
@@ -130,49 +132,49 @@ json_path_query(col, jsonpath)
 json_path_query_first(col, jsonpath)
 ```
 
-Please refer to [json functions](sqls/built-in_functions.md#json-functions) for detail.
+请参考 [json 函数](sqls/built-in_functions.md#json-functions) 获得详细信息.
 
-All these functions share the same parameter signatures, among which, the second parameter is a jsonpath string. The jsonpath grammer used by Kuiper is based on [JsonPath](https://goessner.net/articles/JsonPath/).  
+所有这些函数共享相同的参数签名，其中，第二个参数是 jsonpath 字符串。 Kuiper 使用的 jsonpath 语法基于[JsonPath](https://goessner.net/articles/JsonPath/)
 
-The basic grammar of those expressions is to use the keys part of the JSON objects combined with some elements:
+这些表达式的基本语法是将 JSON 对象的字段部分与一些元素结合使用：
 
-- Dots `.` to move into a tree
-- Brackets `[]` for access to a given array member coupled with a position. It can also access to a map field.
-- Variables, with `$` representing a JSON text and `@` for result path evaluations.
+- 点 `.` 用于移动到树中
+- 括号 `[]` 用于访问给定位置的数组成员。 它还可以访问地图字段。
+- 变量，`$` 表示 JSON 文本，`@` 表示结果路径计算。
 
-So for example, when applied to the previous JSON data sample we can reach the following parts of the tree with these expressions:
+例如，当应用于上述的 JSON 数据示例时，我们可以使用这些表达式访问树的以下部分：
 
-- `$.age` refers to 37.
-- `$.friends.first` refers to “dale”.
-- `$.friends` refers to the full array of friends.
-- `$.friends[0]` refers to the first friend listed in the previous array (contrary to arrays members are zero-based).
-- `$.friends[0][lastname]` refers to the lastname of the first friend listed. Use bracket if [there are reserved words](sqls/lexical_elements.md) or special characters (such as space ' ', '.' and Chinese etc) in the field key.
-- `$.friends[? @.age>60].first` or `$.friends[? (@.age>60)].first` refers to the first name of the friends whose age is bigger than 60. Notice that the space between ? and the condition is required even the condition is with braces.
+- `$.age` 指的是37。
+- `$.friends.first` 指的是 "dale"。
+- `$.friends` 指的是完整的朋友数组。
+- `$.friends[0]` 指的是上一个数组中列出的第一个朋友（与数组成员相反，它们从零开始）。
+- `$.friends[0][lastname]` 是指列出的第一个朋友的姓氏.。如果 fields key 中有 [保留字](sqls/lexical_elements.md)或特殊字符（例如空格 ' '、 '.'和中文等），请使用括号。
+- `$.friends[? @.age>60].first` 或者 `$.friends[? (@.age>60)].first` 是指年龄大于60岁的朋友的名字。请注意，？之间有空格， 并且条件是必需的，即使条件带有括号。
 
-Developers can use the json functions in the SQL statement. Here are some examples.
+开发人员可以在 SQL 语句中使用 json 函数。 这里有些例子。
 
-- Select the lastname of group1 followers
+- 查询第1组跟随者的姓氏
 ```tsql
 SELECT json_path_query(followers, "$.Group1[*].last") FROM demo
 
 ["Shavor","Miller"]
 ```
 
-- Select the lastname if any of the group1 followers is older than 60
+- 查询第1组年龄大于60岁的跟随者的姓氏
 ```tsql
 SELECT name->last FROM demo where json_path_exists(followers, "$.Group1[? @.age>30]")
 
 "Anderson"
 ```
 
-- Select the follower's lastname from group1 whose age is bigger than 30
+- 查询第1组年龄大于30岁的跟随者的姓氏
 ```tsql
 SELECT json_path_exists(followers, "$.Group1[? @.age>30].last") FROM demo
 
 ["Miller"]
 ```
 
-- Assume there is a field in follows with reserved words or chars like dot `my.follower`, use bracket to access it.
+- 假设跟随者有一个字段有保留字或点之类的字符， 比如 `my.follower`,使用括号访问它。
 ```tsql
 SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
 
@@ -187,7 +189,7 @@ SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
 
 ## 列表和切片映射
 
-通配符表达式创建列表映射，它是JSON数组上的映射。
+通配符表达式创建列表映射，它是 JSON 数组上的映射。
 
 ```
 SELECT demo.friends[*]->first FROM demo
