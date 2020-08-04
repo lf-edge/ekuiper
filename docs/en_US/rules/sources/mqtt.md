@@ -57,16 +57,44 @@ The location of certification path. It can be an absolute path, or a relative pa
 
 The location of private key path. It can be an absolute path, or a relative path.  For more detailed information, please refer to ``certificationPath``. Such as ``d3807d9fa5-private.pem.key``.
 
+### bufferLength
+
+specify the maximum number of messages to be buffered in the memory. This is used to avoid the extra large memory usage that would cause out of memory error. Notice that the memory usage will be varied to the actual buffer. Increase the length here won't increase the initial memory allocation so it is safe to set a large buffer length. The default value is 102400, that is if each payload size is about 100 bytes, the maximum buffer size will be about 102400 * 100B ~= 10MB.
+
 ### kubeedgeVersion
 
 kubeedge 版本号，不同的版本号对应的文件内容不同。
 
 ### kubeedgeModelFile
 
-kubeedge 模版文件名，文件指定放在 etc/sources 文件夹中
+kubeedge 模版文件名，文件指定放在 etc/sources 文件夹中，样例格式如下：
 
-### bufferLength
-specify the maximum number of messages to be buffered in the memory. This is used to avoid the extra large memory usage that would cause out of memory error. Notice that the memory usage will be varied to the actual buffer. Increase the length here won't increase the initial memory allocation so it is safe to set a large buffer length. The default value is 102400, that is if each payload size is about 100 bytes, the maximum buffer size will be about 102400 * 100B ~= 10MB.
+```json
+{
+	"deviceModels": [{
+		"name": "device1",
+		"properties": [{
+			"name": "temperature",
+			"dataType": "int"
+		}, {
+			"name": "temperature-enable",
+			"dataType": "string"
+		}]
+	}]
+}
+```
+
+#### deviceModels.name
+
+设备名称,与订阅主题中的字段匹配，位于第三和第四个“/”之间的内容。例如：$ke/events/device/device1/data/update
+
+#### properties.name
+
+字段名称
+
+#### properties.dataType
+
+期望的字段类型
 
 ## Override the default settings
 
