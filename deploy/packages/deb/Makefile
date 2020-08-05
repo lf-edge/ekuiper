@@ -3,6 +3,7 @@ TOPDIR := /tmp/kuiper
 SRCDIR := $(TOPDIR)/$(PKG_VSN)
 BUILT := $(SRCDIR)/BUILT
 
+TARGET_PKG := kuiper-$(PKG_VSN)-linux-$(shell uname -m).deb
 .PHONY: all
 all: | $(BUILT)
 	cp -r debian $(SRCDIR)/
@@ -10,7 +11,7 @@ all: | $(BUILT)
 	sed -i "s#<VERSION>#$(PKG_VSN)#g" $(SRCDIR)/debian/changelog
 	cd $(SRCDIR) && dpkg-buildpackage -us -uc
 	mkdir -p $(KUIPER_SOURCE)/_packages/
-	cp $(SRCDIR)/../*.deb $(KUIPER_SOURCE)/_packages/
+	cp $(SRCDIR)/../*.deb $(KUIPER_SOURCE)/_packages/$(TARGET_PKG)
 
 $(BUILT):
 	mkdir -p $(TOPDIR) $(SRCDIR)

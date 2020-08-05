@@ -41,7 +41,7 @@ ENV KUIPER_SOURCE=/go/kuiper
 
 RUN make -C deploy/packages
 
-RUN rpm -ivh _packages/kuiper-*.$(uname -m).rpm \
+RUN rpm -ivh _packages/*.rpm \
     && [ ! -z $(rpm -q emqx | grep -o emqx) ] \
     && rpm -e kuiper \
     && [ "$(rpm -q emqx)" == "package emqx is not installed" ]

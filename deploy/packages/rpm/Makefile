@@ -19,6 +19,8 @@ ifeq ($(ARCH),mips64)
 ARCH := mips64el
 endif
 
+TARGET_PKG := kuiper-$(PKG_VSN)-linux-$(ARCH).rpm
+
 .PHONY: all
 all: | $(BUILT)
 	rpmbuild -v -bb \
@@ -35,7 +37,7 @@ all: | $(BUILT)
 		--define "_sharedstatedir /var/lib" \
 		kuiper.spec
 	mkdir -p $(KUIPER_SOURCE)/_packages
-	cp $(TOPDIR)/RPMS/$(ARCH)/*.rpm $(KUIPER_SOURCE)/_packages/
+	cp $(TOPDIR)/RPMS/$(ARCH)/*.rpm $(KUIPER_SOURCE)/_packages/$(TARGET_PKG)
 
 $(BUILT):
 	mkdir -p $(TOPDIR) $(SRCDIR)
