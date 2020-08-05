@@ -1,4 +1,4 @@
-## 编译插件
+## Compile the plugins
 
 ### plugins/go.mod
 
@@ -20,39 +20,39 @@ go mod edit -replace github.com/emqx/kuiper=/$kuiper
 go build --buildmode=plugin -o /$kuiper/plugins/sinks/Taos@v1.0.0.so /$kuiper/plugins/sinks/taos.go
 ```
 
-## 规则 Actions 说明
+## Rule Actions Description
 
-| 名称     | 类型     | 是否必填                      | 释义       |
-| -------- | -------- | ----------------------------- | ---------- |
-| ip       | string   | 必填                          | 数据库ip   |
-| port     | int      | 必填                          | 数据库端口 |
-| user     | string   | 必填                          | 用户名     |
-| password | string   | 必填                          | 密码       |
-| database | string   | 必填                          | 数据库名   |
-| table    | string   | 必填                          | 表名       |
-| fields   | []string | 选填（不填时用数据的key替代） | 表字段集合 |
+| Name     | Type     | Optional                                          | Description            |
+| -------- | -------- | ------------------------------------------------- | ---------------------- |
+| ip       | string   | false                                             | Database ip            |
+| port     | int      | false                                             | Database port          |
+| user     | string   | false                                             | Username               |
+| password | string   | false                                             | Password               |
+| database | string   | false                                             | Database name          |
+| table    | string   | false                                             | Table Name             |
+| fields   | []string | true（Replace with data key when not filling in） | Table field collection |
 
-## 操作示例
+## Operation example
 
-### 创建数据库、表，参考以下文档：
+### To create a database or table, refer to the following documents:
 
 ```http
 https://www.taosdata.com/cn/getting-started/
 ```
 
-### 创建流
+### Create a stream
 
 ```curl
 curl --location --request POST 'http://127.0.0.1:9081/streams' --header 'Content-Type:application/json' --data '{"sql":"create stream demoStream(time string, age BIGINT) WITH ( DATASOURCE = \"device/+/message\", FORMAT = \"json\");"}'
 ```
 
-### 创建规则
+### Create a rule
 
 ```curl
 curl --location --request POST 'http://127.0.0.1:9081/rules' --header 'Content-Type:application/json' --data '{"id":"demoRule","sql":"SELECT * FROM demoStream;","actions":[{"taos":{"port":0,"ip":"127.0.0.1","user":"root","password":"taosdata","database":"dbName","table":"tableName","fields":["time","age"]}}]}'
 ```
 
-### 发送数据
+### Send data
 
 ```curl
 mosquitto_pub -h broker.emqx.io -m '{"time":"2020-01-11 18:18:18", "age" : 18}' -t device/device_001/message

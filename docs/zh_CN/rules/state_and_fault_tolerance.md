@@ -1,36 +1,37 @@
-# State
+# 状态
 
-Kuiper supports stateful rule stream. There are two kinds of states in Kuiper:
-1. Internal state for window operation and rewindable source
-2. User state exposed to extensions with stream context, check [state storage](../extension/overview.md#state-storage).
+Kuiper 支持有状态的规则流。Kuiper 中有两种状态：
 
-# Fault Tolerance
+1. 窗口操作和可回溯源的内部状态。
+2. 对流上下文扩展公开的用户状态，可参考 [状态存储](../extension/overview.md#state-storage)。
 
-By default, all the states reside in memory only which means that if the stream exits abnormally, the states will disappear.
+# 容错
 
-In order to make state fault tolerance, Kuipler need to checkpoint the state into persistent storage which will allow a recovery after failure.
+默认情况下，所有状态仅驻留在内存中，这意味着如果流异常退出，则状态将消失。
 
-## Enable Checkpointing
+为了使状态容错，Kuipler 需要将状态检查点放入永久性存储中，以便在发生错误后恢复。
 
-Set the rule option qos to 1 or 2 will enable the checkpointing. Configure the checkpoint interval by setting the checkpointInterval option.
+## 启用检查点
 
-When things go wrong in a stream processing application, it is possible to have either lost, or duplicated results. For the 3 options of qos, the behavior will be:
+将规则选项 qos 设置为1或2将启用检查点。 通过设置 checkpointInterval 选项配置检查点间隔时间。
 
-1. At-most-once(0): Kuiper makes no effort to recover from failures
-2. At-least-once(1): Nothing is lost, but you may experience duplicated results
-3. Exactly-once(2): Nothing is lost or duplicated 
+当在流处理应用程序中出现问题时，可能会造成结果丢失或重复。 对于 qos 的3个选项，其对应行为将是：
 
-Given that Kuiper recovers from faults by rewinding and replaying the source data streams, when the ideal situation is described as exactly once does not mean that every event will be processed exactly once. Instead, it means that every event will affect the state being managed by Kuiper exactly once.
+1. 最多一次（0）：Kuiper 不会采取任何行动从问题中恢复
+2. 至少一次（1）：没有任何结果丢失，但是您可能会遇到重复的结果
+3. 恰好一次（2）：没有丢失或重复任何结果
 
-If you don’t need "exactly once", you can gain some performance by configuring Kuiper to use AT_LEAST_ONCE.
+考虑到 Kuiper 通过回溯和重播源数据流从错误中恢复，将理想情况描述为恰好一次时，并不意味着每个事件都会被恰好处理一次。 相反，这意味着每个事件将只会对由 Kuiper 管理的状态造成一次影响。
 
-## Exactly Once End to End
+如果您不需要“恰好一次”，则可以通过使用 AT_LEAST_ONCE 配置 Kuiper，进而获得一些更好的效果。
 
-### Source consideration
+## 恰好一次端到端
 
-To have an end to end qos of the stream, the source must be rewindable. That means after recovery, the source can be reverted to the checkpointed offset and resend data from that so that the whole stream can be replayed from the last failure.
+### 源考虑
 
-For extended source, the user must implement the api.Rewindable interface as well as the default api.Source interface. Kuiper will handle the rewind internally.
+要获得流的端到端 qos，源必须是可回溯的。这意味着在恢复之后，可以依据检查点偏移量将源恢复，并重新发送数据，这样就可以从上次错误中重放整个流。
+
+对于扩展源，用户必须实现 api.Rewindable 接口以及默认的 api.Source 接口。 Kuiper 将在内部处理回溯。
 
 ```go
 type Rewindable interface {
@@ -39,8 +40,8 @@ type Rewindable interface {
 }
 ```
 
-### Sink consideration
+### 目标考虑
 
-We cannot guarantee the sink to receive a data exactly once. If failures happen during the period of checkpointing, some states which have sent to the sink may not be checkpointed. And those states will be replayed as they are not restored because of not being checkpointed. In this case, the sink may receive them more than once. 
+我们不能保证目标仅接收一次数据。 如果在检查点期间发生错误，则某些已经发送到目标的状态不会被检查到。 这些状态将被重放，因为它们没有被检查而无法恢复。 在这种情况下，目标可能会多次接收它们。
 
-To implement exactly-once, the user will have to implement deduplication tailored to fit the various sinking system.
+要实施“恰好一次”，用户必须针对各种目标系统量身定制重复数据消除功能。
