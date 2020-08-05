@@ -9,7 +9,7 @@ on:
 jobs:
     build:
         runs-on: ubuntu-latest
-        
+
         steps:
         - uses: actions/checkout@v1
         - name: install docker
@@ -63,6 +63,13 @@ jobs:
     build-docker-images:
         runs-on: ubuntu-latest
         
+        strategy:
+            matrix:
+                suffix:
+                - fat
+                - slim
+                - alpine
+
         steps:
         - uses: actions/checkout@v1
         - name: install docker
@@ -82,29 +89,49 @@ jobs:
             sudo systemctl restart docker
             docker version
             docker buildx create --use --name mybuild
+            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - name: build docker image
-          run: make docker
-        - name: tests docker image
+          if: matrix.suffix == 'fat'
+          run: docker build --no-cache -t emqx/kuiper:$(git describe --tags --always) -f deploy/docker/Dockerfile .
+
+        - name: build docker image
+          if: matrix.suffix != 'fat'
+          env:
+              SUFFIX: ${{ matrix.suffix }}
+          run: docker build --no-cache -t emqx/kuiper:$(git describe --tags --always)-$SUFFIX -f deploy/docker/Dockerfile-$SUFFIX .
+
+        - name: test docker image
           run: |
-            container_id=$(docker run -d emqx/kuiper:$(git describe --tags --always))
+            set -e -x -u
+            image_id=$(docker images emqx/kuiper -q | head -1)
+            container_id=$(docker run -d $image_id)
             ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
             sleep 10
             if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
 
-            container_id=$(docker run -d emqx/kuiper:$(git describe --tags --always)-slim)
-            ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
-            sleep 10
-            if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
-
-            container_id=$(docker run -d emqx/kuiper:$(git describe --tags --always)-alpine)
-            ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
-            sleep 10
-            if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
-        - name: build docker images
-          if: github.event_name == 'release'
+        - name: cross build docker images
+          if: (matrix.suffix == 'fat') && (github.event_name == 'release')
           run: |
+            set -e -u -x
             echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
-            make cross_docker
+            docker buildx build --no-cache \
+            --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+            -t emqx/kuiper:$(git describe --tags --always) \
+            -f deploy/docker/Dockerfile . \
+            --push
+
+        - name: cross build docker images
+          if: (matrix.suffix != 'fat') && (github.event_name == 'release')
+          env:
+              SUFFIX: ${{ matrix.suffix }}
+          run: |
+            set -e -u -x
+            echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
+            docker buildx build --no-cache \
+            --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+            -t emqx/kuiper:$(git describe --tags --always)-$SUFFIX \
+            -f deploy/docker/Dockerfile-$SUFFIX . \
+            --push
 
     build-kubernetes-tool:
         runs-on: ubuntu-latest
