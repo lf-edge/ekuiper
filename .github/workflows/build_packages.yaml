@@ -109,7 +109,7 @@ jobs:
             sleep 10
             if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
 
-        - name: corss build docker images
+        - name: cross build docker images
           if: (matrix.suffix == 'fat') && (github.event_name == 'release')
           run: |
             set -e -u -x
@@ -120,7 +120,7 @@ jobs:
             -f deploy/docker/Dockerfile . \
             --push
 
-        - name: corss build docker images
+        - name: cross build docker images
           if: (matrix.suffix != 'fat') && (github.event_name == 'release')
           env:
               SUFFIX: ${{ matrix.suffix }}
