@@ -63,11 +63,11 @@ specify the maximum number of messages to be buffered in the memory. This is use
 
 ### kubeedgeVersion
 
-kubeedge 版本号，不同的版本号对应的文件内容不同。
+kubeedge version number. Different version numbers correspond to different file contents.
 
 ### kubeedgeModelFile
 
-kubeedge 模版文件名，文件指定放在 etc/sources 文件夹中，样例格式如下：
+The name of the kubeedge template file. The file is located in the specified etc/sources folder. The sample format is as follows:
 
 ```json
 {
@@ -86,15 +86,15 @@ kubeedge 模版文件名，文件指定放在 etc/sources 文件夹中，样例�
 
 #### deviceModels.name
 
-设备名称,与订阅主题中的字段匹配，位于第三和第四个“/”之间的内容。例如：$ke/events/device/device1/data/update
+The device name. It matches the field in the subscription topic that is located between the third and fourth "/". For example: $ke/events/device/device1/data/update.
 
 #### properties.name
 
-字段名称
+Field name.
 
 #### properties.dataType
 
-期望的字段类型
+Expected field type.
 
 ## Override the default settings
 
