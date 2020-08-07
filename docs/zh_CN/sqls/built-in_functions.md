@@ -50,7 +50,7 @@ Kuiper 具有许多内置函数，可以对数据执行计算。
 | -------- | ----------- | ---------------------------------------------- |
 | concat   | concat(col1...)  | 连接数组或字符串。 此函数接受任意数量的参数并返回 String 或 Array |
 | endswith | endswith(col1, col2) | 返回一个布尔值，该布尔值指示第一个 String参数是否以第二个 String 参数结尾。 |
-| format_time| parse_time(col1, format) | 将日期时间格式化为字符串。 |
+| format_time| format_time(col1, format) | 将日期时间格式化为字符串。 |
 | indexof  | indexof(col1, col2)  | 返回第二个参数的第一个索引（从0开始），作为第一个参数中的子字符串。 |
 | length   | length(col1)| 返回提供的字符串中的字符数。                                                    |
 | lower    | lower(col1) | 返回给定 String 的小写版本。                                                       |
