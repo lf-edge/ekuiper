@@ -50,7 +50,7 @@ Aggregate functions perform a calculation on a set of values and return a single
 | -------- | ----------- | ---------------------------------------------- |
 | concat   | concat(col1...)  | Concatenates arrays or strings. This function accepts any number of arguments and returns a String or an Array        |
 | endswith | endswith(col1, col2) | Returns a Boolean indicating whether the first String argument ends with the second String argument.              |
-| format_time| parse_time(col1, format) | Format a datetime to string.    |
+| format_time| format_time(col1, format) | Format a datetime to string.    |
 | indexof  | indexof(col1, col2)  | Returns the first index (0-based) of the second argument as a substring in the first argument.                    |
 | length   | length(col1)| Returns the number of characters in the provided string.                                                                  |
 | lower    | lower(col1) | Returns the lowercase version of the given String.                                                                         |
