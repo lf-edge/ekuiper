@@ -6,6 +6,7 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xstream/api"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"io"
 	"io/ioutil"
@@ -92,7 +93,7 @@ func createRestServer(port int) *http.Server {
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
-		Handler:      r, // Pass our instance of gorilla/mux in.
+		Handler:      handlers.CORS(handlers.AllowedHeaders([]string{"Accept", "Accept-Language", "Content-Type", "Content-Language", "Origin"}))(r),
 	}
 	server.SetKeepAlivesEnabled(false)
 	return server
