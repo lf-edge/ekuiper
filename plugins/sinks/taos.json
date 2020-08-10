@@ -1,0 +1,25 @@
+{
+  "libs": [
+    "github.com/taosdata/driver-go@master"
+  ],
+  "helpUrl": {
+    "en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/taos.md",
+    "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/taos.md"
+  },
+  "properties":[
+    {
+      "name" : "Database",
+      "default": "http://192.168.100.245:8086",
+      "optional": "false",
+      "control": "text",
+      "hint": {
+        "en_US": "Address of Taosdb",
+        "zh_CN": "Taosdb 地址"
+      },
+      "label": {
+        "en_US": "DB address",
+        "zh_CN": "数据库地址"
+      }
+    }
+  ]
+}
