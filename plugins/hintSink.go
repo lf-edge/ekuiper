@@ -127,7 +127,7 @@ func (this *Manager) readMetadataDir(dir string) error {
 		ptrMetadata := new(metadata)
 		err = json.Unmarshal(byteContent, ptrMetadata)
 		if nil != err {
-			return fmt.Errorf("myd fileName:%s err:%v", fileName, err)
+			return fmt.Errorf("fileName:%s err:%v", fileName, err)
 		}
 		tmpMap[fileName] = ptrMetadata
 	}
@@ -210,7 +210,7 @@ func (this *sinkPropertyNode) setNodeFromMetal(data *metadata, language string) 
 func (this *sinkProperty) setCustomProperty(pluginName, language string) error {
 	fileName := pluginName + `.json`
 	sinkMetadata := g_sinkMetadata
-	data := sinkMetadata[pluginName]
+	data := sinkMetadata[fileName]
 	if nil == data {
 		return fmt.Errorf(`not find pligin:%s`, fileName)
 	}
