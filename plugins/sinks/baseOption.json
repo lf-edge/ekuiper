@@ -1,0 +1,63 @@
+{
+	"helpUrl": {
+		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/overview.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/overview.md"
+	},
+	"properties": [{
+		"name": "isEventTime",
+		"default":false, 
+		"optional": true,
+		"control": "text",
+		"type": "bool",
+		"hint": {
+			"en_US": "Address of Taosdb",
+			"zh_CN": "使用事件时间还是将时间用作事件的时间戳。 如果使用事件时间，则将从有效负载中提取时间戳。 必须通过 stream 定义指定时间戳记。"
+		},
+		"label": {
+			"en_US": "DB address",
+			"zh_CN": "数据库地址"
+		}
+	}, {
+		"name": "lateTolerance",
+		"default": 0,
+		"optional": true,
+		"control": "text",
+		"type": "int",
+		"hint": {
+			"en_US": "Address of Taosdb",
+			"zh_CN": "在使用事件时间窗口时，可能会出现元素延迟到达的情况。 LateTolerance 可以指定在删除元素之前可以延迟多少时间（单位为 ms）。 默认情况下，该值为0，表示后期元素将被删除。"
+		},
+		"label": {
+			"en_US": "DB address",
+			"zh_CN": "数据库地址"
+		}
+	}, {
+		"name": "concurrency",
+		"default": 1,
+		"optional": true,
+		"control": "text",
+		"type": "int",
+		"hint": {
+			"en_US": "Address of Taosdb",
+			"zh_CN": "一条规则运行时会根据 sql 语句分解成多个 plan 运行。该参数设置每个 plan 运行的线程数。该参数值大于1时，消息处理顺序可能无法保证。"
+		},
+		"label": {
+			"en_US": "DB address",
+			"zh_CN": "数据库地址"
+		}
+	}, {
+		"name": "bufferLength",
+		"default":1024,
+		"optional": true,
+		"control": "text",
+		"type": "int",
+		"hint": {
+			"en_US": "Address of Taosdb",
+			"zh_CN": "指定每个 plan 可缓存消息数。若缓存消息数超过此限制，plan 将阻塞消息接收，直到缓存消息被消费使得缓存消息数目小于限制为止。此选项值越大，则消息吞吐能力越强，但是内存占用也会越多。"
+		},
+		"label": {
+			"en_US": "DB address",
+			"zh_CN": "数据库地址"
+		}
+	}]
+}

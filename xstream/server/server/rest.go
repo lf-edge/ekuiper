@@ -87,6 +87,8 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/plugins/functions", functionsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet)
 
+	r.HandleFunc("/plugins/hintsink/{name}/{language}", hintSinkHandler).Methods(http.MethodGet)
+
 	server := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
 		// Good practice to set timeouts to avoid Slowloris attacks.
@@ -383,4 +385,21 @@ func functionsHandler(w http.ResponseWriter, r *http.Request) {
 //delete a function plugin
 func functionHandler(w http.ResponseWriter, r *http.Request) {
 	pluginHandler(w, r, plugins.FUNCTION)
+}
+
+func getSourceHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+func hintSinkHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+	language := vars["language"]
+	sliByte, err := pluginManager.HintSink(name, language)
+	if err != nil {
+		handleError(w, err, "get ruleSink error", logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(sliByte)
 }

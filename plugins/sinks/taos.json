@@ -1,0 +1,114 @@
+{
+	"author": {
+		"name": "Yuedong Ma",
+		"email": "mayuedong@emqx.io",
+		"company": "EMQ Technologies Co., Ltd",
+		"website": "https://www.emqx.io"
+	},
+	"libs": [
+		"github.com/taosdata/driver-go@master"
+	],
+	"helpUrl": {
+		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/taos.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/taos.md"
+	},
+	"properties": [{
+		"name": "port",
+		"default": 0,
+		"optional": false,
+		"control": "text",
+		"type": "int",
+		"hint": {
+			"en_US": "Point of Taosdb",
+			"zh_CN": "Taosdb 端口号"
+		},
+		"label": {
+			"en_US": "DB point",
+			"zh_CN": "数据库端口"
+		}
+	}, {
+		"name": "ip",
+		"default": "127.0.0.1",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "Ip address of Taosdb",
+			"zh_CN": "Taosdb ip地址"
+		},
+		"label": {
+			"en_US": "DB ip address",
+			"zh_CN": "数据库ip地址"
+		}
+	}, {
+		"name": "user",
+		"default": "root",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "User of Taosdb",
+			"zh_CN": "Taosdb 用户名"
+		},
+		"label": {
+			"en_US": "DB user",
+			"zh_CN": "数据库用户名"
+		}
+	}, {
+		"name": "password",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "Password of Taosdb",
+			"zh_CN": "Taosdb 密码"
+		},
+		"label": {
+			"en_US": "DB password",
+			"zh_CN": "数据库密码"
+		}
+	}, {
+		"name": "database",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "name of database",
+			"zh_CN": "库名称"
+		},
+		"label": {
+			"en_US": "DBbase name",
+			"zh_CN": "库名称"
+		}
+	}, {
+		"name": "table",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "Name of table",
+			"zh_CN": "表名"
+		},
+		"label": {
+			"en_US": "Name of table",
+			"zh_CN": "表名"
+		}
+	}, {
+		"name": "field",
+		"default": ["time"],
+		"optional": false,
+		"control": "key-value",
+		"type": "slice",
+		"hint": {
+			"en_US": "Field of table",
+			"zh_CN": "表字段"
+		},
+		"label": {
+			"en_US": "table field",
+			"zh_CN": "表字段"
+		}
+	}]
+}
