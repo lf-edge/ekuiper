@@ -37,7 +37,7 @@
 			"en_US": "measurement",
 			"zh_CN": "测量"
 		}
-	}， {
+	}, {
 		"name": "username",
 		"default": "",
 		"optional": false,
@@ -65,7 +65,7 @@
 			"en_US": "password",
 			"zh_CN": "密码"
 		}
-	}， {
+	}, {
 		"name": "databasename",
 		"default": "",
 		"optional": true,
@@ -93,7 +93,7 @@
 			"en_US": "Tag",
 			"zh_CN": "标签键"
 		}
-	}， {
+	}, {
 		"name": "tagvalue",
 		"default": "",
 		"optional": true,
