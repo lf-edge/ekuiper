@@ -3,6 +3,7 @@ package plugins
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	"io/ioutil"
 	"path"
@@ -82,6 +83,7 @@ func (this *Manager) readMetadataDir(dir string) error {
 		if nil != err {
 			return fmt.Errorf("fileName:%s err:%v", fileName, err)
 		}
+		common.Log.Infof("metadata file : %s", fileName)
 		tmpMap[fileName] = ptrMetadata
 	}
 	g_sinkMetadata = tmpMap
@@ -106,6 +108,7 @@ func (this *Manager) readMetadataFile(filePath string) error {
 		tmpMap[k] = v
 	}
 	fileName := path.Base(filePath)
+	common.Log.Infof("metadata file : %s", fileName)
 	tmpMap[fileName] = ptrMetadata
 	g_sinkMetadata = tmpMap
 
