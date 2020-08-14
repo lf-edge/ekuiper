@@ -316,6 +316,10 @@ func main() {
 							fmt.Printf("%s\n", err)
 							return nil
 						}
+						if len(c.Args()) != 2 {
+							fmt.Printf("Expect plugin name.\n")
+							return nil
+						}
 						pname := c.Args()[1]
 						args := &common.PluginDesc{
 							RuleDesc: common.RuleDesc{

@@ -1,4 +1,4 @@
-// +build influxdb
+// +build plugins
 
 package main
 
