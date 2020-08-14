@@ -298,7 +298,7 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	}
 	if t == SINK {
 		//m.delMetadata(name)
-    metadataFile := path.Join(m.pluginDir,"sinks",name+".json")
+		metadataFile := path.Join(m.pluginDir, "sinks", name+".json")
 		os.Remove(metadataFile)
 	}
 	for _, p := range paths {

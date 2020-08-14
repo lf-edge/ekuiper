@@ -125,7 +125,7 @@ type (
 		Type     string        `json:"type"`
 		Hint     *sinkLanguage `json:"hint"`
 		Label    *sinkLanguage `json:"label"`
-    Values   interface{} `json:"values"`
+		Values   interface{}   `json:"values"`
 	}
 	sinkPropertyNode struct {
 		Fields  []*sinkField  `json:"properties"`
@@ -147,7 +147,7 @@ func (this *sinkField) setSinkField(v *field) {
 	this.Name = v.Name
 	this.Type = v.Type
 	this.Default = v.Default
-	this.Values= v.Values
+	this.Values = v.Values
 	this.Control = v.Control
 	this.Optional = v.Optional
 	this.Hint = new(sinkLanguage)
@@ -272,19 +272,19 @@ func (this *sinkProperty) modifyOption(option *api.RuleOption) {
 		}
 	}
 }
-func (this *sinkProperty) hintWhenModifySink(rule *api.Rule) (err error){
+func (this *sinkProperty) hintWhenModifySink(rule *api.Rule) (err error) {
 	for _, m := range rule.Actions {
 		for pluginName, sink := range m {
 			mapFields, _ := sink.(map[string]interface{})
-		err = this.hintWhenNewSink(pluginName)
-    if nil != err {
-return err
-    }
+			err = this.hintWhenNewSink(pluginName)
+			if nil != err {
+				return err
+			}
 			this.modifyProperty(pluginName, mapFields)
 		}
 	}
 	this.modifyOption(rule.Options)
-  return nil
+	return nil
 }
 
 func (this *Manager) Metadata(pluginName string, rule *api.Rule) (ptrSinkProperty *sinkProperty, err error) {
