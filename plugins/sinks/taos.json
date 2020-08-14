@@ -9,8 +9,8 @@
 		"github.com/taosdata/driver-go@master"
 	],
 	"helpUrl": {
-		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/taos.md",
-		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/taos.md"
+		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en/plugins/sinks/taos.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh/plugins/sinks/taos.md"
 	},
 	"properties": [{
 		"name": "port",
@@ -19,11 +19,11 @@
 		"control": "text",
 		"type": "int",
 		"hint": {
-			"en_US": "Point of Taosdb",
+			"en_US": "Port of Taosdb",
 			"zh_CN": "Taosdb 端口号"
 		},
 		"label": {
-			"en_US": "DB point",
+			"en_US": "DB port",
 			"zh_CN": "数据库端口"
 		}
 	}, {
@@ -33,12 +33,12 @@
 		"control": "text",
 		"type": "string",
 		"hint": {
-			"en_US": "Ip address of Taosdb",
-			"zh_CN": "Taosdb ip地址"
+			"en_US": "IP address of Taosdb",
+			"zh_CN": "Taosdb IP 地址"
 		},
 		"label": {
-			"en_US": "DB ip address",
-			"zh_CN": "数据库ip地址"
+			"en_US": "DB IP address",
+			"zh_CN": "数据库IP 地址"
 		}
 	}, {
 		"name": "user",
@@ -62,7 +62,7 @@
 		"type": "string",
 		"hint": {
 			"en_US": "Password of Taosdb",
-			"zh_CN": "Taosdb 密码"
+			"zh_CN": "数据库密码"
 		},
 		"label": {
 			"en_US": "DB password",
@@ -79,7 +79,7 @@
 			"zh_CN": "库名称"
 		},
 		"label": {
-			"en_US": "DBbase name",
+			"en_US": "Database name",
 			"zh_CN": "库名称"
 		}
 	}, {
@@ -97,11 +97,11 @@
 			"zh_CN": "表名"
 		}
 	}, {
-		"name": "field",
-		"default": ["time"],
+		"name": "fields",
+		"default": [],
 		"optional": false,
-		"control": "key-value",
-		"type": "slice",
+		"control": "list",
+		"type": "list_string",
 		"hint": {
 			"en_US": "Field of table",
 			"zh_CN": "表字段"

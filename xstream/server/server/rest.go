@@ -11,7 +11,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -87,7 +89,7 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/plugins/functions", functionsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet)
 
-	r.HandleFunc("/plugins/hintsink/{name}/{language}", hintSinkHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata", metadataHandler).Methods(http.MethodGet)
 
 	server := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
@@ -387,19 +389,37 @@ func functionHandler(w http.ResponseWriter, r *http.Request) {
 	pluginHandler(w, r, plugins.FUNCTION)
 }
 
-func getSourceHandler(w http.ResponseWriter, r *http.Request) {
+func parseRequest(req string) map[string]string {
+	mapQuery := make(map[string]string)
+	for _, kv := range strings.Split(req, "&") {
+		pos := strings.Index(kv, "=")
+		if 0 < pos && pos+1 < len(kv) {
+			mapQuery[kv[:pos]], _ = url.QueryUnescape(kv[pos+1:])
+		}
+	}
+	return mapQuery
 }
 
-func hintSinkHandler(w http.ResponseWriter, r *http.Request) {
+func metadataHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	vars := mux.Vars(r)
-	name := vars["name"]
-	language := vars["language"]
-	sliByte, err := pluginManager.HintSink(name, language)
+	mapQuery := parseRequest(r.URL.RawQuery)
+	ruleid := mapQuery["rule"]
+	pluginName := mapQuery["name"]
+
+	var rule *api.Rule
+	var err error
+	if 0 != len(ruleid) {
+		rule, err = ruleProcessor.GetRuleByName(ruleid)
+		if err != nil {
+			handleError(w, err, "describe rule error", logger)
+			return
+		}
+	}
+
+	ptrMetadata, err := pluginManager.Metadata(pluginName, rule)
 	if err != nil {
-		handleError(w, err, "get ruleSink error", logger)
+		handleError(w, err, "metadata error", logger)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(sliByte)
+	jsonResponse(ptrMetadata, w, logger)
 }

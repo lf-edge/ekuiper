@@ -296,6 +296,11 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	if t == SOURCE {
 		paths = append(paths, path.Join(m.etcDir, PluginTypes[t], name+".yaml"))
 	}
+	if t == SINK {
+		//m.delMetadata(name)
+    metadataFile := path.Join(m.pluginDir,"sinks",name+".json")
+		os.Remove(metadataFile)
+	}
 	for _, p := range paths {
 		_, err := os.Stat(p)
 		if err == nil {

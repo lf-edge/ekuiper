@@ -1,0 +1,41 @@
+{
+	"author": {
+		"name": "",
+		"email": "",
+		"company": "EMQ Technologies Co., Ltd",
+		"website": "https://www.emqx.io"
+	},
+	"helpUrl": {
+		"en_US": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/en_US/plugins/sinks/zmq.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/zh_CN/plugins/sinks/zmq.md"
+	},
+	"properties": [{
+		"name": "server",
+		"default": "127.0.0.1:5536",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The url of the Zero Mq server",
+			"zh_CN": "Zero Mq 服务器的 URL"
+		},
+		"label": {
+			"en_US": "server address",
+			"zh_CN": "服务器地址"
+		}
+	}, {
+		"name": "topic",
+		"default": "",
+		"optional": true,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The topic to publish to.",
+			"zh_CN": "订阅主题"
+		},
+		"label": {
+			"en_US": "topic",
+			"zh_CN": "主题"
+		}
+	}]
+}
