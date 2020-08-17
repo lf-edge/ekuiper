@@ -402,6 +402,13 @@ func parseRequest(req string) map[string]string {
 
 func metadataHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+
+	if 0 == len(r.URL.RawQuery) {
+		sinks := pluginManager.GetSinks()
+		jsonResponse(sinks, w, logger)
+		return
+	}
+
 	mapQuery := parseRequest(r.URL.RawQuery)
 	ruleid := mapQuery["rule"]
 	pluginName := mapQuery["name"]
