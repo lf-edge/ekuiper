@@ -299,3 +299,14 @@ func (this *Manager) Metadata(pluginName string, rule *api.Rule) (ptrSinkPropert
 	}
 	return ptrSinkProperty, err
 }
+
+func (this *Manager) GetSinks() (sinks []string) {
+	sinkMetadata := g_sinkMetadata
+	for fileName, _ := range sinkMetadata {
+		if fileName == baseProperty+".json" || fileName == baseOption+".json" {
+			continue
+		}
+		sinks = append(sinks, strings.TrimSuffix(fileName, `.json`))
+	}
+	return sinks
+}

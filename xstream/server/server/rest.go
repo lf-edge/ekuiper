@@ -89,7 +89,7 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/plugins/functions", functionsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet)
 
-	r.HandleFunc("/metadata", metadataHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sinks", metadataHandler).Methods(http.MethodGet)
 
 	server := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
@@ -402,6 +402,12 @@ func parseRequest(req string) map[string]string {
 
 func metadataHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+	if 0 == len(r.URL.RawQuery) {
+		sinks := pluginManager.GetSinks()
+		jsonResponse(sinks, w, logger)
+		return
+	}
+
 	mapQuery := parseRequest(r.URL.RawQuery)
 	ruleid := mapQuery["rule"]
 	pluginName := mapQuery["name"]
@@ -417,6 +423,7 @@ func metadataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ptrMetadata, err := pluginManager.Metadata(pluginName, rule)
+
 	if err != nil {
 		handleError(w, err, "metadata error", logger)
 		return
