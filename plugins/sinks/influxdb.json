@@ -1,0 +1,125 @@
+{
+	"author": {
+		"name": "",
+		"email": "",
+		"company": "EMQ Technologies Co., Ltd",
+		"website": "https://www.emqx.io"
+	},
+	"helpUrl": {
+		"en_US": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/en_US/plugins/sinks/influxdb.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/zh_CN/plugins/sinks/influxdb.md"
+	},
+	"properties": [{
+		"name": "addr",
+		"default": "",
+		"optional": true,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The addr of the InfluxDB",
+			"zh_CN": "InfluxDB的地址"
+		},
+		"label": {
+			"en_US": "Addr",
+			"zh_CN": "地址"
+		}
+	}, {
+		"name": "measurement",
+		"default": "",
+		"optional": true,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The measurement of the InfluxDb",
+			"zh_CN": "InfluxDb的测量"
+		},
+		"label": {
+			"en_US": "measurement",
+			"zh_CN": "测量"
+		}
+	}, {
+		"name": "username",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The InfluxDB login username",
+			"zh_CN": "InfluxDB登陆用户名"
+		},
+		"label": {
+			"en_US": "username",
+			"zh_CN": "用户名"
+		}
+	}, {
+		"name": "password",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The InfluxDB login password",
+			"zh_CN": "InfluxDB登陆密码"
+		},
+		"label": {
+			"en_US": "password",
+			"zh_CN": "密码"
+		}
+	}, {
+		"name": "databasename",
+		"default": "",
+		"optional": true,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The database of the InfluxDB",
+			"zh_CN": "InfluxDB的数据库"
+		},
+		"label": {
+			"en_US": "DBbase name",
+			"zh_CN": "数据库名"
+		}
+	}, {
+		"name": "tagkey",
+		"default": "",
+		"optional": true,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The tag key of the InfluxDB",
+			"zh_CN": "InfluxDB的标签键"
+		},
+		"label": {
+			"en_US": "Tag",
+			"zh_CN": "标签键"
+		}
+	}, {
+		"name": "tagvalue",
+		"default": "",
+		"optional": true,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The tag value of the InfluxDB",
+			"zh_CN": "InfluxDB的标签值"
+		},
+		"label": {
+			"en_US": "Tag value",
+			"zh_CN": "标签值"
+		}
+	}, {
+		"name": "fields",
+		"default": "",
+		"optional": true,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The column of the InfluxDB",
+			"zh_CN": "InfluxDB的列名"
+		},
+		"label": {
+			"en_US": "Column",
+			"zh_CN": "列名"
+		}
+	}]
+}

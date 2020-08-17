@@ -1,0 +1,41 @@
+{
+	"author": {
+		"name": "",
+		"email": "",
+		"company": "EMQ Technologies Co., Ltd",
+		"website": "https://www.emqx.io"
+	},
+	"helpUrl": {
+		"en_US": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/en_US/plugins/sinks/file.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/zh_CN/plugins/sinks/file.md"
+	},
+	"properties": [{
+		"name": "path",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The file path for saving the result",
+			"zh_CN": "保存结果的文件路径"
+		},
+		"label": {
+			"en_US": "Path of file",
+			"zh_CN": "文件路径"
+		}
+	}, {
+		"name": "interval",
+		"default": 1000,
+		"optional": true,
+		"control": "text",
+		"type": "int",
+		"hint": {
+			"en_US": "The time interval (ms) for writing the analysis result.",
+			"zh_CN": "写入分析结果的时间间隔（毫秒）。"
+		},
+		"label": {
+			"en_US": "Intervals",
+			"zh_CN": "间隔时间"
+		}
+	}]
+}

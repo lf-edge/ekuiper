@@ -1,25 +1,114 @@
 {
-  "libs": [
-    "github.com/taosdata/driver-go@master"
-  ],
-  "helpUrl": {
-    "en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/taos.md",
-    "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/taos.md"
-  },
-  "properties":[
-    {
-      "name" : "Database",
-      "default": "http://192.168.100.245:8086",
-      "optional": "false",
-      "control": "text",
-      "hint": {
-        "en_US": "Address of Taosdb",
-        "zh_CN": "Taosdb 地址"
-      },
-      "label": {
-        "en_US": "DB address",
-        "zh_CN": "数据库地址"
-      }
-    }
-  ]
+	"author": {
+		"name": "Yuedong Ma",
+		"email": "mayuedong@emqx.io",
+		"company": "EMQ Technologies Co., Ltd",
+		"website": "https://www.emqx.io"
+	},
+	"libs": [
+		"github.com/taosdata/driver-go@master"
+	],
+	"helpUrl": {
+		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en/plugins/sinks/taos.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh/plugins/sinks/taos.md"
+	},
+	"properties": [{
+		"name": "port",
+		"default": 0,
+		"optional": false,
+		"control": "text",
+		"type": "int",
+		"hint": {
+			"en_US": "Port of Taosdb",
+			"zh_CN": "Taosdb 端口号"
+		},
+		"label": {
+			"en_US": "DB port",
+			"zh_CN": "数据库端口"
+		}
+	}, {
+		"name": "ip",
+		"default": "127.0.0.1",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "IP address of Taosdb",
+			"zh_CN": "Taosdb IP 地址"
+		},
+		"label": {
+			"en_US": "DB IP address",
+			"zh_CN": "数据库IP 地址"
+		}
+	}, {
+		"name": "user",
+		"default": "root",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "User of Taosdb",
+			"zh_CN": "Taosdb 用户名"
+		},
+		"label": {
+			"en_US": "DB user",
+			"zh_CN": "数据库用户名"
+		}
+	}, {
+		"name": "password",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "Password of Taosdb",
+			"zh_CN": "数据库密码"
+		},
+		"label": {
+			"en_US": "DB password",
+			"zh_CN": "数据库密码"
+		}
+	}, {
+		"name": "database",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "name of database",
+			"zh_CN": "库名称"
+		},
+		"label": {
+			"en_US": "Database name",
+			"zh_CN": "库名称"
+		}
+	}, {
+		"name": "table",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "Name of table",
+			"zh_CN": "表名"
+		},
+		"label": {
+			"en_US": "Name of table",
+			"zh_CN": "表名"
+		}
+	}, {
+		"name": "fields",
+		"default": [],
+		"optional": false,
+		"control": "list",
+		"type": "list_string",
+		"hint": {
+			"en_US": "Field of table",
+			"zh_CN": "表字段"
+		},
+		"label": {
+			"en_US": "table field",
+			"zh_CN": "表字段"
+		}
+	}]
 }

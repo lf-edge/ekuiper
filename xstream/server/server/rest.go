@@ -11,7 +11,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -86,6 +88,8 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/plugins/sinks/{name}", sinkHandler).Methods(http.MethodDelete, http.MethodGet)
 	r.HandleFunc("/plugins/functions", functionsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet)
+
+	r.HandleFunc("/metadata", metadataHandler).Methods(http.MethodGet)
 
 	server := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
@@ -383,4 +387,39 @@ func functionsHandler(w http.ResponseWriter, r *http.Request) {
 //delete a function plugin
 func functionHandler(w http.ResponseWriter, r *http.Request) {
 	pluginHandler(w, r, plugins.FUNCTION)
+}
+
+func parseRequest(req string) map[string]string {
+	mapQuery := make(map[string]string)
+	for _, kv := range strings.Split(req, "&") {
+		pos := strings.Index(kv, "=")
+		if 0 < pos && pos+1 < len(kv) {
+			mapQuery[kv[:pos]], _ = url.QueryUnescape(kv[pos+1:])
+		}
+	}
+	return mapQuery
+}
+
+func metadataHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	mapQuery := parseRequest(r.URL.RawQuery)
+	ruleid := mapQuery["rule"]
+	pluginName := mapQuery["name"]
+
+	var rule *api.Rule
+	var err error
+	if 0 != len(ruleid) {
+		rule, err = ruleProcessor.GetRuleByName(ruleid)
+		if err != nil {
+			handleError(w, err, "describe rule error", logger)
+			return
+		}
+	}
+
+	ptrMetadata, err := pluginManager.Metadata(pluginName, rule)
+	if err != nil {
+		handleError(w, err, "metadata error", logger)
+		return
+	}
+	jsonResponse(ptrMetadata, w, logger)
 }
