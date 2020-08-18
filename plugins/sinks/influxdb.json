@@ -1,10 +1,19 @@
 {
 	"author": {
-		"name": "",
+		"name": "Yongxing Ma",
 		"email": "",
-		"company": "EMQ Technologies Co., Ltd",
-		"website": "https://www.emqx.io"
+		"company": "China Mobile",
+		"website": ""
 	},
+	"about": {
+		"trial": false,
+		"description": {
+			"en_US": "This a sink plugin for InfluxDB, it can be used for saving the analysis data into InfluxDB.",
+			"zh_CN": "本插件为 InfluxDB 的持久化插件，可以用于将分析数据存入 InfluxDB 中。"
+		}
+	},
+	"libs": [
+	],
 	"helpUrl": {
 		"en_US": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/en_US/plugins/sinks/influxdb.md",
 		"zh_CN": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/zh_CN/plugins/sinks/influxdb.md"

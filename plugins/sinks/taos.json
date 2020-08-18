@@ -8,6 +8,13 @@
 	"libs": [
 		"github.com/taosdata/driver-go@master"
 	],
+	"about": {
+		"trial": false,
+		"description": {
+			"en_US": "This a sink plugin for TDengine, it can be used for saving the analysis data into TDengine.",
+			"zh_CN": "本插件为 TDengine 的持久化插件，可以用于将分析数据存入 TDengine 中"
+		}
+	},
 	"helpUrl": {
 		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en/plugins/sinks/taos.md",
 		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh/plugins/sinks/taos.md"
