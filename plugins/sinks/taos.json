@@ -13,20 +13,6 @@
 		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh/plugins/sinks/taos.md"
 	},
 	"properties": [{
-		"name": "port",
-		"default": 0,
-		"optional": false,
-		"control": "text",
-		"type": "int",
-		"hint": {
-			"en_US": "Port of Taosdb",
-			"zh_CN": "Taosdb 端口号"
-		},
-		"label": {
-			"en_US": "DB port",
-			"zh_CN": "数据库端口"
-		}
-	}, {
 		"name": "ip",
 		"default": "127.0.0.1",
 		"optional": false,
@@ -39,6 +25,20 @@
 		"label": {
 			"en_US": "DB IP address",
 			"zh_CN": "数据库IP 地址"
+		}
+	}, {
+		"name": "port",
+		"default": 0,
+		"optional": false,
+		"control": "text",
+		"type": "int",
+		"hint": {
+			"en_US": "Port of Taosdb",
+			"zh_CN": "Taosdb 端口号"
+		},
+		"label": {
+			"en_US": "DB port",
+			"zh_CN": "数据库端口"
 		}
 	}, {
 		"name": "user",
@@ -75,7 +75,7 @@
 		"control": "text",
 		"type": "string",
 		"hint": {
-			"en_US": "name of database",
+			"en_US": "Name of database",
 			"zh_CN": "库名称"
 		},
 		"label": {
@@ -107,7 +107,7 @@
 			"zh_CN": "表字段"
 		},
 		"label": {
-			"en_US": "table field",
+			"en_US": "Table field",
 			"zh_CN": "表字段"
 		}
 	}]
