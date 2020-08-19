@@ -20,7 +20,7 @@
 			"zh_CN": "Zero Mq 服务器的 URL"
 		},
 		"label": {
-			"en_US": "server address",
+			"en_US": "Server address",
 			"zh_CN": "服务器地址"
 		}
 	}, {
@@ -34,7 +34,7 @@
 			"zh_CN": "订阅主题"
 		},
 		"label": {
-			"en_US": "topic",
+			"en_US": "Topic",
 			"zh_CN": "主题"
 		}
 	}]
