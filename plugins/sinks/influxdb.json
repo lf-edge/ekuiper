@@ -5,9 +5,14 @@
 		"company": "EMQ Technologies Co., Ltd",
 		"website": "https://www.emqx.io"
 	},
+	"libs": [
+	  "github.com/emqx/kuiper/xstream/api@master",
+	  "github.com/influxdata/influxdb1-client/v2@master",
+	  "github.com/influxdata/influxdb1-client/v2@master"
+	],
 	"helpUrl": {
-		"en_US": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/en_US/plugins/sinks/influxdb.md",
-		"zh_CN": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/zh_CN/plugins/sinks/influxdb.md"
+		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/influxdb.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/influxdb.md"
 	},
 	"properties": [{
 		"name": "addr",

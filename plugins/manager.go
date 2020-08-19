@@ -212,7 +212,7 @@ func NewPluginManager() (*Manager, error) {
 			etcDir:    etcDir,
 			registry:  registry,
 		}
-		outerErr = singleton.readMetadataDir(path.Join(dir, "sinks"))
+		outerErr = singleton.readMetaDir()
 	})
 	return singleton, outerErr
 }
@@ -275,7 +275,7 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		}
 		return fmt.Errorf("fail to unzip file %s: %s", uri, err)
 	}
-	m.readMetadataFile(path.Join(m.pluginDir, PluginTypes[t], name+`.json`))
+	m.readSinkMetaFile(path.Join(m.pluginDir, PluginTypes[t], name+`.json`))
 	m.registry.Store(t, name, version)
 	return nil
 }

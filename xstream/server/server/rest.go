@@ -89,7 +89,8 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/plugins/functions", functionsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet)
 
-	r.HandleFunc("/metadata", metadataHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sinks", sinkMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources", sourceMetaHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPost)
 
 	server := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
@@ -389,9 +390,18 @@ func functionHandler(w http.ResponseWriter, r *http.Request) {
 	pluginHandler(w, r, plugins.FUNCTION)
 }
 
-func parseRequest(req string) map[string]string {
+func parseRequest(r *http.Request) map[string]string {
 	mapQuery := make(map[string]string)
-	for _, kv := range strings.Split(req, "&") {
+	strQuery := ""
+	if http.MethodGet == r.Method {
+		strQuery = r.URL.RawQuery
+	} else {
+		var byteQuery []byte
+		r.Body.Read(byteQuery)
+		strQuery = string(byteQuery)
+	}
+
+	for _, kv := range strings.Split(strQuery, "&") {
 		pos := strings.Index(kv, "=")
 		if 0 < pos && pos+1 < len(kv) {
 			mapQuery[kv[:pos]], _ = url.QueryUnescape(kv[pos+1:])
@@ -400,21 +410,22 @@ func parseRequest(req string) map[string]string {
 	return mapQuery
 }
 
-func metadataHandler(w http.ResponseWriter, r *http.Request) {
+func sinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-
+	///metadata/sinks
 	if 0 == len(r.URL.RawQuery) {
 		sinks := pluginManager.GetSinks()
 		jsonResponse(sinks, w, logger)
 		return
 	}
 
-	mapQuery := parseRequest(r.URL.RawQuery)
+	mapQuery := parseRequest(r)
 	ruleid := mapQuery["rule"]
 	pluginName := mapQuery["name"]
 
 	var rule *api.Rule
 	var err error
+	///metadata/sinks?name=taos&rule=demo
 	if 0 != len(ruleid) {
 		rule, err = ruleProcessor.GetRuleByName(ruleid)
 		if err != nil {
@@ -423,10 +434,41 @@ func metadataHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	ptrMetadata, err := pluginManager.Metadata(pluginName, rule)
+	///metadata/sinks?name=taos
+	ptrMetadata, err := pluginManager.SinkMetadata(pluginName, rule)
 	if err != nil {
 		handleError(w, err, "metadata error", logger)
 		return
 	}
 	jsonResponse(ptrMetadata, w, logger)
+}
+
+func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	mapQuery := parseRequest(r)
+	var ret interface{}
+	var err error
+	switch mapQuery["cmd"] {
+	case "plugins":
+		ret = pluginManager.GetSources()
+	case "confKeys":
+		ret = pluginManager.GetSourceConfKeys(mapQuery["pluginName"])
+	case "getPlugin":
+		ret, err = pluginManager.SourceMetadata(mapQuery["pluginName"])
+	case "addConfKey":
+		err = pluginManager.AddSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"], mapQuery["confData"])
+	case "delConfKey":
+		err = pluginManager.DelSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"])
+	case "updateConfKey":
+		err = pluginManager.UpdateSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"], mapQuery["confData"])
+	}
+	if err != nil {
+		handleError(w, err, "metadata error", logger)
+		return
+	}
+	if nil != ret {
+		jsonResponse(ret, w, logger)
+		return
+	}
+	w.Write([]byte("successful"))
 }

@@ -1,0 +1,173 @@
+{
+	"author": {
+		"name": "",
+		"email": "",
+		"company": "EMQ Technologies Co., Ltd",
+		"website": "https://www.emqx.io"
+	},
+	"libs": [
+		"github.com/emqx/kuiper/xstream/api@master",
+		"github.com/pebbe/zmq4@master"
+	],
+	"helpUrl": {
+		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sources/mqtt.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/mqtt.md"
+	},
+	"properties": {
+		"default": [{
+			"name": "qos",
+			"default": 1,
+			"optional": false,
+			"control": "text",
+			"type": "int",
+			"hint": {
+				"en_US": "The default subscription QoS level.",
+				"zh_CN": "默认订阅QoS级别"
+			},
+			"label": {
+				"en_US": "",
+				"zh_CN": ""
+			}
+		}, {
+			"name": "bufferLength",
+			"default": 102400,
+			"optional": false,
+			"control": "text",
+			"type": "int",
+			"hint": {
+				"en_US": "specify the maximum number of messages to be buffered in the memory.",
+				"zh_CN": "指定最大缓存消息数目。该参数主要用于防止内存溢出。"
+			},
+			"label": {
+				"en_US": "",
+				"zh_CN": ""
+			}
+		}, {
+			"name": "sharedsubscription",
+			"default": true,
+			"optional": true,
+			"control": "",
+			"type": "bool",
+			"hint": {
+				"en_US": "Whether use the shared subscription mode or not. If using the shared subscription mode, then there are multiple Kuiper process can be load balanced.",
+				"zh_CN": "是否使用共享订阅模式。 如果使用共享订阅模式，那么多个 Kuiper 进程可以进行负载平衡。"
+			},
+			"label": {
+				"en_US": "",
+				"zh_CN": ""
+			}
+		}, {
+			"name": "servers",
+			"default": ["tcp://127.0.0.1:1883"],
+			"optional": true,
+			"control": "text",
+			"type": "string-list",
+			"hint": {
+				"en_US": "The server list for MQTT message broker. Currently, only ONE server can be specified.",
+				"zh_CN": "MQTT 消息代理的服务器列表。 当前，只能指定一个服务器。"
+			},
+			"label": {
+				"en_US": "",
+				"zh_CN": ""
+			}
+		}, {
+			"name": "concurrency",
+			"default": 1,
+			"optional": true,
+			"control": "text",
+			"type": "int",
+			"hint": {
+				"en_US": "How many instances will be started. By default, only an instance will be run. If more than one instance is specified, the topic must be a shared subscription topic.",
+				"zh_CN": "设置运行的协程数，默认值为1。如果设置协程数大于1，必须使用共享订阅模式。"
+			},
+			"label": {
+				"en_US": "",
+				"zh_CN": ""
+			}
+		}, {
+			"name": "username",
+			"default": "",
+			"optional": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The username for MQTT connection. The configuration will not be used if certificationPath or privateKeyPath is specified.",
+				"zh_CN": "MQTT 连接用户名。如果指定了 certificationPath 或者 privateKeyPath，那么该项配置不会被使用。"
+			},
+			"label": {
+				"en_US": "",
+				"zh_CN": ""
+			}
+		}, {
+			"name": "password",
+			"default": "",
+			"optional": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The password for MQTT connection. The configuration will not be used if certificationPath or privateKeyPath is specified.",
+				"zh_CN": "MQTT 连接密码。如果指定了 certificationPath 或者 privateKeyPath，那么该项配置不会被使用。"
+			},
+			"label": {
+				"en_US": "",
+				"zh_CN": ""
+			}
+		}, {
+			"name": "certificationPath",
+			"default": "",
+			"optional": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The location of certification path. It can be an absolute path, or a relative path.",
+				"zh_CN": "证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 server 命令的路径。"
+			},
+			"label": {
+				"en_US": "",
+				"zh_CN": ""
+			}
+		}, {
+			"name": "privateKeyPath",
+			"default": "",
+			"optional": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The location of private key path. It can be an absolute path, or a relative path. ",
+				"zh_CN": "私钥路径。可以为绝对路径，也可以为相对路径。"
+			},
+			"label": {
+				"en_US": "",
+				"zh_CN": ""
+			}
+		}, {
+			"name": "kubeedgeVersion",
+			"default": "",
+			"optional": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "kubeedge version number. Different version numbers correspond to different file contents.",
+				"zh_CN": "kubeedge 版本号，不同的版本号对应的文件内容不同"
+			},
+			"label": {
+				"en_US": "",
+				"zh_CN": ""
+			}
+		}, {
+			"name": "kubeedgeModelFile",
+			"default": "",
+			"optional": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The name of the kubeedge template file. The file is located in the specified etc/sources folder.",
+				"zh_CN": "kubeedge 模版文件名，文件指定放在 etc/sources 文件夹中"
+			},
+			"label": {
+				"en_US": "",
+				"zh_CN": ""
+			}
+		}]
+	}
+}
