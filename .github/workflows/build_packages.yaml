@@ -218,7 +218,7 @@ jobs:
           if: github.event_name == 'release'
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
-            curl -w %{http_code} --insecure -H ${{ secrets.EmqxHeader }} https://admin.emqx.io/api/v1/kuiper_github_release_callback?tag=$version
+            curl -w %{http_code} --insecure -H ${{ secrets.EmqxHeader }} https://admin.emqx.io/admin_api/v1/kuiper_github_release_callback?tag=$version
         - name: update helm packages
           if: github.event_name == 'release'
           run: |
