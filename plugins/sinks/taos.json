@@ -6,7 +6,9 @@
 		"website": "https://www.emqx.io"
 	},
 	"libs": [
-		"github.com/taosdata/driver-go@master"
+		"github.com/taosdata/driver-go@master",
+	  "github.com/emqx/kuiper/common@master",
+	  "github.com/emqx/kuiper/xstream/api@master"
 	],
 	"about": {
 		"trial": false,

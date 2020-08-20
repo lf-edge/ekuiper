@@ -5,6 +5,11 @@
 		"company": "China Mobile",
 		"website": ""
 	},
+	"libs": [
+	  "github.com/emqx/kuiper/xstream/api@master",
+	  "github.com/influxdata/influxdb1-client/v2@master",
+	  "github.com/influxdata/influxdb1-client/v2@master"
+	],
 	"about": {
 		"trial": false,
 		"description": {
@@ -12,11 +17,9 @@
 			"zh_CN": "本插件为 InfluxDB 的持久化插件，可以用于将分析数据存入 InfluxDB 中。"
 		}
 	},
-	"libs": [
-	],
 	"helpUrl": {
-		"en_US": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/en_US/plugins/sinks/influxdb.md",
-		"zh_CN": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/zh_CN/plugins/sinks/influxdb.md"
+		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/influxdb.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/influxdb.md"
 	},
 	"properties": [{
 		"name": "addr",

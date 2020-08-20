@@ -1,0 +1,282 @@
+{
+	"author": {
+		"name": "Jiyong Huang",
+		"email": "huangjy@emqx.io",
+		"company": "EMQ Technologies Co., Ltd",
+		"website": "https://www.emqx.io"
+	},
+	"libs": [],
+	"helpUrl": {
+		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sources/edgex.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/edgex.md"
+	},
+	"properties": {
+		"default": [{
+			"name": "protocol",
+			"default": "tcp",
+			"optional": false,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The protocol connect to EdgeX message bus, default value is tcp.",
+				"zh_CN": "连接到 EdgeX 消息总线的协议"
+			},
+			"label": {
+				"en_US": "Protocol",
+				"zh_CN": "协议"
+			}
+		}, {
+			"name": "server",
+			"default": "localhost",
+			"optional": false,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The server address of EdgeX message bus, default value is localhost.",
+				"zh_CN": "EdgeX 消息总线的地址。"
+			},
+			"label": {
+				"en_US": "Server address",
+				"zh_CN": "地址"
+			}
+		}, {
+			"name": "port",
+			"default": 5573,
+			"optional": false,
+			"control": "text",
+			"type": "int",
+			"hint": {
+				"en_US": "The port of EdgeX message bus, default value is 5573.",
+				"zh_CN": "EdgeX 消息总线的端口"
+			},
+			"label": {
+				"en_US": "Port",
+				"zh_CN": "端口"
+			}
+		}, {
+			"name": "topic",
+			"default": "events",
+			"optional": false,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The topic name of EdgeX message bus, default value is events.",
+				"zh_CN": "EdgeX 消息总线上监听的主题名称"
+			},
+			"label": {
+				"en_US": "Topic",
+				"zh_CN": "主题"
+			}
+		}, {
+			"name": "serviceServer",
+			"default": "",
+			"optional": false,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The base service address for getting value descriptors, the value of serviceServer will be concatenated to /api/v1/valuedescriptor to get all of value descriptors of EdgeX server.",
+				"zh_CN": "访问 value descriptors 的基础服务地址，配置项 serviceServer 的值与 /api/v1/valuedescriptor 拼接后，用于获取 EdgeX 服务器上定义的所有 value descriptors。"
+			},
+			"label": {
+				"en_US": "Service address",
+				"zh_CN": "地址"
+			}
+		}, {
+			"name": "type",
+			"default": "",
+			"optional": false,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The EdgeX message bus type, currently two types of message buses are supported. If specified other values, then will use the default zero value.",
+				"zh_CN": "EdgeX 消息总线类型，目前支持两种消息总线。如果指定了错误的消息总线类型，那么会使用缺省 zero 类型。"
+			},
+			"label": {
+				"en_US": "Type",
+				"zh_CN": "类型"
+			}
+		}, {
+			"name": "optional",
+			"default": [{
+				"name": "ClientId",
+				"default": "",
+				"optional": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "",
+					"zh_CN": ""
+				},
+				"label": {
+					"en_US": "",
+					"zh_CN": ""
+				}
+			}, {
+				"name": "Username",
+				"default": "",
+				"optional": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "",
+					"zh_CN": ""
+				},
+				"label": {
+					"en_US": "",
+					"zh_CN": ""
+				}
+			}, {
+				"name": "Password",
+				"default": "",
+				"optional": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "",
+					"zh_CN": ""
+				},
+				"label": {
+					"en_US": "",
+					"zh_CN": ""
+				}
+			}, {
+				"name": "Qos",
+				"default": "",
+				"optional": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "",
+					"zh_CN": ""
+				},
+				"label": {
+					"en_US": "",
+					"zh_CN": ""
+				}
+			}, {
+				"name": "KeepAlive",
+				"default": "",
+				"optional": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "",
+					"zh_CN": ""
+				},
+				"label": {
+					"en_US": "",
+					"zh_CN": ""
+				}
+			}, {
+				"name": "Retained",
+				"default": "",
+				"optional": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "",
+					"zh_CN": ""
+				},
+				"label": {
+					"en_US": "",
+					"zh_CN": ""
+				}
+			}, {
+				"name": "ConnectionPayload",
+				"default": "",
+				"optional": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "",
+					"zh_CN": ""
+				},
+				"label": {
+					"en_US": "",
+					"zh_CN": ""
+				}
+			}, {
+				"name": "CertFile",
+				"default": "",
+				"optional": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "",
+					"zh_CN": ""
+				},
+				"label": {
+					"en_US": "",
+					"zh_CN": ""
+				}
+			}, {
+				"name": "KeyFile",
+				"default": "",
+				"optional": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "",
+					"zh_CN": ""
+				},
+				"label": {
+					"en_US": "",
+					"zh_CN": ""
+				}
+			}, {
+				"name": "CertPEMBlock",
+				"default": "",
+				"optional": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "",
+					"zh_CN": ""
+				},
+				"label": {
+					"en_US": "",
+					"zh_CN": ""
+				}
+			}, {
+				"name": "KeyPEMBlock",
+				"default": "",
+				"optional": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "",
+					"zh_CN": ""
+				},
+				"label": {
+					"en_US": "",
+					"zh_CN": ""
+				}
+			}, {
+				"name": "SkipCertVerify",
+				"default": "",
+				"optional":true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "",
+					"zh_CN": ""
+				},
+				"label": {
+					"en_US": "",
+					"zh_CN": ""
+				}
+			}],
+			"optional":true,
+			"control": "text",
+			"type": "obj-list",
+			"hint": {
+				"en_US": "If MQTT message bus is used, some other optional configurations can be specified. Please notice that all of values in optional are string type, so values for these configurations should be string - such as KeepAlive: \"5000\".",
+				"zh_CN": "如果使用了 MQTT 消息总线，还可以指定别的一些可选配置项。请注意，所有在可选的配置项里指定的值都必须为**字符类型**，因此这里出现的所有的配置应该是字符类型的 - 例如 KeepAlive: \"5000\"。"
+			},
+			"label": {
+				"en_US": "Optional",
+				"zh_CN": "选项"
+			}
+		}]
+	}
+}

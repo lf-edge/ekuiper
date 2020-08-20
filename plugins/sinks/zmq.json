@@ -5,6 +5,11 @@
 		"company": "EMQ Technologies Co., Ltd",
 		"website": "https://www.emqx.io"
 	},
+
+	"libs": [
+      "github.com/emqx/kuiper/xstream/api@master",
+      "github.com/pebbe/zmq4@master"
+	],
 	"about": {
 		"trial": true,
 		"description": {
@@ -12,11 +17,9 @@
 			"zh_CN": "本插件为演示 ZMQ 数据发送插件，不能使用在生产环境中"
 		}
 	},
-	"libs": [
-	],
 	"helpUrl": {
-		"en_US": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/en_US/plugins/sinks/zmq.md",
-		"zh_CN": "https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/zh_CN/plugins/sinks/zmq.md"
+		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/zmq.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/zmq.md"
 	},
 	"properties": [{
 		"name": "server",

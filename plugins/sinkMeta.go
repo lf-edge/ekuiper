@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
@@ -11,7 +10,7 @@ import (
 )
 
 const (
-	baseProperty = `properies`
+	baseProperty = `properties`
 	baseOption   = `options`
 )
 
@@ -27,45 +26,36 @@ type (
 		Chinese string `json:"zh_CN"`
 	}
 	field struct {
-		Optional bool        `json:"optional"`
 		Name     string      `json:"name"`
-		Control  string      `json:"control"`
+		Default  interface{} `json:"default"`
 		Type     string      `json:"type"`
+		Control  string      `json:"control"`
+		Optional bool        `json:"optional"`
+		Values   interface{} `json:"values"`
 		Hint     *language   `json:"hint"`
 		Label    *language   `json:"label"`
-		Default  interface{} `json:"default"`
-		Values   interface{} `json:"values"`
 	}
-	metadata struct {
+	sinkMeta struct {
 		Author  *author   `json:"author"`
 		HelpUrl *language `json:"helpUrl"`
-		Fields  []*field  `json:"properties"`
 		Libs    []string  `json:"libs"`
+		Fields  []*field  `json:"properties"`
 	}
 )
 
-var g_sinkMetadata map[string]*metadata //map[fileName]
-func (this *Manager) delMetadata(pluginName string) {
-	sinkMetadata := g_sinkMetadata
-	if _, ok := sinkMetadata[pluginName]; !ok {
-		return
+var g_sinkMetadata map[string]*sinkMeta //map[fileName]
+func (this *Manager) readSinkMetaDir() error {
+	confDir, err := common.GetLoc("/plugins")
+	if nil != err {
+		return err
 	}
-	tmp := make(map[string]*metadata)
-	fileName := pluginName + `.json`
-	for k, v := range sinkMetadata {
-		if k != fileName {
-			tmp[k] = v
-		}
-	}
-	g_sinkMetadata = tmp
-}
-func (this *Manager) readMetadataDir(dir string) error {
-	tmpMap := make(map[string]*metadata)
+
+	dir := path.Join(confDir, "sinks")
+	tmpMap := make(map[string]*sinkMeta)
 	infos, err := ioutil.ReadDir(dir)
 	if nil != err {
 		return err
 	}
-	//add info log
 	for _, info := range infos {
 		fileName := info.Name()
 		if !strings.HasSuffix(fileName, ".json") {
@@ -73,66 +63,56 @@ func (this *Manager) readMetadataDir(dir string) error {
 		}
 
 		filePath := path.Join(dir, fileName)
-		byteContent, err := ioutil.ReadFile(filePath)
-		if nil != err {
-			return err
-		}
-
-		ptrMetadata := new(metadata)
-		err = json.Unmarshal(byteContent, ptrMetadata)
+		ptrMetadata := new(sinkMeta)
+		err = common.ReadJsonUnmarshal(filePath, ptrMetadata)
 		if nil != err {
 			return fmt.Errorf("fileName:%s err:%v", fileName, err)
 		}
-		common.Log.Infof("metadata file : %s", fileName)
+
+		common.Log.Infof("sinkMeta file : %s", fileName)
 		tmpMap[fileName] = ptrMetadata
 	}
 	g_sinkMetadata = tmpMap
 	return nil
 }
 
-func (this *Manager) readMetadataFile(filePath string) error {
-	byteContent, err := ioutil.ReadFile(filePath)
-	if nil != err {
-		return err
-	}
-
-	ptrMetadata := new(metadata)
-	err = json.Unmarshal(byteContent, ptrMetadata)
+func (this *Manager) readSinkMetaFile(filePath string) error {
+	ptrMetadata := new(sinkMeta)
+	err := common.ReadJsonUnmarshal(filePath, ptrMetadata)
 	if nil != err {
 		return fmt.Errorf("filePath:%s err:%v", filePath, err)
 	}
 
 	sinkMetadata := g_sinkMetadata
-	tmpMap := make(map[string]*metadata)
+	tmpMap := make(map[string]*sinkMeta)
 	for k, v := range sinkMetadata {
 		tmpMap[k] = v
 	}
 	fileName := path.Base(filePath)
-	common.Log.Infof("metadata file : %s", fileName)
+	common.Log.Infof("sinkMeta file : %s", fileName)
 	tmpMap[fileName] = ptrMetadata
 	g_sinkMetadata = tmpMap
-
 	return nil
 }
 
 type (
-	sinkLanguage struct {
+	hintLanguage struct {
 		English string `json:"en"`
 		Chinese string `json:"zh"`
 	}
-	sinkField struct {
+	hintField struct {
 		Name     string        `json:"name"`
 		Default  interface{}   `json:"default"`
 		Control  string        `json:"control"`
 		Optional bool          `json:"optional"`
 		Type     string        `json:"type"`
-		Hint     *sinkLanguage `json:"hint"`
-		Label    *sinkLanguage `json:"label"`
+		Hint     *hintLanguage `json:"hint"`
+		Label    *hintLanguage `json:"label"`
 		Values   interface{}   `json:"values"`
 	}
 	sinkPropertyNode struct {
-		Fields  []*sinkField  `json:"properties"`
-		HelpUrl *sinkLanguage `json:"helpUrl"`
+		Fields  []*hintField  `json:"properties"`
+		HelpUrl *hintLanguage `json:"helpUrl"`
 		Libs    []string      `json:"libs"`
 	}
 	sinkProperty struct {
@@ -142,31 +122,31 @@ type (
 	}
 )
 
-func (this *sinkLanguage) set(l *language) {
+func (this *hintLanguage) set(l *language) {
 	this.English = l.English
 	this.Chinese = l.Chinese
 }
-func (this *sinkField) setSinkField(v *field) {
+func (this *hintField) setSinkField(v *field) {
 	this.Name = v.Name
 	this.Type = v.Type
 	this.Default = v.Default
 	this.Values = v.Values
 	this.Control = v.Control
 	this.Optional = v.Optional
-	this.Hint = new(sinkLanguage)
+	this.Hint = new(hintLanguage)
 	this.Hint.set(v.Hint)
-	this.Label = new(sinkLanguage)
+	this.Label = new(hintLanguage)
 	this.Label.set(v.Label)
 }
 
-func (this *sinkPropertyNode) setNodeFromMetal(data *metadata) {
+func (this *sinkPropertyNode) setNodeFromMetal(data *sinkMeta) {
 	this.Libs = data.Libs
 	if nil != data.HelpUrl {
-		this.HelpUrl = new(sinkLanguage)
+		this.HelpUrl = new(hintLanguage)
 		this.HelpUrl.set(data.HelpUrl)
 	}
 	for _, v := range data.Fields {
-		field := new(sinkField)
+		field := new(hintField)
 		field.setSinkField(v)
 		this.Fields = append(this.Fields, field)
 	}
@@ -177,7 +157,7 @@ func (this *sinkProperty) setCustomProperty(pluginName string) error {
 	sinkMetadata := g_sinkMetadata
 	data := sinkMetadata[fileName]
 	if nil == data {
-		return fmt.Errorf(`not find pligin:%s`, fileName)
+		return fmt.Errorf(`not found pligin:%s`, fileName)
 	}
 	node := new(sinkPropertyNode)
 	node.setNodeFromMetal(data)
@@ -192,7 +172,7 @@ func (this *sinkProperty) setBasePropertry(pluginName string) error {
 	sinkMetadata := g_sinkMetadata
 	data := sinkMetadata[baseProperty+".json"]
 	if nil == data {
-		return fmt.Errorf(`not find pligin:%s`, baseProperty)
+		return fmt.Errorf(`not found pligin:%s`, baseProperty)
 	}
 	node := new(sinkPropertyNode)
 	node.setNodeFromMetal(data)
@@ -207,7 +187,7 @@ func (this *sinkProperty) setBaseOption() error {
 	sinkMetadata := g_sinkMetadata
 	data := sinkMetadata[baseOption+".json"]
 	if nil == data {
-		return fmt.Errorf(`not find pligin:%s`, baseOption)
+		return fmt.Errorf(`not found pligin:%s`, baseOption)
 	}
 	node := new(sinkPropertyNode)
 	node.setNodeFromMetal(data)
@@ -275,6 +255,7 @@ func (this *sinkProperty) modifyOption(option *api.RuleOption) {
 		}
 	}
 }
+
 func (this *sinkProperty) hintWhenModifySink(rule *api.Rule) (err error) {
 	for _, m := range rule.Actions {
 		for pluginName, sink := range m {
@@ -290,7 +271,7 @@ func (this *sinkProperty) hintWhenModifySink(rule *api.Rule) (err error) {
 	return nil
 }
 
-func (this *Manager) Metadata(pluginName string, rule *api.Rule) (ptrSinkProperty *sinkProperty, err error) {
+func (this *Manager) GetSinkMeta(pluginName string, rule *api.Rule) (ptrSinkProperty *sinkProperty, err error) {
 	ptrSinkProperty = new(sinkProperty)
 	if nil == rule {
 		err = ptrSinkProperty.hintWhenNewSink(pluginName)
@@ -298,4 +279,15 @@ func (this *Manager) Metadata(pluginName string, rule *api.Rule) (ptrSinkPropert
 		err = ptrSinkProperty.hintWhenModifySink(rule)
 	}
 	return ptrSinkProperty, err
+}
+
+func (this *Manager) GetSinks() (sinks []string) {
+	sinkMeta := g_sinkMetadata
+	for fileName, _ := range sinkMeta {
+		if fileName == baseProperty+".json" || fileName == baseOption+".json" {
+			continue
+		}
+		sinks = append(sinks, strings.TrimSuffix(fileName, `.json`))
+	}
+	return sinks
 }

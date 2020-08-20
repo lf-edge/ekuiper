@@ -45,7 +45,6 @@ func LoadConf(confName string) ([]byte, error) {
 	}
 
 	file := path.Join(confDir, confName)
-	//	file := confDir + confName
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -364,4 +363,34 @@ func MapToSyncMap(m map[string]interface{}) *sync.Map {
 		sm.Store(k, v)
 	}
 	return sm
+}
+
+func ReadJsonUnmarshal(path string, ret interface{}) error {
+	sliByte, err := ioutil.ReadFile(path)
+	if nil != err {
+		return err
+	}
+	err = json.Unmarshal(sliByte, ret)
+	if nil != err {
+		return err
+	}
+	return nil
+}
+func ReadYamlUnmarshal(path string, ret interface{}) error {
+	sliByte, err := ioutil.ReadFile(path)
+	if nil != err {
+		return err
+	}
+	err = yaml.Unmarshal(sliByte, ret)
+	if nil != err {
+		return err
+	}
+	return nil
+}
+func WriteYamlMarshal(path string, data interface{}) error {
+	y, err := yaml.Marshal(data)
+	if nil != err {
+		return err
+	}
+	return ioutil.WriteFile(path, y, 0666)
 }

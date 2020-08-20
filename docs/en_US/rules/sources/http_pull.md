@@ -59,7 +59,7 @@ The body of request, such as `'{"data": "data", "method": 1}'`
 
 ### bodyType
 
-Body type, it could be none|text|json|html|xml|javascript|form.
+Body type, it could be none|text|json|html|xml|javascript|format.
 
 ### headers
 
