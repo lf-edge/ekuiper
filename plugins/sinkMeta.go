@@ -1,14 +1,12 @@
 package plugins
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	"io/ioutil"
 	"path"
 	"strings"
-	"sync"
 )
 
 const (
@@ -43,89 +41,7 @@ type (
 		Libs    []string  `json:"libs"`
 		Fields  []*field  `json:"properties"`
 	}
-	sourceMeta struct {
-		Author   *author             `json:"author"`
-		HelpUrl  *language           `json:"helpUrl"`
-		Libs     []string            `json:"libs"`
-		ConfKeys map[string][]*field `json:"properties"`
-	}
 )
-
-var (
-	g_sourceMetadata map[string]*sourceMeta //map[fileName]
-	g_sourceMutex    sync.Mutex
-)
-
-func (this *Manager) readSourceMetaFile(filePath string) (*sourceMeta, error) {
-	ptrMeta := new(sourceMeta)
-	err := common.ReadJsonUnmarshal(filePath, ptrMeta)
-	if nil != err || nil == ptrMeta.ConfKeys {
-		return nil, fmt.Errorf("file:%s err:%v", filePath, err)
-	}
-
-	yamlData := make(map[string]map[string]interface{})
-	filePath = strings.TrimSuffix(filePath, `.json`) + `.yaml`
-	err = common.ReadYamlUnmarshal(filePath, &yamlData)
-	if nil != err {
-		return nil, fmt.Errorf("file:%s err:%v", filePath, err)
-	}
-	common.Log.Infof("sourceMeta file : %s", filePath)
-
-	for key, _ := range yamlData {
-		var fields []*field
-		tmpFields := ptrMeta.ConfKeys[key]
-		if nil == tmpFields {
-			defFields := ptrMeta.ConfKeys["default"]
-			for _, pfield := range defFields {
-				p := new(field)
-				*p = *pfield
-				fields = append(fields, p)
-				ptrMeta.ConfKeys[key] = fields
-			}
-		}
-	}
-
-	for key, kvs := range yamlData {
-		fields := ptrMeta.ConfKeys[key]
-		for i, field := range fields {
-			if v, ok := kvs[field.Name]; ok {
-				fields[i].Default = v
-			}
-		}
-	}
-	return ptrMeta, err
-}
-
-func (this *Manager) readSourceMetaDir() error {
-	confDir, err := common.GetConfLoc()
-	if nil != err {
-		return err
-	}
-
-	dir := path.Join(confDir, "sources")
-	infos, err := ioutil.ReadDir(dir)
-	if nil != err {
-		return err
-	}
-
-	tmpMap := make(map[string]*sourceMeta)
-	tmpMap["mqtt_source.json"], err = this.readSourceMetaFile(path.Join(confDir, "mqtt_source.json"))
-	for _, info := range infos {
-		fileName := info.Name()
-		if strings.HasSuffix(fileName, ".json") {
-			filePath := path.Join(dir, fileName)
-			tmpMap[fileName], err = this.readSourceMetaFile(filePath)
-			if nil != err {
-				return err
-			}
-		}
-	}
-
-	g_sourceMutex.Lock()
-	g_sourceMetadata = tmpMap
-	g_sourceMutex.Unlock()
-	return nil
-}
 
 var g_sinkMetadata map[string]*sinkMeta //map[fileName]
 func (this *Manager) readSinkMetaDir() error {
@@ -160,14 +76,6 @@ func (this *Manager) readSinkMetaDir() error {
 	return nil
 }
 
-func (this *Manager) readMetaDir() error {
-	err := this.readSourceMetaDir()
-	if nil != err {
-		return err
-	}
-	return this.readSinkMetaDir()
-}
-
 func (this *Manager) readSinkMetaFile(filePath string) error {
 	ptrMetadata := new(sinkMeta)
 	err := common.ReadJsonUnmarshal(filePath, ptrMetadata)
@@ -187,23 +95,6 @@ func (this *Manager) readSinkMetaFile(filePath string) error {
 
 	return nil
 }
-
-/*
-func (this *Manager) delMetadata(pluginName string) {
-	sinkMetadata := g_sinkMetadata
-	if _, ok := sinkMetadata[pluginName]; !ok {
-		return
-	}
-	tmp := make(map[string]*sinkMeta)
-	fileName := pluginName + `.json`
-	foruOB k, v := range sinkMetadata {
-		if k != fileName {
-			tmp[k] = v
-		}
-	}
-	g_sinkMetadata = tmp
-}
-*/
 
 type (
 	hintLanguage struct {
@@ -390,15 +281,6 @@ func (this *Manager) SinkMetadata(pluginName string, rule *api.Rule) (ptrSinkPro
 	return ptrSinkProperty, err
 }
 
-func (this *Manager) SourceMetadata(pluginName string) (ptrSourceProperty *sourceMeta, err error) {
-	g_sourceMutex.Lock()
-	defer g_sourceMutex.Unlock()
-	if data, ok := g_sourceMetadata[pluginName+".json"]; ok {
-		return data, nil
-	}
-	return nil, fmt.Errorf("not found plugin %s", pluginName)
-}
-
 func (this *Manager) GetSinks() (sinks []string) {
 	sinkMeta := g_sinkMetadata
 	for fileName, _ := range sinkMeta {
@@ -408,156 +290,4 @@ func (this *Manager) GetSinks() (sinks []string) {
 		sinks = append(sinks, strings.TrimSuffix(fileName, `.json`))
 	}
 	return sinks
-}
-
-func (this *Manager) GetSources() (sources []string) {
-	g_sourceMutex.Lock()
-	defer g_sourceMutex.Unlock()
-	for fileName, _ := range g_sourceMetadata {
-		sources = append(sources, strings.TrimSuffix(fileName, `.json`))
-	}
-	return sources
-}
-
-func (this *Manager) GetSourceConfKeys(pluginName string) (keys []string) {
-	g_sourceMutex.Lock()
-	defer g_sourceMutex.Unlock()
-	meta := g_sourceMetadata[pluginName+".json"]
-	if nil == meta {
-		return nil
-	}
-	for k, _ := range meta.ConfKeys {
-		keys = append(keys, k)
-	}
-	return keys
-}
-
-func (this *Manager) DelSourceConfKey(pluginName, confKey string) error {
-	g_sourceMutex.Lock()
-	meta := g_sourceMetadata[pluginName+".json"]
-	if nil == meta {
-		g_sourceMutex.Unlock()
-		return fmt.Errorf("not found plugin %s", pluginName)
-	}
-	if nil == meta.ConfKeys {
-		g_sourceMutex.Unlock()
-		return fmt.Errorf("not found confKey %s", confKey)
-	}
-	delete(meta.ConfKeys, confKey)
-	g_sourceMutex.Unlock()
-	return saveSourceConf(pluginName)
-}
-
-func (this *Manager) AddSourceConfKey(pluginName, confKey, content string) error {
-	reqField := make(map[string]interface{})
-	err := json.Unmarshal([]byte(content), &reqField)
-	if nil != err {
-		return err
-	}
-
-	g_sourceMutex.Lock()
-	meta := g_sourceMetadata[pluginName+".json"]
-	if nil == meta {
-		g_sourceMutex.Unlock()
-		return fmt.Errorf("not found plugin %s", pluginName)
-	}
-
-	if nil == meta.ConfKeys {
-		g_sourceMutex.Unlock()
-		return fmt.Errorf("not found confKey %s", confKey)
-	}
-
-	if 0 != len(meta.ConfKeys[confKey]) {
-		g_sourceMutex.Unlock()
-		return fmt.Errorf("exist confKey %s", confKey)
-	}
-
-	defFields := meta.ConfKeys["default"]
-	if 0 == len(defFields) {
-		g_sourceMutex.Unlock()
-		return fmt.Errorf("not found confKey default")
-	}
-	var newConfKey []*field
-	for _, defField := range defFields {
-		p := new(field)
-		*p = *defField
-		newConfKey = append(newConfKey, p)
-	}
-
-	for k, v := range reqField {
-		for i, field := range newConfKey {
-			if k == field.Name {
-				newConfKey[i].Default = v
-				break
-			}
-		}
-	}
-
-	meta.ConfKeys[confKey] = newConfKey
-	g_sourceMutex.Unlock()
-	return saveSourceConf(pluginName)
-}
-func (this *Manager) UpdateSourceConfKey(pluginName, confKey, content string) error {
-	reqField := make(map[string]interface{})
-	err := json.Unmarshal([]byte(content), &reqField)
-	if nil != err {
-		return err
-	}
-
-	g_sourceMutex.Lock()
-	meta := g_sourceMetadata[pluginName+".json"]
-	if nil == meta {
-		g_sourceMutex.Unlock()
-		return fmt.Errorf("not found plugin %s", pluginName)
-	}
-
-	if nil == meta.ConfKeys {
-		g_sourceMutex.Unlock()
-		return fmt.Errorf("not found confKey %s", confKey)
-	}
-
-	oldFields := meta.ConfKeys[confKey]
-	if 0 == len(oldFields) {
-		g_sourceMutex.Unlock()
-		return fmt.Errorf("not found confKey %s", confKey)
-	}
-
-	for k, v := range reqField {
-		for i, field := range oldFields {
-			if k == field.Name {
-				oldFields[i].Default = v
-				break
-			}
-		}
-	}
-	g_sourceMutex.Unlock()
-	return saveSourceConf(pluginName)
-}
-
-func saveSourceConf(pluginName string) error {
-	confDir, err := common.GetConfLoc()
-	if nil != err {
-		return err
-	}
-	filePath := path.Join(confDir, "sources", pluginName+".yaml")
-	if "mqtt_source" == pluginName {
-		filePath = path.Join(confDir, pluginName+".yaml")
-	}
-
-	g_sourceMutex.Lock()
-	meta := g_sourceMetadata[pluginName+".json"]
-	if nil == meta {
-		g_sourceMutex.Unlock()
-		return fmt.Errorf("not found plugin %s", pluginName)
-	}
-	confData := make(map[string]map[string]interface{})
-	for key, fields := range meta.ConfKeys {
-		confKey := make(map[string]interface{})
-		for _, field := range fields {
-			confKey[field.Name] = field.Default
-		}
-		confData[key] = confKey
-	}
-	g_sourceMutex.Unlock()
-	return common.WriteYamlMarshal(filePath, confData)
 }

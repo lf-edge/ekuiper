@@ -6,8 +6,6 @@
 		"website": "https://www.emqx.io"
 	},
 	"libs": [
-		"github.com/emqx/kuiper/xstream/api@master",
-		"github.com/pebbe/zmq4@master"
 	],
 	"helpUrl": {
 		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sources/mqtt.md",
@@ -22,7 +20,7 @@
 			"type": "int",
 			"hint": {
 				"en_US": "The default subscription QoS level.",
-				"zh_CN": "默认订阅QoS级别"
+				"zh_CN": "默认订阅 QoS 级别"
 			},
 			"label": {
 				"en_US": "",
@@ -35,7 +33,7 @@
 			"control": "text",
 			"type": "int",
 			"hint": {
-				"en_US": "specify the maximum number of messages to be buffered in the memory.",
+				"en_US": "Specify the maximum number of messages to be buffered in the memory.",
 				"zh_CN": "指定最大缓存消息数目。该参数主要用于防止内存溢出。"
 			},
 			"label": {
@@ -43,7 +41,7 @@
 				"zh_CN": ""
 			}
 		}, {
-			"name": "sharedsubscription",
+			"name": "sharedSubscription",
 			"default": true,
 			"optional": true,
 			"control": "",
@@ -147,8 +145,8 @@
 			"control": "text",
 			"type": "string",
 			"hint": {
-				"en_US": "kubeedge version number. Different version numbers correspond to different file contents.",
-				"zh_CN": "kubeedge 版本号，不同的版本号对应的文件内容不同"
+				"en_US": "Kubeedge version number. Different version numbers correspond to different file contents.",
+				"zh_CN": "Kubeedge 版本号，不同的版本号对应的文件内容不同"
 			},
 			"label": {
 				"en_US": "",
@@ -162,7 +160,7 @@
 			"type": "string",
 			"hint": {
 				"en_US": "The name of the kubeedge template file. The file is located in the specified etc/sources folder.",
-				"zh_CN": "kubeedge 模版文件名，文件指定放在 etc/sources 文件夹中"
+				"zh_CN": "Kubeedge 模版文件名，文件指定放在 etc/sources 文件夹中"
 			},
 			"label": {
 				"en_US": "",

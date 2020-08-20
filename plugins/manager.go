@@ -212,7 +212,10 @@ func NewPluginManager() (*Manager, error) {
 			etcDir:    etcDir,
 			registry:  registry,
 		}
-		outerErr = singleton.readMetaDir()
+		outerErr = singleton.readSourceMetaDir()
+		if nil == err {
+			outerErr = singleton.readSinkMetaDir()
+		}
 	})
 	return singleton, outerErr
 }

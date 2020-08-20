@@ -58,7 +58,21 @@
 			}
 		}, {
 			"name": "pattern",
-			"default": "",
+			"default": [{
+      "name": "count",
+      "default": 50,
+      "optional": false,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "",
+        "zh_CN": ""
+      },  
+      "label": {
+        "en_US": "", 
+        "zh_CN": ""
+      }   
+    }],
 			"optional": true,
 			"control": "text",
 			"type": "string",
