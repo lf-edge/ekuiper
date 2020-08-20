@@ -28,8 +28,8 @@ type (
 	field struct {
 		Name     string      `json:"name"`
 		Default  interface{} `json:"default"`
-		Control  string      `json:"control"`
 		Type     string      `json:"type"`
+		Control  string      `json:"control"`
 		Optional bool        `json:"optional"`
 		Values   interface{} `json:"values"`
 		Hint     *language   `json:"hint"`
@@ -92,7 +92,6 @@ func (this *Manager) readSinkMetaFile(filePath string) error {
 	common.Log.Infof("sinkMeta file : %s", fileName)
 	tmpMap[fileName] = ptrMetadata
 	g_sinkMetadata = tmpMap
-
 	return nil
 }
 
@@ -256,6 +255,7 @@ func (this *sinkProperty) modifyOption(option *api.RuleOption) {
 		}
 	}
 }
+
 func (this *sinkProperty) hintWhenModifySink(rule *api.Rule) (err error) {
 	for _, m := range rule.Actions {
 		for pluginName, sink := range m {
@@ -271,7 +271,7 @@ func (this *sinkProperty) hintWhenModifySink(rule *api.Rule) (err error) {
 	return nil
 }
 
-func (this *Manager) SinkMetadata(pluginName string, rule *api.Rule) (ptrSinkProperty *sinkProperty, err error) {
+func (this *Manager) GetSinkMeta(pluginName string, rule *api.Rule) (ptrSinkProperty *sinkProperty, err error) {
 	ptrSinkProperty = new(sinkProperty)
 	if nil == rule {
 		err = ptrSinkProperty.hintWhenNewSink(pluginName)

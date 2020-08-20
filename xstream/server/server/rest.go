@@ -435,7 +435,7 @@ func sinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	///metadata/sinks?name=taos
-	ptrMetadata, err := pluginManager.SinkMetadata(pluginName, rule)
+	ptrMetadata, err := pluginManager.GetSinkMeta(pluginName, rule)
 	if err != nil {
 		handleError(w, err, "metadata error", logger)
 		return
@@ -454,7 +454,7 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	case "confKeys":
 		ret = pluginManager.GetSourceConfKeys(mapQuery["pluginName"])
 	case "getPlugin":
-		ret, err = pluginManager.SourceMetadata(mapQuery["pluginName"])
+		ret, err = pluginManager.GetSourceMeta(mapQuery["pluginName"])
 	case "addConfKey":
 		err = pluginManager.AddSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"], mapQuery["confData"])
 	case "delConfKey":

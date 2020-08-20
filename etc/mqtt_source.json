@@ -1,7 +1,7 @@
 {
 	"author": {
-		"name": "",
-		"email": "",
+		"name": "Jiyong Huang",
+		"email": "huangjy@emqx.io",
 		"company": "EMQ Technologies Co., Ltd",
 		"website": "https://www.emqx.io"
 	},
@@ -23,8 +23,8 @@
 				"zh_CN": "默认订阅 QoS 级别"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Qos level",
+				"zh_CN": "QoS 级别"
 			}
 		}, {
 			"name": "bufferLength",
@@ -37,8 +37,8 @@
 				"zh_CN": "指定最大缓存消息数目。该参数主要用于防止内存溢出。"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "BufferLength",
+				"zh_CN": "缓存大小"
 			}
 		}, {
 			"name": "sharedSubscription",
@@ -51,8 +51,8 @@
 				"zh_CN": "是否使用共享订阅模式。 如果使用共享订阅模式，那么多个 Kuiper 进程可以进行负载平衡。"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "SharedSubscription",
+				"zh_CN": "使用共享订阅模式"
 			}
 		}, {
 			"name": "servers",
@@ -65,8 +65,8 @@
 				"zh_CN": "MQTT 消息代理的服务器列表。 当前，只能指定一个服务器。"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Server list",
+				"zh_CN": "服务器列表"
 			}
 		}, {
 			"name": "concurrency",
@@ -79,8 +79,8 @@
 				"zh_CN": "设置运行的协程数，默认值为1。如果设置协程数大于1，必须使用共享订阅模式。"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Concurrency",
+				"zh_CN": "协程数"
 			}
 		}, {
 			"name": "username",
@@ -93,8 +93,8 @@
 				"zh_CN": "MQTT 连接用户名。如果指定了 certificationPath 或者 privateKeyPath，那么该项配置不会被使用。"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Username",
+				"zh_CN": "用户名"
 			}
 		}, {
 			"name": "password",
@@ -107,8 +107,8 @@
 				"zh_CN": "MQTT 连接密码。如果指定了 certificationPath 或者 privateKeyPath，那么该项配置不会被使用。"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Password",
+				"zh_CN": "密码"
 			}
 		}, {
 			"name": "certificationPath",
@@ -121,8 +121,8 @@
 				"zh_CN": "证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 server 命令的路径。"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Certification path",
+				"zh_CN": "证书路径"
 			}
 		}, {
 			"name": "privateKeyPath",
@@ -135,8 +135,8 @@
 				"zh_CN": "私钥路径。可以为绝对路径，也可以为相对路径。"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Private key path",
+				"zh_CN": "私钥路径"
 			}
 		}, {
 			"name": "kubeedgeVersion",
@@ -149,8 +149,8 @@
 				"zh_CN": "Kubeedge 版本号，不同的版本号对应的文件内容不同"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Kubeedge version",
+				"zh_CN": "Kubeedge 版本号"
 			}
 		}, {
 			"name": "kubeedgeModelFile",
@@ -163,8 +163,8 @@
 				"zh_CN": "Kubeedge 模版文件名，文件指定放在 etc/sources 文件夹中"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "File name",
+				"zh_CN": "文件名"
 			}
 		}]
 	}

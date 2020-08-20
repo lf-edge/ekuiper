@@ -77,13 +77,14 @@ func (this *Manager) readSourceMetaDir() error {
 			if nil != err {
 				return err
 			}
+			common.Log.Infof("sourceMeta file : %s", fileName)
 		}
 	}
 	g_sourceProperty = tmpMap
 	return nil
 }
 
-func (this *Manager) SourceMetadata(pluginName string) (ptrSourceProperty *sourceMeta, err error) {
+func (this *Manager) GetSourceMeta(pluginName string) (ptrSourceProperty *sourceMeta, err error) {
 	property, ok := g_sourceProperty[pluginName+".json"]
 	if ok {
 		property.cfToMeta()

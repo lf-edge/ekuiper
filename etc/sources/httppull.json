@@ -1,7 +1,7 @@
 {
 	"author": {
-		"name": "",
-		"email": "",
+		"name": "Jiyong Huang",
+		"email": "huangjy@emqx.io",
 		"company": "EMQ Technologies Co., Ltd",
 		"website": "https://www.emqx.io"
 	},
@@ -23,8 +23,8 @@
 				"zh_CN": "获取结果的 URL"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "URL",
+				"zh_CN": "路径"
 			}
 		}, {
 			"name": "method",
@@ -37,8 +37,8 @@
 				"zh_CN": "HTTP 方法，它可以是 post、get、put 和 delete。"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "HTTP method",
+				"zh_CN": "HTTP 方法"
 			}
 		}, {
 			"name": "interval",
@@ -51,8 +51,8 @@
 				"zh_CN": "请求之间的间隔时间，单位为 ms"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Interval",
+				"zh_CN": "间隔时间"
 			}
 		}, {
 			"name": "timeout",
@@ -65,8 +65,8 @@
 				"zh_CN": "http 请求的超时时间，单位为 ms"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Timeout",
+				"zh_CN": "超时时间"
 			}
 		}, {
 			"name": "incremental",
@@ -79,8 +79,8 @@
 				"zh_CN": "如果将其设置为 true，则将与最后的结果进行比较； 如果两个请求的响应相同，则将跳过发送结果。"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Incremental",
+				"zh_CN": "递增"
 			}
 		}, {
 			"name": "body",
@@ -93,8 +93,8 @@
 				"zh_CN": "请求的正文"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Body",
+				"zh_CN": "正文"
 			}
 		}, {
 			"name": "bodyType",
@@ -107,8 +107,8 @@
 				"zh_CN": "正文类型,可以是 none|text|json|html|xml|javascript| 格式"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Body type",
+				"zh_CN": "正文类型"
 			}
 		}, {
 			"name": "headers",
@@ -119,12 +119,12 @@
       "control": "text",                                                                 
       "type": "string",                                                                  
       "hint": {                                                                          
-        "en_US": "",      
-        "zh_CN": ""              
+        "en_US": "HTTP headers",      
+        "zh_CN": "HTTP标头"              
       },                                                                                 
       "label": {                                                                         
-        "en_US": "",                                                                     
-        "zh_CN": ""                                                                      
+        "en_US": "HTTP headers",
+        "zh_CN": "HTTP标头"
       }                                                                                  
     }],
 			"optional": false,
@@ -135,8 +135,8 @@
 				"zh_CN": "需要与 HTTP 请求一起发送的 HTTP 请求标头。"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "HTTP headers",
+				"zh_CN": "HTTP标头"
 			}
 		}]
 	}
