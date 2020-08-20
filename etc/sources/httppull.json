@@ -103,7 +103,7 @@
 			"control": "text",
 			"type": "string",
 			"hint": {
-				"en_US": "Body type, it could be none|text|json|html|xml|javascript|form.",
+				"en_US": "Body type, it could be none|text|json|html|xml|javascript|format.",
 				"zh_CN": "正文类型,可以是 none|text|json|html|xml|javascript| 格式"
 			},
 			"label": {
