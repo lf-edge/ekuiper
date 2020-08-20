@@ -1,13 +1,20 @@
 {
 	"author": {
-		"name": "",
-		"email": "",
+		"name": "Jiyong Huang",
+		"email": "huangjy@emqx.io",
 		"company": "EMQ Technologies Co., Ltd",
 		"website": "https://www.emqx.io"
 	},
 	"libs": [
 	  "github.com/emqx/kuiper/xstream/api@master"
 	],
+	"about": {
+		"trial": true,
+		"description": {
+			"en_US": "This a sink plugin for file, it can be used for saving the analysis data into file system.",
+			"zh_CN": "本插件为文件持久化插件，可以用于将分析数据存入指定的文件中。"
+		}
+	},
 	"helpUrl": {
 		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/file.md",
 		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/file.md"

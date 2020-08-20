@@ -1,15 +1,22 @@
 {
 	"author": {
-		"name": "",
+		"name": "Yongxing Ma",
 		"email": "",
-		"company": "EMQ Technologies Co., Ltd",
-		"website": "https://www.emqx.io"
+		"company": "China Mobile",
+		"website": ""
 	},
 	"libs": [
 	  "github.com/emqx/kuiper/xstream/api@master",
 	  "github.com/influxdata/influxdb1-client/v2@master",
 	  "github.com/influxdata/influxdb1-client/v2@master"
 	],
+	"about": {
+		"trial": false,
+		"description": {
+			"en_US": "This a sink plugin for InfluxDB, it can be used for saving the analysis data into InfluxDB.",
+			"zh_CN": "本插件为 InfluxDB 的持久化插件，可以用于将分析数据存入 InfluxDB 中。"
+		}
+	},
 	"helpUrl": {
 		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/influxdb.md",
 		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/influxdb.md"
@@ -39,7 +46,7 @@
 			"zh_CN": "InfluxDb的测量"
 		},
 		"label": {
-			"en_US": "measurement",
+			"en_US": "Measurement",
 			"zh_CN": "测量"
 		}
 	}, {
@@ -53,7 +60,7 @@
 			"zh_CN": "InfluxDB登陆用户名"
 		},
 		"label": {
-			"en_US": "username",
+			"en_US": "Username",
 			"zh_CN": "用户名"
 		}
 	}, {
@@ -64,10 +71,10 @@
 		"type": "string",
 		"hint": {
 			"en_US": "The InfluxDB login password",
-			"zh_CN": "InfluxDB登陆密码"
+			"zh_CN": "InfluxDB 登陆密码"
 		},
 		"label": {
-			"en_US": "password",
+			"en_US": "Password",
 			"zh_CN": "密码"
 		}
 	}, {
@@ -78,7 +85,7 @@
 		"type": "string",
 		"hint": {
 			"en_US": "The database of the InfluxDB",
-			"zh_CN": "InfluxDB的数据库"
+			"zh_CN": "InfluxDB 的数据库"
 		},
 		"label": {
 			"en_US": "DBbase name",
@@ -92,7 +99,7 @@
 		"type": "string",
 		"hint": {
 			"en_US": "The tag key of the InfluxDB",
-			"zh_CN": "InfluxDB的标签键"
+			"zh_CN": "InfluxDB 的标签键"
 		},
 		"label": {
 			"en_US": "Tag",
@@ -106,7 +113,7 @@
 		"type": "string",
 		"hint": {
 			"en_US": "The tag value of the InfluxDB",
-			"zh_CN": "InfluxDB的标签值"
+			"zh_CN": "InfluxDB 的标签值"
 		},
 		"label": {
 			"en_US": "Tag value",
@@ -120,7 +127,7 @@
 		"type": "string",
 		"hint": {
 			"en_US": "The column of the InfluxDB",
-			"zh_CN": "InfluxDB的列名"
+			"zh_CN": "InfluxDB 的列名"
 		},
 		"label": {
 			"en_US": "Column",

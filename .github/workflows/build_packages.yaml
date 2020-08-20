@@ -155,6 +155,7 @@ jobs:
             sudo systemctl restart docker
             docker version
             docker buildx create --use --name mybuild
+            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - name: build docker image
           run: docker build --no-cache -t emqx/kuiper-kubernetes-tool:$(git describe --tags --always) -f deploy/docker/Dockerfile-kubernetes-tool .
         - name: test docker image
@@ -163,11 +164,15 @@ jobs:
             docker run -d --name kuiper-kubernetes-tool emqx/kuiper-kubernetes-tool:$(git describe --tags --always)
             sleep 5
             if [ "$(docker logs kuiper-kubernetes-tool)" != "Kuiper kubernetes tool is started successfully!"  ]; then exit 1; fi
-        - name: push docker image
+        - name: buildx docker image
           if: github.event_name == 'release'
           run: |
             echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
-            docker push emqx/kuiper-kubernetes-tool:$(git describe --tags --always)
+            docker buildx build --no-cache \
+                --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
+                -t emqx/kuiper-kubernetes-tool:$(git describe --tags --always) \
+                -f deploy/docker/Dockerfile-kubernetes-tool . \
+                -- push
 
     release:
         runs-on: ubuntu-latest
@@ -213,7 +218,7 @@ jobs:
           if: github.event_name == 'release'
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
-            curl -w %{http_code} --insecure -H ${{ secrets.EmqxHeader }} https://admin.emqx.io/api/v1/kuiper_github_release_callback?tag=$version
+            curl -w %{http_code} --insecure -H ${{ secrets.EmqxHeader }} https://admin.emqx.io/admin_api/v1/kuiper_github_release_callback?tag=$version
         - name: update helm packages
           if: github.event_name == 'release'
           run: |

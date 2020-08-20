@@ -1,14 +1,22 @@
 {
 	"author": {
-		"name": "",
-		"email": "",
+		"name": "Jiyong Huang",
+		"email": "huangjy@emqx.io",
 		"company": "EMQ Technologies Co., Ltd",
 		"website": "https://www.emqx.io"
 	},
+
 	"libs": [
       "github.com/emqx/kuiper/xstream/api@master",
       "github.com/pebbe/zmq4@master"
 	],
+	"about": {
+		"trial": true,
+		"description": {
+			"en_US": "This a demo 0MQ sink plugin, it cannot be used in production env.",
+			"zh_CN": "本插件为演示 ZMQ 数据发送插件，不能使用在生产环境中"
+		}
+	},
 	"helpUrl": {
 		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/zmq.md",
 		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/zmq.md"
@@ -24,7 +32,7 @@
 			"zh_CN": "Zero Mq 服务器的 URL"
 		},
 		"label": {
-			"en_US": "server address",
+			"en_US": "Server address",
 			"zh_CN": "服务器地址"
 		}
 	}, {
@@ -38,7 +46,7 @@
 			"zh_CN": "订阅主题"
 		},
 		"label": {
-			"en_US": "topic",
+			"en_US": "Topic",
 			"zh_CN": "主题"
 		}
 	}]
