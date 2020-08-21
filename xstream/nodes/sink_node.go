@@ -270,14 +270,24 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 			}
 		} else {
 			for _, r := range j {
-				var output bytes.Buffer
-				err := tp.Execute(&output, r)
-				if err != nil {
-					logger.Warnf("sink node %s instance %d publish %s decode template error: %v", ctx.GetOpId(), ctx.GetInstanceId(), val, err)
-					stats.IncTotalExceptions()
-					return
+				if tp != nil {
+					var output bytes.Buffer
+					err := tp.Execute(&output, r)
+					if err != nil {
+						logger.Warnf("sink node %s instance %d publish %s decode template error: %v", ctx.GetOpId(), ctx.GetInstanceId(), val, err)
+						stats.IncTotalExceptions()
+						return
+					}
+					outdatas = append(outdatas, output.Bytes())
+				} else {
+					if ot, e := json.Marshal(r); e != nil {
+						logger.Warnf("sink node %s instance %d publish %s marshal error: %v", ctx.GetOpId(), ctx.GetInstanceId(), r, e)
+						stats.IncTotalExceptions()
+						return
+					} else {
+						outdatas = append(outdatas, ot)
+					}
 				}
-				outdatas = append(outdatas, output.Bytes())
 			}
 		}
 
