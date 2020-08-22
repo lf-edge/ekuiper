@@ -169,7 +169,60 @@ cross_docker: cross_prepare
 	-f deploy/docker/Dockerfile-alpine . \
 	--push
 
+
+PLUGINS := sinks/file \
+	sinks/influxdb \
+	sinks/taos \
+	sinks/zmq \
+	sources/random \
+	sources/zmq \
+	functions/accumulateWordCount \
+	functions/countPlusOne \
+	functions/echo
+
+.PHONE: plugins
+plugins: cross_prepare $(PLUGINS)
+$(PLUGINS): PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+$(PLUGINS): PLUGIN_NAME = $(word 2, $(subst /, , $@))
+$(PLUGINS):
+	@docker buildx build --no-cache \
+    --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+    -t cross_build \
+    --build-arg VERSION=$(VERSION) \
+    --build-arg PLUGIN_TYPE=$(PLUGIN_TYPE)\
+    --build-arg PLUGIN_NAME=$(PLUGIN_NAME)\
+    --output type=tar,dest=/tmp/cross_build_plugins_$(PLUGIN_TYPE)_$(PLUGIN_NAME).tar \
+    -f .ci/Dockerfile-plugins .
+
+	@mkdir -p _plugins/debian/$(PLUGIN_TYPE)
+	@for arch in amd64 arm64 arm_v7 386 ppc64le; do \
+		tar -xvf /tmp/cross_build_plugins_$(PLUGIN_TYPE)_$(PLUGIN_NAME).tar --wildcards "linux_$${arch}/go/kuiper/_plugins/$(PLUGIN_TYPE)/$(PLUGIN_NAME)/$(PLUGIN_NAME)_$$(echo $${arch%%_*}).zip" \
+		&& mv $$(ls linux_$${arch}/go/kuiper/_plugins/$(PLUGIN_TYPE)/$(PLUGIN_NAME)/$(PLUGIN_NAME)_$$(echo $${arch%%_*}).zip) _plugins/debian/$(PLUGIN_TYPE); \
+	done
+	@rm -f /tmp/cross_build_plugins_$(PLUGIN_TYPE)_$(PLUGIN_NAME).tar
+
+.PHONE: apline_plugins
+alpine_plugins: cross_prepare $(PLUGINS:%=alpine/%)
+$(PLUGINS:%=alpine/%): PLUGIN_TYPE = $(word 2, $(subst /, , $@))
+$(PLUGINS:%=alpine/%): PLUGIN_NAME = $(word 3, $(subst /, , $@))
+$(PLUGINS:%=alpine/%):
+	@docker buildx build --no-cache \
+    --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+    -t cross_build \
+    --build-arg VERSION=$(VERSION) \
+    --build-arg PLUGIN_TYPE=$(PLUGIN_TYPE)\
+    --build-arg PLUGIN_NAME=$(PLUGIN_NAME)\
+    --output type=tar,dest=/tmp/cross_build_plugins_$(PLUGIN_TYPE)_$(PLUGIN_NAME)_on_alpine.tar \
+    -f .ci/Dockerfile-plugins .
+
+	@mkdir -p _plugins/alpine/$(PLUGIN_TYPE)
+	@for arch in amd64 arm64 arm_v7 386 ppc64le; do \
+		tar -xvf /tmp/cross_build_plugins_$(PLUGIN_TYPE)_$(PLUGIN_NAME)_on_alpine.tar --wildcards "linux_$${arch}/go/kuiper/_plugins/$(PLUGIN_TYPE)/$(PLUGIN_NAME)/$(PLUGIN_NAME)_$$(echo $${arch%%_*}).zip" \
+		&& mv $$(ls linux_$${arch}/go/kuiper/_plugins/$(PLUGIN_TYPE)/$(PLUGIN_NAME)/$(PLUGIN_NAME)_$$(echo $${arch%%_*}).zip) _plugins/alpine/$(PLUGIN_TYPE); \
+	done
+	@rm -f /tmp/cross_build_plugins_$(PLUGIN_TYPE)_$(PLUGIN_NAME)_on_alpine.tar
+
 .PHONY: clean
 clean:
 	@rm -rf cross_build.tar linux_amd64 linux_arm64 linux_arm_v7 linux_ppc64le linux_386
-	@rm -rf _build _packages 
+	@rm -rf _build _packages _plugins

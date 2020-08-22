@@ -1,0 +1,19 @@
+FROM golang:1.14-alpine AS builder
+
+ARG VERSION
+ARG PLUGIN_TYPE
+ARG PLUGIN_NAME
+
+COPY . /go/kuiper
+
+WORKDIR /go/kuiper
+
+RUN apk add gcc make git libc-dev binutils-gold pkgconfig zeromq-dev jq zip
+
+RUN set -e -u -x \
+    && mkdir -p _plugins/$PLUGIN_TYPE/$PLUGIN_NAME \
+    && for lib in $(cat etc/$PLUGIN_TYPE/$PLUGIN_NAME.json | jq -r ".libs[]"); do go get $lib; done \
+    && go build --buildmode=plugin -o _plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME.go \
+    && if [ -f "etc/$PLUGIN_TYPE/$PLUGIN_NAME.yaml" ]; then cp etc/$PLUGIN_TYPE/$PLUGIN_NAME.yaml _plugins/$PLUGIN_TYPE/$PLUGIN_NAME; fi \
+    && cd _plugins/$PLUGIN_TYPE/$PLUGIN_NAME \
+    && zip -r ${PLUGIN_NAME}_$(go version -v | grep -o "linux/.*" | sed -r 's linux/(.*) \1 g').zip .
