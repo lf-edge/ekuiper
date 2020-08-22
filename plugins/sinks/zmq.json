@@ -7,7 +7,6 @@
 	},
 
 	"libs": [
-      "github.com/emqx/kuiper/xstream/api@master",
       "github.com/pebbe/zmq4@master"
 	],
 	"about": {
