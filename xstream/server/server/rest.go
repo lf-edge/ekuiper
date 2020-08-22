@@ -414,7 +414,7 @@ func sinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	///metadata/sinks
 	if 0 == len(r.URL.RawQuery) {
-		sinks := pluginManager.GetSinks()
+		sinks := plugins.GetSinks()
 		jsonResponse(sinks, w, logger)
 		return
 	}
@@ -435,7 +435,7 @@ func sinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	///metadata/sinks?name=taos
-	ptrMetadata, err := pluginManager.GetSinkMeta(pluginName, rule)
+	ptrMetadata, err := plugins.GetSinkMeta(pluginName, rule)
 	if err != nil {
 		handleError(w, err, "metadata error", logger)
 		return
@@ -450,17 +450,17 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	switch mapQuery["cmd"] {
 	case "plugins":
-		ret = pluginManager.GetSources()
+		ret = plugins.GetSources()
 	case "confKeys":
-		ret = pluginManager.GetSourceConfKeys(mapQuery["pluginName"])
+		ret = plugins.GetSourceConfKeys(mapQuery["pluginName"])
 	case "getPlugin":
-		ret, err = pluginManager.GetSourceMeta(mapQuery["pluginName"])
+		ret, err = plugins.GetSourceMeta(mapQuery["pluginName"])
 	case "addConfKey":
-		err = pluginManager.AddSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"], mapQuery["confData"])
+		err = plugins.AddSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"], mapQuery["confData"])
 	case "delConfKey":
-		err = pluginManager.DelSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"])
+		err = plugins.DelSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"])
 	case "updateConfKey":
-		err = pluginManager.UpdateSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"], mapQuery["confData"])
+		err = plugins.UpdateSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"], mapQuery["confData"])
 	}
 	if err != nil {
 		handleError(w, err, "metadata error", logger)

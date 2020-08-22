@@ -44,7 +44,7 @@ type (
 )
 
 var g_sinkMetadata map[string]*sinkMeta //map[fileName]
-func (this *Manager) readSinkMetaDir() error {
+func readSinkMetaDir() error {
 	confDir, err := common.GetLoc("/plugins")
 	if nil != err {
 		return err
@@ -76,7 +76,7 @@ func (this *Manager) readSinkMetaDir() error {
 	return nil
 }
 
-func (this *Manager) readSinkMetaFile(filePath string) error {
+func readSinkMetaFile(filePath string) error {
 	ptrMetadata := new(sinkMeta)
 	err := common.ReadJsonUnmarshal(filePath, ptrMetadata)
 	if nil != err {
@@ -123,10 +123,16 @@ type (
 )
 
 func (this *hintLanguage) set(l *language) {
+	if nil == l {
+		return
+	}
 	this.English = l.English
 	this.Chinese = l.Chinese
 }
 func (this *hintField) setSinkField(v *field) {
+	if nil == v {
+		return
+	}
 	this.Name = v.Name
 	this.Type = v.Type
 	this.Default = v.Default
@@ -140,6 +146,9 @@ func (this *hintField) setSinkField(v *field) {
 }
 
 func (this *sinkPropertyNode) setNodeFromMetal(data *sinkMeta) {
+	if nil == data {
+		return
+	}
 	this.Libs = data.Libs
 	if nil != data.HelpUrl {
 		this.HelpUrl = new(hintLanguage)
@@ -271,7 +280,7 @@ func (this *sinkProperty) hintWhenModifySink(rule *api.Rule) (err error) {
 	return nil
 }
 
-func (this *Manager) GetSinkMeta(pluginName string, rule *api.Rule) (ptrSinkProperty *sinkProperty, err error) {
+func GetSinkMeta(pluginName string, rule *api.Rule) (ptrSinkProperty *sinkProperty, err error) {
 	ptrSinkProperty = new(sinkProperty)
 	if nil == rule {
 		err = ptrSinkProperty.hintWhenNewSink(pluginName)
@@ -281,7 +290,7 @@ func (this *Manager) GetSinkMeta(pluginName string, rule *api.Rule) (ptrSinkProp
 	return ptrSinkProperty, err
 }
 
-func (this *Manager) GetSinks() (sinks []string) {
+func GetSinks() (sinks []string) {
 	sinkMeta := g_sinkMetadata
 	for fileName, _ := range sinkMeta {
 		if fileName == baseProperty+".json" || fileName == baseOption+".json" {

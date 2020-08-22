@@ -24,7 +24,7 @@ type (
 
 var g_sourceProperty map[string]*sourceProperty
 
-func (this *Manager) readSourceMetaFile(filePath string) (*sourceProperty, error) {
+func readSourceMetaFile(filePath string) (*sourceProperty, error) {
 	ptrMeta := new(sourceMeta)
 	err := common.ReadJsonUnmarshal(filePath, ptrMeta)
 	if nil != err || 0 == len(ptrMeta.ConfKeys) {
@@ -51,7 +51,7 @@ func (this *Manager) readSourceMetaFile(filePath string) (*sourceProperty, error
 	return property, err
 }
 
-func (this *Manager) readSourceMetaDir() error {
+func readSourceMetaDir() error {
 	confDir, err := common.GetConfLoc()
 	if nil != err {
 		return err
@@ -64,7 +64,7 @@ func (this *Manager) readSourceMetaDir() error {
 	}
 
 	tmpMap := make(map[string]*sourceProperty)
-	tmpMap["mqtt_source.json"], err = this.readSourceMetaFile(path.Join(confDir, "mqtt_source.json"))
+	tmpMap["mqtt_source.json"], err = readSourceMetaFile(path.Join(confDir, "mqtt_source.json"))
 	if nil != err {
 		return err
 	}
@@ -73,7 +73,7 @@ func (this *Manager) readSourceMetaDir() error {
 		fileName := info.Name()
 		if strings.HasSuffix(fileName, ".json") {
 			filePath := path.Join(dir, fileName)
-			tmpMap[fileName], err = this.readSourceMetaFile(filePath)
+			tmpMap[fileName], err = readSourceMetaFile(filePath)
 			if nil != err {
 				return err
 			}
@@ -84,23 +84,23 @@ func (this *Manager) readSourceMetaDir() error {
 	return nil
 }
 
-func (this *Manager) GetSourceMeta(pluginName string) (ptrSourceProperty *sourceMeta, err error) {
+func GetSourceMeta(pluginName string) (ptrSourceProperty *sourceMeta, err error) {
 	property, ok := g_sourceProperty[pluginName+".json"]
 	if ok {
-		property.cfToMeta()
-		return property.meta, nil
+		err = property.cfToMeta()
+		return property.meta, err
 	}
 	return nil, fmt.Errorf("not found plugin %s", pluginName)
 }
 
-func (this *Manager) GetSources() (sources []string) {
+func GetSources() (sources []string) {
 	for fileName, _ := range g_sourceProperty {
 		sources = append(sources, strings.TrimSuffix(fileName, `.json`))
 	}
 	return sources
 }
 
-func (this *Manager) GetSourceConfKeys(pluginName string) (keys []string) {
+func GetSourceConfKeys(pluginName string) (keys []string) {
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
 		return keys
@@ -111,7 +111,7 @@ func (this *Manager) GetSourceConfKeys(pluginName string) (keys []string) {
 	return keys
 }
 
-func (this *Manager) DelSourceConfKey(pluginName, confKey string) error {
+func DelSourceConfKey(pluginName, confKey string) error {
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
 		return fmt.Errorf("not found plugin %s", pluginName)
@@ -124,7 +124,7 @@ func (this *Manager) DelSourceConfKey(pluginName, confKey string) error {
 	return property.saveCf(pluginName)
 }
 
-func (this *Manager) AddSourceConfKey(pluginName, confKey, content string) error {
+func AddSourceConfKey(pluginName, confKey, content string) error {
 	reqField := make(map[string]interface{})
 	err := json.Unmarshal([]byte(content), &reqField)
 	if nil != err {
@@ -149,7 +149,7 @@ func (this *Manager) AddSourceConfKey(pluginName, confKey, content string) error
 	return property.saveCf(pluginName)
 }
 
-func (this *Manager) UpdateSourceConfKey(pluginName, confKey, content string) error {
+func UpdateSourceConfKey(pluginName, confKey, content string) error {
 	reqField := make(map[string]interface{})
 	err := json.Unmarshal([]byte(content), &reqField)
 	if nil != err {
@@ -199,9 +199,17 @@ func (this *sourceProperty) newFields(fields []*field, m map[string]interface{},
 					}
 					this.newFields(tmpFields, tt, &tmpSli)
 				case map[string]interface{}:
-					var tmpSli []*field
+					var tmpSli, tmpFields []*field
 					p.Default = &tmpSli
-					this.newFields(fields, t, &tmpSli)
+					b, err := json.Marshal(fd.Default)
+					if nil != err {
+						return err
+					}
+					err = json.Unmarshal(b, &tmpFields)
+					if nil != err {
+						return err
+					}
+					this.newFields(tmpFields, t, &tmpSli)
 				default:
 					p.Default = v
 				}
@@ -212,15 +220,19 @@ func (this *sourceProperty) newFields(fields []*field, m map[string]interface{},
 	return nil
 }
 
-func (this *sourceProperty) cfToMeta() {
+func (this *sourceProperty) cfToMeta() error {
 	fields := this.meta.ConfKeys["default"]
 	ret := make(map[string][]*field)
 	for k, kvs := range this.cf {
 		var sli []*field
-		this.newFields(fields, kvs, &sli)
+		err := this.newFields(fields, kvs, &sli)
+		if nil != err {
+			return err
+		}
 		ret[k] = sli
 	}
 	this.meta.ConfKeys = ret
+	return nil
 }
 
 func (this *sourceProperty) saveCf(pluginName string) error {
@@ -245,5 +257,4 @@ func (this *sourceProperty) saveCf(pluginName string) error {
 	}
 
 	return common.WriteYamlMarshal(filePath, this.cf)
-
 }
