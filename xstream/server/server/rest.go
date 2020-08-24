@@ -461,6 +461,8 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 		err = plugins.DelSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"])
 	case "updateConfKey":
 		err = plugins.UpdateSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"], mapQuery["confData"])
+	default:
+		err = fmt.Errorf("not found command")
 	}
 	if err != nil {
 		handleError(w, err, "metadata error", logger)
