@@ -81,6 +81,7 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/rules/{name}/start", startRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 
 	r.HandleFunc("/plugins/sources", sourcesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/sources/{name}", sourceHandler).Methods(http.MethodDelete, http.MethodGet)
@@ -298,6 +299,21 @@ func restartRuleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf("Rule %s was restarted", name)))
+}
+
+//get topo of a rule
+func getTopoRuleHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	content, err := getRuleTopo(name)
+	if err != nil {
+		handleError(w, err, "get rule topo error", logger)
+		return
+	}
+	w.Header().Set(ContentType, ContentTypeJSON)
+	w.Write([]byte(content))
 }
 
 func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType) {

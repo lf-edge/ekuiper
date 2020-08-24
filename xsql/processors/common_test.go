@@ -24,6 +24,7 @@ type ruleTest struct {
 	sql  string
 	r    interface{}            // The result
 	m    map[string]interface{} // final metrics
+	t    *xstream.PrintableTopo // printable topo, an optional field
 }
 
 var DbDir = getDbDir()
@@ -931,6 +932,12 @@ func compareResult(t *testing.T, mockSink *test.MockSink, resultFunc func(result
 	}
 	if err := compareMetrics(tp, tt.m); err != nil {
 		t.Errorf("%d. %q\n\nmetrics mismatch:\n\n%s\n\n", i, tt.sql, err)
+	}
+	if tt.t != nil {
+		topo := tp.GetTopo()
+		if !reflect.DeepEqual(tt.t, topo) {
+			t.Errorf("%d. %q\n\ntopo mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.t, topo)
+		}
 	}
 	tp.Cancel()
 }

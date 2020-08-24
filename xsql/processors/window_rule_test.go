@@ -1,6 +1,7 @@
 package processors
 
 import (
+	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"testing"
 )
@@ -207,6 +208,18 @@ func TestWindow(t *testing.T) {
 				"op_join_0_process_latency_ms": int64(0),
 				"op_join_0_records_in_total":   int64(10),
 				"op_join_0_records_out_total":  int64(8),
+			},
+			t: &xstream.PrintableTopo{
+				Sources: []string{"source_demo", "source_demo1"},
+				Edges: map[string][]string{
+					"source_demo":           {"op_preprocessor_demo"},
+					"source_demo1":          {"op_preprocessor_demo1"},
+					"op_preprocessor_demo":  {"op_window"},
+					"op_preprocessor_demo1": {"op_window"},
+					"op_window":             {"op_join"},
+					"op_join":               {"op_project"},
+					"op_project":            {"sink_mockSink"},
+				},
 			},
 		}, {
 			name: `TestWindowRule4`,

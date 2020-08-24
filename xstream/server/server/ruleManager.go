@@ -158,6 +158,20 @@ func getRuleStatus(name string) (string, error) {
 	}
 }
 
+func getRuleTopo(name string) (string, error) {
+	if rs, ok := registry.Load(name); ok {
+		topo := rs.Topology.GetTopo()
+		bytes, err := json.Marshal(topo)
+		if err != nil {
+			return "", common.NewError(fmt.Sprintf("Fail to encode rule %s's topo", name))
+		} else {
+			return string(bytes), nil
+		}
+	} else {
+		return "", common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
+	}
+}
+
 func startRule(name string) error {
 	var rs *RuleState
 	rs, ok := registry.Load(name)
