@@ -11,9 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"runtime"
-	"strings"
 	"time"
 )
 
@@ -89,8 +87,13 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/plugins/functions", functionsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet)
 
-	r.HandleFunc("/metadata/sinks", sinkMetaHandler).Methods(http.MethodGet)
-	r.HandleFunc("/metadata/sources", sourceMetaHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPost)
+	r.HandleFunc("/metadata/sinks", sinksMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sinks/{name}", newSinkMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sinks/{name}/{ruleId}", showSinkMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources", sourcesMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources/{name}", sourceMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources/confKeys/{name}", sourceConfKeysHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources/confKeys/{name}/{confKey}", sourceConfKeyHandler).Methods(http.MethodDelete, http.MethodPost)
 
 	server := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
@@ -390,51 +393,41 @@ func functionHandler(w http.ResponseWriter, r *http.Request) {
 	pluginHandler(w, r, plugins.FUNCTION)
 }
 
-func parseRequest(r *http.Request) map[string]string {
-	mapQuery := make(map[string]string)
-	strQuery := ""
-	if http.MethodGet == r.Method {
-		strQuery = r.URL.RawQuery
-	} else {
-		var byteQuery []byte
-		r.Body.Read(byteQuery)
-		strQuery = string(byteQuery)
-	}
-
-	for _, kv := range strings.Split(strQuery, "&") {
-		pos := strings.Index(kv, "=")
-		if 0 < pos && pos+1 < len(kv) {
-			mapQuery[kv[:pos]], _ = url.QueryUnescape(kv[pos+1:])
-		}
-	}
-	return mapQuery
+//r.HandleFunc("/metadata/sinks", sinksMetaHandler).Methods(http.MethodGet)
+func sinksMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	sinks := plugins.GetSinks()
+	jsonResponse(sinks, w, logger)
+	return
 }
 
-func sinkMetaHandler(w http.ResponseWriter, r *http.Request) {
+//r.HandleFunc("/metadata/sinks/{name}", newSinkMetaHandler).Methods(http.MethodGet)
+func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	///metadata/sinks
-	if 0 == len(r.URL.RawQuery) {
-		sinks := plugins.GetSinks()
-		jsonResponse(sinks, w, logger)
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+
+	ptrMetadata, err := plugins.GetSinkMeta(pluginName, nil)
+	if err != nil {
+		handleError(w, err, "metadata error", logger)
+		return
+	}
+	jsonResponse(ptrMetadata, w, logger)
+}
+
+//r.HandleFunc("/metadata/sinks/{name}/{ruleId}", showSinkMetaHandler).Methods(http.MethodGet)
+func showSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	ruleid := vars["ruleId"]
+
+	rule, err := ruleProcessor.GetRuleByName(ruleid)
+	if err != nil {
+		handleError(w, err, "describe rule error", logger)
 		return
 	}
 
-	mapQuery := parseRequest(r)
-	ruleid := mapQuery["rule"]
-	pluginName := mapQuery["name"]
-
-	var rule *api.Rule
-	var err error
-	///metadata/sinks?name=taos&rule=demo
-	if 0 != len(ruleid) {
-		rule, err = ruleProcessor.GetRuleByName(ruleid)
-		if err != nil {
-			handleError(w, err, "describe rule error", logger)
-			return
-		}
-	}
-
-	///metadata/sinks?name=taos
 	ptrMetadata, err := plugins.GetSinkMeta(pluginName, rule)
 	if err != nil {
 		handleError(w, err, "metadata error", logger)
@@ -443,26 +436,71 @@ func sinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(ptrMetadata, w, logger)
 }
 
+//r.HandleFunc("/metadata/sources", sourcesMetaHandler).Methods(http.MethodGet)
+func sourcesMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	ret := plugins.GetSources()
+	if nil != ret {
+		jsonResponse(ret, w, logger)
+		return
+	}
+}
+
+//r.HandleFunc("/metadata/sources/{name}", sourceMetaHandler).Methods(http.MethodGet)
 func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	mapQuery := parseRequest(r)
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	ret, err := plugins.GetSourceMeta(pluginName)
+	if err != nil {
+		handleError(w, err, "metadata error", logger)
+		return
+	}
+	if nil != ret {
+		jsonResponse(ret, w, logger)
+		return
+	}
+}
+
+//r.HandleFunc("/metadata/sources/confKeys/{name}", sourceConfKeysHandler).Methods( http.MethodGet)
+func sourceConfKeysHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	ret := plugins.GetSourceConfKeys(pluginName)
+	if nil != ret {
+		jsonResponse(ret, w, logger)
+		return
+	}
+}
+
+type sourceConfKey struct {
+	PluginName string `json:"name"`
+	ConfKey    string `json:"confKey"`
+	ConfData   string `json:"confData"`
+}
+
+//r.HandleFunc("/metadata/sources/confKeys/{name}/{confKey}", sourceConfKeyHandler).Methods(http.MethodDelete, http.MethodPost)
+func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	var ret interface{}
 	var err error
-	switch mapQuery["cmd"] {
-	case "plugins":
-		ret = plugins.GetSources()
-	case "confKeys":
-		ret = plugins.GetSourceConfKeys(mapQuery["pluginName"])
-	case "getPlugin":
-		ret, err = plugins.GetSourceMeta(mapQuery["pluginName"])
-	case "addConfKey":
-		err = plugins.AddSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"], mapQuery["confData"])
-	case "delConfKey":
-		err = plugins.DelSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"])
-	case "updateConfKey":
-		err = plugins.UpdateSourceConfKey(mapQuery["pluginName"], mapQuery["confKey"], mapQuery["confData"])
-	default:
-		err = fmt.Errorf("not found command")
+	switch r.Method {
+	case http.MethodDelete:
+		vars := mux.Vars(r)
+		pluginName := vars["name"]
+		confKey := vars["confKey"]
+		err = plugins.DelSourceConfKey(pluginName, confKey)
+	case http.MethodPost:
+		var byteQuery []byte
+		r.Body.Read(byteQuery)
+		req := new(sourceConfKey)
+		err = json.Unmarshal(byteQuery, req)
+		if err != nil {
+			handleError(w, err, "metadata error", logger)
+			return
+		}
+		err = plugins.AddSourceConfKey(req.PluginName, req.ConfKey, req.ConfData)
 	}
 	if err != nil {
 		handleError(w, err, "metadata error", logger)
@@ -472,5 +510,4 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(ret, w, logger)
 		return
 	}
-	w.Write([]byte("successful"))
 }

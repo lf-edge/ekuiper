@@ -141,7 +141,12 @@ func AddSourceConfKey(pluginName, confKey, content string) error {
 	}
 
 	if 0 != len(property.cf[confKey]) {
-		return fmt.Errorf("exist confKey %s", confKey)
+		//	return fmt.Errorf("exist confKey %s", confKey)
+		for k, v := range reqField {
+			property.cf[confKey][k] = v
+		}
+		g_sourceProperty[pluginName+".json"] = property
+		return property.saveCf(pluginName)
 	}
 
 	property.cf[confKey] = reqField
@@ -149,6 +154,7 @@ func AddSourceConfKey(pluginName, confKey, content string) error {
 	return property.saveCf(pluginName)
 }
 
+/*
 func UpdateSourceConfKey(pluginName, confKey, content string) error {
 	reqField := make(map[string]interface{})
 	err := json.Unmarshal([]byte(content), &reqField)
@@ -175,7 +181,7 @@ func UpdateSourceConfKey(pluginName, confKey, content string) error {
 	g_sourceProperty[pluginName+".json"] = property
 	return property.saveCf(pluginName)
 }
-
+*/
 func (this *sourceProperty) newFields(fields []*field, m map[string]interface{}, sli *[]*field) error {
 	for k, v := range m {
 		p := new(field)
