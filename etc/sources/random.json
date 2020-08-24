@@ -1,14 +1,20 @@
 {
 	"author": {
-		"name": "",
-		"email": "",
+		"name": "Jiyong Huang",
+		"email": "huangjy@emqx.io",
 		"company": "EMQ Technologies Co., Ltd",
 		"website": "https://www.emqx.io"
 	},
 	"libs": [
-		"github.com/emqx/kuiper/xstream/api@master",
 		"github.com/pebbe/zmq4@master"
 	],
+	"about": {
+		"trial": false,
+		"description": {
+			"en_US": "he source will generate random inputs with a specified pattern.",
+			"zh_CN": "随机源将生成具有指定样式的随机输入。"
+		}
+	},
 	"helpUrl": {
 		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sources/random.md",
 		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sources/random.md"
@@ -25,8 +31,8 @@
 				"zh_CN": "发出消息的间隔（毫秒）"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Interval",
+				"zh_CN": "间隔时间"
 			}
 		}, {
 			"name": "seed",
@@ -39,8 +45,8 @@
 				"zh_CN": "随机函数产生的最大整数"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Seed",
+				"zh_CN": "最大整数"
 			}
 		}, {
 			"name": "deduplicate",
@@ -53,26 +59,28 @@
 				"zh_CN": "一个整数值。 如果它为正数，则源不会发出与以前任何“重复数据删除”长度的消息重复的消息。如果为0，则源不会检查是否存在重复。如果是负数，则源将检查以前任何消息的重复项。如果有非常大的输入数据集，请不要使用负长度，因为将保留所有以前的数据。"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Deduplicate",
+				"zh_CN": "去除重复"
 			}
 		}, {
 			"name": "pattern",
-			"default": [{
-      "name": "count",
-      "default": 50,
-      "optional": false,
-      "control": "text",
-      "type": "int",
-      "hint": {
-        "en_US": "",
-        "zh_CN": ""
-      },  
-      "label": {
-        "en_US": "", 
-        "zh_CN": ""
-      }   
-    }],
+			"default": [
+        {
+          "name": "count",
+          "default": 50,
+          "optional": true,
+          "control": "text",
+          "type": "int",
+          "hint": {
+            "en_US": "User-defined fields",
+            "zh_CN": "用户自定义字段名"
+          },  
+          "label": {
+            "en_US": "Fields", 
+            "zh_CN": "字段名"
+          }   
+        }
+    ],
 			"optional": true,
 			"control": "text",
 			"type": "string",
@@ -81,8 +89,8 @@
 				"zh_CN": "源生成的样式"
 			},
 			"label": {
-				"en_US": "",
-				"zh_CN": ""
+				"en_US": "Pattern",
+				"zh_CN": "样式"
 			}
 		}]
 	}

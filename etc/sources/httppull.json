@@ -5,8 +5,14 @@
 		"company": "EMQ Technologies Co., Ltd",
 		"website": "https://www.emqx.io"
 	},
-	"libs": [
-	],
+	"libs": [],
+	"about": {
+		"trial": false,
+		"description": {
+			"en_US": "Kuiper provides built-in support for pulling HTTP source stream, which can pull the message from HTTP server broker and feed into the Kuiper processing pipeline.",
+			"zh_CN": "Kuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 Kuiper 处理管道。"
+		}
+	},
 	"helpUrl": {
 		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sources/http_pull.md",
 		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/http_pull.md"

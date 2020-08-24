@@ -6,7 +6,6 @@
 		"website": "https://www.emqx.io"
 	},
 	"libs": [
-	  "github.com/emqx/kuiper/xstream/api@master"
 	],
 	"about": {
 		"trial": true,

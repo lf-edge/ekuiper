@@ -6,8 +6,6 @@
 		"website": ""
 	},
 	"libs": [
-	  "github.com/emqx/kuiper/xstream/api@master",
-	  "github.com/influxdata/influxdb1-client/v2@master",
 	  "github.com/influxdata/influxdb1-client/v2@master"
 	],
 	"about": {
