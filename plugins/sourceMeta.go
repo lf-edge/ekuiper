@@ -246,15 +246,5 @@ func (this *sourceProperty) saveCf(pluginName string) error {
 		dir = confDir
 	}
 	filePath := path.Join(dir, pluginName+".yaml")
-	for key, kvs := range this.cf {
-		for k, v := range kvs {
-			switch t := v.(type) {
-			case map[interface{}]interface{}:
-				kvs[k] = common.ConvertMap(t)
-				this.cf[key] = kvs
-			}
-		}
-	}
-
 	return common.WriteYamlMarshal(filePath, this.cf)
 }
