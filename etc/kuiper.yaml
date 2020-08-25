@@ -35,3 +35,6 @@ sink:
   # The message persistence is triggered by a ticker, and cacheTriggerCount is for using configure the count to trigger the persistence procedure
   # regardless if the message number reaches cacheThreshold or not. This is to prevent the data won't be saved as the cache never pass the threshold.
   cacheTriggerCount: 15
+
+  # Control to disable cache or not. If it's set to true, then the cache will be disabled, otherwise, it will be enabled.
+  disableCache: false

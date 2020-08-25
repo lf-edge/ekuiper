@@ -49,3 +49,17 @@ basic:
 ```
 For such a default configuration, Kuiper will export metrics and serve prometheus at ``http://localhost:20499/metrics``
 
+## Sink configurations
+
+```yaml
+  #The cache persistence threshold size. If the message in sink cache is larger than 10, then it triggers persistence. If you find the remote system is slow to response, or sink throughput is small, then it's recommend to increase below 2 configurations.More memory is required with the increase of below 2 configurations.
+
+  # If the message count reaches below value, then it triggers persistence.
+  cacheThreshold: 10
+  # The message persistence is triggered by a ticker, and cacheTriggerCount is for using configure the count to trigger the persistence procedure regardless if the message number reaches cacheThreshold or not. This is to prevent the data won't be saved as the cache never pass the threshold.
+  cacheTriggerCount: 15
+
+  # Control to disable cache or not. If it's set to true, then the cache will be disabled, otherwise, it will be enabled.
+  disableCache: false
+```
+

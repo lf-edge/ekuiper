@@ -70,8 +70,9 @@ type KuiperConf struct {
 	}
 	Rule api.RuleOption
 	Sink struct {
-		CacheThreshold    int `yaml:"cacheThreshold"`
-		CacheTriggerCount int `yaml:"cacheTriggerCount"`
+		CacheThreshold    int  `yaml:"cacheThreshold"`
+		CacheTriggerCount int  `yaml:"cacheTriggerCount"`
+		DisableCache      bool `yaml:"disableCache""`
 	}
 }
 
