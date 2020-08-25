@@ -503,6 +503,33 @@ func main() {
 			},
 		},
 		{
+			Name:    "gettopo",
+			Aliases: []string{"gettopo"},
+			Usage:   "gettopo rule $rule_name",
+			Subcommands: []cli.Command{
+				{
+					Name:  "rule",
+					Usage: "getstopo rule $rule_name",
+					//Flags: nflag,
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 1 {
+							fmt.Printf("Expect rule name.\n")
+							return nil
+						}
+						rname := c.Args()[0]
+						var reply string
+						err = client.Call("Server.GetTopoRule", rname, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
+			},
+		},
+		{
 			Name:    "start",
 			Aliases: []string{"start"},
 			Usage:   "start rule $rule_name",

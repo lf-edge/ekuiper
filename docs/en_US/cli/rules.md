@@ -192,3 +192,35 @@ Sample:
     ...
 }
 ```
+
+## get the topology structure of a rule
+
+The command is used to get the status of the rule represented as a json string. In the json string, there are 2 fields:
+
+- sources: it is a string array of the names of all source nodes. They are the entry of the topology.
+- edges: it is a hash map of all edges categorized by nodes. The keys are the starting point of an edge. And the value is a collection of ending point.
+
+```shell
+gettopo rule $rule_name
+```
+
+Sample result:
+
+```json
+{
+  "sources": [
+    "source_stream"
+  ],
+  "edges": {
+    "op_preprocessor_stream": [
+      "op_project"
+    ],
+    "op_project": [
+      "sink_log"
+    ],
+    "source_stream": [
+      "op_preprocessor_stream"
+    ]
+  }
+}
+```
