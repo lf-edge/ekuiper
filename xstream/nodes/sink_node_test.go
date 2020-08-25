@@ -11,6 +11,7 @@ import (
 )
 
 func TestSinkTemplate_Apply(t *testing.T) {
+	common.InitConf()
 	var tests = []struct {
 		config map[string]interface{}
 		data   []byte
