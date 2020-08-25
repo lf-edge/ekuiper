@@ -81,6 +81,14 @@ func NewTimebasedCache(in <-chan interface{}, limit int, saveInterval int, errCh
 
 func (c *Cache) initStore(ctx api.StreamContext) {
 	logger := ctx.GetLogger()
+	c.pending = &LinkedQueue{
+		Data: make(map[int]interface{}),
+		Tail: 0,
+	}
+	if common.Config.Sink.DisableCache {
+		logger.Infof("The cache is disabled, and skip the initialization of cache.")
+		return
+	}
 	dbDir, err := common.GetDataLoc()
 	logger.Debugf("cache saved to %s", dbDir)
 	if err != nil {
@@ -151,10 +159,6 @@ func (c *Cache) timebasedRun(ctx api.StreamContext, saveInterval int) {
 }
 
 func (c *Cache) loadCache() error {
-	c.pending = &LinkedQueue{
-		Data: make(map[int]interface{}),
-		Tail: 0,
-	}
 	gob.Register(c.pending)
 	err := c.store.Open()
 	if err != nil && err != io.EOF {
@@ -189,6 +193,9 @@ func (c *Cache) loadCache() error {
 }
 
 func (c *Cache) saveCache(logger api.Logger, p *LinkedQueue) error {
+	if common.Config.Sink.DisableCache {
+		return nil
+	}
 	err := c.store.Open()
 	if err != nil {
 		logger.Errorf("save cache error while opening cache store: %s", err)

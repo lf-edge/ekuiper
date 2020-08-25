@@ -5,8 +5,5 @@
 
 # Restful APIs
 
-Kuiper provides some RESTful management APIs.
-
-
-
+Kuiper provides some RESTful management APIs. Please refer to [Rest-API doc](../restapi/overview.md) for more detailed information.
 
