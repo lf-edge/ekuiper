@@ -54,6 +54,8 @@ const (
 	CROSS_JOIN
 )
 
+var AsteriskExpr = StringLiteral{Val: "*"}
+
 var COLUMN_SEPARATOR = tokens[COLSEP]
 
 type Join struct {
@@ -622,7 +624,7 @@ func (t *Tuple) All(stream string) (interface{}, bool) {
 }
 
 func (t *Tuple) AggregateEval(expr Expr, v CallValuer) []interface{} {
-	return []interface{}{Eval(expr, t, v)}
+	return []interface{}{Eval(expr, MultiValuer(t, v, &WildcardValuer{t}))}
 }
 
 func (t *Tuple) GetTimestamp() int64 {
@@ -709,7 +711,7 @@ func (w WindowTuplesSet) AggregateEval(expr Expr, v CallValuer) []interface{} {
 		return nil
 	}
 	for _, t := range w[0].Tuples {
-		result = append(result, Eval(expr, &t, v))
+		result = append(result, Eval(expr, MultiValuer(&t, v, &WildcardValuer{&t})))
 	}
 	return result
 }
@@ -810,7 +812,7 @@ func (s JoinTupleSets) Index(i int) Valuer { return &(s[i]) }
 func (s JoinTupleSets) AggregateEval(expr Expr, v CallValuer) []interface{} {
 	var result []interface{}
 	for _, t := range s {
-		result = append(result, Eval(expr, &t, v))
+		result = append(result, Eval(expr, MultiValuer(&t, v, &WildcardValuer{&t})))
 	}
 	return result
 }
@@ -820,7 +822,7 @@ type GroupedTuples []DataValuer
 func (s GroupedTuples) AggregateEval(expr Expr, v CallValuer) []interface{} {
 	var result []interface{}
 	for _, t := range s {
-		result = append(result, Eval(expr, t, v))
+		result = append(result, Eval(expr, MultiValuer(t, v, &WildcardValuer{t})))
 	}
 	return result
 }
@@ -970,8 +972,8 @@ type EvalResultMessage struct {
 type ResultsAndMessages []EvalResultMessage
 
 // Eval evaluates expr against a map.
-func Eval(expr Expr, m Valuer, v CallValuer) interface{} {
-	eval := ValuerEval{Valuer: MultiValuer(m, v)}
+func Eval(expr Expr, m Valuer) interface{} {
+	eval := ValuerEval{Valuer: m}
 	return eval.Eval(expr)
 }
 
@@ -1109,16 +1111,16 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 	case *Call:
 		if valuer, ok := v.Valuer.(CallValuer); ok {
 			var args []interface{}
-
 			if len(expr.Args) > 0 {
 				args = make([]interface{}, len(expr.Args))
-				if aggreValuer, ok := valuer.(AggregateCallValuer); ok {
-					for i := range expr.Args {
-						args[i] = aggreValuer.GetAllTuples().AggregateEval(expr.Args[i], aggreValuer.GetSingleCallValuer())
+				for i, arg := range expr.Args {
+					if expr.Name == "collect" && reflect.DeepEqual(arg, &AsteriskExpr) {
+						arg = &Wildcard{Token: ASTERISK}
 					}
-				} else {
-					for i := range expr.Args {
-						args[i] = v.Eval(expr.Args[i])
+					if aggreValuer, ok := valuer.(AggregateCallValuer); ok {
+						args[i] = aggreValuer.GetAllTuples().AggregateEval(arg, aggreValuer.GetSingleCallValuer())
+					} else {
+						args[i] = v.Eval(arg)
 						if _, ok := args[i].(error); ok {
 							return args[i]
 						}
@@ -1160,6 +1162,8 @@ func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 	switch val := lhs.(type) {
 	case map[string]interface{}:
 		return v.evalJsonExpr(val, expr.OP, expr.RHS)
+	case Message:
+		return v.evalJsonExpr(map[string]interface{}(val), expr.OP, expr.RHS)
 	case error:
 		return val
 	}
