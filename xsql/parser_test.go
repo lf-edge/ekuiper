@@ -1205,21 +1205,9 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample(-.3,) FROM tbl`,
-			stmt: &SelectStatement{
-				Fields: []Field{
-					{
-						Expr: &Call{
-							Name: "sample",
-							Args: []Expr{
-								&NumberLiteral{Val: -0.3},
-							},
-						},
-						Name:  "sample",
-						AName: ""},
-				},
-				Sources: []Source{&Table{Name: "tbl"}},
-			},
+			s:    `SELECT sample(-.3,) FROM tbl`,
+			stmt: nil,
+			err:  "cannot get the plugin file name: invalid name sample: not exist",
 		},
 
 		{

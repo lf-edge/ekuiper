@@ -170,6 +170,8 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 			}
 		}
 		return 0, true
+	case "collect":
+		return args[0], true
 	default:
 		common.Log.Debugf("run aggregate func %s", name)
 		nf, fctx, err := v.funcPlugins.GetFuncFromPlugin(name)
