@@ -54,11 +54,11 @@
 		"control": "text",
 		"type": "string",
 		"hint": {
-			"en_US": "User name",
+			"en_US": "Username",
 			"zh_CN": "用户名"
 		},
 		"label": {
-			"en_US": "User name",
+			"en_US": "Username",
 			"zh_CN": "用户名"
 		}
 	}, {
