@@ -1,22 +1,22 @@
 {
+	"about": {
+		"trial": false,
 	"author": {
 		"name": "Jiyong Huang",
 		"email": "huangjy@emqx.io",
 		"company": "EMQ Technologies Co., Ltd",
 		"website": "https://www.emqx.io"
 	},
-	"about": {
-		"trial": false,
+	"helpUrl": {
+		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sources/edgex.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/edgex.md"
+	},
 		"description": {
 			"en_US": "Kuiper provides built-in support for EdgeX source stream, which can subscribe the message from EdgeX message bus and feed into the Kuiper streaming process pipeline.",
 			"zh_CN": "Kuiper 提供了内置的 EdgeX 源支持，它可以被用来订阅来自于EdgeX 消息总线的数据，并且将数据放入 Kuiper 数据处理流水线中。"
 		}
 	},
 	"libs": [],
-	"helpUrl": {
-		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sources/edgex.md",
-		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/edgex.md"
-	},
 	"properties": {
 		"default": [{
 			"name": "protocol",

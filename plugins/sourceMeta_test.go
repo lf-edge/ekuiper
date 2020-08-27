@@ -24,10 +24,11 @@ func TestGetSourceMeta(t *testing.T) {
 		t.Error(err)
 	}
 
-	var meta = new(sourceMeta)
-	if err := json.Unmarshal([]byte(g_template), meta); nil != err {
+	var fileMeta = new(fileSource)
+	if err := json.Unmarshal([]byte(g_template), fileMeta); nil != err {
 		t.Error(err)
 	}
+	meta := newUiSource(fileMeta)
 	source.cf = cf
 	source.meta = meta
 	g_sourceProperty = make(map[string]*sourceProperty)
@@ -223,7 +224,7 @@ func compareUiTp(ui, tp []*field) (err error) {
 	return nil
 }
 
-func compare(source *sourceProperty, uiMeta *sourceMeta) (err error) {
+func compare(source *sourceProperty, uiMeta *uiSource) (err error) {
 	tp := source.meta.ConfKeys["default"]
 	for k, v := range source.cf {
 		ui := uiMeta.ConfKeys[k]

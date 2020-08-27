@@ -211,26 +211,6 @@ func absolutePath(subdir string) (dir string, err error) {
 	return dir, nil
 }
 
-/*
-func GetLoc(subdir string) (string, error) {
-	if base := os.Getenv(KuiperBaseKey); base != "" {
-		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
-		dir = base
-	} else {
-		dir, err = filepath.Abs(filepath.Dir(os.Args[0]))
-		if err != nil {
-			return "", err
-		}
-		dir = filepath.Dir(dir)
-	}
-
-	dir = path.Join(dir, subdir)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return "", fmt.Errorf("conf dir not found : %s", dir)
-	}
-	return dir, nil
-}
-*/
 func GetLoc(subdir string) (string, error) {
 	if "relative" == LoadFileType {
 		return relativePath(subdir)
