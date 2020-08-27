@@ -1,24 +1,24 @@
 {
-	"author": {
-		"name": "Yongxing Ma",
-		"email": "",
-		"company": "China Mobile",
-		"website": ""
-	},
-	"libs": [
-	  "github.com/influxdata/influxdb1-client/v2@master"
-	],
 	"about": {
 		"trial": false,
+		"author": {
+			"name": "Yongxing Ma",
+			"email": "",
+			"company": "China Mobile",
+			"website": ""
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/influxdb.md",
+			"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/influxdb.md"
+		},
 		"description": {
 			"en_US": "This a sink plugin for InfluxDB, it can be used for saving the analysis data into InfluxDB.",
 			"zh_CN": "本插件为 InfluxDB 的持久化插件，可以用于将分析数据存入 InfluxDB 中。"
 		}
 	},
-	"helpUrl": {
-		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/influxdb.md",
-		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/influxdb.md"
-	},
+	"libs": [
+	  "github.com/influxdata/influxdb1-client/v2@master"
+	],
 	"properties": [{
 		"name": "addr",
 		"default": "",
