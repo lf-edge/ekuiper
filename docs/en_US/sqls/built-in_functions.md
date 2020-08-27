@@ -14,6 +14,7 @@ Aggregate functions perform a calculation on a set of values and return a single
 | max      | max(col1)   | The maximum value in a group. The null values will be ignored.                  |
 | min      | min(col1)   | The minimum value in a group. The null values will be ignored.                   |
 | sum      | sum(col1)   | The sum of all the values in a group. The null values will be ignored.           |
+| collect   | collect(*), collect(col1)   | Returns an array with all column or the whole record (when the parameter is *) values from the group.    |
 
 ## Mathematical Functions
 | Function | Example     | Description                                    |

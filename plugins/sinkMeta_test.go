@@ -22,6 +22,7 @@ func TestHintWhenModifySink(t *testing.T) {
 			},
 		},
 	}
+
 	baseMeta := &uiSink{
 		Fields: []*field{
 			{
@@ -47,6 +48,7 @@ func TestHintWhenModifySink(t *testing.T) {
 				},
 			},
 		},
+
 		BaseProperty: map[string]*uiSink{
 			"taos": &uiSink{
 				Fields: []*field{
@@ -57,6 +59,7 @@ func TestHintWhenModifySink(t *testing.T) {
 				},
 			},
 		},
+
 		BaseOption: &uiSink{
 			Fields: []*field{
 				{
@@ -80,6 +83,7 @@ func TestHintWhenModifySink(t *testing.T) {
 			IsEventTime: true,
 		},
 	}
+
 
 	oldSink := new(uiSinks)
 	err := oldSink.hintWhenNewSink("taos")

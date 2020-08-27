@@ -323,6 +323,7 @@ func (this *sourceProperty) cfToMeta() (*uiSource, error) {
 		}
 		ret[k] = sli
 	}
+
 	meta := new(uiSource)
 	*meta = *(this.meta)
 	meta.ConfKeys = ret

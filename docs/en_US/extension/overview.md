@@ -20,10 +20,10 @@ Notice that, there are some restrictions for the names:
 
 ### Version
 
-The user can **optionally** add a version string to the name of _.so_ to help identify the version of the plugin. The version can be then retrieved through describe CLI command or REST API. The naming convention is to add a version string to the name after _@v_. The version can be any string. Below are some typical examples.
+The user can **optionally** add a version string to the name of _.so_ to help identify the version of the plugin. The version can be then retrieved through describe CLI command or REST API. The naming convention is to add a version string to the name after _@_. The version can be any string. If the version string starts with "v", the "v" will be ignored in the return result. Below are some typical examples.
 
 - _MySource@v1.0.0.so_ : version is 1.0.0
-- _MySource@v20200331.so_:  version is 20200331
+- _MySource@20200331.so_:  version is 20200331
 
 If multiple versions of plugins with the same name in place, only the latest version(ordered by the version string) will be taken effect.
 
