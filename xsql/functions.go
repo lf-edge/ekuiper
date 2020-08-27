@@ -28,7 +28,8 @@ func (*FunctionValuer) Meta(_ string) (interface{}, bool) {
 var aggFuncMap = map[string]string{"avg": "",
 	"count": "",
 	"max":   "", "min": "",
-	"sum": "",
+	"sum":     "",
+	"collect": "",
 }
 
 var mathFuncMap = map[string]string{"abs": "", "acos": "", "asin": "", "atan": "", "atan2": "",
