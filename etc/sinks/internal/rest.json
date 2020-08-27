@@ -1,0 +1,142 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sinks/rest.md",
+      "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sinks/rest.md"
+    },
+    "description": {
+      "en_US": "The action is used for publish output message into a RESTful API.",
+      "zh_CN": "该动作用于将输出消息发布到 RESTful API 中。"
+    }
+  },
+  "properties": [
+    {
+      "name": "url",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The RESTful API endpoint, such as https://www.example.com/api/dummy",
+        "zh_CN": "RESTful API 终端地址，例如 https://www.example.com/api/dummy"
+      },
+      "label": {
+        "en_US": "URL",
+        "zh_CN": "地址"
+      }
+    },
+    {
+      "name": "method",
+      "optional": true,
+      "control": "select",
+      "default": "GET",
+      "type": "list_string",
+      "values": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "HEAD"
+      ],
+      "hint": {
+        "en_US": "The HTTP method for the RESTful API.",
+        "zh_CN": "RESTful API 的 HTTP 方法。"
+      },
+      "label": {
+        "en_US": "HTTP method",
+        "zh_CN": "HTTP 方法"
+      }
+    },
+    {
+      "name": "bodyType",
+      "optional": true,
+      "control": "select",
+      "default": "none",
+      "type": "list_string",
+      "values": [
+        "none",
+        "json",
+        "text",
+        "html",
+        "xml",
+        "javascript",
+        "form"
+      ],
+      "hint": {
+        "en_US": "The type of the body. For \"get\" and \"head\", no body is required so the default value is \"none\". For other http methods, the default value is \"json\" For \"html\", \"xml\" and \"javascript\", the dataTemplate must be carefully set up to make sure the format is correct.",
+        "zh_CN": "消息体的类型。对于 \"get\" 和 \"head\"，不需要正文，因此默认值为 \"none\"。 对于其他 http 方法，默认值为 \"json\"。对于 \"html\"，\"xml\" 和 \"javascript\"，必须仔细设置 dataTemplate 以确保格式正确。"
+      },
+      "label": {
+        "en_US": "Body type",
+        "zh_CN": "消息体类型"
+      }
+    },
+    {
+      "name": "timeout",
+      "default": 5000,
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "The timeout (milliseconds) for a HTTP request, defaults to 5000 ms",
+        "zh_CN": "HTTP 请求超时的时间（毫秒），默认为5000毫秒"
+      },
+      "label": {
+        "en_US": "Timeout(ms)",
+        "zh_CN": "超时(ms)"
+      }
+    },
+    {
+      "name": "headers",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The additional headers to be set for the HTTP request.",
+        "zh_CN": "要为 HTTP 请求设置的其他标头"
+      },
+      "label": {
+        "en_US": "HTTP headers",
+        "zh_CN": "HTTP 头"
+      }
+    },
+    {
+      "name": "insecureSkipVerify",
+      "default": true,
+      "optional": true,
+      "control": "radio",
+      "type": "bool",
+      "hint": {
+        "en_US": "Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification.",
+        "zh_CN": "控制是否跳过证书认证。如果被设置为 true，那么跳过证书认证；否则进行证书验证。"
+      },
+      "label": {
+        "en_US": "Certification verification",
+        "zh_CN": "证书验证"
+      }
+    },
+    {
+      "name": "debugResp",
+      "default": true,
+      "optional": true,
+      "control": "radio",
+      "type": "bool",
+      "hint": {
+        "en_US": "Control if print the response information into the console. If set it to true, then print response; If set to false, then skip print log.",
+        "zh_CN": "控制是否将响应信息打印到控制台中。 如果将其设置为 true，则打印响应；如果设置为 false，则跳过打印日志。"
+      },
+      "label": {
+        "en_US": "Print HTTP response",
+        "zh_CN": "打印 HTTP 响应"
+      }
+    }
+  ]
+}

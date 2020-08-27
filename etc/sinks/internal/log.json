@@ -1,0 +1,21 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sinks/mqtt.md",
+      "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sinks/mqtt.md"
+    },
+    "description": {
+      "en_US": "The action is used for print output message into log file, the log file is at $kuiper_install/log/stream.log by default.",
+      "zh_CN": "该操作用于将输出消息打印到日志文件中，默认情况下，该日志文件位于 $kuiper_install/log/stream.log 中。"
+    }
+  },
+  "properties": [
+  ]
+}
