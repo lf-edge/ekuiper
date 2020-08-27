@@ -331,6 +331,9 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 }
 func (m *Manager) Get(t PluginType, name string) (map[string]string, bool) {
 	v, ok := m.registry.Get(t, name)
+	if strings.HasPrefix(v, "v") {
+		v = v[1:]
+	}
 	if ok {
 		m := map[string]string{
 			"name":    name,
@@ -349,7 +352,7 @@ func getSoFileName(m *Manager, t PluginType, name string) (string, error) {
 
 	soFile := ucFirst(name) + ".so"
 	if v != "" {
-		soFile = fmt.Sprintf("%s@v%s.so", ucFirst(name), v)
+		soFile = fmt.Sprintf("%s@%s.so", ucFirst(name), v)
 	}
 	return soFile, nil
 }
@@ -364,7 +367,7 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 	}
 	defer r.Close()
 
-	soPrefix := regexp.MustCompile(fmt.Sprintf(`^%s(@v.*)?\.so$`, ucFirst(name)))
+	soPrefix := regexp.MustCompile(fmt.Sprintf(`^%s(@.*)?\.so$`, ucFirst(name)))
 	var yamlFile, yamlPath, version string
 	expFiles := 1
 	if t == SOURCE {
@@ -422,7 +425,7 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 
 func parseName(n string) (string, string) {
 	result := strings.Split(n, ".so")
-	result = strings.Split(result[0], "@v")
+	result = strings.Split(result[0], "@")
 	name := lcFirst(result[0])
 	if len(result) > 1 {
 		return name, result[1]

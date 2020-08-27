@@ -80,6 +80,7 @@ type (
 	}
 )
 
+
 func newLanguage(fi *fileLanguage) *language {
 	if nil == fi {
 		return nil
@@ -179,6 +180,7 @@ func readSinkMetaFile(filePath string) error {
 	g_sinkMetadata = tmpMap
 	return nil
 }
+
 func (this *uiSinks) setCustomProperty(pluginName string) error {
 	fileName := pluginName + `.json`
 	sinkMetadata := g_sinkMetadata

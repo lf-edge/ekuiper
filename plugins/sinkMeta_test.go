@@ -47,6 +47,7 @@ func TestHintWhenModifySink(t *testing.T) {
 				},
 			},
 		},
+
 		BaseProperty: map[string]*uiSink{
 			"taos": &uiSink{
 				Fields: []*field{
@@ -57,6 +58,7 @@ func TestHintWhenModifySink(t *testing.T) {
 				},
 			},
 		},
+
 		BaseOption: &uiSink{
 			Fields: []*field{
 				{

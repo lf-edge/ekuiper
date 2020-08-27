@@ -450,6 +450,11 @@ func TestFuncValidator(t *testing.T) {
 			stmt: nil,
 			err:  "Expect string type for 2 parameter of function json_path_query.",
 		},
+		{
+			s:    `SELECT collect() from tbl`,
+			stmt: nil,
+			err:  "The arguments for collect should be 1.",
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
