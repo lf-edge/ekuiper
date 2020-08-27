@@ -310,7 +310,7 @@ func ToInt(input interface{}) (int, error) {
 *   Convert a map into a struct. The output parameter must be a pointer to a struct
 *   The struct can have the json meta data
  */
-func MapToStruct(input map[string]interface{}, output interface{}) error {
+func MapToStruct(input, output interface{}) error {
 	// convert map to json
 	jsonString, err := json.Marshal(input)
 	if err != nil {
