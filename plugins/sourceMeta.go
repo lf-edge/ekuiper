@@ -49,6 +49,7 @@ func newUiSource(fi *fileSource) *uiSource {
 var g_sourceProperty map[string]*sourceProperty
 
 func readSourceMetaFile(filePath string) (*sourceProperty, error) {
+
 	ptrMeta := new(fileSource)
 	err := common.ReadJsonUnmarshal(filePath, ptrMeta)
 	if nil != err || 0 == len(ptrMeta.ConfKeys) {

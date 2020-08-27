@@ -347,6 +347,10 @@ func validateAggFunc(name string, args []Expr) error {
 		if err := validateLen(name, 1, len); err != nil {
 			return err
 		}
+	case "collect":
+		if err := validateLen(name, 1, len); err != nil {
+			return err
+		}
 	}
 	return nil
 }

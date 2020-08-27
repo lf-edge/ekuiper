@@ -129,6 +129,7 @@ func newUiSink(fi *fileSink) *uiSink {
 }
 
 var g_sinkMetadata map[string]*uiSink //map[fileName]
+
 func readSinkMetaDir() error {
 	confDir, err := common.GetLoc("/plugins")
 	if nil != err {
@@ -179,6 +180,7 @@ func readSinkMetaFile(filePath string) error {
 	g_sinkMetadata = tmpMap
 	return nil
 }
+
 func (this *uiSinks) setCustomProperty(pluginName string) error {
 	fileName := pluginName + `.json`
 	sinkMetadata := g_sinkMetadata

@@ -23,7 +23,6 @@ func TestGetSourceMeta(t *testing.T) {
 	if err := json.Unmarshal([]byte(g_cf), &cf); nil != err {
 		t.Error(err)
 	}
-
 	var fileMeta = new(fileSource)
 	if err := json.Unmarshal([]byte(g_template), fileMeta); nil != err {
 		t.Error(err)

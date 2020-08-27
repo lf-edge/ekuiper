@@ -13,7 +13,7 @@ func TestHintWhenModifySink(t *testing.T) {
 				Default: "911.911.911.911",
 			},
 		},
-	}
+
 	opMeta := &uiSink{
 		Fields: []*field{
 			{
@@ -57,6 +57,7 @@ func TestHintWhenModifySink(t *testing.T) {
 				},
 			},
 		},
+
 		BaseOption: &uiSink{
 			Fields: []*field{
 				{
