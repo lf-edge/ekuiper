@@ -6,6 +6,7 @@ import (
 	"github.com/emqx/kuiper/common"
 	"io/ioutil"
 	"path"
+	"reflect"
 	"strings"
 )
 
@@ -24,7 +25,7 @@ type (
 
 var g_sourceProperty map[string]*sourceProperty
 
-func (this *Manager) readSourceMetaFile(filePath string) (*sourceProperty, error) {
+func readSourceMetaFile(filePath string) (*sourceProperty, error) {
 	ptrMeta := new(sourceMeta)
 	err := common.ReadJsonUnmarshal(filePath, ptrMeta)
 	if nil != err || 0 == len(ptrMeta.ConfKeys) {
@@ -51,7 +52,7 @@ func (this *Manager) readSourceMetaFile(filePath string) (*sourceProperty, error
 	return property, err
 }
 
-func (this *Manager) readSourceMetaDir() error {
+func readSourceMetaDir() error {
 	confDir, err := common.GetConfLoc()
 	if nil != err {
 		return err
@@ -64,7 +65,7 @@ func (this *Manager) readSourceMetaDir() error {
 	}
 
 	tmpMap := make(map[string]*sourceProperty)
-	tmpMap["mqtt_source.json"], err = this.readSourceMetaFile(path.Join(confDir, "mqtt_source.json"))
+	tmpMap["mqtt_source.json"], err = readSourceMetaFile(path.Join(confDir, "mqtt_source.json"))
 	if nil != err {
 		return err
 	}
@@ -73,7 +74,7 @@ func (this *Manager) readSourceMetaDir() error {
 		fileName := info.Name()
 		if strings.HasSuffix(fileName, ".json") {
 			filePath := path.Join(dir, fileName)
-			tmpMap[fileName], err = this.readSourceMetaFile(filePath)
+			tmpMap[fileName], err = readSourceMetaFile(filePath)
 			if nil != err {
 				return err
 			}
@@ -84,23 +85,22 @@ func (this *Manager) readSourceMetaDir() error {
 	return nil
 }
 
-func (this *Manager) GetSourceMeta(pluginName string) (ptrSourceProperty *sourceMeta, err error) {
+func GetSourceMeta(pluginName string) (ptrSourceProperty *sourceMeta, err error) {
 	property, ok := g_sourceProperty[pluginName+".json"]
 	if ok {
-		property.cfToMeta()
-		return property.meta, nil
+		return property.cfToMeta()
 	}
 	return nil, fmt.Errorf("not found plugin %s", pluginName)
 }
 
-func (this *Manager) GetSources() (sources []string) {
+func GetSources() (sources []string) {
 	for fileName, _ := range g_sourceProperty {
 		sources = append(sources, strings.TrimSuffix(fileName, `.json`))
 	}
 	return sources
 }
 
-func (this *Manager) GetSourceConfKeys(pluginName string) (keys []string) {
+func GetSourceConfKeys(pluginName string) (keys []string) {
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
 		return keys
@@ -111,7 +111,7 @@ func (this *Manager) GetSourceConfKeys(pluginName string) (keys []string) {
 	return keys
 }
 
-func (this *Manager) DelSourceConfKey(pluginName, confKey string) error {
+func DelSourceConfKey(pluginName, confKey string) error {
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
 		return fmt.Errorf("not found plugin %s", pluginName)
@@ -120,11 +120,10 @@ func (this *Manager) DelSourceConfKey(pluginName, confKey string) error {
 		return fmt.Errorf("not found confKey %s", confKey)
 	}
 	delete(property.cf, confKey)
-	g_sourceProperty[pluginName+".json"] = property
 	return property.saveCf(pluginName)
 }
 
-func (this *Manager) AddSourceConfKey(pluginName, confKey, content string) error {
+func AddSourceConfKey(pluginName, confKey, content string) error {
 	reqField := make(map[string]interface{})
 	err := json.Unmarshal([]byte(content), &reqField)
 	if nil != err {
@@ -137,7 +136,7 @@ func (this *Manager) AddSourceConfKey(pluginName, confKey, content string) error
 	}
 
 	if nil == property.cf {
-		return fmt.Errorf("not found confKey %s", confKey)
+		property.cf = make(map[string]map[string]interface{})
 	}
 
 	if 0 != len(property.cf[confKey]) {
@@ -149,7 +148,7 @@ func (this *Manager) AddSourceConfKey(pluginName, confKey, content string) error
 	return property.saveCf(pluginName)
 }
 
-func (this *Manager) UpdateSourceConfKey(pluginName, confKey, content string) error {
+func AddSourceConfKeyField(pluginName, confKey, content string) error {
 	reqField := make(map[string]interface{})
 	err := json.Unmarshal([]byte(content), &reqField)
 	if nil != err {
@@ -165,62 +164,137 @@ func (this *Manager) UpdateSourceConfKey(pluginName, confKey, content string) er
 		return fmt.Errorf("not found confKey %s", confKey)
 	}
 
-	if 0 == len(property.cf[confKey]) {
+	if nil == property.cf[confKey] {
 		return fmt.Errorf("not found confKey %s", confKey)
 	}
 
 	for k, v := range reqField {
 		property.cf[confKey][k] = v
 	}
-	g_sourceProperty[pluginName+".json"] = property
 	return property.saveCf(pluginName)
 }
 
-func (this *sourceProperty) newFields(fields []*field, m map[string]interface{}, sli *[]*field) error {
-	for k, v := range m {
-		p := new(field)
-		for _, fd := range fields {
-			if fd.Name == k {
-				*p = *fd
-				*sli = append(*sli, p)
+func recursionDelMap(cf, fields map[string]interface{}) error {
+	for k, v := range fields {
+		if nil == v {
+			delete(cf, k)
+			continue
+		}
 
-				switch t := v.(type) {
-				case map[interface{}]interface{}:
-					tt := common.ConvertMap(t)
-					var tmpSli, tmpFields []*field
-					p.Default = &tmpSli
-					b, err := json.Marshal(fd.Default)
-					if nil != err {
-						return err
-					}
-					err = json.Unmarshal(b, &tmpFields)
-					if nil != err {
-						return err
-					}
-					this.newFields(tmpFields, tt, &tmpSli)
-				case map[string]interface{}:
-					var tmpSli []*field
-					p.Default = &tmpSli
-					this.newFields(fields, t, &tmpSli)
-				default:
-					p.Default = v
-				}
-				break
+		if delKey, ok := v.(string); ok {
+			if 0 == len(delKey) {
+				delete(cf, k)
+				continue
+			}
+
+			var auxCf map[string]interface{}
+			if err := common.MapToStruct(cf[k], &auxCf); nil != err {
+				return fmt.Errorf("not found second key:%s.%s", k, delKey)
+			}
+			cf[k] = auxCf
+			delete(auxCf, delKey)
+			continue
+		}
+		if reflect.Map == reflect.TypeOf(v).Kind() {
+			var auxCf, auxFields map[string]interface{}
+			if err := common.MapToStruct(cf[k], &auxCf); nil != err {
+				return fmt.Errorf("not found second key:%s.%v", k, v)
+			}
+			cf[k] = auxCf
+			if err := common.MapToStruct(v, &auxFields); nil != err {
+				return fmt.Errorf("requestef format err:%s.%v", k, v)
+			}
+			if err := recursionDelMap(auxCf, auxFields); nil != err {
+				return err
 			}
 		}
 	}
 	return nil
 }
 
-func (this *sourceProperty) cfToMeta() {
+func DelSourceConfKeyField(pluginName, confKey, content string) error {
+	reqField := make(map[string]interface{})
+	err := json.Unmarshal([]byte(content), &reqField)
+	if nil != err {
+		return err
+	}
+
+	property := g_sourceProperty[pluginName+".json"]
+	if nil == property {
+		return fmt.Errorf("not found plugin %s", pluginName)
+	}
+
+	if nil == property.cf {
+		return fmt.Errorf("not found confKey %s", confKey)
+	}
+
+	if nil == property.cf[confKey] {
+		return fmt.Errorf("not found confKey %s", confKey)
+	}
+
+	err = recursionDelMap(property.cf[confKey], reqField)
+	if nil != err {
+		return err
+	}
+	return property.saveCf(pluginName)
+}
+
+func recursionNewFields(template []*field, conf map[string]interface{}, ret *[]*field) error {
+	for i := 0; i < len(template); i++ {
+		p := new(field)
+		*p = *template[i]
+		*ret = append(*ret, p)
+		v, ok := conf[template[i].Name]
+		if ok {
+			p.Exist = true
+		} else {
+			p.Exist = false
+			continue
+		}
+
+		var auxRet, auxTemplate []*field
+		p.Default = &auxRet
+		if nil == v {
+			p.Default = v
+		} else {
+			if reflect.Map == reflect.TypeOf(v).Kind() {
+				var nextCf map[string]interface{}
+				if tmp, ok := v.(map[interface{}]interface{}); ok {
+					nextCf = common.ConvertMap(tmp)
+				} else {
+					if err := common.MapToStruct(v, &nextCf); nil != err {
+						return err
+					}
+				}
+				if err := common.MapToStruct(template[i].Default, &auxTemplate); nil != err {
+					return err
+				}
+				if err := recursionNewFields(auxTemplate, nextCf, &auxRet); nil != err {
+					return err
+				}
+			} else {
+				p.Default = v
+			}
+		}
+	}
+	return nil
+}
+
+func (this *sourceProperty) cfToMeta() (*sourceMeta, error) {
 	fields := this.meta.ConfKeys["default"]
 	ret := make(map[string][]*field)
 	for k, kvs := range this.cf {
 		var sli []*field
-		this.newFields(fields, kvs, &sli)
+		err := recursionNewFields(fields, kvs, &sli)
+		if nil != err {
+			return nil, err
+		}
 		ret[k] = sli
 	}
-	this.meta.ConfKeys = ret
+	meta := new(sourceMeta)
+	*meta = *(this.meta)
+	meta.ConfKeys = ret
+	return meta, nil
 }
 
 func (this *sourceProperty) saveCf(pluginName string) error {
@@ -234,16 +308,5 @@ func (this *sourceProperty) saveCf(pluginName string) error {
 		dir = confDir
 	}
 	filePath := path.Join(dir, pluginName+".yaml")
-	for key, kvs := range this.cf {
-		for k, v := range kvs {
-			switch t := v.(type) {
-			case map[interface{}]interface{}:
-				kvs[k] = common.ConvertMap(t)
-				this.cf[key] = kvs
-			}
-		}
-	}
-
 	return common.WriteYamlMarshal(filePath, this.cf)
-
 }
