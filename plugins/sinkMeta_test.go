@@ -29,7 +29,7 @@ func TestHintWhenModifySink(t *testing.T) {
 				Default: 911,
 			},
 		},
-	},
+	}
 
 	g_sinkMetadata = make(map[string]*uiSink)
 	g_sinkMetadata["taos.json"] = taosMeta
