@@ -1,25 +1,24 @@
 {
-	"author": {
-		"name": "Jiyong Huang",
-		"email": "huangjy@emqx.io",
-		"company": "EMQ Technologies Co., Ltd",
-		"website": "https://www.emqx.io"
-	},
-
-	"libs": [
-      "github.com/pebbe/zmq4@master"
-	],
 	"about": {
 		"trial": true,
+		"author": {
+			"name": "Jiyong Huang",
+			"email": "huangjy@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/zmq.md",
+			"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/zmq.md"
+		},
 		"description": {
 			"en_US": "This a demo 0MQ sink plugin, it cannot be used in production env.",
 			"zh_CN": "本插件为演示 ZMQ 数据发送插件，不能使用在生产环境中"
 		}
 	},
-	"helpUrl": {
-		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/zmq.md",
-		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/zmq.md"
-	},
+	"libs": [
+      "github.com/pebbe/zmq4@master"
+	],
 	"properties": [{
 		"name": "server",
 		"default": "127.0.0.1:5536",

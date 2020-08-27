@@ -1,24 +1,24 @@
 {
-	"author": {
-		"name": "Yuedong Ma",
-		"email": "mayuedong@emqx.io",
-		"company": "EMQ Technologies Co., Ltd",
-		"website": "https://www.emqx.io"
-	},
-	"libs": [
-		"github.com/taosdata/driver-go@master"
-	],
 	"about": {
 		"trial": false,
+		"author": {
+			"name": "Yuedong Ma",
+			"email": "mayuedong@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en/plugins/sinks/taos.md",
+			"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh/plugins/sinks/taos.md"
+		},
 		"description": {
 			"en_US": "This a sink plugin for TDengine, it can be used for saving the analysis data into TDengine.",
 			"zh_CN": "本插件为 TDengine 的持久化插件，可以用于将分析数据存入 TDengine 中"
 		}
 	},
-	"helpUrl": {
-		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en/plugins/sinks/taos.md",
-		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh/plugins/sinks/taos.md"
-	},
+	"libs": [
+		"github.com/taosdata/driver-go@master"
+	],
 	"properties": [{
 		"name": "ip",
 		"default": "127.0.0.1",
@@ -30,8 +30,8 @@
 			"zh_CN": "Taosdb IP 地址"
 		},
 		"label": {
-			"en_US": "DB IP address",
-			"zh_CN": "数据库IP 地址"
+			"en_US": "Database address",
+			"zh_CN": "数据库地址"
 		}
 	}, {
 		"name": "port",
@@ -40,12 +40,12 @@
 		"control": "text",
 		"type": "int",
 		"hint": {
-			"en_US": "Port of Taosdb",
-			"zh_CN": "Taosdb 端口号"
+			"en_US": "Database port",
+			"zh_CN": "数据库端口号"
 		},
 		"label": {
-			"en_US": "DB port",
-			"zh_CN": "数据库端口"
+			"en_US": "Port",
+			"zh_CN": "端口号"
 		}
 	}, {
 		"name": "user",
@@ -54,12 +54,12 @@
 		"control": "text",
 		"type": "string",
 		"hint": {
-			"en_US": "User of Taosdb",
-			"zh_CN": "Taosdb 用户名"
+			"en_US": "User name",
+			"zh_CN": "用户名"
 		},
 		"label": {
-			"en_US": "DB user",
-			"zh_CN": "数据库用户名"
+			"en_US": "User name",
+			"zh_CN": "用户名"
 		}
 	}, {
 		"name": "password",
@@ -72,8 +72,8 @@
 			"zh_CN": "数据库密码"
 		},
 		"label": {
-			"en_US": "DB password",
-			"zh_CN": "数据库密码"
+			"en_US": "Password",
+			"zh_CN": "密码"
 		}
 	}, {
 		"name": "database",
@@ -82,7 +82,7 @@
 		"control": "text",
 		"type": "string",
 		"hint": {
-			"en_US": "Name of database",
+			"en_US": "Database name",
 			"zh_CN": "库名称"
 		},
 		"label": {
@@ -96,11 +96,11 @@
 		"control": "text",
 		"type": "string",
 		"hint": {
-			"en_US": "Name of table",
+			"en_US": "Table name",
 			"zh_CN": "表名"
 		},
 		"label": {
-			"en_US": "Name of table",
+			"en_US": "Table name",
 			"zh_CN": "表名"
 		}
 	}, {
