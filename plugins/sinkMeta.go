@@ -25,6 +25,11 @@ type (
 		English string `json:"en_US"`
 		Chinese string `json:"zh_CN"`
 	}
+	about struct {
+		Author      *author   `json:"author"`
+		HelpUrl     *language `json:"helpUrl"`
+		Description *language `json:"description"`
+	}
 	field struct {
 		Exist    bool        `json:"exist"`
 		Name     string      `json:"name"`
@@ -37,10 +42,9 @@ type (
 		Label    *language   `json:"label"`
 	}
 	sinkMeta struct {
-		Author  *author   `json:"author"`
-		HelpUrl *language `json:"helpUrl"`
-		Libs    []string  `json:"libs"`
-		Fields  []*field  `json:"properties"`
+		About  *about   `json:"about"`
+		Libs   []string `json:"libs"`
+		Fields []*field `json:"properties"`
 	}
 )
 
@@ -111,10 +115,15 @@ type (
 		Label    *hintLanguage `json:"label"`
 		Values   interface{}   `json:"values"`
 	}
+	hintAbout struct {
+		Author      *author       `json:"author"`
+		HelpUrl     *hintLanguage `json:"helpUrl"`
+		Description *hintLanguage `json:"description"`
+	}
 	sinkPropertyNode struct {
-		Fields  []*hintField  `json:"properties"`
-		HelpUrl *hintLanguage `json:"helpUrl"`
-		Libs    []string      `json:"libs"`
+		About  *hintAbout   `json:"about"`
+		Libs   []string     `json:"libs"`
+		Fields []*hintField `json:"properties"`
 	}
 	sinkProperty struct {
 		CustomProperty map[string]*sinkPropertyNode `json:"customProperty"`
@@ -130,6 +139,18 @@ func (this *hintLanguage) set(l *language) {
 	this.English = l.English
 	this.Chinese = l.Chinese
 }
+func (this *hintAbout) setSinkAbout(v *about) {
+	if nil == v {
+		return
+	}
+	this.Author = new(author)
+	*(this.Author) = *(v.Author)
+	this.HelpUrl = new(hintLanguage)
+	this.HelpUrl.set(v.HelpUrl)
+	this.Description = new(hintLanguage)
+	this.Description.set(v.Description)
+}
+
 func (this *hintField) setSinkField(v *field) {
 	if nil == v {
 		return
@@ -146,15 +167,14 @@ func (this *hintField) setSinkField(v *field) {
 	this.Label.set(v.Label)
 }
 
-func (this *sinkPropertyNode) setNodeFromMetal(data *sinkMeta) {
+func (this *sinkPropertyNode) setSinkPropertyNode(data *sinkMeta) {
 	if nil == data {
 		return
 	}
+
 	this.Libs = data.Libs
-	if nil != data.HelpUrl {
-		this.HelpUrl = new(hintLanguage)
-		this.HelpUrl.set(data.HelpUrl)
-	}
+	this.About = new(hintAbout)
+	this.About.setSinkAbout(data.About)
 	for _, v := range data.Fields {
 		field := new(hintField)
 		field.setSinkField(v)
@@ -170,7 +190,7 @@ func (this *sinkProperty) setCustomProperty(pluginName string) error {
 		return fmt.Errorf(`not found pligin:%s`, fileName)
 	}
 	node := new(sinkPropertyNode)
-	node.setNodeFromMetal(data)
+	node.setSinkPropertyNode(data)
 	if 0 == len(this.CustomProperty) {
 		this.CustomProperty = make(map[string]*sinkPropertyNode)
 	}
@@ -185,7 +205,7 @@ func (this *sinkProperty) setBasePropertry(pluginName string) error {
 		return fmt.Errorf(`not found pligin:%s`, baseProperty)
 	}
 	node := new(sinkPropertyNode)
-	node.setNodeFromMetal(data)
+	node.setSinkPropertyNode(data)
 	if 0 == len(this.BaseProperty) {
 		this.BaseProperty = make(map[string]*sinkPropertyNode)
 	}
@@ -200,7 +220,7 @@ func (this *sinkProperty) setBaseOption() error {
 		return fmt.Errorf(`not found pligin:%s`, baseOption)
 	}
 	node := new(sinkPropertyNode)
-	node.setNodeFromMetal(data)
+	node.setSinkPropertyNode(data)
 	this.BaseOption = node
 	return nil
 }

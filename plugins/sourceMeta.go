@@ -12,8 +12,7 @@ import (
 
 type (
 	sourceMeta struct {
-		Author   *author             `json:"author"`
-		HelpUrl  *language           `json:"helpUrl"`
+		About    *about              `json:"about"`
 		Libs     []string            `json:"libs"`
 		ConfKeys map[string][]*field `json:"properties"`
 	}
