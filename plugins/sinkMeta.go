@@ -26,6 +26,7 @@ type (
 		Chinese string `json:"zh_CN"`
 	}
 	field struct {
+		Exist    bool        `json:"exist"`
 		Name     string      `json:"name"`
 		Default  interface{} `json:"default"`
 		Type     string      `json:"type"`

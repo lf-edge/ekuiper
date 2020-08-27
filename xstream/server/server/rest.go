@@ -90,10 +90,12 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/metadata/sinks", sinksMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sinks/{name}", newSinkMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sinks/{name}/{ruleId}", showSinkMetaHandler).Methods(http.MethodGet)
+
 	r.HandleFunc("/metadata/sources", sourcesMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/{name}", sourceMetaHandler).Methods(http.MethodGet)
-	r.HandleFunc("/metadata/sources/confKeys/{name}", sourceConfKeysHandler).Methods(http.MethodGet)
-	r.HandleFunc("/metadata/sources/confKeys/{name}/{confKey}", sourceConfKeyHandler).Methods(http.MethodDelete, http.MethodPost)
+	r.HandleFunc("/metadata/sources/{name}/confKeys", sourceConfKeysHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources/{name}/confKeys/{confKey}", sourceConfKeyHandler).Methods(http.MethodDelete, http.MethodPost)
+	r.HandleFunc("/metadata/sources/{name}/confKeys/{confKey}/field", sourceConfKeyFieldsHandler).Methods(http.MethodDelete, http.MethodPost)
 
 	server := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
@@ -393,7 +395,7 @@ func functionHandler(w http.ResponseWriter, r *http.Request) {
 	pluginHandler(w, r, plugins.FUNCTION)
 }
 
-//r.HandleFunc("/metadata/sinks", sinksMetaHandler).Methods(http.MethodGet)
+//list sink plugin
 func sinksMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	sinks := plugins.GetSinks()
@@ -401,7 +403,7 @@ func sinksMetaHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-//r.HandleFunc("/metadata/sinks/{name}", newSinkMetaHandler).Methods(http.MethodGet)
+//Get sink metadata when creating rules
 func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
@@ -415,7 +417,7 @@ func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(ptrMetadata, w, logger)
 }
 
-//r.HandleFunc("/metadata/sinks/{name}/{ruleId}", showSinkMetaHandler).Methods(http.MethodGet)
+//Get sink metadata when displaying rules
 func showSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
@@ -436,7 +438,7 @@ func showSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(ptrMetadata, w, logger)
 }
 
-//r.HandleFunc("/metadata/sources", sourcesMetaHandler).Methods(http.MethodGet)
+//list source plugin
 func sourcesMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	ret := plugins.GetSources()
@@ -446,7 +448,7 @@ func sourcesMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//r.HandleFunc("/metadata/sources/{name}", sourceMetaHandler).Methods(http.MethodGet)
+//Get source metadata when creating stream
 func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
@@ -462,7 +464,7 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//r.HandleFunc("/metadata/sources/confKeys/{name}", sourceConfKeysHandler).Methods( http.MethodGet)
+//Get confKeys of the source metadata
 func sourceConfKeysHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
@@ -474,33 +476,53 @@ func sourceConfKeysHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type sourceConfKey struct {
-	PluginName string `json:"name"`
-	ConfKey    string `json:"confKey"`
-	ConfData   string `json:"confData"`
-}
-
-//r.HandleFunc("/metadata/sources/confKeys/{name}/{confKey}", sourceConfKeyHandler).Methods(http.MethodDelete, http.MethodPost)
+//Add  del confkey
 func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	var ret interface{}
 	var err error
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	confKey := vars["confKey"]
 	switch r.Method {
 	case http.MethodDelete:
-		vars := mux.Vars(r)
-		pluginName := vars["name"]
-		confKey := vars["confKey"]
 		err = plugins.DelSourceConfKey(pluginName, confKey)
 	case http.MethodPost:
-		var byteQuery []byte
-		r.Body.Read(byteQuery)
-		req := new(sourceConfKey)
-		err = json.Unmarshal(byteQuery, req)
+		v, err := decodeStatementDescriptor(r.Body)
 		if err != nil {
-			handleError(w, err, "metadata error", logger)
+			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		err = plugins.AddSourceConfKey(req.PluginName, req.ConfKey, req.ConfData)
+		err = plugins.AddSourceConfKey(pluginName, confKey, v.Sql)
+	}
+	if err != nil {
+		handleError(w, err, "metadata error", logger)
+		return
+	}
+	if nil != ret {
+		jsonResponse(ret, w, logger)
+		return
+	}
+}
+
+//Del and Update field of confkey
+func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var ret interface{}
+	var err error
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	confKey := vars["confKey"]
+	v, err := decodeStatementDescriptor(r.Body)
+	if err != nil {
+		handleError(w, err, "Invalid body", logger)
+		return
+	}
+	switch r.Method {
+	case http.MethodDelete:
+		err = plugins.DelSourceConfKeyField(pluginName, confKey, v.Sql)
+	case http.MethodPost:
+		err = plugins.AddSourceConfKeyField(pluginName, confKey, v.Sql)
 	}
 	if err != nil {
 		handleError(w, err, "metadata error", logger)
