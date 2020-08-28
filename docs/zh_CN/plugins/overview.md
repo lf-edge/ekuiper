@@ -39,6 +39,111 @@ source 的大部分属性用户通过对应的配置文件指定，用户无法�
 - en_US：英文文档帮助地址
 - zh_CN：中文文档帮助地址
 
+#### description
+
+该插件的简单描述，控制台支持多种语言。
+
+- en_US：英文描述
+- zh_CN：中文描述
+
+#### properties
+
+该插件所支持的属性列表，以及每个属性相关的配置。
+
+- name：属性名称；**该字段必须提供；**
+- default：缺省值，用于设定该属性的缺省值，类型可以为数字、字符、布尔等；该字段可选；
+- optional：设定该属性是否是必须提供；该字段可选，如果不提供则为 `true`, 表示用户可以提供该字段的值；
+- control：控件类型，控制在界面中显示的控件类型；**该字段必须提供；**
+  - text：文本输入框
+  - text-area：文字编辑区域
+  - list-box：列表框
+  - radio-button：单选框
+- helpUrl：如果有关于该属性更详细的帮助，可以在此指定；该字段可选；
+  - en_US：英文文档帮助地址
+  - zh_CN：中文文档帮助地址
+- hint：控件的提示信息；该字段可选；
+  - en_US
+  - zh_CN
+- label：控件针对的标签控件；**该字段必须提供；**
+  - en_US
+  - zh_CN
+- values：如果控件类型为 `list-box` 或者 `radio-button`，**该字段必须提供；**
+  - 数组：数据类型可以为数字、字符、布尔等
+
+#### 样例文件
+
+以下为样例元数据文件。
+
+```json
+{
+	"libs": ["github.com/pebbe/zmq4@master"],
+	"about": {
+		"trial": false,
+		"author": {
+			"name": "Jiyong Huang",
+			"email": "huangjy@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sources/http_pull.md",
+			"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/http_pull.md"
+		},
+		"description": {
+			"en_US": "Kuiper provides built-in support for pulling HTTP source stream, which can pull the message from HTTP server broker and feed into the Kuiper processing pipeline.",
+			"zh_CN": "Kuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 Kuiper 处理管道。"
+		}
+	},
+	"properties": {
+		"default": [{
+			"name": "url",
+			"default": "127.0.0.1:5536",
+			"optional": false,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The URL where to get the result.",
+				"zh_CN": "获取结果的 URL"
+			},
+			"label": {
+				"en_US": "URL",
+				"zh_CN": "路径"
+			}
+		}, {
+			"name": "headers",
+			"default": [{
+				"name": "Accept",
+				"default": "application/json",
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "HTTP headers",
+					"zh_CN": "HTTP标头"
+				},
+				"label": {
+					"en_US": "HTTP headers",
+					"zh_CN": "HTTP标头"
+				}
+			}],
+			"optional": false,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The HTTP request headers that you want to send along with the HTTP request.",
+				"zh_CN": "需要与 HTTP 请求一起发送的 HTTP 请求标头。"
+			},
+			"label": {
+				"en_US": "HTTP headers",
+				"zh_CN": "HTTP标头"
+			}
+		}]
+	}
+}
+```
+
+
+
 ## 动作 (Sinks/Actions)
 
 | 名称                  | 描述                                                  | 备注                                                |
@@ -72,6 +177,13 @@ source 的大部分属性用户通过对应的配置文件指定，用户无法�
 - en_US：英文文档帮助地址
 - zh_CN：中文文档帮助地址
 
+#### description
+
+该插件的简单描述，控制台支持多种语言。
+
+- en_US：英文描述
+- zh_CN：中文描述
+
 #### properties
 
 该插件所支持的属性列表，以及每个属性相关的配置。
@@ -102,35 +214,41 @@ source 的大部分属性用户通过对应的配置文件指定，用户无法�
 
 ```json
 {
-  "author": {
-    "name": "Yuedong Ma",
-    "email": "mayuedong@emqx.io",
-    "company": "EMQ Technologies Co., Ltd",
-    "website": "https://www.emqx.io"
-  },
-  "libs": [
-    "github.com/taosdata/driver-go@master"
-  ],
-  "helpUrl": {
-    "en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/taos.md",
-    "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/taos.md"
-  },
-  "properties":[
-    {
-      "name" : "Database",
-      "default": "http://192.168.100.245:8086",
-      "optional": false,
-      "control": "text",
-      "hint": {
-        "en_US": "Address of Taosdb",
-        "zh_CN": "Taosdb 地址"
-      },
-      "label": {
-        "en_US": "DB address",
-        "zh_CN": "数据库地址"
-      }
-    }
-  ]
+	"about": {
+		"trial": false,
+		"author": {
+			"name": "Yuedong Ma",
+			"email": "mayuedong@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en/plugins/sinks/taos.md",
+			"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh/plugins/sinks/taos.md"
+		},
+		"description": {
+			"en_US": "This a sink plugin for TDengine, it can be used for saving the analysis data into TDengine.",
+			"zh_CN": "本插件为 TDengine 的持久化插件，可以用于将分析数据存入 TDengine 中"
+		}
+	},
+	"libs": [
+		"github.com/taosdata/driver-go@master"
+	],
+	"properties": [{
+		"name": "ip",
+		"default": "127.0.0.1",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "IP address of Taosdb",
+			"zh_CN": "Taosdb IP 地址"
+		},
+		"label": {
+			"en_US": "Database address",
+			"zh_CN": "数据库地址"
+		}
+	}]
 }
 ```
 
