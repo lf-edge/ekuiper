@@ -48,43 +48,37 @@ func newUiSource(fi *fileSource) *uiSource {
 
 var g_sourceProperty map[string]*sourceProperty
 
-func addSourceMetaFile(filePath, fileName string) error {
-	if property, err := readSourceMetaFile(filePath); nil == err {
-		g_sourceProperty[fileName] = property
-
-	} else {
-		return err
-	}
-	return nil
-}
-func readSourceMetaFile(filePath string) (*sourceProperty, error) {
+func readSourceMetaFile(filePath string) error {
 	ptrMeta := new(fileSource)
 	err := common.ReadJsonUnmarshal(filePath, ptrMeta)
 	if nil != err || 0 == len(ptrMeta.ConfKeys) {
-		return nil, fmt.Errorf("file:%s err:%v", filePath, err)
+		return fmt.Errorf("file:%s err:%v", filePath, err)
 	}
 	if 0 == len(ptrMeta.ConfKeys["default"]) {
-		return nil, fmt.Errorf("not found default confKey %s", filePath)
+		return fmt.Errorf("not found default confKey %s", filePath)
 	}
 
 	yamlData := make(map[string]map[string]interface{})
 	filePath = strings.TrimSuffix(filePath, `.json`) + `.yaml`
 	err = common.ReadYamlUnmarshal(filePath, &yamlData)
 	if nil != err {
-		return nil, fmt.Errorf("file:%s err:%v", filePath, err)
+		return fmt.Errorf("file:%s err:%v", filePath, err)
 	}
 	if 0 == len(yamlData["default"]) {
-		return nil, fmt.Errorf("not found default confKey from %s", filePath)
+		return fmt.Errorf("not found default confKey from %s", filePath)
 	}
 
 	property := new(sourceProperty)
 	property.cf = yamlData
 	property.meta = newUiSource(ptrMeta)
 
-	return property, err
+	fileName := path.Base(filePath)
+	g_sourceProperty[fileName] = property
+	return err
 }
 
 func readSourceMetaDir() error {
+	g_sourceProperty = make(map[string]*sourceProperty)
 	confDir, err := common.GetConfLoc()
 	if nil != err {
 		return err
@@ -96,9 +90,7 @@ func readSourceMetaDir() error {
 		return err
 	}
 
-	tmpMap := make(map[string]*sourceProperty)
-	tmpMap["mqtt_source.json"], err = readSourceMetaFile(path.Join(confDir, "mqtt_source.json"))
-	if nil != err {
+	if err = readSourceMetaFile(path.Join(confDir, "mqtt_source.json")); nil != err {
 		return err
 	}
 
@@ -106,14 +98,12 @@ func readSourceMetaDir() error {
 		fileName := info.Name()
 		if strings.HasSuffix(fileName, ".json") {
 			filePath := path.Join(dir, fileName)
-			tmpMap[fileName], err = readSourceMetaFile(filePath)
-			if nil != err {
+			if err = readSourceMetaFile(filePath); nil != err {
 				return err
 			}
 			common.Log.Infof("sourceMeta file : %s", fileName)
 		}
 	}
-	g_sourceProperty = tmpMap
 	return nil
 }
 

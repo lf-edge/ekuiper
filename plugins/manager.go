@@ -283,7 +283,7 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 	if SINK == t {
 		readSinkMetaFile(path.Join(confDir, PluginTypes[t], name+`.json`))
 	} else if SOURCE == t {
-		addSourceMetaFile(path.Join(confDir, PluginTypes[t], name+`.json`), name+`.json`)
+		readSourceMetaFile(path.Join(confDir, PluginTypes[t], name+`.json`))
 	}
 	m.registry.Store(t, name, version)
 	return nil
