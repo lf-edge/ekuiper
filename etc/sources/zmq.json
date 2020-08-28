@@ -1,53 +1,56 @@
 {
-	"about": {
-		"trial": false,
-	"author": {
-		"name": "Jiyong Huang",
-		"email": "huangjy@emqx.io",
-		"company": "EMQ Technologies Co., Ltd",
-		"website": "https://www.emqx.io"
-	},
-	"helpUrl": {
-		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sources/zmq.md",
-		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sources/zmq.md"
-	},
-		"description": {
-			"en_US": "The source will subscribe to a Zero Mq topic to import the messages into kuiper.",
-			"zh_CN": "源将订阅 Zero Mq 主题以将消息导入 kuiper。"
-		}
-	},
-	"libs": [
-		"github.com/pebbe/zmq4@master"
-	],
-	"properties": {
-		"default": [{
-			"name": "server",
-			"default": "127.0.0.1:5536",
-			"optional": false,
-			"control": "text",
-			"type": "string",
-			"hint": {
-				"en_US": "The url of the Zero Mq server",
-				"zh_CN": "Zero Mq 服务器的 URL"
-			},
-			"label": {
-				"en_US": "server address",
-				"zh_CN": "服务器地址"
-			}
-		}, {
-			"name": "topic",
-			"default": "",
-			"optional": true,
-			"control": "text",
-			"type": "string",
-			"hint": {
-				"en_US": "The topic to publish to.",
-				"zh_CN": "订阅主题"
-			},
-			"label": {
-				"en_US": "topic",
-				"zh_CN": "主题"
-			}
-		}]
-	}
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "Jiyong Huang",
+      "email": "huangjy@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sources/zmq.md",
+      "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sources/zmq.md"
+    },
+    "description": {
+      "en_US": "The source will subscribe to a Zero Mq topic to import the messages into kuiper.",
+      "zh_CN": "源将订阅 Zero Mq 主题以将消息导入 kuiper。"
+    }
+  },
+  "libs": [
+    "github.com/pebbe/zmq4@master"
+  ],
+  "properties": {
+    "default": [
+      {
+        "name": "server",
+        "default": "127.0.0.1:5536",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The url of the Zero Mq server",
+          "zh_CN": "Zero Mq 服务器的 URL"
+        },
+        "label": {
+          "en_US": "server address",
+          "zh_CN": "服务器地址"
+        }
+      },
+      {
+        "name": "topic",
+        "default": "",
+        "optional": true,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The topic to publish to.",
+          "zh_CN": "订阅主题"
+        },
+        "label": {
+          "en_US": "topic",
+          "zh_CN": "主题"
+        }
+      }
+    ]
+  }
 }
