@@ -4,7 +4,7 @@ The action is used for publish output message into EdgeX message bus.
 
 | Property name | Optional | Description                                                  |
 | ------------- | -------- | ------------------------------------------------------------ |
-| protocol      | true     | If it's not specified, then use default value ``tcp``.       |
+| protocol      | true     | The protocol. If it's not specified, then use default value ``tcp``. |
 | host          | true     | The host of message bus. If not specified, then use default value ``*``. |
 | port          | true     | The port of message bus. If not specified, then use default value ``5563``. |
 | topic         | true     | The topic to be published. If not specified, then use default value ``events``. |

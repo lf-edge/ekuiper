@@ -80,6 +80,9 @@ type (
 	}
 )
 
+//const internal sinks
+var InternalSinks = [...]string{"log", "mqtt", "rest", "nop", "edgex"}
+
 func newLanguage(fi *fileLanguage) *language {
 	if nil == fi {
 		return nil
@@ -130,32 +133,44 @@ func newUiSink(fi *fileSink) *uiSink {
 
 var g_sinkMetadata map[string]*uiSink //map[fileName]
 func readSinkMetaDir() error {
-	confDir, err := common.GetLoc("/plugins")
+	confDir, err := common.GetConfLoc()
 	if nil != err {
 		return err
 	}
 
 	dir := path.Join(confDir, "sinks")
 	tmpMap := make(map[string]*uiSink)
-	infos, err := ioutil.ReadDir(dir)
+
+	//The internal support sinks
+	for _, sink := range InternalSinks {
+		file := path.Join(confDir, "sinks", "internal", sink+".json")
+		common.Log.Infof("Loading metadata file for sink: %s", file)
+		meta := new(uiSink)
+		err := common.ReadJsonUnmarshal(file, meta)
+		if nil != err {
+			return fmt.Errorf("Failed to load internal sink plugin:%s with err:%v", file, err)
+		}
+		tmpMap[sink+".json"] = meta
+	}
+	files, err := ioutil.ReadDir(dir)
 	if nil != err {
 		return err
 	}
-	for _, info := range infos {
-		fileName := info.Name()
-		if !strings.HasSuffix(fileName, ".json") {
+	for _, file := range files {
+		fname := file.Name()
+		if !strings.HasSuffix(fname, ".json") {
 			continue
 		}
 
-		filePath := path.Join(dir, fileName)
-		ptrMetadata := new(fileSink)
-		err = common.ReadJsonUnmarshal(filePath, ptrMetadata)
+		filePath := path.Join(dir, fname)
+		metadata := new(fileSink)
+		err = common.ReadJsonUnmarshal(filePath, metadata)
 		if nil != err {
-			return fmt.Errorf("fileName:%s err:%v", fileName, err)
+			return fmt.Errorf("fname:%s err:%v", fname, err)
 		}
 
-		common.Log.Infof("sinkMeta file : %s", fileName)
-		tmpMap[fileName] = newUiSink(ptrMetadata)
+		common.Log.Infof("sinkMeta file : %s", fname)
+		tmpMap[fname] = newUiSink(metadata)
 	}
 	g_sinkMetadata = tmpMap
 	return nil
