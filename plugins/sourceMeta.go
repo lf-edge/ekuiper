@@ -11,22 +11,45 @@ import (
 )
 
 type (
-	sourceMeta struct {
-		Author   *author             `json:"author"`
-		HelpUrl  *language           `json:"helpUrl"`
+	fileSource struct {
+		About    *fileAbout              `json:"about"`
+		Libs     []string                `json:"libs"`
+		ConfKeys map[string][]*fileField `json:"properties"`
+	}
+	uiSource struct {
+		About    *about              `json:"about"`
 		Libs     []string            `json:"libs"`
 		ConfKeys map[string][]*field `json:"properties"`
 	}
 	sourceProperty struct {
 		cf   map[string]map[string]interface{}
-		meta *sourceMeta
+		meta *uiSource
 	}
 )
+
+func newUiSource(fi *fileSource) *uiSource {
+	if nil == fi {
+		return nil
+	}
+	ui := new(uiSource)
+	ui.Libs = fi.Libs
+	ui.About = newAbout(fi.About)
+	ui.ConfKeys = make(map[string][]*field)
+
+	for k, fields := range fi.ConfKeys {
+		var sliField []*field
+		for _, v := range fields {
+			sliField = append(sliField, newField(v))
+		}
+		ui.ConfKeys[k] = sliField
+	}
+	return ui
+}
 
 var g_sourceProperty map[string]*sourceProperty
 
 func readSourceMetaFile(filePath string) (*sourceProperty, error) {
-	ptrMeta := new(sourceMeta)
+	ptrMeta := new(fileSource)
 	err := common.ReadJsonUnmarshal(filePath, ptrMeta)
 	if nil != err || 0 == len(ptrMeta.ConfKeys) {
 		return nil, fmt.Errorf("file:%s err:%v", filePath, err)
@@ -47,7 +70,7 @@ func readSourceMetaFile(filePath string) (*sourceProperty, error) {
 
 	property := new(sourceProperty)
 	property.cf = yamlData
-	property.meta = ptrMeta
+	property.meta = newUiSource(ptrMeta)
 
 	return property, err
 }
@@ -85,7 +108,7 @@ func readSourceMetaDir() error {
 	return nil
 }
 
-func GetSourceMeta(pluginName string) (ptrSourceProperty *sourceMeta, err error) {
+func GetSourceMeta(pluginName string) (ptrSourceProperty *uiSource, err error) {
 	property, ok := g_sourceProperty[pluginName+".json"]
 	if ok {
 		return property.cfToMeta()
@@ -93,9 +116,18 @@ func GetSourceMeta(pluginName string) (ptrSourceProperty *sourceMeta, err error)
 	return nil, fmt.Errorf("not found plugin %s", pluginName)
 }
 
-func GetSources() (sources []string) {
-	for fileName, _ := range g_sourceProperty {
-		sources = append(sources, strings.TrimSuffix(fileName, `.json`))
+func GetSources() (sources []*pluginfo) {
+	for fileName, v := range g_sourceProperty {
+		node := new(pluginfo)
+		node.Name = strings.TrimSuffix(fileName, `.json`)
+		if nil == v.meta {
+			continue
+		}
+		if nil == v.meta.About {
+			continue
+		}
+		node.About = v.meta.About
+		sources = append(sources, node)
 	}
 	return sources
 }
@@ -280,7 +312,7 @@ func recursionNewFields(template []*field, conf map[string]interface{}, ret *[]*
 	return nil
 }
 
-func (this *sourceProperty) cfToMeta() (*sourceMeta, error) {
+func (this *sourceProperty) cfToMeta() (*uiSource, error) {
 	fields := this.meta.ConfKeys["default"]
 	ret := make(map[string][]*field)
 	for k, kvs := range this.cf {
@@ -291,7 +323,7 @@ func (this *sourceProperty) cfToMeta() (*sourceMeta, error) {
 		}
 		ret[k] = sli
 	}
-	meta := new(sourceMeta)
+	meta := new(uiSource)
 	*meta = *(this.meta)
 	meta.ConfKeys = ret
 	return meta, nil

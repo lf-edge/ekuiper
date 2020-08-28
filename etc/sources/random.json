@@ -1,23 +1,23 @@
 {
+	"libs": [
+		"github.com/pebbe/zmq4@master"
+	],
+	"about": {
+		"trial": false,
 	"author": {
 		"name": "Jiyong Huang",
 		"email": "huangjy@emqx.io",
 		"company": "EMQ Technologies Co., Ltd",
 		"website": "https://www.emqx.io"
 	},
-	"libs": [
-		"github.com/pebbe/zmq4@master"
-	],
-	"about": {
-		"trial": false,
+	"helpUrl": {
+		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sources/random.md",
+		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sources/random.md"
+	},
 		"description": {
 			"en_US": "he source will generate random inputs with a specified pattern.",
 			"zh_CN": "随机源将生成具有指定样式的随机输入。"
 		}
-	},
-	"helpUrl": {
-		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sources/random.md",
-		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sources/random.md"
 	},
 	"properties": {
 		"default": [{

@@ -6,7 +6,7 @@ import (
 )
 
 func TestHintWhenModifySink(t *testing.T) {
-	taosMeta := &sinkMeta{
+	taosMeta := &uiSink{
 		Fields: []*field{
 			{
 				Name:    "ip",
@@ -14,7 +14,7 @@ func TestHintWhenModifySink(t *testing.T) {
 			},
 		},
 	}
-	opMeta := &sinkMeta{
+	opMeta := &uiSink{
 		Fields: []*field{
 			{
 				Name:    "isEventTime",
@@ -22,7 +22,7 @@ func TestHintWhenModifySink(t *testing.T) {
 			},
 		},
 	}
-	baseMeta := &sinkMeta{
+	baseMeta := &uiSink{
 		Fields: []*field{
 			{
 				Name:    "bufferLength",
@@ -31,15 +31,15 @@ func TestHintWhenModifySink(t *testing.T) {
 		},
 	}
 
-	g_sinkMetadata = make(map[string]*sinkMeta)
+	g_sinkMetadata = make(map[string]*uiSink)
 	g_sinkMetadata["taos.json"] = taosMeta
 	g_sinkMetadata["properties.json"] = baseMeta
 	g_sinkMetadata["options.json"] = opMeta
 
-	newSink := &sinkProperty{
-		CustomProperty: map[string]*sinkPropertyNode{
-			"taos": &sinkPropertyNode{
-				Fields: []*hintField{
+	newSink := &uiSinks{
+		CustomProperty: map[string]*uiSink{
+			"taos": &uiSink{
+				Fields: []*field{
 					{
 						Name:    "ip",
 						Default: "114.114.114.114",
@@ -47,9 +47,9 @@ func TestHintWhenModifySink(t *testing.T) {
 				},
 			},
 		},
-		BaseProperty: map[string]*sinkPropertyNode{
-			"taos": &sinkPropertyNode{
-				Fields: []*hintField{
+		BaseProperty: map[string]*uiSink{
+			"taos": &uiSink{
+				Fields: []*field{
 					{
 						Name:    "bufferLength",
 						Default: 1024,
@@ -57,8 +57,8 @@ func TestHintWhenModifySink(t *testing.T) {
 				},
 			},
 		},
-		BaseOption: &sinkPropertyNode{
-			Fields: []*hintField{
+		BaseOption: &uiSink{
+			Fields: []*field{
 				{
 					Name:    "isEventTime",
 					Default: true,
@@ -81,7 +81,7 @@ func TestHintWhenModifySink(t *testing.T) {
 		},
 	}
 
-	oldSink := new(sinkProperty)
+	oldSink := new(uiSinks)
 	err := oldSink.hintWhenNewSink("taos")
 	if nil != err {
 		t.Error(err)
