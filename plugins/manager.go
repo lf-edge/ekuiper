@@ -212,10 +212,8 @@ func NewPluginManager() (*Manager, error) {
 			etcDir:    etcDir,
 			registry:  registry,
 		}
-		outerErr = readSourceMetaDir()
-		if nil == err {
-			outerErr = readSinkMetaDir()
-		}
+		readSourceMetaDir()
+		readSinkMetaDir()
 	})
 	return singleton, outerErr
 }
@@ -278,7 +276,15 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		}
 		return fmt.Errorf("fail to unzip file %s: %s", uri, err)
 	}
-	readSinkMetaFile(path.Join(m.pluginDir, PluginTypes[t], name+`.json`))
+	confDir, err := common.GetConfLoc()
+	if nil != err {
+		return err
+	}
+	if SINK == t {
+		readSinkMetaFile(path.Join(confDir, PluginTypes[t], name+`.json`))
+	} else if SOURCE == t {
+		readSourceMetaFile(path.Join(confDir, PluginTypes[t], name+`.json`))
+	}
 	m.registry.Store(t, name, version)
 	return nil
 }
@@ -296,13 +302,11 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	paths := []string{
 		path.Join(m.pluginDir, PluginTypes[t], soFile),
 	}
+	if confDir, err := common.GetConfLoc(); nil == err {
+		os.Remove(path.Join(confDir, PluginTypes[t], name+".json"))
+	}
 	if t == SOURCE {
 		paths = append(paths, path.Join(m.etcDir, PluginTypes[t], name+".yaml"))
-	}
-	if t == SINK {
-		//m.delMetadata(name)
-		metadataFile := path.Join(m.pluginDir, "sinks", name+".json")
-		os.Remove(metadataFile)
 	}
 	for _, p := range paths {
 		_, err := os.Stat(p)
@@ -385,8 +389,11 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 			}
 			filenames = append(filenames, yamlPath)
 		} else if fileName == name+".json" {
-			soPath := path.Join(m.pluginDir, PluginTypes[t], fileName)
-			err = unzipTo(file, soPath)
+			confDir, err := common.GetConfLoc()
+			if nil != err {
+				return filenames, "", err
+			}
+			err = unzipTo(file, path.Join(confDir, PluginTypes[t], fileName))
 			if err != nil {
 				return filenames, "", err
 			}
