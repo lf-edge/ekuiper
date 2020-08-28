@@ -143,14 +143,14 @@ func readSinkMetaDir() error {
 
 	//The internal support sinks
 	for _, sink := range InternalSinks {
-		file := path.Join(confDir, "sinks", "internal", sink + ".json")
+		file := path.Join(confDir, "sinks", "internal", sink+".json")
 		common.Log.Infof("Loading metadata file for sink: %s", file)
 		meta := new(uiSink)
 		err := common.ReadJsonUnmarshal(file, meta)
 		if nil != err {
 			return fmt.Errorf("Failed to load internal sink plugin:%s with err:%v", file, err)
 		}
-		tmpMap[sink + ".json"] = meta
+		tmpMap[sink+".json"] = meta
 	}
 	files, err := ioutil.ReadDir(dir)
 	if nil != err {
