@@ -614,6 +614,8 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 			} else {
 				if p.inmeta {
 					args = append(args, &MetaRef{StreamName: "", Name: "*"})
+				} else if _, ok := funcWithAsteriskSupportMap[name]; ok {
+					args = append(args, &Wildcard{Token: ASTERISK})
 				} else {
 					args = append(args, &StringLiteral{Val: "*"})
 				}
@@ -641,6 +643,10 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 	if wt, error := validateWindows(name, args); wt == NOT_WINDOW {
 		if valErr := validateFuncs(name, args); valErr != nil {
 			return nil, valErr
+		}
+		// Add context for some aggregate func
+		if name == "deduplicate" {
+			args = append([]Expr{&Wildcard{Token: ASTERISK}}, args...)
 		}
 		return &Call{Name: name, Args: args}, nil
 	} else {

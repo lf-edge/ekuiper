@@ -172,6 +172,22 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 		return 0, true
 	case "collect":
 		return args[0], true
+	case "deduplicate":
+		v1, ok1 := args[0].([]interface{})
+		v2, ok2 := args[1].([]interface{})
+		v3a, ok3 := args[2].([]interface{})
+
+		if ok1 && ok2 && ok3 && len(v3a) > 0 {
+			v3, ok4 := getFirstValidArg(v3a).(bool)
+			if ok4 {
+				if r, err := dedup(v1, v2, v3); err != nil {
+					return err, false
+				} else {
+					return r, true
+				}
+			}
+		}
+		return fmt.Errorf("Invalid argument type found."), false
 	default:
 		common.Log.Debugf("run aggregate func %s", name)
 		nf, fctx, err := v.funcPlugins.GetFuncFromPlugin(name)
@@ -306,4 +322,29 @@ func sliceStringMin(s []interface{}, min string) (string, error) {
 		}
 	}
 	return min, nil
+}
+
+func dedup(r []interface{}, col []interface{}, all bool) (interface{}, error) {
+	keyset := make(map[string]bool)
+	result := make([]interface{}, 0)
+	for i, m := range col {
+		key := fmt.Sprintf("%v", m)
+		if _, ok := keyset[key]; !ok {
+			if all {
+				result = append(result, r[i])
+			} else if i == len(col)-1 {
+				result = append(result, r[i])
+			}
+			keyset[key] = true
+		}
+	}
+	if !all {
+		if len(result) == 0 {
+			return nil, nil
+		} else {
+			return result[0], nil
+		}
+	} else {
+		return result, nil
+	}
 }
