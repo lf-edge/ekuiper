@@ -18,7 +18,7 @@ DELETE http://127.0.0.1:9081/plugins/sources/random3
 POST http://127.0.0.1:9081/plugins/sinks
 Content-Type: application/json
 
-{"name":"file2","file":"http://127.0.0.1/testzips/sinks/file2.zip"}
+{"name":"file2","file":"file:///C:/repos/go/src/github.com/emqx/kuiper/plugins/testzips/sinks/file2.zip"}
 
 ###
 GET http://127.0.0.1:9081/plugins/sinks

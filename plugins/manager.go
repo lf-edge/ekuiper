@@ -474,30 +474,68 @@ func unzipTo(f *zip.File, fpath string) error {
 }
 
 func isValidUrl(uri string) bool {
-	_, err := url.ParseRequestURI(uri)
+	pu, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return false
 	}
 
-	u, err := url.Parse(uri)
-	if err != nil || u.Scheme == "" || u.Host == "" {
+	switch pu.Scheme {
+	case "http", "https":
+		u, err := url.Parse(uri)
+		if err != nil || u.Scheme == "" || u.Host == "" {
+			return false
+		}
+	case "file":
+		if pu.Host != "" || pu.Path == "" {
+			return false
+		}
+	default:
 		return false
 	}
-
 	return true
 }
 
-func downloadFile(filepath string, url string) error {
-	// Get the data
-	resp, err := http.Get(url)
+func downloadFile(filepath string, uri string) error {
+	u, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("cannot download the file with status: %s", resp.Status)
-	}
-	defer resp.Body.Close()
+	var src io.Reader
+	switch u.Scheme {
+	case "file":
+		// deal with windows path
+		if strings.Index(u.Path, ":") == 2 {
+			u.Path = u.Path[1:]
+		}
+		fmt.Printf(u.Path)
+		sourceFileStat, err := os.Stat(u.Path)
+		if err != nil {
+			return err
+		}
 
+		if !sourceFileStat.Mode().IsRegular() {
+			return fmt.Errorf("%s is not a regular file", u.Path)
+		}
+		srcFile, err := os.Open(u.Path)
+		if err != nil {
+			return err
+		}
+		defer srcFile.Close()
+		src = srcFile
+	case "http", "https":
+		// Get the data
+		resp, err := http.Get(uri)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("cannot download the file with status: %s", resp.Status)
+		}
+		defer resp.Body.Close()
+		src = resp.Body
+	default:
+		return fmt.Errorf("unsupported url scheme %s", u.Scheme)
+	}
 	// Create the file
 	out, err := os.Create(filepath)
 	if err != nil {
@@ -506,7 +544,7 @@ func downloadFile(filepath string, url string) error {
 	defer out.Close()
 
 	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
+	_, err = io.Copy(out, src)
 	return err
 }
 
