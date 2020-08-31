@@ -36,7 +36,7 @@ type (
 		Values   interface{}   `json:"values"`
 	}
 	fileAbout struct {
-		Trial       bool          `json:"trial "`
+		Trial       bool          `json:"trial"`
 		Author      *author       `json:"author"`
 		HelpUrl     *fileLanguage `json:"helpUrl"`
 		Description *fileLanguage `json:"description"`
@@ -51,7 +51,7 @@ type (
 		Chinese string `json:"zh"`
 	}
 	about struct {
-		Trial       bool      `json:"trial "`
+		Trial       bool      `json:"trial"`
 		Author      *author   `json:"author"`
 		HelpUrl     *language `json:"helpUrl"`
 		Description *language `json:"description"`
