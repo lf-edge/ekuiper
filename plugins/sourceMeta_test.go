@@ -44,14 +44,14 @@ func TestGetSourceMeta(t *testing.T) {
 	addData := `{"url":"127.0.0.1","method":"post","headers":{"Accept":"json"}}`
 	delData := `{"method":"","headers":{"Accept":""}}`
 
-	if err := AddSourceConfKey(g_plugin, "new", addData); nil != err {
+	if err := AddSourceConfKey(g_plugin, "new", []byte(addData)); nil != err {
 		t.Error(err)
 	}
 	if err := isAddData(addData, cf[`new`]); nil != err {
 		t.Error(err)
 	}
 
-	if err := DelSourceConfKeyField(g_plugin, "new", delData); nil != err {
+	if err := DelSourceConfKeyField(g_plugin, "new", []byte(delData)); nil != err {
 		t.Error(err)
 	}
 	if err := isDelData(delData, cf[`new`]); nil != err {
