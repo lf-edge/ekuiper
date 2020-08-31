@@ -12,7 +12,7 @@
       "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sources/random.md"
     },
     "description": {
-      "en_US": "he source will generate random inputs with a specified pattern.",
+      "en_US": "The source will generate random inputs with a specified pattern.",
       "zh_CN": "随机源将生成具有指定样式的随机输入。"
     }
   },
