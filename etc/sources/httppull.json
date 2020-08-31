@@ -134,8 +134,8 @@
       }                                                                                  
     }],
 			"optional": false,
-			"control": "text",
-			"type": "string",
+			"control": "list",
+			"type": "list_object",
 			"hint": {
 				"en_US": "The HTTP request headers that you want to send along with the HTTP request.",
 				"zh_CN": "需要与 HTTP 请求一起发送的 HTTP 请求标头。"
