@@ -33,7 +33,7 @@ POST http://localhost:9081/plugins/functions
 ### 参数
 
 1. name：插件的唯一名称。 名称必须采用首字母小写的驼峰命名法。 例如，如果导出的插件名称为 `Random`，则此插件的名称为 `random`。
-2. file：插件文件的 URL。URL支持http和https以及file模式。当使用file模式时，该文件必须在Kuiper服务器所在的机器上。 它必须是一个 zip 文件，其中包含：编译后的 so 文件和yaml 文件（仅源必需）。 如果插件依赖于某些外部依赖项，则可以提供一个名为install.sh 的 bash 脚本来进行依赖项安装。 文件名称必须与插件名称匹配。 请参考[扩展](../extension/overview.md) 了解命名规则。
+2. file：插件文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 Kuiper 服务器所在的机器上。它必须是一个 zip 文件，其中包含：编译后的 so 文件和yaml 文件（仅源必需）。 如果插件依赖于某些外部依赖项，则可以提供一个名为install.sh 的 bash 脚本来进行依赖项安装。 文件名称必须与插件名称匹配。 请参考[扩展](../extension/overview.md) 了解命名规则。
 
 ### 插件文件格式
 名为 random.zip 的源的示例 zip 文件
