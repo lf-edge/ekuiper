@@ -12,7 +12,7 @@ POST http://localhost:9081/plugins/sources
 POST http://localhost:9081/plugins/sinks
 POST http://localhost:9081/plugins/functions
 ```
-Request Sample
+Request Sample when the file locates in a http server
 
 ```json
 {
@@ -21,10 +21,19 @@ Request Sample
 }
 ```
 
+Request Sample for files locates in the same machine of the Kuiepr server.
+
+```json
+{
+  "name":"random",
+  "file":"file:///var/plugins/sources/random.zip"
+}
+```
+
 ### Parameters
 
 1. name: a unique name of the plugin. The name must be the same as the camel case version of the plugin with lowercase first letter. For example, if the exported plugin name is `Random`, then the name of this plugin is `random`.
-2. file: the url of the plugin files. It must be a zip file with: a compiled so file and the yaml file(only required for sources). If the plugin depends on some external dependencies, a bash script named install.sh can be provided to do the dependency installation. The name of the files must match the name of the plugin. Please check [Extension](../extension/overview.md) for the naming rule.
+2. file: the url of the plugin files. The url can be `http` or `https` scheme or `file` scheme to refer to a local file path of the Kuiper server. It must be a zip file with: a compiled so file and the yaml file(only required for sources). If the plugin depends on some external dependencies, a bash script named install.sh can be provided to do the dependency installation. The name of the files must match the name of the plugin. Please check [Extension](../extension/overview.md) for the naming rule.
 
 ### Plugin File Format
 A sample zip file for a source named random.zip
