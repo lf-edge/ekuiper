@@ -154,9 +154,9 @@ func DelSourceConfKey(pluginName, confKey string) error {
 	return property.saveCf(pluginName)
 }
 
-func AddSourceConfKey(pluginName, confKey, content string) error {
+func AddSourceConfKey(pluginName, confKey string, content []byte) error {
 	reqField := make(map[string]interface{})
-	err := json.Unmarshal([]byte(content), &reqField)
+	err := json.Unmarshal(content, &reqField)
 	if nil != err {
 		return err
 	}
@@ -179,9 +179,9 @@ func AddSourceConfKey(pluginName, confKey, content string) error {
 	return property.saveCf(pluginName)
 }
 
-func AddSourceConfKeyField(pluginName, confKey, content string) error {
+func AddSourceConfKeyField(pluginName, confKey string, content []byte) error {
 	reqField := make(map[string]interface{})
-	err := json.Unmarshal([]byte(content), &reqField)
+	err := json.Unmarshal(content, &reqField)
 	if nil != err {
 		return err
 	}
@@ -243,9 +243,9 @@ func recursionDelMap(cf, fields map[string]interface{}) error {
 	return nil
 }
 
-func DelSourceConfKeyField(pluginName, confKey, content string) error {
+func DelSourceConfKeyField(pluginName, confKey string, content []byte) error {
 	reqField := make(map[string]interface{})
-	err := json.Unmarshal([]byte(content), &reqField)
+	err := json.Unmarshal(content, &reqField)
 	if nil != err {
 		return err
 	}

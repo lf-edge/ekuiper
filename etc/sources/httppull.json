@@ -2,16 +2,16 @@
 	"libs": [],
 	"about": {
 		"trial": false,
-	"author": {
-		"name": "Jiyong Huang",
-		"email": "huangjy@emqx.io",
-		"company": "EMQ Technologies Co., Ltd",
-		"website": "https://www.emqx.io"
-	},
-	"helpUrl": {
-		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sources/http_pull.md",
-		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/http_pull.md"
-	},
+		"author": {
+			"name": "Jiyong Huang",
+			"email": "huangjy@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sources/http_pull.md",
+			"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/http_pull.md"
+		},
 		"description": {
 			"en_US": "Kuiper provides built-in support for pulling HTTP source stream, which can pull the message from HTTP server broker and feed into the Kuiper processing pipeline.",
 			"zh_CN": "Kuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 Kuiper 处理管道。"
@@ -78,7 +78,7 @@
 			"name": "incremental",
 			"default": false,
 			"optional": false,
-			"control": "text",
+			"control": "radio",
 			"type": "bool",
 			"hint": {
 				"en_US": "If it's set to true, then will compare with last result; If response of two requests are the same, then will skip sending out the result.",
@@ -92,7 +92,7 @@
 			"name": "body",
 			"default": "{}",
 			"optional": false,
-			"control": "text",
+			"control": "textarea",
 			"type": "string",
 			"hint": {
 				"en_US": "The body of request",
@@ -118,24 +118,24 @@
 			}
 		}, {
 			"name": "headers",
-			"default": [{                                                                                 
-      "name": "Accept",                                                                
-      "default": "application/json",                                                                 
-      "optional": false,                                                                 
-      "control": "text",                                                                 
-      "type": "string",                                                                  
-      "hint": {                                                                          
-        "en_US": "HTTP headers",      
-        "zh_CN": "HTTP标头"              
-      },                                                                                 
-      "label": {                                                                         
-        "en_US": "HTTP headers",
-        "zh_CN": "HTTP标头"
-      }                                                                                  
-    }],
+			"default": [{                                                 
+				"name": "Accept",
+				"default": "application/json",
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "HTTP headers",
+					"zh_CN": "HTTP标头"      
+				},                                                              
+				"label": {
+					"en_US": "HTTP headers",
+					"zh_CN": "HTTP标头"
+				}                                                     
+			}],
 			"optional": false,
-			"control": "text",
-			"type": "string",
+			"control": "list",
+			"type": "list_object",
 			"hint": {
 				"en_US": "The HTTP request headers that you want to send along with the HTTP request.",
 				"zh_CN": "需要与 HTTP 请求一起发送的 HTTP 请求标头。"

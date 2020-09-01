@@ -25,7 +25,7 @@
 				"values": [
 					"tcp"
 				],
-				"type": "list_string",
+				"type": "string",
 				"hint": {
 					"en_US": "The protocol. If it's not specified, then use default value 'tcp'.",
 					"zh_CN": "协议，如未指定，使用缺省值 tcp。"
@@ -161,8 +161,9 @@
 						"name": "Qos",
 						"default": "",
 						"optional": true,
-						"control": "text",
-						"type": "string",
+						"control": "select",
+						"type": "int",
+						"values": [0, 1, 2],
 						"hint": {
 							"en_US": "MQTT QoS",
 							"zh_CN": "MQTT 服务质量"
@@ -294,8 +295,8 @@
 					}
 				],
 				"optional": true,
-				"control": "text",
-				"type": "obj-list",
+				"control": "list",
+				"type": "list_object",
 				"hint": {
 					"en_US": "If MQTT message bus is used, some other optional configurations can be specified. Please notice that all of values in optional are string type, so values for these configurations should be string - such as KeepAlive: \"5000\".",
 					"zh_CN": "如果使用了 MQTT 消息总线，还可以指定别的一些可选配置项。请注意，所有在可选的配置项里指定的值都必须为**字符类型**，因此这里出现的所有的配置应该是字符类型的 - 例如 KeepAlive: \"5000\"。"
