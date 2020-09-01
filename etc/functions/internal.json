@@ -1,0 +1,537 @@
+[{
+	"name": "avg",
+	"control": "text",
+	"example": "avg(col1)",
+	"hint": {
+		"en_US": "The average of the values in a group. The null values will be ignored.",
+		"zh_CN": "组中的平均值。空值不参与计算。"
+	}
+}, {
+	"name": "count",
+	"control": "text",
+	"example": "count(*)",
+	"hint": {
+		"en_US": "The number of items in a group. The null values will be ignored.",
+		"zh_CN": "组中的项目数。空值不参与计算。"
+	}
+}, {
+	"name": "max",
+	"control": "text",
+	"example": "max(col1)",
+	"hint": {
+		"en_US": "The maximum value in a group. The null values will be ignored.",
+		"zh_CN": "组中的最大值。空值不参与计算。"
+	}
+}, {
+	"name": "min",
+	"control": "text",
+	"example": "min(col1)",
+	"hint": {
+		"en_US": "The minimum value in a group. The null values will be ignored.",
+		"zh_CN": "组中的最小值。空值不参与计算。"
+	}
+}, {
+	"name": "sum",
+	"control": "text",
+	"example": "sum(col1)",
+	"hint": {
+		"en_US": "The sum of all the values in a group. The null values will be ignored.",
+		"zh_CN": "组中所有值的总和。空值不参与计算。"
+	}
+}, {
+	"name": "collect",
+	"control": "text",
+	"example": "collect(*), collect(col1)",
+	"hint": {
+		"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group.",
+		"zh_CN": "返回组中指定的列或整个消息（参数为*时）的值组成的数组。"
+	}
+}, {
+	"name": "abs",
+	"control": "text",
+	"example": "abs(col1)",
+	"hint": {
+		"en_US": "The absolute value of a value",
+		"zh_CN": "绝对值"
+	}
+}, {
+	"name": "acos",
+	"control": "text",
+	"example": "acos(col1)",
+	"hint": {
+		"en_US": "The inverse cosine of a number in radians",
+		"zh_CN": "弧度数的反余弦值"
+	}
+}, {
+	"name": "asin",
+	"control": "text",
+	"example": "asin(col1)",
+	"hint": {
+		"en_US": "The inverse sine of a number in radians",
+		"zh_CN": "弧度数的反正弦值"
+	}
+}, {
+	"name": "atan",
+	"control": "text",
+	"example": "atan(col1)",
+	"hint": {
+		"en_US": "The inverse tangent of a number in radians",
+		"zh_CN": "弧度数的反正切值"
+	}
+}, {
+	"name": "atan2",
+	"control": "text",
+	"example": "atan2(col1, col2)",
+	"hint": {
+		"en_US": "The angle, in radians, between the positive x-axis and the (x, y) point defined in the two arguments",
+		"zh_CN": "正x轴与两个自变量中定义的（x，y）点之间的弧度角"
+	}
+}, {
+	"name": "bitand",
+	"control": "text",
+	"example": "bitand(col1, col2)",
+	"hint": {
+		"en_US": "Performs a bitwise AND on the bit representations of the two Int(-converted) arguments",
+		"zh_CN": "对两个Int（-converted）参数的位表示执行按位“与”运算"
+	}
+}, {
+	"name": "bitor",
+	"control": "text",
+	"example": "bitor(col1, col2)",
+	"hint": {
+		"en_US": "Performs a bitwise OR of the bit representations of the two arguments",
+		"zh_CN": "对两个参数的位表示进行或运算"
+	}
+}, {
+	"name": "bitxor",
+	"control": "text",
+	"example": "bitxor(col1, col2)",
+	"hint": {
+		"en_US": "Performs a bitwise XOR on the bit representations of the two Int(-converted) arguments",
+		"zh_CN": "对两个Int（-converted）参数的位表示执行逐位异或运算"
+	}
+}, {
+	"name": "bitnot",
+	"control": "text",
+	"example": "bitnot(col1)",
+	"hint": {
+		"en_US": "Performs a bitwise NOT on the bit representations of the Int(-converted) argument",
+		"zh_CN": "在Int（-converted）参数的位表示形式上执行按位NOT运算"
+	}
+}, {
+	"name": "ceil",
+	"control": "text",
+	"example": "ceil(col1)",
+	"hint": {
+		"en_US": "Round a value up to the nearest BIGINT value.",
+		"zh_CN": "将值舍入到最接近的BIGINT值。"
+	}
+}, {
+	"name": "cos",
+	"control": "text",
+	"example": "cos(col1)",
+	"hint": {
+		"en_US": "Returns the cosine of a number in radians.",
+		"zh_CN": "返回以弧度为单位的数字的余弦值。"
+	}
+}, {
+	"name": "cosh",
+	"control": "text",
+	"example": "cosh(col1)",
+	"hint": {
+		"en_US": "Returns the hyperbolic cosine of a number in radians.",
+		"zh_CN": "返回弧度数的双曲余弦值。"
+	}
+}, {
+	"name": "exp",
+	"control": "text",
+	"example": "exp(col1)",
+	"hint": {
+		"en_US": "Returns e raised to the Decimal argument.",
+		"zh_CN": "返回小数点参数的e。"
+	}
+}, {
+	"name": "ln",
+	"control": "text",
+	"example": "ln(col1)",
+	"hint": {
+		"en_US": "Returns the natural logarithm of the argument.",
+		"zh_CN": "返回参数的自然对数。"
+	}
+}, {
+	"name": "log",
+	"control": "text",
+	"example": "log(col1)",
+	"hint": {
+		"en_US": "Returns the base 10 logarithm of the argument.",
+		"zh_CN": "返回参数的以10为底的对数。"
+	}
+}, {
+	"name": "mod",
+	"control": "text",
+	"example": "mod(col1, col2)",
+	"hint": {
+		"en_US": "Returns the remainder of the division of the first argument by the second argument.",
+		"zh_CN": "返回第一个参数除以第二个参数的余数。"
+	}
+}, {
+	"name": "power",
+	"control": "text",
+	"example": "power(x, y)",
+	"hint": {
+		"en_US": "Pow returns x**y, the base-x exponential of y.",
+		"zh_CN": "返回 x 的 y 次方。"
+	}
+}, {
+	"name": "rand",
+	"control": "text",
+	"example": "rand()",
+	"hint": {
+		"en_US": "Returns a pseudorandom, uniformly distributed double between 0.0 and 1.0.",
+		"zh_CN": "返回一个伪随机数，其均匀分布在0.0和1.0之间。"
+	}
+}, {
+	"name": "round",
+	"control": "text",
+	"example": "round(col1)",
+	"hint": {
+		"en_US": "Round a value to the nearest BIGINT value.",
+		"zh_CN": "将值四舍五入到最接近的 BIGINT 值。"
+	}
+}, {
+	"name": "sign",
+	"control": "text",
+	"example": "sign(col1)",
+	"hint": {
+		"en_US": "Returns the sign of the given number. When the sign of the argument is positive, 1 is returned. When the sign of the argument is negative, -1 is returned. If the argument is 0, 0 is returned.",
+		"zh_CN": "返回给定数字的符号。 当参数的符号为正时，将返回1。 当参数的符号为负数时，返回-1。 如果参数为0，则返回0。"
+	}
+}, {
+	"name": "sin",
+	"control": "text",
+	"example": "sin(col1)",
+	"hint": {
+		"en_US": "Returns the sine of a number in radians.",
+		"zh_CN": "返回弧度数的正弦值。"
+	}
+}, {
+	"name": "sinh",
+	"control": "text",
+	"example": "sinh(col1)",
+	"hint": {
+		"en_US": "Returns the hyperbolic sine of a number in radians.",
+		"zh_CN": "返回弧度数的双曲正弦值。"
+	}
+}, {
+	"name": "sqrt",
+	"control": "text",
+	"example": "sqrt(col1)",
+	"hint": {
+		"en_US": "Returns the square root of a number.",
+		"zh_CN": "返回数字的平方根。"
+	}
+}, {
+	"name": "tan",
+	"control": "text",
+	"example": "tan(col1)",
+	"hint": {
+		"en_US": "Returns the tangent of a number in radians.",
+		"zh_CN": "返回以弧度表示的数字的正切值。"
+	}
+}, {
+	"name": "tanh",
+	"control": "text",
+	"example": "tanh(col1)",
+	"hint": {
+		"en_US": "Returns the hyperbolic tangent of a number in radians.",
+		"zh_CN": "返回弧度数的双曲正切值。"
+	}
+}, {
+	"name": "concat",
+	"control": "text",
+	"example": "concat(col1...)",
+	"hint": {
+		"en_US": "Concatenates arrays or strings. This function accepts any number of arguments and returns a String or an Array",
+		"zh_CN": "连接数组或字符串。 此函数接受任意数量的参数并返回 String 或 Array"
+	}
+}, {
+	"name": "endswith",
+	"control": "text",
+	"example": "endswith(col1, col2)",
+	"hint": {
+		"en_US": "Returns a Boolean indicating whether the first String argument ends with the second String argument.",
+		"zh_CN": "返回一个布尔值，该布尔值指示第一个 String参数是否以第二个 String 参数结尾。"
+	}
+}, {
+	"name": "format_time",
+	"control": "text",
+	"example": "format_time(col1, format)",
+	"hint": {
+		"en_US": "Format a datetime to string.",
+		"zh_CN": "将日期时间格式化为字符串。"
+	}
+}, {
+	"name": "indexof",
+	"control": "text",
+	"example": "indexof(col1, col2)",
+	"hint": {
+		"en_US": "Returns the first index (0-based) of the second argument as a substring in the first argument.",
+		"zh_CN": "返回第二个参数的第一个索引（从0开始），作为第一个参数中的子字符串。"
+	}
+}, {
+	"name": "length",
+	"control": "text",
+	"example": "length(col1)",
+	"hint": {
+		"en_US": "Returns the number of characters in the provided string.",
+		"zh_CN": "返回提供的字符串中的字符数。"
+	}
+}, {
+	"name": "lower",
+	"control": "text",
+	"example": "lower(col1)",
+	"hint": {
+		"en_US": "Returns the lowercase version of the given String.",
+		"zh_CN": "返回给定 String 的小写版本。"
+	}
+}, {
+	"name": "lpad",
+	"control": "text",
+	"example": "lpad(col1, 2)",
+	"hint": {
+		"en_US": "Returns the String argument, padded on the left side with the number of spaces specified by the second argument.",
+		"zh_CN": "返回 String，在左侧用第二个参数指定的空格数填充。"
+	}
+}, {
+	"name": "ltrim",
+	"control": "text",
+	"example": "ltrim(col1)",
+	"hint": {
+		"en_US": "Removes all leading whitespace (tabs and spaces) from the provided String.",
+		"zh_CN": "从提供的字符串中删除所有前导空格（制表符和空格）。"
+	}
+}, {
+	"name": "numbytes",
+	"control": "text",
+	"example": "numbytes(col1)",
+	"hint": {
+		"en_US": "Returns the number of bytes in the UTF-8 encoding of the provided string.",
+		"zh_CN": "以提供的字符串的 UTF-8 编码返回字节数。"
+	}
+}, {
+	"name": "regexp_matches",
+	"control": "text",
+	"example": "regexp_matches(col1, regex)",
+	"hint": {
+		"en_US": "Returns true if the string (first argument) contains a match for the regular expression.",
+		"zh_CN": "如果字符串（第一个参数）包含正则表达式的匹配项，则返回 true。"
+	}
+}, {
+	"name": "regexp_replace",
+	"control": "text",
+	"example": "regexp_matches(col1, regex, str)",
+	"hint": {
+		"en_US": "Replaces all occurrences of the second argument (regular expression) in the first argument with the third argument.",
+		"zh_CN": "将第一个参数中所有出现的第二个参数（正则表达式）替换为第三个参数。"
+	}
+}, {
+	"name": "regexp_substr",
+	"control": "text",
+	"example": "regexp_substr(col1, regex)",
+	"hint": {
+		"en_US": "Finds the first match of the 2nd parameter (regex) in the first parameter.",
+		"zh_CN": "在第一个参数中找到第二个参数（regex）的第一个匹配项。"
+	}
+}, {
+	"name": "rpad",
+	"control": "text",
+	"example": "rpad(col1, 2)",
+	"hint": {
+		"en_US": "Returns the String argument, padded on the right side with the number of spaces specified by the second argument.",
+		"zh_CN": "返回字符串参数，在右侧填充第二个参数指定的空格数。"
+	}
+}, {
+	"name": "rtrim",
+	"control": "text",
+	"example": "rtrim(col1)",
+	"hint": {
+		"en_US": "Removes all trailing whitespace (tabs and spaces) from the provided String.",
+		"zh_CN": "从提供的字符串中删除所有尾随空白（制表符和空格）。"
+	}
+}, {
+	"name": "substring",
+	"control": "text",
+	"example": "substring(col1, start, end)",
+	"hint": {
+		"en_US": "returns the substring of the provided String from the provided Int index (0-based, inclusive) to the end of the String.",
+		"zh_CN": "从提供的 Int 索引（从0开始，包括0）到字符串的结尾，返回提供的String的子字符串。"
+	}
+}, {
+	"name": "startswith",
+	"control": "text",
+	"example": "startswith(col1, str)",
+	"hint": {
+		"en_US": "Returns Boolean, whether the first string argument starts with the second string argument.",
+		"zh_CN": "返回布尔值，是否第一个字符串参数是否以第二个字符串参数开头。"
+	}
+}, {
+	"name": "split_value",
+	"control": "text",
+	"example": "split_value(col1, str_splitter, index)",
+	"hint": {
+		"en_US": "Splitthevalueofthe1stparameterwiththe2ndparameter,andreturnthevalueofsplitarraythatindexedwiththe3rdparameter.split_value(\"/test/device001/message\",\"/\",0)ASa,thereturnedvalueoffunctionisempty;split_value(\"/test/device001/message\",\"/\",3)ASa,thereturnedvalueoffunctionismessage;",
+		"zh_CN": "用第二个参数分割第一个参数的值，并返回用第三个参数索引的分割数组的值。split_value（“/test/device001/message”，“/”，0）ASa，函数的返回值为空；split_value（“/test/device001/message”，“/”，3）ASa，函数的返回值为message。"
+	}
+}, {
+	"name": "trim",
+	"control": "text",
+	"example": "trim(col1)",
+	"hint": {
+		"en_US": "Removes all leading and trailing whitespace (tabs and spaces) from the provided String.",
+		"zh_CN": "从提供的字符串中删除所有前导和尾随空格（制表符和空格）。"
+	}
+}, {
+	"name": "upper",
+	"control": "text",
+	"example": "upper(col1)",
+	"hint": {
+		"en_US": "Returns the uppercase version of the given String.",
+		"zh_CN": "返回给定 String 的大写版本。"
+	}
+}, {
+	"name": "cast",
+	"control": "text",
+	"example": "cast(col, \"bigint\")",
+	"hint": {
+		"en_US": "Converts a value from one data type to another. The supported types includes: bigint, float, string, boolean and datetime(not supported now).",
+		"zh_CN": "将值从一种数据类型转换为另一种数据类型。 支持的类型包括：bigint，float，string，boolean 和 datetime（现在不支持）。"
+	}
+}, {
+	"name": "chr",
+	"control": "text",
+	"example": "chr(col1)",
+	"hint": {
+		"en_US": "Returns the ASCII character that corresponds to the given Int argument",
+		"zh_CN": "返回与给定 Int 参数对应的 ASCII 字符"
+	}
+}, {
+	"name": "encode",
+	"control": "text",
+	"example": "encode(col1, \"base64\")",
+	"hint": {
+		"en_US": "Use the encode function to encode the payload, which potentially might be non-JSON data, into its string representation based on the encoding scheme. Currently, only \"base64\" econding type is supported.",
+		"zh_CN": "使用 encode 函数根据编码方案将负载（可能是非 JSON 数据）编码为其字符串表示形式。目前，只支持\"base64\"econding 类型。"
+	}
+}, {
+	"name": "trunc",
+	"control": "text",
+	"example": "trunc(dec, int)",
+	"hint": {
+		"en_US": "iTruncates the first argument to the number of Decimal places specified by the second argument. If the second argument is less than zero, it is set to zero. If the second argument is greater than 34, it is set to 34. Trailing zeroes are stripped from the result.",
+		"zh_CN": "将第一个参数截断为第二个参数指定的小数位数。 如果第二个参数小于零，则将其设置为零。 如果第二个参数大于34，则将其设置为34。从结果中去除尾随零。"
+	}
+}, {
+	"name": "md5",
+	"control": "text",
+	"example": "md5(col1)",
+	"hint": {
+		"en_US": "Hashed value of the argument",
+		"zh_CN": "参数的哈希值"
+	}
+}, {
+	"name": "sha1",
+	"control": "text",
+	"example": "sha1(col1)",
+	"hint": {
+		"en_US": "Hashed value of the argument",
+		"zh_CN": "参数的哈希值"
+	}
+}, {
+	"name": "sha256",
+	"control": "text",
+	"example": "sha256(col1)",
+	"hint": {
+		"en_US": "Hashed value of the argument",
+		"zh_CN": "参数的哈希值"
+	}
+}, {
+	"name": "sha384",
+	"control": "text",
+	"example": "sha384(col1)",
+	"hint": {
+		"en_US": "Hashed value of the argument",
+		"zh_CN": "参数的哈希值"
+	}
+}, {
+	"name": "sha512",
+	"control": "text",
+	"example": "sha512(col1)",
+	"hint": {
+		"en_US": "Hashed value of the argument",
+		"zh_CN": "参数的哈希值"
+	}
+}, {
+	"name": "json_path_exists",
+	"control": "text",
+	"example": "json_path_exists(col1, \"$.name\")",
+	"hint": {
+		"en_US": "Checks whether JSON path returns any item for the specified JSON value. Return bool value.",
+		"zh_CN": "检查 JSON 路径是否返回指定JSON 值的任何项目。 返回布尔值。"
+	}
+}, {
+	"name": "json_path_query",
+	"control": "text",
+	"example": "json_path_query(col1, \"$.name\")",
+	"hint": {
+		"en_US": "Gets all items returned by JSON path for the specified JSON value.",
+		"zh_CN": "获取 JSON 路径返回的指定 JSON值的所有项目。"
+	}
+}, {
+	"name": "json_path_query_first",
+	"control": "text",
+	"example": "json_path_query_first(col1, \"$.name\")",
+	"hint": {
+		"en_US": "Gets the first item returned by JSON path for the specified JSON value.",
+		"zh_CN": "获取 JSON 路径返回的指定 JSON值的第一项。"
+	}
+}, {
+	"name": "isNull",
+	"control": "text",
+	"example": "isNull(col1)",
+	"hint": {
+		"en_US": "Returns true if the argument is the Null value.",
+		"zh_CN": "如果参数为空值，则返回 true。"
+	}
+}, {
+	"name": "newuuid",
+	"control": "text",
+	"example": "newuuid()",
+	"hint": {
+		"en_US": "Returns a random 16-byte UUID.",
+		"zh_CN": "返回一个随机的16字节 UUID。"
+	}
+}, {
+	"name": "tstamp",
+	"control": "text",
+	"example": "tstamp()",
+	"hint": {
+		"en_US": "Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970",
+		"zh_CN": "返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。"
+	}
+}, {
+	"name": "mqtt",
+	"control": "text",
+	"example": "mqtt(topic)",
+	"hint": {
+		"en_US": "Returns the MQTT meta-data of specified key. The current supported keys - topic: return the topic of message. If there are multiple stream source, then specify the source name in parameter. Such as mqtt(src1.topic) - messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as mqtt(src2.messageid)",
+		"zh_CN": "返回指定键的 MQTT 元数据。 当前支持的键包括 -topic：返回消息的主题。 如果有多个流源，则在参数中指定源名称。 如 mqtt(src1.topic) - messageid：返回消息的消息ID。 如果有多个流源，则在参数中指定源名称。 如 mqtt(src2.messageid)"
+	}
+}, {
+	"name": "meta",
+	"control": "text",
+	"example": "meta(topic)",
+	"hint": {
+		"en_US": "Returns the meta-data of specified key. The key could be: - a standalone key if there is only one source in the from clause, such as meta(device) - A qualified key to specify the stream, such as meta(src1.device) - A key with arrow for multi level meta data, such as meta(src1.reading->device->name) This assumes reading is a map structure meta data.",
+		"zh_CN": "返回指定键的元数据。 键可能是：-如果 from 子句中只有一个来源，则为独立键，例如meta(device) -用于指定流的合格键，例如 meta(src1.device) -用于多级元数据的带有箭头的键，例如 meta(src1.reading->device->name)。这里假定读取是地图结构元数据。"
+	}
+}]

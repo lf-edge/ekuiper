@@ -37,7 +37,7 @@ func newUiFunc(fi *fileFunc) *uiFunc {
 
 var g_funcMetadata []*uiFunc
 
-func readfuncMetaDir() error {
+func readFuncMetaDir() error {
 	confDir, err := common.GetConfLoc()
 	if nil != err {
 		return err
