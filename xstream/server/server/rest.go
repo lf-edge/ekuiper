@@ -480,6 +480,7 @@ func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[strin
 	result = make(map[string]string)
 	hostsArr := strings.Split(hosts, ",")
 	for _, host := range hostsArr {
+		host := strings.Trim(host, " ")
 		tmp := []string{host, "kuiper-plugins", version, ptype, os}
 		//The url is similar to http://host:port/kuiper-plugins/0.9.1/sinks/alpine
 		url := strings.Join(tmp, "/")
