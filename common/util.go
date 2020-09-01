@@ -67,6 +67,7 @@ type KuiperConf struct {
 		RestTls        *tlsConf `yaml:"restTls"`
 		Prometheus     bool     `yaml:"prometheus"`
 		PrometheusPort int      `yaml:"prometheusPort"`
+		PluginHosts    string   `yaml:pluginHosts`
 	}
 	Rule api.RuleOption
 	Sink struct {
