@@ -18,6 +18,7 @@ require (
 	github.com/prometheus/client_golang v1.2.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/urfave/cli v1.22.0
+	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
 )
 
 go 1.13

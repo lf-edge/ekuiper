@@ -128,3 +128,23 @@ The user can pass a query parameter to decide if Kuiper should be stopped after 
 ```shell
 DELETE http://localhost:8080/plugins/sources/{name}?restart=1
 ```
+
+## Get the available plugins
+
+According to the configuration `pluginHosts` in file `etc/kuiper.yaml` ,  it returns the plugins list that can be installed at local run Kuiper instance. By default, it get the list from `https://packages.emqx.io` .
+
+```
+GET http://localhost:9081/plugins/sources/prebuild
+GET http://localhost:9081/plugins/sinks/prebuild
+GET http://localhost:9081/plugins/functions/prebuild
+```
+
+The sample result is as following, and the key is plugin name, the value is plugin download address.
+
+```json
+{
+  "file": "http://127.0.0.1:63767/kuiper-plugins/0.9.1/sinks/alpine/file_arm64.zip",
+  "influx": "http://127.0.0.1:63767/kuiper-plugins/0.9.1/sinks/alpine/influx_arm64.zip",
+  "zmq": "http://127.0.0.1:63768/kuiper-plugins/0.9.1/sinks/alpine/zmq_arm64.zip"
+}
+```
