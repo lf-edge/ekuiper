@@ -64,8 +64,8 @@
 			"name": "servers",
 			"default": ["tcp://127.0.0.1:1883"],
 			"optional": true,
-			"control": "text",
-			"type": "string-list",
+			"control": "select",
+			"type": "list_string",
 			"hint": {
 				"en_US": "The server list for MQTT message broker. Currently, only ONE server can be specified.",
 				"zh_CN": "MQTT 消息代理的服务器列表。 当前，只能指定一个服务器。"

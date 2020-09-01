@@ -493,6 +493,7 @@ func sourceConfKeysHandler(w http.ResponseWriter, r *http.Request) {
 
 //Add  del confkey
 func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
+
 	defer r.Body.Close()
 	var ret interface{}
 	var err error
@@ -503,12 +504,12 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		err = plugins.DelSourceConfKey(pluginName, confKey)
 	case http.MethodPost:
-		v, err := decodeStatementDescriptor(r.Body)
+		v, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		err = plugins.AddSourceConfKey(pluginName, confKey, v.Sql)
+		err = plugins.AddSourceConfKey(pluginName, confKey, v)
 	}
 	if err != nil {
 		handleError(w, err, "metadata error", logger)
@@ -528,16 +529,16 @@ func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
-	v, err := decodeStatementDescriptor(r.Body)
+	v, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		handleError(w, err, "Invalid body", logger)
 		return
 	}
 	switch r.Method {
 	case http.MethodDelete:
-		err = plugins.DelSourceConfKeyField(pluginName, confKey, v.Sql)
+		err = plugins.DelSourceConfKeyField(pluginName, confKey, v)
 	case http.MethodPost:
-		err = plugins.AddSourceConfKeyField(pluginName, confKey, v.Sql)
+		err = plugins.AddSourceConfKeyField(pluginName, confKey, v)
 	}
 	if err != nil {
 		handleError(w, err, "metadata error", logger)
