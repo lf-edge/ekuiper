@@ -273,5 +273,37 @@ source 的大部分属性用户通过对应的配置文件指定，用户无法�
 }
 ```
 
+## 函数 (Functions)
+
+Kuiper 具有许多内置函数，可以对数据执行计算。(具体文档参考 https://github.com/emqx/kuiper/blob/master/docs/zh_CN/sqls/built-in_functions.md)
+
+### functions 元数据文件格式
+
+元数据文件格式为 JSON，主要分成以下部分：
+
+- name：属性名称；**该字段必须提供；**
+- control：控件类型，控制在界面中显示的控件类型；**该字段必须提供；**
+  - text：文本输入框
+- example：样例
+- hint：控件的提示信息；该字段可选；
+  - en_US
+  - zh_CN
+
+#### 样例文件
+
+以下为样例元数据文件。
+
+```json
+[{
+	"name": "avg",
+	"control": "text",
+	"example": "avg(col1)",
+	"hint": {
+		"en_US": "The file path for saving the result",
+		"zh_CN": "组中的平均值。空值不参与计算。"
+	}
+}]
+```
+
 
 

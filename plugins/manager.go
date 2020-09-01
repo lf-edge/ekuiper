@@ -214,6 +214,7 @@ func NewPluginManager() (*Manager, error) {
 		}
 		readSourceMetaDir()
 		readSinkMetaDir()
+		readFuncMetaDir()
 	})
 	return singleton, outerErr
 }
