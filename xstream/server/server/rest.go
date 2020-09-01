@@ -88,6 +88,8 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/plugins/functions", functionsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet)
 
+	r.HandleFunc("/metadata/functions", functionsMetaHandler).Methods(http.MethodGet)
+
 	r.HandleFunc("/metadata/sinks", sinksMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sinks/{name}", newSinkMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sinks/rule/{id}", showSinkMetaHandler).Methods(http.MethodGet)
@@ -451,6 +453,14 @@ func showSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonResponse(ptrMetadata, w, logger)
+}
+
+//list functions
+func functionsMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	sinks := plugins.GetFunctions()
+	jsonResponse(sinks, w, logger)
+	return
 }
 
 //list source plugin
