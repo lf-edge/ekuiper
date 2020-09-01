@@ -36,8 +36,9 @@
 			"name": "method",
 			"default": "",
 			"optional": false,
-			"control": "text",
+			"control": "select",
 			"type": "string",
+			"values": ["post", "get", "put", "delete"],
 			"hint": {
 				"en_US": "HTTP method, it could be post, get, put & delete.",
 				"zh_CN": "HTTP 方法，它可以是 post、get、put 和 delete。"

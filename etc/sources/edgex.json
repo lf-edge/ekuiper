@@ -162,7 +162,7 @@
 						"default": "",
 						"optional": true,
 						"control": "select",
-						"type": "int",
+						"type": "string",
 						"values": [0, 1, 2],
 						"hint": {
 							"en_US": "MQTT QoS",
