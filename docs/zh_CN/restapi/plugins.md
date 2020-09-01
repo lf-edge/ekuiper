@@ -122,3 +122,23 @@ DELETE http://localhost:8080/plugins/functions/{name}
 ```shell
 DELETE http://localhost:8080/plugins/sources/{name}?restart=1
 ```
+
+## 获取可安装的插件
+
+根据在 `etc/kuiper.yaml` 文件中 `pluginHosts` 的配置，获取适合本 Kuiper 实例运行的插件列表，缺省会从 `https://packages.emqx.io` 上去获取。
+
+```
+GET http://localhost:9081/plugins/sources/prebuild
+GET http://localhost:9081/plugins/sinks/prebuild
+GET http://localhost:9081/plugins/functions/prebuild
+```
+
+样例返回内容如下，其中键值为插件名称，值是插件的下载地址。
+
+```json
+{
+  "file": "http://127.0.0.1:63767/kuiper-plugins/0.9.1/sinks/alpine/file_arm64.zip",
+  "influx": "http://127.0.0.1:63767/kuiper-plugins/0.9.1/sinks/alpine/influx_arm64.zip",
+  "zmq": "http://127.0.0.1:63768/kuiper-plugins/0.9.1/sinks/alpine/zmq_arm64.zip"
+}
+```

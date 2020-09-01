@@ -15,6 +15,10 @@ basic:
   # Prometheus settings
   prometheus: false
   prometheusPort: 20499
+  # The URL where hosts all of pre-build plugins. By default it's at packages.emqx.io
+  # There could be several hosts (host can be separated with comma), if same package could be found in the several hosts,
+  # then the package in the 1st host will have the highest priority.
+  pluginHosts: https://packages.emqx.io
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:
