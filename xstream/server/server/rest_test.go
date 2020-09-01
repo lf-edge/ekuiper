@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -214,8 +213,6 @@ func TestFetchPluginList(t1 *testing.T) {
 			"influx": server1.URL + "/kuiper-plugins/" + version + "/sinks/alpine/influx_arm64.zip",
 			"zmq":    server2.URL + "/kuiper-plugins/" + version + "/sinks/alpine/zmq_arm64.zip",
 		}
-		d, _ := json.Marshal(exp)
-		fmt.Println(string(d))
 		if !reflect.DeepEqual(exp, r) {
 			t1.Errorf("result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", exp, r)
 		}

@@ -12,6 +12,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"runtime"
 	"strings"
 	"time"
@@ -429,11 +430,10 @@ func prebuildFuncsPlugins(w http.ResponseWriter, r *http.Request) {
 	prebuildPluginsHandler(w, r, plugins.FUNCTION)
 }
 
-type PrebuildPluginError struct {
-	Error string
-}
-
 func isOffcialDockerImage() bool {
+	if strings.ToLower(os.Getenv("MAINTAINER")) != "emqx.io" {
+		return false
+	}
 	return true
 }
 
