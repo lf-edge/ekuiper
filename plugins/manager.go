@@ -383,7 +383,9 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 			}
 			filenames = append(filenames, yamlPath)
 		} else if fileName == name+".json" {
-			unzipTo(file, path.Join(m.etcDir, PluginTypes[t], fileName))
+			if err := unzipTo(file, path.Join(m.etcDir, PluginTypes[t], fileName)); nil != err {
+				common.Log.Errorf("Failed to decompress the metadata %s file", fileName)
+			}
 		} else if soPrefix.Match([]byte(fileName)) {
 			soPath := path.Join(m.pluginDir, PluginTypes[t], fileName)
 			err = unzipTo(file, soPath)
