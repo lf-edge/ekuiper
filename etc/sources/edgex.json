@@ -21,7 +21,7 @@
 				"name": "protocol",
 				"default": "tcp",
 				"optional": true,
-				"control": "text",
+				"control": "select",
 				"values": [
 					"tcp"
 				],
@@ -161,8 +161,9 @@
 						"name": "Qos",
 						"default": "",
 						"optional": true,
-						"control": "text",
-						"type": "string",
+						"control": "select",
+						"type": "int",
+						"values": [0, 1, 2],
 						"hint": {
 							"en_US": "MQTT QoS",
 							"zh_CN": "MQTT 服务质量"
