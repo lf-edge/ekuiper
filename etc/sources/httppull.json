@@ -92,7 +92,7 @@
 			"name": "body",
 			"default": "{}",
 			"optional": false,
-			"control": "text",
+			"control": "textarea",
 			"type": "string",
 			"hint": {
 				"en_US": "The body of request",
