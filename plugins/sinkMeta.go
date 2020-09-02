@@ -6,6 +6,7 @@ import (
 	"github.com/emqx/kuiper/xstream/api"
 	"io/ioutil"
 	"path"
+	"reflect"
 	"strings"
 )
 
@@ -92,20 +93,34 @@ func newLanguage(fi *fileLanguage) *language {
 	ui.Chinese = fi.Chinese
 	return ui
 }
-func newField(fi *fileField) *field {
-	if nil == fi {
-		return nil
+func newField(fis []*fileField) (uis []*field, err error) {
+	for _, fi := range fis {
+		if nil == fi {
+			continue
+		}
+		ui := new(field)
+		uis = append(uis, ui)
+		ui.Name = fi.Name
+		ui.Type = fi.Type
+		ui.Control = fi.Control
+		ui.Optional = fi.Optional
+		ui.Values = fi.Values
+		ui.Hint = newLanguage(fi.Hint)
+		ui.Label = newLanguage(fi.Label)
+
+		if nil != fi.Default && reflect.Slice == reflect.TypeOf(fi.Default).Kind() {
+			var auxFi []*fileField
+			if err = common.MapToStruct(fi.Default, &auxFi); nil != err {
+				return nil, err
+			}
+			if ui.Default, err = newField(auxFi); nil != err {
+				return nil, err
+			}
+		} else {
+			ui.Default = fi.Default
+		}
 	}
-	ui := new(field)
-	ui.Name = fi.Name
-	ui.Default = fi.Default
-	ui.Type = fi.Type
-	ui.Control = fi.Control
-	ui.Optional = fi.Optional
-	ui.Values = fi.Values
-	ui.Hint = newLanguage(fi.Hint)
-	ui.Label = newLanguage(fi.Label)
-	return ui
+	return uis, err
 }
 func newAbout(fi *fileAbout) *about {
 	if nil == fi {
@@ -118,17 +133,16 @@ func newAbout(fi *fileAbout) *about {
 	ui.Description = newLanguage(fi.Description)
 	return ui
 }
-func newUiSink(fi *fileSink) *uiSink {
+func newUiSink(fi *fileSink) (*uiSink, error) {
 	if nil == fi {
-		return nil
+		return nil, nil
 	}
+	var err error
 	ui := new(uiSink)
 	ui.Libs = fi.Libs
 	ui.About = newAbout(fi.About)
-	for _, v := range fi.Fields {
-		ui.Fields = append(ui.Fields, newField(v))
-	}
-	return ui
+	ui.Fields, err = newField(fi.Fields)
+	return ui, err
 }
 
 var g_sinkMetadata map[string]*uiSink //map[fileName]
@@ -150,7 +164,10 @@ func readSinkMetaDir() error {
 		if nil != err {
 			return fmt.Errorf("Failed to load internal sink plugin:%s with err:%v", file, err)
 		}
-		tmpMap[sink+".json"] = newUiSink(meta)
+		tmpMap[sink+".json"], err = newUiSink(meta)
+		if nil != err {
+			return err
+		}
 	}
 	files, err := ioutil.ReadDir(dir)
 	if nil != err {
@@ -170,7 +187,10 @@ func readSinkMetaDir() error {
 		}
 
 		common.Log.Infof("sinkMeta file : %s", fname)
-		tmpMap[fname] = newUiSink(metadata)
+		tmpMap[fname], err = newUiSink(metadata)
+		if nil != err {
+			return err
+		}
 	}
 	g_sinkMetadata = tmpMap
 	return nil
@@ -190,7 +210,10 @@ func readSinkMetaFile(filePath string) error {
 	}
 	fileName := path.Base(filePath)
 	common.Log.Infof("sinkMeta file : %s", fileName)
-	tmpMap[fileName] = newUiSink(ptrMetadata)
+	tmpMap[fileName], err = newUiSink(ptrMetadata)
+	if nil != err {
+		return err
+	}
 	g_sinkMetadata = tmpMap
 	return nil
 }
@@ -244,7 +267,32 @@ func (this *uiSinks) hintWhenNewSink(pluginName string) (err error) {
 	return err
 }
 
-func (this *uiSink) modifyPropertyNode(mapFields map[string]interface{}) (err error) {
+func modifyCustom(uiFields []*field, ruleFields map[string]interface{}) (err error) {
+	for i, ui := range uiFields {
+		ruleVal := ruleFields[ui.Name]
+		if nil == ruleVal {
+			continue
+		}
+		if reflect.Map == reflect.TypeOf(ruleVal).Kind() {
+			var auxRuleFields map[string]interface{}
+			if err := common.MapToStruct(ruleVal, &auxRuleFields); nil != err {
+				return fmt.Errorf("%s:%v", ui.Name, err)
+			}
+			var auxUiFields []*field
+			if err := common.MapToStruct(ui.Default, &auxUiFields); nil != err {
+				return fmt.Errorf("%s:%v", ui.Name, err)
+			}
+			uiFields[i].Default = auxUiFields
+			if err := modifyCustom(auxUiFields, auxRuleFields); nil != err {
+				return err
+			}
+		} else {
+			uiFields[i].Default = ruleVal
+		}
+	}
+	return nil
+}
+func (this *uiSink) modifyBase(mapFields map[string]interface{}) (err error) {
 	for i, field := range this.Fields {
 		fieldVal := mapFields[field.Name]
 		if nil != fieldVal {
@@ -253,17 +301,23 @@ func (this *uiSink) modifyPropertyNode(mapFields map[string]interface{}) (err er
 	}
 	return nil
 }
+
 func (this *uiSinks) modifyProperty(pluginName string, mapFields map[string]interface{}) (err error) {
-	customProperty := this.CustomProperty[pluginName]
-	if nil != customProperty {
-		customProperty.modifyPropertyNode(mapFields)
+	custom := this.CustomProperty[pluginName]
+	if nil == custom {
+		return fmt.Errorf(`not found pligin:%s`, pluginName)
+	}
+	if err = modifyCustom(custom.Fields, mapFields); nil != err {
+		return err
 	}
 
-	baseProperty := this.BaseProperty[pluginName]
-	if nil != baseProperty {
-		baseProperty.modifyPropertyNode(mapFields)
+	base := this.BaseProperty[pluginName]
+	if nil == base {
+		return fmt.Errorf(`not found pligin:%s`, pluginName)
 	}
-
+	if err = base.modifyBase(mapFields); nil != err {
+		return err
+	}
 	return nil
 }
 
