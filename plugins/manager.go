@@ -368,7 +368,7 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 	}
 	defer r.Close()
 
-	soPrefix := regexp.MustCompile(fmt.Sprintf(`^%s(@.*)?\.so$`, ucFirst(name)))
+	soPrefix := regexp.MustCompile(fmt.Sprintf(`^((%s)|(%s))(@.*)?\.so$`, name, ucFirst(name)))
 	var yamlFile, yamlPath, version string
 	expFiles := 1
 	if t == SOURCE {
