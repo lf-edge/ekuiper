@@ -99,42 +99,37 @@ func (pp *ProjectPlan) getVE(tuple xsql.DataValuer, agg xsql.AggregateData, fv *
 func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	for _, f := range fs {
+		expr := f.Expr
 		//Avoid to re-evaluate for non-agg field has alias name, which was already evaluated in pre-processor operator.
 		if f.AName != "" && !isTest {
-			fr := &xsql.FieldRef{StreamName: "", Name: f.AName}
-			v := ve.Eval(fr)
-			if e, ok := v.(error); ok {
-				return nil, e
-			}
-			result[f.AName] = v
-		} else {
-			v := ve.Eval(f.Expr)
-			if e, ok := v.(error); ok {
-				return nil, e
-			}
-			if _, ok := f.Expr.(*xsql.Wildcard); ok || f.Name == "*" {
-				switch val := v.(type) {
-				case map[string]interface{}:
-					for k, v := range val {
-						if _, ok := result[k]; !ok {
-							result[k] = v
-						}
+			expr = &xsql.FieldRef{StreamName: "", Name: f.AName}
+		}
+		v := ve.Eval(expr)
+		if e, ok := v.(error); ok {
+			return nil, e
+		}
+		if _, ok := f.Expr.(*xsql.Wildcard); ok || f.Name == "*" {
+			switch val := v.(type) {
+			case map[string]interface{}:
+				for k, v := range val {
+					if _, ok := result[k]; !ok {
+						result[k] = v
 					}
-				case xsql.Message:
-					for k, v := range val {
-						if _, ok := result[k]; !ok {
-							result[k] = v
-						}
-					}
-				default:
-					return nil, fmt.Errorf("wildcarder does not return map")
 				}
-			} else {
-				if v != nil {
-					n := assignName(f.Name, f.AName, result)
-					if _, ok := result[n]; !ok {
-						result[n] = v
+			case xsql.Message:
+				for k, v := range val {
+					if _, ok := result[k]; !ok {
+						result[k] = v
 					}
+				}
+			default:
+				return nil, fmt.Errorf("wildcarder does not return map")
+			}
+		} else {
+			if v != nil {
+				n := assignName(f.Name, f.AName, result)
+				if _, ok := result[n]; !ok {
+					result[n] = v
 				}
 			}
 		}

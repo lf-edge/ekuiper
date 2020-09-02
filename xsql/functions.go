@@ -1,6 +1,7 @@
 package xsql
 
 import (
+	"github.com/emqx/kuiper/plugins"
 	"strings"
 )
 
@@ -28,8 +29,14 @@ func (*FunctionValuer) Meta(_ string) (interface{}, bool) {
 var aggFuncMap = map[string]string{"avg": "",
 	"count": "",
 	"max":   "", "min": "",
-	"sum":     "",
+	"sum":         "",
+	"collect":     "",
+	"deduplicate": "",
+}
+
+var funcWithAsteriskSupportMap = map[string]string{
 	"collect": "",
+	"count":   "",
 }
 
 var mathFuncMap = map[string]string{"abs": "", "acos": "", "asin": "", "atan": "", "atan2": "",
@@ -103,4 +110,81 @@ func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bo
 		logger.Debugf("run custom function %s, get result %v", name, result)
 		return result, ok
 	}
+}
+
+func IsAggStatement(node Node) bool {
+	var r = false
+	WalkFunc(node, func(n Node) {
+		if f, ok := n.(*Call); ok {
+			if ok := isAggFunc(f); ok {
+				r = true
+				return
+			}
+		} else if d, ok := n.(Dimensions); ok {
+			ds := d.GetGroups()
+			if ds != nil && len(ds) > 0 {
+				r = true
+				return
+			}
+		}
+	})
+	return r
+}
+
+func isAggFunc(f *Call) bool {
+	fn := strings.ToLower(f.Name)
+	if _, ok := aggFuncMap[fn]; ok {
+		return true
+	} else if _, ok := strFuncMap[fn]; ok {
+		return false
+	} else if _, ok := convFuncMap[fn]; ok {
+		return false
+	} else if _, ok := hashFuncMap[fn]; ok {
+		return false
+	} else if _, ok := otherFuncMap[fn]; ok {
+		return false
+	} else if _, ok := mathFuncMap[fn]; ok {
+		return false
+	} else {
+		if nf, err := plugins.GetFunction(f.Name); err == nil {
+			if nf.IsAggregate() {
+				//Add cache
+				aggFuncMap[fn] = ""
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func HasAggFuncs(node Node) bool {
+	if node == nil {
+		return false
+	}
+	var r = false
+	WalkFunc(node, func(n Node) {
+		if f, ok := n.(*Call); ok {
+			if ok := isAggFunc(f); ok {
+				r = true
+				return
+			}
+		}
+	})
+	return r
+}
+
+func HasNoAggFuncs(node Node) bool {
+	if node == nil {
+		return false
+	}
+	var r = false
+	WalkFunc(node, func(n Node) {
+		if f, ok := n.(*Call); ok {
+			if ok := isAggFunc(f); !ok {
+				r = true
+				return
+			}
+		}
+	})
+	return r
 }
