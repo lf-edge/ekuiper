@@ -3,8 +3,8 @@
 	"about": {
 		"trial": false,
 		"author": {
-			"name": "Jiyong Huang",
-			"email": "huangjy@emqx.io",
+			"name": "EMQ",
+			"email": "contact@emqx.io",
 			"company": "EMQ Technologies Co., Ltd",
 			"website": "https://www.emqx.io"
 		},

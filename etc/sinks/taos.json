@@ -2,8 +2,8 @@
 	"about": {
 		"trial": false,
 		"author": {
-			"name": "Yuedong Ma",
-			"email": "mayuedong@emqx.io",
+			"name": "EMQ",
+			"email": "contact@emqx.io",
 			"company": "EMQ Technologies Co., Ltd",
 			"website": "https://www.emqx.io"
 		},

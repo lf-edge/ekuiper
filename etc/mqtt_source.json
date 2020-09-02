@@ -2,8 +2,8 @@
 	"about": {
 		"trial": false,
 		"author": {
-			"name": "Jiyong Huang",
-			"email": "huangjy@emqx.io",
+			"name": "EMQ",
+			"email": "contact@emqx.io",
 			"company": "EMQ Technologies Co., Ltd",
 			"website": "https://www.emqx.io"
 		},
@@ -21,7 +21,7 @@
 		"default": [{
 			"name": "qos",
 			"default": 1,
-			"optional": false,
+			"optional": true,
 			"control": "select",
 			"type": "int",
 			"values": [0, 1, 2],
@@ -32,20 +32,6 @@
 			"label": {
 				"en_US": "Qos level",
 				"zh_CN": "QoS 级别"
-			}
-		}, {
-			"name": "bufferLength",
-			"default": 102400,
-			"optional": false,
-			"control": "text",
-			"type": "int",
-			"hint": {
-				"en_US": "Specify the maximum number of messages to be buffered in the memory.",
-				"zh_CN": "指定最大缓存消息数目。该参数主要用于防止内存溢出。"
-			},
-			"label": {
-				"en_US": "BufferLength",
-				"zh_CN": "缓存大小"
 			}
 		}, {
 			"name": "sharedSubscription",
