@@ -81,7 +81,9 @@ pluginHosts: https://local.repo.net, https://packages.emqx.io
 The directory structure of the plugins should be similar as following.
 
 ```
-http://host:port/kuiper-plugins/0.9.1/sinks/alpine
+http://host:port/kuiper-plugins/0.9.1/alpine/sinks
+http://host:port/kuiper-plugins/0.9.1/alpine/sources
+http://host:port/kuiper-plugins/0.9.1/alpine/functions
 ```
 
 The content of the page should be similar as below.

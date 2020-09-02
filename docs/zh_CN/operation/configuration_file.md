@@ -80,7 +80,9 @@ pluginHosts: https://local.repo.net, https://packages.emqx.io
 插件的目录结构应如下所示。
 
 ```
-http://host:port/kuiper-plugins/0.9.1/sinks/alpine
+http://host:port/kuiper-plugins/0.9.1/alpine/sinks
+http://host:port/kuiper-plugins/0.9.1/alpine/sources
+http://host:port/kuiper-plugins/0.9.1/alpine/functions
 ```
 
 页面内容如下所示。
