@@ -212,9 +212,15 @@ func NewPluginManager() (*Manager, error) {
 			etcDir:    etcDir,
 			registry:  registry,
 		}
-		readSourceMetaDir()
-		readSinkMetaDir()
-		readFuncMetaDir()
+		if err := readSourceMetaDir(); nil != err {
+			common.Log.Errorf("readSourceMetaDir:%v", err)
+		}
+		if err := readSinkMetaDir(); nil != err {
+			common.Log.Errorf("readSinkMetaDir:%v", err)
+		}
+		if err := readFuncMetaDir(); nil != err {
+			common.Log.Errorf("readFuncMetaDir:%v", err)
+		}
 	})
 	return singleton, outerErr
 }
@@ -278,11 +284,17 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		return fmt.Errorf("fail to unzip file %s: %s", uri, err)
 	}
 	if SINK == t {
-		readSinkMetaFile(path.Join(m.etcDir, PluginTypes[t], name+`.json`))
+		if err := readSinkMetaFile(path.Join(m.etcDir, PluginTypes[t], name+`.json`)); nil != err {
+			common.Log.Errorf("readSinkFile:%v", err)
+		}
 	} else if SOURCE == t {
-		readSourceMetaFile(path.Join(m.etcDir, PluginTypes[t], name+`.json`))
+		if err := readSourceMetaFile(path.Join(m.etcDir, PluginTypes[t], name+`.json`)); nil != err {
+			common.Log.Errorf("readSourceFile:%v", err)
+		}
 	} else if FUNCTION == t {
-		readFuncMetaFile(path.Join(m.etcDir, PluginTypes[t], name+`.json`))
+		if err := readFuncMetaFile(path.Join(m.etcDir, PluginTypes[t], name+`.json`)); nil != err {
+			common.Log.Errorf("readFuncFile:%v", err)
+		}
 	}
 	m.registry.Store(t, name, version)
 	return nil
@@ -301,7 +313,10 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	paths := []string{
 		path.Join(m.pluginDir, PluginTypes[t], soFile),
 	}
-	os.Remove(path.Join(m.etcDir, PluginTypes[t], name+".json"))
+	if err := os.Remove(path.Join(m.etcDir, PluginTypes[t], name+".json")); nil != err {
+		common.Log.Errorf("delMetadataFile %s:%v", name+".json", err)
+	}
+
 	if t == SOURCE {
 		paths = append(paths, path.Join(m.etcDir, PluginTypes[t], name+".yaml"))
 	}
