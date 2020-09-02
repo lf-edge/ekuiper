@@ -281,6 +281,8 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		readSinkMetaFile(path.Join(m.etcDir, PluginTypes[t], name+`.json`))
 	} else if SOURCE == t {
 		readSourceMetaFile(path.Join(m.etcDir, PluginTypes[t], name+`.json`))
+	} else if FUNCTION == t {
+		readFuncMetaFile(path.Join(m.etcDir, PluginTypes[t], name+`.json`))
 	}
 	m.registry.Store(t, name, version)
 	return nil
