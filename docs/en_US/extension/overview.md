@@ -14,9 +14,9 @@ Currently golang plugins are only supported on Linux and macOS which poses the s
 
 ## Naming
 
-Notice that, there are some restrictions for the names:
-1. The name of _.so_ file must be camel case with an upper case first letter. For example, _MySource.so_ or _MySink.so_.
-2. The name of the export symbol of the plugin must be camel case with an upper case first letter.
+We recommend plugin name to be camel case. Notice that, there are some restrictions for the names:
+1. The name of the export symbol of the plugin should be camel case with an **upper case first letter**. It must be the same as the plugin name except the first letter. For example, plugin name _file_ must export a symbol _File_.
+2. The name of _.so_ file must be the same as the export symbol name or the plugin name. For example, _MySource.so_ or _mySink.so_.
 
 ### Version
 
