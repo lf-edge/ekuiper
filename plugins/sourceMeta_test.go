@@ -28,7 +28,10 @@ func TestGetSourceMeta(t *testing.T) {
 	if err := json.Unmarshal([]byte(g_template), fileMeta); nil != err {
 		t.Error(err)
 	}
-	meta := newUiSource(fileMeta)
+	meta, err := newUiSource(fileMeta)
+	if nil != err {
+		t.Error(err)
+	}
 	source.cf = cf
 	source.meta = meta
 	g_sourceProperty = make(map[string]*sourceProperty)
