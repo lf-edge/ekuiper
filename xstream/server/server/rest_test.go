@@ -209,9 +209,9 @@ func TestFetchPluginList(t1 *testing.T) {
 		t1.Errorf("Error: %v", e)
 	} else {
 		exp := map[string]string{
-			"file":   server1.URL + "/kuiper-plugins/" + version + "/sinks/alpine/file_arm64.zip",
-			"influx": server1.URL + "/kuiper-plugins/" + version + "/sinks/alpine/influx_arm64.zip",
-			"zmq":    server2.URL + "/kuiper-plugins/" + version + "/sinks/alpine/zmq_arm64.zip",
+			"file":   server1.URL + "/kuiper-plugins/" + version + "/alpine/sinks/file_arm64.zip",
+			"influx": server1.URL + "/kuiper-plugins/" + version + "/alpine/sinks/influx_arm64.zip",
+			"zmq":    server2.URL + "/kuiper-plugins/" + version + "/alpine/sinks/zmq_arm64.zip",
 		}
 		if !reflect.DeepEqual(exp, r) {
 			t1.Errorf("result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", exp, r)
@@ -222,8 +222,8 @@ func TestFetchPluginList(t1 *testing.T) {
 		t1.Errorf("Error: %v", e)
 	} else {
 		exp := map[string]string{
-			"zmq":  server2.URL + "/kuiper-plugins/" + version + "/sinks/alpine/zmq_arm64.zip",
-			"file": server2.URL + "/kuiper-plugins/" + version + "/sinks/alpine/file_arm64.zip",
+			"zmq":  server2.URL + "/kuiper-plugins/" + version + "/alpine/sinks/zmq_arm64.zip",
+			"file": server2.URL + "/kuiper-plugins/" + version + "/alpine/sinks/file_arm64.zip",
 		}
 		if !reflect.DeepEqual(exp, r) {
 			t1.Errorf("result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", exp, r)
