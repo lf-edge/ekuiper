@@ -27,23 +27,23 @@ type (
 	}
 )
 
-func newUiSource(fi *fileSource) *uiSource {
+func newUiSource(fi *fileSource) (*uiSource, error) {
 	if nil == fi {
-		return nil
+		return nil, nil
 	}
+	var err error
 	ui := new(uiSource)
 	ui.Libs = fi.Libs
 	ui.About = newAbout(fi.About)
 	ui.ConfKeys = make(map[string][]*field)
 
 	for k, fields := range fi.ConfKeys {
-		var sliField []*field
-		for _, v := range fields {
-			sliField = append(sliField, newField(v))
+		if ui.ConfKeys[k], err = newField(fields); nil != err {
+			return nil, err
 		}
-		ui.ConfKeys[k] = sliField
+
 	}
-	return ui
+	return ui, nil
 }
 
 var g_sourceProperty map[string]*sourceProperty
@@ -71,7 +71,10 @@ func readSourceMetaFile(filePath string) error {
 
 	property := new(sourceProperty)
 	property.cf = yamlData
-	property.meta = newUiSource(ptrMeta)
+	property.meta, err = newUiSource(ptrMeta)
+	if nil != err {
+		return err
+	}
 
 	g_sourceProperty[fileName] = property
 	return err
