@@ -81,9 +81,6 @@ type (
 	}
 )
 
-//const internal sinks
-var InternalSinks = [...]string{"log", "mqtt", "rest", "nop", "edgex"}
-
 func newLanguage(fi *fileLanguage) *language {
 	if nil == fi {
 		return nil
@@ -108,15 +105,16 @@ func newField(fis []*fileField) (uis []*field, err error) {
 		ui.Hint = newLanguage(fi.Hint)
 		ui.Label = newLanguage(fi.Label)
 
-		if nil != fi.Default && reflect.Slice == reflect.TypeOf(fi.Default).Kind() {
+		switch t := fi.Default.(type) {
+		case []map[string]interface{}:
 			var auxFi []*fileField
-			if err = common.MapToStruct(fi.Default, &auxFi); nil != err {
+			if err = common.MapToStruct(t, &auxFi); nil != err {
 				return nil, err
 			}
 			if ui.Default, err = newField(auxFi); nil != err {
 				return nil, err
 			}
-		} else {
+		default:
 			ui.Default = fi.Default
 		}
 	}
@@ -154,21 +152,6 @@ func readSinkMetaDir() error {
 
 	dir := path.Join(confDir, "sinks")
 	tmpMap := make(map[string]*uiSink)
-
-	//The internal support sinks
-	for _, sink := range InternalSinks {
-		file := path.Join(confDir, "sinks", "internal", sink+".json")
-		common.Log.Infof("Loading metadata file for sink: %s", file)
-		meta := new(fileSink)
-		err := common.ReadJsonUnmarshal(file, meta)
-		if nil != err {
-			return fmt.Errorf("Failed to load internal sink plugin:%s with err:%v", file, err)
-		}
-		tmpMap[sink+".json"], err = newUiSink(meta)
-		if nil != err {
-			return err
-		}
-	}
 	files, err := ioutil.ReadDir(dir)
 	if nil != err {
 		return err
@@ -185,8 +168,7 @@ func readSinkMetaDir() error {
 		if nil != err {
 			return fmt.Errorf("fname:%s err:%v", fname, err)
 		}
-
-		common.Log.Infof("sinkMeta file : %s", fname)
+		common.Log.Infof("Loading metadata file for sink: %s", fname)
 		tmpMap[fname], err = newUiSink(metadata)
 		if nil != err {
 			return err
@@ -209,7 +191,7 @@ func readSinkMetaFile(filePath string) error {
 		tmpMap[k] = v
 	}
 	fileName := path.Base(filePath)
-	common.Log.Infof("sinkMeta file : %s", fileName)
+	common.Log.Infof("Loading metadata file for sink: %s", fileName)
 	tmpMap[fileName], err = newUiSink(ptrMetadata)
 	if nil != err {
 		return err
