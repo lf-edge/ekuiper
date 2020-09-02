@@ -53,6 +53,21 @@ For such a default configuration, Kuiper will export metrics and serve prometheu
 
 The URL where hosts all of pre-build plugins. By default it's at `packages.emqx.io`. There could be several hosts (host can be separated with comma), if same package could be found in the several hosts, then the package in the 1st host will have the highest priority.
 
+Please notice that only the plugins that can be installed to the current Kuiper instance will be listed through below Rest-APIs.  
+
+```
+GET http://localhost:9081/plugins/sources/prebuild
+GET http://localhost:9081/plugins/sinks/prebuild
+GET http://localhost:9081/plugins/functions/prebuild
+```
+It has following conditions to make the plugins listed through previous APIs,
+
+- Kuiper version: The plugins must be built for the Kuiper instance version. If the plugins cannot be found  for a specific version, no plugins will be returned.
+- Operating system: Now only Linux system is supported, so if Kuiper is running at other operating systems,  no plugins will be returned.
+- CPU architecture: Only with correct CPU architecture built plugins are found in the plugin repository can the plugins be returned.
+- EMQ official released Docker images: Only when the Kuiper is running at EMQ official released Docker images can the plugins be returned.
+
+
 ```yaml
 pluginHosts: https://packages.emqx.io
 ```
