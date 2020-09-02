@@ -49,7 +49,7 @@ basic:
 ```
 For such a default configuration, Kuiper will export metrics and serve prometheus at `http://localhost:20499/metrics`
 
-## Pluginhosts
+## Pluginhosts Configuration
 
 The URL where hosts all of pre-build plugins. By default it's at `packages.emqx.io`. There could be several hosts (host can be separated with comma), if same package could be found in the several hosts, then the package in the 1st host will have the highest priority.
 

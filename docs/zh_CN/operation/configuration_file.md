@@ -50,9 +50,9 @@ basic:
 
 ## Pluginhosts 配置
 
-The URL where hosts all of pre-build plugins. By default it's at `packages.emqx.io`. There could be several hosts (host can be separated with comma), if same package could be found in the several hosts, then the package in the 1st host will have the highest priority.
+该 URL 对所有预构建插件托管。 默认情况下，它位于 `packages.emqx.io` 中。 可能有多个主机（主机可以用逗号分隔），如果可以在多个主机中找到相同的程序包，则第一个主机中的程序包将具有最高优先级。
 
-Please notice that only the plugins that can be installed to the current Kuiper instance will be listed through below Rest-APIs.  
+请注意，只有安装到当前 Kuiper 实例的插件才会通过 Rest-API 下方列出。
 
 ```
 GET http://localhost:9081/plugins/sources/prebuild
@@ -60,30 +60,30 @@ GET http://localhost:9081/plugins/sinks/prebuild
 GET http://localhost:9081/plugins/functions/prebuild
 ```
 
-It has following conditions to make the plugins listed through previous APIs,
+如果希望通过以前的API列出的插件，则应具有以下条件：
 
-- Kuiper version: The plugins must be built for the Kuiper instance version. If the plugins cannot be found  for a specific version, no plugins will be returned.
-- Operating system: Now only Linux system is supported, so if Kuiper is running at other operating systems,  no plugins will be returned.
-- CPU architecture: Only with correct CPU architecture built plugins are found in the plugin repository can the plugins be returned.
-- EMQ official released Docker images: Only when the Kuiper is running at EMQ official released Docker images can the plugins be returned.
+- Kuiper 版本：必须为 Kuiper 实例版本构建插件。 如果找不到特定版本的插件，则不会返回任何插件。
+- 操作系统：现在仅支持 Linux 系统，因此，如果Kuiper在其他操作系统上运行，则不会返回任何插件。
+- CPU 架构：只有在正确的 CPU 架构中构建的插件，才能在插件存储库中找到并返回。
+- EMQ 官方发布的 Docker 映像：仅当 Kuiper 在 EMQ 官方发布的 Docker 映像上运行时，才能返回插件。
 
 ```yaml
 pluginHosts: https://packages.emqx.io
 ```
 
-It could be also as following, you can specify a local repository, and the plugin in that repository will have higher priorities.
+具体如下所示，您可以指定本地存储库，该存储库中的插件将具有更高的优先级。
 
 ```yaml
 pluginHosts: https://local.repo.net, https://packages.emqx.io
 ```
 
-The directory structure of the plugins should be similar as following.
+插件的目录结构应如下所示。
 
 ```
 http://host:port/kuiper-plugins/0.9.1/sinks/alpine
 ```
 
-The content of the page should be similar as below.
+页面内容如下所示。
 
 ```html
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
@@ -117,14 +117,14 @@ The content of the page should be similar as below.
 ## Sink 配置
 
 ```yaml
-  #The cache persistence threshold size. If the message in sink cache is larger than 10, then it triggers persistence. If you find the remote system is slow to response, or sink throughput is small, then it's recommend to increase below 2 configurations.More memory is required with the increase of below 2 configurations.
+  #缓存持久化阈值。 如果接收器高速缓存中的消息大于10，则它将触发持久化。 如果发现远程系统响应速度慢或接收器吞吐量很小，则建议增加2种以下配置，此时需要更多内存。
 
-  # If the message count reaches below value, then it triggers persistence.
+  # 如果消息计数达到以下值，则会触发持久化。
   cacheThreshold: 10
-  # The message persistence is triggered by a ticker, and cacheTriggerCount is for using configure the count to trigger the persistence procedure regardless if the message number reaches cacheThreshold or not. This is to prevent the data won't be saved as the cache never pass the threshold.
+  # 消息持久化由代码触发，cacheTriggerCount 用于使用配置计数来触发持久化过程，而不管消息号是否达到cacheThreshold。 这是为了防止由于缓存永远不会超过阈值而无法保存数据。
   cacheTriggerCount: 15
 
-  # Control to disable cache or not. If it's set to true, then the cache will be disabled, otherwise, it will be enabled.
+  # 控制是否禁用缓存。 如果将其设置为true，则将禁用缓存，否则将启用缓存。
   disableCache: false
 ```
 
