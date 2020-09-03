@@ -1026,6 +1026,7 @@ func (p *Parser) parseStreamStructType() (FieldType, error) {
 	} else {
 		if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == COMMA {
 			rf.StreamFields = sfs
+			p.unscan()
 		} else if tok2 == RPAREN {
 			rf.StreamFields = sfs
 			p.unscan()

@@ -286,10 +286,54 @@ func TestParser_ParseCreateStream(t *testing.T) {
 			//TODO The error string should be more accurate
 			err: `found "DATASOURCE", expect stream options.`,
 		},
+		{
+			s: `CREATE STREAM test(
+					userID bigint,
+					username string,
+					NICKNAMES array(string),
+					Gender boolean,
+					ADDRESS struct(
+						TREET_NAME string, NUMBER bigint
+					), 
+					INFO struct(
+						INFO_NAME string, NUMBER bigint
+					)
+				) WITH (DATASOURCE="test", FORMAT="JSON", CONF_KEY="democonf", TYPE="MQTT");`,
+			stmt: &StreamStmt{
+				Name: StreamName("test"),
+				StreamFields: []StreamField{
+					{Name: "userID", FieldType: &BasicType{Type: BIGINT}},
+					{Name: "username", FieldType: &BasicType{Type: STRINGS}},
+					{Name: "NICKNAMES", FieldType: &ArrayType{Type: STRINGS}},
+					{Name: "Gender", FieldType: &BasicType{Type: BOOLEAN}},
+					{Name: "ADDRESS", FieldType: &RecType{
+						StreamFields: []StreamField{
+							{Name: "TREET_NAME", FieldType: &BasicType{Type: STRINGS}},
+							{Name: "NUMBER", FieldType: &BasicType{Type: BIGINT}},
+						},
+					}},
+					{Name: "INFO", FieldType: &RecType{
+						StreamFields: []StreamField{
+							{Name: "INFO_NAME", FieldType: &BasicType{Type: STRINGS}},
+							{Name: "NUMBER", FieldType: &BasicType{Type: BIGINT}},
+						},
+					}},
+				},
+				Options: map[string]string{
+					"DATASOURCE": "test",
+					"FORMAT":     "JSON",
+					"CONF_KEY":   "democonf",
+					"TYPE":       "MQTT",
+				},
+			},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
+		if i != len(tests)-1 {
+			continue
+		}
 		stmt, err := NewParser(strings.NewReader(tt.s)).ParseCreateStreamStmt()
 		if !reflect.DeepEqual(tt.err, errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
