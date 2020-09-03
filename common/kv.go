@@ -145,7 +145,7 @@ func (m *SimpleKVStore) saveToFile() error {
 
 func (m *SimpleKVStore) Set(key string, value interface{}) error {
 	if m.c == nil {
-		return fmt.Errorf("cache %s has not been initialized yet", m.path)
+		return fmt.Errorf("cache %s has not been initialized yet.", m.path)
 	}
 	if err := m.c.Add(key, value, cache.NoExpiration); err != nil {
 		return err
@@ -155,7 +155,7 @@ func (m *SimpleKVStore) Set(key string, value interface{}) error {
 
 func (m *SimpleKVStore) Replace(key string, value interface{}) error {
 	if m.c == nil {
-		return fmt.Errorf("cache %s has not been initialized yet", m.path)
+		return fmt.Errorf("cache %s has not been initialized yet.", m.path)
 	}
 	m.c.Set(key, value, cache.NoExpiration)
 	return m.saveToFile()
@@ -167,7 +167,7 @@ func (m *SimpleKVStore) Get(key string) (interface{}, bool) {
 
 func (m *SimpleKVStore) Delete(key string) error {
 	if m.c == nil {
-		return fmt.Errorf("cache %s has not been initialized yet", m.path)
+		return fmt.Errorf("cache %s has not been initialized yet.", m.path)
 	}
 	if _, found := m.c.Get(key); found {
 		m.c.Delete(key)
@@ -179,7 +179,7 @@ func (m *SimpleKVStore) Delete(key string) error {
 
 func (m *SimpleKVStore) Keys() (keys []string, err error) {
 	if m.c == nil {
-		return nil, fmt.Errorf("Cache %s has not been initialized yet.", m.path)
+		return nil, fmt.Errorf("cache %s has not been initialized yet.", m.path)
 	}
 	its := m.c.Items()
 	keys = make([]string, 0, len(its))
