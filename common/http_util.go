@@ -46,7 +46,7 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 			switch value.(type) {
 			case []interface{}, map[string]interface{}:
 				if temp, err := json.Marshal(value); err != nil {
-					return nil, fmt.Errorf("fail to parse fomr value: %v", err)
+					return nil, fmt.Errorf("fail to parse from value: %v", err)
 				} else {
 					vstr = string(temp)
 				}
