@@ -281,11 +281,38 @@ Kuiper 具有许多内置函数，可以对数据执行计算。(具体文档参
 
 元数据文件格式为 JSON，主要分成以下部分：
 
+#### about
+
+* trial:表示插件是否可用
+
+* author
+
+  这部分包含了插件的作者信息，插件开发者可以视情况提供这些信息，这部分信息会被展示在管理控制台的插件信息列表上。
+
+     * name：名字
+     * email：电子邮件地址
+     * company：公司名称
+     * website：公司网站地址
+
+* helpUrl
+
+  该插件的帮助文件地址，控制台会根据语言的支持情况，链接到对应的帮助文档中。
+
+     * en_US：英文文档帮助地址
+     * zh_CN：中文文档帮助地址
+
+* description
+
+  该插件的简单描述，控制台支持多种语言。
+
+  * en_US：英文描述
+  * zh_CN：中文描述
+
+#### functions
+
 - name：属性名称；**该字段必须提供；**
-- control：控件类型，控制在界面中显示的控件类型；**该字段必须提供；**
-  - text：文本输入框
 - example：样例
-- hint：控件的提示信息；该字段可选；
+- hint：函数的提示信息；该字段可选；
   - en_US
   - zh_CN
 
@@ -294,15 +321,33 @@ Kuiper 具有许多内置函数，可以对数据执行计算。(具体文档参
 以下为样例元数据文件。
 
 ```json
-[{
-	"name": "avg",
-	"control": "text",
-	"example": "avg(col1)",
-	"hint": {
-		"en_US": "The file path for saving the result",
-		"zh_CN": "组中的平均值。空值不参与计算。"
-	}
-}]
+{
+	"about": {
+		"trial":false,
+		"author": {
+			"name": "",
+			"email": "",
+			"company": "",
+			"website": ""
+		},
+		"helpUrl": {
+			"en_US": "",
+			"zh_CN": ""
+		},
+		"description": {
+			"en_US": "",
+			"zh_CN": ""
+		}
+	},
+	"functions": [{
+		"name": "",
+		"example": "",
+		"hint": {
+			"en_US": "",
+			"zh_CN": ""
+		}
+	}]
+}
 ```
 
 

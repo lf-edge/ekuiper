@@ -48,7 +48,7 @@ func newUiSource(fi *fileSource) (*uiSource, error) {
 
 var g_sourceProperty map[string]*sourceProperty
 
-func readSourceMetaFile(filePath string) error {
+func (m *Manager) readSourceMetaFile(filePath string) error {
 	fileName := path.Base(filePath)
 	ptrMeta := new(fileSource)
 	err := common.ReadJsonUnmarshal(filePath, ptrMeta)
@@ -57,6 +57,11 @@ func readSourceMetaFile(filePath string) error {
 	}
 	if 0 == len(ptrMeta.ConfKeys["default"]) {
 		return fmt.Errorf("not found default confKey %s", filePath)
+	}
+	if nil == ptrMeta.About {
+		return fmt.Errorf("not found about of %s", filePath)
+	} else {
+		_, ptrMeta.About.Installed = m.registry.Get(SOURCE, strings.TrimSuffix(fileName, `.json`))
 	}
 
 	yamlData := make(map[string]map[string]interface{})
@@ -80,7 +85,7 @@ func readSourceMetaFile(filePath string) error {
 	return err
 }
 
-func readSourceMetaDir() error {
+func (m *Manager) readSourceMetaDir() error {
 	g_sourceProperty = make(map[string]*sourceProperty)
 	confDir, err := common.GetConfLoc()
 	if nil != err {
@@ -93,7 +98,7 @@ func readSourceMetaDir() error {
 		return err
 	}
 
-	if err = readSourceMetaFile(path.Join(confDir, "mqtt_source.json")); nil != err {
+	if err = m.readSourceMetaFile(path.Join(confDir, "mqtt_source.json")); nil != err {
 		return err
 	}
 
@@ -101,7 +106,7 @@ func readSourceMetaDir() error {
 		fileName := info.Name()
 		if strings.HasSuffix(fileName, ".json") {
 			filePath := path.Join(dir, fileName)
-			if err = readSourceMetaFile(filePath); nil != err {
+			if err = m.readSourceMetaFile(filePath); nil != err {
 				return err
 			}
 			common.Log.Infof("sourceMeta file : %s", fileName)
@@ -129,7 +134,18 @@ func GetSources() (sources []*pluginfo) {
 			continue
 		}
 		node.About = v.meta.About
-		sources = append(sources, node)
+		i := 0
+		for ; i < len(sources); i++ {
+			if node.Name <= sources[i].Name {
+				sources = append(sources, node)
+				copy(sources[i+1:], sources[i:])
+				sources[i] = node
+				break
+			}
+		}
+		if len(sources) == i {
+			sources = append(sources, node)
+		}
 	}
 	return sources
 }

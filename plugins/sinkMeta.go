@@ -38,6 +38,7 @@ type (
 	}
 	fileAbout struct {
 		Trial       bool          `json:"trial"`
+		Installed   bool          `json:"installed"`
 		Author      *author       `json:"author"`
 		HelpUrl     *fileLanguage `json:"helpUrl"`
 		Description *fileLanguage `json:"description"`
@@ -53,6 +54,7 @@ type (
 	}
 	about struct {
 		Trial       bool      `json:"trial"`
+		Installed   bool      `json:"installed"`
 		Author      *author   `json:"author"`
 		HelpUrl     *language `json:"helpUrl"`
 		Description *language `json:"description"`
@@ -144,14 +146,14 @@ func newUiSink(fi *fileSink) (*uiSink, error) {
 }
 
 var g_sinkMetadata map[string]*uiSink //map[fileName]
-func readSinkMetaDir() error {
+func (m *Manager) readSinkMetaDir() error {
+	g_sinkMetadata = make(map[string]*uiSink)
 	confDir, err := common.GetConfLoc()
 	if nil != err {
 		return err
 	}
 
 	dir := path.Join(confDir, "sinks")
-	tmpMap := make(map[string]*uiSink)
 	files, err := ioutil.ReadDir(dir)
 	if nil != err {
 		return err
@@ -163,42 +165,36 @@ func readSinkMetaDir() error {
 		}
 
 		filePath := path.Join(dir, fname)
-		metadata := new(fileSink)
-		err = common.ReadJsonUnmarshal(filePath, metadata)
-		if nil != err {
-			return fmt.Errorf("fname:%s err:%v", fname, err)
-		}
-		common.Log.Infof("Loading metadata file for sink: %s", fname)
-		tmpMap[fname], err = newUiSink(metadata)
-		if nil != err {
+		if err := m.readSinkMetaFile(filePath); nil != err {
 			return err
 		}
 	}
-	g_sinkMetadata = tmpMap
 	return nil
 }
 
-func readSinkMetaFile(filePath string) error {
-	ptrMetadata := new(fileSink)
-	err := common.ReadJsonUnmarshal(filePath, ptrMetadata)
+func (m *Manager) readSinkMetaFile(filePath string) error {
+	finame := path.Base(filePath)
+	pluginName := strings.TrimSuffix(finame, `.json`)
+	metadata := new(fileSink)
+	err := common.ReadJsonUnmarshal(filePath, metadata)
 	if nil != err {
 		return fmt.Errorf("filePath:%s err:%v", filePath, err)
 	}
-
-	sinkMetadata := g_sinkMetadata
-	tmpMap := make(map[string]*uiSink)
-	for k, v := range sinkMetadata {
-		tmpMap[k] = v
+	if pluginName != baseProperty && pluginName != baseOption {
+		if nil == metadata.About {
+			return fmt.Errorf("not found about of %s", finame)
+		} else {
+			_, metadata.About.Installed = m.registry.Get(SINK, pluginName)
+		}
 	}
-	fileName := path.Base(filePath)
-	common.Log.Infof("Loading metadata file for sink: %s", fileName)
-	tmpMap[fileName], err = newUiSink(ptrMetadata)
+	g_sinkMetadata[finame], err = newUiSink(metadata)
 	if nil != err {
 		return err
 	}
-	g_sinkMetadata = tmpMap
+	common.Log.Infof("Loading metadata file for sink: %s", finame)
 	return nil
 }
+
 func (this *uiSinks) setCustomProperty(pluginName string) error {
 	fileName := pluginName + `.json`
 	sinkMetadata := g_sinkMetadata
@@ -367,7 +363,18 @@ func GetSinks() (sinks []*pluginfo) {
 		node := new(pluginfo)
 		node.Name = strings.TrimSuffix(fileName, `.json`)
 		node.About = v.About
-		sinks = append(sinks, node)
+		i := 0
+		for ; i < len(sinks); i++ {
+			if node.Name <= sinks[i].Name {
+				sinks = append(sinks, node)
+				copy(sinks[i+1:], sinks[i:])
+				sinks[i] = node
+				break
+			}
+		}
+		if len(sinks) == i {
+			sinks = append(sinks, node)
+		}
 	}
 	return sinks
 }
