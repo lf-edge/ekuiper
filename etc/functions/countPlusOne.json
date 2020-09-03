@@ -1,0 +1,28 @@
+{
+	"about": {
+		"trial": false,
+		"author": {
+			"name": "EMQ",
+			"email": "contact@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "",
+			"zh_CN": ""
+		},
+		"description": {
+			"en_US": "",
+			"zh_CN": ""
+		}
+	},
+	"functions": [{
+		"name": "countPlusOne",
+		"example": "countPlusOne(col1)",
+		"hint": {
+			"en_US": "",
+			"zh_CN": "输出参数长度加一"
+		}
+	}]
+}
+

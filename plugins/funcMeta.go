@@ -11,33 +11,43 @@ import (
 type (
 	fileFunc struct {
 		Name    string        `json:"name"`
-		Control string        `json:"control"`
 		Example string        `json:"example"`
 		Hint    *fileLanguage `json:"hint"`
 	}
+	fileFuncs struct {
+		About   *fileAbout  `json:"about"`
+		FiFuncs []*fileFunc `json:"functions"`
+	}
 	uiFunc struct {
 		Name    string    `json:"name"`
-		Control string    `json:"control"`
 		Example string    `json:"example"`
 		Hint    *language `json:"hint"`
 	}
+	uiFuncs struct {
+		About   *about    `json:"about"`
+		UiFuncs []*uiFunc `json:"functions"`
+	}
 )
 
-func newUiFunc(fi *fileFunc) *uiFunc {
+func newUiFuncs(fi *fileFuncs) *uiFuncs {
 	if nil == fi {
 		return nil
 	}
-	ui := new(uiFunc)
-	ui.Name = fi.Name
-	ui.Control = fi.Control
-	ui.Example = fi.Example
-	ui.Hint = newLanguage(fi.Hint)
-	return ui
+	uis := new(uiFuncs)
+	uis.About = newAbout(fi.About)
+	for _, v := range fi.FiFuncs {
+		ui := new(uiFunc)
+		ui.Name = v.Name
+		ui.Example = v.Example
+		ui.Hint = newLanguage(v.Hint)
+		uis.UiFuncs = append(uis.UiFuncs, ui)
+	}
+	return uis
 }
 
-var g_funcMetadata []*uiFunc
+var g_funcMetadata []*uiFuncs
 
-func readFuncMetaDir() error {
+func (m *Manager) readFuncMetaDir() error {
 	confDir, err := common.GetConfLoc()
 	if nil != err {
 		return err
@@ -55,32 +65,38 @@ func readFuncMetaDir() error {
 		}
 
 		filePath := path.Join(dir, fname)
-		var fis []*fileFunc
-		err = common.ReadJsonUnmarshal(filePath, &fis)
+		fis := new(fileFuncs)
+		err = common.ReadJsonUnmarshal(filePath, fis)
 		if nil != err {
 			return fmt.Errorf("fname:%s err:%v", fname, err)
 		}
-		common.Log.Infof("funcMeta file : %s", fname)
-		for _, fi := range fis {
-			g_funcMetadata = append(g_funcMetadata, newUiFunc(fi))
+		if nil == fis.About {
+			return fmt.Errorf("not found about of %s", filePath)
+		} else {
+			_, fis.About.Installed = m.registry.Get(FUNCTION, strings.TrimSuffix(fname, `.json`))
 		}
+		common.Log.Infof("funcMeta file : %s", fname)
+		g_funcMetadata = append(g_funcMetadata, newUiFuncs(fis))
 	}
 	return nil
 }
 
-func readFuncMetaFile(filePath string) error {
-	var fis []*fileFunc
-	err := common.ReadJsonUnmarshal(filePath, &fis)
+func (m *Manager) readFuncMetaFile(filePath string) error {
+	fiName := path.Base(filePath)
+	fis := new(fileFuncs)
+	err := common.ReadJsonUnmarshal(filePath, fis)
 	if nil != err {
 		return fmt.Errorf("filePath:%s err:%v", filePath, err)
 	}
-	for _, fi := range fis {
-		g_funcMetadata = append(g_funcMetadata, newUiFunc(fi))
+	if nil == fis.About {
+		return fmt.Errorf("not found about of %s", filePath)
+	} else {
+		_, fis.About.Installed = m.registry.Get(FUNCTION, strings.TrimSuffix(fiName, `.json`))
 	}
-
-	common.Log.Infof("funcMeta file : %s", path.Base(filePath))
+	g_funcMetadata = append(g_funcMetadata, newUiFuncs(fis))
+	common.Log.Infof("funcMeta file : %s", fiName)
 	return nil
 }
-func GetFunctions() []*uiFunc {
+func GetFunctions() []*uiFuncs {
 	return g_funcMetadata
 }

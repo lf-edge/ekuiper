@@ -1,0 +1,27 @@
+{
+	"about": {
+		"trial": false,
+		"author": {
+			"name": "EMQ",
+			"email": "contact@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "",
+			"zh_CN": ""
+		},
+		"description": {
+			"en_US": "",
+			"zh_CN": ""
+		}
+	},
+	"functions": [{
+		"name": "echo",
+		"example": "echo(col1)",
+		"hint": {
+			"en_US": "",
+			"zh_CN": "原样输出参数值。"
+		}
+	}]
+}
