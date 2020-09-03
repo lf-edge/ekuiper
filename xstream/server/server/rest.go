@@ -102,6 +102,7 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/metadata/sinks/rule/{id}", showSinkMetaHandler).Methods(http.MethodGet)
 
 	r.HandleFunc("/metadata/sources", sourcesMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources/yaml/{name}", sourceConfHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/{name}", sourceMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/{name}/confKeys", sourceConfKeysHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/{name}/confKeys/{confKey}", sourceConfKeyHandler).Methods(http.MethodDelete, http.MethodPost)
@@ -617,6 +618,20 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	if nil != ret {
 		jsonResponse(ret, w, logger)
 		return
+	}
+}
+
+//Get source yaml
+func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	ret, err := plugins.GetSourceConf(pluginName)
+	if err != nil {
+		handleError(w, err, "metadata error", logger)
+		return
+	} else {
+		w.Write(ret)
 	}
 }
 
