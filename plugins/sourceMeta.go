@@ -115,6 +115,22 @@ func (m *Manager) readSourceMetaDir() error {
 	return nil
 }
 
+func GetSourceConf(pluginName string) (b []byte, err error) {
+	property, ok := g_sourceProperty[pluginName+".json"]
+	if ok {
+		cf := make(map[string]map[string]interface{})
+		for key, kvs := range property.cf {
+			aux := make(map[interface{}]interface{})
+			for k, v := range kvs {
+				aux[k] = v
+			}
+			cf[key] = common.ConvertMap(aux)
+		}
+		return json.Marshal(cf)
+	}
+	return nil, fmt.Errorf("not found plugin %s", pluginName)
+}
+
 func GetSourceMeta(pluginName string) (ptrSourceProperty *uiSource, err error) {
 	property, ok := g_sourceProperty[pluginName+".json"]
 	if ok {

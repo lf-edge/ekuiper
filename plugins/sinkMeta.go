@@ -128,6 +128,7 @@ func newAbout(fi *fileAbout) *about {
 	}
 	ui := new(about)
 	ui.Trial = fi.Trial
+	ui.Installed = fi.Installed
 	ui.Author = fi.Author
 	ui.HelpUrl = newLanguage(fi.HelpUrl)
 	ui.Description = newLanguage(fi.Description)
