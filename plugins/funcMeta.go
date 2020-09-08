@@ -29,6 +29,15 @@ type (
 	}
 )
 
+func isInternalFunc(fiName string) bool {
+	internal := []string{`accumulateWordCount.json`, `countPlusOne.json`, `echo.json`, `internal.json`}
+	for _, v := range internal {
+		if v == fiName {
+			return true
+		}
+	}
+	return false
+}
 func newUiFuncs(fi *fileFuncs) *uiFuncs {
 	if nil == fi {
 		return nil
@@ -72,6 +81,8 @@ func (m *Manager) readFuncMetaDir() error {
 		}
 		if nil == fis.About {
 			return fmt.Errorf("not found about of %s", filePath)
+		} else if isInternalFunc(fname) {
+			fis.About.Installed = true
 		} else {
 			_, fis.About.Installed = m.registry.Get(FUNCTION, strings.TrimSuffix(fname, `.json`))
 		}
@@ -90,6 +101,8 @@ func (m *Manager) readFuncMetaFile(filePath string) error {
 	}
 	if nil == fis.About {
 		return fmt.Errorf("not found about of %s", filePath)
+	} else if isInternalFunc(fiName) {
+		fis.About.Installed = true
 	} else {
 		_, fis.About.Installed = m.registry.Get(FUNCTION, strings.TrimSuffix(fiName, `.json`))
 	}
