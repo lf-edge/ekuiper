@@ -452,7 +452,13 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.Pl
 			return
 		}
 		prettyName := strings.ToUpper(osrelease["PRETTY_NAME"])
-		if strings.Contains(prettyName, "ALPINE") || strings.Contains(prettyName, "DEBIAN") {
+		alpine := strings.Contains(prettyName, "ALPINE")
+		debian := strings.Contains(prettyName, "DEBIAN")
+		os := "alpine"
+		if debian {
+			os = "debian"
+		}
+		if alpine || debian {
 			hosts := common.Config.Basic.PluginHosts
 			ptype := "sources"
 			if t == plugins.SINK {
@@ -460,7 +466,7 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.Pl
 			} else if t == plugins.FUNCTION {
 				ptype = "functions"
 			}
-			if err, plugins := fetchPluginList(hosts, ptype, strings.ToLower(prettyName), runtime.GOARCH); err != nil {
+			if err, plugins := fetchPluginList(hosts, ptype, os, runtime.GOARCH); err != nil {
 				handleError(w, err, "", logger)
 			} else {
 				jsonResponse(plugins, w, logger)
@@ -476,7 +482,7 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.Pl
 
 func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[string]string) {
 	if hosts == "" || ptype == "" || os == "" {
-		return fmt.Errorf("Invalid parameter value: hosts, ptype and os value should not be empty."), nil
+		return fmt.Errorf("Invalid parameter value: hosts %s, ptype %s or os: %s should not be empty.", hosts, ptype, os), nil
 	}
 	result = make(map[string]string)
 	hostsArr := strings.Split(hosts, ",")
