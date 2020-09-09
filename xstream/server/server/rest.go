@@ -441,11 +441,9 @@ func isOffcialDockerImage() bool {
 }
 
 func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType) {
-	if runtime.GOOS != "linux" {
-		handleError(w, fmt.Errorf("Plugins can be only installed at Linux."), "", logger)
-		return
-	} else if !isOffcialDockerImage() {
-		handleError(w, fmt.Errorf("Plugins can be only installed at official released Docker images."), "", logger)
+	emsg := "It's strongly recommended to install plugins at official released Docker images. If you choose to proceed to install plugin, please make sure the plugin is validated in your build."
+	if !isOffcialDockerImage() {
+		handleError(w, fmt.Errorf(emsg), "", logger)
 		return
 	} else if runtime.GOOS == "linux" {
 		osrelease, err := common.Read()
@@ -468,11 +466,11 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.Pl
 				jsonResponse(plugins, w, logger)
 			}
 		} else {
-			handleError(w, fmt.Errorf("Only ALPINE & DEBIAN docker images are supported."), "", logger)
+			handleError(w, fmt.Errorf(emsg), "", logger)
 			return
 		}
 	} else {
-		handleError(w, fmt.Errorf("Please use official Kuiper docker images to install the plugins."), "", logger)
+		handleError(w, fmt.Errorf(emsg), "", logger)
 	}
 }
 
