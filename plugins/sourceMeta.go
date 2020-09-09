@@ -27,6 +27,15 @@ type (
 	}
 )
 
+func isInternalSource(fiName string) bool {
+	internal := []string{`edgex.json`, `httppull.json`, `mqtt_source.json`}
+	for _, v := range internal {
+		if v == fiName {
+			return true
+		}
+	}
+	return false
+}
 func newUiSource(fi *fileSource) (*uiSource, error) {
 	if nil == fi {
 		return nil, nil
@@ -60,6 +69,8 @@ func (m *Manager) readSourceMetaFile(filePath string) error {
 	}
 	if nil == ptrMeta.About {
 		return fmt.Errorf("not found about of %s", filePath)
+	} else if isInternalSource(fileName) {
+		ptrMeta.About.Installed = true
 	} else {
 		_, ptrMeta.About.Installed = m.registry.Get(SOURCE, strings.TrimSuffix(fileName, `.json`))
 	}

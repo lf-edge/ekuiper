@@ -83,6 +83,15 @@ type (
 	}
 )
 
+func isInternalSink(fiName string) bool {
+	internal := []string{`edgex.json`, `log.json`, `mqtt.json`, `nop.json`, `rest.json`}
+	for _, v := range internal {
+		if v == fiName {
+			return true
+		}
+	}
+	return false
+}
 func newLanguage(fi *fileLanguage) *language {
 	if nil == fi {
 		return nil
@@ -184,6 +193,8 @@ func (m *Manager) readSinkMetaFile(filePath string) error {
 	if pluginName != baseProperty && pluginName != baseOption {
 		if nil == metadata.About {
 			return fmt.Errorf("not found about of %s", finame)
+		} else if isInternalSink(finame) {
+			metadata.About.Installed = true
 		} else {
 			_, metadata.About.Installed = m.registry.Get(SINK, pluginName)
 		}
