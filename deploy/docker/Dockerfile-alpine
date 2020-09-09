@@ -19,6 +19,7 @@ RUN apk add sed libzmq
 
 WORKDIR /kuiper
 
+ENV MAINTAINER="emqx.io"
 ENV KUIPER_HOME /kuiper
 ENV KUIPER__BASIC__CONSOLELOG true
 
