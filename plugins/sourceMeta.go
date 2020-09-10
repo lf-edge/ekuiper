@@ -28,7 +28,7 @@ type (
 )
 
 func isInternalSource(fiName string) bool {
-	internal := []string{`edgex.json`, `httppull.json`, `mqtt_source.json`}
+	internal := []string{`edgex.json`, `httppull.json`, `mqtt.json`}
 	for _, v := range internal {
 		if v == fiName {
 			return true
@@ -59,6 +59,9 @@ var g_sourceProperty map[string]*sourceProperty
 
 func (m *Manager) readSourceMetaFile(filePath string) error {
 	fileName := path.Base(filePath)
+	if "mqtt_source.json" == fileName {
+		fileName = "mqtt.json"
+	}
 	ptrMeta := new(fileSource)
 	err := common.ReadJsonUnmarshal(filePath, ptrMeta)
 	if nil != err || 0 == len(ptrMeta.ConfKeys) {
