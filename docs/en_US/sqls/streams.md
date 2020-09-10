@@ -29,12 +29,12 @@ CREATE STREAM
 
 | Property name | Optional | Description                                                  |
 | ------------- | -------- | ------------------------------------------------------------ |
-| DATASOURCE | false    | The topic names list if it's a MQTT data source. |
-| FORMAT        | false    | JSON. |
+| DATASOURCE | false    | The value is determined by source type. The topic names list if it's a MQTT data source. Please refer to related document for other sources. |
+| FORMAT        | true | The data format, currently the value can only be "JSON". |
 | KEY           | true     | Reserved key, currently the field is not used. It will be used for GROUP BY statements. |
-| TYPE     | false    | The data format, currently the value can only be "JSON". |
-| StrictValidation     | false    | To control validation behavior of message field against stream schema. See [StrictValidation](#StrictValidation) for more info. |
-| CONF_KEY | false | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../rules/sources/mqtt.md) for more info. |
+| TYPE     | true | The source type, if not specified, the value is "mqtt". |
+| StrictValidation     | true | To control validation behavior of message field against stream schema. See [StrictValidation](#StrictValidation) for more info. |
+| CONF_KEY | true | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../rules/sources/mqtt.md) for more info. |
 
 **Example 1,**
 
