@@ -99,19 +99,14 @@ func getPlugin(t string, pt PluginType) (plugin.Symbol, error) {
 	var nf plugin.Symbol
 	nf, ok := symbolRegistry[key]
 	if !ok {
-		loc, err := common.GetLoc("/plugins/")
-		if err != nil {
-			return nil, fmt.Errorf("cannot find the plugins folder")
-		}
 		m, err := NewPluginManager()
 		if err != nil {
 			return nil, fmt.Errorf("fail to initialize the plugin manager")
 		}
-		soFile, err := getSoFileName(m, pt, t)
+		mod, err := getSoFilePath(m, pt, t)
 		if err != nil {
-			return nil, fmt.Errorf("cannot get the plugin file name: %v", err)
+			return nil, fmt.Errorf("cannot get the plugin file path: %v", err)
 		}
-		mod := path.Join(loc, ptype, soFile)
 		plug, err := plugin.Open(mod)
 		if err != nil {
 			return nil, fmt.Errorf("cannot open %s: %v", mod, err)
@@ -307,13 +302,13 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
 	}
-	soFile, err := getSoFileName(m, t, name)
+	soPath, err := getSoFilePath(m, t, name)
 	if err != nil {
 		return err
 	}
 	var results []string
 	paths := []string{
-		path.Join(m.pluginDir, PluginTypes[t], soFile),
+		soPath,
 	}
 	if err := os.Remove(path.Join(m.etcDir, PluginTypes[t], name+".json")); nil != err {
 		common.Log.Errorf("delMetadataFile %s:%v", name+".json", err)
@@ -362,17 +357,25 @@ func (m *Manager) Get(t PluginType, name string) (map[string]string, bool) {
 	return nil, false
 }
 
-func getSoFileName(m *Manager, t PluginType, name string) (string, error) {
+// Return the lowercase version of so name. It may be upper case in path.
+func getSoFilePath(m *Manager, t PluginType, name string) (string, error) {
 	v, ok := m.registry.Get(t, name)
 	if !ok {
 		return "", common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("invalid name %s: not exist", name))
 	}
 
-	soFile := ucFirst(name) + ".so"
+	soFile := name + ".so"
 	if v != "" {
-		soFile = fmt.Sprintf("%s@%s.so", ucFirst(name), v)
+		soFile = fmt.Sprintf("%s@%s.so", name, v)
 	}
-	return soFile, nil
+	p := path.Join(m.pluginDir, PluginTypes[t], soFile)
+	if _, err := os.Stat(p); err != nil {
+		p = path.Join(m.pluginDir, PluginTypes[t], ucFirst(soFile))
+	}
+	if _, err := os.Stat(p); err != nil {
+		return "", common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("cannot find .so file for plugin %s", name))
+	}
+	return p, nil
 }
 
 func (m *Manager) install(t PluginType, name string, src string) ([]string, string, error) {
