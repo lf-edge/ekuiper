@@ -20,11 +20,12 @@ func TestManager_Register(t *testing.T) {
 	endpoint := s.URL
 
 	data := []struct {
-		t   PluginType
-		n   string
-		u   string
-		v   string
-		err error
+		t       PluginType
+		n       string
+		u       string
+		v       string
+		lowerSo bool
+		err     error
 	}{
 		{
 			t:   SOURCE,
@@ -61,9 +62,10 @@ func TestManager_Register(t *testing.T) {
 			u: endpoint + "/sources/random3.zip",
 			v: "1.0.0",
 		}, {
-			t: SINK,
-			n: "file2",
-			u: endpoint + "/sinks/file2.zip",
+			t:       SINK,
+			n:       "file2",
+			u:       endpoint + "/sinks/file2.zip",
+			lowerSo: true,
 		}, {
 			t: FUNCTION,
 			n: "echo2",
@@ -89,7 +91,7 @@ func TestManager_Register(t *testing.T) {
 		if !reflect.DeepEqual(tt.err, err) {
 			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
 		} else if tt.err == nil {
-			err := checkFile(manager.pluginDir, manager.etcDir, tt.t, tt.n, tt.v)
+			err := checkFile(manager.pluginDir, manager.etcDir, tt.t, tt.n, tt.v, tt.lowerSo)
 			if err != nil {
 				t.Errorf("%d: error : %s\n\n", i, err)
 			}
@@ -214,11 +216,20 @@ func TestManager_Delete(t *testing.T) {
 	}
 }
 
-func checkFile(pluginDir string, etcDir string, t PluginType, name string, version string) error {
-	soName := ucFirst(name) + ".so"
-	if version != "" {
-		soName = fmt.Sprintf("%s@v%s.so", ucFirst(name), version)
+func checkFile(pluginDir string, etcDir string, t PluginType, name string, version string, lowerSo bool) error {
+	var soName string
+	if !lowerSo {
+		soName = ucFirst(name) + ".so"
+		if version != "" {
+			soName = fmt.Sprintf("%s@v%s.so", ucFirst(name), version)
+		}
+	} else {
+		soName = name + ".so"
+		if version != "" {
+			soName = fmt.Sprintf("%s@v%s.so", name, version)
+		}
 	}
+
 	soPath := path.Join(pluginDir, PluginTypes[t], soName)
 	_, err := os.Stat(soPath)
 	if err != nil {
