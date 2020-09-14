@@ -384,7 +384,8 @@ func (this *sourceProperty) saveCf(pluginName string) error {
 	}
 
 	dir := path.Join(confDir, "sources")
-	if "mqtt_source" == pluginName {
+	if "mqtt" == pluginName {
+		pluginName = "mqtt_source"
 		dir = confDir
 	}
 	filePath := path.Join(dir, pluginName+".yaml")
