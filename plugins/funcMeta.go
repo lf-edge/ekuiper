@@ -54,9 +54,10 @@ func newUiFuncs(fi *fileFuncs) *uiFuncs {
 	return uis
 }
 
-var g_funcMetadata []*uiFuncs
+var g_funcMetadata map[string]*uiFuncs
 
 func (m *Manager) readFuncMetaDir() error {
+	g_funcMetadata = make(map[string]*uiFuncs)
 	confDir, err := common.GetConfLoc()
 	if nil != err {
 		return err
@@ -80,6 +81,13 @@ func (m *Manager) readFuncMetaDir() error {
 	return nil
 }
 
+func (m *Manager) uninstalFunc(name string) {
+	if ui, ok := g_funcMetadata[name+".json"]; ok {
+		if nil != ui.About {
+			ui.About.Installed = false
+		}
+	}
+}
 func (m *Manager) readFuncMetaFile(filePath string) error {
 	fiName := path.Base(filePath)
 	fis := new(fileFuncs)
@@ -94,10 +102,13 @@ func (m *Manager) readFuncMetaFile(filePath string) error {
 	} else {
 		_, fis.About.Installed = m.registry.Get(FUNCTION, strings.TrimSuffix(fiName, `.json`))
 	}
-	g_funcMetadata = append(g_funcMetadata, newUiFuncs(fis))
+	g_funcMetadata[fiName] = newUiFuncs(fis)
 	common.Log.Infof("funcMeta file : %s", fiName)
 	return nil
 }
-func GetFunctions() []*uiFuncs {
-	return g_funcMetadata
+func GetFunctions() (ret []*uiFuncs) {
+	for _, v := range g_funcMetadata {
+		ret = append(ret, v)
+	}
+	return ret
 }

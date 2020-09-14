@@ -182,6 +182,13 @@ func (m *Manager) readSinkMetaDir() error {
 	return nil
 }
 
+func (m *Manager) uninstalSink(name string) {
+	if ui, ok := g_sinkMetadata[name+".json"]; ok {
+		if nil != ui.About {
+			ui.About.Installed = false
+		}
+	}
+}
 func (m *Manager) readSinkMetaFile(filePath string) error {
 	finame := path.Base(filePath)
 	pluginName := strings.TrimSuffix(finame, `.json`)

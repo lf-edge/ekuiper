@@ -57,6 +57,15 @@ func newUiSource(fi *fileSource) (*uiSource, error) {
 
 var g_sourceProperty map[string]*sourceProperty
 
+func (m *Manager) uninstalSource(name string) {
+	if v, ok := g_sourceProperty[name+".json"]; ok {
+		if ui := v.meta; nil != ui {
+			if nil != ui.About {
+				ui.About.Installed = false
+			}
+		}
+	}
+}
 func (m *Manager) readSourceMetaFile(filePath string) error {
 	fileName := path.Base(filePath)
 	if "mqtt_source.json" == fileName {
