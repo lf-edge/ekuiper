@@ -30,7 +30,7 @@ type (
 )
 
 func isInternalFunc(fiName string) bool {
-	internal := []string{`accumulateWordCount.json`, `countPlusOne.json`, `echo.json`, `internal.json`}
+	internal := []string{`accumulateWordCount.json`, `countPlusOne.json`, `echo.json`, `internal.json`, "windows.json"}
 	for _, v := range internal {
 		if v == fiName {
 			return true
@@ -73,21 +73,9 @@ func (m *Manager) readFuncMetaDir() error {
 			continue
 		}
 
-		filePath := path.Join(dir, fname)
-		fis := new(fileFuncs)
-		err = common.ReadJsonUnmarshal(filePath, fis)
-		if nil != err {
-			return fmt.Errorf("fname:%s err:%v", fname, err)
+		if err := m.readFuncMetaFile(path.Join(dir, fname)); nil != err {
+			return err
 		}
-		if nil == fis.About {
-			return fmt.Errorf("not found about of %s", filePath)
-		} else if isInternalFunc(fname) {
-			fis.About.Installed = true
-		} else {
-			_, fis.About.Installed = m.registry.Get(FUNCTION, strings.TrimSuffix(fname, `.json`))
-		}
-		common.Log.Infof("funcMeta file : %s", fname)
-		g_funcMetadata = append(g_funcMetadata, newUiFuncs(fis))
 	}
 	return nil
 }

@@ -20,7 +20,7 @@
 		"name": "echo",
 		"example": "echo(col1)",
 		"hint": {
-			"en_US": "",
+			"en_US": "The parameter value is output as it is.",
 			"zh_CN": "原样输出参数值。"
 		}
 	}]
