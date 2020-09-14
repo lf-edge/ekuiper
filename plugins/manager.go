@@ -310,13 +310,16 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	paths := []string{
 		soPath,
 	}
-	if err := os.Remove(path.Join(m.etcDir, PluginTypes[t], name+".json")); nil != err {
-		common.Log.Errorf("delMetadataFile %s:%v", name+".json", err)
+	switch t {
+	case SOURCE:
+		paths = append(paths, path.Join(m.etcDir, PluginTypes[t], name+".yaml"))
+		m.uninstalSource(name)
+	case SINK:
+		m.uninstalSink(name)
+	case FUNCTION:
+		m.uninstalFunc(name)
 	}
 
-	if t == SOURCE {
-		paths = append(paths, path.Join(m.etcDir, PluginTypes[t], name+".yaml"))
-	}
 	for _, p := range paths {
 		_, err := os.Stat(p)
 		if err == nil {
