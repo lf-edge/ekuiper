@@ -20,8 +20,8 @@
 		"name": "countPlusOne",
 		"example": "countPlusOne(col1)",
 		"hint": {
-			"en_US": "",
-			"zh_CN": "输出参数长度加一"
+			"en_US": "The value of the output parameter length plus one",
+			"zh_CN": "输出参数长度加一的值"
 		}
 	}]
 }
