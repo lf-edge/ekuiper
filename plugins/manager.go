@@ -107,14 +107,17 @@ func getPlugin(t string, pt PluginType) (plugin.Symbol, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot get the plugin file path: %v", err)
 		}
+		common.Log.Debug("Opening plugin %s", mod)
 		plug, err := plugin.Open(mod)
 		if err != nil {
 			return nil, fmt.Errorf("cannot open %s: %v", mod, err)
 		}
+		common.Log.Debug("Successfully open plugin %s", mod)
 		nf, err = plug.Lookup(ut)
 		if err != nil {
 			return nil, fmt.Errorf("cannot find symbol %s, please check if it is exported", t)
 		}
+		common.Log.Debug("Successfully look-up plugin %s", mod)
 		symbolRegistry[key] = nf
 	}
 	return nf, nil
@@ -511,6 +514,7 @@ func isValidUrl(uri string) bool {
 }
 
 func downloadFile(filepath string, uri string) error {
+	common.Log.Info("Start to download file %s\n", uri)
 	u, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return err
@@ -522,7 +526,7 @@ func downloadFile(filepath string, uri string) error {
 		if strings.Index(u.Path, ":") == 2 {
 			u.Path = u.Path[1:]
 		}
-		fmt.Printf(u.Path)
+		common.Log.Debugf(u.Path)
 		sourceFileStat, err := os.Stat(u.Path)
 		if err != nil {
 			return err
