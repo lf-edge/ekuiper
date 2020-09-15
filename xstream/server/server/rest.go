@@ -482,7 +482,8 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.Pl
 
 func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[string]string) {
 	if hosts == "" || ptype == "" || os == "" {
-		return fmt.Errorf("Invalid parameter value: hosts %s, ptype %s or os: %s should not be empty.", hosts, ptype, os), nil
+		logger.Error("Invalid parameter value: hosts %s, ptype %s or os: %s should not be empty.", hosts, ptype, os)
+		return fmt.Errorf("Invalid configruation for plugin host in kuiper.yaml.", hosts, ptype, os), nil
 	}
 	result = make(map[string]string)
 	hostsArr := strings.Split(hosts, ",")
@@ -492,6 +493,7 @@ func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[strin
 		//The url is similar to http://host:port/kuiper-plugins/0.9.1/alpine/sinks/
 		url := strings.Join(tmp, "/")
 		resp, err := http.Get(url)
+		logger.Info("Trying to fetch plugins from url: %s\n", url)
 
 		if err != nil {
 			return err, nil
@@ -499,7 +501,7 @@ func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[strin
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("Status error: %v", resp.StatusCode), nil
+			return fmt.Errorf("Cannot fetch plugin list from %s, with status error: %v", url, resp.StatusCode), nil
 		}
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
@@ -511,6 +513,7 @@ func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[strin
 			if _, ok := result[p]; !ok {
 				result[p] = url + "/" + p + "_" + arch + ".zip"
 			}
+			logger.Debugf("Plugin %s, download address is %s\n", p, result[p])
 		}
 	}
 	return

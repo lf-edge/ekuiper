@@ -17,7 +17,7 @@
     }
   },
   "libs": [
-    "github.com/pebbe/zmq4@master"
+    "github.com/pebbe/zmq4@v1.0.0"
   ],
   "properties": {
     "default": [
