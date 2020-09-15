@@ -482,7 +482,7 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.Pl
 
 func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[string]string) {
 	if hosts == "" || ptype == "" || os == "" {
-		logger.Error("Invalid parameter value: hosts %s, ptype %s or os: %s should not be empty.", hosts, ptype, os)
+		logger.Errorf("Invalid parameter value: hosts %s, ptype %s or os: %s should not be empty.", hosts, ptype, os)
 		return fmt.Errorf("Invalid configruation for plugin host in kuiper.yaml.", hosts, ptype, os), nil
 	}
 	result = make(map[string]string)
@@ -493,7 +493,7 @@ func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[strin
 		//The url is similar to http://host:port/kuiper-plugins/0.9.1/alpine/sinks/
 		url := strings.Join(tmp, "/")
 		resp, err := http.Get(url)
-		logger.Info("Trying to fetch plugins from url: %s\n", url)
+		logger.Infof("Trying to fetch plugins from url: %s\n", url)
 
 		if err != nil {
 			return err, nil
