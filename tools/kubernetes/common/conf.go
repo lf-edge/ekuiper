@@ -123,12 +123,12 @@ func (this *config) initLog() bool {
 	if err == nil {
 		Log.SetOutput(logFile)
 		return true
-	} else {
-		Log.Infof("Failed to log to file, using default stderr.")
-		return false
 	}
+	
+	Log.Infof("Failed to log to file, using default stderr.")
 	return false
 }
+
 func (this *config) Init() bool {
 	if !this.initConfig() {
 		return false
