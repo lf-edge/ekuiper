@@ -483,7 +483,7 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.Pl
 func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[string]string) {
 	if hosts == "" || ptype == "" || os == "" {
 		logger.Errorf("Invalid parameter value: hosts %s, ptype %s or os: %s should not be empty.", hosts, ptype, os)
-		return fmt.Errorf("Invalid configruation for plugin host in kuiper.yaml.", hosts, ptype, os), nil
+		return fmt.Errorf("Invalid configruation for plugin host in kuiper.yaml."), nil
 	}
 	result = make(map[string]string)
 	hostsArr := strings.Split(hosts, ",")
