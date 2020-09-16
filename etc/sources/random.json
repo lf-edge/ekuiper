@@ -70,7 +70,7 @@
           {
             "name": "count",
             "default": 50,
-            "optional": true,
+            "optional": false,
             "control": "text",
             "type": "int",
             "hint": {
@@ -83,7 +83,7 @@
             }
           }
         ],
-        "optional": true,
+        "optional": false,
         "control": "list",
         "type": "list_object",
         "hint": {
