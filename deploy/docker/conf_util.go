@@ -41,11 +41,16 @@ var file_keys_map = map[string]map[string]string{
 		"PRIVATEKEYPATH":     "privateKeyPath",
 	},
 	"kuiper": {
-		"CONSOLELOG":     "consoleLog",
-		"FILELOG":        "fileLog",
-		"RESTPORT":       "restPort",
-		"RESTTLS":        "restTls",
-		"PROMETHEUSPORT": "prometheusPort",
+		"CONSOLELOG":         "consoleLog",
+		"FILELOG":            "fileLog",
+		"RESTPORT":           "restPort",
+		"RESTTLS":            "restTls",
+		"PROMETHEUSPORT":     "prometheusPort",
+		"PLUGINHOSTS":        "pluginHosts",
+		"CHECKPOINTINTERVAL": "checkpointInterval",
+		"CACHETHRESHOLD":     "cacheThreshold",
+		"CACHETRIGGERCOUNT":  "cacheTriggerCount",
+		"DISABLECACHE":       "disableCache",
 	},
 }
 
