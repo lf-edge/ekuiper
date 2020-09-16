@@ -28,8 +28,8 @@
         "control": "text",
         "type": "string",
         "hint": {
-          "en_US": "The url of the Zero Mq server",
-          "zh_CN": "Zero Mq 服务器的 URL"
+          "en_US": "The url of the ZeroMQ server",
+          "zh_CN": "ZeroMQ 服务器的 URL"
         },
         "label": {
           "en_US": "server address",
@@ -39,7 +39,7 @@
       {
         "name": "topic",
         "default": "",
-        "optional": true,
+        "optional": false,
         "control": "text",
         "type": "string",
         "hint": {

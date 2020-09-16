@@ -38,7 +38,7 @@
 			{
 				"name": "server",
 				"default": "localhost",
-				"optional": false,
+				"optional": true,
 				"control": "text",
 				"type": "string",
 				"hint": {
@@ -83,7 +83,7 @@
 			{
 				"name": "serviceServer",
 				"default": "",
-				"optional": false,
+				"optional": true,
 				"control": "text",
 				"type": "string",
 				"hint": {
@@ -97,8 +97,8 @@
 			},
 			{
 				"name": "type",
-				"default": "",
-				"optional": false,
+				"default": "zero",
+				"optional": true,
 				"control": "text",
 				"type": "string",
 				"hint": {

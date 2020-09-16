@@ -34,7 +34,7 @@
 			}
 		}, {
 			"name": "method",
-			"default": "",
+			"default": "get",
 			"optional": false,
 			"control": "select",
 			"type": "string",
@@ -50,7 +50,7 @@
 		}, {
 			"name": "interval",
 			"default": 1000,
-			"optional": false,
+			"optional": true,
 			"control": "text",
 			"type": "int",
 			"hint": {
@@ -64,7 +64,7 @@
 		}, {
 			"name": "timeout",
 			"default": 5000,
-			"optional": false,
+			"optional": true,
 			"control": "text",
 			"type": "int",
 			"hint": {
@@ -78,7 +78,7 @@
 		}, {
 			"name": "incremental",
 			"default": false,
-			"optional": false,
+			"optional": true,
 			"control": "radio",
 			"type": "bool",
 			"hint": {
@@ -92,7 +92,7 @@
 		}, {
 			"name": "body",
 			"default": "{}",
-			"optional": false,
+			"optional": true,
 			"control": "textarea",
 			"type": "string",
 			"hint": {
@@ -106,7 +106,7 @@
 		}, {
 			"name": "bodyType",
 			"default": "json",
-			"optional": false,
+			"optional": true,
 			"control": "text",
 			"type": "string",
 			"hint": {
@@ -122,7 +122,7 @@
 			"default": [{                                                 
 				"name": "Accept",
 				"default": "application/json",
-				"optional": false,
+				"optional": true,
 				"control": "text",
 				"type": "string",
 				"hint": {
@@ -134,7 +134,7 @@
 					"zh_CN": "HTTP标头"
 				}                                                     
 			}],
-			"optional": false,
+			"optional": true,
 			"control": "list",
 			"type": "list_object",
 			"hint": {
