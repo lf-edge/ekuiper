@@ -160,7 +160,7 @@ When modifying configuration files through environment variables, the environmen
 ```
 KUIBER__BASIC__DEBUG => basic.debug in etc/kuiper.yaml
 
-MQTT_SOURCES__DEMO_CONF__QOS => demo_conf.qos in etc/mqtt_source.yaml
+MQTT_SOURCE__DEMO_CONF__QOS => demo_conf.qos in etc/mqtt_source.yaml
 ```
 
 The environment variables are separated by two "_", the content of the first part after the separation matches the file name of the configuration file, and the remaining content matches the different levels of the configuration item.

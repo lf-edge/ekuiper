@@ -145,9 +145,9 @@ all_pkgs: cross_build cross_build_for_rpm
 
 .PHONY: docker
 docker:
-	docker build --no-cache -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile .
-	docker build --no-cache -t $(TARGET):$(VERSION)-slim -f deploy/docker/Dockerfile-slim .
-	docker build --no-cache -t $(TARGET):$(VERSION)-alpine -f deploy/docker/Dockerfile-alpine .
+	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile . --load
+	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-slim -f deploy/docker/Dockerfile-slim . --load
+	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-alpine -f deploy/docker/Dockerfile-alpine . --load
 
 .PHONY:cross_docker
 cross_docker: cross_prepare
