@@ -152,12 +152,12 @@
 			"control": "text",
 			"type": "string",
 			"hint": {
-				"en_US": "The name of the kubeedge template file. The file is located in the specified etc/sources folder.",
-				"zh_CN": "Kubeedge 模版文件名，文件指定放在 etc/sources 文件夹中"
+				"en_US": "The name of KubeEdge template file. The file is located in the specified etc/sources folder.",
+				"zh_CN": "KubeEdge 模版文件名，文件指定放在 etc/sources 文件夹中"
 			},
 			"label": {
-				"en_US": "File name",
-				"zh_CN": "文件名"
+				"en_US": "KubeEdge model file",
+				"zh_CN": "KubeEdge 模型文件"
 			}
 		}]
 	}
