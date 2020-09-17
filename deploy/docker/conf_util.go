@@ -22,6 +22,7 @@ var fileMap = map[string]string{
 
 var file_keys_map = map[string]map[string]string{
 	"edgex": {
+		"SERVICESERVER":     "serviceServer",
 		"CLIENTID":          "ClientId",
 		"USERNAME":          "Username",
 		"PASSWORD":          "Password",
