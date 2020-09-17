@@ -441,7 +441,7 @@ func isOffcialDockerImage() bool {
 }
 
 func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType) {
-	emsg := "It's strongly recommended to install plugins at official released Docker images. If you choose to proceed to install plugin, please make sure the plugin is validated in your build."
+	emsg := "It's strongly recommended to install plugins at official released Debian Docker images. If you choose to proceed to install plugin, please make sure the plugin is already validated in your own build."
 	if !isOffcialDockerImage() {
 		handleError(w, fmt.Errorf(emsg), "", logger)
 		return
@@ -452,13 +452,8 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.Pl
 			return
 		}
 		prettyName := strings.ToUpper(osrelease["PRETTY_NAME"])
-		alpine := strings.Contains(prettyName, "ALPINE")
-		debian := strings.Contains(prettyName, "DEBIAN")
-		os := "alpine"
-		if debian {
-			os = "debian"
-		}
-		if alpine || debian {
+		os := "debian"
+		if strings.Contains(prettyName, "DEBIAN") {
 			hosts := common.Config.Basic.PluginHosts
 			ptype := "sources"
 			if t == plugins.SINK {
@@ -490,7 +485,7 @@ func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[strin
 	for _, host := range hostsArr {
 		host := strings.Trim(host, " ")
 		tmp := []string{host, "kuiper-plugins", version, os, ptype}
-		//The url is similar to http://host:port/kuiper-plugins/0.9.1/alpine/sinks/
+		//The url is similar to http://host:port/kuiper-plugins/0.9.1/debian/sinks/
 		url := strings.Join(tmp, "/")
 		resp, err := http.Get(url)
 		logger.Infof("Trying to fetch plugins from url: %s\n", url)
