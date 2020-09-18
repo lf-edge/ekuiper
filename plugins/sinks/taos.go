@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
-	//	_ "github.com/taosdata/driver-go/taosSql"
+	_ "github.com/taosdata/driver-go/taosSql"
 	"reflect"
 	"strings"
 )
