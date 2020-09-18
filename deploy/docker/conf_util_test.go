@@ -218,7 +218,7 @@ func TestProcessEnvArrayValue(t *testing.T) {
 			expt: map[interface{}]interface{}{
 				"default": map[interface{}]interface{}{
 					"servers": []interface{}{"tcp://10.211.55.12:1883", "tcp://10.211.55.13:1883"},
-					"test": []interface{}{int64(1), int64(2)},
+					"test":    []interface{}{int64(1), int64(2)},
 				},
 			},
 		},

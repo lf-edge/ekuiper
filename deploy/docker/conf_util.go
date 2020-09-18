@@ -180,7 +180,7 @@ func getKey(file string, key string) string {
 
 func getValueType(val string) interface{} {
 	val = strings.Trim(val, " ")
-	if strings.HasPrefix(val, "[") && strings.HasSuffix(val, "]"){
+	if strings.HasPrefix(val, "[") && strings.HasSuffix(val, "]") {
 		val = strings.ReplaceAll(val, "[", "")
 		val = strings.ReplaceAll(val, "]", "")
 		vals := strings.Split(val, ",")
