@@ -171,7 +171,7 @@ cross_docker: cross_prepare
 
 
 PLUGINS := sinks/file \
-	sinks/influxdb \
+	sinks/influx \
 	sinks/taos \
 	sinks/zmq \
 	sources/random \

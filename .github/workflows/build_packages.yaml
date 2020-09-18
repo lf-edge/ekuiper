@@ -67,8 +67,8 @@ jobs:
             matrix:
                 plugin:
                 - sinks/file
-                - sinks/influxdb
-                  # - sinks/taos
+                - sinks/influx
+              # - sinks/taos
                 - sinks/zmq
                 - sources/random
                 - sources/zmq

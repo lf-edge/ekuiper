@@ -1,10 +1,10 @@
 {
 	"about": {
-		"trial": false,
+		"trial": true,
 		"author": {
 			"name": "Yongxing Ma",
 			"email": "",
-			"company": "China Mobile",
+			"company": "",
 			"website": ""
 		},
 		"helpUrl": {
@@ -13,7 +13,7 @@
 		},
 		"description": {
 			"en_US": "This a sink plugin for InfluxDB, it can be used for saving the analysis data into InfluxDB.",
-			"zh_CN": "本插件为 InfluxDB 的持久化插件，可以用于将分析数据存入 InfluxDB 中。"
+			"zh_CN": "本插件为 InfluxDB 的持久化插件，可以用于将分析数据存入 InfluxDB 中"
 		}
 	},
 	"libs": [
@@ -21,7 +21,7 @@
 	],
 	"properties": [{
 		"name": "addr",
-		"default": "",
+		"default": "http://192.168.100.245:8086",
 		"optional": true,
 		"control": "text",
 		"type": "string",
@@ -35,7 +35,7 @@
 		}
 	}, {
 		"name": "measurement",
-		"default": "",
+		"default": "test",
 		"optional": true,
 		"control": "text",
 		"type": "string",
@@ -77,7 +77,7 @@
 		}
 	}, {
 		"name": "databasename",
-		"default": "",
+		"default": "db",
 		"optional": true,
 		"control": "text",
 		"type": "string",
@@ -91,7 +91,7 @@
 		}
 	}, {
 		"name": "tagkey",
-		"default": "",
+		"default": "tagkey",
 		"optional": true,
 		"control": "text",
 		"type": "string",
@@ -105,7 +105,7 @@
 		}
 	}, {
 		"name": "tagvalue",
-		"default": "",
+		"default": "tagvalue",
 		"optional": true,
 		"control": "text",
 		"type": "string",
@@ -119,7 +119,7 @@
 		}
 	}, {
 		"name": "fields",
-		"default": "",
+		"default": "humidity,temperature,pressure",
 		"optional": true,
 		"control": "text",
 		"type": "string",
