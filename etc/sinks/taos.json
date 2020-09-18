@@ -1,6 +1,6 @@
 {
 	"about": {
-		"trial": false,
+		"trial": true,
 		"author": {
 			"name": "EMQ",
 			"email": "contact@emqx.io",
@@ -63,7 +63,7 @@
 		}
 	}, {
 		"name": "password",
-		"default": "",
+		"default": "taosdata",
 		"optional": false,
 		"control": "text",
 		"type": "string",
@@ -77,7 +77,7 @@
 		}
 	}, {
 		"name": "database",
-		"default": "",
+		"default": "db",
 		"optional": false,
 		"control": "text",
 		"type": "string",
@@ -91,7 +91,7 @@
 		}
 	}, {
 		"name": "table",
-		"default": "",
+		"default": "t",
 		"optional": false,
 		"control": "text",
 		"type": "string",
