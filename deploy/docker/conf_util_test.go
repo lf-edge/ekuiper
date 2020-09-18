@@ -201,3 +201,33 @@ func TestProcessEnv(t *testing.T) {
 		}
 	}
 }
+
+func TestProcessEnvArrayValue(t *testing.T) {
+	fileMap["mqtt_source"] = "test/mqtt_source.yaml"
+	var tests = []struct {
+		vars []string
+		file string
+		expt map[interface{}]interface{}
+	}{
+		{
+			vars: []string{
+				"MQTT_SOURCE__DEFAULT__SERVERS=[tcp://10.211.55.12:1883,tcp://10.211.55.13:1883]",
+				"MQTT_SOURCE__DEFAULT__TEST=[1,2]",
+			},
+			file: "mqtt_source",
+			expt: map[interface{}]interface{}{
+				"default": map[interface{}]interface{}{
+					"servers": []interface{}{"tcp://10.211.55.12:1883", "tcp://10.211.55.13:1883"},
+					"test": []interface{}{int64(1), int64(2)},
+				},
+			},
+		},
+	}
+	files := make(map[string]map[interface{}]interface{})
+	for i, tt := range tests {
+		ProcessEnv(files, tt.vars)
+		if !reflect.DeepEqual(tt.expt, files[tt.file]) {
+			t.Errorf("%d \tresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.expt, files[tt.file])
+		}
+	}
+}
