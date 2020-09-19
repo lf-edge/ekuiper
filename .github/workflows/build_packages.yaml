@@ -223,7 +223,7 @@ jobs:
                 --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
                 -t emqx/kuiper-kubernetes-tool:$(git describe --tags --always) \
                 -f deploy/docker/Dockerfile-kubernetes-tool . \
-                -- push
+                --push
 
     release:
         runs-on: ubuntu-latest
