@@ -14,6 +14,36 @@ Aggregate functions perform a calculation on a set of values and return a single
 | max      | max(col1)   | The maximum value in a group. The null values will be ignored.                  |
 | min      | min(col1)   | The minimum value in a group. The null values will be ignored.                   |
 | sum      | sum(col1)   | The sum of all the values in a group. The null values will be ignored.           |
+| collect   | collect(*), collect(col1)   | Returns an array with all column or the whole record (when the parameter is *) values from the group.  |
+| deduplicate| deduplicate(col, false)   | Returns the deduplicate results in the group, usually a window. The first argument is the column as the key to deduplicate; the second argument is whether to return all items or just the latest item which is not duplicate. If the latest item is a duplicate, the sink will receive an empty map. Set the sink property [omitIfEmpty](../rules/overview.md#sink_actions) to the sink to not triggering the action.   |
+
+### Collect() Examples
+
+- Get an array of column `a` of the current window. Assume the column a is of int type, the result will be like: `[{"r1":[32, 45]}]`
+    ```sql
+    SELECT collect(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+    ```
+- Get the whole array of the current window. The result will be like: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
+    ```sql
+    SELECT collect(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+    ```
+  
+- Get the first element's column 'a' value within the current window. The result will be like: `[{"r1":32}]`
+    ```sql
+    SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+    ```
+ 
+ ### Deduplicate() Examples
+ 
+ - Get the whole array of the current window which is deduplicated by column `a`. The result will be like: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
+     ```sql
+     SELECT deduplicate(a, true) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+     ```
+ - Get the column `a` value which is not duplicate during the last hour. The result will be like: `[{"r1":32}]`, `[{"r1":45}]` and `[{}]` if a duplicate value arrives. Use the omitIfEmpty sink property to filter out those empty results.
+      ```sql
+      SELECT deduplicate(a, false)->a as r1 FROM demo GROUP BY SlidingWindow(hh, 1)
+      ```
+ 
 
 ## Mathematical Functions
 | Function | Example     | Description                                    |
@@ -50,7 +80,7 @@ Aggregate functions perform a calculation on a set of values and return a single
 | -------- | ----------- | ---------------------------------------------- |
 | concat   | concat(col1...)  | Concatenates arrays or strings. This function accepts any number of arguments and returns a String or an Array        |
 | endswith | endswith(col1, col2) | Returns a Boolean indicating whether the first String argument ends with the second String argument.              |
-| format_time| parse_time(col1, format) | Format a datetime to string.    |
+| format_time| format_time(col1, format) | Format a datetime to string.    |
 | indexof  | indexof(col1, col2)  | Returns the first index (0-based) of the second argument as a substring in the first argument.                    |
 | length   | length(col1)| Returns the number of characters in the provided string.                                                                  |
 | lower    | lower(col1) | Returns the lowercase version of the given String.                                                                         |

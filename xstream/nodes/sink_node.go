@@ -159,18 +159,22 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				var sink api.Sink
 				var err error
 				if !m.isMock {
+					logger.Debugf("Trying to get sink for rule %s with options %v\n", ctx.GetRuleId(), m.options)
 					sink, err = getSink(m.sinkType, m.options)
 					if err != nil {
 						m.drainError(result, err, ctx, logger)
 						return
 					}
+					logger.Debugf("Successfully get the sink %s", m.sinkType)
 					m.mutex.Lock()
 					m.sinks = append(m.sinks, sink)
 					m.mutex.Unlock()
+					logger.Debugf("Now is to open sink for rule %s.\n", ctx.GetRuleId())
 					if err := sink.Open(ctx); err != nil {
 						m.drainError(result, err, ctx, logger)
 						return
 					}
+					logger.Debugf("Successfully open sink for rule %s.\n", ctx.GetRuleId())
 				} else {
 					sink = m.sinks[instance]
 				}
@@ -270,14 +274,24 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 			}
 		} else {
 			for _, r := range j {
-				var output bytes.Buffer
-				err := tp.Execute(&output, r)
-				if err != nil {
-					logger.Warnf("sink node %s instance %d publish %s decode template error: %v", ctx.GetOpId(), ctx.GetInstanceId(), val, err)
-					stats.IncTotalExceptions()
-					return
+				if tp != nil {
+					var output bytes.Buffer
+					err := tp.Execute(&output, r)
+					if err != nil {
+						logger.Warnf("sink node %s instance %d publish %s decode template error: %v", ctx.GetOpId(), ctx.GetInstanceId(), val, err)
+						stats.IncTotalExceptions()
+						return
+					}
+					outdatas = append(outdatas, output.Bytes())
+				} else {
+					if ot, e := json.Marshal(r); e != nil {
+						logger.Warnf("sink node %s instance %d publish %s marshal error: %v", ctx.GetOpId(), ctx.GetInstanceId(), r, e)
+						stats.IncTotalExceptions()
+						return
+					} else {
+						outdatas = append(outdatas, ot)
+					}
 				}
-				outdatas = append(outdatas, output.Bytes())
 			}
 		}
 

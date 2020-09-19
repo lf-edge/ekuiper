@@ -1,0 +1,28 @@
+{
+	"about": {
+		"trial": false,
+		"author": {
+			"name": "EMQ",
+			"email": "contact@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "",
+			"zh_CN": ""
+		},
+		"description": {
+			"en_US": "",
+			"zh_CN": ""
+		}
+	},
+	"functions": [{
+		"name": "accumulateWordCount",
+		"example": "accumulateWordCount(col1)",
+		"hint": {
+			"en_US": "A function which will count how many words had been received from the beginning",
+			"zh_CN": "该函数将计算从一开始就收到了多少个单词"
+		}
+	}]
+}
+

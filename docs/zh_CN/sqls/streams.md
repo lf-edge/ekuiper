@@ -29,14 +29,14 @@ CREATE STREAM
 
 **支持的属性名称**
 
-| 属性名称 | 是否可选 | 说明                                              |
+| 属性名称 | 可选 | 说明                                              |
 | ------------- | -------- | ------------------------------------------------------------ |
-| DATASOURCE | 否   | MQTT 数据源主题名称列表。 |
-| FORMAT        | 否       | JSON。 |
-| KEY           | 是    | 保留键，当前未使用该字段。 它将用于 GROUP BY 语句。 |
-| TYPE    | 否       | 数据格式，当前值只能是 "JSON"。 |
-| StrictValidation     | 否   | 针对流模式控制消息字段的验证行为。 有关更多信息，请参见 [StrictValidation](#StrictValidation) |
-| CONF_KEY | 否 | 如果需要配置其他配置项，请在此处指定 config 键。 有关更多信息，请参见 [MQTT stream](../rules/sources/mqtt.md) 。 |
+| DATASOURCE | 否   | 取决于不同的源类型；如果是 MQTT 源，则为 MQTT 数据源主题名；其它源请参考相关的文档。 |
+| FORMAT        | 是      | 传入的数据类型，目前只支持 "JSON"。 |
+| KEY           | 是    | 保留配置，当前未使用该字段。 它将用于 GROUP BY 语句。 |
+| TYPE    | 是      | 源类型，如未指定，值为 "mqtt"。 |
+| StrictValidation     | 是  | 针对流模式控制消息字段的验证行为。 有关更多信息，请参见 [StrictValidation](#StrictValidation) |
+| CONF_KEY | 是 | 如果需要配置其他配置项，请在此处指定 config 键。 有关更多信息，请参见 [MQTT stream](../rules/sources/mqtt.md) 。 |
 
 **示例1**
 

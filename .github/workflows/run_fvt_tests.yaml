@@ -25,7 +25,7 @@ jobs:
           env:
             JMETER_VERSION: 5.2.1
           run: |
-            wget -O /tmp/apache-jmeter.tgz http://us.mirrors.quenda.co/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+            wget --no-check-certificate -O /tmp/apache-jmeter.tgz http://us.mirrors.quenda.co/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz --no-check-certificate
             cd /tmp && tar -xvf apache-jmeter.tgz
             echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
             echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
@@ -86,7 +86,7 @@ jobs:
         env:
           JMETER_VERSION: 5.2.1
         run: |
-          wget -O /tmp/apache-jmeter.tgz http://us.mirrors.quenda.co/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+          wget --no-check-certificate -O /tmp/apache-jmeter.tgz http://us.mirrors.quenda.co/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
           cd /tmp && tar -xvf apache-jmeter.tgz
           echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
           echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties

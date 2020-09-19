@@ -13,7 +13,7 @@ POST http://localhost:9081/plugins/sources
 POST http://localhost:9081/plugins/sinks
 POST http://localhost:9081/plugins/functions
 ```
-请求示例：
+文件在http服务器上时的请求示例：
 
 ```json
 {
@@ -22,10 +22,18 @@ POST http://localhost:9081/plugins/functions
 }
 ```
 
+文件在Kuiper所在服务器上时的请求示例：
+```json
+{
+  "name":"random",
+  "file":"file:///var/plugins/sources/random.zip"
+}
+```
+
 ### 参数
 
 1. name：插件的唯一名称。 名称必须采用首字母小写的驼峰命名法。 例如，如果导出的插件名称为 `Random`，则此插件的名称为 `random`。
-2. file：插件文件的 URL。 它必须是一个 zip 文件，其中包含：编译后的 so 文件和yaml 文件（仅源必需）。 如果插件依赖于某些外部依赖项，则可以提供一个名为install.sh 的 bash 脚本来进行依赖项安装。 文件名称必须与插件名称匹配。 请参考[扩展](../extension/overview.md) 了解命名规则。
+2. file：插件文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 Kuiper 服务器所在的机器上。它必须是一个 zip 文件，其中包含：编译后的 so 文件和yaml 文件（仅源必需）。 如果插件依赖于某些外部依赖项，则可以提供一个名为install.sh 的 bash 脚本来进行依赖项安装。 文件名称必须与插件名称匹配。 请参考[扩展](../extension/overview.md) 了解命名规则。
 
 ### 插件文件格式
 名为 random.zip 的源的示例 zip 文件
@@ -121,4 +129,24 @@ DELETE http://localhost:8080/plugins/functions/{name}
 
 ```shell
 DELETE http://localhost:8080/plugins/sources/{name}?restart=1
+```
+
+## 获取可安装的插件
+
+根据在 `etc/kuiper.yaml` 文件中 `pluginHosts` 的配置，获取适合本 Kuiper 实例运行的插件列表，缺省会从 `https://packages.emqx.io` 上去获取。
+
+```
+GET http://localhost:9081/plugins/sources/prebuild
+GET http://localhost:9081/plugins/sinks/prebuild
+GET http://localhost:9081/plugins/functions/prebuild
+```
+
+样例返回内容如下，其中键值为插件名称，值是插件的下载地址。
+
+```json
+{
+  "file": "http://127.0.0.1:63767/kuiper-plugins/0.9.1/sinks/alpine/file_arm64.zip",
+  "influx": "http://127.0.0.1:63767/kuiper-plugins/0.9.1/sinks/alpine/influx_arm64.zip",
+  "zmq": "http://127.0.0.1:63768/kuiper-plugins/0.9.1/sinks/alpine/zmq_arm64.zip"
+}
 ```

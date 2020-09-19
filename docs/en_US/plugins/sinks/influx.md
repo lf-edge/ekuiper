@@ -7,12 +7,12 @@ The sink will publish the result into a InfluxDB.
 Please make following update before compile the plugin,
 
 - Add Influxdb library reference in `go.mod`.
-- Remove the first line `// +build influxdb` of file `plugins/sinks/influxdb.go`.
+- Remove the first line `// +build plugins` of file `plugins/sinks/influx.go`.
 
 ```shell
 # cd $kuiper_src
-# go build --buildmode=plugin -o plugins/sinks/InfluxDB.so plugins/sinks/influxdb.go
-# zip influx.zip plugins/sinks/InfluxDB.so
+# go build --buildmode=plugin -o plugins/sinks/Influx.so plugins/sinks/influx.go
+# zip influx.zip plugins/sinks/Influx.so
 # cp influx.zip /root/tomcat_path/webapps/ROOT/
 # bin/cli create plugin sink influx -f /tmp/influxPlugin.txt
 # bin/cli create rule influx -f /tmp/influxRule.txt

@@ -103,6 +103,20 @@ func (t *Server) GetStatusRule(name string, reply *string) error {
 	return nil
 }
 
+func (t *Server) GetTopoRule(name string, reply *string) error {
+	if r, err := getRuleTopo(name); err != nil {
+		return err
+	} else {
+		dst := &bytes.Buffer{}
+		if err = json.Indent(dst, []byte(r), "", "  "); err != nil {
+			*reply = r
+		} else {
+			*reply = dst.String()
+		}
+	}
+	return nil
+}
+
 func (t *Server) StartRule(name string, reply *string) error {
 	if err := startRule(name); err != nil {
 		return err

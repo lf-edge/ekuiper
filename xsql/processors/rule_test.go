@@ -2,6 +2,7 @@ package processors
 
 import (
 	"encoding/json"
+	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"testing"
 )
@@ -60,6 +61,14 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
+			},
+			t: &xstream.PrintableTopo{
+				Sources: []string{"source_demo"},
+				Edges: map[string][]string{
+					"source_demo":          {"op_preprocessor_demo"},
+					"op_preprocessor_demo": {"op_project"},
+					"op_project":           {"sink_mockSink"},
+				},
 			},
 		}, {
 			name: `TestSingleSQLRule2`,

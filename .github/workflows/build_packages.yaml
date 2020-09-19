@@ -60,15 +60,21 @@ jobs:
             name: packages-mac
             path: _packages/.
 
-    build-docker-images:
+    build-docker-images-and-plugins:
         runs-on: ubuntu-latest
-        
+
         strategy:
             matrix:
-                suffix:
-                - fat
-                - slim
-                - alpine
+                plugin:
+                - sinks/file
+                - sinks/influx
+              # - sinks/taos
+                - sinks/zmq
+                - sources/random
+                - sources/zmq
+                - functions/accumulateWordCount
+                - functions/countPlusOne
+                - functions/echo
 
         steps:
         - uses: actions/checkout@v1
@@ -91,24 +97,70 @@ jobs:
             docker buildx create --use --name mybuild
             docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - name: build docker image
-          if: matrix.suffix == 'fat'
-          run: docker build --no-cache -t emqx/kuiper:$(git describe --tags --always) -f deploy/docker/Dockerfile .
-
-        - name: build docker image
-          if: matrix.suffix != 'fat'
+          run: make docker -j4
+        - name: buiild debian plugins
           env:
-              SUFFIX: ${{ matrix.suffix }}
-          run: docker build --no-cache -t emqx/kuiper:$(git describe --tags --always)-$SUFFIX -f deploy/docker/Dockerfile-$SUFFIX .
-
-        - name: test docker image
+            PLUGIN: ${{ matrix.plugin }}
+          run: make ${PLUGIN}
+        - name: test docker and plugins
+          env:
+            PLUGIN: ${{ matrix.plugin }}
           run: |
             set -e -x -u
-            image_id=$(docker images emqx/kuiper -q | head -1)
-            container_id=$(docker run -d $image_id)
-            ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
-            sleep 10
-            if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
+            plugin_type=$(echo ${PLUGIN%%/*})
+            plugin_name=$(echo ${PLUGIN##*/})
 
+            for image_id in $(docker images emqx/kuiper -q); do
+                container_id=$(docker run -d -v $(pwd)/_plugins:/var/plugins $image_id)
+                ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
+                os=$(docker exec -i ${container_id} sh -c "sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g'" )
+                sleep 5
+                if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
+                if [ ${os} = alpine ]; then continue; fi
+                curl ${ip_address}:9081/plugins/${plugin_type} -X POST -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\"}"
+                [ $plugin_name = $(curl ${ip_address}:9081/plugins/${plugin_type}/${plugin_name} | jq '.name'| sed 's/\"//g' ) ] || exit 1
+            done
+        - uses: actions/upload-artifact@v2
+          with:
+            name: plugins
+            path: "_plugins/"
+
+    build-docker-manifest-images:
+        runs-on: ubuntu-latest
+        
+
+        needs:
+        - build-docker-images-and-plugins
+
+        strategy:
+            matrix:
+                suffix:
+                - fat
+                - slim
+                - alpine
+
+        steps:
+        - uses: actions/checkout@v1
+        - name: install docker
+          if: github.event_name == 'release'
+          run: |
+            sudo apt-get remove docker docker-engine docker.io containerd runc
+            sudo apt-get update
+            sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            sudo apt-get update
+            sudo apt-get install docker-ce docker-ce-cli containerd.io jq
+        - name: prepare docker
+          if: github.event_name == 'release'
+          run: |
+            mkdir -p $HOME/.docker
+            echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
+            echo '{ "experimental": true, "storage-driver": "overlay2", "max-concurrent-downloads": 50, "max-concurrent-uploads": 50, "graph": "/mnt/docker" }' | sudo tee /etc/docker/daemon.json
+            sudo systemctl restart docker
+            docker version
+            docker buildx create --use --name mybuild
+            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - name: cross build docker images
           if: (matrix.suffix == 'fat') && (github.event_name == 'release')
           run: |
@@ -119,7 +171,6 @@ jobs:
             -t emqx/kuiper:$(git describe --tags --always) \
             -f deploy/docker/Dockerfile . \
             --push
-
         - name: cross build docker images
           if: (matrix.suffix != 'fat') && (github.event_name == 'release')
           env:
@@ -155,6 +206,7 @@ jobs:
             sudo systemctl restart docker
             docker version
             docker buildx create --use --name mybuild
+            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - name: build docker image
           run: docker build --no-cache -t emqx/kuiper-kubernetes-tool:$(git describe --tags --always) -f deploy/docker/Dockerfile-kubernetes-tool .
         - name: test docker image
@@ -163,16 +215,23 @@ jobs:
             docker run -d --name kuiper-kubernetes-tool emqx/kuiper-kubernetes-tool:$(git describe --tags --always)
             sleep 5
             if [ "$(docker logs kuiper-kubernetes-tool)" != "Kuiper kubernetes tool is started successfully!"  ]; then exit 1; fi
-        - name: push docker image
+        - name: buildx docker image
           if: github.event_name == 'release'
           run: |
             echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
-            docker push emqx/kuiper-kubernetes-tool:$(git describe --tags --always)
+            docker buildx build --no-cache \
+                --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
+                -t emqx/kuiper-kubernetes-tool:$(git describe --tags --always) \
+                -f deploy/docker/Dockerfile-kubernetes-tool . \
+                -- push
 
     release:
         runs-on: ubuntu-latest
 
-        needs: [build, build-on-mac]
+        needs:
+        - build
+        - build-on-mac
+        - build-docker-images-and-plugins
 
         steps:
         - uses: actions/checkout@v1
@@ -184,6 +243,10 @@ jobs:
           with:
             name: packages-mac
             path: _packages
+        - uses: actions/download-artifact@v1
+          with:
+            name: plugins
+            path: _plugins
         - name: check packages
           run: |
             cd _packages && for var in $( ls |grep -v sha256); do
@@ -208,12 +271,13 @@ jobs:
             aws configure set default.region us-west-2
             aws s3 rm --quiet --recursive s3://packages.emqx.io/kuiper/$version
             aws s3 cp --quiet --recursive ./_packages s3://packages.emqx.io/kuiper/$version
-            aws cloudfront create-invalidation --distribution-id E3TYD0WSP4S14P --paths "/kuiper/$version/*"
+            aws s3 cp --quiet --recursive ./_plugins s3://packages.emqx.io/kuiper-plugins/$version
+            aws cloudfront create-invalidation --distribution-id E3TYD0WSP4S14P --paths "/kuiper/$version/*,/kuiper-plugins/$version/*"
         - name: update emqx.io
           if: github.event_name == 'release'
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
-            curl -w %{http_code} --insecure -H ${{ secrets.EmqxHeader }} https://admin.emqx.io/api/v1/kuiper_github_release_callback?tag=$version
+            curl -w %{http_code} --insecure -H ${{ secrets.EmqxHeader }} https://admin.emqx.io/admin_api/v1/kuiper_github_release_callback?tag=$version
         - name: update helm packages
           if: github.event_name == 'release'
           run: |

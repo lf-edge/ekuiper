@@ -347,6 +347,17 @@ func validateAggFunc(name string, args []Expr) error {
 		if err := validateLen(name, 1, len); err != nil {
 			return err
 		}
+	case "collect":
+		if err := validateLen(name, 1, len); err != nil {
+			return err
+		}
+	case "deduplicate":
+		if err := validateLen(name, 2, len); err != nil {
+			return err
+		}
+		if !isBooleanArg(args[1]) {
+			return produceErrInfo(name, 1, "bool")
+		}
 	}
 	return nil
 }

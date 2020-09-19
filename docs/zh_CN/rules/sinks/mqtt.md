@@ -4,17 +4,17 @@
 
 | 属性名称 | 是否可选 | 说明                                          |
 | ------------- | -------- | ---------------------------------------------------- |
-| server        | 否    | mqtt  服务器的代理地址，例如 `tcp：//127.0.0.1：1883` |
-| topic          | 否    | mqtt 主题，例如``分析/结果``                         |
-| clientId      | 是     | mqtt 连接的客户端 ID。 如果未指定，将使用一个 uuid   |
-| protocolVersion   | 是    | 3.1 (也被称为 MQTT 3) 或者 3.1.1 (也被称为 MQTT 4)。 如果未指定，缺省值为 3.1。|
+| server        | 否    | MQTT  服务器地址，例如 `tcp://127.0.0.1:1883` |
+| topic          | 否    | MQTT 主题，例如 `analysis/result`                     |
+| clientId      | 是     | MQTT 连接的客户端 ID。 如果未指定，将使用一个 uuid |
+| protocolVersion   | 是    | MQTT 协议版本。3.1 (也被称为 MQTT 3) 或者 3.1.1 (也被称为 MQTT 4)。 如果未指定，缺省值为 3.1。 |
 | qos               | 是    | 消息转发的服务质量                               |
 | username          | 是    | 连接用户名                            |
 | password          | 是    | 连接密码                             |
 | certificationPath | 是    | 证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 `server` 命令的路径。比如，如果你在 `/var/kuiper` 中运行 `bin/server` ，那么父目录为 `/var/kuiper`; 如果运行从 `/var/kuiper/bin` 中运行`./server`，那么父目录为 `/var/kuiper/bin`。 |
-| privateKeyPath    | 是    | 私钥路径。可以为绝对路径，也可以为相对路径。更详细的信息，请参考 `certificationPath`. |
-| insecureSkipVerify | true     | 如果 InsecureSkipVerify 设置为 ``true``, TLS接受服务器提供的任何证书以及该证书中的任何主机名。 在这种模式下，TLS容易受到中间人攻击。默认值为``false``。配置项只能用于TLS连接。|
-| retained           | true     | 如果 retained 设置为 ``true``,Broker会存储每个Topic的最后一条保留消息及其Qos。默认值是``false``   
+| privateKeyPath    | 是    | 私钥路径。可以为绝对路径，也可以为相对路径，相对路径的用法与 `certificationPath` 类似。 |
+| insecureSkipVerify | true     | 如果 InsecureSkipVerify 设置为 `true`, TLS接受服务器提供的任何证书以及该证书中的任何主机名。 在这种模式下，TLS容易受到中间人攻击。默认值为`false`。配置项只能用于TLS连接。|
+| retained           | true     | 如果 retained 设置为 `true`,Broker会存储每个Topic的最后一条保留消息及其Qos。默认值是 `false`   
 
 以下为使用 SAS 连接到 Azure IoT Hub 的样例。
 ```json

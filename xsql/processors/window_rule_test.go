@@ -1,6 +1,7 @@
 package processors
 
 import (
+	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"testing"
 )
@@ -207,6 +208,18 @@ func TestWindow(t *testing.T) {
 				"op_join_0_process_latency_ms": int64(0),
 				"op_join_0_records_in_total":   int64(10),
 				"op_join_0_records_out_total":  int64(8),
+			},
+			t: &xstream.PrintableTopo{
+				Sources: []string{"source_demo", "source_demo1"},
+				Edges: map[string][]string{
+					"source_demo":           {"op_preprocessor_demo"},
+					"source_demo1":          {"op_preprocessor_demo1"},
+					"op_preprocessor_demo":  {"op_window"},
+					"op_preprocessor_demo1": {"op_window"},
+					"op_window":             {"op_join"},
+					"op_join":               {"op_project"},
+					"op_project":            {"sink_mockSink"},
+				},
 			},
 		}, {
 			name: `TestWindowRule4`,
@@ -550,6 +563,74 @@ func TestWindow(t *testing.T) {
 				"op_window_0_process_latency_ms": int64(0),
 				"op_window_0_records_in_total":   int64(3),
 				"op_window_0_records_out_total":  int64(4),
+			},
+		}, {
+			name: `TestCountWindowRule1`,
+			sql:  `SELECT collect(*)[0]->color as c FROM demo GROUP BY COUNTWINDOW(3)`,
+			r: [][]map[string]interface{}{
+				{{
+					"c": "red",
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(1),
+				"op_project_0_records_out_total":  int64(1),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(1),
+				"sink_mockSink_0_records_out_total": int64(1),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(5),
+				"op_window_0_records_out_total":  int64(1),
+			},
+		}, {
+			name: `TestWindowRule10`,
+			sql:  `SELECT deduplicate(color, false)->color as c FROM demo GROUP BY SlidingWindow(hh, 1)`,
+			r: [][]map[string]interface{}{
+				{{
+					"c": "red",
+				}}, {{
+					"c": "blue",
+				}}, {{}}, {{
+					"c": "yellow",
+				}}, {{}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_ms": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(5),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_ms": int64(0),
+				"op_window_0_records_in_total":   int64(5),
+				"op_window_0_records_out_total":  int64(5),
 			},
 		},
 	}

@@ -59,7 +59,7 @@ http 请求的超时时间，单位为 ms。
 
 ### bodyType
 
-正文类型,可以是 none|text|json|html|xml|javascript| 格式。
+正文类型,可以是 none|text|json|html|xml|javascript|form。
 
 ### headers
 

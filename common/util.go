@@ -45,7 +45,6 @@ func LoadConf(confName string) ([]byte, error) {
 	}
 
 	file := path.Join(confDir, confName)
-	//	file := confDir + confName
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -68,11 +67,13 @@ type KuiperConf struct {
 		RestTls        *tlsConf `yaml:"restTls"`
 		Prometheus     bool     `yaml:"prometheus"`
 		PrometheusPort int      `yaml:"prometheusPort"`
+		PluginHosts    string   `yaml:"pluginHosts"`
 	}
 	Rule api.RuleOption
 	Sink struct {
-		CacheThreshold    int `yaml:"cacheThreshold"`
-		CacheTriggerCount int `yaml:"cacheTriggerCount"`
+		CacheThreshold    int  `yaml:"cacheThreshold"`
+		CacheTriggerCount int  `yaml:"cacheTriggerCount"`
+		DisableCache      bool `yaml:"disableCache""`
 	}
 }
 
@@ -211,26 +212,6 @@ func absolutePath(subdir string) (dir string, err error) {
 	return dir, nil
 }
 
-/*
-func GetLoc(subdir string) (string, error) {
-	if base := os.Getenv(KuiperBaseKey); base != "" {
-		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
-		dir = base
-	} else {
-		dir, err = filepath.Abs(filepath.Dir(os.Args[0]))
-		if err != nil {
-			return "", err
-		}
-		dir = filepath.Dir(dir)
-	}
-
-	dir = path.Join(dir, subdir)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return "", fmt.Errorf("conf dir not found : %s", dir)
-	}
-	return dir, nil
-}
-*/
 func GetLoc(subdir string) (string, error) {
 	if "relative" == LoadFileType {
 		return relativePath(subdir)
@@ -310,7 +291,7 @@ func ToInt(input interface{}) (int, error) {
 *   Convert a map into a struct. The output parameter must be a pointer to a struct
 *   The struct can have the json meta data
  */
-func MapToStruct(input map[string]interface{}, output interface{}) error {
+func MapToStruct(input, output interface{}) error {
 	// convert map to json
 	jsonString, err := json.Marshal(input)
 	if err != nil {
@@ -364,4 +345,34 @@ func MapToSyncMap(m map[string]interface{}) *sync.Map {
 		sm.Store(k, v)
 	}
 	return sm
+}
+
+func ReadJsonUnmarshal(path string, ret interface{}) error {
+	sliByte, err := ioutil.ReadFile(path)
+	if nil != err {
+		return err
+	}
+	err = json.Unmarshal(sliByte, ret)
+	if nil != err {
+		return err
+	}
+	return nil
+}
+func ReadYamlUnmarshal(path string, ret interface{}) error {
+	sliByte, err := ioutil.ReadFile(path)
+	if nil != err {
+		return err
+	}
+	err = yaml.Unmarshal(sliByte, ret)
+	if nil != err {
+		return err
+	}
+	return nil
+}
+func WriteYamlMarshal(path string, data interface{}) error {
+	y, err := yaml.Marshal(data)
+	if nil != err {
+		return err
+	}
+	return ioutil.WriteFile(path, y, 0666)
 }

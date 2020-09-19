@@ -138,7 +138,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						stats.ProcessTimeStart()
 						tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: common.GetNowInMilli(), Metadata: data.Meta()}
 						stats.ProcessTimeEnd()
-						logger.Debugf("source node is sending %+v", tuple)
+						logger.Debugf("source node %s is sending tuple %+v of timestamp %d", m.name, tuple, tuple.Timestamp)
 						//blocking
 						m.Broadcast(tuple)
 						stats.IncTotalRecordsOut()
@@ -154,7 +154,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 								logger.Debugf("Source save offset %v", offset)
 							}
 						}
-						logger.Debugf("%s consume data %v complete", m.name, tuple)
+						logger.Debugf("source node %s has consumed tuple of timestamp %d", m.name, tuple.Timestamp)
 					}
 				}
 			}(i)

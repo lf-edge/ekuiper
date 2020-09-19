@@ -15,6 +15,7 @@ var fileMap = map[string]string{
 	"edgex":       khome + "/etc/sources/edgex.yaml",
 	"random":      khome + "/etc/sources/random.yaml",
 	"zmq":         khome + "/etc/sources/zmq.yaml",
+	"httppull":    khome + "/etc/sources/httppull.yaml",
 	"mqtt_source": khome + "/etc/mqtt_source.yaml",
 	"kuiper":      khome + "/etc/kuiper.yaml",
 	"client":      khome + "/etc/client.yaml",
@@ -22,6 +23,7 @@ var fileMap = map[string]string{
 
 var file_keys_map = map[string]map[string]string{
 	"edgex": {
+		"SERVICESERVER":     "serviceServer",
 		"CLIENTID":          "ClientId",
 		"USERNAME":          "Username",
 		"PASSWORD":          "Password",
@@ -39,13 +41,20 @@ var file_keys_map = map[string]map[string]string{
 		"SHAREDSUBSCRIPTION": "sharedSubscription",
 		"CERTIFICATIONPATH":  "certificationPath",
 		"PRIVATEKEYPATH":     "privateKeyPath",
+		"KUBEEDGEVERSION":    "kubeedgeVersion",
+		"KUBEEDGEMODELFILE":  "kubeedgeModelFile",
 	},
 	"kuiper": {
-		"CONSOLELOG":     "consoleLog",
-		"FILELOG":        "fileLog",
-		"RESTPORT":       "restPort",
-		"RESTTLS":        "restTls",
-		"PROMETHEUSPORT": "prometheusPort",
+		"CONSOLELOG":         "consoleLog",
+		"FILELOG":            "fileLog",
+		"RESTPORT":           "restPort",
+		"RESTTLS":            "restTls",
+		"PROMETHEUSPORT":     "prometheusPort",
+		"PLUGINHOSTS":        "pluginHosts",
+		"CHECKPOINTINTERVAL": "checkpointInterval",
+		"CACHETHRESHOLD":     "cacheThreshold",
+		"CACHETRIGGERCOUNT":  "cacheTriggerCount",
+		"DISABLECACHE":       "disableCache",
 	},
 }
 
@@ -170,7 +179,25 @@ func getKey(file string, key string) string {
 }
 
 func getValueType(val string) interface{} {
-	if i, err := strconv.ParseInt(val, 10, 64); err == nil {
+	val = strings.Trim(val, " ")
+	if strings.HasPrefix(val, "[") && strings.HasSuffix(val, "]") {
+		val = strings.ReplaceAll(val, "[", "")
+		val = strings.ReplaceAll(val, "]", "")
+		vals := strings.Split(val, ",")
+		var ret []interface{}
+		for _, v := range vals {
+			if i, err := strconv.ParseInt(v, 10, 64); err == nil {
+				ret = append(ret, i)
+			} else if b, err := strconv.ParseBool(v); err == nil {
+				ret = append(ret, b)
+			} else if f, err := strconv.ParseFloat(v, 64); err == nil {
+				ret = append(ret, f)
+			} else {
+				ret = append(ret, v)
+			}
+		}
+		return ret
+	} else if i, err := strconv.ParseInt(val, 10, 64); err == nil {
 		return i
 	} else if b, err := strconv.ParseBool(val); err == nil {
 		return b

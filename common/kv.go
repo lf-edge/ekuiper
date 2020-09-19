@@ -16,6 +16,7 @@ type KeyValue interface {
 	//Must return *common.Error with NOT_FOUND error
 	Delete(key string) error
 	Keys() (keys []string, err error)
+	Clean() error
 }
 
 type SyncKVMap struct {
@@ -187,4 +188,8 @@ func (m *SimpleKVStore) Keys() (keys []string, err error) {
 		keys = append(keys, k)
 	}
 	return keys, nil
+}
+
+func (m *SimpleKVStore) Clean() error {
+	return os.RemoveAll(m.path)
 }

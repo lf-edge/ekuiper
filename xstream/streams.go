@@ -2,6 +2,7 @@ package xstream
 
 import (
 	"context"
+	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/checkpoints"
@@ -10,6 +11,11 @@ import (
 	"github.com/emqx/kuiper/xstream/states"
 	"strconv"
 )
+
+type PrintableTopo struct {
+	Sources []string            `json:"sources"`
+	Edges   map[string][]string `json:"edges"`
+}
 
 type TopologyNew struct {
 	sources            []*nodes.SourceNode
@@ -23,6 +29,7 @@ type TopologyNew struct {
 	checkpointInterval int
 	store              api.Store
 	coordinator        *checkpoints.Coordinator
+	topo               *PrintableTopo
 }
 
 func NewWithNameAndQos(name string, qos api.Qos, checkpointInterval int) (*TopologyNew, error) {
@@ -31,6 +38,10 @@ func NewWithNameAndQos(name string, qos api.Qos, checkpointInterval int) (*Topol
 		drain:              make(chan error),
 		qos:                qos,
 		checkpointInterval: checkpointInterval,
+		topo: &PrintableTopo{
+			Sources: make([]string, 0),
+			Edges:   make(map[string][]string),
+		},
 	}
 	return tp, nil
 }
@@ -47,6 +58,7 @@ func (s *TopologyNew) Cancel() {
 
 func (s *TopologyNew) AddSrc(src *nodes.SourceNode) *TopologyNew {
 	s.sources = append(s.sources, src)
+	s.topo.Sources = append(s.topo.Sources, fmt.Sprintf("source_%s", src.GetName()))
 	return s
 }
 
@@ -54,6 +66,7 @@ func (s *TopologyNew) AddSink(inputs []api.Emitter, snk *nodes.SinkNode) *Topolo
 	for _, input := range inputs {
 		input.AddOutput(snk.GetInput())
 		snk.AddInputCount()
+		s.addEdge(input.(api.TopNode), snk, "sink")
 	}
 	s.sinks = append(s.sinks, snk)
 	return s
@@ -63,9 +76,24 @@ func (s *TopologyNew) AddOperator(inputs []api.Emitter, operator nodes.OperatorN
 	for _, input := range inputs {
 		input.AddOutput(operator.GetInput())
 		operator.AddInputCount()
+		s.addEdge(input.(api.TopNode), operator, "op")
 	}
 	s.ops = append(s.ops, operator)
 	return s
+}
+
+func (s *TopologyNew) addEdge(from api.TopNode, to api.TopNode, toType string) {
+	fromType := "op"
+	if _, ok := from.(*nodes.SourceNode); ok {
+		fromType = "source"
+	}
+	f := fmt.Sprintf("%s_%s", fromType, from.GetName())
+	t := fmt.Sprintf("%s_%s", toType, to.GetName())
+	e, ok := s.topo.Edges[f]
+	if !ok {
+		e = make([]string, 0)
+	}
+	s.topo.Edges[f] = append(e, t)
 }
 
 func Transform(op nodes.UnOperation, name string, bufferLength int) *nodes.UnaryOperator {
@@ -180,4 +208,8 @@ func (s *TopologyNew) GetMetrics() (keys []string, values []interface{}) {
 		}
 	}
 	return
+}
+
+func (s *TopologyNew) GetTopo() *PrintableTopo {
+	return s.topo
 }

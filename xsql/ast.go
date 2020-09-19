@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/plugins"
 	"math"
 	"reflect"
 	"sort"
@@ -53,6 +52,8 @@ const (
 	FULL_JOIN
 	CROSS_JOIN
 )
+
+var AsteriskExpr = StringLiteral{Val: "*"}
 
 var COLUMN_SEPARATOR = tokens[COLSEP]
 
@@ -622,7 +623,7 @@ func (t *Tuple) All(stream string) (interface{}, bool) {
 }
 
 func (t *Tuple) AggregateEval(expr Expr, v CallValuer) []interface{} {
-	return []interface{}{Eval(expr, t, v)}
+	return []interface{}{Eval(expr, MultiValuer(t, v, &WildcardValuer{t}))}
 }
 
 func (t *Tuple) GetTimestamp() int64 {
@@ -709,7 +710,7 @@ func (w WindowTuplesSet) AggregateEval(expr Expr, v CallValuer) []interface{} {
 		return nil
 	}
 	for _, t := range w[0].Tuples {
-		result = append(result, Eval(expr, &t, v))
+		result = append(result, Eval(expr, MultiValuer(&t, v, &WildcardValuer{&t})))
 	}
 	return result
 }
@@ -810,7 +811,7 @@ func (s JoinTupleSets) Index(i int) Valuer { return &(s[i]) }
 func (s JoinTupleSets) AggregateEval(expr Expr, v CallValuer) []interface{} {
 	var result []interface{}
 	for _, t := range s {
-		result = append(result, Eval(expr, &t, v))
+		result = append(result, Eval(expr, MultiValuer(&t, v, &WildcardValuer{&t})))
 	}
 	return result
 }
@@ -820,7 +821,7 @@ type GroupedTuples []DataValuer
 func (s GroupedTuples) AggregateEval(expr Expr, v CallValuer) []interface{} {
 	var result []interface{}
 	for _, t := range s {
-		result = append(result, Eval(expr, t, v))
+		result = append(result, Eval(expr, MultiValuer(t, v, &WildcardValuer{t})))
 	}
 	return result
 }
@@ -970,8 +971,8 @@ type EvalResultMessage struct {
 type ResultsAndMessages []EvalResultMessage
 
 // Eval evaluates expr against a map.
-func Eval(expr Expr, m Valuer, v CallValuer) interface{} {
-	eval := ValuerEval{Valuer: MultiValuer(m, v)}
+func Eval(expr Expr, m Valuer) interface{} {
+	eval := ValuerEval{Valuer: m}
 	return eval.Eval(expr)
 }
 
@@ -1037,28 +1038,18 @@ func MultiAggregateValuer(data AggregateData, singleCallValuer CallValuer, value
 	}
 }
 
-//The args is [][] for aggregation
 func (a *multiAggregateValuer) Call(name string, args []interface{}) (interface{}, bool) {
-	var singleArgs []interface{} = nil
+	// assume the aggFuncMap already cache the custom agg funcs in isAggFunc()
+	_, isAgg := aggFuncMap[name]
 	for _, valuer := range a.multiValuer {
-		if a, ok := valuer.(AggregateCallValuer); ok {
+		if a, ok := valuer.(AggregateCallValuer); ok && isAgg {
 			if v, ok := a.Call(name, args); ok {
 				return v, true
 			} else {
 				return fmt.Errorf("call func %s error: %v", name, v), false
 			}
-		} else if c, ok := valuer.(CallValuer); ok {
-			if singleArgs == nil {
-				for _, arg := range args {
-					if arg, ok := arg.([]interface{}); ok {
-						singleArgs = append(singleArgs, arg[0])
-					} else {
-						common.Log.Infof("multiAggregateValuer does not get [][] args but get %v", args)
-						return nil, false
-					}
-				}
-			}
-			if v, ok := c.Call(name, singleArgs); ok {
+		} else if c, ok := valuer.(CallValuer); ok && !isAgg {
+			if v, ok := c.Call(name, args); ok {
 				return v, true
 			}
 		}
@@ -1109,16 +1100,13 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 	case *Call:
 		if valuer, ok := v.Valuer.(CallValuer); ok {
 			var args []interface{}
-
 			if len(expr.Args) > 0 {
 				args = make([]interface{}, len(expr.Args))
-				if aggreValuer, ok := valuer.(AggregateCallValuer); ok {
-					for i := range expr.Args {
-						args[i] = aggreValuer.GetAllTuples().AggregateEval(expr.Args[i], aggreValuer.GetSingleCallValuer())
-					}
-				} else {
-					for i := range expr.Args {
-						args[i] = v.Eval(expr.Args[i])
+				for i, arg := range expr.Args {
+					if aggreValuer, ok := valuer.(AggregateCallValuer); isAggFunc(expr) && ok {
+						args[i] = aggreValuer.GetAllTuples().AggregateEval(arg, aggreValuer.GetSingleCallValuer())
+					} else {
+						args[i] = v.Eval(arg)
 						if _, ok := args[i].(error); ok {
 							return args[i]
 						}
@@ -1160,6 +1148,8 @@ func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 	switch val := lhs.(type) {
 	case map[string]interface{}:
 		return v.evalJsonExpr(val, expr.OP, expr.RHS)
+	case Message:
+		return v.evalJsonExpr(map[string]interface{}(val), expr.OP, expr.RHS)
 	case error:
 		return val
 	}
@@ -1704,78 +1694,4 @@ func toFloat64(para interface{}) float64 {
 		return v
 	}
 	return 0
-}
-
-func IsAggStatement(node Node) bool {
-	var r = false
-	WalkFunc(node, func(n Node) {
-		if f, ok := n.(*Call); ok {
-			if ok := isAggFunc(f); ok {
-				r = true
-				return
-			}
-		} else if d, ok := n.(Dimensions); ok {
-			ds := d.GetGroups()
-			if ds != nil && len(ds) > 0 {
-				r = true
-				return
-			}
-		}
-	})
-	return r
-}
-
-func isAggFunc(f *Call) bool {
-	fn := strings.ToLower(f.Name)
-	if _, ok := aggFuncMap[fn]; ok {
-		return true
-	} else if _, ok := strFuncMap[fn]; ok {
-		return false
-	} else if _, ok := convFuncMap[fn]; ok {
-		return false
-	} else if _, ok := hashFuncMap[fn]; ok {
-		return false
-	} else if _, ok := otherFuncMap[fn]; ok {
-		return false
-	} else if _, ok := mathFuncMap[fn]; ok {
-		return false
-	} else {
-		if nf, err := plugins.GetFunction(f.Name); err == nil {
-			if nf.IsAggregate() {
-				return true
-			}
-		}
-	}
-	return false
-}
-func HasAggFuncs(node Node) bool {
-	if node == nil {
-		return false
-	}
-	var r = false
-	WalkFunc(node, func(n Node) {
-		if f, ok := n.(*Call); ok {
-			if ok := isAggFunc(f); ok {
-				r = true
-				return
-			}
-		}
-	})
-	return r
-}
-
-func HasNoAggFuncs(node Node) bool {
-	if node == nil {
-		return false
-	}
-	var r = false
-	WalkFunc(node, func(n Node) {
-		if f, ok := n.(*Call); ok {
-			if ok := isAggFunc(f); !ok {
-				r = true
-				return
-			}
-		}
-	})
-	return r
 }

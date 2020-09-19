@@ -14,16 +14,16 @@ Currently golang plugins are only supported on Linux and macOS which poses the s
 
 ## Naming
 
-Notice that, there are some restrictions for the names:
-1. The name of _.so_ file must be camel case with an upper case first letter. For example, _MySource.so_ or _MySink.so_.
-2. The name of the export symbol of the plugin must be camel case with an upper case first letter.
+We recommend plugin name to be camel case. Notice that, there are some restrictions for the names:
+1. The name of the export symbol of the plugin should be camel case with an **upper case first letter**. It must be the same as the plugin name except the first letter. For example, plugin name _file_ must export a symbol _File_.
+2. The name of _.so_ file must be the same as the export symbol name or the plugin name. For example, _MySource.so_ or _mySink.so_.
 
 ### Version
 
-The user can **optionally** add a version string to the name of _.so_ to help identify the version of the plugin. The version can be then retrieved through describe CLI command or REST API. The naming convention is to add a version string to the name after _@v_. The version can be any string. Below are some typical examples.
+The user can **optionally** add a version string to the name of _.so_ to help identify the version of the plugin. The version can be then retrieved through describe CLI command or REST API. The naming convention is to add a version string to the name after _@_. The version can be any string. If the version string starts with "v", the "v" will be ignored in the return result. Below are some typical examples.
 
 - _MySource@v1.0.0.so_ : version is 1.0.0
-- _MySource@v20200331.so_:  version is 20200331
+- _MySource@20200331.so_:  version is 20200331
 
 If multiple versions of plugins with the same name in place, only the latest version(ordered by the version string) will be taken effect.
 

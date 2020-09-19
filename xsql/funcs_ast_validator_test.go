@@ -450,6 +450,21 @@ func TestFuncValidator(t *testing.T) {
 			stmt: nil,
 			err:  "Expect string type for 2 parameter of function json_path_query.",
 		},
+		{
+			s:    `SELECT collect() from tbl`,
+			stmt: nil,
+			err:  "The arguments for collect should be 1.",
+		},
+		{
+			s:    `SELECT deduplicate(abc, temp, true) from tbl`,
+			stmt: nil,
+			err:  "The arguments for deduplicate should be 2.",
+		},
+		{
+			s:    `SELECT deduplicate(temp, "string") from tbl`,
+			stmt: nil,
+			err:  "Expect bool type for 2 parameter of function deduplicate.",
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

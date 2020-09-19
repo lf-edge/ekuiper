@@ -20,25 +20,24 @@
 
 ## 比较和计算的兼容性
 
-每个 sql 子句中可能都有二进制操作。 在此示例中，` Select temperature * 2 from demo where temperature > 20`，在 select 子句中使用计算操作，在 where 子句中使用比较操作。 在二进制操作中，如果使用了不兼容的数据类型，则会发生运行时错误并将其发送到目标。
+每个 sql 子句中可能都有二元操作。 在此示例中，` Select temperature * 2 from demo where temperature > 20`，在 select 子句中使用计算操作，在 where 子句中使用比较操作。 在二元操作中，如果使用了不兼容的数据类型，则会发生运行时错误并将其发送到目标。
 
-数组和结构在任何二进制操作中均不受支持。 下表列出了其他数据类型的兼容性。 而行标题是左操作数数据类型，列标题是右操作数数据。 关于兼容性的值，其中 Y 表示是，N 表示否。
+数组和结构在任何二元操作中均不受支持。 下表列出了其他数据类型的兼容性。 而行标题是左操作数数据类型，列标题是右操作数数据。 关于兼容性的值，其中 Y 表示是，N 表示否。
 
- #    | bigint | float | string | datetime | boolean |
-
- ---- | ------ | ----  | ----   | ----     | ---     |
- bigint|  Y    |  Y    |   N    |   N      |   N     |
- float |  Y    |  Y    |   N    |   N      |   N     |
- string|  N    |  N    |   Y    |   N      |   N     |
- datetime| Y   |  Y    | Y if in the valid format | Y | N |
- boolean| N    |  N    |   N    |   N      |   N     |
+| bigint   | float | string | datetime            | boolean |
+| -------- | ----- | ------ | ------------------- | ------- |
+| bigint   | Y     | Y      | N                   | N       |
+| float    | Y     | Y      | N                   | N       |
+| string   | N     | N      | Y                   | N       |
+| datetime | Y     | Y      | Y, 如为合法数据类型 | Y       |
+| boolean  | N     | N      | N                   | N       |
 
 日期时间字符串的默认格式是 `"2006-01-02T15:04:05.000Z07:00"`
 
 对于 `nil` 值，我们遵循以下规则：
 
-  1. 与 nil 比较总是返回 false
-  2. 用 nil 计算总是返回 nil
+    1. 与 nil 比较总是返回 false
+    2. 用 nil 计算总是返回 nil
 
 ## 类型转换
 
@@ -46,4 +45,5 @@
 
 - ...
 - 
+
 

@@ -14,6 +14,35 @@ Kuiper 具有许多内置函数，可以对数据执行计算。
 | max      | max(col1) | 组中的最大值。空值不参与计算。     |
 | min      | min(col1) | 组中的最小值。空值不参与计算。     |
 | sum      | sum(col1) | 组中所有值的总和。空值不参与计算。 |
+| collect   | collect(*), collect(col1)   | 返回组中指定的列或整个消息（参数为*时）的值组成的数组。    |
+| deduplicate| deduplicate(col, false)   | 返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组；此时可以设置 sin k参数 [omitIfEmpty](../rules/overview.md#sink_actions)，使得 sink 接到空结果后不触发。   |
+
+### Collect() 示例
+
+- 获取当前窗口所有消息的列 a 的值组成的数组。假设列 a 的类型为 int, 则结果为: `[{"r1":[32, 45]}]`
+    ```sql
+    SELECT collect(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+    ```
+- 获取当前窗口所有消息的列 a 的值组成的数组。结果为: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
+    ```sql
+    SELECT collect(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+    ```
+  
+- 获取当前窗口第二个消息的列 `a` 的值。结果为: `[{"r1":32}]`
+    ```sql
+    SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+    ```
+ 
+ ### Deduplicate() 示例
+ 
+ - 获取当前窗口中，列 `a` 值不重复的所有消息组成的数组。结果为: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
+     ```sql
+     SELECT deduplicate(a, true) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+     ```
+ - 获取列 `a` 值在过去一小时中不重复的值。每收到一条新消息，都会检测列 `a` 是否重复，若不重复则输出：`[{"r1":32}]` 或者 `[{"r1":45}]`。若检测到重复值，则输出 `[{}]` 。此时，可以设置 omitIfEmpty 的 sink 参数使得检测到重复值时不触发规则。
+      ```sql
+      SELECT deduplicate(a, false)->a as r1 FROM demo GROUP BY SlidingWindow(hh, 1)
+      ```
 
 ## 数学函数
 | 函数 | 示例   | 说明                                  |
@@ -50,7 +79,7 @@ Kuiper 具有许多内置函数，可以对数据执行计算。
 | -------- | ----------- | ---------------------------------------------- |
 | concat   | concat(col1...)  | 连接数组或字符串。 此函数接受任意数量的参数并返回 String 或 Array |
 | endswith | endswith(col1, col2) | 返回一个布尔值，该布尔值指示第一个 String参数是否以第二个 String 参数结尾。 |
-| format_time| parse_time(col1, format) | 将日期时间格式化为字符串。 |
+| format_time| format_time(col1, format) | 将日期时间格式化为字符串。 |
 | indexof  | indexof(col1, col2)  | 返回第二个参数的第一个索引（从0开始），作为第一个参数中的子字符串。 |
 | length   | length(col1)| 返回提供的字符串中的字符数。                                                    |
 | lower    | lower(col1) | 返回给定 String 的小写版本。                                                       |

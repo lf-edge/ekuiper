@@ -408,7 +408,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						Name:  "count",
 						Expr: &Call{
 							Name: "count",
-							Args: []Expr{&StringLiteral{Val: "*"}},
+							Args: []Expr{&Wildcard{Token: ASTERISK}},
 						},
 					},
 				},
@@ -420,6 +420,23 @@ func TestParser_ParseStatement(t *testing.T) {
 			s:    `SELECT count(*, f1) FROM tbl`,
 			stmt: nil,
 			err:  `found ",", expected right paren.`,
+		},
+
+		{
+			s: `SELECT deduplicate(temperature, false) FROM tbl`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						AName: "",
+						Name:  "deduplicate",
+						Expr: &Call{
+							Name: "deduplicate",
+							Args: []Expr{&Wildcard{Token: ASTERISK}, &FieldRef{Name: "temperature"}, &BooleanLiteral{Val: false}},
+						},
+					},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
 		},
 
 		{
@@ -1205,21 +1222,9 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT sample(-.3,) FROM tbl`,
-			stmt: &SelectStatement{
-				Fields: []Field{
-					{
-						Expr: &Call{
-							Name: "sample",
-							Args: []Expr{
-								&NumberLiteral{Val: -0.3},
-							},
-						},
-						Name:  "sample",
-						AName: ""},
-				},
-				Sources: []Source{&Table{Name: "tbl"}},
-			},
+			s:    `SELECT sample(-.3,) FROM tbl`,
+			stmt: nil,
+			err:  "cannot get the plugin file path: invalid name sample: not exist",
 		},
 
 		{

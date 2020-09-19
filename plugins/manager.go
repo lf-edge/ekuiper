@@ -99,27 +99,25 @@ func getPlugin(t string, pt PluginType) (plugin.Symbol, error) {
 	var nf plugin.Symbol
 	nf, ok := symbolRegistry[key]
 	if !ok {
-		loc, err := common.GetLoc("/plugins/")
-		if err != nil {
-			return nil, fmt.Errorf("cannot find the plugins folder")
-		}
 		m, err := NewPluginManager()
 		if err != nil {
 			return nil, fmt.Errorf("fail to initialize the plugin manager")
 		}
-		soFile, err := getSoFileName(m, pt, t)
+		mod, err := getSoFilePath(m, pt, t)
 		if err != nil {
-			return nil, fmt.Errorf("cannot get the plugin file name: %v", err)
+			return nil, fmt.Errorf("cannot get the plugin file path: %v", err)
 		}
-		mod := path.Join(loc, ptype, soFile)
+		common.Log.Debugf("Opening plugin %s", mod)
 		plug, err := plugin.Open(mod)
 		if err != nil {
 			return nil, fmt.Errorf("cannot open %s: %v", mod, err)
 		}
+		common.Log.Debugf("Successfully open plugin %s", mod)
 		nf, err = plug.Lookup(ut)
 		if err != nil {
 			return nil, fmt.Errorf("cannot find symbol %s, please check if it is exported", t)
 		}
+		common.Log.Debugf("Successfully look-up plugin %s", mod)
 		symbolRegistry[key] = nf
 	}
 	return nf, nil
@@ -212,6 +210,15 @@ func NewPluginManager() (*Manager, error) {
 			etcDir:    etcDir,
 			registry:  registry,
 		}
+		if err := singleton.readSourceMetaDir(); nil != err {
+			common.Log.Errorf("readSourceMetaDir:%v", err)
+		}
+		if err := singleton.readSinkMetaDir(); nil != err {
+			common.Log.Errorf("readSinkMetaDir:%v", err)
+		}
+		if err := singleton.readFuncMetaDir(); nil != err {
+			common.Log.Errorf("readFuncMetaDir:%v", err)
+		}
 	})
 	return singleton, outerErr
 }
@@ -274,8 +281,22 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		}
 		return fmt.Errorf("fail to unzip file %s: %s", uri, err)
 	}
-
 	m.registry.Store(t, name, version)
+
+	switch t {
+	case SINK:
+		if err := m.readSinkMetaFile(path.Join(m.etcDir, PluginTypes[t], name+`.json`)); nil != err {
+			common.Log.Errorf("readSinkFile:%v", err)
+		}
+	case SOURCE:
+		if err := m.readSourceMetaFile(path.Join(m.etcDir, PluginTypes[t], name+`.json`)); nil != err {
+			common.Log.Errorf("readSourceFile:%v", err)
+		}
+	case FUNCTION:
+		if err := m.readFuncMetaFile(path.Join(m.etcDir, PluginTypes[t], name+`.json`)); nil != err {
+			common.Log.Errorf("readFuncFile:%v", err)
+		}
+	}
 	return nil
 }
 
@@ -284,17 +305,24 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
 	}
-	soFile, err := getSoFileName(m, t, name)
+	soPath, err := getSoFilePath(m, t, name)
 	if err != nil {
 		return err
 	}
 	var results []string
 	paths := []string{
-		path.Join(m.pluginDir, PluginTypes[t], soFile),
+		soPath,
 	}
-	if t == SOURCE {
+	switch t {
+	case SOURCE:
 		paths = append(paths, path.Join(m.etcDir, PluginTypes[t], name+".yaml"))
+		m.uninstalSource(name)
+	case SINK:
+		m.uninstalSink(name)
+	case FUNCTION:
+		m.uninstalFunc(name)
 	}
+
 	for _, p := range paths {
 		_, err := os.Stat(p)
 		if err == nil {
@@ -322,6 +350,9 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 }
 func (m *Manager) Get(t PluginType, name string) (map[string]string, bool) {
 	v, ok := m.registry.Get(t, name)
+	if strings.HasPrefix(v, "v") {
+		v = v[1:]
+	}
 	if ok {
 		m := map[string]string{
 			"name":    name,
@@ -332,17 +363,25 @@ func (m *Manager) Get(t PluginType, name string) (map[string]string, bool) {
 	return nil, false
 }
 
-func getSoFileName(m *Manager, t PluginType, name string) (string, error) {
+// Return the lowercase version of so name. It may be upper case in path.
+func getSoFilePath(m *Manager, t PluginType, name string) (string, error) {
 	v, ok := m.registry.Get(t, name)
 	if !ok {
 		return "", common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("invalid name %s: not exist", name))
 	}
 
-	soFile := ucFirst(name) + ".so"
+	soFile := name + ".so"
 	if v != "" {
-		soFile = fmt.Sprintf("%s@v%s.so", ucFirst(name), v)
+		soFile = fmt.Sprintf("%s@%s.so", name, v)
 	}
-	return soFile, nil
+	p := path.Join(m.pluginDir, PluginTypes[t], soFile)
+	if _, err := os.Stat(p); err != nil {
+		p = path.Join(m.pluginDir, PluginTypes[t], ucFirst(soFile))
+	}
+	if _, err := os.Stat(p); err != nil {
+		return "", common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("cannot find .so file for plugin %s", name))
+	}
+	return p, nil
 }
 
 func (m *Manager) install(t PluginType, name string, src string) ([]string, string, error) {
@@ -355,7 +394,7 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 	}
 	defer r.Close()
 
-	soPrefix := regexp.MustCompile(fmt.Sprintf(`^%s(@v.*)?\.so$`, ucFirst(name)))
+	soPrefix := regexp.MustCompile(fmt.Sprintf(`^((%s)|(%s))(@.*)?\.so$`, name, ucFirst(name)))
 	var yamlFile, yamlPath, version string
 	expFiles := 1
 	if t == SOURCE {
@@ -372,6 +411,10 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 				return filenames, "", err
 			}
 			filenames = append(filenames, yamlPath)
+		} else if fileName == name+".json" {
+			if err := unzipTo(file, path.Join(m.etcDir, PluginTypes[t], fileName)); nil != err {
+				common.Log.Errorf("Failed to decompress the metadata %s file", fileName)
+			}
 		} else if soPrefix.Match([]byte(fileName)) {
 			soPath := path.Join(m.pluginDir, PluginTypes[t], fileName)
 			err = unzipTo(file, soPath)
@@ -407,7 +450,7 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 
 func parseName(n string) (string, string) {
 	result := strings.Split(n, ".so")
-	result = strings.Split(result[0], "@v")
+	result = strings.Split(result[0], "@")
 	name := lcFirst(result[0])
 	if len(result) > 1 {
 		return name, result[1]
@@ -449,30 +492,69 @@ func unzipTo(f *zip.File, fpath string) error {
 }
 
 func isValidUrl(uri string) bool {
-	_, err := url.ParseRequestURI(uri)
+	pu, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return false
 	}
 
-	u, err := url.Parse(uri)
-	if err != nil || u.Scheme == "" || u.Host == "" {
+	switch pu.Scheme {
+	case "http", "https":
+		u, err := url.Parse(uri)
+		if err != nil || u.Scheme == "" || u.Host == "" {
+			return false
+		}
+	case "file":
+		if pu.Host != "" || pu.Path == "" {
+			return false
+		}
+	default:
 		return false
 	}
-
 	return true
 }
 
-func downloadFile(filepath string, url string) error {
-	// Get the data
-	resp, err := http.Get(url)
+func downloadFile(filepath string, uri string) error {
+	common.Log.Infof("Start to download file %s\n", uri)
+	u, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("cannot download the file with status: %s", resp.Status)
-	}
-	defer resp.Body.Close()
+	var src io.Reader
+	switch u.Scheme {
+	case "file":
+		// deal with windows path
+		if strings.Index(u.Path, ":") == 2 {
+			u.Path = u.Path[1:]
+		}
+		common.Log.Debugf(u.Path)
+		sourceFileStat, err := os.Stat(u.Path)
+		if err != nil {
+			return err
+		}
 
+		if !sourceFileStat.Mode().IsRegular() {
+			return fmt.Errorf("%s is not a regular file", u.Path)
+		}
+		srcFile, err := os.Open(u.Path)
+		if err != nil {
+			return err
+		}
+		defer srcFile.Close()
+		src = srcFile
+	case "http", "https":
+		// Get the data
+		resp, err := http.Get(uri)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("cannot download the file with status: %s", resp.Status)
+		}
+		defer resp.Body.Close()
+		src = resp.Body
+	default:
+		return fmt.Errorf("unsupported url scheme %s", u.Scheme)
+	}
 	// Create the file
 	out, err := os.Create(filepath)
 	if err != nil {
@@ -481,7 +563,7 @@ func downloadFile(filepath string, url string) error {
 	defer out.Close()
 
 	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
+	_, err = io.Copy(out, src)
 	return err
 }
 

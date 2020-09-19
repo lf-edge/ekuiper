@@ -6,11 +6,15 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/xstream/api"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"golang.org/x/net/html"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -78,13 +82,31 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/rules/{name}/start", startRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 
 	r.HandleFunc("/plugins/sources", sourcesHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/plugins/sources/prebuild", prebuildSourcePlugins).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/sources/{name}", sourceHandler).Methods(http.MethodDelete, http.MethodGet)
+
 	r.HandleFunc("/plugins/sinks", sinksHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/plugins/sinks/prebuild", prebuildSinkPlugins).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/sinks/{name}", sinkHandler).Methods(http.MethodDelete, http.MethodGet)
 	r.HandleFunc("/plugins/functions", functionsHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/plugins/functions/prebuild", prebuildFuncsPlugins).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet)
+
+	r.HandleFunc("/metadata/functions", functionsMetaHandler).Methods(http.MethodGet)
+
+	r.HandleFunc("/metadata/sinks", sinksMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sinks/{name}", newSinkMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sinks/rule/{id}", showSinkMetaHandler).Methods(http.MethodGet)
+
+	r.HandleFunc("/metadata/sources", sourcesMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources/yaml/{name}", sourceConfHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources/{name}", sourceMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources/{name}/confKeys", sourceConfKeysHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources/{name}/confKeys/{confKey}", sourceConfKeyHandler).Methods(http.MethodDelete, http.MethodPost)
+	r.HandleFunc("/metadata/sources/{name}/confKeys/{confKey}/field", sourceConfKeyFieldsHandler).Methods(http.MethodDelete, http.MethodPost)
 
 	server := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
@@ -92,7 +114,7 @@ func createRestServer(port int) *http.Server {
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
-		Handler:      r, // Pass our instance of gorilla/mux in.
+		Handler:      handlers.CORS(handlers.AllowedHeaders([]string{"Accept", "Accept-Language", "Content-Type", "Content-Language", "Origin"}))(r),
 	}
 	server.SetKeepAlivesEnabled(false)
 	return server
@@ -294,6 +316,21 @@ func restartRuleHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("Rule %s was restarted", name)))
 }
 
+//get topo of a rule
+func getTopoRuleHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	content, err := getRuleTopo(name)
+	if err != nil {
+		handleError(w, err, "get rule topo error", logger)
+		return
+	}
+	w.Header().Set(ContentType, ContentTypeJSON)
+	w.Write([]byte(content))
+}
+
 func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType) {
 	defer r.Body.Close()
 	switch r.Method {
@@ -382,4 +419,291 @@ func functionsHandler(w http.ResponseWriter, r *http.Request) {
 //delete a function plugin
 func functionHandler(w http.ResponseWriter, r *http.Request) {
 	pluginHandler(w, r, plugins.FUNCTION)
+}
+
+func prebuildSourcePlugins(w http.ResponseWriter, r *http.Request) {
+	prebuildPluginsHandler(w, r, plugins.SOURCE)
+}
+
+func prebuildSinkPlugins(w http.ResponseWriter, r *http.Request) {
+	prebuildPluginsHandler(w, r, plugins.SINK)
+}
+
+func prebuildFuncsPlugins(w http.ResponseWriter, r *http.Request) {
+	prebuildPluginsHandler(w, r, plugins.FUNCTION)
+}
+
+func isOffcialDockerImage() bool {
+	if strings.ToLower(os.Getenv("MAINTAINER")) != "emqx.io" {
+		return false
+	}
+	return true
+}
+
+func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType) {
+	emsg := "It's strongly recommended to install plugins at official released Debian Docker images. If you choose to proceed to install plugin, please make sure the plugin is already validated in your own build."
+	if !isOffcialDockerImage() {
+		handleError(w, fmt.Errorf(emsg), "", logger)
+		return
+	} else if runtime.GOOS == "linux" {
+		osrelease, err := common.Read()
+		if err != nil {
+			logger.Infof("")
+			return
+		}
+		prettyName := strings.ToUpper(osrelease["PRETTY_NAME"])
+		os := "debian"
+		if strings.Contains(prettyName, "DEBIAN") {
+			hosts := common.Config.Basic.PluginHosts
+			ptype := "sources"
+			if t == plugins.SINK {
+				ptype = "sinks"
+			} else if t == plugins.FUNCTION {
+				ptype = "functions"
+			}
+			if err, plugins := fetchPluginList(hosts, ptype, os, runtime.GOARCH); err != nil {
+				handleError(w, err, "", logger)
+			} else {
+				jsonResponse(plugins, w, logger)
+			}
+		} else {
+			handleError(w, fmt.Errorf(emsg), "", logger)
+			return
+		}
+	} else {
+		handleError(w, fmt.Errorf(emsg), "", logger)
+	}
+}
+
+func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[string]string) {
+	if hosts == "" || ptype == "" || os == "" {
+		logger.Errorf("Invalid parameter value: hosts %s, ptype %s or os: %s should not be empty.", hosts, ptype, os)
+		return fmt.Errorf("Invalid configruation for plugin host in kuiper.yaml."), nil
+	}
+	result = make(map[string]string)
+	hostsArr := strings.Split(hosts, ",")
+	for _, host := range hostsArr {
+		host := strings.Trim(host, " ")
+		tmp := []string{host, "kuiper-plugins", version, os, ptype}
+		//The url is similar to http://host:port/kuiper-plugins/0.9.1/debian/sinks/
+		url := strings.Join(tmp, "/")
+		resp, err := http.Get(url)
+		logger.Infof("Trying to fetch plugins from url: %s\n", url)
+
+		if err != nil {
+			return err, nil
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("Cannot fetch plugin list from %s, with status error: %v", url, resp.StatusCode), nil
+		}
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err, nil
+		}
+		plugins := extractFromHtml(string(data), arch)
+		for _, p := range plugins {
+			//If already existed, using the existed.
+			if _, ok := result[p]; !ok {
+				result[p] = url + "/" + p + "_" + arch + ".zip"
+			}
+			logger.Debugf("Plugin %s, download address is %s\n", p, result[p])
+		}
+	}
+	return
+}
+
+func extractFromHtml(content, arch string) []string {
+	plugins := []string{}
+	htmlTokens := html.NewTokenizer(strings.NewReader(content))
+loop:
+	for {
+		tt := htmlTokens.Next()
+		switch tt {
+		case html.ErrorToken:
+			break loop
+		case html.StartTagToken:
+			t := htmlTokens.Token()
+			isAnchor := t.Data == "a"
+			if isAnchor {
+				found := false
+				for _, prop := range t.Attr {
+					if strings.ToUpper(prop.Key) == "HREF" {
+						if strings.HasSuffix(prop.Val, "_"+arch+".zip") {
+							if index := strings.LastIndex(prop.Val, "_"); index != -1 {
+								plugins = append(plugins, prop.Val[0:index])
+							}
+						}
+						found = true
+					}
+				}
+				if !found {
+					logger.Infof("Invalid plugin download link %s", t)
+				}
+			}
+		}
+	}
+	return plugins
+}
+
+//list sink plugin
+func sinksMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	sinks := plugins.GetSinks()
+	jsonResponse(sinks, w, logger)
+	return
+}
+
+//Get sink metadata when creating rules
+func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+
+	ptrMetadata, err := plugins.GetSinkMeta(pluginName, nil)
+	if err != nil {
+		handleError(w, err, "metadata error", logger)
+		return
+	}
+	jsonResponse(ptrMetadata, w, logger)
+}
+
+//Get sink metadata when displaying rules
+func showSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	ruleid := vars["id"]
+
+	rule, err := ruleProcessor.GetRuleByName(ruleid)
+	if err != nil {
+		handleError(w, err, "describe rule error", logger)
+		return
+	}
+
+	ptrMetadata, err := plugins.GetSinkMeta("", rule)
+	if err != nil {
+		handleError(w, err, "metadata error", logger)
+		return
+	}
+	jsonResponse(ptrMetadata, w, logger)
+}
+
+//list functions
+func functionsMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	sinks := plugins.GetFunctions()
+	jsonResponse(sinks, w, logger)
+	return
+}
+
+//list source plugin
+func sourcesMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	ret := plugins.GetSources()
+	if nil != ret {
+		jsonResponse(ret, w, logger)
+		return
+	}
+}
+
+//Get source metadata when creating stream
+func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	ret, err := plugins.GetSourceMeta(pluginName)
+	if err != nil {
+		handleError(w, err, "metadata error", logger)
+		return
+	}
+	if nil != ret {
+		jsonResponse(ret, w, logger)
+		return
+	}
+}
+
+//Get source yaml
+func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	ret, err := plugins.GetSourceConf(pluginName)
+	if err != nil {
+		handleError(w, err, "metadata error", logger)
+		return
+	} else {
+		w.Write(ret)
+	}
+}
+
+//Get confKeys of the source metadata
+func sourceConfKeysHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	ret := plugins.GetSourceConfKeys(pluginName)
+	if nil != ret {
+		jsonResponse(ret, w, logger)
+		return
+	}
+}
+
+//Add  del confkey
+func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
+
+	defer r.Body.Close()
+	var ret interface{}
+	var err error
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	confKey := vars["confKey"]
+	switch r.Method {
+	case http.MethodDelete:
+		err = plugins.DelSourceConfKey(pluginName, confKey)
+	case http.MethodPost:
+		v, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			handleError(w, err, "Invalid body", logger)
+			return
+		}
+		err = plugins.AddSourceConfKey(pluginName, confKey, v)
+	}
+	if err != nil {
+		handleError(w, err, "metadata error", logger)
+		return
+	}
+	if nil != ret {
+		jsonResponse(ret, w, logger)
+		return
+	}
+}
+
+//Del and Update field of confkey
+func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var ret interface{}
+	var err error
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	confKey := vars["confKey"]
+	v, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		handleError(w, err, "Invalid body", logger)
+		return
+	}
+	switch r.Method {
+	case http.MethodDelete:
+		err = plugins.DelSourceConfKeyField(pluginName, confKey, v)
+	case http.MethodPost:
+		err = plugins.AddSourceConfKeyField(pluginName, confKey, v)
+	}
+	if err != nil {
+		handleError(w, err, "metadata error", logger)
+		return
+	}
+	if nil != ret {
+		jsonResponse(ret, w, logger)
+		return
+	}
 }
