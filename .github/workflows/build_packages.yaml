@@ -282,5 +282,10 @@ jobs:
           if: github.event_name == 'release'
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
-            curl -H "Authorization: token ${{ secrets.AccessToken }}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" -X POST -d "{\"event_type\":\"update_repos_for_kuiper\",\"client_payload\":{\"version\": \"$version\"}}" https://api.github.com/repos/emqx/emqx-packages-docker/dispatches
+            curl \
+            -H "Authorization: token ${{ secrets.AccessToken }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -X POST \
+            -d "{\"ref\":\"v1.0.0\",\"inputs\":{\"version\": \"${version}\", \"emqx_ce\": \"true\"}}" \
+            https://api.github.com/repos/emqx/emqx-ci-helper/actions/workflows/kuiper_repos.yaml/dispatches
 
