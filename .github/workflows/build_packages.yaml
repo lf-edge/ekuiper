@@ -68,7 +68,7 @@ jobs:
                 plugin:
                 - sinks/file
                 - sinks/influxdb
-                - sinks/taos
+                  # - sinks/taos
                 - sinks/zmq
                 - sources/random
                 - sources/zmq
@@ -102,10 +102,6 @@ jobs:
           env:
             PLUGIN: ${{ matrix.plugin }}
           run: make ${PLUGIN}
-        - name: buiild alpine plugins
-          env:
-            PLUGIN: ${{ matrix.plugin }}
-          run: make alpine/${PLUGIN}
         - name: test docker and plugins
           env:
             PLUGIN: ${{ matrix.plugin }}
@@ -118,9 +114,9 @@ jobs:
                 container_id=$(docker run -d -v $(pwd)/_plugins:/var/plugins $image_id)
                 ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
                 os=$(docker exec -i ${container_id} sh -c "sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g'" )
-
                 sleep 5
                 if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
+                if [ ${os} = alpine ]; then continue; fi
                 curl ${ip_address}:9081/plugins/${plugin_type} -X POST -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\"}"
                 [ $plugin_name = $(curl ${ip_address}:9081/plugins/${plugin_type}/${plugin_name} | jq '.name'| sed 's/\"//g' ) ] || exit 1
             done

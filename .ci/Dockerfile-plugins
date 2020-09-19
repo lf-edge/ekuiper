@@ -13,6 +13,14 @@ RUN apt update && apt install -y pkg-config libczmq-dev jq zip
 RUN set -e -u -x \
     && mkdir -p _plugins/$PLUGIN_TYPE/$PLUGIN_NAME \
     && for lib in $(cat etc/$PLUGIN_TYPE/$PLUGIN_NAME.json | jq -r ".libs[]"); do go get $lib; done \
+    && case $PLUGIN_NAME in \
+         influxdb | taos ) \
+           go build --buildmode=plugin -tags plugins -o _plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME.go \
+           ;; \
+         * ) \
+           go build --buildmode=plugin -o _plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME.go \
+           ;; \
+       esac \
     && go build --buildmode=plugin -o _plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME.go \
     && if [ -f "etc/$PLUGIN_TYPE/$PLUGIN_NAME.yaml" ]; then cp etc/$PLUGIN_TYPE/$PLUGIN_NAME.yaml _plugins/$PLUGIN_TYPE/$PLUGIN_NAME; fi \
     && cd _plugins/$PLUGIN_TYPE/$PLUGIN_NAME \
