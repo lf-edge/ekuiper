@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"archive/zip"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/emqx/kuiper/common"
@@ -543,7 +544,14 @@ func downloadFile(filepath string, uri string) error {
 		src = srcFile
 	case "http", "https":
 		// Get the data
-		resp, err := http.Get(uri)
+		timeout := time.Duration(10 * time.Second)
+		client := &http.Client{
+			Timeout: timeout,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}
+		resp, err := client.Get(uri)
 		if err != nil {
 			return err
 		}
