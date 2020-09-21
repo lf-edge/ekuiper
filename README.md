@@ -41,13 +41,13 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 - Management
 
-  - Stream and rule management through CLI
-  - Stream and rule management through REST API
+  - [A web based management dashboard](https://hub.docker.com/r/emqx/kuiper-manager) for nodes, plugins, streams & rules management
+  - Plugins, streams and rules management through CLI & REST API
   - Easily be integrate with [KubeEdge](https://github.com/kubeedge/kubeedge), [K3s](https://github.com/rancher/k3s) and [Baetyl](https://github.com/baetyl/baetyl), which bases Kubernetes
 
 - Integration with EMQ X Edge
 
-  Seamless integration with EMQ X Edge, and provided an end to end solution from messaging to analytics. 
+  Seamless integration with EMQ X Neuron & Edge, and provided an end to end solution from messaging to analytics. 
 
 ## Quick start
 

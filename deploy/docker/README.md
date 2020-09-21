@@ -33,13 +33,13 @@ The `emqx/kuiper` images come in many flavors, each designed for a specific use 
 
 ## `emqx/kuiper:<tag>`
 
-This is the defacto image, which is based on Debian and it also includes a Golang build environment. If you are unsure about what your needs  are, you probably want to use this one. It is designed to be used both as a throw away container (mount your source code, compile plugins for Kuiper,  and start the  container to run your app), as well as the base to build other images.
+This is the development Docker image, which is based on Debian and it also includes a Golang build environment. If you are unsure about what your needs  are, you probably want to use this one. It is designed to be used both as a throw away container (mount your source code, compile plugins for Kuiper,  and start the  container to run your app), as well as the base to build other images. Please be aware of that this image is the biggest size, and it's usually used for development purpose.
 
 Notice: This image is the equivalent to development image of `x.x.x-dev` in 0.3.x versions.
 
 ## `emqx/kuiper:<tag>-slim`
 
-This image is also based on Debian, and only contains the minimal packages needed to run `kuiper`. The difference between with previous image (`emqx/kuiper:<tag>`) is that this image does not include Golang development environment. The typical usage of this image would be deploy the plugins compiled in previous Docker image instances.
+This image is also based on Debian, and only contains the minimal packages needed to run `kuiper`. The difference between with previous image (`emqx/kuiper:<tag>`) is that this image does not include Golang development environment. The typical usage of this image would be deploy the plugins compiled in previous Docker image instances. This is the official recommended image if you want to deploy & run  customized plugins into Kuiper.
 
 ## `emqx/kuiper:<tag>-alpine`
 
@@ -80,11 +80,11 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
   - Sink: embedded support for MQTT and HTTP, and provide extension points for sinks
   - UDF functions: embedded support for 60+ functions, and provide extension points for SQL functions
 - Management
-  - Stream and rule management through CLI
-  - Stream and rule management through REST API (In planning)
-  - Easily be integrate with [KubeEdge](https://github.com/kubeedge/kubeedge) and [K3s](https://github.com/rancher/k3s), which bases Kubernetes
-- Integration with EMQ X Edge
-  Seamless integration with EMQ X Edge, and provided an end to end solution from messaging to analytics. 
+  - [A web based management dashboard](https://hub.docker.com/r/emqx/kuiper-manager) for nodes, plugins, streams & rules management
+  - Plugins, streams and rules management through CLI & REST API
+  - Easily be integrate with [KubeEdge](https://github.com/kubeedge/kubeedge), [K3s](https://github.com/rancher/k3s) and [Baetyl](https://github.com/baetyl/baetyl), which bases Kubernetes
+- Integration with EMQ X Nuron & Edge
+  Seamless integration with EMQ X Neuron & Edge, and provided an end to end solution from messaging to analytics. 
 
 
 # How to use this image
@@ -93,14 +93,14 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 Execute some command under this docker image
 
-```
+```shell
 docker run -d -v `pwd`:$somewhere emqx/kuiper:$tag $somecommand
 ```
 
 For example
 
-```
-docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=$MQTT_BROKER_ADDRESS emqx/kuiper:$tag
+```shell
+docker run -p 9081:9081 -d --name kuiper MQTT_SOURCE__DEFAULT__SERVERS=[$MQTT_BROKER_ADDRESS] emqx/kuiper:$tag
 ```
 
 #### 5 minutes quick start
@@ -108,7 +108,7 @@ docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=$MQTT_BROKER_ADDRESS emqx/kui
 1. Set Kuiper source to an MQTT server. This sample uses server locating at ``tcp://broker.emqx.io:1883``. ``broker.emqx.io`` is a public MQTT test server hosted by [EMQ](https://www.emqx.io).
 
    ```shell
-   docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=tcp://broker.emqx.io:1883 emqx/kuiper:$tag
+   docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] emqx/kuiper:$tag
    ```
 
 2. Create a stream - the stream is your stream data schema, similar to table definition in database. Let's say the temperature & humidity data are sent to ``broker.emqx.io``, and those data will be processed in your **LOCAL RUN** Kuiper docker instance.  Below steps will create a stream named ``demo``, and data are sent to ``devices/device_001/messages`` topic, while ``device_001`` could be other devices, such as ``device_002``, all of those data will be subscribed and handled by ``demo`` stream.
@@ -146,20 +146,21 @@ docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=$MQTT_BROKER_ADDRESS emqx/kui
 
 5. To stop the test, just press ``ctrl + c `` in ``bin/cli query`` command console.
 
-6. Next for exploring more powerful features of EMQ X  Kuiper? Refer to below for how to apply EMQ X Kuiper in edge and integrate with AWS / Azure IoT cloud.
+You can also refer to [Kuiper dashboard documentation](https://github.com/emqx/kuiper/blob/master/docs/en_US/manager-ui/overview.md) for better using experience.
 
-   - [Lightweight edge computing EMQ X Kuiper and Azure IoT Hub integration solution](https://www.emqx.io/blog/85)   [简体中文](https://www.emqx.io/cn/blog/87)
-   - [Lightweight edge computing EMQ X Kuiper and AWS IoT Hub integration solution](https://www.emqx.io/blog/88)     [简体中文](https://www.emqx.io/cn/blog/94)
+Next for exploring more powerful features of EMQ X  Kuiper? Refer to below for how to apply EMQ X Kuiper in edge and integrate with AWS / Azure IoT cloud.
+
+- [Lightweight edge computing EMQ X Kuiper and Azure IoT Hub integration solution](https://www.emqx.io/blog/85)   [简体中文](https://www.emqx.io/cn/blog/87)
+- [Lightweight edge computing EMQ X Kuiper and AWS IoT Hub integration solution](https://www.emqx.io/blog/88)     [简体中文](https://www.emqx.io/cn/blog/94)
 
 ### Configuration
 
-Kuiper supports using environment variables to modify configuration files in containers
+Kuiper supports to use environment variables to modify configuration files in containers.
 
 When modifying configuration files through environment variables, the environment variables need to be set according to the prescribed format, for example:
 
 ```
-KUIBER__BASIC__DEBUG => basic.debug in etc/kuiper.yaml
-
+KUIPER__BASIC__DEBUG => basic.debug in etc/kuiper.yaml
 MQTT_SOURCE__DEMO_CONF__QOS => demo_conf.qos in etc/mqtt_source.yaml
 ```
 
