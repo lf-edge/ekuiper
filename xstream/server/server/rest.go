@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
@@ -487,7 +488,14 @@ func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[strin
 		tmp := []string{host, "kuiper-plugins", version, os, ptype}
 		//The url is similar to http://host:port/kuiper-plugins/0.9.1/debian/sinks/
 		url := strings.Join(tmp, "/")
-		resp, err := http.Get(url)
+		timeout := time.Duration(10 * time.Second)
+		client := &http.Client{
+			Timeout: timeout,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}
+		resp, err := client.Get(url)
 		logger.Infof("Trying to fetch plugins from url: %s\n", url)
 
 		if err != nil {
