@@ -68,7 +68,7 @@ func convCall(name string, args []interface{}) (interface{}, bool) {
 				}
 			case "string":
 				if v1, ok1 := args[0].(int); ok1 {
-					return string(v1), true
+					return fmt.Sprintf("%d", v1), true
 				} else if v1, ok1 := args[0].(float64); ok1 {
 					return fmt.Sprintf("%g", v1), true
 				} else if v1, ok1 := args[0].(string); ok1 {

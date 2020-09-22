@@ -55,7 +55,7 @@ func (s *KVStore) restore() error {
 		} else {
 			s.checkpoints = cs
 			for _, c := range cs {
-				if b2, ok := s.db.Get(string(c)); ok {
+				if b2, ok := s.db.Get(fmt.Sprintf("%d", c)); ok {
 					if m, err := bytesToMap(b2.([]byte)); err != nil {
 						return fmt.Errorf("invalid checkpoint data: %s", err)
 					} else {
@@ -100,7 +100,7 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 			if err != nil {
 				return fmt.Errorf("save checkpoint err, fail to encode states: %s", err)
 			}
-			err = s.db.Replace(string(checkpointId), b)
+			err = s.db.Replace(fmt.Sprintf("%d", checkpointId), b)
 			if err != nil {
 				return fmt.Errorf("save checkpoint err: %v", err)
 			}
@@ -111,7 +111,7 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 				cp := s.checkpoints[0]
 				s.checkpoints = s.checkpoints[1:]
 				go func() {
-					_ = s.db.Delete(string(cp))
+					_ = s.db.Delete(fmt.Sprintf("%d", cp))
 				}()
 			}
 			cs, ok := sliceToBytes(s.checkpoints)
