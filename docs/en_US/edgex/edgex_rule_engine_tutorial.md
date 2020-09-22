@@ -282,7 +282,7 @@ Current rule does not filter any data that are sent to Kuiper, so how to filter 
 - Read [EdgeX source](../rules/sources/edgex.md) for more detailed information of configurations and data type conversion.
 - [How to use meta function to extract additional data from EdgeX message bus?](edgex_meta.md) There are some other information are sent along with device service, such as event created time, event id etc. If you want to use such metadata information in your SQL statements, please refer to this doc.
 - [Use Golang template to customize analaysis result in Kuiper](../rules/data_template.md) Before the analysis result is sent to different sinks, the data template can be used to make more processing. You can refer to this doc for more scenarios of using data templates.
-- [EdgeX message bus sink doc](../rules/sinks/edgex.md). The document describes how to use EdgeX message bus sink. If you'd like to send the analysis result into message bus, you are probably interested in this article. 
+- [EdgeX message bus sink doc](../rules/sinks/edgex.md). The document describes how to use EdgeX message bus sink. If you'd like to have your analysis result be consumed by other EdgeX services, you can send analysis data with EdgeX data format through this sink, and other EdgeX services can subscribe new message bus exposed by Kuiper sink.
 - [Kuiper plugin development tutorial](../plugins/plugins_tutorial.md): Kuiper plugin is based on the plugin mechanism of Golang, users can build loosely-coupled plugin applications,  dynamic loading and binding when it is running. You can refer to this article if you're interested in Kuiper plugin development.
 
  If you want to explore more features of EMQ X Kuiper, please refer to below resources.
