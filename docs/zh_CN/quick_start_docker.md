@@ -5,7 +5,7 @@
 2. 设置 Kuiper 源为一个 MQTT 服务器。本例使用位于 `tcp://broker.emqx.io:1883` 的 MQTT 服务器， `broker.emqx.io` 是一个由 [EMQ](https://www.emqx.io) 提供的公有 MQTT 服务器。
 
    ```shell
-   docker run -d --name kuiper -e MQTT_BROKER_ADDRESS=tcp://broker.emqx.io:1883 emqx/kuiper:$tag
+   docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] emqx/kuiper:$tag
    ```
 
 3. 创建流（stream）- 流式数据的结构定义，类似于数据库中的表格类型定义。比如说要发送温度与湿度的数据到 `broker.emqx.io`，这些数据将会被在**本地运行的** Kuiper docker 实例中处理。以下的步骤将创建一个名字为 `demo` 的流，并且数据将会被发送至 `devices/device_001/messages` 主题，这里的 `device_001` 可以是别的设备，比如 `device_002`，所有的这些数据会被 `demo` 流订阅并处理。
@@ -43,7 +43,9 @@
 
 6. 如果想停止测试，在`bin/cli query`命令行窗口中敲 `ctrl + c ` ，或者输入 `exit` 后回车
 
-7. 想了解更多 EMQ X Kuiper 的功能？请参考以下关于在边缘端使用 EMQ X Kuiper 与 AWS/Azure IoT 云集成的案例。
+你可以参考 [Kuiper 管理控制台](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/manager-ui/overview.md) 这篇文章来了解更好的产品使用体验。
+
+想了解更多 EMQ X Kuiper 的功能？请参考以下关于在边缘端使用 EMQ X Kuiper 与 AWS/Azure IoT 云集成的案例。
 
    - [轻量级边缘计算 EMQ X Kuiper 与 AWS IoT 集成方案](https://www.jianshu.com/p/7c0218fd1ee2)
    - [轻量级边缘计算 EMQ X Kuiper 与 Azure IoT Hub 集成方案](https://www.jianshu.com/p/49b06751355f) 

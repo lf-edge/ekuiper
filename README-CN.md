@@ -40,13 +40,13 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
   - SQL 函数：内置支持60+常见的函数，提供扩展点可以扩展自定义函数
 
 - 管理能力
-  - 通过命令行对流、规则和插件进行管理
-  - 通过 REST API 也可以对流、规则和插件进行管理
+  - [基于 Web 的管理控制台](https://hub.docker.com/r/emqx/kuiper-manager)，用于节点，插件，流和规则的管理
+  - 通过命令行和 REST API 对流、规则和插件进行管理
   - 与 [KubeEdge](https://github.com/kubeedge/kubeedge)、[K3s](https://github.com/rancher/k3s)、[Baetyl](https://github.com/baetyl/baetyl) 等基于边缘 Kubernetes 框架的集成能力
 
 - 与 EMQ X Edge 集成
 
-  提供了与 EMQ X Edge 的无缝集成，实现在边缘端从消息接入到数据分析端到端的场景实现能力
+  提供了与 EMQ X Neuron 和 EMQ X Edge 的无缝集成，实现在边缘端从消息接入到数据分析端到端的场景实现能力
 
 ## 快速入门
 
@@ -149,4 +149,3 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 ## 开源版权
 
 [Apache 2.0](LICENSE)
-
