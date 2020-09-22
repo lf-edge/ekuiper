@@ -47,7 +47,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 - Integration with EMQ X Edge
 
-  Seamless integration with EMQ X Neuron & Edge, and provided an end to end solution from messaging to analytics. 
+  Seamless integration with EMQ X Neuron & EMQ X Edge, and provided an end to end solution from messaging to analytics. 
 
 ## Quick start
 
