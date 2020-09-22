@@ -279,6 +279,7 @@ Current rule does not filter any data that are sent to Kuiper, so how to filter 
 
 #### Extended Reading
 
+- Starting from Kuiper 0.9.1 version, [a visualized web UI](../manager-ui/overview.md) is released with a separated Docker image. You can manage the streams, rules and plugins through web page. 
 - Read [EdgeX source](../rules/sources/edgex.md) for more detailed information of configurations and data type conversion.
 - [How to use meta function to extract additional data from EdgeX message bus?](edgex_meta.md) There are some other information are sent along with device service, such as event created time, event id etc. If you want to use such metadata information in your SQL statements, please refer to this doc.
 - [Use Golang template to customize analaysis result in Kuiper](../rules/data_template.md) Before the analysis result is sent to different sinks, the data template can be used to make more processing. You can refer to this doc for more scenarios of using data templates.
