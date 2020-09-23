@@ -47,7 +47,7 @@ Kuiper 配置的格式为 yaml，它提供了一个集中位置  _/etc_  来保�
 Kuiper 扩展支持配置系统自动读取 yaml 文件中的配置，并将其输入到源的 _Configure_ 方法中。 如果在流中指定了 [CONF_KEY](../streams.md#create-stream)  属性，则将输入该键的配置。 否则，将使用默认配置。
 
 要在源中使用配置，必须遵循以下约定：
- 1. 您的配置文件名称必须与 _.so_ 文件相同，并且必须 采用驼峰式命名法， 首字母大写。 例如，MySource.yaml。
+ 1. 您的配置文件名称必须与插件名字相同，例如，mySource.yaml。
   2. yaml 文件必须位于 _etc/sources_ 内。
   3. 可以在 [此处](../rules/sources/mqtt.md)找到 yaml 文件的格式。
 
