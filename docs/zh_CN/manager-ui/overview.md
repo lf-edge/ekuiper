@@ -2,65 +2,149 @@
 
 ### 概览
 
-从 Kuiper 0.9.1 版本开始，每发布一个 Kuiper 新版本，会随之发布对应版本的管理控制台。本文以一个实际例子来说明如何使用管理控制台对 Kuiper 节点进行操作与管理，主要包括以下功能：
+从 Kuiper 0.9.1 版本开始，每发布一个 Kuiper 新版本，会随之发布对应版本的管理控制台。本文以一个实际例子来说明如何使用管理控制台对 Kuiper 节点进行操作与管理。本例将 MQTT 订阅到的数据发送到指定的文件中，演示说明如下：
 
-- Kuiper 节点的增加与删除
-- 插件管理
-- 流管理
-- 规则管理
+- 创建一个 Kuiper 节点
+- 创建一个流，用于订阅 source 端的数据。（本例演示订阅 MQTT 服务器，地址为：`tcp://broker.emqx.io:1883`，主题为：`devices/device_001/messages`，订阅数据为：`{"temperature": 40, "humidity" : 20}`）
+- 创建一个规则，用于计算订阅到的数据，并将数据写入 sink 端。（本例演示将订阅到的消息写入到文件中）
+- source 和 sink 支持多种类别，只需安装相对应的插件，便能实现对应的功能。（本例的 source 为 MQTT， 插件已内置，无需安装；sink 为 file，插件未内置，需要安装）
 
 ### 架构设计
 
-该部分主要介绍一下管理控制台的大概架构设计，可以画个架构图。
+* Kuiper 端：提供 source 到 sink 端的数据计算与传输。
+* Kuiper-Manager 端：提供用户管理，权限验证等服务。
+* UI 端：提供可视化的界面，便于用户操作。
+
+![construct](./image/conStruct.png)
 
 ### 安装管理控制台
 
-本部分介绍如何用 docker 安装，包括安装命令行，如何检查已经安装完毕；
+#### 安装 kuiper
 
-顺便介绍如何准备好 Kuiper 环境
+- 从 `https://hub.docker.com/r/emqx/kuiper/tags` 拉取 Kuiper 的 Docker 镜像。本例使用`slim`镜像。
 
-### 使用
+- 运行 kuiper 容器，(为了方便，我们将使用由 [EMQ](https://www.emqx.io) 提供的公有 MQTT 服务器，在运行容器时可通过 -e 选项设置地址。)
 
-这部分介绍如何使用，包括。。。
+  ```shell
+  docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] emqx/kuiper:$(tag)
+  ```
 
-#### 登录
+#### 安装管理控制台
 
+- 从`https://hub.docker.com/r/emqx/kuiper-manager/tags`拉取kuiper-manager 的 Docker 镜像 。（0.9.1-ief 为华为用户专用镜像，本例使用0.9.1镜像）
 
+- 运行 kuiper-manager 容器并暴露接口：
+
+  ```shell
+  docker run --name kuiperManager -d -p 9082:9082 $(tag)
+  ```
+
+#### 登录 kuiper-manager
+
+登录时需要提供 kuiper-manager 的地址，用户名、密码。样例如下图所示：
+
+* 地址：http://127.0.0.1:9082
+
+* 用户名：admin
+
+* 密码：public
+
+  ![login](./image/login.png)
 
 #### 创建 Kuiper 节点
 
+创建 kuiper 节点时需要填写 Node type、Node name、Endpoint 。
 
+* Node type : 选择 `直接连接节点`  (`华为 IEF 节点` 专用于华为用户)。
+
+* Node name : 自拟，本例为：example。
+
+* Endpoint ：http://$IP:9081，IP获取命令如下：
+
+  ```shell
+  docker inspect $(Kuiper CONTAINER ID) |  grep IPAddress
+  ```
+
+创建 Kuiper 节点样例如下图所示：
+
+![addNode](./image/addNode.png)
 
 #### 安装插件
 
-选择一个插件进行介绍，比如 file 插件？
+**注意：插件安装、并且通过规则使用后，插件已经被加载到内存中，由于 Golang 语言的限制，在插件删除的时候，无法将其真正卸载，所以想重新进行插件的安装，Kuiper 必须重启才可生效；目前只支持在 debian 的 Docker 环境里的插件安装，其余环境暂不支持。**
 
+在下拉列表中选择一个名为 file 的 sinks 插件进行下载，该插件将数据写入到用户指定的文件中。如下图所示：
 
-
-**注意：插件安装、并且通过规则使用后，插件已经被加载到内存中，由于 Golang 语言的限制，在插件删除的时候，无法将其真正卸载，所以想重新进行插件的安装，Kuiper 必须重启才可生效。**
+![newPlugine](./image/newPlugin.png)
 
 #### 创建流
 
-可以分别介绍一下 schema & schemaless 流的创建过程，以及如何对 conf_key 进行配置的使用
+如下图，创建一个名为 demoStream 的流，用于订阅地址为 tcp://broker.emqx.io:1883 的 mqtt 服务器消息， 消息主题为 devices/device_001/messages，消息内容为 [{"temperature": 40, "humidity" : 20}]。
 
-
+![newStream](./image/newStream.png)
 
 #### 创建规则
 
-写一条规则，主要介绍
+如下图，创建一条名为 demoRule 的规则，将订阅数据中 temperature > 30 的数据写入文件中。
 
-- 如何使用 SQL 编辑器；
-- 以及 Sink 的配置使用；
+![newRule](./image/newRule.png)
 
+本例文件路径为：/kuiper/demoFile ，通过下图进行设置
 
+![sinkConf](./image/sinkConf.png)
 
 #### 查看执行结果
 
+* 进入 Kuiper 容器创建文件：
 
+```shell
+docker exec -it $(kuiper CONTAINER ID) sh
+touch demoFile
+tail -f demoFile
+```
 
-### 总结
+* 使用 MQTT 客户端工具 mosquitto_pub 将传感器数据发送到 MQTT 服务器 `tcp://broker.emqx.io:1883`的主题 `devices/device_001/messages`  中，命令如下。如一切正常，此时名为`demoFile`的文件将收到数据：`[{"temperature": 40, "humidity" : 20}]`。
 
+```shell
+mosquitto_pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages
+```
 
+#### 了解更多
+
+##### 关于源
+
+上文中，我们在运行容器时通过 -e 选项设置了 MQTT 的地址，数据写到了 MQTT 的配置文件中，通过以下命令可以查看：
+
+```shell
+docker exec -it $(Kuiper CONTAINER ID) sh
+cat etc/mqtt_source.yaml
+```
+
+输出为：
+
+```yaml
+default:
+  concurrency: 1
+  qos: 1
+  servers:
+  - tcp://broker.emqx.io:1883
+  sharedSubscription: true
+demo_conf:
+  qos: 0
+  servers:
+  - tcp://10.211.55.6:1883
+  - tcp://127.0.0.1
+```
+
+上文中，在创建流时选择的配置组为 `default` ，如上图所示，程序将使用 `default` 下的配置。同理，用户也可以根据需求编写自己的配置，具体操作为：在创建流的页面中点击`源配置`，如下图所示：
+
+![sourceConf](./image/sourceConf.png)
+
+##### 关于规则
+
+如下图所示，选项中提供了三个 icon ，从左到右依次代表：规则运行状态、重启规则、删除规则，用户可按需操作。
+
+![ruleOp](./image/ruleOp.png)
 
 ### 扩展阅读
 
