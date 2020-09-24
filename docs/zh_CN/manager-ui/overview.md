@@ -9,25 +9,35 @@
 - 创建一个规则，用于计算订阅到的数据，并将数据写入 sink 端。（本例演示将订阅到的消息写入到文件中）
 - source 和 sink 支持多种类别，只需安装相对应的插件，便能实现对应的功能。（本例的 source 为 MQTT， 插件已内置，无需安装；source 为 file，插件未内置，需要安装）
 
+### 架构设计
+
+* Kuiper 端：提供 source 到 sink 端的数据计算与传输。
+* Kuiper-Manager 端：提供用户管理，权限验证等服务。
+* UI 端：提供可视化的界面，便于用户操作。
+
+![construct](./image/conStruct.png)
+
 ### 安装管理控制台
 
 #### 安装 kuiper
 
-- 拉取 Kuiper 的 Docker 镜像，获取地址： https://hub.docker.com/r/emqx/kuiper/tags 。样例如下图所示，点击红框复制拉取镜像的命令，粘贴命令至终端运行。
+- 从 `https://hub.docker.com/r/emqx/kuiper/tags` 拉取 Kuiper 的 Docker 镜像。本例使用`slim`镜像。
 
-  ![pullKuiper](./image/pullKuiper.png)
+- 运行 kuiper 容器，(为了方便，我们将使用由 [EMQ](https://www.emqx.io) 提供的公有 MQTT 服务器，在运行容器时可通过 -e 选项设置地址。)
 
-- 运行 kuiper 容器：`docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] $(IMAGE ID)` 。样例如下图所示：
-
-  ![runKuiper](./image/runKuiper.png)
+  ```shell
+  docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] emqx/kuiper:$(tag)
+  ```
 
 #### 安装管理控制台
 
-- 拉取 kuiper-manager 的 Docker 镜像：https://hub.docker.com/r/emqx/kuiper-manager/tags 。样例如下图所示，点击红框复制拉取镜像的命令，粘贴命令至终端运行。
+- 从`https://hub.docker.com/r/emqx/kuiper-manager/tags`拉取kuiper-manager 的 Docker 镜像 。（0.9.1-ief 为华为用户专用镜像，本例使用0.9.1镜像）
 
-  ![pullUi](./image/pullUi.png)
+- 运行 kuiper-manager 容器并暴露接口：
 
-- 运行 kuiper-manager 容器并暴露接口：`docker run --name kuiperManager -d -p 9082:9082 $(IMAGE ID)`  。样例如下图所示：![runUi](./image/runUi.png)
+  ```shell
+  docker run --name kuiperManager -d -p 9082:9082 $(tag)
+  ```
 
 #### 登录 kuiper-manager
 
@@ -45,17 +55,27 @@
 
 创建 kuiper 节点时需要填写 Node type、Node name、Endpoint 。
 
-* Node type : 选择 `Direct link node`  (Huawei IEF node 专用于华为用户)
-* Node name : 自拟，本例为：example
-* Endpoint ：http://$IP:9081 通过 `docker inspect $(kuiper CONTAINER ID) |  grep IPAddress` 获取 kuiper IP 地址。样例如下图所示：![kuiperIP](./image/kuiperIP.png)
+* Node type : 选择 `直接连接节点`  (`华为 IEF 节点` 专用于华为用户)。
 
-创建 Kuiper 节点样例如下图所示：![addNode](./image/addNode.png)
+* Node name : 自拟，本例为：example。
+
+* Endpoint ：http://$IP:9081，IP获取命令如下：
+
+  ```shell
+  docker inspect $(Kuiper CONTAINER ID) |  grep IPAddress
+  ```
+
+创建 Kuiper 节点样例如下图所示：
+
+![addNode](./image/addNode.png)
 
 #### 安装插件
 
-**注意：插件安装、并且通过规则使用后，插件已经被加载到内存中，由于 Golang 语言的限制，在插件删除的时候，无法将其真正卸载，所以想重新进行插件的安装，Kuiper 必须重启才可生效。**
+**注意：插件安装、并且通过规则使用后，插件已经被加载到内存中，由于 Golang 语言的限制，在插件删除的时候，无法将其真正卸载，所以想重新进行插件的安装，Kuiper 必须重启才可生效；目前只支持在 debian 的 Docker 环境里的插件安装，其余环境暂不支持。**
 
-下载一个名为 file 的 sinks 插件，该插件将数据写入到用户指定的文件中。如下图所示：![newPlugine](./image/newPlugin.png)
+在下拉列表中选择一个名为 file 的 sinks 插件进行下载，该插件将数据写入到用户指定的文件中。如下图所示：
+
+![newPlugine](./image/newPlugin.png)
 
 #### 创建流
 
@@ -63,25 +83,66 @@
 
 ![newStream](./image/newStream.png)
 
-##### 关于配置组
-
-配置分为多个组，用户可根据自己需求创建和选择。程序默认为 default 配置组，若用户选择其他配置组，则所选配置组和 default 配置组共同生效，若所选配置组中有数据和 default 配置组冲突，则冲突数据以所选配置组为准。
-
 #### 创建规则
 
-如下图，创建一条名为 demoRule 的规则，将订阅数据中 temperature > 30 的数据写入文件中。（本例文件路径为 /kuiper/demoFile）
+如下图，创建一条名为 demoRule 的规则，将订阅数据中 temperature > 30 的数据写入文件中。
 
 ![newRule](./image/newRule.png)
 
+本例文件路径为：/kuiper/demoFile ，通过下图进行设置
+
+![sinkConf](./image/sinkConf.png)
+
 #### 查看执行结果
 
- 您可以使用 MQTT 客户端工具 mosquitto_pub 来发布传感器数据到服务器 `tcp://broker.emqx.io:1883`的主题 `devices/device_001/messages`  。运行shell命令：`mosquitto_pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages`。结果如下图所示：
+* 进入 Kuiper 容器创建文件：
 
-![ret](./image/ret.png)
+```shell
+docker exec -it $(kuiper CONTAINER ID) sh
+touch demoFile
+tail -f demoFile
+```
 
-如下图所示，选项中提供了三个 icon ，从左到右依次代表：rule状态、重启rule、删除rule，用户可按需操作。
+* 使用 MQTT 客户端工具 mosquitto_pub 将传感器数据发送到 MQTT 服务器 `tcp://broker.emqx.io:1883`的主题 `devices/device_001/messages`  中，命令如下。如一切正常，此时名为`demoFile`的文件将收到数据：`[{"temperature": 40, "humidity" : 20}]`。
 
-![ruleOP](./image/ruleOp.png)
+```shell
+mosquitto_pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages
+```
+
+#### 了解更多
+
+##### 关于 Source
+
+上文中，我们在运行容器时通过 -e 选项设置了 MQTT 的地址，数据写到了 MQTT 的配置文件中，通过以下命令可以查看：
+
+```shell
+docker exec -it $(Kuiper CONTAINER ID) sh
+cat etc/mqtt_source.yaml
+```
+
+输出为：
+
+```yaml
+default:
+  concurrency: 1
+  qos: 1
+  servers:
+  - tcp://broker.emqx.io:1883
+  sharedSubscription: true
+demo_conf:
+  qos: 0
+  servers:
+  - tcp://10.211.55.6:1883
+  - tcp://127.0.0.1
+```
+
+上文中，在创建流时选择的配置组为 default ，如上图所示，程序将使用 default 下的配置。同理，用户也可以根据需求编写自己的配置，具体操作为：在创建流的页面中点击`源配置`，如下图所示：
+
+![sourceConf](./image/sourceConf.png)
+
+如下图所示，选项中提供了三个 icon ，从左到右依次代表：规则状态、重启规则、删除规则，用户可按需操作。
+
+![ruleOp](./image/ruleOp.png)
 
 ### 扩展阅读
 
