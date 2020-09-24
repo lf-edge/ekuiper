@@ -146,7 +146,7 @@
 
 单击「添加」按钮，弹出对话框如下所示。输入结果存储的文件路径为 `/kuiper/demoFile` 。更多关于 file 目标的信息可以查看[帮助文件](../plugins/sinks/file.md)。目标 file 处于 `Beta` 状态，不能作为实际生产环境使用。
 
-![sinkConf](./resources/sinkConf.png)
+![sinkConf](./resources/sink_conf.png)
 
 创建规则后，如果一切正常，那么规则处于运行状态。
 
