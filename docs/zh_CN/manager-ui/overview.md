@@ -91,7 +91,7 @@
 
 * 节点类型 : 选择 `直接连接节点`  (`华为 IEF 节点` 专用于华为用户)。
 
-* 节点名称 : 自拟，本例为：example。
+* 节点名称 : 自拟，本例为 `example`。
 
 * 端点URL：`http://$IP:9081`，IP 获取命令如下：
 
@@ -101,13 +101,13 @@
 
 创建 Kuiper 节点样例如下图所示，如果把端口暴露到了主机，那么也可以直接使用主机上的 9081 端口地址。
 
-![addNode](./resources/addNode.png)
+![addNode](./resources/add_node.png)
 
 #### 安装插件
 
 我们的场景中会使用名为 file 的目标插件，选择「插件」> 「安装插件」，弹出以下对话框：在下拉列表中选择名为 file 的目标插件进行下载和安装，该插件将数据写入到用户指定的文件中。如下图所示，读者选择了对应名称的插件后，「文件」输入框中会自动填入对应的插件下载地址。点击「提交」按钮后，Kuiper 将会从 `https://www.emqx.io/downloads` 上相关的地址自动下载对应的插件，并自动安装到系统中。
 
-![newPlugine](./resources/newPlugin.png)
+![newPlugine](./resources/new_plugin.png)
 
 **注意：插件安装、并且通过规则使用后，插件已经被加载到内存中，由于 Golang 语言的限制，在插件删除的时候，无法将其真正卸载，所以想重新进行插件的安装，Kuiper 必须重启才可生效；目前只支持在 debian 的 Docker 环境里的插件安装，其余环境暂不支持。**
 
@@ -132,7 +132,7 @@
 
 - 「流格式」，与「流类型」类似，用户不选的话，使用缺省的「json」
 
-![newStream](./resources/newStream.png)
+![newStream](./resources/new_stream.png)
 
 如上所示用的是缺省的「default」配置组。用户也可以根据需求编写自己的配置，具体操作为，在创建流的页面中点击`源配置`，弹出对话框如下图所示。如果用户在这里输入任意配置项的值，将会覆盖掉「default」中对应的配置；如果不输入值，那么将使用「default」中的缺省配置值。
 
@@ -142,7 +142,7 @@
 
 如下图，创建一条名为 demoRule 的规则，将数据中 temperature > 30 的数据过滤出来。SQL 编辑器在用户写 SQL 的过程中可以给出提示，方便用户完成 SQL 的编写。
 
-![newRule](./resources/newRule.png)
+![newRule](./resources/new_rule.png)
 
 单击「添加」按钮，弹出对话框如下所示。输入结果存储的文件路径为 `/kuiper/demoFile` 。更多关于 file 目标的信息可以查看[帮助文件](../plugins/sinks/file.md)。目标 file 处于 `Beta` 状态，不能作为实际生产环境使用。
 
@@ -174,7 +174,7 @@
 - 重启规则
 - 删除规则
 
-![ruleOp](./resources/ruleOp.png)
+![ruleOp](./resources/rule_op.png)
 
 ### 扩展阅读
 
