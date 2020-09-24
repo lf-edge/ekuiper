@@ -20,7 +20,7 @@
 * Kuiper-manager：管理控制台，本质是一个反向 HTTP 代理服务，提供用户管理，权限验证等服务。既可以部署在云端，也可以部署在边缘端
 * Kuiper 实例，被管理的 Kuiper 节点实例，Kuiper-manager 可以同时管理多个 Kuiper 节点
 
-![construct](./resources/conStruct.png)
+![construct](./resources/arch.png)
 
 ### 安装管理控制台
 
