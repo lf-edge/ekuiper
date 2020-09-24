@@ -68,7 +68,7 @@ jobs:
                 plugin:
                 - sinks/file
                 - sinks/influx
-              # - sinks/taos
+                - sinks/taos
                 - sinks/zmq
                 - sources/random
                 - sources/zmq
