@@ -75,13 +75,16 @@ func (m *taosSink) Configure(props map[string]interface{}) error {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
 	if cfg.Ip == "" {
-	 cfg.Ip ="127.0.0.1" 
+		cfg.Ip = "127.0.0.1"
+		common.Log.Infof("Not find IP conf, will use default value '127.0.0.1'.")
 	}
 	if cfg.User == "" {
-	 cfg.User = "root" 
+		cfg.User = "root"
+		common.Log.Infof("Not find user conf, will use default value 'root'.")
 	}
 	if cfg.Password == "" {
-	 cfg.Password = "taosdata" 
+		cfg.Password = "taosdata"
+		common.Log.Infof("Not find password conf, will use default value 'taosdata'.")
 	}
 	if cfg.Database == "" {
 		return fmt.Errorf("property database is required")
