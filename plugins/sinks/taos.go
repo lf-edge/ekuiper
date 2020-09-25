@@ -75,13 +75,13 @@ func (m *taosSink) Configure(props map[string]interface{}) error {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
 	if cfg.Ip == "" {
-		return fmt.Errorf("property ip is required")
+	 cfg.Ip ="127.0.0.1" 
 	}
 	if cfg.User == "" {
-		return fmt.Errorf("property user is required")
+	 cfg.User = "root" 
 	}
 	if cfg.Password == "" {
-		return fmt.Errorf("property password is required")
+	 cfg.Password = "taosdata" 
 	}
 	if cfg.Database == "" {
 		return fmt.Errorf("property database is required")
