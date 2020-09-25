@@ -136,7 +136,7 @@
 
 如上所示用的是缺省的「default」配置组。用户也可以根据需求编写自己的配置，具体操作为，在创建流的页面中点击`源配置`，弹出对话框如下图所示。如果用户在这里输入任意配置项的值，将会覆盖掉「default」中对应的配置；如果不输入值，那么将使用「default」中的缺省配置值。
 
-![sourceConf](./resources/sourceConf.png)
+![sourceConf](./resources/source_conf.png)
 
 #### 创建规则
 
