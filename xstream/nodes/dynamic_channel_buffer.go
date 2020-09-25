@@ -1,12 +1,16 @@
 package nodes
 
-import "github.com/emqx/kuiper/xstream/api"
+import (
+	"sync/atomic"
+
+	"github.com/emqx/kuiper/xstream/api"
+)
 
 type DynamicChannelBuffer struct {
 	In     chan api.SourceTuple
 	Out    chan api.SourceTuple
 	buffer []api.SourceTuple
-	limit  int
+	limit  int64
 }
 
 func NewDynamicChannelBuffer() *DynamicChannelBuffer {
@@ -22,14 +26,14 @@ func NewDynamicChannelBuffer() *DynamicChannelBuffer {
 
 func (b *DynamicChannelBuffer) SetLimit(limit int) {
 	if limit > 0 {
-		b.limit = limit
+		atomic.StoreInt64(&b.limit, int64(limit))
 	}
 }
 
 func (b *DynamicChannelBuffer) run() {
 	for {
 		l := len(b.buffer)
-		if l >= b.limit {
+		if int64(l) >= atomic.LoadInt64(&b.limit) {
 			b.Out <- b.buffer[0]
 			b.buffer = b.buffer[1:]
 		} else if l > 0 {
