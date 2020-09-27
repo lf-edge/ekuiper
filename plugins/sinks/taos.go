@@ -11,7 +11,6 @@ import (
 	_ "github.com/taosdata/driver-go/taosSql"
 	"reflect"
 	"strings"
-	"time"
 )
 
 type (
@@ -63,8 +62,7 @@ func (this *taosConfig) buildSql(ctx api.StreamContext, mapData map[string]inter
 			this.delTsField()
 		}
 	} else {
-		ts := time.Now().String()[:len("2019-07-15 00:00:00")]
-		vals = append(vals, fmt.Sprintf(`"%v"`, ts))
+		vals = append(vals, "now")
 		keys = append(keys, this.TsFieldName)
 	}
 
