@@ -103,7 +103,8 @@
 			"en_US": "Table name",
 			"zh_CN": "表名"
 		}
-	}, {
+	}, 
+  {
 		"name": "fields",
 		"default": [],
 		"optional": false,
@@ -116,6 +117,36 @@
 		"label": {
 			"en_US": "Table field",
 			"zh_CN": "表字段"
+		}
+	},
+  {
+		"name": "provideTs",
+		"default": false,
+		"optional": false,
+		"control": "radio",
+		"type": "bool",
+		"hint": {
+			"en_US": "Whether to provide a timestamp",
+			"zh_CN": "是否提供时间戳"
+		},
+		"label": {
+			"en_US": "Whether to provide a timestamp",
+			"zh_CN": "是否提供时间戳"
+		}
+	},
+  {
+		"name": "tsFieldName",
+		"default":"",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "Timestamp field name",
+			"zh_CN": "时间戳字段名"
+		},
+		"label": {
+			"en_US": "Timestamp field name",
+			"zh_CN": "时间戳字段名"
 		}
 	}]
 }

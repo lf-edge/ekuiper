@@ -22,15 +22,19 @@ go build --buildmode=plugin -o /$kuiper/plugins/sinks/Taos@v1.0.0.so /$kuiper/pl
 
 ## 规则 Actions 说明
 
-| 名称     | 类型     | 是否必填                      | 释义       |
-| -------- | -------- | ----------------------------- | ---------- |
-| ip       | string   | 必填                          | 数据库ip   |
-| port     | int      | 必填                          | 数据库端口 |
-| user     | string   | 必填                          | 用户名     |
-| password | string   | 必填                          | 密码       |
-| database | string   | 必填                          | 数据库名   |
-| table    | string   | 必填                          | 表名       |
-| fields   | []string | 选填（不填时用数据的key替代） | 表字段集合 |
+由于 taos 数据库要求表中必须有时间戳字段，所以用户必须告知数据表的时间戳字段名称（必填tsFieldName）。用户可以选择是否提供时间戳数据，若不提供（provideTs=false），时间戳字段的内容由 taos 数据库自动生成。
+
+| 名称        | 类型     | 是否必填                      | 释义                   |
+| ----------- | -------- | ----------------------------- | ---------------------- |
+| ip          | string   | 必填                          | 数据库ip               |
+| port        | int      | 必填                          | 数据库端口             |
+| user        | string   | 必填                          | 用户名                 |
+| password    | string   | 必填                          | 密码                   |
+| database    | string   | 必填                          | 数据库名               |
+| table       | string   | 必填                          | 表名                   |
+| fields      | []string | 选填（不填时用数据的key替代） | 表字段集合             |
+| provideTs   | Bool     | 必填                          | 用户是否提供时间戳字段 |
+| tsFieldName | String   | 必填                          | 时间戳字段名称         |
 
 ## 操作示例
 

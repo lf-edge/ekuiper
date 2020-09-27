@@ -15,13 +15,15 @@ import (
 
 type (
 	taosConfig struct {
-		Port     int      `json:"port"`
-		Ip       string   `json:"ip"`
-		User     string   `json:"user"`
-		Password string   `json:"password"`
-		Database string   `json:"database"`
-		Table    string   `json:"table"`
-		Fields   []string `json:"fields"`
+		ProvideTs   bool     `json:"provideTs"`
+		Port        int      `json:"port"`
+		Ip          string   `json:"ip"`
+		User        string   `json:"user"`
+		Password    string   `json:"password"`
+		Database    string   `json:"database"`
+		Table       string   `json:"table"`
+		TsFieldName string   `json:"tsFieldName"`
+		Fields      []string `json:"fields"`
 	}
 	taosSink struct {
 		conf *taosConfig
@@ -29,12 +31,41 @@ type (
 	}
 )
 
-func (this *taosConfig) buildSql(ctx api.StreamContext, mapData map[string]interface{}) string {
-	if 0 == len(mapData) {
-		return ""
+func (this *taosConfig) delTsField() {
+	var auxFields []string
+	for _, v := range this.Fields {
+		if v != this.TsFieldName {
+			auxFields = append(auxFields, v)
+		}
 	}
+	this.Fields = auxFields
+}
+
+func (this *taosConfig) buildSql(ctx api.StreamContext, mapData map[string]interface{}) (string, error) {
+	if 0 == len(mapData) {
+		return "", fmt.Errorf("data is empty.")
+	}
+	if 0 == len(this.TsFieldName) {
+		return "", fmt.Errorf("tsFieldName is empty.")
+	}
+
 	logger := ctx.GetLogger()
 	var keys, vals []string
+
+	if this.ProvideTs {
+		if v, ok := mapData[this.TsFieldName]; !ok {
+			return "", fmt.Errorf("Timestamp field not found : %s.", this.TsFieldName)
+		} else {
+			keys = append(keys, this.TsFieldName)
+			vals = append(vals, fmt.Sprintf(`"%v"`, v))
+			delete(mapData, this.TsFieldName)
+			this.delTsField()
+		}
+	} else {
+		vals = append(vals, "now")
+		keys = append(keys, this.TsFieldName)
+	}
+
 	for _, k := range this.Fields {
 		if v, ok := mapData[k]; ok {
 			keys = append(keys, k)
@@ -44,14 +75,15 @@ func (this *taosConfig) buildSql(ctx api.StreamContext, mapData map[string]inter
 				vals = append(vals, fmt.Sprintf(`%v`, v))
 			}
 		} else {
-			logger.Debug("not found field:", k)
+			logger.Warln("not found field:", k)
 		}
 	}
-	if 0 != len(keys) {
+
+	if 0 != len(this.Fields) {
 		if len(this.Fields) < len(mapData) {
 			logger.Warnln("some of values will be ignored.")
 		}
-		return fmt.Sprintf(`INSERT INTO %s (%s)VALUES(%s);`, this.Table, strings.Join(keys, `,`), strings.Join(vals, `,`))
+		return fmt.Sprintf(`INSERT INTO %s (%s)VALUES(%s);`, this.Table, strings.Join(keys, `,`), strings.Join(vals, `,`)), nil
 	}
 
 	for k, v := range mapData {
@@ -63,9 +95,9 @@ func (this *taosConfig) buildSql(ctx api.StreamContext, mapData map[string]inter
 		}
 	}
 	if 0 != len(keys) {
-		return fmt.Sprintf(`INSERT INTO %s (%s)VALUES(%s);`, this.Table, strings.Join(keys, `,`), strings.Join(vals, `,`))
+		return fmt.Sprintf(`INSERT INTO %s (%s)VALUES(%s);`, this.Table, strings.Join(keys, `,`), strings.Join(vals, `,`)), nil
 	}
-	return ""
+	return "", nil
 }
 
 func (m *taosSink) Configure(props map[string]interface{}) error {
@@ -91,6 +123,9 @@ func (m *taosSink) Configure(props map[string]interface{}) error {
 	}
 	if cfg.Table == "" {
 		return fmt.Errorf("property table is required")
+	}
+	if cfg.TsFieldName == "" {
+		return fmt.Errorf("property TsFieldName is required")
 	}
 	m.conf = cfg
 	return nil
@@ -119,9 +154,9 @@ func (m *taosSink) Collect(ctx api.StreamContext, item interface{}) error {
 		return err
 	}
 	for _, mapData := range sliData {
-		sql := m.conf.buildSql(ctx, mapData)
-		if 0 == len(sql) {
-			continue
+		sql, err := m.conf.buildSql(ctx, mapData)
+		if nil != err {
+			return err
 		}
 		logger.Debugf(sql)
 		rows, err := m.db.Query(sql)
