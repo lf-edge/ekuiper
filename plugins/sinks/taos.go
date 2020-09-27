@@ -177,4 +177,3 @@ func (m *taosSink) Close(ctx api.StreamContext) error {
 func Taos() api.Sink {
 	return &taosSink{}
 }
-
