@@ -75,7 +75,7 @@ func (this *taosConfig) buildSql(ctx api.StreamContext, mapData map[string]inter
 				vals = append(vals, fmt.Sprintf(`%v`, v))
 			}
 		} else {
-			logger.Warln("not found field:", k)
+			logger.Warnln("not found field:", k)
 		}
 	}
 
