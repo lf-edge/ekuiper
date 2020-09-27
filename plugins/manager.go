@@ -544,7 +544,7 @@ func downloadFile(filepath string, uri string) error {
 		src = srcFile
 	case "http", "https":
 		// Get the data
-		timeout := time.Duration(3 * time.Minute)
+		timeout := time.Duration(5 * time.Minute)
 		client := &http.Client{
 			Timeout: timeout,
 			Transport: &http.Transport{
