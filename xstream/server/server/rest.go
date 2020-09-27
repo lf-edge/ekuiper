@@ -488,7 +488,7 @@ func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[strin
 		tmp := []string{host, "kuiper-plugins", version, os, ptype}
 		//The url is similar to http://host:port/kuiper-plugins/0.9.1/debian/sinks/
 		url := strings.Join(tmp, "/")
-		timeout := time.Duration(10 * time.Second)
+		timeout := time.Duration(30 * time.Second)
 		client := &http.Client{
 			Timeout: timeout,
 			Transport: &http.Transport{
