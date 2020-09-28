@@ -11,7 +11,7 @@ wget -O "$zip" "$url"
 if ! [ -e $zip ]
 then
 	echo "Not downloaded to the installation package."
-	exit 1
+	exit 2
 fi
 
 dir="TDengine-client"
@@ -20,7 +20,7 @@ tar -zxvf "$zip"
 if ! [ -e $dir ]
 then
 	echo "Failed to decompress Taos client."
-	exit 1
+	exit 3
 fi
 
 cd "$dir"

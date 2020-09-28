@@ -19,7 +19,7 @@ require (
 go mod edit -replace github.com/emqx/kuiper=/$kuiper
 go build --buildmode=plugin -o /$kuiper/plugins/sinks/Taos@v1.0.0.so /$kuiper/plugins/sinks/taos.go
 ```
-### 安装插件
+### Install plugin
 Since the operation of the taos plug-in depends on the taos client, for the convenience of users, the taos client will be downloaded when the plug-in is installed. However, the taos client version corresponds to the server version one-to-one, which is not compatible with each other, so the user must inform the taos server version used.
 ## Rule Actions Description
 
