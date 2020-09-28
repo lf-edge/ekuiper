@@ -19,7 +19,8 @@ require (
 go mod edit -replace github.com/emqx/kuiper=/$kuiper
 go build --buildmode=plugin -o /$kuiper/plugins/sinks/Taos@v1.0.0.so /$kuiper/plugins/sinks/taos.go
 ```
-
+### 安装插件
+由于 taos 插件的运行依赖于 taos 客户端，为了便于用户使用，安装插件时将下载 taos 客户端。但是 taos 客户端版本与其服务器版本一一对应，互不兼容，所以用户必须告知所用 taos 服务器版本。
 ## 规则 Actions 说明
 
 由于 taos 数据库要求表中必须有时间戳字段，所以用户必须告知数据表的时间戳字段名称（必填tsFieldName）。用户可以选择是否提供时间戳数据，若不提供（provideTs=false），时间戳字段的内容由 taos 数据库自动生成。

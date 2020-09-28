@@ -24,8 +24,9 @@ import (
 )
 
 type Plugin struct {
-	Name string `json:"name"`
-	File string `json:"file"`
+	Name       string   `json:"name"`
+	File       string   `json:"file"`
+	ShellParas []string `json:"shellParas"`
 }
 
 type PluginType int
@@ -247,7 +248,7 @@ func (m *Manager) List(t PluginType) (result []string, err error) {
 }
 
 func (m *Manager) Register(t PluginType, j *Plugin) error {
-	name, uri := j.Name, j.File
+	name, uri, shellParas := j.Name, j.File, j.ShellParas
 	//Validation
 	name = strings.Trim(name, " ")
 	if name == "" {
@@ -275,7 +276,7 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}
 	//unzip and copy to destination
-	unzipFiles, version, err := m.install(t, name, zipPath)
+	unzipFiles, version, err := m.install(t, name, zipPath, shellParas)
 	if err != nil {
 		if t == SOURCE && len(unzipFiles) == 1 { //source that only copy so file
 			os.Remove(unzipFiles[0])
@@ -385,7 +386,7 @@ func getSoFilePath(m *Manager, t PluginType, name string) (string, error) {
 	return p, nil
 }
 
-func (m *Manager) install(t PluginType, name string, src string) ([]string, string, error) {
+func (m *Manager) install(t PluginType, name, src string, shellParas []string) ([]string, string, error) {
 	var filenames []string
 	var tempPath = path.Join(m.pluginDir, "temp", PluginTypes[t], name)
 	defer os.RemoveAll(tempPath)
@@ -439,7 +440,12 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 	} else if needInstall {
 		//run install script if there is
 		spath := path.Join(tempPath, "install.sh")
-		out, err := exec.Command("/bin/sh", spath).Output()
+		shellParas = append(shellParas, spath)
+		if 1 != len(shellParas) {
+			copy(shellParas[1:], shellParas[0:])
+			shellParas[0] = spath
+		}
+		out, err := exec.Command("/bin/sh", shellParas...).Output()
 		if err != nil {
 			return filenames, "", err
 		} else {
