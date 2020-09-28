@@ -446,10 +446,9 @@ func (m *Manager) install(t PluginType, name, src string, shellParas []string) (
 			shellParas[0] = spath
 		}
 		out, err := exec.Command("/bin/sh", shellParas...).Output()
+		common.Log.Infof("install %s plugin %s log: %s", PluginTypes[t], name, string(out))
 		if err != nil {
 			return filenames, "", err
-		} else {
-			common.Log.Infof("install %s plugin %s log: %s", PluginTypes[t], name, out)
 		}
 	}
 	return filenames, version, nil
