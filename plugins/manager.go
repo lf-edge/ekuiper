@@ -404,6 +404,7 @@ func (m *Manager) install(t PluginType, name, src string, shellParas []string) (
 		yamlPath = path.Join(m.etcDir, PluginTypes[t], yamlFile)
 		expFiles = 2
 	}
+	var revokeFiles []string
 	needInstall := false
 	for _, file := range r.File {
 		fileName := file.Name
@@ -412,10 +413,14 @@ func (m *Manager) install(t PluginType, name, src string, shellParas []string) (
 			if err != nil {
 				return filenames, "", err
 			}
+			revokeFiles = append(revokeFiles, yamlPath)
 			filenames = append(filenames, yamlPath)
 		} else if fileName == name+".json" {
-			if err := unzipTo(file, path.Join(m.etcDir, PluginTypes[t], fileName)); nil != err {
+			jsonPath := path.Join(m.etcDir, PluginTypes[t], fileName)
+			if err := unzipTo(file, jsonPath); nil != err {
 				common.Log.Errorf("Failed to decompress the metadata %s file", fileName)
+			} else {
+				revokeFiles = append(revokeFiles, jsonPath)
 			}
 		} else if soPrefix.Match([]byte(fileName)) {
 			soPath := path.Join(m.pluginDir, PluginTypes[t], fileName)
@@ -424,6 +429,7 @@ func (m *Manager) install(t PluginType, name, src string, shellParas []string) (
 				return filenames, "", err
 			}
 			filenames = append(filenames, soPath)
+			revokeFiles = append(revokeFiles, soPath)
 			_, version = parseName(fileName)
 		} else { //unzip other files
 			err = unzipTo(file, path.Join(tempPath, fileName))
@@ -448,6 +454,9 @@ func (m *Manager) install(t PluginType, name, src string, shellParas []string) (
 		out, err := exec.Command("/bin/sh", shellParas...).Output()
 		common.Log.Infof("install %s plugin %s log: %s", PluginTypes[t], name, string(out))
 		if err != nil {
+			for _, f := range revokeFiles {
+				os.Remove(f)
+			}
 			return filenames, "", err
 		}
 	}
