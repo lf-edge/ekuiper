@@ -16,6 +16,7 @@ fi
 
 dir="TDengine-client"
 tar -zxvf "$zip"
+rm "$zip"
 
 if ! [ -e $dir ]
 then
@@ -32,3 +33,5 @@ do
 	fi
 done
 
+cd ../
+rm -rf "$dir"
