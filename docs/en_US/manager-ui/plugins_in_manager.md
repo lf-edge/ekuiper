@@ -14,7 +14,7 @@ The plugin metadata is a json format file, and different plugin types support di
 
 **Source**
 
-For detailed configuration of source metadata, please refer to [source metadata configuration](../plugins/overview.md#source-metadata file format). Examples of configuration files are as follows:
+For detailed configuration of source metadata, please refer to [source metadata configuration](../plugins/overview.md#source-metadata-file-format). Examples of configuration files are as follows:
 
 ```json
 {
@@ -67,19 +67,19 @@ Describe the basic information of the plugin, including plug-in author, help fil
 
 **properties**
 
-Describe the configurable attribute information of the plugin, including parameter information and how to display on the interface. The attribute information of Source is specified by the corresponding configuration file, and multiple configuration groups can be specified in the configuration file. For details, please refer to [Source Configuration Document](../extension/source.md#Processing configuration). In the metadata file, there can be multiple configuration group names under `properties`, such as `default` in the example; each configuration group has multiple attribute metadata.
+Describe the configurable attribute information of the plugin, including parameter information and how to display on the interface. The attribute information of Source is specified by the corresponding configuration file, and multiple configuration groups can be specified in the configuration file. For details, please refer to [Source Configuration Document](../extension/source.md#Deal-with-configuration). In the metadata file, there can be multiple configuration group names under `properties`, such as `default` in the example; each configuration group has multiple attribute metadata.
 
 On the stream management page of the management console, click `Source Configuration` to expand any source, and all configuration groups of metadata can be displayed.
 
 ![plugin conf group](resources/source_confkey.png)
 
-Click any configuration group to view the configuration group parameters. Click the add symbol to enter the parameter configuration page as shown below. The displayed name and control information of parameter configuration come from the definition of metadata JSON file.
+Click any configuration group to view the configuration group parameters. Click the add icon to enter the parameter configuration page as shown below. The displayed name and control information of parameter configuration come from the definition of metadata JSON file.
 
 ![source configure](resources/source_conf.png)
 
 **Sink**
 
-Sink metadata configuration is basically the same as Source. For detailed configuration, please refer to [sink metadata configuration](../plugins/overview.md#sink-metadata file format).
+Sink metadata configuration is basically the same as Source. For detailed configuration, please refer to [sink metadata configuration](../plugins/overview.md#sink-metadata-file-format).
 
 The configuration parameters of Sink metadata mainly consist of two parts:
 
@@ -91,7 +91,7 @@ Describe the basic information of the plugin, including plugin author, help file
 
 **properties**
 
-Describe the configurable attribute information of the plugin, including parameter information and how to display on the interface. Unlike Source, the attributes of Sink are not stored in the configuration file, but are configured when the rule is created. In the corresponding metadata configuration, it no longer has the concept of configuration group for Sink. On the rule creation page of the management console, in the pop-up window of adding action , after selecting the plugin, the help document link and the attributes defined in the metadata will be displayed. It is worth noting that Sink has some [common attributes](../rules/overview.md#目标动作), which will be displayed in all sinks.
+Describe the configurable attribute information of the plugin, including parameter information and how to display on the interface. Unlike Source, the attributes of Sink are not stored in the configuration file, but are configured when the rule is created. In the corresponding metadata configuration, it no longer has the concept of configuration group for Sink. On the rule creation page of the management console, in the pop-up window of adding action , after selecting the plugin, the help document link and the attributes defined in the metadata will be displayed. It is worth noting that Sink has some [common attributes](../rules/overview.md#sinks/actions), which will be displayed in all sinks.
 
 ![sink config](resources/sink_conf.png)
 
@@ -134,4 +134,4 @@ Due to the limitation of `Go` language plugin mechanism, the compilation environ
 
 ### Summary
 
-Kuiper console provides a display mechanism for custom plugins. User only needs to add the plugin metadata file in the custom plugin package. At the same time, users can customize the plugin warehouse, so that plugins can be installed and used conveniently from the console.
+Kuiper management console provides a display mechanism for custom plugins. User only needs to add the plugin metadata file in the custom plugin package. At the same time, users can customize the plugin  repository, so that plugins can be installed and used conveniently from the console.

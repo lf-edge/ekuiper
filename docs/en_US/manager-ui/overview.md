@@ -4,15 +4,15 @@
 
 ### Overview
 
-From Kuiper version 0.9.1, whenever a new version of Kuiper is released, the corresponding version of the management console will be released. This article uses a practical example to illustrate how to use the management console to operate and manage Kuiper nodes. In the article, the data will be subscribed from the MQTT server, , and be sent to the specified file after processing through the rules written by Kuiper. The demonstration is as follows:
+From Kuiper version 0.9.1, whenever a new version of Kuiper is released, the corresponding version of the management console will be released. This article uses a practical example to illustrate how to use the management console to operate and manage Kuiper nodes. In the article, the data will be subscribed from the MQTT server, and be sent to the specified file after processing through the rules written by Kuiper. The demonstration is as follows:
 
 - Create a Kuiper node through the management console
 - Create a stream to subscribe to the data in the MQTT server. This example demonstrates subscribing to the MQTT server. The relevant information is shown below.
   - Address: `tcp://broker.emqx.io:1883`，
   - Topic: `devices/device_001/messages`，
   - Data: `{"temperature": 40, "humidity" : 20}`
-- Create a rule to calculate the subscribed data and write the data to the sink「This example demonstrates writing the subscribed message to a file」.
-- Kuiper currently supports multiple sources and sinks. Users only need to install the corresponding plugins to achieve the corresponding function. 「The source of this example is MQTT source, which has built-in support without the need of installation; the sink is a file, which does not have built-in support and needs to be installed separately."
+- Create a rule to calculate the subscribed data and write the data to the sink "This example demonstrates writing the subscribed message to a file".
+- Kuiper currently supports multiple sources and sinks. Users only need to install the corresponding plugins to achieve the corresponding function. "The source of this example is MQTT source, which has built-in support without the need of installation; the sink is a file, which does not have built-in support and needs to be installed separately."
 
 ### Architecture design
 
@@ -59,7 +59,7 @@ From Kuiper version 0.9.1, whenever a new version of Kuiper is released, the cor
 
 #### Install management console
 
-- Pull the Docker image of kuiper-manager from [Docker Image Library](https://hub.docker.com/r/emqx/kuiper-manager/tags), and `0.9.1-ief` is a dedicated image for Huawei IEF users, This example uses the `0.9.1` mirror.
+- Pull the Docker image of kuiper-manager from [Docker Image Library](https://hub.docker.com/r/emqx/kuiper-manager/tags), and `0.9.1-ief` is a dedicated image for Huawei IEF users, This example uses the `0.9.1` image.
 
   ```shell
   docker pull emqx/kuiper-manager:0.9.1
