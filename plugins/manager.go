@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"archive/zip"
+	"bytes"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -451,13 +452,20 @@ func (m *Manager) install(t PluginType, name, src string, shellParas []string) (
 			copy(shellParas[1:], shellParas[0:])
 			shellParas[0] = spath
 		}
-		out, err := exec.Command("/bin/sh", shellParas...).Output()
-		common.Log.Infof("install %s plugin %s log: %s", PluginTypes[t], name, string(out))
+		cmd := exec.Command("/bin/sh", shellParas...)
+		var outb, errb bytes.Buffer
+		cmd.Stdout = &outb
+		cmd.Stderr = &errb
+		err := cmd.Run()
+
 		if err != nil {
 			for _, f := range revokeFiles {
 				os.Remove(f)
 			}
+			common.Log.Infof(`err:%v stdout:%s stderr:%s`, err, outb.String(), errb.String())
 			return filenames, "", err
+		} else {
+			common.Log.Infof("install %s plugin %s", PluginTypes[t], name)
 		}
 	}
 	return filenames, version, nil
