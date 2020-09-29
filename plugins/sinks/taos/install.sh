@@ -1,14 +1,12 @@
 if [ -z "$1" ]
 then
     echo "version is empty."
-	exit 1
+	exit 5
 fi
 
 url="https://www.taosdata.com/download/download-all.php?pkgType=tdengine_linux&pkgName=TDengine-client-$1-Linux-x64.tar.gz"
 zip="TDengine-client.tar.gz"
-wget --read-timeout=240 -O "$zip" "$url" -o "Tdengine.log" -t1
-cat ./Tdengine.log
-rm ./TDengine.log
+wget -T 280 -O "$zip" "$url"
 
 if ! [ -e $zip ]
 then
@@ -27,13 +25,21 @@ then
 fi
 
 cd "$dir"
+ret=""
 for file in ./*
 do
 	if [ -x $file -a ! -d $file ]
 	then
 		./"$file"
+		ret="successful"
 	fi
 done
 
 cd ../
 rm -rf "$dir"
+
+if [ -z "$ret" ]
+then
+    echo "not found script."
+	exit 4
+fi
