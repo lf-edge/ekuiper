@@ -6,7 +6,9 @@ fi
 
 url="https://www.taosdata.com/download/download-all.php?pkgType=tdengine_linux&pkgName=TDengine-client-$1-Linux-x64.tar.gz"
 zip="TDengine-client.tar.gz"
-wget --read-timeout==240 -O "$zip" "$url"
+wget --read-timeout=240 -O "$zip" "$url" -o "Tdengine.log" -t1
+cat ./Tdengine.log
+rm ./TDengine.log
 
 if ! [ -e $zip ]
 then
