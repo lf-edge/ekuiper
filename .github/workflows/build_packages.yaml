@@ -1,10 +1,10 @@
 name: Build packages
 
 on:
-    pull_request:
-    release:
-        types:
-            - published
+  pull_request:
+  release:
+    types:
+      - published
 
 jobs:
     build:
@@ -117,7 +117,18 @@ jobs:
                 sleep 5
                 if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
                 if [ ${os} = alpine ]; then continue; fi
-                curl ${ip_address}:9081/plugins/${plugin_type} -X POST -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\"}"
+                if [ "${plugin_name}" = "taos" ]; then
+                    curl \
+                    ${ip_address}:9081/plugins/${plugin_type} \
+                    -X POST \
+                    -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"shellParas\": [\"2.0.3.1\"]}"
+                else
+                    curl \
+                    ${ip_address}:9081/plugins/${plugin_type} \
+                    -X POST \
+                    -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\"}"
+                fi
+                docker logs ${container_id}
                 [ $plugin_name = $(curl ${ip_address}:9081/plugins/${plugin_type}/${plugin_name} | jq '.name'| sed 's/\"//g' ) ] || exit 1
             done
         - uses: actions/upload-artifact@v2

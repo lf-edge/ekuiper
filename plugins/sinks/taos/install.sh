@@ -1,3 +1,6 @@
+#!/bin/sh
+set -e -x -u
+
 if [ -z "$1" ]
 then
     echo "version is empty."
