@@ -191,8 +191,8 @@ sinks/taos:
     -f .ci/Dockerfile-plugins .
 
 	@mkdir -p _plugins/debian/sinks
-	@tar -xvf /tmp/cross_build_plugins_sinks_taos.tar --wildcards "go/kuiper/_plugins/sinks/taos/taos_amd64.zip" \
-	&& mv go/kuiper/_plugins/sinks/taos/taos_amd64.zip _plugins/debian/sinks
+	@tar -xvf /tmp/cross_build_plugins_sinks_taos.tar --wildcards "go/kuiper/plugins/sinks/taos/taos_amd64.zip" \
+	&& mv go/kuiper/plugins/sinks/taos/taos_amd64.zip _plugins/debian/sinks
 	@rm -f /tmp/cross_build_plugins_sinks_taos.tar
 $(PLUGINS): PLUGIN_TYPE = $(word 1, $(subst /, , $@))
 $(PLUGINS): PLUGIN_NAME = $(word 2, $(subst /, , $@))
@@ -208,8 +208,8 @@ $(PLUGINS):
 
 	@mkdir -p _plugins/debian/$(PLUGIN_TYPE)
 	@for arch in amd64 arm64 arm_v7 386 ppc64le; do \
-		tar -xvf /tmp/cross_build_plugins_$(PLUGIN_TYPE)_$(PLUGIN_NAME).tar --wildcards "linux_$${arch}/go/kuiper/_plugins/$(PLUGIN_TYPE)/$(PLUGIN_NAME)/$(PLUGIN_NAME)_$$(echo $${arch%%_*}).zip" \
-		&& mv $$(ls linux_$${arch}/go/kuiper/_plugins/$(PLUGIN_TYPE)/$(PLUGIN_NAME)/$(PLUGIN_NAME)_$$(echo $${arch%%_*}).zip) _plugins/debian/$(PLUGIN_TYPE); \
+		tar -xvf /tmp/cross_build_plugins_$(PLUGIN_TYPE)_$(PLUGIN_NAME).tar --wildcards "linux_$${arch}/go/kuiper/plugins/$(PLUGIN_TYPE)/$(PLUGIN_NAME)/$(PLUGIN_NAME)_$$(echo $${arch%%_*}).zip" \
+		&& mv $$(ls linux_$${arch}/go/kuiper/plugins/$(PLUGIN_TYPE)/$(PLUGIN_NAME)/$(PLUGIN_NAME)_$$(echo $${arch%%_*}).zip) _plugins/debian/$(PLUGIN_TYPE); \
 	done
 	@rm -f /tmp/cross_build_plugins_$(PLUGIN_TYPE)_$(PLUGIN_NAME).tar
 

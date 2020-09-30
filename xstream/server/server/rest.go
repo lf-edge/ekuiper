@@ -112,8 +112,8 @@ func createRestServer(port int) *http.Server {
 	server := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
 		// Good practice to set timeouts to avoid Slowloris attacks.
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
+		WriteTimeout: time.Second * 60 * 5,
+		ReadTimeout:  time.Second * 60 * 5,
 		IdleTimeout:  time.Second * 60,
 		Handler:      handlers.CORS(handlers.AllowedHeaders([]string{"Accept", "Accept-Language", "Content-Type", "Content-Language", "Origin"}))(r),
 	}
