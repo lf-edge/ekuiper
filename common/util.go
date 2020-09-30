@@ -7,6 +7,7 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/go-yaml/yaml"
+	"github.com/keepeye/logrus-filename"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
@@ -78,7 +79,10 @@ type KuiperConf struct {
 }
 
 func init() {
+	filenameHook := filename.NewHook()
+	filenameHook.Field = "line"
 	Log = logrus.New()
+	Log.AddHook(filenameHook)
 	Log.SetReportCaller(true)
 	Log.SetFormatter(&logrus.TextFormatter{
 		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
