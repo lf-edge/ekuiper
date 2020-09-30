@@ -25,7 +25,7 @@ source 的大部分属性用户通过对应的配置文件指定，用户无法�
 
 #### about
 
-* trial:表示插件是否可用
+* trial:表示插件是否 为 beta 测试阶段
 
 * author
 
@@ -174,7 +174,7 @@ source 的大部分属性用户通过对应的配置文件指定，用户无法�
 
 #### about
 
-* trial:表示插件是否可用
+* trial:表示插件是否 为 beta 测试阶段
 
 * author
 
@@ -283,7 +283,7 @@ Kuiper 具有许多内置函数，可以对数据执行计算。(具体文档参
 
 #### about
 
-* trial:表示插件是否可用
+* trial:表示插件是否 为 beta 测试阶段
 
 * author
 
