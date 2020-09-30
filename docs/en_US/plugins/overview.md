@@ -25,7 +25,7 @@ This part of the content defines which library dependencies are used by the plug
 
 #### about
 
-* trial: indicates whether the plugin is available
+* trial: indicates whether the plugin is under beta test stage 
 
 * author
 
@@ -174,7 +174,7 @@ The content of this part defines which library dependencies are used by the plug
 
 #### about
 
-* trial: indicates whether the plugin is available
+* trial: indicates whether the plugin is under beta test stage
 
 * author
 
@@ -284,7 +284,7 @@ The metadata file format is JSON and is mainly divided into the following parts:
 
 #### about
 
-* trial: indicates whether the plugin is available
+* trial: indicates whether the plugin is under beta test stage
 
 * author
 

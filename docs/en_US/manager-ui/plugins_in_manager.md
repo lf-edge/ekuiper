@@ -97,7 +97,7 @@ Describe the configurable attribute information of the plugin, including paramet
 
 **Functions**
 
-For detailed configuration of Function metadata, please refer to [sink metadata configuration](../plugins/overview.md#functions-metadata file format). Among them, the `about` part is exactly the same as Source and Sink. The `function` part is configured with the name, examples and prompt information of the function, which are used for code prompting in the SQL editor of the new rule.
+For detailed configuration of Function metadata, please refer to [sink metadata configuration](../plugins/overview.md#functions-metadata-file-format). Among them, the `about` part is exactly the same as Source and Sink. The `function` part is configured with the name, examples and prompt information of the function, which are used for code prompting in the SQL editor of the new rule.
 
 ![function about](resources/function_about.png)
 
