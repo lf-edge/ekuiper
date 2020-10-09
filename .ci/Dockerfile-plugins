@@ -17,7 +17,7 @@ RUN set -e -u -x \
          influxdb ) \
            go build --buildmode=plugin -tags plugins -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go \
            ;; \
-         taos ) \
+         tdengine ) \
            if [ "$(uname -m)" = "x86_64" ]; then \
              wget "https://www.taosdata.com/download/download-all.php?pkgType=tdengine_linux&pkgName=TDengine-client-2.0.3.1-Linux-x64.tar.gz" -O /tmp/TDengine-client-2.0.3.1-Linux-x64.tar.gz \
              && tar -zxvf /tmp/TDengine-client-2.0.3.1-Linux-x64.tar.gz \

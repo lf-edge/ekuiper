@@ -133,7 +133,7 @@ func (m *taosSink) Configure(props map[string]interface{}) error {
 
 func (m *taosSink) Open(ctx api.StreamContext) (err error) {
 	logger := ctx.GetLogger()
-	logger.Debug("Opening taos sink")
+	logger.Debug("Opening tdengine sink")
 	url := fmt.Sprintf(`%s:%s@tcp(%s:%d)/%s`, m.conf.User, m.conf.Password, m.conf.Ip, m.conf.Port, m.conf.Database)
 	m.db, err = sql.Open("taosSql", url)
 	return err
@@ -143,10 +143,10 @@ func (m *taosSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	data, ok := item.([]byte)
 	if !ok {
-		logger.Debug("taos sink receive non string data")
+		logger.Debug("tdengine sink receive non string data")
 		return nil
 	}
-	logger.Debugf("taos sink receive %s", item)
+	logger.Debugf("tdengine sink receive %s", item)
 
 	var sliData []map[string]interface{}
 	err := json.Unmarshal(data, &sliData)

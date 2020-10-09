@@ -162,7 +162,7 @@ source 的大部分属性用户通过对应的配置文件指定，用户无法�
 | [file](sinks/file.md) | 该插件将分析结果保存到某个指定到文件系统中 | 插件样例，不可用于生产环境 |
 | [zmq](sinks/zmq.md)   | 该插件将分析结果发送到 Zero Mq 的主题中  | 插件样例，不能用于生产环境 |
 | [Influxdb](sinks/influx.md)   | 该插件将分析结果发送到 InfluxDB 中  | 由 [@smart33690](https://github.com/smart33690) 提供 |
-| [TDengine](sinks/taos.md) | 该插件将分析结果发送到 TDengine 中 |  |
+| [TDengine](sinks/tdengine.md) | 该插件将分析结果发送到 TDengine 中 |  |
 
 ### sink 元数据文件格式
 
