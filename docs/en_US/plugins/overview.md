@@ -162,7 +162,7 @@ The following is a sample of metadata file.
 | [file](sinks/file.md)       | The plugin saves the analysis results to a specified file system | Sample of plugin, not available in production environment |
 | [zmq](sinks/zmq.md)         | The plugin sends the analysis results to the topic of Zero Mq | Sample of plugin, not available in production environment |
 | [Influxdb](sinks/influx.md) | The plugin sends the analysis results to InfluxDB            | Provided by [@smart33690](https://github.com/smart33690)  |
-| [TDengine](sinks/taos.md)   | The plugin sends the analysis results to TDengine            |                                                           |
+| [TDengine](sinks/tdengine.md)   | The plugin sends the analysis results to TDengine            |                                                           |
 
 ### sink metadata file format
 
