@@ -68,7 +68,7 @@ jobs:
                 plugin:
                 - sinks/file
                 - sinks/influx
-                - sinks/taos
+                - sinks/tdengine
                 - sinks/zmq
                 - sources/random
                 - sources/zmq
@@ -117,7 +117,7 @@ jobs:
                 sleep 5
                 if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
                 if [ ${os} = alpine ]; then continue; fi
-                if [ "${plugin_name}" = "taos" ]; then
+                if [ "${plugin_name}" = "tdengine" ]; then
                     curl \
                     ${ip_address}:9081/plugins/${plugin_type} \
                     -X POST \

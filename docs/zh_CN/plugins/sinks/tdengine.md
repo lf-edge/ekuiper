@@ -17,13 +17,13 @@ require (
 
 ```shell
 go mod edit -replace github.com/emqx/kuiper=/$kuiper
-go build --buildmode=plugin -o /$kuiper/plugins/sinks/Taos@v1.0.0.so /$kuiper/plugins/sinks/taos.go
+go build --buildmode=plugin -o /$kuiper/plugins/sinks/Tdengine@v1.0.0.so /$kuiper/plugins/sinks/tdengine.go
 ```
 ### 安装插件
-由于 taos 插件的运行依赖于 taos 客户端，为了便于用户使用，安装插件时将下载 taos 客户端。但是 taos 客户端版本与其服务器版本一一对应，互不兼容，所以用户必须告知所用 taos 服务器版本。
+由于 tdengine 插件的运行依赖于 tdengine 客户端，为了便于用户使用，安装插件时将下载 tdengine 客户端。但是 tdengine 客户端版本与其服务器版本一一对应，互不兼容，所以用户必须告知所用 tdengine 服务器版本。
 ## 规则 Actions 说明
 
-由于 taos 数据库要求表中必须有时间戳字段，所以用户必须告知数据表的时间戳字段名称（必填tsFieldName）。用户可以选择是否提供时间戳数据，若不提供（provideTs=false），时间戳字段的内容由 taos 数据库自动生成。
+由于 tdengine 数据库要求表中必须有时间戳字段，所以用户必须告知数据表的时间戳字段名称（必填tsFieldName）。用户可以选择是否提供时间戳数据，若不提供（provideTs=false），时间戳字段的内容由 tdengine 数据库自动生成。
 
 | 名称        | 类型     | 是否必填                      | 释义                   |
 | ----------- | -------- | ----------------------------- | ---------------------- |
@@ -54,7 +54,7 @@ curl --location --request POST 'http://127.0.0.1:9081/streams' --header 'Content
 ### 创建规则
 
 ```curl
-curl --location --request POST 'http://127.0.0.1:9081/rules' --header 'Content-Type:application/json' --data '{"id":"demoRule","sql":"SELECT * FROM demoStream;","actions":[{"taos":{"port":0,"ip":"127.0.0.1","user":"root","password":"taosdata","database":"dbName","table":"tableName","fields":["time","age"]}}]}'
+curl --location --request POST 'http://127.0.0.1:9081/rules' --header 'Content-Type:application/json' --data '{"id":"demoRule","sql":"SELECT * FROM demoStream;","actions":[{"tdengine":{"provideTs":true,"tsFieldName":"time","port":0,"ip":"127.0.0.1","user":"root","password":"taosdata","database":"dbName","table":"tableName","fields":["time","age"]}}]}'
 ```
 
 ### 发送数据
