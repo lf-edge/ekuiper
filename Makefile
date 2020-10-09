@@ -178,22 +178,22 @@ PLUGINS := sinks/file \
 	functions/countPlusOne \
 	functions/echo
 
-.PHONY: plugins sinks/taos $(PLUGINS)
-plugins: cross_prepare sinks/taos $(PLUGINS)
-sinks/taos:
+.PHONY: plugins sinks/tdengine $(PLUGINS)
+plugins: cross_prepare sinks/tdengine $(PLUGINS)
+sinks/tdengine:
 	@docker buildx build --no-cache \
     --platform=linux/amd64 \
     -t cross_build \
     --build-arg VERSION=$(VERSION) \
     --build-arg PLUGIN_TYPE=sinks \
-    --build-arg PLUGIN_NAME=taos \
-    --output type=tar,dest=/tmp/cross_build_plugins_sinks_taos.tar \
+    --build-arg PLUGIN_NAME=tdengine \
+    --output type=tar,dest=/tmp/cross_build_plugins_sinks_tdengine.tar \
     -f .ci/Dockerfile-plugins .
 
 	@mkdir -p _plugins/debian/sinks
-	@tar -xvf /tmp/cross_build_plugins_sinks_taos.tar --wildcards "go/kuiper/plugins/sinks/taos/taos_amd64.zip" \
-	&& mv go/kuiper/plugins/sinks/taos/taos_amd64.zip _plugins/debian/sinks
-	@rm -f /tmp/cross_build_plugins_sinks_taos.tar
+	@tar -xvf /tmp/cross_build_plugins_sinks_tdengine.tar --wildcards "go/kuiper/plugins/sinks/tdengine/tdengine_amd64.zip" \
+	&& mv go/kuiper/plugins/sinks/tdengine/tdengine_amd64.zip _plugins/debian/sinks
+	@rm -f /tmp/cross_build_plugins_sinks_tdengine.tar
 $(PLUGINS): PLUGIN_TYPE = $(word 1, $(subst /, , $@))
 $(PLUGINS): PLUGIN_NAME = $(word 2, $(subst /, , $@))
 $(PLUGINS):
