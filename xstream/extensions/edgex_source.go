@@ -50,7 +50,7 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 	var mbusType = messaging.ZeroMQ
 	if t, ok := props["type"]; ok {
 		mbusType = t.(string)
-		if mbusType != messaging.ZeroMQ && mbusType != messaging.MQTT {
+		if mbusType != messaging.ZeroMQ && mbusType != messaging.MQTT && mbusType != messaging.RedisStreams {
 			return fmt.Errorf("Specified wrong message type value %s, will use zeromq messagebus.\n", mbusType)
 		}
 	}
