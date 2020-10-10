@@ -274,6 +274,8 @@ func AddSourceConfKey(pluginName, confKey string, content []byte) (err *multilin
 }
 
 func AddSourceConfKeyField(pluginName, confKey string, content []byte) (err *multilingualMsg) {
+	err = new(multilingualMsg)
+	err.msg = new(language)
 	reqField := make(map[string]interface{})
 	e := json.Unmarshal(content, &reqField)
 	if nil != e {
