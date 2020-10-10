@@ -94,7 +94,7 @@ func (r *multilingualMsg) GetCode() int {
 }
 func (r *multilingualMsg) GetMsg() string {
 	b, err := json.Marshal(r.msg)
-	if nil != err {
+	if nil == err {
 		return string(b)
 	}
 	return err.Error()
