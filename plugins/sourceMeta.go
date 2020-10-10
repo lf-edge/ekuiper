@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"io/ioutil"
+	"net/http"
 	"path"
 	"reflect"
 	"strings"
@@ -138,9 +139,10 @@ func (m *Manager) readSourceMetaDir() error {
 	return nil
 }
 
-func GetSourceConf(pluginName string) (b []byte, err error) {
-	property, ok := g_sourceProperty[pluginName+".json"]
-	if ok {
+func GetSourceConf(pluginName string) (b []byte, err *multilingualMsg) {
+	err = new(multilingualMsg)
+	err.msg = new(language)
+	if property, ok := g_sourceProperty[pluginName+".json"]; ok {
 		cf := make(map[string]map[string]interface{})
 		for key, kvs := range property.cf {
 			aux := make(map[interface{}]interface{})
@@ -149,17 +151,32 @@ func GetSourceConf(pluginName string) (b []byte, err error) {
 			}
 			cf[key] = common.ConvertMap(aux)
 		}
-		return json.Marshal(cf)
+		if b, e := json.Marshal(cf); nil == e {
+			return b, nil
+		} else {
+			err.code = http.StatusBadRequest
+			err.msg.setEn(e.Error())
+			err.msg.setZh(fmt.Sprintf(`json 格式化错误：%s`, e.Error()))
+			return nil, err
+		}
 	}
-	return nil, fmt.Errorf("not found plugin %s", pluginName)
+	err.code = http.StatusNotFound
+	err.msg.setEn(`not found pligin:` + baseOption)
+	err.msg.setZh(`没有找到插件：` + baseOption)
+	return nil, err
 }
 
-func GetSourceMeta(pluginName string) (ptrSourceProperty *uiSource, err error) {
+func GetSourceMeta(pluginName string) (ptrSourceProperty *uiSource, err *multilingualMsg) {
+	err = new(multilingualMsg)
+	err.msg = new(language)
 	property, ok := g_sourceProperty[pluginName+".json"]
 	if ok {
 		return property.cfToMeta()
 	}
-	return nil, fmt.Errorf("not found plugin %s", pluginName)
+	err.code = http.StatusNotFound
+	err.msg.setEn(`not found pligin:` + pluginName)
+	err.msg.setZh(`没有找到插件：` + pluginName)
+	return nil, err
 }
 
 func GetSources() (sources []*pluginfo) {
@@ -200,28 +217,44 @@ func GetSourceConfKeys(pluginName string) (keys []string) {
 	return keys
 }
 
-func DelSourceConfKey(pluginName, confKey string) error {
+func DelSourceConfKey(pluginName, confKey string) (err *multilingualMsg) {
+	err = new(multilingualMsg)
+	err.msg = new(language)
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
-		return fmt.Errorf("not found plugin %s", pluginName)
+		err.code = http.StatusNotFound
+		err.msg.setZh(`没有找到插件：` + pluginName)
+		err.msg.setEn(`not found plugin : ` + pluginName)
+		return err
 	}
 	if nil == property.cf {
-		return fmt.Errorf("not found confKey %s", confKey)
+		err.code = http.StatusNotFound
+		err.msg.setZh(`没有找到配置项：` + confKey)
+		err.msg.setEn(`not found confKey: ` + confKey)
+		return err
 	}
 	delete(property.cf, confKey)
 	return property.saveCf(pluginName)
 }
 
-func AddSourceConfKey(pluginName, confKey string, content []byte) error {
+func AddSourceConfKey(pluginName, confKey string, content []byte) (err *multilingualMsg) {
+	err = new(multilingualMsg)
+	err.msg = new(language)
 	reqField := make(map[string]interface{})
-	err := json.Unmarshal(content, &reqField)
-	if nil != err {
+	if e := json.Unmarshal(content, &reqField); nil != e {
+		msg := e.Error()
+		err.code = http.StatusBadRequest
+		err.msg.setZh(`解析数据错误：` + msg)
+		err.msg.setEn(msg)
 		return err
 	}
 
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
-		return fmt.Errorf("not found plugin %s", pluginName)
+		err.code = http.StatusNotFound
+		err.msg.setZh(`没有找到插件：` + pluginName)
+		err.msg.setEn(`not found plugin : ` + pluginName)
+		return err
 	}
 
 	if nil == property.cf {
@@ -229,7 +262,10 @@ func AddSourceConfKey(pluginName, confKey string, content []byte) error {
 	}
 
 	if 0 != len(property.cf[confKey]) {
-		return fmt.Errorf("exist confKey %s", confKey)
+		err.code = http.StatusBadRequest
+		err.msg.setZh(`配置项已经存在：` + confKey)
+		err.msg.setEn(`exist confKey: ` + confKey)
+		return err
 	}
 
 	property.cf[confKey] = reqField
@@ -237,24 +273,37 @@ func AddSourceConfKey(pluginName, confKey string, content []byte) error {
 	return property.saveCf(pluginName)
 }
 
-func AddSourceConfKeyField(pluginName, confKey string, content []byte) error {
+func AddSourceConfKeyField(pluginName, confKey string, content []byte) (err *multilingualMsg) {
 	reqField := make(map[string]interface{})
-	err := json.Unmarshal(content, &reqField)
-	if nil != err {
+	e := json.Unmarshal(content, &reqField)
+	if nil != e {
+		msg := e.Error()
+		err.code = http.StatusBadRequest
+		err.msg.setZh(`解析数据错误：` + msg)
+		err.msg.setEn(msg)
 		return err
 	}
 
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
-		return fmt.Errorf("not found plugin %s", pluginName)
+		err.code = http.StatusNotFound
+		err.msg.setZh(`没有找到插件：` + pluginName)
+		err.msg.setEn(`not found plugin : ` + pluginName)
+		return err
 	}
 
 	if nil == property.cf {
-		return fmt.Errorf("not found confKey %s", confKey)
+		err.code = http.StatusNotFound
+		err.msg.setZh(`没有找到配置项：` + confKey)
+		err.msg.setEn(`not found confKey: ` + confKey)
+		return err
 	}
 
 	if nil == property.cf[confKey] {
-		return fmt.Errorf("not found confKey %s", confKey)
+		err.code = http.StatusNotFound
+		err.msg.setZh(`没有找到配置项：` + confKey)
+		err.msg.setEn(`not found confKey: ` + confKey)
+		return err
 	}
 
 	for k, v := range reqField {
@@ -263,7 +312,9 @@ func AddSourceConfKeyField(pluginName, confKey string, content []byte) error {
 	return property.saveCf(pluginName)
 }
 
-func recursionDelMap(cf, fields map[string]interface{}) error {
+func recursionDelMap(cf, fields map[string]interface{}) (err *multilingualMsg) {
+	err = new(multilingualMsg)
+	err.msg = new(language)
 	for k, v := range fields {
 		if nil == v {
 			delete(cf, k)
@@ -277,8 +328,11 @@ func recursionDelMap(cf, fields map[string]interface{}) error {
 			}
 
 			var auxCf map[string]interface{}
-			if err := common.MapToStruct(cf[k], &auxCf); nil != err {
-				return fmt.Errorf("not found second key:%s.%s", k, delKey)
+			if nil != common.MapToStruct(cf[k], &auxCf) {
+				err.code = http.StatusNotFound
+				err.msg.setZh(fmt.Sprintf("找不到删除字段：%s.%s", k, delKey))
+				err.msg.setEn(fmt.Sprintf("not found second key:%s.%s", k, delKey))
+				return err
 			}
 			cf[k] = auxCf
 			delete(auxCf, delKey)
@@ -286,12 +340,18 @@ func recursionDelMap(cf, fields map[string]interface{}) error {
 		}
 		if reflect.Map == reflect.TypeOf(v).Kind() {
 			var auxCf, auxFields map[string]interface{}
-			if err := common.MapToStruct(cf[k], &auxCf); nil != err {
-				return fmt.Errorf("not found second key:%s.%v", k, v)
+			if nil != common.MapToStruct(cf[k], &auxCf) {
+				err.code = http.StatusNotFound
+				err.msg.setZh(fmt.Sprintf("找不到删除字段：%s.%s", k, v))
+				err.msg.setEn(fmt.Sprintf("not found second key:%s.%s", k, v))
+				return err
 			}
 			cf[k] = auxCf
-			if err := common.MapToStruct(v, &auxFields); nil != err {
-				return fmt.Errorf("requestef format err:%s.%v", k, v)
+			if nil != common.MapToStruct(v, &auxFields) {
+				err.code = http.StatusBadRequest
+				err.msg.setZh(fmt.Sprintf("类型转换错误：%s.%v", k, v))
+				err.msg.setEn(fmt.Sprintf("format err:%s.%v", k, v))
+				return err
 			}
 			if err := recursionDelMap(auxCf, auxFields); nil != err {
 				return err
@@ -301,24 +361,39 @@ func recursionDelMap(cf, fields map[string]interface{}) error {
 	return nil
 }
 
-func DelSourceConfKeyField(pluginName, confKey string, content []byte) error {
+func DelSourceConfKeyField(pluginName, confKey string, content []byte) (err *multilingualMsg) {
+	err = new(multilingualMsg)
+	err.msg = new(language)
 	reqField := make(map[string]interface{})
-	err := json.Unmarshal(content, &reqField)
-	if nil != err {
+	e := json.Unmarshal(content, &reqField)
+	if nil != e {
+		msg := e.Error()
+		err.code = http.StatusBadRequest
+		err.msg.setZh(`解析 json 错误：` + msg)
+		err.msg.setEn(msg)
 		return err
 	}
 
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
-		return fmt.Errorf("not found plugin %s", pluginName)
+		err.code = http.StatusNotFound
+		err.msg.setZh(`没有找到插件：` + pluginName)
+		err.msg.setEn(`not found plugin : ` + pluginName)
+		return err
 	}
 
 	if nil == property.cf {
-		return fmt.Errorf("not found confKey %s", confKey)
+		err.code = http.StatusNotFound
+		err.msg.setZh(`没有找到配置项：` + confKey)
+		err.msg.setEn(`not found confKey: ` + confKey)
+		return err
 	}
 
 	if nil == property.cf[confKey] {
-		return fmt.Errorf("not found confKey %s", confKey)
+		err.code = http.StatusNotFound
+		err.msg.setZh(`没有找到配置项：` + confKey)
+		err.msg.setEn(`not found confKey: ` + confKey)
+		return err
 	}
 
 	err = recursionDelMap(property.cf[confKey], reqField)
@@ -328,7 +403,7 @@ func DelSourceConfKeyField(pluginName, confKey string, content []byte) error {
 	return property.saveCf(pluginName)
 }
 
-func recursionNewFields(template []*field, conf map[string]interface{}, ret *[]*field) error {
+func recursionNewFields(template []*field, conf map[string]interface{}, ret *[]*field) (err *multilingualMsg) {
 	for i := 0; i < len(template); i++ {
 		p := new(field)
 		*p = *template[i]
@@ -351,14 +426,26 @@ func recursionNewFields(template []*field, conf map[string]interface{}, ret *[]*
 				if tmp, ok := v.(map[interface{}]interface{}); ok {
 					nextCf = common.ConvertMap(tmp)
 				} else {
-					if err := common.MapToStruct(v, &nextCf); nil != err {
+					if e := common.MapToStruct(v, &nextCf); nil != e {
+						msg := e.Error()
+						err = new(multilingualMsg)
+						err.code = http.StatusBadRequest
+						err.msg = new(language)
+						err.msg.setZh(`类型转换失败：` + msg)
+						err.msg.setEn(msg)
 						return err
 					}
 				}
-				if err := common.MapToStruct(template[i].Default, &auxTemplate); nil != err {
+				if e := common.MapToStruct(template[i].Default, &auxTemplate); nil != e {
+					msg := e.Error()
+					err = new(multilingualMsg)
+					err.msg = new(language)
+					err.code = http.StatusBadRequest
+					err.msg.setZh(`类型转换失败：` + msg)
+					err.msg.setEn(msg)
 					return err
 				}
-				if err := recursionNewFields(auxTemplate, nextCf, &auxRet); nil != err {
+				if err = recursionNewFields(auxTemplate, nextCf, &auxRet); nil != err {
 					return err
 				}
 			} else {
@@ -369,7 +456,7 @@ func recursionNewFields(template []*field, conf map[string]interface{}, ret *[]*
 	return nil
 }
 
-func (this *sourceProperty) cfToMeta() (*uiSource, error) {
+func (this *sourceProperty) cfToMeta() (*uiSource, *multilingualMsg) {
 	fields := this.meta.ConfKeys["default"]
 	ret := make(map[string][]*field)
 	for k, kvs := range this.cf {
@@ -386,9 +473,15 @@ func (this *sourceProperty) cfToMeta() (*uiSource, error) {
 	return meta, nil
 }
 
-func (this *sourceProperty) saveCf(pluginName string) error {
-	confDir, err := common.GetConfLoc()
-	if nil != err {
+func (this *sourceProperty) saveCf(pluginName string) (err *multilingualMsg) {
+	err = new(multilingualMsg)
+	err.msg = new(language)
+	confDir, e := common.GetConfLoc()
+	if nil != e {
+		msg := e.Error()
+		err.code = http.StatusBadRequest
+		err.msg.setZh(`获取不到配置文件的存储路径：` + msg)
+		err.msg.setEn(msg)
 		return err
 	}
 
@@ -398,5 +491,13 @@ func (this *sourceProperty) saveCf(pluginName string) error {
 		dir = confDir
 	}
 	filePath := path.Join(dir, pluginName+".yaml")
-	return common.WriteYamlMarshal(filePath, this.cf)
+	e = common.WriteYamlMarshal(filePath, this.cf)
+	if nil != e {
+		msg := e.Error()
+		err.code = http.StatusBadRequest
+		err.msg.setZh(`写入配置文件错误：` + msg)
+		err.msg.setEn(msg)
+		return err
+	}
+	return nil
 }

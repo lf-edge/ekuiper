@@ -571,7 +571,9 @@ func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 
 	ptrMetadata, err := plugins.GetSinkMeta(pluginName, nil)
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		msg := err.GetMsg()
+		logger.Error(msg)
+		http.Error(w, msg, err.GetCode())
 		return
 	}
 	jsonResponse(ptrMetadata, w, logger)
@@ -583,18 +585,17 @@ func showSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	ruleid := vars["id"]
 
-	rule, err := ruleProcessor.GetRuleByName(ruleid)
-	if err != nil {
-		handleError(w, err, "describe rule error", logger)
+	if rule, err := ruleProcessor.GetRuleByName(ruleid); err != nil {
+		handleError(w, err, "", logger)
 		return
-	}
-
-	ptrMetadata, err := plugins.GetSinkMeta("", rule)
-	if err != nil {
-		handleError(w, err, "metadata error", logger)
+	} else if ptrMetadata, err := plugins.GetSinkMeta("", rule); err != nil {
+		msg := err.GetMsg()
+		logger.Error(msg)
+		http.Error(w, msg, err.GetCode())
 		return
+	} else {
+		jsonResponse(ptrMetadata, w, logger)
 	}
-	jsonResponse(ptrMetadata, w, logger)
 }
 
 //list functions
@@ -622,7 +623,9 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	pluginName := vars["name"]
 	ret, err := plugins.GetSourceMeta(pluginName)
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		msg := err.GetMsg()
+		logger.Error(msg)
+		http.Error(w, msg, err.GetCode())
 		return
 	}
 	if nil != ret {
@@ -638,7 +641,9 @@ func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	pluginName := vars["name"]
 	ret, err := plugins.GetSourceConf(pluginName)
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		msg := err.GetMsg()
+		logger.Error(msg)
+		http.Error(w, msg, err.GetCode())
 		return
 	} else {
 		w.Write(ret)
@@ -662,24 +667,30 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 	var ret interface{}
-	var err error
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
+
 	switch r.Method {
 	case http.MethodDelete:
-		err = plugins.DelSourceConfKey(pluginName, confKey)
-	case http.MethodPost:
-		v, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			handleError(w, err, "Invalid body", logger)
+		if err := plugins.DelSourceConfKey(pluginName, confKey); nil != err {
+			msg := err.GetMsg()
+			logger.Error(msg)
+			http.Error(w, msg, err.GetCode())
 			return
 		}
-		err = plugins.AddSourceConfKey(pluginName, confKey, v)
-	}
-	if err != nil {
-		handleError(w, err, "metadata error", logger)
-		return
+	case http.MethodPost:
+		v, e := ioutil.ReadAll(r.Body)
+		if e != nil {
+			handleError(w, e, "Invalid body", logger)
+			return
+		}
+		if err := plugins.AddSourceConfKey(pluginName, confKey, v); nil != err {
+			msg := err.GetMsg()
+			logger.Error(msg)
+			http.Error(w, msg, err.GetCode())
+			return
+		}
 	}
 	if nil != ret {
 		jsonResponse(ret, w, logger)
@@ -691,24 +702,30 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	var ret interface{}
-	var err error
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
-	v, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		handleError(w, err, "Invalid body", logger)
+	v, e := ioutil.ReadAll(r.Body)
+	if e != nil {
+		handleError(w, e, "Invalid body", logger)
 		return
 	}
 	switch r.Method {
 	case http.MethodDelete:
-		err = plugins.DelSourceConfKeyField(pluginName, confKey, v)
+		if err := plugins.DelSourceConfKeyField(pluginName, confKey, v); nil != err {
+			msg := err.GetMsg()
+			logger.Error(msg)
+			http.Error(w, msg, err.GetCode())
+			return
+
+		}
 	case http.MethodPost:
-		err = plugins.AddSourceConfKeyField(pluginName, confKey, v)
-	}
-	if err != nil {
-		handleError(w, err, "metadata error", logger)
-		return
+		if err := plugins.AddSourceConfKeyField(pluginName, confKey, v); nil != err {
+			msg := err.GetMsg()
+			logger.Error(msg)
+			http.Error(w, msg, err.GetCode())
+			return
+		}
 	}
 	if nil != ret {
 		jsonResponse(ret, w, logger)

@@ -84,7 +84,7 @@ func TestHintWhenModifySink(t *testing.T) {
 	oldSink := new(uiSinks)
 	err := oldSink.hintWhenNewSink("taos")
 	if nil != err {
-		t.Error(err)
+		t.Errorf(err.GetMsg())
 	}
 
 	if false != oldSink.BaseOption.Fields[0].Default {

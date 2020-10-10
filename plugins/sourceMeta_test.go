@@ -37,9 +37,9 @@ func TestGetSourceMeta(t *testing.T) {
 	g_sourceProperty = make(map[string]*sourceProperty)
 	g_sourceProperty[g_file] = source
 
-	showMeta, err := GetSourceMeta(g_plugin)
-	if nil != err {
-		t.Error(err)
+	showMeta, e := GetSourceMeta(g_plugin)
+	if nil != e {
+		t.Errorf(e.GetMsg())
 	}
 	if err := compare(source, showMeta); nil != err {
 		t.Error(err)
@@ -47,15 +47,15 @@ func TestGetSourceMeta(t *testing.T) {
 	addData := `{"url":"127.0.0.1","method":"post","headers":{"Accept":"json"}}`
 	delData := `{"method":"","headers":{"Accept":""}}`
 
-	if err := AddSourceConfKey(g_plugin, "new", []byte(addData)); nil != err {
-		t.Error(err)
+	if e := AddSourceConfKey(g_plugin, "new", []byte(addData)); nil != e {
+		t.Errorf(e.GetMsg())
 	}
 	if err := isAddData(addData, cf[`new`]); nil != err {
 		t.Error(err)
 	}
 
-	if err := DelSourceConfKeyField(g_plugin, "new", []byte(delData)); nil != err {
-		t.Error(err)
+	if e := DelSourceConfKeyField(g_plugin, "new", []byte(delData)); nil != e {
+		t.Errorf(e.GetMsg())
 	}
 	if err := isDelData(delData, cf[`new`]); nil != err {
 		t.Error(err)

@@ -1,10 +1,12 @@
 package plugins
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	"io/ioutil"
+	"net/http"
 	"path"
 	"reflect"
 	"strings"
@@ -81,7 +83,28 @@ type (
 		BaseProperty   map[string]*uiSink `json:"baseProperty"`
 		BaseOption     *uiSink            `json:"baseOption"`
 	}
+	multilingualMsg struct {
+		code int
+		msg  *language
+	}
 )
+
+func (r *multilingualMsg) GetCode() int {
+	return r.code
+}
+func (r *multilingualMsg) GetMsg() string {
+	b, err := json.Marshal(r.msg)
+	if nil != err {
+		return string(b)
+	}
+	return err.Error()
+}
+func (r *language) setZh(msg string) {
+	r.Chinese = msg
+}
+func (r *language) setEn(msg string) {
+	r.English = msg
+}
 
 func isInternalSink(fiName string) bool {
 	internal := []string{`edgex.json`, `log.json`, `mqtt.json`, `nop.json`, `rest.json`}
@@ -214,12 +237,16 @@ func (m *Manager) readSinkMetaFile(filePath string) error {
 	return nil
 }
 
-func (this *uiSinks) setCustomProperty(pluginName string) error {
+func (this *uiSinks) setCustomProperty(pluginName string) (err *multilingualMsg) {
 	fileName := pluginName + `.json`
-	sinkMetadata := g_sinkMetadata
-	data := sinkMetadata[fileName]
+	data := g_sinkMetadata[fileName]
 	if nil == data {
-		return fmt.Errorf(`not found pligin:%s`, fileName)
+		err = new(multilingualMsg)
+		err.code = http.StatusNotFound
+		err.msg = new(language)
+		err.msg.setEn(`not found pligin:` + fileName)
+		err.msg.setZh(`没有找到插件：` + fileName)
+		return err
 	}
 	if 0 == len(this.CustomProperty) {
 		this.CustomProperty = make(map[string]*uiSink)
@@ -228,11 +255,15 @@ func (this *uiSinks) setCustomProperty(pluginName string) error {
 	return nil
 }
 
-func (this *uiSinks) setBasePropertry(pluginName string) error {
-	sinkMetadata := g_sinkMetadata
-	data := sinkMetadata[baseProperty+".json"]
+func (this *uiSinks) setBasePropertry(pluginName string) (err *multilingualMsg) {
+	data := g_sinkMetadata[baseProperty+".json"]
 	if nil == data {
-		return fmt.Errorf(`not found pligin:%s`, baseProperty)
+		err = new(multilingualMsg)
+		err.code = http.StatusNotFound
+		err.msg = new(language)
+		err.msg.setEn(`not found pligin:` + baseProperty)
+		err.msg.setZh(`没有找到插件：` + baseProperty)
+		return err
 	}
 	if 0 == len(this.BaseProperty) {
 		this.BaseProperty = make(map[string]*uiSink)
@@ -241,17 +272,22 @@ func (this *uiSinks) setBasePropertry(pluginName string) error {
 	return nil
 }
 
-func (this *uiSinks) setBaseOption() error {
-	sinkMetadata := g_sinkMetadata
-	data := sinkMetadata[baseOption+".json"]
+func (this *uiSinks) setBaseOption() (err *multilingualMsg) {
+	data := g_sinkMetadata[baseOption+".json"]
 	if nil == data {
-		return fmt.Errorf(`not found pligin:%s`, baseOption)
+		err = new(multilingualMsg)
+		err.code = http.StatusNotFound
+
+		err.msg = new(language)
+		err.msg.setEn(`not found pligin:` + baseOption)
+		err.msg.setZh(`没有找到插件：` + baseOption)
+		return err
 	}
 	this.BaseOption = data
 	return nil
 }
 
-func (this *uiSinks) hintWhenNewSink(pluginName string) (err error) {
+func (this *uiSinks) hintWhenNewSink(pluginName string) (err *multilingualMsg) {
 	err = this.setCustomProperty(pluginName)
 	if nil != err {
 		return err
@@ -343,7 +379,7 @@ func (this *uiSinks) modifyOption(option *api.RuleOption) {
 	}
 }
 
-func (this *uiSinks) hintWhenModifySink(rule *api.Rule) (err error) {
+func (this *uiSinks) hintWhenModifySink(rule *api.Rule) (err *multilingualMsg) {
 	for _, m := range rule.Actions {
 		for pluginName, sink := range m {
 			mapFields, _ := sink.(map[string]interface{})
@@ -358,7 +394,7 @@ func (this *uiSinks) hintWhenModifySink(rule *api.Rule) (err error) {
 	return nil
 }
 
-func GetSinkMeta(pluginName string, rule *api.Rule) (ptrSinkProperty *uiSinks, err error) {
+func GetSinkMeta(pluginName string, rule *api.Rule) (ptrSinkProperty *uiSinks, err *multilingualMsg) {
 	ptrSinkProperty = new(uiSinks)
 	if nil == rule {
 		err = ptrSinkProperty.hintWhenNewSink(pluginName)
