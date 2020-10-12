@@ -555,6 +555,17 @@ loop:
 	return plugins
 }
 
+func parseRawQuery(r *http.Request) map[string]string {
+	mapQuery := make(map[string]string)
+	for _, kv := range strings.Split(r.URL.RawQuery, "&") {
+		pos := strings.Index(kv, "=")
+		if 0 < pos && pos+1 < len(kv) {
+			mapQuery[kv[:pos]] = kv[pos+1:]
+		}
+	}
+	return mapQuery
+}
+
 //list sink plugin
 func sinksMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
