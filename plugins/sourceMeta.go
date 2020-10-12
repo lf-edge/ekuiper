@@ -138,7 +138,7 @@ func (m *Manager) readSourceMetaDir() error {
 	return nil
 }
 
-func GetSourceConf(pluginName string) (b []byte, err error) {
+func GetSourceConf(pluginName, language string) (b []byte, err error) {
 	property, ok := g_sourceProperty[pluginName+".json"]
 	if ok {
 		cf := make(map[string]map[string]interface{})
@@ -149,17 +149,21 @@ func GetSourceConf(pluginName string) (b []byte, err error) {
 			}
 			cf[key] = common.ConvertMap(aux)
 		}
-		return json.Marshal(cf)
+		if b, err = json.Marshal(cf); nil != err {
+			return nil, fmt.Errorf(`%s%v`, getUiMsg(language, 5), cf)
+		} else {
+			return b, err
+		}
 	}
-	return nil, fmt.Errorf("not found plugin %s", pluginName)
+	return nil, fmt.Errorf(`%s%s`, getUiMsg(language, 1), pluginName)
 }
 
-func GetSourceMeta(pluginName string) (ptrSourceProperty *uiSource, err error) {
+func GetSourceMeta(pluginName, language string) (ptrSourceProperty *uiSource, err error) {
 	property, ok := g_sourceProperty[pluginName+".json"]
 	if ok {
-		return property.cfToMeta()
+		return property.cfToMeta(language)
 	}
-	return nil, fmt.Errorf("not found plugin %s", pluginName)
+	return nil, fmt.Errorf(`%s%s`, getUiMsg(language, 1), pluginName)
 }
 
 func GetSources() (sources []*pluginfo) {
@@ -200,19 +204,19 @@ func GetSourceConfKeys(pluginName string) (keys []string) {
 	return keys
 }
 
-func DelSourceConfKey(pluginName, confKey string) error {
+func DelSourceConfKey(pluginName, confKey, language string) error {
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
-		return fmt.Errorf("not found plugin %s", pluginName)
+		return fmt.Errorf(`%s%s`, getUiMsg(language, 1), pluginName)
 	}
 	if nil == property.cf {
-		return fmt.Errorf("not found confKey %s", confKey)
+		return fmt.Errorf(`%s%s`, getUiMsg(language, 2), confKey)
 	}
 	delete(property.cf, confKey)
-	return property.saveCf(pluginName)
+	return property.saveCf(pluginName, language)
 }
 
-func AddSourceConfKey(pluginName, confKey string, content []byte) error {
+func AddSourceConfKey(pluginName, confKey, language string, content []byte) error {
 	reqField := make(map[string]interface{})
 	err := json.Unmarshal(content, &reqField)
 	if nil != err {
@@ -221,7 +225,7 @@ func AddSourceConfKey(pluginName, confKey string, content []byte) error {
 
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
-		return fmt.Errorf("not found plugin %s", pluginName)
+		return fmt.Errorf(`%s%s`, getUiMsg(language, 1), pluginName)
 	}
 
 	if nil == property.cf {
@@ -229,15 +233,15 @@ func AddSourceConfKey(pluginName, confKey string, content []byte) error {
 	}
 
 	if 0 != len(property.cf[confKey]) {
-		return fmt.Errorf("exist confKey %s", confKey)
+		return fmt.Errorf(`%s%s`, getUiMsg(language, 3), pluginName)
 	}
 
 	property.cf[confKey] = reqField
 	g_sourceProperty[pluginName+".json"] = property
-	return property.saveCf(pluginName)
+	return property.saveCf(pluginName, language)
 }
 
-func AddSourceConfKeyField(pluginName, confKey string, content []byte) error {
+func AddSourceConfKeyField(pluginName, confKey, language string, content []byte) error {
 	reqField := make(map[string]interface{})
 	err := json.Unmarshal(content, &reqField)
 	if nil != err {
@@ -246,24 +250,24 @@ func AddSourceConfKeyField(pluginName, confKey string, content []byte) error {
 
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
-		return fmt.Errorf("not found plugin %s", pluginName)
+		return fmt.Errorf(`%s%s`, getUiMsg(language, 1), pluginName)
 	}
 
 	if nil == property.cf {
-		return fmt.Errorf("not found confKey %s", confKey)
+		return fmt.Errorf(`%s%s`, getUiMsg(language, 2), confKey)
 	}
 
 	if nil == property.cf[confKey] {
-		return fmt.Errorf("not found confKey %s", confKey)
+		return fmt.Errorf(`%s%s`, getUiMsg(language, 2), confKey)
 	}
 
 	for k, v := range reqField {
 		property.cf[confKey][k] = v
 	}
-	return property.saveCf(pluginName)
+	return property.saveCf(pluginName, language)
 }
 
-func recursionDelMap(cf, fields map[string]interface{}) error {
+func recursionDelMap(cf, fields map[string]interface{}, language string) error {
 	for k, v := range fields {
 		if nil == v {
 			delete(cf, k)
@@ -278,7 +282,7 @@ func recursionDelMap(cf, fields map[string]interface{}) error {
 
 			var auxCf map[string]interface{}
 			if err := common.MapToStruct(cf[k], &auxCf); nil != err {
-				return fmt.Errorf("not found second key:%s.%s", k, delKey)
+				return fmt.Errorf(`%s%s.%s`, getUiMsg(language, 4), k, delKey)
 			}
 			cf[k] = auxCf
 			delete(auxCf, delKey)
@@ -287,13 +291,13 @@ func recursionDelMap(cf, fields map[string]interface{}) error {
 		if reflect.Map == reflect.TypeOf(v).Kind() {
 			var auxCf, auxFields map[string]interface{}
 			if err := common.MapToStruct(cf[k], &auxCf); nil != err {
-				return fmt.Errorf("not found second key:%s.%v", k, v)
+				return fmt.Errorf(`%s%s.%v`, getUiMsg(language, 7), k, v)
 			}
 			cf[k] = auxCf
 			if err := common.MapToStruct(v, &auxFields); nil != err {
-				return fmt.Errorf("requestef format err:%s.%v", k, v)
+				return fmt.Errorf(`%s%s.%v`, getUiMsg(language, 7), k, v)
 			}
-			if err := recursionDelMap(auxCf, auxFields); nil != err {
+			if err := recursionDelMap(auxCf, auxFields, language); nil != err {
 				return err
 			}
 		}
@@ -301,7 +305,7 @@ func recursionDelMap(cf, fields map[string]interface{}) error {
 	return nil
 }
 
-func DelSourceConfKeyField(pluginName, confKey string, content []byte) error {
+func DelSourceConfKeyField(pluginName, confKey, language string, content []byte) error {
 	reqField := make(map[string]interface{})
 	err := json.Unmarshal(content, &reqField)
 	if nil != err {
@@ -310,22 +314,22 @@ func DelSourceConfKeyField(pluginName, confKey string, content []byte) error {
 
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
-		return fmt.Errorf("not found plugin %s", pluginName)
+		return fmt.Errorf(`%s%s`, getUiMsg(language, 1), pluginName)
 	}
 
 	if nil == property.cf {
-		return fmt.Errorf("not found confKey %s", confKey)
+		return fmt.Errorf(`%s%s`, getUiMsg(language, 2), confKey)
 	}
 
 	if nil == property.cf[confKey] {
-		return fmt.Errorf("not found confKey %s", confKey)
+		return fmt.Errorf(`%s%s`, getUiMsg(language, 2), confKey)
 	}
 
-	err = recursionDelMap(property.cf[confKey], reqField)
+	err = recursionDelMap(property.cf[confKey], reqField, language)
 	if nil != err {
 		return err
 	}
-	return property.saveCf(pluginName)
+	return property.saveCf(pluginName, language)
 }
 
 func recursionNewFields(template []*field, conf map[string]interface{}, ret *[]*field) error {
@@ -369,14 +373,14 @@ func recursionNewFields(template []*field, conf map[string]interface{}, ret *[]*
 	return nil
 }
 
-func (this *sourceProperty) cfToMeta() (*uiSource, error) {
+func (this *sourceProperty) cfToMeta(language string) (*uiSource, error) {
 	fields := this.meta.ConfKeys["default"]
 	ret := make(map[string][]*field)
 	for k, kvs := range this.cf {
 		var sli []*field
 		err := recursionNewFields(fields, kvs, &sli)
 		if nil != err {
-			return nil, err
+			return nil, fmt.Errorf(`%s%v`, getUiMsg(language, 7), err)
 		}
 		ret[k] = sli
 	}
@@ -386,10 +390,10 @@ func (this *sourceProperty) cfToMeta() (*uiSource, error) {
 	return meta, nil
 }
 
-func (this *sourceProperty) saveCf(pluginName string) error {
+func (this *sourceProperty) saveCf(pluginName, language string) error {
 	confDir, err := common.GetConfLoc()
 	if nil != err {
-		return err
+		return fmt.Errorf(`%s%v`, getUiMsg(language, 8), err)
 	}
 
 	dir := path.Join(confDir, "sources")
@@ -398,5 +402,9 @@ func (this *sourceProperty) saveCf(pluginName string) error {
 		dir = confDir
 	}
 	filePath := path.Join(dir, pluginName+".yaml")
-	return common.WriteYamlMarshal(filePath, this.cf)
+	err = common.WriteYamlMarshal(filePath, this.cf)
+	if nil != err {
+		return fmt.Errorf(`%s%v`, getUiMsg(language, 9), err)
+	}
+	return nil
 }
