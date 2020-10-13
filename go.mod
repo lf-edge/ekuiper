@@ -20,6 +20,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/urfave/cli v1.22.0
 	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
+	gopkg.in/ini.v1 v1.62.0
 )
 
 go 1.15

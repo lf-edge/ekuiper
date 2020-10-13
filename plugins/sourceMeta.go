@@ -150,12 +150,12 @@ func GetSourceConf(pluginName, language string) (b []byte, err error) {
 			cf[key] = common.ConvertMap(aux)
 		}
 		if b, err = json.Marshal(cf); nil != err {
-			return nil, fmt.Errorf(`%s%v`, getUiMsg(language, 5), cf)
+			return nil, fmt.Errorf(`%s%v`, getMsg(language, source, "5"), cf)
 		} else {
 			return b, err
 		}
 	}
-	return nil, fmt.Errorf(`%s%s`, getUiMsg(language, 1), pluginName)
+	return nil, fmt.Errorf(`%s%s`, getMsg(language, source, "1"), pluginName)
 }
 
 func GetSourceMeta(pluginName, language string) (ptrSourceProperty *uiSource, err error) {
@@ -163,7 +163,7 @@ func GetSourceMeta(pluginName, language string) (ptrSourceProperty *uiSource, er
 	if ok {
 		return property.cfToMeta(language)
 	}
-	return nil, fmt.Errorf(`%s%s`, getUiMsg(language, 1), pluginName)
+	return nil, fmt.Errorf(`%s%s`, getMsg(language, source, "1"), pluginName)
 }
 
 func GetSources() (sources []*pluginfo) {
@@ -207,10 +207,10 @@ func GetSourceConfKeys(pluginName string) (keys []string) {
 func DelSourceConfKey(pluginName, confKey, language string) error {
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
-		return fmt.Errorf(`%s%s`, getUiMsg(language, 1), pluginName)
+		return fmt.Errorf(`%s%s`, getMsg(language, source, "1"), pluginName)
 	}
 	if nil == property.cf {
-		return fmt.Errorf(`%s%s`, getUiMsg(language, 2), confKey)
+		return fmt.Errorf(`%s%s`, getMsg(language, source, "2"), confKey)
 	}
 	delete(property.cf, confKey)
 	return property.saveCf(pluginName, language)
@@ -225,7 +225,7 @@ func AddSourceConfKey(pluginName, confKey, language string, content []byte) erro
 
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
-		return fmt.Errorf(`%s%s`, getUiMsg(language, 1), pluginName)
+		return fmt.Errorf(`%s%s`, getMsg(language, source, "1"), pluginName)
 	}
 
 	if nil == property.cf {
@@ -233,7 +233,7 @@ func AddSourceConfKey(pluginName, confKey, language string, content []byte) erro
 	}
 
 	if 0 != len(property.cf[confKey]) {
-		return fmt.Errorf(`%s%s`, getUiMsg(language, 3), pluginName)
+		return fmt.Errorf(`%s%s`, getMsg(language, source, "3"), pluginName)
 	}
 
 	property.cf[confKey] = reqField
@@ -250,15 +250,15 @@ func AddSourceConfKeyField(pluginName, confKey, language string, content []byte)
 
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
-		return fmt.Errorf(`%s%s`, getUiMsg(language, 1), pluginName)
+		return fmt.Errorf(`%s%s`, getMsg(language, source, "1"), pluginName)
 	}
 
 	if nil == property.cf {
-		return fmt.Errorf(`%s%s`, getUiMsg(language, 2), confKey)
+		return fmt.Errorf(`%s%s`, getMsg(language, source, "2"), confKey)
 	}
 
 	if nil == property.cf[confKey] {
-		return fmt.Errorf(`%s%s`, getUiMsg(language, 2), confKey)
+		return fmt.Errorf(`%s%s`, getMsg(language, source, "2"), confKey)
 	}
 
 	for k, v := range reqField {
@@ -282,7 +282,7 @@ func recursionDelMap(cf, fields map[string]interface{}, language string) error {
 
 			var auxCf map[string]interface{}
 			if err := common.MapToStruct(cf[k], &auxCf); nil != err {
-				return fmt.Errorf(`%s%s.%s`, getUiMsg(language, 4), k, delKey)
+				return fmt.Errorf(`%s%s.%s`, getMsg(language, source, "4"), k, delKey)
 			}
 			cf[k] = auxCf
 			delete(auxCf, delKey)
@@ -291,11 +291,11 @@ func recursionDelMap(cf, fields map[string]interface{}, language string) error {
 		if reflect.Map == reflect.TypeOf(v).Kind() {
 			var auxCf, auxFields map[string]interface{}
 			if err := common.MapToStruct(cf[k], &auxCf); nil != err {
-				return fmt.Errorf(`%s%s.%v`, getUiMsg(language, 7), k, v)
+				return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "7"), k, v)
 			}
 			cf[k] = auxCf
 			if err := common.MapToStruct(v, &auxFields); nil != err {
-				return fmt.Errorf(`%s%s.%v`, getUiMsg(language, 7), k, v)
+				return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "7"), k, v)
 			}
 			if err := recursionDelMap(auxCf, auxFields, language); nil != err {
 				return err
@@ -314,15 +314,15 @@ func DelSourceConfKeyField(pluginName, confKey, language string, content []byte)
 
 	property := g_sourceProperty[pluginName+".json"]
 	if nil == property {
-		return fmt.Errorf(`%s%s`, getUiMsg(language, 1), pluginName)
+		return fmt.Errorf(`%s%s`, getMsg(language, source, "1"), pluginName)
 	}
 
 	if nil == property.cf {
-		return fmt.Errorf(`%s%s`, getUiMsg(language, 2), confKey)
+		return fmt.Errorf(`%s%s`, getMsg(language, source, "2"), confKey)
 	}
 
 	if nil == property.cf[confKey] {
-		return fmt.Errorf(`%s%s`, getUiMsg(language, 2), confKey)
+		return fmt.Errorf(`%s%s`, getMsg(language, source, "2"), confKey)
 	}
 
 	err = recursionDelMap(property.cf[confKey], reqField, language)
@@ -380,7 +380,7 @@ func (this *sourceProperty) cfToMeta(language string) (*uiSource, error) {
 		var sli []*field
 		err := recursionNewFields(fields, kvs, &sli)
 		if nil != err {
-			return nil, fmt.Errorf(`%s%v`, getUiMsg(language, 7), err)
+			return nil, fmt.Errorf(`%s%v`, getMsg(language, "source", "7"), err)
 		}
 		ret[k] = sli
 	}
@@ -393,7 +393,7 @@ func (this *sourceProperty) cfToMeta(language string) (*uiSource, error) {
 func (this *sourceProperty) saveCf(pluginName, language string) error {
 	confDir, err := common.GetConfLoc()
 	if nil != err {
-		return fmt.Errorf(`%s%v`, getUiMsg(language, 8), err)
+		return fmt.Errorf(`%s%v`, getMsg(language, source, "8"), err)
 	}
 
 	dir := path.Join(confDir, "sources")
@@ -404,7 +404,7 @@ func (this *sourceProperty) saveCf(pluginName, language string) error {
 	filePath := path.Join(dir, pluginName+".yaml")
 	err = common.WriteYamlMarshal(filePath, this.cf)
 	if nil != err {
-		return fmt.Errorf(`%s%v`, getUiMsg(language, 9), err)
+		return fmt.Errorf(`%s%v`, getMsg(language, "source", "9"), err)
 	}
 	return nil
 }

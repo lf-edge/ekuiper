@@ -13,6 +13,8 @@ import (
 const (
 	baseProperty = `properties`
 	baseOption   = `options`
+	sink         = `sink`
+	source       = `source`
 )
 
 type (
@@ -220,7 +222,7 @@ func (this *uiSinks) setCustomProperty(pluginName string) error {
 	sinkMetadata := g_sinkMetadata
 	data := sinkMetadata[fileName]
 	if nil == data {
-		return fmt.Errorf(`%s%s`, getUiMsg(this.language, 1), pluginName)
+		return fmt.Errorf(`%s%s`, getMsg(this.language, sink, "1"), pluginName)
 	}
 	if 0 == len(this.CustomProperty) {
 		this.CustomProperty = make(map[string]*uiSink)
@@ -233,7 +235,7 @@ func (this *uiSinks) setBasePropertry(pluginName string) error {
 	sinkMetadata := g_sinkMetadata
 	data := sinkMetadata[baseProperty+".json"]
 	if nil == data {
-		return fmt.Errorf(`%s%s`, getUiMsg(this.language, 1), baseProperty)
+		return fmt.Errorf(`%s%s`, getMsg(this.language, sink, "1"), baseProperty)
 	}
 	if 0 == len(this.BaseProperty) {
 		this.BaseProperty = make(map[string]*uiSink)
@@ -246,7 +248,7 @@ func (this *uiSinks) setBaseOption() error {
 	sinkMetadata := g_sinkMetadata
 	data := sinkMetadata[baseOption+".json"]
 	if nil == data {
-		return fmt.Errorf(`%s%s`, getUiMsg(this.language, 1), baseOption)
+		return fmt.Errorf(`%s%s`, getMsg(this.language, sink, "1"), baseOption)
 	}
 	this.BaseOption = data
 	return nil
@@ -274,11 +276,11 @@ func (this *uiSinks) modifyCustom(uiFields []*field, ruleFields map[string]inter
 		if reflect.Map == reflect.TypeOf(ruleVal).Kind() {
 			var auxRuleFields map[string]interface{}
 			if err := common.MapToStruct(ruleVal, &auxRuleFields); nil != err {
-				return fmt.Errorf(`%s%v %s`, getUiMsg(this.language, 7), err, ui.Name)
+				return fmt.Errorf(`%s%v %s`, getMsg(this.language, sink, "2"), err, ui.Name)
 			}
 			var auxUiFields []*field
 			if err := common.MapToStruct(ui.Default, &auxUiFields); nil != err {
-				return fmt.Errorf(`%s%v %s`, getUiMsg(this.language, 7), err, ui.Name)
+				return fmt.Errorf(`%s%v %s`, getMsg(this.language, sink, "2"), err, ui.Name)
 			}
 			uiFields[i].Default = auxUiFields
 			if err := this.modifyCustom(auxUiFields, auxRuleFields); nil != err {
@@ -302,7 +304,7 @@ func (this *uiSink) modifyBase(mapFields map[string]interface{}) {
 func (this *uiSinks) modifyProperty(pluginName string, mapFields map[string]interface{}) (err error) {
 	custom := this.CustomProperty[pluginName]
 	if nil == custom {
-		return fmt.Errorf(`%s%s`, getUiMsg(this.language, 1), pluginName)
+		return fmt.Errorf(`%s%s`, getMsg(this.language, sink, "1"), pluginName)
 	}
 	if err = this.modifyCustom(custom.Fields, mapFields); nil != err {
 		return err
@@ -310,7 +312,7 @@ func (this *uiSinks) modifyProperty(pluginName string, mapFields map[string]inte
 
 	base := this.BaseProperty[pluginName]
 	if nil == base {
-		return fmt.Errorf(`%s%s`, getUiMsg(this.language, 1), pluginName)
+		return fmt.Errorf(`%s%s`, getMsg(this.language, sink, "1"), pluginName)
 	}
 	base.modifyBase(mapFields)
 	return nil
