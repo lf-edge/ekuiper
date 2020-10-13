@@ -342,7 +342,7 @@
           <SystemSampler guiclass="SystemSamplerGui" testclass="SystemSampler" testname="CLI_CreateStream" enabled="true">
             <boolProp name="SystemSampler.checkReturnCode">false</boolProp>
             <stringProp name="SystemSampler.expectedReturnCode">0</stringProp>
-            <stringProp name="SystemSampler.command">bin/cli</stringProp>
+            <stringProp name="SystemSampler.command">bin/kuiper</stringProp>
             <elementProp name="SystemSampler.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="Argument">
@@ -387,7 +387,7 @@
           <SystemSampler guiclass="SystemSamplerGui" testclass="SystemSampler" testname="CLI_CreateRule" enabled="true">
             <boolProp name="SystemSampler.checkReturnCode">false</boolProp>
             <stringProp name="SystemSampler.expectedReturnCode">0</stringProp>
-            <stringProp name="SystemSampler.command">bin/cli</stringProp>
+            <stringProp name="SystemSampler.command">bin/kuiper</stringProp>
             <elementProp name="SystemSampler.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="Argument">
@@ -437,7 +437,7 @@
           <SystemSampler guiclass="SystemSamplerGui" testclass="SystemSampler" testname="CLI_ShowRules" enabled="true">
             <boolProp name="SystemSampler.checkReturnCode">false</boolProp>
             <stringProp name="SystemSampler.expectedReturnCode">0</stringProp>
-            <stringProp name="SystemSampler.command">bin/cli</stringProp>
+            <stringProp name="SystemSampler.command">bin/kuiper</stringProp>
             <elementProp name="SystemSampler.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="Argument">
@@ -472,7 +472,7 @@
           <SystemSampler guiclass="SystemSamplerGui" testclass="SystemSampler" testname="CLI_DescribeRule" enabled="true">
             <boolProp name="SystemSampler.checkReturnCode">false</boolProp>
             <stringProp name="SystemSampler.expectedReturnCode">0</stringProp>
-            <stringProp name="SystemSampler.command">bin/cli</stringProp>
+            <stringProp name="SystemSampler.command">bin/kuiper</stringProp>
             <elementProp name="SystemSampler.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="Argument">
@@ -512,7 +512,7 @@
           <SystemSampler guiclass="SystemSamplerGui" testclass="SystemSampler" testname="CLI_GetRuleStatus" enabled="true">
             <boolProp name="SystemSampler.checkReturnCode">false</boolProp>
             <stringProp name="SystemSampler.expectedReturnCode">0</stringProp>
-            <stringProp name="SystemSampler.command">bin/cli</stringProp>
+            <stringProp name="SystemSampler.command">bin/kuiper</stringProp>
             <elementProp name="SystemSampler.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="Argument">
@@ -552,7 +552,7 @@
           <SystemSampler guiclass="SystemSamplerGui" testclass="SystemSampler" testname="CLI_DropRule" enabled="true">
             <boolProp name="SystemSampler.checkReturnCode">false</boolProp>
             <stringProp name="SystemSampler.expectedReturnCode">0</stringProp>
-            <stringProp name="SystemSampler.command">bin/cli</stringProp>
+            <stringProp name="SystemSampler.command">bin/kuiper</stringProp>
             <elementProp name="SystemSampler.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="Argument">
@@ -592,7 +592,7 @@
           <SystemSampler guiclass="SystemSamplerGui" testclass="SystemSampler" testname="CLI_DropStream" enabled="true">
             <boolProp name="SystemSampler.checkReturnCode">false</boolProp>
             <stringProp name="SystemSampler.expectedReturnCode">0</stringProp>
-            <stringProp name="SystemSampler.command">bin/cli</stringProp>
+            <stringProp name="SystemSampler.command">bin/kuiper</stringProp>
             <elementProp name="SystemSampler.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="Argument">
