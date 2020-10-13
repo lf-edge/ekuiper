@@ -29,10 +29,12 @@ func (m *Manager) readUiMsgFile(fPath string) (map[int]string, error) {
 	for i := 0; i < len(rows); i++ {
 		row := strings.Split(rows[i], "=")
 		if 2 != len(row) {
+			common.Log.Infof("uiMsg format error : %s", rows[i])
 			continue
 		}
 		code, err := strconv.Atoi(row[0])
 		if nil != err {
+			common.Log.Infof("uiMsg data error : %s", rows[i])
 			continue
 		}
 		msgs[code] = row[1]

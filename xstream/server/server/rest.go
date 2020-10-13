@@ -580,9 +580,14 @@ func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 
-	ptrMetadata, err := plugins.GetSinkMeta(pluginName, nil)
+	mapQuery := parseRawQuery(r)
+	language := mapQuery["language"]
+	if 0 == len(language) {
+		language = "en_US"
+	}
+	ptrMetadata, err := plugins.GetSinkMeta(pluginName, language, nil)
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		handleError(w, err, "", logger)
 		return
 	}
 	jsonResponse(ptrMetadata, w, logger)
@@ -600,9 +605,14 @@ func showSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ptrMetadata, err := plugins.GetSinkMeta("", rule)
+	mapQuery := parseRawQuery(r)
+	language := mapQuery["language"]
+	if 0 == len(language) {
+		language = "en_US"
+	}
+	ptrMetadata, err := plugins.GetSinkMeta("", language, rule)
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		handleError(w, err, "", logger)
 		return
 	}
 	jsonResponse(ptrMetadata, w, logger)
@@ -631,9 +641,14 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
-	ret, err := plugins.GetSourceMeta(pluginName)
+	mapQuery := parseRawQuery(r)
+	language := mapQuery["language"]
+	if 0 == len(language) {
+		language = "en_US"
+	}
+	ret, err := plugins.GetSourceMeta(pluginName, language)
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		handleError(w, err, "", logger)
 		return
 	}
 	if nil != ret {
@@ -647,9 +662,14 @@ func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
-	ret, err := plugins.GetSourceConf(pluginName)
+	mapQuery := parseRawQuery(r)
+	language := mapQuery["language"]
+	if 0 == len(language) {
+		language = "en_US"
+	}
+	ret, err := plugins.GetSourceConf(pluginName, language)
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		handleError(w, err, "", logger)
 		return
 	} else {
 		w.Write(ret)
@@ -677,19 +697,26 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
+
+	mapQuery := parseRawQuery(r)
+	language := mapQuery["language"]
+	if 0 == len(language) {
+		language = "en_US"
+	}
+
 	switch r.Method {
 	case http.MethodDelete:
-		err = plugins.DelSourceConfKey(pluginName, confKey)
+		err = plugins.DelSourceConfKey(pluginName, confKey, language)
 	case http.MethodPost:
 		v, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		err = plugins.AddSourceConfKey(pluginName, confKey, v)
+		err = plugins.AddSourceConfKey(pluginName, confKey, language, v)
 	}
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		handleError(w, err, "", logger)
 		return
 	}
 	if nil != ret {
@@ -711,14 +738,21 @@ func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "Invalid body", logger)
 		return
 	}
+
+	mapQuery := parseRawQuery(r)
+	language := mapQuery["language"]
+	if 0 == len(language) {
+		language = "en_US"
+	}
+
 	switch r.Method {
 	case http.MethodDelete:
-		err = plugins.DelSourceConfKeyField(pluginName, confKey, v)
+		err = plugins.DelSourceConfKeyField(pluginName, confKey, language, v)
 	case http.MethodPost:
-		err = plugins.AddSourceConfKeyField(pluginName, confKey, v)
+		err = plugins.AddSourceConfKeyField(pluginName, confKey, language, v)
 	}
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		handleError(w, err, "", logger)
 		return
 	}
 	if nil != ret {
