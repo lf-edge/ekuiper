@@ -154,7 +154,7 @@ A simple command line tool is implemented in ``stream/cli/main.go``.
 
 #### Run sql to manage streams
 
-Run `cli stream` command, after `kuiper >` prompt shown, enter stream related sql statements such as create, drop, describe, explain and show stream statements to execute.
+Run `kuiper stream` command, after `kuiper >` prompt shown, enter stream related sql statements such as create, drop, describe, explain and show stream statements to execute.
 
 ```bash
 cli stream

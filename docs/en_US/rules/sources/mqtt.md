@@ -51,7 +51,7 @@ The password for MQTT connection. The configuration will not be used if ``certif
 
 ### certificationPath
 
-The location of certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the ``server`` command. For example, if you run ``bin/server`` from ``/var/kuiper``, then the base path is ``/var/kuiper``; If you run ``./server`` from ``/var/kuiper/bin``, then the base path is ``/var/kuiper/bin``.  Such as  ``d3807d9fa5-certificate.pem``.
+The location of certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the ``kuiperd`` command. For example, if you run ``bin/kuiperd`` from ``/var/kuiper``, then the base path is ``/var/kuiper``; If you run ``./kuiperd`` from ``/var/kuiper/bin``, then the base path is ``/var/kuiper/bin``.  Such as  ``d3807d9fa5-certificate.pem``.
 
 ### privateKeyPath
 

@@ -154,7 +154,7 @@ my_stream, iot_stream
 
 #### 运行 SQL 来管理流
 
-运行 `cli stream` 命令，在显示 `kuiper>` 提示后，输入与流相关的 sql 语句，例如create，drop，description，explain和show stream语句以执行操作。
+运行 `kuiper stream` 命令，在显示 `kuiper>` 提示后，输入与流相关的 sql 语句，例如create，drop，description，explain和show stream语句以执行操作。
 
 ```bash
 cli stream

@@ -20,7 +20,7 @@ create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_typ
 示例：
 
 ```shell
-# bin/cli create plugin source random {"file":"http://127.0.0.1/plugins/sources/random.zip"}
+# bin/kuiper create plugin source random {"file":"http://127.0.0.1/plugins/sources/random.zip"}
 ```
 
 该命令创建一个名为 `random` 的源插件。
@@ -30,7 +30,7 @@ create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_typ
 示例：
 
 ```shell
-# bin/cli create plugin sink plugin1 -f /tmp/plugin1.txt
+# bin/kuiper create plugin sink plugin1 -f /tmp/plugin1.txt
 ```
 
 以下是 `plugin1.txt` 的内容。
@@ -56,7 +56,7 @@ show plugins function
 示例：
 
 ```shell
-# bin/cli show plugins function
+# bin/kuiper show plugins function
 function1
 function2
 ```
@@ -71,7 +71,7 @@ describe plugin $plugin_type $plugin_name
 示例：
 
 ```shell
-# bin/cli describe plugin source plugin1
+# bin/kuiper describe plugin source plugin1
 {
   "name": "plugin1",
   "version": "1.0.0"
@@ -90,6 +90,6 @@ drop plugin $plugin_type $plugin_name -s $stop
 示例：
 
 ```shell
-# bin/cli drop plugin source random
+# bin/kuiper drop plugin source random
 Plugin random is dropped.
 ```

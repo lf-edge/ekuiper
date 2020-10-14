@@ -8,7 +8,7 @@ EdgeX already defines data types in [value descriptors](https://github.com/edgex
 
 ```shell
 # cd $kuiper_base
-# bin/cli CREATE STREAM demo'() with(format="json", datasource="demo" type="edgex")'
+# bin/kuiper CREATE STREAM demo'() with(format="json", datasource="demo" type="edgex")'
 ```
 
 EdgeX source will try to get the data type of a field, 

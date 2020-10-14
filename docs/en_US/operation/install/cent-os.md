@@ -8,11 +8,11 @@ Unzip the installation package.
 
 ``unzip kuiper-centos7-v0.0.1.zip``
 
-Run the ``cli`` to verify Kuiper is installed successfully or not.
+Run the ``kuiper`` to verify Kuiper is installed successfully or not.
 
 ```shell
 # cd kuiper
-# bin/cli --version
+# bin/kuiper --version
 kuiper version 0.0.1
 ```
 
