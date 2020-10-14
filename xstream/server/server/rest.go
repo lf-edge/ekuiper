@@ -555,17 +555,6 @@ loop:
 	return plugins
 }
 
-func parseRawQuery(r *http.Request) map[string]string {
-	mapQuery := make(map[string]string)
-	for _, kv := range strings.Split(r.URL.RawQuery, "&") {
-		pos := strings.Index(kv, "=")
-		if 0 < pos && pos+1 < len(kv) {
-			mapQuery[kv[:pos]] = kv[pos+1:]
-		}
-	}
-	return mapQuery
-}
-
 //list sink plugin
 func sinksMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -580,8 +569,8 @@ func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 
-	mapQuery := parseRawQuery(r)
-	language := mapQuery["language"]
+	v := r.URL.Query()
+	language := v.Get("language")
 	if 0 == len(language) {
 		language = "en_US"
 	}
@@ -605,8 +594,8 @@ func showSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mapQuery := parseRawQuery(r)
-	language := mapQuery["language"]
+	v := r.URL.Query()
+	language := v.Get("language")
 	if 0 == len(language) {
 		language = "en_US"
 	}
@@ -641,8 +630,8 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
-	mapQuery := parseRawQuery(r)
-	language := mapQuery["language"]
+	v := r.URL.Query()
+	language := v.Get("language")
 	if 0 == len(language) {
 		language = "en_US"
 	}
@@ -662,8 +651,8 @@ func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
-	mapQuery := parseRawQuery(r)
-	language := mapQuery["language"]
+	v := r.URL.Query()
+	language := v.Get("language")
 	if 0 == len(language) {
 		language = "en_US"
 	}
@@ -698,8 +687,8 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
 
-	mapQuery := parseRawQuery(r)
-	language := mapQuery["language"]
+	v := r.URL.Query()
+	language := v.Get("language")
 	if 0 == len(language) {
 		language = "en_US"
 	}
@@ -739,8 +728,8 @@ func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mapQuery := parseRawQuery(r)
-	language := mapQuery["language"]
+	val := r.URL.Query()
+	language := val.Get("language")
 	if 0 == len(language) {
 		language = "en_US"
 	}
