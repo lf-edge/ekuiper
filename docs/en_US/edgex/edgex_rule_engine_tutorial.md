@@ -102,7 +102,7 @@ docker exec -it edgex-kuiper /bin/sh
 Use following command to create a stream named ``demo``.
 
 ```shell
-bin/cli create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
+bin/kuiper create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
 ```
 
 For other command line tools, please refer to [this doc](../cli/overview.md).
@@ -182,7 +182,7 @@ You can create a rule file with any text editor, and copy following contents int
 In the running Kuiper instance, and execute following command.
 
 ```shell
-$ bin/cli create rule rule1 -f rule.txt
+$ bin/kuiper create rule rule1 -f rule.txt
 Connecting to 127.0.0.1:20498...
 Creating a new rule from file rule.txt.
 Rule rule1 was created successfully, please use 'cli getstatus rule rule1' command to get rule status.
@@ -233,7 +233,7 @@ $ mosquitto_sub -h broker.emqx.io -t result
 You can also type below command to look at the rule execution status. The corresponding REST API is also available for getting rule status, please check [related document](../restapi/overview.md).
 
 ```shell
-# bin/cli getstatus rule rule1
+# bin/kuiper getstatus rule rule1
 Connecting to 127.0.0.1:20498...
 {
   "source_demo_0_records_in_total": 29,

@@ -15,11 +15,11 @@
    # docker exec -it kuiper /bin/sh
    
    -- In docker instance
-   # bin/cli create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="devices/+/messages")'
+   # bin/kuiper create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="devices/+/messages")'
    Connecting to 127.0.0.1:20498...
    Stream demo is created.
    
-   # bin/cli query
+   # bin/kuiper query
    Connecting to 127.0.0.1:20498...
    kuiper > select * from demo where temperature > 30;
    Query was submit successfully.
@@ -32,7 +32,7 @@
    # mosquitto_pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages
    ```
 
-5. 如果一切顺利的话，您可以看到消息打印在容器的 `bin/cli query` 窗口里，请试着发布另外一条`温度`小于30的数据，该数据将会被 SQL 规则过滤掉。
+5. 如果一切顺利的话，您可以看到消息打印在容器的 `bin/kuiper query` 窗口里，请试着发布另外一条`温度`小于30的数据，该数据将会被 SQL 规则过滤掉。
 
    ```shell
    kuiper > select * from demo WHERE temperature > 30;
@@ -41,7 +41,7 @@
 
    如有任何问题，请查看日志文件 `log/stream.log`。
 
-6. 如果想停止测试，在`bin/cli query`命令行窗口中敲 `ctrl + c ` ，或者输入 `exit` 后回车
+6. 如果想停止测试，在`bin/kuiper query`命令行窗口中敲 `ctrl + c ` ，或者输入 `exit` 后回车
 
 你可以参考 [Kuiper 管理控制台](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/manager-ui/overview.md) 这篇文章来了解更好的产品使用体验。
 

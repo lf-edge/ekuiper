@@ -14,8 +14,8 @@ Please make following update before compile the plugin,
 # go build --buildmode=plugin -o plugins/sinks/Influx.so plugins/sinks/influx.go
 # zip influx.zip plugins/sinks/Influx.so
 # cp influx.zip /root/tomcat_path/webapps/ROOT/
-# bin/cli create plugin sink influx -f /tmp/influxPlugin.txt
-# bin/cli create rule influx -f /tmp/influxRule.txt
+# bin/kuiper create plugin sink influx -f /tmp/influxPlugin.txt
+# bin/kuiper create rule influx -f /tmp/influxRule.txt
 ```
 
 Restart the Kuiper server to activate the plugin.

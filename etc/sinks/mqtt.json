@@ -138,8 +138,8 @@
       "control": "text",
       "type": "string",
       "hint": {
-        "en_US": "The certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the server command. For example, if you run bin/server from /var/kuiper, then the base path is /var/kuiper; If you run ./server from /var/kuiper/bin, then the base path is /var/kuiper/bin.",
-        "zh_CN": "证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 server 命令的路径。比如，如果你在 /var/kuiper 中运行 bin/server ，那么父目录为 /var/kuiper; 如果运行从 /var/kuiper/bin 中运行./server，那么父目录为 /var/kuiper/bin"
+        "en_US": "The certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the kuiperd command. For example, if you run bin/kuiperd from /var/kuiper, then the base path is /var/kuiper; If you run ./kuiperd from /var/kuiper/bin, then the base path is /var/kuiper/bin.",
+        "zh_CN": "证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 kuiperd 命令的路径。比如，如果你在 /var/kuiper 中运行 bin/kuiperd ，那么父目录为 /var/kuiper; 如果运行从 /var/kuiper/bin 中运行./kuiperd，那么父目录为 /var/kuiper/bin"
       },
       "label": {
         "en_US": "Certification path",

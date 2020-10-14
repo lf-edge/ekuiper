@@ -118,11 +118,11 @@ docker run -p 9081:9081 -d --name kuiper MQTT_SOURCE__DEFAULT__SERVERS=[$MQTT_BR
    # docker exec -it kuiper /bin/sh
    
    -- In docker instance
-   # bin/cli create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="devices/+/messages")'
+   # bin/kuiper create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="devices/+/messages")'
    Connecting to 127.0.0.1:20498...
    Stream demo is created.
    
-   # bin/cli query
+   # bin/kuiper query
    Connecting to 127.0.0.1:20498...
    kuiper > select * from demo where temperature > 30;
    Query was submit successfully.
@@ -135,7 +135,7 @@ docker run -p 9081:9081 -d --name kuiper MQTT_SOURCE__DEFAULT__SERVERS=[$MQTT_BR
    # mosquitto_pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages
    ```
 
-4. If everything goes well,  you can see the message is print on docker ``bin/cli query`` window. Please try to publish another message with ``temperature`` less than 30, and it will be filtered by WHERE condition of the SQL. 
+4. If everything goes well,  you can see the message is print on docker ``bin/kuiper query`` window. Please try to publish another message with ``temperature`` less than 30, and it will be filtered by WHERE condition of the SQL. 
 
    ```
    kuiper > select * from demo WHERE temperature > 30;
@@ -144,7 +144,7 @@ docker run -p 9081:9081 -d --name kuiper MQTT_SOURCE__DEFAULT__SERVERS=[$MQTT_BR
 
    If having any problems, please take a look at ``log/stream.log``.
 
-5. To stop the test, just press ``ctrl + c `` in ``bin/cli query`` command console.
+5. To stop the test, just press ``ctrl + c `` in ``bin/kuiper query`` command console.
 
 You can also refer to [Kuiper dashboard documentation](https://github.com/emqx/kuiper/blob/master/docs/en_US/manager-ui/overview.md) for better using experience.
 

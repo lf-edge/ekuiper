@@ -38,9 +38,9 @@
     }
    ```
   
-- Create stream ``bin/cli create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'``
+- Create stream ``bin/kuiper create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'``
 
-- Create rule ``bin/cli create rule rule1 -f rule.txt``. To add another rule, just change the rule name of command, then deploy another rule, e,g, ``bin/cli create rule rule2 -f rule.txt``
+- Create rule ``bin/kuiper create rule rule1 -f rule.txt``. To add another rule, just change the rule name of command, then deploy another rule, e,g, ``bin/kuiper create rule rule2 -f rule.txt``
 
 - Run ``pub`` application ``./pub 1000000``, below is an example.
   ```shell script
@@ -50,7 +50,7 @@
   
   Check the status of rule,
   ```shell script
-  ubuntu@ip-172-31-5-85:/tmp/kuiper-master/_build/kuiper--linux-x86_64$ bin/cli getstatus rule rule1
+  ubuntu@ip-172-31-5-85:/tmp/kuiper-master/_build/kuiper--linux-x86_64$ bin/kuiper getstatus rule rule1
     Connecting to 127.0.0.1:20498...
     {
       "source_demo_0_records_in_total": 1000000,
@@ -84,7 +84,7 @@
       "sink_nop_0_0_buffer_length": 1,
       "sink_nop_0_0_last_invocation": "2020-04-10T04:26:15.513501"
     }
-  ubuntu@ip-172-31-5-85:/tmp/kuiper-master/_build/kuiper--linux-x86_64$ bin/cli getstatus rule rule2
+  ubuntu@ip-172-31-5-85:/tmp/kuiper-master/_build/kuiper--linux-x86_64$ bin/kuiper getstatus rule rule2
     Connecting to 127.0.0.1:20498...
     {
       "source_demo_0_records_in_total": 1000000,

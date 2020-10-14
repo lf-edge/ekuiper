@@ -98,7 +98,7 @@ docker exec -it kuiper /bin/sh
 使用以下命令，创建一个名为 ``demo`` 的流定义.
 
 ```shell
-bin/cli create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
+bin/kuiper create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
 ```
 
 其它命令行，请参考[该文档](../cli/overview.md)。
@@ -178,7 +178,7 @@ curl -X POST \
 在运行的容器中，执行以下命令。
 
 ```shell
-# bin/cli create rule rule1 -f rule.txt
+# bin/kuiper create rule rule1 -f rule.txt
 Connecting to 127.0.0.1:20498...
 Creating a new rule from file rule.txt.
 Rule rule1 was created successfully, please use 'cli getstatus rule rule1' command to get rule status.
@@ -227,7 +227,7 @@ time="2020-04-17T06:32:31Z" level=info msg="sink result for rule rule1: [{\"bool
 你也可以敲入以下的命令来查看规则执行的状态。相关的查看规则状态的 REST API 也有提供，请检查[相关文档](../restapi/overview.md).
 
 ```shell
-# bin/cli getstatus rule rule1
+# bin/kuiper getstatus rule rule1
 Connecting to 127.0.0.1:20498...
 {
   "source_demo_0_records_in_total": 29,

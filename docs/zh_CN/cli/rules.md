@@ -17,7 +17,7 @@ create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file
 示例：
 
 ```shell
-# bin/cli create rule rule1 {"sql": "SELECT * from demo","actions": [{"log":  {}},{"mqtt":  {"server":"tcp://127.0.0.1:1883", "topic":"demoSink"}}]}
+# bin/kuiper create rule rule1 {"sql": "SELECT * from demo","actions": [{"log":  {}},{"mqtt":  {"server":"tcp://127.0.0.1:1883", "topic":"demoSink"}}]}
 ```
 
 该命令创建一个名为 `rule1` 的规则。
@@ -27,7 +27,7 @@ create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file
 示例：
 
 ```shell
-# bin/cli create rule rule1 -f /tmp/rule.txt
+# bin/kuiper create rule rule1 -f /tmp/rule.txt
 ```
 
 以下是 `rule.txt` 的内容。
@@ -60,7 +60,7 @@ show rules
 示例：
 
 ```shell
-# bin/cli show rules
+# bin/kuiper show rules
 [
   {
     "id": "rule1",
@@ -84,7 +84,7 @@ describe rule $rule_name
 示例：
 
 ```shell
-# bin/cli describe rule rule1
+# bin/kuiper describe rule rule1
 {
   "sql": "SELECT * from demo",
   "actions": [
@@ -112,7 +112,7 @@ drop rule $rule_name
 示例：
 
 ```shell
-# bin/cli drop rule rule1
+# bin/kuiper drop rule rule1
 rule rule1 dropped
 ```
 
@@ -127,7 +127,7 @@ start rule $rule_name
 示例：
 
 ```shell
-# bin/cli start rule rule1
+# bin/kuiper start rule rule1
 rule rule1 started
 ```
 
@@ -142,7 +142,7 @@ stop rule $rule_name
 示例：
 
 ```shell
-# bin/cli stop rule rule1
+# bin/kuiper stop rule rule1
 rule rule1 stopped
 ```
 
@@ -157,7 +157,7 @@ restart rule $rule_name
 示例：
 
 ```shell
-# bin/cli restart rule rule1
+# bin/kuiper restart rule rule1
 rule rule1 restarted
 ```
 
@@ -174,7 +174,7 @@ getstatus rule $rule_name
 示例：
 
 ```shell
-# bin/cli getstatus rule rule1
+# bin/kuiper getstatus rule rule1
 {
     "source_demo_0_records_in_total":5,
     "source_demo_0_records_out_total":5,

@@ -10,7 +10,7 @@ EdgeX 在 [value descriptors](https://github.com/edgexfoundry/go-mod-core-contra
 
 ```shell
 # cd $kuiper_base
-# bin/cli CREATE STREAM demo'() with(format="json", datasource="demo" type="edgex")'
+# bin/kuiper CREATE STREAM demo'() with(format="json", datasource="demo" type="edgex")'
 ```
 
 EdgeX 源会试图取得某个字段的类型，

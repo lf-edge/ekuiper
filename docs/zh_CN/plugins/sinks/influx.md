@@ -13,8 +13,8 @@
 # go build --buildmode=plugin -o plugins/sinks/InfluxDB.so plugins/sinks/influxdb.go
 # zip influx.zip plugins/sinks/InfluxDB.so
 # cp influx.zip /root/tomcat_path/webapps/ROOT/
-# bin/cli create plugin sink influx -f /tmp/influxPlugin.txt
-# bin/cli create rule influx -f /tmp/influxRule.txt
+# bin/kuiper create plugin sink influx -f /tmp/influxPlugin.txt
+# bin/kuiper create rule influx -f /tmp/influxRule.txt
 ```
 
 重新启动 Kuiper 服务器以激活插件。

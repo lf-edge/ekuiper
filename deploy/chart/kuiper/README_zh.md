@@ -101,7 +101,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
   my-kuiper-0   1/1     Running   0          19s
 
   $ kubectl exec -it  my-kuiper-0 sh
-  /kuiper # ./bin/cli
+  /kuiper # ./bin/kuiper
   Connecting to 127.0.0.1:20498...
   ```
 
@@ -134,7 +134,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
   my-kuiper-0   1/1     Running   0          19s
   
   $ kubectl exec -it  my-kuiper-0 sh
-  /kuiper # ./bin/cli
+  /kuiper # ./bin/kuiper
   Connecting to 127.0.0.1:20498...
   ```
 
@@ -216,6 +216,6 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
   drwxrwxrwt    3 root     root           100 Dec 10 02:23 private.pem.key
 
   $ kubectl exec -it  my-kuiper-0 sh
-  /kuiper # ./bin/cli
+  /kuiper # ./bin/kuiper
   Connecting to 127.0.0.1:20498...
   ```
