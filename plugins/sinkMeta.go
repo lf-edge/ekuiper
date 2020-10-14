@@ -13,6 +13,8 @@ import (
 const (
 	baseProperty = `properties`
 	baseOption   = `options`
+	sink         = `sink`
+	source       = `source`
 )
 
 type (
@@ -80,6 +82,7 @@ type (
 		CustomProperty map[string]*uiSink `json:"customProperty"`
 		BaseProperty   map[string]*uiSink `json:"baseProperty"`
 		BaseOption     *uiSink            `json:"baseOption"`
+		language       string
 	}
 )
 
@@ -219,7 +222,7 @@ func (this *uiSinks) setCustomProperty(pluginName string) error {
 	sinkMetadata := g_sinkMetadata
 	data := sinkMetadata[fileName]
 	if nil == data {
-		return fmt.Errorf(`not found pligin:%s`, fileName)
+		return fmt.Errorf(`%s%s`, getMsg(this.language, sink, "not_found_plugin"), pluginName)
 	}
 	if 0 == len(this.CustomProperty) {
 		this.CustomProperty = make(map[string]*uiSink)
@@ -232,7 +235,7 @@ func (this *uiSinks) setBasePropertry(pluginName string) error {
 	sinkMetadata := g_sinkMetadata
 	data := sinkMetadata[baseProperty+".json"]
 	if nil == data {
-		return fmt.Errorf(`not found pligin:%s`, baseProperty)
+		return fmt.Errorf(`%s%s`, getMsg(this.language, sink, "not_found_plugin"), baseProperty)
 	}
 	if 0 == len(this.BaseProperty) {
 		this.BaseProperty = make(map[string]*uiSink)
@@ -245,7 +248,7 @@ func (this *uiSinks) setBaseOption() error {
 	sinkMetadata := g_sinkMetadata
 	data := sinkMetadata[baseOption+".json"]
 	if nil == data {
-		return fmt.Errorf(`not found pligin:%s`, baseOption)
+		return fmt.Errorf(`%s%s`, getMsg(this.language, sink, "not_found_plugin"), baseOption)
 	}
 	this.BaseOption = data
 	return nil
@@ -264,7 +267,7 @@ func (this *uiSinks) hintWhenNewSink(pluginName string) (err error) {
 	return err
 }
 
-func modifyCustom(uiFields []*field, ruleFields map[string]interface{}) (err error) {
+func (this *uiSinks) modifyCustom(uiFields []*field, ruleFields map[string]interface{}) (err error) {
 	for i, ui := range uiFields {
 		ruleVal := ruleFields[ui.Name]
 		if nil == ruleVal {
@@ -273,14 +276,14 @@ func modifyCustom(uiFields []*field, ruleFields map[string]interface{}) (err err
 		if reflect.Map == reflect.TypeOf(ruleVal).Kind() {
 			var auxRuleFields map[string]interface{}
 			if err := common.MapToStruct(ruleVal, &auxRuleFields); nil != err {
-				return fmt.Errorf("%s:%v", ui.Name, err)
+				return fmt.Errorf(`%s%v %s`, getMsg(this.language, sink, "type_conversion_fail"), err, ui.Name)
 			}
 			var auxUiFields []*field
 			if err := common.MapToStruct(ui.Default, &auxUiFields); nil != err {
-				return fmt.Errorf("%s:%v", ui.Name, err)
+				return fmt.Errorf(`%s%v %s`, getMsg(this.language, sink, "type_conversion_fail"), err, ui.Name)
 			}
 			uiFields[i].Default = auxUiFields
-			if err := modifyCustom(auxUiFields, auxRuleFields); nil != err {
+			if err := this.modifyCustom(auxUiFields, auxRuleFields); nil != err {
 				return err
 			}
 		} else {
@@ -289,32 +292,29 @@ func modifyCustom(uiFields []*field, ruleFields map[string]interface{}) (err err
 	}
 	return nil
 }
-func (this *uiSink) modifyBase(mapFields map[string]interface{}) (err error) {
+func (this *uiSink) modifyBase(mapFields map[string]interface{}) {
 	for i, field := range this.Fields {
 		fieldVal := mapFields[field.Name]
 		if nil != fieldVal {
 			this.Fields[i].Default = fieldVal
 		}
 	}
-	return nil
 }
 
 func (this *uiSinks) modifyProperty(pluginName string, mapFields map[string]interface{}) (err error) {
 	custom := this.CustomProperty[pluginName]
 	if nil == custom {
-		return fmt.Errorf(`not found pligin:%s`, pluginName)
+		return fmt.Errorf(`%s%s`, getMsg(this.language, sink, "not_found_plugin"), pluginName)
 	}
-	if err = modifyCustom(custom.Fields, mapFields); nil != err {
+	if err = this.modifyCustom(custom.Fields, mapFields); nil != err {
 		return err
 	}
 
 	base := this.BaseProperty[pluginName]
 	if nil == base {
-		return fmt.Errorf(`not found pligin:%s`, pluginName)
+		return fmt.Errorf(`%s%s`, getMsg(this.language, sink, "not_found_plugin"), pluginName)
 	}
-	if err = base.modifyBase(mapFields); nil != err {
-		return err
-	}
+	base.modifyBase(mapFields)
 	return nil
 }
 
@@ -351,15 +351,18 @@ func (this *uiSinks) hintWhenModifySink(rule *api.Rule) (err error) {
 			if nil != err {
 				return err
 			}
-			this.modifyProperty(pluginName, mapFields)
+			if err := this.modifyProperty(pluginName, mapFields); nil != err {
+				return err
+			}
 		}
 	}
 	this.modifyOption(rule.Options)
 	return nil
 }
 
-func GetSinkMeta(pluginName string, rule *api.Rule) (ptrSinkProperty *uiSinks, err error) {
+func GetSinkMeta(pluginName, language string, rule *api.Rule) (ptrSinkProperty *uiSinks, err error) {
 	ptrSinkProperty = new(uiSinks)
+	ptrSinkProperty.language = language
 	if nil == rule {
 		err = ptrSinkProperty.hintWhenNewSink(pluginName)
 	} else {

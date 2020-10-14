@@ -222,6 +222,9 @@ func NewPluginManager() (*Manager, error) {
 		if err := singleton.readFuncMetaDir(); nil != err {
 			common.Log.Errorf("readFuncMetaDir:%v", err)
 		}
+		if err := singleton.readUiMsgDir(); nil != err {
+			common.Log.Errorf("readUiMsgDir:%v", err)
+		}
 	})
 	return singleton, outerErr
 }
