@@ -57,8 +57,8 @@ case "$1" in
         if [ -f /usr/bin/kuiper ]; then
                 rm /usr/bin/kuiper
         fi
-        if [ -f /usr/bin/kuiper_ctl ]; then
-                rm /usr/bin/kuiper_ctl
+        if [ -f /usr/bin/kuiperd ]; then
+                rm /usr/bin/kuiperd
         fi
     ;;
 
@@ -66,11 +66,9 @@ case "$1" in
         if [ -f /usr/bin/kuiper ]; then
                 rm /usr/bin/kuiper
         fi
-        if [ -f /usr/bin/kuiper_ctl ]; then
-                rm /usr/bin/kuiper_ctl
+        if [ -f /usr/bin/kuiperd ]; then
+                rm /usr/bin/kuiperd
         fi
-        # rm /usr/bin/kuiper
-        # rm /usr/bin/kuiper_ctl
     ;;
 
     upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
