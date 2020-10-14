@@ -569,8 +569,7 @@ func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 
-	v := r.URL.Query()
-	language := v.Get("language")
+	language := r.Header.Get("Content-Language")
 	if 0 == len(language) {
 		language = "en_US"
 	}
@@ -594,8 +593,7 @@ func showSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	v := r.URL.Query()
-	language := v.Get("language")
+	language := r.Header.Get("Content-Language")
 	if 0 == len(language) {
 		language = "en_US"
 	}
@@ -630,8 +628,7 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
-	v := r.URL.Query()
-	language := v.Get("language")
+	language := r.Header.Get("Content-Language")
 	if 0 == len(language) {
 		language = "en_US"
 	}
@@ -651,8 +648,7 @@ func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
-	v := r.URL.Query()
-	language := v.Get("language")
+	language := r.Header.Get("Content-Language")
 	if 0 == len(language) {
 		language = "en_US"
 	}
@@ -687,8 +683,7 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
 
-	v := r.URL.Query()
-	language := v.Get("language")
+	language := r.Header.Get("Content-Language")
 	if 0 == len(language) {
 		language = "en_US"
 	}
@@ -728,8 +723,7 @@ func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	val := r.URL.Query()
-	language := val.Get("language")
+	language := r.Header.Get("Content-Language")
 	if 0 == len(language) {
 		language = "en_US"
 	}
