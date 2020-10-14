@@ -79,7 +79,7 @@ spec:
         - name: kuiper
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}-alpine"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["./bin/server"]
+          command: ["./bin/kuiperd"]
           ports:
           {{ $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
           - name: restapi

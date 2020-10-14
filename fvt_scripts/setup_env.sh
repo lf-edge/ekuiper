@@ -14,7 +14,7 @@ else
   #done
 fi
 
-pids=`ps aux|grep "server" | grep "bin"|awk '{printf $2 " "}'`
+pids=`ps aux|grep "kuiperd" | grep "bin"|awk '{printf $2 " "}'`
 if [ "$pids" = "" ] ; then
    echo "No kuiper server was started"
 else

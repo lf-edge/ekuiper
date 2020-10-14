@@ -25,8 +25,8 @@ A lightweight IoT edge analytics software
 
 %build
 cd %{_code_source}
-GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=%{_version}-%{_release} -X main.LoadFileType=absolute" -o %{_code_source}/cli %{_code_source}/xstream/cli/main.go
-GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=%{_version}-%{_release} -X main.LoadFileType=absolute" -o %{_code_source}/server %{_code_source}/xstream/server/main.go
+GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=%{_version}-%{_release} -X main.LoadFileType=absolute" -o %{_code_source}/kuiper %{_code_source}/xstream/cli/main.go
+GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=%{_version}-%{_release} -X main.LoadFileType=absolute" -o %{_code_source}/kuiperd %{_code_source}/xstream/server/main.go
 cd -
 
 %install
@@ -42,8 +42,8 @@ mkdir -p %{buildroot}%{_initddir}
 
 
 cp %{_code_source}/deploy/packages/service_helper.sh %{buildroot}%{_lib_home}/bin/
-cp %{_code_source}/cli %{buildroot}%{_lib_home}/bin/
-cp %{_code_source}/server %{buildroot}%{_lib_home}/bin/
+cp %{_code_source}/kuiper %{buildroot}%{_lib_home}/bin/
+cp %{_code_source}/kuiperd %{buildroot}%{_lib_home}/bin/
 cp -R %{_code_source}/etc/* %{buildroot}%{_conf_dir}/
 cp -R %{_code_source}/plugins/* %{buildroot}%{_var_home}/plugins/
 install -m644 %{_service_src} %{buildroot}%{_service_dst}
@@ -59,8 +59,8 @@ fi
 
 %post
 if [ $1 = 1 ]; then
-    ln -s %{_lib_home}/bin/server %{_bindir}/kuiperd
-    ln -s %{_lib_home}/bin/cli %{_bindir}/kuiper
+    ln -s %{_lib_home}/bin/kuiperd %{_bindir}/kuiperd
+    ln -s %{_lib_home}/bin/kuiper %{_bindir}/kuiper
 fi
 %{_post_addition}
 if [ -e %{_initddir}/%{_name} ] ; then
