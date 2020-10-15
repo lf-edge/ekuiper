@@ -175,6 +175,6 @@ func (m *taosSink) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func Taos() api.Sink {
+func Tdengine() api.Sink {
 	return &taosSink{}
 }
