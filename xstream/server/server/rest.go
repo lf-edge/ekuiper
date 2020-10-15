@@ -569,10 +569,7 @@ func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 
-	language := r.Header.Get("Content-Language")
-	if 0 == len(language) {
-		language = "en_US"
-	}
+	language := getLanguage(r)
 	ptrMetadata, err := plugins.GetSinkMeta(pluginName, language, nil)
 	if err != nil {
 		handleError(w, err, "", logger)
@@ -593,10 +590,7 @@ func showSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	language := r.Header.Get("Content-Language")
-	if 0 == len(language) {
-		language = "en_US"
-	}
+	language := getLanguage(r)
 	ptrMetadata, err := plugins.GetSinkMeta("", language, rule)
 	if err != nil {
 		handleError(w, err, "", logger)
@@ -628,10 +622,7 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
-	language := r.Header.Get("Content-Language")
-	if 0 == len(language) {
-		language = "en_US"
-	}
+	language := getLanguage(r)
 	ret, err := plugins.GetSourceMeta(pluginName, language)
 	if err != nil {
 		handleError(w, err, "", logger)
@@ -648,10 +639,7 @@ func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
-	language := r.Header.Get("Content-Language")
-	if 0 == len(language) {
-		language = "en_US"
-	}
+	language := getLanguage(r)
 	ret, err := plugins.GetSourceConf(pluginName, language)
 	if err != nil {
 		handleError(w, err, "", logger)
@@ -682,12 +670,7 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
-
-	language := r.Header.Get("Content-Language")
-	if 0 == len(language) {
-		language = "en_US"
-	}
-
+	language := getLanguage(r)
 	switch r.Method {
 	case http.MethodDelete:
 		err = plugins.DelSourceConfKey(pluginName, confKey, language)
@@ -723,11 +706,7 @@ func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	language := r.Header.Get("Content-Language")
-	if 0 == len(language) {
-		language = "en_US"
-	}
-
+	language := getLanguage(r)
 	switch r.Method {
 	case http.MethodDelete:
 		err = plugins.DelSourceConfKeyField(pluginName, confKey, language, v)
@@ -742,4 +721,11 @@ func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(ret, w, logger)
 		return
 	}
+}
+func getLanguage(r *http.Request) string {
+	language := r.Header.Get("Content-Language")
+	if 0 == len(language) {
+		language = "en_US"
+	}
+	return language
 }
