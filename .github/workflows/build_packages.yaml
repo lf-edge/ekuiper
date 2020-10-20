@@ -176,7 +176,7 @@ jobs:
           if: (matrix.suffix == 'fat') && (github.event_name == 'release')
           run: |
             set -e -u -x
-            echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
+            echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USER }} --password-stdin
             docker buildx build --no-cache \
             --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
             -t emqx/kuiper:$(git describe --tags --always) \
@@ -188,7 +188,7 @@ jobs:
               SUFFIX: ${{ matrix.suffix }}
           run: |
             set -e -u -x
-            echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
+            echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USER }} --password-stdin
             docker buildx build --no-cache \
             --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
             -t emqx/kuiper:$(git describe --tags --always)-$SUFFIX \
@@ -229,7 +229,7 @@ jobs:
         - name: buildx docker image
           if: github.event_name == 'release'
           run: |
-            echo ${{ secrets.DockerHubPassword }} | docker login -u ${{ secrets.DockerHubUser }} --password-stdin
+            echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USER }} --password-stdin
             docker buildx build --no-cache \
                 --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
                 -t emqx/kuiper-kubernetes-tool:$(git describe --tags --always) \
@@ -277,13 +277,13 @@ jobs:
             curl "https://d1vvhvl2y92vvt.cloudfront.net/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             sudo ./aws/install
-            aws configure set aws_access_key_id ${{ secrets.AwsAccessKeyId }}
-            aws configure set aws_secret_access_key ${{ secrets.AwsSecretAccessKey }}
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
             aws configure set default.region us-west-2
-            aws s3 rm --quiet --recursive s3://packages.emqx.io/kuiper/$version
-            aws s3 cp --quiet --recursive ./_packages s3://packages.emqx.io/kuiper/$version
-            aws s3 cp --quiet --recursive ./_plugins s3://packages.emqx.io/kuiper-plugins/$version
-            aws cloudfront create-invalidation --distribution-id E3TYD0WSP4S14P --paths "/kuiper/$version/*,/kuiper-plugins/$version/*"
+            aws s3 rm --quiet --recursive s3://packages.emqx/kuiper/$version
+            aws s3 cp --quiet --recursive ./_packages s3://packages.emqx/kuiper/$version
+            aws s3 cp --quiet --recursive ./_plugins s3://packages.emqx/kuiper-plugins/$version
+            aws cloudfront create-invalidation --distribution-id E170YEULGLT8XB --paths "/kuiper/$version/*,/kuiper-plugins/$version/*"
         - name: update emqx.io
           if: github.event_name == 'release'
           run: |
