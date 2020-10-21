@@ -1,4 +1,4 @@
-FROM golang:1.14-alpine AS builder
+FROM golang:1.15.1-alpine AS builder
 
 COPY . /go/kuiper
 
@@ -28,4 +28,4 @@ EXPOSE 9081 20498
 
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
-CMD ["./bin/server"]
+CMD ["./bin/kuiperd"]

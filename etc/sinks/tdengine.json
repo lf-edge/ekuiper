@@ -8,8 +8,8 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en/plugins/sinks/taos.md",
-			"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh/plugins/sinks/taos.md"
+			"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en/plugins/sinks/tdengine.md",
+			"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh/plugins/sinks/tdengine.md"
 		},
 		"description": {
 			"en_US": "This a sink plugin for TDengine, it can be used for saving the analysis data into TDengine.",
@@ -77,7 +77,7 @@
 		}
 	}, {
 		"name": "database",
-		"default": "db",
+		"default": "",
 		"optional": false,
 		"control": "text",
 		"type": "string",
@@ -91,7 +91,7 @@
 		}
 	}, {
 		"name": "table",
-		"default": "t",
+		"default": "",
 		"optional": false,
 		"control": "text",
 		"type": "string",
@@ -103,7 +103,8 @@
 			"en_US": "Table name",
 			"zh_CN": "表名"
 		}
-	}, {
+	}, 
+  {
 		"name": "fields",
 		"default": [],
 		"optional": false,
@@ -116,6 +117,36 @@
 		"label": {
 			"en_US": "Table field",
 			"zh_CN": "表字段"
+		}
+	},
+  {
+		"name": "provideTs",
+		"default": false,
+		"optional": false,
+		"control": "radio",
+		"type": "bool",
+		"hint": {
+			"en_US": "Whether to provide a timestamp",
+			"zh_CN": "是否提供时间戳"
+		},
+		"label": {
+			"en_US": "Whether to provide a timestamp",
+			"zh_CN": "是否提供时间戳"
+		}
+	},
+  {
+		"name": "tsFieldName",
+		"default":"",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "Timestamp field name",
+			"zh_CN": "时间戳字段名"
+		},
+		"label": {
+			"en_US": "Timestamp field name",
+			"zh_CN": "时间戳字段名"
 		}
 	}]
 }

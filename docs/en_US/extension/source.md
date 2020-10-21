@@ -54,7 +54,7 @@ Kuiper configurations are formatted as yaml and it provides a centralize locatio
 A configuration system is supported for Kuiper extension which will automatically read the configuration in yaml file and feed into the _Configure_ method of the source. If the [CONF_KEY](../streams.md#create-stream) property is specified in the stream, the configuration of that key will be fed. Otherwise, the default configuration is used.
  
  To use configuration in your source, the following conventions must be followed.
- 1. The name of your configuration file must be the same as the _.so_ file and must be camel case with upper case first letter. For example, MySource.yaml.
+ 1. The name of your configuration file must be the same as the plugin name. For example, mySource.yaml.
  2. The yaml file must be located inside _etc/sources_
  3. The format of the yaml file could be found [here](../rules/sources/mqtt.md)
  

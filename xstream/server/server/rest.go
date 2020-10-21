@@ -112,8 +112,8 @@ func createRestServer(port int) *http.Server {
 	server := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
 		// Good practice to set timeouts to avoid Slowloris attacks.
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
+		WriteTimeout: time.Second * 60 * 5,
+		ReadTimeout:  time.Second * 60 * 5,
 		IdleTimeout:  time.Second * 60,
 		Handler:      handlers.CORS(handlers.AllowedHeaders([]string{"Accept", "Accept-Language", "Content-Type", "Content-Language", "Origin"}))(r),
 	}
@@ -488,7 +488,7 @@ func fetchPluginList(hosts, ptype, os, arch string) (err error, result map[strin
 		tmp := []string{host, "kuiper-plugins", version, os, ptype}
 		//The url is similar to http://host:port/kuiper-plugins/0.9.1/debian/sinks/
 		url := strings.Join(tmp, "/")
-		timeout := time.Duration(10 * time.Second)
+		timeout := time.Duration(30 * time.Second)
 		client := &http.Client{
 			Timeout: timeout,
 			Transport: &http.Transport{
@@ -569,9 +569,10 @@ func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 
-	ptrMetadata, err := plugins.GetSinkMeta(pluginName, nil)
+	language := getLanguage(r)
+	ptrMetadata, err := plugins.GetSinkMeta(pluginName, language, nil)
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		handleError(w, err, "", logger)
 		return
 	}
 	jsonResponse(ptrMetadata, w, logger)
@@ -589,9 +590,10 @@ func showSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ptrMetadata, err := plugins.GetSinkMeta("", rule)
+	language := getLanguage(r)
+	ptrMetadata, err := plugins.GetSinkMeta("", language, rule)
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		handleError(w, err, "", logger)
 		return
 	}
 	jsonResponse(ptrMetadata, w, logger)
@@ -620,9 +622,10 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
-	ret, err := plugins.GetSourceMeta(pluginName)
+	language := getLanguage(r)
+	ret, err := plugins.GetSourceMeta(pluginName, language)
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		handleError(w, err, "", logger)
 		return
 	}
 	if nil != ret {
@@ -636,9 +639,10 @@ func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
-	ret, err := plugins.GetSourceConf(pluginName)
+	language := getLanguage(r)
+	ret, err := plugins.GetSourceConf(pluginName, language)
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		handleError(w, err, "", logger)
 		return
 	} else {
 		w.Write(ret)
@@ -666,19 +670,20 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 	confKey := vars["confKey"]
+	language := getLanguage(r)
 	switch r.Method {
 	case http.MethodDelete:
-		err = plugins.DelSourceConfKey(pluginName, confKey)
+		err = plugins.DelSourceConfKey(pluginName, confKey, language)
 	case http.MethodPost:
 		v, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		err = plugins.AddSourceConfKey(pluginName, confKey, v)
+		err = plugins.AddSourceConfKey(pluginName, confKey, language, v)
 	}
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		handleError(w, err, "", logger)
 		return
 	}
 	if nil != ret {
@@ -700,18 +705,27 @@ func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "Invalid body", logger)
 		return
 	}
+
+	language := getLanguage(r)
 	switch r.Method {
 	case http.MethodDelete:
-		err = plugins.DelSourceConfKeyField(pluginName, confKey, v)
+		err = plugins.DelSourceConfKeyField(pluginName, confKey, language, v)
 	case http.MethodPost:
-		err = plugins.AddSourceConfKeyField(pluginName, confKey, v)
+		err = plugins.AddSourceConfKeyField(pluginName, confKey, language, v)
 	}
 	if err != nil {
-		handleError(w, err, "metadata error", logger)
+		handleError(w, err, "", logger)
 		return
 	}
 	if nil != ret {
 		jsonResponse(ret, w, logger)
 		return
 	}
+}
+func getLanguage(r *http.Request) string {
+	language := r.Header.Get("Content-Language")
+	if 0 == len(language) {
+		language = "en_US"
+	}
+	return language
 }

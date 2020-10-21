@@ -98,7 +98,7 @@ docker exec -it kuiper /bin/sh
 使用以下命令，创建一个名为 ``demo`` 的流定义.
 
 ```shell
-bin/cli create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
+bin/kuiper create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
 ```
 
 其它命令行，请参考[该文档](../cli/overview.md)。
@@ -178,7 +178,7 @@ curl -X POST \
 在运行的容器中，执行以下命令。
 
 ```shell
-# bin/cli create rule rule1 -f rule.txt
+# bin/kuiper create rule rule1 -f rule.txt
 Connecting to 127.0.0.1:20498...
 Creating a new rule from file rule.txt.
 Rule rule1 was created successfully, please use 'cli getstatus rule rule1' command to get rule status.
@@ -227,7 +227,7 @@ time="2020-04-17T06:32:31Z" level=info msg="sink result for rule rule1: [{\"bool
 你也可以敲入以下的命令来查看规则执行的状态。相关的查看规则状态的 REST API 也有提供，请检查[相关文档](../restapi/overview.md).
 
 ```shell
-# bin/cli getstatus rule rule1
+# bin/kuiper getstatus rule rule1
 Connecting to 127.0.0.1:20498...
 {
   "source_demo_0_records_in_total": 29,
@@ -272,10 +272,11 @@ Connecting to 127.0.0.1:20498...
 
 #### 扩展阅读
 
+- 从 Kuiper 0.9.1 版本开始，通过一个单独的 Docker 镜像提供了 [可视化 web 用户交互界面](../manager-ui/overview.md)，您可以通过该 web 界面进行流、规则和插件等管理。
 - 阅读 [EdgeX 源](../rules/sources/edgex.md) 获取更多详细信息，以及类型转换等。
 - [如何使用 meta 函数抽取在 EdgeX 消息总线中发送的更多信息？](edgex_meta.md) 设备服务往总线上发送数据的时候，一些额外的信息也随之发送，比如时间创建时间，id 等。如果你想在 SQL 语句中使用这些信息，请参考这篇文章。
 - [Kuiper 中使用 Golang 模版 (template) 定制分析结果](../rules/data_template.md) 分析结果在发送给不同的 sink 之前，可以使用数据模版对结果进行二次处理，参考这片文章可以获取更多的关于数据模版的使用场景。
-- [EdgeX 消息总线目标](../rules/sinks/edgex.md). 该文档描述了如何使用 EdgeX 消息总线目标。如果你想把分析结果发送到消息总线中，你可能对此文章感兴趣。 
+- [EdgeX 消息总线目标](../rules/sinks/edgex.md). 该文档描述了如何使用 EdgeX 消息总线目标。如果想把你的分析结果被别的 EdgeX 服务消费，你可以通过这个 sink 发送 EdgeX 格式的数据，别的 EdgeX 服务可以通过这个 Kuiper sink 暴露出来的新的消息总线进行订阅。
 - [Kuiper 插件开发教程](../plugins/plugins_tutorial.md): Kuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松散耦合的插件程序，在运行时动态加载和绑定，如果您对开发插件有兴趣，请参考该文章。
 
 如想了解更多的 EMQ X Kuiper 的信息，请参考以下资源。

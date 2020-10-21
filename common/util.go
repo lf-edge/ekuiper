@@ -7,13 +7,14 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/go-yaml/yaml"
+	"github.com/keepeye/logrus-filename"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
+	//"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -78,15 +79,25 @@ type KuiperConf struct {
 }
 
 func init() {
+	filenameHook := filename.NewHook()
+	filenameHook.Field = "file"
 	Log = logrus.New()
-	Log.SetReportCaller(true)
+	Log.AddHook(filenameHook)
+	/*
+		Log.SetReportCaller(true)
+			Log.SetFormatter(&logrus.TextFormatter{
+				CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+					filename := path.Base(f.File)
+					return "", fmt.Sprintf("%s:%d", filename, f.Line)
+				},
+				DisableColors: true,
+				FullTimestamp: true,
+			})
+	*/
 	Log.SetFormatter(&logrus.TextFormatter{
-		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-			filename := path.Base(f.File)
-			return "", fmt.Sprintf("%s:%d", filename, f.Line)
-		},
-		DisableColors: true,
-		FullTimestamp: true,
+		TimestampFormat: "2006-01-02 15:04:05",
+		DisableColors:   true,
+		FullTimestamp:   true,
 	})
 	Log.Debugf("init with args %s", os.Args)
 	for _, arg := range os.Args {

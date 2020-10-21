@@ -12,8 +12,8 @@
       "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sinks/mqtt.md"
     },
     "description": {
-      "en_US": "The action is used for publish output message into an MQTT server.",
-      "zh_CN": "该操作用于将输出消息发布到 MQTT 服务器中"
+      "en_US": "The action is used for publishing output message into EdgeX message bus.",
+      "zh_CN": "该操作用于将输出消息发布到 EdgeX 消息总线"
     }
   },
   "properties": [

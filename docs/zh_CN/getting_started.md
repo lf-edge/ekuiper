@@ -14,10 +14,10 @@ or
 $ tar -xzf kuiper-$VERISON-$OS-$ARCH.zip
 ```
 
-运行 ``bin/server`` 以启动 kuiper 服务器
+运行 ``bin/kuiperd`` 以启动 kuiper 服务器
 
 ```sh
-$ bin/server
+$ bin/kuiperd
 ```
  您应该会看到一条成功的消息：`Serving Rule server on port 20498`
 
@@ -26,8 +26,8 @@ kuiper 的目录结构如下:
 ```
 kuiper_installed_dir
   bin
-    server
-    cli
+    kuiperd
+    kuiper
   etc
     mqtt_source.yaml
     ...
@@ -67,8 +67,8 @@ kuiper 的目录结构如下:
 
 ```
 /usr/lib/kuiper/bin
-  server
-  cli
+  kuiperd
+  kuiper
 /etc/kuiper
   mqtt_source.yaml
   ...
@@ -98,7 +98,7 @@ Kuiper 具有许多用于复杂分析的内置函数和扩展，您可以访问 
 
 我们创建一个名为 ``demo`` 的流，该流使用 ``DATASOURCE`` 属性中指定的 MQTT ``demo`` 主题。
 ```sh
-$ bin/cli create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="demo")'
+$ bin/kuiper create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="demo")'
 ```
 MQTT 源将通过`tcp://localhost:1883`连接到 MQTT 消息服务器，如果您的 MQTT 消息服务器位于别的位置，请在`etc/mqtt_source.yaml`中进行指定。 您可以通过修改如下配置文件来更改配置。
 
@@ -109,14 +109,14 @@ default:
   servers: [tcp://127.0.0.1:1883]
 ```
 
-您可以使用``cli show streams`` 命令来查看是否创建了 ``demo`` 流。
+您可以使用``kuiper show streams`` 命令来查看是否创建了 ``demo`` 流。
 
 ### 通过查询工具测试流
 
-现在已经创建了流，可以通过 ``cli query`` 命令对其进行测试。键入``cli query``后，显示 ``kuiper``提示符。
+现在已经创建了流，可以通过 ``kuiper query`` 命令对其进行测试。键入``kuiper query``后，显示 ``kuiper``提示符。
 
 ```sh
-$ bin/cli query
+$ bin/kuiper query
 kuiper > 
 ```
 
@@ -158,10 +158,10 @@ time="2019-09-09T21:46:54+08:00" level=info msg="stop the query."
 * sql：针对规则运行的查询
 * 动作：规则的输出动作
 
-我们可以运行 ``cli rule`` 命令来创建规则并在文件中指定规则定义
+我们可以运行 ``kuiper rule`` 命令来创建规则并在文件中指定规则定义
 
 ```sh
-$ bin/cli create rule ruleDemo -f myRule
+$ bin/kuiper create rule ruleDemo -f myRule
 ```
 `myRule`文件的内容。 对于在1分钟内滚动时间窗口中的平均温度大于30的事件，它将打印到日志中。
 
@@ -192,7 +192,7 @@ $ bin/cli create rule ruleDemo -f myRule
 您可以使用命令行暂停规则一段时间，然后重新启动规则和其他管理工作。 规则名称是规则的标识符。 查看[规则管理 CLI](rules/overview.md) 以了解详细信息
 
 ```sh
-$ bin/cli stop rule ruleDemo
+$ bin/kuiper stop rule ruleDemo
 ```
 
 

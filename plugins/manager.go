@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"archive/zip"
+	"bytes"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -24,8 +25,9 @@ import (
 )
 
 type Plugin struct {
-	Name string `json:"name"`
-	File string `json:"file"`
+	Name       string   `json:"name"`
+	File       string   `json:"file"`
+	ShellParas []string `json:"shellParas"`
 }
 
 type PluginType int
@@ -220,6 +222,9 @@ func NewPluginManager() (*Manager, error) {
 		if err := singleton.readFuncMetaDir(); nil != err {
 			common.Log.Errorf("readFuncMetaDir:%v", err)
 		}
+		if err := singleton.readUiMsgDir(); nil != err {
+			common.Log.Errorf("readUiMsgDir:%v", err)
+		}
 	})
 	return singleton, outerErr
 }
@@ -247,7 +252,7 @@ func (m *Manager) List(t PluginType) (result []string, err error) {
 }
 
 func (m *Manager) Register(t PluginType, j *Plugin) error {
-	name, uri := j.Name, j.File
+	name, uri, shellParas := j.Name, j.File, j.ShellParas
 	//Validation
 	name = strings.Trim(name, " ")
 	if name == "" {
@@ -275,7 +280,7 @@ func (m *Manager) Register(t PluginType, j *Plugin) error {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}
 	//unzip and copy to destination
-	unzipFiles, version, err := m.install(t, name, zipPath)
+	unzipFiles, version, err := m.install(t, name, zipPath, shellParas)
 	if err != nil {
 		if t == SOURCE && len(unzipFiles) == 1 { //source that only copy so file
 			os.Remove(unzipFiles[0])
@@ -385,7 +390,7 @@ func getSoFilePath(m *Manager, t PluginType, name string) (string, error) {
 	return p, nil
 }
 
-func (m *Manager) install(t PluginType, name string, src string) ([]string, string, error) {
+func (m *Manager) install(t PluginType, name, src string, shellParas []string) ([]string, string, error) {
 	var filenames []string
 	var tempPath = path.Join(m.pluginDir, "temp", PluginTypes[t], name)
 	defer os.RemoveAll(tempPath)
@@ -403,6 +408,7 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 		yamlPath = path.Join(m.etcDir, PluginTypes[t], yamlFile)
 		expFiles = 2
 	}
+	var revokeFiles []string
 	needInstall := false
 	for _, file := range r.File {
 		fileName := file.Name
@@ -411,10 +417,14 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 			if err != nil {
 				return filenames, "", err
 			}
+			revokeFiles = append(revokeFiles, yamlPath)
 			filenames = append(filenames, yamlPath)
 		} else if fileName == name+".json" {
-			if err := unzipTo(file, path.Join(m.etcDir, PluginTypes[t], fileName)); nil != err {
+			jsonPath := path.Join(m.etcDir, PluginTypes[t], fileName)
+			if err := unzipTo(file, jsonPath); nil != err {
 				common.Log.Errorf("Failed to decompress the metadata %s file", fileName)
+			} else {
+				revokeFiles = append(revokeFiles, jsonPath)
 			}
 		} else if soPrefix.Match([]byte(fileName)) {
 			soPath := path.Join(m.pluginDir, PluginTypes[t], fileName)
@@ -423,6 +433,7 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 				return filenames, "", err
 			}
 			filenames = append(filenames, soPath)
+			revokeFiles = append(revokeFiles, soPath)
 			_, version = parseName(fileName)
 		} else { //unzip other files
 			err = unzipTo(file, path.Join(tempPath, fileName))
@@ -439,11 +450,25 @@ func (m *Manager) install(t PluginType, name string, src string) ([]string, stri
 	} else if needInstall {
 		//run install script if there is
 		spath := path.Join(tempPath, "install.sh")
-		out, err := exec.Command("/bin/sh", spath).Output()
+		shellParas = append(shellParas, spath)
+		if 1 != len(shellParas) {
+			copy(shellParas[1:], shellParas[0:])
+			shellParas[0] = spath
+		}
+		cmd := exec.Command("/bin/sh", shellParas...)
+		var outb, errb bytes.Buffer
+		cmd.Stdout = &outb
+		cmd.Stderr = &errb
+		err := cmd.Run()
+
 		if err != nil {
+			for _, f := range revokeFiles {
+				os.Remove(f)
+			}
+			common.Log.Infof(`err:%v stdout:%s stderr:%s`, err, outb.String(), errb.String())
 			return filenames, "", err
 		} else {
-			common.Log.Infof("install %s plugin %s log: %s", PluginTypes[t], name, out)
+			common.Log.Infof("install %s plugin %s", PluginTypes[t], name)
 		}
 	}
 	return filenames, version, nil
@@ -544,7 +569,7 @@ func downloadFile(filepath string, uri string) error {
 		src = srcFile
 	case "http", "https":
 		// Get the data
-		timeout := time.Duration(10 * time.Second)
+		timeout := time.Duration(5 * time.Minute)
 		client := &http.Client{
 			Timeout: timeout,
 			Transport: &http.Transport{

@@ -22,7 +22,7 @@ log
 
 ## bin
 
-The ``bin`` directory includes all of executable files. Such as ``cli`` command.
+The ``bin`` directory includes all of executable files. Such as ``kuiper`` command.
 
 ## etc
 

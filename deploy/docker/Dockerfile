@@ -1,4 +1,4 @@
-FROM golang:1.14 AS builder
+FROM golang:1.15.1 AS builder
 
 COPY . /go/kuiper
 
@@ -25,4 +25,4 @@ WORKDIR /usr/local/kuiper
 VOLUME ["/usr/local/kuiper/etc", "/usr/local/kuiper/data", "/usr/local/kuiper/plugins", "/usr/local/kuiper/log"]
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
-CMD ["./bin/server"]
+CMD ["./bin/kuiperd"]

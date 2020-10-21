@@ -33,8 +33,8 @@ chmod -R +X /etc/kuiper
 chmod -R 0755 /usr/lib/kuiper/bin
 [ -f /usr/bin/kuiperd ] && rm /usr/bin/kuiperd
 [ -f /usr/bin/kuiper ] && rm /usr/bin/kuiper
-ln -s /usr/lib/kuiper/bin/server /usr/bin/kuiperd
-ln -s /usr/lib/kuiper/bin/cli /usr/bin/kuiper
+ln -s /usr/lib/kuiper/bin/kuiperd /usr/bin/kuiperd
+ln -s /usr/lib/kuiper/bin/kuiper /usr/bin/kuiper
 
 case "$1" in
     configure)

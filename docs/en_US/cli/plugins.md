@@ -20,7 +20,7 @@ The plugin can be created with two ways.
 Sample:
 
 ```shell
-# bin/cli create plugin source random {"file":"http://127.0.0.1/plugins/sources/random.zip"}
+# bin/kuiper create plugin source random {"file":"http://127.0.0.1/plugins/sources/random.zip"}
 ```
 
 The command create a source plugin named ``random``. 
@@ -30,7 +30,7 @@ The command create a source plugin named ``random``.
 Sample:
 
 ```shell
-# bin/cli create plugin sink plugin1 -f /tmp/plugin1.txt
+# bin/kuiper create plugin sink plugin1 -f /tmp/plugin1.txt
 ```
 
 Below is the contents of ``plugin1.txt``.
@@ -56,7 +56,7 @@ show plugins function
 Sample:
 
 ```shell
-# bin/cli show plugins function
+# bin/kuiper show plugins function
 function1
 function2
 ```
@@ -71,7 +71,7 @@ describe plugin $plugin_type $plugin_name
 Sample: 
 
 ```shell
-# bin/cli describe plugin source plugin1
+# bin/kuiper describe plugin source plugin1
 {
   "name": "plugin1",
   "version": "1.0.0"
@@ -89,6 +89,6 @@ In which, `-s $stop` is an optional boolean parameter. If it is set to true, the
 Sample:
 
 ```shell
-# bin/cli drop plugin source random
+# bin/kuiper drop plugin source random
 Plugin random is dropped.
 ```

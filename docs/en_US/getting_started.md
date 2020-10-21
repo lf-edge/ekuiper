@@ -14,10 +14,10 @@ or
 $ tar -xzf kuiper-$VERISON-$OS-$ARCH.zip
 ```
 
-Run `bin/server` to start the kuiper server
+Run `bin/kuiperd` to start the kuiper server
 
 ```sh
-$ bin/server
+$ bin/kuiperd
 ```
 
 You should see a successful message: `Serving Rule server on port 20498`
@@ -102,7 +102,7 @@ The stream needs to have a name and a schema defining the data that each incomin
 
 We create a stream named `demo` which consumes MQTT `demo` topic as specified in the DATASOURCE property.
 ```sh
-$ bin/cli create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="demo")'
+$ bin/kuiper create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="demo")'
 ```
 The MQTT source will connect to MQTT broker at `tcp://localhost:1883`. If your MQTT broker is in another location, specify it in the `etc/mqtt_source.yaml`.  You can change the servers configuration as in below.
 
@@ -113,14 +113,14 @@ default:
   servers: [tcp://127.0.0.1:1883]
 ```
 
-You can use command ``cli show streams`` to see if the ``demo`` stream was created or not.
+You can use command ``kuiper show streams`` to see if the ``demo`` stream was created or not.
 
 ### Testing the stream through query tool
 
-Now the stream is created, it can be tested from ``cli query`` command. The `kuiper` prompt is displayed as below after typing `cli query`.
+Now the stream is created, it can be tested from ``kuiper query`` command. The `kuiper` prompt is displayed as below after typing `cli query`.
 
 ```sh
-$ bin/cli query
+$ bin/kuiper query
 kuiper > 
 ```
 
@@ -162,10 +162,10 @@ As part of the rule, we need to specify the following:
 * sql: the query to run for the rule
 * actions: the output actions for the rule
 
-We can run the `cli rule` command to create rule and specify the rule definition in a file
+We can run the `kuiper rule` command to create rule and specify the rule definition in a file
 
 ```sh
-$ bin/cli create rule ruleDemo -f myRule
+$ bin/kuiper create rule ruleDemo -f myRule
 ```
 The content of `myRule` file. It prints out to the log  for the events where the average temperature in a 1 minute tumbling window is bigger than 30.
 ```json
@@ -191,9 +191,9 @@ Check the stream log located at "`log/stream.log`", and you would see the filter
 ```
 
 ### Managing the rules
-You can use CLI to stop the rule for a while and restart it and other management work. The rule name is the identifier of a rule. Check [Rule Management CLI](cli/rules.md) for detail
+You can use command line tool to stop the rule for a while and restart it and other management work. The rule name is the identifier of a rule. Check [Rule Management CLI](cli/rules.md) for detail
 ```sh
-$ bin/cli stop rule ruleDemo
+$ bin/kuiper stop rule ruleDemo
 ```
 
 

@@ -12,7 +12,7 @@ jobs:
         runs-on: ubuntu-latest
 
         container:
-            image: golang:1.14
+            image: golang:1.15.1
 
         steps:
         - uses: actions/checkout@v2
@@ -31,11 +31,11 @@ jobs:
             mkdir -p data
             mkdir -p log
             sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
-            go build --buildmode=plugin -o plugins/sources/Random@v2.0.0.so plugins/sources/random.go
-            go build --buildmode=plugin -o plugins/sinks/File@v1.0.0.so plugins/sinks/file.go
-            go build --buildmode=plugin -o plugins/functions/Echo.so plugins/functions/echo.go
-            go build --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so plugins/functions/countPlusOne.go
-            go build --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so plugins/functions/accumulateWordCount.go
+            go build --buildmode=plugin -o plugins/sources/Random@v2.0.0.so plugins/sources/random/random.go
+            go build --buildmode=plugin -o plugins/sinks/File@v1.0.0.so plugins/sinks/file/file.go
+            go build --buildmode=plugin -o plugins/functions/Echo.so plugins/functions/echo/echo.go
+            go build --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so plugins/functions/countPlusOne/countPlusOne.go
+            go build --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so plugins/functions/accumulateWordCount/accumulateWordCount.go
             go test --tags=edgex ./...
         - uses: actions/upload-artifact@v1
           if: failure()

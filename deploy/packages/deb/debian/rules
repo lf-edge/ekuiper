@@ -16,8 +16,8 @@ PKG_VSN ?= develop
 ## note that it is necessary to use overlay_vars relative to .. as
 ## the generate command EXECUTES in rel/
 build:
-	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(PKG_VSN) -X main.LoadFileType=absolute" -o cli xstream/cli/main.go
-	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(PKG_VSN) -X main.LoadFileType=absolute" -o server xstream/server/main.go
+	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(PKG_VSN) -X main.LoadFileType=absolute" -o kuiper xstream/cli/main.go
+	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(PKG_VSN) -X main.LoadFileType=absolute" -o kuiperd xstream/server/main.go
 
 clean:
 	dh_clean
@@ -39,8 +39,8 @@ install: build
 	mkdir -p debian/kuiper/lib/systemd/system
 	
 	cp deploy/packages/service_helper.sh debian/kuiper/usr/lib/kuiper/bin
-	cp cli debian/kuiper/usr/lib/kuiper/bin/
-	cp server debian/kuiper/usr/lib/kuiper/bin/
+	cp kuiper debian/kuiper/usr/lib/kuiper/bin/
+	cp kuiperd debian/kuiper/usr/lib/kuiper/bin/
 	cp -R etc/* debian/kuiper/etc/kuiper/
 	cp -R plugins/* debian/kuiper/var/lib/kuiper/plugins/
 

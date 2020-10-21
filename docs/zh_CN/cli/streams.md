@@ -15,7 +15,7 @@ create stream $stream_name $stream_def | create stream -f $stream_def_file
 示例：
 
 ```shell
-# bin/cli create stream my_stream '(id bigint, name string, score float) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");'
+# bin/kuiper create stream my_stream '(id bigint, name string, score float) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");'
 stream my_stream created
 ```
 
@@ -26,7 +26,7 @@ stream my_stream created
 示例：
 
 ```shell
-# bin/cli create stream -f /tmp/my_stream.txt
+# bin/kuiper create stream -f /tmp/my_stream.txt
 stream my_stream created
 ```
 
@@ -48,7 +48,7 @@ show streams
 示例：
 
 ```shell
-# bin/cli show streams
+# bin/kuiper show streams
 my_stream
 ```
 
@@ -63,7 +63,7 @@ describe stream $stream_name
 示例：
 
 ```shell
-# bin/cli describe stream my_stream
+# bin/kuiper describe stream my_stream
 Fields
 --------------------------------------------------------------------------------
 id	bigint
@@ -86,7 +86,7 @@ drop stream $stream_name
 示例：
 
 ```shell
-# bin/cli drop stream my_stream
+# bin/kuiper drop stream my_stream
 stream my_stream dropped
 ```
 
@@ -99,7 +99,7 @@ query
 示例：
 
 ```shell
-# bin/cli query
+# bin/kuiper query
 kuiper > 
 ```
 

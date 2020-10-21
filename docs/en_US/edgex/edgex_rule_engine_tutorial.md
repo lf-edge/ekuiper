@@ -102,7 +102,7 @@ docker exec -it edgex-kuiper /bin/sh
 Use following command to create a stream named ``demo``.
 
 ```shell
-bin/cli create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
+bin/kuiper create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
 ```
 
 For other command line tools, please refer to [this doc](../cli/overview.md).
@@ -182,7 +182,7 @@ You can create a rule file with any text editor, and copy following contents int
 In the running Kuiper instance, and execute following command.
 
 ```shell
-$ bin/cli create rule rule1 -f rule.txt
+$ bin/kuiper create rule rule1 -f rule.txt
 Connecting to 127.0.0.1:20498...
 Creating a new rule from file rule.txt.
 Rule rule1 was created successfully, please use 'cli getstatus rule rule1' command to get rule status.
@@ -233,7 +233,7 @@ $ mosquitto_sub -h broker.emqx.io -t result
 You can also type below command to look at the rule execution status. The corresponding REST API is also available for getting rule status, please check [related document](../restapi/overview.md).
 
 ```shell
-# bin/cli getstatus rule rule1
+# bin/kuiper getstatus rule rule1
 Connecting to 127.0.0.1:20498...
 {
   "source_demo_0_records_in_total": 29,
@@ -279,10 +279,11 @@ Current rule does not filter any data that are sent to Kuiper, so how to filter 
 
 #### Extended Reading
 
+- Starting from Kuiper 0.9.1 version, [a visualized web UI](../manager-ui/overview.md) is released with a separated Docker image. You can manage the streams, rules and plugins through web page. 
 - Read [EdgeX source](../rules/sources/edgex.md) for more detailed information of configurations and data type conversion.
 - [How to use meta function to extract additional data from EdgeX message bus?](edgex_meta.md) There are some other information are sent along with device service, such as event created time, event id etc. If you want to use such metadata information in your SQL statements, please refer to this doc.
 - [Use Golang template to customize analaysis result in Kuiper](../rules/data_template.md) Before the analysis result is sent to different sinks, the data template can be used to make more processing. You can refer to this doc for more scenarios of using data templates.
-- [EdgeX message bus sink doc](../rules/sinks/edgex.md). The document describes how to use EdgeX message bus sink. If you'd like to send the analysis result into message bus, you are probably interested in this article. 
+- [EdgeX message bus sink doc](../rules/sinks/edgex.md). The document describes how to use EdgeX message bus sink. If you'd like to have your analysis result be consumed by other EdgeX services, you can send analysis data with EdgeX data format through this sink, and other EdgeX services can subscribe new message bus exposed by Kuiper sink.
 - [Kuiper plugin development tutorial](../plugins/plugins_tutorial.md): Kuiper plugin is based on the plugin mechanism of Golang, users can build loosely-coupled plugin applications,  dynamic loading and binding when it is running. You can refer to this article if you're interested in Kuiper plugin development.
 
  If you want to explore more features of EMQ X Kuiper, please refer to below resources.

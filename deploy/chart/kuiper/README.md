@@ -101,7 +101,7 @@ Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as
   my-kuiper-0   1/1     Running   0          19s
   
   $ kubectl exec -it  my-kuiper-0 sh
-  /kuiper # ./bin/cli
+  /kuiper # ./bin/kuiper
   Connecting to 127.0.0.1:20498...
   ```
 
@@ -134,7 +134,7 @@ Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as
   my-kuiper-0   1/1     Running   0          19s
   
   $ kubectl exec -it  my-kuiper-0 sh
-  /kuiper # ./bin/cli
+  /kuiper # ./bin/kuiper
   Connecting to 127.0.0.1:20498...
   ```
 
@@ -216,6 +216,6 @@ Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as
   drwxrwxrwt    3 root     root           100 Dec 10 02:23 private.pem.key
   
   $ kubectl exec -it  my-kuiper-0 sh
-  /kuiper # ./bin/cli
+  /kuiper # ./bin/kuiper
   Connecting to 127.0.0.1:20498...
   ```

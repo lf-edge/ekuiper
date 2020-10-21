@@ -8,11 +8,11 @@
 
 ``unzip kuiper-centos7-v0.0.1.zip``
 
-运行 `cli` 来验证 Kuiper 是否已成功安装。
+运行 `kuiper` 来验证 Kuiper 是否已成功安装。
 
 ```shell
 # cd kuiper
-# bin/cli --version
+# bin/kuiper --version
 kuiper version 0.0.1
 ```
 
