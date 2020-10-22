@@ -111,7 +111,7 @@ cross_build: cross_prepare
 	@tar -xvf cross_build.tar --wildcards linux_386/go/kuiper/_packages/ \
 		&& mv linux_386/go/kuiper/_packages/kuiper-$(VERSION)-$(OS)-x86_64.tar.gz $(PACKAGES_PATH)/kuiper-$(VERSION)-linux-386.tar.gz \
 		&& mv linux_386/go/kuiper/_packages/kuiper-$(VERSION)-$(OS)-x86_64.zip $(PACKAGES_PATH)/kuiper-$(VERSION)-linux-386.zip \
-		&& mv linux_386/go/kuiper/_packages/*.deb $(PACKAGES_PATH)
+		&& mv linux_386/go/kuiper/_packages/kuiper-$(VERSION)-$(OS)-x86_64.deb $(PACKAGES_PATH)/kuiper-$(VERSION)-linux-386.deb
 
 	@rm -f cross_build.tar
 	@echo "Cross build success"
