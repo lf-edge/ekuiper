@@ -24,3 +24,28 @@ REST 服务通常需要特定的数据格式。 这可以由公共目标属性 `
       }
     }
 ```
+Visualization mode
+以可视化图形交互创建rules的SQL和Actions
+
+Text mode
+以json格式创建rules的SQL和Actions
+
+创建写taosdb rest示例：
+```json
+{"id": "rest1",
+  "sql": "SELECT tele[0]-\u003eTag00001 AS temperature, tele[0]-\u003eTag00002 AS humidity FROM neuron", 
+  "actions": [
+    {
+      "rest": {
+        "bodyType": "text",
+        "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})", 
+        "debugResp": true,
+        "headers": {"Authorization": "Basic cm9vdDp0YW9zZGF0YQ=="},
+        "method": "POST",
+        "sendSingle": true,
+        "url": "http://xxx.xxx.xxx.xxx:6041/rest/sql"
+      }
+    }
+  ]
+}
+```
