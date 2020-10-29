@@ -23,3 +23,31 @@ REST service usually requires a specific data format. That can be imposed by the
       }
     }
 ```
+
+## Visualization mode
+
+Use visualization create rules SQL and Actions
+
+## Text mode
+
+Use text json create rules SQL and Actions
+
+Example for taosdb rest：
+```json
+{"id": "rest1",
+  "sql": "SELECT tele[0]-\u003eTag00001 AS temperature, tele[0]-\u003eTag00002 AS humidity FROM neuron", 
+  "actions": [
+    {
+      "rest": {
+        "bodyType": "text",
+        "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})", 
+        "debugResp": true,
+        "headers": {"Authorization": "Basic cm9vdDp0YW9zZGF0YQ=="},
+        "method": "POST",
+        "sendSingle": true,
+        "url": "http://xxx.xxx.xxx.xxx:6041/rest/sql"
+      }
+    }
+  ]
+}
+```
