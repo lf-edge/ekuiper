@@ -972,19 +972,18 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 	}
 	mockClock.Add(time.Duration(postleap) * time.Millisecond)
 	common.Log.Debugf("Clock add to %d", common.GetNowInMilli())
-	time.Sleep(1)
-	// Check if stream done. Poll for metrics,
-	for retry := 100; retry > 0; retry-- {
-		time.Sleep(time.Duration(retry) * time.Millisecond)
-		break
-		/*
-			if err := compareMetrics(tp, metrics); err == nil {
-				break
-			} else {
-				common.Log.Debugf("check metrics error at %d: %s", retry, err)
-			}
-		*/
-	}
+	/*
+		time.Sleep(1)
+		// Check if stream done. Poll for metrics,
+		for retry := 100; retry > 0; retry-- {
+			time.Sleep(time.Duration(retry) * time.Millisecond)
+				if err := compareMetrics(tp, metrics); err == nil {
+					break
+				} else {
+					common.Log.Debugf("check metrics error at %d: %s", retry, err)
+				}
+		}
+	*/
 	return nil
 }
 
