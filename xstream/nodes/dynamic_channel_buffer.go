@@ -7,10 +7,10 @@ import (
 )
 
 type DynamicChannelBuffer struct {
+	limit  int64
 	In     chan api.SourceTuple
 	Out    chan api.SourceTuple
 	buffer []api.SourceTuple
-	limit  int64
 }
 
 func NewDynamicChannelBuffer() *DynamicChannelBuffer {
