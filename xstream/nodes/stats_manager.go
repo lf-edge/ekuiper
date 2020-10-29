@@ -111,7 +111,7 @@ func (sm *DefaultStatManager) ProcessTimeStart() {
 
 func (sm *DefaultStatManager) ProcessTimeEnd() {
 	if !sm.processTimeStart.IsZero() {
-		sm.processLatency = int64(time.Since(sm.processTimeStart) / time.Millisecond)
+		sm.processLatency = int64(time.Since(sm.processTimeStart) / time.Microsecond)
 	}
 }
 
@@ -138,7 +138,7 @@ func (sm *PrometheusStatManager) IncTotalExceptions() {
 
 func (sm *PrometheusStatManager) ProcessTimeEnd() {
 	if !sm.processTimeStart.IsZero() {
-		sm.processLatency = int64(time.Since(sm.processTimeStart) / time.Millisecond)
+		sm.processLatency = int64(time.Since(sm.processTimeStart) / time.Microsecond)
 		sm.pProcessLatency.Set(float64(sm.processLatency))
 	}
 }
