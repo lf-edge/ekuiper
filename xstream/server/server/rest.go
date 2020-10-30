@@ -78,7 +78,7 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/rules/{name}", ruleHandler).Methods(http.MethodDelete, http.MethodGet)
+	r.HandleFunc("/rules/{name}", ruleHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
 	r.HandleFunc("/rules/{name}/status", getStatusRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/start", startRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
@@ -272,6 +272,35 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(content))
+	case http.MethodPut:
+		_, err := ruleProcessor.GetRuleByName(name)
+		if err != nil {
+			handleError(w, err, "not found this rule", logger)
+			return
+		}
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			handleError(w, err, "Invalid body", logger)
+			return
+		}
+
+		r, err := ruleProcessor.ExecUpdate(name, string(body))
+		var result string
+		if err != nil {
+			handleError(w, err, "Update rule error", logger)
+			return
+		} else {
+			result = fmt.Sprintf("Rule %s was updated successfully.", r.Id)
+		}
+
+		err = restartRule(name)
+		if err != nil {
+			handleError(w, err, "restart rule error", logger)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(result))
 	}
 }
 
