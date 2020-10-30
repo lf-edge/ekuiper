@@ -228,6 +228,27 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 
 	return rule, nil
 }
+func (p *RuleProcessor) ExecUpdate(name, ruleJson string) (*api.Rule, error) {
+	rule, err := p.getRuleByJson(name, ruleJson)
+	if err != nil {
+		return nil, err
+	}
+
+	err = p.db.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer p.db.Close()
+
+	err = p.db.Replace(rule.Id, ruleJson)
+	if err != nil {
+		return nil, err
+	} else {
+		log.Infof("Rule %s is update.", rule.Id)
+	}
+
+	return rule, nil
+}
 
 func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (err error) {
 	rule, err := p.GetRuleByName(name)
