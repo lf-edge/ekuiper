@@ -71,7 +71,7 @@ func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}) (err erro
 		)
 		for index, key = range keys {
 			if k == key {
-				if strings.HasSuffix(k, "process_latency_ms") {
+				if strings.HasSuffix(k, "process_latency_us") {
 					if values[index].(int64) >= v.(int64) {
 						matched = true
 						continue

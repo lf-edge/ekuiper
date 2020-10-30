@@ -8,12 +8,12 @@ import (
 const RecordsInTotal = "records_in_total"
 const RecordsOutTotal = "records_out_total"
 const ExceptionsTotal = "exceptions_total"
-const ProcessLatencyMs = "process_latency_ms"
+const ProcessLatencyUs = "process_latency_us"
 const LastInvocation = "last_invocation"
 const BufferLength = "buffer_length"
 
 var (
-	MetricNames        = []string{RecordsInTotal, RecordsOutTotal, ExceptionsTotal, ProcessLatencyMs, BufferLength, LastInvocation}
+	MetricNames        = []string{RecordsInTotal, RecordsOutTotal, ExceptionsTotal, ProcessLatencyUs, BufferLength, LastInvocation}
 	prometheuseMetrics *PrometheusMetrics
 	mutex              sync.RWMutex
 )
@@ -60,7 +60,7 @@ func newPrometheusMetrics() *PrometheusMetrics {
 			Help: "Total number of user exceptions of " + prefix,
 		}, labelNames)
 		processLatency := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: prefix + "_" + ProcessLatencyMs,
+			Name: prefix + "_" + ProcessLatencyUs,
 			Help: "Process latency in millisecond of " + prefix,
 		}, labelNames)
 		bufferLength := prometheus.NewGaugeVec(prometheus.GaugeOpts{
