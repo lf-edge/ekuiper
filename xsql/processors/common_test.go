@@ -56,6 +56,7 @@ func cleanStateData() {
 	}
 }
 
+/*
 func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}) (err error) {
 	keys, values := tp.GetMetrics()
 	if common.Config.Basic.Debug == true {
@@ -97,6 +98,7 @@ func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}) (err erro
 	}
 	return nil
 }
+*/
 
 func errstring(err error) string {
 	if err != nil {
@@ -970,16 +972,10 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 	common.Log.Debugf("Clock add to %d", common.GetNowInMilli())
 	time.Sleep(1)
 	// Check if stream done. Poll for metrics,
-	/*
-		for retry := 100; retry > 0; retry-- {
-			time.Sleep(time.Duration(retry) * time.Millisecond)
-			if err := compareMetrics(tp, metrics); err == nil {
-				break
-			} else {
-				common.Log.Debugf("check metrics error at %d: %s", retry, err)
-			}
-		}
-	*/
+	for retry := 100; retry > 0; retry-- {
+		time.Sleep(time.Duration(retry) * time.Millisecond)
+		break
+	}
 	return nil
 }
 
