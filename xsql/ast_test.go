@@ -1,6 +1,7 @@
 package xsql
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
@@ -105,6 +106,45 @@ func Test_MessageValTest(t *testing.T) {
 			t.Errorf("%d. error mismatch:\n  exp=%t\n  got=%t\n\n", i, tt.exptOk, ok)
 		} else if tt.exptOk && !reflect.DeepEqual(tt.exptV, v) {
 			t.Errorf("%d. \n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.exptV, v)
+		}
+	}
+}
+
+func Test_StreamFieldsMarshall(t *testing.T) {
+	var tests = []struct {
+		sf StreamFields
+		r  string
+	}{{
+		sf: []StreamField{
+			{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
+			{Name: "FIRST_NAME", FieldType: &BasicType{Type: STRINGS}},
+			{Name: "LAST_NAME", FieldType: &BasicType{Type: STRINGS}},
+			{Name: "NICKNAMES", FieldType: &ArrayType{Type: STRINGS}},
+			{Name: "Gender", FieldType: &BasicType{Type: BOOLEAN}},
+			{Name: "ADDRESS", FieldType: &RecType{
+				StreamFields: []StreamField{
+					{Name: "STREET_NAME", FieldType: &BasicType{Type: STRINGS}},
+					{Name: "NUMBER", FieldType: &BasicType{Type: BIGINT}},
+				},
+			}},
+		},
+		r: `[{"FieldType":"bigint","Name":"USERID"},{"FieldType":"string","Name":"FIRST_NAME"},{"FieldType":"string","Name":"LAST_NAME"},{"FieldType":{"Type":"array","ElementType":"string"},"Name":"NICKNAMES"},{"FieldType":"boolean","Name":"Gender"},{"FieldType":{"Type":"struct","Fields":[{"FieldType":"string","Name":"STREET_NAME"},{"FieldType":"bigint","Name":"NUMBER"}]},"Name":"ADDRESS"}]`,
+	}, {
+		sf: []StreamField{
+			{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
+		},
+		r: `[{"FieldType":"bigint","Name":"USERID"}]`,
+	}}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	for i, tt := range tests {
+		r, err := json.Marshal(tt.sf)
+		if err != nil {
+			t.Errorf("%d. \nmarshall error: %v", i, err)
+			t.FailNow()
+		}
+		result := string(r)
+		if !reflect.DeepEqual(tt.r, result) {
+			t.Errorf("%d. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.r, result)
 		}
 	}
 }
