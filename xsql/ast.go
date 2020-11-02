@@ -314,10 +314,10 @@ type StreamField struct {
 
 func (u *StreamField) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		FieldType string
+		FieldType interface{}
 		Name      string
 	}{
-		FieldType: PrintFieldType(u.FieldType),
+		FieldType: PrintFieldTypeForJson(u.FieldType),
 		Name:      u.Name,
 	})
 }
