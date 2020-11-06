@@ -12,7 +12,8 @@ basic:
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
 ```
-
+## system log
+When the user sets the value of the environment variable named KuiperSyslogKey to true, the log will be printed to the syslog.
 ## Cli Port
 ```yaml
 basic:
