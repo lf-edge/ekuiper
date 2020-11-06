@@ -18,7 +18,8 @@ then
 fi
 
 dir="TDengine-client"
-tar -zxvf "$zip"
+mkdir "$dir"
+tar -xzvf "$zip" -C ./"$dir" --strip-components 1
 rm "$zip"
 
 if ! [ -e $dir ]
