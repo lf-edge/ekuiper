@@ -97,8 +97,8 @@
       "name": "headers",
       "default": "",
       "optional": true,
-      "control": "text",
-      "type": "string",
+      "control": "list",
+      "type": "list_object",
       "hint": {
         "en_US": "The additional headers to be set for the HTTP request.",
         "zh_CN": "要为 HTTP 请求设置的其他标头"
