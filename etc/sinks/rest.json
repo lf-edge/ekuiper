@@ -95,7 +95,7 @@
     },
     {
       "name": "headers",
-      "default": "",
+      "default": [],
       "optional": true,
       "control": "list",
       "type": "list_object",
