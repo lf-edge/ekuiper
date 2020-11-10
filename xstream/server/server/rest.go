@@ -197,8 +197,7 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		streamProcessor.DropStream(name)
-		content, err := streamProcessor.ExecStreamSql(v.Sql)
+		content, err := streamProcessor.ExecReplaceStream(v.Sql)
 		if err != nil {
 			handleError(w, err, "Stream command error", logger)
 			return
