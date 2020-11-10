@@ -77,6 +77,33 @@ func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, statement stri
 	}
 }
 
+func (p *StreamProcessor) ExecReplaceStream(statement string) (string, error) {
+	parser := xsql.NewParser(strings.NewReader(statement))
+	stmt, err := xsql.Language.Parse(parser)
+	if err != nil {
+		return "", err
+	}
+
+	switch s := stmt.(type) {
+	case *xsql.StreamStmt:
+		if err = p.db.Open(); nil != err {
+			return "", fmt.Errorf("Replace stream fails, error when opening db: %v.", err)
+		}
+		defer p.db.Close()
+
+		if err = p.db.Replace(string(s.Name), statement); nil != err {
+			return "", fmt.Errorf("Replace stream fails: %v.", err)
+		} else {
+			info := fmt.Sprintf("Stream %s is replaced.", s.Name)
+			log.Printf("%s", info)
+			return info, nil
+		}
+	default:
+		return "", fmt.Errorf("Invalid stream statement: %s", statement)
+	}
+	return "", nil
+}
+
 func (p *StreamProcessor) ExecStreamSql(statement string) (string, error) {
 	r, err := p.ExecStmt(statement)
 	if err != nil {
