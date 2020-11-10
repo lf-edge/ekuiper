@@ -262,13 +262,12 @@ jobs:
             cd _packages && for var in $( ls |grep -v sha256); do
               echo "$(cat $var.sha256) $var" | sha256sum -c || exit 1
             done
-        - name: update github release
+        - uses: zhanghongtong/upload-release-asset@v1
           if: github.event_name == 'release'
-          run: |
-            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
-            for var in $(ls _packages) ; do
-              .github/workflows/script/upload_github_release_asset.sh owner=emqx repo=kuiper tag=$version filename=_packages/$var github_api_token=$(echo ${{ secrets.AccessToken }})
-            done
+          with:
+            repo: kuiper
+            path: "_packages/kuiper-*"
+            token: ${{ secrets.AccessToken }}
         - name: create invalidation for cloudfront
           if: github.event_name == 'release'
           run: |
@@ -287,7 +286,13 @@ jobs:
           if: github.event_name == 'release'
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
-            curl -w %{http_code} --insecure -H ${{ secrets.EmqxHeader }} https://admin.emqx.io/admin_api/v1/kuiper_github_release_callback?tag=$version
+            curl -w %{http_code} \
+               --insecure \
+               -H "Content-Type: application/json" \
+               -H "token: ${{ secrets.EMQX_IO_TOKEN }}" \
+               -X POST \
+               -d "{\"repo\":\"emqx/kuiper\", \"tag\": \"${version}\" }" \
+               ${{ secrets.EMQX_IO_RELEASE_API }}
         - name: update helm packages
           if: github.event_name == 'release'
           run: |
