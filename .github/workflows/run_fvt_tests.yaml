@@ -23,9 +23,9 @@ jobs:
         - name: install jmeter
           timeout-minutes: 10
           env:
-            JMETER_VERSION: 5.2.1
+              JMETER_VERSION: 5.3
           run: |
-            wget --no-check-certificate -O /tmp/apache-jmeter.tgz http://us.mirrors.quenda.co/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz --no-check-certificate
+            wget --no-check-certificate -O /tmp/apache-jmeter.tgz https://downloads.apache.org//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
             cd /tmp && tar -xvf apache-jmeter.tgz
             echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
             echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
@@ -84,9 +84,9 @@ jobs:
       - name: install jmeter
         timeout-minutes: 10
         env:
-          JMETER_VERSION: 5.2.1
+            JMETER_VERSION: 5.3
         run: |
-          wget --no-check-certificate -O /tmp/apache-jmeter.tgz http://us.mirrors.quenda.co/apache//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+          wget --no-check-certificate -O /tmp/apache-jmeter.tgz https://downloads.apache.org//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
           cd /tmp && tar -xvf apache-jmeter.tgz
           echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
           echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
