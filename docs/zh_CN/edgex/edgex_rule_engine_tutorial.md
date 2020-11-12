@@ -67,6 +67,10 @@ f69e9c4d6cc8        nexus3.edgexfoundry.org:10004/docker-core-data-go:master    
 ed7ad5ae08b2        nexus3.edgexfoundry.org:10004/docker-edgex-volume:master               "/bin/sh -c '/usr/bi…"   37 minutes ago      Up 37 minutes                                                                                                          edgex-files
 ```
 
+#### 原生 (native) 方式运行
+
+出于运行效率考虑，读者可能需要直接以原生方式运行 Kuiper，但是可能会发现直接使用下载的 Kuiper 软件包启动后[无法直接使用 Edgex](https://github.com/emqx/kuiper/issues/596)，这是因为 EdgeX 缺省消息总线依赖于 `zeromq` 库，如果 Kuiper 启动的时候在库文件寻找路径下无法找到 `zeromq` 库，它将无法启动。这导致对于不需要使用 EdgeX 的 Kuiper 用户也不得不去安装 `zeromq` 库 ，因此缺省提供的下载安装包中**<u>内置不支持 Edgex</u>** 。如果读者需要以原生方式运行 Kuiper 并且支持 `EdgeX`，可以通过命令 `make pkg_with_edgex` 自己来编译原生安装包，或者从容器中直接拷贝出安装包。
+
 ### 创建流
 
 该步骤是创建一个可以从 EdgeX 消息总线进行数据消费的流。有两种方法来支持管理流，你可以选择喜欢的方式。
