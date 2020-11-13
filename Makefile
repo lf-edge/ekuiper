@@ -182,7 +182,7 @@ PLUGINS := sinks/file \
 plugins: cross_prepare sinks/tdengine $(PLUGINS)
 sinks/tdengine:
 	@docker buildx build --no-cache \
-    --platform=linux/amd64 \
+    --platform=linux/amd64,linux/arm64 \
     -t cross_build \
     --build-arg VERSION=$(VERSION) \
     --build-arg PLUGIN_TYPE=sinks \
@@ -191,9 +191,12 @@ sinks/tdengine:
     -f .ci/Dockerfile-plugins .
 
 	@mkdir -p _plugins/debian/sinks
-	@tar -xvf /tmp/cross_build_plugins_sinks_tdengine.tar --wildcards "go/kuiper/plugins/sinks/tdengine/tdengine_amd64.zip" \
-	&& mv go/kuiper/plugins/sinks/tdengine/tdengine_amd64.zip _plugins/debian/sinks
+	@for arch in amd64 arm64; do \
+		tar -xvf /tmp/cross_build_plugins_sinks_tdengine.tar --wildcards "linux_$${arch}/go/kuiper/plugins/sinks/tdengine/tdengine_$$(echo $${arch%%_*}).zip" \
+		&& mv $$(ls linux_$${arch}/go/kuiper/plugins/sinks/tdengine/tdengine_$$(echo $${arch%%_*}).zip) _plugins/debian/sinks; \
+	done
 	@rm -f /tmp/cross_build_plugins_sinks_tdengine.tar
+
 $(PLUGINS): PLUGIN_TYPE = $(word 1, $(subst /, , $@))
 $(PLUGINS): PLUGIN_NAME = $(word 2, $(subst /, , $@))
 $(PLUGINS):
