@@ -267,24 +267,28 @@ func (this *uiSinks) hintWhenNewSink(pluginName string) (err error) {
 	return err
 }
 
-func (this *uiSinks) modifyCustom(uiFields []*field, ruleFields map[string]interface{}) (err error) {
+func (this *uiSinks) modifyCustom(pluginName string, uiFields []*field, ruleFields map[string]interface{}) (err error) {
 	for i, ui := range uiFields {
 		ruleVal := ruleFields[ui.Name]
 		if nil == ruleVal {
 			continue
 		}
 		if reflect.Map == reflect.TypeOf(ruleVal).Kind() {
-			var auxRuleFields map[string]interface{}
-			if err := common.MapToStruct(ruleVal, &auxRuleFields); nil != err {
-				return fmt.Errorf(`%s%v %s`, getMsg(this.language, sink, "type_conversion_fail"), err, ui.Name)
-			}
-			var auxUiFields []*field
-			if err := common.MapToStruct(ui.Default, &auxUiFields); nil != err {
-				return fmt.Errorf(`%s%v %s`, getMsg(this.language, sink, "type_conversion_fail"), err, ui.Name)
-			}
-			uiFields[i].Default = auxUiFields
-			if err := this.modifyCustom(auxUiFields, auxRuleFields); nil != err {
-				return err
+			if "headers" == ui.Name && "rest" == pluginName {
+				uiFields[i].Default = ruleVal
+			} else {
+				var auxRuleFields map[string]interface{}
+				if err := common.MapToStruct(ruleVal, &auxRuleFields); nil != err {
+					return fmt.Errorf(`%s%v %s`, getMsg(this.language, sink, "type_conversion_fail"), err, ui.Name)
+				}
+				var auxUiFields []*field
+				if err := common.MapToStruct(ui.Default, &auxUiFields); nil != err {
+					return fmt.Errorf(`%s%v %s`, getMsg(this.language, sink, "type_conversion_fail"), err, ui.Name)
+				}
+				uiFields[i].Default = auxUiFields
+				if err := this.modifyCustom(pluginName, auxUiFields, auxRuleFields); nil != err {
+					return err
+				}
 			}
 		} else {
 			uiFields[i].Default = ruleVal
@@ -306,7 +310,7 @@ func (this *uiSinks) modifyProperty(pluginName string, mapFields map[string]inte
 	if nil == custom {
 		return fmt.Errorf(`%s%s`, getMsg(this.language, sink, "not_found_plugin"), pluginName)
 	}
-	if err = this.modifyCustom(custom.Fields, mapFields); nil != err {
+	if err = this.modifyCustom(pluginName, custom.Fields, mapFields); nil != err {
 		return err
 	}
 
