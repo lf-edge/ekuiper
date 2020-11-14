@@ -71,6 +71,10 @@ f69e9c4d6cc8        nexus3.edgexfoundry.org:10004/docker-core-data-go:master    
 ed7ad5ae08b2        nexus3.edgexfoundry.org:10004/docker-edgex-volume:master               "/bin/sh -c '/usr/bi…"   37 minutes ago      Up 37 minutes                                                                                                          edgex-files
 ```
 
+#### Run with native
+
+For performance reason, reader probably wants to run Kuiper with native approach. But you may find that [EdgeX cannot be used](https://github.com/emqx/kuiper/issues/596) with the downloaded Kuiper binary packages. It's because that EdgeX message bus relies on `zeromq` library. If  `zeromq` library cannot be found in the library search path, it cannot be started. So it will have those Kuiper users who do not want to use EdgeX install the `zeromq` library as well. For this reason, the default downloaded Kuiper package **<u>does NOT have embedded support</u>** for `EdgeX`. If reader wants to support `EdgeX` in native packages, you can either make a native package by running command `make pkg_with_edgex`, or just copy the binary package from docker container.
+
 ### Create a stream
 
 There are two approaches to manage stream, you can use your preferred approach.

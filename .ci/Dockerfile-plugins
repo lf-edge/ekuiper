@@ -19,11 +19,14 @@ RUN set -e -u -x \
            ;; \
          tdengine ) \
            if [ "$(uname -m)" = "x86_64" ]; then \
-             wget "https://www.taosdata.com/download/download-all.php?pkgType=tdengine_linux&pkgName=TDengine-client-2.0.3.1-Linux-x64.tar.gz" -O /tmp/TDengine-client-2.0.3.1-Linux-x64.tar.gz \
-             && tar -zxvf /tmp/TDengine-client-2.0.3.1-Linux-x64.tar.gz \
-             && cd TDengine-client && ./install_client.sh && cd - \
-             && go build --buildmode=plugin -tags plugins -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go; \
-           fi \
+             wget "https://www.taosdata.com/download/download-all.php?pkgType=tdengine_linux&pkgName=TDengine-client-2.0.6.0-Linux-x64.tar.gz" -O /tmp/TDengine-client-2.0.6.0.tar.gz; \
+           fi; \
+           if [ "$(uname -m)" = "aarch64" ]; then \
+             wget "https://www.taosdata.com/download/download-all.php?pkgType=tdengine_linux&pkgName=TDengine-client-2.0.6.0-Linux-aarch64.tar.gz" -O /tmp/TDengine-client-2.0.6.0.tar.gz; \
+           fi; \
+           tar -zxvf /tmp/TDengine-client-2.0.6.0.tar.gz \
+           && cd TDengine-client-2.0.6.0 && ./install_client.sh && cd - \
+           && go build --buildmode=plugin -tags plugins -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go \
            ;; \
          * ) \
            go build --buildmode=plugin -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go \

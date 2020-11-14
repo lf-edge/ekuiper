@@ -180,12 +180,12 @@ func TestFuncState(t *testing.T) {
 			},
 			m: map[string]interface{}{
 				"op_preprocessor_text_0_exceptions_total":   int64(0),
-				"op_preprocessor_text_0_process_latency_ms": int64(0),
+				"op_preprocessor_text_0_process_latency_us": int64(0),
 				"op_preprocessor_text_0_records_in_total":   int64(8),
 				"op_preprocessor_text_0_records_out_total":  int64(8),
 
 				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_process_latency_us": int64(0),
 				"op_project_0_records_in_total":   int64(8),
 				"op_project_0_records_out_total":  int64(8),
 
@@ -245,12 +245,12 @@ func TestFuncStateCheckpoint(t *testing.T) {
 				},
 				m: map[string]interface{}{
 					"op_preprocessor_text_0_exceptions_total":   int64(0),
-					"op_preprocessor_text_0_process_latency_ms": int64(0),
+					"op_preprocessor_text_0_process_latency_us": int64(0),
 					"op_preprocessor_text_0_records_in_total":   int64(6),
 					"op_preprocessor_text_0_records_out_total":  int64(6),
 
 					"op_project_0_exceptions_total":   int64(0),
-					"op_project_0_process_latency_ms": int64(0),
+					"op_project_0_process_latency_us": int64(0),
 					"op_project_0_records_in_total":   int64(6),
 					"op_project_0_records_out_total":  int64(6),
 
@@ -267,12 +267,12 @@ func TestFuncStateCheckpoint(t *testing.T) {
 			cc:        1,
 			pauseMetric: map[string]interface{}{
 				"op_preprocessor_text_0_exceptions_total":   int64(0),
-				"op_preprocessor_text_0_process_latency_ms": int64(0),
+				"op_preprocessor_text_0_process_latency_us": int64(0),
 				"op_preprocessor_text_0_records_in_total":   int64(3),
 				"op_preprocessor_text_0_records_out_total":  int64(3),
 
 				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_ms": int64(0),
+				"op_project_0_process_latency_us": int64(0),
 				"op_project_0_records_in_total":   int64(3),
 				"op_project_0_records_out_total":  int64(3),
 

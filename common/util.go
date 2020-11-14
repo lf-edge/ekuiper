@@ -15,19 +15,22 @@ import (
 	"path"
 	"path/filepath"
 	//"runtime"
+	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
+	"log/syslog"
 	"sort"
 	"strings"
 	"sync"
 )
 
 const (
-	logFileName   = "stream.log"
-	etc_dir       = "/etc/"
-	data_dir      = "/data/"
-	log_dir       = "/log/"
-	StreamConf    = "kuiper.yaml"
-	KuiperBaseKey = "KuiperBaseKey"
-	MetaKey       = "__meta"
+	logFileName     = "stream.log"
+	etc_dir         = "/etc/"
+	data_dir        = "/data/"
+	log_dir         = "/log/"
+	StreamConf      = "kuiper.yaml"
+	KuiperBaseKey   = "KuiperBaseKey"
+	KuiperSyslogKey = "KuiperSyslogKey"
+	MetaKey         = "__meta"
 )
 
 var (
@@ -79,21 +82,19 @@ type KuiperConf struct {
 }
 
 func init() {
+	Log = logrus.New()
+	if "true" == os.Getenv(KuiperSyslogKey) {
+		if hook, err := logrus_syslog.NewSyslogHook("", "", syslog.LOG_INFO, ""); err != nil {
+			Log.Error("Unable to connect to local syslog daemon")
+		} else {
+			Log.AddHook(hook)
+		}
+	}
+
 	filenameHook := filename.NewHook()
 	filenameHook.Field = "file"
-	Log = logrus.New()
 	Log.AddHook(filenameHook)
-	/*
-		Log.SetReportCaller(true)
-			Log.SetFormatter(&logrus.TextFormatter{
-				CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-					filename := path.Base(f.File)
-					return "", fmt.Sprintf("%s:%d", filename, f.Line)
-				},
-				DisableColors: true,
-				FullTimestamp: true,
-			})
-	*/
+
 	Log.SetFormatter(&logrus.TextFormatter{
 		TimestampFormat: "2006-01-02 15:04:05",
 		DisableColors:   true,

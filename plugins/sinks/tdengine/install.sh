@@ -8,6 +8,9 @@ then
 fi
 
 url="https://www.taosdata.com/download/download-all.php?pkgType=tdengine_linux&pkgName=TDengine-client-$1-Linux-x64.tar.gz"
+if [ "$(uname -m)" = "aarch64" ]; then \
+	url="https://www.taosdata.com/download/download-all.php?pkgType=tdengine_linux&pkgName=TDengine-client-$1-Linux-aarch64.tar.gz"
+fi
 zip="TDengine-client.tar.gz"
 wget -T 280 -O "$zip" "$url"
 
@@ -18,7 +21,8 @@ then
 fi
 
 dir="TDengine-client"
-tar -zxvf "$zip"
+mkdir "$dir"
+tar -xzvf "$zip" -C ./"$dir" --strip-components 1
 rm "$zip"
 
 if ! [ -e $dir ]
