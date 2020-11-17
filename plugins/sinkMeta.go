@@ -273,7 +273,7 @@ func (this *uiSinks) modifyCustom(uiFields []*field, ruleFields map[string]inter
 		if nil == ruleVal {
 			continue
 		}
-		if reflect.Map == reflect.TypeOf(ruleVal).Kind() {
+		if reflect.Map == reflect.TypeOf(ruleVal).Kind() && "object" != ui.Type {
 			var auxRuleFields map[string]interface{}
 			if err := common.MapToStruct(ruleVal, &auxRuleFields); nil != err {
 				return fmt.Errorf(`%s%v %s`, getMsg(this.language, sink, "type_conversion_fail"), err, ui.Name)
