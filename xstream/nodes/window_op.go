@@ -212,6 +212,11 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 					ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
 				}
 			}
+		} else { // If not restore from checkpoint, set the initial triggerTime
+			switch o.window.Type {
+			case xsql.TUMBLING_WINDOW, xsql.HOPPING_WINDOW:
+				o.triggerTime = common.GetNowInMilli()
+			}
 		}
 	}
 
@@ -235,7 +240,17 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				o.statManager.IncTotalExceptions()
 			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
-				inputs = append(inputs, d)
+				if o.window.Type == xsql.HOPPING_WINDOW && o.window.Interval > o.window.Length {
+					diff := int64(o.window.Interval) + o.triggerTime - d.Timestamp
+					//buffer for 1 second
+					if diff > int64(o.window.Length+1000) {
+						log.Debugf("tuple %s emitted at %d skipped", d, d.Timestamp)
+					} else {
+						inputs = append(inputs, d)
+					}
+				} else {
+					inputs = append(inputs, d)
+				}
 				switch o.window.Type {
 				case xsql.NOT_WINDOW:
 					inputs, _ = o.scan(inputs, d.Timestamp, ctx)
@@ -282,6 +297,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				o.statManager.IncTotalExceptions()
 			}
 		case now := <-c:
+			log.Debugf("triggered by ticker at %d", common.TimeToUnixMilli(now))
 			if len(inputs) > 0 {
 				o.statManager.ProcessTimeStart()
 				n := common.TimeToUnixMilli(now)
