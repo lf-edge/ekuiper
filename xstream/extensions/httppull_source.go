@@ -113,7 +113,7 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 		}
 	}
 
-	common.Log.Infof("Initialized with configurations %#v.", hps)
+	common.Log.Debugf("Initialized with configurations %#v.", hps)
 	return nil
 }
 
@@ -158,7 +158,7 @@ func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 				if hps.incremental {
 					nmd5 := getMD5Hash(c)
 					if omd5 == nmd5 {
-						logger.Infof("Content has not changed since last fetch, so skip processing.")
+						logger.Debugf("Content has not changed since last fetch, so skip processing.")
 						continue
 					} else {
 						omd5 = nmd5
