@@ -8,18 +8,20 @@ import (
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/go-yaml/yaml"
 	"github.com/keepeye/logrus-filename"
+	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
+	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	//"runtime"
-	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
 	"log/syslog"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -66,6 +68,8 @@ type KuiperConf struct {
 		Debug          bool     `yaml:"debug"`
 		ConsoleLog     bool     `yaml:"consoleLog"`
 		FileLog        bool     `yaml:"fileLog"`
+		RotateTime     int      `yaml:"rotateTime"`
+		MaxAge         int      `yaml:"maxAge"`
 		Port           int      `yaml:"port"`
 		RestPort       int      `yaml:"restPort"`
 		RestTls        *tlsConf `yaml:"restTls"`
@@ -100,6 +104,7 @@ func init() {
 		DisableColors:   true,
 		FullTimestamp:   true,
 	})
+
 	Log.Debugf("init with args %s", os.Args)
 	for _, arg := range os.Args {
 		if strings.HasPrefix(arg, "-test.") {
@@ -153,7 +158,17 @@ func InitConf() {
 			}
 		} else {
 			if Config.Basic.FileLog {
-				Log.SetOutput(logFile)
+				writer, err := rotatelogs.New(
+					file+".%Y-%m-%d_%H:%M:%S",
+					rotatelogs.WithLinkName(file),
+					rotatelogs.WithRotationTime(time.Hour*time.Duration(Config.Basic.RotateTime)),
+					rotatelogs.WithMaxAge(time.Hour*time.Duration(Config.Basic.MaxAge)),
+				)
+				if err != nil {
+					logrus.Errorf("config local file system for logger error: %v", err)
+				} else {
+					Log.SetOutput(writer)
+				}
 			}
 		}
 	} else {
