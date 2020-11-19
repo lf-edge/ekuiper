@@ -129,6 +129,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 					case <-ctx.Done():
 						logger.Infof("source %s done", m.name)
 						m.close(ctx, logger)
+						buffer.Close()
 						return
 					case err := <-sourceErrCh:
 						m.drainError(errCh, err, ctx, logger)

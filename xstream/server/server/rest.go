@@ -263,7 +263,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		jsonResponse(rule, w, logger)
 	case http.MethodDelete:
-		stopRule(name)
+		deleteRule(name)
 		content, err := ruleProcessor.ExecDrop(name)
 		if err != nil {
 			handleError(w, err, "delete rule error", logger)

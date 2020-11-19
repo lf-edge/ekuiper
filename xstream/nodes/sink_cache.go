@@ -108,6 +108,7 @@ func (c *Cache) timebasedRun(ctx api.StreamContext, saveInterval int) {
 	logger := ctx.GetLogger()
 	c.initStore(ctx)
 	ticker := common.GetTicker(saveInterval)
+	defer ticker.Stop()
 	var tcount = 0
 	for {
 		select {
@@ -200,6 +201,7 @@ func (c *Cache) saveCache(logger api.Logger, p *LinkedQueue) error {
 	if err != nil {
 		logger.Errorf("save cache error while opening cache store: %s", err)
 		logger.Infof("clean the cache and reopen")
+		c.store.Close()
 		c.store.Clean()
 		err = c.store.Open()
 		if err != nil {
