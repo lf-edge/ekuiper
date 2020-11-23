@@ -70,7 +70,9 @@ type KuiperConf struct {
 		FileLog        bool     `yaml:"fileLog"`
 		RotateTime     int      `yaml:"rotateTime"`
 		MaxAge         int      `yaml:"maxAge"`
+		Ip             string   `yaml:"ip"`
 		Port           int      `yaml:"port"`
+		RestIp         string   `yaml:"restIp"`
 		RestPort       int      `yaml:"restPort"`
 		RestTls        *tlsConf `yaml:"restTls"`
 		Prometheus     bool     `yaml:"prometheus"`
@@ -138,6 +140,13 @@ func InitConf() {
 		Log.Fatal(err)
 	} else {
 		Config = &kc
+	}
+	if 0 == len(Config.Basic.Ip) {
+		Config.Basic.Ip = "0.0.0.0"
+	}
+	if 0 == len(Config.Basic.RestIp) {
+		Config.Basic.RestIp = "0.0.0.0"
+
 	}
 
 	if Config.Basic.Debug {
