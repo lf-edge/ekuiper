@@ -60,6 +60,20 @@
 			"zh_CN": "失败重试间隔毫秒"
 		}
 	}, {
+		"name": "retryCount",
+		"default": 3,
+		"optional":true,
+		"type": "int",
+		"control": "text",
+		"hint": {
+			"en_US": "Specify how many will the sink retry to send data out if the previous send failed. If the specified value <= 0, then it will not retry.",
+			"zh_CN": "设置信息发送失败后重试次数，如果该值的设置 <= 0，那么不会尝试重新发送。"
+		},
+		"label": {
+			"en_US": "Retry count",
+			"zh_CN": "失败重试次数"
+		}
+	}, {
 		"name": "cacheLength",
 		"default": 1024,
 		"optional":true,
