@@ -11,6 +11,10 @@ basic:
   consoleLog: false
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
+  # How many hours to split the file
+  rotateTime: 24
+  # Maximum file storage hours
+  maxAge: 72
 ```
 ## system log
 When the user sets the value of the environment variable named KuiperSyslogKey to true, the log will be printed to the syslog.
