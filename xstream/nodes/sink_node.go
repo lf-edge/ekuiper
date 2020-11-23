@@ -98,6 +98,14 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				retryInterval = t
 			}
 		}
+		retryCount := 3
+		if c, ok := m.options["retryCount"]; ok {
+			if t, err := common.ToInt(c); err != nil || t < 0 {
+				logger.Warnf("invalid type for retryCount property, should be positive integer but found %t", c)
+			} else {
+				retryCount = t
+			}
+		}
 		cacheLength := 1024
 		if c, ok := m.options["cacheLength"]; ok {
 			if t, err := common.ToInt(c); err != nil || t < 0 {
@@ -203,9 +211,9 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 						}
 						stats.SetBufferLength(int64(cache.Length()))
 						if runAsync {
-							go doCollect(sink, data, stats, retryInterval, omitIfEmpty, sendSingle, tp, cache.Complete, ctx)
+							go doCollect(sink, data, stats, retryInterval, retryCount, omitIfEmpty, sendSingle, tp, cache.Complete, ctx)
 						} else {
-							doCollect(sink, data, stats, retryInterval, omitIfEmpty, sendSingle, tp, cache.Complete, ctx)
+							doCollect(sink, data, stats, retryInterval, retryCount, omitIfEmpty, sendSingle, tp, cache.Complete, ctx)
 						}
 					case <-ctx.Done():
 						logger.Infof("sink node %s instance %d done", m.name, instance)
@@ -235,7 +243,7 @@ func extractInput(v []byte) ([]map[string]interface{}, error) {
 	return j, nil
 }
 
-func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval int, omitIfEmpty bool, sendSingle bool, tp *template.Template, signalCh chan<- int, ctx api.StreamContext) {
+func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval, retryCount int, omitIfEmpty bool, sendSingle bool, tp *template.Template, signalCh chan<- int, ctx api.StreamContext) {
 	stats.IncTotalRecordsIn()
 	stats.ProcessTimeStart()
 	defer stats.ProcessTimeEnd()
@@ -312,7 +320,8 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 				if err := sink.Collect(ctx, outdata); err != nil {
 					stats.IncTotalExceptions()
 					logger.Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), outdata, err)
-					if retryInterval > 0 {
+					if retryInterval > 0 && retryCount > 0 {
+						retryCount--
 						time.Sleep(time.Duration(retryInterval) * time.Millisecond)
 						logger.Debugf("try again")
 					} else {
