@@ -14,11 +14,11 @@ basic:
 ```
 ## system log
 When the user sets the value of the environment variable named KuiperSyslogKey to true, the log will be printed to the syslog.
-## Cli Port
+## Cli Addr
 ```yaml
 basic:
-  # CLI port
-  port: 20498
+  # CLI addr
+  addr: "0.0.0.0:20498"
 ```
 The port that the CLI server listens on
 
@@ -26,8 +26,8 @@ The port that the CLI server listens on
 
 ```yaml
 basic:
-  # REST service port
-  restPort: 9081
+  # REST service addr
+  restAddr: "0.0.0.0:9081"
   restTls:
     certfile: /var/https-server.crt
     keyfile: /var/https-server.key

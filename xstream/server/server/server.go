@@ -93,7 +93,7 @@ func StartUp(Version, LoadFileType string) {
 	}
 
 	//Start rest service
-	srvRest := createRestServer(common.Config.Basic.RestPort)
+	srvRest := createRestServer(common.Config.Basic.RestAddr)
 	go func() {
 		var err error
 		if common.Config.Basic.RestTls == nil {
@@ -107,14 +107,14 @@ func StartUp(Version, LoadFileType string) {
 	}()
 
 	// Start rpc service
-	portRpc := common.Config.Basic.Port
+	addrRpc := common.Config.Basic.Addr
 	rpcSrv := rpc.NewServer()
 	err = rpcSrv.Register(server)
 	if err != nil {
 		logger.Fatal("Format of service Server isn'restHttpType correct. ", err)
 	}
 	srvRpc := &http.Server{
-		Addr:         fmt.Sprintf("0.0.0.0:%d", portRpc),
+		Addr:         addrRpc,
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
@@ -131,7 +131,7 @@ func StartUp(Version, LoadFileType string) {
 	if common.Config.Basic.RestTls != nil {
 		restHttpType = "https"
 	}
-	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://0.0.0.0:%d. \n", Version, common.Config.Basic.Port, restHttpType, common.Config.Basic.RestPort)
+	msg := fmt.Sprintf("Serving kuiper (version - %s) on addr %s, and restful api on %s://%s. \n", Version, common.Config.Basic.Addr, restHttpType, common.Config.Basic.RestAddr)
 	logger.Info(msg)
 	fmt.Printf(msg)
 

@@ -14,11 +14,11 @@ basic:
 ```
 ## 系统日志
 用户将名为 KuiperSyslogKey 的环境变量的值设置为 true 时，日志将打印到系统日志中。
-## Cli 端口
+## Cli 地址
 ```yaml
 basic:
-  # CLI port
-  port: 20498
+  # CLI addr
+  port: "0.0.0.0:20498"
 ```
 CLI 服务器监听端口
 
@@ -26,8 +26,8 @@ CLI 服务器监听端口
 
 ```yaml
 basic:
-  # REST service port
-  restPort: 9081
+  # REST service addr
+  restPort: "0.0.0.0:9081"
   restTls:
     certfile: /var/https-server.crt
     keyfile: /var/https-server.key

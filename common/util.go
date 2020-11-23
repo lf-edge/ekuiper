@@ -66,8 +66,8 @@ type KuiperConf struct {
 		Debug          bool     `yaml:"debug"`
 		ConsoleLog     bool     `yaml:"consoleLog"`
 		FileLog        bool     `yaml:"fileLog"`
-		Port           int      `yaml:"port"`
-		RestPort       int      `yaml:"restPort"`
+		Addr           string   `yaml:"addr"`
+		RestAddr       string   `yaml:"restAddr"`
 		RestTls        *tlsConf `yaml:"restTls"`
 		Prometheus     bool     `yaml:"prometheus"`
 		PrometheusPort int      `yaml:"prometheusPort"`

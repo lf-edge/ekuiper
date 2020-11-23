@@ -5,10 +5,10 @@ basic:
   consoleLog: false
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
-  # CLI port
-  port: 20498
-  # REST service port
-  restPort: 9081
+  # CLI addr
+  addr: "0.0.0.0:20498"
+  # REST service addr
+  restAddr: "0.0.0.0:9081"
   #  restTls:
   #    certfile: /var/https-server.crt
   #    keyfile: /var/https-server.key
