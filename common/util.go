@@ -134,6 +134,7 @@ func InitConf() {
 			CheckpointInterval: 300000, //5 minutes
 		},
 	}
+
 	if err := yaml.Unmarshal(b, &kc); err != nil {
 		Log.Fatal(err)
 	} else {
@@ -144,20 +145,23 @@ func InitConf() {
 		Log.SetLevel(logrus.DebugLevel)
 	}
 
-	logDir, err := GetLoc(log_dir)
-	if err != nil {
-		Log.Fatal(err)
-	}
-	file := logDir + logFileName
-	logFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err == nil {
-		if Config.Basic.ConsoleLog {
-			if Config.Basic.FileLog {
+	if Config.Basic.FileLog {
+		logDir, err := GetLoc(log_dir)
+		if err != nil {
+			Log.Fatal(err)
+		}
+
+		file := logDir + logFileName
+		logFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if nil != err {
+			fmt.Println("Failed to init log file settings...", err)
+			Log.Infof("Failed to log to file, using default stderr.")
+			Log.SetOutput(os.Stdout)
+		} else {
+			if Config.Basic.ConsoleLog {
 				mw := io.MultiWriter(os.Stdout, logFile)
 				Log.SetOutput(mw)
-			}
-		} else {
-			if Config.Basic.FileLog {
+			} else {
 				writer, err := rotatelogs.New(
 					file+".%Y-%m-%d_%H:%M:%S",
 					rotatelogs.WithLinkName(file),
@@ -165,15 +169,16 @@ func InitConf() {
 					rotatelogs.WithMaxAge(time.Hour*time.Duration(Config.Basic.MaxAge)),
 				)
 				if err != nil {
-					logrus.Errorf("config local file system for logger error: %v", err)
+					fmt.Println("Failed to init log file settings...", err)
+					Log.Infof("Failed to log to file, using default stderr.")
+					Log.SetOutput(os.Stdout)
 				} else {
 					Log.SetOutput(writer)
 				}
 			}
 		}
-	} else {
-		fmt.Println("Failed to init log file settings...")
-		Log.Infof("Failed to log to file, using default stderr.")
+	} else if Config.Basic.ConsoleLog {
+		Log.SetOutput(os.Stdout)
 	}
 }
 
