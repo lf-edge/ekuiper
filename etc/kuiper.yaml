@@ -41,4 +41,4 @@ sink:
   cacheTriggerCount: 15
 
   # Control to disable cache or not. If it's set to true, then the cache will be disabled, otherwise, it will be enabled.
-  disableCache: false
+  disableCache: true

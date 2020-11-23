@@ -11,6 +11,7 @@ type DynamicChannelBuffer struct {
 	In     chan api.SourceTuple
 	Out    chan api.SourceTuple
 	buffer []api.SourceTuple
+	done   chan bool
 }
 
 func NewDynamicChannelBuffer() *DynamicChannelBuffer {
@@ -19,6 +20,7 @@ func NewDynamicChannelBuffer() *DynamicChannelBuffer {
 		Out:    make(chan api.SourceTuple),
 		buffer: make([]api.SourceTuple, 0),
 		limit:  102400,
+		done:   make(chan bool, 1),
 	}
 	go buffer.run()
 	return buffer
@@ -34,22 +36,36 @@ func (b *DynamicChannelBuffer) run() {
 	for {
 		l := len(b.buffer)
 		if int64(l) >= atomic.LoadInt64(&b.limit) {
-			b.Out <- b.buffer[0]
-			b.buffer = b.buffer[1:]
+			select {
+			case b.Out <- b.buffer[0]:
+				b.buffer = b.buffer[1:]
+			case <-b.done:
+				return
+			}
 		} else if l > 0 {
 			select {
 			case b.Out <- b.buffer[0]:
 				b.buffer = b.buffer[1:]
 			case value := <-b.In:
 				b.buffer = append(b.buffer, value)
+			case <-b.done:
+				return
 			}
 		} else {
-			value := <-b.In
-			b.buffer = append(b.buffer, value)
+			select {
+			case value := <-b.In:
+				b.buffer = append(b.buffer, value)
+			case <-b.done:
+				return
+			}
 		}
 	}
 }
 
 func (b *DynamicChannelBuffer) GetLength() int {
 	return len(b.buffer)
+}
+
+func (b *DynamicChannelBuffer) Close() {
+	b.done <- true
 }
