@@ -136,43 +136,37 @@ func InitConf() {
 	}
 	if 0 == len(Config.Basic.RestIp) {
 		Config.Basic.RestIp = "0.0.0.0"
-
 	}
 
 	if Config.Basic.Debug {
 		Log.SetLevel(logrus.DebugLevel)
 	}
 
-	logDir, err := GetLoc(log_dir)
-	if err != nil {
-		Log.Fatal(err)
-	}
-	file := path.Join(logDir, logFileName)
-	logFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err == nil {
-		if Config.Basic.ConsoleLog {
-			if Config.Basic.FileLog {
-				mw := io.MultiWriter(os.Stdout, logFile)
-				Log.SetOutput(mw)
-			}
-		} else {
-			if Config.Basic.FileLog {
-				writer, err := rotatelogs.New(
-					file+".%Y-%m-%d_%H:%M:%S",
-					rotatelogs.WithLinkName(file),
-					rotatelogs.WithRotationTime(time.Hour*time.Duration(Config.Basic.RotateTime)),
-					rotatelogs.WithMaxAge(time.Hour*time.Duration(Config.Basic.MaxAge)),
-				)
-				if err != nil {
-					logrus.Errorf("config local file system for logger error: %v", err)
-				} else {
-					Log.SetOutput(writer)
-				}
-			}
+	if Config.Basic.FileLog {
+		logDir, err := GetLoc(log_dir)
+		if err != nil {
+			Log.Fatal(err)
 		}
-	} else {
-		fmt.Println("Failed to init log file settings..." + err.Error())
-		Log.Infof("Failed to log to file, using default stderr.")
+
+		file := path.Join(logDir, logFileName)
+		logWriter, err := rotatelogs.New(
+			file+".%Y-%m-%d_%H-%M-%S",
+			rotatelogs.WithLinkName(file),
+			rotatelogs.WithRotationTime(time.Hour*time.Duration(Config.Basic.RotateTime)),
+			rotatelogs.WithMaxAge(time.Hour*time.Duration(Config.Basic.MaxAge)),
+		)
+
+		if err != nil {
+			fmt.Println("Failed to init log file settings..." + err.Error())
+			Log.Infof("Failed to log to file, using default stderr.")
+		} else if Config.Basic.ConsoleLog {
+			mw := io.MultiWriter(os.Stdout, logWriter)
+			Log.SetOutput(mw)
+		} else if !Config.Basic.ConsoleLog {
+			Log.SetOutput(logWriter)
+		}
+	} else if Config.Basic.ConsoleLog {
+		Log.SetOutput(os.Stdout)
 	}
 }
 
