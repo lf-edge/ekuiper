@@ -1320,6 +1320,28 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 				},
 			},
 		},
+		{
+			s: `SELECT f1 FROM tbl GROUP BY TUMBLINGWINDOW(ss, 10, 5)`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "f1"},
+						Name:  "f1",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+				Dimensions: Dimensions{
+					Dimension{
+						Expr: &Window{
+							WindowType: TUMBLING_WINDOW,
+							Length:     &IntegerLiteral{Val: 10000},
+							Interval:   &IntegerLiteral{Val: 0},
+							Limit:      &IntegerLiteral{Val: 5},
+						},
+					},
+				},
+			},
+		},
 
 		{
 			s: `SELECT f1 FROM tbl GROUP BY HOPPINGWINDOW(mi, 5, 1)`,
@@ -1344,6 +1366,29 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 		},
 
 		{
+			s: `SELECT f1 FROM tbl GROUP BY HOPPINGWINDOW(mi, 5, 1, 2)`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "f1"},
+						Name:  "f1",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+				Dimensions: Dimensions{
+					Dimension{
+						Expr: &Window{
+							WindowType: HOPPING_WINDOW,
+							Length:     &IntegerLiteral{Val: 3e5},
+							Interval:   &IntegerLiteral{Val: 6e4},
+							Limit:      &IntegerLiteral{Val: 2},
+						},
+					},
+				},
+			},
+		},
+
+		{
 			s: `SELECT f1 FROM tbl GROUP BY SESSIONWINDOW(hh, 5, 1)`,
 			stmt: &SelectStatement{
 				Fields: []Field{
@@ -1359,6 +1404,28 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 							WindowType: SESSION_WINDOW,
 							Length:     &IntegerLiteral{Val: 1.8e7},
 							Interval:   &IntegerLiteral{Val: 3.6e6},
+						},
+					},
+				},
+			},
+		},
+		{
+			s: `SELECT f1 FROM tbl GROUP BY SESSIONWINDOW(hh, 5, 1, 100)`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "f1"},
+						Name:  "f1",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+				Dimensions: Dimensions{
+					Dimension{
+						Expr: &Window{
+							WindowType: SESSION_WINDOW,
+							Length:     &IntegerLiteral{Val: 1.8e7},
+							Interval:   &IntegerLiteral{Val: 3.6e6},
+							Limit:      &IntegerLiteral{Val: 100},
 						},
 					},
 				},
@@ -1388,9 +1455,38 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 		},
 
 		{
-			s:    `SELECT f1 FROM tbl GROUP BY SLIDINGWINDOW(mi, 5, 1)`,
+			s: `SELECT f1 FROM tbl GROUP BY SLIDINGWINDOW(ms, 5, 5)`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr:  &FieldRef{Name: "f1"},
+						Name:  "f1",
+						AName: ""},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+				Dimensions: Dimensions{
+					Dimension{
+						Expr: &Window{
+							WindowType: SLIDING_WINDOW,
+							Length:     &IntegerLiteral{Val: 5},
+							Interval:   &IntegerLiteral{Val: 0},
+							Limit:      &IntegerLiteral{Val: 5},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			s:    `SELECT f1 FROM tbl GROUP BY SLIDINGWINDOW(mi, 5, 1, 4)`,
 			stmt: nil,
-			err:  "The arguments for slidingwindow should be 2.\n",
+			err:  "The arguments for slidingwindow should be 2 or 3.\n",
+		},
+
+		{
+			s:    `SELECT f1 FROM tbl GROUP BY SLIDINGWINDOW(mi, 5, 0)`,
+			stmt: nil,
+			err:  "The 2 argument for slidingwindow must be a positive integer. \n",
 		},
 
 		{

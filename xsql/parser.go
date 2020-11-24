@@ -672,22 +672,22 @@ func validateWindows(name string, args []Expr) (WindowType, error) {
 	fname := strings.ToLower(name)
 	switch fname {
 	case "tumblingwindow":
-		if err := validateWindow(fname, 2, args); err != nil {
+		if err := validateTimeWindow(fname, 2, args); err != nil {
 			return TUMBLING_WINDOW, err
 		}
 		return TUMBLING_WINDOW, nil
 	case "hoppingwindow":
-		if err := validateWindow(fname, 3, args); err != nil {
+		if err := validateTimeWindow(fname, 3, args); err != nil {
 			return HOPPING_WINDOW, err
 		}
 		return HOPPING_WINDOW, nil
 	case "sessionwindow":
-		if err := validateWindow(fname, 3, args); err != nil {
+		if err := validateTimeWindow(fname, 3, args); err != nil {
 			return SESSION_WINDOW, err
 		}
 		return SESSION_WINDOW, nil
 	case "slidingwindow":
-		if err := validateWindow(fname, 2, args); err != nil {
+		if err := validateTimeWindow(fname, 2, args); err != nil {
 			return SLIDING_WINDOW, err
 		}
 		return SLIDING_WINDOW, nil
@@ -717,17 +717,19 @@ func validateWindows(name string, args []Expr) (WindowType, error) {
 	return NOT_WINDOW, nil
 }
 
-func validateWindow(funcName string, expectLen int, args []Expr) error {
-	if len(args) != expectLen {
-		return fmt.Errorf("The arguments for %s should be %d.\n", funcName, expectLen)
+func validateTimeWindow(funcName string, minLen int, args []Expr) error {
+	if len(args) != minLen && len(args) != minLen+1 {
+		return fmt.Errorf("The arguments for %s should be %d or %d.\n", funcName, minLen, minLen+1)
 	}
 	if _, ok := args[0].(*TimeLiteral); !ok {
 		return fmt.Errorf("The 1st argument for %s is expecting timer literal expression. One value of [dd|hh|mi|ss|ms].\n", funcName)
 	}
 
 	for i := 1; i < len(args); i++ {
-		if _, ok := args[i].(*IntegerLiteral); !ok {
+		if ai, ok := args[i].(*IntegerLiteral); !ok {
 			return fmt.Errorf("The %d argument for %s is expecting interger literal expression. \n", i, funcName)
+		} else if ai.Val <= 0 {
+			return fmt.Errorf("The %d argument for %s must be a positive integer. \n", i, funcName)
 		}
 	}
 	return nil
@@ -760,10 +762,17 @@ func (p *Parser) ConvertToWindows(wtype WindowType, args []Expr) (*Window, error
 		return nil, fmt.Errorf("Invalid timeliteral %s", v)
 	}
 	win.Length = &IntegerLiteral{Val: args[1].(*IntegerLiteral).Val * unit}
-	if len(args) > 2 {
-		win.Interval = &IntegerLiteral{Val: args[2].(*IntegerLiteral).Val * unit}
-	} else {
+	switch wtype {
+	case TUMBLING_WINDOW, SLIDING_WINDOW:
 		win.Interval = &IntegerLiteral{Val: 0}
+		if len(args) == 3 {
+			win.Limit = &IntegerLiteral{Val: args[2].(*IntegerLiteral).Val}
+		}
+	case SESSION_WINDOW, HOPPING_WINDOW:
+		win.Interval = &IntegerLiteral{Val: args[2].(*IntegerLiteral).Val * unit}
+		if len(args) == 4 {
+			win.Limit = &IntegerLiteral{Val: args[3].(*IntegerLiteral).Val}
+		}
 	}
 	return win, nil
 }

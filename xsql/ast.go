@@ -244,6 +244,7 @@ type Window struct {
 	WindowType WindowType
 	Length     *IntegerLiteral
 	Interval   *IntegerLiteral
+	Limit      *IntegerLiteral
 	Filter     Expr
 }
 
