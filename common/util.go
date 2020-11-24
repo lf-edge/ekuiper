@@ -163,7 +163,7 @@ func InitConf() {
 				Log.SetOutput(mw)
 			} else {
 				writer, err := rotatelogs.New(
-					file+".%Y-%m-%d_%H:%M:%S",
+					file+".%Y-%m-%d_%H-%M-%S",
 					rotatelogs.WithLinkName(file),
 					rotatelogs.WithRotationTime(time.Hour*time.Duration(Config.Basic.RotateTime)),
 					rotatelogs.WithMaxAge(time.Hour*time.Duration(Config.Basic.MaxAge)),
