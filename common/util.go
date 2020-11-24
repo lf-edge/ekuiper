@@ -10,14 +10,11 @@ import (
 	"github.com/keepeye/logrus-filename"
 	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
-	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
-	//"runtime"
-	"log/syslog"
 	"sort"
 	"strings"
 	"sync"
@@ -87,14 +84,7 @@ type KuiperConf struct {
 
 func init() {
 	Log = logrus.New()
-	if "true" == os.Getenv(KuiperSyslogKey) {
-		if hook, err := logrus_syslog.NewSyslogHook("", "", syslog.LOG_INFO, ""); err != nil {
-			Log.Error("Unable to connect to local syslog daemon")
-		} else {
-			Log.AddHook(hook)
-		}
-	}
-
+	initSyslog()
 	filenameHook := filename.NewHook()
 	filenameHook.Field = "file"
 	Log.AddHook(filenameHook)
@@ -148,7 +138,7 @@ func InitConf() {
 	if err != nil {
 		Log.Fatal(err)
 	}
-	file := logDir + logFileName
+	file := path.Join(logDir, logFileName)
 	logFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
 		if Config.Basic.ConsoleLog {
@@ -172,7 +162,7 @@ func InitConf() {
 			}
 		}
 	} else {
-		fmt.Println("Failed to init log file settings...")
+		fmt.Println("Failed to init log file settings..." + err.Error())
 		Log.Infof("Failed to log to file, using default stderr.")
 	}
 }
