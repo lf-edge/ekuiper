@@ -140,6 +140,23 @@ CREATE STREAM demo (
 
 在事件时间模式下，水印算法用于计算窗口。
 
+## 时间窗口数目限制
+
+时间窗口由时间触发，每个窗口内的消息数量可能差别很大。在某些场景下，用户可能只需要窗口内的部分数据进行计算。可选参数 `limit` 就是用于这种场景中。四种时间窗口都可使用此参数，限制窗口内的消息数目。因为无需存储整个时间段内的消息，相比于在select语句中选择子项，采用此参数可显著降低较长时间窗口的内存占用。
+
+```
+TUMBLINGWINDOW(timeunit, length, limit)
+HOPPINGWINDOW(timeunit, length, interval, limit)
+SLIDINGWINDOW(timeunit, length, limit)
+SESSIONWINDOW(timeunit, length, timeout, limit)
+```
+
+在以下的例子中，每隔一小时触发一个窗口，并返回最后 10 条 deviceId 为 1 的消息。
+
+```
+SELECT * from demo GROUP BY TUMBLINGWINDOW(ss, 3600, 10) FILTER( WHERE deviceId = 1)
+``` 
+
 ## 窗口中的运行时错误
 
 如果窗口从上游接收到错误（例如，数据类型不符合流定义），则错误事件将立即转发到目标（sink）。 当前窗口计算将忽略错误事件。

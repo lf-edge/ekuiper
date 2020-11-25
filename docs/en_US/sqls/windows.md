@@ -142,5 +142,22 @@ CREATE STREAM demo (
 
 In event time mode, the watermark algorithm is used to calculate a window.
 
+## Time based window count limit
+
+Time based windows are triggered by time, the tuple count of each windows may be very different. In some scenario, the user may only need a certain amount of tuples in the window. An optional property `limit` is introduced for all four time based window to limit the amount of tuples in each window. It can reduce the memory usage for the rule to not store all the tuples in the time window. 
+
+```
+TUMBLINGWINDOW(timeunit, length, limit)
+HOPPINGWINDOW(timeunit, length, interval, limit)
+SLIDINGWINDOW(timeunit, length, limit)
+SESSIONWINDOW(timeunit, length, timeout, limit)
+```
+
+For example, trigger a window in each hour and only return the last 10 tuples whose deviceId is 1, the sql is as below:
+
+```
+SELECT * from demo GROUP BY TUMBLINGWINDOW(ss, 3600, 10) FILTER( WHERE deviceId = 1)
+``` 
+
 ## Runtime error in window
 If the window receive an error (for example, the data type does not comply to the stream definition) from upstream, the error event will be forwarded immediately to the sink. The current window calculation will ignore the error event.
