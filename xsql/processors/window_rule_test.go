@@ -632,6 +632,224 @@ func TestWindow(t *testing.T) {
 				"op_window_0_records_in_total":   int64(5),
 				"op_window_0_records_out_total":  int64(5),
 			},
+		}, {
+			name: `TestWindowRule11`,
+			sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1, 2)`,
+			r: [][]map[string]interface{}{
+				{{
+					"color": "red",
+					"size":  float64(3),
+					"ts":    float64(1541152486013),
+				}, {
+					"color": "blue",
+					"size":  float64(6),
+					"ts":    float64(1541152486822),
+				}},
+				{{
+					"color": "blue",
+					"size":  float64(6),
+					"ts":    float64(1541152486822),
+				}, {
+					"color": "blue",
+					"size":  float64(2),
+					"ts":    float64(1541152487632),
+				}},
+				{{
+					"color": "blue",
+					"size":  float64(2),
+					"ts":    float64(1541152487632),
+				}, {
+					"color": "yellow",
+					"size":  float64(4),
+					"ts":    float64(1541152488442),
+				}},
+				{{
+					"color": "yellow",
+					"size":  float64(4),
+					"ts":    float64(1541152488442),
+				}, {
+					"color": "red",
+					"size":  float64(1),
+					"ts":    float64(1541152489252),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_us": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_us": int64(0),
+				"op_project_0_records_in_total":   int64(4),
+				"op_project_0_records_out_total":  int64(4),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_us": int64(0),
+				"op_window_0_records_in_total":   int64(5),
+				"op_window_0_records_out_total":  int64(4),
+			},
+		}, {
+			name: `TestWindowRule12`,
+			sql:  `SELECT color, ts FROM demo GROUP BY tumblingwindow(ss, 1, 1) FILTER( WHERE size > 2)`,
+			r: [][]map[string]interface{}{
+				{{
+					"color": "blue",
+					"ts":    float64(1541152486822),
+				}},
+				{{
+					"color": "yellow",
+					"ts":    float64(1541152488442),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_us": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_us": int64(0),
+				"op_project_0_records_in_total":   int64(2),
+				"op_project_0_records_out_total":  int64(2),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_us": int64(0),
+				"op_window_0_records_in_total":   int64(3),
+				"op_window_0_records_out_total":  int64(2),
+			},
+		}, {
+			name: `TestWindowRule13`,
+			sql:  `SELECT color, temp, ts FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1, 3)`,
+			r: [][]map[string]interface{}{
+				{{
+					"color": "red",
+					"temp":  25.5,
+					"ts":    float64(1541152486013),
+				}}, {{
+					"color": "red",
+					"temp":  25.5,
+					"ts":    float64(1541152486013),
+				}}, {{
+					"color": "blue",
+					"temp":  28.1,
+					"ts":    float64(1541152487632),
+				}}, {{
+					"color": "blue",
+					"temp":  28.1,
+					"ts":    float64(1541152487632),
+				}}, {{
+					"color": "yellow",
+					"temp":  27.4,
+					"ts":    float64(1541152488442),
+				}}, {{
+					"color": "yellow",
+					"temp":  27.4,
+					"ts":    float64(1541152488442),
+				}}, {{
+					"color": "red",
+					"temp":  25.5,
+					"ts":    float64(1541152489252),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo_0_process_latency_us": int64(0),
+				"op_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_preprocessor_demo_0_records_out_total":  int64(5),
+
+				"op_preprocessor_demo1_0_exceptions_total":   int64(0),
+				"op_preprocessor_demo1_0_process_latency_us": int64(0),
+				"op_preprocessor_demo1_0_records_in_total":   int64(5),
+				"op_preprocessor_demo1_0_records_out_total":  int64(5),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_us": int64(0),
+				"op_project_0_records_in_total":   int64(7),
+				"op_project_0_records_out_total":  int64(7),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(7),
+				"sink_mockSink_0_records_out_total": int64(7),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"source_demo1_0_exceptions_total":  int64(0),
+				"source_demo1_0_records_in_total":  int64(5),
+				"source_demo1_0_records_out_total": int64(5),
+
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_us": int64(0),
+				"op_window_0_records_in_total":   int64(10),
+				"op_window_0_records_out_total":  int64(10),
+
+				"op_join_0_exceptions_total":   int64(0),
+				"op_join_0_process_latency_us": int64(0),
+				"op_join_0_records_in_total":   int64(10),
+				"op_join_0_records_out_total":  int64(7),
+			},
+		}, {
+			name: `TestWindowRule14`,
+			sql:  `SELECT temp FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1, 2) `,
+			r: [][]map[string]interface{}{
+				{{
+					"temp": 25.5,
+				}, {
+					"temp": 27.5,
+				}}, {{
+					"temp": 27.4,
+				}, {
+					"temp": 25.5,
+				}}, {{
+					"temp": 29.1,
+				}, {
+					"temp": 32.2,
+				}}, {{
+					"temp": 30.9,
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_sessionDemo_0_exceptions_total":   int64(0),
+				"op_preprocessor_sessionDemo_0_process_latency_us": int64(0),
+				"op_preprocessor_sessionDemo_0_records_in_total":   int64(11),
+				"op_preprocessor_sessionDemo_0_records_out_total":  int64(11),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_us": int64(0),
+				"op_project_0_records_in_total":   int64(4),
+				"op_project_0_records_out_total":  int64(4),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
+
+				"source_sessionDemo_0_exceptions_total":  int64(0),
+				"source_sessionDemo_0_records_in_total":  int64(11),
+				"source_sessionDemo_0_records_out_total": int64(11),
+
+				"op_window_0_exceptions_total":   int64(0),
+				"op_window_0_process_latency_us": int64(0),
+				"op_window_0_records_in_total":   int64(11),
+				"op_window_0_records_out_total":  int64(4),
+			},
 		},
 	}
 	handleStream(true, streamList, t)
@@ -1055,6 +1273,58 @@ func TestEventWindow(t *testing.T) {
 				"source_demoErr_0_records_out_total": int64(6),
 
 				"op_window_0_exceptions_total":   int64(1),
+				"op_window_0_process_latency_us": int64(0),
+				"op_window_0_records_in_total":   int64(6),
+				"op_window_0_records_out_total":  int64(5),
+			},
+		}, {
+			name: `TestEventWindowRule8`,
+			sql:  `SELECT * FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1, 1)`,
+			r: [][]map[string]interface{}{
+				{{
+					"color": "red",
+					"size":  float64(3),
+					"ts":    float64(1541152486013),
+				}},
+				{{
+					"color": "blue",
+					"size":  float64(2),
+					"ts":    float64(1541152487632),
+				}},
+				{{
+					"color": "yellow",
+					"size":  float64(4),
+					"ts":    float64(1541152488442),
+				}}, {{
+					"color": "red",
+					"size":  float64(1),
+					"ts":    float64(1541152489252),
+				}}, {{
+					"color": "red",
+					"size":  float64(1),
+					"ts":    float64(1541152489252),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_demoE_0_exceptions_total":   int64(0),
+				"op_preprocessor_demoE_0_process_latency_us": int64(0),
+				"op_preprocessor_demoE_0_records_in_total":   int64(6),
+				"op_preprocessor_demoE_0_records_out_total":  int64(6),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_us": int64(0),
+				"op_project_0_records_in_total":   int64(5),
+				"op_project_0_records_out_total":  int64(5),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
+
+				"op_window_0_exceptions_total":   int64(0),
 				"op_window_0_process_latency_us": int64(0),
 				"op_window_0_records_in_total":   int64(6),
 				"op_window_0_records_out_total":  int64(5),

@@ -8,6 +8,7 @@ import (
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"math"
+	"sort"
 	"time"
 )
 
@@ -15,6 +16,7 @@ type WindowConfig struct {
 	Type     xsql.WindowType
 	Length   int
 	Interval int //If interval is not set, it is equals to Length
+	Limit    int //If limit is not positive, there will be no limit
 }
 
 type WindowOperator struct {
@@ -60,6 +62,9 @@ func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance in
 		} else if o.window.Type == xsql.COUNT_WINDOW {
 			//if no interval value is set and it's count window, then set interval to length value.
 			o.window.Interval = o.window.Length
+		}
+		if w.Limit != nil {
+			o.window.Limit = w.Limit.Val
 		}
 	} else {
 		o.window = &WindowConfig{
@@ -236,6 +241,14 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
 				inputs = append(inputs, d)
+				if o.window.Limit > 0 && len(inputs) > o.window.Limit {
+					if o.window.Type == xsql.SESSION_WINDOW {
+						first := inputs[:1]
+						inputs = append(first, inputs[len(inputs)-o.window.Limit:]...)
+					} else {
+						inputs = inputs[len(inputs)-o.window.Limit:]
+					}
+				}
 				switch o.window.Type {
 				case xsql.NOT_WINDOW:
 					inputs, _ = o.scan(inputs, d.Timestamp, ctx)
@@ -379,8 +392,13 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 	if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
 		delta = o.calDelta(triggerTime, delta, log)
 	}
-	var results xsql.WindowTuplesSet = make([]xsql.WindowTuples, 0)
 	i := 0
+	if o.isEventTime {
+		sort.SliceStable(inputs, func(i, j int) bool {
+			return inputs[i].Timestamp < inputs[j].Timestamp
+		})
+	}
+	var resultTuples []*xsql.Tuple
 	//Sync table
 	for _, tuple := range inputs {
 		if o.window.Type == xsql.HOPPING_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
@@ -400,15 +418,20 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 			i++
 		}
 		if tuple.Timestamp <= triggerTime {
-			results = results.AddTuple(tuple)
+			resultTuples = append(resultTuples, tuple)
 		}
 	}
 	triggered := false
-	if len(results) > 0 {
-		log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
-		if o.isEventTime {
-			results.Sort()
+	if len(resultTuples) > 0 {
+		//Event window and session window may exceed the limit
+		if o.window.Limit > 0 && len(resultTuples) > o.window.Limit {
+			resultTuples = resultTuples[len(resultTuples)-o.window.Limit:]
 		}
+		var results xsql.WindowTuplesSet = make([]xsql.WindowTuples, 0)
+		for _, t := range resultTuples {
+			results = results.AddTuple(t)
+		}
+		log.Debugf("window %s triggered for %d tuples", o.name, len(resultTuples))
 		log.Debugf("Sent: %v", results)
 		//blocking if one of the channel is full
 		o.Broadcast(results)
@@ -416,7 +439,6 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 		o.statManager.IncTotalRecordsOut()
 		log.Debugf("done scan")
 	}
-
 	return inputs[:i], triggered
 }
 
