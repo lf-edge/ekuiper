@@ -73,6 +73,28 @@ Response Sample:
 }
 ```
 
+## update a rule
+
+The API accepts a JSON content and update a rule.
+
+```shell
+PUT http://localhost:8080/rules/{id}
+```
+
+Path parameter `id` is the id or name of the old rule.
+
+Request Sample
+
+```json
+{
+  "id": "rule1",
+  "sql": "SELECT * FROM demo",
+  "actions": [{
+    "log":  {}
+  }]
+}
+```
+
 ## drop a rule
 
 The API is used for drop the rule.
