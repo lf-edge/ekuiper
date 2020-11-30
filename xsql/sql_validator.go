@@ -12,22 +12,21 @@ func Validate(stmt *SelectStatement) error {
 	}
 
 	//Cannot GROUP BY alias fields with aggregate funcs
-	//if stmt.Dimensions != nil {
-	//	for _, d := range stmt.Dimensions {
-	//		if f, ok := d.Expr.(*FieldRef); ok {
-	//			for _, f1 := range stmt.Fields {
-	//				if f.Name == f1.Name || f.Name == f1.AName {
-	//					if HasAggFuncs(f1.Expr) {
-	//						return fmt.Errorf("Cannot group on %s.", f.Name)
-	//					}
-	//					break
-	//				}
-	//			}
-	//		} else {
-	//			return fmt.Errorf("Invalid use of group function")
-	//		}
-	//
-	//	}
-	//}
+	if stmt.Dimensions != nil {
+		for _, d := range stmt.Dimensions {
+			if f, ok := d.Expr.(*FieldRef); ok {
+				for _, f1 := range stmt.Fields {
+					if f.Name == f1.Name || f.Name == f1.AName {
+						if HasAggFuncs(f1.Expr) {
+							return fmt.Errorf("Cannot group on %s.", f.Name)
+						}
+						break
+					}
+				}
+			} else {
+				return fmt.Errorf("Invalid use of group function")
+			}
+		}
+	}
 	return nil
 }
