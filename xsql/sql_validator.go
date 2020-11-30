@@ -11,23 +11,11 @@ func Validate(stmt *SelectStatement) error {
 		return fmt.Errorf("Not allowed to call none-aggregate functions in HAVING clause.")
 	}
 
-	//Cannot GROUP BY alias fields with aggregate funcs
-	//if stmt.Dimensions != nil {
-	//	for _, d := range stmt.Dimensions {
-	//		if f, ok := d.Expr.(*FieldRef); ok {
-	//			for _, f1 := range stmt.Fields {
-	//				if f.Name == f1.Name || f.Name == f1.AName {
-	//					if HasAggFuncs(f1.Expr) {
-	//						return fmt.Errorf("Cannot group on %s.", f.Name)
-	//					}
-	//					break
-	//				}
-	//			}
-	//		} else {
-	//			return fmt.Errorf("Invalid use of group function")
-	//		}
-	//
-	//	}
-	//}
+	for _, d := range stmt.Dimensions {
+		if HasAggFuncs(d.Expr) {
+			return fmt.Errorf("Not allowed to call aggregate functions in GROUP BY clause.")
+		}
+	}
+
 	return nil
 }

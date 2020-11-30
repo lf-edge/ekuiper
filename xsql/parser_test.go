@@ -918,6 +918,12 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s:    `SELECT id,AVG(data) FROM t GROUP BY SUM(data)>10`,
+			stmt: nil,
+			err:  "Not allowed to call aggregate functions in GROUP BY clause.",
+		},
+
+		{
 			s: `SELECT s1.temp AS t, name FROM topic/sensor1 AS s1 WHERE t = "dname" GROUP BY s1.temp`,
 			stmt: &SelectStatement{
 				Fields: []Field{
