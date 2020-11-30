@@ -124,7 +124,7 @@ SELECT followers->Group1[:1]->first FROM demo
 
 Kuiper provides a list of functions to allow to execute json path over struct or array columns or values. The functions are:
 
-```tsql
+```sql
 json_path_exists(col, jsonpath)
 json_path_query(col, jsonpath)
 json_path_query_first(col, jsonpath)
@@ -152,28 +152,28 @@ So for example, when applied to the previous JSON data sample we can reach the f
 Developers can use the json functions in the SQL statement. Here are some examples.
 
 - Select the lastname of group1 followers
-```tsql
+```sql
 SELECT json_path_query(followers, "$.Group1[*].last") FROM demo
 
 ["Shavor","Miller"]
 ```
 
 - Select the lastname if any of the group1 followers is older than 60
-```tsql
+```sql
 SELECT name->last FROM demo where json_path_exists(followers, "$.Group1[? @.age>30]")
 
 "Anderson"
 ```
 
 - Select the follower's lastname from group1 whose age is bigger than 30
-```tsql
+```sql
 SELECT json_path_exists(followers, "$.Group1[? @.age>30].last") FROM demo
 
 ["Miller"]
 ```
 
 - Assume there is a field in follows with reserved words or chars like dot `my.follower`, use bracket to access it.
-```tsql
+```sql
 SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
 
 ["Miller"]

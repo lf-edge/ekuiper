@@ -180,5 +180,5 @@ kuiper > select USERID from demo;
 
 请参阅下面的内容，需要使用存储器来保存流定义。
 
-![stream_storage](resources/stream_storage.png)
+![stream_storage](./resources/stream_storage.png)
 

@@ -1,0 +1,199 @@
+{
+  "cn": [
+    {
+      "title": "概要",
+      "path": "./"
+    },
+    {
+      "title": "安装试用",
+      "children": [
+        {
+          "title": "下载安装快速入门",
+          "path": "getting_started"
+        },
+        {
+          "title": "Docker 容器安装教程",
+          "path": "quick_start_docker"
+        },
+        {
+          "title": "EdgeX Foundry 规则引擎教程",
+          "path": "edgex/edgex_rule_engine_tutorial"
+        }
+      ]
+    },
+    {
+      "title": "规则",
+      "path": "rules/overview"
+    },
+    {
+      "title": "命令行工具",
+      "children": [
+        {
+          "title": "流管理",
+          "path": "cli/streams"
+        },
+        {
+          "title": "规则管理",
+          "path": "cli/rules"
+        },
+        {
+          "title": "插件管理",
+          "path": "cli/plugins"
+        }
+      ]
+    },
+    {
+      "title": "Rest API 接口",
+      "children": [
+        {
+          "title": "流管理",
+          "path": "restapi/streams"
+        },
+        {
+          "title": "规则管理",
+          "path": "restapi/rules"
+        },
+        {
+          "title": "插件管理",
+          "path": "restapi/plugins"
+        }
+      ]
+    },
+    {
+      "title": "Kuiper SQL 参考",
+      "children": [
+        {
+          "title": "流规格",
+          "path": "sqls/streams"
+        },
+        {
+          "title": "查询语言元素",
+          "path": "sqls/query_language_elements"
+        },
+        {
+          "title": "窗口",
+          "path": "sqls/windows"
+        },
+        {
+          "title": "函数",
+          "path": "sqls/built-in_functions"
+        }
+      ]
+    },
+    {
+      "title": "扩展 Kuiper",
+      "path": "extension/overview"
+    },
+    {
+      "title": "插件",
+      "children": [
+        {
+          "title": "插件介绍",
+          "path": "plugins/overview"
+        },
+        {
+          "title": "插件开发教程",
+          "path": "plugins/plugins_tutorial"
+        }
+      ]
+    }
+  ],
+  "en": [
+    {
+      "title": "Introduction",
+      "path": "./"
+    },
+    {
+      "title": "Getting started",
+      "path": "getting_started"
+    },
+    {
+      "title": "Reference Guide",
+      "path": "reference"
+    },
+    {
+      "title": "Install and operation",
+      "children": [
+        {
+          "title": "Install instruction",
+          "path": "operation/install/overview"
+        },
+        {
+          "title": "Cent-OS",
+          "path": "operation/install/cent-os"
+        },
+        {
+          "title": "Operation guide",
+          "path": "operation/operations"
+        },
+        {
+          "title": "Kuiper basic configuration",
+          "path": "operation/configuration_file"
+        },
+        {
+          "title": "MQTT source configuration",
+          "path": "rules/sources/mqtt"
+        }
+      ]
+    },
+    {
+      "title": "Command line interface tools - CLI",
+      "children": [
+        {
+          "title": "Streams",
+          "path": "cli/streams"
+        },
+        {
+          "title": "Rules",
+          "path": "cli/rules"
+        }
+      ]
+    },
+    {
+      "title": "Kuiper SQL reference",
+      "children": [
+        {
+          "title": "Stream specifications",
+          "path": "sqls/streams"
+        },
+        {
+          "title": "Query languange element",
+          "path": "sqls/query_language_elements"
+        },
+        {
+          "title": "Windows",
+          "path": "sqls/windows"
+        },
+        {
+          "title": "Built-in functions",
+          "path": "sqls/built-in_functions"
+        }
+      ]
+    },
+    {
+      "title": "Rules",
+      "children": [
+        {
+          "title": "Rules",
+          "path": "rules/overview"
+        },
+        {
+          "title": "Log action",
+          "path": "rules/sinks/logs"
+        },
+        {
+          "title": "MQTT action",
+          "path": "rules/sinks/mqtt"
+        }
+      ]
+    },
+    {
+      "title": "Extend Kuiper",
+      "path": "extension/overview"
+    },
+    {
+      "title": "Plugins",
+      "path": "plugins/overview"
+    }
+  ]
+}

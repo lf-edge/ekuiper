@@ -60,7 +60,9 @@ The data flowing into the sink is a  data structure of `map[string]interface{}` 
 ]
 ```
 
+::: v-pre
 When sending to the sink, each piece of data is sent separately. First, you need to set the `sendSingle` of the sink to `true`, and then use the data template: `{{json .}}`. The complete configuration is as follows, and the user can copy it to the end of a sink configuration.
+:::
 
 ```json
  ...
@@ -88,7 +90,9 @@ Assuming that the target sink still needs JSON data, the content of the data tem
 "sendSingle": true,
 ```
 
+::: v-pre
 In the above data template, the built-in actions of  `{{if pipeline}} T1 {{else if pipeline}} T0 {{end}}` are used, which looks more complicated. We can do a little adjustment, remove the escape and add abbreviation. The typesetting afterwards is as follows (note: when generating Kuiper rules, the following optimized typesetting rules cannot be passed in).
+:::
 
 ```
 {"device_id": {{.device_id}}, "description": "
@@ -142,11 +146,17 @@ The requirement is:
 
 The data template is relatively complicated, which is explained below:
 
+::: v-pre
 - `{{$len := len .values}} {{$loopsize := add $len -1}}`, this section executes two expressions. For the first one, `len` function gets the length of `values` in the data. For the second one, `add` decrements its value by 1 and assigns it to the variable `loopsize`. At present, since the operation of directly decrementing the value by 1 is not supported by  the Golang expression, `add` is a function extended by Kuiper to achieve this function.
+:::
 
+::: v-pre
 - `{\"device_id\": \"{{.device_id}}\", \"description\": }` This piece of template is applied to the sample data, and a JSON string `{"device_id": "1", "description": } ` is generated.
+:::
 
+::: v-pre
 - `{{range $index, $ele := .values}} {{if le .temperature 25.0}}\"fine\"{{else if gt .temperature 25.0}}\"high\"{{end}} {{if eq $loopsize $index}}]{{else}},{{end}}{{end}}` ,this section of the template looks relatively complicated. However, if we adjust it, remove the escape and add indentation, the  typesetting is as follows which may be clearer (note: when generating the Kuiper rules, the following optimized typesetting rules cannot be passed in).
+:::
 
   ```
   {{range $index, $ele := .values}} 
