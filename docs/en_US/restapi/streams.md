@@ -65,6 +65,22 @@ Response Sample:
 }
 ```
 
+## update a stream
+
+The API is used for update the stream definition.
+
+```shell
+PUT http://localhost:9081/streams/{id}
+```
+
+Path parameter `id` is the id or name of the old stream.
+
+Request sample, the request is a json string with `sql` field.
+
+```json
+{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+```
+
 ## drop a stream
 
 The API is used for drop the stream definition.
@@ -72,3 +88,4 @@ The API is used for drop the stream definition.
 ```shell
 DELETE http://localhost:9081/streams/{id}
 ```
+
