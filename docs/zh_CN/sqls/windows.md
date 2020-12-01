@@ -24,7 +24,7 @@ MS ：毫秒单位
 
 滚动窗口函数用于将数据流分割成不同的时间段，并对其执行函数，例如下面的示例。滚动窗口的关键区别在于它们重复不重叠，并且一个事件不能属于多个翻滚窗口。
 
-![Tumbling Window](resources/tumblingWindow.png)
+![Tumbling Window](./resources/tumblingWindow.png)
 
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, TUMBLINGWINDOW(ss, 10);
@@ -34,7 +34,7 @@ SELECT count(*) FROM demo GROUP BY ID, TUMBLINGWINDOW(ss, 10);
 
 跳跃窗口功能会在时间上向前跳一段固定的时间。 将它们视为可能重叠的翻转窗口可能很容易，因此事件可以属于多个跳跃窗口结果集。 要使跳跃窗口与翻转窗口相同，请将跳跃大小指定为与窗口大小相同。
 
-![Hopping Window](resources/hoppingWindow.png)
+![Hopping Window](./resources/hoppingWindow.png)
 
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, HOPPINGWINDOW(ss, 10, 5);
@@ -46,7 +46,7 @@ SELECT count(*) FROM demo GROUP BY ID, HOPPINGWINDOW(ss, 10, 5);
 
 滑动窗口功能与翻转或跳动窗口不同，仅在事件发生时会产生输出。 每个窗口至少会有一个事件，并且该窗口连续向前移动€（ε）。 就像跳跃窗口一样，事件可以属于多个滑动窗口。
 
-![Sliding Window](resources/slidingWindow.png)
+![Sliding Window](./resources/slidingWindow.png)
 
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mm, 1);
@@ -58,7 +58,7 @@ SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mm, 1);
 
 会话窗口功能对在相似时间到达的事件进行分组，以过滤掉没有数据的时间段。 它有两个主要参数：超时和最大持续时间。
 
-![Session Window](resources/sessionWindow.png)
+![Session Window](./resources/sessionWindow.png)
 
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mm, 2, 1);
@@ -78,7 +78,7 @@ SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mm, 2, 1);
 
 滚动计数窗口与一般的滚动窗口类似，在滚动窗口中的事件不重复、不重叠，一个事件不会属于多个滚动窗口。以下是一个长度为 5 的滚动计数窗口。
 
-![](resources/tumblingCountWindow.png)
+![](./resources/tumblingCountWindow.png)
 
 ```sql
 SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
@@ -95,7 +95,7 @@ SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
 
 以下为 `COUNTWINDOW(5,1)`  的示意图，计数窗口长度为 5， 每接收一个事件就触发一次。
 
-![](resources/slidingCountWindow_1.png)
+![](./resources/slidingCountWindow_1.png)
 
 以下计数窗口的长度为 5，每 2 个事件触发一次窗口。输出为最近的 5 个事件。
 
@@ -104,7 +104,7 @@ SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
 3. 当收到事件 `6`，目前总共有 6 个事件，大于窗口长度 5， 生成了1个窗口包含了 5 个事件。由于长度为 5，因此第一个事件将被忽略
 4. 剩下窗口生成与之前的类似
 
-![](resources/slidingCountWindow_2.png)
+![](./resources/slidingCountWindow_2.png)
 
 ```sql
 SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT(*) > 2

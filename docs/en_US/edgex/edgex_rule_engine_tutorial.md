@@ -8,7 +8,7 @@ In EdgeX Geneva, [EMQ X Kuiper - an SQL based rule engine](https://github.com/em
 - SQL: SQL is where you specify the business logic of streaming data processing. Kuiper provides SQL-like statements to allow you to extract, filter & transform data. 
 - Sink: Sink is used for sending analysis result to a specified target. For example, send analysis result to another MQTT broker, or an HTTP rest address.
 
-![](../../resources/arch.png)
+![](../arch.png)
 
 Following three steps are required for using Kuiper.
 
@@ -36,7 +36,7 @@ EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to ex
 
 - An EdgeX message bus sink is extended to support send analysis result back to EdgeX Message Bus. User can also choose to send analysis result to RestAPI, Kuiper already supported it. 
 
-![](arch_light.png)
+![](./arch_light.png)
 
 ## Start to use
 

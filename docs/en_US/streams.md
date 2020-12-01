@@ -180,5 +180,5 @@ kuiper > select USERID from demo;
 
 Refer to below, a storage is required for saving the stream definitions.
 
-![stream_storage](resources/stream_storage.png)
+![stream_storage](./resources/stream_storage.png)
 
