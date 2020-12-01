@@ -30,7 +30,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 					NICKNAMES ARRAY(STRING),
 					Gender BOOLEAN,
 					ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-				) WITH (DATASOURCE="users", FORMAT="AVRO", KEY="USERID");`,
+				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
 			r: []string{"Stream topic1 is created."},
 		},
 		{
@@ -41,13 +41,13 @@ func TestStreamCreateProcessor(t *testing.T) {
 					NICKNAMES ARRAY(STRING),
 					Gender BOOLEAN,
 					` + "`地址`" + ` STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-				) WITH (DATASOURCE="users", FORMAT="AVRO", KEY="USERID");`,
+				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
 			r: []string{"Stream stream is created."},
 		},
 		{
 			s: `CREATE STREAM topic1 (
 					USERID BIGINT,
-				) WITH (DATASOURCE="users", FORMAT="AVRO", KEY="USERID");`,
+				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
 			err: "Create stream fails: Item topic1 already exists.",
 		},
 		{
@@ -58,7 +58,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 			s: `DESCRIBE STREAM topic1;`,
 			r: []string{"Fields\n--------------------------------------------------------------------------------\nUSERID\tbigint\nFIRST_NAME\tstring\nLAST_NAME\tstring\nNICKNAMES\t" +
 				"array(string)\nGender\tboolean\nADDRESS\tstruct(STREET_NAME string, NUMBER bigint)\n\n" +
-				"DATASOURCE: users\nFORMAT: AVRO\nKEY: USERID\n"},
+				"DATASOURCE: users\nFORMAT: JSON\nKEY: USERID\n"},
 		},
 		{
 			s: `DROP STREAM topic1;`,

@@ -593,7 +593,7 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 				},
 				Options: map[string]string{
 					"DATASOURCE":       "users",
-					"FORMAT":           "AVRO",
+					"FORMAT":           "JSON",
 					"KEY":              "USERID",
 					"CONF_KEY":         "srv1",
 					"TYPE":             "MQTT",
@@ -696,7 +696,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 				},
 				Options: map[string]string{
 					"DATASOURCE":       "users",
-					"FORMAT":           "AVRO",
+					"FORMAT":           "JSON",
 					"KEY":              "USERID",
 					"CONF_KEY":         "srv1",
 					"TYPE":             "MQTT",
@@ -716,7 +716,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 				StreamFields: nil,
 				Options: map[string]string{
 					"DATASOURCE":       "users",
-					"FORMAT":           "AVRO",
+					"FORMAT":           "JSON",
 					"KEY":              "USERID",
 					"CONF_KEY":         "srv1",
 					"TYPE":             "MQTT",
@@ -890,7 +890,7 @@ func TestPreprocessorError(t *testing.T) {
 				},
 				Options: map[string]string{
 					"DATASOURCE":       "users",
-					"FORMAT":           "AVRO",
+					"FORMAT":           "JSON",
 					"KEY":              "USERID",
 					"CONF_KEY":         "srv1",
 					"TYPE":             "MQTT",
