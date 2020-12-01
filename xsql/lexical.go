@@ -99,6 +99,7 @@ const (
 	XBIGINT
 	XFLOAT
 	XSTRING
+	XBYTEA
 	XDATETIME
 	XBOOLEAN
 	XARRAY
@@ -188,6 +189,7 @@ var tokens = []string{
 	XBIGINT:   "BIGINT",
 	XFLOAT:    "FLOAT",
 	XSTRING:   "STRING",
+	XBYTEA:    "BYTEA",
 	XDATETIME: "DATETIME",
 	XBOOLEAN:  "BOOLEAN",
 	XARRAY:    "ARRAY",
@@ -428,6 +430,8 @@ func (s *Scanner) ScanIdent() (tok Token, lit string) {
 		return XDATETIME, lit
 	case "STRING":
 		return XSTRING, lit
+	case "BYTEA":
+		return XBYTEA, lit
 	case "BOOLEAN":
 		return XBOOLEAN, lit
 	case "ARRAY":
@@ -659,6 +663,7 @@ const (
 	BIGINT
 	FLOAT
 	STRINGS
+	BYTEA
 	DATETIME
 	BOOLEAN
 	ARRAY
@@ -694,6 +699,8 @@ func getDataType(tok Token) DataType {
 		return FLOAT
 	case XSTRING:
 		return STRINGS
+	case XBYTEA:
+		return BYTEA
 	case XDATETIME:
 		return DATETIME
 	case XBOOLEAN:

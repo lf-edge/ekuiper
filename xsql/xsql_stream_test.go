@@ -326,6 +326,26 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					"TYPE":       "MQTT",
 				},
 			},
+		}, {
+			s: `CREATE STREAM demo (
+					USERID BIGINT,
+					FIRST_NAME STRING,
+					LAST_NAME STRING,
+					PICTURE BYTEA,
+				) WITH (DATASOURCE="users", FORMAT="JSON");`,
+			stmt: &StreamStmt{
+				Name: StreamName("demo"),
+				StreamFields: []StreamField{
+					{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
+					{Name: "FIRST_NAME", FieldType: &BasicType{Type: STRINGS}},
+					{Name: "LAST_NAME", FieldType: &BasicType{Type: STRINGS}},
+					{Name: "PICTURE", FieldType: &BasicType{Type: BYTEA}},
+				},
+				Options: map[string]string{
+					"DATASOURCE": "users",
+					"FORMAT":     "JSON",
+				},
+			},
 		},
 	}
 
