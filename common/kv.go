@@ -1,195 +1,146 @@
 package common
 
 import (
+	"database/sql"
 	"fmt"
-	"github.com/patrickmn/go-cache"
-	"os"
+	_ "github.com/mattn/go-sqlite3"
 	"sync"
 )
 
 type KeyValue interface {
 	Open() error
 	Close() error
-	Set(key string, value interface{}) error
-	Replace(key string, value interface{}) error
-	Get(key string) (interface{}, bool)
+	Set(key, val string) error
+	Replace(key, val string) error
+	Get(key string) (string, bool)
 	//Must return *common.Error with NOT_FOUND error
 	Delete(key string) error
 	Keys() (keys []string, err error)
 	Clean() error
 }
 
-type SyncKVMap struct {
-	sync.RWMutex
-	internal map[string]*SimpleKVStore
+var g_sqliteDb *sql.DB
+
+func OpenSqlite(fpath string) error {
+	db, err := sql.Open("sqlite3", fpath)
+	if nil == err {
+		g_sqliteDb = db
+	}
+	return err
 }
 
-func (sm *SyncKVMap) Load(path string) (result *SimpleKVStore) {
+func CloseSqlite() {
+	if nil != g_sqliteDb {
+		g_sqliteDb.Close()
+	}
+}
+
+type SyncKVMap struct {
+	sync.RWMutex
+	internal map[string]*SqliteKV
+}
+
+func (sm *SyncKVMap) Load(table string) (result *SqliteKV) {
 	sm.Lock()
 	defer sm.Unlock()
-	if s, ok := sm.internal[path]; ok {
+	if s, ok := sm.internal[table]; ok {
 		result = s
 	} else {
-		c := cache.New(cache.NoExpiration, 0)
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			os.MkdirAll(path, os.ModePerm)
-		}
-		result = NewSimpleKVStore(path+"/stores.data", c)
-		sm.internal[path] = result
+		result = new(SqliteKV)
+		result.table = table
+		sm.internal[table] = result
 	}
 
 	return
 }
 
 var stores = &SyncKVMap{
-	internal: make(map[string]*SimpleKVStore),
+	internal: make(map[string]*SqliteKV),
 }
 
-func GetSimpleKVStore(path string) *SimpleKVStore {
-	return stores.Load(path)
+func GetSqliteKV(table string) *SqliteKV {
+	return stores.Load(table)
 }
 
-type CtrlType int
-
-const (
-	OPEN CtrlType = iota
-	SAVE
-	CLOSE
-)
-
-type SimpleKVStore struct {
-	path string
-	c    *cache.Cache
-	/* These 2 channels must be mapping one by one*/
-	ctrlCh chan CtrlType
-	errCh  chan error
+type SqliteKV struct {
+	table string
 }
 
-func NewSimpleKVStore(path string, c *cache.Cache) *SimpleKVStore {
-	r := &SimpleKVStore{
-		path:   path,
-		c:      c,
-		ctrlCh: make(chan CtrlType),
-		errCh:  make(chan error),
-	}
-	go r.run()
-	return r
+func (m *SqliteKV) Open() error {
+	sql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS '%s'('key' VARCHAR(255) PRIMARY KEY NOT NULL, 'val' TEXT NOT NULL);", m.table)
+	_, err := g_sqliteDb.Exec(sql)
+	fmt.Println("myd:", sql, err)
+	return err
 }
 
-func (m *SimpleKVStore) run() {
-	count := 0
-	opened := false
-	for c := range m.ctrlCh {
-		switch c {
-		case OPEN:
-			count++
-			if !opened {
-				if _, err := os.Stat(m.path); os.IsNotExist(err) {
-					m.errCh <- nil
-					break
-				}
-				if e := m.c.LoadFile(m.path); e != nil {
-					m.errCh <- e
-					break
-				}
-			}
-			m.errCh <- nil
-			opened = true
-		case CLOSE:
-			count--
-			if count == 0 {
-				opened = false
-				err := m.doClose()
-				if err != nil {
-					Log.Error(err)
-					m.errCh <- err
-					break
-				}
-			}
-			m.errCh <- nil
-		case SAVE:
-			//swallow duplicate requests
-			if len(m.ctrlCh) > 0 {
-				m.errCh <- nil
-				break
-			}
-			if e := m.c.SaveFile(m.path); e != nil {
-				Log.Error(e)
-				m.errCh <- e
-				break
-			}
-			m.errCh <- nil
-		}
-	}
-}
-
-func (m *SimpleKVStore) Open() error {
-	m.ctrlCh <- OPEN
-	return <-m.errCh
-}
-
-func (m *SimpleKVStore) Close() error {
-	m.ctrlCh <- CLOSE
-	return <-m.errCh
-}
-
-func (m *SimpleKVStore) doClose() error {
-	//e := m.c.SaveFile(m.path)
-	m.c.Flush() //Delete all of the values from memory.
+func (m *SqliteKV) Close() error {
 	return nil
 }
 
-func (m *SimpleKVStore) saveToFile() error {
-	m.ctrlCh <- SAVE
-	return <-m.errCh
+func (m *SqliteKV) Set(key, value string) error {
+	sql := fmt.Sprintf(`INSERT INTO %s(key,val)VALUES('%s','%s');`, m.table, key, value)
+	_, err := g_sqliteDb.Exec(sql)
+	fmt.Println("myd:", sql, err)
+	return err
 }
 
-func (m *SimpleKVStore) Set(key string, value interface{}) error {
-	if m.c == nil {
-		return fmt.Errorf("cache %s has not been initialized yet.", m.path)
-	}
-	if err := m.c.Add(key, value, cache.NoExpiration); err != nil {
-		return err
-	}
-	return m.saveToFile()
+func (m *SqliteKV) Replace(key, value string) error {
+	sql := fmt.Sprintf("UPDATE %s SET val='%s' where key='%s';", m.table, value, key)
+	_, err := g_sqliteDb.Exec(sql)
+	fmt.Println("myd:", sql, err)
+	return err
 }
 
-func (m *SimpleKVStore) Replace(key string, value interface{}) error {
-	if m.c == nil {
-		return fmt.Errorf("cache %s has not been initialized yet.", m.path)
+func (m *SqliteKV) Get(key string) (string, bool) {
+	sql := fmt.Sprintf("SELECT val FROM %s WHERE key='%s';", m.table, key)
+	row, err := g_sqliteDb.Query(sql)
+	fmt.Println("myd:", sql, err)
+	if nil != err {
+		return "", false
 	}
-	m.c.Set(key, value, cache.NoExpiration)
-	return m.saveToFile()
+	defer row.Close()
+	var val string
+	for row.Next() {
+		err = row.Scan(&val)
+		if nil != err {
+			return "", false
+		} else {
+			return val, true
+		}
+	}
+	return val, true
 }
 
-func (m *SimpleKVStore) Get(key string) (interface{}, bool) {
-	return m.c.Get(key)
+func (m *SqliteKV) Delete(key string) error {
+	sql := fmt.Sprintf("DELETE FROM %s WHERE key='%s';", m.table, key)
+	_, err := g_sqliteDb.Exec(sql)
+	fmt.Println("myd:", sql, err)
+	return err
 }
 
-func (m *SimpleKVStore) Delete(key string) error {
-	if m.c == nil {
-		return fmt.Errorf("cache %s has not been initialized yet.", m.path)
+func (m *SqliteKV) Keys() (keys []string, err error) {
+	sql := fmt.Sprintf("SELECT key FROM %s", m.table)
+	row, err := g_sqliteDb.Query(sql)
+	fmt.Println("myd:", sql, err)
+	if nil != err {
+		return nil, err
 	}
-	if _, found := m.c.Get(key); found {
-		m.c.Delete(key)
-	} else {
-		return NewErrorWithCode(NOT_FOUND, fmt.Sprintf("%s is not found", key))
-	}
-	return m.saveToFile()
-}
-
-func (m *SimpleKVStore) Keys() (keys []string, err error) {
-	if m.c == nil {
-		return nil, fmt.Errorf("cache %s has not been initialized yet.", m.path)
-	}
-	its := m.c.Items()
-	keys = make([]string, 0, len(its))
-	for k := range its {
-		keys = append(keys, k)
+	defer row.Close()
+	for row.Next() {
+		var val string
+		err = row.Scan(&val)
+		if nil != err {
+			return nil, err
+		} else {
+			keys = append(keys, val)
+		}
 	}
 	return keys, nil
 }
 
-func (m *SimpleKVStore) Clean() error {
-	return os.RemoveAll(m.path)
+func (m *SqliteKV) Clean() error {
+	sql := fmt.Sprintf("DROP TABLE %s", m.table)
+	_, err := g_sqliteDb.Exec(sql)
+	fmt.Println("myd:", sql, err)
+	return err
 }

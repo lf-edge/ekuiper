@@ -1025,7 +1025,7 @@ func createStream(t *testing.T, tt ruleTest, j int, opt *api.RuleOption, sinkPro
 
 // Create or drop streams
 func handleStream(createOrDrop bool, names []string, t *testing.T) {
-	p := NewStreamProcessor(path.Join(DbDir, "stream"))
+	p := NewStreamProcessor("stream")
 	for _, name := range names {
 		var sql string
 		if createOrDrop {

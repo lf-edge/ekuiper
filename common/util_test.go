@@ -4,17 +4,22 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
+	//"strings"
 	"testing"
 )
 
-func TestSimpleKVStore_Funcs(t *testing.T) {
-	abs, _ := filepath.Abs("test.data")
+func TestSqliteKV_Funcs(t *testing.T) {
+	abs, _ := filepath.Abs("sqliteKV.db")
 	if f, _ := os.Stat(abs); f != nil {
 		_ = os.Remove(abs)
 	}
+	if err := OpenSqlite(abs); nil != err {
+		t.Error(err)
+		return
+	}
+	defer CloseSqlite()
 
-	ks := GetSimpleKVStore(abs)
+	ks := GetSqliteKV("t")
 	if e := ks.Open(); e != nil {
 		t.Errorf("Failed to open data %s.", e)
 	}
@@ -56,7 +61,7 @@ func TestSimpleKVStore_Funcs(t *testing.T) {
 		reflect.DeepEqual(1, len(keys))
 	}
 
-	_ = os.Remove(abs)
+	os.Remove(abs)
 }
 
 func TestMapConvert_Funcs(t *testing.T) {
@@ -86,6 +91,7 @@ func TestMapConvert_Funcs(t *testing.T) {
 	}
 }
 
+/*
 func TestGetDataLoc_Funcs(t *testing.T) {
 	d, err := GetDataLoc()
 	if err != nil {
@@ -94,3 +100,4 @@ func TestGetDataLoc_Funcs(t *testing.T) {
 		t.Errorf("Unexpected data location %s", d)
 	}
 }
+*/

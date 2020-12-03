@@ -40,9 +40,13 @@ func StartUp(Version, LoadFileType string) {
 		logger.Infof("db location is %s", dr)
 		dataDir = dr
 	}
+	if err := common.OpenSqlite(path.Join(path.Dir(dataDir), "sqliteKV.db")); nil != err {
+		logger.Panic(err)
+	}
+	defer common.CloseSqlite()
 
 	ruleProcessor = processors.NewRuleProcessor(path.Dir(dataDir))
-	streamProcessor = processors.NewStreamProcessor(path.Join(path.Dir(dataDir), "stream"))
+	streamProcessor = processors.NewStreamProcessor("stream")
 	pluginManager, err = plugins.NewPluginManager()
 	if err != nil {
 		logger.Panic(err)

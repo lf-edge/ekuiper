@@ -2,6 +2,7 @@ package nodes
 
 import (
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
@@ -94,7 +95,7 @@ func (c *Cache) initStore(ctx api.StreamContext) {
 	if err != nil {
 		c.drainError(err)
 	}
-	c.store = common.GetSimpleKVStore(path.Join(dbDir, "sink", ctx.GetRuleId()))
+	c.store = common.GetSqliteKV(path.Join(dbDir, "sink", ctx.GetRuleId()))
 	c.key = ctx.GetOpId() + strconv.Itoa(ctx.GetInstanceId())
 	logger.Debugf("cache saved to key %s", c.key)
 	//load cache
@@ -168,7 +169,8 @@ func (c *Cache) loadCache() error {
 	defer c.store.Close()
 	if err == nil {
 		if t, f := c.store.Get(c.key); f {
-			if mt, ok := t.(*LinkedQueue); ok {
+			mt := new(LinkedQueue)
+			if ok := json.Unmarshal([]byte(t), &mt); nil != ok {
 				c.pending = mt
 				c.changed = true
 				// To store the keys in slice in sorted order
@@ -210,7 +212,11 @@ func (c *Cache) saveCache(logger api.Logger, p *LinkedQueue) error {
 		}
 	}
 	defer c.store.Close()
-	return c.store.Replace(c.key, p)
+	b, err := json.Marshal(p)
+	if nil != err {
+		return err
+	}
+	return c.store.Replace(c.key, string(b))
 }
 
 func (c *Cache) drainError(err error) {

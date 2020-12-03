@@ -84,9 +84,9 @@ func TestStreamCreateProcessor(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
-	streamDB := path.Join(getDbDir(), "streamTest")
+	//streamDB := path.Join(getDbDir(), "streamTest")
 	for i, tt := range tests {
-		results, err := NewStreamProcessor(streamDB).ExecStmt(tt.s)
+		results, err := NewStreamProcessor("streamTest").ExecStmt(tt.s)
 		if !reflect.DeepEqual(tt.err, errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" {

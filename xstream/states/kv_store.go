@@ -34,7 +34,7 @@ type KVStore struct {
 //Assume each operator only has one instance
 func getKVStore(ruleId string) (*KVStore, error) {
 	dr, _ := common.GetDataLoc()
-	db := common.GetSimpleKVStore(path.Join(dr, "checkpoints", ruleId))
+	db := common.GetSqliteKV(path.Join(dr, "checkpoints", ruleId))
 	s := &KVStore{db: db, max: 3, mapStore: &sync.Map{}}
 	//read data from badger db
 	if err := s.restore(); err != nil {
@@ -50,13 +50,13 @@ func (s *KVStore) restore() error {
 	}
 	defer s.db.Close()
 	if b, ok := s.db.Get(CheckpointListKey); ok {
-		if cs, err := bytesToSlice(b.([]byte)); err != nil {
+		if cs, err := bytesToSlice([]byte(b)); err != nil {
 			return fmt.Errorf("invalid checkpoint data: %s", err)
 		} else {
 			s.checkpoints = cs
 			for _, c := range cs {
 				if b2, ok := s.db.Get(fmt.Sprintf("%d", c)); ok {
-					if m, err := bytesToMap(b2.([]byte)); err != nil {
+					if m, err := bytesToMap([]byte(b2)); err != nil {
 						return fmt.Errorf("invalid checkpoint data: %s", err)
 					} else {
 						s.mapStore.Store(c, common.MapToSyncMap(m))
@@ -100,7 +100,7 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 			if err != nil {
 				return fmt.Errorf("save checkpoint err, fail to encode states: %s", err)
 			}
-			err = s.db.Replace(fmt.Sprintf("%d", checkpointId), b)
+			err = s.db.Replace(fmt.Sprintf("%d", checkpointId), string(b))
 			if err != nil {
 				return fmt.Errorf("save checkpoint err: %v", err)
 			}
@@ -118,7 +118,7 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 			if !ok {
 				return fmt.Errorf("save checkpoint err: fail to encode checkpoint counts")
 			}
-			err = s.db.Replace(CheckpointListKey, cs)
+			err = s.db.Replace(CheckpointListKey, string(cs))
 			if err != nil {
 				return fmt.Errorf("save checkpoint err: %v", err)
 			}
