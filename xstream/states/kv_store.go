@@ -120,8 +120,7 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 				}
 				err = s.db.Replace(fmt.Sprintf("%d", checkpointId), b)
 			*/
-			//err = s.db.Replace(fmt.Sprintf("%d", checkpointId), m)
-			err = s.db.Replace(fmt.Sprintf("%d", checkpointId), common.SyncMapToMap(m))
+			err = s.db.Set(fmt.Sprintf("%d", checkpointId), common.SyncMapToMap(m))
 			if err != nil {
 				return fmt.Errorf("save checkpoint err: %v", err)
 			}
@@ -142,7 +141,8 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 				}
 				err = s.db.Replace(CheckpointListKey, cs)
 			*/
-			err = s.db.Replace(CheckpointListKey, s.checkpoints)
+
+			err = s.db.Set(CheckpointListKey, s.checkpoints)
 			if err != nil {
 				return fmt.Errorf("save checkpoint err: %v", err)
 			}

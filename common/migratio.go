@@ -31,7 +31,7 @@ func migration(dir string) error {
 		if value, ok := c.Get(k); !ok {
 			return fmt.Errorf("not found %s from %s", k, fpath)
 		} else {
-			if err := store.Set(k, value); nil != err {
+			if err := store.Setnx(k, value); nil != err {
 				return err
 			}
 			if err := gocacheDel(c, k); nil != err {

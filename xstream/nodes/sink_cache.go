@@ -211,7 +211,7 @@ func (c *Cache) saveCache(logger api.Logger, p *LinkedQueue) error {
 		}
 	}
 	defer c.store.Close()
-	return c.store.Replace(c.key, p)
+	return c.store.Set(c.key, p)
 }
 
 func (c *Cache) drainError(err error) {

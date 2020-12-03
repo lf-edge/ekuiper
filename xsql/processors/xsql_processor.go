@@ -67,7 +67,7 @@ func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, statement stri
 		return "", fmt.Errorf("Create stream fails, error when opening db: %v.", err)
 	}
 	defer p.db.Close()
-	err = p.db.Set(string(stmt.Name), statement)
+	err = p.db.Setnx(string(stmt.Name), statement)
 	if err != nil {
 		return "", fmt.Errorf("Create stream fails: %v.", err)
 	} else {
@@ -91,7 +91,7 @@ func (p *StreamProcessor) ExecReplaceStream(statement string) (string, error) {
 		}
 		defer p.db.Close()
 
-		if err = p.db.Replace(string(s.Name), statement); nil != err {
+		if err = p.db.Set(string(s.Name), statement); nil != err {
 			return "", fmt.Errorf("Replace stream fails: %v.", err)
 		} else {
 			info := fmt.Sprintf("Stream %s is replaced.", s.Name)
@@ -247,7 +247,7 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 	}
 	defer p.db.Close()
 
-	err = p.db.Set(rule.Id, ruleJson)
+	err = p.db.Setnx(rule.Id, ruleJson)
 	if err != nil {
 		return nil, err
 	} else {
@@ -268,7 +268,7 @@ func (p *RuleProcessor) ExecUpdate(name, ruleJson string) (*api.Rule, error) {
 	}
 	defer p.db.Close()
 
-	err = p.db.Replace(rule.Id, ruleJson)
+	err = p.db.Set(rule.Id, ruleJson)
 	if err != nil {
 		return nil, err
 	} else {
@@ -296,7 +296,7 @@ func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (err e
 	}
 	defer p.db.Close()
 
-	err = p.db.Replace(name, string(ruleJson))
+	err = p.db.Set(name, string(ruleJson))
 	if err != nil {
 		return err
 	} else {
@@ -380,7 +380,7 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	if rule.Options == nil {
 		rule.Options = &api.RuleOption{}
 	}
-	//Set default options
+	//Setnx default options
 	if rule.Options.CheckpointInterval < 0 {
 		return nil, fmt.Errorf("rule option checkpointInterval %d is invalid, require a positive integer", rule.Options.CheckpointInterval)
 	}

@@ -15,8 +15,10 @@ import (
 type KeyValue interface {
 	Open() error
 	Close() error
+	// Set key to hold string value if key does not exist otherwise return an error
+	Setnx(key string, value interface{}) error
+	// Set key to hold the string value. If key already holds a value, it is overwritten
 	Set(key string, value interface{}) error
-	Replace(key string, value interface{}) error
 	Get(key string, val interface{}) bool
 	//Must return *common.Error with NOT_FOUND error
 	Delete(key string) error
@@ -69,7 +71,7 @@ func (m *SimpleKVStore) encode(value interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (m *SimpleKVStore) Set(key string, value interface{}) error {
+func (m *SimpleKVStore) Setnx(key string, value interface{}) error {
 	b, err := m.encode(value)
 	if nil != err {
 		return err
@@ -84,7 +86,7 @@ func (m *SimpleKVStore) Set(key string, value interface{}) error {
 	return err
 }
 
-func (m *SimpleKVStore) Replace(key string, value interface{}) error {
+func (m *SimpleKVStore) Set(key string, value interface{}) error {
 	b, err := m.encode(value)
 	if nil != err {
 		return err

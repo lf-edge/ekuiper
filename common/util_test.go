@@ -20,7 +20,7 @@ func TestSimpleKVStore_Funcs(t *testing.T) {
 		t.Errorf("Failed to open data %s.", e)
 	}
 
-	if err := ks.Set("foo", "bar"); nil != err {
+	if err := ks.Setnx("foo", "bar"); nil != err {
 		t.Error(err)
 	}
 
@@ -33,11 +33,11 @@ func TestSimpleKVStore_Funcs(t *testing.T) {
 		t.Errorf("Should not find the foo key.")
 	}
 
-	if err := ks.Set("foo1", "bar1"); nil != err {
+	if err := ks.Setnx("foo1", "bar1"); nil != err {
 		t.Error(err)
 	}
 
-	if err := ks.Replace("foo1", "bar2"); nil != err {
+	if err := ks.Set("foo1", "bar2"); nil != err {
 		t.Error(err)
 	}
 

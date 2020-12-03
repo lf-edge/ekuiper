@@ -1002,7 +1002,7 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 		if err := compareMetrics(tp, metrics); err == nil {
 			break
 		} else {
-			common.Log.Debugf("check metrics error at %d: %s", retry, err)
+			common.Log.Errorf("check metrics error at %d: %s", retry, err)
 		}
 	}
 	return nil
