@@ -1,7 +1,7 @@
 package states
 
 import (
-	"bytes"
+	//"bytes"
 	"encoding/gob"
 	"fmt"
 	"github.com/emqx/kuiper/common"
@@ -49,22 +49,39 @@ func (s *KVStore) restore() error {
 		return err
 	}
 	defer s.db.Close()
-	if b, ok := s.db.Get(CheckpointListKey); ok {
-		if cs, err := bytesToSlice(b.([]byte)); err != nil {
-			return fmt.Errorf("invalid checkpoint data: %s", err)
-		} else {
-			s.checkpoints = cs
-			for _, c := range cs {
-				if b2, ok := s.db.Get(fmt.Sprintf("%d", c)); ok {
-					if m, err := bytesToMap(b2.([]byte)); err != nil {
-						return fmt.Errorf("invalid checkpoint data: %s", err)
-					} else {
-						s.mapStore.Store(c, common.MapToSyncMap(m))
+
+	var cs []int64
+	if ok := s.db.Get(CheckpointListKey, &cs); ok {
+		s.checkpoints = cs
+		for _, c := range cs {
+			var m map[string]interface{}
+			if ok := s.db.Get(fmt.Sprintf("%d", c), &m); ok {
+				s.mapStore.Store(c, common.MapToSyncMap(m))
+			} else {
+				return fmt.Errorf("invalid checkpoint data: %v", c)
+			}
+		}
+	}
+
+	/*
+		if ok := s.db.Get(CheckpointListKey, &b); ok {
+			if cs, err := bytesToSlice(b); err != nil {
+				return fmt.Errorf("invalid checkpoint data: %s", err)
+			} else {
+				s.checkpoints = cs
+				for _, c := range cs {
+					var b2 []byte
+					if ok := s.db.Get(fmt.Sprintf("%d", c), &b2); ok {
+						if m, err := bytesToMap(b2); err != nil {
+							return fmt.Errorf("invalid checkpoint data: %s", err)
+						} else {
+							s.mapStore.Store(c, common.MapToSyncMap(m))
+						}
 					}
 				}
 			}
 		}
-	}
+	*/
 	return nil
 }
 
@@ -96,11 +113,15 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 				return fmt.Errorf("save checkpoint err: %v", err)
 			}
 			defer s.db.Close()
-			b, err := mapToBytes(m)
-			if err != nil {
-				return fmt.Errorf("save checkpoint err, fail to encode states: %s", err)
-			}
-			err = s.db.Replace(fmt.Sprintf("%d", checkpointId), b)
+			/*
+				b, err := mapToBytes(m)
+				if err != nil {
+					return fmt.Errorf("save checkpoint err, fail to encode states: %s", err)
+				}
+				err = s.db.Replace(fmt.Sprintf("%d", checkpointId), b)
+			*/
+			//err = s.db.Replace(fmt.Sprintf("%d", checkpointId), m)
+			err = s.db.Replace(fmt.Sprintf("%d", checkpointId), common.SyncMapToMap(m))
 			if err != nil {
 				return fmt.Errorf("save checkpoint err: %v", err)
 			}
@@ -114,11 +135,14 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 					_ = s.db.Delete(fmt.Sprintf("%d", cp))
 				}()
 			}
-			cs, ok := sliceToBytes(s.checkpoints)
-			if !ok {
-				return fmt.Errorf("save checkpoint err: fail to encode checkpoint counts")
-			}
-			err = s.db.Replace(CheckpointListKey, cs)
+			/*
+				cs, ok := sliceToBytes(s.checkpoints)
+				if !ok {
+					return fmt.Errorf("save checkpoint err: fail to encode checkpoint counts")
+				}
+				err = s.db.Replace(CheckpointListKey, cs)
+			*/
+			err = s.db.Replace(CheckpointListKey, s.checkpoints)
 			if err != nil {
 				return fmt.Errorf("save checkpoint err: %v", err)
 			}
@@ -152,6 +176,7 @@ func (s *KVStore) GetOpState(opId string) (*sync.Map, error) {
 	return &sync.Map{}, nil
 }
 
+/*
 func mapToBytes(sm *sync.Map) ([]byte, error) {
 	m := common.SyncMapToMap(sm)
 	var buf bytes.Buffer
@@ -190,3 +215,4 @@ func bytesToSlice(input []byte) ([]int64, error) {
 	}
 	return result, nil
 }
+*/

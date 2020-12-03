@@ -167,27 +167,28 @@ func (c *Cache) loadCache() error {
 	}
 	defer c.store.Close()
 	if err == nil {
-		if t, f := c.store.Get(c.key); f {
-			if mt, ok := t.(*LinkedQueue); ok {
-				c.pending = mt
-				c.changed = true
-				// To store the keys in slice in sorted order
-				var keys []int
-				for k := range mt.Data {
-					keys = append(keys, k)
-				}
-				sort.Ints(keys)
-				for _, k := range keys {
-					t := &CacheTuple{
-						index: k,
-						data:  mt.Data[k],
-					}
-					c.Out <- t
-				}
-				return nil
-			} else {
-				return fmt.Errorf("load malform cache, found %t(%v)", t, t)
+		mt := new(LinkedQueue)
+		if f := c.store.Get(c.key, mt); f {
+			//	if mt, ok := t.(*LinkedQueue); ok {
+			c.pending = mt
+			c.changed = true
+			// To store the keys in slice in sorted order
+			var keys []int
+			for k := range mt.Data {
+				keys = append(keys, k)
 			}
+			sort.Ints(keys)
+			for _, k := range keys {
+				t := &CacheTuple{
+					index: k,
+					data:  mt.Data[k],
+				}
+				c.Out <- t
+			}
+			return nil
+			//	}
+		} else {
+			return fmt.Errorf("load malform cache, found %v(%v)", mt, mt)
 		}
 	}
 	return nil

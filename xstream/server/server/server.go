@@ -48,6 +48,9 @@ func StartUp(Version, LoadFileType string) {
 		logger.Panic(err)
 	}
 
+	if err := common.DataMigration(path.Dir(dataDir)); nil != err {
+		logger.Panic(err)
+	}
 	registry = &RuleRegistry{internal: make(map[string]*RuleState)}
 
 	server := new(Server)

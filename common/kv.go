@@ -1,10 +1,15 @@
 package common
 
 import (
+	"bytes"
+	"database/sql"
+	"encoding/gob"
 	"fmt"
-	"github.com/patrickmn/go-cache"
+	_ "github.com/mattn/go-sqlite3"
 	"os"
-	"sync"
+	"path"
+	"path/filepath"
+	"strings"
 )
 
 type KeyValue interface {
@@ -12,184 +17,135 @@ type KeyValue interface {
 	Close() error
 	Set(key string, value interface{}) error
 	Replace(key string, value interface{}) error
-	Get(key string) (interface{}, bool)
+	Get(key string, val interface{}) bool
 	//Must return *common.Error with NOT_FOUND error
 	Delete(key string) error
 	Keys() (keys []string, err error)
 	Clean() error
 }
 
-type SyncKVMap struct {
-	sync.RWMutex
-	internal map[string]*SimpleKVStore
-}
-
-func (sm *SyncKVMap) Load(path string) (result *SimpleKVStore) {
-	sm.Lock()
-	defer sm.Unlock()
-	if s, ok := sm.internal[path]; ok {
-		result = s
-	} else {
-		c := cache.New(cache.NoExpiration, 0)
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			os.MkdirAll(path, os.ModePerm)
-		}
-		result = NewSimpleKVStore(path+"/stores.data", c)
-		sm.internal[path] = result
-	}
-
-	return
-}
-
-var stores = &SyncKVMap{
-	internal: make(map[string]*SimpleKVStore),
-}
-
-func GetSimpleKVStore(path string) *SimpleKVStore {
-	return stores.Load(path)
-}
-
-type CtrlType int
-
-const (
-	OPEN CtrlType = iota
-	SAVE
-	CLOSE
-)
-
 type SimpleKVStore struct {
-	path string
-	c    *cache.Cache
-	/* These 2 channels must be mapping one by one*/
-	ctrlCh chan CtrlType
-	errCh  chan error
+	db    *sql.DB
+	table string
+	path  string
 }
 
-func NewSimpleKVStore(path string, c *cache.Cache) *SimpleKVStore {
-	r := &SimpleKVStore{
-		path:   path,
-		c:      c,
-		ctrlCh: make(chan CtrlType),
-		errCh:  make(chan error),
+func GetSimpleKVStore(fpath string) (ret *SimpleKVStore) {
+	if _, err := os.Stat(fpath); os.IsNotExist(err) {
+		os.MkdirAll(fpath, os.ModePerm)
 	}
-	go r.run()
-	return r
-}
-
-func (m *SimpleKVStore) run() {
-	count := 0
-	opened := false
-	for c := range m.ctrlCh {
-		switch c {
-		case OPEN:
-			count++
-			if !opened {
-				if _, err := os.Stat(m.path); os.IsNotExist(err) {
-					m.errCh <- nil
-					break
-				}
-				if e := m.c.LoadFile(m.path); e != nil {
-					m.errCh <- e
-					break
-				}
-			}
-			m.errCh <- nil
-			opened = true
-		case CLOSE:
-			count--
-			if count == 0 {
-				opened = false
-				err := m.doClose()
-				if err != nil {
-					Log.Error(err)
-					m.errCh <- err
-					break
-				}
-			}
-			m.errCh <- nil
-		case SAVE:
-			//swallow duplicate requests
-			if len(m.ctrlCh) > 0 {
-				m.errCh <- nil
-				break
-			}
-			if e := m.c.SaveFile(m.path); e != nil {
-				Log.Error(e)
-				m.errCh <- e
-				break
-			}
-			m.errCh <- nil
-		}
-	}
+	dir, file := filepath.Split(fpath)
+	ret = new(SimpleKVStore)
+	ret.path = path.Join(dir, "sqliteKV.db")
+	ret.table = file
+	return ret
 }
 
 func (m *SimpleKVStore) Open() error {
-	m.ctrlCh <- OPEN
-	return <-m.errCh
+	db, err := sql.Open("sqlite3", m.path)
+	if nil != err {
+		return err
+	}
+	m.db = db
+	sql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS '%s'('key' VARCHAR(255) PRIMARY KEY, 'val' BLOB);", m.table)
+	_, err = m.db.Exec(sql)
+	return err
 }
 
 func (m *SimpleKVStore) Close() error {
-	m.ctrlCh <- CLOSE
-	return <-m.errCh
-}
-
-func (m *SimpleKVStore) doClose() error {
-	//e := m.c.SaveFile(m.path)
-	m.c.Flush() //Delete all of the values from memory.
+	if nil != m.db {
+		return m.db.Close()
+	}
 	return nil
 }
 
-func (m *SimpleKVStore) saveToFile() error {
-	m.ctrlCh <- SAVE
-	return <-m.errCh
+func (m *SimpleKVStore) encode(value interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	gob.Register(value)
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(value); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 func (m *SimpleKVStore) Set(key string, value interface{}) error {
-	if m.c == nil {
-		return fmt.Errorf("cache %s has not been initialized yet.", m.path)
-	}
-	if err := m.c.Add(key, value, cache.NoExpiration); err != nil {
+	b, err := m.encode(value)
+	if nil != err {
 		return err
 	}
-	return m.saveToFile()
+	sql := fmt.Sprintf("INSERT INTO %s(key,val) values(?,?);", m.table)
+	stmt, err := m.db.Prepare(sql)
+	_, err = stmt.Exec(key, b)
+	stmt.Close()
+	if nil != err && strings.Contains(err.Error(), "UNIQUE constraint failed") {
+		return fmt.Errorf(`Item %s already exists`, key)
+	}
+	return err
 }
 
 func (m *SimpleKVStore) Replace(key string, value interface{}) error {
-	if m.c == nil {
-		return fmt.Errorf("cache %s has not been initialized yet.", m.path)
+	b, err := m.encode(value)
+	if nil != err {
+		return err
 	}
-	m.c.Set(key, value, cache.NoExpiration)
-	return m.saveToFile()
+	sql := fmt.Sprintf("REPLACE INTO %s(key,val) values(?,?);", m.table)
+	stmt, err := m.db.Prepare(sql)
+	_, err = stmt.Exec(key, b)
+	stmt.Close()
+	return err
 }
 
-func (m *SimpleKVStore) Get(key string) (interface{}, bool) {
-	return m.c.Get(key)
+func (m *SimpleKVStore) Get(key string, value interface{}) bool {
+	sql := fmt.Sprintf("SELECT val FROM %s WHERE key='%s';", m.table, key)
+	row := m.db.QueryRow(sql)
+	var tmp []byte
+	err := row.Scan(&tmp)
+	if nil != err {
+		return false
+	}
+
+	dec := gob.NewDecoder(bytes.NewBuffer(tmp))
+	if err := dec.Decode(value); err != nil {
+		return false
+	}
+	return true
 }
 
 func (m *SimpleKVStore) Delete(key string) error {
-	if m.c == nil {
-		return fmt.Errorf("cache %s has not been initialized yet.", m.path)
-	}
-	if _, found := m.c.Get(key); found {
-		m.c.Delete(key)
-	} else {
+	sql := fmt.Sprintf("SELECT key FROM %s WHERE key='%s';", m.table, key)
+	row := m.db.QueryRow(sql)
+	var tmp []byte
+	err := row.Scan(&tmp)
+	if nil != err || 0 == len(tmp) {
 		return NewErrorWithCode(NOT_FOUND, fmt.Sprintf("%s is not found", key))
 	}
-	return m.saveToFile()
+	sql = fmt.Sprintf("DELETE FROM %s WHERE key='%s';", m.table, key)
+	_, err = m.db.Exec(sql)
+	return err
 }
 
 func (m *SimpleKVStore) Keys() (keys []string, err error) {
-	if m.c == nil {
-		return nil, fmt.Errorf("cache %s has not been initialized yet.", m.path)
+	sql := fmt.Sprintf("SELECT key FROM %s", m.table)
+	row, err := m.db.Query(sql)
+	if nil != err {
+		return nil, err
 	}
-	its := m.c.Items()
-	keys = make([]string, 0, len(its))
-	for k := range its {
-		keys = append(keys, k)
+	defer row.Close()
+	for row.Next() {
+		var val string
+		err = row.Scan(&val)
+		if nil != err {
+			return nil, err
+		} else {
+			keys = append(keys, val)
+		}
 	}
 	return keys, nil
 }
 
 func (m *SimpleKVStore) Clean() error {
-	return os.RemoveAll(m.path)
+	sql := fmt.Sprintf("DELETE FROM %s", m.table)
+	_, err := m.db.Exec(sql)
+	return err
 }
