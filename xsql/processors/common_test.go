@@ -941,7 +941,11 @@ func doRuleTestBySinkProps(t *testing.T, tests []ruleTest, j int, opt *api.RuleO
 	fmt.Printf("The test bucket for option %d size is %d.\n\n", j, len(tests))
 	for i, tt := range tests {
 		datas, dataLength, tp, mockSink, errCh := createStream(t, tt, j, opt, sinkProps)
-		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP); err != nil {
+		wait := 1
+		if opt.Qos == api.ExactlyOnce {
+			wait = 20
+		}
+		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP, wait); err != nil {
 			t.Errorf("send data error %s", err)
 			break
 		}
@@ -969,7 +973,7 @@ func compareResult(t *testing.T, mockSink *test.MockSink, resultFunc func(result
 	tp.Cancel()
 }
 
-func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, datas [][]*xsql.Tuple, errCh <-chan error, tp *xstream.TopologyNew, postleap int) error {
+func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, datas [][]*xsql.Tuple, errCh <-chan error, tp *xstream.TopologyNew, postleap int, wait int) error {
 	// Send data and move time
 	mockClock := test.GetMockClock()
 	// TODO assume multiple data source send the data in order and has the same length
@@ -995,15 +999,21 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 	}
 	mockClock.Add(time.Duration(postleap) * time.Millisecond)
 	common.Log.Debugf("Clock add to %d", common.GetNowInMilli())
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(time.Duration(wait) * time.Millisecond)
 	// Check if stream done. Poll for metrics,
-	for retry := 100; retry > 0; retry-- {
-		time.Sleep(time.Duration(retry) * time.Millisecond)
+	var retry int
+	for retry = 5; retry > 0; retry-- {
 		if err := compareMetrics(tp, metrics); err == nil {
 			break
 		} else {
 			common.Log.Errorf("check metrics error at %d: %s", retry, err)
 		}
+		time.Sleep(1000 * time.Millisecond)
+	}
+	if retry == 0 {
+		fmt.Printf("send data timeout\n")
+	} else if retry < 3 {
+		fmt.Printf("try %d for metric comparison\n", 4-retry)
 	}
 	return nil
 }
