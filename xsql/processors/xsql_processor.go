@@ -570,7 +570,13 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 			if err != nil {
 				return nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
 			}
-			pp, err := plans.NewPreprocessor(streamStmt, alias, rule.Options.IsEventTime)
+			isBinary := false
+			if f, ok := streamStmt.Options["FORMAT"]; ok {
+				if strings.ToLower(f) == common.FORMAT_BINARY {
+					isBinary = true
+				}
+			}
+			pp, err := plans.NewPreprocessor(streamStmt, alias, rule.Options.IsEventTime, isBinary)
 			if err != nil {
 				return nil, nil, err
 			}
