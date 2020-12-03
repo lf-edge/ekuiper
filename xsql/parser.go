@@ -2,6 +2,7 @@ package xsql
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/golang-collections/collections/stack"
 	"io"
 	"strconv"
@@ -810,12 +811,12 @@ func (p *Parser) ParseCreateStreamStmt() (*StreamStmt, error) {
 func validateStream(stmt *StreamStmt) error {
 	f, ok := stmt.Options["FORMAT"]
 	if !ok {
-		f = "json"
+		f = common.FORMAT_JSON
 	}
 	switch strings.ToLower(f) {
-	case "json":
+	case common.FORMAT_JSON:
 		//do nothing
-	case "binary":
+	case common.FORMAT_BINARY:
 		switch len(stmt.StreamFields) {
 		case 0:
 			// do nothing for schemaless

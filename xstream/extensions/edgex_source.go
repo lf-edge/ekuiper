@@ -30,6 +30,11 @@ type EdgexSource struct {
 }
 
 func (es *EdgexSource) Configure(device string, props map[string]interface{}) error {
+	if f, ok := props["format"]; ok {
+		if f != common.FORMAT_JSON {
+			return fmt.Errorf("edgex source only supports `json` format")
+		}
+	}
 	var protocol = "tcp"
 	if p, ok := props["protocol"]; ok {
 		protocol = p.(string)

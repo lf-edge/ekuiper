@@ -6,16 +6,21 @@ import (
 	"strings"
 )
 
-const DefaultField = "self"
+const (
+	FORMAT_BINARY = "binary"
+	FORMAT_JSON   = "json"
+
+	DEFAULT_FIELD = "self"
+)
 
 func MessageDecode(payload []byte, format string) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	switch strings.ToLower(format) {
-	case "json":
+	case FORMAT_JSON:
 		e := json.Unmarshal(payload, &result)
 		return result, e
-	case "binary":
-		result[DefaultField] = payload
+	case FORMAT_BINARY:
+		result[DEFAULT_FIELD] = payload
 		return result, nil
 	}
 	return nil, fmt.Errorf("invalid format %s", format)
