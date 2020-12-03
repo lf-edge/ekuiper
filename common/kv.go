@@ -19,31 +19,31 @@ type KeyValue interface {
 	Setnx(key string, value interface{}) error
 	// Set key to hold the string value. If key already holds a value, it is overwritten
 	Set(key string, value interface{}) error
-	Get(key string, val interface{}) bool
+	Get(key string, val interface{}) (bool, error)
 	//Must return *common.Error with NOT_FOUND error
 	Delete(key string) error
 	Keys() (keys []string, err error)
 	Clean() error
 }
 
-type SimpleKVStore struct {
+type SqliteKVStore struct {
 	db    *sql.DB
 	table string
 	path  string
 }
 
-func GetSimpleKVStore(fpath string) (ret *SimpleKVStore) {
+func GetSqliteKVStore(fpath string) (ret *SqliteKVStore) {
 	if _, err := os.Stat(fpath); os.IsNotExist(err) {
 		os.MkdirAll(fpath, os.ModePerm)
 	}
 	dir, file := filepath.Split(fpath)
-	ret = new(SimpleKVStore)
+	ret = new(SqliteKVStore)
 	ret.path = path.Join(dir, "sqliteKV.db")
 	ret.table = file
 	return ret
 }
 
-func (m *SimpleKVStore) Open() error {
+func (m *SqliteKVStore) Open() error {
 	db, err := sql.Open("sqlite3", m.path)
 	if nil != err {
 		return err
@@ -54,14 +54,14 @@ func (m *SimpleKVStore) Open() error {
 	return err
 }
 
-func (m *SimpleKVStore) Close() error {
+func (m *SqliteKVStore) Close() error {
 	if nil != m.db {
 		return m.db.Close()
 	}
 	return nil
 }
 
-func (m *SimpleKVStore) encode(value interface{}) ([]byte, error) {
+func (m *SqliteKVStore) encode(value interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	gob.Register(value)
 	enc := gob.NewEncoder(&buf)
@@ -71,7 +71,7 @@ func (m *SimpleKVStore) encode(value interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (m *SimpleKVStore) Setnx(key string, value interface{}) error {
+func (m *SqliteKVStore) Setnx(key string, value interface{}) error {
 	b, err := m.encode(value)
 	if nil != err {
 		return err
@@ -86,7 +86,7 @@ func (m *SimpleKVStore) Setnx(key string, value interface{}) error {
 	return err
 }
 
-func (m *SimpleKVStore) Set(key string, value interface{}) error {
+func (m *SqliteKVStore) Set(key string, value interface{}) error {
 	b, err := m.encode(value)
 	if nil != err {
 		return err
@@ -98,23 +98,23 @@ func (m *SimpleKVStore) Set(key string, value interface{}) error {
 	return err
 }
 
-func (m *SimpleKVStore) Get(key string, value interface{}) bool {
+func (m *SqliteKVStore) Get(key string, value interface{}) (bool, error) {
 	sql := fmt.Sprintf("SELECT val FROM %s WHERE key='%s';", m.table, key)
 	row := m.db.QueryRow(sql)
 	var tmp []byte
 	err := row.Scan(&tmp)
 	if nil != err {
-		return false
+		return false, nil
 	}
 
 	dec := gob.NewDecoder(bytes.NewBuffer(tmp))
 	if err := dec.Decode(value); err != nil {
-		return false
+		return false, err
 	}
-	return true
+	return true, nil
 }
 
-func (m *SimpleKVStore) Delete(key string) error {
+func (m *SqliteKVStore) Delete(key string) error {
 	sql := fmt.Sprintf("SELECT key FROM %s WHERE key='%s';", m.table, key)
 	row := m.db.QueryRow(sql)
 	var tmp []byte
@@ -127,7 +127,8 @@ func (m *SimpleKVStore) Delete(key string) error {
 	return err
 }
 
-func (m *SimpleKVStore) Keys() (keys []string, err error) {
+func (m *SqliteKVStore) Keys() ([]string, error) {
+	keys := make([]string, 0)
 	sql := fmt.Sprintf("SELECT key FROM %s", m.table)
 	row, err := m.db.Query(sql)
 	if nil != err {
@@ -146,7 +147,7 @@ func (m *SimpleKVStore) Keys() (keys []string, err error) {
 	return keys, nil
 }
 
-func (m *SimpleKVStore) Clean() error {
+func (m *SqliteKVStore) Clean() error {
 	sql := fmt.Sprintf("DELETE FROM %s", m.table)
 	_, err := m.db.Exec(sql)
 	return err

@@ -94,7 +94,7 @@ func (c *Cache) initStore(ctx api.StreamContext) {
 	if err != nil {
 		c.drainError(err)
 	}
-	c.store = common.GetSimpleKVStore(path.Join(dbDir, "sink", ctx.GetRuleId()))
+	c.store = common.GetSqliteKVStore(path.Join(dbDir, "sink", ctx.GetRuleId()))
 	c.key = ctx.GetOpId() + strconv.Itoa(ctx.GetInstanceId())
 	logger.Debugf("cache saved to key %s", c.key)
 	//load cache
@@ -168,8 +168,10 @@ func (c *Cache) loadCache() error {
 	defer c.store.Close()
 	if err == nil {
 		mt := new(LinkedQueue)
-		if f := c.store.Get(c.key, mt); f {
-			//	if mt, ok := t.(*LinkedQueue); ok {
+		if f, err := c.store.Get(c.key, &mt); f {
+			if nil != err {
+				return fmt.Errorf("load malform cache, found %v(%v)", c.key, mt)
+			}
 			c.pending = mt
 			c.changed = true
 			// To store the keys in slice in sorted order
@@ -186,9 +188,6 @@ func (c *Cache) loadCache() error {
 				c.Out <- t
 			}
 			return nil
-			//	}
-		} else {
-			return fmt.Errorf("load malform cache, found %v(%v)", mt, mt)
 		}
 	}
 	return nil

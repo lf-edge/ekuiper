@@ -46,7 +46,7 @@ func TestDataMigration(t *testing.T) {
 		return
 	}
 
-	store := GetSimpleKVStore(dir)
+	store := GetSqliteKVStore(dir)
 	if err := store.Open(); nil != err {
 		t.Error(err)
 		return
@@ -54,7 +54,7 @@ func TestDataMigration(t *testing.T) {
 	defer store.Close()
 	for k, v := range kvs {
 		var dbVal string
-		if !store.Get(k, &dbVal) {
+		if ok, _ := store.Get(k, &dbVal); !ok {
 			t.Error("not found key ", k)
 			return
 		} else if v != dbVal {

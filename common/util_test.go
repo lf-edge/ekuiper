@@ -9,13 +9,13 @@ import (
 	"testing"
 )
 
-func TestSimpleKVStore_Funcs(t *testing.T) {
+func TestSqliteKVStore_Funcs(t *testing.T) {
 	abs, _ := filepath.Abs("test")
 	if f, _ := os.Stat(abs); f != nil {
 		os.Remove(abs)
 	}
 
-	ks := GetSimpleKVStore(abs)
+	ks := GetSqliteKVStore(abs)
 	if e := ks.Open(); e != nil {
 		t.Errorf("Failed to open data %s.", e)
 	}
@@ -25,7 +25,7 @@ func TestSimpleKVStore_Funcs(t *testing.T) {
 	}
 
 	var v string
-	if ok := ks.Get("foo", &v); ok {
+	if ok, _ := ks.Get("foo", &v); ok {
 		if !reflect.DeepEqual("bar", v) {
 			t.Error("expect:bar", "get:", v)
 		}
@@ -42,7 +42,7 @@ func TestSimpleKVStore_Funcs(t *testing.T) {
 	}
 
 	var v1 string
-	if ok := ks.Get("foo1", &v1); ok {
+	if ok, _ := ks.Get("foo1", &v1); ok {
 		if !reflect.DeepEqual("bar2", v1) {
 			t.Error("expect:bar2", "get:", v1)
 		}
@@ -67,7 +67,7 @@ func TestSimpleKVStore_Funcs(t *testing.T) {
 	}
 
 	var v2 string
-	if ok := ks.Get("foo", &v2); ok {
+	if ok, _ := ks.Get("foo", &v2); ok {
 		if !reflect.DeepEqual("bar", v2) {
 			t.Error("expect:bar", "get:", v)
 		}

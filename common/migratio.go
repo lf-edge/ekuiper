@@ -21,7 +21,7 @@ func migration(dir string) error {
 		return err
 	}
 
-	store := GetSimpleKVStore(dir)
+	store := GetSqliteKVStore(dir)
 	if err := store.Open(); nil != err {
 		return err
 	}

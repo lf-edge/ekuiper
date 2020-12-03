@@ -141,11 +141,11 @@ func doCheckpointRuleTest(t *testing.T, tests []ruleCheckpointTest, j int, opt *
 				common.Log.Debugf("check checkpointCount error at %d: %d", retry, actual)
 			}
 		}
-		tp.Cancel()
 		if retry == 0 {
 			t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, j, tt.cc, tp.GetCoordinator().GetCompleteCount())
 			return
 		}
+		tp.Cancel()
 		time.Sleep(10 * time.Millisecond)
 		// resume stream
 		log.Debugf("Resume stream at %d", common.GetNowInMilli())
