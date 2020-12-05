@@ -70,6 +70,7 @@ func doStartRule(rs *RuleState) error {
 				logger.Printf("closing rule %s for error: %v", rs.Name, err)
 				tp.Cancel()
 			} else {
+				rs.Triggered = false
 				logger.Printf("closing rule %s", rs.Name)
 			}
 		}
