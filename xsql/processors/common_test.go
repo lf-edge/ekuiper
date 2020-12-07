@@ -1,6 +1,7 @@
 package processors
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
@@ -9,6 +10,7 @@ import (
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
 	"github.com/emqx/kuiper/xstream/test"
+	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
@@ -27,7 +29,10 @@ type ruleTest struct {
 	t    *xstream.PrintableTopo // printable topo, an optional field
 }
 
-var DbDir = getDbDir()
+var (
+	DbDir         = getDbDir()
+	image, b64img = getImg()
+)
 
 func getDbDir() string {
 	common.InitConf()
@@ -37,6 +42,19 @@ func getDbDir() string {
 	}
 	log.Infof("db location is %s", dbDir)
 	return dbDir
+}
+
+func getImg() ([]byte, string) {
+	docsFolder, err := common.GetLoc("/docs/")
+	if err != nil {
+		log.Fatalf("Cannot find docs folder: %v", err)
+	}
+	image, err := ioutil.ReadFile(path.Join(docsFolder, "cover.jpg"))
+	if err != nil {
+		log.Fatalf("Cannot read image: %v", err)
+	}
+	b64img := base64.StdEncoding.EncodeToString(image)
+	return image, b64img
 }
 
 func cleanStateData() {
@@ -891,6 +909,15 @@ var testData = map[string][]*xsql.Tuple{
 			Timestamp: 1541152493400,
 		},
 	},
+	"binDemo": {
+		{
+			Emitter: "binDemo",
+			Message: map[string]interface{}{
+				"self": image,
+			},
+			Timestamp: 1541152486013,
+		},
+	},
 }
 
 func commonResultFunc(result [][]byte) interface{} {
@@ -1094,6 +1121,8 @@ func handleStream(createOrDrop bool, names []string, t *testing.T) {
 				sql = "CREATE STREAM ext2 (count bigint) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"dedup\")"
 			case "text":
 				sql = "CREATE STREAM text (slogan string, brand string) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"
+			case "binDemo":
+				sql = "CREATE STREAM binDemo () WITH (DATASOURCE=\"users\", FORMAT=\"BINARY\")"
 			default:
 				t.Errorf("create stream %s fail", name)
 			}
