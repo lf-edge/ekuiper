@@ -11,10 +11,11 @@ Below is the list of data types supported.
 | 1    | bigint    |                                                              |
 | 2    | float     |                                                              |
 | 3    | string    |                                                              |
-| 4    | datetime  | Not support.                                                 |
+| 4    | datetime  |                                                 |
 | 5    | boolean   |                                                              |
-| 6    | array     | The array type, can be any simple types or struct type (#1 - #5, and #7). |
-| 7    | struct    | The complex type.                                            |
+| 6    | bytea   |  A sequence of bytes to store binary data. If the stream format is "JSON", the bytea field must be a base64 encoded string |
+| 7    | array     | The array type, can be any simple types or array and type. |
+| 8    | struct    | The complex type.                                            |
 
 ## Language definitions
 
@@ -30,10 +31,10 @@ CREATE STREAM
 | Property name | Optional | Description                                                  |
 | ------------- | -------- | ------------------------------------------------------------ |
 | DATASOURCE | false    | The value is determined by source type. The topic names list if it's a MQTT data source. Please refer to related document for other sources. |
-| FORMAT        | true | The data format, currently the value can only be "JSON". |
+| FORMAT        | true | The data format, currently the value can be "JSON" and "BINARY". The default is "JSON". Check [Binary Stream](#Binary Stream) for more detail. |
 | KEY           | true     | Reserved key, currently the field is not used. It will be used for GROUP BY statements. |
 | TYPE     | true | The source type, if not specified, the value is "mqtt". |
-| StrictValidation     | true | To control validation behavior of message field against stream schema. See [StrictValidation](#StrictValidation) for more info. |
+| StrictValidation     | true | To control validation behavior of message field against stream schema. See [Strict Validation](#Strict Validation) for more info. |
 | CONF_KEY | true | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../rules/sources/mqtt.md) for more info. |
 
 **Example 1,**
@@ -67,7 +68,7 @@ The stream will subscribe to MQTT topic ``test/``, the server connection uses se
 
 - See [rules and streams CLI docs](../cli/overview.md) for more information of rules & streams management.
 
-### StrictValidation
+### Strict Validation
 
 ```
 The value of StrictValidation can be true or false.
@@ -77,8 +78,9 @@ The value of StrictValidation can be true or false.
 bigint: 0
 float: 0.0
 string: ""
-datetime: (NOT support yet)
+datetime: the current time
 boolean: false
+bytea: nil
 array: zero length array
 struct: null value
 ```
@@ -95,3 +97,14 @@ Schema-less stream field data type will be determined at runtime. If the field i
 
 See [Query languange element](query_language_elements.md) for more inforamtion of SQL language.
 
+### Binary Stream
+
+Specify "BINARY" format for streams of binary data such as image or video streams. The payload of such streams is a block of binary data without fields. So it is required to define the stream as only one field of `bytea`. In the below example, the payload will be parsed into `image` field of `demoBin` stream.
+
+```sql
+demoBin (
+	image BYTEA
+) WITH (DATASOURCE="test/", FORMAT="BINARY");
+```
+
+If "BINARY" format stream is defined as schemaless, a default field named `self` will be assigned for the binary payload.
