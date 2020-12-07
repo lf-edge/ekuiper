@@ -15,6 +15,7 @@ func TestGetConf_Apply(t *testing.T) {
 		"client":   "900",
 		"user":     "SPERF",
 		"passwd":   "PASSPASS",
+		"format":   "json",
 		"params": map[string]interface{}{
 			"QUERY_TABLE": "VBAP",
 			"ROWCOUNT":    10,
@@ -41,6 +42,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 	result := map[string]interface{}{
 		"interval": 100,
 		"seed":     1,
+		"format":   "json",
 		"pattern": map[string]interface{}{
 			"count": 50,
 		},
