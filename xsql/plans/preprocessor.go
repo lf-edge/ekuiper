@@ -1,6 +1,7 @@
 package plans
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
@@ -19,10 +20,11 @@ type Preprocessor struct {
 	isEventTime     bool
 	timestampField  string
 	timestampFormat string
+	isBinary        bool
 }
 
-func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool) (*Preprocessor, error) {
-	p := &Preprocessor{streamStmt: s, aliasFields: fs, isEventTime: iet}
+func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool, isBinary bool) (*Preprocessor, error) {
+	p := &Preprocessor{streamStmt: s, aliasFields: fs, isEventTime: iet, isBinary: isBinary}
 	if iet {
 		if tf, ok := s.Options["TIMESTAMP"]; ok {
 			p.timestampField = tf
@@ -33,7 +35,6 @@ func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool) (*Preprocesso
 			p.timestampFormat = ts
 		}
 	}
-
 	return p, nil
 }
 
@@ -52,9 +53,17 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.F
 
 	result := make(map[string]interface{})
 	if p.streamStmt.StreamFields != nil {
-		for _, f := range p.streamStmt.StreamFields {
+		if p.isBinary {
+			f := p.streamStmt.StreamFields[0]
+			tuple.Message[f.Name] = tuple.Message[common.DEFAULT_FIELD]
 			if e := p.addRecField(f.FieldType, result, tuple.Message, f.Name); e != nil {
 				return fmt.Errorf("error in preprocessor: %s", e)
+			}
+		} else {
+			for _, f := range p.streamStmt.StreamFields {
+				if e := p.addRecField(f.FieldType, result, tuple.Message, f.Name); e != nil {
+					return fmt.Errorf("error in preprocessor: %s", e)
+				}
 			}
 		}
 	} else {
@@ -174,6 +183,20 @@ func (p *Preprocessor) addRecField(ft xsql.FieldType, r map[string]interface{}, 
 					}
 				} else {
 					return fmt.Errorf("invalid data type for %s, expect boolean but found %[2]T(%[2]v)", n, t)
+				}
+			case xsql.BYTEA:
+				if jtype == reflect.String {
+					if b, err := base64.StdEncoding.DecodeString(t.(string)); err != nil {
+						return fmt.Errorf("invalid data type for %s, expect bytea but found %[2]T(%[2]v) which cannot base64 decode", n, t)
+					} else {
+						r[n] = b
+					}
+				} else if jtype == reflect.Slice {
+					if b, ok := t.([]byte); ok {
+						r[n] = b
+					} else {
+						return fmt.Errorf("invalid data type for %s, expect bytea but found %[2]T(%[2]v)", n, t)
+					}
 				}
 			default:
 				return fmt.Errorf("invalid data type for %s, it is not supported yet", st)
@@ -409,6 +432,28 @@ func (p *Preprocessor) addArrayField(ft *xsql.ArrayType, srcSlice []interface{})
 					}
 				} else {
 					return nil, fmt.Errorf("invalid data type for [%d], expect boolean but found %[2]T(%[2]v)", i, t)
+				}
+			}
+			return tempSlice, nil
+		case xsql.BYTEA:
+			if srcSlice == nil {
+				return [][]byte(nil), nil
+			}
+			tempSlice := make([][]byte, 0)
+			for i, t := range srcSlice {
+				jtype := reflect.ValueOf(t).Kind()
+				if jtype == reflect.String {
+					if b, err := base64.StdEncoding.DecodeString(t.(string)); err != nil {
+						return nil, fmt.Errorf("invalid data type for [%d], expect bytea but found %[2]T(%[2]v) which cannot base64 decode", i, t)
+					} else {
+						tempSlice = append(tempSlice, b)
+					}
+				} else if jtype == reflect.Slice {
+					if b, ok := t.([]byte); ok {
+						tempSlice = append(tempSlice, b)
+					} else {
+						return nil, fmt.Errorf("invalid data type for [%d], expect bytea but found %[2]T(%[2]v)", i, t)
+					}
 				}
 			}
 			return tempSlice, nil

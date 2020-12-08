@@ -619,3 +619,77 @@ func TestNoneSingleSQLTemplate(t *testing.T) {
 		return result
 	})
 }
+
+func TestSingleSQLForBinary(t *testing.T) {
+	//Reset
+	streamList := []string{"binDemo"}
+	handleStream(false, streamList, t)
+	//Data setup
+	var tests = []ruleTest{
+		{
+			name: `TestSingleSQLRule1`,
+			sql:  `SELECT * FROM binDemo`,
+			r: [][]map[string]interface{}{
+				{{
+					"self": image,
+				}},
+			},
+			m: map[string]interface{}{
+				"op_preprocessor_binDemo_0_exceptions_total":   int64(0),
+				"op_preprocessor_binDemo_0_process_latency_us": int64(0),
+				"op_preprocessor_binDemo_0_records_in_total":   int64(1),
+				"op_preprocessor_binDemo_0_records_out_total":  int64(1),
+
+				"op_project_0_exceptions_total":   int64(0),
+				"op_project_0_process_latency_us": int64(0),
+				"op_project_0_records_in_total":   int64(1),
+				"op_project_0_records_out_total":  int64(1),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(1),
+				"sink_mockSink_0_records_out_total": int64(1),
+
+				"source_binDemo_0_exceptions_total":  int64(0),
+				"source_binDemo_0_records_in_total":  int64(1),
+				"source_binDemo_0_records_out_total": int64(1),
+			},
+		},
+	}
+	handleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength: 100,
+		}, {
+			BufferLength:       100,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+		}, {
+			BufferLength:       100,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+		},
+	}
+	byteFunc := func(result [][]byte) interface{} {
+		var maps [][]map[string]interface{}
+		for _, v := range result {
+			var mapRes []map[string][]byte
+			err := json.Unmarshal(v, &mapRes)
+			if err != nil {
+				panic("Failed to parse the input into map")
+			}
+			mapInt := make([]map[string]interface{}, len(mapRes))
+			for i, mv := range mapRes {
+				mapInt[i] = make(map[string]interface{})
+				//assume only one key
+				for k, v := range mv {
+					mapInt[i][k] = v
+				}
+			}
+			maps = append(maps, mapInt)
+		}
+		return maps
+	}
+	for j, opt := range options {
+		doRuleTestBySinkProps(t, tests, j, opt, nil, byteFunc)
+	}
+}

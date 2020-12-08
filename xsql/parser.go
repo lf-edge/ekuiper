@@ -2,6 +2,7 @@ package xsql
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/golang-collections/collections/stack"
 	"io"
 	"strconv"
@@ -786,14 +787,11 @@ func (p *Parser) ParseCreateStreamStmt() (*StreamStmt, error) {
 				}
 				if tok3, lit3 := p.scanIgnoreWhitespace(); tok3 == SEMICOLON {
 					p.unscan()
-					return stmt, nil
 				} else if tok3 == EOF {
-					//Finish parsing create stream statement.
-					return stmt, nil
+					//Finish parsing create stream statement. Jump to validate
 				} else {
 					return nil, fmt.Errorf("found %q, expected semicolon or EOF.", lit3)
 				}
-
 			} else {
 				return nil, fmt.Errorf("found %q, expected stream name.", lit2)
 			}
@@ -804,7 +802,39 @@ func (p *Parser) ParseCreateStreamStmt() (*StreamStmt, error) {
 		p.unscan()
 		return nil, nil
 	}
+	if valErr := validateStream(stmt); valErr != nil {
+		return nil, valErr
+	}
 	return stmt, nil
+}
+
+func validateStream(stmt *StreamStmt) error {
+	f, ok := stmt.Options["FORMAT"]
+	if !ok {
+		f = common.FORMAT_JSON
+	}
+	switch strings.ToLower(f) {
+	case common.FORMAT_JSON:
+		//do nothing
+	case common.FORMAT_BINARY:
+		switch len(stmt.StreamFields) {
+		case 0:
+			// do nothing for schemaless
+		case 1:
+			f := stmt.StreamFields[0]
+			if bt, ok := f.FieldType.(*BasicType); ok {
+				if bt.Type == BYTEA {
+					break
+				}
+			}
+			return fmt.Errorf("'binary' format stream can have only 'bytea' type field")
+		default:
+			return fmt.Errorf("'binary' format stream can have only one field")
+		}
+	default:
+		return fmt.Errorf("option 'format=%s' is invalid", f)
+	}
+	return nil
 }
 
 func (p *Parser) parseShowStreamsStmt() (*ShowStreamsStatement, error) {

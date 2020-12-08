@@ -7,6 +7,7 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	"math/rand"
+	"strings"
 	"time"
 )
 
@@ -17,7 +18,8 @@ type randomSourceConfig struct {
 	Seed     int                    `json:"seed"`
 	Pattern  map[string]interface{} `json:"pattern"`
 	// how long will the source trace for deduplication. If 0, deduplicate is disabled; if negative, deduplicate will be the whole life time
-	Deduplicate int `json:"deduplicate"`
+	Deduplicate int    `json:"deduplicate"`
+	Format      string `json:"format"`
 }
 
 //Emit data randomly with only a string field
@@ -40,6 +42,9 @@ func (s *randomSource) Configure(topic string, props map[string]interface{}) err
 	}
 	if cfg.Interval <= 0 {
 		return fmt.Errorf("source `random` property `seed` must be a positive integer but got %d", cfg.Seed)
+	}
+	if strings.ToLower(cfg.Format) != common.FORMAT_JSON {
+		return fmt.Errorf("random source only supports `json` format")
 	}
 	s.conf = cfg
 	return nil

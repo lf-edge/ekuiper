@@ -1,13 +1,16 @@
 package plans
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/contexts"
+	"io/ioutil"
 	"log"
+	"path"
 	"reflect"
 	"testing"
 	"time"
@@ -593,7 +596,7 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 				},
 				Options: map[string]string{
 					"DATASOURCE":       "users",
-					"FORMAT":           "AVRO",
+					"FORMAT":           "JSON",
 					"KEY":              "USERID",
 					"CONF_KEY":         "srv1",
 					"TYPE":             "MQTT",
@@ -696,7 +699,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 				},
 				Options: map[string]string{
 					"DATASOURCE":       "users",
-					"FORMAT":           "AVRO",
+					"FORMAT":           "JSON",
 					"KEY":              "USERID",
 					"CONF_KEY":         "srv1",
 					"TYPE":             "MQTT",
@@ -716,7 +719,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 				StreamFields: nil,
 				Options: map[string]string{
 					"DATASOURCE":       "users",
-					"FORMAT":           "AVRO",
+					"FORMAT":           "JSON",
 					"KEY":              "USERID",
 					"CONF_KEY":         "srv1",
 					"TYPE":             "MQTT",
@@ -827,7 +830,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
-		pp, err := NewPreprocessor(tt.stmt, nil, true)
+		pp, err := NewPreprocessor(tt.stmt, nil, true, false)
 		if err != nil {
 			t.Error(err)
 		}
@@ -890,7 +893,7 @@ func TestPreprocessorError(t *testing.T) {
 				},
 				Options: map[string]string{
 					"DATASOURCE":       "users",
-					"FORMAT":           "AVRO",
+					"FORMAT":           "JSON",
 					"KEY":              "USERID",
 					"CONF_KEY":         "srv1",
 					"TYPE":             "MQTT",
@@ -913,6 +916,135 @@ func TestPreprocessorError(t *testing.T) {
 
 		dm := make(map[string]interface{})
 		if e := json.Unmarshal(tt.data, &dm); e != nil {
+			log.Fatal(e)
+			return
+		} else {
+			tuple := &xsql.Tuple{Message: dm}
+			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			result := pp.Apply(ctx, tuple, fv, afv)
+			if !reflect.DeepEqual(tt.result, result) {
+				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
+			}
+		}
+
+	}
+}
+
+func TestPreprocessorForBinary(t *testing.T) {
+	docsFolder, err := common.GetLoc("/docs/")
+	if err != nil {
+		t.Errorf("Cannot find docs folder: %v", err)
+	}
+	image, err := ioutil.ReadFile(path.Join(docsFolder, "cover.jpg"))
+	if err != nil {
+		t.Errorf("Cannot read image: %v", err)
+	}
+	b64img := base64.StdEncoding.EncodeToString(image)
+	//TODO test bytea type conversion to string or else
+	var tests = []struct {
+		stmt     *xsql.StreamStmt
+		data     []byte
+		isBinary bool
+		result   interface{}
+	}{
+		{
+			stmt: &xsql.StreamStmt{
+				Name:         xsql.StreamName("demo"),
+				StreamFields: nil,
+			},
+			data:     image,
+			isBinary: true,
+			result: &xsql.Tuple{Message: xsql.Message{
+				"self": image,
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "img", FieldType: &xsql.BasicType{Type: xsql.BYTEA}},
+				},
+			},
+			data:     image,
+			isBinary: true,
+			result: &xsql.Tuple{Message: xsql.Message{
+				"img": image,
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.RecType{
+						StreamFields: []xsql.StreamField{
+							{Name: "b", FieldType: &xsql.BasicType{Type: xsql.BYTEA}},
+						},
+					}},
+				},
+			},
+			data: []byte(fmt.Sprintf(`{"a": {"b" : "%s"}}`, b64img)),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": map[string]interface{}{
+					"b": image,
+				},
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.ArrayType{
+						Type: xsql.BYTEA,
+					}},
+				},
+			},
+			data: []byte(fmt.Sprintf(`{"a": ["%s"]}`, b64img)),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": [][]byte{
+					image,
+				},
+			},
+			},
+		},
+		{
+			stmt: &xsql.StreamStmt{
+				Name: xsql.StreamName("demo"),
+				StreamFields: []xsql.StreamField{
+					{Name: "a", FieldType: &xsql.ArrayType{
+						Type: xsql.STRUCT,
+						FieldType: &xsql.RecType{
+							StreamFields: []xsql.StreamField{
+								{Name: "b", FieldType: &xsql.BasicType{Type: xsql.BYTEA}},
+							},
+						},
+					}},
+				},
+			},
+			data: []byte(fmt.Sprintf(`{"a": [{"b":"%s"}]}`, b64img)),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": []map[string]interface{}{
+					{"b": image},
+				},
+			},
+			},
+		},
+	}
+
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+
+	defer common.CloseLogger()
+	contextLogger := common.Log.WithField("rule", "TestPreprocessorForBinary")
+	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
+	for i, tt := range tests {
+		pp := &Preprocessor{streamStmt: tt.stmt, isBinary: tt.isBinary}
+		format := "json"
+		if tt.isBinary {
+			format = "binary"
+		}
+		if dm, e := common.MessageDecode(tt.data, format); e != nil {
 			log.Fatal(e)
 			return
 		} else {

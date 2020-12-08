@@ -3,7 +3,6 @@ package extensions
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
@@ -18,14 +17,15 @@ const DEFAULT_INTERVAL = 10000
 const DEFAULT_TIMEOUT = 5000
 
 type HTTPPullSource struct {
-	url         string
-	method      string
-	interval    int
-	timeout     int
-	incremental bool
-	body        string
-	bodyType    string
-	headers     map[string]string
+	url           string
+	method        string
+	interval      int
+	timeout       int
+	incremental   bool
+	body          string
+	bodyType      string
+	headers       map[string]string
+	messageFormat string
 
 	client *http.Client
 }
@@ -92,6 +92,15 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 		}
 	}
 
+	hps.messageFormat = common.FORMAT_JSON
+	if c, ok := props["format"]; ok {
+		if c1, ok1 := c.(string); ok1 {
+			hps.messageFormat = c1
+		} else {
+			return fmt.Errorf("Not valid format value %v.", c)
+		}
+	}
+
 	if b, ok := props["body"]; ok {
 		if b1, ok1 := b.(string); ok1 {
 			hps.body = b1
@@ -134,7 +143,7 @@ func (hps *HTTPPullSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
 	ticker := time.NewTicker(time.Millisecond * time.Duration(hps.interval))
 	logger := ctx.GetLogger()
 	defer ticker.Stop()
@@ -165,10 +174,10 @@ func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 					}
 				}
 
-				result := make(map[string]interface{})
+				result, e := common.MessageDecode(c, hps.messageFormat)
 				meta := make(map[string]interface{})
-				if e := json.Unmarshal(c, &result); e != nil {
-					logger.Errorf("Invalid data format, cannot convert %s into JSON with error %s", string(c), e)
+				if e != nil {
+					logger.Errorf("Invalid data format, cannot decode %s to %s format with error %s", string(c), hps.messageFormat, e)
 					return
 				}
 
