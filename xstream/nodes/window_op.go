@@ -282,20 +282,19 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				o.statManager.IncTotalExceptions()
 			}
 		case now := <-c:
+			n := common.TimeToUnixMilli(now)
+			if o.window.Type == xsql.SESSION_WINDOW {
+				lastTriggerTime := o.triggerTime
+				o.triggerTime = n
+				log.Debugf("session window update trigger time %d with %d inputs", n, len(inputs))
+				if len(inputs) == 0 || lastTriggerTime < inputs[0].Timestamp {
+					log.Debugf("session window last trigger time %d < first tuple %d", lastTriggerTime, inputs[0].Timestamp)
+					break
+				}
+			}
 			if len(inputs) > 0 {
 				o.statManager.ProcessTimeStart()
-				n := common.TimeToUnixMilli(now)
-				//For session window, check if the last scan time is newer than the inputs
-				if o.window.Type == xsql.SESSION_WINDOW {
-					//scan time for session window will record all triggers of the ticker but not the timeout
-					lastTriggerTime := o.triggerTime
-					o.triggerTime = n
-					//Check if the current window has exceeded the max duration, if not continue expand
-					if lastTriggerTime < inputs[0].Timestamp {
-						break
-					}
-				}
-				log.Debugf("triggered by ticker")
+				log.Debugf("triggered by ticker at %d", n)
 				inputs, _ = o.scan(inputs, n, ctx)
 				o.statManager.ProcessTimeEnd()
 				ctx.PutState(WINDOW_INPUTS_KEY, inputs)

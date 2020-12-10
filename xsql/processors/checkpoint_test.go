@@ -155,7 +155,7 @@ func doCheckpointRuleTest(t *testing.T, tests []ruleCheckpointTest, j int, opt *
 		log.Debugf("Resume stream at %d", common.GetNowInMilli())
 		errCh = tp.Open()
 		log.Debugf("After open stream at %d", common.GetNowInMilli())
-		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP, 3000); err != nil {
+		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP, 10); err != nil {
 			t.Errorf("second phase send data error %s", err)
 			break
 		}
