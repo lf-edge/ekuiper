@@ -49,10 +49,10 @@ func (s *TopologyNew) GetContext() api.StreamContext {
 	return s.ctx
 }
 
+// may be called multiple times so must be idempotent
 func (s *TopologyNew) Cancel() {
-	if s.drain != nil {
-		close(s.drain)
-	}
+	// completion signal
+	s.drainErr(nil)
 	s.cancel()
 	s.store = nil
 	s.coordinator = nil
@@ -115,7 +115,12 @@ func (s *TopologyNew) prepareContext() {
 }
 
 func (s *TopologyNew) drainErr(err error) {
-	go func() { s.drain <- err }()
+	select {
+	case s.drain <- err:
+		s.ctx.GetLogger().Errorf("topo %s drain error %v", s.name, err)
+	default:
+		s.ctx.GetLogger().Infof("topo %s drain error %v, but receiver closed so ignored", s.name, err)
+	}
 }
 
 func (s *TopologyNew) Open() <-chan error {

@@ -38,10 +38,15 @@ func (rr *RuleRegistry) Load(key string) (value *RuleState, ok bool) {
 	return result, ok
 }
 
-func (rr *RuleRegistry) Delete(key string) {
+// Atomic get and delete
+func (rr *RuleRegistry) Delete(key string) (*RuleState, bool) {
 	rr.Lock()
-	delete(rr.internal, key)
+	result, ok := rr.internal[key]
+	if ok {
+		delete(rr.internal, key)
+	}
 	rr.Unlock()
+	return result, ok
 }
 
 func createRuleState(rule *api.Rule) (*RuleState, error) {
@@ -64,8 +69,8 @@ func doStartRule(rs *RuleState) error {
 	go func() {
 		tp := rs.Topology
 		select {
-		case err, ok := <-tp.Open():
-			if ok {
+		case err := <-tp.Open():
+			if err != nil {
 				tp.GetContext().SetError(err)
 				logger.Printf("closing rule %s for error: %v", rs.Name, err)
 				tp.Cancel()
@@ -210,11 +215,10 @@ func stopRule(name string) (result string) {
 }
 
 func deleteRule(name string) (result string) {
-	if rs, ok := registry.Load(name); ok {
+	if rs, ok := registry.Delete(name); ok {
 		if rs.Triggered {
 			(*rs.Topology).Cancel()
 		}
-		registry.Delete(name)
 		result = fmt.Sprintf("Rule %s was deleted.", name)
 	} else {
 		result = fmt.Sprintf("Rule %s was not found.", name)
