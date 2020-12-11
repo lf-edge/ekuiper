@@ -19,8 +19,7 @@ import (
 	"time"
 )
 
-const SOURCELEAP = 200 // Time change before sending a data
-const POSTLEAP = 1000  // Time change after all data sends out
+const POSTLEAP = 1000 // Time change after all data sends out
 type ruleTest struct {
 	name string
 	sql  string
@@ -76,11 +75,6 @@ func cleanStateData() {
 
 func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}) (err error) {
 	keys, values := tp.GetMetrics()
-	if common.Config.Basic.Debug == true {
-		for i, k := range keys {
-			log.Printf("%s:%v", k, values[i])
-		}
-	}
 	for k, v := range m {
 		var (
 			index   int
@@ -941,7 +935,11 @@ func doRuleTestBySinkProps(t *testing.T, tests []ruleTest, j int, opt *api.RuleO
 	fmt.Printf("The test bucket for option %d size is %d.\n\n", j, len(tests))
 	for i, tt := range tests {
 		datas, dataLength, tp, mockSink, errCh := createStream(t, tt, j, opt, sinkProps)
-		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP); err != nil {
+		wait := 20
+		if opt.Qos == api.ExactlyOnce {
+			wait = 30
+		}
+		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP, wait); err != nil {
 			t.Errorf("send data error %s", err)
 			break
 		}
@@ -969,18 +967,21 @@ func compareResult(t *testing.T, mockSink *test.MockSink, resultFunc func(result
 	tp.Cancel()
 }
 
-func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, datas [][]*xsql.Tuple, errCh <-chan error, tp *xstream.TopologyNew, postleap int) error {
+func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, datas [][]*xsql.Tuple, errCh <-chan error, tp *xstream.TopologyNew, postleap int, wait int) error {
 	// Send data and move time
 	mockClock := test.GetMockClock()
+	// Set the current time
+	mockClock.Add(0)
 	// TODO assume multiple data source send the data in order and has the same length
 	for i := 0; i < dataLength; i++ {
-		mockClock.Add(SOURCELEAP * time.Millisecond)
-		common.Log.Debugf("Clock add to %d", common.GetNowInMilli())
-		time.Sleep(1)
 		for _, d := range datas {
 			// Make sure time is going forward only
-			if d[i].Timestamp > common.GetNowInMilli() {
-				mockClock.Set(common.TimeFromUnixMilli(d[i].Timestamp))
+			// gradually add up time to ensure checkpoint is triggered before the data send
+			for n := common.GetNowInMilli() + 100; d[i].Timestamp+100 > n; n += 100 {
+				if d[i].Timestamp < n {
+					n = d[i].Timestamp
+				}
+				mockClock.Set(common.TimeFromUnixMilli(n))
 				common.Log.Debugf("Clock set to %d", common.GetNowInMilli())
 				time.Sleep(1)
 			}
@@ -992,18 +993,25 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 			default:
 			}
 		}
+		time.Sleep(time.Duration(wait) * time.Millisecond)
 	}
 	mockClock.Add(time.Duration(postleap) * time.Millisecond)
 	common.Log.Debugf("Clock add to %d", common.GetNowInMilli())
-	time.Sleep(1)
 	// Check if stream done. Poll for metrics,
-	for retry := 100; retry > 0; retry-- {
-		time.Sleep(time.Duration(retry) * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
+	var retry int
+	for retry = 2; retry > 0; retry-- {
 		if err := compareMetrics(tp, metrics); err == nil {
 			break
 		} else {
-			common.Log.Debugf("check metrics error at %d: %s", retry, err)
+			common.Log.Errorf("check metrics error at %d: %s", retry, err)
 		}
+		time.Sleep(1000 * time.Millisecond)
+	}
+	if retry == 0 {
+		fmt.Printf("send data timeout\n")
+	} else if retry < 2 {
+		fmt.Printf("try %d for metric comparison\n", 2-retry)
 	}
 	return nil
 }
@@ -1011,7 +1019,7 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 func createStream(t *testing.T, tt ruleTest, j int, opt *api.RuleOption, sinkProps map[string]interface{}) ([][]*xsql.Tuple, int, *xstream.TopologyNew, *test.MockSink, <-chan error) {
 	// Rest for each test
 	cleanStateData()
-	test.ResetClock(1541152485800)
+	test.ResetClock(1541152486000)
 	// Create stream
 	var (
 		sources    []*nodes.SourceNode

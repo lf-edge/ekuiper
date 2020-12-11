@@ -24,7 +24,7 @@ type StreamProcessor struct {
 //@params d : the directory of the DB to save the stream info
 func NewStreamProcessor(d string) *StreamProcessor {
 	processor := &StreamProcessor{
-		db: common.GetSimpleKVStore(d),
+		db: common.GetSqliteKVStore(d),
 	}
 	return processor
 }
@@ -67,7 +67,7 @@ func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, statement stri
 		return "", fmt.Errorf("Create stream fails, error when opening db: %v.", err)
 	}
 	defer p.db.Close()
-	err = p.db.Set(string(stmt.Name), statement)
+	err = p.db.Setnx(string(stmt.Name), statement)
 	if err != nil {
 		return "", fmt.Errorf("Create stream fails: %v.", err)
 	} else {
@@ -91,7 +91,7 @@ func (p *StreamProcessor) ExecReplaceStream(statement string) (string, error) {
 		}
 		defer p.db.Close()
 
-		if err = p.db.Replace(string(s.Name), statement); nil != err {
+		if err = p.db.Set(string(s.Name), statement); nil != err {
 			return "", fmt.Errorf("Replace stream fails: %v.", err)
 		} else {
 			info := fmt.Sprintf("Stream %s is replaced.", s.Name)
@@ -153,11 +153,11 @@ func (p *StreamProcessor) DescStream(name string) (*xsql.StreamStmt, error) {
 		return nil, fmt.Errorf("Describe stream fails, error when opening db: %v.", err)
 	}
 	defer p.db.Close()
-	s, f := p.db.Get(name)
+	var s1 string
+	f, _ := p.db.Get(name, &s1)
 	if !f {
 		return nil, common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("Stream %s is not found.", name))
 	}
-	s1 := s.(string)
 
 	parser := xsql.NewParser(strings.NewReader(s1))
 	stream, err := xsql.Language.Parse(parser)
@@ -177,7 +177,8 @@ func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement) (
 		return "", fmt.Errorf("Explain stream fails, error when opening db: %v.", err)
 	}
 	defer p.db.Close()
-	_, f := p.db.Get(stmt.Name)
+	var s string
+	f, _ := p.db.Get(stmt.Name, &s)
 	if !f {
 		return "", fmt.Errorf("Stream %s is not found.", stmt.Name)
 	}
@@ -206,12 +207,12 @@ func (p *StreamProcessor) DropStream(name string) (string, error) {
 	}
 }
 
-func GetStream(m *common.SimpleKVStore, name string) (stmt *xsql.StreamStmt, err error) {
-	s, f := m.Get(name)
+func GetStream(m *common.SqliteKVStore, name string) (stmt *xsql.StreamStmt, err error) {
+	var s1 string
+	f, _ := m.Get(name, &s1)
 	if !f {
 		return nil, fmt.Errorf("Cannot find key %s. ", name)
 	}
-	s1, _ := s.(string)
 	parser := xsql.NewParser(strings.NewReader(s1))
 	stream, err := xsql.Language.Parse(parser)
 	stmt, ok := stream.(*xsql.StreamStmt)
@@ -228,7 +229,7 @@ type RuleProcessor struct {
 
 func NewRuleProcessor(d string) *RuleProcessor {
 	processor := &RuleProcessor{
-		db:        common.GetSimpleKVStore(path.Join(d, "rule")),
+		db:        common.GetSqliteKVStore(path.Join(d, "rule")),
 		rootDbDir: d,
 	}
 	return processor
@@ -246,7 +247,7 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 	}
 	defer p.db.Close()
 
-	err = p.db.Set(rule.Id, ruleJson)
+	err = p.db.Setnx(rule.Id, ruleJson)
 	if err != nil {
 		return nil, err
 	} else {
@@ -267,7 +268,7 @@ func (p *RuleProcessor) ExecUpdate(name, ruleJson string) (*api.Rule, error) {
 	}
 	defer p.db.Close()
 
-	err = p.db.Replace(rule.Id, ruleJson)
+	err = p.db.Set(rule.Id, ruleJson)
 	if err != nil {
 		return nil, err
 	} else {
@@ -295,7 +296,7 @@ func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (err e
 	}
 	defer p.db.Close()
 
-	err = p.db.Replace(name, string(ruleJson))
+	err = p.db.Set(name, string(ruleJson))
 	if err != nil {
 		return err
 	} else {
@@ -310,11 +311,11 @@ func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
 		return nil, err
 	}
 	defer p.db.Close()
-	s, f := p.db.Get(name)
+	var s1 string
+	f, _ := p.db.Get(name, &s1)
 	if !f {
 		return nil, common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("Rule %s is not found.", name))
 	}
-	s1, _ := s.(string)
 	return p.getRuleByJson(name, s1)
 }
 
@@ -379,7 +380,7 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	if rule.Options == nil {
 		rule.Options = &api.RuleOption{}
 	}
-	//Set default options
+	//Setnx default options
 	if rule.Options.CheckpointInterval < 0 {
 		return nil, fmt.Errorf("rule option checkpointInterval %d is invalid, require a positive integer", rule.Options.CheckpointInterval)
 	}
@@ -435,11 +436,11 @@ func (p *RuleProcessor) ExecDesc(name string) (string, error) {
 		return "", err
 	}
 	defer p.db.Close()
-	s, f := p.db.Get(name)
+	var s1 string
+	f, _ := p.db.Get(name, &s1)
 	if !f {
 		return "", fmt.Errorf("Rule %s is not found.", name)
 	}
-	s1, _ := s.(string)
 	dst := &bytes.Buffer{}
 	if err := json.Indent(dst, []byte(s1), "", "  "); err != nil {
 		return "", err
@@ -464,8 +465,9 @@ func (p *RuleProcessor) ExecDrop(name string) (string, error) {
 	}
 	defer p.db.Close()
 	result := fmt.Sprintf("Rule %s is dropped.", name)
-	if ruleJson, ok := p.db.Get(name); ok {
-		rule, err := p.getRuleByJson(name, ruleJson.(string))
+	var ruleJson string
+	if ok, _ := p.db.Get(name, &ruleJson); ok {
+		rule, err := p.getRuleByJson(name, ruleJson)
 		if err != nil {
 			return "", err
 		}
@@ -495,7 +497,7 @@ func cleanSinkCache(rule *api.Rule) error {
 	if err != nil {
 		return err
 	}
-	store := common.GetSimpleKVStore(path.Join(dbDir, "sink"))
+	store := common.GetSqliteKVStore(path.Join(dbDir, "sink"))
 	err = store.Open()
 	if err != nil {
 		return err
@@ -548,7 +550,7 @@ func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.S
 		if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || dimensions != nil) {
 			return nil, nil, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
 		}
-		store := common.GetSimpleKVStore(path.Join(p.rootDbDir, "stream"))
+		store := common.GetSqliteKVStore(path.Join(p.rootDbDir, "stream"))
 		err = store.Open()
 		if err != nil {
 			return nil, nil, err

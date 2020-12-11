@@ -358,7 +358,6 @@ func SyncMapToMap(sm *sync.Map) map[string]interface{} {
 	})
 	return m
 }
-
 func MapToSyncMap(m map[string]interface{}) *sync.Map {
 	sm := new(sync.Map)
 	for k, v := range m {

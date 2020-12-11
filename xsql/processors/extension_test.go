@@ -48,7 +48,7 @@ func TestExtensions(t *testing.T) {
 	for i, tt := range tests {
 		// Rest for each test
 		cleanStateData()
-		test.ResetClock(1541152485800)
+		test.ResetClock(1541152486000)
 		// Create stream
 		p := NewRuleProcessor(DbDir)
 		p.ExecDrop(tt.name)
