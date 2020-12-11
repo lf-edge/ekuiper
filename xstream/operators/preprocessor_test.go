@@ -1,4 +1,4 @@
-package plans
+package operators
 
 import (
 	"encoding/base64"

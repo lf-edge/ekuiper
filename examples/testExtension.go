@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql/processors"
+	"github.com/emqx/kuiper/xstream/planner"
 	"path"
 	"time"
 )
@@ -33,7 +34,7 @@ func main() {
 		log.Printf(msg)
 	}
 
-	tp, err := rp.ExecInitRule(rs)
+	tp, err := planner.Plan(rs, dbDir)
 	if err != nil {
 		log.Panicf("fail to init rule: %v", err)
 	}

@@ -1,4 +1,4 @@
-package plans
+package operators
 
 import (
 	"fmt"
@@ -397,7 +397,7 @@ func TestMultiJoinPlan_Apply(t *testing.T) {
 			t.Errorf("statement source is not a table")
 		} else {
 			fv, afv := xsql.NewFunctionValuersForOp(nil)
-			pp := &JoinPlan{Joins: stmt.Joins, From: table}
+			pp := &JoinOp{Joins: stmt.Joins, From: table}
 			result := pp.Apply(ctx, tt.data, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)

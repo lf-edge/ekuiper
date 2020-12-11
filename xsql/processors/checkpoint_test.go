@@ -67,11 +67,11 @@ func TestCheckpoint(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demo_0_records_in_total":  int64(3),
-				"op_preprocessor_demo_0_records_out_total": int64(3),
+				"op_1_preprocessor_demo_0_records_in_total":  int64(3),
+				"op_1_preprocessor_demo_0_records_out_total": int64(3),
 
-				"op_project_0_records_in_total":  int64(3),
-				"op_project_0_records_out_total": int64(3),
+				"op_3_project_0_records_in_total":  int64(3),
+				"op_3_project_0_records_out_total": int64(3),
 
 				"sink_mockSink_0_records_in_total":  int64(3),
 				"sink_mockSink_0_records_out_total": int64(3),
@@ -79,18 +79,18 @@ func TestCheckpoint(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(3),
 				"source_demo_0_records_out_total": int64(3),
 
-				"op_window_0_records_in_total":  int64(3),
-				"op_window_0_records_out_total": int64(3),
+				"op_2_window_0_records_in_total":  int64(3),
+				"op_2_window_0_records_out_total": int64(3),
 			},
 		},
 		pauseSize: 3,
 		cc:        2,
 		pauseMetric: map[string]interface{}{
-			"op_preprocessor_demo_0_records_in_total":  int64(3),
-			"op_preprocessor_demo_0_records_out_total": int64(3),
+			"op_1_preprocessor_demo_0_records_in_total":  int64(3),
+			"op_1_preprocessor_demo_0_records_out_total": int64(3),
 
-			"op_project_0_records_in_total":  int64(1),
-			"op_project_0_records_out_total": int64(1),
+			"op_3_project_0_records_in_total":  int64(1),
+			"op_3_project_0_records_out_total": int64(1),
 
 			"sink_mockSink_0_records_in_total":  int64(1),
 			"sink_mockSink_0_records_out_total": int64(1),
@@ -98,8 +98,8 @@ func TestCheckpoint(t *testing.T) {
 			"source_demo_0_records_in_total":  int64(3),
 			"source_demo_0_records_out_total": int64(3),
 
-			"op_window_0_records_in_total":  int64(3),
-			"op_window_0_records_out_total": int64(1),
+			"op_2_window_0_records_in_total":  int64(3),
+			"op_2_window_0_records_out_total": int64(1),
 		}},
 	}
 	handleStream(true, streamList, t)

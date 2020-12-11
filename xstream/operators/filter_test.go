@@ -1,4 +1,4 @@
-package plans
+package operators
 
 import (
 	"errors"
@@ -334,7 +334,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 			break
 		}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		pp := &FilterPlan{Condition: stmt.Condition}
+		pp := &FilterOp{Condition: stmt.Condition}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
@@ -457,7 +457,7 @@ func TestFilterPlanError(t *testing.T) {
 			break
 		}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		pp := &FilterPlan{Condition: stmt.Condition}
+		pp := &FilterOp{Condition: stmt.Condition}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)

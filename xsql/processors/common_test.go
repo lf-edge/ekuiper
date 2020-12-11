@@ -9,6 +9,7 @@ import (
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
+	"github.com/emqx/kuiper/xstream/planner"
 	"github.com/emqx/kuiper/xstream/test"
 	"io/ioutil"
 	"os"
@@ -1027,7 +1028,6 @@ func createStream(t *testing.T, tt ruleTest, j int, opt *api.RuleOption, sinkPro
 		dataLength int
 	)
 
-	p := NewRuleProcessor(DbDir)
 	parser := xsql.NewParser(strings.NewReader(tt.sql))
 	if stmt, err := xsql.Language.Parse(parser); err != nil {
 		t.Errorf("parse sql %s error: %s", tt.sql, err)
@@ -1047,13 +1047,13 @@ func createStream(t *testing.T, tt ruleTest, j int, opt *api.RuleOption, sinkPro
 			}
 		}
 	}
-	tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.name, j), Sql: tt.sql, Options: opt}, sources)
-	if err != nil {
-		t.Error(err)
-	}
 	mockSink := test.NewMockSink()
 	sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, sinkProps)
-	tp.AddSink(inputs, sink)
+	tp, err := planner.PlanWithSourcesAndSinks(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.name, j), Sql: tt.sql, Options: opt}, DbDir, sources, []*nodes.SinkNode{sink})
+	if err != nil {
+		t.Error(err)
+		return nil, 0, nil, nil, nil
+	}
 	errCh := tp.Open()
 	return datas, dataLength, tp, mockSink, errCh
 }

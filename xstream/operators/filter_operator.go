@@ -1,4 +1,4 @@
-package plans
+package operators
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/emqx/kuiper/xstream/api"
 )
 
-type FilterPlan struct {
+type FilterOp struct {
 	Condition xsql.Expr
 }
 
@@ -14,7 +14,7 @@ type FilterPlan struct {
  *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
  *  output: *xsql.Tuple | xsql.WindowTuplesSet | xsql.JoinTupleSets
  */
-func (p *FilterPlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
+func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("filter plan receive %s", data)
 	switch input := data.(type) {

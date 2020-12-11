@@ -39,7 +39,7 @@ func init() {
 	gob.Register([]*xsql.Tuple{})
 }
 
-func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance int64, streams []string, bufferLength int) (*WindowOperator, error) {
+func NewWindowOp(name string, w WindowConfig, isEventTime bool, lateTolerance int64, streams []string, bufferLength int) (*WindowOperator, error) {
 	o := new(WindowOperator)
 
 	o.defaultSinkNode = &defaultSinkNode{
@@ -50,21 +50,10 @@ func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance in
 		},
 	}
 	o.isEventTime = isEventTime
-	if w != nil {
-		o.window = &WindowConfig{
-			Type:   w.WindowType,
-			Length: w.Length.Val,
-		}
-		if w.Interval != nil {
-			o.window.Interval = w.Interval.Val
-		} else if o.window.Type == xsql.COUNT_WINDOW {
-			//if no interval value is set and it's count window, then set interval to length value.
-			o.window.Interval = o.window.Length
-		}
-	} else {
-		o.window = &WindowConfig{
-			Type: xsql.NOT_WINDOW,
-		}
+	o.window = &w
+	if o.window.Interval == 0 && o.window.Type == xsql.COUNT_WINDOW {
+		//if no interval value is set and it's count window, then set interval to length value.
+		o.window.Interval = o.window.Length
 	}
 	if isEventTime {
 		//Create watermark generator
