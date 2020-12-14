@@ -1,4 +1,4 @@
-package plans
+package operators
 
 import (
 	"errors"
@@ -262,7 +262,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 			break
 		}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		pp := &HavingPlan{Condition: stmt.Having}
+		pp := &HavingOp{Condition: stmt.Having}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
@@ -415,7 +415,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 			break
 		}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		pp := &HavingPlan{Condition: stmt.Having}
+		pp := &HavingOp{Condition: stmt.Having}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
@@ -487,7 +487,7 @@ func TestHavingPlanError(t *testing.T) {
 			break
 		}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		pp := &HavingPlan{Condition: stmt.Having}
+		pp := &HavingOp{Condition: stmt.Having}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)

@@ -1,4 +1,4 @@
-package plans
+package operators
 
 import (
 	"errors"
@@ -472,7 +472,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 			break
 		}
 
-		pp := &OrderPlan{SortFields: stmt.SortFields}
+		pp := &OrderOp{SortFields: stmt.SortFields}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {

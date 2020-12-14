@@ -1,4 +1,4 @@
-package plans
+package operators
 
 import (
 	"encoding/json"
@@ -417,7 +417,7 @@ func TestStrFunc_Apply1(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectPlan{Fields: stmt.Fields}
+		pp := &ProjectOp{Fields: stmt.Fields}
 		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)

@@ -1,4 +1,4 @@
-package plans
+package operators
 
 import (
 	"encoding/json"
@@ -516,7 +516,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
-		pp := &ProjectPlan{Fields: stmt.Fields, SendMeta: true}
+		pp := &ProjectOp{Fields: stmt.Fields, SendMeta: true}
 		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
@@ -1067,7 +1067,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
-		pp := &ProjectPlan{Fields: stmt.Fields}
+		pp := &ProjectOp{Fields: stmt.Fields}
 		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
@@ -1268,7 +1268,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		pp := &ProjectPlan{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
 		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
@@ -1971,7 +1971,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		pp := &ProjectPlan{Fields: stmt.Fields, IsAggregate: true, isTest: true}
+		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: true, isTest: true}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
@@ -2121,7 +2121,7 @@ func TestProjectPlanError(t *testing.T) {
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
-		pp := &ProjectPlan{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
 		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)

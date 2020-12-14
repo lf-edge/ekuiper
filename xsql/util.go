@@ -111,3 +111,16 @@ func LowercaseKeyMap(m map[string]interface{}) map[string]interface{} {
 	}
 	return m1
 }
+
+func GetStatementFromSql(sql string) (*SelectStatement, error) {
+	parser := NewParser(strings.NewReader(sql))
+	if stmt, err := Language.Parse(parser); err != nil {
+		return nil, fmt.Errorf("Parse SQL %s error: %s.", sql, err)
+	} else {
+		if r, ok := stmt.(*SelectStatement); !ok {
+			return nil, fmt.Errorf("SQL %s is not a select statement.", sql)
+		} else {
+			return r, nil
+		}
+	}
+}

@@ -1,4 +1,4 @@
-package plans
+package operators
 
 import (
 	"fmt"
@@ -6,11 +6,11 @@ import (
 	"github.com/emqx/kuiper/xstream/api"
 )
 
-type HavingPlan struct {
+type HavingOp struct {
 	Condition xsql.Expr
 }
 
-func (p *HavingPlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
+func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("having plan receive %s", data)
 	switch input := data.(type) {

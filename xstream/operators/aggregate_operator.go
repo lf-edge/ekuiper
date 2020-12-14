@@ -1,4 +1,4 @@
-package plans
+package operators
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/emqx/kuiper/xstream/api"
 )
 
-type AggregatePlan struct {
+type AggregateOp struct {
 	Dimensions xsql.Dimensions
 	Alias      xsql.Fields
 }
@@ -15,7 +15,7 @@ type AggregatePlan struct {
  *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
  *  output: xsql.GroupedTuplesSet
  */
-func (p *AggregatePlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
+func (p *AggregateOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("aggregate plan receive %s", data)
 	grouped := data
@@ -105,7 +105,7 @@ func (p *AggregatePlan) Apply(ctx api.StreamContext, data interface{}, fv *xsql.
 	return grouped
 }
 
-func (p *AggregatePlan) calculateAlias(tuple xsql.DataValuer, agg xsql.AggregateData, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) error {
+func (p *AggregateOp) calculateAlias(tuple xsql.DataValuer, agg xsql.AggregateData, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) error {
 	afv.SetData(agg)
 	ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(agg, fv, tuple, fv, afv, &xsql.WildcardValuer{Data: tuple})}
 	for _, f := range p.Alias {

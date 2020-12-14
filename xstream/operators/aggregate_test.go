@@ -1,4 +1,4 @@
-package plans
+package operators
 
 import (
 	"errors"
@@ -310,7 +310,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			break
 		}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		pp := &AggregatePlan{Dimensions: stmt.Dimensions.GetGroups()}
+		pp := &AggregateOp{Dimensions: stmt.Dimensions.GetGroups()}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		gr, ok := result.(xsql.GroupedTuplesSet)
 		if !ok {
@@ -552,7 +552,7 @@ func TestAggregatePlanGroupAlias_Apply(t *testing.T) {
 			}
 		}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		pp := &AggregatePlan{Dimensions: stmt.Dimensions.GetGroups(), Alias: aggregateAlias}
+		pp := &AggregateOp{Dimensions: stmt.Dimensions.GetGroups(), Alias: aggregateAlias}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		gr, ok := result.(xsql.GroupedTuplesSet)
 		if !ok {
@@ -699,7 +699,7 @@ func TestAggregatePlanAlias_Apply(t *testing.T) {
 			}
 		}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		pp := &AggregatePlan{Dimensions: stmt.Dimensions.GetGroups(), Alias: aggregateAlias}
+		pp := &AggregateOp{Dimensions: stmt.Dimensions.GetGroups(), Alias: aggregateAlias}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
@@ -752,7 +752,7 @@ func TestAggregatePlanError(t *testing.T) {
 			break
 		}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		pp := &AggregatePlan{Dimensions: stmt.Dimensions.GetGroups()}
+		pp := &AggregateOp{Dimensions: stmt.Dimensions.GetGroups()}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)

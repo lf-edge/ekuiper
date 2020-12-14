@@ -1,4 +1,4 @@
-package plans
+package operators
 
 import (
 	"encoding/json"
@@ -181,7 +181,7 @@ func TestMiscFunc_Apply1(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectPlan{Fields: stmt.Fields}
+		pp := &ProjectOp{Fields: stmt.Fields}
 		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
@@ -234,7 +234,7 @@ func TestMqttFunc_Apply2(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectPlan{Fields: stmt.Fields}
+		pp := &ProjectOp{Fields: stmt.Fields}
 		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
@@ -351,7 +351,7 @@ func TestMetaFunc_Apply1(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectPlan{Fields: stmt.Fields}
+		pp := &ProjectOp{Fields: stmt.Fields}
 		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
@@ -697,7 +697,7 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectPlan{Fields: stmt.Fields}
+		pp := &ProjectOp{Fields: stmt.Fields}
 		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
