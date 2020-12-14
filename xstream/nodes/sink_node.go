@@ -195,32 +195,61 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				m.mutex.Lock()
 				m.statManagers = append(m.statManagers, stats)
 				m.mutex.Unlock()
-				var cache *Cache
-				if m.qos >= api.AtLeastOnce {
-					cache = NewCheckpointbasedCache(m.input, cacheLength, m.tch, result, ctx)
+
+				if common.Config.Sink.DisableCache {
+					for {
+						select {
+						case data := <-m.input:
+							if newdata, processed := m.preprocess(data); processed {
+								break
+							} else {
+								data = newdata
+							}
+							stats.SetBufferLength(int64(len(m.input)))
+							if runAsync {
+								go doCollect(sink, data, stats, omitIfEmpty, sendSingle, tp, ctx)
+							} else {
+								doCollect(sink, data, stats, omitIfEmpty, sendSingle, tp, ctx)
+							}
+						case <-ctx.Done():
+							logger.Infof("sink node %s instance %d done", m.name, instance)
+							if err := sink.Close(ctx); err != nil {
+								logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
+							}
+							return
+						case <-m.tch:
+							logger.Debugf("rule %s sink receive checkpoint, do nothing", ctx.GetRuleId())
+						}
+					}
 				} else {
-					cache = NewTimebasedCache(m.input, cacheLength, cacheSaveInterval, result, ctx)
-				}
-				for {
-					select {
-					case data := <-cache.Out:
-						if newdata, processed := m.preprocess(data.data); processed {
-							break
-						} else {
-							data.data = newdata
+					logger.Infof("Creating sink cache")
+					var cache *Cache
+					if m.qos >= api.AtLeastOnce {
+						cache = NewCheckpointbasedCache(m.input, cacheLength, m.tch, result, ctx)
+					} else {
+						cache = NewTimebasedCache(m.input, cacheLength, cacheSaveInterval, result, ctx)
+					}
+					for {
+						select {
+						case data := <-cache.Out:
+							if newdata, processed := m.preprocess(data.data); processed {
+								break
+							} else {
+								data.data = newdata
+							}
+							stats.SetBufferLength(int64(len(m.input)))
+							if runAsync {
+								go doCollectCacheTuple(sink, data, stats, retryInterval, retryCount, omitIfEmpty, sendSingle, tp, cache.Complete, ctx)
+							} else {
+								doCollectCacheTuple(sink, data, stats, retryInterval, retryCount, omitIfEmpty, sendSingle, tp, cache.Complete, ctx)
+							}
+						case <-ctx.Done():
+							logger.Infof("sink node %s instance %d done", m.name, instance)
+							if err := sink.Close(ctx); err != nil {
+								logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
+							}
+							return
 						}
-						stats.SetBufferLength(int64(cache.Length()))
-						if runAsync {
-							go doCollect(sink, data, stats, retryInterval, retryCount, omitIfEmpty, sendSingle, tp, cache.Complete, ctx)
-						} else {
-							doCollect(sink, data, stats, retryInterval, retryCount, omitIfEmpty, sendSingle, tp, cache.Complete, ctx)
-						}
-					case <-ctx.Done():
-						logger.Infof("sink node %s instance %d done", m.name, instance)
-						if err := sink.Close(ctx); err != nil {
-							logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
-						}
-						return
 					}
 				}
 			}(i)
@@ -243,16 +272,30 @@ func extractInput(v []byte) ([]map[string]interface{}, error) {
 	return j, nil
 }
 
-func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval, retryCount int, omitIfEmpty bool, sendSingle bool, tp *template.Template, signalCh chan<- int, ctx api.StreamContext) {
+func doCollect(sink api.Sink, item interface{}, stats StatManager, omitIfEmpty bool, sendSingle bool, tp *template.Template, ctx api.StreamContext) {
 	stats.IncTotalRecordsIn()
 	stats.ProcessTimeStart()
 	defer stats.ProcessTimeEnd()
 	logger := ctx.GetLogger()
+	outdatas := getOutData(stats, ctx, item, omitIfEmpty, sendSingle, tp)
+
+	for _, outdata := range outdatas {
+		if err := sink.Collect(ctx, outdata); err != nil {
+			stats.IncTotalExceptions()
+			logger.Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), outdata, err)
+		} else {
+			stats.IncTotalRecordsOut()
+		}
+	}
+}
+
+func getOutData(stats StatManager, ctx api.StreamContext, item interface{}, omitIfEmpty bool, sendSingle bool, tp *template.Template) [][]byte {
+	logger := ctx.GetLogger()
 	var outdatas [][]byte
-	switch val := item.data.(type) {
+	switch val := item.(type) {
 	case []byte:
 		if omitIfEmpty && string(val) == "[{}]" {
-			return
+			return nil
 		}
 		var (
 			err error
@@ -261,9 +304,9 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 		if sendSingle || tp != nil {
 			j, err = extractInput(val)
 			if err != nil {
-				stats.IncTotalExceptions()
 				logger.Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), val, err)
-				return
+				stats.IncTotalExceptions()
+				return nil
 			}
 			logger.Debugf("receive %d records", len(j))
 		}
@@ -274,7 +317,7 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 				if err != nil {
 					logger.Warnf("sink node %s instance %d publish %s decode template error: %v", ctx.GetOpId(), ctx.GetInstanceId(), val, err)
 					stats.IncTotalExceptions()
-					return
+					return nil
 				}
 				outdatas = append(outdatas, output.Bytes())
 			} else {
@@ -288,14 +331,14 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 					if err != nil {
 						logger.Warnf("sink node %s instance %d publish %s decode template error: %v", ctx.GetOpId(), ctx.GetInstanceId(), val, err)
 						stats.IncTotalExceptions()
-						return
+						return nil
 					}
 					outdatas = append(outdatas, output.Bytes())
 				} else {
 					if ot, e := json.Marshal(r); e != nil {
 						logger.Warnf("sink node %s instance %d publish %s marshal error: %v", ctx.GetOpId(), ctx.GetInstanceId(), r, e)
 						stats.IncTotalExceptions()
-						return
+						return nil
 					} else {
 						outdatas = append(outdatas, ot)
 					}
@@ -308,7 +351,15 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 	default:
 		outdatas = [][]byte{[]byte(fmt.Sprintf(`[{"error":"result is not a string but found %#v"}]`, val))}
 	}
+	return outdatas
+}
 
+func doCollectCacheTuple(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval, retryCount int, omitIfEmpty bool, sendSingle bool, tp *template.Template, signalCh chan<- int, ctx api.StreamContext) {
+	stats.IncTotalRecordsIn()
+	stats.ProcessTimeStart()
+	defer stats.ProcessTimeEnd()
+	logger := ctx.GetLogger()
+	outdatas := getOutData(stats, ctx, item.data, omitIfEmpty, sendSingle, tp)
 	for _, outdata := range outdatas {
 	outerloop:
 		for {
@@ -330,7 +381,12 @@ func doCollect(sink api.Sink, item *CacheTuple, stats StatManager, retryInterval
 				} else {
 					logger.Debugf("success")
 					stats.IncTotalRecordsOut()
-					signalCh <- item.index
+					select {
+					case signalCh <- item.index:
+					default:
+						logger.Warnf("sink cache missing response for %d", item.index)
+					}
+
 					break outerloop
 				}
 			}

@@ -85,10 +85,6 @@ func (c *Cache) initStore(ctx api.StreamContext) {
 		Data: make(map[int]interface{}),
 		Tail: 0,
 	}
-	if common.Config.Sink.DisableCache {
-		logger.Infof("The cache is disabled, and skip the initialization of cache.")
-		return
-	}
 	dbDir, err := common.GetDataLoc()
 	logger.Debugf("cache saved to %s", dbDir)
 	if err != nil {
@@ -194,9 +190,6 @@ func (c *Cache) loadCache() error {
 }
 
 func (c *Cache) saveCache(logger api.Logger, p *LinkedQueue) error {
-	if common.Config.Sink.DisableCache {
-		return nil
-	}
 	err := c.store.Open()
 	if err != nil {
 		logger.Errorf("save cache error while opening cache store: %s", err)

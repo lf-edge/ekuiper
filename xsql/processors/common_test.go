@@ -26,6 +26,7 @@ type ruleTest struct {
 	r    interface{}            // The result
 	m    map[string]interface{} // final metrics
 	t    *xstream.PrintableTopo // printable topo, an optional field
+	w    int                    // wait time for each data sending, in milli
 }
 
 var (
@@ -222,7 +223,7 @@ var testData = map[string][]*xsql.Tuple{
 				"from": "device1",
 				"ts":   1541152486013,
 			},
-			Timestamp: 1541152486013,
+			Timestamp: 1541152486115,
 		},
 		{
 			Emitter: "demo1",
@@ -232,7 +233,7 @@ var testData = map[string][]*xsql.Tuple{
 				"from": "device2",
 				"ts":   1541152486823,
 			},
-			Timestamp: 1541152486823,
+			Timestamp: 1541152486903,
 		},
 		{
 			Emitter: "demo1",
@@ -242,7 +243,7 @@ var testData = map[string][]*xsql.Tuple{
 				"from": "device3",
 				"ts":   1541152487632,
 			},
-			Timestamp: 1541152487632,
+			Timestamp: 1541152487702,
 		},
 		{
 			Emitter: "demo1",
@@ -252,7 +253,7 @@ var testData = map[string][]*xsql.Tuple{
 				"from": "device1",
 				"ts":   1541152488442,
 			},
-			Timestamp: 1541152488442,
+			Timestamp: 1541152488605,
 		},
 		{
 			Emitter: "demo1",
@@ -262,7 +263,7 @@ var testData = map[string][]*xsql.Tuple{
 				"from": "device3",
 				"ts":   1541152489252,
 			},
-			Timestamp: 1541152489252,
+			Timestamp: 1541152489305,
 		},
 	},
 	"sessionDemo": {
@@ -935,9 +936,12 @@ func doRuleTestBySinkProps(t *testing.T, tests []ruleTest, j int, opt *api.RuleO
 	fmt.Printf("The test bucket for option %d size is %d.\n\n", j, len(tests))
 	for i, tt := range tests {
 		datas, dataLength, tp, mockSink, errCh := createStream(t, tt, j, opt, sinkProps)
-		wait := 20
-		if opt.Qos == api.ExactlyOnce {
-			wait = 30
+		wait := tt.w
+		if wait == 0 {
+			wait = 5
+			if opt.Qos == api.ExactlyOnce {
+				wait = 10
+			}
 		}
 		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP, wait); err != nil {
 			t.Errorf("send data error %s", err)
@@ -992,8 +996,8 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 				return err
 			default:
 			}
+			time.Sleep(time.Duration(wait) * time.Millisecond)
 		}
-		time.Sleep(time.Duration(wait) * time.Millisecond)
 	}
 	mockClock.Add(time.Duration(postleap) * time.Millisecond)
 	common.Log.Debugf("Clock add to %d", common.GetNowInMilli())
