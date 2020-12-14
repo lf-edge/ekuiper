@@ -421,9 +421,13 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, err
 		go func() {
 			select {
 			case err := <-tp.Open():
-				log.Infof("closing query for error: %v", err)
-				tp.GetContext().SetError(err)
-				tp.Cancel()
+				if err != nil {
+					log.Infof("closing query for error: %v", err)
+					tp.GetContext().SetError(err)
+					tp.Cancel()
+				} else {
+					log.Info("closing query")
+				}
 			}
 		}()
 		return tp, nil
