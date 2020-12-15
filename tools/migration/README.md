@@ -1,16 +1,16 @@
-## 1 程序说明及应用：
+## 1 Program description and application:
 
-### 1.1 程序说明：
+### 1.1 Program description:
 
-​    本程序用于历史数据迁移，将版本号小于1.0.2的 kuiper 数据迁移到1.0.2版本中。程序运行时将 `dada` 文件夹及其子目录下所有名为 `stores.data` 的文件数据迁移到 data 目录下的 `sqliteKV.db` 数据库中。若原数据存储路径为 `data/rule/store.data`,则迁移后数据位于`data/sqliteKV.db `路径下名为`rule`的表中。
+This program is used for historical data migration, which migrates Kuiper data whose version number is less than 1.0.2 to 1.0.2 version. When the program is running, all file data named `stores.data` in the `dada` folder and its subdirectories will be migrated to the `sqliteKV.db` database under the data directory. If the original data storage path is `data/rule/store.data`, the migrated data will be located in the table named `rule` under the path `data/sqliteKV.db`.
 
-### 1.2 编译程序：
+### 1.2 Compile the program:
 
-执行 `go build -o tools/migration/migration tools/migration/main.go` 命令即可生成 migration 程序。
+Execute the `go build -o tools/migration/migration tools/migration/main.go` command to generate the migration program.
 
-### 1.3 操作示例
+### 1.3 Operation example
 
-用户需要提供 kuiper 的 data 文件夹的路径
+The user needs to provide the path of Kuiper's data folder
 
 ```shell
 ./migration $(kuiper/data)
