@@ -75,6 +75,7 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 func createRestServer(ip string, port int) *http.Server {
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
@@ -140,6 +141,10 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		byteInfo, _ := json.Marshal(info)
 		w.Write(byteInfo)
 	}
+}
+
+func pingHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
 
 //list or create streams
