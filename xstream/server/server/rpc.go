@@ -172,7 +172,7 @@ func (t *Server) ShowRules(_ int, reply *string) error {
 }
 
 func (t *Server) DropRule(name string, reply *string) error {
-	stopRule(name)
+	deleteRule(name)
 	r, err := ruleProcessor.ExecDrop(name)
 	if err != nil {
 		return fmt.Errorf("Drop rule error : %s.", err)

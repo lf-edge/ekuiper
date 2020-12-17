@@ -126,7 +126,7 @@ SELECT followers->Group1[:1]->first FROM demo
 
 Kuiper 提供了一系列函数，以允许通过结构或数组列或值进行 json 路径操作。 这些函数是：
 
-```tsql
+```sql
 json_path_exists(col, jsonpath)
 json_path_query(col, jsonpath)
 json_path_query_first(col, jsonpath)
@@ -154,28 +154,28 @@ json_path_query_first(col, jsonpath)
 开发人员可以在 SQL 语句中使用 json 函数。 这里有些例子。
 
 - 查询第1组跟随者的姓氏
-```tsql
+```sql
 SELECT json_path_query(followers, "$.Group1[*].last") FROM demo
 
 ["Shavor","Miller"]
 ```
 
 - 查询第1组年龄大于60岁的跟随者的姓氏
-```tsql
+```sql
 SELECT name->last FROM demo where json_path_exists(followers, "$.Group1[? @.age>30]")
 
 "Anderson"
 ```
 
 - 查询第1组年龄大于30岁的跟随者的姓氏
-```tsql
+```sql
 SELECT json_path_exists(followers, "$.Group1[? @.age>30].last") FROM demo
 
 ["Miller"]
 ```
 
 - 假设跟随者有一个字段有保留字或点之类的字符， 比如 `my.follower`,使用括号访问它。
-```tsql
+```sql
 SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
 
 ["Miller"]

@@ -2,17 +2,18 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	zmq "github.com/pebbe/zmq4"
 )
 
 type zmqSource struct {
-	subscriber *zmq.Socket
-	srv        string
-	topic      string
-	cancel     context.CancelFunc
+	subscriber    *zmq.Socket
+	srv           string
+	topic         string
+	messageFormat string
+	cancel        context.CancelFunc
 }
 
 func (s *zmqSource) Configure(topic string, props map[string]interface{}) error {
@@ -22,6 +23,12 @@ func (s *zmqSource) Configure(topic string, props map[string]interface{}) error 
 		return fmt.Errorf("zmq source is missing property server")
 	}
 	s.srv = srv.(string)
+	f, ok := props["format"]
+	if !ok {
+		s.messageFormat = common.FORMAT_JSON
+	} else {
+		s.messageFormat = f.(string)
+	}
 	return nil
 }
 
@@ -42,26 +49,26 @@ func (s *zmqSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 	s.cancel = cancel
 	logger.Debugf("start to listen")
 	for {
-		msgs, err := s.subscriber.RecvMessage(0)
+		msgs, err := s.subscriber.RecvMessageBytes(0)
 		if err != nil {
 			id, err := s.subscriber.GetIdentity()
 			errCh <- fmt.Errorf("zmq source getting message %s error: %v", id, err)
 		} else {
 			logger.Debugf("zmq source receive %v", msgs)
-			var m string
+			var m []byte
 			for i, msg := range msgs {
 				if i == 0 && s.topic != "" {
 					continue
 				}
-				m += msg
+				m = append(m, msg...)
 			}
 			meta := make(map[string]interface{})
 			if s.topic != "" {
-				meta["topic"] = msgs[0]
+				meta["topic"] = string(msgs[0])
 			}
-			result := make(map[string]interface{})
-			if e := json.Unmarshal([]byte(m), &result); e != nil {
-				logger.Warnf("zmq source message %s is not json", m)
+			result, e := common.MessageDecode(m, s.messageFormat)
+			if e != nil {
+				logger.Errorf("Invalid data format, cannot decode %v to %s format with error %s", m, s.messageFormat, e)
 			} else {
 				consumer <- api.NewDefaultSourceTuple(result, meta)
 			}

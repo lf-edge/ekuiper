@@ -7,6 +7,7 @@ import (
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/extensions"
 	"github.com/go-yaml/yaml"
+	"strings"
 	"sync"
 )
 
@@ -129,6 +130,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 					case <-ctx.Done():
 						logger.Infof("source %s done", m.name)
 						m.close(ctx, logger)
+						buffer.Close()
 						return
 					case err := <-sourceErrCh:
 						m.drainError(errCh, err, ctx, logger)
@@ -239,6 +241,11 @@ func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
 	} else {
 		logger.Warnf("config file %s.yaml is not loaded properly. Return an empty configuration", m.sourceType)
 	}
+	f, ok := m.options["FORMAT"]
+	if !ok || f == "" {
+		f = "json"
+	}
+	props["format"] = strings.ToLower(f)
 	logger.Debugf("get conf for %s with conf key %s: %v", m.sourceType, confkey, props)
 	return props
 }

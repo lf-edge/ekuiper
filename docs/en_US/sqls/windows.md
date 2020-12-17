@@ -24,7 +24,7 @@ There are 5 time-units can be used in the windows. For example, ``TUMBLINGWINDOW
 
 Tumbling window functions are used to segment a data stream into distinct time segments and perform a function against them, such as the example below. The key differentiators of a Tumbling window are that they repeat, do not overlap, and an event cannot belong to more than one tumbling window.
 
-![Tumbling Window](resources/tumblingWindow.png)
+![Tumbling Window](./resources/tumblingWindow.png)
 
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, TUMBLINGWINDOW(ss, 10);
@@ -34,7 +34,7 @@ SELECT count(*) FROM demo GROUP BY ID, TUMBLINGWINDOW(ss, 10);
 
 Hopping window functions hop forward in time by a fixed period. It may be easy to think of them as Tumbling windows that can overlap, so events can belong to more than one Hopping window result set. To make a Hopping window the same as a Tumbling window, specify the hop size to be the same as the window size.
 
-![Hopping Window](resources/hoppingWindow.png)
+![Hopping Window](./resources/hoppingWindow.png)
 
 
 ```sql
@@ -47,7 +47,7 @@ SELECT count(*) FROM demo GROUP BY ID, HOPPINGWINDOW(ss, 10, 5);
 
 Sliding window functions, unlike Tumbling or Hopping windows, produce an output **ONLY** when an event occurs. Every window will have at least one event and the window continuously moves forward by an € (epsilon). Like hopping windows, events can belong to more than one sliding window.
 
-![Sliding Window](resources/slidingWindow.png)
+![Sliding Window](./resources/slidingWindow.png)
 
 
 ```sql
@@ -60,7 +60,7 @@ SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mm, 1);
 
 Session window functions group events that arrive at similar times, filtering out periods of time where there is no data. It has two main parameters: timeout and maximum duration.
 
-![Session Window](resources/sessionWindow.png)
+![Session Window](./resources/sessionWindow.png)
 
 
 ```sql
@@ -81,7 +81,7 @@ Please notice that the count window does not concern time, it only concern about
 
 Tumbling count window is similar to general tumbling window, events in a tumbling window can not repeat, do not overlap, and an event cannot belong to more than one tumbling window. Below is a count window with 5 events length. 
 
-![](resources/tumblingCountWindow.png)
+![](./resources/tumblingCountWindow.png)
 
 ```sql
 SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
@@ -98,7 +98,7 @@ The SQL will group events with 5 count window, and only get the `temperature` th
 
 Below is picture for describing `COUNTWINDOW(5,1)`, the window size is 5, and window is triggered with every event.
 
-![](resources/slidingCountWindow_1.png)
+![](./resources/slidingCountWindow_1.png)
 
 Sample in below is a count window that with 5 length, and triggered with every 2 events. The output will be latest of 5 events that are received.
 
@@ -107,7 +107,7 @@ Sample in below is a count window that with 5 length, and triggered with every 2
 3. When event `6` is received, currently totally has 6 events, which is great than window size `5`,  it produces a window that include latest 5 events. Because the window size is 5, so the 1st event is ignored in the window.
 4. Rests of windows are generated with the same approach as previous.
 
-![](resources/slidingCountWindow_2.png)
+![](./resources/slidingCountWindow_2.png)
 
 ```sql
 SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT(*) > 2

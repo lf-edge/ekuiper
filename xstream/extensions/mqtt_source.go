@@ -15,6 +15,7 @@ import (
 
 type MQTTSource struct {
 	srv      string
+	format   string
 	tpc      string
 	clientid string
 	pVersion uint
@@ -29,6 +30,7 @@ type MQTTSource struct {
 }
 
 type MQTTConfig struct {
+	Format             string   `json:"format"`
 	Qos                int      `json:"qos"`
 	Sharedsubscription bool     `json:"sharedSubscription"`
 	Servers            []string `json:"servers"`
@@ -59,6 +61,7 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 		return fmt.Errorf("missing server property")
 	}
 
+	ms.format = cfg.Format
 	ms.clientid = cfg.Clientid
 
 	ms.pVersion = 3
@@ -136,7 +139,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 	opts.SetConnectionLostHandler(func(client MQTT.Client, e error) {
 		log.Errorf("The connection %s is disconnected due to error %s, will try to re-connect later.", ms.srv+": "+ms.clientid, e)
 		reconn = true
-		subscribe(ms.tpc, client, ctx, consumer, ms.model)
+		subscribe(ms.tpc, client, ctx, consumer, ms.model, ms.format)
 	})
 
 	opts.SetOnConnectHandler(func(client MQTT.Client) {
@@ -151,18 +154,18 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 	}
 	log.Infof("The connection to server %s was established successfully", ms.srv)
 	ms.conn = c
-	subscribe(ms.tpc, c, ctx, consumer, ms.model)
+	subscribe(ms.tpc, c, ctx, consumer, ms.model, ms.format)
 	log.Infof("Successfully subscribe to topic %s", ms.srv+": "+ms.clientid)
 }
 
-func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consumer chan<- api.SourceTuple, model modelVersion) {
+func subscribe(topic string, client MQTT.Client, ctx api.StreamContext, consumer chan<- api.SourceTuple, model modelVersion, format string) {
 	log := ctx.GetLogger()
 	h := func(client MQTT.Client, msg MQTT.Message) {
 		log.Debugf("instance %d received %s", ctx.GetInstanceId(), msg.Payload())
-		result := make(map[string]interface{})
+		result, e := common.MessageDecode(msg.Payload(), format)
 		//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
-		if e := json.Unmarshal(msg.Payload(), &result); e != nil {
-			log.Errorf("Invalid data format, cannot convert %s into JSON with error %s", string(msg.Payload()), e)
+		if e != nil {
+			log.Errorf("Invalid data format, cannot decode %s to %s format with error %s", string(msg.Payload()), format, e)
 			return
 		}
 

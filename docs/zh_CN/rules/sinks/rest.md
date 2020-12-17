@@ -12,18 +12,21 @@
 | debugResp | 是 | 控制是否将响应信息打印到控制台中。 如果将其设置为 `true`，则打印响应。 如果设置为`false`，则跳过打印日志。 默认值为 `false`。 |
 | insecureSkipVerify | 是 | 控制是否跳过证书认证。如果被设置为 `true`，那么跳过证书认证；否则进行证书验证。缺省为 `true`。 |
 
-REST 服务通常需要特定的数据格式。 这可以由公共目标属性 `dataTemplate` 强制使用。 请参考[数据模板](../overview.md#data-template)。 以下是用于连接到 Edgex Foundry core 命令的示例配置。dataTemplate`{{.key}}` 表示将打印出键值，即 result [key]。 因此，这里的模板是在结果中仅选择字段 `key` ，并将字段名称更改为 `newKey`。 `sendSingle` 是另一个常见属性。 设置为 true 表示如果结果是数组，则每个元素将单独发送。
+::: v-pre
+REST 服务通常需要特定的数据格式。 这可以由公共目标属性 `dataTemplate` 强制使用。 请参考[数据模板](../overview.md#数据模板)。 以下是用于连接到 Edgex Foundry core 命令的示例配置。dataTemplate`{{.key}}` 表示将打印出键值，即 result [key]。 因此，这里的模板是在结果中仅选择字段 `key` ，并将字段名称更改为 `newKey`。 `sendSingle` 是另一个常见属性。 设置为 true 表示如果结果是数组，则每个元素将单独发送。
+:::
 
 ```json
     {
       "rest": {
-        "url": "http://127.0.0.1:48082/api/v1/device/cc622d99-f835-4e94-b5cb-b1eff8699dc4/command/51fce08a-ae19-4bce-b431-b9f363bba705",       
+        "url": "http://127.0.0.1:48082/api/v1/device/cc622d99-f835-4e94-b5cb-b1eff8699dc4/command/51fce08a-ae19-4bce-b431-b9f363bba705",
         "method": "post",
         "dataTemplate": "\"newKey\":\"{{.key}}\"",
         "sendSingle": true
       }
     }
 ```
+
 Visualization mode
 以可视化图形交互创建rules的SQL和Actions
 
@@ -31,6 +34,7 @@ Text mode
 以json格式创建rules的SQL和Actions
 
 创建写taosdb rest示例：
+
 ```json
 {"id": "rest1",
   "sql": "SELECT tele[0]-\u003eTag00001 AS temperature, tele[0]-\u003eTag00002 AS humidity FROM neuron", 

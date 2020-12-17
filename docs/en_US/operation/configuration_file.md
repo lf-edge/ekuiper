@@ -11,21 +11,27 @@ basic:
   consoleLog: false
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
+  # How many hours to split the file
+  rotateTime: 24
+  # Maximum file storage hours
+  maxAge: 72
 ```
 ## system log
 When the user sets the value of the environment variable named KuiperSyslogKey to true, the log will be printed to the syslog.
-## Cli Port
+## Cli Addr
 ```yaml
 basic:
+  # CLI bind IP
+  ip: 0.0.0.0
   # CLI port
   port: 20498
 ```
-The port that the CLI server listens on
-
 ## Rest Service Configuration
 
 ```yaml
 basic:
+  # REST service bind IP
+  restIp: 0.0.0.0
   # REST service port
   restPort: 9081
   restTls:

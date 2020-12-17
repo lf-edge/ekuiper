@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/emqx/kuiper/xstream/planner"
+	"path"
 	"sort"
 	"sync"
 
@@ -38,10 +40,15 @@ func (rr *RuleRegistry) Load(key string) (value *RuleState, ok bool) {
 	return result, ok
 }
 
-func (rr *RuleRegistry) Delete(key string) {
+// Atomic get and delete
+func (rr *RuleRegistry) Delete(key string) (*RuleState, bool) {
 	rr.Lock()
-	delete(rr.internal, key)
+	result, ok := rr.internal[key]
+	if ok {
+		delete(rr.internal, key)
+	}
 	rr.Unlock()
+	return result, ok
 }
 
 func createRuleState(rule *api.Rule) (*RuleState, error) {
@@ -49,7 +56,7 @@ func createRuleState(rule *api.Rule) (*RuleState, error) {
 		Name: rule.Id,
 	}
 	registry.Store(rule.Id, rs)
-	if tp, err := ruleProcessor.ExecInitRule(rule); err != nil {
+	if tp, err := planner.Plan(rule, path.Dir(dataDir)); err != nil {
 		return rs, err
 	} else {
 		rs.Topology = tp
@@ -65,9 +72,15 @@ func doStartRule(rs *RuleState) error {
 		tp := rs.Topology
 		select {
 		case err := <-tp.Open():
-			tp.GetContext().SetError(err)
-			logger.Printf("closing rule %s for error: %v", rs.Name, err)
-			tp.Cancel()
+			if err != nil {
+				tp.GetContext().SetError(err)
+				logger.Printf("closing rule %s for error: %v", rs.Name, err)
+				tp.Cancel()
+				rs.Triggered = false
+			} else {
+				rs.Triggered = false
+				logger.Printf("closing rule %s", rs.Name)
+			}
 		}
 	}()
 	return nil
@@ -198,6 +211,18 @@ func stopRule(name string) (result string) {
 		rs.Triggered = false
 		ruleProcessor.ExecReplaceRuleState(name, false)
 		result = fmt.Sprintf("Rule %s was stopped.", name)
+	} else {
+		result = fmt.Sprintf("Rule %s was not found.", name)
+	}
+	return
+}
+
+func deleteRule(name string) (result string) {
+	if rs, ok := registry.Delete(name); ok {
+		if rs.Triggered {
+			(*rs.Topology).Cancel()
+		}
+		result = fmt.Sprintf("Rule %s was deleted.", name)
 	} else {
 		result = fmt.Sprintf("Rule %s was not found.", name)
 	}

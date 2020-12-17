@@ -35,7 +35,6 @@ type TopologyNew struct {
 func NewWithNameAndQos(name string, qos api.Qos, checkpointInterval int) (*TopologyNew, error) {
 	tp := &TopologyNew{
 		name:               name,
-		drain:              make(chan error),
 		qos:                qos,
 		checkpointInterval: checkpointInterval,
 		topo: &PrintableTopo{
@@ -50,7 +49,10 @@ func (s *TopologyNew) GetContext() api.StreamContext {
 	return s.ctx
 }
 
+// may be called multiple times so must be idempotent
 func (s *TopologyNew) Cancel() {
+	// completion signal
+	s.drainErr(nil)
 	s.cancel()
 	s.store = nil
 	s.coordinator = nil
@@ -113,7 +115,12 @@ func (s *TopologyNew) prepareContext() {
 }
 
 func (s *TopologyNew) drainErr(err error) {
-	go func() { s.drain <- err }()
+	select {
+	case s.drain <- err:
+		s.ctx.GetLogger().Errorf("topo %s drain error %v", s.name, err)
+	default:
+		s.ctx.GetLogger().Infof("topo %s drain error %v, but receiver closed so ignored", s.name, err)
+	}
 }
 
 func (s *TopologyNew) Open() <-chan error {
@@ -124,6 +131,7 @@ func (s *TopologyNew) Open() <-chan error {
 		return s.drain
 	}
 	s.prepareContext() // ensure context is set
+	s.drain = make(chan error)
 	var err error
 	if s.store, err = states.CreateStore(s.name, s.qos); err != nil {
 		s.drainErr(err)

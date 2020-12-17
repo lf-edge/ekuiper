@@ -94,7 +94,7 @@ Let's consider a sample scenario where we are receiving temperature and humidity
 
 ### Prerequisite
 
-We assume there is already a MQTT broker as the data source of Kuiper server. If you don't have one, EMQX is recommended. Please follow the [EMQ Installation Guide](https://docs.emqx.io/broker/v3/en/install.html) to setup a mqtt broker.
+We assume there is already a MQTT broker as the data source of Kuiper server. If you don't have one, EMQX is recommended. Please follow the [EMQ Installation Guide](https://docs.emqx.io/en/broker/latest/getting-started/install.html) to setup a mqtt broker.
 
 ### Defining the input stream
 

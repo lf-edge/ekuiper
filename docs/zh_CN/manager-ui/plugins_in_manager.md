@@ -63,7 +63,7 @@ Source 元数据的配置参数主要由两部分组成：
 
 描述插件的基本信息，包括插件作者，帮助文件，描述等。所有属性都支持多语言描述。插件安装后，在管理控制台的流管理页面选择流类型时，将会展示插件元数据中定义的信息。选中插件之后，界面上将展示元数据定义的帮助文档链接。
 
-![plugin abouot](resources/source_about.png)
+![plugin abouot](./resources/source_about.png)
 
 **properties**
 
@@ -71,11 +71,11 @@ Source 元数据的配置参数主要由两部分组成：
 
 在管理控制台的流管理页面，点击`源配置`，展开任意的源，则可展示元数据的所有配置组。
 
-![plugin conf group](resources/source_confkey.png)
+![plugin conf group](./resources/source_confkey.png)
 
 点击任一配置组，可查看配置组参数。点击添加符号，则可进入如下图参数配置页面。参数配置的展示名称，控件等信息均来自元数据json文件的定义。
 
-![source configure](resources/source_conf.png)
+![source configure](./resources/source_conf.png)
 
 **动作（Sink）**
 
@@ -87,19 +87,19 @@ Sink 元数据的配置参数主要也由两部分组成：
 
 描述插件的基本信息，包括插件作者，帮助文件，描述等。所有属性都支持多语言描述。插件安装后，在管理控制台的规则创建页面，在动作模块点击`添加`按钮，在弹出窗口中，点击下拉框进行 sink 选择。在下拉框中将列出插件元数据中定义的信息。
 
-![sink about](resources/sink_about.png)
+![sink about](./resources/sink_about.png)
 
 **properties**
 
 描述插件的可配置属性信息，包括参数的信息以及如何进行界面展示。与 Source 不同的时，Sink 的属性不保存在配置文件里，而是在规则创建时进行配置。对应的元数据配置中，Sink 不再有配置组概念。在管理控制台的规则创建页面，添加动作弹出窗口中，选中插件后将展示帮助文档链接以及元数据中定义的属性。需要注意的时，Sink 有一些[共同属性](../rules/overview.md#目标动作)，在所有 Sink 中都会展示。
 
-![sink config](resources/sink_conf.png)
+![sink config](./resources/sink_conf.png)
 
 **函数（Functions）**
 
 Function 元数据详细配置请参考 [sink 元数据配置](../plugins/overview.md#functions-元数据文件格式)。其中，`about` 部分与 Source 和 Sink 完全相同。`function` 部分配置了函数的名称，样例和提示信息，用于新建规则的 SQL 编辑器中进行代码提示。
 
-![function about](resources/function_about.png)
+![function about](./resources/function_about.png)
 
 ### 插件编译打包格式
 

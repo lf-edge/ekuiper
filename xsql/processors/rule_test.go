@@ -44,15 +44,15 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"op_preprocessor_demo_0_process_latency_us": int64(0),
-				"op_preprocessor_demo_0_records_in_total":   int64(5),
-				"op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_1_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(5),
-				"op_project_0_records_out_total":  int64(5),
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(5),
+				"op_2_project_0_records_out_total":  int64(5),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(5),
@@ -65,9 +65,9 @@ func TestSingleSQL(t *testing.T) {
 			t: &xstream.PrintableTopo{
 				Sources: []string{"source_demo"},
 				Edges: map[string][]string{
-					"source_demo":          {"op_preprocessor_demo"},
-					"op_preprocessor_demo": {"op_project"},
-					"op_project":           {"sink_mockSink"},
+					"source_demo":            {"op_1_preprocessor_demo"},
+					"op_1_preprocessor_demo": {"op_2_project"},
+					"op_2_project":           {"sink_mockSink"},
 				},
 			},
 		}, {
@@ -84,15 +84,15 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"op_preprocessor_demo_0_process_latency_us": int64(0),
-				"op_preprocessor_demo_0_records_in_total":   int64(5),
-				"op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_1_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(2),
-				"op_project_0_records_out_total":  int64(2),
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(2),
+				"op_3_project_0_records_out_total":  int64(2),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(2),
@@ -102,10 +102,10 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 
-				"op_filter_0_exceptions_total":   int64(0),
-				"op_filter_0_process_latency_us": int64(0),
-				"op_filter_0_records_in_total":   int64(5),
-				"op_filter_0_records_out_total":  int64(2),
+				"op_2_filter_0_exceptions_total":   int64(0),
+				"op_2_filter_0_process_latency_us": int64(0),
+				"op_2_filter_0_records_in_total":   int64(5),
+				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
 			name: `TestSingleSQLRule3`,
@@ -121,15 +121,15 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"op_preprocessor_demo_0_process_latency_us": int64(0),
-				"op_preprocessor_demo_0_records_in_total":   int64(5),
-				"op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_1_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(2),
-				"op_project_0_records_out_total":  int64(2),
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(2),
+				"op_3_project_0_records_out_total":  int64(2),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(2),
@@ -139,10 +139,10 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 
-				"op_filter_0_exceptions_total":   int64(0),
-				"op_filter_0_process_latency_us": int64(0),
-				"op_filter_0_records_in_total":   int64(5),
-				"op_filter_0_records_out_total":  int64(2),
+				"op_2_filter_0_exceptions_total":   int64(0),
+				"op_2_filter_0_process_latency_us": int64(0),
+				"op_2_filter_0_records_in_total":   int64(5),
+				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
 			name: `TestSingleSQLRule4`,
@@ -163,15 +163,15 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demoError_0_exceptions_total":   int64(3),
-				"op_preprocessor_demoError_0_process_latency_us": int64(0),
-				"op_preprocessor_demoError_0_records_in_total":   int64(5),
-				"op_preprocessor_demoError_0_records_out_total":  int64(2),
+				"op_1_preprocessor_demoError_0_exceptions_total":   int64(3),
+				"op_1_preprocessor_demoError_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demoError_0_records_in_total":   int64(5),
+				"op_1_preprocessor_demoError_0_records_out_total":  int64(2),
 
-				"op_project_0_exceptions_total":   int64(3),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(4),
-				"op_project_0_records_out_total":  int64(1),
+				"op_3_project_0_exceptions_total":   int64(3),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(4),
+				"op_3_project_0_records_out_total":  int64(1),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(4),
@@ -181,10 +181,10 @@ func TestSingleSQL(t *testing.T) {
 				"source_demoError_0_records_in_total":  int64(5),
 				"source_demoError_0_records_out_total": int64(5),
 
-				"op_filter_0_exceptions_total":   int64(3),
-				"op_filter_0_process_latency_us": int64(0),
-				"op_filter_0_records_in_total":   int64(5),
-				"op_filter_0_records_out_total":  int64(1),
+				"op_2_filter_0_exceptions_total":   int64(3),
+				"op_2_filter_0_process_latency_us": int64(0),
+				"op_2_filter_0_records_in_total":   int64(5),
+				"op_2_filter_0_records_out_total":  int64(1),
 			},
 		}, {
 			name: `TestSingleSQLRule4`,
@@ -205,15 +205,15 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demoError_0_exceptions_total":   int64(3),
-				"op_preprocessor_demoError_0_process_latency_us": int64(0),
-				"op_preprocessor_demoError_0_records_in_total":   int64(5),
-				"op_preprocessor_demoError_0_records_out_total":  int64(2),
+				"op_1_preprocessor_demoError_0_exceptions_total":   int64(3),
+				"op_1_preprocessor_demoError_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demoError_0_records_in_total":   int64(5),
+				"op_1_preprocessor_demoError_0_records_out_total":  int64(2),
 
-				"op_project_0_exceptions_total":   int64(3),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(4),
-				"op_project_0_records_out_total":  int64(1),
+				"op_3_project_0_exceptions_total":   int64(3),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(4),
+				"op_3_project_0_records_out_total":  int64(1),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(4),
@@ -223,10 +223,10 @@ func TestSingleSQL(t *testing.T) {
 				"source_demoError_0_records_in_total":  int64(5),
 				"source_demoError_0_records_out_total": int64(5),
 
-				"op_filter_0_exceptions_total":   int64(3),
-				"op_filter_0_process_latency_us": int64(0),
-				"op_filter_0_records_in_total":   int64(5),
-				"op_filter_0_records_out_total":  int64(1),
+				"op_2_filter_0_exceptions_total":   int64(3),
+				"op_2_filter_0_process_latency_us": int64(0),
+				"op_2_filter_0_records_in_total":   int64(5),
+				"op_2_filter_0_records_out_total":  int64(1),
 			},
 		}, {
 			name: `TestSingleSQLRule5`,
@@ -254,15 +254,15 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"op_preprocessor_demo_0_process_latency_us": int64(0),
-				"op_preprocessor_demo_0_records_in_total":   int64(5),
-				"op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_1_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(5),
-				"op_project_0_records_out_total":  int64(5),
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(5),
+				"op_2_project_0_records_out_total":  int64(5),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(5),
@@ -286,15 +286,15 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"op_preprocessor_demo_0_process_latency_us": int64(0),
-				"op_preprocessor_demo_0_records_in_total":   int64(5),
-				"op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_1_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(2),
-				"op_project_0_records_out_total":  int64(2),
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(2),
+				"op_3_project_0_records_out_total":  int64(2),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(2),
@@ -304,10 +304,10 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 
-				"op_filter_0_exceptions_total":   int64(0),
-				"op_filter_0_process_latency_us": int64(0),
-				"op_filter_0_records_in_total":   int64(5),
-				"op_filter_0_records_out_total":  int64(2),
+				"op_2_filter_0_exceptions_total":   int64(0),
+				"op_2_filter_0_process_latency_us": int64(0),
+				"op_2_filter_0_records_in_total":   int64(5),
+				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
 			name: `TestSingleSQLRule7`,
@@ -330,15 +330,15 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demo1_0_exceptions_total":   int64(0),
-				"op_preprocessor_demo1_0_process_latency_us": int64(0),
-				"op_preprocessor_demo1_0_records_in_total":   int64(5),
-				"op_preprocessor_demo1_0_records_out_total":  int64(5),
+				"op_1_preprocessor_demo1_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_demo1_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demo1_0_records_in_total":   int64(5),
+				"op_1_preprocessor_demo1_0_records_out_total":  int64(5),
 
-				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(5),
-				"op_project_0_records_out_total":  int64(5),
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(5),
+				"op_2_project_0_records_out_total":  int64(5),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(5),
@@ -366,20 +366,20 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demo1_0_exceptions_total":   int64(0),
-				"op_preprocessor_demo1_0_process_latency_us": int64(0),
-				"op_preprocessor_demo1_0_records_in_total":   int64(5),
-				"op_preprocessor_demo1_0_records_out_total":  int64(5),
+				"op_1_preprocessor_demo1_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_demo1_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demo1_0_records_in_total":   int64(5),
+				"op_1_preprocessor_demo1_0_records_out_total":  int64(5),
 
-				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(2),
-				"op_project_0_records_out_total":  int64(2),
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(2),
+				"op_3_project_0_records_out_total":  int64(2),
 
-				"op_filter_0_exceptions_total":   int64(0),
-				"op_filter_0_process_latency_us": int64(0),
-				"op_filter_0_records_in_total":   int64(5),
-				"op_filter_0_records_out_total":  int64(2),
+				"op_2_filter_0_exceptions_total":   int64(0),
+				"op_2_filter_0_process_latency_us": int64(0),
+				"op_2_filter_0_records_in_total":   int64(5),
+				"op_2_filter_0_records_out_total":  int64(2),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(2),
@@ -432,15 +432,15 @@ func TestSingleSQLError(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_ldemo_0_exceptions_total":   int64(0),
-				"op_preprocessor_ldemo_0_process_latency_us": int64(0),
-				"op_preprocessor_ldemo_0_records_in_total":   int64(5),
-				"op_preprocessor_ldemo_0_records_out_total":  int64(5),
+				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
+				"op_1_preprocessor_ldemo_0_records_out_total":  int64(5),
 
-				"op_project_0_exceptions_total":   int64(1),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(3),
-				"op_project_0_records_out_total":  int64(2),
+				"op_3_project_0_exceptions_total":   int64(1),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(3),
+				"op_3_project_0_records_out_total":  int64(2),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(3),
@@ -450,10 +450,10 @@ func TestSingleSQLError(t *testing.T) {
 				"source_ldemo_0_records_in_total":  int64(5),
 				"source_ldemo_0_records_out_total": int64(5),
 
-				"op_filter_0_exceptions_total":   int64(1),
-				"op_filter_0_process_latency_us": int64(0),
-				"op_filter_0_records_in_total":   int64(5),
-				"op_filter_0_records_out_total":  int64(2),
+				"op_2_filter_0_exceptions_total":   int64(1),
+				"op_2_filter_0_process_latency_us": int64(0),
+				"op_2_filter_0_records_in_total":   int64(5),
+				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
 			name: `TestSingleSQLErrorRule2`,
@@ -474,15 +474,15 @@ func TestSingleSQLError(t *testing.T) {
 				{{}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_ldemo_0_exceptions_total":   int64(0),
-				"op_preprocessor_ldemo_0_process_latency_us": int64(0),
-				"op_preprocessor_ldemo_0_records_in_total":   int64(5),
-				"op_preprocessor_ldemo_0_records_out_total":  int64(5),
+				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
+				"op_1_preprocessor_ldemo_0_records_out_total":  int64(5),
 
-				"op_project_0_exceptions_total":   int64(1),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(5),
-				"op_project_0_records_out_total":  int64(4),
+				"op_2_project_0_exceptions_total":   int64(1),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(5),
+				"op_2_project_0_records_out_total":  int64(4),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(5),
@@ -532,15 +532,15 @@ func TestSingleSQLTemplate(t *testing.T) {
 				},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"op_preprocessor_demo_0_process_latency_us": int64(0),
-				"op_preprocessor_demo_0_records_in_total":   int64(5),
-				"op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_1_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(5),
-				"op_project_0_records_out_total":  int64(5),
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(5),
+				"op_2_project_0_records_out_total":  int64(5),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(5),
@@ -590,15 +590,15 @@ func TestNoneSingleSQLTemplate(t *testing.T) {
 				[]byte("<div>results</div><ul><li>red - 1</li></ul>"),
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demo_0_exceptions_total":   int64(0),
-				"op_preprocessor_demo_0_process_latency_us": int64(0),
-				"op_preprocessor_demo_0_records_in_total":   int64(5),
-				"op_preprocessor_demo_0_records_out_total":  int64(5),
+				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_1_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(5),
-				"op_project_0_records_out_total":  int64(5),
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(5),
+				"op_2_project_0_records_out_total":  int64(5),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(5),
@@ -618,4 +618,78 @@ func TestNoneSingleSQLTemplate(t *testing.T) {
 	}, func(result [][]byte) interface{} {
 		return result
 	})
+}
+
+func TestSingleSQLForBinary(t *testing.T) {
+	//Reset
+	streamList := []string{"binDemo"}
+	handleStream(false, streamList, t)
+	//Data setup
+	var tests = []ruleTest{
+		{
+			name: `TestSingleSQLRule1`,
+			sql:  `SELECT * FROM binDemo`,
+			r: [][]map[string]interface{}{
+				{{
+					"self": image,
+				}},
+			},
+			m: map[string]interface{}{
+				"op_1_preprocessor_binDemo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_binDemo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_binDemo_0_records_in_total":   int64(1),
+				"op_1_preprocessor_binDemo_0_records_out_total":  int64(1),
+
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(1),
+				"op_2_project_0_records_out_total":  int64(1),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(1),
+				"sink_mockSink_0_records_out_total": int64(1),
+
+				"source_binDemo_0_exceptions_total":  int64(0),
+				"source_binDemo_0_records_in_total":  int64(1),
+				"source_binDemo_0_records_out_total": int64(1),
+			},
+		},
+	}
+	handleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength: 100,
+		}, {
+			BufferLength:       100,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+		}, {
+			BufferLength:       100,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+		},
+	}
+	byteFunc := func(result [][]byte) interface{} {
+		var maps [][]map[string]interface{}
+		for _, v := range result {
+			var mapRes []map[string][]byte
+			err := json.Unmarshal(v, &mapRes)
+			if err != nil {
+				panic("Failed to parse the input into map")
+			}
+			mapInt := make([]map[string]interface{}, len(mapRes))
+			for i, mv := range mapRes {
+				mapInt[i] = make(map[string]interface{})
+				//assume only one key
+				for k, v := range mv {
+					mapInt[i][k] = v
+				}
+			}
+			maps = append(maps, mapInt)
+		}
+		return maps
+	}
+	for j, opt := range options {
+		doRuleTestBySinkProps(t, tests, j, opt, nil, byteFunc)
+	}
 }

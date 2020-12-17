@@ -73,6 +73,28 @@ GET http://localhost:9081/rules/{id}
 }
 ```
 
+## 更新规则
+
+该 API 接受 JSON 内容并更新规则。
+
+```shell
+PUT http://localhost:8080/rules/{id}
+```
+
+路径参数  `id` 是原有规则的 id 或名称。
+
+请求示例：
+
+```json
+{
+  "id": "rule1",
+  "sql": "SELECT * FROM demo",
+  "actions": [{
+    "log":  {}
+  }]
+}
+```
+
 ## 删除规则
 
 该 API 用于删除规则。
@@ -80,7 +102,6 @@ GET http://localhost:9081/rules/{id}
 ```shell
 DELETE http://localhost:8080/rules/{id}
 ```
-
 
 ## 启动规则
 

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
-	"github.com/emqx/kuiper/xsql/plans"
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
+	"github.com/emqx/kuiper/xstream/planner"
 	"os"
 	"path"
 	"strings"
@@ -24,7 +24,7 @@ type StreamProcessor struct {
 //@params d : the directory of the DB to save the stream info
 func NewStreamProcessor(d string) *StreamProcessor {
 	processor := &StreamProcessor{
-		db: common.GetSimpleKVStore(d),
+		db: common.GetSqliteKVStore(d),
 	}
 	return processor
 }
@@ -67,7 +67,7 @@ func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, statement stri
 		return "", fmt.Errorf("Create stream fails, error when opening db: %v.", err)
 	}
 	defer p.db.Close()
-	err = p.db.Set(string(stmt.Name), statement)
+	err = p.db.Setnx(string(stmt.Name), statement)
 	if err != nil {
 		return "", fmt.Errorf("Create stream fails: %v.", err)
 	} else {
@@ -91,7 +91,7 @@ func (p *StreamProcessor) ExecReplaceStream(statement string) (string, error) {
 		}
 		defer p.db.Close()
 
-		if err = p.db.Replace(string(s.Name), statement); nil != err {
+		if err = p.db.Set(string(s.Name), statement); nil != err {
 			return "", fmt.Errorf("Replace stream fails: %v.", err)
 		} else {
 			info := fmt.Sprintf("Stream %s is replaced.", s.Name)
@@ -153,11 +153,11 @@ func (p *StreamProcessor) DescStream(name string) (*xsql.StreamStmt, error) {
 		return nil, fmt.Errorf("Describe stream fails, error when opening db: %v.", err)
 	}
 	defer p.db.Close()
-	s, f := p.db.Get(name)
+	var s1 string
+	f, _ := p.db.Get(name, &s1)
 	if !f {
 		return nil, common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("Stream %s is not found.", name))
 	}
-	s1 := s.(string)
 
 	parser := xsql.NewParser(strings.NewReader(s1))
 	stream, err := xsql.Language.Parse(parser)
@@ -177,7 +177,8 @@ func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement) (
 		return "", fmt.Errorf("Explain stream fails, error when opening db: %v.", err)
 	}
 	defer p.db.Close()
-	_, f := p.db.Get(stmt.Name)
+	var s string
+	f, _ := p.db.Get(stmt.Name, &s)
 	if !f {
 		return "", fmt.Errorf("Stream %s is not found.", stmt.Name)
 	}
@@ -206,21 +207,6 @@ func (p *StreamProcessor) DropStream(name string) (string, error) {
 	}
 }
 
-func GetStream(m *common.SimpleKVStore, name string) (stmt *xsql.StreamStmt, err error) {
-	s, f := m.Get(name)
-	if !f {
-		return nil, fmt.Errorf("Cannot find key %s. ", name)
-	}
-	s1, _ := s.(string)
-	parser := xsql.NewParser(strings.NewReader(s1))
-	stream, err := xsql.Language.Parse(parser)
-	stmt, ok := stream.(*xsql.StreamStmt)
-	if !ok {
-		err = fmt.Errorf("Error resolving the stream %s, the data in db may be corrupted.", name)
-	}
-	return
-}
-
 type RuleProcessor struct {
 	db        common.KeyValue
 	rootDbDir string
@@ -228,7 +214,7 @@ type RuleProcessor struct {
 
 func NewRuleProcessor(d string) *RuleProcessor {
 	processor := &RuleProcessor{
-		db:        common.GetSimpleKVStore(path.Join(d, "rule")),
+		db:        common.GetSqliteKVStore(path.Join(d, "rule")),
 		rootDbDir: d,
 	}
 	return processor
@@ -246,7 +232,7 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 	}
 	defer p.db.Close()
 
-	err = p.db.Set(rule.Id, ruleJson)
+	err = p.db.Setnx(rule.Id, ruleJson)
 	if err != nil {
 		return nil, err
 	} else {
@@ -267,7 +253,7 @@ func (p *RuleProcessor) ExecUpdate(name, ruleJson string) (*api.Rule, error) {
 	}
 	defer p.db.Close()
 
-	err = p.db.Replace(rule.Id, ruleJson)
+	err = p.db.Set(rule.Id, ruleJson)
 	if err != nil {
 		return nil, err
 	} else {
@@ -295,7 +281,7 @@ func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (err e
 	}
 	defer p.db.Close()
 
-	err = p.db.Replace(name, string(ruleJson))
+	err = p.db.Set(name, string(ruleJson))
 	if err != nil {
 		return err
 	} else {
@@ -310,11 +296,11 @@ func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
 		return nil, err
 	}
 	defer p.db.Close()
-	s, f := p.db.Get(name)
+	var s1 string
+	f, _ := p.db.Get(name, &s1)
 	if !f {
 		return nil, common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("Rule %s is not found.", name))
 	}
-	s1, _ := s.(string)
 	return p.getRuleByJson(name, s1)
 }
 
@@ -331,19 +317,6 @@ func (p *RuleProcessor) getDefaultRule(name, sql string) *api.Rule {
 			Qos:                api.AtMostOnce,
 			CheckpointInterval: 300000,
 		},
-	}
-}
-
-func getStatementFromSql(sql string) (*xsql.SelectStatement, error) {
-	parser := xsql.NewParser(strings.NewReader(sql))
-	if stmt, err := xsql.Language.Parse(parser); err != nil {
-		return nil, fmt.Errorf("Parse SQL %s error: %s.", sql, err)
-	} else {
-		if r, ok := stmt.(*xsql.SelectStatement); !ok {
-			return nil, fmt.Errorf("SQL %s is not a select statement.", sql)
-		} else {
-			return r, nil
-		}
 	}
 }
 
@@ -370,7 +343,7 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	if rule.Sql == "" {
 		return nil, fmt.Errorf("Missing rule SQL.")
 	}
-	if _, err := getStatementFromSql(rule.Sql); err != nil {
+	if _, err := xsql.GetStatementFromSql(rule.Sql); err != nil {
 		return nil, err
 	}
 	if rule.Actions == nil || len(rule.Actions) == 0 {
@@ -379,7 +352,7 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	if rule.Options == nil {
 		rule.Options = &api.RuleOption{}
 	}
-	//Set default options
+	//Setnx default options
 	if rule.Options.CheckpointInterval < 0 {
 		return nil, fmt.Errorf("rule option checkpointInterval %d is invalid, require a positive integer", rule.Options.CheckpointInterval)
 	}
@@ -395,34 +368,20 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	return rule, nil
 }
 
-func (p *RuleProcessor) ExecInitRule(rule *api.Rule) (*xstream.TopologyNew, error) {
-	if tp, inputs, err := p.createTopo(rule); err != nil {
-		return nil, err
-	} else {
-		for i, m := range rule.Actions {
-			for name, action := range m {
-				props, ok := action.(map[string]interface{})
-				if !ok {
-					return nil, fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
-				}
-				tp.AddSink(inputs, nodes.NewSinkNode(fmt.Sprintf("%s_%d", name, i), name, props))
-			}
-		}
-		return tp, nil
-	}
-}
-
 func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*xstream.TopologyNew, error) {
-	if tp, inputs, err := p.createTopo(p.getDefaultRule(ruleid, sql)); err != nil {
+	if tp, err := planner.PlanWithSourcesAndSinks(p.getDefaultRule(ruleid, sql), p.rootDbDir, nil, []*nodes.SinkNode{nodes.NewSinkNode("sink_memory_log", "logToMemory", nil)}); err != nil {
 		return nil, err
 	} else {
-		tp.AddSink(inputs, nodes.NewSinkNode("sink_memory_log", "logToMemory", nil))
 		go func() {
 			select {
 			case err := <-tp.Open():
-				log.Infof("closing query for error: %v", err)
-				tp.GetContext().SetError(err)
-				tp.Cancel()
+				if err != nil {
+					log.Infof("closing query for error: %v", err)
+					tp.GetContext().SetError(err)
+					tp.Cancel()
+				} else {
+					log.Info("closing query")
+				}
 			}
 		}()
 		return tp, nil
@@ -435,11 +394,11 @@ func (p *RuleProcessor) ExecDesc(name string) (string, error) {
 		return "", err
 	}
 	defer p.db.Close()
-	s, f := p.db.Get(name)
+	var s1 string
+	f, _ := p.db.Get(name, &s1)
 	if !f {
 		return "", fmt.Errorf("Rule %s is not found.", name)
 	}
-	s1, _ := s.(string)
 	dst := &bytes.Buffer{}
 	if err := json.Indent(dst, []byte(s1), "", "  "); err != nil {
 		return "", err
@@ -464,8 +423,9 @@ func (p *RuleProcessor) ExecDrop(name string) (string, error) {
 	}
 	defer p.db.Close()
 	result := fmt.Sprintf("Rule %s is dropped.", name)
-	if ruleJson, ok := p.db.Get(name); ok {
-		rule, err := p.getRuleByJson(name, ruleJson.(string))
+	var ruleJson string
+	if ok, _ := p.db.Get(name, &ruleJson); ok {
+		rule, err := p.getRuleByJson(name, ruleJson)
 		if err != nil {
 			return "", err
 		}
@@ -495,7 +455,7 @@ func cleanSinkCache(rule *api.Rule) error {
 	if err != nil {
 		return err
 	}
-	store := common.GetSimpleKVStore(path.Join(dbDir, "sink"))
+	store := common.GetSqliteKVStore(path.Join(dbDir, "sink"))
 	err = store.Open()
 	if err != nil {
 		return err
@@ -518,140 +478,4 @@ func cleanSinkCache(rule *api.Rule) error {
 		}
 	}
 	return nil
-}
-
-func (p *RuleProcessor) createTopo(rule *api.Rule) (*xstream.TopologyNew, []api.Emitter, error) {
-	return p.createTopoWithSources(rule, nil)
-}
-
-//For test to mock source
-func (p *RuleProcessor) createTopoWithSources(rule *api.Rule, sources []*nodes.SourceNode) (*xstream.TopologyNew, []api.Emitter, error) {
-	name := rule.Id
-	sql := rule.Sql
-
-	log.Infof("Init rule with options %+v", rule.Options)
-	shouldCreateSource := sources == nil
-
-	if selectStmt, err := getStatementFromSql(sql); err != nil {
-		return nil, nil, err
-	} else {
-		tp, err := xstream.NewWithNameAndQos(name, rule.Options.Qos, rule.Options.CheckpointInterval)
-		if err != nil {
-			return nil, nil, err
-		}
-		var inputs []api.Emitter
-		streamsFromStmt := xsql.GetStreams(selectStmt)
-		dimensions := selectStmt.Dimensions
-		if !shouldCreateSource && len(streamsFromStmt) != len(sources) {
-			return nil, nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
-		}
-		if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || dimensions != nil) {
-			return nil, nil, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
-		}
-		store := common.GetSimpleKVStore(path.Join(p.rootDbDir, "stream"))
-		err = store.Open()
-		if err != nil {
-			return nil, nil, err
-		}
-		defer store.Close()
-
-		var alias, aggregateAlias xsql.Fields
-		for _, f := range selectStmt.Fields {
-			if f.AName != "" {
-				if !xsql.HasAggFuncs(f.Expr) {
-					alias = append(alias, f)
-				} else {
-					aggregateAlias = append(aggregateAlias, f)
-				}
-			}
-		}
-		for i, s := range streamsFromStmt {
-			streamStmt, err := GetStream(store, s)
-			if err != nil {
-				return nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
-			}
-			pp, err := plans.NewPreprocessor(streamStmt, alias, rule.Options.IsEventTime)
-			if err != nil {
-				return nil, nil, err
-			}
-			var srcNode *nodes.SourceNode
-			if shouldCreateSource {
-				node := nodes.NewSourceNode(s, streamStmt.Options)
-				srcNode = node
-			} else {
-				srcNode = sources[i]
-			}
-			tp.AddSrc(srcNode)
-			preprocessorOp := xstream.Transform(pp, "preprocessor_"+s, rule.Options.BufferLength)
-			preprocessorOp.SetConcurrency(rule.Options.Concurrency)
-			tp.AddOperator([]api.Emitter{srcNode}, preprocessorOp)
-			inputs = append(inputs, preprocessorOp)
-		}
-
-		var w *xsql.Window
-		if dimensions != nil {
-			w = dimensions.GetWindow()
-			if w != nil {
-				if w.Filter != nil {
-					wfilterOp := xstream.Transform(&plans.FilterPlan{Condition: w.Filter}, "windowFilter", rule.Options.BufferLength)
-					wfilterOp.SetConcurrency(rule.Options.Concurrency)
-					tp.AddOperator(inputs, wfilterOp)
-					inputs = []api.Emitter{wfilterOp}
-				}
-				wop, err := nodes.NewWindowOp("window", w, rule.Options.IsEventTime, rule.Options.LateTol, streamsFromStmt, rule.Options.BufferLength)
-				if err != nil {
-					return nil, nil, err
-				}
-				tp.AddOperator(inputs, wop)
-				inputs = []api.Emitter{wop}
-			}
-		}
-
-		if w != nil && selectStmt.Joins != nil {
-			joinOp := xstream.Transform(&plans.JoinPlan{Joins: selectStmt.Joins, From: selectStmt.Sources[0].(*xsql.Table)}, "join", rule.Options.BufferLength)
-			joinOp.SetConcurrency(rule.Options.Concurrency)
-			tp.AddOperator(inputs, joinOp)
-			inputs = []api.Emitter{joinOp}
-		}
-
-		if selectStmt.Condition != nil {
-			filterOp := xstream.Transform(&plans.FilterPlan{Condition: selectStmt.Condition}, "filter", rule.Options.BufferLength)
-			filterOp.SetConcurrency(rule.Options.Concurrency)
-			tp.AddOperator(inputs, filterOp)
-			inputs = []api.Emitter{filterOp}
-		}
-
-		var ds xsql.Dimensions
-		if dimensions != nil || len(aggregateAlias) > 0 {
-			ds = dimensions.GetGroups()
-			if (ds != nil && len(ds) > 0) || len(aggregateAlias) > 0 {
-				aggregateOp := xstream.Transform(&plans.AggregatePlan{Dimensions: ds, Alias: aggregateAlias}, "aggregate", rule.Options.BufferLength)
-				aggregateOp.SetConcurrency(rule.Options.Concurrency)
-				tp.AddOperator(inputs, aggregateOp)
-				inputs = []api.Emitter{aggregateOp}
-			}
-		}
-
-		if selectStmt.Having != nil {
-			havingOp := xstream.Transform(&plans.HavingPlan{selectStmt.Having}, "having", rule.Options.BufferLength)
-			havingOp.SetConcurrency(rule.Options.Concurrency)
-			tp.AddOperator(inputs, havingOp)
-			inputs = []api.Emitter{havingOp}
-		}
-
-		if selectStmt.SortFields != nil {
-			orderOp := xstream.Transform(&plans.OrderPlan{SortFields: selectStmt.SortFields}, "order", rule.Options.BufferLength)
-			orderOp.SetConcurrency(rule.Options.Concurrency)
-			tp.AddOperator(inputs, orderOp)
-			inputs = []api.Emitter{orderOp}
-		}
-
-		if selectStmt.Fields != nil {
-			projectOp := xstream.Transform(&plans.ProjectPlan{Fields: selectStmt.Fields, IsAggregate: xsql.IsAggStatement(selectStmt), SendMeta: rule.Options.SendMetaToSink}, "project", rule.Options.BufferLength)
-			projectOp.SetConcurrency(rule.Options.Concurrency)
-			tp.AddOperator(inputs, projectOp)
-			inputs = []api.Emitter{projectOp}
-		}
-		return tp, inputs, nil
-	}
 }

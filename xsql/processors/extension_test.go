@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/planner"
 	"github.com/emqx/kuiper/xstream/test"
 	"os"
 	"testing"
@@ -48,7 +49,7 @@ func TestExtensions(t *testing.T) {
 	for i, tt := range tests {
 		// Rest for each test
 		cleanStateData()
-		test.ResetClock(1541152485800)
+		test.ResetClock(1541152486000)
 		// Create stream
 		p := NewRuleProcessor(DbDir)
 		p.ExecDrop(tt.name)
@@ -57,7 +58,7 @@ func TestExtensions(t *testing.T) {
 			t.Errorf("failed to create rule: %s.", err)
 			continue
 		}
-		tp, err := p.ExecInitRule(rs)
+		tp, err := planner.Plan(rs, DbDir)
 		if err != nil {
 			t.Errorf("fail to init rule: %v", err)
 			continue
@@ -179,15 +180,15 @@ func TestFuncState(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_text_0_exceptions_total":   int64(0),
-				"op_preprocessor_text_0_process_latency_us": int64(0),
-				"op_preprocessor_text_0_records_in_total":   int64(8),
-				"op_preprocessor_text_0_records_out_total":  int64(8),
+				"op_1_preprocessor_text_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_text_0_process_latency_us": int64(0),
+				"op_1_preprocessor_text_0_records_in_total":   int64(8),
+				"op_1_preprocessor_text_0_records_out_total":  int64(8),
 
-				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(8),
-				"op_project_0_records_out_total":  int64(8),
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(8),
+				"op_2_project_0_records_out_total":  int64(8),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(8),
@@ -244,15 +245,15 @@ func TestFuncStateCheckpoint(t *testing.T) {
 					}},
 				},
 				m: map[string]interface{}{
-					"op_preprocessor_text_0_exceptions_total":   int64(0),
-					"op_preprocessor_text_0_process_latency_us": int64(0),
-					"op_preprocessor_text_0_records_in_total":   int64(6),
-					"op_preprocessor_text_0_records_out_total":  int64(6),
+					"op_1_preprocessor_text_0_exceptions_total":   int64(0),
+					"op_1_preprocessor_text_0_process_latency_us": int64(0),
+					"op_1_preprocessor_text_0_records_in_total":   int64(6),
+					"op_1_preprocessor_text_0_records_out_total":  int64(6),
 
-					"op_project_0_exceptions_total":   int64(0),
-					"op_project_0_process_latency_us": int64(0),
-					"op_project_0_records_in_total":   int64(6),
-					"op_project_0_records_out_total":  int64(6),
+					"op_2_project_0_exceptions_total":   int64(0),
+					"op_2_project_0_process_latency_us": int64(0),
+					"op_2_project_0_records_in_total":   int64(6),
+					"op_2_project_0_records_out_total":  int64(6),
 
 					"sink_mockSink_0_exceptions_total":  int64(0),
 					"sink_mockSink_0_records_in_total":  int64(6),
@@ -266,15 +267,15 @@ func TestFuncStateCheckpoint(t *testing.T) {
 			pauseSize: 3,
 			cc:        1,
 			pauseMetric: map[string]interface{}{
-				"op_preprocessor_text_0_exceptions_total":   int64(0),
-				"op_preprocessor_text_0_process_latency_us": int64(0),
-				"op_preprocessor_text_0_records_in_total":   int64(3),
-				"op_preprocessor_text_0_records_out_total":  int64(3),
+				"op_1_preprocessor_text_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_text_0_process_latency_us": int64(0),
+				"op_1_preprocessor_text_0_records_in_total":   int64(3),
+				"op_1_preprocessor_text_0_records_out_total":  int64(3),
 
-				"op_project_0_exceptions_total":   int64(0),
-				"op_project_0_process_latency_us": int64(0),
-				"op_project_0_records_in_total":   int64(3),
-				"op_project_0_records_out_total":  int64(3),
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(3),

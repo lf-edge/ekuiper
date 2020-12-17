@@ -39,7 +39,7 @@ func init() {
 	gob.Register([]*xsql.Tuple{})
 }
 
-func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance int64, streams []string, bufferLength int) (*WindowOperator, error) {
+func NewWindowOp(name string, w WindowConfig, isEventTime bool, lateTolerance int64, streams []string, bufferLength int) (*WindowOperator, error) {
 	o := new(WindowOperator)
 
 	o.defaultSinkNode = &defaultSinkNode{
@@ -50,21 +50,10 @@ func NewWindowOp(name string, w *xsql.Window, isEventTime bool, lateTolerance in
 		},
 	}
 	o.isEventTime = isEventTime
-	if w != nil {
-		o.window = &WindowConfig{
-			Type:   w.WindowType,
-			Length: w.Length.Val,
-		}
-		if w.Interval != nil {
-			o.window.Interval = w.Interval.Val
-		} else if o.window.Type == xsql.COUNT_WINDOW {
-			//if no interval value is set and it's count window, then set interval to length value.
-			o.window.Interval = o.window.Length
-		}
-	} else {
-		o.window = &WindowConfig{
-			Type: xsql.NOT_WINDOW,
-		}
+	o.window = &w
+	if o.window.Interval == 0 && o.window.Type == xsql.COUNT_WINDOW {
+		//if no interval value is set and it's count window, then set interval to length value.
+		o.window.Interval = o.window.Length
 	}
 	if isEventTime {
 		//Create watermark generator
@@ -282,20 +271,19 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				o.statManager.IncTotalExceptions()
 			}
 		case now := <-c:
+			n := common.TimeToUnixMilli(now)
+			if o.window.Type == xsql.SESSION_WINDOW {
+				lastTriggerTime := o.triggerTime
+				o.triggerTime = n
+				log.Debugf("session window update trigger time %d with %d inputs", n, len(inputs))
+				if len(inputs) == 0 || lastTriggerTime < inputs[0].Timestamp {
+					log.Debugf("session window last trigger time %d < first tuple %d", lastTriggerTime, inputs[0].Timestamp)
+					break
+				}
+			}
 			if len(inputs) > 0 {
 				o.statManager.ProcessTimeStart()
-				n := common.TimeToUnixMilli(now)
-				//For session window, check if the last scan time is newer than the inputs
-				if o.window.Type == xsql.SESSION_WINDOW {
-					//scan time for session window will record all triggers of the ticker but not the timeout
-					lastTriggerTime := o.triggerTime
-					o.triggerTime = n
-					//Check if the current window has exceeded the max duration, if not continue expand
-					if lastTriggerTime < inputs[0].Timestamp {
-						break
-					}
-				}
-				log.Debugf("triggered by ticker")
+				log.Debugf("triggered by ticker at %d", n)
 				inputs, _ = o.scan(inputs, n, ctx)
 				o.statManager.ProcessTimeEnd()
 				ctx.PutState(WINDOW_INPUTS_KEY, inputs)

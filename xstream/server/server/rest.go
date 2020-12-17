@@ -72,9 +72,10 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 	}
 }
 
-func createRestServer(port int) *http.Server {
+func createRestServer(ip string, port int) *http.Server {
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
@@ -110,7 +111,7 @@ func createRestServer(port int) *http.Server {
 	r.HandleFunc("/metadata/sources/{name}/confKeys/{confKey}/field", sourceConfKeyFieldsHandler).Methods(http.MethodDelete, http.MethodPost)
 
 	server := &http.Server{
-		Addr: fmt.Sprintf("0.0.0.0:%d", port),
+		Addr: fmt.Sprintf("%s:%d", ip, port),
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * 60 * 5,
 		ReadTimeout:  time.Second * 60 * 5,
@@ -140,6 +141,10 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		byteInfo, _ := json.Marshal(info)
 		w.Write(byteInfo)
 	}
+}
+
+func pingHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
 
 //list or create streams
@@ -263,7 +268,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		jsonResponse(rule, w, logger)
 	case http.MethodDelete:
-		stopRule(name)
+		deleteRule(name)
 		content, err := ruleProcessor.ExecDrop(name)
 		if err != nil {
 			handleError(w, err, "delete rule error", logger)

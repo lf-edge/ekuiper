@@ -151,14 +151,14 @@ func (c *Coordinator) Activate() error {
 	go func() {
 		for {
 			select {
-			case <-tc:
+			case n := <-tc:
 				//trigger checkpoint
 				//TODO pose max attempt and min pause check for consequent pendingCheckpoints
 
 				// TODO Check if all tasks are running
 
 				//Create a pending checkpoint
-				checkpointId := common.GetNowInMilli()
+				checkpointId := common.TimeToUnixMilli(n)
 				checkpoint := newPendingCheckpoint(checkpointId, c.tasksToWaitFor)
 				logger.Debugf("Create checkpoint %d", checkpointId)
 				c.pendingCheckpoints.Store(checkpointId, checkpoint)

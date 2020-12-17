@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
-	"reflect"
 	"testing"
 	"time"
 )
@@ -68,11 +67,11 @@ func TestCheckpoint(t *testing.T) {
 				}},
 			},
 			m: map[string]interface{}{
-				"op_preprocessor_demo_0_records_in_total":  int64(3),
-				"op_preprocessor_demo_0_records_out_total": int64(3),
+				"op_1_preprocessor_demo_0_records_in_total":  int64(3),
+				"op_1_preprocessor_demo_0_records_out_total": int64(3),
 
-				"op_project_0_records_in_total":  int64(3),
-				"op_project_0_records_out_total": int64(3),
+				"op_3_project_0_records_in_total":  int64(3),
+				"op_3_project_0_records_out_total": int64(3),
 
 				"sink_mockSink_0_records_in_total":  int64(3),
 				"sink_mockSink_0_records_out_total": int64(3),
@@ -80,18 +79,18 @@ func TestCheckpoint(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(3),
 				"source_demo_0_records_out_total": int64(3),
 
-				"op_window_0_records_in_total":  int64(3),
-				"op_window_0_records_out_total": int64(3),
+				"op_2_window_0_records_in_total":  int64(3),
+				"op_2_window_0_records_out_total": int64(3),
 			},
 		},
 		pauseSize: 3,
 		cc:        2,
 		pauseMetric: map[string]interface{}{
-			"op_preprocessor_demo_0_records_in_total":  int64(3),
-			"op_preprocessor_demo_0_records_out_total": int64(3),
+			"op_1_preprocessor_demo_0_records_in_total":  int64(3),
+			"op_1_preprocessor_demo_0_records_out_total": int64(3),
 
-			"op_project_0_records_in_total":  int64(1),
-			"op_project_0_records_out_total": int64(1),
+			"op_3_project_0_records_in_total":  int64(1),
+			"op_3_project_0_records_out_total": int64(1),
 
 			"sink_mockSink_0_records_in_total":  int64(1),
 			"sink_mockSink_0_records_out_total": int64(1),
@@ -99,8 +98,8 @@ func TestCheckpoint(t *testing.T) {
 			"source_demo_0_records_in_total":  int64(3),
 			"source_demo_0_records_out_total": int64(3),
 
-			"op_window_0_records_in_total":  int64(3),
-			"op_window_0_records_out_total": int64(1),
+			"op_2_window_0_records_in_total":  int64(3),
+			"op_2_window_0_records_out_total": int64(1),
 		}},
 	}
 	handleStream(true, streamList, t)
@@ -125,33 +124,38 @@ func doCheckpointRuleTest(t *testing.T, tests []ruleCheckpointTest, j int, opt *
 	for i, tt := range tests {
 		datas, dataLength, tp, mockSink, errCh := createStream(t, tt.ruleTest, j, opt, nil)
 		log.Debugf("Start sending first phase data done at %d", common.GetNowInMilli())
-		if err := sendData(t, tt.pauseSize, tt.pauseMetric, datas, errCh, tp, 100); err != nil {
+		if err := sendData(t, tt.pauseSize, tt.pauseMetric, datas, errCh, tp, 100, 1); err != nil {
 			t.Errorf("first phase send data error %s", err)
 			break
 		}
 		log.Debugf("Send first phase data done at %d", common.GetNowInMilli())
 		// compare checkpoint count
+		time.Sleep(10 * time.Millisecond)
 		var retry int
-		for retry = 100; retry > 0; retry-- {
-			time.Sleep(time.Duration(retry) * time.Millisecond)
+		for retry = 3; retry > 0; retry-- {
 			actual := tp.GetCoordinator().GetCompleteCount()
-			if reflect.DeepEqual(tt.cc, actual) {
+			if tt.cc == actual {
 				break
 			} else {
 				common.Log.Debugf("check checkpointCount error at %d: %d", retry, actual)
 			}
+			time.Sleep(200 * time.Millisecond)
 		}
+		cc := tp.GetCoordinator().GetCompleteCount()
 		tp.Cancel()
 		if retry == 0 {
-			t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, j, tt.cc, tp.GetCoordinator().GetCompleteCount())
+			t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, j, tt.cc, cc)
 			return
+		} else if retry < 3 {
+			fmt.Printf("try %d for checkpoint count\n", 4-retry)
 		}
+		tp.Cancel()
 		time.Sleep(10 * time.Millisecond)
 		// resume stream
 		log.Debugf("Resume stream at %d", common.GetNowInMilli())
 		errCh = tp.Open()
 		log.Debugf("After open stream at %d", common.GetNowInMilli())
-		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP); err != nil {
+		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP, 10); err != nil {
 			t.Errorf("second phase send data error %s", err)
 			break
 		}

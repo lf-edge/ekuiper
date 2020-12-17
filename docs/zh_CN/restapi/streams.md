@@ -65,6 +65,22 @@ GET http://localhost:9081/streams/{id}}
 }
 ```
 
+## 更新流
+
+该 API 用于更新流定义。
+
+```shell
+PUT http://localhost:9081/streams/{id}
+```
+
+路径参数  `id` 是原有流定义的 id 或名称。
+
+请求示例，请求命令是带有 `sql` 字段的 json 字符串。
+
+```json
+{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+```
+
 ## 删除流
 
 该 API 用于删除流定义。
@@ -72,3 +88,4 @@ GET http://localhost:9081/streams/{id}}
 ```shell
 DELETE http://localhost:9081/streams/{id}
 ```
+

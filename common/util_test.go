@@ -2,53 +2,82 @@ package common
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 )
 
-func TestSimpleKVStore_Funcs(t *testing.T) {
-	abs, _ := filepath.Abs("test.data")
+func TestSqliteKVStore_Funcs(t *testing.T) {
+	abs, _ := filepath.Abs("test")
 	if f, _ := os.Stat(abs); f != nil {
-		_ = os.Remove(abs)
+		os.Remove(abs)
 	}
 
-	ks := GetSimpleKVStore(abs)
+	ks := GetSqliteKVStore(abs)
 	if e := ks.Open(); e != nil {
 		t.Errorf("Failed to open data %s.", e)
 	}
 
-	_ = ks.Set("foo", "bar")
-	v, _ := ks.Get("foo")
-	reflect.DeepEqual("bar", v)
+	if err := ks.Setnx("foo", "bar"); nil != err {
+		t.Error(err)
+	}
 
-	_ = ks.Set("foo1", "bar1")
-	v1, _ := ks.Get("foo1")
-	reflect.DeepEqual("bar1", v1)
+	var v string
+	if ok, _ := ks.Get("foo", &v); ok {
+		if !reflect.DeepEqual("bar", v) {
+			t.Error("expect:bar", "get:", v)
+		}
+	} else {
+		t.Errorf("Should not find the foo key.")
+	}
+
+	if err := ks.Setnx("foo1", "bar1"); nil != err {
+		t.Error(err)
+	}
+
+	if err := ks.Set("foo1", "bar2"); nil != err {
+		t.Error(err)
+	}
+
+	var v1 string
+	if ok, _ := ks.Get("foo1", &v1); ok {
+		if !reflect.DeepEqual("bar2", v1) {
+			t.Error("expect:bar2", "get:", v1)
+		}
+	} else {
+		t.Errorf("Should not find the foo1 key.")
+	}
 
 	if keys, e1 := ks.Keys(); e1 != nil {
 		t.Errorf("Failed to get value: %s.", e1)
 	} else {
-		reflect.DeepEqual(2, len(keys))
+		if !reflect.DeepEqual(2, len(keys)) {
+			t.Error("expect:2", "get:", len(keys))
+		}
 	}
 
 	if e2 := ks.Close(); e2 != nil {
 		t.Errorf("Failed to close data: %s.", e2)
 	}
 
-	//if _, f := ks.Get("foo"); f {
-	//	t.Errorf("Should not find the foo key.")
-	//}
+	if err := ks.Open(); nil != err {
+		t.Error(err)
+	}
 
-	_ = ks.Open()
-	if v, ok := ks.Get("foo"); ok {
-		reflect.DeepEqual("bar", v)
+	var v2 string
+	if ok, _ := ks.Get("foo", &v2); ok {
+		if !reflect.DeepEqual("bar", v2) {
+			t.Error("expect:bar", "get:", v)
+		}
 	} else {
 		t.Errorf("Should not find the foo key.")
 	}
 
-	ks.Delete("foo1")
+	if err := ks.Delete("foo1"); nil != err {
+		t.Error(err)
+	}
 
 	if keys, e1 := ks.Keys(); e1 != nil {
 		t.Errorf("Failed to get value: %s.", e1)
@@ -56,7 +85,20 @@ func TestSimpleKVStore_Funcs(t *testing.T) {
 		reflect.DeepEqual(1, len(keys))
 	}
 
-	_ = os.Remove(abs)
+	if err := ks.Clean(); nil != err {
+		t.Error(err)
+	}
+
+	if keys, e1 := ks.Keys(); e1 != nil {
+		t.Errorf("Failed to get value: %s.", e1)
+	} else {
+		reflect.DeepEqual(0, len(keys))
+	}
+
+	dir, _ := filepath.Split(abs)
+	abs = path.Join(dir, "sqliteKV.db")
+	os.Remove(abs)
+
 }
 
 func TestMapConvert_Funcs(t *testing.T) {

@@ -1,6 +1,7 @@
 package processors
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
@@ -8,7 +9,9 @@ import (
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
+	"github.com/emqx/kuiper/xstream/planner"
 	"github.com/emqx/kuiper/xstream/test"
+	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
@@ -17,17 +20,20 @@ import (
 	"time"
 )
 
-const SOURCELEAP = 200 // Time change before sending a data
-const POSTLEAP = 1000  // Time change after all data sends out
+const POSTLEAP = 1000 // Time change after all data sends out
 type ruleTest struct {
 	name string
 	sql  string
 	r    interface{}            // The result
 	m    map[string]interface{} // final metrics
 	t    *xstream.PrintableTopo // printable topo, an optional field
+	w    int                    // wait time for each data sending, in milli
 }
 
-var DbDir = getDbDir()
+var (
+	DbDir         = getDbDir()
+	image, b64img = getImg()
+)
 
 func getDbDir() string {
 	common.InitConf()
@@ -37,6 +43,19 @@ func getDbDir() string {
 	}
 	log.Infof("db location is %s", dbDir)
 	return dbDir
+}
+
+func getImg() ([]byte, string) {
+	docsFolder, err := common.GetLoc("/docs/")
+	if err != nil {
+		log.Fatalf("Cannot find docs folder: %v", err)
+	}
+	image, err := ioutil.ReadFile(path.Join(docsFolder, "cover.jpg"))
+	if err != nil {
+		log.Fatalf("Cannot read image: %v", err)
+	}
+	b64img := base64.StdEncoding.EncodeToString(image)
+	return image, b64img
 }
 
 func cleanStateData() {
@@ -58,11 +77,6 @@ func cleanStateData() {
 
 func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}) (err error) {
 	keys, values := tp.GetMetrics()
-	if common.Config.Basic.Debug == true {
-		for i, k := range keys {
-			log.Printf("%s:%v", k, values[i])
-		}
-	}
 	for k, v := range m {
 		var (
 			index   int
@@ -210,7 +224,7 @@ var testData = map[string][]*xsql.Tuple{
 				"from": "device1",
 				"ts":   1541152486013,
 			},
-			Timestamp: 1541152486013,
+			Timestamp: 1541152486115,
 		},
 		{
 			Emitter: "demo1",
@@ -220,7 +234,7 @@ var testData = map[string][]*xsql.Tuple{
 				"from": "device2",
 				"ts":   1541152486823,
 			},
-			Timestamp: 1541152486823,
+			Timestamp: 1541152486903,
 		},
 		{
 			Emitter: "demo1",
@@ -230,7 +244,7 @@ var testData = map[string][]*xsql.Tuple{
 				"from": "device3",
 				"ts":   1541152487632,
 			},
-			Timestamp: 1541152487632,
+			Timestamp: 1541152487702,
 		},
 		{
 			Emitter: "demo1",
@@ -240,7 +254,7 @@ var testData = map[string][]*xsql.Tuple{
 				"from": "device1",
 				"ts":   1541152488442,
 			},
-			Timestamp: 1541152488442,
+			Timestamp: 1541152488605,
 		},
 		{
 			Emitter: "demo1",
@@ -250,7 +264,7 @@ var testData = map[string][]*xsql.Tuple{
 				"from": "device3",
 				"ts":   1541152489252,
 			},
-			Timestamp: 1541152489252,
+			Timestamp: 1541152489305,
 		},
 	},
 	"sessionDemo": {
@@ -891,6 +905,15 @@ var testData = map[string][]*xsql.Tuple{
 			Timestamp: 1541152493400,
 		},
 	},
+	"binDemo": {
+		{
+			Emitter: "binDemo",
+			Message: map[string]interface{}{
+				"self": image,
+			},
+			Timestamp: 1541152486013,
+		},
+	},
 }
 
 func commonResultFunc(result [][]byte) interface{} {
@@ -914,7 +937,14 @@ func doRuleTestBySinkProps(t *testing.T, tests []ruleTest, j int, opt *api.RuleO
 	fmt.Printf("The test bucket for option %d size is %d.\n\n", j, len(tests))
 	for i, tt := range tests {
 		datas, dataLength, tp, mockSink, errCh := createStream(t, tt, j, opt, sinkProps)
-		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP); err != nil {
+		wait := tt.w
+		if wait == 0 {
+			wait = 5
+			if opt.Qos == api.ExactlyOnce {
+				wait = 10
+			}
+		}
+		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP, wait); err != nil {
 			t.Errorf("send data error %s", err)
 			break
 		}
@@ -942,18 +972,21 @@ func compareResult(t *testing.T, mockSink *test.MockSink, resultFunc func(result
 	tp.Cancel()
 }
 
-func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, datas [][]*xsql.Tuple, errCh <-chan error, tp *xstream.TopologyNew, postleap int) error {
+func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, datas [][]*xsql.Tuple, errCh <-chan error, tp *xstream.TopologyNew, postleap int, wait int) error {
 	// Send data and move time
 	mockClock := test.GetMockClock()
+	// Set the current time
+	mockClock.Add(0)
 	// TODO assume multiple data source send the data in order and has the same length
 	for i := 0; i < dataLength; i++ {
-		mockClock.Add(SOURCELEAP * time.Millisecond)
-		common.Log.Debugf("Clock add to %d", common.GetNowInMilli())
-		time.Sleep(1)
 		for _, d := range datas {
 			// Make sure time is going forward only
-			if d[i].Timestamp > common.GetNowInMilli() {
-				mockClock.Set(common.TimeFromUnixMilli(d[i].Timestamp))
+			// gradually add up time to ensure checkpoint is triggered before the data send
+			for n := common.GetNowInMilli() + 100; d[i].Timestamp+100 > n; n += 100 {
+				if d[i].Timestamp < n {
+					n = d[i].Timestamp
+				}
+				mockClock.Set(common.TimeFromUnixMilli(n))
 				common.Log.Debugf("Clock set to %d", common.GetNowInMilli())
 				time.Sleep(1)
 			}
@@ -964,19 +997,26 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 				return err
 			default:
 			}
+			time.Sleep(time.Duration(wait) * time.Millisecond)
 		}
 	}
 	mockClock.Add(time.Duration(postleap) * time.Millisecond)
 	common.Log.Debugf("Clock add to %d", common.GetNowInMilli())
-	time.Sleep(1)
 	// Check if stream done. Poll for metrics,
-	for retry := 100; retry > 0; retry-- {
-		time.Sleep(time.Duration(retry) * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
+	var retry int
+	for retry = 2; retry > 0; retry-- {
 		if err := compareMetrics(tp, metrics); err == nil {
 			break
 		} else {
-			common.Log.Debugf("check metrics error at %d: %s", retry, err)
+			common.Log.Errorf("check metrics error at %d: %s", retry, err)
 		}
+		time.Sleep(1000 * time.Millisecond)
+	}
+	if retry == 0 {
+		fmt.Printf("send data timeout\n")
+	} else if retry < 2 {
+		fmt.Printf("try %d for metric comparison\n", 2-retry)
 	}
 	return nil
 }
@@ -984,7 +1024,7 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 func createStream(t *testing.T, tt ruleTest, j int, opt *api.RuleOption, sinkProps map[string]interface{}) ([][]*xsql.Tuple, int, *xstream.TopologyNew, *test.MockSink, <-chan error) {
 	// Rest for each test
 	cleanStateData()
-	test.ResetClock(1541152485800)
+	test.ResetClock(1541152486000)
 	// Create stream
 	var (
 		sources    []*nodes.SourceNode
@@ -992,7 +1032,6 @@ func createStream(t *testing.T, tt ruleTest, j int, opt *api.RuleOption, sinkPro
 		dataLength int
 	)
 
-	p := NewRuleProcessor(DbDir)
 	parser := xsql.NewParser(strings.NewReader(tt.sql))
 	if stmt, err := xsql.Language.Parse(parser); err != nil {
 		t.Errorf("parse sql %s error: %s", tt.sql, err)
@@ -1012,13 +1051,13 @@ func createStream(t *testing.T, tt ruleTest, j int, opt *api.RuleOption, sinkPro
 			}
 		}
 	}
-	tp, inputs, err := p.createTopoWithSources(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.name, j), Sql: tt.sql, Options: opt}, sources)
-	if err != nil {
-		t.Error(err)
-	}
 	mockSink := test.NewMockSink()
 	sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, sinkProps)
-	tp.AddSink(inputs, sink)
+	tp, err := planner.PlanWithSourcesAndSinks(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.name, j), Sql: tt.sql, Options: opt}, DbDir, sources, []*nodes.SinkNode{sink})
+	if err != nil {
+		t.Error(err)
+		return nil, 0, nil, nil, nil
+	}
 	errCh := tp.Open()
 	return datas, dataLength, tp, mockSink, errCh
 }
@@ -1094,6 +1133,8 @@ func handleStream(createOrDrop bool, names []string, t *testing.T) {
 				sql = "CREATE STREAM ext2 (count bigint) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"dedup\")"
 			case "text":
 				sql = "CREATE STREAM text (slogan string, brand string) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"
+			case "binDemo":
+				sql = "CREATE STREAM binDemo () WITH (DATASOURCE=\"users\", FORMAT=\"BINARY\")"
 			default:
 				t.Errorf("create stream %s fail", name)
 			}
