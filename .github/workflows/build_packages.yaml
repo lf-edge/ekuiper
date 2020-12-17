@@ -59,6 +59,7 @@ jobs:
             matrix:
                 plugin:
                 - sinks/file
+                - sinks/image
                 - sinks/influx
                 - sinks/tdengine
                 - sinks/zmq
