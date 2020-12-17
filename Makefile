@@ -172,6 +172,7 @@ cross_docker: cross_prepare
 PLUGINS := sinks/file \
 	sinks/influx \
 	sinks/zmq \
+	sinks/image \
 	sources/random \
 	sources/zmq \
 	functions/accumulateWordCount \
