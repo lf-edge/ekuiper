@@ -17,7 +17,7 @@ require (
 
 ```shell
 go mod edit -replace github.com/emqx/kuiper=/$kuiper
-go build --buildmode=plugin -o /$kuiper/plugins/sinks/Tdengine@v1.0.0.so /$kuiper/plugins/sinks/tdengine.go
+go build --buildmode=plugin -o /$kuiper/plugins/sinks/Tdengine@v1.0.0.so /$kuiper/plugins/sinks/tdengine/tdengine.go
 ```
 ### 安装插件
 由于 tdengine 插件的运行依赖于 tdengine 客户端，为了便于用户使用，安装插件时将下载 tdengine 客户端。但是 tdengine 客户端版本与其服务器版本一一对应，互不兼容，所以用户必须告知所用 tdengine 服务器版本。

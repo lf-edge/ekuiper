@@ -6,7 +6,7 @@ The sink will publish the result into a Zero Mq topic.
 
 ```shell
 # cd $kuiper_src
-# go build --buildmode=plugin -o plugins/sinks/Zmq.so plugins/sinks/zmq.go
+# go build --buildmode=plugin -o plugins/sinks/Zmq.so plugins/sinks/zmq/zmq.go
 # cp plugins/sinks/Zmq.so $kuiper_install/plugins/sinks
 ```
 

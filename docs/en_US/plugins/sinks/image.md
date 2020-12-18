@@ -6,7 +6,7 @@ Sink is used to save the picture to the specified folder.
 
 ```shell
 # cd $kuiper_src
-# go build --buildmode=plugin -o plugins/sinks/Image.so plugins/sinks/image.go
+# go build --buildmode=plugin -o plugins/sinks/Image.so plugins/sinks/image/image.go
 # cp plugins/sinks/Image.so $kuiper_install/plugins/sinks
 ```
 
