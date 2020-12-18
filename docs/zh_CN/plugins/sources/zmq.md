@@ -6,7 +6,7 @@
 
 ```shell
 # cd $kuiper_src
-# go build --buildmode=plugin -o plugins/sources/Zmq.so plugins/sources/zmq.go
+# go build --buildmode=plugin -o plugins/sources/Zmq.so plugins/sources/zmq/zmq.go
 # cp plugins/sources/Zmq.so $kuiper_install/plugins/sources
 ```
 

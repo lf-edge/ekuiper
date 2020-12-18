@@ -10,7 +10,7 @@
 
 ```shell
 # cd $kuiper_src
-# go build --buildmode=plugin -o plugins/sinks/InfluxDB.so plugins/sinks/influxdb.go
+# go build --buildmode=plugin -o plugins/sinks/InfluxDB.so plugins/sinks/influxdb/influxdb.go
 # zip influx.zip plugins/sinks/InfluxDB.so
 # cp influx.zip /root/tomcat_path/webapps/ROOT/
 # bin/kuiper create plugin sink influx -f /tmp/influxPlugin.txt
