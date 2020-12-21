@@ -102,6 +102,11 @@ func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}) (err erro
 		if matched {
 			continue
 		}
+		if common.Config.Basic.Debug == true {
+			for i, k := range keys {
+				log.Printf("%s:%v", k, values[i])
+			}
+		}
 		//do not find
 		if index < len(values) {
 			return fmt.Errorf("metrics mismatch for %s:\n\nexp=%#v(%t)\n\ngot=%#v(%t)\n\n", k, v, v, values[index], values[index])
