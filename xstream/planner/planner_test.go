@@ -271,15 +271,196 @@ func Test_createLogicalPlan(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
+		}, { // 5. optimize join on
+			sql: `SELECT id1 FROM src1 INNER JOIN src2 on src1.id1 = src2.id2 and src1.temp > 20 and src2.hum < 60 WHERE src1.id > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						JoinPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									WindowPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												FilterPlan{
+													baseLogicalPlan: baseLogicalPlan{
+														children: []LogicalPlan{
+															DataSourcePlan{
+																name:       "src1",
+																isWildCard: true,
+																needMeta:   false,
+																fields:     nil,
+																metaFields: nil,
+															}.Init(),
+														},
+													},
+													condition: &xsql.BinaryExpr{
+														RHS: &xsql.BinaryExpr{
+															OP:  xsql.GT,
+															LHS: &xsql.FieldRef{Name: "temp", StreamName: "src1"},
+															RHS: &xsql.IntegerLiteral{Val: 20},
+														},
+														OP: xsql.AND,
+														LHS: &xsql.BinaryExpr{
+															OP:  xsql.GT,
+															LHS: &xsql.FieldRef{Name: "id", StreamName: "src1"},
+															RHS: &xsql.IntegerLiteral{Val: 111},
+														},
+													},
+												}.Init(),
+												FilterPlan{
+													baseLogicalPlan: baseLogicalPlan{
+														children: []LogicalPlan{
+															DataSourcePlan{
+																name:       "src2",
+																isWildCard: true,
+																needMeta:   false,
+																fields:     nil,
+																metaFields: nil,
+															}.Init(),
+														},
+													},
+													condition: &xsql.BinaryExpr{
+														OP:  xsql.LT,
+														LHS: &xsql.FieldRef{Name: "hum", StreamName: "src2"},
+														RHS: &xsql.IntegerLiteral{Val: 60},
+													},
+												}.Init(),
+											},
+										},
+										condition: nil,
+										wtype:     xsql.TUMBLING_WINDOW,
+										length:    10000,
+										interval:  0,
+										limit:     0,
+									}.Init(),
+								},
+							},
+							from: &xsql.Table{
+								Name: "src1",
+							},
+							joins: []xsql.Join{
+								{
+									Name:     "src2",
+									Alias:    "",
+									JoinType: xsql.INNER_JOIN,
+									Expr: &xsql.BinaryExpr{
+										LHS: &xsql.FieldRef{Name: "id1", StreamName: "src1"},
+										OP:  xsql.EQ,
+										RHS: &xsql.FieldRef{Name: "id2", StreamName: "src2"},
+									},
+								},
+							},
+						}.Init(),
+					},
+				},
+				fields: []xsql.Field{
+					{
+						Expr:  &xsql.FieldRef{Name: "id1"},
+						Name:  "id1",
+						AName: ""},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
+		}, { // 6. optimize outter join on
+			sql: `SELECT id1 FROM src1 FULL JOIN src2 on src1.id1 = src2.id2 and src1.temp > 20 and src2.hum < 60 WHERE src1.id > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						JoinPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									WindowPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												FilterPlan{
+													baseLogicalPlan: baseLogicalPlan{
+														children: []LogicalPlan{
+															DataSourcePlan{
+																name:       "src1",
+																isWildCard: true,
+																needMeta:   false,
+																fields:     nil,
+																metaFields: nil,
+															}.Init(),
+														},
+													},
+													condition: &xsql.BinaryExpr{
+														OP:  xsql.GT,
+														LHS: &xsql.FieldRef{Name: "id", StreamName: "src1"},
+														RHS: &xsql.IntegerLiteral{Val: 111},
+													},
+												}.Init(),
+												DataSourcePlan{
+													name:       "src2",
+													isWildCard: true,
+													needMeta:   false,
+													fields:     nil,
+													metaFields: nil,
+												}.Init(),
+											},
+										},
+										condition: nil,
+										wtype:     xsql.TUMBLING_WINDOW,
+										length:    10000,
+										interval:  0,
+										limit:     0,
+									}.Init(),
+								},
+							},
+							from: &xsql.Table{
+								Name: "src1",
+							},
+							joins: []xsql.Join{
+								{
+									Name:     "src2",
+									Alias:    "",
+									JoinType: xsql.FULL_JOIN,
+									Expr: &xsql.BinaryExpr{
+										OP: xsql.AND,
+										LHS: &xsql.BinaryExpr{
+											OP: xsql.AND,
+											LHS: &xsql.BinaryExpr{
+												LHS: &xsql.FieldRef{Name: "id1", StreamName: "src1"},
+												OP:  xsql.EQ,
+												RHS: &xsql.FieldRef{Name: "id2", StreamName: "src2"},
+											},
+											RHS: &xsql.BinaryExpr{
+												OP:  xsql.GT,
+												LHS: &xsql.FieldRef{Name: "temp", StreamName: "src1"},
+												RHS: &xsql.IntegerLiteral{Val: 20},
+											},
+										},
+										RHS: &xsql.BinaryExpr{
+											OP:  xsql.LT,
+											LHS: &xsql.FieldRef{Name: "hum", StreamName: "src2"},
+											RHS: &xsql.IntegerLiteral{Val: 60},
+										},
+									},
+								},
+							},
+						}.Init(),
+					},
+				},
+				fields: []xsql.Field{
+					{
+						Expr:  &xsql.FieldRef{Name: "id1"},
+						Name:  "id1",
+						AName: ""},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
 		},
 	}
 	//TODO optimize having, optimize on
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	for i, tt := range tests {
-		//fmt.Printf("Parsing SQL %q.\n", tt.s)
+	for i, tt := range tests[6:] {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
+			continue
 		}
 		p, err := createLogicalPlan(stmt, &api.RuleOption{
 			IsEventTime:        false,

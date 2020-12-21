@@ -2,7 +2,7 @@ package planner
 
 import "github.com/emqx/kuiper/xsql"
 
-func GetRefSources(node xsql.Node) []string {
+func getRefSources(node xsql.Node) []string {
 	result := make(map[string]bool)
 	keys := make([]string, 0, len(result))
 	if node == nil {
@@ -17,4 +17,18 @@ func GetRefSources(node xsql.Node) []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func combine(l xsql.Expr, r xsql.Expr) xsql.Expr {
+	if l != nil && r != nil {
+		return &xsql.BinaryExpr{
+			OP:  xsql.AND,
+			LHS: l,
+			RHS: r,
+		}
+	} else if l != nil {
+		return l
+	} else {
+		return r
+	}
 }

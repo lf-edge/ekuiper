@@ -20,13 +20,37 @@ func (p DataSourcePlan) Init() *DataSourcePlan {
 
 // Presume no children for data source
 func (p *DataSourcePlan) PushDownPredicate(condition xsql.Expr) (xsql.Expr, LogicalPlan) {
-	if condition != nil {
+	owned, other := p.extract(condition)
+	if owned != nil {
 		// Add a filter plan for children
 		f := FilterPlan{
-			condition: condition,
+			condition: owned,
 		}.Init()
 		f.SetChildren([]LogicalPlan{p})
-		return nil, f
+		return other, f
 	}
-	return nil, p
+	return other, p
+}
+
+func (p *DataSourcePlan) extract(expr xsql.Expr) (xsql.Expr, xsql.Expr) {
+	s := getRefSources(expr)
+	switch len(s) {
+	case 0:
+		return expr, nil
+	case 1:
+		if s[0] == p.name {
+			return expr, nil
+		} else {
+			return nil, expr
+		}
+	default:
+		if be, ok := expr.(*xsql.BinaryExpr); ok && be.OP == xsql.AND {
+			ul, pl := p.extract(be.LHS)
+			ur, pr := p.extract(be.RHS)
+			owned := combine(ul, ur)
+			other := combine(pl, pr)
+			return owned, other
+		}
+		return nil, expr
+	}
 }
