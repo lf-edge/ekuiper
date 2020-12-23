@@ -1,0 +1,28 @@
+{
+	"about": {
+		"trial": false,
+		"author": {
+			"name": "EMQ",
+			"email": "contact@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "",
+			"zh_CN": ""
+		},
+		"description": {
+			"en_US": "",
+			"zh_CN": ""
+		}
+	},
+	"functions": [{
+		"name": "thumbnail",
+		"example": "thumbnail(image,maxWidth, maxHeight)",
+		"hint": {
+			"en_US": "Downscales an image preserving its aspect ratio to the maximum dimensions (maxWidth, maxHeight).",
+			"zh_CN": "将保留宽高比的图像缩小到最大尺寸（maxWidth，maxHeight）。"
+		}
+	}]
+}
+
