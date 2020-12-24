@@ -44,6 +44,9 @@ func (this *command) call(host string) bool {
 	case "delete", "DELETE":
 		resp, err = common.Delete(head)
 		break
+	case "put", "PUT":
+		resp, err = common.Put(head, string(body))
+		break
 	default:
 		this.strLog = fmt.Sprintf("no such method : %s", this.Method)
 		return false

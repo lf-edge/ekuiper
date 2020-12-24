@@ -195,7 +195,29 @@ Execute the command of `go build -o tools/kubernetes/kuiper-kubernetes-tool tool
 }
 ```
 
-### 3.8 Show the status of rule1
+### 3.8 Replace and restart rules rule1
+
+```json
+{
+    "commands":[
+        {
+            "url":"/rules/rule1",
+            "description":"update rule1",
+            "method":"put",
+            "data":{
+                "id":"rule1",
+                "sql":"SELECT * FROM stream1",
+                "actions":[
+                    {
+                        "log":{
+                        }
+                    }]
+            }
+        }]
+}
+```
+
+### 3.9 Show the status of rule1
 
 ```json
 {

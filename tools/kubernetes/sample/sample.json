@@ -46,6 +46,20 @@
             }
         },
         {
+            "url":"/rules/rule1",
+            "description":"update rule1",
+            "method":"put",
+            "data":{
+                "id":"rule1",
+                "sql":"SELECT id FROM stream1",
+                "actions":[
+                    {
+                        "log":{
+                        }
+                    }]
+            }
+        },
+        {
             "url":"/rules",
             "description":"create rule2",
             "method":"post",
