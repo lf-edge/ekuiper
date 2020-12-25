@@ -8,8 +8,8 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "",
-			"zh_CN": ""
+      "en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/functions/functions.md",
+      "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/functions/functions.md"
 		},
 		"description": {
 			"en_US": "",
@@ -20,8 +20,8 @@
 		"name": "accumulateWordCount",
 		"example": "accumulateWordCount(col1)",
 		"hint": {
-			"en_US": "A function which will count how many words had been received from the beginning",
-			"zh_CN": "该函数将计算从一开始就收到了多少个单词"
+			"en_US": "This function counts the total number of orders",
+			"zh_CN": "该函数统计一共有多少个单词"
 		}
 	}]
 }
