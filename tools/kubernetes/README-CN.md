@@ -193,7 +193,31 @@ commandDir: "./sample/" //命令文件夹路径
 }
 ```
 
-### 3.8 显示规则 rule1 的状态
+### 3.8 替换并重启规则 rule1
+
+```json
+{
+    "commands":[
+        {
+            "url":"/rules/rule1",
+            "description":"update rule1",
+            "method":"put",
+            "data":{
+                "id":"rule1",
+                "sql":"SELECT * FROM stream1",
+                "actions":[
+                    {
+                        "log":{
+                        }
+                    }]
+            }
+        }]
+}
+```
+
+
+
+### 3.9 显示规则 rule1 的状态
 
 ```json
 {

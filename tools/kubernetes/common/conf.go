@@ -176,6 +176,15 @@ func Post(inHead, inBody string) (data []byte, err error) {
 	return fetchContents(request)
 }
 
+func Put(inHead, inBody string) (data []byte, err error) {
+	request, err := http.NewRequest(http.MethodPut, inHead, bytes.NewBuffer([]byte(inBody)))
+	if nil != err {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	return fetchContents(request)
+}
+
 func Delete(inUrl string) (data []byte, err error) {
 	request, err := http.NewRequest(http.MethodDelete, inUrl, nil)
 	if nil != err {
