@@ -28,10 +28,11 @@ func TestCall(t *testing.T) {
 		},
 		{
 			cmd: command{
-				Url:    `/streams`,
+				Url:    `/streams/stream1`,
 				Method: `put`,
+				Data:   struct{ sql string }{sql: `create stream stream1 (id bigint, name string) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\");`},
 			},
-			exp: false,
+			exp: true,
 		},
 		{
 			cmd: command{
