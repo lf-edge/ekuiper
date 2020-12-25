@@ -68,6 +68,8 @@ jobs:
                 - functions/accumulateWordCount
                 - functions/countPlusOne
                 - functions/echo
+                - functions/thumbnail
+                - functions/resize
 
         steps:
         - uses: actions/checkout@v1

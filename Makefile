@@ -177,6 +177,8 @@ PLUGINS := sinks/file \
 	sources/zmq \
 	functions/accumulateWordCount \
 	functions/countPlusOne \
+	functions/thumbnail\
+	functions/resize\
 	functions/echo
 
 .PHONY: plugins sinks/tdengine $(PLUGINS)
