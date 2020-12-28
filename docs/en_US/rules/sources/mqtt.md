@@ -6,9 +6,7 @@ Kuiper provides built-in support for MQTT source stream, which can subscribe the
 #Global MQTT configurations
 default:
   qos: 1
-  sharedSubscription: true
   servers: [tcp://127.0.0.1:1883]
-  concurrency: 1
   #username: user1
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -29,13 +27,6 @@ Use can specify the global MQTT settings here. The configuration items specified
 ### qos
 
 The default subscription QoS level.
-
-### concurrency
-How many instances will be started. By default, only an instance will be run. If more than one instance is specified, the topic must be a shared subscription topic.
-
-### sharedSubscription
-
-Whether use the shared subscription mode or not. If using the shared subscription mode, then there are multiple Kuiper process can be load balanced.
 
 ### servers
 
@@ -109,4 +100,3 @@ demo (
 ```
 
 The configuration keys used for these specific settings are the same as in ``default`` settings, any values specified in specific settings will overwrite the values in ``default`` section.
-

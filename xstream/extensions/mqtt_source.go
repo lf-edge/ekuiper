@@ -30,18 +30,17 @@ type MQTTSource struct {
 }
 
 type MQTTConfig struct {
-	Format             string   `json:"format"`
-	Qos                int      `json:"qos"`
-	Sharedsubscription bool     `json:"sharedSubscription"`
-	Servers            []string `json:"servers"`
-	Clientid           string   `json:"clientid"`
-	PVersion           string   `json:"protocolVersion"`
-	Uname              string   `json:"username"`
-	Password           string   `json:"password"`
-	Certification      string   `json:"certificationPath"`
-	PrivateKPath       string   `json:"privateKeyPath"`
-	KubeedgeModelFile  string   `json:"kubeedgeModelFile"`
-	KubeedgeVersion    string   `json:"kubeedgeVersion"`
+	Format            string   `json:"format"`
+	Qos               int      `json:"qos"`
+	Servers           []string `json:"servers"`
+	Clientid          string   `json:"clientid"`
+	PVersion          string   `json:"protocolVersion"`
+	Uname             string   `json:"username"`
+	Password          string   `json:"password"`
+	Certification     string   `json:"certificationPath"`
+	PrivateKPath      string   `json:"privateKeyPath"`
+	KubeedgeModelFile string   `json:"kubeedgeModelFile"`
+	KubeedgeVersion   string   `json:"kubeedgeVersion"`
 }
 
 func (ms *MQTTSource) WithSchema(schema string) *MQTTSource {
