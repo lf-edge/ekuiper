@@ -34,20 +34,6 @@
 				"zh_CN": "QoS 级别"
 			}
 		}, {
-			"name": "sharedSubscription",
-			"default": true,
-			"optional": true,
-			"control": "radio",
-			"type": "bool",
-			"hint": {
-				"en_US": "Whether use the shared subscription mode or not. If using the shared subscription mode, then there are multiple Kuiper process can be load balanced.",
-				"zh_CN": "是否使用共享订阅模式。 如果使用共享订阅模式，那么多个 Kuiper 进程可以进行负载平衡。"
-			},
-			"label": {
-				"en_US": "SharedSubscription",
-				"zh_CN": "使用共享订阅模式"
-			}
-		}, {
 			"name": "servers",
 			"default": ["tcp://127.0.0.1:1883"],
 			"optional": true,
@@ -60,20 +46,6 @@
 			"label": {
 				"en_US": "Server list",
 				"zh_CN": "服务器列表"
-			}
-		}, {
-			"name": "concurrency",
-			"default": 1,
-			"optional": true,
-			"control": "text",
-			"type": "int",
-			"hint": {
-				"en_US": "How many instances will be started. By default, only an instance will be run. If more than one instance is specified, the topic must be a shared subscription topic.",
-				"zh_CN": "设置运行的协程数，默认值为1。如果设置协程数大于1，必须使用共享订阅模式。"
-			},
-			"label": {
-				"en_US": "Concurrency",
-				"zh_CN": "协程数"
 			}
 		}, {
 			"name": "username",
