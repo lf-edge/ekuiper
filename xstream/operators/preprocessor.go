@@ -15,26 +15,19 @@ import (
 )
 
 type Preprocessor struct {
-	streamStmt      *xsql.StreamStmt
+	//Pruned stream fields. Could be streamField(with data type info) or string
+	streamFields    []interface{}
 	aliasFields     xsql.Fields
+	allMeta         bool
+	metaFields      []string //only needed if not allMeta
 	isEventTime     bool
 	timestampField  string
 	timestampFormat string
 	isBinary        bool
 }
 
-func NewPreprocessor(s *xsql.StreamStmt, fs xsql.Fields, iet bool, isBinary bool) (*Preprocessor, error) {
-	p := &Preprocessor{streamStmt: s, aliasFields: fs, isEventTime: iet, isBinary: isBinary}
-	if iet {
-		if tf, ok := s.Options["TIMESTAMP"]; ok {
-			p.timestampField = tf
-		} else {
-			return nil, fmt.Errorf("preprocessor is set to be event time but stream option TIMESTAMP not found")
-		}
-		if ts, ok := s.Options["TIMESTAMP_FORMAT"]; ok {
-			p.timestampFormat = ts
-		}
-	}
+func NewPreprocessor(fields []interface{}, fs xsql.Fields, allMeta bool, metaFields []string, iet bool, timestampField string, timestampFormat string, isBinary bool) (*Preprocessor, error) {
+	p := &Preprocessor{streamFields: fields, aliasFields: fs, allMeta: allMeta, metaFields: metaFields, isEventTime: iet, isBinary: isBinary, timestampFormat: timestampFormat, timestampField: timestampField}
 	return p, nil
 }
 
@@ -52,18 +45,27 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.F
 	log.Debugf("preprocessor receive %s", tuple.Message)
 
 	result := make(map[string]interface{})
-	if p.streamStmt.StreamFields != nil {
-		if p.isBinary {
-			f := p.streamStmt.StreamFields[0]
-			tuple.Message[f.Name] = tuple.Message[common.DEFAULT_FIELD]
-			if e := p.addRecField(f.FieldType, result, tuple.Message, f.Name); e != nil {
-				return fmt.Errorf("error in preprocessor: %s", e)
-			}
-		} else {
-			for _, f := range p.streamStmt.StreamFields {
-				if e := p.addRecField(f.FieldType, result, tuple.Message, f.Name); e != nil {
+	if p.streamFields != nil {
+		for _, f := range p.streamFields {
+			switch sf := f.(type) {
+			case *xsql.StreamField:
+				if p.isBinary {
+					tuple.Message[sf.Name] = tuple.Message[common.DEFAULT_FIELD]
+				}
+				if e := p.addRecField(sf.FieldType, result, tuple.Message, sf.Name); e != nil {
 					return fmt.Errorf("error in preprocessor: %s", e)
 				}
+			case string: //schemaless
+				if p.isBinary {
+					result = tuple.Message
+				} else {
+					if m, ok := tuple.Message.Value(sf); ok {
+						result[sf] = m
+					}
+				}
+			}
+			if p.isBinary {
+				break //binary format should only have ONE field
 			}
 		}
 	} else {
@@ -95,12 +97,19 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.F
 			return fmt.Errorf("cannot find timestamp field %s in tuple %v", p.timestampField, result)
 		}
 	}
+	if !p.allMeta && p.metaFields != nil && len(p.metaFields) > 0 {
+		newMeta := make(xsql.Metadata)
+		for _, f := range p.metaFields {
+			newMeta[f] = tuple.Metadata[f]
+		}
+		tuple.Metadata = newMeta
+	}
 	return tuple
 }
 
 func (p *Preprocessor) parseTime(s string) (time.Time, error) {
-	if f, ok := p.streamStmt.Options["TIMESTAMP_FORMAT"]; ok {
-		return common.ParseTime(s, f)
+	if p.timestampFormat != "" {
+		return common.ParseTime(s, p.timestampFormat)
 	} else {
 		return time.Parse(common.JSISO, s)
 	}

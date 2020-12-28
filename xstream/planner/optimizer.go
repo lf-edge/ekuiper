@@ -1,6 +1,7 @@
 package planner
 
 var optRuleList = []logicalOptRule{
+	&columnPruner{},
 	&predicatePushDown{},
 }
 

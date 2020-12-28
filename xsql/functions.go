@@ -112,17 +112,18 @@ func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bo
 	}
 }
 
-func IsAggStatement(node Node) bool {
-	var r = false
-	WalkFunc(node, func(n Node) {
-		if f, ok := n.(*Call); ok {
+func IsAggStatement(stmt *SelectStatement) bool {
+	if stmt.Dimensions != nil {
+		ds := stmt.Dimensions.GetGroups()
+		if ds != nil && len(ds) > 0 {
+			return true
+		}
+	}
+	r := false
+	WalkFunc(stmt.Fields, func(n Node) {
+		switch f := n.(type) {
+		case *Call:
 			if ok := isAggFunc(f); ok {
-				r = true
-				return
-			}
-		} else if d, ok := n.(Dimensions); ok {
-			ds := d.GetGroups()
-			if ds != nil && len(ds) > 0 {
 				r = true
 				return
 			}

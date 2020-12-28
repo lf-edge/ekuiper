@@ -421,6 +421,7 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.Joins)
 		Walk(v, n.Condition)
 		Walk(v, n.SortFields)
+		Walk(v, n.Having)
 
 	case SortFields:
 		for _, sf := range n {

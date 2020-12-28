@@ -9,6 +9,8 @@ type LogicalPlan interface {
 	// It will accept a condition that is an expression slice, and return the expressions that can't be pushed.
 	// It also return the new tree of plan as it can possibly change the tree
 	PushDownPredicate(xsql.Expr) (xsql.Expr, LogicalPlan)
+	// Prune the unused columns in the data source level, by pushing all needed columns down
+	PruneColumns(fields []xsql.Expr) error
 }
 
 type baseLogicalPlan struct {
@@ -38,4 +40,14 @@ func (p *baseLogicalPlan) PushDownPredicate(condition xsql.Expr) (xsql.Expr, Log
 		p.children[i] = newChild
 	}
 	return rest, p.self
+}
+
+func (p *baseLogicalPlan) PruneColumns(fields []xsql.Expr) error {
+	for _, child := range p.children {
+		err := child.PruneColumns(fields)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
