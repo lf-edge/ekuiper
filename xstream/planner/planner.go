@@ -40,25 +40,25 @@ func PlanWithSourcesAndSinks(rule *api.Rule, storePath string, sources []*nodes.
 	}
 	defer store.Close()
 	// Create logical plan and optimize. Logical plans are a linked list
-	lp, err := createLogicalPlan(stmt, rule.Options)
+	lp, err := createLogicalPlan(stmt, rule.Options, store)
 	if err != nil {
 		return nil, err
 	}
-	tp, err := createTopo(rule, lp, sources, sinks, store, streamsFromStmt)
+	tp, err := createTopo(rule, lp, sources, sinks, streamsFromStmt)
 	if err != nil {
 		return nil, err
 	}
 	return tp, nil
 }
 
-func createTopo(rule *api.Rule, lp LogicalPlan, sources []*nodes.SourceNode, sinks []*nodes.SinkNode, store common.KeyValue, streamsFromStmt []string) (*xstream.TopologyNew, error) {
+func createTopo(rule *api.Rule, lp LogicalPlan, sources []*nodes.SourceNode, sinks []*nodes.SinkNode, streamsFromStmt []string) (*xstream.TopologyNew, error) {
 	// Create topology
 	tp, err := xstream.NewWithNameAndQos(rule.Id, rule.Options.Qos, rule.Options.CheckpointInterval)
 	if err != nil {
 		return nil, err
 	}
 
-	input, _, err := buildOps(lp, tp, rule.Options, sources, store, streamsFromStmt, 0)
+	input, _, err := buildOps(lp, tp, rule.Options, sources, streamsFromStmt, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +83,11 @@ func createTopo(rule *api.Rule, lp LogicalPlan, sources []*nodes.SourceNode, sin
 	return tp, nil
 }
 
-func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, sources []*nodes.SourceNode, store common.KeyValue, streamsFromStmt []string, index int) (api.Emitter, int, error) {
+func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, sources []*nodes.SourceNode, streamsFromStmt []string, index int) (api.Emitter, int, error) {
 	var inputs []api.Emitter
 	newIndex := index
 	for _, c := range lp.Children() {
-		input, ni, err := buildOps(c, tp, options, sources, store, streamsFromStmt, newIndex)
+		input, ni, err := buildOps(c, tp, options, sources, streamsFromStmt, newIndex)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -101,23 +101,13 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 	)
 	switch t := lp.(type) {
 	case *DataSourcePlan:
-		streamStmt, err := getStream(store, t.name)
-		if err != nil {
-			return nil, 0, fmt.Errorf("fail to get stream %s, please check if stream is created", t.name)
-		}
-		isBinary := false
-		if f, ok := streamStmt.Options["FORMAT"]; ok {
-			if strings.ToLower(f) == common.FORMAT_BINARY {
-				isBinary = true
-			}
-		}
-		pp, err := operators.NewPreprocessor(streamStmt, t.alias, options.IsEventTime, isBinary)
+		pp, err := operators.NewPreprocessor(t.streamFields, t.alias, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary)
 		if err != nil {
 			return nil, 0, err
 		}
 		var srcNode *nodes.SourceNode
 		if len(sources) == 0 {
-			node := nodes.NewSourceNode(t.name, streamStmt.Options)
+			node := nodes.NewSourceNode(t.name, t.streamStmt.Options)
 			srcNode = node
 		} else {
 			found := false
@@ -187,7 +177,7 @@ func getStream(m common.KeyValue, name string) (stmt *xsql.StreamStmt, err error
 	return
 }
 
-func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption) (LogicalPlan, error) {
+func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store common.KeyValue) (LogicalPlan, error) {
 	streamsFromStmt := xsql.GetStreams(stmt)
 	dimensions := stmt.Dimensions
 	var (
@@ -207,13 +197,16 @@ func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption) (Logical
 		}
 	}
 	for _, s := range streamsFromStmt {
+		streamStmt, err := getStream(store, s)
+		if err != nil {
+			return nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
+		}
 		p = DataSourcePlan{
 			name:       s,
-			isWildCard: true,
-			needMeta:   opt.SendMetaToSink,
-			fields:     nil,
-			metaFields: nil,
+			streamStmt: streamStmt,
+			iet:        opt.IsEventTime,
 			alias:      alias,
+			allMeta:    opt.SendMetaToSink,
 		}.Init()
 		children = append(children, p)
 	}

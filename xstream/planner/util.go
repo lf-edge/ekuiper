@@ -32,3 +32,20 @@ func combine(l xsql.Expr, r xsql.Expr) xsql.Expr {
 		return r
 	}
 }
+
+func getFields(node xsql.Node) []xsql.Expr {
+	result := make([]xsql.Expr, 0)
+	xsql.WalkFunc(node, func(n xsql.Node) {
+		switch t := n.(type) {
+		case *xsql.FieldRef:
+			result = append(result, t)
+		case *xsql.Wildcard:
+			result = append(result, t)
+		case *xsql.MetaRef:
+			result = append(result, t)
+		case *xsql.SortField:
+			result = append(result, t)
+		}
+	})
+	return result
+}

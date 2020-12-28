@@ -35,3 +35,8 @@ func (p *WindowPlan) PushDownPredicate(condition xsql.Expr) (xsql.Expr, LogicalP
 		return nil, p
 	}
 }
+
+func (p *WindowPlan) PruneColumns(fields []xsql.Expr) error {
+	f := getFields(p.condition)
+	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
+}

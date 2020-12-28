@@ -51,3 +51,8 @@ func extractCondition(condition xsql.Expr) (unpushable xsql.Expr, pushable xsql.
 	//default case: all condition are unpushable
 	return condition, nil
 }
+
+func (p *JoinPlan) PruneColumns(fields []xsql.Expr) error {
+	f := getFields(p.joins)
+	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
+}

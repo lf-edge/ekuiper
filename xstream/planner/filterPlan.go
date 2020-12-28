@@ -32,3 +32,8 @@ func (p *FilterPlan) PushDownPredicate(condition xsql.Expr) (xsql.Expr, LogicalP
 		return nil, p
 	}
 }
+
+func (p *FilterPlan) PruneColumns(fields []xsql.Expr) error {
+	f := getFields(p.condition)
+	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
+}
