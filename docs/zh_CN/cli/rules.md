@@ -4,7 +4,7 @@ Kuiper 规则命令行工具可以管理规则，例如创建、显示、删除�
 
 ## 创建规则
 
-如下命令用于创建规则。 规则的定义以 JSON 格式指定，请阅读 [rule](../rules/overview.md) 以获取更多详细信息。
+如下命令用于创建规则。 规则的定义以 JSON 格式指定，请阅读 [规则](../rules/overview.md) 以获取更多详细信息。
 
 ```shell
 create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file
