@@ -10,13 +10,13 @@ Kuiper 允许用户自定义不同类型的扩展。
 
 - 源扩展用于扩展不同的流源，例如使用来自其他消息服务器的数据。Kuiper 对 [MQTT 消息服务器](../rules/sources/mqtt.md)的内置源提供支持。
 - Sink/Action 扩展用于将发布/推送数据扩展到不同的目标，例如数据库，其他消息系统，Web 界面或文件系统。Kuiper 中提供内置动作支持，请参阅  [MQTT](../rules/sinks/mqtt.md)  & [日志文件](../rules/sinks/logs.md).。
-- 函数扩展允许用户扩展 SQL 中使用的不同函数。 Kuiper支持内置函数，请参见 [functions](../sqls/built-in_functions.md)。
+- 函数扩展允许用户扩展 SQL 中使用的不同函数。 Kuiper支持内置函数，请参见 [函数](../sqls/built-in_functions.md)。
 
 请阅读以下内容，了解如何实现不同的扩展。
 
-- [源扩展](#)
-- [Sink/Action 扩展](#)
-- [函数扩展](#)
+- [源扩展](./source.md)
+- [Sink/Action 扩展](./sink.md)
+- [函数扩展](./function.md)
 
 ### 状态存储
 

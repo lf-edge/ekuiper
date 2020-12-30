@@ -15,7 +15,7 @@ Kuiper 具有许多内置函数，可以对数据执行计算。
 | min      | min(col1) | 组中的最小值。空值不参与计算。     |
 | sum      | sum(col1) | 组中所有值的总和。空值不参与计算。 |
 | collect   | collect(*), collect(col1)   | 返回组中指定的列或整个消息（参数为*时）的值组成的数组。    |
-| deduplicate| deduplicate(col, false)   | 返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组；此时可以设置 sin k参数 [omitIfEmpty](../rules/overview.md#sink_actions)，使得 sink 接到空结果后不触发。   |
+| deduplicate| deduplicate(col, false)   | 返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组；此时可以设置 sink 参数 [omitIfEmpty](../rules/overview.md#sink_actions)，使得 sink 接到空结果后不触发。   |
 
 ### Collect() 示例
 

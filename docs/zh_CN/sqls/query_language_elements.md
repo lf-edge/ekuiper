@@ -5,13 +5,13 @@ Kuiper 提供了用于构建查询的各种元素。 总结如下。
 
 | 元素                  | 总结                                                         |
 | --------------------- | ------------------------------------------------------------ |
-| [SELECT](#SELECT)     | SELECT 用于从输入流中检索行，并允许从 Kuiper 中的一个或多个输入流中选择一个或多个列。 |
-| [FROM](#FROM)         | FROM 指定输入流。 任何 SELECT 语句始终需要 FROM 子句。       |
-| [JOIN](#JOIN)         | JOIN 用于合并来自两个或更多输入流的记录。 JOIN 包括 LEFT，RIGHT，FULL 和 CROSS。 |
-| [WHERE](#WHERE)       | WHERE 指定查询返回的行的搜索条件。                           |
-| [GROUP BY](#GROUP BY) | GROUP BY 将一组选定的行分组为一组汇总行，这些汇总行按一个或多个列或表达式的值分组。 |
-| [ORDER BY](#ORDER BY) | 按一列或多列的值对行进行排序。                               |
-| [HAVING](#HAVING)     | HAVING 为组或集合指定搜索条件。 HAVING 只能与 SELECT 表达式一起使用。 |
+| [SELECT](#select)     | SELECT 用于从输入流中检索行，并允许从 Kuiper 中的一个或多个输入流中选择一个或多个列。 |
+| [FROM](#from)         | FROM 指定输入流。 任何 SELECT 语句始终需要 FROM 子句。       |
+| [JOIN](#join)         | JOIN 用于合并来自两个或更多输入流的记录。 JOIN 包括 LEFT，RIGHT，FULL 和 CROSS。 |
+| [WHERE](#where)       | WHERE 指定查询返回的行的搜索条件。                           |
+| [GROUP BY](#group-by) | GROUP BY 将一组选定的行分组为一组汇总行，这些汇总行按一个或多个列或表达式的值分组。 |
+| [ORDER BY](#order-by) | 按一列或多列的值对行进行排序。                               |
+| [HAVING](#having)     | HAVING 为组或集合指定搜索条件。 HAVING 只能与 SELECT 表达式一起使用。 |
 |                       |                                                              |
 
 ## SELECT
@@ -56,7 +56,7 @@ SELECT
 
 指定输入流。 任何 SELECT 语句始终需要 FROM 子句。
 
-### Syntax
+### 句法
 
 ```sql
 FROM source_stream | source_stream AS source_stream_alias 
@@ -234,7 +234,7 @@ GROUP BY <group by spec>
     <column_expression>  
 ```
 
-## 参数
+### 参数
 
 **<window_type>**
 
