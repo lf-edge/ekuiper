@@ -1,4 +1,4 @@
-# 样本数据
+## 样本数据
 
 ```json
 {
@@ -29,9 +29,9 @@
 }
 ```
 
-# 基本表达式
+## 基本表达式
 
-## 识别码
+### 识别码
 
 源引用 (`.`)
 
@@ -56,7 +56,7 @@ SELECT name->first AS fname FROM demo
 {"fname": "Tom"}
 ```
 
-## 索引表达式
+### 索引表达式
 
 索引表达式使您可以选择列表中的特定元素。 它看起来应该类似于普通编程语言中的数组访问。 索引基于0。
 
@@ -81,7 +81,7 @@ SELECT d.friends[0]->last FROM demo AS d
 }
 ```
 
-# 切片
+## 切片
 
 切片允许您选择数组的连续子集。
 
@@ -122,7 +122,7 @@ SELECT followers->Group1[:1]->first FROM demo
 }
 ```
 
-# Json 路径函数
+## Json 路径函数
 
 Kuiper 提供了一系列函数，以允许通过结构或数组列或值进行 json 路径操作。 这些函数是：
 
@@ -183,11 +183,11 @@ SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
 
 
 
-# *映射*
+## *映射*
 
 <!--Do we need to support this?-->
 
-## 列表和切片映射
+### 列表和切片映射
 
 通配符表达式创建列表映射，它是 JSON 数组上的映射。
 
@@ -207,7 +207,7 @@ SELECT friends[:1]->first FROM demo
 }
 ```
 
-## 对象映射
+### 对象映射
 
 
 

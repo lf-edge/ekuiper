@@ -1,16 +1,16 @@
-# State
+## State
 
 Kuiper supports stateful rule stream. There are two kinds of states in Kuiper:
 1. Internal state for window operation and rewindable source
 2. User state exposed to extensions with stream context, check [state storage](../extension/overview.md#state-storage).
 
-# Fault Tolerance
+## Fault Tolerance
 
 By default, all the states reside in memory only which means that if the stream exits abnormally, the states will disappear.
 
 In order to make state fault tolerance, Kuipler need to checkpoint the state into persistent storage which will allow a recovery after failure.
 
-## Enable Checkpointing
+### Enable Checkpointing
 
 Set the rule option qos to 1 or 2 will enable the checkpointing. Configure the checkpoint interval by setting the checkpointInterval option.
 
@@ -24,9 +24,9 @@ Given that Kuiper recovers from faults by rewinding and replaying the source dat
 
 If you don’t need "exactly once", you can gain some performance by configuring Kuiper to use AT_LEAST_ONCE.
 
-## Exactly Once End to End
+### Exactly Once End to End
 
-### Source consideration
+#### Source consideration
 
 To have an end to end qos of the stream, the source must be rewindable. That means after recovery, the source can be reverted to the checkpointed offset and resend data from that so that the whole stream can be replayed from the last failure.
 
@@ -39,7 +39,7 @@ type Rewindable interface {
 }
 ```
 
-### Sink consideration
+#### Sink consideration
 
 We cannot guarantee the sink to receive a data exactly once. If failures happen during the period of checkpointing, some states which have sent to the sink may not be checkpointed. And those states will be replayed as they are not restored because of not being checkpointed. In this case, the sink may receive them more than once. 
 

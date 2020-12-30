@@ -33,7 +33,7 @@ Kuiper 具有许多内置函数，可以对数据执行计算。
     SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
  
- ### Deduplicate() 示例
+### Deduplicate() 示例
  
  - 获取当前窗口中，列 `a` 值不重复的所有消息组成的数组。结果为: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
      ```sql
