@@ -52,7 +52,7 @@ The current options includes:
 | qos | int:0   | Specify the qos of the stream. The options are 0: At most once; 1: At least once and 2: Exactly once. If qos is bigger than 0, the checkpoint mechanism will be activated to save states periodically so that the rule can be resumed from errors.  |
 | checkpointInterval | int:300000   | Specify the time interval in milliseconds to trigger a checkpoint. This is only effective when qos is bigger than 0.  |
 
-For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](state_and_fault_tolerance).
+For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](state_and_fault_tolerance.md).
 
 The rule options can be defined globally in ``etc/kuiper.yaml`` under the ``rules`` section. The options defined in the rule json will override the global setting. 
 
