@@ -53,18 +53,18 @@
 | qos                | int:0        | 指定流的 qos。 值为0对应最多一次； 1对应至少一次，2对应恰好一次。 如果 qos 大于0，将激活检查点机制以定期保存状态，以便可以从错误中恢复规则。 |
 | checkpointInterval | int:300000   | 指定触发检查点的时间间隔（单位为 ms）。 仅当 qos 大于0时才有效。 |
 
-有关 `qos` 和 `checkpointInterval` 的详细信息，请查看[状态和容错](state_and_fault_tolerance)。
+有关 `qos` 和 `checkpointInterval` 的详细信息，请查看[状态和容错](state_and_fault_tolerance.md)。
 
 可以在 `rules` 下属的 `etc/kuiper.yaml` 中全局定义规则选项。 规则 json 中定义的选项将覆盖全局设置。
 
 ## 源
 
 - Kuiper 支持以下 3 种内置源：
-  - MQTT 源，有关更多详细信息，请参阅 [MQTT source stream](https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/zh_CN/rules/sources/mqtt.md)。
-  - EdgeX 源缺省是包含在[容器镜像](https://hub.docker.com/r/emqx/kuiper)中发布的，但是没有包含在单独下载的二进制包中，您可以使用 `make pkg_with_edgex` 命令来编译出一个支持 EdgeX 源的程序。更多关于它的详细信息，请参考 [EdgeX source stream](https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/zh_CN/rules/sources/edgex.md)。
-  - HTTP 定时拉取源，按照用户指定的时间间隔，定时从 HTTP 服务器中拉取数据，更多详细信息，请参考[这里](https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/zh_CN/rules/sources/http_pull.md) 。
-- 有关Kuiper SQL 的更多信息，请参阅 [SQL](https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/zh_CN/sqls/overview.md)。
-- 可以自定义来源，请参阅 [extension](https://github.com/emqx/kuiper/blob/dev/0.9.1/docs/zh_CN/extension/overview.md)了解更多详细信息。
+  - MQTT 源，有关更多详细信息，请参阅 [MQTT source stream](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/mqtt.md)。
+  - EdgeX 源缺省是包含在[容器镜像](https://hub.docker.com/r/emqx/kuiper)中发布的，但是没有包含在单独下载的二进制包中，您可以使用 `make pkg_with_edgex` 命令来编译出一个支持 EdgeX 源的程序。更多关于它的详细信息，请参考 [EdgeX source stream](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/edgex.md)。
+  - HTTP 定时拉取源，按照用户指定的时间间隔，定时从 HTTP 服务器中拉取数据，更多详细信息，请参考[这里](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/http_pull.md) 。
+- 有关Kuiper SQL 的更多信息，请参阅 [SQL](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/sqls/overview.md)。
+- 可以自定义来源，请参阅 [extension](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/extension/overview.md)了解更多详细信息。
 
 ### 目标/动作
 
