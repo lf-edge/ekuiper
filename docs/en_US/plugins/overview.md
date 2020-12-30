@@ -276,6 +276,14 @@ The following is a sample of metadata file.
 
 ## Functions
 
+| 名称                                          | 描述                                                         | 备注                       |
+| --------------------------------------------- | ------------------------------------------------------------ | -------------------------- |
+| [echo](functions/functions.md)                | 原样输出参数值                                               | 插件样例，不可用于生产环境 |
+| [countPlusOne](functions/functions.md)        | 输出参数长度加一的值                                         | 插件样例，不可用于生产环境 |
+| [accumulateWordCount](functions/functions.md) | 函数统计一共有多少个单词                                     | 插件样例，不可用于生产环境 |
+| [resize](functions/functions.md)              | 创建具有新尺寸（宽度，高度）的缩放图像。如果 width 或 height 设置为0，则将其设置为长宽比保留值 | 插件样例，不可用于生产环境 |
+| [thumbnail](functions/functions.md)           | 将保留宽高比的图像缩小到最大尺寸( maxWidth，maxHeight)。     | 插件样例，不可用于生产环境 |
+
 Kuiper has many built-in functions that can perform calculations on data. (Refer to https://github.com/emqx/kuiper/blob/master/docs/zh_CN/sqls/built-in_functions.md for specific documentation)
 
 ### functions metadata file format
