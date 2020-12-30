@@ -276,7 +276,7 @@ The following is a sample of metadata file.
 
 ## Functions
 
-| 名称                                          | Description                                                  | Remarks                                                 |
+| Name                                          | Description                                                  | Remarks                                                 |
 | --------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------- |
 | [echo](functions/functions.md)                | Output parameter value as it is                              | Plugin sample, not available for production environment |
 | [countPlusOne](functions/functions.md)        | Output the value of the parameter length plus one            | Plugin sample, not available for production environment |
