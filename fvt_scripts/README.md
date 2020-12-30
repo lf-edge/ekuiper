@@ -209,3 +209,10 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   
   The test script verifies HTTP pull source. It sends request to a [server](fvt_scripts/plugins/service/server.go). The script set incremental to true, so it will compare with last result; If response of two requests are the same, then will skip sending out the result.
   This script also requires to run [server](fvt_scripts/plugins/service/server.go), please refer to last testcase for how to compile and run.
+  
+- [Binary data type test](http_pull_rule.jmx)
+  
+  This script verify the binary data support. The rule consumes the binary image data sent from MQTT broker, and then processed by the rule, finally the image data will be sent back to MQTT broker again. The script verifies BASE64 of image that produced by Kuiper rule engine. 
+  
+  - `binary_image_hex.txt`: the data file of image.
+  - `binary_image_base64.txt`: the BASE64 file of image.
