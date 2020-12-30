@@ -12,9 +12,7 @@ The Golang template applies a piece of logic to the data, and then formats and o
 >
 > The input text for a template is UTF-8-encoded text in any format. "Actions"--data evaluations or control structures--are delimited by "{{" and "}}"; all text outside actions is copied to the output unchanged. Except for raw strings, actions may not span newlines, although comments can.
 
-
-
-###  Actions
+### Actions
 
 The Golang  template provides some [built-in actions](https://golang.org/pkg/text/template/#hdr-Actions) which allows users to write various control statements to extract content. For example,
 
