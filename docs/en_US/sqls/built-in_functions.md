@@ -33,7 +33,7 @@ Aggregate functions perform a calculation on a set of values and return a single
     SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
  
- ### Deduplicate() Examples
+### Deduplicate() Examples
  
  - Get the whole array of the current window which is deduplicated by column `a`. The result will be like: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
      ```sql

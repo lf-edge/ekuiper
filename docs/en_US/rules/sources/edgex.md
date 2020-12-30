@@ -1,8 +1,8 @@
-# EdgeX Source
+## EdgeX Source
 
 Kuiper provides built-in support for EdgeX source stream, which can subscribe the message from [EdgeX message bus](https://github.com/edgexfoundry/go-mod-messaging) and feed into the Kuiper streaming process pipeline.  
 
-## Stream definition for EdgeX
+### Stream definition for EdgeX
 
 EdgeX already defines data types in [value descriptors](https://github.com/edgexfoundry/go-mod-core-contracts), so it's recommeded to use schema-less stream definition in EdgeX source as in below.
 
@@ -19,7 +19,7 @@ EdgeX source will try to get the data type of a field,
 
 The types defined in EdgeX value descriptors will be converted into related [data types](../../sqls/streams.md) that supported in Kuiper.
 
-### Boolean
+#### Boolean
 
 If  ``Type`` value of ``ValueDescriptor`` is ``Bool``, then Kuiper tries to convert to ``boolean`` type. Following values will be converted into ``true``.
 
@@ -29,31 +29,31 @@ Following will be converted into ``false``.
 
 - "0", "f", "F", "false", "FALSE", "False"
 
-### Bigint
+#### Bigint
 
 If  ``Type`` value of ``ValueDescriptor`` is ``INT8`` , ``INT16``, ``INT32``,  ``INT64``,``UINT`` , ``UINT8`` , ``UINT16`` ,  ``UINT32`` , ``UINT64`` then Kuiper tries to convert to ``Bigint`` type. 
 
-### Float
+#### Float
 
 If  ``Type`` value of ``ValueDescriptor`` is ``FLOAT32``, ``FLOAT64``, then Kuiper tries to convert to ``Float`` type. 
 
-### String
+#### String
 
 If  ``Type`` value of ``ValueDescriptor`` is ``String``, then Kuiper tries to convert to ``String`` type. 
 
-### Boolean array
+#### Boolean array
 
 `Bool` array type in EdgeX will be converted to `boolean` array.
 
-### Bigint array
+#### Bigint array
 
 All of ``INT8`` , ``INT16``, ``INT32``,  ``INT64``,``UINT`` , ``UINT8`` , ``UINT16`` ,  ``UINT32`` , ``UINT64``  array types in EdgeX will be converted to `Bigint` array.
 
-### Float array
+#### Float array
 
 All of ``FLOAT32``, ``FLOAT64``  array types in EdgeX will be converted to `Float` array.
 
-# Global configurations
+## Global configurations
 
 The configuration file of EdgeX source is at ``$kuiper/etc/sources/edgex.yaml``. Below is the file format.
 
@@ -75,34 +75,34 @@ default:
 
 Use can specify the global EdgeX settings here. The configuration items specified in ``default`` section will be taken as default settings for all EdgeX source. 
 
-## protocol
+### protocol
 
 The protocol connect to EdgeX message bus, default value is ``tcp``.
 
-## server
+### server
 
 The server address of  EdgeX message bus, default value is ``localhost``.
 
-## port
+### port
 
 The port of EdgeX message bus, default value is ``5573``.
 
-## topic
+### topic
 
 The topic name of EdgeX message bus,  default value is ``events``.
 
-## serviceServer
+### serviceServer
 
 The base service address for getting value descriptors, the value of ``serviceServer`` will be concatenated to ``/api/v1/valuedescriptor`` to get all of value descriptors of EdgeX server.
 
-## type
+### type
 
 The EdgeX message bus type, currently two types of message buses are supported. If specified other values, then will use the default ``zero`` value.
 
 - ``zero``: Use ZeroMQ as EdgeX message bus. 
 - ``mqtt``: Use the MQTT broker as EdgeX message bus.
 
-## optional
+### optional
 
 If MQTT message bus is used, some other optional configurations can be specified. Please notice that all of values in optional are **<u>string type</u>**, so values for these configurations should be string - such as ``KeepAlive: "5000"``. Below optional configurations are supported, please check MQTT specification for the detailed information.
 
@@ -120,7 +120,7 @@ If MQTT message bus is used, some other optional configurations can be specified
 - KeyPEMBlock
 - SkipCertVerify
 
-## Override the default settings
+### Override the default settings
 
 In some cases, maybe you want to consume message from multiple topics from message bus.  Kuiper supports to specify another configuration, and use the ``CONF_KEY`` to specify the newly created key when you create a stream.
 

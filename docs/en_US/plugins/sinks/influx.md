@@ -36,7 +36,7 @@ Restart the Kuiper server to activate the plugin.
 
 Below is a sample for selecting temperature great than 50 degree, and some profiles only for your reference.
 
-####/tmp/influxRule.txt
+#### /tmp/influxRule.txt
 ```json
 {
   "id": "influx",
@@ -58,7 +58,7 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
   ]
 }
 ```
-####/tmp/influxPlugin.txt
+#### /tmp/influxPlugin.txt
 ```json
 {
    "file":"http://localhost:8080/influx.zip"
