@@ -31,17 +31,17 @@ This part of the content defines which library dependencies are used by the plug
 
   This part contains the author information of the plugin. The plugin developer can provide this information as appropriate. The information of this part will be displayed in the plugin information list of the management console.
 
-      * name
-      * email
-      * company
-      * website
+  * name
+  * email
+  * company
+  * website
 
 * helpUrl
 
   The help file address of the plug-in. The console will link to the corresponding help file according to the language support.
 
-      * en_US: English document help address
-      * zh_CN: Chinese document help address
+  * en_US: English document help address
+  * zh_CN: Chinese document help address
 
 * description
 

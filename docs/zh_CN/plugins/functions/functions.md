@@ -16,7 +16,7 @@ echo(avg) 示例
   SELECT echo(avg) as r1 FROM test;
   ```
 
-###  countPlusOne 插件
+### countPlusOne 插件
 
 | 函数         | 示例              | 说明                 |
 | ------------ | ----------------- | -------------------- |

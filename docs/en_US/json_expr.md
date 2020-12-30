@@ -1,4 +1,4 @@
-# Sample data
+## Sample data
 
 ```json
 {
@@ -29,9 +29,9 @@
 }
 ```
 
-# Basic expressions
+## Basic expressions
 
-## Identifier 
+### Identifier 
 
 Source Dereference (`.`) The source dereference operator can be used to specify columns by dereferencing the source stream or table. The ``->`` dereference selects a key in a nested JSON object.
 
@@ -54,7 +54,7 @@ SELECT name->first AS fname FROM demo
 {"fname": "Tom"}
 ```
 
-## Index expression
+### Index expression
 
 Index Expressions allow you to select a specific element in a list. It should look similar to array access in common programming languages. Indexing is 0 based.
 
@@ -79,7 +79,7 @@ SELECT d.friends[0]->last FROM demo AS d
 }
 ```
 
-# Slicing
+## Slicing
 
 Slices allow you to select a contiguous subset of an array. 
 
@@ -120,7 +120,7 @@ SELECT followers->Group1[:1]->first FROM demo
 }
 ```
 
-# Json Path functions
+## Json Path functions
 
 Kuiper provides a list of functions to allow to execute json path over struct or array columns or values. The functions are:
 
@@ -179,11 +179,11 @@ SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
 ["Miller"]
 ```
 
-# *Projections*
+## *Projections*
 
 <!--Do we need to support this?-->
 
-## List & Slice projections
+### List & Slice projections
 
 A wildcard expression creates a list projection, which is a projection over a JSON array. 
 
@@ -203,7 +203,7 @@ SELECT friends[:1]->first FROM demo
 }
 ```
 
-## Object projections
+### Object projections
 
 
 
