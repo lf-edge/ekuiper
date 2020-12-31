@@ -1,69 +1,69 @@
-# 定制函数
+# Custom function
 
-Kuiper 可以定制函数，函数的开发、编译及使用请[参见这里](../../extension/function.md)。
+Kuiper can customize functions. For the development, compilation and use of functions, please [see here](../../extension/function.md).
 
-### echo 插件
+### echo plugin
 
-| 函数 | 示例      | 说明           |
-| ---- | --------- | -------------- |
-| echo | echo(avg) | 原样输出参数值 |
+| Function | Example   | Description                     |
+| -------- | --------- | ------------------------------- |
+| echo     | echo(avg) | Output parameter value as it is |
 
-echo(avg) 示例
+echo(avg) example
 
-- 假设 avg 类型为 int ，值为30， 则结果为: `[{"r1":30}]`
+- Assuming the type of avg is int and the value is 30, the result is: `[{"r1":30}]`
 
   ```
   SELECT echo(avg) as r1 FROM test;
   ```
 
-### countPlusOne 插件
+### countPlusOne plugin
 
-| 函数         | 示例              | 说明                 |
-| ------------ | ----------------- | -------------------- |
-| countPlusOne | countPlusOne(avg) | 输出参数长度加一的值 |
+| Function     | Example           | Description                                       |
+| ------------ | ----------------- | ------------------------------------------------- |
+| countPlusOne | countPlusOne(avg) | Output the value of the parameter length plus one |
 
-countPlusOne(avg) 示例
+countPlusOne(avg) example
 
-- 假设 avg 类型为 []int ，值为`[1,2,3]`， 则结果为: `[{"r1":4}]`
+- Assuming the type of avg is []int and the value is `[1,2,3]`, the result is: `[{"r1":4}]`
 
   ```
   SELECT countPlusOne(avg) as r1 FROM test;
   ```
 
-### accumulateWordCount 插件
+### accumulateWordCount plugin
 
-| 函数                | 示例                         | 说明                     |
-| ------------------- | ---------------------------- | ------------------------ |
-| accumulateWordCount | accumulateWordCount(avg,sep) | 函数统计一共有多少个单词 |
+| Function            | Example                      | Description                                  |
+| ------------------- | ---------------------------- | -------------------------------------------- |
+| accumulateWordCount | accumulateWordCount(avg,sep) | The function counts how many words there are |
 
-accumulateWordCount(avg,sep) 示例
+accumulateWordCount(avg,sep) example
 
-- 假设 avg 类型为 string ，值为`My name is Bob`；sep  类型为 string ，值为空格,则结果为: `[{"r1":4}]`
+- Assuming that the avg type is string and the value is `My name is Bob`, the sep type is string and the value is a space, the result is: `[{"r1":4}]`
 
   ```
   SELECT accumulateWordCount(avg,sep) as r1 FROM test;
   ```
 
-### 图像处理插件
+### Image processing plugin
 
-图像处理目前暂时只支持`png`和`jpeg`格式
+Image processing currently only supports the formats of `png` and `jpeg` 
 
-| 函数      | 示例                               | 说明                                                         |
+| Function  | Example                            | Description                                                  |
 | --------- | ---------------------------------- | ------------------------------------------------------------ |
-| resize    | resize(avg,width, height)          | 创建具有新尺寸（宽度，高度）的缩放图像。如果 width 或 height 设置为0，则将其设置为长宽比保留值 |
-| thumbnail | thumbnail(avg,maxWidth, maxHeight) | 将保留宽高比的图像缩小到最大尺寸( maxWidth，maxHeight)。     |
+| resize    | resize(avg,width, height)          | Create a scaled image with new dimensions (width, height). If width or height is set to 0, it is set to the reserved value of aspect ratio |
+| thumbnail | thumbnail(avg,maxWidth, maxHeight) | Reduce the image that retains the aspect ratio to the maximum size (maxWidth, maxHeight). |
 
-resize(avg,width, height)示例
+resize(avg,width, height) example
 
-- 其中 avg 类型为 []byte 。
+- The avg type is []byte.
 
   ```
   SELECT resize(avg,width,height) as r1 FROM test;
   ```
 
-thumbnail(avg,maxWidth, maxHeight)示例
+thumbnail(avg,maxWidth, maxHeight) example
 
-- 其中 avg 类型为 []byte。
+- The avg type is []byte.
 
   ```
   SELECT countPlusOne(avg,maxWidth, maxHeight) as r1 FROM test;
