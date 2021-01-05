@@ -19,7 +19,7 @@ Sample:
 stream my_stream created
 ```
 
-The command create a rule named ``my_stream``. 
+The command create a stream named ``my_stream``. 
 
 - Specify the stream definition in file. If the stream is complex, or the stream is already wrote in text files with well organized formats, you can just specify the stream definition through ``-f`` option.
 

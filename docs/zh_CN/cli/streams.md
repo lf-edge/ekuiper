@@ -19,7 +19,7 @@ create stream $stream_name $stream_def | create stream -f $stream_def_file
 stream my_stream created
 ```
 
-该命令创建一个名为 `my_stream` 的规则。
+该命令创建一个名为 `my_stream` 的流。
 
 - 在文件中指定流定义。 如果流很复杂，或者流已经通过明确的格式写在文本文件中，则只需通过 `-f` 选项规定流定义。
 
