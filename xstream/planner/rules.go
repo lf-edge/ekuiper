@@ -15,3 +15,14 @@ func (r *predicatePushDown) optimize(lp LogicalPlan) (LogicalPlan, error) {
 func (r *predicatePushDown) name() string {
 	return "predicatePushDown"
 }
+
+type columnPruner struct{}
+
+func (r *columnPruner) optimize(lp LogicalPlan) (LogicalPlan, error) {
+	err := lp.PruneColumns(nil)
+	return lp, err
+}
+
+func (r *columnPruner) name() string {
+	return "columnPruner"
+}

@@ -149,29 +149,30 @@ func TestSingleSQL(t *testing.T) {
 			sql:  `SELECT size as Int8, ts FROM demoError where size > 3`,
 			r: [][]map[string]interface{}{
 				{{
-					"error": "error in preprocessor: invalid data type for color, expect string but found int(3)",
+					"error": "error in preprocessor: invalid data type for size, expect bigint but found string(red)",
 				}},
 				{{
 					"Int8": float64(6),
 					"ts":   float64(1541152486822),
 				}},
 				{{
-					"error": "error in preprocessor: invalid data type for color, expect string but found int(7)",
+					"Int8": float64(4),
+					"ts":   float64(1541152488442),
 				}},
 				{{
 					"error": "error in preprocessor: invalid data type for size, expect bigint but found string(blue)",
 				}},
 			},
 			m: map[string]interface{}{
-				"op_1_preprocessor_demoError_0_exceptions_total":   int64(3),
+				"op_1_preprocessor_demoError_0_exceptions_total":   int64(2),
 				"op_1_preprocessor_demoError_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demoError_0_records_in_total":   int64(5),
-				"op_1_preprocessor_demoError_0_records_out_total":  int64(2),
+				"op_1_preprocessor_demoError_0_records_out_total":  int64(3),
 
-				"op_3_project_0_exceptions_total":   int64(3),
+				"op_3_project_0_exceptions_total":   int64(2),
 				"op_3_project_0_process_latency_us": int64(0),
 				"op_3_project_0_records_in_total":   int64(4),
-				"op_3_project_0_records_out_total":  int64(1),
+				"op_3_project_0_records_out_total":  int64(2),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(4),
@@ -181,52 +182,10 @@ func TestSingleSQL(t *testing.T) {
 				"source_demoError_0_records_in_total":  int64(5),
 				"source_demoError_0_records_out_total": int64(5),
 
-				"op_2_filter_0_exceptions_total":   int64(3),
+				"op_2_filter_0_exceptions_total":   int64(2),
 				"op_2_filter_0_process_latency_us": int64(0),
 				"op_2_filter_0_records_in_total":   int64(5),
-				"op_2_filter_0_records_out_total":  int64(1),
-			},
-		}, {
-			name: `TestSingleSQLRule4`,
-			sql:  `SELECT size as Int8, ts FROM demoError where size > 3`,
-			r: [][]map[string]interface{}{
-				{{
-					"error": "error in preprocessor: invalid data type for color, expect string but found int(3)",
-				}},
-				{{
-					"Int8": float64(6),
-					"ts":   float64(1541152486822),
-				}},
-				{{
-					"error": "error in preprocessor: invalid data type for color, expect string but found int(7)",
-				}},
-				{{
-					"error": "error in preprocessor: invalid data type for size, expect bigint but found string(blue)",
-				}},
-			},
-			m: map[string]interface{}{
-				"op_1_preprocessor_demoError_0_exceptions_total":   int64(3),
-				"op_1_preprocessor_demoError_0_process_latency_us": int64(0),
-				"op_1_preprocessor_demoError_0_records_in_total":   int64(5),
-				"op_1_preprocessor_demoError_0_records_out_total":  int64(2),
-
-				"op_3_project_0_exceptions_total":   int64(3),
-				"op_3_project_0_process_latency_us": int64(0),
-				"op_3_project_0_records_in_total":   int64(4),
-				"op_3_project_0_records_out_total":  int64(1),
-
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
-
-				"source_demoError_0_exceptions_total":  int64(0),
-				"source_demoError_0_records_in_total":  int64(5),
-				"source_demoError_0_records_out_total": int64(5),
-
-				"op_2_filter_0_exceptions_total":   int64(3),
-				"op_2_filter_0_process_latency_us": int64(0),
-				"op_2_filter_0_records_in_total":   int64(5),
-				"op_2_filter_0_records_out_total":  int64(1),
+				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
 			name: `TestSingleSQLRule5`,

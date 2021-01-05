@@ -11,3 +11,8 @@ func (p OrderPlan) Init() *OrderPlan {
 	p.baseLogicalPlan.self = &p
 	return &p
 }
+
+func (p *OrderPlan) PruneColumns(fields []xsql.Expr) error {
+	f := getFields(p.SortFields)
+	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
+}

@@ -19,14 +19,11 @@ func (p *FilterPlan) PushDownPredicate(condition xsql.Expr) (xsql.Expr, LogicalP
 		p.condition = a
 		return nil, p
 	}
-	// if has child, try to move pushable condition out
-	up, pp := extractCondition(a)
 
-	rest, _ := p.baseLogicalPlan.PushDownPredicate(pp)
+	rest, _ := p.baseLogicalPlan.PushDownPredicate(a)
 
-	up = combine(up, rest)
-	if up != nil {
-		p.condition = up
+	if rest != nil {
+		p.condition = rest
 		return nil, p
 	} else if len(p.children) == 1 {
 		// eliminate this filter
@@ -36,35 +33,7 @@ func (p *FilterPlan) PushDownPredicate(condition xsql.Expr) (xsql.Expr, LogicalP
 	}
 }
 
-// Return the unpushable condition and pushable condition
-func extractCondition(condition xsql.Expr) (unpushable xsql.Expr, pushable xsql.Expr) {
-	s := GetRefSources(condition)
-	if len(s) < 2 {
-		pushable = condition
-		return
-	} else {
-		if be, ok := condition.(*xsql.BinaryExpr); ok && be.OP == xsql.AND {
-			ul, pl := extractCondition(be.LHS)
-			ur, pr := extractCondition(be.RHS)
-			unpushable = combine(ul, ur)
-			pushable = combine(pl, pr)
-			return
-		}
-	}
-	//default case: all condition are unpushable
-	return condition, nil
-}
-
-func combine(l xsql.Expr, r xsql.Expr) xsql.Expr {
-	if l != nil && r != nil {
-		return &xsql.BinaryExpr{
-			OP:  xsql.AND,
-			LHS: l,
-			RHS: r,
-		}
-	} else if l != nil {
-		return l
-	} else {
-		return r
-	}
+func (p *FilterPlan) PruneColumns(fields []xsql.Expr) error {
+	f := getFields(p.condition)
+	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
 }

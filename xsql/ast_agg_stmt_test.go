@@ -24,7 +24,7 @@ func TestIsAggStatement(t *testing.T) {
 		{s: `SELECT max(f1) FROM tbl`, agg: true},
 		{s: `SELECT min(f1) FROM tbl`, agg: true},
 		{s: `SELECT count(f1) FROM tbl group by tumblingwindow(ss, 5)`, agg: true},
-
+		{s: `SELECT f1 FROM tbl group by tumblingwindow(ss, 5) having count(f1) > 3`, agg: false},
 		{s: `SELECT f1 FROM tbl left join tbl2 on tbl1.f1 = tbl2.f2`, agg: false},
 	}
 
