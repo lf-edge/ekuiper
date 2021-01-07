@@ -338,6 +338,26 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "udf",
+					Usage: "describe udf $udf_name",
+					//Flags: nflag,
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 1 {
+							fmt.Printf("Expect udf name.\n")
+							return nil
+						}
+						pname := c.Args()[0]
+						var reply string
+						err = client.Call("Server.DescUdf", pname, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 
@@ -387,7 +407,7 @@ func main() {
 					Action: func(c *cli.Context) error {
 						r := c.String("stop")
 						if r != "true" && r != "false" {
-							fmt.Printf("Expect r to be a boolean value.\n")
+							fmt.Printf("Expect s flag to be a boolean value.\n")
 							return nil
 						}
 						if len(c.Args()) < 2 || len(c.Args()) > 3 {
@@ -464,6 +484,20 @@ func main() {
 						}
 						var reply string
 						err = client.Call("Server.ShowPlugins", ptype, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
+				{
+					Name:  "udfs",
+					Usage: "show udfs",
+					Action: func(c *cli.Context) error {
+						var reply string
+						err = client.Call("Server.ShowUdfs", 0, &reply)
 						if err != nil {
 							fmt.Println(err)
 						} else {
@@ -600,6 +634,68 @@ func main() {
 						rname := c.Args()[0]
 						var reply string
 						err = client.Call("Server.RestartRule", rname, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
+			},
+		},
+		{
+			Name:    "register",
+			Aliases: []string{"register"},
+			Usage:   "register plugin function $plugin_name [$plugin_json | -f plugin_def_file]",
+			Subcommands: []cli.Command{
+				{
+					Name:  "plugin",
+					Usage: "register plugin $plugin_type $plugin_name [$plugin_json | -f plugin_def_file]",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:     "file, f",
+							Usage:    "the location of plugin functions definition file",
+							FilePath: "/home/myplugin.txt",
+						},
+					},
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) < 2 {
+							fmt.Printf("Expect plugin type and name.\n")
+							return nil
+						}
+						ptype := c.Args()[0]
+						if strings.ToLower(ptype) != "function" {
+							fmt.Printf("Plugin type must be function.\n")
+							return nil
+						}
+						pname := c.Args()[1]
+						sfile := c.String("file")
+						args := &common.PluginDesc{
+							RuleDesc: common.RuleDesc{
+								Name: pname,
+							},
+						}
+						if sfile != "" {
+							if len(c.Args()) != 2 {
+								fmt.Printf("Expect plugin type, name.\nBut found %d args:%s.\n", len(c.Args()), c.Args())
+								return nil
+							}
+							if p, err := readDef(sfile, "plugin"); err != nil {
+								fmt.Printf("%s", err)
+								return nil
+							} else {
+								args.Json = string(p)
+							}
+						} else {
+							if len(c.Args()) != 3 {
+								fmt.Printf("Expect plugin type, name and json.\nBut found %d args:%s.\n", len(c.Args()), c.Args())
+								return nil
+							}
+							args.Json = c.Args()[2]
+						}
+						var reply string
+						err = client.Call("Server.RegisterPlugin", args, &reply)
 						if err != nil {
 							fmt.Println(err)
 						} else {

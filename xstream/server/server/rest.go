@@ -96,6 +96,9 @@ func createRestServer(ip string, port int) *http.Server {
 	r.HandleFunc("/plugins/functions", functionsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/functions/prebuild", prebuildFuncsPlugins).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet)
+	r.HandleFunc("/plugins/functions/{name}/register", functionRegisterHandler).Methods(http.MethodPost)
+	r.HandleFunc("/plugins/udfs", functionsListHandler).Methods(http.MethodGet)
+	r.HandleFunc("/plugins/udfs/{name}", functionsGetHandler).Methods(http.MethodGet)
 
 	r.HandleFunc("/metadata/functions", functionsMetaHandler).Methods(http.MethodGet)
 
@@ -390,20 +393,20 @@ func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugins.PluginType
 		}
 		jsonResponse(content, w, logger)
 	case http.MethodPost:
-		sd := plugins.Plugin{}
-		err := json.NewDecoder(r.Body).Decode(&sd)
+		sd := plugins.NewPluginByType(t)
+		err := json.NewDecoder(r.Body).Decode(sd)
 		// Problems decoding
 		if err != nil {
 			handleError(w, err, fmt.Sprintf("Invalid body: Error decoding the %s plugin json", plugins.PluginTypes[t]), logger)
 			return
 		}
-		err = pluginManager.Register(t, &sd)
+		err = pluginManager.Register(t, sd)
 		if err != nil {
 			handleError(w, err, fmt.Sprintf("%s plugins create command error", plugins.PluginTypes[t]), logger)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("%s plugin %s is created", plugins.PluginTypes[t], sd.Name)))
+		w.Write([]byte(fmt.Sprintf("%s plugin %s is created", plugins.PluginTypes[t], sd.GetName())))
 	}
 }
 
@@ -464,9 +467,63 @@ func functionsHandler(w http.ResponseWriter, r *http.Request) {
 	pluginsHandler(w, r, plugins.FUNCTION)
 }
 
+//list all user defined functions in all function plugins
+func functionsListHandler(w http.ResponseWriter, r *http.Request) {
+	content, err := pluginManager.ListSymbols()
+	if err != nil {
+		handleError(w, err, "udfs list command error", logger)
+		return
+	}
+	jsonResponse(content, w, logger)
+}
+
+func functionsGetHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+	j, ok := pluginManager.GetSymbol(name)
+	if !ok {
+		handleError(w, common.NewErrorWithCode(common.NOT_FOUND, "not found"), fmt.Sprintf("describe function %s error", name), logger)
+		return
+	}
+	jsonResponse(map[string]string{"name": name, "plugin": j}, w, logger)
+}
+
 //delete a function plugin
 func functionHandler(w http.ResponseWriter, r *http.Request) {
 	pluginHandler(w, r, plugins.FUNCTION)
+}
+
+type functionList struct {
+	Functions []string `json:"functions,omitempty"`
+}
+
+// register function list for function plugin. If a plugin exports multiple functions, the function list must be registered
+// either by create or register. If the function plugin has been loaded because of auto load through so file, the function
+// list MUST be registered by this API or only the function with the same name as the plugin can be used.
+func functionRegisterHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	_, ok := pluginManager.Get(plugins.FUNCTION, name)
+	if !ok {
+		handleError(w, common.NewErrorWithCode(common.NOT_FOUND, "not found"), fmt.Sprintf("register %s plugin %s error", plugins.PluginTypes[plugins.FUNCTION], name), logger)
+		return
+	}
+	sd := functionList{}
+	err := json.NewDecoder(r.Body).Decode(&sd)
+	// Problems decoding
+	if err != nil {
+		handleError(w, err, fmt.Sprintf("Invalid body: Error decoding the function list json %s", r.Body), logger)
+		return
+	}
+	err = pluginManager.RegisterFuncs(name, sd.Functions)
+	if err != nil {
+		handleError(w, err, fmt.Sprintf("function plugins %s regiser functions error", name), logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf("function plugin %s function list is registered", name)))
 }
 
 func prebuildSourcePlugins(w http.ResponseWriter, r *http.Request) {

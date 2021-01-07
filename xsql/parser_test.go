@@ -1230,7 +1230,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s:    `SELECT sample(-.3,) FROM tbl`,
 			stmt: nil,
-			err:  "cannot get the plugin file path: invalid name sample: not exist",
+			err:  "cannot get the plugin file path: invalid symbol name sample: not exist",
 		},
 
 		{
