@@ -24,6 +24,7 @@ func TestManager_Register(t *testing.T) {
 		n       string
 		u       string
 		v       string
+		f       []string
 		lowerSo bool
 		err     error
 	}{
@@ -36,7 +37,7 @@ func TestManager_Register(t *testing.T) {
 			t:   SOURCE,
 			n:   "zipMissConf",
 			u:   endpoint + "/sources/zipMissConf.zip",
-			err: errors.New("fail to unzip file " + endpoint + "/sources/zipMissConf.zip: invalid zip file: so file or conf file is missing"),
+			err: errors.New("fail to install plugin: invalid zip file: so file or conf file is missing"),
 		}, {
 			t:   SINK,
 			n:   "urlerror",
@@ -46,12 +47,12 @@ func TestManager_Register(t *testing.T) {
 			t:   SINK,
 			n:   "zipWrongname",
 			u:   endpoint + "/sinks/zipWrongName.zip",
-			err: errors.New("fail to unzip file " + endpoint + "/sinks/zipWrongName.zip: invalid zip file: so file or conf file is missing"),
+			err: errors.New("fail to install plugin: invalid zip file: so file or conf file is missing"),
 		}, {
 			t:   FUNCTION,
 			n:   "zipMissSo",
 			u:   endpoint + "/functions/zipMissSo.zip",
-			err: errors.New("fail to unzip file " + endpoint + "/functions/zipMissSo.zip: invalid zip file: so file or conf file is missing"),
+			err: errors.New("fail to install plugin: invalid zip file: so file or conf file is missing"),
 		}, {
 			t: SOURCE,
 			n: "random2",
@@ -70,11 +71,18 @@ func TestManager_Register(t *testing.T) {
 			t: FUNCTION,
 			n: "echo2",
 			u: endpoint + "/functions/echo2.zip",
+			f: []string{"echo2", "echo3"},
 		}, {
 			t:   FUNCTION,
 			n:   "echo2",
 			u:   endpoint + "/functions/echo2.zip",
 			err: errors.New("invalid name echo2: duplicate"),
+		}, {
+			t:   FUNCTION,
+			n:   "misc",
+			u:   endpoint + "/functions/echo2.zip",
+			f:   []string{"misc", "echo3"},
+			err: errors.New("function name echo3 already exists"),
 		},
 	}
 	manager, err := NewPluginManager()
@@ -84,10 +92,22 @@ func TestManager_Register(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 	for i, tt := range data {
-		err = manager.Register(tt.t, &Plugin{
-			Name: tt.n,
-			File: tt.u,
-		})
+		var p Plugin
+		if tt.t == FUNCTION {
+			p = &FuncPlugin{
+				IOPlugin: IOPlugin{
+					Name: tt.n,
+					File: tt.u,
+				},
+				Functions: tt.f,
+			}
+		} else {
+			p = &IOPlugin{
+				Name: tt.n,
+				File: tt.u,
+			}
+		}
+		err = manager.Register(tt.t, p)
 		if !reflect.DeepEqual(tt.err, err) {
 			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
 		} else if tt.err == nil {
@@ -135,32 +155,57 @@ func TestManager_List(t *testing.T) {
 	}
 }
 
+func TestManager_Symbols(t *testing.T) {
+	manager, err := NewPluginManager()
+	if err != nil {
+		t.Error(err)
+	}
+	r := []string{"accumulateWordCount", "countPlusOne", "echo", "echo2", "echo3", "misc"}
+	result, err := manager.ListSymbols()
+	if err != nil {
+		t.Errorf("list symbols error : %s\n\n", err)
+		return
+	}
+	sort.Strings(result)
+	if !reflect.DeepEqual(r, result) {
+		t.Errorf("result mismatch:\n  exp=%v\n  got=%v\n\n", r, result)
+	}
+	p, ok := manager.GetSymbol("echo3")
+	if !ok {
+		t.Errorf("cannot find echo3 symbol")
+	}
+	if p != "echo2" {
+		t.Errorf("wrong plugin %s for echo3 symbol", p)
+	}
+}
+
 func TestManager_Desc(t *testing.T) {
 	data := []struct {
 		t PluginType
 		n string
-		r map[string]string
+		r map[string]interface{}
 	}{
 		{
 			t: SOURCE,
 			n: "random2",
-			r: map[string]string{
+			r: map[string]interface{}{
 				"name":    "random2",
 				"version": "",
 			},
 		}, {
 			t: SOURCE,
 			n: "random3",
-			r: map[string]string{
+			r: map[string]interface{}{
 				"name":    "random3",
 				"version": "1.0.0",
 			},
 		}, {
 			t: FUNCTION,
 			n: "echo2",
-			r: map[string]string{
-				"name":    "echo2",
-				"version": "",
+			r: map[string]interface{}{
+				"name":      "echo2",
+				"version":   "",
+				"functions": []string{"echo2", "echo3"},
 			},
 		},
 	}
