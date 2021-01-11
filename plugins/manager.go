@@ -96,6 +96,7 @@ var (
 //Registry is append only because plugin cannot delete or reload. To delete a plugin, restart the server to reindex
 type Registry struct {
 	sync.RWMutex
+	// 3 maps for source/sink/function. In each map, key is the plugin name, value is the version
 	plugins []map[string]string
 	// A map from function name to its plugin file name. It is constructed during initialization by reading kv info. All functions must have at least an entry, even the function resizes in a one function plugin.
 	symbols map[string]string
