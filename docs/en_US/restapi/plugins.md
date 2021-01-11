@@ -129,6 +129,52 @@ The user can pass a query parameter to decide if Kuiper should be stopped after 
 DELETE http://localhost:8080/plugins/sources/{name}?restart=1
 ```
 
+## APIs to handle function plugin with multiple functions
+
+Unlike source and sink plugins, function plugin can export multiple functions at once. The exported names must be unique globally across all plugins. There will be a one to many mapping between function and its container plugin. Thus, we provide show udf(user defined function) api to query all user defined functions so that users can check the name duplication. And we provide describe udf api to find out the defined plugin of a function. We also provide the register functions api to register the udf list for an auto loaded plugin.
+
+### show udfs
+
+The API is used for displaying all user defined functions which are defined across all plugins.
+
+```shell
+GET http://localhost:9081/plugins/udfs
+```
+
+Response Sample:
+
+```json
+["func1","func2"]
+```
+
+### describe an udf
+
+The API is used to find out the plugin which defines the UDF.
+
+```shell
+GET http://localhost:9081/plugins/udfs/{name}
+```
+
+Response Sample:
+
+```json
+{
+  "name": "funcName",
+  "plugin": "pluginName"
+}
+```
+
+### register functions
+
+The API aims to register all exported functions in an auto loaded function plugin or when the exported functions are changed. If the plugin was loaded by CLI create command or REST create API with functions property specified, then this is not needed. The register API will persist the functions list in the kv. Unless the exported functions are changed, users only need to register it once.
+
+```shell
+POST http://{{host}}/plugins/functions/{plugin_name}/register
+
+{"functions":["func1","func2"]}
+
+```
+
 ## Get the available plugins
 
 According to the configuration `pluginHosts` in file `etc/kuiper.yaml` ,  it returns the plugins list that can be installed at local run Kuiper instance. By default, it get the list from `https://packages.emqx.io` .
