@@ -7,7 +7,7 @@ require (
 	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/edgexfoundry/go-mod-core-contracts v0.1.80
-	github.com/edgexfoundry/go-mod-messaging v0.1.23
+	github.com/edgexfoundry/go-mod-messaging v0.1.30
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/google/uuid v1.1.1
@@ -17,7 +17,7 @@ require (
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lestrrat-go/strftime v1.0.3 // indirect
 	github.com/mattn/go-sqlite3 v1.14.5
-	github.com/pebbe/zmq4 v1.0.0
+	github.com/pebbe/zmq4 v1.2.2
 	github.com/prometheus/client_golang v1.2.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/urfave/cli v1.22.0
