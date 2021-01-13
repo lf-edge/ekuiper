@@ -11,19 +11,34 @@ RUN make build_with_edgex
 
 FROM alpine:3.12
 
+# Set environment vars
+ENV MAINTAINER="emqx.io" \
+    KUIPER_HOME="/kuiper" \
+    KUIPER__BASIC__CONSOLELOG=true
+
+# These vars are not persisted in the final image layer
+ARG KUIPER_USER="kuiper"
+ARG KUIPER_USER_ID="1001"
+
+# (root) Add packages and "kuiper" user
+RUN apk add sed libzmq
+
 COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 COPY --from=builder /go/kuiper/kuiper_conf_util /usr/bin/kuiper_conf_util
 COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
 
-RUN apk add sed libzmq
+WORKDIR ${KUIPER_HOME}
 
-WORKDIR /kuiper
+# Set appropriate ownership to allow binary full access to KUIPER_HOME dir
+RUN adduser -DH -s /sbin/nologin -u ${KUIPER_USER_ID} ${KUIPER_USER} && \
+    chown -Rh ${KUIPER_USER}:${KUIPER_USER} ${KUIPER_HOME} && \
+    mkdir -p /usr/local/taos && \
+    chown -Rh ${KUIPER_USER}:${KUIPER_USER} /usr/local/taos
 
-ENV MAINTAINER="emqx.io"
-ENV KUIPER_HOME /kuiper
-ENV KUIPER__BASIC__CONSOLELOG true
+# Run the kuiper process under the kuiper user
+USER ${KUIPER_USER}
 
-VOLUME ["/kuiper/etc", "/kuiper/data", "/kuiper/plugins", "/kuiper/log"]
+VOLUME ["${KUIPER_HOME}/etc", "${KUIPER_HOME}/data", "${KUIPER_HOME}/plugins", "${KUIPER_HOME}/log"]
 EXPOSE 9081 20498
 
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
