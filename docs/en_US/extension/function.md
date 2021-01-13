@@ -38,14 +38,36 @@ var MyFunction myFunction
 
 The [Echo Function](../../../plugins/functions/echo.go) is a good example.
 
+### Export multiple functions
+
+In one plugin, developers can export multiple functions. Each function must implement [api.Function](../../../xstream/api/stream.go) as described at [Develop a customized function](#develop-a-customized-function) section. Make sure all functions are exported like:
+
+```go
+var(
+    Function1 function1
+    Function2 function2
+    Functionn functionn
+)
+```
+
+It is a best practice to combine all related functions in a plugin to simplify the build and deployment of functions.
+
 ### Package the source
+
 Build the implemented function as a go plugin and make sure the output so file resides in the plugins/functions folder.
 
 ```bash
 go build --buildmode=plugin -o plugins/functions/MyFunction.so plugins/functions/my_function.go
 ```
 
-### Usage
+### Register multiple functions
+
+Kuiper will load plugins in the plugin folders automatically. The auto loaded function plugin assumes there is a function named the same as the plugin name. If multiple functions are exported, users need to explicitly register them to make them available. There are two ways to register the functions.
+
+1. In development environment, we recommend to build plugin .so file directly into the plugin folder so that kuiper can auto load it. Then call [CLI register functions command](../cli/plugins.md#register-functions) or [REST register functions API](../restapi/plugins.md#register-functions).
+2. In production environment, [package the plugin into zip file](../plugins/plugins_tutorial.md#plugin-deployment-1), then call [CLI function plugin create command](../cli/plugins.md#create-a-plugin) or [REST function plugin create API](../restapi/plugins.md#create-a-plugin) with functions list specified.
+
+## Usage
 
 The customized function can be directly used in the SQL of a rule if it follows the below convention.
 

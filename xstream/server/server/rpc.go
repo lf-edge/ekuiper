@@ -188,36 +188,53 @@ func (t *Server) DropRule(name string, reply *string) error {
 
 func (t *Server) CreatePlugin(arg *common.PluginDesc, reply *string) error {
 	pt := plugins.PluginType(arg.Type)
-	p, err := getPluginByJson(arg)
+	p, err := getPluginByJson(arg, pt)
 	if err != nil {
 		return fmt.Errorf("Create plugin error: %s", err)
 	}
-	if p.File == "" {
+	if p.GetFile() == "" {
 		return fmt.Errorf("Create plugin error: Missing plugin file url.")
 	}
 	err = pluginManager.Register(pt, p)
 	if err != nil {
 		return fmt.Errorf("Create plugin error: %s", err)
 	} else {
-		*reply = fmt.Sprintf("Plugin %s is created.", p.Name)
+		*reply = fmt.Sprintf("Plugin %s is created.", p.GetName())
+	}
+	return nil
+}
+
+func (t *Server) RegisterPlugin(arg *common.PluginDesc, reply *string) error {
+	p, err := getPluginByJson(arg, plugins.FUNCTION)
+	if err != nil {
+		return fmt.Errorf("Register plugin functions error: %s", err)
+	}
+	if len(p.GetSymbols()) == 0 {
+		return fmt.Errorf("Register plugin functions error: Missing function list.")
+	}
+	err = pluginManager.RegisterFuncs(p.GetName(), p.GetSymbols())
+	if err != nil {
+		return fmt.Errorf("Create plugin error: %s", err)
+	} else {
+		*reply = fmt.Sprintf("Plugin %s is created.", p.GetName())
 	}
 	return nil
 }
 
 func (t *Server) DropPlugin(arg *common.PluginDesc, reply *string) error {
 	pt := plugins.PluginType(arg.Type)
-	p, err := getPluginByJson(arg)
+	p, err := getPluginByJson(arg, pt)
 	if err != nil {
 		return fmt.Errorf("Drop plugin error: %s", err)
 	}
-	err = pluginManager.Delete(pt, p.Name, arg.Stop)
+	err = pluginManager.Delete(pt, p.GetName(), arg.Stop)
 	if err != nil {
 		return fmt.Errorf("Drop plugin error: %s", err)
 	} else {
 		if arg.Stop {
-			*reply = fmt.Sprintf("Plugin %s is dropped and Kuiper will be stopped.", p.Name)
+			*reply = fmt.Sprintf("Plugin %s is dropped and Kuiper will be stopped.", p.GetName())
 		} else {
-			*reply = fmt.Sprintf("Plugin %s is dropped and Kuiper must restart for the change to take effect.", p.Name)
+			*reply = fmt.Sprintf("Plugin %s is dropped and Kuiper must restart for the change to take effect.", p.GetName())
 		}
 
 	}
@@ -228,7 +245,7 @@ func (t *Server) ShowPlugins(arg int, reply *string) error {
 	pt := plugins.PluginType(arg)
 	l, err := pluginManager.List(pt)
 	if err != nil {
-		return fmt.Errorf("Drop plugin error: %s", err)
+		return fmt.Errorf("Show plugin error: %s", err)
 	} else {
 		if len(l) == 0 {
 			l = append(l, "No plugin is found.")
@@ -238,13 +255,26 @@ func (t *Server) ShowPlugins(arg int, reply *string) error {
 	return nil
 }
 
+func (t *Server) ShowUdfs(_ int, reply *string) error {
+	l, err := pluginManager.ListSymbols()
+	if err != nil {
+		return fmt.Errorf("Show UDFs error: %s", err)
+	} else {
+		if len(l) == 0 {
+			l = append(l, "No udf is found.")
+		}
+		*reply = strings.Join(l, "\n")
+	}
+	return nil
+}
+
 func (t *Server) DescPlugin(arg *common.PluginDesc, reply *string) error {
 	pt := plugins.PluginType(arg.Type)
-	p, err := getPluginByJson(arg)
+	p, err := getPluginByJson(arg, pt)
 	if err != nil {
 		return fmt.Errorf("Describe plugin error: %s", err)
 	}
-	m, ok := pluginManager.Get(pt, p.Name)
+	m, ok := pluginManager.Get(pt, p.GetName())
 	if !ok {
 		return fmt.Errorf("Describe plugin error: not found")
 	} else {
@@ -261,15 +291,37 @@ func (t *Server) DescPlugin(arg *common.PluginDesc, reply *string) error {
 	return nil
 }
 
-func getPluginByJson(arg *common.PluginDesc) (*plugins.Plugin, error) {
-	var p plugins.Plugin
+func (t *Server) DescUdf(arg string, reply *string) error {
+	m, ok := pluginManager.GetSymbol(arg)
+	if !ok {
+		return fmt.Errorf("Describe udf error: not found")
+	} else {
+		j := map[string]string{
+			"name":   arg,
+			"plugin": m,
+		}
+		s, err := json.Marshal(j)
+		if err != nil {
+			return fmt.Errorf("Describe udf error: invalid json %v", j)
+		}
+		dst := &bytes.Buffer{}
+		if err := json.Indent(dst, s, "", "  "); err != nil {
+			return fmt.Errorf("Describe udf error: indent json error %v", err)
+		}
+		*reply = dst.String()
+	}
+	return nil
+}
+
+func getPluginByJson(arg *common.PluginDesc, pt plugins.PluginType) (plugins.Plugin, error) {
+	p := plugins.NewPluginByType(pt)
 	if arg.Json != "" {
-		if err := json.Unmarshal([]byte(arg.Json), &p); err != nil {
+		if err := json.Unmarshal([]byte(arg.Json), p); err != nil {
 			return nil, fmt.Errorf("Parse plugin %s error : %s.", arg.Json, err)
 		}
 	}
-	p.Name = arg.Name
-	return &p, nil
+	p.SetName(arg.Name)
+	return p, nil
 }
 
 func init() {
