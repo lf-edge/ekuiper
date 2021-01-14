@@ -58,5 +58,3 @@ func (f *imageResize) Exec(args []interface{}, _ api.FunctionContext) (interface
 func (f *imageResize) IsAggregate() bool {
 	return false
 }
-
-var Resize imageResize

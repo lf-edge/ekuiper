@@ -58,5 +58,3 @@ func (f *thumbnail) Exec(args []interface{}, _ api.FunctionContext) (interface{}
 func (f *thumbnail) IsAggregate() bool {
 	return false
 }
-
-var Thumbnail thumbnail
