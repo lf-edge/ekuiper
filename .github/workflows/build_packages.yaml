@@ -68,8 +68,7 @@ jobs:
                 - functions/accumulateWordCount
                 - functions/countPlusOne
                 - functions/echo
-                - functions/thumbnail
-                - functions/resize
+                - functions/image
 
         steps:
         - uses: actions/checkout@v1
@@ -93,7 +92,7 @@ jobs:
             docker run --rm --privileged tonistiigi/binfmt --install all
         - name: build docker image
           run: make docker -j4
-        - name: buiild debian plugins
+        - name: build debian plugins
           env:
             PLUGIN: ${{ matrix.plugin }}
           run: make ${PLUGIN}
@@ -117,6 +116,11 @@ jobs:
                     ${ip_address}:9081/plugins/${plugin_type} \
                     -X POST \
                     -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"shellParas\": [\"2.0.3.1\"]}"
+                elif [ "${plugin_name}" = "image" ]; then
+                     curl \
+                     ${ip_address}:9081/plugins/${plugin_type} \
+                     -X POST \
+                     -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"functions\": [\"resize\",\"thumbnail\"]}"
                 else
                     curl \
                     ${ip_address}:9081/plugins/${plugin_type} \

@@ -30,7 +30,7 @@ type (
 )
 
 func isInternalFunc(fiName string) bool {
-	internal := []string{`accumulateWordCount.json`, `countPlusOne.json`, `echo.json`, `internal.json`, "windows.json", "thumbnail.json", "resize.json"}
+	internal := []string{`accumulateWordCount.json`, `countPlusOne.json`, `echo.json`, `internal.json`, "windows.json", "image.json"}
 	for _, v := range internal {
 		if v == fiName {
 			return true

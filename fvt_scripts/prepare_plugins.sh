@@ -24,9 +24,24 @@ cp plugins/zmq.yaml .
 zip zmq.zip Zmq.so zmq.yaml
 rm -rf zmq.yaml Zmq.so
 
+rm -rf image.* Image.so
+
+FILE=../plugins/functions/Image.so
+if [ -f "$FILE" ]; then
+    echo "$FILE exists, not requried to build plugin."
+else
+    echo "$FILE does not exist, will build the plugin."
+    go build --buildmode=plugin -o ../plugins/functions/Image.so ../plugins/functions/image/*.go
+fi
+
+mv ../plugins/functions/Image.so .
+zip image.zip Image.so
+rm -rf Image.so
+
 rm -rf plugins/service/web/plugins/
 mkdir -p plugins/service/web/plugins/
 mv zmq.zip plugins/service/web/plugins/
+mv image.zip plugins/service/web/plugins/
 
 cd plugins/service/
 export BUILD_ID=dontKillMe

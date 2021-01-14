@@ -31,7 +31,7 @@ RUN set -e -u -x \
            && go build --buildmode=plugin -tags plugins -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go \
            ;; \
          * ) \
-           go build --buildmode=plugin -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go \
+           go build --buildmode=plugin -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/*.go \
            ;; \
        esac \
     && if [ -f "etc/$PLUGIN_TYPE/$PLUGIN_NAME.yaml" ]; then cp etc/$PLUGIN_TYPE/$PLUGIN_NAME.yaml plugins/$PLUGIN_TYPE/$PLUGIN_NAME; fi \
