@@ -2,7 +2,7 @@ Kuiper 实现了下面的插件，目前这些插件有的是用于描述插件�
 
 Kuiper 插件开发者在开发过程中，可以指定元数据文件，这些元数据主要应用于以下方面：
 
-- 插件编译：对于在目录 `plugins/sinks` 和 `plugins/sources` 中的插件，如果开发者提供了相关的元数据文件，那么 Kuiper 在版本发布的时候会自动编译该插件，然后自动上传这些插件到 EMQ 的插件下载网站上： www.emqx.io/downloads/kuiper/vx.x.x/plugins，其中 `x.x.x` 为版本号。
+- 插件编译：对于在目录 `plugins/sinks` 和 `plugins/sources` 中的插件，如果开发者提供了相关的元数据文件，那么 Kuiper 在版本发布的时候会自动编译该插件，然后自动上传这些插件到 EMQ 的插件下载网站上： www.emqx.cn/downloads/kuiper/vx.x.x/plugins，其中 `x.x.x` 为版本号。
 
   **<u>请注意：由于 Golang 插件的局限性，这些自动编译出来的插件能运行在 Kuiper 官方发布的对应版本的容器中；但是对于直接下载的二进制安装包，或者用户自己编译出来的二进制包，这些下载的插件不保证可以正常运行。</u>**
 

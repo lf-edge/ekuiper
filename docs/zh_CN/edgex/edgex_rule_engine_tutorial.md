@@ -207,7 +207,7 @@ time="2020-04-17T06:32:31Z" level=info msg="sink result for rule rule1: [{\"bool
 
 ### 监控分析结果
 
-因为所有的分析结果都被发布到``tcp://broker.emqx.io:1883``，你可以直接使用以下的  ``mosquitto_sub`` 命令来监听结果，你也可以参考别的 [MQTT 客户端工具](https://www.emqx.io/blog/mqtt-client-tools).
+因为所有的分析结果都被发布到``tcp://broker.emqx.io:1883``，你可以直接使用以下的  ``mosquitto_sub`` 命令来监听结果，你也可以参考别的 [MQTT 客户端工具](https://www.emqx.cn/blog/mqtt-client-tools).
 
 ```shell
 # mosquitto_sub -h broker.emqx.io -t result
