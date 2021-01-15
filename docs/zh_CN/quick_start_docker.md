@@ -2,7 +2,7 @@
 
 1. 从 `https://hub.docker.com/r/emqx/kuiper/tags` 拉取 Kuiper 的 Docker 镜像。在本教程中推荐使用 `alpine` 镜像（参考 [Kuiper Docker](https://hub.docker.com/r/emqx/kuiper) 的内容了解不同 Kuiper Docker 镜像的区别）。 
 
-2. 设置 Kuiper 源为一个 MQTT 服务器。本例使用位于 `tcp://broker.emqx.io:1883` 的 MQTT 服务器， `broker.emqx.io` 是一个由 [EMQ](https://www.emqx.io) 提供的公有 MQTT 服务器。
+2. 设置 Kuiper 源为一个 MQTT 服务器。本例使用位于 `tcp://broker.emqx.io:1883` 的 MQTT 服务器， `broker.emqx.io` 是一个由 [EMQ](https://www.emqx.cn) 提供的公有 MQTT 服务器。
 
    ```shell
    docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] emqx/kuiper:$tag
@@ -26,7 +26,7 @@
    
    ```
 
-4. 您可以使用任何[ MQTT 客户端工具](https://www.emqx.io/cn/blog/mqtt-client-tools)来发布传感器数据到服务器 `tcp://broker.emqx.io:1883`的主题 `devices/device_001/messages` 。以下例子使用 `mosquitto_pub`。
+4. 您可以使用任何[ MQTT 客户端工具](https://www.emqx.cn/blog/mqtt-client-tools)来发布传感器数据到服务器 `tcp://broker.emqx.io:1883`的主题 `devices/device_001/messages` 。以下例子使用 `mosquitto_pub`。
 
    ```shell
    # mosquitto_pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages

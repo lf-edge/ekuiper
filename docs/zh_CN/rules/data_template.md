@@ -49,7 +49,7 @@ Golang 的模版可以作用于各种数据结构，比如 map、切片 (slice)�
 
 ### 切片 (slice) 数据按条发送
 
-流入 sink 的数据是一个 `map[string]interface{}` 切片的数据结构，但是用户往目标 sink 发送数据的时候，可能是需要单条的数据，而不是所有的数据。比如在这篇 [Kuiper 与 AWS IoT Hub 集成的文章](https://www.emqx.io/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution)中所介绍的，规则产生的样例数据如下所示。
+流入 sink 的数据是一个 `map[string]interface{}` 切片的数据结构，但是用户往目标 sink 发送数据的时候，可能是需要单条的数据，而不是所有的数据。比如在这篇 [Kuiper 与 AWS IoT Hub 集成的文章](https://www.emqx.cn/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution)中所介绍的，规则产生的样例数据如下所示。
 
 ```json
 [
