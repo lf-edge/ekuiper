@@ -277,7 +277,9 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				o.triggerTime = n
 				log.Debugf("session window update trigger time %d with %d inputs", n, len(inputs))
 				if len(inputs) == 0 || lastTriggerTime < inputs[0].Timestamp {
-					log.Debugf("session window last trigger time %d < first tuple %d", lastTriggerTime, inputs[0].Timestamp)
+					if len(inputs) > 0 {
+						log.Debugf("session window last trigger time %d < first tuple %d", lastTriggerTime, inputs[0].Timestamp)
+					}
 					break
 				}
 			}
