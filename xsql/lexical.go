@@ -674,6 +674,7 @@ var dataTypes = []string{
 	BIGINT:   "bigint",
 	FLOAT:    "float",
 	STRINGS:  "string",
+	BYTEA:    "bytea",
 	DATETIME: "datetime",
 	BOOLEAN:  "boolean",
 	ARRAY:    "array",
