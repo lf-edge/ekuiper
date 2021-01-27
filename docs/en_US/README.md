@@ -120,11 +120,11 @@ Join our [Slack](https://join.slack.com/t/emqx/shared_invite/zt-7xrracuf-GGdbNB1
 
 ## Build from source
 
-#### Preparation
+### Preparation
 
 - Go version >= 1.13
 
-#### Compile
+### Compile
 
 + Binary: 
 

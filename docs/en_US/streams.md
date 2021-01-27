@@ -1,7 +1,7 @@
-## Stream specs 
+# Stream specs 
 
 
-### Data types
+## Data types
 
 Refer to [Azure IoT](https://docs.microsoft.com/en-us/stream-analytics-query/data-types-azure-stream-analytics), boolean type is cast to int.
 
@@ -17,9 +17,9 @@ Refer to [Azure IoT](https://docs.microsoft.com/en-us/stream-analytics-query/dat
 
 
 
-### Language definitions
+## Language definitions
 
-#### CREATE STREAM
+### CREATE STREAM
 
 ```sql
 CREATE STREAM   
@@ -102,7 +102,7 @@ demo: #Conf_key
 
 ```
 
-#### DROP STREAM
+### DROP STREAM
 
 DROP the stream.
 
@@ -110,7 +110,7 @@ DROP the stream.
 DROP STREAM my_stream
 ```
 
-#### DESCRIBE STREAM
+### DESCRIBE STREAM
 
 Print the stream definition.
 
@@ -128,7 +128,7 @@ Format: json
 Key: id
 ```
 
-#### EXPLAIN STREAM
+### EXPLAIN STREAM
 
 Print the detailed runtime infomation of the stream.
 
@@ -136,7 +136,7 @@ Print the detailed runtime infomation of the stream.
 EXPLAIN STREAM my_stream
 ```
 
-#### SHOW STREAMS
+### SHOW STREAMS
 
 Print all defined streams in system.
 
@@ -148,11 +148,11 @@ my_stream, iot_stream
 
 
 
-### A simple CLI
+## A simple CLI
 
 A simple command line tool is implemented in ``stream/cli/main.go``. 
 
-#### Run sql to manage streams
+### Run sql to manage streams
 
 Run `kuiper stream` command, after `kuiper >` prompt shown, enter stream related sql statements such as create, drop, describe, explain and show stream statements to execute.
 
@@ -164,7 +164,7 @@ kuiper > DESCRIBE STREAM sname
 ```
 
 
-#### Run query
+### Run query
 
 ```bash
 cli query
@@ -174,9 +174,9 @@ kuiper > select USERID from demo;
 
 
 
-### Implementation
+## Implementation
 
-##### How to save the stream definitions?
+### How to save the stream definitions?
 
 Refer to below, a storage is required for saving the stream definitions.
 

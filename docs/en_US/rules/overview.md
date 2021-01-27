@@ -1,4 +1,4 @@
-## Rules 
+# Rules 
 
 Rules are defined by JSON, below is an example.
 
@@ -22,7 +22,7 @@ Rules are defined by JSON, below is an example.
 
 The following 3 parameters are required for creating a rule.
 
-### Parameters
+## Parameters
 
 | Parameter name | Optional | Description                                                  |
 | ------------- | -------- | ------------------------------------------------------------ |
@@ -31,11 +31,11 @@ The following 3 parameters are required for creating a rule.
 | actions           | false    | An array of sink actions        |
 | options           | true    | A map of options        |
 
-### id
+## id
 
 The identification of the rule. The rule name cannot be duplicated in the same Kuiper instance.
 
-### sql
+## sql
 
 The sql query to run for the rule. 
 
@@ -56,7 +56,7 @@ For detail about `qos` and `checkpointInterval`, please check [state and fault t
 
 The rule options can be defined globally in ``etc/kuiper.yaml`` under the ``rules`` section. The options defined in the rule json will override the global setting. 
 
-### Sources
+## Sources
 
 - Kuiper provides embeded following 3 sources,
   - MQTT source, see  [MQTT source stream](sources/mqtt.md) for more detailed info.
@@ -67,7 +67,7 @@ The rule options can be defined globally in ``etc/kuiper.yaml`` under the ``rule
 
 
 
-## sinks/actions
+### sinks/actions
 
 Currently, below kinds of sinks/actions are supported:
 
@@ -92,7 +92,7 @@ Each action can define its own properties. There are several common properties:
 | sendSingle        | true     | The output messages are received as an array. This is indicate whether to send the results one by one. If false, the output message will be ``{"result":"${the string of received message}"}``. For example, ``{"result":"[{\"count\":30},"\"count\":20}]"}``. Otherwise, the result message will be sent one by one with the actual field name. For the same example as above, it will send ``{"count":30}``, then send ``{"count":20}`` to the RESTful endpoint.Default to false. |
 | dataTemplate      | true     | The [golang template](https://golang.org/pkg/html/template) format string to specify the output data format. The input of the template is the sink message which is always an array of map. If no data template is specified, the raw input will be the data. |
 
-##### Data Template
+### Data Template
 User can refer to [Use Golang template to customize analaysis result in Kuiper](data_template.md) for more detailed scenarios. 
 If sendSingle is true, the data template will execute against a record; Otherwise, it will execute against the whole array of records. Typical data templates are:
 
@@ -150,7 +150,7 @@ In sendSingle=false mode:
 
 Actions could be customized to support different kinds of outputs, see [extension](../extension/overview.md) for more detailed info.
 
-##### Functions supported in template
+### Functions supported in template
 
 Kuiper extends several functions that can be used in data template.
 

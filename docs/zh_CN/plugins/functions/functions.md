@@ -2,7 +2,7 @@
 
 Kuiper 可以定制函数，函数的开发、编译及使用请[参见这里](../../extension/function.md)。
 
-### echo 插件
+## echo 插件
 
 | 函数 | 示例      | 说明           |
 | ---- | --------- | -------------- |
@@ -16,7 +16,7 @@ echo(avg) 示例
   SELECT echo(avg) as r1 FROM test;
   ```
 
-### countPlusOne 插件
+## countPlusOne 插件
 
 | 函数         | 示例              | 说明                 |
 | ------------ | ----------------- | -------------------- |
@@ -30,7 +30,7 @@ countPlusOne(avg) 示例
   SELECT countPlusOne(avg) as r1 FROM test;
   ```
 
-### accumulateWordCount 插件
+## accumulateWordCount 插件
 
 | 函数                | 示例                         | 说明                     |
 | ------------------- | ---------------------------- | ------------------------ |
@@ -44,7 +44,7 @@ accumulateWordCount(avg,sep) 示例
   SELECT accumulateWordCount(avg,sep) as r1 FROM test;
   ```
 
-### 图像处理插件
+## 图像处理插件
 
 图像处理目前暂时只支持`png`和`jpeg`格式
 
