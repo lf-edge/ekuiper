@@ -39,10 +39,10 @@ basic:
     keyfile: /var/https-server.key
 ```
 
-#### restPort
+### restPort
 REST http 服务器监听端口
 
-#### restTls
+### restTls
 TLS 证书 cert 文件和 key 文件位置。如果 restTls 选项未配置，则 REST 服务器将启动为 http 服务器，否则启动为 https 服务器。
 
 ## Prometheus 配置

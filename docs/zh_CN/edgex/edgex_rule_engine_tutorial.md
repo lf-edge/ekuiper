@@ -67,15 +67,15 @@ f69e9c4d6cc8        nexus3.edgexfoundry.org:10004/docker-core-data-go:master    
 ed7ad5ae08b2        nexus3.edgexfoundry.org:10004/docker-edgex-volume:master               "/bin/sh -c '/usr/bi…"   37 minutes ago      Up 37 minutes                                                                                                          edgex-files
 ```
 
-#### 原生 (native) 方式运行
+### 原生 (native) 方式运行
 
 出于运行效率考虑，读者可能需要直接以原生方式运行 Kuiper，但是可能会发现直接使用下载的 Kuiper 软件包启动后[无法直接使用 Edgex](https://github.com/emqx/kuiper/issues/596)，这是因为 EdgeX 缺省消息总线依赖于 `zeromq` 库，如果 Kuiper 启动的时候在库文件寻找路径下无法找到 `zeromq` 库，它将无法启动。这导致对于不需要使用 EdgeX 的 Kuiper 用户也不得不去安装 `zeromq` 库 ，因此缺省提供的下载安装包中**<u>内置不支持 Edgex</u>** 。如果读者需要以原生方式运行 Kuiper 并且支持 `EdgeX`，可以通过命令 `make pkg_with_edgex` 自己来编译原生安装包，或者从容器中直接拷贝出安装包。
 
-### 创建流
+## 创建流
 
 该步骤是创建一个可以从 EdgeX 消息总线进行数据消费的流。有两种方法来支持管理流，你可以选择喜欢的方式。
 
-#### 方式1: 使用 Rest API
+### 方式1: 使用 Rest API
 请注意: EdgeX 中的 Kuiper Rest 接口使用``48075``端口，而不是缺省的``9081``端口。所以在 EdgeX 调用 Kuiper Rest 的时候，请将文档中所有的 9081 替换为 48075。
 
 请将 ``$kuiper_server`` 替换为本地运行的 Kuiper 实例的地址。
@@ -91,7 +91,7 @@ curl -X POST \
 
 关于其它 API，请参考[该文档](../restapi/overview.md).
 
-#### 方式2: 使用 Kuiper 命令行
+### 方式2: 使用 Kuiper 命令行
 
 使用以下命令，进入运行中的 Kuiper docker 实例。
 
@@ -124,7 +124,7 @@ default:
 
 更多关于配置文件的信息，请参考[该文档](../rules/sources/edgex.md).
 
-### 创建规则
+## 创建规则
 
 让我们创建一条规则，将分析结果发送至 MQTT 服务器，关于 MQTT 目标的相关配置，请参考[这个链接](../rules/sinks/mqtt.md)。与创建流的过程类似，你可以选择使用 REST 或者命令行来管理规则。
 
@@ -133,7 +133,7 @@ default:
 - 发布到公共的 MQTT 服务器 ``broker.emqx.io`` 的主题``result`` 上；
 - 打印至日志文件
 
-#### 选项1: 使用 Rest API
+### 选项1: 使用 Rest API
 
 ```shell
 curl -X POST \
@@ -157,7 +157,7 @@ curl -X POST \
 }
 ```
 
-#### 选项2: 使用 Kuiper 命令行
+### 选项2: 使用 Kuiper 命令行
 
 你可以使用任意编辑器来创建一条规则，将下列内容拷贝到编辑器中，并命名为 ``rule.txt``。
 
@@ -205,7 +205,7 @@ time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int6
 time="2020-04-17T06:32:31Z" level=info msg="sink result for rule rule1: [{\"bool\":true}]" file="log_sink.go:16" rule=rule1
 ```
 
-### 监控分析结果
+## 监控分析结果
 
 因为所有的分析结果都被发布到``tcp://broker.emqx.io:1883``，你可以直接使用以下的  ``mosquitto_sub`` 命令来监听结果，你也可以参考别的 [MQTT 客户端工具](https://www.emqx.io/blog/mqtt-client-tools).
 
@@ -266,15 +266,15 @@ Connecting to 127.0.0.1:20498...
   "sink_mqtt_0_0_last_invocation": "2020-04-17T10:30:09.294423"
 ```
 
-### 总结
+## 总结
 
 在本教程中，我们介绍了使用 EdgeX Kuiper 规则引擎的非常简单的例子，如果使用过程中发现任何问题，请到 EdgeX，或者 Kuiper Github 中报问题。
 
-### 更多练习
+## 更多练习
 
 目前的规则没有过滤发送给 Kuiper 的任何数据，那么如何过滤数据呢？请使用[删除规则](../cli/rules.md)，然后试着更改一下 SQL 语句，完成更改后，重新部署规则。这时候如果监听 MQTT 服务的结果主题，检查一下相关的规则是否起作用？
 
-#### 扩展阅读
+### 扩展阅读
 
 - 从 Kuiper 0.9.1 版本开始，通过一个单独的 Docker 镜像提供了 [可视化 web 用户交互界面](../manager-ui/overview.md)，您可以通过该 web 界面进行流、规则和插件等管理。
 - 阅读 [EdgeX 源](../rules/sources/edgex.md) 获取更多详细信息，以及类型转换等。
