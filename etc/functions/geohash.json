@@ -1,0 +1,92 @@
+{
+	"about": {
+		"trial": false,
+		"author": {
+			"name": "EMQ",
+			"email": "contact@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/functions/functions.md",
+			"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/functions/functions.md"
+		},
+		"description": {
+			"en_US": "",
+			"zh_CN": ""
+		}
+	},
+	"libs": ["github.com/mmcloughlin/geohash@master"],
+  "name":"geohash",
+	"functions": [{
+		"name": "geohashEncode",
+		"example": "geohashEncode(la,lo )",
+		"hint": {
+			"en_US": "Encode latitude and longitude as characters",
+			"zh_CN": "将经纬度编码为字符"
+		}
+	}, {
+		"name": "geohashEncodeInt",
+		"example": "geohashEncodeInt(la,lo )",
+		"hint": {
+			"en_US": "Encode latitude and longitude as numbers",
+			"zh_CN": "将经纬度编码为数字"
+		}
+	}, {
+		"name": "geohashDecode",
+		"example": "geohashDecode(hash )",
+		"hint": {
+			"en_US": "Decode characters into latitude and longitude",
+			"zh_CN": "将字符解码为经纬度"
+		}
+	}, {
+		"name": "geohashDecodeInt",
+		"example": "geohashDecodeInt(hash)",
+		"hint": {
+			"en_US": "Decode numbers into latitude and longitude",
+			"zh_CN": "将数字解码为经纬度"
+		}
+	}, {
+		"name": "geohashBoundingBox",
+		"example": "geohashBoundingBox(hash )",
+		"hint": {
+			"en_US": "Area for calculating character codes",
+			"zh_CN": "计算字符编码的区域"
+		}
+	}, {
+		"name": "geohashBoundingBoxInt",
+		"example": "geohashBoundingBoxInt(hash)",
+		"hint": {
+			"en_US": "Calculate the area of digital coding",
+			"zh_CN": "计算数字编码的区域"
+		}
+	}, {
+		"name": "geohashNeighbor",
+		"example": "geohashNeighbor(hash,direction )",
+		"hint": {
+			"en_US": "Calculate the neighbor of the corresponding direction of the character encoding",
+			"zh_CN": "计算字符编码对应方向的邻居"
+		}
+	}, {
+		"name": "geohashNeighborInt",
+		"example": "geohashNeighborInt(hash,direction )",
+		"hint": {
+			"en_US": "Calculate the neighbors in the corresponding direction of the digital code",
+			"zh_CN": "计算数字编码对应方向的邻居"
+		}
+	}, {
+		"name": "geohashNeighbors",
+		"example": "geohashNeighbors(hash)",
+		"hint": {
+			"en_US": "Calculate all neighbors of character encoding",
+			"zh_CN": "计算字符编码的所有邻居"
+		}
+	}, {
+		"name": "geohashNeighborsInt",
+		"example": "geohashNeighborsInt(hash)",
+		"hint": {
+			"en_US": "Calculate all neighbors of digital encoding",
+			"zh_CN": "计算数字编码的所有邻居"
+		}
+	}]
+}

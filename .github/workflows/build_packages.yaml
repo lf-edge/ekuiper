@@ -69,6 +69,7 @@ jobs:
                 - functions/countPlusOne
                 - functions/echo
                 - functions/image
+                - functions/geohash
 
         steps:
         - uses: actions/checkout@v1
