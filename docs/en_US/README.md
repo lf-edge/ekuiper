@@ -110,8 +110,8 @@ Join our [Slack](https://join.slack.com/t/emqx/shared_invite/zt-7xrracuf-GGdbNB1
 
 - [Getting started](./getting_started.md) 
 
-- [Reference guide](./reference.md)
-  - [Install and operation](./operation/overview.md)
+- Reference guide
+  - [Install and operation](./getting_started.md)
   - [Command line interface tools - CLI](./cli/overview.md)
   - [Kuiper SQL reference](./sqls/overview.md)
   - [Rules](./rules/overview.md)
@@ -142,8 +142,18 @@ Join our [Slack](https://join.slack.com/t/emqx/shared_invite/zt-7xrracuf-GGdbNB1
 
   > Docker images support EdgeX by default
 
-To using cross-compilation, refer to [this doc](./cross-compile.md).
+## Cross-compile binaries
+
+:::tip Tip
+Kuiper plugins bases on Golang, and due to Golang restrictions, ``CGO_ENABLED``  flag must be set to 0 to use the Golang cross-compile. But with this flag mode, the Golang plugins will not work. So if you want to use plugins in Kuiper, you can NOT use cross-compile to produce the binary packages.
+:::
+
+- Preparation
+  - docker version >= 19.03
+  - Enable Docker CLI  experimental mode
+- Cross-compile binary files: ``$ make cross_build``
+- Cross-compile images for all platforms and push to registry:``$ make cross_docker``
 
 ## Open source license
 
-[Apache 2.0](LICENSE)
+[Apache 2.0](https://github.com/emqx/kuiper/blob/master/LICENSE)
