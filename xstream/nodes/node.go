@@ -75,9 +75,13 @@ func (o *defaultNode) doBroadcast(val interface{}) error {
 	wg.Add(len(o.outputs))
 	for n, out := range o.outputs {
 		go func(name string, output chan<- interface{}) {
-			output <- val
+			select {
+			case output <- val:
+				logger.Debugf("broadcast from %s to %s done", o.ctx.GetOpId(), name)
+			case <-o.ctx.Done():
+				// rule stop so stop waiting
+			}
 			wg.Done()
-			logger.Debugf("broadcast from %s to %s done", o.ctx.GetOpId(), name)
 		}(n, out)
 	}
 	logger.Debugf("broadcasting from %s", o.ctx.GetOpId())
