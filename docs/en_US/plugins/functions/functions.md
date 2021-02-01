@@ -69,106 +69,106 @@ thumbnail(avg,maxWidth, maxHeight) example
   SELECT countPlusOne(avg,maxWidth, maxHeight) as r1 FROM test;
   ```
 
-### Geohash 插件
+### Geohash plugin
 
-| 函数                  | 示例                                                     | 说明                                                         |
+| Function              | Example                                                  | Description                                                  |
 | --------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
-| geohashEncode         | geohashEncode(la,lo float64)(string)                     | 将经纬度编码为字符串                                         |
-| geohashEncodeInt      | geohashEncodeInt(la,lo float64)(uint64)                  | 将经纬度编码为无类型整数                                     |
-| geohashDecode         | geohashDecode(hash string)(la,lo float64)                | 将字符串解码为经纬度                                         |
-| geohashDecodeInt      | geohashDecodeInt(hash uint64)(la,lo float64)             | 将无类型整数解码为经纬度                                     |
-| geohashBoundingBox    | geohashBoundingBox(hash string)(string)                  | 返回字符串编码的区域                                         |
-| geohashBoundingBoxInt | geohashBoundingBoxInt(hash uint64)(string)               | 返回无类型整数编码的区域                                     |
-| geohashNeighbor       | geohashNeighbor(hash string,direction string)(string)    | 返回一个字符串对应方向上的邻居（方向列表：North NorthEast East SouthEast South SouthWest West NorthWest） |
-| geohashNeighborInt    | geohashNeighborInt(hash uint64,direction string)(uint64) | 返回一个无类型整数对应方向上的邻居（方向列表：North NorthEast East SouthEast South SouthWest West NorthWest） |
-| geohashNeighbors      | geohashNeighbors(hash string)([]string)                  | 返回一个字符串的所有邻居                                     |
-| geohashNeighborsInt   | geohashNeighborsInt(hash uint64)([]uint64)               | 返回一个无类型整数的所有邻居                                 |
+| geohashEncode         | geohashEncode(la,lo float64)(string)                     | Encode latitude and longitude as a string                    |
+| geohashEncodeInt      | geohashEncodeInt(la,lo float64)(uint64)                  | Encode latitude and longitude as an unsigned integer         |
+| geohashDecode         | geohashDecode(hash string)(la,lo float64)                | Decode a string into latitude and longitude                  |
+| geohashDecodeInt      | geohashDecodeInt(hash uint64)(la,lo float64)             | Decode an unsigned integers into latitude and longitude      |
+| geohashBoundingBox    | geohashBoundingBox(hash string)(string)                  | Returns the area encoded by a string                         |
+| geohashBoundingBoxInt | geohashBoundingBoxInt(hash uint64)(string)               | Returns the area encoded by an unsigned integer              |
+| geohashNeighbor       | geohashNeighbor(hash string,direction string)(string)    | Returns the neighbor in the corresponding direction of a string (Direction list: North NorthEast East SouthEast South SouthWest West NorthWest) |
+| geohashNeighborInt    | geohashNeighborInt(hash uint64,direction string)(uint64) | Returns the neighbor in the corresponding direction of an unsigned integer (Direction list: North NorthEast East SouthEast South SouthWest West NorthWest) |
+| geohashNeighbors      | geohashNeighbors(hash string)([]string)                  | Return all neighbors of a string                             |
+| geohashNeighborsInt   | geohashNeighborsInt(hash uint64)([]uint64)               | Return all neighbors of an unsigned integer                  |
 
- geohashEncode 示例
+ geohashEncode example
 
-- 输入：`{"lo" :131.036192,"la":-25.345457}` 
-- 输出：`{"geohashEncode":"qgmpvf18h86e"}`
+- Input: `{"lo" :131.036192,"la":-25.345457}` 
+- Output: `{"geohashEncode":"qgmpvf18h86e"}`
 
 ```sql
 SELECT geohashEncode(la,lo) FROM test
 ```
 
- geohashEncodeInt 示例
+ geohashEncodeInt example
 
-- 输入：`{"lo" :131.036192,"la":-25.345457}` 
-- 输出：`{"geohashEncodeInt":12963433097944239317}`
+- Input: `{"lo" :131.036192,"la":-25.345457}` 
+- Output: `{"geohashEncodeInt":12963433097944239317}`
 
 ```sql
 SELECT geohashEncodeInt(la,lo) FROM test
 ```
 
- geohashDecode 示例
+ geohashDecode example
 
-- 输入：`{"hash" :"qgmpvf18h86e"} ` 
-- 输出：`{"geohashDecode":{"Longitude":131.036192,"Latitude":-25.345457099999997}}`
+- Input: `{"hash" :"qgmpvf18h86e"} ` 
+- Output: `{"geohashDecode":{"Longitude":131.036192,"Latitude":-25.345457099999997}}`
 
 ```sql
 SELECT geohashDecode(hash) FROM test
 ```
 
-geohashDecodeInt 示例
+geohashDecodeInt example
 
-- 输入：`{"hash" :12963433097944239317}`
-- 输出：`{"geohashDecodeInt":{"Longitude":131.03618861,"Latitude":-25.345456300000002}}`
+- Input: `{"hash" :12963433097944239317}`
+- Output: `{"geohashDecodeInt":{"Longitude":131.03618861,"Latitude":-25.345456300000002}}`
 
 ```sql
 SELECT geohashDecodeInt(hash) FROM test
 ```
 
- geohashBoundingBox  示例
+ geohashBoundingBox  example
 
-- 输入：`{"hash" :"qgmpvf18h86e"} `
-- 输出：`{"geohashBoundingBox":{"MinLat":-25.345457140356302,"MaxLat":-25.34545697271824,"MinLng":131.03619195520878,"MaxLng":131.0361922904849}}`
+- Input: `{"hash" :"qgmpvf18h86e"} `
+- Output: `{"geohashBoundingBox":{"MinLat":-25.345457140356302,"MaxLat":-25.34545697271824,"MinLng":131.03619195520878,"MaxLng":131.0361922904849}}`
 
 ```sql
 SELECT geohashBoundingBox(hash) FROM test
 ```
 
- geohashBoundingBoxInt  示例
+ geohashBoundingBoxInt  example
 
-- 输入：`{"hash" :12963433097944239317}`
-- 输出：`{"geohashBoundingBoxInt":{"MinLat":-25.345456302165985,"MaxLat":-25.34545626025647,"MinLng":131.0361886024475,"MaxLng":131.03618868626654}}`
+- Input: `{"hash" :12963433097944239317}`
+- Output: `{"geohashBoundingBoxInt":{"MinLat":-25.345456302165985,"MaxLat":-25.34545626025647,"MinLng":131.0361886024475,"MaxLng":131.03618868626654}}`
 
 ```sql
 SELECT geohashBoundingBoxInt(hash) FROM test
 ```
 
-geohashNeighbor 示例
+geohashNeighbor example
 
-- 输入：`{"hash" :"qgmpvf18h86e","direction":"North"} `
-- 输出：`{"geohashNeighbor":"qgmpvf18h86s"}`
+- Input: `{"hash" :"qgmpvf18h86e","direction":"North"} `
+- Output: `{"geohashNeighbor":"qgmpvf18h86s"}`
 
 ```sql
 SELECT geohashNeighbor(hash,direction) FROM test
 ```
 
-geohashNeighborInt 示例
+geohashNeighborInt example
 
-- 输入：`{"hash" :12963433097944239317,"direction":"North"}`
-- 输出：`{"geohashNeighborInt":12963433097944240129}`
+- Input:`{"hash" :12963433097944239317,"direction":"North"}`
+- Output:`{"geohashNeighborInt":12963433097944240129}`
 
 ```sql
 SELECT geohashNeighborInt(hash,direction) FROM test
 ```
 
-geohashNeighbors 示例
+geohashNeighbors example
 
-- 输入：`{"hash" :12963433097944239317}`
-- 输出：`{"geohashNeighbors":["qgmpvf18h86s","qgmpvf18h86u","qgmpvf18h86g","qgmpvf18h86f","qgmpvf18h86d","qgmpvf18h866","qgmpvf18h867","qgmpvf18h86k"]}`
+- Input: `{"hash" :12963433097944239317}`
+- Output: `{"geohashNeighbors":["qgmpvf18h86s","qgmpvf18h86u","qgmpvf18h86g","qgmpvf18h86f","qgmpvf18h86d","qgmpvf18h866","qgmpvf18h867","qgmpvf18h86k"]}`
 
 ```sql
 SELECT geohashNeighbors(hash) FROM test
 ```
 
-geohashNeighborsInt 示例
+geohashNeighborsInt example
 
-- 输入： `{"hash" :"qgmpvf18h86e","neber":"North"}` 
-- 输出：`{"geohashNeighborsInt":[12963433097944240129,12963433097944240131,12963433097944240130,12963433097944237399,12963433097944237397,12963433097944150015,12963433097944152746,12963433097944152747]}`
+- Input:  `{"hash" :"qgmpvf18h86e","neber":"North"}` 
+- Output: `{"geohashNeighborsInt":[12963433097944240129,12963433097944240131,12963433097944240130,12963433097944237399,12963433097944237397,12963433097944150015,12963433097944152746,12963433097944152747]}`
 
 ```sql
 SELECT geohashNeighborsInt(hash) FROM test
