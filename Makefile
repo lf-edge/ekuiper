@@ -178,6 +178,7 @@ PLUGINS := sinks/file \
 	functions/accumulateWordCount \
 	functions/countPlusOne \
 	functions/image\
+	functions/geohash\
 	functions/echo
 
 .PHONY: plugins sinks/tdengine $(PLUGINS)
