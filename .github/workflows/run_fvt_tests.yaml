@@ -44,7 +44,6 @@ jobs:
             make build_with_edgex
             go build --buildmode=plugin -o plugins/sources/Zmq.so plugins/sources/zmq/zmq.go
             go build --buildmode=plugin -o plugins/functions/Image.so plugins/functions/image/*.go
-            go build --buildmode=plugin -o plugins/functions/Geohash.so plugins/functions/geohash/*.go
         - name: run edgex && emqx && kuiper
           run: |
             sudo ./fvt_scripts/setup_env.sh
