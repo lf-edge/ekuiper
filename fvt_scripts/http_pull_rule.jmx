@@ -93,7 +93,7 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-&quot;sql&quot; : &quot;create stream demo (Temperature float, humidity bigint) WITH (FORMAT=\&quot;JSON\&quot;, TYPE=\&quot;httppull\&quot; DATASOURCE=\&quot;devices/+/messages\&quot; Conf_key=\&quot;application_conf\&quot;)&quot;&#xd;
+&quot;sql&quot; : &quot;create stream demo (Temperature float, humidity bigint) WITH (FORMAT=\&quot;JSON\&quot;, TYPE=\&quot;httppull\&quot; DATASOURCE=\&quot;pull\&quot; Conf_key=\&quot;application_conf\&quot;)&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
