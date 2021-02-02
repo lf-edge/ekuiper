@@ -122,6 +122,11 @@ jobs:
                      ${ip_address}:9081/plugins/${plugin_type} \
                      -X POST \
                      -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"functions\": [\"resize\",\"thumbnail\"]}"
+                elif [ "${plugin_name}" = "geohash" ]; then
+                     curl \
+                     ${ip_address}:9081/plugins/${plugin_type} \
+                     -X POST \
+                     -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"functions\": [\"geohashEncode\", \"geohashEncodeInt\", \"geohashDecode\", \"geohashDecodeInt\", \"geohashBoundingBox\", \"geohashBoundingBoxInt\", \"geohashNeighbor\", \"geohashNeighborInt\", \"geohashNeighbors\", \"geohashNeighborsInt\"]}"
                 else
                     curl \
                     ${ip_address}:9081/plugins/${plugin_type} \

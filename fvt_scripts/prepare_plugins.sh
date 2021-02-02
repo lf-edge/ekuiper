@@ -38,10 +38,23 @@ mv ../plugins/functions/Image.so .
 zip image.zip Image.so
 rm -rf Image.so
 
+FILE=../plugins/functions/Geohash.so
+if [ -f "$FILE" ]; then
+    echo "$FILE exists, not requried to build plugin."
+else
+    echo "$FILE does not exist, will build the plugin."
+    go build --buildmode=plugin -o ../plugins/functions/Image.so ../plugins/functions/geohash/*.go
+fi
+
+mv ../plugins/functions/Geohash.so .
+zip geohash.zip Geohash.so
+rm -rf Geohash.so
+
 rm -rf plugins/service/web/plugins/
 mkdir -p plugins/service/web/plugins/
 mv zmq.zip plugins/service/web/plugins/
 mv image.zip plugins/service/web/plugins/
+mv geohash.zip plugins/service/web/plugins/
 
 cd plugins/service/
 export BUILD_ID=dontKillMe
