@@ -1199,23 +1199,37 @@ func (v *ValuerEval) subset(result interface{}, expr Expr) interface{} {
 	ber := v.Eval(expr)
 	if berVal, ok1 := ber.(*BracketEvalResult); ok1 {
 		if berVal.isIndex() {
-			if berVal.Start >= val.Len() {
+			if 0 > berVal.Start {
+				if 0 > berVal.Start+val.Len() {
+					return fmt.Errorf("out of index: %d of %d", berVal.Start, val.Len())
+				}
+				berVal.Start += val.Len()
+			} else if berVal.Start >= val.Len() {
 				return fmt.Errorf("out of index: %d of %d", berVal.Start, val.Len())
 			}
 			return val.Index(berVal.Start).Interface()
 		} else {
-			if berVal.Start >= val.Len() {
+			if 0 > berVal.Start {
+				if 0 > berVal.Start+val.Len() {
+					return fmt.Errorf("out of index: %d of %d", berVal.Start, val.Len())
+				}
+				berVal.Start += val.Len()
+			} else if berVal.Start >= val.Len() {
 				return fmt.Errorf("start value is out of index: %d of %d", berVal.Start, val.Len())
 			}
-
-			if berVal.End >= val.Len() {
+			if math.MinInt64 == berVal.End {
+				berVal.End = val.Len()
+			} else if 0 > berVal.End {
+				if 0 > berVal.End+val.Len() {
+					return fmt.Errorf("out of index: %d of %d", berVal.End, val.Len())
+				}
+				berVal.End += val.Len()
+			} else if berVal.End > val.Len() {
 				return fmt.Errorf("end value is out of index: %d of %d", berVal.End, val.Len())
+			} else if berVal.Start >= berVal.End {
+				return fmt.Errorf("start cannot be greater than end. start:%d  end:%d", berVal.Start, berVal.End)
 			}
-			end := berVal.End
-			if end == -1 {
-				end = val.Len()
-			}
-			return val.Slice(berVal.Start, end).Interface()
+			return val.Slice(berVal.Start, berVal.End).Interface()
 		}
 	} else {
 		return fmt.Errorf("invalid evaluation result - %v", berVal)

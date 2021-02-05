@@ -60,7 +60,7 @@ SELECT name->first AS fname FROM demo
 
 ### 索引表达式
 
-索引表达式使您可以选择列表中的特定元素。 它看起来应该类似于普通编程语言中的数组访问。 索引从0开始。
+索引表达式使您可以选择列表中的特定元素。 它看起来应该类似于普通编程语言中的数组访问。 索引值以0为开始值，-1 为从末尾的开始位置，以此类推。
 
 ```
 SELECT children FROM demo
@@ -79,6 +79,24 @@ SELECT children[0] FROM demo
     "children": "Sara"
 }
 
+SELECT children[1] FROM demo
+
+{
+    "children": "Alex"
+}
+
+SELECT children[-1] FROM demo
+
+{
+    "children": "Jack"
+}
+
+SELECT children[-2] FROM demo
+
+{
+    "children": "Alex"
+}
+
 SELECT d.friends[0]->last FROM demo AS d
 
 {
@@ -90,10 +108,22 @@ SELECT d.friends[0]->last FROM demo AS d
 
 切片允许您选择数组的连续子集。
 
-`field[from:to]` 如果未指定 from，则表示从数组的第一个元素开始; 如果未指定 to，则表示以数组的最后一个元素结尾。
+`field[from:to)` 为前闭后开区间，不包含to。如果未指定 from，则表示从数组的第一个元素开始; 如果未指定 to，则表示以数组的最后一个元素结尾。
 
 ```
 SELECT children[0:1] FROM demo
+
+{
+    "children": ["Sara"]
+}
+
+SELECT children[1:-1] FROM demo
+
+{
+    "children": ["Alex"]
+}
+
+SELECT children[0:-1] FROM demo
 
 {
     "children": ["Sara","Alex"]
@@ -113,7 +143,13 @@ SELECT children[:] FROM demo == SELECT children FROM demo
 
 
 ```
-SELECT children[:1] FROM demo
+SELECT children[:2] FROM demo
+
+{
+    "children": ["Sara","Alex"]
+}
+
+SELECT children[:-1] FROM demo
 
 {
     "children": ["Sara","Alex"]
@@ -126,7 +162,7 @@ SELECT children[:1] FROM demo
 SELECT followers->Group1[:1]->first FROM demo
 
 {
-    "first": ["John","Alice"]
+    "first": ["John"]
 }
 ```
 

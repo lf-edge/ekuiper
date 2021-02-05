@@ -2,6 +2,7 @@ package xsql
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -1672,7 +1673,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						Expr: &BinaryExpr{
 							LHS: &FieldRef{Name: "children"},
 							OP:  SUBSET,
-							RHS: &ColonExpr{Start: 0, End: -1},
+							RHS: &ColonExpr{Start: 0, End: math.MinInt64},
 						},
 						Name:  "",
 						AName: ""},
@@ -1689,7 +1690,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						Expr: &BinaryExpr{
 							LHS: &FieldRef{Name: "children"},
 							OP:  SUBSET,
-							RHS: &ColonExpr{Start: 2, End: -1},
+							RHS: &ColonExpr{Start: 2, End: math.MinInt64},
 						},
 						Name:  "",
 						AName: "c"},
@@ -1704,7 +1705,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 				Fields: []Field{
 					{
 						Expr: &BinaryExpr{
-							LHS: &BinaryExpr{LHS: &FieldRef{Name: "children"}, OP: SUBSET, RHS: &ColonExpr{Start: 2, End: -1}},
+							LHS: &BinaryExpr{LHS: &FieldRef{Name: "children"}, OP: SUBSET, RHS: &ColonExpr{Start: 2, End: math.MinInt64}},
 							OP:  ARROW,
 							RHS: &FieldRef{Name: "first"},
 						},
@@ -1734,7 +1735,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 				Fields: []Field{
 					{
 						Expr: &BinaryExpr{
-							LHS: &BinaryExpr{LHS: &FieldRef{StreamName: StreamName("demo"), Name: "children"}, OP: SUBSET, RHS: &ColonExpr{Start: 2, End: -1}},
+							LHS: &BinaryExpr{LHS: &FieldRef{StreamName: StreamName("demo"), Name: "children"}, OP: SUBSET, RHS: &ColonExpr{Start: 2, End: math.MinInt64}},
 							OP:  ARROW,
 							RHS: &FieldRef{Name: "first"},
 						},
@@ -1754,7 +1755,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							Name: "lower",
 							Args: []Expr{
 								&BinaryExpr{
-									LHS: &BinaryExpr{LHS: &FieldRef{StreamName: StreamName("demo"), Name: "children"}, OP: SUBSET, RHS: &ColonExpr{Start: 2, End: -1}},
+									LHS: &BinaryExpr{LHS: &FieldRef{StreamName: StreamName("demo"), Name: "children"}, OP: SUBSET, RHS: &ColonExpr{Start: 2, End: math.MinInt64}},
 									OP:  ARROW,
 									RHS: &FieldRef{Name: "first"},
 								},

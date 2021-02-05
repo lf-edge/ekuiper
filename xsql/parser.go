@@ -5,6 +5,7 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/golang-collections/collections/stack"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -547,7 +548,7 @@ func (p *Parser) parseBracketExpr() (Expr, error) {
 	tok2, lit2 := p.scanIgnoreWhitespace()
 	if tok2 == RBRACKET {
 		//field[]
-		return &ColonExpr{Start: 0, End: -1}, nil
+		return &ColonExpr{Start: 0, End: math.MinInt64}, nil
 	} else if tok2 == INTEGER {
 		start, err := strconv.Atoi(lit2)
 		if err != nil {
@@ -581,7 +582,7 @@ func (p *Parser) parseColonExpr(start int) (Expr, error) {
 			return nil, fmt.Errorf("Found %q, expected right bracket.", lit1)
 		}
 	} else if tok == RBRACKET {
-		return &ColonExpr{Start: start, End: -1}, nil
+		return &ColonExpr{Start: start, End: math.MinInt64}, nil
 	}
 	return nil, fmt.Errorf("Found %q, expected right bracket.", lit)
 }
