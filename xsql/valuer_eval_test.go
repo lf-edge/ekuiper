@@ -226,7 +226,49 @@ func TestCalculation(t *testing.T) {
 		stmt, _ := NewParser(strings.NewReader(sql)).Parse()
 		projects = append(projects, stmt.Fields[0].Expr)
 	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(data)*len(sqls))
+	for i, tt := range data {
+		for j, c := range projects {
+			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: common.GetNowInMilli(), Metadata: nil}
+			ve := &ValuerEval{Valuer: MultiValuer(tuple)}
+			result := ve.Eval(c)
+			if !reflect.DeepEqual(tt.r[j], result) {
+				t.Errorf("%d-%d. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, j, tt.r[j], result)
+			}
+		}
+	}
+}
 
+func TestArray(t *testing.T) {
+	data := []struct {
+		m Message
+		r []interface{}
+	}{
+		{
+			m: map[string]interface{}{
+				"a": []int64{0, 1, 2, 3, 4, 5},
+			},
+			r: []interface{}{
+				int64(0), int64(5), int64(1), []int64{0, 1}, []int64{4, 5}, []int64{5}, []int64{0, 1, 2, 3, 4}, []int64{1, 2, 3, 4}, []int64{0, 1, 2, 3, 4, 5},
+			},
+		},
+	}
+	sqls := []string{
+		"select a[0] as t from src",
+		"select a[-1] as t from src",
+		"select a[1] as t from src",
+		"select a[:2] as t from src",
+		"select a[4:] as t from src",
+		"select a[-1:] as t from src",
+		"select a[0:-1] as t from src",
+		"select a[-5:-1] as t from src",
+		"select a[:] as t from src",
+	}
+	var projects []Expr
+	for _, sql := range sqls {
+		stmt, _ := NewParser(strings.NewReader(sql)).Parse()
+		projects = append(projects, stmt.Fields[0].Expr)
+	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(data)*len(sqls))
 	for i, tt := range data {
 		for j, c := range projects {

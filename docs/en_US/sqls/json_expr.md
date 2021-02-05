@@ -58,7 +58,7 @@ SELECT name->first AS fname FROM demo
 
 ### Index expression
 
-Index Expressions allow you to select a specific element in a list. It should look similar to array access in common programming languages. Indexing is 0 based.
+Index Expressions allow you to select a specific element in a list. It should look similar to array access in common programming languages.The index value starts with 0, -1 is the starting position from the end, and so on.
 
 ```
 SELECT children FROM demo
@@ -77,6 +77,24 @@ SELECT children[0] FROM demo
     "children": "Sara"
 }
 
+SELECT children[1] FROM demo
+
+{
+    "children": "Alex"
+}
+
+SELECT children[-1] FROM demo
+
+{
+    "children": "Jack"
+}
+
+SELECT children[-2] FROM demo
+
+{
+    "children": "Alex"
+}
+
 SELECT d.friends[0]->last FROM demo AS d
 
 {
@@ -88,10 +106,22 @@ SELECT d.friends[0]->last FROM demo AS d
 
 Slices allow you to select a contiguous subset of an array. 
 
-``field[from:to]`` If from is not specified, then it means start from the 1st element of array; If to is not specified, then it means end with the last element of array.
+``field[from:to)``is the interval before closing and opening, excluding to. If from is not specified, then it means start from the 1st element of array; If to is not specified, then it means end with the last element of array.
 
 ```
 SELECT children[0:1] FROM demo
+
+{
+    "children": ["Sara"]
+}
+
+SELECT children[1:-1] FROM demo
+
+{
+    "children": ["Alex"]
+}
+
+SELECT children[0:-1] FROM demo
 
 {
     "children": ["Sara","Alex"]
@@ -111,7 +141,7 @@ SELECT children[:] FROM demo == SELECT children FROM demo
 
 
 ```
-SELECT children[:1] FROM demo
+SELECT children[:2] FROM demo
 
 {
     "children": ["Sara","Alex"]
@@ -124,7 +154,7 @@ SELECT children[:1] FROM demo
 SELECT followers->Group1[:1]->first FROM demo
 
 {
-    "first": ["John","Alice"]
+    "first": ["John"]
 }
 ```
 
