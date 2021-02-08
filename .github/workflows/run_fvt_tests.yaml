@@ -42,8 +42,8 @@ jobs:
           run: |
             sudo apt update && sudo apt install pkg-config libczmq-dev -y
             make build_with_edgex
-            go build --buildmode=plugin -o plugins/sources/Zmq.so plugins/sources/zmq/zmq.go
-            go build --buildmode=plugin -o plugins/functions/Image.so plugins/functions/image/*.go
+            go build -trimpath --buildmode=plugin -o plugins/sources/Zmq.so plugins/sources/zmq/zmq.go
+            go build -trimpath --buildmode=plugin -o plugins/functions/Image.so plugins/functions/image/*.go
         - name: run edgex && emqx && kuiper
           run: |
             sudo ./fvt_scripts/setup_env.sh

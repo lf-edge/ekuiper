@@ -16,7 +16,7 @@ if [ -f "$FILE" ]; then
     echo "$FILE exists, not requried to build plugin."
 else
     echo "$FILE does not exist, will build the plugin."
-    go build --buildmode=plugin -o ../plugins/sources/Zmq.so ../plugins/sources/zmq/zmq.go
+    go build -trimpath --buildmode=plugin -o ../plugins/sources/Zmq.so ../plugins/sources/zmq/zmq.go
 fi
 
 mv ../plugins/sources/Zmq.so .
@@ -31,7 +31,7 @@ if [ -f "$FILE" ]; then
     echo "$FILE exists, not requried to build plugin."
 else
     echo "$FILE does not exist, will build the plugin."
-    go build --buildmode=plugin -o ../plugins/functions/Image.so ../plugins/functions/image/*.go
+    go build -trimpath --buildmode=plugin -o ../plugins/functions/Image.so ../plugins/functions/image/*.go
 fi
 
 mv ../plugins/functions/Image.so .

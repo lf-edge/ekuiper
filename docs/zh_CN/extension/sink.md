@@ -50,7 +50,7 @@ func MySink() api.Sink {
 将实现的 Sink （目标）构建为 go 插件，并确保输出的 so 文件位于 plugins/sinks 文件夹中。
 
 ```bash
-go build --buildmode=plugin -o plugins/sinks/MySink.so plugins/sinks/my_sink.go
+go build -trimpath --buildmode=plugin -o plugins/sinks/MySink.so plugins/sinks/my_sink.go
 ```
 
 ### 使用

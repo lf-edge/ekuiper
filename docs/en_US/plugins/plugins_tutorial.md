@@ -167,7 +167,7 @@ Developers can locally compile Kuiper and the plugin for debugging, which steps 
     1. Run `go mod edit -replace github.com/emqx/kuiper=$kuiperPath` under the plugin project, make the Kuiper dependence point to the local Kuiper, and then please replace the download directory of step 1 by $kuiperPath, the same below.
    2. Compile the plugin so to the directory of Kuiper plugin
    ```go
-   go build --buildmode=plugin -o $kuiperPath/_build/$build/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
+   go build -trimpath --buildmode=plugin -o $kuiperPath/_build/$build/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
    ```
 
 ### Docker compile
@@ -185,7 +185,7 @@ Kuiper provides different docker images for different purpose. The development d
     -- In docker instance
     # cd /home/samplePlugin
     # go mod edit -replace github.com/emqx/kuiper=/go/kuiper
-    # go build --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
+    # go build -trimpath --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
     ```
 You can use below sample shell script in your plugin project to automatically build and package the plugins. Please modify the variables at the beginning of the script to meet the requirements of different environments.
 
@@ -199,7 +199,7 @@ export VERSION=0.0.1
 
 go mod edit -replace github.com/emqx/kuiper=$KUIPER_SOURCE
 
-go build --buildmode=plugin -o $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so sinks/mysql.go
+go build -trimpath --buildmode=plugin -o $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so sinks/mysql.go
 
 ## zip the output
 mkdir $ZIP_TARGET/sinks

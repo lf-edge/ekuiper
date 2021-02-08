@@ -17,7 +17,7 @@ require (
 
 ```shell
 go mod edit -replace github.com/emqx/kuiper=/$kuiper
-go build --buildmode=plugin -o /$kuiper/plugins/sinks/Tdengine@v1.0.0.so /$kuiper/plugins/sinks/tdengine/tdengine.go
+go build -trimpath --buildmode=plugin -o /$kuiper/plugins/sinks/Tdengine@v1.0.0.so /$kuiper/plugins/sinks/tdengine/tdengine.go
 ```
 ### Install plugin
 Since the operation of the tdengine plug-in depends on the tdengine client, for the convenience of users, the tdengine client will be downloaded when the plug-in is installed. However, the tdengine client version corresponds to the server version one-to-one, which is not compatible with each other, so the user must inform the tdengine server version used.
