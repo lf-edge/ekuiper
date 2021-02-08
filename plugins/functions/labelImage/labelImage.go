@@ -1,5 +1,3 @@
-// +build tflite
-
 package main
 
 import (
@@ -8,6 +6,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
+	"github.com/mattn/go-tflite"
 	"github.com/nfnt/resize"
 	"image"
 	_ "image/jpeg"
