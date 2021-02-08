@@ -17,7 +17,7 @@ RUN set -e -u -x \
     && for lib in $(cat etc/$PLUGIN_TYPE/$PLUGIN_NAME.json | jq -r ".libs[]"); do go get $lib; done \
     && case $PLUGIN_NAME in \
          influxdb ) \
-           go build --buildmode=plugin -tags plugins -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go \
+           go build -trimpath --buildmode=plugin -tags plugins -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go \
            ;; \
          tdengine ) \
            if [ "$(uname -m)" = "x86_64" ]; then \
@@ -28,10 +28,10 @@ RUN set -e -u -x \
            fi; \
            tar -zxvf /tmp/TDengine-client-2.0.6.0.tar.gz \
            && cd TDengine-client-2.0.6.0 && ./install_client.sh && cd - \
-           && go build --buildmode=plugin -tags plugins -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go \
+           && go build -trimpath --buildmode=plugin -tags plugins -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go \
            ;; \
          * ) \
-           go build --buildmode=plugin -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/*.go \
+           go build -trimpath --buildmode=plugin -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/*.go \
            ;; \
        esac \
     && if [ -f "etc/$PLUGIN_TYPE/$PLUGIN_NAME.yaml" ]; then cp etc/$PLUGIN_TYPE/$PLUGIN_NAME.yaml plugins/$PLUGIN_TYPE/$PLUGIN_NAME; fi \
