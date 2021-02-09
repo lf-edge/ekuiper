@@ -28,7 +28,7 @@ Aggregate functions perform a calculation on a set of values and return a single
     SELECT collect(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
   
-- Get the first element's column 'a' value within the current window. The result will be like: `[{"r1":32}]`
+- Get the second element's column 'a' value within the current window. The result will be like: `[{"r1":32}]`
     ```sql
     SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
