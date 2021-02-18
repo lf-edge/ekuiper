@@ -33,10 +33,10 @@ type SqliteKVStore struct {
 }
 
 func GetSqliteKVStore(fpath string) (ret *SqliteKVStore) {
-	if _, err := os.Stat(fpath); os.IsNotExist(err) {
-		os.MkdirAll(fpath, os.ModePerm)
-	}
 	dir, file := filepath.Split(fpath)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		os.MkdirAll(dir, os.ModePerm)
+	}
 	ret = new(SqliteKVStore)
 	ret.path = path.Join(dir, "sqliteKV.db")
 	ret.table = file
