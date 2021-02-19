@@ -132,6 +132,35 @@ func TestMiscFunc_Apply1(t *testing.T) {
 				"a":     "devices/device_001/message",
 			}},
 		},
+
+		{
+			sql: "SELECT cardinality(arr) as r FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"temperature": 43.2,
+					"arr":         []int{},
+				},
+			},
+			result: []map[string]interface{}{{
+				"r": float64(0),
+			}},
+		},
+
+		{
+			sql: "SELECT cardinality(arr) as r FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"temperature": 43.2,
+					"arr":         []int{1, 2, 3, 4, 5},
+				},
+			},
+			result: []map[string]interface{}{{
+				"r": float64(5),
+			}},
+		},
+
 		{
 			sql: "SELECT isNull(arr) as r FROM test",
 			data: &xsql.Tuple{
@@ -157,7 +186,9 @@ func TestMiscFunc_Apply1(t *testing.T) {
 			result: []map[string]interface{}{{
 				"r": true,
 			}},
-		}, {
+		},
+
+		{
 			sql: "SELECT isNull(rec) as r FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",
@@ -176,7 +207,6 @@ func TestMiscFunc_Apply1(t *testing.T) {
 	contextLogger := common.Log.WithField("rule", "TestMiscFunc_Apply1")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
-
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
@@ -192,8 +222,6 @@ func TestMiscFunc_Apply1(t *testing.T) {
 				t.Errorf("Failed to parse the input into map.\n")
 				continue
 			}
-			//fmt.Printf("%t\n", mapRes["rengine_field_0"])
-
 			if !reflect.DeepEqual(tt.result, mapRes) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
 			}
