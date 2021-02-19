@@ -77,7 +77,7 @@ var jsonFuncMap = map[string]string{
 }
 
 var otherFuncMap = map[string]string{"isnull": "",
-	"newuuid": "", "tstamp": "", "mqtt": "", "meta": "",
+	"newuuid": "", "tstamp": "", "mqtt": "", "meta": "", "cardinality": "",
 }
 
 func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {

@@ -32,9 +32,9 @@ Aggregate functions perform a calculation on a set of values and return a single
     ```sql
     SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
- 
+
 ### Deduplicate() Examples
- 
+
  - Get the whole array of the current window which is deduplicated by column `a`. The result will be like: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
      ```sql
      SELECT deduplicate(a, true) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
@@ -43,7 +43,7 @@ Aggregate functions perform a calculation on a set of values and return a single
       ```sql
       SELECT deduplicate(a, false)->a as r1 FROM demo GROUP BY SlidingWindow(hh, 1)
       ```
- 
+
 
 ## Mathematical Functions
 | Function | Example     | Description                                    |
@@ -125,10 +125,11 @@ Aggregate functions perform a calculation on a set of values and return a single
 **Please refer to [json path functions](../json_expr.md#json-path-functions) for how to compose a json path.**  
 
 ## Other Functions
-| Function | Example      | Description                                                  |
-| -------- | ------------ | ------------------------------------------------------------ |
-| isNull   | isNull(col1) | Returns true if the argument is the Null value.              |
-| newuuid  | newuuid()    | Returns a random 16-byte UUID.                               |
-| tstamp   | tstamp()     | Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970 |
-| mqtt     | mqtt(topic)  | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src1.topic)``<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src2.messageid)`` |
-| meta     | meta(topic)  | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as ``meta(device)``<br />- A qualified key to specify the stream, such as ``meta(src1.device)`` <br />- A key with arrow for multi level meta data, such as ``meta(src1.reading->device->name)`` This assumes reading is a map structure meta data. |
+| Function    | Example           | Description                                                  |
+| ----------- | ----------------- | ------------------------------------------------------------ |
+| isNull      | isNull(col1)      | Returns true if the argument is the Null value.              |
+| cardinality | cardinality(col1) | The number of members in the group. The null value is 0.     |
+| newuuid     | newuuid()         | Returns a random 16-byte UUID.                               |
+| tstamp      | tstamp()          | Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970 |
+| mqtt        | mqtt(topic)       | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src1.topic)``<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src2.messageid)`` |
+| meta        | meta(topic)       | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as ``meta(device)``<br />- A qualified key to specify the stream, such as ``meta(src1.device)`` <br />- A key with arrow for multi level meta data, such as ``meta(src1.reading->device->name)`` This assumes reading is a map structure meta data. |

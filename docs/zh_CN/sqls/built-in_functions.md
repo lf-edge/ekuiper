@@ -32,9 +32,9 @@ Kuiper 具有许多内置函数，可以对数据执行计算。
     ```sql
     SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
- 
+
 ### Deduplicate() 示例
- 
+
  - 获取当前窗口中，列 `a` 值不重复的所有消息组成的数组。结果为: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
      ```sql
      SELECT deduplicate(a, true) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
@@ -124,10 +124,11 @@ Kuiper 具有许多内置函数，可以对数据执行计算。
 **请参阅 [json 路径函数](../json_expr.md#json-path-functions) 了解如何编写json路径。**
 
 ## 其它函数
-| 函数    | 示例         | 说明                                                         |
-| ------- | ------------ | ------------------------------------------------------------ |
-| isNull  | isNull(col1) | 如果参数为空值，则返回 true。                                |
-| newuuid | newuuid()    | 返回一个随机的16字节 UUID。                                  |
-| tstamp  | tstamp()     | 返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。 |
-| mqtt    | mqtt(topic)  | 返回指定键的 MQTT 元数据。 当前支持的键包括<br />-topic：返回消息的主题。 如果有多个流源，则在参数中指定源名称。 如 `mqtt(src1.topic)`<br />- messageid：返回消息的消息ID。 如果有多个流源，则在参数中指定源名称。 如 `mqtt(src2.messageid)` |
-| meta    | meta(topic)  | 返回指定键的元数据。 键可能是：<br/>-如果 from 子句中只有一个来源，则为独立键，例如`meta(device)`<br />-用于指定流的合格键，例如 `meta(src1.device)` <br />-用于多级元数据的带有箭头的键，例如 `meta(src1.reading->device->name)`。这里假定读取是地图结构元数据。 |
+| 函数        | 示例              | 说明                                                         |
+| ----------- | ----------------- | ------------------------------------------------------------ |
+| isNull      | isNull(col1)      | 如果参数为空值，则返回 true。                                |
+| cardinality | cardinality(col1) | 组中成员的数量。空值为0。                                    |
+| newuuid     | newuuid()         | 返回一个随机的16字节 UUID。                                  |
+| tstamp      | tstamp()          | 返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。 |
+| mqtt        | mqtt(topic)       | 返回指定键的 MQTT 元数据。 当前支持的键包括<br />-topic：返回消息的主题。 如果有多个流源，则在参数中指定源名称。 如 `mqtt(src1.topic)`<br />- messageid：返回消息的消息ID。 如果有多个流源，则在参数中指定源名称。 如 `mqtt(src2.messageid)` |
+| meta        | meta(topic)       | 返回指定键的元数据。 键可能是：<br/>-如果 from 子句中只有一个来源，则为独立键，例如`meta(device)`<br />-用于指定流的合格键，例如 `meta(src1.device)` <br />-用于多级元数据的带有箭头的键，例如 `meta(src1.reading->device->name)`。这里假定读取是地图结构元数据。 |

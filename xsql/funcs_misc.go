@@ -222,6 +222,12 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 		return nil, false
 	case "meta":
 		return args[0], true
+	case "cardinality":
+		val := reflect.ValueOf(args[0])
+		if val.Kind() == reflect.Slice {
+			return val.Len(), true
+		}
+		return 0, true
 	default:
 		return fmt.Errorf("unknown function name %s", name), false
 	}
