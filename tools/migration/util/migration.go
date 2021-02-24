@@ -2,7 +2,7 @@ package util
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/common/kv"
 	"github.com/patrickmn/go-cache"
 	"io/ioutil"
 	"os"
@@ -22,7 +22,7 @@ func migration(dir string) error {
 		return err
 	}
 
-	store := common.GetSqliteKVStore(dir)
+	store := kv.GetDefaultKVStore(dir)
 	if err := store.Open(); nil != err {
 		return err
 	}

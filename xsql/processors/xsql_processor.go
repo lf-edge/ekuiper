@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/common/kv"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
@@ -18,13 +19,13 @@ import (
 var log = common.Log
 
 type StreamProcessor struct {
-	db common.KeyValue
+	db kv.KeyValue
 }
 
 //@params d : the directory of the DB to save the stream info
 func NewStreamProcessor(d string) *StreamProcessor {
 	processor := &StreamProcessor{
-		db: common.GetSqliteKVStore(d),
+		db: kv.GetDefaultKVStore(d),
 	}
 	return processor
 }
@@ -208,13 +209,13 @@ func (p *StreamProcessor) DropStream(name string) (string, error) {
 }
 
 type RuleProcessor struct {
-	db        common.KeyValue
+	db        kv.KeyValue
 	rootDbDir string
 }
 
 func NewRuleProcessor(d string) *RuleProcessor {
 	processor := &RuleProcessor{
-		db:        common.GetSqliteKVStore(path.Join(d, "rule")),
+		db:        kv.GetDefaultKVStore(path.Join(d, "rule")),
 		rootDbDir: d,
 	}
 	return processor
@@ -455,7 +456,7 @@ func cleanSinkCache(rule *api.Rule) error {
 	if err != nil {
 		return err
 	}
-	store := common.GetSqliteKVStore(path.Join(dbDir, "sink"))
+	store := kv.GetDefaultKVStore(path.Join(dbDir, "sink"))
 	err = store.Open()
 	if err != nil {
 		return err

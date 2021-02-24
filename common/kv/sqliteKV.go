@@ -1,30 +1,17 @@
-package common
+package kv
 
 import (
 	"bytes"
 	"database/sql"
 	"encoding/gob"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 )
-
-type KeyValue interface {
-	Open() error
-	Close() error
-	// Set key to hold string value if key does not exist otherwise return an error
-	Setnx(key string, value interface{}) error
-	// Set key to hold the string value. If key already holds a value, it is overwritten
-	Set(key string, value interface{}) error
-	Get(key string, val interface{}) (bool, error)
-	//Must return *common.Error with NOT_FOUND error
-	Delete(key string) error
-	Keys() (keys []string, err error)
-	Clean() error
-}
 
 type SqliteKVStore struct {
 	db    *sql.DB
@@ -120,7 +107,7 @@ func (m *SqliteKVStore) Delete(key string) error {
 	var tmp []byte
 	err := row.Scan(&tmp)
 	if nil != err || 0 == len(tmp) {
-		return NewErrorWithCode(NOT_FOUND, fmt.Sprintf("%s is not found", key))
+		return common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("%s is not found", key))
 	}
 	sql = fmt.Sprintf("DELETE FROM %s WHERE key='%s';", m.table, key)
 	_, err = m.db.Exec(sql)
