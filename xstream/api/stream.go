@@ -114,6 +114,7 @@ type StreamContext interface {
 	GetRuleId() string
 	GetOpId() string
 	GetInstanceId() int
+	GetRootPath() string
 	WithMeta(ruleId string, opId string, store Store) StreamContext
 	WithInstance(instanceId int) StreamContext
 	WithCancel() (StreamContext, context.CancelFunc)
