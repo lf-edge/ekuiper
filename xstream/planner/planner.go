@@ -3,6 +3,7 @@ package planner
 import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/common/kv"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
@@ -33,7 +34,7 @@ func PlanWithSourcesAndSinks(rule *api.Rule, storePath string, sources []*nodes.
 	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil) {
 		return nil, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
 	}
-	store := common.GetSqliteKVStore(path.Join(storePath, "stream"))
+	store := kv.GetDefaultKVStore(path.Join(storePath, "stream"))
 	err = store.Open()
 	if err != nil {
 		return nil, err
@@ -162,7 +163,7 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 	return op, newIndex, nil
 }
 
-func getStream(m common.KeyValue, name string) (stmt *xsql.StreamStmt, err error) {
+func getStream(m kv.KeyValue, name string) (stmt *xsql.StreamStmt, err error) {
 	var s string
 	f, err := m.Get(name, &s)
 	if !f || err != nil {
@@ -177,7 +178,7 @@ func getStream(m common.KeyValue, name string) (stmt *xsql.StreamStmt, err error
 	return
 }
 
-func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store common.KeyValue) (LogicalPlan, error) {
+func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
 	streamsFromStmt := xsql.GetStreams(stmt)
 	dimensions := stmt.Dimensions
 	var (

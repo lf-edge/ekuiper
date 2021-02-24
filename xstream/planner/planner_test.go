@@ -3,6 +3,7 @@ package planner
 import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/common/kv"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"path"
@@ -26,7 +27,7 @@ func getDbDir() string {
 }
 
 func Test_createLogicalPlan(t *testing.T) {
-	store := common.GetSqliteKVStore(path.Join(DbDir, "stream"))
+	store := kv.GetDefaultKVStore(path.Join(DbDir, "stream"))
 	err := store.Open()
 	if err != nil {
 		t.Error(err)
