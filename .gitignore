@@ -22,7 +22,6 @@ log/*
 _book
 node_modules/
 
-go.sum
 _build
 _packages
 jmeter_logs
