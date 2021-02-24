@@ -440,7 +440,7 @@ func (m *Manager) Register(t PluginType, j Plugin) error {
 	}
 	if err != nil { //Revert for any errors
 		if t == SOURCE && len(unzipFiles) == 1 { //source that only copy so file
-			os.Remove(unzipFiles[0])
+			os.RemoveAll(unzipFiles[0])
 		}
 		if len(j.GetSymbols()) > 0 {
 			m.db.Close()
@@ -507,6 +507,13 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	paths := []string{
 		soPath,
 	}
+	// Find etc folder
+	etcPath := path.Join(m.etcDir, PluginTypes[t], name)
+	if fi, err := os.Stat(etcPath); err == nil {
+		if fi.Mode().IsDir() {
+			paths = append(paths, etcPath)
+		}
+	}
 	switch t {
 	case SOURCE:
 		paths = append(paths, path.Join(m.etcDir, PluginTypes[t], name+".yaml"))
@@ -537,7 +544,7 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 	for _, p := range paths {
 		_, err := os.Stat(p)
 		if err == nil {
-			err = os.Remove(p)
+			err = os.RemoveAll(p)
 			if err != nil {
 				results = append(results, err.Error())
 			}
@@ -664,6 +671,11 @@ func (m *Manager) install(t PluginType, name, src string, shellParas []string) (
 			filenames = append(filenames, soPath)
 			revokeFiles = append(revokeFiles, soPath)
 			_, version = parseName(fileName)
+		} else if strings.HasPrefix(fileName, "etc/") {
+			err = unzipTo(file, path.Join(m.etcDir, PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
+			if err != nil {
+				return filenames, "", err
+			}
 		} else { //unzip other files
 			err = unzipTo(file, path.Join(tempPath, fileName))
 			if err != nil {
@@ -692,11 +704,12 @@ func (m *Manager) install(t PluginType, name, src string, shellParas []string) (
 
 		if err != nil {
 			for _, f := range revokeFiles {
-				os.Remove(f)
+				os.RemoveAll(f)
 			}
 			common.Log.Infof(`err:%v stdout:%s stderr:%s`, err, outb.String(), errb.String())
 			return filenames, "", err
 		} else {
+			common.Log.Infof(`run install script:%s`, outb.String())
 			common.Log.Infof("install %s plugin %s", PluginTypes[t], name)
 		}
 	}
@@ -716,17 +729,21 @@ func parseName(n string) (string, string) {
 func unzipTo(f *zip.File, fpath string) error {
 	_, err := os.Stat(fpath)
 	if err == nil || !os.IsNotExist(err) {
-		if err = os.Remove(fpath); err != nil {
+		if err = os.RemoveAll(fpath); err != nil {
 			return fmt.Errorf("failed to delete file %s", fpath)
 		}
 	}
 
 	if f.FileInfo().IsDir() {
-		return fmt.Errorf("%s: not a file, but a directory", fpath)
+		// Make Folder
+		os.MkdirAll(fpath, os.ModePerm)
+		return nil
 	}
 
-	if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
-		return err
+	if _, err := os.Stat(filepath.Dir(fpath)); os.IsNotExist(err) {
+		if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+			return err
+		}
 	}
 
 	outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())

@@ -83,6 +83,10 @@ func TestManager_Register(t *testing.T) {
 			u:   endpoint + "/functions/echo2.zip",
 			f:   []string{"misc", "echo3"},
 			err: errors.New("function name echo3 already exists"),
+		}, {
+			t: FUNCTION,
+			n: "comp",
+			u: endpoint + "/functions/comp.zip",
 		},
 	}
 	manager, err := NewPluginManager()
@@ -133,7 +137,7 @@ func TestManager_List(t *testing.T) {
 			r: []string{"file", "file2"},
 		}, {
 			t: FUNCTION,
-			r: []string{"accumulateWordCount", "countPlusOne", "echo", "echo2"},
+			r: []string{"accumulateWordCount", "comp", "countPlusOne", "echo", "echo2"},
 		},
 	}
 	manager, err := NewPluginManager()
@@ -160,7 +164,7 @@ func TestManager_Symbols(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	r := []string{"accumulateWordCount", "countPlusOne", "echo", "echo2", "echo3", "misc"}
+	r := []string{"accumulateWordCount", "comp", "countPlusOne", "echo", "echo2", "echo3", "misc"}
 	result, err := manager.ListSymbols()
 	if err != nil {
 		t.Errorf("list symbols error : %s\n\n", err)
@@ -245,6 +249,9 @@ func TestManager_Delete(t *testing.T) {
 		}, {
 			t: SOURCE,
 			n: "random3",
+		}, {
+			t: FUNCTION,
+			n: "comp",
 		},
 	}
 	manager, err := NewPluginManager()
