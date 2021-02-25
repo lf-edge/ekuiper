@@ -173,3 +173,13 @@ geohashNeighborsInt example
 ```sql
 SELECT geohashNeighborsInt(hash) FROM test
 ```
+
+### LabelImage plugin
+
+This is a sample plugin to demonstrate the usage of TensorFlowLite(tflite) model interpreter. The function receives a bytea input representing an image and produce the AI label of the image by running the tflite model.
+
+Assuming the input is the byte array of peacock.jpg, the output will be "peacock".
+
+```sql
+SELECT labelImage(self) FROM tfdemo
+```
