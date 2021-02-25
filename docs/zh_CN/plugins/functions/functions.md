@@ -173,3 +173,13 @@ geohashNeighborsInt 示例
 ```sql
 SELECT geohashNeighborsInt(hash) FROM test
 ```
+
+### LabelImage plugin
+
+该插件为展示使用 TensorFlowLite 模型的示例插件。此函数接收一个以 bytea 类型表示的图像的输入，输出该图像的根据 tflite 模型计算的标示。
+
+如下 SQL 中，假设输入为 peacock.jpg 文件的二进制流，则输出为字符串 “peacock”。
+
+```sql
+SELECT labelImage(self) FROM tfdemo
+```
