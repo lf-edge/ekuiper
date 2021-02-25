@@ -42,7 +42,8 @@ A sample zip file for a source named random.zip
 3. install.sh
 4. Various dependency files/folders of install.sh   
    - mysdk.zip
-   - myconfig.conf  
+   - myconfig.conf
+5. etc directory: the runtime configuration files or dependency files. After installation, this directory will be renamed to the plugin name under {{kuiperPath}}/etc/{{pluginType}} directory.
 
 Notice that, the install.sh will be run that the system may already had the lib or package. Make sure to check the path before. Below is an example install.sh to install a sample sdk lib. 
 ```bash

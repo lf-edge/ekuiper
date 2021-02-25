@@ -123,3 +123,13 @@ DeleteState(key string) error
 #### State data type
 
 The state can be any type. If the rule [checkpoint mechanism](../rules/state_and_fault_tolerance.md) is enabled, the state will be serialized by [golang gob](https://golang.org/pkg/encoding/gob/). So it is required to be gob compatibile. For custom data type, register the type by ``gob.Register(value interface{})`` .
+
+### Runtime dependencies
+
+Some plugin may need to access dependencies in the file system. It is recommended to put those files under {{kuiperPath}}/etc/{{pluginType}}/{{pluginName}} directory. When packaging the plugin, put those files in [etc directory](../restapi/plugins.md#plugin-file-format). After installation, they will be moved to the recommended place.
+
+In the plugin source code, developers can access the file system by getting the Kuiper root path from the context:
+
+```go
+ctx.GetRootPath()
+```
