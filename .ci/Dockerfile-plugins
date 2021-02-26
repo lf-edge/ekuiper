@@ -30,6 +30,10 @@ RUN set -e -u -x \
            && cd TDengine-client-2.0.6.0 && ./install_client.sh && cd - \
            && go build -trimpath --buildmode=plugin -tags plugins -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go \
            ;; \
+         labelImage ) \
+           git clone -b v2.2.0-rc3 --depth 1 https://github.com/tensorflow/tensorflow.git /tensorflow; \
+           CGO_CFLAGS=-I/tensorflow CGO_LDFLAGS=-L/go/kuiper/plugins/functions/labelImage/lib go build -trimpath --buildmode=plugin -o plugins/functions/labelImage/labelImage.so plugins/functions/labelImage/*.go \
+           ;; \
          * ) \
            go build -trimpath --buildmode=plugin -o plugins/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so plugins/$PLUGIN_TYPE/$PLUGIN_NAME/*.go \
            ;; \
