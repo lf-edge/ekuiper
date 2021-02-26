@@ -314,6 +314,7 @@ func (p *RuleProcessor) getDefaultRule(name, sql string) *api.Rule {
 			Concurrency:        1,
 			BufferLength:       1024,
 			SendMetaToSink:     false,
+			SendError:          true,
 			Qos:                api.AtMostOnce,
 			CheckpointInterval: 300000,
 		},

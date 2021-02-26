@@ -66,6 +66,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					SendMetaToSink:     false,
 					Qos:                api.AtMostOnce,
 					CheckpointInterval: 300000,
+					SendError:          true,
 				},
 			},
 		}, {
@@ -121,6 +122,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					SendMetaToSink:     false,
 					Qos:                api.ExactlyOnce,
 					CheckpointInterval: 60000,
+					SendError:          true,
 				},
 			},
 		},

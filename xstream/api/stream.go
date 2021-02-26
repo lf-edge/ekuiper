@@ -96,6 +96,7 @@ type RuleOption struct {
 	Concurrency        int   `json:"concurrency" yaml:"concurrency"`
 	BufferLength       int   `json:"bufferLength" yaml:"bufferLength"`
 	SendMetaToSink     bool  `json:"sendMetaToSink" yaml:"sendMetaToSink"`
+	SendError          bool  `json:"sendError" yaml:"sendError"`
 	Qos                Qos   `json:"qos" yaml:"qos"`
 	CheckpointInterval int   `json:"checkpointInterval" yaml:"checkpointInterval"`
 }

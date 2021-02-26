@@ -598,6 +598,7 @@ func Test_createLogicalPlan(t *testing.T) {
 			SendMetaToSink:     false,
 			Qos:                0,
 			CheckpointInterval: 0,
+			SendError:          true,
 		}, store)
 		if err != nil {
 			t.Errorf("%d. %q\n\nerror:%v\n\n", i, tt.sql, err)
