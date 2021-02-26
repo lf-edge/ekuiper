@@ -182,7 +182,7 @@ PLUGINS := sinks/file \
 	functions/echo
 
 .PHONY: plugins sinks/tdengine $(PLUGINS)
-plugins: cross_prepare sinks/tdengine $(PLUGINS)
+plugins: cross_prepare sinks/tdengine functions/labelImage $(PLUGINS)
 sinks/tdengine:
 	@docker buildx build --no-cache \
     --platform=linux/amd64,linux/arm64 \
@@ -199,6 +199,21 @@ sinks/tdengine:
 		&& mv $$(ls linux_$${arch}/go/kuiper/plugins/sinks/tdengine/tdengine_$$(echo $${arch%%_*}).zip) _plugins/debian/sinks; \
 	done
 	@rm -f /tmp/cross_build_plugins_sinks_tdengine.tar
+
+functions/labelImage:
+	@docker buildx build --no-cache \
+    --platform=linux/amd64 \
+    -t cross_build \
+    --build-arg VERSION=$(VERSION) \
+    --build-arg PLUGIN_TYPE=functions \
+    --build-arg PLUGIN_NAME=labelImage \
+    --output type=tar,dest=/tmp/cross_build_plugins_functions_labelImage.tar \
+    -f .ci/Dockerfile-plugins .
+
+	@mkdir -p _plugins/debian/functions
+	@tar -xvf /tmp/cross_build_plugins_functions_labelImage.tar --wildcards "go/kuiper/plugins/functions/labelImage/labelImage_amd64.zip"
+	@mv $$(ls go/kuiper/plugins/functions/labelImage/labelImage_amd64.zip) _plugins/debian/functions
+	@rm -f /tmp/cross_build_plugins_functions_labelImage.tar
 
 $(PLUGINS): PLUGIN_TYPE = $(word 1, $(subst /, , $@))
 $(PLUGINS): PLUGIN_NAME = $(word 2, $(subst /, , $@))
