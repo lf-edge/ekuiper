@@ -78,6 +78,7 @@ func TestHintWhenModifySink(t *testing.T) {
 		},
 		Options: &api.RuleOption{
 			IsEventTime: true,
+			SendError:   true,
 		},
 	}
 

@@ -49,6 +49,7 @@ The current options includes:
 | concurrency | int: 1   | A rule is processed by several phases of plans according to the sql statement. This option will specify how many instances will be run for each plan. If the value is bigger than 1, the order of the messages may not be retained. |
 | bufferLength | int: 1024   | Specify how many messages can be buffered in memory for each plan. If the buffered messages exceed the limit, the plan will block message receiving until the buffered messages have been sent out so that the buffered size is less than the limit. A bigger value will accommodate more throughput but will also take up more memory footprint.  |
 | sendMetaToSink | bool:false   | Specify whether the meta data of an event will be sent to the sink. If true, the sink can get te meta data information.  |
+| sendError  | bool: true | Whether to send the error to sink. If true, any runtime error will be sent through the whole rule into sinks. Otherwise, the error will only be printed out in the log. |
 | qos | int:0   | Specify the qos of the stream. The options are 0: At most once; 1: At least once and 2: Exactly once. If qos is bigger than 0, the checkpoint mechanism will be activated to save states periodically so that the rule can be resumed from errors.  |
 | checkpointInterval | int:300000   | Specify the time interval in milliseconds to trigger a checkpoint. This is only effective when qos is bigger than 0.  |
 

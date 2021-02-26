@@ -203,6 +203,7 @@ func TestFuncState(t *testing.T) {
 	handleStream(true, streamList, t)
 	doRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
+		SendError:    true,
 	})
 }
 
@@ -292,5 +293,6 @@ func TestFuncStateCheckpoint(t *testing.T) {
 		BufferLength:       100,
 		Qos:                api.AtLeastOnce,
 		CheckpointInterval: 2000,
+		SendError:          true,
 	})
 }

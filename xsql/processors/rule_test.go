@@ -354,12 +354,15 @@ func TestSingleSQL(t *testing.T) {
 	options := []*api.RuleOption{
 		{
 			BufferLength: 100,
+			SendError:    true,
 		}, {
 			BufferLength:       100,
+			SendError:          true,
 			Qos:                api.AtLeastOnce,
 			CheckpointInterval: 5000,
 		}, {
 			BufferLength:       100,
+			SendError:          true,
 			Qos:                api.ExactlyOnce,
 			CheckpointInterval: 5000,
 		},
@@ -456,6 +459,92 @@ func TestSingleSQLError(t *testing.T) {
 	handleStream(true, streamList, t)
 	doRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
+		SendError:    true,
+	})
+}
+
+func TestSingleSQLOmitError(t *testing.T) {
+	//Reset
+	streamList := []string{"ldemo"}
+	handleStream(false, streamList, t)
+	//Data setup
+	var tests = []ruleTest{
+		{
+			name: `TestSingleSQLErrorRule1`,
+			sql:  `SELECT color, ts FROM ldemo where size >= 3`,
+			r: [][]map[string]interface{}{
+				{{
+					"color": "red",
+					"ts":    float64(1541152486013),
+				}},
+				{{
+					"ts": float64(1541152487632),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
+				"op_1_preprocessor_ldemo_0_records_out_total":  int64(5),
+
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(2),
+				"op_3_project_0_records_out_total":  int64(2),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
+
+				"source_ldemo_0_exceptions_total":  int64(0),
+				"source_ldemo_0_records_in_total":  int64(5),
+				"source_ldemo_0_records_out_total": int64(5),
+
+				"op_2_filter_0_exceptions_total":   int64(1),
+				"op_2_filter_0_process_latency_us": int64(0),
+				"op_2_filter_0_records_in_total":   int64(5),
+				"op_2_filter_0_records_out_total":  int64(2),
+			},
+		}, {
+			name: `TestSingleSQLErrorRule2`,
+			sql:  `SELECT size * 5 FROM ldemo`,
+			r: [][]map[string]interface{}{
+				{{
+					"rengine_field_0": float64(15),
+				}},
+				{{
+					"rengine_field_0": float64(15),
+				}},
+				{{
+					"rengine_field_0": float64(10),
+				}},
+				{{}},
+			},
+			m: map[string]interface{}{
+				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
+				"op_1_preprocessor_ldemo_0_records_out_total":  int64(5),
+
+				"op_2_project_0_exceptions_total":   int64(1),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(5),
+				"op_2_project_0_records_out_total":  int64(4),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
+
+				"source_ldemo_0_exceptions_total":  int64(0),
+				"source_ldemo_0_records_in_total":  int64(5),
+				"source_ldemo_0_records_out_total": int64(5),
+			},
+		},
+	}
+	handleStream(true, streamList, t)
+	doRuleTest(t, tests, 0, &api.RuleOption{
+		BufferLength: 100,
+		SendError:    false,
 	})
 }
 
@@ -514,6 +603,7 @@ func TestSingleSQLTemplate(t *testing.T) {
 	handleStream(true, streamList, t)
 	doRuleTestBySinkProps(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
+		SendError:    true,
 	}, map[string]interface{}{
 		"dataTemplate": `{"wrapper":"w1", "c":"{{.color}}"}`,
 		"sendSingle":   true,
@@ -572,6 +662,7 @@ func TestNoneSingleSQLTemplate(t *testing.T) {
 	handleStream(true, streamList, t)
 	doRuleTestBySinkProps(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
+		SendError:    true,
 	}, map[string]interface{}{
 		"dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.color}} - {{.size}}</li>{{end}}</ul>`,
 	}, func(result [][]byte) interface{} {
@@ -618,12 +709,15 @@ func TestSingleSQLForBinary(t *testing.T) {
 	options := []*api.RuleOption{
 		{
 			BufferLength: 100,
+			SendError:    true,
 		}, {
 			BufferLength:       100,
+			SendError:          true,
 			Qos:                api.AtLeastOnce,
 			CheckpointInterval: 5000,
 		}, {
 			BufferLength:       100,
+			SendError:          true,
 			Qos:                api.ExactlyOnce,
 			CheckpointInterval: 5000,
 		},
