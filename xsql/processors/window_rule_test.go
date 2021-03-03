@@ -638,12 +638,15 @@ func TestWindow(t *testing.T) {
 	options := []*api.RuleOption{
 		{
 			BufferLength: 100,
+			SendError:    true,
 		}, {
 			BufferLength:       100,
+			SendError:          true,
 			Qos:                api.AtLeastOnce,
 			CheckpointInterval: 5000,
 		}, {
 			BufferLength:       100,
+			SendError:          true,
 			Qos:                api.ExactlyOnce,
 			CheckpointInterval: 5000,
 		},
@@ -1065,16 +1068,19 @@ func TestEventWindow(t *testing.T) {
 	options := []*api.RuleOption{
 		{
 			BufferLength: 100,
+			SendError:    true,
 			IsEventTime:  true,
 			LateTol:      1000,
 		}, {
 			BufferLength:       100,
+			SendError:          true,
 			Qos:                api.AtLeastOnce,
 			CheckpointInterval: 5000,
 			IsEventTime:        true,
 			LateTol:            1000,
 		}, {
 			BufferLength:       100,
+			SendError:          true,
 			Qos:                api.ExactlyOnce,
 			CheckpointInterval: 5000,
 			IsEventTime:        true,
@@ -1334,5 +1340,6 @@ func TestWindowError(t *testing.T) {
 	handleStream(true, streamList, t)
 	doRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
+		SendError:    true,
 	})
 }

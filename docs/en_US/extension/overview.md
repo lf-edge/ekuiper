@@ -35,9 +35,10 @@ A typical environment for developing plugins is to put the plugin and Kuiper in 
 2. Create the plugin implementation file inside plugins/sources or plugin/sinks or plugin/functions according to what extension type is developing.
 3. Build the file as plugin into the same folder. The build command is typically like:
 ```bash
-go build --buildmode=plugin -o plugins/sources/MySource.so plugins/sources/my_source.go
+go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so plugins/sources/my_source.go
 ```
 
+Notice that, the `-trimpath` build flag is required if using the prebuilte kuiper or kuiper docker image because the kuiperd is also built with the flag to improve build reproducibility.
 
 ### Plugin development
 The development of plugins is to implement a specific interface according to the plugin type and export the implementation with a specific name. There are two types of exported symbol supported:
@@ -122,3 +123,13 @@ DeleteState(key string) error
 #### State data type
 
 The state can be any type. If the rule [checkpoint mechanism](../rules/state_and_fault_tolerance.md) is enabled, the state will be serialized by [golang gob](https://golang.org/pkg/encoding/gob/). So it is required to be gob compatibile. For custom data type, register the type by ``gob.Register(value interface{})`` .
+
+### Runtime dependencies
+
+Some plugin may need to access dependencies in the file system. It is recommended to put those files under {{kuiperPath}}/etc/{{pluginType}}/{{pluginName}} directory. When packaging the plugin, put those files in [etc directory](../restapi/plugins.md#plugin-file-format). After installation, they will be moved to the recommended place.
+
+In the plugin source code, developers can access the file system by getting the Kuiper root path from the context:
+
+```go
+ctx.GetRootPath()
+```

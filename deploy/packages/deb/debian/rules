@@ -17,7 +17,7 @@ PKG_VSN ?= develop
 ## the generate command EXECUTES in rel/
 build:
 	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(PKG_VSN) -X main.LoadFileType=absolute" -o kuiper xstream/cli/main.go
-	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(PKG_VSN) -X main.LoadFileType=absolute" -o kuiperd xstream/server/main.go
+	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(PKG_VSN) -X main.LoadFileType=absolute" -o kuiperd xstream/server/main.go
 
 clean:
 	dh_clean

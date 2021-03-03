@@ -38,12 +38,33 @@ var MyFunction myFunction
 
 [Echo Function](../../../plugins/functions/echo.go) 是一个很好的示例。
 
+### 导出多个函数
+
+开发者可在一个函数插件中导出多个函数。每个函数均需实现 [api.Function](../../../xstream/api/stream.go) 接口，正如 [开发一个定制函数](#develop-a-customized-function) 所描述的那样。需要确保所有函数都导出了，如下所示：
+
+```go
+var(
+    Function1 function1
+    Function2 function2
+    Functionn functionn
+)
+```
+
+同一类的函数可以在一个插件里开发和导出以减少构建和部署开销。
+
 ### 源文件打包
 将实现的函数构建为 go 插件，并确保输出 so 文件位于 plugins/functions 文件夹中。
 
 ```bash
-go build --buildmode=plugin -o plugins/functions/MyFunction.so plugins/functions/my_function.go
+go build -trimpath --buildmode=plugin -o plugins/functions/MyFunction.so plugins/functions/my_function.go
 ```
+
+### 注册多个函数
+
+Kuiper 启动时会自动载入插件目录里已编译好的插件。自动载入的函数插件假设插件里仅导出一个同名的函数。如果插件导出多个函数，则需要显示运行一次注册操作。有两种方法可以注册函数：
+
+1. 在开发环境中，建议直接构建插件 .so 文件到插件目录中以便 kuiper 自动载入。构建完成后，运行 [CLI 注册函数命令](../cli/plugins.md#register-functions) or [REST 注册函数 API](../restapi/plugins.md#register-functions) 进行注册。
+2. 在生产环境中，[打包插件到 zip 压缩包](../plugins/plugins_tutorial.md#plugin-deployment-1)，然后运行 [CLI 创建函数插件命令](../cli/plugins.md#create-a-plugin) 或者 [REST 创建函数 API](../restapi/plugins.md#create-a-plugin) 并设置 functions 参数以指定导出函数名。
 
 ### 使用
 

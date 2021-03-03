@@ -42,3 +42,13 @@ func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionConte
 	}
 }
 ```
+
+### 运行时依赖
+
+有些插件可能需要访问文件系统中的依赖文件。依赖文件建放置于 {{kuiperPath}}/etc/{{pluginType}}/{{pluginName}} 目录。打包插件时，依赖文件应放置于 [etc 目录](../restapi/plugins.md#plugin-file-format)。安装后，这些文件会自动移动到推荐的位置。
+
+在插件源代码中，开发者可通过 context 获取 Kuiper 根目录，以访问文件系统中的依赖：
+
+```go
+ctx.GetRootPath()
+```

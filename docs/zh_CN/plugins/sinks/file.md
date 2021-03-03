@@ -6,7 +6,7 @@
 
 ```shell
 # cd $kuiper_src
-# go build --buildmode=plugin -o plugins/sinks/File.so plugins/sinks/file/file.go
+# go build -trimpath --buildmode=plugin -o plugins/sinks/File.so plugins/sinks/file/file.go
 # cp plugins/sinks/File.so $kuiper_install/plugins/sinks
 ```
 

@@ -16,6 +16,7 @@ type (
 	}
 	fileFuncs struct {
 		About   *fileAbout  `json:"about"`
+		Name    string      `json:"name"`
 		FiFuncs []*fileFunc `json:"functions"`
 	}
 	uiFunc struct {
@@ -25,12 +26,13 @@ type (
 	}
 	uiFuncs struct {
 		About   *about    `json:"about"`
+		Name    string    `json:"name"`
 		UiFuncs []*uiFunc `json:"functions"`
 	}
 )
 
 func isInternalFunc(fiName string) bool {
-	internal := []string{`accumulateWordCount.json`, `countPlusOne.json`, `echo.json`, `internal.json`, "windows.json", "thumbnail.json", "resize.json"}
+	internal := []string{`accumulateWordCount.json`, `countPlusOne.json`, `echo.json`, `internal.json`, "windows.json", "image.json", "geohash.json"}
 	for _, v := range internal {
 		if v == fiName {
 			return true
@@ -44,6 +46,7 @@ func newUiFuncs(fi *fileFuncs) *uiFuncs {
 	}
 	uis := new(uiFuncs)
 	uis.About = newAbout(fi.About)
+	uis.Name = fi.Name
 	for _, v := range fi.FiFuncs {
 		ui := new(uiFunc)
 		ui.Name = v.Name

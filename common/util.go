@@ -124,6 +124,7 @@ func InitConf() {
 			Concurrency:        1,
 			BufferLength:       1024,
 			CheckpointInterval: 300000, //5 minutes
+			SendError:          true,
 		},
 	}
 	if err := yaml.Unmarshal(b, &kc); err != nil {

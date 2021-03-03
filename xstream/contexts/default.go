@@ -81,6 +81,11 @@ func (c *DefaultContext) GetInstanceId() int {
 	return c.instanceId
 }
 
+func (c *DefaultContext) GetRootPath() string {
+	loc, _ := common.GetLoc("")
+	return loc
+}
+
 func (c *DefaultContext) SetError(err error) {
 	c.err = err
 }

@@ -69,4 +69,117 @@ thumbnail(avg,maxWidth, maxHeight) example
   SELECT countPlusOne(avg,maxWidth, maxHeight) as r1 FROM test;
   ```
 
- 
+### Geohash plugin
+
+| Function              | Example                                                  | Description                                                  |
+| --------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
+| geohashEncode         | geohashEncode(la,lo float64)(string)                     | Encode latitude and longitude as a string                    |
+| geohashEncodeInt      | geohashEncodeInt(la,lo float64)(uint64)                  | Encode latitude and longitude as an unsigned integer         |
+| geohashDecode         | geohashDecode(hash string)(la,lo float64)                | Decode a string into latitude and longitude                  |
+| geohashDecodeInt      | geohashDecodeInt(hash uint64)(la,lo float64)             | Decode an unsigned integers into latitude and longitude      |
+| geohashBoundingBox    | geohashBoundingBox(hash string)(string)                  | Returns the area encoded by a string                         |
+| geohashBoundingBoxInt | geohashBoundingBoxInt(hash uint64)(string)               | Returns the area encoded by an unsigned integer              |
+| geohashNeighbor       | geohashNeighbor(hash string,direction string)(string)    | Returns the neighbor in the corresponding direction of a string (Direction list: North NorthEast East SouthEast South SouthWest West NorthWest) |
+| geohashNeighborInt    | geohashNeighborInt(hash uint64,direction string)(uint64) | Returns the neighbor in the corresponding direction of an unsigned integer (Direction list: North NorthEast East SouthEast South SouthWest West NorthWest) |
+| geohashNeighbors      | geohashNeighbors(hash string)([]string)                  | Return all neighbors of a string                             |
+| geohashNeighborsInt   | geohashNeighborsInt(hash uint64)([]uint64)               | Return all neighbors of an unsigned integer                  |
+
+ geohashEncode example
+
+- Input: `{"lo" :131.036192,"la":-25.345457}` 
+- Output: `{"geohashEncode":"qgmpvf18h86e"}`
+
+```sql
+SELECT geohashEncode(la,lo) FROM test
+```
+
+ geohashEncodeInt example
+
+- Input: `{"lo" :131.036192,"la":-25.345457}` 
+- Output: `{"geohashEncodeInt":12963433097944239317}`
+
+```sql
+SELECT geohashEncodeInt(la,lo) FROM test
+```
+
+ geohashDecode example
+
+- Input: `{"hash" :"qgmpvf18h86e"} ` 
+- Output: `{"geohashDecode":{"Longitude":131.036192,"Latitude":-25.345457099999997}}`
+
+```sql
+SELECT geohashDecode(hash) FROM test
+```
+
+geohashDecodeInt example
+
+- Input: `{"hash" :12963433097944239317}`
+- Output: `{"geohashDecodeInt":{"Longitude":131.03618861,"Latitude":-25.345456300000002}}`
+
+```sql
+SELECT geohashDecodeInt(hash) FROM test
+```
+
+ geohashBoundingBox  example
+
+- Input: `{"hash" :"qgmpvf18h86e"} `
+- Output: `{"geohashBoundingBox":{"MinLat":-25.345457140356302,"MaxLat":-25.34545697271824,"MinLng":131.03619195520878,"MaxLng":131.0361922904849}}`
+
+```sql
+SELECT geohashBoundingBox(hash) FROM test
+```
+
+ geohashBoundingBoxInt  example
+
+- Input: `{"hash" :12963433097944239317}`
+- Output: `{"geohashBoundingBoxInt":{"MinLat":-25.345456302165985,"MaxLat":-25.34545626025647,"MinLng":131.0361886024475,"MaxLng":131.03618868626654}}`
+
+```sql
+SELECT geohashBoundingBoxInt(hash) FROM test
+```
+
+geohashNeighbor example
+
+- Input: `{"hash" :"qgmpvf18h86e","direction":"North"} `
+- Output: `{"geohashNeighbor":"qgmpvf18h86s"}`
+
+```sql
+SELECT geohashNeighbor(hash,direction) FROM test
+```
+
+geohashNeighborInt example
+
+- Input:`{"hash" :12963433097944239317,"direction":"North"}`
+- Output:`{"geohashNeighborInt":12963433097944240129}`
+
+```sql
+SELECT geohashNeighborInt(hash,direction) FROM test
+```
+
+geohashNeighbors example
+
+- Input: `{"hash" :12963433097944239317}`
+- Output: `{"geohashNeighbors":["qgmpvf18h86s","qgmpvf18h86u","qgmpvf18h86g","qgmpvf18h86f","qgmpvf18h86d","qgmpvf18h866","qgmpvf18h867","qgmpvf18h86k"]}`
+
+```sql
+SELECT geohashNeighbors(hash) FROM test
+```
+
+geohashNeighborsInt example
+
+- Input:  `{"hash" :"qgmpvf18h86e","neber":"North"}` 
+- Output: `{"geohashNeighborsInt":[12963433097944240129,12963433097944240131,12963433097944240130,12963433097944237399,12963433097944237397,12963433097944150015,12963433097944152746,12963433097944152747]}`
+
+```sql
+SELECT geohashNeighborsInt(hash) FROM test
+```
+
+### LabelImage plugin
+
+This is a sample plugin to demonstrate the usage of TensorFlowLite(tflite) model interpreter. The function receives a bytea input representing an image and produce the AI label of the image by running the tflite model.
+
+Assuming the input is the byte array of peacock.jpg, the output will be "peacock".
+
+```sql
+SELECT labelImage(self) FROM tfdemo
+```

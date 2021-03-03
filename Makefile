@@ -49,10 +49,10 @@ build_prepare:
 build_without_edgex: build_prepare
 	@if [ ! -z $(GOOS) ] && [ ! -z $(GOARCH) ] && [ $(CGO_ENABLED) == 0 ];then \
 		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiper xstream/cli/main.go; \
-		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiperd xstream/server/main.go; \
+		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiperd xstream/server/main.go; \
 	else \
 		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiper xstream/cli/main.go; \
-		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiperd xstream/server/main.go; \
+		GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiperd xstream/server/main.go; \
 	fi
 	@if [ ! -z $$(which upx) ] && [ "$$(uname -m)" != "aarch64" ]; then upx ./kuiper; upx ./kuiperd; fi
 	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
@@ -66,10 +66,10 @@ pkg_without_edgex: build_without_edgex
 build_with_edgex: build_prepare
 	@if [ ! -z $(GOOS) ] && [ ! -z $(GOARCH) ] && [ $(CGO_ENABLED) == 0 ];then \
 		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags edgex -o kuiper xstream/cli/main.go; \
-		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags edgex -o kuiperd xstream/server/main.go; \
+		GO111MODULE=on GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags edgex -o kuiperd xstream/server/main.go; \
 	else \
 		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags edgex -o kuiper xstream/cli/main.go; \
-		GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags edgex -o kuiperd xstream/server/main.go; \
+		GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags edgex -o kuiperd xstream/server/main.go; \
 	fi
 	@if [ ! -z $$(which upx) ] && [ "$$(uname -m)" != "aarch64" ]; then upx ./kuiper; upx ./kuiperd; fi
 	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
@@ -177,12 +177,12 @@ PLUGINS := sinks/file \
 	sources/zmq \
 	functions/accumulateWordCount \
 	functions/countPlusOne \
-	functions/thumbnail\
-	functions/resize\
+	functions/image\
+	functions/geohash\
 	functions/echo
 
 .PHONY: plugins sinks/tdengine $(PLUGINS)
-plugins: cross_prepare sinks/tdengine $(PLUGINS)
+plugins: cross_prepare sinks/tdengine functions/labelImage $(PLUGINS)
 sinks/tdengine:
 	@docker buildx build --no-cache \
     --platform=linux/amd64,linux/arm64 \
@@ -199,6 +199,21 @@ sinks/tdengine:
 		&& mv $$(ls linux_$${arch}/go/kuiper/plugins/sinks/tdengine/tdengine_$$(echo $${arch%%_*}).zip) _plugins/debian/sinks; \
 	done
 	@rm -f /tmp/cross_build_plugins_sinks_tdengine.tar
+
+functions/labelImage:
+	@docker buildx build --no-cache \
+    --platform=linux/amd64 \
+    -t cross_build \
+    --build-arg VERSION=$(VERSION) \
+    --build-arg PLUGIN_TYPE=functions \
+    --build-arg PLUGIN_NAME=labelImage \
+    --output type=tar,dest=/tmp/cross_build_plugins_functions_labelImage.tar \
+    -f .ci/Dockerfile-plugins .
+
+	@mkdir -p _plugins/debian/functions
+	@tar -xvf /tmp/cross_build_plugins_functions_labelImage.tar --wildcards "go/kuiper/plugins/functions/labelImage/labelImage_amd64.zip"
+	@mv $$(ls go/kuiper/plugins/functions/labelImage/labelImage_amd64.zip) _plugins/debian/functions
+	@rm -f /tmp/cross_build_plugins_functions_labelImage.tar
 
 $(PLUGINS): PLUGIN_TYPE = $(word 1, $(subst /, , $@))
 $(PLUGINS): PLUGIN_NAME = $(word 2, $(subst /, , $@))

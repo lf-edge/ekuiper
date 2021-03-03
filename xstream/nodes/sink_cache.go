@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/common/kv"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/checkpoints"
 	"io"
@@ -65,7 +66,7 @@ type Cache struct {
 	changed bool
 	//serialize
 	key   string //the key for current cache
-	store common.KeyValue
+	store kv.KeyValue
 }
 
 func NewTimebasedCache(in <-chan interface{}, limit int, saveInterval int, errCh chan<- error, ctx api.StreamContext) *Cache {
@@ -90,7 +91,7 @@ func (c *Cache) initStore(ctx api.StreamContext) {
 	if err != nil {
 		c.drainError(err)
 	}
-	c.store = common.GetSqliteKVStore(path.Join(dbDir, "sink", ctx.GetRuleId()))
+	c.store = kv.GetDefaultKVStore(path.Join(dbDir, "sink", ctx.GetRuleId()))
 	c.key = ctx.GetOpId() + strconv.Itoa(ctx.GetInstanceId())
 	logger.Debugf("cache saved to key %s", c.key)
 	//load cache

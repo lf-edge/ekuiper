@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/common/kv"
 	"github.com/patrickmn/go-cache"
 	"os"
 	"path"
@@ -47,7 +47,7 @@ func TestDataMigration(t *testing.T) {
 		return
 	}
 
-	store := common.GetSqliteKVStore(dir)
+	store := kv.GetDefaultKVStore(dir)
 	if err := store.Open(); nil != err {
 		t.Error(err)
 		return

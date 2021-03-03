@@ -42,7 +42,8 @@ A sample zip file for a source named random.zip
 3. install.sh
 4. Various dependency files/folders of install.sh   
    - mysdk.zip
-   - myconfig.conf  
+   - myconfig.conf
+5. etc directory: the runtime configuration files or dependency files. After installation, this directory will be renamed to the plugin name under {{kuiperPath}}/etc/{{pluginType}} directory.
 
 Notice that, the install.sh will be run that the system may already had the lib or package. Make sure to check the path before. Below is an example install.sh to install a sample sdk lib. 
 ```bash
@@ -127,6 +128,52 @@ DELETE http://localhost:8080/plugins/functions/{name}
 The user can pass a query parameter to decide if Kuiper should be stopped after a delete in order to make the deletion take effect. The parameter is `restart` and only when the value is `1` will the Kuiper be stopped. The user has to manually restart it.
 ```shell
 DELETE http://localhost:8080/plugins/sources/{name}?restart=1
+```
+
+## APIs to handle function plugin with multiple functions
+
+Unlike source and sink plugins, function plugin can export multiple functions at once. The exported names must be unique globally across all plugins. There will be a one to many mapping between function and its container plugin. Thus, we provide show udf(user defined function) api to query all user defined functions so that users can check the name duplication. And we provide describe udf api to find out the defined plugin of a function. We also provide the register functions api to register the udf list for an auto loaded plugin.
+
+### show udfs
+
+The API is used for displaying all user defined functions which are defined across all plugins.
+
+```shell
+GET http://localhost:9081/plugins/udfs
+```
+
+Response Sample:
+
+```json
+["func1","func2"]
+```
+
+### describe an udf
+
+The API is used to find out the plugin which defines the UDF.
+
+```shell
+GET http://localhost:9081/plugins/udfs/{name}
+```
+
+Response Sample:
+
+```json
+{
+  "name": "funcName",
+  "plugin": "pluginName"
+}
+```
+
+### register functions
+
+The API aims to register all exported functions in an auto loaded function plugin or when the exported functions are changed. If the plugin was loaded by CLI create command or REST create API with functions property specified, then this is not needed. The register API will persist the functions list in the kv. Unless the exported functions are changed, users only need to register it once.
+
+```shell
+POST http://{{host}}/plugins/functions/{plugin_name}/register
+
+{"functions":["func1","func2"]}
+
 ```
 
 ## Get the available plugins

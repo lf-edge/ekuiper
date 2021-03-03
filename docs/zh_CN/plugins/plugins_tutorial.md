@@ -167,7 +167,7 @@ require (
     1. 在插件项目下，运行 `go mod edit -replace github.com/emqx/kuiper=$kuiperPath`，使得 Kuiper 依赖指向本地 Kuiper，请替换 $kuiperPath 到步骤1下载目录，下同。
    2. 编译插件 so 到 Kuiper 插件目录下
    ```go
-    go build --buildmode=plugin -o $kuiperPath/_build/$build/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
+    go build -trimpath --buildmode=plugin -o $kuiperPath/_build/$build/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
    ```
 
 ### Docker 编译
@@ -185,7 +185,7 @@ require (
     -- In docker instance
     # cd /home/samplePlugin
     # go mod edit -replace github.com/emqx/kuiper=/go/kuiper
-    # go build --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
+    # go build -trimpath --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
     ```
 
 在插件项目中可以使用如下 shell 脚本自动编译及打包插件。修改脚本开头的参数以满足不同环境下的开发调试需求。
@@ -200,7 +200,7 @@ export VERSION=0.0.1
 
 go mod edit -replace github.com/emqx/kuiper=$KUIPER_SOURCE
 
-go build --buildmode=plugin -o $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so sinks/mysql.go
+go build -trimpath --buildmode=plugin -o $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so sinks/mysql.go
 
 ## zip the output
 mkdir $ZIP_TARGET/sinks

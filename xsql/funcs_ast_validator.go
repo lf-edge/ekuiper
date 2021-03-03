@@ -275,6 +275,10 @@ func validateOtherFunc(name string, args []Expr) error {
 		if err := validateLen(name, 1, len); err != nil {
 			return err
 		}
+	case "cardinality":
+		if err := validateLen(name, 1, len); err != nil {
+			return err
+		}
 	case "nanvl":
 		if err := validateLen(name, 2, len); err != nil {
 			return err

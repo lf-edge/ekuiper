@@ -3,6 +3,7 @@ package planner
 import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/common/kv"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
@@ -33,7 +34,7 @@ func PlanWithSourcesAndSinks(rule *api.Rule, storePath string, sources []*nodes.
 	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil) {
 		return nil, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
 	}
-	store := common.GetSqliteKVStore(path.Join(storePath, "stream"))
+	store := kv.GetDefaultKVStore(path.Join(storePath, "stream"))
 	err = store.Open()
 	if err != nil {
 		return nil, err
@@ -122,11 +123,11 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 			}
 		}
 		tp.AddSrc(srcNode)
-		op = xstream.Transform(pp, fmt.Sprintf("%d_preprocessor_%s", newIndex, t.name), options.BufferLength)
+		op = xstream.Transform(pp, fmt.Sprintf("%d_preprocessor_%s", newIndex, t.name), options)
 		inputs = []api.Emitter{srcNode}
 	case *WindowPlan:
 		if t.condition != nil {
-			wfilterOp := xstream.Transform(&operators.FilterOp{Condition: t.condition}, fmt.Sprintf("%d_windowFilter", newIndex), options.BufferLength)
+			wfilterOp := xstream.Transform(&operators.FilterOp{Condition: t.condition}, fmt.Sprintf("%d_windowFilter", newIndex), options)
 			wfilterOp.SetConcurrency(options.Concurrency)
 			tp.AddOperator(inputs, wfilterOp)
 			inputs = []api.Emitter{wfilterOp}
@@ -136,22 +137,22 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 			Type:     t.wtype,
 			Length:   t.length,
 			Interval: t.interval,
-		}, t.isEventTime, options.LateTol, streamsFromStmt, options.BufferLength)
+		}, streamsFromStmt, options)
 		if err != nil {
 			return nil, 0, err
 		}
 	case *JoinPlan:
-		op = xstream.Transform(&operators.JoinOp{Joins: t.joins, From: t.from}, fmt.Sprintf("%d_join", newIndex), options.BufferLength)
+		op = xstream.Transform(&operators.JoinOp{Joins: t.joins, From: t.from}, fmt.Sprintf("%d_join", newIndex), options)
 	case *FilterPlan:
-		op = xstream.Transform(&operators.FilterOp{Condition: t.condition}, fmt.Sprintf("%d_filter", newIndex), options.BufferLength)
+		op = xstream.Transform(&operators.FilterOp{Condition: t.condition}, fmt.Sprintf("%d_filter", newIndex), options)
 	case *AggregatePlan:
-		op = xstream.Transform(&operators.AggregateOp{Dimensions: t.dimensions, Alias: t.alias}, fmt.Sprintf("%d_aggregate", newIndex), options.BufferLength)
+		op = xstream.Transform(&operators.AggregateOp{Dimensions: t.dimensions, Alias: t.alias}, fmt.Sprintf("%d_aggregate", newIndex), options)
 	case *HavingPlan:
-		op = xstream.Transform(&operators.HavingOp{Condition: t.condition}, fmt.Sprintf("%d_having", newIndex), options.BufferLength)
+		op = xstream.Transform(&operators.HavingOp{Condition: t.condition}, fmt.Sprintf("%d_having", newIndex), options)
 	case *OrderPlan:
-		op = xstream.Transform(&operators.OrderOp{SortFields: t.SortFields}, fmt.Sprintf("%d_order", newIndex), options.BufferLength)
+		op = xstream.Transform(&operators.OrderOp{SortFields: t.SortFields}, fmt.Sprintf("%d_order", newIndex), options)
 	case *ProjectPlan:
-		op = xstream.Transform(&operators.ProjectOp{Fields: t.fields, IsAggregate: t.isAggregate, SendMeta: t.sendMeta}, fmt.Sprintf("%d_project", newIndex), options.BufferLength)
+		op = xstream.Transform(&operators.ProjectOp{Fields: t.fields, IsAggregate: t.isAggregate, SendMeta: t.sendMeta}, fmt.Sprintf("%d_project", newIndex), options)
 	default:
 		return nil, 0, fmt.Errorf("unknown logical plan %v", t)
 	}
@@ -162,7 +163,7 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 	return op, newIndex, nil
 }
 
-func getStream(m common.KeyValue, name string) (stmt *xsql.StreamStmt, err error) {
+func getStream(m kv.KeyValue, name string) (stmt *xsql.StreamStmt, err error) {
 	var s string
 	f, err := m.Get(name, &s)
 	if !f || err != nil {
@@ -177,7 +178,7 @@ func getStream(m common.KeyValue, name string) (stmt *xsql.StreamStmt, err error
 	return
 }
 
-func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store common.KeyValue) (LogicalPlan, error) {
+func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
 	streamsFromStmt := xsql.GetStreams(stmt)
 	dimensions := stmt.Dimensions
 	var (

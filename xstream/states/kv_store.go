@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/common/kv"
 	"github.com/emqx/kuiper/xstream/checkpoints"
 	"path"
 	"sync"
@@ -20,7 +21,7 @@ func init() {
 ***   { "checkpoint1", "checkpoint2" ... "checkpointn" : The complete or incomplete snapshot
  */
 type KVStore struct {
-	db          common.KeyValue
+	db          kv.KeyValue
 	mapStore    *sync.Map //The current root store of a rule
 	checkpoints []int64
 	max         int
@@ -33,7 +34,7 @@ type KVStore struct {
 //Assume each operator only has one instance
 func getKVStore(ruleId string) (*KVStore, error) {
 	dr, _ := common.GetDataLoc()
-	db := common.GetSqliteKVStore(path.Join(dr, "checkpoints", ruleId))
+	db := kv.GetDefaultKVStore(path.Join(dr, "checkpoints", ruleId))
 	s := &KVStore{db: db, max: 3, mapStore: &sync.Map{}}
 	//read data from badger db
 	if err := s.restore(); err != nil {

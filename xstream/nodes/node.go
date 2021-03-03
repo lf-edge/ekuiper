@@ -21,6 +21,7 @@ type defaultNode struct {
 	name         string
 	outputs      map[string]chan<- interface{}
 	concurrency  int
+	sendError    bool
 	statManagers []StatManager
 	ctx          api.StreamContext
 	qos          api.Qos
@@ -59,6 +60,12 @@ func (o *defaultNode) GetMetrics() (result [][]interface{}) {
 }
 
 func (o *defaultNode) Broadcast(val interface{}) error {
+	if !o.sendError {
+		if _, ok := val.(error); ok {
+			return nil
+		}
+	}
+
 	if o.qos >= api.AtLeastOnce {
 		boe := &checkpoints.BufferOrEvent{
 			Data:    val,
@@ -75,9 +82,13 @@ func (o *defaultNode) doBroadcast(val interface{}) error {
 	wg.Add(len(o.outputs))
 	for n, out := range o.outputs {
 		go func(name string, output chan<- interface{}) {
-			output <- val
+			select {
+			case output <- val:
+				logger.Debugf("broadcast from %s to %s done", o.ctx.GetOpId(), name)
+			case <-o.ctx.Done():
+				// rule stop so stop waiting
+			}
 			wg.Done()
-			logger.Debugf("broadcast from %s to %s done", o.ctx.GetOpId(), name)
 		}(n, out)
 	}
 	logger.Debugf("broadcasting from %s", o.ctx.GetOpId())

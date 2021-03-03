@@ -21,7 +21,28 @@ type RuleState struct {
 	Name      string
 	Topology  *xstream.TopologyNew
 	Triggered bool
+	// temporary storage for topo graph to make sure even rule close, the graph is still available
+	topoGraph *xstream.PrintableTopo
 }
+
+func (rs *RuleState) GetTopoGraph() *xstream.PrintableTopo {
+	if rs.topoGraph != nil {
+		return rs.topoGraph
+	} else if rs.Topology != nil {
+		return rs.Topology.GetTopo()
+	} else {
+		return nil
+	}
+}
+
+// Assume rule has started and the topo has instantiated
+func (rs *RuleState) Stop() {
+	rs.Triggered = false
+	rs.Topology.Cancel()
+	rs.topoGraph = rs.Topology.GetTopo()
+	rs.Topology = nil
+}
+
 type RuleRegistry struct {
 	sync.RWMutex
 	internal map[string]*RuleState
@@ -65,8 +86,8 @@ func createRuleState(rule *api.Rule) (*RuleState, error) {
 	}
 }
 
+// Assume rs is started with topo instantiated
 func doStartRule(rs *RuleState) error {
-	rs.Triggered = true
 	ruleProcessor.ExecReplaceRuleState(rs.Name, true)
 	go func() {
 		tp := rs.Topology
@@ -173,7 +194,10 @@ func getRuleStatus(name string) (string, error) {
 
 func getRuleTopo(name string) (string, error) {
 	if rs, ok := registry.Load(name); ok {
-		topo := rs.Topology.GetTopo()
+		topo := rs.GetTopoGraph()
+		if topo == nil {
+			return "", common.NewError(fmt.Sprintf("Fail to get rule %s's topo, make sure the rule has been started before", name))
+		}
 		bytes, err := json.Marshal(topo)
 		if err != nil {
 			return "", common.NewError(fmt.Sprintf("Fail to encode rule %s's topo", name))
@@ -207,8 +231,7 @@ func startRule(name string) error {
 
 func stopRule(name string) (result string) {
 	if rs, ok := registry.Load(name); ok && rs.Triggered {
-		(*rs.Topology).Cancel()
-		rs.Triggered = false
+		rs.Stop()
 		ruleProcessor.ExecReplaceRuleState(name, false)
 		result = fmt.Sprintf("Rule %s was stopped.", name)
 	} else {

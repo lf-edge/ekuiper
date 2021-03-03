@@ -42,7 +42,8 @@ POST http://localhost:9081/plugins/functions
 3. install.sh
 4. install.sh 的各种依赖文件/文件夹
    - mysdk.zip
-   - myconfig.conf  
+   - myconfig.conf
+5. etc 目录：插件的运行时配置文件或依赖文件。插件安装后，该目录将重名为插件名并复制到 {{kuiperPath}}/etc/{{pluginType}} 目录下。
 
 请注意，将在系统可能已经具有库或软件包的情况下运行 install.sh。 确保在运行之前检查路径。 下面是一个示例 install.sh，用于安装示例 sdk 库。 
 
@@ -129,6 +130,52 @@ DELETE http://localhost:8080/plugins/functions/{name}
 
 ```shell
 DELETE http://localhost:8080/plugins/sources/{name}?restart=1
+```
+
+## 用于导出多函数的函数插件的相关 API
+
+与 source 和 sink 插件不同，函数插件可以在一个插件里导出多个函数。导出的函数名必须全局唯一，不能与其他插件导出的函数同名。插件和函数是一对多的关系。因此，我们提供了 show udf （用户定义的函数） 接口用于查询所有已定义的函数名以便用户避免重复名字。我们也提供了 describe udf 接口，以便查询出定义该函数的插件名称。另外，我们提供了函数注册接口，用于给自动载入的函数注册导出的多个函数。
+
+### 显示用户自定义函数列表
+
+该 API 用于展示所有自定义的函数的名称。
+
+```shell
+GET http://localhost:9081/plugins/udfs
+```
+
+结果样例：
+
+```json
+["func1","func2"]
+```
+
+### 描述用户自定义函数
+
+该 API 用于展示定义此用户自定义函数的插件名称。
+
+```shell
+GET http://localhost:9081/plugins/udfs/{name}
+```
+
+结果样例：
+
+```json
+{
+  "name": "funcName",
+  "plugin": "pluginName"
+}
+```
+
+### register functions
+
+该 API 用于给自动载入的函数插件注册其导出的所有函数或者用于更改插件导出的函数列表。如果插件是经由命令行的创建命令或者 REST API 创建，且创建时提供了 functions 参数，则无需再执行此命令除非用于更改导出函数。此命令将会持久化到 KV 中。因此，除非需要更改导出函数列表，用户仅需执行注册函数一次。
+
+```shell
+POST http://{{host}}/plugins/functions/{plugin_name}/register
+
+{"functions":["func1","func2"]}
+
 ```
 
 ## 获取可安装的插件
