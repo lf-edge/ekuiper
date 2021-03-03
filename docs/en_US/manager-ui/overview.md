@@ -1,8 +1,6 @@
+# Use of Kuiper management console
 
-
-## Use of Kuiper management console
-
-### Overview
+## Overview
 
 From Kuiper version 0.9.1, whenever a new version of Kuiper is released, the corresponding version of the management console will be released. This article uses a practical example to illustrate how to use the management console to operate and manage Kuiper nodes. In the article, the data will be subscribed from the MQTT server, and be sent to the specified file after processing through the rules written by Kuiper. The demonstration is as follows:
 
@@ -14,7 +12,7 @@ From Kuiper version 0.9.1, whenever a new version of Kuiper is released, the cor
 - Create a rule to calculate the subscribed data and write the data to the sink "This example demonstrates writing the subscribed message to a file".
 - Kuiper currently supports multiple sources and sinks. Users only need to install the corresponding plugins to achieve the corresponding function. "The source of this example is MQTT source, which has built-in support without the need of installation; the sink is a file, which does not have built-in support and needs to be installed separately."
 
-### Architecture design
+## Architecture design
 
 * UI end: a visual interface, easy for users to operate
 * Kuiper-manager: Management console, which essentially is a reverse HTTP proxy service, providing the services of user management, permission verification. It can be deployed in the cloud or at the edge
@@ -22,9 +20,9 @@ From Kuiper version 0.9.1, whenever a new version of Kuiper is released, the cor
 
 ![construct](./resources/arch.png)
 
-### Install the management console
+## Install the management console
 
-#### Install Kuiper
+### Install Kuiper
 
 - Pull Kuiper's Docker image from [Docker Image Library](https://hub.docker.com/r/emqx/kuiper/tags). Since it is required to install the plugin in this article, you must use the `kuiper:0.9.1-slim` image (`kuiper:0.9.1-alpine` image is relatively small and easy to install, but due to the lack of some necessary library files, the plug-in cannot run normally. The `kuiper:0.9.1` image is the development version, which is suitable for use in the development phase).
 
@@ -57,7 +55,7 @@ From Kuiper version 0.9.1, whenever a new version of Kuiper is released, the cor
   ....
   ```
 
-#### Install management console
+### Install management console
 
 - Pull the Docker image of kuiper-manager from [Docker Image Library](https://hub.docker.com/r/emqx/kuiper-manager/tags), and `0.9.1-ief` is a dedicated image for Huawei IEF users, This example uses the `0.9.1` image.
 
@@ -71,9 +69,9 @@ From Kuiper version 0.9.1, whenever a new version of Kuiper is released, the cor
   docker run --name kuiperManager -d -p 9082:9082 emqx/kuiper-manager:0.9.1
   ```
 
-### Getting started
+## Getting started
 
-#### Login to kuiper-manager
+### Login to kuiper-manager
 
 You need to provide the address, user name, and password of kuiper-manager when logging in, which is shown below:
 
@@ -85,7 +83,7 @@ You need to provide the address, user name, and password of kuiper-manager when 
 
   ![login](./resources/login.png)
 
-#### Create a Kuiper node
+### Create a Kuiper node
 
 When creating a kuiper node, you need to fill in the "node type", "node name" and "endpoint URL".
 
@@ -103,7 +101,7 @@ The example of creating a Kuiper node is shown in the figure below. If the port 
 
 ![addNode](./resources/add_node.png)
 
-#### Install the plugin
+### Install the plugin
 
 In our scenario, the target plugin named file will be used. Select "Plugins" > "Install plugin", and the following dialog box will pop up: Select the target plugin named file in the drop-down list to download and install it, and the plugin will write data to the file specified by the user. As shown in the figure below, after the reader selects the plug-in with the corresponding name, the  input box of "File" will automatically be filled with the corresponding plug-in download address. After clicking the "Submit" button, Kuiper will automatically download the corresponding plugin from the relevant address on `https://www.emqx.io/downloads` and install it into the system automatically.
 
@@ -111,7 +109,7 @@ In our scenario, the target plugin named file will be used. Select "Plugins" > "
 
 **Note: After the plug-in is installed and used through the rules, the plug-in has been loaded into the memory. Due to the limitations of the Golang language, when the plug-in is deleted, it cannot be uninstalled in practice. Therefore, if you want to reinstall the plug-in, you must restart Kuiper before it can take effect. Currently only the installation in the Docker environment of debian is supported, and other environments are not supported temporarily. **
 
-#### Create a stream
+### Create a stream
 
 Create a stream named `demoStream`, as shown below:
 
@@ -138,7 +136,7 @@ As shown above, the "default" configuration group is used. Users can also write 
 
 ![sourceConf](./resources/source_conf.png)
 
-#### Create a rule
+### Create a rule
 
 As shown in the figure below, a rule named demoRule is created to filter out the data with temperature> 30 in the data. The SQL editor can give hints during the user's SQL writing process to facilitate the user to complete the SQL writing.
 
@@ -150,7 +148,7 @@ Click the "Add" button and a dialog box will pop up as shown below. The file pat
 
 After the rule is created, if everything goes well, the rule is running.
 
-#### View execution results
+### View execution results
 
 Enter the Kuiper container to create a file:
 
@@ -176,7 +174,7 @@ As shown in the figure below, there are three buttons in the options. Readers ca
 
 ![ruleOp](./resources/rule_op.png)
 
-### Extended reading
+## Extended reading
 
 - [How to display custom plugins in the installation list of the management console](plugins_in_manager.md): Kuiper provides a plugin extension mechanism, and users can implement custom plugins based on the extended interface. On the management console, users can install plugins directly through the interface. If readers have customized plugins and want to show them in the installation list of the management console, this article can give readers some reference.
 - If the readers want to develop their own plug-in, they can refer to [Plugin Development Tutorial](../plugins/plugins_tutorial.md) for more information.

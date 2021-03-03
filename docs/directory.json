@@ -21,11 +21,68 @@
 		},
 		{
 			"title": "规则",
-			"path": "rules/overview"
+			"children": [{
+					"title": "规则管理",
+					"path": "rules/overview"
+				},
+				{
+					"title": "Sinks",
+					"children": [{
+							"title": "EdgeX 消息总线目标",
+							"path": "rules/sinks/edgex"
+						},
+						{
+							"title": "MQTT 动作",
+							"path": "rules/sinks/mqtt"
+						},
+						{
+							"title": "Nop action",
+							"path": "rules/sinks/nop"
+						},
+						{
+							"title": "REST动作",
+							"path": "rules/sinks/rest"
+						},
+						{
+							"title": "日志操作",
+							"path": "rules/sinks/logs"
+						}
+					]
+				},
+				{
+					"title": "Sources",
+					"children": [{
+							"title": "EdgeX 源",
+							"path": "rules/sources/edgex"
+						},
+						{
+							"title": "HTTP 提取源",
+							"path": "rules/sources/http_pull"
+						},
+						{
+							"title": "MQTT源",
+							"path": "rules/sources/mqtt"
+						}
+					]
+				},
+				{
+					"title": "Golang 模版",
+					"path": "rules/data_template"
+				},
+				{
+					"title": "状态和容错",
+					"path": "rules/state_and_fault_tolerance"
+				}
+
+			]
 		},
 		{
 			"title": "命令行工具",
 			"children": [{
+					"title": "摘要",
+					"path": "cli/overview"
+				},
+				{
 					"title": "流管理",
 					"path": "cli/streams"
 				},
@@ -40,8 +97,24 @@
 			]
 		},
 		{
+			"title": "管理控制台",
+			"children": [{
+					"title": "控制台使用",
+					"path": "manager-ui/overview"
+				},
+				{
+					"title": "如何将自定义的插件展示在管理控制台的安装列表",
+					"path": "manager-ui/plugins_in_manager"
+				}
+			]
+		},
+		{
 			"title": "Rest API 接口",
 			"children": [{
+					"title": "接口介绍",
+					"path": "restapi/overview"
+				},
+				{
 					"title": "流管理",
 					"path": "restapi/streams"
 				},
@@ -58,6 +131,10 @@
 		{
 			"title": "Kuiper SQL 参考",
 			"children": [{
+					"title": "Kuiper SQL 介绍",
+					"path": "sqls/overview"
+				},
+				{
 					"title": "流规格",
 					"path": "sqls/streams"
 				},
@@ -72,12 +149,36 @@
 				{
 					"title": "函数",
 					"path": "sqls/built-in_functions"
+				},
+				{
+					"title": "Kuiper 词汇元素",
+					"path": "sqls/lexical_elements"
+				},
+				{
+					"title": "JSON 表达式",
+					"path": "sqls/json_expr"
 				}
 			]
 		},
 		{
 			"title": "扩展 Kuiper",
-			"path": "extension/overview"
+			"children": [{
+					"title": "Introduction",
+					"path": "extension/overview"
+				},
+				{
+					"title": "函数扩展",
+					"path": "extension/function"
+				},
+				{
+					"title": "Sink/Action 扩展",
+					"path": "extension/sink"
+				},
+				{
+					"title": "源扩展",
+					"path": "extension/source"
+				}
+			]
 		},
 		{
 			"title": "插件",
@@ -88,6 +189,46 @@
 				{
 					"title": "插件开发教程",
 					"path": "plugins/plugins_tutorial"
+				},
+				{
+					"title": "Sinks",
+					"children": [{
+							"title": "文件目标（Sink）",
+							"path": "plugins/sinks/file"
+						},
+						{
+							"title": "图像目标（Sink）",
+							"path": "plugins/sinks/image"
+						},
+						{
+							"title": "InfluxDB 目标（Sink）",
+							"path": "plugins/sinks/influx"
+						},
+						{
+							"title": "TDengine Sink",
+							"path": "plugins/sinks/tdengine"
+						},
+						{
+							"title": "Zmq Sink",
+							"path": "plugins/sinks/zmq"
+						}
+					]
+				},
+				{
+					"title": "Sources",
+					"children": [{
+							"title": "Random Source",
+							"path": "plugins/sources/random"
+						},
+						{
+							"title": "Zmq Source",
+							"path": "plugins/sources/zmq"
+						}
+					]
+				},
+				{
+					"title": "Custom function",
+					"path": "plugins/functions/functions"
 				}
 			]
 		}
@@ -114,11 +255,68 @@
 		},
 		{
 			"title": "Rules",
-			"path": "rules/overview"
+			"children": [{
+					"title": "Introduction",
+					"path": "rules/overview"
+				},
+				{
+					"title": "Sinks",
+					"children": [{
+							"title": "EdgeX Message Bus action",
+							"path": "rules/sinks/edgex"
+						},
+						{
+							"title": "MQTT action",
+							"path": "rules/sinks/mqtt"
+						},
+						{
+							"title": "Nop action",
+							"path": "rules/sinks/nop"
+						},
+						{
+							"title": "REST action",
+							"path": "rules/sinks/rest"
+						},
+						{
+							"title": "Log action",
+							"path": "rules/sinks/logs"
+						}
+					]
+				},
+				{
+					"title": "Sources",
+					"children": [{
+							"title": "EdgeX Source",
+							"path": "rules/sources/edgex"
+						},
+						{
+							"title": "HTTP pull source",
+							"path": "rules/sources/http_pull"
+						},
+						{
+							"title": "MQTT source",
+							"path": "rules/sources/mqtt"
+						}
+					]
+				},
+				{
+					"title": "Golang template",
+					"path": "rules/data_template"
+				},
+				{
+					"title": "State and Fault Tolerance",
+					"path": "rules/state_and_fault_tolerance"
+				}
+
+			]
 		},
 		{
 			"title": "Command line tool",
 			"children": [{
+					"title": "Introduction",
+					"path": "cli/overview"
+				},
+				{
 					"title": "Streams",
 					"path": "cli/streams"
 				},
@@ -129,6 +327,18 @@
 				{
 					"title": "Plugins",
 					"path": "cli/plugins"
+				}
+			]
+		},
+		{
+			"title": "Kuiper management console",
+			"children": [{
+					"title": "Introduction",
+					"path": "manager-ui/overview"
+				},
+				{
+					"title": "How to display custom plugins in the installation list of the management console",
+					"path": "manager-ui/plugins_in_manager"
 				}
 			]
 		},
@@ -151,6 +361,10 @@
 		{
 			"title": "Kuiper SQL",
 			"children": [{
+					"title": "Introduction",
+					"path": "sqls/overview"
+				},
+				{
 					"title": "Streams",
 					"path": "sqls/streams"
 				},
@@ -165,12 +379,36 @@
 				{
 					"title": "Functions",
 					"path": "sqls/built-in_functions"
+				},
+				{
+					"title": "Kuiper lexical elements",
+					"path": "sqls/lexical_elements"
+				},
+				{
+					"title": "JSON Expressions",
+					"path": "sqls/json_expr"
 				}
 			]
 		},
 		{
 			"title": "Extend Kuiper",
-			"path": "extension/overview"
+			"children": [{
+					"title": "Introduction",
+					"path": "extension/overview"
+				},
+				{
+					"title": "Function Extension",
+					"path": "extension/function"
+				},
+				{
+					"title": "Sink Extension",
+					"path": "extension/sink"
+				},
+				{
+					"title": "Source Extension",
+					"path": "extension/source"
+				}
+			]
 		},
 		{
 			"title": "Plugins",
@@ -181,6 +419,46 @@
 				{
 					"title": "Development tutorial",
 					"path": "plugins/plugins_tutorial"
+				},
+				{
+					"title": "Sinks",
+					"children": [{
+							"title": "File Sink",
+							"path": "plugins/sinks/file"
+						},
+						{
+							"title": "Image Sink",
+							"path": "plugins/sinks/image"
+						},
+						{
+							"title": "InfluxDB Sink",
+							"path": "plugins/sinks/influx"
+						},
+						{
+							"title": "TDengine Sink",
+							"path": "plugins/sinks/tdengine"
+						},
+						{
+							"title": "Zmq Sink",
+							"path": "plugins/sinks/zmq"
+						}
+					]
+				},
+				{
+					"title": "Sources",
+					"children": [{
+							"title": "Random Source",
+							"path": "plugins/sources/random"
+						},
+						{
+							"title": "Zmq Source",
+							"path": "plugins/sources/zmq"
+						}
+					]
+				},
+				{
+					"title": "Custom function",
+					"path": "plugins/functions/functions"
 				}
 			]
 		}

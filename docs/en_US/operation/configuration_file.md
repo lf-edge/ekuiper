@@ -39,10 +39,10 @@ basic:
     keyfile: /var/https-server.key
 ```
 
-#### restPort
+### restPort
 The port for the rest api http server to listen to.
 
-#### restTls
+### restTls
 The tls cert file path and key file path setting. If restTls is not set, the rest api server will listen on http. Otherwise, it will listen on https.
 
 ## Prometheus Configuration

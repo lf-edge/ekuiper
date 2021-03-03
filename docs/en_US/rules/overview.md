@@ -67,7 +67,7 @@ The rule options can be defined globally in ``etc/kuiper.yaml`` under the ``rule
 - See [SQL](../sqls/overview.md) for more info of Kuiper SQL.
 - Sources can be customized, see [extension](../extension/overview.md) for more detailed info.
 
-## sinks/actions
+### sinks/actions
 
 Currently, below kinds of sinks/actions are supported:
 

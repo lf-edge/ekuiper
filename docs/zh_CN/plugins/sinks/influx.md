@@ -35,7 +35,7 @@
 
 下面是选择温度大于50度的样本规则，和一些配置文件仅供参考。
 
-#### ####/tmp/influxRule.txt
+### ####/tmp/influxRule.txt
 ```json
 {
   "id": "influx",
@@ -57,13 +57,13 @@
   ]
 }
 ```
-#### ####/tmp/influxPlugin.txt
+### ####/tmp/influxPlugin.txt
 ```json
 {
   "file":"http://localhost:8080/influx.zip"
 }
 ```
-#### plugins/go.mod
+### plugins/go.mod
 ```
 module plugins
 

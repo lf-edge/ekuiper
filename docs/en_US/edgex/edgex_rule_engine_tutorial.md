@@ -158,7 +158,7 @@ curl -X POST \
       "log":{}
     }
   ]
-}
+}'
 ```
 
 #### Option 2: Use Kuiper CLI

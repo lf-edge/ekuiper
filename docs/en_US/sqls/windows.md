@@ -125,7 +125,7 @@ In some cases, not all the inputs are needed for the window. Filter clause is pr
 
 The filter clause must follow the window function. The filter clause must be like `FILTER(WHERE expr)`. Example:
 ```sql
-SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FITLER(where revenue > 100)
+SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER(where revenue > 100)
 ```
 
 ## Timestamp Management

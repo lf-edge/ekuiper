@@ -1,7 +1,7 @@
-## 流规格 
+# 流规格 
 
 
-### 数据类型
+## 数据类型
 
 参考 [Azure IoT](https://docs.microsoft.com/en-us/stream-analytics-query/data-types-azure-stream-analytics), 将布尔类型强制转换为 int。
 
@@ -17,9 +17,9 @@
 
 
 
-### 语言定义
+## 语言定义
 
-#### 创建流
+### 创建流
 
 ```sql
 CREATE STREAM   
@@ -102,7 +102,7 @@ demo: #Conf_key
 
 ```
 
-#### 删除流
+### 删除流
 
 删除流。
 
@@ -110,7 +110,7 @@ demo: #Conf_key
 DROP STREAM my_stream
 ```
 
-#### 描述流
+### 描述流
 
 打印流定义。
 
@@ -128,7 +128,7 @@ Format: json
 Key: id
 ```
 
-#### 解释流
+### 解释流
 
 打印流的详细运行时信息。
 
@@ -136,7 +136,7 @@ Key: id
 EXPLAIN STREAM my_stream
 ```
 
-#### 显示流
+### 显示流
 
 打印系统中所有已定义的流。
 
@@ -148,11 +148,11 @@ my_stream, iot_stream
 
 
 
-### 一个简单的 CLI
+## 一个简单的 CLI
 
 一个简单的命令行工具在 `stream/cli/main.go` 中实现。
 
-#### 运行 SQL 来管理流
+### 运行 SQL 来管理流
 
 运行 `kuiper stream` 命令，在显示 `kuiper>` 提示后，输入与流相关的 sql 语句，例如create，drop，description，explain和show stream语句以执行操作。
 
@@ -164,7 +164,7 @@ kuiper > DESCRIBE STREAM sname
 ```
 
 
-#### 查询
+### 查询
 
 ```bash
 cli query
@@ -174,9 +174,9 @@ kuiper > select USERID from demo;
 
 
 
-### 实现
+## 实现
 
-##### 如何保存流定义？
+### 如何保存流定义？
 
 请参阅下面的内容，需要使用存储器来保存流定义。
 

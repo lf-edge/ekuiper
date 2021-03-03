@@ -2,7 +2,7 @@
 
 Kuiper can customize functions. For the development, compilation and use of functions, please [see here](../../extension/function.md).
 
-### echo plugin
+## echo plugin
 
 | Function | Example   | Description                     |
 | -------- | --------- | ------------------------------- |
@@ -16,7 +16,7 @@ echo(avg) example
   SELECT echo(avg) as r1 FROM test;
   ```
 
-### countPlusOne plugin
+## countPlusOne plugin
 
 | Function     | Example           | Description                                       |
 | ------------ | ----------------- | ------------------------------------------------- |
@@ -30,7 +30,7 @@ countPlusOne(avg) example
   SELECT countPlusOne(avg) as r1 FROM test;
   ```
 
-### accumulateWordCount plugin
+## accumulateWordCount plugin
 
 | Function            | Example                      | Description                                  |
 | ------------------- | ---------------------------- | -------------------------------------------- |
@@ -44,7 +44,7 @@ accumulateWordCount(avg,sep) example
   SELECT accumulateWordCount(avg,sep) as r1 FROM test;
   ```
 
-### Image processing plugin
+## Image processing plugin
 
 Image processing currently only supports the formats of `png` and `jpeg` 
 
