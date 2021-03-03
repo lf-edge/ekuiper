@@ -8,7 +8,7 @@
 
 ## 先决条件
 
-如需运行 TensorFlow Lite 解释器，我们需要一个经过训练的模型。在本教程中，我们将不介绍如何训练和涵盖这个模型，您可以通过查看 [tflite converter](https://www.tensorflow.org/lite/convert) 了解如何做到这一点。我们既可以训练一个新的模型，也可以在线选择一个。在本教程中，我们将使用 [mattn/go tflite](https://github.com/mattn/go-tflite) 的 [label image](https://github.com/mattn/go-tflite/tree/master//\u示例/label\u图像) 模型。该 repo为 tflite C API 创建了 golang 绑定。 我们还将使用它来实现我们的插件。
+如需运行 TensorFlow Lite 解释器，我们需要一个经过训练的模型。在本教程中，我们将不介绍如何训练和涵盖这个模型，您可以通过查看 [tflite converter](https://www.tensorflow.org/lite/convert) 了解如何做到这一点。我们既可以训练一个新的模型，也可以在线选择一个。在本教程中，我们将使用 [mattn/go tflite](https://github.com/mattn/go-tflite) 的 [label image](https://github.com/mattn/go-tflite/tree/master/_example/label_image) 模型。该 repo为 tflite C API 创建了 golang 绑定。 我们还将使用它来实现我们的插件。
 
 ## 开发插件
 
