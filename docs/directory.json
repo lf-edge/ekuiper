@@ -16,6 +16,10 @@
 				{
 					"title": "EdgeX Foundry 规则引擎教程",
 					"path": "edgex/edgex_rule_engine_tutorial"
+				},
+				{
+					"title": "如何使用 meta 函数抽取在 EdgeX 消息总线中发送的其它信息",
+					"path": "edgex/edgex_meta"
 				}
 			]
 		},
@@ -250,6 +254,10 @@
 				{
 					"title": "EdgeX Foundry installation",
 					"path": "edgex/edgex_rule_engine_tutorial"
+				},
+				{
+					"title": "How to use meta function to extract addtional data from EdgeX message bus",
+					"path": "edgex/edgex_meta"
 				}
 			]
 		},
