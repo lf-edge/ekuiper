@@ -121,7 +121,7 @@ Kuiper 具有许多内置函数，可以对数据执行计算。
 | json_path_query     | json_path_query(col1, "$.name")  | 获取 JSON 路径返回的指定 JSON值的所有项目。 |
 | json_path_query_first  | json_path_query_first(col1, "$.name")| 获取 JSON 路径返回的指定 JSON值的第一项。 |
 
-**请参阅 [json 路径函数](../json_expr.md#json-path-functions) 了解如何编写json路径。**
+**请参阅 [json 路径函数](./json_expr.md#json-path-functions) 了解如何编写json路径。**
 
 ## 其它函数
 | 函数        | 示例              | 说明                                                         |

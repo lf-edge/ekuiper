@@ -70,7 +70,7 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 
 ### EdgeX 吞吐量测试
 
-- 一个 [Go 应用](fvt_scripts/edgex/benchmark/pub.go) 用于向 ZeroMQ 消息总线发送数据，数据如下。
+- 一个 [Go 应用](https://github.com/emqx/kuiper/blob/master/fvt_scripts/edgex/benchmark/pub.go) 用于向 ZeroMQ 消息总线发送数据，数据如下。
 
   ```
   {
