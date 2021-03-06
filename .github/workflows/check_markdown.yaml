@@ -22,4 +22,4 @@ jobs:
       uses: actions/checkout@main
   
     - name: Check directory config
-      run: python3 .github/workflows/directory_check.py $(pwd)/docs/
+      run: python3 .github/workflows/directory_check.py directory.json $(pwd)/docs

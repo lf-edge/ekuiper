@@ -122,7 +122,7 @@ Aggregate functions perform a calculation on a set of values and return a single
 | json_path_query     | json_path_query(col1, "$.name")  | Gets all items returned by JSON path for the specified JSON value.              |
 | json_path_query_first  | json_path_query_first(col1, "$.name")| Gets the first item returned by JSON path for the specified JSON value.                  |
 
-**Please refer to [json path functions](../json_expr.md#json-path-functions) for how to compose a json path.**  
+**Please refer to [json path functions](./json_expr.md#json-path-functions) for how to compose a json path.**  
 
 ## Other Functions
 | Function    | Example           | Description                                                  |
