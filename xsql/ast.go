@@ -229,6 +229,28 @@ func (c *Call) expr()    {}
 func (c *Call) literal() {}
 func (c *Call) node()    {}
 
+type WhenClause struct {
+	// The condition expression
+	Expr   Expr
+	Result Expr
+}
+
+func (w *WhenClause) expr()    {}
+func (w *WhenClause) literal() {}
+func (w *WhenClause) node()    {}
+
+type CaseExpr struct {
+	// The compare value expression. It can be a value expression or nil.
+	// When it is nil, the WhenClause Expr must be a logical(comparison) expression
+	Value       Expr
+	WhenClauses []*WhenClause
+	ElseClause  Expr
+}
+
+func (c *CaseExpr) expr()    {}
+func (c *CaseExpr) literal() {}
+func (c *CaseExpr) node()    {}
+
 type WindowType int
 
 const (
@@ -439,6 +461,17 @@ func Walk(v Visitor, node Node) {
 		}
 	case *Join:
 		Walk(v, n.Expr)
+
+	case *CaseExpr:
+		Walk(v, n.Value)
+		for _, w := range n.WhenClauses {
+			Walk(v, w)
+		}
+		Walk(v, n.ElseClause)
+
+	case *WhenClause:
+		Walk(v, n.Expr)
+		Walk(v, n.Result)
 
 	case *StreamStmt:
 		Walk(v, &n.Name)

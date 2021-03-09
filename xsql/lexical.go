@@ -83,6 +83,11 @@ const (
 	ASC
 	DESC
 	FILTER
+	CASE
+	WHEN
+	THEN
+	ELSE
+	END
 
 	TRUE
 	FALSE
@@ -406,6 +411,16 @@ func (s *Scanner) ScanIdent() (tok Token, lit string) {
 		return JOIN, lit
 	case "ON":
 		return ON, lit
+	case "CASE":
+		return CASE, lit
+	case "WHEN":
+		return WHEN, lit
+	case "THEN":
+		return THEN, lit
+	case "ELSE":
+		return ELSE, lit
+	case "END":
+		return END, lit
 	case "CREATE":
 		return CREATE, lit
 	case "DROP":

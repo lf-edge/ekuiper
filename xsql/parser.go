@@ -499,7 +499,9 @@ func (p *Parser) parseUnaryExpr() (Expr, error) {
 	p.unscan()
 
 	tok, lit := p.scanIgnoreWhitespace()
-	if tok == IDENT {
+	if tok == CASE {
+		return p.parseCaseExpr()
+	} else if tok == IDENT {
 		if tok1, _ := p.scanIgnoreWhitespace(); tok1 == LPAREN {
 			return p.parseCall(lit)
 		}
@@ -668,6 +670,70 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 		}
 		return win, nil
 	}
+}
+
+func (p *Parser) parseCaseExpr() (*CaseExpr, error) {
+	c := &CaseExpr{}
+	tok, _ := p.scanIgnoreWhitespace()
+	p.unscan()
+	if tok != WHEN { // no condition value for case, additional validation needed
+		if exp, err := p.ParseExpr(); err != nil {
+			return nil, err
+		} else {
+			c.Value = exp
+		}
+	}
+
+loop:
+	for {
+		tok, _ := p.scanIgnoreWhitespace()
+		switch tok {
+		case WHEN:
+			if exp, err := p.ParseExpr(); err != nil {
+				return nil, err
+			} else {
+				if c.WhenClauses == nil {
+					c.WhenClauses = make([]*WhenClause, 0)
+				}
+				if c.Value == nil && !isBooleanArg(exp) {
+					return nil, fmt.Errorf("invalid CASE expression, WHEN expression must be a bool condition")
+				}
+				w := &WhenClause{
+					Expr: exp,
+				}
+				tokThen, _ := p.scanIgnoreWhitespace()
+				if tokThen != THEN {
+					return nil, fmt.Errorf("invalid CASE expression, THEN expected after WHEN")
+				} else {
+					if expThen, err := p.ParseExpr(); err != nil {
+						return nil, err
+					} else {
+						w.Result = expThen
+						c.WhenClauses = append(c.WhenClauses, w)
+					}
+				}
+			}
+		case ELSE:
+			if c.WhenClauses != nil {
+				if exp, err := p.ParseExpr(); err != nil {
+					return nil, err
+				} else {
+					c.ElseClause = exp
+				}
+			} else {
+				return nil, fmt.Errorf("invalid CASE expression, WHEN expected before ELSE")
+			}
+		case END:
+			if c.WhenClauses != nil {
+				break loop
+			} else {
+				return nil, fmt.Errorf("invalid CASE expression, WHEN expected before END")
+			}
+		default:
+			return nil, fmt.Errorf("invalid CASE expression, END expected")
+		}
+	}
+	return c, nil
 }
 
 func validateWindows(name string, args []Expr) (WindowType, error) {
