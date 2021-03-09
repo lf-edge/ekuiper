@@ -1285,6 +1285,99 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
+		}, {
+			s: "SELECT CASE temperature WHEN 25 THEN \"bingo\" WHEN 30 THEN \"high\" ELSE \"low\" END as label, humidity FROM tbl",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr: &CaseExpr{
+							Value: &FieldRef{Name: "temperature"},
+							WhenClauses: []*WhenClause{
+								{
+									Expr:   &IntegerLiteral{Val: 25},
+									Result: &StringLiteral{Val: "bingo"},
+								}, {
+									Expr:   &IntegerLiteral{Val: 30},
+									Result: &StringLiteral{Val: "high"},
+								},
+							},
+							ElseClause: &StringLiteral{Val: "low"},
+						},
+						Name:  "",
+						AName: "label",
+					}, {
+						Expr:  &FieldRef{Name: "humidity"},
+						Name:  "humidity",
+						AName: "",
+					},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
+		}, {
+			s: "SELECT CASE temperature WHEN 25 THEN \"bingo\" WHEN 30 THEN \"high\" END as label, humidity FROM tbl",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr: &CaseExpr{
+							Value: &FieldRef{Name: "temperature"},
+							WhenClauses: []*WhenClause{
+								{
+									Expr:   &IntegerLiteral{Val: 25},
+									Result: &StringLiteral{Val: "bingo"},
+								}, {
+									Expr:   &IntegerLiteral{Val: 30},
+									Result: &StringLiteral{Val: "high"},
+								},
+							},
+							ElseClause: nil,
+						},
+						Name:  "",
+						AName: "label",
+					}, {
+						Expr:  &FieldRef{Name: "humidity"},
+						Name:  "humidity",
+						AName: "",
+					},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
+		}, {
+			s:    "SELECT CASE temperature ELSE \"low\" END as label, humidity FROM tbl",
+			stmt: nil,
+			err:  "invalid CASE expression, WHEN expected before ELSE",
+		}, {
+			s: "SELECT CASE WHEN temperature > 30 THEN \"high\" ELSE \"low\" END as label, humidity FROM tbl",
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						Expr: &CaseExpr{
+							Value: nil,
+							WhenClauses: []*WhenClause{
+								{
+									Expr: &BinaryExpr{
+										OP:  GT,
+										LHS: &FieldRef{Name: "temperature"},
+										RHS: &IntegerLiteral{Val: 30},
+									},
+									Result: &StringLiteral{Val: "high"},
+								},
+							},
+							ElseClause: &StringLiteral{Val: "low"},
+						},
+						Name:  "",
+						AName: "label",
+					}, {
+						Expr:  &FieldRef{Name: "humidity"},
+						Name:  "humidity",
+						AName: "",
+					},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
+		}, {
+			s:    "SELECT CASE WHEN 30 THEN \"high\" ELSE \"low\" END as label, humidity FROM tbl",
+			stmt: nil,
+			err:  "invalid CASE expression, WHEN expression must be a bool condition",
 		},
 	}
 

@@ -404,10 +404,19 @@ func isFloatArg(arg Expr) bool {
 }
 
 func isBooleanArg(arg Expr) bool {
-	if _, ok := arg.(*BooleanLiteral); ok {
+	switch t := arg.(type) {
+	case *BooleanLiteral:
 		return true
+	case *BinaryExpr:
+		switch t.OP {
+		case AND, OR, EQ, NEQ, LT, LTE, GT, GTE:
+			return true
+		default:
+			return false
+		}
+	default:
+		return false
 	}
-	return false
 }
 
 func isStringArg(arg Expr) bool {
