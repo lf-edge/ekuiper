@@ -348,6 +348,63 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo1_0_records_in_total":  int64(5),
 				"source_demo1_0_records_out_total": int64(5),
 			},
+		}, {
+			name: `TestSingleSQLRule9`,
+			sql:  `SELECT color, CASE WHEN size < 2 THEN "S" WHEN size < 4 THEN "M" ELSE "L" END as s, ts FROM demo`,
+			r: [][]map[string]interface{}{
+				{{
+					"color": "red",
+					"s":     "M",
+					"ts":    float64(1541152486013),
+				}},
+				{{
+					"color": "blue",
+					"s":     "L",
+					"ts":    float64(1541152486822),
+				}},
+				{{
+					"color": "blue",
+					"s":     "M",
+					"ts":    float64(1541152487632),
+				}},
+				{{
+					"color": "yellow",
+					"s":     "L",
+					"ts":    float64(1541152488442),
+				}},
+				{{
+					"color": "red",
+					"s":     "S",
+					"ts":    float64(1541152489252),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
+				"op_1_preprocessor_demo_0_records_out_total":  int64(5),
+
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(5),
+				"op_2_project_0_records_out_total":  int64(5),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+			},
+			t: &xstream.PrintableTopo{
+				Sources: []string{"source_demo"},
+				Edges: map[string][]string{
+					"source_demo":            {"op_1_preprocessor_demo"},
+					"op_1_preprocessor_demo": {"op_2_project"},
+					"op_2_project":           {"sink_mockSink"},
+				},
+			},
 		},
 	}
 	handleStream(true, streamList, t)

@@ -508,14 +508,29 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"a.b.c": "val_a",
 			}},
 		},
+		{
+			sql: `SELECT CASE a WHEN 10 THEN "true" END AS b FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": int64(10),
+				},
+			},
+			result: []map[string]interface{}{{
+				"b": "true",
+			}},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := common.Log.WithField("rule", "TestProjectPlan_Apply1")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-
+		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+		if err != nil {
+			t.Errorf("parse sql error： %s", err)
+			continue
+		}
 		pp := &ProjectOp{Fields: stmt.Fields, SendMeta: true}
 		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil)

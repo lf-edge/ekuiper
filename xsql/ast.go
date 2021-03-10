@@ -1172,6 +1172,8 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 	case *Wildcard:
 		val, _ := v.Valuer.Value("")
 		return val
+	case *CaseExpr:
+		return v.evalCase(expr)
 	default:
 		return nil
 	}
@@ -1195,6 +1197,38 @@ func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 		return rhs
 	}
 	return v.simpleDataEval(lhs, rhs, expr.OP)
+}
+
+func (v *ValuerEval) evalCase(expr *CaseExpr) interface{} {
+	if expr.Value != nil { // compare value to all when clause
+		ev := v.Eval(expr.Value)
+		for _, w := range expr.WhenClauses {
+			wv := v.Eval(w.Expr)
+			switch r := v.simpleDataEval(ev, wv, EQ).(type) {
+			case error:
+				return fmt.Errorf("evaluate case expression error: %s", r)
+			case bool:
+				if r {
+					return v.Eval(w.Result)
+				}
+			}
+		}
+	} else {
+		for _, w := range expr.WhenClauses {
+			switch r := v.Eval(w.Expr).(type) {
+			case error:
+				return fmt.Errorf("evaluate case expression error: %s", r)
+			case bool:
+				if r {
+					return v.Eval(w.Result)
+				}
+			}
+		}
+	}
+	if expr.ElseClause != nil {
+		return v.Eval(expr.ElseClause)
+	}
+	return nil
 }
 
 func isSliceOrArray(v interface{}) bool {
