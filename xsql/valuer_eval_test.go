@@ -239,6 +239,91 @@ func TestCalculation(t *testing.T) {
 	}
 }
 
+func TestCase(t *testing.T) {
+	data := []struct {
+		m Message
+		r []interface{}
+	}{
+		{
+			m: map[string]interface{}{
+				"a": float64(32),
+				"b": float64(72),
+			},
+			r: []interface{}{
+				1, 0, 0, 1,
+			},
+		}, {
+			m: map[string]interface{}{
+				"a": int64(32),
+				"b": int64(72),
+			},
+			r: []interface{}{
+				1, 0, 0, 1,
+			},
+		}, {
+			m: map[string]interface{}{
+				"a": "32",
+				"b": "72",
+			},
+			r: []interface{}{
+				errors.New("evaluate case expression error: invalid operation string(32) = int64(32)"), errors.New("evaluate case expression error: invalid operation string(32) = int64(72)"),
+				errors.New("evaluate case expression error: invalid operation string(32) > int64(70)"), errors.New("evaluate case expression error: invalid operation string(32) > int64(30)"),
+			},
+		}, {
+			m: map[string]interface{}{
+				"a": float64(55),
+				"b": int64(55),
+			},
+			r: []interface{}{
+				0, nil, 0, 1,
+			},
+		}, {
+			m: map[string]interface{}{
+				"a": int64(55),
+				"b": float64(0),
+			},
+			r: []interface{}{0, nil, 0, 1},
+		}, {
+			m: map[string]interface{}{
+				"c": "nothing",
+			},
+			r: []interface{}{
+				0, nil, -1, nil,
+			},
+		}, {
+			m: map[string]interface{}{
+				"a": 12,
+				"c": "nothing",
+			},
+			r: []interface{}{
+				0, nil, -1, nil,
+			},
+		},
+	}
+	sqls := []string{
+		"select CASE a WHEN 32 THEN 1 ELSE 0 END as t from src",
+		"select CASE a WHEN 72 THEN 1 WHEN 32 THEN 0 END as t from src",
+		"select CASE WHEN a > 70 THEN 1 WHEN a > 30 AND a < 70 THEN 0 ELSE -1 END as t from src",
+		"select CASE WHEN a > 30 THEN 1 END as t from src",
+	}
+	var projects []Expr
+	for _, sql := range sqls {
+		stmt, _ := NewParser(strings.NewReader(sql)).Parse()
+		projects = append(projects, stmt.Fields[0].Expr)
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(data)*len(sqls))
+	for i, tt := range data {
+		for j, c := range projects {
+			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: common.GetNowInMilli(), Metadata: nil}
+			ve := &ValuerEval{Valuer: MultiValuer(tuple)}
+			result := ve.Eval(c)
+			if !reflect.DeepEqual(tt.r[j], result) {
+				t.Errorf("%d-%d. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, j, tt.r[j], result)
+			}
+		}
+	}
+}
+
 func TestArray(t *testing.T) {
 	data := []struct {
 		m Message
