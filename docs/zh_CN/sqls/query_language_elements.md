@@ -303,6 +303,59 @@ FROM table_name
 ORDER BY column1, column2, ... ASC|DESC;
 ```
 
+## Case Expression
+
+The case expression evaluates a list of conditions and returns one of multiple possible result expressions. It let you use IF ... THEN ... ELSE logic in SQL statements without having to invoke procedures.
+
+There are two types of case expression: simple case expression and searched case expression.
+
+### Simple Case Expression
+
+The simple case expression compares an expression to a set of simple expressions to determine the result.
+
+#### Syntax
+
+```sql
+CASE value   
+     WHEN conditionValue THEN result_expression [ ...n ]   
+     [ ELSE else_result_expression ]   
+END   
+```
+
+**Example**:
+
+```sql
+SELECT CASE color 
+    WHEN "red" THEN 1 
+    WHEN "yellow" THEN 2 
+    ELSE 3 END as colorInteger, 
+humidity FROM tbl
+```
+
+### Searched Case Expression
+
+The searched case expression evaluates a set of bool expressions to determine the result.
+
+#### Syntax
+
+```sql
+CASE    
+     WHEN condition THEN result_expression [ ...n ]   
+     [ ELSE else_result_expression ]   
+END 
+```
+
+**Example**:
+
+```sql
+SELECT CASE 
+    WHEN size < 150 THEN "S" 
+    WHEN size < 170 THEN "M"
+    WHEN size < 175 THEN "L"
+    ELSE "XL" END as sizeLabel
+FROM tbl
+```
+
 ## 使用保留字或特殊字符
 如果你想在 SQL 或者流管理中使用保留关键字，或者特殊字符，请参考 [Kuiper 词法元素](lexical_elements.md).
 

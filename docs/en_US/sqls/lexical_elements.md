@@ -31,7 +31,7 @@ SELECT `a-b`, `hello world`, `中文Chinese` from demo
 **Reserved keywords for rule SQL**: If you'd like to use the following keyword in rule SQL, you will have to use backtick to enclose them.
 
 ```
-SELECT, FROM, JOIN, LEFT, INNER, ON, WHERE, GROUP, ORDER, HAVING, BY, ASC, DESC, AND, OR
+SELECT, FROM, JOIN, LEFT, INNER, ON, WHERE, GROUP, ORDER, HAVING, BY, ASC, DESC, AND, OR, CASE, WHEN, THEN, ELSE, END
 ```
 
 The following is an example for using a stream named `from`, which is a reserved keyword in Kuiper.
