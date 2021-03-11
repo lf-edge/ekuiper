@@ -196,6 +196,10 @@ You can use command line tool to stop the rule for a while and restart it and ot
 $ bin/kuiper stop rule ruleDemo
 ```
 
+Refer to the following topics for guidance on using the Kuiper.
 
-
-If you'd like to know more about the project, please refer to [doc home](index.md).
+- [Command line interface tools - CLI](./cli/overview.md)
+- [Kuiper SQL reference](./sqls/overview.md)
+- [Rules](./rules/overview.md)
+- [Extend Kuiper](./extension/overview.md)
+- [Plugins](./plugins/overview.md)

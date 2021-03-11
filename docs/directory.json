@@ -353,6 +353,10 @@
 		{
 			"title": "Rest API",
 			"children": [{
+				    "title": "Introduction",
+				    "path": "restapi/overview"
+			    },
+				{
 					"title": "Streams",
 					"path": "restapi/streams"
 				},

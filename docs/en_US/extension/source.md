@@ -38,7 +38,7 @@ function MySource() api.Source{
 }
 ```
 
-The [Randome Source](../../../plugins/sources/random.go) is a good example.
+The [Randome Source](https://github.com/emqx/kuiper/blob/master/plugins/sources/random/random.go) is a good example.
 
 ### Rewindable source
 If the [rule checkpoint](../rules/state_and_fault_tolerance.md#source-consideration) is enabled, the source requires to be rewindable. That means the source need to implement both ``api.Source`` and ``api.Rewindable`` interface. 
@@ -51,7 +51,7 @@ A typical implementation is to save an ``offset`` as a field of the source. And 
 
 Kuiper configurations are formatted as yaml and it provides a centralize location _/etc_ to hold all the configurations. Inside it, a subfolder _sources_ is provided for the source configurations including the extended sources.
 
-A configuration system is supported for Kuiper extension which will automatically read the configuration in yaml file and feed into the _Configure_ method of the source. If the [CONF_KEY](../streams.md#create-stream) property is specified in the stream, the configuration of that key will be fed. Otherwise, the default configuration is used.
+A configuration system is supported for Kuiper extension which will automatically read the configuration in yaml file and feed into the _Configure_ method of the source. If the [CONF_KEY](../sqls/streams.md#create-stream) property is specified in the stream, the configuration of that key will be fed. Otherwise, the default configuration is used.
  
  To use configuration in your source, the following conventions must be followed.
  1. The name of your configuration file must be the same as the plugin name. For example, mySource.yaml.
@@ -74,7 +74,7 @@ go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so plugins/sou
 
 ### Usage
 
-The customized source is specified in a [stream definition](../streams.md#create-stream). The related properties are:
+The customized source is specified in a [stream definition](../sqls/streams.md#create-stream). The related properties are:
 
 - TYPE: specify the name of the source, must be camel case.
 - CONF_KEY: specify the key of the configuration to be used.

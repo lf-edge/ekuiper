@@ -44,7 +44,7 @@ function MySource() api.Source{
 
 Kuiper 配置的格式为 yaml，它提供了一个集中位置  _/etc_  来保存所有配置。 在其中，为源配置提供了一个子文件夹  _sources_，同时也适用于扩展源。
 
-Kuiper 扩展支持配置系统自动读取 yaml 文件中的配置，并将其输入到源的 _Configure_ 方法中。 如果在流中指定了 [CONF_KEY](../streams.md#create-stream)  属性，则将输入该键的配置。 否则，将使用默认配置。
+Kuiper 扩展支持配置系统自动读取 yaml 文件中的配置，并将其输入到源的 _Configure_ 方法中。 如果在流中指定了 [CONF_KEY](../sqls/streams.md#create-stream)  属性，则将输入该键的配置。 否则，将使用默认配置。
 
 要在源中使用配置，必须遵循以下约定：
  1. 您的配置文件名称必须与插件名字相同，例如，mySource.yaml。
@@ -67,7 +67,7 @@ go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so plugins/sou
 
 ### 使用
 
-在[流定义](../streams.md#create-stream)中指定自定义源， 相关属性为：
+在[流定义](../sqls/streams.md#create-stream)中指定自定义源， 相关属性为：
 
 - TYPE：指定源名称，必须为驼峰式命名。
 - CONF_KEY：指定要使用的配置键。
