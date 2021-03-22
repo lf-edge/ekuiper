@@ -47,5 +47,5 @@
 
 想了解更多 EMQ X Kuiper 的功能？请参考以下关于在边缘端使用 EMQ X Kuiper 与 AWS/Azure IoT 云集成的案例。
 
-   - [轻量级边缘计算 EMQ X Kuiper 与 AWS IoT 集成方案](https://www.jianshu.com/p/7c0218fd1ee2)
-   - [轻量级边缘计算 EMQ X Kuiper 与 Azure IoT Hub 集成方案](https://www.jianshu.com/p/49b06751355f) 
+   - [轻量级边缘计算 EMQ X Kuiper 与 AWS IoT 集成方案](https://www.emqx.cn/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution)
+   - [轻量级边缘计算 EMQ X Kuiper 与 Azure IoT Hub 集成方案](https://www.emqx.cn/blog/lightweight-edge-computing-emqx-kuiper-and-azure-iot-hub-integration-solution) 
