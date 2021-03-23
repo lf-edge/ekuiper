@@ -47,7 +47,7 @@ jobs:
         - name: run edgex && emqx && kuiper
           run: |
             sudo ./fvt_scripts/setup_env.sh
-            ln -s _build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-x86_64/log kuiper_logs
+            ln -s _build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log kuiper_logs
         - name: run fvt tests
           timeout-minutes: 8
           run: ./fvt_scripts/run_jmeter.sh with_edgex=true

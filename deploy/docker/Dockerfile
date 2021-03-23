@@ -7,7 +7,7 @@ WORKDIR /go/kuiper
 RUN apt update && apt install -y pkg-config libczmq-dev
 
 RUN make build_with_edgex \
-    && ln -s /go/kuiper/_build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-$(uname -m) /usr/local/kuiper 
+    && ln -s /go/kuiper/_build/kuiper-$(git describe --tags --always)-$(go env GOOS)-$(go env GOARCH) /usr/local/kuiper
 
 RUN go build  -o kuiper_conf_util deploy/docker/conf_util.go \
     && if [ "$(uname -m)" != "aarch64" ]; then apt install -y upx && upx ./kuiper_conf_util; fi \

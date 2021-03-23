@@ -3,7 +3,7 @@ TOPDIR := /tmp/kuiper
 SRCDIR := $(TOPDIR)/$(PKG_VSN)
 BUILT := $(SRCDIR)/BUILT
 
-TARGET_PKG := kuiper-$(PKG_VSN)-linux-$(shell uname -m).deb
+TARGET_PKG := kuiper-$(PKG_VSN)-linux-$(shell go env GOARCH).deb
 .PHONY: all
 all: | $(BUILT)
 	cp -r debian $(SRCDIR)/
