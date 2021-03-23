@@ -19,7 +19,7 @@ ifeq ($(ARCH),mips64)
 ARCH := mips64el
 endif
 
-TARGET_PKG := kuiper-$(PKG_VSN)-linux-$(ARCH).rpm
+TARGET_PKG := kuiper-$(PKG_VSN)-linux-$(shell go env GOARCH).rpm
 
 .PHONY: all
 all: | $(BUILT)
