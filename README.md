@@ -1,5 +1,11 @@
 # EMQ X Kuiper - An edge lightweight IoT data analytics software
 
+[![GitHub Release](https://img.shields.io/github/release/emqx/kuiper?color=brightgreen)](https://github.com/emqx/kuiper/releases)
+[![Docker Pulls](https://img.shields.io/docker/pulls/emqx/kuiper)](https://hub.docker.com/r/emqx/kuiper)
+[![Slack Invite](<https://kuiper-slack-invite.emqx.io/badge.svg>)](https://kuiper-slack-invite.emqx.io/)
+[![Twitter](https://img.shields.io/badge/Follow-EMQ%20X-1DA1F2?logo=twitter)](https://twitter.com/emqtt)
+[![Community](https://img.shields.io/badge/Community-Kuiper-yellow?logo=github)](https://github.com/emqx/kuiper/discussions)
+
 [English](README.md) | [简体中文](README-CN.md)
 
 ## Overview
@@ -55,7 +61,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 - [EdgeX rule engine tutorial](docs/en_US/edgex/edgex_rule_engine_tutorial.md)
 
 ## Slack channels
-Join our [Slack](https://join.slack.com/t/emqx/shared_invite/zt-7xrracuf-GGdbNB1pARtaZKvv6IfTvw), and then join [kuiper](https://emqx.slack.com/archives/C0138SZP23Y) channel.
+Join our [Slack](https://kuiper-slack-invite.emqx.io/).
 
 ## Performance test result
 
