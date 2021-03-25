@@ -3,7 +3,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/emqx/kuiper)](https://hub.docker.com/r/emqx/kuiper)
 [![Slack Invite](<https://kuiper-slack-invite.emqx.io/badge.svg>)](https://kuiper-slack-invite.emqx.io/)
 [![Twitter](https://img.shields.io/badge/Follow-EMQ%20X-1DA1F2?logo=twitter)](https://twitter.com/emqtt)
-[![问答社区](https://img.shields.io/badge/Community-Kuiper-yellow)](https://askemq.com/c/kuiper/)
+[![问答社区](https://img.shields.io/badge/问答社区-Kuiper-yellow)](https://askemq.com/c/kuiper/)
 
 [English](README.md) | [简体中文](README-CN.md)
 
