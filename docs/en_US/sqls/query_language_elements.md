@@ -5,14 +5,13 @@ Kuiper provides a variety of elements for building queries. They are summarized 
 
 | Element               | Summary                                                      |
 | --------------------- | ------------------------------------------------------------ |
-| [SELECT](#SELECT)     | SELECT is used to retrieve rows from input streams and enables the selection of one or many columns from one or many input streams in Kuiper. |
-| [FROM](#FROM)         | FROM specifies the input stream. The FROM clause is always required for any SELECT statement. |
-| [JOIN](#JOIN)         | JOIN is used to combine records from two or more input streams. JOIN includes LEFT, RIGHT, FULL & CROSS. |
-| [WHERE](#WHERE)       | WHERE specifies the search condition for the rows returned by the query. |
-| [GROUP BY](#GROUP BY) | GROUP BY groups a selected set of rows into a set of summary rows grouped by the values of one or more columns or expressions. |
-| [ORDER BY](#ORDER BY) | Order the rows by values of one or more columns.             |
-| [HAVING](#HAVING)     | HAVING specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression.             |
-|                       |                                                              |
+| [SELECT](#select)     | SELECT is used to retrieve rows from input streams and enables the selection of one or many columns from one or many input streams in Kuiper. |
+| [FROM](#from)         | FROM specifies the input stream. The FROM clause is always required for any SELECT statement. |
+| [JOIN](#join)         | JOIN is used to combine records from two or more input streams. JOIN includes LEFT, RIGHT, FULL & CROSS. |
+| [WHERE](#where)       | WHERE specifies the search condition for the rows returned by the query. |
+| [GROUP BY](#group-by) | GROUP BY groups a selected set of rows into a set of summary rows grouped by the values of one or more columns or expressions. |
+| [ORDER BY](#order-by) | Order the rows by values of one or more columns.             |
+| [HAVING](#having)     | HAVING specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression.             |
 
 ## SELECT
 
