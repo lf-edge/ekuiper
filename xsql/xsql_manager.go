@@ -42,22 +42,22 @@ func init() {
 	})
 
 	Language.Handle(CREATE, func(p *Parser) (statement Statement, e error) {
-		return p.ParseCreateStreamStmt()
+		return p.ParseCreateStmt()
 	})
 
 	Language.Handle(SHOW, func(p *Parser) (statement Statement, e error) {
-		return p.parseShowStreamsStmt()
+		return p.parseShowStmt()
 	})
 
 	Language.Handle(EXPLAIN, func(p *Parser) (statement Statement, e error) {
-		return p.parseExplainStreamsStmt()
+		return p.parseExplainStmt()
 	})
 
 	Language.Handle(DESCRIBE, func(p *Parser) (statement Statement, e error) {
-		return p.parseDescribeStreamStmt()
+		return p.parseDescribeStmt()
 	})
 
 	Language.Handle(DROP, func(p *Parser) (statement Statement, e error) {
-		return p.parseDropStreamsStmt()
+		return p.parseDropStmt()
 	})
 }

@@ -2,8 +2,11 @@ package nodes
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/checkpoints"
+	"github.com/go-yaml/yaml"
+	"strings"
 	"sync"
 )
 
@@ -15,6 +18,16 @@ type OperatorNode interface {
 	AddInputCount()
 	SetQos(api.Qos)
 	SetBarrierHandler(checkpoints.BarrierHandler)
+}
+
+type DataSourceNode interface {
+	api.Emitter
+	Open(ctx api.StreamContext, errCh chan<- error)
+	GetName() string
+	GetMetrics() [][]interface{}
+	Broadcast(val interface{}) error
+	GetStreamContext() api.StreamContext
+	SetQos(api.Qos)
 }
 
 type defaultNode struct {
@@ -141,4 +154,47 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 		}
 	}
 	return data, false
+}
+
+func getSourceConf(ctx api.StreamContext, sourceType string, options map[string]string) map[string]interface{} {
+	confkey := options["CONF_KEY"]
+	logger := ctx.GetLogger()
+	confPath := "sources/" + sourceType + ".yaml"
+	if sourceType == "mqtt" {
+		confPath = "mqtt_source.yaml"
+	}
+	conf, err := common.LoadConf(confPath)
+	props := make(map[string]interface{})
+	if err == nil {
+		cfg := make(map[interface{}]interface{})
+		if err := yaml.Unmarshal(conf, &cfg); err != nil {
+			logger.Warnf("fail to parse yaml for source %s. Return an empty configuration", sourceType)
+		} else {
+			def, ok := cfg["default"]
+			if !ok {
+				logger.Warnf("default conf is not found", confkey)
+			} else {
+				if def1, ok1 := def.(map[interface{}]interface{}); ok1 {
+					props = common.ConvertMap(def1)
+				}
+				if c, ok := cfg[confkey]; ok {
+					if c1, ok := c.(map[interface{}]interface{}); ok {
+						c2 := common.ConvertMap(c1)
+						for k, v := range c2 {
+							props[k] = v
+						}
+					}
+				}
+			}
+		}
+	} else {
+		logger.Warnf("config file %s.yaml is not loaded properly. Return an empty configuration", sourceType)
+	}
+	f, ok := options["FORMAT"]
+	if !ok || f == "" {
+		f = "json"
+	}
+	props["format"] = strings.ToLower(f)
+	logger.Debugf("get conf for %s with conf key %s: %v", sourceType, confkey, props)
+	return props
 }

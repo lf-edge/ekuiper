@@ -15,6 +15,11 @@ type Node interface {
 	node()
 }
 
+type NameNode interface {
+	Node
+	GetName() string
+}
+
 type Expr interface {
 	Node
 	expr()
@@ -315,10 +320,23 @@ type StreamName string
 
 func (sn *StreamName) node() {}
 
+type StreamType int
+
+const (
+	TypeStream StreamType = iota
+	TypeTable
+)
+
+var StreamTypeMap = map[StreamType]string{
+	TypeStream: "stream",
+	TypeTable:  "table",
+}
+
 type StreamStmt struct {
 	Name         StreamName
 	StreamFields StreamFields
 	Options      Options
+	StreamType   StreamType //default to TypeStream
 }
 
 func (ss *StreamStmt) node() {}
@@ -388,14 +406,47 @@ type DropStreamStatement struct {
 func (ss *ShowStreamsStatement) Stmt() {}
 func (ss *ShowStreamsStatement) node() {}
 
-func (dss *DescribeStreamStatement) Stmt() {}
-func (dss *DescribeStreamStatement) node() {}
+func (dss *DescribeStreamStatement) Stmt()           {}
+func (dss *DescribeStreamStatement) node()           {}
+func (dss *DescribeStreamStatement) GetName() string { return dss.Name }
 
-func (ess *ExplainStreamStatement) Stmt() {}
-func (ess *ExplainStreamStatement) node() {}
+func (ess *ExplainStreamStatement) Stmt()           {}
+func (ess *ExplainStreamStatement) node()           {}
+func (ess *ExplainStreamStatement) GetName() string { return ess.Name }
 
-func (dss *DropStreamStatement) Stmt() {}
-func (dss *DropStreamStatement) node() {}
+func (dss *DropStreamStatement) Stmt()           {}
+func (dss *DropStreamStatement) node()           {}
+func (dss *DropStreamStatement) GetName() string { return dss.Name }
+
+type ShowTablesStatement struct {
+}
+
+type DescribeTableStatement struct {
+	Name string
+}
+
+type ExplainTableStatement struct {
+	Name string
+}
+
+type DropTableStatement struct {
+	Name string
+}
+
+func (ss *ShowTablesStatement) Stmt() {}
+func (ss *ShowTablesStatement) node() {}
+
+func (dss *DescribeTableStatement) Stmt()           {}
+func (dss *DescribeTableStatement) node()           {}
+func (dss *DescribeTableStatement) GetName() string { return dss.Name }
+
+func (ess *ExplainTableStatement) Stmt()           {}
+func (ess *ExplainTableStatement) node()           {}
+func (ess *ExplainTableStatement) GetName() string { return ess.Name }
+
+func (dss *DropTableStatement) Stmt()           {}
+func (dss *DropTableStatement) node()           {}
+func (dss *DropTableStatement) GetName() string { return dss.Name }
 
 type Visitor interface {
 	Visit(Node) Visitor
@@ -478,25 +529,11 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.StreamFields)
 		Walk(v, n.Options)
 
-	case *BasicType:
+	case *BasicType, *ArrayType, *RecType:
 		Walk(v, n)
 
-	case *ArrayType:
-		Walk(v, n)
-
-	case *RecType:
-		Walk(v, n)
-
-	case *ShowStreamsStatement:
-		Walk(v, n)
-
-	case *DescribeStreamStatement:
-		Walk(v, n)
-
-	case *ExplainStreamStatement:
-		Walk(v, n)
-
-	case *DropStreamStatement:
+	case *ShowStreamsStatement, *DescribeStreamStatement, *ExplainStreamStatement, *DropStreamStatement,
+		*ShowTablesStatement, *DescribeTableStatement, *ExplainTableStatement, *DropTableStatement:
 		Walk(v, n)
 	}
 }
@@ -787,7 +824,7 @@ func (jt *JoinTuple) doGetValue(t string, key string) (interface{}, bool) {
 					return v, ok
 				}
 			}
-			common.Log.Infoln("Wrong key: ", key, ", not found")
+			common.Log.Debugf("Wrong key: %s not found", key)
 			return nil, false
 		} else {
 			return getTupleValue(tuples[0], t, key)

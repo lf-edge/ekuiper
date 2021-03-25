@@ -9,7 +9,7 @@ import (
 
 func TestSingleSQL(t *testing.T) {
 	//Reset
-	streamList := []string{"demo", "demoError", "demo1"}
+	streamList := []string{"demo", "demoError", "demo1", "table1"}
 	handleStream(false, streamList, t)
 	//Data setup
 	var tests = []ruleTest{
@@ -404,6 +404,64 @@ func TestSingleSQL(t *testing.T) {
 					"op_1_preprocessor_demo": {"op_2_project"},
 					"op_2_project":           {"sink_mockSink"},
 				},
+			},
+		}, {
+			name: `TestSingleSQLRule10`,
+			sql:  "SELECT * FROM demo INNER JOIN table1 on demo.ts = table1.id",
+			r: [][]map[string]interface{}{
+				{{
+					"id":    float64(1541152486013),
+					"name":  "name1",
+					"color": "red",
+					"size":  float64(3),
+					"ts":    float64(1541152486013),
+				}},
+				{{
+					"id":    float64(1541152487632),
+					"name":  "name2",
+					"color": "blue",
+					"size":  float64(2),
+					"ts":    float64(1541152487632),
+				}},
+				{{
+					"id":    float64(1541152489252),
+					"name":  "name3",
+					"color": "red",
+					"size":  float64(1),
+					"ts":    float64(1541152489252),
+				}},
+			},
+			m: map[string]interface{}{
+				"op_1_preprocessor_demo_0_exceptions_total":  int64(0),
+				"op_1_preprocessor_demo_0_records_in_total":  int64(5),
+				"op_1_preprocessor_demo_0_records_out_total": int64(5),
+
+				"op_2_tableprocessor_table1_0_exceptions_total":  int64(0),
+				"op_2_tableprocessor_table1_0_records_in_total":  int64(1),
+				"op_2_tableprocessor_table1_0_records_out_total": int64(1),
+
+				"op_3_join_aligner_0_records_in_total":  int64(6),
+				"op_3_join_aligner_0_records_out_total": int64(5),
+
+				"op_4_join_0_exceptions_total":  int64(0),
+				"op_4_join_0_records_in_total":  int64(5),
+				"op_4_join_0_records_out_total": int64(3),
+
+				"op_5_project_0_exceptions_total":  int64(0),
+				"op_5_project_0_records_in_total":  int64(3),
+				"op_5_project_0_records_out_total": int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"source_table1_0_exceptions_total":  int64(0),
+				"source_table1_0_records_in_total":  int64(1),
+				"source_table1_0_records_out_total": int64(1),
 			},
 		},
 	}

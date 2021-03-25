@@ -33,6 +33,24 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 		default:
 			return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", r)
 		}
+	case xsql.WindowTuples: // For batch table, will return the batch
+		var f []xsql.Tuple
+		for _, t := range input.Tuples {
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&t, fv)}
+			result := ve.Eval(p.Condition)
+			switch val := result.(type) {
+			case error:
+				return fmt.Errorf("run Where error: %s", val)
+			case bool:
+				if val {
+					f = append(f, t)
+				}
+			default:
+				return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
+			}
+		}
+		input.Tuples = f
+		return input
 	case xsql.WindowTuplesSet:
 		if len(input) != 1 {
 			return fmt.Errorf("run Where error: the input WindowTuplesSet with multiple tuples cannot be evaluated")

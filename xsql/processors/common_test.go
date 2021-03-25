@@ -1046,7 +1046,10 @@ func createStream(t *testing.T, tt ruleTest, j int, opt *api.RuleOption, sinkPro
 		} else {
 			streams := xsql.GetStreams(selectStmt)
 			for _, stream := range streams {
-				data := testData[stream]
+				data, ok := testData[stream]
+				if !ok {
+					continue
+				}
 				dataLength = len(data)
 				datas = append(datas, data)
 				source := nodes.NewSourceNodeWithSource(stream, test.NewMockSource(data), map[string]string{
@@ -1140,11 +1143,21 @@ func handleStream(createOrDrop bool, names []string, t *testing.T) {
 				sql = "CREATE STREAM text (slogan string, brand string) WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"
 			case "binDemo":
 				sql = "CREATE STREAM binDemo () WITH (DATASOURCE=\"users\", FORMAT=\"BINARY\")"
+			case "table1":
+				sql = `CREATE TABLE table1 (
+					name STRING,
+					size BIGINT,
+					id BIGINT
+				) WITH (DATASOURCE="lookup.json", FORMAT="json", CONF_KEY="test");`
 			default:
 				t.Errorf("create stream %s fail", name)
 			}
 		} else {
-			sql = `DROP STREAM ` + name
+			if strings.Index(name, "table") == 0 {
+				sql = `DROP TABLE ` + name
+			} else {
+				sql = `DROP STREAM ` + name
+			}
 		}
 
 		_, err := p.ExecStmt(sql)

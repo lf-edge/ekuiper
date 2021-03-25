@@ -16,7 +16,9 @@ import (
 	"strings"
 )
 
-var log = common.Log
+var (
+	log = common.Log
+)
 
 type StreamProcessor struct {
 	db kv.KeyValue
@@ -37,23 +39,44 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 		return nil, err
 	}
 	switch s := stmt.(type) {
-	case *xsql.StreamStmt:
+	case *xsql.StreamStmt: //Table is also StreamStmt
 		var r string
-		r, err = p.execCreateStream(s, statement)
+		err = p.execSave(s, statement, false)
+		stt := xsql.StreamTypeMap[s.StreamType]
+		if err != nil {
+			err = fmt.Errorf("Create %s fails: %v.", stt, err)
+		} else {
+			r = fmt.Sprintf("%s %s is created.", strings.Title(stt), s.Name)
+			log.Printf("%s", r)
+		}
 		result = append(result, r)
 	case *xsql.ShowStreamsStatement:
-		result, err = p.execShowStream(s)
+		result, err = p.execShow(xsql.TypeStream)
+	case *xsql.ShowTablesStatement:
+		result, err = p.execShow(xsql.TypeTable)
 	case *xsql.DescribeStreamStatement:
 		var r string
-		r, err = p.execDescribeStream(s)
+		r, err = p.execDescribe(s, xsql.TypeStream)
+		result = append(result, r)
+	case *xsql.DescribeTableStatement:
+		var r string
+		r, err = p.execDescribe(s, xsql.TypeTable)
 		result = append(result, r)
 	case *xsql.ExplainStreamStatement:
 		var r string
-		r, err = p.execExplainStream(s)
+		r, err = p.execExplain(s, xsql.TypeStream)
+		result = append(result, r)
+	case *xsql.ExplainTableStatement:
+		var r string
+		r, err = p.execExplain(s, xsql.TypeTable)
 		result = append(result, r)
 	case *xsql.DropStreamStatement:
 		var r string
-		r, err = p.execDropStream(s)
+		r, err = p.execDrop(s, xsql.TypeStream)
+		result = append(result, r)
+	case *xsql.DropTableStatement:
+		var r string
+		r, err = p.execDrop(s, xsql.TypeTable)
 		result = append(result, r)
 	default:
 		return nil, fmt.Errorf("Invalid stream statement: %s", statement)
@@ -62,47 +85,50 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 	return
 }
 
-func (p *StreamProcessor) execCreateStream(stmt *xsql.StreamStmt, statement string) (string, error) {
+func (p *StreamProcessor) execSave(stmt *xsql.StreamStmt, statement string, replace bool) error {
 	err := p.db.Open()
 	if err != nil {
-		return "", fmt.Errorf("Create stream fails, error when opening db: %v.", err)
+		return fmt.Errorf("error when opening db: %v.", err)
 	}
 	defer p.db.Close()
-	err = p.db.Setnx(string(stmt.Name), statement)
+	s, err := json.Marshal(xsql.StreamInfo{
+		StreamType: stmt.StreamType,
+		Statement:  statement,
+	})
 	if err != nil {
-		return "", fmt.Errorf("Create stream fails: %v.", err)
-	} else {
-		info := fmt.Sprintf("Stream %s is created.", stmt.Name)
-		log.Printf("%s", info)
-		return info, nil
+		return fmt.Errorf("error when saving to db: %v.", err)
 	}
+	if replace {
+		err = p.db.Set(string(stmt.Name), string(s))
+	} else {
+		err = p.db.Setnx(string(stmt.Name), string(s))
+	}
+	return err
 }
 
-func (p *StreamProcessor) ExecReplaceStream(statement string) (string, error) {
+func (p *StreamProcessor) ExecReplaceStream(statement string, st xsql.StreamType) (string, error) {
 	parser := xsql.NewParser(strings.NewReader(statement))
 	stmt, err := xsql.Language.Parse(parser)
 	if err != nil {
 		return "", err
 	}
-
+	stt := xsql.StreamTypeMap[st]
 	switch s := stmt.(type) {
 	case *xsql.StreamStmt:
-		if err = p.db.Open(); nil != err {
-			return "", fmt.Errorf("Replace stream fails, error when opening db: %v.", err)
+		if s.StreamType != st {
+			return "", common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("%s %s is not found", xsql.StreamTypeMap[st], s.Name))
 		}
-		defer p.db.Close()
-
-		if err = p.db.Set(string(s.Name), statement); nil != err {
-			return "", fmt.Errorf("Replace stream fails: %v.", err)
+		err = p.execSave(s, statement, true)
+		if err != nil {
+			return "", fmt.Errorf("Replace %s fails: %v.", stt, err)
 		} else {
-			info := fmt.Sprintf("Stream %s is replaced.", s.Name)
+			info := fmt.Sprintf("%s %s is replaced.", strings.Title(stt), s.Name)
 			log.Printf("%s", info)
 			return info, nil
 		}
 	default:
-		return "", fmt.Errorf("Invalid stream statement: %s", statement)
+		return "", fmt.Errorf("Invalid %s statement: %s", stt, statement)
 	}
-	return "", nil
 }
 
 func (p *StreamProcessor) ExecStreamSql(statement string) (string, error) {
@@ -114,88 +140,111 @@ func (p *StreamProcessor) ExecStreamSql(statement string) (string, error) {
 	}
 }
 
-func (p *StreamProcessor) execShowStream(_ *xsql.ShowStreamsStatement) ([]string, error) {
-	keys, err := p.ShowStream()
+func (p *StreamProcessor) execShow(st xsql.StreamType) ([]string, error) {
+	keys, err := p.ShowStream(st)
 	if len(keys) == 0 {
-		keys = append(keys, "No stream definitions are found.")
+		keys = append(keys, fmt.Sprintf("No %s definitions are found.", xsql.StreamTypeMap[st]))
 	}
 	return keys, err
 }
 
-func (p *StreamProcessor) ShowStream() ([]string, error) {
+func (p *StreamProcessor) ShowStream(st xsql.StreamType) ([]string, error) {
+	stt := xsql.StreamTypeMap[st]
 	err := p.db.Open()
 	if err != nil {
-		return nil, fmt.Errorf("Show stream fails, error when opening db: %v.", err)
+		return nil, fmt.Errorf("Show %ss fails, error when opening db: %v.", stt, err)
 	}
 	defer p.db.Close()
-	return p.db.Keys()
+	keys, err := p.db.Keys()
+	if err != nil {
+		return nil, fmt.Errorf("Show %ss fails, error when loading data from db: %v.", stt, err)
+	}
+	var (
+		v      string
+		vs     = &xsql.StreamInfo{}
+		result = make([]string, 0)
+	)
+	for _, k := range keys {
+		if ok, _ := p.db.Get(k, &v); ok {
+			if err := json.Unmarshal([]byte(v), vs); err == nil && vs.StreamType == st {
+				result = append(result, k)
+			}
+		}
+	}
+	return result, nil
 }
 
-func (p *StreamProcessor) execDescribeStream(stmt *xsql.DescribeStreamStatement) (string, error) {
-	streamStmt, err := p.DescStream(stmt.Name)
+func (p *StreamProcessor) getStream(name string, st xsql.StreamType) (string, error) {
+	vs, err := xsql.GetDataSourceStatement(p.db, name)
+	if vs != nil && vs.StreamType == st {
+		return vs.Statement, nil
+	}
 	if err != nil {
 		return "", err
 	}
-	var buff bytes.Buffer
-	buff.WriteString("Fields\n--------------------------------------------------------------------------------\n")
-	for _, f := range streamStmt.StreamFields {
-		buff.WriteString(f.Name + "\t")
-		buff.WriteString(xsql.PrintFieldType(f.FieldType))
-		buff.WriteString("\n")
-	}
-	buff.WriteString("\n")
-	common.PrintMap(streamStmt.Options, &buff)
-	return buff.String(), err
+	return "", common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("%s %s is not found", xsql.StreamTypeMap[st], name))
 }
 
-func (p *StreamProcessor) DescStream(name string) (*xsql.StreamStmt, error) {
-	err := p.db.Open()
+func (p *StreamProcessor) execDescribe(stmt xsql.NameNode, st xsql.StreamType) (string, error) {
+	streamStmt, err := p.DescStream(stmt.GetName(), st)
 	if err != nil {
-		return nil, fmt.Errorf("Describe stream fails, error when opening db: %v.", err)
+		return "", err
 	}
-	defer p.db.Close()
-	var s1 string
-	f, _ := p.db.Get(name, &s1)
-	if !f {
-		return nil, common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("Stream %s is not found.", name))
+	switch s := streamStmt.(type) {
+	case *xsql.StreamStmt:
+		var buff bytes.Buffer
+		buff.WriteString("Fields\n--------------------------------------------------------------------------------\n")
+		for _, f := range s.StreamFields {
+			buff.WriteString(f.Name + "\t")
+			buff.WriteString(xsql.PrintFieldType(f.FieldType))
+			buff.WriteString("\n")
+		}
+		buff.WriteString("\n")
+		common.PrintMap(s.Options, &buff)
+		return buff.String(), err
+	default:
+		return "%s", fmt.Errorf("Error resolving the %s %s, the data in db may be corrupted.", xsql.StreamTypeMap[st], stmt.GetName())
 	}
 
-	parser := xsql.NewParser(strings.NewReader(s1))
+}
+
+func (p *StreamProcessor) DescStream(name string, st xsql.StreamType) (xsql.Statement, error) {
+	statement, err := p.getStream(name, st)
+	if err != nil {
+		return nil, fmt.Errorf("Describe %s fails, %s.", xsql.StreamTypeMap[st], err)
+	}
+	parser := xsql.NewParser(strings.NewReader(statement))
 	stream, err := xsql.Language.Parse(parser)
 	if err != nil {
 		return nil, err
 	}
-	streamStmt, ok := stream.(*xsql.StreamStmt)
-	if !ok {
-		return nil, fmt.Errorf("Error resolving the stream %s, the data in db may be corrupted.", name)
-	}
-	return streamStmt, nil
+	return stream, nil
 }
 
-func (p *StreamProcessor) execExplainStream(stmt *xsql.ExplainStreamStatement) (string, error) {
-	err := p.db.Open()
+func (p *StreamProcessor) execExplain(stmt xsql.NameNode, st xsql.StreamType) (string, error) {
+	_, err := p.getStream(stmt.GetName(), st)
 	if err != nil {
-		return "", fmt.Errorf("Explain stream fails, error when opening db: %v.", err)
-	}
-	defer p.db.Close()
-	var s string
-	f, _ := p.db.Get(stmt.Name, &s)
-	if !f {
-		return "", fmt.Errorf("Stream %s is not found.", stmt.Name)
+		return "", fmt.Errorf("Explain %s fails, %s.", xsql.StreamTypeMap[st], err)
 	}
 	return "TO BE SUPPORTED", nil
 }
 
-func (p *StreamProcessor) execDropStream(stmt *xsql.DropStreamStatement) (string, error) {
-	s, err := p.DropStream(stmt.Name)
+func (p *StreamProcessor) execDrop(stmt xsql.NameNode, st xsql.StreamType) (string, error) {
+	s, err := p.DropStream(stmt.GetName(), st)
 	if err != nil {
-		return s, fmt.Errorf("Drop stream fails: %s.", err)
+		return s, fmt.Errorf("Drop %s fails: %s.", xsql.StreamTypeMap[st], err)
 	}
 	return s, nil
 }
 
-func (p *StreamProcessor) DropStream(name string) (string, error) {
-	err := p.db.Open()
+func (p *StreamProcessor) DropStream(name string, st xsql.StreamType) (string, error) {
+	defer p.db.Close()
+	_, err := p.getStream(name, st)
+	if err != nil {
+		return "", err
+	}
+
+	err = p.db.Open()
 	if err != nil {
 		return "", fmt.Errorf("error when opening db: %v", err)
 	}
@@ -204,7 +253,7 @@ func (p *StreamProcessor) DropStream(name string) (string, error) {
 	if err != nil {
 		return "", err
 	} else {
-		return fmt.Sprintf("Stream %s is dropped.", name), nil
+		return fmt.Sprintf("%s %s is dropped.", strings.Title(xsql.StreamTypeMap[st]), name), nil
 	}
 }
 

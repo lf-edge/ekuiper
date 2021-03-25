@@ -29,16 +29,37 @@ func TestParser_ParseTree(t *testing.T) {
 				},
 			},
 		},
+		{
+			s: `CREATE TABLE demo (
+					USERID BIGINT,
+				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
+			stmt: &StreamStmt{
+				Name: StreamName("demo"),
+				StreamFields: []StreamField{
+					{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
+				},
+				Options: map[string]string{
+					"DATASOURCE": "users",
+					"FORMAT":     "JSON",
+					"KEY":        "USERID",
+				},
+				StreamType: TypeTable,
+			},
+		},
 
 		{
 			s:    `SHOW STREAMS`,
 			stmt: &ShowStreamsStatement{},
 		},
+		{
+			s:    `SHOW TABLES`,
+			stmt: &ShowTablesStatement{},
+		},
 
 		{
 			s:    `SHOW STREAMSf`,
 			stmt: nil,
-			err:  `found "STREAMSf", expected keyword streams.`,
+			err:  `found "STREAMSf", expected keyword streams or tables.`,
 		},
 
 		{
@@ -66,6 +87,29 @@ func TestParser_ParseTree(t *testing.T) {
 		{
 			s: `DROP STREAM demo1`,
 			stmt: &DropStreamStatement{
+				Name: "demo1",
+			},
+			err: ``,
+		},
+		{
+			s: `DESCRIBE TABLE demo`,
+			stmt: &DescribeTableStatement{
+				Name: "demo",
+			},
+			err: ``,
+		},
+
+		{
+			s: `EXPLAIN TABLE demo1`,
+			stmt: &ExplainTableStatement{
+				Name: "demo1",
+			},
+			err: ``,
+		},
+
+		{
+			s: `DROP TABLE demo1`,
+			stmt: &DropTableStatement{
 				Name: "demo1",
 			},
 			err: ``,

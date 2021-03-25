@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
+	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -78,6 +79,8 @@ func createRestServer(ip string, port int) *http.Server {
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
+	r.HandleFunc("/tables", tablesHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/rules/{name}", ruleHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
 	r.HandleFunc("/rules/{name}/status", getStatusRuleHandler).Methods(http.MethodGet)
@@ -150,14 +153,13 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-//list or create streams
-func streamsHandler(w http.ResponseWriter, r *http.Request) {
+func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st xsql.StreamType) {
 	defer r.Body.Close()
 	switch r.Method {
 	case http.MethodGet:
-		content, err := streamProcessor.ShowStream()
+		content, err := streamProcessor.ShowStream(st)
 		if err != nil {
-			handleError(w, err, "Stream command error", logger)
+			handleError(w, err, fmt.Sprintf("%s command error", strings.Title(xsql.StreamTypeMap[st])), logger)
 			return
 		}
 		jsonResponse(content, w, logger)
@@ -169,7 +171,7 @@ func streamsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		content, err := streamProcessor.ExecStreamSql(v.Sql)
 		if err != nil {
-			handleError(w, err, "Stream command error", logger)
+			handleError(w, err, fmt.Sprintf("%s command error", strings.Title(xsql.StreamTypeMap[st])), logger)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
@@ -177,24 +179,23 @@ func streamsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//describe or delete a stream
-func streamHandler(w http.ResponseWriter, r *http.Request) {
+func sourceManageHandler(w http.ResponseWriter, r *http.Request, st xsql.StreamType) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
 
 	switch r.Method {
 	case http.MethodGet:
-		content, err := streamProcessor.DescStream(name)
+		content, err := streamProcessor.DescStream(name, st)
 		if err != nil {
-			handleError(w, err, "describe stream error", logger)
+			handleError(w, err, fmt.Sprintf("describe %s error", xsql.StreamTypeMap[st]), logger)
 			return
 		}
 		jsonResponse(content, w, logger)
 	case http.MethodDelete:
-		content, err := streamProcessor.DropStream(name)
+		content, err := streamProcessor.DropStream(name, st)
 		if err != nil {
-			handleError(w, err, "delete stream error", logger)
+			handleError(w, err, fmt.Sprintf("delete %s error", xsql.StreamTypeMap[st]), logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -205,14 +206,33 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		content, err := streamProcessor.ExecReplaceStream(v.Sql)
+		content, err := streamProcessor.ExecReplaceStream(v.Sql, st)
 		if err != nil {
-			handleError(w, err, "Stream command error", logger)
+			handleError(w, err, fmt.Sprintf("%s command error", strings.Title(xsql.StreamTypeMap[st])), logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(content))
 	}
+}
+
+//list or create streams
+func streamsHandler(w http.ResponseWriter, r *http.Request) {
+	sourcesManageHandler(w, r, xsql.TypeStream)
+}
+
+//describe or delete a stream
+func streamHandler(w http.ResponseWriter, r *http.Request) {
+	sourceManageHandler(w, r, xsql.TypeStream)
+}
+
+//list or create tables
+func tablesHandler(w http.ResponseWriter, r *http.Request) {
+	sourcesManageHandler(w, r, xsql.TypeTable)
+}
+
+func tableHandler(w http.ResponseWriter, r *http.Request) {
+	sourceManageHandler(w, r, xsql.TypeTable)
 }
 
 //list or create rules

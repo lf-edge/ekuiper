@@ -6,8 +6,6 @@ import (
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/extensions"
-	"github.com/go-yaml/yaml"
-	"strings"
 	"sync"
 )
 
@@ -58,7 +56,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	logger := ctx.GetLogger()
 	logger.Infof("open source node %s with option %v", m.name, m.options)
 	go func() {
-		props := m.getConf(ctx)
+		props := getSourceConf(ctx, m.sourceType, m.options)
 		if c, ok := props["concurrency"]; ok {
 			if t, err := common.ToInt(c); err != nil || t <= 0 {
 				logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", c)
@@ -205,47 +203,4 @@ func (m *SourceNode) close(ctx api.StreamContext, logger api.Logger) {
 			logger.Warnf("close source fails: %v", err)
 		}
 	}
-}
-
-func (m *SourceNode) getConf(ctx api.StreamContext) map[string]interface{} {
-	confkey := m.options["CONF_KEY"]
-	logger := ctx.GetLogger()
-	confPath := "sources/" + m.sourceType + ".yaml"
-	if m.sourceType == "mqtt" {
-		confPath = "mqtt_source.yaml"
-	}
-	conf, err := common.LoadConf(confPath)
-	props := make(map[string]interface{})
-	if err == nil {
-		cfg := make(map[interface{}]interface{})
-		if err := yaml.Unmarshal(conf, &cfg); err != nil {
-			logger.Warnf("fail to parse yaml for source %s. Return an empty configuration", m.sourceType)
-		} else {
-			def, ok := cfg["default"]
-			if !ok {
-				logger.Warnf("default conf is not found", confkey)
-			} else {
-				if def1, ok1 := def.(map[interface{}]interface{}); ok1 {
-					props = common.ConvertMap(def1)
-				}
-				if c, ok := cfg[confkey]; ok {
-					if c1, ok := c.(map[interface{}]interface{}); ok {
-						c2 := common.ConvertMap(c1)
-						for k, v := range c2 {
-							props[k] = v
-						}
-					}
-				}
-			}
-		}
-	} else {
-		logger.Warnf("config file %s.yaml is not loaded properly. Return an empty configuration", m.sourceType)
-	}
-	f, ok := m.options["FORMAT"]
-	if !ok || f == "" {
-		f = "json"
-	}
-	props["format"] = strings.ToLower(f)
-	logger.Debugf("get conf for %s with conf key %s: %v", m.sourceType, confkey, props)
-	return props
 }

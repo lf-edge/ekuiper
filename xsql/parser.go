@@ -836,45 +836,52 @@ func (p *Parser) ConvertToWindows(wtype WindowType, args []Expr) (*Window, error
 	return win, nil
 }
 
-func (p *Parser) ParseCreateStreamStmt() (*StreamStmt, error) {
-	stmt := &StreamStmt{}
+func (p *Parser) ParseCreateStmt() (Statement, error) {
 	if tok, _ := p.scanIgnoreWhitespace(); tok == CREATE {
-		if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == STREAM {
-			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == IDENT {
-				stmt.Name = StreamName(lit2)
-				if fields, err := p.parseStreamFields(); err != nil {
-					return nil, err
-				} else {
-					stmt.StreamFields = fields
-				}
-				if opts, err := p.parseStreamOptions(); err != nil {
-					return nil, err
-				} else {
-					stmt.Options = opts
-				}
-				if tok3, lit3 := p.scanIgnoreWhitespace(); tok3 == SEMICOLON {
-					p.unscan()
-				} else if tok3 == EOF {
-					//Finish parsing create stream statement. Jump to validate
-				} else {
-					return nil, fmt.Errorf("found %q, expected semicolon or EOF.", lit3)
-				}
+		tok1, lit1 := p.scanIgnoreWhitespace()
+		stmt := &StreamStmt{}
+		switch tok1 {
+		case STREAM:
+			stmt.StreamType = TypeStream
+		case TABLE:
+			stmt.StreamType = TypeTable
+		default:
+			return nil, fmt.Errorf("found %q, expected keyword stream or table.", lit1)
+		}
+		if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == IDENT {
+			stmt.Name = StreamName(lit2)
+			if fields, err := p.parseStreamFields(); err != nil {
+				return nil, err
 			} else {
-				return nil, fmt.Errorf("found %q, expected stream name.", lit2)
+				stmt.StreamFields = fields
+			}
+			if opts, err := p.parseStreamOptions(); err != nil {
+				return nil, err
+			} else {
+				stmt.Options = opts
+			}
+			if tok3, lit3 := p.scanIgnoreWhitespace(); tok3 == SEMICOLON {
+				p.unscan()
+			} else if tok3 == EOF {
+				//Finish parsing create stream statement. Jump to validate
+			} else {
+				return nil, fmt.Errorf("found %q, expected semicolon or EOF.", lit3)
 			}
 		} else {
-			return nil, fmt.Errorf("found %q, expected keyword stream.", lit1)
+			return nil, fmt.Errorf("found %q, expected stream name.", lit2)
 		}
+		if valErr := validateStream(stmt); valErr != nil {
+			return nil, valErr
+		}
+		return stmt, nil
 	} else {
 		p.unscan()
 		return nil, nil
 	}
-	if valErr := validateStream(stmt); valErr != nil {
-		return nil, valErr
-	}
-	return stmt, nil
+
 }
 
+// TODO more accurate validation for table
 func validateStream(stmt *StreamStmt) error {
 	f, ok := stmt.Options["FORMAT"]
 	if !ok {
@@ -884,6 +891,9 @@ func validateStream(stmt *StreamStmt) error {
 	case common.FORMAT_JSON:
 		//do nothing
 	case common.FORMAT_BINARY:
+		if stmt.StreamType == TypeTable {
+			return fmt.Errorf("'binary' format is not supported for table")
+		}
 		switch len(stmt.StreamFields) {
 		case 0:
 			// do nothing for schemaless
@@ -901,40 +911,66 @@ func validateStream(stmt *StreamStmt) error {
 	default:
 		return fmt.Errorf("option 'format=%s' is invalid", f)
 	}
+
+	if stmt.StreamType == TypeTable {
+		if t, ok := stmt.Options["TYPE"]; ok {
+			if strings.ToLower(t) != "file" {
+				return fmt.Errorf("table only supports 'file' type")
+			}
+		}
+	}
 	return nil
 }
 
-func (p *Parser) parseShowStreamsStmt() (*ShowStreamsStatement, error) {
-	ss := &ShowStreamsStatement{}
+func (p *Parser) parseShowStmt() (Statement, error) {
 	if tok, _ := p.scanIgnoreWhitespace(); tok == SHOW {
-		if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == STREAMS {
+		tok1, lit1 := p.scanIgnoreWhitespace()
+		switch tok1 {
+		case STREAMS:
+			ss := &ShowStreamsStatement{}
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == EOF || tok2 == SEMICOLON {
 				return ss, nil
 			} else {
 				return nil, fmt.Errorf("found %q, expected semecolon or EOF.", lit2)
 			}
-		} else {
-			return nil, fmt.Errorf("found %q, expected keyword streams.", lit1)
+		case TABLES:
+			ss := &ShowTablesStatement{}
+			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == EOF || tok2 == SEMICOLON {
+				return ss, nil
+			} else {
+				return nil, fmt.Errorf("found %q, expected semecolon or EOF.", lit2)
+			}
+		default:
+			return nil, fmt.Errorf("found %q, expected keyword streams or tables.", lit1)
 		}
 	} else {
 		p.unscan()
 		return nil, nil
 	}
-	return ss, nil
 }
 
-func (p *Parser) parseDescribeStreamStmt() (*DescribeStreamStatement, error) {
-	dss := &DescribeStreamStatement{}
+func (p *Parser) parseDescribeStmt() (Statement, error) {
 	if tok, _ := p.scanIgnoreWhitespace(); tok == DESCRIBE {
-		if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == STREAM {
+		tok1, lit1 := p.scanIgnoreWhitespace()
+		switch tok1 {
+		case STREAM:
+			dss := &DescribeStreamStatement{}
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == IDENT {
 				dss.Name = lit2
 				return dss, nil
 			} else {
 				return nil, fmt.Errorf("found %q, expected stream name.", lit2)
 			}
-		} else {
-			return nil, fmt.Errorf("found %q, expected keyword stream.", lit1)
+		case TABLE:
+			dss := &DescribeTableStatement{}
+			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == IDENT {
+				dss.Name = lit2
+				return dss, nil
+			} else {
+				return nil, fmt.Errorf("found %q, expected table name.", lit2)
+			}
+		default:
+			return nil, fmt.Errorf("found %q, expected keyword stream or table.", lit1)
 		}
 	} else {
 		p.unscan()
@@ -942,18 +978,28 @@ func (p *Parser) parseDescribeStreamStmt() (*DescribeStreamStatement, error) {
 	}
 }
 
-func (p *Parser) parseExplainStreamsStmt() (*ExplainStreamStatement, error) {
-	ess := &ExplainStreamStatement{}
+func (p *Parser) parseExplainStmt() (Statement, error) {
 	if tok, _ := p.scanIgnoreWhitespace(); tok == EXPLAIN {
-		if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == STREAM {
+		tok1, lit1 := p.scanIgnoreWhitespace()
+		switch tok1 {
+		case STREAM:
+			ess := &ExplainStreamStatement{}
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == IDENT {
 				ess.Name = lit2
 				return ess, nil
 			} else {
 				return nil, fmt.Errorf("found %q, expected stream name.", lit2)
 			}
-		} else {
-			return nil, fmt.Errorf("found %q, expected keyword stream.", lit1)
+		case TABLE:
+			ess := &ExplainTableStatement{}
+			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == IDENT {
+				ess.Name = lit2
+				return ess, nil
+			} else {
+				return nil, fmt.Errorf("found %q, expected table name.", lit2)
+			}
+		default:
+			return nil, fmt.Errorf("found %q, expected keyword stream or table.", lit1)
 		}
 	} else {
 		p.unscan()
@@ -961,18 +1007,28 @@ func (p *Parser) parseExplainStreamsStmt() (*ExplainStreamStatement, error) {
 	}
 }
 
-func (p *Parser) parseDropStreamsStmt() (*DropStreamStatement, error) {
-	ess := &DropStreamStatement{}
+func (p *Parser) parseDropStmt() (Statement, error) {
 	if tok, _ := p.scanIgnoreWhitespace(); tok == DROP {
-		if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == STREAM {
+		tok1, lit1 := p.scanIgnoreWhitespace()
+		switch tok1 {
+		case STREAM:
+			ess := &DropStreamStatement{}
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == IDENT {
 				ess.Name = lit2
 				return ess, nil
 			} else {
 				return nil, fmt.Errorf("found %q, expected stream name.", lit2)
 			}
-		} else {
-			return nil, fmt.Errorf("found %q, expected keyword stream.", lit1)
+		case TABLE:
+			ess := &DropTableStatement{}
+			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == IDENT {
+				ess.Name = lit2
+				return ess, nil
+			} else {
+				return nil, fmt.Errorf("found %q, expected stream name.", lit2)
+			}
+		default:
+			return nil, fmt.Errorf("found %q, expected keyword stream or table.", lit1)
 		}
 	} else {
 		p.unscan()
