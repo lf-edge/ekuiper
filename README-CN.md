@@ -1,4 +1,9 @@
 # EMQ X Kuiper - 超轻量物联网边缘数据分析软件
+[![GitHub Release](https://img.shields.io/github/release/emqx/kuiper?color=brightgreen)](https://github.com/emqx/kuiper/releases)
+[![Docker Pulls](https://img.shields.io/docker/pulls/emqx/kuiper)](https://hub.docker.com/r/emqx/kuiper)
+[![Slack Invite](<https://kuiper-slack-invite.emqx.io/badge.svg>)](https://kuiper-slack-invite.emqx.io/)
+[![Twitter](https://img.shields.io/badge/Follow-EMQ%20X-1DA1F2?logo=twitter)](https://twitter.com/emqtt)
+[![问答社区](https://img.shields.io/badge/Community-Kuiper-yellow)](https://askemq.com/c/kuiper/)
 
 [English](README.md) | [简体中文](README-CN.md)
 
@@ -54,7 +59,7 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 - [EdgeX 规则引擎教程](docs/zh_CN/edgex/edgex_rule_engine_tutorial.md)
 
 ## Slack
-加入我们的 [Slack](https://join.slack.com/t/emqx/shared_invite/zt-7xrracuf-GGdbNB1pARtaZKvv6IfTvw)，然后加入 [kuiper](https://emqx.slack.com/archives/C0138SZP23Y) 频道。
+加入我们的 [Slack](https://kuiper-slack-invite.emqx.io/)。
 
 ## 性能测试结果
 
