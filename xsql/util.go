@@ -3,6 +3,8 @@ package xsql
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/common/kv"
 	"strings"
 )
 
@@ -123,4 +125,43 @@ func GetStatementFromSql(sql string) (*SelectStatement, error) {
 			return r, nil
 		}
 	}
+}
+
+type StreamInfo struct {
+	StreamType StreamType `json:"streamType"`
+	Statement  string     `json:"statement"`
+}
+
+func GetDataSourceStatement(m kv.KeyValue, name string) (*StreamInfo, error) {
+	var (
+		v  string
+		vs = &StreamInfo{}
+	)
+	err := m.Open()
+	if err != nil {
+		return nil, fmt.Errorf("error when opening db: %v", err)
+	}
+	defer m.Close()
+	if ok, _ := m.Get(name, &v); ok {
+		if err := json.Unmarshal([]byte(v), vs); err != nil {
+			return nil, fmt.Errorf("error unmarshall %s, the data in db may be corrupted", name)
+		} else {
+			return vs, nil
+		}
+	}
+	return nil, common.NewErrorWithCode(common.NOT_FOUND, fmt.Sprintf("%s is not found", name))
+}
+
+func GetDataSource(m kv.KeyValue, name string) (stmt *StreamStmt, err error) {
+	info, err := GetDataSourceStatement(m, name)
+	if err != nil {
+		return nil, err
+	}
+	parser := NewParser(strings.NewReader(info.Statement))
+	stream, err := Language.Parse(parser)
+	stmt, ok := stream.(*StreamStmt)
+	if !ok {
+		err = fmt.Errorf("Error resolving the stream %s, the data in db may be corrupted.", name)
+	}
+	return
 }

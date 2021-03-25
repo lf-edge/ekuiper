@@ -525,7 +525,8 @@ func TestPreprocessor_Apply(t *testing.T) {
 	contextLogger := common.Log.WithField("rule", "TestPreprocessor_Apply")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		pp := &Preprocessor{streamFields: convertFields(tt.stmt.StreamFields)}
+		pp := &Preprocessor{}
+		pp.streamFields = convertFields(tt.stmt.StreamFields)
 
 		dm := make(map[string]interface{})
 		if e := json.Unmarshal(tt.data, &dm); e != nil {
@@ -658,7 +659,9 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 	contextLogger := common.Log.WithField("rule", "TestPreprocessorTime_Apply")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		pp := &Preprocessor{streamFields: convertFields(tt.stmt.StreamFields), timestampFormat: tt.stmt.Options["TIMESTAMP_FORMAT"]}
+		pp := &Preprocessor{}
+		pp.streamFields = convertFields(tt.stmt.StreamFields)
+		pp.timestampFormat = tt.stmt.Options["TIMESTAMP_FORMAT"]
 		dm := make(map[string]interface{})
 		if e := json.Unmarshal(tt.data, &dm); e != nil {
 			log.Fatal(e)
@@ -840,12 +843,14 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 	for i, tt := range tests {
 
 		pp := &Preprocessor{
-			streamFields:    convertFields(tt.stmt.StreamFields),
-			aliasFields:     nil,
-			isEventTime:     true,
-			timestampField:  tt.stmt.Options["TIMESTAMP"],
-			timestampFormat: tt.stmt.Options["TIMESTAMP_FORMAT"],
-			isBinary:        false,
+			defaultFieldProcessor: defaultFieldProcessor{
+				streamFields:    convertFields(tt.stmt.StreamFields),
+				aliasFields:     nil,
+				isBinary:        false,
+				timestampFormat: tt.stmt.Options["TIMESTAMP_FORMAT"],
+			},
+			isEventTime:    true,
+			timestampField: tt.stmt.Options["TIMESTAMP"],
 		}
 
 		dm := make(map[string]interface{})
@@ -925,8 +930,8 @@ func TestPreprocessorError(t *testing.T) {
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
-		pp := &Preprocessor{streamFields: convertFields(tt.stmt.StreamFields)}
-
+		pp := &Preprocessor{}
+		pp.streamFields = convertFields(tt.stmt.StreamFields)
 		dm := make(map[string]interface{})
 		if e := json.Unmarshal(tt.data, &dm); e != nil {
 			log.Fatal(e)
@@ -1052,7 +1057,9 @@ func TestPreprocessorForBinary(t *testing.T) {
 	contextLogger := common.Log.WithField("rule", "TestPreprocessorForBinary")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		pp := &Preprocessor{streamFields: convertFields(tt.stmt.StreamFields), isBinary: tt.isBinary}
+		pp := &Preprocessor{}
+		pp.streamFields = convertFields(tt.stmt.StreamFields)
+		pp.isBinary = tt.isBinary
 		format := "json"
 		if tt.isBinary {
 			format = "binary"
@@ -1065,7 +1072,7 @@ func TestPreprocessorForBinary(t *testing.T) {
 			fv, afv := xsql.NewFunctionValuersForOp(nil)
 			result := pp.Apply(ctx, tuple, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
+				t.Errorf("%d. %q\n\nresult mismatch", i, tuple)
 			}
 		}
 

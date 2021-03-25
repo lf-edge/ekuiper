@@ -1,0 +1,8 @@
+default:
+  fileType: json
+  # The directory of the file relative to kuiper root or an absolute path.
+  # Do not include the file name here. The file name should be defined in the stream data source
+  path: data
+
+test:
+  path: fvt_scripts

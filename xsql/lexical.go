@@ -98,7 +98,9 @@ const (
 	DESCRIBE
 	SHOW
 	STREAM
+	TABLE
 	STREAMS
+	TABLES
 	WITH
 
 	XBIGINT
@@ -188,7 +190,9 @@ var tokens = []string{
 	DESCRIBE: "DESCRIBE",
 	SHOW:     "SHOW",
 	STREAM:   "STREAM",
+	TABLE:    "TABLE",
 	STREAMS:  "STREAMS",
+	TABLES:   "TABLES",
 	WITH:     "WITH",
 
 	XBIGINT:   "BIGINT",
@@ -435,6 +439,10 @@ func (s *Scanner) ScanIdent() (tok Token, lit string) {
 		return STREAM, lit
 	case "STREAMS":
 		return STREAMS, lit
+	case "TABLE":
+		return TABLE, lit
+	case "TABLES":
+		return TABLES, lit
 	case "WITH":
 		return WITH, lit
 	case "BIGINT":

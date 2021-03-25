@@ -8,7 +8,7 @@ import (
 
 func TestWindow(t *testing.T) {
 	//Reset
-	streamList := []string{"demo", "demoError", "demo1", "sessionDemo"}
+	streamList := []string{"demo", "demoError", "demo1", "sessionDemo", "table1"}
 	handleStream(false, streamList, t)
 	var tests = []ruleTest{
 		{
@@ -631,6 +631,66 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_process_latency_us": int64(0),
 				"op_2_window_0_records_in_total":   int64(5),
 				"op_2_window_0_records_out_total":  int64(5),
+			},
+		}, {
+			name: `TestWindowRule11`,
+			sql:  `SELECT color, name FROM demo INNER JOIN table1 on demo.ts = table1.id where demo.size > 2 and table1.size > 1 GROUP BY tumblingwindow(ss, 1)`,
+			r: [][]map[string]interface{}{
+				{{
+					"color": "red",
+					"name":  "name1",
+				}},
+			},
+			m: map[string]interface{}{
+				//"op_4_project_0_exceptions_total":   int64(0),
+				//"op_4_project_0_process_latency_us": int64(0),
+				//"op_4_project_0_records_in_total":   int64(2),
+				//"op_4_project_0_records_out_total":  int64(2),
+
+				"op_3_window_0_exceptions_total":   int64(0),
+				"op_3_window_0_process_latency_us": int64(0),
+				"op_3_window_0_records_in_total":   int64(3),
+				"op_3_window_0_records_out_total":  int64(2),
+
+				"op_2_filter_0_exceptions_total":   int64(0),
+				"op_2_filter_0_process_latency_us": int64(0),
+				"op_2_filter_0_records_in_total":   int64(5),
+				"op_2_filter_0_records_out_total":  int64(3),
+
+				"op_1_preprocessor_demo_0_exceptions_total":  int64(0),
+				"op_1_preprocessor_demo_0_records_in_total":  int64(5),
+				"op_1_preprocessor_demo_0_records_out_total": int64(5),
+
+				"op_4_tableprocessor_table1_0_exceptions_total":  int64(0),
+				"op_4_tableprocessor_table1_0_records_in_total":  int64(1),
+				"op_4_tableprocessor_table1_0_records_out_total": int64(1),
+
+				"op_5_filter_0_exceptions_total":  int64(0),
+				"op_5_filter_0_records_in_total":  int64(1),
+				"op_5_filter_0_records_out_total": int64(1),
+
+				"op_6_join_aligner_0_records_in_total":  int64(3),
+				"op_6_join_aligner_0_records_out_total": int64(2),
+
+				"op_7_join_0_exceptions_total":  int64(0),
+				"op_7_join_0_records_in_total":  int64(2),
+				"op_7_join_0_records_out_total": int64(1),
+
+				"op_8_project_0_exceptions_total":  int64(0),
+				"op_8_project_0_records_in_total":  int64(1),
+				"op_8_project_0_records_out_total": int64(1),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(1),
+				"sink_mockSink_0_records_out_total": int64(1),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"source_table1_0_exceptions_total":  int64(0),
+				"source_table1_0_records_in_total":  int64(1),
+				"source_table1_0_records_out_total": int64(1),
 			},
 		},
 	}

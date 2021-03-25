@@ -1,6 +1,7 @@
 package planner
 
 import (
+	"errors"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/common/kv"
@@ -10,7 +11,6 @@ import (
 	"github.com/emqx/kuiper/xstream/nodes"
 	"github.com/emqx/kuiper/xstream/operators"
 	"path"
-	"strings"
 )
 
 func Plan(rule *api.Rule, storePath string) (*xstream.TopologyNew, error) {
@@ -28,9 +28,9 @@ func PlanWithSourcesAndSinks(rule *api.Rule, storePath string, sources []*nodes.
 	}
 	// validation
 	streamsFromStmt := xsql.GetStreams(stmt)
-	if len(sources) > 0 && len(sources) != len(streamsFromStmt) {
-		return nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
-	}
+	//if len(sources) > 0 && len(sources) != len(streamsFromStmt) {
+	//	return nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
+	//}
 	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil) {
 		return nil, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
 	}
@@ -102,29 +102,41 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 	)
 	switch t := lp.(type) {
 	case *DataSourcePlan:
-		pp, err := operators.NewPreprocessor(t.streamFields, t.alias, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary)
-		if err != nil {
-			return nil, 0, err
-		}
-		var srcNode *nodes.SourceNode
-		if len(sources) == 0 {
-			node := nodes.NewSourceNode(t.name, t.streamStmt.Options)
-			srcNode = node
-		} else {
-			found := false
-			for _, source := range sources {
-				if t.name == source.GetName() {
-					srcNode = source
-					found = true
+		switch t.streamStmt.StreamType {
+		case xsql.TypeStream:
+			pp, err := operators.NewPreprocessor(t.streamFields, t.alias, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary)
+			if err != nil {
+				return nil, 0, err
+			}
+			var srcNode *nodes.SourceNode
+			if len(sources) == 0 {
+				node := nodes.NewSourceNode(t.name, t.streamStmt.Options)
+				srcNode = node
+			} else {
+				found := false
+				for _, source := range sources {
+					if t.name == source.GetName() {
+						srcNode = source
+						found = true
+					}
+				}
+				if !found {
+					return nil, 0, fmt.Errorf("can't find predefined source %s", t.name)
 				}
 			}
-			if !found {
-				return nil, 0, fmt.Errorf("can't find predefined source %s", t.name)
+			tp.AddSrc(srcNode)
+			op = xstream.Transform(pp, fmt.Sprintf("%d_preprocessor_%s", newIndex, t.name), options)
+			inputs = []api.Emitter{srcNode}
+		case xsql.TypeTable:
+			pp, err := operators.NewTableProcessor(t.streamFields, t.alias, t.timestampFormat)
+			if err != nil {
+				return nil, 0, err
 			}
+			srcNode := nodes.NewTableNode(t.name, t.streamStmt.Options)
+			tp.AddSrc(srcNode)
+			op = xstream.Transform(pp, fmt.Sprintf("%d_tableprocessor_%s", newIndex, t.name), options)
+			inputs = []api.Emitter{srcNode}
 		}
-		tp.AddSrc(srcNode)
-		op = xstream.Transform(pp, fmt.Sprintf("%d_preprocessor_%s", newIndex, t.name), options)
-		inputs = []api.Emitter{srcNode}
 	case *WindowPlan:
 		if t.condition != nil {
 			wfilterOp := xstream.Transform(&operators.FilterOp{Condition: t.condition}, fmt.Sprintf("%d_windowFilter", newIndex), options)
@@ -141,6 +153,8 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 		if err != nil {
 			return nil, 0, err
 		}
+	case *JoinAlignPlan:
+		op, err = nodes.NewJoinAlignNode(fmt.Sprintf("%d_join_aligner", newIndex), t.Emitters, options)
 	case *JoinPlan:
 		op = xstream.Transform(&operators.JoinOp{Joins: t.joins, From: t.from}, fmt.Sprintf("%d_join", newIndex), options)
 	case *FilterPlan:
@@ -163,27 +177,15 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 	return op, newIndex, nil
 }
 
-func getStream(m kv.KeyValue, name string) (stmt *xsql.StreamStmt, err error) {
-	var s string
-	f, err := m.Get(name, &s)
-	if !f || err != nil {
-		return nil, fmt.Errorf("Cannot find key %s. ", name)
-	}
-	parser := xsql.NewParser(strings.NewReader(s))
-	stream, err := xsql.Language.Parse(parser)
-	stmt, ok := stream.(*xsql.StreamStmt)
-	if !ok {
-		err = fmt.Errorf("Error resolving the stream %s, the data in db may be corrupted.", name)
-	}
-	return
-}
-
 func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
 	streamsFromStmt := xsql.GetStreams(stmt)
 	dimensions := stmt.Dimensions
 	var (
-		p                     LogicalPlan
-		children              []LogicalPlan
+		p        LogicalPlan
+		children []LogicalPlan
+		// If there are tables, the plan graph will be different for join/window
+		tableChildren         []LogicalPlan
+		tableEmitters         []string
 		w                     *xsql.Window
 		ds                    xsql.Dimensions
 		alias, aggregateAlias xsql.Fields
@@ -197,8 +199,9 @@ func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv
 			}
 		}
 	}
+
 	for _, s := range streamsFromStmt {
-		streamStmt, err := getStream(store, s)
+		streamStmt, err := xsql.GetDataSource(store, s)
 		if err != nil {
 			return nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
 		}
@@ -209,11 +212,20 @@ func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv
 			alias:      alias,
 			allMeta:    opt.SendMetaToSink,
 		}.Init()
-		children = append(children, p)
+		if streamStmt.StreamType == xsql.TypeStream {
+			children = append(children, p)
+		} else {
+			tableChildren = append(tableChildren, p)
+			tableEmitters = append(tableEmitters, string(streamStmt.Name))
+		}
+
 	}
 	if dimensions != nil {
 		w = dimensions.GetWindow()
 		if w != nil {
+			if len(children) == 0 {
+				return nil, errors.New("cannot run window for TABLE sources")
+			}
 			wp := WindowPlan{
 				wtype:       w.WindowType,
 				length:      w.Length.Val,
@@ -235,7 +247,16 @@ func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv
 			p = wp
 		}
 	}
-	if w != nil && stmt.Joins != nil {
+	if stmt.Joins != nil {
+		if len(tableChildren) > 0 {
+			p = JoinAlignPlan{
+				Emitters: tableEmitters,
+			}.Init()
+			p.SetChildren(append(children, tableChildren...))
+			children = []LogicalPlan{p}
+		} else if w == nil {
+			return nil, errors.New("need to run stream join in windows")
+		}
 		// TODO extract on filter
 		p = JoinPlan{
 			from:  stmt.Sources[0].(*xsql.Table),
@@ -287,7 +308,6 @@ func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv
 			sendMeta:    opt.SendMetaToSink,
 		}.Init()
 		p.SetChildren(children)
-		children = []LogicalPlan{p}
 	}
 
 	return optimize(p)

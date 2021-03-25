@@ -1,6 +1,7 @@
 package planner
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/common/kv"
@@ -40,17 +41,36 @@ func Test_createLogicalPlan(t *testing.T) {
 					temp BIGINT,
 					name string
 				) WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,
-		"src2": `CREATE STREAM src1 (
+		"src2": `CREATE STREAM src2 (
 					id2 BIGINT,
 					hum BIGINT
-				) WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,
+				) WITH (DATASOURCE="src2", FORMAT="json", KEY="ts");`,
+		"table1": `CREATE TABLE table1 (
+					id BIGINT,
+					name STRING,
+					value STRING,
+					hum BIGINT
+				) WITH (TYPE="file");`,
+	}
+	types := map[string]xsql.StreamType{
+		"src1":   xsql.TypeStream,
+		"src2":   xsql.TypeStream,
+		"table1": xsql.TypeTable,
 	}
 	for name, sql := range streamSqls {
-		store.Set(name, sql)
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: types[name],
+			Statement:  sql,
+		})
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
+		store.Set(name, string(s))
 	}
 	streams := make(map[string]*xsql.StreamStmt)
 	for n, _ := range streamSqls {
-		streamStmt, err := getStream(store, n)
+		streamStmt, err := xsql.GetDataSource(store, n)
 		if err != nil {
 			t.Errorf("fail to get stream %s, please check if stream is created", n)
 			return
@@ -581,6 +601,229 @@ func Test_createLogicalPlan(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
+		}, { // 7 window error for table
+			sql: `SELECT value FROM table1 WHERE name = "v1" GROUP BY TUMBLINGWINDOW(ss, 10) FILTER( WHERE temp > 2)`,
+			p:   nil,
+			err: "cannot run window for TABLE sources",
+		}, { // 8 join table without window
+			sql: `SELECT id1 FROM src1 INNER JOIN table1 on src1.id1 = table1.id and src1.temp > 20 and table1.hum < 60 WHERE src1.id1 > 111`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						JoinPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									JoinAlignPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												FilterPlan{
+													baseLogicalPlan: baseLogicalPlan{
+														children: []LogicalPlan{
+															DataSourcePlan{
+																name: "src1",
+																streamFields: []interface{}{
+																	&xsql.StreamField{
+																		Name:      "id1",
+																		FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+																	},
+																	&xsql.StreamField{
+																		Name:      "temp",
+																		FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+																	},
+																},
+																streamStmt: streams["src1"],
+																metaFields: []string{},
+															}.Init(),
+														},
+													},
+													condition: &xsql.BinaryExpr{
+														RHS: &xsql.BinaryExpr{
+															OP:  xsql.GT,
+															LHS: &xsql.FieldRef{Name: "temp", StreamName: "src1"},
+															RHS: &xsql.IntegerLiteral{Val: 20},
+														},
+														OP: xsql.AND,
+														LHS: &xsql.BinaryExpr{
+															OP:  xsql.GT,
+															LHS: &xsql.FieldRef{Name: "id1", StreamName: "src1"},
+															RHS: &xsql.IntegerLiteral{Val: 111},
+														},
+													},
+												}.Init(),
+												FilterPlan{
+													baseLogicalPlan: baseLogicalPlan{
+														children: []LogicalPlan{
+															DataSourcePlan{
+																name: "table1",
+																streamFields: []interface{}{
+																	&xsql.StreamField{
+																		Name:      "hum",
+																		FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+																	},
+																	&xsql.StreamField{
+																		Name:      "id",
+																		FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+																	},
+																},
+																streamStmt: streams["table1"],
+																metaFields: []string{},
+															}.Init(),
+														},
+													},
+													condition: &xsql.BinaryExpr{
+														OP:  xsql.LT,
+														LHS: &xsql.FieldRef{Name: "hum", StreamName: "table1"},
+														RHS: &xsql.IntegerLiteral{Val: 60},
+													},
+												}.Init(),
+											},
+										},
+										Emitters: []string{"table1"},
+									}.Init(),
+								},
+							},
+							from: &xsql.Table{
+								Name: "src1",
+							},
+							joins: []xsql.Join{
+								{
+									Name:     "table1",
+									Alias:    "",
+									JoinType: xsql.INNER_JOIN,
+									Expr: &xsql.BinaryExpr{
+										LHS: &xsql.FieldRef{Name: "id1", StreamName: "src1"},
+										OP:  xsql.EQ,
+										RHS: &xsql.FieldRef{Name: "id", StreamName: "table1"},
+									},
+								},
+							},
+						}.Init(),
+					},
+				},
+				fields: []xsql.Field{
+					{
+						Expr:  &xsql.FieldRef{Name: "id1"},
+						Name:  "id1",
+						AName: ""},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
+		}, { // 8 join table with window
+			sql: `SELECT id1 FROM src1 INNER JOIN table1 on src1.id1 = table1.id and src1.temp > 20 and table1.hum < 60 WHERE src1.id1 > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						JoinPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									JoinAlignPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												WindowPlan{
+													baseLogicalPlan: baseLogicalPlan{
+														children: []LogicalPlan{
+															FilterPlan{
+																baseLogicalPlan: baseLogicalPlan{
+																	children: []LogicalPlan{
+																		DataSourcePlan{
+																			name: "src1",
+																			streamFields: []interface{}{
+																				&xsql.StreamField{
+																					Name:      "id1",
+																					FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+																				},
+																				&xsql.StreamField{
+																					Name:      "temp",
+																					FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+																				},
+																			},
+																			streamStmt: streams["src1"],
+																			metaFields: []string{},
+																		}.Init(),
+																	},
+																},
+																condition: &xsql.BinaryExpr{
+																	RHS: &xsql.BinaryExpr{
+																		OP:  xsql.GT,
+																		LHS: &xsql.FieldRef{Name: "temp", StreamName: "src1"},
+																		RHS: &xsql.IntegerLiteral{Val: 20},
+																	},
+																	OP: xsql.AND,
+																	LHS: &xsql.BinaryExpr{
+																		OP:  xsql.GT,
+																		LHS: &xsql.FieldRef{Name: "id1", StreamName: "src1"},
+																		RHS: &xsql.IntegerLiteral{Val: 111},
+																	},
+																},
+															}.Init(),
+														},
+													},
+													condition: nil,
+													wtype:     xsql.TUMBLING_WINDOW,
+													length:    10000,
+													interval:  0,
+													limit:     0,
+												}.Init(),
+												FilterPlan{
+													baseLogicalPlan: baseLogicalPlan{
+														children: []LogicalPlan{
+															DataSourcePlan{
+																name: "table1",
+																streamFields: []interface{}{
+																	&xsql.StreamField{
+																		Name:      "hum",
+																		FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+																	},
+																	&xsql.StreamField{
+																		Name:      "id",
+																		FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+																	},
+																},
+																streamStmt: streams["table1"],
+																metaFields: []string{},
+															}.Init(),
+														},
+													},
+													condition: &xsql.BinaryExpr{
+														OP:  xsql.LT,
+														LHS: &xsql.FieldRef{Name: "hum", StreamName: "table1"},
+														RHS: &xsql.IntegerLiteral{Val: 60},
+													},
+												}.Init(),
+											},
+										},
+										Emitters: []string{"table1"},
+									}.Init(),
+								},
+							},
+							from: &xsql.Table{
+								Name: "src1",
+							},
+							joins: []xsql.Join{
+								{
+									Name:     "table1",
+									Alias:    "",
+									JoinType: xsql.INNER_JOIN,
+									Expr: &xsql.BinaryExpr{
+										LHS: &xsql.FieldRef{Name: "id1", StreamName: "src1"},
+										OP:  xsql.EQ,
+										RHS: &xsql.FieldRef{Name: "id", StreamName: "table1"},
+									},
+								},
+							},
+						}.Init(),
+					},
+				},
+				fields: []xsql.Field{
+					{
+						Expr:  &xsql.FieldRef{Name: "id1"},
+						Name:  "id1",
+						AName: ""},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -601,11 +844,18 @@ func Test_createLogicalPlan(t *testing.T) {
 			CheckpointInterval: 0,
 			SendError:          true,
 		}, store)
-		if err != nil {
-			t.Errorf("%d. %q\n\nerror:%v\n\n", i, tt.sql, err)
-		}
-		if !reflect.DeepEqual(tt.p, p) {
+		if !reflect.DeepEqual(tt.err, errstring(err)) {
+			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
+		} else if !reflect.DeepEqual(tt.p, p) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.p, p)
 		}
 	}
+}
+
+// errstring returns the string representation of an error.
+func errstring(err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	return ""
 }

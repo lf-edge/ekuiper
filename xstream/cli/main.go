@@ -134,7 +134,7 @@ func main() {
 		{
 			Name:    "create",
 			Aliases: []string{"create"},
-			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file | create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file",
+			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create table $table_name | create table $table_name -f $table_def_file| create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file | create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file",
 
 			Subcommands: []cli.Command{
 				{
@@ -155,6 +155,33 @@ func main() {
 								return nil
 							} else {
 								args := strings.Join([]string{"CREATE STREAM ", string(stream)}, " ")
+								streamProcess(client, args)
+								return nil
+							}
+						} else {
+							streamProcess(client, "")
+							return nil
+						}
+					},
+				},
+				{
+					Name:  "table",
+					Usage: "create table $table_name [-f table_def_file]",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:     "file, f",
+							Usage:    "the location of table definition file",
+							FilePath: "/home/mytable.txt",
+						},
+					},
+					Action: func(c *cli.Context) error {
+						sfile := c.String("file")
+						if sfile != "" {
+							if stream, err := readDef(sfile, "table"); err != nil {
+								fmt.Printf("%s", err)
+								return nil
+							} else {
+								args := strings.Join([]string{"CREATE TABLE ", string(stream)}, " ")
 								streamProcess(client, args)
 								return nil
 							}
@@ -276,11 +303,20 @@ func main() {
 		{
 			Name:    "describe",
 			Aliases: []string{"describe"},
-			Usage:   "describe stream $stream_name | describe rule $rule_name | describe plugin $plugin_type $plugin_name",
+			Usage:   "describe stream $stream_name | describe table $table_name | describe rule $rule_name | describe plugin $plugin_type $plugin_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
 					Usage: "describe stream $stream_name",
+					//Flags: nflag,
+					Action: func(c *cli.Context) error {
+						streamProcess(client, "")
+						return nil
+					},
+				},
+				{
+					Name:  "table",
+					Usage: "describe table $table_name",
 					//Flags: nflag,
 					Action: func(c *cli.Context) error {
 						streamProcess(client, "")
@@ -364,11 +400,20 @@ func main() {
 		{
 			Name:    "drop",
 			Aliases: []string{"drop"},
-			Usage:   "drop stream $stream_name | drop rule $rule_name | drop plugin $plugin_type $plugin_name -r $stop",
+			Usage:   "drop stream $stream_name | drop table $table_name |drop rule $rule_name | drop plugin $plugin_type $plugin_name -r $stop",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
 					Usage: "drop stream $stream_name",
+					//Flags: nflag,
+					Action: func(c *cli.Context) error {
+						streamProcess(client, "")
+						return nil
+					},
+				},
+				{
+					Name:  "table",
+					Usage: "drop table $table_name",
 					//Flags: nflag,
 					Action: func(c *cli.Context) error {
 						streamProcess(client, "")
@@ -444,12 +489,20 @@ func main() {
 		{
 			Name:    "show",
 			Aliases: []string{"show"},
-			Usage:   "show streams | show rules | show plugins $plugin_type",
+			Usage:   "show streams | show tables | show rules | show plugins $plugin_type",
 
 			Subcommands: []cli.Command{
 				{
 					Name:  "streams",
 					Usage: "show streams",
+					Action: func(c *cli.Context) error {
+						streamProcess(client, "")
+						return nil
+					},
+				},
+				{
+					Name:  "tables",
+					Usage: "show tables",
 					Action: func(c *cli.Context) error {
 						streamProcess(client, "")
 						return nil

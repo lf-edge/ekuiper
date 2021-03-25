@@ -32,7 +32,7 @@ func TestGetConf_Apply(t *testing.T) {
 	})
 	contextLogger := common.Log.WithField("rule", "test")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
-	conf := n.getConf(ctx)
+	conf := getSourceConf(ctx, n.sourceType, n.options)
 	if !reflect.DeepEqual(result, conf) {
 		t.Errorf("result mismatch:\n\nexp=%s\n\ngot=%s\n\n", result, conf)
 	}
@@ -55,7 +55,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 	})
 	contextLogger := common.Log.WithField("rule", "test")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
-	conf := n.getConf(ctx)
+	conf := getSourceConf(ctx, n.sourceType, n.options)
 	if !reflect.DeepEqual(result, conf) {
 		t.Errorf("result mismatch:\n\nexp=%s\n\ngot=%s\n\n", result, conf)
 		return

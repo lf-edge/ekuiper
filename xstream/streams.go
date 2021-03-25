@@ -18,7 +18,7 @@ type PrintableTopo struct {
 }
 
 type TopologyNew struct {
-	sources            []*nodes.SourceNode
+	sources            []nodes.DataSourceNode
 	sinks              []*nodes.SinkNode
 	ctx                api.StreamContext
 	cancel             context.CancelFunc
@@ -58,7 +58,7 @@ func (s *TopologyNew) Cancel() {
 	s.coordinator = nil
 }
 
-func (s *TopologyNew) AddSrc(src *nodes.SourceNode) *TopologyNew {
+func (s *TopologyNew) AddSrc(src nodes.DataSourceNode) *TopologyNew {
 	s.sources = append(s.sources, src)
 	s.topo.Sources = append(s.topo.Sources, fmt.Sprintf("source_%s", src.GetName()))
 	return s
@@ -86,7 +86,7 @@ func (s *TopologyNew) AddOperator(inputs []api.Emitter, operator nodes.OperatorN
 
 func (s *TopologyNew) addEdge(from api.TopNode, to api.TopNode, toType string) {
 	fromType := "op"
-	if _, ok := from.(*nodes.SourceNode); ok {
+	if _, ok := from.(nodes.DataSourceNode); ok {
 		fromType = "source"
 	}
 	f := fmt.Sprintf("%s_%s", fromType, from.GetName())

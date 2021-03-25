@@ -63,6 +63,14 @@ type Source interface {
 	Closable
 }
 
+type TableSource interface {
+	// Load the data at batch
+	Load(ctx StreamContext) ([]SourceTuple, error)
+	//Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties
+	//read from the yaml
+	Configure(datasource string, props map[string]interface{}) error
+}
+
 type Sink interface {
 	//Should be sync function for normal case. The container will run it in go func
 	Open(ctx StreamContext) error
