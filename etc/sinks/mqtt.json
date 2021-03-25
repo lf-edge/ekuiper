@@ -58,7 +58,7 @@
         "zh_CN": "MQTT 连接的客户端 ID。 如果未指定，将使用一个 uuid"
       },
       "label": {
-        "en_US": "MQTT ClinetID",
+        "en_US": "MQTT ClientID",
         "zh_CN": "MQTT 客户端标识符(ClinetID)"
       }
     },
@@ -157,8 +157,8 @@
         "zh_CN": "私钥路径。可以为绝对路径，也可以为相对路径，相对路径的用法与 certificationPath 类似"
       },
       "label": {
-        "en_US": "Certification path",
-        "zh_CN": "证书路径"
+        "en_US": "Private key path",
+        "zh_CN": "私钥路径"
       }
     },
     {
