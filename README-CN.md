@@ -58,8 +58,18 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 - [Kuiper 5分钟快速入门](docs/zh_CN/quick_start_docker.md)
 - [EdgeX 规则引擎教程](docs/zh_CN/edgex/edgex_rule_engine_tutorial.md)
 
-## Slack
-加入我们的 [Slack](https://kuiper-slack-invite.emqx.io/)。
+## 社区
+
+你可通过以下途径与 EMQ 社区及开发者联系:
+- [Forum](https://askemq.com/c/kuiper/)
+- [Weibo](https://weibo.com/emqtt)
+- [Blog](https://www.emqx.cn/blog)
+- [Slack](https://kuiper-slack-invite.emqx.io/)
+- [Twitter](https://twitter.com/emqtt)
+- [Reddit](https://www.reddit.com/r/emqx/)
+- [Facebook](https://www.facebook.com/emqxmqtt)
+
+欢迎你将任何 bug、问题和功能请求提交到 [emqx/kuiper](https://github.com/emqx/kuiper/issues)。
 
 ## 性能测试结果
 
