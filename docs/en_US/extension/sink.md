@@ -6,7 +6,7 @@ Sink feed data from Kuiper into external systems. Kuiper has built-in sink suppo
 
 ### Develop a sink
 
-To develop a sink for Kuiper is to implement [api.Sink](../../../xstream/api/stream.go) interface and export it as a golang plugin.
+To develop a sink for Kuiper is to implement [api.Sink](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go) interface and export it as a golang plugin.
 
 Before starting the development, you must [setup the environment for golang plugin](overview.md#setup-the-plugin-developing-environment). 
 
@@ -43,7 +43,7 @@ func MySink() api.Sink {
 }
 ```
 
-The [Memory Sink](../../../plugins/sinks/memory.go) is a good example.
+The [Memory Sink](https://github.com/emqx/kuiper/blob/master/plugins/sinks/memory/memory.go) is a good example.
 
 ### Package the sink
 Build the implemented sink as a go plugin and make sure the output so file resides in the plugins/sinks folder.

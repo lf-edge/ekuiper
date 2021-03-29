@@ -6,7 +6,7 @@ Sources feed data into Kuiper from other systems. Kuiper has built-in source sup
 
 ### Develop a source
 
-To develop a source for Kuiper is to implement [api.Source](../../../xstream/api/stream.go) interface and export it as a golang plugin.
+To develop a source for Kuiper is to implement [api.Source](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go) interface and export it as a golang plugin.
 
 Before starting the development, you must [setup the environment for golang plugin](overview.md#setup-the-plugin-developing-environment). 
 

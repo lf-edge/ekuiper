@@ -17,7 +17,7 @@
 要开发函数插件，我们需要：
 
 1. 创建插件 go 文件。 例如，在 kuiper 源代码中，创建 *plugins/functions/labelImage/labelImage.go* 文件。
-2. 创建一个实现 [api.函数接口](../../../../xstream/api/stream.go) 的 struct。
+2. 创建一个实现 [api.函数接口](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go) 的 struct。
 3. 导出 struct。
 
 实现的关键是 *Exec* 函数。 伪代码如下：
@@ -53,7 +53,7 @@ var LabelImage = labelImage{
 }
 ```
 
-查阅 [本教程](../plugins_tutorial.md) 以获得创建 Kuiper 插件的详细步骤。请参阅 [labelImage.go](../../../../plugins/functions/labelImage/labelImage.go) 以获取完整的源代码。
+查阅 [本教程](../plugins_tutorial.md) 以获得创建 Kuiper 插件的详细步骤。请参阅 [labelImage.go](https://github.com/emqx/kuiper/blob/master/plugins/functions/labelImage/labelImage.go) 以获取完整的源代码。
 
 ## 构建并安装插件
 
