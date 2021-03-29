@@ -70,7 +70,7 @@ Join our [Slack](https://join.slack.com/t/emqx/shared_invite/zt-7xrracuf-GGdbNB1
 
 ### EdgeX throughput test
 
-- A [Go application](fvt_scripts/edgex/benchmark/pub.go) is wrote to send data to ZeroMQ message bus, the data is as following.
+- A [Go application](https://github.com/emqx/kuiper/tree/master/fvt_scripts/edgex/benchmark/pub.go) is wrote to send data to ZeroMQ message bus, the data is as following.
 
   ```
   {

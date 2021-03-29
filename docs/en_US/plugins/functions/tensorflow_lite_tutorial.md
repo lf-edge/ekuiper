@@ -17,7 +17,7 @@ To integrate Kuiper with TensorFlow lite, we will develop a customized Kuiper fu
 To develop the function plugin, we need to:
 
 1. Create the plugin go file.  For example, in kuiper source code, create *plugins/functions/labelImage/labelImage.go* file.
-2. Create a struct that implements [api.Function interface](../../../../xstream/api/stream.go). 
+2. Create a struct that implements [api.Function interface](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go). 
 3. Export the struct.
 
 The key part of the implementation is the *Exec* function. The pseudo code is like:
@@ -53,7 +53,7 @@ var LabelImage = labelImage{
 }
 ```
 
-Check [this tutorial](../plugins_tutorial.md) for detail steps of creating Kuiper plugins.  Please refer to [labelImage.go](../../../../plugins/functions/labelImage/labelImage.go) for the full source code.
+Check [this tutorial](../plugins_tutorial.md) for detail steps of creating Kuiper plugins.  Please refer to [labelImage.go](https://github.com/emqx/kuiper/blob/master/plugins/functions/labelImage/labelImage.go) for the full source code.
 
 ## Build and install the plugin
 
