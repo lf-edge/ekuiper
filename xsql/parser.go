@@ -1025,7 +1025,7 @@ func (p *Parser) parseDropStmt() (Statement, error) {
 				ess.Name = lit2
 				return ess, nil
 			} else {
-				return nil, fmt.Errorf("found %q, expected stream name.", lit2)
+				return nil, fmt.Errorf("found %q, expected table name.", lit2)
 			}
 		default:
 			return nil, fmt.Errorf("found %q, expected keyword stream or table.", lit1)
