@@ -30,7 +30,7 @@ type SinkNode struct {
 func NewSinkNode(name string, sinkType string, props map[string]interface{}) *SinkNode {
 	bufferLength := 1024
 	if c, ok := props["bufferLength"]; ok {
-		if t, err := common.ToInt(c); err != nil || t <= 0 {
+		if t, err := common.ToInt(c, false); err != nil || t <= 0 {
 			//invalid property bufferLength
 		} else {
 			bufferLength = t
@@ -76,7 +76,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	}
 	go func() {
 		if c, ok := m.options["concurrency"]; ok {
-			if t, err := common.ToInt(c); err != nil || t <= 0 {
+			if t, err := common.ToInt(c, false); err != nil || t <= 0 {
 				logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", c)
 			} else {
 				m.concurrency = t
@@ -92,7 +92,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 		}
 		retryInterval := 1000
 		if c, ok := m.options["retryInterval"]; ok {
-			if t, err := common.ToInt(c); err != nil || t < 0 {
+			if t, err := common.ToInt(c, false); err != nil || t < 0 {
 				logger.Warnf("invalid type for retryInterval property, should be positive integer but found %t", c)
 			} else {
 				retryInterval = t
@@ -100,7 +100,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 		}
 		retryCount := 3
 		if c, ok := m.options["retryCount"]; ok {
-			if t, err := common.ToInt(c); err != nil || t < 0 {
+			if t, err := common.ToInt(c, false); err != nil || t < 0 {
 				logger.Warnf("invalid type for retryCount property, should be positive integer but found %t", c)
 			} else {
 				retryCount = t
@@ -108,7 +108,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 		}
 		cacheLength := 1024
 		if c, ok := m.options["cacheLength"]; ok {
-			if t, err := common.ToInt(c); err != nil || t < 0 {
+			if t, err := common.ToInt(c, false); err != nil || t < 0 {
 				logger.Warnf("invalid type for cacheLength property, should be positive integer but found %t", c)
 			} else {
 				cacheLength = t
@@ -116,7 +116,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 		}
 		cacheSaveInterval := 1000
 		if c, ok := m.options["cacheSaveInterval"]; ok {
-			if t, err := common.ToInt(c); err != nil || t < 0 {
+			if t, err := common.ToInt(c, false); err != nil || t < 0 {
 				logger.Warnf("invalid type for cacheSaveInterval property, should be positive integer but found %t", c)
 			} else {
 				cacheSaveInterval = t

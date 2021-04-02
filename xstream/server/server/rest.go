@@ -69,7 +69,6 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 	// Problems encoding
 	if err != nil {
 		handleError(w, err, "", logger)
-		return
 	}
 }
 

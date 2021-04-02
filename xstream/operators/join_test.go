@@ -662,7 +662,7 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 		if table, ok := stmt.Sources[0].(*xsql.Table); !ok {
 			t.Errorf("statement source is not a table")
 		} else {
-			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
 			pp := &JoinOp{Joins: stmt.Joins, From: table}
 			result := pp.Apply(ctx, tt.data, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
@@ -1128,7 +1128,7 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 		if table, ok := stmt.Sources[0].(*xsql.Table); !ok {
 			t.Errorf("statement source is not a table")
 		} else {
-			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
 			pp := &JoinOp{Joins: stmt.Joins, From: table}
 			result := pp.Apply(ctx, tt.data, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
@@ -1312,7 +1312,7 @@ func TestRightJoinPlan_Apply(t *testing.T) {
 		if table, ok := stmt.Sources[0].(*xsql.Table); !ok {
 			t.Errorf("statement source is not a table")
 		} else {
-			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
 			pp := &JoinOp{Joins: stmt.Joins, From: table}
 			result := pp.Apply(ctx, tt.data, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
@@ -1563,7 +1563,7 @@ func TestFullJoinPlan_Apply(t *testing.T) {
 		if table, ok := stmt.Sources[0].(*xsql.Table); !ok {
 			t.Errorf("statement source is not a table")
 		} else {
-			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
 			pp := &JoinOp{Joins: stmt.Joins, From: table}
 			result := pp.Apply(ctx, tt.data, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
@@ -1694,7 +1694,7 @@ func TestCrossJoinPlan_Apply(t *testing.T) {
 		if table, ok := stmt.Sources[0].(*xsql.Table); !ok {
 			t.Errorf("statement source is not a table")
 		} else {
-			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
 			pp := &JoinOp{Joins: stmt.Joins, From: table}
 			result := pp.Apply(ctx, tt.data, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
@@ -1768,7 +1768,7 @@ func TestCrossJoinPlanError(t *testing.T) {
 		if table, ok := stmt.Sources[0].(*xsql.Table); !ok {
 			t.Errorf("statement source is not a table")
 		} else {
-			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
 			pp := &JoinOp{Joins: stmt.Joins, From: table}
 			result := pp.Apply(ctx, tt.data, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {

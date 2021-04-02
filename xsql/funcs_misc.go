@@ -172,7 +172,7 @@ func toFixed(num float64, precision int) float64 {
 }
 
 func hashCall(name string, args []interface{}) (interface{}, bool) {
-	arg0 := common.ToString(args[0])
+	arg0 := common.ToStringAlways(args[0])
 	var h hash.Hash
 	switch name {
 	case "md5":

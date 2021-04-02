@@ -261,7 +261,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 			t.Errorf("statement parse error %s", err)
 			break
 		}
-		fv, afv := xsql.NewFunctionValuersForOp(nil)
+		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
 		pp := &HavingOp{Condition: stmt.Having}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
@@ -414,7 +414,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 			t.Errorf("statement parse error %s", err)
 			break
 		}
-		fv, afv := xsql.NewFunctionValuersForOp(nil)
+		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
 		pp := &HavingOp{Condition: stmt.Having}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
@@ -486,7 +486,7 @@ func TestHavingPlanError(t *testing.T) {
 			t.Errorf("statement parse error %s", err)
 			break
 		}
-		fv, afv := xsql.NewFunctionValuersForOp(nil)
+		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
 		pp := &HavingOp{Condition: stmt.Having}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {

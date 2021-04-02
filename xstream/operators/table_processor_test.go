@@ -120,7 +120,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 					Message: m,
 				}
 			}
-			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
 			result := pp.Apply(ctx, tuples, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.result, result)

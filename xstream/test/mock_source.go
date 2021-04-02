@@ -65,7 +65,7 @@ func (m *MockSource) GetOffset() (interface{}, error) {
 }
 
 func (m *MockSource) Rewind(offset interface{}) error {
-	oi, err := common.ToInt(offset)
+	oi, err := common.ToInt(offset, false)
 	if err != nil {
 		return fmt.Errorf("mock source fails to rewind: %s", err)
 	} else {

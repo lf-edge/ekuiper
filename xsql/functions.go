@@ -2,18 +2,21 @@ package xsql
 
 import (
 	"github.com/emqx/kuiper/plugins"
+	"github.com/emqx/kuiper/services"
 	"strings"
 )
 
 // ONLY use NewFunctionValuer function to initialize
 type FunctionValuer struct {
-	funcPlugins *funcPlugins
+	funcPlugins    *funcPlugins
+	serviceManager *services.Manager
 }
 
 //Should only be called by stream to make sure a single instance for an operation
-func NewFunctionValuer(p *funcPlugins) *FunctionValuer {
+func NewFunctionValuer(p *funcPlugins, m *services.Manager) *FunctionValuer {
 	fv := &FunctionValuer{
-		funcPlugins: p,
+		funcPlugins:    p,
+		serviceManager: m,
 	}
 	return fv
 }
@@ -97,6 +100,13 @@ func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bo
 	} else if _, ok := aggFuncMap[lowerName]; ok {
 		return nil, false
 	} else {
+		// Check service extension
+		// TODO check aggregate
+		if fv.serviceManager.HasFunction(name) {
+			return fv.serviceManager.InvokeFunction(name, args)
+		}
+
+		// Check plugin extension
 		nf, fctx, err := fv.funcPlugins.GetFuncFromPlugin(name)
 		if err != nil {
 			return err, false

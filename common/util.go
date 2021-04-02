@@ -17,7 +17,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -290,83 +289,6 @@ func ProcessPath(p string) (string, error) {
 	}
 }
 
-/*********** Type Cast Utilities *****/
-//TODO datetime type
-func ToString(input interface{}) string {
-	return fmt.Sprintf("%v", input)
-}
-func ToInt(input interface{}) (int, error) {
-	switch t := input.(type) {
-	case float64:
-		return int(t), nil
-	case int64:
-		return int(t), nil
-	case int:
-		return t, nil
-	default:
-		return 0, fmt.Errorf("unsupported type %T of %[1]v", input)
-	}
-}
-
-/*
-*   Convert a map into a struct. The output parameter must be a pointer to a struct
-*   The struct can have the json meta data
- */
-func MapToStruct(input, output interface{}) error {
-	// convert map to json
-	jsonString, err := json.Marshal(input)
-	if err != nil {
-		return err
-	}
-
-	// convert json to struct
-	return json.Unmarshal(jsonString, output)
-}
-
-func ConvertMap(s map[interface{}]interface{}) map[string]interface{} {
-	r := make(map[string]interface{})
-	for k, v := range s {
-		switch t := v.(type) {
-		case map[interface{}]interface{}:
-			v = ConvertMap(t)
-		case []interface{}:
-			v = ConvertArray(t)
-		}
-		r[fmt.Sprintf("%v", k)] = v
-	}
-	return r
-}
-
-func ConvertArray(s []interface{}) []interface{} {
-	r := make([]interface{}, len(s))
-	for i, e := range s {
-		switch t := e.(type) {
-		case map[interface{}]interface{}:
-			e = ConvertMap(t)
-		case []interface{}:
-			e = ConvertArray(t)
-		}
-		r[i] = e
-	}
-	return r
-}
-
-func SyncMapToMap(sm *sync.Map) map[string]interface{} {
-	m := make(map[string]interface{})
-	sm.Range(func(k interface{}, v interface{}) bool {
-		m[fmt.Sprintf("%v", k)] = v
-		return true
-	})
-	return m
-}
-func MapToSyncMap(m map[string]interface{}) *sync.Map {
-	sm := new(sync.Map)
-	for k, v := range m {
-		sm.Store(k, v)
-	}
-	return sm
-}
-
 func ReadJsonUnmarshal(path string, ret interface{}) error {
 	sliByte, err := ioutil.ReadFile(path)
 	if nil != err {
@@ -378,6 +300,14 @@ func ReadJsonUnmarshal(path string, ret interface{}) error {
 	}
 	return nil
 }
+func WriteYamlMarshal(path string, data interface{}) error {
+	y, err := yaml.Marshal(data)
+	if nil != err {
+		return err
+	}
+	return ioutil.WriteFile(path, y, 0666)
+}
+
 func ReadYamlUnmarshal(path string, ret interface{}) error {
 	sliByte, err := ioutil.ReadFile(path)
 	if nil != err {
@@ -388,11 +318,4 @@ func ReadYamlUnmarshal(path string, ret interface{}) error {
 		return err
 	}
 	return nil
-}
-func WriteYamlMarshal(path string, data interface{}) error {
-	y, err := yaml.Marshal(data)
-	if nil != err {
-		return err
-	}
-	return ioutil.WriteFile(path, y, 0666)
 }
