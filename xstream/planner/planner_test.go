@@ -45,7 +45,7 @@ func Test_createLogicalPlan(t *testing.T) {
 					id2 BIGINT,
 					hum BIGINT
 				) WITH (DATASOURCE="src2", FORMAT="json", KEY="ts");`,
-		"table1": `CREATE TABLE table1 (
+		"tableInPlanner": `CREATE TABLE tableInPlanner (
 					id BIGINT,
 					name STRING,
 					value STRING,
@@ -53,9 +53,9 @@ func Test_createLogicalPlan(t *testing.T) {
 				) WITH (TYPE="file");`,
 	}
 	types := map[string]xsql.StreamType{
-		"src1":   xsql.TypeStream,
-		"src2":   xsql.TypeStream,
-		"table1": xsql.TypeTable,
+		"src1":           xsql.TypeStream,
+		"src2":           xsql.TypeStream,
+		"tableInPlanner": xsql.TypeTable,
 	}
 	for name, sql := range streamSqls {
 		s, err := json.Marshal(&xsql.StreamInfo{
@@ -602,11 +602,11 @@ func Test_createLogicalPlan(t *testing.T) {
 				sendMeta:    false,
 			}.Init(),
 		}, { // 7 window error for table
-			sql: `SELECT value FROM table1 WHERE name = "v1" GROUP BY TUMBLINGWINDOW(ss, 10) FILTER( WHERE temp > 2)`,
+			sql: `SELECT value FROM tableInPlanner WHERE name = "v1" GROUP BY TUMBLINGWINDOW(ss, 10) FILTER( WHERE temp > 2)`,
 			p:   nil,
 			err: "cannot run window for TABLE sources",
 		}, { // 8 join table without window
-			sql: `SELECT id1 FROM src1 INNER JOIN table1 on src1.id1 = table1.id and src1.temp > 20 and table1.hum < 60 WHERE src1.id1 > 111`,
+			sql: `SELECT id1 FROM src1 INNER JOIN tableInPlanner on src1.id1 = tableInPlanner.id and src1.temp > 20 and tableInPlanner.hum < 60 WHERE src1.id1 > 111`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
@@ -654,7 +654,7 @@ func Test_createLogicalPlan(t *testing.T) {
 													baseLogicalPlan: baseLogicalPlan{
 														children: []LogicalPlan{
 															DataSourcePlan{
-																name: "table1",
+																name: "tableInPlanner",
 																streamFields: []interface{}{
 																	&xsql.StreamField{
 																		Name:      "hum",
@@ -665,20 +665,20 @@ func Test_createLogicalPlan(t *testing.T) {
 																		FieldType: &xsql.BasicType{Type: xsql.BIGINT},
 																	},
 																},
-																streamStmt: streams["table1"],
+																streamStmt: streams["tableInPlanner"],
 																metaFields: []string{},
 															}.Init(),
 														},
 													},
 													condition: &xsql.BinaryExpr{
 														OP:  xsql.LT,
-														LHS: &xsql.FieldRef{Name: "hum", StreamName: "table1"},
+														LHS: &xsql.FieldRef{Name: "hum", StreamName: "tableInPlanner"},
 														RHS: &xsql.IntegerLiteral{Val: 60},
 													},
 												}.Init(),
 											},
 										},
-										Emitters: []string{"table1"},
+										Emitters: []string{"tableInPlanner"},
 									}.Init(),
 								},
 							},
@@ -687,13 +687,13 @@ func Test_createLogicalPlan(t *testing.T) {
 							},
 							joins: []xsql.Join{
 								{
-									Name:     "table1",
+									Name:     "tableInPlanner",
 									Alias:    "",
 									JoinType: xsql.INNER_JOIN,
 									Expr: &xsql.BinaryExpr{
 										LHS: &xsql.FieldRef{Name: "id1", StreamName: "src1"},
 										OP:  xsql.EQ,
-										RHS: &xsql.FieldRef{Name: "id", StreamName: "table1"},
+										RHS: &xsql.FieldRef{Name: "id", StreamName: "tableInPlanner"},
 									},
 								},
 							},
@@ -710,7 +710,7 @@ func Test_createLogicalPlan(t *testing.T) {
 				sendMeta:    false,
 			}.Init(),
 		}, { // 8 join table with window
-			sql: `SELECT id1 FROM src1 INNER JOIN table1 on src1.id1 = table1.id and src1.temp > 20 and table1.hum < 60 WHERE src1.id1 > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			sql: `SELECT id1 FROM src1 INNER JOIN tableInPlanner on src1.id1 = tableInPlanner.id and src1.temp > 20 and tableInPlanner.hum < 60 WHERE src1.id1 > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
@@ -769,7 +769,7 @@ func Test_createLogicalPlan(t *testing.T) {
 													baseLogicalPlan: baseLogicalPlan{
 														children: []LogicalPlan{
 															DataSourcePlan{
-																name: "table1",
+																name: "tableInPlanner",
 																streamFields: []interface{}{
 																	&xsql.StreamField{
 																		Name:      "hum",
@@ -780,20 +780,20 @@ func Test_createLogicalPlan(t *testing.T) {
 																		FieldType: &xsql.BasicType{Type: xsql.BIGINT},
 																	},
 																},
-																streamStmt: streams["table1"],
+																streamStmt: streams["tableInPlanner"],
 																metaFields: []string{},
 															}.Init(),
 														},
 													},
 													condition: &xsql.BinaryExpr{
 														OP:  xsql.LT,
-														LHS: &xsql.FieldRef{Name: "hum", StreamName: "table1"},
+														LHS: &xsql.FieldRef{Name: "hum", StreamName: "tableInPlanner"},
 														RHS: &xsql.IntegerLiteral{Val: 60},
 													},
 												}.Init(),
 											},
 										},
-										Emitters: []string{"table1"},
+										Emitters: []string{"tableInPlanner"},
 									}.Init(),
 								},
 							},
@@ -802,13 +802,13 @@ func Test_createLogicalPlan(t *testing.T) {
 							},
 							joins: []xsql.Join{
 								{
-									Name:     "table1",
+									Name:     "tableInPlanner",
 									Alias:    "",
 									JoinType: xsql.INNER_JOIN,
 									Expr: &xsql.BinaryExpr{
 										LHS: &xsql.FieldRef{Name: "id1", StreamName: "src1"},
 										OP:  xsql.EQ,
-										RHS: &xsql.FieldRef{Name: "id", StreamName: "table1"},
+										RHS: &xsql.FieldRef{Name: "id", StreamName: "tableInPlanner"},
 									},
 								},
 							},

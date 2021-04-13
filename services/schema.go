@@ -4,12 +4,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/golang/protobuf/proto"
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/dynamic"
 	"sync"
 )
+
+var WRAPPER_TYPES = map[string]struct{}{
+	"google.protobuf.BoolValue":   {},
+	"google.protobuf.BytesValue":  {},
+	"google.protobuf.DoubleValue": {},
+	"google.protobuf.FloatValue":  {},
+	"google.protobuf.Int32Value":  {},
+	"google.protobuf.Int64Value":  {},
+	"google.protobuf.StringValue": {},
+	"google.protobuf.UInt32Value": {},
+	"google.protobuf.UInt64Value": {},
+}
+
+const VOID = "google.protobuf.EMPTY"
 
 type descriptor interface {
 	GetFunctions() []string
@@ -27,9 +42,20 @@ type jsonDescriptor interface {
 	ConvertReturnJson(method string, returnVal []byte) (interface{}, error)
 }
 
+type textDescriptor interface {
+	ConvertParamsToText(method string, params []interface{}) ([]byte, error)
+	ConvertReturnText(method string, returnVal []byte) (interface{}, error)
+}
+
 type interfaceDescriptor interface {
 	ConvertParams(method string, params []interface{}) ([]interface{}, error)
 	ConvertReturn(method string, returnVal interface{}) (interface{}, error)
+}
+
+type multiplexDescriptor interface {
+	jsonDescriptor
+	textDescriptor
+	interfaceDescriptor
 }
 
 var ( //Do not call these directly, use the get methods
@@ -134,6 +160,14 @@ func (d *wrappedProtoDescriptor) ConvertParamsToJson(method string, params []int
 	}
 }
 
+func (d *wrappedProtoDescriptor) ConvertParamsToText(method string, params []interface{}) ([]byte, error) {
+	if message, err := d.ConvertParamsToMessage(method, params); err != nil {
+		return nil, err
+	} else {
+		return message.MarshalText()
+	}
+}
+
 func convertParams(im *desc.MessageDescriptor, params []interface{}) ([]interface{}, error) {
 	fields := im.GetFields()
 	var result []interface{}
@@ -180,8 +214,16 @@ func convertParams(im *desc.MessageDescriptor, params []interface{}) ([]interfac
 
 func (d *wrappedProtoDescriptor) ConvertReturn(method string, returnVal interface{}) (interface{}, error) {
 	m := d.MethodDescriptor(method)
-	// TODO map support for msgpack?
-	return decodeField(returnVal, m.GetOutputType().FindFieldByNumber(1))
+	t := m.GetOutputType()
+	if _, ok := WRAPPER_TYPES[t.GetFullyQualifiedName()]; ok {
+		return decodeField(returnVal, t.FindFieldByNumber(1), false)
+	} else { // MUST be a map
+		if retMap, ok := returnVal.(map[string]interface{}); ok {
+			return decodeMap(retMap, t, true)
+		} else {
+			return nil, fmt.Errorf("fail to convert return val, must be a map but got %v", returnVal)
+		}
+	}
 }
 
 func (d *wrappedProtoDescriptor) ConvertReturnMessage(method string, returnVal *dynamic.Message) (interface{}, error) {
@@ -196,7 +238,17 @@ func (d *wrappedProtoDescriptor) ConvertReturnJson(method string, returnVal []by
 		return nil, err
 	}
 	m := d.MethodDescriptor(method)
-	return decodeMap(r, m.GetOutputType())
+	return decodeMap(r, m.GetOutputType(), false)
+}
+
+func (d *wrappedProtoDescriptor) ConvertReturnText(method string, returnVal []byte) (interface{}, error) {
+	m := d.MethodDescriptor(method)
+	t := m.GetOutputType()
+	if _, ok := WRAPPER_TYPES[t.GetFullyQualifiedName()]; ok {
+		return decodeField(string(returnVal), t.FindFieldByNumber(1), true)
+	} else {
+		return nil, fmt.Errorf("fail to convert return val to text, return type must be primitive type but got %s", t.GetName())
+	}
 }
 
 func (d *wrappedProtoDescriptor) MethodDescriptor(name string) *desc.MethodDescriptor {
@@ -397,15 +449,20 @@ func encodeSingleField(field *desc.FieldDescriptor, v interface{}) (interface{},
 }
 
 func decodeMessage(message *dynamic.Message, outputType *desc.MessageDescriptor) interface{} {
+	if _, ok := WRAPPER_TYPES[outputType.GetFullyQualifiedName()]; ok {
+		return message.GetFieldByNumber(1)
+	} else if VOID == outputType.GetFullyQualifiedName() {
+		return nil
+	}
 	result := make(map[string]interface{})
 	for _, field := range outputType.GetFields() {
-		decodeMessageField(message.GetField(field), field, result)
+		decodeMessageField(message.GetField(field), field, result, false)
 	}
 	return result
 }
 
-func decodeMessageField(src interface{}, field *desc.FieldDescriptor, result map[string]interface{}) error {
-	if f, err := decodeField(src, field); err != nil {
+func decodeMessageField(src interface{}, field *desc.FieldDescriptor, result map[string]interface{}, unstrict bool) error {
+	if f, err := decodeField(src, field, unstrict); err != nil {
 		return err
 	} else {
 		result[field.GetName()] = f
@@ -413,7 +470,7 @@ func decodeMessageField(src interface{}, field *desc.FieldDescriptor, result map
 	}
 }
 
-func decodeField(src interface{}, field *desc.FieldDescriptor) (interface{}, error) {
+func decodeField(src interface{}, field *desc.FieldDescriptor, unstrict bool) (interface{}, error) {
 	var (
 		r interface{}
 		e error
@@ -422,49 +479,41 @@ func decodeField(src interface{}, field *desc.FieldDescriptor) (interface{}, err
 	switch field.GetType() {
 	case dpb.FieldDescriptorProto_TYPE_DOUBLE, dpb.FieldDescriptorProto_TYPE_FLOAT:
 		if field.IsRepeated() {
-			r, e = common.ToFloat64Slice(src, false)
+			r, e = common.ToFloat64Slice(src, unstrict)
 		} else {
-			r, e = common.ToFloat64(src, false)
+			r, e = common.ToFloat64(src, unstrict)
 		}
 	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32, dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64, dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32, dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
 		if field.IsRepeated() {
-			r, e = common.ToInt64Slice(src, false)
+			r, e = common.ToInt64Slice(src, unstrict)
 		} else {
-			r, e = common.ToInt64(src, false)
+			r, e = common.ToInt64(src, unstrict)
 		}
 	case dpb.FieldDescriptorProto_TYPE_BOOL:
 		if field.IsRepeated() {
-			r, e = common.ToBoolSlice(src, false)
+			r, e = common.ToBoolSlice(src, unstrict)
 		} else {
-			r, e = common.ToBool(src, false)
+			r, e = common.ToBool(src, unstrict)
 		}
 	case dpb.FieldDescriptorProto_TYPE_STRING:
 		if field.IsRepeated() {
-			r, e = common.ToStringSlice(src, false)
+			r, e = common.ToStringSlice(src, unstrict)
 		} else {
-			r, e = common.ToString(src, false)
+			r, e = common.ToString(src, unstrict)
 		}
 	case dpb.FieldDescriptorProto_TYPE_BYTES:
 		if field.IsRepeated() {
-			r, e = common.ToBytesSlice(src, false)
+			r, e = common.ToBytesSlice(src, unstrict)
 		} else {
-			r, e = common.ToBytes(src, false)
+			r, e = common.ToBytes(src, unstrict)
 		}
 	case dpb.FieldDescriptorProto_TYPE_MESSAGE:
 		if field.IsRepeated() {
 			r, e = common.ToTypedSlice(src, func(input interface{}, unstrict bool) (interface{}, error) {
-				if r, err := common.ToStringMap(input); err != nil {
-					return nil, err
-				} else {
-					return decodeMap(r, field.GetMessageType())
-				}
-			}, "map", false)
+				return decodeSubMessage(input, field.GetMessageType(), unstrict)
+			}, "map", unstrict)
 		} else {
-			if m, err := common.ToStringMap(src); err != nil {
-				r, e = nil, err
-			} else {
-				r, e = decodeMap(m, field.GetMessageType())
-			}
+			r, e = decodeSubMessage(src, field.GetMessageType(), unstrict)
 		}
 	default:
 		return nil, fmt.Errorf("unsupported type for %s", fn)
@@ -475,17 +524,40 @@ func decodeField(src interface{}, field *desc.FieldDescriptor) (interface{}, err
 	return r, e
 }
 
-func decodeMap(src map[string]interface{}, ft *desc.MessageDescriptor) (map[string]interface{}, error) {
+func decodeMap(src map[string]interface{}, ft *desc.MessageDescriptor, unstrict bool) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	for _, field := range ft.GetFields() {
 		val, ok := src[field.GetName()]
 		if !ok {
 			continue
 		}
-		err := decodeMessageField(val, field, result)
+		err := decodeMessageField(val, field, result, unstrict)
 		if err != nil {
 			return nil, err
 		}
 	}
 	return result, nil
+}
+
+func decodeSubMessage(input interface{}, ft *desc.MessageDescriptor, unstrict bool) (interface{}, error) {
+	var m = map[string]interface{}{}
+	switch v := input.(type) {
+	case map[interface{}]interface{}:
+		for k, val := range v {
+			m[common.ToStringAlways(k)] = val
+		}
+		return decodeMap(m, ft, unstrict)
+	case map[string]interface{}:
+		return decodeMap(v, ft, unstrict)
+	case proto.Message:
+		message, err := dynamic.AsDynamicMessage(v)
+		if err != nil {
+			return nil, err
+		}
+		return decodeMessage(message, ft), nil
+	case *dynamic.Message:
+		return decodeMessage(v, ft), nil
+	default:
+		return nil, fmt.Errorf("cannot decode %[1]T(%[1]v) to map", input)
+	}
 }

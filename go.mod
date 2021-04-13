@@ -24,8 +24,10 @@ require (
 	github.com/pebbe/zmq4 v1.2.2
 	github.com/prometheus/client_golang v1.2.1
 	github.com/sirupsen/logrus v1.4.2
+	github.com/ugorji/go/codec v1.2.5
 	github.com/urfave/cli v1.22.0
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	google.golang.org/grpc v1.36.1
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/ini.v1 v1.62.0

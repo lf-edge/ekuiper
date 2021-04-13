@@ -7,12 +7,15 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/jhump/protoreflect/dynamic"
 	"github.com/jhump/protoreflect/dynamic/grpcdynamic"
-	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
+	"github.com/ugorji/go/codec"
 	"google.golang.org/grpc"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/rpc"
 	"net/url"
+	"reflect"
+	"strings"
 	"time"
 )
 
@@ -40,7 +43,7 @@ func NewExecutor(i *interfaceInfo) (executor, error) {
 		if _, err := url.Parse(i.Addr); err != nil {
 			return nil, fmt.Errorf("invalid url %s", i.Addr)
 		}
-		d, ok := descriptor.(jsonDescriptor)
+		d, ok := descriptor.(multiplexDescriptor)
 		if !ok {
 			return nil, fmt.Errorf("invalid descriptor type for rest")
 		}
@@ -95,8 +98,8 @@ func (d *grpcExecutor) InvokeFunction(name string, params []interface{}) (interf
 	if err != nil {
 		return nil, err
 	}
-	//TODO timeout handling
-	o, err := stub.InvokeRpc(context.Background(), d.descriptor.MethodDescriptor(name), message)
+	ctx, _ := context.WithTimeout(context.Background(), time.Duration(d.timeout)*time.Millisecond)
+	o, err := stub.InvokeRpc(ctx, d.descriptor.MethodDescriptor(name), message)
 	if err != nil {
 		return nil, fmt.Errorf("error invoking method %s in proto: %v", name, err)
 	}
@@ -108,7 +111,7 @@ func (d *grpcExecutor) InvokeFunction(name string, params []interface{}) (interf
 }
 
 type httpExecutor struct {
-	descriptor         jsonDescriptor
+	descriptor         multiplexDescriptor
 	url                string
 	method             string
 	headers            map[string]string
@@ -143,10 +146,17 @@ func (h *httpExecutor) InvokeFunction(name string, params []interface{}) (interf
 		common.Log.Debugf("%s\n", string(buf))
 		return nil, fmt.Errorf("http executor fails to err http return code: %d and error message %s", resp.StatusCode, string(buf))
 	} else {
-		if buf, bodyErr := ioutil.ReadAll(resp.Body); bodyErr != nil {
+		buf, bodyErr := ioutil.ReadAll(resp.Body)
+		if bodyErr != nil {
 			return nil, fmt.Errorf("http executor read response body error: %v", bodyErr)
-		} else {
+		}
+		contentType := resp.Header.Get("Content-Type")
+		if strings.HasPrefix(contentType, "application/json") {
 			return h.descriptor.ConvertReturnJson(name, buf)
+		} else if strings.HasPrefix(contentType, "text/plain") {
+			return h.descriptor.ConvertReturnText(name, buf)
+		} else {
+			return nil, fmt.Errorf("unsupported resposne content type %s", contentType)
 		}
 	}
 }
@@ -156,26 +166,41 @@ type msgpackExecutor struct {
 	addr       string
 	timeout    int64
 
-	conn net.Conn
+	conn *rpc.Client
 }
 
 // InvokeFunction flat the params and result
 func (m *msgpackExecutor) InvokeFunction(name string, params []interface{}) (interface{}, error) {
 	if m.conn == nil {
+		h := &codec.MsgpackHandle{}
+		h.MapType = reflect.TypeOf(map[string]interface{}(nil))
 		conn, err := net.Dial("tcp", m.addr)
 		if err != nil {
 			return nil, err
 		}
-		m.conn = conn
+		rpcCodec := codec.MsgpackSpecRpc.ClientCodec(conn, h)
+		m.conn = rpc.NewClientWithCodec(rpcCodec)
 	}
 	ps, err := m.descriptor.ConvertParams(name, params)
 	if err != nil {
 		return nil, err
 	}
-	client := rpc.NewSession(m.conn, true)
-	retval, xerr := client.Send(name, ps...)
-	if xerr != nil {
-		return nil, xerr
+	var (
+		reply interface{}
+		args  interface{}
+	)
+	// TODO argument flat
+	switch len(ps) {
+	case 0:
+		// do nothing
+	case 1:
+		args = ps[0]
+	default:
+		args = codec.MsgpackSpecRpcMultiArgs(ps)
 	}
-	return m.descriptor.ConvertReturn(name, retval.Interface())
+	err = m.conn.Call(name, args, &reply)
+	if err != nil {
+		return nil, err
+	}
+	return m.descriptor.ConvertReturn(name, reply)
 }
