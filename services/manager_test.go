@@ -37,23 +37,29 @@ func TestInitByFiles(t *testing.T) {
 				Protocol: GRPC,
 				Schema: &schemaInfo{
 					SchemaType: PROTOBUFF,
-					SchemaFile: path.Join(etcDir, "schemas", "hw.proto"),
+					SchemaFile: "hw.proto",
 				},
 				Functions: []string{
 					"helloFromGrpc",
 					"Compute",
+					"get_feature",
+					"get_similarity",
+					"object_detection",
 				},
 			},
 			"tsrest": {
-				Addr:     "http://localhost:8090",
+				Addr:     "http://localhost:51234",
 				Protocol: REST,
 				Schema: &schemaInfo{
 					SchemaType: PROTOBUFF,
-					SchemaFile: path.Join(etcDir, "schemas", "hw.proto"),
+					SchemaFile: "hw.proto",
 				},
 				Functions: []string{
 					"helloFromRest",
 					"Compute",
+					"get_feature",
+					"get_similarity",
+					"objectDetect",
 				},
 			},
 			"tsmsgpack": {
@@ -61,11 +67,14 @@ func TestInitByFiles(t *testing.T) {
 				Protocol: MSGPACK,
 				Schema: &schemaInfo{
 					SchemaType: PROTOBUFF,
-					SchemaFile: path.Join(etcDir, "schemas", "hw.proto"),
+					SchemaFile: "hw.proto",
 				},
 				Functions: []string{
 					"helloFromMsgpack",
 					"Compute",
+					"get_feature",
+					"get_similarity",
+					"object_detection",
 				},
 			},
 		},
@@ -81,6 +90,11 @@ func TestInitByFiles(t *testing.T) {
 			InterfaceName: "tsrest",
 			MethodName:    "SayHello",
 		},
+		"objectDetect": {
+			ServiceName:   "sample",
+			InterfaceName: "tsrest",
+			MethodName:    "object_detection",
+		},
 		"helloFromMsgpack": {
 			ServiceName:   "sample",
 			InterfaceName: "tsmsgpack",
@@ -90,6 +104,21 @@ func TestInitByFiles(t *testing.T) {
 			ServiceName:   "sample",
 			InterfaceName: "tsmsgpack",
 			MethodName:    "Compute",
+		},
+		"get_feature": { // Overridden of functions
+			ServiceName:   "sample",
+			InterfaceName: "tsmsgpack",
+			MethodName:    "get_feature",
+		},
+		"get_similarity": { // Overridden of functions
+			ServiceName:   "sample",
+			InterfaceName: "tsmsgpack",
+			MethodName:    "get_similarity",
+		},
+		"object_detection": { // Overridden of functions
+			ServiceName:   "sample",
+			InterfaceName: "tsmsgpack",
+			MethodName:    "object_detection",
 		},
 	}
 
@@ -104,7 +133,7 @@ func TestInitByFiles(t *testing.T) {
 	}
 	m.serviceKV.Open()
 	m.functionKV.Open()
-	err := m.initByFiles()
+	err := m.InitByFiles()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

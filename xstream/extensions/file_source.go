@@ -47,7 +47,7 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 		return errors.New("missing property Path")
 	}
 	if fileName == "" {
-		return errors.New("source must be specified")
+		return errors.New("file name must be specified")
 	}
 	if !filepath.IsAbs(cfg.Path) {
 		cfg.Path, err = common.GetLoc("/" + cfg.Path)

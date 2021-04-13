@@ -1,8 +1,6 @@
 package services
 
 import (
-	"github.com/emqx/kuiper/common"
-	"path"
 	"reflect"
 	"testing"
 )
@@ -10,7 +8,6 @@ import (
 var descriptors []descriptor
 
 func init() {
-	schemaLoc, _ := common.GetLoc("/services/test/schemas/")
 	schemas := []*schemaInfo{
 		{
 			SchemaType: PROTOBUFF,
@@ -19,7 +16,7 @@ func init() {
 	}
 	descriptors = make([]descriptor, len(schemas))
 	for i, sch := range schemas {
-		d, err := parse(sch.SchemaType, path.Join(schemaLoc, sch.SchemaFile))
+		d, err := parse(sch.SchemaType, sch.SchemaFile)
 		if err != nil {
 			panic(err)
 		}

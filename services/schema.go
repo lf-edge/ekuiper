@@ -40,7 +40,11 @@ var ( //Do not call these directly, use the get methods
 
 func ProtoParser() *protoparse.Parser {
 	once.Do(func() {
-		schemaDir, _ := common.GetLoc("/etc/services/schemas/")
+		dir := "/etc/services/schemas/"
+		if common.IsTesting {
+			dir = "/services/test/schemas/"
+		}
+		schemaDir, _ := common.GetLoc(dir)
 		protoParser = &protoparse.Parser{ImportPaths: []string{schemaDir}}
 	})
 	return protoParser

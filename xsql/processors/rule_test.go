@@ -799,6 +799,7 @@ func TestSingleSQLForBinary(t *testing.T) {
 					"self": image,
 				}},
 			},
+			w: 50,
 			m: map[string]interface{}{
 				"op_1_preprocessor_binDemo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_binDemo_0_process_latency_us": int64(0),

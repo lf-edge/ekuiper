@@ -34,7 +34,11 @@ func GetServiceManager() (*Manager, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if singleton == nil {
-		etcDir, err := common.GetLoc("/etc/services")
+		dir := "/etc/services"
+		if common.IsTesting {
+			dir = "/services/test"
+		}
+		etcDir, err := common.GetLoc(dir)
 		if err != nil {
 			return nil, fmt.Errorf("cannot find etc/services folder: %s", err)
 		}
@@ -62,8 +66,8 @@ func GetServiceManager() (*Manager, error) {
 			functionKV: fdb,
 		}
 	}
-	if !singleton.loaded {
-		err := singleton.initByFiles()
+	if !singleton.loaded && !common.IsTesting { // To boost the testing perf
+		err := singleton.InitByFiles()
 		return singleton, err
 	}
 	return singleton, nil
@@ -77,7 +81,7 @@ func GetServiceManager() (*Manager, error) {
  *
  * NOT threadsafe, must run in lock
  */
-func (m *Manager) initByFiles() error {
+func (m *Manager) InitByFiles() error {
 	common.Log.Debugf("init service manager")
 	files, err := ioutil.ReadDir(m.etcDir)
 	if nil != err {
