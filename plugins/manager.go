@@ -3,16 +3,12 @@ package plugins
 import (
 	"archive/zip"
 	"bytes"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/common/kv"
 	"github.com/emqx/kuiper/xstream/api"
-	"io"
 	"io/ioutil"
-	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -390,7 +386,7 @@ func (m *Manager) Register(t PluginType, j Plugin) error {
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
 	}
-	if !isValidUrl(uri) || !strings.HasSuffix(uri, ".zip") {
+	if !common.IsValidUrl(uri) || !strings.HasSuffix(uri, ".zip") {
 		return fmt.Errorf("invalid uri %s", uri)
 	}
 
@@ -427,7 +423,7 @@ func (m *Manager) Register(t PluginType, j Plugin) error {
 	//clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
 	//download
-	err = downloadFile(zipPath, uri)
+	err = common.DownloadFile(zipPath, uri)
 	if err != nil {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}
@@ -649,7 +645,7 @@ func (m *Manager) install(t PluginType, name, src string, shellParas []string) (
 	for _, file := range r.File {
 		fileName := file.Name
 		if yamlFile == fileName {
-			err = unzipTo(file, yamlPath)
+			err = common.UnzipTo(file, yamlPath)
 			if err != nil {
 				return filenames, "", err
 			}
@@ -657,14 +653,14 @@ func (m *Manager) install(t PluginType, name, src string, shellParas []string) (
 			filenames = append(filenames, yamlPath)
 		} else if fileName == name+".json" {
 			jsonPath := path.Join(m.etcDir, PluginTypes[t], fileName)
-			if err := unzipTo(file, jsonPath); nil != err {
+			if err := common.UnzipTo(file, jsonPath); nil != err {
 				common.Log.Errorf("Failed to decompress the metadata %s file", fileName)
 			} else {
 				revokeFiles = append(revokeFiles, jsonPath)
 			}
 		} else if soPrefix.Match([]byte(fileName)) {
 			soPath := path.Join(m.pluginDir, PluginTypes[t], fileName)
-			err = unzipTo(file, soPath)
+			err = common.UnzipTo(file, soPath)
 			if err != nil {
 				return filenames, "", err
 			}
@@ -672,12 +668,12 @@ func (m *Manager) install(t PluginType, name, src string, shellParas []string) (
 			revokeFiles = append(revokeFiles, soPath)
 			_, version = parseName(fileName)
 		} else if strings.HasPrefix(fileName, "etc/") {
-			err = unzipTo(file, path.Join(m.etcDir, PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
+			err = common.UnzipTo(file, path.Join(m.etcDir, PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
 			if err != nil {
 				return filenames, "", err
 			}
 		} else { //unzip other files
-			err = unzipTo(file, path.Join(tempPath, fileName))
+			err = common.UnzipTo(file, path.Join(tempPath, fileName))
 			if err != nil {
 				return filenames, "", err
 			}
@@ -724,126 +720,6 @@ func parseName(n string) (string, string) {
 		return name, result[1]
 	}
 	return name, ""
-}
-
-func unzipTo(f *zip.File, fpath string) error {
-	_, err := os.Stat(fpath)
-	if err == nil || !os.IsNotExist(err) {
-		if err = os.RemoveAll(fpath); err != nil {
-			return fmt.Errorf("failed to delete file %s", fpath)
-		}
-	}
-
-	if f.FileInfo().IsDir() {
-		// Make Folder
-		os.MkdirAll(fpath, os.ModePerm)
-		return nil
-	}
-
-	if _, err := os.Stat(filepath.Dir(fpath)); os.IsNotExist(err) {
-		if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
-			return err
-		}
-	}
-
-	outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-	if err != nil {
-		return err
-	}
-
-	rc, err := f.Open()
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(outFile, rc)
-
-	outFile.Close()
-	rc.Close()
-	return err
-}
-
-func isValidUrl(uri string) bool {
-	pu, err := url.ParseRequestURI(uri)
-	if err != nil {
-		return false
-	}
-
-	switch pu.Scheme {
-	case "http", "https":
-		u, err := url.Parse(uri)
-		if err != nil || u.Scheme == "" || u.Host == "" {
-			return false
-		}
-	case "file":
-		if pu.Host != "" || pu.Path == "" {
-			return false
-		}
-	default:
-		return false
-	}
-	return true
-}
-
-func downloadFile(filepath string, uri string) error {
-	common.Log.Infof("Start to download file %s\n", uri)
-	u, err := url.ParseRequestURI(uri)
-	if err != nil {
-		return err
-	}
-	var src io.Reader
-	switch u.Scheme {
-	case "file":
-		// deal with windows path
-		if strings.Index(u.Path, ":") == 2 {
-			u.Path = u.Path[1:]
-		}
-		common.Log.Debugf(u.Path)
-		sourceFileStat, err := os.Stat(u.Path)
-		if err != nil {
-			return err
-		}
-
-		if !sourceFileStat.Mode().IsRegular() {
-			return fmt.Errorf("%s is not a regular file", u.Path)
-		}
-		srcFile, err := os.Open(u.Path)
-		if err != nil {
-			return err
-		}
-		defer srcFile.Close()
-		src = srcFile
-	case "http", "https":
-		// Get the data
-		timeout := time.Duration(5 * time.Minute)
-		client := &http.Client{
-			Timeout: timeout,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			},
-		}
-		resp, err := client.Get(uri)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("cannot download the file with status: %s", resp.Status)
-		}
-		defer resp.Body.Close()
-		src = resp.Body
-	default:
-		return fmt.Errorf("unsupported url scheme %s", u.Scheme)
-	}
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Write the body to file
-	_, err = io.Copy(out, src)
-	return err
 }
 
 func ucFirst(str string) string {

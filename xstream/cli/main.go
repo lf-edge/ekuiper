@@ -134,7 +134,7 @@ func main() {
 		{
 			Name:    "create",
 			Aliases: []string{"create"},
-			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create table $table_name | create table $table_name -f $table_def_file| create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file | create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file",
+			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create table $table_name | create table $table_name -f $table_def_file| create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file | create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file | create service $service_name $service_json ",
 
 			Subcommands: []cli.Command{
 				{
@@ -214,7 +214,7 @@ func main() {
 								}
 								rname := c.Args()[0]
 								var reply string
-								args := &common.RuleDesc{rname, string(rule)}
+								args := &common.RPCArgDesc{rname, string(rule)}
 								err = client.Call("Server.CreateRule", args, &reply)
 								if err != nil {
 									fmt.Println(err)
@@ -231,7 +231,7 @@ func main() {
 							rname := c.Args()[0]
 							rjson := c.Args()[1]
 							var reply string
-							args := &common.RuleDesc{rname, rjson}
+							args := &common.RPCArgDesc{rname, rjson}
 							err = client.Call("Server.CreateRule", args, &reply)
 							if err != nil {
 								fmt.Println(err)
@@ -265,7 +265,7 @@ func main() {
 						pname := c.Args()[1]
 						sfile := c.String("file")
 						args := &common.PluginDesc{
-							RuleDesc: common.RuleDesc{
+							RPCArgDesc: common.RPCArgDesc{
 								Name: pname,
 							},
 							Type: ptype,
@@ -298,12 +298,33 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "service",
+					Usage: "create service $service_name $service_json",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) < 2 {
+							fmt.Printf("Expect service name and json.\n")
+							return nil
+						}
+						var reply string
+						err = client.Call("Server.CreateService", &common.RPCArgDesc{
+							Name: c.Args()[0],
+							Json: c.Args()[1],
+						}, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 		{
 			Name:    "describe",
 			Aliases: []string{"describe"},
-			Usage:   "describe stream $stream_name | describe table $table_name | describe rule $rule_name | describe plugin $plugin_type $plugin_name",
+			Usage:   "describe stream $stream_name | describe table $table_name | describe rule $rule_name | describe plugin $plugin_type $plugin_name | describe udf $udf_name | describe service $service_name | describe service_func $service_func_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -358,7 +379,7 @@ func main() {
 						}
 						pname := c.Args()[1]
 						args := &common.PluginDesc{
-							RuleDesc: common.RuleDesc{
+							RPCArgDesc: common.RPCArgDesc{
 								Name: pname,
 							},
 							Type: ptype,
@@ -394,13 +415,51 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "service",
+					Usage: "describe service $service_name",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 1 {
+							fmt.Printf("Expect service name.\n")
+							return nil
+						}
+						name := c.Args()[0]
+						var reply string
+						err = client.Call("Server.DescService", name, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
+				{
+					Name:  "service_func",
+					Usage: "describe service_func $service_func_name",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 1 {
+							fmt.Printf("Expect service func name.\n")
+							return nil
+						}
+						name := c.Args()[0]
+						var reply string
+						err = client.Call("Server.DescServiceFunc", name, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 
 		{
 			Name:    "drop",
 			Aliases: []string{"drop"},
-			Usage:   "drop stream $stream_name | drop table $table_name |drop rule $rule_name | drop plugin $plugin_type $plugin_name -r $stop",
+			Usage:   "drop stream $stream_name | drop table $table_name |drop rule $rule_name | drop plugin $plugin_type $plugin_name -r $stop | drop service $service_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -466,7 +525,7 @@ func main() {
 						}
 						pname := c.Args()[1]
 						args := &common.PluginDesc{
-							RuleDesc: common.RuleDesc{
+							RPCArgDesc: common.RPCArgDesc{
 								Name: pname,
 							},
 							Type: ptype,
@@ -483,13 +542,32 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "service",
+					Usage: "drop service $service_name",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 1 {
+							fmt.Printf("Expect service name.\n")
+							return nil
+						}
+						name := c.Args()[0]
+						var reply string
+						err = client.Call("Server.DropService", name, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 
 		{
 			Name:    "show",
 			Aliases: []string{"show"},
-			Usage:   "show streams | show tables | show rules | show plugins $plugin_type",
+			Usage:   "show streams | show tables | show rules | show plugins $plugin_type | show services | show service_funcs",
 
 			Subcommands: []cli.Command{
 				{
@@ -551,6 +629,32 @@ func main() {
 					Action: func(c *cli.Context) error {
 						var reply string
 						err = client.Call("Server.ShowUdfs", 0, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				}, {
+					Name:  "services",
+					Usage: "show services",
+					Action: func(c *cli.Context) error {
+						var reply string
+						err = client.Call("Server.ShowServices", 0, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				}, {
+					Name:  "service_funcs",
+					Usage: "show service_funcs",
+					Action: func(c *cli.Context) error {
+						var reply string
+						err = client.Call("Server.ShowServiceFuncs", 0, &reply)
 						if err != nil {
 							fmt.Println(err)
 						} else {
@@ -725,7 +829,7 @@ func main() {
 						pname := c.Args()[1]
 						sfile := c.String("file")
 						args := &common.PluginDesc{
-							RuleDesc: common.RuleDesc{
+							RPCArgDesc: common.RPCArgDesc{
 								Name: pname,
 							},
 						}

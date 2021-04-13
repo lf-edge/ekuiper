@@ -1,11 +1,11 @@
 package common
 
-type RuleDesc struct {
+type RPCArgDesc struct {
 	Name, Json string
 }
 
 type PluginDesc struct {
-	RuleDesc
+	RPCArgDesc
 	Type int
 	Stop bool
 }

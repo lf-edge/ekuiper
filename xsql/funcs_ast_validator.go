@@ -29,7 +29,7 @@ func validateFuncs(funcName string, args []Expr) error {
 		return validateAggFunc(lowerName, args)
 	} else {
 		// Get from external service
-		if m, err := services.NewServiceManager(); err != nil {
+		if m, err := services.GetServiceManager(); err != nil {
 			return err
 		} else {
 			if m.HasFunction(funcName) {

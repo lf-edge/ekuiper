@@ -1,19 +1,22 @@
 package services
 
 import (
+	"archive/zip"
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/common/kv"
 	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
 var (
 	once      sync.Once
 	mutex     sync.Mutex
-	singleton *Manager //Do not call this directly, use NewServiceManager
+	singleton *Manager //Do not call this directly, use GetServiceManager
 )
 
 type Manager struct {
@@ -27,7 +30,7 @@ type Manager struct {
 	functionKV kv.KeyValue
 }
 
-func NewServiceManager() (*Manager, error) {
+func GetServiceManager() (*Manager, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if singleton == nil {
@@ -84,64 +87,10 @@ func (m *Manager) initByFiles() error {
 	for _, file := range files {
 		baseName := filepath.Base(file.Name())
 		if filepath.Ext(baseName) == ".json" {
-			serviceConf := &conf{}
-			err := common.ReadJsonUnmarshal(filepath.Join(m.etcDir, baseName), serviceConf)
+			err := m.initFile(baseName)
 			if err != nil {
-				common.Log.Errorf("Parse services file %s failed: %v", baseName, err)
+				common.Log.Errorf("%v", err)
 				continue
-			}
-			//TODO validate serviceConf
-			serviceName := baseName[0 : len(baseName)-5]
-			info := &serviceInfo{
-				About:      serviceConf.About,
-				Interfaces: make(map[string]*interfaceInfo),
-			}
-			for _, binding := range serviceConf.Interfaces {
-				binding.SchemaFile = path.Join(m.etcDir, "schemas", binding.SchemaFile)
-				desc, err := parse(binding.SchemaType, binding.SchemaFile)
-				if err != nil {
-					common.Log.Errorf("Fail to parse schema file %s: %v", binding.SchemaFile, err)
-				}
-
-				// setting function alias
-				aliasMap := make(map[string]string)
-				for _, finfo := range binding.Functions {
-					aliasMap[finfo.ServiceName] = finfo.Name
-				}
-
-				methods := desc.GetFunctions()
-				functions := make([]string, len(methods))
-				for i, f := range methods {
-					fname := f
-					if a, ok := aliasMap[f]; ok {
-						fname = a
-					}
-					functions[i] = fname
-				}
-				info.Interfaces[binding.Name] = &interfaceInfo{
-					Desc:     binding.Description,
-					Addr:     binding.Address,
-					Protocol: binding.Protocol,
-					Schema: &schemaInfo{
-						SchemaType: binding.SchemaType,
-						SchemaFile: binding.SchemaFile,
-					},
-					Functions: functions,
-				}
-				err = m.serviceKV.Set(serviceName, info)
-				if err != nil {
-					return fmt.Errorf("fail to save the parsing result: %v", err)
-				}
-				for i, f := range functions {
-					err := m.functionKV.Set(f, &functionContainer{
-						ServiceName:   serviceName,
-						InterfaceName: binding.Name,
-						MethodName:    methods[i],
-					})
-					if err != nil {
-						common.Log.Errorf("fail to save the function mapping for %s, the function is not available: %v", f, err)
-					}
-				}
 			}
 		}
 	}
@@ -149,9 +98,76 @@ func (m *Manager) initByFiles() error {
 	return nil
 }
 
+func (m *Manager) initFile(baseName string) error {
+	serviceConf := &conf{}
+	err := common.ReadJsonUnmarshal(filepath.Join(m.etcDir, baseName), serviceConf)
+	if err != nil {
+		return fmt.Errorf("parse services file %s failed: %v", baseName, err)
+	}
+	//TODO validate serviceConf
+	serviceName := baseName[0 : len(baseName)-5]
+	info := &serviceInfo{
+		About:      serviceConf.About,
+		Interfaces: make(map[string]*interfaceInfo),
+	}
+	for _, binding := range serviceConf.Interfaces {
+		desc, err := parse(binding.SchemaType, binding.SchemaFile)
+		if err != nil {
+			return fmt.Errorf("Fail to parse schema file %s: %v", binding.SchemaFile, err)
+		}
+
+		// setting function alias
+		aliasMap := make(map[string]string)
+		for _, finfo := range binding.Functions {
+			aliasMap[finfo.ServiceName] = finfo.Name
+		}
+
+		methods := desc.GetFunctions()
+		functions := make([]string, len(methods))
+		for i, f := range methods {
+			fname := f
+			if a, ok := aliasMap[f]; ok {
+				fname = a
+			}
+			functions[i] = fname
+		}
+		info.Interfaces[binding.Name] = &interfaceInfo{
+			Desc:     binding.Description,
+			Addr:     binding.Address,
+			Protocol: binding.Protocol,
+			Schema: &schemaInfo{
+				SchemaType: binding.SchemaType,
+				SchemaFile: binding.SchemaFile,
+			},
+			Functions: functions,
+		}
+		err = m.serviceKV.Set(serviceName, info)
+		if err != nil {
+			return fmt.Errorf("fail to save the parsing result: %v", err)
+		}
+		for i, f := range functions {
+			err := m.functionKV.Set(f, &functionContainer{
+				ServiceName:   serviceName,
+				InterfaceName: binding.Name,
+				MethodName:    methods[i],
+			})
+			if err != nil {
+				common.Log.Errorf("fail to save the function mapping for %s, the function is not available: %v", f, err)
+			}
+		}
+	}
+	return nil
+}
+
 func (m *Manager) HasFunction(name string) bool {
 	_, ok := m.getFunction(name)
 	common.Log.Debugf("found external function %s? %v ", name, ok)
+	return ok
+}
+
+func (m *Manager) HasService(name string) bool {
+	_, ok := m.getService(name)
+	common.Log.Debugf("found external service %s? %v ", name, ok)
 	return ok
 }
 
@@ -193,10 +209,6 @@ func (m *Manager) getService(name string) (*serviceInfo, bool) {
 	}
 }
 
-func ValidateFunction(name string) {
-
-}
-
 func (m *Manager) InvokeFunction(name string, params []interface{}) (interface{}, bool) {
 	f, ok := m.getFunction(name)
 	if !ok {
@@ -232,4 +244,146 @@ func (m *Manager) getExecutor(name string, info *interfaceInfo) (executor, error
 		e, _ = m.executorPool.LoadOrStore(name, ne)
 	}
 	return e.(executor), nil
+}
+
+func (m *Manager) deleteServiceFuncs(service string) error {
+	if s, ok := m.getService(service); ok {
+		for _, i := range s.Interfaces {
+			for _, f := range i.Functions {
+				_ = m.deleteFunc(service, f)
+			}
+		}
+	}
+	return nil
+}
+
+func (m *Manager) deleteFunc(service, name string) error {
+	f, err := m.GetFunction(name)
+	if err != nil {
+		return err
+	}
+	if f.ServiceName == service {
+		m.functionBuf.Delete(name)
+		m.functionKV.Delete(name)
+	}
+	return nil
+}
+
+// ** CRUD of the service files **
+
+type ServiceCreationRequest struct {
+	Name string `json:"name"`
+	File string `json:"file"`
+}
+
+func (m *Manager) List() ([]string, error) {
+	return m.serviceKV.Keys()
+}
+
+func (m *Manager) Create(r *ServiceCreationRequest) error {
+	name, uri := r.Name, r.File
+	if ok, _ := m.serviceKV.Get(name, &serviceInfo{}); ok {
+		return fmt.Errorf("service %s exist", name)
+	}
+	if !common.IsValidUrl(uri) || !strings.HasSuffix(uri, ".zip") {
+		return fmt.Errorf("invalid file path %s", uri)
+	}
+	zipPath := path.Join(m.etcDir, name+".zip")
+	//clean up: delete zip file and unzip files in error
+	defer os.Remove(zipPath)
+	//download
+	err := common.DownloadFile(zipPath, uri)
+	if err != nil {
+		return fmt.Errorf("fail to download file %s: %s", uri, err)
+	}
+	//unzip and copy to destination
+	err = m.unzip(name, zipPath)
+	if err != nil {
+		return err
+	}
+	// init file to serviceKV
+	return m.initFile(name + ".json")
+}
+
+func (m *Manager) Delete(name string) error {
+	name = strings.Trim(name, " ")
+	if name == "" {
+		return fmt.Errorf("invalid name %s: should not be empty", name)
+	}
+	m.deleteServiceFuncs(name)
+	m.serviceBuf.Delete(name)
+	err := m.serviceKV.Delete(name)
+	if err != nil {
+		return err
+	}
+	path := path.Join(m.etcDir, name+".json")
+	err = os.Remove(path)
+	if err != nil {
+		common.Log.Errorf("remove service json fails: %v", err)
+	}
+	return nil
+}
+
+func (m *Manager) Get(name string) (*serviceInfo, error) {
+	name = strings.Trim(name, " ")
+	if name == "" {
+		return nil, fmt.Errorf("invalid name %s: should not be empty", name)
+	}
+	r, ok := m.getService(name)
+	if !ok {
+		return nil, fmt.Errorf("can't get the service %s", name)
+	}
+	return r, nil
+}
+
+func (m *Manager) Update(req *ServiceCreationRequest) error {
+	err := m.Delete(req.Name)
+	if err != nil {
+		return err
+	}
+	return m.Create(req)
+}
+
+func (m *Manager) unzip(name, src string) error {
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	baseName := strings.ToLower(name + ".json")
+	// Try unzip
+	found := false
+	for _, file := range r.File {
+		if strings.ToLower(file.Name) == baseName {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("cannot find the json descriptor file %s for service", baseName)
+	}
+	// unzip
+	for _, file := range r.File {
+		err := common.UnzipTo(file, path.Join(m.etcDir, file.Name))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *Manager) ListFunctions() ([]string, error) {
+	return m.functionKV.Keys()
+}
+
+func (m *Manager) GetFunction(name string) (*functionContainer, error) {
+	name = strings.Trim(name, " ")
+	if name == "" {
+		return nil, fmt.Errorf("invalid name %s: should not be empty", name)
+	}
+	r, ok := m.getFunction(name)
+	if !ok {
+		return nil, fmt.Errorf("can't get the service function %s", name)
+	}
+	return r, nil
 }

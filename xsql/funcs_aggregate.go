@@ -16,7 +16,7 @@ type AggregateFunctionValuer struct {
 
 func NewFunctionValuersForOp(ctx api.StreamContext) (*FunctionValuer, *AggregateFunctionValuer, error) {
 	p := NewFuncPlugins(ctx)
-	m, err := services.NewServiceManager()
+	m, err := services.GetServiceManager()
 	if err != nil {
 		return nil, nil, err
 	}
