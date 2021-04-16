@@ -2,7 +2,7 @@
 [![GitHub Release](https://img.shields.io/github/release/emqx/kuiper?color=brightgreen)](https://github.com/emqx/kuiper/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/emqx/kuiper)](https://hub.docker.com/r/emqx/kuiper)
 [![Slack Invite](<https://kuiper-slack-invite.emqx.io/badge.svg>)](https://kuiper-slack-invite.emqx.io/)
-[![Twitter](https://img.shields.io/badge/Follow-EMQ%20X-1DA1F2?logo=twitter)](https://twitter.com/emqtt)
+[![Twitter](https://img.shields.io/badge/Follow-EMQ-1DA1F2?logo=twitter)](https://twitter.com/EMQTech)
 [![问答社区](https://img.shields.io/badge/问答社区-Kuiper-yellow)](https://askemq.com/c/kuiper/)
 
 [English](README.md) | [简体中文](README-CN.md)
@@ -65,7 +65,7 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 - [Weibo](https://weibo.com/emqtt)
 - [Blog](https://www.emqx.cn/blog)
 - [Slack](https://kuiper-slack-invite.emqx.io/)
-- [Twitter](https://twitter.com/emqtt)
+- [Twitter](https://twitter.com/EMQTech)
 - [Reddit](https://www.reddit.com/r/emqx/)
 - [Facebook](https://www.facebook.com/emqxmqtt)
 

@@ -3,7 +3,7 @@
 [![GitHub Release](https://img.shields.io/github/release/emqx/kuiper?color=brightgreen)](https://github.com/emqx/kuiper/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/emqx/kuiper)](https://hub.docker.com/r/emqx/kuiper)
 [![Slack Invite](<https://kuiper-slack-invite.emqx.io/badge.svg>)](https://kuiper-slack-invite.emqx.io/)
-[![Twitter](https://img.shields.io/badge/Follow-EMQ%20X-1DA1F2?logo=twitter)](https://twitter.com/emqtt)
+[![Twitter](https://img.shields.io/badge/Follow-EMQ-1DA1F2?logo=twitter)](https://twitter.com/EMQTech)
 [![Community](https://img.shields.io/badge/Community-Kuiper-yellow?logo=github)](https://github.com/emqx/kuiper/discussions)
 
 [English](README.md) | [简体中文](README-CN.md)
