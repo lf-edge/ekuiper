@@ -26,6 +26,18 @@
         {
           "name": "helloFromGrpc",
           "serviceName": "SayHello"
+        },
+        {
+          "name": "objectDetectFromGrpc",
+          "serviceName": "object_detection"
+        },
+        {
+          "name": "getFeatureFromGrpc",
+          "serviceName": "get_feature"
+        },
+        {
+          "name": "getStatusFromGrpc",
+          "serviceName": "getStatus"
         }
       ]
     },
@@ -41,8 +53,16 @@
           "serviceName": "SayHello"
         },
         {
-          "name": "objectDetect",
+          "name": "objectDetectFromRest",
           "serviceName": "object_detection"
+        },
+        {
+          "name": "getFeatureFromRest",
+          "serviceName": "get_feature"
+        },
+        {
+          "name": "getStatusFromRest",
+          "serviceName": "getStatus"
         }
       ]
     },
@@ -56,6 +76,18 @@
         {
           "name": "helloFromMsgpack",
           "serviceName": "SayHello"
+        },
+        {
+          "name": "objectDetectFromMsgpack",
+          "serviceName": "object_detection"
+        },
+        {
+          "name": "getFeatureFromMsgpack",
+          "serviceName": "get_feature"
+        },
+        {
+          "name": "getStatusFromMsgpack",
+          "serviceName": "getStatus"
         }
       ]
     }

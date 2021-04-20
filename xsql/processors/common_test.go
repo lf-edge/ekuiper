@@ -919,6 +919,29 @@ var testData = map[string][]*xsql.Tuple{
 			Timestamp: 1541152486013,
 		},
 	},
+	"fakeBin": {
+		{
+			Emitter: "fakeBin",
+			Message: map[string]interface{}{
+				"self": []byte("golang"),
+			},
+			Timestamp: 1541152486013,
+		},
+		{
+			Emitter: "fakeBin",
+			Message: map[string]interface{}{
+				"self": []byte("peacock"),
+			},
+			Timestamp: 1541152487013,
+		},
+		{
+			Emitter: "fakeBin",
+			Message: map[string]interface{}{
+				"self": []byte("bullfrog"),
+			},
+			Timestamp: 1541152488013,
+		},
+	},
 	"helloStr": {
 		{
 			Emitter: "helloStr",
@@ -997,9 +1020,9 @@ func doRuleTestBySinkProps(t *testing.T, tests []ruleTest, j int, opt *api.RuleO
 		}
 		switch opt.Qos {
 		case api.ExactlyOnce:
-			wait *= 10
+			wait *= 3
 		case api.AtLeastOnce:
-			wait *= 5
+			wait *= 2
 		}
 		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP, wait); err != nil {
 			t.Errorf("send data error %s", err)
@@ -1205,6 +1228,8 @@ func handleStream(createOrDrop bool, names []string, t *testing.T) {
 				sql = `CREATE STREAM helloStr (name string) WITH (DATASOURCE="hello", FORMAT="JSON")`
 			case "commands":
 				sql = `CREATE STREAM commands (command string, image string) WITH (DATASOURCE="commands", FORMAT="JSON")`
+			case "fakeBin":
+				sql = "CREATE STREAM fakeBin () WITH (DATASOURCE=\"users\", FORMAT=\"BINARY\")"
 			default:
 				t.Errorf("create stream %s fail", name)
 			}

@@ -33,7 +33,7 @@ func strCall(name string, args []interface{}) (interface{}, bool) {
 		return strings.ToLower(arg0), true
 	case "lpad":
 		arg0 := common.ToStringAlways(args[0])
-		arg1, err := common.ToInt(args[1], false)
+		arg1, err := common.ToInt(args[1], common.STRICT)
 		if err != nil {
 			return err, false
 		}
@@ -76,7 +76,7 @@ func strCall(name string, args []interface{}) (interface{}, bool) {
 		}
 	case "rpad":
 		arg0 := common.ToStringAlways(args[0])
-		arg1, err := common.ToInt(args[1], false)
+		arg1, err := common.ToInt(args[1], common.STRICT)
 		if err != nil {
 			return err, false
 		}
@@ -86,12 +86,12 @@ func strCall(name string, args []interface{}) (interface{}, bool) {
 		return strings.TrimRightFunc(arg0, unicode.IsSpace), true
 	case "substring":
 		arg0 := common.ToStringAlways(args[0])
-		arg1, err := common.ToInt(args[1], false)
+		arg1, err := common.ToInt(args[1], common.STRICT)
 		if err != nil {
 			return err, false
 		}
 		if len(args) > 2 {
-			arg2, err := common.ToInt(args[2], false)
+			arg2, err := common.ToInt(args[2], common.STRICT)
 			if err != nil {
 				return err, false
 			}
@@ -105,7 +105,7 @@ func strCall(name string, args []interface{}) (interface{}, bool) {
 	case "split_value":
 		arg0, arg1 := common.ToStringAlways(args[0]), common.ToStringAlways(args[1])
 		ss := strings.Split(arg0, arg1)
-		v, _ := common.ToInt(args[2], false)
+		v, _ := common.ToInt(args[2], common.STRICT)
 		if v > (len(ss) - 1) {
 			return fmt.Errorf("%d out of index array (size = %d)", v, len(ss)), false
 		} else {

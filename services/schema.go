@@ -216,10 +216,10 @@ func (d *wrappedProtoDescriptor) ConvertReturn(method string, returnVal interfac
 	m := d.MethodDescriptor(method)
 	t := m.GetOutputType()
 	if _, ok := WRAPPER_TYPES[t.GetFullyQualifiedName()]; ok {
-		return decodeField(returnVal, t.FindFieldByNumber(1), false)
+		return decodeField(returnVal, t.FindFieldByNumber(1), common.STRICT)
 	} else { // MUST be a map
 		if retMap, ok := returnVal.(map[string]interface{}); ok {
-			return decodeMap(retMap, t, true)
+			return decodeMap(retMap, t, common.CONVERT_SAMEKIND)
 		} else {
 			return nil, fmt.Errorf("fail to convert return val, must be a map but got %v", returnVal)
 		}
@@ -238,14 +238,14 @@ func (d *wrappedProtoDescriptor) ConvertReturnJson(method string, returnVal []by
 		return nil, err
 	}
 	m := d.MethodDescriptor(method)
-	return decodeMap(r, m.GetOutputType(), false)
+	return decodeMap(r, m.GetOutputType(), common.CONVERT_SAMEKIND)
 }
 
 func (d *wrappedProtoDescriptor) ConvertReturnText(method string, returnVal []byte) (interface{}, error) {
 	m := d.MethodDescriptor(method)
 	t := m.GetOutputType()
 	if _, ok := WRAPPER_TYPES[t.GetFullyQualifiedName()]; ok {
-		return decodeField(string(returnVal), t.FindFieldByNumber(1), true)
+		return decodeField(string(returnVal), t.FindFieldByNumber(1), common.CONVERT_ALL)
 	} else {
 		return nil, fmt.Errorf("fail to convert return val to text, return type must be primitive type but got %s", t.GetName())
 	}
@@ -311,53 +311,53 @@ func encodeField(field *desc.FieldDescriptor, v interface{}) (interface{}, error
 		)
 		switch ft {
 		case dpb.FieldDescriptorProto_TYPE_DOUBLE:
-			result, err = common.ToFloat64Slice(v, false)
+			result, err = common.ToFloat64Slice(v, common.STRICT)
 		case dpb.FieldDescriptorProto_TYPE_FLOAT:
-			result, err = common.ToTypedSlice(v, func(input interface{}, unstrict bool) (interface{}, error) {
-				r, err := common.ToFloat64(input, unstrict)
+			result, err = common.ToTypedSlice(v, func(input interface{}, sn common.Strictness) (interface{}, error) {
+				r, err := common.ToFloat64(input, sn)
 				if err != nil {
 					return 0, nil
 				} else {
 					return float32(r), nil
 				}
-			}, "float", false)
+			}, "float", common.STRICT)
 		case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32:
-			result, err = common.ToTypedSlice(v, func(input interface{}, unstrict bool) (interface{}, error) {
-				r, err := common.ToInt(input, unstrict)
+			result, err = common.ToTypedSlice(v, func(input interface{}, sn common.Strictness) (interface{}, error) {
+				r, err := common.ToInt(input, sn)
 				if err != nil {
 					return 0, nil
 				} else {
 					return int32(r), nil
 				}
-			}, "int", false)
+			}, "int", common.STRICT)
 		case dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64:
-			result, err = common.ToInt64Slice(v, false)
+			result, err = common.ToInt64Slice(v, common.STRICT)
 		case dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32:
-			result, err = common.ToTypedSlice(v, func(input interface{}, unstrict bool) (interface{}, error) {
-				r, err := common.ToUint64(input, unstrict)
+			result, err = common.ToTypedSlice(v, func(input interface{}, sn common.Strictness) (interface{}, error) {
+				r, err := common.ToUint64(input, sn)
 				if err != nil {
 					return 0, nil
 				} else {
 					return uint32(r), nil
 				}
-			}, "uint", false)
+			}, "uint", common.STRICT)
 		case dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
-			result, err = common.ToUint64Slice(v, false)
+			result, err = common.ToUint64Slice(v, common.STRICT)
 		case dpb.FieldDescriptorProto_TYPE_BOOL:
-			result, err = common.ToBoolSlice(v, false)
+			result, err = common.ToBoolSlice(v, common.STRICT)
 		case dpb.FieldDescriptorProto_TYPE_STRING:
-			result, err = common.ToStringSlice(v, false)
+			result, err = common.ToStringSlice(v, common.STRICT)
 		case dpb.FieldDescriptorProto_TYPE_BYTES:
-			result, err = common.ToBytesSlice(v, false)
+			result, err = common.ToBytesSlice(v, common.STRICT)
 		case dpb.FieldDescriptorProto_TYPE_MESSAGE:
-			result, err = common.ToTypedSlice(v, func(input interface{}, unstrict bool) (interface{}, error) {
+			result, err = common.ToTypedSlice(v, func(input interface{}, sn common.Strictness) (interface{}, error) {
 				r, err := common.ToStringMap(v)
 				if err == nil {
 					return encodeMap(field.GetMessageType().GetFields(), r)
 				} else {
 					return nil, fmt.Errorf("invalid type for map type field '%s': %v", fn, err)
 				}
-			}, "bool", false)
+			}, "map", common.STRICT)
 		default:
 			return nil, fmt.Errorf("invalid type for field '%s'", fn)
 		}
@@ -374,63 +374,63 @@ func encodeSingleField(field *desc.FieldDescriptor, v interface{}) (interface{},
 	fn := field.GetName()
 	switch field.GetType() {
 	case dpb.FieldDescriptorProto_TYPE_DOUBLE:
-		r, err := common.ToFloat64(v, false)
+		r, err := common.ToFloat64(v, common.STRICT)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for float type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_FLOAT:
-		r, err := common.ToFloat64(v, false)
+		r, err := common.ToFloat64(v, common.STRICT)
 		if err == nil {
 			return float32(r), nil
 		} else {
 			return nil, fmt.Errorf("invalid type for float type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32:
-		r, err := common.ToInt(v, false)
+		r, err := common.ToInt(v, common.STRICT)
 		if err == nil {
 			return int32(r), nil
 		} else {
 			return nil, fmt.Errorf("invalid type for int type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64:
-		r, err := common.ToInt64(v, false)
+		r, err := common.ToInt64(v, common.STRICT)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for int type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32:
-		r, err := common.ToUint64(v, false)
+		r, err := common.ToUint64(v, common.STRICT)
 		if err == nil {
 			return uint32(r), nil
 		} else {
 			return nil, fmt.Errorf("invalid type for uint type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
-		r, err := common.ToUint64(v, false)
+		r, err := common.ToUint64(v, common.STRICT)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for uint type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_BOOL:
-		r, err := common.ToBool(v, false)
+		r, err := common.ToBool(v, common.STRICT)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for bool type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_STRING:
-		r, err := common.ToString(v, false)
+		r, err := common.ToString(v, common.STRICT)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for string type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_BYTES:
-		r, err := common.ToBytes(v, false)
+		r, err := common.ToBytes(v, common.STRICT)
 		if err == nil {
 			return r, nil
 		} else {
@@ -456,13 +456,13 @@ func decodeMessage(message *dynamic.Message, outputType *desc.MessageDescriptor)
 	}
 	result := make(map[string]interface{})
 	for _, field := range outputType.GetFields() {
-		decodeMessageField(message.GetField(field), field, result, false)
+		decodeMessageField(message.GetField(field), field, result, common.STRICT)
 	}
 	return result
 }
 
-func decodeMessageField(src interface{}, field *desc.FieldDescriptor, result map[string]interface{}, unstrict bool) error {
-	if f, err := decodeField(src, field, unstrict); err != nil {
+func decodeMessageField(src interface{}, field *desc.FieldDescriptor, result map[string]interface{}, sn common.Strictness) error {
+	if f, err := decodeField(src, field, sn); err != nil {
 		return err
 	} else {
 		result[field.GetName()] = f
@@ -470,7 +470,7 @@ func decodeMessageField(src interface{}, field *desc.FieldDescriptor, result map
 	}
 }
 
-func decodeField(src interface{}, field *desc.FieldDescriptor, unstrict bool) (interface{}, error) {
+func decodeField(src interface{}, field *desc.FieldDescriptor, sn common.Strictness) (interface{}, error) {
 	var (
 		r interface{}
 		e error
@@ -479,41 +479,41 @@ func decodeField(src interface{}, field *desc.FieldDescriptor, unstrict bool) (i
 	switch field.GetType() {
 	case dpb.FieldDescriptorProto_TYPE_DOUBLE, dpb.FieldDescriptorProto_TYPE_FLOAT:
 		if field.IsRepeated() {
-			r, e = common.ToFloat64Slice(src, unstrict)
+			r, e = common.ToFloat64Slice(src, sn)
 		} else {
-			r, e = common.ToFloat64(src, unstrict)
+			r, e = common.ToFloat64(src, sn)
 		}
 	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32, dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64, dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32, dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
 		if field.IsRepeated() {
-			r, e = common.ToInt64Slice(src, unstrict)
+			r, e = common.ToInt64Slice(src, sn)
 		} else {
-			r, e = common.ToInt64(src, unstrict)
+			r, e = common.ToInt64(src, sn)
 		}
 	case dpb.FieldDescriptorProto_TYPE_BOOL:
 		if field.IsRepeated() {
-			r, e = common.ToBoolSlice(src, unstrict)
+			r, e = common.ToBoolSlice(src, sn)
 		} else {
-			r, e = common.ToBool(src, unstrict)
+			r, e = common.ToBool(src, sn)
 		}
 	case dpb.FieldDescriptorProto_TYPE_STRING:
 		if field.IsRepeated() {
-			r, e = common.ToStringSlice(src, unstrict)
+			r, e = common.ToStringSlice(src, sn)
 		} else {
-			r, e = common.ToString(src, unstrict)
+			r, e = common.ToString(src, sn)
 		}
 	case dpb.FieldDescriptorProto_TYPE_BYTES:
 		if field.IsRepeated() {
-			r, e = common.ToBytesSlice(src, unstrict)
+			r, e = common.ToBytesSlice(src, sn)
 		} else {
-			r, e = common.ToBytes(src, unstrict)
+			r, e = common.ToBytes(src, sn)
 		}
 	case dpb.FieldDescriptorProto_TYPE_MESSAGE:
 		if field.IsRepeated() {
-			r, e = common.ToTypedSlice(src, func(input interface{}, unstrict bool) (interface{}, error) {
-				return decodeSubMessage(input, field.GetMessageType(), unstrict)
-			}, "map", unstrict)
+			r, e = common.ToTypedSlice(src, func(input interface{}, ssn common.Strictness) (interface{}, error) {
+				return decodeSubMessage(input, field.GetMessageType(), ssn)
+			}, "map", sn)
 		} else {
-			r, e = decodeSubMessage(src, field.GetMessageType(), unstrict)
+			r, e = decodeSubMessage(src, field.GetMessageType(), sn)
 		}
 	default:
 		return nil, fmt.Errorf("unsupported type for %s", fn)
@@ -524,14 +524,14 @@ func decodeField(src interface{}, field *desc.FieldDescriptor, unstrict bool) (i
 	return r, e
 }
 
-func decodeMap(src map[string]interface{}, ft *desc.MessageDescriptor, unstrict bool) (map[string]interface{}, error) {
+func decodeMap(src map[string]interface{}, ft *desc.MessageDescriptor, sn common.Strictness) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	for _, field := range ft.GetFields() {
 		val, ok := src[field.GetName()]
 		if !ok {
 			continue
 		}
-		err := decodeMessageField(val, field, result, unstrict)
+		err := decodeMessageField(val, field, result, sn)
 		if err != nil {
 			return nil, err
 		}
@@ -539,16 +539,16 @@ func decodeMap(src map[string]interface{}, ft *desc.MessageDescriptor, unstrict 
 	return result, nil
 }
 
-func decodeSubMessage(input interface{}, ft *desc.MessageDescriptor, unstrict bool) (interface{}, error) {
+func decodeSubMessage(input interface{}, ft *desc.MessageDescriptor, sn common.Strictness) (interface{}, error) {
 	var m = map[string]interface{}{}
 	switch v := input.(type) {
 	case map[interface{}]interface{}:
 		for k, val := range v {
 			m[common.ToStringAlways(k)] = val
 		}
-		return decodeMap(m, ft, unstrict)
+		return decodeMap(m, ft, sn)
 	case map[string]interface{}:
-		return decodeMap(v, ft, unstrict)
+		return decodeMap(v, ft, sn)
 	case proto.Message:
 		message, err := dynamic.AsDynamicMessage(v)
 		if err != nil {

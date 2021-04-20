@@ -42,9 +42,9 @@ func TestInitByFiles(t *testing.T) {
 				Functions: []string{
 					"helloFromGrpc",
 					"Compute",
-					"get_feature",
-					"get_similarity",
-					"object_detection",
+					"getFeatureFromGrpc",
+					"objectDetectFromGrpc",
+					"getStatusFromGrpc",
 				},
 			},
 			"tsrest": {
@@ -57,9 +57,9 @@ func TestInitByFiles(t *testing.T) {
 				Functions: []string{
 					"helloFromRest",
 					"Compute",
-					"get_feature",
-					"get_similarity",
-					"objectDetect",
+					"getFeatureFromRest",
+					"objectDetectFromRest",
+					"getStatusFromRest",
 				},
 			},
 			"tsmsgpack": {
@@ -72,9 +72,9 @@ func TestInitByFiles(t *testing.T) {
 				Functions: []string{
 					"helloFromMsgpack",
 					"Compute",
-					"get_feature",
-					"get_similarity",
-					"object_detection",
+					"getFeatureFromMsgpack",
+					"objectDetectFromMsgpack",
+					"getStatusFromMsgpack",
 				},
 			},
 		},
@@ -90,40 +90,64 @@ func TestInitByFiles(t *testing.T) {
 			InterfaceName: "tsrest",
 			MethodName:    "SayHello",
 		},
-		"objectDetect": {
-			ServiceName:   "sample",
-			InterfaceName: "tsrest",
-			MethodName:    "object_detection",
-		},
 		"helloFromMsgpack": {
 			ServiceName:   "sample",
 			InterfaceName: "tsmsgpack",
 			MethodName:    "SayHello",
+		},
+		"objectDetectFromGrpc": {
+			ServiceName:   "sample",
+			InterfaceName: "tsrpc",
+			MethodName:    "object_detection",
+		},
+		"objectDetectFromRest": {
+			ServiceName:   "sample",
+			InterfaceName: "tsrest",
+			MethodName:    "object_detection",
+		},
+		"objectDetectFromMsgpack": {
+			ServiceName:   "sample",
+			InterfaceName: "tsmsgpack",
+			MethodName:    "object_detection",
+		},
+		"getFeatureFromGrpc": {
+			ServiceName:   "sample",
+			InterfaceName: "tsrpc",
+			MethodName:    "get_feature",
+		},
+		"getFeatureFromRest": {
+			ServiceName:   "sample",
+			InterfaceName: "tsrest",
+			MethodName:    "get_feature",
+		},
+		"getFeatureFromMsgpack": {
+			ServiceName:   "sample",
+			InterfaceName: "tsmsgpack",
+			MethodName:    "get_feature",
+		},
+		"getStatusFromGrpc": {
+			ServiceName:   "sample",
+			InterfaceName: "tsrpc",
+			MethodName:    "getStatus",
+		},
+		"getStatusFromRest": {
+			ServiceName:   "sample",
+			InterfaceName: "tsrest",
+			MethodName:    "getStatus",
+		},
+		"getStatusFromMsgpack": {
+			ServiceName:   "sample",
+			InterfaceName: "tsmsgpack",
+			MethodName:    "getStatus",
 		},
 		"Compute": { // Overridden of functions
 			ServiceName:   "sample",
 			InterfaceName: "tsmsgpack",
 			MethodName:    "Compute",
 		},
-		"get_feature": { // Overridden of functions
-			ServiceName:   "sample",
-			InterfaceName: "tsmsgpack",
-			MethodName:    "get_feature",
-		},
-		"get_similarity": { // Overridden of functions
-			ServiceName:   "sample",
-			InterfaceName: "tsmsgpack",
-			MethodName:    "get_similarity",
-		},
-		"object_detection": { // Overridden of functions
-			ServiceName:   "sample",
-			InterfaceName: "tsmsgpack",
-			MethodName:    "object_detection",
-		},
 	}
 
 	// run and compare
-
 	m := &Manager{
 		executorPool: &sync.Map{},
 

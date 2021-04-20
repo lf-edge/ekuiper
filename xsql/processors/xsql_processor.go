@@ -517,7 +517,7 @@ func cleanSinkCache(rule *api.Rule) error {
 		for name, action := range m {
 			props, _ := action.(map[string]interface{})
 			if c, ok := props["concurrency"]; ok {
-				if t, err := common.ToInt(c, false); err == nil && t > 0 {
+				if t, err := common.ToInt(c, common.STRICT); err == nil && t > 0 {
 					con = t
 				}
 			}

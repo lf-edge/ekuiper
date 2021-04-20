@@ -93,7 +93,7 @@ func randomize(p map[string]interface{}, seed int) map[string]interface{} {
 	r := make(map[string]interface{})
 	for k, v := range p {
 		//TODO other data types
-		vi, err := common.ToInt(v, false)
+		vi, err := common.ToInt(v, common.STRICT)
 		if err != nil {
 			break
 		}

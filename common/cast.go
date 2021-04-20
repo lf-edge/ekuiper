@@ -9,18 +9,31 @@ import (
 	"sync"
 )
 
+type Strictness int8
+
+const (
+	STRICT Strictness = iota
+	CONVERT_SAMEKIND
+	CONVERT_ALL
+)
+
 /*********** Type Cast Utilities *****/
+
 //TODO datetime type
 func ToStringAlways(input interface{}) string {
 	return fmt.Sprintf("%v", input)
 }
 
-func ToString(input interface{}, unstrict bool) (string, error) {
+func ToString(input interface{}, sn Strictness) (string, error) {
 	switch s := input.(type) {
 	case string:
 		return s, nil
+	case []byte:
+		if sn != STRICT {
+			return string(s), nil
+		}
 	default:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			switch s := input.(type) {
 			case string:
 				return s, nil
@@ -43,15 +56,13 @@ func ToString(input interface{}, unstrict bool) (string, error) {
 			case uint:
 				return strconv.FormatUint(uint64(s), 10), nil
 			case uint64:
-				return strconv.FormatUint(uint64(s), 10), nil
+				return strconv.FormatUint(s, 10), nil
 			case uint32:
 				return strconv.FormatUint(uint64(s), 10), nil
 			case uint16:
 				return strconv.FormatUint(uint64(s), 10), nil
 			case uint8:
 				return strconv.FormatUint(uint64(s), 10), nil
-			case []byte:
-				return string(s), nil
 			case template.HTML:
 				return string(s), nil
 			case template.URL:
@@ -74,7 +85,7 @@ func ToString(input interface{}, unstrict bool) (string, error) {
 	return "", fmt.Errorf("cannot convert %[1]T(%[1]v) to string", input)
 }
 
-func ToInt(input interface{}, unstrict bool) (int, error) {
+func ToInt(input interface{}, sn Strictness) (int, error) {
 	switch s := input.(type) {
 	case int:
 		return s, nil
@@ -97,36 +108,36 @@ func ToInt(input interface{}, unstrict bool) (int, error) {
 	case uint8:
 		return int(s), nil
 	case float64:
-		if unstrict || isIntegral64(s) {
+		if sn != STRICT || isIntegral64(s) {
 			return int(s), nil
 		}
 	case float32:
-		if unstrict || isIntegral32(s) {
+		if sn != STRICT || isIntegral32(s) {
 			return int(s), nil
 		}
 	case string:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			v, err := strconv.ParseInt(s, 0, 0)
 			if err == nil {
 				return int(v), nil
 			}
 		}
 	case bool:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			if s {
 				return 1, nil
 			}
 			return 0, nil
 		}
 	case nil:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			return 0, nil
 		}
 	}
 	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to int", input)
 }
 
-func ToInt64(input interface{}, unstrict bool) (int64, error) {
+func ToInt64(input interface{}, sn Strictness) (int64, error) {
 	switch s := input.(type) {
 	case int:
 		return int64(s), nil
@@ -149,90 +160,90 @@ func ToInt64(input interface{}, unstrict bool) (int64, error) {
 	case uint8:
 		return int64(s), nil
 	case float64:
-		if unstrict || isIntegral64(s) {
+		if sn != STRICT || isIntegral64(s) {
 			return int64(s), nil
 		}
 	case float32:
-		if unstrict || isIntegral32(s) {
+		if sn != STRICT || isIntegral32(s) {
 			return int64(s), nil
 		}
 	case string:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			v, err := strconv.ParseInt(s, 0, 0)
 			if err == nil {
 				return int64(v), nil
 			}
 		}
 	case bool:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			if s {
 				return 1, nil
 			}
 			return 0, nil
 		}
 	case nil:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			return 0, nil
 		}
 	}
 	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to int64", input)
 }
 
-func ToFloat64(input interface{}, unstrict bool) (float64, error) {
+func ToFloat64(input interface{}, sn Strictness) (float64, error) {
 	switch s := input.(type) {
 	case float64:
 		return s, nil
 	case float32:
 		return float64(s), nil
 	case int:
-		if unstrict {
+		if sn != STRICT {
 			return float64(s), nil
 		}
 	case int64:
-		if unstrict {
+		if sn != STRICT {
 			return float64(s), nil
 		}
 	case int32:
-		if unstrict {
+		if sn != STRICT {
 			return float64(s), nil
 		}
 	case int16:
-		if unstrict {
+		if sn != STRICT {
 			return float64(s), nil
 		}
 	case int8:
-		if unstrict {
+		if sn != STRICT {
 			return float64(s), nil
 		}
 	case uint:
-		if unstrict {
+		if sn != STRICT {
 			return float64(s), nil
 		}
 	case uint64:
-		if unstrict {
+		if sn != STRICT {
 			return float64(s), nil
 		}
 	case uint32:
-		if unstrict {
+		if sn != STRICT {
 			return float64(s), nil
 		}
 	case uint16:
-		if unstrict {
+		if sn != STRICT {
 			return float64(s), nil
 		}
 	case uint8:
-		if unstrict {
+		if sn != STRICT {
 			return float64(s), nil
 		}
 	case string:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			v, err := strconv.ParseFloat(s, 64)
 			if err == nil {
 				return v, nil
 			}
 		}
 	case bool:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			if s {
 				return 1, nil
 			}
@@ -242,10 +253,10 @@ func ToFloat64(input interface{}, unstrict bool) (float64, error) {
 	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to float64", input)
 }
 
-func ToUint64(i interface{}, unstrict bool) (uint64, error) {
+func ToUint64(i interface{}, sn Strictness) (uint64, error) {
 	switch s := i.(type) {
 	case string:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			v, err := strconv.ParseUint(s, 0, 64)
 			if err == nil {
 				return v, nil
@@ -290,58 +301,62 @@ func ToUint64(i interface{}, unstrict bool) (uint64, error) {
 		if s < 0 {
 			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
 		}
-		if unstrict || isIntegral32(s) {
+		if sn != STRICT || isIntegral32(s) {
 			return uint64(s), nil
 		}
 	case float64:
 		if s < 0 {
 			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
 		}
-		if unstrict || isIntegral64(s) {
+		if sn != STRICT || isIntegral64(s) {
 			return uint64(s), nil
 		}
 	case bool:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			if s {
 				return 1, nil
 			}
 			return 0, nil
 		}
 	case nil:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			return 0, nil
 		}
 	}
 	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint", i)
 }
 
-func ToBool(input interface{}, unstrict bool) (bool, error) {
+func ToBool(input interface{}, sn Strictness) (bool, error) {
 	switch b := input.(type) {
 	case bool:
 		return b, nil
 	case nil:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			return false, nil
 		}
 	case int:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			if b != 0 {
 				return true, nil
 			}
 			return false, nil
 		}
 	case string:
-		if unstrict {
+		if sn == CONVERT_ALL {
 			return strconv.ParseBool(b)
 		}
 	}
 	return false, fmt.Errorf("cannot convert %[1]T(%[1]v) to bool", input)
 }
 
-func ToBytes(input interface{}, _ bool) ([]byte, error) {
+func ToBytes(input interface{}, sn Strictness) ([]byte, error) {
 	switch b := input.(type) {
 	case []byte:
 		return b, nil
+	case string:
+		if sn != STRICT {
+			return []byte(b), nil
+		}
 	}
 	return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to bytes", input)
 }
@@ -365,19 +380,19 @@ func ToStringMap(input interface{}) (map[string]interface{}, error) {
 	}
 }
 
-func ToTypedSlice(input interface{}, conv func(input interface{}, unstrict bool) (interface{}, error), eleType string, unstrict bool) (interface{}, error) {
+func ToTypedSlice(input interface{}, conv func(interface{}, Strictness) (interface{}, error), eleType string, sn Strictness) (interface{}, error) {
 	s := reflect.ValueOf(input)
 	if s.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to %s slice)", input, eleType)
 	}
-	ele, err := conv(s.Index(0).Interface(), unstrict)
+	ele, err := conv(s.Index(0).Interface(), sn)
 	if err != nil {
 		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to %s slice for the %d element: %v", input, eleType, 0, err)
 	}
 	result := reflect.MakeSlice(reflect.SliceOf(reflect.TypeOf(ele)), s.Len(), s.Len())
 	result.Index(0).Set(reflect.ValueOf(ele))
 	for i := 1; i < s.Len(); i++ {
-		ele, err := conv(s.Index(i).Interface(), unstrict)
+		ele, err := conv(s.Index(i).Interface(), sn)
 		if err != nil {
 			return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to int slice for the %d element: %v", input, i, err)
 		}
@@ -386,14 +401,14 @@ func ToTypedSlice(input interface{}, conv func(input interface{}, unstrict bool)
 	return result.Interface(), nil
 }
 
-func ToInt64Slice(input interface{}, unstrict bool) ([]int64, error) {
+func ToInt64Slice(input interface{}, sn Strictness) ([]int64, error) {
 	s := reflect.ValueOf(input)
 	if s.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to int slice)", input)
 	}
 	var result []int64
 	for i := 0; i < s.Len(); i++ {
-		ele, err := ToInt64(s.Index(i).Interface(), unstrict)
+		ele, err := ToInt64(s.Index(i).Interface(), sn)
 		if err != nil {
 			return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to int slice for the %d element: %v", input, i, err)
 		}
@@ -402,14 +417,14 @@ func ToInt64Slice(input interface{}, unstrict bool) ([]int64, error) {
 	return result, nil
 }
 
-func ToUint64Slice(input interface{}, unstrict bool) ([]uint64, error) {
+func ToUint64Slice(input interface{}, sn Strictness) ([]uint64, error) {
 	s := reflect.ValueOf(input)
 	if s.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint slice)", input)
 	}
 	var result []uint64
 	for i := 0; i < s.Len(); i++ {
-		ele, err := ToUint64(s.Index(i).Interface(), unstrict)
+		ele, err := ToUint64(s.Index(i).Interface(), sn)
 		if err != nil {
 			return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint slice for the %d element: %v", input, i, err)
 		}
@@ -418,14 +433,14 @@ func ToUint64Slice(input interface{}, unstrict bool) ([]uint64, error) {
 	return result, nil
 }
 
-func ToFloat64Slice(input interface{}, unstrict bool) ([]float64, error) {
+func ToFloat64Slice(input interface{}, sn Strictness) ([]float64, error) {
 	s := reflect.ValueOf(input)
 	if s.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to float slice)", input)
 	}
 	var result []float64
 	for i := 0; i < s.Len(); i++ {
-		ele, err := ToFloat64(s.Index(i).Interface(), unstrict)
+		ele, err := ToFloat64(s.Index(i).Interface(), sn)
 		if err != nil {
 			return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to float slice for the %d element: %v", input, i, err)
 		}
@@ -434,14 +449,14 @@ func ToFloat64Slice(input interface{}, unstrict bool) ([]float64, error) {
 	return result, nil
 }
 
-func ToBoolSlice(input interface{}, unstrict bool) ([]bool, error) {
+func ToBoolSlice(input interface{}, sn Strictness) ([]bool, error) {
 	s := reflect.ValueOf(input)
 	if s.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to bool slice)", input)
 	}
 	var result []bool
 	for i := 0; i < s.Len(); i++ {
-		ele, err := ToBool(s.Index(i).Interface(), unstrict)
+		ele, err := ToBool(s.Index(i).Interface(), sn)
 		if err != nil {
 			return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to bool slice for the %d element: %v", input, i, err)
 		}
@@ -450,14 +465,14 @@ func ToBoolSlice(input interface{}, unstrict bool) ([]bool, error) {
 	return result, nil
 }
 
-func ToStringSlice(input interface{}, unstrict bool) ([]string, error) {
+func ToStringSlice(input interface{}, sn Strictness) ([]string, error) {
 	s := reflect.ValueOf(input)
 	if s.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to string slice)", input)
 	}
 	var result []string
 	for i := 0; i < s.Len(); i++ {
-		ele, err := ToString(s.Index(i).Interface(), unstrict)
+		ele, err := ToString(s.Index(i).Interface(), sn)
 		if err != nil {
 			return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to string slice for the %d element: %v", input, i, err)
 		}
@@ -466,14 +481,14 @@ func ToStringSlice(input interface{}, unstrict bool) ([]string, error) {
 	return result, nil
 }
 
-func ToBytesSlice(input interface{}, unstrict bool) ([][]byte, error) {
+func ToBytesSlice(input interface{}, sn Strictness) ([][]byte, error) {
 	s := reflect.ValueOf(input)
 	if s.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to string slice)", input)
 	}
 	var result [][]byte
 	for i := 0; i < s.Len(); i++ {
-		ele, err := ToBytes(s.Index(i).Interface(), unstrict)
+		ele, err := ToBytes(s.Index(i).Interface(), sn)
 		if err != nil {
 			return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to bytes slice for the %d element: %v", input, i, err)
 		}

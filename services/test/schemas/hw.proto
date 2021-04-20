@@ -9,19 +9,21 @@ package helloworld;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
 
 // The greeting service definition.
 service Greeter {
   // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc SayHello(HelloRequest) returns (HelloReply) {}
   rpc Compute (InferRequest) returns (Response) {}
-  rpc get_feature(Base64ImgRequest) returns(FeatureResponse) {}
-  rpc get_similarity(FeaturesRequest) returns(FloatResponse) {}
+  // Primitive type param. Not supported for rest json
+  rpc get_feature(google.protobuf.BytesValue) returns(FeatureResponse) {}
   rpc object_detection(ObjectDetectionRequest) returns(ObjectDetectionResponse) {
     option (google.api.http) = {
       post: "/v1/object_detection/"
     };
   }
+  rpc getStatus(google.protobuf.Empty) returns(google.protobuf.BoolValue) {}
 }
 
 // The request message containing the user's name.
@@ -49,10 +51,6 @@ message InferRequest {
   string extra = 6;
 }
 
-message Base64ImgRequest{
-  string img = 1;
-}
-
 message Box{
   int32 x = 1;
   int32 y = 2;
@@ -67,15 +65,6 @@ message FeatureResult{
 
 message FeatureResponse{
   repeated FeatureResult feature = 1;
-}
-
-message FeaturesRequest{
-  repeated float featureA = 1;
-  repeated float featureB = 2;
-}
-
-message FloatResponse{
-  float response = 1;
 }
 
 message ObjectDetectionRequest {
