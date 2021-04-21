@@ -33,7 +33,7 @@ func TestInitByFiles(t *testing.T) {
 		},
 		Interfaces: map[string]*interfaceInfo{
 			"tsrpc": {
-				Addr:     "localhost:50051",
+				Addr:     "tcp://localhost:50051",
 				Protocol: GRPC,
 				Schema: &schemaInfo{
 					SchemaType: PROTOBUFF,
@@ -63,7 +63,7 @@ func TestInitByFiles(t *testing.T) {
 				},
 			},
 			"tsmsgpack": {
-				Addr:     "localhost:50000",
+				Addr:     "tcp://localhost:50000",
 				Protocol: MSGPACK,
 				Schema: &schemaInfo{
 					SchemaType: PROTOBUFF,

@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/dynamic"
 	"github.com/jhump/protoreflect/dynamic/grpcdynamic"
 	"github.com/ugorji/go/codec"
@@ -14,6 +15,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"net/url"
+	"path"
 	"reflect"
 	"strings"
 	"time"
@@ -27,6 +29,14 @@ func NewExecutor(i *interfaceInfo) (executor, error) {
 	if err != nil {
 		return nil, err
 	}
+	u, err := url.Parse(i.Addr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid url %s", i.Addr)
+	}
+	opt := &interfaceOpt{
+		addr:    u,
+		timeout: 5000,
+	}
 	switch i.Protocol {
 	case GRPC:
 		d, ok := descriptor.(protoDescriptor)
@@ -34,25 +44,20 @@ func NewExecutor(i *interfaceInfo) (executor, error) {
 			return nil, fmt.Errorf("invalid descriptor type for grpc")
 		}
 		exe := &grpcExecutor{
-			descriptor: d,
-			timeout:    5000,
-			addr:       i.Addr,
+			descriptor:   d,
+			interfaceOpt: opt,
 		}
 		return exe, nil
 	case REST:
-		if _, err := url.Parse(i.Addr); err != nil {
-			return nil, fmt.Errorf("invalid url %s", i.Addr)
-		}
 		d, ok := descriptor.(multiplexDescriptor)
 		if !ok {
 			return nil, fmt.Errorf("invalid descriptor type for rest")
 		}
 		exe := &httpExecutor{
-			descriptor: d,
-			url:        i.Addr,
-			timeout:    5000,
-			method:     http.MethodPost,
-			bodyType:   "json",
+			descriptor:   d,
+			interfaceOpt: opt,
+			method:       http.MethodPost,
+			bodyType:     "json",
 		}
 		return exe, nil
 	case MSGPACK:
@@ -61,9 +66,8 @@ func NewExecutor(i *interfaceInfo) (executor, error) {
 			return nil, fmt.Errorf("invalid descriptor type for msgpack-rpc")
 		}
 		exe := &msgpackExecutor{
-			descriptor: d,
-			timeout:    5000,
-			addr:       i.Addr,
+			descriptor:   d,
+			interfaceOpt: opt,
 		}
 		return exe, nil
 	default:
@@ -75,19 +79,44 @@ type executor interface {
 	InvokeFunction(name string, params []interface{}) (interface{}, error)
 }
 
+type interfaceOpt struct {
+	addr    *url.URL
+	timeout int64
+}
+
 type grpcExecutor struct {
 	descriptor protoDescriptor
-	addr       string
-	timeout    int64
+	*interfaceOpt
 
 	conn *grpc.ClientConn
 }
 
 func (d *grpcExecutor) InvokeFunction(name string, params []interface{}) (interface{}, error) {
 	if d.conn == nil {
-		conn, err := grpc.Dial(d.addr, grpc.WithInsecure(), grpc.WithBlock())
-		if err != nil {
-			return nil, err
+		dialCtx, cancel := context.WithTimeout(context.Background(), time.Duration(d.timeout)*time.Millisecond)
+		var (
+			conn *grpc.ClientConn
+			e    error
+		)
+		go func() {
+			defer cancel()
+			conn, e = grpc.DialContext(dialCtx, d.addr.Host, grpc.WithInsecure(), grpc.WithBlock())
+		}()
+
+		select {
+		case <-dialCtx.Done():
+			err := dialCtx.Err()
+			switch err {
+			case context.Canceled:
+				// connect successfully, do nothing
+			case context.DeadlineExceeded:
+				return nil, fmt.Errorf("connect to %s timeout", d.addr.String())
+			default:
+				return nil, fmt.Errorf("connect to %s error: %v", d.addr.String(), err)
+			}
+		}
+		if e != nil {
+			return nil, e
 		}
 		d.conn = conn
 	}
@@ -98,9 +127,29 @@ func (d *grpcExecutor) InvokeFunction(name string, params []interface{}) (interf
 	if err != nil {
 		return nil, err
 	}
-	ctx, _ := context.WithTimeout(context.Background(), time.Duration(d.timeout)*time.Millisecond)
-	o, err := stub.InvokeRpc(ctx, d.descriptor.MethodDescriptor(name), message)
-	if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(d.timeout)*time.Millisecond)
+	var (
+		o proto.Message
+		e error
+	)
+	go func() {
+		defer cancel()
+		o, e = stub.InvokeRpc(ctx, d.descriptor.MethodDescriptor(name), message)
+	}()
+
+	select {
+	case <-ctx.Done():
+		err := ctx.Err()
+		switch err {
+		case context.Canceled:
+			// connect successfully, do nothing
+		case context.DeadlineExceeded:
+			return nil, fmt.Errorf("invoke %s timeout", name)
+		default:
+			return nil, fmt.Errorf("invoke %s error: %v", name, err)
+		}
+	}
+	if e != nil {
 		return nil, fmt.Errorf("error invoking method %s in proto: %v", name, err)
 	}
 	odm, err := dynamic.AsDynamicMessage(o)
@@ -111,12 +160,11 @@ func (d *grpcExecutor) InvokeFunction(name string, params []interface{}) (interf
 }
 
 type httpExecutor struct {
-	descriptor         multiplexDescriptor
-	url                string
+	descriptor multiplexDescriptor
+	*interfaceOpt
 	method             string
 	headers            map[string]string
 	bodyType           string
-	timeout            int64
 	insecureSkipVerify bool
 
 	conn *http.Client
@@ -136,7 +184,9 @@ func (h *httpExecutor) InvokeFunction(name string, params []interface{}) (interf
 	if err != nil {
 		return nil, err
 	}
-	resp, err := common.Send(common.Log, h.conn, h.bodyType, h.method, h.url+"/"+name, h.headers, false, json)
+	u := *h.addr
+	u.Path = path.Join(u.Path, name)
+	resp, err := common.Send(common.Log, h.conn, h.bodyType, h.method, u.String(), h.headers, false, json)
 	if err != nil {
 		return nil, err
 	}
@@ -163,8 +213,7 @@ func (h *httpExecutor) InvokeFunction(name string, params []interface{}) (interf
 
 type msgpackExecutor struct {
 	descriptor interfaceDescriptor
-	addr       string
-	timeout    int64
+	*interfaceOpt
 
 	conn *rpc.Client
 }
@@ -174,7 +223,8 @@ func (m *msgpackExecutor) InvokeFunction(name string, params []interface{}) (int
 	if m.conn == nil {
 		h := &codec.MsgpackHandle{}
 		h.MapType = reflect.TypeOf(map[string]interface{}(nil))
-		conn, err := net.Dial("tcp", m.addr)
+
+		conn, err := net.Dial(m.addr.Scheme, m.addr.Host)
 		if err != nil {
 			return nil, err
 		}

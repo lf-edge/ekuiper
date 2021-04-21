@@ -18,7 +18,7 @@
   "interfaces": [
     {
       "name": "tsrpc",
-      "address": "localhost:50051",
+      "address": "tcp://localhost:50051",
       "protocol": "grpc",
       "schemaType": "protobuf",
       "schemaFile": "hw.proto",
@@ -68,7 +68,7 @@
     },
     {
       "name": "tsmsgpack",
-      "address": "localhost:50000",
+      "address": "tcp://localhost:50000",
       "protocol": "msgpack-rpc",
       "schemaType": "protobuf",
       "schemaFile": "hw.proto",
