@@ -37,18 +37,19 @@ type (
 		Description *fileLanguage `json:"description"`
 	}
 	binding struct {
-		Name        string        `json:"name"`
-		Description *fileLanguage `json:"description"`
-		Address     string        `json:"address"`
-		Protocol    protocol      `json:"protocol"`
-		SchemaType  schema        `json:"schemaType"`
-		SchemaFile  string        `json:"schemaFile"`
-		Functions   []*mapping    `json:"functions"`
+		Name        string                 `json:"name"`
+		Description *fileLanguage          `json:"description"`
+		Address     string                 `json:"address"`
+		Protocol    protocol               `json:"protocol"`
+		SchemaType  schema                 `json:"schemaType"`
+		SchemaFile  string                 `json:"schemaFile"`
+		Functions   []*mapping             `json:"functions"`
+		Options     map[string]interface{} `json:"options"`
 	}
 
 	conf struct {
-		About      *about     `json:"about"`
-		Interfaces []*binding `json:"interfaces"`
+		About      *about              `json:"about"`
+		Interfaces map[string]*binding `json:"interfaces"`
 	}
 )
 
@@ -69,6 +70,12 @@ type interfaceInfo struct {
 	Protocol  protocol
 	Schema    *schemaInfo
 	Functions []string
+	Options   map[string]interface{}
+}
+
+type restOption struct {
+	InsecureSkipVerify bool              `json:"insecureSkipVerify"`
+	Headers            map[string]string `json:"headers"`
 }
 
 type functionContainer struct {

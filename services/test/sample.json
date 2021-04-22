@@ -15,9 +15,8 @@
       "zh_CN": "示例外部函数配置，仅供测试"
     }
   },
-  "interfaces": [
-    {
-      "name": "tsrpc",
+  "interfaces": {
+    "tsrpc": {
       "address": "tcp://localhost:50051",
       "protocol": "grpc",
       "schemaType": "protobuf",
@@ -26,6 +25,10 @@
         {
           "name": "helloFromGrpc",
           "serviceName": "SayHello"
+        },
+        {
+          "name": "ComputeFromGrpc",
+          "serviceName": "Compute"
         },
         {
           "name": "objectDetectFromGrpc",
@@ -41,16 +44,25 @@
         }
       ]
     },
-    {
-      "name": "tsrest",
+    "tsrest": {
       "address": "http://localhost:51234",
       "protocol": "rest",
+      "options": {
+        "insecureSkipVerify": true,
+        "headers": {
+          "Accept-Charset": "utf-8"
+        }
+      },
       "schemaType": "protobuf",
       "schemaFile": "hw.proto",
       "functions": [
         {
           "name": "helloFromRest",
           "serviceName": "SayHello"
+        },
+        {
+          "name": "ComputeFromRest",
+          "serviceName": "Compute"
         },
         {
           "name": "objectDetectFromRest",
@@ -66,8 +78,7 @@
         }
       ]
     },
-    {
-      "name": "tsmsgpack",
+    "tsmsgpack": {
       "address": "tcp://localhost:50000",
       "protocol": "msgpack-rpc",
       "schemaType": "protobuf",
@@ -76,6 +87,10 @@
         {
           "name": "helloFromMsgpack",
           "serviceName": "SayHello"
+        },
+        {
+          "name": "ComputeFromMsgpack",
+          "serviceName": "Compute"
         },
         {
           "name": "objectDetectFromMsgpack",
@@ -91,5 +106,5 @@
         }
       ]
     }
-  ]
+  }
 }

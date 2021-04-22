@@ -53,11 +53,15 @@ func NewExecutor(i *interfaceInfo) (executor, error) {
 		if !ok {
 			return nil, fmt.Errorf("invalid descriptor type for rest")
 		}
+		o := &restOption{}
+		e := common.MapToStruct(i.Options, o)
+		if e != nil {
+			return nil, fmt.Errorf("incorrect rest option: %v", e)
+		}
 		exe := &httpExecutor{
 			descriptor:   d,
 			interfaceOpt: opt,
-			method:       http.MethodPost,
-			bodyType:     "json",
+			restOpt:      o,
 		}
 		return exe, nil
 	case MSGPACK:
@@ -162,10 +166,7 @@ func (d *grpcExecutor) InvokeFunction(name string, params []interface{}) (interf
 type httpExecutor struct {
 	descriptor multiplexDescriptor
 	*interfaceOpt
-	method             string
-	headers            map[string]string
-	bodyType           string
-	insecureSkipVerify bool
+	restOpt *restOption
 
 	conn *http.Client
 }
@@ -173,7 +174,7 @@ type httpExecutor struct {
 func (h *httpExecutor) InvokeFunction(name string, params []interface{}) (interface{}, error) {
 	if h.conn == nil {
 		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: h.insecureSkipVerify},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: h.restOpt.InsecureSkipVerify},
 		}
 		h.conn = &http.Client{
 			Transport: tr,
@@ -186,7 +187,7 @@ func (h *httpExecutor) InvokeFunction(name string, params []interface{}) (interf
 	}
 	u := *h.addr
 	u.Path = path.Join(u.Path, name)
-	resp, err := common.Send(common.Log, h.conn, h.bodyType, h.method, u.String(), h.headers, false, json)
+	resp, err := common.Send(common.Log, h.conn, "json", http.MethodPost, u.String(), h.restOpt.Headers, false, json)
 	if err != nil {
 		return nil, err
 	}

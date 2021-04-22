@@ -114,7 +114,7 @@ func (m *Manager) initFile(baseName string) error {
 		About:      serviceConf.About,
 		Interfaces: make(map[string]*interfaceInfo),
 	}
-	for _, binding := range serviceConf.Interfaces {
+	for name, binding := range serviceConf.Interfaces {
 		desc, err := parse(binding.SchemaType, binding.SchemaFile)
 		if err != nil {
 			return fmt.Errorf("Fail to parse schema file %s: %v", binding.SchemaFile, err)
@@ -135,7 +135,7 @@ func (m *Manager) initFile(baseName string) error {
 			}
 			functions[i] = fname
 		}
-		info.Interfaces[binding.Name] = &interfaceInfo{
+		info.Interfaces[name] = &interfaceInfo{
 			Desc:     binding.Description,
 			Addr:     binding.Address,
 			Protocol: binding.Protocol,
@@ -144,21 +144,22 @@ func (m *Manager) initFile(baseName string) error {
 				SchemaFile: binding.SchemaFile,
 			},
 			Functions: functions,
-		}
-		err = m.serviceKV.Set(serviceName, info)
-		if err != nil {
-			return fmt.Errorf("fail to save the parsing result: %v", err)
+			Options:   binding.Options,
 		}
 		for i, f := range functions {
 			err := m.functionKV.Set(f, &functionContainer{
 				ServiceName:   serviceName,
-				InterfaceName: binding.Name,
+				InterfaceName: name,
 				MethodName:    methods[i],
 			})
 			if err != nil {
 				common.Log.Errorf("fail to save the function mapping for %s, the function is not available: %v", f, err)
 			}
 		}
+	}
+	err = m.serviceKV.Set(serviceName, info)
+	if err != nil {
+		return fmt.Errorf("fail to save the parsing result: %v", err)
 	}
 	return nil
 }

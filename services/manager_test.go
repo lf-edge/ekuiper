@@ -41,7 +41,7 @@ func TestInitByFiles(t *testing.T) {
 				},
 				Functions: []string{
 					"helloFromGrpc",
-					"Compute",
+					"ComputeFromGrpc",
 					"getFeatureFromGrpc",
 					"objectDetectFromGrpc",
 					"getStatusFromGrpc",
@@ -54,9 +54,15 @@ func TestInitByFiles(t *testing.T) {
 					SchemaType: PROTOBUFF,
 					SchemaFile: "hw.proto",
 				},
+				Options: map[string]interface{}{
+					"insecureSkipVerify": true,
+					"headers": map[string]interface{}{
+						"Accept-Charset": "utf-8",
+					},
+				},
 				Functions: []string{
 					"helloFromRest",
-					"Compute",
+					"ComputeFromRest",
 					"getFeatureFromRest",
 					"objectDetectFromRest",
 					"getStatusFromRest",
@@ -71,7 +77,7 @@ func TestInitByFiles(t *testing.T) {
 				},
 				Functions: []string{
 					"helloFromMsgpack",
-					"Compute",
+					"ComputeFromMsgpack",
 					"getFeatureFromMsgpack",
 					"objectDetectFromMsgpack",
 					"getStatusFromMsgpack",
@@ -140,7 +146,17 @@ func TestInitByFiles(t *testing.T) {
 			InterfaceName: "tsmsgpack",
 			MethodName:    "getStatus",
 		},
-		"Compute": { // Overridden of functions
+		"ComputeFromGrpc": {
+			ServiceName:   "sample",
+			InterfaceName: "tsrpc",
+			MethodName:    "Compute",
+		},
+		"ComputeFromRest": {
+			ServiceName:   "sample",
+			InterfaceName: "tsrest",
+			MethodName:    "Compute",
+		},
+		"ComputeFromMsgpack": {
 			ServiceName:   "sample",
 			InterfaceName: "tsmsgpack",
 			MethodName:    "Compute",
