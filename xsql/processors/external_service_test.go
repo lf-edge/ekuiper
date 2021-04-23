@@ -52,10 +52,10 @@ type Box struct {
 	H int32 `json:"h,omitempty"`
 }
 
-type FeatureResult struct {
-	Features []float64 `json:"features,omitempty"`
-	Box      Box       `json:"box,omitempty"`
-}
+//type FeatureResult struct {
+//	Features []float64 `json:"features,omitempty"`
+//	Box      Box       `json:"box,omitempty"`
+//}
 
 func TestRestService(t *testing.T) {
 	// mock server, the port is set in the sample.json

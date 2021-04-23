@@ -18,6 +18,7 @@ import (
 	"path"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -216,21 +217,28 @@ type msgpackExecutor struct {
 	descriptor interfaceDescriptor
 	*interfaceOpt
 
-	conn *rpc.Client
+	sync.Mutex
+	connected bool
+	conn      *rpc.Client
 }
 
 // InvokeFunction flat the params and result
 func (m *msgpackExecutor) InvokeFunction(name string, params []interface{}) (interface{}, error) {
-	if m.conn == nil {
-		h := &codec.MsgpackHandle{}
-		h.MapType = reflect.TypeOf(map[string]interface{}(nil))
+	if !m.connected {
+		m.Lock()
+		if !m.connected {
+			h := &codec.MsgpackHandle{}
+			h.MapType = reflect.TypeOf(map[string]interface{}(nil))
 
-		conn, err := net.Dial(m.addr.Scheme, m.addr.Host)
-		if err != nil {
-			return nil, err
+			conn, err := net.Dial(m.addr.Scheme, m.addr.Host)
+			if err != nil {
+				return nil, err
+			}
+			rpcCodec := codec.MsgpackSpecRpc.ClientCodec(conn, h)
+			m.conn = rpc.NewClientWithCodec(rpcCodec)
 		}
-		rpcCodec := codec.MsgpackSpecRpc.ClientCodec(conn, h)
-		m.conn = rpc.NewClientWithCodec(rpcCodec)
+		m.connected = true
+		m.Unlock()
 	}
 	ps, err := m.descriptor.ConvertParams(name, params)
 	if err != nil {
@@ -251,6 +259,9 @@ func (m *msgpackExecutor) InvokeFunction(name string, params []interface{}) (int
 	}
 	err = m.conn.Call(name, args, &reply)
 	if err != nil {
+		if err == rpc.ErrShutdown {
+			m.connected = false
+		}
 		return nil, err
 	}
 	return m.descriptor.ConvertReturn(name, reply)

@@ -362,7 +362,7 @@ func encodeField(field *desc.FieldDescriptor, v interface{}) (interface{}, error
 			return nil, fmt.Errorf("invalid type for field '%s'", fn)
 		}
 		if err != nil {
-			err = fmt.Errorf("faile to encode field '%s':%v", fn, err)
+			err = fmt.Errorf("failed to encode field '%s':%v", fn, err)
 		}
 		return result, err
 	} else {
