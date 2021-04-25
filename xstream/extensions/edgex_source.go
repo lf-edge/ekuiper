@@ -3,18 +3,12 @@
 package extensions
 
 import (
-	"bytes"
-	"context"
-	"encoding/base64"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/coredata"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/urlclient/local"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
-	"github.com/edgexfoundry/go-mod-messaging/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2/dtos"
+	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	"strconv"
@@ -24,9 +18,7 @@ import (
 type EdgexSource struct {
 	client     messaging.MessageClient
 	subscribed bool
-	vdc        coredata.ValueDescriptorClient
 	topic      string
-	valueDescs map[string]string
 }
 
 func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
@@ -58,15 +50,6 @@ func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 		if mbusType != messaging.ZeroMQ && mbusType != messaging.MQTT && mbusType != messaging.RedisStreams {
 			return fmt.Errorf("Specified wrong message type value %s, will use zeromq messagebus.\n", mbusType)
 		}
-	}
-
-	if serviceServer, ok := props["serviceServer"]; ok {
-		svr := serviceServer.(string) + clients.ApiValueDescriptorRoute
-		common.Log.Infof("Connect to value descriptor service at: %s \n", svr)
-		es.vdc = coredata.NewValueDescriptorClient(local.New(svr))
-		es.valueDescs = make(map[string]string)
-	} else {
-		return fmt.Errorf("The service server cannot be empty.")
 	}
 
 	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: protocol, Host: server, Port: port}, Type: mbusType}
@@ -135,8 +118,8 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 				return
 			case env := <-messages:
 				if strings.ToLower(env.ContentType) == "application/json" {
-					e := models.Event{}
-					if err := e.UnmarshalJSON(env.Payload); err != nil {
+					e := &dtos.Event{}
+					if err := json.Unmarshal(env.Payload, e); err != nil {
 						len := len(env.Payload)
 						if len > 200 {
 							len = 200
@@ -146,33 +129,38 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 						result := make(map[string]interface{})
 						meta := make(map[string]interface{})
 
-						log.Debugf("receive message %s from device %s", env.Payload, e.Device)
+						log.Debugf("receive message %s from device %s", env.Payload, e.DeviceName)
 						for _, r := range e.Readings {
-							if r.Name != "" {
+							if r.ResourceName != "" {
 								if v, err := es.getValue(r, log); err != nil {
-									log.Warnf("fail to get value for %s: %v", r.Name, err)
+									log.Warnf("fail to get value for %s: %v", r.ResourceName, err)
 								} else {
-									result[r.Name] = v
+									result[r.ResourceName] = v
 								}
 								r_meta := map[string]interface{}{}
 								r_meta["id"] = r.Id
-								r_meta["created"] = r.Created
-								r_meta["modified"] = r.Modified
+								//r_meta["created"] = r.Created
+								//r_meta["modified"] = r.Modified
 								r_meta["origin"] = r.Origin
-								r_meta["pushed"] = r.Pushed
-								r_meta["device"] = r.Device
-								meta[r.Name] = r_meta
+								//r_meta["pushed"] = r.Pushed
+								r_meta["deviceName"] = r.DeviceName
+								r_meta["profileName"] = r.ProfileName
+								r_meta["valueType"] = r.ValueType
+								meta[r.ResourceName] = r_meta
 							} else {
 								log.Warnf("The name of readings should not be empty!")
 							}
 						}
 						if len(result) > 0 {
-							meta["id"] = e.ID
-							meta["pushed"] = e.Pushed
-							meta["device"] = e.Device
-							meta["created"] = e.Created
-							meta["modified"] = e.Modified
+							meta["id"] = e.Id
+							//meta["pushed"] = e.Pushed
+							meta["deviceName"] = e.DeviceName
+							meta["profileName"] = e.ProfileName
+							meta["sourceName"] = e.SourceName
+							//meta["created"] = e.Created
+							//meta["modified"] = e.Modified
 							meta["origin"] = e.Origin
+							meta["tags"] = e.Tags
 							meta["correlationid"] = env.CorrelationID
 
 							select {
@@ -193,94 +181,69 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 	}
 }
 
-func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{}, error) {
-	t, err := es.getType(r.Name, logger)
-	var ot = t
-	if err != nil {
-		return nil, err
-	}
-	t = strings.ToUpper(t)
-	logger.Debugf("name %s with type %s", r.Name, t)
+func (es *EdgexSource) getValue(r dtos.BaseReading, logger api.Logger) (interface{}, error) {
+	t := r.ValueType
+	logger.Debugf("name %s with type %s", r.ResourceName, r.ValueType)
 	v := r.Value
 	switch t {
-	case "BOOL":
+	case v2.ValueTypeBool:
 		if r, err := strconv.ParseBool(v); err != nil {
 			return nil, err
 		} else {
 			return r, nil
 		}
-	case "INT8", "INT16", "INT32", "INT64", "UINT8", "UINT16", "UINT32":
+	case v2.ValueTypeInt8, v2.ValueTypeInt16, v2.ValueTypeInt32, v2.ValueTypeInt64, v2.ValueTypeUint8, v2.ValueTypeUint16, v2.ValueTypeUint32:
 		if r, err := strconv.Atoi(v); err != nil {
 			return nil, err
 		} else {
 			return r, nil
 		}
-	case "UINT64":
+	case v2.ValueTypeUint64:
 		if u64, err := strconv.ParseUint(v, 10, 64); err != nil {
 			return nil, err
 		} else {
 			return u64, nil
 		}
-	case "FLOAT32", "FLOAT64":
-		if r.ValueType == "" {
-			r.ValueType = ot
+	case v2.ValueTypeFloat32:
+		if r, err := strconv.ParseFloat(v, 32); err != nil {
+			return nil, err
+		} else {
+			return r, nil
 		}
-		return es.getFloatValue(r.FloatEncoding, r.Value, r.ValueType, logger)
-	case "STRING":
+	case v2.ValueTypeFloat64:
+		if r, err := strconv.ParseFloat(v, 64); err != nil {
+			return nil, err
+		} else {
+			return r, nil
+		}
+	case v2.ValueTypeString:
 		return v, nil
-	case "BOOLARRAY":
+	case v2.ValueTypeBoolArray:
 		var val []bool
 		if e := json.Unmarshal([]byte(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
 		}
-	case "UINT8ARRAY", "UINT16ARRAY", "UINT32ARRAY", "INT8ARRAY", "INT16ARRAY", "INT32ARRAY", "INT64ARRAY":
+	case v2.ValueTypeInt8Array, v2.ValueTypeInt16Array, v2.ValueTypeInt32Array, v2.ValueTypeInt64Array, v2.ValueTypeUint8Array, v2.ValueTypeUint16Array, v2.ValueTypeUint32Array:
 		var val []int
 		if e := json.Unmarshal([]byte(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
 		}
-	case "UINT64ARRAY":
+	case v2.ValueTypeUint64Array:
 		var val []uint64
 		if e := json.Unmarshal([]byte(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
 		}
-	case "FLOAT32ARRAY", "FLOAT64ARRAY":
-		if r.ValueType == "" {
-			r.ValueType = ot
-		}
-		var val1 []string
-		if e := json.Unmarshal([]byte(v), &val1); e == nil {
-			ret := []float64{}
-			for _, v := range val1 {
-				if fv, err := es.getFloatValue(r.FloatEncoding, v, r.ValueType, logger); err != nil {
-					return nil, err
-				} else {
-					if f, ok := fv.(float64); ok {
-						ret = append(ret, f)
-					} else {
-						return nil, fmt.Errorf("The %v is not a float64 type.", f)
-					}
-				}
-			}
-			return ret, nil
-		} else {
-			var val []float64
-			ret := []float64{}
-			if e := json.Unmarshal([]byte(v), &val); e == nil {
-				for _, v := range val {
-					ret = append(ret, v)
-				}
-				return ret, nil
-			} else {
-				return nil, e
-			}
-		}
-	case "BINARY":
+	case v2.ValueTypeFloat32Array:
+		return convertFloatArray(v, 32)
+	case v2.ValueTypeFloat64Array:
+		return convertFloatArray(v, 64)
+	case v2.ValueTypeBinary:
 		return nil, fmt.Errorf("Unsupport for binary type, the value will be ignored.")
 	default:
 		logger.Warnf("Not supported type %s, and processed as string value", t)
@@ -288,104 +251,24 @@ func (es *EdgexSource) getValue(r models.Reading, logger api.Logger) (interface{
 	}
 }
 
-func (es *EdgexSource) getFloatValue(FloatEncoding string, Value string, ValueType string, logger api.Logger) (interface{}, error) {
-	if len(FloatEncoding) == 0 {
-		if strings.Contains(Value, "=") {
-			FloatEncoding = models.Base64Encoding
-		} else {
-			FloatEncoding = models.ENotation
+func convertFloatArray(v string, bitSize int) (interface{}, error) {
+	var val1 []string
+	if e := json.Unmarshal([]byte(v), &val1); e == nil {
+		var ret []float64
+		for _, v := range val1 {
+			if fv, err := strconv.ParseFloat(v, bitSize); err != nil {
+				return nil, err
+			} else {
+				ret = append(ret, fv)
+			}
 		}
-	}
-	switch strings.ToLower(ValueType) {
-	case strings.ToLower(models.ValueTypeFloat32), strings.ToLower(models.ValueTypeFloat32Array):
-		var value float64
-		switch FloatEncoding {
-		case models.Base64Encoding:
-			data, err := base64.StdEncoding.DecodeString(Value)
-			if err != nil {
-				return false, fmt.Errorf("unable to Base 64 decode float32 value ('%s'): %s", Value, err.Error())
-			}
-			var value1 float32
-			err = binary.Read(bytes.NewReader(data), binary.BigEndian, &value1)
-			if err != nil {
-				return false, fmt.Errorf("unable to decode float32 value bytes: %s", err.Error())
-			}
-			value = float64(value1)
-		case models.ENotation:
-			var err error
-			var temp float64
-			temp, err = strconv.ParseFloat(Value, 64)
-			if err != nil {
-				return false, fmt.Errorf("unable to parse Float64 eNotation value: %s", err.Error())
-			}
-
-			value = float64(temp)
-
-		default:
-			return false, fmt.Errorf("unkown FloatEncoding for float32 value: %s", FloatEncoding)
-
-		}
-		return value, nil
-
-	case strings.ToLower(models.ValueTypeFloat64), strings.ToLower(models.ValueTypeFloat64Array):
-		var value float64
-		switch FloatEncoding {
-		case models.Base64Encoding:
-			data, err := base64.StdEncoding.DecodeString(Value)
-			if err != nil {
-				return false, fmt.Errorf("unable to Base 64 decode float64 value ('%s'): %s", Value, err.Error())
-			}
-
-			err = binary.Read(bytes.NewReader(data), binary.BigEndian, &value)
-			if err != nil {
-				return false, fmt.Errorf("unable to decode float64 value bytes: %s", err.Error())
-			}
-			return value, nil
-		case models.ENotation:
-			var err error
-			value, err = strconv.ParseFloat(Value, 64)
-			if err != nil {
-				return false, fmt.Errorf("unable to parse Float64 eNotation value: %s", err.Error())
-			}
-			return value, nil
-		default:
-			return false, fmt.Errorf("unkown FloatEncoding for float64 value: %s", FloatEncoding)
-		}
-	default:
-		return nil, fmt.Errorf("unkown value type: %s", ValueType)
-	}
-}
-
-func (es *EdgexSource) fetchAllDataDescriptors() error {
-	if vdArr, err := es.vdc.ValueDescriptors(context.Background()); err != nil {
-		return err
+		return ret, nil
 	} else {
-		for _, vd := range vdArr {
-			es.valueDescs[vd.Name] = vd.Type
-		}
-		if len(vdArr) == 0 {
-			common.Log.Infof("Cannot find any value descriptors from value descriptor services.")
+		var val []float64
+		if e := json.Unmarshal([]byte(v), &val); e == nil {
+			return val, nil
 		} else {
-			common.Log.Infof("Get %d of value descriptors from service.", len(vdArr))
-			for i, v := range vdArr {
-				common.Log.Debugf("%d: %s - %s ", i, v.Name, v.Type)
-			}
-		}
-	}
-	return nil
-}
-
-func (es *EdgexSource) getType(id string, logger api.Logger) (string, error) {
-	if t, ok := es.valueDescs[id]; ok {
-		return t, nil
-	} else {
-		if e := es.fetchAllDataDescriptors(); e != nil {
-			return "", e
-		}
-		if t, ok := es.valueDescs[id]; ok {
-			return t, nil
-		} else {
-			return "", fmt.Errorf("cannot find type info for %s in value descriptor.", id)
+			return nil, e
 		}
 	}
 }

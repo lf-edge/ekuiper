@@ -5,48 +5,61 @@ package extensions
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2/dtos"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2/models"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
 	"github.com/emqx/kuiper/common"
+	"math"
 	"reflect"
 	"testing"
 )
 
-var es = EdgexSource{valueDescs: map[string]string{
-	"b1":  "bool",
-	"i1":  "int8",
-	"i2":  "INT16",
-	"i3":  "INT32",
-	"i4":  "INT64",
-	"i5":  "UINT8",
-	"i6":  "UINT16",
-	"i7":  "UINT32",
-	"s1":  "String",
-	"f1":  "Float32", //FLOAT32 will be handled by special case
-	"f2":  "Float64", //FLOAT64 will be handled by special case
-	"i8":  "UINT64",  //UINT64 will be handled by special case
-	"ba":  "BOOLARRAY",
-	"ia1": "INT8ARRAY",
-	"ia2": "INT16ARRAY",
-	"ia3": "INT32ARRAY",
-	"ia4": "INT64ARRAY",
-	"ia5": "UINT8ARRAY",
-	"ia6": "UINT16ARRAY",
-	"ia7": "UINT32ARRAY",
-	"ia8": "UINT64ARRAY",
-	"fa1": "FLOAT32ARRAY",
-	"fa2": "FLOAT64ARRAY",
-},
-}
+var (
+	es      = &EdgexSource{}
+	typeMap = map[string]string{
+		"b1":  v2.ValueTypeBool,
+		"i1":  v2.ValueTypeInt8,
+		"i2":  v2.ValueTypeInt16,
+		"i3":  v2.ValueTypeInt32,
+		"i4":  v2.ValueTypeInt64,
+		"i5":  v2.ValueTypeUint8,
+		"i6":  v2.ValueTypeUint16,
+		"i7":  v2.ValueTypeUint32,
+		"s1":  v2.ValueTypeString,
+		"f1":  v2.ValueTypeFloat32,
+		"f2":  v2.ValueTypeFloat64,
+		"i8":  v2.ValueTypeUint64,
+		"ba":  v2.ValueTypeBoolArray,
+		"ia1": v2.ValueTypeInt8Array,
+		"ia2": v2.ValueTypeInt16Array,
+		"ia3": v2.ValueTypeInt32Array,
+		"ia4": v2.ValueTypeInt64Array,
+		"ia5": v2.ValueTypeUint8Array,
+		"ia6": v2.ValueTypeUint16Array,
+		"ia7": v2.ValueTypeUint32Array,
+		"ia8": v2.ValueTypeUint64Array,
+		"fa1": v2.ValueTypeFloat32Array,
+		"fa2": v2.ValueTypeFloat64Array,
+	}
+)
 
 func TestGetValue_IntFloat(t *testing.T) {
-	var testEvent = models.Event{Device: "test"}
+	var testEvent = models.Event{DeviceName: "test"}
 	for i := 1; i < 8; i++ {
-		r1 := models.Reading{Name: fmt.Sprintf("i%d", i), Value: "1"}
+		name := fmt.Sprintf("i%d", i)
+		r1 := models.SimpleReading{
+			BaseReading: models.BaseReading{
+				ResourceName: name,
+				ValueType:    typeMap[name],
+			},
+			Value: "1",
+		}
 		testEvent.Readings = append(testEvent.Readings, r1)
 	}
 
-	for _, r := range testEvent.Readings {
+	dtoe := dtos.FromEventModelToDTO(testEvent)
+	for _, r := range dtoe.Readings {
 		if v, e := es.getValue(r, common.Log); e != nil {
 			t.Errorf("%s", e)
 		} else {
@@ -54,33 +67,7 @@ func TestGetValue_IntFloat(t *testing.T) {
 		}
 	}
 
-	rf_01 := models.Reading{Name: "f1", Value: "fwtOaw=="}
-	if v, e := es.getValue(rf_01, common.Log); e != nil {
-		t.Errorf("%s", e)
-	} else {
-		if v1, ok := v.(float64); ok {
-			if v1 != 185169860786896613617389922448534667264.000000 {
-				t.Errorf("expected 185169860786896613617389922448534667264.000000, but it's %f.", v1)
-			}
-		} else {
-			t.Errorf("expected float32 type, but it's %T.", v)
-		}
-	}
-
-	rf_02 := models.Reading{Name: "f2", Value: "QAkeuFHrhR8="}
-	if v, e := es.getValue(rf_02, common.Log); e != nil {
-		t.Errorf("%s", e)
-	} else {
-		if v1, ok := v.(float64); ok {
-			if v1 != 3.14 {
-				t.Errorf("expected 3.14, but it's %f.", v1)
-			}
-		} else {
-			t.Errorf("expected float64 type, but it's %T.", v)
-		}
-	}
-
-	r1 := models.Reading{Name: "i8", Value: "10796529505058023104"}
+	r1 := dtos.BaseReading{ResourceName: "i8", ValueType: typeMap["i8"], SimpleReading: dtos.SimpleReading{Value: "10796529505058023104"}}
 	if v, e := es.getValue(r1, common.Log); e != nil {
 		t.Errorf("%s", e)
 	} else {
@@ -91,28 +78,40 @@ func TestGetValue_IntFloat(t *testing.T) {
 		}
 	}
 
-	r2 := models.Reading{Name: "f1", Value: "3.14"}
+	r2 := dtos.BaseReading{ResourceName: "f1", ValueType: typeMap["f1"], SimpleReading: dtos.SimpleReading{Value: "3.14"}}
 	if v, e := es.getValue(r2, common.Log); e != nil {
 		t.Errorf("%s", e)
 	} else {
 		if v1, ok := v.(float64); ok {
-			if v1 != 3.14 {
+			if !almostEqual(v1, 3.14) {
 				t.Errorf("expected 3.14, but it's %f.", v1)
 			}
 		}
 	}
 }
 
+func almostEqual(a, b float64) bool {
+	return math.Abs(a-b) <= 1e-6
+}
+
 func TestGetValue_IntFloatArr(t *testing.T) {
-	var testEvent = models.Event{Device: "test"}
+	var testEvent = models.Event{DeviceName: "test"}
 	for i := 1; i < 8; i++ {
 		ia := []int{i, i * 2}
 		jsonValue, _ := json.Marshal(ia)
-		r1 := models.Reading{Name: fmt.Sprintf("ia%d", i), Value: string(jsonValue)}
+		name := fmt.Sprintf("ia%d", i)
+		r1 := models.SimpleReading{
+			BaseReading: models.BaseReading{
+				ResourceName: name,
+				ValueType:    typeMap[name],
+			},
+			Value: string(jsonValue),
+		}
 		testEvent.Readings = append(testEvent.Readings, r1)
 	}
 
-	for i, r := range testEvent.Readings {
+	dtoe := dtos.FromEventModelToDTO(testEvent)
+	for i, r := range dtoe.Readings {
 		if v, e := es.getValue(r, common.Log); e != nil {
 			t.Errorf("%s", e)
 		} else {
@@ -120,8 +119,7 @@ func TestGetValue_IntFloatArr(t *testing.T) {
 		}
 	}
 
-	r1 := models.Reading{Name: "ia8", Value: string(`[10796529505058023104, 10796529505058023105]`)}
-	testEvent.Readings = append(testEvent.Readings, r1)
+	r1 := dtos.BaseReading{ResourceName: "ia8", ValueType: typeMap["ia8"], SimpleReading: dtos.SimpleReading{Value: `[10796529505058023104, 10796529505058023105]`}}
 	if v, e := es.getValue(r1, common.Log); e != nil {
 		t.Errorf("%s", e)
 	} else {
@@ -134,7 +132,7 @@ func TestGetValue_IntFloatArr(t *testing.T) {
 		}
 	}
 
-	rf_00 := models.Reading{Name: "fa1", Value: `[3.14, 2.71828]`}
+	rf_00 := dtos.BaseReading{ResourceName: "fa1", ValueType: typeMap["fa1"], SimpleReading: dtos.SimpleReading{Value: `[3.14, 2.71828]`}}
 	if v, e := es.getValue(rf_00, common.Log); e != nil {
 		t.Errorf("%s", e)
 	} else {
@@ -144,32 +142,6 @@ func TestGetValue_IntFloatArr(t *testing.T) {
 			}
 		} else {
 			t.Errorf("expected float32 array type, but it's %T.", v)
-		}
-	}
-
-	rf_01 := models.Reading{Name: "fa1", Value: `["fwtOaw==","fwtOaw=="]`}
-	if v, e := es.getValue(rf_01, common.Log); e != nil {
-		t.Errorf("%s", e)
-	} else {
-		if v1, ok := v.([]float64); ok {
-			if v1[0] != 185169860786896613617389922448534667264.000000 || v1[1] != 185169860786896613617389922448534667264.000000 {
-				t.Errorf("expected 185169860786896613617389922448534667264.000000, but it's %v.", v1)
-			}
-		} else {
-			t.Errorf("expected float64 array type, but it's %T.", v)
-		}
-	}
-
-	rf_02 := models.Reading{Name: "fa2", Value: `["QAkeuFHrhR8=","QAW/CZWq95A="]`}
-	if v, e := es.getValue(rf_02, common.Log); e != nil {
-		t.Errorf("%s", e)
-	} else {
-		if v1, ok := v.([]float64); ok {
-			if v1[0] != 3.14 || v1[1] != 2.71828 {
-				t.Errorf("expected 3.14 and 2.71828, but it's %v.", v1)
-			}
-		} else {
-			t.Errorf("expected float64 array type, but it's %T.", v)
 		}
 	}
 }
@@ -196,13 +168,21 @@ func expectOne(t *testing.T, expected interface{}) {
 }
 
 func TestGetValue_Float(t *testing.T) {
-	var testEvent = models.Event{Device: "test"}
+	var testEvent = models.Event{DeviceName: "test"}
 	for i := 1; i < 3; i++ {
-		r1 := models.Reading{Name: fmt.Sprintf("f%d", i), Value: "3.14"}
+		name := fmt.Sprintf("f%d", i)
+		r1 := models.SimpleReading{
+			BaseReading: models.BaseReading{
+				ResourceName: name,
+				ValueType:    typeMap[name],
+			},
+			Value: "3.14",
+		}
 		testEvent.Readings = append(testEvent.Readings, r1)
 	}
 
-	for _, r := range testEvent.Readings {
+	dtoe := dtos.FromEventModelToDTO(testEvent)
+	for _, r := range dtoe.Readings {
 		if v, e := es.getValue(r, common.Log); e != nil {
 			t.Errorf("%s", e)
 		} else {
@@ -213,7 +193,7 @@ func TestGetValue_Float(t *testing.T) {
 
 func expectPi(t *testing.T, expected interface{}) {
 	if v1, ok := expected.(float64); ok {
-		if v1 != 3.14 {
+		if !almostEqual(v1, 3.14) {
 			t.Errorf("expected 3.14, but it's %f.", v1)
 		}
 	} else {
@@ -225,7 +205,7 @@ func TestGetValue_Bool(t *testing.T) {
 	///////////True
 	trues := []string{"1", "t", "T", "true", "TRUE", "True"}
 	for _, v := range trues {
-		r1 := models.Reading{Name: "b1", Value: v}
+		r1 := dtos.BaseReading{ResourceName: "b1", ValueType: typeMap["b1"], SimpleReading: dtos.SimpleReading{Value: v}}
 		if v, e := es.getValue(r1, common.Log); e != nil {
 			t.Errorf("%s", e)
 		} else {
@@ -233,7 +213,7 @@ func TestGetValue_Bool(t *testing.T) {
 		}
 	}
 
-	r1 := models.Reading{Name: "b1", Value: "TRue"}
+	r1 := dtos.BaseReading{ResourceName: "b1", ValueType: typeMap["b1"], SimpleReading: dtos.SimpleReading{Value: "TRue"}}
 	if _, e := es.getValue(r1, common.Log); e == nil {
 		t.Errorf("%s", e)
 	}
@@ -241,7 +221,7 @@ func TestGetValue_Bool(t *testing.T) {
 	///////////False
 	falses := []string{"0", "f", "F", "false", "FALSE", "False"}
 	for _, v := range falses {
-		r1 := models.Reading{Name: "b1", Value: v}
+		r1 := dtos.BaseReading{ResourceName: "b1", ValueType: typeMap["b1"], SimpleReading: dtos.SimpleReading{Value: v}}
 		if v, e := es.getValue(r1, common.Log); e != nil {
 			t.Errorf("%s", e)
 		} else {
@@ -249,7 +229,7 @@ func TestGetValue_Bool(t *testing.T) {
 		}
 	}
 
-	r1 = models.Reading{Name: "b1", Value: "FAlse"}
+	r1 = dtos.BaseReading{ResourceName: "b1", ValueType: typeMap["b1"], SimpleReading: dtos.SimpleReading{Value: "FAlse"}}
 	if _, e := es.getValue(r1, common.Log); e == nil {
 		t.Errorf("%s", e)
 	}
@@ -276,24 +256,42 @@ func expectFalse(t *testing.T, expected interface{}) {
 }
 
 func TestWrongType(t *testing.T) {
-	es1 := EdgexSource{valueDescs: map[string]string{
-		"f": "FLOAT", //A not exsited type
-	},
-	}
-	r1 := models.Reading{Name: "f", Value: "100"}
-	if v, _ := es1.getValue(r1, common.Log); v != "100" {
+	r1 := dtos.BaseReading{ResourceName: "f", ValueType: "FLOAT", SimpleReading: dtos.SimpleReading{Value: "100"}}
+	if v, _ := es.getValue(r1, common.Log); v != "100" {
 		t.Errorf("Expected 100, but it's %s!", v)
 	}
 }
 
 func TestWrongValue(t *testing.T) {
-	var testEvent = models.Event{Device: "test"}
-	r1 := models.Reading{Name: "b1", Value: "100"}   //100 cannot be converted to a boolean value
-	r2 := models.Reading{Name: "i1", Value: "int"}   //'int' string cannot be converted to int value
-	r3 := models.Reading{Name: "f1", Value: "float"} //'float' string cannot be converted to int value
+	var testEvent = models.Event{DeviceName: "test"}
+	//100 cannot be converted to a boolean value
+	r1 := models.SimpleReading{
+		BaseReading: models.BaseReading{
+			ResourceName: "b1",
+			ValueType:    typeMap["b1"],
+		},
+		Value: "100",
+	}
+	//'int' string cannot be converted to int value
+	r2 := models.SimpleReading{
+		BaseReading: models.BaseReading{
+			ResourceName: "i1",
+			ValueType:    typeMap["i1"],
+		},
+		Value: "int",
+	}
+	//'float' string cannot be converted to int value
+	r3 := models.SimpleReading{
+		BaseReading: models.BaseReading{
+			ResourceName: "f1",
+			ValueType:    typeMap["f1"],
+		},
+		Value: "float",
+	}
 	testEvent.Readings = append(testEvent.Readings, r1, r2, r3)
 
-	for _, v := range testEvent.Readings {
+	dtoe := dtos.FromEventModelToDTO(testEvent)
+	for _, v := range dtoe.Readings {
 		if _, e := es.getValue(v, common.Log); e == nil {
 			t.Errorf("Expected an error!")
 		}
