@@ -4,57 +4,79 @@ package sinks
 
 import (
 	"fmt"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2/dtos"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xstream/contexts"
 	"reflect"
 	"testing"
 )
+
+var (
+	contextLogger = common.Log.WithField("rule", "testEdgexSink")
+	ctx           = contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
+)
+
+func compareEvent(expected, actual *dtos.Event) bool {
+	if (expected.Id == actual.Id || (expected.Id == "" && actual.Id != "")) && expected.ProfileName == actual.ProfileName && expected.DeviceName == actual.DeviceName && (expected.Origin == actual.Origin || (expected.Origin == 0 && actual.Origin > 0)) && reflect.DeepEqual(expected.Tags, actual.Tags) && expected.SourceName == actual.SourceName && len(expected.Readings) == len(actual.Readings) {
+		for i, r := range expected.Readings {
+			if !compareReading(r, actual.Readings[i]) {
+				break
+			}
+		}
+		return true
+	}
+	return false
+}
+
+func compareReading(expected, actual dtos.BaseReading) bool {
+	if (expected.Id == actual.Id || (expected.Id == "" && actual.Id != "")) && expected.ProfileName == actual.ProfileName && expected.DeviceName == actual.DeviceName && (expected.Origin == actual.Origin || (expected.Origin == 0 && actual.Origin > 0)) && expected.ResourceName == actual.ResourceName && expected.Value == actual.Value && expected.ValueType == actual.ValueType {
+		return true
+	}
+	return false
+}
 
 func TestProduceEvents(t1 *testing.T) {
 	var tests = []struct {
 		input      string
 		deviceName string
-		expected   *models.Event
+		expected   *dtos.Event
 		error      string
 	}{
 		{
 			input: `[
 						{"meta":{
-							"correlationid":"","created":1,"device":"demo","id":"","modified":2,"origin":3,"pushed":0,
-							"humidity":{"created":11,"device":"test device name1","id":"12","modified":13,"origin":14,"pushed":15},
-							"temperature":{"created":21,"device":"test device name2","id":"22","modified":23,"origin":24,"pushed":25}
+							"correlationid":"","deviceName":"demo","id":"","origin":3,
+							"humidity":{"deviceName":"test device name1","id":"12","origin":14,"valueType":"int64"},
+							"temperature":{"deviceName":"test device name2","id":"22","origin":24}
 							}
 						},
 						{"humidity":100},
 						{"temperature":50}
 					]`,
-			expected: &models.Event{
-				ID:       "",
-				Pushed:   0,
-				Device:   "demo",
-				Created:  1,
-				Modified: 2,
-				Origin:   3,
-				Readings: []models.Reading{
+			expected: &dtos.Event{
+				Id:          "",
+				DeviceName:  "demo",
+				ProfileName: "kuiper",
+				Origin:      3,
+				Readings: []dtos.BaseReading{
 					{
-						Name:     "humidity",
-						Value:    "100",
-						Created:  11,
-						Device:   "test device name1",
-						Id:       "12",
-						Modified: 13,
-						Origin:   14,
-						Pushed:   15,
+						ResourceName:  "humidity",
+						DeviceName:    "test device name1",
+						ProfileName:   "kuiper",
+						Id:            "12",
+						Origin:        14,
+						ValueType:     v2.ValueTypeInt64,
+						SimpleReading: dtos.SimpleReading{Value: "100"},
 					},
 					{
-						Name:     "temperature",
-						Value:    "50",
-						Created:  21,
-						Device:   "test device name2",
-						Id:       "22",
-						Modified: 23,
-						Origin:   24,
-						Pushed:   25,
+						ResourceName:  "temperature",
+						DeviceName:    "test device name2",
+						ProfileName:   "kuiper",
+						Id:            "22",
+						Origin:        24,
+						ValueType:     v2.ValueTypeFloat64,
+						SimpleReading: dtos.SimpleReading{Value: "5.000000e+01"},
 					},
 				},
 			},
@@ -64,30 +86,27 @@ func TestProduceEvents(t1 *testing.T) {
 		{
 			input: `[
 						{"meta":{
-							"correlationid":"","created":1,"device":"demo","id":"","modified":2,"origin":3,"pushed":0,
-							"humidity":{"created":11,"device":"test device name1","id":"12","modified":13,"origin":14,"pushed":15},
-							"temperature":{"created":21,"device":"test device name2","id":"22","modified":23,"origin":24,"pushed":25}
+							"correlationid":"","profileName":"demoProfile","deviceName":"demo","sourceName":"demoSource","id":"abc","origin":3,"tags":{"auth":"admin"},
+							"humidity":{"deviceName":"test device name1","id":"12","origin":14},
+							"temperature":{"deviceName":"test device name2","id":"22","origin":24}
 							}
 						},
 						{"h1":100}
 					]`,
-			expected: &models.Event{
-				ID:       "",
-				Pushed:   0,
-				Device:   "demo",
-				Created:  1,
-				Modified: 2,
-				Origin:   3,
-				Readings: []models.Reading{
+			expected: &dtos.Event{
+				Id:          "abc",
+				DeviceName:  "demo",
+				ProfileName: "demoProfile",
+				SourceName:  "demoSource",
+				Origin:      3,
+				Tags:        map[string]string{"auth": "admin"},
+				Readings: []dtos.BaseReading{
 					{
-						Name:     "h1",
-						Value:    "100",
-						Created:  0,
-						Device:   "",
-						Id:       "",
-						Modified: 0,
-						Origin:   0,
-						Pushed:   0,
+						ResourceName:  "h1",
+						SimpleReading: dtos.SimpleReading{Value: "1.000000e+02"},
+						DeviceName:    "demo",
+						ProfileName:   "demoProfile",
+						ValueType:     v2.ValueTypeFloat64,
 					},
 				},
 			},
@@ -99,23 +118,14 @@ func TestProduceEvents(t1 *testing.T) {
 						{"meta": 50},
 						{"h1":100}
 					]`,
-			expected: &models.Event{
-				ID:       "",
-				Pushed:   0,
-				Device:   "",
-				Created:  0,
-				Modified: 0,
-				Origin:   0,
-				Readings: []models.Reading{
+			expected: &dtos.Event{
+				ProfileName: "kuiper",
+				Readings: []dtos.BaseReading{
 					{
-						Name:     "h1",
-						Value:    "100",
-						Created:  0,
-						Device:   "",
-						Id:       "",
-						Modified: 0,
-						Origin:   0,
-						Pushed:   0,
+						ResourceName:  "h1",
+						SimpleReading: dtos.SimpleReading{Value: "1.000000e+02"},
+						ProfileName:   "kuiper",
+						ValueType:     v2.ValueTypeFloat64,
 					},
 				},
 			},
@@ -124,36 +134,37 @@ func TestProduceEvents(t1 *testing.T) {
 
 		{
 			input: `[
-						{"meta1": 50},
-						{"h1":100}
+						{"meta1": "newmeta"},
+						{"h1":true},
+						{"sa":["1","2","3","4"]},
+						{"fa":[1.1,2.2,3.3,4.4]}
 					]`,
-			expected: &models.Event{
-				ID:       "",
-				Pushed:   0,
-				Device:   "",
-				Created:  0,
-				Modified: 0,
-				Origin:   0,
-				Readings: []models.Reading{
+			expected: &dtos.Event{
+				ProfileName: "kuiper",
+				Readings: []dtos.BaseReading{
 					{
-						Name:     "meta1",
-						Value:    "50",
-						Created:  0,
-						Device:   "",
-						Id:       "",
-						Modified: 0,
-						Origin:   0,
-						Pushed:   0,
+						ResourceName:  "meta1",
+						SimpleReading: dtos.SimpleReading{Value: "newmeta"},
+						ProfileName:   "kuiper",
+						ValueType:     v2.ValueTypeString,
 					},
 					{
-						Name:     "h1",
-						Value:    "100",
-						Created:  0,
-						Device:   "",
-						Id:       "",
-						Modified: 0,
-						Origin:   0,
-						Pushed:   0,
+						ResourceName:  "h1",
+						SimpleReading: dtos.SimpleReading{Value: "true"},
+						ProfileName:   "kuiper",
+						ValueType:     v2.ValueTypeBool,
+					},
+					{
+						ResourceName:  "sa",
+						SimpleReading: dtos.SimpleReading{Value: "[\"1\",\"2\",\"3\",\"4\"]"},
+						ProfileName:   "kuiper",
+						ValueType:     v2.ValueTypeStringArray,
+					},
+					{
+						ResourceName:  "fa",
+						SimpleReading: dtos.SimpleReading{Value: "[1.100000e+00, 2.200000e+00, 3.300000e+00, 4.400000e+00]"},
+						ProfileName:   "kuiper",
+						ValueType:     v2.ValueTypeFloat64Array,
 					},
 				},
 			},
@@ -163,27 +174,32 @@ func TestProduceEvents(t1 *testing.T) {
 		{
 			input:      `[]`,
 			deviceName: "kuiper",
-			expected: &models.Event{
-				ID:       "",
-				Pushed:   0,
-				Device:   "kuiper",
-				Created:  0,
-				Modified: 0,
-				Origin:   0,
-				Readings: nil,
+			expected: &dtos.Event{
+				ProfileName: "kuiper",
+				DeviceName:  "kuiper",
+				Origin:      0,
+				Readings:    nil,
 			},
 			error: "",
+		},
+		{
+			input: `[{"sa":["1","2",3,"4"]}]`, //invalid array, return nil
+			expected: &dtos.Event{
+				ProfileName: "kuiper",
+				Origin:      0,
+				Readings:    nil,
+			},
 		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, t := range tests {
 		ems := EdgexMsgBusSink{deviceName: t.deviceName, metadata: "meta"}
-		result, err := ems.produceEvents([]byte(t.input))
+		result, err := ems.produceEvents(ctx, []byte(t.input))
 
 		if !reflect.DeepEqual(t.error, common.Errstring(err)) {
 			t1.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, t.input, t.error, err)
-		} else if t.error == "" && !reflect.DeepEqual(t.expected, result) {
+		} else if t.error == "" && !compareEvent(t.expected, result) {
 			t1.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, t.input, t.expected, result)
 		}
 	}
