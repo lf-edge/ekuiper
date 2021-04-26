@@ -5,15 +5,7 @@
     # go build -o fvt_scripts/edgex/benchmark/pub fvt_scripts/edgex/benchmark/pub.go
     ```
 
-- A mockup EdgeX value descriptor service should be compiled and run before test.
-
-    ```shell
-    # go build -o fvt_scripts/edgex/valuedesc/vdmocker fvt_scripts/edgex/valuedesc/vd_server.go
-    
-    # fvt_scripts/edgex/valuedesc/vdmocker > vdmocker.out 2>&1 &
-    ```
-
-- Update edgex configuration. Update ``Server`` configuration to the address where you run ``pub`` in the 1st step, update ``serviceServer`` to the address where you run ``vdmocker`` of last step.  
+- Update edgex configuration. Update ``Server`` configuration to the address where you run ``pub`` in the 1st step.  
   ```yaml
   default:
     protocol: tcp

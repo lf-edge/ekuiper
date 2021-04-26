@@ -138,7 +138,7 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT temperature,humidity, meta(id) AS eid,meta(Created) AS ec, meta(temperature-&gt;pushed) AS tpush, meta(temperature-&gt;Created) AS tcreated, meta(temperature-&gt;Origin) AS torigin, meta(Humidity-&gt;Device) AS hdevice, meta(Humidity-&gt;Modified) AS hmodified FROM demo WHERE meta(device)=\&quot;demo2\&quot;&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT temperature,humidity, meta(id) AS eid, meta(temperature-&gt;Origin) AS torigin, meta(Humidity-&gt;DeviceName) AS hdevice FROM demo WHERE meta(deviceName)=\&quot;demo2\&quot;&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
       &quot;mqtt&quot;: {&#xd;
@@ -465,27 +465,9 @@
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
           <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="event_create_time Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$[0].ec</stringProp>
-            <stringProp name="EXPECTED_VALUE">22</stringProp>
-            <boolProp name="JSONVALIDATION">true</boolProp>
-            <boolProp name="EXPECT_NULL">false</boolProp>
-            <boolProp name="INVERT">false</boolProp>
-            <boolProp name="ISREGEX">false</boolProp>
-          </JSONPathAssertion>
-          <hashTree/>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="name Assertion" enabled="true">
             <stringProp name="JSON_PATH">$[0].hdevice</stringProp>
             <stringProp name="EXPECTED_VALUE">Humidity sensor</stringProp>
-            <boolProp name="JSONVALIDATION">true</boolProp>
-            <boolProp name="EXPECT_NULL">false</boolProp>
-            <boolProp name="INVERT">false</boolProp>
-            <boolProp name="ISREGEX">false</boolProp>
-          </JSONPathAssertion>
-          <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="hmodified Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$[0].hmodified</stringProp>
-            <stringProp name="EXPECTED_VALUE">70</stringProp>
             <boolProp name="JSONVALIDATION">true</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>
