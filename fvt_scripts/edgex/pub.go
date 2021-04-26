@@ -1,13 +1,15 @@
+// +build edgex
+
 package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/coredata"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/urlclient/local"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
-	"github.com/edgexfoundry/go-mod-messaging/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2/dtos"
+	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"log"
 	"os"
 	"time"
@@ -29,37 +31,47 @@ func pubEventClientZeroMq() {
 		if ec := msgClient.Connect(); ec != nil {
 			log.Fatal(ec)
 		} else {
-			client := coredata.NewEventClient(local.New("test"))
 			//r := rand.New(rand.NewSource(time.Now().UnixNano()))
 			for i := 0; i < 10; i++ {
 				//temp := r.Intn(100)
 				//humd := r.Intn(100)
 
-				var testEvent = models.Event{Device: "demo", Created: 123, Modified: 123, Origin: 123}
-				var r1 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name", Name: "Temperature", Value: fmt.Sprintf("%d", i*8)}
-				var r2 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name", Name: "Humidity", Value: fmt.Sprintf("%d", i*9)}
-
-				var r3 = models.Reading{Name: "b1"}
-				if i%2 == 0 {
-					r3.Value = "true"
-				} else {
-					r3.Value = "false"
+				var testEvent = dtos.NewEvent("demoProfile", "demo", "demoSource")
+				testEvent.Origin = 123
+				err := testEvent.AddSimpleReading("Temperature", v2.ValueTypeInt64, int64(i*8))
+				if err != nil {
+					fmt.Errorf("Add reading error for %d.Temperature: %v\n", i, i*8)
+				}
+				err = testEvent.AddSimpleReading("Humidity", v2.ValueTypeInt64, int64(i*9))
+				if err != nil {
+					fmt.Errorf("Add reading error for %d.Humidity: %v\n", i, i*9)
+				}
+				err = testEvent.AddSimpleReading("b1", v2.ValueTypeBool, i%2 == 0)
+				if err != nil {
+					fmt.Errorf("Add reading error for %d.b1: %v\n", i, i%2 == 0)
+				}
+				err = testEvent.AddSimpleReading("i1", v2.ValueTypeInt64, int64(i))
+				if err != nil {
+					fmt.Errorf("Add reading error for %d.i1: %v\n", i, i)
+				}
+				err = testEvent.AddSimpleReading("f1", v2.ValueTypeFloat64, float64(i)/2.0)
+				if err != nil {
+					fmt.Errorf("Add reading error for %d.f1: %v\n", i, float64(i)/2.0)
+				}
+				err = testEvent.AddSimpleReading("ui64", v2.ValueTypeUint64, uint64(10796529505058023104))
+				if err != nil {
+					fmt.Errorf("Add reading error for %d.ui64: %v\n", i, uint64(10796529505058023104))
 				}
 
-				r4 := models.Reading{Name: "i1", Value: fmt.Sprintf("%d", i)}
-				r5 := models.Reading{Name: "f1", Value: fmt.Sprintf("%.2f", float64(i)/2.0)}
-				r6 := models.Reading{Name: "ui64", Value: "10796529505058023104"}
-
-				testEvent.Readings = append(testEvent.Readings, r1, r2, r3, r4, r5, r6)
-
-				data, err := client.MarshalEvent(testEvent)
+				fmt.Printf("readings: %v\n", testEvent.Readings)
+				data, err := json.Marshal(testEvent)
 				if err != nil {
 					fmt.Errorf("unexpected error MarshalEvent %v", err)
 				} else {
 					fmt.Println(string(data))
 				}
 
-				env := types.NewMessageEnvelope([]byte(data), context.Background())
+				env := types.NewMessageEnvelope(data, context.Background())
 				env.ContentType = "application/json"
 
 				if e := msgClient.Publish(env, "events"); e != nil {
@@ -88,21 +100,26 @@ func pubToAnother() {
 		if ec := msgClient.Connect(); ec != nil {
 			log.Fatal(ec)
 		}
-		client := coredata.NewEventClient(local.New("test1"))
-		var testEvent = models.Event{Device: "demo1", Created: 123, Modified: 123, Origin: 123}
-		var r1 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name", Name: "Temperature", Value: "20"}
-		var r2 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name", Name: "Humidity", Value: "30"}
 
-		testEvent.Readings = append(testEvent.Readings, r1, r2)
+		testEvent := dtos.NewEvent("demo1Profile", "demo1", "demo1Source")
+		testEvent.Origin = 123
+		err := testEvent.AddSimpleReading("Temperature", v2.ValueTypeInt64, int64(20))
+		if err != nil {
+			fmt.Errorf("Add reading error for Temperature: %v\n", 20)
+		}
+		err = testEvent.AddSimpleReading("Humidity", v2.ValueTypeInt64, int64(30))
+		if err != nil {
+			fmt.Errorf("Add reading error for Humidity: %v\n", 20)
+		}
 
-		data, err := client.MarshalEvent(testEvent)
+		data, err := json.Marshal(testEvent)
 		if err != nil {
 			fmt.Errorf("unexpected error MarshalEvent %v", err)
 		} else {
 			fmt.Println(string(data))
 		}
 
-		env := types.NewMessageEnvelope([]byte(data), context.Background())
+		env := types.NewMessageEnvelope(data, context.Background())
 		env.ContentType = "application/json"
 
 		if e := msgClient.Publish(env, "application"); e != nil {
@@ -129,22 +146,29 @@ func pubArrayMessage() {
 		if ec := msgClient.Connect(); ec != nil {
 			log.Fatal(ec)
 		}
-		client := coredata.NewEventClient(local.New("test1"))
-		var testEvent = models.Event{Device: "demo1", Created: 123, Modified: 123, Origin: 123}
-		var r1 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "bool array", Name: "ba", Value: "[true, true, false]"}
-		var r2 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "int32 array", Name: "ia", Value: "[30, 40, 50]"}
-		var r3 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "float64 array", Name: "fa", Value: "[3.14, 3.1415, 3.1415926]"}
+		testEvent := dtos.NewEvent("demo1Profile", "demo1", "demo1Source")
+		testEvent.Origin = 123
+		err := testEvent.AddSimpleReading("ba", v2.ValueTypeBoolArray, []bool{true, true, false})
+		if err != nil {
+			fmt.Errorf("Add reading error for ba: %v\n", []bool{true, true, false})
+		}
+		err = testEvent.AddSimpleReading("ia", v2.ValueTypeInt32Array, []int32{30, 40, 50})
+		if err != nil {
+			fmt.Errorf("Add reading error for ia: %v\n", []int32{30, 40, 50})
+		}
+		err = testEvent.AddSimpleReading("fa", v2.ValueTypeFloat64Array, []float64{3.14, 3.1415, 3.1415926})
+		if err != nil {
+			fmt.Errorf("Add reading error for fa: %v\n", []float64{3.14, 3.1415, 3.1415926})
+		}
 
-		testEvent.Readings = append(testEvent.Readings, r1, r2, r3)
-
-		data, err := client.MarshalEvent(testEvent)
+		data, err := json.Marshal(testEvent)
 		if err != nil {
 			fmt.Errorf("unexpected error MarshalEvent %v", err)
 		} else {
 			fmt.Println(string(data))
 		}
 
-		env := types.NewMessageEnvelope([]byte(data), context.Background())
+		env := types.NewMessageEnvelope(data, context.Background())
 		env.ContentType = "application/json"
 
 		if e := msgClient.Publish(env, "events"); e != nil {
@@ -172,14 +196,18 @@ func pubToMQTT(host string) {
 		if ec := msgClient.Connect(); ec != nil {
 			log.Fatal(ec)
 		}
-		client := coredata.NewEventClient(local.New("test1"))
-		var testEvent = models.Event{Device: "demo1", Created: 123, Modified: 123, Origin: 123}
-		var r1 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name", Name: "Temperature", Value: "20"}
-		var r2 = models.Reading{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Device: "test device name", Name: "Humidity", Value: "30"}
+		testEvent := dtos.NewEvent("demo1Profile", "demo1", "demo1Source")
+		testEvent.Origin = 123
+		err := testEvent.AddSimpleReading("Temperature", v2.ValueTypeInt64, int64(20))
+		if err != nil {
+			fmt.Errorf("Add reading error for Temperature: %v\n", 20)
+		}
+		err = testEvent.AddSimpleReading("Humidity", v2.ValueTypeInt64, int64(30))
+		if err != nil {
+			fmt.Errorf("Add reading error for Humidity: %v\n", 20)
+		}
 
-		testEvent.Readings = append(testEvent.Readings, r1, r2)
-
-		data, err := client.MarshalEvent(testEvent)
+		data, err := json.Marshal(testEvent)
 		if err != nil {
 			fmt.Errorf("unexpected error MarshalEvent %v", err)
 		} else {
@@ -205,17 +233,25 @@ func pubMetaSource() {
 		if ec := msgClient.Connect(); ec != nil {
 			log.Fatal(ec)
 		} else {
-			client := coredata.NewEventClient(local.New("test"))
-
 			evtDevice := []string{"demo1", "demo2"}
 			for i, device := range evtDevice {
 				j := int64(i) + 1
-				testEvent := models.Event{Device: device, Created: 11 * j, Modified: 12 * j, Origin: 13 * j}
-				r1 := models.Reading{Pushed: 22 * j, Created: 23 * j, Origin: 24 * j, Modified: 25 * j, Device: "Temperature sensor", Name: "Temperature", Value: fmt.Sprintf("%d", j*8)}
-				r2 := models.Reading{Pushed: 32 * j, Created: 33 * j, Origin: 34 * j, Modified: 35 * j, Device: "Humidity sensor", Name: "Humidity", Value: fmt.Sprintf("%d", j*8)}
+				testEvent := dtos.NewEvent("demo1Profile", device, "demo1Source")
+				testEvent.Origin = 13 * j
+				err := testEvent.AddSimpleReading("Temperature", v2.ValueTypeInt64, j*8)
+				if err != nil {
+					fmt.Errorf("Add reading error for %d.Temperature: %v\n", i, j*8)
+				}
+				testEvent.Readings[0].Origin = 24 * j
+				testEvent.Readings[0].DeviceName = "Temperature sensor"
+				err = testEvent.AddSimpleReading("Humidity", v2.ValueTypeInt64, j*8)
+				if err != nil {
+					fmt.Errorf("Add reading error for %d.Humidity: %v\n", i, j*8)
+				}
+				testEvent.Readings[1].Origin = 34 * j
+				testEvent.Readings[1].DeviceName = "Humidity sensor"
 
-				testEvent.Readings = append(testEvent.Readings, r1, r2)
-				data, err := client.MarshalEvent(testEvent)
+				data, err := json.Marshal(testEvent)
 				if err != nil {
 					fmt.Errorf("unexpected error MarshalEvent %v", err)
 				} else {
