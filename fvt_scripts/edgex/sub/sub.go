@@ -1,9 +1,11 @@
+// +build edgex
+
 package main
 
 import (
 	"fmt"
-	"github.com/edgexfoundry/go-mod-messaging/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
+	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/emqx/kuiper/common"
 	"os"
 )
@@ -32,7 +34,7 @@ func subEventsFromZMQ() {
 				//log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
 				common.Log.Fatal(e)
 			} else {
-				var count int = 0
+				var count = 0
 				for {
 					select {
 					case e1 := <-err:

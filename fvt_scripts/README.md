@@ -137,14 +137,6 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
 
   The test script is used for testing [eKuiper EdgeX source](../docs/en_US/rules/sources/edgex.md). To run the script, 
 
-  - A mockup EdgeX value descriptor service should be compiled and run before test.
-
-    ```shell
-    # go build -o fvt_scripts/edgex/valuedesc/vdmocker fvt_scripts/edgex/valuedesc/vd_server.go
-    
-    # fvt_scripts/edgex/valuedesc/vdmocker > vdmocker.out 2>&1 &
-    ```
-
   - An EdgeX message bus publish tool should be compiled and run during running test.
 
     ```shell
@@ -187,7 +179,7 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
 
   The test script verifies EdgeX message bus sink.  Only one message meet the condition of created rule, and it will be sent to EdgeX message bus sink.
 
-  As with the previous 2 testcases, besides to prepare ``vdmocker`` & ``pub`` application, another ``sub`` application should also be prepared.
+  As with the previous 2 testcases, besides to prepare ``pub`` application, another ``sub`` application should also be prepared.
 
   ```shell
   # go build -o fvt_scripts/edgex/sub/sub fvt_scripts/edgex/sub/sub.go 
@@ -197,7 +189,7 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
 
   The test script verifies EdgeX array data type support. The rule uses JSON expression in both `SELECT` and `WHERE` clause. The sink result is sent to MQTT broker, and it verifies the project result in sampler assertions.
 
-  This test script, you need to prepare ``vdmocker`` & ``pub`` application.
+  This test script, you need to prepare ``pub`` application.
 
 - [An end to end plugin test](plugin_end_2_end.jmx)
   The script is an end-2-end plugin test. It requires a mock http server, and also a plugin.
