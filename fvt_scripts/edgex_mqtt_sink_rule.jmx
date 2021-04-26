@@ -452,7 +452,7 @@
         </SystemSampler>
         <hashTree>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="device Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.device</stringProp>
+            <stringProp name="JSON_PATH">$.deviceName</stringProp>
             <stringProp name="EXPECTED_VALUE">demo1</stringProp>
             <boolProp name="JSONVALIDATION">true</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>

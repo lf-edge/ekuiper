@@ -5,12 +5,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/coredata"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/urlclient/local"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
-	"github.com/edgexfoundry/go-mod-messaging/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2/dtos"
+	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"log"
 	"os"
 	"strconv"
@@ -53,21 +53,27 @@ func pubEventClientZeroMq(count int, wg *sync.WaitGroup) {
 		if ec := msgClient.Connect(); ec != nil {
 			log.Fatal(ec)
 		} else {
-			client := coredata.NewEventClient(local.New("test"))
 			index := 0
 			for i := 0; i < count; i++ {
 				if i%10 == 0 {
 					index = 0
 				}
 
-				var testEvent = models.Event{Device: "demo"}
-				var r1 = models.Reading{Device: "Temperature device", Name: "Temperature", Value: fmt.Sprintf("%d", mockup[index].temperature)}
-				var r2 = models.Reading{Device: "Humidity device", Name: "Humidity", Value: fmt.Sprintf("%d", mockup[index].humidity)}
+				testEvent := dtos.NewEvent("demoProfile", "demo", "demoSource")
+				err := testEvent.AddSimpleReading("Temperature", v2.ValueTypeInt32, int32(mockup[index].temperature))
+				if err != nil {
+					fmt.Errorf("Add reading error for Temperature: %v\n", int32(mockup[index].temperature))
+				}
+				testEvent.Readings[0].DeviceName = "Temperature device"
+
+				err = testEvent.AddSimpleReading("Humidity", v2.ValueTypeInt32, int32(mockup[index].humidity))
+				if err != nil {
+					fmt.Errorf("Add reading error for Humidity: %v\n", int32(mockup[index].temperature))
+				}
+				testEvent.Readings[1].DeviceName = "Humidity device"
 				index++
 
-				testEvent.Readings = append(testEvent.Readings, r1, r2)
-
-				data, err := client.MarshalEvent(testEvent)
+				data, err := json.Marshal(testEvent)
 				if err != nil {
 					fmt.Errorf("unexpected error MarshalEvent %v", err)
 				}
