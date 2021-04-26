@@ -26,17 +26,8 @@ fi
 
 fvt_scripts/start_kuiper.sh
 
-pids=`ps aux | grep vdmocker | grep "fvt_scripts" | awk '{printf $2 " "}'`
-if [ "$pids" = "" ] ; then
-   echo "No value descriptor mockup server was started"
-else
-  for pid in $pids ; do
-    echo "kill value descriptor mockup server " $pid
-    kill -9 $pid
-  done
-fi
-
-fvt_scripts/start_vdmock.sh
+chmod +x fvt_scripts/build_edgex_mock.sh
+fvt_scripts/build_edgex_mock.sh
 
 pids=`ps aux | grep http_server | grep "./" | awk '{printf $2 " "}'`
 if [ "$pids" = "" ] ; then
