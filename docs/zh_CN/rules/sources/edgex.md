@@ -66,7 +66,6 @@ default:
   server: localhost
   port: 5573
   topic: events
-  serviceServer: http://localhost:48080
 #  optional:
 #    ClientId: client1
 #    Username: user1
@@ -90,10 +89,6 @@ EdgeX 消息总线的端口，缺省为 `5573`
 ## topic
 
 EdgeX 消息总线上监听的主题名称，缺省为 `events`
-
-## serviceServer
-
-访问 value descriptors 的基础服务地址，配置项 `serviceServer` 的值与 `/api/v1/valuedescriptor` 拼接后，用于获取 EdgeX 服务器上定义的所有 value descriptors。
 
 ## type
 
