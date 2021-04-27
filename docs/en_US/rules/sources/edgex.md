@@ -64,7 +64,6 @@ default:
   server: localhost
   port: 5573
   topic: events
-  serviceServer: http://localhost:48080
 #  optional:
 #    ClientId: client1
 #    Username: user1
@@ -90,10 +89,6 @@ The port of EdgeX message bus, default value is ``5573``.
 ### topic
 
 The topic name of EdgeX message bus,  default value is ``events``.
-
-### serviceServer
-
-The base service address for getting value descriptors, the value of ``serviceServer`` will be concatenated to ``/api/v1/valuedescriptor`` to get all of value descriptors of EdgeX server.
 
 ### type
 
