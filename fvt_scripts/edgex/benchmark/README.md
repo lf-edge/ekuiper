@@ -12,7 +12,6 @@
     server: 172.31.1.144
     port: 5563
     topic: events
-    serviceServer: http://localhost:48080 
   ```
 
 - The rule is listed as following, save the rule as ``rule.txt``.
