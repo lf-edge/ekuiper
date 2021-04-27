@@ -328,9 +328,6 @@ func (m *readingMeta) decorate(r *dtos.BaseReading) dtos.BaseReading {
 	if m.deviceName != nil {
 		r.DeviceName = *m.deviceName
 	}
-	if m.resourceName != nil {
-		r.ResourceName = *m.resourceName
-	}
 	if m.profileName != nil {
 		r.ProfileName = *m.profileName
 	}
