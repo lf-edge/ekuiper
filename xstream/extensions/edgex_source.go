@@ -116,7 +116,10 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 			case e1 := <-err:
 				errCh <- e1
 				return
-			case env := <-messages:
+			case env, ok := <-messages:
+				if !ok { // the source is closed
+					return
+				}
 				if strings.ToLower(env.ContentType) == "application/json" {
 					e := &dtos.Event{}
 					if err := json.Unmarshal(env.Payload, e); err != nil {
