@@ -122,7 +122,6 @@ default:
   server: localhost
   port: 5566
   topic: events
-  serviceServer: http://localhost:48080
 .....  
 ```
 
