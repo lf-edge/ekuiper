@@ -81,21 +81,6 @@
 				}
 			},
 			{
-				"name": "serviceServer",
-				"default": "",
-				"optional": true,
-				"control": "text",
-				"type": "string",
-				"hint": {
-					"en_US": "The base service address for getting value descriptors, the value of serviceServer will be concatenated to /api/v1/valuedescriptor to get all of value descriptors of EdgeX server.",
-					"zh_CN": "访问 value descriptors 的基础服务地址，配置项 serviceServer 的值与 /api/v1/valuedescriptor 拼接后，用于获取 EdgeX 服务器上定义的所有 value descriptors。"
-				},
-				"label": {
-					"en_US": "Service address",
-					"zh_CN": "地址"
-				}
-			},
-			{
 				"name": "type",
 				"default": "zero",
 				"optional": true,
