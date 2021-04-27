@@ -160,6 +160,7 @@ func pubArrayMessage() {
 		if err != nil {
 			fmt.Errorf("Add reading error for fa: %v\n", []float64{3.14, 3.1415, 3.1415926})
 		}
+		testEvent.Readings[len(testEvent.Readings)-1].Value = "[3.14, 3.1415, 3.1415926]"
 
 		data, err := json.Marshal(testEvent)
 		if err != nil {
@@ -214,7 +215,7 @@ func pubToMQTT(host string) {
 			fmt.Println(string(data))
 		}
 
-		env := types.NewMessageEnvelope([]byte(data), context.Background())
+		env := types.NewMessageEnvelope(data, context.Background())
 		env.ContentType = "application/json"
 
 		if e := msgClient.Publish(env, "events"); e != nil {
