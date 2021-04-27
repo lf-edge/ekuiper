@@ -814,6 +814,88 @@ func Test_createLogicalPlan(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
+		}, { // 9 meta
+			sql: `SELECT temp, meta(id) AS eid,meta(Humidity->Device) AS hdevice FROM src1 WHERE meta(device)="demo2"`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						FilterPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									DataSourcePlan{
+										name: "src1",
+										streamFields: []interface{}{
+											&xsql.StreamField{
+												Name:      "temp",
+												FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+											},
+										},
+										streamStmt: streams["src1"],
+										metaFields: []string{"Humidity", "device", "id"},
+										alias: xsql.Fields{
+											xsql.Field{
+												Expr: &xsql.Call{Name: "meta", Args: []xsql.Expr{&xsql.MetaRef{
+													Name: "id",
+												}}},
+												Name:  "meta",
+												AName: "eid",
+											},
+											xsql.Field{
+												Expr: &xsql.Call{Name: "meta", Args: []xsql.Expr{
+													&xsql.BinaryExpr{
+														OP:  xsql.ARROW,
+														LHS: &xsql.MetaRef{Name: "Humidity"},
+														RHS: &xsql.MetaRef{Name: "Device"},
+													},
+												}},
+												Name:  "meta",
+												AName: "hdevice",
+											},
+										},
+									}.Init(),
+								},
+							},
+							condition: &xsql.BinaryExpr{
+								LHS: &xsql.Call{
+									Name: "meta",
+									Args: []xsql.Expr{&xsql.MetaRef{
+										Name: "device",
+									}},
+								},
+								OP: xsql.EQ,
+								RHS: &xsql.StringLiteral{
+									Val: "demo2",
+								},
+							},
+						}.Init(),
+					},
+				},
+				fields: []xsql.Field{
+					{
+						Expr:  &xsql.FieldRef{Name: "temp"},
+						Name:  "temp",
+						AName: "",
+					}, {
+						Expr: &xsql.Call{Name: "meta", Args: []xsql.Expr{&xsql.MetaRef{
+							Name: "id",
+						}}},
+						Name:  "meta",
+						AName: "eid",
+					}, {
+						Expr: &xsql.Call{Name: "meta", Args: []xsql.Expr{
+							&xsql.BinaryExpr{
+								OP:  xsql.ARROW,
+								LHS: &xsql.MetaRef{Name: "Humidity"},
+								RHS: &xsql.MetaRef{Name: "Device"},
+							},
+						}},
+						Name:  "meta",
+						AName: "hdevice",
+					},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
