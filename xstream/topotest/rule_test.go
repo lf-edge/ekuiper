@@ -1,4 +1,4 @@
-package processors
+package topotest
 
 import (
 	"encoding/json"
@@ -10,13 +10,13 @@ import (
 func TestSingleSQL(t *testing.T) {
 	//Reset
 	streamList := []string{"demo", "demoError", "demo1", "table1"}
-	handleStream(false, streamList, t)
+	HandleStream(false, streamList, t)
 	//Data setup
-	var tests = []ruleTest{
+	var tests = []RuleTest{
 		{
-			name: `TestSingleSQLRule1`,
-			sql:  `SELECT * FROM demo`,
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLRule1`,
+			Sql:  `SELECT * FROM demo`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"size":  float64(3),
@@ -43,7 +43,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":    float64(1541152489252),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -62,7 +62,7 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 			},
-			t: &xstream.PrintableTopo{
+			T: &xstream.PrintableTopo{
 				Sources: []string{"source_demo"},
 				Edges: map[string][]string{
 					"source_demo":            {"op_1_preprocessor_demo"},
@@ -71,9 +71,9 @@ func TestSingleSQL(t *testing.T) {
 				},
 			},
 		}, {
-			name: `TestSingleSQLRule2`,
-			sql:  `SELECT color, ts FROM demo where size > 3`,
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLRule2`,
+			Sql:  `SELECT color, ts FROM demo where size > 3`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "blue",
 					"ts":    float64(1541152486822),
@@ -83,7 +83,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":    float64(1541152488442),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -108,9 +108,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
-			name: `TestSingleSQLRule3`,
-			sql:  `SELECT size as Int8, ts FROM demo where size > 3`,
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLRule3`,
+			Sql:  `SELECT size as Int8, ts FROM demo where size > 3`,
+			R: [][]map[string]interface{}{
 				{{
 					"Int8": float64(6),
 					"ts":   float64(1541152486822),
@@ -120,7 +120,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":   float64(1541152488442),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -145,9 +145,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
-			name: `TestSingleSQLRule4`,
-			sql:  `SELECT size as Int8, ts FROM demoError where size > 3`,
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLRule4`,
+			Sql:  `SELECT size as Int8, ts FROM demoError where size > 3`,
+			R: [][]map[string]interface{}{
 				{{
 					"error": "error in preprocessor: invalid data type for size, expect bigint but found string(red)",
 				}},
@@ -163,7 +163,7 @@ func TestSingleSQL(t *testing.T) {
 					"error": "error in preprocessor: invalid data type for size, expect bigint but found string(blue)",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demoError_0_exceptions_total":   int64(2),
 				"op_1_preprocessor_demoError_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demoError_0_records_in_total":   int64(5),
@@ -188,9 +188,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
-			name: `TestSingleSQLRule5`,
-			sql:  `SELECT meta(topic) as m, ts FROM demo`,
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLRule5`,
+			Sql:  `SELECT meta(topic) as m, ts FROM demo`,
+			R: [][]map[string]interface{}{
 				{{
 					"m":  "mock",
 					"ts": float64(1541152486013),
@@ -212,7 +212,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts": float64(1541152489252),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -232,9 +232,9 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_out_total": int64(5),
 			},
 		}, {
-			name: `TestSingleSQLRule6`,
-			sql:  `SELECT color, ts FROM demo where size > 3 and meta(topic)="mock"`,
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLRule6`,
+			Sql:  `SELECT color, ts FROM demo where size > 3 and meta(topic)="mock"`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "blue",
 					"ts":    float64(1541152486822),
@@ -244,7 +244,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":    float64(1541152488442),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -269,9 +269,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
-			name: `TestSingleSQLRule7`,
-			sql:  "SELECT `from` FROM demo1",
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLRule7`,
+			Sql:  "SELECT `from` FROM demo1",
+			R: [][]map[string]interface{}{
 				{{
 					"from": "device1",
 				}},
@@ -288,7 +288,7 @@ func TestSingleSQL(t *testing.T) {
 					"from": "device3",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo1_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo1_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo1_0_records_in_total":   int64(5),
@@ -308,9 +308,9 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo1_0_records_out_total": int64(5),
 			},
 		}, {
-			name: `TestSingleSQLRule8`,
-			sql:  "SELECT * FROM demo1 where `from`=\"device1\"",
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLRule8`,
+			Sql:  "SELECT * FROM demo1 where `from`=\"device1\"",
+			R: [][]map[string]interface{}{
 				{{
 					"temp": float64(25.5),
 					"hum":  float64(65),
@@ -324,7 +324,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":   float64(1541152488442),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo1_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo1_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo1_0_records_in_total":   int64(5),
@@ -349,9 +349,9 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo1_0_records_out_total": int64(5),
 			},
 		}, {
-			name: `TestSingleSQLRule9`,
-			sql:  `SELECT color, CASE WHEN size < 2 THEN "S" WHEN size < 4 THEN "M" ELSE "L" END as s, ts FROM demo`,
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLRule9`,
+			Sql:  `SELECT color, CASE WHEN size < 2 THEN "S" WHEN size < 4 THEN "M" ELSE "L" END as s, ts FROM demo`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"s":     "M",
@@ -378,7 +378,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":    float64(1541152489252),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -397,7 +397,7 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 			},
-			t: &xstream.PrintableTopo{
+			T: &xstream.PrintableTopo{
 				Sources: []string{"source_demo"},
 				Edges: map[string][]string{
 					"source_demo":            {"op_1_preprocessor_demo"},
@@ -406,9 +406,9 @@ func TestSingleSQL(t *testing.T) {
 				},
 			},
 		}, {
-			name: `TestSingleSQLRule10`,
-			sql:  "SELECT * FROM demo INNER JOIN table1 on demo.ts = table1.id",
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLRule10`,
+			Sql:  "SELECT * FROM demo INNER JOIN table1 on demo.ts = table1.id",
+			R: [][]map[string]interface{}{
 				{{
 					"id":    float64(1541152486013),
 					"name":  "name1",
@@ -431,7 +431,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":    float64(1541152489252),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":  int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":  int64(5),
 				"op_1_preprocessor_demo_0_records_out_total": int64(5),
@@ -465,7 +465,7 @@ func TestSingleSQL(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
+	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
 		{
 			BufferLength: 100,
@@ -483,20 +483,20 @@ func TestSingleSQL(t *testing.T) {
 		},
 	}
 	for j, opt := range options {
-		doRuleTest(t, tests, j, opt)
+		DoRuleTest(t, tests[9:10], j, opt)
 	}
 }
 
 func TestSingleSQLError(t *testing.T) {
 	//Reset
 	streamList := []string{"ldemo"}
-	handleStream(false, streamList, t)
+	HandleStream(false, streamList, t)
 	//Data setup
-	var tests = []ruleTest{
+	var tests = []RuleTest{
 		{
-			name: `TestSingleSQLErrorRule1`,
-			sql:  `SELECT color, ts FROM ldemo where size >= 3`,
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLErrorRule1`,
+			Sql:  `SELECT color, ts FROM ldemo where size >= 3`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"ts":    float64(1541152486013),
@@ -508,7 +508,7 @@ func TestSingleSQLError(t *testing.T) {
 					"ts": float64(1541152487632),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
@@ -533,9 +533,9 @@ func TestSingleSQLError(t *testing.T) {
 				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
-			name: `TestSingleSQLErrorRule2`,
-			sql:  `SELECT size * 5 FROM ldemo`,
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLErrorRule2`,
+			Sql:  `SELECT size * 5 FROM ldemo`,
+			R: [][]map[string]interface{}{
 				{{
 					"kuiper_field_0": float64(15),
 				}},
@@ -550,7 +550,7 @@ func TestSingleSQLError(t *testing.T) {
 				}},
 				{{}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
@@ -571,8 +571,8 @@ func TestSingleSQLError(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
-	doRuleTest(t, tests, 0, &api.RuleOption{
+	HandleStream(true, streamList, t)
+	DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	})
@@ -581,13 +581,13 @@ func TestSingleSQLError(t *testing.T) {
 func TestSingleSQLOmitError(t *testing.T) {
 	//Reset
 	streamList := []string{"ldemo"}
-	handleStream(false, streamList, t)
+	HandleStream(false, streamList, t)
 	//Data setup
-	var tests = []ruleTest{
+	var tests = []RuleTest{
 		{
-			name: `TestSingleSQLErrorRule1`,
-			sql:  `SELECT color, ts FROM ldemo where size >= 3`,
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLErrorRule1`,
+			Sql:  `SELECT color, ts FROM ldemo where size >= 3`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"ts":    float64(1541152486013),
@@ -596,7 +596,7 @@ func TestSingleSQLOmitError(t *testing.T) {
 					"ts": float64(1541152487632),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
@@ -621,9 +621,9 @@ func TestSingleSQLOmitError(t *testing.T) {
 				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
-			name: `TestSingleSQLErrorRule2`,
-			sql:  `SELECT size * 5 FROM ldemo`,
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLErrorRule2`,
+			Sql:  `SELECT size * 5 FROM ldemo`,
+			R: [][]map[string]interface{}{
 				{{
 					"kuiper_field_0": float64(15),
 				}},
@@ -635,7 +635,7 @@ func TestSingleSQLOmitError(t *testing.T) {
 				}},
 				{{}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
@@ -656,8 +656,8 @@ func TestSingleSQLOmitError(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
-	doRuleTest(t, tests, 0, &api.RuleOption{
+	HandleStream(true, streamList, t)
+	DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    false,
 	})
@@ -666,13 +666,13 @@ func TestSingleSQLOmitError(t *testing.T) {
 func TestSingleSQLTemplate(t *testing.T) {
 	//Reset
 	streamList := []string{"demo"}
-	handleStream(false, streamList, t)
+	HandleStream(false, streamList, t)
 	//Data setup
-	var tests = []ruleTest{
+	var tests = []RuleTest{
 		{
-			name: `TestSingleSQLTemplateRule1`,
-			sql:  `SELECT * FROM demo`,
-			r: []map[string]interface{}{
+			Name: `TestSingleSQLTemplateRule1`,
+			Sql:  `SELECT * FROM demo`,
+			R: []map[string]interface{}{
 				{
 					"c":       "red",
 					"wrapper": "w1",
@@ -694,7 +694,7 @@ func TestSingleSQLTemplate(t *testing.T) {
 					"wrapper": "w1",
 				},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -715,7 +715,7 @@ func TestSingleSQLTemplate(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
+	HandleStream(true, streamList, t)
 	doRuleTestBySinkProps(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
@@ -740,20 +740,20 @@ func TestSingleSQLTemplate(t *testing.T) {
 func TestNoneSingleSQLTemplate(t *testing.T) {
 	//Reset
 	streamList := []string{"demo"}
-	handleStream(false, streamList, t)
+	HandleStream(false, streamList, t)
 	//Data setup
-	var tests = []ruleTest{
+	var tests = []RuleTest{
 		{
-			name: `TestNoneSingleSQLTemplateRule1`,
-			sql:  `SELECT * FROM demo`,
-			r: [][]byte{
+			Name: `TestNoneSingleSQLTemplateRule1`,
+			Sql:  `SELECT * FROM demo`,
+			R: [][]byte{
 				[]byte("<div>results</div><ul><li>red - 3</li></ul>"),
 				[]byte("<div>results</div><ul><li>blue - 6</li></ul>"),
 				[]byte("<div>results</div><ul><li>blue - 2</li></ul>"),
 				[]byte("<div>results</div><ul><li>yellow - 4</li></ul>"),
 				[]byte("<div>results</div><ul><li>red - 1</li></ul>"),
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -774,7 +774,7 @@ func TestNoneSingleSQLTemplate(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
+	HandleStream(true, streamList, t)
 	doRuleTestBySinkProps(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
@@ -788,19 +788,19 @@ func TestNoneSingleSQLTemplate(t *testing.T) {
 func TestSingleSQLForBinary(t *testing.T) {
 	//Reset
 	streamList := []string{"binDemo"}
-	handleStream(false, streamList, t)
+	HandleStream(false, streamList, t)
 	//Data setup
-	var tests = []ruleTest{
+	var tests = []RuleTest{
 		{
-			name: `TestSingleSQLRule1`,
-			sql:  `SELECT * FROM binDemo`,
-			r: [][]map[string]interface{}{
+			Name: `TestSingleSQLRule1`,
+			Sql:  `SELECT * FROM binDemo`,
+			R: [][]map[string]interface{}{
 				{{
 					"self": image,
 				}},
 			},
-			w: 50,
-			m: map[string]interface{}{
+			W: 50,
+			M: map[string]interface{}{
 				"op_1_preprocessor_binDemo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_binDemo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_binDemo_0_records_in_total":   int64(1),
@@ -821,7 +821,7 @@ func TestSingleSQLForBinary(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
+	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
 		{
 			BufferLength: 100,

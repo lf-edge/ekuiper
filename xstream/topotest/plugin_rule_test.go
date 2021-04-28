@@ -1,19 +1,32 @@
 // +build !windows
 
-package processors
+package topotest
 
 import (
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/plugins"
+	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/planner"
-	"github.com/emqx/kuiper/xstream/test"
+	"github.com/emqx/kuiper/xstream/topotest/mockclock"
 	"os"
 	"testing"
 	"time"
 )
+
+var manager *plugins.Manager
+
+func init() {
+	var err error
+	manager, err = plugins.NewPluginManager()
+	if err != nil {
+		panic(err)
+	}
+	xsql.InitFuncRegisters(manager)
+}
 
 //This cannot be run in Windows. And the plugins must be built to so before running this
 //For Windows, run it in wsl with go test xsql/processors/extension_test.go xsql/processors/xsql_processor.go
@@ -25,7 +38,7 @@ func TestExtensions(t *testing.T) {
 	log := common.Log
 	//Reset
 	streamList := []string{"ext", "ext2"}
-	handleStream(false, streamList, t)
+	HandleStream(false, streamList, t)
 	os.Remove(CACHE_FILE)
 	os.Create(CACHE_FILE)
 	var tests = []struct {
@@ -44,16 +57,12 @@ func TestExtensions(t *testing.T) {
 			maxLength: 2,
 		},
 	}
-	handleStream(true, streamList, t)
+	HandleStream(true, streamList, t)
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
-		// Rest for each test
-		cleanStateData()
-		test.ResetClock(1541152486000)
-		// Create stream
-		p := NewRuleProcessor(DbDir)
-		p.ExecDrop(tt.name)
-		rs, err := p.ExecCreate(tt.name, tt.rj)
+		mockclock.ResetClock(1541152486000)
+		// Create rule
+		rs, err := CreateRule(tt.name, tt.rj)
 		if err != nil {
 			t.Errorf("failed to create rule: %s.", err)
 			continue
@@ -147,13 +156,13 @@ func getResults() []string {
 func TestFuncState(t *testing.T) {
 	//Reset
 	streamList := []string{"text"}
-	handleStream(false, streamList, t)
+	HandleStream(false, streamList, t)
 	//Data setup
-	var tests = []ruleTest{
+	var tests = []RuleTest{
 		{
-			name: `TestFuncStateRule1`,
-			sql:  `SELECT accumulateWordCount(slogan, " ") as wc FROM text`,
-			r: [][]map[string]interface{}{
+			Name: `TestFuncStateRule1`,
+			Sql:  `SELECT accumulateWordCount(slogan, " ") as wc FROM text`,
+			R: [][]map[string]interface{}{
 				{{
 					"wc": float64(3),
 				}},
@@ -179,7 +188,7 @@ func TestFuncState(t *testing.T) {
 					"wc": float64(30),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_text_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_text_0_process_latency_us": int64(0),
 				"op_1_preprocessor_text_0_records_in_total":   int64(8),
@@ -200,23 +209,22 @@ func TestFuncState(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
-	doRuleTest(t, tests, 0, &api.RuleOption{
+	HandleStream(true, streamList, t)
+	DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	})
 }
 
 func TestFuncStateCheckpoint(t *testing.T) {
-	common.IsTesting = true
 	streamList := []string{"text"}
-	handleStream(false, streamList, t)
-	var tests = []ruleCheckpointTest{
+	HandleStream(false, streamList, t)
+	var tests = []RuleCheckpointTest{
 		{
-			ruleTest: ruleTest{
-				name: `TestFuncStateCheckpointRule1`,
-				sql:  `SELECT accumulateWordCount(slogan, " ") as wc FROM text`,
-				r: [][]map[string]interface{}{
+			RuleTest: RuleTest{
+				Name: `TestFuncStateCheckpointRule1`,
+				Sql:  `SELECT accumulateWordCount(slogan, " ") as wc FROM text`,
+				R: [][]map[string]interface{}{
 					{{
 						"wc": float64(3),
 					}},
@@ -245,7 +253,7 @@ func TestFuncStateCheckpoint(t *testing.T) {
 						"wc": float64(30),
 					}},
 				},
-				m: map[string]interface{}{
+				M: map[string]interface{}{
 					"op_1_preprocessor_text_0_exceptions_total":   int64(0),
 					"op_1_preprocessor_text_0_process_latency_us": int64(0),
 					"op_1_preprocessor_text_0_records_in_total":   int64(6),
@@ -265,9 +273,9 @@ func TestFuncStateCheckpoint(t *testing.T) {
 					"source_text_0_records_out_total": int64(6),
 				},
 			},
-			pauseSize: 3,
-			cc:        1,
-			pauseMetric: map[string]interface{}{
+			PauseSize: 3,
+			Cc:        1,
+			PauseMetric: map[string]interface{}{
 				"op_1_preprocessor_text_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_text_0_process_latency_us": int64(0),
 				"op_1_preprocessor_text_0_records_in_total":   int64(3),
@@ -288,8 +296,8 @@ func TestFuncStateCheckpoint(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
-	doCheckpointRuleTest(t, tests, 0, &api.RuleOption{
+	HandleStream(true, streamList, t)
+	DoCheckpointRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength:       100,
 		Qos:                api.AtLeastOnce,
 		CheckpointInterval: 2000,

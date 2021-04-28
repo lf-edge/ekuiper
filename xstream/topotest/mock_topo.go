@@ -1,4 +1,4 @@
-package processors
+package topotest
 
 import (
 	"encoding/base64"
@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
+	"github.com/emqx/kuiper/xsql/processors"
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/nodes"
 	"github.com/emqx/kuiper/xstream/planner"
-	"github.com/emqx/kuiper/xstream/test"
+	"github.com/emqx/kuiper/xstream/topotest/mockclock"
+	"github.com/emqx/kuiper/xstream/topotest/mocknodes"
 	"io/ioutil"
-	"os"
 	"path"
 	"reflect"
 	"strings"
@@ -21,58 +22,48 @@ import (
 )
 
 const POSTLEAP = 1000 // Time change after all data sends out
-type ruleTest struct {
-	name string
-	sql  string
-	r    interface{}            // The result
-	m    map[string]interface{} // final metrics
-	t    *xstream.PrintableTopo // printable topo, an optional field
-	w    int                    // wait time for each data sending, in milli
+type RuleTest struct {
+	Name string
+	Sql  string
+	R    interface{}            // The result
+	M    map[string]interface{} // final metrics
+	T    *xstream.PrintableTopo // printable topo, an optional field
+	W    int                    // wait time for each data sending, in milli
 }
 
 var (
-	DbDir         = getDbDir()
-	image, b64img = getImg()
+	DbDir    = common.GetDbDir()
+	image, _ = getImg()
 )
-
-func getDbDir() string {
-	common.InitConf()
-	dbDir, err := common.GetDataLoc()
-	if err != nil {
-		log.Panic(err)
-	}
-	log.Infof("db location is %s", dbDir)
-	return dbDir
-}
 
 func getImg() ([]byte, string) {
 	docsFolder, err := common.GetLoc("/docs/")
 	if err != nil {
-		log.Fatalf("Cannot find docs folder: %v", err)
+		common.Log.Fatalf("Cannot find docs folder: %v", err)
 	}
 	image, err := ioutil.ReadFile(path.Join(docsFolder, "cover.jpg"))
 	if err != nil {
-		log.Fatalf("Cannot read image: %v", err)
+		common.Log.Fatalf("Cannot read image: %v", err)
 	}
 	b64img := base64.StdEncoding.EncodeToString(image)
 	return image, b64img
 }
 
-func cleanStateData() {
-	dbDir, err := common.GetDataLoc()
-	if err != nil {
-		log.Panic(err)
-	}
-	c := path.Join(dbDir, "checkpoints")
-	err = os.RemoveAll(c)
-	if err != nil {
-		log.Errorf("%s", err)
-	}
-	s := path.Join(dbDir, "sink", "cache")
-	err = os.RemoveAll(s)
-	if err != nil {
-		log.Errorf("%s", err)
-	}
+func CleanStateData() {
+	//dbDir, err := common.GetDataLoc()
+	//if err != nil {
+	//	common.Log.Panic(err)
+	//}
+	//c := path.Join(dbDir, "checkpoints")
+	//err = os.RemoveAll(c)
+	//if err != nil {
+	//	common.Log.Errorf("%s", err)
+	//}
+	//s := path.Join(dbDir, "sink", "cache")
+	//err = os.RemoveAll(s)
+	//if err != nil {
+	//	common.Log.Errorf("%s", err)
+	//}
 }
 
 func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}) (err error) {
@@ -104,24 +95,17 @@ func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}) (err erro
 		}
 		if common.Config.Basic.Debug == true {
 			for i, k := range keys {
-				log.Printf("%s:%v", k, values[i])
+				common.Log.Printf("%s:%v", k, values[i])
 			}
 		}
 		//do not find
 		if index < len(values) {
-			return fmt.Errorf("metrics mismatch for %s:\n\nexp=%#v(%t)\n\ngot=%#v(%t)\n\n", k, v, v, values[index], values[index])
+			return fmt.Errorf("metrics mismatch for %s:\n\nexp=%#v(%T)\n\ngot=%#v(%T)\n\n", k, v, v, values[index], values[index])
 		} else {
 			return fmt.Errorf("metrics mismatch for %s:\n\nexp=%#v\n\ngot=nil\n\n", k, v)
 		}
 	}
 	return nil
-}
-
-func errstring(err error) string {
-	if err != nil {
-		return err.Error()
-	}
-	return ""
 }
 
 // The time diff must larger than timeleap
@@ -872,7 +856,7 @@ var testData = map[string][]*xsql.Tuple{
 		{
 			Emitter: "text",
 			Message: map[string]interface{}{
-				"slogan": "I can't believe I ate the whole thing",
+				"slogan": "I can'T believe I ate the whole thing",
 				"brand":  "Alka Seltzer",
 			},
 			Timestamp: 1541152489200,
@@ -888,7 +872,7 @@ var testData = map[string][]*xsql.Tuple{
 		{
 			Emitter: "text",
 			Message: map[string]interface{}{
-				"slogan": "Don't leave home without it",
+				"slogan": "Don'T leave home without it",
 				"brand":  "American Express",
 			},
 			Timestamp: 1541152491200,
@@ -946,21 +930,21 @@ var testData = map[string][]*xsql.Tuple{
 		{
 			Emitter: "helloStr",
 			Message: map[string]interface{}{
-				"name": "world",
+				"Name": "world",
 			},
 			Timestamp: 1541152486013,
 		},
 		{
 			Emitter: "helloStr",
 			Message: map[string]interface{}{
-				"name": "golang",
+				"Name": "golang",
 			},
 			Timestamp: 1541152487013,
 		},
 		{
 			Emitter: "helloStr",
 			Message: map[string]interface{}{
-				"name": "peacock",
+				"Name": "peacock",
 			},
 			Timestamp: 1541152488013,
 		},
@@ -969,24 +953,24 @@ var testData = map[string][]*xsql.Tuple{
 		{
 			Emitter: "commands",
 			Message: map[string]interface{}{
-				"command": "get",
-				"image":   "my image",
+				"cmd":        "get",
+				"base64_img": "my image",
 			},
 			Timestamp: 1541152486013,
 		},
 		{
 			Emitter: "commands",
 			Message: map[string]interface{}{
-				"command": "detect",
-				"image":   "my image",
+				"cmd":        "detect",
+				"base64_img": "my image",
 			},
 			Timestamp: 1541152487013,
 		},
 		{
 			Emitter: "commands",
 			Message: map[string]interface{}{
-				"command": "delete",
-				"image":   "my image",
+				"cmd":        "delete",
+				"base64_img": "my image",
 			},
 			Timestamp: 1541152488013,
 		},
@@ -1006,15 +990,19 @@ func commonResultFunc(result [][]byte) interface{} {
 	return maps
 }
 
-func doRuleTest(t *testing.T, tests []ruleTest, j int, opt *api.RuleOption) {
+func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption) {
 	doRuleTestBySinkProps(t, tests, j, opt, nil, commonResultFunc)
 }
 
-func doRuleTestBySinkProps(t *testing.T, tests []ruleTest, j int, opt *api.RuleOption, sinkProps map[string]interface{}, resultFunc func(result [][]byte) interface{}) {
+func doRuleTestBySinkProps(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption, sinkProps map[string]interface{}, resultFunc func(result [][]byte) interface{}) {
 	fmt.Printf("The test bucket for option %d size is %d.\n\n", j, len(tests))
 	for i, tt := range tests {
 		datas, dataLength, tp, mockSink, errCh := createStream(t, tt, j, opt, sinkProps)
-		wait := tt.w
+		if tp == nil {
+			t.Errorf("topo is not created successfully")
+			break
+		}
+		wait := tt.W
 		if wait == 0 {
 			wait = 5
 		}
@@ -1024,7 +1012,22 @@ func doRuleTestBySinkProps(t *testing.T, tests []ruleTest, j int, opt *api.RuleO
 		case api.AtLeastOnce:
 			wait *= 2
 		}
-		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP, wait); err != nil {
+		var retry int
+		if opt.Qos > api.AtMostOnce {
+			for retry = 3; retry > 0; retry-- {
+				if tp.GetCoordinator() == nil || !tp.GetCoordinator().IsActivated() {
+					common.Log.Debugf("waiting for coordinator ready %d\n", retry)
+					time.Sleep(10 * time.Millisecond)
+				} else {
+					break
+				}
+			}
+			if retry < 0 {
+				t.Error("coordinator timeout")
+				t.FailNow()
+			}
+		}
+		if err := sendData(t, dataLength, tt.M, datas, errCh, tp, POSTLEAP, wait); err != nil {
 			t.Errorf("send data error %s", err)
 			break
 		}
@@ -1032,21 +1035,21 @@ func doRuleTestBySinkProps(t *testing.T, tests []ruleTest, j int, opt *api.RuleO
 	}
 }
 
-func compareResult(t *testing.T, mockSink *test.MockSink, resultFunc func(result [][]byte) interface{}, tt ruleTest, i int, tp *xstream.TopologyNew) {
+func compareResult(t *testing.T, mockSink *mocknodes.MockSink, resultFunc func(result [][]byte) interface{}, tt RuleTest, i int, tp *xstream.TopologyNew) {
 	// Check results
 	results := mockSink.GetResults()
 	maps := resultFunc(results)
 
-	if !reflect.DeepEqual(tt.r, maps) {
-		t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.r, maps)
+	if !reflect.DeepEqual(tt.R, maps) {
+		t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.Sql, tt.R, maps)
 	}
-	if err := compareMetrics(tp, tt.m); err != nil {
-		t.Errorf("%d. %q\n\nmetrics mismatch:\n\n%s\n\n", i, tt.sql, err)
+	if err := compareMetrics(tp, tt.M); err != nil {
+		t.Errorf("%d. %q\n\nmetrics mismatch:\n\n%s\n\n", i, tt.Sql, err)
 	}
-	if tt.t != nil {
+	if tt.T != nil {
 		topo := tp.GetTopo()
-		if !reflect.DeepEqual(tt.t, topo) {
-			t.Errorf("%d. %q\n\ntopo mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.t, topo)
+		if !reflect.DeepEqual(tt.T, topo) {
+			t.Errorf("%d. %q\n\ntopo mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.Sql, tt.T, topo)
 		}
 	}
 	tp.Cancel()
@@ -1054,7 +1057,7 @@ func compareResult(t *testing.T, mockSink *test.MockSink, resultFunc func(result
 
 func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, datas [][]*xsql.Tuple, errCh <-chan error, tp *xstream.TopologyNew, postleap int, wait int) error {
 	// Send data and move time
-	mockClock := test.GetMockClock()
+	mockClock := mockclock.GetMockClock()
 	// Set the current time
 	mockClock.Add(0)
 	// TODO assume multiple data source send the data in order and has the same length
@@ -1094,17 +1097,18 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 		time.Sleep(1000 * time.Millisecond)
 	}
 	if retry == 0 {
-		fmt.Printf("send data timeout\n")
+		t.Error("send data timeout")
+		t.FailNow()
 	} else if retry < 2 {
-		fmt.Printf("try %d for metric comparison\n", 2-retry)
+		common.Log.Debugf("try %d for metric comparison\n", 2-retry)
 	}
 	return nil
 }
 
-func createStream(t *testing.T, tt ruleTest, j int, opt *api.RuleOption, sinkProps map[string]interface{}) ([][]*xsql.Tuple, int, *xstream.TopologyNew, *test.MockSink, <-chan error) {
+func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkProps map[string]interface{}) ([][]*xsql.Tuple, int, *xstream.TopologyNew, *mocknodes.MockSink, <-chan error) {
 	// Rest for each test
-	cleanStateData()
-	test.ResetClock(1541152486000)
+	CleanStateData()
+	mockclock.ResetClock(1541152486000)
 	// Create stream
 	var (
 		sources    []*nodes.SourceNode
@@ -1112,12 +1116,12 @@ func createStream(t *testing.T, tt ruleTest, j int, opt *api.RuleOption, sinkPro
 		dataLength int
 	)
 
-	parser := xsql.NewParser(strings.NewReader(tt.sql))
+	parser := xsql.NewParser(strings.NewReader(tt.Sql))
 	if stmt, err := xsql.Language.Parse(parser); err != nil {
-		t.Errorf("parse sql %s error: %s", tt.sql, err)
+		t.Errorf("parse sql %s error: %s", tt.Sql, err)
 	} else {
 		if selectStmt, ok := stmt.(*xsql.SelectStatement); !ok {
-			t.Errorf("sql %s is not a select statement", tt.sql)
+			t.Errorf("sql %s is not a select statement", tt.Sql)
 		} else {
 			streams := xsql.GetStreams(selectStmt)
 			for _, stream := range streams {
@@ -1127,16 +1131,16 @@ func createStream(t *testing.T, tt ruleTest, j int, opt *api.RuleOption, sinkPro
 				}
 				dataLength = len(data)
 				datas = append(datas, data)
-				source := nodes.NewSourceNodeWithSource(stream, test.NewMockSource(data), map[string]string{
+				source := nodes.NewSourceNodeWithSource(stream, mocknodes.NewMockSource(data), map[string]string{
 					"DATASOURCE": stream,
 				})
 				sources = append(sources, source)
 			}
 		}
 	}
-	mockSink := test.NewMockSink()
+	mockSink := mocknodes.NewMockSink()
 	sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, sinkProps)
-	tp, err := planner.PlanWithSourcesAndSinks(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.name, j), Sql: tt.sql, Options: opt}, DbDir, sources, []*nodes.SinkNode{sink})
+	tp, err := planner.PlanWithSourcesAndSinks(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.Name, j), Sql: tt.Sql, Options: opt}, DbDir, sources, []*nodes.SinkNode{sink})
 	if err != nil {
 		t.Error(err)
 		return nil, 0, nil, nil, nil
@@ -1146,8 +1150,8 @@ func createStream(t *testing.T, tt ruleTest, j int, opt *api.RuleOption, sinkPro
 }
 
 // Create or drop streams
-func handleStream(createOrDrop bool, names []string, t *testing.T) {
-	p := NewStreamProcessor(path.Join(DbDir, "stream"))
+func HandleStream(createOrDrop bool, names []string, t *testing.T) {
+	p := processors.NewStreamProcessor(path.Join(DbDir, "stream"))
 	for _, name := range names {
 		var sql string
 		if createOrDrop {
@@ -1227,7 +1231,7 @@ func handleStream(createOrDrop bool, names []string, t *testing.T) {
 			case "helloStr":
 				sql = `CREATE STREAM helloStr (name string) WITH (DATASOURCE="hello", FORMAT="JSON")`
 			case "commands":
-				sql = `CREATE STREAM commands (command string, image string) WITH (DATASOURCE="commands", FORMAT="JSON")`
+				sql = `CREATE STREAM commands (cmd string, base64_img string) WITH (DATASOURCE="commands", FORMAT="JSON")`
 			case "fakeBin":
 				sql = "CREATE STREAM fakeBin () WITH (DATASOURCE=\"users\", FORMAT=\"BINARY\")"
 			default:
@@ -1246,4 +1250,77 @@ func handleStream(createOrDrop bool, names []string, t *testing.T) {
 			t.Log(err)
 		}
 	}
+}
+
+type RuleCheckpointTest struct {
+	RuleTest
+	PauseSize   int                    // Stop stream after sending pauseSize source to test checkpoint resume
+	Cc          int                    // checkpoint count when paused
+	PauseMetric map[string]interface{} // The metric to check when paused
+}
+
+func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, j int, opt *api.RuleOption) {
+	fmt.Printf("The test bucket for option %d size is %d.\n\n", j, len(tests))
+	for i, tt := range tests {
+		datas, dataLength, tp, mockSink, errCh := createStream(t, tt.RuleTest, j, opt, nil)
+		if tp == nil {
+			t.Errorf("topo is not created successfully")
+			break
+		}
+		var retry int
+		for retry = 10; retry > 0; retry-- {
+			if tp.GetCoordinator() == nil || !tp.GetCoordinator().IsActivated() {
+				common.Log.Debugf("waiting for coordinator ready %d\n", retry)
+				time.Sleep(10 * time.Millisecond)
+			} else {
+				break
+			}
+		}
+		if retry == 0 {
+			t.Error("coordinator timeout")
+			t.FailNow()
+		}
+		common.Log.Debugf("Start sending first phase data done at %d", common.GetNowInMilli())
+		if err := sendData(t, tt.PauseSize, tt.PauseMetric, datas, errCh, tp, 100, 100); err != nil {
+			t.Errorf("first phase send data error %s", err)
+			break
+		}
+		common.Log.Debugf("Send first phase data done at %d", common.GetNowInMilli())
+		// compare checkpoint count
+		time.Sleep(10 * time.Millisecond)
+		for retry = 3; retry > 0; retry-- {
+			actual := tp.GetCoordinator().GetCompleteCount()
+			if tt.Cc == actual {
+				break
+			} else {
+				common.Log.Debugf("check checkpointCount error at %d: %d\n", retry, actual)
+			}
+			time.Sleep(200 * time.Millisecond)
+		}
+		cc := tp.GetCoordinator().GetCompleteCount()
+		tp.Cancel()
+		if retry == 0 {
+			t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, j, tt.Cc, cc)
+			return
+		} else if retry < 3 {
+			common.Log.Debugf("try %d for checkpoint count\n", 4-retry)
+		}
+		tp.Cancel()
+		time.Sleep(10 * time.Millisecond)
+		// resume stream
+		common.Log.Debugf("Resume stream at %d", common.GetNowInMilli())
+		errCh = tp.Open()
+		common.Log.Debugf("After open stream at %d", common.GetNowInMilli())
+		if err := sendData(t, dataLength, tt.M, datas, errCh, tp, POSTLEAP, 10); err != nil {
+			t.Errorf("second phase send data error %s", err)
+			break
+		}
+		compareResult(t, mockSink, commonResultFunc, tt.RuleTest, i, tp)
+	}
+}
+
+func CreateRule(name, sql string) (*api.Rule, error) {
+	p := processors.NewRuleProcessor(DbDir)
+	p.ExecDrop(name)
+	return p.ExecCreate(name, sql)
 }

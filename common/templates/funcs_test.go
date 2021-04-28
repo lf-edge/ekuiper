@@ -3,6 +3,7 @@ package templates
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"reflect"
 	"testing"
 )
@@ -48,7 +49,7 @@ func TestBase64Encode(t *testing.T) {
 	for i, tt := range tests {
 		result, err := Base64Encode(tt.para)
 		r, _ := base64.StdEncoding.DecodeString(result)
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.para, tt.err, err)
 
 		} else if tt.err == "" && !reflect.DeepEqual(tt.expect, string(r)) {
@@ -131,19 +132,11 @@ func TestAdd(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		result, err := Add(tt.para1, tt.para2)
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.para1, tt.para2, tt.err, err)
 
 		} else if tt.err == "" && !reflect.DeepEqual(tt.expect, result) {
 			t.Errorf("%d. %q %q \n\n mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.para1, tt.para2, tt.expect, result)
 		}
 	}
-}
-
-// errstring returns the string representation of an error.
-func errstring(err error) string {
-	if err != nil {
-		return err.Error()
-	}
-	return ""
 }

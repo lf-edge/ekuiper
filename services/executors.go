@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xstream/api"
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/dynamic"
 	"github.com/jhump/protoreflect/dynamic/grpcdynamic"
@@ -81,7 +82,7 @@ func NewExecutor(i *interfaceInfo) (executor, error) {
 }
 
 type executor interface {
-	InvokeFunction(name string, params []interface{}) (interface{}, error)
+	InvokeFunction(ctx api.FunctionContext, name string, params []interface{}) (interface{}, error)
 }
 
 type interfaceOpt struct {
@@ -96,7 +97,7 @@ type grpcExecutor struct {
 	conn *grpc.ClientConn
 }
 
-func (d *grpcExecutor) InvokeFunction(name string, params []interface{}) (interface{}, error) {
+func (d *grpcExecutor) InvokeFunction(ctx api.FunctionContext, name string, params []interface{}) (interface{}, error) {
 	if d.conn == nil {
 		dialCtx, cancel := context.WithTimeout(context.Background(), time.Duration(d.timeout)*time.Millisecond)
 		var (
@@ -132,19 +133,19 @@ func (d *grpcExecutor) InvokeFunction(name string, params []interface{}) (interf
 	if err != nil {
 		return nil, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(d.timeout)*time.Millisecond)
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Duration(d.timeout)*time.Millisecond)
 	var (
 		o proto.Message
 		e error
 	)
 	go func() {
 		defer cancel()
-		o, e = stub.InvokeRpc(ctx, d.descriptor.MethodDescriptor(name), message)
+		o, e = stub.InvokeRpc(timeoutCtx, d.descriptor.MethodDescriptor(name), message)
 	}()
 
 	select {
-	case <-ctx.Done():
-		err := ctx.Err()
+	case <-timeoutCtx.Done():
+		err := timeoutCtx.Err()
 		switch err {
 		case context.Canceled:
 			// connect successfully, do nothing
@@ -172,7 +173,7 @@ type httpExecutor struct {
 	conn *http.Client
 }
 
-func (h *httpExecutor) InvokeFunction(name string, params []interface{}) (interface{}, error) {
+func (h *httpExecutor) InvokeFunction(ctx api.FunctionContext, name string, params []interface{}) (interface{}, error) {
 	if h.conn == nil {
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: h.restOpt.InsecureSkipVerify},
@@ -188,14 +189,14 @@ func (h *httpExecutor) InvokeFunction(name string, params []interface{}) (interf
 	}
 	u := *h.addr
 	u.Path = path.Join(u.Path, name)
-	resp, err := common.Send(common.Log, h.conn, "json", http.MethodPost, u.String(), h.restOpt.Headers, false, json)
+	resp, err := common.Send(ctx.GetLogger(), h.conn, "json", http.MethodPost, u.String(), h.restOpt.Headers, false, json)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		buf, _ := ioutil.ReadAll(resp.Body)
-		common.Log.Debugf("%s\n", string(buf))
+		ctx.GetLogger().Debugf("%s\n", string(buf))
 		return nil, fmt.Errorf("http executor fails to err http return code: %d and error message %s", resp.StatusCode, string(buf))
 	} else {
 		buf, bodyErr := ioutil.ReadAll(resp.Body)
@@ -223,7 +224,7 @@ type msgpackExecutor struct {
 }
 
 // InvokeFunction flat the params and result
-func (m *msgpackExecutor) InvokeFunction(name string, params []interface{}) (interface{}, error) {
+func (m *msgpackExecutor) InvokeFunction(_ api.FunctionContext, name string, params []interface{}) (interface{}, error) {
 	if !m.connected {
 		m.Lock()
 		if !m.connected {

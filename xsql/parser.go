@@ -618,10 +618,8 @@ func (p *Parser) parseCall(name string) (Expr, error) {
 			} else {
 				if p.inmeta {
 					args = append(args, &MetaRef{StreamName: "", Name: "*"})
-				} else if _, ok := funcWithAsteriskSupportMap[name]; ok {
-					args = append(args, &Wildcard{Token: ASTERISK})
 				} else {
-					args = append(args, &StringLiteral{Val: "*"})
+					args = append(args, &Wildcard{Token: ASTERISK})
 				}
 				return &Call{Name: name, Args: args}, nil
 			}

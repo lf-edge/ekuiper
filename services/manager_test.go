@@ -1,17 +1,20 @@
 package services
 
 import (
-	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/common/kv"
-	"path"
+	"github.com/emqx/kuiper/xsql"
 	"reflect"
-	"sync"
 	"testing"
 )
 
+var m *Manager
+
+func init() {
+	m, _ = GetServiceManager()
+	m.InitByFiles()
+	xsql.InitFuncRegisters(m)
+}
+
 func TestInitByFiles(t *testing.T) {
-	etcDir, _ := common.GetLoc("/services/test")
-	dbDir, _ := common.GetDataLoc()
 	//expects
 	name := "sample"
 	info := &serviceInfo{
@@ -163,23 +166,7 @@ func TestInitByFiles(t *testing.T) {
 		},
 	}
 
-	// run and compare
-	m := &Manager{
-		executorPool: &sync.Map{},
-
-		etcDir:     etcDir,
-		serviceKV:  kv.GetDefaultKVStore(path.Join(dbDir, "services")),
-		functionKV: kv.GetDefaultKVStore(path.Join(dbDir, "serviceFuncs")),
-	}
-	m.serviceKV.Open()
-	m.functionKV.Open()
-	err := m.InitByFiles()
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	err = m.serviceKV.Open()
+	err := m.serviceKV.Open()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

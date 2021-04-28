@@ -2,9 +2,14 @@ package processors
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"path"
 	"reflect"
 	"testing"
+)
+
+var (
+	DbDir = common.GetDbDir()
 )
 
 func TestStreamCreateProcessor(t *testing.T) {
@@ -83,10 +88,10 @@ func TestStreamCreateProcessor(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
-	streamDB := path.Join(getDbDir(), "streamTest")
+	streamDB := path.Join(DbDir, "streamTest")
 	for i, tt := range tests {
 		results, err := NewStreamProcessor(streamDB).ExecStmt(tt.s)
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" {
 			if !reflect.DeepEqual(tt.r, results) {
@@ -172,10 +177,10 @@ func TestTableProcessor(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
-	streamDB := path.Join(getDbDir(), "streamTest")
+	streamDB := path.Join(common.GetDbDir(), "streamTest")
 	for i, tt := range tests {
 		results, err := NewStreamProcessor(streamDB).ExecStmt(tt.s)
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" {
 			if !reflect.DeepEqual(tt.r, results) {

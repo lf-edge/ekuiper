@@ -1,30 +1,21 @@
-package processors
+package topotest
 
 import (
-	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/api"
 	"testing"
-	"time"
 )
-
-type ruleCheckpointTest struct {
-	ruleTest
-	pauseSize   int                    // Stop stream after sending pauseSize source to test checkpoint resume
-	cc          int                    // checkpoint count when paused
-	pauseMetric map[string]interface{} // The metric to check when paused
-}
 
 // Full lifecycle test: Run window rule; trigger checkpoints by mock timer; restart rule; make sure the result is right;
 func TestCheckpoint(t *testing.T) {
 	common.IsTesting = true
 	streamList := []string{"demo"}
-	handleStream(false, streamList, t)
-	var tests = []ruleCheckpointTest{{
-		ruleTest: ruleTest{
-			name: `TestCheckpointRule1`,
-			sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
-			r: [][]map[string]interface{}{
+	HandleStream(false, streamList, t)
+	var tests = []RuleCheckpointTest{{
+		RuleTest: RuleTest{
+			Name: `TestCheckpointRule1`,
+			Sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"size":  float64(3),
@@ -66,7 +57,7 @@ func TestCheckpoint(t *testing.T) {
 					"ts":    float64(1541152489252),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_records_in_total":  int64(3),
 				"op_1_preprocessor_demo_0_records_out_total": int64(3),
 
@@ -83,9 +74,9 @@ func TestCheckpoint(t *testing.T) {
 				"op_2_window_0_records_out_total": int64(3),
 			},
 		},
-		pauseSize: 3,
-		cc:        2,
-		pauseMetric: map[string]interface{}{
+		PauseSize: 3,
+		Cc:        2,
+		PauseMetric: map[string]interface{}{
 			"op_1_preprocessor_demo_0_records_in_total":  int64(3),
 			"op_1_preprocessor_demo_0_records_out_total": int64(3),
 
@@ -102,7 +93,7 @@ func TestCheckpoint(t *testing.T) {
 			"op_2_window_0_records_out_total": int64(1),
 		}},
 	}
-	handleStream(true, streamList, t)
+	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
 		{
 			BufferLength:       100,
@@ -117,50 +108,6 @@ func TestCheckpoint(t *testing.T) {
 		},
 	}
 	for j, opt := range options {
-		doCheckpointRuleTest(t, tests, j, opt)
-	}
-}
-
-func doCheckpointRuleTest(t *testing.T, tests []ruleCheckpointTest, j int, opt *api.RuleOption) {
-	fmt.Printf("The test bucket for option %d size is %d.\n\n", j, len(tests))
-	for i, tt := range tests {
-		datas, dataLength, tp, mockSink, errCh := createStream(t, tt.ruleTest, j, opt, nil)
-		log.Debugf("Start sending first phase data done at %d", common.GetNowInMilli())
-		if err := sendData(t, tt.pauseSize, tt.pauseMetric, datas, errCh, tp, 100, 100); err != nil {
-			t.Errorf("first phase send data error %s", err)
-			break
-		}
-		log.Debugf("Send first phase data done at %d", common.GetNowInMilli())
-		// compare checkpoint count
-		time.Sleep(10 * time.Millisecond)
-		var retry int
-		for retry = 3; retry > 0; retry-- {
-			actual := tp.GetCoordinator().GetCompleteCount()
-			if tt.cc == actual {
-				break
-			} else {
-				common.Log.Debugf("check checkpointCount error at %d: %d", retry, actual)
-			}
-			time.Sleep(200 * time.Millisecond)
-		}
-		cc := tp.GetCoordinator().GetCompleteCount()
-		tp.Cancel()
-		if retry == 0 {
-			t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, j, tt.cc, cc)
-			return
-		} else if retry < 3 {
-			fmt.Printf("try %d for checkpoint count\n", 4-retry)
-		}
-		tp.Cancel()
-		time.Sleep(10 * time.Millisecond)
-		// resume stream
-		log.Debugf("Resume stream at %d", common.GetNowInMilli())
-		errCh = tp.Open()
-		log.Debugf("After open stream at %d", common.GetNowInMilli())
-		if err := sendData(t, dataLength, tt.m, datas, errCh, tp, POSTLEAP, 10); err != nil {
-			t.Errorf("second phase send data error %s", err)
-			break
-		}
-		compareResult(t, mockSink, commonResultFunc, tt.ruleTest, i, tp)
+		DoCheckpointRuleTest(t, tests, j, opt)
 	}
 }

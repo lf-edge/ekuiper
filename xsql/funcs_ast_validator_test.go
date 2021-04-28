@@ -2,6 +2,7 @@ package xsql
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"reflect"
 	"strings"
 	"testing"
@@ -471,7 +472,7 @@ func TestFuncValidator(t *testing.T) {
 	for i, tt := range tests {
 		//fmt.Printf("Parsing SQL %q.\n", tt.s)
 		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)

@@ -2,34 +2,25 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/services"
 	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
 
 type AggregateFunctionValuer struct {
-	data        AggregateData
-	fv          *FunctionValuer
-	funcPlugins *funcPlugins
+	data AggregateData
+	fv   *FunctionValuer
 }
 
-func NewFunctionValuersForOp(ctx api.StreamContext) (*FunctionValuer, *AggregateFunctionValuer, error) {
-	p := NewFuncPlugins(ctx)
-	m, err := services.GetServiceManager()
-	if err != nil {
-		return nil, nil, err
-	}
-	fv, afv := NewAggregateFunctionValuers(p, m)
-	return fv, afv, nil
+func NewFunctionValuersForOp(ctx api.StreamContext, registers []FunctionRegister) (*FunctionValuer, *AggregateFunctionValuer) {
+	p := NewFuncRuntime(ctx, registers)
+	return NewAggregateFunctionValuers(p)
 }
 
 //Should only be called by stream to make sure a single instance for an operation
-func NewAggregateFunctionValuers(p *funcPlugins, m *services.Manager) (*FunctionValuer, *AggregateFunctionValuer) {
-	fv := NewFunctionValuer(p, m)
+func NewAggregateFunctionValuers(p *funcRuntime) (*FunctionValuer, *AggregateFunctionValuer) {
+	fv := NewFunctionValuer(p)
 	return fv, &AggregateFunctionValuer{
-		fv:          fv,
-		funcPlugins: p,
+		fv: fv,
 	}
 }
 
@@ -195,17 +186,21 @@ func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interfa
 		}
 		return fmt.Errorf("Invalid argument type found."), false
 	default:
-		common.Log.Debugf("run aggregate func %s", name)
-		nf, fctx, err := v.funcPlugins.GetFuncFromPlugin(name)
-		if err != nil {
+		nf, fctx, err := v.fv.runtime.getCustom(name)
+		switch err {
+		case NotFoundErr:
+			return nil, false
+		case nil:
+			// do nothing, continue
+		default:
 			return err, false
 		}
 		if !nf.IsAggregate() {
 			return nil, false
 		}
-		result, ok := nf.Exec(args, fctx)
-		common.Log.Debugf("run custom aggregate function %s, get result %v", name, result)
-		return result, ok
+		logger := fctx.GetLogger()
+		logger.Debugf("run aggregate func %s", name)
+		return nf.Exec(args, fctx)
 	}
 }
 

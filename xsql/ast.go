@@ -611,6 +611,21 @@ type AggregateData interface {
 // Message is a valuer that substitutes values for the mapped interface.
 type Message map[string]interface{}
 
+func ToMessage(input interface{}) (Message, bool) {
+	var result Message
+	switch m := input.(type) {
+	case Message:
+		result = m
+	case Metadata:
+		result = Message(m)
+	case map[string]interface{}:
+		result = m
+	default:
+		return nil, false
+	}
+	return result, true
+}
+
 // Value returns the value for a key in the Message.
 func (m Message) Value(key string) (interface{}, bool) {
 	var colkey string

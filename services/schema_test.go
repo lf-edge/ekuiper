@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/emqx/kuiper/common"
 	"reflect"
 	"testing"
 )
@@ -100,13 +101,13 @@ func TestConvertParams(t *testing.T) {
 	for i, descriptor := range descriptors {
 		for j, tt := range tests {
 			r, err := descriptor.(interfaceDescriptor).ConvertParams(tt.method, tt.params)
-			if !reflect.DeepEqual(tt.err, errstring(err)) {
+			if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 				t.Errorf("%d.%d : interface error mismatch:\n  exp=%s\n  got=%s\n\n", i, j, tt.err, err)
 			} else if tt.err == "" && !reflect.DeepEqual(tt.iresult, r) {
 				t.Errorf("%d.%d \n\ninterface result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, j, tt.iresult, r)
 			}
 			rj, err := descriptor.(jsonDescriptor).ConvertParamsToJson(tt.method, tt.params)
-			if !reflect.DeepEqual(tt.err, errstring(err)) {
+			if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 				t.Errorf("%d.%d : json error mismatch:\n  exp=%s\n  got=%s\n\n", i, j, tt.err, err)
 			} else if tt.err == "" && !reflect.DeepEqual(tt.jresult, rj) {
 				t.Errorf("%d.%d \n\njson result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, j, tt.jresult, rj)
@@ -216,24 +217,17 @@ func TestConvertReturns(t *testing.T) {
 	for i, descriptor := range descriptors {
 		for j, tt := range tests[1:2] {
 			r, err := descriptor.(interfaceDescriptor).ConvertReturn(tt.method, tt.ireturn)
-			if !reflect.DeepEqual(tt.ierr, errstring(err)) {
+			if !reflect.DeepEqual(tt.ierr, common.Errstring(err)) {
 				t.Errorf("%d.%d : interface error mismatch:\n  exp=%s\n  got=%s\n\n", i, j, tt.ierr, err)
 			} else if tt.ierr == "" && !reflect.DeepEqual(tt.iresult, r) {
 				t.Errorf("%d.%d \n\ninterface result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, j, tt.iresult, r)
 			}
 			rj, err := descriptor.(jsonDescriptor).ConvertReturnJson(tt.method, tt.jreturn)
-			if !reflect.DeepEqual(tt.jerr, errstring(err)) {
+			if !reflect.DeepEqual(tt.jerr, common.Errstring(err)) {
 				t.Errorf("%d.%d : json error mismatch:\n  exp=%s\n  got=%s\n\n", i, j, tt.jerr, err)
 			} else if tt.jerr == "" && !reflect.DeepEqual(tt.jresult, rj) {
 				t.Errorf("%d.%d \n\njson result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, j, tt.jresult, rj)
 			}
 		}
 	}
-}
-
-func errstring(err error) string {
-	if err != nil {
-		return err.Error()
-	}
-	return ""
 }

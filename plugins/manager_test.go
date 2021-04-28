@@ -3,6 +3,7 @@ package plugins
 import (
 	"errors"
 	"fmt"
+	"github.com/emqx/kuiper/xsql"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,6 +12,17 @@ import (
 	"sort"
 	"testing"
 )
+
+var manager *Manager
+
+func init() {
+	var err error
+	manager, err = NewPluginManager()
+	if err != nil {
+		panic(err)
+	}
+	xsql.InitFuncRegisters(manager)
+}
 
 func TestManager_Register(t *testing.T) {
 	s := httptest.NewServer(
@@ -89,10 +101,6 @@ func TestManager_Register(t *testing.T) {
 			u: endpoint + "/functions/comp.zip",
 		},
 	}
-	manager, err := NewPluginManager()
-	if err != nil {
-		t.Error(err)
-	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 	for i, tt := range data {
@@ -111,7 +119,7 @@ func TestManager_Register(t *testing.T) {
 				File: tt.u,
 			}
 		}
-		err = manager.Register(tt.t, p)
+		err := manager.Register(tt.t, p)
 		if !reflect.DeepEqual(tt.err, err) {
 			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
 		} else if tt.err == nil {
@@ -140,10 +148,6 @@ func TestManager_List(t *testing.T) {
 			r: []string{"accumulateWordCount", "comp", "countPlusOne", "echo", "echo2"},
 		},
 	}
-	manager, err := NewPluginManager()
-	if err != nil {
-		t.Error(err)
-	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 
 	for i, p := range data {
@@ -160,10 +164,6 @@ func TestManager_List(t *testing.T) {
 }
 
 func TestManager_Symbols(t *testing.T) {
-	manager, err := NewPluginManager()
-	if err != nil {
-		t.Error(err)
-	}
 	r := []string{"accumulateWordCount", "comp", "countPlusOne", "echo", "echo2", "echo3", "misc"}
 	result, err := manager.ListSymbols()
 	if err != nil {
@@ -213,10 +213,6 @@ func TestManager_Desc(t *testing.T) {
 			},
 		},
 	}
-	manager, err := NewPluginManager()
-	if err != nil {
-		t.Error(err)
-	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 
 	for i, p := range data {
@@ -254,14 +250,10 @@ func TestManager_Delete(t *testing.T) {
 			n: "comp",
 		},
 	}
-	manager, err := NewPluginManager()
-	if err != nil {
-		t.Error(err)
-	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 
 	for i, p := range data {
-		err = manager.Delete(p.t, p.n, false)
+		err := manager.Delete(p.t, p.n, false)
 		if err != nil {
 			t.Errorf("%d: delete error : %s\n\n", i, err)
 		}

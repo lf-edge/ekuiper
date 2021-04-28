@@ -1,4 +1,4 @@
-package test
+package mocknodes
 
 import (
 	"github.com/emqx/kuiper/xstream/api"

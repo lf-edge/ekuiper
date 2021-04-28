@@ -1,12 +1,13 @@
-package processors
+package services
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/emqx/kuiper/services"
+	"github.com/emqx/kuiper/common"
 	pb "github.com/emqx/kuiper/services/test/schemas/helloworld"
 	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/topotest"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
@@ -18,11 +19,6 @@ import (
 	"reflect"
 	"testing"
 )
-
-func init() {
-	m, _ := services.GetServiceManager()
-	m.InitByFiles()
-}
 
 type HelloRequest struct {
 	Name string `json:"name,omitempty"`
@@ -45,12 +41,12 @@ type ObjectDetectResponse struct {
 	Type   string `json:"type,omitempty"`
 }
 
-type Box struct {
-	X int32 `json:"x,omitempty"`
-	Y int32 `json:"y,omitempty"`
-	W int32 `json:"w,omitempty"`
-	H int32 `json:"h,omitempty"`
-}
+//type Box struct {
+//	X int32 `json:"x,omitempty"`
+//	Y int32 `json:"y,omitempty"`
+//	W int32 `json:"w,omitempty"`
+//	H int32 `json:"h,omitempty"`
+//}
 
 //type FeatureResult struct {
 //	Features []float64 `json:"features,omitempty"`
@@ -61,7 +57,8 @@ func TestRestService(t *testing.T) {
 	// mock server, the port is set in the sample.json
 	l, err := net.Listen("tcp", "127.0.0.1:51234")
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
+		t.FailNow()
 	}
 	count := 0
 	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -117,13 +114,13 @@ func TestRestService(t *testing.T) {
 	defer server.Close()
 	//Reset
 	streamList := []string{"helloStr", "commands", "fakeBin"}
-	handleStream(false, streamList, t)
+	topotest.HandleStream(false, streamList, t)
 	//Data setup
-	var tests = []ruleTest{
+	var tests = []topotest.RuleTest{
 		{
-			name: `TestRestRule1`,
-			sql:  `SELECT helloFromRest(name) as wc FROM helloStr`,
-			r: [][]map[string]interface{}{
+			Name: `TestRestRule1`,
+			Sql:  `SELECT helloFromRest(name) as wc FROM helloStr`,
+			R: [][]map[string]interface{}{
 				{{
 					"wc": map[string]interface{}{
 						"message": "world",
@@ -140,7 +137,7 @@ func TestRestService(t *testing.T) {
 					},
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_2_project_0_exceptions_total":   int64(0),
 				"op_2_project_0_process_latency_us": int64(0),
 				"op_2_project_0_records_in_total":   int64(3),
@@ -151,9 +148,9 @@ func TestRestService(t *testing.T) {
 				"sink_mockSink_0_records_out_total": int64(3),
 			},
 		}, {
-			name: `TestRestRule2`,
-			sql:  `SELECT objectDetectFromRest(command, image)->result FROM commands`,
-			r: [][]map[string]interface{}{
+			Name: `TestRestRule2`,
+			Sql:  `SELECT objectDetectFromRest(cmd, base64_img)->result FROM commands`,
+			R: [][]map[string]interface{}{
 				{{
 					"kuiper_field_0": "get success",
 				}},
@@ -164,7 +161,31 @@ func TestRestService(t *testing.T) {
 					"kuiper_field_0": "delete success",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
+		}, {
+			Name: `TestRestRule3`,
+			Sql:  `SELECT objectDetectFromRest(*)->result FROM commands`,
+			R: [][]map[string]interface{}{
+				{{
+					"kuiper_field_0": "get success",
+				}},
+				{{
+					"kuiper_field_0": "detect success",
+				}},
+				{{
+					"kuiper_field_0": "delete success",
+				}},
+			},
+			M: map[string]interface{}{
 				"op_2_project_0_exceptions_total":   int64(0),
 				"op_2_project_0_process_latency_us": int64(0),
 				"op_2_project_0_records_in_total":   int64(3),
@@ -175,9 +196,9 @@ func TestRestService(t *testing.T) {
 				"sink_mockSink_0_records_out_total": int64(3),
 			},
 			//}, {
-			//	name: `TestRestRule3`,
-			//	sql:  `SELECT getFeatureFromRest(self)->feature[0]->box->h FROM fakeBin`,
-			//	r: [][]map[string]interface{}{
+			//	Name: `TestRestRule3`,
+			//	Sql:  `SELECT getFeatureFromRest(self)->feature[0]->box->h FROM fakeBin`,
+			//	R: [][]map[string]interface{}{
 			//		{{
 			//			"kuiper_field_0": 106,
 			//		}},
@@ -188,7 +209,7 @@ func TestRestService(t *testing.T) {
 			//			"kuiper_field_0": 108,
 			//		}},
 			//	},
-			//	m: map[string]interface{}{
+			//	M: map[string]interface{}{
 			//		"op_2_project_0_exceptions_total":   int64(0),
 			//		"op_2_project_0_process_latency_us": int64(0),
 			//		"op_2_project_0_records_in_total":   int64(3),
@@ -199,23 +220,23 @@ func TestRestService(t *testing.T) {
 			//		"sink_mockSink_0_records_out_total": int64(3),
 			//	},
 		}, {
-			name: `TestRestRule4`,
-			sql:  `SELECT getStatusFromRest(), command FROM commands`,
-			r: [][]map[string]interface{}{
+			Name: `TestRestRule4`,
+			Sql:  `SELECT getStatusFromRest(), cmd FROM commands`,
+			R: [][]map[string]interface{}{
 				{{
 					"getStatusFromRest": true,
-					"command":           "get",
+					"cmd":               "get",
 				}},
 				{{
 					"getStatusFromRest": false,
-					"command":           "detect",
+					"cmd":               "detect",
 				}},
 				{{
 					"getStatusFromRest": true,
-					"command":           "delete",
+					"cmd":               "delete",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_2_project_0_exceptions_total":   int64(0),
 				"op_2_project_0_process_latency_us": int64(0),
 				"op_2_project_0_records_in_total":   int64(3),
@@ -227,8 +248,8 @@ func TestRestService(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
-	doRuleTest(t, tests, 0, &api.RuleOption{
+	topotest.HandleStream(true, streamList, t)
+	topotest.DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	})
@@ -236,7 +257,7 @@ func TestRestService(t *testing.T) {
 
 type Resolver map[string]reflect.Value
 
-func (self Resolver) Resolve(name string, arguments []reflect.Value) (reflect.Value, error) {
+func (self Resolver) Resolve(name string, _ []reflect.Value) (reflect.Value, error) {
 	return self[name], nil
 }
 
@@ -298,13 +319,13 @@ func TestMsgpackService(t *testing.T) {
 
 	//Reset
 	streamList := []string{"helloStr", "commands", "fakeBin"}
-	handleStream(false, streamList, t)
+	topotest.HandleStream(false, streamList, t)
 	//Data setup
-	var tests = []ruleTest{
+	var tests = []topotest.RuleTest{
 		{
-			name: `TestRestRule1`,
-			sql:  `SELECT helloFromMsgpack(name) as wc FROM helloStr`,
-			r: [][]map[string]interface{}{
+			Name: `TestRestRule1`,
+			Sql:  `SELECT helloFromMsgpack(name) as wc FROM helloStr`,
+			R: [][]map[string]interface{}{
 				{{
 					"wc": map[string]interface{}{
 						"message": "world",
@@ -321,7 +342,7 @@ func TestMsgpackService(t *testing.T) {
 					},
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_2_project_0_exceptions_total":   int64(0),
 				"op_2_project_0_process_latency_us": int64(0),
 				"op_2_project_0_records_in_total":   int64(3),
@@ -332,9 +353,9 @@ func TestMsgpackService(t *testing.T) {
 				"sink_mockSink_0_records_out_total": int64(3),
 			},
 		}, {
-			name: `TestRestRule2`,
-			sql:  `SELECT objectDetectFromMsgpack(command, image)->result FROM commands`,
-			r: [][]map[string]interface{}{
+			Name: `TestRestRule2`,
+			Sql:  `SELECT objectDetectFromMsgpack(*)->result FROM commands`,
+			R: [][]map[string]interface{}{
 				{{
 					"kuiper_field_0": "get success",
 				}},
@@ -345,7 +366,7 @@ func TestMsgpackService(t *testing.T) {
 					"kuiper_field_0": "delete success",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_2_project_0_exceptions_total":   int64(0),
 				"op_2_project_0_process_latency_us": int64(0),
 				"op_2_project_0_records_in_total":   int64(3),
@@ -356,9 +377,9 @@ func TestMsgpackService(t *testing.T) {
 				"sink_mockSink_0_records_out_total": int64(3),
 			},
 		}, {
-			name: `TestRestRule3`,
-			sql:  `SELECT getFeatureFromMsgpack(self)->feature[0]->box->h FROM fakeBin`,
-			r: [][]map[string]interface{}{
+			Name: `TestRestRule3`,
+			Sql:  `SELECT getFeatureFromMsgpack(self)->feature[0]->box->h FROM fakeBin`,
+			R: [][]map[string]interface{}{
 				{{
 					"kuiper_field_0": float64(106), //Convert by the testing tool
 				}},
@@ -369,7 +390,7 @@ func TestMsgpackService(t *testing.T) {
 					"kuiper_field_0": float64(108),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_2_project_0_exceptions_total":   int64(0),
 				"op_2_project_0_process_latency_us": int64(0),
 				"op_2_project_0_records_in_total":   int64(3),
@@ -380,9 +401,9 @@ func TestMsgpackService(t *testing.T) {
 				"sink_mockSink_0_records_out_total": int64(3),
 			},
 			//}, {
-			//	name: `TestRestRule4`,
-			//	sql:  `SELECT getStatusFromMsgpack(), command FROM commands`,
-			//	r: [][]map[string]interface{}{
+			//	Name: `TestRestRule4`,
+			//	Sql:  `SELECT getStatusFromMsgpack(), command FROM commands`,
+			//	R: [][]map[string]interface{}{
 			//		{{
 			//			"getStatusFromRest": true,
 			//			"command": "get",
@@ -396,7 +417,7 @@ func TestMsgpackService(t *testing.T) {
 			//			"command": "delete",
 			//		}},
 			//	},
-			//	m: map[string]interface{}{
+			//	M: map[string]interface{}{
 			//		"op_2_project_0_exceptions_total":   int64(0),
 			//		"op_2_project_0_process_latency_us": int64(0),
 			//		"op_2_project_0_records_in_total":   int64(3),
@@ -408,8 +429,8 @@ func TestMsgpackService(t *testing.T) {
 			//	},
 		},
 	}
-	handleStream(true, streamList, t)
-	doRuleTest(t, tests, 0, &api.RuleOption{
+	topotest.HandleStream(true, streamList, t)
+	topotest.DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	})
@@ -466,26 +487,26 @@ func (s *server) GetStatus(context.Context, *empty.Empty) (*wrappers.BoolValue, 
 func TestGrpcService(t *testing.T) {
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		common.Log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
 	pb.RegisterGreeterServer(s, &server{})
 	go func() {
 		if err := s.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
+			common.Log.Fatalf("failed to serve: %v", err)
 		}
 	}()
 	defer s.Stop()
 
 	//Reset
 	streamList := []string{"helloStr", "commands", "fakeBin"}
-	handleStream(false, streamList, t)
+	topotest.HandleStream(false, streamList, t)
 	//Data setup
-	var tests = []ruleTest{
+	var tests = []topotest.RuleTest{
 		{
-			name: `TestRestRule1`,
-			sql:  `SELECT helloFromGrpc(name) as wc FROM helloStr`,
-			r: [][]map[string]interface{}{
+			Name: `TestRestRule1`,
+			Sql:  `SELECT helloFromGrpc(name) as wc FROM helloStr`,
+			R: [][]map[string]interface{}{
 				{{
 					"wc": map[string]interface{}{
 						"message": "world",
@@ -502,7 +523,7 @@ func TestGrpcService(t *testing.T) {
 					},
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_2_project_0_exceptions_total":   int64(0),
 				"op_2_project_0_process_latency_us": int64(0),
 				"op_2_project_0_records_in_total":   int64(3),
@@ -513,9 +534,9 @@ func TestGrpcService(t *testing.T) {
 				"sink_mockSink_0_records_out_total": int64(3),
 			},
 		}, {
-			name: `TestRestRule2`,
-			sql:  `SELECT objectDetectFromGrpc(command, image)->result FROM commands`,
-			r: [][]map[string]interface{}{
+			Name: `TestRestRule2`,
+			Sql:  `SELECT objectDetectFromGrpc(cmd, base64_img)->result FROM commands`,
+			R: [][]map[string]interface{}{
 				{{
 					"kuiper_field_0": "get success",
 				}},
@@ -526,7 +547,7 @@ func TestGrpcService(t *testing.T) {
 					"kuiper_field_0": "delete success",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_2_project_0_exceptions_total":   int64(0),
 				"op_2_project_0_process_latency_us": int64(0),
 				"op_2_project_0_records_in_total":   int64(3),
@@ -537,9 +558,9 @@ func TestGrpcService(t *testing.T) {
 				"sink_mockSink_0_records_out_total": int64(3),
 			},
 		}, {
-			name: `TestRestRule3`,
-			sql:  `SELECT getFeatureFromGrpc(self)->feature[0]->box->h FROM fakeBin`,
-			r: [][]map[string]interface{}{
+			Name: `TestRestRule3`,
+			Sql:  `SELECT getFeatureFromGrpc(self)->feature[0]->box->h FROM fakeBin`,
+			R: [][]map[string]interface{}{
 				{{
 					"kuiper_field_0": float64(106), //Convert by the testing tool
 				}},
@@ -550,7 +571,7 @@ func TestGrpcService(t *testing.T) {
 					"kuiper_field_0": float64(108),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_2_project_0_exceptions_total":   int64(0),
 				"op_2_project_0_process_latency_us": int64(0),
 				"op_2_project_0_records_in_total":   int64(3),
@@ -561,23 +582,23 @@ func TestGrpcService(t *testing.T) {
 				"sink_mockSink_0_records_out_total": int64(3),
 			},
 		}, {
-			name: `TestRestRule4`,
-			sql:  `SELECT getStatusFromGrpc(), command FROM commands`,
-			r: [][]map[string]interface{}{
+			Name: `TestRestRule4`,
+			Sql:  `SELECT getStatusFromGrpc(), cmd FROM commands`,
+			R: [][]map[string]interface{}{
 				{{
 					"getStatusFromGrpc": true,
-					"command":           "get",
+					"cmd":               "get",
 				}},
 				{{
 					"getStatusFromGrpc": true,
-					"command":           "detect",
+					"cmd":               "detect",
 				}},
 				{{
 					"getStatusFromGrpc": true,
-					"command":           "delete",
+					"cmd":               "delete",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_2_project_0_exceptions_total":   int64(0),
 				"op_2_project_0_process_latency_us": int64(0),
 				"op_2_project_0_records_in_total":   int64(3),
@@ -589,8 +610,8 @@ func TestGrpcService(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
-	doRuleTest(t, tests, 0, &api.RuleOption{
+	topotest.HandleStream(true, streamList, t)
+	topotest.DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	})

@@ -98,12 +98,6 @@ func (s *TopologyNew) addEdge(from api.TopNode, to api.TopNode, toType string) {
 	s.topo.Edges[f] = append(e, t)
 }
 
-func Transform(op nodes.UnOperation, name string, options *api.RuleOption) *nodes.UnaryOperator {
-	operator := nodes.New(name, options)
-	operator.SetOperation(op)
-	return operator
-}
-
 // prepareContext setups internal context before
 // stream starts execution.
 func (s *TopologyNew) prepareContext() {

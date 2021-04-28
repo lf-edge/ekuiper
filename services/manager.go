@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/common/kv"
+	"github.com/emqx/kuiper/xstream/api"
 	"io/ioutil"
 	"os"
 	"path"
@@ -164,11 +165,36 @@ func (m *Manager) initFile(baseName string) error {
 	return nil
 }
 
+// Start Implement FunctionRegister
+
 func (m *Manager) HasFunction(name string) bool {
 	_, ok := m.getFunction(name)
 	common.Log.Debugf("found external function %s? %v ", name, ok)
 	return ok
 }
+
+func (m *Manager) Function(name string) (api.Function, error) {
+	f, ok := m.getFunction(name)
+	if !ok {
+		return nil, fmt.Errorf("service function %s not found", name)
+	}
+	s, ok := m.getService(f.ServiceName)
+	if !ok {
+		return nil, fmt.Errorf("service function %s's service %s not found", name, f.ServiceName)
+	}
+	i, ok := s.Interfaces[f.InterfaceName]
+	if !ok {
+		return nil, fmt.Errorf("service function %s's interface %s not found", name, f.InterfaceName)
+	}
+	// executor is gotten from pool, so all externalFuncs with the same interface share the same executor instance
+	e, err := m.getExecutor(f.InterfaceName, i)
+	if err != nil {
+		return nil, fmt.Errorf("fail to initiate the executor for %s: %v", f.InterfaceName, err)
+	}
+	return &ExternalFunc{exe: e, methodName: f.MethodName}, nil
+}
+
+// End Implement FunctionRegister
 
 func (m *Manager) HasService(name string) bool {
 	_, ok := m.getService(name)
@@ -211,30 +237,6 @@ func (m *Manager) getService(name string) (*serviceInfo, bool) {
 			m.serviceBuf.Store(name, r)
 		}
 		return r, ok
-	}
-}
-
-func (m *Manager) InvokeFunction(name string, params []interface{}) (interface{}, bool) {
-	f, ok := m.getFunction(name)
-	if !ok {
-		return fmt.Errorf("service function %s not found", name), false
-	}
-	s, ok := m.getService(f.ServiceName)
-	if !ok {
-		return fmt.Errorf("service function %s's service %s not found", name, f.ServiceName), false
-	}
-	i, ok := s.Interfaces[f.InterfaceName]
-	if !ok {
-		return fmt.Errorf("service function %s's interface %s not found", name, f.InterfaceName), false
-	}
-	e, err := m.getExecutor(f.InterfaceName, i)
-	if err != nil {
-		return fmt.Errorf("fail to initiate the executor for %s: %v", f.InterfaceName, err), false
-	}
-	if r, err := e.InvokeFunction(f.MethodName, params); err != nil {
-		return err, false
-	} else {
-		return r, true
 	}
 }
 

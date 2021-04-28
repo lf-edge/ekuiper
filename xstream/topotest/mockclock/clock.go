@@ -1,4 +1,4 @@
-package test
+package mockclock
 
 import (
 	"github.com/benbjohnson/clock"

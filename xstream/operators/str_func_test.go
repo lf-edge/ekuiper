@@ -419,7 +419,7 @@ func TestStrFunc_Apply1(t *testing.T) {
 		}
 		pp := &ProjectOp{Fields: stmt.Fields}
 		pp.isTest = true
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {

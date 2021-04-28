@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xsql"
 	"github.com/golang/protobuf/proto"
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
@@ -265,9 +266,9 @@ func (d *wrappedProtoDescriptor) MethodDescriptor(name string) *desc.MethodDescr
 func unfoldMap(ft *desc.MessageDescriptor, i interface{}) ([]interface{}, error) {
 	fields := ft.GetFields()
 	result := make([]interface{}, len(fields))
-	if m, ok := i.(map[string]interface{}); ok {
+	if m, ok := xsql.ToMessage(i); ok {
 		for _, field := range fields {
-			v, ok := m[field.GetName()]
+			v, ok := m.Value(field.GetName())
 			if !ok {
 				return nil, fmt.Errorf("field %s not found", field.GetName())
 			}

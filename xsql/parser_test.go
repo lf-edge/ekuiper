@@ -2,6 +2,7 @@ package xsql
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"math"
 	"reflect"
 	"strings"
@@ -1231,7 +1232,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s:    `SELECT sample(-.3,) FROM tbl`,
 			stmt: nil,
-			err:  "cannot get the plugin file path: invalid symbol name sample: not exist",
+			err:  "error getting function sample: not found",
 		},
 
 		{
@@ -1378,6 +1379,21 @@ func TestParser_ParseStatement(t *testing.T) {
 			s:    "SELECT CASE WHEN 30 THEN \"high\" ELSE \"low\" END as label, humidity FROM tbl",
 			stmt: nil,
 			err:  "invalid CASE expression, WHEN expression must be a bool condition",
+		}, {
+			s: `SELECT echo(*) FROM tbl`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						AName: "",
+						Name:  "echo",
+						Expr: &Call{
+							Name: "echo",
+							Args: []Expr{&Wildcard{Token: ASTERISK}},
+						},
+					},
+				},
+				Sources: []Source{&Table{Name: "tbl"}},
+			},
 		},
 	}
 
@@ -1385,7 +1401,7 @@ func TestParser_ParseStatement(t *testing.T) {
 	for i, tt := range tests {
 		//fmt.Printf("Parsing SQL %q.\n", tt.s)
 		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
@@ -1623,7 +1639,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 	for i, tt := range tests {
 		//fmt.Printf("Parsing SQL %q.\n", tt.s)
 		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
@@ -1897,7 +1913,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
@@ -2119,7 +2135,7 @@ func TestParser_ParseJoins(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
@@ -2182,18 +2198,10 @@ func TestParser_ParseStatements(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		stmts, err := NewParser(strings.NewReader(tt.s)).ParseQueries()
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" && !reflect.DeepEqual(tt.stmts, stmts) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmts, stmts)
 		}
 	}
-}
-
-// errstring returns the string representation of an error.
-func errstring(err error) string {
-	if err != nil {
-		return err.Error()
-	}
-	return ""
 }

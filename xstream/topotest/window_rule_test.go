@@ -1,4 +1,4 @@
-package processors
+package topotest
 
 import (
 	"github.com/emqx/kuiper/xstream"
@@ -9,12 +9,12 @@ import (
 func TestWindow(t *testing.T) {
 	//Reset
 	streamList := []string{"demo", "demoError", "demo1", "sessionDemo", "table1"}
-	handleStream(false, streamList, t)
-	var tests = []ruleTest{
+	HandleStream(false, streamList, t)
+	var tests = []RuleTest{
 		{
-			name: `TestWindowRule1`,
-			sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowRule1`,
+			Sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"size":  float64(3),
@@ -56,7 +56,7 @@ func TestWindow(t *testing.T) {
 					"ts":    float64(1541152489252),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -81,9 +81,9 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_out_total":  int64(4),
 			},
 		}, {
-			name: `TestWindowRule2`,
-			sql:  `SELECT color, ts FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowRule2`,
+			Sql:  `SELECT color, ts FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"ts":    float64(1541152486013),
@@ -96,7 +96,7 @@ func TestWindow(t *testing.T) {
 					"ts":    float64(1541152488442),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -126,9 +126,9 @@ func TestWindow(t *testing.T) {
 				"op_2_filter_0_records_out_total":  int64(3),
 			},
 		}, {
-			name: `TestWindowRule3`,
-			sql:  `SELECT color, temp, ts FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowRule3`,
+			Sql:  `SELECT color, temp, ts FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"temp":  25.5,
@@ -171,7 +171,7 @@ func TestWindow(t *testing.T) {
 					"ts":    float64(1541152489252),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -209,7 +209,7 @@ func TestWindow(t *testing.T) {
 				"op_4_join_0_records_in_total":   int64(10),
 				"op_4_join_0_records_out_total":  int64(8),
 			},
-			t: &xstream.PrintableTopo{
+			T: &xstream.PrintableTopo{
 				Sources: []string{"source_demo", "source_demo1"},
 				Edges: map[string][]string{
 					"source_demo":             {"op_1_preprocessor_demo"},
@@ -222,9 +222,9 @@ func TestWindow(t *testing.T) {
 				},
 			},
 		}, {
-			name: `TestWindowRule4`,
-			sql:  `SELECT color FROM demo GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowRule4`,
+			Sql:  `SELECT color FROM demo GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 				}}, {{
@@ -247,7 +247,7 @@ func TestWindow(t *testing.T) {
 					"color": "yellow",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -282,9 +282,9 @@ func TestWindow(t *testing.T) {
 				"op_4_order_0_records_out_total":  int64(5),
 			},
 		}, {
-			name: `TestWindowRule5`,
-			sql:  `SELECT temp FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1) `,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowRule5`,
+			Sql:  `SELECT temp FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1) `,
+			R: [][]map[string]interface{}{
 				{{
 					"temp": 25.5,
 				}, {
@@ -309,7 +309,7 @@ func TestWindow(t *testing.T) {
 					"temp": 30.9,
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_sessionDemo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_sessionDemo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_sessionDemo_0_records_in_total":   int64(11),
@@ -334,9 +334,9 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_out_total":  int64(4),
 			},
 		}, {
-			name: `TestWindowRule6`,
-			sql:  `SELECT max(temp) as m, count(color) as c FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowRule6`,
+			Sql:  `SELECT max(temp) as m, count(color) as c FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"m": 25.5,
 					"c": float64(1),
@@ -363,7 +363,7 @@ func TestWindow(t *testing.T) {
 					"c": float64(2),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -402,9 +402,9 @@ func TestWindow(t *testing.T) {
 				"op_4_join_0_records_out_total":  int64(8),
 			},
 		}, {
-			name: `TestWindowRule7`,
-			sql:  `SELECT * FROM demoError GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowRule7`,
+			Sql:  `SELECT * FROM demoError GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"error": "error in preprocessor: invalid data type for color, expect string but found int(3)",
 				}},
@@ -434,7 +434,7 @@ func TestWindow(t *testing.T) {
 					"error": "error in preprocessor: invalid data type for size, expect bigint but found string(blue)",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demoError_0_exceptions_total":   int64(3),
 				"op_1_preprocessor_demoError_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demoError_0_records_in_total":   int64(5),
@@ -459,16 +459,16 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_out_total":  int64(3),
 			},
 		}, {
-			name: `TestWindowRule8`,
-			sql:  `SELECT color, ts, count(*) as c FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1) having c > 1`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowRule8`,
+			Sql:  `SELECT color, ts, count(*) as c FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1) having c > 1`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"ts":    float64(1541152486013),
 					"c":     float64(2),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -508,9 +508,9 @@ func TestWindow(t *testing.T) {
 				"op_5_having_0_records_out_total":  int64(1),
 			},
 		}, {
-			name: `TestWindowRule9`,
-			sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1) FILTER( WHERE size > 2)`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowRule9`,
+			Sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1) FILTER( WHERE size > 2)`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"size":  float64(3),
@@ -540,7 +540,7 @@ func TestWindow(t *testing.T) {
 					"ts":    float64(1541152488442),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -565,14 +565,14 @@ func TestWindow(t *testing.T) {
 				"op_3_window_0_records_out_total":  int64(4),
 			},
 		}, {
-			name: `TestCountWindowRule1`,
-			sql:  `SELECT collect(*)[0]->color as c FROM demo GROUP BY COUNTWINDOW(3)`,
-			r: [][]map[string]interface{}{
+			Name: `TestCountWindowRule1`,
+			Sql:  `SELECT collect(*)[0]->color as c FROM demo GROUP BY COUNTWINDOW(3)`,
+			R: [][]map[string]interface{}{
 				{{
 					"c": "red",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -597,9 +597,9 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_out_total":  int64(1),
 			},
 		}, {
-			name: `TestWindowRule10`,
-			sql:  `SELECT deduplicate(color, false)->color as c FROM demo GROUP BY SlidingWindow(hh, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowRule10`,
+			Sql:  `SELECT deduplicate(color, false)->color as c FROM demo GROUP BY SlidingWindow(hh, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"c": "red",
 				}}, {{
@@ -608,7 +608,7 @@ func TestWindow(t *testing.T) {
 					"c": "yellow",
 				}}, {{}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
@@ -633,15 +633,15 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_out_total":  int64(5),
 			},
 		}, {
-			name: `TestWindowRule11`,
-			sql:  `SELECT color, name FROM demo INNER JOIN table1 on demo.ts = table1.id where demo.size > 2 and table1.size > 1 GROUP BY tumblingwindow(ss, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowRule11`,
+			Sql:  `SELECT color, name FROM demo INNER JOIN table1 on demo.ts = table1.id where demo.size > 2 and table1.size > 1 GROUP BY tumblingwindow(ss, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"name":  "name1",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				//"op_4_project_0_exceptions_total":   int64(0),
 				//"op_4_project_0_process_latency_us": int64(0),
 				//"op_4_project_0_records_in_total":   int64(2),
@@ -694,7 +694,7 @@ func TestWindow(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
+	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
 		{
 			BufferLength: 100,
@@ -712,19 +712,19 @@ func TestWindow(t *testing.T) {
 		},
 	}
 	for j, opt := range options {
-		doRuleTest(t, tests, j, opt)
+		DoRuleTest(t, tests, j, opt)
 	}
 }
 
 func TestEventWindow(t *testing.T) {
 	//Reset
 	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE"}
-	handleStream(false, streamList, t)
-	var tests = []ruleTest{
+	HandleStream(false, streamList, t)
+	var tests = []RuleTest{
 		{
-			name: `TestEventWindowRule1`,
-			sql:  `SELECT * FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestEventWindowRule1`,
+			Sql:  `SELECT * FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"size":  float64(3),
@@ -761,7 +761,7 @@ func TestEventWindow(t *testing.T) {
 					"ts":    float64(1541152489252),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demoE_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demoE_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demoE_0_records_in_total":   int64(6),
@@ -786,9 +786,9 @@ func TestEventWindow(t *testing.T) {
 				"op_2_window_0_records_out_total":  int64(5),
 			},
 		}, {
-			name: `TestEventWindowRule2`,
-			sql:  `SELECT color, ts FROM demoE where size > 2 GROUP BY tumblingwindow(ss, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestEventWindowRule2`,
+			Sql:  `SELECT color, ts FROM demoE where size > 2 GROUP BY tumblingwindow(ss, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"ts":    float64(1541152486013),
@@ -798,7 +798,7 @@ func TestEventWindow(t *testing.T) {
 					"ts":    float64(1541152488442),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demoE_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demoE_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demoE_0_records_in_total":   int64(6),
@@ -828,9 +828,9 @@ func TestEventWindow(t *testing.T) {
 				"op_3_filter_0_records_out_total":  int64(2),
 			},
 		}, {
-			name: `TestEventWindowRule3`,
-			sql:  `SELECT color, temp, ts FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestEventWindowRule3`,
+			Sql:  `SELECT color, temp, ts FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"temp":  25.5,
@@ -861,7 +861,7 @@ func TestEventWindow(t *testing.T) {
 					"ts":    float64(1541152489252),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demoE_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demoE_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demoE_0_records_in_total":   int64(6),
@@ -900,9 +900,9 @@ func TestEventWindow(t *testing.T) {
 				"op_4_join_0_records_out_total":  int64(5),
 			},
 		}, {
-			name: `TestEventWindowRule4`,
-			sql:  `SELECT color FROM demoE GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
-			r: [][]map[string]interface{}{
+			Name: `TestEventWindowRule4`,
+			Sql:  `SELECT color FROM demoE GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 				}}, {{
@@ -921,7 +921,7 @@ func TestEventWindow(t *testing.T) {
 					"color": "yellow",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demoE_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demoE_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demoE_0_records_in_total":   int64(6),
@@ -956,9 +956,9 @@ func TestEventWindow(t *testing.T) {
 				"op_4_order_0_records_out_total":  int64(4),
 			},
 		}, {
-			name: `TestEventWindowRule5`,
-			sql:  `SELECT temp FROM sessionDemoE GROUP BY SessionWindow(ss, 2, 1) `,
-			r: [][]map[string]interface{}{
+			Name: `TestEventWindowRule5`,
+			Sql:  `SELECT temp FROM sessionDemoE GROUP BY SessionWindow(ss, 2, 1) `,
+			R: [][]map[string]interface{}{
 				{{
 					"temp": 25.5,
 				}}, {{
@@ -981,7 +981,7 @@ func TestEventWindow(t *testing.T) {
 					"temp": 30.9,
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_sessionDemoE_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_sessionDemoE_0_process_latency_us": int64(0),
 				"op_1_preprocessor_sessionDemoE_0_records_in_total":   int64(12),
@@ -1006,9 +1006,9 @@ func TestEventWindow(t *testing.T) {
 				"op_2_window_0_records_out_total":  int64(4),
 			},
 		}, {
-			name: `TestEventWindowRule6`,
-			sql:  `SELECT max(temp) as m, count(color) as c FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestEventWindowRule6`,
+			Sql:  `SELECT max(temp) as m, count(color) as c FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"m": 25.5,
 					"c": float64(1),
@@ -1026,7 +1026,7 @@ func TestEventWindow(t *testing.T) {
 					"c": float64(2),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demoE_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_demoE_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demoE_0_records_in_total":   int64(6),
@@ -1064,9 +1064,9 @@ func TestEventWindow(t *testing.T) {
 				"op_4_join_0_records_out_total":  int64(5),
 			},
 		}, {
-			name: `TestEventWindowRule7`,
-			sql:  `SELECT * FROM demoErr GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestEventWindowRule7`,
+			Sql:  `SELECT * FROM demoErr GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"error": "error in preprocessor: invalid data type for color, expect string but found int(2)",
 				}},
@@ -1098,7 +1098,7 @@ func TestEventWindow(t *testing.T) {
 					"ts":    float64(1541152489252),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_demoErr_0_exceptions_total":   int64(1),
 				"op_1_preprocessor_demoErr_0_process_latency_us": int64(0),
 				"op_1_preprocessor_demoErr_0_records_in_total":   int64(6),
@@ -1124,7 +1124,7 @@ func TestEventWindow(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
+	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
 		{
 			BufferLength: 100,
@@ -1148,26 +1148,26 @@ func TestEventWindow(t *testing.T) {
 		},
 	}
 	for j, opt := range options {
-		doRuleTest(t, tests, j, opt)
+		DoRuleTest(t, tests, j, opt)
 	}
 }
 
 func TestWindowError(t *testing.T) {
 	//Reset
 	streamList := []string{"ldemo", "ldemo1"}
-	handleStream(false, streamList, t)
-	var tests = []ruleTest{
+	HandleStream(false, streamList, t)
+	var tests = []RuleTest{
 		{
-			name: `TestWindowErrorRule1`,
-			sql:  `SELECT size * 3 FROM ldemo GROUP BY TUMBLINGWINDOW(ss, 2)`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowErrorRule1`,
+			Sql:  `SELECT size * 3 FROM ldemo GROUP BY TUMBLINGWINDOW(ss, 2)`,
+			R: [][]map[string]interface{}{
 				{{
 					"error": "run Select error: invalid operation string(string) * int64(3)",
 				}}, {{
 					"kuiper_field_0": float64(6),
 				}, {}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
@@ -1192,9 +1192,9 @@ func TestWindowError(t *testing.T) {
 				"op_2_window_0_records_out_total":  int64(2),
 			},
 		}, {
-			name: `TestWindowErrorRule2`,
-			sql:  `SELECT color, ts FROM ldemo where size > 2 GROUP BY tumblingwindow(ss, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowErrorRule2`,
+			Sql:  `SELECT color, ts FROM ldemo where size > 2 GROUP BY tumblingwindow(ss, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"error": "run Where error: invalid operation string(string) > int64(2)",
 				}}, {{
@@ -1204,7 +1204,7 @@ func TestWindowError(t *testing.T) {
 					"ts": float64(1541152487632),
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
@@ -1234,9 +1234,9 @@ func TestWindowError(t *testing.T) {
 				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
-			name: `TestWindowErrorRule3`,
-			sql:  `SELECT color, temp, ts FROM ldemo INNER JOIN ldemo1 ON ldemo.ts = ldemo1.ts GROUP BY SlidingWindow(ss, 1)`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowErrorRule3`,
+			Sql:  `SELECT color, temp, ts FROM ldemo INNER JOIN ldemo1 ON ldemo.ts = ldemo1.ts GROUP BY SlidingWindow(ss, 1)`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"temp":  25.5,
@@ -1263,7 +1263,7 @@ func TestWindowError(t *testing.T) {
 					"error": "run Join error: invalid operation int64(1541152488442) = string(1541152488442)",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
@@ -1302,9 +1302,9 @@ func TestWindowError(t *testing.T) {
 				"op_4_join_0_records_out_total":  int64(5),
 			},
 		}, {
-			name: `TestWindowErrorRule4`,
-			sql:  `SELECT color FROM ldemo GROUP BY SlidingWindow(ss, 2), color having size >= 2 order by color`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowErrorRule4`,
+			Sql:  `SELECT color FROM ldemo GROUP BY SlidingWindow(ss, 2), color having size >= 2 order by color`,
+			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 				}}, {{
@@ -1317,7 +1317,7 @@ func TestWindowError(t *testing.T) {
 					"color": float64(49),
 				}, {}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
@@ -1352,9 +1352,9 @@ func TestWindowError(t *testing.T) {
 				"op_4_having_0_records_out_total":  int64(2),
 			},
 		}, {
-			name: `TestWindowErrorRule5`,
-			sql:  `SELECT color, size FROM ldemo GROUP BY tumblingwindow(ss, 1) ORDER BY size`,
-			r: [][]map[string]interface{}{
+			Name: `TestWindowErrorRule5`,
+			Sql:  `SELECT color, size FROM ldemo GROUP BY tumblingwindow(ss, 1) ORDER BY size`,
+			R: [][]map[string]interface{}{
 				{{
 					"error": "run Order By error: incompatible types for comparison: int and string",
 				}}, {{
@@ -1366,7 +1366,7 @@ func TestWindowError(t *testing.T) {
 					"color": "red",
 				}},
 			},
-			m: map[string]interface{}{
+			M: map[string]interface{}{
 				"op_1_preprocessor_ldemo_0_exceptions_total":   int64(0),
 				"op_1_preprocessor_ldemo_0_process_latency_us": int64(0),
 				"op_1_preprocessor_ldemo_0_records_in_total":   int64(5),
@@ -1397,8 +1397,8 @@ func TestWindowError(t *testing.T) {
 			},
 		},
 	}
-	handleStream(true, streamList, t)
-	doRuleTest(t, tests, 0, &api.RuleOption{
+	HandleStream(true, streamList, t)
+	DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	})

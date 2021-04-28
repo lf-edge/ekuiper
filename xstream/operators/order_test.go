@@ -473,7 +473,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 		}
 
 		pp := &OrderOp{SortFields: stmt.SortFields}
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)

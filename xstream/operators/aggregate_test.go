@@ -347,7 +347,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			t.Errorf("statement parse error %s", err)
 			break
 		}
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		pp := &AggregateOp{Dimensions: stmt.Dimensions.GetGroups()}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		gr, ok := result.(xsql.GroupedTuplesSet)
@@ -589,7 +589,7 @@ func TestAggregatePlanGroupAlias_Apply(t *testing.T) {
 				}
 			}
 		}
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		pp := &AggregateOp{Dimensions: stmt.Dimensions.GetGroups(), Alias: aggregateAlias}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		gr, ok := result.(xsql.GroupedTuplesSet)
@@ -736,7 +736,7 @@ func TestAggregatePlanAlias_Apply(t *testing.T) {
 				}
 			}
 		}
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		pp := &AggregateOp{Dimensions: stmt.Dimensions.GetGroups(), Alias: aggregateAlias}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
@@ -789,7 +789,7 @@ func TestAggregatePlanError(t *testing.T) {
 			t.Errorf("statement parse error %s", err)
 			break
 		}
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		pp := &AggregateOp{Dimensions: stmt.Dimensions.GetGroups()}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {

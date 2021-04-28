@@ -2,6 +2,7 @@ package xsql
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"reflect"
 	"strings"
 	"testing"
@@ -401,7 +402,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		stmt, err := NewParser(strings.NewReader(tt.s)).ParseCreateStmt()
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
@@ -409,11 +410,3 @@ func TestParser_ParseCreateStream(t *testing.T) {
 	}
 
 }
-
-// errstring returns the string representation of an error.
-//func errstring(err error) string {
-//	if err != nil {
-//		return err.Error()
-//	}
-//	return ""
-//}

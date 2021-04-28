@@ -4,13 +4,13 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/contexts"
-	"github.com/emqx/kuiper/xstream/test"
+	"github.com/emqx/kuiper/xstream/topotest/mockclock"
 	"reflect"
 	"testing"
 )
 
 func TestTableNode(t *testing.T) {
-	test.ResetClock(1541152486000)
+	mockclock.ResetClock(1541152486000)
 	var tests = []struct {
 		name    string
 		options map[string]string
