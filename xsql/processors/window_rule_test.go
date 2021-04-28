@@ -1164,7 +1164,7 @@ func TestWindowError(t *testing.T) {
 				{{
 					"error": "run Select error: invalid operation string(string) * int64(3)",
 				}}, {{
-					"rengine_field_0": float64(6),
+					"kuiper_field_0": float64(6),
 				}, {}},
 			},
 			m: map[string]interface{}{

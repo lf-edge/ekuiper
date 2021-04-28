@@ -155,13 +155,13 @@ func TestRestService(t *testing.T) {
 			sql:  `SELECT objectDetectFromRest(command, image)->result FROM commands`,
 			r: [][]map[string]interface{}{
 				{{
-					"rengine_field_0": "get success",
+					"kuiper_field_0": "get success",
 				}},
 				{{
-					"rengine_field_0": "detect success",
+					"kuiper_field_0": "detect success",
 				}},
 				{{
-					"rengine_field_0": "delete success",
+					"kuiper_field_0": "delete success",
 				}},
 			},
 			m: map[string]interface{}{
@@ -179,13 +179,13 @@ func TestRestService(t *testing.T) {
 			//	sql:  `SELECT getFeatureFromRest(self)->feature[0]->box->h FROM fakeBin`,
 			//	r: [][]map[string]interface{}{
 			//		{{
-			//			"rengine_field_0": 106,
+			//			"kuiper_field_0": 106,
 			//		}},
 			//		{{
-			//			"rengine_field_0": 107,
+			//			"kuiper_field_0": 107,
 			//		}},
 			//		{{
-			//			"rengine_field_0": 108,
+			//			"kuiper_field_0": 108,
 			//		}},
 			//	},
 			//	m: map[string]interface{}{
@@ -336,13 +336,13 @@ func TestMsgpackService(t *testing.T) {
 			sql:  `SELECT objectDetectFromMsgpack(command, image)->result FROM commands`,
 			r: [][]map[string]interface{}{
 				{{
-					"rengine_field_0": "get success",
+					"kuiper_field_0": "get success",
 				}},
 				{{
-					"rengine_field_0": "detect success",
+					"kuiper_field_0": "detect success",
 				}},
 				{{
-					"rengine_field_0": "delete success",
+					"kuiper_field_0": "delete success",
 				}},
 			},
 			m: map[string]interface{}{
@@ -360,13 +360,13 @@ func TestMsgpackService(t *testing.T) {
 			sql:  `SELECT getFeatureFromMsgpack(self)->feature[0]->box->h FROM fakeBin`,
 			r: [][]map[string]interface{}{
 				{{
-					"rengine_field_0": float64(106), //Convert by the testing tool
+					"kuiper_field_0": float64(106), //Convert by the testing tool
 				}},
 				{{
-					"rengine_field_0": float64(107),
+					"kuiper_field_0": float64(107),
 				}},
 				{{
-					"rengine_field_0": float64(108),
+					"kuiper_field_0": float64(108),
 				}},
 			},
 			m: map[string]interface{}{
@@ -517,13 +517,13 @@ func TestGrpcService(t *testing.T) {
 			sql:  `SELECT objectDetectFromGrpc(command, image)->result FROM commands`,
 			r: [][]map[string]interface{}{
 				{{
-					"rengine_field_0": "get success",
+					"kuiper_field_0": "get success",
 				}},
 				{{
-					"rengine_field_0": "detect success",
+					"kuiper_field_0": "detect success",
 				}},
 				{{
-					"rengine_field_0": "delete success",
+					"kuiper_field_0": "delete success",
 				}},
 			},
 			m: map[string]interface{}{
@@ -541,13 +541,13 @@ func TestGrpcService(t *testing.T) {
 			sql:  `SELECT getFeatureFromGrpc(self)->feature[0]->box->h FROM fakeBin`,
 			r: [][]map[string]interface{}{
 				{{
-					"rengine_field_0": float64(106), //Convert by the testing tool
+					"kuiper_field_0": float64(106), //Convert by the testing tool
 				}},
 				{{
-					"rengine_field_0": float64(107),
+					"kuiper_field_0": float64(107),
 				}},
 				{{
-					"rengine_field_0": float64(108),
+					"kuiper_field_0": float64(108),
 				}},
 			},
 			m: map[string]interface{}{

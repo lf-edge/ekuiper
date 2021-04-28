@@ -537,16 +537,16 @@ func TestSingleSQLError(t *testing.T) {
 			sql:  `SELECT size * 5 FROM ldemo`,
 			r: [][]map[string]interface{}{
 				{{
-					"rengine_field_0": float64(15),
+					"kuiper_field_0": float64(15),
 				}},
 				{{
 					"error": "run Select error: invalid operation string(string) * int64(5)",
 				}},
 				{{
-					"rengine_field_0": float64(15),
+					"kuiper_field_0": float64(15),
 				}},
 				{{
-					"rengine_field_0": float64(10),
+					"kuiper_field_0": float64(10),
 				}},
 				{{}},
 			},
@@ -625,13 +625,13 @@ func TestSingleSQLOmitError(t *testing.T) {
 			sql:  `SELECT size * 5 FROM ldemo`,
 			r: [][]map[string]interface{}{
 				{{
-					"rengine_field_0": float64(15),
+					"kuiper_field_0": float64(15),
 				}},
 				{{
-					"rengine_field_0": float64(15),
+					"kuiper_field_0": float64(15),
 				}},
 				{{
-					"rengine_field_0": float64(10),
+					"kuiper_field_0": float64(10),
 				}},
 				{{}},
 			},

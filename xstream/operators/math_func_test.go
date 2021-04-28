@@ -476,7 +476,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				t.Errorf("Failed to parse the input into map.\n")
 				continue
 			}
-			//fmt.Printf("%t\n", mapRes["rengine_field_0"])
+			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
 
 			if !reflect.DeepEqual(tt.result, mapRes) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
