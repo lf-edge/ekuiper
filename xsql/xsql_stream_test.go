@@ -19,6 +19,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					FIRST_NAME STRING,
 					LAST_NAME STRING,
 					NICKNAMES ARRAY(STRING),
+					data bytea,
 					Gender BOOLEAN,
 					ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
 				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", CONF_KEY="srv1", type="MQTT", TIMESTAMP="USERID", TIMESTAMP_FORMAT="yyyy-MM-dd''T''HH:mm:ssX'");`,
@@ -29,6 +30,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					{Name: "FIRST_NAME", FieldType: &BasicType{Type: STRINGS}},
 					{Name: "LAST_NAME", FieldType: &BasicType{Type: STRINGS}},
 					{Name: "NICKNAMES", FieldType: &ArrayType{Type: STRINGS}},
+					{Name: "data", FieldType: &BasicType{Type: BYTEA}},
 					{Name: "Gender", FieldType: &BasicType{Type: BOOLEAN}},
 					{Name: "ADDRESS", FieldType: &RecType{
 						StreamFields: []StreamField{
@@ -226,7 +228,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				StreamFields: nil,
 				Options:      nil,
 			},
-			err: `found "integer", expect valid stream field types(BIGINT | FLOAT | STRINGS | DATETIME | BOOLEAN | ARRAY | STRUCT).`,
+			err: `found "integer", expect valid stream field types(BIGINT | FLOAT | STRINGS | DATETIME | BOOLEAN | BYTEA | ARRAY | STRUCT).`,
 		},
 
 		{

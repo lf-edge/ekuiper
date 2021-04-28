@@ -1116,7 +1116,7 @@ func (p *Parser) parseStreamField() (*StreamField, error) {
 				field.FieldType = f
 			}
 		} else if t == UNKNOWN {
-			return nil, fmt.Errorf("found %q, expect valid stream field types(BIGINT | FLOAT | STRINGS | DATETIME | BOOLEAN | ARRAY | STRUCT).", lit1)
+			return nil, fmt.Errorf("found %q, expect valid stream field types(BIGINT | FLOAT | STRINGS | DATETIME | BOOLEAN | BYTEA | ARRAY | STRUCT).", lit1)
 		}
 
 		if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == COMMA {
