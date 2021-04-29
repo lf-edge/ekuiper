@@ -714,6 +714,30 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 			result: []map[string]interface{}{{
 				"a": "Shield of faith",
 			}},
+		}, {
+			sql: "SELECT json_path_query(equipment, \"$[\\\"arm.left\\\"]\") AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class":     "warrior",
+					"equipment": `{"rings": [0.1, 2.4],"arm.right": "Sword of flame","arm.left":  "Shield of faith"}`,
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "Shield of faith",
+			}},
+		}, {
+			sql: "SELECT json_path_query(equipment, \"$[0][\\\"arm.left\\\"]\") AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class":     "warrior",
+					"equipment": `[{"rings": [0.1, 2.4],"arm.right": "Sword of flame","arm.left":  "Shield of faith"}]`,
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "Shield of faith",
+			}},
 		},
 	}
 

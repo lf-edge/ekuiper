@@ -1008,9 +1008,9 @@ func doRuleTestBySinkProps(t *testing.T, tests []RuleTest, j int, opt *api.RuleO
 		}
 		switch opt.Qos {
 		case api.ExactlyOnce:
-			wait *= 3
+			wait *= 4
 		case api.AtLeastOnce:
-			wait *= 2
+			wait *= 3
 		}
 		var retry int
 		if opt.Qos > api.AtMostOnce {
@@ -1088,7 +1088,7 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 	// Check if stream done. Poll for metrics,
 	time.Sleep(10 * time.Millisecond)
 	var retry int
-	for retry = 3; retry > 0; retry-- {
+	for retry = 4; retry > 0; retry-- {
 		if err := compareMetrics(tp, metrics); err == nil {
 			break
 		} else {
@@ -1098,7 +1098,6 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 	}
 	if retry == 0 {
 		t.Error("send data timeout")
-		t.FailNow()
 	} else if retry < 2 {
 		common.Log.Debugf("try %d for metric comparison\n", 2-retry)
 	}
