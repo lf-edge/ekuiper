@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+option go_package = "grpc/helloworld";
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.helloworld";
+option java_outer_classname = "HelloWorldProto";
+
+package helloworld;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+// The greeting service definition.
+service Greeter {
+  // Sends a greeting
+  rpc SayHello(HelloRequest) returns (HelloReply) {}
+  rpc Compute (InferRequest) returns (Response) {}
+  // Primitive type param. Not supported for rest json
+  rpc get_feature(google.protobuf.BytesValue) returns(FeatureResponse) {}
+  rpc object_detection(ObjectDetectionRequest) returns(ObjectDetectionResponse) {
+    option (google.api.http) = {
+      post: "/v1/object_detection/"
+    };
+  }
+  rpc getStatus(google.protobuf.Empty) returns(google.protobuf.BoolValue) {}
+}
+
+// The request message containing the user's name.
+message HelloRequest {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message HelloReply {
+  string message = 1;
+}
+
+message Response {
+  uint32 code = 1;
+  string msg = 2;
+}
+
+message InferRequest {
+  string rid = 1;
+  string uuid = 2;
+  string outlet = 3;
+
+  string path = 4;
+  bytes data = 5;
+  string extra = 6;
+}
+
+message Box{
+  int32 x = 1;
+  int32 y = 2;
+  int32 w = 3;
+  int32 h = 4;
+}
+
+message FeatureResult{
+  repeated float features = 1;
+  Box box = 2;
+}
+
+message FeatureResponse{
+  repeated FeatureResult feature = 1;
+}
+
+message ObjectDetectionRequest {
+  string cmd = 1;
+  string base64_img = 2;
+}
+
+message ObjectDetectionResponse {
+  string info = 1;
+  int32 code = 2;
+  string image = 3;
+  string result = 4;
+  string type = 5;
+}

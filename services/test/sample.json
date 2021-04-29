@@ -1,0 +1,110 @@
+{
+  "about": {
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/functions/functions.md",
+      "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/functions/functions.md"
+    },
+    "description": {
+      "en_US": "Sample external services for test only",
+      "zh_CN": "示例外部函数配置，仅供测试"
+    }
+  },
+  "interfaces": {
+    "tsrpc": {
+      "address": "tcp://localhost:50051",
+      "protocol": "grpc",
+      "schemaType": "protobuf",
+      "schemaFile": "hw.proto",
+      "functions": [
+        {
+          "name": "helloFromGrpc",
+          "serviceName": "SayHello"
+        },
+        {
+          "name": "ComputeFromGrpc",
+          "serviceName": "Compute"
+        },
+        {
+          "name": "objectDetectFromGrpc",
+          "serviceName": "object_detection"
+        },
+        {
+          "name": "getFeatureFromGrpc",
+          "serviceName": "get_feature"
+        },
+        {
+          "name": "getStatusFromGrpc",
+          "serviceName": "getStatus"
+        }
+      ]
+    },
+    "tsrest": {
+      "address": "http://localhost:51234",
+      "protocol": "rest",
+      "options": {
+        "insecureSkipVerify": true,
+        "headers": {
+          "Accept-Charset": "utf-8"
+        }
+      },
+      "schemaType": "protobuf",
+      "schemaFile": "hw.proto",
+      "functions": [
+        {
+          "name": "helloFromRest",
+          "serviceName": "SayHello"
+        },
+        {
+          "name": "ComputeFromRest",
+          "serviceName": "Compute"
+        },
+        {
+          "name": "objectDetectFromRest",
+          "serviceName": "object_detection"
+        },
+        {
+          "name": "getFeatureFromRest",
+          "serviceName": "get_feature"
+        },
+        {
+          "name": "getStatusFromRest",
+          "serviceName": "getStatus"
+        }
+      ]
+    },
+    "tsmsgpack": {
+      "address": "tcp://localhost:50000",
+      "protocol": "msgpack-rpc",
+      "schemaType": "protobuf",
+      "schemaFile": "hw.proto",
+      "functions": [
+        {
+          "name": "helloFromMsgpack",
+          "serviceName": "SayHello"
+        },
+        {
+          "name": "ComputeFromMsgpack",
+          "serviceName": "Compute"
+        },
+        {
+          "name": "objectDetectFromMsgpack",
+          "serviceName": "object_detection"
+        },
+        {
+          "name": "getFeatureFromMsgpack",
+          "serviceName": "get_feature"
+        },
+        {
+          "name": "getStatusFromMsgpack",
+          "serviceName": "getStatus"
+        }
+      ]
+    }
+  }
+}

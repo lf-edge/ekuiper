@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
+	"github.com/emqx/kuiper/services"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/gorilla/handlers"
@@ -69,7 +70,6 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 	// Problems encoding
 	if err != nil {
 		handleError(w, err, "", logger)
-		return
 	}
 }
 
@@ -115,6 +115,11 @@ func createRestServer(ip string, port int) *http.Server {
 	r.HandleFunc("/metadata/sources/{name}/confKeys", sourceConfKeysHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/{name}/confKeys/{confKey}", sourceConfKeyHandler).Methods(http.MethodDelete, http.MethodPost)
 	r.HandleFunc("/metadata/sources/{name}/confKeys/{confKey}/field", sourceConfKeyFieldsHandler).Methods(http.MethodDelete, http.MethodPost)
+
+	r.HandleFunc("/services", servicesHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/services/functions", serviceFunctionsHandler).Methods(http.MethodGet)
+	r.HandleFunc("/services/functions/{name}", serviceFunctionHandler).Methods(http.MethodGet)
+	r.HandleFunc("/services/{name}", serviceHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
 
 	server := &http.Server{
 		Addr: fmt.Sprintf("%s:%d", ip, port),
@@ -852,4 +857,93 @@ func getLanguage(r *http.Request) string {
 		language = "en_US"
 	}
 	return language
+}
+
+func servicesHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	switch r.Method {
+	case http.MethodGet:
+		content, err := serviceManager.List()
+		if err != nil {
+			handleError(w, err, "service list command error", logger)
+			return
+		}
+		jsonResponse(content, w, logger)
+	case http.MethodPost:
+		sd := &services.ServiceCreationRequest{}
+		err := json.NewDecoder(r.Body).Decode(sd)
+		// Problems decoding
+		if err != nil {
+			handleError(w, err, "Invalid body: Error decoding the %s service request payload", logger)
+			return
+		}
+		err = serviceManager.Create(sd)
+		if err != nil {
+			handleError(w, err, "service create command error", logger)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(fmt.Sprintf("service %s is created", sd.Name)))
+	}
+}
+
+func serviceHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	switch r.Method {
+	case http.MethodDelete:
+		err := serviceManager.Delete(name)
+		if err != nil {
+			handleError(w, err, fmt.Sprintf("delete service %s error", name), logger)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		result := fmt.Sprintf("service %s is deleted", name)
+		w.Write([]byte(result))
+	case http.MethodGet:
+		j, err := serviceManager.Get(name)
+		if err != nil {
+			handleError(w, common.NewErrorWithCode(common.NOT_FOUND, "not found"), fmt.Sprintf("describe service %s error", name), logger)
+			return
+		}
+		jsonResponse(j, w, logger)
+	case http.MethodPut:
+		sd := &services.ServiceCreationRequest{}
+		err := json.NewDecoder(r.Body).Decode(sd)
+		// Problems decoding
+		if err != nil {
+			handleError(w, err, "Invalid body: Error decoding the %s service request payload", logger)
+			return
+		}
+		sd.Name = name
+		err = serviceManager.Update(sd)
+		if err != nil {
+			handleError(w, err, "service update command error", logger)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fmt.Sprintf("service %s is updated", sd.Name)))
+	}
+}
+
+func serviceFunctionsHandler(w http.ResponseWriter, r *http.Request) {
+	content, err := serviceManager.ListFunctions()
+	if err != nil {
+		handleError(w, err, "service list command error", logger)
+		return
+	}
+	jsonResponse(content, w, logger)
+}
+
+func serviceFunctionHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+	j, err := serviceManager.GetFunction(name)
+	if err != nil {
+		handleError(w, common.NewErrorWithCode(common.NOT_FOUND, "not found"), fmt.Sprintf("describe function %s error", name), logger)
+		return
+	}
+	jsonResponse(j, w, logger)
 }

@@ -128,7 +128,7 @@ func (c *DefaultContext) WithCancel() (api.StreamContext, context.CancelFunc) {
 
 func (c *DefaultContext) IncrCounter(key string, amount int) error {
 	if v, ok := c.state.Load(key); ok {
-		if vi, err := common.ToInt(v); err != nil {
+		if vi, err := common.ToInt(v, common.STRICT); err != nil {
 			return fmt.Errorf("state[%s] must be an int", key)
 		} else {
 			c.state.Store(key, vi+amount)
@@ -141,7 +141,7 @@ func (c *DefaultContext) IncrCounter(key string, amount int) error {
 
 func (c *DefaultContext) GetCounter(key string) (int, error) {
 	if v, ok := c.state.Load(key); ok {
-		if vi, err := common.ToInt(v); err != nil {
+		if vi, err := common.ToInt(v, common.STRICT); err != nil {
 			return 0, fmt.Errorf("state[%s] is not a number, but %v", key, v)
 		} else {
 			return vi, nil

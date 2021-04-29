@@ -86,22 +86,17 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 
 	stats, err := NewStatManager("op", ctx)
 	if err != nil {
-		select {
-		case errCh <- err:
-			logger.Errorf("unary operator %s error %s", o.name, err)
-		case <-ctx.Done():
-			logger.Infof("unary operator %s cancelling....", o.name)
-			o.mutex.Lock()
-			cancel()
-			o.cancelled = true
-			o.mutex.Unlock()
-		}
+		o.drainError(errCh, err, ctx)
 		return
 	}
 	o.mutex.Lock()
 	o.statManagers = append(o.statManagers, stats)
 	o.mutex.Unlock()
-	fv, afv := xsql.NewFunctionValuersForOp(exeCtx)
+	fv, afv, err := xsql.NewFunctionValuersForOp(exeCtx)
+	if err != nil {
+		o.drainError(errCh, err, ctx)
+		return
+	}
 
 	for {
 		select {
@@ -139,4 +134,15 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			return
 		}
 	}
+}
+
+func (o *UnaryOperator) drainError(errCh chan<- error, err error, ctx api.StreamContext) {
+	go func() {
+		select {
+		case errCh <- err:
+			ctx.GetLogger().Errorf("unary operator %s error %s", o.name, err)
+		case <-ctx.Done():
+			// stop waiting
+		}
+	}()
 }

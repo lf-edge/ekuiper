@@ -1,5 +1,19 @@
 # 扩展
 
+Kuiper 允许用户自定义扩展，以支持更多的功能。用户可编写插件进行扩展；也可以通过配置的方式，扩展 SQL 中的函数，用于调用外部已有的 REST 或 RPC 服务。
+
+使用插件扩展较为复杂，需要用户编写代码并自行编译，具有一定的开发成本。其使用的场景包括：
+
+- 需要扩展源或是 sink
+- 对性能要求较高
+
+使用外部函数扩展，仅需要进行配置，但其需要通过网络进行调用，有一定性能损耗。使用的场景包括：
+
+- 调用已有的服务，如 REST 或 grpc 提供的 AI 服务
+- 需要灵活部署的服务
+
+## 插件扩展
+
 Kuiper 允许用户自定义不同类型的扩展。 
 
 - 源扩展用于扩展不同的流源，例如使用来自其他消息服务器的数据。Kuiper 对 [MQTT 消息服务器](../rules/sources/mqtt.md)的内置源提供支持。
@@ -52,3 +66,11 @@ func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionConte
 ```go
 ctx.GetRootPath()
 ```
+
+## 外部函数扩展
+
+提供一种配置的方式，使得 Kuiper 可以使用 SQL 以函数的方式直接调用外部服务，包括各种 rpc 服务， http 服务等。该方式将可大提高 Kuiper 扩展的易用性。外部函数将作为插件系统的补充，仅在性能要求较高的情况下才建议使用插件。
+
+以 getFeature 函数为例，假设有 AI 服务基于 grpc 提供getFeature 服务。则可在Kuiper配置之后，使用 `SELECT getFeature(self) from demo` 的方式，无需定制插件而调用该 AI 服务。
+
+详细配置方法，请参考[外部函数](external_func.md)。

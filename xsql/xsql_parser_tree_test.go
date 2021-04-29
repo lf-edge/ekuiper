@@ -46,7 +46,27 @@ func TestParser_ParseTree(t *testing.T) {
 				StreamType: TypeTable,
 			},
 		},
-
+		{
+			s: `CREATE TABLE table1 (
+					name STRING,
+					size BIGINT,
+					id BIGINT
+				) WITH (DATASOURCE="lookup.json", FORMAT="json", CONF_KEY="test");`,
+			stmt: &StreamStmt{
+				Name: StreamName("table1"),
+				StreamFields: []StreamField{
+					{Name: "name", FieldType: &BasicType{Type: STRINGS}},
+					{Name: "size", FieldType: &BasicType{Type: BIGINT}},
+					{Name: "id", FieldType: &BasicType{Type: BIGINT}},
+				},
+				Options: map[string]string{
+					"DATASOURCE": "lookup.json",
+					"FORMAT":     "json",
+					"CONF_KEY":   "test",
+				},
+				StreamType: TypeTable,
+			},
+		},
 		{
 			s:    `SHOW STREAMS`,
 			stmt: &ShowStreamsStatement{},

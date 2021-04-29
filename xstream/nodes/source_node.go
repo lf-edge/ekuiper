@@ -58,7 +58,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	go func() {
 		props := getSourceConf(ctx, m.sourceType, m.options)
 		if c, ok := props["concurrency"]; ok {
-			if t, err := common.ToInt(c); err != nil || t <= 0 {
+			if t, err := common.ToInt(c, common.STRICT); err != nil || t <= 0 {
 				logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", c)
 			} else {
 				m.concurrency = t
@@ -66,7 +66,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 		}
 		bl := 102400
 		if c, ok := props["bufferLength"]; ok {
-			if t, err := common.ToInt(c); err != nil || t <= 0 {
+			if t, err := common.ToInt(c, common.STRICT); err != nil || t <= 0 {
 				logger.Warnf("invalid type for bufferLength property, should be positive integer but found %t", c)
 			} else {
 				bl = t

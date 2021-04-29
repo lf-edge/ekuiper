@@ -60,7 +60,7 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 
 	var qos byte = 0
 	if qosRec, ok := ps["qos"]; ok {
-		if v, err := common.ToInt(qosRec); err == nil {
+		if v, err := common.ToInt(qosRec, common.STRICT); err == nil {
 			qos = byte(v)
 		}
 		if qos != 0 && qos != 1 && qos != 2 {

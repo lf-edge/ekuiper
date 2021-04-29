@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
+	"github.com/emqx/kuiper/services"
 	"github.com/emqx/kuiper/xsql/processors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -25,6 +26,7 @@ var (
 	ruleProcessor   *processors.RuleProcessor
 	streamProcessor *processors.StreamProcessor
 	pluginManager   *plugins.Manager
+	serviceManager  *services.Manager
 )
 
 func StartUp(Version, LoadFileType string) {
@@ -44,6 +46,10 @@ func StartUp(Version, LoadFileType string) {
 	ruleProcessor = processors.NewRuleProcessor(path.Dir(dataDir))
 	streamProcessor = processors.NewStreamProcessor(path.Join(path.Dir(dataDir), "stream"))
 	pluginManager, err = plugins.NewPluginManager()
+	if err != nil {
+		logger.Panic(err)
+	}
+	serviceManager, err = services.GetServiceManager()
 	if err != nil {
 		logger.Panic(err)
 	}

@@ -126,7 +126,7 @@ func doCheckpointRuleTest(t *testing.T, tests []ruleCheckpointTest, j int, opt *
 	for i, tt := range tests {
 		datas, dataLength, tp, mockSink, errCh := createStream(t, tt.ruleTest, j, opt, nil)
 		log.Debugf("Start sending first phase data done at %d", common.GetNowInMilli())
-		if err := sendData(t, tt.pauseSize, tt.pauseMetric, datas, errCh, tp, 100, 1); err != nil {
+		if err := sendData(t, tt.pauseSize, tt.pauseMetric, datas, errCh, tp, 100, 100); err != nil {
 			t.Errorf("first phase send data error %s", err)
 			break
 		}

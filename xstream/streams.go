@@ -132,16 +132,17 @@ func (s *TopologyNew) Open() <-chan error {
 	}
 	s.prepareContext() // ensure context is set
 	s.drain = make(chan error)
-	var err error
-	if s.store, err = states.CreateStore(s.name, s.qos); err != nil {
-		s.drainErr(err)
-		return s.drain
-	}
-	s.enableCheckpoint()
 	log := s.ctx.GetLogger()
 	log.Infoln("Opening stream")
 	// open stream
 	go func() {
+		var err error
+		if s.store, err = states.CreateStore(s.name, s.qos); err != nil {
+			fmt.Println(err)
+			s.drain <- err
+			return
+		}
+		s.enableCheckpoint()
 		// open stream sink, after log sink is ready.
 		for _, snk := range s.sinks {
 			snk.Open(s.ctx.WithMeta(s.name, snk.GetName(), s.store), s.drain)

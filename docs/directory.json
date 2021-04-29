@@ -129,6 +129,10 @@
 				{
 					"title": "插件管理",
 					"path": "restapi/plugins"
+				},
+				{
+					"title": "外部函数管理",
+					"path": "restapi/services"
 				}
 			]
 		},
@@ -181,6 +185,10 @@
 				{
 					"title": "源扩展",
 					"path": "extension/source"
+				},
+				{
+					"title": "外部函数",
+					"path": "extension/external_func"
 				}
 			]
 		},
@@ -367,6 +375,10 @@
 				{
 					"title": "Plugins",
 					"path": "restapi/plugins"
+				},
+				{
+					"title": "External Services",
+					"path": "restapi/services"
 				}
 			]
 		},
@@ -419,6 +431,10 @@
 				{
 					"title": "Source Extension",
 					"path": "extension/source"
+				},
+				{
+					"title": "External Function",
+					"path": "extension/external_func"
 				}
 			]
 		},

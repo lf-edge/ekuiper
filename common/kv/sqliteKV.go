@@ -19,6 +19,10 @@ type SqliteKVStore struct {
 	path  string
 }
 
+func init() {
+	gob.Register(make(map[string]interface{}))
+}
+
 func GetSqliteKVStore(fpath string) (ret *SqliteKVStore) {
 	dir, file := filepath.Split(fpath)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {

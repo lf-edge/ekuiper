@@ -3,6 +3,7 @@ package xsql
 import (
 	"fmt"
 	"github.com/emqx/kuiper/plugins"
+	"github.com/emqx/kuiper/services"
 	"strings"
 )
 
@@ -27,6 +28,15 @@ func validateFuncs(funcName string, args []Expr) error {
 	} else if _, ok := aggFuncMap[lowerName]; ok {
 		return validateAggFunc(lowerName, args)
 	} else {
+		// Get from external service
+		if m, err := services.GetServiceManager(); err != nil {
+			return err
+		} else {
+			if m.HasFunction(funcName) {
+				return nil
+			}
+		}
+		// Get from plugin
 		if nf, err := plugins.GetFunction(funcName); err != nil {
 			return err
 		} else {

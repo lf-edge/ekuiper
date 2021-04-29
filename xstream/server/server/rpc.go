@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
+	"github.com/emqx/kuiper/services"
 	"github.com/emqx/kuiper/xstream/sinks"
 	"strings"
 	"time"
@@ -75,7 +76,7 @@ func (t *Server) Stream(stream string, reply *string) error {
 	return nil
 }
 
-func (t *Server) CreateRule(rule *common.RuleDesc, reply *string) error {
+func (t *Server) CreateRule(rule *common.RPCArgDesc, reply *string) error {
 	r, err := ruleProcessor.ExecCreate(rule.Name, rule.Json)
 	if err != nil {
 		return fmt.Errorf("Create rule error : %s.", err)
@@ -278,15 +279,11 @@ func (t *Server) DescPlugin(arg *common.PluginDesc, reply *string) error {
 	if !ok {
 		return fmt.Errorf("Describe plugin error: not found")
 	} else {
-		s, err := json.Marshal(m)
+		r, err := marshalDesc(m)
 		if err != nil {
-			return fmt.Errorf("Describe plugin error: invalid json %v", m)
+			return fmt.Errorf("Describe plugin error: %v", err)
 		}
-		dst := &bytes.Buffer{}
-		if err := json.Indent(dst, s, "", "  "); err != nil {
-			return fmt.Errorf("Describe plugin error: indent json error %v", err)
-		}
-		*reply = dst.String()
+		*reply = r
 	}
 	return nil
 }
@@ -300,17 +297,118 @@ func (t *Server) DescUdf(arg string, reply *string) error {
 			"name":   arg,
 			"plugin": m,
 		}
-		s, err := json.Marshal(j)
+		r, err := marshalDesc(j)
 		if err != nil {
-			return fmt.Errorf("Describe udf error: invalid json %v", j)
+			return fmt.Errorf("Describe udf error: %v", err)
 		}
-		dst := &bytes.Buffer{}
-		if err := json.Indent(dst, s, "", "  "); err != nil {
-			return fmt.Errorf("Describe udf error: indent json error %v", err)
-		}
-		*reply = dst.String()
+		*reply = r
 	}
 	return nil
+}
+
+func (t *Server) CreateService(arg *common.RPCArgDesc, reply *string) error {
+	sd := &services.ServiceCreationRequest{}
+	if arg.Json != "" {
+		if err := json.Unmarshal([]byte(arg.Json), sd); err != nil {
+			return fmt.Errorf("Parse service %s error : %s.", arg.Json, err)
+		}
+	}
+	if sd.Name != arg.Name {
+		return fmt.Errorf("Create service error: name mismatch.")
+	}
+	if sd.File == "" {
+		return fmt.Errorf("Create service error: Missing service file url.")
+	}
+	err := serviceManager.Create(sd)
+	if err != nil {
+		return fmt.Errorf("Create service error: %s", err)
+	} else {
+		*reply = fmt.Sprintf("Service %s is created.", arg.Name)
+	}
+	return nil
+}
+
+func (t *Server) DescService(name string, reply *string) error {
+	s, err := serviceManager.Get(name)
+	if err != nil {
+		return fmt.Errorf("Desc service error : %s.", err)
+	} else {
+		r, err := marshalDesc(s)
+		if err != nil {
+			return fmt.Errorf("Describe service error: %v", err)
+		}
+		*reply = r
+	}
+	return nil
+}
+
+func (t *Server) DescServiceFunc(name string, reply *string) error {
+	s, err := serviceManager.GetFunction(name)
+	if err != nil {
+		return fmt.Errorf("Desc service func error : %s.", err)
+	} else {
+		r, err := marshalDesc(s)
+		if err != nil {
+			return fmt.Errorf("Describe service func error: %v", err)
+		}
+		*reply = r
+	}
+	return nil
+}
+
+func (t *Server) DropService(name string, reply *string) error {
+	err := serviceManager.Delete(name)
+	if err != nil {
+		return fmt.Errorf("Drop service error : %s.", err)
+	}
+	*reply = fmt.Sprintf("Service %s is dropped", name)
+	return nil
+}
+
+func (t *Server) ShowServices(_ int, reply *string) error {
+	s, err := serviceManager.List()
+	if err != nil {
+		return fmt.Errorf("Show service error: %s.", err)
+	}
+	if len(s) == 0 {
+		*reply = "No service definitions are found."
+	} else {
+		r, err := marshalDesc(s)
+		if err != nil {
+			return fmt.Errorf("Show service error: %v", err)
+		}
+		*reply = r
+	}
+	return nil
+}
+
+func (t *Server) ShowServiceFuncs(_ int, reply *string) error {
+	s, err := serviceManager.ListFunctions()
+	if err != nil {
+		return fmt.Errorf("Show service funcs error: %s.", err)
+	}
+	if len(s) == 0 {
+		*reply = "No service definitions are found."
+	} else {
+		r, err := marshalDesc(s)
+		if err != nil {
+			return fmt.Errorf("Show service funcs error: %v", err)
+		}
+		*reply = r
+	}
+	return nil
+}
+
+func marshalDesc(m interface{}) (string, error) {
+	s, err := json.Marshal(m)
+	if err != nil {
+		return "", fmt.Errorf("invalid json %v", m)
+	}
+	dst := &bytes.Buffer{}
+	if err := json.Indent(dst, s, "", "  "); err != nil {
+		return "", fmt.Errorf("indent json error %v", err)
+	}
+	return dst.String(), nil
 }
 
 func getPluginByJson(arg *common.PluginDesc, pt plugins.PluginType) (plugins.Plugin, error) {

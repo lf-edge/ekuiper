@@ -3,6 +3,7 @@ package xsql
 import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/services"
 	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
@@ -13,14 +14,19 @@ type AggregateFunctionValuer struct {
 	funcPlugins *funcPlugins
 }
 
-func NewFunctionValuersForOp(ctx api.StreamContext) (*FunctionValuer, *AggregateFunctionValuer) {
+func NewFunctionValuersForOp(ctx api.StreamContext) (*FunctionValuer, *AggregateFunctionValuer, error) {
 	p := NewFuncPlugins(ctx)
-	return NewAggregateFunctionValuers(p)
+	m, err := services.GetServiceManager()
+	if err != nil {
+		return nil, nil, err
+	}
+	fv, afv := NewAggregateFunctionValuers(p, m)
+	return fv, afv, nil
 }
 
 //Should only be called by stream to make sure a single instance for an operation
-func NewAggregateFunctionValuers(p *funcPlugins) (*FunctionValuer, *AggregateFunctionValuer) {
-	fv := NewFunctionValuer(p)
+func NewAggregateFunctionValuers(p *funcPlugins, m *services.Manager) (*FunctionValuer, *AggregateFunctionValuer) {
+	fv := NewFunctionValuer(p, m)
 	return fv, &AggregateFunctionValuer{
 		fv:          fv,
 		funcPlugins: p,
