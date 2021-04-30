@@ -1,13 +1,13 @@
-Kuiper REST api 允许您管理外部服务，例如注册、删除和列出服务，列出外部函数等。
+Kuiper REST api allows you to manage external services, such as registering, deleting and listing services, listing external functions.
 
-## 注册外部服务
+## Register external services
 
-该API接受JSON内容以创建新的外部服务。 
+This API accepts JSON content to create new external services.
 
 ```shell
 POST http://localhost:9081/services
 ```
-文件在http服务器上时的请求示例：
+An example of a request for a file on an HTTP server:
 
 ```json
 {
@@ -16,7 +16,7 @@ POST http://localhost:9081/services
 }
 ```
 
-文件在Kuiper所在服务器上时的请求示例：
+An example of a request for a file on the Kuiper server:
 ```json
 {
   "name":"random",
@@ -24,52 +24,52 @@ POST http://localhost:9081/services
 }
 ```
 
-### 参数
+### parameter
 
-1. name：外部服务的唯一名称，名称必须与 zip 文件里的服务定义 json 文件完全相同。
-2. file：外部服务文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 Kuiper 服务器所在的机器上。它必须是一个 zip 文件，其中包含：与服务名相同的服务描述 json 文件以及其他任意辅助文件。其中，schema 文件必须在 schema 文件夹下。
+1. name: The unique name of the external service, which must be exactly the same as the json file of service definition in the zip file.
+2. file: URL of external service file. URL supports http, https and file modes. When using the file mode, the file must be on the machine where the Kuiper server is located. It must be a zip file, which contains the service description json file with the same name as the service and any other auxiliary files. The schema file must be in the schema folder.
 
-### 服务文件格式
-名为 sample.zip 的源的示例 zip 文件
+### Service file format
+A sample zip file of the source named sample.zip
 1. sample.json
-2. schema 目录：内部包含服务所用到的一个或多个 schema 文件。例如，sample.proto。
+2. Schema directory: it contains one or more schema files used by the service. For example, sample.proto.
 
 
-## 显示外部服务
+## Display external services
 
-该 API 用于显示服务器中为定义的所有外部服务。
+This API is used to display all external services defined in the server.
 
 ```shell
 GET http://localhost:9081/services
 ```
 
-响应示例：
+Response example:
 
 ```json
 ["sample","sample2"]
 ```
 
-## 描述外部服务
+## Describe external services
 
-该 API 用于打印外部服务的详细定义。
+This API is used to print detailed definitions of external services.
 
 ```shell
 GET http://localhost:9081/plugins/services/{name}
 ```
 
-路径参数 `name` 是外部服务的名称。
+The path parameter `name` is the name of the external service.
 
-## 删除外部服务
+## Delete external services
 
-该 API 用于删除外部服务，服务之下定义的所有函数都将被删除。
+This API is used to delete external services, and all functions defined under the service will be deleted.
 
 ```shell
 DELETE http://localhost:8080/plugins/services/{name}
 ```
 
-## 更新外部服务
+## Update external services
 
-该 API 用于更新外部服务，其参数与服务注册相同。
+This API is used to update external services, and its parameters are the same as that of service registration.
 
 ```shell
 PUT http://localhost:9081/services/{name}
@@ -80,29 +80,29 @@ PUT http://localhost:9081/services/{name}
 }
 ```
 
-## 显示所有外部函数
+## Display all external functions
 
-每个服务可包含多个函数。该 API 用于展示所有外部函数的可用于 SQL 的函数名称。
+Each service can contain multiple functions. This API is used to display the names of all external functions that can be used in SQL.
 
 ```shell
 GET http://localhost:9081/services/functions
 ```
 
-结果样例：
+Result example:
 
 ```json
 ["func1","func2"]
 ```
 
-### 描述外部函数
+### Describe external functions
 
-该 API 用于展示定义此外部函数的服务名称。
+This API is used to display the name of the service that defines this external function.
 
 ```shell
 GET http://localhost:9081/services/functions/{name}
 ```
 
-结果样例：
+Result example:
 
 ```json
 {
