@@ -29,7 +29,7 @@ type EdgexSource struct {
 	valueDescs map[string]string
 }
 
-func (es *EdgexSource) Configure(device string, props map[string]interface{}) error {
+func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 	if f, ok := props["format"]; ok {
 		if f != common.FORMAT_JSON {
 			return fmt.Errorf("edgex source only supports `json` format")
@@ -84,6 +84,7 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 		}
 		mbconf.Optional = optional
 	}
+	printConf(mbconf)
 	common.Log.Infof("Use configuration for edgex messagebus %v\n", mbconf)
 
 	if client, err := messaging.NewMessageClient(mbconf); err != nil {
@@ -95,19 +96,18 @@ func (es *EdgexSource) Configure(device string, props map[string]interface{}) er
 
 }
 
-func castToString(v interface{}) (result string, ok bool) {
-	switch v := v.(type) {
-	case int:
-		return strconv.Itoa(v), true
-	case string:
-		return v, true
-	case bool:
-		return strconv.FormatBool(v), true
-	case float64, float32:
-		return fmt.Sprintf("%.2f", v), true
-	default:
-		return "", false
+// Modify the copied conf to print no password.
+func printConf(mbconf types.MessageBusConfig) {
+	var printableOptional = make(map[string]string)
+	for k, v := range mbconf.Optional {
+		if strings.ToLower(k) == "password" {
+			printableOptional[k] = "*"
+		} else {
+			printableOptional[k] = v
+		}
 	}
+	mbconf.Optional = printableOptional
+	common.Log.Infof("Use configuration for edgex messagebus %v\n", mbconf)
 }
 
 func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {

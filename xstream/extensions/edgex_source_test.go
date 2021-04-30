@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
 	"github.com/emqx/kuiper/common"
+	"reflect"
 	"testing"
 )
 
@@ -310,5 +312,22 @@ func TestCastToString(t *testing.T) {
 	}
 	if v, ok := CastToString(12.3); v != "12.30" || !ok {
 		t.Errorf("Failed to cast float.")
+	}
+}
+
+func TestPrintConf(t *testing.T) {
+	expMbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: "tcp", Host: "127.0.0.1", Port: 6625}, Type: "mbus", Optional: map[string]string{
+		"proa":     "proa",
+		"Password": "fafsadfsadf=",
+		"Prob":     "Prob",
+	}}
+	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: "tcp", Host: "127.0.0.1", Port: 6625}, Type: "mbus", Optional: map[string]string{
+		"proa":     "proa",
+		"Password": "fafsadfsadf=",
+		"Prob":     "Prob",
+	}}
+	printConf(mbconf)
+	if !reflect.DeepEqual(expMbconf, mbconf) {
+		t.Errorf("conf changed after printing")
 	}
 }
