@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -171,11 +172,13 @@ func TestProcessEnv(t *testing.T) {
 		vars []string
 		file string
 		expt map[interface{}]interface{}
+		out  string
 	}{
 		{
 			vars: []string{
 				"EDGEX__DEFAULT__TYPE=zmq",
 				"EDGEX__DEFAULT__OPTIONAL__CLIENTID=clientid_0000",
+				"EDGEX__DEFAULT__OPTIONAL__PASSWORD=should_not_print",
 				"EDGEX__APPLICATION_CONF__PROTOCOL=ssl",
 			},
 			file: "edgex",
@@ -185,12 +188,14 @@ func TestProcessEnv(t *testing.T) {
 					"type":     "zmq",
 					"optional": map[interface{}]interface{}{
 						"ClientId": "clientid_0000",
+						"Password": "should_not_print",
 					},
 				},
 				"application_conf": map[interface{}]interface{}{
 					"protocol": "ssl",
 				},
 			},
+			out: "application_conf:\n  protocol: ssl\ndefault:\n  optional:\n    ClientId: clientid_0000\n    Password: '*'\n  protocol: tcp\n  type: zmq\n",
 		},
 	}
 	files := make(map[string]map[interface{}]interface{})
@@ -198,6 +203,14 @@ func TestProcessEnv(t *testing.T) {
 		ProcessEnv(files, tt.vars)
 		if !reflect.DeepEqual(tt.expt, files[tt.file]) {
 			t.Errorf("%d \tresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.expt, files[tt.file])
+		}
+		for f, v := range files {
+			p := toPrintableString(v)
+			if !reflect.DeepEqual(tt.out, p) {
+				t.Errorf("%d \tresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.out, p)
+			}
+			message := fmt.Sprintf("-------------------\nConf file %s: \n %s", f, p)
+			fmt.Println(message)
 		}
 	}
 }
