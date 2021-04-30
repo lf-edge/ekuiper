@@ -49,23 +49,6 @@ func getImg() ([]byte, string) {
 	return image, b64img
 }
 
-func CleanStateData() {
-	//dbDir, err := common.GetDataLoc()
-	//if err != nil {
-	//	common.Log.Panic(err)
-	//}
-	//c := path.Join(dbDir, "checkpoints")
-	//err = os.RemoveAll(c)
-	//if err != nil {
-	//	common.Log.Errorf("%s", err)
-	//}
-	//s := path.Join(dbDir, "sink", "cache")
-	//err = os.RemoveAll(s)
-	//if err != nil {
-	//	common.Log.Errorf("%s", err)
-	//}
-}
-
 func compareMetrics(tp *xstream.TopologyNew, m map[string]interface{}) (err error) {
 	keys, values := tp.GetMetrics()
 	for k, v := range m {
@@ -1105,8 +1088,6 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 }
 
 func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkProps map[string]interface{}) ([][]*xsql.Tuple, int, *xstream.TopologyNew, *mocknodes.MockSink, <-chan error) {
-	// Rest for each test
-	CleanStateData()
 	mockclock.ResetClock(1541152486000)
 	// Create stream
 	var (
