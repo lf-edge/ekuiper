@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/contexts"
-	"github.com/emqx/kuiper/xstream/test"
+	"github.com/emqx/kuiper/xstream/topotest/mocknodes"
 	"reflect"
 	"testing"
 	"time"
@@ -76,7 +76,7 @@ func TestSinkTemplate_Apply(t *testing.T) {
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 
 	for i, tt := range tests {
-		mockSink := test.NewMockSink()
+		mockSink := mocknodes.NewMockSink()
 		s := NewSinkNodeWithSink("mockSink", mockSink, tt.config)
 		s.Open(ctx, make(chan error))
 		s.input <- tt.data

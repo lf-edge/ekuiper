@@ -1,10 +1,11 @@
-package test
+package mocknodes
 
 import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/topotest/mockclock"
 	"sync"
 	"time"
 )
@@ -26,7 +27,7 @@ func NewMockSource(data []*xsql.Tuple) *MockSource {
 
 func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
 	log := ctx.GetLogger()
-	mockClock := GetMockClock()
+	mockClock := mockclock.GetMockClock()
 	log.Infof("%d: mock source %s starts", common.GetNowInMilli(), ctx.GetOpId())
 	log.Debugf("mock source %s starts with offset %d", ctx.GetOpId(), m.offset)
 	for i, d := range m.data {

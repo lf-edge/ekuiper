@@ -29,9 +29,7 @@ func ToString(input interface{}, sn Strictness) (string, error) {
 	case string:
 		return s, nil
 	case []byte:
-		if sn != STRICT {
-			return string(s), nil
-		}
+		return string(s), nil
 	default:
 		if sn == CONVERT_ALL {
 			switch s := input.(type) {

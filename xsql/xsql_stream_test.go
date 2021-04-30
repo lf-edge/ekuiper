@@ -2,6 +2,7 @@ package xsql
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"reflect"
 	"strings"
 	"testing"
@@ -19,6 +20,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					FIRST_NAME STRING,
 					LAST_NAME STRING,
 					NICKNAMES ARRAY(STRING),
+					data bytea,
 					Gender BOOLEAN,
 					ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
 				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", CONF_KEY="srv1", type="MQTT", TIMESTAMP="USERID", TIMESTAMP_FORMAT="yyyy-MM-dd''T''HH:mm:ssX'");`,
@@ -29,6 +31,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					{Name: "FIRST_NAME", FieldType: &BasicType{Type: STRINGS}},
 					{Name: "LAST_NAME", FieldType: &BasicType{Type: STRINGS}},
 					{Name: "NICKNAMES", FieldType: &ArrayType{Type: STRINGS}},
+					{Name: "data", FieldType: &BasicType{Type: BYTEA}},
 					{Name: "Gender", FieldType: &BasicType{Type: BOOLEAN}},
 					{Name: "ADDRESS", FieldType: &RecType{
 						StreamFields: []StreamField{
@@ -226,7 +229,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				StreamFields: nil,
 				Options:      nil,
 			},
-			err: `found "integer", expect valid stream field types(BIGINT | FLOAT | STRINGS | DATETIME | BOOLEAN | ARRAY | STRUCT).`,
+			err: `found "integer", expect valid stream field types(BIGINT | FLOAT | STRINGS | DATETIME | BOOLEAN | BYTEA | ARRAY | STRUCT).`,
 		},
 
 		{
@@ -399,7 +402,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		stmt, err := NewParser(strings.NewReader(tt.s)).ParseCreateStmt()
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
@@ -407,11 +410,3 @@ func TestParser_ParseCreateStream(t *testing.T) {
 	}
 
 }
-
-// errstring returns the string representation of an error.
-//func errstring(err error) string {
-//	if err != nil {
-//		return err.Error()
-//	}
-//	return ""
-//}

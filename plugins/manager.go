@@ -257,23 +257,6 @@ func GetSink(t string) (api.Sink, error) {
 	return s, nil
 }
 
-func GetFunction(t string) (api.Function, error) {
-	nf, err := getPlugin(t, FUNCTION)
-	if err != nil {
-		return nil, err
-	}
-	var s api.Function
-	switch t := nf.(type) {
-	case api.Function:
-		s = t
-	case func() api.Function:
-		s = t()
-	default:
-		return nil, fmt.Errorf("exported symbol %s is not type of api.Function or function that return api.Function", t)
-	}
-	return s, nil
-}
-
 type Manager struct {
 	pluginDir string
 	etcDir    string
@@ -586,6 +569,32 @@ func (m *Manager) Get(t PluginType, name string) (map[string]interface{}, bool) 
 	}
 	return nil, false
 }
+
+// Start implement xsql.FunctionRegister
+
+func (m *Manager) HasFunction(name string) bool {
+	_, ok := m.GetSymbol(name)
+	return ok
+}
+
+func (m *Manager) Function(name string) (api.Function, error) {
+	nf, err := getPlugin(name, FUNCTION)
+	if err != nil {
+		return nil, err
+	}
+	var s api.Function
+	switch t := nf.(type) {
+	case api.Function:
+		s = t
+	case func() api.Function:
+		s = t()
+	default:
+		return nil, fmt.Errorf("exported symbol %s is not type of api.Function or function that return api.Function", t)
+	}
+	return s, nil
+}
+
+// End Implement FunctionRegister
 
 // Return the lowercase version of so name. It may be upper case in path.
 func getSoFilePath(m *Manager, t PluginType, name string, isSoName bool) (string, error) {

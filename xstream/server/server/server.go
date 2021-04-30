@@ -4,6 +4,7 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/plugins"
 	"github.com/emqx/kuiper/services"
+	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xsql/processors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -53,6 +54,7 @@ func StartUp(Version, LoadFileType string) {
 	if err != nil {
 		logger.Panic(err)
 	}
+	xsql.InitFuncRegisters(serviceManager, pluginManager)
 
 	registry = &RuleRegistry{internal: make(map[string]*RuleState)}
 

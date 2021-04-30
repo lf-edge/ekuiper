@@ -137,7 +137,7 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) (map[string]inter
 	return result, nil
 }
 
-const DEFAULT_FIELD_NAME_PREFIX string = "rengine_field_"
+const DEFAULT_FIELD_NAME_PREFIX string = "kuiper_field_"
 
 func assignName(name, alias string, fields map[string]interface{}) string {
 	if result := strings.Trim(alias, " "); result != "" {

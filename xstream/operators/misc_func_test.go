@@ -213,7 +213,7 @@ func TestMiscFunc_Apply1(t *testing.T) {
 		}
 		pp := &ProjectOp{Fields: stmt.Fields}
 		pp.isTest = true
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
@@ -264,7 +264,7 @@ func TestMqttFunc_Apply2(t *testing.T) {
 		}
 		pp := &ProjectOp{Fields: stmt.Fields}
 		pp.isTest = true
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
@@ -273,7 +273,7 @@ func TestMqttFunc_Apply2(t *testing.T) {
 				t.Errorf("Failed to parse the input into map.\n")
 				continue
 			}
-			//fmt.Printf("%t\n", mapRes["rengine_field_0"])
+			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
 
 			if !reflect.DeepEqual(tt.result, mapRes) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
@@ -381,7 +381,7 @@ func TestMetaFunc_Apply1(t *testing.T) {
 		}
 		pp := &ProjectOp{Fields: stmt.Fields}
 		pp.isTest = true
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
@@ -390,7 +390,7 @@ func TestMetaFunc_Apply1(t *testing.T) {
 				t.Errorf("Failed to parse the input into map.\n")
 				continue
 			}
-			//fmt.Printf("%t\n", mapRes["rengine_field_0"])
+			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
 
 			if !reflect.DeepEqual(tt.result, mapRes) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
@@ -714,6 +714,30 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 			result: []map[string]interface{}{{
 				"a": "Shield of faith",
 			}},
+		}, {
+			sql: "SELECT json_path_query(equipment, \"$[\\\"arm.left\\\"]\") AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class":     "warrior",
+					"equipment": `{"rings": [0.1, 2.4],"arm.right": "Sword of flame","arm.left":  "Shield of faith"}`,
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "Shield of faith",
+			}},
+		}, {
+			sql: "SELECT json_path_query(equipment, \"$[0][\\\"arm.left\\\"]\") AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class":     "warrior",
+					"equipment": `[{"rings": [0.1, 2.4],"arm.right": "Sword of flame","arm.left":  "Shield of faith"}]`,
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "Shield of faith",
+			}},
 		},
 	}
 
@@ -727,7 +751,7 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 		}
 		pp := &ProjectOp{Fields: stmt.Fields}
 		pp.isTest = true
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
@@ -736,7 +760,7 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 				t.Errorf("Failed to parse the input into map.\n")
 				continue
 			}
-			//fmt.Printf("%t\n", mapRes["rengine_field_0"])
+			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
 
 			if !reflect.DeepEqual(tt.result, mapRes) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)

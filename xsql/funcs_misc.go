@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	b64 "encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/PaesslerAG/gval"
 	"github.com/PaesslerAG/jsonpath"
@@ -240,6 +241,12 @@ func jsonCall(name string, args []interface{}) (interface{}, bool) {
 		input = convertToInterfaceArr(args[0].(map[string]interface{}))
 	case reflect.Slice:
 		input = convertSlice(args[0])
+	case reflect.String:
+		v, _ := args[0].(string)
+		err := json.Unmarshal([]byte(v), &input)
+		if err != nil {
+			return fmt.Errorf("%s function error: the first argument '%v' is not a valid json string", name, args[0]), false
+		}
 	default:
 		return fmt.Errorf("%s function error: the first argument must be a map but got %v", name, args[0]), false
 	}

@@ -5,6 +5,7 @@ package sinks
 import (
 	"fmt"
 	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/emqx/kuiper/common"
 	"reflect"
 	"testing"
 )
@@ -180,18 +181,10 @@ func TestProduceEvents(t1 *testing.T) {
 		ems := EdgexMsgBusSink{deviceName: t.deviceName, metadata: "meta"}
 		result, err := ems.produceEvents([]byte(t.input))
 
-		if !reflect.DeepEqual(t.error, errstring(err)) {
+		if !reflect.DeepEqual(t.error, common.Errstring(err)) {
 			t1.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, t.input, t.error, err)
 		} else if t.error == "" && !reflect.DeepEqual(t.expected, result) {
 			t1.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, t.input, t.expected, result)
 		}
 	}
-}
-
-// errstring returns the string representation of an error.
-func errstring(err error) string {
-	if err != nil {
-		return err.Error()
-	}
-	return ""
 }

@@ -1,8 +1,14 @@
 package xsql
 
-import "fmt"
+import (
+	"fmt"
+)
 
-var Language = &ParseTree{}
+var (
+	Language          = &ParseTree{}
+	FuncRegisters     []FunctionRegister
+	parserFuncRuntime *funcRuntime
+)
 
 type ParseTree struct {
 	Handlers map[Token]func(*Parser) (Statement, error)
@@ -60,4 +66,11 @@ func init() {
 	Language.Handle(DROP, func(p *Parser) (statement Statement, e error) {
 		return p.parseDropStmt()
 	})
+
+	InitFuncRegisters()
+}
+
+func InitFuncRegisters(registers ...FunctionRegister) {
+	FuncRegisters = registers
+	parserFuncRuntime = NewFuncRuntime(nil, registers)
 }

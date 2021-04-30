@@ -22,14 +22,16 @@ func (f UnFunc) Apply(ctx api.StreamContext, data interface{}) interface{} {
 
 type UnaryOperator struct {
 	*defaultSinkNode
-	op        UnOperation
-	mutex     sync.RWMutex
-	cancelled bool
+	op            UnOperation
+	funcRegisters []xsql.FunctionRegister
+	mutex         sync.RWMutex
+	cancelled     bool
 }
 
 // NewUnary creates *UnaryOperator value
-func New(name string, options *api.RuleOption) *UnaryOperator {
+func New(name string, registers []xsql.FunctionRegister, options *api.RuleOption) *UnaryOperator {
 	return &UnaryOperator{
+		funcRegisters: registers,
 		defaultSinkNode: &defaultSinkNode{
 			input: make(chan interface{}, options.BufferLength),
 			defaultNode: &defaultNode{
@@ -92,11 +94,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	o.mutex.Lock()
 	o.statManagers = append(o.statManagers, stats)
 	o.mutex.Unlock()
-	fv, afv, err := xsql.NewFunctionValuersForOp(exeCtx)
-	if err != nil {
-		o.drainError(errCh, err, ctx)
-		return
-	}
+	fv, afv := xsql.NewFunctionValuersForOp(exeCtx, o.funcRegisters)
 
 	for {
 		select {

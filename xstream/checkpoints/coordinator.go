@@ -82,6 +82,7 @@ type Coordinator struct {
 	signal                  chan *Signal
 	store                   api.Store
 	ctx                     api.StreamContext
+	activated               bool
 }
 
 func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTask, sinks []SinkTask, qos api.Qos, store api.Store, interval int, ctx api.StreamContext) *Coordinator {
@@ -149,6 +150,7 @@ func (c *Coordinator) Activate() error {
 	c.ticker = common.GetTicker(c.baseInterval)
 	tc := c.ticker.C
 	go func() {
+		c.activated = true
 		for {
 			select {
 			case n := <-tc:
@@ -278,4 +280,8 @@ func (c *Coordinator) GetCompleteCount() int {
 
 func (c *Coordinator) GetLatest() int64 {
 	return c.completedCheckpoints.getLatest().checkpointId
+}
+
+func (c *Coordinator) IsActivated() bool {
+	return c.activated
 }

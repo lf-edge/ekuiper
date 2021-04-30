@@ -14,18 +14,8 @@ import (
 )
 
 var (
-	DbDir = getDbDir()
+	DbDir = common.GetDbDir()
 )
-
-func getDbDir() string {
-	common.InitConf()
-	dbDir, err := common.GetDataLoc()
-	if err != nil {
-		common.Log.Panic(err)
-	}
-	common.Log.Infof("db location is %s", dbDir)
-	return dbDir
-}
 
 func Test_createLogicalPlan(t *testing.T) {
 	store := kv.GetDefaultKVStore(path.Join(DbDir, "stream"))
@@ -370,8 +360,8 @@ func Test_createLogicalPlan(t *testing.T) {
 								},
 							},
 							condition: &xsql.BinaryExpr{
-								LHS: &xsql.Call{Name: "COUNT", Args: []xsql.Expr{&xsql.StringLiteral{
-									Val: "*",
+								LHS: &xsql.Call{Name: "COUNT", Args: []xsql.Expr{&xsql.Wildcard{
+									Token: xsql.ASTERISK,
 								}}},
 								OP:  xsql.GT,
 								RHS: &xsql.IntegerLiteral{Val: 2},
@@ -844,18 +834,10 @@ func Test_createLogicalPlan(t *testing.T) {
 			CheckpointInterval: 0,
 			SendError:          true,
 		}, store)
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
 		} else if !reflect.DeepEqual(tt.p, p) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.p, p)
 		}
 	}
-}
-
-// errstring returns the string representation of an error.
-func errstring(err error) string {
-	if err != nil {
-		return err.Error()
-	}
-	return ""
 }

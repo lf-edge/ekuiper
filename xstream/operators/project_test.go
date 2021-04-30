@@ -533,7 +533,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 		}
 		pp := &ProjectOp{Fields: stmt.Fields, SendMeta: true}
 		pp.isTest = true
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
@@ -542,7 +542,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				t.Errorf("Failed to parse the input into map.\n")
 				continue
 			}
-			//fmt.Printf("%t\n", mapRes["rengine_field_0"])
+			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
 
 			if !reflect.DeepEqual(tt.result, mapRes) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
@@ -1084,7 +1084,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 
 		pp := &ProjectOp{Fields: stmt.Fields}
 		pp.isTest = true
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
@@ -1094,7 +1094,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				continue
 			}
 
-			//fmt.Printf("%t\n", mapRes["rengine_field_0"])
+			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
 
 			if !reflect.DeepEqual(tt.result, mapRes) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
@@ -1285,7 +1285,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 		}
 		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
 		pp.isTest = true
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
@@ -1295,7 +1295,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 				continue
 			}
 
-			//fmt.Printf("%t\n", mapRes["rengine_field_0"])
+			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
 
 			if !reflect.DeepEqual(tt.result, mapRes) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
@@ -1987,7 +1987,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			t.Error(err)
 		}
 		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: true, isTest: true}
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
 		if v, ok := result.([]byte); ok {
@@ -1997,7 +1997,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				continue
 			}
 
-			//fmt.Printf("%t\n", mapRes["rengine_field_0"])
+			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
 
 			if !reflect.DeepEqual(tt.result, mapRes) {
 				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
@@ -2138,7 +2138,7 @@ func TestProjectPlanError(t *testing.T) {
 
 		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
 		pp.isTest = true
-		fv, afv, _ := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)

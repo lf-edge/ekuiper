@@ -2,6 +2,7 @@ package xsql
 
 import (
 	"fmt"
+	"github.com/emqx/kuiper/common"
 	"reflect"
 	"strings"
 	"testing"
@@ -33,7 +34,7 @@ func TestIsAggStatement(t *testing.T) {
 		//fmt.Printf("Parsing SQL %q.\n", tt.s)
 		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
 		isAgg := IsAggStatement(stmt)
-		if !reflect.DeepEqual(tt.err, errstring(err)) {
+		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" && (tt.agg != isAgg) {
 			t.Errorf("Error: expected %t, actual %t.", tt.agg, isAgg)

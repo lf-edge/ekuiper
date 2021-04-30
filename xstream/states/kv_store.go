@@ -34,7 +34,7 @@ type KVStore struct {
 //Assume each operator only has one instance
 func getKVStore(ruleId string) (*KVStore, error) {
 	dr, _ := common.GetDataLoc()
-	db := kv.GetDefaultKVStore(path.Join(dr, "checkpoints", ruleId))
+	db := kv.GetDefaultKVStore(path.Join(dr, ruleId, "checkpoints"))
 	s := &KVStore{db: db, max: 3, mapStore: &sync.Map{}}
 	//read data from badger db
 	if err := s.restore(); err != nil {

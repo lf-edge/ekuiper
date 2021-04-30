@@ -1,22 +1,20 @@
 package xsql
 
 import (
-	"github.com/emqx/kuiper/plugins"
-	"github.com/emqx/kuiper/services"
+	"errors"
+	"github.com/emqx/kuiper/xstream/api"
 	"strings"
 )
 
 // ONLY use NewFunctionValuer function to initialize
 type FunctionValuer struct {
-	funcPlugins    *funcPlugins
-	serviceManager *services.Manager
+	runtime *funcRuntime
 }
 
 //Should only be called by stream to make sure a single instance for an operation
-func NewFunctionValuer(p *funcPlugins, m *services.Manager) *FunctionValuer {
+func NewFunctionValuer(p *funcRuntime) *FunctionValuer {
 	fv := &FunctionValuer{
-		funcPlugins:    p,
-		serviceManager: m,
+		runtime: p,
 	}
 	return fv
 }
@@ -27,6 +25,11 @@ func (*FunctionValuer) Value(_ string) (interface{}, bool) {
 
 func (*FunctionValuer) Meta(_ string) (interface{}, bool) {
 	return nil, false
+}
+
+type FunctionRegister interface {
+	HasFunction(name string) bool
+	Function(name string) (api.Function, error)
 }
 
 var aggFuncMap = map[string]string{"avg": "",
@@ -83,6 +86,8 @@ var otherFuncMap = map[string]string{"isnull": "",
 	"newuuid": "", "tstamp": "", "mqtt": "", "meta": "", "cardinality": "",
 }
 
+var NotFoundErr = errors.New("not found")
+
 func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	lowerName := strings.ToLower(name)
 	if _, ok := mathFuncMap[lowerName]; ok {
@@ -100,15 +105,13 @@ func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bo
 	} else if _, ok := aggFuncMap[lowerName]; ok {
 		return nil, false
 	} else {
-		// Check service extension
-		// TODO check aggregate
-		if fv.serviceManager.HasFunction(name) {
-			return fv.serviceManager.InvokeFunction(name, args)
-		}
-
-		// Check plugin extension
-		nf, fctx, err := fv.funcPlugins.GetFuncFromPlugin(name)
-		if err != nil {
+		nf, fctx, err := fv.runtime.getCustom(name)
+		switch err {
+		case NotFoundErr:
+			return nil, false
+		case nil:
+			// do nothing, continue
+		default:
 			return err, false
 		}
 		if nf.IsAggregate() {
@@ -116,9 +119,7 @@ func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bo
 		}
 		logger := fctx.GetLogger()
 		logger.Debugf("run func %s", name)
-		result, ok := nf.Exec(args, fctx)
-		logger.Debugf("run custom function %s, get result %v", name, result)
-		return result, ok
+		return nf.Exec(args, fctx)
 	}
 }
 
@@ -157,7 +158,7 @@ func isAggFunc(f *Call) bool {
 	} else if _, ok := mathFuncMap[fn]; ok {
 		return false
 	} else {
-		if nf, err := plugins.GetFunction(f.Name); err == nil {
+		if nf, _, err := parserFuncRuntime.getCustom(f.Name); err == nil {
 			if nf.IsAggregate() {
 				//Add cache
 				aggFuncMap[fn] = ""
