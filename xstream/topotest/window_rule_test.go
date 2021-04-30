@@ -284,6 +284,7 @@ func TestWindow(t *testing.T) {
 		}, {
 			Name: `TestWindowRule5`,
 			Sql:  `SELECT temp FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1) `,
+			W:    10,
 			R: [][]map[string]interface{}{
 				{{
 					"temp": 25.5,

@@ -5,6 +5,7 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
+	"strings"
 )
 
 type Preprocessor struct {
@@ -59,7 +60,9 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.F
 	if !p.allMeta && p.metaFields != nil && len(p.metaFields) > 0 {
 		newMeta := make(xsql.Metadata)
 		for _, f := range p.metaFields {
-			newMeta[f] = tuple.Metadata[f]
+			if m, ok := tuple.Metadata.Value(f); ok {
+				newMeta[strings.ToLower(f)] = m
+			}
 		}
 		tuple.Metadata = newMeta
 	}

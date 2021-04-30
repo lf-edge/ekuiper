@@ -66,7 +66,7 @@ func main() {
 		if bs, err := yaml.Marshal(v); err != nil {
 			fmt.Println(err)
 		} else {
-			message := fmt.Sprintf("-------------------\nConf file %s: \n %s", f, string(bs))
+			message := fmt.Sprintf("-------------------\nConf file %s: \n %s", f, printable(v))
 			fmt.Println(message)
 			if fname, ok := fileMap[f]; ok {
 				if e := ioutil.WriteFile(fname, bs, 0644); e != nil {
@@ -77,6 +77,29 @@ func main() {
 			}
 		}
 	}
+}
+
+func printable(m map[interface{}]interface{}) map[interface{}]interface{} {
+	printableMap := make(map[interface{}]interface{})
+	for k, v := range m {
+		ks, ok := k.(string)
+		if ok && strings.ToLower(ks) == "password" {
+			printableMap[k] = "*"
+		} else {
+			if vm, ok := v.(map[interface{}]interface{}); ok {
+				printableMap[k] = printable(vm)
+			} else {
+				printableMap[k] = v
+			}
+		}
+	}
+	return printableMap
+}
+
+func toPrintableString(m map[interface{}]interface{}) string {
+	p := printable(m)
+	b, _ := yaml.Marshal(p)
+	return string(b)
 }
 
 func ProcessEnv(files map[string]map[interface{}]interface{}, vars []string) {
@@ -116,7 +139,7 @@ func ProcessEnv(files map[string]map[interface{}]interface{}, vars []string) {
 					fmt.Printf("%s\n", err)
 				} else {
 					m := make(map[interface{}]interface{})
-					err = yaml.Unmarshal([]byte(data), &m)
+					err = yaml.Unmarshal(data, &m)
 					if err != nil {
 						fmt.Println(err)
 					}

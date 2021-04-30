@@ -26,7 +26,7 @@ type DataSourcePlan struct {
 	// intermediate status
 	isWildCard bool
 	fields     map[string]interface{}
-	metaMap    map[string]bool
+	metaMap    map[string]string
 }
 
 func (p DataSourcePlan) Init() *DataSourcePlan {
@@ -76,7 +76,7 @@ func (p *DataSourcePlan) PruneColumns(fields []xsql.Expr) error {
 	p.getProps()
 	p.fields = make(map[string]interface{})
 	if !p.allMeta {
-		p.metaMap = make(map[string]bool)
+		p.metaMap = make(map[string]string)
 	}
 	if p.timestampField != "" {
 		p.fields[p.timestampField] = p.timestampField
@@ -103,7 +103,7 @@ func (p *DataSourcePlan) PruneColumns(fields []xsql.Expr) error {
 					p.allMeta = true
 					p.metaMap = nil
 				} else if !p.allMeta {
-					p.metaMap[f.Name] = true
+					p.metaMap[strings.ToLower(f.Name)] = f.Name
 				}
 			}
 		case *xsql.SortField:
@@ -164,9 +164,11 @@ func (p *DataSourcePlan) getAllFields() {
 		p.streamFields = sfs
 	}
 	p.metaFields = make([]string, 0, len(p.metaMap))
-	for k, _ := range p.metaMap {
-		p.metaFields = append(p.metaFields, k)
+	for _, v := range p.metaMap {
+		p.metaFields = append(p.metaFields, v)
 	}
+	// for consistency of results for testing
+	sort.Strings(p.metaFields)
 	p.fields = nil
 	p.metaMap = nil
 }
