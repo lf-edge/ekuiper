@@ -80,7 +80,7 @@ Aggregate functions perform a calculation on a set of values and return a single
 | -------- | ----------- | ---------------------------------------------- |
 | concat   | concat(col1...)  | Concatenates arrays or strings. This function accepts any number of arguments and returns a String or an Array        |
 | endswith | endswith(col1, col2) | Returns a Boolean indicating whether the first String argument ends with the second String argument.              |
-| format_time| format_time(col1, format) | Format a datetime to string.    |
+| format_time| format_time(col1, format) | Format a datetime to string. The 'col1' will be [casted to datetime type](#cast-to-datetime) if it is bigint, float or string type before formatting. Please check [format patterns](#format_time-patterns) for how to compose the format.  |
 | indexof  | indexof(col1, col2)  | Returns the first index (0-based) of the second argument as a substring in the first argument.                    |
 | length   | length(col1)| Returns the number of characters in the provided string.                                                                  |
 | lower    | lower(col1) | Returns the lowercase version of the given String.                                                                         |
@@ -98,14 +98,49 @@ Aggregate functions perform a calculation on a set of values and return a single
 | trim      | trim(col1) | Removes all leading and trailing whitespace (tabs and spaces) from the provided String.                                    |
 | upper     | upper(col1)| Returns the uppercase version of the given String.|
 
+### Format_time patterns
+
+A pattern is used to create a format string. Patterns are based on a simple sequence of letters and symbols which is common in many languages like Java etc. The supported symbols in Kuiepr are
+
+| Symbol | Meaning     | Example                                    |
+| -------- | ----------- | ---------------------------------------------- |
+/ G        /  era        / G(AD)    /
+/ Y        /  year/ YYYY(2004), YY(04) /
+/ M   / month / M(1), MM(01), MMM(Jan), MMMM(January) /
+/ d  / day of month / d(2), dd(02) /
+/ E / day of week / EEE(Mon), EEEE(Monday) /
+/ H / hour in 24 hours format / HH(15) /
+/ h / hour in 12 hours format / h(2), hh(03) /
+/ a / AM or PM / a(PM) /
+/ m / minute / m(4), mm(04) /
+/ s / second / s(5), ss(05) /
+/ S / fraction of second / S(.0), SS(.00), SSS(.000) /
+/ z / time zone name / z(MST) /
+/ Z / 4 digits time zone offset / Z(-0700) /
+/ X / time zone offset / X(-07), XX(-0700), XXX(-07:00) /
+
+Examples:
+
+- YYYY-MM-dd T HH:mm:ss -> 2006-01-02 T 15:04:05
+- YYYY/MM/dd HH:mm:ssSSS XXX -> 2006/01/02 15:04:05.000 -07:00
+ 
 ## Conversion Functions
 
 | Function | Example     | Description                                    |
 | -------- | ----------- | ---------------------------------------------- |
-| cast     | cast(col,  "bigint") | Converts a value from one data type to another. The supported types includes: bigint, float, string, boolean and datetime(not supported now). |
+| cast     | cast(col,  "bigint") | Converts a value from one data type to another. The supported types includes: bigint, float, string, boolean and datetime. |
 | chr      | chr(col1)   | Returns the ASCII character that corresponds to the given Int argument                                                   |
 | encode   | encode(col1, "base64") |Use the encode function to encode the payload, which potentially might be non-JSON data, into its string representation based on the encoding scheme. Currently, only "base64" econding type is supported.                             |
 | trunc    | trunc(dec, int)| Truncates the first argument to the number of Decimal places specified by the second argument. If the second argument is less than zero, it is set to zero. If the second argument is greater than 34, it is set to 34. Trailing zeroes are stripped from the result.       |
+
+### Cast to datetime
+
+When casting to datetime type, the supported column type and casting rule are:
+
+1. If column is datatime type, just return the value.
+2. If column is bigint or float type, the number will be treated as the milliseconds elapsed since January 1, 1970 00:00:00 UTC and converted.
+3. If column is string, it will be parsed to datetime with the default format: ``"2006-01-02T15:04:05.000Z07:00"``.
+4. Other types are not supported.
 
 ## Hashing Functions
 | Function | Example     | Description                                    |
