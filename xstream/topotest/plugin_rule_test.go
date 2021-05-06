@@ -213,7 +213,7 @@ func TestFuncState(t *testing.T) {
 	DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
-	})
+	}, 0)
 }
 
 func TestFuncStateCheckpoint(t *testing.T) {

@@ -284,7 +284,6 @@ func TestWindow(t *testing.T) {
 		}, {
 			Name: `TestWindowRule5`,
 			Sql:  `SELECT temp FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1) `,
-			W:    10,
 			R: [][]map[string]interface{}{
 				{{
 					"temp": 25.5,
@@ -713,7 +712,7 @@ func TestWindow(t *testing.T) {
 		},
 	}
 	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt)
+		DoRuleTest(t, tests, j, opt, 15)
 	}
 }
 
@@ -1149,7 +1148,7 @@ func TestEventWindow(t *testing.T) {
 		},
 	}
 	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt)
+		DoRuleTest(t, tests, j, opt, 10)
 	}
 }
 
@@ -1402,5 +1401,5 @@ func TestWindowError(t *testing.T) {
 	DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
-	})
+	}, 0)
 }
