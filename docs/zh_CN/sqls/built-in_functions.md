@@ -79,7 +79,7 @@ Kuiper 具有许多内置函数，可以对数据执行计算。
 | -------- | ----------- | ---------------------------------------------- |
 | concat   | concat(col1...)  | 连接数组或字符串。 此函数接受任意数量的参数并返回 String 或 Array |
 | endswith | endswith(col1, col2) | 返回一个布尔值，该布尔值指示第一个 String参数是否以第二个 String 参数结尾。 |
-| format_time| format_time(col1, format) | 将日期时间格式化为字符串。 |
+| format_time| format_time(col1, format) | 将日期时间格式化为字符串。其中，若参数 col1 为兼容类型，则在格式化之前 [转换为 datetime 类型](#转换为-datetime-类型)。关于格式字符串，请参考 [时间格式](#时间格式)。|
 | indexof  | indexof(col1, col2)  | 返回第二个参数的第一个索引（从0开始），作为第一个参数中的子字符串。 |
 | length   | length(col1)| 返回提供的字符串中的字符数。                                                    |
 | lower    | lower(col1) | 返回给定 String 的小写版本。                                                       |
@@ -96,14 +96,50 @@ Kuiper 具有许多内置函数，可以对数据执行计算。
 | trim      | trim(col1) | 从提供的字符串中删除所有前导和尾随空格（制表符和空格）。        |
 | upper     | upper(col1)| 返回给定 String 的大写版本。 |
 
+### 时间格式
+
+时间格式为一些特定符号和字母组成的字符串。Kuiper 里支持的符号如下表所示：
+
+| 符号 | 含义     | 示例                                    |
+| -------- | ----------- | ---------------------------------------------- |
+/ G        /  公元        / G(AD)    /
+/ Y        /  年/ YYYY(2004), YY(04) /
+/ M   / 月 / M(1), MM(01), MMM(Jan), MMMM(January) /
+/ d  / 日期 / d(2), dd(02) /
+/ E / 星期几 / EEE(Mon), EEEE(Monday) /
+/ H / 24小时制的小时 / HH(15) /
+/ h / 12小时制的小时 / h(2), hh(03) /
+/ a / AM 或 PM / a(PM) /
+/ m / 分 / m(4), mm(04) /
+/ s / 秒 / s(5), ss(05) /
+/ S / 秒的分数 / S(.0), SS(.00), SSS(.000) /
+/ z / 时区名 / z(MST) /
+/ Z / 4位数的时区 / Z(-0700) /
+/ X / 时区 / X(-07), XX(-0700), XXX(-07:00) /
+
+示例:
+
+- YYYY-MM-dd T HH:mm:ss -> 2006-01-02 T 15:04:05
+- YYYY/MM/dd HH:mm:ssSSS XXX -> 2006/01/02 15:04:05.000 -07:00
+
+
 ## 转换函数
 
 | 函数 | 示例     | 说明                                  |
 | -------- | ----------- | ---------------------------------------------- |
-| cast     | cast(col,  "bigint") | 将值从一种数据类型转换为另一种数据类型。 支持的类型包括：bigint，float，string，boolean 和 datetime（现在不支持）。 |
+| cast     | cast(col,  "bigint") | 将值从一种数据类型转换为另一种数据类型。 支持的类型包括：bigint，float，string，boolean 和 datetime。 |
 | chr      | chr(col1)   | 返回与给定 Int 参数对应的 ASCII 字符                           |
 | encode   | encode(col1, "base64") |使用 encode 函数根据编码方案将负载（可能是非 JSON 数据）编码为其字符串表示形式。目前，只支持"base64"econding 类型。                             |
 | trunc    | trunc(dec, int)| 将第一个参数截断为第二个参数指定的小数位数。 如果第二个参数小于零，则将其设置为零。 如果第二个参数大于34，则将其设置为34。从结果中去除尾随零。 |
+
+### 转换为 datetime 类型
+
+使用 cast 函数转换到 datatime 类型时，转换规则如下：
+
+1. 如果参数为 datatime 类型，则直接返回原值。
+2. 如果参数为 bigint 或者 float 类型，则其数值会作为自 1970年1月1日0时起至今的毫秒值而转换为 datetime 类型。
+3. 如果参数为 string 类型，则会用默认格式 ``"2006-01-02T15:04:05.000Z07:00"``  将其转换为 datetime类型。
+4. 其他类型的参数均不支持转换。
 
 ## 哈希函数
 | 函数   | 示例         | 说明         |
