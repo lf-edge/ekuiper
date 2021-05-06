@@ -201,6 +201,20 @@ func TestMiscFunc_Apply1(t *testing.T) {
 				"r": true,
 			}},
 		},
+		{
+			sql: "SELECT cast(a * 1000, \"datetime\") AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": float64(1.62000273e+09),
+					"b": "ya",
+					"c": "myc",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": "2021-05-03T00:45:30Z",
+			}},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

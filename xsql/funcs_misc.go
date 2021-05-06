@@ -108,7 +108,12 @@ func convCall(name string, args []interface{}) (interface{}, bool) {
 					return fmt.Errorf("Not supported type conversion."), false
 				}
 			case "datetime":
-				return fmt.Errorf("Not supported type conversion."), false
+				dt, err := common.InterfaceToTime(args[0], "")
+				if err != nil {
+					return err, false
+				} else {
+					return dt, true
+				}
 			default:
 				return fmt.Errorf("Unknow type, only support bigint, float, string, boolean and datetime."), false
 			}
