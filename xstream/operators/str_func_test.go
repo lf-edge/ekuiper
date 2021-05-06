@@ -75,6 +75,23 @@ func TestStrFunc_Apply1(t *testing.T) {
 			}},
 		},
 		{
+			sql: "SELECT format_time(meta(created) * 1000, \"yyyy-MM-dd T HH:mm:ss\") AS time FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": "hello",
+					"b": "ya",
+					"c": "myc",
+				},
+				Metadata: xsql.Metadata{
+					"created": float64(1.62000273e+09),
+				},
+			},
+			result: []map[string]interface{}{{
+				"time": "2021-05-03 T 00:45:30",
+			}},
+		},
+		{
 			sql: "SELECT indexof(a, \"a\") AS a FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",

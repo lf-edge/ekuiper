@@ -6,7 +6,6 @@ import (
 	"github.com/emqx/kuiper/common"
 	"regexp"
 	"strings"
-	"time"
 	"unicode"
 	"unicode/utf8"
 )
@@ -45,14 +44,16 @@ func strCall(name string, args []interface{}) (interface{}, bool) {
 		arg0 := common.ToStringAlways(args[0])
 		return len(arg0), true
 	case "format_time":
-		arg0 := args[0]
-		if t, ok := arg0.(time.Time); ok {
-			arg1 := common.ToStringAlways(args[1])
-			if s, err := common.FormatTime(t, arg1); err == nil {
-				return s, true
-			}
+		arg0, err := common.InterfaceToTime(args[0], "")
+		if err != nil {
+			return err, false
 		}
-		return "", false
+		arg1 := common.ToStringAlways(args[1])
+		if s, err := common.FormatTime(arg0, arg1); err == nil {
+			return s, true
+		} else {
+			return err, false
+		}
 	case "regexp_matches":
 		arg0, arg1 := common.ToStringAlways(args[0]), common.ToStringAlways(args[1])
 		if matched, err := regexp.MatchString(arg1, arg0); err != nil {
