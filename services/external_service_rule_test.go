@@ -252,7 +252,7 @@ func TestRestService(t *testing.T) {
 	topotest.DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
-	})
+	}, 0)
 }
 
 type Resolver map[string]reflect.Value
@@ -433,7 +433,7 @@ func TestMsgpackService(t *testing.T) {
 	topotest.DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
-	})
+	}, 0)
 }
 
 type server struct {
@@ -614,5 +614,5 @@ func TestGrpcService(t *testing.T) {
 	topotest.DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
-	})
+	}, 0)
 }

@@ -973,11 +973,11 @@ func commonResultFunc(result [][]byte) interface{} {
 	return maps
 }
 
-func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption) {
-	doRuleTestBySinkProps(t, tests, j, opt, nil, commonResultFunc)
+func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption, wait int) {
+	doRuleTestBySinkProps(t, tests, j, opt, wait, nil, commonResultFunc)
 }
 
-func doRuleTestBySinkProps(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption, sinkProps map[string]interface{}, resultFunc func(result [][]byte) interface{}) {
+func doRuleTestBySinkProps(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption, w int, sinkProps map[string]interface{}, resultFunc func(result [][]byte) interface{}) {
 	fmt.Printf("The test bucket for option %d size is %d.\n\n", j, len(tests))
 	for i, tt := range tests {
 		datas, dataLength, tp, mockSink, errCh := createStream(t, tt, j, opt, sinkProps)
@@ -987,11 +987,15 @@ func doRuleTestBySinkProps(t *testing.T, tests []RuleTest, j int, opt *api.RuleO
 		}
 		wait := tt.W
 		if wait == 0 {
-			wait = 5
+			if w > 0 {
+				wait = w
+			} else {
+				wait = 5
+			}
 		}
 		switch opt.Qos {
 		case api.ExactlyOnce:
-			wait *= 4
+			wait *= 10
 		case api.AtLeastOnce:
 			wait *= 3
 		}

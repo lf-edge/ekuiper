@@ -483,7 +483,7 @@ func TestSingleSQL(t *testing.T) {
 		},
 	}
 	for j, opt := range options {
-		DoRuleTest(t, tests[9:10], j, opt)
+		DoRuleTest(t, tests[9:10], j, opt, 0)
 	}
 }
 
@@ -575,7 +575,7 @@ func TestSingleSQLError(t *testing.T) {
 	DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
-	})
+	}, 0)
 }
 
 func TestSingleSQLOmitError(t *testing.T) {
@@ -660,7 +660,7 @@ func TestSingleSQLOmitError(t *testing.T) {
 	DoRuleTest(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    false,
-	})
+	}, 0)
 }
 
 func TestSingleSQLTemplate(t *testing.T) {
@@ -719,7 +719,7 @@ func TestSingleSQLTemplate(t *testing.T) {
 	doRuleTestBySinkProps(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
-	}, map[string]interface{}{
+	}, 0, map[string]interface{}{
 		"dataTemplate": `{"wrapper":"w1", "c":"{{.color}}"}`,
 		"sendSingle":   true,
 	}, func(result [][]byte) interface{} {
@@ -778,7 +778,7 @@ func TestNoneSingleSQLTemplate(t *testing.T) {
 	doRuleTestBySinkProps(t, tests, 0, &api.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
-	}, map[string]interface{}{
+	}, 0, map[string]interface{}{
 		"dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.color}} - {{.size}}</li>{{end}}</ul>`,
 	}, func(result [][]byte) interface{} {
 		return result
@@ -859,6 +859,6 @@ func TestSingleSQLForBinary(t *testing.T) {
 		return maps
 	}
 	for j, opt := range options {
-		doRuleTestBySinkProps(t, tests, j, opt, nil, byteFunc)
+		doRuleTestBySinkProps(t, tests, j, opt, 0, nil, byteFunc)
 	}
 }
