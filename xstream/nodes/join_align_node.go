@@ -58,7 +58,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 		for {
 			log.Debugf("JoinAlignNode %s is looping", n.name)
 			select {
-			// process incoming item
+			// process incoming item from both streams(transformed) and tables
 			case item, opened := <-n.input:
 				processed := false
 				if item, processed = n.preprocess(item); processed {
@@ -96,7 +96,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						ctx.PutState(StreamInputsKey, inputs)
 						n.statManager.SetBufferLength(int64(len(n.input)))
 					}
-				case xsql.WindowTuples:
+				case xsql.WindowTuples: // batch input
 					log.Debugf("JoinAlignNode receive batch source %s", d)
 					if batchLen <= 0 {
 						errCh <- errors.New("Join receives too many table content")

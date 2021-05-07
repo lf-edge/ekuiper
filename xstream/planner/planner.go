@@ -110,7 +110,7 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 			}
 			var srcNode *nodes.SourceNode
 			if len(sources) == 0 {
-				node := nodes.NewSourceNode(t.name, t.streamStmt.Options)
+				node := nodes.NewSourceNode(t.name, t.streamStmt.StreamType, t.streamStmt.Options)
 				srcNode = node
 			} else {
 				found := false
@@ -128,11 +128,11 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 			op = Transform(pp, fmt.Sprintf("%d_preprocessor_%s", newIndex, t.name), options)
 			inputs = []api.Emitter{srcNode}
 		case xsql.TypeTable:
-			pp, err := operators.NewTableProcessor(t.streamFields, t.alias, t.timestampFormat)
+			pp, err := operators.NewTableProcessor(t.streamFields, t.alias, t.timestampFormat, isBatch(t.streamStmt.Options))
 			if err != nil {
 				return nil, 0, err
 			}
-			srcNode := nodes.NewTableNode(t.name, t.streamStmt.Options)
+			srcNode := nodes.NewSourceNode(t.name, t.streamStmt.StreamType, t.streamStmt.Options)
 			tp.AddSrc(srcNode)
 			op = Transform(pp, fmt.Sprintf("%d_tableprocessor_%s", newIndex, t.name), options)
 			inputs = []api.Emitter{srcNode}
@@ -175,6 +175,14 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 	}
 	tp.AddOperator(inputs, op)
 	return op, newIndex, nil
+}
+
+func isBatch(options xsql.Options) bool {
+	t, ok := options["TYPE"]
+	if !ok || t == "file" {
+		return true
+	}
+	return false
 }
 
 func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {

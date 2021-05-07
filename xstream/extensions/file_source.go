@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 )
 
 type FileType string
@@ -22,13 +23,20 @@ var fileTypes = map[FileType]bool{
 
 type FileSourceConfig struct {
 	FileType FileType `json:"fileType"`
-	Path     string   `json:"Path"`
+	Path     string   `json:"path"`
+	Interval int      `json:"interval"`
 }
 
 // The BATCH to load data from file at once
 type FileSource struct {
 	file   string
 	config *FileSourceConfig
+}
+
+func (fs *FileSource) Close(ctx api.StreamContext) error {
+	ctx.GetLogger().Infof("Close file source")
+	// do nothing
+	return nil
 }
 
 func (fs *FileSource) Configure(fileName string, props map[string]interface{}) error {
@@ -68,18 +76,59 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 	return nil
 }
 
-func (fs *FileSource) Load(ctx api.StreamContext) ([]api.SourceTuple, error) {
+func (fs *FileSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+	err := fs.Load(ctx, consumer)
+	if err != nil {
+		errCh <- err
+		return
+	}
+	if fs.config.Interval > 0 {
+		ticker := time.NewTicker(time.Millisecond * time.Duration(fs.config.Interval))
+		logger := ctx.GetLogger()
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				logger.Debugf("Load file source again at %v", common.GetNowInMilli())
+				err := fs.Load(ctx, consumer)
+				if err != nil {
+					errCh <- err
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
+}
+
+func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTuple) error {
 	switch fs.config.FileType {
 	case JSON_TYPE:
 		ctx.GetLogger().Debugf("Start to load from file %s", fs.file)
 		resultMap := make([]map[string]interface{}, 0)
 		err := common.ReadJsonUnmarshal(fs.file, &resultMap)
-		result := make([]api.SourceTuple, len(resultMap))
-		for i, m := range resultMap {
-			result[i] = api.NewDefaultSourceTuple(m, nil)
+		if err != nil {
+			return fmt.Errorf("loaded %s, check error %s", fs.file, err)
 		}
-		ctx.GetLogger().Debugf("loaded %s, check error %s", fs.file, err)
-		return result, err
+		ctx.GetLogger().Debug("Sending tuples")
+		for _, m := range resultMap {
+			select {
+			case consumer <- api.NewDefaultSourceTuple(m, nil):
+				// do nothing
+			case <-ctx.Done():
+				return nil
+			}
+		}
+		// Send EOF
+		select {
+		case consumer <- api.NewDefaultSourceTuple(nil, nil):
+			// do nothing
+		case <-ctx.Done():
+			return nil
+		}
+		ctx.GetLogger().Debug("All tuples sent")
+		return nil
 	}
-	return nil, fmt.Errorf("invalid file type %s", fs.config.FileType)
+	return fmt.Errorf("invalid file type %s", fs.config.FileType)
 }

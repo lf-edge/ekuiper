@@ -105,7 +105,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 	contextLogger := common.Log.WithField("rule", "TestPreprocessor_Apply")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		pp := &TableProcessor{}
+		pp := &TableProcessor{isBatchInput: true}
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
 
 		var dm []map[string]interface{}
@@ -113,15 +113,15 @@ func TestTableProcessor_Apply(t *testing.T) {
 			t.Log(e)
 			t.Fail()
 		} else {
-			tuples := make([]*xsql.Tuple, len(dm))
-			for i, m := range dm {
-				tuples[i] = &xsql.Tuple{
+			fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
+			for _, m := range dm {
+				pp.Apply(ctx, &xsql.Tuple{
 					Emitter: "demo",
 					Message: m,
-				}
+				}, fv, afv)
 			}
-			fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
-			result := pp.Apply(ctx, tuples, fv, afv)
+
+			result := pp.Apply(ctx, &xsql.Tuple{}, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {
 				t.Errorf("%d. result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.result, result)
 			}

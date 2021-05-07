@@ -2,6 +2,7 @@ package nodes
 
 import (
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/contexts"
 	"reflect"
 	"testing"
@@ -26,7 +27,7 @@ func TestGetConf_Apply(t *testing.T) {
 			},
 		},
 	}
-	n := NewSourceNode("test", map[string]string{
+	n := NewSourceNode("test", xsql.TypeStream, map[string]string{
 		"DATASOURCE": "RFC_READ_TABLE",
 		"TYPE":       "test",
 	})
@@ -48,7 +49,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 		},
 		"deduplicate": 50,
 	}
-	n := NewSourceNode("test", map[string]string{
+	n := NewSourceNode("test", xsql.TypeStream, map[string]string{
 		"DATASOURCE": "test",
 		"TYPE":       "random",
 		"CONF_KEY":   "dedup",
