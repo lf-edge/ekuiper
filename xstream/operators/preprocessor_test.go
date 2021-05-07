@@ -595,14 +595,14 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.DATETIME}},
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.DATETIME}},
 				},
-				Options: map[string]string{
-					"DATASOURCE":       "users",
-					"FORMAT":           "JSON",
-					"KEY":              "USERID",
-					"CONF_KEY":         "srv1",
-					"TYPE":             "MQTT",
-					"TIMESTAMP":        "USERID",
-					"TIMESTAMP_FORMAT": "yyyy-MM-dd 'at' HH:mm:ss'Z'X",
+				Options: &xsql.Options{
+					DATASOURCE:       "users",
+					FORMAT:           "JSON",
+					KEY:              "USERID",
+					CONF_KEY:         "srv1",
+					TYPE:             "MQTT",
+					TIMESTAMP:        "USERID",
+					TIMESTAMP_FORMAT: "yyyy-MM-dd 'at' HH:mm:ss'Z'X",
 				},
 			},
 			data: []byte(`{"abc": "2019-09-19 at 18:55:15Z+07", "def" : 1568854573431}`),
@@ -661,7 +661,9 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 	for i, tt := range tests {
 		pp := &Preprocessor{}
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
-		pp.timestampFormat = tt.stmt.Options["TIMESTAMP_FORMAT"]
+		if tt.stmt.Options != nil {
+			pp.timestampFormat = tt.stmt.Options.TIMESTAMP_FORMAT
+		}
 		dm := make(map[string]interface{})
 		if e := json.Unmarshal(tt.data, &dm); e != nil {
 			log.Fatal(e)
@@ -709,14 +711,14 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 				StreamFields: []xsql.StreamField{
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.BIGINT}},
 				},
-				Options: map[string]string{
-					"DATASOURCE":       "users",
-					"FORMAT":           "JSON",
-					"KEY":              "USERID",
-					"CONF_KEY":         "srv1",
-					"TYPE":             "MQTT",
-					"TIMESTAMP":        "abc",
-					"TIMESTAMP_FORMAT": "yyyy-MM-dd''T''HH:mm:ssX'",
+				Options: &xsql.Options{
+					DATASOURCE:       "users",
+					FORMAT:           "JSON",
+					KEY:              "USERID",
+					CONF_KEY:         "srv1",
+					TYPE:             "MQTT",
+					TIMESTAMP:        "abc",
+					TIMESTAMP_FORMAT: "yyyy-MM-dd''T''HH:mm:ssX'",
 				},
 			},
 			data: []byte(`{"abc": 1568854515000}`),
@@ -729,14 +731,14 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			stmt: &xsql.StreamStmt{
 				Name:         xsql.StreamName("demo"),
 				StreamFields: nil,
-				Options: map[string]string{
-					"DATASOURCE":       "users",
-					"FORMAT":           "JSON",
-					"KEY":              "USERID",
-					"CONF_KEY":         "srv1",
-					"TYPE":             "MQTT",
-					"TIMESTAMP":        "abc",
-					"TIMESTAMP_FORMAT": "yyyy-MM-dd''T''HH:mm:ssX'",
+				Options: &xsql.Options{
+					DATASOURCE:       "users",
+					FORMAT:           "JSON",
+					KEY:              "USERID",
+					CONF_KEY:         "srv1",
+					TYPE:             "MQTT",
+					TIMESTAMP:        "abc",
+					TIMESTAMP_FORMAT: "yyyy-MM-dd''T''HH:mm:ssX'",
 				},
 			},
 			data: []byte(`{"abc": 1568854515000}`),
@@ -751,9 +753,9 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 				StreamFields: []xsql.StreamField{
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.BOOLEAN}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"TIMESTAMP":  "abc",
+				Options: &xsql.Options{
+					DATASOURCE: "users",
+					TIMESTAMP:  "abc",
 				},
 			},
 			data:   []byte(`{"abc": true}`),
@@ -766,9 +768,9 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.FLOAT}},
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"TIMESTAMP":  "def",
+				Options: &xsql.Options{
+					DATASOURCE: "users",
+					TIMESTAMP:  "def",
 				},
 			},
 			data: []byte(`{"abc": 34, "def" : "2019-09-23T02:47:29.754Z", "ghi": 50}`),
@@ -785,9 +787,9 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.DATETIME}},
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.DATETIME}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"TIMESTAMP":  "abc",
+				Options: &xsql.Options{
+					DATASOURCE: "users",
+					TIMESTAMP:  "abc",
 				},
 			},
 			data: []byte(`{"abc": "2019-09-19T00:55:15.000Z", "def" : 1568854573431}`),
@@ -804,10 +806,10 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.FLOAT}},
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
 				},
-				Options: map[string]string{
-					"DATASOURCE":       "users",
-					"TIMESTAMP":        "def",
-					"TIMESTAMP_FORMAT": "yyyy-MM-dd'AT'HH:mm:ss",
+				Options: &xsql.Options{
+					DATASOURCE:       "users",
+					TIMESTAMP:        "def",
+					TIMESTAMP_FORMAT: "yyyy-MM-dd'AT'HH:mm:ss",
 				},
 			},
 			data: []byte(`{"abc": 34, "def" : "2019-09-23AT02:47:29", "ghi": 50}`),
@@ -824,10 +826,10 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.FLOAT}},
 					{Name: "def", FieldType: &xsql.BasicType{Type: xsql.STRINGS}},
 				},
-				Options: map[string]string{
-					"DATASOURCE":       "users",
-					"TIMESTAMP":        "def",
-					"TIMESTAMP_FORMAT": "yyyy-MM-ddaHH:mm:ss",
+				Options: &xsql.Options{
+					DATASOURCE:       "users",
+					TIMESTAMP:        "def",
+					TIMESTAMP_FORMAT: "yyyy-MM-ddaHH:mm:ss",
 				},
 			},
 			data:   []byte(`{"abc": 34, "def" : "2019-09-23AT02:47:29", "ghi": 50}`),
@@ -847,10 +849,10 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 				streamFields:    convertFields(tt.stmt.StreamFields),
 				aliasFields:     nil,
 				isBinary:        false,
-				timestampFormat: tt.stmt.Options["TIMESTAMP_FORMAT"],
+				timestampFormat: tt.stmt.Options.TIMESTAMP_FORMAT,
 			},
 			isEventTime:    true,
-			timestampField: tt.stmt.Options["TIMESTAMP"],
+			timestampField: tt.stmt.Options.TIMESTAMP,
 		}
 
 		dm := make(map[string]interface{})
@@ -909,14 +911,14 @@ func TestPreprocessorError(t *testing.T) {
 				StreamFields: []xsql.StreamField{
 					{Name: "abc", FieldType: &xsql.BasicType{Type: xsql.BIGINT}},
 				},
-				Options: map[string]string{
-					"DATASOURCE":       "users",
-					"FORMAT":           "JSON",
-					"KEY":              "USERID",
-					"CONF_KEY":         "srv1",
-					"TYPE":             "MQTT",
-					"TIMESTAMP":        "abc",
-					"TIMESTAMP_FORMAT": "yyyy-MM-dd''T''HH:mm:ssX'",
+				Options: &xsql.Options{
+					DATASOURCE:       "users",
+					FORMAT:           "JSON",
+					KEY:              "USERID",
+					CONF_KEY:         "srv1",
+					TYPE:             "MQTT",
+					TIMESTAMP:        "abc",
+					TIMESTAMP_FORMAT: "yyyy-MM-dd''T''HH:mm:ssX'",
 				},
 			},
 			data:   []byte(`{"abc": "not a time"}`),

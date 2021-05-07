@@ -22,9 +22,10 @@ var fileTypes = map[FileType]bool{
 }
 
 type FileSourceConfig struct {
-	FileType FileType `json:"fileType"`
-	Path     string   `json:"path"`
-	Interval int      `json:"interval"`
+	FileType   FileType `json:"fileType"`
+	Path       string   `json:"path"`
+	Interval   int      `json:"interval"`
+	RetainSize int      `json:"$retainSize"`
 }
 
 // The BATCH to load data from file at once
@@ -112,6 +113,10 @@ func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTupl
 			return fmt.Errorf("loaded %s, check error %s", fs.file, err)
 		}
 		ctx.GetLogger().Debug("Sending tuples")
+		if fs.config.RetainSize > 0 && fs.config.RetainSize < len(resultMap) {
+			resultMap = resultMap[(len(resultMap) - fs.config.RetainSize):]
+			ctx.GetLogger().Debug("Sending tuples for retain size %d", fs.config.RetainSize)
+		}
 		for _, m := range resultMap {
 			select {
 			case consumer <- api.NewDefaultSourceTuple(m, nil):
@@ -120,12 +125,14 @@ func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTupl
 				return nil
 			}
 		}
-		// Send EOF
-		select {
-		case consumer <- api.NewDefaultSourceTuple(nil, nil):
-			// do nothing
-		case <-ctx.Done():
-			return nil
+		// Send EOF if retain size not set
+		if fs.config.RetainSize == 0 {
+			select {
+			case consumer <- api.NewDefaultSourceTuple(nil, nil):
+				// do nothing
+			case <-ctx.Done():
+				return nil
+			}
 		}
 		ctx.GetLogger().Debug("All tuples sent")
 		return nil

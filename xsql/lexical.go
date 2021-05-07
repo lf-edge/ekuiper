@@ -120,6 +120,7 @@ const (
 	STRICT_VALIDATION
 	TIMESTAMP
 	TIMESTAMP_FORMAT
+	RETAIN_SIZE
 
 	DD
 	HH
@@ -212,6 +213,7 @@ var tokens = []string{
 	STRICT_VALIDATION: "STRICT_VALIDATION",
 	TIMESTAMP:         "TIMESTAMP",
 	TIMESTAMP_FORMAT:  "TIMESTAMP_FORMAT",
+	RETAIN_SIZE:       "RETAIN_SIZE",
 
 	AND:   "AND",
 	OR:    "OR",
@@ -481,6 +483,8 @@ func (s *Scanner) ScanIdent() (tok Token, lit string) {
 		return TIMESTAMP, lit
 	case "TIMESTAMP_FORMAT":
 		return TIMESTAMP_FORMAT, lit
+	case "RETAIN_SIZE":
+		return RETAIN_SIZE, lit
 	case "DD":
 		return DD, lit
 	case "HH":

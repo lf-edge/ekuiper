@@ -6,6 +6,7 @@ import (
 	"github.com/golang-collections/collections/stack"
 	"io"
 	"math"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -881,8 +882,8 @@ func (p *Parser) ParseCreateStmt() (Statement, error) {
 
 // TODO more accurate validation for table
 func validateStream(stmt *StreamStmt) error {
-	f, ok := stmt.Options["FORMAT"]
-	if !ok {
+	f := stmt.Options.FORMAT
+	if f == "" {
 		f = common.FORMAT_JSON
 	}
 	switch strings.ToLower(f) {
@@ -908,14 +909,6 @@ func validateStream(stmt *StreamStmt) error {
 		}
 	default:
 		return fmt.Errorf("option 'format=%s' is invalid", f)
-	}
-
-	if stmt.StreamType == TypeTable {
-		if t, ok := stmt.Options["TYPE"]; ok {
-			if strings.ToLower(t) != "file" {
-				return fmt.Errorf("table only supports 'file' type")
-			}
-		}
 	}
 	return nil
 }
@@ -1188,21 +1181,37 @@ func (p *Parser) parseStreamStructType() (FieldType, error) {
 	return rf, nil
 }
 
-func (p *Parser) parseStreamOptions() (map[string]string, error) {
-	var opts = make(map[string]string)
+func (p *Parser) parseStreamOptions() (*Options, error) {
+	opts := &Options{}
+	v := reflect.ValueOf(opts)
 	lStack := &stack.Stack{}
 	if tok, lit := p.scanIgnoreWhitespace(); tok == LPAREN {
 		lStack.Push(LPAREN)
 		for {
-			if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == DATASOURCE || tok1 == FORMAT || tok1 == KEY || tok1 == CONF_KEY || tok1 == STRICT_VALIDATION || tok1 == TYPE || tok1 == TIMESTAMP || tok1 == TIMESTAMP_FORMAT {
+			if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == DATASOURCE || tok1 == FORMAT || tok1 == KEY || tok1 == CONF_KEY || tok1 == STRICT_VALIDATION || tok1 == TYPE || tok1 == TIMESTAMP || tok1 == TIMESTAMP_FORMAT || tok1 == RETAIN_SIZE {
 				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == EQ {
 					if tok3, lit3 := p.scanIgnoreWhitespace(); tok3 == STRING {
-						if tok1 == STRICT_VALIDATION {
+						switch tok1 {
+						case STRICT_VALIDATION:
 							if val := strings.ToUpper(lit3); (val != "TRUE") && (val != "FALSE") {
 								return nil, fmt.Errorf("found %q, expect TRUE/FALSE value in %s option.", lit3, tok1)
+							} else {
+								opts.STRICT_VALIDATION = (val == "TRUE")
+							}
+						case RETAIN_SIZE:
+							if val, err := strconv.Atoi(lit3); err != nil {
+								return nil, fmt.Errorf("found %q, expect number value in %s option.", lit3, tok1)
+							} else {
+								opts.RETAIN_SIZE = val
+							}
+						default:
+							f := v.Elem().FieldByName(lit1)
+							if f.IsValid() {
+								f.SetString(lit3)
+							} else { // should not happen
+								return nil, fmt.Errorf("invalid field %s.", lit1)
 							}
 						}
-						opts[lit1] = lit3
 					} else {
 						return nil, fmt.Errorf("found %q, expect string value in option.", lit3)
 					}
@@ -1219,7 +1228,7 @@ func (p *Parser) parseStreamOptions() (map[string]string, error) {
 					return nil, fmt.Errorf("Parenthesis is not matched in options definition.")
 				}
 			} else {
-				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|STRICT_VALIDATION|TYPE).", lit1)
+				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE).", lit1)
 			}
 		}
 	} else {

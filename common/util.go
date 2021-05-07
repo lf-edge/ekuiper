@@ -2,7 +2,6 @@ package common
 
 import (
 	"archive/zip"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/benbjohnson/clock"
@@ -16,7 +15,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 )
@@ -168,17 +166,6 @@ func InitConf() {
 		}
 	} else if Config.Basic.ConsoleLog {
 		Log.SetOutput(os.Stdout)
-	}
-}
-
-func PrintMap(m map[string]string, buff *bytes.Buffer) {
-	si := make([]string, 0, len(m))
-	for s := range m {
-		si = append(si, s)
-	}
-	sort.Strings(si)
-	for _, s := range si {
-		buff.WriteString(fmt.Sprintf("%s: %s\n", s, m[s]))
 	}
 }
 

@@ -13,16 +13,16 @@ type SourceNode struct {
 	*defaultNode
 	streamType xsql.StreamType
 	sourceType string
-	options    map[string]string
+	options    *xsql.Options
 	isMock     bool
 
 	mutex   sync.RWMutex
 	sources []api.Source
 }
 
-func NewSourceNode(name string, st xsql.StreamType, options map[string]string) *SourceNode {
-	t, ok := options["TYPE"]
-	if !ok {
+func NewSourceNode(name string, st xsql.StreamType, options *xsql.Options) *SourceNode {
+	t := options.TYPE
+	if t == "" {
 		if st == xsql.TypeStream {
 			t = "mqtt"
 		} else if st == xsql.TypeTable {
@@ -30,6 +30,7 @@ func NewSourceNode(name string, st xsql.StreamType, options map[string]string) *
 		}
 	}
 	return &SourceNode{
+		streamType: st,
 		sourceType: t,
 		defaultNode: &defaultNode{
 			name:        name,
@@ -43,7 +44,7 @@ func NewSourceNode(name string, st xsql.StreamType, options map[string]string) *
 const OFFSET_KEY = "$$offset"
 
 //Only for mock source, do not use it in production
-func NewSourceNodeWithSource(name string, source api.Source, options map[string]string) *SourceNode {
+func NewSourceNodeWithSource(name string, source api.Source, options *xsql.Options) *SourceNode {
 	return &SourceNode{
 		sources: []api.Source{source},
 		defaultNode: &defaultNode{
@@ -77,6 +78,10 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				bl = t
 			}
 		}
+		// Set retain size for table type
+		if m.options.RETAIN_SIZE > 0 && m.streamType == xsql.TypeTable {
+			props["$retainSize"] = m.options.RETAIN_SIZE
+		}
 		m.reset()
 		logger.Infof("open source node %d instances", m.concurrency)
 		for i := 0; i < m.concurrency; i++ { // workers
@@ -90,7 +95,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						m.drainError(errCh, err, ctx, logger)
 						return
 					}
-					err = source.Configure(m.options["DATASOURCE"], props)
+					err = source.Configure(m.options.DATASOURCE, props)
 					if err != nil {
 						m.drainError(errCh, err, ctx, logger)
 						return

@@ -3,6 +3,7 @@ package nodes
 import (
 	"fmt"
 	"github.com/emqx/kuiper/common"
+	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/checkpoints"
 	"github.com/go-yaml/yaml"
@@ -156,8 +157,8 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 	return data, false
 }
 
-func getSourceConf(ctx api.StreamContext, sourceType string, options map[string]string) map[string]interface{} {
-	confkey := options["CONF_KEY"]
+func getSourceConf(ctx api.StreamContext, sourceType string, options *xsql.Options) map[string]interface{} {
+	confkey := options.CONF_KEY
 	logger := ctx.GetLogger()
 	confPath := "sources/" + sourceType + ".yaml"
 	if sourceType == "mqtt" {
@@ -190,8 +191,8 @@ func getSourceConf(ctx api.StreamContext, sourceType string, options map[string]
 	} else {
 		logger.Warnf("config file %s.yaml is not loaded properly. Return an empty configuration", sourceType)
 	}
-	f, ok := options["FORMAT"]
-	if !ok || f == "" {
+	f := options.FORMAT
+	if f == "" {
 		f = "json"
 	}
 	props["format"] = strings.ToLower(f)

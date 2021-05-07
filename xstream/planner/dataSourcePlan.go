@@ -175,19 +175,17 @@ func (p *DataSourcePlan) getAllFields() {
 
 func (p *DataSourcePlan) getProps() error {
 	if p.iet {
-		if tf, ok := p.streamStmt.Options["TIMESTAMP"]; ok {
-			p.timestampField = tf
+		if p.streamStmt.Options.TIMESTAMP != "" {
+			p.timestampField = p.streamStmt.Options.TIMESTAMP
 		} else {
 			return fmt.Errorf("preprocessor is set to be event time but stream option TIMESTAMP not found")
 		}
-		if ts, ok := p.streamStmt.Options["TIMESTAMP_FORMAT"]; ok {
-			p.timestampFormat = ts
+		if p.streamStmt.Options.TIMESTAMP_FORMAT != "" {
+			p.timestampFormat = p.streamStmt.Options.TIMESTAMP_FORMAT
 		}
 	}
-	if f, ok := p.streamStmt.Options["FORMAT"]; ok {
-		if strings.ToLower(f) == common.FORMAT_BINARY {
-			p.isBinary = true
-		}
+	if strings.ToLower(p.streamStmt.Options.FORMAT) == common.FORMAT_BINARY {
+		p.isBinary = true
 	}
 	return nil
 }
