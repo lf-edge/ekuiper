@@ -27,9 +27,9 @@ func TestGetConf_Apply(t *testing.T) {
 			},
 		},
 	}
-	n := NewSourceNode("test", xsql.TypeStream, map[string]string{
-		"DATASOURCE": "RFC_READ_TABLE",
-		"TYPE":       "test",
+	n := NewSourceNode("test", xsql.TypeStream, &xsql.Options{
+		DATASOURCE: "RFC_READ_TABLE",
+		TYPE:       "test",
 	})
 	contextLogger := common.Log.WithField("rule", "test")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
@@ -49,10 +49,10 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 		},
 		"deduplicate": 50,
 	}
-	n := NewSourceNode("test", xsql.TypeStream, map[string]string{
-		"DATASOURCE": "test",
-		"TYPE":       "random",
-		"CONF_KEY":   "dedup",
+	n := NewSourceNode("test", xsql.TypeStream, &xsql.Options{
+		DATASOURCE: "test",
+		TYPE:       "random",
+		CONF_KEY:   "dedup",
 	})
 	contextLogger := common.Log.WithField("rule", "test")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)

@@ -9,7 +9,7 @@ import (
 
 func TestSingleSQL(t *testing.T) {
 	//Reset
-	streamList := []string{"demo", "demoError", "demo1", "table1"}
+	streamList := []string{"demo", "demoError", "demo1", "table1", "demoTable"}
 	HandleStream(false, streamList, t)
 	//Data setup
 	var tests = []RuleTest{
@@ -431,6 +431,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":    float64(1541152489252),
 				}},
 			},
+			W: 15,
 			M: map[string]interface{}{
 				"op_1_preprocessor_demo_0_exceptions_total":  int64(0),
 				"op_1_preprocessor_demo_0_records_in_total":  int64(5),
@@ -462,6 +463,52 @@ func TestSingleSQL(t *testing.T) {
 				"source_table1_0_exceptions_total":  int64(0),
 				"source_table1_0_records_in_total":  int64(4),
 				"source_table1_0_records_out_total": int64(4),
+			},
+		}, {
+			Name: `TestSingleSQLRule11`,
+			Sql:  "SELECT device FROM demo INNER JOIN demoTable on demo.ts = demoTable.ts",
+			R: [][]map[string]interface{}{
+				{{
+					"device": "device2",
+				}},
+				{{
+					"device": "device4",
+				}},
+				{{
+					"device": "device5",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_1_preprocessor_demo_0_exceptions_total":  int64(0),
+				"op_1_preprocessor_demo_0_records_in_total":  int64(5),
+				"op_1_preprocessor_demo_0_records_out_total": int64(5),
+
+				"op_2_tableprocessor_demoTable_0_exceptions_total":  int64(0),
+				"op_2_tableprocessor_demoTable_0_records_in_total":  int64(5),
+				"op_2_tableprocessor_demoTable_0_records_out_total": int64(5),
+
+				"op_3_join_aligner_0_records_in_total":  int64(10),
+				"op_3_join_aligner_0_records_out_total": int64(5),
+
+				"op_4_join_0_exceptions_total":  int64(0),
+				"op_4_join_0_records_in_total":  int64(5),
+				"op_4_join_0_records_out_total": int64(3),
+
+				"op_5_project_0_exceptions_total":  int64(0),
+				"op_5_project_0_records_in_total":  int64(3),
+				"op_5_project_0_records_out_total": int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"source_demoTable_0_exceptions_total":  int64(0),
+				"source_demoTable_0_records_in_total":  int64(5),
+				"source_demoTable_0_records_out_total": int64(5),
 			},
 		},
 	}

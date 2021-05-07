@@ -958,6 +958,48 @@ var testData = map[string][]*xsql.Tuple{
 			Timestamp: 1541152488013,
 		},
 	},
+	"demoTable": {
+		{
+			Emitter: "demoTable",
+			Message: map[string]interface{}{
+				"ts":     1541152486013,
+				"device": "device1",
+			},
+			Timestamp: 1541152486501,
+		},
+		{
+			Emitter: "demoTable",
+			Message: map[string]interface{}{
+				"ts":     1541152486822,
+				"device": "device2",
+			},
+			Timestamp: 1541152486502,
+		},
+		{
+			Emitter: "demoTable",
+			Message: map[string]interface{}{
+				"ts":     1541152487632,
+				"device": "device3",
+			},
+			Timestamp: 1541152488001,
+		},
+		{
+			Emitter: "demoTable",
+			Message: map[string]interface{}{
+				"ts":     1541152488442,
+				"device": "device4",
+			},
+			Timestamp: 1541152488002,
+		},
+		{
+			Emitter: "demoTable",
+			Message: map[string]interface{}{
+				"ts":     1541152489252,
+				"device": "device5",
+			},
+			Timestamp: 1541152488003,
+		},
+	},
 }
 
 func commonResultFunc(result [][]byte) interface{} {
@@ -1115,8 +1157,8 @@ func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkPro
 				}
 				dataLength = len(data)
 				datas = append(datas, data)
-				source := nodes.NewSourceNodeWithSource(stream, mocknodes.NewMockSource(data), map[string]string{
-					"DATASOURCE": stream,
+				source := nodes.NewSourceNodeWithSource(stream, mocknodes.NewMockSource(data), &xsql.Options{
+					DATASOURCE: stream,
 				})
 				sources = append(sources, source)
 			}
@@ -1159,6 +1201,11 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 					"`from`" + ` STRING,
 					ts BIGINT
 				) WITH (DATASOURCE="demo1", FORMAT="json", KEY="ts");`
+			case "demoTable":
+				sql = `CREATE TABLE demoTable (
+					device STRING,
+					ts BIGINT
+				) WITH (DATASOURCE="demoTable", TYPE="mqtt", RETAIN_SIZE="3");`
 			case "sessionDemo":
 				sql = `CREATE STREAM sessionDemo (
 					temp FLOAT,

@@ -23,26 +23,27 @@ func TestParser_ParseTree(t *testing.T) {
 				StreamFields: []StreamField{
 					{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"FORMAT":     "JSON",
-					"KEY":        "USERID",
+				Options: &Options{
+					DATASOURCE: "users",
+					FORMAT:     "JSON",
+					KEY:        "USERID",
 				},
 			},
 		},
 		{
 			s: `CREATE TABLE demo (
 					USERID BIGINT,
-				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
+				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", RETAIN_SIZE="3");`,
 			stmt: &StreamStmt{
 				Name: StreamName("demo"),
 				StreamFields: []StreamField{
 					{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"FORMAT":     "JSON",
-					"KEY":        "USERID",
+				Options: &Options{
+					DATASOURCE:  "users",
+					FORMAT:      "JSON",
+					KEY:         "USERID",
+					RETAIN_SIZE: 3,
 				},
 				StreamType: TypeTable,
 			},
@@ -60,10 +61,10 @@ func TestParser_ParseTree(t *testing.T) {
 					{Name: "size", FieldType: &BasicType{Type: BIGINT}},
 					{Name: "id", FieldType: &BasicType{Type: BIGINT}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "lookup.json",
-					"FORMAT":     "json",
-					"CONF_KEY":   "test",
+				Options: &Options{
+					DATASOURCE: "lookup.json",
+					FORMAT:     "json",
+					CONF_KEY:   "test",
 				},
 				StreamType: TypeTable,
 			},

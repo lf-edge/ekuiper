@@ -107,6 +107,10 @@ func TestTableProcessor_Apply(t *testing.T) {
 	for i, tt := range tests {
 		pp := &TableProcessor{isBatchInput: true}
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
+		pp.output = xsql.WindowTuples{
+			Emitter: "demo",
+			Tuples:  make([]xsql.Tuple, 0),
+		}
 
 		var dm []map[string]interface{}
 		if e := json.Unmarshal(tt.data, &dm); e != nil {

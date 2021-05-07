@@ -200,12 +200,42 @@ func (p *StreamProcessor) execDescribe(stmt xsql.NameNode, st xsql.StreamType) (
 			buff.WriteString("\n")
 		}
 		buff.WriteString("\n")
-		common.PrintMap(s.Options, &buff)
+		printOptions(s.Options, &buff)
 		return buff.String(), err
 	default:
 		return "%s", fmt.Errorf("Error resolving the %s %s, the data in db may be corrupted.", xsql.StreamTypeMap[st], stmt.GetName())
 	}
 
+}
+
+func printOptions(opts *xsql.Options, buff *bytes.Buffer) {
+	if opts.CONF_KEY != "" {
+		buff.WriteString(fmt.Sprintf("CONF_KEY: %s\n", opts.CONF_KEY))
+	}
+	if opts.DATASOURCE != "" {
+		buff.WriteString(fmt.Sprintf("DATASOURCE: %s\n", opts.DATASOURCE))
+	}
+	if opts.FORMAT != "" {
+		buff.WriteString(fmt.Sprintf("FORMAT: %s\n", opts.FORMAT))
+	}
+	if opts.KEY != "" {
+		buff.WriteString(fmt.Sprintf("KEY: %s\n", opts.KEY))
+	}
+	if opts.RETAIN_SIZE != 0 {
+		buff.WriteString(fmt.Sprintf("RETAIN_SIZE: %d\n", opts.RETAIN_SIZE))
+	}
+	if opts.STRICT_VALIDATION {
+		buff.WriteString(fmt.Sprintf("STRICT_VALIDATION: %v\n", opts.STRICT_VALIDATION))
+	}
+	if opts.TIMESTAMP != "" {
+		buff.WriteString(fmt.Sprintf("TIMESTAMP: %s\n", opts.TIMESTAMP))
+	}
+	if opts.TIMESTAMP_FORMAT != "" {
+		buff.WriteString(fmt.Sprintf("TIMESTAMP_FORMAT: %s\n", opts.TIMESTAMP_FORMAT))
+	}
+	if opts.TYPE != "" {
+		buff.WriteString(fmt.Sprintf("TYPE: %s\n", opts.TYPE))
+	}
 }
 
 func (p *StreamProcessor) DescStream(name string, st xsql.StreamType) (xsql.Statement, error) {

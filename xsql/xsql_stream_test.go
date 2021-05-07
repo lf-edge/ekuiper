@@ -40,14 +40,14 @@ func TestParser_ParseCreateStream(t *testing.T) {
 						},
 					}},
 				},
-				Options: map[string]string{
-					"DATASOURCE":       "users",
-					"FORMAT":           "JSON",
-					"KEY":              "USERID",
-					"CONF_KEY":         "srv1",
-					"TYPE":             "MQTT",
-					"TIMESTAMP":        "USERID",
-					"TIMESTAMP_FORMAT": "yyyy-MM-dd''T''HH:mm:ssX'",
+				Options: &Options{
+					DATASOURCE:       "users",
+					FORMAT:           "JSON",
+					KEY:              "USERID",
+					CONF_KEY:         "srv1",
+					TYPE:             "MQTT",
+					TIMESTAMP:        "USERID",
+					TIMESTAMP_FORMAT: "yyyy-MM-dd''T''HH:mm:ssX'",
 				},
 			},
 		},
@@ -61,11 +61,11 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				StreamFields: []StreamField{
 					{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
 				},
-				Options: map[string]string{
-					"DATASOURCE":        "users",
-					"FORMAT":            "JSON",
-					"KEY":               "USERID",
-					"STRICT_VALIDATION": "true",
+				Options: &Options{
+					DATASOURCE:        "users",
+					FORMAT:            "JSON",
+					KEY:               "USERID",
+					STRICT_VALIDATION: true,
 				},
 			},
 		},
@@ -87,11 +87,11 @@ func TestParser_ParseCreateStream(t *testing.T) {
 						},
 					}},
 				},
-				Options: map[string]string{
-					"DATASOURCE":        "users",
-					"FORMAT":            "JSON",
-					"KEY":               "USERID",
-					"STRICT_VALIDATION": "FAlse",
+				Options: &Options{
+					DATASOURCE:        "users",
+					FORMAT:            "JSON",
+					KEY:               "USERID",
+					STRICT_VALIDATION: false,
 				},
 			},
 		},
@@ -115,10 +115,10 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					}},
 					{Name: "birthday", FieldType: &BasicType{Type: DATETIME}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"FORMAT":     "JSON",
-					"KEY":        "USERID",
+				Options: &Options{
+					DATASOURCE: "users",
+					FORMAT:     "JSON",
+					KEY:        "USERID",
 				},
 			},
 		},
@@ -144,10 +144,10 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					}},
 					{Name: "birthday", FieldType: &BasicType{Type: DATETIME}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"FORMAT":     "JSON",
-					"KEY":        "USERID",
+				Options: &Options{
+					DATASOURCE: "users",
+					FORMAT:     "JSON",
+					KEY:        "USERID",
 				},
 			},
 		},
@@ -159,10 +159,10 @@ func TestParser_ParseCreateStream(t *testing.T) {
 			stmt: &StreamStmt{
 				Name:         StreamName("demo"),
 				StreamFields: nil,
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"FORMAT":     "JSON",
-					"KEY":        "USERID",
+				Options: &Options{
+					DATASOURCE: "users",
+					FORMAT:     "JSON",
+					KEY:        "USERID",
 				},
 			},
 		},
@@ -172,10 +172,10 @@ func TestParser_ParseCreateStream(t *testing.T) {
 			stmt: &StreamStmt{
 				Name:         StreamName("demo"),
 				StreamFields: nil,
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"FORMAT":     "JSON",
-					"KEY":        "USERID",
+				Options: &Options{
+					DATASOURCE: "users",
+					FORMAT:     "JSON",
+					KEY:        "USERID",
 				},
 			},
 		},
@@ -194,10 +194,10 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				StreamFields: []StreamField{
 					{Name: "NAME", FieldType: &BasicType{Type: STRINGS}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"FORMAT":     "JSON",
-					"KEY":        "USERID",
+				Options: &Options{
+					DATASOURCE: "users",
+					FORMAT:     "JSON",
+					KEY:        "USERID",
 				},
 			},
 		},
@@ -239,7 +239,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				StreamFields: nil,
 				Options:      nil,
 			},
-			err: `found "sources", unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|STRICT_VALIDATION|TYPE).`,
+			err: `found "sources", unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE).`,
 		},
 
 		{
@@ -261,7 +261,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				StreamFields: []StreamField{
 					{Name: "USERID", FieldType: &BasicType{Type: BIGINT}},
 				},
-				Options: map[string]string{},
+				Options: &Options{},
 			},
 		},
 
@@ -322,11 +322,11 @@ func TestParser_ParseCreateStream(t *testing.T) {
 						},
 					}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "test",
-					"FORMAT":     "JSON",
-					"CONF_KEY":   "democonf",
-					"TYPE":       "MQTT",
+				Options: &Options{
+					DATASOURCE: "test",
+					FORMAT:     "JSON",
+					CONF_KEY:   "democonf",
+					TYPE:       "MQTT",
 				},
 			},
 		}, {
@@ -344,9 +344,9 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					{Name: "LAST_NAME", FieldType: &BasicType{Type: STRINGS}},
 					{Name: "PICTURE", FieldType: &BasicType{Type: BYTEA}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"FORMAT":     "JSON",
+				Options: &Options{
+					DATASOURCE: "users",
+					FORMAT:     "JSON",
 				},
 			},
 		}, {
@@ -364,9 +364,9 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					{Name: "LAST_NAME", FieldType: &BasicType{Type: STRINGS}},
 					{Name: "PICTURE", FieldType: &BasicType{Type: BYTEA}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"FORMAT":     "JSON",
+				Options: &Options{
+					DATASOURCE: "users",
+					FORMAT:     "JSON",
 				},
 			},
 		}, {
@@ -391,9 +391,9 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				StreamFields: []StreamField{
 					{Name: "image", FieldType: &BasicType{Type: BYTEA}},
 				},
-				Options: map[string]string{
-					"DATASOURCE": "users",
-					"FORMAT":     "BINARY",
+				Options: &Options{
+					DATASOURCE: "users",
+					FORMAT:     "BINARY",
 				},
 			},
 		},

@@ -312,7 +312,17 @@ func (fr *MetaRef) expr() {}
 func (fr *MetaRef) node() {}
 
 // The stream AST tree
-type Options map[string]string
+type Options struct {
+	DATASOURCE        string
+	KEY               string
+	FORMAT            string
+	CONF_KEY          string
+	TYPE              string
+	STRICT_VALIDATION bool
+	TIMESTAMP         string
+	TIMESTAMP_FORMAT  string
+	RETAIN_SIZE       int
+}
 
 func (o Options) node() {}
 
@@ -335,7 +345,7 @@ var StreamTypeMap = map[StreamType]string{
 type StreamStmt struct {
 	Name         StreamName
 	StreamFields StreamFields
-	Options      Options
+	Options      *Options
 	StreamType   StreamType //default to TypeStream
 }
 

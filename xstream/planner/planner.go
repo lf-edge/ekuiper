@@ -113,14 +113,8 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 				node := nodes.NewSourceNode(t.name, t.streamStmt.StreamType, t.streamStmt.Options)
 				srcNode = node
 			} else {
-				found := false
-				for _, source := range sources {
-					if t.name == source.GetName() {
-						srcNode = source
-						found = true
-					}
-				}
-				if !found {
+				srcNode = getMockSource(sources, t.name)
+				if srcNode == nil {
 					return nil, 0, fmt.Errorf("can't find predefined source %s", t.name)
 				}
 			}
@@ -128,11 +122,17 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 			op = Transform(pp, fmt.Sprintf("%d_preprocessor_%s", newIndex, t.name), options)
 			inputs = []api.Emitter{srcNode}
 		case xsql.TypeTable:
-			pp, err := operators.NewTableProcessor(t.streamFields, t.alias, t.timestampFormat, isBatch(t.streamStmt.Options))
+			pp, err := operators.NewTableProcessor(t.name, t.streamFields, t.alias, t.streamStmt.Options)
 			if err != nil {
 				return nil, 0, err
 			}
-			srcNode := nodes.NewSourceNode(t.name, t.streamStmt.StreamType, t.streamStmt.Options)
+			var srcNode *nodes.SourceNode
+			if len(sources) > 0 {
+				srcNode = getMockSource(sources, t.name)
+			}
+			if srcNode == nil {
+				srcNode = nodes.NewSourceNode(t.name, t.streamStmt.StreamType, t.streamStmt.Options)
+			}
 			tp.AddSrc(srcNode)
 			op = Transform(pp, fmt.Sprintf("%d_tableprocessor_%s", newIndex, t.name), options)
 			inputs = []api.Emitter{srcNode}
@@ -177,12 +177,13 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 	return op, newIndex, nil
 }
 
-func isBatch(options xsql.Options) bool {
-	t, ok := options["TYPE"]
-	if !ok || t == "file" {
-		return true
+func getMockSource(sources []*nodes.SourceNode, name string) *nodes.SourceNode {
+	for _, source := range sources {
+		if name == source.GetName() {
+			return source
+		}
 	}
-	return false
+	return nil
 }
 
 func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
