@@ -437,7 +437,7 @@ func TestSingleSQL(t *testing.T) {
 				"op_1_preprocessor_demo_0_records_out_total": int64(5),
 
 				"op_2_tableprocessor_table1_0_exceptions_total":  int64(0),
-				"op_2_tableprocessor_table1_0_records_in_total":  int64(1),
+				"op_2_tableprocessor_table1_0_records_in_total":  int64(4),
 				"op_2_tableprocessor_table1_0_records_out_total": int64(1),
 
 				"op_3_join_aligner_0_records_in_total":  int64(6),
@@ -460,8 +460,8 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_out_total": int64(5),
 
 				"source_table1_0_exceptions_total":  int64(0),
-				"source_table1_0_records_in_total":  int64(1),
-				"source_table1_0_records_out_total": int64(1),
+				"source_table1_0_records_in_total":  int64(4),
+				"source_table1_0_records_out_total": int64(4),
 			},
 		},
 	}
@@ -483,7 +483,7 @@ func TestSingleSQL(t *testing.T) {
 		},
 	}
 	for j, opt := range options {
-		DoRuleTest(t, tests[9:10], j, opt, 0)
+		DoRuleTest(t, tests, j, opt, 0)
 	}
 }
 

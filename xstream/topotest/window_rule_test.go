@@ -662,7 +662,7 @@ func TestWindow(t *testing.T) {
 				"op_1_preprocessor_demo_0_records_out_total": int64(5),
 
 				"op_4_tableprocessor_table1_0_exceptions_total":  int64(0),
-				"op_4_tableprocessor_table1_0_records_in_total":  int64(1),
+				"op_4_tableprocessor_table1_0_records_in_total":  int64(4),
 				"op_4_tableprocessor_table1_0_records_out_total": int64(1),
 
 				"op_5_filter_0_exceptions_total":  int64(0),
@@ -689,8 +689,8 @@ func TestWindow(t *testing.T) {
 				"source_demo_0_records_out_total": int64(5),
 
 				"source_table1_0_exceptions_total":  int64(0),
-				"source_table1_0_records_in_total":  int64(1),
-				"source_table1_0_records_out_total": int64(1),
+				"source_table1_0_records_in_total":  int64(4),
+				"source_table1_0_records_out_total": int64(4),
 			},
 		},
 	}

@@ -11,6 +11,7 @@ import (
 
 type SourceNode struct {
 	*defaultNode
+	streamType xsql.StreamType
 	sourceType string
 	options    map[string]string
 	isMock     bool
@@ -19,10 +20,14 @@ type SourceNode struct {
 	sources []api.Source
 }
 
-func NewSourceNode(name string, options map[string]string) *SourceNode {
+func NewSourceNode(name string, st xsql.StreamType, options map[string]string) *SourceNode {
 	t, ok := options["TYPE"]
 	if !ok {
-		t = "mqtt"
+		if st == xsql.TypeStream {
+			t = "mqtt"
+		} else if st == xsql.TypeTable {
+			t = "file"
+		}
 	}
 	return &SourceNode{
 		sourceType: t,
@@ -179,6 +184,8 @@ func doGetSource(t string) (api.Source, error) {
 		s = &extensions.MQTTSource{}
 	case "httppull":
 		s = &extensions.HTTPPullSource{}
+	case "file":
+		s = &extensions.FileSource{}
 	default:
 		s, err = plugins.GetSource(t)
 		if err != nil {
