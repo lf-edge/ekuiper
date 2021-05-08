@@ -1092,6 +1092,7 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 	// TODO assume multiple data source send the data in order and has the same length
 	for i := 0; i < dataLength; i++ {
 		for _, d := range datas {
+			time.Sleep(time.Duration(wait) * time.Millisecond)
 			// Make sure time is going forward only
 			// gradually add up time to ensure checkpoint is triggered before the data send
 			for n := common.GetNowInMilli() + 100; d[i].Timestamp+100 > n; n += 100 {
@@ -1109,7 +1110,6 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 				return err
 			default:
 			}
-			time.Sleep(time.Duration(wait) * time.Millisecond)
 		}
 	}
 	mockClock.Add(time.Duration(postleap) * time.Millisecond)
