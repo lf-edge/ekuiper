@@ -36,7 +36,26 @@ CREATE TABLE table1 (
 SELECT * FROM demo INNER JOIN table1 on demo.id = table1.id
 ```
 
-In this example, a table `table1` is created to read json data from file "lookup.json". Then in the rule, `table1` is joined with the stream `demo` so that the stream can lookup the name from the id.
+In this example, a table `table1` is created to read json data from file *lookup.json*. Then in the rule, `table1` is joined with the stream `demo` so that the stream can lookup the name from the id.
+
+The content of *lookup.json* file should be an array of objects. Below is an example:
+
+```json
+[
+  {
+    "id": 1541152486013,
+    "name": "name1"
+  },
+  {
+    "id": 1541152487632,
+    "name": "name2"
+  },
+  {
+    "id": 1541152489252,
+    "name": "name3"
+  }
+]
+```
 
 ### Filter by history state
 
