@@ -1,0 +1,13 @@
+state,0,0
+iot,31,0
+state,0,1
+iot,35,0
+iot,20,0
+iot,80,0
+state,0,0
+iot,45,0
+iot,10,0
+iot,12,0
+iot,65,0
+state,0,1
+iot,55,0
