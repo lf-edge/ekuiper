@@ -51,7 +51,7 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 	return result
 }
 
-func getStreamNames(join *xsql.Join) ([]string, error) {
+func (jp *JoinOp) getStreamNames(join *xsql.Join) ([]string, error) {
 	var srcs []string
 	xsql.WalkFunc(join, func(node xsql.Node) {
 		if f, ok := node.(*xsql.FieldRef); ok {
@@ -62,8 +62,18 @@ func getStreamNames(join *xsql.Join) ([]string, error) {
 		}
 	})
 	if len(srcs) != 2 {
-		return nil, fmt.Errorf("Not correct join expression, it requires exactly 2 sources at ON expression.")
+		if jp.From.Alias != "" {
+			srcs = append(srcs, jp.From.Alias)
+		} else {
+			srcs = append(srcs, jp.From.Name)
+		}
+		if join.Alias != "" {
+			srcs = append(srcs, join.Alias)
+		} else {
+			srcs = append(srcs, join.Name)
+		}
 	}
+
 	return srcs, nil
 }
 
@@ -71,7 +81,7 @@ func (jp *JoinOp) evalSet(input xsql.WindowTuplesSet, join xsql.Join, fv *xsql.F
 	var leftStream, rightStream string
 
 	if join.JoinType != xsql.CROSS_JOIN {
-		streams, err := getStreamNames(&join)
+		streams, err := jp.getStreamNames(&join)
 		if err != nil {
 			return nil, err
 		}
@@ -114,7 +124,8 @@ func (jp *JoinOp) evalSet(input xsql.WindowTuplesSet, join xsql.Join, fv *xsql.F
 				temp.AddTuple(left)
 				temp.AddTuple(right)
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, fv)}
-				result := ve.Eval(join.Expr)
+				result := evalOn(join, ve, &left, &right)
+
 				switch val := result.(type) {
 				case error:
 					return nil, val
@@ -153,8 +164,20 @@ func (jp *JoinOp) evalSet(input xsql.WindowTuplesSet, join xsql.Join, fv *xsql.F
 	return sets, nil
 }
 
+func evalOn(join xsql.Join, ve *xsql.ValuerEval, left interface{}, right *xsql.Tuple) interface{} {
+	var result interface{}
+	if join.Expr != nil {
+		result = ve.Eval(join.Expr)
+	} else if join.JoinType == xsql.INNER_JOIN { // if no on expression
+		result = left != nil && right != nil
+	} else {
+		result = true
+	}
+	return result
+}
+
 func (jp *JoinOp) evalSetWithRightJoin(input xsql.WindowTuplesSet, join xsql.Join, excludeJoint bool, fv *xsql.FunctionValuer) (xsql.JoinTupleSets, error) {
-	streams, err := getStreamNames(&join)
+	streams, err := jp.getStreamNames(&join)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +200,7 @@ func (jp *JoinOp) evalSetWithRightJoin(input xsql.WindowTuplesSet, join xsql.Joi
 			temp.AddTuple(right)
 			temp.AddTuple(left)
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, fv)}
-			result := ve.Eval(join.Expr)
+			result := evalOn(join, ve, &left, &right)
 			switch val := result.(type) {
 			case error:
 				return nil, val
@@ -228,7 +251,7 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesS
 				merged.AddTuple(right)
 			} else {
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&left, &right, fv)}
-				result := ve.Eval(join.Expr)
+				result := evalOn(join, ve, &left, &right)
 				switch val := result.(type) {
 				case error:
 					return nil, val
@@ -279,7 +302,7 @@ func (jp *JoinOp) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTu
 		isJoint := false
 		for _, left := range *set {
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&right, &left, fv)}
-			result := ve.Eval(join.Expr)
+			result := evalOn(join, ve, &left, &right)
 			switch val := result.(type) {
 			case error:
 				return nil, val
