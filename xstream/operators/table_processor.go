@@ -12,18 +12,14 @@ type TableProcessor struct {
 
 	isBatchInput bool // whether the inputs are batched, such as file which sends multiple messages at a batch. If batch input, only fires when EOF is received. This is mutual exclusive with retainSize.
 	retainSize   int  // how many(maximum) messages to be retained for each output
+	emitterName  string
 	// States
 	output       xsql.WindowTuples // current batched message collection
 	batchEmitted bool              // if batch input, this is the signal for whether the last batch has emitted. If true, reinitialize.
 }
 
 func NewTableProcessor(name string, fields []interface{}, fs xsql.Fields, options *xsql.Options) (*TableProcessor, error) {
-	p := &TableProcessor{
-		output: xsql.WindowTuples{
-			Emitter: name,
-			Tuples:  make([]xsql.Tuple, 0),
-		},
-	}
+	p := &TableProcessor{emitterName: name, batchEmitted: true, retainSize: 1}
 	p.defaultFieldProcessor = defaultFieldProcessor{
 		streamFields: fields, aliasFields: fs, isBinary: false, timestampFormat: options.TIMESTAMP_FORMAT,
 	}
@@ -32,6 +28,7 @@ func NewTableProcessor(name string, fields []interface{}, fs xsql.Fields, option
 		p.isBatchInput = false
 	} else if isBatch(options.TYPE) {
 		p.isBatchInput = true
+		p.retainSize = 0
 	}
 	return p, nil
 }
@@ -48,7 +45,10 @@ func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql
 	}
 	logger.Debugf("preprocessor receive %v", tuple)
 	if p.batchEmitted {
-		p.output.Tuples = make([]xsql.Tuple, 0)
+		p.output = xsql.WindowTuples{
+			Emitter: p.emitterName,
+			Tuples:  make([]xsql.Tuple, 0),
+		}
 		p.batchEmitted = false
 	}
 	if tuple.Message != nil {
@@ -57,10 +57,18 @@ func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql
 			return fmt.Errorf("error in table processor: %s", err)
 		}
 		tuple.Message = result
-		if p.retainSize > 0 && len(p.output.Tuples) == p.retainSize {
-			p.output.Tuples = p.output.Tuples[1:]
+		var newTuples []xsql.Tuple
+		for i, ot := range p.output.Tuples {
+			if p.retainSize > 0 && len(p.output.Tuples) == p.retainSize && i == 0 {
+				continue
+			}
+			newTuples = append(newTuples, ot)
 		}
-		p.output.Tuples = append(p.output.Tuples, *tuple)
+		newTuples = append(newTuples, *tuple)
+		p.output = xsql.WindowTuples{
+			Emitter: p.emitterName,
+			Tuples:  newTuples,
+		}
 		if !p.isBatchInput {
 			return p.output
 		}

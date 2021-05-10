@@ -105,7 +105,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 	contextLogger := common.Log.WithField("rule", "TestPreprocessor_Apply")
 	ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		pp := &TableProcessor{isBatchInput: true}
+		pp := &TableProcessor{isBatchInput: true, emitterName: "demo"}
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
 		pp.output = xsql.WindowTuples{
 			Emitter: "demo",
