@@ -463,7 +463,7 @@ type Visitor interface {
 }
 
 func Walk(v Visitor, node Node) {
-	if node == nil {
+	if node == nil || reflect.ValueOf(node).IsNil() {
 		return
 	}
 
@@ -482,9 +482,16 @@ func Walk(v Visitor, node Node) {
 			Walk(v, expr)
 		}
 
+	case Dimensions:
+		Walk(v, n.GetWindow())
+		for _, dimension := range n.GetGroups() {
+			Walk(v, dimension.Expr)
+		}
+
 	case *Window:
 		Walk(v, n.Length)
 		Walk(v, n.Interval)
+		Walk(v, n.Filter)
 
 	case *Field:
 		Walk(v, n.Expr)
@@ -1214,7 +1221,7 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 		}
 		return nil
 	case *FieldRef:
-		if expr.StreamName == "" {
+		if expr.StreamName == "" || expr.StreamName == DEFAULT_STREAM {
 			val, _ := v.Valuer.Value(expr.Name)
 			return val
 		} else {
@@ -1223,7 +1230,7 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 			return val
 		}
 	case *MetaRef:
-		if expr.StreamName == "" {
+		if expr.StreamName == "" || expr.StreamName == DEFAULT_STREAM {
 			val, _ := v.Valuer.Meta(expr.Name)
 			return val
 		} else {

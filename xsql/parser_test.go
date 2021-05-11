@@ -21,7 +21,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "name"},
+						Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 						Name:  "name",
 						AName: ""},
 				},
@@ -33,7 +33,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "select"},
+						Expr:  &FieldRef{Name: "select", StreamName: DEFAULT_STREAM},
 						Name:  "select",
 						AName: ""},
 				},
@@ -45,7 +45,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "name"},
+						Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 						Name:  "name",
 						AName: ""},
 				},
@@ -83,7 +83,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "name"},
+						Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 						Name:  "name",
 						AName: ""},
 				},
@@ -96,7 +96,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "name"},
+						Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 						Name:  "name",
 						AName: ""},
 				},
@@ -109,7 +109,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "name"},
+						Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 						Name:  "name",
 						AName: ""},
 				},
@@ -122,7 +122,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "name"},
+						Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 						Name:  "name",
 						AName: ""},
 				},
@@ -135,7 +135,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "name"},
+						Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 						Name:  "name",
 						AName: ""},
 				},
@@ -148,7 +148,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "name"},
+						Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 						Name:  "name",
 						AName: ""},
 				},
@@ -161,7 +161,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "name"},
+						Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 						Name:  "name",
 						AName: ""},
 				},
@@ -185,8 +185,8 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT a,b FROM tbl`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "a"}, Name: "a", AName: ""},
-					{Expr: &FieldRef{Name: "b"}, Name: "b", AName: ""},
+					{Expr: &FieldRef{Name: "a", StreamName: DEFAULT_STREAM}, Name: "a", AName: ""},
+					{Expr: &FieldRef{Name: "b", StreamName: DEFAULT_STREAM}, Name: "b", AName: ""},
 				},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
@@ -195,9 +195,9 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT a, b,c FROM tbl`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "a"}, Name: "a", AName: ""},
-					{Expr: &FieldRef{Name: "b"}, Name: "b", AName: ""},
-					{Expr: &FieldRef{Name: "c"}, Name: "c", AName: ""},
+					{Expr: &FieldRef{Name: "a", StreamName: DEFAULT_STREAM}, Name: "a", AName: ""},
+					{Expr: &FieldRef{Name: "b", StreamName: DEFAULT_STREAM}, Name: "b", AName: ""},
+					{Expr: &FieldRef{Name: "c", StreamName: DEFAULT_STREAM}, Name: "c", AName: ""},
 				},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
@@ -206,7 +206,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s: `SELECT a AS alias FROM tbl`,
 			stmt: &SelectStatement{
-				Fields:  []Field{{Expr: &FieldRef{Name: "a"}, Name: "a", AName: "alias"}},
+				Fields:  []Field{{Expr: &FieldRef{Name: "a", StreamName: DEFAULT_STREAM}, Name: "a", AName: "alias"}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -215,8 +215,8 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT a AS alias1, b as Alias2 FROM tbl`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "a"}, Name: "a", AName: "alias1"},
-					{Expr: &FieldRef{Name: "b"}, Name: "b", AName: "Alias2"},
+					{Expr: &FieldRef{Name: "a", StreamName: DEFAULT_STREAM}, Name: "a", AName: "alias1"},
+					{Expr: &FieldRef{Name: "b", StreamName: DEFAULT_STREAM}, Name: "b", AName: "Alias2"},
 				},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
@@ -248,7 +248,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						Name:  "length",
 						Expr: &Call{
 							Name: "length",
-							Args: []Expr{&FieldRef{Name: "test"}},
+							Args: []Expr{&FieldRef{Name: "test", StreamName: DEFAULT_STREAM}},
 						},
 					},
 				},
@@ -318,7 +318,7 @@ func TestParser_ParseStatement(t *testing.T) {
 							Name: "indexof",
 							Args: []Expr{
 								&StringLiteral{Val: "abc"},
-								&FieldRef{Name: "field1"},
+								&FieldRef{Name: "field1", StreamName: DEFAULT_STREAM},
 							},
 						},
 					},
@@ -340,7 +340,7 @@ func TestParser_ParseStatement(t *testing.T) {
 								&Call{
 									Name: "lower",
 									Args: []Expr{
-										&FieldRef{Name: "test"},
+										&FieldRef{Name: "test", StreamName: DEFAULT_STREAM},
 									},
 								},
 								&IntegerLiteral{Val: 1},
@@ -365,7 +365,7 @@ func TestParser_ParseStatement(t *testing.T) {
 								&Call{
 									Name: "lower",
 									Args: []Expr{
-										&FieldRef{Name: "test"},
+										&FieldRef{Name: "test", StreamName: DEFAULT_STREAM},
 									},
 								},
 								&IntegerLiteral{Val: 1},
@@ -433,7 +433,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						Name:  "deduplicate",
 						Expr: &Call{
 							Name: "deduplicate",
-							Args: []Expr{&Wildcard{Token: ASTERISK}, &FieldRef{Name: "temperature"}, &BooleanLiteral{Val: false}},
+							Args: []Expr{&Wildcard{Token: ASTERISK}, &FieldRef{Name: "temperature", StreamName: DEFAULT_STREAM}, &BooleanLiteral{Val: false}},
 						},
 					},
 				},
@@ -461,9 +461,9 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT field0,   "abc" AS field1, field2 FROM tbl`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{AName: "", Name: "field0", Expr: &FieldRef{Name: "field0"}},
+					{AName: "", Name: "field0", Expr: &FieldRef{Name: "field0", StreamName: DEFAULT_STREAM}},
 					{AName: "field1", Name: "", Expr: &StringLiteral{Val: "abc"}},
-					{AName: "", Name: "field2", Expr: &FieldRef{Name: "field2"}}},
+					{AName: "", Name: "field2", Expr: &FieldRef{Name: "field2", StreamName: DEFAULT_STREAM}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -489,10 +489,10 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s: `SELECT abc FROM tbl WHERE abc > 12 `,
 			stmt: &SelectStatement{
-				Fields:  []Field{{AName: "", Name: "abc", Expr: &FieldRef{Name: "abc"}}},
+				Fields:  []Field{{AName: "", Name: "abc", Expr: &FieldRef{Name: "abc", StreamName: DEFAULT_STREAM}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 				Condition: &BinaryExpr{
-					LHS: &FieldRef{Name: "abc"},
+					LHS: &FieldRef{Name: "abc", StreamName: DEFAULT_STREAM},
 					OP:  GT,
 					RHS: &IntegerLiteral{Val: 12},
 				},
@@ -502,10 +502,10 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s: `SELECT abc FROM tbl WHERE abc = "hello" `,
 			stmt: &SelectStatement{
-				Fields:  []Field{{AName: "", Name: "abc", Expr: &FieldRef{Name: "abc"}}},
+				Fields:  []Field{{AName: "", Name: "abc", Expr: &FieldRef{Name: "abc", StreamName: DEFAULT_STREAM}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 				Condition: &BinaryExpr{
-					LHS: &FieldRef{Name: "abc"},
+					LHS: &FieldRef{Name: "abc", StreamName: DEFAULT_STREAM},
 					OP:  EQ,
 					RHS: &StringLiteral{Val: "hello"},
 				},
@@ -528,10 +528,10 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s: `SELECT abc, "fff" AS fa FROM tbl WHERE fa >= 5 `,
 			stmt: &SelectStatement{
-				Fields:  []Field{{AName: "", Name: "abc", Expr: &FieldRef{Name: "abc"}}, {AName: "fa", Name: "", Expr: &StringLiteral{Val: "fff"}}},
+				Fields:  []Field{{AName: "", Name: "abc", Expr: &FieldRef{Name: "abc", StreamName: DEFAULT_STREAM}}, {AName: "fa", Name: "", Expr: &StringLiteral{Val: "fff"}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 				Condition: &BinaryExpr{
-					LHS: &FieldRef{Name: "fa"},
+					LHS: &FieldRef{Name: "fa", StreamName: DEFAULT_STREAM},
 					OP:  GTE,
 					RHS: &IntegerLiteral{Val: 5},
 				},
@@ -541,10 +541,10 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s: `SELECT field2 FROM tbl WHERE field2 != 5 `,
 			stmt: &SelectStatement{
-				Fields:  []Field{{AName: "", Name: "field2", Expr: &FieldRef{Name: "field2"}}},
+				Fields:  []Field{{AName: "", Name: "field2", Expr: &FieldRef{Name: "field2", StreamName: DEFAULT_STREAM}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 				Condition: &BinaryExpr{
-					LHS: &FieldRef{Name: "field2"},
+					LHS: &FieldRef{Name: "field2", StreamName: DEFAULT_STREAM},
 					OP:  NEQ,
 					RHS: &IntegerLiteral{Val: 5},
 				},
@@ -554,10 +554,10 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s: `SELECT field2 FROM tbl WHERE field2 !   = 5 `, //Add space char in expression
 			stmt: &SelectStatement{
-				Fields:  []Field{{AName: "", Name: "field2", Expr: &FieldRef{Name: "field2"}}},
+				Fields:  []Field{{AName: "", Name: "field2", Expr: &FieldRef{Name: "field2", StreamName: DEFAULT_STREAM}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 				Condition: &BinaryExpr{
-					LHS: &FieldRef{Name: "field2"},
+					LHS: &FieldRef{Name: "field2", StreamName: DEFAULT_STREAM},
 					OP:  NEQ,
 					RHS: &IntegerLiteral{Val: 5},
 				},
@@ -585,7 +585,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						AName: "",
 						Name:  "",
 						Expr: &BinaryExpr{
-							LHS: &FieldRef{Name: "abc"},
+							LHS: &FieldRef{Name: "abc", StreamName: DEFAULT_STREAM},
 							OP:  ADD,
 							RHS: &IntegerLiteral{Val: 2},
 						},
@@ -621,7 +621,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						AName: "",
 						Name:  "",
 						Expr: &BinaryExpr{
-							LHS: &FieldRef{Name: "abc"},
+							LHS: &FieldRef{Name: "abc", StreamName: DEFAULT_STREAM},
 							OP:  ADD,
 							RHS: &StringLiteral{Val: "hello"},
 						},
@@ -640,7 +640,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						Name:  "",
 						Expr: &BinaryExpr{
 							LHS: &BinaryExpr{
-								LHS: &FieldRef{Name: "abc"},
+								LHS: &FieldRef{Name: "abc", StreamName: DEFAULT_STREAM},
 								OP:  MUL,
 								RHS: &IntegerLiteral{Val: 2},
 							},
@@ -665,7 +665,7 @@ func TestParser_ParseStatement(t *testing.T) {
 							Args: []Expr{
 								&BinaryExpr{
 									LHS: &BinaryExpr{
-										LHS: &FieldRef{Name: "abc"},
+										LHS: &FieldRef{Name: "abc", StreamName: DEFAULT_STREAM},
 										OP:  MUL,
 										RHS: &IntegerLiteral{Val: 2},
 									},
@@ -720,7 +720,7 @@ func TestParser_ParseStatement(t *testing.T) {
 								&StringLiteral{Val: "param2"},
 								&BinaryExpr{
 									LHS: &BinaryExpr{
-										LHS: &FieldRef{Name: "abc"},
+										LHS: &FieldRef{Name: "abc", StreamName: DEFAULT_STREAM},
 										OP:  MUL,
 										RHS: &IntegerLiteral{Val: 2},
 									},
@@ -812,7 +812,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []Source{&Table{Name: "tbl"}},
 				Condition: &BinaryExpr{
-					LHS: &FieldRef{Name: "f1"},
+					LHS: &FieldRef{Name: "f1", StreamName: DEFAULT_STREAM},
 					OP:  GT,
 					RHS: &NumberLiteral{Val: 2.2},
 				},
@@ -823,14 +823,14 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT deviceId, name FROM topic/sensor1 WHERE deviceId=1 AND name = "dname"`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "deviceId"}, Name: "deviceId", AName: ""},
-					{Expr: &FieldRef{Name: "name"}, Name: "name", AName: ""},
+					{Expr: &FieldRef{Name: "deviceId", StreamName: DEFAULT_STREAM}, Name: "deviceId", AName: ""},
+					{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, Name: "name", AName: ""},
 				},
 				Sources: []Source{&Table{Name: "topic/sensor1"}},
 				Condition: &BinaryExpr{
-					LHS: &BinaryExpr{LHS: &FieldRef{Name: "deviceId"}, OP: EQ, RHS: &IntegerLiteral{Val: 1}},
+					LHS: &BinaryExpr{LHS: &FieldRef{Name: "deviceId", StreamName: DEFAULT_STREAM}, OP: EQ, RHS: &IntegerLiteral{Val: 1}},
 					OP:  AND,
-					RHS: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
+					RHS: &BinaryExpr{LHS: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
 				},
 			},
 		},
@@ -839,8 +839,8 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT deviceId, name FROM topic/sensor1 AS t1 WHERE t1.deviceId=1 AND t1.name = "dname"`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "deviceId"}, Name: "deviceId", AName: ""},
-					{Expr: &FieldRef{Name: "name"}, Name: "name", AName: ""},
+					{Expr: &FieldRef{Name: "deviceId", StreamName: DEFAULT_STREAM}, Name: "deviceId", AName: ""},
+					{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, Name: "name", AName: ""},
 				},
 				Sources: []Source{&Table{Name: "topic/sensor1", Alias: "t1"}},
 				Condition: &BinaryExpr{
@@ -855,14 +855,14 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE t> = 20.5 OR name = "dname"`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
-					{Expr: &FieldRef{Name: "name"}, Name: "name", AName: ""},
+					{Expr: &FieldRef{Name: "temp", StreamName: DEFAULT_STREAM}, Name: "temp", AName: "t"},
+					{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, Name: "name", AName: ""},
 				},
 				Sources: []Source{&Table{Name: "topic/sensor1"}},
 				Condition: &BinaryExpr{
-					LHS: &BinaryExpr{LHS: &FieldRef{Name: "t"}, OP: GTE, RHS: &NumberLiteral{Val: 20.5}},
+					LHS: &BinaryExpr{LHS: &FieldRef{Name: "t", StreamName: DEFAULT_STREAM}, OP: GTE, RHS: &NumberLiteral{Val: 20.5}},
 					OP:  OR,
-					RHS: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
+					RHS: &BinaryExpr{LHS: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
 				},
 			},
 		},
@@ -871,12 +871,12 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY name`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
-					{Expr: &FieldRef{Name: "name"}, Name: "name", AName: ""},
+					{Expr: &FieldRef{Name: "temp", StreamName: DEFAULT_STREAM}, Name: "temp", AName: "t"},
+					{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, Name: "name", AName: ""},
 				},
 				Sources:    []Source{&Table{Name: "topic/sensor1"}},
-				Condition:  &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
-				Dimensions: Dimensions{Dimension{Expr: &FieldRef{Name: "name"}}},
+				Condition:  &BinaryExpr{LHS: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
+				Dimensions: Dimensions{Dimension{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}}},
 			},
 		},
 
@@ -884,13 +884,13 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY name HAVING count(name) > 3`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
-					{Expr: &FieldRef{Name: "name"}, Name: "name", AName: ""},
+					{Expr: &FieldRef{Name: "temp", StreamName: DEFAULT_STREAM}, Name: "temp", AName: "t"},
+					{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, Name: "name", AName: ""},
 				},
 				Sources:    []Source{&Table{Name: "topic/sensor1"}},
-				Condition:  &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
-				Dimensions: Dimensions{Dimension{Expr: &FieldRef{Name: "name"}}},
-				Having:     &BinaryExpr{LHS: &Call{Name: "count", Args: []Expr{&FieldRef{StreamName: "", Name: "name"}}}, OP: GT, RHS: &IntegerLiteral{Val: 3}},
+				Condition:  &BinaryExpr{LHS: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
+				Dimensions: Dimensions{Dimension{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}}},
+				Having:     &BinaryExpr{LHS: &Call{Name: "count", Args: []Expr{&FieldRef{StreamName: DEFAULT_STREAM, Name: "name"}}}, OP: GT, RHS: &IntegerLiteral{Val: 3}},
 			},
 		},
 
@@ -898,12 +898,12 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" HAVING count(name) > 3`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
-					{Expr: &FieldRef{Name: "name"}, Name: "name", AName: ""},
+					{Expr: &FieldRef{Name: "temp", StreamName: DEFAULT_STREAM}, Name: "temp", AName: "t"},
+					{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, Name: "name", AName: ""},
 				},
 				Sources:   []Source{&Table{Name: "topic/sensor1"}},
-				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
-				Having:    &BinaryExpr{LHS: &Call{Name: "count", Args: []Expr{&FieldRef{StreamName: "", Name: "name"}}}, OP: GT, RHS: &IntegerLiteral{Val: 3}},
+				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
+				Having:    &BinaryExpr{LHS: &Call{Name: "count", Args: []Expr{&FieldRef{StreamName: DEFAULT_STREAM, Name: "name"}}}, OP: GT, RHS: &IntegerLiteral{Val: 3}},
 			},
 		},
 
@@ -930,10 +930,10 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{Expr: &FieldRef{StreamName: "s1", Name: "temp"}, Name: "temp", AName: "t"},
-					{Expr: &FieldRef{Name: "name"}, Name: "name", AName: ""},
+					{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, Name: "name", AName: ""},
 				},
 				Sources:    []Source{&Table{Name: "topic/sensor1", Alias: "s1"}},
-				Condition:  &BinaryExpr{LHS: &FieldRef{Name: "t"}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
+				Condition:  &BinaryExpr{LHS: &FieldRef{Name: "t", StreamName: DEFAULT_STREAM}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
 				Dimensions: Dimensions{Dimension{Expr: &FieldRef{StreamName: "s1", Name: "temp"}}},
 			},
 		},
@@ -942,13 +942,13 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY lpad(name,1)`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
-					{Expr: &FieldRef{Name: "name"}, Name: "name", AName: ""},
+					{Expr: &FieldRef{Name: "temp", StreamName: DEFAULT_STREAM}, Name: "temp", AName: "t"},
+					{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, Name: "name", AName: ""},
 				},
 				Sources:   []Source{&Table{Name: "topic/sensor1"}},
-				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
+				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
 				Dimensions: Dimensions{Dimension{
-					Expr: &Call{Name: "lpad", Args: []Expr{&FieldRef{Name: "name"}, &IntegerLiteral{Val: 1}}},
+					Expr: &Call{Name: "lpad", Args: []Expr{&FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, &IntegerLiteral{Val: 1}}},
 				},
 				},
 			},
@@ -958,11 +958,11 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT temp AS t, name FROM topic/sensor1 AS s1 WHERE name = "dname" GROUP BY lpad(s1.name,1)`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
-					{Expr: &FieldRef{Name: "name"}, Name: "name", AName: ""},
+					{Expr: &FieldRef{Name: "temp", StreamName: DEFAULT_STREAM}, Name: "temp", AName: "t"},
+					{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, Name: "name", AName: ""},
 				},
 				Sources:   []Source{&Table{Name: "topic/sensor1", Alias: "s1"}},
-				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
+				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
 				Dimensions: Dimensions{Dimension{
 					Expr: &Call{Name: "lpad", Args: []Expr{&FieldRef{StreamName: StreamName("s1"), Name: "name"}, &IntegerLiteral{Val: 1}}},
 				},
@@ -974,15 +974,15 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY lpad(name,1) ORDER BY name`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
-					{Expr: &FieldRef{Name: "name"}, Name: "name", AName: ""},
+					{Expr: &FieldRef{Name: "temp", StreamName: DEFAULT_STREAM}, Name: "temp", AName: "t"},
+					{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, Name: "name", AName: ""},
 				},
 				Sources:   []Source{&Table{Name: "topic/sensor1"}},
-				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
+				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
 				Dimensions: Dimensions{
 					Dimension{
 						Expr: &Call{Name: "lpad", Args: []Expr{
-							&FieldRef{Name: "name"},
+							&FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 							&IntegerLiteral{Val: 1}},
 						},
 					},
@@ -995,8 +995,8 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT temp AS t, name FROM topic/sensor1 AS s1 WHERE s1.name = "dname" GROUP BY lpad(s1.name,1) ORDER BY s1.name`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
-					{Expr: &FieldRef{Name: "name"}, Name: "name", AName: ""},
+					{Expr: &FieldRef{Name: "temp", StreamName: DEFAULT_STREAM}, Name: "temp", AName: "t"},
+					{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, Name: "name", AName: ""},
 				},
 				Sources:   []Source{&Table{Name: "topic/sensor1", Alias: "s1"}},
 				Condition: &BinaryExpr{LHS: &FieldRef{StreamName: StreamName("s1"), Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
@@ -1016,15 +1016,15 @@ func TestParser_ParseStatement(t *testing.T) {
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY lpad(name,1) ORDER BY name DESC`,
 			stmt: &SelectStatement{
 				Fields: []Field{
-					{Expr: &FieldRef{Name: "temp"}, Name: "temp", AName: "t"},
-					{Expr: &FieldRef{Name: "name"}, Name: "name", AName: ""},
+					{Expr: &FieldRef{Name: "temp", StreamName: DEFAULT_STREAM}, Name: "temp", AName: "t"},
+					{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, Name: "name", AName: ""},
 				},
 				Sources:   []Source{&Table{Name: "topic/sensor1"}},
-				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name"}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
+				Condition: &BinaryExpr{LHS: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}, OP: EQ, RHS: &StringLiteral{Val: "dname"}},
 				Dimensions: Dimensions{
 					Dimension{
 						Expr: &Call{Name: "lpad", Args: []Expr{
-							&FieldRef{Name: "name"},
+							&FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 							&IntegerLiteral{Val: 1}},
 						},
 					},
@@ -1072,11 +1072,11 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []Source{&Table{Name: "topic/sensor1"}},
 				Dimensions: Dimensions{
-					Dimension{Expr: &FieldRef{Name: "name"}},
-					Dimension{Expr: &FieldRef{Name: "name2"}},
+					Dimension{Expr: &FieldRef{Name: "name", StreamName: DEFAULT_STREAM}},
+					Dimension{Expr: &FieldRef{Name: "name2", StreamName: DEFAULT_STREAM}},
 					Dimension{
 						Expr: &Call{Name: "power", Args: []Expr{
-							&FieldRef{Name: "name3"},
+							&FieldRef{Name: "name3", StreamName: DEFAULT_STREAM},
 							&NumberLiteral{Val: 1.8}},
 						},
 					},
@@ -1103,7 +1103,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "name"},
+						Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 						Name:  "name",
 						AName: ""},
 				},
@@ -1116,7 +1116,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "name"},
+						Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 						Name:  "name",
 						AName: ""},
 				},
@@ -1129,7 +1129,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "name"},
+						Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 						Name:  "name",
 						AName: ""},
 				},
@@ -1155,7 +1155,7 @@ func TestParser_ParseStatement(t *testing.T) {
 					{AName: "f1", Name: "", Expr: &BooleanLiteral{Val: true}},
 				},
 				Sources:   []Source{&Table{Name: "tbl"}},
-				Condition: &BinaryExpr{LHS: &FieldRef{Name: "f2"}, OP: EQ, RHS: &BooleanLiteral{Val: true}},
+				Condition: &BinaryExpr{LHS: &FieldRef{Name: "f2", StreamName: DEFAULT_STREAM}, OP: EQ, RHS: &BooleanLiteral{Val: true}},
 			},
 		},
 
@@ -1168,7 +1168,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						Name:  "indexof",
 						Expr: &Call{
 							Name: "indexof",
-							Args: []Expr{&FieldRef{Name: "field1"}, &StringLiteral{Val: "abc"}},
+							Args: []Expr{&FieldRef{Name: "field1", StreamName: DEFAULT_STREAM}, &StringLiteral{Val: "abc"}},
 						},
 					},
 				},
@@ -1268,7 +1268,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "space var"},
+						Expr:  &FieldRef{Name: "space var", StreamName: DEFAULT_STREAM},
 						Name:  "space var",
 						AName: ""},
 				},
@@ -1280,7 +1280,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "中文 Chinese"},
+						Expr:  &FieldRef{Name: "中文 Chinese", StreamName: DEFAULT_STREAM},
 						Name:  "中文 Chinese",
 						AName: ""},
 				},
@@ -1292,7 +1292,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []Field{
 					{
 						Expr: &CaseExpr{
-							Value: &FieldRef{Name: "temperature"},
+							Value: &FieldRef{Name: "temperature", StreamName: DEFAULT_STREAM},
 							WhenClauses: []*WhenClause{
 								{
 									Expr:   &IntegerLiteral{Val: 25},
@@ -1307,7 +1307,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						Name:  "",
 						AName: "label",
 					}, {
-						Expr:  &FieldRef{Name: "humidity"},
+						Expr:  &FieldRef{Name: "humidity", StreamName: DEFAULT_STREAM},
 						Name:  "humidity",
 						AName: "",
 					},
@@ -1320,7 +1320,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []Field{
 					{
 						Expr: &CaseExpr{
-							Value: &FieldRef{Name: "temperature"},
+							Value: &FieldRef{Name: "temperature", StreamName: DEFAULT_STREAM},
 							WhenClauses: []*WhenClause{
 								{
 									Expr:   &IntegerLiteral{Val: 25},
@@ -1335,7 +1335,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						Name:  "",
 						AName: "label",
 					}, {
-						Expr:  &FieldRef{Name: "humidity"},
+						Expr:  &FieldRef{Name: "humidity", StreamName: DEFAULT_STREAM},
 						Name:  "humidity",
 						AName: "",
 					},
@@ -1357,7 +1357,7 @@ func TestParser_ParseStatement(t *testing.T) {
 								{
 									Expr: &BinaryExpr{
 										OP:  GT,
-										LHS: &FieldRef{Name: "temperature"},
+										LHS: &FieldRef{Name: "temperature", StreamName: DEFAULT_STREAM},
 										RHS: &IntegerLiteral{Val: 30},
 									},
 									Result: &StringLiteral{Val: "high"},
@@ -1368,7 +1368,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						Name:  "",
 						AName: "label",
 					}, {
-						Expr:  &FieldRef{Name: "humidity"},
+						Expr:  &FieldRef{Name: "humidity", StreamName: DEFAULT_STREAM},
 						Name:  "humidity",
 						AName: "",
 					},
@@ -1420,7 +1420,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "f1"},
+						Expr:  &FieldRef{Name: "f1", StreamName: DEFAULT_STREAM},
 						Name:  "f1",
 						AName: ""},
 				},
@@ -1442,7 +1442,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "f1"},
+						Expr:  &FieldRef{Name: "f1", StreamName: DEFAULT_STREAM},
 						Name:  "f1",
 						AName: ""},
 				},
@@ -1464,7 +1464,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "f1"},
+						Expr:  &FieldRef{Name: "f1", StreamName: DEFAULT_STREAM},
 						Name:  "f1",
 						AName: ""},
 				},
@@ -1486,7 +1486,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "f1"},
+						Expr:  &FieldRef{Name: "f1", StreamName: DEFAULT_STREAM},
 						Name:  "f1",
 						AName: ""},
 				},
@@ -1520,7 +1520,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "f1"},
+						Expr:  &FieldRef{Name: "f1", StreamName: DEFAULT_STREAM},
 						Name:  "f1",
 						AName: ""},
 				},
@@ -1541,7 +1541,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 			stmt: &SelectStatement{
 				Fields: []Field{
 					{
-						Expr:  &FieldRef{Name: "f1"},
+						Expr:  &FieldRef{Name: "f1", StreamName: DEFAULT_STREAM},
 						Name:  "f1",
 						AName: ""},
 				},
@@ -1580,7 +1580,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 							Length:     &IntegerLiteral{Val: 3},
 							Interval:   &IntegerLiteral{Val: 1},
 							Filter: &BinaryExpr{
-								LHS: &FieldRef{Name: "revenue"},
+								LHS: &FieldRef{Name: "revenue", StreamName: DEFAULT_STREAM},
 								OP:  GT,
 								RHS: &IntegerLiteral{Val: 100},
 							},
@@ -1600,20 +1600,20 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 				},
 				Sources: []Source{&Table{Name: "demo"}},
 				Dimensions: Dimensions{
-					Dimension{Expr: &FieldRef{Name: "department"}},
+					Dimension{Expr: &FieldRef{Name: "department", StreamName: DEFAULT_STREAM}},
 					Dimension{
 						Expr: &Window{
 							WindowType: COUNT_WINDOW,
 							Length:     &IntegerLiteral{Val: 3},
 							Interval:   &IntegerLiteral{Val: 1},
 							Filter: &BinaryExpr{
-								LHS: &FieldRef{Name: "revenue"},
+								LHS: &FieldRef{Name: "revenue", StreamName: DEFAULT_STREAM},
 								OP:  GT,
 								RHS: &IntegerLiteral{Val: 100},
 							},
 						},
 					},
-					Dimension{Expr: &FieldRef{Name: "year"}},
+					Dimension{Expr: &FieldRef{Name: "year", StreamName: DEFAULT_STREAM}},
 				},
 			},
 		},
@@ -1659,7 +1659,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 				Fields: []Field{
 					{
 						Expr: &BinaryExpr{
-							LHS: &FieldRef{Name: "children"},
+							LHS: &FieldRef{Name: "children", StreamName: DEFAULT_STREAM},
 							OP:  SUBSET,
 							RHS: &IndexExpr{Index: 0},
 						},
@@ -1677,7 +1677,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 					{
 						Expr: &BinaryExpr{
 							LHS: &BinaryExpr{
-								LHS: &FieldRef{Name: "children"},
+								LHS: &FieldRef{Name: "children", StreamName: DEFAULT_STREAM},
 								OP:  SUBSET,
 								RHS: &IndexExpr{Index: 0},
 							},
@@ -1699,7 +1699,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 					{
 						Expr: &BinaryExpr{
 							LHS: &BinaryExpr{
-								LHS: &FieldRef{Name: "children"},
+								LHS: &FieldRef{Name: "children", StreamName: DEFAULT_STREAM},
 								OP:  ARROW,
 								RHS: &FieldRef{Name: "first"},
 							},
@@ -1722,7 +1722,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						Expr: &BinaryExpr{
 							LHS: &BinaryExpr{
 								LHS: &BinaryExpr{
-									LHS: &FieldRef{Name: "children"},
+									LHS: &FieldRef{Name: "children", StreamName: DEFAULT_STREAM},
 									OP:  ARROW,
 									RHS: &FieldRef{Name: "first"},
 								},
@@ -1746,7 +1746,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 				Fields: []Field{
 					{
 						Expr: &BinaryExpr{
-							LHS: &FieldRef{Name: "children"},
+							LHS: &FieldRef{Name: "children", StreamName: DEFAULT_STREAM},
 							OP:  SUBSET,
 							RHS: &ColonExpr{Start: 0, End: 1},
 						},
@@ -1763,7 +1763,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 				Fields: []Field{
 					{
 						Expr: &BinaryExpr{
-							LHS: &FieldRef{Name: "children"},
+							LHS: &FieldRef{Name: "children", StreamName: DEFAULT_STREAM},
 							OP:  SUBSET,
 							RHS: &ColonExpr{Start: 0, End: 1},
 						},
@@ -1780,7 +1780,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 				Fields: []Field{
 					{
 						Expr: &BinaryExpr{
-							LHS: &FieldRef{Name: "children"},
+							LHS: &FieldRef{Name: "children", StreamName: DEFAULT_STREAM},
 							OP:  SUBSET,
 							RHS: &ColonExpr{Start: 0, End: math.MinInt32},
 						},
@@ -1797,7 +1797,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 				Fields: []Field{
 					{
 						Expr: &BinaryExpr{
-							LHS: &FieldRef{Name: "children"},
+							LHS: &FieldRef{Name: "children", StreamName: DEFAULT_STREAM},
 							OP:  SUBSET,
 							RHS: &ColonExpr{Start: 2, End: math.MinInt32},
 						},
@@ -1814,7 +1814,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 				Fields: []Field{
 					{
 						Expr: &BinaryExpr{
-							LHS: &BinaryExpr{LHS: &FieldRef{Name: "children"}, OP: SUBSET, RHS: &ColonExpr{Start: 2, End: math.MinInt32}},
+							LHS: &BinaryExpr{LHS: &FieldRef{Name: "children", StreamName: DEFAULT_STREAM}, OP: SUBSET, RHS: &ColonExpr{Start: 2, End: math.MinInt32}},
 							OP:  ARROW,
 							RHS: &FieldRef{Name: "first"},
 						},
@@ -1883,7 +1883,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 				Fields: []Field{
 					{
 						Expr: &BinaryExpr{
-							LHS: &FieldRef{Name: "children"},
+							LHS: &FieldRef{Name: "children", StreamName: DEFAULT_STREAM},
 							OP:  SUBSET,
 							RHS: &ColonExpr{Start: 0, End: 1},
 						},
@@ -1893,7 +1893,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 				Sources: []Source{&Table{Name: "demo"}},
 				Condition: &BinaryExpr{
 					LHS: &BinaryExpr{
-						LHS: &FieldRef{Name: "abc"},
+						LHS: &FieldRef{Name: "abc", StreamName: DEFAULT_STREAM},
 						OP:  SUBSET,
 						RHS: &IndexExpr{Index: 0},
 					},
@@ -1940,9 +1940,9 @@ func TestParser_ParseJoins(t *testing.T) {
 				Joins: []Join{
 					{
 						Name: "topic1", Alias: "", JoinType: LEFT_JOIN, Expr: &BinaryExpr{
-							LHS: &FieldRef{Name: "f"},
+							LHS: &FieldRef{Name: "f", StreamName: DEFAULT_STREAM},
 							OP:  EQ,
-							RHS: &FieldRef{Name: "k"},
+							RHS: &FieldRef{Name: "k", StreamName: DEFAULT_STREAM},
 						},
 					},
 				},
@@ -1962,9 +1962,9 @@ func TestParser_ParseJoins(t *testing.T) {
 				Joins: []Join{
 					{
 						Name: "topic1", Alias: "t2", JoinType: INNER_JOIN, Expr: &BinaryExpr{
-							LHS: &FieldRef{Name: "f"},
+							LHS: &FieldRef{Name: "f", StreamName: DEFAULT_STREAM},
 							OP:  EQ,
-							RHS: &FieldRef{Name: "k"},
+							RHS: &FieldRef{Name: "k", StreamName: DEFAULT_STREAM},
 						},
 					},
 				},
@@ -1984,9 +1984,9 @@ func TestParser_ParseJoins(t *testing.T) {
 				Joins: []Join{
 					{
 						Name: "topic1/sensor2", Alias: "t2", JoinType: LEFT_JOIN, Expr: &BinaryExpr{
-							LHS: &FieldRef{Name: "f"},
+							LHS: &FieldRef{Name: "f", StreamName: DEFAULT_STREAM},
 							OP:  EQ,
-							RHS: &FieldRef{Name: "k"},
+							RHS: &FieldRef{Name: "k", StreamName: DEFAULT_STREAM},
 						},
 					},
 				},
@@ -2006,9 +2006,9 @@ func TestParser_ParseJoins(t *testing.T) {
 				Joins: []Join{
 					{
 						Name: "topic1/sensor2", Alias: "t2", JoinType: LEFT_JOIN, Expr: &BinaryExpr{
-							LHS: &FieldRef{Name: "f"},
+							LHS: &FieldRef{Name: "f", StreamName: DEFAULT_STREAM},
 							OP:  EQ,
-							RHS: &FieldRef{Name: "k"},
+							RHS: &FieldRef{Name: "k", StreamName: DEFAULT_STREAM},
 						},
 					},
 				},
@@ -2154,7 +2154,7 @@ func TestParser_ParseStatements(t *testing.T) {
 				{
 					Fields: []Field{
 						{
-							Expr:  &FieldRef{Name: "name"},
+							Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 							Name:  "name",
 							AName: ""},
 					},
@@ -2163,7 +2163,7 @@ func TestParser_ParseStatements(t *testing.T) {
 				{
 					Fields: []Field{
 						{
-							Expr:  &FieldRef{Name: "name"},
+							Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 							Name:  "name",
 							AName: ""},
 					},
@@ -2176,7 +2176,7 @@ func TestParser_ParseStatements(t *testing.T) {
 				{
 					Fields: []Field{
 						{
-							Expr:  &FieldRef{Name: "name"},
+							Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 							Name:  "name",
 							AName: ""},
 					},
@@ -2185,7 +2185,7 @@ func TestParser_ParseStatements(t *testing.T) {
 				{
 					Fields: []Field{
 						{
-							Expr:  &FieldRef{Name: "name"},
+							Expr:  &FieldRef{Name: "name", StreamName: DEFAULT_STREAM},
 							Name:  "name",
 							AName: ""},
 					},

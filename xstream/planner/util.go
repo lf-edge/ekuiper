@@ -9,7 +9,7 @@ func getRefSources(node xsql.Node) []string {
 		return keys
 	}
 	xsql.WalkFunc(node, func(n xsql.Node) {
-		if f, ok := n.(*xsql.FieldRef); ok {
+		if f, ok := n.(*xsql.FieldRef); ok && f.StreamName != "" {
 			result[string(f.StreamName)] = true
 		}
 	})
@@ -38,11 +38,15 @@ func getFields(node xsql.Node) []xsql.Expr {
 	xsql.WalkFunc(node, func(n xsql.Node) {
 		switch t := n.(type) {
 		case *xsql.FieldRef:
-			result = append(result, t)
+			if t.StreamName != "" {
+				result = append(result, t)
+			}
 		case *xsql.Wildcard:
 			result = append(result, t)
 		case *xsql.MetaRef:
-			result = append(result, t)
+			if t.StreamName != "" {
+				result = append(result, t)
+			}
 		case *xsql.SortField:
 			result = append(result, t)
 		}

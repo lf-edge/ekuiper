@@ -86,7 +86,7 @@ func (p *DataSourcePlan) PruneColumns(fields []xsql.Expr) error {
 		case *xsql.Wildcard:
 			p.isWildCard = true
 		case *xsql.FieldRef:
-			if !p.isWildCard && (f.StreamName == "" || string(f.StreamName) == p.name) {
+			if !p.isWildCard && (f.StreamName == xsql.DEFAULT_STREAM || string(f.StreamName) == p.name) {
 				if _, ok := p.fields[f.Name]; !ok {
 					sf := p.getField(f.Name)
 					if sf != nil {
@@ -98,7 +98,7 @@ func (p *DataSourcePlan) PruneColumns(fields []xsql.Expr) error {
 			if p.allMeta {
 				break
 			}
-			if f.StreamName == "" || string(f.StreamName) == p.name {
+			if f.StreamName == xsql.DEFAULT_STREAM || string(f.StreamName) == p.name {
 				if f.Name == "*" {
 					p.allMeta = true
 					p.metaMap = nil

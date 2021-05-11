@@ -93,7 +93,7 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []xsql.Field{
 					{
-						Expr:  &xsql.FieldRef{Name: "name"},
+						Expr:  &xsql.FieldRef{Name: "name", StreamName: "src1"},
 						Name:  "name",
 						AName: ""},
 				},
@@ -129,7 +129,7 @@ func Test_createLogicalPlan(t *testing.T) {
 											},
 										},
 										condition: &xsql.BinaryExpr{
-											LHS: &xsql.FieldRef{Name: "name"},
+											LHS: &xsql.FieldRef{Name: "name", StreamName: "src1"},
 											OP:  xsql.EQ,
 											RHS: &xsql.StringLiteral{Val: "v1"},
 										},
@@ -146,7 +146,7 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []xsql.Field{
 					{
-						Expr:  &xsql.FieldRef{Name: "temp"},
+						Expr:  &xsql.FieldRef{Name: "temp", StreamName: "src1"},
 						Name:  "temp",
 						AName: ""},
 				},
@@ -235,7 +235,7 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []xsql.Field{
 					{
-						Expr:  &xsql.FieldRef{Name: "id1"},
+						Expr:  &xsql.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
 						AName: ""},
 				},
@@ -277,12 +277,12 @@ func Test_createLogicalPlan(t *testing.T) {
 										condition: &xsql.BinaryExpr{
 											OP: xsql.AND,
 											LHS: &xsql.BinaryExpr{
-												LHS: &xsql.FieldRef{Name: "name"},
+												LHS: &xsql.FieldRef{Name: "name", StreamName: "src1"},
 												OP:  xsql.EQ,
 												RHS: &xsql.StringLiteral{Val: "v1"},
 											},
 											RHS: &xsql.BinaryExpr{
-												LHS: &xsql.FieldRef{Name: "temp"},
+												LHS: &xsql.FieldRef{Name: "temp", StreamName: "src1"},
 												OP:  xsql.GT,
 												RHS: &xsql.IntegerLiteral{Val: 2},
 											},
@@ -300,7 +300,7 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []xsql.Field{
 					{
-						Expr:  &xsql.FieldRef{Name: "id1"},
+						Expr:  &xsql.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
 						AName: ""},
 				},
@@ -352,7 +352,7 @@ func Test_createLogicalPlan(t *testing.T) {
 											},
 										},
 										condition: &xsql.BinaryExpr{
-											LHS: &xsql.FieldRef{Name: "temp"},
+											LHS: &xsql.FieldRef{Name: "temp", StreamName: "src1"},
 											OP:  xsql.GT,
 											RHS: &xsql.IntegerLiteral{Val: 20},
 										},
@@ -479,7 +479,7 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []xsql.Field{
 					{
-						Expr:  &xsql.FieldRef{Name: "id1"},
+						Expr:  &xsql.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
 						AName: ""},
 				},
@@ -487,7 +487,7 @@ func Test_createLogicalPlan(t *testing.T) {
 				sendMeta:    false,
 			}.Init(),
 		}, { // 6. optimize outter join on
-			sql: `SELECT id1 FROM src1 FULL JOIN src2 on src1.id1 = src2.id2 and src1.temp > 20 and src2.hum < 60 WHERE src1.id > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			sql: `SELECT id1 FROM src1 FULL JOIN src2 on src1.id1 = src2.id2 and src1.temp > 20 and src2.hum < 60 WHERE src1.id1 > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
@@ -519,7 +519,7 @@ func Test_createLogicalPlan(t *testing.T) {
 													},
 													condition: &xsql.BinaryExpr{
 														OP:  xsql.GT,
-														LHS: &xsql.FieldRef{Name: "id", StreamName: "src1"},
+														LHS: &xsql.FieldRef{Name: "id1", StreamName: "src1"},
 														RHS: &xsql.IntegerLiteral{Val: 111},
 													},
 												}.Init(),
@@ -584,7 +584,7 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []xsql.Field{
 					{
-						Expr:  &xsql.FieldRef{Name: "id1"},
+						Expr:  &xsql.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
 						AName: ""},
 				},
@@ -592,11 +592,11 @@ func Test_createLogicalPlan(t *testing.T) {
 				sendMeta:    false,
 			}.Init(),
 		}, { // 7 window error for table
-			sql: `SELECT value FROM tableInPlanner WHERE name = "v1" GROUP BY TUMBLINGWINDOW(ss, 10) FILTER( WHERE temp > 2)`,
+			sql: `SELECT value FROM tableInPlanner WHERE name = "v1" GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p:   nil,
 			err: "cannot run window for TABLE sources",
 		}, { // 8 join table without window
-			sql: `SELECT id1 FROM src1 INNER JOIN tableInPlanner on src1.id1 = tableInPlanner.id and src1.temp > 20 and tableInPlanner.hum < 60 WHERE src1.id1 > 111`,
+			sql: `SELECT id1 FROM src1 INNER JOIN tableInPlanner on src1.id1 = tableInPlanner.id and src1.temp > 20 and hum < 60 WHERE src1.id1 > 111`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
@@ -692,14 +692,14 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []xsql.Field{
 					{
-						Expr:  &xsql.FieldRef{Name: "id1"},
+						Expr:  &xsql.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
 						AName: ""},
 				},
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 8 join table with window
+		}, { // 9 join table with window
 			sql: `SELECT id1 FROM src1 INNER JOIN tableInPlanner on src1.id1 = tableInPlanner.id and src1.temp > 20 and tableInPlanner.hum < 60 WHERE src1.id1 > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -807,14 +807,14 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []xsql.Field{
 					{
-						Expr:  &xsql.FieldRef{Name: "id1"},
+						Expr:  &xsql.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
 						AName: ""},
 				},
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 9 meta
+		}, { // 10 meta
 			sql: `SELECT temp, meta(id) AS eid,meta(Humidity->Device) AS hdevice FROM src1 WHERE meta(device)="demo2"`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -835,7 +835,8 @@ func Test_createLogicalPlan(t *testing.T) {
 										alias: xsql.Fields{
 											xsql.Field{
 												Expr: &xsql.Call{Name: "meta", Args: []xsql.Expr{&xsql.MetaRef{
-													Name: "id",
+													Name:       "id",
+													StreamName: xsql.DEFAULT_STREAM,
 												}}},
 												Name:  "meta",
 												AName: "eid",
@@ -844,7 +845,7 @@ func Test_createLogicalPlan(t *testing.T) {
 												Expr: &xsql.Call{Name: "meta", Args: []xsql.Expr{
 													&xsql.BinaryExpr{
 														OP:  xsql.ARROW,
-														LHS: &xsql.MetaRef{Name: "Humidity"},
+														LHS: &xsql.MetaRef{Name: "Humidity", StreamName: xsql.DEFAULT_STREAM},
 														RHS: &xsql.MetaRef{Name: "Device"},
 													},
 												}},
@@ -859,7 +860,8 @@ func Test_createLogicalPlan(t *testing.T) {
 								LHS: &xsql.Call{
 									Name: "meta",
 									Args: []xsql.Expr{&xsql.MetaRef{
-										Name: "device",
+										Name:       "device",
+										StreamName: xsql.DEFAULT_STREAM,
 									}},
 								},
 								OP: xsql.EQ,
@@ -872,12 +874,13 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []xsql.Field{
 					{
-						Expr:  &xsql.FieldRef{Name: "temp"},
+						Expr:  &xsql.FieldRef{Name: "temp", StreamName: "src1"},
 						Name:  "temp",
 						AName: "",
 					}, {
 						Expr: &xsql.Call{Name: "meta", Args: []xsql.Expr{&xsql.MetaRef{
-							Name: "id",
+							Name:       "id",
+							StreamName: xsql.DEFAULT_STREAM,
 						}}},
 						Name:  "meta",
 						AName: "eid",
@@ -885,7 +888,7 @@ func Test_createLogicalPlan(t *testing.T) {
 						Expr: &xsql.Call{Name: "meta", Args: []xsql.Expr{
 							&xsql.BinaryExpr{
 								OP:  xsql.ARROW,
-								LHS: &xsql.MetaRef{Name: "Humidity"},
+								LHS: &xsql.MetaRef{Name: "Humidity", StreamName: xsql.DEFAULT_STREAM},
 								RHS: &xsql.MetaRef{Name: "Device"},
 							},
 						}},
