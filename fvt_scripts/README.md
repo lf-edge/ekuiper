@@ -212,7 +212,23 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   
 - [Binary data type test](http_pull_rule.jmx)
   
-  This script verify the binary data support. The rule consumes the binary image data sent from MQTT broker, and then processed by the rule, finally the image data will be sent back to MQTT broker again. The script verifies BASE64 of image that produced by Kuiper rule engine. 
+  This script verifies the binary data support. The rule consumes the binary image data sent from MQTT broker, and then processed by the rule, finally the image data will be sent back to MQTT broker again. The script verifies BASE64 of image that produced by Kuiper rule engine. 
   
   - `binary_image_hex.txt`: the data file of image.
   - `binary_image_base64.txt`: the BASE64 file of image.
+
+- [Static table test](table_static.jmx)
+
+  This script verifies the batch table support. 
+  - Create a MQTT stream. The sent data are read from file `iot_data_id.txt` which defines an id, temperature and humidity.
+  - Create a table whose type is file which reads `lookup.json` as the content. It is like a dictionary which maps the name and size to each id.
+  - The rule join the stream and table by id to lookup the name and filter by temperature.
+  - The result data will be sent back to MQTT broker again and compared with `table_static_result_data.txt`.
+
+- [Continuous table test](table_cont.jmx)
+
+  This script verifies the continuous updated table support. Unlike the static table, the continuous table will be updated once received new data.
+  - Create a MQTT stream with topic named `iot`. The sent data are read from file `iot_data_multi_topics.txt` when the topic name is matched which defines temperature and humidity.
+  - Create a table whose type is mqtt with topic name `state`. The sent data is also from file `iot_data_multi_topics.txt` when the topic name is matched which defines the state. The table records the latest state from the `state` topic which is working like a control topic to switch on or off of the processing.
+  - The rule join the stream and table filter by both the state from the table and temperature from the stream.  
+  - The result data will be sent back to MQTT broker again and compared with `table_cont_result_data.txt`.
