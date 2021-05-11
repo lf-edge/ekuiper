@@ -11,6 +11,7 @@ import (
 	"github.com/emqx/kuiper/xstream/nodes"
 	"github.com/emqx/kuiper/xstream/operators"
 	"path"
+	"strings"
 )
 
 func Plan(rule *api.Rule, storePath string) (*xstream.TopologyNew, error) {
@@ -50,6 +51,64 @@ func PlanWithSourcesAndSinks(rule *api.Rule, storePath string, sources []*nodes.
 		return nil, err
 	}
 	return tp, nil
+}
+
+func decorateStmt(s *xsql.SelectStatement, ss []*xsql.StreamStmt, alias xsql.Fields, aggregateAlias xsql.Fields) (err error) {
+	isSchemaless := false
+	for _, streamStmt := range ss {
+		if streamStmt.StreamFields == nil {
+			isSchemaless = true
+			break
+		}
+	}
+	xsql.WalkFunc(s, func(n xsql.Node) {
+		if f, ok := n.(*xsql.FieldRef); ok && f.StreamName != "" {
+			fname := f.Name
+			isAlias := false
+			if f.StreamName == xsql.DEFAULT_STREAM {
+				for _, alias := range alias {
+					if strings.EqualFold(fname, alias.AName) {
+						fname = alias.Name
+						isAlias = true
+						break
+					}
+				}
+				if !isAlias {
+					for _, alias := range aggregateAlias {
+						if strings.EqualFold(fname, alias.AName) {
+							fname = alias.Name
+							isAlias = true
+							break
+						}
+					}
+				}
+			}
+			count := 0
+			for _, streamStmt := range ss {
+				for _, field := range streamStmt.StreamFields {
+					if strings.EqualFold(fname, field.Name) {
+						if f.StreamName == xsql.DEFAULT_STREAM {
+							f.StreamName = streamStmt.Name
+							count++
+						} else if f.StreamName == streamStmt.Name {
+							count++
+						}
+						break
+					}
+				}
+			}
+			if count > 1 {
+				err = fmt.Errorf("ambiguous field %s", fname)
+			} else if count == 0 && !isAlias && f.StreamName == xsql.DEFAULT_STREAM { // alias may refer to non stream field
+				if !isSchemaless {
+					err = fmt.Errorf("unknown field %s.%s", f.StreamName, f.Name)
+				} else if len(ss) == 1 { // If only one schemaless stream, all the fields must be a field of that stream
+					f.StreamName = ss[0].Name
+				}
+			}
+		}
+	})
+	return
 }
 
 func createTopo(rule *api.Rule, lp LogicalPlan, sources []*nodes.SourceNode, sinks []*nodes.SinkNode, streamsFromStmt []string) (*xstream.TopologyNew, error) {
@@ -209,11 +268,13 @@ func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv
 		}
 	}
 
-	for _, s := range streamsFromStmt {
+	streamStmts := make([]*xsql.StreamStmt, len(streamsFromStmt))
+	for i, s := range streamsFromStmt {
 		streamStmt, err := xsql.GetDataSource(store, s)
 		if err != nil {
 			return nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
 		}
+		streamStmts[i] = streamStmt
 		p = DataSourcePlan{
 			name:       s,
 			streamStmt: streamStmt,
@@ -227,7 +288,11 @@ func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv
 			tableChildren = append(tableChildren, p)
 			tableEmitters = append(tableEmitters, string(streamStmt.Name))
 		}
+	}
 
+	err := decorateStmt(stmt, streamStmts, alias, aggregateAlias)
+	if err != nil {
+		return nil, err
 	}
 	if dimensions != nil {
 		w = dimensions.GetWindow()

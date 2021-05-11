@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+const DEFAULT_STREAM = "$default"
+
 type Parser struct {
 	s *Scanner
 
@@ -446,7 +448,7 @@ func (p *Parser) ParseExpr() (Expr, error) {
 	var err error
 	root := &BinaryExpr{}
 
-	root.RHS, err = p.parseUnaryExpr()
+	root.RHS, err = p.parseUnaryExpr(false)
 	if err != nil {
 		return nil, err
 	}
@@ -464,7 +466,7 @@ func (p *Parser) ParseExpr() (Expr, error) {
 		}
 
 		var rhs Expr
-		if rhs, err = p.parseUnaryExpr(); err != nil {
+		if rhs, err = p.parseUnaryExpr(op == ARROW); err != nil {
 			return nil, err
 		}
 
@@ -481,7 +483,7 @@ func (p *Parser) ParseExpr() (Expr, error) {
 	return nil, nil
 }
 
-func (p *Parser) parseUnaryExpr() (Expr, error) {
+func (p *Parser) parseUnaryExpr(isSubField bool) (Expr, error) {
 	if tok1, _ := p.scanIgnoreWhitespace(); tok1 == LPAREN {
 		expr, err := p.ParseExpr()
 		if err != nil {
@@ -515,12 +517,18 @@ func (p *Parser) parseUnaryExpr() (Expr, error) {
 				if len(n) == 2 {
 					return &MetaRef{StreamName: StreamName(n[0]), Name: n[1]}, nil
 				}
-				return &MetaRef{StreamName: "", Name: n[0]}, nil
+				if isSubField {
+					return &MetaRef{StreamName: "", Name: n[0]}, nil
+				}
+				return &MetaRef{StreamName: DEFAULT_STREAM, Name: n[0]}, nil
 			} else {
 				if len(n) == 2 {
 					return &FieldRef{StreamName: StreamName(n[0]), Name: n[1]}, nil
 				}
-				return &FieldRef{StreamName: "", Name: n[0]}, nil
+				if isSubField {
+					return &FieldRef{StreamName: "", Name: n[0]}, nil
+				}
+				return &FieldRef{StreamName: DEFAULT_STREAM, Name: n[0]}, nil
 			}
 		}
 	} else if tok == STRING {

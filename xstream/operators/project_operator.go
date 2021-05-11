@@ -102,7 +102,7 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) (map[string]inter
 		expr := f.Expr
 		//Avoid to re-evaluate for non-agg field has alias name, which was already evaluated in pre-processor operator.
 		if f.AName != "" && !isTest {
-			expr = &xsql.FieldRef{StreamName: "", Name: f.AName}
+			expr = &xsql.FieldRef{StreamName: xsql.DEFAULT_STREAM, Name: f.AName}
 		}
 		v := ve.Eval(expr)
 		if e, ok := v.(error); ok {
