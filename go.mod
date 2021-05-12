@@ -8,6 +8,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/edgexfoundry/go-mod-core-contracts v0.1.80
 	github.com/edgexfoundry/go-mod-messaging v0.1.30
+	github.com/gdexlab/go-render v1.0.1
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/golang/protobuf v1.5.0
@@ -27,9 +28,9 @@ require (
 	github.com/ugorji/go/codec v1.2.5
 	github.com/urfave/cli v1.22.0
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344
-	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
 	google.golang.org/grpc v1.36.1
-	google.golang.org/protobuf v1.26.0 // indirect
+	google.golang.org/protobuf v1.26.0
 	gopkg.in/ini.v1 v1.62.0
 )
 

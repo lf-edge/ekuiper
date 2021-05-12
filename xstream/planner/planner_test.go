@@ -7,6 +7,7 @@ import (
 	"github.com/emqx/kuiper/common/kv"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
+	"github.com/gdexlab/go-render/render"
 	"path"
 	"reflect"
 	"strings"
@@ -899,6 +900,119 @@ func Test_createLogicalPlan(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
+		}, { // 11 join with same name field and aliased
+			sql: `SELECT src2.hum AS hum1, tableInPlanner.hum AS hum2 FROM src2 INNER JOIN tableInPlanner on id2 = id WHERE hum1 > hum2`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						JoinPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									JoinAlignPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													name: "src2",
+													streamFields: []interface{}{
+														&xsql.StreamField{
+															Name:      "hum",
+															FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+														},
+														&xsql.StreamField{
+															Name:      "id2",
+															FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+														},
+													},
+													streamStmt: streams["src2"],
+													alias: xsql.Fields{
+														xsql.Field{
+															Expr: &xsql.FieldRef{
+																Name:       "hum",
+																StreamName: "src2",
+															},
+															Name:  "hum",
+															AName: "hum1",
+														},
+													},
+													metaFields: []string{},
+												}.Init(),
+												DataSourcePlan{
+													name: "tableInPlanner",
+													streamFields: []interface{}{
+														&xsql.StreamField{
+															Name:      "hum",
+															FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+														},
+														&xsql.StreamField{
+															Name:      "id",
+															FieldType: &xsql.BasicType{Type: xsql.BIGINT},
+														},
+													},
+													streamStmt: streams["tableInPlanner"],
+													alias: xsql.Fields{
+														xsql.Field{
+															Expr: &xsql.FieldRef{
+																Name:       "hum",
+																StreamName: "tableInPlanner",
+															},
+															Name:  "hum",
+															AName: "hum2",
+														},
+													},
+													metaFields: []string{},
+												}.Init(),
+											},
+										},
+										Emitters: []string{"tableInPlanner"},
+									}.Init(),
+								},
+							},
+							from: &xsql.Table{
+								Name: "src2",
+							},
+							joins: []xsql.Join{
+								{
+									Name:     "tableInPlanner",
+									Alias:    "",
+									JoinType: xsql.INNER_JOIN,
+									Expr: &xsql.BinaryExpr{
+										RHS: &xsql.BinaryExpr{
+											OP:  xsql.EQ,
+											LHS: &xsql.FieldRef{Name: "id2", StreamName: "src2"},
+											RHS: &xsql.FieldRef{Name: "id", StreamName: "tableInPlanner"},
+										},
+										OP: xsql.AND,
+										LHS: &xsql.BinaryExpr{
+											OP:  xsql.GT,
+											LHS: &xsql.FieldRef{Name: "hum1", StreamName: "src2"},
+											RHS: &xsql.FieldRef{Name: "hum2", StreamName: "tableInPlanner"},
+										},
+									},
+								},
+							},
+						}.Init(),
+					},
+				},
+				fields: []xsql.Field{
+					{
+						Expr: &xsql.FieldRef{
+							Name:       "hum",
+							StreamName: "src2",
+						},
+						Name:  "hum",
+						AName: "hum1",
+					}, {
+						Expr: &xsql.FieldRef{
+							Name:       "hum",
+							StreamName: "tableInPlanner",
+						},
+						Name:  "hum",
+						AName: "hum2",
+					},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -922,7 +1036,7 @@ func Test_createLogicalPlan(t *testing.T) {
 		if !reflect.DeepEqual(tt.err, common.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
 		} else if !reflect.DeepEqual(tt.p, p) {
-			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.p, p)
+			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, render.AsCode(tt.p), render.AsCode(p))
 		}
 	}
 }
