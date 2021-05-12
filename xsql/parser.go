@@ -12,6 +12,7 @@ import (
 )
 
 const DEFAULT_STREAM = "$default"
+const MULTI_STREAM = "$multi"
 
 type Parser struct {
 	s *Scanner
