@@ -20,7 +20,7 @@ POST http://localhost:9081/services
 ```json
 {
   "name":"random",
-  "file":"file:///var/plugins/services/sample.zip"
+  "file":"file:///var/services/sample.zip"
 }
 ```
 
@@ -54,7 +54,7 @@ GET http://localhost:9081/services
 该 API 用于打印外部服务的详细定义。
 
 ```shell
-GET http://localhost:9081/plugins/services/{name}
+GET http://localhost:9081/services/{name}
 ```
 
 路径参数 `name` 是外部服务的名称。
@@ -64,7 +64,7 @@ GET http://localhost:9081/plugins/services/{name}
 该 API 用于删除外部服务，服务之下定义的所有函数都将被删除。
 
 ```shell
-DELETE http://localhost:8080/plugins/services/{name}
+DELETE http://localhost:8080/services/{name}
 ```
 
 ## 更新外部服务
