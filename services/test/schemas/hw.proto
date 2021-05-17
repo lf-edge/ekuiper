@@ -24,6 +24,7 @@ service Greeter {
     };
   }
   rpc getStatus(google.protobuf.Empty) returns(google.protobuf.BoolValue) {}
+  rpc RestEncodedJson(google.protobuf.StringValue) returns(google.protobuf.StringValue) {}
 }
 
 // The request message containing the user's name.
@@ -69,7 +70,7 @@ message FeatureResponse{
 
 message ObjectDetectionRequest {
   string cmd = 1;
-  string base64_img = 2;
+  string base64_img = 2 [json_name="base64_img"];
 }
 
 message ObjectDetectionResponse {

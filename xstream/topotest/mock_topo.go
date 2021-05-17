@@ -936,24 +936,27 @@ var testData = map[string][]*xsql.Tuple{
 		{
 			Emitter: "commands",
 			Message: map[string]interface{}{
-				"cmd":        "get",
-				"base64_img": "my image",
+				"cmd":          "get",
+				"base64_img":   "my image",
+				"encoded_json": "{\"name\": \"name1\",\"size\": 22}",
 			},
 			Timestamp: 1541152486013,
 		},
 		{
 			Emitter: "commands",
 			Message: map[string]interface{}{
-				"cmd":        "detect",
-				"base64_img": "my image",
+				"cmd":          "detect",
+				"base64_img":   "my image",
+				"encoded_json": "{\"name\": \"name2\",\"size\": 33}",
 			},
 			Timestamp: 1541152487013,
 		},
 		{
 			Emitter: "commands",
 			Message: map[string]interface{}{
-				"cmd":        "delete",
-				"base64_img": "my image",
+				"cmd":          "delete",
+				"base64_img":   "my image",
+				"encoded_json": "{\"name\": \"name3\",\"size\": 11}",
 			},
 			Timestamp: 1541152488013,
 		},
@@ -1262,7 +1265,7 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 			case "helloStr":
 				sql = `CREATE STREAM helloStr (name string) WITH (DATASOURCE="hello", FORMAT="JSON")`
 			case "commands":
-				sql = `CREATE STREAM commands (cmd string, base64_img string) WITH (DATASOURCE="commands", FORMAT="JSON")`
+				sql = `CREATE STREAM commands (cmd string, base64_img string, encoded_json string) WITH (DATASOURCE="commands", FORMAT="JSON")`
 			case "fakeBin":
 				sql = "CREATE STREAM fakeBin () WITH (DATASOURCE=\"users\", FORMAT=\"BINARY\")"
 			default:

@@ -142,7 +142,7 @@ Since REST and msgpack-rpc are not natively defined by protobuf, there are some 
 
 The REST service is **POST** by default currently, and the transmission format is json. In the defined protobuf:
 
-- The input and output format cannot be a basic type, and it must be message
+- The input type must be **Message** or *google.protobuf.StringValue*. If the type is *google.protobuf.StringValue*, the parameter must be an encoded json string like `"{\"name\":\"name1\",\"size\":1}"`.
 
 The msgpack-rpc service has the following limitation:
 - Input can not be empty
