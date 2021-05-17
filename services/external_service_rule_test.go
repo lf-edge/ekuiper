@@ -53,6 +53,11 @@ type ObjectDetectResponse struct {
 //	Box      Box       `json:"box,omitempty"`
 //}
 
+type EncodedRequest struct {
+	Name string `json:"name,omitempty"`
+	Size int    `json:"size,omitempty"`
+}
+
 func TestRestService(t *testing.T) {
 	// mock server, the port is set in the sample.json
 	l, err := net.Listen("tcp", "127.0.0.1:51234")
@@ -81,6 +86,9 @@ func TestRestService(t *testing.T) {
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
+			if req.Image == "" {
+				http.Error(w, "image is not found", http.StatusBadRequest)
+			}
 			out = &ObjectDetectResponse{
 				Info:   req.Command,
 				Code:   200,
@@ -92,6 +100,14 @@ func TestRestService(t *testing.T) {
 			r := count%2 == 0
 			count++
 			io.WriteString(w, fmt.Sprintf("%v", r))
+			return
+		case "/RestEncodedJson":
+			req := &EncodedRequest{}
+			err := json.NewDecoder(r.Body).Decode(req)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			}
+			io.WriteString(w, req.Name)
 			return
 		default:
 			http.Error(w, "path not supported", http.StatusBadRequest)
@@ -234,6 +250,30 @@ func TestRestService(t *testing.T) {
 				{{
 					"getStatusFromRest": true,
 					"cmd":               "delete",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
+		}, {
+			Name: `TestRestRule5`,
+			Sql:  `SELECT restEncodedJson(encoded_json) as name FROM commands`,
+			R: [][]map[string]interface{}{
+				{{
+					"name": "name1",
+				}},
+				{{
+					"name": "name2",
+				}},
+				{{
+					"name": "name3",
 				}},
 			},
 			M: map[string]interface{}{

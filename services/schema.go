@@ -13,19 +13,30 @@ import (
 	"sync"
 )
 
-var WRAPPER_TYPES = map[string]struct{}{
-	"google.protobuf.BoolValue":   {},
-	"google.protobuf.BytesValue":  {},
-	"google.protobuf.DoubleValue": {},
-	"google.protobuf.FloatValue":  {},
-	"google.protobuf.Int32Value":  {},
-	"google.protobuf.Int64Value":  {},
-	"google.protobuf.StringValue": {},
-	"google.protobuf.UInt32Value": {},
-	"google.protobuf.UInt64Value": {},
-}
+const (
+	wrapperBool   = "google.protobuf.BoolValue"
+	wrapperBytes  = "google.protobuf.BytesValue"
+	wrapperDouble = "google.protobuf.DoubleValue"
+	wrapperFloat  = "google.protobuf.FloatValue"
+	wrapperInt32  = "google.protobuf.Int32Value"
+	wrapperInt64  = "google.protobuf.Int64Value"
+	wrapperString = "google.protobuf.StringValue"
+	wrapperUInt32 = "google.protobuf.UInt32Value"
+	wrapperUInt64 = "google.protobuf.UInt64Value"
+	wrapperVoid   = "google.protobuf.EMPTY"
+)
 
-const VOID = "google.protobuf.EMPTY"
+var WRAPPER_TYPES = map[string]struct{}{
+	wrapperBool:   {},
+	wrapperBytes:  {},
+	wrapperDouble: {},
+	wrapperFloat:  {},
+	wrapperInt32:  {},
+	wrapperInt64:  {},
+	wrapperString: {},
+	wrapperUInt32: {},
+	wrapperUInt64: {},
+}
 
 type descriptor interface {
 	GetFunctions() []string
@@ -154,6 +165,22 @@ func (d *wrappedProtoDescriptor) ConvertParamsToMessage(method string, params []
 }
 
 func (d *wrappedProtoDescriptor) ConvertParamsToJson(method string, params []interface{}) ([]byte, error) {
+	// Deal with encoded json string. Just return the string
+	if len(params) == 1 {
+		m := d.MethodDescriptor(method)
+		if m == nil {
+			return nil, fmt.Errorf("can't find method %s in proto", method)
+		}
+		im := m.GetInputType()
+		if im.GetFullyQualifiedName() == wrapperString {
+			ss, err := common.ToString(params[0], common.STRICT)
+			if err != nil {
+				return nil, err
+			}
+			return []byte(ss), nil
+		}
+	}
+
 	if message, err := d.ConvertParamsToMessage(method, params); err != nil {
 		return nil, err
 	} else {
@@ -452,7 +479,7 @@ func encodeSingleField(field *desc.FieldDescriptor, v interface{}) (interface{},
 func decodeMessage(message *dynamic.Message, outputType *desc.MessageDescriptor) interface{} {
 	if _, ok := WRAPPER_TYPES[outputType.GetFullyQualifiedName()]; ok {
 		return message.GetFieldByNumber(1)
-	} else if VOID == outputType.GetFullyQualifiedName() {
+	} else if wrapperVoid == outputType.GetFullyQualifiedName() {
 		return nil
 	}
 	result := make(map[string]interface{})

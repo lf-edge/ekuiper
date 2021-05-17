@@ -48,6 +48,7 @@ func TestInitByFiles(t *testing.T) {
 					"getFeatureFromGrpc",
 					"objectDetectFromGrpc",
 					"getStatusFromGrpc",
+					"notUsedRpc",
 				},
 			},
 			"tsrest": {
@@ -69,6 +70,7 @@ func TestInitByFiles(t *testing.T) {
 					"getFeatureFromRest",
 					"objectDetectFromRest",
 					"getStatusFromRest",
+					"restEncodedJson",
 				},
 			},
 			"tsmsgpack": {
@@ -84,6 +86,7 @@ func TestInitByFiles(t *testing.T) {
 					"getFeatureFromMsgpack",
 					"objectDetectFromMsgpack",
 					"getStatusFromMsgpack",
+					"notUsedMsgpack",
 				},
 			},
 		},
@@ -163,6 +166,21 @@ func TestInitByFiles(t *testing.T) {
 			ServiceName:   "sample",
 			InterfaceName: "tsmsgpack",
 			MethodName:    "Compute",
+		},
+		"notUsedRpc": {
+			ServiceName:   "sample",
+			InterfaceName: "tsrpc",
+			MethodName:    "RestEncodedJson",
+		},
+		"restEncodedJson": {
+			ServiceName:   "sample",
+			InterfaceName: "tsrest",
+			MethodName:    "RestEncodedJson",
+		},
+		"notUsedMsgpack": {
+			ServiceName:   "sample",
+			InterfaceName: "tsmsgpack",
+			MethodName:    "RestEncodedJson",
 		},
 	}
 

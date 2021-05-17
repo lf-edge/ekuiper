@@ -41,6 +41,10 @@
         {
           "name": "getStatusFromGrpc",
           "serviceName": "getStatus"
+        },
+        {
+          "name": "notUsedRpc",
+          "serviceName": "RestEncodedJson"
         }
       ]
     },
@@ -75,6 +79,10 @@
         {
           "name": "getStatusFromRest",
           "serviceName": "getStatus"
+        },
+        {
+          "name": "restEncodedJson",
+          "serviceName": "RestEncodedJson"
         }
       ]
     },
@@ -103,6 +111,10 @@
         {
           "name": "getStatusFromMsgpack",
           "serviceName": "getStatus"
+        },
+        {
+          "name": "notUsedMsgpack",
+          "serviceName": "RestEncodedJson"
         }
       ]
     }

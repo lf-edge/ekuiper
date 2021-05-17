@@ -139,7 +139,7 @@ Protobuf 采用 proto3 格式，详细格式请参考 [proto3-spec](https://deve
 由于 REST 和 msgpack-rpc 并非原生采用 protobuf 定义，因此其使用有一些限制。
 
 REST 服务目前默认为 **POST**，且传输格式为 json。定义的protobuf 中：
-- 输入和输出格式不能为基本类型，必须为 message
+- 输入参数仅可以为 message 类型或者 *google.protobuf.StringValue* 类型。若输入参数为 *google.protobuf.StringValue*，则传入的参数必须为已编码的 json 字符串，例如 `"{\"name\":\"name1\",\"size\":1}"`。
 
 msgpack-rpc 服务有以下限制：
 - 输入不能为空

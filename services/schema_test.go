@@ -96,6 +96,16 @@ func TestConvertParams(t *testing.T) {
 		//	},
 		//	jresult: []byte(`{"featureA":[0.031646,-0.800592,-1.101858,-0.354359,0.656587],"featureB":[0.354359,0.656587,-0.327047,0.198284,-2.142494,0.76016,1.680131]}`),
 		//},
+		{ // 6
+			method: "RestEncodedJson",
+			params: []interface{}{
+				[]byte("{\"name\":\"encoded json\",\"size\":1}"),
+			},
+			iresult: []interface{}{
+				"{\"name\":\"encoded json\",\"size\":1}",
+			},
+			jresult: []byte("{\"name\":\"encoded json\",\"size\":1}"),
+		},
 	}
 
 	for i, descriptor := range descriptors {
