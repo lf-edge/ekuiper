@@ -75,7 +75,7 @@ Assuming we have a service named 'sample', we can define a service definition fi
       "functions": [
         {
           "name": "getFeature",
-          "serviceName": "get_feature"
+          "serviceName": "get_feature" 
         },
         {
           "name": "getSimilarity",
@@ -99,13 +99,13 @@ The service provided by each service interface is defined by its corresponding s
 syntax = "proto3";
 package ts;
 
-service TSRest {
+service TSRest { // The proto service name is indifferent
   rpc object_detection(ObjectDetectionRequest) returns(ObjectDetectionResponse) {}
 }
 
 message ObjectDetectionRequest {
   string cmd = 1;
-  string base64_img = 2;
+  string base64_img = 2 [json_name="base64_img"];
 }
 
 message ObjectDetectionResponse {
@@ -117,9 +117,24 @@ message ObjectDetectionResponse {
 }
 ```
 
-This file defines the tsrest service interface to provide a service object_detection, and its input and output formats are also defined by the protobuf format.
+This file defines the tsrest service interface to provide a service object_detection, and its input and output formats are also defined by the protobuf format. It is recommended to only have one service section in the proto file.
 
 Protobuf uses proto3 format. Please refer to [proto3-spec](https://developers.google.com/protocol-buffers/docs/reference/proto3-spec) for detailed format.
+
+### Mapping
+
+In the external service configuration, there are 1 json file and at least 1 schema file(.proto) to define the function mapping. This will define a 3 layer mappings.
+
+1. Kuiper external service layer: it is defined by the file name of the json. It will be used as a key for the external service in the [REST API](../restapi/services.md) for the describe, delete and update of the service as a whole.
+2. Interface layer: it is defined in the `interfaces` section of the json file. This is a virtual layer to group functions with the same schemas so that the shared properties such as address, schema file can be specified only once.
+3. Kuiper function layer: it is defined in the proto file as `rpc`. Notice that, the proto rpcs must be defined under a service section in protobuf. There is no restriction for the name of proto service. The function name is the same as the rpc name in the proto by default. But the user can override the mapping name in the json files's interfaces -> functions section.
+
+In this sample, if a user call `objectDetection` function in Kuiper SQL, the mapping steps are:
+
+1. Found a function mapping in json file, interfaces *tsrest* functions section: `{"name": "objectDetect","serviceName": "object_detection"}`. This maps SQL function `objectDetect` to rpc named `object_detection`.
+2. In the schema file `tsrest.proto`, rpc `object_detection` is defined and the parameter and return type will be parsed. The `tsrest` interface properties such as address, protocol will be used to issue the request in runtime.
+
+Notice that, in REST call the parameters will be parsed to json.  Proto message field names are **converted** to lowerCamelCase and become JSON object keys. If the object keys of the REST API is not lowerCamelCase, the user must specify the json_name field option to avoid the conversion.
 
 ### Limitation
 
@@ -182,7 +197,7 @@ In the above example, objectDetection receives a message parameter.
 ```protobuf
 message ObjectDetectionRequest {
   string cmd = 1;
-  string base64_img = 2;
+  string base64_img = 2 [json_name="base64_img"];
 }
 ```
 
