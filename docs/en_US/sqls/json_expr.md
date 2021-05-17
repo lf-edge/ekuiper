@@ -168,7 +168,7 @@ json_path_query(col, jsonpath)
 json_path_query_first(col, jsonpath)
 ```
 
-Please refer to [json functions](sqls/built-in_functions.md#json-functions) for detail.
+Please refer to [json functions](./built-in_functions.md#json-functions) for detail.
 
 All these functions share the same parameter signatures, among which, the second parameter is a jsonpath string. The jsonpath grammer used by Kuiper is based on [JsonPath](https://goessner.net/articles/JsonPath/).
 
@@ -184,7 +184,7 @@ So for example, when applied to the previous JSON data sample we can reach the f
 - `$.friends.first` refers to “dale”.
 - `$.friends` refers to the full array of friends.
 - `$.friends[0]` refers to the first friend listed in the previous array (contrary to arrays members are zero-based).
-- `$.friends[0][lastname]` refers to the lastname of the first friend listed. Use bracket if [there are reserved words](sqls/lexical_elements.md) or special characters (such as space ' ', '.' and Chinese etc) in the field key.
+- `$.friends[0][lastname]` refers to the lastname of the first friend listed. Use bracket if [there are reserved words](./lexical_elements.md) or special characters (such as space ' ', '.' and Chinese etc) in the field key.
 - `$.friends[? @.age>60].first` or `$.friends[? (@.age>60)].first` refers to the first name of the friends whose age is bigger than 60. Notice that the space between ? and the condition is required even the condition is with braces.
 
 Developers can use the json functions in the SQL statement. Here are some examples.
