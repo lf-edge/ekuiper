@@ -97,13 +97,13 @@ json 配置文件包括以下两个部分：
 syntax = "proto3";
 package ts;
 
-service TSRest {
+service TSRest { // proto service 名字与 Kuiper 外部服务名字无关
   rpc object_detection(ObjectDetectionRequest) returns(ObjectDetectionResponse) {}
 }
 
 message ObjectDetectionRequest {
   string cmd = 1;
-  string base64_img = 2;
+  string base64_img = 2 [json_name="base64_img"];
 }
 
 message ObjectDetectionResponse {
@@ -115,9 +115,24 @@ message ObjectDetectionResponse {
 }
 ```
 
-该文件定义了 tsrest 服务接口提供了一个服务 object_detection, 其输入，输出的格式也通过 protobuf 的格式进行了定义。
+该文件定义了 tsrest 服务接口提供了一个服务 object_detection, 其输入，输出的格式也通过 protobuf 的格式进行了定义。建议 proto 文件中仅定义一个 `service`，可包含多个 `rpc`。
 
 Protobuf 采用 proto3 格式，详细格式请参考 [proto3-spec](https://developers.google.com/protocol-buffers/docs/reference/proto3-spec) 。
+
+### 映射
+
+外部服务配置需要1个 json 文件和至少一个 schema（.proto） 文件。配置定义了服务映射的3个层次。
+
+1. Kuiper 外部服务层: 外部服务名通过 json 文件名定义。这个名字将作为 [REST API](../restapi/services.md) 中描述，删除和更新整体外部服务的键。
+2. 接口层: 定义于 json 文件的 `interfaces` 部分。该层为用户不可见的虚拟层，主要用于将一组服务聚合，以便可以只定义一次一组函数共有的属性，例如 schema，访问地址等。 
+3. Kuiper 函数层: 函数定义于 proto 文件中的`rpc`。需要注意的是，proto 文件中的 `rpc` 必须定义在 proto 文件中的 `service` 之下。此 `sevice` 与 Kuiper 中的外部服务概念不同，且没有关联，其取名没有任何限制。默认情况下，外部函数的名字与 rpc 名字相同。用户可通过修改 json 文件中，interface 下的 functions 部分来覆盖函数名的映射关系。 
+
+在这个样例中，如果用户在 Kuiper SQL 中调用 `objectDetection` 函数，则其映射过程如下:
+
+1. 在 json 文件的 *tsrest* interface 中，找到函数映射：`{"name": "objectDetect","serviceName": "object_detection"}`。 该配置将 SQL 函数 `objectDetect` 映射为名为`object_detection` 的 rpc。
+2. 在 `tsrest.proto` 文件中，找到 rpc `object_detection` 定义。再根据 json 文件中的 `tsrest` interface 配置属性，例如地址，协议等在运行时进行参数解析和服务调用。
+
+需要注意的是，REST 服务调用时参数将会解析为 json。其中，json 的键名来自于 proto 中的 message 定义的键名。Proto message 的键名在解析时会自动转化为小写驼峰格式。如果调用的 REST 服务参数不是这种格式，用户必须在 message 中指定 json_name 选项显式指定键名以防止自动转换。
 
 ### 限制
 
@@ -174,7 +189,7 @@ ptoto 文件中，一般参数为 message 类型。映射到 Kuiper 中，其参
 ```protobuf
 message ObjectDetectionRequest {
   string cmd = 1;
-  string base64_img = 2;
+  string base64_img = 2 [json_name="base64_img"];
 }
 ```
 
