@@ -166,7 +166,64 @@ SELECT followers->Group1[:1]->first FROM demo
 }
 ```
 
+## Json 路径函数
 
+Kuiper 提供了一系列函数，以允许通过结构或数组列或值进行 json 路径操作。 这些函数是：
+
+```sql
+json_path_exists(col, jsonpath)
+json_path_query(col, jsonpath)
+json_path_query_first(col, jsonpath)
+```
+
+请参考 [json 函数](sqls/built-in_functions.md#json-functions) 获得详细信息.
+
+所有这些函数共享相同的参数签名，其中，第二个参数是 jsonpath 字符串。 Kuiper 使用的 jsonpath 语法基于[JsonPath](https://goessner.net/articles/JsonPath/)
+
+这些表达式的基本语法是将 JSON 对象的字段部分与一些元素结合使用：
+
+- 点 `.` 用于移动到树中
+- 括号 `[]` 用于访问给定位置的数组成员。 它还可以访问地图字段。
+- 变量，`$` 表示 JSON 文本，`@` 表示结果路径计算。
+
+例如，当应用于上述的 JSON 数据示例时，我们可以使用这些表达式访问树的以下部分：
+
+- `$.age` 指的是37。
+- `$.friends.first` 指的是 "dale"。
+- `$.friends` 指的是完整的朋友数组。
+- `$.friends[0]` 指的是上一个数组中列出的第一个朋友（与数组成员相反，它们从零开始）。
+- `$.friends[0][lastname]` 是指列出的第一个朋友的姓氏.。如果 fields key 中有 [保留字](sqls/lexical_elements.md)或特殊字符（例如空格 ' '、 '.'和中文等），请使用括号。
+- `$.friends[? @.age>60].first` 或者 `$.friends[? (@.age>60)].first` 是指年龄大于60岁的朋友的名字。请注意，？之间有空格， 并且条件是必需的，即使条件带有括号。
+
+开发人员可以在 SQL 语句中使用 json 函数。 这里有些例子。
+
+- 查询第1组跟随者的姓氏
+```sql
+SELECT json_path_query(followers, "$.Group1[*].last") FROM demo
+
+["Shavor","Miller"]
+```
+
+- 查询第1组年龄大于60岁的跟随者的姓氏
+```sql
+SELECT name->last FROM demo where json_path_exists(followers, "$.Group1[? @.age>30]")
+
+"Anderson"
+```
+
+- 查询第1组年龄大于30岁的跟随者的姓氏
+```sql
+SELECT json_path_exists(followers, "$.Group1[? @.age>30].last") FROM demo
+
+["Miller"]
+```
+
+- 假设跟随者有一个字段有保留字或点之类的字符， 比如 `my.follower`,使用括号访问它。
+```sql
+SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
+
+["Miller"]
+```
 
 ### *映射* -不支持
 
