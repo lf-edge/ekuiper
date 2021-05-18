@@ -40,7 +40,7 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
 ```json
 {
   "id": "influx",
-  "sql": "SELECT * from  demo_stream where temperature < 50",
+  "sql": "SELECT * from  demo_stream where temperature > 50",
   "actions": [
     {
       "log": {},
