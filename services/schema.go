@@ -68,6 +68,7 @@ type multiplexDescriptor interface {
 	jsonDescriptor
 	textDescriptor
 	interfaceDescriptor
+	httpMapping
 }
 
 var ( //Do not call these directly, use the get methods
@@ -103,8 +104,11 @@ func parse(schema schema, file string) (descriptor, error) {
 		} else {
 			result := &wrappedProtoDescriptor{
 				FileDescriptor: fds[0],
-				methods:        make(map[string]*desc.MethodDescriptor),
 				mf:             dynamic.NewMessageFactoryWithDefaults(),
+			}
+			err := result.parseHttpOptions()
+			if err != nil {
+				return nil, err
 			}
 			reg.Store(info, result)
 			return result, nil
@@ -116,8 +120,8 @@ func parse(schema schema, file string) (descriptor, error) {
 
 type wrappedProtoDescriptor struct {
 	*desc.FileDescriptor
-	methods map[string]*desc.MethodDescriptor
-	mf      *dynamic.MessageFactory
+	methodOptions map[string]*httpOptions
+	mf            *dynamic.MessageFactory
 }
 
 //TODO support for duplicate names
@@ -144,7 +148,7 @@ func (d *wrappedProtoDescriptor) ConvertParams(method string, params []interface
 		return nil, fmt.Errorf("can't find method %s in proto", method)
 	}
 	im := m.GetInputType()
-	return convertParams(im, params)
+	return d.convertParams(im, params)
 }
 
 func (d *wrappedProtoDescriptor) ConvertParamsToMessage(method string, params []interface{}) (*dynamic.Message, error) {
@@ -154,7 +158,7 @@ func (d *wrappedProtoDescriptor) ConvertParamsToMessage(method string, params []
 	}
 	im := m.GetInputType()
 	message := d.mf.NewDynamicMessage(im)
-	typedParams, err := convertParams(im, params)
+	typedParams, err := d.convertParams(im, params)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +200,7 @@ func (d *wrappedProtoDescriptor) ConvertParamsToText(method string, params []int
 	}
 }
 
-func convertParams(im *desc.MessageDescriptor, params []interface{}) ([]interface{}, error) {
+func (d *wrappedProtoDescriptor) convertParams(im *desc.MessageDescriptor, params []interface{}) ([]interface{}, error) {
 	fields := im.GetFields()
 	var result []interface{}
 	switch len(params) {
@@ -209,14 +213,14 @@ func convertParams(im *desc.MessageDescriptor, params []interface{}) ([]interfac
 	case 1:
 		// If it is map, try unfold it
 		// TODO custom error for non map or map name not match
-		if r, err := unfoldMap(im, params[0]); err != nil {
+		if r, err := d.unfoldMap(im, params[0]); err != nil {
 			common.Log.Debugf("try unfold param for message %s fail: %v", im.GetName(), err)
 		} else {
 			return r, nil
 		}
 		// For non map params, treat it as special case of multiple params
 		if len(fields) == 1 {
-			param0, err := encodeField(fields[0], params[0])
+			param0, err := d.encodeField(fields[0], params[0])
 			if err != nil {
 				return nil, err
 			}
@@ -227,7 +231,7 @@ func convertParams(im *desc.MessageDescriptor, params []interface{}) ([]interfac
 	default:
 		if len(fields) == len(params) {
 			for i, field := range fields {
-				param, err := encodeField(field, params[i])
+				param, err := d.encodeField(field, params[i])
 				if err != nil {
 					return nil, err
 				}
@@ -290,7 +294,7 @@ func (d *wrappedProtoDescriptor) MethodDescriptor(name string) *desc.MethodDescr
 	return m
 }
 
-func unfoldMap(ft *desc.MessageDescriptor, i interface{}) ([]interface{}, error) {
+func (d *wrappedProtoDescriptor) unfoldMap(ft *desc.MessageDescriptor, i interface{}) ([]interface{}, error) {
 	fields := ft.GetFields()
 	result := make([]interface{}, len(fields))
 	if m, ok := xsql.ToMessage(i); ok {
@@ -299,7 +303,7 @@ func unfoldMap(ft *desc.MessageDescriptor, i interface{}) ([]interface{}, error)
 			if !ok {
 				return nil, fmt.Errorf("field %s not found", field.GetName())
 			}
-			fv, err := encodeField(field, v)
+			fv, err := d.encodeField(field, v)
 			if err != nil {
 				return nil, err
 			}
@@ -311,25 +315,26 @@ func unfoldMap(ft *desc.MessageDescriptor, i interface{}) ([]interface{}, error)
 	return result, nil
 }
 
-func encodeMap(fields []*desc.FieldDescriptor, i interface{}) (map[string]interface{}, error) {
-	var result map[string]interface{}
-	if m, ok := i.(map[string]interface{}); ok && len(m) == len(fields) {
+func (d *wrappedProtoDescriptor) encodeMap(im *desc.MessageDescriptor, i interface{}) (*dynamic.Message, error) {
+	result := d.mf.NewDynamicMessage(im)
+	fields := im.GetFields()
+	if m, ok := i.(map[string]interface{}); ok {
 		for _, field := range fields {
 			v, ok := m[field.GetName()]
 			if !ok {
 				return nil, fmt.Errorf("field %s not found", field.GetName())
 			}
-			fv, err := encodeField(field, v)
+			fv, err := d.encodeField(field, v)
 			if err != nil {
 				return nil, err
 			}
-			result[field.GetName()] = fv
+			result.SetFieldByName(field.GetName(), fv)
 		}
 	}
 	return result, nil
 }
 
-func encodeField(field *desc.FieldDescriptor, v interface{}) (interface{}, error) {
+func (d *wrappedProtoDescriptor) encodeField(field *desc.FieldDescriptor, v interface{}) (interface{}, error) {
 	fn := field.GetName()
 	ft := field.GetType()
 	if field.IsRepeated() {
@@ -381,7 +386,7 @@ func encodeField(field *desc.FieldDescriptor, v interface{}) (interface{}, error
 			result, err = common.ToTypedSlice(v, func(input interface{}, sn common.Strictness) (interface{}, error) {
 				r, err := common.ToStringMap(v)
 				if err == nil {
-					return encodeMap(field.GetMessageType().GetFields(), r)
+					return d.encodeMap(field.GetMessageType(), r)
 				} else {
 					return nil, fmt.Errorf("invalid type for map type field '%s': %v", fn, err)
 				}
@@ -394,11 +399,11 @@ func encodeField(field *desc.FieldDescriptor, v interface{}) (interface{}, error
 		}
 		return result, err
 	} else {
-		return encodeSingleField(field, v)
+		return d.encodeSingleField(field, v)
 	}
 }
 
-func encodeSingleField(field *desc.FieldDescriptor, v interface{}) (interface{}, error) {
+func (d *wrappedProtoDescriptor) encodeSingleField(field *desc.FieldDescriptor, v interface{}) (interface{}, error) {
 	fn := field.GetName()
 	switch field.GetType() {
 	case dpb.FieldDescriptorProto_TYPE_DOUBLE:
@@ -467,7 +472,7 @@ func encodeSingleField(field *desc.FieldDescriptor, v interface{}) (interface{},
 	case dpb.FieldDescriptorProto_TYPE_MESSAGE:
 		r, err := common.ToStringMap(v)
 		if err == nil {
-			return encodeMap(field.GetMessageType().GetFields(), r)
+			return d.encodeMap(field.GetMessageType(), r)
 		} else {
 			return nil, fmt.Errorf("invalid type for map type field '%s': %v", fn, err)
 		}

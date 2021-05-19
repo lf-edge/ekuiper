@@ -225,7 +225,7 @@ func TestConvertReturns(t *testing.T) {
 	}
 
 	for i, descriptor := range descriptors {
-		for j, tt := range tests[1:2] {
+		for j, tt := range tests {
 			r, err := descriptor.(interfaceDescriptor).ConvertReturn(tt.method, tt.ireturn)
 			if !reflect.DeepEqual(tt.ierr, common.Errstring(err)) {
 				t.Errorf("%d.%d : interface error mismatch:\n  exp=%s\n  got=%s\n\n", i, j, tt.ierr, err)

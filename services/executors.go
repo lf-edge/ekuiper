@@ -16,7 +16,6 @@ import (
 	"net/http"
 	"net/rpc"
 	"net/url"
-	"path"
 	"reflect"
 	"strings"
 	"sync"
@@ -183,13 +182,16 @@ func (h *httpExecutor) InvokeFunction(ctx api.FunctionContext, name string, para
 			Timeout:   time.Duration(h.timeout) * time.Millisecond}
 	}
 
-	json, err := h.descriptor.ConvertParamsToJson(name, params)
+	hm, err := h.descriptor.ConvertHttpMapping(name, params)
 	if err != nil {
 		return nil, err
 	}
-	u := *h.addr
-	u.Path = path.Join(u.Path, name)
-	resp, err := common.Send(ctx.GetLogger(), h.conn, "json", http.MethodPost, u.String(), h.restOpt.Headers, false, json)
+	u := h.addr.String() + hm.Uri
+	_, err = url.Parse(u)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := common.Send(ctx.GetLogger(), h.conn, "json", hm.Method, u, h.restOpt.Headers, false, hm.Body)
 	if err != nil {
 		return nil, err
 	}

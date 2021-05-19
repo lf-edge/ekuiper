@@ -10,6 +10,7 @@ import (
 	"github.com/emqx/kuiper/xstream/topotest"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/wrappers"
+	"github.com/gorilla/mux"
 	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
 	"google.golang.org/grpc"
 	"io"
@@ -17,6 +18,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"testing"
 )
 
@@ -58,6 +60,26 @@ type EncodedRequest struct {
 	Size int    `json:"size,omitempty"`
 }
 
+type ShelfMessage struct {
+	Id    string `json:"id,omitempty"`
+	Theme string `json:"theme,omitempty"`
+}
+
+type ShelfMessageOut struct {
+	Id    int64  `json:"id,omitempty"`
+	Theme string `json:"theme,omitempty"`
+}
+
+type BookMessage struct {
+	Id     int64  `json:"id,omitempty"`
+	Author string `json:"author,omitempty"`
+	Title  string `json:"title,omitempty"`
+}
+
+type MessageMessage struct {
+	Text string `json:"text,omitempty"`
+}
+
 func TestRestService(t *testing.T) {
 	// mock server, the port is set in the sample.json
 	l, err := net.Listen("tcp", "127.0.0.1:51234")
@@ -66,61 +88,109 @@ func TestRestService(t *testing.T) {
 		t.FailNow()
 	}
 	count := 0
-	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		defer r.Body.Close()
-		var (
-			out interface{}
-		)
-		switch path {
-		case "/SayHello":
-			body := &HelloRequest{}
-			err := json.NewDecoder(r.Body).Decode(body)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-			}
-			out = &HelloReply{Message: body.Name}
-		case "/object_detection":
-			req := &ObjectDetectRequest{}
-			err := json.NewDecoder(r.Body).Decode(req)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-			}
-			if req.Image == "" {
-				http.Error(w, "image is not found", http.StatusBadRequest)
-			}
-			out = &ObjectDetectResponse{
-				Info:   req.Command,
-				Code:   200,
-				Image:  req.Image,
-				Result: req.Command + " success",
-				Type:   "S",
-			}
-		case "/getStatus":
-			r := count%2 == 0
-			count++
-			io.WriteString(w, fmt.Sprintf("%v", r))
-			return
-		case "/RestEncodedJson":
-			req := &EncodedRequest{}
-			err := json.NewDecoder(r.Body).Decode(req)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-			}
-			io.WriteString(w, req.Name)
-			return
-		default:
-			http.Error(w, "path not supported", http.StatusBadRequest)
-		}
-
-		w.Header().Add("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		err = enc.Encode(out)
-		// Problems encoding
+	router := mux.NewRouter()
+	router.HandleFunc("/SayHello", func(w http.ResponseWriter, r *http.Request) {
+		body := &HelloRequest{}
+		err := json.NewDecoder(r.Body).Decode(body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
-	}))
+		out := &HelloReply{Message: body.Name}
+		jsonOut(w, err, out)
+	}).Methods(http.MethodPost)
+	router.HandleFunc("/object_detection", func(w http.ResponseWriter, r *http.Request) {
+		req := &ObjectDetectRequest{}
+		err := json.NewDecoder(r.Body).Decode(req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		if req.Image == "" {
+			http.Error(w, "image is not found", http.StatusBadRequest)
+		}
+		out := &ObjectDetectResponse{
+			Info:   req.Command,
+			Code:   200,
+			Image:  req.Image,
+			Result: req.Command + " success",
+			Type:   "S",
+		}
+		jsonOut(w, err, out)
+	}).Methods(http.MethodPost)
+	router.HandleFunc("/getStatus", func(w http.ResponseWriter, r *http.Request) {
+		result := count%2 == 0
+		count++
+		io.WriteString(w, fmt.Sprintf("%v", result))
+	}).Methods(http.MethodPost)
+	router.HandleFunc("/RestEncodedJson", func(w http.ResponseWriter, r *http.Request) {
+		req := &EncodedRequest{}
+		err := json.NewDecoder(r.Body).Decode(req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		io.WriteString(w, req.Name)
+	}).Methods(http.MethodPost)
+	router.HandleFunc("/bookshelf/v1/shelves", func(w http.ResponseWriter, r *http.Request) {
+		req := &ShelfMessage{}
+		err := json.NewDecoder(r.Body).Decode(req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		if req.Id == "" || req.Theme == "" {
+			http.Error(w, "empty request", http.StatusBadRequest)
+		}
+		idint, _ := strconv.Atoi(req.Id)
+		out := ShelfMessageOut{Id: int64(idint), Theme: req.Theme}
+		jsonOut(w, err, out)
+	}).Methods(http.MethodPost)
+	router.HandleFunc("/bookshelf/v1/shelves/{shelf}/books/{book}", func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		vars := mux.Vars(r)
+		shelf, book := vars["shelf"], vars["book"]
+		if shelf == "" || book == "" {
+			http.Error(w, "empty request", http.StatusBadRequest)
+		}
+		idint, _ := strconv.Atoi(book)
+		out := BookMessage{Id: int64(idint), Author: "NA", Title: "title_" + book}
+		jsonOut(w, err, out)
+	}).Methods(http.MethodGet)
+	router.HandleFunc("/messaging/v1/messages/{name}", func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		vars := mux.Vars(r)
+		name := vars["name"]
+		if name == "" {
+			http.Error(w, "empty request", http.StatusBadRequest)
+		}
+		out := MessageMessage{Text: name + " content"}
+		jsonOut(w, err, out)
+	}).Methods(http.MethodGet)
+	router.HandleFunc("/messaging/v1/messages/filter/{name}", func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		vars := mux.Vars(r)
+		name := vars["name"]
+		q := r.URL.Query()
+		rev, sub := q.Get("revision"), q.Get("sub.subfield")
+		if name == "" || rev == "" || sub == "" {
+			http.Error(w, "empty request", http.StatusBadRequest)
+		}
+		out := MessageMessage{Text: name + rev + sub}
+		jsonOut(w, err, out)
+	}).Methods(http.MethodGet)
+	router.HandleFunc("/messaging/v1/messages/{name}", func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		vars := mux.Vars(r)
+		name := vars["name"]
+		if name == "" {
+			http.Error(w, "empty request", http.StatusBadRequest)
+		}
+		body := &MessageMessage{}
+		err := json.NewDecoder(r.Body).Decode(body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		out := MessageMessage{Text: body.Text}
+		jsonOut(w, err, out)
+	}).Methods(http.MethodPut, http.MethodPatch)
+	server := httptest.NewUnstartedServer(router)
 	server.Listener.Close()
 	server.Listener = l
 
@@ -129,7 +199,7 @@ func TestRestService(t *testing.T) {
 
 	defer server.Close()
 	//Reset
-	streamList := []string{"helloStr", "commands", "fakeBin"}
+	streamList := []string{"helloStr", "commands", "fakeBin", "shelves", "demo", "mes"}
 	topotest.HandleStream(false, streamList, t)
 	//Data setup
 	var tests = []topotest.RuleTest{
@@ -286,6 +356,145 @@ func TestRestService(t *testing.T) {
 				"sink_mockSink_0_records_in_total":  int64(3),
 				"sink_mockSink_0_records_out_total": int64(3),
 			},
+		}, {
+			Name: `TestRestRule6`,
+			Sql:  `SELECT CreateShelf(shelf)->theme as theme FROM shelves`,
+			R: [][]map[string]interface{}{
+				{{
+					"theme": "tandra",
+				}},
+				{{
+					"theme": "claro",
+				}},
+				{{
+					"theme": "dark",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
+		}, {
+			Name: `TestRestRule7`,
+			Sql:  `SELECT GetBook(size, ts)->title as title FROM demo WHERE size > 3 `,
+			R: [][]map[string]interface{}{
+				{{
+					"title": "title_1541152486822",
+				}},
+				{{
+					"title": "title_1541152488442",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_filter_0_exceptions_total":   int64(0),
+				"op_2_filter_0_process_latency_us": int64(0),
+				"op_2_filter_0_records_in_total":   int64(5),
+				"op_2_filter_0_records_out_total":  int64(2),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
+			},
+		}, {
+			Name: `TestRestRule8`,
+			Sql:  `SELECT GetMessage(concat("messages/",ts))->text as message FROM demo WHERE size > 3`,
+			R: [][]map[string]interface{}{
+				{{
+					"message": "1541152486822 content",
+				}},
+				{{
+					"message": "1541152488442 content",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_filter_0_exceptions_total":   int64(0),
+				"op_2_filter_0_process_latency_us": int64(0),
+				"op_2_filter_0_records_in_total":   int64(5),
+				"op_2_filter_0_records_out_total":  int64(2),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
+			},
+		}, {
+			Name: `TestRestRule9`,
+			Sql:  `SELECT SearchMessage(name, size, shelf)->text as message FROM shelves`,
+			R: [][]map[string]interface{}{
+				{{
+					"message": "name12sub1",
+				}},
+				{{
+					"message": "name23sub2",
+				}},
+				{{
+					"message": "name34sub3",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
+			// TODO support * as one of the parameters
+			//},{
+			//	Name: `TestRestRule10`,
+			//	Sql:  `SELECT UpdateMessage(message_id, *)->text as message FROM mes`,
+			//	R: [][]map[string]interface{}{
+			//		{{
+			//			"message": "message1",
+			//		}},
+			//		{{
+			//			"message": "message2",
+			//		}},
+			//		{{
+			//			"message": "message3",
+			//		}},
+			//	},
+			//	M: map[string]interface{}{
+			//		"op_2_project_0_exceptions_total":   int64(0),
+			//		"op_2_project_0_process_latency_us": int64(0),
+			//		"op_2_project_0_records_in_total":   int64(3),
+			//		"op_2_project_0_records_out_total":  int64(3),
+			//
+			//		"sink_mockSink_0_exceptions_total":  int64(0),
+			//		"sink_mockSink_0_records_in_total":  int64(3),
+			//		"sink_mockSink_0_records_out_total": int64(3),
+			//	},
+		}, {
+			Name: `TestRestRule11`,
+			Sql:  `SELECT PatchMessage(message_id, text)->text as message FROM mes`,
+			R: [][]map[string]interface{}{
+				{{
+					"message": "message1",
+				}},
+				{{
+					"message": "message2",
+				}},
+				{{
+					"message": "message3",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
@@ -293,6 +502,16 @@ func TestRestService(t *testing.T) {
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
+}
+
+func jsonOut(w http.ResponseWriter, err error, out interface{}) {
+	w.Header().Add("Content-Type", "application/json")
+	enc := json.NewEncoder(w)
+	err = enc.Encode(out)
+	// Problems encoding
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
 }
 
 type Resolver map[string]reflect.Value

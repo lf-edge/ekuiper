@@ -92,6 +92,66 @@ func TestInitByFiles(t *testing.T) {
 		},
 	}
 	funcs := map[string]*functionContainer{
+		"ListShelves": {
+			ServiceName:   "httpSample",
+			InterfaceName: "bookshelf",
+			MethodName:    "ListShelves",
+		},
+		"CreateShelf": {
+			ServiceName:   "httpSample",
+			InterfaceName: "bookshelf",
+			MethodName:    "CreateShelf",
+		},
+		"GetShelf": {
+			ServiceName:   "httpSample",
+			InterfaceName: "bookshelf",
+			MethodName:    "GetShelf",
+		},
+		"DeleteShelf": {
+			ServiceName:   "httpSample",
+			InterfaceName: "bookshelf",
+			MethodName:    "DeleteShelf",
+		},
+		"ListBooks": {
+			ServiceName:   "httpSample",
+			InterfaceName: "bookshelf",
+			MethodName:    "ListBooks",
+		},
+		"createBook": {
+			ServiceName:   "httpSample",
+			InterfaceName: "bookshelf",
+			MethodName:    "CreateBook",
+		},
+		"GetBook": {
+			ServiceName:   "httpSample",
+			InterfaceName: "bookshelf",
+			MethodName:    "GetBook",
+		},
+		"DeleteBook": {
+			ServiceName:   "httpSample",
+			InterfaceName: "bookshelf",
+			MethodName:    "DeleteBook",
+		},
+		"GetMessage": {
+			ServiceName:   "httpSample",
+			InterfaceName: "messaging",
+			MethodName:    "GetMessage",
+		},
+		"SearchMessage": {
+			ServiceName:   "httpSample",
+			InterfaceName: "messaging",
+			MethodName:    "SearchMessage",
+		},
+		"UpdateMessage": {
+			ServiceName:   "httpSample",
+			InterfaceName: "messaging",
+			MethodName:    "UpdateMessage",
+		},
+		"PatchMessage": {
+			ServiceName:   "httpSample",
+			InterfaceName: "messaging",
+			MethodName:    "PatchMessage",
+		},
 		"helloFromGrpc": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrpc",
