@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package messaging;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+service Messaging {
+  rpc GetMessage(GetMessageRequest) returns (Message) {
+    option (google.api.http) = {
+      get: "/v1/{name=messages/*}"
+    };
+  }
+  rpc SearchMessage(SearchMessageRequest) returns (Message) {
+    option (google.api.http) = {
+      get:"/v1/messages/filter/{message_id}"
+    };
+  }
+
+  rpc UpdateMessage(UpdateMessageRequest) returns (Message) {
+    option (google.api.http) = {
+      put: "/v1/messages/{message_id}"
+      body: "message"
+    };
+  }
+
+  rpc PatchMessage(PatchMessageRequest) returns (Message) {
+    option (google.api.http) = {
+      patch: "/v1/messages/{message_id}"
+      body: "*"
+    };
+  }
+}
+message GetMessageRequest {
+  string name = 1; // Mapped to URL path.
+}
+message Message {
+  string text = 1; // The resource content.
+}
+
+message SearchMessageRequest {
+  message SubMessage {
+    string subfield = 1;
+  }
+  string message_id = 1; // Mapped to URL path.
+  int64 revision = 2;    // Mapped to URL query parameter `revision`.
+  SubMessage sub = 3;    // Mapped to URL query parameter `sub.subfield`.
+}
+
+message UpdateMessageRequest {
+  string message_id = 1; // mapped to the URL
+  Message message = 2;   // mapped to the body
+}
+
+message PatchMessageRequest {
+  string message_id = 1;
+  string text = 2;
+}

@@ -121,6 +121,71 @@ This file defines the tsrest service interface to provide a service object_detec
 
 Protobuf uses proto3 format. Please refer to [proto3-spec](https://developers.google.com/protocol-buffers/docs/reference/proto3-spec) for detailed format.
 
+### HTTP Options
+
+In order to support detail configuration of the REST service, such as the http method, the url template, the params and the body, an additional mapping annotations based on grpc transcoding specification provided by *google.api.http* annotation. Users can specify a http rule for each rpc method to define the mapping of the rpc method to the http method, URL path, URL query parameters, and HTTP request body.
+
+Below is a portion of the revised tsrest.proto file in which a http rule is added. The rule specifies the http method to be *post*, and the mapping url to */v1/computation/object_detection* to override the default url */object_detection*. It also specifies the body to be a wildcard which means the whole input parameter of *ObjectDetectionRequest* will be the body.
+
+```protobuf
+service TSRest {
+  rpc object_detection(ObjectDetectionRequest) returns(ObjectDetectionResponse) {
+    option (google.api.http) = {
+      post: "/v1/computation/object_detection"
+      body: "*"
+    };
+  }
+}
+```
+
+If the object_detection rest service provides different url for different command, users can specify the url mapping with parameters as below. By this way, the input *ObjectDetectionRequest* parameter's *cmd* field is assigned to the url, and the *base64_img* field is processed as the body.
+
+```protobuf
+service TSRest {
+  rpc object_detection(ObjectDetectionRequest) returns(ObjectDetectionResponse) {
+    option (google.api.http) = {
+      post: "/v1/computation/object_detection/{cmd}"
+      body: "base64_img"
+    };
+  }
+}
+```
+
+Another typical scenario is the REST services to search a list. The search parameters are usually appended to the url as the query parameters. 
+
+```protobuf
+service TSRest {
+  rpc SearchMessage(MessageRequest) returns(Message) {
+    option (google.api.http) = {
+      get: "/v1/messages"
+    };
+  }
+}
+
+message MessageRequest {
+  string author = 1;
+  string title = 2;
+}
+```
+
+In this example, there is no *body* specified thus all parameter fields are mapped to the query parameter. When calling `SearchMessage({"author":"Author","title":"Message1"})` in Kuiper SQL, it will be mapped to `GET /v1/messages?author=Author&title=Message1`.
+
+For more detail about the mapping syntax for protobuf, please check [adding transcoding mapping](https://cloud.google.com/endpoints/docs/grpc/transcoding#adding_transcoding_mappings) and [httprule](https://cloud.google.com/endpoints/docs/grpc-service-config/reference/rpc/google.api#httprule).
+
+#### Usage
+
+To use the http options, the google api package must be imported in the proto file.
+
+```protobuf
+syntax = "proto3";
+
+package yourpackage;
+
+import "google/api/annotations.proto";
+```
+
+Thus, the google api proto files must be in the imported path. Kuiper already ship those proto files in `etc/services/schemas/google`. Users do not need to add this to the packaged customized service.
+
 ### Mapping
 
 In the external service configuration, there are 1 json file and at least 1 schema file(.proto) to define the function mapping. This will define a 3 layer mappings.
@@ -136,13 +201,14 @@ In this sample, if a user call `objectDetection` function in Kuiper SQL, the map
 
 Notice that, in REST call the parameters will be parsed to json.  Proto message field names are **converted** to lowerCamelCase and become JSON object keys. If the object keys of the REST API is not lowerCamelCase, the user must specify the json_name field option to avoid the conversion.
 
-### Limitation
+### Notification
 
 Since REST and msgpack-rpc are not natively defined by protobuf, there are some  limitations when using them.
 
-The REST service is **POST** by default currently, and the transmission format is json. In the defined protobuf:
+The REST service is **POST** by default currently, and the transmission format is json. The user can change the default method through [http options](#http-options) in the defined protobuf. There are some restricitons in rest service:
 
-- The input type must be **Message** or *google.protobuf.StringValue*. If the type is *google.protobuf.StringValue*, the parameter must be an encoded json string like `"{\"name\":\"name1\",\"size\":1}"`.
+- If http options are not specified, the input type must be **Message** or *google.protobuf.StringValue*. If the type is *google.protobuf.StringValue*, the parameter must be an encoded json string like `"{\"name\":\"name1\",\"size\":1}"`.
+- The marshalled json for int64 type will be string
 
 The msgpack-rpc service has the following limitation:
 - Input can not be empty
@@ -202,3 +268,4 @@ message ObjectDetectionRequest {
 ```
 
 In Kuiper, users can pass in the entire struct as a parameter, or pass in two string parameters as cmd and base64_img respectively.
+

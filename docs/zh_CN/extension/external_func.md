@@ -119,6 +119,72 @@ message ObjectDetectionResponse {
 
 Protobuf 采用 proto3 格式，详细格式请参考 [proto3-spec](https://developers.google.com/protocol-buffers/docs/reference/proto3-spec) 。
 
+### Http选项
+
+为了支持更细粒度的 REST 服务配置，例如配置 http 方法，URL，参数以及请求体，我们支持了基于 *google.api.http* 注解的 grpc 转码配置。在 proto 文件中，用户可通过给每个 rpc 方法添加注解的方式，配置该方法映射的 http 方法，URL 路径，URL 参数以及请求体。
+
+以下例子是修改过的 tsrest.proto 文件的一部分，添加了 http 规则的注解。例子中，注解指定了 http 方法为 *post*，映射的 url 为 */v1/computation/object_detection* 以覆盖默认的 url */object_detection*。注解中的 body 设置为 * 表示方法的类型为 *ObjectDetectionRequest* 的输入参数将完全转换为请求消息体。
+
+```protobuf
+service TSRest {
+  rpc object_detection(ObjectDetectionRequest) returns(ObjectDetectionResponse) {
+    option (google.api.http) = {
+      post: "/v1/computation/object_detection"
+      body: "*"
+    };
+  }
+}
+```
+
+假设映射的 object_detection 服务针对不同的命令提供不同的 URL，则用户可以通过指定 URL 参数的方式完成映射。在下面的示例中，输入参数 *ObjectDetectionRequest* 被分为了两个部分：*cmd* 作为了映射 URL 的一部分，而 *base64_img* 则用作请求消息体。
+
+```protobuf
+service TSRest {
+  rpc object_detection(ObjectDetectionRequest) returns(ObjectDetectionResponse) {
+    option (google.api.http) = {
+      post: "/v1/computation/object_detection/{cmd}"
+      body: "base64_img"
+    };
+  }
+}
+```
+
+另外一种常见的使用场景是搜索服务，其中搜索参数作为 URL 的一部分。
+
+```protobuf
+service TSRest {
+  rpc SearchMessage(MessageRequest) returns(Message) {
+    option (google.api.http) = {
+      get: "/v1/messages"
+    };
+  }
+}
+
+message MessageRequest {
+  string author = 1;
+  string title = 2;
+}
+```
+
+在这个例子中，*body* 没有指定，因此所有输入参数都映射成 URL 参数。在 SQL 中调用函数
+`SearchMessage({"author":"Author","title":"Message1"})` 将会映射成 `GET /v1/messages?author=Author&title=Message1`。
+
+更详细 protobuf http 映射的语法介绍，请参看 [转码映射](https://cloud.google.com/endpoints/docs/grpc/transcoding#adding_transcoding_mappings) 和 [httprule](https://cloud.google.com/endpoints/docs/grpc-service-config/reference/rpc/google.api#httprule).
+
+#### 用法
+
+使用 http 选项，必须在 proto 文件中导入如下文件：
+
+```protobuf
+syntax = "proto3";
+
+package yourpackage;
+
+import "google/api/annotations.proto";
+```
+
+因此，google api proto 文件必须在导入路径上。Kuiper 默认  `etc/services/schemas/google` 搭载了依赖的 proto 文件。用户无需在自定义服务里打包此依赖。
+
 ### 映射
 
 外部服务配置需要1个 json 文件和至少一个 schema（.proto） 文件。配置定义了服务映射的3个层次。
@@ -134,12 +200,13 @@ Protobuf 采用 proto3 格式，详细格式请参考 [proto3-spec](https://deve
 
 需要注意的是，REST 服务调用时参数将会解析为 json。其中，json 的键名来自于 proto 中的 message 定义的键名。Proto message 的键名在解析时会自动转化为小写驼峰格式。如果调用的 REST 服务参数不是这种格式，用户必须在 message 中指定 json_name 选项显式指定键名以防止自动转换。
 
-### 限制
+### 注意事项
 
 由于 REST 和 msgpack-rpc 并非原生采用 protobuf 定义，因此其使用有一些限制。
 
-REST 服务目前默认为 **POST**，且传输格式为 json。定义的protobuf 中：
-- 输入参数仅可以为 message 类型或者 *google.protobuf.StringValue* 类型。若输入参数为 *google.protobuf.StringValue*，则传入的参数必须为已编码的 json 字符串，例如 `"{\"name\":\"name1\",\"size\":1}"`。
+REST 服务目前默认为 **POST**，且传输格式为 json。用户可通过配置 proto 文件中的 [http 选项](#http选项) 来改变默认的 http 方法和 URL 等。REST 服务配置有如下限制：
+
+- 如果未指定 http 选项，输入参数仅可以为 message 类型或者 *google.protobuf.StringValue* 类型。若输入参数为 *google.protobuf.StringValue*，则传入的参数必须为已编码的 json 字符串，例如 `"{\"name\":\"name1\",\"size\":1}"`。
 
 msgpack-rpc 服务有以下限制：
 - 输入不能为空

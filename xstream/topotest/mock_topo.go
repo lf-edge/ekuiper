@@ -1003,6 +1003,73 @@ var testData = map[string][]*xsql.Tuple{
 			Timestamp: 1541152488003,
 		},
 	},
+	"shelves": {
+		{
+			Emitter: "shelves",
+			Message: map[string]interface{}{
+				"name": "name1",
+				"size": 2,
+				"shelf": map[string]interface{}{
+					"id":       1541152486013,
+					"theme":    "tandra",
+					"subfield": "sub1",
+				},
+			},
+			Timestamp: 1541152486501,
+		},
+		{
+			Emitter: "shelves",
+			Message: map[string]interface{}{
+				"name": "name2",
+				"size": 3,
+				"shelf": map[string]interface{}{
+					"id":       1541152486822,
+					"theme":    "claro",
+					"subfield": "sub2",
+				},
+			},
+			Timestamp: 1541152486502,
+		},
+		{
+			Emitter: "shelves",
+			Message: map[string]interface{}{
+				"name": "name3",
+				"size": 4,
+				"shelf": map[string]interface{}{
+					"id":       1541152487632,
+					"theme":    "dark",
+					"subfield": "sub3",
+				},
+			},
+			Timestamp: 1541152488001,
+		},
+	},
+	"mes": {
+		{
+			Emitter: "mes",
+			Message: map[string]interface{}{
+				"message_id": "1541152486013",
+				"text":       "message1",
+			},
+			Timestamp: 1541152486501,
+		},
+		{
+			Emitter: "mes",
+			Message: map[string]interface{}{
+				"message_id": "1541152486501",
+				"text":       "message2",
+			},
+			Timestamp: 1541152486501,
+		},
+		{
+			Emitter: "mes",
+			Message: map[string]interface{}{
+				"message_id": "1541152487013",
+				"text":       "message3",
+			},
+			Timestamp: 1541152487501,
+		},
+	},
 }
 
 func commonResultFunc(result [][]byte) interface{} {
@@ -1268,6 +1335,14 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 				sql = `CREATE STREAM commands (cmd string, base64_img string, encoded_json string) WITH (DATASOURCE="commands", FORMAT="JSON")`
 			case "fakeBin":
 				sql = "CREATE STREAM fakeBin () WITH (DATASOURCE=\"users\", FORMAT=\"BINARY\")"
+			case "shelves":
+				sql = `CREATE STREAM shelves (
+					name string,
+					size BIGINT,
+					shelf STRUCT(theme STRING,id BIGINT, subfield STRING)
+				) WITH (DATASOURCE="shelves", FORMAT="json");`
+			case "mes":
+				sql = `CREATE STREAM mes (message_id string, text string) WITH (DATASOURCE="mes", FORMAT="JSON")`
 			default:
 				t.Errorf("create stream %s fail", name)
 			}

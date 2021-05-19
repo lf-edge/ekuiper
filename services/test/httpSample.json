@@ -1,0 +1,44 @@
+{
+  "about": {
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/functions/functions.md",
+      "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/functions/functions.md"
+    },
+    "description": {
+      "en_US": "Sample external services for http options",
+      "zh_CN": "示例外部函数配置，用于测试http选项"
+    }
+  },
+  "interfaces": {
+    "bookshelf": {
+      "address": "http://localhost:51234/bookshelf",
+      "protocol": "rest",
+      "options": {
+        "insecureSkipVerify": true,
+        "headers": {
+          "Accept-Charset": "utf-8"
+        }
+      },
+      "schemaType": "protobuf",
+      "schemaFile": "http_bookstore.proto",
+      "functions": [
+        {
+          "name": "createBook",
+          "serviceName": "CreateBook"
+        }
+      ]
+    },
+    "messaging": {
+      "address": "http://localhost:51234/messaging",
+      "protocol": "rest",
+      "schemaType": "protobuf",
+      "schemaFile": "http_messaging.proto"
+    }
+  }
+}

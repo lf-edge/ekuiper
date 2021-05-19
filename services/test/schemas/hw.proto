@@ -7,7 +7,6 @@ option java_outer_classname = "HelloWorldProto";
 
 package helloworld;
 
-import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 
@@ -18,11 +17,7 @@ service Greeter {
   rpc Compute (InferRequest) returns (Response) {}
   // Primitive type param. Not supported for rest json
   rpc get_feature(google.protobuf.BytesValue) returns(FeatureResponse) {}
-  rpc object_detection(ObjectDetectionRequest) returns(ObjectDetectionResponse) {
-    option (google.api.http) = {
-      post: "/v1/object_detection/"
-    };
-  }
+  rpc object_detection(ObjectDetectionRequest) returns(ObjectDetectionResponse) {}
   rpc getStatus(google.protobuf.Empty) returns(google.protobuf.BoolValue) {}
   rpc RestEncodedJson(google.protobuf.StringValue) returns(google.protobuf.StringValue) {}
 }
