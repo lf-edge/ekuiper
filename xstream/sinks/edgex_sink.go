@@ -77,7 +77,7 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 
 	if ptype, ok := ps["type"]; ok {
 		ems.ptype = ptype.(string)
-		if ems.ptype != messaging.ZeroMQ && ems.ptype != messaging.MQTT && ems.ptype != messaging.RedisStreams {
+		if ems.ptype != messaging.ZeroMQ && ems.ptype != messaging.MQTT && ems.ptype != messaging.Redis {
 			common.Log.Infof("Specified wrong message type value %s, will use zeromq messagebus.\n", ems.ptype)
 			ems.ptype = messaging.ZeroMQ
 		}
