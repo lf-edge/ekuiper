@@ -47,7 +47,7 @@ func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 	var mbusType = messaging.ZeroMQ
 	if t, ok := props["type"]; ok {
 		mbusType = t.(string)
-		if mbusType != messaging.ZeroMQ && mbusType != messaging.MQTT && mbusType != messaging.RedisStreams {
+		if mbusType != messaging.ZeroMQ && mbusType != messaging.MQTT && mbusType != messaging.Redis {
 			return fmt.Errorf("Specified wrong message type value %s, will use zeromq messagebus.\n", mbusType)
 		}
 	}
@@ -123,11 +123,11 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 				if strings.ToLower(env.ContentType) == "application/json" {
 					e := &dtos.Event{}
 					if err := json.Unmarshal(env.Payload, e); err != nil {
-						len := len(env.Payload)
-						if len > 200 {
-							len = 200
+						l := len(env.Payload)
+						if l > 200 {
+							l = 200
 						}
-						log.Warnf("payload %s unmarshal fail: %v", env.Payload[0:(len-1)], err)
+						log.Warnf("payload %s unmarshal fail: %v", env.Payload[0:(l-1)], err)
 					} else {
 						result := make(map[string]interface{})
 						meta := make(map[string]interface{})
@@ -276,7 +276,7 @@ func convertFloatArray(v string, bitSize int) (interface{}, error) {
 	}
 }
 
-func (es *EdgexSource) Close(ctx api.StreamContext) error {
+func (es *EdgexSource) Close(_ api.StreamContext) error {
 	if es.subscribed {
 		if e := es.client.Disconnect(); e != nil {
 			return e
