@@ -59,7 +59,7 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 		return errors.New("file name must be specified")
 	}
 	if !filepath.IsAbs(cfg.Path) {
-		cfg.Path, err = common.GetLoc("/" + cfg.Path)
+		cfg.Path, err = common.GetLoc(cfg.Path)
 		if err != nil {
 			return fmt.Errorf("invalid path %s", cfg.Path)
 		}

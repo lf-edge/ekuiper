@@ -951,7 +951,7 @@ func TestPreprocessorError(t *testing.T) {
 }
 
 func TestPreprocessorForBinary(t *testing.T) {
-	docsFolder, err := common.GetLoc("/docs/")
+	docsFolder, err := common.GetLoc("docs/")
 	if err != nil {
 		t.Errorf("Cannot find docs folder: %v", err)
 	}

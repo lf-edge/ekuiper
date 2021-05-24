@@ -35,9 +35,9 @@ func GetServiceManager() (*Manager, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if singleton == nil {
-		dir := "/etc/services"
+		dir := "etc/services"
 		if common.IsTesting {
-			dir = "/services/test"
+			dir = "services/test"
 		}
 		etcDir, err := common.GetLoc(dir)
 		if err != nil {

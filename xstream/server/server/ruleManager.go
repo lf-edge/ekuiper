@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/emqx/kuiper/xstream/planner"
-	"path"
 	"sort"
 	"sync"
 
@@ -77,7 +76,7 @@ func createRuleState(rule *api.Rule) (*RuleState, error) {
 		Name: rule.Id,
 	}
 	registry.Store(rule.Id, rs)
-	if tp, err := planner.Plan(rule, path.Dir(dataDir)); err != nil {
+	if tp, err := planner.Plan(rule, dataDir); err != nil {
 		return rs, err
 	} else {
 		rs.Topology = tp
