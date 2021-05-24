@@ -21,9 +21,10 @@ import (
 
 const (
 	logFileName     = "stream.log"
-	etc_dir         = "/etc/"
-	data_dir        = "/data/"
-	log_dir         = "/log/"
+	etc_dir         = "etc"
+	data_dir        = "data"
+	log_dir         = "log"
+	plugins_dir     = "plugins"
 	StreamConf      = "kuiper.yaml"
 	KuiperBaseKey   = "KuiperBaseKey"
 	KuiperSyslogKey = "KuiperSyslogKey"
@@ -31,12 +32,18 @@ const (
 )
 
 var (
-	Log          *logrus.Logger
-	Config       *KuiperConf
-	IsTesting    bool
-	Clock        clock.Clock
-	logFile      *os.File
-	LoadFileType = "relative"
+	Log             *logrus.Logger
+	Config          *KuiperConf
+	IsTesting       bool
+	Clock           clock.Clock
+	logFile         *os.File
+	LoadFileType    = "relative"
+	AbsoluteMapping = map[string]string{
+		etc_dir:     "/etc/kuiper",
+		data_dir:    "/var/lib/kuiper/data",
+		log_dir:     "/var/log/kuiper",
+		plugins_dir: "/var/lib/kuiper/plugins",
+	}
 )
 
 func LoadConf(confName string) ([]byte, error) {
@@ -185,7 +192,7 @@ func GetDataLoc() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		d := path.Join(path.Dir(dataDir), "test")
+		d := path.Join(dataDir, "test")
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			err = os.MkdirAll(d, 0755)
 			if err != nil {
@@ -197,29 +204,24 @@ func GetDataLoc() (string, error) {
 	return GetLoc(data_dir)
 }
 
-func absolutePath(subdir string) (dir string, err error) {
-	subdir = strings.TrimLeft(subdir, `/`)
-	subdir = strings.TrimRight(subdir, `/`)
-	switch subdir {
-	case "etc":
-		dir = "/etc/kuiper/"
-		break
-	case "data":
-		dir = "/var/lib/kuiper/data/"
-		break
-	case "log":
-		dir = "/var/log/kuiper/"
-		break
-	case "plugins":
-		dir = "/var/lib/kuiper/plugins/"
-		break
+func GetPluginsLoc() (string, error) {
+	return GetLoc(plugins_dir)
+}
+
+func absolutePath(loc string) (dir string, err error) {
+	for relDir, absoluteDir := range AbsoluteMapping {
+		if strings.HasPrefix(loc, relDir) {
+			dir = strings.Replace(loc, relDir, absoluteDir, 1)
+			break
+		}
 	}
 	if 0 == len(dir) {
-		return "", fmt.Errorf("no find such file : %s", subdir)
+		return "", fmt.Errorf("location %s is not allowed for absolue mode", loc)
 	}
 	return dir, nil
 }
 
+// GetLoc subdir must be a relative path
 func GetLoc(subdir string) (string, error) {
 	if "relative" == LoadFileType {
 		return relativePath(subdir)
@@ -241,7 +243,7 @@ func relativePath(subdir string) (dir string, err error) {
 		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
 		dir = base
 	}
-	confDir := dir + subdir
+	confDir := path.Join(dir, subdir)
 	if _, err := os.Stat(confDir); os.IsNotExist(err) {
 		lastdir := dir
 		for len(dir) > 0 {
@@ -249,7 +251,7 @@ func relativePath(subdir string) (dir string, err error) {
 			if lastdir == dir {
 				break
 			}
-			confDir = dir + subdir
+			confDir = path.Join(dir, subdir)
 			if _, err := os.Stat(confDir); os.IsNotExist(err) {
 				lastdir = dir
 				continue

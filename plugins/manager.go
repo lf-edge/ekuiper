@@ -267,12 +267,12 @@ type Manager struct {
 func NewPluginManager() (*Manager, error) {
 	var outerErr error
 	once.Do(func() {
-		dir, err := common.GetLoc("/plugins")
+		dir, err := common.GetPluginsLoc()
 		if err != nil {
 			outerErr = fmt.Errorf("cannot find plugins folder: %s", err)
 			return
 		}
-		etcDir, err := common.GetLoc("/etc")
+		etcDir, err := common.GetConfLoc()
 		if err != nil {
 			outerErr = fmt.Errorf("cannot find etc folder: %s", err)
 			return

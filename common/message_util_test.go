@@ -10,7 +10,7 @@ import (
 )
 
 func TestMessageDecode(t *testing.T) {
-	docsFolder, err := GetLoc("/docs/")
+	docsFolder, err := GetLoc("/docs")
 	if err != nil {
 		t.Errorf("Cannot find docs folder: %v", err)
 	}

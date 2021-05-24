@@ -44,8 +44,8 @@ func StartUp(Version, LoadFileType string) {
 		dataDir = dr
 	}
 
-	ruleProcessor = processors.NewRuleProcessor(path.Dir(dataDir))
-	streamProcessor = processors.NewStreamProcessor(path.Join(path.Dir(dataDir), "stream"))
+	ruleProcessor = processors.NewRuleProcessor(dataDir)
+	streamProcessor = processors.NewStreamProcessor(path.Join(dataDir, "stream"))
 	pluginManager, err = plugins.NewPluginManager()
 	if err != nil {
 		logger.Panic(err)

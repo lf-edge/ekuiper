@@ -37,7 +37,7 @@ var (
 )
 
 func getImg() ([]byte, string) {
-	docsFolder, err := common.GetLoc("/docs/")
+	docsFolder, err := common.GetLoc("docs/")
 	if err != nil {
 		common.Log.Fatalf("Cannot find docs folder: %v", err)
 	}
