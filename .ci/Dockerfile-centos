@@ -28,7 +28,7 @@ RUN case $(arch) in \
             ARCH=s390x \
         ;; \
     esac \
-    && wget https://golang.org/dl/go$GO_VERSION.linux-$ARCH.tar.gz \
+    && wget --no-verbose https://golang.org/dl/go$GO_VERSION.linux-$ARCH.tar.gz \
     && tar -C /usr/local -xzf go$GO_VERSION.linux-$ARCH.tar.gz
 
 ENV PATH=$PATH:/usr/local/go/bin
@@ -40,9 +40,4 @@ WORKDIR /go/kuiper
 ENV KUIPER_SOURCE=/go/kuiper
 
 RUN make -C deploy/packages
-
-RUN rpm -ivh _packages/*.rpm \
-    && [ ! -z $(rpm -q emqx | grep -o emqx) ] \
-    && rpm -e kuiper \
-    && [ "$(rpm -q emqx)" == "package emqx is not installed" ]
-
+RUN .ci/test.sh
