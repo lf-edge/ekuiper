@@ -32,7 +32,7 @@ EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to ex
   CREATE STREAM demo (temperature bigint) WITH (FORMAT="JSON"...)
   ```
 
-  However, data type definitions are already specified through EdgeX ``Core contract Service`` , and to improve the using experience, user are NOT necessary to specify data types when creating stream. Kuiper source tries to load all of ``value descriptors`` from ``Core contract Service`` during initialization of a rule (so now if you have any updated value descriptors, you will have to **restart the rule**), then if with any data sending from message bus, it will be converted into [corresponding data types](../rules/sources/edgex.md).
+  However, data type definitions are already specified in the EdgeX events/readings and to improve the using experience, user are NOT necessary to specify data types when creating stream. For any data sending from message bus, it will be converted into [corresponding data types](../rules/sources/edgex.md).
 
 - An EdgeX message bus sink is extended to support send analysis result back to EdgeX Message Bus. User can also choose to send analysis result to RestAPI, Kuiper already supported it. 
 
@@ -44,13 +44,13 @@ In out tutorial, we will use [Random Integer Device Service](https://github.com/
 
 ### Run EdgeX Docker instances
 
-Go to [EdgeX develop-scripts project](https://github.com/edgexfoundry/developer-scripts/tree/master/releases), and download related Docker compose file for Geneva release,  then bring up EdgeX Docker instances. 
+Go to [EdgeX-compose project](https://github.com/edgexfoundry/edgex-compose), and download related Docker compose file for Ireland release,  then bring up EdgeX Docker instances. 
 
 ```shell
-$ docker-compose -f ./docker-compose-nexus-redis-no-secty.yml up -d --build
+$ docker-compose -f ./docker-compose-no-secty.yml up -d --build
 ```
 
-After all of the Docker instances are started, you can use ``docker ps`` command to verify all of services are running correctly.
+After all of the Docker instances are started, you can use ``docker ps`` command to verify all services are running correctly.
 
 ```shell
 $ docker ps
@@ -73,7 +73,7 @@ ed7ad5ae08b2        nexus3.edgexfoundry.org:10004/docker-edgex-volume:master    
 
 #### Run with native
 
-For performance reason, reader probably wants to run Kuiper with native approach. But you may find that [EdgeX cannot be used](https://github.com/emqx/kuiper/issues/596) with the downloaded Kuiper binary packages. It's because that EdgeX message bus relies on `zeromq` library. If  `zeromq` library cannot be found in the library search path, it cannot be started. So it will have those Kuiper users who do not want to use EdgeX install the `zeromq` library as well. For this reason, the default downloaded Kuiper package **<u>does NOT have embedded support</u>** for `EdgeX`. If reader wants to support `EdgeX` in native packages, you can either make a native package by running command `make pkg_with_edgex`, or just copy the binary package from docker container.
+For performance reason, reader probably wants to run Kuiper with native approach. But you may find that [EdgeX cannot be used](https://github.com/emqx/kuiper/issues/596) with the downloaded Kuiper binary packages. It's because that EdgeX message bus relies on `zeromq` library. If `zeromq` library cannot be found in the library search path, it cannot be started. So it will have those Kuiper users who do not want to use EdgeX install the `zeromq` library as well. For this reason, the default downloaded Kuiper package **<u>does NOT have embedded support</u>** for `EdgeX`. If reader wants to support `EdgeX` in native packages, you can either make a native package by running command `make pkg_with_edgex`, or just copy the binary package from docker container.
 
 ### Create a stream
 
@@ -113,7 +113,7 @@ For other command line tools, please refer to [this doc](../cli/overview.md).
 
 ------
 
-Now the stream is created. But you maybe curious about how Kuiper knows the message bus IP address & port, because such information are not specified in ``CREATE STREAM`` statement. Those configurations are managed in ``etc/sources/edgex.yaml`` , you can type ``cat etc/sources/edgex.yaml`` command to take a look at the contents of file.  If you have different server, ports & service server configurations, please update it accordingly. As mentioned previously, these configurations could be overrode when bring-up the Docker instances.
+Now the stream is created. But you may be curious about how Kuiper knows the message bus IP address & port, because such information are not specified in ``CREATE STREAM`` statement. Those configurations are managed in ``etc/sources/edgex.yaml`` , you can type ``cat etc/sources/edgex.yaml`` command to take a look at the contents of file.  If you have different server, ports & service server configurations, please update it accordingly. As mentioned previously, these configurations could be overrode when bring-up the Docker instances.
 
 ```yaml
 #Global Edgex configurations
