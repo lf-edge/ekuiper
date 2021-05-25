@@ -32,7 +32,7 @@
   CREATE STREAM demo (temperature bigint) WITH (FORMAT="JSON"...)
   ```
 
-  然而在 EdgeX 中，数据类型定义在 EdgeX ``Core contract Service`` 中已经指定，为了提升使用体验，用户可以在创建流的时候不指定数据类型。Kuiper 源会在初始化规则的时候，从 ``Core contract Service`` 中获取所有的 ``value descriptors`` 定义（所以如果有任何数据类型定义的变化，你需要重启规则）。当接收到来自于消息总线的数据的时候，会根规则转换为[相应的数据类型](../rules/sources/edgex.md)。
+  然而在 EdgeX 中，数据类型定义在 EdgeX event/reading 中已经指定，为了提升使用体验，用户可以在创建流的时候不指定数据类型。当接收到来自于消息总线的数据的时候，会根规则转换为[相应的数据类型](../rules/sources/edgex.md)。
 
 - 扩展支持 EdgeX 消息总线目标（sink），用于将处理结果写回至 EdgeX 消息总线。用户也可以选择将分析结果发送到 Kuiper 之前已经支持的 RestAPI 接口等。
 
@@ -40,10 +40,10 @@
 
 ## 运行 EdgeX Docker 实例
 
-打开 [EdgeX develop-scripts 项目](https://github.com/edgexfoundry/developer-scripts/tree/master/releases)，并且下载 Geneva 版本的 Docker compose file，然后启动所有的 EdgeX 容器。
+打开 [EdgeX compose 项目](https://github.com/edgexfoundry/edgex-compose)，并且下载 Ireland 版本的 Docker compose file，然后启动所有的 EdgeX 容器。
 
 ```shell
-# docker-compose -f ./docker-compose-nexus-redis-no-secty.yml up -d --build
+# docker-compose -f ./docker-compose-no-secty.yml up -d --build
 ```
 
 所有的容器启动完毕之后，请使用 ``docker ps`` 命令确定所有的容器已经正常启动。
