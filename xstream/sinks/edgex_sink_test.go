@@ -38,10 +38,12 @@ func compareReading(expected, actual dtos.BaseReading) bool {
 
 func TestProduceEvents(t1 *testing.T) {
 	var tests = []struct {
-		input      string
-		deviceName string
-		expected   *dtos.Event
-		error      string
+		input       string
+		deviceName  string
+		profileName string
+		topic       string
+		expected    *dtos.Event
+		error       string
 	}{
 		{
 			input: `[
@@ -57,13 +59,13 @@ func TestProduceEvents(t1 *testing.T) {
 			expected: &dtos.Event{
 				Id:          "",
 				DeviceName:  "demo",
-				ProfileName: "kuiper",
+				ProfileName: "kuiperProfile",
 				Origin:      3,
 				Readings: []dtos.BaseReading{
 					{
 						ResourceName:  "humidity",
 						DeviceName:    "test device name1",
-						ProfileName:   "kuiper",
+						ProfileName:   "kuiperProfile",
 						Id:            "12",
 						Origin:        14,
 						ValueType:     v2.ValueTypeInt64,
@@ -72,7 +74,7 @@ func TestProduceEvents(t1 *testing.T) {
 					{
 						ResourceName:  "temperature",
 						DeviceName:    "test device name2",
-						ProfileName:   "kuiper",
+						ProfileName:   "kuiperProfile",
 						Id:            "22",
 						Origin:        24,
 						ValueType:     v2.ValueTypeFloat64,
@@ -119,12 +121,12 @@ func TestProduceEvents(t1 *testing.T) {
 						{"h1":100}
 					]`,
 			expected: &dtos.Event{
-				ProfileName: "kuiper",
+				ProfileName: "kuiperProfile",
 				Readings: []dtos.BaseReading{
 					{
 						ResourceName:  "h1",
 						SimpleReading: dtos.SimpleReading{Value: "1.000000e+02"},
-						ProfileName:   "kuiper",
+						ProfileName:   "kuiperProfile",
 						ValueType:     v2.ValueTypeFloat64,
 					},
 				},
@@ -140,30 +142,30 @@ func TestProduceEvents(t1 *testing.T) {
 						{"fa":[1.1,2.2,3.3,4.4]}
 					]`,
 			expected: &dtos.Event{
-				ProfileName: "kuiper",
+				ProfileName: "kuiperProfile",
 				Readings: []dtos.BaseReading{
 					{
 						ResourceName:  "meta1",
 						SimpleReading: dtos.SimpleReading{Value: "newmeta"},
-						ProfileName:   "kuiper",
+						ProfileName:   "kuiperProfile",
 						ValueType:     v2.ValueTypeString,
 					},
 					{
 						ResourceName:  "h1",
 						SimpleReading: dtos.SimpleReading{Value: "true"},
-						ProfileName:   "kuiper",
+						ProfileName:   "kuiperProfile",
 						ValueType:     v2.ValueTypeBool,
 					},
 					{
 						ResourceName:  "sa",
 						SimpleReading: dtos.SimpleReading{Value: "[\"1\",\"2\",\"3\",\"4\"]"},
-						ProfileName:   "kuiper",
+						ProfileName:   "kuiperProfile",
 						ValueType:     v2.ValueTypeStringArray,
 					},
 					{
 						ResourceName:  "fa",
 						SimpleReading: dtos.SimpleReading{Value: "[1.100000e+00, 2.200000e+00, 3.300000e+00, 4.400000e+00]"},
-						ProfileName:   "kuiper",
+						ProfileName:   "kuiperProfile",
 						ValueType:     v2.ValueTypeFloat64Array,
 					},
 				},
@@ -172,11 +174,14 @@ func TestProduceEvents(t1 *testing.T) {
 		},
 
 		{
-			input:      `[]`,
-			deviceName: "kuiper",
+			input:       `[]`,
+			deviceName:  "kuiper",
+			profileName: "kp",
+			topic:       "demo",
 			expected: &dtos.Event{
-				ProfileName: "kuiper",
+				ProfileName: "kp",
 				DeviceName:  "kuiper",
+				SourceName:  "demo",
 				Origin:      0,
 				Readings:    nil,
 			},
@@ -185,7 +190,7 @@ func TestProduceEvents(t1 *testing.T) {
 		{
 			input: `[{"sa":["1","2",3,"4"]}]`, //invalid array, return nil
 			expected: &dtos.Event{
-				ProfileName: "kuiper",
+				ProfileName: "kuiperProfile",
 				Origin:      0,
 				Readings:    nil,
 			},
@@ -194,7 +199,7 @@ func TestProduceEvents(t1 *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, t := range tests {
-		ems := EdgexMsgBusSink{deviceName: t.deviceName, metadata: "meta"}
+		ems := EdgexMsgBusSink{deviceName: t.deviceName, profileName: t.profileName, metadata: "meta"}
 		result, err := ems.produceEvents(ctx, []byte(t.input))
 
 		if !reflect.DeepEqual(t.error, common.Errstring(err)) {
