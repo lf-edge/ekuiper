@@ -17,7 +17,7 @@
 
 本文档将不涉及EdgeX和EMQ X Kuiper的基本操作，因此读者应具有以下基本知识：
 
-- 请通过[此链接](https://docs.edgexfoundry.org/1.2/) 以了解EdgeX的基础知识，最好完成[快速入门](https://docs.edgexfoundry.org/1.2/getting-started/quick-start/)。
+- 请通过[此链接](https://docs.edgexfoundry.org/2.0/) 以了解EdgeX的基础知识，最好完成[快速入门](https://docs.edgexfoundry.org/1.2/getting-started/quick-start/)。
 - 请阅读[EdgeX Kuiper规则引擎入门教程](https://github.com/emqx/kuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md)：您最好阅读此入门教程，并开始在EdgeX中试用规则引擎。
 - [Go模板](https://golang.org/pkg/text/template/)：EMQ X Kuiper使用Go模板从分析结果中提取数据。 了解Go模板可以帮助您从分析结果中提取所需的数据。
 

@@ -6,7 +6,7 @@ Kuiper 提供了内置的 EdgeX 源支持，它可以被用来订阅来自于[Ed
 
 ## EdgeX 流定义
 
-EdgeX 在 [value descriptors](https://github.com/edgexfoundry/go-mod-core-contracts) 已经定义了数据类型，因此在 Kuiper 中建议采用 schema-less 方式的 EdgeX 流式定义，如下所示。
+EdgeX 在 [readings](https://docs.edgexfoundry.org/2.0/microservices/core/data/Ch-CoreData/#events-and-readings) 已经定义了数据类型，因此在 Kuiper 中建议采用 schema-less 方式的 EdgeX 流式定义，如下所示。
 
 ```shell
 # cd $kuiper_base
@@ -15,15 +15,15 @@ EdgeX 在 [value descriptors](https://github.com/edgexfoundry/go-mod-core-contra
 
 EdgeX 源会试图取得某个字段的类型，
 
-- 如果在 value descriptors 中可找到其数据类型，就将其转换为对应类型；
-- 如果在 value descriptors 中可找不到到其数据类型，将保留原值；
+- 如果在 reading 的值类型中可找到其数据类型，就将其转换为对应类型；
+- 如果在 reading 的值类型中可找不到到其数据类型，将保留原值；
 - 如果类型转换失败，该值将被**丢弃**，并在日志上打印一条告警消息；
 
-在 EdgeX value descriptors 中定义的数据类型，将被转换为 Kuiper 中相应支持的[数据类型](../../sqls/streams.md)。
+在 readings 中定义的数据类型，将被转换为 Kuiper 中相应支持的[数据类型](../../sqls/streams.md)。
 
 ### Boolean
 
-如果 `ValueDescriptor` 中  `Type` 的值为 `Bool` ，那么 Kuiper 会试着将其转换为 ``boolean`` 类型，以下的值将被转化为 `true`。
+如果 `reading` 中  `ValueType` 的值为 `Bool` ，那么 Kuiper 会试着将其转换为 ``boolean`` 类型，以下的值将被转化为 `true`。
 
 - "1", "t", "T", "true", "TRUE", "True" 
 
@@ -33,15 +33,15 @@ EdgeX 源会试图取得某个字段的类型，
 
 ### Bigint
 
-如果 `ValueDescriptor` 中  `Type` 的值为 `INT8` , `INT16`, `INT32`,  `INT64` , `UINT8` , `UINT16` ,  `UINT32` , `UINT64` 那么 Kuiper 会试着将其转换为 `Bigint` 类型。 
+如果 `reading` 中  `ValueType` 的值为 `INT8` , `INT16`, `INT32`,  `INT64` , `UINT8` , `UINT16` ,  `UINT32` , `UINT64` 那么 Kuiper 会试着将其转换为 `Bigint` 类型。 
 
 ### Float
 
-如果 `ValueDescriptor` 中  `Type` 的值为 `FLOAT32`, `FLOAT64` ，那么 Kuiper 会试着将其转换为 `Float` 类型。 
+如果 `reading` 中  `ValueType` 的值为 `FLOAT32`, `FLOAT64` ，那么 Kuiper 会试着将其转换为 `Float` 类型。 
 
 ### String
 
-如果 `ValueDescriptor` 中  `Type` 的值为 `String`，那么 Kuiper 会试着将其转换为 `String` 类型。
+如果 `reading` 中  `ValueType` 的值为 `String`，那么 Kuiper 会试着将其转换为 `String` 类型。
 
 ### Boolean 数组
 
