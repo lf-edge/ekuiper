@@ -23,8 +23,10 @@ type EdgexMsgBusSink struct {
 	topic       string
 	contentType string
 
-	deviceName string
-	metadata   string
+	deviceName  string
+	profileName string
+	sourceName  string
+	metadata    string
 
 	optional map[string]string
 	client   messaging.MessageClient
@@ -87,6 +89,10 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 		ems.deviceName = dname.(string)
 	}
 
+	if pname, ok := ps["profileName"]; ok {
+		ems.profileName = pname.(string)
+	}
+
 	if metadata, ok := ps["metadata"]; ok {
 		ems.metadata = metadata.(string)
 	}
@@ -142,6 +148,10 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, result []byte) 
 		if ems.deviceName != "" {
 			event.DeviceName = ems.deviceName
 		}
+		if ems.profileName != "" {
+			event.ProfileName = ems.profileName
+		}
+		event.SourceName = ems.topic
 		for _, v := range m {
 			for k1, v1 := range v {
 				if k1 == ems.metadata {
