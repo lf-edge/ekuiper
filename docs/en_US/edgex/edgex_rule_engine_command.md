@@ -17,7 +17,7 @@ The scenario does not have any real business logics, but simply to demonstrate t
 
 This document will not cover basic operations for EdgeX & eKuiper, so readers should have basic knowledge for them:
 
-- Refer to [this link](https://docs.edgexfoundry.org/1.2/) for learning basic knowledge of EdgeX, and it would be better to finish [Quick Start](https://docs.edgexfoundry.org/1.2/getting-started/quick-start/).
+- Refer to [this link](https://docs.edgexfoundry.org/2.0/) for learning basic knowledge of EdgeX, and it would be better to finish [Quick Start](https://docs.edgexfoundry.org/2.0/getting-started/quick-start/).
 - Refer to [EdgeX eKuiper Rule Engine Tutorial](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md):  You'd better go through this quick tutorial,  and get to start trying out the rules engine in the EdgeX. 
 - [Go template](https://golang.org/pkg/text/template/): eKuiper uses Go template for extracting data from analysis result. Knowledge of Go template could help you to extract expected data from analysis result.
 
