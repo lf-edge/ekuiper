@@ -199,7 +199,7 @@ func TestProduceEvents(t1 *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, t := range tests {
-		ems := EdgexMsgBusSink{deviceName: t.deviceName, profileName: t.profileName, metadata: "meta"}
+		ems := EdgexMsgBusSink{deviceName: t.deviceName, profileName: t.profileName, topic: t.topic, metadata: "meta"}
 		result, err := ems.produceEvents(ctx, []byte(t.input))
 
 		if !reflect.DeepEqual(t.error, common.Errstring(err)) {
