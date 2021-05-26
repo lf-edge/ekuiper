@@ -78,7 +78,7 @@ func doPrintFieldTypeForJson(ft FieldType) (result string, isLiteral bool) {
 			if q {
 				result = fmt.Sprintf(`%s{"FieldType":"%s","Name":"%s"}`, result, fieldType, f.Name)
 			} else {
-				result = fmt.Sprintf(`%s{"FieldType":"%s","Name":"%s"}`, result, fieldType, f.Name)
+				result = fmt.Sprintf(`%s{"FieldType":%s,"Name":"%s"}`, result, fieldType, f.Name)
 			}
 		}
 		result += `]}`
