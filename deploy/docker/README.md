@@ -21,7 +21,7 @@
 
 - **Supported architectures**
 
-  `amd64`, `arm64v8`,  `arm32v7`, `i386`, `ppc64le`
+  `amd64`, `arm64v8`,  `arm32v7`, `i386`
 
 - **Supported Docker versions**:
 

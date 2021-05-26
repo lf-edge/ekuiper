@@ -212,7 +212,7 @@ jobs:
             set -e -u -x
             echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USER }} --password-stdin
             docker buildx build --no-cache \
-            --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+            --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
             -t emqx/kuiper:$(git describe --tags --always) \
             -f deploy/docker/Dockerfile . \
             --push
@@ -224,7 +224,7 @@ jobs:
             set -e -u -x
             echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USER }} --password-stdin
             docker buildx build --no-cache \
-            --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+            --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
             -t emqx/kuiper:$(git describe --tags --always)-$SUFFIX \
             -f deploy/docker/Dockerfile-$SUFFIX . \
             --push
