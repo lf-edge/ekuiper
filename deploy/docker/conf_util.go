@@ -65,7 +65,7 @@ func main() {
 		if bs, err := yaml.Marshal(v); err != nil {
 			fmt.Println(err)
 		} else {
-			message := fmt.Sprintf("-------------------\nConf file %s: \n %s", f, printable(v))
+			message := fmt.Sprintf("-------------------\nConf file %s: \n %s", f, toPrintableString(v))
 			fmt.Println(message)
 			if fname, ok := fileMap[f]; ok {
 				if e := ioutil.WriteFile(fname, bs, 0644); e != nil {
