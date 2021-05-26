@@ -72,7 +72,7 @@ func main() {
 				if e := ioutil.WriteFile(fname, bs, 0644); e != nil {
 					fmt.Println(e)
 				} else {
-					fmt.Printf("%s updated", fname)
+					fmt.Printf("%s updated\n", fname)
 				}
 			}
 		}
