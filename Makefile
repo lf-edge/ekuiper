@@ -117,19 +117,19 @@ docker:
 .PHONY:cross_docker
 cross_docker: cross_prepare
 	docker buildx build --no-cache \
-	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
 	-t $(TARGET):$(VERSION) \
 	-f deploy/docker/Dockerfile . \
 	--push
 
 	docker buildx build --no-cache \
-	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
 	-t $(TARGET):$(VERSION)-slim \
 	-f deploy/docker/Dockerfile-slim . \
 	--push
 
 	docker buildx build --no-cache \
-	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
 	-t $(TARGET):$(VERSION)-alpine \
 	-f deploy/docker/Dockerfile-alpine . \
 	--push
@@ -184,7 +184,7 @@ $(PLUGINS): PLUGIN_TYPE = $(word 1, $(subst /, , $@))
 $(PLUGINS): PLUGIN_NAME = $(word 2, $(subst /, , $@))
 $(PLUGINS):
 	@docker buildx build --no-cache \
-    --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le \
+    --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
     -t cross_build \
     --build-arg VERSION=$(VERSION) \
     --build-arg PLUGIN_TYPE=$(PLUGIN_TYPE)\
@@ -193,7 +193,7 @@ $(PLUGINS):
     -f .ci/Dockerfile-plugins .
 
 	@mkdir -p _plugins/debian/$(PLUGIN_TYPE)
-	@for arch in amd64 arm64 arm_v7 386 ppc64le; do \
+	@for arch in amd64 arm64 arm_v7 386; do \
 		tar -xvf /tmp/cross_build_plugins_$(PLUGIN_TYPE)_$(PLUGIN_NAME).tar --wildcards "linux_$${arch}/go/kuiper/plugins/$(PLUGIN_TYPE)/$(PLUGIN_NAME)/$(PLUGIN_NAME)_$$(echo $${arch%%_*}).zip" \
 		&& mv $$(ls linux_$${arch}/go/kuiper/plugins/$(PLUGIN_TYPE)/$(PLUGIN_NAME)/$(PLUGIN_NAME)_$$(echo $${arch%%_*}).zip) _plugins/debian/$(PLUGIN_TYPE); \
 	done
@@ -201,5 +201,5 @@ $(PLUGINS):
 
 .PHONY: clean
 clean:
-	@rm -rf cross_build.tar linux_amd64 linux_arm64 linux_arm_v7 linux_ppc64le linux_386
+	@rm -rf cross_build.tar linux_amd64 linux_arm64 linux_arm_v7 linux_386
 	@rm -rf _build _packages _plugins
