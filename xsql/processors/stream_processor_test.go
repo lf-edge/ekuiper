@@ -33,7 +33,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 					LAST_NAME STRING,
 					NICKNAMES ARRAY(STRING),
 					Gender BOOLEAN,
-					ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
+					ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT, BUILDING STRUCT(NAME STRING, ROOM BIGINT)),
 				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
 			r: []string{"Stream topic1 is created."},
 		},
@@ -61,7 +61,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 		{
 			s: `DESCRIBE STREAM topic1;`,
 			r: []string{"Fields\n--------------------------------------------------------------------------------\nUSERID\tbigint\nFIRST_NAME\tstring\nLAST_NAME\tstring\nNICKNAMES\t" +
-				"array(string)\nGender\tboolean\nADDRESS\tstruct(STREET_NAME string, NUMBER bigint)\n\n" +
+				"array(string)\nGender\tboolean\nADDRESS\tstruct(STREET_NAME string, NUMBER bigint, BUILDING struct(NAME string, ROOM bigint))\n\n" +
 				"DATASOURCE: users\nFORMAT: JSON\nKEY: USERID\n"},
 		},
 		{
