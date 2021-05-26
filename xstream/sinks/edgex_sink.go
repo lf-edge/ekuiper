@@ -151,7 +151,9 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, result []byte) 
 		if ems.profileName != "" {
 			event.ProfileName = ems.profileName
 		}
-		event.SourceName = ems.topic
+		if event.SourceName == "" {
+			event.SourceName = ems.topic
+		}
 		for _, v := range m {
 			for k1, v1 := range v {
 				if k1 == ems.metadata {
@@ -358,7 +360,7 @@ type meta struct {
 func newMetaFromMap(m1 map[string]interface{}) *meta {
 	result := &meta{
 		eventMeta: eventMeta{
-			profileName: "kuiper",
+			profileName: "kuiperProfile",
 		},
 	}
 	for k, v := range m1 {
