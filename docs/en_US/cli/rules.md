@@ -7,17 +7,17 @@ The Kuiper rule command line tools allows you to manage rules, such as create, s
 The command is used for creating a rule.  The rule's definition is specified with JSON format, read [rule](../rules/overview.md) for more detailed information.
 
 ```shell
-create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file
+create rule $rule_name '$rule_json' | create rule $rule_name -f $rule_def_file
 ```
 
 The rule can be created with two ways. 
 
-- Specify the rule definition in command line.
+- Specify the rule definition in command line. Notice that, the json string must be quoted.
 
 Sample:
 
 ```shell
-# bin/kuiper create rule rule1 {"sql": "SELECT * from demo","actions": [{"log":  {}},{"mqtt":  {"server":"tcp://127.0.0.1:1883", "topic":"demoSink"}}]}
+# bin/kuiper create rule rule1 '{"sql": "SELECT * from demo","actions": [{"log":  {}},{"mqtt":  {"server":"tcp://127.0.0.1:1883", "topic":"demoSink"}}]}'
 ```
 
 The command create a rule named ``rule1``. 

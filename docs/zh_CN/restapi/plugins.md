@@ -122,14 +122,14 @@ GET http://localhost:9081/plugins/functions/{name}
 该 API 用于删除插件。 需要重启 kuiper 服务器才能生效。
 
 ```shell
-DELETE http://localhost:8080/plugins/sources/{name}
-DELETE http://localhost:8080/plugins/sinks/{name}
-DELETE http://localhost:8080/plugins/functions/{name}
+DELETE http://localhost:9081/plugins/sources/{name}
+DELETE http://localhost:9081/plugins/sinks/{name}
+DELETE http://localhost:9081/plugins/functions/{name}
 ```
 用户可以传递查询参数来决定是否应在删除后停止 Kuiper，以使删除生效。 参数是`restart`，只有当值是1时，Kuiper 才停止。 用户必须手动重新启动它。
 
 ```shell
-DELETE http://localhost:8080/plugins/sources/{name}?restart=1
+DELETE http://localhost:9081/plugins/sources/{name}?restart=1
 ```
 
 ## 用于导出多函数的函数插件的相关 API

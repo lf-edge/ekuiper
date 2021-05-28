@@ -64,7 +64,7 @@ GET http://localhost:9081/services/{name}
 该 API 用于删除外部服务，服务之下定义的所有函数都将被删除。
 
 ```shell
-DELETE http://localhost:8080/services/{name}
+DELETE http://localhost:9081/services/{name}
 ```
 
 ## 更新外部服务

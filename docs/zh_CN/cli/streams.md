@@ -7,7 +7,7 @@ Kuiper 流命令行工具可用于管理流，例如创建、描述、显示和�
 该命令用于创建流。有关流定义的更多详细信息，请参考[流](../sqls/streams.md)。
 
 ```shell
-create stream $stream_name $stream_def | create stream -f $stream_def_file
+create stream $stream_name '$stream_def' | create stream -f $stream_def_file
 ```
 
 - 在命令行中指定流定义。
@@ -15,7 +15,7 @@ create stream $stream_name $stream_def | create stream -f $stream_def_file
 示例：
 
 ```shell
-# bin/kuiper create stream my_stream '(id bigint, name string, score float) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");'
+# bin/kuiper create stream my_stream '(id bigint, name string, score float) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id")'
 stream my_stream created
 ```
 

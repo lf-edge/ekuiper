@@ -158,7 +158,7 @@ my_stream, iot_stream
 
 ```bash
 cli stream
-kuiper > CREATE STREAM sname (count bigint) WITH (source="users", FORMAT="AVRO", KEY="USERID")
+kuiper > CREATE STREAM 'sname (count bigint) WITH (source="users", FORMAT="AVRO", KEY="USERID")'
 kuiper > DESCRIBE STREAM sname
 ...
 ```
