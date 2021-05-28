@@ -78,7 +78,7 @@ Response Sample:
 The API accepts a JSON content and update a rule.
 
 ```shell
-PUT http://localhost:8080/rules/{id}
+PUT http://localhost:9081/rules/{id}
 ```
 
 Path parameter `id` is the id or name of the old rule.
@@ -100,7 +100,7 @@ Request Sample
 The API is used for drop the rule.
 
 ```shell
-DELETE http://localhost:8080/rules/{id}
+DELETE http://localhost:9081/rules/{id}
 ```
 
 
@@ -109,7 +109,7 @@ DELETE http://localhost:8080/rules/{id}
 The API is used to start running the rule.
 
 ```shell
-POST http://localhost:8080/rules/{id}/start
+POST http://localhost:9081/rules/{id}/start
 ```
 
 
@@ -118,7 +118,7 @@ POST http://localhost:8080/rules/{id}/start
 The API is used to stop running the rule.
 
 ```shell
-POST http://localhost:8080/rules/{id}/stop
+POST http://localhost:9081/rules/{id}/stop
 ```
 
 ## restart a rule
@@ -126,7 +126,7 @@ POST http://localhost:8080/rules/{id}/stop
 The API is used to restart the rule.
 
 ```shell
-POST http://localhost:8080/rules/{id}/restart
+POST http://localhost:9081/rules/{id}/restart
 ```
 
 ## get the status of a rule
@@ -136,7 +136,7 @@ The command is used to get the status of the rule. If the rule is running, the m
 - stopped: $reason
 
 ```shell
-GET http://localhost:8080/rules/{id}/status
+GET http://localhost:9081/rules/{id}/status
 ```
 
 Response Sample:
@@ -168,7 +168,7 @@ The command is used to get the status of the rule represented as a json string. 
 - edges: it is a hash map of all edges categorized by nodes. The keys are the starting point of an edge. And the value is a collection of ending point.
 
 ```shell
-GET http://localhost:8080/rules/{id}/topo
+GET http://localhost:9081/rules/{id}/topo
 ```
 
 Response Sample:

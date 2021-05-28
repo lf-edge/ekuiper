@@ -64,7 +64,7 @@ The path parameter `name` is the name of the external service.
 This API is used to delete external services, and all functions defined under the service will be deleted.
 
 ```shell
-DELETE http://localhost:8080/services/{name}
+DELETE http://localhost:9081/services/{name}
 ```
 
 ## Update external services

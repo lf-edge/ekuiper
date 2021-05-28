@@ -121,13 +121,13 @@ Response Sample:
 The API is used for drop the plugin. The kuiper server needs to be restarted to take effect.
 
 ```shell
-DELETE http://localhost:8080/plugins/sources/{name}
-DELETE http://localhost:8080/plugins/sinks/{name}
-DELETE http://localhost:8080/plugins/functions/{name}
+DELETE http://localhost:9081/plugins/sources/{name}
+DELETE http://localhost:9081/plugins/sinks/{name}
+DELETE http://localhost:9081/plugins/functions/{name}
 ```
 The user can pass a query parameter to decide if Kuiper should be stopped after a delete in order to make the deletion take effect. The parameter is `restart` and only when the value is `1` will the Kuiper be stopped. The user has to manually restart it.
 ```shell
-DELETE http://localhost:8080/plugins/sources/{name}?restart=1
+DELETE http://localhost:9081/plugins/sources/{name}?restart=1
 ```
 
 ## APIs to handle function plugin with multiple functions

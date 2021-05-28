@@ -7,17 +7,17 @@ Kuiper 规则命令行工具可以管理规则，例如创建、显示、删除�
 如下命令用于创建规则。 规则的定义以 JSON 格式指定，请阅读 [规则](../rules/overview.md) 以获取更多详细信息。
 
 ```shell
-create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file
+create rule $rule_name '$rule_json' | create rule $rule_name -f $rule_def_file
 ```
 
 可以通过两种方式创建规则。
 
-- 在命令行中指定规则定义。
+- 在命令行中指定规则定义。注意规则 json 明文必须放在引号里。
 
 示例：
 
 ```shell
-# bin/kuiper create rule rule1 {"sql": "SELECT * from demo","actions": [{"log":  {}},{"mqtt":  {"server":"tcp://127.0.0.1:1883", "topic":"demoSink"}}]}
+# bin/kuiper create rule rule1 '{"sql": "SELECT * from demo","actions": [{"log":  {}},{"mqtt":  {"server":"tcp://127.0.0.1:1883", "topic":"demoSink"}}]}'
 ```
 
 该命令创建一个名为 `rule1` 的规则。

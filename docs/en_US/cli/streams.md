@@ -7,7 +7,7 @@ The Kuiper stream command line tools allows you to manage the streams, such as c
 The command is used for creating a stream. For more detailed information of stream definition, please refer to [streams](../sqls/streams.md).
 
 ```shell
-create stream $stream_name $stream_def | create stream -f $stream_def_file
+create stream $stream_name '$stream_def' | create stream -f $stream_def_file
 ```
 
 - Specify the stream definition in command line.
@@ -15,7 +15,7 @@ create stream $stream_name $stream_def | create stream -f $stream_def_file
 Sample:
 
 ```shell
-# bin/kuiper create stream my_stream '(id bigint, name string, score float) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");'
+# bin/kuiper create stream my_stream '(id bigint, name string, score float) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id")'
 stream my_stream created
 ```
 

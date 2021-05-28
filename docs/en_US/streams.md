@@ -158,7 +158,7 @@ Run `kuiper stream` command, after `kuiper >` prompt shown, enter stream related
 
 ```bash
 cli stream
-kuiper > CREATE STREAM sname (count bigint) WITH (source="users", FORMAT="AVRO", KEY="USERID")
+kuiper > CREATE STREAM sname '(count bigint) WITH (source="users", FORMAT="AVRO", KEY="USERID")'
 kuiper > DESCRIBE STREAM sname
 ...
 ```

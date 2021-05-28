@@ -78,7 +78,7 @@ GET http://localhost:9081/rules/{id}
 该 API 接受 JSON 内容并更新规则。
 
 ```shell
-PUT http://localhost:8080/rules/{id}
+PUT http://localhost:9081/rules/{id}
 ```
 
 路径参数  `id` 是原有规则的 id 或名称。
@@ -100,7 +100,7 @@ PUT http://localhost:8080/rules/{id}
 该 API 用于删除规则。
 
 ```shell
-DELETE http://localhost:8080/rules/{id}
+DELETE http://localhost:9081/rules/{id}
 ```
 
 ## 启动规则
@@ -108,7 +108,7 @@ DELETE http://localhost:8080/rules/{id}
 该 API 用于开始运行规则。
 
 ```shell
-POST http://localhost:8080/rules/{id}/start
+POST http://localhost:9081/rules/{id}/start
 ```
 
 
@@ -117,7 +117,7 @@ POST http://localhost:8080/rules/{id}/start
 该 API 用于停止运行规则。
 
 ```shell
-POST http://localhost:8080/rules/{id}/stop
+POST http://localhost:9081/rules/{id}/stop
 ```
 
 ## 重启规则
@@ -125,7 +125,7 @@ POST http://localhost:8080/rules/{id}/stop
 该 API 用于重启规则。
 
 ```shell
-POST http://localhost:8080/rules/{id}/restart
+POST http://localhost:9081/rules/{id}/restart
 ```
 
 ## 获取规则的状态
@@ -136,7 +136,7 @@ POST http://localhost:8080/rules/{id}/restart
 - 停止： $reason
 
 ```shell
-GET http://localhost:8080/rules/{id}/status
+GET http://localhost:9081/rules/{id}/status
 ```
 
 响应示例：
