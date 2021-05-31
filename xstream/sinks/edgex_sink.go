@@ -3,6 +3,7 @@
 package sinks
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2"
@@ -166,15 +167,22 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, result []byte) 
 					mm1 := m1.readingMeta(ctx, k1)
 					if mm1 != nil && mm1.valueType != nil {
 						vt = *mm1.valueType
-						vv = v1
+						vv, err = getValueByType(v1, vt)
 					} else {
 						vt, vv, err = getValueType(v1)
-						if err != nil {
-							ctx.GetLogger().Errorf("%v", err)
-							continue
-						}
 					}
-					err = event.AddSimpleReading(k1, vt, vv)
+					if err != nil {
+						ctx.GetLogger().Errorf("%v", err)
+						continue
+					}
+					switch vt {
+					case v2.ValueTypeBinary:
+						// default media type
+						event.AddBinaryReading(k1, vv.([]byte), "application/text")
+					default:
+						err = event.AddSimpleReading(k1, vt, vv)
+					}
+
 					if err != nil {
 						ctx.GetLogger().Errorf("%v", err)
 						continue
@@ -206,60 +214,147 @@ func getValueType(v interface{}) (string, interface{}, error) {
 	case reflect.Float64:
 		return v2.ValueTypeFloat64, v, nil
 	case reflect.Slice:
-		arrayValue, ok := v.([]interface{})
-		if !ok {
+		switch arrayValue := v.(type) {
+		case []interface{}:
+			if len(arrayValue) > 0 {
+				ka := reflect.TypeOf(arrayValue[0]).Kind()
+				switch ka {
+				case reflect.Bool:
+					result := make([]bool, len(arrayValue))
+					for i, av := range arrayValue {
+						temp, ok := av.(bool)
+						if !ok {
+							return "", nil, fmt.Errorf("unable to cast value to []bool for %v", v)
+						}
+						result[i] = temp
+					}
+					return v2.ValueTypeBoolArray, result, nil
+				case reflect.String:
+					result := make([]string, len(arrayValue))
+					for i, av := range arrayValue {
+						temp, ok := av.(string)
+						if !ok {
+							return "", nil, fmt.Errorf("unable to cast value to []string for %v", v)
+						}
+						result[i] = temp
+					}
+					return v2.ValueTypeStringArray, result, nil
+				case reflect.Int64, reflect.Int:
+					result := make([]int64, len(arrayValue))
+					for i, av := range arrayValue {
+						temp, ok := av.(int64)
+						if !ok {
+							return "", nil, fmt.Errorf("unable to cast value to []int64 for %v", v)
+						}
+						result[i] = temp
+					}
+					return v2.ValueTypeInt64Array, result, nil
+				case reflect.Float64:
+					result := make([]float64, len(arrayValue))
+					for i, av := range arrayValue {
+						temp, ok := av.(float64)
+						if !ok {
+							return "", nil, fmt.Errorf("unable to cast value to []float64 for %v", v)
+						}
+						result[i] = temp
+					}
+					return v2.ValueTypeFloat64Array, result, nil
+				}
+			} else { // default to string array
+				return v2.ValueTypeStringArray, []string{}, nil
+			}
+		case []byte:
+			return v2.ValueTypeBinary, v, nil
+		default:
 			return "", nil, fmt.Errorf("unable to cast value to []interface{} for %v", v)
 		}
-		if len(arrayValue) > 0 {
-			ka := reflect.TypeOf(arrayValue[0]).Kind()
-			switch ka {
-			case reflect.Bool:
-				result := make([]bool, len(arrayValue))
-				for i, av := range arrayValue {
-					temp, ok := av.(bool)
-					if !ok {
-						return "", nil, fmt.Errorf("unable to cast value to []bool for %v", v)
-					}
-					result[i] = temp
-				}
-				return v2.ValueTypeBoolArray, result, nil
-			case reflect.String:
-				result := make([]string, len(arrayValue))
-				for i, av := range arrayValue {
-					temp, ok := av.(string)
-					if !ok {
-						return "", nil, fmt.Errorf("unable to cast value to []string for %v", v)
-					}
-					result[i] = temp
-				}
-				return v2.ValueTypeStringArray, result, nil
-			case reflect.Int64, reflect.Int:
-				result := make([]int64, len(arrayValue))
-				for i, av := range arrayValue {
-					temp, ok := av.(int64)
-					if !ok {
-						return "", nil, fmt.Errorf("unable to cast value to []int64 for %v", v)
-					}
-					result[i] = temp
-				}
-				return v2.ValueTypeInt64Array, result, nil
-			case reflect.Float64:
-				result := make([]float64, len(arrayValue))
-				for i, av := range arrayValue {
-					temp, ok := av.(float64)
-					if !ok {
-						return "", nil, fmt.Errorf("unable to cast value to []float64 for %v", v)
-					}
-					result[i] = temp
-				}
-				return v2.ValueTypeFloat64Array, result, nil
-			}
-		} else { // default to string array
-			return v2.ValueTypeStringArray, []string{}, nil
-		}
-
 	}
 	return "", nil, fmt.Errorf("unsupported value %v(%s)", v, k)
+}
+
+func getValueByType(v interface{}, vt string) (interface{}, error) {
+	switch vt {
+	case v2.ValueTypeBool:
+		return common.ToBool(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeInt8:
+		return common.ToInt8(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeInt16:
+		return common.ToInt16(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeInt32:
+		return common.ToInt32(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeInt64:
+		return common.ToInt64(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeUint8:
+		return common.ToUint8(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeUint16:
+		return common.ToUint16(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeUint32:
+		return common.ToUint32(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeUint64:
+		return common.ToUint64(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeFloat32:
+		return common.ToFloat32(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeFloat64:
+		return common.ToFloat64(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeString:
+		return common.ToString(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeBoolArray:
+		return common.ToBoolSlice(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeInt8Array:
+		return common.ToTypedSlice(v, func(input interface{}, sn common.Strictness) (interface{}, error) {
+			return common.ToInt8(input, sn)
+		}, "int8", common.CONVERT_SAMEKIND)
+	case v2.ValueTypeInt16Array:
+		return common.ToTypedSlice(v, func(input interface{}, sn common.Strictness) (interface{}, error) {
+			return common.ToInt16(input, sn)
+		}, "int16", common.CONVERT_SAMEKIND)
+	case v2.ValueTypeInt32Array:
+		return common.ToTypedSlice(v, func(input interface{}, sn common.Strictness) (interface{}, error) {
+			return common.ToInt32(input, sn)
+		}, "int32", common.CONVERT_SAMEKIND)
+	case v2.ValueTypeInt64Array:
+		return common.ToInt64Slice(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeUint8Array:
+		return common.ToTypedSlice(v, func(input interface{}, sn common.Strictness) (interface{}, error) {
+			return common.ToUint8(input, sn)
+		}, "uint8", common.CONVERT_SAMEKIND)
+	case v2.ValueTypeUint16Array:
+		return common.ToTypedSlice(v, func(input interface{}, sn common.Strictness) (interface{}, error) {
+			return common.ToUint16(input, sn)
+		}, "uint16", common.CONVERT_SAMEKIND)
+	case v2.ValueTypeUint32Array:
+		return common.ToTypedSlice(v, func(input interface{}, sn common.Strictness) (interface{}, error) {
+			return common.ToUint32(input, sn)
+		}, "uint32", common.CONVERT_SAMEKIND)
+	case v2.ValueTypeUint64Array:
+		return common.ToUint64Slice(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeFloat32Array:
+		return common.ToTypedSlice(v, func(input interface{}, sn common.Strictness) (interface{}, error) {
+			return common.ToFloat32(input, sn)
+		}, "float32", common.CONVERT_SAMEKIND)
+	case v2.ValueTypeFloat64Array:
+		return common.ToFloat64Slice(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeStringArray:
+		return common.ToStringSlice(v, common.CONVERT_SAMEKIND)
+	case v2.ValueTypeBinary:
+		var (
+			bv  []byte
+			err error
+		)
+		switch vv := v.(type) {
+		case string:
+			if bv, err = base64.StdEncoding.DecodeString(vv); err != nil {
+				return nil, fmt.Errorf("fail to decode binary value from %s: %v", vv, err)
+			}
+		case []byte:
+			bv = vv
+		default:
+			return nil, fmt.Errorf("fail to decode binary value from %v: not binary type", vv)
+		}
+		return bv, nil
+	default:
+		return nil, fmt.Errorf("unsupported type %v", vt)
+	}
 }
 
 func (ems *EdgexMsgBusSink) getMeta(result []map[string]interface{}) *meta {
@@ -331,6 +426,7 @@ type readingMeta struct {
 	resourceName *string
 	origin       *int64
 	valueType    *string
+	mediaType    *string
 }
 
 func (m *readingMeta) decorate(r *dtos.BaseReading) dtos.BaseReading {
@@ -348,6 +444,9 @@ func (m *readingMeta) decorate(r *dtos.BaseReading) dtos.BaseReading {
 	}
 	if m.valueType != nil {
 		r.ValueType = *m.valueType
+	}
+	if m.mediaType != nil {
+		r.MediaType = *m.mediaType
 	}
 	return *r
 }
@@ -443,7 +542,11 @@ func (m *meta) readingMeta(ctx api.StreamContext, readingName string) *readingMe
 			}
 		case "valueType":
 			if v1, ok := v.(string); ok {
-				result.resourceName = &v1
+				result.valueType = &v1
+			}
+		case "mediaType":
+			if v1, ok := v.(string); ok {
+				result.mediaType = &v1
 			}
 		default:
 			ctx.GetLogger().Warnf("reading %s meta got unknown field %s of value %v", readingName, k, v)
