@@ -135,6 +135,162 @@ func ToInt(input interface{}, sn Strictness) (int, error) {
 	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to int", input)
 }
 
+func ToInt8(input interface{}, sn Strictness) (int8, error) {
+	switch s := input.(type) {
+	case int:
+		return int8(s), nil
+	case int64:
+		return int8(s), nil
+	case int32:
+		return int8(s), nil
+	case int16:
+		return int8(s), nil
+	case int8:
+		return s, nil
+	case uint:
+		return int8(s), nil
+	case uint64:
+		return int8(s), nil
+	case uint32:
+		return int8(s), nil
+	case uint16:
+		return int8(s), nil
+	case uint8:
+		return int8(s), nil
+	case float64:
+		if sn != STRICT || isIntegral64(s) {
+			return int8(s), nil
+		}
+	case float32:
+		if sn != STRICT || isIntegral32(s) {
+			return int8(s), nil
+		}
+	case string:
+		if sn == CONVERT_ALL {
+			v, err := strconv.ParseInt(s, 0, 0)
+			if err == nil {
+				return int8(v), nil
+			}
+		}
+	case bool:
+		if sn == CONVERT_ALL {
+			if s {
+				return 1, nil
+			}
+			return 0, nil
+		}
+	case nil:
+		if sn == CONVERT_ALL {
+			return 0, nil
+		}
+	}
+	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to int", input)
+}
+
+func ToInt16(input interface{}, sn Strictness) (int16, error) {
+	switch s := input.(type) {
+	case int:
+		return int16(s), nil
+	case int64:
+		return int16(s), nil
+	case int32:
+		return int16(s), nil
+	case int16:
+		return int16(s), nil
+	case int8:
+		return int16(s), nil
+	case uint:
+		return int16(s), nil
+	case uint64:
+		return int16(s), nil
+	case uint32:
+		return int16(s), nil
+	case uint16:
+		return int16(s), nil
+	case uint8:
+		return int16(s), nil
+	case float64:
+		if sn != STRICT || isIntegral64(s) {
+			return int16(s), nil
+		}
+	case float32:
+		if sn != STRICT || isIntegral32(s) {
+			return int16(s), nil
+		}
+	case string:
+		if sn == CONVERT_ALL {
+			v, err := strconv.ParseInt(s, 0, 0)
+			if err == nil {
+				return int16(v), nil
+			}
+		}
+	case bool:
+		if sn == CONVERT_ALL {
+			if s {
+				return 1, nil
+			}
+			return 0, nil
+		}
+	case nil:
+		if sn == CONVERT_ALL {
+			return 0, nil
+		}
+	}
+	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to int", input)
+}
+
+func ToInt32(input interface{}, sn Strictness) (int32, error) {
+	switch s := input.(type) {
+	case int:
+		return int32(s), nil
+	case int64:
+		return int32(s), nil
+	case int32:
+		return s, nil
+	case int16:
+		return int32(s), nil
+	case int8:
+		return int32(s), nil
+	case uint:
+		return int32(s), nil
+	case uint64:
+		return int32(s), nil
+	case uint32:
+		return int32(s), nil
+	case uint16:
+		return int32(s), nil
+	case uint8:
+		return int32(s), nil
+	case float64:
+		if sn != STRICT || isIntegral64(s) {
+			return int32(s), nil
+		}
+	case float32:
+		if sn != STRICT || isIntegral32(s) {
+			return int32(s), nil
+		}
+	case string:
+		if sn == CONVERT_ALL {
+			v, err := strconv.ParseInt(s, 0, 0)
+			if err == nil {
+				return int32(v), nil
+			}
+		}
+	case bool:
+		if sn == CONVERT_ALL {
+			if s {
+				return 1, nil
+			}
+			return 0, nil
+		}
+	case nil:
+		if sn == CONVERT_ALL {
+			return 0, nil
+		}
+	}
+	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to int", input)
+}
+
 func ToInt64(input interface{}, sn Strictness) (int64, error) {
 	switch s := input.(type) {
 	case int:
@@ -251,6 +407,70 @@ func ToFloat64(input interface{}, sn Strictness) (float64, error) {
 	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to float64", input)
 }
 
+func ToFloat32(input interface{}, sn Strictness) (float32, error) {
+	switch s := input.(type) {
+	case float64:
+		return float32(s), nil
+	case float32:
+		return s, nil
+	case int:
+		if sn != STRICT {
+			return float32(s), nil
+		}
+	case int64:
+		if sn != STRICT {
+			return float32(s), nil
+		}
+	case int32:
+		if sn != STRICT {
+			return float32(s), nil
+		}
+	case int16:
+		if sn != STRICT {
+			return float32(s), nil
+		}
+	case int8:
+		if sn != STRICT {
+			return float32(s), nil
+		}
+	case uint:
+		if sn != STRICT {
+			return float32(s), nil
+		}
+	case uint64:
+		if sn != STRICT {
+			return float32(s), nil
+		}
+	case uint32:
+		if sn != STRICT {
+			return float32(s), nil
+		}
+	case uint16:
+		if sn != STRICT {
+			return float32(s), nil
+		}
+	case uint8:
+		if sn != STRICT {
+			return float32(s), nil
+		}
+	case string:
+		if sn == CONVERT_ALL {
+			v, err := strconv.ParseFloat(s, 32)
+			if err == nil {
+				return float32(v), nil
+			}
+		}
+	case bool:
+		if sn == CONVERT_ALL {
+			if s {
+				return 1, nil
+			}
+			return 0, nil
+		}
+	}
+	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to float64", input)
+}
+
 func ToUint64(i interface{}, sn Strictness) (uint64, error) {
 	switch s := i.(type) {
 	case string:
@@ -308,6 +528,225 @@ func ToUint64(i interface{}, sn Strictness) (uint64, error) {
 		}
 		if sn != STRICT || isIntegral64(s) {
 			return uint64(s), nil
+		}
+	case bool:
+		if sn == CONVERT_ALL {
+			if s {
+				return 1, nil
+			}
+			return 0, nil
+		}
+	case nil:
+		if sn == CONVERT_ALL {
+			return 0, nil
+		}
+	}
+	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint", i)
+}
+
+func ToUint8(i interface{}, sn Strictness) (uint8, error) {
+	switch s := i.(type) {
+	case string:
+		if sn == CONVERT_ALL {
+			v, err := strconv.ParseUint(s, 0, 64)
+			if err == nil {
+				return uint8(v), nil
+			}
+		}
+	case int:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint8(s), nil
+	case int64:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint8(s), nil
+	case int32:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint8(s), nil
+	case int16:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint8(s), nil
+	case int8:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint8(s), nil
+	case uint:
+		return uint8(s), nil
+	case uint64:
+		return uint8(s), nil
+	case uint32:
+		return uint8(s), nil
+	case uint16:
+		return uint8(s), nil
+	case uint8:
+		return s, nil
+	case float32:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		if sn != STRICT || isIntegral32(s) {
+			return uint8(s), nil
+		}
+	case float64:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		if sn != STRICT || isIntegral64(s) {
+			return uint8(s), nil
+		}
+	case bool:
+		if sn == CONVERT_ALL {
+			if s {
+				return 1, nil
+			}
+			return 0, nil
+		}
+	case nil:
+		if sn == CONVERT_ALL {
+			return 0, nil
+		}
+	}
+	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint", i)
+}
+
+func ToUint16(i interface{}, sn Strictness) (uint16, error) {
+	switch s := i.(type) {
+	case string:
+		if sn == CONVERT_ALL {
+			v, err := strconv.ParseUint(s, 0, 64)
+			if err == nil {
+				return uint16(v), nil
+			}
+		}
+	case int:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint16(s), nil
+	case int64:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint16(s), nil
+	case int32:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint16(s), nil
+	case int16:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint16(s), nil
+	case int8:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint16(s), nil
+	case uint:
+		return uint16(s), nil
+	case uint64:
+		return uint16(s), nil
+	case uint32:
+		return uint16(s), nil
+	case uint16:
+		return s, nil
+	case uint8:
+		return uint16(s), nil
+	case float32:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		if sn != STRICT || isIntegral32(s) {
+			return uint16(s), nil
+		}
+	case float64:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		if sn != STRICT || isIntegral64(s) {
+			return uint16(s), nil
+		}
+	case bool:
+		if sn == CONVERT_ALL {
+			if s {
+				return 1, nil
+			}
+			return 0, nil
+		}
+	case nil:
+		if sn == CONVERT_ALL {
+			return 0, nil
+		}
+	}
+	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint", i)
+}
+
+func ToUint32(i interface{}, sn Strictness) (uint32, error) {
+	switch s := i.(type) {
+	case string:
+		if sn == CONVERT_ALL {
+			v, err := strconv.ParseUint(s, 0, 64)
+			if err == nil {
+				return uint32(v), nil
+			}
+		}
+	case int:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint32(s), nil
+	case int64:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint32(s), nil
+	case int32:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint32(s), nil
+	case int16:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint32(s), nil
+	case int8:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		return uint32(s), nil
+	case uint:
+		return uint32(s), nil
+	case uint64:
+		return uint32(s), nil
+	case uint32:
+		return s, nil
+	case uint16:
+		return uint32(s), nil
+	case uint8:
+		return uint32(s), nil
+	case float32:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		if sn != STRICT || isIntegral32(s) {
+			return uint32(s), nil
+		}
+	case float64:
+		if s < 0 {
+			return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to uint, negative not allowed", i)
+		}
+		if sn != STRICT || isIntegral64(s) {
+			return uint32(s), nil
 		}
 	case bool:
 		if sn == CONVERT_ALL {

@@ -252,6 +252,8 @@ func pubMetaSource() {
 				testEvent.Readings[1].Origin = 34 * j
 				testEvent.Readings[1].DeviceName = "Humidity sensor"
 
+				testEvent.AddBinaryReading("raw", []byte("Hello World"), "application/text")
+
 				data, err := json.Marshal(testEvent)
 				if err != nil {
 					fmt.Errorf("unexpected error MarshalEvent %v", err)

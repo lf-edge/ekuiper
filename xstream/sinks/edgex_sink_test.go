@@ -49,7 +49,7 @@ func TestProduceEvents(t1 *testing.T) {
 			input: `[
 						{"meta":{
 							"correlationid":"","deviceName":"demo","id":"","origin":3,
-							"humidity":{"deviceName":"test device name1","id":"12","origin":14,"valueType":"int64"},
+							"humidity":{"deviceName":"test device name1","id":"12","origin":14,"valueType":"Int64"},
 							"temperature":{"deviceName":"test device name2","id":"22","origin":24}
 							}
 						},
@@ -194,6 +194,42 @@ func TestProduceEvents(t1 *testing.T) {
 				Origin:      0,
 				Readings:    nil,
 			},
+		},
+		{
+			input: `[
+						{"meta1": "newmeta"},
+						{"sa":"SGVsbG8gV29ybGQ="},
+						{"meta":{
+							"correlationid":"","profileName":"demoProfile","deviceName":"demo","sourceName":"demoSource","id":"abc","origin":3,"tags":{"auth":"admin"},
+							"sa":{"deviceName":"test device name1","id":"12","origin":14, "valueType":"Binary","mediaType":"application/css"}
+						}}
+					]`,
+			expected: &dtos.Event{
+				DeviceName:  "demo",
+				ProfileName: "demoProfile",
+				SourceName:  "demoSource",
+				Origin:      3,
+				Tags:        map[string]string{"auth": "admin"},
+				Readings: []dtos.BaseReading{
+					{
+						DeviceName:    "demo",
+						ProfileName:   "demoProfile",
+						ResourceName:  "meta1",
+						SimpleReading: dtos.SimpleReading{Value: "newmeta"},
+						ValueType:     v2.ValueTypeString,
+					},
+					{
+						ResourceName:  "sa",
+						BinaryReading: dtos.BinaryReading{BinaryValue: []byte("Hello World"), MediaType: "application/css"},
+						ProfileName:   "demoProfile",
+						DeviceName:    "test device name1",
+						Id:            "12",
+						Origin:        14,
+						ValueType:     v2.ValueTypeBinary,
+					},
+				},
+			},
+			error: "",
 		},
 	}
 

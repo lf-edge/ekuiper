@@ -149,6 +149,9 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 								r_meta["deviceName"] = r.DeviceName
 								r_meta["profileName"] = r.ProfileName
 								r_meta["valueType"] = r.ValueType
+								if r.MediaType != "" {
+									r_meta["mediaType"] = r.MediaType
+								}
 								meta[r.ResourceName] = r_meta
 							} else {
 								log.Warnf("The name of readings should not be empty!")
@@ -246,8 +249,15 @@ func (es *EdgexSource) getValue(r dtos.BaseReading, logger api.Logger) (interfac
 		return convertFloatArray(v, 32)
 	case v2.ValueTypeFloat64Array:
 		return convertFloatArray(v, 64)
+	case v2.ValueTypeStringArray:
+		var val []string
+		if e := json.Unmarshal([]byte(v), &val); e == nil {
+			return val, nil
+		} else {
+			return nil, e
+		}
 	case v2.ValueTypeBinary:
-		return nil, fmt.Errorf("Unsupport for binary type, the value will be ignored.")
+		return r.BinaryValue, nil
 	default:
 		logger.Warnf("Not supported type %s, and processed as string value", t)
 		return v, nil
