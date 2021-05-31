@@ -329,3 +329,13 @@ func TestPrintConf(t *testing.T) {
 		t.Errorf("conf changed after printing")
 	}
 }
+
+func TestGetValue_Binary(t *testing.T) {
+	ev := []byte("Hello World")
+	r1 := dtos.BaseReading{ResourceName: "bin", ValueType: v2.ValueTypeBinary, BinaryReading: dtos.BinaryReading{MediaType: "application/text", BinaryValue: ev}}
+	if v, e := es.getValue(r1, common.Log); e != nil {
+		t.Errorf("%s", e)
+	} else if !reflect.DeepEqual(ev, v) {
+		t.Errorf("result mismatch, expect %v, but got %v", ev, v)
+	}
+}

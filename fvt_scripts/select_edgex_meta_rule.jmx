@@ -138,7 +138,7 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT temperature,humidity, meta(id) AS eid, meta(temperature-&gt;Origin) AS torigin, meta(Humidity-&gt;DeviceName) AS hdevice FROM demo WHERE meta(deviceName)=\&quot;demo2\&quot;&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT temperature,humidity, raw, meta(id) AS eid, meta(temperature-&gt;Origin) AS torigin, meta(Humidity-&gt;DeviceName) AS hdevice, meta(raw-&gt;mediaType) as rawMedia FROM demo WHERE meta(deviceName)=\&quot;demo2\&quot;&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
       &quot;mqtt&quot;: {&#xd;
@@ -465,6 +465,15 @@
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
           <hashTree/>
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="raw Assertion" enabled="true">
+            <stringProp name="JSON_PATH">$[0].raw</stringProp>
+            <stringProp name="EXPECTED_VALUE">SGVsbG8gV29ybGQ=</stringProp>
+            <boolProp name="JSONVALIDATION">true</boolProp>
+            <boolProp name="EXPECT_NULL">false</boolProp>
+            <boolProp name="INVERT">false</boolProp>
+            <boolProp name="ISREGEX">false</boolProp>
+          </JSONPathAssertion>
+          <hashTree/>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="name Assertion" enabled="true">
             <stringProp name="JSON_PATH">$[0].hdevice</stringProp>
             <stringProp name="EXPECTED_VALUE">Humidity sensor</stringProp>
@@ -477,6 +486,15 @@
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="torigin Assertion" enabled="true">
             <stringProp name="JSON_PATH">$[0].torigin</stringProp>
             <stringProp name="EXPECTED_VALUE">48</stringProp>
+            <boolProp name="JSONVALIDATION">true</boolProp>
+            <boolProp name="EXPECT_NULL">false</boolProp>
+            <boolProp name="INVERT">false</boolProp>
+            <boolProp name="ISREGEX">false</boolProp>
+          </JSONPathAssertion>
+          <hashTree/>
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="rawMedia Assertion" enabled="true">
+            <stringProp name="JSON_PATH">$[0].rawMedia</stringProp>
+            <stringProp name="EXPECTED_VALUE">application/text</stringProp>
             <boolProp name="JSONVALIDATION">true</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>
