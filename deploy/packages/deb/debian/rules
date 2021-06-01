@@ -34,6 +34,9 @@ install: build
 	mkdir -p debian/kuiper/usr/lib/kuiper/bin
 	mkdir -p debian/kuiper/var/lib/kuiper/data
 	mkdir -p debian/kuiper/var/lib/kuiper/plugins
+	mkdir -p debian/kuiper/var/lib/kuiper/plugins/sources
+	mkdir -p debian/kuiper/var/lib/kuiper/plugins/sinks
+	mkdir -p debian/kuiper/var/lib/kuiper/plugins/functions
 	mkdir -p debian/kuiper/var/log/kuiper
 	mkdir -p debian/kuiper/etc/kuiper
 	mkdir -p debian/kuiper/lib/systemd/system
@@ -42,7 +45,6 @@ install: build
 	cp kuiper debian/kuiper/usr/lib/kuiper/bin/
 	cp kuiperd debian/kuiper/usr/lib/kuiper/bin/
 	cp -R etc/* debian/kuiper/etc/kuiper/
-	cp -R plugins/* debian/kuiper/var/lib/kuiper/plugins/
 
 	install -m755 debian/kuiper.service debian/kuiper/lib/systemd/system/
 	

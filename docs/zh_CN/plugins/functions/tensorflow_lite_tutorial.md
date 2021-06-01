@@ -109,16 +109,18 @@ Content-Type: application/json
 
 #### 构建 labelImage 插件
 
-确保已克隆 Kuiper github repo。 插件源文件位于 *plugins/functions/labelImage/labelImage.go* 中。 在构建插件之前，导出 tensorflow repo 和构建库的路径。
+确保已克隆 Kuiper github repo。 插件源文件位于 *extensions/functions/labelImage/labelImage.go* 中。 在构建插件之前，导出 tensorflow repo 和构建库的路径。
 
 ```shell
 $ cd {{kuiperRepoPath}}
 $ export CGO_CFLAGS=-I/root/tensorflow
 $ export CGO_LDFLAGS=-L/root/tensorflow/lib
-$ go build -trimpath --buildmode=plugin -o plugins/functions/LabelImage.so plugins/functions/labelImage/*.go
+$ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functions/LabelImage.so extensions/functions/labelImage/*.go
+$ mkdir -p "plugins/functions"
+$ cp -r extensions/functions/labelImage plugins/functions
 ```
 
-通过这些命令，插件将构建到 plugins/functions/LabelImage.so 中。 出于开发目的，您可以重新启动 Kuiper 以自动加载此插件并进行测试。 测试完成后，我们应该将其打包为一个 zip 文件，该文件可供 Kuiper 插件安装API 使用，以便可以在其他计算机（例如生产环境）中使用。
+通过这些命令，插件将构建到 plugins/functions/LabelImage.so 中，同时复制所有依赖文件到 plugins/functions/labelImage 目录下。 出于开发目的，您可以重新启动 Kuiper 以自动加载此插件并进行测试。 测试完成后，我们应该将其打包为一个 zip 文件，该文件可供 Kuiper 插件安装API 使用，以便可以在其他计算机（例如生产环境）中使用。
 
 #### 打包插件
 

@@ -2,9 +2,9 @@ FROM golang:1.15.1-alpine AS builder
 
 COPY . /go/kuiper
 
-WORKDIR /go/kuiper
+WORKDIR /go/kuiper/tools/kubernetes
 
-RUN go build -o tools/kubernetes/kuiper-kubernetes-tool tools/kubernetes/main.go
+RUN go build -o kuiper-kubernetes-tool main.go
 
 FROM alpine:3.12
 

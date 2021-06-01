@@ -15,11 +15,11 @@ Kuiper plugin is based on the plugin mechanism of Golang, users can build loosel
 These limitations are relatively strict, and they almost require compiling and running the plugin and Kuiper on the same machine. It often results in the plugin which complied by the development environment can not be used in producing Kuiper. This article gives a detailed introduction to one reliable and available plugin development environment setting and process, which is recommended to the Kuiper plugin developer to use. Generally, the process for development and usage of the plugin is as follows:
 
 - Development
-    - Create and develop plugin project
-    - Compile and debug plugin
+    - Create and develop the plugin project
+    - Compile and debug the plugin
 - Deployment
     - Compile plugins which can be used for the production environment
-    - Deploy plugin to the production environment
+    - Deploy plugins to the production environment
 
 ## Plugin development 
 
@@ -27,7 +27,7 @@ Developing plugin is generally carried out in the development environment. Kuipe
 
 ### Create and develop the plugin project
 
-There are some plugin examples in the plugins directory of the Kuiper project source code. The user customized plugin can also be developed in the Kuiper project. However, users usually need to create the new project outside of the Kuiper project to develop customized plugins, to manage code more conveniently. It's recommended to use Go module to develop plugin projects, the typical structure of project is listed as following.
+There are some plugin examples in the *extensions* directory of the Kuiper project source code. The user customized plugin can also be developed in the Kuiper project. However, users usually need to create the new project outside of the Kuiper project to develop customized plugins, to manage code more conveniently. It's recommended to use Go module to develop plugin projects, the typical structure of project is listed as following.
 
 ```
 plugin_project
@@ -45,7 +45,7 @@ Developing a plugin needs to extend the interface in Kuiper, so it must depend o
 ```go
 module samplePlugin
 
-go 1.13
+go 1.16
 
 require (
 	github.com/emqx/kuiper v0.0.0-20200323140757-60d00241372b
@@ -54,7 +54,7 @@ require (
 
 The Kuiper plugin has three types. The source code can be put into the corresponding directory. For the detailed method of plugin development: [EMQ X Kuiper extension](../extension/overview.md). This article will take the Sink plugin as an example to introduce the process of plugin development and deployment. We will develop a basic MySql sink, for write stream output data to the MySql database.
 
-- Create plugin project samplePlugin with the above directory structure
+- Create plugin the project samplePlugin with the above directory structure
 - Create file mysql.go under the sinks directory
 - Edit file mysql.go for implementing the plugin
     -  Implement [api.Sink](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go) interface
@@ -146,7 +146,7 @@ func Mysql() api.Sink {
  ```go
 module samplePlugin
 
-go 1.13
+go 1.16
 
 require (
 	github.com/emqx/kuiper v0.0.0-20200323140757-60d00241372b
@@ -165,10 +165,17 @@ Developers can locally compile Kuiper and the plugin for debugging, which steps 
 2.  Compile Kuiper: run `make` under the Kuiper directory
 3. Compile the plugin:
     1. Run `go mod edit -replace github.com/emqx/kuiper=$kuiperPath` under the plugin project, make the Kuiper dependence point to the local Kuiper, and then please replace the download directory of step 1 by $kuiperPath, the same below.
-   2. Compile the plugin so to the directory of Kuiper plugin
-   ```go
-   go build -trimpath --buildmode=plugin -o $kuiperPath/_build/$build/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
-   ```
+   2. Because the Golang plugin system has a very strict limitation of the dependency paths, it is more safe to build the plugin from the Kuiper main project. In the Kuiper project, add a new *mod* file with a name like *sample.mod* to point to your plugin project.
+      ```
+      module github.com/emqx/kuiper
+      go 1.16
+      require samplePlugin v0.0.0
+      replace samplePlugin => ../samplePlugin     
+      ```
+   3. In Kuiper path, compile the plugin so with the newly added mod file
+       ```go
+       go build -trimpath -modfile sample.mod --buildmode=plugin -o $kuiperPath/_build/$build/plugins/sinks/Mysql@v1.0.0.so ../samplePlugin/sinks/mysql.go
+       ```
 
 ### Docker compile
 
@@ -183,9 +190,8 @@ Kuiper provides different docker images for different purpose. The development d
     # docker exec -it kuiper-dev /bin/sh
     
     -- In docker instance
-    # cd /home/samplePlugin
-    # go mod edit -replace github.com/emqx/kuiper=/go/kuiper
-    # go build -trimpath --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
+   // Add the sample.mod to kuiper project then run the below build command
+    # go build -trimpath -modfile sample.mod --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so ../samplePlugin/sinks/mysql.go
     ```
 You can use below sample shell script in your plugin project to automatically build and package the plugins. Please modify the variables at the beginning of the script to meet the requirements of different environments.
 
