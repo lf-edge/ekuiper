@@ -69,7 +69,7 @@ There are 2 common configuration fields.
 Build the implemented source as a go plugin and make sure the output so file resides in the plugins/sources folder.
 
 ```bash
-go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so plugins/sources/my_source.go
+go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/MySource.so extensions/sources/my_source.go
 ```
 
 ### Usage

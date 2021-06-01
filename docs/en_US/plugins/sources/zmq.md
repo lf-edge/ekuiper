@@ -6,7 +6,7 @@ The source will subscribe to a Zero Mq topic to import the messages into kuiper
 
 ```shell
 # cd $kuiper_src
-# go build -trimpath --buildmode=plugin -o plugins/sources/Zmq.so plugins/sources/zmq/zmq.go
+# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Zmq.so extensions/sources/zmq/zmq.go
 # cp plugins/sources/Zmq.so $kuiper_install/plugins/sources
 ```
 

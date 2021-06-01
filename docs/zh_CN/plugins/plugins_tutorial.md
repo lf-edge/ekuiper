@@ -27,7 +27,7 @@ Kuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松散
 
 ### 创建并开发插件项目
 
-Kuiper 项目源代码的 plugins 目录下有一些插件范例。用户自定义的插件也可以在 Kuiper 项目中开发。但是为了便于代码管理，一般应当在 Kuiper 项目之外另建项目开发自定义插件。插件项目建议使用 Go module，典型的项目目录如下图所示：
+Kuiper 项目源代码的 extensions 目录下有一些插件范例。用户自定义的插件也可以在 Kuiper 项目中开发。但是为了便于代码管理，一般应当在 Kuiper 项目之外另建项目开发自定义插件。插件项目建议使用 Go module，典型的项目目录如下图所示：
 
 ```
 plugin_project
@@ -45,7 +45,7 @@ plugin_project
 ```go
 module samplePlugin
 
-go 1.13
+go 1.16
 
 require (
 	github.com/emqx/kuiper v0.0.0-20200323140757-60d00241372b
@@ -146,7 +146,7 @@ func Mysql() api.Sink {
  ```go
 module samplePlugin
 
-go 1.13
+go 1.16
 
 require (
 	github.com/emqx/kuiper v0.0.0-20200323140757-60d00241372b
@@ -165,10 +165,17 @@ require (
 2. 编译 Kuiper：在 Kuiper 目录下，运行 `make`
 3. 编译插件：
     1. 在插件项目下，运行 `go mod edit -replace github.com/emqx/kuiper=$kuiperPath`，使得 Kuiper 依赖指向本地 Kuiper，请替换 $kuiperPath 到步骤1下载目录，下同。
-   2. 编译插件 so 到 Kuiper 插件目录下
-   ```go
-    go build -trimpath --buildmode=plugin -o $kuiperPath/_build/$build/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
-   ```
+    2. 由于 Go 语言插件系统对依赖的路径有非常严格的要求，为了确保插件可以顺利运行，建议在 Kuiper 主项目里进行编译。在 Kuiper 项目里，添加如下名为 sample.mod 的 mod 文件，用于插件编译。
+       ```
+       module github.com/emqx/kuiper
+       go 1.16
+       require samplePlugin v0.0.0
+       replace samplePlugin => ../samplePlugin   
+       ```
+    3. 在 Kuiper 目录下，使用新的 mod 文件编译插件 so
+       ```go
+        go build -trimpath -modfile sample.mod --buildmode=plugin -o $kuiperPath/_build/$build/plugins/sinks/Mysql@v1.0.0.so ../samplePlugin/sinks/mysql.go
+       ```
 
 ### Docker 编译
 
@@ -183,9 +190,8 @@ require (
     # docker exec -it kuiper-dev /bin/sh
     
     -- In docker instance
-    # cd /home/samplePlugin
-    # go mod edit -replace github.com/emqx/kuiper=/go/kuiper
-    # go build -trimpath --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so sinks/mysql.go
+    // 在 Kuiper 项目中添加 sample.mod 然后运行如下命令进行编译
+    # go build -trimpath --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so ../samplePlugin/sinks/mysql.go
     ```
 
 在插件项目中可以使用如下 shell 脚本自动编译及打包插件。修改脚本开头的参数以满足不同环境下的开发调试需求。
