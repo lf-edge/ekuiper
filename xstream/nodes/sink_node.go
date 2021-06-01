@@ -151,8 +151,8 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				temp, err := template.New("sink").Funcs(funcMap).Parse(t)
 				if err != nil {
 					msg := fmt.Sprintf("property dataTemplate %v is invalid: %v", t, err)
-					result <- fmt.Errorf(msg)
 					logger.Warnf(msg)
+					result <- fmt.Errorf(msg)
 					return
 				} else {
 					tp = temp
