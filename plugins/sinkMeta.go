@@ -351,31 +351,10 @@ func (us *uiSinks) modifyOption(option *api.RuleOption) {
 	}
 }
 
-func (us *uiSinks) hintWhenModifySink(rule *api.Rule) (err error) {
-	for _, m := range rule.Actions {
-		for pluginName, sink := range m {
-			mapFields, _ := sink.(map[string]interface{})
-			err = us.hintWhenNewSink(pluginName)
-			if nil != err {
-				return err
-			}
-			if err := us.modifyProperty(pluginName, mapFields); nil != err {
-				return err
-			}
-		}
-	}
-	us.modifyOption(rule.Options)
-	return nil
-}
-
-func GetSinkMeta(pluginName, language string, rule *api.Rule) (ptrSinkProperty *uiSinks, err error) {
+func GetSinkMeta(pluginName, language string) (ptrSinkProperty *uiSinks, err error) {
 	ptrSinkProperty = new(uiSinks)
 	ptrSinkProperty.language = language
-	if nil == rule {
-		err = ptrSinkProperty.hintWhenNewSink(pluginName)
-	} else {
-		err = ptrSinkProperty.hintWhenModifySink(rule)
-	}
+	err = ptrSinkProperty.hintWhenNewSink(pluginName)
 	return ptrSinkProperty, err
 }
 
