@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"github.com/emqx/kuiper/xstream/api"
 	"testing"
 )
 
@@ -45,71 +44,6 @@ func TestHintWhenModifySink(t *testing.T) {
 	g_sinkMetadata["properties.json"] = baseMeta
 	g_sinkMetadata["options.json"] = opMeta
 
-	newSink := &uiSinks{
-		CustomProperty: map[string]uiSink{
-			"taos": {
-				Fields: []field{
-					{
-						Name:    "ip",
-						Default: "114.114.114.114",
-					},
-				},
-			},
-			"log": {
-				Fields: []field{
-					{
-						Name:    "ip",
-						Default: "227.227.227.227",
-					},
-				},
-			},
-		},
-		BaseProperty: map[string]uiSink{
-			"taos": {
-				Fields: []field{
-					{
-						Name:    "bufferLength",
-						Default: 1024,
-					},
-				},
-			},
-			"log": {
-				Fields: []field{
-					{
-						Name:    "bufferLength",
-						Default: 2048,
-					},
-				},
-			},
-		},
-		BaseOption: uiSink{
-			Fields: []field{
-				{
-					Name:    "isEventTime",
-					Default: true,
-				},
-			},
-		},
-	}
-
-	rule := &api.Rule{
-		Actions: []map[string]interface{}{
-			{
-				"taos": map[string]interface{}{
-					"ip":           "114.114.114.114",
-					"bufferLength": 1024,
-				}, "log": map[string]interface{}{
-					"ip":           "227.227.227.227",
-					"bufferLength": 2048,
-				},
-			},
-		},
-		Options: &api.RuleOption{
-			IsEventTime: true,
-			SendError:   true,
-		},
-	}
-
 	oldSink := new(uiSinks)
 	err := oldSink.hintWhenNewSink("taos")
 	if nil != err {
@@ -123,20 +57,6 @@ func TestHintWhenModifySink(t *testing.T) {
 		t.Errorf("fail")
 	}
 	if "911.911.911.911" != oldSink.CustomProperty["taos"].Fields[0].Default {
-		t.Errorf("fail")
-	}
-	err = oldSink.hintWhenModifySink(rule)
-	if nil != err {
-		t.Error(err)
-	}
-
-	if oldSink.BaseOption.Fields[0].Default != newSink.BaseOption.Fields[0].Default {
-		t.Errorf("fail")
-	}
-	if oldSink.BaseProperty["taos"].Fields[0].Default != newSink.BaseProperty["taos"].Fields[0].Default {
-		t.Errorf("fail")
-	}
-	if oldSink.CustomProperty["taos"].Fields[0].Default != newSink.CustomProperty["taos"].Fields[0].Default {
 		t.Errorf("fail")
 	}
 }

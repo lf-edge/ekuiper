@@ -107,7 +107,6 @@ func createRestServer(ip string, port int) *http.Server {
 
 	r.HandleFunc("/metadata/sinks", sinksMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sinks/{name}", newSinkMetaHandler).Methods(http.MethodGet)
-	r.HandleFunc("/metadata/sinks/rule/{id}", showSinkMetaHandler).Methods(http.MethodGet)
 
 	r.HandleFunc("/metadata/sources", sourcesMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/yaml/{name}", sourceConfHandler).Methods(http.MethodGet)
@@ -699,28 +698,7 @@ func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	pluginName := vars["name"]
 
 	language := getLanguage(r)
-	ptrMetadata, err := plugins.GetSinkMeta(pluginName, language, nil)
-	if err != nil {
-		handleError(w, err, "", logger)
-		return
-	}
-	jsonResponse(ptrMetadata, w, logger)
-}
-
-//Get sink metadata when displaying rules
-func showSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	vars := mux.Vars(r)
-	ruleid := vars["id"]
-
-	rule, err := ruleProcessor.GetRuleByName(ruleid)
-	if err != nil {
-		handleError(w, err, "describe rule error", logger)
-		return
-	}
-
-	language := getLanguage(r)
-	ptrMetadata, err := plugins.GetSinkMeta("", language, rule)
+	ptrMetadata, err := plugins.GetSinkMeta(pluginName, language)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
