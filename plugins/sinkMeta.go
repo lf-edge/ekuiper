@@ -74,10 +74,6 @@ type (
 		Libs   []string `json:"libs"`
 		Fields []field  `json:"properties"`
 	}
-	uiSinks struct {
-		CustomProperty map[string]*uiSink `json:"customProperty"`
-		language       string
-	}
 )
 
 func isInternalSink(fiName string) bool {
@@ -209,29 +205,14 @@ func (m *Manager) readSinkMetaFile(filePath string) error {
 	return nil
 }
 
-func (us *uiSinks) setCustomProperty(pluginName string) error {
+func GetSinkMeta(pluginName, language string) (*uiSink, error) {
 	fileName := pluginName + `.json`
 	sinkMetadata := g_sinkMetadata
 	data, ok := sinkMetadata[fileName]
-	if !ok {
-		return fmt.Errorf(`%s%s`, getMsg(us.language, sink, "not_found_plugin"), pluginName)
+	if !ok || data == nil {
+		return nil, fmt.Errorf(`%s%s`, getMsg(language, sink, "not_found_plugin"), pluginName)
 	}
-	if 0 == len(us.CustomProperty) {
-		us.CustomProperty = make(map[string]*uiSink)
-	}
-	us.CustomProperty[pluginName] = data
-	return nil
-}
-
-func (us *uiSinks) hintWhenNewSink(pluginName string) (err error) {
-	return us.setCustomProperty(pluginName)
-}
-
-func GetSinkMeta(pluginName, language string) (ptrSinkProperty *uiSinks, err error) {
-	ptrSinkProperty = new(uiSinks)
-	ptrSinkProperty.language = language
-	err = ptrSinkProperty.hintWhenNewSink(pluginName)
-	return ptrSinkProperty, err
+	return data, nil
 }
 
 type pluginfo struct {
