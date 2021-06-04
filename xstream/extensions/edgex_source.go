@@ -68,8 +68,6 @@ func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 		mbconf.Optional = optional
 	}
 	printConf(mbconf)
-	common.Log.Infof("Use configuration for edgex messagebus %v\n", mbconf)
-
 	if client, err := messaging.NewMessageClient(mbconf); err != nil {
 		return err
 	} else {
@@ -90,7 +88,7 @@ func printConf(mbconf types.MessageBusConfig) {
 		}
 	}
 	mbconf.Optional = printableOptional
-	common.Log.Infof("Use configuration for edgex messagebus %v\n", mbconf)
+	common.Log.Infof("Use configuration for edgex messagebus %v", mbconf)
 }
 
 func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
