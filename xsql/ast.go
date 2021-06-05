@@ -286,6 +286,24 @@ type Fields []Field
 
 func (fs Fields) node() {}
 
+func (fs Fields) Len() int {
+	return len(fs)
+}
+func (fs Fields) Swap(i, j int) {
+	fs[i], fs[j] = fs[j], fs[i]
+}
+func (fs Fields) Less(i int, j int) bool {
+	m := fs[i].AName
+	if m == "" {
+		m = fs[i].Name
+	}
+	n := fs[j].AName
+	if n == "" {
+		n = fs[j].Name
+	}
+	return m < n
+}
+
 type BinaryExpr struct {
 	OP  Token
 	LHS Expr
