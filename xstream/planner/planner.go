@@ -11,6 +11,7 @@ import (
 	"github.com/emqx/kuiper/xstream/nodes"
 	"github.com/emqx/kuiper/xstream/operators"
 	"path"
+	"sort"
 	"strings"
 )
 
@@ -450,6 +451,8 @@ func aliasFieldsForSource(aliasMap map[string]*aliasInfo, name xsql.StreamName, 
 			}
 		}
 	}
+	// sort to get a constant result for testing
+	sort.Sort(result)
 	return
 }
 
