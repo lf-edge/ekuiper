@@ -111,7 +111,9 @@ func (s *TopologyNew) prepareContext() {
 func (s *TopologyNew) drainErr(err error) {
 	select {
 	case s.drain <- err:
-		s.ctx.GetLogger().Errorf("topo %s drain error %v", s.name, err)
+		if err != nil {
+			s.ctx.GetLogger().Errorf("topo %s drain error %v", s.name, err)
+		}
 	default:
 		s.ctx.GetLogger().Infof("topo %s drain error %v, but receiver closed so ignored", s.name, err)
 	}
