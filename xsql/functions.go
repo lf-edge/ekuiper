@@ -39,9 +39,11 @@ type FunctionRegister interface {
 var aggFuncMap = map[string]string{"avg": "",
 	"count": "",
 	"max":   "", "min": "",
-	"sum":         "",
-	"collect":     "",
-	"deduplicate": "",
+	"sum":          "",
+	"collect":      "",
+	"deduplicate":  "",
+	"window_start": "",
+	"window_end":   "",
 }
 
 var funcWithAsteriskSupportMap = map[string]string{

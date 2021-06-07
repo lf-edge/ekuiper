@@ -120,41 +120,45 @@ func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple, current int64, 
 	case xsql.SLIDING_WINDOW:
 		nextTs := getEarliestEventTs(inputs, current, watermark)
 		return nextTs
-	case xsql.SESSION_WINDOW:
-		if len(inputs) > 0 {
-			timeout, duration := int64(w.window.Interval), int64(w.window.Length)
-			sort.SliceStable(inputs, func(i, j int) bool {
-				return inputs[i].Timestamp < inputs[j].Timestamp
-			})
-			et := inputs[0].Timestamp
-			tick := et + (duration - et%duration)
-			if et%duration == 0 {
-				tick = et
-			}
-			var p int64
-			for _, tuple := range inputs {
-				var r int64 = math.MaxInt64
-				if p > 0 {
-					if tuple.Timestamp-p > timeout {
-						r = p + timeout
-					}
-				}
-				if tuple.Timestamp > tick {
-					if tick-duration > et && tick < r {
-						r = tick
-					}
-					tick += duration
-				}
-				if r < math.MaxInt64 {
-					return r
-				}
-				p = tuple.Timestamp
-			}
-		}
-		return math.MaxInt64
 	default:
 		return math.MaxInt64
 	}
+}
+
+func (w *WatermarkGenerator) getNextSessionWindow(inputs []*xsql.Tuple, current int64, watermark int64, triggered bool) (int64, bool) {
+	if len(inputs) > 0 {
+		timeout, duration := int64(w.window.Interval), int64(w.window.Length)
+		sort.SliceStable(inputs, func(i, j int) bool {
+			return inputs[i].Timestamp < inputs[j].Timestamp
+		})
+		et := inputs[0].Timestamp
+		tick := et + (duration - et%duration)
+		if et%duration == 0 {
+			tick = et
+		}
+		var p int64
+		ticked := false
+		for _, tuple := range inputs {
+			var r int64 = math.MaxInt64
+			if p > 0 {
+				if tuple.Timestamp-p > timeout {
+					r = p + timeout
+				}
+			}
+			if tuple.Timestamp > tick {
+				if tick-duration > et && tick < r {
+					r = tick
+					ticked = true
+				}
+				tick += duration
+			}
+			if r < math.MaxInt64 {
+				return r, ticked
+			}
+			p = tuple.Timestamp
+		}
+	}
+	return math.MaxInt64, false
 }
 
 func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.Tuple, errCh chan<- error) {
@@ -163,6 +167,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 		triggered       bool
 		nextWindowEndTs int64
 		prevWindowEndTs int64
+		lastTicked      bool
 	)
 
 	o.watermarkGenerator.lastWatermarkTs = 0
@@ -196,17 +201,30 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				if d.IsWatermark() {
 					watermarkTs := d.GetTimestamp()
 					windowEndTs := nextWindowEndTs
+					ticked := false
 					//Session window needs a recalculation of window because its window end depends the inputs
 					if windowEndTs == math.MaxInt64 || o.window.Type == xsql.SESSION_WINDOW || o.window.Type == xsql.SLIDING_WINDOW {
-						windowEndTs = o.watermarkGenerator.getNextWindow(inputs, prevWindowEndTs, watermarkTs, triggered)
+						if o.window.Type == xsql.SESSION_WINDOW {
+							windowEndTs, ticked = o.watermarkGenerator.getNextSessionWindow(inputs, prevWindowEndTs, watermarkTs, triggered)
+						} else {
+							windowEndTs = o.watermarkGenerator.getNextWindow(inputs, prevWindowEndTs, watermarkTs, triggered)
+						}
 					}
 					for windowEndTs <= watermarkTs && windowEndTs >= 0 {
 						log.Debugf("Window end ts %d Watermark ts %d", windowEndTs, watermarkTs)
 						log.Debugf("Current input count %d", len(inputs))
 						//scan all events and find out the event in the current window
+						if o.window.Type == xsql.SESSION_WINDOW && !lastTicked {
+							o.triggerTime = inputs[0].Timestamp
+						}
 						inputs, triggered = o.scan(inputs, windowEndTs, ctx)
 						prevWindowEndTs = windowEndTs
-						windowEndTs = o.watermarkGenerator.getNextWindow(inputs, windowEndTs, watermarkTs, triggered)
+						lastTicked = ticked
+						if o.window.Type == xsql.SESSION_WINDOW {
+							windowEndTs, ticked = o.watermarkGenerator.getNextSessionWindow(inputs, prevWindowEndTs, watermarkTs, triggered)
+						} else {
+							windowEndTs = o.watermarkGenerator.getNextWindow(inputs, prevWindowEndTs, watermarkTs, triggered)
+						}
 					}
 					nextWindowEndTs = windowEndTs
 					log.Debugf("next window end %d", nextWindowEndTs)
