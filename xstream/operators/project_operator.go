@@ -37,10 +37,10 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 			results = append(results, r)
 		}
 	case xsql.WindowTuplesSet:
-		if len(input) != 1 {
+		if len(input.Content) != 1 {
 			return fmt.Errorf("run Select error: the input WindowTuplesSet with multiple tuples cannot be evaluated)")
 		}
-		ms := input[0].Tuples
+		ms := input.Content[0].Tuples
 		for _, v := range ms {
 			ve := pp.getVE(&v, input, fv, afv)
 			if r, err := project(pp.Fields, ve); err != nil {
@@ -52,8 +52,8 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 				break
 			}
 		}
-	case xsql.JoinTupleSets:
-		ms := input
+	case *xsql.JoinTupleSets:
+		ms := input.Content
 		for _, v := range ms {
 			ve := pp.getVE(&v, input, fv, afv)
 			if r, err := project(pp.Fields, ve); err != nil {
@@ -67,7 +67,7 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		}
 	case xsql.GroupedTuplesSet:
 		for _, v := range input {
-			ve := pp.getVE(v[0], v, fv, afv)
+			ve := pp.getVE(v.Content[0], v, fv, afv)
 			if r, err := project(pp.Fields, ve); err != nil {
 				return fmt.Errorf("run Select error: %s", err)
 			} else {

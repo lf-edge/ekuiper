@@ -303,30 +303,24 @@ func TestWindow(t *testing.T) {
 			},
 		}, {
 			Name: `TestWindowRule5`,
-			Sql:  `SELECT temp FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1) `,
+			Sql:  `SELECT count(temp), window_start() as ws, window_end() FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1) `,
 			R: [][]map[string]interface{}{
 				{{
-					"temp": 25.5,
-				}, {
-					"temp": 27.5,
+					"count":      float64(2),
+					"ws":         float64(1541152486013),
+					"window_end": float64(1541152487823), // timeout
 				}}, {{
-					"temp": 28.1,
-				}, {
-					"temp": 27.4,
-				}, {
-					"temp": 25.5,
+					"count":      float64(3),
+					"ws":         float64(1541152487932),
+					"window_end": float64(1541152490000), // tick
 				}}, {{
-					"temp": 26.2,
-				}, {
-					"temp": 26.8,
-				}, {
-					"temp": 28.9,
-				}, {
-					"temp": 29.1,
-				}, {
-					"temp": 32.2,
+					"count":      float64(5),
+					"ws":         float64(1541152490000),
+					"window_end": float64(1541152494000), // tick
 				}}, {{
-					"temp": 30.9,
+					"count":      float64(1),
+					"ws":         float64(1541152494000),
+					"window_end": float64(1541152495112), // timeout
 				}},
 			},
 			M: map[string]interface{}{
@@ -335,10 +329,10 @@ func TestWindow(t *testing.T) {
 				"op_1_preprocessor_sessionDemo_0_records_in_total":   int64(11),
 				"op_1_preprocessor_sessionDemo_0_records_out_total":  int64(11),
 
-				"op_3_project_0_exceptions_total":   int64(0),
-				"op_3_project_0_process_latency_us": int64(0),
-				"op_3_project_0_records_in_total":   int64(4),
-				"op_3_project_0_records_out_total":  int64(4),
+				"op_4_project_0_exceptions_total":   int64(0),
+				"op_4_project_0_process_latency_us": int64(0),
+				"op_4_project_0_records_in_total":   int64(4),
+				"op_4_project_0_records_out_total":  int64(4),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(4),
@@ -355,32 +349,48 @@ func TestWindow(t *testing.T) {
 			},
 		}, {
 			Name: `TestWindowRule6`,
-			Sql:  `SELECT max(temp) as m, count(color) as c FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
+			Sql:  `SELECT window_end(), max(temp) as m, count(color) as c, window_start() FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
 				{{
-					"m": 25.5,
-					"c": float64(1),
+					"m":            25.5,
+					"c":            float64(1),
+					"window_start": float64(1541152485115),
+					"window_end":   float64(1541152486115),
 				}}, {{
-					"m": 25.5,
-					"c": float64(1),
+					"m":            25.5,
+					"c":            float64(1),
+					"window_start": float64(1541152485822),
+					"window_end":   float64(1541152486822),
 				}}, {{
-					"m": 25.5,
-					"c": float64(1),
+					"m":            25.5,
+					"c":            float64(1),
+					"window_start": float64(1541152485903),
+					"window_end":   float64(1541152486903),
 				}}, {{
-					"m": 28.1,
-					"c": float64(1),
+					"m":            28.1,
+					"c":            float64(1),
+					"window_start": float64(1541152486702),
+					"window_end":   float64(1541152487702),
 				}}, {{
-					"m": 28.1,
-					"c": float64(1),
+					"m":            28.1,
+					"c":            float64(1),
+					"window_start": float64(1541152487442),
+					"window_end":   float64(1541152488442),
 				}}, {{
-					"m": 28.1,
-					"c": float64(2),
+					"m":            28.1,
+					"c":            float64(2),
+					"window_start": float64(1541152487605),
+					"window_end":   float64(1541152488605),
 				}}, {{
-					"m": 27.4,
-					"c": float64(1),
+					"m":            27.4,
+					"c":            float64(1),
+					"window_start": float64(1541152488252),
+					"window_end":   float64(1541152489252),
 				}}, {{
-					"m": 27.4,
-					"c": float64(2),
+					"m":            27.4,
+					"c":            float64(2),
+					"window_start": float64(1541152488305),
+					"window_end":   float64(1541152489305),
 				}},
 			},
 			M: map[string]interface{}{
@@ -480,12 +490,14 @@ func TestWindow(t *testing.T) {
 			},
 		}, {
 			Name: `TestWindowRule8`,
-			Sql:  `SELECT color, ts, count(*) as c FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1) having c > 1`,
+			Sql:  `SELECT color, window_end(), ts, count(*) as c, window_start() FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1) having c > 1`,
 			R: [][]map[string]interface{}{
 				{{
-					"color": "red",
-					"ts":    float64(1541152486013),
-					"c":     float64(2),
+					"color":        "red",
+					"ts":           float64(1541152486013),
+					"c":            float64(2),
+					"window_start": float64(1541152486000),
+					"window_end":   float64(1541152487000),
 				}},
 			},
 			M: map[string]interface{}{
@@ -524,35 +536,27 @@ func TestWindow(t *testing.T) {
 			},
 		}, {
 			Name: `TestWindowRule9`,
-			Sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1) FILTER( WHERE size > 2)`,
+			Sql:  `SELECT color, window_start(), window_end() FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1) FILTER( WHERE size > 2)`,
 			R: [][]map[string]interface{}{
 				{{
-					"color": "red",
-					"size":  float64(3),
-					"ts":    float64(1541152486013),
-				}, {
-					"color": "blue",
-					"size":  float64(6),
-					"ts":    float64(1541152486822),
+					"color":        "red",
+					"window_start": float64(1541152485000),
+					"window_end":   float64(1541152487000),
 				}},
 				{{
-					"color": "red",
-					"size":  float64(3),
-					"ts":    float64(1541152486013),
-				}, {
-					"color": "blue",
-					"size":  float64(6),
-					"ts":    float64(1541152486822),
+					"color":        "red",
+					"window_start": float64(1541152486000),
+					"window_end":   float64(1541152488000),
 				}},
 				{{
-					"color": "yellow",
-					"size":  float64(4),
-					"ts":    float64(1541152488442),
+					"color":        "yellow",
+					"window_start": float64(1541152487000),
+					"window_end":   float64(1541152489000),
 				}},
 				{{
-					"color": "yellow",
-					"size":  float64(4),
-					"ts":    float64(1541152488442),
+					"color":        "yellow",
+					"window_start": float64(1541152488000),
+					"window_end":   float64(1541152490000),
 				}},
 			},
 			M: map[string]interface{}{
@@ -649,11 +653,13 @@ func TestWindow(t *testing.T) {
 			},
 		}, {
 			Name: `TestWindowRule11`,
-			Sql:  `SELECT color, name FROM demo INNER JOIN table1 on demo.ts = table1.id where demo.size > 2 and table1.size > 1 GROUP BY tumblingwindow(ss, 1)`,
+			Sql:  `SELECT color, name, window_start(), window_end() FROM demo INNER JOIN table1 on demo.ts = table1.id where demo.size > 2 and table1.size > 1 GROUP BY tumblingwindow(ss, 1)`,
 			R: [][]map[string]interface{}{
 				{{
-					"color": "red",
-					"name":  "name1",
+					"color":        "red",
+					"name":         "name1",
+					"window_start": float64(1541152486000),
+					"window_end":   float64(1541152487000),
 				}},
 			},
 			M: map[string]interface{}{
@@ -802,15 +808,19 @@ func TestEventWindow(t *testing.T) {
 			},
 		}, {
 			Name: `TestEventWindowRule2`,
-			Sql:  `SELECT color, ts FROM demoE where size > 2 GROUP BY tumblingwindow(ss, 1)`,
+			Sql:  `SELECT window_start(), window_end(), color, ts FROM demoE where size > 2 GROUP BY tumblingwindow(ss, 1)`,
 			R: [][]map[string]interface{}{
 				{{
-					"color": "red",
-					"ts":    float64(1541152486013),
+					"window_start": float64(1541152486000),
+					"window_end":   float64(1541152487000),
+					"color":        "red",
+					"ts":           float64(1541152486013),
 				}},
 				{{
-					"color": "yellow",
-					"ts":    float64(1541152488442),
+					"window_start": float64(1541152488000),
+					"window_end":   float64(1541152489000),
+					"color":        "yellow",
+					"ts":           float64(1541152488442),
 				}},
 			},
 			M: map[string]interface{}{
@@ -916,24 +926,40 @@ func TestEventWindow(t *testing.T) {
 			},
 		}, {
 			Name: `TestEventWindowRule4`,
-			Sql:  `SELECT color FROM demoE GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
+			Sql:  `SELECT  window_start() as ws, color, window_end() as we FROM demoE GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
+					"ws":    float64(1541152484013),
+					"we":    float64(1541152486013),
 				}}, {{
 					"color": "blue",
+					"ws":    float64(1541152485632),
+					"we":    float64(1541152487632),
 				}, {
 					"color": "red",
+					"ws":    float64(1541152485632),
+					"we":    float64(1541152487632),
 				}}, {{
 					"color": "blue",
+					"ws":    float64(1541152486442),
+					"we":    float64(1541152488442),
 				}, {
 					"color": "yellow",
+					"ws":    float64(1541152486442),
+					"we":    float64(1541152488442),
 				}}, {{
 					"color": "blue",
+					"ws":    float64(1541152487252),
+					"we":    float64(1541152489252),
 				}, {
 					"color": "red",
+					"ws":    float64(1541152487252),
+					"we":    float64(1541152489252),
 				}, {
 					"color": "yellow",
+					"ws":    float64(1541152487252),
+					"we":    float64(1541152489252),
 				}},
 			},
 			M: map[string]interface{}{
@@ -1133,6 +1159,104 @@ func TestEventWindow(t *testing.T) {
 				"source_demoErr_0_records_out_total": int64(6),
 
 				"op_2_window_0_exceptions_total":   int64(1),
+				"op_2_window_0_process_latency_us": int64(0),
+				"op_2_window_0_records_in_total":   int64(6),
+				"op_2_window_0_records_out_total":  int64(5),
+			},
+		}, {
+			Name: `TestEventWindowRule8`,
+			Sql:  `SELECT temp, window_start(), window_end() FROM sessionDemoE GROUP BY SessionWindow(ss, 2, 1) `,
+			R: [][]map[string]interface{}{
+				{{
+					"temp":         25.5,
+					"window_start": float64(1541152486013),
+					"window_end":   float64(1541152487013),
+				}}, {{
+					"temp":         28.1,
+					"window_start": float64(1541152487932),
+					"window_end":   float64(1541152490000),
+				}}, {{
+					"temp":         26.2,
+					"window_start": float64(1541152490000),
+					"window_end":   float64(1541152494000),
+				}}, {{
+					"temp":         30.9,
+					"window_start": float64(1541152494000),
+					"window_end":   float64(1541152495112),
+				}},
+			},
+			M: map[string]interface{}{
+				"op_1_preprocessor_sessionDemoE_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_sessionDemoE_0_process_latency_us": int64(0),
+				"op_1_preprocessor_sessionDemoE_0_records_in_total":   int64(12),
+				"op_1_preprocessor_sessionDemoE_0_records_out_total":  int64(12),
+
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(4),
+				"op_3_project_0_records_out_total":  int64(4),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
+
+				"source_sessionDemoE_0_exceptions_total":  int64(0),
+				"source_sessionDemoE_0_records_in_total":  int64(12),
+				"source_sessionDemoE_0_records_out_total": int64(12),
+
+				"op_2_window_0_exceptions_total":   int64(0),
+				"op_2_window_0_process_latency_us": int64(0),
+				"op_2_window_0_records_in_total":   int64(12),
+				"op_2_window_0_records_out_total":  int64(4),
+			},
+		}, {
+			Name: `TestEventWindowRule9`,
+			Sql:  `SELECT window_end(), color, window_start() FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
+			R: [][]map[string]interface{}{
+				{{
+					"color":        "red",
+					"window_start": float64(1541152485000),
+					"window_end":   float64(1541152487000),
+				}},
+				{{
+					"color":        "red",
+					"window_start": float64(1541152486000),
+					"window_end":   float64(1541152488000),
+				}},
+				{{
+					"color":        "blue",
+					"window_start": float64(1541152487000),
+					"window_end":   float64(1541152489000),
+				}}, {{
+					"color":        "yellow",
+					"window_start": float64(1541152488000),
+					"window_end":   float64(1541152490000),
+				}}, {{
+					"color":        "red",
+					"window_start": float64(1541152489000),
+					"window_end":   float64(1541152491000),
+				}},
+			},
+			M: map[string]interface{}{
+				"op_1_preprocessor_demoE_0_exceptions_total":   int64(0),
+				"op_1_preprocessor_demoE_0_process_latency_us": int64(0),
+				"op_1_preprocessor_demoE_0_records_in_total":   int64(6),
+				"op_1_preprocessor_demoE_0_records_out_total":  int64(6),
+
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(5),
+				"op_3_project_0_records_out_total":  int64(5),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
+
+				"op_2_window_0_exceptions_total":   int64(0),
 				"op_2_window_0_process_latency_us": int64(0),
 				"op_2_window_0_records_in_total":   int64(6),
 				"op_2_window_0_records_out_total":  int64(5),

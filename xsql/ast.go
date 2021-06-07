@@ -748,6 +748,7 @@ type Wildcarder interface {
 type DataValuer interface {
 	Valuer
 	Wildcarder
+	Clone() DataValuer
 }
 
 type WildcardValuer struct {
@@ -783,6 +784,8 @@ func (wv *WildcardValuer) AppendAlias(string, interface{}) bool {
 
 type AggregateData interface {
 	AggregateEval(expr Expr, v CallValuer) []interface{}
+	GetWindowStart() int64
+	GetWindowEnd() int64
 }
 
 // Message is a valuer that substitutes values for the mapped interface.
@@ -918,6 +921,14 @@ func (t *Tuple) AggregateEval(expr Expr, v CallValuer) []interface{} {
 	return []interface{}{Eval(expr, MultiValuer(t, v, &WildcardValuer{t}))}
 }
 
+func (t *Tuple) GetWindowStart() int64 {
+	return 0
+}
+
+func (t *Tuple) GetWindowEnd() int64 {
+	return 0
+}
+
 func (t *Tuple) GetTimestamp() int64 {
 	return t.Timestamp
 }
@@ -930,15 +941,53 @@ func (t *Tuple) IsWatermark() bool {
 	return false
 }
 
+func (t *Tuple) Clone() DataValuer {
+	c := &Tuple{
+		Emitter:   t.Emitter,
+		Timestamp: t.Timestamp,
+	}
+	if t.Message != nil {
+		m := Message{}
+		for k, v := range t.Message {
+			m[k] = v
+		}
+		c.Message = m
+	}
+	if t.Metadata != nil {
+		md := Metadata{}
+		for k, v := range t.Metadata {
+			md[k] = v
+		}
+		c.Metadata = md
+	}
+	return c
+}
+
 type WindowTuples struct {
 	Emitter string
 	Tuples  []Tuple
 }
 
-type WindowTuplesSet []WindowTuples
+type WindowRange struct {
+	WindowStart int64
+	WindowEnd   int64
+}
+
+func (r *WindowRange) GetWindowStart() int64 {
+	return r.WindowStart
+}
+
+func (r *WindowRange) GetWindowEnd() int64 {
+	return r.WindowEnd
+}
+
+type WindowTuplesSet struct {
+	Content []WindowTuples
+	*WindowRange
+}
 
 func (w WindowTuplesSet) GetBySrc(src string) []Tuple {
-	for _, me := range w {
+	for _, me := range w.Content {
 		if me.Emitter == src {
 			return me.Tuples
 		}
@@ -947,20 +996,20 @@ func (w WindowTuplesSet) GetBySrc(src string) []Tuple {
 }
 
 func (w WindowTuplesSet) Len() int {
-	if len(w) > 0 {
-		return len(w[0].Tuples)
+	if len(w.Content) > 0 {
+		return len(w.Content[0].Tuples)
 	}
 	return 0
 }
 func (w WindowTuplesSet) Swap(i, j int) {
-	if len(w) > 0 {
-		s := w[0].Tuples
+	if len(w.Content) > 0 {
+		s := w.Content[0].Tuples
 		s[i], s[j] = s[j], s[i]
 	}
 }
 func (w WindowTuplesSet) Index(i int) Valuer {
-	if len(w) > 0 {
-		s := w[0].Tuples
+	if len(w.Content) > 0 {
+		s := w.Content[0].Tuples
 		return &(s[i])
 	}
 	return nil
@@ -968,11 +1017,11 @@ func (w WindowTuplesSet) Index(i int) Valuer {
 
 func (w WindowTuplesSet) AddTuple(tuple *Tuple) WindowTuplesSet {
 	found := false
-	for i, t := range w {
+	for i, t := range w.Content {
 		if t.Emitter == tuple.Emitter {
 			t.Tuples = append(t.Tuples, *tuple)
 			found = true
-			w[i] = t
+			w.Content[i] = t
 			break
 		}
 	}
@@ -980,14 +1029,14 @@ func (w WindowTuplesSet) AddTuple(tuple *Tuple) WindowTuplesSet {
 	if !found {
 		ets := &WindowTuples{Emitter: tuple.Emitter}
 		ets.Tuples = append(ets.Tuples, *tuple)
-		w = append(w, *ets)
+		w.Content = append(w.Content, *ets)
 	}
 	return w
 }
 
 //Sort by tuple timestamp
 func (w WindowTuplesSet) Sort() {
-	for _, t := range w {
+	for _, t := range w.Content {
 		tuples := t.Tuples
 		sort.SliceStable(tuples, func(i, j int) bool {
 			return tuples[i].Timestamp < tuples[j].Timestamp
@@ -998,10 +1047,10 @@ func (w WindowTuplesSet) Sort() {
 
 func (w WindowTuplesSet) AggregateEval(expr Expr, v CallValuer) []interface{} {
 	var result []interface{}
-	if len(w) != 1 { //should never happen
+	if len(w.Content) != 1 { //should never happen
 		return nil
 	}
-	for _, t := range w[0].Tuples {
+	for _, t := range w.Content[0].Tuples {
 		result = append(result, Eval(expr, MultiValuer(&t, v, &WildcardValuer{&t})))
 	}
 	return result
@@ -1099,25 +1148,39 @@ func (jt *JoinTuple) All(stream string) (interface{}, bool) {
 	return nil, false
 }
 
-type JoinTupleSets []JoinTuple
+func (jt *JoinTuple) Clone() DataValuer {
+	ts := make([]Tuple, len(jt.Tuples))
+	for i, t := range jt.Tuples {
+		ts[i] = *(t.Clone().(*Tuple))
+	}
+	return &JoinTuple{Tuples: ts}
+}
 
-func (s JoinTupleSets) Len() int           { return len(s) }
-func (s JoinTupleSets) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s JoinTupleSets) Index(i int) Valuer { return &(s[i]) }
+type JoinTupleSets struct {
+	Content []JoinTuple
+	*WindowRange
+}
 
-func (s JoinTupleSets) AggregateEval(expr Expr, v CallValuer) []interface{} {
+func (s *JoinTupleSets) Len() int           { return len(s.Content) }
+func (s *JoinTupleSets) Swap(i, j int)      { s.Content[i], s.Content[j] = s.Content[j], s.Content[i] }
+func (s *JoinTupleSets) Index(i int) Valuer { return &(s.Content[i]) }
+
+func (s *JoinTupleSets) AggregateEval(expr Expr, v CallValuer) []interface{} {
 	var result []interface{}
-	for _, t := range s {
+	for _, t := range s.Content {
 		result = append(result, Eval(expr, MultiValuer(&t, v, &WildcardValuer{&t})))
 	}
 	return result
 }
 
-type GroupedTuples []DataValuer
+type GroupedTuples struct {
+	Content []DataValuer
+	*WindowRange
+}
 
 func (s GroupedTuples) AggregateEval(expr Expr, v CallValuer) []interface{} {
 	var result []interface{}
-	for _, t := range s {
+	for _, t := range s.Content {
 		result = append(result, Eval(expr, MultiValuer(t, v, &WildcardValuer{t})))
 	}
 	return result
@@ -1127,7 +1190,7 @@ type GroupedTuplesSet []GroupedTuples
 
 func (s GroupedTuplesSet) Len() int           { return len(s) }
 func (s GroupedTuplesSet) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s GroupedTuplesSet) Index(i int) Valuer { return s[i][0] }
+func (s GroupedTuplesSet) Index(i int) Valuer { return s[i].Content[0] }
 
 type SortingData interface {
 	Len() int
@@ -1403,22 +1466,34 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 		return &BracketEvalResult{Start: expr.Index, End: expr.Index}
 	case *Call:
 		if valuer, ok := v.Valuer.(CallValuer); ok {
-			var args []interface{}
-			if len(expr.Args) > 0 {
-				args = make([]interface{}, len(expr.Args))
-				for i, arg := range expr.Args {
-					if aggreValuer, ok := valuer.(AggregateCallValuer); IsAggFunc(expr) && ok {
-						args[i] = aggreValuer.GetAllTuples().AggregateEval(arg, aggreValuer.GetSingleCallValuer())
+			switch expr.Name {
+			case "window_start", "window_end":
+				if aggreValuer, ok := valuer.(AggregateCallValuer); ok {
+					ad := aggreValuer.GetAllTuples()
+					if expr.Name == "window_start" {
+						return ad.GetWindowStart()
 					} else {
-						args[i] = v.Eval(arg)
-						if _, ok := args[i].(error); ok {
-							return args[i]
+						return ad.GetWindowEnd()
+					}
+				}
+			default:
+				var args []interface{}
+				if len(expr.Args) > 0 {
+					args = make([]interface{}, len(expr.Args))
+					for i, arg := range expr.Args {
+						if aggreValuer, ok := valuer.(AggregateCallValuer); IsAggFunc(expr) && ok {
+							args[i] = aggreValuer.GetAllTuples().AggregateEval(arg, aggreValuer.GetSingleCallValuer())
+						} else {
+							args[i] = v.Eval(arg)
+							if _, ok := args[i].(error); ok {
+								return args[i]
+							}
 						}
 					}
 				}
+				val, _ := valuer.Call(expr.Name, args)
+				return val
 			}
-			val, _ := valuer.Call(expr.Name, args)
-			return val
 		}
 		return nil
 	case *FieldRef:

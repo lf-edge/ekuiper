@@ -52,10 +52,10 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 		input.Tuples = f
 		return input
 	case xsql.WindowTuplesSet:
-		if len(input) != 1 {
+		if len(input.Content) != 1 {
 			return fmt.Errorf("run Where error: the input WindowTuplesSet with multiple tuples cannot be evaluated")
 		}
-		ms := input[0].Tuples
+		ms := input.Content[0].Tuples
 		r := ms[:0]
 		for _, v := range ms {
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&v, fv)}
@@ -72,11 +72,11 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 			}
 		}
 		if len(r) > 0 {
-			input[0].Tuples = r
+			input.Content[0].Tuples = r
 			return input
 		}
-	case xsql.JoinTupleSets:
-		ms := input
+	case *xsql.JoinTupleSets:
+		ms := input.Content
 		r := ms[:0]
 		for _, v := range ms {
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&v, fv)}
@@ -92,8 +92,9 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 				return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
 		}
+		input.Content = r
 		if len(r) > 0 {
-			return r
+			return input
 		}
 	default:
 		return fmt.Errorf("run Where error: invalid input %[1]T(%[1]v)", input)
