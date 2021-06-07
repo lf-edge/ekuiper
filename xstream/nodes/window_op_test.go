@@ -65,32 +65,34 @@ func TestCountWindow(t *testing.T) {
 			expWinCount: 1,
 			winTupleSets: []xsql.WindowTuplesSet{
 				{
-					xsql.WindowTuples{
-						Emitter: "",
-						Tuples: []xsql.Tuple{
-							{
-								Message: map[string]interface{}{
-									"f1": "v1",
+					Content: []xsql.WindowTuples{
+						{
+							Emitter: "",
+							Tuples: []xsql.Tuple{
+								{
+									Message: map[string]interface{}{
+										"f1": "v1",
+									},
 								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f2": "v2",
+								{
+									Message: map[string]interface{}{
+										"f2": "v2",
+									},
 								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f3": "v3",
+								{
+									Message: map[string]interface{}{
+										"f3": "v3",
+									},
 								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f4": "v4",
+								{
+									Message: map[string]interface{}{
+										"f4": "v4",
+									},
 								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f5": "v5",
+								{
+									Message: map[string]interface{}{
+										"f5": "v5",
+									},
 								},
 							},
 						},
@@ -129,22 +131,24 @@ func TestCountWindow(t *testing.T) {
 			expWinCount: 1,
 			winTupleSets: []xsql.WindowTuplesSet{
 				{
-					xsql.WindowTuples{
-						Emitter: "",
-						Tuples: []xsql.Tuple{
-							{
-								Message: map[string]interface{}{
-									"f3": "v3",
+					Content: []xsql.WindowTuples{
+						{
+							Emitter: "",
+							Tuples: []xsql.Tuple{
+								{
+									Message: map[string]interface{}{
+										"f3": "v3",
+									},
 								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f4": "v4",
+								{
+									Message: map[string]interface{}{
+										"f4": "v4",
+									},
 								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f5": "v5",
+								{
+									Message: map[string]interface{}{
+										"f5": "v5",
+									},
 								},
 							},
 						},
@@ -173,17 +177,19 @@ func TestCountWindow(t *testing.T) {
 			expWinCount: 1,
 			winTupleSets: []xsql.WindowTuplesSet{
 				{
-					xsql.WindowTuples{
-						Emitter: "",
-						Tuples: []xsql.Tuple{
-							{
-								Message: map[string]interface{}{
-									"f4": "v4",
+					Content: []xsql.WindowTuples{
+						{
+							Emitter: "",
+							Tuples: []xsql.Tuple{
+								{
+									Message: map[string]interface{}{
+										"f4": "v4",
+									},
 								},
-							},
-							{
-								Message: map[string]interface{}{
-									"f5": "v5",
+								{
+									Message: map[string]interface{}{
+										"f5": "v5",
+									},
 								},
 							},
 						},

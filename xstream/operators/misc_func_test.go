@@ -206,7 +206,7 @@ func TestMiscFunc_Apply1(t *testing.T) {
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{
-					"a": float64(1.62000273e+09),
+					"a": 1.62000273e+09,
 					"b": "ya",
 					"c": "myc",
 				},
@@ -247,16 +247,18 @@ func TestMiscFunc_Apply1(t *testing.T) {
 func TestMqttFunc_Apply2(t *testing.T) {
 	var tests = []struct {
 		sql    string
-		data   xsql.JoinTupleSets
+		data   *xsql.JoinTupleSets
 		result []map[string]interface{}
 	}{
 		{
 			sql: "SELECT id1, mqtt(src1.topic) AS a, mqtt(src2.topic) as b FROM src1 LEFT JOIN src2 ON src1.id1 = src2.id1",
-			data: xsql.JoinTupleSets{
-				xsql.JoinTuple{
-					Tuples: []xsql.Tuple{
-						{Emitter: "src1", Message: xsql.Message{"id1": "1", "f1": "v1"}, Metadata: xsql.Metadata{"topic": "devices/type1/device001"}},
-						{Emitter: "src2", Message: xsql.Message{"id2": "1", "f2": "w1"}, Metadata: xsql.Metadata{"topic": "devices/type2/device001"}},
+			data: &xsql.JoinTupleSets{
+				Content: []xsql.JoinTuple{
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": "1", "f1": "v1"}, Metadata: xsql.Metadata{"topic": "devices/type1/device001"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": "1", "f2": "w1"}, Metadata: xsql.Metadata{"topic": "devices/type2/device001"}},
+						},
 					},
 				},
 			},
