@@ -32,11 +32,11 @@ func (v *AggregateFunctionValuer) GetSingleCallValuer() CallValuer {
 	return v.fv
 }
 
-func (v *AggregateFunctionValuer) Value(key string) (interface{}, bool) {
+func (v *AggregateFunctionValuer) Value(string) (interface{}, bool) {
 	return nil, false
 }
 
-func (v *AggregateFunctionValuer) Meta(key string) (interface{}, bool) {
+func (v *AggregateFunctionValuer) Meta(string) (interface{}, bool) {
 	return nil, false
 }
 
