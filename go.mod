@@ -1,6 +1,7 @@
 module github.com/emqx/kuiper
 
 require (
+	github.com/Masterminds/sprig/v3 v3.2.1
 	github.com/PaesslerAG/gval v1.0.0
 	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/benbjohnson/clock v1.0.0
@@ -16,6 +17,8 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.3
+	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/jhump/protoreflect v1.8.2
 	github.com/jonboulle/clockwork v0.2.2 // indirect
@@ -23,9 +26,9 @@ require (
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lestrrat-go/strftime v1.0.3 // indirect
 	github.com/mattn/go-sqlite3 v1.14.5
+	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/msgpack-rpc/msgpack-rpc-go v0.0.0-20131026060856-c76397e1782b
 	github.com/msgpack/msgpack-go v0.0.0-20130625150338-8224460e6fa3 // indirect
-	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/pebbe/zmq4 v1.2.2
 	github.com/prometheus/client_golang v1.2.1
 	github.com/sirupsen/logrus v1.4.2
