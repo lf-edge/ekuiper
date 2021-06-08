@@ -16,6 +16,8 @@ Aggregate functions perform a calculation on a set of values and return a single
 | sum      | sum(col1)   | The sum of all the values in a group. The null values will be ignored.           |
 | collect   | collect(*), collect(col1)   | Returns an array with all column or the whole record (when the parameter is *) values from the group.  |
 | deduplicate| deduplicate(col, false)   | Returns the deduplicate results in the group, usually a window. The first argument is the column as the key to deduplicate; the second argument is whether to return all items or just the latest item which is not duplicate. If the latest item is a duplicate, the sink will receive an empty map. Set the sink property [omitIfEmpty](../rules/overview.md#sink_actions) to the sink to not triggering the action.   |
+| window_start| window_start()   | Return the window start timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.   |
+| window_end| window_end()   | Return the window end timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.  |
 
 ### Collect() Examples
 
