@@ -17,7 +17,7 @@ func TestParser_ParseTree(t *testing.T) {
 		{
 			s: `CREATE STREAM demo (
 					USERID BIGINT,
-				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID");`,
+				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", SHARED="true");`,
 			stmt: &StreamStmt{
 				Name: StreamName("demo"),
 				StreamFields: []StreamField{
@@ -27,6 +27,7 @@ func TestParser_ParseTree(t *testing.T) {
 					DATASOURCE: "users",
 					FORMAT:     "JSON",
 					KEY:        "USERID",
+					SHARED:     true,
 				},
 			},
 		},
