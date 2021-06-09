@@ -1197,7 +1197,7 @@ func (p *Parser) parseStreamOptions() (*Options, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok == LPAREN {
 		lStack.Push(LPAREN)
 		for {
-			if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == DATASOURCE || tok1 == FORMAT || tok1 == KEY || tok1 == CONF_KEY || tok1 == STRICT_VALIDATION || tok1 == TYPE || tok1 == TIMESTAMP || tok1 == TIMESTAMP_FORMAT || tok1 == RETAIN_SIZE {
+			if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == DATASOURCE || tok1 == FORMAT || tok1 == KEY || tok1 == CONF_KEY || tok1 == STRICT_VALIDATION || tok1 == TYPE || tok1 == TIMESTAMP || tok1 == TIMESTAMP_FORMAT || tok1 == RETAIN_SIZE || tok1 == SHARED {
 				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == EQ {
 					if tok3, lit3 := p.scanIgnoreWhitespace(); tok3 == STRING {
 						switch tok1 {
@@ -1212,6 +1212,12 @@ func (p *Parser) parseStreamOptions() (*Options, error) {
 								return nil, fmt.Errorf("found %q, expect number value in %s option.", lit3, tok1)
 							} else {
 								opts.RETAIN_SIZE = val
+							}
+						case SHARED:
+							if val := strings.ToUpper(lit3); (val != "TRUE") && (val != "FALSE") {
+								return nil, fmt.Errorf("found %q, expect TRUE/FALSE value in %s option.", lit3, tok1)
+							} else {
+								opts.SHARED = (val == "TRUE")
 							}
 						default:
 							f := v.Elem().FieldByName(lit1)
@@ -1237,7 +1243,7 @@ func (p *Parser) parseStreamOptions() (*Options, error) {
 					return nil, fmt.Errorf("Parenthesis is not matched in options definition.")
 				}
 			} else {
-				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE).", lit1)
+				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE).", lit1)
 			}
 		}
 	} else {

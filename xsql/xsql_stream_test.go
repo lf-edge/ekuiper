@@ -55,7 +55,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 		{
 			s: `CREATE STREAM demo (
 					USERID BIGINT,
-				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", STRICT_VALIDATION="true");`,
+				) WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", STRICT_VALIDATION="true", SHARED="true");`,
 			stmt: &StreamStmt{
 				Name: StreamName("demo"),
 				StreamFields: []StreamField{
@@ -66,6 +66,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					FORMAT:            "JSON",
 					KEY:               "USERID",
 					STRICT_VALIDATION: true,
+					SHARED:            true,
 				},
 			},
 		},
@@ -239,7 +240,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				StreamFields: nil,
 				Options:      nil,
 			},
-			err: `found "sources", unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE).`,
+			err: `found "sources", unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE).`,
 		},
 
 		{

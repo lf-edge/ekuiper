@@ -121,6 +121,7 @@ const (
 	TIMESTAMP
 	TIMESTAMP_FORMAT
 	RETAIN_SIZE
+	SHARED
 
 	DD
 	HH
@@ -214,6 +215,7 @@ var tokens = []string{
 	TIMESTAMP:         "TIMESTAMP",
 	TIMESTAMP_FORMAT:  "TIMESTAMP_FORMAT",
 	RETAIN_SIZE:       "RETAIN_SIZE",
+	SHARED:            "SHARED",
 
 	AND:   "AND",
 	OR:    "OR",
@@ -485,6 +487,8 @@ func (s *Scanner) ScanIdent() (tok Token, lit string) {
 		return TIMESTAMP_FORMAT, lit
 	case "RETAIN_SIZE":
 		return RETAIN_SIZE, lit
+	case "SHARED":
+		return SHARED, lit
 	case "DD":
 		return DD, lit
 	case "HH":
