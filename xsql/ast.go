@@ -473,6 +473,7 @@ type Options struct {
 	TIMESTAMP         string
 	TIMESTAMP_FORMAT  string
 	RETAIN_SIZE       int
+	SHARED            bool
 }
 
 func (o Options) node() {}

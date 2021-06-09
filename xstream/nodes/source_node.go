@@ -11,13 +11,13 @@ import (
 
 type SourceNode struct {
 	*defaultNode
-	streamType xsql.StreamType
-	sourceType string
-	options    *xsql.Options
-	isMock     bool
-
-	mutex   sync.RWMutex
-	sources []api.Source
+	streamType   xsql.StreamType
+	sourceType   string
+	options      *xsql.Options
+	bufferLength int
+	props        map[string]interface{}
+	mutex        sync.RWMutex
+	sources      []api.Source
 }
 
 func NewSourceNode(name string, st xsql.StreamType, options *xsql.Options) *SourceNode {
@@ -41,9 +41,9 @@ func NewSourceNode(name string, st xsql.StreamType, options *xsql.Options) *Sour
 	}
 }
 
-const OFFSET_KEY = "$$offset"
+const OffsetKey = "$$offset"
 
-//Only for mock source, do not use it in production
+// NewSourceNodeWithSource Only for mock source, do not use it in production
 func NewSourceNodeWithSource(name string, source api.Source, options *xsql.Options) *SourceNode {
 	return &SourceNode{
 		sources: []api.Source{source},
@@ -63,6 +63,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	logger.Infof("open source node %s with option %v", m.name, m.options)
 	go func() {
 		props := getSourceConf(ctx, m.sourceType, m.options)
+		m.props = props
 		if c, ok := props["concurrency"]; ok {
 			if t, err := common.ToInt(c, common.STRICT); err != nil || t <= 0 {
 				logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", c)
@@ -78,6 +79,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				bl = t
 			}
 		}
+		m.bufferLength = bl
 		// Set retain size for table type
 		if m.options.RETAIN_SIZE > 0 && m.streamType == xsql.TypeTable {
 			props["$retainSize"] = m.options.RETAIN_SIZE
@@ -87,22 +89,22 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 		for i := 0; i < m.concurrency; i++ { // workers
 			go func(instance int) {
 				//Do open source instances
-				var source api.Source
-				var err error
+				var (
+					source api.Source
+					si     *sourceInstance
+					buffer *DynamicChannelBuffer
+					err    error
+				)
 				if !m.isMock {
-					source, err = getSource(m.sourceType)
-					if err != nil {
-						m.drainError(errCh, err, ctx, logger)
-						return
-					}
-					err = source.Configure(m.options.DATASOURCE, props)
+					si, err = getSourceInstance(m, instance)
 					if err != nil {
 						m.drainError(errCh, err, ctx, logger)
 						return
 					}
 					m.mutex.Lock()
-					m.sources = append(m.sources, source)
+					m.sources = append(m.sources, si.source)
 					m.mutex.Unlock()
+					buffer = si.dataCh
 				} else {
 					logger.Debugf("get source instance %d from %d sources", instance, len(m.sources))
 					source = m.sources[instance]
@@ -115,23 +117,6 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.mutex.Lock()
 				m.statManagers = append(m.statManagers, stats)
 				m.mutex.Unlock()
-
-				if rw, ok := source.(api.Rewindable); ok {
-					if offset, err := ctx.GetState(OFFSET_KEY); err != nil {
-						m.drainError(errCh, err, ctx, logger)
-					} else if offset != nil {
-						logger.Infof("Source rewind from %v", offset)
-						err = rw.Rewind(offset)
-						if err != nil {
-							m.drainError(errCh, err, ctx, logger)
-						}
-					}
-				}
-
-				buffer := NewDynamicChannelBuffer()
-				buffer.SetLimit(bl)
-				sourceErrCh := make(chan error)
-				go source.Open(ctx.WithInstance(instance), buffer.In, sourceErrCh)
 				logger.Infof("Start source %s instance %d successfully", m.name, instance)
 				for {
 					select {
@@ -140,7 +125,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						m.close(ctx, logger)
 						buffer.Close()
 						return
-					case err := <-sourceErrCh:
+					case err := <-si.errorCh:
 						m.drainError(errCh, err, ctx, logger)
 						return
 					case data := <-buffer.Out:
@@ -157,7 +142,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 							if offset, err := rw.GetOffset(); err != nil {
 								m.drainError(errCh, err, ctx, logger)
 							} else {
-								err = ctx.PutState(OFFSET_KEY, offset)
+								err = ctx.PutState(OffsetKey, offset)
 								if err != nil {
 									m.drainError(errCh, err, ctx, logger)
 								}
@@ -210,9 +195,13 @@ func (m *SourceNode) drainError(errCh chan<- error, err error, ctx api.StreamCon
 }
 
 func (m *SourceNode) close(ctx api.StreamContext, logger api.Logger) {
-	for _, s := range m.sources {
-		if err := s.Close(ctx); err != nil {
-			logger.Warnf("close source fails: %v", err)
+	if !m.options.SHARED {
+		for _, s := range m.sources {
+			if err := s.Close(ctx); err != nil {
+				logger.Warnf("close source fails: %v", err)
+			}
 		}
+	} else {
+		removeSourceInstance(m)
 	}
 }
