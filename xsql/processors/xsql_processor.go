@@ -224,6 +224,9 @@ func printOptions(opts *xsql.Options, buff *bytes.Buffer) {
 	if opts.RETAIN_SIZE != 0 {
 		buff.WriteString(fmt.Sprintf("RETAIN_SIZE: %d\n", opts.RETAIN_SIZE))
 	}
+	if opts.SHARED {
+		buff.WriteString(fmt.Sprintf("SHARED: %v\n", opts.SHARED))
+	}
 	if opts.STRICT_VALIDATION {
 		buff.WriteString(fmt.Sprintf("STRICT_VALIDATION: %v\n", opts.STRICT_VALIDATION))
 	}
