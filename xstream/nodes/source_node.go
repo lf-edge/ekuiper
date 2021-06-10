@@ -6,6 +6,7 @@ import (
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/extensions"
+	"github.com/emqx/kuiper/xstream/topotest/mocknodes"
 	"sync"
 )
 
@@ -43,20 +44,6 @@ func NewSourceNode(name string, st xsql.StreamType, options *xsql.Options) *Sour
 
 const OffsetKey = "$$offset"
 
-// NewSourceNodeWithSource Only for mock source, do not use it in production
-func NewSourceNodeWithSource(name string, source api.Source, options *xsql.Options) *SourceNode {
-	return &SourceNode{
-		sources: []api.Source{source},
-		defaultNode: &defaultNode{
-			name:        name,
-			outputs:     make(map[string]chan<- interface{}),
-			concurrency: 1,
-		},
-		options: options,
-		isMock:  true,
-	}
-}
-
 func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	m.ctx = ctx
 	logger := ctx.GetLogger()
@@ -90,25 +77,21 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			go func(instance int) {
 				//Do open source instances
 				var (
-					source api.Source
 					si     *sourceInstance
 					buffer *DynamicChannelBuffer
 					err    error
 				)
-				if !m.isMock {
-					si, err = getSourceInstance(m, instance)
-					if err != nil {
-						m.drainError(errCh, err, ctx, logger)
-						return
-					}
-					m.mutex.Lock()
-					m.sources = append(m.sources, si.source)
-					m.mutex.Unlock()
-					buffer = si.dataCh
-				} else {
-					logger.Debugf("get source instance %d from %d sources", instance, len(m.sources))
-					source = m.sources[instance]
+
+				si, err = getSourceInstance(m, instance)
+				if err != nil {
+					m.drainError(errCh, err, ctx, logger)
+					return
 				}
+				m.mutex.Lock()
+				m.sources = append(m.sources, si.source)
+				m.mutex.Unlock()
+				buffer = si.dataCh
+
 				stats, err := NewStatManager("source", ctx)
 				if err != nil {
 					m.drainError(errCh, err, ctx, logger)
@@ -138,7 +121,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						m.Broadcast(tuple)
 						stats.IncTotalRecordsOut()
 						stats.SetBufferLength(int64(buffer.GetLength()))
-						if rw, ok := source.(api.Rewindable); ok {
+						if rw, ok := si.source.(api.Rewindable); ok {
 							if offset, err := rw.GetOffset(); err != nil {
 								m.drainError(errCh, err, ctx, logger)
 							} else {
@@ -158,9 +141,6 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (m *SourceNode) reset() {
-	if !m.isMock {
-		m.sources = nil
-	}
 	m.statManagers = nil
 }
 
@@ -176,6 +156,8 @@ func doGetSource(t string) (api.Source, error) {
 		s = &extensions.HTTPPullSource{}
 	case "file":
 		s = &extensions.FileSource{}
+	case "mock":
+		s = &mocknodes.MockSource{}
 	default:
 		s, err = plugins.GetSource(t)
 		if err != nil {

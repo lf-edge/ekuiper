@@ -18,13 +18,6 @@ type MockSource struct {
 
 const TIMELEAP = 200
 
-func NewMockSource(data []*xsql.Tuple) *MockSource {
-	mock := &MockSource{
-		data: data,
-	}
-	return mock
-}
-
 func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
 	log := ctx.GetLogger()
 	mockClock := mockclock.GetMockClock()
@@ -80,6 +73,7 @@ func (m *MockSource) Close(_ api.StreamContext) error {
 	return nil
 }
 
-func (m *MockSource) Configure(_ string, _ map[string]interface{}) error {
+func (m *MockSource) Configure(dataKey string, _ map[string]interface{}) error {
+	m.data = TestData[dataKey]
 	return nil
 }
