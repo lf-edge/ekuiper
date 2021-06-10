@@ -53,7 +53,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 - [EdgeX rule engine tutorial](./edgex/edgex_rule_engine_tutorial.md)
 
 ## Slack channels
-Join our [Slack](https://join.slack.com/t/emqx/shared_invite/zt-7xrracuf-GGdbNB1pARtaZKvv6IfTvw), and then join [kuiper](https://emqx.slack.com/archives/C0138SZP23Y) channel.
+Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFzM2CEABBcKYGEVCgkw), and then join [ekuiper](https://lfedge.slack.com/archives/C024F4P7KCK) or [ekuiper-user](https://lfedge.slack.com/archives/C024F4SMEMR) channel.
 
 ## Performance test result
 

@@ -65,7 +65,7 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 - [Forum](https://askemq.com/c/kuiper/)
 - [Weibo](https://weibo.com/emqtt)
 - [Blog](https://www.emqx.cn/blog)
-- [Slack](https://kuiper-slack-invite.emqx.io/)
+- [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFzM2CEABBcKYGEVCgkw): 加入 [ekuiper](https://lfedge.slack.com/archives/C024F4P7KCK) 或者 [ekuiper-user](https://lfedge.slack.com/archives/C024F4SMEMR) 频道。
 - [Twitter](https://twitter.com/EMQTech)
 - [Reddit](https://www.reddit.com/r/emqx/)
 - [Facebook](https://www.facebook.com/emqxmqtt)
