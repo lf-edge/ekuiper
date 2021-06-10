@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/emqx/kuiper/xstream"
 	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/xstream/topotest/mocknodes"
 	"testing"
 )
 
@@ -843,7 +844,7 @@ func TestSingleSQLForBinary(t *testing.T) {
 			Sql:  `SELECT * FROM binDemo`,
 			R: [][]map[string]interface{}{
 				{{
-					"self": image,
+					"self": mocknodes.Image,
 				}},
 			},
 			W: 50,
