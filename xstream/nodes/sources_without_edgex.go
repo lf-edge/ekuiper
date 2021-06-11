@@ -1,4 +1,5 @@
 // +build !edgex
+// +build !test
 
 package nodes
 

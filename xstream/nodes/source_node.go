@@ -6,7 +6,6 @@ import (
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
 	"github.com/emqx/kuiper/xstream/extensions"
-	"github.com/emqx/kuiper/xstream/topotest/mocknodes"
 	"sync"
 )
 
@@ -156,8 +155,6 @@ func doGetSource(t string) (api.Source, error) {
 		s = &extensions.HTTPPullSource{}
 	case "file":
 		s = &extensions.FileSource{}
-	case "mock":
-		s = &mocknodes.MockSource{}
 	default:
 		s, err = plugins.GetSource(t)
 		if err != nil {
