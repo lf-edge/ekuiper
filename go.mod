@@ -5,9 +5,10 @@ require (
 	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/benbjohnson/clock v1.0.0
 	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
-	github.com/eclipse/paho.mqtt.golang v1.3.4
-	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.0.0-dev.94
-	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.0-dev.15
+	github.com/eclipse/paho.mqtt.golang v1.3.5
+	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.0.0-dev.100
+	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.0-dev.16
+	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/gdexlab/go-render v1.0.1
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
@@ -24,7 +25,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.5
 	github.com/msgpack-rpc/msgpack-rpc-go v0.0.0-20131026060856-c76397e1782b
 	github.com/msgpack/msgpack-go v0.0.0-20130625150338-8224460e6fa3 // indirect
-	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/pebbe/zmq4 v1.2.7
 	github.com/prometheus/client_golang v1.2.1
 	github.com/sirupsen/logrus v1.4.2
