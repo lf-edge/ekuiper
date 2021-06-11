@@ -69,6 +69,18 @@ func TestSinkTemplate_Apply(t *testing.T) {
 			},
 			data:   []byte(`[{"temperature":33,"humidity":70,"__meta": {"messageid":45,"other": "mock"}}]`),
 			result: [][]byte{[]byte(`[{"__meta":{"messageid":45,"other":"mock"},"temp":33}]`)},
+		}, {
+			config: map[string]interface{}{
+				"dataTemplate": `[{{range $index, $ele := .}}{{if $index}},{{end}}{"result":{{add $ele.temperature $ele.humidity}}}{{end}}]`,
+			},
+			data:   []byte(`[{"temperature":33,"humidity":70},{"temperature":22,"humidity":50},{"temperature":11,"humidity":90}]`),
+			result: [][]byte{[]byte(`[{"result":103},{"result":72},{"result":101}]`)},
+		}, {
+			config: map[string]interface{}{
+				"dataTemplate": `{{$counter := 0}}{{range $index, $ele := .}}{{if ne 90.0 $ele.humidity}}{{$counter = add $counter 1}}{{end}}{{end}}{"result":{{$counter}}}`,
+			},
+			data:   []byte(`[{"temperature":33,"humidity":70},{"temperature":22,"humidity":50},{"temperature":11,"humidity":90}]`),
+			result: [][]byte{[]byte(`{"result":2}`)},
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

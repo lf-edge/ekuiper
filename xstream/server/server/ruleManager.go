@@ -116,7 +116,7 @@ func getAllRulesWithStatus() ([]map[string]interface{}, error) {
 	for i, name := range names {
 		s, err := getRuleState(name)
 		if err != nil {
-			return nil, err
+			s = fmt.Sprintf("error: %s", err)
 		}
 		result[i] = map[string]interface{}{
 			"id":     name,
@@ -130,7 +130,7 @@ func getRuleState(name string) (string, error) {
 	if rs, ok := registry.Load(name); ok {
 		return doGetRuleState(rs)
 	} else {
-		return "", fmt.Errorf("Rule %s is not found", name)
+		return "", fmt.Errorf("Rule %s is not found in registry", name)
 	}
 }
 

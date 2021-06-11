@@ -5,9 +5,10 @@ require (
 	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/benbjohnson/clock v1.0.0
 	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
-	github.com/eclipse/paho.mqtt.golang v1.3.4
-	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.0.0-dev.94
-	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.0-dev.15
+	github.com/eclipse/paho.mqtt.golang v1.3.5
+	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.0.0-dev.100
+	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.0-dev.16
+	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/gdexlab/go-render v1.0.1
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
@@ -15,7 +16,9 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.3
+	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/jhump/protoreflect v1.8.2
+	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lestrrat-go/strftime v1.0.3 // indirect
@@ -25,6 +28,8 @@ require (
 	github.com/pebbe/zmq4 v1.2.7
 	github.com/prometheus/client_golang v1.2.1
 	github.com/sirupsen/logrus v1.4.2
+	github.com/smartystreets/goconvey v1.6.4 // indirect
+	github.com/tebeka/strftime v0.1.5 // indirect
 	github.com/ugorji/go/codec v1.2.5
 	github.com/urfave/cli v1.22.0
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344
@@ -34,4 +39,4 @@ require (
 	gopkg.in/ini.v1 v1.62.0
 )
 
-go 1.15
+go 1.16

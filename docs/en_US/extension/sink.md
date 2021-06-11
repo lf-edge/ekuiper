@@ -49,7 +49,7 @@ The [Memory Sink](https://github.com/emqx/kuiper/blob/master/plugins/sinks/memor
 Build the implemented sink as a go plugin and make sure the output so file resides in the plugins/sinks folder.
 
 ```bash
-go build -trimpath --buildmode=plugin -o plugins/sinks/MySink.so plugins/sinks/my_sink.go
+go build -trimpath -modfile extensions.mod --buildmode=plugin -o extensions/sinks/MySink.so extensions/sinks/my_sink.go
 ```
 
 ### Usage

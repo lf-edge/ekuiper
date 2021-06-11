@@ -112,12 +112,15 @@ func (jp *JoinOp) evalSet(input xsql.WindowTuplesSet, join xsql.Join, fv *xsql.F
 		return jp.evalSetWithRightJoin(input, join, false, fv)
 	}
 	for _, left := range lefts {
-		merged := &xsql.JoinTuple{}
-		if join.JoinType == xsql.LEFT_JOIN || join.JoinType == xsql.FULL_JOIN || join.JoinType == xsql.CROSS_JOIN {
-			merged.AddTuple(left)
-		}
-		for _, right := range rights {
+		leftJoined := false
+		for index, right := range rights {
+			tupleJoined := false
+			merged := &xsql.JoinTuple{}
+			if join.JoinType == xsql.LEFT_JOIN || join.JoinType == xsql.FULL_JOIN || join.JoinType == xsql.CROSS_JOIN {
+				merged.AddTuple(left)
+			}
 			if join.JoinType == xsql.CROSS_JOIN {
+				tupleJoined = true
 				merged.AddTuple(right)
 			} else {
 				temp := &xsql.JoinTuple{}
@@ -131,11 +134,11 @@ func (jp *JoinOp) evalSet(input xsql.WindowTuplesSet, join xsql.Join, fv *xsql.F
 					return nil, val
 				case bool:
 					if val {
+						leftJoined = true
+						tupleJoined = true
 						if join.JoinType == xsql.INNER_JOIN {
 							merged.AddTuple(left)
 							merged.AddTuple(right)
-							sets = append(sets, *merged)
-							merged = &xsql.JoinTuple{}
 						} else {
 							merged.AddTuple(right)
 						}
@@ -144,8 +147,15 @@ func (jp *JoinOp) evalSet(input xsql.WindowTuplesSet, join xsql.Join, fv *xsql.F
 					return nil, fmt.Errorf("invalid join condition that returns non-bool value %[1]T(%[1]v)", val)
 				}
 			}
+			if tupleJoined || (!leftJoined && index == len(rights)-1 && len(merged.Tuples) > 0) {
+				leftJoined = true
+				sets = append(sets, *merged)
+			}
 		}
-		if len(merged.Tuples) > 0 {
+		// If no messages in the right
+		if !leftJoined && join.JoinType != xsql.INNER_JOIN {
+			merged := &xsql.JoinTuple{}
+			merged.AddTuple(left)
 			sets = append(sets, *merged)
 		}
 	}
@@ -191,11 +201,11 @@ func (jp *JoinOp) evalSetWithRightJoin(input xsql.WindowTuplesSet, join xsql.Joi
 	sets := xsql.JoinTupleSets{}
 
 	for _, right := range rights {
-		merged := &xsql.JoinTuple{}
-		merged.AddTuple(right)
 		isJoint := false
-
-		for _, left := range lefts {
+		for index, left := range lefts {
+			tupleJoined := false
+			merged := &xsql.JoinTuple{}
+			merged.AddTuple(right)
 			temp := &xsql.JoinTuple{}
 			temp.AddTuple(right)
 			temp.AddTuple(left)
@@ -208,19 +218,20 @@ func (jp *JoinOp) evalSetWithRightJoin(input xsql.WindowTuplesSet, join xsql.Joi
 				if val {
 					merged.AddTuple(left)
 					isJoint = true
+					tupleJoined = true
 				}
 			default:
 				return nil, fmt.Errorf("invalid join condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
+			if !excludeJoint && (tupleJoined || (!isJoint && index == len(lefts)-1 && len(merged.Tuples) > 0)) {
+				isJoint = true
+				sets = append(sets, *merged)
+			}
 		}
-		if excludeJoint {
-			if len(merged.Tuples) > 0 && (!isJoint) {
-				sets = append(sets, *merged)
-			}
-		} else {
-			if len(merged.Tuples) > 0 {
-				sets = append(sets, *merged)
-			}
+		if !isJoint {
+			merged := &xsql.JoinTuple{}
+			merged.AddTuple(right)
+			sets = append(sets, *merged)
 		}
 	}
 	return sets, nil
@@ -241,13 +252,16 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesS
 		return jp.evalRightJoinSets(set, input, join, false, fv)
 	}
 	for _, left := range *set {
-		merged := &xsql.JoinTuple{}
-		if join.JoinType == xsql.LEFT_JOIN || join.JoinType == xsql.FULL_JOIN || join.JoinType == xsql.CROSS_JOIN {
-			merged.AddTuples(left.Tuples)
-		}
+		leftJoined := false
 		innerAppend := false
-		for _, right := range rights {
+		for index, right := range rights {
+			tupleJoined := false
+			merged := &xsql.JoinTuple{}
+			if join.JoinType == xsql.LEFT_JOIN || join.JoinType == xsql.FULL_JOIN || join.JoinType == xsql.CROSS_JOIN {
+				merged.AddTuples(left.Tuples)
+			}
 			if join.JoinType == xsql.CROSS_JOIN {
+				tupleJoined = true
 				merged.AddTuple(right)
 			} else {
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&left, &right, fv)}
@@ -257,6 +271,8 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesS
 					return nil, val
 				case bool:
 					if val {
+						leftJoined = true
+						tupleJoined = true
 						if join.JoinType == xsql.INNER_JOIN && !innerAppend {
 							merged.AddTuples(left.Tuples)
 							innerAppend = true
@@ -267,9 +283,15 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesS
 					return nil, fmt.Errorf("invalid join condition that returns non-bool value %[1]T(%[1]v)", val)
 				}
 			}
+			if tupleJoined || (!leftJoined && index == len(rights)-1 && len(merged.Tuples) > 0) {
+				leftJoined = true
+				newSets = append(newSets, *merged)
+			}
 		}
 
-		if len(merged.Tuples) > 0 {
+		if !leftJoined && join.JoinType != xsql.INNER_JOIN {
+			merged := &xsql.JoinTuple{}
+			merged.AddTuples(left.Tuples)
 			newSets = append(newSets, *merged)
 		}
 	}
@@ -297,10 +319,11 @@ func (jp *JoinOp) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTu
 	newSets := xsql.JoinTupleSets{}
 
 	for _, right := range rights {
-		merged := &xsql.JoinTuple{}
-		merged.AddTuple(right)
 		isJoint := false
-		for _, left := range *set {
+		for index, left := range *set {
+			tupleJoined := false
+			merged := &xsql.JoinTuple{}
+			merged.AddTuple(right)
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&right, &left, fv)}
 			result := evalOn(join, ve, &left, &right)
 			switch val := result.(type) {
@@ -309,21 +332,22 @@ func (jp *JoinOp) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTu
 			case bool:
 				if val {
 					isJoint = true
+					tupleJoined = true
 					merged.AddTuples(left.Tuples)
 				}
 			default:
 				return nil, fmt.Errorf("invalid join condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
+			if !excludeJoint && (tupleJoined || (!isJoint && index == len(*set)-1 && len(merged.Tuples) > 0)) {
+				isJoint = true
+				newSets = append(newSets, *merged)
+			}
 		}
 
-		if excludeJoint {
-			if len(merged.Tuples) > 0 && (!isJoint) {
-				newSets = append(newSets, *merged)
-			}
-		} else {
-			if len(merged.Tuples) > 0 {
-				newSets = append(newSets, *merged)
-			}
+		if !isJoint {
+			merged := &xsql.JoinTuple{}
+			merged.AddTuple(right)
+			newSets = append(newSets, *merged)
 		}
 	}
 	return newSets, nil

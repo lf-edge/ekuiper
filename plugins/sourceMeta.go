@@ -17,9 +17,9 @@ type (
 		ConfKeys map[string][]*fileField `json:"properties"`
 	}
 	uiSource struct {
-		About    *about              `json:"about"`
-		Libs     []string            `json:"libs"`
-		ConfKeys map[string][]*field `json:"properties"`
+		About    *about             `json:"about"`
+		Libs     []string           `json:"libs"`
+		ConfKeys map[string][]field `json:"properties"`
 	}
 	sourceProperty struct {
 		cf   map[string]map[string]interface{}
@@ -44,7 +44,7 @@ func newUiSource(fi *fileSource) (*uiSource, error) {
 	ui := new(uiSource)
 	ui.Libs = fi.Libs
 	ui.About = newAbout(fi.About)
-	ui.ConfKeys = make(map[string][]*field)
+	ui.ConfKeys = make(map[string][]field)
 
 	for k, fields := range fi.ConfKeys {
 		if ui.ConfKeys[k], err = newField(fields); nil != err {
@@ -198,7 +198,7 @@ func GetSourceConfKeys(pluginName string) (keys []string) {
 	if nil == property {
 		return keys
 	}
-	for k, _ := range property.cf {
+	for k := range property.cf {
 		keys = append(keys, k)
 	}
 	return keys
@@ -332,11 +332,9 @@ func DelSourceConfKeyField(pluginName, confKey, language string, content []byte)
 	return property.saveCf(pluginName, language)
 }
 
-func recursionNewFields(template []*field, conf map[string]interface{}, ret *[]*field) error {
+func recursionNewFields(template []field, conf map[string]interface{}, ret *[]field) error {
 	for i := 0; i < len(template); i++ {
-		p := new(field)
-		*p = *template[i]
-		*ret = append(*ret, p)
+		p := template[i]
 		v, ok := conf[template[i].Name]
 		if ok {
 			p.Exist = true
@@ -345,7 +343,7 @@ func recursionNewFields(template []*field, conf map[string]interface{}, ret *[]*
 			continue
 		}
 
-		var auxRet, auxTemplate []*field
+		var auxRet, auxTemplate []field
 		p.Default = &auxRet
 		if nil == v {
 			p.Default = v
@@ -369,15 +367,16 @@ func recursionNewFields(template []*field, conf map[string]interface{}, ret *[]*
 				p.Default = v
 			}
 		}
+		*ret = append(*ret, p)
 	}
 	return nil
 }
 
 func (this *sourceProperty) cfToMeta(language string) (*uiSource, error) {
 	fields := this.meta.ConfKeys["default"]
-	ret := make(map[string][]*field)
+	ret := make(map[string][]field)
 	for k, kvs := range this.cf {
-		var sli []*field
+		var sli []field
 		err := recursionNewFields(fields, kvs, &sli)
 		if nil != err {
 			return nil, fmt.Errorf(`%s%v`, getMsg(language, "source", "type_conversion_fail"), err)
