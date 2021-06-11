@@ -6,8 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2/dtos"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
 	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"log"
@@ -38,27 +38,27 @@ func pubEventClientZeroMq() {
 
 				var testEvent = dtos.NewEvent("demoProfile", "demo", "demoSource")
 				testEvent.Origin = 123
-				err := testEvent.AddSimpleReading("Temperature", v2.ValueTypeInt64, int64(i*8))
+				err := testEvent.AddSimpleReading("Temperature", common.ValueTypeInt64, int64(i*8))
 				if err != nil {
 					fmt.Errorf("Add reading error for %d.Temperature: %v\n", i, i*8)
 				}
-				err = testEvent.AddSimpleReading("Humidity", v2.ValueTypeInt64, int64(i*9))
+				err = testEvent.AddSimpleReading("Humidity", common.ValueTypeInt64, int64(i*9))
 				if err != nil {
 					fmt.Errorf("Add reading error for %d.Humidity: %v\n", i, i*9)
 				}
-				err = testEvent.AddSimpleReading("b1", v2.ValueTypeBool, i%2 == 0)
+				err = testEvent.AddSimpleReading("b1", common.ValueTypeBool, i%2 == 0)
 				if err != nil {
 					fmt.Errorf("Add reading error for %d.b1: %v\n", i, i%2 == 0)
 				}
-				err = testEvent.AddSimpleReading("i1", v2.ValueTypeInt64, int64(i))
+				err = testEvent.AddSimpleReading("i1", common.ValueTypeInt64, int64(i))
 				if err != nil {
 					fmt.Errorf("Add reading error for %d.i1: %v\n", i, i)
 				}
-				err = testEvent.AddSimpleReading("f1", v2.ValueTypeFloat64, float64(i)/2.0)
+				err = testEvent.AddSimpleReading("f1", common.ValueTypeFloat64, float64(i)/2.0)
 				if err != nil {
 					fmt.Errorf("Add reading error for %d.f1: %v\n", i, float64(i)/2.0)
 				}
-				err = testEvent.AddSimpleReading("ui64", v2.ValueTypeUint64, uint64(10796529505058023104))
+				err = testEvent.AddSimpleReading("ui64", common.ValueTypeUint64, uint64(10796529505058023104))
 				if err != nil {
 					fmt.Errorf("Add reading error for %d.ui64: %v\n", i, uint64(10796529505058023104))
 				}
@@ -103,11 +103,11 @@ func pubToAnother() {
 
 		testEvent := dtos.NewEvent("demo1Profile", "demo1", "demo1Source")
 		testEvent.Origin = 123
-		err := testEvent.AddSimpleReading("Temperature", v2.ValueTypeInt64, int64(20))
+		err := testEvent.AddSimpleReading("Temperature", common.ValueTypeInt64, int64(20))
 		if err != nil {
 			fmt.Errorf("Add reading error for Temperature: %v\n", 20)
 		}
-		err = testEvent.AddSimpleReading("Humidity", v2.ValueTypeInt64, int64(30))
+		err = testEvent.AddSimpleReading("Humidity", common.ValueTypeInt64, int64(30))
 		if err != nil {
 			fmt.Errorf("Add reading error for Humidity: %v\n", 20)
 		}
@@ -148,15 +148,15 @@ func pubArrayMessage() {
 		}
 		testEvent := dtos.NewEvent("demo1Profile", "demo1", "demo1Source")
 		testEvent.Origin = 123
-		err := testEvent.AddSimpleReading("ba", v2.ValueTypeBoolArray, []bool{true, true, false})
+		err := testEvent.AddSimpleReading("ba", common.ValueTypeBoolArray, []bool{true, true, false})
 		if err != nil {
 			fmt.Errorf("Add reading error for ba: %v\n", []bool{true, true, false})
 		}
-		err = testEvent.AddSimpleReading("ia", v2.ValueTypeInt32Array, []int32{30, 40, 50})
+		err = testEvent.AddSimpleReading("ia", common.ValueTypeInt32Array, []int32{30, 40, 50})
 		if err != nil {
 			fmt.Errorf("Add reading error for ia: %v\n", []int32{30, 40, 50})
 		}
-		err = testEvent.AddSimpleReading("fa", v2.ValueTypeFloat64Array, []float64{3.14, 3.1415, 3.1415926})
+		err = testEvent.AddSimpleReading("fa", common.ValueTypeFloat64Array, []float64{3.14, 3.1415, 3.1415926})
 		if err != nil {
 			fmt.Errorf("Add reading error for fa: %v\n", []float64{3.14, 3.1415, 3.1415926})
 		}
@@ -199,11 +199,11 @@ func pubToMQTT(host string) {
 		}
 		testEvent := dtos.NewEvent("demo1Profile", "demo1", "demo1Source")
 		testEvent.Origin = 123
-		err := testEvent.AddSimpleReading("Temperature", v2.ValueTypeInt64, int64(20))
+		err := testEvent.AddSimpleReading("Temperature", common.ValueTypeInt64, int64(20))
 		if err != nil {
 			fmt.Errorf("Add reading error for Temperature: %v\n", 20)
 		}
-		err = testEvent.AddSimpleReading("Humidity", v2.ValueTypeInt64, int64(30))
+		err = testEvent.AddSimpleReading("Humidity", common.ValueTypeInt64, int64(30))
 		if err != nil {
 			fmt.Errorf("Add reading error for Humidity: %v\n", 20)
 		}
@@ -239,13 +239,13 @@ func pubMetaSource() {
 				j := int64(i) + 1
 				testEvent := dtos.NewEvent("demo1Profile", device, "demo1Source")
 				testEvent.Origin = 13 * j
-				err := testEvent.AddSimpleReading("Temperature", v2.ValueTypeInt64, j*8)
+				err := testEvent.AddSimpleReading("Temperature", common.ValueTypeInt64, j*8)
 				if err != nil {
 					fmt.Errorf("Add reading error for %d.Temperature: %v\n", i, j*8)
 				}
 				testEvent.Readings[0].Origin = 24 * j
 				testEvent.Readings[0].DeviceName = "Temperature sensor"
-				err = testEvent.AddSimpleReading("Humidity", v2.ValueTypeInt64, j*8)
+				err = testEvent.AddSimpleReading("Humidity", common.ValueTypeInt64, j*8)
 				if err != nil {
 					fmt.Errorf("Add reading error for %d.Humidity: %v\n", i, j*8)
 				}
