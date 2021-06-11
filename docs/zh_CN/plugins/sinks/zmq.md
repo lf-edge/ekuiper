@@ -6,7 +6,7 @@
 
 ```shell
 # cd $kuiper_src
-# go build -trimpath --buildmode=plugin -o plugins/sinks/Zmq.so plugins/sinks/zmq/zmq.go
+# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Zmq.so extensions/sinks/zmq/zmq.go
 # cp plugins/sinks/Zmq.so $kuiper_install/plugins/sinks
 ```
 

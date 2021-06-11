@@ -6,7 +6,7 @@
 
 ```shell
 # cd $kuiper_src
-# go build -trimpath --buildmode=plugin -o plugins/sources/Random.so plugins/sources/random/random.go
+# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Random.so extensions/sources/random/random.go
 # cp plugins/sources/Random.so $kuiper_install/plugins/sources
 ```
 

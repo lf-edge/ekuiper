@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	g_file     string = `httppull.json`
-	g_plugin   string = `httppull`
-	g_cf       string = `{"default":{"url":"http://localhost","method":"post","interval":10000,"timeout":5000,"body":"{}","bodyType":"json","headers":{"Accept":"application/json"}},"ck1":{"url":"127.0.0.1:9527","method":"get","interval":1000,"headers":{"Accept":"application/json"}},"ck2":{"method":"delete","interval":100,"url":"http://localhost:9090/pull"}}`
-	g_template string = `{"author":{"name":"Jiyong Huang","email":"huangjy@emqx.io","company":"EMQ Technologies Co., Ltd","website":"https://www.emqx.io"},"libs":[],"helpUrl":{"en_US":"https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sources/http_pull.md","zh_CN":"https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/http_pull.md"},"properties":{"default":[{"name":"url","default":"127.0.0.1:5536","optional":false,"control":"text","type":"string","hint":{"en_US":"The URL where to get the result.","zh_CN":"获取结果的 URL"},"label":{"en_US":"URL","zh_CN":"路径"}},{"name":"method","default":"","optional":false,"control":"text","type":"string","hint":{"en_US":"HTTP method, it could be post, get, put & delete.","zh_CN":"HTTP 方法，它可以是 post、get、put 和 delete。"},"label":{"en_US":"HTTP method","zh_CN":"HTTP 方法"}},{"name":"interval","default":1000,"optional":false,"control":"text","type":"int","hint":{"en_US":"The interval between the requests, time unit is ms.","zh_CN":"请求之间的间隔时间，单位为 ms"},"label":{"en_US":"Interval","zh_CN":"间隔时间"}},{"name":"timeout","default":5000,"optional":false,"control":"text","type":"int","hint":{"en_US":"The timeout for http request, time unit is ms.","zh_CN":"http 请求的超时时间，单位为 ms"},"label":{"en_US":"Timeout","zh_CN":"超时时间"}},{"name":"incremental","default":false,"optional":false,"control":"text","type":"bool","hint":{"en_US":"If it's set to true, then will compare with last result; If response of two requests are the same, then will skip sending out the result.","zh_CN":"如果将其设置为 true，则将与最后的结果进行比较； 如果两个请求的响应相同，则将跳过发送结果。"},"label":{"en_US":"Incremental","zh_CN":"递增"}},{"name":"body","default":"{}","optional":false,"control":"text","type":"string","hint":{"en_US":"The body of request","zh_CN":"请求的正文"},"label":{"en_US":"Body","zh_CN":"正文"}},{"name":"bodyType","default":"json","optional":false,"control":"text","type":"string","hint":{"en_US":"Body type, it could be none|text|json|html|xml|javascript|format.","zh_CN":"正文类型,可以是 none|text|json|html|xml|javascript| 格式"},"label":{"en_US":"Body type","zh_CN":"正文类型"}},{"name":"headers","default":[{"name":"Accept","default":"application/json","optional":false,"control":"text","type":"string","hint":{"en_US":"HTTP headers","zh_CN":"HTTP标头"},"label":{"en_US":"HTTP headers","zh_CN":"HTTP标头"}}],"optional":false,"control":"text","type":"string","hint":{"en_US":"The HTTP request headers that you want to send along with the HTTP request.","zh_CN":"需要与 HTTP 请求一起发送的 HTTP 请求标头。"},"label":{"en_US":"HTTP headers","zh_CN":"HTTP标头"}}]}}`
+	g_file     = `httppull.json`
+	g_plugin   = `httppull`
+	g_cf       = `{"default":{"url":"http://localhost","method":"post","interval":10000,"timeout":5000,"body":"{}","bodyType":"json","headers":{"Accept":"application/json"}},"ck1":{"url":"127.0.0.1:9527","method":"get","interval":1000,"headers":{"Accept":"application/json"}},"ck2":{"method":"delete","interval":100,"url":"http://localhost:9090/pull"}}`
+	g_template = `{"author":{"name":"Jiyong Huang","email":"huangjy@emqx.io","company":"EMQ Technologies Co., Ltd","website":"https://www.emqx.io"},"libs":[],"helpUrl":{"en_US":"https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sources/http_pull.md","zh_CN":"https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/http_pull.md"},"properties":{"default":[{"name":"url","default":"127.0.0.1:5536","optional":false,"control":"text","type":"string","hint":{"en_US":"The URL where to get the result.","zh_CN":"获取结果的 URL"},"label":{"en_US":"URL","zh_CN":"路径"}},{"name":"method","default":"","optional":false,"control":"text","type":"string","hint":{"en_US":"HTTP method, it could be post, get, put & delete.","zh_CN":"HTTP 方法，它可以是 post、get、put 和 delete。"},"label":{"en_US":"HTTP method","zh_CN":"HTTP 方法"}},{"name":"interval","default":1000,"optional":false,"control":"text","type":"int","hint":{"en_US":"The interval between the requests, time unit is ms.","zh_CN":"请求之间的间隔时间，单位为 ms"},"label":{"en_US":"Interval","zh_CN":"间隔时间"}},{"name":"timeout","default":5000,"optional":false,"control":"text","type":"int","hint":{"en_US":"The timeout for http request, time unit is ms.","zh_CN":"http 请求的超时时间，单位为 ms"},"label":{"en_US":"Timeout","zh_CN":"超时时间"}},{"name":"incremental","default":false,"optional":false,"control":"text","type":"bool","hint":{"en_US":"If it's set to true, then will compare with last result; If response of two requests are the same, then will skip sending out the result.","zh_CN":"如果将其设置为 true，则将与最后的结果进行比较； 如果两个请求的响应相同，则将跳过发送结果。"},"label":{"en_US":"Incremental","zh_CN":"递增"}},{"name":"body","default":"{}","optional":false,"control":"text","type":"string","hint":{"en_US":"The body of request","zh_CN":"请求的正文"},"label":{"en_US":"Body","zh_CN":"正文"}},{"name":"bodyType","default":"json","optional":false,"control":"text","type":"string","hint":{"en_US":"Body type, it could be none|text|json|html|xml|javascript|format.","zh_CN":"正文类型,可以是 none|text|json|html|xml|javascript| 格式"},"label":{"en_US":"Body type","zh_CN":"正文类型"}},{"name":"headers","default":[{"name":"Accept","default":"application/json","optional":false,"control":"text","type":"string","hint":{"en_US":"HTTP headers","zh_CN":"HTTP标头"},"label":{"en_US":"HTTP headers","zh_CN":"HTTP标头"}}],"optional":false,"control":"text","type":"string","hint":{"en_US":"The HTTP request headers that you want to send along with the HTTP request.","zh_CN":"需要与 HTTP 请求一起发送的 HTTP 请求标头。"},"label":{"en_US":"HTTP headers","zh_CN":"HTTP标头"}}]}}`
 )
 
 func TestGetSourceMeta(t *testing.T) {
@@ -102,7 +102,7 @@ func isAddData(js string, cf map[string]interface{}) error {
 	if err := json.Unmarshal([]byte(js), &addNode); nil != err {
 		return err
 	}
-	for addk, _ := range addNode {
+	for addk := range addNode {
 		if _, ok := cf[addk]; !ok {
 			return fmt.Errorf("not found key:%s", addk)
 		}
@@ -117,7 +117,7 @@ func marshalUn(input, output interface{}) error {
 	return json.Unmarshal(jsonString, output)
 }
 
-func compareUiCf(ui []*field, cf map[string]interface{}) (err error) {
+func compareUiCf(ui []field, cf map[string]interface{}) (err error) {
 	for i := 0; i < len(ui); i++ {
 		if !ui[i].Exist {
 			continue
@@ -130,7 +130,7 @@ func compareUiCf(ui []*field, cf map[string]interface{}) (err error) {
 				return fmt.Errorf("default of %s is nil", ui[i].Name)
 			}
 			if reflect.Map == reflect.TypeOf(v).Kind() {
-				var auxUi []*field
+				var auxUi []field
 				if err = marshalUn(ui[i].Default, &auxUi); nil != err {
 					return err
 				}
@@ -152,7 +152,7 @@ func compareUiCf(ui []*field, cf map[string]interface{}) (err error) {
 	return nil
 }
 
-func compareUiTp(ui, tp []*field) (err error) {
+func compareUiTp(ui, tp []field) (err error) {
 	for i := 0; i < len(ui); i++ {
 		j := 0
 		for ; j < len(tp); j++ {
@@ -200,21 +200,6 @@ func compareUiTp(ui, tp []*field) (err error) {
 			if !ui[i].Exist {
 				if nil == ui[i].Default || nil == tp[j].Default {
 					return fmt.Errorf("The default of %s is nil", ui[i].Name)
-					if reflect.Slice == reflect.TypeOf(ui[i].Default).Kind() {
-						var auxUi, auxTp []*field
-						if err = marshalUn(ui[i].Default, &auxUi); nil != err {
-							return err
-						}
-						if err = marshalUn(tp[j].Default, &auxTp); nil != err {
-							return err
-						}
-
-						if err = compareUiTp(auxUi, auxTp); nil != err {
-							return err
-						}
-					} else if ui[i].Default != tp[j].Default {
-						return fmt.Errorf("not equal->%s default:{tp:%v,ui:%v}", ui[i].Name, tp[j].Default, ui[i].Default)
-					}
 				}
 			}
 

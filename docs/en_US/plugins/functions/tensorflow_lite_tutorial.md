@@ -108,16 +108,18 @@ There is a very simple [instruction](https://github.com/tensorflow/tensorflow/tr
 
 #### Build the labelImage plugin
 
-Make sure the Kuiper github repo has cloned. The plugin source file is in *plugins/functions/labelImage/labelImage.go*. Export the paths of the tensorflow repo and built libraries before build the plugin.
+Make sure the Kuiper github repo has cloned. The plugin source file is in *extensions/functions/labelImage/labelImage.go*. Export the paths of the tensorflow repo and built libraries before build the plugin.
 
 ```shell
 $ cd {{kuiperRepoPath}}
 $ export CGO_CFLAGS=-I/root/tensorflow
 $ export CGO_LDFLAGS=-L/root/tensorflow/lib
-$ go build -trimpath --buildmode=plugin -o plugins/functions/LabelImage.so plugins/functions/labelImage/*.go
+$ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functions/LabelImage.so extensions/functions/labelImage/*.go
+$ mkdir -p "plugins/functions"
+$ cp -r extensions/functions/labelImage plugins/functions
 ```
 
-By these commands, the plugin is built into plugins/functions/LabelImage.so. For development purpose, you can restart Kuiper to load this plugin automatically and do testing. After testing complete, we should package it in a zip which is ready to use by Kuiper plugin installation API so that it can be used in another machine such as in production environment.
+By these commands, the plugin is built into plugins/functions/LabelImage.so and copy all dependencies to plugins/functions/labelImage folder. For development purpose, you can restart Kuiper to load this plugin automatically and do testing. After testing complete, we should package it in a zip which is ready to use by Kuiper plugin installation API so that it can be used in another machine such as in production environment.
 
 #### Package the plugin
 

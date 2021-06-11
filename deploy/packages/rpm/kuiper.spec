@@ -38,6 +38,9 @@ mkdir -p %{buildroot}%{_bindir}
 mkdir -p %{buildroot}%{_var_home}
 mkdir -p %{buildroot}%{_var_home}/data
 mkdir -p %{buildroot}%{_var_home}/plugins
+mkdir -p %{buildroot}%{_var_home}/plugins/sources
+mkdir -p %{buildroot}%{_var_home}/plugins/sinks
+mkdir -p %{buildroot}%{_var_home}/plugins/functions
 mkdir -p %{buildroot}%{_initddir}
 
 
@@ -45,7 +48,6 @@ cp %{_code_source}/deploy/packages/service_helper.sh %{buildroot}%{_lib_home}/bi
 cp %{_code_source}/kuiper %{buildroot}%{_lib_home}/bin/
 cp %{_code_source}/kuiperd %{buildroot}%{_lib_home}/bin/
 cp -R %{_code_source}/etc/* %{buildroot}%{_conf_dir}/
-cp -R %{_code_source}/plugins/* %{buildroot}%{_var_home}/plugins/
 install -m644 %{_service_src} %{buildroot}%{_service_dst}
 
 %pre

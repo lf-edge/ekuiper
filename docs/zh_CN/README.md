@@ -53,7 +53,7 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 - [EdgeX 规则引擎教程](./edgex/edgex_rule_engine_tutorial.md)
 
 ## Slack
-加入我们的 [Slack](https://join.slack.com/t/emqx/shared_invite/zt-7xrracuf-GGdbNB1pARtaZKvv6IfTvw)，然后加入 [kuiper](https://emqx.slack.com/archives/C0138SZP23Y) 频道。
+加入我们的 [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFzM2CEABBcKYGEVCgkw)，然后加入 [ekuiper](https://lfedge.slack.com/archives/C024F4P7KCK) 或者 [ekuiper-user](https://lfedge.slack.com/archives/C024F4SMEMR) 频道。
 
 ## 性能测试结果
 

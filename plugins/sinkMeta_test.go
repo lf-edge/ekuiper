@@ -7,7 +7,15 @@ import (
 
 func TestHintWhenModifySink(t *testing.T) {
 	taosMeta := &uiSink{
-		Fields: []*field{
+		Fields: []field{
+			{
+				Name:    "ip",
+				Default: "911.911.911.911",
+			},
+		},
+	}
+	logMeta := &uiSink{
+		Fields: []field{
 			{
 				Name:    "ip",
 				Default: "911.911.911.911",
@@ -15,7 +23,7 @@ func TestHintWhenModifySink(t *testing.T) {
 		},
 	}
 	opMeta := &uiSink{
-		Fields: []*field{
+		Fields: []field{
 			{
 				Name:    "isEventTime",
 				Default: false,
@@ -23,7 +31,7 @@ func TestHintWhenModifySink(t *testing.T) {
 		},
 	}
 	baseMeta := &uiSink{
-		Fields: []*field{
+		Fields: []field{
 			{
 				Name:    "bufferLength",
 				Default: 911,
@@ -33,32 +41,49 @@ func TestHintWhenModifySink(t *testing.T) {
 
 	g_sinkMetadata = make(map[string]*uiSink)
 	g_sinkMetadata["taos.json"] = taosMeta
+	g_sinkMetadata["log.json"] = logMeta
 	g_sinkMetadata["properties.json"] = baseMeta
 	g_sinkMetadata["options.json"] = opMeta
 
 	newSink := &uiSinks{
-		CustomProperty: map[string]*uiSink{
-			"taos": &uiSink{
-				Fields: []*field{
+		CustomProperty: map[string]uiSink{
+			"taos": {
+				Fields: []field{
 					{
 						Name:    "ip",
 						Default: "114.114.114.114",
 					},
 				},
 			},
+			"log": {
+				Fields: []field{
+					{
+						Name:    "ip",
+						Default: "227.227.227.227",
+					},
+				},
+			},
 		},
-		BaseProperty: map[string]*uiSink{
-			"taos": &uiSink{
-				Fields: []*field{
+		BaseProperty: map[string]uiSink{
+			"taos": {
+				Fields: []field{
 					{
 						Name:    "bufferLength",
 						Default: 1024,
 					},
 				},
 			},
+			"log": {
+				Fields: []field{
+					{
+						Name:    "bufferLength",
+						Default: 2048,
+					},
+				},
+			},
 		},
-		BaseOption: &uiSink{
-			Fields: []*field{
+		BaseOption: uiSink{
+			Fields: []field{
 				{
 					Name:    "isEventTime",
 					Default: true,
@@ -73,6 +98,9 @@ func TestHintWhenModifySink(t *testing.T) {
 				"taos": map[string]interface{}{
 					"ip":           "114.114.114.114",
 					"bufferLength": 1024,
+				}, "log": map[string]interface{}{
+					"ip":           "227.227.227.227",
+					"bufferLength": 2048,
 				},
 			},
 		},
