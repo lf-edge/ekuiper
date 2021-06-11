@@ -16,14 +16,11 @@ jobs:
         - uses: actions/checkout@v2
           with:
             fetch-depth: 0
-        - name: prepare docker
-          run: |
-            mkdir -p $HOME/.docker
-            echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
-            echo '{ "experimental": true, "storage-driver": "overlay2", "max-concurrent-downloads": 50, "max-concurrent-uploads": 50 }' | sudo tee /etc/docker/daemon.json
-            sudo systemctl restart docker
-            docker info
-            docker buildx create --use --name mybuild
+        - uses: docker/setup-buildx-action@v1
+        - uses: docker/setup-qemu-action@v1
+          with:
+            image: tonistiigi/binfmt:latest
+            platforms: all
         - name: build
           run: |
             make all_pkgs
@@ -63,15 +60,11 @@ jobs:
         - uses: actions/checkout@v2
           with:
             fetch-depth: 0
-        - name: prepare docker
-          run: |
-            mkdir -p $HOME/.docker
-            echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
-            echo '{ "experimental": true, "storage-driver": "overlay2", "max-concurrent-downloads": 50, "max-concurrent-uploads": 50, "graph": "/mnt/docker" }' | sudo tee /etc/docker/daemon.json
-            sudo systemctl restart docker
-            docker version
-            docker buildx create --use --name mybuild
-            docker run --rm --privileged tonistiigi/binfmt --install all
+        - uses: docker/setup-buildx-action@v1
+        - uses: docker/setup-qemu-action@v1
+          with:
+            image: tonistiigi/binfmt:latest
+            platforms: all
         - name: build docker image
           run: |
             make docker -j4
@@ -116,15 +109,11 @@ jobs:
         - uses: actions/checkout@v2
           with:
             fetch-depth: 0
-        - name: prepare docker
-          run: |
-            mkdir -p $HOME/.docker
-            echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
-            echo '{ "experimental": true, "storage-driver": "overlay2", "max-concurrent-downloads": 50, "max-concurrent-uploads": 50, "graph": "/mnt/docker" }' | sudo tee /etc/docker/daemon.json
-            sudo systemctl restart docker
-            docker version
-            docker buildx create --use --name mybuild
-            docker run --rm --privileged tonistiigi/binfmt --install all
+        - uses: docker/setup-buildx-action@v1
+        - uses: docker/setup-qemu-action@v1
+          with:
+            image: tonistiigi/binfmt:latest
+            platforms: all
         - name: build debian plugins
           env:
             PLUGIN: ${{ matrix.plugin }}
@@ -197,20 +186,19 @@ jobs:
         - uses: actions/checkout@v2
           with:
             fetch-depth: 0
-        - name: prepare docker
-          run: |
-            mkdir -p $HOME/.docker
-            echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
-            echo '{ "experimental": true, "storage-driver": "overlay2", "max-concurrent-downloads": 50, "max-concurrent-uploads": 50, "graph": "/mnt/docker" }' | sudo tee /etc/docker/daemon.json
-            sudo systemctl restart docker
-            docker version
-            docker buildx create --use --name mybuild
-            docker run --rm --privileged tonistiigi/binfmt --install all
+        - uses: docker/setup-buildx-action@v1
+        - uses: docker/setup-qemu-action@v1
+          with:
+            image: tonistiigi/binfmt:latest
+            platforms: all
+        - uses: docker/login-action@v1
+          with:
+            username: ${{ secrets.DOCKER_HUB_USER }}
+            password: ${{ secrets.DOCKER_HUB_TOKEN }}
         - name: cross build docker images
           if: matrix.suffix == 'fat'
           run: |
             set -e -u -x
-            echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USER }} --password-stdin
             docker buildx build --no-cache \
             --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
             -t emqx/kuiper:$(git describe --tags --always) \
@@ -222,7 +210,6 @@ jobs:
               SUFFIX: ${{ matrix.suffix }}
           run: |
             set -e -u -x
-            echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USER }} --password-stdin
             docker buildx build --no-cache \
             --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
             -t emqx/kuiper:$(git describe --tags --always)-$SUFFIX \
@@ -236,24 +223,11 @@ jobs:
         - uses: actions/checkout@v2
           with:
             fetch-depth: 0
-        - name: install docker
-          run: |
-            sudo apt-get remove docker docker-engine docker.io containerd runc
-            sudo apt-get update
-            sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-            sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-            sudo apt-get update
-            sudo apt-get install docker-ce docker-ce-cli containerd.io
-        - name: prepare docker
-          run: |
-            mkdir -p $HOME/.docker
-            echo '{ "experimental": "enabled" }' | tee $HOME/.docker/config.json
-            echo '{ "experimental": true, "storage-driver": "overlay2", "max-concurrent-downloads": 50, "max-concurrent-uploads": 50, "graph": "/mnt/docker" }' | sudo tee /etc/docker/daemon.json
-            sudo systemctl restart docker
-            docker version
-            docker buildx create --use --name mybuild
-            docker run --rm --privileged tonistiigi/binfmt --install all
+        - uses: docker/setup-buildx-action@v1
+        - uses: docker/setup-qemu-action@v1
+          with:
+            image: tonistiigi/binfmt:latest
+            platforms: all
         - name: build docker image
           run: docker build --no-cache -t emqx/kuiper-kubernetes-tool:$(git describe --tags --always) -f deploy/docker/Dockerfile-kubernetes-tool .
         - name: test docker image
@@ -262,10 +236,14 @@ jobs:
             docker run -d --name kuiper-kubernetes-tool emqx/kuiper-kubernetes-tool:$(git describe --tags --always)
             sleep 5
             if [ "$(docker logs kuiper-kubernetes-tool)" != "Kuiper kubernetes tool is started successfully!"  ]; then exit 1; fi
+        - uses: docker/login-action@v1
+          if: github.event_name == 'release'
+          with:
+            username: ${{ secrets.DOCKER_HUB_USER }}
+            password: ${{ secrets.DOCKER_HUB_TOKEN }}
         - name: buildx docker image
           if: github.event_name == 'release'
           run: |
-            echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USER }} --password-stdin
             docker buildx build --no-cache \
                 --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
                 -t emqx/kuiper-kubernetes-tool:$(git describe --tags --always) \
@@ -304,7 +282,7 @@ jobs:
           with:
             repo: kuiper
             path: "_packages/kuiper-*"
-            token: ${{ secrets.AccessToken }}
+            token: ${{ secrets.GITHUB_TOKEN }}
         - name: create invalidation for cloudfront
           if: github.event_name == 'release'
           run: |
@@ -332,7 +310,7 @@ jobs:
           run: |
             version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
             curl \
-            -H "Authorization: token ${{ secrets.AccessToken }}" \
+            -H "Authorization: token ${{ secrets.CI_GIT_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
             -X POST \
             -d "{\"ref\":\"v1.0.0\",\"inputs\":{\"version\": \"${version}\", \"emqx_ce\": \"true\"}}" \
