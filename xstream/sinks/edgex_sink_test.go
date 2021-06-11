@@ -4,8 +4,8 @@ package sinks
 
 import (
 	"fmt"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2/dtos"
+	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xstream/contexts"
 	"reflect"

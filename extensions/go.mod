@@ -8,7 +8,7 @@ require (
 	github.com/mattn/go-tflite v1.0.1
 	github.com/mmcloughlin/geohash v0.10.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/pebbe/zmq4 v1.2.2
+	github.com/pebbe/zmq4 v1.2.7
 	github.com/taosdata/driver-go v0.0.0-20210525062356-2bd1b495d5f3
 )
 

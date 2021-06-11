@@ -5,9 +5,9 @@ package extensions
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2/dtos"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/v2/models"
+	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/emqx/kuiper/common"
 	"math"
