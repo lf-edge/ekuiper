@@ -158,8 +158,14 @@
 
 ### 模版中支持的函数
 
+用户可通过模板函数，对数据进行各种转换，包括但不限于格式转换，数学计算和编码等。eKuiper 中支持的模板函数包括以下几类：
+
+1. Go 语言内置[模板函数](https://golang.org/pkg/text/template/#hdr-Functions)。
+2. 来自 [sprig library](http://masterminds.github.io/sprig/) 的丰富的扩展函数集。
+3. eKuiper 扩展的函数。
+
 eKuiper 扩展了几个可以在模版中使用的函数。
 
-- `json para1`: `json` 函数用于将 map 内容转换为 JSON 字符串
-- `base64 para1`: `base64` 函数用于将参数值编码为 base64 字符串
-- `add para1 para2`: `add` 函数用于将两个数值类型的参数相加
+- (deprecated)`json para1`: `json` 函数用于将 map 内容转换为 JSON 字符串。本函数已弃用，建议使用 sprig 扩展的 `toJson` 函数。
+- (deprecated)`base64 para1`: `base64` 函数用于将参数值编码为 base64 字符串。本函数已弃用，建议将参数转换为 string 类型后，使用 sprig 扩展的 `b64enc` 函数。
+
