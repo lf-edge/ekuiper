@@ -156,8 +156,13 @@ Actions could be customized to support different kinds of outputs, see [extensio
 
 ### Functions supported in template
 
+With the help of template functions, users can do a lot of transformation including formation, simple mathematics, encoding etc. The supported functions in Kuiper template includes:
+
+1. Go built-in [template functions](https://golang.org/pkg/text/template/#hdr-Functions).
+2. An abundant extended function set from [sprig library](http://masterminds.github.io/sprig/).
+3. Kuiper extended functions.
+   
 Kuiper extends several functions that can be used in data template.
 
-- `json para1`: The `json` function is used for convert the map content to a JSON string.
-- `base64 para1`: The `base64` function is used for encoding parameter value to a base64 string.
-- `add para1 para2`: The `add` function is used for adding two numeric value.
+- (deprecated)`json para1`: The `json` function is used for convert the map content to a JSON string. Use`toJson` from sprig instead.
+- (deprecated)`base64 para1`: The `base64` function is used for encoding parameter value to a base64 string. Convert the pramater to string type and use `b64enc` from sprig instead.

@@ -65,11 +65,11 @@ When sending to the sink, each piece of data is sent separately. First, you need
 ```json
  ...
  "sendSingle": true,
- "dataTemplate": "{{json .}}"
+ "dataTemplate": "{{toJson .}}"
 ```
 
 - After setting `sendSingle` to `true`, Kuiper traverses the `[]map[string]interface{}` data type that has been passed to the sink. For each data in the traversal process, the user-specified data template will be applied.
-- `json` is a function provided by Kuiper (users can refer to [Kuiper Extension Template Function](overview.md) for more information of Kuiper extensions), which can convert incoming parameters into JSON string output. For each piece of traversed data, the content in the map is converted to a JSON string
+- `toJson` is a function provided by Kuiper (users can refer to [Template Functions in Kuiper](./overview.md#functions-supported-in-template) for more information of Kuiper extensions), which can convert incoming parameters into JSON string output. For each piece of traversed data, the content in the map is converted to a JSON string
 
 Golang also provides some built-in functions. Users can refer to [More Golang Built-in Functions](https://golang.org/pkg/text/template/#hdr-Functions) for more function information.
 

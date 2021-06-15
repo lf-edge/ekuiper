@@ -20,7 +20,7 @@ func TestSinkTemplate_Apply(t *testing.T) {
 		{
 			config: map[string]interface{}{
 				"sendSingle":   true,
-				"dataTemplate": `{"wrapper":"w1","content":{{json .}},"ab":"{{.ab}}"}`,
+				"dataTemplate": `{"wrapper":"w1","content":{{toJson .}},"ab":"{{.ab}}"}`,
 			},
 			data:   []byte(`[{"ab":"hello1"},{"ab":"hello2"}]`),
 			result: [][]byte{[]byte(`{"wrapper":"w1","content":{"ab":"hello1"},"ab":"hello1"}`), []byte(`{"wrapper":"w1","content":{"ab":"hello2"},"ab":"hello2"}`)},
@@ -38,7 +38,7 @@ func TestSinkTemplate_Apply(t *testing.T) {
 			result: [][]byte{[]byte(`<div>results</div><ul><li>hello1</li><li>hello2</li></ul>`)},
 		}, {
 			config: map[string]interface{}{
-				"dataTemplate": `{"content":{{json .}}}`,
+				"dataTemplate": `{"content":{{toJson .}}}`,
 			},
 			data:   []byte(`[{"ab":"hello1"},{"ab":"hello2"}]`),
 			result: [][]byte{[]byte(`{"content":[{"ab":"hello1"},{"ab":"hello2"}]}`)},
@@ -59,13 +59,13 @@ func TestSinkTemplate_Apply(t *testing.T) {
 		}, {
 			config: map[string]interface{}{
 				"sendSingle":   true,
-				"dataTemplate": `{"__meta":{{json .__meta}},"temp":{{.temperature}}}`,
+				"dataTemplate": `{"__meta":{{toJson .__meta}},"temp":{{.temperature}}}`,
 			},
 			data:   []byte(`[{"temperature":33,"humidity":70,"__meta": {"messageid":45,"other": "mock"}}]`),
 			result: [][]byte{[]byte(`{"__meta":{"messageid":45,"other":"mock"},"temp":33}`)},
 		}, {
 			config: map[string]interface{}{
-				"dataTemplate": `[{"__meta":{{json (index . 0 "__meta")}},"temp":{{index . 0 "temperature"}}}]`,
+				"dataTemplate": `[{"__meta":{{toJson (index . 0 "__meta")}},"temp":{{index . 0 "temperature"}}}]`,
 			},
 			data:   []byte(`[{"temperature":33,"humidity":70,"__meta": {"messageid":45,"other": "mock"}}]`),
 			result: [][]byte{[]byte(`[{"__meta":{"messageid":45,"other":"mock"},"temp":33}]`)},
@@ -73,7 +73,7 @@ func TestSinkTemplate_Apply(t *testing.T) {
 			config: map[string]interface{}{
 				"dataTemplate": `[{{range $index, $ele := .}}{{if $index}},{{end}}{"result":{{add $ele.temperature $ele.humidity}}}{{end}}]`,
 			},
-			data:   []byte(`[{"temperature":33,"humidity":70},{"temperature":22,"humidity":50},{"temperature":11,"humidity":90}]`),
+			data:   []byte(`[{"temperature":33,"humidity":70},{"temperature":22.0,"humidity":50},{"temperature":11,"humidity":90}]`),
 			result: [][]byte{[]byte(`[{"result":103},{"result":72},{"result":101}]`)},
 		}, {
 			config: map[string]interface{}{
@@ -81,6 +81,13 @@ func TestSinkTemplate_Apply(t *testing.T) {
 			},
 			data:   []byte(`[{"temperature":33,"humidity":70},{"temperature":22,"humidity":50},{"temperature":11,"humidity":90}]`),
 			result: [][]byte{[]byte(`{"result":2}`)},
+		}, {
+			config: map[string]interface{}{
+				"dataTemplate": `{"a":"{{base64 .a}}","b":"{{base64 .b}}","c":"{{b64enc .c}}","d":"{{b64enc .d}}","e":"{{base64 .e}}"}`,
+				"sendSingle":   true,
+			},
+			data:   []byte(`[{"a":1,"b":3.1415,"c":"hello","d":"{\"hello\" : 3}","e":{"humidity":20,"temperature":30}}]`),
+			result: [][]byte{[]byte(`{"a":"MQ==","b":"My4xNDE1","c":"aGVsbG8=","d":"eyJoZWxsbyIgOiAzfQ==","e":"eyJodW1pZGl0eSI6MjAsInRlbXBlcmF0dXJlIjozMH0="}`)},
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
