@@ -36,6 +36,7 @@ CREATE STREAM
 | TYPE     | true | The source type, if not specified, the value is "mqtt". |
 | StrictValidation     | true | To control validation behavior of message field against stream schema. See [Strict Validation](#Strict Validation) for more info. |
 | CONF_KEY | true | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../rules/sources/mqtt.md) for more info. |
+| SHARED | true | Whether the source instance will be shared across all rules using this stream |
 
 **Example 1,**
 
@@ -67,6 +68,18 @@ The stream will subscribe to MQTT topic ``test/``, the server connection uses se
 - See [MQTT source](../rules/sources/mqtt.md) for more info.
 
 - See [rules and streams CLI docs](../cli/overview.md) for more information of rules & streams management.
+
+### Share source instance across rules
+
+By default, each rule will instantiate its own source instance. In some scenarios, users may need to manipulate the exact same data stream with different rules. For example, for the data of temperature from a sensor. They may want to trigger an alert when the average for a period of time is higher than 30 degree and trigger another alert when it is lower than 0. With default configuration, each rule creates a source instance and may receive data in different order due to network delay or other factors so that the average calculation may happen with different context. By sharing the instance, we can assure both rules are processing the same data. Additionally, it will have better performance by eliminating the overhead of instantiation.
+
+To use the share instance mode, just set the `SHARED` option to true in the stream definition. 
+
+```
+demo (
+		...
+	) WITH (DATASOURCE="test", FORMAT="JSON", KEY="USERID", SHARED="true");
+```
 
 ### Strict Validation
 

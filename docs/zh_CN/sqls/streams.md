@@ -38,6 +38,7 @@ CREATE STREAM
 | TYPE    | 是      | 源类型，如未指定，值为 "mqtt"。 |
 | StrictValidation     | 是  | 针对流模式控制消息字段的验证行为。 有关更多信息，请参见 [Strict Validation](#Strict Validation) |
 | CONF_KEY | 是 | 如果需要配置其他配置项，请在此处指定 config 键。 有关更多信息，请参见 [MQTT stream](../rules/sources/mqtt.md) 。 |
+| SHARED | 是 | 是否在使用该流的规则中共享源的实例 |
 
 **示例1**
 
@@ -69,6 +70,18 @@ demo (
 - 有关更多信息，请参见 [MQTT source](../rules/sources/mqtt.md) 
 
 - 有关规则和流管理的更多信息，请参见 [规则和流 CLI docs](../cli/overview.md) 
+
+### 共享源实例
+
+默认情况下，每个规则会创建自己的源实例。在某些场景中，用户需要不同的规则处理完全相同的数据流。例如，在处理传感器的温度数据时，用户可能需要一个规则，当一段时间的平均温度大于30度时触发警告；而另一个规则则是当一段时间的平均温度小于0度时触发警告。使用默认配置时，两个规则各自独立实例化源实例。由于网络延迟等原因，规则可能得到不同顺序，甚至各有缺失数据的数据流，从而在不同的数据维度中计算平均值。通过配置共享源实例，用户可以确保两个规则处理完全相同的数据。同时，由于节省了额外的源实例开销，规则的性能也能得到提升。
+
+使用共享源实例模式，只需要共享源实例的流时，将其 `SHARED` 属性设置为 true 。
+
+```
+demo (
+		...
+	) WITH (DATASOURCE="test", FORMAT="JSON", KEY="USERID", SHARED="true");
+```
 
 ### Strict Validation
 
