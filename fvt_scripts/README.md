@@ -224,3 +224,11 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   - Create a table whose type is mqtt with topic name `state`. The sent data is also from file `iot_data_multi_topics.txt` when the topic name is matched which defines the state. The table records the latest state from the `state` topic which is working like a control topic to switch on or off of the processing.
   - The rule join the stream and table filter by both the state from the table and temperature from the stream.  
   - The result data will be sent back to MQTT broker again and compared with `table_cont_result_data.txt`.
+
+- [Shared source instance test](shared_source_rules.jmx)
+
+  This script verifies the shared source instances across rules. By specifying shared property to true in the stream definition, all rules using the stream will all share the same source instance for better performance.
+  - Create a MQTT stream with `SHARED` option true. The sent data are read from file `iot_data.txt` which defines temperature and humidity.
+  - Create 3 rules which all select from the stream just created with different where filter. They should share the same mqtt source instance.
+  - Send data to the stream. Make sure all 3 rules receive the exact same copy of data but conduct different filter by checking the result.
+  - The result data will be sent back to MQTT broker again and compared with `select_condition_iot_data.txt`, `select_condition_iot_data2.txt` and `select_condition_iot_data3.txt` respectively.
