@@ -8,7 +8,7 @@
 
 ``unzip kuiper-centos7-v0.0.1.zip``
 
-运行 `kuiper` 来验证 Kuiper 是否已成功安装。
+运行 `kuiper` 来验证 eKuiper 是否已成功安装。
 
 ```shell
 # cd kuiper
@@ -16,5 +16,5 @@
 kuiper version 0.0.1
 ```
 
-如果可以打印版本，则说明 Kuiper 已成功安装。
+如果可以打印版本，则说明 eKuiper 已成功安装。
 

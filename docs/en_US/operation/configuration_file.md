@@ -1,5 +1,5 @@
 # Basic configurations
-The configuration file for Kuiper is at ``$kuiper/etc/kuiper.yaml``. The configuration file is yaml format.
+The configuration file for eKuiper is at ``$kuiper/etc/kuiper.yaml``. The configuration file is yaml format.
 
 ## Log level
 
@@ -47,20 +47,20 @@ The tls cert file path and key file path setting. If restTls is not set, the res
 
 ## Prometheus Configuration
 
-Kuiper can export metrics to prometheus if ``prometheus`` option is true. The prometheus will be served with the port specified by ``prometheusPort`` option.
+eKuiper can export metrics to prometheus if ``prometheus`` option is true. The prometheus will be served with the port specified by ``prometheusPort`` option.
 
 ```yaml
 basic:
   prometheus: true
   prometheusPort: 20499
 ```
-For such a default configuration, Kuiper will export metrics and serve prometheus at `http://localhost:20499/metrics`
+For such a default configuration, eKuiper will export metrics and serve prometheus at `http://localhost:20499/metrics`
 
 ## Pluginhosts Configuration
 
 The URL where hosts all of pre-build plugins. By default it's at `packages.emqx.io`. There could be several hosts (host can be separated with comma), if same package could be found in the several hosts, then the package in the 1st host will have the highest priority.
 
-Please notice that only the plugins that can be installed to the current Kuiper instance will be listed through below Rest-APIs.  
+Please notice that only the plugins that can be installed to the current eKuiper instance will be listed through below Rest-APIs.  
 
 ```
 GET http://localhost:9081/plugins/sources/prebuild
@@ -69,10 +69,10 @@ GET http://localhost:9081/plugins/functions/prebuild
 ```
 It has following conditions to make the plugins listed through previous APIs,
 
-- Kuiper version: The plugins must be built for the Kuiper instance version. If the plugins cannot be found  for a specific version, no plugins will be returned.
-- Operating system: Now only Linux system is supported, so if Kuiper is running at other operating systems,  no plugins will be returned.
+- eKuiper version: The plugins must be built for the eKuiper instance version. If the plugins cannot be found  for a specific version, no plugins will be returned.
+- Operating system: Now only Linux system is supported, so if eKuiper is running at other operating systems,  no plugins will be returned.
 - CPU architecture: Only with correct CPU architecture built plugins are found in the plugin repository can the plugins be returned.
-- EMQ official released Docker images: Only when the Kuiper is running at EMQ official released Docker images can the plugins be returned.
+- EMQ official released Docker images: Only when the eKuiper is running at EMQ official released Docker images can the plugins be returned.
 
 
 ```yaml

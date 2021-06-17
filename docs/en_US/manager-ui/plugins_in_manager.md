@@ -2,7 +2,7 @@
 
 ### Overview
 
-Kuiper provides a plugin extension mechanism, and users can implement custom plugins based on the extended interface. On the management console, users can install plugins directly through the interface. If readers have custom plugins and want to show them in the installation list of the management console, this article can give readers some reference.
+eKuiper provides a plugin extension mechanism, and users can implement custom plugins based on the extended interface. On the management console, users can install plugins directly through the interface. If readers have custom plugins and want to show them in the installation list of the management console, this article can give readers some reference.
 
 ### Plugin metadata
 
@@ -120,18 +120,18 @@ Example:  https://127.0.0.1:9090/kuiper-plugins/0.9.1/debian/sinks/file.zip
 
 Among them:
 
-1. $version: Kuiper version number used for plugin compilation
-2. $os: The operating system used for the plugin compilation. If the plugin is compiled in the default Kuiper Docker image, the value is debian.
+1. $version: eKuiper version number used for plugin compilation
+2. $os: The operating system used for the plugin compilation. If the plugin is compiled in the default eKuiper Docker image, the value is debian.
 3. $type: plugin type, which can be `sources`, `sinks`, `functions`.
 
 
 ### Limitation
 
-Due to the limitation of `Go` language plugin mechanism, the compilation environment of the plugin must be the same as the `Kuiper` environment. Therefore, it is recommended that the plugin be compiled in a `Docker` container of the same version as `Kuiper`. At the same time, because some libraries in the `alpine` environment are missing, it is not recommended to run plugins on it. Therefore, if you need to install and run the plugin, it is recommended to use the following container:
+Due to the limitation of `Go` language plugin mechanism, the compilation environment of the plugin must be the same as the `eKuiper` environment. Therefore, it is recommended that the plugin be compiled in a `Docker` container of the same version as `eKuiper`. At the same time, because some libraries in the `alpine` environment are missing, it is not recommended to run plugins on it. Therefore, if you need to install and run the plugin, it is recommended to use the following container:
 
 - Kuiper: Use slim image, such as `0.9.1-slim`
 - Plugin: compile with the default image of the corresponding version, such as `0.9.1`
 
 ### Summary
 
-Kuiper management console provides a display mechanism for custom plugins. User only needs to add the plugin metadata file in the custom plugin package. At the same time, users can customize the plugin  repository, so that plugins can be installed and used conveniently from the console.
+eKuiper management console provides a display mechanism for custom plugins. User only needs to add the plugin metadata file in the custom plugin package. At the same time, users can customize the plugin  repository, so that plugins can be installed and used conveniently from the console.

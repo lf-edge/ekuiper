@@ -1,6 +1,6 @@
 # Custom function
 
-Kuiper can customize functions. For the development, compilation and use of functions, please [see here](../../extension/function.md).
+eKuiper can customize functions. For the development, compilation and use of functions, please [see here](../../extension/function.md).
 
 ## echo plugin
 

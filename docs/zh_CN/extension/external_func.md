@@ -1,11 +1,11 @@
 # 外部函数
 
-外部函数通过配置的方式，将已有的服务映射成 Kuiper SQL 函数。运行使用外部函数的规则时，Kuiper 将根据配置，对数据输入输出进行转换，并调用对应的服务。
+外部函数通过配置的方式，将已有的服务映射成 eKuiper SQL 函数。运行使用外部函数的规则时，eKuiper 将根据配置，对数据输入输出进行转换，并调用对应的服务。
 
 ## 配置
 
 外部函数的配置文件为 json 格式。通常包括两个部分：
-- json 文件，用于描述服务的信息。文件将保存为 Kuiper 中服务的名字。
+- json 文件，用于描述服务的信息。文件将保存为 eKuiper 中服务的名字。
 - schema 文件，用于描述服务 API 接口。包括服务包含的 API 名字，输入输出参数类型等。目前仅支持 [protobuf 类型](https://developers.google.com/protocol-buffers) 。
 
 json 配置文件包括以下两个部分：
@@ -33,8 +33,8 @@ json 配置文件包括以下两个部分：
       "website": "https://www.emqx.io"
     },
     "helpUrl": {
-      "en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/functions/functions.md",
-      "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/functions/functions.md"
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/plugins/functions/functions.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/plugins/functions/functions.md"
     },
     "description": {
       "en_US": "Sample external services for test only",
@@ -97,7 +97,7 @@ json 配置文件包括以下两个部分：
 syntax = "proto3";
 package ts;
 
-service TSRest { // proto service 名字与 Kuiper 外部服务名字无关
+service TSRest { // proto service 名字与 eKuiper 外部服务名字无关
   rpc object_detection(ObjectDetectionRequest) returns(ObjectDetectionResponse) {}
 }
 
@@ -183,17 +183,17 @@ package yourpackage;
 import "google/api/annotations.proto";
 ```
 
-因此，google api proto 文件必须在导入路径上。Kuiper 默认  `etc/services/schemas/google` 搭载了依赖的 proto 文件。用户无需在自定义服务里打包此依赖。
+因此，google api proto 文件必须在导入路径上。eKuiper 默认  `etc/services/schemas/google` 搭载了依赖的 proto 文件。用户无需在自定义服务里打包此依赖。
 
 ### 映射
 
 外部服务配置需要1个 json 文件和至少一个 schema（.proto） 文件。配置定义了服务映射的3个层次。
 
-1. Kuiper 外部服务层: 外部服务名通过 json 文件名定义。这个名字将作为 [REST API](../restapi/services.md) 中描述，删除和更新整体外部服务的键。
+1. eKuiper 外部服务层: 外部服务名通过 json 文件名定义。这个名字将作为 [REST API](../restapi/services.md) 中描述，删除和更新整体外部服务的键。
 2. 接口层: 定义于 json 文件的 `interfaces` 部分。该层为用户不可见的虚拟层，主要用于将一组服务聚合，以便可以只定义一次一组函数共有的属性，例如 schema，访问地址等。 
-3. Kuiper 函数层: 函数定义于 proto 文件中的`rpc`。需要注意的是，proto 文件中的 `rpc` 必须定义在 proto 文件中的 `service` 之下。此 `sevice` 与 Kuiper 中的外部服务概念不同，且没有关联，其取名没有任何限制。默认情况下，外部函数的名字与 rpc 名字相同。用户可通过修改 json 文件中，interface 下的 functions 部分来覆盖函数名的映射关系。 
+3. eKuiper 函数层: 函数定义于 proto 文件中的`rpc`。需要注意的是，proto 文件中的 `rpc` 必须定义在 proto 文件中的 `service` 之下。此 `sevice` 与 eKuiper 中的外部服务概念不同，且没有关联，其取名没有任何限制。默认情况下，外部函数的名字与 rpc 名字相同。用户可通过修改 json 文件中，interface 下的 functions 部分来覆盖函数名的映射关系。 
 
-在这个样例中，如果用户在 Kuiper SQL 中调用 `objectDetection` 函数，则其映射过程如下:
+在这个样例中，如果用户在 eKuiper SQL 中调用 `objectDetection` 函数，则其映射过程如下:
 
 1. 在 json 文件的 *tsrest* interface 中，找到函数映射：`{"name": "objectDetect","serviceName": "object_detection"}`。 该配置将 SQL 函数 `objectDetect` 映射为名为`object_detection` 的 rpc。
 2. 在 `tsrest.proto` 文件中，找到 rpc `object_detection` 定义。再根据 json 文件中的 `tsrest` interface 配置属性，例如地址，协议等在运行时进行参数解析和服务调用。
@@ -217,7 +217,7 @@ msgpack-rpc 服务有以下限制：
 - 放置在配置文件夹
 - 通过 REST API 动态注册。
 
-Kuiper 启动时，会读取配置文件夹 *etc/services* 里的外部服务配置文件并注册。用户可在启动之前，将配置文件遵循如下规则放入配置文件夹：
+eKuiper 启动时，会读取配置文件夹 *etc/services* 里的外部服务配置文件并注册。用户可在启动之前，将配置文件遵循如下规则放入配置文件夹：
 1. 文件名必须为 *$服务名$.json*。例如，*sample.json* 会注册为 sample 服务。
 2. 使用的 Schema 文件必须放入 schema 文件夹。其目录结构类似为:
    ```
@@ -231,7 +231,7 @@ Kuiper 启动时，会读取配置文件夹 *etc/services* 里的外部服务配
        other.json
        ...
    ```
-注意：Kuiper 启动之后，修改配置文件**不能**自动载入系统。需要动态更新时，请使用 REST 服务。
+注意：eKuiper 启动之后，修改配置文件**不能**自动载入系统。需要动态更新时，请使用 REST 服务。
 
 服务的动态注册和管理，请参考[外部服务管理 API](../restapi/services.md)。
 
@@ -247,7 +247,7 @@ SELECT objectDetection(cmd, img) from comandStream
 
 ### 参数展开
 
-ptoto 文件中，一般参数为 message 类型。映射到 Kuiper 中，其参数可接收两种情况：
+ptoto 文件中，一般参数为 message 类型。映射到 eKuiper 中，其参数可接收两种情况：
 
 1. 参数不展开，传入的必须为 struct 类型
 2. 参数展开，按照 message 中定义的顺序，传入多个参数
@@ -260,4 +260,4 @@ message ObjectDetectionRequest {
 }
 ```
 
-在 Kuiper 中，用户可传入整个 struct 作为参数，也可以传入两个 string 参数，分别作为 cmd 和 base64_img。
+在 eKuiper 中，用户可传入整个 struct 作为参数，也可以传入两个 string 参数，分别作为 cmd 和 base64_img。

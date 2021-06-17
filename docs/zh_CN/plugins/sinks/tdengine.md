@@ -7,7 +7,7 @@ module plugins
 
 go 1.13
 
-replace github.com/emqx/kuiper => /$kuiper
+replace github.com/emqx/kuiper => /$eKuiper
 
 require (
     github.com/emqx/kuiper v0.0.0-00010101000000-000000000000 // indirect
@@ -16,8 +16,8 @@ require (
 ```
 
 ```shell
-go mod edit -replace github.com/emqx/kuiper=/$kuiper
-go build -trimpath -modfile extensions.mod --buildmode=plugin -o /$kuiper/plugins/sinks/Tdengine@v1.0.0.so /$kuiper/extensions/sinks/tdengine/tdengine.go
+go mod edit -replace github.com/emqx/kuiper=/$eKuiper
+go build -trimpath -modfile extensions.mod --buildmode=plugin -o /$ekuiper/plugins/sinks/Tdengine@v1.0.0.so /$ekuiper/extensions/sinks/tdengine/tdengine.go
 ```
 ### 安装插件
 由于 tdengine 插件的运行依赖于 tdengine 客户端，为了便于用户使用，安装插件时将下载 tdengine 客户端。但是 tdengine 客户端版本与其服务器版本一一对应，互不兼容，所以用户必须告知所用 tdengine 服务器版本。

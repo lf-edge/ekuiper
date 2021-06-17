@@ -1,12 +1,12 @@
 # Sink （目标） 扩展
 
-Kuiper 可以将数据接收到外部系统。 Kuiper具有对  [MQTT 消息服务器](../rules/sinks/mqtt.md) 和 [日志目标](../rules/sinks/logs.md)的内置接收器支持。然而， 仍然需要将数据发布到各种外部系统，包括消息传递系统和数据库等。Sink （目标）扩展正是为了满足这一要求。
+eKuiper 可以将数据接收到外部系统。 eKuiper具有对  [MQTT 消息服务器](../rules/sinks/mqtt.md) 和 [日志目标](../rules/sinks/logs.md)的内置接收器支持。然而， 仍然需要将数据发布到各种外部系统，包括消息传递系统和数据库等。Sink （目标）扩展正是为了满足这一要求。
 
 ## 开发
 
 ### 开发 Sink （目标）
 
-为 Kuiper 开发 Sink （目标），是实现 [api.Sink](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go) 接口并将其导出为 golang 插件。
+为 eKuiper 开发 Sink （目标），是实现 [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) 接口并将其导出为 golang 插件。
 
 在开始开发之前，您必须为 [golang 插件设置环境](overview.md#setup-the-plugin-developing-environment)。
 
@@ -23,7 +23,7 @@ Configure(props map[string]interface{}) error
 Open(ctx StreamContext) error
 ```
 
-Sink （目标）的主要任务是实现 _collect_ 方法。 当 Kuiper 将任何数据输入 Sink （目标）时，将调用该函数。 作为无限流，此函数将被连续调用。 此功能的任务是将数据发布到外部系统。 第一个参数是上下文，第二个参数是从 Kuiper 接收的数据。
+Sink （目标）的主要任务是实现 _collect_ 方法。 当 eKuiper 将任何数据输入 Sink （目标）时，将调用该函数。 作为无限流，此函数将被连续调用。 此功能的任务是将数据发布到外部系统。 第一个参数是上下文，第二个参数是从 eKuiper 接收的数据。
 
 ```go
 //Called when each row of data has transferred to this sink
@@ -44,7 +44,7 @@ func MySink() api.Sink {
 }
 ```
 
-[Memory Sink](https://github.com/emqx/kuiper/blob/master/plugins/sinks/memory/memory.go) 是一个很好的示例。
+[Memory Sink](https://github.com/lf-edge/ekuiper/blob/master/plugins/sinks/memory/memory.go) 是一个很好的示例。
 
 ### 将 Sink （目标）打包
 将实现的 Sink （目标）构建为 go 插件，并确保输出的 so 文件位于 plugins/sinks 文件夹中。

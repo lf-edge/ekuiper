@@ -26,10 +26,10 @@ The program is used for monitoring and processing files under folder. If program
 
 ### 1.3 Configuration file format and meaning:
 ```yaml
-port: 9081  //kuiper port
+port: 9081  //eKuiper port
 timeout: 500  //Timeout for executing a command (unit: ms)
 intervalTime: 60  //interval of Checking the command folder  (unit: seconds)
-ip: "127.0.0.1" //kuiper ip adress
+ip: "127.0.0.1" //eKuiper ip adress
 logPath: "./log/kubernetes.log" //Log save path
 commandDir: "./sample/" //Command folder path
 ```

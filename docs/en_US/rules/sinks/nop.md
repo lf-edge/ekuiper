@@ -1,6 +1,6 @@
 # Nop action
 
-The action is an Nop sink, the result sent to this sink will be ignored. If specify the `log` property to `true`, then the result will be saved into log file, the log file is at `$kuiper_install/log/stream.log` by default.
+The action is an Nop sink, the result sent to this sink will be ignored. If specify the `log` property to `true`, then the result will be saved into log file, the log file is at `$eKuiper_install/log/stream.log` by default.
 
 | Property name      | Optional | Description                                                  |
 | ------------------ | -------- | ------------------------------------------------------------ |

@@ -8,8 +8,8 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/sinks/file.md",
-			"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/sinks/file.md"
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/plugins/sinks/file.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/plugins/sinks/file.md"
 		},
 		"description": {
 			"en_US": "This a sink plugin for file, it can be used for saving the analysis data into file system.",

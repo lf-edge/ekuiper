@@ -2,15 +2,15 @@
 
 ## Overview
 
-In EdgeX Geneva, [EMQ X Kuiper - an SQL based rule engine](https://github.com/emqx/kuiper) is integrated with EdgeX. Before diving into this tutorial, let's spend a little time on learning basic knowledge of Kuiper. Kuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. Kuiper rules are based on ``Source``, ``SQL`` and ``Sink``.
+In EdgeX Geneva, [LF Edge eKuiper - an SQL based rule engine](https://github.com/lf-edge/ekuiper) is integrated with EdgeX. Before diving into this tutorial, let's spend a little time on learning basic knowledge of eKuiper. eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. eKuiper rules are based on ``Source``, ``SQL`` and ``Sink``.
 
 - Source: The data source of streaming data, such as data from MQTT broker. In EdgeX scenario, the data source is EdgeX message bus, which could be ZeroMQ or MQTT broker.
-- SQL: SQL is where you specify the business logic of streaming data processing. Kuiper provides SQL-like statements to allow you to extract, filter & transform data. 
+- SQL: SQL is where you specify the business logic of streaming data processing. eKuiper provides SQL-like statements to allow you to extract, filter & transform data. 
 - Sink: Sink is used for sending analysis result to a specified target. For example, send analysis result to another MQTT broker, or an HTTP rest address.
 
 ![](../arch.png)
 
-Following three steps are required for using Kuiper.
+Following three steps are required for using eKuiper.
 
 - Create a stream, where you specify the data source.
 - Write a rule.
@@ -18,23 +18,23 @@ Following three steps are required for using Kuiper.
   - Specify a sink target for saving analysis result
 - Deploy and run rule.
 
-The tutorial demonstrates how to use Kuiper to process the data from EdgeX message bus.
+The tutorial demonstrates how to use eKuiper to process the data from EdgeX message bus.
 
-## Kuiper EdgeX integration
+## eKuiper EdgeX integration
 
-EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to exchange information between different micro services. It contains the abstract message bus interface and implementations for ZeroMQ & MQTT. The integration work for Kuiper & EdgeX includes following 3 parts. 
+EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to exchange information between different micro services. It contains the abstract message bus interface and implementations for ZeroMQ & MQTT. The integration work for eKuiper & EdgeX includes following 3 parts. 
 
 - An EdgeX message bus source is extended to support consuming data from EdgeX message bus.  
 
-- To analyze the data, Kuiper need to know data types that passed through it. Generally, user would be better to specify data schema for analysis data when a stream is created. Such as in below, a ``demo`` stream has a field named ``temperature`` field. It is very similar to create table schema in relational database system. After creating the stream definition, Kuiper can perform type checking during compilation or runtime, and invalid SQLs or data will be reported to user.
+- To analyze the data, eKuiper need to know data types that passed through it. Generally, user would be better to specify data schema for analysis data when a stream is created. Such as in below, a ``demo`` stream has a field named ``temperature`` field. It is very similar to create table schema in relational database system. After creating the stream definition, eKuiper can perform type checking during compilation or runtime, and invalid SQLs or data will be reported to user.
 
   ```shell
   CREATE STREAM demo (temperature bigint) WITH (FORMAT="JSON"...)
   ```
 
-  However, data type definitions are already specified through EdgeX ``Core contract Service`` , and to improve the using experience, user are NOT necessary to specify data types when creating stream. Kuiper source tries to load all of ``value descriptors`` from ``Core contract Service`` during initialization of a rule (so now if you have any updated value descriptors, you will have to **restart the rule**), then if with any data sending from message bus, it will be converted into [corresponding data types](../rules/sources/edgex.md).
+  However, data type definitions are already specified through EdgeX ``Core contract Service`` , and to improve the using experience, user are NOT necessary to specify data types when creating stream. eKuiper source tries to load all of ``value descriptors`` from ``Core contract Service`` during initialization of a rule (so now if you have any updated value descriptors, you will have to **restart the rule**), then if with any data sending from message bus, it will be converted into [corresponding data types](../rules/sources/edgex.md).
 
-- An EdgeX message bus sink is extended to support send analysis result back to EdgeX Message Bus. User can also choose to send analysis result to RestAPI, Kuiper already supported it. 
+- An EdgeX message bus sink is extended to support send analysis result back to EdgeX Message Bus. User can also choose to send analysis result to RestAPI, eKuiper already supported it. 
 
 ![](./arch_light.png)
 
@@ -73,16 +73,16 @@ ed7ad5ae08b2        nexus3.edgexfoundry.org:10004/docker-edgex-volume:master    
 
 #### Run with native
 
-For performance reason, reader probably wants to run Kuiper with native approach. But you may find that [EdgeX cannot be used](https://github.com/emqx/kuiper/issues/596) with the downloaded Kuiper binary packages. It's because that EdgeX message bus relies on `zeromq` library. If  `zeromq` library cannot be found in the library search path, it cannot be started. So it will have those Kuiper users who do not want to use EdgeX install the `zeromq` library as well. For this reason, the default downloaded Kuiper package **<u>does NOT have embedded support</u>** for `EdgeX`. If reader wants to support `EdgeX` in native packages, you can either make a native package by running command `make pkg_with_edgex`, or just copy the binary package from docker container.
+For performance reason, reader probably wants to run eKuiper with native approach. But you may find that [EdgeX cannot be used](https://github.com/lf-edge/ekuiper/issues/596) with the downloaded eKuiper binary packages. It's because that EdgeX message bus relies on `zeromq` library. If  `zeromq` library cannot be found in the library search path, it cannot be started. So it will have those eKuiper users who do not want to use EdgeX install the `zeromq` library as well. For this reason, the default downloaded eKuiper package **<u>does NOT have embedded support</u>** for `EdgeX`. If reader wants to support `EdgeX` in native packages, you can either make a native package by running command `make pkg_with_edgex`, or just copy the binary package from docker container.
 
 ### Create a stream
 
 There are two approaches to manage stream, you can use your preferred approach.
 
 #### Option 1: Use Rest API
-Notice: Rest API of Kuiper in EdgeX uses ``48075`` instead of default ``9081``. So please change 9081 to 48075 in all of documents when you use EdgeX Kuiper Rest API.
+Notice: Rest API of eKuiper in EdgeX uses ``48075`` instead of default ``9081``. So please change 9081 to 48075 in all of documents when you use EdgeX eKuiper Rest API.
 
-The next step is to create a stream that can consume data from EdgeX message bus. Please change ``$kuiper_docker`` to Kuiper docker instance IP address.
+The next step is to create a stream that can consume data from EdgeX message bus. Please change ``$kuiper_docker`` to eKuiper docker instance IP address.
 
 ```shell
 curl -X POST \
@@ -95,9 +95,9 @@ curl -X POST \
 
 For other Rest APIs, please refer to [this doc](../restapi/overview.md).
 
-#### Option 2: Use Kuiper CLI
+#### Option 2: Use eKuiper CLI
 
-Run following command to enter the running Kuiper docker instance.
+Run following command to enter the running eKuiper docker instance.
 
 ```shell
 docker exec -it edgex-kuiper /bin/sh
@@ -113,7 +113,7 @@ For other command line tools, please refer to [this doc](../cli/overview.md).
 
 ------
 
-Now the stream is created. But you maybe curious about how Kuiper knows the message bus IP address & port, because such information are not specified in ``CREATE STREAM`` statement. Those configurations are managed in ``etc/sources/edgex.yaml`` , you can type ``cat etc/sources/edgex.yaml`` command to take a look at the contents of file.  If you have different server, ports & service server configurations, please update it accordingly. As mentioned previously, these configurations could be overrode when bring-up the Docker instances.
+Now the stream is created. But you maybe curious about how eKuiper knows the message bus IP address & port, because such information are not specified in ``CREATE STREAM`` statement. Those configurations are managed in ``etc/sources/edgex.yaml`` , you can type ``cat etc/sources/edgex.yaml`` command to take a look at the contents of file.  If you have different server, ports & service server configurations, please update it accordingly. As mentioned previously, these configurations could be overrode when bring-up the Docker instances.
 
 ```yaml
 #Global Edgex configurations
@@ -161,7 +161,7 @@ curl -X POST \
 }'
 ```
 
-#### Option 2: Use Kuiper CLI
+#### Option 2: Use eKuiper CLI
 
 You can create a rule file with any text editor, and copy following contents into it. Let's say the file name is ``rule.txt``.  
 
@@ -183,7 +183,7 @@ You can create a rule file with any text editor, and copy following contents int
 }
 ```
 
-In the running Kuiper instance, and execute following command.
+In the running eKuiper instance, and execute following command.
 
 ```shell
 $ bin/kuiper create rule rule1 -f rule.txt
@@ -194,7 +194,7 @@ Rule rule1 was created successfully, please use 'cli getstatus rule rule1' comma
 
 ------
 
-If you want to send analysis result to another sink, please refer to [other sinks](../rules/overview.md#actions) that supported in Kuiper.
+If you want to send analysis result to another sink, please refer to [other sinks](../rules/overview.md#actions) that supported in eKuiper.
 
 Now you can also take a look at the log file under ``log/stream.log``, or through command ``docker logs edgex-kuiper `` to see detailed info of rule. 
 
@@ -275,23 +275,23 @@ Connecting to 127.0.0.1:20498...
 
 ### Summary
 
-In this tutorial,  we introduce a very simple use of EdgeX Kuiper rule engine. If having any issues regarding to use of Kuiper rule engine, you can open issues in EdgeX or Kuiper Github respository.
+In this tutorial,  we introduce a very simple use of EdgeX eKuiper rule engine. If having any issues regarding to use of eKuiper rule engine, you can open issues in EdgeX or eKuiper Github respository.
 
 ### More Excecise 
 
-Current rule does not filter any data that are sent to Kuiper, so how to filter data?  Please [drop rule](../cli/rules.md) and change the SQL in previous rule accordingly.  After update the rule file, and then deploy the rule again. Please monitor the ``result`` topic of MQTT broker, and please verify see if the rule works or not.
+Current rule does not filter any data that are sent to eKuiper, so how to filter data?  Please [drop rule](../cli/rules.md) and change the SQL in previous rule accordingly.  After update the rule file, and then deploy the rule again. Please monitor the ``result`` topic of MQTT broker, and please verify see if the rule works or not.
 
 #### Extended Reading
 
-- Starting from Kuiper 0.9.1 version, [a visualized web UI](../manager-ui/overview.md) is released with a separated Docker image. You can manage the streams, rules and plugins through web page. 
+- Starting from eKuiper 0.9.1 version, [a visualized web UI](../manager-ui/overview.md) is released with a separated Docker image. You can manage the streams, rules and plugins through web page. 
 - Read [EdgeX source](../rules/sources/edgex.md) for more detailed information of configurations and data type conversion.
 - [How to use meta function to extract additional data from EdgeX message bus?](edgex_meta.md) There are some other information are sent along with device service, such as event created time, event id etc. If you want to use such metadata information in your SQL statements, please refer to this doc.
-- [Use Golang template to customize analaysis result in Kuiper](../rules/data_template.md) Before the analysis result is sent to different sinks, the data template can be used to make more processing. You can refer to this doc for more scenarios of using data templates.
-- [EdgeX message bus sink doc](../rules/sinks/edgex.md). The document describes how to use EdgeX message bus sink. If you'd like to have your analysis result be consumed by other EdgeX services, you can send analysis data with EdgeX data format through this sink, and other EdgeX services can subscribe new message bus exposed by Kuiper sink.
-- [Kuiper plugin development tutorial](../plugins/plugins_tutorial.md): Kuiper plugin is based on the plugin mechanism of Golang, users can build loosely-coupled plugin applications,  dynamic loading and binding when it is running. You can refer to this article if you're interested in Kuiper plugin development.
+- [Use Golang template to customize analaysis result in eKuiper](../rules/data_template.md) Before the analysis result is sent to different sinks, the data template can be used to make more processing. You can refer to this doc for more scenarios of using data templates.
+- [EdgeX message bus sink doc](../rules/sinks/edgex.md). The document describes how to use EdgeX message bus sink. If you'd like to have your analysis result be consumed by other EdgeX services, you can send analysis data with EdgeX data format through this sink, and other EdgeX services can subscribe new message bus exposed by eKuiper sink.
+- [eKuiper plugin development tutorial](../plugins/plugins_tutorial.md): eKuiper plugin is based on the plugin mechanism of Golang, users can build loosely-coupled plugin applications,  dynamic loading and binding when it is running. You can refer to this article if you're interested in eKuiper plugin development.
 
- If you want to explore more features of EMQ X Kuiper, please refer to below resources.
+ If you want to explore more features of eKuiper, please refer to below resources.
 
-- [Kuiper Github code repository](https://github.com/emqx/kuiper/)
-- [Kuiper reference guide](https://github.com/emqx/kuiper/blob/edgex/docs/en_US/reference.md)
+- [eKuiper Github code repository](https://github.com/lf-edge/ekuiper/)
+- [eKuiper reference guide](https://github.com/lf-edge/ekuiper/blob/edgex/docs/en_US/reference.md)
 

@@ -2,11 +2,11 @@
 
 ## Download & install
 
-Get the installation package via https://github.com/emqx/kuiper/releases or https://www.emqx.io/downloads#kuiper
+Get the installation package via https://github.com/lf-edge/ekuiper/releases or https://www.emqx.io/downloads#kuiper
 
 ### zip、tar.gz compressed package
 
-Unzip kuiper
+Unzip eKuiper
 
 ```sh
 $ unzip kuiper-$VERISON-$OS-$ARCH.zip
@@ -14,7 +14,7 @@ or
 $ tar -xzf kuiper-$VERISON-$OS-$ARCH.zip
 ```
 
-Run `bin/kuiperd` to start the kuiper server
+Run `bin/kuiperd` to start the eKuiper server
 
 ```sh
 $ bin/kuiperd
@@ -22,10 +22,10 @@ $ bin/kuiperd
 
 You should see a successful message: `Serving Rule server on port 20498`
 
-The directory structure of kuiper is as follows:
+The directory structure of eKuiper is as follows:
 
 ```
-kuiper_installed_dir
+eKuiper_installed_dir
   bin
     server
     cli
@@ -43,7 +43,7 @@ kuiper_installed_dir
 
 #### deb、rpm installation package
 
-Use related commands to install kuiper
+Use related commands to install eKuiper
 
 ```sh
 $ sudo dpkg -i kuiper_$VERSION_$ARCH.deb
@@ -51,7 +51,7 @@ or
 $ sudo rpm -ivh kuiper-$VERSION-1.el7.rpm
 ```
 
-Run `kuiperd` to start the kuiper server
+Run `kuiperd` to start the eKuiper server
 
 ```sh
 $ sudo kuiperd
@@ -59,13 +59,13 @@ $ sudo kuiperd
 
 You should see a successful message: `Serving Rule server on port 20498`
 
-kuiper also supports systemctl startup
+eKuiper also supports systemctl startup
 
  ```sh
  $ sudo systemctl start kuiper
  ```
 
-The directory structure of kuiper is as follows:
+The directory structure of eKuiper is as follows:
 
 ```
 /usr/lib/kuiper/bin
@@ -86,15 +86,15 @@ The directory structure of kuiper is as follows:
 
 ## Run the first rule stream
 
-Kuiper rule is composed by a SQL and multiple actions. Kuiper SQL is an easy to use SQL-like language to specify the logic of the rule stream. By providing the rule through CLI, a rule stream will be created in the rule engine and run continuously. The user can then manage the rules through CLI.
+eKuiper rule is composed by a SQL and multiple actions. eKuiper SQL is an easy to use SQL-like language to specify the logic of the rule stream. By providing the rule through CLI, a rule stream will be created in the rule engine and run continuously. The user can then manage the rules through CLI.
 
-Kuiper has a lot of built-in functions and extensions available for complex analysis, and you can find more information about the grammer and its functions from the [Kuiper SQL reference](sqls/overview.md).
+eKuiper has a lot of built-in functions and extensions available for complex analysis, and you can find more information about the grammer and its functions from the [eKuiper SQL reference](sqls/overview.md).
 
-Let's consider a sample scenario where we are receiving temperature and humidity record from a sensor through MQTT service and we want to issue an alert when the temperature is bigger than 30 degrees celcius in a time window. We can write a Kuiper rule for the above scenario using the following several steps.
+Let's consider a sample scenario where we are receiving temperature and humidity record from a sensor through MQTT service and we want to issue an alert when the temperature is bigger than 30 degrees celcius in a time window. We can write a eKuiper rule for the above scenario using the following several steps.
 
 ### Prerequisite
 
-We assume there is already a MQTT broker as the data source of Kuiper server. If you don't have one, EMQX is recommended. Please follow the [EMQ Installation Guide](https://docs.emqx.io/en/broker/latest/getting-started/install.html) to setup a mqtt broker.
+We assume there is already a MQTT broker as the data source of eKuiper server. If you don't have one, EMQX is recommended. Please follow the [EMQ Installation Guide](https://docs.emqx.io/en/broker/latest/getting-started/install.html) to setup a mqtt broker.
 
 ### Defining the input stream
 
@@ -196,10 +196,10 @@ You can use command line tool to stop the rule for a while and restart it and ot
 $ bin/kuiper stop rule ruleDemo
 ```
 
-Refer to the following topics for guidance on using the Kuiper.
+Refer to the following topics for guidance on using the eKuiper.
 
 - [Command line interface tools - CLI](./cli/overview.md)
-- [Kuiper SQL reference](./sqls/overview.md)
+- [eKuiper SQL reference](./sqls/overview.md)
 - [Rules](./rules/overview.md)
-- [Extend Kuiper](./extension/overview.md)
+- [Extend eKuiper](./extension/overview.md)
 - [Plugins](./plugins/overview.md)

@@ -2,11 +2,11 @@
 
 
 
-Refer to the following topics for guidance on using the Kuiper.
+Refer to the following topics for guidance on using the eKuiper.
 
 - [Install and operation](operation/overview.md)
 - [Command line interface tools - CLI](cli/overview.md)
-- [Kuiper SQL reference](sqls/overview.md)
+- [eKuiper SQL reference](sqls/overview.md)
 - [Rules](rules/overview.md)
-- [Extend Kuiper](extension/overview.md)
+- [Extend eKuiper](extension/overview.md)
 - [Plugins](plugins/overview.md)

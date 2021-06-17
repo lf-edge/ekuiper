@@ -1,12 +1,12 @@
 # Source Extension
 
-Sources feed data into Kuiper from other systems. Kuiper has built-in source support for [MQTT broker](../rules/sources/mqtt.md). There are still needs to consume data from various external systems include messaging systems and data pipelines etc. Source extension is presented to meet this requirement.
+Sources feed data into eKuiper from other systems. eKuiper has built-in source support for [MQTT broker](../rules/sources/mqtt.md). There are still needs to consume data from various external systems include messaging systems and data pipelines etc. Source extension is presented to meet this requirement.
 
 ## Developing
 
 ### Develop a source
 
-To develop a source for Kuiper is to implement [api.Source](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go) interface and export it as a golang plugin.
+To develop a source for eKuiper is to implement [api.Source](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) interface and export it as a golang plugin.
 
 Before starting the development, you must [setup the environment for golang plugin](overview.md#setup-the-plugin-developing-environment). 
 
@@ -38,20 +38,20 @@ function MySource() api.Source{
 }
 ```
 
-The [Randome Source](https://github.com/emqx/kuiper/blob/master/plugins/sources/random/random.go) is a good example.
+The [Randome Source](https://github.com/lf-edge/ekuiper/blob/master/plugins/sources/random/random.go) is a good example.
 
 ### Rewindable source
 If the [rule checkpoint](../rules/state_and_fault_tolerance.md#source-consideration) is enabled, the source requires to be rewindable. That means the source need to implement both ``api.Source`` and ``api.Rewindable`` interface. 
 
-A typical implementation is to save an ``offset`` as a field of the source. And update the offset value when reading in new value. Notice that, when implementing GetOffset() will be called by Kuiper system which means the offset value can be accessed by multiple go routines. So a lock is required when read or write the offset.
+A typical implementation is to save an ``offset`` as a field of the source. And update the offset value when reading in new value. Notice that, when implementing GetOffset() will be called by eKuiper system which means the offset value can be accessed by multiple go routines. So a lock is required when read or write the offset.
 
 
 
 ### Deal with configuration
 
-Kuiper configurations are formatted as yaml and it provides a centralize location _/etc_ to hold all the configurations. Inside it, a subfolder _sources_ is provided for the source configurations including the extended sources.
+eKuiper configurations are formatted as yaml and it provides a centralize location _/etc_ to hold all the configurations. Inside it, a subfolder _sources_ is provided for the source configurations including the extended sources.
 
-A configuration system is supported for Kuiper extension which will automatically read the configuration in yaml file and feed into the _Configure_ method of the source. If the [CONF_KEY](../sqls/streams.md#create-stream) property is specified in the stream, the configuration of that key will be fed. Otherwise, the default configuration is used.
+A configuration system is supported for eKuiper extension which will automatically read the configuration in yaml file and feed into the _Configure_ method of the source. If the [CONF_KEY](../sqls/streams.md#create-stream) property is specified in the stream, the configuration of that key will be fed. Otherwise, the default configuration is used.
  
  To use configuration in your source, the following conventions must be followed.
  1. The name of your configuration file must be the same as the plugin name. For example, mySource.yaml.

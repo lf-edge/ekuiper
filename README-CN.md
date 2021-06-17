@@ -1,5 +1,5 @@
-# EMQ X Kuiper - 超轻量物联网边缘数据分析软件
-[![GitHub Release](https://img.shields.io/github/release/emqx/kuiper?color=brightgreen)](https://github.com/emqx/kuiper/releases)
+# LF Edge eKuiper - 超轻量物联网边缘数据分析软件
+[![GitHub Release](https://img.shields.io/github/release/lf-edge/ekuiper?color=brightgreen)](https://github.com/lf-edge/ekuiper/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/emqx/kuiper)](https://hub.docker.com/r/emqx/kuiper)
 [![Slack](https://img.shields.io/badge/Slack-LF%20Edge-39AE85?logo=slack)](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFzM2CEABBcKYGEVCgkw)
 [![Twitter](https://img.shields.io/badge/Follow-EMQ-1DA1F2?logo=twitter)](https://twitter.com/EMQTech)
@@ -10,13 +10,13 @@
 
 ## 概览
 
-EMQ X Kuiper 是 Golang 实现的轻量级物联网边缘分析、流式处理开源软件，可以运行在各类资源受限的边缘设备上。Kuiper 设计的一个主要目标就是将在云端运行的实时流式计算框架（比如 [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) 和 [Apache Flink](https://flink.apache.org) 等）迁移到边缘端。Kuiper 参考了上述云端流式处理项目的架构与实现，结合边缘流式数据处理的特点，采用了编写基于``源 (Source)``，``SQL (业务逻辑处理)``, ``目标 (Sink)`` 的规则引擎来实现边缘端的流式数据处理。
+LF Edge eKuiper 是 Golang 实现的轻量级物联网边缘分析、流式处理开源软件，可以运行在各类资源受限的边缘设备上。eKuiper 设计的一个主要目标就是将在云端运行的实时流式计算框架（比如 [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) 和 [Apache Flink](https://flink.apache.org) 等）迁移到边缘端。eKuiper 参考了上述云端流式处理项目的架构与实现，结合边缘流式数据处理的特点，采用了编写基于``源 (Source)``，``SQL (业务逻辑处理)``, ``目标 (Sink)`` 的规则引擎来实现边缘端的流式数据处理。
 
 ![arch](./docs/zh_CN/arch.png)
 
 **应用场景**
 
-Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物联网中对生产线数据进行实时处理；车联网中的车机对来自汽车总线数据的即时分析；智能城市场景中，对来自于各类城市设施数据的实时分析。通过 Kuiper 在边缘端的处理，可以提升系统响应速度，节省网络带宽费用和存储成本，以及提高系统安全性等。
+eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物联网中对生产线数据进行实时处理；车联网中的车机对来自汽车总线数据的即时分析；智能城市场景中，对来自于各类城市设施数据的实时分析。通过 eKuiper 在边缘端的处理，可以提升系统响应速度，节省网络带宽费用和存储成本，以及提高系统安全性等。
 
 ## 功能
 
@@ -56,7 +56,7 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 
 ## 快速入门
 
-- [Kuiper 5分钟快速入门](docs/zh_CN/quick_start_docker.md)
+- [eKuiper 5分钟快速入门](docs/zh_CN/quick_start_docker.md)
 - [EdgeX 规则引擎教程](docs/zh_CN/edgex/edgex_rule_engine_tutorial.md)
 
 ## 社区
@@ -70,14 +70,14 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 - [Reddit](https://www.reddit.com/r/emqx/)
 - [Facebook](https://www.facebook.com/emqxmqtt)
 
-欢迎你将任何 bug、问题和功能请求提交到 [emqx/kuiper](https://github.com/emqx/kuiper/issues)。
+欢迎你将任何 bug、问题和功能请求提交到 [lf-edge/ekuiper](https://github.com/lf-edge/ekuiper/issues)。
 
 ## 性能测试结果
 
 ### MQTT 吞吐量测试支持
 
 - 使用 JMeter MQTT 插件来发送数据到 EMQ X 服务器，消息类似于 ``{"temperature": 10, "humidity" : 90}``， 温度与湿度的值是介于 0 ～ 100 之间的随机整数值
-- Kuiper 从 EMQ X 服务器订阅消息，并且通过 SQL 分析数据： ``SELECT * FROM demo WHERE temperature > 50 `` 
+- eKuiper 从 EMQ X 服务器订阅消息，并且通过 SQL 分析数据： ``SELECT * FROM demo WHERE temperature > 50 `` 
 - 分析结果通过 [文件插件](docs/zh_CN/plugins/sinks/file.md) 写到本地的文件系统里
 
 | 设备                                                 | 每秒发送消息数 | CPU 使用        | 内存 |
@@ -100,7 +100,7 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
   }
   ```
 
-- Kuiper 从 EdgeX ZeroMQ 消息总线订阅数据，并且使用 ``SELECT * FROM demo WHERE temperature > 50 `` 来分析数据，其中 90% 数据被规则所过滤。
+- eKuiper 从 EdgeX ZeroMQ 消息总线订阅数据，并且使用 ``SELECT * FROM demo WHERE temperature > 50 `` 来分析数据，其中 90% 数据被规则所过滤。
 
 - 分析结果将被发送到 [nop sink](docs/zh_CN/rules/sinks/nop.md)，所有的数据都被忽略。
 
@@ -130,9 +130,9 @@ Kuiper 可以运行在各类物联网的边缘使用场景中，比如工业物�
 - [参考指南](docs/zh_CN/reference.md)
   - [安装与操作](docs/zh_CN/operation/overview.md)
   - [命令行界面工具-CLI](docs/zh_CN/cli/overview.md)
-  - [Kuiper SQL参考](docs/zh_CN/sqls/overview.md)
+  - [eKuiper SQL参考](docs/zh_CN/sqls/overview.md)
   - [规则](docs/zh_CN/rules/overview.md)
-  - [扩展Kuiper](docs/zh_CN/extension/overview.md)
+  - [扩展eKuiper](docs/zh_CN/extension/overview.md)
   - [插件](docs/zh_CN/plugins/overview.md)
 
 ## 从源码编译

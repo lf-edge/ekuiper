@@ -5,16 +5,16 @@
 ## 编译和部署插件
 
 ```shell
-# cd $kuiper_src
+# cd $eKuiper_src
 # go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Random.so extensions/sources/random/random.go
-# cp plugins/sources/Random.so $kuiper_install/plugins/sources
+# cp plugins/sources/Random.so $eKuiper_install/plugins/sources
 ```
 
-重新启动 Kuiper 服务器以激活插件。
+重新启动 eKuiper 服务器以激活插件。
 
 ## 配置
 
-该源的配置为 `$kuiper/etc/sources/random.yaml`。格式如下：
+该源的配置为 `$ekuiper/etc/sources/random.yaml`。格式如下：
 
 ```yaml
 default:

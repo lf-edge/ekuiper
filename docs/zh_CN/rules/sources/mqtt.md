@@ -1,6 +1,6 @@
 # MQTT源
 
-Kuiper 为 MQTT 源流提供了内置支持，流可以订阅来自 MQTT 代理的消息并输入Kuiper 处理管道。 MQTT 源的配置文件位于 `$kuiper/etc/mqtt_source.yaml`。 以下是文件格式。
+eKuiper 为 MQTT 源流提供了内置支持，流可以订阅来自 MQTT 代理的消息并输入eKuiper 处理管道。 MQTT 源的配置文件位于 `$ekuiper/etc/mqtt_source.yaml`。 以下是文件格式。
 
 ```yaml
 #全局MQTT配置

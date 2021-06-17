@@ -1,12 +1,12 @@
 # External Function
 
-External functions map existing services to Kuiper SQL functions through configuration. When running the rules that use external functions, Kuiper will convert data input and output according to the configuration, and call the corresponding service.
+External functions map existing services to eKuiper SQL functions through configuration. When running the rules that use external functions, eKuiper will convert data input and output according to the configuration, and call the corresponding service.
 
 ## Configuration
 
 The configuration file of the external function is in json format, which usually consists of two parts:
 
-- JSON file, used to describes the information of the service. The file will be saved as the name of the service in Kuiper.
+- JSON file, used to describes the information of the service. The file will be saved as the name of the service in eKuiper.
 - Schema file, used to  describes the service API interface, including the name of the API included in the service,, input and output parameter type. Currently only [protobuf type](https://developers.google.com/protocol-buffers) is supported.
 
 The json configuration file includes the following two parts:
@@ -34,8 +34,8 @@ Assuming we have a service named 'sample', we can define a service definition fi
       "website": "https://www.emqx.io"
     },
     "helpUrl": {
-      "en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/functions/functions.md",
-      "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/functions/functions.md"
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/plugins/functions/functions.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/plugins/functions/functions.md"
     },
     "description": {
       "en_US": "Sample external services for test only",
@@ -168,7 +168,7 @@ message MessageRequest {
 }
 ```
 
-In this example, there is no *body* specified thus all parameter fields are mapped to the query parameter. When calling `SearchMessage({"author":"Author","title":"Message1"})` in Kuiper SQL, it will be mapped to `GET /v1/messages?author=Author&title=Message1`.
+In this example, there is no *body* specified thus all parameter fields are mapped to the query parameter. When calling `SearchMessage({"author":"Author","title":"Message1"})` in eKuiper SQL, it will be mapped to `GET /v1/messages?author=Author&title=Message1`.
 
 For more detail about the mapping syntax for protobuf, please check [adding transcoding mapping](https://cloud.google.com/endpoints/docs/grpc/transcoding#adding_transcoding_mappings) and [httprule](https://cloud.google.com/endpoints/docs/grpc-service-config/reference/rpc/google.api#httprule).
 
@@ -184,17 +184,17 @@ package yourpackage;
 import "google/api/annotations.proto";
 ```
 
-Thus, the google api proto files must be in the imported path. Kuiper already ship those proto files in `etc/services/schemas/google`. Users do not need to add this to the packaged customized service.
+Thus, the google api proto files must be in the imported path. eKuiper already ship those proto files in `etc/services/schemas/google`. Users do not need to add this to the packaged customized service.
 
 ### Mapping
 
 In the external service configuration, there are 1 json file and at least 1 schema file(.proto) to define the function mapping. This will define a 3 layer mappings.
 
-1. Kuiper external service layer: it is defined by the file name of the json. It will be used as a key for the external service in the [REST API](../restapi/services.md) for the describe, delete and update of the service as a whole.
+1. eKuiper external service layer: it is defined by the file name of the json. It will be used as a key for the external service in the [REST API](../restapi/services.md) for the describe, delete and update of the service as a whole.
 2. Interface layer: it is defined in the `interfaces` section of the json file. This is a virtual layer to group functions with the same schemas so that the shared properties such as address, schema file can be specified only once.
-3. Kuiper function layer: it is defined in the proto file as `rpc`. Notice that, the proto rpcs must be defined under a service section in protobuf. There is no restriction for the name of proto service. The function name is the same as the rpc name in the proto by default. But the user can override the mapping name in the json files's interfaces -> functions section.
+3. eKuiper function layer: it is defined in the proto file as `rpc`. Notice that, the proto rpcs must be defined under a service section in protobuf. There is no restriction for the name of proto service. The function name is the same as the rpc name in the proto by default. But the user can override the mapping name in the json files's interfaces -> functions section.
 
-In this sample, if a user call `objectDetection` function in Kuiper SQL, the mapping steps are:
+In this sample, if a user call `objectDetection` function in eKuiper SQL, the mapping steps are:
 
 1. Found a function mapping in json file, interfaces *tsrest* functions section: `{"name": "objectDetect","serviceName": "object_detection"}`. This maps SQL function `objectDetect` to rpc named `object_detection`.
 2. In the schema file `tsrest.proto`, rpc `object_detection` is defined and the parameter and return type will be parsed. The `tsrest` interface properties such as address, protocol will be used to issue the request in runtime.
@@ -220,7 +220,7 @@ External functions need to be registered before being used. There are two ways t
 - Placed in the configuration folder
 - Dynamic registration via REST API.
 
-When Kuiper is started, it will read and register the external service configuration file in the configuration folder *etc/services*. Before starting, users can put the configuration file into the configuration folder according to the following rules:
+When eKuiper is started, it will read and register the external service configuration file in the configuration folder *etc/services*. Before starting, users can put the configuration file into the configuration folder according to the following rules:
 
 1. The file name must be *$service name$.json*. For example, *sample.json* will be registered as a sample service.
 
@@ -237,7 +237,7 @@ When Kuiper is started, it will read and register the external service configura
        other.json
        ...
    ```
-   Note: After Kuiper is started, it **cannot** automatically load the system by modifying the configuration file. If you need to update dynamically, please use the REST service.
+   Note: After eKuiper is started, it **cannot** automatically load the system by modifying the configuration file. If you need to update dynamically, please use the REST service.
 
 For dynamic registration and management of services, please refer to [External Service Management API](../restapi/services.md).
 
@@ -253,7 +253,7 @@ Before calling the function, you need to make sure that the REST service is runn
 
 ### Parameter expansion
 
-In the ptoto file, the general parameters are in message type. When being mapped to Kuiper, its parameters can be received in two situations:
+In the ptoto file, the general parameters are in message type. When being mapped to eKuiper, its parameters can be received in two situations:
 
 1. If the parameters are not expanded, they must be in struct type when being passed in.
 2. If the parameters are expanded, multiple parameters can be passed in according to the order defined in the message.
@@ -267,5 +267,5 @@ message ObjectDetectionRequest {
 }
 ```
 
-In Kuiper, users can pass in the entire struct as a parameter, or pass in two string parameters as cmd and base64_img respectively.
+In eKuiper, users can pass in the entire struct as a parameter, or pass in two string parameters as cmd and base64_img respectively.
 

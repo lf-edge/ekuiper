@@ -4,7 +4,7 @@
 
 
 
-在 Kuiper 中，每个列或表达式都有一个相关的数据类型。 数据类型描述（约束）该类型的列可以容纳的一组值或该类型可以产生的表达式。
+在 eKuiper 中，每个列或表达式都有一个相关的数据类型。 数据类型描述（约束）该类型的列可以容纳的一组值或该类型可以产生的表达式。
 
 以下是支持的数据类型的列表。
 
@@ -47,7 +47,7 @@ my_stream
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```
 
-该流将订阅 MQTT 主题`topic/temperature`，服务器连接使用配置文件`$kuiper/etc/mqtt_source.yaml` 中默认部分的 servers 键。
+该流将订阅 MQTT 主题`topic/temperature`，服务器连接使用配置文件`$ekuiper/etc/mqtt_source.yaml` 中默认部分的 servers 键。
 
 - 有关更多信息，请参见 [MQTT source](../rules/sources/mqtt.md) 
 
@@ -64,7 +64,7 @@ demo (
 	) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
 ```
 
- 流将订阅 MQTT 主题 `test/`，服务器连接使用配置文件`$kuiper/etc/mqtt_source.yaml` 中 demo 部分的设置。
+ 流将订阅 MQTT 主题 `test/`，服务器连接使用配置文件`$ekuiper/etc/mqtt_source.yaml` 中 demo 部分的设置。
 
 - 有关更多信息，请参见 [MQTT source](../rules/sources/mqtt.md) 
 

@@ -25,10 +25,10 @@
 
 ### 1.3 配置文件格式及含义：
 ```yaml
-port: 9081  //kuiper 端口
+port: 9081  //eKuiper 端口
 timeout: 500  //执行一条命令超时时间（单位：毫秒）
 intervalTime: 60  //隔多久检查一次命令文件夹（单位：秒）
-ip: "127.0.0.1" //kuiper ip地址
+ip: "127.0.0.1" //eKuiper ip地址
 logPath: "./log/kubernetes.log" //日志保存路径
 commandDir: "./sample/" //命令文件夹路径
 ```

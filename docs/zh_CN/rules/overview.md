@@ -33,7 +33,7 @@
 
 ### id
 
-规则的标识。 规则名称不能在同一 Kuiper 实例中重复。
+规则的标识。 规则名称不能在同一 eKuiper 实例中重复。
 
 ### sql
 
@@ -60,12 +60,12 @@
 
 ## 源
 
-- Kuiper 支持以下 3 种内置源：
-  - MQTT 源，有关更多详细信息，请参阅 [MQTT source stream](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/mqtt.md)。
-  - EdgeX 源缺省是包含在[容器镜像](https://hub.docker.com/r/emqx/kuiper)中发布的，但是没有包含在单独下载的二进制包中，您可以使用 `make pkg_with_edgex` 命令来编译出一个支持 EdgeX 源的程序。更多关于它的详细信息，请参考 [EdgeX source stream](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/edgex.md)。
-  - HTTP 定时拉取源，按照用户指定的时间间隔，定时从 HTTP 服务器中拉取数据，更多详细信息，请参考[这里](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/http_pull.md) 。
-- 有关Kuiper SQL 的更多信息，请参阅 [SQL](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/sqls/overview.md)。
-- 可以自定义来源，请参阅 [extension](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/extension/overview.md)了解更多详细信息。
+- eKuiper 支持以下 3 种内置源：
+  - MQTT 源，有关更多详细信息，请参阅 [MQTT source stream](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/mqtt.md)。
+  - EdgeX 源缺省是包含在[容器镜像](https://hub.docker.com/r/emqx/kuiper)中发布的，但是没有包含在单独下载的二进制包中，您可以使用 `make pkg_with_edgex` 命令来编译出一个支持 EdgeX 源的程序。更多关于它的详细信息，请参考 [EdgeX source stream](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/edgex.md)。
+  - HTTP 定时拉取源，按照用户指定的时间间隔，定时从 HTTP 服务器中拉取数据，更多详细信息，请参考[这里](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/http_pull.md) 。
+- 有关eKuiper SQL 的更多信息，请参阅 [SQL](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/overview.md)。
+- 可以自定义来源，请参阅 [extension](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/extension/overview.md)了解更多详细信息。
 
 ## 目标/动作
 
@@ -94,7 +94,7 @@
 
 ### 数据模板
 
-用户可以参考 [Kuiper 中使用 Golang 模版 (template) 定制分析结果](./data_template.md) 来获取更多的关于数据模版的使用场景。
+用户可以参考 [eKuiper 中使用 Golang 模版 (template) 定制分析结果](./data_template.md) 来获取更多的关于数据模版的使用场景。
 
 如果 sendSingle 为 true，则数据模板将针对某一条记录执行操作； 否则，它将对整个记录数组执行操作。 典型的数据模板是：
 
@@ -158,7 +158,7 @@
 
 ### 模版中支持的函数
 
-Kuiper 扩展了几个可以在模版中使用的函数。
+eKuiper 扩展了几个可以在模版中使用的函数。
 
 - `json para1`: `json` 函数用于将 map 内容转换为 JSON 字符串
 - `base64 para1`: `base64` 函数用于将参数值编码为 base64 字符串

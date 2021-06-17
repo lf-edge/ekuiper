@@ -1,4 +1,4 @@
-Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为例演示如何部署 Kuiper：
+eKuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为例演示如何部署 eKuiper：
 
 ## Prepare：
 
@@ -22,15 +22,15 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
   $ export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   ```
 
-## 获取 Kuiper Helm Chart
+## 获取 eKuiper Helm Chart
 
-+ 可以通过一下两种方法的任意一种获取 Kuiper Helm Chart，本文以使用 `git clone` 拉取代码的方式为例讲解。
++ 可以通过一下两种方法的任意一种获取 eKuiper Helm Chart，本文以使用 `git clone` 拉取代码的方式为例讲解。
 
   + Git clone
 
     ```shell
-    $ git clone https://github.com/emqx/kuiper
-    $ cd kuiper/deploy/chart/kuiper
+    $ git clone https://github.com/lf-edge/ekuiper
+    $ cd ekuiper/deploy/chart/kuiper
     ```
 
   + Helm repo
@@ -49,19 +49,19 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
       emqx/kuiper	0.0.4        	0.0.4      	A lightweight IoT edge analytic software
       ```
 
-+ 可以通过编辑 `values.yaml` 文件或使用 `helm install --set` 命令编辑 Kuiper Helm Chart 的配置
++ 可以通过编辑 `values.yaml` 文件或使用 `helm install --set` 命令编辑 eKuiper Helm Chart 的配置
 
-  ##### Kuiper Helm Chart 配置项
+  ##### eKuiper Helm Chart 配置项
 
   | 参数                           | 描述                                | Default Value            |
   | ------------------------------ | ----------------------------------- | ------------------------ |
-  | `replicaCount`                 | 部署kuiper数量                      | 1                        |
+  | `replicaCount`                 | 部署eKuiper数量                      | 1                        |
   | `image.repository`             | 拉取镜像名称                        | emqx/kuiper              |
   | `image.pullPolicy`             | 拉取镜像策略                        | IfNotPresent             |
   | `service.type`  | Kubernetes Service type. |ClusterIP|
-  | `service.kuiper`  | Kuiper 端口 |20498|
-  | `service.restapi`  | Kuiper ReseApi 端口 . |9081|
-  | `service.nodePorts.kuiper`  | Kubernetes node port for Kuiper. |nil|
+  | `service.kuiper`  | eKuiper 端口 |20498|
+  | `service.restapi`  | eKuiper ReseApi 端口 . |9081|
+  | `service.nodePorts.kuiper`  | Kubernetes node port for eKuiper. |nil|
   | `service.nodePorts.restapi` | Kubernetes node port for RestAPi. |nil|
   | `service.loadBalancerIP`  | loadBalancerIP for Service |	nil |
   | `service.loadBalancerSourceRanges` |	Address(es) that are allowed when service is LoadBalancer |	[] |
@@ -75,13 +75,13 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
   | `nodeSelector`                 | 节点选择                            | {}                       |
   | `tolerations`                  | 污点容忍                            | []                       |
   | `affinity`                     | 节点亲和性                          | {}                       |
-  | `kuiperConfig`                 | Kuiper `etc` 目录下的配置文件           |                        |
+  | `kuiperConfig`                 | eKuiper `etc` 目录下的配置文件           |                        |
 
-## 通过 Helm 部署 Kuiper
+## 通过 Helm 部署 eKuiper
 
-#### 快速部署Kuiper
+#### 快速部署 eKuiper
 
-+ 使用 Helm 部署 Kuiper
++ 使用 Helm 部署 eKuiper
 
   ```shell
   $ helm install my-kuiper .
@@ -105,16 +105,16 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
   Connecting to 127.0.0.1:20498...
   ```
 
-#### 部署持久化的 Kuiper
+#### 部署持久化的 eKuiper
 
-+ Kuiper 通过 创建 PVC 资源挂载 `/kuiper/data` 目录实现持久化 `pods`，**在部署 Kuiper 之前，用户需要自行在 Kubernetes 中创建 PVC 资源或 Storage Classes 资源**
++ eKuiper 通过 创建 PVC 资源挂载 `/ekuiper/data` 目录实现持久化 `pods`，**在部署 eKuiper 之前，用户需要自行在 Kubernetes 中创建 PVC 资源或 Storage Classes 资源**
 
 + 编辑 `values.yaml` 文件，设置 `persistence.enabled=true`
 
   + 如果用户部署了 PVC 资源，那么设置 `persistence.existingClaim=your_pv_name`
   + 如果用户部署了 Storage Classes 资源，那么设置`persistence.storageClass=your_storageClass_name`
 
-+ 使用 Helm 部署 Kuiper
++ 使用 Helm 部署 eKuiper
 
   ```shell
   $ helm install my-kuiper .
@@ -138,7 +138,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
   Connecting to 127.0.0.1:20498...
   ```
 
-#### 部署Kuiper并使用证书
+#### 部署 eKuiper 并使用证书
 
 + 使用 `kubectl create secret` 将证书文件和私钥创建成 Secret 资源，`kubectl create secret` 命令的语法如下：
 
@@ -189,7 +189,7 @@ Kuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s 为
   ...
   ```
 
-+ 使用 Helm 部署 Kuiper
++ 使用 Helm 部署 eKuiper
 
   ```shell
   $ helm install my-kuiper .

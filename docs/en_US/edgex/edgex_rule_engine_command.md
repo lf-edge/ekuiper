@@ -1,8 +1,8 @@
-# Control device with EdgeX Kuiper rules engine
+# Control device with EdgeX eKuiper rules engine
 
 ## Overview
 
-This document describes how to use Kuiper rule engine to control devices with analysis result. To make the tutorial simple,  the doc uses [device-virtual](https://github.com/edgexfoundry/device-virtual-go) sample,  it analyzes the data sent from device-virtual services, and then control the device according to the analysis result produced by Kuiper rule engine.
+This document describes how to use eKuiper rule engine to control devices with analysis result. To make the tutorial simple,  the doc uses [device-virtual](https://github.com/edgexfoundry/device-virtual-go) sample,  it analyzes the data sent from device-virtual services, and then control the device according to the analysis result produced by eKuiper rule engine.
 
 ### Scenarios
 
@@ -11,23 +11,23 @@ In this document, following 2 rules will be created and run.
 1. A rule that monitoring `Random-UnsignedInteger-Device` device, and if `uint8` value is  larger than `20`, then send a command to `Random-Boolean-Device` device, and turn on random generation of bool value.
 2. A rule that monitoring `Random-Integer-Device` device, and if the average value for `int8` with every 20 seconds is larger than 0, then send a command to `Random-Boolean-Device` device service to turn off random generation of bool value.
 
-The scenario does not have any real business logics, but simply to demonstrate the feature of EdgeX Kuiper rule engine. You can make a reasonable business rules based on our demo.
+The scenario does not have any real business logics, but simply to demonstrate the feature of EdgeX eKuiper rule engine. You can make a reasonable business rules based on our demo.
 
 ## Prerequisite knowledge
 
-This document will not cover basic operations for EdgeX & EMQ X Kuiper, so readers should have basic knowledge for them:
+This document will not cover basic operations for EdgeX & eKuiper, so readers should have basic knowledge for them:
 
 - Refer to [this link](https://docs.edgexfoundry.org/1.2/) for learning basic knowledge of EdgeX, and it would be better to finish [Quick Start](https://docs.edgexfoundry.org/1.2/getting-started/quick-start/).
-- Refer to [EdgeX Kuiper Rule Engine Tutorial](https://github.com/emqx/kuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md):  You'd better go through this quick tutorial,  and get to start trying out the rules engine in the EdgeX. 
-- [Go template](https://golang.org/pkg/text/template/): EMQ X Kuiper uses Go template for extracting data from analysis result. Knowledge of Go template could help you to extract expected data from analysis result.
+- Refer to [EdgeX eKuiper Rule Engine Tutorial](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md):  You'd better go through this quick tutorial,  and get to start trying out the rules engine in the EdgeX. 
+- [Go template](https://golang.org/pkg/text/template/): eKuiper uses Go template for extracting data from analysis result. Knowledge of Go template could help you to extract expected data from analysis result.
 
 ## Start to use
 
-Make sure you have followed document [EdgeX Kuiper Rule Engine Tutorial](https://github.com/emqx/kuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md), and successfully run the tutorial. 
+Make sure you have followed document [EdgeX eKuiper Rule Engine Tutorial](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md), and successfully run the tutorial. 
 
 ### Create EdgeX stream
 
-You should create a stream that can consume streaming data from EdgeX application service before creating rule. This step is not required if you already finished [EdgeX Kuiper Rule Engine Tutorial](https://github.com/emqx/kuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md). 
+You should create a stream that can consume streaming data from EdgeX application service before creating rule. This step is not required if you already finished [EdgeX eKuiper Rule Engine Tutorial](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md). 
 
 ```shell
 curl -X POST \
@@ -200,7 +200,7 @@ curl -X PUT \
   -d '{"value":-75, "EnableRandomization_Bool": "true"}'
 ```
 
-Kuiper uses [Go template](https://golang.org/pkg/text/template/) to extract data from analysis result, and the `dataTemplate` should be similar as following.
+eKuiper uses [Go template](https://golang.org/pkg/text/template/) to extract data from analysis result, and the `dataTemplate` should be similar as following.
 
 ```
 "dataTemplate": "{\"value\": {{.int8}}, \"EnableRandomization_Bool\": \"{{.randomization}}\"}"
@@ -210,8 +210,8 @@ In some cases, you probably need to iterate over returned array values, or set d
 
 ## Extended readings
 
- If you want to explore more features of EMQ X Kuiper, please refer to below resources.
+ If you want to explore more features of eKuiper, please refer to below resources.
 
-- [Kuiper Github code repository](https://github.com/emqx/kuiper/)
-- [Kuiper reference guide](https://github.com/emqx/kuiper/blob/edgex/docs/en_US/reference.md)
+- [eKuiper Github code repository](https://github.com/lf-edge/ekuiper/)
+- [eKuiper reference guide](https://github.com/lf-edge/ekuiper/blob/edgex/docs/en_US/reference.md)
 

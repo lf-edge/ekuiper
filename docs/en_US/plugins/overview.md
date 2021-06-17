@@ -1,18 +1,18 @@
-Kuiper has implemented the following plugins. At present, some of these plug-ins are examples used to describe the plug-in development process, and some are contributed by community developers. Please read the relevant documents carefully before using the plugins.
+eKuiper has implemented the following plugins. At present, some of these plug-ins are examples used to describe the plug-in development process, and some are contributed by community developers. Please read the relevant documents carefully before using the plugins.
 
-Developers of Kuiper plugin can specify metadata files during the development process. These metadata files are mainly used in the following aspects:
+Developers of eKuiper plugin can specify metadata files during the development process. These metadata files are mainly used in the following aspects:
 
-- Plugin compilation: For plugins in the directories `plugins/sinks` and `plugins/sources`, if the developer provides related metadata files, Kuiper will automatically compile the plugins when the version is released, and then automatically upload these plugins to the EMQ plugin download website: www.emqx.io/downloads/kuiper/vx.x.x/plugins, where `x.x.x` is the version number.
+- Plugin compilation: For plugins in the directories `plugins/sinks` and `plugins/sources`, if the developer provides related metadata files, eKuiper will automatically compile the plugins when the version is released, and then automatically upload these plugins to the EMQ plugin download website: www.emqx.io/downloads/kuiper/vx.x.x/plugins, where `x.x.x` is the version number.
 
-  **<u>Note: Due to the limitations of Golang plugins, these automatically compiled plugins can run in the container of the corresponding version released by Kuiper. However, for the directly downloaded binary installation package, or the binary package compiled by the user , these downloaded plugins are not guaranteed to work properly. </u>**
+  **<u>Note: Due to the limitations of Golang plugins, these automatically compiled plugins can run in the container of the corresponding version released by eKuiper. However, for the directly downloaded binary installation package, or the binary package compiled by the user , these downloaded plugins are not guaranteed to work properly. </u>**
 
-- Visualization: from version 0.9.1, Kuiper will release the management console synchronously with the version, which can be used to manage Kuiper nodes, streams, rules, and plugins. Plugin metadata provided by developers can make it more convenient for users to use plugins. Therefore, it is strongly recommended that plugin developers provide corresponding metadata files when submitting plugins. The metadata file is in JSON format. The file name is consistent with that of the plugin and is placed in the root directory of the compressed package together with the plugin.
+- Visualization: from version 0.9.1, eKuiper will release the management console synchronously with the version, which can be used to manage eKuiper nodes, streams, rules, and plugins. Plugin metadata provided by developers can make it more convenient for users to use plugins. Therefore, it is strongly recommended that plugin developers provide corresponding metadata files when submitting plugins. The metadata file is in JSON format. The file name is consistent with that of the plugin and is placed in the root directory of the compressed package together with the plugin.
 
 ## Sources
 
 | Name                        | Descriptiom                                                  | Remarks                                                   |
 | --------------------------- | ------------------------------------------------------------ | --------------------------------------------------------- |
-| [zmq](sources/zmq.md)       | The plugin listens to Zero Mq messages and sends them to the Kuiper stream | Sample of plugin, not available in production environment |
+| [zmq](sources/zmq.md)       | The plugin listens to Zero Mq messages and sends them to the eKuiper stream | Sample of plugin, not available in production environment |
 | [random](sources/random.md) | The plugin generates messages according to the specified pattern | Sample of plugin, not available in production environment |
 
 ### source metadata file format
@@ -284,7 +284,7 @@ The following is a sample of metadata file.
 | [resize](functions/functions.md)              | Create a scaled image with new dimensions (width, height). If width or height is set to 0, it is set to the reserved value of aspect ratio | Plugin sample, not available for production environment |
 | [thumbnail](functions/functions.md)           | Reduce the image that retains the aspect ratio to the maximum size (maxWidth, maxHeight). | Plugin sample, not available for production environment |
 
-Kuiper has many built-in functions that can perform calculations on data. (Refer to https://github.com/emqx/kuiper/blob/master/docs/zh_CN/sqls/built-in_functions.md for specific documentation)
+eKuiper has many built-in functions that can perform calculations on data. (Refer to https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/built-in_functions.md for specific documentation)
 
 ### functions metadata file format
 

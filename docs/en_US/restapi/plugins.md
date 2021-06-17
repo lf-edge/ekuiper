@@ -1,7 +1,7 @@
 
-The Kuiper REST api for plugins allows you to manage plugins, such as create, drop and list plugins. Notice that, drop a plugin will need to restart kuiper to take effect. To update a plugin, do the following:
+The eKuiper REST api for plugins allows you to manage plugins, such as create, drop and list plugins. Notice that, drop a plugin will need to restart eKuiper to take effect. To update a plugin, do the following:
 1. Drop the plugin.
-2. Restart Kuiper.
+2. Restart eKuiper.
 3. Create the plugin with the new configuration.
 
 ## create a plugin
@@ -33,7 +33,7 @@ Request Sample for files locates in the same machine of the Kuiepr server.
 ### Parameters
 
 1. name: a unique name of the plugin. The name must be the same as the camel case version of the plugin with lowercase first letter. For example, if the exported plugin name is `Random`, then the name of this plugin is `random`.
-2. file: the url of the plugin files. The url can be `http` or `https` scheme or `file` scheme to refer to a local file path of the Kuiper server. It must be a zip file with: a compiled so file and the yaml file(only required for sources). If the plugin depends on some external dependencies, a bash script named install.sh can be provided to do the dependency installation. The name of the files must match the name of the plugin. Please check [Extension](../extension/overview.md) for the naming rule.
+2. file: the url of the plugin files. The url can be `http` or `https` scheme or `file` scheme to refer to a local file path of the eKuiper server. It must be a zip file with: a compiled so file and the yaml file(only required for sources). If the plugin depends on some external dependencies, a bash script named install.sh can be provided to do the dependency installation. The name of the files must match the name of the plugin. Please check [Extension](../extension/overview.md) for the naming rule.
 
 ### Plugin File Format
 A sample zip file for a source named random.zip
@@ -43,7 +43,7 @@ A sample zip file for a source named random.zip
 4. Various dependency files/folders of install.sh   
    - mysdk.zip
    - myconfig.conf
-5. etc directory: the runtime configuration files or dependency files. After installation, this directory will be renamed to the plugin name under {{kuiperPath}}/etc/{{pluginType}} directory.
+5. etc directory: the runtime configuration files or dependency files. After installation, this directory will be renamed to the plugin name under {{eKuiperPath}}/etc/{{pluginType}} directory.
 
 Notice that, the install.sh will be run that the system may already had the lib or package. Make sure to check the path before. Below is an example install.sh to install a sample sdk lib. 
 ```bash
@@ -118,14 +118,14 @@ Response Sample:
 
 ## drop a plugin
 
-The API is used for drop the plugin. The kuiper server needs to be restarted to take effect.
+The API is used for drop the plugin. The eKuiper server needs to be restarted to take effect.
 
 ```shell
 DELETE http://localhost:9081/plugins/sources/{name}
 DELETE http://localhost:9081/plugins/sinks/{name}
 DELETE http://localhost:9081/plugins/functions/{name}
 ```
-The user can pass a query parameter to decide if Kuiper should be stopped after a delete in order to make the deletion take effect. The parameter is `restart` and only when the value is `1` will the Kuiper be stopped. The user has to manually restart it.
+The user can pass a query parameter to decide if eKuiper should be stopped after a delete in order to make the deletion take effect. The parameter is `restart` and only when the value is `1` will the eKuiper be stopped. The user has to manually restart it.
 ```shell
 DELETE http://localhost:9081/plugins/sources/{name}?restart=1
 ```
@@ -178,7 +178,7 @@ POST http://{{host}}/plugins/functions/{plugin_name}/register
 
 ## Get the available plugins
 
-According to the configuration `pluginHosts` in file `etc/kuiper.yaml` ,  it returns the plugins list that can be installed at local run Kuiper instance. By default, it get the list from `https://packages.emqx.io` .
+According to the configuration `pluginHosts` in file `etc/kuiper.yaml` ,  it returns the plugins list that can be installed at local run eKuiper instance. By default, it get the list from `https://packages.emqx.io` .
 
 ```
 GET http://localhost:9081/plugins/sources/prebuild

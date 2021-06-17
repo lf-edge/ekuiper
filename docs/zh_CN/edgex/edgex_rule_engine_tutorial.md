@@ -2,15 +2,15 @@
 
 ## 概览
 
-在 EdgeX Geneva 版本中, [EMQ X Kuiper - 基于 SQL 的轻量级流式数据处理软件](https://github.com/emqx/kuiper)与 EdgeX 进行了集成。在进入这篇教程之前，让我们先花一些时间来了解一些 Kuiper 的基本知识。EMQ X Kuiper 是 Golang 实现的轻量级物联网边缘分析、流式处理开源软件，可以运行在各类资源受限的边缘设备上。Kuiper 基于`源 (Source)`，`SQL (业务逻辑处理)`， `目标 (Sink)` 的方式来支持流式数据处理。
+在 EdgeX Geneva 版本中, [LF Edge eKuiper - 基于 SQL 的轻量级流式数据处理软件](https://github.com/lf-edge/ekuiper)与 EdgeX 进行了集成。在进入这篇教程之前，让我们先花一些时间来了解一些 eKuiper 的基本知识。 eKuiper 是 Golang 实现的轻量级物联网边缘分析、流式处理开源软件，可以运行在各类资源受限的边缘设备上。eKuiper 基于`源 (Source)`，`SQL (业务逻辑处理)`， `目标 (Sink)` 的方式来支持流式数据处理。
 
 - 源（Source）：流式数据的数据源，例如来自于 MQTT 服务器的数据。在 EdgeX 的场景下，数据源就是 EdgeX 消息总线（EdgeX message bus），可以是来自于 ZeroMQ 或者 MQTT 服务器；
-- SQL：SQL 是你流式数据处理指定业务逻辑的地方，Kuiper 提供了 SQL 语句可以对数据进行抽取、过滤和转换；
+- SQL：SQL 是你流式数据处理指定业务逻辑的地方，eKuiper 提供了 SQL 语句可以对数据进行抽取、过滤和转换；
 - 目标（Sink）：目标用于将分析结果发送到特定的目标。例如，将分析结果发送到另外的 MQTT 服务器，或者一个 HTTP Rest 地址；
 
 ![](../arch.png)
 
-使用 Kuiper，一般需要完成以下三个步骤。
+使用 eKuiper，一般需要完成以下三个步骤。
 
 - 创建流，就是你定义数据源的地方
 - 写规则
@@ -18,23 +18,23 @@
   - 指定一个保存分析结果的目标
 - 部署，并且运行规则
 
-该教程描述如何使用 Kuiper 处理来自于 EdgeX 消息总线的数据。
+该教程描述如何使用 eKuiper 处理来自于 EdgeX 消息总线的数据。
 
-## Kuiper EdgeX 集成
+## eKuiper EdgeX 集成
 
-在不同的微服务之间，EdgeX 使用[消息总线](https://github.com/edgexfoundry/go-mod-messaging)进行数据交换。它包含了一个抽象的消息总线接口，并分别实现了 ZeroMQ 与 MQTT，在不同的微服务之间信息交互的支持。Kuiper 和 EdgeX 的集成工作包含了以下三部分，
+在不同的微服务之间，EdgeX 使用[消息总线](https://github.com/edgexfoundry/go-mod-messaging)进行数据交换。它包含了一个抽象的消息总线接口，并分别实现了 ZeroMQ 与 MQTT，在不同的微服务之间信息交互的支持。eKuiper 和 EdgeX 的集成工作包含了以下三部分，
 
 - 扩展了一个 EdgeX 消息总线源，支持从 EdgeX 消息总线中接收数据  
 
-- 为了可以分析数据，Kuiper 需知道传入的数据流的格式。一般来说，用户最好在创建流的时候指定被分析的流数据的格式。如下所示，一个 ``demo`` 流包含了一个名为 ``temperature`` 的字段。这与在关系型数据库中创建表格定义的时候非常像。在创建了流定义以后，Kuiper 可以在编译或者运行时对进入的数据进行类型检查，相应错误也会报告给用户。
+- 为了可以分析数据，eKuiper 需知道传入的数据流的格式。一般来说，用户最好在创建流的时候指定被分析的流数据的格式。如下所示，一个 ``demo`` 流包含了一个名为 ``temperature`` 的字段。这与在关系型数据库中创建表格定义的时候非常像。在创建了流定义以后，eKuiper 可以在编译或者运行时对进入的数据进行类型检查，相应错误也会报告给用户。
 
   ```shell
   CREATE STREAM demo (temperature bigint) WITH (FORMAT="JSON"...)
   ```
 
-  然而在 EdgeX 中，数据类型定义在 EdgeX ``Core contract Service`` 中已经指定，为了提升使用体验，用户可以在创建流的时候不指定数据类型。Kuiper 源会在初始化规则的时候，从 ``Core contract Service`` 中获取所有的 ``value descriptors`` 定义（所以如果有任何数据类型定义的变化，你需要重启规则）。当接收到来自于消息总线的数据的时候，会根规则转换为[相应的数据类型](../rules/sources/edgex.md)。
+  然而在 EdgeX 中，数据类型定义在 EdgeX ``Core contract Service`` 中已经指定，为了提升使用体验，用户可以在创建流的时候不指定数据类型。eKuiper 源会在初始化规则的时候，从 ``Core contract Service`` 中获取所有的 ``value descriptors`` 定义（所以如果有任何数据类型定义的变化，你需要重启规则）。当接收到来自于消息总线的数据的时候，会根规则转换为[相应的数据类型](../rules/sources/edgex.md)。
 
-- 扩展支持 EdgeX 消息总线目标（sink），用于将处理结果写回至 EdgeX 消息总线。用户也可以选择将分析结果发送到 Kuiper 之前已经支持的 RestAPI 接口等。
+- 扩展支持 EdgeX 消息总线目标（sink），用于将处理结果写回至 EdgeX 消息总线。用户也可以选择将分析结果发送到 eKuiper 之前已经支持的 RestAPI 接口等。
 
 ![](./arch_light.png)
 
@@ -69,20 +69,20 @@ ed7ad5ae08b2        nexus3.edgexfoundry.org:10004/docker-edgex-volume:master    
 
 ### 原生 (native) 方式运行
 
-出于运行效率考虑，读者可能需要直接以原生方式运行 Kuiper，但是可能会发现直接使用下载的 Kuiper 软件包启动后[无法直接使用 Edgex](https://github.com/emqx/kuiper/issues/596)，这是因为 EdgeX 缺省消息总线依赖于 `zeromq` 库，如果 Kuiper 启动的时候在库文件寻找路径下无法找到 `zeromq` 库，它将无法启动。这导致对于不需要使用 EdgeX 的 Kuiper 用户也不得不去安装 `zeromq` 库 ，因此缺省提供的下载安装包中**<u>内置不支持 Edgex</u>** 。如果读者需要以原生方式运行 Kuiper 并且支持 `EdgeX`，可以通过命令 `make pkg_with_edgex` 自己来编译原生安装包，或者从容器中直接拷贝出安装包。
+出于运行效率考虑，读者可能需要直接以原生方式运行 eKuiper，但是可能会发现直接使用下载的 eKuiper 软件包启动后[无法直接使用 Edgex](https://github.com/lf-edge/ekuiper/issues/596)，这是因为 EdgeX 缺省消息总线依赖于 `zeromq` 库，如果 eKuiper 启动的时候在库文件寻找路径下无法找到 `zeromq` 库，它将无法启动。这导致对于不需要使用 EdgeX 的 eKuiper 用户也不得不去安装 `zeromq` 库 ，因此缺省提供的下载安装包中**<u>内置不支持 Edgex</u>** 。如果读者需要以原生方式运行 eKuiper 并且支持 `EdgeX`，可以通过命令 `make pkg_with_edgex` 自己来编译原生安装包，或者从容器中直接拷贝出安装包。
 
 ## 创建流
 
 该步骤是创建一个可以从 EdgeX 消息总线进行数据消费的流。有两种方法来支持管理流，你可以选择喜欢的方式。
 
 ### 方式1: 使用 Rest API
-请注意: EdgeX 中的 Kuiper Rest 接口使用``48075``端口，而不是缺省的``9081``端口。所以在 EdgeX 调用 Kuiper Rest 的时候，请将文档中所有的 9081 替换为 48075。
+请注意: EdgeX 中的 eKuiper Rest 接口使用``48075``端口，而不是缺省的``9081``端口。所以在 EdgeX 调用 eKuiper Rest 的时候，请将文档中所有的 9081 替换为 48075。
 
-请将 ``$kuiper_server`` 替换为本地运行的 Kuiper 实例的地址。
+请将 ``$eKuiper_server`` 替换为本地运行的 eKuiper 实例的地址。
 
 ```shell
 curl -X POST \
-  http://$kuiper_server:48075/streams \
+  http://$eKuiper_server:48075/streams \
   -H 'Content-Type: application/json' \
   -d '{
   "sql": "create stream demo() WITH (FORMAT=\"JSON\", TYPE=\"edgex\")"
@@ -91,9 +91,9 @@ curl -X POST \
 
 关于其它 API，请参考[该文档](../restapi/overview.md).
 
-### 方式2: 使用 Kuiper 命令行
+### 方式2: 使用 eKuiper 命令行
 
-使用以下命令，进入运行中的 Kuiper docker 实例。
+使用以下命令，进入运行中的 eKuiper docker 实例。
 
 ```shell
 docker exec -it kuiper /bin/sh
@@ -109,7 +109,7 @@ bin/kuiper create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
 
 ------
 
-现在流已经创建好了，但是你可能好奇 Kuiper 是如何知道消息总线的地址和端口，因为此类信息在 ``CREATE STREAM`` 并未指定。实际上这些信息是在配置文件  ``etc/sources/edgex.yaml`` 中指定的，你可以在命令行窗口中输入 ``cat etc/sources/edgex.yaml`` 来查看文件的内容。如果你有不同的服务器、端口和服务的地址，请更新相应的配置。正如之前提到的，这些配置选项可以在容器启动的时候进行重写。
+现在流已经创建好了，但是你可能好奇 eKuiper 是如何知道消息总线的地址和端口，因为此类信息在 ``CREATE STREAM`` 并未指定。实际上这些信息是在配置文件  ``etc/sources/edgex.yaml`` 中指定的，你可以在命令行窗口中输入 ``cat etc/sources/edgex.yaml`` 来查看文件的内容。如果你有不同的服务器、端口和服务的地址，请更新相应的配置。正如之前提到的，这些配置选项可以在容器启动的时候进行重写。
 
 ```yaml
 #Global Edgex configurations
@@ -137,7 +137,7 @@ default:
 
 ```shell
 curl -X POST \
-  http://$kuiper_server:9081/rules \
+  http://$eKuiper_server:9081/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule1",
@@ -157,7 +157,7 @@ curl -X POST \
 }
 ```
 
-### 选项2: 使用 Kuiper 命令行
+### 选项2: 使用 eKuiper 命令行
 
 你可以使用任意编辑器来创建一条规则，将下列内容拷贝到编辑器中，并命名为 ``rule.txt``。
 
@@ -190,7 +190,7 @@ Rule rule1 was created successfully, please use 'cli getstatus rule rule1' comma
 
 ------
 
-如想将结果发送到别的目标，请参考 Kuiper 中支持的[其它目标](../rules/overview.md#actions)。你现在可以看一下在 ``log/stream.log``中的日志文件，查看规则的详细信息。
+如想将结果发送到别的目标，请参考 eKuiper 中支持的[其它目标](../rules/overview.md#actions)。你现在可以看一下在 ``log/stream.log``中的日志文件，查看规则的详细信息。
 
 ```
 time="2020-04-17T06:32:24Z" level=info msg="Serving kuiper (version - 0.3.1-4-g9e63fe1) on port 20498, and restful api on port 9081. \n" file="server.go:101"
@@ -268,23 +268,23 @@ Connecting to 127.0.0.1:20498...
 
 ## 总结
 
-在本教程中，我们介绍了使用 EdgeX Kuiper 规则引擎的非常简单的例子，如果使用过程中发现任何问题，请到 EdgeX，或者 Kuiper Github 中报问题。
+在本教程中，我们介绍了使用 EdgeX eKuiper 规则引擎的非常简单的例子，如果使用过程中发现任何问题，请到 EdgeX，或者 eKuiper Github 中报问题。
 
 ## 更多练习
 
-目前的规则没有过滤发送给 Kuiper 的任何数据，那么如何过滤数据呢？请使用[删除规则](../cli/rules.md)，然后试着更改一下 SQL 语句，完成更改后，重新部署规则。这时候如果监听 MQTT 服务的结果主题，检查一下相关的规则是否起作用？
+目前的规则没有过滤发送给 eKuiper 的任何数据，那么如何过滤数据呢？请使用[删除规则](../cli/rules.md)，然后试着更改一下 SQL 语句，完成更改后，重新部署规则。这时候如果监听 MQTT 服务的结果主题，检查一下相关的规则是否起作用？
 
 ### 扩展阅读
 
-- 从 Kuiper 0.9.1 版本开始，通过一个单独的 Docker 镜像提供了 [可视化 web 用户交互界面](../manager-ui/overview.md)，您可以通过该 web 界面进行流、规则和插件等管理。
+- 从 eKuiper 0.9.1 版本开始，通过一个单独的 Docker 镜像提供了 [可视化 web 用户交互界面](../manager-ui/overview.md)，您可以通过该 web 界面进行流、规则和插件等管理。
 - 阅读 [EdgeX 源](../rules/sources/edgex.md) 获取更多详细信息，以及类型转换等。
 - [如何使用 meta 函数抽取在 EdgeX 消息总线中发送的更多信息？](edgex_meta.md) 设备服务往总线上发送数据的时候，一些额外的信息也随之发送，比如时间创建时间，id 等。如果你想在 SQL 语句中使用这些信息，请参考这篇文章。
-- [Kuiper 中使用 Golang 模版 (template) 定制分析结果](../rules/data_template.md) 分析结果在发送给不同的 sink 之前，可以使用数据模版对结果进行二次处理，参考这片文章可以获取更多的关于数据模版的使用场景。
-- [EdgeX 消息总线目标](../rules/sinks/edgex.md). 该文档描述了如何使用 EdgeX 消息总线目标。如果想把你的分析结果被别的 EdgeX 服务消费，你可以通过这个 sink 发送 EdgeX 格式的数据，别的 EdgeX 服务可以通过这个 Kuiper sink 暴露出来的新的消息总线进行订阅。
-- [Kuiper 插件开发教程](../plugins/plugins_tutorial.md): Kuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松散耦合的插件程序，在运行时动态加载和绑定，如果您对开发插件有兴趣，请参考该文章。
+- [eKuiper 中使用 Golang 模版 (template) 定制分析结果](../rules/data_template.md) 分析结果在发送给不同的 sink 之前，可以使用数据模版对结果进行二次处理，参考这片文章可以获取更多的关于数据模版的使用场景。
+- [EdgeX 消息总线目标](../rules/sinks/edgex.md). 该文档描述了如何使用 EdgeX 消息总线目标。如果想把你的分析结果被别的 EdgeX 服务消费，你可以通过这个 sink 发送 EdgeX 格式的数据，别的 EdgeX 服务可以通过这个 eKuiper sink 暴露出来的新的消息总线进行订阅。
+- [eKuiper 插件开发教程](../plugins/plugins_tutorial.md): eKuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松散耦合的插件程序，在运行时动态加载和绑定，如果您对开发插件有兴趣，请参考该文章。
 
-如想了解更多的 EMQ X Kuiper 的信息，请参考以下资源。
+如想了解更多的 LF Edge eKuiper 的信息，请参考以下资源。
 
-- [Kuiper Github 代码库](https://github.com/emqx/kuiper/)
-- [Kuiper 参考指南](https://github.com/emqx/kuiper/blob/master/docs/zh_CN/reference.md)
+- [eKuiper Github 代码库](https://github.com/lf-edge/ekuiper/)
+- [eKuiper 参考指南](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/reference.md)
 

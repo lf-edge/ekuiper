@@ -1,8 +1,8 @@
 # Plugins management
 
-The Kuiper plugin command line tools allows you to manage plugins, such as create, show and drop plugins. Notice that, drop a plugin will need to restart kuiper to take effect. To update a plugin, do the following:
+The eKuiper plugin command line tools allows you to manage plugins, such as create, show and drop plugins. Notice that, drop a plugin will need to restart eKuiper to take effect. To update a plugin, do the following:
 1. Drop the plugin.
-2. Restart Kuiper.
+2. Restart eKuiper.
 3. Create the plugin with the new configuration.
 
 ## create a plugin
@@ -93,7 +93,7 @@ The command is used for drop the plugin.
 ```shell
 drop plugin $plugin_type $plugin_name -s $stop 
 ```
-In which, `-s $stop` is an optional boolean parameter. If it is set to true, the Kuiper server will be stopped for the delete to take effect. The user will need to restart it manually.
+In which, `-s $stop` is an optional boolean parameter. If it is set to true, the eKuiper server will be stopped for the delete to take effect. The user will need to restart it manually.
 Sample:
 
 ```shell

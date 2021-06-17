@@ -160,7 +160,7 @@ SELECT followers->Group1[:1]->first FROM demo
 
 ## Json Path functions
 
-Kuiper provides a list of functions to allow to execute json path over struct or array columns or values. The functions are:
+eKuiper provides a list of functions to allow to execute json path over struct or array columns or values. The functions are:
 
 ```sql
 json_path_exists(col, jsonpath)
@@ -170,7 +170,7 @@ json_path_query_first(col, jsonpath)
 
 Please refer to [json functions](./built-in_functions.md#json-functions) for detail.
 
-All these functions share the same parameter signatures, among which, the second parameter is a jsonpath string. The jsonpath grammer used by Kuiper is based on [JsonPath](https://goessner.net/articles/JsonPath/).
+All these functions share the same parameter signatures, among which, the second parameter is a jsonpath string. The jsonpath grammer used by eKuiper is based on [JsonPath](https://goessner.net/articles/JsonPath/).
 
 The basic grammar of those expressions is to use the keys part of the JSON objects combined with some elements:
 

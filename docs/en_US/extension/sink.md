@@ -1,12 +1,12 @@
 # Sink Extension
 
-Sink feed data from Kuiper into external systems. Kuiper has built-in sink support for [MQTT broker](../rules/sinks/mqtt.md) and [log sink](../rules/sinks/logs.md). There are still needs to publish data to various external systems include messaging systems and database etc. Sink extension is presented to meet this requirement.
+Sink feed data from eKuiper into external systems. eKuiper has built-in sink support for [MQTT broker](../rules/sinks/mqtt.md) and [log sink](../rules/sinks/logs.md). There are still needs to publish data to various external systems include messaging systems and database etc. Sink extension is presented to meet this requirement.
 
 ## Developing
 
 ### Develop a sink
 
-To develop a sink for Kuiper is to implement [api.Sink](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go) interface and export it as a golang plugin.
+To develop a sink for eKuiper is to implement [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) interface and export it as a golang plugin.
 
 Before starting the development, you must [setup the environment for golang plugin](overview.md#setup-the-plugin-developing-environment). 
 
@@ -22,7 +22,7 @@ The next task is to implement _open_ method. The implementation should be synchr
 Open(ctx StreamContext) error
 ```  
 
-The main task for a Sink is to implement _collect_ method. The function will be invoked when Kuiper feed any data into the sink. As an infinite stream, this function will be invoked continuously. The task of this function is to publish data to the external system. The first parameter is the context, and the second parameter is the data received from Kuiper.
+The main task for a Sink is to implement _collect_ method. The function will be invoked when eKuiper feed any data into the sink. As an infinite stream, this function will be invoked continuously. The task of this function is to publish data to the external system. The first parameter is the context, and the second parameter is the data received from eKuiper.
 
 ```go
 //Called when each row of data has transferred to this sink
@@ -43,7 +43,7 @@ func MySink() api.Sink {
 }
 ```
 
-The [Memory Sink](https://github.com/emqx/kuiper/blob/master/plugins/sinks/memory/memory.go) is a good example.
+The [Memory Sink](https://github.com/lf-edge/ekuiper/blob/master/plugins/sinks/memory/memory.go) is a good example.
 
 ### Package the sink
 Build the implemented sink as a go plugin and make sure the output so file resides in the plugins/sinks folder.

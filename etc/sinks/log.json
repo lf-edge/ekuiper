@@ -8,8 +8,8 @@
       "website": "https://www.emqx.io"
     },
     "helpUrl": {
-      "en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sinks/mqtt.md",
-      "zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sinks/mqtt.md"
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/mqtt.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/mqtt.md"
     },
     "description": {
       "en_US": "The action is used for print output message into log file, the log file is at $kuiper_install/log/stream.log by default.",

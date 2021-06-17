@@ -1,20 +1,20 @@
 # Zmq 源
 
-源将订阅 Zero Mq 主题以将消息导入 kuiper。
+源将订阅 Zero Mq 主题以将消息导入 eKuiper。
 
 ## 编译和部署插件
 
 ```shell
-# cd $kuiper_src
+# cd $eKuiper_src
 # go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Zmq.so extensions/sources/zmq/zmq.go
-# cp plugins/sources/Zmq.so $kuiper_install/plugins/sources
+# cp plugins/sources/Zmq.so $eKuiper_install/plugins/sources
 ```
 
-重新启动 Kuiper 服务器以激活插件。
+重新启动 eKuiper 服务器以激活插件。
 
 ## 配置
 
-该源的配置位于 `$kuiper/etc/sources/zmq.yaml`。格式如下：
+该源的配置位于 `$ekuiper/etc/sources/zmq.yaml`。格式如下：
 
 ```yaml
 #Global Zmq configurations

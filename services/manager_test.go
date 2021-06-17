@@ -26,8 +26,8 @@ func TestInitByFiles(t *testing.T) {
 				Website: "https://www.emqx.io",
 			},
 			HelpUrl: &fileLanguage{
-				English: "https://github.com/emqx/kuiper/blob/master/docs/en_US/plugins/functions/functions.md",
-				Chinese: "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/plugins/functions/functions.md",
+				English: "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/plugins/functions/functions.md",
+				Chinese: "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/plugins/functions/functions.md",
 			},
 			Description: &fileLanguage{
 				English: "Sample external services for test only",

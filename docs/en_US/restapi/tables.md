@@ -1,6 +1,6 @@
 # Tables management
 
-The Kuiper REST api for tables allows you to manage the tables, such as create, describe, show and drop table definitions.
+The eKuiper REST api for tables allows you to manage the tables, such as create, describe, show and drop table definitions.
 
 ## create a table
 

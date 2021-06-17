@@ -1,10 +1,10 @@
-# 使用 Kuiper 函数插件运行TensorFlow Lite 模型
+# 使用 eKuiper 函数插件运行TensorFlow Lite 模型
 
-[EMQ X Kuiper](https://docs.emqx.io/en/kuiper/latest/) 是一款边缘轻量级物联网数据分析/流软件，可在各种资源受限的物联网设备上运行。
+[LF Edge eKuiper](https://docs.emqx.io/en/kuiper/latest/) 是一款边缘轻量级物联网数据分析/流软件，可在各种资源受限的物联网设备上运行。
 
 [TensorFlow Lite](https://www.tensorflow.org/lite/guide) 是一组帮助开发人员在移动端、嵌入式和物联网设备上运行 TensorFlow 模型的工具，它使得设备上的机器学习预测具有低延迟和较小的二进制容量。
 
-通过集成 Kuiper 和 TensorFlow Lite，用户可以通过包含预先构建的 TensorFlow 模型的AI分析流中的数据。 在本教程中，我们将引导您构建一个 kuiper 插件，通过预先训练的图像识别 TensorFlow 模型，标记边缘设备生成的流图片（二进制数据）。
+通过集成 eKuiper 和 TensorFlow Lite，用户可以通过包含预先构建的 TensorFlow 模型的AI分析流中的数据。 在本教程中，我们将引导您构建一个 eKuiper 插件，通过预先训练的图像识别 TensorFlow 模型，标记边缘设备生成的流图片（二进制数据）。
 
 ## 先决条件
 
@@ -12,12 +12,12 @@
 
 ## 开发插件
 
-为了集成 Kuiper 和 TensorFlow Lite，我们将开发一个定制的 Kuiper 函数插件，供 Kuiper 规则使用。例如，我们将创建 `LabelImage`  函数，其输入是表示图像的二进制类型数据，输出是表示图像标签的字符串。例如，如果输入图像中有孔雀，`LabelImage(col)` 将输出“孔雀”。
+为了集成 eKuiper 和 TensorFlow Lite，我们将开发一个定制的 eKuiper 函数插件，供 eKuiper 规则使用。例如，我们将创建 `LabelImage`  函数，其输入是表示图像的二进制类型数据，输出是表示图像标签的字符串。例如，如果输入图像中有孔雀，`LabelImage(col)` 将输出“孔雀”。
 
 要开发函数插件，我们需要：
 
-1. 创建插件 go 文件。 例如，在 kuiper 源代码中，创建 *plugins/functions/labelImage/labelImage.go* 文件。
-2. 创建一个实现 [api.函数接口](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go) 的 struct。
+1. 创建插件 go 文件。 例如，在 eKuiper 源代码中，创建 *plugins/functions/labelImage/labelImage.go* 文件。
+2. 创建一个实现 [api.函数接口](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) 的 struct。
 3. 导出 struct。
 
 实现的关键是 *Exec* 函数。 伪代码如下：
@@ -53,15 +53,15 @@ var LabelImage = labelImage{
 }
 ```
 
-查阅 [本教程](../plugins_tutorial.md) 以获得创建 Kuiper 插件的详细步骤。请参阅 [labelImage.go](https://github.com/emqx/kuiper/blob/master/plugins/functions/labelImage/labelImage.go) 以获取完整的源代码。
+查阅 [本教程](../plugins_tutorial.md) 以获得创建 eKuiper 插件的详细步骤。请参阅 [labelImage.go](https://github.com/lf-edge/ekuiper/blob/master/plugins/functions/labelImage/labelImage.go) 以获取完整的源代码。
 
 ## 构建并安装插件
 
-要使用该插件，我们需要在运行 Kuiper 的环境中对其进行构建，然后将其安装在 Kuiper 中。
+要使用该插件，我们需要在运行 eKuiper 的环境中对其进行构建，然后将其安装在 eKuiper 中。
 
 ### 通过预构建的  zip 安装
 
-如果使用基于 debian 的带有 1.1.1 或 1.1.1-slim标签的 Kuiper docker 镜像，我们可以安装预构建的 labelImage插件。 例如，要在 docker image emqx/kuiper:1.1.2-slim 中安装 Kuiper 1.1.2 插件，则预构建的 zip 文件位于 *https://www.emqx.io/downloads/kuiper-plugins/v1.1.2/debian/functions/labelImage_amd64.zip*。 按如下所示运行 rest命令以进行安装。
+如果使用基于 debian 的带有 1.1.1 或 1.1.1-slim标签的 eKuiper docker 镜像，我们可以安装预构建的 labelImage插件。 例如，要在 docker image emqx/kuiper:1.1.2-slim 中安装 eKuiper 1.1.2 插件，则预构建的 zip 文件位于 *https://www.emqx.io/downloads/kuiper-plugins/v1.1.2/debian/functions/labelImage_amd64.zip*。 按如下所示运行 rest命令以进行安装。
 
 ```shell
 POST http://{{kuiperHost:kuiperRestPort}}/plugins/functions
@@ -72,7 +72,7 @@ Content-Type: application/json
 
 ### 手动构建
 
-如果您不使用官方的 Kuiper docker 镜像运行 Kuiper，由于 golang 插件的限制，预构建的 labelImage 插件将不适用。您需要手动构建插件。手动创建插件 zip 文件有3个步骤：
+如果您不使用官方的 eKuiper docker 镜像运行 eKuiper，由于 golang 插件的限制，预构建的 labelImage 插件将不适用。您需要手动构建插件。手动创建插件 zip 文件有3个步骤：
 
 1. 构建 TensorFlowLite C API。
 2. 构建 labelImage 插件。
@@ -109,10 +109,10 @@ Content-Type: application/json
 
 #### 构建 labelImage 插件
 
-确保已克隆 Kuiper github repo。 插件源文件位于 *extensions/functions/labelImage/labelImage.go* 中。 在构建插件之前，导出 tensorflow repo 和构建库的路径。
+确保已克隆 eKuiper github repo。 插件源文件位于 *extensions/functions/labelImage/labelImage.go* 中。 在构建插件之前，导出 tensorflow repo 和构建库的路径。
 
 ```shell
-$ cd {{kuiperRepoPath}}
+$ cd {{eKuiperRepoPath}}
 $ export CGO_CFLAGS=-I/root/tensorflow
 $ export CGO_LDFLAGS=-L/root/tensorflow/lib
 $ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functions/LabelImage.so extensions/functions/labelImage/*.go
@@ -120,7 +120,7 @@ $ mkdir -p "plugins/functions"
 $ cp -r extensions/functions/labelImage plugins/functions
 ```
 
-通过这些命令，插件将构建到 plugins/functions/LabelImage.so 中，同时复制所有依赖文件到 plugins/functions/labelImage 目录下。 出于开发目的，您可以重新启动 Kuiper 以自动加载此插件并进行测试。 测试完成后，我们应该将其打包为一个 zip 文件，该文件可供 Kuiper 插件安装API 使用，以便可以在其他计算机（例如生产环境）中使用。
+通过这些命令，插件将构建到 plugins/functions/LabelImage.so 中，同时复制所有依赖文件到 plugins/functions/labelImage 目录下。 出于开发目的，您可以重新启动 eKuiper 以自动加载此插件并进行测试。 测试完成后，我们应该将其打包为一个 zip 文件，该文件可供 eKuiper 插件安装API 使用，以便可以在其他计算机（例如生产环境）中使用。
 
 #### 打包插件
 
@@ -144,7 +144,7 @@ $ cp -r extensions/functions/labelImage plugins/functions
 
 ### 定义流
 
-通过 Kuiper rest API 定义流。 我们创建一个名为 tfdemo 的流，其格式为二进制，主题为 tfdemo。
+通过 eKuiper rest API 定义流。 我们创建一个名为 tfdemo 的流，其格式为二进制，主题为 tfdemo。
 
 ```shell
 POST http://{{host}}/streams
@@ -155,7 +155,7 @@ Content-Type: application/json
 
 ### 定义规则
 
-通过 Kuiper rest API 定义规则。 我们将创建一个名为 ruleTf 的规则。 我们只是从 tfdemo 流中读取图像，然后对其运行自定义函数 *labelImage*。 返回结果将是 AI 识别的图像的标签。
+通过 eKuiper rest API 定义规则。 我们将创建一个名为 ruleTf 的规则。 我们只是从 tfdemo 流中读取图像，然后对其运行自定义函数 *labelImage*。 返回结果将是 AI 识别的图像的标签。
 
 ```shell
 POST http://{{host}}/rules
@@ -233,4 +233,4 @@ time="2021-02-05 16:23:30" level=info msg="sink result for rule ruleTf: [{\"labe
 
 ## 结论
 
-在本教程中，我们将引导您构建自定义的 Kuiper 插件，以利用预先训练好的 TensorFlow Lite 模型。 如果需要使用其他模型，只需按照规定步骤创建另一个函数。 请注意，如果在同一环境中运行，构建的 TensorFlow C API 可以在所有函数之间共享。希望这些功能能让你在实现边缘设备中的AI时候感到开心 。
+在本教程中，我们将引导您构建自定义的 eKuiper 插件，以利用预先训练好的 TensorFlow Lite 模型。 如果需要使用其他模型，只需按照规定步骤创建另一个函数。 请注意，如果在同一环境中运行，构建的 TensorFlow C API 可以在所有函数之间共享。希望这些功能能让你在实现边缘设备中的AI时候感到开心 。

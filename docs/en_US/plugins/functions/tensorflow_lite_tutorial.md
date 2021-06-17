@@ -1,10 +1,10 @@
-# Run TensorFlow Lite model with Kuiper function plugin
+# Run TensorFlow Lite model with eKuiper function plugin
 
-[EMQ X Kuiper](https://docs.emqx.io/en/kuiper/latest/) is an edge lightweight IoT data analytics / streaming software which can be run at all kinds of resource constrained IoT devices.
+[LF Edge eKuiper](https://docs.emqx.io/en/kuiper/latest/) is an edge lightweight IoT data analytics / streaming software which can be run at all kinds of resource constrained IoT devices.
 
 [TensorFlow Lite](https://www.tensorflow.org/lite/guide) is a set of tools to help developers run TensorFlow models on mobile, embedded, and IoT devices. It enables on-device machine learning inference with low latency and a small binary size.
 
-By integrating Kuiper and TensorFlow Lite, users can analyze the data in stream by AI with prebuilt TensorFlow models. In this tutorial, we will walk you through building a kuiper plugin to label pictures (binary data) produced by an edge device in stream by pre-trained image recognition TensorFlow model.
+By integrating eKuiper and TensorFlow Lite, users can analyze the data in stream by AI with prebuilt TensorFlow models. In this tutorial, we will walk you through building a eKuiper plugin to label pictures (binary data) produced by an edge device in stream by pre-trained image recognition TensorFlow model.
 
 ## Prerequisite
 
@@ -12,12 +12,12 @@ To run the TensorFlow lite interpreter, we need a trained model. We won't cover 
 
 ## Develop the plugin
 
-To integrate Kuiper with TensorFlow lite, we will develop a customized Kuiper function plugin to be used by Kuiper rules. As an example, we will create `LabelImage` function whose input is a binary type data representing an image and the output is a string representing the label of the image. For example, `LabelImage(col)` will produce `"peacock"` if the input image has a peacock.
+To integrate eKuiper with TensorFlow lite, we will develop a customized eKuiper function plugin to be used by eKuiper rules. As an example, we will create `LabelImage` function whose input is a binary type data representing an image and the output is a string representing the label of the image. For example, `LabelImage(col)` will produce `"peacock"` if the input image has a peacock.
 
 To develop the function plugin, we need to:
 
-1. Create the plugin go file.  For example, in kuiper source code, create *plugins/functions/labelImage/labelImage.go* file.
-2. Create a struct that implements [api.Function interface](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go). 
+1. Create the plugin go file.  For example, in eKuiper source code, create *plugins/functions/labelImage/labelImage.go* file.
+2. Create a struct that implements [api.Function interface](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go). 
 3. Export the struct.
 
 The key part of the implementation is the *Exec* function. The pseudo code is like:
@@ -53,18 +53,18 @@ var LabelImage = labelImage{
 }
 ```
 
-Check [this tutorial](../plugins_tutorial.md) for detail steps of creating Kuiper plugins.  Please refer to [labelImage.go](https://github.com/emqx/kuiper/blob/master/plugins/functions/labelImage/labelImage.go) for the full source code.
+Check [this tutorial](../plugins_tutorial.md) for detail steps of creating eKuiper plugins.  Please refer to [labelImage.go](https://github.com/lf-edge/ekuiper/blob/master/plugins/functions/labelImage/labelImage.go) for the full source code.
 
 ## Build and install the plugin
 
-To use the plugin, we need to build it in the environment where Kuiper will run and then install it in Kuiper.
+To use the plugin, we need to build it in the environment where eKuiper will run and then install it in eKuiper.
 
 ### Install by pre-built zip
 
-If using Kuiper docker images with tags like 1.1.1 or 1.1.1-slim which are based on debian, we can install the pre-built labelImage plugin. For example, to install the plugin for Kuiper 1.1.2 in docker image emqx/kuiper:1.1.2-slim, the pre-built zip file locates in *https://www.emqx.io/downloads/kuiper-plugins/v1.1.2/debian/functions/labelImage_amd64.zip*. Run the rest command as below to install.
+If using eKuiper docker images with tags like 1.1.1 or 1.1.1-slim which are based on debian, we can install the pre-built labelImage plugin. For example, to install the plugin for eKuiper 1.1.2 in docker image emqx/kuiper:1.1.2-slim, the pre-built zip file locates in *https://www.emqx.io/downloads/kuiper-plugins/v1.1.2/debian/functions/labelImage_amd64.zip*. Run the rest command as below to install.
 
 ```shell
-POST http://{{kuiperHost:kuiperRestPort}}/plugins/functions
+POST http://{{eKuiperHost:eKuiperRestPort}}/plugins/functions
 Content-Type: application/json
 
 {"name":"labelImage", "file": "https://www.emqx.io/downloads/kuiper-plugins/v1.1.2/debian/functions/labelImage_amd64.zip"}
@@ -72,7 +72,7 @@ Content-Type: application/json
 
 ### Manual build
 
-If you don't run Kuiper by official Kuiper docker image, the pre-built labelImage plugin will not fit due to the limitation of golang plugin. You will need to built the plugin manually. There are 3 steps to create the plugin zip file manually:
+If you don't run eKuiper by official eKuiper docker image, the pre-built labelImage plugin will not fit due to the limitation of golang plugin. You will need to built the plugin manually. There are 3 steps to create the plugin zip file manually:
 
 1. Build the TensorFlowLite C API.
 2. Build the labelImage plugin.
@@ -108,10 +108,10 @@ There is a very simple [instruction](https://github.com/tensorflow/tensorflow/tr
 
 #### Build the labelImage plugin
 
-Make sure the Kuiper github repo has cloned. The plugin source file is in *extensions/functions/labelImage/labelImage.go*. Export the paths of the tensorflow repo and built libraries before build the plugin.
+Make sure the eKuiper github repo has cloned. The plugin source file is in *extensions/functions/labelImage/labelImage.go*. Export the paths of the tensorflow repo and built libraries before build the plugin.
 
 ```shell
-$ cd {{kuiperRepoPath}}
+$ cd {{eKuiperRepoPath}}
 $ export CGO_CFLAGS=-I/root/tensorflow
 $ export CGO_LDFLAGS=-L/root/tensorflow/lib
 $ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functions/LabelImage.so extensions/functions/labelImage/*.go
@@ -119,7 +119,7 @@ $ mkdir -p "plugins/functions"
 $ cp -r extensions/functions/labelImage plugins/functions
 ```
 
-By these commands, the plugin is built into plugins/functions/LabelImage.so and copy all dependencies to plugins/functions/labelImage folder. For development purpose, you can restart Kuiper to load this plugin automatically and do testing. After testing complete, we should package it in a zip which is ready to use by Kuiper plugin installation API so that it can be used in another machine such as in production environment.
+By these commands, the plugin is built into plugins/functions/LabelImage.so and copy all dependencies to plugins/functions/labelImage folder. For development purpose, you can restart eKuiper to load this plugin automatically and do testing. After testing complete, we should package it in a zip which is ready to use by eKuiper plugin installation API so that it can be used in another machine such as in production environment.
 
 #### Package the plugin
 
@@ -143,7 +143,7 @@ Once the plugin installed, we can use it in our rule. We will create a rule to r
 
 ### Define the stream
 
-Define the stream by Kuiper rest API. We create a stream named tfdemo whose format is binary and the topic is tfdemo.
+Define the stream by eKuiper rest API. We create a stream named tfdemo whose format is binary and the topic is tfdemo.
 
 ```shell
 POST http://{{host}}/streams
@@ -154,7 +154,7 @@ Content-Type: application/json
 
 ### Define the rule
 
-Define the rule by Kuiper rest API.  We will create a rule named ruleTf. We just read the images from tfdemo stream and run the custom function *labelImage* against it. The result will be the label of the image recognized by the AI.
+Define the rule by eKuiper rest API.  We will create a rule named ruleTf. We just read the images from tfdemo stream and run the custom function *labelImage* against it. The result will be the label of the image recognized by the AI.
 
 ```shell
 POST http://{{host}}/rules
@@ -232,4 +232,4 @@ The images are labeled correctly.
 
 ## Conclusion
 
-In this tutorial, we walk you through building a customized Kuiper plugin to leverage a pre-trained TensorFlowLite model. If you need to use other models, just follow the steps to create another function. Notice that, the built TensorFlow C API can be shared among all functions if running in the same environment. Enjoy the AI in edge device.
+In this tutorial, we walk you through building a customized eKuiper plugin to leverage a pre-trained TensorFlowLite model. If you need to use other models, just follow the steps to create another function. Notice that, the built TensorFlow C API can be shared among all functions if running in the same environment. Enjoy the AI in edge device.

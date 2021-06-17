@@ -1,5 +1,5 @@
 # 基本配置
-Kuiper 的配置文件位于 `$ kuiper / etc / kuiper.yaml` 中。 配置文件为 yaml 格式。
+eKuiper 的配置文件位于 `$ eKuiper / etc / kuiper.yaml` 中。 配置文件为 yaml 格式。
 
 ## 日志级别
 
@@ -47,20 +47,20 @@ TLS 证书 cert 文件和 key 文件位置。如果 restTls 选项未配置，�
 
 ## Prometheus 配置
 
-如果 `prometheus` 参数设置为 true，Kuiper 将把运行指标暴露到 prometheus。Prometheus 将运行在 `prometheusPort` 参数指定的端口上。
+如果 `prometheus` 参数设置为 true，eKuiper 将把运行指标暴露到 prometheus。Prometheus 将运行在 `prometheusPort` 参数指定的端口上。
 
 ```yaml
 basic:
   prometheus: true
   prometheusPort: 20499
 ```
-在如上默认配置中，Kuiper 暴露于 Prometheusd 运行指标可通过 `http://localhost:20499/metrics` 访问。
+在如上默认配置中，eKuiper 暴露于 Prometheusd 运行指标可通过 `http://localhost:20499/metrics` 访问。
 
 ## Pluginhosts 配置
 
 该 URL 对所有预构建插件托管。 默认情况下，它位于 `packages.emqx.io` 中。 可能有多个主机（主机可以用逗号分隔），如果可以在多个主机中找到相同的程序包，则第一个主机中的程序包将具有最高优先级。
 
-请注意，只有可以安装到当前 Kuiper 实例的插件才会通过 Rest-API 下方列出。
+请注意，只有可以安装到当前 eKuiper 实例的插件才会通过 Rest-API 下方列出。
 
 ```
 GET http://localhost:9081/plugins/sources/prebuild
@@ -70,10 +70,10 @@ GET http://localhost:9081/plugins/functions/prebuild
 
 如果希望通过前述的API列出插件，则应具有以下条件：
 
-- Kuiper 版本：必须为 Kuiper 实例版本构建插件。 如果找不到特定版本的插件，则不会返回任何插件。
-- 操作系统：现在仅支持 Linux 系统，因此，如果 Kuiper 在其他操作系统上运行，则不会返回任何插件。
+- eKuiper 版本：必须为 eKuiper 实例版本构建插件。 如果找不到特定版本的插件，则不会返回任何插件。
+- 操作系统：现在仅支持 Linux 系统，因此，如果 eKuiper 在其他操作系统上运行，则不会返回任何插件。
 - CPU 架构：只有在正确的 CPU 架构中构建的插件，才能在插件存储库中找到并返回。
-- EMQ 官方发布的 Docker 映像：仅当 Kuiper 在 EMQ 官方发布的 Docker 映像上运行时，才能返回插件。
+- EMQ 官方发布的 Docker 映像：仅当 eKuiper 在 EMQ 官方发布的 Docker 映像上运行时，才能返回插件。
 
 ```yaml
 pluginHosts: https://packages.emqx.io

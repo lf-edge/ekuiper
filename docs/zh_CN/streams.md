@@ -37,7 +37,7 @@ CREATE STREAM
 | KEY           | 是    | 将来将用于 GROUP BY 语句 ?? |
 | TYPE     | 否   | 如果支持越来越多的源，将来是否需要？ 默认情况下，它将是 MQTT 类型。 |
 | StrictValidation     | 否    | 根据流模式控制消息字段的验证行为。 |
-| CONF_KEY | 否 | 如果需要配置其他配置项，请在此处指定配置键。<br />Kuiper当前建议使用yaml文件格式。 |
+| CONF_KEY | 否 | 如果需要配置其他配置项，请在此处指定配置键。<br />eKuiper当前建议使用yaml文件格式。 |
 
 **StrictValidation介绍**
 
@@ -80,7 +80,7 @@ CREATE STREAM my_stream
 
 
 
-MQTT 源的配置指定以 yaml 格式，并且配置文件位置在`$kuiper/etc/mqtt_source.yaml` 处。 以下是文件格式。
+MQTT 源的配置指定以 yaml 格式，并且配置文件位置在`$ekuiper/etc/mqtt_source.yaml` 处。 以下是文件格式。
 
 ```yaml
 #全局MQTT配置

@@ -1,6 +1,6 @@
 # 定制函数
 
-Kuiper 可以定制函数，函数的开发、编译及使用请[参见这里](../../extension/function.md)。
+eKuiper 可以定制函数，函数的开发、编译及使用请[参见这里](../../extension/function.md)。
 
 ## echo 插件
 

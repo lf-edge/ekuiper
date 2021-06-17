@@ -1,6 +1,6 @@
 # Tensorflow Lite C API library
 
-This is the prebuilt tensorflow lite c library for debian 10. It can be used directly in Kuiper docker image of tags x.x.x or x.x.x-slim.
+This is the prebuilt tensorflow lite c library for debian 10. It can be used directly in eKuiper docker image of tags x.x.x or x.x.x-slim.
 
 To use in other environment, you need to build the library from source.
 

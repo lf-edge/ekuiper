@@ -1,45 +1,45 @@
 ## Overview
 
-Kuiper FVT (functional verification tests)  covers following scenarios. 
+eKuiper FVT (functional verification tests)  covers following scenarios. 
 
 - Basic functions of HTTP REST-API 
 - Basic functions of CLI
-- Complex end-2-end scenario for Kuiper source, processing and sink
+- Complex end-2-end scenario for eKuiper source, processing and sink
 
 The scenarios will be invoked automatically in Github actions with any new code commit or push request. Another Raspberry Pi continouly integration environment will also be ready for running test cases in ARM environment. So if receives any failed FVT running, please re-check the code or update the scripts if necessary.
 
-Kuiper project uses JMeter for writing the scripts for following reasons,
+eKuiper project uses JMeter for writing the scripts for following reasons,
 
 - Easy to write testcases for HTTP REST-API & CLI
-- Capabilities of publish and subscribe MQTT message. The Kuiper end-2-end scenarios requires MQTT client for pub/sub message, and JMeter provides a unified approach for supporting such functions
+- Capabilities of publish and subscribe MQTT message. The eKuiper end-2-end scenarios requires MQTT client for pub/sub message, and JMeter provides a unified approach for supporting such functions
 - Capabilities of writing complex content assertions. Besides some simple ways of content assertions, JMeter also provides ``BeanShell Assertion``, which can be used for extract and process complex message contents. 
 
 ## Run script in local development environment
 
 **Prepare JMeter**
 
-Kuiper uses JMeter for FVT test scenarios, includes REST-API, CLI and end to end test scenarios. 
+eKuiper uses JMeter for FVT test scenarios, includes REST-API, CLI and end to end test scenarios. 
 
 - Install JRE - requires JRE 8+
 - Download and extract [JMeter](http://jmeter.apache.org/download_jmeter.cgi). 
 
 **Install MQTT broker**
 
-Because test scripts uses MQTT broker for source and sink of Kuiper rule, an MQTT broker is required for running the scripts. If you use a broker that cannot be accessed from ``tcp://127.0.0.1:1883``, you should modify the script and specify your MQTT broker address.
+Because test scripts uses MQTT broker for source and sink of eKuiper rule, an MQTT broker is required for running the scripts. If you use a broker that cannot be accessed from ``tcp://127.0.0.1:1883``, you should modify the script and specify your MQTT broker address.
 
-- Modify servers to your MQTT broker address in Kuiper configuration file ``etc/mqtt_source.yaml``. 
+- Modify servers to your MQTT broker address in eKuiper configuration file ``etc/mqtt_source.yaml``. 
 - Modify the script file that you want to run.
   - ``mqtt_srv``: The default value is ``127.0.0.1``, you need to update it if you have a different broker. Refer to below screenshot, ``Test Plan > User Defined Variables > mqtt_srv``.
     
     ![jmeter_variables](resources/jmeter_variables.png)
     
-  - If you run test Kuiper server at another address or port, you need also change below two config.
-    - ``Test Plan > User Defined Variables > srv``: The Kuiper server address, by default is at ``127.0.0.1``.
-    - ``Test Plan > User Defined Variables > rest_port``: The Kuiper server RestAPI port, by default is ``9081``, please change it if running Kuiper at a different port.
+  - If you run test eKuiper server at another address or port, you need also change below two config.
+    - ``Test Plan > User Defined Variables > srv``: The eKuiper server address, by default is at ``127.0.0.1``.
+    - ``Test Plan > User Defined Variables > rest_port``: The eKuiper server RestAPI port, by default is ``9081``, please change it if running eKuiper at a different port.
 
 **Run JMeter**
 
-For most of scripts, you can just start JMeter by default way, such as ``bin/jmeter.sh`` in Mac or Linux. But some of scripts need to pass some parameters before running them. Please refer to below for detailed. Please make sure you start MQTT broker & Kuiper before running the tests.
+For most of scripts, you can just start JMeter by default way, such as ``bin/jmeter.sh`` in Mac or Linux. But some of scripts need to pass some parameters before running them. Please refer to below for detailed. Please make sure you start MQTT broker & eKuiper before running the tests.
 
 ## Scenarios
 
@@ -50,9 +50,9 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   - Create/Delete/Describe/Show stream for RestAPI
   - Create/Delete/Describe/Show stream for CLI
 
-  The script need to be told about the location of Kuiper install directory, so script knows where to invoke Kuiper CLI.
+  The script need to be told about the location of eKuiper install directory, so script knows where to invoke eKuiper CLI.
 
-  - Specify the ``base`` property in the JMeter command line, the ``base`` is where Kuiper installs. Below is command for starting JMeter.
+  - Specify the ``base`` property in the JMeter command line, the ``base`` is where eKuiper installs. Below is command for starting JMeter.
 
     ```shell
     bin/jmeter.sh -Dbase="/opt/kuiper"
@@ -67,17 +67,17 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
     - Create/Delete/Describe/Show rule for CLI
   - Delete stream definition at the last step of test scenario
   
-  The script need to be told about the location of Kuiper install directory, so script knows where to invoke Kuiper CLI.
+  The script need to be told about the location of eKuiper install directory, so script knows where to invoke eKuiper CLI.
   
-  - Specify the ``base`` property in the JMeter command line, the ``base`` is where Kuiper installs. 
-  - Specify the ``fvt`` property in the JMeter command line, the ``fvt`` is where you develop Kuiper, script will read rule file  ``fvt_scripts/rule1.txt`` from the location.
+  - Specify the ``base`` property in the JMeter command line, the ``base`` is where eKuiper installs. 
+  - Specify the ``fvt`` property in the JMeter command line, the ``fvt`` is where you develop eKuiper, script will read rule file  ``fvt_scripts/rule1.txt`` from the location.
   
   - Modify ``mqtt.server`` to your MQTT broker address in file ``fvt_scripts/rule1.txt``.
   
   - So below is command for starting JMeter.
   
     ```shell
-    bin/jmeter.sh -Dbase="/opt/kuiper" -Dfvt="/Users/rockyjin/Downloads/workspace/edge/src/kuiper"
+    bin/jmeter.sh -Dbase="/opt/kuiper" -Dfvt="/Users/rockyjin/Downloads/workspace/edge/src/ekuiper"
     ```
   
 - [Select all (*) records rule test](select_all_rule.jmx)
@@ -135,7 +135,7 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
 
 - [EdgeX source with condition](select_edgex_condition_rule.jmx)
 
-  The test script is used for testing [Kuiper EdgeX source](../docs/en_US/rules/sources/edgex.md). To run the script, 
+  The test script is used for testing [eKuiper EdgeX source](../docs/en_US/rules/sources/edgex.md). To run the script, 
 
   - A mockup EdgeX value descriptor service should be compiled and run before test.
 
@@ -151,10 +151,10 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
     # go build -o fvt_scripts/edgex/pub fvt_scripts/edgex/pub.go
     ```
 
-  - Run the JMeter with following command, and specify the ``fvt`` property in the JMeter command line, the ``fvt`` is where you develop Kuiper, script will search ``fvt_scripts/edgex/pub`` from the location.
+  - Run the JMeter with following command, and specify the ``fvt`` property in the JMeter command line, the ``fvt`` is where you develop eKuiper, script will search ``fvt_scripts/edgex/pub`` from the location.
 
     ```shell
-    bin/jmeter.sh -Dfvt="/Users/rockyjin/Downloads/workspace/edge/src/kuiper"
+    bin/jmeter.sh -Dfvt="/Users/rockyjin/Downloads/workspace/edge/src/ekuiper"
     ```
 
   - The processing SQL is ``SELECT * FROM demo WHERE temperature > 30``, so all of the data that with temperature less than 30 will be fitered. 
@@ -163,7 +163,7 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   
 - [Multiple EdgeX source configurations](fvt_scripts/select_edgex_another_bus_rule.jmx)
 
-  The test script is used for testing specifying another EdgeX source configurations in Kuiper.
+  The test script is used for testing specifying another EdgeX source configurations in eKuiper.
 
   - In the ``edgex.yaml`` configuration file, below additional configurations are specified.
 
@@ -212,7 +212,7 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   
 - [Binary data type test](http_pull_rule.jmx)
   
-  This script verifies the binary data support. The rule consumes the binary image data sent from MQTT broker, and then processed by the rule, finally the image data will be sent back to MQTT broker again. The script verifies BASE64 of image that produced by Kuiper rule engine. 
+  This script verifies the binary data support. The rule consumes the binary image data sent from MQTT broker, and then processed by the rule, finally the image data will be sent back to MQTT broker again. The script verifies BASE64 of image that produced by eKuiper rule engine. 
   
   - `binary_image_hex.txt`: the data file of image.
   - `binary_image_base64.txt`: the BASE64 file of image.

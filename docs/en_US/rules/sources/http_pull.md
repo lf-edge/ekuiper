@@ -1,6 +1,6 @@
 # HTTP pull source 
 
-Kuiper provides built-in support for pulling HTTP source stream, which can pull the message from HTTP server broker and feed into the Kuiper processing pipeline.  The configuration file of HTTP pull source is at ``etc/sources/httppull.yaml``. Below is the file format.
+eKuiper provides built-in support for pulling HTTP source stream, which can pull the message from HTTP server broker and feed into the eKuiper processing pipeline.  The configuration file of HTTP pull source is at ``etc/sources/httppull.yaml``. Below is the file format.
 
 ```yaml
 #Global httppull configurations
