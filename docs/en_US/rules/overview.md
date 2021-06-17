@@ -33,7 +33,7 @@ The following 3 parameters are required for creating a rule.
 
 ### id
 
-The identification of the rule. The rule name cannot be duplicated in the same Kuiper instance.
+The identification of the rule. The rule name cannot be duplicated in the same eKuiper instance.
 
 ### sql
 
@@ -60,11 +60,11 @@ The rule options can be defined globally in ``etc/kuiper.yaml`` under the ``rule
 
 ## Sources
 
-- Kuiper provides embeded following 3 sources,
+- eKuiper provides embeded following 3 sources,
   - MQTT source, see  [MQTT source stream](./sources/mqtt.md) for more detailed info.
   - EdgeX source by default is shipped in [docker images](https://hub.docker.com/r/emqx/kuiper), but NOT included in single download binary files, you use ``make pkg_with_edgex`` command to build a binary package that supports EdgeX source. Please see [EdgeX source stream](./sources/edgex.md) for more detailed info.
   - HTTP pull source, regularly pull the contents at user's specified interval time, see [here](./sources/http_pull.md) for more detailed info.
-- See [SQL](../sqls/overview.md) for more info of Kuiper SQL.
+- See [SQL](../sqls/overview.md) for more info of eKuiper SQL.
 - Sources can be customized, see [extension](../extension/overview.md) for more detailed info.
 
 ## Sinks/Actions
@@ -94,7 +94,7 @@ Each action can define its own properties. There are several common properties:
 
 ### Data Template
 
-User can refer to [Use Golang template to customize analaysis result in Kuiper](./data_template.md) for more detailed scenarios.
+User can refer to [Use Golang template to customize analaysis result in eKuiper](./data_template.md) for more detailed scenarios.
 If sendSingle is true, the data template will execute against a record; Otherwise, it will execute against the whole array of records. Typical data templates are:
 
 For example, we have the sink input as
@@ -156,7 +156,7 @@ Actions could be customized to support different kinds of outputs, see [extensio
 
 ### Functions supported in template
 
-Kuiper extends several functions that can be used in data template.
+eKuiper extends several functions that can be used in data template.
 
 - `json para1`: The `json` function is used for convert the map content to a JSON string.
 - `base64 para1`: The `base64` function is used for encoding parameter value to a base64 string.

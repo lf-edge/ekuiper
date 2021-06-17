@@ -1,8 +1,8 @@
 # Windows
 
-In time-streaming scenarios, performing operations on the data contained in temporal windows is a common pattern. Kuiper has native support for windowing functions, enabling you to author complex stream processing jobs with minimal effort.
+In time-streaming scenarios, performing operations on the data contained in temporal windows is a common pattern. eKuiper has native support for windowing functions, enabling you to author complex stream processing jobs with minimal effort.
 
-There are five kinds of windows to use: [Tumbling window](#tumbling-window), [Hopping window](#hopping-window), [Sliding window](#sliding-window), [Session window](#session-window) and [Count window](#count-window). You use the window functions in the `GROUP BY` clause of the query syntax in your Kuiper queries. 
+There are five kinds of windows to use: [Tumbling window](#tumbling-window), [Hopping window](#hopping-window), [Sliding window](#sliding-window), [Session window](#session-window) and [Count window](#count-window). You use the window functions in the `GROUP BY` clause of the query syntax in your eKuiper queries. 
 
 All the windowing operations output results at the end of the window. The output of the window will be single event based on the aggregate function used. 
 

@@ -1,6 +1,6 @@
 # 扩展
 
-Kuiper 允许用户自定义扩展，以支持更多的功能。用户可编写插件进行扩展；也可以通过配置的方式，扩展 SQL 中的函数，用于调用外部已有的 REST 或 RPC 服务。
+eKuiper 允许用户自定义扩展，以支持更多的功能。用户可编写插件进行扩展；也可以通过配置的方式，扩展 SQL 中的函数，用于调用外部已有的 REST 或 RPC 服务。
 
 使用插件扩展较为复杂，需要用户编写代码并自行编译，具有一定的开发成本。其使用的场景包括：
 
@@ -14,11 +14,11 @@ Kuiper 允许用户自定义扩展，以支持更多的功能。用户可编写�
 
 ## 插件扩展
 
-Kuiper 允许用户自定义不同类型的扩展。 
+eKuiper 允许用户自定义不同类型的扩展。 
 
-- 源扩展用于扩展不同的流源，例如使用来自其他消息服务器的数据。Kuiper 对 [MQTT 消息服务器](../rules/sources/mqtt.md)的内置源提供支持。
-- Sink/Action 扩展用于将发布/推送数据扩展到不同的目标，例如数据库，其他消息系统，Web 界面或文件系统。Kuiper 中提供内置动作支持，请参阅  [MQTT](../rules/sinks/mqtt.md)  & [日志文件](../rules/sinks/logs.md).。
-- 函数扩展允许用户扩展 SQL 中使用的不同函数。 Kuiper支持内置函数，请参见 [函数](../sqls/built-in_functions.md)。
+- 源扩展用于扩展不同的流源，例如使用来自其他消息服务器的数据。eKuiper 对 [MQTT 消息服务器](../rules/sources/mqtt.md)的内置源提供支持。
+- Sink/Action 扩展用于将发布/推送数据扩展到不同的目标，例如数据库，其他消息系统，Web 界面或文件系统。eKuiper 中提供内置动作支持，请参阅  [MQTT](../rules/sinks/mqtt.md)  & [日志文件](../rules/sinks/logs.md).。
+- 函数扩展允许用户扩展 SQL 中使用的不同函数。 eKuiper支持内置函数，请参见 [函数](../sqls/built-in_functions.md)。
 
 请阅读以下内容，了解如何实现不同的扩展。
 
@@ -34,7 +34,7 @@ Kuiper 允许用户自定义不同类型的扩展。
 
 ## 状态存储
 
-Kuiper 扩展通过 context 参数暴露了一个基于键值对的状态存储接口，可用于所有类型的扩展，包括 Source，Sink 和 Function 扩展.
+eKuiper 扩展通过 context 参数暴露了一个基于键值对的状态存储接口，可用于所有类型的扩展，包括 Source，Sink 和 Function 扩展.
 
 状态为键值对，其中键为 string 类型而值为任意数据。键的作用域仅为当前扩展的实例。
 
@@ -59,9 +59,9 @@ func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionConte
 
 ### 运行时依赖
 
-有些插件可能需要访问文件系统中的依赖文件。依赖文件建放置于 {{kuiperPath}}/etc/{{pluginType}}/{{pluginName}} 目录。打包插件时，依赖文件应放置于 [etc 目录](../restapi/plugins.md#plugin-file-format)。安装后，这些文件会自动移动到推荐的位置。
+有些插件可能需要访问文件系统中的依赖文件。依赖文件建放置于 {{ekuiperPath}}/etc/{{pluginType}}/{{pluginName}} 目录。打包插件时，依赖文件应放置于 [etc 目录](../restapi/plugins.md#plugin-file-format)。安装后，这些文件会自动移动到推荐的位置。
 
-在插件源代码中，开发者可通过 context 获取 Kuiper 根目录，以访问文件系统中的依赖：
+在插件源代码中，开发者可通过 context 获取 eKuiper 根目录，以访问文件系统中的依赖：
 
 ```go
 ctx.GetRootPath()
@@ -69,8 +69,8 @@ ctx.GetRootPath()
 
 ## 外部函数扩展
 
-提供一种配置的方式，使得 Kuiper 可以使用 SQL 以函数的方式直接调用外部服务，包括各种 rpc 服务， http 服务等。该方式将可大提高 Kuiper 扩展的易用性。外部函数将作为插件系统的补充，仅在性能要求较高的情况下才建议使用插件。
+提供一种配置的方式，使得 eKuiper 可以使用 SQL 以函数的方式直接调用外部服务，包括各种 rpc 服务， http 服务等。该方式将可大提高 eKuiper 扩展的易用性。外部函数将作为插件系统的补充，仅在性能要求较高的情况下才建议使用插件。
 
-以 getFeature 函数为例，假设有 AI 服务基于 grpc 提供getFeature 服务。则可在Kuiper配置之后，使用 `SELECT getFeature(self) from demo` 的方式，无需定制插件而调用该 AI 服务。
+以 getFeature 函数为例，假设有 AI 服务基于 grpc 提供getFeature 服务。则可在 eKuiper 配置之后，使用 `SELECT getFeature(self) from demo` 的方式，无需定制插件而调用该 AI 服务。
 
 详细配置方法，请参考[外部函数](external_func.md)。

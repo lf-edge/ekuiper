@@ -1,36 +1,36 @@
-# Use of Kuiper management console
+# Use of eKuiper management console
 
 ## Overview
 
-From Kuiper version 0.9.1, whenever a new version of Kuiper is released, the corresponding version of the management console will be released. This article uses a practical example to illustrate how to use the management console to operate and manage Kuiper nodes. In the article, the data will be subscribed from the MQTT server, and be sent to the specified file after processing through the rules written by Kuiper. The demonstration is as follows:
+From eKuiper version 0.9.1, whenever a new version of eKuiper is released, the corresponding version of the management console will be released. This article uses a practical example to illustrate how to use the management console to operate and manage eKuiper nodes. In the article, the data will be subscribed from the MQTT server, and be sent to the specified file after processing through the rules written by eKuiper. The demonstration is as follows:
 
-- Create a Kuiper node through the management console
+- Create a eKuiper node through the management console
 - Create a stream to subscribe to the data in the MQTT server. This example demonstrates subscribing to the MQTT server. The relevant information is shown below.
   - Address: `tcp://broker.emqx.io:1883`，
   - Topic: `devices/device_001/messages`，
   - Data: `{"temperature": 40, "humidity" : 20}`
 - Create a rule to calculate the subscribed data and write the data to the sink "This example demonstrates writing the subscribed message to a file".
-- Kuiper currently supports multiple sources and sinks. Users only need to install the corresponding plugins to achieve the corresponding function. "The source of this example is MQTT source, which has built-in support without the need of installation; the sink is a file, which does not have built-in support and needs to be installed separately."
+- eKuiper currently supports multiple sources and sinks. Users only need to install the corresponding plugins to achieve the corresponding function. "The source of this example is MQTT source, which has built-in support without the need of installation; the sink is a file, which does not have built-in support and needs to be installed separately."
 
 ## Architecture design
 
 * UI end: a visual interface, easy for users to operate
-* Kuiper-manager: Management console, which essentially is a reverse HTTP proxy service, providing the services of user management, permission verification. It can be deployed in the cloud or at the edge
-* Kuiper instance: managed Kuiper node instance, Kuiper-manager can manage multiple Kuiper nodes at the same time
+* eKuiper-manager: Management console, which essentially is a reverse HTTP proxy service, providing the services of user management, permission verification. It can be deployed in the cloud or at the edge
+* eKuiper instance: managed eKuiper node instance, eKuiper-manager can manage multiple eKuiper nodes at the same time
 
 ![construct](./resources/arch.png)
 
 ## Install the management console
 
-### Install Kuiper
+### Install eKuiper
 
-- Pull Kuiper's Docker image from [Docker Image Library](https://hub.docker.com/r/emqx/kuiper/tags). Since it is required to install the plugin in this article, you must use the `kuiper:0.9.1-slim` image (`kuiper:0.9.1-alpine` image is relatively small and easy to install, but due to the lack of some necessary library files, the plug-in cannot run normally. The `kuiper:0.9.1` image is the development version, which is suitable for use in the development phase).
+- Pull eKuiper's Docker image from [Docker Image Library](https://hub.docker.com/r/emqx/kuiper/tags). Since it is required to install the plugin in this article, you must use the `kuiper:0.9.1-slim` image (`kuiper:0.9.1-alpine` image is relatively small and easy to install, but due to the lack of some necessary library files, the plug-in cannot run normally. The `kuiper:0.9.1` image is the development version, which is suitable for use in the development phase).
 
   ```shell
   docker pull emqx/kuiper:0.9.1-slim
   ```
 
-- Run the Kuiper container (for convenience, we will use the public MQTT server provided by [EMQ](https://www.emqx.io), and the address can be set by the `-e` option when running the container). If you want to access the Kuiper instance through the host, you can expose port 9081 by adding the `-p 9081:9081` parameter when starting the container.
+- Run the eKuiper container (for convenience, we will use the public MQTT server provided by [EMQ](https://www.emqx.io), and the address can be set by the `-e` option when running the container). If you want to access the eKuiper instance through the host, you can expose port 9081 by adding the `-p 9081:9081` parameter when starting the container.
 
   ```shell
   # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] emqx/kuiper:0.9.1-slim
@@ -83,9 +83,9 @@ You need to provide the address, user name, and password of kuiper-manager when 
 
   ![login](./resources/login.png)
 
-### Create a Kuiper node
+### Create a eKuiper node
 
-When creating a kuiper node, you need to fill in the "node type", "node name" and "endpoint URL".
+When creating a eKuiper node, you need to fill in the "node type", "node name" and "endpoint URL".
 
 * Node Type: Select `Direct Connect Node` (`Huawei IEF Node` is dedicated to Huawei users).
 
@@ -97,17 +97,17 @@ When creating a kuiper node, you need to fill in the "node type", "node name" an
   docker inspect kuiper |  grep IPAddress
   ```
 
-The example of creating a Kuiper node is shown in the figure below. If the port is exposed to the host, then the 9081 port address on the host can also be used directly.
+The example of creating a eKuiper node is shown in the figure below. If the port is exposed to the host, then the 9081 port address on the host can also be used directly.
 
 ![addNode](./resources/add_node.png)
 
 ### Install the plugin
 
-In our scenario, the target plugin named file will be used. Select "Plugins" > "Install plugin", and the following dialog box will pop up: Select the target plugin named file in the drop-down list to download and install it, and the plugin will write data to the file specified by the user. As shown in the figure below, after the reader selects the plug-in with the corresponding name, the  input box of "File" will automatically be filled with the corresponding plug-in download address. After clicking the "Submit" button, Kuiper will automatically download the corresponding plugin from the relevant address on `https://www.emqx.io/downloads` and install it into the system automatically.
+In our scenario, the target plugin named file will be used. Select "Plugins" > "Install plugin", and the following dialog box will pop up: Select the target plugin named file in the drop-down list to download and install it, and the plugin will write data to the file specified by the user. As shown in the figure below, after the reader selects the plug-in with the corresponding name, the  input box of "File" will automatically be filled with the corresponding plug-in download address. After clicking the "Submit" button, eKuiper will automatically download the corresponding plugin from the relevant address on `https://www.emqx.io/downloads` and install it into the system automatically.
 
 ![newPlugine](./resources/new_plugin.png)
 
-**Note: After the plug-in is installed and used through the rules, the plug-in has been loaded into the memory. Due to the limitations of the Golang language, when the plug-in is deleted, it cannot be uninstalled in practice. Therefore, if you want to reinstall the plug-in, you must restart Kuiper before it can take effect. Currently only the installation in the Docker environment of debian is supported, and other environments are not supported temporarily. **
+**Note: After the plug-in is installed and used through the rules, the plug-in has been loaded into the memory. Due to the limitations of the Golang language, when the plug-in is deleted, it cannot be uninstalled in practice. Therefore, if you want to reinstall the plug-in, you must restart eKuiper before it can take effect. Currently only the installation in the Docker environment of debian is supported, and other environments are not supported temporarily. **
 
 ### Create a stream
 
@@ -142,7 +142,7 @@ As shown in the figure below, a rule named demoRule is created to filter out the
 
 ![newRule](./resources/new_rule.png)
 
-Click the "Add" button and a dialog box will pop up as shown below. The file path of `/kuiper/demoFile` where the input result is stored is input . More information about the file sink can be found in [Help File](../plugins/sinks/file.md). The target file is in the `Beta` state and cannot be used as an actual production environment.
+Click the "Add" button and a dialog box will pop up as shown below. The file path of `/ekuiper/demoFile` where the input result is stored is input . More information about the file sink can be found in [Help File](../plugins/sinks/file.md). The target file is in the `Beta` state and cannot be used as an actual production environment.
 
 ![sinkConf](./resources/sink_conf.png)
 
@@ -150,7 +150,7 @@ After the rule is created, if everything goes well, the rule is running.
 
 ### View execution results
 
-Enter the Kuiper container to create a file:
+Enter the eKuiper container to create a file:
 
 ```shell
 # docker exec -it kuiper sh
@@ -176,8 +176,8 @@ As shown in the figure below, there are three buttons in the options. Readers ca
 
 ## Extended reading
 
-- [How to display custom plugins in the installation list of the management console](plugins_in_manager.md): Kuiper provides a plugin extension mechanism, and users can implement custom plugins based on the extended interface. On the management console, users can install plugins directly through the interface. If readers have customized plugins and want to show them in the installation list of the management console, this article can give readers some reference.
+- [How to display custom plugins in the installation list of the management console](plugins_in_manager.md): eKuiper provides a plugin extension mechanism, and users can implement custom plugins based on the extended interface. On the management console, users can install plugins directly through the interface. If readers have customized plugins and want to show them in the installation list of the management console, this article can give readers some reference.
 - If the readers want to develop their own plug-in, they can refer to [Plugin Development Tutorial](../plugins/plugins_tutorial.md) for more information.
-- [EMQ edge-stack project](https://github.com/emqx/edge-stack): This project allows users to install and test EMQ edge series products more easily, realize industrial data analysis, edge data aggregation, and Kuiper-based edge data analysis and other one-stop edge solutions.
+- [EMQ edge-stack project](https://github.com/emqx/edge-stack): This project allows users to install and test EMQ edge series products more easily, realize industrial data analysis, edge data aggregation, and eKuiper-based edge data analysis and other one-stop edge solutions.
 
 

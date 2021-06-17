@@ -8,8 +8,8 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/sqls/windows.md",
-			"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/sqls/windows.md"
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/sqls/windows.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/windows.md"
 		},
 		"description": {
 			"en_US": "In time-streaming scenarios, performing operations on the data contained in temporal windows is a common pattern. Kuiper has native support for windowing functions, enabling you to author complex stream processing jobs with minimal effort.",

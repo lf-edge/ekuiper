@@ -1,4 +1,4 @@
-Kuiper REST api 允许您管理外部服务，例如注册、删除和列出服务，列出外部函数等。
+eKuiper REST api 允许您管理外部服务，例如注册、删除和列出服务，列出外部函数等。
 
 ## 注册外部服务
 
@@ -16,7 +16,7 @@ POST http://localhost:9081/services
 }
 ```
 
-文件在Kuiper所在服务器上时的请求示例：
+文件在eKuiper所在服务器上时的请求示例：
 ```json
 {
   "name":"random",
@@ -27,7 +27,7 @@ POST http://localhost:9081/services
 ### 参数
 
 1. name：外部服务的唯一名称，名称必须与 zip 文件里的服务定义 json 文件完全相同。
-2. file：外部服务文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 Kuiper 服务器所在的机器上。它必须是一个 zip 文件，其中包含：与服务名相同的服务描述 json 文件以及其他任意辅助文件。其中，schema 文件必须在 schema 文件夹下。
+2. file：外部服务文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 eKuiper 服务器所在的机器上。它必须是一个 zip 文件，其中包含：与服务名相同的服务描述 json 文件以及其他任意辅助文件。其中，schema 文件必须在 schema 文件夹下。
 
 ### 服务文件格式
 名为 sample.zip 的源的示例 zip 文件

@@ -37,7 +37,7 @@ CREATE STREAM
 | KEY           | true     | It will be used in future for GROUP BY statements ??         |
 | TYPE     | false    | The type of source to be used. The value must be camel case. For example, if the user creates a customized source _MySource_ with _MySource.so_ inside the plugins/sources folder, set TYPE=mySource to use that extended source. By default, it would be MQTT type. |
 | StrictValidation     | false    | To control validation behavior of message field against stream schema. |
-| CONF_KEY | false | If additional configuration items are requied to be configured, then specify the config key here.<br />Kuiper currently propose yaml file format. |
+| CONF_KEY | false | If additional configuration items are requied to be configured, then specify the config key here.<br />eKuiper currently propose yaml file format. |
 
 **Introduction for StrictValidation**
 
@@ -80,7 +80,7 @@ CREATE STREAM my_stream
 
 
 
-The configuration of MQTT source is specified with yaml format, and the configuration file location is at ``$kuiper/etc/mqtt_source.yaml``.  Below is the file format.
+The configuration of MQTT source is specified with yaml format, and the configuration file location is at ``$ekuiper/etc/mqtt_source.yaml``.  Below is the file format.
 
 ```yaml
 #Global MQTT configurations

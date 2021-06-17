@@ -2,10 +2,10 @@
 
 ## Directory structure 
 
-Below is the installation directory structure after installing Kuiper. 
+Below is the installation directory structure after installing eKuiper. 
 
 ```
-kuiper_installed_dir
+eKuiper_installed_dir
   bin
     cli
   etc

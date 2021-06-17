@@ -1,6 +1,6 @@
 # `Dockerfile` links
 
-- [emqx/kuiper](https://github.com/emqx/kuiper/blob/master/docker/Dockerfile)
+- [emqx/kuiper](https://github.com/lf-edge/ekuiper/blob/master/docker/Dockerfile)
 
 # Quick reference
 
@@ -8,16 +8,16 @@
 
   **<u>Web</u>**
 
-  - https://github.com/emqx/kuiper
+  - https://github.com/lf-edge/ekuiper
 
   **<u>Documents</u>**
 
-  - [Getting started](https://github.com/emqx/kuiper/blob/master/docs/en_US/getting_started.md) 
-  - [Reference guide](https://github.com/emqx/kuiper/blob/master/docs/en_US/reference.md)
+  - [Getting started](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/getting_started.md) 
+  - [Reference guide](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/reference.md)
 
 - **Where to file issues:**
 
-  https://github.com/emqx/kuiper/issues
+  https://github.com/lf-edge/ekuiper/issues
 
 - **Supported architectures**
 
@@ -33,13 +33,13 @@ The `emqx/kuiper` images come in many flavors, each designed for a specific use 
 
 ## `emqx/kuiper:<tag>`
 
-This is the development Docker image, which is based on Debian and it also includes a Golang build environment. If you are unsure about what your needs  are, you probably want to use this one. It is designed to be used both as a throw away container (mount your source code, compile plugins for Kuiper,  and start the  container to run your app), as well as the base to build other images. Please be aware of that this image is the biggest size, and it's usually used for development purpose.
+This is the development Docker image, which is based on Debian and it also includes a Golang build environment. If you are unsure about what your needs  are, you probably want to use this one. It is designed to be used both as a throw away container (mount your source code, compile plugins for eKuiper,  and start the  container to run your app), as well as the base to build other images. Please be aware of that this image is the biggest size, and it's usually used for development purpose.
 
 Notice: This image is the equivalent to development image of `x.x.x-dev` in 0.3.x versions.
 
 ## `emqx/kuiper:<tag>-slim`
 
-This image is also based on Debian, and only contains the minimal packages needed to run `kuiper`. The difference between with previous image (`emqx/kuiper:<tag>`) is that this image does not include Golang development environment. The typical usage of this image would be deploy the plugins compiled in previous Docker image instances. This is the official recommended image if you want to deploy & run  customized plugins into Kuiper.
+This image is also based on Debian, and only contains the minimal packages needed to run `kuiper`. The difference between with previous image (`emqx/kuiper:<tag>`) is that this image does not include Golang development environment. The typical usage of this image would be deploy the plugins compiled in previous Docker image instances. This is the official recommended image if you want to deploy & run  customized plugins into eKuiper.
 
 ## `emqx/kuiper:<tag>-alpine`
 
@@ -49,15 +49,15 @@ This variant is highly recommended when final image size being as  small as poss
 
 To minimize image size, it's uncommon for additional related tools (such as `git` or `bash`) to be included in Alpine-based images. Using this image as a base, add the things you need in your own Dockerfile (see the [`alpine` image description](https://hub.docker.com/_/alpine/) for examples of how to install packages if you are unfamiliar).
 
-# What is Kuiper
+# What is eKuiper
 
-EMQ X Kuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of Kuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  Kuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
+LF Edge eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of eKuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  eKuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
 
-![Kuiper architect](https://github.com/emqx/kuiper/raw/master/docs/resources/arch.png)
+![eKuiper architect](https://github.com/lf-edge/ekuiper/raw/master/docs/resources/arch.png)
 
 **User scenarios**
 
-It can be run at various IoT edge use scenarios, such as real-time processing of production line data in the IIoT; Gateway of Connected Vehicle analyze the data from data-bus in real time; Real-time analysis of urban facility data in smart city scenarios. Kuiper processing at the edge can reduce system response latency, save network bandwidth and storage costs, and improve system security.
+It can be run at various IoT edge use scenarios, such as real-time processing of production line data in the IIoT; Gateway of Connected Vehicle analyze the data from data-bus in real time; Real-time analysis of urban facility data in smart city scenarios. eKuiper processing at the edge can reduce system response latency, save network bandwidth and storage costs, and improve system security.
 
 **Features**
 
@@ -89,7 +89,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 # How to use this image
 
-### Run kuiper
+### Run eKuiper
 
 Execute some command under this docker image
 
@@ -105,13 +105,13 @@ docker run -p 9081:9081 -d --name kuiper MQTT_SOURCE__DEFAULT__SERVERS=[$MQTT_BR
 
 #### 5 minutes quick start
 
-1. Set Kuiper source to an MQTT server. This sample uses server locating at ``tcp://broker.emqx.io:1883``. ``broker.emqx.io`` is a public MQTT test server hosted by [EMQ](https://www.emqx.io).
+1. Set eKuiper source to an MQTT server. This sample uses server locating at ``tcp://broker.emqx.io:1883``. ``broker.emqx.io`` is a public MQTT test server hosted by [EMQ](https://www.emqx.io).
 
    ```shell
    docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] emqx/kuiper:$tag
    ```
 
-2. Create a stream - the stream is your stream data schema, similar to table definition in database. Let's say the temperature & humidity data are sent to ``broker.emqx.io``, and those data will be processed in your **LOCAL RUN** Kuiper docker instance.  Below steps will create a stream named ``demo``, and data are sent to ``devices/device_001/messages`` topic, while ``device_001`` could be other devices, such as ``device_002``, all of those data will be subscribed and handled by ``demo`` stream.
+2. Create a stream - the stream is your stream data schema, similar to table definition in database. Let's say the temperature & humidity data are sent to ``broker.emqx.io``, and those data will be processed in your **LOCAL RUN** eKuiper docker instance.  Below steps will create a stream named ``demo``, and data are sent to ``devices/device_001/messages`` topic, while ``device_001`` could be other devices, such as ``device_002``, all of those data will be subscribed and handled by ``demo`` stream.
 
    ```shell
    -- In host
@@ -146,16 +146,16 @@ docker run -p 9081:9081 -d --name kuiper MQTT_SOURCE__DEFAULT__SERVERS=[$MQTT_BR
 
 5. To stop the test, just press ``ctrl + c `` in ``bin/kuiper query`` command console.
 
-You can also refer to [Kuiper dashboard documentation](https://github.com/emqx/kuiper/blob/master/docs/en_US/manager-ui/overview.md) for better using experience.
+You can also refer to [eKuiper dashboard documentation](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/manager-ui/overview.md) for better using experience.
 
-Next for exploring more powerful features of EMQ X  Kuiper? Refer to below for how to apply EMQ X Kuiper in edge and integrate with AWS / Azure IoT cloud.
+Next for exploring more powerful features of eKuiper? Refer to below for how to apply LF Edge eKuiper in edge and integrate with AWS / Azure IoT cloud.
 
-- [Lightweight edge computing EMQ X Kuiper and Azure IoT Hub integration solution](https://www.emqx.io/blog/85)   [简体中文](https://www.emqx.io/cn/blog/87)
-- [Lightweight edge computing EMQ X Kuiper and AWS IoT Hub integration solution](https://www.emqx.io/blog/88)     [简体中文](https://www.emqx.io/cn/blog/94)
+- [Lightweight edge computing eKuiper and Azure IoT Hub integration solution](https://www.emqx.io/blog/85)   [简体中文](https://www.emqx.io/cn/blog/87)
+- [Lightweight edge computing eKuiper and AWS IoT Hub integration solution](https://www.emqx.io/blog/88)     [简体中文](https://www.emqx.io/cn/blog/94)
 
 ### Configuration
 
-Kuiper supports to use environment variables to modify configuration files in containers.
+eKuiper supports to use environment variables to modify configuration files in containers.
 
 When modifying configuration files through environment variables, the environment variables need to be set according to the prescribed format, for example:
 
@@ -187,12 +187,12 @@ Port = 48080
 ...
 ```
 
-If you want to configure more options, you can mount the configuration file into Kuiper container, like this:
+If you want to configure more options, you can mount the configuration file into eKuiper container, like this:
 ```
 $ docker run --name kuiper -v /path/to/mqtt_sources.yaml:/kuiper/etc/mqtt_sources.yaml -v /path/to/edgex.yaml:/kuiper/etc/sources/edgex.yaml emqx/kuiper:$tag
 ```
 
 # More
 
-If you'd like to know more about the project, please refer to [Github project](https://github.com/emqx/kuiper/blob/master/docs/en_US/README.md).
+If you'd like to know more about the project, please refer to [Github project](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/README.md).
 

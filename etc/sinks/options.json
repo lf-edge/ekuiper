@@ -1,7 +1,7 @@
 {
 	"helpUrl": {
-		"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en/rules/overview.md",
-		"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh/rules/overview.md"
+		"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en/rules/overview.md",
+		"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh/rules/overview.md"
 	},
 	"properties": [{
 		"name": "isEventTime",

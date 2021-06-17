@@ -5,12 +5,12 @@ The sink is used for saving analysis result into a specified file.
 ## Compile & deploy plugin
 
 ```shell
-# cd $kuiper_src
+# cd $eKuiper_src
 # go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/File.so extensions/sinks/file/file.go
-# cp plugins/sinks/File.so $kuiper_install/plugins/sinks
+# cp plugins/sinks/File.so $eKuiper_install/plugins/sinks
 ```
 
-Restart the Kuiper server to activate the plugin.
+Restart the eKuiper server to activate the plugin.
 
 ## Properties
 

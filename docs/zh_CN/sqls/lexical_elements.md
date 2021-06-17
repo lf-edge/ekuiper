@@ -1,4 +1,4 @@
-# Kuiper 词汇元素
+# eKuiper 词汇元素
 
 ## 注释
 
@@ -6,7 +6,7 @@
 
 ## 令牌（Tokens）
 
-Kuiper SQL 由令牌构建。 令牌分为四类：
+eKuiper SQL 由令牌构建。 令牌分为四类：
 
 - *标识符*
 - *关键字*
@@ -34,7 +34,7 @@ SELECT `a-b`, `hello world`, `中文Chinese` from demo
 SELECT, FROM, JOIN, LEFT, INNER, ON, WHERE, GROUP, ORDER, HAVING, BY, ASC, DESC, AND, OR, CASE, WHEN, THEN, ELSE, END
 ```
 
-以下是使用名为 `from` 的流的示例，`from` 是 Kuiper 中的保留关键字。
+以下是使用名为 `from` 的流的示例，`from` 是 eKuiper 中的保留关键字。
 
 ```sql
 SELECT * FROM demo1 where `from`="device1"

@@ -1,23 +1,23 @@
-# EMQ X Kuiper - An edge lightweight IoT data analytics software
+# LF Edge eKuiper - An edge lightweight IoT data analytics software
 
-[![GitHub Release](https://img.shields.io/github/release/emqx/kuiper?color=brightgreen)](https://github.com/emqx/kuiper/releases)
+[![GitHub Release](https://img.shields.io/github/release/lf-edge/ekuiper?color=brightgreen)](https://github.com/lf-edge/ekuiper/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/emqx/kuiper)](https://hub.docker.com/r/emqx/kuiper)
 [![Slack](https://img.shields.io/badge/Slack-LF%20Edge-39AE85?logo=slack)](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFzM2CEABBcKYGEVCgkw)
 [![Twitter](https://img.shields.io/badge/Follow-EMQ-1DA1F2?logo=twitter)](https://twitter.com/EMQTech)
-[![Community](https://img.shields.io/badge/Community-Kuiper-yellow?logo=github)](https://github.com/emqx/kuiper/discussions)
+[![Community](https://img.shields.io/badge/Community-Kuiper-yellow?logo=github)](https://github.com/lf-edge/ekuiper/discussions)
 [![YouTube](https://img.shields.io/badge/Subscribe-EMQ-FF0000?logo=youtube)](https://www.youtube.com/channel/UC5FjR77ErAxvZENEWzQaO5Q)
 
 [English](README.md) | [简体中文](README-CN.md)
 
 ## Overview
 
-EMQ X Kuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of Kuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  Kuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
+LF Edge eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of eKuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  eKuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
 
 ![arch](./docs/en_US/arch.png)
 
 **User scenarios**
 
-It can be run at various IoT edge use scenarios, such as real-time processing of production line data in the IIoT; Gateway of Connected Vehicle analyze the data from data-bus in real time; Real-time analysis of urban facility data in smart city scenarios. Kuiper processing at the edge can reduce system response latency, save network bandwidth and storage costs, and improve system security.
+It can be run at various IoT edge use scenarios, such as real-time processing of production line data in the IIoT; Gateway of Connected Vehicle analyze the data from data-bus in real time; Real-time analysis of urban facility data in smart city scenarios. eKuiper processing at the edge can reduce system response latency, save network bandwidth and storage costs, and improve system security.
 
 ## Features
 
@@ -58,7 +58,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 ## Quick start
 
-- [Kuiper 5 minutes quick start](docs/en_US/quick_start_docker.md)
+- [eKuiper 5 minutes quick start](docs/en_US/quick_start_docker.md)
 - [EdgeX rule engine tutorial](docs/en_US/edgex/edgex_rule_engine_tutorial.md)
 
 ## Slack channels
@@ -69,7 +69,7 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
 ### MQTT throughput test
 
 - Using JMeter MQTT plugin to send simulation data to EMQ X Broker, such as: ``{"temperature": 10, "humidity" : 90}``, the value of temperature and humidity are random integer between 0 - 100.
-- Kuiper subscribe from EMQ X Broker, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50 `` 
+- eKuiper subscribe from EMQ X Broker, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50 `` 
 - The analysis result are wrote to local file by using [file sink plugin](docs/en_US/plugins/sinks/file.md).
 
 | Devices                                        | Message # per second | CPU usage     | Memory usage |
@@ -92,7 +92,7 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
   }
   ```
 
-- Kuiper subscribe from EdgeX ZeroMQ message bus, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50``. 90% of data will be filtered by the rule.
+- eKuiper subscribe from EdgeX ZeroMQ message bus, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50``. 90% of data will be filtered by the rule.
 
 - The analysis result are sent to [nop sink](docs/en_US/rules/sinks/nop.md), all of the result data will be ignored.
 
@@ -122,9 +122,9 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
 - [Reference guide](docs/en_US/reference.md)
   - [Install and operation](docs/en_US/operation/overview.md)
   - [Command line interface tools - CLI](docs/en_US/cli/overview.md)
-  - [Kuiper SQL reference](docs/en_US/sqls/overview.md)
+  - [eKuiper SQL reference](docs/en_US/sqls/overview.md)
   - [Rules](docs/en_US/rules/overview.md)
-  - [Extend Kuiper](docs/en_US/extension/overview.md)
+  - [Extend eKuiper](docs/en_US/extension/overview.md)
   - [Plugins](docs/en_US/plugins/overview.md)
 
 ## Build from source

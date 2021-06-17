@@ -1,16 +1,16 @@
 # 函数扩展
 
-在 Kuiper SQL 语法中，向服务器提供了[许多内置函数](../sqls/built-in_functions.md)，用于各种可重用的业务逻辑。 但是，用户仍然可能需要其他未被内置插件覆盖的可重用的业务逻辑。 提供函数扩展是为了自定义函数。
+在 eKuiper SQL 语法中，向服务器提供了[许多内置函数](../sqls/built-in_functions.md)，用于各种可重用的业务逻辑。 但是，用户仍然可能需要其他未被内置插件覆盖的可重用的业务逻辑。 提供函数扩展是为了自定义函数。
 
 ## 开发
 
 ### 开发一个定制函数
 
-为 Kuiper 开发函数的过程，就是实现 [api.Function](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go) 接口并将其导出为 golang 插件。
+为 eKuiper 开发函数的过程，就是实现 [api.Function](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) 接口并将其导出为 golang 插件。
 
 在开始开发之前，您必须为 [golang 插件设置环境](overview.md#setup-the-plugin-developing-environment)。
 
-为了开发函数，首先要实现 _Validate_ 方法。 在 SQL 验证期间将调用此方法。 在此方法中，将传递 [xsql.Expr](https://github.com/emqx/kuiper/blob/master/xsql/ast.go) 的切片作为参数，该参数包含运行时该函数的参数。 开发人员可以对其进行验证，以检查参数计数和类型等。如果验证成功，则返回 nil。 否则，返回一个错误对象。
+为了开发函数，首先要实现 _Validate_ 方法。 在 SQL 验证期间将调用此方法。 在此方法中，将传递 [xsql.Expr](https://github.com/lf-edge/ekuiper/blob/master/xsql/ast.go) 的切片作为参数，该参数包含运行时该函数的参数。 开发人员可以对其进行验证，以检查参数计数和类型等。如果验证成功，则返回 nil。 否则，返回一个错误对象。
 
 ```go
 //The argument is a list of xsql.Expr
@@ -36,11 +36,11 @@ Exec(args []interface{}) (interface{}, bool)
 var MyFunction myFunction
 ```
 
-[Echo Function](https://github.com/emqx/kuiper/blob/master/plugins/functions/echo/echo.go) 是一个很好的示例。
+[Echo Function](https://github.com/lf-edge/ekuiper/blob/master/plugins/functions/echo/echo.go) 是一个很好的示例。
 
 ### 导出多个函数
 
-开发者可在一个函数插件中导出多个函数。每个函数均需实现 [api.Function](https://github.com/emqx/kuiper/blob/master/xstream/api/stream.go) 接口，正如 [开发一个定制函数](#develop-a-customized-function) 所描述的那样。需要确保所有函数都导出了，如下所示：
+开发者可在一个函数插件中导出多个函数。每个函数均需实现 [api.Function](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) 接口，正如 [开发一个定制函数](#develop-a-customized-function) 所描述的那样。需要确保所有函数都导出了，如下所示：
 
 ```go
 var(
@@ -61,9 +61,9 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functio
 
 ### 注册多个函数
 
-Kuiper 启动时会自动载入插件目录里已编译好的插件。自动载入的函数插件假设插件里仅导出一个同名的函数。如果插件导出多个函数，则需要显示运行一次注册操作。有两种方法可以注册函数：
+eKuiper 启动时会自动载入插件目录里已编译好的插件。自动载入的函数插件假设插件里仅导出一个同名的函数。如果插件导出多个函数，则需要显示运行一次注册操作。有两种方法可以注册函数：
 
-1. 在开发环境中，建议直接构建插件 .so 文件到插件目录中以便 kuiper 自动载入。构建完成后，运行 [CLI 注册函数命令](../cli/plugins.md#register-functions) or [REST 注册函数 API](../restapi/plugins.md#register-functions) 进行注册。
+1. 在开发环境中，建议直接构建插件 .so 文件到插件目录中以便 eKuiper 自动载入。构建完成后，运行 [CLI 注册函数命令](../cli/plugins.md#register-functions) or [REST 注册函数 API](../restapi/plugins.md#register-functions) 进行注册。
 2. 在生产环境中，[打包插件到 zip 压缩包](../plugins/plugins_tutorial.md#plugin-deployment-1)，然后运行 [CLI 创建函数插件命令](../cli/plugins.md#create-a-plugin) 或者 [REST 创建函数 API](../restapi/plugins.md#create-a-plugin) 并设置 functions 参数以指定导出函数名。
 
 ### 使用

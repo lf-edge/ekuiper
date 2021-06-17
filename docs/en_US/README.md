@@ -1,14 +1,14 @@
-# EMQ X Kuiper - An edge lightweight IoT data analytics software
+# LF Edge eKuiper - An edge lightweight IoT data analytics software
 
 ## Overview
 
-EMQ X Kuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of Kuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  Kuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
+LF Edge eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of eKuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  eKuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
 
 ![arch](./arch.png)
 
 **User scenarios**
 
-It can be run at various IoT edge use scenarios, such as real-time processing of production line data in the IIoT; Gateway of Connected Vehicle analyze the data from data-bus in real time; Real-time analysis of urban facility data in smart city scenarios. Kuiper processing at the edge can reduce system response latency, save network bandwidth and storage costs, and improve system security.
+It can be run at various IoT edge use scenarios, such as real-time processing of production line data in the IIoT; Gateway of Connected Vehicle analyze the data from data-bus in real time; Real-time analysis of urban facility data in smart city scenarios. eKuiper processing at the edge can reduce system response latency, save network bandwidth and storage costs, and improve system security.
 
 ## Features
 
@@ -49,7 +49,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 ## Quick start
 
-- [Kuiper 5 minutes quick start](./quick_start_docker.md)
+- [eKuiper 5 minutes quick start](./quick_start_docker.md)
 - [EdgeX rule engine tutorial](./edgex/edgex_rule_engine_tutorial.md)
 
 ## Slack channels
@@ -60,7 +60,7 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
 ### MQTT throughput test
 
 - Using JMeter MQTT plugin to send simulation data to EMQ X Broker, such as: ``{"temperature": 10, "humidity" : 90}``, the value of temperature and humidity are random integer between 0 - 100.
-- Kuiper subscribe from EMQ X Broker, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50 `` 
+- eKuiper subscribe from EMQ X Broker, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50 `` 
 - The analysis result are wrote to local file by using [file sink plugin](./plugins/sinks/file.md).
 
 | Devices                                        | Message # per second | CPU usage     | Memory usage |
@@ -70,7 +70,7 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
 
 ### EdgeX throughput test
 
-- A [Go application](https://github.com/emqx/kuiper/tree/master/fvt_scripts/edgex/benchmark/pub.go) is wrote to send data to ZeroMQ message bus, the data is as following.
+- A [Go application](https://github.com/lf-edge/ekuiper/tree/master/fvt_scripts/edgex/benchmark/pub.go) is wrote to send data to ZeroMQ message bus, the data is as following.
 
   ```
   {
@@ -83,7 +83,7 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
   }
   ```
 
-- Kuiper subscribe from EdgeX ZeroMQ message bus, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50``. 90% of data will be filtered by the rule.
+- eKuiper subscribe from EdgeX ZeroMQ message bus, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50``. 90% of data will be filtered by the rule.
 
 - The analysis result are sent to [nop sink](./rules/sinks/nop.md), all of the result data will be ignored.
 
@@ -113,9 +113,9 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
 - Reference guide
   - [Install and operation](./getting_started.md)
   - [Command line interface tools - CLI](./cli/overview.md)
-  - [Kuiper SQL reference](./sqls/overview.md)
+  - [eKuiper SQL reference](./sqls/overview.md)
   - [Rules](./rules/overview.md)
-  - [Extend Kuiper](./extension/overview.md)
+  - [Extend eKuiper](./extension/overview.md)
   - [Plugins](./plugins/overview.md)
 
 ## Build from source
@@ -145,7 +145,7 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
 ## Cross-compile binaries
 
 :::tip Tip
-Kuiper plugins bases on Golang, and due to Golang restrictions, ``CGO_ENABLED``  flag must be set to 0 to use the Golang cross-compile. But with this flag mode, the Golang plugins will not work. So if you want to use plugins in Kuiper, you can NOT use cross-compile to produce the binary packages.
+eKuiper plugins bases on Golang, and due to Golang restrictions, ``CGO_ENABLED``  flag must be set to 0 to use the Golang cross-compile. But with this flag mode, the Golang plugins will not work. So if you want to use plugins in eKuiper, you can NOT use cross-compile to produce the binary packages.
 :::
 
 - Preparation
@@ -156,4 +156,4 @@ Kuiper plugins bases on Golang, and due to Golang restrictions, ``CGO_ENABLED`` 
 
 ## Open source license
 
-[Apache 2.0](https://github.com/emqx/kuiper/blob/master/LICENSE)
+[Apache 2.0](https://github.com/lf-edge/ekuiper/blob/master/LICENSE)

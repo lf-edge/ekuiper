@@ -1,8 +1,8 @@
-# 使用 EdgeX Kuiper 规则引擎控制设备
+# 使用 eKuiper 规则引擎控制设备
 
 ## 概述
 
-该文章描述了如何在 EdgeX 中使用 Kuiper 规则引擎，根据分析结果来实现对设备的控制。为了便于理解，该文章使用 [device-virtual](https://github.com/edgexfoundry/device-virtual-go)示例，它对device-virtual服务发送的数据进行分析，然后根据由Kuiper规则引擎生成的分析结果来控制设备 。
+该文章描述了如何在 EdgeX 中使用 eKuiper 规则引擎，根据分析结果来实现对设备的控制。为了便于理解，该文章使用 [device-virtual](https://github.com/edgexfoundry/device-virtual-go)示例，它对device-virtual服务发送的数据进行分析，然后根据由Kuiper规则引擎生成的分析结果来控制设备 。
 
 ### 场景
 
@@ -11,27 +11,27 @@
 1. 监视`Random-UnsignedInteger-Device`设备的规则，如果`uint8`值大于 `20`，则向`Random-Boolean-Device`设备发送命令，并开启布尔值的随机生成 。
 2. 监视`Random-Integer-Device`设备的规则，如果每20秒 `int8`的平均值大于0，则向`Random-Boolean-Device` 设备服务发送命令以关闭 布尔值的随机生成。
 
-该场景不含任何真实的业务逻辑，而只是为了演示EdgeX Kuiper规则引擎的功能。 您可以根据我们的演示制定合理的业务规则。
+该场景不含任何真实的业务逻辑，而只是为了演示eKuiper规则引擎的功能。 您可以根据我们的演示制定合理的业务规则。
 
 ## 预备知识
 
-本文档将不涉及EdgeX和EMQ X Kuiper的基本操作，因此读者应具有以下基本知识：
+本文档将不涉及EdgeX和eKuiper的基本操作，因此读者应具有以下基本知识：
 
 - 请通过[此链接](https://docs.edgexfoundry.org/1.2/) 以了解EdgeX的基础知识，最好完成[快速入门](https://docs.edgexfoundry.org/1.2/getting-started/quick-start/)。
-- 请阅读[EdgeX Kuiper规则引擎入门教程](https://github.com/emqx/kuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md)：您最好阅读此入门教程，并开始在EdgeX中试用规则引擎。
-- [Go模板](https://golang.org/pkg/text/template/)：EMQ X Kuiper使用Go模板从分析结果中提取数据。 了解Go模板可以帮助您从分析结果中提取所需的数据。
+- 请阅读[EdgeX eKuiper规则引擎入门教程](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md)：您最好阅读此入门教程，并开始在EdgeX中试用规则引擎。
+- [Go模板](https://golang.org/pkg/text/template/)：eKuiper使用Go模板从分析结果中提取数据。 了解Go模板可以帮助您从分析结果中提取所需的数据。
 
 ## 开始使用
 
-请务必遵循文档 [EdgeX Kuiper规则引擎入门教程](https://github.com/emqx/kuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md)，确保教程能够成功运行。
+请务必遵循文档 [EdgeX eKuiper规则引擎入门教程](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md)，确保教程能够成功运行。
 
 ### 创建EdgeX流
 
-在创建规则之前，应创建一个流，该流可以使用来自EdgeX应用程序服务的流数据。 如果您已经完成 [EdgeX Kuiper规则引擎入门教程](https://github.com/emqx/kuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md)，则不需要此步骤。
+在创建规则之前，应创建一个流，该流可以使用来自EdgeX应用程序服务的流数据。 如果您已经完成 [EdgeX eKuiper规则引擎入门教程](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md)，则不需要此步骤。
 
 ```shell
 curl -X POST \
-  http://$kuiper_docker:48075/streams \
+  http://$ekuiper_docker:48075/streams \
   -H 'Content-Type: application/json' \
   -d '{
   "sql": "create stream demo() WITH (FORMAT=\"JSON\", TYPE=\"edgex\")"
@@ -117,7 +117,7 @@ curl -X PUT \
 
 ```shell
 curl -X POST \
-  http://$kuiper_server:48075/rules \
+  http://$eKuiper_server:48075/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule1",
@@ -147,7 +147,7 @@ curl -X POST \
 
 ```shell
 curl -X POST \
-  http://$kuiper_server:48075/rules \
+  http://$eKuiper_server:48075/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule2",
@@ -198,7 +198,7 @@ curl -X PUT \
   -d '{"value":-75, "EnableRandomization_Bool": "true"}'
 ```
 
-Kuiper使用[Go模板](https://golang.org/pkg/text/template/) 从分析结果中提取数据，并且`dataTemplate` 内容如下：
+eKuiper使用[Go模板](https://golang.org/pkg/text/template/) 从分析结果中提取数据，并且`dataTemplate` 内容如下：
 
 ```
 "dataTemplate": "{\"value\": {{.int8}}, \"EnableRandomization_Bool\": \"{{.randomization}}\"}"
@@ -208,8 +208,8 @@ Kuiper使用[Go模板](https://golang.org/pkg/text/template/) 从分析结果中
 
 ## 补充阅读材料
 
-如果您想了解EMQ X Kuiper的更多特性，请阅读下面的参考资料：
+如果您想了解LF Edge eKuiper的更多特性，请阅读下面的参考资料：
 
-- [Kuiper Github 代码库](https://github.com/emqx/kuiper/)
-- [Kuiper 参考指南](https://github.com/emqx/kuiper/blob/edgex/docs/en_US/reference.md)
+- [eKuiper Github 代码库](https://github.com/lf-edge/ekuiper/)
+- [eKuiper 参考指南](https://github.com/lf-edge/ekuiper/blob/edgex/docs/en_US/reference.md)
 

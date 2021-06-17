@@ -1,13 +1,13 @@
 ## EdgeX Source
 
-Kuiper provides built-in support for EdgeX source stream, which can subscribe the message from [EdgeX message bus](https://github.com/edgexfoundry/go-mod-messaging) and feed into the Kuiper streaming process pipeline.  
+eKuiper provides built-in support for EdgeX source stream, which can subscribe the message from [EdgeX message bus](https://github.com/edgexfoundry/go-mod-messaging) and feed into the eKuiper streaming process pipeline.  
 
 ### Stream definition for EdgeX
 
 EdgeX already defines data types in [value descriptors](https://github.com/edgexfoundry/go-mod-core-contracts), so it's recommeded to use schema-less stream definition in EdgeX source as in below.
 
 ```shell
-# cd $kuiper_base
+# cd $eKuiper_base
 # bin/kuiper CREATE STREAM demo'() with(format="json", datasource="demo" type="edgex")'
 ```
 
@@ -17,11 +17,11 @@ EdgeX source will try to get the data type of a field,
 - or keep original value if  field of a type can not be found in value descriptors service;
 - or if failed to conver the value, then the value will be **dropped**, and a warning message print in the log;
 
-The types defined in EdgeX value descriptors will be converted into related [data types](../../sqls/streams.md) that supported in Kuiper.
+The types defined in EdgeX value descriptors will be converted into related [data types](../../sqls/streams.md) that supported in eKuiper.
 
 #### Boolean
 
-If  ``Type`` value of ``ValueDescriptor`` is ``Bool``, then Kuiper tries to convert to ``boolean`` type. Following values will be converted into ``true``.
+If  ``Type`` value of ``ValueDescriptor`` is ``Bool``, then eKuiper tries to convert to ``boolean`` type. Following values will be converted into ``true``.
 
 - "1", "t", "T", "true", "TRUE", "True" 
 
@@ -31,15 +31,15 @@ Following will be converted into ``false``.
 
 #### Bigint
 
-If  ``Type`` value of ``ValueDescriptor`` is ``INT8`` , ``INT16``, ``INT32``,  ``INT64``,``UINT`` , ``UINT8`` , ``UINT16`` ,  ``UINT32`` , ``UINT64`` then Kuiper tries to convert to ``Bigint`` type. 
+If  ``Type`` value of ``ValueDescriptor`` is ``INT8`` , ``INT16``, ``INT32``,  ``INT64``,``UINT`` , ``UINT8`` , ``UINT16`` ,  ``UINT32`` , ``UINT64`` then eKuiper tries to convert to ``Bigint`` type. 
 
 #### Float
 
-If  ``Type`` value of ``ValueDescriptor`` is ``FLOAT32``, ``FLOAT64``, then Kuiper tries to convert to ``Float`` type. 
+If  ``Type`` value of ``ValueDescriptor`` is ``FLOAT32``, ``FLOAT64``, then eKuiper tries to convert to ``Float`` type. 
 
 #### String
 
-If  ``Type`` value of ``ValueDescriptor`` is ``String``, then Kuiper tries to convert to ``String`` type. 
+If  ``Type`` value of ``ValueDescriptor`` is ``String``, then eKuiper tries to convert to ``String`` type. 
 
 #### Boolean array
 
@@ -55,7 +55,7 @@ All of ``FLOAT32``, ``FLOAT64``  array types in EdgeX will be converted to `Floa
 
 ## Global configurations
 
-The configuration file of EdgeX source is at ``$kuiper/etc/sources/edgex.yaml``. Below is the file format.
+The configuration file of EdgeX source is at ``$ekuiper/etc/sources/edgex.yaml``. Below is the file format.
 
 ```yaml
 #Global Edgex configurations
@@ -122,7 +122,7 @@ If MQTT message bus is used, some other optional configurations can be specified
 
 ### Override the default settings
 
-In some cases, maybe you want to consume message from multiple topics from message bus.  Kuiper supports to specify another configuration, and use the ``CONF_KEY`` to specify the newly created key when you create a stream.
+In some cases, maybe you want to consume message from multiple topics from message bus.  eKuiper supports to specify another configuration, and use the ``CONF_KEY`` to specify the newly created key when you create a stream.
 
 ```yaml
 #Override the global configurations

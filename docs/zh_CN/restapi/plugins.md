@@ -1,7 +1,7 @@
-Kuiper REST api 允许您管理插件，例如创建、删除和列出插件。 请注意，删除插件将需要重新启动 kuiper 才能生效。 要更新插件，请执行以下操作：
+eKuiper REST api 允许您管理插件，例如创建、删除和列出插件。 请注意，删除插件将需要重新启动 eKuiper 才能生效。 要更新插件，请执行以下操作：
 
 1. 删除插件。
-2. 重新启动 Kuiper。
+2. 重新启动 eKuiper。
 3. 使用新配置创建插件。
 
 ## 创建插件
@@ -22,7 +22,7 @@ POST http://localhost:9081/plugins/functions
 }
 ```
 
-文件在Kuiper所在服务器上时的请求示例：
+文件在eKuiper所在服务器上时的请求示例：
 ```json
 {
   "name":"random",
@@ -33,7 +33,7 @@ POST http://localhost:9081/plugins/functions
 ### 参数
 
 1. name：插件的唯一名称。 名称必须采用首字母小写的驼峰命名法。 例如，如果导出的插件名称为 `Random`，则此插件的名称为 `random`。
-2. file：插件文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 Kuiper 服务器所在的机器上。它必须是一个 zip 文件，其中包含：编译后的 so 文件和yaml 文件（仅源必需）。 如果插件依赖于某些外部依赖项，则可以提供一个名为install.sh 的 bash 脚本来进行依赖项安装。 文件名称必须与插件名称匹配。 请参考 [扩展](../extension/overview.md) 了解命名规则。
+2. file：插件文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 eKuiper 服务器所在的机器上。它必须是一个 zip 文件，其中包含：编译后的 so 文件和yaml 文件（仅源必需）。 如果插件依赖于某些外部依赖项，则可以提供一个名为install.sh 的 bash 脚本来进行依赖项安装。 文件名称必须与插件名称匹配。 请参考 [扩展](../extension/overview.md) 了解命名规则。
 
 ### 插件文件格式
 名为 random.zip 的源的示例 zip 文件
@@ -43,7 +43,7 @@ POST http://localhost:9081/plugins/functions
 4. install.sh 的各种依赖文件/文件夹
    - mysdk.zip
    - myconfig.conf
-5. etc 目录：插件的运行时配置文件或依赖文件。插件安装后，该目录将重名为插件名并复制到 {{kuiperPath}}/etc/{{pluginType}} 目录下。
+5. etc 目录：插件的运行时配置文件或依赖文件。插件安装后，该目录将重名为插件名并复制到 {{eKuiperPath}}/etc/{{pluginType}} 目录下。
 
 请注意，将在系统可能已经具有库或软件包的情况下运行 install.sh。 确保在运行之前检查路径。 下面是一个示例 install.sh，用于安装示例 sdk 库。 
 
@@ -119,14 +119,14 @@ GET http://localhost:9081/plugins/functions/{name}
 
 ## 删除插件
 
-该 API 用于删除插件。 需要重启 kuiper 服务器才能生效。
+该 API 用于删除插件。 需要重启 eKuiper 服务器才能生效。
 
 ```shell
 DELETE http://localhost:9081/plugins/sources/{name}
 DELETE http://localhost:9081/plugins/sinks/{name}
 DELETE http://localhost:9081/plugins/functions/{name}
 ```
-用户可以传递查询参数来决定是否应在删除后停止 Kuiper，以使删除生效。 参数是`restart`，只有当值是1时，Kuiper 才停止。 用户必须手动重新启动它。
+用户可以传递查询参数来决定是否应在删除后停止 eKuiper，以使删除生效。 参数是`restart`，只有当值是1时，eKuiper 才停止。 用户必须手动重新启动它。
 
 ```shell
 DELETE http://localhost:9081/plugins/sources/{name}?restart=1
@@ -180,7 +180,7 @@ POST http://{{host}}/plugins/functions/{plugin_name}/register
 
 ## 获取可安装的插件
 
-根据在 `etc/kuiper.yaml` 文件中 `pluginHosts` 的配置，获取适合本 Kuiper 实例运行的插件列表，缺省会从 `https://packages.emqx.io` 上去获取。
+根据在 `etc/kuiper.yaml` 文件中 `pluginHosts` 的配置，获取适合本 eKuiper 实例运行的插件列表，缺省会从 `https://packages.emqx.io` 上去获取。
 
 ```
 GET http://localhost:9081/plugins/sources/prebuild

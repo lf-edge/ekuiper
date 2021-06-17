@@ -1,20 +1,20 @@
 # Zmq Source
 
-The source will subscribe to a Zero Mq topic to import the messages into kuiper
+The source will subscribe to a Zero Mq topic to import the messages into eKuiper
 
 ## Compile & deploy plugin
 
 ```shell
-# cd $kuiper_src
+# cd $eKuiper_src
 # go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Zmq.so extensions/sources/zmq/zmq.go
-# cp plugins/sources/Zmq.so $kuiper_install/plugins/sources
+# cp plugins/sources/Zmq.so $eKuiper_install/plugins/sources
 ```
 
-Restart the Kuiper server to activate the plugin.
+Restart the eKuiper server to activate the plugin.
 
 ## Configuration
 
-The configuration for this source is ``$kuiper/etc/sources/zmq.yaml``. The format is as below:
+The configuration for this source is ``$ekuiper/etc/sources/zmq.yaml``. The format is as below:
 
 ```yaml
 #Global Zmq configurations

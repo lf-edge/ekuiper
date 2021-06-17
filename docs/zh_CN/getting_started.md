@@ -2,11 +2,11 @@
 
 ## 下载和安装
 
-通过 <https://github.com/emqx/kuiper/releases> 或 <https://www.emqx.cn/downloads#kuiper> 获取安装包.
+通过 <https://github.com/lf-edge/ekuiper/releases> 或 <https://www.emqx.cn/downloads#kuiper> 获取安装包.
 
 ### zip、tar.gz 压缩包
 
-解压缩 kuiper
+解压缩 eKuiper
 
 ```sh
 $ unzip kuiper-$VERISON-$OS-$ARCH.zip
@@ -14,17 +14,17 @@ or
 $ tar -xzf kuiper-$VERISON-$OS-$ARCH.zip
 ```
 
-运行 ``bin/kuiperd`` 以启动 kuiper 服务器
+运行 ``bin/kuiperd`` 以启动 eKuiper 服务器
 
 ```sh
 $ bin/kuiperd
 ```
  您应该会看到一条成功的消息：`Serving Rule server on port 20498`
 
-kuiper 的目录结构如下:
+eKuiper 的目录结构如下:
 
 ```
-kuiper_installed_dir
+eKuiper_installed_dir
   bin
     kuiperd
     kuiper
@@ -42,7 +42,7 @@ kuiper_installed_dir
 
 #### deb、rpm 安装包
 
-使用相关命令安装 kuiper
+使用相关命令安装 eKuiper
 
 ```sh
 $ sudo dpkg -i kuiper_$VERSION_$ARCH.deb
@@ -50,7 +50,7 @@ or
 $ sudo rpm -ivh kuiper-$VERSION-1.el7.rpm
 ```
 
-运行 `kuiperd` 以启动 kuiper 服务器
+运行 `kuiperd` 以启动 eKuiper 服务器
 
 ```sh
 $ sudo kuiperd
@@ -63,7 +63,7 @@ $ sudo kuiperd
  $ sudo systemctl start kuiper
  ```
 
-kuiper 的目录结构如下:
+eKuiper 的目录结构如下:
 
 ```
 /usr/lib/kuiper/bin
@@ -82,15 +82,15 @@ kuiper 的目录结构如下:
 
 ## 运行的第一个规则流
 
-Kuiper 规则由一个 SQL 和多个操作组成。 Kuiper SQL 是一种易于使用的类 SQL 语言，用于确定规则流的逻辑。 通过命令行提供规则，规则流将在规则引擎中创建并连续运行。用户之后可以通过命令行管理规则。
+eKuiper 规则由一个 SQL 和多个操作组成。 eKuiper SQL 是一种易于使用的类 SQL 语言，用于确定规则流的逻辑。 通过命令行提供规则，规则流将在规则引擎中创建并连续运行。用户之后可以通过命令行管理规则。
 
-Kuiper 具有许多用于复杂分析的内置函数和扩展，您可以访问 [Kuiper SQL 参考](sqls/overview.md)获取有关语法和其功能的更多信息。
+eKuiper 具有许多用于复杂分析的内置函数和扩展，您可以访问 [eKuiper SQL 参考](sqls/overview.md)获取有关语法和其功能的更多信息。
 
-让我们考虑一个示例场景：我们正在通过 MQTT 服务从传感器接收温度和湿度记录，并且当温度在一个时间窗口中大于30摄氏度时，我们希望发出警报。 我们可以使用以下几个步骤为上述场景编写 Kuiper 规则。
+让我们考虑一个示例场景：我们正在通过 MQTT 服务从传感器接收温度和湿度记录，并且当温度在一个时间窗口中大于30摄氏度时，我们希望发出警报。 我们可以使用以下几个步骤为上述场景编写 eKuiper 规则。
 
 ### 先决条件
 
-我们假设已经有一个 MQTT 消息服务器作为 Kuiper 服务器的数据源。 如果您没有，建议使用 EMQ X。 请按照 [EMQ Broker 安装指南](https://docs.emqx.cn/cn/broker/latest/getting-started/install.html)设置 MQTT 消息服务器。
+我们假设已经有一个 MQTT 消息服务器作为 eKuiper 服务器的数据源。 如果您没有，建议使用 EMQ X。 请按照 [EMQ Broker 安装指南](https://docs.emqx.cn/cn/broker/latest/getting-started/install.html)设置 MQTT 消息服务器。
 
 ### 定义输入流
 
@@ -196,9 +196,9 @@ $ bin/kuiper stop rule ruleDemo
 ```
 
 
-请参考以下主题，以获取有关使用 Kuiper 的指导。
+请参考以下主题，以获取有关使用 eKuiper 的指导。
 - [命令行界面工具 CLI](./cli/overview.md)
-- [Kuiper SQL 参考](./sqls/overview.md)
+- [eKuiper SQL 参考](./sqls/overview.md)
 - [规则](./rules/overview.md)
-- [扩展 Kuiper](./extension/overview.md)
+- [扩展 eKuiper](./extension/overview.md)
 - [插件](./plugins/overview.md)

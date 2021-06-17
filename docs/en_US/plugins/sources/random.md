@@ -5,16 +5,16 @@ he source will generate random inputs with a specified pattern.
 ## Compile & deploy plugin
 
 ```shell
-# cd $kuiper_src
+# cd $eKuiper_src
 # go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Random.so extensions/sources/random/random.go
-# cp plugins/sources/Random.so $kuiper_install/plugins/sources
+# cp plugins/sources/Random.so $eKuiper_install/plugins/sources
 ```
 
-Restart the Kuiper server to activate the plugin.
+Restart the eKuiper server to activate the plugin.
 
 ## Configuration
 
-The configuration for this source is ``$kuiper/etc/sources/random.yaml``. The format is as below:
+The configuration for this source is ``$ekuiper/etc/sources/random.yaml``. The format is as below:
 
 ```yaml
 default:

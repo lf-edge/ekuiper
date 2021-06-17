@@ -1,8 +1,8 @@
 # Table specs
 
-Kuiper streams is unbounded and immutable, any new data are appended in the current stream for processing.  **Table** is provided to represent the current state of the stream. It can be considered as a snapshot of the stream. Users can use table to retain a batch of data for processing.
+eKuiper streams is unbounded and immutable, any new data are appended in the current stream for processing.  **Table** is provided to represent the current state of the stream. It can be considered as a snapshot of the stream. Users can use table to retain a batch of data for processing.
 
-Table is not allowed to use alone in Kuiper. It is only recommended to join with streams. When joining with stream, table will be updated continuously when new event coming. However, only events arriving on the stream side trigger downstream updates and produce join output.
+Table is not allowed to use alone in eKuiper. It is only recommended to join with streams. When joining with stream, table will be updated continuously when new event coming. However, only events arriving on the stream side trigger downstream updates and produce join output.
 
 ## Syntax
 

@@ -5,12 +5,12 @@
 ## 编译和部署插件
 
 ```shell
-# cd $kuiper_src
+# cd $ekuiper_src
 # go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Zmq.so extensions/sinks/zmq/zmq.go
-# cp plugins/sinks/Zmq.so $kuiper_install/plugins/sinks
+# cp plugins/sinks/Zmq.so $ekuiper_install/plugins/sinks
 ```
 
-重新启动 Kuiper 服务器以激活插件。
+重新启动 eKuiper 服务器以激活插件。
 
 ## 属性
 

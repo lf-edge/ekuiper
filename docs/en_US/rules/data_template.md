@@ -1,12 +1,12 @@
-# Use Golang template to customize analaysis result in Kuiper
+# Use Golang template to customize analaysis result in eKuiper
 
 ## Introduction
 
-After performing data analysis and processing through Kuiper, users can use various sink to send data analysis result to different systems. For the same analysis results, the format required by different sinks may not be the same. For example, in an Internet of Things scenario, when it is found that the temperature of a device is too high, a request needs to be sent to a rest service in the cloud. At the same time, a control command needs to be sent to the device through the MQTT protocol locally. The data format required by them may not be the same. Therefore, it is necessary to perform "secondary processing" on the results from the analysis before the data is sent to different targets. This article will introduce how to use the data template in the sink to achieve "secondary processing" of the analysis results.
+After performing data analysis and processing through eKuiper, users can use various sink to send data analysis result to different systems. For the same analysis results, the format required by different sinks may not be the same. For example, in an Internet of Things scenario, when it is found that the temperature of a device is too high, a request needs to be sent to a rest service in the cloud. At the same time, a control command needs to be sent to the device through the MQTT protocol locally. The data format required by them may not be the same. Therefore, it is necessary to perform "secondary processing" on the results from the analysis before the data is sent to different targets. This article will introduce how to use the data template in the sink to achieve "secondary processing" of the analysis results.
 
 ## Golang template introduction
 
-The Golang template applies a piece of logic to the data, and then formats and outputs the data according to the logic specified by the user. The common usage scenario of the Golang template is in web development. For example, after converting and controlling a data structure in Golang, it is converted to HTML tags and output to the browser. Kuiper uses [Golang template](https://golang.org/pkg/text/template/) to implement "secondary processing" of the analysis results. Please refer to the following introduction from Golang.
+The Golang template applies a piece of logic to the data, and then formats and outputs the data according to the logic specified by the user. The common usage scenario of the Golang template is in web development. For example, after converting and controlling a data structure in Golang, it is converted to HTML tags and output to the browser. eKuiper uses [Golang template](https://golang.org/pkg/text/template/) to implement "secondary processing" of the analysis results. Please refer to the following introduction from Golang.
 
 > Templates are executed by applying them to a data structure. Annotations in the template refer to elements of the data structure (typically a field of a struct or a key in a map) to control execution and derive values to be displayed. Execution of the template walks the structure and sets the cursor, represented by a period '.' and called "dot", to the value at the current location in the structure as execution proceeds.
 >
@@ -28,7 +28,7 @@ The Golang  template provides some [built-in actions](https://golang.org/pkg/tex
 {{range pipeline}} T1 {{else}} T0 {{end}}
 ```
 
-Readers can see that actions are delimited by `{{}}`. During the use of Kuiper’s data templates, the output is generally in JSON format, and the JSON format is delimited by `{}`. Therefore, if the readers are not familiar with it, they will find it difficult to understand the functions of Kuiper's data templates. For example, in the following example,
+Readers can see that actions are delimited by `{{}}`. During the use of eKuiper’s data templates, the output is generally in JSON format, and the JSON format is delimited by `{}`. Therefore, if the readers are not familiar with it, they will find it difficult to understand the functions of eKuiper's data templates. For example, in the following example,
 
 ```
 {{if pipeline}} {"field1": true} {{else}}  {"field1": false} {{end}}
@@ -39,9 +39,9 @@ The meaning of the above expression is as follows (please note the delimiter of 
 - If the condition pipeline is met, the JSON string `{"field1": true}` is output
 - Otherwise, the JSON string `{"field1": false}` is output
 
-### Kuiper sink data format
+### eKuiper sink data format
 
-The Golang template can be applied to various data structures, such as maps, slices, channels, etc., and the data type obtained by the data template in Kuiper's sink is fixed, which is a data type that contains Golang `map` slices. It is shown as follows.
+The Golang template can be applied to various data structures, such as maps, slices, channels, etc., and the data type obtained by the data template in eKuiper's sink is fixed, which is a data type that contains Golang `map` slices. It is shown as follows.
 
 ```go
 []map[string]interface{}
@@ -49,7 +49,7 @@ The Golang template can be applied to various data structures, such as maps, sli
 
 ### Send slice data by piece
 
-The data flowing into the sink is a  data structure of `map[string]interface{}` slice. However, when the user sends data to the target sink, it may need a single piece of data instead of all the data. For example, in this article of  [Integration of Kuiper and AWS IoT Hub ](https://www.emqx.io/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution), the sample data generated by the rule is shown below.
+The data flowing into the sink is a  data structure of `map[string]interface{}` slice. However, when the user sends data to the target sink, it may need a single piece of data instead of all the data. For example, in this article of  [Integration of eKuiper and AWS IoT Hub ](https://www.emqx.io/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution), the sample data generated by the rule is shown below.
 
 ```json
 [
@@ -68,8 +68,8 @@ When sending to the sink, each piece of data is sent separately. First, you need
  "dataTemplate": "{{json .}}"
 ```
 
-- After setting `sendSingle` to `true`, Kuiper traverses the `[]map[string]interface{}` data type that has been passed to the sink. For each data in the traversal process, the user-specified data template will be applied.
-- `json` is a function provided by Kuiper (users can refer to [Kuiper Extension Template Function](overview.md) for more information of Kuiper extensions), which can convert incoming parameters into JSON string output. For each piece of traversed data, the content in the map is converted to a JSON string
+- After setting `sendSingle` to `true`, eKuiper traverses the `[]map[string]interface{}` data type that has been passed to the sink. For each data in the traversal process, the user-specified data template will be applied.
+- `json` is a function provided by eKuiper (users can refer to [eKuiper Extension Template Function](overview.md) for more information of eKuiper extensions), which can convert incoming parameters into JSON string output. For each piece of traversed data, the content in the map is converted to a JSON string
 
 Golang also provides some built-in functions. Users can refer to [More Golang Built-in Functions](https://golang.org/pkg/text/template/#hdr-Functions) for more function information.
 
@@ -89,7 +89,7 @@ Assuming that the target sink still needs JSON data, the content of the data tem
 ```
 
 ::: v-pre
-In the above data template, the built-in actions of  `{{if pipeline}} T1 {{else if pipeline}} T0 {{end}}` are used, which looks more complicated. We can do a little adjustment, remove the escape and add abbreviation. The typesetting afterwards is as follows (note: when generating Kuiper rules, the following optimized typesetting rules cannot be passed in).
+In the above data template, the built-in actions of  `{{if pipeline}} T1 {{else if pipeline}} T0 {{end}}` are used, which looks more complicated. We can do a little adjustment, remove the escape and add abbreviation. The typesetting afterwards is as follows (note: when generating eKuiper rules, the following optimized typesetting rules cannot be passed in).
 :::
 
 ```
@@ -145,7 +145,7 @@ The requirement is:
 The data template is relatively complicated, which is explained below:
 
 ::: v-pre
-- `{{$len := len .values}} {{$loopsize := add $len -1}}`, this section executes two expressions. For the first one, `len` function gets the length of `values` in the data. For the second one, `add` decrements its value by 1 and assigns it to the variable `loopsize`. At present, since the operation of directly decrementing the value by 1 is not supported by  the Golang expression, `add` is a function extended by Kuiper to achieve this function.
+- `{{$len := len .values}} {{$loopsize := add $len -1}}`, this section executes two expressions. For the first one, `len` function gets the length of `values` in the data. For the second one, `add` decrements its value by 1 and assigns it to the variable `loopsize`. At present, since the operation of directly decrementing the value by 1 is not supported by  the Golang expression, `add` is a function extended by eKuiper to achieve this function.
 :::
 
 ::: v-pre
@@ -153,7 +153,7 @@ The data template is relatively complicated, which is explained below:
 :::
 
 ::: v-pre
-- `{{range $index, $ele := .values}} {{if le .temperature 25.0}}\"fine\"{{else if gt .temperature 25.0}}\"high\"{{end}} {{if eq $loopsize $index}}]{{else}},{{end}}{{end}}` ,this section of the template looks relatively complicated. However, if we adjust it, remove the escape and add indentation, the  typesetting is as follows which may be clearer (note: when generating the Kuiper rules, the following optimized typesetting rules cannot be passed in).
+- `{{range $index, $ele := .values}} {{if le .temperature 25.0}}\"fine\"{{else if gt .temperature 25.0}}\"high\"{{end}} {{if eq $loopsize $index}}]{{else}},{{end}}{{end}}` ,this section of the template looks relatively complicated. However, if we adjust it, remove the escape and add indentation, the  typesetting is as follows which may be clearer (note: when generating the eKuiper rules, the following optimized typesetting rules cannot be passed in).
 :::
 
   ```
@@ -181,7 +181,7 @@ In addition, the template is still applied to each record in the slice. Therefor
 
 ## Summary
 
-The data template function provided by Kuiper can realize the secondary processing of the analysis results to meet the needs of different sink targets. However, readers can also see that due to the limitations of the Golang template, it is awkward to implement more complex data conversion. We hope that the Golang template function can be made more powerful and flexible in the future, which can support more complex requirements. At present, it is recommended that users can implement some simpler data conversion through data templates. If the user needs to perform more complicated processing on the data and extends the sink by himself, it can be directly processed in the sink implementation.
+The data template function provided by eKuiper can realize the secondary processing of the analysis results to meet the needs of different sink targets. However, readers can also see that due to the limitations of the Golang template, it is awkward to implement more complex data conversion. We hope that the Golang template function can be made more powerful and flexible in the future, which can support more complex requirements. At present, it is recommended that users can implement some simpler data conversion through data templates. If the user needs to perform more complicated processing on the data and extends the sink by himself, it can be directly processed in the sink implementation.
 
-In addition, the Kuiper team plans to support custom extended template functions in sinks in the future, so that some more complex logic can be implemented within the function. For the users, they only need a call of a simple template function.
+In addition, the eKuiper team plans to support custom extended template functions in sinks in the future, so that some more complex logic can be implemented within the function. For the users, they only need a call of a simple template function.
 

@@ -9,7 +9,7 @@
 -  把文件 `plugins/sinks/influxdb.go` 中的第一行 `// +build plugins` 删除
 
 ```shell
-# cd $kuiper_src
+# cd $eKuiper_src
 # go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/InfluxDB.so extensions/sinks/influxdb/influxdb.go
 # zip influx.zip plugins/sinks/InfluxDB.so
 # cp influx.zip /root/tomcat_path/webapps/ROOT/
@@ -17,7 +17,7 @@
 # bin/kuiper create rule influx -f /tmp/influxRule.txt
 ```
 
-重新启动 Kuiper 服务器以激活插件。
+重新启动 eKuiper 服务器以激活插件。
 
 ## 属性
 
@@ -75,6 +75,6 @@ require (
         github.com/influxdata/influxdb1-client v0.0.0-20200515024757-02f0bf5dbca3 // indirect
 )
 
-replace github.com/emqx/kuiper => /root/goProject/kuiper
+replace github.com/emqx/kuiper => /root/goProject/ekuiper
 
 ```

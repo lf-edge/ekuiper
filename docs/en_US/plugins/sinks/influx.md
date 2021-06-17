@@ -10,7 +10,7 @@ Please make following update before compile the plugin,
 - Remove the first line `// +build plugins` of file `plugins/sinks/influx.go`.
 
 ```shell
-# cd $kuiper_src
+# cd $eKuiper_src
 # go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Influx.so extensions/sinks/influx/influx.go
 # zip influx.zip plugins/sinks/Influx.so
 # cp influx.zip /root/tomcat_path/webapps/ROOT/
@@ -18,7 +18,7 @@ Please make following update before compile the plugin,
 # bin/kuiper create rule influx -f /tmp/influxRule.txt
 ```
 
-Restart the Kuiper server to activate the plugin.
+Restart the eKuiper server to activate the plugin.
 
 ## Properties
 

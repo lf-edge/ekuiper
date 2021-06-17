@@ -1,11 +1,11 @@
 
 # 查询语言元素
 
-Kuiper 提供了用于构建查询的各种元素。 总结如下。
+eKuiper 提供了用于构建查询的各种元素。 总结如下。
 
 | 元素                  | 总结                                                         |
 | --------------------- | ------------------------------------------------------------ |
-| [SELECT](#select)     | SELECT 用于从输入流中检索行，并允许从 Kuiper 中的一个或多个输入流中选择一个或多个列。 |
+| [SELECT](#select)     | SELECT 用于从输入流中检索行，并允许从 eKuiper 中的一个或多个输入流中选择一个或多个列。 |
 | [FROM](#from)         | FROM 指定输入流。 任何 SELECT 语句始终需要 FROM 子句。       |
 | [JOIN](#join)         | JOIN 用于合并来自两个或更多输入流的记录。 JOIN 包括 LEFT，RIGHT，FULL 和 CROSS。 |
 | [WHERE](#where)       | WHERE 指定查询返回的行的搜索条件。                           |
@@ -16,7 +16,7 @@ Kuiper 提供了用于构建查询的各种元素。 总结如下。
 
 ## SELECT
 
-从输入流中检索行，并允许从 Kuiper 中的一个或多个输入流中选择一个或多个列。
+从输入流中检索行，并允许从 eKuiper 中的一个或多个输入流中选择一个或多个列。
 
 ### 句法
 
@@ -238,7 +238,7 @@ GROUP BY <group by spec>
 
 **<window_type>**
 
-指定任何支持Kuiper的窗口，有关详细信息，请参阅 [windows](windows.md) 。
+指定任何支持eKuiper的窗口，有关详细信息，请参阅 [windows](windows.md) 。
 
 **< column_expression >**
 
@@ -357,5 +357,5 @@ FROM tbl
 ```
 
 ## 使用保留字或特殊字符
-如果你想在 SQL 或者流管理中使用保留关键字，或者特殊字符，请参考 [Kuiper 词法元素](lexical_elements.md).
+如果你想在 SQL 或者流管理中使用保留关键字，或者特殊字符，请参考 [eKuiper 词法元素](lexical_elements.md).
 

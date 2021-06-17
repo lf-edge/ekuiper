@@ -1,8 +1,8 @@
 # 插件管理
 
-Kuiper 插件命令行工具使您可以管理插件，例如创建，显示和删除插件。 请注意，删除插件将需要重新启动kuiper 才能生效。 要更新插件，请执行以下操作：
+eKuiper 插件命令行工具使您可以管理插件，例如创建，显示和删除插件。 请注意，删除插件将需要重新启动eKuiper 才能生效。 要更新插件，请执行以下操作：
 1. 删除插件。
-2. 重新启动 Kuiper。
+2. 重新启动 eKuiper。
 3. 使用新配置创建插件。
 
 ## 创建插件
@@ -93,7 +93,7 @@ describe plugin $plugin_type $plugin_name
 ```shell
 drop plugin $plugin_type $plugin_name -s $stop 
 ```
-其中，`-s $stop` 是可选的布尔参数。 如果将其设置为 true，则 Kuiper 服务器将停止，以使删除生效。 用户将需要手动重新启动它。
+其中，`-s $stop` 是可选的布尔参数。 如果将其设置为 true，则 eKuiper 服务器将停止，以使删除生效。 用户将需要手动重新启动它。
 
 示例：
 

@@ -1,6 +1,6 @@
 # 流管理
 
-Kuiper 流命令行工具可用于管理流，例如创建、描述、显示和删除流定义。
+eKuiper 流命令行工具可用于管理流，例如创建、描述、显示和删除流定义。
 
 ## 创建流
 
@@ -103,7 +103,7 @@ query
 kuiper > 
 ```
 
-键入 `query` 子命令后，它会提示 `kuiper>`，然后在命令提示符中键入 SQLs （有关如何使用Kuiper SQL的信息，请参阅 [Kuiper SQL 参考](../sqls/overview.md) ），然后按回车。
+键入 `query` 子命令后，它会提示 `kuiper>`，然后在命令提示符中键入 SQLs （有关如何使用eKuiper SQL的信息，请参阅 [eKuiper SQL 参考](../sqls/overview.md) ），然后按回车。
 
 结果将在控制台中打印。
 

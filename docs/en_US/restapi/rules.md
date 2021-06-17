@@ -1,6 +1,6 @@
 # Rules management
 
-The Kuiper REST api for rules allows you to manage rules, such as create, show, drop, describe, start, stop and restart rules. 
+The eKuiper REST api for rules allows you to manage rules, such as create, show, drop, describe, start, stop and restart rules. 
 
 ## create a rule
 

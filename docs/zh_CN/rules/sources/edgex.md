@@ -2,14 +2,14 @@
 
 # EdgeX 源
 
-Kuiper 提供了内置的 EdgeX 源支持，它可以被用来订阅来自于[EdgeX 消息总线](https://github.com/edgexfoundry/go-mod-messaging)的数据，并且将数据放入 Kuiper 数据处理流水线中。
+eKuiper 提供了内置的 EdgeX 源支持，它可以被用来订阅来自于[EdgeX 消息总线](https://github.com/edgexfoundry/go-mod-messaging)的数据，并且将数据放入 eKuiper 数据处理流水线中。
 
 ## EdgeX 流定义
 
-EdgeX 在 [value descriptors](https://github.com/edgexfoundry/go-mod-core-contracts) 已经定义了数据类型，因此在 Kuiper 中建议采用 schema-less 方式的 EdgeX 流式定义，如下所示。
+EdgeX 在 [value descriptors](https://github.com/edgexfoundry/go-mod-core-contracts) 已经定义了数据类型，因此在 eKuiper 中建议采用 schema-less 方式的 EdgeX 流式定义，如下所示。
 
 ```shell
-# cd $kuiper_base
+# cd $eKuiper_base
 # bin/kuiper CREATE STREAM demo'() with(format="json", datasource="demo" type="edgex")'
 ```
 
@@ -19,11 +19,11 @@ EdgeX 源会试图取得某个字段的类型，
 - 如果在 value descriptors 中可找不到到其数据类型，将保留原值；
 - 如果类型转换失败，该值将被**丢弃**，并在日志上打印一条告警消息；
 
-在 EdgeX value descriptors 中定义的数据类型，将被转换为 Kuiper 中相应支持的[数据类型](../../sqls/streams.md)。
+在 EdgeX value descriptors 中定义的数据类型，将被转换为 eKuiper 中相应支持的[数据类型](../../sqls/streams.md)。
 
 ### Boolean
 
-如果 `ValueDescriptor` 中  `Type` 的值为 `Bool` ，那么 Kuiper 会试着将其转换为 ``boolean`` 类型，以下的值将被转化为 `true`。
+如果 `ValueDescriptor` 中  `Type` 的值为 `Bool` ，那么 eKuiper 会试着将其转换为 ``boolean`` 类型，以下的值将被转化为 `true`。
 
 - "1", "t", "T", "true", "TRUE", "True" 
 
@@ -33,15 +33,15 @@ EdgeX 源会试图取得某个字段的类型，
 
 ### Bigint
 
-如果 `ValueDescriptor` 中  `Type` 的值为 `INT8` , `INT16`, `INT32`,  `INT64` , `UINT8` , `UINT16` ,  `UINT32` , `UINT64` 那么 Kuiper 会试着将其转换为 `Bigint` 类型。 
+如果 `ValueDescriptor` 中  `Type` 的值为 `INT8` , `INT16`, `INT32`,  `INT64` , `UINT8` , `UINT16` ,  `UINT32` , `UINT64` 那么 eKuiper 会试着将其转换为 `Bigint` 类型。 
 
 ### Float
 
-如果 `ValueDescriptor` 中  `Type` 的值为 `FLOAT32`, `FLOAT64` ，那么 Kuiper 会试着将其转换为 `Float` 类型。 
+如果 `ValueDescriptor` 中  `Type` 的值为 `FLOAT32`, `FLOAT64` ，那么 eKuiper 会试着将其转换为 `Float` 类型。 
 
 ### String
 
-如果 `ValueDescriptor` 中  `Type` 的值为 `String`，那么 Kuiper 会试着将其转换为 `String` 类型。
+如果 `ValueDescriptor` 中  `Type` 的值为 `String`，那么 eKuiper 会试着将其转换为 `String` 类型。
 
 ### Boolean 数组
 
@@ -57,7 +57,7 @@ EdgeX 中所有的 `FLOAT32`, `FLOAT64`  数组类型会被转换为 `Float` 数
 
 # 全局配置
 
-EdgeX 源配置文件为 `$kuiper/etc/sources/edgex.yaml`，以下配置文件内容。
+EdgeX 源配置文件为 `$ekuiper/etc/sources/edgex.yaml`，以下配置文件内容。
 
 ```yaml
 #Global Edgex configurations
@@ -122,7 +122,7 @@ EdgeX 消息总线类型，目前支持两种消息总线。如果指定了错�
 
 ## 重载缺省设置
 
-在某些情况下，你可能想消费来自于多个主题的数据。Kuiper 支持指定别的配置，并且在创建流定义的时候使用 `CONF_KEY` 来指定新的配置。
+在某些情况下，你可能想消费来自于多个主题的数据。eKuiper 支持指定别的配置，并且在创建流定义的时候使用 `CONF_KEY` 来指定新的配置。
 
 ```yaml
 #覆盖全局配置

@@ -1,4 +1,4 @@
-Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as an example for demonstrating how to deploy at k3s.
+eKuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as an example for demonstrating how to deploy at k3s.
 
 ## Prepare
 
@@ -22,15 +22,15 @@ Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as
   $ export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   ```
 
-## Get Kuiper Helm Chart
+## Get eKuiper Helm Chart
 
-+ With any approaches in below to get Kuiper Helm Chart, here uses `git clone` to get Helm chart.
++ With any approaches in below to get eKuiper Helm Chart, here uses `git clone` to get Helm chart.
 
   + Git clone
 
     ```shell
-    $ git clone https://github.com/emqx/kuiper
-    $ cd kuiper/deploy/chart/kuiper
+    $ git clone https://github.com/lf-edge/ekuiper
+    $ cd ekuiper/deploy/chart/Kuiper
     ```
 
   + Helm repo (TODO)
@@ -49,19 +49,19 @@ Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as
       emqx/kuiper	0.0.3	        0.0.3	        A lightweight IoT edge analytic software
       ```
 
-+ By edit  `values.yaml` file or use command `helm install --set` to edit ``Kuiper Helm Chart`` configurations.
++ By edit  `values.yaml` file or use command `helm install --set` to edit ``eKuiper Helm Chart`` configurations.
 
-  ##### Kuiper Helm Chart Configurations 
+  ##### eKuiper Helm Chart Configurations 
 
   | Parameters                     | Descriptions                                         | Default Value            |
   | ------------------------------ | ---------------------------------------------------- | ------------------------ |
-  | `replicaCount`                 | Deployed Kuiper instance number                      | 1                        |
+  | `replicaCount`                 | Deployed eKuiper instance number                      | 1                        |
   | `image.repository`             | Docker image name                                    | emqx/kuiper              |
   | `image.pullPolicy`             | Pull policy                                          | IfNotPresent             |
   | `service.type`  | Kubernetes Service type. |ClusterIP|
-  | `service.kuiper`  | Port for Kuiper. |20498|
+  | `service.kuiper`  | Port for eKuiper. |20498|
   | `service.restapi`  | Port for ReseApi. |9081|
-  | `service.nodePorts.kuiper`  | Kubernetes node port for Kuiper. |nil|
+  | `service.nodePorts.kuiper`  | Kubernetes node port for eKuiper. |nil|
   | `service.nodePorts.restapi` | Kubernetes node port for RestAPi. |nil|
   | `service.loadBalancerIP`  | loadBalancerIP for Service |	nil |
   | `service.loadBalancerSourceRanges` |	Address(es) that are allowed when service is LoadBalancer |	[] |
@@ -75,13 +75,13 @@ Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as
   | `nodeSelector`                 | Node selector                                        | {}                       |
   | `tolerations`                  | Tolerations                                          | []                       |
   | `affinity`                     | Affinity                                             | {}                       |
-  | `kuiperConfig`                 | Configuration file in the Kuiper `etc` directory     |                          |
+  | `kuiperConfig`                 | Configuration file in the eKuiper `etc` directory     |                          |
 
-## Deploy Kuiper through Helm
+## Deploy eKuiper through Helm
 
-#### Deploy Kuiper quickly
+#### Deploy eKuiper quickly
 
-+ Deploy Kuiper through Helm
++ Deploy eKuiper through Helm
 
   ```shell
   $ helm install my-kuiper .
@@ -105,16 +105,16 @@ Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as
   Connecting to 127.0.0.1:20498...
   ```
 
-#### Deploy persisted Kuiper
+#### Deploy persisted eKuiper
 
-+ Kuiper realized persisted  `pods` through creating PVC resources and mount `/kuiper/data` directory. **Before deploying Kuiper, user need to create PVC or Storage Classes resource in Kubernetes.**
++ eKuiper realized persisted  `pods` through creating PVC resources and mount `/ekuiper/data` directory. **Before deploying Kuiper, user need to create PVC or Storage Classes resource in Kubernetes.**
 
 + Open and edit `values.yaml` file, set  `persistence.enabled=true`
 
   + If user deploys PVC resource, , then set`persistence.existingClaim=your_pv_name`
   + If user deploys Storage Classes resource, then set `persistence.storageClass=your_storageClass_name`
 
-+ Deploy Kuiper through Helm 
++ Deploy eKuiper through Helm 
 
   ```
   $ helm install my-kuiper .
@@ -138,7 +138,7 @@ Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as
   Connecting to 127.0.0.1:20498...
   ```
 
-#### Deploy Kuiper and using SSL certification and key
+#### Deploy eKuiper and using SSL certification and key
 
 + Use command `kubectl create secret` , create certification & private keys to ``Secret resources``, the usage of command `kubectl create secret`  is listed as in below：
 
@@ -189,7 +189,7 @@ Kuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s as
   ...
   ```
 
-+ Deploy Kuiper through Helm 
++ Deploy eKuiper through Helm 
 
   ```shell
   $ helm install my-kuiper .

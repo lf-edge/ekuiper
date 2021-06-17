@@ -1,6 +1,6 @@
 # Streams management
 
-The Kuiper REST api for streams allows you to manage the streams, such as create, describe, show and drop stream definitions.
+The eKuiper REST api for streams allows you to manage the streams, such as create, describe, show and drop stream definitions.
 
 ## create a stream
 

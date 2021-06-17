@@ -8,8 +8,8 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/emqx/kuiper/blob/master/docs/en_US/rules/sources/mqtt.md",
-			"zh_CN": "https://github.com/emqx/kuiper/blob/master/docs/zh_CN/rules/sources/mqtt.md"
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/mqtt.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/mqtt.md"
 		},
 		"description": {
 			"en_US": "Kuiper provides built-in support for MQTT source stream, which can subscribe the message from MQTT broker and feed into the Kuiper processing pipeline.",

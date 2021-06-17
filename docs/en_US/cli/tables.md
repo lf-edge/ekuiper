@@ -1,6 +1,6 @@
 # Tables management
 
-The Kuiper table command line tools allows you to manage the tables, such as create, describe, show and drop table definitions.
+The eKuiper table command line tools allows you to manage the tables, such as create, describe, show and drop table definitions.
 
 ## create a table
 

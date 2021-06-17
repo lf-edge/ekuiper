@@ -5,12 +5,12 @@ The sink will publish the result into a Zero Mq topic.
 ## Compile & deploy plugin
 
 ```shell
-# cd $kuiper_src
+# cd $eKuiper_src
 # go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Zmq.so extensions/sinks/zmq/zmq.go
-# cp plugins/sinks/Zmq.so $kuiper_install/plugins/sinks
+# cp plugins/sinks/Zmq.so $eKuiper_install/plugins/sinks
 ```
 
-Restart the Kuiper server to activate the plugin.
+Restart the eKuiper server to activate the plugin.
 
 ## Properties
 

@@ -1,6 +1,6 @@
 # How to use meta function to extract addtional data from EdgeX message bus?
 
-When data are published into EdgeX message bus, besides the actual device value, it also have some additional values, such as event created time, modified time etc in the event. Sometimes these values are required for data analysis. This article describes how to use functions provided by Kuiper to achieve the goal.
+When data are published into EdgeX message bus, besides the actual device value, it also have some additional values, such as event created time, modified time etc in the event. Sometimes these values are required for data analysis. This article describes how to use functions provided by eKuiper to achieve the goal.
 
 ## Events data model received in EdgeX message bus
 
@@ -30,9 +30,9 @@ Similar to ``Event``, ``Reading`` also has some metadata (ID, Pushed... etc).
       - ...
     - reading [n] ...
 
-## EdgeX data model in Kuiper
+## EdgeX data model in eKuiper
 
-So how the EdgeX data are managed in Kuiper? Let's take an example.
+So how the EdgeX data are managed in eKuiper? Let's take an example.
 
 As in below - firstly, user creates an EdgeX stream named ``events`` with yellow color.
 
@@ -42,7 +42,7 @@ Secondly, one message is published to message bus as in below.
 
 - The device name is ``demo`` with green color
 - Reading name ``temperature`` & ``Humidity`` with red color. 
-- It has some ``metadata`` that is not necessary to "visible", but it probably will be used during data analysis, such as ``Created`` field in ``Event`` structure. Kuiper saves these values into message tuple named metadata, and user can get these values during analysis.
+- It has some ``metadata`` that is not necessary to "visible", but it probably will be used during data analysis, such as ``Created`` field in ``Event`` structure. eKuiper saves these values into message tuple named metadata, and user can get these values during analysis.
 
 <img src="bus_data.png" style="zoom:50%;" />
 
@@ -80,7 +80,7 @@ SELECT temperature,humidity, meta(id) AS eid,meta(Created) AS ec, meta(temperatu
 
 ## Summary
 
-``meta`` function can be used in Kuiper to access metadata values. Below lists all available keys for ``Events`` and ``Reading``.
+``meta`` function can be used in eKuiper to access metadata values. Below lists all available keys for ``Events`` and ``Reading``.
 
 - Events: id, pushed, device, created, modified, origin, correlationid
 - Readning: id, created, modified, origin, pushed, device
