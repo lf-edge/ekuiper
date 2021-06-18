@@ -298,9 +298,6 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 			return COMMENT, ""
 		} else if r == '>' {
 			return ARROW, tokens[ARROW]
-		} else if isDigit(r) {
-			s.unread()
-			return s.ScanNumber(false, true)
 		} else if r == '.' {
 			_, _ = s.ScanWhiteSpace()
 			if r1 := s.read(); isDigit(r1) {
