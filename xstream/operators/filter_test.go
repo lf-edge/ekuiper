@@ -322,6 +322,32 @@ func TestFilterPlan_Apply(t *testing.T) {
 			},
 			result: nil,
 		},
+		// Test for short circuit. If not, an error would happen
+		{
+			sql: "SELECT abc FROM tbl WHERE abc*2 > 12 AND abc / 0 < 20",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(6),
+				},
+			},
+			result: nil,
+		},
+		{
+			sql: "SELECT abc FROM tbl WHERE abc*2+3 > 12 OR abc / 0 < 20",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(6),
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(6),
+				},
+			},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -444,6 +470,16 @@ func TestFilterPlanError(t *testing.T) {
 				},
 			},
 			result: errors.New("run Where error: invalid operation int64(50) = string(v1)"),
+		},
+		{
+			sql: "SELECT abc FROM tbl WHERE abc*2+3 > 12 AND abc / 0 < 20",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(6),
+				},
+			},
+			result: errors.New("run Where error: divided by zero"),
 		},
 	}
 

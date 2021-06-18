@@ -1276,6 +1276,17 @@ func (v *ValuerEval) evalBinaryExpr(expr *BinaryExpr) interface{} {
 	case error:
 		return val
 	}
+	// shortcut for bool
+	switch expr.OP {
+	case AND:
+		if bv, ok := lhs.(bool); ok && !bv {
+			return false
+		}
+	case OR:
+		if bv, ok := lhs.(bool); ok && bv {
+			return true
+		}
+	}
 	if isSliceOrArray(lhs) {
 		return v.evalJsonExpr(lhs, expr.OP, expr.RHS)
 	}
