@@ -502,7 +502,7 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (Expr, error) {
 
 	p.unscan()
 
-	tok, lit := p.scanIgnoreWhitespace()
+	tok, lit := p.scanIgnoreWhiteSpaceWithNegativeNum()
 	if tok == CASE {
 		return p.parseCaseExpr()
 	} else if tok == IDENT {
@@ -557,7 +557,7 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (Expr, error) {
 }
 
 func (p *Parser) parseBracketExpr() (Expr, error) {
-	tok2, lit2 := p.scanIgnoreWhitespace()
+	tok2, lit2 := p.scanIgnoreWhiteSpaceWithNegativeNum()
 	if tok2 == RBRACKET {
 		//field[]
 		return &ColonExpr{Start: 0, End: math.MinInt32}, nil
@@ -581,7 +581,7 @@ func (p *Parser) parseBracketExpr() (Expr, error) {
 }
 
 func (p *Parser) parseColonExpr(start int) (Expr, error) {
-	tok, lit := p.scanIgnoreWhitespace()
+	tok, lit := p.scanIgnoreWhiteSpaceWithNegativeNum()
 	if tok == INTEGER {
 		end, err := strconv.Atoi(lit)
 		if err != nil {
@@ -597,6 +597,19 @@ func (p *Parser) parseColonExpr(start int) (Expr, error) {
 		return &ColonExpr{Start: start, End: math.MinInt32}, nil
 	}
 	return nil, fmt.Errorf("Found %q, expected right bracket.", lit)
+}
+
+func (p *Parser) scanIgnoreWhiteSpaceWithNegativeNum() (Token, string) {
+	tok, lit := p.scanIgnoreWhitespace()
+	if tok == SUB {
+		_, _ = p.s.ScanWhiteSpace()
+		r := p.s.read()
+		if isDigit(r) {
+			p.s.unread()
+			tok, lit = p.s.ScanNumber(false, true)
+		}
+	}
+	return tok, lit
 }
 
 func (p *Parser) parseAs(f *Field) (*Field, error) {

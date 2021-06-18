@@ -1395,6 +1395,33 @@ func TestParser_ParseStatement(t *testing.T) {
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
+		{
+			s: `SELECT count(*)-10 FROM demo`,
+			stmt: &SelectStatement{
+				Fields: []Field{
+					{
+						AName: "",
+						Name:  "",
+						Expr: &BinaryExpr{
+							OP: SUB,
+							LHS: &Call{
+								Name: "count",
+								Args: []Expr{
+									&Wildcard{Token: ASTERISK},
+								},
+							},
+							RHS: &IntegerLiteral{Val: 10},
+						},
+					},
+				},
+				Sources: []Source{&Table{Name: "demo"}},
+			},
+		},
+		{
+			s:    `SELECT -abc FROM demo`,
+			stmt: nil,
+			err:  "found \"-\", expected expression.",
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
