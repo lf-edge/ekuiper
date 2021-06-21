@@ -1160,7 +1160,7 @@ func MultiAggregateValuer(data AggregateData, singleCallValuer CallValuer, value
 }
 
 func (a *multiAggregateValuer) Call(name string, args []interface{}) (interface{}, bool) {
-	// assume the aggFuncMap already cache the custom agg funcs in isAggFunc()
+	// assume the aggFuncMap already cache the custom agg funcs in IsAggFunc()
 	_, isAgg := aggFuncMap[name]
 	for _, valuer := range a.multiValuer {
 		if a, ok := valuer.(AggregateCallValuer); ok && isAgg {
@@ -1224,7 +1224,7 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 			if len(expr.Args) > 0 {
 				args = make([]interface{}, len(expr.Args))
 				for i, arg := range expr.Args {
-					if aggreValuer, ok := valuer.(AggregateCallValuer); isAggFunc(expr) && ok {
+					if aggreValuer, ok := valuer.(AggregateCallValuer); IsAggFunc(expr) && ok {
 						args[i] = aggreValuer.GetAllTuples().AggregateEval(arg, aggreValuer.GetSingleCallValuer())
 					} else {
 						args[i] = v.Eval(arg)

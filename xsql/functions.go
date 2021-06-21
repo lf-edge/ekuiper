@@ -134,7 +134,7 @@ func IsAggStatement(stmt *SelectStatement) bool {
 	WalkFunc(stmt.Fields, func(n Node) {
 		switch f := n.(type) {
 		case *Call:
-			if ok := isAggFunc(f); ok {
+			if ok := IsAggFunc(f); ok {
 				r = true
 				return
 			}
@@ -143,7 +143,7 @@ func IsAggStatement(stmt *SelectStatement) bool {
 	return r
 }
 
-func isAggFunc(f *Call) bool {
+func IsAggFunc(f *Call) bool {
 	fn := strings.ToLower(f.Name)
 	if _, ok := aggFuncMap[fn]; ok {
 		return true
@@ -176,7 +176,7 @@ func HasAggFuncs(node Node) bool {
 	var r = false
 	WalkFunc(node, func(n Node) {
 		if f, ok := n.(*Call); ok {
-			if ok := isAggFunc(f); ok {
+			if ok := IsAggFunc(f); ok {
 				r = true
 				return
 			}
@@ -192,7 +192,7 @@ func HasNoAggFuncs(node Node) bool {
 	var r = false
 	WalkFunc(node, func(n Node) {
 		if f, ok := n.(*Call); ok {
-			if ok := isAggFunc(f); !ok {
+			if ok := IsAggFunc(f); !ok {
 				r = true
 				return
 			}

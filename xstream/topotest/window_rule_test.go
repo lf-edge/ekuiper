@@ -1313,7 +1313,7 @@ func TestWindowError(t *testing.T) {
 			},
 		}, {
 			Name: `TestWindowErrorRule4`,
-			Sql:  `SELECT color FROM ldemo GROUP BY SlidingWindow(ss, 2), color having size >= 2 order by color`,
+			Sql:  `SELECT color FROM ldemo GROUP BY SlidingWindow(ss, 2), color having collect(size)[0] >= 2 order by color`,
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
