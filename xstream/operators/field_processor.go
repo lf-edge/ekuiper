@@ -15,7 +15,6 @@ import (
 
 type defaultFieldProcessor struct {
 	streamFields    []interface{}
-	aliasFields     xsql.Fields
 	timestampFormat string
 	isBinary        bool
 }
@@ -47,17 +46,6 @@ func (p *defaultFieldProcessor) processField(tuple *xsql.Tuple, fv *xsql.Functio
 		}
 	} else {
 		result = tuple.Message
-	}
-	//If the field has alias name, then evaluate the alias field before transfer it to proceeding operators, and put it into result.
-	//Otherwise, the GROUP BY, ORDER BY statement cannot get the value.
-	for _, f := range p.aliasFields {
-		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, fv)}
-		v := ve.Eval(f.Expr)
-		if e, ok := v.(error); ok {
-			return nil, e
-		} else {
-			result[f.AName] = v
-		}
 	}
 	return result, nil
 }

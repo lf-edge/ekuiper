@@ -18,10 +18,10 @@ type TableProcessor struct {
 	batchEmitted bool              // if batch input, this is the signal for whether the last batch has emitted. If true, reinitialize.
 }
 
-func NewTableProcessor(name string, fields []interface{}, fs xsql.Fields, options *xsql.Options) (*TableProcessor, error) {
+func NewTableProcessor(name string, fields []interface{}, options *xsql.Options) (*TableProcessor, error) {
 	p := &TableProcessor{emitterName: name, batchEmitted: true, retainSize: 1}
 	p.defaultFieldProcessor = defaultFieldProcessor{
-		streamFields: fields, aliasFields: fs, isBinary: false, timestampFormat: options.TIMESTAMP_FORMAT,
+		streamFields: fields, isBinary: false, timestampFormat: options.TIMESTAMP_FORMAT,
 	}
 	if options.RETAIN_SIZE > 0 {
 		p.retainSize = options.RETAIN_SIZE

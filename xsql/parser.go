@@ -11,9 +11,6 @@ import (
 	"strings"
 )
 
-const DEFAULT_STREAM = "$default"
-const MULTI_STREAM = "$multi"
-
 type Parser struct {
 	s *Scanner
 
@@ -521,7 +518,7 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (Expr, error) {
 				if isSubField {
 					return &MetaRef{StreamName: "", Name: n[0]}, nil
 				}
-				return &MetaRef{StreamName: DEFAULT_STREAM, Name: n[0]}, nil
+				return &MetaRef{StreamName: DefaultStream, Name: n[0]}, nil
 			} else {
 				if len(n) == 2 {
 					return &FieldRef{StreamName: StreamName(n[0]), Name: n[1]}, nil
@@ -529,7 +526,7 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (Expr, error) {
 				if isSubField {
 					return &FieldRef{StreamName: "", Name: n[0]}, nil
 				}
-				return &FieldRef{StreamName: DEFAULT_STREAM, Name: n[0]}, nil
+				return &FieldRef{StreamName: DefaultStream, Name: n[0]}, nil
 			}
 		}
 	} else if tok == STRING {

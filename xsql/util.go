@@ -165,3 +165,23 @@ func GetDataSource(m kv.KeyValue, name string) (stmt *StreamStmt, err error) {
 	}
 	return
 }
+
+// IsAggregate check if an expression is aggregate with the binding alias info
+func IsAggregate(expr Expr) (r bool) {
+	WalkFunc(expr, func(n Node) bool {
+		switch f := n.(type) {
+		case *Call:
+			if ok := IsAggFunc(f); ok {
+				r = true
+				return false
+			}
+		case *FieldRef:
+			if f.IsAggregate() {
+				r = true
+				return false
+			}
+		}
+		return true
+	})
+	return
+}

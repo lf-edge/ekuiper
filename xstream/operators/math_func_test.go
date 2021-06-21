@@ -466,7 +466,6 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 			continue
 		}
 		pp := &ProjectOp{Fields: stmt.Fields}
-		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}

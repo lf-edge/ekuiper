@@ -24,7 +24,7 @@ func TestFuncValidator(t *testing.T) {
 
 		{
 			s: `SELECT abs(field1) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "abs", Expr: &Call{Name: "abs", Args: []Expr{&FieldRef{Name: "field1", StreamName: DEFAULT_STREAM}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "abs", Expr: &Call{Name: "abs", Args: []Expr{&FieldRef{Name: "field1", StreamName: DefaultStream}}}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -206,7 +206,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT concat(field, "hello") FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "concat", Expr: &Call{Name: "concat", Args: []Expr{&FieldRef{Name: "field", StreamName: DEFAULT_STREAM}, &StringLiteral{Val: "hello"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "concat", Expr: &Call{Name: "concat", Args: []Expr{&FieldRef{Name: "field", StreamName: DefaultStream}, &StringLiteral{Val: "hello"}}}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -232,7 +232,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT regexp_matches(field, "hello") FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "regexp_matches", Expr: &Call{Name: "regexp_matches", Args: []Expr{&FieldRef{Name: "field", StreamName: DEFAULT_STREAM}, &StringLiteral{Val: "hello"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "regexp_matches", Expr: &Call{Name: "regexp_matches", Args: []Expr{&FieldRef{Name: "field", StreamName: DefaultStream}, &StringLiteral{Val: "hello"}}}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -252,7 +252,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT regexp_replace(field, "hello", "h") FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "regexp_replace", Expr: &Call{Name: "regexp_replace", Args: []Expr{&FieldRef{Name: "field", StreamName: DEFAULT_STREAM}, &StringLiteral{Val: "hello"}, &StringLiteral{Val: "h"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "regexp_replace", Expr: &Call{Name: "regexp_replace", Args: []Expr{&FieldRef{Name: "field", StreamName: DefaultStream}, &StringLiteral{Val: "hello"}, &StringLiteral{Val: "h"}}}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -266,7 +266,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT trim(field) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "trim", Expr: &Call{Name: "trim", Args: []Expr{&FieldRef{Name: "field", StreamName: DEFAULT_STREAM}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "trim", Expr: &Call{Name: "trim", Args: []Expr{&FieldRef{Name: "field", StreamName: DefaultStream}}}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -280,7 +280,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT rpad(field, 3) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "rpad", Expr: &Call{Name: "rpad", Args: []Expr{&FieldRef{Name: "field", StreamName: DEFAULT_STREAM}, &IntegerLiteral{Val: 3}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "rpad", Expr: &Call{Name: "rpad", Args: []Expr{&FieldRef{Name: "field", StreamName: DefaultStream}, &IntegerLiteral{Val: 3}}}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -294,7 +294,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT substring(field, 3, 4) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "substring", Expr: &Call{Name: "substring", Args: []Expr{&FieldRef{Name: "field", StreamName: DEFAULT_STREAM}, &IntegerLiteral{Val: 3}, &IntegerLiteral{Val: 4}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "substring", Expr: &Call{Name: "substring", Args: []Expr{&FieldRef{Name: "field", StreamName: DefaultStream}, &IntegerLiteral{Val: 3}, &IntegerLiteral{Val: 4}}}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -320,7 +320,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT cast(field, "bigint") FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "cast", Expr: &Call{Name: "cast", Args: []Expr{&FieldRef{Name: "field", StreamName: DEFAULT_STREAM}, &StringLiteral{Val: "bigint"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "cast", Expr: &Call{Name: "cast", Args: []Expr{&FieldRef{Name: "field", StreamName: DefaultStream}, &StringLiteral{Val: "bigint"}}}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -334,7 +334,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT chr(field) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "chr", Expr: &Call{Name: "chr", Args: []Expr{&FieldRef{Name: "field", StreamName: DEFAULT_STREAM}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "chr", Expr: &Call{Name: "chr", Args: []Expr{&FieldRef{Name: "field", StreamName: DefaultStream}}}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -348,7 +348,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT encode(field, "base64") FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "encode", Expr: &Call{Name: "encode", Args: []Expr{&FieldRef{Name: "field", StreamName: DEFAULT_STREAM}, &StringLiteral{Val: "base64"}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "encode", Expr: &Call{Name: "encode", Args: []Expr{&FieldRef{Name: "field", StreamName: DefaultStream}, &StringLiteral{Val: "base64"}}}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -362,7 +362,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT trunc(field, 3) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "trunc", Expr: &Call{Name: "trunc", Args: []Expr{&FieldRef{Name: "field", StreamName: DEFAULT_STREAM}, &IntegerLiteral{Val: 3}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "trunc", Expr: &Call{Name: "trunc", Args: []Expr{&FieldRef{Name: "field", StreamName: DefaultStream}, &IntegerLiteral{Val: 3}}}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -376,7 +376,7 @@ func TestFuncValidator(t *testing.T) {
 		///
 		{
 			s: `SELECT sha512(field) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "sha512", Expr: &Call{Name: "sha512", Args: []Expr{&FieldRef{Name: "field", StreamName: DEFAULT_STREAM}}}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "sha512", Expr: &Call{Name: "sha512", Args: []Expr{&FieldRef{Name: "field", StreamName: DefaultStream}}}}},
 				Sources: []Source{&Table{Name: "tbl"}},
 			},
 		},
@@ -427,7 +427,7 @@ func TestFuncValidator(t *testing.T) {
 		},
 		{
 			s:    `SELECT meta(device) FROM tbl`,
-			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "meta", Expr: &Call{Name: "meta", Args: []Expr{&MetaRef{Name: "device", StreamName: DEFAULT_STREAM}}}}}, Sources: []Source{&Table{Name: "tbl"}}},
+			stmt: &SelectStatement{Fields: []Field{{AName: "", Name: "meta", Expr: &Call{Name: "meta", Args: []Expr{&MetaRef{Name: "device", StreamName: DefaultStream}}}}}, Sources: []Source{&Table{Name: "tbl"}}},
 		},
 		{
 			s:    `SELECT meta(tbl.device) FROM tbl`,
@@ -439,7 +439,7 @@ func TestFuncValidator(t *testing.T) {
 				OP: ARROW,
 				LHS: &BinaryExpr{
 					OP:  ARROW,
-					LHS: &MetaRef{Name: "device", StreamName: DEFAULT_STREAM},
+					LHS: &MetaRef{Name: "device", StreamName: DefaultStream},
 					RHS: &MetaRef{Name: "reading"},
 				},
 				RHS: &MetaRef{Name: "topic"},

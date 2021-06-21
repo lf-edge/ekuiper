@@ -847,7 +847,6 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 		pp := &Preprocessor{
 			defaultFieldProcessor: defaultFieldProcessor{
 				streamFields:    convertFields(tt.stmt.StreamFields),
-				aliasFields:     nil,
 				isBinary:        false,
 				timestampFormat: tt.stmt.Options.TIMESTAMP_FORMAT,
 			},

@@ -35,19 +35,24 @@ func (p *JoinPlan) PushDownPredicate(condition xsql.Expr) (xsql.Expr, LogicalPla
 
 // Return the unpushable condition and pushable condition
 func extractCondition(condition xsql.Expr) (unpushable xsql.Expr, pushable xsql.Expr) {
-	s := getRefSources(condition)
-	if len(s) < 2 {
+	s, hasDefault := getRefSources(condition)
+	l := len(s)
+	if hasDefault {
+		l += 1
+	}
+	if l == 0 || (l == 1 && s[0] != xsql.DefaultStream) {
 		pushable = condition
 		return
-	} else {
-		if be, ok := condition.(*xsql.BinaryExpr); ok && be.OP == xsql.AND {
-			ul, pl := extractCondition(be.LHS)
-			ur, pr := extractCondition(be.RHS)
-			unpushable = combine(ul, ur)
-			pushable = combine(pl, pr)
-			return
-		}
 	}
+
+	if be, ok := condition.(*xsql.BinaryExpr); ok && be.OP == xsql.AND {
+		ul, pl := extractCondition(be.LHS)
+		ur, pr := extractCondition(be.RHS)
+		unpushable = combine(ul, ur)
+		pushable = combine(pl, pr)
+		return
+	}
+
 	//default case: all condition are unpushable
 	return condition, nil
 }

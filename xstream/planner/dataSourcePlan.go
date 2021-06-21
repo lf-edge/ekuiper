@@ -10,14 +10,13 @@ import (
 
 type DataSourcePlan struct {
 	baseLogicalPlan
-	name string
+	name xsql.StreamName
 	// calculated properties
 	// initialized with stream definition, pruned with rule
 	streamFields []interface{}
 	metaFields   []string
 	// passon properties
 	streamStmt      *xsql.StreamStmt
-	alias           xsql.Fields
 	allMeta         bool
 	isBinary        bool
 	iet             bool
@@ -49,12 +48,16 @@ func (p *DataSourcePlan) PushDownPredicate(condition xsql.Expr) (xsql.Expr, Logi
 }
 
 func (p *DataSourcePlan) extract(expr xsql.Expr) (xsql.Expr, xsql.Expr) {
-	s := getRefSources(expr)
+	s, hasDefault := getRefSources(expr)
+	l := len(s)
+	if hasDefault {
+		l += 1
+	}
 	switch len(s) {
 	case 0:
 		return expr, nil
 	case 1:
-		if s[0] == p.name || s[0] == "" {
+		if s[0] == p.name || s[0] == xsql.DefaultStream {
 			return expr, nil
 		} else {
 			return nil, expr
@@ -86,7 +89,7 @@ func (p *DataSourcePlan) PruneColumns(fields []xsql.Expr) error {
 		case *xsql.Wildcard:
 			p.isWildCard = true
 		case *xsql.FieldRef:
-			if !p.isWildCard && (f.StreamName == xsql.DEFAULT_STREAM || string(f.StreamName) == p.name) {
+			if !p.isWildCard && (f.StreamName == xsql.DefaultStream || f.StreamName == p.name) {
 				if _, ok := p.fields[f.Name]; !ok {
 					sf := p.getField(f.Name)
 					if sf != nil {
@@ -98,7 +101,7 @@ func (p *DataSourcePlan) PruneColumns(fields []xsql.Expr) error {
 			if p.allMeta {
 				break
 			}
-			if f.StreamName == xsql.DEFAULT_STREAM || string(f.StreamName) == p.name {
+			if f.StreamName == xsql.DefaultStream || f.StreamName == p.name {
 				if f.Name == "*" {
 					p.allMeta = true
 					p.metaMap = nil

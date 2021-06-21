@@ -226,7 +226,6 @@ func TestMiscFunc_Apply1(t *testing.T) {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
 		pp := &ProjectOp{Fields: stmt.Fields}
-		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
@@ -277,7 +276,6 @@ func TestMqttFunc_Apply2(t *testing.T) {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
 		pp := &ProjectOp{Fields: stmt.Fields}
-		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
@@ -394,7 +392,6 @@ func TestMetaFunc_Apply1(t *testing.T) {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
 		pp := &ProjectOp{Fields: stmt.Fields}
-		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
@@ -764,7 +761,6 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
 		pp := &ProjectOp{Fields: stmt.Fields}
-		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}

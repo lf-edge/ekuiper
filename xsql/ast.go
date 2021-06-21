@@ -57,8 +57,10 @@ const (
 	FULL_JOIN
 	CROSS_JOIN
 )
-
-var AsteriskExpr = StringLiteral{Val: "*"}
+const (
+	DEFAULT_FIELD_NAME_PREFIX string = "kuiper_field_"
+	PRIVATE_PREFIX            string = "$$"
+)
 
 var COLUMN_SEPARATOR = tokens[COLSEP]
 
@@ -159,6 +161,36 @@ type Dimensions []Dimension
 
 func (f *Field) expr() {}
 func (f *Field) node() {}
+
+func (f *Field) GetName() string {
+	if f.AName != "" {
+		return f.AName
+	} else {
+		return f.Name
+	}
+}
+
+func (f *Field) IsSelectionField() bool {
+	if f.AName != "" {
+		return true
+	}
+	_, ok := f.Expr.(*FieldRef)
+	if ok {
+		return true
+	}
+	return false
+}
+
+func (f *Field) IsColumn() bool {
+	if f.AName != "" {
+		return false
+	}
+	_, ok := f.Expr.(*FieldRef)
+	if ok {
+		return true
+	}
+	return false
+}
 
 func (pe *ParenExpr) expr() {}
 func (pe *ParenExpr) node() {}
@@ -313,13 +345,114 @@ type BinaryExpr struct {
 func (fe *BinaryExpr) expr() {}
 func (be *BinaryExpr) node() {}
 
+const (
+	DefaultStream = StreamName("$$default")
+	AliasStream   = StreamName("$$alias")
+)
+
+// FieldRef could be
+// 1. SQL Field
+//  1.1 Explicit field "stream.col"
+//  1.2 Implicit field "col"  -> only exist in schemaless stream. Otherwise, explicit stream name will be bound
+//  1.3 Alias field "expr as c" -> refer to an expression or column
+// 2. Json expression field like a->b
 type FieldRef struct {
+	// optional, bind in analyzer, empty means alias, default means not set
+	// MUST have after binding for SQL fields. For 1.2,1.3 and 1.4, use special constant as stream name
 	StreamName StreamName
-	Name       string
+	// optional, set only once. For selections, empty name will be assigned a default name
+	// MUST have after binding, assign a name for 1.4
+	Name string
+	// Only for alias
+	*AliasRef
 }
 
 func (fr *FieldRef) expr() {}
 func (fr *FieldRef) node() {}
+func (fr *FieldRef) IsColumn() bool {
+	return fr.StreamName != AliasStream && fr.StreamName != ""
+}
+func (fr *FieldRef) IsAlias() bool {
+	return fr.StreamName == AliasStream
+}
+func (fr *FieldRef) IsSQLField() bool {
+	return fr.StreamName != ""
+}
+
+func (fr *FieldRef) IsAggregate() bool {
+	if fr.StreamName != AliasStream {
+		return false
+	}
+	// lazy calculate
+	if fr.isAggregate == nil {
+		tr := IsAggregate(fr.expression)
+		fr.isAggregate = &tr
+	}
+	return *fr.isAggregate
+}
+
+func (fr *FieldRef) RefSelection(a *AliasRef) {
+	fr.AliasRef = a
+}
+
+// RefSources Must call after binding or will get empty
+func (fr *FieldRef) RefSources() []StreamName {
+	if fr.StreamName == AliasStream {
+		return fr.refSources
+	} else if fr.StreamName != "" {
+		return []StreamName{fr.StreamName}
+	} else {
+		return nil
+	}
+}
+
+// SetRefSource Only call this for alias field ref
+func (fr *FieldRef) SetRefSource(names []StreamName) {
+	fr.refSources = names
+}
+
+type AliasRef struct {
+	// MUST have, It is used for evaluation
+	expression Expr
+	// MUST have after binding, calculate once in initializer. Could be 0 when alias an expression without col like "1+2"
+	refSources []StreamName
+	// optional, lazy set when calculating isAggregate
+	isAggregate *bool
+}
+
+func NewAliasRef(e Expr) (*AliasRef, error) {
+	r := make(map[StreamName]bool)
+	var walkErr error
+	WalkFunc(e, func(n Node) bool {
+		switch f := n.(type) {
+		case *FieldRef:
+			switch f.StreamName {
+			case AliasStream:
+				walkErr = fmt.Errorf("cannot use alias %s inside another alias %v", f.Name, e)
+				return false
+			default:
+				r[f.StreamName] = true
+			}
+		}
+		return true
+	})
+	if walkErr != nil {
+		return nil, walkErr
+	}
+	rs := make([]StreamName, 0)
+	for k := range r {
+		rs = append(rs, k)
+	}
+	return &AliasRef{
+		expression: e,
+		refSources: rs,
+	}, nil
+}
+
+// for testing only
+func MockAliasRef(e Expr, r []StreamName, a *bool) *AliasRef {
+	return &AliasRef{e, r, a}
+}
 
 type MetaRef struct {
 	StreamName StreamName
@@ -477,7 +610,7 @@ func (dss *DropTableStatement) node()           {}
 func (dss *DropTableStatement) GetName() string { return dss.Name }
 
 type Visitor interface {
-	Visit(Node) Visitor
+	Visit(Node) bool
 }
 
 func Walk(v Visitor, node Node) {
@@ -485,7 +618,7 @@ func Walk(v Visitor, node Node) {
 		return
 	}
 
-	if v = v.Visit(node); v == nil {
+	if !v.Visit(node) {
 		return
 	}
 
@@ -513,6 +646,9 @@ func Walk(v Visitor, node Node) {
 
 	case *Field:
 		Walk(v, n.Expr)
+		if fr, ok := n.Expr.(*FieldRef); ok && fr.IsAlias() {
+			Walk(v, fr.expression)
+		}
 
 	case Fields:
 		for _, c := range n {
@@ -574,19 +710,20 @@ func Walk(v Visitor, node Node) {
 }
 
 // WalkFunc traverses a node hierarchy in depth-first order.
-func WalkFunc(node Node, fn func(Node)) {
+func WalkFunc(node Node, fn func(Node) bool) {
 	Walk(walkFuncVisitor(fn), node)
 }
 
-type walkFuncVisitor func(Node)
+type walkFuncVisitor func(Node) bool
 
-func (fn walkFuncVisitor) Visit(n Node) Visitor { fn(n); return fn }
+func (fn walkFuncVisitor) Visit(n Node) bool { return fn(n) }
 
 // Valuer is the interface that wraps the Value() method.
 type Valuer interface {
 	// Value returns the value and existence flag for a given key.
 	Value(key string) (interface{}, bool)
 	Meta(key string) (interface{}, bool)
+	AppendAlias(key string, value interface{}) bool
 }
 
 // CallValuer implements the Call method for evaluating function calls.
@@ -631,8 +768,13 @@ func (wv *WildcardValuer) Value(key string) (interface{}, bool) {
 	}
 }
 
-func (wv *WildcardValuer) Meta(key string) (interface{}, bool) {
+func (wv *WildcardValuer) Meta(string) (interface{}, bool) {
 	return nil, false
+}
+
+func (wv *WildcardValuer) AppendAlias(string, interface{}) bool {
+	// do nothing
+	return false
 }
 
 /**********************************
@@ -701,6 +843,11 @@ func (m Message) Meta(key string) (interface{}, bool) {
 	return m.Value(key)
 }
 
+func (m Message) AppendAlias(k string, v interface{}) bool {
+	fmt.Printf("append alias %s:%v\n", k, v)
+	return false
+}
+
 type Event interface {
 	GetTimestamp() int64
 	IsWatermark() bool
@@ -721,14 +868,38 @@ func (m Metadata) Meta(key string) (interface{}, bool) {
 	return msg.Meta(key)
 }
 
+type Alias struct {
+	AliasMap Message
+}
+
+func (a *Alias) AppendAlias(key string, value interface{}) bool {
+	if a.AliasMap == nil {
+		a.AliasMap = make(map[string]interface{})
+	}
+	a.AliasMap[PRIVATE_PREFIX+key] = value
+	return true
+}
+
+func (a *Alias) AliasValue(key string) (interface{}, bool) {
+	if a.AliasMap == nil {
+		return nil, false
+	}
+	return a.AliasMap.Value(key)
+}
+
 type Tuple struct {
 	Emitter   string
-	Message   Message
+	Message   Message // immutable
 	Timestamp int64
-	Metadata  Metadata
+	Metadata  Metadata // immutable
+	Alias
 }
 
 func (t *Tuple) Value(key string) (interface{}, bool) {
+	r, ok := t.AliasValue(key)
+	if ok {
+		return r, ok
+	}
 	return t.Message.Value(key)
 }
 
@@ -739,7 +910,7 @@ func (t *Tuple) Meta(key string) (interface{}, bool) {
 	return t.Metadata.Value(key)
 }
 
-func (t *Tuple) All(stream string) (interface{}, bool) {
+func (t *Tuple) All(string) (interface{}, bool) {
 	return t.Message, true
 }
 
@@ -838,6 +1009,7 @@ func (w WindowTuplesSet) AggregateEval(expr Expr, v CallValuer) []interface{} {
 
 type JoinTuple struct {
 	Tuples []Tuple
+	Alias
 }
 
 func (jt *JoinTuple) AddTuple(tuple Tuple) {
@@ -895,6 +1067,10 @@ func (jt *JoinTuple) doGetValue(t string, key string) (interface{}, bool) {
 }
 
 func (jt *JoinTuple) Value(key string) (interface{}, bool) {
+	r, ok := jt.AliasValue(key)
+	if ok {
+		return r, ok
+	}
 	return jt.doGetValue("value", key)
 }
 
@@ -1132,6 +1308,15 @@ func (a multiValuer) Meta(key string) (interface{}, bool) {
 	return nil, false
 }
 
+func (a multiValuer) AppendAlias(key string, value interface{}) bool {
+	for _, valuer := range a {
+		if ok := valuer.AppendAlias(key, value); ok {
+			return true
+		}
+	}
+	return false
+}
+
 func (a multiValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	for _, valuer := range a {
 		if valuer, ok := valuer.(CallValuer); ok {
@@ -1160,7 +1345,7 @@ func MultiAggregateValuer(data AggregateData, singleCallValuer CallValuer, value
 }
 
 func (a *multiAggregateValuer) Call(name string, args []interface{}) (interface{}, bool) {
-	// assume the aggFuncMap already cache the custom agg funcs in isAggFunc()
+	// assume the aggFuncMap already cache the custom agg funcs in IsAggFunc()
 	_, isAgg := aggFuncMap[name]
 	for _, valuer := range a.multiValuer {
 		if a, ok := valuer.(AggregateCallValuer); ok && isAgg {
@@ -1202,8 +1387,6 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 	switch expr := expr.(type) {
 	case *BinaryExpr:
 		return v.evalBinaryExpr(expr)
-	//case *BooleanLiteral:
-	//	return expr.Val
 	case *IntegerLiteral:
 		return expr.Val
 	case *NumberLiteral:
@@ -1224,7 +1407,7 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 			if len(expr.Args) > 0 {
 				args = make([]interface{}, len(expr.Args))
 				for i, arg := range expr.Args {
-					if aggreValuer, ok := valuer.(AggregateCallValuer); isAggFunc(expr) && ok {
+					if aggreValuer, ok := valuer.(AggregateCallValuer); IsAggFunc(expr) && ok {
 						args[i] = aggreValuer.GetAllTuples().AggregateEval(arg, aggreValuer.GetSingleCallValuer())
 					} else {
 						args[i] = v.Eval(arg)
@@ -1239,16 +1422,28 @@ func (v *ValuerEval) Eval(expr Expr) interface{} {
 		}
 		return nil
 	case *FieldRef:
-		if expr.StreamName == "" || expr.StreamName == DEFAULT_STREAM {
-			val, _ := v.Valuer.Value(expr.Name)
-			return val
+		var n string
+		if expr.IsAlias() { // alias is renamed internally to avoid accidentally evaled as a col with the same name
+			n = fmt.Sprintf("%s%s", PRIVATE_PREFIX, expr.Name)
+		} else if expr.StreamName == DefaultStream {
+			n = expr.Name
 		} else {
-			//The field specified with stream source
-			val, _ := v.Valuer.Value(string(expr.StreamName) + COLUMN_SEPARATOR + expr.Name)
-			return val
+			n = fmt.Sprintf("%s%s%s", string(expr.StreamName), COLUMN_SEPARATOR, expr.Name)
 		}
+		if n != "" {
+			val, ok := v.Valuer.Value(n)
+			if ok {
+				return val
+			}
+		}
+		if expr.IsAlias() {
+			r := v.Eval(expr.expression)
+			v.Valuer.AppendAlias(expr.Name, r)
+			return r
+		}
+		return nil
 	case *MetaRef:
-		if expr.StreamName == "" || expr.StreamName == DEFAULT_STREAM {
+		if expr.StreamName == "" || expr.StreamName == DefaultStream {
 			val, _ := v.Valuer.Meta(expr.Name)
 			return val
 		} else {

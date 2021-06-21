@@ -233,28 +233,38 @@ func TestWindow(t *testing.T) {
 			},
 		}, {
 			Name: `TestWindowRule4`,
-			Sql:  `SELECT color FROM demo GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
+			Sql:  `SELECT color, count(*) as c FROM demo GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
+					"c":     float64(1),
 				}}, {{
 					"color": "blue",
+					"c":     float64(1),
 				}, {
 					"color": "red",
+					"c":     float64(1),
 				}}, {{
 					"color": "blue",
+					"c":     float64(2),
 				}, {
 					"color": "red",
+					"c":     float64(1),
 				}}, {{
 					"color": "blue",
+					"c":     float64(2),
 				}, {
 					"color": "yellow",
+					"c":     float64(1),
 				}}, {{
 					"color": "blue",
+					"c":     float64(1),
 				}, {
 					"color": "red",
+					"c":     float64(1),
 				}, {
 					"color": "yellow",
+					"c":     float64(1),
 				}},
 			},
 			M: map[string]interface{}{
@@ -384,10 +394,10 @@ func TestWindow(t *testing.T) {
 				"op_2_preprocessor_demo1_0_records_in_total":   int64(5),
 				"op_2_preprocessor_demo1_0_records_out_total":  int64(5),
 
-				"op_6_project_0_exceptions_total":   int64(0),
-				"op_6_project_0_process_latency_us": int64(0),
-				"op_6_project_0_records_in_total":   int64(8),
-				"op_6_project_0_records_out_total":  int64(8),
+				"op_5_project_0_exceptions_total":   int64(0),
+				"op_5_project_0_process_latency_us": int64(0),
+				"op_5_project_0_records_in_total":   int64(8),
+				"op_5_project_0_records_out_total":  int64(8),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(8),
@@ -484,10 +494,10 @@ func TestWindow(t *testing.T) {
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
 				"op_1_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"op_6_project_0_exceptions_total":   int64(0),
-				"op_6_project_0_process_latency_us": int64(0),
-				"op_6_project_0_records_in_total":   int64(1),
-				"op_6_project_0_records_out_total":  int64(1),
+				"op_5_project_0_exceptions_total":   int64(0),
+				"op_5_project_0_process_latency_us": int64(0),
+				"op_5_project_0_records_in_total":   int64(1),
+				"op_5_project_0_records_out_total":  int64(1),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(1),
@@ -507,15 +517,10 @@ func TestWindow(t *testing.T) {
 				"op_2_filter_0_records_in_total":   int64(5),
 				"op_2_filter_0_records_out_total":  int64(3),
 
-				"op_4_aggregate_0_exceptions_total":   int64(0),
-				"op_4_aggregate_0_process_latency_us": int64(0),
-				"op_4_aggregate_0_records_in_total":   int64(2),
-				"op_4_aggregate_0_records_out_total":  int64(2),
-
-				"op_5_having_0_exceptions_total":   int64(0),
-				"op_5_having_0_process_latency_us": int64(0),
-				"op_5_having_0_records_in_total":   int64(2),
-				"op_5_having_0_records_out_total":  int64(1),
+				"op_4_having_0_exceptions_total":   int64(0),
+				"op_4_having_0_process_latency_us": int64(0),
+				"op_4_having_0_records_in_total":   int64(2),
+				"op_4_having_0_records_out_total":  int64(1),
 			},
 		}, {
 			Name: `TestWindowRule9`,
@@ -588,10 +593,10 @@ func TestWindow(t *testing.T) {
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
 				"op_1_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"op_4_project_0_exceptions_total":   int64(0),
-				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(1),
-				"op_4_project_0_records_out_total":  int64(1),
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(1),
+				"op_3_project_0_records_out_total":  int64(1),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(1),
@@ -624,10 +629,10 @@ func TestWindow(t *testing.T) {
 				"op_1_preprocessor_demo_0_records_in_total":   int64(5),
 				"op_1_preprocessor_demo_0_records_out_total":  int64(5),
 
-				"op_4_project_0_exceptions_total":   int64(0),
-				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(5),
-				"op_4_project_0_records_out_total":  int64(5),
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(5),
+				"op_3_project_0_records_out_total":  int64(5),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(5),
@@ -839,7 +844,7 @@ func TestEventWindow(t *testing.T) {
 			},
 		}, {
 			Name: `TestEventWindowRule3`,
-			Sql:  `SELECT color, temp, ts FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
+			Sql:  `SELECT color, temp, demoE.ts FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
@@ -1047,10 +1052,10 @@ func TestEventWindow(t *testing.T) {
 				"op_2_preprocessor_demo1E_0_records_in_total":   int64(6),
 				"op_2_preprocessor_demo1E_0_records_out_total":  int64(6),
 
-				"op_6_project_0_exceptions_total":   int64(0),
-				"op_6_project_0_process_latency_us": int64(0),
-				"op_6_project_0_records_in_total":   int64(5),
-				"op_6_project_0_records_out_total":  int64(5),
+				"op_5_project_0_exceptions_total":   int64(0),
+				"op_5_project_0_process_latency_us": int64(0),
+				"op_5_project_0_records_in_total":   int64(5),
+				"op_5_project_0_records_out_total":  int64(5),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(5),
@@ -1313,7 +1318,7 @@ func TestWindowError(t *testing.T) {
 			},
 		}, {
 			Name: `TestWindowErrorRule4`,
-			Sql:  `SELECT color FROM ldemo GROUP BY SlidingWindow(ss, 2), color having size >= 2 order by color`,
+			Sql:  `SELECT color FROM ldemo GROUP BY SlidingWindow(ss, 2), color having collect(size)[0] >= 2 order by color`,
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",

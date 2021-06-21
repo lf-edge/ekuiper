@@ -93,7 +93,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				Message: xsql.Message{},
 			},
 			result: []map[string]interface{}{{
-				DEFAULT_FIELD_NAME_PREFIX + "0": "value",
+				"": "value",
 			}},
 		},
 
@@ -104,7 +104,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				Message: xsql.Message{},
 			},
 			result: []map[string]interface{}{{
-				DEFAULT_FIELD_NAME_PREFIX + "0": 3.4,
+				"": 3.4,
 			}},
 		},
 
@@ -115,7 +115,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				Message: xsql.Message{},
 			},
 			result: []map[string]interface{}{{
-				DEFAULT_FIELD_NAME_PREFIX + "0": 5.0,
+				"": 5.0,
 			}},
 		},
 
@@ -532,7 +532,6 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			continue
 		}
 		pp := &ProjectOp{Fields: stmt.Fields, SendMeta: true}
-		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
@@ -1083,7 +1082,6 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
 		pp := &ProjectOp{Fields: stmt.Fields}
-		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
@@ -1284,7 +1282,6 @@ func TestProjectPlan_Funcs(t *testing.T) {
 			t.Error(err)
 		}
 		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
-		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
@@ -1986,7 +1983,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: true, isTest: true}
+		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: true}
 		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		var mapRes []map[string]interface{}
@@ -2137,7 +2134,6 @@ func TestProjectPlanError(t *testing.T) {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
 		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
-		pp.isTest = true
 		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {
