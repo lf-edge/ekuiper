@@ -6,7 +6,6 @@ import (
 	"github.com/emqx/kuiper/common"
 	"github.com/emqx/kuiper/xsql"
 	"github.com/emqx/kuiper/xstream/api"
-	"strconv"
 	"strings"
 )
 
@@ -14,7 +13,6 @@ type ProjectOp struct {
 	Fields      xsql.Fields
 	IsAggregate bool
 	SendMeta    bool
-	isTest      bool
 }
 
 /**
@@ -30,7 +28,7 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		return input
 	case *xsql.Tuple:
 		ve := pp.getVE(input, input, fv, afv)
-		if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
+		if r, err := project(pp.Fields, ve); err != nil {
 			return fmt.Errorf("run Select error: %s", err)
 		} else {
 			if pp.SendMeta && input.Metadata != nil {
@@ -45,7 +43,7 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		ms := input[0].Tuples
 		for _, v := range ms {
 			ve := pp.getVE(&v, input, fv, afv)
-			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
+			if r, err := project(pp.Fields, ve); err != nil {
 				return fmt.Errorf("run Select error: %s", err)
 			} else {
 				results = append(results, r)
@@ -58,7 +56,7 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		ms := input
 		for _, v := range ms {
 			ve := pp.getVE(&v, input, fv, afv)
-			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
+			if r, err := project(pp.Fields, ve); err != nil {
 				return err
 			} else {
 				results = append(results, r)
@@ -70,7 +68,7 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 	case xsql.GroupedTuplesSet:
 		for _, v := range input {
 			ve := pp.getVE(v[0], v, fv, afv)
-			if r, err := project(pp.Fields, ve, pp.isTest); err != nil {
+			if r, err := project(pp.Fields, ve); err != nil {
 				return fmt.Errorf("run Select error: %s", err)
 			} else {
 				results = append(results, r)
@@ -96,15 +94,10 @@ func (pp *ProjectOp) getVE(tuple xsql.DataValuer, agg xsql.AggregateData, fv *xs
 	}
 }
 
-func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) (map[string]interface{}, error) {
+func project(fs xsql.Fields, ve *xsql.ValuerEval) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	for _, f := range fs {
-		expr := f.Expr
-		//Avoid to re-evaluate for non-agg field has alias name, which was already evaluated in pre-processor operator.
-		if f.AName != "" && !isTest {
-			expr = &xsql.FieldRef{StreamName: xsql.DEFAULT_STREAM, Name: f.AName}
-		}
-		v := ve.Eval(expr)
+		v := ve.Eval(f.Expr)
 		if e, ok := v.(error); ok {
 			return nil, e
 		}
@@ -127,7 +120,7 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) (map[string]inter
 			}
 		} else {
 			if v != nil {
-				n := assignName(f.Name, f.AName, result)
+				n := assignName(f.Name, f.AName)
 				if _, ok := result[n]; !ok {
 					result[n] = v
 				}
@@ -137,9 +130,7 @@ func project(fs xsql.Fields, ve *xsql.ValuerEval, isTest bool) (map[string]inter
 	return result, nil
 }
 
-const DEFAULT_FIELD_NAME_PREFIX string = "kuiper_field_"
-
-func assignName(name, alias string, fields map[string]interface{}) string {
+func assignName(name, alias string) string {
 	if result := strings.Trim(alias, " "); result != "" {
 		return result
 	}
@@ -147,13 +138,5 @@ func assignName(name, alias string, fields map[string]interface{}) string {
 	if result := strings.Trim(name, " "); result != "" {
 		return result
 	}
-
-	for i := 0; i < 2048; i++ {
-		key := DEFAULT_FIELD_NAME_PREFIX + strconv.Itoa(i)
-		if _, ok := fields[key]; !ok {
-			return key
-		}
-	}
-	fmt.Printf("Cannot assign a default field name")
 	return ""
 }

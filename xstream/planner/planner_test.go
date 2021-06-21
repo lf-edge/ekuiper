@@ -60,7 +60,7 @@ func Test_createLogicalPlan(t *testing.T) {
 		store.Set(name, string(s))
 	}
 	streams := make(map[string]*xsql.StreamStmt)
-	for n, _ := range streamSqls {
+	for n := range streamSqls {
 		streamStmt, err := xsql.GetDataSource(store, n)
 		if err != nil {
 			t.Errorf("fail to get stream %s, please check if stream is created", n)
@@ -68,6 +68,12 @@ func Test_createLogicalPlan(t *testing.T) {
 		}
 		streams[n] = streamStmt
 	}
+
+	var (
+		//boolTrue = true
+		boolFalse = false
+	)
+
 	var tests = []struct {
 		sql string
 		p   LogicalPlan
@@ -96,7 +102,8 @@ func Test_createLogicalPlan(t *testing.T) {
 					{
 						Expr:  &xsql.FieldRef{Name: "name", StreamName: "src1"},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
@@ -373,7 +380,7 @@ func Test_createLogicalPlan(t *testing.T) {
 				fields: []xsql.Field{
 					{
 						Expr:  &xsql.Wildcard{Token: xsql.ASTERISK},
-						Name:  "",
+						Name:  "kuiper_field_0",
 						AName: ""},
 				},
 				isAggregate: false,
@@ -833,27 +840,6 @@ func Test_createLogicalPlan(t *testing.T) {
 										},
 										streamStmt: streams["src1"],
 										metaFields: []string{"Humidity", "device", "id"},
-										alias: xsql.Fields{
-											xsql.Field{
-												Expr: &xsql.Call{Name: "meta", Args: []xsql.Expr{&xsql.MetaRef{
-													Name:       "id",
-													StreamName: xsql.DEFAULT_STREAM,
-												}}},
-												Name:  "meta",
-												AName: "eid",
-											},
-											xsql.Field{
-												Expr: &xsql.Call{Name: "meta", Args: []xsql.Expr{
-													&xsql.BinaryExpr{
-														OP:  xsql.ARROW,
-														LHS: &xsql.MetaRef{Name: "Humidity", StreamName: xsql.DEFAULT_STREAM},
-														RHS: &xsql.MetaRef{Name: "Device"},
-													},
-												}},
-												Name:  "meta",
-												AName: "hdevice",
-											},
-										},
 									}.Init(),
 								},
 							},
@@ -862,7 +848,7 @@ func Test_createLogicalPlan(t *testing.T) {
 									Name: "meta",
 									Args: []xsql.Expr{&xsql.MetaRef{
 										Name:       "device",
-										StreamName: xsql.DEFAULT_STREAM,
+										StreamName: xsql.DefaultStream,
 									}},
 								},
 								OP: xsql.EQ,
@@ -879,20 +865,28 @@ func Test_createLogicalPlan(t *testing.T) {
 						Name:  "temp",
 						AName: "",
 					}, {
-						Expr: &xsql.Call{Name: "meta", Args: []xsql.Expr{&xsql.MetaRef{
-							Name:       "id",
-							StreamName: xsql.DEFAULT_STREAM,
-						}}},
+						Expr: &xsql.FieldRef{Name: "eid", StreamName: xsql.AliasStream, AliasRef: xsql.MockAliasRef(
+							&xsql.Call{Name: "meta", Args: []xsql.Expr{&xsql.MetaRef{
+								Name:       "id",
+								StreamName: xsql.DefaultStream,
+							}}},
+							[]xsql.StreamName{},
+							nil,
+						)},
 						Name:  "meta",
 						AName: "eid",
 					}, {
-						Expr: &xsql.Call{Name: "meta", Args: []xsql.Expr{
-							&xsql.BinaryExpr{
-								OP:  xsql.ARROW,
-								LHS: &xsql.MetaRef{Name: "Humidity", StreamName: xsql.DEFAULT_STREAM},
-								RHS: &xsql.MetaRef{Name: "Device"},
-							},
-						}},
+						Expr: &xsql.FieldRef{Name: "hdevice", StreamName: xsql.AliasStream, AliasRef: xsql.MockAliasRef(
+							&xsql.Call{Name: "meta", Args: []xsql.Expr{
+								&xsql.BinaryExpr{
+									OP:  xsql.ARROW,
+									LHS: &xsql.MetaRef{Name: "Humidity", StreamName: xsql.DefaultStream},
+									RHS: &xsql.MetaRef{Name: "Device"},
+								},
+							}},
+							[]xsql.StreamName{},
+							nil,
+						)},
 						Name:  "meta",
 						AName: "hdevice",
 					},
@@ -924,16 +918,6 @@ func Test_createLogicalPlan(t *testing.T) {
 														},
 													},
 													streamStmt: streams["src2"],
-													alias: xsql.Fields{
-														xsql.Field{
-															Expr: &xsql.FieldRef{
-																Name:       "hum",
-																StreamName: "src2",
-															},
-															Name:  "hum",
-															AName: "hum1",
-														},
-													},
 													metaFields: []string{},
 												}.Init(),
 												DataSourcePlan{
@@ -949,16 +933,6 @@ func Test_createLogicalPlan(t *testing.T) {
 														},
 													},
 													streamStmt: streams["tableInPlanner"],
-													alias: xsql.Fields{
-														xsql.Field{
-															Expr: &xsql.FieldRef{
-																Name:       "hum",
-																StreamName: "tableInPlanner",
-															},
-															Name:  "hum",
-															AName: "hum2",
-														},
-													},
 													metaFields: []string{},
 												}.Init(),
 											},
@@ -983,9 +957,23 @@ func Test_createLogicalPlan(t *testing.T) {
 										},
 										OP: xsql.AND,
 										LHS: &xsql.BinaryExpr{
-											OP:  xsql.GT,
-											LHS: &xsql.FieldRef{Name: "hum1", StreamName: "src2"},
-											RHS: &xsql.FieldRef{Name: "hum2", StreamName: "tableInPlanner"},
+											OP: xsql.GT,
+											LHS: &xsql.FieldRef{Name: "hum1", StreamName: xsql.AliasStream, AliasRef: xsql.MockAliasRef(
+												&xsql.FieldRef{
+													Name:       "hum",
+													StreamName: "src2",
+												},
+												[]xsql.StreamName{"src2"},
+												&boolFalse,
+											)},
+											RHS: &xsql.FieldRef{Name: "hum2", StreamName: xsql.AliasStream, AliasRef: xsql.MockAliasRef(
+												&xsql.FieldRef{
+													Name:       "hum",
+													StreamName: "tableInPlanner",
+												},
+												[]xsql.StreamName{"tableInPlanner"},
+												&boolFalse,
+											)},
 										},
 									},
 								},
@@ -995,17 +983,25 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []xsql.Field{
 					{
-						Expr: &xsql.FieldRef{
-							Name:       "hum",
-							StreamName: "src2",
-						},
+						Expr: &xsql.FieldRef{Name: "hum1", StreamName: xsql.AliasStream, AliasRef: xsql.MockAliasRef(
+							&xsql.FieldRef{
+								Name:       "hum",
+								StreamName: "src2",
+							},
+							[]xsql.StreamName{"src2"},
+							&boolFalse,
+						)},
 						Name:  "hum",
 						AName: "hum1",
 					}, {
-						Expr: &xsql.FieldRef{
-							Name:       "hum",
-							StreamName: "tableInPlanner",
-						},
+						Expr: &xsql.FieldRef{Name: "hum2", StreamName: xsql.AliasStream, AliasRef: xsql.MockAliasRef(
+							&xsql.FieldRef{
+								Name:       "hum",
+								StreamName: "tableInPlanner",
+							},
+							[]xsql.StreamName{"tableInPlanner"},
+							&boolFalse,
+						)},
 						Name:  "hum",
 						AName: "hum2",
 					},

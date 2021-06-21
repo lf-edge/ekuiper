@@ -17,11 +17,11 @@ type Preprocessor struct {
 	timestampField string
 }
 
-func NewPreprocessor(fields []interface{}, fs xsql.Fields, allMeta bool, metaFields []string, iet bool, timestampField string, timestampFormat string, isBinary bool) (*Preprocessor, error) {
+func NewPreprocessor(fields []interface{}, allMeta bool, metaFields []string, iet bool, timestampField string, timestampFormat string, isBinary bool) (*Preprocessor, error) {
 	p := &Preprocessor{
 		allMeta: allMeta, metaFields: metaFields, isEventTime: iet, timestampField: timestampField}
 	p.defaultFieldProcessor = defaultFieldProcessor{
-		streamFields: fields, aliasFields: fs, isBinary: isBinary, timestampFormat: timestampFormat,
+		streamFields: fields, isBinary: isBinary, timestampFormat: timestampFormat,
 	}
 	return p, nil
 }

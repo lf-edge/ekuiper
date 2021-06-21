@@ -11,8 +11,6 @@ import (
 	"github.com/emqx/kuiper/xstream/nodes"
 	"github.com/emqx/kuiper/xstream/operators"
 	"path"
-	"sort"
-	"strings"
 )
 
 func Plan(rule *api.Rule, storePath string) (*xstream.TopologyNew, error) {
@@ -52,126 +50,6 @@ func PlanWithSourcesAndSinks(rule *api.Rule, storePath string, sources []*nodes.
 		return nil, err
 	}
 	return tp, nil
-}
-
-type aliasInfo struct {
-	alias       xsql.Field
-	refSources  []string
-	isAggregate bool
-}
-
-// Analyze the select statement by decorating the info from stream statement.
-// Typically, set the correct stream name for fieldRefs
-func decorateStmt(s *xsql.SelectStatement, store kv.KeyValue) ([]*xsql.StreamStmt, map[string]*aliasInfo, error) {
-	streamsFromStmt := xsql.GetStreams(s)
-	streamStmts := make([]*xsql.StreamStmt, len(streamsFromStmt))
-	aliasSourceMap := make(map[string]*aliasInfo)
-	isSchemaless := false
-	for i, s := range streamsFromStmt {
-		streamStmt, err := xsql.GetDataSource(store, s)
-		if err != nil {
-			return nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
-		}
-		streamStmts[i] = streamStmt
-		if streamStmt.StreamFields == nil {
-			isSchemaless = true
-		}
-	}
-	var walkErr error
-	for _, f := range s.Fields {
-		if f.AName != "" {
-			if _, ok := aliasSourceMap[strings.ToLower(f.AName)]; ok {
-				return nil, nil, fmt.Errorf("duplicate alias %s", f.AName)
-			}
-			refStreams := make(map[string]struct{})
-			xsql.WalkFunc(f.Expr, func(n xsql.Node) {
-				switch expr := n.(type) {
-				case *xsql.FieldRef:
-					err := updateFieldRefStream(expr, streamStmts, isSchemaless)
-					if err != nil {
-						walkErr = err
-						return
-					}
-					if expr.StreamName != "" {
-						refStreams[string(expr.StreamName)] = struct{}{}
-					}
-				}
-			})
-			if walkErr != nil {
-				return nil, nil, walkErr
-			}
-			refStreamKeys := make([]string, len(refStreams))
-			c := 0
-			for k, _ := range refStreams {
-				refStreamKeys[c] = k
-				c++
-			}
-			aliasSourceMap[strings.ToLower(f.AName)] = &aliasInfo{
-				alias:       f,
-				refSources:  refStreamKeys,
-				isAggregate: xsql.HasAggFuncs(f.Expr),
-			}
-		}
-	}
-	// Select fields are visited firstly to make sure all aliases have streamName set
-	xsql.WalkFunc(s, func(n xsql.Node) {
-		//skip alias field
-		switch f := n.(type) {
-		case *xsql.Field:
-			if f.AName != "" {
-				return
-			}
-		case *xsql.FieldRef:
-			if f.StreamName == xsql.DEFAULT_STREAM {
-				for aname, ainfo := range aliasSourceMap {
-					if strings.EqualFold(f.Name, aname) {
-						switch len(ainfo.refSources) {
-						case 0: // if no ref source, we can put it to any stream, here just assign it to the first stream
-							f.StreamName = streamStmts[0].Name
-						case 1:
-							f.StreamName = xsql.StreamName(ainfo.refSources[0])
-						default:
-							f.StreamName = xsql.MULTI_STREAM
-						}
-						return
-					}
-
-				}
-			}
-			err := updateFieldRefStream(f, streamStmts, isSchemaless)
-			if err != nil {
-				walkErr = err
-			}
-		}
-	})
-	return streamStmts, aliasSourceMap, walkErr
-}
-
-func updateFieldRefStream(f *xsql.FieldRef, streamStmts []*xsql.StreamStmt, isSchemaless bool) (err error) {
-	count := 0
-	for _, streamStmt := range streamStmts {
-		for _, field := range streamStmt.StreamFields {
-			if strings.EqualFold(f.Name, field.Name) {
-				if f.StreamName == xsql.DEFAULT_STREAM {
-					f.StreamName = streamStmt.Name
-					count++
-				} else if f.StreamName == streamStmt.Name {
-					count++
-				}
-				break
-			}
-		}
-	}
-	if count > 1 {
-		err = fmt.Errorf("ambiguous field %s", f.Name)
-	} else if count == 0 && f.StreamName == xsql.DEFAULT_STREAM { // alias may refer to non stream field
-		if !isSchemaless {
-			err = fmt.Errorf("unknown field %s.%s", f.StreamName, f.Name)
-		} else if len(streamStmts) == 1 { // If only one schemaless stream, all the fields must be a field of that stream
-			f.StreamName = streamStmts[0].Name
-		}
-	}
-	return
 }
 
 func createTopo(rule *api.Rule, lp LogicalPlan, sources []*nodes.SourceNode, sinks []*nodes.SinkNode, streamsFromStmt []string) (*xstream.TopologyNew, error) {
@@ -226,16 +104,16 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 	case *DataSourcePlan:
 		switch t.streamStmt.StreamType {
 		case xsql.TypeStream:
-			pp, err := operators.NewPreprocessor(t.streamFields, t.alias, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary)
+			pp, err := operators.NewPreprocessor(t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary)
 			if err != nil {
 				return nil, 0, err
 			}
 			var srcNode *nodes.SourceNode
 			if len(sources) == 0 {
-				node := nodes.NewSourceNode(t.name, t.streamStmt.StreamType, t.streamStmt.Options)
+				node := nodes.NewSourceNode(string(t.name), t.streamStmt.StreamType, t.streamStmt.Options)
 				srcNode = node
 			} else {
-				srcNode = getMockSource(sources, t.name)
+				srcNode = getMockSource(sources, string(t.name))
 				if srcNode == nil {
 					return nil, 0, fmt.Errorf("can't find predefined source %s", t.name)
 				}
@@ -244,16 +122,16 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 			op = Transform(pp, fmt.Sprintf("%d_preprocessor_%s", newIndex, t.name), options)
 			inputs = []api.Emitter{srcNode}
 		case xsql.TypeTable:
-			pp, err := operators.NewTableProcessor(t.name, t.streamFields, t.alias, t.streamStmt.Options)
+			pp, err := operators.NewTableProcessor(string(t.name), t.streamFields, t.streamStmt.Options)
 			if err != nil {
 				return nil, 0, err
 			}
 			var srcNode *nodes.SourceNode
 			if len(sources) > 0 {
-				srcNode = getMockSource(sources, t.name)
+				srcNode = getMockSource(sources, string(t.name))
 			}
 			if srcNode == nil {
-				srcNode = nodes.NewSourceNode(t.name, t.streamStmt.StreamType, t.streamStmt.Options)
+				srcNode = nodes.NewSourceNode(string(t.name), t.streamStmt.StreamType, t.streamStmt.Options)
 			}
 			tp.AddSrc(srcNode)
 			op = Transform(pp, fmt.Sprintf("%d_tableprocessor_%s", newIndex, t.name), options)
@@ -282,7 +160,7 @@ func buildOps(lp LogicalPlan, tp *xstream.TopologyNew, options *api.RuleOption, 
 	case *FilterPlan:
 		op = Transform(&operators.FilterOp{Condition: t.condition}, fmt.Sprintf("%d_filter", newIndex), options)
 	case *AggregatePlan:
-		op = Transform(&operators.AggregateOp{Dimensions: t.dimensions, Alias: t.alias}, fmt.Sprintf("%d_aggregate", newIndex), options)
+		op = Transform(&operators.AggregateOp{Dimensions: t.dimensions}, fmt.Sprintf("%d_aggregate", newIndex), options)
 	case *HavingPlan:
 		op = Transform(&operators.HavingOp{Condition: t.condition}, fmt.Sprintf("%d_having", newIndex), options)
 	case *OrderPlan:
@@ -321,17 +199,16 @@ func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv
 		ds            xsql.Dimensions
 	)
 
-	streamStmts, aliasMap, err := decorateStmt(stmt, store)
+	streamStmts, err := decorateStmt(stmt, store)
 	if err != nil {
 		return nil, err
 	}
 
-	for i, streamStmt := range streamStmts {
+	for _, streamStmt := range streamStmts {
 		p = DataSourcePlan{
-			name:       string(streamStmt.Name),
+			name:       streamStmt.Name,
 			streamStmt: streamStmt,
 			iet:        opt.IsEventTime,
-			alias:      aliasFieldsForSource(aliasMap, streamStmt.Name, i == 0),
 			allMeta:    opt.SendMetaToSink,
 		}.Init()
 		if streamStmt.StreamType == xsql.TypeStream {
@@ -341,7 +218,6 @@ func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv
 			tableEmitters = append(tableEmitters, string(streamStmt.Name))
 		}
 	}
-	aggregateAlias, _ := complexAlias(aliasMap)
 	if dimensions != nil {
 		w = dimensions.GetWindow()
 		if w != nil {
@@ -395,12 +271,11 @@ func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv
 		children = []LogicalPlan{p}
 	}
 	// TODO handle aggregateAlias in optimization as it does not only happen in select fields
-	if dimensions != nil || len(aggregateAlias) > 0 {
+	if dimensions != nil {
 		ds = dimensions.GetGroups()
-		if (ds != nil && len(ds) > 0) || len(aggregateAlias) > 0 {
+		if ds != nil && len(ds) > 0 {
 			p = AggregatePlan{
 				dimensions: ds,
-				alias:      aggregateAlias,
 			}.Init()
 			p.SetChildren(children)
 			children = []LogicalPlan{p}
@@ -433,40 +308,6 @@ func createLogicalPlan(stmt *xsql.SelectStatement, opt *api.RuleOption, store kv
 	}
 
 	return optimize(p)
-}
-
-func aliasFieldsForSource(aliasMap map[string]*aliasInfo, name xsql.StreamName, isFirst bool) (result xsql.Fields) {
-	for _, ainfo := range aliasMap {
-		if ainfo.isAggregate {
-			continue
-		}
-		switch len(ainfo.refSources) {
-		case 0:
-			if isFirst {
-				result = append(result, ainfo.alias)
-			}
-		case 1:
-			if strings.EqualFold(ainfo.refSources[0], string(name)) {
-				result = append(result, ainfo.alias)
-			}
-		}
-	}
-	// sort to get a constant result for testing
-	sort.Sort(result)
-	return
-}
-
-func complexAlias(aliasMap map[string]*aliasInfo) (aggregateAlias xsql.Fields, joinAlias xsql.Fields) {
-	for _, ainfo := range aliasMap {
-		if ainfo.isAggregate {
-			aggregateAlias = append(aggregateAlias, ainfo.alias)
-			continue
-		}
-		if len(ainfo.refSources) > 1 {
-			joinAlias = append(joinAlias, ainfo.alias)
-		}
-	}
-	return
 }
 
 func Transform(op nodes.UnOperation, name string, options *api.RuleOption) *nodes.UnaryOperator {

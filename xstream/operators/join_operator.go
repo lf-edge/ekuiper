@@ -53,13 +53,17 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 
 func (jp *JoinOp) getStreamNames(join *xsql.Join) ([]string, error) {
 	var srcs []string
-	xsql.WalkFunc(join, func(node xsql.Node) {
+	keys := make(map[xsql.StreamName]bool)
+	xsql.WalkFunc(join, func(node xsql.Node) bool {
 		if f, ok := node.(*xsql.FieldRef); ok {
-			if string(f.StreamName) == "" {
-				return
+			for _, v := range f.RefSources() {
+				if _, ok := keys[v]; !ok {
+					srcs = append(srcs, string(v))
+					keys[v] = true
+				}
 			}
-			srcs = append(srcs, string(f.StreamName))
 		}
+		return true
 	})
 	if len(srcs) != 2 {
 		if jp.From.Alias != "" {
@@ -128,7 +132,7 @@ func (jp *JoinOp) evalSet(input xsql.WindowTuplesSet, join xsql.Join, fv *xsql.F
 				temp.AddTuple(right)
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, fv)}
 				result := evalOn(join, ve, &left, &right)
-
+				merged.AliasMap = temp.AliasMap
 				switch val := result.(type) {
 				case error:
 					return nil, val
@@ -211,6 +215,7 @@ func (jp *JoinOp) evalSetWithRightJoin(input xsql.WindowTuplesSet, join xsql.Joi
 			temp.AddTuple(left)
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, fv)}
 			result := evalOn(join, ve, &left, &right)
+			merged.AliasMap = temp.AliasMap
 			switch val := result.(type) {
 			case error:
 				return nil, val
@@ -266,6 +271,7 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesS
 			} else {
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&left, &right, fv)}
 				result := evalOn(join, ve, &left, &right)
+				merged.AliasMap = left.AliasMap
 				switch val := result.(type) {
 				case error:
 					return nil, val
@@ -326,6 +332,7 @@ func (jp *JoinOp) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTu
 			merged.AddTuple(right)
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&right, &left, fv)}
 			result := evalOn(join, ve, &left, &right)
+			merged.AliasMap = left.AliasMap
 			switch val := result.(type) {
 			case error:
 				return nil, val

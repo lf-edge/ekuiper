@@ -2,21 +2,29 @@ package planner
 
 import "github.com/emqx/kuiper/xsql"
 
-func getRefSources(node xsql.Node) []string {
-	result := make(map[string]bool)
-	keys := make([]string, 0, len(result))
+func getRefSources(node xsql.Node) ([]xsql.StreamName, bool) {
+	result := make(map[xsql.StreamName]bool)
+	keys := make([]xsql.StreamName, 0, len(result))
 	if node == nil {
-		return keys
+		return keys, false
 	}
-	xsql.WalkFunc(node, func(n xsql.Node) {
-		if f, ok := n.(*xsql.FieldRef); ok && f.StreamName != "" {
-			result[string(f.StreamName)] = true
+	hasDefault := false
+	xsql.WalkFunc(node, func(n xsql.Node) bool {
+		if f, ok := n.(*xsql.FieldRef); ok {
+			for _, sn := range f.RefSources() {
+				if sn == xsql.DefaultStream {
+					hasDefault = true
+				}
+				result[sn] = true
+			}
+			return false
 		}
+		return true
 	})
 	for k := range result {
 		keys = append(keys, k)
 	}
-	return keys
+	return keys, hasDefault
 }
 
 func combine(l xsql.Expr, r xsql.Expr) xsql.Expr {
@@ -35,10 +43,10 @@ func combine(l xsql.Expr, r xsql.Expr) xsql.Expr {
 
 func getFields(node xsql.Node) []xsql.Expr {
 	result := make([]xsql.Expr, 0)
-	xsql.WalkFunc(node, func(n xsql.Node) {
+	xsql.WalkFunc(node, func(n xsql.Node) bool {
 		switch t := n.(type) {
 		case *xsql.FieldRef:
-			if t.StreamName != "" {
+			if t.IsColumn() {
 				result = append(result, t)
 			}
 		case *xsql.Wildcard:
@@ -50,6 +58,7 @@ func getFields(node xsql.Node) []xsql.Expr {
 		case *xsql.SortField:
 			result = append(result, t)
 		}
+		return true
 	})
 	return result
 }

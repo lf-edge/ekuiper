@@ -19,12 +19,16 @@ func NewFunctionValuer(p *funcRuntime) *FunctionValuer {
 	return fv
 }
 
-func (*FunctionValuer) Value(_ string) (interface{}, bool) {
+func (*FunctionValuer) Value(string) (interface{}, bool) {
 	return nil, false
 }
 
-func (*FunctionValuer) Meta(_ string) (interface{}, bool) {
+func (*FunctionValuer) Meta(string) (interface{}, bool) {
 	return nil, false
+}
+
+func (*FunctionValuer) AppendAlias(string, interface{}) bool {
+	return false
 }
 
 type FunctionRegister interface {
@@ -131,19 +135,20 @@ func IsAggStatement(stmt *SelectStatement) bool {
 		}
 	}
 	r := false
-	WalkFunc(stmt.Fields, func(n Node) {
+	WalkFunc(stmt.Fields, func(n Node) bool {
 		switch f := n.(type) {
 		case *Call:
-			if ok := isAggFunc(f); ok {
+			if ok := IsAggFunc(f); ok {
 				r = true
-				return
+				return false
 			}
 		}
+		return true
 	})
 	return r
 }
 
-func isAggFunc(f *Call) bool {
+func IsAggFunc(f *Call) bool {
 	fn := strings.ToLower(f.Name)
 	if _, ok := aggFuncMap[fn]; ok {
 		return true
@@ -174,29 +179,14 @@ func HasAggFuncs(node Node) bool {
 		return false
 	}
 	var r = false
-	WalkFunc(node, func(n Node) {
+	WalkFunc(node, func(n Node) bool {
 		if f, ok := n.(*Call); ok {
-			if ok := isAggFunc(f); ok {
+			if ok := IsAggFunc(f); ok {
 				r = true
-				return
+				return false
 			}
 		}
-	})
-	return r
-}
-
-func HasNoAggFuncs(node Node) bool {
-	if node == nil {
-		return false
-	}
-	var r = false
-	WalkFunc(node, func(n Node) {
-		if f, ok := n.(*Call); ok {
-			if ok := isAggFunc(f); !ok {
-				r = true
-				return
-			}
-		}
+		return true
 	})
 	return r
 }
