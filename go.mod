@@ -6,8 +6,8 @@ require (
 	github.com/benbjohnson/clock v1.0.0
 	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
 	github.com/eclipse/paho.mqtt.golang v1.3.5
-	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.0.0-dev.100
-	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.0-dev.16
+	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.0.0
+	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.1
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/gdexlab/go-render v1.0.1
 	github.com/go-yaml/yaml v2.1.0+incompatible

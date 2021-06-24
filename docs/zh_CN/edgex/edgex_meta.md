@@ -29,6 +29,14 @@
       - ...
     - reading [n] ...
 
+### 突破性变化
+
+由于 EdgeX v2 重构了消息元数据，从 eKuiper v1.2.0 之前的版本升级的用户需要注意元数据的突破性变化。
+
+1. ``Event`` 和 ``Reading`` 中移除了元数据 `Pushed`, `Created` 和 `Modified` 。
+2. `Event`` 和 ``Reading`` 中的元数据 `Device` 改名为 `DeviceName` 。
+3. `Reading`` 中的元数据 `Name` 改名为 `ResourceName` 。
+
 ## eKuiper 中的 EdgeX 数据模型
 
 那么在 eKuiper 中， EdgeX 数据是如何被管理的？让我们来看个例子。
@@ -41,7 +49,7 @@
 
 - Device name 为 ``demo``，以绿色高亮标示
 - Reading 名称为 ``temperature`` & ``Humidity`` ，用红色高亮标示
-- 这里有些 ``元数据`` 是没有必要「可见」的，但是这些值在分析的时候可能会被用到，例如``Event`` 结构体中的 ``DeviceName`` 字段。eKuiper 将这些值保存在 eKuiper 消息中的名为 metadata 的字段中，用户在分析阶段可以获取到这些值。
+- 这里有些 ``元数据`` 是没有必要「可见」的，但是这些值在分析的时候可能会被用到，例如``Event`` 结构体中的 ``DeviceName`` 字段。eKuiper 将这些值保存在 eKuiper 消息中的名为 metadata 的字段中，用户在分析阶段可以获取到这些值。**需要注意的是, EdgeX v2 中元数据 `Device` 已重命名为 `DeviceName` 。**
 
 <img src="bus_data.png" style="zoom:50%;" />
 
