@@ -38,6 +38,13 @@
 
 ![](./arch_light.png)
 
+## 迁移到 EdgeX V2
+
+eKuiper v1.2.1 之后的版本将仅支持 EdgeX v2 ( Ireland 及之后的版本 )，并引入以下突破性变化。
+
+1. EdgeX 源不再依赖 `Core contract Service` 。用户可以从配置文件 `edgex.yaml` 中移除属性 `serviceServer` 的相关配置。
+2. [元数据中的突破性变化](./edgex_meta.md#突破性变化)。例如，元数据 `Device` 重命名为 `DeviceName` 。
+
 ## 运行 EdgeX Docker 实例
 
 打开 [EdgeX compose 项目](https://github.com/edgexfoundry/edgex-compose)，并且下载 Ireland 版本的 Docker compose file，然后启动所有的 EdgeX 容器。

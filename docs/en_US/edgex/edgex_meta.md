@@ -28,6 +28,14 @@ Similar to ``Event``, ``Reading`` also has some metadata (ID, DeviceName... etc)
       - ... // The same as in reading[0]
       - ...
     - reading [n] ...
+  
+### Breaking changes from EdgeX v1
+
+If upgrading from eKuiper versions v1.2.0 and before which integrates with EdgeX v1, there will be some breaking changes of the meta datas due to the refactor of EdgeX v2.
+
+1. The metadata `Pushed`, `Created` and `Modified` for both events and readings are removed. 
+2. The metadata `Device` for both events and readings are renamed to `DeviceName`.
+3. The metadata `Name` of readings is renamed to `ResourceName`.
 
 ## EdgeX data model in eKuiper
 
@@ -41,7 +49,7 @@ Secondly, one message is published to message bus as in below.
 
 - The device name is ``demo`` with green color
 - Reading name ``temperature`` & ``Humidity`` with red color. 
-- It has some ``metadata`` that is not necessary to "visible", but it probably will be used during data analysis, such as ``DeviceName`` field in ``Event`` structure. eKuiper saves these values into message tuple named metadata, and user can get these values during analysis.
+- It has some ``metadata`` that is not necessary to "visible", but it probably will be used during data analysis, such as ``DeviceName`` field in ``Event`` structure. eKuiper saves these values into message tuple named metadata, and user can get these values during analysis. **Notice that, metadata name `DeviceName` was renamed from `Device` in EdgeX v2.**
 
 <img src="bus_data.png" style="zoom:50%;" />
 
