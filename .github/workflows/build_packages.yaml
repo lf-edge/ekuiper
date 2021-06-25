@@ -277,10 +277,10 @@ jobs:
             cd _packages && for var in $( ls |grep -v sha256); do
               echo "$(cat $var.sha256) $var" | sha256sum -c || exit 1
             done
-        - uses: zhanghongtong/upload-release-asset@v1
+        - uses: Rory-Z/upload-release-asset@v1
           if: github.event_name == 'release'
           with:
-            repo: kuiper
+            repo: ekuiper
             path: "_packages/kuiper-*"
             token: ${{ secrets.GITHUB_TOKEN }}
         - name: create invalidation for cloudfront
