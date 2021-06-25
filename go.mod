@@ -5,7 +5,6 @@ require (
 	github.com/PaesslerAG/gval v1.0.0
 	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/benbjohnson/clock v1.0.0
-	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
 	github.com/eclipse/paho.mqtt.golang v1.3.5
 	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.0.0
 	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.1

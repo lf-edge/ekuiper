@@ -329,10 +329,10 @@ func TestWindow(t *testing.T) {
 				"op_1_preprocessor_sessionDemo_0_records_in_total":   int64(11),
 				"op_1_preprocessor_sessionDemo_0_records_out_total":  int64(11),
 
-				"op_4_project_0_exceptions_total":   int64(0),
-				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(4),
-				"op_4_project_0_records_out_total":  int64(4),
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(4),
+				"op_3_project_0_records_out_total":  int64(4),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(4),
