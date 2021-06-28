@@ -349,45 +349,45 @@ func TestWindow(t *testing.T) {
 			},
 		}, {
 			Name: `TestWindowRule6`,
-			Sql:  `SELECT window_end(), max(temp) as m, count(color) as c, window_start() FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
+			Sql:  `SELECT window_end(), sum(temp) as temp, count(color) as c, window_start() FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
 				{{
-					"m":            25.5,
+					"temp":         25.5,
 					"c":            float64(1),
 					"window_start": float64(1541152485115),
 					"window_end":   float64(1541152486115),
 				}}, {{
-					"m":            25.5,
+					"temp":         25.5,
 					"c":            float64(1),
 					"window_start": float64(1541152485822),
 					"window_end":   float64(1541152486822),
 				}}, {{
-					"m":            25.5,
+					"temp":         25.5,
 					"c":            float64(1),
 					"window_start": float64(1541152485903),
 					"window_end":   float64(1541152486903),
 				}}, {{
-					"m":            28.1,
+					"temp":         28.1,
 					"c":            float64(1),
 					"window_start": float64(1541152486702),
 					"window_end":   float64(1541152487702),
 				}}, {{
-					"m":            28.1,
+					"temp":         28.1,
 					"c":            float64(1),
 					"window_start": float64(1541152487442),
 					"window_end":   float64(1541152488442),
 				}}, {{
-					"m":            28.1,
+					"temp":         55.5,
 					"c":            float64(2),
 					"window_start": float64(1541152487605),
 					"window_end":   float64(1541152488605),
 				}}, {{
-					"m":            27.4,
+					"temp":         27.4,
 					"c":            float64(1),
 					"window_start": float64(1541152488252),
 					"window_end":   float64(1541152489252),
 				}}, {{
-					"m":            27.4,
+					"temp":         52.9,
 					"c":            float64(2),
 					"window_start": float64(1541152488305),
 					"window_end":   float64(1541152489305),
