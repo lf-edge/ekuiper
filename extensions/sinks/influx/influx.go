@@ -20,11 +20,9 @@ type influxSink struct {
 	tagkey       string
 	tagvalue     string
 	fields       string
+	cli          client.Client
+	fieldmap     map[string]interface{}
 }
-
-var cli client.Client
-
-var fieldmap map[string]interface{}
 
 type ListMap []map[string]interface{}
 
@@ -75,7 +73,7 @@ func (m *influxSink) Configure(props map[string]interface{}) error {
 func (m *influxSink) Open(ctx api.StreamContext) (err error) {
 	logger := ctx.GetLogger()
 	logger.Debug("Opening influx sink")
-	cli, err = client.NewHTTPClient(client.HTTPConfig{
+	m.cli, err = client.NewHTTPClient(client.HTTPConfig{
 		Addr:     m.addr,
 		Username: m.username,
 		Password: m.password,
@@ -106,18 +104,18 @@ func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 		}
 		tags := map[string]string{m.tagkey: m.tagvalue}
 		fields := strings.Split(m.fields, ",")
-		fieldmap = make(map[string]interface{}, 10)
+		m.fieldmap = make(map[string]interface{}, 10)
 		for _, field := range fields {
-			fieldmap[field] = out[0][field]
+			m.fieldmap[field] = out[0][field]
 		}
 
-		pt, err := client.NewPoint(m.measurement, tags, fieldmap, time.Now())
+		pt, err := client.NewPoint(m.measurement, tags, m.fieldmap, time.Now())
 		if err != nil {
 			logger.Debug(err)
 			return err
 		}
 		bp.AddPoint(pt)
-		err = cli.Write(bp)
+		err = m.cli.Write(bp)
 		if err != nil {
 			logger.Debug(err)
 			return err
@@ -130,7 +128,7 @@ func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 }
 
 func (m *influxSink) Close(ctx api.StreamContext) error {
-	cli.Close()
+	m.cli.Close()
 	return nil
 }
 
