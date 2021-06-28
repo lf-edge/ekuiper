@@ -26,8 +26,12 @@ func decorateStmt(s *xsql.SelectStatement, store kv.KeyValue) ([]*xsql.StreamStm
 		}
 	}
 
+	dsn := xsql.DefaultStream
+	if len(streamsFromStmt) == 1 {
+		dsn = streamStmts[0].Name
+	}
 	// [fieldName][streamsName][*aliasRef] if alias, with special key alias/default. Each key has exactly one value
-	fieldsMap := newFieldsMap(isSchemaless)
+	fieldsMap := newFieldsMap(isSchemaless, dsn)
 	if !isSchemaless {
 		for _, streamStmt := range streamStmts {
 			for _, field := range streamStmt.StreamFields {
@@ -149,19 +153,20 @@ func allAggregate(expr xsql.Expr) (r bool) {
 }
 
 type fieldsMap struct {
-	content      map[string]streamFieldStore
-	isSchemaless bool
+	content       map[string]streamFieldStore
+	isSchemaless  bool
+	defaultStream xsql.StreamName
 }
 
-func newFieldsMap(isSchemaless bool) *fieldsMap {
-	return &fieldsMap{content: make(map[string]streamFieldStore), isSchemaless: isSchemaless}
+func newFieldsMap(isSchemaless bool, defaultStream xsql.StreamName) *fieldsMap {
+	return &fieldsMap{content: make(map[string]streamFieldStore), isSchemaless: isSchemaless, defaultStream: defaultStream}
 }
 
 func (f *fieldsMap) reserve(fieldName string, streamName xsql.StreamName) {
 	if fm, ok := f.content[strings.ToLower(fieldName)]; ok {
 		fm.add(streamName)
 	} else {
-		fm := newStreamFieldStore(f.isSchemaless)
+		fm := newStreamFieldStore(f.isSchemaless, f.defaultStream)
 		fm.add(streamName)
 		f.content[strings.ToLower(fieldName)] = fm
 	}
@@ -171,7 +176,7 @@ func (f *fieldsMap) save(fieldName string, streamName xsql.StreamName, field *xs
 	fm, ok := f.content[strings.ToLower(fieldName)]
 	if !ok {
 		if streamName == xsql.AliasStream || f.isSchemaless {
-			fm = newStreamFieldStore(f.isSchemaless)
+			fm = newStreamFieldStore(f.isSchemaless, f.defaultStream)
 			f.content[strings.ToLower(fieldName)] = fm
 		} else {
 			return fmt.Errorf("unknown field %s", fieldName)
@@ -188,7 +193,7 @@ func (f *fieldsMap) bind(fr *xsql.FieldRef) error {
 	fm, ok := f.content[strings.ToLower(fr.Name)]
 	if !ok {
 		if f.isSchemaless && fr.Name != "" {
-			fm = newStreamFieldStore(f.isSchemaless)
+			fm = newStreamFieldStore(f.isSchemaless, f.defaultStream)
 			f.content[strings.ToLower(fr.Name)] = fm
 		} else {
 			return fmt.Errorf("unknown field %s", fr.Name)
@@ -217,11 +222,11 @@ type streamFieldStore interface {
 	bindRef(f *xsql.FieldRef) error
 }
 
-func newStreamFieldStore(isSchemaless bool) streamFieldStore {
+func newStreamFieldStore(isSchemaless bool, defaultStream xsql.StreamName) streamFieldStore {
 	if !isSchemaless {
 		return &streamFieldMap{content: make(map[xsql.StreamName]*xsql.AliasRef)}
 	} else {
-		return &streamFieldMapSchemaless{content: make(map[xsql.StreamName]*xsql.AliasRef)}
+		return &streamFieldMapSchemaless{content: make(map[xsql.StreamName]*xsql.AliasRef), defaultStream: defaultStream}
 	}
 }
 
@@ -302,7 +307,8 @@ func (s *streamFieldMap) bindRef(fr *xsql.FieldRef) error {
 }
 
 type streamFieldMapSchemaless struct {
-	content map[xsql.StreamName]*xsql.AliasRef
+	content       map[xsql.StreamName]*xsql.AliasRef
+	defaultStream xsql.StreamName
 }
 
 // add this should not be called for schemaless
@@ -343,8 +349,14 @@ func (s *streamFieldMapSchemaless) ref(k xsql.StreamName, v *xsql.AliasRef) erro
 
 func (s *streamFieldMapSchemaless) bindRef(fr *xsql.FieldRef) error {
 	l := len(s.content)
-	if fr.StreamName == "" {
-		fr.StreamName = xsql.DefaultStream
+	if fr.StreamName == "" || fr.StreamName == xsql.DefaultStream {
+		if l == 1 {
+			for sk := range s.content {
+				fr.StreamName = sk
+			}
+		} else {
+			fr.StreamName = s.defaultStream
+		}
 	}
 	k := fr.StreamName
 	if k == xsql.DefaultStream {
