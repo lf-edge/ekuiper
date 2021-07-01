@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/pkg/api"
+	"github.com/emqx/kuiper/pkg/message"
 	zmq "github.com/pebbe/zmq4"
 )
 
@@ -25,7 +25,7 @@ func (s *zmqSource) Configure(topic string, props map[string]interface{}) error 
 	s.srv = srv.(string)
 	f, ok := props["format"]
 	if !ok {
-		s.messageFormat = common.FORMAT_JSON
+		s.messageFormat = message.FormatJson
 	} else {
 		s.messageFormat = f.(string)
 	}
@@ -66,7 +66,7 @@ func (s *zmqSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			if s.topic != "" {
 				meta["topic"] = string(msgs[0])
 			}
-			result, e := common.MessageDecode(m, s.messageFormat)
+			result, e := message.Decode(m, s.messageFormat)
 			if e != nil {
 				logger.Errorf("Invalid data format, cannot decode %v to %s format with error %s", m, s.messageFormat, e)
 			} else {

@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/xsql"
-	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/pkg/api"
+	"github.com/emqx/kuiper/pkg/ast"
 	"strings"
 )
 
@@ -22,8 +22,8 @@ func (f *accumulateWordCountFunc) Validate(args []interface{}) error {
 	if len(args) != 2 {
 		return fmt.Errorf("wordCount function only supports 2 parameter but got %d", len(args))
 	}
-	if arg1, ok := args[1].(xsql.Expr); ok {
-		if _, ok := arg1.(*xsql.StringLiteral); !ok {
+	if arg1, ok := args[1].(ast.Expr); ok {
+		if _, ok := arg1.(*ast.StringLiteral); !ok {
 			return fmt.Errorf("the second parameter of wordCount function must be a string literal")
 		}
 	}

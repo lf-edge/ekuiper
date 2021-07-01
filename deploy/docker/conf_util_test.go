@@ -8,28 +8,28 @@ import (
 
 func TestHandle(t *testing.T) {
 	var tests = []struct {
-		config map[interface{}]interface{}
+		config map[string]interface{}
 		skeys  []string
 		val    string
-		exp    map[interface{}]interface{}
+		exp    map[string]interface{}
 	}{
 		{
-			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			config: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "tcp",
 					"port":     5563,
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId": "client1",
 					},
 				},
 			},
 			skeys: []string{"default", "protocol"},
 			val:   "ssl",
-			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			exp: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "ssl",
 					"port":     5563,
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId": "client1",
 					},
 				},
@@ -37,22 +37,22 @@ func TestHandle(t *testing.T) {
 		},
 
 		{
-			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			config: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "tcp",
 					"port":     5563,
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId": "client1",
 					},
 				},
 			},
 			skeys: []string{"default", "optional", "CLIENTID"},
 			val:   "client2",
-			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			exp: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "tcp",
 					"port":     5563,
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId": "client2",
 					},
 				},
@@ -60,22 +60,22 @@ func TestHandle(t *testing.T) {
 		},
 
 		{
-			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			config: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "tcp",
 					"port":     5563,
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId": "client1",
 					},
 				},
 			},
 			skeys: []string{"default", "optional", "KEEPALIVE"},
 			val:   "6000",
-			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			exp: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "tcp",
 					"port":     5563,
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId":  "client1",
 						"KeepAlive": int64(6000),
 					},
@@ -84,22 +84,22 @@ func TestHandle(t *testing.T) {
 		},
 
 		{
-			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			config: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "tcp",
 					"port":     5563,
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId": "client1",
 					},
 				},
 			},
 			skeys: []string{"default", "optional", "RETAINED"},
 			val:   "true",
-			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			exp: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "tcp",
 					"port":     5563,
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId": "client1",
 						"Retained": true,
 					},
@@ -108,22 +108,22 @@ func TestHandle(t *testing.T) {
 		},
 
 		{
-			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			config: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "tcp",
 					"port":     5563,
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId": "client1",
 					},
 				},
 			},
 			skeys: []string{"default", "optional", "test"},
 			val:   "3.14",
-			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			exp: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "tcp",
 					"port":     5563,
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId": "client1",
 						"test":     3.14,
 					},
@@ -132,26 +132,26 @@ func TestHandle(t *testing.T) {
 		},
 
 		{
-			config: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			config: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "tcp",
 					"port":     5563,
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId": "client1",
 					},
 				},
 			},
 			skeys: []string{"application_conf", "test"},
 			val:   "ssl",
-			exp: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			exp: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "tcp",
 					"port":     5563,
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId": "client1",
 					},
 				},
-				"application_conf": map[interface{}]interface{}{
+				"application_conf": map[string]interface{}{
 					"test": "ssl",
 				},
 			},
@@ -171,7 +171,7 @@ func TestProcessEnv(t *testing.T) {
 	var tests = []struct {
 		vars []string
 		file string
-		expt map[interface{}]interface{}
+		expt map[string]interface{}
 		out  string
 	}{
 		{
@@ -182,23 +182,23 @@ func TestProcessEnv(t *testing.T) {
 				"EDGEX__APPLICATION_CONF__PROTOCOL=ssl",
 			},
 			file: "edgex",
-			expt: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			expt: map[string]interface{}{
+				"default": map[string]interface{}{
 					"protocol": "tcp",
 					"type":     "zmq",
-					"optional": map[interface{}]interface{}{
+					"optional": map[string]interface{}{
 						"ClientId": "clientid_0000",
 						"Password": "should_not_print",
 					},
 				},
-				"application_conf": map[interface{}]interface{}{
+				"application_conf": map[string]interface{}{
 					"protocol": "ssl",
 				},
 			},
-			out: "application_conf:\n  protocol: ssl\ndefault:\n  optional:\n    ClientId: clientid_0000\n    Password: '*'\n  protocol: tcp\n  type: zmq\n",
+			out: "application_conf:\n    protocol: ssl\ndefault:\n    optional:\n        ClientId: clientid_0000\n        Password: '*'\n    protocol: tcp\n    type: zmq\n",
 		},
 	}
-	files := make(map[string]map[interface{}]interface{})
+	files := make(map[string]map[string]interface{})
 	for i, tt := range tests {
 		ProcessEnv(files, tt.vars)
 		if !reflect.DeepEqual(tt.expt, files[tt.file]) {
@@ -220,7 +220,7 @@ func TestProcessEnvArrayValue(t *testing.T) {
 	var tests = []struct {
 		vars []string
 		file string
-		expt map[interface{}]interface{}
+		expt map[string]interface{}
 	}{
 		{
 			vars: []string{
@@ -228,15 +228,15 @@ func TestProcessEnvArrayValue(t *testing.T) {
 				"MQTT_SOURCE__DEFAULT__TEST=[1,2]",
 			},
 			file: "mqtt_source",
-			expt: map[interface{}]interface{}{
-				"default": map[interface{}]interface{}{
+			expt: map[string]interface{}{
+				"default": map[string]interface{}{
 					"servers": []interface{}{"tcp://10.211.55.12:1883", "tcp://10.211.55.13:1883"},
 					"test":    []interface{}{int64(1), int64(2)},
 				},
 			},
 		},
 	}
-	files := make(map[string]map[interface{}]interface{})
+	files := make(map[string]map[string]interface{})
 	for i, tt := range tests {
 		ProcessEnv(files, tt.vars)
 		if !reflect.DeepEqual(tt.expt, files[tt.file]) {

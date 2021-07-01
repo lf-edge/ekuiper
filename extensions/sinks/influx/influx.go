@@ -4,7 +4,7 @@ package main
 
 import (
 	"encoding/json"
-	api "github.com/emqx/kuiper/xstream/api"
+	api "github.com/emqx/kuiper/pkg/api"
 	_ "github.com/influxdata/influxdb1-client/v2"
 	client "github.com/influxdata/influxdb1-client/v2"
 	"strings"

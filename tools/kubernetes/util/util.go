@@ -3,13 +3,12 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	kconf "github.com/emqx/kuiper/tools/kubernetes/conf"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 	"time"
-
-	"github.com/emqx/kuiper/tools/kubernetes/common"
 )
 
 type (
@@ -25,37 +24,37 @@ type (
 	}
 )
 
-func (this *command) getLog() string {
-	return this.strLog
+func (c *command) getLog() string {
+	return c.strLog
 }
 
-func (this *command) call(host string) bool {
+func (c *command) call(host string) bool {
 	var resp []byte
 	var err error
-	head := host + this.Url
-	body, _ := json.Marshal(this.Data)
-	switch this.Method {
+	head := host + c.Url
+	body, _ := json.Marshal(c.Data)
+	switch c.Method {
 	case "post", "POST":
-		resp, err = common.Post(head, string(body))
+		resp, err = kconf.Post(head, string(body))
 		break
 	case "get", "GET":
-		resp, err = common.Get(head)
+		resp, err = kconf.Get(head)
 		break
 	case "delete", "DELETE":
-		resp, err = common.Delete(head)
+		resp, err = kconf.Delete(head)
 		break
 	case "put", "PUT":
-		resp, err = common.Put(head, string(body))
+		resp, err = kconf.Put(head, string(body))
 		break
 	default:
-		this.strLog = fmt.Sprintf("no such method : %s", this.Method)
+		c.strLog = fmt.Sprintf("no such method : %s", c.Method)
 		return false
 	}
 	if nil == err {
-		this.strLog = fmt.Sprintf("%s:%s resp:%s", head, this.Method, string(resp))
+		c.strLog = fmt.Sprintf("%s:%s resp:%s", head, c.Method, string(resp))
 		return true
 	}
-	this.strLog = fmt.Sprintf("%s:%s resp:%s err:%v", head, this.Method, string(resp), err)
+	c.strLog = fmt.Sprintf("%s:%s resp:%s err:%v", head, c.Method, string(resp), err)
 	return false
 }
 
@@ -72,66 +71,66 @@ type (
 	}
 )
 
-func (this *historyFile) setName(name string) {
-	this.Name = name
+func (f *historyFile) setName(name string) {
+	f.Name = name
 }
-func (this *historyFile) setLoadTime(loadTime int64) {
-	this.LoadTime = loadTime
+func (f *historyFile) setLoadTime(loadTime int64) {
+	f.LoadTime = loadTime
 }
 
-func (this *server) getLogs() []string {
-	return this.logs
+func (s *server) getLogs() []string {
+	return s.logs
 }
-func (this *server) printLogs() {
-	for _, v := range this.logs {
-		common.Log.Info(v)
+func (s *server) printLogs() {
+	for _, v := range s.logs {
+		kconf.Log.Info(v)
 	}
-	this.logs = this.logs[:0]
+	s.logs = s.logs[:0]
 }
 
-func (this *server) loadHistoryFile() bool {
+func (s *server) loadHistoryFile() bool {
 	var sli []*historyFile
-	if err := common.LoadFileUnmarshal(this.fileHistory, &sli); nil != err {
-		common.Log.Info(err)
+	if err := kconf.LoadFileUnmarshal(s.fileHistory, &sli); nil != err {
+		kconf.Log.Info(err)
 		return false
 	}
 	for _, v := range sli {
-		this.mapHistoryFile[v.Name] = v
+		s.mapHistoryFile[v.Name] = v
 	}
 	return true
 }
 
-func (this *server) init() bool {
-	this.mapHistoryFile = make(map[string]*historyFile)
-	conf := common.GetConf()
+func (s *server) init() bool {
+	s.mapHistoryFile = make(map[string]*historyFile)
+	conf := kconf.GetConf()
 	dirCommand := conf.GetCommandDir()
-	this.dirCommand = dirCommand
-	this.fileHistory = path.Join(path.Dir(dirCommand), ".history")
-	if _, err := os.Stat(this.fileHistory); os.IsNotExist(err) {
-		if _, err = os.Create(this.fileHistory); nil != err {
-			common.Log.Info(err)
+	s.dirCommand = dirCommand
+	s.fileHistory = path.Join(path.Dir(dirCommand), ".history")
+	if _, err := os.Stat(s.fileHistory); os.IsNotExist(err) {
+		if _, err = os.Create(s.fileHistory); nil != err {
+			kconf.Log.Info(err)
 			return false
 		}
 		return true
 	}
-	return this.loadHistoryFile()
+	return s.loadHistoryFile()
 }
 
-func (this *server) saveHistoryFile() bool {
+func (s *server) saveHistoryFile() bool {
 	var sli []*historyFile
-	for _, v := range this.mapHistoryFile {
+	for _, v := range s.mapHistoryFile {
 		sli = append(sli, v)
 	}
-	err := common.SaveFileMarshal(this.fileHistory, sli)
+	err := kconf.SaveFileMarshal(s.fileHistory, sli)
 	if nil != err {
-		common.Log.Info(err)
+		kconf.Log.Info(err)
 		return false
 	}
 	return true
 }
 
-func (this *server) isUpdate(info os.FileInfo) bool {
-	v := this.mapHistoryFile[info.Name()]
+func (s *server) isUpdate(info os.FileInfo) bool {
+	v := s.mapHistoryFile[info.Name()]
 	if nil == v {
 		return true
 	}
@@ -142,68 +141,68 @@ func (this *server) isUpdate(info os.FileInfo) bool {
 	return false
 }
 
-func (this *server) processDir() bool {
-	infos, err := ioutil.ReadDir(this.dirCommand)
+func (s *server) processDir() bool {
+	infos, err := ioutil.ReadDir(s.dirCommand)
 	if nil != err {
-		this.logs = append(this.logs, fmt.Sprintf("read command dir:%v", err))
+		s.logs = append(s.logs, fmt.Sprintf("read command dir:%v", err))
 		return false
 	}
-	conf := common.GetConf()
+	conf := kconf.GetConf()
 	host := fmt.Sprintf(`http://%s:%d`, conf.GetIp(), conf.GetPort())
 	for _, info := range infos {
 		if !strings.HasSuffix(info.Name(), ".json") {
 			continue
 		}
-		if !this.isUpdate(info) {
+		if !s.isUpdate(info) {
 			continue
 		}
 
 		hisFile := new(historyFile)
 		hisFile.setName(info.Name())
 		hisFile.setLoadTime(time.Now().Unix())
-		this.mapHistoryFile[info.Name()] = hisFile
+		s.mapHistoryFile[info.Name()] = hisFile
 
-		filePath := path.Join(this.dirCommand, info.Name())
+		filePath := path.Join(s.dirCommand, info.Name())
 		file := new(fileData)
-		err = common.LoadFileUnmarshal(filePath, file)
+		err = kconf.LoadFileUnmarshal(filePath, file)
 		if nil != err {
-			this.logs = append(this.logs, fmt.Sprintf("load command file:%v", err))
+			s.logs = append(s.logs, fmt.Sprintf("load command file:%v", err))
 			return false
 		}
 
 		for _, command := range file.Commands {
 			flag := command.call(host)
-			this.logs = append(this.logs, command.getLog())
+			s.logs = append(s.logs, command.getLog())
 			if !flag {
 				break
 			}
 		}
 	}
-	this.saveHistoryFile()
+	s.saveHistoryFile()
 	return true
 }
 
-func (this *server) watchFolders() {
-	conf := common.GetConf()
-	this.processDir()
-	this.printLogs()
+func (s *server) watchFolders() {
+	conf := kconf.GetConf()
+	s.processDir()
+	s.printLogs()
 	chTime := time.Tick(time.Second * time.Duration(conf.GetIntervalTime()))
 	for {
 		select {
 		case <-chTime:
-			this.processDir()
-			this.printLogs()
+			s.processDir()
+			s.printLogs()
 		}
 	}
 }
 
 func Process() {
 	if len(os.Args) != 2 {
-		common.Log.Fatal("Missing configuration file")
+		kconf.Log.Fatal("Missing configuration file")
 		return
 	}
 
-	conf := common.GetConf()
+	conf := kconf.GetConf()
 	if !conf.Init() {
 		return
 	}
