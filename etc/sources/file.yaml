@@ -7,4 +7,4 @@ default:
   interval: 0
 
 test:
-  path: fvt_scripts
+  path: test

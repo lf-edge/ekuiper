@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/pkg/api"
+	"github.com/emqx/kuiper/pkg/cast"
+	"github.com/emqx/kuiper/pkg/message"
 	"math/rand"
 	"strings"
 	"time"
@@ -30,7 +31,7 @@ type randomSource struct {
 
 func (s *randomSource) Configure(topic string, props map[string]interface{}) error {
 	cfg := &randomSourceConfig{}
-	err := common.MapToStruct(props, cfg)
+	err := cast.MapToStruct(props, cfg)
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
@@ -43,7 +44,7 @@ func (s *randomSource) Configure(topic string, props map[string]interface{}) err
 	if cfg.Interval <= 0 {
 		return fmt.Errorf("source `random` property `seed` must be a positive integer but got %d", cfg.Seed)
 	}
-	if strings.ToLower(cfg.Format) != common.FORMAT_JSON {
+	if strings.ToLower(cfg.Format) != message.FormatJson {
 		return fmt.Errorf("random source only supports `json` format")
 	}
 	s.conf = cfg
@@ -93,7 +94,7 @@ func randomize(p map[string]interface{}, seed int) map[string]interface{} {
 	r := make(map[string]interface{})
 	for k, v := range p {
 		//TODO other data types
-		vi, err := common.ToInt(v, common.STRICT)
+		vi, err := cast.ToInt(v, cast.STRICT)
 		if err != nil {
 			break
 		}

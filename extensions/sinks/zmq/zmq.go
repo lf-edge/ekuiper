@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/pkg/api"
 	zmq "github.com/pebbe/zmq4"
 )
 

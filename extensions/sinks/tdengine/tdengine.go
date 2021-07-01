@@ -6,8 +6,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/xstream/api"
+	"github.com/emqx/kuiper/internal/conf"
+	"github.com/emqx/kuiper/pkg/api"
+	"github.com/emqx/kuiper/pkg/cast"
 	_ "github.com/taosdata/driver-go/taosSql"
 	"reflect"
 	"strings"
@@ -102,21 +103,21 @@ func (this *taosConfig) buildSql(ctx api.StreamContext, mapData map[string]inter
 
 func (m *taosSink) Configure(props map[string]interface{}) error {
 	cfg := &taosConfig{}
-	err := common.MapToStruct(props, cfg)
+	err := cast.MapToStruct(props, cfg)
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
 	if cfg.Ip == "" {
 		cfg.Ip = "127.0.0.1"
-		common.Log.Infof("Not find IP conf, will use default value '127.0.0.1'.")
+		conf.Log.Infof("Not find IP conf, will use default value '127.0.0.1'.")
 	}
 	if cfg.User == "" {
 		cfg.User = "root"
-		common.Log.Infof("Not find user conf, will use default value 'root'.")
+		conf.Log.Infof("Not find user conf, will use default value 'root'.")
 	}
 	if cfg.Password == "" {
 		cfg.Password = "taosdata"
-		common.Log.Infof("Not find password conf, will use default value 'taosdata'.")
+		conf.Log.Infof("Not find password conf, will use default value 'taosdata'.")
 	}
 	if cfg.Database == "" {
 		return fmt.Errorf("property database is required")

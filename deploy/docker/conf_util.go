@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-yaml/yaml"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -59,7 +59,7 @@ var file_keys_map = map[string]map[string]string{
 
 func main() {
 	fmt.Println(fileMap["edgex"])
-	files := make(map[string]map[interface{}]interface{})
+	files := make(map[string]map[string]interface{})
 	ProcessEnv(files, os.Environ())
 	for f, v := range files {
 		if bs, err := yaml.Marshal(v); err != nil {
@@ -78,14 +78,13 @@ func main() {
 	}
 }
 
-func printable(m map[interface{}]interface{}) map[interface{}]interface{} {
-	printableMap := make(map[interface{}]interface{})
+func printable(m map[string]interface{}) map[string]interface{} {
+	printableMap := make(map[string]interface{})
 	for k, v := range m {
-		ks, ok := k.(string)
-		if ok && strings.ToLower(ks) == "password" {
+		if strings.EqualFold(k, "password") {
 			printableMap[k] = "*"
 		} else {
-			if vm, ok := v.(map[interface{}]interface{}); ok {
+			if vm, ok := v.(map[string]interface{}); ok {
 				printableMap[k] = printable(vm)
 			} else {
 				printableMap[k] = v
@@ -95,13 +94,13 @@ func printable(m map[interface{}]interface{}) map[interface{}]interface{} {
 	return printableMap
 }
 
-func toPrintableString(m map[interface{}]interface{}) string {
+func toPrintableString(m map[string]interface{}) string {
 	p := printable(m)
 	b, _ := yaml.Marshal(p)
 	return string(b)
 }
 
-func ProcessEnv(files map[string]map[interface{}]interface{}, vars []string) {
+func ProcessEnv(files map[string]map[string]interface{}, vars []string) {
 	for _, e := range vars {
 		pair := strings.SplitN(e, "=", 2)
 		if len(pair) != 2 {
@@ -110,7 +109,7 @@ func ProcessEnv(files map[string]map[interface{}]interface{}, vars []string) {
 		}
 
 		valid := false
-		for k, _ := range fileMap {
+		for k := range fileMap {
 			if strings.HasPrefix(pair[0], strings.ToUpper(k)) {
 				valid = true
 				break
@@ -137,7 +136,7 @@ func ProcessEnv(files map[string]map[interface{}]interface{}, vars []string) {
 				if data, err := ioutil.ReadFile(fileMap[k]); err != nil {
 					fmt.Printf("%s\n", err)
 				} else {
-					m := make(map[interface{}]interface{})
+					m := make(map[string]interface{})
 					err = yaml.Unmarshal(data, &m)
 					if err != nil {
 						fmt.Println(err)
@@ -153,19 +152,19 @@ func ProcessEnv(files map[string]map[interface{}]interface{}, vars []string) {
 	}
 }
 
-func Handle(file string, conf map[interface{}]interface{}, skeys []string, val string) {
+func Handle(file string, conf map[string]interface{}, skeys []string, val string) {
 	key := getKey(file, skeys[0])
 	if len(skeys) == 1 {
 		conf[key] = getValueType(val)
 	} else if len(skeys) >= 2 {
 		if v, ok := conf[key]; ok {
-			if v1, ok1 := v.(map[interface{}]interface{}); ok1 {
+			if v1, ok1 := v.(map[string]interface{}); ok1 {
 				Handle(file, v1, skeys[1:], val)
 			} else {
 				fmt.Printf("Not expected map: %v\n", v)
 			}
 		} else {
-			v1 := make(map[interface{}]interface{})
+			v1 := make(map[string]interface{})
 			conf[key] = v1
 			Handle(file, v1, skeys[1:], val)
 		}

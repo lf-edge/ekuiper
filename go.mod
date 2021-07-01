@@ -10,7 +10,6 @@ require (
 	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.1
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/gdexlab/go-render v1.0.1
-	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/golang/protobuf v1.5.0
 	github.com/google/uuid v1.2.0
@@ -40,6 +39,7 @@ require (
 	google.golang.org/grpc v1.36.1
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/ini.v1 v1.62.0
+	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 )
 
 go 1.16
