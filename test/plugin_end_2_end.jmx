@@ -247,7 +247,7 @@
           <SystemSampler guiclass="SystemSamplerGui" testclass="SystemSampler" testname="Send_Data" enabled="true">
             <boolProp name="SystemSampler.checkReturnCode">false</boolProp>
             <stringProp name="SystemSampler.expectedReturnCode">0</stringProp>
-            <stringProp name="SystemSampler.command">fvt_scripts/plugins/pub/zmq_pub</stringProp>
+            <stringProp name="SystemSampler.command">test/plugins/pub/zmq_pub</stringProp>
             <elementProp name="SystemSampler.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments"/>
             </elementProp>
@@ -471,7 +471,7 @@
           <elementProp name="SystemSampler.environment" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
-          <stringProp name="SystemSampler.directory">${__property(fvt,,)}/fvt_scripts/plugins/service/</stringProp>
+          <stringProp name="SystemSampler.directory">${__property(fvt,,)}/test/plugins/service/</stringProp>
         </SystemSampler>
         <hashTree/>
       </hashTree>

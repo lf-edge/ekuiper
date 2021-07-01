@@ -24,10 +24,10 @@ else
   done
 fi
 
-fvt_scripts/start_kuiper.sh
+test/start_kuiper.sh
 
-chmod +x fvt_scripts/build_edgex_mock.sh
-fvt_scripts/build_edgex_mock.sh
+chmod +x test/build_edgex_mock.sh
+test/build_edgex_mock.sh
 
 pids=`ps aux | grep http_server | grep "./" | awk '{printf $2 " "}'`
 if [ "$pids" = "" ] ; then
@@ -39,4 +39,4 @@ else
   done
 fi
 
-fvt_scripts/prepare_plugins.sh
+test/prepare_plugins.sh

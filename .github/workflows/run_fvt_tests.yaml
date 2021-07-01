@@ -46,11 +46,11 @@ jobs:
             go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functions/Image.so extensions/functions/image/*.go
         - name: run edgex && emqx && kuiper
           run: |
-            sudo ./fvt_scripts/setup_env.sh
+            sudo ./test/setup_env.sh
             ln -s _build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log kuiper_logs
         - name: run fvt tests
           timeout-minutes: 8
-          run: ./fvt_scripts/run_jmeter.sh with_edgex=true
+          run: ./test/run_jmeter.sh with_edgex=true
         - uses: actions/upload-artifact@v1
           if: always()
           with:
@@ -179,7 +179,7 @@ jobs:
         run: |
           emqx_address=$(kubectl get svc --namespace default emqx -o jsonpath="{.spec.clusterIP}")
           kuiper_address=$(kubectl get svc --namespace default kuiper -o jsonpath="{.spec.clusterIP}")
-          /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t fvt_scripts/select_aggr_rule.jmx -Dsrv=${kuiper_address} -Dmqtt_srv=${emqx_address} -l jmeter_logs/select_aggr_rule.jtl -j jmeter_logs/select_aggr_rule.log
+          /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/select_aggr_rule.jmx -Dsrv=${kuiper_address} -Dmqtt_srv=${emqx_address} -l jmeter_logs/select_aggr_rule.jtl -j jmeter_logs/select_aggr_rule.log
           mkdir -p kuiper_logs
           kubectl exec kuiper-0 -- cat /kuiper/log/stream.log > kuiper_logs/stream.log
       - uses: actions/upload-artifact@v1

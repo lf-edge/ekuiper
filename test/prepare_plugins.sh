@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-go build -o fvt_scripts/plugins/pub/zmq_pub fvt_scripts/plugins/pub/zmq_pub.go
-chmod +x fvt_scripts/plugins/pub/zmq_pub
+go build -o test/plugins/pub/zmq_pub test/plugins/pub/zmq_pub.go
+chmod +x test/plugins/pub/zmq_pub
 
-go build -o fvt_scripts/plugins/service/http_server fvt_scripts/plugins/service/server.go
-chmod +x fvt_scripts/plugins/service/http_server
+go build -o test/plugins/service/http_server test/plugins/service/server.go
+chmod +x test/plugins/service/http_server
 
-cd fvt_scripts
+cd test
 
 rm -rf zmq.* Zmq.so
 
