@@ -57,7 +57,7 @@ eKuiper 插件有三种类型，源代码可放入对应的目录中。插件开
 - 新建名为 samplePlugin 的插件项目，采用上文的目录结构
 - 在 sinks 目录下，新建 mysql.go 文件
 - 编辑 mysql.go 文件以实现插件
-    -  实现 [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go)接口
+    -  实现 [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go)接口
     - 导出 Symbol：Mysql。它既可以是一个“构造函数”，也可以是结构体本身。当导出构造函数时，使用该插件的规则初始化时会用此函数创建该插件的实例；当导出为结构体时，所有使用该插件的规则将公用该插件同一个单例。如果插件有状态，例如数据库连接，建议使用第一种方法。
 - 编辑 go.mod, 添加 mysql 驱动模块
 

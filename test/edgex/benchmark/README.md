@@ -2,7 +2,7 @@
 
 - Build the ``pub.go``, this is used for simulating the data.
     ```shell
-    # go build -o fvt_scripts/edgex/benchmark/pub fvt_scripts/edgex/benchmark/pub.go
+    # go build -o test/edgex/benchmark/pub test/edgex/benchmark/pub.go
     ```
 
 - Update edgex configuration. Update ``Server`` configuration to the address where you run ``pub`` in the 1st step.  

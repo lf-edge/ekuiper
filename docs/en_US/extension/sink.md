@@ -6,7 +6,7 @@ Sink feed data from eKuiper into external systems. eKuiper has built-in sink sup
 
 ### Develop a sink
 
-To develop a sink for eKuiper is to implement [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) interface and export it as a golang plugin.
+To develop a sink for eKuiper is to implement [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface and export it as a golang plugin.
 
 Before starting the development, you must [setup the environment for golang plugin](overview.md#setup-the-plugin-developing-environment). 
 
@@ -43,7 +43,7 @@ func MySink() api.Sink {
 }
 ```
 
-The [Memory Sink](https://github.com/lf-edge/ekuiper/blob/master/plugins/sinks/memory/memory.go) is a good example.
+The [Memory Sink](https://github.com/lf-edge/ekuiper/blob/master/extensions/sinks/memory/memory.go) is a good example.
 
 ### Package the sink
 Build the implemented sink as a go plugin and make sure the output so file resides in the plugins/sinks folder.

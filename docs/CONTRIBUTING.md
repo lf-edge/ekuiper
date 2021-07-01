@@ -24,7 +24,7 @@ $ git commit -m "A brief summary of the commit
 The eKuiper project leverages Github actions to run unit test & FVT (functional verification test), so please take a look at the PR status result, and make sure that all of testcases run successfully.
 
 - Write Golang unit testcases to test your code if necessary.
-- A set of [FVT testcases](../fvt_scripts/README.md) will be triggered with any PR submission, so please make sure that these testcases can be run successfully.
+- A set of [FVT testcases](../test/README.md) will be triggered with any PR submission, so please make sure that these testcases can be run successfully.
 
 ## Code conventions
 

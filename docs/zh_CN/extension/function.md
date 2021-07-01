@@ -6,11 +6,11 @@
 
 ### 开发一个定制函数
 
-为 eKuiper 开发函数的过程，就是实现 [api.Function](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) 接口并将其导出为 golang 插件。
+为 eKuiper 开发函数的过程，就是实现 [api.Function](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 接口并将其导出为 golang 插件。
 
 在开始开发之前，您必须为 [golang 插件设置环境](overview.md#setup-the-plugin-developing-environment)。
 
-为了开发函数，首先要实现 _Validate_ 方法。 在 SQL 验证期间将调用此方法。 在此方法中，将传递 [xsql.Expr](https://github.com/lf-edge/ekuiper/blob/master/xsql/ast.go) 的切片作为参数，该参数包含运行时该函数的参数。 开发人员可以对其进行验证，以检查参数计数和类型等。如果验证成功，则返回 nil。 否则，返回一个错误对象。
+为了开发函数，首先要实现 _Validate_ 方法。 在 SQL 验证期间将调用此方法。 在此方法中，将传递 [xsql.Expr](https://github.com/lf-edge/ekuiper/blob/master/pkg/ast/expr.go) 的切片作为参数，该参数包含运行时该函数的参数。 开发人员可以对其进行验证，以检查参数计数和类型等。如果验证成功，则返回 nil。 否则，返回一个错误对象。
 
 ```go
 //The argument is a list of xsql.Expr
@@ -36,11 +36,11 @@ Exec(args []interface{}) (interface{}, bool)
 var MyFunction myFunction
 ```
 
-[Echo Function](https://github.com/lf-edge/ekuiper/blob/master/plugins/functions/echo/echo.go) 是一个很好的示例。
+[Echo Function](https://github.com/lf-edge/ekuiper/blob/master/extensions/functions/echo/echo.go) 是一个很好的示例。
 
 ### 导出多个函数
 
-开发者可在一个函数插件中导出多个函数。每个函数均需实现 [api.Function](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) 接口，正如 [开发一个定制函数](#develop-a-customized-function) 所描述的那样。需要确保所有函数都导出了，如下所示：
+开发者可在一个函数插件中导出多个函数。每个函数均需实现 [api.Function](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 接口，正如 [开发一个定制函数](#develop-a-customized-function) 所描述的那样。需要确保所有函数都导出了，如下所示：
 
 ```go
 var(
