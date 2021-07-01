@@ -70,9 +70,9 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   The script need to be told about the location of eKuiper install directory, so script knows where to invoke eKuiper CLI.
   
   - Specify the ``base`` property in the JMeter command line, the ``base`` is where eKuiper installs. 
-  - Specify the ``fvt`` property in the JMeter command line, the ``fvt`` is where you develop eKuiper, script will read rule file  ``fvt_scripts/rule1.txt`` from the location.
+  - Specify the ``fvt`` property in the JMeter command line, the ``fvt`` is where you develop eKuiper, script will read rule file  ``test/rule1.txt`` from the location.
   
-  - Modify ``mqtt.server`` to your MQTT broker address in file ``fvt_scripts/rule1.txt``.
+  - Modify ``mqtt.server`` to your MQTT broker address in file ``test/rule1.txt``.
   
   - So below is command for starting JMeter.
   
@@ -140,10 +140,10 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   - An EdgeX message bus publish tool should be compiled and run during running test.
 
     ```shell
-    # go build -o fvt_scripts/edgex/pub fvt_scripts/edgex/pub.go
+    # go build -o test/edgex/pub test/edgex/pub.go
     ```
 
-  - Run the JMeter with following command, and specify the ``fvt`` property in the JMeter command line, the ``fvt`` is where you develop eKuiper, script will search ``fvt_scripts/edgex/pub`` from the location.
+  - Run the JMeter with following command, and specify the ``fvt`` property in the JMeter command line, the ``fvt`` is where you develop eKuiper, script will search ``test/edgex/pub`` from the location.
 
     ```shell
     bin/jmeter.sh -Dfvt="/Users/rockyjin/Downloads/workspace/edge/src/ekuiper"
@@ -153,7 +153,7 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   
   - Another JMeter mock-up user subscribes MQTT result topic, and assert message number and contents.
   
-- [Multiple EdgeX source configurations](fvt_scripts/select_edgex_another_bus_rule.jmx)
+- [Multiple EdgeX source configurations](test/select_edgex_another_bus_rule.jmx)
 
   The test script is used for testing specifying another EdgeX source configurations in eKuiper.
 
@@ -182,7 +182,7 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   As with the previous 2 testcases, besides to prepare ``pub`` application, another ``sub`` application should also be prepared.
 
   ```shell
-  # go build -o fvt_scripts/edgex/sub/sub fvt_scripts/edgex/sub/sub.go 
+  # go build -o test/edgex/sub/sub test/edgex/sub/sub.go 
   ```
 
 - [EdgeX array data type](edgex_array_rule.jmx)
@@ -194,13 +194,13 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
 - [An end to end plugin test](plugin_end_2_end.jmx)
   The script is an end-2-end plugin test. It requires a mock http server, and also a plugin.
     ```shell
-    # go build -o fvt_scripts/plugins/service/http_server fvt_scripts/plugins/service/server.go 
+    # go build -o test/plugins/service/http_server test/plugins/service/server.go 
     ```
 
 - [Pull HTTP test](http_pull_rule.jmx)
   
-  The test script verifies HTTP pull source. It sends request to a [server](fvt_scripts/plugins/service/server.go). The script set incremental to true, so it will compare with last result; If response of two requests are the same, then will skip sending out the result.
-  This script also requires to run [server](fvt_scripts/plugins/service/server.go), please refer to last testcase for how to compile and run.
+  The test script verifies HTTP pull source. It sends request to a [server](test/plugins/service/server.go). The script set incremental to true, so it will compare with last result; If response of two requests are the same, then will skip sending out the result.
+  This script also requires to run [server](test/plugins/service/server.go), please refer to last testcase for how to compile and run.
   
 - [Binary data type test](http_pull_rule.jmx)
   

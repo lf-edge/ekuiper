@@ -70,7 +70,7 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
 
 ### EdgeX throughput test
 
-- A [Go application](https://github.com/lf-edge/ekuiper/tree/master/fvt_scripts/edgex/benchmark/pub.go) is wrote to send data to ZeroMQ message bus, the data is as following.
+- A [Go application](https://github.com/lf-edge/ekuiper/tree/master/test/edgex/benchmark/pub.go) is wrote to send data to ZeroMQ message bus, the data is as following.
 
   ```
   {

@@ -6,11 +6,11 @@ In the eKuiper SQL syntax, [many built-in functions](../sqls/built-in_functions.
 
 ### Develop a customized function
 
-To develop a function for eKuiper is to implement [api.Function](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) interface and export it as a golang plugin.
+To develop a function for eKuiper is to implement [api.Function](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface and export it as a golang plugin.
 
 Before starting the development, you must [setup the environment for golang plugin](overview.md#setup-the-plugin-developing-environment). 
 
-To develop a function, the _Validate_ method is firstly to be implemented. This method will be called during SQL validation. In this method, a slice of [xsql.Expr](https://github.com/lf-edge/ekuiper/blob/master/xsql/ast.go) is passed as the parameter that contains the arguments for this function in the runtime. The developer can do a validation against it to check the argument count and type etc. If validation is successful, return nil. Otherwise, return an error object.
+To develop a function, the _Validate_ method is firstly to be implemented. This method will be called during SQL validation. In this method, a slice of [xsql.Expr](https://github.com/lf-edge/ekuiper/blob/master/pkg/ast/expr.go) is passed as the parameter that contains the arguments for this function in the runtime. The developer can do a validation against it to check the argument count and type etc. If validation is successful, return nil. Otherwise, return an error object.
 
 ```go
 //The argument is a list of xsql.Expr
@@ -36,11 +36,11 @@ As the function itself is a plugin, it must be in the main package. Given the fu
 var MyFunction myFunction
 ```
 
-The [Echo Function](https://github.com/lf-edge/ekuiper/blob/master/plugins/functions/echo/echo.go) is a good example.
+The [Echo Function](https://github.com/lf-edge/ekuiper/blob/master/extensions/functions/echo/echo.go) is a good example.
 
 ### Export multiple functions
 
-In one plugin, developers can export multiple functions. Each function must implement [api.Function](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) as described at [Develop a customized function](#develop-a-customized-function) section. Make sure all functions are exported like:
+In one plugin, developers can export multiple functions. Each function must implement [api.Function](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) as described at [Develop a customized function](#develop-a-customized-function) section. Make sure all functions are exported like:
 
 ```go
 var(

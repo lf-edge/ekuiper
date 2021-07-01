@@ -6,7 +6,7 @@ Sources feed data into eKuiper from other systems. eKuiper has built-in source s
 
 ### Develop a source
 
-To develop a source for eKuiper is to implement [api.Source](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) interface and export it as a golang plugin.
+To develop a source for eKuiper is to implement [api.Source](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface and export it as a golang plugin.
 
 Before starting the development, you must [setup the environment for golang plugin](overview.md#setup-the-plugin-developing-environment). 
 
@@ -38,7 +38,7 @@ function MySource() api.Source{
 }
 ```
 
-The [Randome Source](https://github.com/lf-edge/ekuiper/blob/master/plugins/sources/random/random.go) is a good example.
+The [Random Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/sources/random/random.go) is a good example.
 
 ### Rewindable source
 If the [rule checkpoint](../rules/state_and_fault_tolerance.md#source-consideration) is enabled, the source requires to be rewindable. That means the source need to implement both ``api.Source`` and ``api.Rewindable`` interface. 

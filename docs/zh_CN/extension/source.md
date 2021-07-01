@@ -6,7 +6,7 @@
 
 ### 开发一个源
 
-为 eKuiper 开发源的 是实现 [api.Source](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) 接口并将其导出为 golang 插件。
+为 eKuiper 开发源的 是实现 [api.Source](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 接口并将其导出为 golang 插件。
 
 在开始开发之前，您必须为 [golang 插件设置环境](overview.md#setup-the-plugin-developing-environment)。
 
@@ -38,7 +38,7 @@ function MySource() api.Source{
 }
 ```
 
-[Randome Source](https://github.com/lf-edge/ekuiper/blob/master/plugins/sources/random/random.go)  是一个很好的示例。
+[Random Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/sources/random/random.go)  是一个很好的示例。
 
 ### 处理配置
 

@@ -6,7 +6,7 @@ eKuiper 可以将数据接收到外部系统。 eKuiper具有对  [MQTT 消息�
 
 ### 开发 Sink （目标）
 
-为 eKuiper 开发 Sink （目标），是实现 [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) 接口并将其导出为 golang 插件。
+为 eKuiper 开发 Sink （目标），是实现 [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 接口并将其导出为 golang 插件。
 
 在开始开发之前，您必须为 [golang 插件设置环境](overview.md#setup-the-plugin-developing-environment)。
 
@@ -44,7 +44,7 @@ func MySink() api.Sink {
 }
 ```
 
-[Memory Sink](https://github.com/lf-edge/ekuiper/blob/master/plugins/sinks/memory/memory.go) 是一个很好的示例。
+[Memory Sink](https://github.com/lf-edge/ekuiper/blob/master/extensions/sinks/memory/memory.go) 是一个很好的示例。
 
 ### 将 Sink （目标）打包
 将实现的 Sink （目标）构建为 go 插件，并确保输出的 so 文件位于 plugins/sinks 文件夹中。

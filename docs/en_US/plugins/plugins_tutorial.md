@@ -57,7 +57,7 @@ The eKuiper plugin has three types. The source code can be put into the correspo
 - Create plugin the project samplePlugin with the above directory structure
 - Create file mysql.go under the sinks directory
 - Edit file mysql.go for implementing the plugin
-    -  Implement [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/xstream/api/stream.go) interface
+    -  Implement [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface
     - Export Symbol: Mysql. It could be a constructor function so that each rule can instantiate an own mysql plugin instance. Or it could be the struct which means every rule will share a singleton of the plugin. If the plugin has states like the connection, the first approach is preferred.
 - Edit go.mod, add Mysql driver module
 
