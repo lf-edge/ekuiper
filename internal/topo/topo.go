@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/internal/topo/checkpoints"
-	"github.com/emqx/kuiper/internal/topo/contexts"
-	"github.com/emqx/kuiper/internal/topo/nodes"
-	"github.com/emqx/kuiper/internal/topo/states"
+	"github.com/emqx/kuiper/internal/topo/checkpoint"
+	kctx "github.com/emqx/kuiper/internal/topo/context"
+	"github.com/emqx/kuiper/internal/topo/node"
+	"github.com/emqx/kuiper/internal/topo/state"
 	"github.com/emqx/kuiper/pkg/api"
 	"strconv"
 )
@@ -18,17 +18,17 @@ type PrintableTopo struct {
 }
 
 type Topo struct {
-	sources            []nodes.DataSourceNode
-	sinks              []*nodes.SinkNode
+	sources            []node.DataSourceNode
+	sinks              []*node.SinkNode
 	ctx                api.StreamContext
 	cancel             context.CancelFunc
 	drain              chan error
-	ops                []nodes.OperatorNode
+	ops                []node.OperatorNode
 	name               string
 	qos                api.Qos
 	checkpointInterval int
 	store              api.Store
-	coordinator        *checkpoints.Coordinator
+	coordinator        *checkpoint.Coordinator
 	topo               *PrintableTopo
 }
 
@@ -58,13 +58,13 @@ func (s *Topo) Cancel() {
 	s.coordinator = nil
 }
 
-func (s *Topo) AddSrc(src nodes.DataSourceNode) *Topo {
+func (s *Topo) AddSrc(src node.DataSourceNode) *Topo {
 	s.sources = append(s.sources, src)
 	s.topo.Sources = append(s.topo.Sources, fmt.Sprintf("source_%s", src.GetName()))
 	return s
 }
 
-func (s *Topo) AddSink(inputs []api.Emitter, snk *nodes.SinkNode) *Topo {
+func (s *Topo) AddSink(inputs []api.Emitter, snk *node.SinkNode) *Topo {
 	for _, input := range inputs {
 		input.AddOutput(snk.GetInput())
 		snk.AddInputCount()
@@ -74,7 +74,7 @@ func (s *Topo) AddSink(inputs []api.Emitter, snk *nodes.SinkNode) *Topo {
 	return s
 }
 
-func (s *Topo) AddOperator(inputs []api.Emitter, operator nodes.OperatorNode) *Topo {
+func (s *Topo) AddOperator(inputs []api.Emitter, operator node.OperatorNode) *Topo {
 	for _, input := range inputs {
 		input.AddOutput(operator.GetInput())
 		operator.AddInputCount()
@@ -86,7 +86,7 @@ func (s *Topo) AddOperator(inputs []api.Emitter, operator nodes.OperatorNode) *T
 
 func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 	fromType := "op"
-	if _, ok := from.(nodes.DataSourceNode); ok {
+	if _, ok := from.(node.DataSourceNode); ok {
 		fromType = "source"
 	}
 	f := fmt.Sprintf("%s_%s", fromType, from.GetName())
@@ -103,7 +103,7 @@ func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 func (s *Topo) prepareContext() {
 	if s.ctx == nil || s.ctx.Err() != nil {
 		contextLogger := conf.Log.WithField("rule", s.name)
-		ctx := contexts.WithValue(contexts.Background(), contexts.LoggerKey, contextLogger)
+		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 		s.ctx, s.cancel = ctx.WithCancel()
 	}
 }
@@ -133,7 +133,7 @@ func (s *Topo) Open() <-chan error {
 	// open stream
 	go func() {
 		var err error
-		if s.store, err = states.CreateStore(s.name, s.qos); err != nil {
+		if s.store, err = state.CreateStore(s.name, s.qos); err != nil {
 			fmt.Println(err)
 			s.drain <- err
 			return
@@ -165,49 +165,49 @@ func (s *Topo) Open() <-chan error {
 
 func (s *Topo) enableCheckpoint() error {
 	if s.qos >= api.AtLeastOnce {
-		var sources []checkpoints.StreamTask
+		var sources []checkpoint.StreamTask
 		for _, r := range s.sources {
 			sources = append(sources, r)
 		}
-		var ops []checkpoints.NonSourceTask
+		var ops []checkpoint.NonSourceTask
 		for _, r := range s.ops {
 			ops = append(ops, r)
 		}
-		var sinks []checkpoints.SinkTask
+		var sinks []checkpoint.SinkTask
 		for _, r := range s.sinks {
 			sinks = append(sinks, r)
 		}
-		c := checkpoints.NewCoordinator(s.name, sources, ops, sinks, s.qos, s.store, s.checkpointInterval, s.ctx)
+		c := checkpoint.NewCoordinator(s.name, sources, ops, sinks, s.qos, s.store, s.checkpointInterval, s.ctx)
 		s.coordinator = c
 	}
 	return nil
 }
 
-func (s *Topo) GetCoordinator() *checkpoints.Coordinator {
+func (s *Topo) GetCoordinator() *checkpoint.Coordinator {
 	return s.coordinator
 }
 
 func (s *Topo) GetMetrics() (keys []string, values []interface{}) {
-	for _, node := range s.sources {
-		for ins, metrics := range node.GetMetrics() {
+	for _, sn := range s.sources {
+		for ins, metrics := range sn.GetMetrics() {
 			for i, v := range metrics {
-				keys = append(keys, "source_"+node.GetName()+"_"+strconv.Itoa(ins)+"_"+nodes.MetricNames[i])
+				keys = append(keys, "source_"+sn.GetName()+"_"+strconv.Itoa(ins)+"_"+node.MetricNames[i])
 				values = append(values, v)
 			}
 		}
 	}
-	for _, node := range s.ops {
-		for ins, metrics := range node.GetMetrics() {
+	for _, so := range s.ops {
+		for ins, metrics := range so.GetMetrics() {
 			for i, v := range metrics {
-				keys = append(keys, "op_"+node.GetName()+"_"+strconv.Itoa(ins)+"_"+nodes.MetricNames[i])
+				keys = append(keys, "op_"+so.GetName()+"_"+strconv.Itoa(ins)+"_"+node.MetricNames[i])
 				values = append(values, v)
 			}
 		}
 	}
-	for _, node := range s.sinks {
-		for ins, metrics := range node.GetMetrics() {
+	for _, sn := range s.sinks {
+		for ins, metrics := range sn.GetMetrics() {
 			for i, v := range metrics {
-				keys = append(keys, "sink_"+node.GetName()+"_"+strconv.Itoa(ins)+"_"+nodes.MetricNames[i])
+				keys = append(keys, "sink_"+sn.GetName()+"_"+strconv.Itoa(ins)+"_"+node.MetricNames[i])
 				values = append(values, v)
 			}
 		}

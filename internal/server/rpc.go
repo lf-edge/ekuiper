@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/internal/plugin"
 	"github.com/emqx/kuiper/internal/service"
-	"github.com/emqx/kuiper/internal/topo/sinks"
+	"github.com/emqx/kuiper/internal/topo/sink"
 	"strings"
 	"time"
 )
@@ -51,15 +51,15 @@ func (t *Server) GetQueryResult(qid string, reply *string) error {
 		}
 	}
 
-	sinks.QR.LastFetch = time.Now()
-	sinks.QR.Mux.Lock()
-	if len(sinks.QR.Results) > 0 {
-		*reply = strings.Join(sinks.QR.Results, "")
-		sinks.QR.Results = make([]string, 10)
+	sink.QR.LastFetch = time.Now()
+	sink.QR.Mux.Lock()
+	if len(sink.QR.Results) > 0 {
+		*reply = strings.Join(sink.QR.Results, "")
+		sink.QR.Results = make([]string, 10)
 	} else {
 		*reply = ""
 	}
-	sinks.QR.Mux.Unlock()
+	sink.QR.Mux.Unlock()
 	return nil
 }
 
@@ -432,7 +432,7 @@ func init() {
 
 			n := time.Now()
 			w := 10 * time.Second
-			if v := n.Sub(sinks.QR.LastFetch); v >= w {
+			if v := n.Sub(sink.QR.LastFetch); v >= w {
 				logger.Printf("The client seems no longer fetch the query result, stop the query now.")
 				stopQuery()
 				ticker.Stop()

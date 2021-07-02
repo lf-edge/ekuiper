@@ -3,7 +3,7 @@ package topotest
 import (
 	"encoding/json"
 	"github.com/emqx/kuiper/internal/topo"
-	"github.com/emqx/kuiper/internal/topo/topotest/mocknodes"
+	"github.com/emqx/kuiper/internal/topo/topotest/mocknode"
 	"github.com/emqx/kuiper/pkg/api"
 	"testing"
 )
@@ -844,7 +844,7 @@ func TestSingleSQLForBinary(t *testing.T) {
 			Sql:  `SELECT * FROM binDemo`,
 			R: [][]map[string]interface{}{
 				{{
-					"self": mocknodes.Image,
+					"self": mocknode.Image,
 				}},
 			},
 			W: 50,

@@ -1,7 +1,7 @@
 package xsql
 
 import (
-	"github.com/emqx/kuiper/internal/topo/contexts"
+	"github.com/emqx/kuiper/internal/topo/context"
 	"github.com/emqx/kuiper/pkg/api"
 	"github.com/emqx/kuiper/pkg/errorx"
 	"sync"
@@ -52,7 +52,7 @@ func (fp *funcRuntime) Get(name string) (api.Function, api.FunctionContext, erro
 		if nf == nil {
 			return nil, nil, errorx.NotFoundErr
 		}
-		fctx := contexts.NewDefaultFuncContext(fp.parentCtx, len(fp.regs))
+		fctx := context.NewDefaultFuncContext(fp.parentCtx, len(fp.regs))
 		fp.regs[name] = &funcReg{
 			ins: nf,
 			ctx: fctx,
