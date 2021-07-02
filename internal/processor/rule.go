@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/emqx/kuiper/internal/conf"
 	"github.com/emqx/kuiper/internal/topo"
-	"github.com/emqx/kuiper/internal/topo/nodes"
+	"github.com/emqx/kuiper/internal/topo/node"
 	"github.com/emqx/kuiper/internal/topo/planner"
 	"github.com/emqx/kuiper/internal/xsql"
 	"github.com/emqx/kuiper/pkg/api"
@@ -180,7 +180,7 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 }
 
 func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*topo.Topo, error) {
-	if tp, err := planner.PlanWithSourcesAndSinks(p.getDefaultRule(ruleid, sql), p.rootDbDir, nil, []*nodes.SinkNode{nodes.NewSinkNode("sink_memory_log", "logToMemory", nil)}); err != nil {
+	if tp, err := planner.PlanWithSourcesAndSinks(p.getDefaultRule(ruleid, sql), p.rootDbDir, nil, []*node.SinkNode{node.NewSinkNode("sink_memory_log", "logToMemory", nil)}); err != nil {
 		return nil, err
 	} else {
 		go func() {
@@ -257,7 +257,7 @@ func (p *RuleProcessor) ExecDrop(name string) (string, error) {
 
 func cleanCheckpoint(name string) error {
 	dbDir, _ := conf.GetDataLoc()
-	c := path.Join(dbDir, "checkpoints", name)
+	c := path.Join(dbDir, name)
 	return os.RemoveAll(c)
 }
 

@@ -7,10 +7,10 @@ import (
 	"github.com/emqx/kuiper/internal/processor"
 	"github.com/emqx/kuiper/internal/testx"
 	"github.com/emqx/kuiper/internal/topo"
-	"github.com/emqx/kuiper/internal/topo/nodes"
+	"github.com/emqx/kuiper/internal/topo/node"
 	"github.com/emqx/kuiper/internal/topo/planner"
 	"github.com/emqx/kuiper/internal/topo/topotest/mockclock"
-	"github.com/emqx/kuiper/internal/topo/topotest/mocknodes"
+	"github.com/emqx/kuiper/internal/topo/topotest/mocknode"
 	"github.com/emqx/kuiper/internal/xsql"
 	"github.com/emqx/kuiper/pkg/api"
 	"github.com/emqx/kuiper/pkg/ast"
@@ -140,7 +140,7 @@ func doRuleTestBySinkProps(t *testing.T, tests []RuleTest, j int, opt *api.RuleO
 	}
 }
 
-func compareResult(t *testing.T, mockSink *mocknodes.MockSink, resultFunc func(result [][]byte) interface{}, tt RuleTest, i int, tp *topo.Topo) {
+func compareResult(t *testing.T, mockSink *mocknode.MockSink, resultFunc func(result [][]byte) interface{}, tt RuleTest, i int, tp *topo.Topo) {
 	// Check results
 	results := mockSink.GetResults()
 	maps := resultFunc(results)
@@ -209,11 +209,11 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 	return nil
 }
 
-func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkProps map[string]interface{}) ([][]*xsql.Tuple, int, *topo.Topo, *mocknodes.MockSink, <-chan error) {
+func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkProps map[string]interface{}) ([][]*xsql.Tuple, int, *topo.Topo, *mocknode.MockSink, <-chan error) {
 	mockclock.ResetClock(1541152486000)
 	// Create stream
 	var (
-		sources    []*nodes.SourceNode
+		sources    []*node.SourceNode
 		datas      [][]*xsql.Tuple
 		dataLength int
 	)
@@ -227,7 +227,7 @@ func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkPro
 		} else {
 			streams := xsql.GetStreams(selectStmt)
 			for _, stream := range streams {
-				data, ok := mocknodes.TestData[stream]
+				data, ok := mocknode.TestData[stream]
 				if !ok {
 					continue
 				}
@@ -236,9 +236,9 @@ func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkPro
 			}
 		}
 	}
-	mockSink := mocknodes.NewMockSink()
-	sink := nodes.NewSinkNodeWithSink("mockSink", mockSink, sinkProps)
-	tp, err := planner.PlanWithSourcesAndSinks(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.Name, j), Sql: tt.Sql, Options: opt}, DbDir, sources, []*nodes.SinkNode{sink})
+	mockSink := mocknode.NewMockSink()
+	sink := node.NewSinkNodeWithSink("mockSink", mockSink, sinkProps)
+	tp, err := planner.PlanWithSourcesAndSinks(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.Name, j), Sql: tt.Sql, Options: opt}, DbDir, sources, []*node.SinkNode{sink})
 	if err != nil {
 		t.Error(err)
 		return nil, 0, nil, nil, nil
