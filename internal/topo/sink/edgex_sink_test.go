@@ -6,9 +6,9 @@ import (
 	"fmt"
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
-	"github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/internal/testx"
-	"github.com/emqx/kuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"reflect"
 	"testing"
 )

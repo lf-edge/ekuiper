@@ -1,7 +1,7 @@
 package testx
 
 import (
-	"github.com/emqx/kuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 // errstring returns the string representation of an error.

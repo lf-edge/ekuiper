@@ -1,4 +1,4 @@
-module github.com/emqx/kuiper
+module github.com/lf-edge/ekuiper
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.1
@@ -40,9 +40,9 @@ require (
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/ini.v1 v1.62.0
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
-	github.com/emqx/kuiper/extensions v0.0.0
+	github.com/lf-edge/ekuiper/extensions v0.0.0
 )
 
-replace github.com/emqx/kuiper/extensions => ./extensions
+replace github.com/lf-edge/ekuiper/extensions => ./extensions
 
 go 1.16

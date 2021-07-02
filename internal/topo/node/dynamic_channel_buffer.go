@@ -1,7 +1,7 @@
 package node
 
 import (
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"sync/atomic"
 )
 

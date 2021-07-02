@@ -1,4 +1,4 @@
-module github.com/emqx/kuiper
+module github.com/lf-edge/ekuiper
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.1

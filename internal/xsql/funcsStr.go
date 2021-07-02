@@ -3,7 +3,7 @@ package xsql
 import (
 	"bytes"
 	"fmt"
-	"github.com/emqx/kuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"regexp"
 	"strings"
 	"unicode"

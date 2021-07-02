@@ -2,7 +2,7 @@ package context
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 type DefaultFuncContext struct {

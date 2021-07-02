@@ -4,9 +4,9 @@ package main
 
 import (
 	"encoding/json"
-	api "github.com/emqx/kuiper/pkg/api"
 	_ "github.com/influxdata/influxdb1-client/v2"
 	client "github.com/influxdata/influxdb1-client/v2"
+	api "github.com/lf-edge/ekuiper/pkg/api"
 	"strings"
 	"time"
 )

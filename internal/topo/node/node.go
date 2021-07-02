@@ -2,10 +2,10 @@ package node
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/internal/topo/checkpoint"
-	"github.com/emqx/kuiper/pkg/api"
-	"github.com/emqx/kuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"gopkg.in/yaml.v3"
 	"strings"
 	"sync"

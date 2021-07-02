@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/emqx/kuiper/pkg/api"
-	"github.com/emqx/kuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	zmq "github.com/pebbe/zmq4"
 )
 

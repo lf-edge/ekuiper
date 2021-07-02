@@ -1,6 +1,6 @@
 package main
 
-import "github.com/emqx/kuiper/internal/server"
+import "github.com/lf-edge/ekuiper/internal/server"
 
 var (
 	Version      = "unknown"

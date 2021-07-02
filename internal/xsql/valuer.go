@@ -2,8 +2,8 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/pkg/ast"
-	"github.com/emqx/kuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"math"
 	"reflect"
 	"sort"

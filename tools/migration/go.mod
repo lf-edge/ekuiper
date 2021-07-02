@@ -1,10 +1,10 @@
-module github.com/emqx/kuiper/tools/migration
+module github.com/lf-edge/ekuiper/tools/migration
 
 go 1.16
 
 require (
-	github.com/emqx/kuiper v0.0.0
+	github.com/lf-edge/ekuiper v0.0.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 )
 
-replace github.com/emqx/kuiper => ../../
+replace github.com/lf-edge/ekuiper => ../../

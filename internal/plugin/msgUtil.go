@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	kconf "github.com/emqx/kuiper/internal/conf"
+	kconf "github.com/lf-edge/ekuiper/internal/conf"
 	"gopkg.in/ini.v1"
 	"io/ioutil"
 	"path"

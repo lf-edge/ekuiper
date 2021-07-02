@@ -3,10 +3,10 @@ package state
 import (
 	"encoding/gob"
 	"fmt"
-	"github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/internal/topo/checkpoint"
-	"github.com/emqx/kuiper/pkg/cast"
-	"github.com/emqx/kuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
+	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"path"
 	"sync"
 )

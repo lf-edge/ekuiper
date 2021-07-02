@@ -2,8 +2,8 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/pkg/api"
-	"github.com/emqx/kuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"strings"
 )
 

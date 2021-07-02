@@ -2,8 +2,8 @@ package mocknode
 
 import (
 	"encoding/base64"
-	"github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"io/ioutil"
 	"path"
 )

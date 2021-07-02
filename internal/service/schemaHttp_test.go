@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/emqx/kuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/internal/testx"
 	"net/http"
 	"reflect"
 	"testing"

@@ -1,6 +1,6 @@
 package planner
 
-import "github.com/emqx/kuiper/pkg/ast"
+import "github.com/lf-edge/ekuiper/pkg/ast"
 
 type JoinPlan struct {
 	baseLogicalPlan

@@ -3,7 +3,7 @@ package xsql
 import (
 	"bufio"
 	"bytes"
-	"github.com/emqx/kuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"io"
 	"strconv"
 	"strings"

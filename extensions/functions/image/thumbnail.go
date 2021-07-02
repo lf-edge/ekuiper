@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/nfnt/resize"
 	"image"
 	"image/jpeg"

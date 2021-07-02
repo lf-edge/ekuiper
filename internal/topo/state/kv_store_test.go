@@ -2,8 +2,8 @@ package state
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"log"
 	"os"
 	"path"

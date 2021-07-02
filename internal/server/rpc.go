@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/emqx/kuiper/internal/plugin"
-	"github.com/emqx/kuiper/internal/service"
-	"github.com/emqx/kuiper/internal/topo/sink"
+	"github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/internal/service"
+	"github.com/lf-edge/ekuiper/internal/topo/sink"
 	"strings"
 	"time"
 )

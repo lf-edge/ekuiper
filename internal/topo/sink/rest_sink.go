@@ -3,8 +3,8 @@ package sink
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/emqx/kuiper/internal/pkg/httpx"
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"io/ioutil"
 	"net/http"
 	"net/url"

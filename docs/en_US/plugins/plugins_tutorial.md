@@ -48,7 +48,7 @@ module samplePlugin
 go 1.16
 
 require (
-	github.com/emqx/kuiper v0.0.0-20200323140757-60d00241372b
+	github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
 )
 ```
 
@@ -70,8 +70,8 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/xstream/api"
+	"github.com/lf-edge/ekuiper/common"
+	"github.com/lf-edge/ekuiper/xstream/api"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -149,7 +149,7 @@ module samplePlugin
 go 1.16
 
 require (
-	github.com/emqx/kuiper v0.0.0-20200323140757-60d00241372b
+	github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
 	github.com/go-sql-driver/mysql v1.5.0
 )
  ```
@@ -164,10 +164,10 @@ Developers can locally compile eKuiper and the plugin for debugging, which steps
 1. Download eKuiper source code: `git clone https://github.com/lf-edge/ekuiper.git`
 2.  Compile eKuiper: run `make` under the eKuiper directory
 3. Compile the plugin:
-    1. Run `go mod edit -replace github.com/emqx/kuiper=$eKuiperPath` under the plugin project, make the eKuiper dependence point to the local eKuiper, and then please replace the download directory of step 1 by $eKuiperPath, the same below.
+    1. Run `go mod edit -replace github.com/lf-edge/ekuiper=$eKuiperPath` under the plugin project, make the eKuiper dependence point to the local eKuiper, and then please replace the download directory of step 1 by $eKuiperPath, the same below.
    2. Because the Golang plugin system has a very strict limitation of the dependency paths, it is more safe to build the plugin from the eKuiper main project. In the eKuiper project, add a new *mod* file with a name like *sample.mod* to point to your plugin project.
       ```
-      module github.com/emqx/kuiper
+      module github.com/lf-edge/ekuiper
       go 1.16
       require samplePlugin v0.0.0
       replace samplePlugin => ../samplePlugin     
@@ -203,7 +203,7 @@ export ETC_TARGET=$EKUIPER_SOURCE/etc
 export ZIP_TARGET=plugins
 export VERSION=0.0.1
 
-go mod edit -replace github.com/emqx/kuiper=$EKUIPER_SOURCE
+go mod edit -replace github.com/lf-edge/ekuiper=$EKUIPER_SOURCE
 
 go build -trimpath --buildmode=plugin -o $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so sinks/mysql.go
 

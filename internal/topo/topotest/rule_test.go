@@ -2,9 +2,9 @@ package topotest
 
 import (
 	"encoding/json"
-	"github.com/emqx/kuiper/internal/topo"
-	"github.com/emqx/kuiper/internal/topo/topotest/mocknode"
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/internal/topo"
+	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"testing"
 )
 

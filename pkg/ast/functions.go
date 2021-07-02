@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"strings"
 	"sync"
 )

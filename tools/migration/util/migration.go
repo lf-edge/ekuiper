@@ -2,7 +2,7 @@ package util
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/common/kv"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"github.com/patrickmn/go-cache"
 	"io/ioutil"
 	"os"

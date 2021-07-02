@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"image/jpeg"
 	"image/png"
 	"io/ioutil"

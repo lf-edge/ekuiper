@@ -1,8 +1,8 @@
 package topotest
 
 import (
-	"github.com/emqx/kuiper/internal/topo"
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/internal/topo"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"testing"
 )
 

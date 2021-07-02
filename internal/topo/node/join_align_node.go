@@ -2,8 +2,8 @@ package node
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/internal/xsql"
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 // JoinAlignNode will block the stream and buffer all the table tuples. Once buffered, it will combine the later input with the buffer

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
-	"github.com/emqx/kuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"os"
 )
 

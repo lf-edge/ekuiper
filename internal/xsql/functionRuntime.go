@@ -1,9 +1,9 @@
 package xsql
 
 import (
-	"github.com/emqx/kuiper/internal/topo/context"
-	"github.com/emqx/kuiper/pkg/api"
-	"github.com/emqx/kuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"sync"
 )
 

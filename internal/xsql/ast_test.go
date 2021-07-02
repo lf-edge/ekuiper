@@ -3,7 +3,7 @@ package xsql
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/emqx/kuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"reflect"
 	"testing"
 )

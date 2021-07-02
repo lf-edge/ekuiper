@@ -1,11 +1,11 @@
 package server
 
 import (
-	"github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/internal/plugin"
-	"github.com/emqx/kuiper/internal/processor"
-	"github.com/emqx/kuiper/internal/service"
-	"github.com/emqx/kuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/internal/processor"
+	"github.com/lf-edge/ekuiper/internal/service"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"context"

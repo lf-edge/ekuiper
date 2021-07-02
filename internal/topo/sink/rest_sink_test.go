@@ -3,8 +3,8 @@ package sink
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"

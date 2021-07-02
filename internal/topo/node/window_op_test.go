@@ -2,7 +2,7 @@ package node
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"reflect"
 	"testing"
 )
