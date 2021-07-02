@@ -1,13 +1,13 @@
 package node
 
 import (
-	"github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/internal/plugin"
-	"github.com/emqx/kuiper/internal/topo/source"
-	"github.com/emqx/kuiper/internal/xsql"
-	"github.com/emqx/kuiper/pkg/api"
-	"github.com/emqx/kuiper/pkg/ast"
-	"github.com/emqx/kuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/internal/topo/source"
+	"github.com/lf-edge/ekuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"sync"
 )
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/emqx/kuiper/tools/migration/util"
+	"github.com/lf-edge/ekuiper/tools/migration/util"
 	"log"
 	"os"
 )

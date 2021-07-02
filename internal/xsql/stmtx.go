@@ -3,9 +3,9 @@ package xsql
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/emqx/kuiper/pkg/ast"
-	"github.com/emqx/kuiper/pkg/errorx"
-	"github.com/emqx/kuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"strings"
 )
 

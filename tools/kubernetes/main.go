@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/emqx/kuiper/tools/kubernetes/util"
+	"github.com/lf-edge/ekuiper/tools/kubernetes/util"
 	"os"
 	"os/signal"
 	"syscall"

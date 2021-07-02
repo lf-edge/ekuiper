@@ -2,7 +2,7 @@ package collector
 
 import (
 	"errors"
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 // CollectorFunc is a function used to colllect

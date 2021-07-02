@@ -2,8 +2,8 @@ package conf
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/pkg/api"
 	"github.com/lestrrat-go/file-rotatelogs"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"io"

@@ -2,10 +2,10 @@ package operator
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/internal/topo/context"
-	"github.com/emqx/kuiper/internal/xsql"
-	"github.com/emqx/kuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"reflect"
 	"strings"
 	"testing"

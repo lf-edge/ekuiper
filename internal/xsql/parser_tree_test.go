@@ -2,8 +2,8 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/internal/testx"
-	"github.com/emqx/kuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"reflect"
 	"strings"
 	"testing"

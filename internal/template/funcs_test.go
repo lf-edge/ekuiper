@@ -3,7 +3,7 @@ package template
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/emqx/kuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/internal/testx"
 	"reflect"
 	"testing"
 )

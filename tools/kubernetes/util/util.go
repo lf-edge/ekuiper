@@ -3,7 +3,7 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	kconf "github.com/emqx/kuiper/tools/kubernetes/conf"
+	kconf "github.com/lf-edge/ekuiper/tools/kubernetes/conf"
 	"io/ioutil"
 	"os"
 	"path"

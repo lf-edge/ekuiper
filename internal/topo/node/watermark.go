@@ -3,9 +3,9 @@ package node
 import (
 	"context"
 	"fmt"
-	"github.com/emqx/kuiper/internal/xsql"
-	"github.com/emqx/kuiper/pkg/api"
-	"github.com/emqx/kuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"math"
 	"sort"
 )

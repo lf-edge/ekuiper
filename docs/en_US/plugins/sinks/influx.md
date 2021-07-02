@@ -71,11 +71,11 @@ module plugins
 go 1.14
 
 require (
-        github.com/emqx/kuiper v0.0.0-20200323140757-60d00241372b
+        github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
         github.com/influxdata/influxdb-client-go v1.2.0
         github.com/influxdata/influxdb1-client v0.0.0-20200515024757-02f0bf5dbca3 // indirect
 )
 
-replace github.com/emqx/kuiper => /root/goProject/kuiper
+replace github.com/lf-edge/ekuiper => /root/goProject/kuiper
 
 ```

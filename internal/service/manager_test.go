@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/emqx/kuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"reflect"
 	"testing"
 )

@@ -2,9 +2,9 @@ package planner
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/internal/xsql"
-	"github.com/emqx/kuiper/pkg/ast"
-	"github.com/emqx/kuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"strconv"
 	"strings"
 )

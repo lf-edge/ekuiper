@@ -1,6 +1,6 @@
 package planner
 
-import "github.com/emqx/kuiper/pkg/ast"
+import "github.com/lf-edge/ekuiper/pkg/ast"
 
 func getRefSources(node ast.Node) ([]ast.StreamName, bool) {
 	result := make(map[ast.StreamName]bool)

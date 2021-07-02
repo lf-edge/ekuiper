@@ -2,9 +2,9 @@ package node
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/internal/topo/context"
-	"github.com/emqx/kuiper/internal/topo/topotest/mocknode"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
 	"reflect"
 	"testing"
 	"time"

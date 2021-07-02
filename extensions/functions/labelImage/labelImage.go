@@ -6,7 +6,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	tflite "github.com/mattn/go-tflite"
 	"github.com/nfnt/resize"
 	"image"

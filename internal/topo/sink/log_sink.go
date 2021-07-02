@@ -2,8 +2,8 @@ package sink
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/internal/topo/collector"
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/internal/topo/collector"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"sync"
 	"time"
 )

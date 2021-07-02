@@ -2,7 +2,7 @@ package processor
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/internal/testx"
 	"path"
 	"reflect"
 	"testing"

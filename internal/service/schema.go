@@ -3,14 +3,14 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	kconf "github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/internal/xsql"
-	"github.com/emqx/kuiper/pkg/cast"
 	"github.com/golang/protobuf/proto"
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/dynamic"
+	kconf "github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	"sync"
 )

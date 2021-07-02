@@ -7,16 +7,16 @@ module plugins
 
 go 1.13
 
-replace github.com/emqx/kuiper => /$eKuiper
+replace github.com/lf-edge/ekuiper => /$eKuiper
 
 require (
-    github.com/emqx/kuiper v0.0.0-00010101000000-000000000000 // indirect
+    github.com/lf-edge/ekuiper v0.0.0-00010101000000-000000000000 // indirect
     github.com/taosdata/driver-go v0.0.0-20200723061832-5be6460b0c20
 )
 ```
 
 ```shell
-go mod edit -replace github.com/emqx/kuiper=/$eKuiper
+go mod edit -replace github.com/lf-edge/ekuiper=/$eKuiper
 go build -trimpath -modfile extensions.mod --buildmode=plugin -o /$ekuiper/plugins/sinks/Tdengine@v1.0.0.so /$ekuiper/extensions/sinks/tdengine/tdengine.go
 ```
 ### 安装插件

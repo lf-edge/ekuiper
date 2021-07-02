@@ -2,8 +2,8 @@ package plugin
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/internal/conf"
-	"github.com/emqx/kuiper/internal/pkg/filex"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"io/ioutil"
 	"path"
 	"strings"

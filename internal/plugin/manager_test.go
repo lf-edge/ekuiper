@@ -3,7 +3,7 @@ package plugin
 import (
 	"errors"
 	"fmt"
-	"github.com/emqx/kuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"net/http"
 	"net/http/httptest"
 	"os"

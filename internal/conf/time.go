@@ -2,7 +2,7 @@ package conf
 
 import (
 	"github.com/benbjohnson/clock"
-	"github.com/emqx/kuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"time"
 )
 

@@ -2,10 +2,10 @@ package service
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/pkg/cast"
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"net/http"
 	"regexp"

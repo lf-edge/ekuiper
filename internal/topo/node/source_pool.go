@@ -3,9 +3,9 @@ package node
 import (
 	"context"
 	"fmt"
-	"github.com/emqx/kuiper/internal/conf"
-	kctx "github.com/emqx/kuiper/internal/topo/context"
-	"github.com/emqx/kuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"sync"
 )
 

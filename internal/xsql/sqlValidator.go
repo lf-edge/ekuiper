@@ -2,7 +2,7 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/emqx/kuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 // Validate validate select statement without context.

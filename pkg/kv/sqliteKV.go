@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/gob"
 	"fmt"
-	"github.com/emqx/kuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"path"

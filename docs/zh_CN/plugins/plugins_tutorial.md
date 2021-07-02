@@ -48,7 +48,7 @@ module samplePlugin
 go 1.16
 
 require (
-	github.com/emqx/kuiper v0.0.0-20200323140757-60d00241372b
+	github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
 )
 ```
 
@@ -70,8 +70,8 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/emqx/kuiper/common"
-	"github.com/emqx/kuiper/xstream/api"
+	"github.com/lf-edge/ekuiper/common"
+	"github.com/lf-edge/ekuiper/xstream/api"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -149,7 +149,7 @@ module samplePlugin
 go 1.16
 
 require (
-	github.com/emqx/kuiper v0.0.0-20200323140757-60d00241372b
+	github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
 	github.com/go-sql-driver/mysql v1.5.0
 )
  ```
@@ -164,10 +164,10 @@ require (
 1. 下载 eKuiper 源代码 `git clone https://github.com/lf-edge/ekuiper.git`
 2. 编译 eKuiper：在 eKuiper 目录下，运行 `make`
 3. 编译插件：
-    1. 在插件项目下，运行 `go mod edit -replace github.com/emqx/kuiper=$eKuiperPath`，使得 eKuiper 依赖指向本地 eKuiper，请替换 $eKuiperPath 到步骤1下载目录，下同。
+    1. 在插件项目下，运行 `go mod edit -replace github.com/lf-edge/ekuiper=$eKuiperPath`，使得 eKuiper 依赖指向本地 eKuiper，请替换 $eKuiperPath 到步骤1下载目录，下同。
     2. 由于 Go 语言插件系统对依赖的路径有非常严格的要求，为了确保插件可以顺利运行，建议在 eKuiper 主项目里进行编译。在 eKuiper 项目里，添加如下名为 sample.mod 的 mod 文件，用于插件编译。
        ```
-       module github.com/emqx/kuiper
+       module github.com/lf-edge/ekuiper
        go 1.16
        require samplePlugin v0.0.0
        replace samplePlugin => ../samplePlugin   
@@ -204,7 +204,7 @@ export ETC_TARGET=$EKUIPER_SOURCE/etc
 export ZIP_TARGET=plugins
 export VERSION=0.0.1
 
-go mod edit -replace github.com/emqx/kuiper=$EKUIPER_SOURCE
+go mod edit -replace github.com/lf-edge/ekuiper=$EKUIPER_SOURCE
 
 go build -trimpath --buildmode=plugin -o $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so sinks/mysql.go
 

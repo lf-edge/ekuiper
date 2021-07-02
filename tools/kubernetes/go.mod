@@ -1,4 +1,4 @@
-module github.com/emqx/kuiper/tools/kubernetes
+module github.com/lf-edge/ekuiper/tools/kubernetes
 
 require (
 	github.com/sirupsen/logrus v1.4.2
