@@ -128,6 +128,7 @@ github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible/go.mod h1:ZQnN8lSECae
 github.com/lestrrat-go/strftime v1.0.3 h1:qqOPU7y+TM8Y803I8fG9c/DyKG3xH/xkng6keC1015Q=
 github.com/lestrrat-go/strftime v1.0.3/go.mod h1:E1nN3pCbtMSu1yjSVeyuRFVm/U0xoR76fd03sz+Qz4g=
 github.com/lf-edge/ekuiper v0.0.0-20210528134227-7e6a6a028a6f/go.mod h1:Cv3+JK88Uv8CVKNQyRLKaFoZz9pPdhuDTZ2nSz/UiOU=
+github.com/lf-edge/ekuiper v0.0.0-20210705062157-b68b45211d6e/go.mod h1:DLIqiIUj97aJoPfY+898WqNfP6Pm1287AmkJ2mnovss=
 github.com/mattn/go-pointer v0.0.0-20190911064623-a0a44394634f/go.mod h1:2zXcozF6qYGgmsG+SeTZz3oAbFLdD3OWqnUbNvJZAlc=
 github.com/mattn/go-sqlite3 v1.14.5 h1:1IdxlwTNazvbKJQSxoJ5/9ECbEeaTTyeU7sEAZ5KKTQ=
 github.com/mattn/go-sqlite3 v1.14.5/go.mod h1:WVKg1VTActs4Qso6iwGbiFih2UIHo0ENGwNd0Lj+XmI=
