@@ -146,6 +146,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 	opts.SetOnConnectHandler(func(client MQTT.Client) {
 		if reconn {
 			log.Infof("The connection is %s re-established successfully.", ms.srv+": "+ms.clientid)
+			subscribe(ms.tpc, client, ctx, consumer, ms.model, ms.format)
 		}
 	})
 
