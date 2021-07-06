@@ -138,7 +138,7 @@ func TestLifecycle(t *testing.T) {
 		}
 	)
 	func() {
-		defer cleanStateData()
+		cleanStateData()
 		store, err := getKVStore(ruleId)
 		if err != nil {
 			t.Errorf("Get store for rule %s error: %s", ruleId, err)
@@ -208,14 +208,17 @@ func TestLifecycle(t *testing.T) {
 			return
 		}
 		// compare checkpoints
-		if !reflect.DeepEqual(checkpointIds, store.checkpoints) {
+		if !reflect.DeepEqual(checkpointIds[2:], store.checkpoints) {
 			t.Errorf("%d.Restore checkpoint\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, checkpointIds, store.checkpoints)
 			return
 		}
 		// compare contents
 		result = mapStoreToMap(store.mapStore)
-		if !reflect.DeepEqual(r, result) {
-			t.Errorf("%d.Restore checkpoint\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, r, result)
+		last := map[string]interface{}{
+			"3": r["3"],
+		}
+		if !reflect.DeepEqual(last, result) {
+			t.Errorf("%d.Restore checkpoint\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, last, result)
 			return
 		}
 		ns, err := store.GetOpState(opIds[1])
@@ -251,7 +254,7 @@ func cleanStateData() {
 	if err != nil {
 		log.Panic(err)
 	}
-	c := path.Join(dbDir, CheckpointListKey)
+	c := path.Join(dbDir)
 	err = os.RemoveAll(c)
 	if err != nil {
 		conf.Log.Error(err)

@@ -46,8 +46,9 @@ type Logger interface {
 
 type Store interface {
 	SaveState(checkpointId int64, opId string, state map[string]interface{}) error
-	SaveCheckpoint(checkpointId int64) error //Save the whole checkpoint state into storage like badger
+	SaveCheckpoint(checkpointId int64) error //Save the whole checkpoint state into storage
 	GetOpState(opId string) (*sync.Map, error)
+	Clean() error
 }
 
 type Closable interface {

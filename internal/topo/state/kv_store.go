@@ -4,10 +4,9 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/tskv"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/kv"
-	"path"
 	"sync"
 )
 
@@ -22,10 +21,11 @@ func init() {
 //  { "checkpoint1", "checkpoint2" ... "checkpointn" : The complete or incomplete snapshot
 //
 type KVStore struct {
-	db          kv.KeyValue
+	db          tskv.Tskv
 	mapStore    *sync.Map //The current root store of a rule
 	checkpoints []int64
 	max         int
+	ruleId      string
 }
 
 //Store in path ./data/checkpoint/$ruleId
@@ -34,9 +34,11 @@ type KVStore struct {
 //"$checkpointId":A map with key of checkpoint id and value of snapshot(gob serialized)
 //Assume each operator only has one instance
 func getKVStore(ruleId string) (*KVStore, error) {
-	dr, _ := conf.GetDataLoc()
-	db := kv.GetDefaultKVStore(path.Join(dr, ruleId, CheckpointListKey))
-	s := &KVStore{db: db, max: 3, mapStore: &sync.Map{}}
+	db, err := tskv.NewSqlite(ruleId)
+	if err != nil {
+		return nil, err
+	}
+	s := &KVStore{db: db, max: 3, mapStore: &sync.Map{}, ruleId: ruleId}
 	//read data from badger db
 	if err := s.restore(); err != nil {
 		return nil, err
@@ -45,24 +47,13 @@ func getKVStore(ruleId string) (*KVStore, error) {
 }
 
 func (s *KVStore) restore() error {
-	err := s.db.Open()
+	var m map[string]interface{}
+	k, err := s.db.Last(&m)
 	if err != nil {
 		return err
 	}
-	defer s.db.Close()
-
-	var cs []int64
-	if ok, _ := s.db.Get(CheckpointListKey, &cs); ok {
-		s.checkpoints = cs
-		for _, c := range cs {
-			var m map[string]interface{}
-			if ok, _ := s.db.Get(fmt.Sprintf("%d", c), &m); ok {
-				s.mapStore.Store(c, cast.MapToSyncMap(m))
-			} else {
-				return fmt.Errorf("invalid checkpoint data: %v", c)
-			}
-		}
-	}
+	s.checkpoints = []int64{k}
+	s.mapStore.Store(k, cast.MapToSyncMap(m))
 	return nil
 }
 
@@ -89,27 +80,14 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 		if m, ok := v.(*sync.Map); !ok {
 			return fmt.Errorf("invalid KVStore for checkpointId %d with value %v: should be *sync.Map type", checkpointId, v)
 		} else {
-			err := s.db.Open()
-			if err != nil {
-				return fmt.Errorf("save checkpoint err: %v", err)
-			}
-			err = s.db.Set(fmt.Sprintf("%d", checkpointId), cast.SyncMapToMap(m))
-			if err != nil {
-				return fmt.Errorf("save checkpoint err: %v", err)
-			}
 			s.checkpoints = append(s.checkpoints, checkpointId)
 			//TODO is the order promised?
 			for len(s.checkpoints) > s.max {
 				cp := s.checkpoints[0]
 				s.checkpoints = s.checkpoints[1:]
 				s.mapStore.Delete(cp)
-				err = s.db.Delete(fmt.Sprintf("%d", cp))
-				if err != nil {
-					fmt.Printf("delete checkpoint %d db store error %s", cp, err)
-				}
 			}
-
-			err = s.db.Set(CheckpointListKey, s.checkpoints)
+			_, err := s.db.Set(checkpointId, cast.SyncMapToMap(m))
 			if err != nil {
 				return fmt.Errorf("save checkpoint err: %v", err)
 			}
@@ -141,4 +119,8 @@ func (s *KVStore) GetOpState(opId string) (*sync.Map, error) {
 		}
 	}
 	return &sync.Map{}, nil
+}
+
+func (s *KVStore) Clean() error {
+	return s.db.DeleteBefore(s.checkpoints[0])
 }
