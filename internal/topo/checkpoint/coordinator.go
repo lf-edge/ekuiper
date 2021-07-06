@@ -77,7 +77,7 @@ type Coordinator struct {
 	completedCheckpoints    *checkpointStore
 	ruleId                  string
 	baseInterval            int
-	timeout                 int
+	cleanThreshold          int
 	advanceToEndOfEventTime bool
 	ticker                  *clock.Ticker //For processing time only
 	signal                  chan *Signal
@@ -113,7 +113,7 @@ func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTa
 	}
 	//5 minutes by default
 	if interval <= 0 {
-		interval = 5000
+		interval = 300000
 	}
 	return &Coordinator{
 		tasksToTrigger:     sourceResponders,
@@ -123,12 +123,12 @@ func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTa
 		completedCheckpoints: &checkpointStore{
 			maxNum: 3,
 		},
-		ruleId:       ruleId,
-		signal:       signal,
-		baseInterval: interval,
-		timeout:      200000,
-		store:        store,
-		ctx:          ctx,
+		ruleId:         ruleId,
+		signal:         signal,
+		baseInterval:   interval,
+		store:          store,
+		ctx:            ctx,
+		cleanThreshold: 100,
 	}
 }
 
@@ -152,6 +152,7 @@ func (c *Coordinator) Activate() error {
 	tc := c.ticker.C
 	go func() {
 		c.activated = true
+		toBeClean := 0
 		for {
 			select {
 			case n := <-tc:
@@ -171,21 +172,13 @@ func (c *Coordinator) Activate() error {
 						if err := t.TriggerCheckpoint(checkpointId); err != nil {
 							logger.Infof("Fail to trigger checkpoint for source %s with error %v, cancel it", t.GetName(), err)
 							c.cancel(checkpointId)
-						} else {
-							timeout := conf.GetTicker(c.timeout)
-							select {
-							case <-timeout.C:
-								logger.Debugf("Try to cancel checkpoint %d for timeout", checkpointId)
-								c.cancel(checkpointId)
-							case <-c.ctx.Done():
-								if timeout != nil {
-									timeout.Stop()
-									logger.Infoln("Stop ongoing checkpoint %d", checkpointId)
-									c.cancel(checkpointId)
-								}
-							}
 						}
 					}(r)
+				}
+				toBeClean++
+				if toBeClean >= c.cleanThreshold {
+					c.store.Clean()
+					toBeClean = 0
 				}
 			case s := <-c.signal:
 				switch s.Message {

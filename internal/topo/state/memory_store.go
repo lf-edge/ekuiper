@@ -20,6 +20,10 @@ func (s *MemoryStore) SaveCheckpoint(_ int64) error {
 	return nil
 }
 
-func (s *MemoryStore) GetOpState(opId string) (*sync.Map, error) {
+func (s *MemoryStore) GetOpState(_ string) (*sync.Map, error) {
 	return &sync.Map{}, nil
+}
+
+func (s *MemoryStore) Clean() error {
+	return nil
 }
