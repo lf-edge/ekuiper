@@ -4,7 +4,7 @@ PACKAGES_PATH ?= _packages
 VERSION := $(shell git describe --tags --always)
 PACKAGE_NAME := kuiper-$(VERSION)-$(shell go env GOOS)-$(shell go env GOARCH)
 
-TARGET ?= emqx/kuiper
+TARGET ?= lfedge/ekuiper
 
 export KUIPER_SOURCE := $(shell pwd)
 
