@@ -19,7 +19,7 @@ REST service usually requires a specific data format. That can be imposed by the
 ```json
     {
       "rest": {
-        "url": "http://127.0.0.1:48082/api/v1/device/cc622d99-f835-4e94-b5cb-b1eff8699dc4/command/51fce08a-ae19-4bce-b431-b9f363bba705",       
+        "url": "http://127.0.0.1:59882/api/v1/device/cc622d99-f835-4e94-b5cb-b1eff8699dc4/command/51fce08a-ae19-4bce-b431-b9f363bba705",       
         "method": "post",
         "dataTemplate": "\"newKey\":\"{{.key}}\"",
         "sendSingle": true

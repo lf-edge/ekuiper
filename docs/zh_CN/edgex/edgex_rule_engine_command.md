@@ -31,14 +31,15 @@
 
 ```shell
 curl -X POST \
-  http://$ekuiper_docker:48075/streams \
+  http://$ekuiper_docker:59720/streams \
   -H 'Content-Type: application/json' \
   -d '{
   "sql": "create stream demo() WITH (FORMAT=\"JSON\", TYPE=\"edgex\")"
 }'
 ```
 
-由于这两个规则都会向设备`Random-UnsignedInteger-Device`发送控制命令，通过运行命令`curl http://localhost:48082/api/v1/device/name/Random-Boolean-Device | jq`可以获取该设备的可用命令列表。它将打印类似的输出，如下所示。
+由于这两个规则都会向设备`Random-UnsignedInteger-Device`
+发送控制命令，通过运行命令`curl http://localhost:59882/api/v1/device/name/Random-Boolean-Device | jq`可以获取该设备的可用命令列表。它将打印类似的输出，如下所示。
 
 ```json
 {
@@ -69,7 +70,7 @@ curl -X POST \
             "description": "service unavailable"
           }
         ],
-        "url": "http://edgex-core-command:48082/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498"
+        "url": "http://edgex-core-command:59882/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498"
       },
       "put": {
         "path": "/api/v1/device/{deviceId}/Bool",
@@ -82,7 +83,7 @@ curl -X POST \
             "description": "service unavailable"
           }
         ],
-        "url": "http://edgex-core-command:48082/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
+        "url": "http://edgex-core-command:59882/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
         "parameterNames": [
           "Bool",
           "EnableRandomization_Bool"
@@ -102,7 +103,7 @@ curl -X POST \
 
 ```shell
 curl -X PUT \
-  http://edgex-core-command:48082/api/v1/device/c1459444-79bd-46c8-8b37-d6e1418f2a3a/command/fe202437-236d-41c5-845e-3e6013b928cd \
+  http://edgex-core-command:59882/api/v1/device/c1459444-79bd-46c8-8b37-d6e1418f2a3a/command/fe202437-236d-41c5-845e-3e6013b928cd \
   -H 'Content-Type: application/json' \
   -d '{"Bool":"true", "EnableRandomization_Bool": "true"}'
 ```
@@ -117,7 +118,7 @@ curl -X PUT \
 
 ```shell
 curl -X POST \
-  http://$eKuiper_server:48075/rules \
+  http://$eKuiper_server:59720/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule1",
@@ -125,7 +126,7 @@ curl -X POST \
   "actions": [
     {
       "rest": {
-        "url": "http://edgex-core-command:48082/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
+        "url": "http://edgex-core-command:59882/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
         "method": "put",
         "retryInterval": -1,
         "dataTemplate": "{\"Bool\":\"true\", \"EnableRandomization_Bool\": \"true\"}",
@@ -147,7 +148,7 @@ curl -X POST \
 
 ```shell
 curl -X POST \
-  http://$eKuiper_server:48075/rules \
+  http://$eKuiper_server:59720/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule2",
@@ -155,7 +156,7 @@ curl -X POST \
   "actions": [
     {
       "rest": {
-        "url": "http://edgex-core-command:48082/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
+        "url": "http://edgex-core-command:59882/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
         "method": "put",
         "retryInterval": -1,
         "dataTemplate": "{\"Bool\":\"false\", \"EnableRandomization_Bool\": \"false\"}",
@@ -193,7 +194,7 @@ SQL的输出内容如下：
 
 ```shell
 curl -X PUT \
-  http://edgex-core-command:48082/api/v1/device/${deviceId}/command/xyz \
+  http://edgex-core-command:59882/api/v1/device/${deviceId}/command/xyz \
   -H 'Content-Type: application/json' \
   -d '{"value":-75, "EnableRandomization_Bool": "true"}'
 ```

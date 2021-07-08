@@ -60,11 +60,11 @@ $ docker ps
 CONTAINER ID        IMAGE                                                                  COMMAND                  CREATED             STATUS              PORTS                                                                                              NAMES
 5618c93027a9        nexus3.edgexfoundry.org:10004/docker-device-virtual-go:master          "/device-virtual --p…"   37 minutes ago      Up 37 minutes       0.0.0.0:49990->49990/tcp                                                                           edgex-device-virtual
 fabe6b9052f5        nexus3.edgexfoundry.org:10004/docker-edgex-ui-go:master                "./edgex-ui-server"      37 minutes ago      Up 37 minutes       0.0.0.0:4000->4000/tcp                                                                             edgex-ui-go
-950135a7041d        emqx/kuiper:0.3.1                                                      "/usr/bin/docker-ent…"   37 minutes ago      Up 37 minutes        0.0.0.0:20498->20498/tcp, 9081/tcp, 0.0.0.0:48075->48075/tcp                                       edgex-kuiper
+950135a7041d        emqx/kuiper:0.3.1                                                      "/usr/bin/docker-ent…"   37 minutes ago      Up 37 minutes        0.0.0.0:20498->20498/tcp, 9081/tcp, 0.0.0.0:59720->59720/tcp                                       edgex-kuiper
 c49b0d6f9347        nexus3.edgexfoundry.org:10004/docker-support-scheduler-go:master       "/support-scheduler …"   37 minutes ago      Up 37 minutes       0.0.0.0:48085->48085/tcp                                                                           edgex-support-scheduler
-4265dcc2bb48        nexus3.edgexfoundry.org:10004/docker-core-command-go:master            "/core-command -cp=c…"   37 minutes ago      Up 37 minutes       0.0.0.0:48082->48082/tcp                                                                           edgex-core-command
+4265dcc2bb48        nexus3.edgexfoundry.org:10004/docker-core-command-go:master            "/core-command -cp=c…"   37 minutes ago      Up 37 minutes       0.0.0.0:59882->59882/tcp                                                                           edgex-core-command
 4667160e2f41        nexus3.edgexfoundry.org:10004/docker-app-service-configurable:master   "/app-service-config…"   37 minutes ago      Up 37 minutes       48095/tcp, 0.0.0.0:48100->48100/tcp                                                                edgex-app-service-configurable-rules
-9bbfe95993f5        nexus3.edgexfoundry.org:10004/docker-core-metadata-go:master           "/core-metadata -cp=…"   37 minutes ago      Up 37 minutes       0.0.0.0:48081->48081/tcp, 48082/tcp                                                                edgex-core-metadata
+9bbfe95993f5        nexus3.edgexfoundry.org:10004/docker-core-metadata-go:master           "/core-metadata -cp=…"   37 minutes ago      Up 37 minutes       0.0.0.0:48081->48081/tcp, 59882/tcp                                                                edgex-core-metadata
 2e342a3aae81        nexus3.edgexfoundry.org:10004/docker-support-notifications-go:master   "/support-notificati…"   37 minutes ago      Up 37 minutes       0.0.0.0:48060->48060/tcp                                                                           edgex-support-notifications
 3cfc628e013a        nexus3.edgexfoundry.org:10004/docker-sys-mgmt-agent-go:master          "/sys-mgmt-agent -cp…"   37 minutes ago      Up 37 minutes       0.0.0.0:48090->48090/tcp                                                                           edgex-sys-mgmt-agent
 f69e9c4d6cc8        nexus3.edgexfoundry.org:10004/docker-core-data-go:master               "/core-data -cp=cons…"   37 minutes ago      Up 37 minutes       0.0.0.0:5563->5563/tcp, 0.0.0.0:48080->48080/tcp                                                   edgex-core-data
@@ -76,20 +76,24 @@ ed7ad5ae08b2        nexus3.edgexfoundry.org:10004/docker-edgex-volume:master    
 
 ### 原生 (native) 方式运行
 
-出于运行效率考虑，读者可能需要直接以原生方式运行 eKuiper，但是可能会发现直接使用下载的 eKuiper 软件包启动后[无法直接使用 Edgex](https://github.com/lf-edge/ekuiper/issues/596)，这是因为 EdgeX 缺省消息总线依赖于 `zeromq` 库，如果 eKuiper 启动的时候在库文件寻找路径下无法找到 `zeromq` 库，它将无法启动。这导致对于不需要使用 EdgeX 的 eKuiper 用户也不得不去安装 `zeromq` 库 ，因此缺省提供的下载安装包中**<u>内置不支持 Edgex</u>** 。如果读者需要以原生方式运行 eKuiper 并且支持 `EdgeX`，可以通过命令 `make pkg_with_edgex` 自己来编译原生安装包，或者从容器中直接拷贝出安装包。
+出于运行效率考虑，读者可能需要直接以原生方式运行 eKuiper，但是可能会发现直接使用下载的 eKuiper
+软件包启动后[无法直接使用 Edgex](https://github.com/lf-edge/ekuiper/issues/596)，这是因为 EdgeX 缺省消息总线依赖于 `zeromq` 库，如果 eKuiper
+启动的时候在库文件寻找路径下无法找到 `zeromq` 库，它将无法启动。这导致对于不需要使用 EdgeX 的 eKuiper 用户也不得不去安装 `zeromq` 库 ，因此缺省提供的下载安装包中**<u>内置不支持
+Edgex</u>** 。如果读者需要以原生方式运行 eKuiper 并且支持 `EdgeX`，可以通过命令 `make pkg_with_edgex` 自己来编译原生安装包，或者从容器中直接拷贝出安装包。
 
 ## 创建流
 
 该步骤是创建一个可以从 EdgeX 消息总线进行数据消费的流。有两种方法来支持管理流，你可以选择喜欢的方式。
 
 ### 方式1: 使用 Rest API
-请注意: EdgeX 中的 eKuiper Rest 接口使用``48075``端口，而不是缺省的``9081``端口。所以在 EdgeX 调用 eKuiper Rest 的时候，请将文档中所有的 9081 替换为 48075。
+
+请注意: EdgeX 中的 eKuiper Rest 接口使用``59720``端口，而不是缺省的``9081``端口。所以在 EdgeX 调用 eKuiper Rest 的时候，请将文档中所有的 9081 替换为 59720。
 
 请将 ``$eKuiper_server`` 替换为本地运行的 eKuiper 实例的地址。
 
 ```shell
 curl -X POST \
-  http://$eKuiper_server:48075/streams \
+  http://$eKuiper_server:59720/streams \
   -H 'Content-Type: application/json' \
   -d '{
   "sql": "create stream demo() WITH (FORMAT=\"JSON\", TYPE=\"edgex\")"
@@ -196,19 +200,20 @@ Rule rule1 was created successfully, please use 'cli getstatus rule rule1' comma
 
 ------
 
-如想将结果发送到别的目标，请参考 eKuiper 中支持的[其它目标](../rules/overview.md#actions)。你现在可以看一下在 ``log/stream.log``中的日志文件，查看规则的详细信息。
+如想将结果发送到别的目标，请参考 eKuiper 中支持的[其它目标](../rules/overview.md#目标动作)。你现在可以看一下在 ``log/stream.log``中的日志文件，查看规则的详细信息。
 
 ```
-time="2020-04-17T06:32:24Z" level=info msg="Serving kuiper (version - 0.3.1-4-g9e63fe1) on port 20498, and restful api on port 9081. \n" file="server.go:101"
-time="2020-04-17T06:32:24Z" level=info msg="The connection to edgex messagebus is established successfully." file="edgex_source.go:95" rule=rule1
-time="2020-04-17T06:32:24Z" level=info msg="Successfully subscribed to edgex messagebus topic events." file="edgex_source.go:104" rule=rule1
-time="2020-04-17T06:32:24Z" level=info msg="The connection to server tcp://broker.emqx.io:1883 was established successfully" file="mqtt_sink.go:161" rule=rule1
-time="2020-04-17T06:32:25Z" level=info msg="Get 24 of value descriptors from service." file="edgex_source.go:223"
-time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int32\":-697766590}]" file="log_sink.go:16" rule=rule1
-time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int8\":-47}]" file="log_sink.go:16" rule=rule1
-time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int16\":-318}]" file="log_sink.go:16" rule=rule1
-time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int64\":-8680421421398846880}]" file="log_sink.go:16" rule=rule1
-time="2020-04-17T06:32:31Z" level=info msg="sink result for rule rule1: [{\"bool\":true}]" file="log_sink.go:16" rule=rule1
+time="2021-07-08 01:03:08" level=info msg="Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720. \n" file="server/server.go:144"
+Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720. 
+time="2021-07-08 01:08:14" level=info msg="Successfully subscribed to edgex messagebus topic rules-events." file="extensions/edgex_source.go:111" rule=rule1
+time="2021-07-08 01:08:14" level=info msg="The connection to server tcp://broker.emqx.io:1883 was established successfully" file="sinks/mqtt_sink.go:182" rule=rule1
+time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Float32\":-2.4369560555943686e+38}]" file="sinks/log_sink.go:16" rule=rule1
+time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Float64\":-1.488582e+308}]" file="sinks/log_sink.go:16" rule=rule1
+time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint64\":9544048735510870974}]" file="sinks/log_sink.go:16" rule=rule1
+time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint16\":33714}]" file="sinks/log_sink.go:16" rule=rule1
+time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint8\":57}]" file="sinks/log_sink.go:16" rule=rule1
+time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint32\":3860684797}]" file="sinks/log_sink.go:16" rule=rule1
+...
 ```
 
 ## 监控分析结果
@@ -217,20 +222,22 @@ time="2020-04-17T06:32:31Z" level=info msg="sink result for rule rule1: [{\"bool
 
 ```shell
 # mosquitto_sub -h broker.emqx.io -t result
-[{"bool":true}]
-[{"bool":false}]
-[{"bool":true}]
-[{"randomvalue_int16":3287}]
-[{"float64":8.41326e+306}]
-[{"randomvalue_int32":-1872949486}]
-[{"randomvalue_int8":-53}]
-[{"int64":-1829499332806053678}]
-[{"int32":-1560624981}]
-[{"int16":8991}]
-[{"int8":-4}]
-[{"bool":true}]
-[{"bool":false}]
-[{"float64":1.737076e+306}]
+[{"Bool":false}]
+[{"Int64":228212448717749920}]
+[{"Int8":-70}]
+[{"Int16":16748}]
+[{"Int32":728167766}]
+[{"Uint16":32311}]
+[{"Uint8":133}]
+[{"Uint64":16707883778643919729}]
+[{"Uint32":1453300043}]
+[{"Bool":false}]
+[{"Float32":1.3364580409833176e+37}]
+[{"Float64":8.638344e+306}]
+[{"Int64":-2517790659681968229}]
+[{"Int16":-31683}]
+[{"Int8":96}]
+[{"Int32":-1245869667}]
 ...
 ```
 
