@@ -61,39 +61,47 @@ After all of the Docker instances are started, you can use ``docker ps`` command
 
 ```shell
 $ docker ps
-CONTAINER ID        IMAGE                                                                  COMMAND                  CREATED             STATUS              PORTS                                                                                              NAMES
-5618c93027a9        nexus3.edgexfoundry.org:10004/docker-device-virtual-go:master          "/device-virtual --p…"   37 minutes ago      Up 37 minutes       0.0.0.0:49990->49990/tcp                                                                           edgex-device-virtual
-fabe6b9052f5        nexus3.edgexfoundry.org:10004/docker-edgex-ui-go:master                "./edgex-ui-server"      37 minutes ago      Up 37 minutes       0.0.0.0:4000->4000/tcp                                                                             edgex-ui-go
-950135a7041d        emqx/kuiper:0.3.1                                                      "/usr/bin/docker-ent…"   37 minutes ago      Up 37 minutes        0.0.0.0:20498->20498/tcp, 9081/tcp, 0.0.0.0:48075->48075/tcp                                       edgex-kuiper
-c49b0d6f9347        nexus3.edgexfoundry.org:10004/docker-support-scheduler-go:master       "/support-scheduler …"   37 minutes ago      Up 37 minutes       0.0.0.0:48085->48085/tcp                                                                           edgex-support-scheduler
-4265dcc2bb48        nexus3.edgexfoundry.org:10004/docker-core-command-go:master            "/core-command -cp=c…"   37 minutes ago      Up 37 minutes       0.0.0.0:48082->48082/tcp                                                                           edgex-core-command
-4667160e2f41        nexus3.edgexfoundry.org:10004/docker-app-service-configurable:master   "/app-service-config…"   37 minutes ago      Up 37 minutes       48095/tcp, 0.0.0.0:48100->48100/tcp                                                                edgex-app-service-configurable-rules
-9bbfe95993f5        nexus3.edgexfoundry.org:10004/docker-core-metadata-go:master           "/core-metadata -cp=…"   37 minutes ago      Up 37 minutes       0.0.0.0:48081->48081/tcp, 48082/tcp                                                                edgex-core-metadata
-2e342a3aae81        nexus3.edgexfoundry.org:10004/docker-support-notifications-go:master   "/support-notificati…"   37 minutes ago      Up 37 minutes       0.0.0.0:48060->48060/tcp                                                                           edgex-support-notifications
-3cfc628e013a        nexus3.edgexfoundry.org:10004/docker-sys-mgmt-agent-go:master          "/sys-mgmt-agent -cp…"   37 minutes ago      Up 37 minutes       0.0.0.0:48090->48090/tcp                                                                           edgex-sys-mgmt-agent
-f69e9c4d6cc8        nexus3.edgexfoundry.org:10004/docker-core-data-go:master               "/core-data -cp=cons…"   37 minutes ago      Up 37 minutes       0.0.0.0:5563->5563/tcp, 0.0.0.0:48080->48080/tcp                                                   edgex-core-data
-9e5091928409        nexus3.edgexfoundry.org:10004/docker-support-logging-go:master         "/support-logging -c…"   37 minutes ago      Up 37 minutes       0.0.0.0:48061->48061/tcp                                                                           edgex-support-logging
-74e8668f892c        redis:5.0.7-alpine                                                     "docker-entrypoint.s…"   37 minutes ago      Up 37 minutes       0.0.0.0:6379->6379/tcp                                                                             edgex-redis
-9b341bb217f9        consul:1.3.1                                                           "docker-entrypoint.s…"   37 minutes ago      Up 37 minutes       0.0.0.0:8400->8400/tcp, 8300-8302/tcp, 8301-8302/udp, 8600/tcp, 8600/udp, 0.0.0.0:8500->8500/tcp   edgex-core-consul
-ed7ad5ae08b2        nexus3.edgexfoundry.org:10004/docker-edgex-volume:master               "/bin/sh -c '/usr/bi…"   37 minutes ago      Up 37 minutes                                                                                                          edgex-files
+CONTAINER ID   IMAGE                                                           COMMAND                  CREATED
+ STATUS          PORTS                                                                                  NAMES
+c7cb2c07dc4f   nexus3.edgexfoundry.org:10004/device-virtual:latest             "/device-virtual --c…"   13 minutes ago   Up 13 minutes   127.0.0.1:59900->59900/tcp                                                             edgex-device-virtual
+d7089087c301   nexus3.edgexfoundry.org:10004/device-rest:latest                "/device-rest --cp=c…"   13 minutes ago   Up 13 minutes   127.0.0.1:59986->59986/tcp                                                             edgex-device-rest
+32cd339157e2   nexus3.edgexfoundry.org:10004/app-service-configurable:latest   "/app-service-config…"   13 minutes ago   Up 13 minutes   48095/tcp, 127.0.0.1:59701->59701/tcp                                                  edgex-app-rules-engine
+62c2174d4b45   nexus3.edgexfoundry.org:10004/sys-mgmt-agent:latest             "/sys-mgmt-agent -cp…"   13 minutes ago   Up 13 minutes   127.0.0.1:58890->58890/tcp                                                             edgex-sys-mgmt-agent
+5b9f9cfb4307   nexus3.edgexfoundry.org:10004/core-data:latest                  "/core-data -cp=cons…"   13 minutes ago   Up 13 minutes   127.0.0.1:5563->5563/tcp, 127.0.0.1:59880->59880/tcp                                   edgex-core-data
+b455b06e2e7c   nexus3.edgexfoundry.org:10004/core-command:latest               "/core-command -cp=c…"   13 minutes ago   Up 13 minutes   127.0.0.1:59882->59882/tcp                                                             edgex-core-command
+6de994ce09d6   nexus3.edgexfoundry.org:10004/core-metadata:latest              "/core-metadata -cp=…"   13 minutes ago   Up 13 minutes   127.0.0.1:59881->59881/tcp                                                             edgex-core-metadata
+1b62bf57dd34   nexus3.edgexfoundry.org:10004/support-notifications:latest      "/support-notificati…"   13 minutes ago   Up 13 minutes   127.0.0.1:59860->59860/tcp                                                             edgex-support-notifications
+38776815a286   nexus3.edgexfoundry.org:10004/support-scheduler:latest          "/support-scheduler …"   13 minutes ago   Up 13 minutes   127.0.0.1:59861->59861/tcp                                                             edgex-support-scheduler
+5176ddff9f08   emqx/kuiper:1.2.1-alpine                                        "/usr/bin/docker-ent…"   13 minutes ago   Up 13 minutes   9081/tcp, 20498/tcp, 127.0.0.1:59720->59720/tcp                                        edgex-kuiper
+c78419bc5096   consul:1.9.5                                                    "docker-entrypoint.s…"   13 minutes ago   Up 13 minutes   8300-8302/tcp, 8301-8302/udp, 8600/tcp, 8600/udp, 127.0.0.1:8500->8500/tcp             edgex-core-consul
+d4b236a7b561   redis:6.2.4-alpine                                              "docker-entrypoint.s…"   13 minutes ago   Up 13 minutes   127.0.0.1:6379->6379/tcp                                                               edgex-redis
 ```
 
 #### Run with native
 
-For performance reason, reader probably wants to run eKuiper with native approach. But you may find that [EdgeX cannot be used](https://github.com/lf-edge/ekuiper/issues/596) with the downloaded eKuiper binary packages. It's because that EdgeX message bus relies on `zeromq` library. If `zeromq` library cannot be found in the library search path, it cannot be started. So it will have those eKuiper users who do not want to use EdgeX install the `zeromq` library as well. For this reason, the default downloaded eKuiper package **<u>does NOT have embedded support</u>** for `EdgeX`. If reader wants to support `EdgeX` in native packages, you can either make a native package by running command `make pkg_with_edgex`, or just copy the binary package from docker container.
+For performance reason, reader probably wants to run eKuiper with native approach. But you may find
+that [EdgeX cannot be used](https://github.com/lf-edge/ekuiper/issues/596) with the downloaded eKuiper binary packages.
+It's because that EdgeX message bus relies on `zeromq` library. If `zeromq` library cannot be found in the library
+search path, it cannot be started. So it will have those eKuiper users who do not want to use EdgeX install the `zeromq`
+library as well. For this reason, the default downloaded eKuiper package **<u>does NOT have embedded support</u>**
+for `EdgeX`. If reader wants to support `EdgeX` in native packages, you can either make a native package by running
+command `make pkg_with_edgex`, or just copy the binary package from docker container.
 
 ### Create a stream
 
 There are two approaches to manage stream, you can use your preferred approach.
 
 #### Option 1: Use Rest API
-Notice: Rest API of eKuiper in EdgeX uses ``48075`` instead of default ``9081``. So please change 9081 to 48075 in all of documents when you use EdgeX eKuiper Rest API.
 
-The next step is to create a stream that can consume data from EdgeX message bus. Please change ``$kuiper_docker`` to eKuiper docker instance IP address.
+Notice: Rest API of eKuiper in EdgeX uses ``59720`` instead of default ``9081``. So please change 9081 to 59720 in all
+of documents when you use EdgeX eKuiper Rest API.
+
+The next step is to create a stream that can consume data from EdgeX message bus. Please change ``$kuiper_docker`` to
+eKuiper docker instance IP address.
 
 ```shell
 curl -X POST \
-  http://$kuiper_docker:48075/streams \
+  http://$kuiper_docker:59720/streams \
   -H 'Content-Type: application/json' \
   -d '{
   "sql": "create stream demo() WITH (FORMAT=\"JSON\", TYPE=\"edgex\")"
@@ -147,7 +155,7 @@ So the below rule will get all of values from ``event`` topic. The sink result w
 
 ```shell
 curl -X POST \
-  http://$kuiper_server:48075/rules \
+  http://$kuiper_server:59720/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule1",
@@ -200,21 +208,23 @@ Rule rule1 was created successfully, please use 'cli getstatus rule rule1' comma
 
 ------
 
-If you want to send analysis result to another sink, please refer to [other sinks](../rules/overview.md#actions) that supported in eKuiper.
+If you want to send analysis result to another sink, please refer to [other sinks](../rules/overview.md#sinksactions)
+that supported in eKuiper.
 
-Now you can also take a look at the log file under ``log/stream.log``, or through command ``docker logs edgex-kuiper `` to see detailed info of rule. 
+Now you can also take a look at the log file under ``log/stream.log``, or through command ``docker logs edgex-kuiper ``
+to see detailed info of rule.
 
 ```
-time="2020-04-17T06:32:24Z" level=info msg="Serving kuiper (version - 0.3.1-4-g9e63fe1) on port 20498, and restful api on port 9081. \n" file="server.go:101"
-time="2020-04-17T06:32:24Z" level=info msg="The connection to edgex messagebus is established successfully." file="edgex_source.go:95" rule=rule1
-time="2020-04-17T06:32:24Z" level=info msg="Successfully subscribed to edgex messagebus topic events." file="edgex_source.go:104" rule=rule1
-time="2020-04-17T06:32:24Z" level=info msg="The connection to server tcp://broker.emqx.io:1883 was established successfully" file="mqtt_sink.go:161" rule=rule1
-time="2020-04-17T06:32:25Z" level=info msg="Get 24 of value descriptors from service." file="edgex_source.go:223"
-time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int32\":-697766590}]" file="log_sink.go:16" rule=rule1
-time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int8\":-47}]" file="log_sink.go:16" rule=rule1
-time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int16\":-318}]" file="log_sink.go:16" rule=rule1
-time="2020-04-17T06:32:25Z" level=info msg="sink result for rule rule1: [{\"int64\":-8680421421398846880}]" file="log_sink.go:16" rule=rule1
-time="2020-04-17T06:32:31Z" level=info msg="sink result for rule rule1: [{\"bool\":true}]" file="log_sink.go:16" rule=rule1
+time="2021-07-08 01:03:08" level=info msg="Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720. \n" file="server/server.go:144"
+Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720. 
+time="2021-07-08 01:08:14" level=info msg="Successfully subscribed to edgex messagebus topic rules-events." file="extensions/edgex_source.go:111" rule=rule1
+time="2021-07-08 01:08:14" level=info msg="The connection to server tcp://broker.emqx.io:1883 was established successfully" file="sinks/mqtt_sink.go:182" rule=rule1
+time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Float32\":-2.4369560555943686e+38}]" file="sinks/log_sink.go:16" rule=rule1
+time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Float64\":-1.488582e+308}]" file="sinks/log_sink.go:16" rule=rule1
+time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint64\":9544048735510870974}]" file="sinks/log_sink.go:16" rule=rule1
+time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint16\":33714}]" file="sinks/log_sink.go:16" rule=rule1
+time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint8\":57}]" file="sinks/log_sink.go:16" rule=rule1
+time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint32\":3860684797}]" file="sinks/log_sink.go:16" rule=rule1
 ...
 ```
 
@@ -224,20 +234,23 @@ Since all of the analysis result are published to  ``tcp://broker.emqx.io:1883``
 
 ```shell
 $ mosquitto_sub -h broker.emqx.io -t result
-[{"bool":true}]
-[{"bool":false}]
-[{"bool":true}]
-[{"randomvalue_int16":3287}]
-[{"float64":8.41326e+306}]
-[{"randomvalue_int32":-1872949486}]
-[{"randomvalue_int8":-53}]
-[{"int64":-1829499332806053678}]
-[{"int32":-1560624981}]
-[{"int16":8991}]
-[{"int8":-4}]
-[{"bool":true}]
-[{"bool":false}]
-[{"float64":1.737076e+306}]
+[{"Bool":false}]
+[{"Int64":228212448717749920}]
+[{"Int8":-70}]
+[{"Int16":16748}]
+[{"Int32":728167766}]
+[{"Uint16":32311}]
+[{"Uint8":133}]
+[{"Uint64":16707883778643919729}]
+[{"Uint32":1453300043}]
+[{"Bool":false}]
+[{"Float32":1.3364580409833176e+37}]
+[{"Float64":8.638344e+306}]
+[{"Int64":-2517790659681968229}]
+[{"Int16":-31683}]
+[{"Int8":96}]
+[{"Int32":-1245869667}]
+...
 ```
 
 You can also type below command to look at the rule execution status. The corresponding REST API is also available for getting rule status, please check [related document](../restapi/overview.md).

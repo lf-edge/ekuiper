@@ -31,71 +31,91 @@ You should create a stream that can consume streaming data from EdgeX applicatio
 
 ```shell
 curl -X POST \
-  http://$kuiper_docker:48075/streams \
+  http://$kuiper_docker:59720/streams \
   -H 'Content-Type: application/json' \
   -d '{
   "sql": "create stream demo() WITH (FORMAT=\"JSON\", TYPE=\"edgex\")"
 }'
 ```
 
-Since both of rules will send control command to device `Random-UnsignedInteger-Device`, let's get a list of available commands for this device by running below command,
+Since both of rules will send control command to device `Random-UnsignedInteger-Device`, let's get a list of available
+commands for this device by running below command,
 
- `curl http://localhost:48082/api/v1/device/name/Random-Boolean-Device | jq`, and it prints similar outputs as below.
+`http://127.0.0.1:59882/api/v2/device/name/Random-Boolean-Device | jq`, and it prints similar outputs as below.
 
 ```json
 {
-  "id": "9b051411-ca20-4556-bd3e-7f52475764ff",
-  "name": "Random-Boolean-Device",
-  "adminState": "UNLOCKED",
-  "operatingState": "ENABLED",
-  "labels": [
-    "device-virtual-example"
-  ],
-  "commands": [
-    {
-      "created": 1589052044139,
-      "modified": 1589052044139,
-      "id": "28d88bb3-e280-46f7-949f-37cc411757f5",
-      "name": "Bool",
-      "get": {
-        "path": "/api/v1/device/{deviceId}/Bool",
-        "responses": [
+  "apiVersion": "v2",
+  "statusCode": 200,
+  "deviceCoreCommand": {
+    "deviceName": "Random-Boolean-Device",
+    "profileName": "Random-Boolean-Device",
+    "coreCommands": [
+      {
+        "name": "WriteBoolValue",
+        "set": true,
+        "path": "/api/v2/device/name/Random-Boolean-Device/WriteBoolValue",
+        "url": "http://edgex-core-command:59882",
+        "parameters": [
           {
-            "code": "200",
-            "expectedValues": [
-              "Bool"
-            ]
+            "resourceName": "Bool",
+            "valueType": "Bool"
           },
           {
-            "code": "503",
-            "description": "service unavailable"
+            "resourceName": "EnableRandomization_Bool",
+            "valueType": "Bool"
           }
-        ],
-        "url": "http://edgex-core-command:48082/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498"
+        ]
       },
-      "put": {
-        "path": "/api/v1/device/{deviceId}/Bool",
-        "responses": [
+      {
+        "name": "WriteBoolArrayValue",
+        "set": true,
+        "path": "/api/v2/device/name/Random-Boolean-Device/WriteBoolArrayValue",
+        "url": "http://edgex-core-command:59882",
+        "parameters": [
           {
-            "code": "200"
+            "resourceName": "BoolArray",
+            "valueType": "BoolArray"
           },
           {
-            "code": "503",
-            "description": "service unavailable"
+            "resourceName": "EnableRandomization_BoolArray",
+            "valueType": "Bool"
           }
-        ],
-        "url": "http://edgex-core-command:48082/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
-        "parameterNames": [
-          "Bool",
-          "EnableRandomization_Bool"
+        ]
+      },
+      {
+        "name": "Bool",
+        "get": true,
+        "set": true,
+        "path": "/api/v2/device/name/Random-Boolean-Device/Bool",
+        "url": "http://edgex-core-command:59882",
+        "parameters": [
+          {
+            "resourceName": "Bool",
+            "valueType": "Bool"
+          }
+        ]
+      },
+      {
+        "name": "BoolArray",
+        "get": true,
+        "set": true,
+        "path": "/api/v2/device/name/Random-Boolean-Device/BoolArray",
+        "url": "http://edgex-core-command:59882",
+        "parameters": [
+          {
+            "resourceName": "BoolArray",
+            "valueType": "BoolArray"
+          }
         ]
       }
-    }
-  ]
+    ]
+  }
 }
 ```
 
-From the output, you can know that there are two commands, and the 2nd command is used for update configurations for the device. There are two parameters for this device,
+From the output, you can know that there are four commands, and the 1st command is used for update configurations for
+the device. There are two parameters for this device,
 
 - `Bool`: Set the returned value when other services want to get device data. The parameter will be used only when `EnableRandomization_Bool` is set to false.
 - `EnableRandomization_Bool`: Enable randomization generation of bool value or not. If this value is set to true, then the 1st parameter will be ignored.
@@ -104,7 +124,7 @@ So a sample control command would be similar as following.
 
 ```shell
 curl -X PUT \
-  http://edgex-core-command:48082/api/v1/device/c1459444-79bd-46c8-8b37-d6e1418f2a3a/command/fe202437-236d-41c5-845e-3e6013b928cd \
+  http://edgex-core-command:59882/api/v2/device/name/Random-Boolean-Device/WriteBoolValue \
   -H 'Content-Type: application/json' \
   -d '{"Bool":"true", "EnableRandomization_Bool": "true"}'
 ```
@@ -119,7 +139,7 @@ The 1st is a rule that monitoring `Random-UnsignedInteger-Device` device, and if
 
 ```shell
 curl -X POST \
-  http://$kuiper_server:48075/rules \
+  http://$kuiper_server:59720/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule1",
@@ -127,7 +147,7 @@ curl -X POST \
   "actions": [
     {
       "rest": {
-        "url": "http://edgex-core-command:48082/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
+        "url": "http://edgex-core-command:59882/api/v2/device/name/Random-Boolean-Device/WriteBoolValue",
         "method": "put",
         "retryInterval": -1,
         "dataTemplate": "{\"Bool\":\"true\", \"EnableRandomization_Bool\": \"true\"}",
@@ -149,15 +169,15 @@ The 2nd rule is monitoring `Random-Integer-Device` device, and if the average va
 
 ```shell
 curl -X POST \
-  http://$kuiper_server:48075/rules \
+  http://$kuiper_server:59720/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule2",
-  "sql": "SELECT avg(int8) AS avg_int8 FROM demo WHERE int8 != nil GROUP BY  TUMBLINGWINDOW(ss, 20) HAVING avg(int8) > 0",
+  "sql": "SELECT avg(int8) AS avg_int8 FROM demo WHERE int8 != nil GROUP BY TUMBLINGWINDOW(ss, 20) HAVING avg(int8) > 0",
   "actions": [
     {
       "rest": {
-        "url": "http://edgex-core-command:48082/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
+        "url": "http://edgex-core-command:59882/api/v2/device/name/Random-Boolean-Device/WriteBoolValue",
         "method": "put",
         "retryInterval": -1,
         "dataTemplate": "{\"Bool\":\"false\", \"EnableRandomization_Bool\": \"false\"}",
@@ -195,7 +215,7 @@ Let's suppose a service need following data format, while `value` field is read 
 
 ```shell
 curl -X PUT \
-  http://edgex-core-command:48082/api/v1/device/${deviceId}/command/xyz \
+  http://edgex-core-command:59882/api/v1/device/${deviceId}/command/xyz \
   -H 'Content-Type: application/json' \
   -d '{"value":-75, "EnableRandomization_Bool": "true"}'
 ```
