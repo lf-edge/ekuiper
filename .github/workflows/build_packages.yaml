@@ -68,10 +68,10 @@ jobs:
         - name: build docker image
           run: |
             make docker -j4
-            docker save emqx/kuiper:$(git describe --tags --always)-slim > kuiper-image.tar.gz
+            docker save lfedge/ekuiper:$(git describe --tags --always)-slim > kuiper-image.tar.gz
         - name: test docker image
           run: |
-            for image_id in $(docker images emqx/kuiper -q); do
+            for image_id in $(docker images lfedge/ekuiper -q); do
               container_id=$(docker run -d $image_id)
               ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
               sleep 5
@@ -132,7 +132,7 @@ jobs:
             plugin_type=$(echo ${PLUGIN%%/*})
             plugin_name=$(echo ${PLUGIN##*/})
 
-            for image_id in $(docker images emqx/kuiper -q); do
+            for image_id in $(docker images lfedge/ekuiper -q); do
                 container_id=$(docker run -d -v $(pwd)/_plugins:/var/plugins $image_id)
                 ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
                 os=$(docker exec -i ${container_id} sh -c "sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g'" )
@@ -201,7 +201,7 @@ jobs:
             set -e -u -x
             docker buildx build --no-cache \
             --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
-            -t emqx/kuiper:$(git describe --tags --always) \
+            -t lfedge/ekuiper:$(git describe --tags --always) \
             -f deploy/docker/Dockerfile . \
             --push
         - name: cross build docker images
@@ -212,7 +212,7 @@ jobs:
             set -e -u -x
             docker buildx build --no-cache \
             --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
-            -t emqx/kuiper:$(git describe --tags --always)-$SUFFIX \
+            -t lfedge/ekuiper:$(git describe --tags --always)-$SUFFIX \
             -f deploy/docker/Dockerfile-$SUFFIX . \
             --push
 
@@ -229,11 +229,11 @@ jobs:
             image: tonistiigi/binfmt:latest
             platforms: all
         - name: build docker image
-          run: docker build --no-cache -t emqx/kuiper-kubernetes-tool:$(git describe --tags --always) -f deploy/docker/Dockerfile-kubernetes-tool .
+          run: docker build --no-cache -t lfedge/ekuiper-kubernetes-tool:$(git describe --tags --always) -f deploy/docker/Dockerfile-kubernetes-tool .
         - name: test docker image
           run: |
             set -e -u -x
-            docker run -d --name kuiper-kubernetes-tool emqx/kuiper-kubernetes-tool:$(git describe --tags --always)
+            docker run -d --name kuiper-kubernetes-tool lfedge/ekuiper-kubernetes-tool:$(git describe --tags --always)
             sleep 5
             if [ "$(docker logs kuiper-kubernetes-tool)" != "Kuiper kubernetes tool is started successfully!"  ]; then exit 1; fi
         - uses: docker/login-action@v1
@@ -246,7 +246,7 @@ jobs:
           run: |
             docker buildx build --no-cache \
                 --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
-                -t emqx/kuiper-kubernetes-tool:$(git describe --tags --always) \
+                -t lfedge/ekuiper-kubernetes-tool:$(git describe --tags --always) \
                 -f deploy/docker/Dockerfile-kubernetes-tool . \
                 --push
 
@@ -283,36 +283,3 @@ jobs:
             repo: ekuiper
             path: "_packages/kuiper-*"
             token: ${{ secrets.GITHUB_TOKEN }}
-        - name: create invalidation for cloudfront
-          if: github.event_name == 'release'
-          run: |
-            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
-            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws configure set default.region us-west-2
-            aws s3 rm --quiet --recursive s3://packages.emqx/kuiper/$version
-            aws s3 cp --quiet --recursive ./_packages s3://packages.emqx/kuiper/$version
-            aws s3 cp --quiet --recursive ./_plugins s3://packages.emqx/kuiper-plugins/$version
-            aws cloudfront create-invalidation --distribution-id E170YEULGLT8XB --paths "/kuiper/$version/*,/kuiper-plugins/$version/*"
-        - name: update emqx.io
-          if: github.event_name == 'release'
-          run: |
-            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
-            curl -w %{http_code} \
-               --insecure \
-               -H "Content-Type: application/json" \
-               -H "token: ${{ secrets.EMQX_IO_TOKEN }}" \
-               -X POST \
-               -d "{\"repo\":\"emqx/kuiper\", \"tag\": \"${version}\" }" \
-               ${{ secrets.EMQX_IO_RELEASE_API }}
-        - name: update helm packages
-          if: github.event_name == 'release'
-          run: |
-            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
-            curl \
-            -H "Authorization: token ${{ secrets.CI_GIT_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            -X POST \
-            -d "{\"ref\":\"v1.0.0\",\"inputs\":{\"version\": \"${version}\", \"emqx_ce\": \"true\"}}" \
-            https://api.github.com/repos/emqx/emqx-ci-helper/actions/workflows/kuiper_repos.yaml/dispatches
-
