@@ -15,8 +15,8 @@ From eKuiper version 0.9.1, whenever a new version of eKuiper is released, the c
 ## Architecture design
 
 * UI end: a visual interface, easy for users to operate
-* eKuiper-manager: Management console, which essentially is a reverse HTTP proxy service, providing the services of user management, permission verification. It can be deployed in the cloud or at the edge
-* eKuiper instance: managed eKuiper node instance, eKuiper-manager can manage multiple eKuiper nodes at the same time
+* Kuiper-manager: Management console, which essentially is a reverse HTTP proxy service, providing the services of user management, permission verification. It can be deployed in the cloud or at the edge
+* eKuiper instance: managed eKuiper node instance, Kuiper-manager can manage multiple eKuiper nodes at the same time
 
 ![construct](./resources/arch.png)
 
@@ -24,16 +24,16 @@ From eKuiper version 0.9.1, whenever a new version of eKuiper is released, the c
 
 ### Install eKuiper
 
-- Pull eKuiper's Docker image from [Docker Image Library](https://hub.docker.com/r/emqx/kuiper/tags). Since it is required to install the plugin in this article, you must use the `kuiper:0.9.1-slim` image (`kuiper:0.9.1-alpine` image is relatively small and easy to install, but due to the lack of some necessary library files, the plug-in cannot run normally. The `kuiper:0.9.1` image is the development version, which is suitable for use in the development phase).
+- Pull eKuiper's Docker image from [Docker Image Library](https://hub.docker.com/r/lfedge/ekuiper/tags). Since it is required to install the plugin in this article, you must use the `kuiper:0.9.1-slim` image (`kuiper:0.9.1-alpine` image is relatively small and easy to install, but due to the lack of some necessary library files, the plug-in cannot run normally. The `kuiper:0.9.1` image is the development version, which is suitable for use in the development phase).
 
   ```shell
-  docker pull emqx/kuiper:0.9.1-slim
+  docker pull lfedge/ekuiper:0.9.1-slim
   ```
 
 - Run the eKuiper container (for convenience, we will use the public MQTT server provided by [EMQ](https://www.emqx.io), and the address can be set by the `-e` option when running the container). If you want to access the eKuiper instance through the host, you can expose port 9081 by adding the `-p 9081:9081` parameter when starting the container.
 
   ```shell
-  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] emqx/kuiper:0.9.1-slim
+  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] lfedge/ekuiper:0.9.1-slim
   ```
   
   When the container is running, the MQTT server address can be set through the `-e` option, and the data is written to the MQTT source configuration file, which can be viewed by the following command:

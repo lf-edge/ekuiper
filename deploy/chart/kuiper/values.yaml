@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: emqx/kuiper
+  repository: lfedge/ekuiper
   pullPolicy: IfNotPresent
 
 service:

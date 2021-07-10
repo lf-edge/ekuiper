@@ -62,7 +62,7 @@ The rule options can be defined globally in ``etc/kuiper.yaml`` under the ``rule
 
 - eKuiper provides embeded following 3 sources,
   - MQTT source, see  [MQTT source stream](./sources/mqtt.md) for more detailed info.
-  - EdgeX source by default is shipped in [docker images](https://hub.docker.com/r/emqx/kuiper), but NOT included in single download binary files, you use ``make pkg_with_edgex`` command to build a binary package that supports EdgeX source. Please see [EdgeX source stream](./sources/edgex.md) for more detailed info.
+  - EdgeX source by default is shipped in [docker images](https://hub.docker.com/r/lfedge/ekuiper), but NOT included in single download binary files, you use ``make pkg_with_edgex`` command to build a binary package that supports EdgeX source. Please see [EdgeX source stream](./sources/edgex.md) for more detailed info.
   - HTTP pull source, regularly pull the contents at user's specified interval time, see [here](./sources/http_pull.md) for more detailed info.
 - See [SQL](../sqls/overview.md) for more info of eKuiper SQL.
 - Sources can be customized, see [extension](../extension/overview.md) for more detailed info.

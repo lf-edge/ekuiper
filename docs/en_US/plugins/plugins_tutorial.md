@@ -182,7 +182,7 @@ Developers can locally compile eKuiper and the plugin for debugging, which steps
 eKuiper provides different docker images for different purpose. The development docker image should be used for compiling plugins. From 0.4.0, the eKuiper image with tag x.x.x (e.g. `kuiper:0.4.0`) is the development docker image. For 0.3.x, eKuiper image with tag x.x.x-dev (e.g. `kuiper:0.3.0-dev`) is the development docker image. Compared with the running version, the development version provides the development environment of Go, which lets users compile the plugin that can be completely compatible with the officially published version of eKuiper. The compiling steps in docker are as follows:
 1. Run docker of the development version of eKuiper. Users need to mount the local plugin directory to the directory in docker, and then they can access and compile the plugin project in docker. The author's plugin project is located in the local `/var/git` directory. We map the local directory `/var/git` to the `/home` directory in docker by using the following commands.
     ```go
-    docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/home emqx/kuiper:0.3.0-dev
+    docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/home lfedge/ekuiper:0.3.0-dev
     ```
 2. The principle of compiling plugins in docker environment is the same as the local compilation. The compiled plugin is locating in the target directory of the plugin project.
     ```go
@@ -240,7 +240,7 @@ If the production environment and development environment are different, the dev
 
 ### Plugin compilation
 
-The plugin should use the same environment as the production environment  eKuiper to compile in principle. If the production environment is eKuiper docker, should use the dev docker environment that has the same version as the production environment to compile the plugin. For example, if the production environment uses docker mirroring [emqx/kuiper:0.3.0](https://registry.hub.docker.com/layers/emqx/kuiper/0.3.0/images/sha256-0e3543d33f6f8c56de044d5ff001fd39b9e26f82219ca5fd25605953ed33580e?context=explore), the plugin should be compiled in [emqx/kuiper:0.3.0-dev](https://registry.hub.docker.com/layers/emqx/kuiper/0.3.0-dev/images/sha256-a309d3821b55b01dc01c4f4a04e83288bf5526325f0073197387f2ca425260d0?context=explore) environment.
+The plugin should use the same environment as the production environment  eKuiper to compile in principle. If the production environment is eKuiper docker, should use the dev docker environment that has the same version as the production environment to compile the plugin. For example, if the production environment uses docker mirroring [lfedge/ekuiper:0.3.0](https://registry.hub.docker.com/layers/lfedge/ekuiper/0.3.0/images/sha256-0e3543d33f6f8c56de044d5ff001fd39b9e26f82219ca5fd25605953ed33580e?context=explore), the plugin should be compiled in [lfedge/ekuiper:0.3.0-dev](https://registry.hub.docker.com/layers/lfedge/ekuiper/0.3.0-dev/images/sha256-a309d3821b55b01dc01c4f4a04e83288bf5526325f0073197387f2ca425260d0?context=explore) environment.
 
 Please refer [Docker compile](#docker编译) for the compilation process. The compiled plugin can be tested in the Development Docker image before deploying.
 

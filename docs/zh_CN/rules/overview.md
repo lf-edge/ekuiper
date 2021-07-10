@@ -62,7 +62,7 @@
 
 - eKuiper 支持以下 3 种内置源：
   - MQTT 源，有关更多详细信息，请参阅 [MQTT source stream](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/mqtt.md)。
-  - EdgeX 源缺省是包含在[容器镜像](https://hub.docker.com/r/emqx/kuiper)中发布的，但是没有包含在单独下载的二进制包中，您可以使用 `make pkg_with_edgex` 命令来编译出一个支持 EdgeX 源的程序。更多关于它的详细信息，请参考 [EdgeX source stream](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/edgex.md)。
+  - EdgeX 源缺省是包含在[容器镜像](https://hub.docker.com/r/lfedge/ekuiper)中发布的，但是没有包含在单独下载的二进制包中，您可以使用 `make pkg_with_edgex` 命令来编译出一个支持 EdgeX 源的程序。更多关于它的详细信息，请参考 [EdgeX source stream](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/edgex.md)。
   - HTTP 定时拉取源，按照用户指定的时间间隔，定时从 HTTP 服务器中拉取数据，更多详细信息，请参考[这里](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/http_pull.md) 。
 - 有关eKuiper SQL 的更多信息，请参阅 [SQL](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/overview.md)。
 - 可以自定义来源，请参阅 [extension](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/extension/overview.md)了解更多详细信息。

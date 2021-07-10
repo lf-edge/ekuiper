@@ -39,7 +39,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 - Management
 
-  - [A web based management dashboard](https://hub.docker.com/r/emqx/kuiper-manager) for nodes, plugins, streams & rules management
+  - [A web based management dashboard](https://hub.docker.com/r/lfedge/ekuiper-manager) for nodes, plugins, streams & rules management
   - Plugins, streams and rules management through CLI & REST API
   - Easily be integrate with [KubeEdge](https://github.com/kubeedge/kubeedge), [K3s](https://github.com/rancher/k3s) and [Baetyl](https://github.com/baetyl/baetyl), which bases Kubernetes
 

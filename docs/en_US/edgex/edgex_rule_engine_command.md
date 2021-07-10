@@ -215,7 +215,7 @@ Let's suppose a service need following data format, while `value` field is read 
 
 ```shell
 curl -X PUT \
-  http://edgex-core-command:59882/api/v1/device/${deviceId}/command/xyz \
+  http://edgex-core-command:59882/api/v2/device/name/${deviceName}/command \
   -H 'Content-Type: application/json' \
   -d '{"value":-75, "EnableRandomization_Bool": "true"}'
 ```
