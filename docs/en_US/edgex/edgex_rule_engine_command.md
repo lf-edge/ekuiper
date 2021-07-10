@@ -1,49 +1,69 @@
-# Control device with EdgeX eKuiper rules engine
+# Command device with EdgeX eKuiper rules engine
 
 ## Overview
 
-This document describes how to use eKuiper rule engine to control devices with analysis result. To make the tutorial simple,  the doc uses [device-virtual](https://github.com/edgexfoundry/device-virtual-go) sample,  it analyzes the data sent from device-virtual services, and then control the device according to the analysis result produced by eKuiper rule engine.
+This document describes how to actuate a device with rules trigger by the eKuiper rules engine. To make the example
+simple, the virtual device [device-virtual](https://github.com/edgexfoundry/device-virtual-go) is used as the actuated
+device. The eKuiper rules engine analyzes the data sent from device-virtual services, and then sends a command to
+virtual device based a rule firing in eKuiper based on that analysis. It should be noted that an application service is
+used to route core data through the rules engine.
 
-### Scenarios
+### Use Case Scenarios
 
-In this document, following 2 rules will be created and run.
+Rules will be created in eKuiper to watch for two circumstances:
 
-1. A rule that monitoring `Random-UnsignedInteger-Device` device, and if `uint8` value is  larger than `20`, then send a command to `Random-Boolean-Device` device, and turn on random generation of bool value.
-2. A rule that monitoring `Random-Integer-Device` device, and if the average value for `int8` with every 20 seconds is larger than 0, then send a command to `Random-Boolean-Device` device service to turn off random generation of bool value.
+1. monitor for events coming from the `Random-UnsignedInteger-Device` device (one of the default virtual device managed
+   devices), and if a `uint8` reading value is found larger than `20` in the event, then send a command
+   to `Random-Boolean-Device` device to start generating random numbers (specifically - set random generation bool to
+   true).
+2. monitor for events coming from the `Random-Integer-Device` device (another of the default virtual device managed
+   devices), and if the average for `int8` reading values (within 20 seconds) is larger than 0, then send a command
+   to `Random-Boolean-Device` device to stop generating random numbers (specifically - set random generation bool to
+   false).
 
-The scenario does not have any real business logics, but simply to demonstrate the feature of EdgeX eKuiper rule engine. You can make a reasonable business rules based on our demo.
+These use case scenarios do not have any real business meaning, but easily demonstrate the features of EdgeX automatic
+actuation accomplished via the eKuiper rule engine.
 
-## Prerequisite knowledge
+### Prerequisite Knowledge
 
-This document will not cover basic operations for EdgeX & eKuiper, so readers should have basic knowledge for them:
+This document will not cover basic operations of EdgeX or LF Edge eKuiper. Readers should have basic knowledge of:
 
-- Refer to [this link](https://docs.edgexfoundry.org/2.0/) for learning basic knowledge of EdgeX, and it would be better to finish [Quick Start](https://docs.edgexfoundry.org/2.0/getting-started/quick-start/).
-- Refer to [EdgeX eKuiper Rule Engine Tutorial](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md):  You'd better go through this quick tutorial,  and get to start trying out the rules engine in the EdgeX. 
-- [Go template](https://golang.org/pkg/text/template/): eKuiper uses Go template for extracting data from analysis result. Knowledge of Go template could help you to extract expected data from analysis result.
+- Get and start EdgeX. Refer to [Quick Start](https://docs.edgexfoundry.org/2.0/getting-started/quick-start/) for how to
+  get and start EdgeX with the virtual device service.
+- Run the eKuiper Rules Engine. Refer
+  to [EdgeX eKuiper Rule Engine Tutorial](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md)
+  to understand the basics of eKuiper and EdgeX.
 
-## Start to use
+## Start eKuiper and Create an EdgeX Stream
 
-Make sure you have followed document [EdgeX eKuiper Rule Engine Tutorial](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md), and successfully run the tutorial. 
+Make sure you read
+the [EdgeX eKuiper Rule Engine Tutorial](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md)
+and successfully run eKuiper with EdgeX.
 
-### Create EdgeX stream
+First create a stream that can consume streaming data from the EdgeX application service (rules engine profile). This
+step is not required if you already finished
+the [EdgeX eKuiper Rule Engine Tutorial](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md)
+.
 
-You should create a stream that can consume streaming data from EdgeX application service before creating rule. This step is not required if you already finished [EdgeX eKuiper Rule Engine Tutorial](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/edgex/edgex_rule_engine_tutorial.md). 
-
-```shell
+``` bash
 curl -X POST \
-  http://$kuiper_docker:59720/streams \
+  http://$ekuiper_docker:59720/streams \
   -H 'Content-Type: application/json' \
-  -d '{
-  "sql": "create stream demo() WITH (FORMAT=\"JSON\", TYPE=\"edgex\")"
-}'
+  -d '{"sql": "create stream demo() WITH (FORMAT=\"JSON\", TYPE=\"edgex\")"}'
 ```
 
-Since both of rules will send control command to device `Random-UnsignedInteger-Device`, let's get a list of available
-commands for this device by running below command,
+## Get and Test the Command URL
 
-`http://127.0.0.1:59882/api/v2/device/name/Random-Boolean-Device | jq`, and it prints similar outputs as below.
+Since both use case scenario rules will send commands to the `Random-Boolean-Device` virtual device, use the curl
+request below to get a list of available commands for this device.
 
-```json
+``` bash
+curl http://127.0.0.1:59882/api/v2/device/name/Random-Boolean-Device | jq
+```
+
+It should print results like those below.
+
+``` json
 {
   "apiVersion": "v2",
   "statusCode": 200,
@@ -114,32 +134,38 @@ commands for this device by running below command,
 }
 ```
 
-From the output, you can know that there are four commands, and the 1st command is used for update configurations for
-the device. There are two parameters for this device,
+From this output, look for the URL associated to the `PUT` command (the first URL listed). This is the command eKuiper
+will use to call on the device. There are two parameters for this command:
 
-- `Bool`: Set the returned value when other services want to get device data. The parameter will be used only when `EnableRandomization_Bool` is set to false.
-- `EnableRandomization_Bool`: Enable randomization generation of bool value or not. If this value is set to true, then the 1st parameter will be ignored.
+- `Bool`: Set the returned value when other services want to get device data. The parameter will be used only
+  when `EnableRandomization_Bool` is set to false.
+- `EnableRandomization_Bool`: Enable/disable the randomization generation of bool values. If this value is set to true,
+  then the 1st parameter will be ignored.
 
-So a sample control command would be similar as following.
+You can test calling this command with its parameters using curl as shown below.
 
-```shell
+``` bash
 curl -X PUT \
   http://edgex-core-command:59882/api/v2/device/name/Random-Boolean-Device/WriteBoolValue \
   -H 'Content-Type: application/json' \
   -d '{"Bool":"true", "EnableRandomization_Bool": "true"}'
 ```
 
-### Create rules
+## Create rules
 
-#### The first rule
+Now that you have EdgeX and eKuiper running, the EdgeX stream defined, and you know the command to
+actuate `Random-Boolean-Device`, it is time to build the eKuiper rules.
 
-The 1st is a rule that monitoring `Random-UnsignedInteger-Device` device, and if `uint8` value is  larger than `20`, then send a command to `Random-Boolean-Device` device, and turn on random generation of bool value.  Below is the rule definition, please notice that,
+### The first rule
 
-- The action will be triggered when uint8 value is larger than 20. Since the uint8 value is not used for sending control command to `Random-Boolean-Device`,  the `uint8` value is not used in the `dataTemplate` property of `rest` action.
+Again, the 1st rule is to monitor for events coming from the `Random-UnsignedInteger-Device` device (one of the default
+virtual device managed devices), and if a `uint8` reading value is found larger than `20` in the event, then send the
+command to `Random-Boolean-Device` device to start generating random numbers (specifically - set random generation bool
+to true). Given the URL and parameters to the command, below is the curl command to declare the first rule in eKuiper.
 
-```shell
+``` bash
 curl -X POST \
-  http://$kuiper_server:59720/rules \
+  http://$ekuiper_server:59720/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule1",
@@ -149,7 +175,6 @@ curl -X POST \
       "rest": {
         "url": "http://edgex-core-command:59882/api/v2/device/name/Random-Boolean-Device/WriteBoolValue",
         "method": "put",
-        "retryInterval": -1,
         "dataTemplate": "{\"Bool\":\"true\", \"EnableRandomization_Bool\": \"true\"}",
         "sendSingle": true
       }
@@ -161,15 +186,17 @@ curl -X POST \
 }'
 ```
 
-#### The 2nd rule
+### The second rule
 
-The 2nd rule is monitoring `Random-Integer-Device` device, and if the average value for `int8` with every 20 seconds is larger than 0, then send a command to `Random-Boolean-Device` device service to turn off random generation of bool value.
+The 2nd rule is to monitor for events coming from the `Random-Integer-Device` device (another of the default virtual
+device managed devices), and if the average for `int8` reading values (within 20 seconds) is larger than 0, then send a
+command to `Random-Boolean-Device` device to stop generating random numbers (specifically - set random generation bool
+to false). Here is the curl request to setup the second rule in eKuiper. The same command URL is used as the same device
+action (`Random-Boolean-Device's PUT bool command`) is being actuated, but with different parameters.
 
-- The average value for uint8 is calculated every 20 seconds, and if the average value is larger than 0, then send a control command to `Random-Boolean-Device` service.
-
-```shell
+``` bash
 curl -X POST \
-  http://$kuiper_server:59720/rules \
+  http://$ekuiper_server:59720/rules \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "rule2",
@@ -179,7 +206,6 @@ curl -X POST \
       "rest": {
         "url": "http://edgex-core-command:59882/api/v2/device/name/Random-Boolean-Device/WriteBoolValue",
         "method": "put",
-        "retryInterval": -1,
         "dataTemplate": "{\"Bool\":\"false\", \"EnableRandomization_Bool\": \"false\"}",
         "sendSingle": true
       }
@@ -191,23 +217,28 @@ curl -X POST \
 }'
 ```
 
-Now both of rules are created, and you can take a look at logs of edgex-kuiper for the rule execution result.
+## Watch the eKuiper Logs
 
-```shell
-# docker logs edgex-kuiper
+Both rules are now created in eKuiper. eKuiper is busy analyzing the event data coming for the virtual devices looking
+for readings that match the rules you created. You can watch the edgex-kuiper container logs for the rule triggering and
+command execution.
+
+``` bash
+docker logs edgex-kuiper
 ```
 
-## Extract data from analysis result?
+## Explore the Results
 
-It is probably that the analysis result need to be sent to command rest service as well, how to extract the data from analysis result? For example, below SQL is used for filtering data.
+You can also explore the eKuiper analysis that caused the commands to be sent to the service. To see the the data from
+the analysis, use the SQL below to query eKuiper filtering data.
 
-```sql
+``` sql
 SELECT int8, "true" AS randomization FROM demo WHERE uint8 > 20
 ```
 
-The output of the SQL is probably similar as below,
+The output of the SQL should look similar to the results below.
 
-```json
+``` json
 [{"int8":-75, "randomization":"true"}]
 ```
 
@@ -234,4 +265,3 @@ In some cases, you probably need to iterate over returned array values, or set d
 
 - [eKuiper Github code repository](https://github.com/lf-edge/ekuiper/)
 - [eKuiper reference guide](https://github.com/lf-edge/ekuiper/blob/edgex/docs/en_US/reference.md)
-
