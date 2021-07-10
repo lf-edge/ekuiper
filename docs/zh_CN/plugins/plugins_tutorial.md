@@ -182,7 +182,7 @@ require (
 从0.3.0版本开始，eKuiper 提供了开发版本 docker 镜像。其中， 0.4.0及之后版本的开发镜像为x.x.x，例如``uiper:0.4.0`；而 0.3.x 版本的开发镜像名为 x.x.x-dev，例如 `kuiper:0.3.0-dev`。与运行版本相比，开发版提供了 go 开发环境，使得用户可以在编译出在 eKuiper 正式发布版本中完全兼容的插件。Docker 中编译步骤如下：
 1. 运行 eKuiper 开发版本 docker。需要把本地插件目录 mount 到 docker 里的目录中，这样才能在 docker 中访问插件项目并编译。笔者的插件项目位于本地 `/var/git` 目录。下面的命令中，我们把本地的 `/var/git`目录映射到 docker 内的 `/home` 目录中。
     ```go
-    docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/home emqx/kuiper:0.3.0-dev
+    docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/home lfedge/ekuiper:0.3.0-dev
     ```
 2. 在 docker 环境中编译插件，其原理与本地编译一致。编译出的插件置于插件项目的 target 目录中
     ```go
@@ -240,7 +240,7 @@ eKuiper 生产环境和开发环境如果不同，开发的插件需要重新编
 
 ### 插件编译
 
-插件原则上应该与生产环境 eKuiper 采用相同环境进行编译。假设生产环境为 eKuiper docker，则应当采用与生产环境相同版本的 dev docker 环境编译插件。例如，生产环境采用 [emqx/kuiper:0.3.0](https://registry.hub.docker.com/layers/emqx/kuiper/0.3.0/images/sha256-0e3543d33f6f8c56de044d5ff001fd39b9e26f82219ca5fd25605953ed33580e?context=explore)的 docker 镜像，则插件需要在[emqx/kuiper:0.3.0-dev](https://registry.hub.docker.com/layers/emqx/kuiper/0.3.0-dev/images/sha256-a309d3821b55b01dc01c4f4a04e83288bf5526325f0073197387f2ca425260d0?context=explore) 的环境中进行编译。
+插件原则上应该与生产环境 eKuiper 采用相同环境进行编译。假设生产环境为 eKuiper docker，则应当采用与生产环境相同版本的 dev docker 环境编译插件。例如，生产环境采用 [lfedge/ekuiper:0.3.0](https://registry.hub.docker.com/layers/lfedge/ekuiper/0.3.0/images/sha256-0e3543d33f6f8c56de044d5ff001fd39b9e26f82219ca5fd25605953ed33580e?context=explore)的 docker 镜像，则插件需要在[lfedge/ekuiper:0.3.0-dev](https://registry.hub.docker.com/layers/lfedge/ekuiper/0.3.0-dev/images/sha256-a309d3821b55b01dc01c4f4a04e83288bf5526325f0073197387f2ca425260d0?context=explore) 的环境中进行编译。
 
 编译过程请参考[ Docker 编译](#docker编译)。编译完成的插件可以直接在开发 Docker 中进行调试。
 

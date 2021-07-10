@@ -39,58 +39,76 @@ curl -X POST \
 ```
 
 由于这两个规则都会向设备`Random-UnsignedInteger-Device`
-发送控制命令，通过运行命令`curl http://localhost:59882/api/v1/device/name/Random-Boolean-Device | jq`可以获取该设备的可用命令列表。它将打印类似的输出，如下所示。
+发送控制命令，通过运行命令`curl http://127.0.0.1:59882/api/v2/device/name/Random-Boolean-Device | jq`可以获取该设备的可用命令列表。它将打印类似的输出，如下所示。
 
 ```json
 {
-  "id": "9b051411-ca20-4556-bd3e-7f52475764ff",
-  "name": "Random-Boolean-Device",
-  "adminState": "UNLOCKED",
-  "operatingState": "ENABLED",
-  "labels": [
-    "device-virtual-example"
-  ],
-  "commands": [
-    {
-      "created": 1589052044139,
-      "modified": 1589052044139,
-      "id": "28d88bb3-e280-46f7-949f-37cc411757f5",
-      "name": "Bool",
-      "get": {
-        "path": "/api/v1/device/{deviceId}/Bool",
-        "responses": [
+  "apiVersion": "v2",
+  "statusCode": 200,
+  "deviceCoreCommand": {
+    "deviceName": "Random-Boolean-Device",
+    "profileName": "Random-Boolean-Device",
+    "coreCommands": [
+      {
+        "name": "WriteBoolValue",
+        "set": true,
+        "path": "/api/v2/device/name/Random-Boolean-Device/WriteBoolValue",
+        "url": "http://edgex-core-command:59882",
+        "parameters": [
           {
-            "code": "200",
-            "expectedValues": [
-              "Bool"
-            ]
+            "resourceName": "Bool",
+            "valueType": "Bool"
           },
           {
-            "code": "503",
-            "description": "service unavailable"
+            "resourceName": "EnableRandomization_Bool",
+            "valueType": "Bool"
           }
-        ],
-        "url": "http://edgex-core-command:59882/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498"
+        ]
       },
-      "put": {
-        "path": "/api/v1/device/{deviceId}/Bool",
-        "responses": [
+      {
+        "name": "WriteBoolArrayValue",
+        "set": true,
+        "path": "/api/v2/device/name/Random-Boolean-Device/WriteBoolArrayValue",
+        "url": "http://edgex-core-command:59882",
+        "parameters": [
           {
-            "code": "200"
+            "resourceName": "BoolArray",
+            "valueType": "BoolArray"
           },
           {
-            "code": "503",
-            "description": "service unavailable"
+            "resourceName": "EnableRandomization_BoolArray",
+            "valueType": "Bool"
           }
-        ],
-        "url": "http://edgex-core-command:59882/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
-        "parameterNames": [
-          "Bool",
-          "EnableRandomization_Bool"
+        ]
+      },
+      {
+        "name": "Bool",
+        "get": true,
+        "set": true,
+        "path": "/api/v2/device/name/Random-Boolean-Device/Bool",
+        "url": "http://edgex-core-command:59882",
+        "parameters": [
+          {
+            "resourceName": "Bool",
+            "valueType": "Bool"
+          }
+        ]
+      },
+      {
+        "name": "BoolArray",
+        "get": true,
+        "set": true,
+        "path": "/api/v2/device/name/Random-Boolean-Device/BoolArray",
+        "url": "http://edgex-core-command:59882",
+        "parameters": [
+          {
+            "resourceName": "BoolArray",
+            "valueType": "BoolArray"
+          }
         ]
       }
-    }
-  ]
+    ]
+  }
 }
 ```
 
@@ -103,7 +121,7 @@ curl -X POST \
 
 ```shell
 curl -X PUT \
-  http://edgex-core-command:59882/api/v1/device/c1459444-79bd-46c8-8b37-d6e1418f2a3a/command/fe202437-236d-41c5-845e-3e6013b928cd \
+  http://edgex-core-command:59882/api/v2/device/name/Random-Boolean-Device/WriteBoolValue \
   -H 'Content-Type: application/json' \
   -d '{"Bool":"true", "EnableRandomization_Bool": "true"}'
 ```
@@ -126,7 +144,7 @@ curl -X POST \
   "actions": [
     {
       "rest": {
-        "url": "http://edgex-core-command:59882/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
+        "url": "http://edgex-core-command:59882/api/v2/device/name/Random-Boolean-Device/WriteBoolValue",
         "method": "put",
         "retryInterval": -1,
         "dataTemplate": "{\"Bool\":\"true\", \"EnableRandomization_Bool\": \"true\"}",
@@ -156,7 +174,7 @@ curl -X POST \
   "actions": [
     {
       "rest": {
-        "url": "http://edgex-core-command:59882/api/v1/device/bcd18c02-b187-4f29-8265-8312dc5d794d/command/d6d3007d-c4ce-472f-a117-820b5410e498",
+        "url": "http://edgex-core-command:59882/api/v2/device/name/Random-Boolean-Device/WriteBoolValue",
         "method": "put",
         "retryInterval": -1,
         "dataTemplate": "{\"Bool\":\"false\", \"EnableRandomization_Bool\": \"false\"}",
@@ -194,7 +212,7 @@ SQL的输出内容如下：
 
 ```shell
 curl -X PUT \
-  http://edgex-core-command:59882/api/v1/device/${deviceId}/command/xyz \
+  http://edgex-core-command:59882/api/v2/device/name/${deviceName}/command \
   -H 'Content-Type: application/json' \
   -d '{"value":-75, "EnableRandomization_Bool": "true"}'
 ```

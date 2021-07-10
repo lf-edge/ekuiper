@@ -15,7 +15,7 @@
 ## 架构设计
 
 * UI 端：可视化的界面，便于用户操作
-* eKuiper-manager：管理控制台，本质是一个反向 HTTP 代理服务，提供用户管理，权限验证等服务。既可以部署在云端，也可以部署在边缘端
+* Kuiper-manager：管理控制台，本质是一个反向 HTTP 代理服务，提供用户管理，权限验证等服务。既可以部署在云端，也可以部署在边缘端
 * eKuiper 实例，被管理的 eKuiper 节点实例，Kuiper-manager 可以同时管理多个 eKuiper 节点
 
 ![construct](./resources/arch.png)
@@ -24,16 +24,16 @@
 
 ### 安装 eKuiper
 
-- 从 [Docker 镜像库](https://hub.docker.com/r/emqx/kuiper/tags)拉取 eKuiper 的 Docker 镜像。由于本文中要安装插件，必须使用`kuiper:0.9.1-slim`镜像（`kuiper:0.9.1-alpine` 镜像比较小，安装比较方便，但是由于缺少一些必要的库文件，插件无法正常运行；而 `kuiper:0.9.1` 镜像是开发版本的镜像，适合于开发阶段使用）。
+- 从 [Docker 镜像库](https://hub.docker.com/r/lfedge/ekuiper/tags)拉取 eKuiper 的 Docker 镜像。由于本文中要安装插件，必须使用`kuiper:0.9.1-slim`镜像（`kuiper:0.9.1-alpine` 镜像比较小，安装比较方便，但是由于缺少一些必要的库文件，插件无法正常运行；而 `kuiper:0.9.1` 镜像是开发版本的镜像，适合于开发阶段使用）。
 
   ```shell
-  docker pull emqx/kuiper:0.9.1-slim
+  docker pull lfedge/ekuiper:0.9.1-slim
   ```
 
 - 运行 eKuiper 容器（为了方便，我们将使用由 [EMQ](https://www.emqx.cn) 提供的公有 MQTT 服务器，在运行容器时可通过 `-e` 选项设置地址）。如果您想通过主机访问 eKuiper 实例，可以通过在启动容器的时候加入 `-p 9081:9081` 参数来暴露 9081 端口。
 
   ```shell
-  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] emqx/kuiper:0.9.1-slim
+  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] lfedge/ekuiper:0.9.1-slim
   ```
   
   在运行容器时通过 `-e` 选项设置了 MQTT 服务器地址，数据写到了 MQTT 源配置文件中，通过以下命令可以查看：

@@ -46,7 +46,7 @@ eKuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s a
       ```shell
       helm search kuiper
       NAME     		CHART VERSION	APP VERSION  	DESCRIPTION
-      emqx/kuiper	0.0.3	        0.0.3	        A lightweight IoT edge analytic software
+      lfedge/ekuiper	0.0.3	        0.0.3	        A lightweight IoT edge analytic software
       ```
 
 + By edit  `values.yaml` file or use command `helm install --set` to edit ``eKuiper Helm Chart`` configurations.
@@ -56,7 +56,7 @@ eKuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s a
   | Parameters                     | Descriptions                                         | Default Value            |
   | ------------------------------ | ---------------------------------------------------- | ------------------------ |
   | `replicaCount`                 | Deployed eKuiper instance number                      | 1                        |
-  | `image.repository`             | Docker image name                                    | emqx/kuiper              |
+  | `image.repository`             | Docker image name                                    | lfedge/ekuiper              |
   | `image.pullPolicy`             | Pull policy                                          | IfNotPresent             |
   | `service.type`  | Kubernetes Service type. |ClusterIP|
   | `service.kuiper`  | Port for eKuiper. |20498|

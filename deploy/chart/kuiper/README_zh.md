@@ -46,7 +46,7 @@ eKuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s �
       ```shell
       $ helm search repo kuiper
       NAME       	CHART VERSION	APP VERSION	DESCRIPTION
-      emqx/kuiper	0.0.4        	0.0.4      	A lightweight IoT edge analytic software
+      lfedge/ekuiper	0.0.4        	0.0.4      	A lightweight IoT edge analytic software
       ```
 
 + 可以通过编辑 `values.yaml` 文件或使用 `helm install --set` 命令编辑 eKuiper Helm Chart 的配置
@@ -56,7 +56,7 @@ eKuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s �
   | 参数                           | 描述                                | Default Value            |
   | ------------------------------ | ----------------------------------- | ------------------------ |
   | `replicaCount`                 | 部署eKuiper数量                      | 1                        |
-  | `image.repository`             | 拉取镜像名称                        | emqx/kuiper              |
+  | `image.repository`             | 拉取镜像名称                        | lfedge/ekuiper              |
   | `image.pullPolicy`             | 拉取镜像策略                        | IfNotPresent             |
   | `service.type`  | Kubernetes Service type. |ClusterIP|
   | `service.kuiper`  | eKuiper 端口 |20498|
