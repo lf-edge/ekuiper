@@ -9,24 +9,54 @@ We're really glad you're reading this, because we need volunteer developers to h
 
 ## Submitting changes
 
-The `develop` branch is active development branch, so it's recommended to set `develop` as base branch, and also create PR against `develop` branch.
+The `master` branch is active development branch, so it's recommended to set `master` as base branch, and also create PR
+against `master` branch.
 
-When you create a pull request, we will love you forever if you include examples. We can always use more test coverage. Always write a clear log message for your commits. One-line messages are fine for small changes, but bigger changes should look like this:
+When you create a pull request, we will love you forever if you include examples. We can always use more test coverage.
+Always write a clear log message for your commits. One-line messages are fine for small changes, but bigger changes
+should look like this:
 
 ```
-$ git commit -m "A brief summary of the commit
+$ git commit -m "type(scope): A brief summary of the commit
 > 
 > A paragraph describing what changed and its impact."
 ```
 
+The commit message should follow the convention of "type(scope): A brief summary of the commit". In which type could
+be "feat", "fix", "doc", "refactor" etc; and scope describe the change scope in one word like "parer", "planner", "sink"
+etc. If the commit affects all scopes, use "*".
+
 ### Testing
 
-The eKuiper project leverages Github actions to run unit test & FVT (functional verification test), so please take a look at the PR status result, and make sure that all of testcases run successfully.
+The eKuiper project leverages Github actions to run unit test & FVT (functional verification test), so please take a
+look at the PR status result, and make sure that all of testcases run successfully.
 
 - Write Golang unit testcases to test your code if necessary.
-- A set of [FVT testcases](../test/README.md) will be triggered with any PR submission, so please make sure that these testcases can be run successfully.
+- A set of [FVT testcases](../test/README.md) will be triggered with any PR submission, so please make sure that these
+  testcases can be run successfully.
+
+### Sign-off commit
+
+The sign-off is to certify the origin of the commit. It is required to commit to this project. If you set
+your `user.name` and `user.email` git configs, you can sign your commit automatically with `git commit -s`.
 
 ## Code conventions
 
-- Use `go fmt` to format your code before commit code change. eKuiper Github Action CI pipeline reports error if it's not format by `go fmt`.
+- Use `go fmt` to format your code before commit code change. eKuiper Github Action CI pipeline reports error if it's
+  not format by `go fmt`.
 - Configuration key in config files uses camel case format.
+
+## Community Promotion
+
+Besides coding, other types of contributions are a great way to get involved. Welcome to contribute to this project by
+promoting it to the open source community and the world.
+
+The promotion contributions include but not limit to:
+
+- Integrate of eKuiepr to your open source project
+- Organize workshops or meetups about the project
+- Answer questions about the project on issues, slack or maillist
+- Write tutorials for how project can be used
+- Offer to mentor another contributor
+
+Thank you for taking the time to contribute!
