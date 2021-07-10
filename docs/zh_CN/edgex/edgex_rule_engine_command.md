@@ -146,7 +146,6 @@ curl -X POST \
       "rest": {
         "url": "http://edgex-core-command:59882/api/v2/device/name/Random-Boolean-Device/WriteBoolValue",
         "method": "put",
-        "retryInterval": -1,
         "dataTemplate": "{\"Bool\":\"true\", \"EnableRandomization_Bool\": \"true\"}",
         "sendSingle": true
       }
@@ -176,7 +175,6 @@ curl -X POST \
       "rest": {
         "url": "http://edgex-core-command:59882/api/v2/device/name/Random-Boolean-Device/WriteBoolValue",
         "method": "put",
-        "retryInterval": -1,
         "dataTemplate": "{\"Bool\":\"false\", \"EnableRandomization_Bool\": \"false\"}",
         "sendSingle": true
       }
