@@ -37,10 +37,6 @@ ARG KUIPER_USER_ID="1001"
 # (root) Add packages and "kuiper" user
 RUN apk add sed libzmq
 
-COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
-COPY --from=builder /go/kuiper/kuiper_conf_util /usr/bin/kuiper_conf_util
-COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
-
 WORKDIR ${KUIPER_HOME}
 
 # Set appropriate ownership to allow binary full access to KUIPER_HOME dir
@@ -51,6 +47,10 @@ RUN adduser -DH -s /sbin/nologin -u ${KUIPER_USER_ID} ${KUIPER_USER} && \
 
 # Run the kuiper process under the kuiper user
 USER ${KUIPER_USER}
+
+COPY --chown=${KUIPER_USER}:${KUIPER_USER} ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
+COPY --chown=${KUIPER_USER}:${KUIPER_USER} --from=builder /go/kuiper/kuiper_conf_util /usr/bin/kuiper_conf_util
+COPY --chown=${KUIPER_USER}:${KUIPER_USER} --from=builder /go/kuiper/_build/kuiper-* /kuiper/
 
 VOLUME ["${KUIPER_HOME}/etc", "${KUIPER_HOME}/data", "${KUIPER_HOME}/plugins", "${KUIPER_HOME}/log"]
 EXPOSE 9081 20498
