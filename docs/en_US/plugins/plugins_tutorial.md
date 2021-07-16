@@ -1,6 +1,9 @@
 # A lightweight loT edge stream processing - eKuiper plugin development tutorial
 
-[LF Edge eKuiper](https://www.emqx.io/products/kuiper) is a lightweight loT streaming data processing software based on SQL. It provides a set of plugin mechanism for implementing customized source, sink and SQL function to extend the ability of  stream processing. This tutorial gives a detailed introduction to the process of development, compilation, and deployment of the eKuiper plugin.
+[LF Edge eKuiper](https://www.lfedge.org/projects/ekuiper/) is a lightweight loT streaming data processing software
+based on SQL. It provides a set of plugin mechanism for implementing customized source, sink and SQL function to extend
+the ability of stream processing. This tutorial gives a detailed introduction to the process of development,
+compilation, and deployment of the eKuiper plugin.
 
 ## Overview
 
@@ -62,6 +65,7 @@ The eKuiper plugin has three types. The source code can be put into the correspo
 - Edit go.mod, add Mysql driver module
 
 The complete source code of mysql.go is as follows:
+
 ```go
 package main
 
@@ -70,9 +74,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/lf-edge/ekuiper/common"
 	"github.com/lf-edge/ekuiper/xstream/api"
-	_ "github.com/go-sql-driver/mysql"
 )
 
 type mysqlConfig struct {
@@ -83,7 +87,7 @@ type mysqlConfig struct {
 type mysqlSink struct {
 	conf *mysqlConfig
 	//The db connection instance
-	db   *sql.DB
+	db *sql.DB
 }
 
 func (m *mysqlSink) Configure(props map[string]interface{}) error {

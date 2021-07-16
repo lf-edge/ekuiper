@@ -1,10 +1,15 @@
 # Run TensorFlow Lite model with eKuiper function plugin
 
-[LF Edge eKuiper](https://docs.emqx.io/en/kuiper/latest/) is an edge lightweight IoT data analytics / streaming software which can be run at all kinds of resource constrained IoT devices.
+[LF Edge eKuiper](https://www.lfedge.org/projects/ekuiper/) is an edge lightweight IoT data analytics / streaming
+software which can be run at all kinds of resource constrained IoT devices.
 
-[TensorFlow Lite](https://www.tensorflow.org/lite/guide) is a set of tools to help developers run TensorFlow models on mobile, embedded, and IoT devices. It enables on-device machine learning inference with low latency and a small binary size.
+[TensorFlow Lite](https://www.tensorflow.org/lite/guide) is a set of tools to help developers run TensorFlow models on
+mobile, embedded, and IoT devices. It enables on-device machine learning inference with low latency and a small binary
+size.
 
-By integrating eKuiper and TensorFlow Lite, users can analyze the data in stream by AI with prebuilt TensorFlow models. In this tutorial, we will walk you through building a eKuiper plugin to label pictures (binary data) produced by an edge device in stream by pre-trained image recognition TensorFlow model.
+By integrating eKuiper and TensorFlow Lite, users can analyze the data in stream by AI with prebuilt TensorFlow models.
+In this tutorial, we will walk you through building a eKuiper plugin to label pictures (binary data) produced by an edge
+device in stream by pre-trained image recognition TensorFlow model.
 
 ## Prerequisite
 
@@ -185,13 +190,13 @@ import (
 	"time"
 )
 
-func main(){
+func main() {
 	const TOPIC = "tfdemo"
 
 	images := []string{
 		"peacock.png",
 		"frog.jpg",
-        // other images you want
+		// other images you want
 	}
 	opts := mqtt.NewClientOptions().AddBroker("tcp://yourownhost:1883")
 	client := mqtt.NewClient(opts)
@@ -199,16 +204,16 @@ func main(){
 		panic(token.Error())
 	}
 	for _, image := range images {
-		fmt.Println("Publishing " + image);
+		fmt.Println("Publishing " + image)
 		payload, err := ioutil.ReadFile(image)
-		if err != nil{
+		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 		if token := client.Publish(TOPIC, 0, false, payload); token.Wait() && token.Error() != nil {
 			fmt.Println(token.Error())
 		} else {
-			fmt.Println("Published " + image);
+			fmt.Println("Published " + image)
 		}
 		time.Sleep(1 * time.Second)
 	}

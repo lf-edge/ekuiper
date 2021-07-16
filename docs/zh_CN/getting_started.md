@@ -2,7 +2,7 @@
 
 ## 下载和安装
 
-通过 <https://github.com/lf-edge/ekuiper/releases> 或 <https://www.emqx.cn/downloads#kuiper> 获取安装包.
+通过 <https://github.com/lf-edge/ekuiper/releases>  获取安装包.
 
 ### zip、tar.gz 压缩包
 
