@@ -1,10 +1,12 @@
 # 使用 eKuiper 函数插件运行TensorFlow Lite 模型
 
-[LF Edge eKuiper](https://docs.emqx.io/en/kuiper/latest/) 是一款边缘轻量级物联网数据分析/流软件，可在各种资源受限的物联网设备上运行。
+[LF Edge eKuiper](https://www.lfedge.org/projects/ekuiper/) 是一款边缘轻量级物联网数据分析/流软件，可在各种资源受限的物联网设备上运行。
 
-[TensorFlow Lite](https://www.tensorflow.org/lite/guide) 是一组帮助开发人员在移动端、嵌入式和物联网设备上运行 TensorFlow 模型的工具，它使得设备上的机器学习预测具有低延迟和较小的二进制容量。
+[TensorFlow Lite](https://www.tensorflow.org/lite/guide) 是一组帮助开发人员在移动端、嵌入式和物联网设备上运行 TensorFlow
+模型的工具，它使得设备上的机器学习预测具有低延迟和较小的二进制容量。
 
-通过集成 eKuiper 和 TensorFlow Lite，用户可以通过包含预先构建的 TensorFlow 模型的AI分析流中的数据。 在本教程中，我们将引导您构建一个 eKuiper 插件，通过预先训练的图像识别 TensorFlow 模型，标记边缘设备生成的流图片（二进制数据）。
+通过集成 eKuiper 和 TensorFlow Lite，用户可以通过包含预先构建的 TensorFlow 模型的AI分析流中的数据。 在本教程中，我们将引导您构建一个 eKuiper 插件，通过预先训练的图像识别 TensorFlow
+模型，标记边缘设备生成的流图片（二进制数据）。
 
 ## 先决条件
 
@@ -186,13 +188,13 @@ import (
 	"time"
 )
 
-func main(){
+func main() {
 	const TOPIC = "tfdemo"
 
 	images := []string{
 		"peacock.png",
 		"frog.jpg",
-        // 其他你需要的图像
+		// 其他你需要的图像
 	}
 	opts := mqtt.NewClientOptions().AddBroker("tcp://yourownhost:1883")
 	client := mqtt.NewClient(opts)
@@ -200,16 +202,16 @@ func main(){
 		panic(token.Error())
 	}
 	for _, image := range images {
-		fmt.Println("Publishing " + image);
+		fmt.Println("Publishing " + image)
 		payload, err := ioutil.ReadFile(image)
-		if err != nil{
+		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 		if token := client.Publish(TOPIC, 0, false, payload); token.Wait() && token.Error() != nil {
 			fmt.Println(token.Error())
 		} else {
-			fmt.Println("Published " + image);
+			fmt.Println("Published " + image)
 		}
 		time.Sleep(1 * time.Second)
 	}
