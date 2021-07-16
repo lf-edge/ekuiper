@@ -96,6 +96,7 @@ EdgeX 消息总线类型，目前支持两种消息总线。如果指定了错�
 
 - `zero`：使用 ZeroMQ 类型的消息总线 
 - `mqtt`：使用 MQTT 服务器作为消息总线
+- `redis`: 使用 Redis 服务器作为消息总线。使用 EdgeX docker compose 启动时，type参数会默认设置为该类型。
 
 ## optional
 
