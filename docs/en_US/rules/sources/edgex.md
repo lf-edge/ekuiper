@@ -96,6 +96,7 @@ The EdgeX message bus type, currently two types of message buses are supported. 
 
 - ``zero``: Use ZeroMQ as EdgeX message bus. 
 - ``mqtt``: Use the MQTT broker as EdgeX message bus.
+- ``redis``: Use Redis as EdgeX message bus. When using EdgeX docker compose, the type will be set to this by default.
 
 ### optional
 
