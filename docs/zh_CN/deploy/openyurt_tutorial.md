@@ -1,12 +1,14 @@
 # 使用 OpenYurt 部署和管理 eKuiper
 
-LF Edge eKuiper 是轻量级物联网数据分析和流媒体软件，通常在边缘端运行。 它提供了一个 [管理仪表板](../manager-ui/overview.md) 来管理一个或多个 eKuiper 实例。 通常，仪表板部署在云节点中，用于管理跨多个边缘节点的 eKuiper 实例。
+LF Edge eKuiper 是轻量级物联网数据分析和流处理软件，通常在边缘端运行。 它提供了一个 [管理仪表板](../manager-ui/overview.md) 来管理一个或多个 eKuiper 实例。
+通常，仪表板部署在云节点中，用于管理跨多个边缘节点的 eKuiper 实例。
 
-在大多数情况下，出于安全或其他考虑，边缘节点在物理上无法从云节点访问。 这使得部署变得困难，并且无法进行云到边缘管理。 [OpenYurt](https://github.com/openyurtio/openyurt) 改变了这种情况。 OpenYurt 基于原生 Kubernetes 构建，可以对其进行扩展以无缝支持边缘计算。 简而言之，OpenYurt 使用户能够管理在边缘基础设施中运行的应用程序，就像它们在云基础设施中运行一样。
+在大多数情况下，出于安全或其他考虑，边缘节点在物理上无法从云节点访问。 这使得部署变得困难，并且无法进行云到边缘管理。 [OpenYurt](https://github.com/openyurtio/openyurt) 改变了这种情况。
+OpenYurt 基于原生 Kubernetes 构建，可以对其进行扩展以无缝支持边缘计算。 简而言之，OpenYurt 使用户能够管理在边缘基础设施中运行的应用程序，就像它们在云基础设施中运行一样。
 
 在本教程中，我们将展示如何在 OpenYurt 集群中部署 eKuiper 及其仪表板，并利用 yurt 隧道实现从云到边缘的管理。 为了模拟云节点和边缘节点可能位于不同网络区域的真实场景，我们使用了一个两节点的 kubernetes 集群。 eKuiper 实例将部署到边缘节点，仪表板将部署到云节点。
 
-![arch](ekuiper_openyurt.png)
+<img src="ekuiper_openyurt.png" alt="arch" width="80%"/>
 
 ## 先决条件
 
@@ -123,7 +125,7 @@ $ sudo iptables -t nat -A OUTPUT -d 172.31.0.236 -j DNAT --to-destination 34.209
 
 ## 将 eKuiper 实例部署到边缘
 
-eKuiper 作为边缘流媒体软件，通常部署在边缘端。 我们将使用 eKuiper helm chart 来加速部署。
+eKuiper 作为边缘流处理软件，通常部署在边缘端。 我们将使用 eKuiper helm chart 来加速部署。
 
 ```shell
 $ git clone https://github.com/lf-edge/ekuiper
@@ -246,10 +248,10 @@ args:
 ...
 ```
 
-然后，我们将 kubernetes 集群转换为 OpenYurt 集群并部署 yurt 隧道。
+然后，我们将 kubernetes 集群转换为 OpenYurt 集群。
 
 ```shell
-$ _output/bin/yurtctl convert --cloud-nodes cloud-node --provider kubeadm --deploy-yurttunnel
+$ _output/bin/yurtctl convert --cloud-nodes cloud-node --provider kubeadm
 ```
 
 接下来我们将通过分别部署 yurt-tunnel-server 和 yurt-tunnel-agent 手动设置 yurt 隧道。
@@ -285,3 +287,11 @@ kubectl apply -f config/setup/yurt-tunnel-agent.yaml
 很棒！ 现在我们可以通过仪表板在边缘管理 eKuiper，就像它部署在云端一样。参照 [manager ui教程](../manager-ui/overview.md)，可以从云端创建和管理 eKuiper
 的流、规则和插件以及任何类似的管理工作。
 
+## 扩展阅读
+
+如果您想了解LF Edge eKuiper 或者 OpenYurt 的更多特性，请阅读下面的参考资料：
+
+- [eKuiper Github 代码库](https://github.com/lf-edge/ekuiper/)
+- [eKuiper 参考指南](https://github.com/lf-edge/ekuiper/blob/edgex/docs/en_US/reference.md)
+- [OpenYurt 教程](https://github.com/openyurtio/openyurt/tree/master/docs/tutorial)
+- [eKuiper 管理控制台教程](../manager-ui/overview.md)
