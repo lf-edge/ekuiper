@@ -76,7 +76,7 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
 ### 原生 (native) 方式运行
 
 出于运行效率考虑，读者可能需要直接以原生方式运行 eKuiper，但是可能会发现直接使用下载的 eKuiper
-软件包启动后[无法直接使用 Edgex](https://github.com/lf-edge/ekuiper/issues/596)，这是因为 EdgeX 缺省消息总线依赖于 `zeromq` 库，如果 eKuiper
+软件包启动后[无法直接使用 EdgeX](https://github.com/lf-edge/ekuiper/issues/596)，这是因为 EdgeX 缺省消息总线依赖于 `zeromq` 库，如果 eKuiper
 启动的时候在库文件寻找路径下无法找到 `zeromq` 库，它将无法启动。这导致对于不需要使用 EdgeX 的 eKuiper 用户也不得不去安装 `zeromq` 库 ，因此缺省提供的下载安装包中**<u>内置不支持
 Edgex</u>** 。如果读者需要以原生方式运行 eKuiper 并且支持 `EdgeX`，可以通过命令 `make pkg_with_edgex` 自己来编译原生安装包，或者从容器中直接拷贝出安装包。
 
