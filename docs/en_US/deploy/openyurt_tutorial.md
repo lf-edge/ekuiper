@@ -15,7 +15,7 @@ tunnel to enable the management from cloud to the edge. To mimic the real scenar
 may locate in separate network regions, we use a two-nodes kubernetes cluster. The eKuiper instance will be deployed to
 the edge node, and the dashboard will be deployed to the cloud node.
 
-![arch](ekuiper_openyurt.png)
+<img src="ekuiper_openyurt.png" alt="arch" width="80%"/>
 
 ## Prerequisite
 
@@ -280,10 +280,10 @@ args:
 ...
 ```
 
-Then, we will convert the kubernetes cluster to OpenYurt cluster and deploy the yurt tunnel.
+Then, we will convert the kubernetes cluster to OpenYurt cluster.
 
 ```shell
-$ _output/bin/yurtctl convert --cloud-nodes cloud-node --provider kubeadm --deploy-yurttunnel
+$ _output/bin/yurtctl convert --cloud-nodes cloud-node --provider kubeadm
 ```
 
 Next we will setup the yurt-tunnel manually by deploying yurrt-tunnel-server and yurt-tunnel-agent separately.
@@ -322,3 +322,12 @@ healthy like the below screenshot:
 Great! Now we can manage the eKuiper in the edge by the dashboard, as if it was deployed in the cloud. Follow
 the [manager ui tutorial](../manager-ui/overview.md) to create and manage your stream, rule and plugins and any other
 management works of eKuiper from the cloud.
+
+## Extended Reading
+
+If you want to explore more features of eKuiper or OpenYurt, please refer to below resources.
+
+- [eKuiper Github code repository](https://github.com/lf-edge/ekuiper/)
+- [eKuiper reference guide](https://github.com/lf-edge/ekuiper/blob/edgex/docs/en_US/reference.md)
+- [OpenYurt tutorials](https://github.com/openyurtio/openyurt/tree/master/docs/tutorial)
+- [eKuiper manager ui tutorial](../manager-ui/overview.md)
