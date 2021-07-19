@@ -22,10 +22,9 @@ then
     echo "version is empty."
 	exit 5
 fi
-
-url="https://www.taosdata.com/download/download-all.php?pkgType=tdengine_linux&pkgName=TDengine-client-$1-Linux-x64.tar.gz"
+url="https://www.taosdata.com/assets-download/TDengine-client-$1-Linux-x64.tar.gz"
 if [ "$(uname -m)" = "aarch64" ]; then \
-	url="https://www.taosdata.com/download/download-all.php?pkgType=tdengine_linux&pkgName=TDengine-client-$1-Linux-aarch64.tar.gz"
+	url="https://www.taosdata.com/assets-download/TDengine-client-$1-Linux-aarch64.tar.gz"
 fi
 zip="TDengine-client.tar.gz"
 wget -T 280 -O "$zip" "$url"
