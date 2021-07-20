@@ -49,6 +49,7 @@ var file_keys_map = map[string]map[string]string{
 		"CERTPEMBLOCK":      "CertPEMBlock",
 		"KEYPEMBLOCK":       "KeyPEMBlock",
 		"SKIPCERTVERIFY":    "SkipCertVerify",
+		"MESSAGETYPE":       "messageType",
 	},
 	"mqtt_source": {
 		"SHAREDSUBSCRIPTION": "sharedSubscription",
