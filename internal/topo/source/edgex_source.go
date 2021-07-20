@@ -21,6 +21,7 @@ import (
 	"fmt"
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
 	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -32,65 +33,62 @@ import (
 )
 
 type EdgexSource struct {
-	client     messaging.MessageClient
-	subscribed bool
-	topic      string
+	client      messaging.MessageClient
+	subscribed  bool
+	topic       string
+	messageType messageType
 }
 
+type EdgexConf struct {
+	Format      string            `json:"format"`
+	Protocol    string            `json:"protocol"`
+	Server      string            `json:"server"`
+	Port        int               `json:"port"`
+	Topic       string            `json:"topic"`
+	Type        string            `json:"type"`
+	MessageType messageType       `json:"messageType"`
+	Optional    map[string]string `json:"optional"`
+}
+
+type messageType string
+
+const (
+	MessageTypeEvent   messageType = "event"
+	MessageTypeRequest messageType = "request"
+)
+
 func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
-	if f, ok := props["format"]; ok {
-		if f != message.FormatJson {
-			return fmt.Errorf("edgex source only supports `json` format")
-		}
+	c := &EdgexConf{
+		Format:      message.FormatJson,
+		Protocol:    "tcp",
+		Server:      "localhost",
+		Port:        5563,
+		Type:        messaging.Redis,
+		MessageType: MessageTypeEvent,
 	}
-	var protocol = "tcp"
-	if p, ok := props["protocol"]; ok {
-		protocol = p.(string)
+	err := cast.MapToStruct(props, c)
+	if err != nil {
+		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
-	var server = "localhost"
-	if s, ok := props["server"]; ok {
-		server = s.(string)
-	}
-	var port = 5563
-	if p, ok := props["port"]; ok {
-		port = p.(int)
+	if c.Format != message.FormatJson {
+		return fmt.Errorf("edgex source only supports `json` format")
 	}
 
-	if tpc, ok := props["topic"]; ok {
-		es.topic = tpc.(string)
+	if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT && c.Type != messaging.Redis {
+		return fmt.Errorf("Specified wrong message type value %s, will use zeromq messagebus.\n", c.Type)
 	}
 
-	var mbusType = messaging.ZeroMQ
-	if t, ok := props["type"]; ok {
-		mbusType = t.(string)
-		if mbusType != messaging.ZeroMQ && mbusType != messaging.MQTT && mbusType != messaging.Redis {
-			return fmt.Errorf("Specified wrong message type value %s, will use zeromq messagebus.\n", mbusType)
-		}
-	}
-
-	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: protocol, Host: server, Port: port}, Type: mbusType}
-
-	var optional = make(map[string]string)
-	if ops, ok := props["optional"]; ok {
-		if ops1, ok1 := ops.(map[string]interface{}); ok1 {
-			for k, v := range ops1 {
-				if cv, err := cast.ToString(v, cast.CONVERT_ALL); err == nil {
-					optional[k] = cv
-				} else {
-					conf.Log.Infof("Cannot convert configuration %s: %s to string type.\n", k, v)
-				}
-			}
-		}
-		mbconf.Optional = optional
-	}
+	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: c.Protocol, Host: c.Server, Port: c.Port}, Type: c.Type}
+	mbconf.Optional = c.Optional
 	printConf(mbconf)
 	if client, err := messaging.NewMessageClient(mbconf); err != nil {
 		return err
 	} else {
 		es.client = client
+		es.messageType = c.MessageType
+		es.topic = c.Topic
 		return nil
 	}
-
 }
 
 // Modify the copied conf to print no password.
@@ -135,8 +133,14 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 					return
 				}
 				if strings.ToLower(env.ContentType) == "application/json" {
-					e := &dtos.Event{}
-					if err := json.Unmarshal(env.Payload, e); err != nil {
+					var r interface{}
+					switch es.messageType {
+					case MessageTypeEvent:
+						r = &dtos.Event{}
+					case MessageTypeRequest:
+						r = &requests.AddEventRequest{}
+					}
+					if err := json.Unmarshal(env.Payload, r); err != nil {
 						l := len(env.Payload)
 						if l > 200 {
 							l = 200
@@ -145,6 +149,13 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 					} else {
 						result := make(map[string]interface{})
 						meta := make(map[string]interface{})
+						var e *dtos.Event
+						switch t := r.(type) {
+						case *dtos.Event:
+							e = t
+						case *requests.AddEventRequest:
+							e = &t.Event
+						}
 
 						log.Debugf("receive message %s from device %s", env.Payload, e.DeviceName)
 						for _, r := range e.Readings {

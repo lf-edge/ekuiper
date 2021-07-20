@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
 	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"log"
@@ -54,33 +55,33 @@ func pubEventClientZeroMq() {
 				testEvent.Origin = 123
 				err := testEvent.AddSimpleReading("Temperature", common.ValueTypeInt64, int64(i*8))
 				if err != nil {
-					fmt.Errorf("Add reading error for %d.Temperature: %v\n", i, i*8)
+					fmt.Printf("Add reading error for %d.Temperature: %v\n", i, i*8)
 				}
 				err = testEvent.AddSimpleReading("Humidity", common.ValueTypeInt64, int64(i*9))
 				if err != nil {
-					fmt.Errorf("Add reading error for %d.Humidity: %v\n", i, i*9)
+					fmt.Printf("Add reading error for %d.Humidity: %v\n", i, i*9)
 				}
 				err = testEvent.AddSimpleReading("b1", common.ValueTypeBool, i%2 == 0)
 				if err != nil {
-					fmt.Errorf("Add reading error for %d.b1: %v\n", i, i%2 == 0)
+					fmt.Printf("Add reading error for %d.b1: %v\n", i, i%2 == 0)
 				}
 				err = testEvent.AddSimpleReading("i1", common.ValueTypeInt64, int64(i))
 				if err != nil {
-					fmt.Errorf("Add reading error for %d.i1: %v\n", i, i)
+					fmt.Printf("Add reading error for %d.i1: %v\n", i, i)
 				}
 				err = testEvent.AddSimpleReading("f1", common.ValueTypeFloat64, float64(i)/2.0)
 				if err != nil {
-					fmt.Errorf("Add reading error for %d.f1: %v\n", i, float64(i)/2.0)
+					fmt.Printf("Add reading error for %d.f1: %v\n", i, float64(i)/2.0)
 				}
 				err = testEvent.AddSimpleReading("ui64", common.ValueTypeUint64, uint64(10796529505058023104))
 				if err != nil {
-					fmt.Errorf("Add reading error for %d.ui64: %v\n", i, uint64(10796529505058023104))
+					fmt.Printf("Add reading error for %d.ui64: %v\n", i, uint64(10796529505058023104))
 				}
 
 				fmt.Printf("readings: %v\n", testEvent.Readings)
 				data, err := json.Marshal(testEvent)
 				if err != nil {
-					fmt.Errorf("unexpected error MarshalEvent %v", err)
+					fmt.Printf("unexpected error MarshalEvent %v", err)
 				} else {
 					fmt.Println(string(data))
 				}
@@ -119,16 +120,18 @@ func pubToAnother() {
 		testEvent.Origin = 123
 		err := testEvent.AddSimpleReading("Temperature", common.ValueTypeInt64, int64(20))
 		if err != nil {
-			fmt.Errorf("Add reading error for Temperature: %v\n", 20)
+			fmt.Printf("Add reading error for Temperature: %v\n", 20)
 		}
 		err = testEvent.AddSimpleReading("Humidity", common.ValueTypeInt64, int64(30))
 		if err != nil {
-			fmt.Errorf("Add reading error for Humidity: %v\n", 20)
+			fmt.Printf("Add reading error for Humidity: %v\n", 20)
 		}
 
-		data, err := json.Marshal(testEvent)
+		req := requests.NewAddEventRequest(testEvent)
+
+		data, err := json.Marshal(req)
 		if err != nil {
-			fmt.Errorf("unexpected error MarshalEvent %v", err)
+			fmt.Printf("unexpected error marshal request %v", err)
 		} else {
 			fmt.Println(string(data))
 		}
@@ -164,21 +167,21 @@ func pubArrayMessage() {
 		testEvent.Origin = 123
 		err := testEvent.AddSimpleReading("ba", common.ValueTypeBoolArray, []bool{true, true, false})
 		if err != nil {
-			fmt.Errorf("Add reading error for ba: %v\n", []bool{true, true, false})
+			fmt.Printf("Add reading error for ba: %v\n", []bool{true, true, false})
 		}
 		err = testEvent.AddSimpleReading("ia", common.ValueTypeInt32Array, []int32{30, 40, 50})
 		if err != nil {
-			fmt.Errorf("Add reading error for ia: %v\n", []int32{30, 40, 50})
+			fmt.Printf("Add reading error for ia: %v\n", []int32{30, 40, 50})
 		}
 		err = testEvent.AddSimpleReading("fa", common.ValueTypeFloat64Array, []float64{3.14, 3.1415, 3.1415926})
 		if err != nil {
-			fmt.Errorf("Add reading error for fa: %v\n", []float64{3.14, 3.1415, 3.1415926})
+			fmt.Printf("Add reading error for fa: %v\n", []float64{3.14, 3.1415, 3.1415926})
 		}
 		testEvent.Readings[len(testEvent.Readings)-1].Value = "[3.14, 3.1415, 3.1415926]"
 
 		data, err := json.Marshal(testEvent)
 		if err != nil {
-			fmt.Errorf("unexpected error MarshalEvent %v", err)
+			fmt.Printf("unexpected error MarshalEvent %v", err)
 		} else {
 			fmt.Println(string(data))
 		}
@@ -215,16 +218,16 @@ func pubToMQTT(host string) {
 		testEvent.Origin = 123
 		err := testEvent.AddSimpleReading("Temperature", common.ValueTypeInt64, int64(20))
 		if err != nil {
-			fmt.Errorf("Add reading error for Temperature: %v\n", 20)
+			fmt.Printf("Add reading error for Temperature: %v\n", 20)
 		}
 		err = testEvent.AddSimpleReading("Humidity", common.ValueTypeInt64, int64(30))
 		if err != nil {
-			fmt.Errorf("Add reading error for Humidity: %v\n", 20)
+			fmt.Printf("Add reading error for Humidity: %v\n", 20)
 		}
 
 		data, err := json.Marshal(testEvent)
 		if err != nil {
-			fmt.Errorf("unexpected error MarshalEvent %v", err)
+			fmt.Printf("unexpected error MarshalEvent %v", err)
 		} else {
 			fmt.Println(string(data))
 		}
@@ -255,13 +258,13 @@ func pubMetaSource() {
 				testEvent.Origin = 13 * j
 				err := testEvent.AddSimpleReading("Temperature", common.ValueTypeInt64, j*8)
 				if err != nil {
-					fmt.Errorf("Add reading error for %d.Temperature: %v\n", i, j*8)
+					fmt.Printf("Add reading error for %d.Temperature: %v\n", i, j*8)
 				}
 				testEvent.Readings[0].Origin = 24 * j
 				testEvent.Readings[0].DeviceName = "Temperature sensor"
 				err = testEvent.AddSimpleReading("Humidity", common.ValueTypeInt64, j*8)
 				if err != nil {
-					fmt.Errorf("Add reading error for %d.Humidity: %v\n", i, j*8)
+					fmt.Printf("Add reading error for %d.Humidity: %v\n", i, j*8)
 				}
 				testEvent.Readings[1].Origin = 34 * j
 				testEvent.Readings[1].DeviceName = "Humidity sensor"
@@ -270,7 +273,7 @@ func pubMetaSource() {
 
 				data, err := json.Marshal(testEvent)
 				if err != nil {
-					fmt.Errorf("unexpected error MarshalEvent %v", err)
+					fmt.Printf("unexpected error MarshalEvent %v", err)
 				} else {
 					fmt.Println(string(data))
 				}
