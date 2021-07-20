@@ -64,6 +64,7 @@ default:
   server: localhost
   port: 5573
   topic: events
+  messageType: event
 #  optional:
 #    ClientId: client1
 #    Username: user1
@@ -88,19 +89,33 @@ The port of EdgeX message bus, default value is ``5573``.
 
 ### topic
 
-The topic name of EdgeX message bus,  default value is ``events``.
+The topic name of EdgeX message bus, default value is ``events``. Users can subscribe to the topics of message bus
+directly or subscribe to topics exported by EdgeX application service. Notice that, the message type of the two types of
+topics are different, remember to set the appropriate messageType property.
 
 ### type
 
-The EdgeX message bus type, currently two types of message buses are supported. If specified other values, then will use the default ``zero`` value.
+The EdgeX message bus type, currently three types of message buses are supported. If specified other values, then will
+use the default ``redis`` value.
 
-- ``zero``: Use ZeroMQ as EdgeX message bus. 
+- ``zero``: Use ZeroMQ as EdgeX message bus.
 - ``mqtt``: Use the MQTT broker as EdgeX message bus.
 - ``redis``: Use Redis as EdgeX message bus. When using EdgeX docker compose, the type will be set to this by default.
 
+### messageType
+
+The EdgeX message model type. If connected to the topic of EdgeX application service, the message model is an "event".
+Otherwise, if connected to the topic of EdgeX message bus directly to receive the message from device service or core
+data, the message is a "request". There are two available types of messageType property:
+
+- ``event``: The message will be decoded as a `dtos.Event` type. This is the default.
+- ``request``: The message will be decoded as a `requests.AddEventRequest` type.
+
 ### optional
 
-If MQTT message bus is used, some other optional configurations can be specified. Please notice that all of values in optional are **<u>string type</u>**, so values for these configurations should be string - such as ``KeepAlive: "5000"``. Below optional configurations are supported, please check MQTT specification for the detailed information.
+If MQTT message bus is used, some other optional configurations can be specified. Please notice that all of values in
+optional are **<u>string type</u>**, so values for these configurations should be string - such as ``KeepAlive: "5000"``
+. Below optional configurations are supported, please check MQTT specification for the detailed information.
 
 - ClientId
 
