@@ -119,7 +119,7 @@ func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 		m.fieldmap = make(map[string]interface{}, 100)
 		for _, field := range fields {
 			if out[0][field] != nil {
-				fieldmap[field] = out[0][field]
+				m.fieldmap[field] = out[0][field]
 			}
 		}
 
