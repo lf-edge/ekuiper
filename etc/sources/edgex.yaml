@@ -4,6 +4,11 @@ default:
   server: localhost
   port: 5563
   topic: events
+  type: zero
+  # Could be 'event' or 'request'.
+  # If the message is from app service, the message type is an event;
+  # Otherwise, if it is from the message bus directly, it should be a request
+  messageType: event
 #  Below is optional configurations settings for mqtt
 #  type: mqtt
 #  optional:
@@ -26,6 +31,7 @@ application_conf: #Conf_key
   server: localhost
   port: 5571
   topic: application
+  messageType: request
 
 mqtt_conf: #Conf_key
   protocol: tcp
