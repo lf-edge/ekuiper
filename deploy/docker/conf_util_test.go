@@ -191,6 +191,7 @@ func TestProcessEnv(t *testing.T) {
 		{
 			vars: []string{
 				"EDGEX__DEFAULT__TYPE=zmq",
+				"EDGEX__DEFAULT__MESSAGETYPE=event",
 				"EDGEX__DEFAULT__OPTIONAL__CLIENTID=clientid_0000",
 				"EDGEX__DEFAULT__OPTIONAL__PASSWORD=should_not_print",
 				"EDGEX__APPLICATION_CONF__PROTOCOL=ssl",
@@ -198,8 +199,9 @@ func TestProcessEnv(t *testing.T) {
 			file: "edgex",
 			expt: map[string]interface{}{
 				"default": map[string]interface{}{
-					"protocol": "tcp",
-					"type":     "zmq",
+					"messageType": "event",
+					"protocol":    "tcp",
+					"type":        "zmq",
 					"optional": map[string]interface{}{
 						"ClientId": "clientid_0000",
 						"Password": "should_not_print",
@@ -209,7 +211,7 @@ func TestProcessEnv(t *testing.T) {
 					"protocol": "ssl",
 				},
 			},
-			out: "application_conf:\n    protocol: ssl\ndefault:\n    optional:\n        ClientId: clientid_0000\n        Password: '*'\n    protocol: tcp\n    type: zmq\n",
+			out: "application_conf:\n    protocol: ssl\ndefault:\n    messageType: event\n    optional:\n        ClientId: clientid_0000\n        Password: '*'\n    protocol: tcp\n    type: zmq\n",
 		},
 	}
 	files := make(map[string]map[string]interface{})
