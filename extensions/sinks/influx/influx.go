@@ -116,9 +116,11 @@ func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 		}
 		tags := map[string]string{m.tagkey: m.tagvalue}
 		fields := strings.Split(m.fields, ",")
-		m.fieldmap = make(map[string]interface{}, 10)
+		m.fieldmap = make(map[string]interface{}, 100)
 		for _, field := range fields {
-			m.fieldmap[field] = out[0][field]
+			if out[0][field] != nil {
+				fieldmap[field] = out[0][field]
+			}
 		}
 
 		pt, err := client.NewPoint(m.measurement, tags, m.fieldmap, time.Now())
