@@ -18,7 +18,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/server"
+	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -229,7 +229,7 @@ func main() {
 								}
 								rname := c.Args()[0]
 								var reply string
-								args := &server.RPCArgDesc{Name: rname, Json: string(rule)}
+								args := &model.RPCArgDesc{Name: rname, Json: string(rule)}
 								err = client.Call("Server.CreateRule", args, &reply)
 								if err != nil {
 									fmt.Println(err)
@@ -246,7 +246,7 @@ func main() {
 							rname := c.Args()[0]
 							rjson := c.Args()[1]
 							var reply string
-							args := &server.RPCArgDesc{Name: rname, Json: rjson}
+							args := &model.RPCArgDesc{Name: rname, Json: rjson}
 							err = client.Call("Server.CreateRule", args, &reply)
 							if err != nil {
 								fmt.Println(err)
@@ -279,8 +279,8 @@ func main() {
 						}
 						pname := c.Args()[1]
 						sfile := c.String("file")
-						args := &server.PluginDesc{
-							RPCArgDesc: server.RPCArgDesc{
+						args := &model.PluginDesc{
+							RPCArgDesc: model.RPCArgDesc{
 								Name: pname,
 							},
 							Type: ptype,
@@ -322,7 +322,7 @@ func main() {
 							return nil
 						}
 						var reply string
-						err = client.Call("Server.CreateService", &server.RPCArgDesc{
+						err = client.Call("Server.CreateService", &model.RPCArgDesc{
 							Name: c.Args()[0],
 							Json: c.Args()[1],
 						}, &reply)
@@ -393,8 +393,8 @@ func main() {
 							return nil
 						}
 						pname := c.Args()[1]
-						args := &server.PluginDesc{
-							RPCArgDesc: server.RPCArgDesc{
+						args := &model.PluginDesc{
+							RPCArgDesc: model.RPCArgDesc{
 								Name: pname,
 							},
 							Type: ptype,
@@ -539,8 +539,8 @@ func main() {
 							return nil
 						}
 						pname := c.Args()[1]
-						args := &server.PluginDesc{
-							RPCArgDesc: server.RPCArgDesc{
+						args := &model.PluginDesc{
+							RPCArgDesc: model.RPCArgDesc{
 								Name: pname,
 							},
 							Type: ptype,
@@ -843,8 +843,8 @@ func main() {
 						}
 						pname := c.Args()[1]
 						sfile := c.String("file")
-						args := &server.PluginDesc{
-							RPCArgDesc: server.RPCArgDesc{
+						args := &model.PluginDesc{
+							RPCArgDesc: model.RPCArgDesc{
 								Name: pname,
 							},
 						}
