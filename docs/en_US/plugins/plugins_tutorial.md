@@ -26,46 +26,31 @@ These limitations are relatively strict, and they almost require compiling and r
 
 ## Plugin development 
 
-Developing plugin is generally carried out in the development environment. eKuiper plugins will be deployed to the production environment after passing debugging and running the development environment.
+Developing plugin is generally carried out in the development environment. eKuiper plugins will be deployed to the production environment after passing debugging and running the development environment. Since the limitation of Golang plugin system, here we provide two practical ways for plugin developer to set up environment for eKuiper plugin: **create the plugin project inside eKuiper** and **create the plugin project outside eKuiper**.
+The eKuiper plugin has three types: **sources**,**functions** and **sinks**, for the detailed method of plugin development: [LF Edge eKuiper extension](../extension/overview.md). This article will take the Sink plugin as an example to introduce the process of plugin development and deployment. We will develop a basic MySql sink, for write stream output data to the MySql database. The workflow list as followings:
 
-### Create and develop the plugin project
-
-There are some plugin examples in the *extensions* directory of the eKuiper project source code. The user customized plugin can also be developed in the eKuiper project. However, users usually need to create the new project outside of the eKuiper project to develop customized plugins, to manage code more conveniently. It's recommended to use Go module to develop plugin projects, the typical structure of project is listed as following.
-
-```
-plugin_project
-  sources         //source code directory of the plugin source 
-    mysource.go
-  sinks           //source code directory of the plugin sink
-    mysink.go
-  functions       //source code directory of the plugin function
-    myfunction.go
-  target          //directory of compiling results   
-  go.mod          //file go module
-```
-
-Developing a plugin needs to extend the interface in eKuiper, so it must depend on the eKuiper project. The simplest go.mod also needs to include the dependency for eKuiper. A typical go.mod is as follows:
-```go
-module samplePlugin
-
-go 1.16
-
-require (
-	github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
-)
-```
-
-The eKuiper plugin has three types. The source code can be put into the corresponding directory. For the detailed method of plugin development: [LF Edge eKuiper extension](../extension/overview.md). This article will take the Sink plugin as an example to introduce the process of plugin development and deployment. We will develop a basic MySql sink, for write stream output data to the MySql database.
-
-- Create plugin the project samplePlugin with the above directory structure
+- Create the plugin project
 - Create file mysql.go under the sinks directory
 - Edit file mysql.go for implementing the plugin
-    -  Implement [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface
+    - Implement [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface
     - Export Symbol: Mysql. It could be a constructor function so that each rule can instantiate an own mysql plugin instance. Or it could be the struct which means every rule will share a singleton of the plugin. If the plugin has states like the connection, the first approach is preferred.
 - Edit go.mod, add Mysql driver module
+- Build the eKuiper and plugin
 
-The complete source code of mysql.go is as follows:
+### Create the plugin project inside eKuiper
 
+When users develop the plugin by this way, he must firstly download the eKuiper source code and run `make` command inside the eKuiper root directory. There are some plugin examples in the *extensions* directory of the eKuiper project source code. The advantage is all existing official plugins are developed by this way so new plugin developer can directly start instead of setting up a new project from scratch.
+Users can also use extensions directory to develop the plugins, the structure of project is like this:
+```
+extensions
+  sinks
+    mysql
+      mysql.go
+  go.mod
+```
+The extensions directory is using Go module to manage the existing example plugins packages, so users just need create a new directory for their plugin, put their code there and update the dependency in go.mod file.
+
+Next users need edit the mysql.go and implement the plugin. The complete source code of mysql.go is as follows:
 ```go
 package main
 
@@ -75,9 +60,10 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/lf-edge/ekuiper/common"
-	"github.com/lf-edge/ekuiper/xstream/api"
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
+
 
 type mysqlConfig struct {
 	Url   string `json:"url"`
@@ -92,7 +78,7 @@ type mysqlSink struct {
 
 func (m *mysqlSink) Configure(props map[string]interface{}) error {
 	cfg := &mysqlConfig{}
-	err := common.MapToStruct(props, cfg)
+	err := cast.MapToStruct(props, cfg)
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
@@ -102,13 +88,17 @@ func (m *mysqlSink) Configure(props map[string]interface{}) error {
 	if cfg.Table == "" {
 		return fmt.Errorf("property Table is required")
 	}
+	m.conf = cfg
 	return nil
 }
 
 func (m *mysqlSink) Open(ctx api.StreamContext) (err error) {
 	logger := ctx.GetLogger()
-	logger.Debug("Opening mysql sink")
+	logger.Debugf("Opening mysql sink %v", m.conf)
 	m.db, err = sql.Open("mysql", m.conf.Url)
+	if err != nil {
+		logger.Error(err)
+	}
 	return
 }
 
@@ -146,7 +136,32 @@ func Mysql() api.Sink {
 	return &mysqlSink{}
 }
 ```
- The complete code of go.mod is as follows:
+
+### Create the plugin project outside eKuiper
+
+However, users usually need to create the new project outside of the eKuiper project to develop customized plugins, to manage code more conveniently. It's recommended to use Go module to develop plugin projects, the code structure of project is listed as following. 
+
+```
+samplePlugin
+  sinks           //source code directory of the plugin sink
+    mysql.go
+  target          //directory of compiling results   
+  go.mod          //file go module
+```
+
+Next we need edit the mysql.go and implement the plugin, users can use the same code previously introduced.
+Developing a plugin needs to extend the interface in eKuiper, so it must depend on the eKuiper project. A typical go.mod is as follows:
+```go
+module samplePlugin
+
+go 1.16
+
+require (
+	github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
+)
+```
+
+mysql.go also have a dependency for mysql package, so the finial go.mod is this.
  ```go
 module samplePlugin
 
@@ -164,59 +179,131 @@ The environment of compiling the plugin should be consistent with that of  eKuip
 
 #### Compile locally
 
-Developers can locally compile eKuiper and the plugin for debugging, which steps are as follows:
+If users create plugin project inside eKuiper, then he can just use the following method to build the plugin.
+```shell
+   # compile the eKuiper
+   go build -trimpath -o ./_build/$build/bin/kuiperd cmd/kuiperd/main.go
+    
+   # compile the plugin that using the extensions folder within eKuiper project
+   go build -trimpath -modfile extensions.mod --buildmode=plugin -o ./_build/$build/plugins/sinks/Mysql@v1.0.0.so extensions/sinks/mysql/mysql.go
+ ```
+
+However, if developers create plugin project outside eKuiper, he needs following steps to compile eKuiper and the plugin for debugging:
 1. Download eKuiper source code: `git clone https://github.com/lf-edge/ekuiper.git`
-2.  Compile eKuiper: run `make` under the eKuiper directory
-3. Compile the plugin:
-    1. Run `go mod edit -replace github.com/lf-edge/ekuiper=$eKuiperPath` under the plugin project, make the eKuiper dependence point to the local eKuiper, and then please replace the download directory of step 1 by $eKuiperPath, the same below.
+2. Compile eKuiper: run `make` under the eKuiper directory
+3. eKuiper main path set: set environment variable `eKuiperPath` by the download directory of step 1, e.g. `export eKuiperPath=/go/ekuiper`
+4. Build env set up: in order to compile the plugin in the same environment with ekuiper, users need do some special steps to set up the build environment.
+   1. Run `go mod edit -replace github.com/lf-edge/ekuiper=$eKuiperPath` under the plugin project, make the eKuiper dependence point to the local eKuiper, here the `$eKuiperPath` will be replaced by the download directory of step 1, the same below.
+      Here is an example after this step
+      ```
+      module samplePlugin
+
+      go 1.16
+
+      require (
+        github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
+        github.com/go-sql-driver/mysql v1.5.0
+      )
+      replace github.com/lf-edge/ekuiper => /go/ekuiper # replace ekuiper with local ekuiper module
+      
+      ```
    2. Because the Golang plugin system has a very strict limitation of the dependency paths, it is more safe to build the plugin from the eKuiper main project. In the eKuiper project, add a new *mod* file with a name like *sample.mod* to point to your plugin project.
+      Here is an example if your plugin project in the same directory with eKuiper project
       ```
       module github.com/lf-edge/ekuiper
       go 1.16
       require samplePlugin v0.0.0
-      replace samplePlugin => ../samplePlugin     
+      replace samplePlugin => ../samplePlugin   # replace samplePlugin with local samplePlugin module
       ```
-   3. In eKuiper path, compile the plugin so with the newly added mod file
-       ```go
+   3. After these steps, the plugin and eKuiper project will look like this
+      ```
+      ekuiper
+        sample.mod         //new added sample.mod file in step2
+        go.mod             //existing ekuiper default mod file
+        extensions.mod     //existing extensions mod file for plugins
+      samplePlugin
+        go.mod             //new plugin project default mod file
+      ```
+ 4. compile eKuiper and plugin inside the eKuiper project
+       ```shell
+         # compile the eKuiper
+       go build -trimpath -o $eKuiperPath/_build/$build/bin/kuiperd cmd/kuiperd/main.go
+    
+         # compile the plugin that using self-managed project within eKuiper project
        go build -trimpath -modfile sample.mod --buildmode=plugin -o $eKuiperPath/_build/$build/plugins/sinks/Mysql@v1.0.0.so ../samplePlugin/sinks/mysql.go
        ```
 
-### Docker compile
+#### Docker compile
 
-eKuiper provides different docker images for different purpose. The development docker image should be used for compiling plugins. From 0.4.0, the eKuiper image with tag x.x.x (e.g. `kuiper:0.4.0`) is the development docker image. For 0.3.x, eKuiper image with tag x.x.x-dev (e.g. `kuiper:0.3.0-dev`) is the development docker image. Compared with the running version, the development version provides the development environment of Go, which lets users compile the plugin that can be completely compatible with the officially published version of eKuiper. The compiling steps in docker are as follows:
+eKuiper provides different docker images for different purpose. The development docker image should be used for compiling plugins. From 0.4.0, the eKuiper image with tag x.x.x (e.g. `lfedge/ekuiper:0.4.0`) is the development docker image. Compared with the running version, the development version provides the development environment of Go, which lets users compile the plugin that can be completely compatible with the officially published version of eKuiper. The compiling steps in docker are as follows:
 1. Run docker of the development version of eKuiper. Users need to mount the local plugin directory to the directory in docker, and then they can access and compile the plugin project in docker. The author's plugin project is located in the local `/var/git` directory. We map the local directory `/var/git` to the `/home` directory in docker by using the following commands.
     ```go
-    docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/home lfedge/ekuiper:0.3.0-dev
+    docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/home lfedge/ekuiper:1.3.0
     ```
 2. The principle of compiling plugins in docker environment is the same as the local compilation. The compiled plugin is locating in the target directory of the plugin project.
-    ```go
-    -- In host
-    # docker exec -it kuiper-dev /bin/sh
-    
-    -- In docker instance
-   // Add the sample.mod to eKuiper project then run the below build command
-    # go build -trimpath -modfile sample.mod --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so ../samplePlugin/sinks/mysql.go
-    ```
+    1. get into the compiling docker environment  
+       ```shell
+         # In host
+         docker exec -it kuiper-dev /bin/sh
+       ```
+    2. eKuiper main path set: in compiling docker image, eKuiper project located in `/go/kuiper` 
+       ```shell
+         # In docker instance
+         export EKUIPER_SOURCE=/go/kuiper
+       ```
+    3. do the necessary steps listed in former compile locally steps, the structure should like this
+       ``` 
+       /go/kuiper
+         go.mod
+         sample.mod
+       /home/samplePlugin
+         sinks           
+           mysql.go     
+         go.mod
+       ```
+    4. go to the eKuiper project path and run the local command    
+       ```shell 
+         # In docker instance
+         # Add the sample.mod to eKuiper project then run the below build command
+         go build -trimpath -modfile sample.mod --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so /home/samplePlugin/sinks/mysql.go
+       ```
 You can use below sample shell script in your plugin project to automatically build and package the plugins. Please modify the variables at the beginning of the script to meet the requirements of different environments.
 
 ```shell script
-#!/bin/sh
-export EKUIPER_SOURCE=../ekuiper
-export PLUGIN_TARGET=$EKUIPER_SOURCE/plugins
-export ETC_TARGET=$EKUIPER_SOURCE/etc
-export ZIP_TARGET=plugins
+export EKUIPER_SOURCE=/go/kuiper
+export PLUGIN_SOURCE=/home/samplePlugin
+export PLUGIN_TARGET=$PLUGIN_SOURCE/plugins
 export VERSION=0.0.1
 
-go mod edit -replace github.com/lf-edge/ekuiper=$EKUIPER_SOURCE
 
-go build -trimpath --buildmode=plugin -o $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so sinks/mysql.go
+mkdir -p $PLUGIN_TARGET/sinks
+
+# replace eKuiper dependency with local eKuiper
+go mod edit -replace github.com/emqx/kuiper=$EKUIPER_SOURCE
+
+# go to eKuiper main path
+cd $EKUIPER_SOURCE
+
+cat <<EOF >$EKUIPER_SOURCE/sample.mod
+module github.com/lf-edge/ekuiper
+go 1.16
+require samplePlugin v0.0.0
+replace samplePlugin => $PLUGIN_SOURCE
+EOF
+
+go mod download -modfile sample.mod github.com/go-sql-driver/mysql
+go build -trimpath -modfile sample.mod  --buildmode=plugin -o $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so $PLUGIN_SOURCE/sinks/mysql.go
+
+cd $PLUGIN_SOURCE
+
+
+echo $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so
 
 ## zip the output
-mkdir $ZIP_TARGET/sinks
-zip -o $ZIP_TARGET/sinks/mysql.zip $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so
+zip -o $PLUGIN_TARGET/sinks/mysql.zip $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so
 ```
 
-### Debug and run the plugin
+#### Debug and run the plugin
 
 Run eKuiper in the local or **Develop** Docker, create streams and rules, set action of the rule to mysql, then users can test the customized mysql sink plugin. Please refer [eKuiper documentation](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/getting_started.md) for the steps of creating streams and rules. The following provides a rule using the mysql plugin for reference.
 ```
@@ -244,9 +331,9 @@ If the production environment and development environment are different, the dev
 
 ### Plugin compilation
 
-The plugin should use the same environment as the production environment  eKuiper to compile in principle. If the production environment is eKuiper docker, should use the dev docker environment that has the same version as the production environment to compile the plugin. For example, if the production environment uses docker mirroring [lfedge/ekuiper:0.3.0](https://registry.hub.docker.com/layers/lfedge/ekuiper/0.3.0/images/sha256-0e3543d33f6f8c56de044d5ff001fd39b9e26f82219ca5fd25605953ed33580e?context=explore), the plugin should be compiled in [lfedge/ekuiper:0.3.0-dev](https://registry.hub.docker.com/layers/lfedge/ekuiper/0.3.0-dev/images/sha256-a309d3821b55b01dc01c4f4a04e83288bf5526325f0073197387f2ca425260d0?context=explore) environment.
+The plugin should use the same environment as the production environment eKuiper to compile in principle. If the production environment is eKuiper docker, should use the dev docker environment that has the same version as the production environment to compile the plugin. For example, if the production environment uses docker mirroring [lfedge/ekuiper:0.4.0-slim](https://registry.hub.docker.com/layers/lfedge/ekuiper/0.4.0-alpine/images/sha256-f79e9afd020a05f443d1864ee08007fe472e0d15e266d48a1f636fbd0343d507?context=explore), the plugin should be compiled in [lfedge/ekuiper:0.4.0](https://registry.hub.docker.com/layers/lfedge/ekuiper/0.4.0/images/sha256-dcc1420cbbd501aedd1bfe4093818a69726de1d6365974b69e99e1d5bc671836?context=explore) environment.
 
-Please refer [Docker compile](#docker编译) for the compilation process. The compiled plugin can be tested in the Development Docker image before deploying.
+Please refer [Docker compile](#Docker-compile) for the compilation process. The compiled plugin can be tested in the Development Docker image before deploying.
 
 ### Plugin deployment 
 
