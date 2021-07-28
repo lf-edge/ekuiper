@@ -26,7 +26,7 @@ basic:
   # The URL where hosts all of pre-build plugins. By default it's at packages.emqx.io
   # There could be several hosts (host can be separated with comma), if same package could be found in the several hosts,
   # then the package in the 1st host will have the highest priority.
-  pluginHosts: https://www.emqx.io/downloads
+  pluginHosts: https://packages.emqx.net
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:
