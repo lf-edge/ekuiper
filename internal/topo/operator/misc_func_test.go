@@ -765,6 +765,26 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 			result: []map[string]interface{}{{
 				"a": "Shield of faith",
 			}},
+		}, {
+			sql: `SELECT all[poi[-1] + 1]->ts as powerOnTs FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"all": []map[string]interface{}{
+						{"SystemPowerMode": 0, "VehicleSpeed": 0, "FLWdwPosition": 0, "FrontWiperSwitchStatus": float64(1), "ts": 0},
+						{"SystemPowerMode": 0, "VehicleSpeed": 0, "FLWdwPosition": 0, "FrontWiperSwitchStatus": float64(4), "ts": 500},
+						{"SystemPowerMode": 2, "VehicleSpeed": 0, "FLWdwPosition": 0, "FrontWiperSwitchStatus": 0, "ts": 1000},
+						{"SystemPowerMode": 2, "VehicleSpeed": 10, "FLWdwPosition": 20, "FrontWiperSwitchStatus": 0, "ts": 60000},
+						{"SystemPowerMode": 2, "VehicleSpeed": 10, "FLWdwPosition": 20, "FrontWiperSwitchStatus": 0, "ts": 89500},
+						{"SystemPowerMode": 2, "VehicleSpeed": 20, "FLWdwPosition": 50, "FrontWiperSwitchStatus": 5, "ts": 90000},
+						{"SystemPowerMode": 2, "VehicleSpeed": 40, "FLWdwPosition": 60, "FrontWiperSwitchStatus": 5, "ts": 121000},
+					},
+					"poi": []interface{}{0, 1},
+				},
+			},
+			result: []map[string]interface{}{{
+				"powerOnTs": float64(1000),
+			}},
 		},
 	}
 

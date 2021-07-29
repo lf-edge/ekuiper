@@ -212,7 +212,6 @@ func validate(t string, v interface{}) error {
 	default:
 		return fmt.Errorf("incompatible types for comparison: %s and %s", t, vt)
 	}
-	return nil
 }
 
 type EvalResultMessage struct {
@@ -354,9 +353,23 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 	case *ast.BooleanLiteral:
 		return expr.Val
 	case *ast.ColonExpr:
-		return &BracketEvalResult{Start: expr.Start, End: expr.End}
+		s, e := v.Eval(expr.Start), v.Eval(expr.End)
+		si, err := cast.ToInt(s, cast.CONVERT_SAMEKIND)
+		if err != nil {
+			return fmt.Errorf("colon start %v is not int: %v", expr.Start, err)
+		}
+		ei, err := cast.ToInt(e, cast.CONVERT_SAMEKIND)
+		if err != nil {
+			return fmt.Errorf("colon end %v is not int: %v", expr.End, err)
+		}
+		return &BracketEvalResult{Start: si, End: ei}
 	case *ast.IndexExpr:
-		return &BracketEvalResult{Start: expr.Index, End: expr.Index}
+		i := v.Eval(expr.Index)
+		ii, err := cast.ToInt(i, cast.CONVERT_SAMEKIND)
+		if err != nil {
+			return fmt.Errorf("index %v is not int: %v", expr.Index, err)
+		}
+		return &BracketEvalResult{Start: ii, End: ii}
 	case *ast.Call:
 		if valuer, ok := v.Valuer.(CallValuer); ok {
 			switch expr.Name {
@@ -972,8 +985,6 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op ast.Token) interfac
 	default:
 		return invalidOpError(lhs, op, rhs)
 	}
-
-	return invalidOpError(lhs, op, rhs)
 }
 
 func invalidOpError(lhs interface{}, op ast.Token, rhs interface{}) error {

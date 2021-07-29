@@ -285,7 +285,6 @@ func (p *Parser) parseJoins() (ast.Joins, error) {
 			return nil, nil
 		}
 	}
-	return joins, nil
 }
 
 func (p *Parser) ParseJoin(joinType ast.JoinType) (*ast.Join, error) {
@@ -492,8 +491,6 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 			node = r
 		}
 	}
-
-	return nil, nil
 }
 
 func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
@@ -572,11 +569,27 @@ func (p *Parser) parseBracketExpr() (ast.Expr, error) {
 	tok2, lit2 := p.scanIgnoreWhiteSpaceWithNegativeNum()
 	if tok2 == ast.RBRACKET {
 		//field[]
-		return &ast.ColonExpr{Start: 0, End: math.MinInt32}, nil
+		return &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: math.MinInt32}}, nil
 	} else if tok2 == ast.INTEGER {
 		start, err := strconv.Atoi(lit2)
 		if err != nil {
 			return nil, fmt.Errorf("The start index %s is not an int value in bracket expression.", lit2)
+		}
+		if tok3, _ := p.scanIgnoreWhitespace(); tok3 == ast.RBRACKET {
+			//Such as field[2]
+			return &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: start}}, nil
+		} else if tok3 == ast.COLON {
+			//Such as field[2:] or field[2:4]
+			return p.parseColonExpr(&ast.IntegerLiteral{Val: start})
+		}
+	} else if tok2 == ast.COLON {
+		//Such as field[:3] or [:]
+		return p.parseColonExpr(&ast.IntegerLiteral{Val: 0})
+	} else {
+		p.unscan()
+		start, err := p.ParseExpr()
+		if err != nil {
+			return nil, fmt.Errorf("The start index %s is invalid in bracket expression.", lit2)
 		}
 		if tok3, _ := p.scanIgnoreWhitespace(); tok3 == ast.RBRACKET {
 			//Such as field[2]
@@ -585,14 +598,11 @@ func (p *Parser) parseBracketExpr() (ast.Expr, error) {
 			//Such as field[2:] or field[2:4]
 			return p.parseColonExpr(start)
 		}
-	} else if tok2 == ast.COLON {
-		//Such as field[:3] or [:]
-		return p.parseColonExpr(0)
 	}
 	return nil, fmt.Errorf("Unexpected token %q. when parsing bracket expressions.", lit2)
 }
 
-func (p *Parser) parseColonExpr(start int) (ast.Expr, error) {
+func (p *Parser) parseColonExpr(start ast.Expr) (ast.Expr, error) {
 	tok, lit := p.scanIgnoreWhiteSpaceWithNegativeNum()
 	if tok == ast.INTEGER {
 		end, err := strconv.Atoi(lit)
@@ -601,12 +611,12 @@ func (p *Parser) parseColonExpr(start int) (ast.Expr, error) {
 		}
 
 		if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == ast.RBRACKET {
-			return &ast.ColonExpr{Start: start, End: end}, nil
+			return &ast.ColonExpr{Start: start, End: &ast.IntegerLiteral{Val: end}}, nil
 		} else {
 			return nil, fmt.Errorf("Found %q, expected right bracket.", lit1)
 		}
 	} else if tok == ast.RBRACKET {
-		return &ast.ColonExpr{Start: start, End: math.MinInt32}, nil
+		return &ast.ColonExpr{Start: start, End: &ast.IntegerLiteral{Val: math.MinInt32}}, nil
 	}
 	return nil, fmt.Errorf("Found %q, expected right bracket.", lit)
 }
@@ -677,7 +687,7 @@ func (p *Parser) parseCall(name string) (ast.Expr, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok != ast.RPAREN {
 		return nil, fmt.Errorf("found function call %q, expected ), but with %q.", name, lit)
 	}
-	if wt, error := validateWindows(name, args); wt == ast.NOT_WINDOW {
+	if wt, err := validateWindows(name, args); wt == ast.NOT_WINDOW {
 		if valErr := validateFuncs(name, args); valErr != nil {
 			return nil, valErr
 		}
@@ -687,12 +697,12 @@ func (p *Parser) parseCall(name string) (ast.Expr, error) {
 		}
 		return &ast.Call{Name: name, Args: args}, nil
 	} else {
-		if error != nil {
-			return nil, error
+		if err != nil {
+			return nil, err
 		}
 		win, err := p.ConvertToWindows(wt, args)
 		if err != nil {
-			return nil, error
+			return nil, err
 		}
 		// parse filter clause
 		f, err := p.parseFilter()
@@ -1230,7 +1240,7 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 							if val := strings.ToUpper(lit3); (val != "TRUE") && (val != "FALSE") {
 								return nil, fmt.Errorf("found %q, expect TRUE/FALSE value in %s option.", lit3, tok1)
 							} else {
-								opts.STRICT_VALIDATION = (val == "TRUE")
+								opts.STRICT_VALIDATION = val == "TRUE"
 							}
 						case ast.RETAIN_SIZE:
 							if val, err := strconv.Atoi(lit3); err != nil {
@@ -1242,7 +1252,7 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 							if val := strings.ToUpper(lit3); (val != "TRUE") && (val != "FALSE") {
 								return nil, fmt.Errorf("found %q, expect TRUE/FALSE value in %s option.", lit3, tok1)
 							} else {
-								opts.SHARED = (val == "TRUE")
+								opts.SHARED = val == "TRUE"
 							}
 						default:
 							f := v.Elem().FieldByName(lit1)
