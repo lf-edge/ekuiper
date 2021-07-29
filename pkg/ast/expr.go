@@ -50,12 +50,12 @@ type BracketExpr struct {
 }
 
 type ColonExpr struct {
-	Start int
-	End   int
+	Start Expr
+	End   Expr
 }
 
 type IndexExpr struct {
-	Index int
+	Index Expr
 }
 
 type BooleanLiteral struct {

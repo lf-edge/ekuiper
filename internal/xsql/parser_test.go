@@ -1697,7 +1697,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream},
 							OP:  ast.SUBSET,
-							RHS: &ast.IndexExpr{Index: 0},
+							RHS: &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: 0}},
 						},
 						Name:  "",
 						AName: ""},
@@ -1715,7 +1715,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							LHS: &ast.BinaryExpr{
 								LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream},
 								OP:  ast.SUBSET,
-								RHS: &ast.IndexExpr{Index: 0},
+								RHS: &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: 0}},
 							},
 							OP:  ast.ARROW,
 							RHS: &ast.FieldRef{Name: "first"},
@@ -1740,7 +1740,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 								RHS: &ast.FieldRef{Name: "first"},
 							},
 							OP:  ast.SUBSET,
-							RHS: &ast.IndexExpr{Index: 2},
+							RHS: &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: 2}},
 						},
 
 						Name:  "",
@@ -1763,7 +1763,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 									RHS: &ast.FieldRef{Name: "first"},
 								},
 								OP:  ast.SUBSET,
-								RHS: &ast.IndexExpr{Index: 2},
+								RHS: &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: 2}},
 							},
 							OP:  ast.ARROW,
 							RHS: &ast.FieldRef{Name: "test"},
@@ -1784,7 +1784,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream},
 							OP:  ast.SUBSET,
-							RHS: &ast.ColonExpr{Start: 0, End: 1},
+							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
 						},
 						Name:  "",
 						AName: ""},
@@ -1801,7 +1801,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream},
 							OP:  ast.SUBSET,
-							RHS: &ast.ColonExpr{Start: 0, End: 1},
+							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
 						},
 						Name:  "",
 						AName: ""},
@@ -1818,7 +1818,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream},
 							OP:  ast.SUBSET,
-							RHS: &ast.ColonExpr{Start: 0, End: math.MinInt32},
+							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: math.MinInt32}},
 						},
 						Name:  "",
 						AName: ""},
@@ -1835,7 +1835,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream},
 							OP:  ast.SUBSET,
-							RHS: &ast.ColonExpr{Start: 2, End: math.MinInt32},
+							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 2}, End: &ast.IntegerLiteral{Val: math.MinInt32}},
 						},
 						Name:  "",
 						AName: "c"},
@@ -1850,7 +1850,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						Expr: &ast.BinaryExpr{
-							LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream}, OP: ast.SUBSET, RHS: &ast.ColonExpr{Start: 2, End: math.MinInt32}},
+							LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream}, OP: ast.SUBSET, RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 2}, End: &ast.IntegerLiteral{Val: math.MinInt32}}},
 							OP:  ast.ARROW,
 							RHS: &ast.FieldRef{Name: "first"},
 						},
@@ -1880,7 +1880,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						Expr: &ast.BinaryExpr{
-							LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{StreamName: ast.StreamName("demo"), Name: "children"}, OP: ast.SUBSET, RHS: &ast.ColonExpr{Start: 2, End: math.MinInt32}},
+							LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{StreamName: ast.StreamName("demo"), Name: "children"}, OP: ast.SUBSET, RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 2}, End: &ast.IntegerLiteral{Val: math.MinInt32}}},
 							OP:  ast.ARROW,
 							RHS: &ast.FieldRef{Name: "first"},
 						},
@@ -1900,7 +1900,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							Name: "lower",
 							Args: []ast.Expr{
 								&ast.BinaryExpr{
-									LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{StreamName: ast.StreamName("demo"), Name: "children"}, OP: ast.SUBSET, RHS: &ast.ColonExpr{Start: 2, End: math.MinInt32}},
+									LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{StreamName: ast.StreamName("demo"), Name: "children"}, OP: ast.SUBSET, RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 2}, End: &ast.IntegerLiteral{Val: math.MinInt32}}},
 									OP:  ast.ARROW,
 									RHS: &ast.FieldRef{Name: "first"},
 								},
@@ -1921,7 +1921,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream},
 							OP:  ast.SUBSET,
-							RHS: &ast.ColonExpr{Start: 0, End: 1},
+							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
 						},
 						Name:  "",
 						AName: ""},
@@ -1931,7 +1931,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 					LHS: &ast.BinaryExpr{
 						LHS: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream},
 						OP:  ast.SUBSET,
-						RHS: &ast.IndexExpr{Index: 0},
+						RHS: &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: 0}},
 					},
 					OP:  ast.GT,
 					RHS: &ast.IntegerLiteral{Val: 12},
@@ -1943,6 +1943,22 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 			s:    `SELECT demo.children.first AS c FROM demo`,
 			stmt: nil,
 			err:  "Too many field names. Please use -> to reference keys in struct.\n",
+		},
+		{
+			s: `SELECT children[index] FROM demo`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream},
+							OP:  ast.SUBSET,
+							RHS: &ast.IndexExpr{Index: &ast.FieldRef{Name: "index", StreamName: ast.DefaultStream}},
+						},
+						Name:  "",
+						AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "demo"}},
+			},
 		},
 	}
 
