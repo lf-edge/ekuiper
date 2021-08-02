@@ -30,6 +30,8 @@ port: 9081  //eKuiper port
 timeout: 500  //Timeout for executing a command (unit: ms)
 intervalTime: 60  //interval of Checking the command folder  (unit: seconds)
 ip: "127.0.0.1" //eKuiper ip adress
+consoleLog: true  //true|false, if it's set to true, then the log will be print to console
+fileLog: false  //true|false, if it's set to true, then the log will be print to log file "logPath"
 logPath: "./log/kubernetes.log" //Log save path
 commandDir: "./sample/" //Command folder path
 ```
