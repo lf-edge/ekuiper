@@ -29,6 +29,8 @@ port: 9081  //eKuiper 端口
 timeout: 500  //执行一条命令超时时间（单位：毫秒）
 intervalTime: 60  //隔多久检查一次命令文件夹（单位：秒）
 ip: "127.0.0.1" //eKuiper ip地址
+consoleLog: true //是否需要打印log到console上
+fileLog: true   //是否需要打印log到log文件中，如果需要，log将会打印到logPath指定文件中
 logPath: "./log/kubernetes.log" //日志保存路径
 commandDir: "./sample/" //命令文件夹路径
 ```

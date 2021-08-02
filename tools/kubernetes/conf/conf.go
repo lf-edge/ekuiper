@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gopkg.in/yaml.v3"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -36,6 +37,8 @@ type (
 		Timeout      int    `yaml:"timeout"`
 		IntervalTime int    `yaml:"intervalTime"`
 		Ip           string `yaml:"ip"`
+		ConsoleLog   bool   `yaml:"consoleLog"`
+		FileLog      bool   `yaml:"fileLog"`
 		LogPath      string `yaml:"logPath"`
 		CommandDir   string `yaml:"commandDir"`
 	}
@@ -132,15 +135,22 @@ func (c *config) initLog() bool {
 		DisableColors: true,
 		FullTimestamp: true,
 	})
-
-	logFile, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err == nil {
-		Log.SetOutput(logFile)
-		return true
-	} else {
-		Log.Infof("Failed to log to file, using default stderr.")
-		return false
+	if c.FileLog {
+		logFile, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			fmt.Println("Failed to init log file settings..." + err.Error())
+			Log.Infof("Failed to log to file, using default stderr.")
+			return false
+		} else if c.ConsoleLog {
+			mw := io.MultiWriter(os.Stdout, logFile)
+			Log.SetOutput(mw)
+		} else if !c.ConsoleLog {
+			Log.SetOutput(logFile)
+		}
+	} else if c.ConsoleLog {
+		Log.SetOutput(os.Stdout)
 	}
+	return true
 }
 
 func (c *config) Init() bool {
