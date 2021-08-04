@@ -14,9 +14,23 @@
 
 package kv
 
+import (
+	"sync"
+)
+
+type kvstores struct {
+	stores map[string]KeyValue
+	mu	   sync.Mutex
+}
+
+var stores = kvstores{
+	stores: make(map[string]KeyValue),
+	mu: sync.Mutex{},
+}
+
+var database Database
+
 type KeyValue interface {
-	Open() error
-	Close() error
 	// Set key to hold string value if key does not exist otherwise return an error
 	Setnx(key string, value interface{}) error
 	// Set key to hold the string value. If key already holds a value, it is overwritten
@@ -28,6 +42,24 @@ type KeyValue interface {
 	Clean() error
 }
 
-func GetDefaultKVStore(fpath string) (ret KeyValue) {
-	return GetSqliteKVStore(fpath)
+func SetKVStoreDatabase(d Database) {
+	database = d
+}
+
+func (s *kvstores) get(table string) (error, KeyValue) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if store, contains := s.stores[table]; contains {
+		return nil, store
+	}
+	err, store := CreateSqlKvStore(database, table)
+	if err != nil {
+		return err, nil
+	}
+	s.stores[table] = store
+	return nil, store
+}
+
+func GetKVStore(table string) (error, KeyValue) {
+	return stores.get(table)
 }

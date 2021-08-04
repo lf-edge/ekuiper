@@ -62,11 +62,6 @@ func GetDataSourceStatement(m kv.KeyValue, name string) (*StreamInfo, error) {
 		v  string
 		vs = &StreamInfo{}
 	)
-	err := m.Open()
-	if err != nil {
-		return nil, fmt.Errorf("error when opening db: %v", err)
-	}
-	defer m.Close()
 	if ok, _ := m.Get(name, &v); ok {
 		if err := json.Unmarshal([]byte(v), vs); err != nil {
 			return nil, fmt.Errorf("error unmarshall %s, the data in db may be corrupted", name)

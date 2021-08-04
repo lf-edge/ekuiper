@@ -22,17 +22,16 @@ import (
 	"testing"
 )
 
-func TestSqliteKVStore_Funcs(t *testing.T) {
+func TestSqlKVStore_Funcs(t *testing.T) {
 	abs, _ := filepath.Abs("test")
 	if f, _ := os.Stat(abs); f != nil {
 		os.Remove(abs)
 	}
+	_, database := NewSqliteDatabase(abs)
+	database.Connect()
+	SetKVStoreDatabase(database)
 
-	ks := GetSqliteKVStore(abs)
-	if e := ks.Open(); e != nil {
-		t.Errorf("Failed to open data %s.", e)
-	}
-
+	_, ks := GetKVStore("test")
 	if err := ks.Setnx("foo", "bar"); nil != err {
 		t.Error(err)
 	}
@@ -69,14 +68,6 @@ func TestSqliteKVStore_Funcs(t *testing.T) {
 		if !reflect.DeepEqual(2, len(keys)) {
 			t.Error("expect:2", "get:", len(keys))
 		}
-	}
-
-	if e2 := ks.Close(); e2 != nil {
-		t.Errorf("Failed to close data: %s.", e2)
-	}
-
-	if err := ks.Open(); nil != err {
-		t.Error(err)
 	}
 
 	var v2 string

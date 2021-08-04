@@ -36,8 +36,12 @@ type StreamProcessor struct {
 
 //@params d : the directory of the DB to save the stream info
 func NewStreamProcessor(d string) *StreamProcessor {
+	err, db := kv.GetKVStore(d)
+	if err != nil {
+		panic(fmt.Sprintf("Can not initalize store for the stream processor at path %s", d))
+	}
 	processor := &StreamProcessor{
-		db: kv.GetDefaultKVStore(d),
+		db: db,
 	}
 	return processor
 }
@@ -96,11 +100,6 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 }
 
 func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, replace bool) error {
-	err := p.db.Open()
-	if err != nil {
-		return fmt.Errorf("error when opening db: %v.", err)
-	}
-	defer p.db.Close()
 	s, err := json.Marshal(xsql.StreamInfo{
 		StreamType: stmt.StreamType,
 		Statement:  statement,
@@ -160,11 +159,6 @@ func (p *StreamProcessor) execShow(st ast.StreamType) ([]string, error) {
 
 func (p *StreamProcessor) ShowStream(st ast.StreamType) ([]string, error) {
 	stt := ast.StreamTypeMap[st]
-	err := p.db.Open()
-	if err != nil {
-		return nil, fmt.Errorf("Show %ss fails, error when opening db: %v.", stt, err)
-	}
-	defer p.db.Close()
 	keys, err := p.db.Keys()
 	if err != nil {
 		return nil, fmt.Errorf("Show %ss fails, error when loading data from db: %v.", stt, err)
@@ -281,17 +275,11 @@ func (p *StreamProcessor) execDrop(stmt ast.NameNode, st ast.StreamType) (string
 }
 
 func (p *StreamProcessor) DropStream(name string, st ast.StreamType) (string, error) {
-	defer p.db.Close()
 	_, err := p.getStream(name, st)
 	if err != nil {
 		return "", err
 	}
 
-	err = p.db.Open()
-	if err != nil {
-		return "", fmt.Errorf("error when opening db: %v", err)
-	}
-	defer p.db.Close()
 	err = p.db.Delete(name)
 	if err != nil {
 		return "", err

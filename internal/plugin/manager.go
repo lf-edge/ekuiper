@@ -294,17 +294,10 @@ func NewPluginManager() (*Manager, error) {
 			outerErr = fmt.Errorf("cannot find etc folder: %s", err)
 			return
 		}
-		dbDir, err := conf.GetDataLoc()
-		if err != nil {
-			outerErr = fmt.Errorf("cannot find db folder: %s", err)
-			return
-		}
-		db := kv.GetDefaultKVStore(path.Join(dbDir, "pluginFuncs"))
-		err = db.Open()
+		err, db := kv.GetKVStore("pluginFuncs")
 		if err != nil {
 			outerErr = fmt.Errorf("error when opening db: %v.", err)
 		}
-		defer db.Close()
 		plugins := make([]map[string]string, 3)
 		for i := 0; i < 3; i++ {
 			names, err := findAll(PluginType(i), dir)
@@ -400,15 +393,10 @@ func (m *Manager) Register(t PluginType, j Plugin) error {
 	var err error
 	if t == FUNCTION {
 		if len(j.GetSymbols()) > 0 {
-			err = m.db.Open()
-			if err != nil {
-				return err
-			}
 			err = m.db.Set(name, j.GetSymbols())
 			if err != nil {
 				return err
 			}
-			m.db.Close()
 			err = m.registry.StoreSymbols(name, j.GetSymbols())
 		} else {
 			err = m.registry.StoreSymbols(name, []string{name})
@@ -430,16 +418,13 @@ func (m *Manager) Register(t PluginType, j Plugin) error {
 	//unzip and copy to destination
 	unzipFiles, version, err := m.install(t, name, zipPath, shellParas)
 	if err == nil && len(j.GetSymbols()) > 0 {
-		if err = m.db.Open(); err == nil {
-			err = m.db.Set(name, j.GetSymbols())
-		}
+		err = m.db.Set(name, j.GetSymbols())
 	}
 	if err != nil { //Revert for any errors
 		if t == SOURCE && len(unzipFiles) == 1 { //source that only copy so file
 			os.RemoveAll(unzipFiles[0])
 		}
 		if len(j.GetSymbols()) > 0 {
-			m.db.Close()
 			m.registry.RemoveSymbols(j.GetSymbols())
 		} else {
 			m.registry.RemoveSymbols([]string{name})
@@ -470,11 +455,6 @@ func (m *Manager) RegisterFuncs(name string, functions []string) error {
 	if len(functions) == 0 {
 		return fmt.Errorf("property 'functions' must not be empty")
 	}
-	err := m.db.Open()
-	if err != nil {
-		return err
-	}
-	defer m.db.Close()
 	old := make([]string, 0)
 	if ok, err := m.db.Get(name, &old); err != nil {
 		return err
@@ -483,7 +463,7 @@ func (m *Manager) RegisterFuncs(name string, functions []string) error {
 	} else if !ok {
 		m.registry.RemoveSymbols([]string{name})
 	}
-	err = m.db.Set(name, functions)
+	err := m.db.Set(name, functions)
 	if err != nil {
 		return err
 	}
@@ -518,10 +498,6 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 		m.uninstalSink(name)
 	case FUNCTION:
 		old := make([]string, 0)
-		err = m.db.Open()
-		if err != nil {
-			return err
-		}
 		if ok, err := m.db.Get(name, &old); err != nil {
 			return err
 		} else if ok {
@@ -533,7 +509,6 @@ func (m *Manager) Delete(t PluginType, name string, stop bool) error {
 		} else if !ok {
 			m.registry.RemoveSymbols([]string{name})
 		}
-		m.db.Close()
 		m.uninstalFunc(name)
 	}
 
@@ -573,12 +548,9 @@ func (m *Manager) Get(t PluginType, name string) (map[string]interface{}, bool) 
 			"version": v,
 		}
 		if t == FUNCTION {
-			if err := m.db.Open(); err == nil {
-				l := make([]string, 0)
-				if ok, _ := m.db.Get(name, &l); ok {
-					r["functions"] = l
-				}
-				m.db.Close()
+			l := make([]string, 0)
+			if ok, _ := m.db.Get(name, &l); ok {
+				r["functions"] = l
 			}
 			// ignore the error
 		}

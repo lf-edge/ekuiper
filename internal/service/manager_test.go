@@ -258,12 +258,6 @@ func TestInitByFiles(t *testing.T) {
 		},
 	}
 
-	err := m.serviceKV.Open()
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	defer m.serviceKV.Close()
 	actualService := &serviceInfo{}
 	ok, err := m.serviceKV.Get(name, actualService)
 	if err != nil {
@@ -278,12 +272,6 @@ func TestInitByFiles(t *testing.T) {
 		t.Errorf("service info mismatch, expect %v but got %v", info, actualService)
 	}
 
-	err = m.functionKV.Open()
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	defer m.functionKV.Close()
 	actualKeys, _ := m.functionKV.Keys()
 	if len(funcs) != len(actualKeys) {
 		t.Errorf("functions info mismatch: expect %d funcs but got %v", len(funcs), actualKeys)

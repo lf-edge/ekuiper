@@ -29,7 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"path"
 	"reflect"
 	"strings"
 	"testing"
@@ -263,7 +262,7 @@ func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkPro
 
 // Create or drop streams
 func HandleStream(createOrDrop bool, names []string, t *testing.T) {
-	p := processor.NewStreamProcessor(path.Join(DbDir, "stream"))
+	p := processor.NewStreamProcessor("stream")
 	for _, name := range names {
 		var sql string
 		if createOrDrop {

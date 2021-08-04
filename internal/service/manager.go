@@ -59,17 +59,11 @@ func GetServiceManager() (*Manager, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot find etc/services folder: %s", err)
 		}
-		dbDir, err := kconf.GetDataLoc()
-		if err != nil {
-			return nil, fmt.Errorf("cannot find db folder: %s", err)
-		}
-		sdb := kv.GetDefaultKVStore(path.Join(dbDir, "services"))
-		fdb := kv.GetDefaultKVStore(path.Join(dbDir, "serviceFuncs"))
-		err = sdb.Open()
+		err, sdb := kv.GetKVStore("services")
 		if err != nil {
 			return nil, fmt.Errorf("cannot open service db: %s", err)
 		}
-		err = fdb.Open()
+		err, fdb := kv.GetKVStore("serviceFuncs")
 		if err != nil {
 			return nil, fmt.Errorf("cannot open function db: %s", err)
 		}

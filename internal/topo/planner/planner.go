@@ -25,7 +25,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"path"
 )
 
 func Plan(rule *api.Rule, storePath string) (*topo.Topo, error) {
@@ -49,12 +48,10 @@ func PlanWithSourcesAndSinks(rule *api.Rule, storePath string, sources []*node.S
 	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil) {
 		return nil, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
 	}
-	store := kv.GetDefaultKVStore(path.Join(storePath, "stream"))
-	err = store.Open()
+	err, store := kv.GetKVStore("stream")
 	if err != nil {
 		return nil, err
 	}
-	defer store.Close()
 	// Create logical plan and optimize. Logical plans are a linked list
 	lp, err := createLogicalPlan(stmt, rule.Options, store)
 	if err != nil {
