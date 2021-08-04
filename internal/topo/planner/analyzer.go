@@ -369,8 +369,6 @@ func (s *streamFieldMapSchemaless) bindRef(fr *ast.FieldRef) error {
 			for sk := range s.content {
 				fr.StreamName = sk
 			}
-		} else {
-			fr.StreamName = s.defaultStream
 		}
 	}
 	k := fr.StreamName
@@ -378,7 +376,8 @@ func (s *streamFieldMapSchemaless) bindRef(fr *ast.FieldRef) error {
 		switch l {
 		case 0: // must be a column because alias are fields and have been traversed
 			// reserve a hole and do nothing
-			s.content[k] = nil
+			fr.StreamName = s.defaultStream
+			s.content[s.defaultStream] = nil
 			return nil
 		case 1: // if alias or single col, return this
 			for sk, sv := range s.content {
@@ -393,10 +392,12 @@ func (s *streamFieldMapSchemaless) bindRef(fr *ast.FieldRef) error {
 				fr.StreamName = ast.AliasStream
 				return nil
 			} else {
-				return fmt.Errorf("ambiguous field ")
+				fr.StreamName = s.defaultStream
 			}
 		}
-	} else {
+	}
+
+	if fr.StreamName != ast.DefaultStream {
 		r, ok := s.content[k]
 		if !ok { // reserver a hole
 			s.content[k] = nil
@@ -405,4 +406,5 @@ func (s *streamFieldMapSchemaless) bindRef(fr *ast.FieldRef) error {
 		}
 		return nil
 	}
+	return fmt.Errorf("ambiguous field ")
 }

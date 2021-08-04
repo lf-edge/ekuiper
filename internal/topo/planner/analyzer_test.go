@@ -113,6 +113,10 @@ var tests = []struct {
 		sql: `SELECT sin(temp) as temp1, cos(temp1) FROM src1`,
 		r:   newErrorStructWithS("unknown field temp1", ""),
 	},
+	{ // 14
+		sql: `SELECT collect(*)[-1] as current FROM src1 GROUP BY COUNTWINDOW(2, 1) HAVING isNull(current->name) = false`,
+		r:   newErrorStruct(""),
+	},
 }
 
 func Test_validation(t *testing.T) {
