@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"strconv"
+	"sync"
 )
 
 type PrintableTopo struct {
@@ -44,6 +45,7 @@ type Topo struct {
 	store              api.Store
 	coordinator        *checkpoint.Coordinator
 	topo               *PrintableTopo
+	mu                 sync.Mutex
 }
 
 func NewWithNameAndQos(name string, qos api.Qos, checkpointInterval int) (*Topo, error) {
@@ -65,6 +67,8 @@ func (s *Topo) GetContext() api.StreamContext {
 
 // Cancel may be called multiple times so must be idempotent
 func (s *Topo) Cancel() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	// completion signal
 	s.drainErr(nil)
 	s.cancel()
@@ -146,6 +150,8 @@ func (s *Topo) Open() <-chan error {
 	log.Infoln("Opening stream")
 	// open stream
 	go func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
 		var err error
 		if s.store, err = state.CreateStore(s.name, s.qos); err != nil {
 			fmt.Println(err)

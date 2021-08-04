@@ -36,11 +36,10 @@ func migration(dir string) error {
 		return err
 	}
 
-	store := kv.GetDefaultKVStore(dir)
-	if err := store.Open(); nil != err {
+	err, store := kv.GetKVStore(dir)
+	if err != nil {
 		return err
 	}
-	defer store.Close()
 
 	for _, k := range keys {
 		if value, ok := c.Get(k); !ok {
@@ -74,6 +73,7 @@ func DataMigration(dir string) error {
 			}
 		}
 	}
+	kv.CloseAll()
 	return nil
 }
 

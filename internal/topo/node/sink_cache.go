@@ -21,7 +21,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"io"
 	"path"
 	"sort"
 	"strconv"
@@ -105,7 +104,10 @@ func (c *Cache) initStore(ctx api.StreamContext) {
 	if err != nil {
 		c.drainError(err)
 	}
-	c.store = kv.GetDefaultKVStore(path.Join(dbDir, "sink", ctx.GetRuleId()))
+	err, c.store = kv.GetKVStore(path.Join("sink", ctx.GetRuleId()))
+	if err != nil {
+		c.drainError(err)
+	}
 	c.key = ctx.GetOpId() + strconv.Itoa(ctx.GetInstanceId())
 	logger.Debugf("cache saved to key %s", c.key)
 	//load cache
@@ -172,52 +174,35 @@ func (c *Cache) timebasedRun(ctx api.StreamContext, saveInterval int) {
 
 func (c *Cache) loadCache() error {
 	gob.Register(c.pending)
-	err := c.store.Open()
-	if err != nil && err != io.EOF {
-		return err
-	}
-	defer c.store.Close()
-	if err == nil {
-		mt := new(LinkedQueue)
-		if f, err := c.store.Get(c.key, &mt); f {
-			if nil != err {
-				return fmt.Errorf("load malform cache, found %v(%v)", c.key, mt)
-			}
-			c.pending = mt
-			c.changed = true
-			// To store the keys in slice in sorted order
-			var keys []int
-			for k := range mt.Data {
-				keys = append(keys, k)
-			}
-			sort.Ints(keys)
-			for _, k := range keys {
-				t := &CacheTuple{
-					index: k,
-					data:  mt.Data[k],
-				}
-				c.Out <- t
-			}
-			return nil
+	mt := new(LinkedQueue)
+	if f, err := c.store.Get(c.key, &mt); f {
+		if nil != err {
+			return fmt.Errorf("load malform cache, found %v(%v)", c.key, mt)
 		}
+		c.pending = mt
+		c.changed = true
+		// To store the keys in slice in sorted order
+		var keys []int
+		for k := range mt.Data {
+			keys = append(keys, k)
+		}
+		sort.Ints(keys)
+		for _, k := range keys {
+			t := &CacheTuple{
+				index: k,
+				data:  mt.Data[k],
+			}
+			c.Out <- t
+		}
+		return nil
 	}
 	return nil
 }
 
 func (c *Cache) saveCache(logger api.Logger, p *LinkedQueue) error {
-	err := c.store.Open()
-	if err != nil {
-		logger.Errorf("save cache error while opening cache store: %s", err)
-		logger.Infof("clean the cache and reopen")
-		c.store.Close()
-		c.store.Clean()
-		err = c.store.Open()
-		if err != nil {
-			logger.Errorf("save cache error after reset the cache store: %s", err)
-			return err
-		}
-	}
-	defer c.store.Close()
+	logger.Infof("clean the cache and reopen")
+	c.store.Clean()
+
 	return c.store.Set(c.key, p)
 }
 

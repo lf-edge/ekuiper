@@ -22,7 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"path"
 	"reflect"
 	"strings"
 	"testing"
@@ -116,13 +115,11 @@ var tests = []struct {
 }
 
 func Test_validation(t *testing.T) {
-	store := kv.GetDefaultKVStore(path.Join(DbDir, "stream"))
-	err := store.Open()
+	err, store := kv.GetKVStore("stream")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	defer store.Close()
 	streamSqls := map[string]string{
 		"src1": `CREATE STREAM src1 (
 					id1 BIGINT,
@@ -179,13 +176,11 @@ func Test_validation(t *testing.T) {
 }
 
 func Test_validationSchemaless(t *testing.T) {
-	store := kv.GetDefaultKVStore(path.Join(DbDir, "stream"))
-	err := store.Open()
+	err, store := kv.GetKVStore("stream")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	defer store.Close()
 	streamSqls := map[string]string{
 		"src1": `CREATE STREAM src1 (
 				) WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,

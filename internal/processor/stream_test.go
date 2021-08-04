@@ -17,7 +17,6 @@ package processor
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/testx"
-	"path"
 	"reflect"
 	"testing"
 )
@@ -102,9 +101,8 @@ func TestStreamCreateProcessor(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
-	streamDB := path.Join(DbDir, "streamTest")
 	for i, tt := range tests {
-		results, err := NewStreamProcessor(streamDB).ExecStmt(tt.s)
+		results, err := NewStreamProcessor("streamTest").ExecStmt(tt.s)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" {
@@ -191,9 +189,8 @@ func TestTableProcessor(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
-	streamDB := path.Join(testx.GetDbDir(), "streamTest")
 	for i, tt := range tests {
-		results, err := NewStreamProcessor(streamDB).ExecStmt(tt.s)
+		results, err := NewStreamProcessor("streamTest").ExecStmt(tt.s)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" {
