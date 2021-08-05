@@ -72,6 +72,18 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 欢迎你将任何 bug、问题和功能请求提交到 [lf-edge/ekuiper](https://github.com/lf-edge/ekuiper/issues)。
 
+### 会议
+
+欢迎订阅[社区日历](https://lists.lfedge.org/g/ekuiper-tsc/calendar?calstart=2021-08-06) 。
+
+欢迎参加社区周会，每周五早上 10:30 举行。
+- [zoom 会议链接](https://zoom.us/j/95097577087?pwd=azZaOXpXWmFoOXpqK293RFp0N1pydz09 )
+- [会议计要](https://wiki.lfedge.org/display/EKUIPER/Weekly+Development+Meeting)
+
+## 贡献
+
+感谢您的贡献！请参阅 [CONTRIBUTING.md](./docs/CONTRIBUTING.md) 获取详细信息。
+
 ## 性能测试结果
 
 ### MQTT 吞吐量测试支持
