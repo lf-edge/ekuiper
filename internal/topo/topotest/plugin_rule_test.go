@@ -81,7 +81,7 @@ func TestExtensions(t *testing.T) {
 			t.Errorf("failed to create rule: %s.", err)
 			continue
 		}
-		tp, err := planner.Plan(rs, DbDir)
+		tp, err := planner.Plan(rs)
 		if err != nil {
 			t.Errorf("fail to init rule: %v", err)
 			continue

@@ -16,6 +16,7 @@ package testx
 
 import (
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/sqlkv"
 )
 
 // errstring returns the string representation of an error.
@@ -26,11 +27,12 @@ func Errstring(err error) string {
 	return ""
 }
 
-func GetDbDir() string {
+func InitEnv() string {
 	conf.InitConf()
 	dbDir, err := conf.GetDataLoc()
 	if err != nil {
 		conf.Log.Fatal(err)
 	}
+	sqlkv.Setup(dbDir)
 	return dbDir
 }

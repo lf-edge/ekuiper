@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/sqlkv"
 	"github.com/lf-edge/ekuiper/internal/pkg/tskv"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
@@ -31,18 +32,16 @@ import (
 )
 
 type RuleProcessor struct {
-	db        kv.KeyValue
-	rootDbDir string
+	db kv.KeyValue
 }
 
-func NewRuleProcessor(d string) *RuleProcessor {
-	err, db := kv.GetKVStore("rule")
+func NewRuleProcessor() *RuleProcessor {
+	db, err := sqlkv.GetKVStore("rule")
 	if err != nil {
-		panic(fmt.Sprintf("Can not initalize store for the Rule Processor"))
+		panic(fmt.Sprintf("Can not initalize store for the rule processor at path 'rule': %v", err))
 	}
 	processor := &RuleProcessor{
-		db:        db,
-		rootDbDir: d,
+		db: db,
 	}
 	return processor
 }
@@ -174,7 +173,7 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 }
 
 func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*topo.Topo, error) {
-	if tp, err := planner.PlanWithSourcesAndSinks(p.getDefaultRule(ruleid, sql), p.rootDbDir, nil, []*node.SinkNode{node.NewSinkNode("sink_memory_log", "logToMemory", nil)}); err != nil {
+	if tp, err := planner.PlanWithSourcesAndSinks(p.getDefaultRule(ruleid, sql), nil, []*node.SinkNode{node.NewSinkNode("sink_memory_log", "logToMemory", nil)}); err != nil {
 		return nil, err
 	} else {
 		go func() {
@@ -243,7 +242,7 @@ func cleanCheckpoint(name string) error {
 }
 
 func cleanSinkCache(rule *api.Rule) error {
-	err, store := kv.GetKVStore("sink")
+	store, err := sqlkv.GetKVStore("sink")
 	if err != nil {
 		return err
 	}

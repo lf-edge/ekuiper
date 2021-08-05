@@ -131,7 +131,7 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-&quot;sql&quot; : &quot;create stream demo (temperature float, humidity bigint) WITH (FORMAT=\&quot;JSON\&quot;, DATASOURCE=\&quot;devices/+/messages\&quot; )&quot;&#xd;
+&quot;sql&quot; : &quot;create stream ademo (temperature float, humidity bigint) WITH (FORMAT=\&quot;JSON\&quot;, DATASOURCE=\&quot;devices/+/messages\&quot; )&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
@@ -154,7 +154,7 @@
           <hashTree>
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="-1754954177">Stream demo is created.</stringProp>
+                <stringProp name="-1754954177">Stream ademo is created.</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message"></stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
@@ -170,15 +170,15 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-  &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT avg(temperature) AS t_av, max(temperature) AS t_max, min(temperature) AS t_min, COUNT(*) As t_count, split_value(mqtt(topic), \&quot;/\&quot;, 1) AS device_id FROM demo GROUP BY device_id, TUMBLINGWINDOW(ss, 5)&quot;,&#xd;
+  &quot;id&quot;: &quot;arule&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT avg(temperature) AS t_av, max(temperature) AS t_max, min(temperature) AS t_min, COUNT(*) As t_count, split_value(mqtt(topic), \&quot;/\&quot;, 1) AS device_id FROM ademo GROUP BY device_id, TUMBLINGWINDOW(ss, 5)&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
       &quot;mqtt&quot;: {&#xd;
         &quot;server&quot;: &quot;tcp://${mqtt_srv}:1883&quot;,&#xd;
         &quot;topic&quot;: &quot;devices/result&quot;,&#xd;
         &quot;qos&quot;: 1,&#xd;
-        &quot;clientId&quot;: &quot;demo_001&quot;&#xd;
+        &quot;clientId&quot;: &quot;ademo_001&quot;&#xd;
       }&#xd;
     }&#xd;
   ]&#xd;
@@ -204,7 +204,7 @@
           <hashTree>
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="-2022196798">Rule rule1 was created</stringProp>
+                <stringProp name="-2022196798">Rule arule was created</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message"></stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
@@ -228,7 +228,7 @@
             <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/rules/rule1/status</stringProp>
+            <stringProp name="HTTPSampler.path">/rules/arule/status</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -240,7 +240,7 @@
           </HTTPSamplerProxy>
           <hashTree>
             <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
-              <stringProp name="JSON_PATH">$.source_demo_0_records_in_total</stringProp>
+              <stringProp name="JSON_PATH">$.source_ademo_0_records_in_total</stringProp>
               <stringProp name="EXPECTED_VALUE">0</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
               <boolProp name="EXPECT_NULL">false</boolProp>
@@ -291,7 +291,7 @@
             <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/rules/rule1/status</stringProp>
+            <stringProp name="HTTPSampler.path">/rules/arule/status</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -303,7 +303,7 @@
           </HTTPSamplerProxy>
           <hashTree>
             <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
-              <stringProp name="JSON_PATH">$.source_demo_0_records_in_total</stringProp>
+              <stringProp name="JSON_PATH">$.source_ademo_0_records_in_total</stringProp>
               <stringProp name="EXPECTED_VALUE">10</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
               <boolProp name="EXPECT_NULL">false</boolProp>
@@ -340,7 +340,7 @@
             <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/rules/rule1</stringProp>
+            <stringProp name="HTTPSampler.path">/rules/arule</stringProp>
             <stringProp name="HTTPSampler.method">DELETE</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -353,7 +353,7 @@
           <hashTree>
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="717250485">Rule rule1 is dropped.</stringProp>
+                <stringProp name="717250485">Rule arule is dropped.</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message"></stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
@@ -377,7 +377,7 @@
             <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/streams/demo</stringProp>
+            <stringProp name="HTTPSampler.path">/streams/ademo</stringProp>
             <stringProp name="HTTPSampler.method">DELETE</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -390,7 +390,7 @@
           <hashTree>
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="287881319">Stream demo is dropped.</stringProp>
+                <stringProp name="287881319">Stream ademo is dropped.</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message"></stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>

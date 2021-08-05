@@ -89,7 +89,7 @@ func createRuleState(rule *api.Rule) (*RuleState, error) {
 		Name: rule.Id,
 	}
 	registry.Store(rule.Id, rs)
-	if tp, err := planner.Plan(rule, dataDir); err != nil {
+	if tp, err := planner.Plan(rule); err != nil {
 		return rs, err
 	} else {
 		rs.Topology = tp

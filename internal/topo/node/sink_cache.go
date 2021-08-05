@@ -18,6 +18,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/sqlkv"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/kv"
@@ -99,12 +100,8 @@ func (c *Cache) initStore(ctx api.StreamContext) {
 		Data: make(map[int]interface{}),
 		Tail: 0,
 	}
-	dbDir, err := conf.GetDataLoc()
-	logger.Debugf("cache saved to %s", dbDir)
-	if err != nil {
-		c.drainError(err)
-	}
-	err, c.store = kv.GetKVStore(path.Join("sink", ctx.GetRuleId()))
+	var err error
+	c.store, err = sqlkv.GetKVStore(path.Join("sink", ctx.GetRuleId()))
 	if err != nil {
 		c.drainError(err)
 	}

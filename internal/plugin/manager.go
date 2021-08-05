@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/internal/pkg/sqlkv"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
@@ -294,7 +295,7 @@ func NewPluginManager() (*Manager, error) {
 			outerErr = fmt.Errorf("cannot find etc folder: %s", err)
 			return
 		}
-		err, db := kv.GetKVStore("pluginFuncs")
+		db, err := sqlkv.GetKVStore("pluginFuncs")
 		if err != nil {
 			outerErr = fmt.Errorf("error when opening db: %v.", err)
 		}

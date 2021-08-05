@@ -16,11 +16,11 @@ package server
 
 import (
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/sqlkv"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/service"
 	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/kv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"context"
@@ -42,7 +42,6 @@ var (
 	streamProcessor *processor.StreamProcessor
 	pluginManager   *plugin.Manager
 	serviceManager  *service.Manager
-	store			*kv.KeyValue
 )
 
 func StartUp(Version, LoadFileType string) {
@@ -53,31 +52,26 @@ func StartUp(Version, LoadFileType string) {
 
 	dr, err := conf.GetDataLoc()
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	} else {
 		logger.Infof("db location is %s", dr)
 		dataDir = dr
 	}
 
-	err, database := kv.NewSqliteDatabase(dataDir)
+	err = sqlkv.Setup(dataDir)
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
-	err = database.Connect()
-	if err != nil {
-		logger.Panic(err)
-	}
-	kv.SetKVStoreDatabase(database)
 
-	ruleProcessor = processor.NewRuleProcessor(dataDir)
-	streamProcessor = processor.NewStreamProcessor("stream")
+	ruleProcessor = processor.NewRuleProcessor()
+	streamProcessor = processor.NewStreamProcessor()
 	pluginManager, err = plugin.NewPluginManager()
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 	serviceManager, err = service.GetServiceManager()
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 	xsql.InitFuncRegisters(serviceManager, pluginManager)
 
@@ -191,6 +185,6 @@ func StartUp(Version, LoadFileType string) {
 		logger.Info("prometheus server successfully shutdown.")
 	}
 
-	database.Disconnect()
+	sqlkv.Close()
 	os.Exit(0)
 }

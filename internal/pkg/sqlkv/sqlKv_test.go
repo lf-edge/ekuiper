@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kv
+package sqlkv
 
 import (
 	"os"
@@ -27,11 +27,11 @@ func TestSqlKVStore_Funcs(t *testing.T) {
 	if f, _ := os.Stat(abs); f != nil {
 		os.Remove(abs)
 	}
-	_, database := NewSqliteDatabase(abs)
-	database.Connect()
-	SetKVStoreDatabase(database)
+	_, db := newSqliteDatabase(abs)
+	db.Connect()
+	database = db
 
-	_, ks := GetKVStore("test")
+	ks, _ := GetKVStore("test")
 	if err := ks.Setnx("foo", "bar"); nil != err {
 		t.Error(err)
 	}
@@ -99,6 +99,7 @@ func TestSqlKVStore_Funcs(t *testing.T) {
 		reflect.DeepEqual(0, len(keys))
 	}
 
+	database.Disconnect()
 	dir, _ := filepath.Split(abs)
 	abs = path.Join(dir, "sqliteKV.db")
 	os.Remove(abs)

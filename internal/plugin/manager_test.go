@@ -17,6 +17,7 @@ package plugin
 import (
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"net/http"
 	"net/http/httptest"
@@ -31,6 +32,7 @@ var manager *Manager
 
 func init() {
 	var err error
+	testx.InitEnv()
 	manager, err = NewPluginManager()
 	if err != nil {
 		panic(err)
