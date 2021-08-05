@@ -21,9 +21,9 @@ import (
 	"testing"
 )
 
-var (
-	DbDir = testx.GetDbDir()
-)
+func init() {
+	testx.InitEnv()
+}
 
 func TestStreamCreateProcessor(t *testing.T) {
 	var tests = []struct {
@@ -101,8 +101,9 @@ func TestStreamCreateProcessor(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
+	p := NewStreamProcessor()
 	for i, tt := range tests {
-		results, err := NewStreamProcessor("streamTest").ExecStmt(tt.s)
+		results, err := p.ExecStmt(tt.s)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" {
@@ -188,9 +189,9 @@ func TestTableProcessor(t *testing.T) {
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-
+	p := NewStreamProcessor()
 	for i, tt := range tests {
-		results, err := NewStreamProcessor("streamTest").ExecStmt(tt.s)
+		results, err := p.ExecStmt(tt.s)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" {

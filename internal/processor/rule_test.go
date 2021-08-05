@@ -142,7 +142,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 		},
 	}
 
-	p := NewRuleProcessor(DbDir)
+	p := NewRuleProcessor()
 	for i, tt := range tests {
 		r, err := p.getRuleByJson(tt.result.Id, tt.ruleStr)
 		if err != nil {

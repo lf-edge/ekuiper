@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kv
+package sqlkv
 
 import (
 	"database/sql"
@@ -24,20 +24,20 @@ import (
 )
 
 type SqliteDatabase struct {
-	db *sql.DB
+	db   *sql.DB
 	Path string
-	mu sync.Mutex
+	mu   sync.Mutex
 }
 
-func NewSqliteDatabase(dir string) (error, *SqliteDatabase) {
+func newSqliteDatabase(dir string) (error, *SqliteDatabase) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		os.MkdirAll(dir, os.ModePerm)
 	}
 	dbPath := path.Join(dir, "sqliteKV.db")
 	return nil, &SqliteDatabase{
-		db: nil,
+		db:   nil,
 		Path: dbPath,
-		mu: sync.Mutex{},
+		mu:   sync.Mutex{},
 	}
 }
 
