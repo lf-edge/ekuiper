@@ -107,6 +107,12 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				m.mutex.Unlock()
 				buffer = si.dataCh
 
+				defer func() {
+					logger.Infof("source %s done", m.name)
+					m.close(ctx, logger)
+					buffer.Close()
+				}()
+
 				stats, err := NewStatManager("source", ctx)
 				if err != nil {
 					m.drainError(errCh, err, ctx, logger)
@@ -119,9 +125,6 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				for {
 					select {
 					case <-ctx.Done():
-						logger.Infof("source %s done", m.name)
-						m.close(ctx, logger)
-						buffer.Close()
 						return
 					case err := <-si.errorCh:
 						m.drainError(errCh, err, ctx, logger)
@@ -183,8 +186,8 @@ func doGetSource(t string) (api.Source, error) {
 func (m *SourceNode) drainError(errCh chan<- error, err error, ctx api.StreamContext, logger api.Logger) {
 	select {
 	case errCh <- err:
+		logger.Debugf("sent error: %v", err)
 	case <-ctx.Done():
-		m.close(ctx, logger)
 	}
 	return
 }
