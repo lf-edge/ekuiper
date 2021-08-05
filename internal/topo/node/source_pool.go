@@ -137,7 +137,8 @@ func (p *sourcePool) deleteInstance(k string, node *SourceNode, index int) {
 		end := s.detach(instanceKey)
 		if end {
 			s.cancel()
-			s.source.Close(s.ctx)
+			_ = s.source.Close(s.ctx)
+			s.dataCh.Close()
 			delete(p.registry, k)
 		}
 	}
@@ -228,7 +229,7 @@ func (ss *sourceSingleton) broadcastError(err error) {
 			wg.Done()
 		}(n, out.errorCh)
 	}
-	ss.RLock()
+	ss.RUnlock()
 	logger.Debugf("broadcasting from source pool")
 	wg.Wait()
 }
