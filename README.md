@@ -61,8 +61,20 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 - [eKuiper 5 minutes quick start](docs/en_US/quick_start_docker.md)
 - [EdgeX rule engine tutorial](docs/en_US/edgex/edgex_rule_engine_tutorial.md)
 
-## Slack channels
+## Community
+
 Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFzM2CEABBcKYGEVCgkw), and then join [ekuiper](https://lfedge.slack.com/archives/C024F4P7KCK) or [ekuiper-user](https://lfedge.slack.com/archives/C024F4SMEMR) channel.
+
+### Meeting
+
+Subscribe to community events [calendar](https://lists.lfedge.org/g/ekuiper-tsc/calendar?calstart=2021-08-06).
+
+Weekly community meeting at Friday 10:30AM GMT+8:
+- [zoom link](https://zoom.us/j/95097577087?pwd=azZaOXpXWmFoOXpqK293RFp0N1pydz09 )
+- [Meeting minutes](https://wiki.lfedge.org/display/EKUIPER/Weekly+Development+Meeting)
+
+## Contributing
+Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for more information.
 
 ## Performance test result
 
