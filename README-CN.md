@@ -147,6 +147,12 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
   - [扩展eKuiper](docs/zh_CN/extension/overview.md)
   - [插件](docs/zh_CN/plugins/overview.md)
 
+## 视频教程
+
+- [基于 KubeEdge 和 Kuiper的边缘流式数据处理实践](https://www.bilibili.com/video/BV1h54y167CL?from=search&seid=9124550685624172830)
+- [云边协同高效实现物联网边缘流式业务处理 - 华为 IEF & EMQ X Kuiper 轻量级边缘数据解决方案](https://www.bilibili.com/video/BV1hQ4y1A7Vy?from=search&seid=9124550685624172830)
+- [Edge X 规则引擎实战](https://zoom.us/rec/play/DgWxHH6_d33nTzlsQP3WgHu0jJCezPG2sXOK72GVb3RcSZvubFMIYvJiY9gwPIIRYXK7t-5XaYdCmBLi.9eDmWb-Fncv8J6_v?startTime=1627005637000)
+
 ## 从源码编译
 
 #### 准备
