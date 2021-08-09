@@ -78,7 +78,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 欢迎参加社区周会，每周五早上 10:30 举行。
 - [zoom 会议链接](https://zoom.us/j/95097577087?pwd=azZaOXpXWmFoOXpqK293RFp0N1pydz09 )
-- [会议计要](https://wiki.lfedge.org/display/EKUIPER/Weekly+Development+Meeting)
+- [会议纪要](https://wiki.lfedge.org/display/EKUIPER/Weekly+Development+Meeting)
 
 ## 贡献
 
