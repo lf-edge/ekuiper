@@ -176,11 +176,11 @@ func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 					logger.Warnf("Found error http return code: %d when trying to reach %v ", resp.StatusCode, hps)
 					break
 				}
-				defer resp.Body.Close()
 				c, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
 					logger.Warnf("Found error %s when trying to reach %v ", err, hps)
 				}
+				resp.Body.Close()
 				if hps.incremental {
 					nmd5 := getMD5Hash(c)
 					if omd5 == nmd5 {
@@ -201,6 +201,8 @@ func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 				select {
 				case consumer <- api.NewDefaultSourceTuple(result, meta):
 					logger.Debugf("send data to device node")
+				case <-ctx.Done():
+					return
 				}
 			}
 		case <-ctx.Done():
