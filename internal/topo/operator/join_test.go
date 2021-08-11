@@ -35,7 +35,7 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 		result interface{}
 	}{
 		{ //0
-			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2",
+			sql: "SELECT id1 FROM src1 left join src2 on id1 = id2",
 			data: xsql.WindowTuplesSet{
 				Content: []xsql.WindowTuples{
 					{
