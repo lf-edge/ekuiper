@@ -73,6 +73,10 @@ func (jp *JoinOp) getStreamNames(join *ast.Join) ([]string, error) {
 	ast.WalkFunc(join, func(node ast.Node) bool {
 		if f, ok := node.(*ast.FieldRef); ok {
 			for _, v := range f.RefSources() {
+				// Exclude default stream as it is a virtual stream name.
+				if v == ast.DefaultStream {
+					continue
+				}
 				if _, ok := keys[v]; !ok {
 					srcs = append(srcs, string(v))
 					keys[v] = true
