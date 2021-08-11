@@ -18,11 +18,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gdexlab/go-render/render"
-	"github.com/lf-edge/ekuiper/internal/pkg/sqlkv"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"reflect"
 	"strings"
 	"testing"
@@ -33,7 +33,7 @@ func init() {
 }
 
 func Test_createLogicalPlan(t *testing.T) {
-	store, err := sqlkv.GetKVStore("stream")
+	err, store := kv.GetKV("stream")
 	if err != nil {
 		t.Error(err)
 		return
@@ -1136,7 +1136,7 @@ func Test_createLogicalPlan(t *testing.T) {
 }
 
 func Test_createLogicalPlanSchemaless(t *testing.T) {
-	store, err := sqlkv.GetKVStore("stream")
+	err, store := kv.GetKV("stream")
 	if err != nil {
 		t.Error(err)
 		return

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021 INTECH Process Automation Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tskv
+package db
 
-type Tskv interface {
-	Set(k int64, v interface{}) (inserted bool, err error)
-	Get(k int64, v interface{}) (found bool, err error)
-	Last(v interface{}) (key int64, err error)
-	Delete(k int64) error
-	DeleteBefore(int64) error
-	Close() error
+import (
+	"github.com/lf-edge/ekuiper/internal/pkg/db/redis"
+	"github.com/lf-edge/ekuiper/internal/pkg/db/sql/sqlite"
+)
+
+type Config struct {
+	Type   string
+	Redis  redis.Config
+	Sqlite sqlite.Config
 }

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021 INTECH Process Automation Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlkv
+package sqlite
 
 import (
 	"database/sql"
@@ -23,25 +23,30 @@ import (
 	"sync"
 )
 
-type SqliteDatabase struct {
+type Database struct {
 	db   *sql.DB
 	Path string
 	mu   sync.Mutex
 }
 
-func newSqliteDatabase(dir string) (error, *SqliteDatabase) {
+func NewSqliteDatabase(conf Config) (error, *Database) {
+	dir := conf.Path
+	name := "sqliteKV.db"
+	if conf.Name != "" {
+		name = conf.Name
+	}
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		os.MkdirAll(dir, os.ModePerm)
 	}
-	dbPath := path.Join(dir, "sqliteKV.db")
-	return nil, &SqliteDatabase{
+	dbPath := path.Join(dir, name)
+	return nil, &Database{
 		db:   nil,
 		Path: dbPath,
 		mu:   sync.Mutex{},
 	}
 }
 
-func (d *SqliteDatabase) Connect() error {
+func (d *Database) Connect() error {
 	db, err := sql.Open("sqlite3", connectionString(d.Path))
 	if err != nil {
 		return err
@@ -57,12 +62,12 @@ func connectionString(dpath string) string {
 	return fmt.Sprintf("file:%s?cache=shared", dpath)
 }
 
-func (d *SqliteDatabase) Disconnect() error {
+func (d *Database) Disconnect() error {
 	err := d.db.Close()
 	return err
 }
 
-func (d *SqliteDatabase) Apply(f func(db *sql.DB) error) error {
+func (d *Database) Apply(f func(db *sql.DB) error) error {
 	d.mu.Lock()
 	err := f(d.db)
 	d.mu.Unlock()

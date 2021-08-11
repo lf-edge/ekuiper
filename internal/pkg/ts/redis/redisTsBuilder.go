@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021 INTECH Process Automation Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,25 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testx
+package redis
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/internal/pkg/db/redis"
+	st "github.com/lf-edge/ekuiper/pkg/kv/stores"
 )
 
-// errstring returns the string representation of an error.
-func Errstring(err error) string {
-	if err != nil {
-		return err.Error()
-	}
-	return ""
+type TsBuilder struct {
+	redis redis.Instance
 }
 
-func InitEnv() {
-	conf.InitConf()
-	err := kv.SetupDefault()
-	if err != nil {
-		conf.Log.Fatal(err)
+func NewTsBuilder(d redis.Instance) TsBuilder {
+	return TsBuilder{
+		redis: d,
 	}
+}
+
+func (b TsBuilder) CreateTs(table string) (error, st.Tskv) {
+	return createRedisTs(b.redis, table)
 }

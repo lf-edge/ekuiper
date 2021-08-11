@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/sqlkv"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
 	"github.com/lf-edge/ekuiper/internal/topo/operator"
@@ -26,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	store2 "github.com/lf-edge/ekuiper/pkg/kv/stores"
 )
 
 func Plan(rule *api.Rule) (*topo.Topo, error) {
@@ -49,7 +49,7 @@ func PlanWithSourcesAndSinks(rule *api.Rule, sources []*node.SourceNode, sinks [
 	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil) {
 		return nil, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
 	}
-	store, err := sqlkv.GetKVStore("stream")
+	err, store := kv.GetKV("stream")
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func getMockSource(sources []*node.SourceNode, name string) *node.SourceNode {
 	return nil
 }
 
-func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
+func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store store2.KeyValue) (LogicalPlan, error) {
 
 	dimensions := stmt.Dimensions
 	var (

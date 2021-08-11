@@ -34,3 +34,5 @@ corss_build_for_rpm.tar
 
 *.swp
 *.history
+
+*/**/*.db

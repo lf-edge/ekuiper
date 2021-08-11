@@ -12,25 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testx
+package stores
 
-import (
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/kv"
-)
-
-// errstring returns the string representation of an error.
-func Errstring(err error) string {
-	if err != nil {
-		return err.Error()
-	}
-	return ""
-}
-
-func InitEnv() {
-	conf.InitConf()
-	err := kv.SetupDefault()
-	if err != nil {
-		conf.Log.Fatal(err)
-	}
+type KeyValue interface {
+	// Set key to hold string value if key does not exist otherwise return an error
+	Setnx(key string, value interface{}) error
+	// Set key to hold the string value. If key already holds a value, it is overwritten
+	Set(key string, value interface{}) error
+	Get(key string, val interface{}) (bool, error)
+	//Must return *common.Error with NOT_FOUND error
+	Delete(key string) error
+	Keys() (keys []string, err error)
+	Clean() error
 }

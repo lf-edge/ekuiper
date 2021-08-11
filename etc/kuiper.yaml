@@ -52,3 +52,18 @@ sink:
 
   # Control to disable cache or not. If it's set to true, then the cache will be disabled, otherwise, it will be enabled.
   disableCache: true
+
+store:
+  #Type of store that will be used for keeping state of the application
+  type: sqlite
+  redis:
+    host: localhost
+    port: 6379
+    password: kuiper
+    #Timeout in ms
+    timeout: 1000
+  sqlite:
+    #Sqlite absolute database path, if left empty default directory of the application will be used
+    path:
+    #Sqlite file name, if left empty name of db will be sqliteKV.db
+    name:

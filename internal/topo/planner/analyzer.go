@@ -18,14 +18,14 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/kv/stores"
 	"strconv"
 	"strings"
 )
 
 // Analyze the select statement by decorating the info from stream statement.
 // Typically, set the correct stream name for fieldRefs
-func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt, error) {
+func decorateStmt(s *ast.SelectStatement, store stores.KeyValue) ([]*ast.StreamStmt, error) {
 	streamsFromStmt := xsql.GetStreams(s)
 	streamStmts := make([]*ast.StreamStmt, len(streamsFromStmt))
 	isSchemaless := false

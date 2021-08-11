@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021 INTECH Process Automation Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,25 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testx
+package sql
 
-import (
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/kv"
-)
+import "database/sql"
 
-// errstring returns the string representation of an error.
-func Errstring(err error) string {
-	if err != nil {
-		return err.Error()
-	}
-	return ""
-}
-
-func InitEnv() {
-	conf.InitConf()
-	err := kv.SetupDefault()
-	if err != nil {
-		conf.Log.Fatal(err)
-	}
+type Database interface {
+	Apply(f func(db *sql.DB) error) error
 }
