@@ -91,11 +91,12 @@ jobs:
             fail-fast: false
             matrix:
                 plugin:
-                - sinks/file
+                  - sinks/file
                 - sinks/image
                 - sinks/influx
                 - sinks/tdengine
                 - sinks/zmq
+                  - sinks/redis
                 - sources/random
                 - sources/zmq
                 - functions/accumulateWordCount

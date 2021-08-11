@@ -138,6 +138,7 @@ PLUGINS := sinks/file \
 	sinks/influx \
 	sinks/zmq \
 	sinks/image \
+	sinks/redis \
 	sources/random \
 	sources/zmq \
 	functions/accumulateWordCount \
