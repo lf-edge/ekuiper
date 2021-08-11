@@ -20,9 +20,9 @@ import (
 	kconf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
-	"github.com/lf-edge/ekuiper/internal/pkg/sqlkv"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/kv/stores"
 	"io/ioutil"
 	"os"
 	"path"
@@ -44,8 +44,8 @@ type Manager struct {
 	functionBuf  *sync.Map
 
 	etcDir     string
-	serviceKV  kv.KeyValue
-	functionKV kv.KeyValue
+	serviceKV  stores.KeyValue
+	functionKV stores.KeyValue
 }
 
 func GetServiceManager() (*Manager, error) {
@@ -60,11 +60,11 @@ func GetServiceManager() (*Manager, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot find etc/services folder: %s", err)
 		}
-		sdb, err := sqlkv.GetKVStore("services")
+		err, sdb := kv.GetKV("services")
 		if err != nil {
 			return nil, fmt.Errorf("cannot open service db: %s", err)
 		}
-		fdb, err := sqlkv.GetKVStore("serviceFuncs")
+		err, fdb := kv.GetKV("serviceFuncs")
 		if err != nil {
 			return nil, fmt.Errorf("cannot open function db: %s", err)
 		}

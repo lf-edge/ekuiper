@@ -19,11 +19,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/sqlkv"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/kv/stores"
 	"strings"
 )
 
@@ -32,11 +32,11 @@ var (
 )
 
 type StreamProcessor struct {
-	db kv.KeyValue
+	db stores.KeyValue
 }
 
 func NewStreamProcessor() *StreamProcessor {
-	db, err := sqlkv.GetKVStore("stream")
+	err, db := kv.GetKV("stream")
 	if err != nil {
 		panic(fmt.Sprintf("Can not initalize store for the stream processor at path 'stream': %v", err))
 	}

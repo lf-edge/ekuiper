@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kv
+package stores
 
-type KeyValue interface {
-	// Set key to hold string value if key does not exist otherwise return an error
-	Setnx(key string, value interface{}) error
-	// Set key to hold the string value. If key already holds a value, it is overwritten
-	Set(key string, value interface{}) error
-	Get(key string, val interface{}) (bool, error)
-	//Must return *common.Error with NOT_FOUND error
-	Delete(key string) error
-	Keys() (keys []string, err error)
-	Clean() error
+type Tskv interface {
+	Set(k int64, v interface{}) (inserted bool, err error)
+	Get(k int64, v interface{}) (found bool, err error)
+	Last(v interface{}) (key int64, err error)
+	Delete(k int64) error
+	DeleteBefore(int64) error
+	Close() error
+	Drop() error
 }

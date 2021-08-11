@@ -73,7 +73,20 @@ type KuiperConf struct {
 	Sink struct {
 		CacheThreshold    int  `yaml:"cacheThreshold"`
 		CacheTriggerCount int  `yaml:"cacheTriggerCount"`
-		DisableCache      bool `yaml:"disableCache""`
+		DisableCache      bool `yaml:"disableCache"`
+	}
+	Store struct {
+		Type  string `yaml:"type"`
+		Redis struct {
+			Host     string `yaml:"host"`
+			Port     int    `yaml:"port"`
+			Password string `yaml:"password"`
+			Timeout  int    `yaml:"timeout"`
+		}
+		Sqlite struct {
+			Path string `yaml:"path"`
+			Name string `yaml:"name"`
+		}
 	}
 }
 
