@@ -22,10 +22,11 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
-	"github.com/lf-edge/ekuiper/internal/pkg/sqlkv"
+	"github.com/lf-edge/ekuiper/pkg/kv"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/kv/stores"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -279,7 +280,7 @@ type Manager struct {
 	pluginDir string
 	etcDir    string
 	registry  *Registry
-	db        kv.KeyValue
+	db        stores.KeyValue
 }
 
 func NewPluginManager() (*Manager, error) {
@@ -295,7 +296,7 @@ func NewPluginManager() (*Manager, error) {
 			outerErr = fmt.Errorf("cannot find etc folder: %s", err)
 			return
 		}
-		db, err := sqlkv.GetKVStore("pluginFuncs")
+		err, db := kv.GetKV("pluginFuncs")
 		if err != nil {
 			outerErr = fmt.Errorf("error when opening db: %v.", err)
 		}

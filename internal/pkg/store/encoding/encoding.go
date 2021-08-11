@@ -12,25 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testx
+package encoding
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	"bytes"
+	"encoding/gob"
 )
 
-// errstring returns the string representation of an error.
-func Errstring(err error) string {
-	if err != nil {
-		return err.Error()
+func Encode(value interface{}) (error, []byte) {
+	var buff bytes.Buffer
+	gob.Register(value)
+	enc := gob.NewEncoder(&buff)
+	if err := enc.Encode(value); err != nil {
+		return err, nil
 	}
-	return ""
-}
-
-func InitEnv() {
-	conf.InitConf()
-	err := kv.SetupDefault()
-	if err != nil {
-		conf.Log.Fatal(err)
-	}
+	return nil, buff.Bytes()
 }

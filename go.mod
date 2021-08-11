@@ -4,6 +4,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.1
 	github.com/PaesslerAG/gval v1.0.0
 	github.com/PaesslerAG/jsonpath v0.1.1
+	github.com/alicebob/miniredis/v2 v2.15.1
 	github.com/benbjohnson/clock v1.0.0
 	github.com/eclipse/paho.mqtt.golang v1.3.5
 	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.0.0
@@ -12,6 +13,7 @@ require (
 	github.com/gdexlab/go-render v1.0.1
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/golang/protobuf v1.5.0
+	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.3

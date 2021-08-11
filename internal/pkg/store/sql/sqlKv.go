@@ -12,23 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlkv
+package sql
 
 import (
 	"bytes"
 	"database/sql"
 	"encoding/gob"
 	"fmt"
+	dbSql "github.com/lf-edge/ekuiper/internal/pkg/db/sql"
+	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"strings"
 )
 
 type sqlKvStore struct {
-	database Database
+	database dbSql.Database
 	table    string
 }
 
-func CreateSqlKvStore(database Database, table string) (error, *sqlKvStore) {
+func createSqlKvStore(database dbSql.Database, table string) (error, *sqlKvStore) {
 	store := &sqlKvStore{
 		database: database,
 		table:    table,
@@ -44,19 +46,9 @@ func CreateSqlKvStore(database Database, table string) (error, *sqlKvStore) {
 	return nil, store
 }
 
-func encode(value interface{}) ([]byte, error) {
-	var buf bytes.Buffer
-	gob.Register(value)
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(value); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
 func (kv *sqlKvStore) Setnx(key string, value interface{}) error {
 	return kv.database.Apply(func(db *sql.DB) error {
-		b, err := encode(value)
+		err, b := kvEncoding.Encode(value)
 		if nil != err {
 			return err
 		}
@@ -74,7 +66,7 @@ func (kv *sqlKvStore) Setnx(key string, value interface{}) error {
 }
 
 func (kv *sqlKvStore) Set(key string, value interface{}) error {
-	b, err := encode(value)
+	err, b := kvEncoding.Encode(value)
 	if nil != err {
 		return err
 	}

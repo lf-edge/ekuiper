@@ -138,3 +138,37 @@ The content of the page should be similar as below.
   disableCache: false
 ```
 
+## Store configurations
+There is possibility to configure storage of state for application. Default storage layer is sqlite database. There is option to set redis as storage.
+In order to use redis as store type property must be changed into redis value.
+### Sqlite
+    
+It has properties
+* path - if left empty database will be created in the data directory of the kuiper base key
+* name - name of database file - if left empty it will be `sqliteKV.db`
+ 
+### Redis
+
+It has properties
+* host     - host of redis
+* port     - port of redis
+* password - password used for auth in redis, if left empty auth won't be used
+* timeout  - timeout fo connection
+
+### Config
+```yaml
+    store:
+      #Type of store that will be used for keeping state of the application
+      type: sqlite
+      redis:
+        host: localhost
+        port: 6379
+        password: kuiper
+        #Timeout in ms
+        timeout: 1000
+      sqlite:
+        #Sqlite absolute database path, if left empty default directory of the application will be used
+        path:
+        #Sqlite file name, if left empty name of db will be sqliteKV.db
+        name:
+```

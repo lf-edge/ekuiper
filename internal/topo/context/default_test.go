@@ -18,6 +18,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"log"
 	"os"
 	"path"
@@ -26,6 +27,10 @@ import (
 )
 
 func TestState(t *testing.T) {
+	err := kv.SetupDefault()
+	if err != nil {
+		t.Error(err)
+	}
 	var (
 		i      = 0
 		ruleId = "testStateRule"

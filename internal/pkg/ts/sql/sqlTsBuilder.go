@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021 INTECH Process Automation Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlkv
+package sql
 
-import "database/sql"
+import (
+	"github.com/lf-edge/ekuiper/internal/pkg/db/sql"
+	ts2 "github.com/lf-edge/ekuiper/pkg/kv/stores"
+)
 
-type Database interface {
-	Connect() error
-	Disconnect() error
-	Apply(f func(db *sql.DB) error) error
+type TsBuilder struct {
+	database sql.Database
+}
+
+func NewTsBuilder(d sql.Database) TsBuilder {
+	return TsBuilder{
+		database: d,
+	}
+}
+
+func (b TsBuilder) CreateTs(table string) (error, ts2.Tskv) {
+	return createSqlTs(b.database, table)
 }

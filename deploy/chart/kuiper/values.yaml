@@ -96,6 +96,19 @@ kuiperConfig:
       cacheThreshold: 10
       cacheTriggerCount: 15
       disableCache: true
+    store:
+      type: sqlite
+      redis:
+        host: localhost
+        port: 6379
+        password: kuiper
+        #Timeout in ms
+        timeout: 1000
+      sqlite:
+        #Sqlite absolute database path, if left empty default directory of the application will be used
+        path: ""
+        #Sqlite file name, if left empty name of db will be sqliteKV.db and tskv.db respectively
+        name: ""
   "mqtt_source.yaml":
     #Global MQTT configurations
     default:
