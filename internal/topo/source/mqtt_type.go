@@ -39,7 +39,7 @@ type modelVersion interface {
 	checkType(map[string]interface{}, string) []string
 }
 
-func modelFactory(version string) modelVersion {
+func modelFactory(_ string) modelVersion {
 	return new(deviceModel)
 }
 func (this *property) getName() string {
@@ -81,8 +81,11 @@ func intToBool(i int) bool {
 }
 func changeType(modelType string, data interface{}) (interface{}, string) {
 	var err error
-	dataType := reflect.TypeOf(data).Kind()
-	switch dataType {
+	dt := reflect.TypeOf(data)
+	if dt == nil {
+		return data, fmt.Sprintf("not support type : %v", nil)
+	}
+	switch dt.Kind() {
 	case reflect.Bool:
 		b, _ := data.(bool)
 		switch modelType {
@@ -138,7 +141,7 @@ func changeType(modelType string, data interface{}) (interface{}, string) {
 			return data, fmt.Sprintf("not support modelType : %s", modelType)
 		}
 	default:
-		return data, fmt.Sprintf("not support type : %v", dataType)
+		return data, fmt.Sprintf("not support type : %v", dt.Kind())
 	}
 	return data, ""
 }

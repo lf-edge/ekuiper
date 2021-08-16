@@ -304,7 +304,7 @@ func recursionDelMap(cf, fields map[string]interface{}, language string) error {
 			delete(auxCf, delKey)
 			continue
 		}
-		if reflect.Map == reflect.TypeOf(v).Kind() {
+		if reflect.TypeOf(v) != nil && reflect.Map == reflect.TypeOf(v).Kind() {
 			var auxCf, auxFields map[string]interface{}
 			if err := cast.MapToStruct(cf[k], &auxCf); nil != err {
 				return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), k, v)
@@ -364,7 +364,7 @@ func recursionNewFields(template []field, conf map[string]interface{}, ret *[]fi
 		if nil == v {
 			p.Default = v
 		} else {
-			if reflect.Map == reflect.TypeOf(v).Kind() {
+			if reflect.TypeOf(v) != nil && reflect.Map == reflect.TypeOf(v).Kind() {
 				var nextCf map[string]interface{}
 				if tmp, ok := v.(map[interface{}]interface{}); ok {
 					nextCf = cast.ConvertMap(tmp)

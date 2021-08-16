@@ -30,6 +30,7 @@ func TestCheckType(t *testing.T) {
 		{"temperature": "1", "humidity": "1"},
 		{"temperature": 1, "humidity": "1"},
 		{"temperature": "1", "humidity": 1},
+		{"temperature": nil, "humidity": "1"},
 	}
 
 	topics := []string{`$ke/events/device/device1/data/update`, `$ke/events/device/device2/data/update`}
