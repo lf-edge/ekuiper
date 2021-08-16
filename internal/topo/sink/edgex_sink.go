@@ -172,7 +172,8 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, result []byte) 
 		}
 		for _, v := range m {
 			for k1, v1 := range v {
-				if k1 == ems.metadata {
+				// Ignore nil values
+				if k1 == ems.metadata || v1 == nil {
 					continue
 				} else {
 					var (
@@ -216,7 +217,11 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, result []byte) 
 }
 
 func getValueType(v interface{}) (string, interface{}, error) {
-	k := reflect.TypeOf(v).Kind()
+	vt := reflect.TypeOf(v)
+	if vt == nil {
+		return "", nil, fmt.Errorf("unsupported value nil")
+	}
+	k := vt.Kind()
 	switch k {
 	case reflect.Bool:
 		return v2.ValueTypeBool, v, nil
@@ -232,8 +237,11 @@ func getValueType(v interface{}) (string, interface{}, error) {
 		switch arrayValue := v.(type) {
 		case []interface{}:
 			if len(arrayValue) > 0 {
-				ka := reflect.TypeOf(arrayValue[0]).Kind()
-				switch ka {
+				kt := reflect.TypeOf(arrayValue[0])
+				if kt == nil {
+					return "", nil, fmt.Errorf("unsupported value %v(%s), the first element is nil", v, k)
+				}
+				switch kt.Kind() {
 				case reflect.Bool:
 					result := make([]bool, len(arrayValue))
 					for i, av := range arrayValue {

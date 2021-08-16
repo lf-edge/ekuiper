@@ -209,7 +209,10 @@ func hashCall(name string, args []interface{}) (interface{}, bool) {
 	default:
 		return fmt.Errorf("unknown hash function name %s", name), false
 	}
-	io.WriteString(h, arg0)
+	_, err := io.WriteString(h, arg0)
+	if err != nil {
+		return err, false
+	}
 	return fmt.Sprintf("%x", h.Sum(nil)), true
 }
 
@@ -227,12 +230,11 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 				return false, true
 			}
 		}
-		return false, true
 	case "newuuid":
-		if uuid, err := uuid.NewUUID(); err != nil {
+		if newUUID, err := uuid.NewUUID(); err != nil {
 			return err, false
 		} else {
-			return uuid.String(), true
+			return newUUID.String(), true
 		}
 	case "tstamp":
 		return conf.GetNowInMilli(), true
@@ -256,20 +258,26 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 
 func jsonCall(name string, args []interface{}) (interface{}, bool) {
 	var input interface{}
-	switch reflect.TypeOf(args[0]).Kind() {
-	case reflect.Map:
-		input = convertToInterfaceArr(args[0].(map[string]interface{}))
-	case reflect.Slice:
-		input = convertSlice(args[0])
-	case reflect.String:
-		v, _ := args[0].(string)
-		err := json.Unmarshal([]byte(v), &input)
-		if err != nil {
-			return fmt.Errorf("%s function error: the first argument '%v' is not a valid json string", name, args[0]), false
+	at := reflect.TypeOf(args[0])
+	if at != nil {
+		switch at.Kind() {
+		case reflect.Map:
+			input = convertToInterfaceArr(args[0].(map[string]interface{}))
+		case reflect.Slice:
+			input = convertSlice(args[0])
+		case reflect.String:
+			v, _ := args[0].(string)
+			err := json.Unmarshal([]byte(v), &input)
+			if err != nil {
+				return fmt.Errorf("%s function error: the first argument '%v' is not a valid json string", name, args[0]), false
+			}
+		default:
+			return fmt.Errorf("%s function error: the first argument must be a map but got %v", name, args[0]), false
 		}
-	default:
-		return fmt.Errorf("%s function error: the first argument must be a map but got %v", name, args[0]), false
+	} else {
+		return fmt.Errorf("%s function error: the first argument must be a map but got nil", name), false
 	}
+
 	builder := gval.Full(jsonpath.PlaceholderExtension())
 	path, err := builder.NewEvaluable(args[1].(string))
 	if err != nil {
@@ -292,6 +300,9 @@ func jsonCall(name string, args []interface{}) (interface{}, bool) {
 			return fmt.Errorf("%s function error: query result (%v) is not an array", name, result), false
 		}
 	case "json_path_exists":
+		if result == nil {
+			return false, true
+		}
 		e := true
 		switch reflect.TypeOf(result).Kind() {
 		case reflect.Slice, reflect.Array:
@@ -307,7 +318,12 @@ func jsonCall(name string, args []interface{}) (interface{}, bool) {
 func convertToInterfaceArr(orig map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
 	for k, v := range orig {
-		switch reflect.TypeOf(v).Kind() {
+		vt := reflect.TypeOf(v)
+		if vt == nil {
+			result[k] = nil
+			continue
+		}
+		switch vt.Kind() {
 		case reflect.Slice:
 			result[k] = convertSlice(v)
 		case reflect.Map:

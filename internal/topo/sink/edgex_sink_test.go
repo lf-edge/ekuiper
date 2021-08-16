@@ -108,7 +108,8 @@ func TestProduceEvents(t1 *testing.T) {
 							"temperature":{"deviceName":"test device name2","id":"22","origin":24}
 							}
 						},
-						{"h1":100}
+						{"h1":100},
+						{"h2":null}
 					]`,
 			expected: &dtos.Event{
 				Id:          "abc",

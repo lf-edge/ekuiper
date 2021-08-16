@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"reflect"
@@ -433,6 +434,7 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 		sql    string
 		data   interface{}
 		result interface{}
+		err    string
 	}{
 		{
 			sql: `SELECT json_path_query(equipment, "$.arm_right") AS a FROM test`,
@@ -785,6 +787,28 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 			result: []map[string]interface{}{{
 				"powerOnTs": float64(1000),
 			}},
+		}, {
+			sql: `SELECT json_path_query(equipment, "$.arm_right") AS a FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"class": "warrior",
+					"equipment2": map[string]interface{}{
+						"rings": []map[string]interface{}{
+							{
+								"name":   "ring of despair",
+								"weight": 0.1,
+							}, {
+								"name":   "ring of strength",
+								"weight": 2.4,
+							},
+						},
+						"arm_right": "Sword of flame",
+						"arm_left":  "Shield of faith",
+					},
+				},
+			},
+			err: "run Select error: call func json_path_query error: json_path_query function error: the first argument must be a map but got nil",
 		},
 	}
 
@@ -799,20 +823,30 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 		pp := &ProjectOp{Fields: stmt.Fields}
 		fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
 		result := pp.Apply(ctx, tt.data, fv, afv)
-		var mapRes []map[string]interface{}
-		if v, ok := result.([]byte); ok {
-			err := json.Unmarshal(v, &mapRes)
-			if err != nil {
-				t.Errorf("Failed to parse the input into map.\n")
-				continue
+		switch rt := result.(type) {
+		case []byte:
+			if tt.err == "" {
+				var mapRes []map[string]interface{}
+				err := json.Unmarshal(rt, &mapRes)
+				if err != nil {
+					t.Errorf("Failed to parse the input into map.\n")
+					continue
+				}
+				if !reflect.DeepEqual(tt.result, mapRes) {
+					t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
+				}
+			} else {
+				t.Errorf("%d: invalid result:\n  exp error %s\n  got=%s\n\n", i, tt.err, result)
 			}
-			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
-
-			if !reflect.DeepEqual(tt.result, mapRes) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
+		case error:
+			if tt.err == "" {
+				t.Errorf("%d: got error:\n  exp=%s\n  got=%s\n\n", i, tt.result, err)
+			} else if !reflect.DeepEqual(tt.err, testx.Errstring(rt)) {
+				t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
 			}
-		} else {
-			t.Errorf("The returned result is not type of []byte but found %v", result)
+		default:
+			t.Errorf("%d: Invalid returned result found %v", i, result)
 		}
+
 	}
 }
