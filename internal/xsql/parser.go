@@ -528,7 +528,7 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 					return &ast.MetaRef{StreamName: ast.StreamName(n[0]), Name: n[1]}, nil
 				}
 				if isSubField {
-					return &ast.MetaRef{StreamName: "", Name: n[0]}, nil
+					return &ast.JsonFieldRef{Name: n[0]}, nil
 				}
 				return &ast.MetaRef{StreamName: ast.DefaultStream, Name: n[0]}, nil
 			} else {
@@ -536,7 +536,7 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 					return &ast.FieldRef{StreamName: ast.StreamName(n[0]), Name: n[1]}, nil
 				}
 				if isSubField {
-					return &ast.FieldRef{StreamName: "", Name: n[0]}, nil
+					return &ast.JsonFieldRef{Name: n[0]}, nil
 				}
 				return &ast.FieldRef{StreamName: ast.DefaultStream, Name: n[0]}, nil
 			}

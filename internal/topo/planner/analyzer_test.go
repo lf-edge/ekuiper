@@ -116,6 +116,10 @@ var tests = []struct {
 		sql: `SELECT collect(*)[-1] as current FROM src1 GROUP BY COUNTWINDOW(2, 1) HAVING isNull(current->name) = false`,
 		r:   newErrorStruct(""),
 	},
+	{ // 14
+		sql: `SELECT sum(next->nid) as nid FROM src1 WHERE next->nid > 20 `,
+		r:   newErrorStruct(""),
+	},
 }
 
 func Test_validation(t *testing.T) {
@@ -128,7 +132,8 @@ func Test_validation(t *testing.T) {
 		"src1": `CREATE STREAM src1 (
 					id1 BIGINT,
 					temp BIGINT,
-					name string
+					name string,
+					next STRUCT(NAME STRING, NID BIGINT)
 				) WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,
 	}
 	types := map[string]ast.StreamType{

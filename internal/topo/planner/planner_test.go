@@ -893,7 +893,7 @@ func Test_createLogicalPlan(t *testing.T) {
 								&ast.BinaryExpr{
 									OP:  ast.ARROW,
 									LHS: &ast.MetaRef{Name: "Humidity", StreamName: ast.DefaultStream},
-									RHS: &ast.MetaRef{Name: "Device"},
+									RHS: &ast.JsonFieldRef{Name: "Device"},
 								},
 							}},
 							[]ast.StreamName{},
@@ -1809,7 +1809,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 								&ast.BinaryExpr{
 									OP:  ast.ARROW,
 									LHS: &ast.MetaRef{Name: "Humidity", StreamName: ast.DefaultStream},
-									RHS: &ast.MetaRef{Name: "Device"},
+									RHS: &ast.JsonFieldRef{Name: "Device"},
 								},
 							}},
 							[]ast.StreamName{},
