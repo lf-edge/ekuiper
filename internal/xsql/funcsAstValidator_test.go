@@ -455,9 +455,9 @@ func TestFuncValidator(t *testing.T) {
 				LHS: &ast.BinaryExpr{
 					OP:  ast.ARROW,
 					LHS: &ast.MetaRef{Name: "device", StreamName: ast.DefaultStream},
-					RHS: &ast.MetaRef{Name: "reading"},
+					RHS: &ast.JsonFieldRef{Name: "reading"},
 				},
-				RHS: &ast.MetaRef{Name: "topic"},
+				RHS: &ast.JsonFieldRef{Name: "topic"},
 			}}}}}, Sources: []ast.Source{&ast.Table{Name: "tbl"}}},
 		},
 		{

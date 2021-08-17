@@ -432,6 +432,13 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 			val, _ := v.Valuer.Meta(string(expr.StreamName) + ast.COLUMN_SEPARATOR + expr.Name)
 			return val
 		}
+	case *ast.JsonFieldRef:
+		val, ok := v.Valuer.Value(expr.Name)
+		if ok {
+			return val
+		} else {
+			return nil
+		}
 	case *ast.Wildcard:
 		val, _ := v.Valuer.Value("")
 		return val
@@ -515,7 +522,7 @@ func (v *ValuerEval) evalJsonExpr(result interface{}, op ast.Token, expr ast.Exp
 	case ast.ARROW:
 		if val, ok := result.(map[string]interface{}); ok {
 			switch e := expr.(type) {
-			case *ast.FieldRef, *ast.MetaRef:
+			case *ast.JsonFieldRef:
 				ve := &ValuerEval{Valuer: Message(val)}
 				return ve.Eval(e)
 			default:

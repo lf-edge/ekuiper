@@ -63,9 +63,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt,
 		ast.WalkFunc(f.Expr, func(n ast.Node) bool {
 			switch f := n.(type) {
 			case *ast.FieldRef:
-				if f.IsSQLField() {
-					walkErr = fieldsMap.bind(f)
-				}
+				walkErr = fieldsMap.bind(f)
 			}
 			return true
 		})

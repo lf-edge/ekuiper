@@ -192,9 +192,6 @@ func (fr *FieldRef) IsColumn() bool {
 func (fr *FieldRef) IsAlias() bool {
 	return fr.StreamName == AliasStream
 }
-func (fr *FieldRef) IsSQLField() bool {
-	return fr.StreamName != ""
-}
 
 func (fr *FieldRef) IsAggregate() bool {
 	if fr.StreamName != AliasStream {
@@ -278,3 +275,10 @@ type MetaRef struct {
 
 func (fr *MetaRef) expr() {}
 func (fr *MetaRef) node() {}
+
+type JsonFieldRef struct {
+	Name string
+}
+
+func (fr *JsonFieldRef) expr() {}
+func (fr *JsonFieldRef) node() {}
