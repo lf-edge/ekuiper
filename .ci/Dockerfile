@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.15.1 AS builder
+FROM golang:1.15.11-stretch AS builder
 
 COPY . /go/kuiper
 
