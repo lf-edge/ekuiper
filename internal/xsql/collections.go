@@ -15,7 +15,6 @@
 package xsql
 
 import (
-	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"sort"
@@ -91,7 +90,7 @@ func (m Message) Meta(key string) (interface{}, bool) {
 }
 
 func (m Message) AppendAlias(k string, v interface{}) bool {
-	fmt.Printf("append alias %s:%v\n", k, v)
+	conf.Log.Debugf("append alias %s:%v\n", k, v)
 	return false
 }
 
