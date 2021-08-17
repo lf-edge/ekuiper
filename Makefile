@@ -143,8 +143,8 @@ PLUGINS := sinks/file \
 	sources/zmq \
 	functions/accumulateWordCount \
 	functions/countPlusOne \
-	functions/image\
-	functions/geohash\
+	functions/image \
+	functions/geohash \
 	functions/echo
 
 .PHONY: plugins sinks/tdengine $(PLUGINS)
