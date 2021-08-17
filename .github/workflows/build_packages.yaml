@@ -284,3 +284,14 @@ jobs:
             repo: ekuiper
             path: "_packages/kuiper-*"
             token: ${{ secrets.GITHUB_TOKEN }}
+        - name: upload plugins to s3
+          if: github.event_name == 'release'
+          run: |
+            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set default.region us-west-2
+            aws s3 rm --quiet --recursive s3://packages.emqx/kuiper/$version
+            aws s3 cp --quiet --recursive ./_packages s3://packages.emqx/kuiper/$version
+            aws s3 cp --quiet --recursive ./_plugins s3://packages.emqx/kuiper-plugins/$version
+            aws cloudfront create-invalidation --distribution-id E170YEULGLT8XB --paths "/kuiper/$version/*,/kuiper-plugins/$version/*"
