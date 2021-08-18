@@ -16,7 +16,7 @@ FROM centos:7
 
 RUN yum install -y make wget git which rpm-build gcc
 
-ARG GO_VERSION=1.15.1
+ARG GO_VERSION=1.15.11
 
 RUN case $(arch) in \
         x86_64) \
@@ -52,6 +52,3 @@ COPY . /go/kuiper
 WORKDIR /go/kuiper
 
 ENV KUIPER_SOURCE=/go/kuiper
-
-RUN make -C deploy/packages
-RUN .ci/test.sh
