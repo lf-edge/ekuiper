@@ -12,6 +12,17 @@ jobs:
     build:
         runs-on: ubuntu-latest
 
+        strategy:
+            matrix:
+                golang:
+                - 1.15.11
+                arch:
+                - linux/amd64
+                - linux/arm64
+                os:
+                - debian
+                - centos
+
         steps:
         - uses: actions/checkout@v2
           with:
@@ -21,9 +32,30 @@ jobs:
           with:
             image: tonistiigi/binfmt:latest
             platforms: all
+        - name: get docker sha256
+          id: digest
+          run: |
+              digest=$(docker buildx imagetools inspect ghcr.io/rory-z/ekuiper/base:${{ matrix.golang }}-${{ matrix.os }} --raw | jq --raw-output '.manifests[] | select(.platform.architecture=="amd64").digest')
+              echo "::set-output name=image::ghcr.io/rory-z/ekuiper/base@${digest}"
+        - run: docker pull ${{ steps.disgest.outputs.image }}
+        - name: build base image
+          uses: docker/build-push-action@v2
+          with:
+            pull: true
+            load: true
+            cache-from: ${{ steps.disgest.outputs.image }}
+            platforms: ${{ matrix.arch }}
+            build-args: GO_VERSION=${{ matrix.golang }}
+            tags: ghcr.io/rory-z/ekuiper/base:${{ matrix.golang }}-${{ matrix.os }}
+            file: .github/dockerfiles/Dockerfile.${{ matrix.os }}
         - name: build
           run: |
-            make all_pkgs
+            docker run -i --rm \
+            -v $(pwd):/ekuiper \
+            --workdir /ekuiper \
+            --platform ${{ matrix.arch }} \
+            ghcr.io/rory-z/ekuiper/base:${{ matrix.golang }}-${{ matrix.os }} \
+            bash -euc "make pkg  && .ci/tests.sh"
             cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
         - uses: actions/upload-artifact@v1
           with:
