@@ -91,7 +91,10 @@ func (p *DataSourcePlan) extract(expr ast.Expr) (ast.Expr, ast.Expr) {
 
 func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 	//init values
-	p.getProps()
+	err := p.getProps()
+	if err != nil {
+		return err
+	}
 	p.fields = make(map[string]interface{})
 	if !p.allMeta {
 		p.metaMap = make(map[string]string)
@@ -157,7 +160,7 @@ func (p *DataSourcePlan) getAllFields() {
 	p.streamFields = make([]interface{}, 0)
 	if p.isWildCard {
 		if p.streamStmt.StreamFields != nil {
-			for k, _ := range p.streamStmt.StreamFields { // The input can only be StreamFields
+			for k := range p.streamStmt.StreamFields { // The input can only be StreamFields
 				p.streamFields = append(p.streamFields, &p.streamStmt.StreamFields[k])
 			}
 		} else {
@@ -167,7 +170,7 @@ func (p *DataSourcePlan) getAllFields() {
 		sfs := make([]interface{}, 0, len(p.fields))
 		if conf.IsTesting {
 			var keys []string
-			for k, _ := range p.fields {
+			for k := range p.fields {
 				keys = append(keys, k)
 			}
 			sort.Strings(keys)
@@ -198,9 +201,9 @@ func (p *DataSourcePlan) getProps() error {
 		} else {
 			return fmt.Errorf("preprocessor is set to be event time but stream option TIMESTAMP not found")
 		}
-		if p.streamStmt.Options.TIMESTAMP_FORMAT != "" {
-			p.timestampFormat = p.streamStmt.Options.TIMESTAMP_FORMAT
-		}
+	}
+	if p.streamStmt.Options.TIMESTAMP_FORMAT != "" {
+		p.timestampFormat = p.streamStmt.Options.TIMESTAMP_FORMAT
 	}
 	if strings.ToLower(p.streamStmt.Options.FORMAT) == message.FormatBinary {
 		p.isBinary = true

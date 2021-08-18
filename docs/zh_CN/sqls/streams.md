@@ -39,6 +39,8 @@ CREATE STREAM
 | StrictValidation     | 是  | 针对流模式控制消息字段的验证行为。 有关更多信息，请参见 [Strict Validation](#Strict Validation) |
 | CONF_KEY | 是 | 如果需要配置其他配置项，请在此处指定 config 键。 有关更多信息，请参见 [MQTT stream](../rules/sources/mqtt.md) 。 |
 | SHARED | 是 | 是否在使用该流的规则中共享源的实例 |
+| TIMESTAMP | 是 | 代表该事件时间戳的字段名。如果有设置，则使用此流的规则将采用事件时间；否则将采用处理时间。详情请看[时间戳管理](./windows.md#时间戳管理)。 |
+| TIMESTAMP_FORMAT | 是 | 字符串和时间格式转换时使用的默认格式。 |
 
 **示例1**
 
