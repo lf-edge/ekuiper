@@ -266,7 +266,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			p.SetChildren(append(children, tableChildren...))
 			children = []LogicalPlan{p}
 		} else if w == nil {
-			return nil, errors.New("need to run stream join in windows")
+			return nil, errors.New("a time window or count window is required to join multiple streams")
 		}
 		// TODO extract on filter
 		p = JoinPlan{

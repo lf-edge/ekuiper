@@ -7,9 +7,9 @@ eKuiper 提供了用于构建查询的各种元素。 总结如下。
 | --------------------- | ------------------------------------------------------------ |
 | [SELECT](#select)     | SELECT 用于从输入流中检索行，并允许从 eKuiper 中的一个或多个输入流中选择一个或多个列。 |
 | [FROM](#from)         | FROM 指定输入流。 任何 SELECT 语句始终需要 FROM 子句。       |
-| [JOIN](#join)         | JOIN 用于合并来自两个或更多输入流的记录。 JOIN 包括 LEFT，RIGHT，FULL 和 CROSS。 |
+| [JOIN](#join)         | JOIN 用于合并来自两个或更多输入流的记录。 JOIN 包括 LEFT，RIGHT，FULL 和 CROSS。JOIN 可用于多个流或者流和表格。当用于多个流时，必须运行在[窗口](./windows.md)中，否则每次单条数据，JOIN 没有意义。|
 | [WHERE](#where)       | WHERE 指定查询返回的行的搜索条件。                           |
-| [GROUP BY](#group-by) | GROUP BY 将一组选定的行分组为一组汇总行，这些汇总行按一个或多个列或表达式的值分组。 |
+| [GROUP BY](#group-by) | GROUP BY 将一组选定的行分组为一组汇总行，这些汇总行按一个或多个列或表达式的值分组。该语句必须运行在[窗口](./windows.md)中。 |
 | [ORDER BY](#order-by) | 按一列或多列的值对行进行排序。                               |
 | [HAVING](#having)     | HAVING 为组或集合指定搜索条件。 HAVING 只能与 SELECT 表达式一起使用。 |
 |                       |                                                              |
