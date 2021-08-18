@@ -60,9 +60,9 @@ const (
 func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 	c := &EdgexConf{
 		Format:      message.FormatJson,
-		Protocol:    "tcp",
+		Protocol:    "redis",
 		Server:      "localhost",
-		Port:        5563,
+		Port:        6379,
 		Type:        messaging.Redis,
 		MessageType: MessageTypeEvent,
 	}
@@ -74,8 +74,12 @@ func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 		return fmt.Errorf("edgex source only supports `json` format")
 	}
 
+	if c.MessageType != MessageTypeEvent && c.MessageType != MessageTypeRequest {
+		return fmt.Errorf("specified wrong messageType value %s", c.MessageType)
+	}
+
 	if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT && c.Type != messaging.Redis {
-		return fmt.Errorf("Specified wrong message type value %s, will use zeromq messagebus.\n", c.Type)
+		return fmt.Errorf("specified wrong type value %s", c.Type)
 	}
 
 	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: c.Protocol, Host: c.Server, Port: c.Port}, Type: c.Type}
