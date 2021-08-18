@@ -156,6 +156,7 @@
         &quot;protocol&quot;: &quot;tcp&quot;,&#xd;
         &quot;host&quot;: &quot;*&quot;,&#xd;
         &quot;port&quot;: 5571,&#xd;
+        &quot;type&quot;: &quot;zero&quot;,&#xd;
         &quot;topic&quot;: &quot;application&quot;,&#xd;
         &quot;metadata&quot;: &quot;metadt&quot;,&#xd;
         &quot;contentType&quot;: &quot;application/json&quot;&#xd;

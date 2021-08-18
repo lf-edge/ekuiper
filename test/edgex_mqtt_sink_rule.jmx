@@ -165,6 +165,7 @@
         &quot;type&quot;: &quot;mqtt&quot;,&#xd;
         &quot;metadata&quot;: &quot;edgex_meta&quot;,&#xd;
         &quot;contentType&quot;: &quot;application/json&quot;,&#xd;
+        &quot;messageType&quot;: &quot;request&quot;,&#xd;
         &quot;optional&quot;: {&#xd;
         	&quot;ClientId&quot;: &quot;edgex_message_bus_001&quot;&#xd;
         }&#xd;
@@ -468,7 +469,7 @@
         </SystemSampler>
         <hashTree>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="device Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.deviceName</stringProp>
+            <stringProp name="JSON_PATH">$.event.deviceName</stringProp>
             <stringProp name="EXPECTED_VALUE">demo1</stringProp>
             <boolProp name="JSONVALIDATION">true</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
@@ -477,7 +478,7 @@
           </JSONPathAssertion>
           <hashTree/>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="reading_0 Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.readings[0].value</stringProp>
+            <stringProp name="JSON_PATH">$.event.readings[0].value</stringProp>
             <stringProp name="EXPECTED_VALUE">30</stringProp>
             <boolProp name="JSONVALIDATION">false</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
@@ -486,7 +487,7 @@
           </JSONPathAssertion>
           <hashTree/>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="reading_1 Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.readings[1].value</stringProp>
+            <stringProp name="JSON_PATH">$.event.readings[1].value</stringProp>
             <stringProp name="EXPECTED_VALUE">20</stringProp>
             <boolProp name="JSONVALIDATION">false</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
@@ -495,7 +496,7 @@
           </JSONPathAssertion>
           <hashTree/>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="reading_2 Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.readings[2].value</stringProp>
+            <stringProp name="JSON_PATH">$.event.readings[2].value</stringProp>
             <stringProp name="EXPECTED_VALUE">20</stringProp>
             <boolProp name="JSONVALIDATION">false</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>

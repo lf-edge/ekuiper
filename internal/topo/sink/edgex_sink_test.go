@@ -20,6 +20,7 @@ import (
 	"fmt"
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
+	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -51,16 +52,180 @@ func compareReading(expected, actual dtos.BaseReading) bool {
 	return false
 }
 
+func TestConfigure(t *testing.T) {
+	var tests = []struct {
+		conf     map[string]interface{}
+		expected *EdgexConf
+		error    string
+	}{
+		{ // 0
+			conf: map[string]interface{}{
+				"metadata": "meta",
+			},
+			expected: &EdgexConf{
+				Protocol:    "redis",
+				Host:        "localhost",
+				Port:        6379,
+				Type:        messaging.Redis,
+				MessageType: MessageTypeEvent,
+				ContentType: "application/json",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				Metadata:    "meta",
+			},
+		},
+		{ // 1
+			conf: map[string]interface{}{
+				"type":        "redis",
+				"protocol":    "redis",
+				"host":        "edgex-redis",
+				"port":        6379,
+				"topic":       "ekuiperResult",
+				"deviceName":  "ekuiper",
+				"profileName": "ekuiper",
+				"sourceName":  "ekuiper",
+				"contentType": "application/json",
+			},
+			expected: &EdgexConf{
+				Protocol:    "redis",
+				Host:        "edgex-redis",
+				Port:        6379,
+				Type:        messaging.Redis,
+				MessageType: MessageTypeEvent,
+				ContentType: "application/json",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiper",
+				SourceName:  "ekuiper",
+				Topic:       "ekuiperResult",
+			},
+		},
+		{ // 2
+			conf: map[string]interface{}{
+				"protocol":    "tcp",
+				"host":        "127.0.0.1",
+				"port":        1883,
+				"topic":       "result",
+				"type":        "mqtt",
+				"metadata":    "edgex_meta",
+				"contentType": "application/json",
+				"optional": map[string]interface{}{
+					"ClientId": "edgex_message_bus_001",
+				},
+			},
+			expected: &EdgexConf{
+				Protocol:    "tcp",
+				Host:        "127.0.0.1",
+				Port:        1883,
+				Type:        messaging.MQTT,
+				MessageType: MessageTypeEvent,
+				ContentType: "application/json",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "",
+				Metadata:    "edgex_meta",
+				Topic:       "result",
+				Optional: map[string]string{
+					"ClientId": "edgex_message_bus_001",
+				},
+			},
+		}, { // 3
+			conf: map[string]interface{}{
+				"type":        "redis",
+				"protocol":    "redis",
+				"host":        "edgex-redis",
+				"port":        6379,
+				"topicPrefix": "edgex/events/device",
+				"messageType": "request",
+				"contentType": "application/json",
+			},
+			expected: &EdgexConf{
+				Protocol:    "redis",
+				Host:        "edgex-redis",
+				Port:        6379,
+				Type:        messaging.Redis,
+				MessageType: MessageTypeRequest,
+				ContentType: "application/json",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "",
+				TopicPrefix: "edgex/events/device",
+			},
+		}, { // 4
+			conf: map[string]interface{}{
+				"type":        "redis",
+				"protocol":    "redis",
+				"host":        "edgex-redis",
+				"port":        6379,
+				"topicPrefix": "edgex/events/device",
+				"messageType": "requests",
+				"contentType": "application/json",
+			},
+			error: "specified wrong messageType value requests",
+		}, { // 5
+			conf: map[string]interface{}{
+				"type":        20,
+				"protocol":    "redis",
+				"host":        "edgex-redis",
+				"port":        6379,
+				"topicPrefix": "edgex/events/device",
+				"messageType": "requests",
+				"contentType": "application/json",
+			},
+			error: "read properties map[contentType:application/json host:edgex-redis messageType:requests port:6379 protocol:redis topicPrefix:edgex/events/device type:20] fail with error: json: cannot unmarshal number into Go struct field EdgexConf.type of type string",
+		}, { // 6
+			conf: map[string]interface{}{
+				"type":        "redis",
+				"protocol":    "redis",
+				"host":        "edgex-redis",
+				"port":        -1,
+				"topicPrefix": "edgex/events/device",
+				"messageType": "requests",
+				"contentType": "application/json",
+			},
+			error: "specified wrong port value, expect positive integer but got -1",
+		}, { // 7
+			conf: map[string]interface{}{
+				"type":        "zmq",
+				"protocol":    "redis",
+				"host":        "edgex-redis",
+				"port":        6379,
+				"topicPrefix": "edgex/events/device",
+				"messageType": "requests",
+				"contentType": "application/json",
+			},
+			error: "specified wrong type value zmq",
+		}, { // 8
+			conf: map[string]interface{}{
+				"protocol":    "redis",
+				"host":        "edgex-redis",
+				"port":        6379,
+				"topicPrefix": "edgex/events/device",
+				"topic":       "requests",
+				"contentType": "application/json",
+			},
+			error: "not allow to specify both topic and topicPrefix, please set one only",
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	for i, test := range tests {
+		ems := EdgexMsgBusSink{}
+		err := ems.Configure(test.conf)
+		if !reflect.DeepEqual(test.error, testx.Errstring(err)) {
+			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, test.error, err)
+		} else if test.error == "" && !reflect.DeepEqual(test.expected, ems.c) {
+			t.Errorf("%d\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, test.expected, ems.c)
+		}
+	}
+}
+
 func TestProduceEvents(t1 *testing.T) {
 	var tests = []struct {
-		input       string
-		deviceName  string
-		profileName string
-		topic       string
-		expected    *dtos.Event
-		error       string
+		input    string
+		conf     map[string]interface{}
+		expected *dtos.Event
+		error    string
 	}{
-		{
+		{ // 0
 			input: `[
 						{"meta":{
 							"correlationid":"","deviceName":"demo","id":"","origin":3,
@@ -71,16 +236,20 @@ func TestProduceEvents(t1 *testing.T) {
 						{"humidity":100},
 						{"temperature":50}
 					]`,
+			conf: map[string]interface{}{
+				"metadata": "meta",
+			},
 			expected: &dtos.Event{
 				Id:          "",
 				DeviceName:  "demo",
-				ProfileName: "kuiperProfile",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "ruleTest",
 				Origin:      3,
 				Readings: []dtos.BaseReading{
 					{
 						ResourceName:  "humidity",
 						DeviceName:    "test device name1",
-						ProfileName:   "kuiperProfile",
+						ProfileName:   "ekuiperProfile",
 						Id:            "12",
 						Origin:        14,
 						ValueType:     v2.ValueTypeInt64,
@@ -100,7 +269,7 @@ func TestProduceEvents(t1 *testing.T) {
 			error: "",
 		},
 
-		{
+		{ // 1
 			input: `[
 						{"meta":{
 							"correlationid":"","profileName":"demoProfile","deviceName":"demo","sourceName":"demoSource","id":"abc","origin":3,"tags":{"auth":"admin"},
@@ -111,6 +280,9 @@ func TestProduceEvents(t1 *testing.T) {
 						{"h1":100},
 						{"h2":null}
 					]`,
+			conf: map[string]interface{}{
+				"metadata": "meta",
+			},
 			expected: &dtos.Event{
 				Id:          "abc",
 				DeviceName:  "demo",
@@ -131,18 +303,31 @@ func TestProduceEvents(t1 *testing.T) {
 			error: "",
 		},
 
-		{
+		{ // 2
 			input: `[
 						{"meta": 50},
 						{"h1":100}
 					]`,
+			conf: map[string]interface{}{
+				"sourceName": "demo",
+			},
 			expected: &dtos.Event{
-				ProfileName: "kuiperProfile",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "demo",
 				Readings: []dtos.BaseReading{
+					{
+						ResourceName:  "meta",
+						SimpleReading: dtos.SimpleReading{Value: "5.000000e+01"},
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						ValueType:     v2.ValueTypeFloat64,
+					},
 					{
 						ResourceName:  "h1",
 						SimpleReading: dtos.SimpleReading{Value: "1.000000e+02"},
-						ProfileName:   "kuiperProfile",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
 						ValueType:     v2.ValueTypeFloat64,
 					},
 				},
@@ -150,7 +335,7 @@ func TestProduceEvents(t1 *testing.T) {
 			error: "",
 		},
 
-		{
+		{ // 3
 			input: `[
 						{"meta1": "newmeta"},
 						{"h1":true},
@@ -158,30 +343,36 @@ func TestProduceEvents(t1 *testing.T) {
 						{"fa":[1.1,2.2,3.3,4.4]}
 					]`,
 			expected: &dtos.Event{
-				ProfileName: "kuiperProfile",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "ruleTest",
 				Readings: []dtos.BaseReading{
 					{
 						ResourceName:  "meta1",
 						SimpleReading: dtos.SimpleReading{Value: "newmeta"},
-						ProfileName:   "kuiperProfile",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
 						ValueType:     v2.ValueTypeString,
 					},
 					{
 						ResourceName:  "h1",
 						SimpleReading: dtos.SimpleReading{Value: "true"},
-						ProfileName:   "kuiperProfile",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
 						ValueType:     v2.ValueTypeBool,
 					},
 					{
 						ResourceName:  "sa",
 						SimpleReading: dtos.SimpleReading{Value: "[\"1\",\"2\",\"3\",\"4\"]"},
-						ProfileName:   "kuiperProfile",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
 						ValueType:     v2.ValueTypeStringArray,
 					},
 					{
 						ResourceName:  "fa",
 						SimpleReading: dtos.SimpleReading{Value: "[1.100000e+00, 2.200000e+00, 3.300000e+00, 4.400000e+00]"},
-						ProfileName:   "kuiperProfile",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
 						ValueType:     v2.ValueTypeFloat64Array,
 					},
 				},
@@ -189,41 +380,50 @@ func TestProduceEvents(t1 *testing.T) {
 			error: "",
 		},
 
-		{
-			input:       `[]`,
-			deviceName:  "kuiper",
-			profileName: "kp",
-			topic:       "demo",
+		{ // 4
+			input: `[]`,
+			conf: map[string]interface{}{
+				"deviceName":  "kuiper",
+				"profileName": "kp",
+				"topic":       "demo",
+			},
 			expected: &dtos.Event{
 				ProfileName: "kp",
 				DeviceName:  "kuiper",
-				SourceName:  "demo",
+				SourceName:  "ruleTest",
 				Origin:      0,
 				Readings:    nil,
 			},
 			error: "",
 		},
-		{
+		{ // 5
 			input: `[{"sa":["1","2",3,"4"]}]`, //invalid array, return nil
 			expected: &dtos.Event{
-				ProfileName: "kuiperProfile",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "ruleTest",
 				Origin:      0,
 				Readings:    nil,
 			},
 		},
-		{
+		{ // 6
 			input: `[
 						{"meta1": "newmeta"},
 						{"sa":"SGVsbG8gV29ybGQ="},
 						{"meta":{
-							"correlationid":"","profileName":"demoProfile","deviceName":"demo","sourceName":"demoSource","id":"abc","origin":3,"tags":{"auth":"admin"},
+							"correlationid":"","profileName":"demoProfile","deviceName":"demo","id":"abc","origin":3,"tags":{"auth":"admin"},
 							"sa":{"deviceName":"test device name1","id":"12","origin":14, "valueType":"Binary","mediaType":"application/css"}
 						}}
 					]`,
+			conf: map[string]interface{}{
+				"metadata":    "meta",
+				"profileName": "myprofile",
+				"sourceName":  "ds",
+			},
 			expected: &dtos.Event{
 				DeviceName:  "demo",
 				ProfileName: "demoProfile",
-				SourceName:  "demoSource",
+				SourceName:  "ds",
 				Origin:      3,
 				Tags:        map[string]string{"auth": "admin"},
 				Readings: []dtos.BaseReading{
@@ -251,9 +451,16 @@ func TestProduceEvents(t1 *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, t := range tests {
-		ems := EdgexMsgBusSink{deviceName: t.deviceName, profileName: t.profileName, topic: t.topic, metadata: "meta"}
+		ems := EdgexMsgBusSink{}
+		err := ems.Configure(t.conf)
+		if err != nil {
+			t1.Errorf("%d: configure error %v", i, err)
+			continue
+		}
+		if ems.c.SourceName == "" {
+			ems.c.SourceName = "ruleTest"
+		}
 		result, err := ems.produceEvents(ctx, []byte(t.input))
-
 		if !reflect.DeepEqual(t.error, testx.Errstring(err)) {
 			t1.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, t.input, t.error, err)
 		} else if t.error == "" && !compareEvent(t.expected, result) {

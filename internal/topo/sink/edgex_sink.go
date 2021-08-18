@@ -22,6 +22,7 @@ import (
 	"fmt"
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
 	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -30,120 +31,92 @@ import (
 	"reflect"
 )
 
+type messageType string
+
+const (
+	MessageTypeEvent   messageType = "event"
+	MessageTypeRequest messageType = "request"
+)
+
+type EdgexConf struct {
+	Protocol    string            `json:"protocol"`
+	Host        string            `json:"host"`
+	Port        int               `json:"port"`
+	Topic       string            `json:"topic"`
+	TopicPrefix string            `json:"topicPrefix"`
+	Type        string            `json:"type"`
+	MessageType messageType       `json:"messageType"`
+	ContentType string            `json:"contentType"`
+	DeviceName  string            `json:"deviceName"`
+	ProfileName string            `json:"profileName"`
+	SourceName  string            `json:"sourceName"`
+	Metadata    string            `json:"metadata"`
+	Optional    map[string]string `json:"optional"`
+}
+
 type EdgexMsgBusSink struct {
-	protocol string
-	host     string
-	port     int
-	ptype    string
+	c *EdgexConf
 
-	topic       string
-	contentType string
-
-	deviceName  string
-	profileName string
-	sourceName  string
-	metadata    string
-
-	optional map[string]string
-	client   messaging.MessageClient
+	topic  string
+	conf   *types.MessageBusConfig
+	client messaging.MessageClient
 }
 
 func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
-	ems.host = "*"
-	ems.protocol = "tcp"
-	ems.port = 5573
-	ems.topic = "events"
-	ems.contentType = "application/json"
-	ems.ptype = messaging.ZeroMQ
-
-	if host, ok := ps["host"]; ok {
-		ems.host = host.(string)
-	} else {
-		conf.Log.Infof("Not find host conf, will use default value '*'.")
+	c := &EdgexConf{
+		Protocol:    "redis",
+		Host:        "localhost",
+		Port:        6379,
+		Type:        messaging.Redis,
+		MessageType: MessageTypeEvent,
+		ContentType: "application/json",
+		DeviceName:  "ekuiper",
+		ProfileName: "ekuiperProfile",
+		// SourceName is set in open as the rule id
+	}
+	err := cast.MapToStruct(ps, c)
+	if err != nil {
+		return fmt.Errorf("read properties %v fail with error: %v", ps, err)
 	}
 
-	if pro, ok := ps["protocol"]; ok {
-		ems.protocol = pro.(string)
-	} else {
-		conf.Log.Infof("Not find protocol conf, will use default value 'tcp'.")
+	if c.Port < 0 {
+		return fmt.Errorf("specified wrong port value, expect positive integer but got %d", c.Port)
 	}
 
-	if port, ok := ps["port"]; ok {
-		if pv, ok := port.(float64); ok {
-			ems.port = int(pv)
-		} else if pv, ok := port.(float32); ok {
-			ems.port = int(pv)
-		} else {
-			conf.Log.Infof("Not valid port value, will use default value '5563'.")
-		}
-
-	} else {
-		conf.Log.Infof("Not find port conf, will use default value '5563'.")
+	if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT && c.Type != messaging.Redis {
+		return fmt.Errorf("specified wrong type value %s", c.Type)
 	}
 
-	if topic, ok := ps["topic"]; ok {
-		ems.topic = topic.(string)
-	} else {
-		conf.Log.Infof("Not find topic conf, will use default value 'events'.")
+	if c.MessageType != MessageTypeEvent && c.MessageType != MessageTypeRequest {
+		return fmt.Errorf("specified wrong messageType value %s", c.MessageType)
 	}
 
-	if contentType, ok := ps["contentType"]; ok {
-		ems.contentType = contentType.(string)
-	} else {
-		conf.Log.Infof("Not find contentType conf, will use default value 'application/json'.")
+	if c.MessageType == MessageTypeEvent && c.ContentType != "application/json" {
+		return fmt.Errorf("specified wrong contentType value %s: only 'application/json' is supported if messageType is event", c.ContentType)
 	}
 
-	if ptype, ok := ps["type"]; ok {
-		ems.ptype = ptype.(string)
-		if ems.ptype != messaging.ZeroMQ && ems.ptype != messaging.MQTT && ems.ptype != messaging.Redis {
-			conf.Log.Infof("Specified wrong message type value %s, will use zeromq messagebus.\n", ems.ptype)
-			ems.ptype = messaging.ZeroMQ
-		}
+	if c.Topic != "" && c.TopicPrefix != "" {
+		return fmt.Errorf("not allow to specify both topic and topicPrefix, please set one only")
 	}
 
-	if dname, ok := ps["deviceName"]; ok {
-		ems.deviceName = dname.(string)
+	ems.c = c
+	ems.conf = &types.MessageBusConfig{
+		PublishHost: types.HostInfo{
+			Host:     c.Host,
+			Port:     c.Port,
+			Protocol: c.Protocol,
+		},
+		Type:     c.Type,
+		Optional: c.Optional,
 	}
 
-	if pname, ok := ps["profileName"]; ok {
-		ems.profileName = pname.(string)
-	}
-
-	if metadata, ok := ps["metadata"]; ok {
-		ems.metadata = metadata.(string)
-	}
-
-	if optIntf, ok := ps["optional"]; ok {
-		if opt, ok1 := optIntf.(map[string]interface{}); ok1 {
-			optional := make(map[string]string)
-			for k, v := range opt {
-				if sv, ok2 := v.(string); ok2 {
-					optional[k] = sv
-				} else {
-					info := fmt.Sprintf("Only string value is allowed for optional value, the value for key %s is not a string.", k)
-					conf.Log.Infof(info)
-					return fmt.Errorf(info)
-				}
-			}
-			ems.optional = optional
-		}
-	}
 	return nil
 }
 
 func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
-	conf := types.MessageBusConfig{
-		PublishHost: types.HostInfo{
-			Host:     ems.host,
-			Port:     ems.port,
-			Protocol: ems.protocol,
-		},
-		Type:     ems.ptype,
-		Optional: ems.optional,
-	}
-	log.Infof("Using configuration for EdgeX message bus sink: %+v", conf)
-	if msgClient, err := messaging.NewMessageClient(conf); err != nil {
+	log.Infof("Using configuration for EdgeX message bus sink: %+v", ems.c)
+	if msgClient, err := messaging.NewMessageClient(*ems.conf); err != nil {
 		return err
 	} else {
 		if ec := msgClient.Connect(); ec != nil {
@@ -151,6 +124,19 @@ func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 		} else {
 			ems.client = msgClient
 		}
+	}
+	if ems.c.SourceName == "" {
+		ems.c.SourceName = ctx.GetRuleId()
+	}
+
+	if ems.c.Topic == "" && ems.c.TopicPrefix == "" {
+		ems.topic = "application"
+	} else if ems.c.Topic != "" {
+		ems.topic = ems.c.Topic
+	} else if ems.c.Metadata == "" { // If meta data are static, the "dynamic" topic is static
+		ems.topic = fmt.Sprintf("%s/%s/%s/%s", ems.c.TopicPrefix, ems.c.DeviceName, ems.c.ProfileName, ems.c.SourceName)
+	} else {
+		ems.topic = "" // calculate dynamically
 	}
 	return nil
 }
@@ -161,19 +147,19 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, result []byte) 
 		m1 := ems.getMeta(m)
 		event := m1.createEvent()
 		//Override the devicename if user specified the value
-		if ems.deviceName != "" {
-			event.DeviceName = ems.deviceName
+		if event.DeviceName == "" {
+			event.DeviceName = ems.c.DeviceName
 		}
-		if ems.profileName != "" {
-			event.ProfileName = ems.profileName
+		if event.ProfileName == "" {
+			event.ProfileName = ems.c.ProfileName
 		}
 		if event.SourceName == "" {
-			event.SourceName = ems.topic
+			event.SourceName = ems.c.SourceName
 		}
 		for _, v := range m {
 			for k1, v1 := range v {
 				// Ignore nil values
-				if k1 == ems.metadata || v1 == nil {
+				if k1 == ems.c.Metadata || v1 == nil {
 					continue
 				} else {
 					var (
@@ -381,12 +367,12 @@ func getValueByType(v interface{}, vt string) (interface{}, error) {
 }
 
 func (ems *EdgexMsgBusSink) getMeta(result []map[string]interface{}) *meta {
-	if ems.metadata == "" {
+	if ems.c.Metadata == "" {
 		return newMetaFromMap(nil)
 	}
 	//Try to get the meta field
 	for _, v := range result {
-		if m, ok := v[ems.metadata]; ok {
+		if m, ok := v[ems.c.Metadata]; ok {
 			if m1, ok1 := m.(map[string]interface{}); ok1 {
 				return newMetaFromMap(m1)
 			} else {
@@ -405,14 +391,32 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 		if err != nil {
 			return fmt.Errorf("Failed to convert to EdgeX event: %s.", err.Error())
 		}
-		data, err := json.Marshal(evt)
-		if err != nil {
-			return fmt.Errorf("unexpected error MarshalEvent %v", err)
+		var (
+			data  []byte
+			topic string
+		)
+		if ems.c.MessageType == MessageTypeRequest {
+			req := requests.NewAddEventRequest(*evt)
+			data, _, err = req.Encode()
+			if err != nil {
+				return fmt.Errorf("unexpected error encode event %v", err)
+			}
+		} else {
+			data, err = json.Marshal(evt)
+			if err != nil {
+				return fmt.Errorf("unexpected error MarshalEvent %v", err)
+			}
 		}
-		env := types.NewMessageEnvelope([]byte(data), ctx)
-		env.ContentType = ems.contentType
+		env := types.NewMessageEnvelope(data, ctx)
+		env.ContentType = ems.c.ContentType
 
-		if e := ems.client.Publish(env, ems.topic); e != nil {
+		if ems.topic == "" { // dynamic topic
+			topic = fmt.Sprintf("%s/%s/%s/%s", ems.c.TopicPrefix, evt.DeviceName, evt.ProfileName, evt.SourceName)
+		} else {
+			topic = ems.topic
+		}
+
+		if e := ems.client.Publish(env, topic); e != nil {
 			logger.Errorf("Found error %s when publish to EdgeX message bus.\n", e)
 			return e
 		}
@@ -481,9 +485,7 @@ type meta struct {
 
 func newMetaFromMap(m1 map[string]interface{}) *meta {
 	result := &meta{
-		eventMeta: eventMeta{
-			profileName: "kuiperProfile",
-		},
+		eventMeta: eventMeta{},
 	}
 	for k, v := range m1 {
 		switch k {
