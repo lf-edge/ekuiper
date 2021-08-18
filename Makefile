@@ -69,46 +69,6 @@ real_pkg:
 cross_prepare:
 	@docker run --rm --privileged tonistiigi/binfmt --install all
 
-.PHONY: cross_build
-cross_build: cross_prepare
-	@docker buildx build --no-cache \
-	--platform=linux/amd64,linux/arm64,linux/arm/v7 \
-	-t cross_build \
-	--output type=tar,dest=cross_build.tar \
-	-f .ci/Dockerfile .
-
-	@mkdir -p $(PACKAGES_PATH)
-	@tar -xvf cross_build.tar --wildcards linux_amd64/go/kuiper/_packages/ \
-		&& mv linux_amd64/go/kuiper/_packages/* $(PACKAGES_PATH)
-	@tar -xvf cross_build.tar --wildcards linux_arm64/go/kuiper/_packages/ \
-		&& mv linux_arm64/go/kuiper/_packages/* $(PACKAGES_PATH)
-	@tar -xvf cross_build.tar --wildcards linux_arm_v7/go/kuiper/_packages/ \
-		&& mv linux_arm_v7/go/kuiper/_packages/* $(PACKAGES_PATH)
-
-	@rm -f cross_build.tar
-	@echo "Cross build success"
-
-.PHONY: cross_build_for_rpm
-cross_build_for_rpm: cross_prepare
-	@docker buildx build --no-cache \
-	--platform=linux/amd64,linux/arm64 \
-	-t cross_build \
-	--output type=tar,dest=cross_build_for_rpm.tar \
-	-f .ci/Dockerfile-centos .
-
-	@mkdir -p $(PACKAGES_PATH)
-	@tar -xvf cross_build_for_rpm.tar --wildcards linux_amd64/go/kuiper/_packages/ \
-		&& mv linux_amd64/go/kuiper/_packages/*.rpm $(PACKAGES_PATH)
-	@tar -xvf cross_build_for_rpm.tar --wildcards linux_arm64/go/kuiper/_packages/ \
-		&& mv linux_arm64/go/kuiper/_packages/*.rpm $(PACKAGES_PATH)
-
-	@rm -f cross_build_for_rpm.tar
-	@echo "Cross build rpm packages success"
-
-
-.PHONE: all_pkgs
-all_pkgs: cross_build cross_build_for_rpm
-
 .PHONY: docker
 docker:
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile . --load
