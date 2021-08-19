@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build edgex
 // +build edgex
 
 package sink
@@ -134,7 +135,7 @@ func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 	} else if ems.c.Topic != "" {
 		ems.topic = ems.c.Topic
 	} else if ems.c.Metadata == "" { // If meta data are static, the "dynamic" topic is static
-		ems.topic = fmt.Sprintf("%s/%s/%s/%s", ems.c.TopicPrefix, ems.c.DeviceName, ems.c.ProfileName, ems.c.SourceName)
+		ems.topic = fmt.Sprintf("%s/%s/%s/%s", ems.c.TopicPrefix, ems.c.ProfileName, ems.c.DeviceName, ems.c.SourceName)
 	} else {
 		ems.topic = "" // calculate dynamically
 	}
@@ -411,7 +412,7 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 		env.ContentType = ems.c.ContentType
 
 		if ems.topic == "" { // dynamic topic
-			topic = fmt.Sprintf("%s/%s/%s/%s", ems.c.TopicPrefix, evt.DeviceName, evt.ProfileName, evt.SourceName)
+			topic = fmt.Sprintf("%s/%s/%s/%s", ems.c.TopicPrefix, evt.ProfileName, evt.DeviceName, evt.SourceName)
 		} else {
 			topic = ems.topic
 		}
@@ -420,6 +421,7 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 			logger.Errorf("Found error %s when publish to EdgeX message bus.\n", e)
 			return e
 		}
+		logger.Debugf("Published %+v to EdgeX message bus topic %s", evt, topic)
 	} else {
 		return fmt.Errorf("Unkown type %t, the message cannot be published.\n", item)
 	}

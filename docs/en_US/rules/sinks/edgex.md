@@ -13,12 +13,12 @@ The action is used for publishing output message into EdgeX message bus.
 | host          | true     | The host of message bus. If not specified, then use default value ``localhost``. |
 | port          | true     | The port of message bus. If not specified, then use default value ``6379``. |
 | topic         | true     | The topic to be published. The topic is static across all messages. To use dynamic topic, leave this empty and specify the topicPrefix property. Only one of the topic and topicPrefix properties can be specified. If both are not specified, then use default topic value ``application``. |
-| topicPrefix         | true     | The prefix of a dynamic topic to be published. The topic will become a concatenation of `$topicPrefix/$deviceName/$profileName/$sourceName`. |
+| topicPrefix         | true     | The prefix of a dynamic topic to be published. The topic will become a concatenation of `$topicPrefix/$profileName/$deviceName/$sourceName`. |
 | contentType   | true     | The content type of message to be published. If not specified, then use the default value ``application/json``. |
 | messageType   | true     | The EdgeX message model type. To publish the message as an event like EdgeX application service, use `event`. Otherwise, to publish the message as an event request like EdgeX device service or core data service, use `request`. If not specified, then use the default value ``event``. |
 | metadata      | true     | The property is a field name that allows user to specify a field name of SQL  select clause,  the field name should use ``meta(*) AS xxx``  to select all of EdgeX metadata from message. |
-| deviceName    | true     | Allows user to specify the device name in the event structure that are sent from eKuiper. The deviceName in the meta take precedence if specified.  |
 | profileName    | true     | Allows user to specify the profile name in the event structure that are sent from eKuiper. The profileName in the meta take precedence if specified. |
+| deviceName    | true     | Allows user to specify the device name in the event structure that are sent from eKuiper. The deviceName in the meta take precedence if specified.  |
 | sourceName    | true     | Allows user to specify the source name in the event structure that are sent from eKuiper. The sourceName in the meta take precedence if specified. |
 | optional      | true     | If ``mqtt`` message bus type is specified, then some optional values can be specified. Please refer to below for supported optional supported configurations. |
 
@@ -57,8 +57,8 @@ With the default setting, the EdgeX sink will publish to the default redis messa
         "host": "localhost",
         "port": 6379,
         "topic": "application",
-        "deviceName": "ekuiper",
         "profileName": "ekuiperProfile",
+        "deviceName": "ekuiper",        
         "contentType": "application/json"
       }
     }
@@ -68,7 +68,7 @@ With the default setting, the EdgeX sink will publish to the default redis messa
 
 ### Publish to redis message bus like device service
 
-By changing the `topicPrefix` and `messageType` properties, we can let EdgeX sink simulates a device. The topic name for device in EdgeX is like `edgex/events/device/$deviceName/$profileName/$sourceName` so we set the `topicPrefix` to `edgex/events/device` to make sure the messages are routing to device events. And by specifying the `metadata` property, we can have a dynamic topic to simulate multiple devices. Check the next section [dynamic metadata](#dynamic-metadata) for details.
+By changing the `topicPrefix` and `messageType` properties, we can let EdgeX sink simulates a device. The topic name for device in EdgeX is like `edgex/events/device/$profileName/$deviceName/$sourceName` so we set the `topicPrefix` to `edgex/events/device` to make sure the messages are routing to device events. And by specifying the `metadata` property, we can have a dynamic topic to simulate multiple devices. Check the next section [dynamic metadata](#dynamic-metadata) for details.
 
 ```json
 {
@@ -132,8 +132,8 @@ Below is a rule that send analysis result to zeromq message bus.
         "host": "*",
         "port": 5571,
         "topic": "application",
-        "deviceName": "kuiper",
-        "profileName": "kuiperProfile",
+        "profileName": "myprofile",
+        "deviceName": "mydevice",        
         "contentType": "application/json"
       }
     }
@@ -144,7 +144,7 @@ Below is a rule that send analysis result to zeromq message bus.
 ## Dynamic metadata
 
 ### Publish result to a new EdgeX message bus without keeping original metadata
-In this case, the original metadata value (such as ``id, deviceName, profileName, sourceName, origin, tags`` in ``Events`` structure, and ``id, deviceName, profileName, origin, valueType`` in ``Reading`` structure will not be kept). eKuiper acts as another EdgeX micro service here, and it has own ``device name`` and ``profile name``. ``deviceName`` and ``profileName`` properties are provided, and allows user to specify the device name of eKuiper. The ``SourceName`` will be default to the ``topic`` property. Below is one example,
+In this case, the original metadata value (such as ``id, profileName, deviceName, sourceName, origin, tags`` in ``Events`` structure, and ``id, profileName, deviceName, origin, valueType`` in ``Reading`` structure will not be kept). eKuiper acts as another EdgeX micro service here, and it has own ``device name`` and ``profile name``. ``deviceName`` and ``profileName`` properties are provided, and allows user to specify the device name of eKuiper. The ``SourceName`` will be default to the ``topic`` property. Below is one example,
 
 1) Data received from EdgeX message bus ``events`` topic,
 ```
