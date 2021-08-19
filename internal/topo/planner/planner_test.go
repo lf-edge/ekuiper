@@ -42,7 +42,8 @@ func Test_createLogicalPlan(t *testing.T) {
 		"src1": `CREATE STREAM src1 (
 					id1 BIGINT,
 					temp BIGINT,
-					name string
+					name string,
+					myarray array(string)
 				) WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,
 		"src2": `CREATE STREAM src2 (
 					id2 BIGINT,
@@ -92,7 +93,7 @@ func Test_createLogicalPlan(t *testing.T) {
 		err string
 	}{
 		{ // 0
-			sql: `SELECT name FROM src1`,
+			sql: `SELECT myarray[temp] FROM src1`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
@@ -101,8 +102,12 @@ func Test_createLogicalPlan(t *testing.T) {
 							name:            "src1",
 							streamFields: []interface{}{
 								&ast.StreamField{
-									Name:      "name",
-									FieldType: &ast.BasicType{Type: ast.STRINGS},
+									Name:      "myarray",
+									FieldType: &ast.ArrayType{Type: ast.STRINGS},
+								},
+								&ast.StreamField{
+									Name:      "temp",
+									FieldType: &ast.BasicType{Type: ast.BIGINT},
 								},
 							},
 							streamStmt: streams["src1"],
@@ -112,8 +117,18 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []ast.Field{
 					{
-						Expr:  &ast.FieldRef{Name: "name", StreamName: "src1"},
-						Name:  "name",
+						Expr: &ast.BinaryExpr{
+							OP: ast.SUBSET,
+							LHS: &ast.FieldRef{
+								StreamName: "src1",
+								Name:       "myarray",
+							},
+							RHS: &ast.IndexExpr{Index: &ast.FieldRef{
+								StreamName: "src1",
+								Name:       "temp",
+							}},
+						},
+						Name:  "kuiper_field_0",
 						AName: "",
 					},
 				},
@@ -356,6 +371,10 @@ func Test_createLogicalPlan(t *testing.T) {
 																	&ast.StreamField{
 																		Name:      "name",
 																		FieldType: &ast.BasicType{Type: ast.STRINGS},
+																	},
+																	&ast.StreamField{
+																		Name:      "myarray",
+																		FieldType: &ast.ArrayType{Type: ast.STRINGS},
 																	},
 																},
 																streamStmt: streams["src1"],
