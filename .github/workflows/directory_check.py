@@ -23,15 +23,18 @@ def check_md_content(md_file):
         md_content = re.sub(r'{% emqxee %}([\s\S]*?){% endemqxee %}', '', md_content)
 
     image_list = re.findall('(.*?)!\[(.*?)\]\((.*?)\)', md_content)
-    url_list = re.findall('(.*?)\[(.*?)\]\((.*?).md(.*?)\)', md_content)
+    url_list = re.findall('(.*?)\[(.*?)\]\((.*?)\)', md_content)
     for url in url_list:
-        if url[2].startswith(('http://', 'https://', '<')):
+        if url[0].endswith('!'):
             continue
-        ref_md_path = os.path.join(f'{"/".join(md_file.split("/")[:-1])}/', f'{url[2]}.md')
+        if url[2].startswith(('http://', 'https://', '<', '#')):
+            continue
+        url_path = url[2].split('.md')[0]
+        ref_md_path = os.path.join(f'{"/".join(md_file.split("/")[:-1])}/', f'{url_path}.md')
 
         if not os.path.exists(ref_md_path):
             print(f'In {md_file}：', end='')
-            print(f'{url[2]}.md', f'not found or not in {directory_file}')
+            print(f'{url[2]} not found or not in {directory_file}')
             success = False
 
     for image in image_list:
