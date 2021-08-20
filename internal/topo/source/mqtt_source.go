@@ -16,7 +16,6 @@ package source
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
@@ -90,13 +89,10 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 	ms.pkeyPath = cfg.PrivateKPath
 
 	if 0 != len(cfg.KubeedgeModelFile) {
-		conf, err := conf.LoadConf(path.Join("sources", cfg.KubeedgeModelFile))
-		if nil != err {
-			return err
-		}
+		p := path.Join("sources", cfg.KubeedgeModelFile)
 		ms.model = modelFactory(cfg.KubeedgeVersion)
-		if err = json.Unmarshal(conf, ms.model); err != nil {
-			ms.model = nil
+		err = conf.LoadConfigFromPath(p, ms.model)
+		if err != nil {
 			return err
 		}
 	}
