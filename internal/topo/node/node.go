@@ -20,7 +20,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"gopkg.in/yaml.v3"
 	"strings"
 	"sync"
 )
@@ -178,32 +177,28 @@ func getSourceConf(ctx api.StreamContext, sourceType string, options *ast.Option
 	if sourceType == "mqtt" {
 		confPath = "mqtt_source.yaml"
 	}
-	conf, err := conf.LoadConf(confPath)
 	props := make(map[string]interface{})
-	if err == nil {
-		cfg := make(map[string]interface{})
-		if err := yaml.Unmarshal(conf, &cfg); err != nil {
-			logger.Warnf("fail to parse yaml for source %s. Return an empty configuration", sourceType)
+	cfg := make(map[string]interface{})
+	err := conf.LoadConfigByName(confPath, &cfg)
+	if err != nil {
+		logger.Warnf("fail to parse yaml for source %s. Return an empty configuration", sourceType)
+	} else {
+		def, ok := cfg["default"]
+		if !ok {
+			logger.Warnf("default conf is not found", confkey)
 		} else {
-			def, ok := cfg["default"]
-			if !ok {
-				logger.Warnf("default conf is not found", confkey)
-			} else {
-				if def1, ok1 := def.(map[string]interface{}); ok1 {
-					props = def1
-				}
-				if c, ok := cfg[confkey]; ok {
-					if c1, ok := c.(map[string]interface{}); ok {
-						c2 := c1
-						for k, v := range c2 {
-							props[k] = v
-						}
+			if def1, ok1 := def.(map[string]interface{}); ok1 {
+				props = def1
+			}
+			if c, ok := cfg[confkey]; ok {
+				if c1, ok := c.(map[string]interface{}); ok {
+					c2 := c1
+					for k, v := range c2 {
+						props[k] = v
 					}
 				}
 			}
 		}
-	} else {
-		logger.Warnf("config file %s.yaml is not loaded properly. Return an empty configuration", sourceType)
 	}
 	f := options.FORMAT
 	if f == "" {

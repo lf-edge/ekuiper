@@ -1,0 +1,66 @@
+{
+  "libs": [],
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/http_pull.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/http_pull.md"
+    },
+    "description": {
+      "en_US": "Desc US",
+      "zh_CN": "Desc CH"
+    }
+  },
+  "properties": {
+    "default": [
+      {
+        "name": "FIELDS",
+        "optional": false,
+        "control": "text",
+        "type": "array",
+        "hint": {
+          "en_US": "test",
+          "zh_CN": "test"
+        },
+        "label": {
+          "en_US": "FIELDS",
+          "zh_CN": "FIELDS"
+        }
+      },
+      {
+        "name": "QUERY_TABLE",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "test",
+          "zh_CN": "test"
+        },
+        "label": {
+          "en_US": "QUERY_TABLE",
+          "zh_CN": "QUERY_TABLE"
+        }
+      },
+      {
+        "name": "ROWCOUNT",
+        "optional": false,
+        "control": "number",
+        "type": "int",
+        "hint": {
+          "en_US": "test",
+          "zh_CN": "test"
+        },
+        "label": {
+          "en_US": "ROWCOUNT",
+          "zh_CN": "ROWCOUNT"
+        }
+      }
+    ]
+  }
+}

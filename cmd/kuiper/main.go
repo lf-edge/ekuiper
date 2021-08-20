@@ -20,7 +20,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/urfave/cli"
-	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"net/rpc"
 	"os"
@@ -34,7 +33,7 @@ type clientConf struct {
 	Port int    `yaml:"port"`
 }
 
-var clientYaml = "client.yaml"
+const ClientYaml = "client.yaml"
 
 func streamProcess(client *rpc.Client, args string) {
 	var reply string
@@ -64,22 +63,20 @@ func main() {
 	//		Usage: "the name of stream",
 	//	}}
 
-	b, err := conf.LoadConf(clientYaml)
+	var cfg map[string]clientConf
+	err := conf.LoadConfigByName(ClientYaml, &cfg)
 	if err != nil {
 		conf.Log.Fatal(err)
-	}
-	var cfg map[string]clientConf
-	var config *clientConf
-	if err := yaml.Unmarshal(b, &cfg); err != nil {
 		fmt.Printf("Failed to load config file with error %s.\n", err)
-	} else {
-		c, ok := cfg["basic"]
-		if !ok {
-			fmt.Printf("No basic config in client.yaml, will use the default configuration.\n")
-		} else {
-			config = &c
-		}
 	}
+	var config *clientConf
+	c, ok := cfg["basic"]
+	if !ok {
+		fmt.Printf("No basic config in client.yaml, will use the default configuration.\n")
+	} else {
+		config = &c
+	}
+
 	if config == nil {
 		config = &clientConf{
 			Host: "127.0.0.1",

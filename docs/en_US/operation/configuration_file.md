@@ -1,5 +1,25 @@
 # Basic configurations
+
 The configuration file for eKuiper is at ``$kuiper/etc/kuiper.yaml``. The configuration file is yaml format.
+Application can be configured through environment variables. Environment variables are taking precedence over their counterparts
+in the yaml file. In order to use env variable for given config we must use formatting as follows:
+`KUIPER__` prefix + config path elements connected by `__`.
+Example, in case of config:
+
+```yaml
+basic:
+  # true|false, with debug level, it prints more debug info
+  debug: false
+  # true|false, if it's set to true, then the log will be print to console
+  consoleLog: false
+  # true|false, if it's set to true, then the log will be print to log file
+  fileLog: true
+  # How many hours to split the file
+  rotateTime: 24
+  # Maximum file storage hours
+  maxAge: 72
+```
+for debug option in basic following env is valid `KUIPER_BASIC_DEBUG=true` and if used debug value will be set to true.
 
 ## Log level
 

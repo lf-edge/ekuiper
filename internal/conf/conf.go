@@ -19,34 +19,18 @@ import (
 	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"time"
 )
 
-const StreamConf = "kuiper.yaml"
+const ConfFileName = "kuiper.yaml"
 
 var (
 	Config    *KuiperConf
 	IsTesting bool
 )
-
-func LoadConf(confName string) ([]byte, error) {
-	confDir, err := GetConfLoc()
-	if err != nil {
-		return nil, err
-	}
-
-	file := path.Join(confDir, confName)
-	b, err := ioutil.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
-}
 
 type tlsConf struct {
 	Certfile string `yaml:"certfile"`
@@ -90,11 +74,10 @@ type KuiperConf struct {
 }
 
 func InitConf() {
-	b, err := LoadConf(StreamConf)
+	cpath, err := GetConfLoc()
 	if err != nil {
-		Log.Fatal(err)
+		panic(err)
 	}
-
 	kc := KuiperConf{
 		Rule: api.RuleOption{
 			LateTol:            1000,
@@ -104,11 +87,13 @@ func InitConf() {
 			SendError:          true,
 		},
 	}
-	if err := yaml.Unmarshal(b, &kc); err != nil {
+
+	err = LoadConfigFromPath(path.Join(cpath, ConfFileName), &kc)
+	if err != nil {
 		Log.Fatal(err)
-	} else {
-		Config = &kc
+		panic(err)
 	}
+	Config = &kc
 	if 0 == len(Config.Basic.Ip) {
 		Config.Basic.Ip = "0.0.0.0"
 	}

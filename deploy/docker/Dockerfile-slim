@@ -19,14 +19,11 @@ COPY . /go/kuiper
 WORKDIR /go/kuiper
 
 RUN apt update && apt install -y pkg-config libczmq-dev
-RUN go build  -o kuiper_conf_util deploy/docker/conf_util.go \
-    && if [ "$(uname -m)" = "x86_64" ]; then apt install -y upx && upx ./kuiper_conf_util; fi
 RUN make build_with_edgex
 
 FROM debian:10
 
 COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
-COPY --from=builder /go/kuiper/kuiper_conf_util /usr/bin/kuiper_conf_util
 COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
 
 RUN apt update && apt install -y pkg-config libczmq-dev wget
