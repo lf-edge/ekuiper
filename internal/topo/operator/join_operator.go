@@ -278,7 +278,6 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesS
 	}
 	for _, left := range set.Content {
 		leftJoined := false
-		innerAppend := false
 		for index, right := range rights {
 			tupleJoined := false
 			merged := &xsql.JoinTuple{}
@@ -299,9 +298,8 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesS
 					if val {
 						leftJoined = true
 						tupleJoined = true
-						if join.JoinType == ast.INNER_JOIN && !innerAppend {
+						if join.JoinType == ast.INNER_JOIN {
 							merged.AddTuples(left.Tuples)
-							innerAppend = true
 						}
 						merged.AddTuple(right)
 					}
