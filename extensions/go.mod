@@ -10,7 +10,7 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pebbe/zmq4 v1.2.7
 	github.com/taosdata/driver-go v0.0.0-20210525062356-2bd1b495d5f3
-	github.com/go-redis/redis/v8 v8.4.11
+	github.com/go-redis/redis/v7 v7.3.0
 )
 
 replace github.com/lf-edge/ekuiper => ../
