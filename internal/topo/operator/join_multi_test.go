@@ -508,6 +508,77 @@ func TestMultiJoinPlan_Apply(t *testing.T) {
 					},
 				},
 			},
+		}, {
+			sql: "SELECT id1 FROM src1 inner join src2 on src1.id = src2.id inner join src3 on src1.id = src3.id",
+			data: xsql.WindowTuplesSet{
+				Content: []xsql.WindowTuples{
+					{
+						Emitter: "src1",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src1",
+								Message: xsql.Message{"id": 1, "f1": "v1"},
+							}, {
+								Emitter: "src1",
+								Message: xsql.Message{"id": 2, "f1": "v5"},
+							}, {
+								Emitter: "src1",
+								Message: xsql.Message{"id": 3, "f1": "v3"},
+							},
+						},
+					},
+
+					{
+						Emitter: "src2",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src2",
+								Message: xsql.Message{"id": 1, "f2": "w1"},
+							}, {
+								Emitter: "src2",
+								Message: xsql.Message{"id": 2, "f2": "w2"},
+							}, {
+								Emitter: "src2",
+								Message: xsql.Message{"id": 4, "f2": "w3"},
+							},
+						},
+					},
+
+					{
+						Emitter: "src3",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src3",
+								Message: xsql.Message{"id": 1, "f3": "x1"},
+							}, {
+								Emitter: "src3",
+								Message: xsql.Message{"id": 1, "f3": "x3"},
+							}, {
+								Emitter: "src3",
+								Message: xsql.Message{"id": 5, "f3": "x5"},
+							},
+						},
+					},
+				},
+			},
+			result: &xsql.JoinTupleSets{
+				Content: []xsql.JoinTuple{
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id": 1, "f1": "v1"}},
+							{Emitter: "src2", Message: xsql.Message{"id": 1, "f2": "w1"}},
+							{Emitter: "src3", Message: xsql.Message{"id": 1, "f3": "x1"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id": 1, "f1": "v1"}},
+							{Emitter: "src2", Message: xsql.Message{"id": 1, "f2": "w1"}},
+							{Emitter: "src3", Message: xsql.Message{"id": 1, "f3": "x3"}},
+						},
+					},
+				},
+			},
 		},
 	}
 
