@@ -19,7 +19,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v7"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -143,14 +143,14 @@ func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 					}
 
 					if r.dataType == "list" {
-						err := r.cli.LPush(ctx, key, v).Err()
+						err := r.cli.LPush(key, v).Err()
 						if err != nil {
 							logger.Error(err)
 							return err
 						}
 						logger.Debugf("send redis list success, key:%s data: %s", key, string(v))
 					} else {
-						err := r.cli.Set(ctx, key, v, r.expiration*time.Second).Err()
+						err := r.cli.Set(key, v, r.expiration*time.Second).Err()
 						if err != nil {
 							logger.Error(err)
 							return err
@@ -171,14 +171,14 @@ func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 				}
 
 				if r.dataType == "list" {
-					err := r.cli.LPush(ctx, key, v).Err()
+					err := r.cli.LPush(key, v).Err()
 					if err != nil {
 						logger.Error(err)
 						return err
 					}
 					logger.Debugf("send redis list success, key:%s data: %s", key, string(v))
 				} else {
-					err := r.cli.Set(ctx, key, v, r.expiration*time.Second).Err()
+					err := r.cli.Set(key, v, r.expiration*time.Second).Err()
 					if err != nil {
 						logger.Error(err)
 						return err
@@ -189,14 +189,14 @@ func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 
 		} else if r.key != "" {
 			if r.dataType == "list" {
-				err := r.cli.LPush(ctx, r.key, v).Err()
+				err := r.cli.LPush(r.key, v).Err()
 				if err != nil {
 					logger.Error(err)
 					return err
 				}
 				logger.Debugf("send redis list success, key:%s data: %s", r.key, string(v))
 			} else {
-				err := r.cli.Set(ctx, r.key, v, r.expiration*time.Second).Err()
+				err := r.cli.Set(r.key, v, r.expiration*time.Second).Err()
 				if err != nil {
 					logger.Error(err)
 					return err
