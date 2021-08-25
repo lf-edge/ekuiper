@@ -662,7 +662,7 @@ func (p *Parser) parseCall(name string) (ast.Expr, error) {
 				return nil, fmt.Errorf("found %q, expected right paren.", lit2)
 			} else {
 				if p.inmeta {
-					args = append(args, &ast.MetaRef{StreamName: "", Name: "*"})
+					args = append(args, &ast.MetaRef{StreamName: ast.DefaultStream, Name: "*"})
 				} else {
 					args = append(args, &ast.Wildcard{Token: ast.ASTERISK})
 				}
