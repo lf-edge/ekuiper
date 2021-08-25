@@ -49,7 +49,7 @@ SELECT count(*) FROM demo GROUP BY ID, HOPPINGWINDOW(ss, 10, 5);
 ![Sliding Window](./resources/slidingWindow.png)
 
 ```sql
-SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mm, 1);
+SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mi, 1);
 ```
 
 
@@ -61,7 +61,7 @@ SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mm, 1);
 ![Session Window](./resources/sessionWindow.png)
 
 ```sql
-SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mm, 2, 1);
+SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mi, 2, 1);
 ```
 
 

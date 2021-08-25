@@ -51,7 +51,7 @@ Sliding window functions, unlike Tumbling or Hopping windows, produce an output 
 
 
 ```sql
-SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mm, 1);
+SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mi, 1);
 ```
 
 
@@ -64,7 +64,7 @@ Session window functions group events that arrive at similar times, filtering ou
 
 
 ```sql
-SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mm, 2, 1);
+SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mi, 2, 1);
 ```
 
 
