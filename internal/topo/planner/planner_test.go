@@ -70,7 +70,11 @@ func Test_createLogicalPlan(t *testing.T) {
 			t.Error(err)
 			t.Fail()
 		}
-		store.Set(name, string(s))
+		err = store.Set(name, string(s))
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
 	}
 	streams := make(map[string]*ast.StreamStmt)
 	for n := range streamSqls {
@@ -1044,6 +1048,65 @@ func Test_createLogicalPlan(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
+		}, { // 12 meta with more fields
+			sql: `SELECT temp, meta(*) as m FROM src1 WHERE meta(device)="demo2"`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						FilterPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									DataSourcePlan{
+										name: "src1",
+										streamFields: []interface{}{
+											&ast.StreamField{
+												Name:      "temp",
+												FieldType: &ast.BasicType{Type: ast.BIGINT},
+											},
+										},
+										streamStmt: streams["src1"],
+										metaFields: []string{},
+										allMeta:    true,
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{
+									Name: "meta",
+									Args: []ast.Expr{&ast.MetaRef{
+										Name:       "device",
+										StreamName: ast.DefaultStream,
+									}},
+								},
+								OP: ast.EQ,
+								RHS: &ast.StringLiteral{
+									Val: "demo2",
+								},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "temp", StreamName: "src1"},
+						Name:  "temp",
+						AName: "",
+					}, {
+						Expr: &ast.FieldRef{Name: "m", StreamName: ast.AliasStream, AliasRef: ast.MockAliasRef(
+							&ast.Call{Name: "meta", Args: []ast.Expr{&ast.MetaRef{
+								Name:       "*",
+								StreamName: ast.DefaultStream,
+							}}},
+							[]ast.StreamName{},
+							nil,
+						)},
+						Name:  "meta",
+						AName: "m",
+					},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -1104,7 +1167,11 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 			t.Error(err)
 			t.Fail()
 		}
-		store.Set(name, string(s))
+		err = store.Set(name, string(s))
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
 	}
 	streams := make(map[string]*ast.StreamStmt)
 	for n := range streamSqls {

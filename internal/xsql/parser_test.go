@@ -1431,6 +1431,27 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: nil,
 			err:  "found \"-\", expected expression.",
 		},
+		{
+			s: `SELECT meta(*) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "meta",
+						Expr: &ast.Call{
+							Name: "meta",
+							Args: []ast.Expr{
+								&ast.MetaRef{
+									Name:       "*",
+									StreamName: ast.DefaultStream,
+								},
+							},
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
