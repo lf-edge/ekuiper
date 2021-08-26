@@ -17,8 +17,8 @@ package state
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/kv"
 	"log"
 	"os"
 	"path"
@@ -154,7 +154,7 @@ func TestLifecycle(t *testing.T) {
 	)
 	func() {
 		cleanStateData()
-		err := kv.SetupDefault()
+		err := store.SetupDefault()
 		if err != nil {
 			t.Error(err)
 		}

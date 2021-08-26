@@ -18,10 +18,10 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"github.com/lf-edge/ekuiper/pkg/kv/stores"
 	"path"
 	"sort"
 	"strconv"
@@ -80,7 +80,7 @@ type Cache struct {
 	changed bool
 	//serialize
 	key   string //the key for current cache
-	store stores.KeyValue
+	store kv.KeyValue
 }
 
 func NewTimebasedCache(in <-chan interface{}, limit int, saveInterval int, errCh chan<- error, ctx api.StreamContext) *Cache {
@@ -101,7 +101,7 @@ func (c *Cache) initStore(ctx api.StreamContext) {
 		Tail: 0,
 	}
 	var err error
-	err, c.store = kv.GetKV(path.Join("sink", ctx.GetRuleId()))
+	err, c.store = store.GetKV(path.Join("sink", ctx.GetRuleId()))
 	if err != nil {
 		c.drainError(err)
 	}

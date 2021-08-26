@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@ package common
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/kv/stores"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"reflect"
 	"testing"
 )
 
-func TestKvSetnx(ks stores.KeyValue, t *testing.T) {
+func TestKvSetnx(ks kv.KeyValue, t *testing.T) {
 
 	if err := ks.Setnx("foo", "bar"); nil != err {
 		t.Error(err)
@@ -32,7 +32,7 @@ func TestKvSetnx(ks stores.KeyValue, t *testing.T) {
 	}
 }
 
-func TestKvSet(ks stores.KeyValue, t *testing.T) {
+func TestKvSet(ks kv.KeyValue, t *testing.T) {
 
 	if err := ks.Set("foo", "bar"); nil != err {
 		t.Error(err)
@@ -43,7 +43,7 @@ func TestKvSet(ks stores.KeyValue, t *testing.T) {
 	}
 }
 
-func TestKvGet(ks stores.KeyValue, t *testing.T) {
+func TestKvGet(ks kv.KeyValue, t *testing.T) {
 
 	if err := ks.Setnx("foo", "bar"); nil != err {
 		t.Error(err)
@@ -59,7 +59,7 @@ func TestKvGet(ks stores.KeyValue, t *testing.T) {
 	}
 }
 
-func TestKvKeys(length int, ks stores.KeyValue, t *testing.T) {
+func TestKvKeys(length int, ks kv.KeyValue, t *testing.T) {
 
 	expected := make([]string, 0)
 	for i := 0; i < length; i++ {

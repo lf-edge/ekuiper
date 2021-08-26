@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,30 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kv
+package store
 
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/pkg/db"
-	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/pkg/ts"
-	st "github.com/lf-edge/ekuiper/pkg/kv/stores"
+	kv2 "github.com/lf-edge/ekuiper/pkg/kv"
 	"sync"
 )
 
 type stores struct {
-	kv        map[string]st.KeyValue
-	ts        map[string]st.Tskv
+	kv        map[string]kv2.KeyValue
+	ts        map[string]kv2.Tskv
 	mu        sync.Mutex
-	kvBuilder store.Builder
+	kvBuilder Builder
 	tsBuilder ts.Builder
 }
 
 func newStores(db db.Database) (error, *stores) {
 	var err error
-	var kvBuilder store.Builder
+	var kvBuilder Builder
 	var tsBuilder ts.Builder
-	err, kvBuilder = store.CreateStoreBuilder(db)
+	kvBuilder, err = CreateStoreBuilder(db)
 	if err != nil {
 		return err, nil
 	}
@@ -44,21 +43,21 @@ func newStores(db db.Database) (error, *stores) {
 		return err, nil
 	}
 	return nil, &stores{
-		kv:        make(map[string]st.KeyValue),
-		ts:        make(map[string]st.Tskv),
+		kv:        make(map[string]kv2.KeyValue),
+		ts:        make(map[string]kv2.Tskv),
 		mu:        sync.Mutex{},
 		kvBuilder: kvBuilder,
 		tsBuilder: tsBuilder,
 	}
 }
 
-func (s *stores) GetKV(table string) (error, st.KeyValue) {
+func (s *stores) GetKV(table string) (error, kv2.KeyValue) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if ks, contains := s.kv[table]; contains {
 		return nil, ks
 	}
-	err, ks := s.kvBuilder.CreateStore(table)
+	ks, err := s.kvBuilder.CreateStore(table)
 	if err != nil {
 		return err, nil
 	}
@@ -66,7 +65,7 @@ func (s *stores) GetKV(table string) (error, st.KeyValue) {
 	return nil, ks
 }
 
-func (s *stores) GetTS(table string) (error, st.Tskv) {
+func (s *stores) GetTS(table string) (error, kv2.Tskv) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if tts, contains := s.ts[table]; contains {
@@ -88,14 +87,14 @@ func InitGlobalStores(db db.Database) error {
 	return err
 }
 
-func GetKV(table string) (error, st.KeyValue) {
+func GetKV(table string) (error, kv2.KeyValue) {
 	if globalStores == nil {
 		return fmt.Errorf("global stores are not initialized"), nil
 	}
 	return globalStores.GetKV(table)
 }
 
-func GetTS(table string) (error, st.Tskv) {
+func GetTS(table string) (error, kv2.Tskv) {
 	if globalStores == nil {
 		return fmt.Errorf("global stores are not initialized"), nil
 	}

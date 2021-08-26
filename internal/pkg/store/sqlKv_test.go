@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/db/sql/sqlite"
 	sb "github.com/lf-edge/ekuiper/internal/pkg/store/sql"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
-	st "github.com/lf-edge/ekuiper/pkg/kv/stores"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"os"
 	"path"
 	"path/filepath"
@@ -62,7 +62,7 @@ func deleteIfExists(abs string) error {
 	return nil
 }
 
-func setupSqlKv() (st.KeyValue, *sqlite.Database, string) {
+func setupSqlKv() (kv.KeyValue, *sqlite.Database, string) {
 	absPath, err := filepath.Abs("test")
 	if err != nil {
 		panic(err)
@@ -82,8 +82,8 @@ func setupSqlKv() (st.KeyValue, *sqlite.Database, string) {
 	}
 
 	builder := sb.NewStoreBuilder(db)
-	var store st.KeyValue
-	err, store = builder.CreateStore(Table)
+	var store kv.KeyValue
+	store, err = builder.CreateStore(Table)
 	if err != nil {
 		panic(err)
 	}

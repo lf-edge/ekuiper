@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 package common
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/kv/stores"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"reflect"
 	"testing"
 )
@@ -25,7 +25,7 @@ var (
 	Values = []string{"bar1", "bar15", "bar2", "bar3"}
 )
 
-func TestTsSet(ks stores.Tskv, t *testing.T) {
+func TestTsSet(ks kv.Tskv, t *testing.T) {
 	load(ks, t)
 
 	if ok, err := ks.Set(2500, "bar25"); nil != err {
@@ -35,7 +35,7 @@ func TestTsSet(ks stores.Tskv, t *testing.T) {
 	}
 }
 
-func TestTsLast(ks stores.Tskv, t *testing.T) {
+func TestTsLast(ks kv.Tskv, t *testing.T) {
 	load(ks, t)
 
 	var v string
@@ -46,7 +46,7 @@ func TestTsLast(ks stores.Tskv, t *testing.T) {
 	}
 }
 
-func TestTsGet(ks stores.Tskv, t *testing.T) {
+func TestTsGet(ks kv.Tskv, t *testing.T) {
 	load(ks, t)
 
 	var value string
@@ -59,7 +59,7 @@ func TestTsGet(ks stores.Tskv, t *testing.T) {
 	}
 }
 
-func TestTsDelete(ks stores.Tskv, t *testing.T) {
+func TestTsDelete(ks kv.Tskv, t *testing.T) {
 	load(ks, t)
 
 	if err := ks.Delete(1500); nil != err {
@@ -72,7 +72,7 @@ func TestTsDelete(ks stores.Tskv, t *testing.T) {
 	}
 }
 
-func TestTsDeleteBefore(ks stores.Tskv, t *testing.T) {
+func TestTsDeleteBefore(ks kv.Tskv, t *testing.T) {
 	load(ks, t)
 
 	if ok, err := ks.Set(3500, "bar35"); nil != err {
@@ -110,7 +110,7 @@ func TestTsDeleteBefore(ks stores.Tskv, t *testing.T) {
 	}
 }
 
-func load(ks stores.Tskv, t *testing.T) {
+func load(ks kv.Tskv, t *testing.T) {
 	for i := 0; i < len(Keys); i++ {
 		k := Keys[i]
 		v := Values[i]

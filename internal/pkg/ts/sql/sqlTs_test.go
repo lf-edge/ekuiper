@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ts
+package sql
 
 import (
 	"github.com/lf-edge/ekuiper/internal/pkg/db/sql/sqlite"
-	sb "github.com/lf-edge/ekuiper/internal/pkg/ts/sql"
 	"github.com/lf-edge/ekuiper/internal/pkg/ts/test/common"
-	"github.com/lf-edge/ekuiper/pkg/kv/stores"
+	ts2 "github.com/lf-edge/ekuiper/pkg/kv"
 	"os"
 	"path"
 	"path/filepath"
@@ -73,7 +72,7 @@ func deleteIfExists(abs string) error {
 	return nil
 }
 
-func setupSqlKv() (stores.Tskv, *sqlite.Database, string) {
+func setupSqlKv() (ts2.Tskv, *sqlite.Database, string) {
 	absPath, err := filepath.Abs("test")
 	if err != nil {
 		panic(err)
@@ -92,11 +91,11 @@ func setupSqlKv() (stores.Tskv, *sqlite.Database, string) {
 		panic(err)
 	}
 
-	builder := sb.NewTsBuilder(db)
+	builder := NewTsBuilder(db)
 	if err != nil {
 		panic(err)
 	}
-	var store stores.Tskv
+	var store ts2.Tskv
 	err, store = builder.CreateTs(Table)
 	if err != nil {
 		panic(err)

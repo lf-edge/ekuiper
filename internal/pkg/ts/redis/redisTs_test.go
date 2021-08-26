@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ts
+package redis
 
 import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/lf-edge/ekuiper/internal/pkg/db/redis"
-	rb "github.com/lf-edge/ekuiper/internal/pkg/ts/redis"
 	"github.com/lf-edge/ekuiper/internal/pkg/ts/test/common"
-	st "github.com/lf-edge/ekuiper/pkg/kv/stores"
+	ts2 "github.com/lf-edge/ekuiper/pkg/kv"
 	"strconv"
 	"testing"
 )
@@ -59,7 +58,7 @@ func TestRedisTsDeleteBefore(t *testing.T) {
 	common.TestTsDeleteBefore(ks, t)
 }
 
-func setupRedisKv() (st.Tskv, *redis.Instance, *miniredis.Miniredis) {
+func setupRedisKv() (ts2.Tskv, *redis.Instance, *miniredis.Miniredis) {
 	minRedis, err := miniredis.Run()
 	if err != nil {
 		panic(err)
@@ -70,8 +69,8 @@ func setupRedisKv() (st.Tskv, *redis.Instance, *miniredis.Miniredis) {
 		panic(err)
 	}
 
-	builder := rb.NewTsBuilder(redisDB)
-	var ks st.Tskv
+	builder := NewTsBuilder(redisDB)
+	var ks ts2.Tskv
 	err, ks = builder.CreateTs("test")
 	if err != nil {
 		panic(err)

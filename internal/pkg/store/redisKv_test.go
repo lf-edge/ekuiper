@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/db/redis"
 	rb "github.com/lf-edge/ekuiper/internal/pkg/store/redis"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
-	st "github.com/lf-edge/ekuiper/pkg/kv/stores"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"strconv"
 	"testing"
 )
@@ -50,7 +50,7 @@ func TestRedisKvKeys(t *testing.T) {
 	common.TestKvKeys(length, ks, t)
 }
 
-func setupRedisKv() (st.KeyValue, *redis.Instance, *miniredis.Miniredis) {
+func setupRedisKv() (kv.KeyValue, *redis.Instance, *miniredis.Miniredis) {
 	minRedis, err := miniredis.Run()
 	if err != nil {
 		panic(err)
@@ -61,8 +61,8 @@ func setupRedisKv() (st.KeyValue, *redis.Instance, *miniredis.Miniredis) {
 		panic(err)
 	}
 	builder := rb.NewStoreBuilder(redisDB)
-	var ks st.KeyValue
-	err, ks = builder.CreateStore("test")
+	var ks kv.KeyValue
+	ks, err = builder.CreateStore("test")
 	if err != nil {
 		panic(err)
 	}

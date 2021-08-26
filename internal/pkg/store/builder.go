@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,22 +21,22 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/db/sql"
 	rb "github.com/lf-edge/ekuiper/internal/pkg/store/redis"
 	sb "github.com/lf-edge/ekuiper/internal/pkg/store/sql"
-	st "github.com/lf-edge/ekuiper/pkg/kv/stores"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 type Builder interface {
-	CreateStore(table string) (error, st.KeyValue)
+	CreateStore(table string) (kv.KeyValue, error)
 }
 
-func CreateStoreBuilder(database db.Database) (error, Builder) {
+func CreateStoreBuilder(database db.Database) (Builder, error) {
 	switch database.(type) {
 	case *redis.Instance:
 		d := *database.(*redis.Instance)
-		return nil, rb.NewStoreBuilder(d)
+		return rb.NewStoreBuilder(d), nil
 	case sql.Database:
 		d := database.(sql.Database)
-		return nil, sb.NewStoreBuilder(d)
+		return sb.NewStoreBuilder(d), nil
 	default:
-		return fmt.Errorf("unrecognized database type"), nil
+		return nil, fmt.Errorf("unrecognized database type")
 	}
 }

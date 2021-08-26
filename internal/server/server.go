@@ -16,11 +16,11 @@ package server
 
 import (
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/service"
 	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/kv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"context"
@@ -49,7 +49,7 @@ func StartUp(Version, LoadFileType string) {
 	startTimeStamp = time.Now().Unix()
 	conf.InitConf()
 
-	err := kv.SetupWithKuiperConfig(conf.Config)
+	err := store.SetupWithKuiperConfig(conf.Config)
 	if err != nil {
 		panic(err)
 	}

@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ type Database interface {
 	Disconnect() error
 }
 
-func CreateDatabase(conf Config) (error, Database) {
+func CreateDatabase(conf Config) (Database, error) {
 	var db Database
 	var err error
 	databaseType := conf.Type
@@ -36,14 +36,14 @@ func CreateDatabase(conf Config) (error, Database) {
 	case "sqlite":
 		err, db = sqlite.NewSqliteDatabase(conf.Sqlite)
 		if err != nil {
-			return err, nil
+			return nil, err
 		}
 	default:
-		return fmt.Errorf("unrecognized database type - %s", databaseType), nil
+		return nil, fmt.Errorf("unrecognized database type - %s", databaseType)
 	}
 	err = db.Connect()
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
-	return nil, db
+	return db, nil
 }

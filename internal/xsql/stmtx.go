@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/lf-edge/ekuiper/pkg/kv/stores"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"strings"
 )
 
@@ -57,7 +57,7 @@ type StreamInfo struct {
 	Statement  string         `json:"statement"`
 }
 
-func GetDataSourceStatement(m stores.KeyValue, name string) (*StreamInfo, error) {
+func GetDataSourceStatement(m kv.KeyValue, name string) (*StreamInfo, error) {
 	var (
 		v  string
 		vs = &StreamInfo{}
@@ -72,7 +72,7 @@ func GetDataSourceStatement(m stores.KeyValue, name string) (*StreamInfo, error)
 	return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s is not found", name))
 }
 
-func GetDataSource(m stores.KeyValue, name string) (stmt *ast.StreamStmt, err error) {
+func GetDataSource(m kv.KeyValue, name string) (stmt *ast.StreamStmt, err error) {
 	info, err := GetDataSourceStatement(m, name)
 	if err != nil {
 		return nil, err

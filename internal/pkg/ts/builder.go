@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/db/sql"
 	rb "github.com/lf-edge/ekuiper/internal/pkg/ts/redis"
 	sb "github.com/lf-edge/ekuiper/internal/pkg/ts/sql"
-	"github.com/lf-edge/ekuiper/pkg/kv/stores"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 type Builder interface {
-	CreateTs(table string) (error, stores.Tskv)
+	CreateTs(table string) (error, kv.Tskv)
 }
 
 func CreateTsBuilder(database db.Database) (error, Builder) {
