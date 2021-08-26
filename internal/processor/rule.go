@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
@@ -27,15 +28,14 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"github.com/lf-edge/ekuiper/pkg/kv/stores"
 )
 
 type RuleProcessor struct {
-	db stores.KeyValue
+	db kv.KeyValue
 }
 
 func NewRuleProcessor() *RuleProcessor {
-	err, db := kv.GetKV("rule")
+	err, db := store.GetKV("rule")
 	if err != nil {
 		panic(fmt.Sprintf("Can not initalize store for the rule processor at path 'rule': %v", err))
 	}
@@ -233,7 +233,7 @@ func (p *RuleProcessor) ExecDrop(name string) (string, error) {
 }
 
 func cleanCheckpoint(name string) error {
-	err, db := kv.GetTS(name)
+	err, db := store.GetTS(name)
 	if err != nil {
 		return err
 	}
@@ -241,7 +241,7 @@ func cleanCheckpoint(name string) error {
 }
 
 func cleanSinkCache(rule *api.Rule) error {
-	err, store := kv.GetKV("sink")
+	err, store := store.GetKV("sink")
 	if err != nil {
 		return err
 	}

@@ -18,10 +18,10 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	ts "github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/kv"
-	ts "github.com/lf-edge/ekuiper/pkg/kv/stores"
+	ts2 "github.com/lf-edge/ekuiper/pkg/kv"
 	"sync"
 )
 
@@ -36,7 +36,7 @@ func init() {
 //  { "checkpoint1", "checkpoint2" ... "checkpointn" : The complete or incomplete snapshot
 //
 type KVStore struct {
-	db          ts.Tskv
+	db          ts2.Tskv
 	mapStore    *sync.Map //The current root store of a rule
 	checkpoints []int64
 	max         int
@@ -49,7 +49,7 @@ type KVStore struct {
 //"$checkpointId":A map with key of checkpoint id and value of snapshot(gob serialized)
 //Assume each operator only has one instance
 func getKVStore(ruleId string) (*KVStore, error) {
-	err, db := kv.GetTS(ruleId)
+	err, db := ts.GetTS(ruleId)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +67,10 @@ func (s *KVStore) restore() error {
 	if err != nil {
 		return err
 	}
-	s.checkpoints = []int64{k}
-	s.mapStore.Store(k, cast.MapToSyncMap(m))
+	if k > 0 {
+		s.checkpoints = []int64{k}
+		s.mapStore.Store(k, cast.MapToSyncMap(m))
+	}
 	return nil
 }
 

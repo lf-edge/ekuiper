@@ -139,8 +139,10 @@ The content of the page should be similar as below.
 ```
 
 ## Store configurations
+
 There is possibility to configure storage of state for application. Default storage layer is sqlite database. There is option to set redis as storage.
 In order to use redis as store type property must be changed into redis value.
+
 ### Sqlite
     
 It has properties

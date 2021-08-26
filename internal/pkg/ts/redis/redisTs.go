@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -124,11 +124,13 @@ func (t ts) Last(value interface{}) (int64, error) {
 		if err != nil {
 			return err
 		}
-		dec := gob.NewDecoder(bytes.NewBuffer(tmp[0]))
-		if err = dec.Decode(value); err != nil {
-			return err
+		if len(tmp) > 0 {
+			dec := gob.NewDecoder(bytes.NewBuffer(tmp[0]))
+			if err = dec.Decode(value); err != nil {
+				return err
+			}
+			last, err = strconv.ParseInt(string(tmp[1]), 10, 64)
 		}
-		last, err = strconv.ParseInt(string(tmp[1]), 10, 64)
 		return err
 	})
 	if err != nil {
