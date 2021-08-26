@@ -138,3 +138,39 @@ http://host:port/kuiper-plugins/0.9.1/alpine/functions
   disableCache: false
 ```
 
+## 存储配置
+
+可通过配置修改创建的流和规则等状态的存储方式。默认情况下，程序状态存储在 sqlite 数据库中。把存储类型改成 redis，可使用 redis 作为存储方式。
+
+### Sqlite
+
+可配置如下属性：
+* path - 配置 sqlite 存储路径。若为空则存储在默认的 data 目录中。
+* name - 数据库文件名。若为空，则设置为默认名字`sqliteKV.db`。
+
+### Redis
+
+可配置如下属性：
+* host     - redis 服务器地址。
+* port     - redis 服务器端口。
+* password - redis 服务器密码。若 redis 未配置认证系统，则可不设置密码。
+* timeout  - 连接超时时间。
+
+### 配置示例
+
+```yaml
+    store:
+      #Type of store that will be used for keeping state of the application
+      type: sqlite
+      redis:
+        host: localhost
+        port: 6379
+        password: kuiper
+        #Timeout in ms
+        timeout: 1000
+      sqlite:
+        #Sqlite absolute database path, if left empty default directory of the application will be used
+        path:
+        #Sqlite file name, if left empty name of db will be sqliteKV.db
+        name:
+```

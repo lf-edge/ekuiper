@@ -12,22 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package kv
 
-import (
-	"github.com/lf-edge/ekuiper/tools/migration/util"
-	"log"
-	"os"
-)
-
-func main() {
-	if 2 != len(os.Args) {
-		log.Fatal("Please enter the correct path. For example: ./migration kuiper/bin/data")
-	}
-
-	if err := util.DataMigration(os.Args[1]); nil != err {
-		log.Fatal(err)
-	} else {
-		log.Println("The data migration was successful.")
-	}
+type Tskv interface {
+	Set(k int64, v interface{}) (inserted bool, err error)
+	Get(k int64, v interface{}) (found bool, err error)
+	Last(v interface{}) (key int64, err error)
+	Delete(k int64) error
+	DeleteBefore(int64) error
+	Close() error
+	Drop() error
 }

@@ -16,7 +16,7 @@ package testx
 
 import (
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
 )
 
 // errstring returns the string representation of an error.
@@ -29,7 +29,7 @@ func Errstring(err error) string {
 
 func InitEnv() {
 	conf.InitConf()
-	err := kv.SetupDefault()
+	err := store.SetupDefault()
 	if err != nil {
 		conf.Log.Fatal(err)
 	}

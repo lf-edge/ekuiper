@@ -17,11 +17,11 @@ package planner
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/kv"
 	"reflect"
 	"strings"
 	"testing"
@@ -123,7 +123,7 @@ var tests = []struct {
 }
 
 func Test_validation(t *testing.T) {
-	err, store := kv.GetKV("stream")
+	err, store := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
 		return
@@ -185,7 +185,7 @@ func Test_validation(t *testing.T) {
 }
 
 func Test_validationSchemaless(t *testing.T) {
-	err, store := kv.GetKV("stream")
+	err, store := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
 		return

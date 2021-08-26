@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,13 +32,13 @@ type redisKvStore struct {
 	keyPrefix string
 }
 
-func CreateRedisKvStore(redis dbRedis.Instance, table string) (error, *redisKvStore) {
+func CreateRedisKvStore(redis dbRedis.Instance, table string) (*redisKvStore, error) {
 	store := &redisKvStore{
 		database:  redis,
 		table:     table,
 		keyPrefix: fmt.Sprintf("%s:%s", KvPrefix, table),
 	}
-	return nil, store
+	return store, nil
 }
 
 func (kv redisKvStore) Setnx(key string, value interface{}) error {

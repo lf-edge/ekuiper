@@ -30,7 +30,7 @@ type sqlKvStore struct {
 	table    string
 }
 
-func createSqlKvStore(database dbSql.Database, table string) (error, *sqlKvStore) {
+func createSqlKvStore(database dbSql.Database, table string) (*sqlKvStore, error) {
 	store := &sqlKvStore{
 		database: database,
 		table:    table,
@@ -41,9 +41,9 @@ func createSqlKvStore(database dbSql.Database, table string) (error, *sqlKvStore
 		return err
 	})
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
-	return nil, store
+	return store, nil
 }
 
 func (kv *sqlKvStore) Setnx(key string, value interface{}) error {

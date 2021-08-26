@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ package redis
 
 import (
 	"github.com/lf-edge/ekuiper/internal/pkg/db/redis"
-	st "github.com/lf-edge/ekuiper/pkg/kv/stores"
+	st "github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 type TsBuilder struct {
