@@ -525,6 +525,56 @@ func TestSingleSQL(t *testing.T) {
 				"source_demoTable_0_records_in_total":  int64(5),
 				"source_demoTable_0_records_out_total": int64(5),
 			},
+		}, {
+			Name: `TestSingleSQLRule12`,
+			Sql:  "SELECT demo.ts as demoTs, table1.id as table1Id FROM demo INNER JOIN table1 on demoTs = table1Id",
+			R: [][]map[string]interface{}{
+				{{
+					"table1Id": float64(1541152486013),
+					"demoTs":   float64(1541152486013),
+				}},
+				{{
+					"table1Id": float64(1541152487632),
+					"demoTs":   float64(1541152487632),
+				}},
+				{{
+					"table1Id": float64(1541152489252),
+					"demoTs":   float64(1541152489252),
+				}},
+			},
+			W: 15,
+			M: map[string]interface{}{
+				"op_1_preprocessor_demo_0_exceptions_total":  int64(0),
+				"op_1_preprocessor_demo_0_records_in_total":  int64(5),
+				"op_1_preprocessor_demo_0_records_out_total": int64(5),
+
+				"op_2_tableprocessor_table1_0_exceptions_total":  int64(0),
+				"op_2_tableprocessor_table1_0_records_in_total":  int64(4),
+				"op_2_tableprocessor_table1_0_records_out_total": int64(1),
+
+				"op_3_join_aligner_0_records_in_total":  int64(6),
+				"op_3_join_aligner_0_records_out_total": int64(5),
+
+				"op_4_join_0_exceptions_total":  int64(0),
+				"op_4_join_0_records_in_total":  int64(5),
+				"op_4_join_0_records_out_total": int64(3),
+
+				"op_5_project_0_exceptions_total":  int64(0),
+				"op_5_project_0_records_in_total":  int64(3),
+				"op_5_project_0_records_out_total": int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"source_table1_0_exceptions_total":  int64(0),
+				"source_table1_0_records_in_total":  int64(4),
+				"source_table1_0_records_out_total": int64(4),
+			},
 		},
 	}
 	HandleStream(true, streamList, t)

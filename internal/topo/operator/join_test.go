@@ -508,6 +508,52 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			result: nil,
 		},
 
+		{ // 10     select id1 FROM src1 left join src2 on null = null
+			sql: "SELECT id1 FROM src1 left join src2 on src1.id2 = src2.id1",
+			data: xsql.WindowTuplesSet{
+				Content: []xsql.WindowTuples{
+					{
+						Emitter: "src1",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src1",
+								Message: xsql.Message{"id1": 1, "f2": "w1"},
+							},
+						},
+					},
+
+					{
+						Emitter: "src2",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 2, "f2": "w1"},
+							}, {
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 2, "f2": "w2"},
+							},
+						},
+					},
+				},
+			},
+			result: &xsql.JoinTupleSets{
+				Content: []xsql.JoinTuple{
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f2": "w1"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w1"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f2": "w1"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
+						},
+					},
+				},
+			},
+		},
+
 		{
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1*2 = src2.id2",
 			data: xsql.WindowTuplesSet{
@@ -1123,6 +1169,68 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 							{
 								Emitter: "src1",
 								Message: xsql.Message{"id1": 1, "f1": "v1"},
+							},
+							{
+								Emitter: "src1",
+								Message: xsql.Message{"id1": 1, "f1": "v2"},
+							},
+						},
+					},
+
+					{
+						Emitter: "src2",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 1, "f2": "w1"},
+							}, {
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 1, "f2": "w2"},
+							},
+						},
+					},
+				},
+			},
+			result: &xsql.JoinTupleSets{
+				Content: []xsql.JoinTuple{
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 1, "f2": "w1"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 1, "f2": "w2"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v2"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 1, "f2": "w1"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v2"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 1, "f2": "w2"}},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			sql: "SELECT id1 FROM src1 inner join src2 on src1.id1 = src2.id2",
+			data: xsql.WindowTuplesSet{
+				Content: []xsql.WindowTuples{
+					{
+						Emitter: "src1",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src1",
+								Message: xsql.Message{"id1": 1, "f1": "v1"},
 							}, {
 								Emitter: "src1",
 								Message: xsql.Message{"id1": 2, "f1": "v2"},
@@ -1644,6 +1752,82 @@ func TestRightJoinPlan_Apply(t *testing.T) {
 				},
 			},
 		},
+		{
+			sql: "SELECT id1 FROM src1 right join src2 on src1.id1 = src2.id2",
+			data: xsql.WindowTuplesSet{
+				Content: []xsql.WindowTuples{
+					{
+						Emitter: "src1",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src1",
+								Message: xsql.Message{"id1": 1, "f1": "v1"},
+							}, {
+								Emitter: "src1",
+								Message: xsql.Message{"id1": 2, "f1": "v2"},
+							}, {
+								Emitter: "src1",
+								Message: xsql.Message{"id1": 1, "f1": "v3"},
+							},
+						},
+					},
+
+					{
+						Emitter: "src2",
+						Tuples:  []xsql.Tuple{},
+					},
+				},
+			},
+			result: nil,
+		},
+		{
+			sql: "SELECT id1 FROM src1 right join src2 on src1.id1 = src2.id2",
+			data: xsql.WindowTuplesSet{
+				Content: []xsql.WindowTuples{
+					{
+						Emitter: "src1",
+						Tuples:  []xsql.Tuple{},
+					},
+
+					{
+						Emitter: "src2",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 1, "f2": "w1"},
+							}, {
+								Emitter: "src2",
+								Message: xsql.Message{"f2": "w2"},
+							}, {
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 4, "f2": "w3"},
+							},
+						},
+					},
+				},
+			},
+			result: &xsql.JoinTupleSets{
+				Content: []xsql.JoinTuple{
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src2", Message: xsql.Message{"id2": 1, "f2": "w1"}},
+						},
+					},
+
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src2", Message: xsql.Message{"f2": "w2"}},
+						},
+					},
+
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
+						},
+					},
+				},
+			},
+		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestRightJoinPlan_Apply")
@@ -1874,6 +2058,79 @@ func TestFullJoinPlan_Apply(t *testing.T) {
 				Content: []xsql.WindowTuples{
 					{
 						Emitter: "src1",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src1",
+								Message: xsql.Message{"id1": 1, "f1": "v1"},
+							}, {
+								Emitter: "src1",
+								Message: xsql.Message{"id1": 2, "f1": "v2"},
+							}, {
+								Emitter: "src1",
+								Message: xsql.Message{"id1": 3, "f1": "v3"},
+							},
+						},
+					},
+
+					{
+						Emitter: "src2",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 4, "f2": "w1"},
+							}, {
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 5, "f2": "w2"},
+							}, {
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 6, "f2": "w3"},
+							},
+						},
+					},
+				},
+			},
+			result: &xsql.JoinTupleSets{
+				Content: []xsql.JoinTuple{
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v3"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w1"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src2", Message: xsql.Message{"id2": 5, "f2": "w2"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src2", Message: xsql.Message{"id2": 6, "f2": "w3"}},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			sql: "SELECT id1 FROM src1 full join src2 on src1.id1 = src2.id2",
+			data: xsql.WindowTuplesSet{
+				Content: []xsql.WindowTuples{
+					{
+						Emitter: "src1",
 						Tuples:  []xsql.Tuple{},
 					},
 
@@ -2088,6 +2345,56 @@ func TestCrossJoinPlan_Apply(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			sql: "SELECT id1 FROM src1 cross join src2",
+			data: xsql.WindowTuplesSet{
+				Content: []xsql.WindowTuples{
+					{
+						Emitter: "src1",
+						Tuples:  []xsql.Tuple{},
+					},
+
+					{
+						Emitter: "src2",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 1, "f2": "w1"},
+							}, {
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 1, "f2": "w2"},
+							},
+						},
+					},
+				},
+			},
+			result: nil,
+		},
+		{
+			sql: "SELECT id1 FROM src2 cross join src1",
+			data: xsql.WindowTuplesSet{
+				Content: []xsql.WindowTuples{
+					{
+						Emitter: "src1",
+						Tuples:  []xsql.Tuple{},
+					},
+
+					{
+						Emitter: "src2",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 1, "f2": "w1"},
+							}, {
+								Emitter: "src2",
+								Message: xsql.Message{"id2": 1, "f2": "w2"},
+							},
+						},
+					},
+				},
+			},
+			result: nil,
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
