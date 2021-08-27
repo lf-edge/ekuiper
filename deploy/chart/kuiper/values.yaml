@@ -76,14 +76,26 @@ kuiperConfig:
       port: 20498
   "kuiper.yaml":
     basic:
-      # true|false, with debug level, it prints more debug info
       debug: false
       consoleLog: false
       fileLog: true
+      rotateTime: 24
+      maxAge: 72
+      ip: 0.0.0.0
       port: 20498
+      restIp: 0.0.0.0
       restPort: 9081
       prometheus: false
       prometheusPort: 20499
+      pluginHosts: https://packages.emqx.net
+    rule:
+      qos: 0
+      checkpointInterval: 300000
+      sendError: true
+    sink:
+      cacheThreshold: 10
+      cacheTriggerCount: 15
+      disableCache: true
   "mqtt_source.yaml":
     #Global MQTT configurations
     default:
