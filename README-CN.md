@@ -1,7 +1,7 @@
 # LF Edge eKuiper - 超轻量物联网边缘数据分析软件
 [![GitHub Release](https://img.shields.io/github/release/lf-edge/ekuiper?color=brightgreen)](https://github.com/lf-edge/ekuiper/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/emqx/kuiper)](https://hub.docker.com/r/lfedge/ekuiper)
-[![Slack](https://img.shields.io/badge/Slack-LF%20Edge-39AE85?logo=slack)](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFzM2CEABBcKYGEVCgkw)
+[![Slack](https://img.shields.io/badge/Slack-LF%20Edge-39AE85?logo=slack)](https://slack.lfedge.org/)
 [![Twitter](https://img.shields.io/badge/Follow-EMQ-1DA1F2?logo=twitter)](https://twitter.com/EMQTech)
 [![问答社区](https://img.shields.io/badge/问答社区-Kuiper-yellow)](https://askemq.com/c/kuiper/)
 [![YouTube](https://img.shields.io/badge/Subscribe-EMQ%20中文-FF0000?logo=youtube)](https://www.youtube.com/channel/UCir_r04HIsLjf2qqyZ4A8Cg)
@@ -65,7 +65,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 - [Forum](https://askemq.com/c/kuiper/)
 - [Weibo](https://weibo.com/emqtt)
 - [Blog](https://www.emqx.cn/blog)
-- [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFzM2CEABBcKYGEVCgkw): 加入 [ekuiper](https://lfedge.slack.com/archives/C024F4P7KCK) 或者 [ekuiper-user](https://lfedge.slack.com/archives/C024F4SMEMR) 频道。
+- [Slack](https://slack.lfedge.org/): 加入 [ekuiper](https://lfedge.slack.com/archives/C024F4P7KCK) 或者 [ekuiper-user](https://lfedge.slack.com/archives/C024F4SMEMR) 频道。
 - [Twitter](https://twitter.com/EMQTech)
 - [Reddit](https://www.reddit.com/r/emqx/)
 - [Facebook](https://www.facebook.com/emqxmqtt)
