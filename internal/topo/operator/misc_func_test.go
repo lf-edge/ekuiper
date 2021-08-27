@@ -47,6 +47,18 @@ func TestMiscFunc_Apply1(t *testing.T) {
 			}},
 		},
 		{
+			sql: "SELECT md5(d) AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": "The quick brown fox jumps over the lazy dog",
+					"b": "myb",
+					"c": "myc",
+				},
+			},
+			result: []map[string]interface{}{{}},
+		},
+		{
 			sql: "SELECT sha1(a) AS a FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",
