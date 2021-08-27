@@ -122,7 +122,7 @@ func relativePath(subdir string) (dir string, err error) {
 		return confDir, nil
 	}
 
-	return "", fmt.Errorf("dir %s not found, please set KuiperBaseKey program environment variable correctly.", confDir)
+	return "", fmt.Errorf("dir %s not found, please make sure it is created.", confDir)
 }
 
 func ProcessPath(p string) (string, error) {
