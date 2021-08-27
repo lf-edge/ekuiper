@@ -35,6 +35,9 @@ const (
 
 //TODO datetime type
 func ToStringAlways(input interface{}) string {
+	if input == nil {
+		return ""
+	}
 	return fmt.Sprintf("%v", input)
 }
 

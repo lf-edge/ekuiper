@@ -193,6 +193,9 @@ func toFixed(num float64, precision int) float64 {
 }
 
 func hashCall(name string, args []interface{}) (interface{}, bool) {
+	if args[0] == nil {
+		return nil, true
+	}
 	arg0 := cast.ToStringAlways(args[0])
 	var h hash.Hash
 	switch name {
