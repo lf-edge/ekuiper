@@ -18,6 +18,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -30,12 +31,13 @@ import (
 )
 
 type defaultFieldProcessor struct {
-	streamFields    []interface{}
-	timestampFormat string
-	isBinary        bool
+	streamFields     []interface{}
+	timestampFormat  string
+	isBinary         bool
+	strictValidation bool
 }
 
-func (p *defaultFieldProcessor) processField(tuple *xsql.Tuple, fv *xsql.FunctionValuer) (map[string]interface{}, error) {
+func (p *defaultFieldProcessor) processField(tuple *xsql.Tuple, _ *xsql.FunctionValuer) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	if p.streamFields != nil {
 		for _, f := range p.streamFields {
@@ -211,10 +213,44 @@ func (p *defaultFieldProcessor) addRecField(ft ast.FieldType, r map[string]inter
 		default:
 			return fmt.Errorf("unsupported type %T", st)
 		}
-		return nil
 	} else {
-		return fmt.Errorf("invalid data %s, field %s not found", j, n)
+		if p.strictValidation {
+			return fmt.Errorf("invalid data %s, field %s not found", j, n)
+		} else {
+			switch st := ft.(type) {
+			case *ast.BasicType:
+				switch st.Type {
+				case ast.UNKNOWN:
+					return fmt.Errorf("invalid data type unknown defined for %s, please check the stream definition", t)
+				case ast.BIGINT:
+					r[n] = int64(0)
+				case ast.FLOAT:
+					r[n] = 0.0
+				case ast.STRINGS:
+					r[n] = ""
+				case ast.DATETIME:
+					r[n] = conf.GetNow()
+				case ast.BOOLEAN:
+					r[n] = false
+				case ast.BYTEA:
+					r[n] = []byte{}
+				default:
+					return fmt.Errorf("invalid data type for %s, it is not supported yet", st)
+				}
+			case *ast.ArrayType:
+				if tempArr, err := p.addArrayField(st, nil); err != nil {
+					return fmt.Errorf("fail to parse field %s: %s", n, err)
+				} else {
+					r[n] = tempArr
+				}
+			case *ast.RecType:
+				r[n] = make(map[string]interface{})
+			default:
+				return fmt.Errorf("unsupported type %T", st)
+			}
+		}
 	}
+	return nil
 }
 
 //ft must be ast.ArrayType

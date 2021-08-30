@@ -533,6 +533,31 @@ func TestPreprocessor_Apply(t *testing.T) {
 				},
 			},
 			},
+		}, {
+			stmt: &ast.StreamStmt{
+				Name: ast.StreamName("demo"),
+				StreamFields: []ast.StreamField{
+					{Name: "a", FieldType: &ast.RecType{
+						StreamFields: []ast.StreamField{
+							{Name: "b", FieldType: &ast.BasicType{Type: ast.STRINGS}},
+						},
+					}},
+					{Name: "b", FieldType: &ast.BasicType{Type: ast.FLOAT}},
+					{Name: "c", FieldType: &ast.ArrayType{Type: ast.BIGINT}},
+				},
+				Options: &ast.Options{
+					STRICT_VALIDATION: false,
+				},
+			},
+			data: []byte(`{"a": {"d" : "hello"}}`),
+			result: &xsql.Tuple{Message: xsql.Message{
+				"a": map[string]interface{}{
+					"b": "",
+				},
+				"b": 0.0,
+				"c": []int(nil),
+			},
+			},
 		},
 	}
 
@@ -543,6 +568,11 @@ func TestPreprocessor_Apply(t *testing.T) {
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		pp := &Preprocessor{}
+		if tt.stmt.Options != nil {
+			pp.strictValidation = tt.stmt.Options.STRICT_VALIDATION
+		} else {
+			pp.strictValidation = true
+		}
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
 
 		dm := make(map[string]interface{})
@@ -949,6 +979,7 @@ func TestPreprocessorError(t *testing.T) {
 	for i, tt := range tests {
 
 		pp := &Preprocessor{}
+		pp.strictValidation = true
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
 		dm := make(map[string]interface{})
 		if e := json.Unmarshal(tt.data, &dm); e != nil {

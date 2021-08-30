@@ -117,14 +117,14 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	case *DataSourcePlan:
 		switch t.streamStmt.StreamType {
 		case ast.TypeStream:
-			pp, err := operator.NewPreprocessor(t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary)
+			pp, err := operator.NewPreprocessor(t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary, t.streamStmt.Options.STRICT_VALIDATION)
 			if err != nil {
 				return nil, 0, err
 			}
 			var srcNode *node.SourceNode
 			if len(sources) == 0 {
-				node := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, t.streamStmt.Options)
-				srcNode = node
+				sourceNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, t.streamStmt.Options)
+				srcNode = sourceNode
 			} else {
 				srcNode = getMockSource(sources, string(t.name))
 				if srcNode == nil {
@@ -324,7 +324,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 }
 
 func Transform(op node.UnOperation, name string, options *api.RuleOption) *node.UnaryOperator {
-	operator := node.New(name, xsql.FuncRegisters, options)
-	operator.SetOperation(op)
-	return operator
+	unaryOperator := node.New(name, xsql.FuncRegisters, options)
+	unaryOperator.SetOperation(op)
+	return unaryOperator
 }

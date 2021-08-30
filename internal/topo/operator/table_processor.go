@@ -37,6 +37,7 @@ func NewTableProcessor(name string, fields []interface{}, options *ast.Options) 
 	p := &TableProcessor{emitterName: name, batchEmitted: true, retainSize: 1}
 	p.defaultFieldProcessor = defaultFieldProcessor{
 		streamFields: fields, isBinary: false, timestampFormat: options.TIMESTAMP_FORMAT,
+		strictValidation: options.STRICT_VALIDATION,
 	}
 	if options.RETAIN_SIZE > 0 {
 		p.retainSize = options.RETAIN_SIZE
