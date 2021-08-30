@@ -1226,7 +1226,7 @@ func (p *Parser) parseStreamStructType() (ast.FieldType, error) {
 }
 
 func (p *Parser) parseStreamOptions() (*ast.Options, error) {
-	opts := &ast.Options{}
+	opts := &ast.Options{STRICT_VALIDATION: true}
 	v := reflect.ValueOf(opts)
 	lStack := &stack.Stack{}
 	if tok, lit := p.scanIgnoreWhitespace(); tok == ast.LPAREN {

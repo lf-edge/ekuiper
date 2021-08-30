@@ -43,3 +43,7 @@ func GetTimer(duration int) *clock.Timer {
 func GetNowInMilli() int64 {
 	return cast.TimeToUnixMilli(Clock.Now())
 }
+
+func GetNow() time.Time {
+	return Clock.Now()
+}
