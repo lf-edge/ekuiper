@@ -185,11 +185,16 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 	if err != nil {
 		return fmt.Errorf("rest sink fails to send out the data: %s", err)
 	} else {
+		defer resp.Body.Close()
 		logger.Debugf("rest sink got response %v", resp)
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			buf, _ := ioutil.ReadAll(resp.Body)
-			logger.Errorf("%s\n", string(buf))
-			return fmt.Errorf("rest sink fails to err http return code: %d and error message %s.", resp.StatusCode, string(buf))
+			if buf, bodyErr := ioutil.ReadAll(resp.Body); bodyErr != nil {
+				logger.Errorf("%s\n", bodyErr)
+				return fmt.Errorf("rest sink fails to err http return code: %d and error message %s.", resp.StatusCode, bodyErr)
+			} else {
+				logger.Errorf("%s\n", string(buf))
+				return fmt.Errorf("rest sink fails to err http return code: %d and error message %s.", resp.StatusCode, string(buf))
+			}
 		} else {
 			if ms.debugResp {
 				if buf, bodyErr := ioutil.ReadAll(resp.Body); bodyErr != nil {
