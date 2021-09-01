@@ -105,6 +105,16 @@ func (pp *ProjectOp) getVE(tuple xsql.DataValuer, agg xsql.AggregateData, fv *xs
 	if pp.IsAggregate {
 		return &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(agg, fv, tuple, fv, afv, &xsql.WildcardValuer{Data: tuple})}
 	} else {
+		var wr *xsql.WindowRange
+		switch input := agg.(type) {
+		case xsql.WindowTuplesSet:
+			wr = input.WindowRange
+		case *xsql.JoinTupleSets:
+			wr = input.WindowRange
+		}
+		if wr != nil {
+			return &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, &xsql.WindowRangeValuer{WindowRange: wr}, fv, &xsql.WildcardValuer{Data: tuple})}
+		}
 		return &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, fv, &xsql.WildcardValuer{Data: tuple})}
 	}
 }

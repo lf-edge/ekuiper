@@ -40,11 +40,9 @@ var maps = []map[string]string{
 var aggFuncMap = map[string]string{"avg": "",
 	"count": "",
 	"max":   "", "min": "",
-	"sum":          "",
-	"collect":      "",
-	"deduplicate":  "",
-	"window_start": "",
-	"window_end":   "",
+	"sum":         "",
+	"collect":     "",
+	"deduplicate": "",
 }
 
 var funcWithAsteriskSupportMap = map[string]string{
@@ -91,6 +89,8 @@ var jsonFuncMap = map[string]string{
 
 var otherFuncMap = map[string]string{"isnull": "",
 	"newuuid": "", "tstamp": "", "mqtt": "", "meta": "", "cardinality": "",
+	"window_start": "",
+	"window_end":   "",
 }
 
 type FuncRuntime interface {

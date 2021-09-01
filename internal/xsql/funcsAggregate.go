@@ -54,6 +54,14 @@ func (v *AggregateFunctionValuer) Value(string) (interface{}, bool) {
 func (v *AggregateFunctionValuer) Meta(string) (interface{}, bool) {
 	return nil, false
 }
+
+func (v *AggregateFunctionValuer) FuncValue(key string) (interface{}, bool) {
+	if vv, ok := v.data.(FuncValuer); ok {
+		return vv.FuncValue(key)
+	}
+	return nil, false
+}
+
 func (*AggregateFunctionValuer) AppendAlias(string, interface{}) bool {
 	return false
 }

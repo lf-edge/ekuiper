@@ -566,9 +566,17 @@ func TestWindow(t *testing.T) {
 					"color":        "red",
 					"window_start": float64(1541152485000),
 					"window_end":   float64(1541152487000),
+				}, {
+					"color":        "blue",
+					"window_start": float64(1541152485000),
+					"window_end":   float64(1541152487000),
 				}},
 				{{
 					"color":        "red",
+					"window_start": float64(1541152486000),
+					"window_end":   float64(1541152488000),
+				}, {
+					"color":        "blue",
 					"window_start": float64(1541152486000),
 					"window_end":   float64(1541152488000),
 				}},
@@ -1199,8 +1207,32 @@ func TestEventWindow(t *testing.T) {
 					"temp":         28.1,
 					"window_start": float64(1541152487932),
 					"window_end":   float64(1541152490000),
+				}, {
+					"temp":         27.4,
+					"window_start": float64(1541152487932),
+					"window_end":   float64(1541152490000),
+				}, {
+					"temp":         25.5,
+					"window_start": float64(1541152487932),
+					"window_end":   float64(1541152490000),
 				}}, {{
 					"temp":         26.2,
+					"window_start": float64(1541152490000),
+					"window_end":   float64(1541152494000),
+				}, {
+					"temp":         26.8,
+					"window_start": float64(1541152490000),
+					"window_end":   float64(1541152494000),
+				}, {
+					"temp":         28.9,
+					"window_start": float64(1541152490000),
+					"window_end":   float64(1541152494000),
+				}, {
+					"temp":         29.1,
+					"window_start": float64(1541152490000),
+					"window_end":   float64(1541152494000),
+				}, {
+					"temp":         32.2,
 					"window_start": float64(1541152490000),
 					"window_end":   float64(1541152494000),
 				}}, {{
@@ -1246,13 +1278,25 @@ func TestEventWindow(t *testing.T) {
 					"color":        "red",
 					"window_start": float64(1541152486000),
 					"window_end":   float64(1541152488000),
+				}, {
+					"color":        "blue",
+					"window_start": float64(1541152486000),
+					"window_end":   float64(1541152488000),
 				}},
 				{{
 					"color":        "blue",
 					"window_start": float64(1541152487000),
 					"window_end":   float64(1541152489000),
+				}, {
+					"color":        "yellow",
+					"window_start": float64(1541152487000),
+					"window_end":   float64(1541152489000),
 				}}, {{
 					"color":        "yellow",
+					"window_start": float64(1541152488000),
+					"window_end":   float64(1541152490000),
+				}, {
+					"color":        "red",
 					"window_start": float64(1541152488000),
 					"window_end":   float64(1541152490000),
 				}}, {{
