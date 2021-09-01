@@ -25,6 +25,11 @@ import (
 	"time"
 )
 
+var implicitValueFuncs = map[string]bool{
+	"window_start": true,
+	"window_end":   true,
+}
+
 // Valuer is the interface that wraps the Value() method.
 type Valuer interface {
 	// Value returns the value and existence flag for a given key.
@@ -39,6 +44,11 @@ type CallValuer interface {
 
 	// Call is invoked to evaluate a function call (if possible).
 	Call(name string, args []interface{}) (interface{}, bool)
+}
+
+// FuncValuer can calculate function type value like window_start and window_end
+type FuncValuer interface {
+	FuncValue(key string) (interface{}, bool)
 }
 
 type AggregateCallValuer interface {
@@ -272,6 +282,17 @@ func (a multiValuer) AppendAlias(key string, value interface{}) bool {
 	return false
 }
 
+func (a multiValuer) FuncValue(key string) (interface{}, bool) {
+	for _, valuer := range a {
+		if vv, ok := valuer.(FuncValuer); ok {
+			if r, ok := vv.FuncValue(key); ok {
+				return r, true
+			}
+		}
+	}
+	return nil, false
+}
+
 func (a multiValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	for _, valuer := range a {
 		if valuer, ok := valuer.(CallValuer); ok {
@@ -371,18 +392,15 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		}
 		return &BracketEvalResult{Start: ii, End: ii}
 	case *ast.Call:
-		if valuer, ok := v.Valuer.(CallValuer); ok {
-			switch expr.Name {
-			case "window_start", "window_end":
-				if aggreValuer, ok := valuer.(AggregateCallValuer); ok {
-					ad := aggreValuer.GetAllTuples()
-					if expr.Name == "window_start" {
-						return ad.GetWindowStart()
-					} else {
-						return ad.GetWindowEnd()
-					}
+		if _, ok := implicitValueFuncs[expr.Name]; ok {
+			if vv, ok := v.Valuer.(FuncValuer); ok {
+				val, ok := vv.FuncValue(expr.Name)
+				if ok {
+					return val
 				}
-			default:
+			}
+		} else {
+			if valuer, ok := v.Valuer.(CallValuer); ok {
 				var args []interface{}
 				if len(expr.Args) > 0 {
 					args = make([]interface{}, len(expr.Args))
