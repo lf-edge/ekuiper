@@ -1269,6 +1269,170 @@ func TestMultiJoinPlan_Apply(t *testing.T) {
 			},
 			result: nil,
 		},
+
+		{ //19
+			sql: "SELECT id1 FROM src1 full join src2 on src1.id = src2.id full join src3 on src1.id = src3.id",
+			data: xsql.WindowTuplesSet{
+				Content: []xsql.WindowTuples{
+					{
+						Emitter: "src1",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src1",
+								Message: xsql.Message{"id": 1, "f1": "v1"},
+							},
+						},
+					},
+					{
+						Emitter: "src2",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src2",
+								Message: xsql.Message{"id": 1, "f2": "w1"},
+							},
+						},
+					},
+					{
+						Emitter: "src3",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src3",
+								Message: xsql.Message{"id": 1, "f3": "x1"},
+							},
+						},
+					},
+				},
+			},
+			result: &xsql.JoinTupleSets{
+				Content: []xsql.JoinTuple{
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id": 1, "f1": "v1"}},
+							{Emitter: "src2", Message: xsql.Message{"id": 1, "f2": "w1"}},
+							{Emitter: "src3", Message: xsql.Message{"id": 1, "f3": "x1"}},
+						},
+					},
+				},
+			},
+		},
+		{ //20
+			sql: "SELECT id1 FROM src1 full join src2 on src1.id = src2.id full join src3 on src1.id = src3.id",
+			data: xsql.WindowTuplesSet{
+				Content: []xsql.WindowTuples{
+					{
+						Emitter: "src1",
+						Tuples:  nil,
+					},
+
+					{
+						Emitter: "src2",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src2",
+								Message: xsql.Message{"id": 1, "f2": "w1"},
+							},
+						},
+					},
+
+					{
+						Emitter: "src3",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src3",
+								Message: xsql.Message{"id": 1, "f3": "x1"},
+							},
+						},
+					},
+				},
+			},
+			result: &xsql.JoinTupleSets{
+				Content: []xsql.JoinTuple{
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src2", Message: xsql.Message{"id": 1, "f2": "w1"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src3", Message: xsql.Message{"id": 1, "f3": "x1"}},
+						},
+					},
+				},
+			},
+		},
+		{ //21
+			sql: "SELECT id1 FROM src1 full join src2 on src1.id = src2.id full join src3 on src1.id = src3.id",
+			data: xsql.WindowTuplesSet{
+				Content: []xsql.WindowTuples{
+					{
+						Emitter: "src1",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src1",
+								Message: xsql.Message{"id": 1, "f1": "v1"},
+							},
+						},
+					},
+
+					{
+						Emitter: "src2",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src2",
+								Message: xsql.Message{"id": 1, "f2": "w1"},
+							},
+						},
+					},
+				},
+			},
+			result: &xsql.JoinTupleSets{
+				Content: []xsql.JoinTuple{
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id": 1, "f1": "v1"}},
+							{Emitter: "src2", Message: xsql.Message{"id": 1, "f2": "w1"}},
+						},
+					},
+				},
+			},
+		},
+
+		{ //22
+			sql: "SELECT id1 FROM src1 full join src2 on src1.id = src2.id full join src3 on src1.id = src3.id",
+			data: xsql.WindowTuplesSet{
+				Content: []xsql.WindowTuples{
+					{
+						Emitter: "src1",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src1",
+								Message: xsql.Message{"id": 1, "f1": "v1"},
+							},
+						},
+					},
+
+					{
+						Emitter: "src3",
+						Tuples: []xsql.Tuple{
+							{
+								Emitter: "src3",
+								Message: xsql.Message{"id": 1, "f3": "x1"},
+							},
+						},
+					},
+				},
+			},
+			result: &xsql.JoinTupleSets{
+				Content: []xsql.JoinTuple{
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id": 1, "f1": "v1"}},
+							{Emitter: "src3", Message: xsql.Message{"id": 1, "f3": "x1"}},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
