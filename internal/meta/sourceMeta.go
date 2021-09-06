@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package plugin
+package meta
 
 import (
 	"encoding/json"
@@ -43,15 +43,6 @@ type (
 	}
 )
 
-func isInternalSource(fiName string) bool {
-	internal := []string{`edgex.json`, `httppull.json`, `mqtt.json`}
-	for _, v := range internal {
-		if v == fiName {
-			return true
-		}
-	}
-	return false
-}
 func newUiSource(fi *fileSource) (*uiSource, error) {
 	if nil == fi {
 		return nil, nil
@@ -73,7 +64,7 @@ func newUiSource(fi *fileSource) (*uiSource, error) {
 
 var gSourceproperty map[string]*sourceProperty
 
-func (m *Manager) uninstalSource(name string) {
+func UninstallSource(name string) {
 	if v, ok := gSourceproperty[name+".json"]; ok {
 		if ui := v.meta; nil != ui {
 			if nil != ui.About {
@@ -82,7 +73,7 @@ func (m *Manager) uninstalSource(name string) {
 		}
 	}
 }
-func (m *Manager) readSourceMetaFile(filePath string) error {
+func ReadSourceMetaFile(filePath string, installed bool) error {
 	fileName := path.Base(filePath)
 	if "mqtt_source.json" == fileName {
 		fileName = "mqtt.json"
@@ -97,10 +88,8 @@ func (m *Manager) readSourceMetaFile(filePath string) error {
 	}
 	if nil == ptrMeta.About {
 		return fmt.Errorf("not found about of %s", filePath)
-	} else if isInternalSource(fileName) {
-		ptrMeta.About.Installed = true
 	} else {
-		_, ptrMeta.About.Installed = m.registry.Get(SOURCE, strings.TrimSuffix(fileName, `.json`))
+		ptrMeta.About.Installed = installed
 	}
 
 	yamlData := make(map[string]map[string]interface{})
@@ -124,7 +113,7 @@ func (m *Manager) readSourceMetaFile(filePath string) error {
 	return err
 }
 
-func (m *Manager) readSourceMetaDir() error {
+func ReadSourceMetaDir(checker InstallChecker) error {
 	gSourceproperty = make(map[string]*sourceProperty)
 	confDir, err := conf.GetConfLoc()
 	if nil != err {
@@ -137,7 +126,7 @@ func (m *Manager) readSourceMetaDir() error {
 		return err
 	}
 
-	if err = m.readSourceMetaFile(path.Join(confDir, "mqtt_source.json")); nil != err {
+	if err = ReadSourceMetaFile(path.Join(confDir, "mqtt_source.json"), false); nil != err {
 		return err
 	}
 
@@ -145,7 +134,7 @@ func (m *Manager) readSourceMetaDir() error {
 		fileName := info.Name()
 		if strings.HasSuffix(fileName, ".json") {
 			filePath := path.Join(dir, fileName)
-			if err = m.readSourceMetaFile(filePath); nil != err {
+			if err = ReadSourceMetaFile(filePath, checker(strings.TrimSuffix(fileName, ".json"))); nil != err {
 				return err
 			}
 			conf.Log.Infof("sourceMeta file : %s", fileName)

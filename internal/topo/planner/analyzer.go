@@ -16,6 +16,7 @@ package planner
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/kv"
@@ -110,14 +111,14 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt,
 }
 
 func validate(s *ast.SelectStatement) (err error) {
-	if ast.IsAggregate(s.Condition) {
+	if xsql.IsAggregate(s.Condition) {
 		return fmt.Errorf("Not allowed to call aggregate functions in WHERE clause.")
 	}
 	if !allAggregate(s.Having) {
 		return fmt.Errorf("Not allowed to call non-aggregate functions in HAVING clause.")
 	}
 	for _, d := range s.Dimensions {
-		if ast.IsAggregate(d.Expr) {
+		if xsql.IsAggregate(d.Expr) {
 			return fmt.Errorf("Not allowed to call aggregate functions in GROUP BY clause.")
 		}
 	}
@@ -125,9 +126,9 @@ func validate(s *ast.SelectStatement) (err error) {
 		switch f := n.(type) {
 		case *ast.Call:
 			// aggregate call should not have any aggregate arg
-			if ast.FuncFinderSingleton().IsAggFunc(f) {
+			if function.IsAggFunc(f.Name) {
 				for _, arg := range f.Args {
-					tr := ast.IsAggregate(arg)
+					tr := xsql.IsAggregate(arg)
 					if tr {
 						err = fmt.Errorf("invalid argument for func %s: aggregate argument is not allowed", f.Name)
 						return false
@@ -155,7 +156,7 @@ func allAggregate(expr ast.Expr) (r bool) {
 				return false
 			}
 		case *ast.Call, *ast.FieldRef:
-			if !ast.IsAggregate(f) {
+			if !xsql.IsAggregate(f) {
 				r = false
 				return false
 			}

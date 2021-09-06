@@ -27,6 +27,9 @@ import (
 	"testing"
 )
 
+func init() {
+}
+
 type errorStruct struct {
 	err  string
 	serr *string

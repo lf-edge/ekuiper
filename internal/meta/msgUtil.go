@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package plugin
+package meta
 
 import (
 	kconf "github.com/lf-edge/ekuiper/internal/conf"
@@ -33,7 +33,7 @@ func getMsg(language, section, key string) string {
 	}
 	return ""
 }
-func (m *Manager) readUiMsgDir() error {
+func ReadUiMsgDir() error {
 	gUimsg = make(map[string]*ini.File)
 	confDir, err := kconf.GetConfLoc()
 	if nil != err {

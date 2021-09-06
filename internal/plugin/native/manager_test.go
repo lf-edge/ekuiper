@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package plugin
+package native
 
 import (
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/binder"
+	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/internal/xsql"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -28,21 +29,21 @@ import (
 	"testing"
 )
 
-var manager *Manager
-
 func init() {
-	var err error
 	testx.InitEnv()
-	manager, err = NewPluginManager()
+	nativeManager, err := InitManager()
 	if err != nil {
 		panic(err)
 	}
-	xsql.InitFuncRegisters(manager)
+	err = function.Initialize([]binder.FactoryEntry{{Name: "native plugin", Factory: nativeManager}})
+	if err != nil {
+		panic(err)
+	}
 }
 
 func TestManager_Register(t *testing.T) {
 	s := httptest.NewServer(
-		http.FileServer(http.Dir("testzips")),
+		http.FileServer(http.Dir("../testzips")),
 	)
 	defer s.Close()
 	endpoint := s.URL
@@ -167,11 +168,7 @@ func TestManager_List(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 
 	for i, p := range data {
-		result, err := manager.List(p.t)
-		if err != nil {
-			t.Errorf("%d: list error : %s\n\n", i, err)
-			return
-		}
+		result := manager.List(p.t)
 		sort.Strings(result)
 		if !reflect.DeepEqual(p.r, result) {
 			t.Errorf("%d: result mismatch:\n  exp=%v\n  got=%v\n\n", i, p.r, result)
@@ -181,16 +178,12 @@ func TestManager_List(t *testing.T) {
 
 func TestManager_Symbols(t *testing.T) {
 	r := []string{"accumulateWordCount", "comp", "countPlusOne", "echo", "echo2", "echo3", "misc"}
-	result, err := manager.ListSymbols()
-	if err != nil {
-		t.Errorf("list symbols error : %s\n\n", err)
-		return
-	}
+	result := manager.ListSymbols()
 	sort.Strings(result)
 	if !reflect.DeepEqual(r, result) {
 		t.Errorf("result mismatch:\n  exp=%v\n  got=%v\n\n", r, result)
 	}
-	p, ok := manager.GetSymbol("echo3")
+	p, ok := manager.GetPluginBySymbol(FUNCTION, "echo3")
 	if !ok {
 		t.Errorf("cannot find echo3 symbol")
 	}
@@ -232,7 +225,7 @@ func TestManager_Desc(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 
 	for i, p := range data {
-		result, ok := manager.Get(p.t, p.n)
+		result, ok := manager.GetPluginInfo(p.t, p.n)
 		if !ok {
 			t.Errorf("%d: get error : not found\n\n", i)
 			return

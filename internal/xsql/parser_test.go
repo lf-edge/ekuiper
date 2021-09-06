@@ -1241,7 +1241,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s:    `SELECT sample(-.3,) FROM tbl`,
 			stmt: nil,
-			err:  "error getting function sample: not found",
+			err:  "function sample not found",
 		},
 
 		{

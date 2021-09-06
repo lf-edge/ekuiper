@@ -314,7 +314,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 	if stmt.Fields != nil {
 		p = ProjectPlan{
 			fields:      stmt.Fields,
-			isAggregate: ast.IsAggStatement(stmt),
+			isAggregate: xsql.IsAggStatement(stmt),
 			sendMeta:    opt.SendMetaToSink,
 		}.Init()
 		p.SetChildren(children)
@@ -324,7 +324,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 }
 
 func Transform(op node.UnOperation, name string, options *api.RuleOption) *node.UnaryOperator {
-	unaryOperator := node.New(name, xsql.FuncRegisters, options)
+	unaryOperator := node.New(name, options)
 	unaryOperator.SetOperation(op)
 	return unaryOperator
 }

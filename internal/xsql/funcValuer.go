@@ -15,18 +15,10 @@
 package xsql
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"strings"
 )
 
-type FunctionRegister interface {
-	HasFunction(name string) bool
-	Function(name string) (api.Function, error)
-}
-
-// ONLY use NewFunctionValuer function to initialize
+// FunctionValuer ONLY use NewFunctionValuer function to initialize
 type FunctionValuer struct {
 	runtime *funcRuntime
 }
@@ -52,39 +44,14 @@ func (*FunctionValuer) AppendAlias(string, interface{}) bool {
 }
 
 func (fv *FunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
-	lowerName := strings.ToLower(name)
-	switch ast.FuncFinderSingleton().FuncType(lowerName) {
-	case ast.NotFoundFunc:
-		nf, fctx, err := fv.runtime.Get(name)
-		switch err {
-		case errorx.NotFoundErr:
-			return nil, false
-		case nil:
-			// do nothing, continue
-		default:
-			return err, false
-		}
-		if nf.IsAggregate() {
-			return nil, false
-		}
-		logger := fctx.GetLogger()
-		logger.Debugf("run func %s", name)
-		return nf.Exec(args, fctx)
-	case ast.AggFunc:
+	nf, fctx, err := fv.runtime.Get(name)
+	switch err {
+	case errorx.NotFoundErr:
 		return nil, false
-	case ast.MathFunc:
-		return mathCall(lowerName, args)
-	case ast.ConvFunc:
-		return convCall(lowerName, args)
-	case ast.StrFunc:
-		return strCall(lowerName, args)
-	case ast.HashFunc:
-		return hashCall(lowerName, args)
-	case ast.JsonFunc:
-		return jsonCall(lowerName, args)
-	case ast.OtherFunc:
-		return otherCall(lowerName, args)
+	case nil:
+		// do nothing, continue
 	default:
-		return nil, false
+		return err, false
 	}
+	return ExecFunc(name, nf, args, fctx)
 }

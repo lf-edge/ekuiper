@@ -17,7 +17,6 @@ package xsql
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"reflect"
 	"strings"
 	"testing"
@@ -48,7 +47,7 @@ func TestIsAggStatement(t *testing.T) {
 	for i, tt := range tests {
 		//fmt.Printf("Parsing SQL %q.\n", tt.s)
 		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
-		isAgg := ast.IsAggStatement(stmt)
+		isAgg := IsAggStatement(stmt)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" && (tt.agg != isAgg) {

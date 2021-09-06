@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package xsql
+package function
 
 import (
 	"fmt"
@@ -26,32 +26,23 @@ type AllowTypes struct {
 
 func validateFuncs(funcName string, args []ast.Expr) error {
 	lowerName := strings.ToLower(funcName)
-	switch ast.FuncFinderSingleton().FuncType(lowerName) {
-	case ast.NotFoundFunc:
-		nf, _, err := parserFuncRuntime.Get(funcName)
-		if err != nil {
-			return fmt.Errorf("error getting function %s: %v", funcName, err)
-		}
-		var targs []interface{}
-		for _, arg := range args {
-			targs = append(targs, arg)
-		}
-		return nf.Validate(targs)
-	case ast.AggFunc:
+	switch getFuncType(lowerName) {
+	case AggFunc:
 		return validateAggFunc(lowerName, args)
-	case ast.MathFunc:
+	case MathFunc:
 		return validateMathFunc(lowerName, args)
-	case ast.ConvFunc:
+	case ConvFunc:
 		return validateConvFunc(lowerName, args)
-	case ast.StrFunc:
+	case StrFunc:
 		return validateStrFunc(lowerName, args)
-	case ast.HashFunc:
+	case HashFunc:
 		return validateHashFunc(lowerName, args)
-	case ast.JsonFunc:
+	case JsonFunc:
 		return validateJsonFunc(lowerName, args)
-	case ast.OtherFunc:
+	case OtherFunc:
 		return validateOtherFunc(lowerName, args)
 	default:
+		// should not happen
 		return fmt.Errorf("unkndow function %s", lowerName)
 	}
 }

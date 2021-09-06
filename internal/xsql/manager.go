@@ -21,7 +21,6 @@ import (
 
 var (
 	Language          = &ParseTree{}
-	FuncRegisters     []FunctionRegister
 	parserFuncRuntime *funcRuntime
 )
 
@@ -81,12 +80,4 @@ func init() {
 	Language.Handle(ast.DROP, func(p *Parser) (statement ast.Statement, e error) {
 		return p.parseDropStmt()
 	})
-
-	InitFuncRegisters()
-}
-
-func InitFuncRegisters(registers ...FunctionRegister) {
-	FuncRegisters = registers
-	parserFuncRuntime = NewFuncRuntime(nil, registers)
-	ast.InitFuncFinder(parserFuncRuntime)
 }

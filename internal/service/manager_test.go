@@ -15,7 +15,8 @@
 package service
 
 import (
-	"github.com/lf-edge/ekuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/internal/binder"
+	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"reflect"
 	"testing"
 )
@@ -23,9 +24,16 @@ import (
 var m *Manager
 
 func init() {
-	m, _ = GetServiceManager()
+	serviceManager, err := InitManager()
+	if err != nil {
+		panic(err)
+	}
+	err = function.Initialize([]binder.FactoryEntry{{Name: "external service", Factory: serviceManager}})
+	if err != nil {
+		panic(err)
+	}
+	m = GetManager()
 	m.InitByFiles()
-	xsql.InitFuncRegisters(m)
 }
 
 func TestInitByFiles(t *testing.T) {

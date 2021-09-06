@@ -15,6 +15,7 @@
 package xsql
 
 import (
+	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -25,9 +26,8 @@ import (
 //Each operator has a single instance of this to hold the context
 type funcRuntime struct {
 	sync.Mutex
-	regs          map[string]*funcReg
-	parentCtx     api.StreamContext
-	funcRegisters []FunctionRegister
+	regs      map[string]*funcReg
+	parentCtx api.StreamContext
 }
 
 type funcReg struct {
@@ -35,10 +35,9 @@ type funcReg struct {
 	ctx api.FunctionContext
 }
 
-func NewFuncRuntime(ctx api.StreamContext, registers []FunctionRegister) *funcRuntime {
+func NewFuncRuntime(ctx api.StreamContext) *funcRuntime {
 	return &funcRuntime{
-		parentCtx:     ctx,
-		funcRegisters: registers,
+		parentCtx: ctx,
 	}
 }
 
@@ -54,17 +53,13 @@ func (fp *funcRuntime) Get(name string) (api.Function, api.FunctionContext, erro
 			err error
 		)
 		// Check service extension and plugin extension if set
-		for _, r := range fp.funcRegisters {
-			if r.HasFunction(name) {
-				nf, err = r.Function(name)
-				if err != nil {
-					return nil, nil, err
-				}
-				break
-			}
-		}
+		nf, err = function.Function(name)
 		if nf == nil {
-			return nil, nil, errorx.NotFoundErr
+			if err == nil {
+				return nil, nil, errorx.NotFoundErr
+			} else {
+				return nil, nil, err
+			}
 		}
 		fctx := context.NewDefaultFuncContext(fp.parentCtx, len(fp.regs))
 		fp.regs[name] = &funcReg{

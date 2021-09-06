@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ast
+package function
 
 import (
+	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
-	"sync"
 )
 
-type FuncType int
+type funcType int
 
 const (
-	NotFoundFunc FuncType = iota - 1
+	NotFoundFunc funcType = iota - 1
 	AggFunc
 	MathFunc
 	StrFunc
@@ -93,64 +94,86 @@ var otherFuncMap = map[string]string{"isnull": "",
 	"window_end":   "",
 }
 
-type FuncRuntime interface {
-	Get(name string) (api.Function, api.FunctionContext, error)
-}
-
-var (
-	once sync.Once
-	ff   *FuncFinder
-)
-
-// FuncFinder Singleton, must be initiated when starting
-type FuncFinder struct {
-	runtime FuncRuntime
-}
-
-// InitFuncFinder must be called when starting
-func InitFuncFinder(runtime FuncRuntime) {
-	once.Do(func() {
-		ff = &FuncFinder{runtime: runtime}
-	})
-	ff.runtime = runtime
-}
-
-// FuncFinderSingleton must be inited before calling this
-func FuncFinderSingleton() *FuncFinder {
-	return ff
-}
-
-func (ff *FuncFinder) IsAggFunc(f *Call) bool {
-	fn := strings.ToLower(f.Name)
-	if _, ok := aggFuncMap[fn]; ok {
-		return true
-	} else if _, ok := strFuncMap[fn]; ok {
-		return false
-	} else if _, ok := convFuncMap[fn]; ok {
-		return false
-	} else if _, ok := hashFuncMap[fn]; ok {
-		return false
-	} else if _, ok := otherFuncMap[fn]; ok {
-		return false
-	} else if _, ok := mathFuncMap[fn]; ok {
-		return false
-	} else {
-		if nf, _, err := ff.runtime.Get(f.Name); err == nil {
-			if nf.IsAggregate() {
-				//Add cache
-				aggFuncMap[fn] = ""
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (ff *FuncFinder) FuncType(name string) FuncType {
+func getFuncType(name string) funcType {
 	for i, m := range maps {
 		if _, ok := m[strings.ToLower(name)]; ok {
-			return FuncType(i)
+			return funcType(i)
 		}
 	}
 	return NotFoundFunc
+}
+
+type funcExecutor struct{}
+
+func (f *funcExecutor) ValidateWithName(args []ast.Expr, name string) error {
+	var eargs []ast.Expr
+	for _, arg := range args {
+		if t, ok := arg.(ast.Expr); ok {
+			eargs = append(eargs, t)
+		} else {
+			// should never happen
+			return fmt.Errorf("receive invalid arg %v", arg)
+		}
+	}
+	return validateFuncs(name, eargs)
+}
+
+func (f *funcExecutor) Validate(_ []interface{}) error {
+	return fmt.Errorf("unknow name")
+}
+
+func (f *funcExecutor) Exec(_ []interface{}, _ api.FunctionContext) (interface{}, bool) {
+	return fmt.Errorf("unknow name"), false
+}
+
+func (f *funcExecutor) ExecWithName(args []interface{}, _ api.FunctionContext, name string) (interface{}, bool) {
+	lowerName := strings.ToLower(name)
+	switch getFuncType(lowerName) {
+	case AggFunc:
+		return aggCall(lowerName, args)
+	case MathFunc:
+		return mathCall(lowerName, args)
+	case ConvFunc:
+		return convCall(lowerName, args)
+	case StrFunc:
+		return strCall(lowerName, args)
+	case HashFunc:
+		return hashCall(lowerName, args)
+	case JsonFunc:
+		return jsonCall(lowerName, args)
+	case OtherFunc:
+		return otherCall(lowerName, args)
+	}
+	return fmt.Errorf("unknow name"), false
+}
+
+func (f *funcExecutor) IsAggregate() bool {
+	return false
+}
+
+func (f *funcExecutor) IsAggregateWithName(name string) bool {
+	lowerName := strings.ToLower(name)
+	return getFuncType(lowerName) == AggFunc
+}
+
+var staticFuncExecutor = &funcExecutor{}
+
+type Manager struct{}
+
+func (m *Manager) Function(name string) (api.Function, error) {
+	ft := getFuncType(name)
+	if ft != NotFoundFunc {
+		return staticFuncExecutor, nil
+	}
+	return nil, nil
+}
+
+func (m *Manager) HasFunctionSet(name string) bool {
+	return name == "internal"
+}
+
+var m = &Manager{}
+
+func GetManager() *Manager {
+	return m
 }

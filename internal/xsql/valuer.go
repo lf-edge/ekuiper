@@ -16,6 +16,7 @@ package xsql
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"math"
@@ -322,7 +323,7 @@ func MultiAggregateValuer(data AggregateData, singleCallValuer CallValuer, value
 
 func (a *multiAggregateValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	// assume the aggFuncMap already cache the custom agg funcs in IsAggFunc()
-	isAgg := ast.FuncFinderSingleton().FuncType(name) == ast.AggFunc
+	isAgg := function.IsAggFunc(name)
 	for _, valuer := range a.multiValuer {
 		if a, ok := valuer.(AggregateCallValuer); ok && isAgg {
 			if v, ok := a.Call(name, args); ok {
@@ -405,7 +406,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 				if len(expr.Args) > 0 {
 					args = make([]interface{}, len(expr.Args))
 					for i, arg := range expr.Args {
-						if aggreValuer, ok := valuer.(AggregateCallValuer); ast.FuncFinderSingleton().IsAggFunc(expr) && ok {
+						if aggreValuer, ok := valuer.(AggregateCallValuer); function.IsAggFunc(expr.Name) && ok {
 							args[i] = aggreValuer.GetAllTuples().AggregateEval(arg, aggreValuer.GetSingleCallValuer())
 						} else {
 							args[i] = v.Eval(arg)

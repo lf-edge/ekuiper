@@ -12,19 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !edgex
-// +build !test
+package binder
 
-package node
+import "github.com/lf-edge/ekuiper/pkg/api"
 
-import (
-	"github.com/lf-edge/ekuiper/pkg/api"
-)
-
-func getSource(t string) (api.Source, error) {
-	return doGetSource(t)
+type SourceFactory interface {
+	Source(name string) (api.Source, error)
 }
 
-func getSink(name string, action map[string]interface{}) (api.Sink, error) {
-	return doGetSink(name, action)
+type SinkFactory interface {
+	Sink(name string) (api.Sink, error)
+}
+
+type FuncFactory interface {
+	Function(name string) (api.Function, error)
+	// HasFunctionSet Some functions are bundled together into a plugin which shares the same json file.
+	// This function can return if the function set name exists.
+	HasFunctionSet(funcName string) bool
+}
+
+type FactoryEntry struct {
+	Name    string
+	Factory interface{}
 }
