@@ -48,7 +48,7 @@ type Manager struct {
 	functionKV kv.KeyValue
 }
 
-func GetServiceManager() (*Manager, error) {
+func InitManager() (*Manager, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if singleton == nil {
@@ -83,6 +83,10 @@ func GetServiceManager() (*Manager, error) {
 		return singleton, err
 	}
 	return singleton, nil
+}
+
+func GetManager() *Manager {
+	return singleton
 }
 
 /**
@@ -176,12 +180,10 @@ func (m *Manager) initFile(baseName string) error {
 	return nil
 }
 
-// Start Implement FunctionRegister
+// Start Implement FunctionFactory
 
-func (m *Manager) HasFunction(name string) bool {
-	_, ok := m.getFunction(name)
-	kconf.Log.Debugf("found external function %s? %v ", name, ok)
-	return ok
+func (m *Manager) HasFunctionSet(name string) bool {
+	return false
 }
 
 func (m *Manager) Function(name string) (api.Function, error) {
@@ -205,7 +207,7 @@ func (m *Manager) Function(name string) (api.Function, error) {
 	return &ExternalFunc{exe: e, methodName: f.MethodName}, nil
 }
 
-// End Implement FunctionRegister
+// End Implement FunctionFactory
 
 func (m *Manager) HasService(name string) bool {
 	_, ok := m.getService(name)

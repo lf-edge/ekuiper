@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package plugin
+package meta
 
 import (
 	"fmt"
@@ -46,15 +46,6 @@ type (
 	}
 )
 
-func isInternalFunc(fiName string) bool {
-	internal := []string{`accumulateWordCount.json`, `countPlusOne.json`, `echo.json`, `internal.json`, "windows.json", "image.json", "geohash.json"}
-	for _, v := range internal {
-		if v == fiName {
-			return true
-		}
-	}
-	return false
-}
 func newUiFuncs(fi *fileFuncs) *uiFuncs {
 	if nil == fi {
 		return nil
@@ -74,7 +65,7 @@ func newUiFuncs(fi *fileFuncs) *uiFuncs {
 
 var gFuncmetadata map[string]*uiFuncs
 
-func (m *Manager) readFuncMetaDir() error {
+func ReadFuncMetaDir(checker InstallChecker) error {
 	gFuncmetadata = make(map[string]*uiFuncs)
 	confDir, err := conf.GetConfLoc()
 	if nil != err {
@@ -92,21 +83,22 @@ func (m *Manager) readFuncMetaDir() error {
 			continue
 		}
 
-		if err := m.readFuncMetaFile(path.Join(dir, fname)); nil != err {
+		if err := ReadFuncMetaFile(path.Join(dir, fname), checker(strings.TrimSuffix(fname, ".json"))); nil != err {
 			return err
 		}
 	}
 	return nil
 }
 
-func (m *Manager) uninstalFunc(name string) {
+func UninstallFunc(name string) {
 	if ui, ok := gFuncmetadata[name+".json"]; ok {
 		if nil != ui.About {
 			ui.About.Installed = false
 		}
 	}
 }
-func (m *Manager) readFuncMetaFile(filePath string) error {
+
+func ReadFuncMetaFile(filePath string, installed bool) error {
 	fiName := path.Base(filePath)
 	fis := new(fileFuncs)
 	err := filex.ReadJsonUnmarshal(filePath, fis)
@@ -115,15 +107,14 @@ func (m *Manager) readFuncMetaFile(filePath string) error {
 	}
 	if nil == fis.About {
 		return fmt.Errorf("not found about of %s", filePath)
-	} else if isInternalFunc(fiName) {
-		fis.About.Installed = true
 	} else {
-		_, fis.About.Installed = m.registry.Get(FUNCTION, strings.TrimSuffix(fiName, `.json`))
+		fis.About.Installed = installed
 	}
 	gFuncmetadata[fiName] = newUiFuncs(fis)
 	conf.Log.Infof("funcMeta file : %s", fiName)
 	return nil
 }
+
 func GetFunctions() (ret []*uiFuncs) {
 	for _, v := range gFuncmetadata {
 		ret = append(ret, v)

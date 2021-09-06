@@ -132,7 +132,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 			t.Log(e)
 			t.Fail()
 		} else {
-			fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
+			fv, afv := xsql.NewFunctionValuersForOp(nil)
 			for _, m := range dm {
 				pp.Apply(ctx, &xsql.Tuple{
 					Emitter: "demo",

@@ -12,19 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ast
+package xsql
+
+import (
+	"github.com/lf-edge/ekuiper/internal/binder/function"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+)
 
 // IsAggregate check if an expression is aggregate with the binding alias info
-func IsAggregate(expr Expr) (r bool) {
-	WalkFunc(expr, func(n Node) bool {
+func IsAggregate(expr ast.Expr) (r bool) {
+	ast.WalkFunc(expr, func(n ast.Node) bool {
 		switch f := n.(type) {
-		case *Call:
-			if ok := FuncFinderSingleton().IsAggFunc(f); ok {
+		case *ast.Call:
+			if ok := function.IsAggFunc(f.Name); ok {
 				r = true
 				return false
 			}
-		case *FieldRef:
-			if f.IsAggregate() {
+		case *ast.FieldRef:
+			// lazy calculate
+			if getOrCalculateAgg(f) {
 				r = true
 				return false
 			}
@@ -34,7 +40,20 @@ func IsAggregate(expr Expr) (r bool) {
 	return
 }
 
-func IsAggStatement(stmt *SelectStatement) bool {
+func getOrCalculateAgg(f *ast.FieldRef) bool {
+	if f.IsAlias() {
+		p := f.IsAggregate
+		if p == nil {
+			tr := IsAggregate(f.Expression)
+			p = &tr
+			f.IsAggregate = p
+		}
+		return *p
+	}
+	return false
+}
+
+func IsAggStatement(stmt *ast.SelectStatement) bool {
 	if stmt.Dimensions != nil {
 		ds := stmt.Dimensions.GetGroups()
 		if ds != nil && len(ds) > 0 {
@@ -42,10 +61,10 @@ func IsAggStatement(stmt *SelectStatement) bool {
 		}
 	}
 	r := false
-	WalkFunc(stmt.Fields, func(n Node) bool {
+	ast.WalkFunc(stmt.Fields, func(n ast.Node) bool {
 		switch f := n.(type) {
-		case *Call:
-			if ok := FuncFinderSingleton().IsAggFunc(f); ok {
+		case *ast.Call:
+			if ok := function.IsAggFunc(f.Name); ok {
 				r = true
 				return false
 			}
@@ -55,14 +74,14 @@ func IsAggStatement(stmt *SelectStatement) bool {
 	return r
 }
 
-func HasAggFuncs(node Node) bool {
+func HasAggFuncs(node ast.Node) bool {
 	if node == nil {
 		return false
 	}
 	var r = false
-	WalkFunc(node, func(n Node) bool {
-		if f, ok := n.(*Call); ok {
-			if ok := FuncFinderSingleton().IsAggFunc(f); ok {
+	ast.WalkFunc(node, func(n ast.Node) bool {
+		if f, ok := n.(*ast.Call); ok {
+			if ok := function.IsAggFunc(f.Name); ok {
 				r = true
 				return false
 			}

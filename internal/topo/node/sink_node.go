@@ -18,10 +18,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/plugin"
 	ct "github.com/lf-edge/ekuiper/internal/template"
-	"github.com/lf-edge/ekuiper/internal/topo/sink"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"sync"
@@ -405,33 +404,25 @@ func doCollectCacheTuple(sink api.Sink, item *CacheTuple, stats StatManager, ret
 	}
 }
 
-func doGetSink(name string, action map[string]interface{}) (api.Sink, error) {
+func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 	var (
 		s   api.Sink
 		err error
 	)
-	switch name {
-	case "log":
-		s = sink.NewLogSink()
-	case "logToMemory":
-		s = sink.NewLogSinkToMemory()
-	case "mqtt":
-		s = &sink.MQTTSink{}
-	case "rest":
-		s = &sink.RestSink{}
-	case "nop":
-		s = &sink.NopSink{}
-	default:
-		s, err = plugin.GetSink(name)
+	s, err = io.Sink(name)
+	if s != nil {
+		err = s.Configure(action)
 		if err != nil {
 			return nil, err
 		}
+		return s, nil
+	} else {
+		if err != nil {
+			return nil, err
+		} else {
+			return nil, fmt.Errorf("sink %s not found", name)
+		}
 	}
-	err = s.Configure(action)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
 }
 
 //Override defaultNode

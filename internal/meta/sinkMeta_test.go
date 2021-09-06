@@ -12,32 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build edgex
-// +build !test
-
-package node
+package meta
 
 import (
-	"github.com/lf-edge/ekuiper/internal/topo/sink"
-	"github.com/lf-edge/ekuiper/internal/topo/source"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"testing"
 )
 
-func getSource(t string) (api.Source, error) {
-	if t == "edgex" {
-		return &source.EdgexSource{}, nil
+func TestHintWhenModifySink(t *testing.T) {
+	taosMeta := &uiSink{
+		Fields: []field{
+			{
+				Name:    "ip",
+				Default: "911.911.911.911",
+			},
+		},
 	}
-	return doGetSource(t)
-}
+	logMeta := &uiSink{
+		Fields: []field{
+			{
+				Name:    "ip",
+				Default: "911.911.911.911",
+			},
+		},
+	}
 
-func getSink(name string, action map[string]interface{}) (api.Sink, error) {
-	if name == "edgex" {
-		s := &sink.EdgexMsgBusSink{}
-		if err := s.Configure(action); err != nil {
-			return nil, err
-		} else {
-			return s, nil
+	gSinkmetadata = make(map[string]*uiSink)
+	gSinkmetadata["taos.json"] = taosMeta
+	gSinkmetadata["log.json"] = logMeta
+
+	oldSink, err := GetSinkMeta("taos", "en_US")
+	if err != nil {
+		t.Errorf("%v", err)
+	} else {
+		if "911.911.911.911" != oldSink.Fields[0].Default {
+			t.Errorf("fail")
 		}
 	}
-	return doGetSink(name, action)
 }

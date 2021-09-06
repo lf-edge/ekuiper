@@ -15,12 +15,15 @@
 package server
 
 import (
+	"github.com/lf-edge/ekuiper/internal/binder"
+	"github.com/lf-edge/ekuiper/internal/binder/function"
+	"github.com/lf-edge/ekuiper/internal/binder/io"
+	"github.com/lf-edge/ekuiper/internal/binder/meta"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/internal/plugin/native"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/service"
-	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"context"
@@ -39,8 +42,6 @@ var (
 	version         = ""
 	ruleProcessor   *processor.RuleProcessor
 	streamProcessor *processor.StreamProcessor
-	pluginManager   *plugin.Manager
-	serviceManager  *service.Manager
 )
 
 func StartUp(Version, LoadFileType string) {
@@ -56,15 +57,29 @@ func StartUp(Version, LoadFileType string) {
 
 	ruleProcessor = processor.NewRuleProcessor()
 	streamProcessor = processor.NewStreamProcessor()
-	pluginManager, err = plugin.NewPluginManager()
+
+	// Bind the source, function, sink
+	nativeManager, err := native.InitManager()
 	if err != nil {
 		panic(err)
 	}
-	serviceManager, err = service.GetServiceManager()
+	serviceManager, err := service.InitManager()
 	if err != nil {
 		panic(err)
 	}
-	xsql.InitFuncRegisters(serviceManager, pluginManager)
+	entries := []binder.FactoryEntry{
+		{Name: "native plugin", Factory: nativeManager},
+		{Name: "external service", Factory: serviceManager},
+	}
+	err = function.Initialize(entries)
+	if err != nil {
+		panic(err)
+	}
+	err = io.Initialize(entries)
+	if err != nil {
+		panic(err)
+	}
+	meta.Bind()
 
 	registry = &RuleRegistry{internal: make(map[string]*RuleState)}
 

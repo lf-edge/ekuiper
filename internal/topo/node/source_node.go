@@ -16,8 +16,6 @@ package node
 
 import (
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/internal/topo/source"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -160,27 +158,6 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 
 func (m *SourceNode) reset() {
 	m.statManagers = nil
-}
-
-func doGetSource(t string) (api.Source, error) {
-	var (
-		s   api.Source
-		err error
-	)
-	switch t {
-	case "mqtt":
-		s = &source.MQTTSource{}
-	case "httppull":
-		s = &source.HTTPPullSource{}
-	case "file":
-		s = &source.FileSource{}
-	default:
-		s, err = plugin.GetSource(t)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return s, nil
 }
 
 func (m *SourceNode) drainError(errCh chan<- error, err error, ctx api.StreamContext, logger api.Logger) {

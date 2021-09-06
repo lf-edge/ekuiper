@@ -1448,7 +1448,7 @@ func TestMultiJoinPlan_Apply(t *testing.T) {
 		if table, ok := stmt.Sources[0].(*ast.Table); !ok {
 			t.Errorf("statement source is not a table")
 		} else {
-			fv, afv := xsql.NewFunctionValuersForOp(nil, xsql.FuncRegisters)
+			fv, afv := xsql.NewFunctionValuersForOp(nil)
 			pp := &JoinOp{Joins: stmt.Joins, From: table}
 			result := pp.Apply(ctx, tt.data, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {

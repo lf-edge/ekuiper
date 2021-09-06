@@ -24,7 +24,7 @@ import (
 
 // NewLogSink log action, no properties now
 // example: {"log":{}}
-func NewLogSink() *collector.FuncCollector {
+func NewLogSink() api.Sink {
 	return collector.Func(func(ctx api.StreamContext, data interface{}) error {
 		log := ctx.GetLogger()
 		log.Infof("sink result for rule %s: %s", ctx.GetRuleId(), data)
@@ -40,7 +40,7 @@ type QueryResult struct {
 
 var QR = &QueryResult{LastFetch: time.Now()}
 
-func NewLogSinkToMemory() *collector.FuncCollector {
+func NewLogSinkToMemory() api.Sink {
 	QR.Results = make([]string, 10)
 	return collector.Func(func(ctx api.StreamContext, data interface{}) error {
 		QR.Mux.Lock()

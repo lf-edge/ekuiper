@@ -21,7 +21,8 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/internal/meta"
+	"github.com/lf-edge/ekuiper/internal/plugin/native"
 	"github.com/lf-edge/ekuiper/internal/service"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -421,50 +422,47 @@ func getTopoRuleHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(content))
 }
 
-func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) {
+func pluginsHandler(w http.ResponseWriter, r *http.Request, t native.PluginType) {
+	pluginManager := native.GetManager()
 	defer r.Body.Close()
 	switch r.Method {
 	case http.MethodGet:
-		content, err := pluginManager.List(t)
-		if err != nil {
-			handleError(w, err, fmt.Sprintf("%s plugins list command error", plugin.PluginTypes[t]), logger)
-			return
-		}
+		content := pluginManager.List(t)
 		jsonResponse(content, w, logger)
 	case http.MethodPost:
-		sd := plugin.NewPluginByType(t)
+		sd := native.NewPluginByType(t)
 		err := json.NewDecoder(r.Body).Decode(sd)
 		// Problems decoding
 		if err != nil {
-			handleError(w, err, fmt.Sprintf("Invalid body: Error decoding the %s plugin json", plugin.PluginTypes[t]), logger)
+			handleError(w, err, fmt.Sprintf("Invalid body: Error decoding the %s plugin json", native.PluginTypes[t]), logger)
 			return
 		}
 		err = pluginManager.Register(t, sd)
 		if err != nil {
-			handleError(w, err, fmt.Sprintf("%s plugins create command error", plugin.PluginTypes[t]), logger)
+			handleError(w, err, fmt.Sprintf("%s plugins create command error", native.PluginTypes[t]), logger)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("%s plugin %s is created", plugin.PluginTypes[t], sd.GetName())))
+		w.Write([]byte(fmt.Sprintf("%s plugin %s is created", native.PluginTypes[t], sd.GetName())))
 	}
 }
 
-func pluginHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) {
+func pluginHandler(w http.ResponseWriter, r *http.Request, t native.PluginType) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
 	cb := r.URL.Query().Get("stop")
-
+	pluginManager := native.GetManager()
 	switch r.Method {
 	case http.MethodDelete:
 		r := cb == "1"
 		err := pluginManager.Delete(t, name, r)
 		if err != nil {
-			handleError(w, err, fmt.Sprintf("delete %s plugin %s error", plugin.PluginTypes[t], name), logger)
+			handleError(w, err, fmt.Sprintf("delete %s plugin %s error", native.PluginTypes[t], name), logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		result := fmt.Sprintf("%s plugin %s is deleted", plugin.PluginTypes[t], name)
+		result := fmt.Sprintf("%s plugin %s is deleted", native.PluginTypes[t], name)
 		if r {
 			result = fmt.Sprintf("%s and Kuiper will be stopped", result)
 		} else {
@@ -472,9 +470,9 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) 
 		}
 		w.Write([]byte(result))
 	case http.MethodGet:
-		j, ok := pluginManager.Get(t, name)
+		j, ok := pluginManager.GetPluginInfo(t, name)
 		if !ok {
-			handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("describe %s plugin %s error", plugin.PluginTypes[t], name), logger)
+			handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("describe %s plugin %s error", native.PluginTypes[t], name), logger)
 			return
 		}
 		jsonResponse(j, w, logger)
@@ -483,43 +481,41 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) 
 
 //list or create source plugin
 func sourcesHandler(w http.ResponseWriter, r *http.Request) {
-	pluginsHandler(w, r, plugin.SOURCE)
+	pluginsHandler(w, r, native.SOURCE)
 }
 
 //delete a source plugin
 func sourceHandler(w http.ResponseWriter, r *http.Request) {
-	pluginHandler(w, r, plugin.SOURCE)
+	pluginHandler(w, r, native.SOURCE)
 }
 
 //list or create sink plugin
 func sinksHandler(w http.ResponseWriter, r *http.Request) {
-	pluginsHandler(w, r, plugin.SINK)
+	pluginsHandler(w, r, native.SINK)
 }
 
 //delete a sink plugin
 func sinkHandler(w http.ResponseWriter, r *http.Request) {
-	pluginHandler(w, r, plugin.SINK)
+	pluginHandler(w, r, native.SINK)
 }
 
 //list or create function plugin
 func functionsHandler(w http.ResponseWriter, r *http.Request) {
-	pluginsHandler(w, r, plugin.FUNCTION)
+	pluginsHandler(w, r, native.FUNCTION)
 }
 
 //list all user defined functions in all function plugins
 func functionsListHandler(w http.ResponseWriter, r *http.Request) {
-	content, err := pluginManager.ListSymbols()
-	if err != nil {
-		handleError(w, err, "udfs list command error", logger)
-		return
-	}
+	pluginManager := native.GetManager()
+	content := pluginManager.ListSymbols()
 	jsonResponse(content, w, logger)
 }
 
 func functionsGetHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
-	j, ok := pluginManager.GetSymbol(name)
+	pluginManager := native.GetManager()
+	j, ok := pluginManager.GetPluginBySymbol(native.FUNCTION, name)
 	if !ok {
 		handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("describe function %s error", name), logger)
 		return
@@ -529,7 +525,7 @@ func functionsGetHandler(w http.ResponseWriter, r *http.Request) {
 
 //delete a function plugin
 func functionHandler(w http.ResponseWriter, r *http.Request) {
-	pluginHandler(w, r, plugin.FUNCTION)
+	pluginHandler(w, r, native.FUNCTION)
 }
 
 type functionList struct {
@@ -543,10 +539,10 @@ func functionRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
-
-	_, ok := pluginManager.Get(plugin.FUNCTION, name)
+	pluginManager := native.GetManager()
+	_, ok := pluginManager.GetPluginInfo(native.FUNCTION, name)
 	if !ok {
-		handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("register %s plugin %s error", plugin.PluginTypes[plugin.FUNCTION], name), logger)
+		handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("register %s plugin %s error", native.PluginTypes[native.FUNCTION], name), logger)
 		return
 	}
 	sd := functionList{}
@@ -566,15 +562,15 @@ func functionRegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func prebuildSourcePlugins(w http.ResponseWriter, r *http.Request) {
-	prebuildPluginsHandler(w, r, plugin.SOURCE)
+	prebuildPluginsHandler(w, r, native.SOURCE)
 }
 
 func prebuildSinkPlugins(w http.ResponseWriter, r *http.Request) {
-	prebuildPluginsHandler(w, r, plugin.SINK)
+	prebuildPluginsHandler(w, r, native.SINK)
 }
 
 func prebuildFuncsPlugins(w http.ResponseWriter, r *http.Request) {
-	prebuildPluginsHandler(w, r, plugin.FUNCTION)
+	prebuildPluginsHandler(w, r, native.FUNCTION)
 }
 
 func isOffcialDockerImage() bool {
@@ -584,7 +580,7 @@ func isOffcialDockerImage() bool {
 	return true
 }
 
-func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) {
+func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t native.PluginType) {
 	emsg := "It's strongly recommended to install plugins at official released Debian Docker images. If you choose to proceed to install plugin, please make sure the plugin is already validated in your own build."
 	if !isOffcialDockerImage() {
 		handleError(w, fmt.Errorf(emsg), "", logger)
@@ -600,9 +596,9 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.Plu
 		if strings.Contains(prettyName, "DEBIAN") {
 			hosts := conf.Config.Basic.PluginHosts
 			ptype := "sources"
-			if t == plugin.SINK {
+			if t == native.SINK {
 				ptype = "sinks"
-			} else if t == plugin.FUNCTION {
+			} else if t == native.FUNCTION {
 				ptype = "functions"
 			}
 			if err, plugins := fetchPluginList(hosts, ptype, os, runtime.GOARCH); err != nil {
@@ -701,7 +697,7 @@ loop:
 //list sink plugin
 func sinksMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	sinks := plugin.GetSinks()
+	sinks := meta.GetSinks()
 	jsonResponse(sinks, w, logger)
 	return
 }
@@ -713,7 +709,7 @@ func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	pluginName := vars["name"]
 
 	language := getLanguage(r)
-	ptrMetadata, err := plugin.GetSinkMeta(pluginName, language)
+	ptrMetadata, err := meta.GetSinkMeta(pluginName, language)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
@@ -724,7 +720,7 @@ func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 //list functions
 func functionsMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	sinks := plugin.GetFunctions()
+	sinks := meta.GetFunctions()
 	jsonResponse(sinks, w, logger)
 	return
 }
@@ -732,7 +728,7 @@ func functionsMetaHandler(w http.ResponseWriter, r *http.Request) {
 //list source plugin
 func sourcesMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	ret := plugin.GetSources()
+	ret := meta.GetSources()
 	if nil != ret {
 		jsonResponse(ret, w, logger)
 		return
@@ -745,7 +741,7 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 	language := getLanguage(r)
-	ret, err := plugin.GetSourceMeta(pluginName, language)
+	ret, err := meta.GetSourceMeta(pluginName, language)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
@@ -762,7 +758,7 @@ func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 	language := getLanguage(r)
-	ret, err := plugin.GetSourceConf(pluginName, language)
+	ret, err := meta.GetSourceConf(pluginName, language)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
@@ -776,7 +772,7 @@ func sourceConfKeysHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
-	ret := plugin.GetSourceConfKeys(pluginName)
+	ret := meta.GetSourceConfKeys(pluginName)
 	if nil != ret {
 		jsonResponse(ret, w, logger)
 		return
@@ -795,14 +791,14 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	language := getLanguage(r)
 	switch r.Method {
 	case http.MethodDelete:
-		err = plugin.DelSourceConfKey(pluginName, confKey, language)
+		err = meta.DelSourceConfKey(pluginName, confKey, language)
 	case http.MethodPost:
 		v, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		err = plugin.AddSourceConfKey(pluginName, confKey, language, v)
+		err = meta.AddSourceConfKey(pluginName, confKey, language, v)
 	}
 	if err != nil {
 		handleError(w, err, "", logger)
@@ -831,9 +827,9 @@ func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
 	language := getLanguage(r)
 	switch r.Method {
 	case http.MethodDelete:
-		err = plugin.DelSourceConfKeyField(pluginName, confKey, language, v)
+		err = meta.DelSourceConfKeyField(pluginName, confKey, language, v)
 	case http.MethodPost:
-		err = plugin.AddSourceConfKeyField(pluginName, confKey, language, v)
+		err = meta.AddSourceConfKeyField(pluginName, confKey, language, v)
 	}
 	if err != nil {
 		handleError(w, err, "", logger)
@@ -854,6 +850,7 @@ func getLanguage(r *http.Request) string {
 
 func servicesHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+	serviceManager := service.GetManager()
 	switch r.Method {
 	case http.MethodGet:
 		content, err := serviceManager.List()
@@ -884,7 +881,7 @@ func serviceHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
-
+	serviceManager := service.GetManager()
 	switch r.Method {
 	case http.MethodDelete:
 		err := serviceManager.Delete(name)
@@ -922,6 +919,7 @@ func serviceHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func serviceFunctionsHandler(w http.ResponseWriter, r *http.Request) {
+	serviceManager := service.GetManager()
 	content, err := serviceManager.ListFunctions()
 	if err != nil {
 		handleError(w, err, "service list command error", logger)
@@ -933,6 +931,7 @@ func serviceFunctionsHandler(w http.ResponseWriter, r *http.Request) {
 func serviceFunctionHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
+	serviceManager := service.GetManager()
 	j, err := serviceManager.GetFunction(name)
 	if err != nil {
 		handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("describe function %s error", name), logger)
