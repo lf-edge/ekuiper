@@ -84,7 +84,6 @@ type KuiperConf struct {
 			Timeout  int    `yaml:"timeout"`
 		}
 		Sqlite struct {
-			Path string `yaml:"path"`
 			Name string `yaml:"name"`
 		}
 	}
