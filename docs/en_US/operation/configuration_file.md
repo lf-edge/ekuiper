@@ -146,7 +146,6 @@ In order to use redis as store type property must be changed into redis value.
 ### Sqlite
     
 It has properties
-* path - if left empty database will be created in the data directory of the kuiper base key
 * name - name of database file - if left empty it will be `sqliteKV.db`
  
 ### Redis
@@ -169,8 +168,6 @@ It has properties
         #Timeout in ms
         timeout: 1000
       sqlite:
-        #Sqlite absolute database path, if left empty default directory of the application will be used
-        path:
         #Sqlite file name, if left empty name of db will be sqliteKV.db
         name:
 ```

@@ -63,7 +63,5 @@ store:
     #Timeout in ms
     timeout: 1000
   sqlite:
-    #Sqlite absolute database path, if left empty default directory of the application will be used
-    path:
     #Sqlite file name, if left empty name of db will be sqliteKV.db
     name:

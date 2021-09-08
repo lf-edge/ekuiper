@@ -145,7 +145,6 @@ http://host:port/kuiper-plugins/0.9.1/alpine/functions
 ### Sqlite
 
 可配置如下属性：
-* path - 配置 sqlite 存储路径。若为空则存储在默认的 data 目录中。
 * name - 数据库文件名。若为空，则设置为默认名字`sqliteKV.db`。
 
 ### Redis
@@ -169,8 +168,6 @@ http://host:port/kuiper-plugins/0.9.1/alpine/functions
         #Timeout in ms
         timeout: 1000
       sqlite:
-        #Sqlite absolute database path, if left empty default directory of the application will be used
-        path:
         #Sqlite file name, if left empty name of db will be sqliteKV.db
         name:
 ```

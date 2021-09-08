@@ -39,18 +39,22 @@ func SetupDefault() error {
 	return Setup(c)
 }
 
-func SetupWithKuiperConfig(conf *conf.KuiperConf) error {
+func SetupWithKuiperConfig(kconf *conf.KuiperConf) error {
+	dir, err := conf.GetDataLoc()
+	if err != nil {
+		return err
+	}
 	c := db.Config{
-		Type: conf.Store.Type,
+		Type: kconf.Store.Type,
 		Redis: redis.Config{
-			Host:     conf.Store.Redis.Host,
-			Port:     conf.Store.Redis.Port,
-			Password: conf.Store.Redis.Password,
-			Timeout:  conf.Store.Redis.Timeout,
+			Host:     kconf.Store.Redis.Host,
+			Port:     kconf.Store.Redis.Port,
+			Password: kconf.Store.Redis.Password,
+			Timeout:  kconf.Store.Redis.Timeout,
 		},
 		Sqlite: sqlite.Config{
-			Path: conf.Store.Sqlite.Path,
-			Name: conf.Store.Sqlite.Name,
+			Path: dir,
+			Name: kconf.Store.Sqlite.Name,
 		},
 	}
 	return Setup(c)
