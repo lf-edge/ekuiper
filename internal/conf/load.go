@@ -80,6 +80,12 @@ func process(configMap map[string]interface{}, variables []string) error {
 		}
 		keys := nameToKeys(trimPrefix(pair[0]))
 		handle(configMap, keys, pair[1])
+		printableK := strings.Join(keys, ".")
+		printableV := pair[1]
+		if strings.Contains(strings.ToLower(printableK), "password") {
+			printableV = "*"
+		}
+		Log.Infof("Set config '%s.%s' to '%s' by environment variable", Prefix, printableK, printableV)
 	}
 	return nil
 }
