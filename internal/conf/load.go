@@ -29,7 +29,6 @@ import (
 )
 
 const Separator = "__"
-const Prefix = "KUIPER"
 
 func LoadConfig(c interface{}) error {
 	return LoadConfigByName(ConfFileName, c)
@@ -44,8 +43,9 @@ func LoadConfigByName(name string, c interface{}) error {
 	return LoadConfigFromPath(p, c)
 }
 
-func LoadConfigFromPath(path string, c interface{}) error {
-	b, err := ioutil.ReadFile(path)
+func LoadConfigFromPath(p string, c interface{}) error {
+	prefix := getPrefix(p)
+	b, err := ioutil.ReadFile(p)
 	if err != nil {
 		return err
 	}
@@ -55,37 +55,42 @@ func LoadConfigFromPath(path string, c interface{}) error {
 		return err
 	}
 	configs := normalize(configMap)
+	err = process(configs, os.Environ(), prefix)
+	if err != nil {
+		return err
+	}
 	if _, success := c.(*map[string]interface{}); success {
-		names, err := extractKeysFromJsonIfExists(path)
+		names, err := extractKeysFromJsonIfExists(p)
 		if err != nil {
 			return err
 		}
 		applyKeys(configs, names)
 	}
-	err = process(configs, os.Environ())
-	if err != nil {
-		return err
-	}
 	return mapstructure.Decode(configs, c)
 }
 
-func process(configMap map[string]interface{}, variables []string) error {
+func getPrefix(p string) string {
+	_, file := path.Split(p)
+	return strings.ToUpper(strings.TrimSuffix(file, filepath.Ext(file)))
+}
+
+func process(configMap map[string]interface{}, variables []string, prefix string) error {
 	for _, e := range variables {
-		if !strings.HasPrefix(e, Prefix) {
+		if !strings.HasPrefix(e, prefix) {
 			continue
 		}
 		pair := strings.SplitN(e, "=", 2)
 		if len(pair) != 2 {
 			return fmt.Errorf("wrong format of variable")
 		}
-		keys := nameToKeys(trimPrefix(pair[0]))
+		keys := nameToKeys(trimPrefix(pair[0], prefix))
 		handle(configMap, keys, pair[1])
 		printableK := strings.Join(keys, ".")
 		printableV := pair[1]
 		if strings.Contains(strings.ToLower(printableK), "password") {
 			printableV = "*"
 		}
-		Log.Infof("Set config '%s.%s' to '%s' by environment variable", Prefix, printableK, printableV)
+		Log.Infof("Set config '%s.%s' to '%s' by environment variable", strings.ToLower(prefix), printableK, printableV)
 	}
 	return nil
 }
@@ -109,8 +114,8 @@ func handle(conf map[string]interface{}, keysLeft []string, val string) {
 	}
 }
 
-func trimPrefix(key string) string {
-	p := fmt.Sprintf("%s%s", Prefix, Separator)
+func trimPrefix(key string, prefix string) string {
+	p := fmt.Sprintf("%s%s", prefix, Separator)
 	return strings.TrimPrefix(key, p)
 }
 

@@ -42,7 +42,7 @@ func TestEnv(t *testing.T) {
 }
 
 func TestJsonCamelCase(t *testing.T) {
-	key := "KUIPER__DEFAULT__BODYTYPE"
+	key := "HTTPPULL__DEFAULT__BODYTYPE"
 	value := "event"
 
 	err := os.Setenv(key, value)
@@ -58,8 +58,8 @@ func TestJsonCamelCase(t *testing.T) {
 	}
 
 	if casted, success := c["default"].(map[string]interface{}); success {
-		if casted["bodyType"] != "json" {
-			t.Errorf("env variable should set it to true")
+		if casted["bodyType"] != "event" {
+			t.Errorf("env variable should set it to event")
 		}
 	} else {
 		t.Errorf("returned value does not contains map under 'Basic' key")
