@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package native
+package plugin
 
 type PluginType int
 
@@ -20,6 +20,7 @@ const (
 	SOURCE PluginType = iota
 	SINK
 	FUNCTION
+	PORTABLE
 )
 
 var PluginTypes = []string{"sources", "sinks", "functions"}

@@ -22,6 +22,8 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/plugin/native"
+	"github.com/lf-edge/ekuiper/internal/plugin/portable"
+	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/service"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -63,12 +65,17 @@ func StartUp(Version, LoadFileType string) {
 	if err != nil {
 		panic(err)
 	}
+	portableManager, err := portable.InitManager()
+	if err != nil {
+		panic(err)
+	}
 	serviceManager, err := service.InitManager()
 	if err != nil {
 		panic(err)
 	}
 	entries := []binder.FactoryEntry{
 		{Name: "native plugin", Factory: nativeManager},
+		{Name: "portable plugin", Factory: portableManager},
 		{Name: "external service", Factory: serviceManager},
 	}
 	err = function.Initialize(entries)
@@ -173,6 +180,8 @@ func StartUp(Version, LoadFileType string) {
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
 	<-sigint
+
+	runtime.GetPluginInsManager().KillAll()
 
 	if err = srvRpc.Shutdown(context.TODO()); err != nil {
 		logger.Errorf("rpc server shutdown error: %v", err)

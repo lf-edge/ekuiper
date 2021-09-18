@@ -19,6 +19,7 @@ $(BUILT):
 	rm -rf $(SRCDIR)/plugins/source/*
 	rm -rf $(SRCDIR)/plugins/sinks/*
 	rm -rf $(SRCDIR)/plugins/functions/*
+	rm -rf $(SRCDIR)/plugins/portable/*
 
 clean:
 	rm -rf $(TOPDIR)

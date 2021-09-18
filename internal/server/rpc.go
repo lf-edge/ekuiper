@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/native"
 	"github.com/lf-edge/ekuiper/internal/service"
 	"github.com/lf-edge/ekuiper/internal/topo/sink"
@@ -202,7 +203,7 @@ func (t *Server) DropRule(name string, reply *string) error {
 }
 
 func (t *Server) CreatePlugin(arg *model.PluginDesc, reply *string) error {
-	pt := native.PluginType(arg.Type)
+	pt := plugin.PluginType(arg.Type)
 	p, err := getPluginByJson(arg, pt)
 	if err != nil {
 		return fmt.Errorf("Create plugin error: %s", err)
@@ -220,7 +221,7 @@ func (t *Server) CreatePlugin(arg *model.PluginDesc, reply *string) error {
 }
 
 func (t *Server) RegisterPlugin(arg *model.PluginDesc, reply *string) error {
-	p, err := getPluginByJson(arg, native.FUNCTION)
+	p, err := getPluginByJson(arg, plugin.FUNCTION)
 	if err != nil {
 		return fmt.Errorf("Register plugin functions error: %s", err)
 	}
@@ -237,7 +238,7 @@ func (t *Server) RegisterPlugin(arg *model.PluginDesc, reply *string) error {
 }
 
 func (t *Server) DropPlugin(arg *model.PluginDesc, reply *string) error {
-	pt := native.PluginType(arg.Type)
+	pt := plugin.PluginType(arg.Type)
 	p, err := getPluginByJson(arg, pt)
 	if err != nil {
 		return fmt.Errorf("Drop plugin error: %s", err)
@@ -257,7 +258,7 @@ func (t *Server) DropPlugin(arg *model.PluginDesc, reply *string) error {
 }
 
 func (t *Server) ShowPlugins(arg int, reply *string) error {
-	pt := native.PluginType(arg)
+	pt := plugin.PluginType(arg)
 	l := native.GetManager().List(pt)
 	if len(l) == 0 {
 		l = append(l, "No plugin is found.")
@@ -276,7 +277,7 @@ func (t *Server) ShowUdfs(_ int, reply *string) error {
 }
 
 func (t *Server) DescPlugin(arg *model.PluginDesc, reply *string) error {
-	pt := native.PluginType(arg.Type)
+	pt := plugin.PluginType(arg.Type)
 	p, err := getPluginByJson(arg, pt)
 	if err != nil {
 		return fmt.Errorf("Describe plugin error: %s", err)
@@ -295,7 +296,7 @@ func (t *Server) DescPlugin(arg *model.PluginDesc, reply *string) error {
 }
 
 func (t *Server) DescUdf(arg string, reply *string) error {
-	m, ok := native.GetManager().GetPluginBySymbol(native.FUNCTION, arg)
+	m, ok := native.GetManager().GetPluginBySymbol(plugin.FUNCTION, arg)
 	if !ok {
 		return fmt.Errorf("Describe udf error: not found")
 	} else {
@@ -417,8 +418,8 @@ func marshalDesc(m interface{}) (string, error) {
 	return dst.String(), nil
 }
 
-func getPluginByJson(arg *model.PluginDesc, pt native.PluginType) (native.Plugin, error) {
-	p := native.NewPluginByType(pt)
+func getPluginByJson(arg *model.PluginDesc, pt plugin.PluginType) (plugin.Plugin, error) {
+	p := plugin.NewPluginByType(pt)
 	if arg.Json != "" {
 		if err := json.Unmarshal([]byte(arg.Json), p); err != nil {
 			return nil, fmt.Errorf("Parse plugin %s error : %s.", arg.Json, err)

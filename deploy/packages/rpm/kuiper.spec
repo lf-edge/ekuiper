@@ -41,6 +41,7 @@ mkdir -p %{buildroot}%{_var_home}/plugins
 mkdir -p %{buildroot}%{_var_home}/plugins/sources
 mkdir -p %{buildroot}%{_var_home}/plugins/sinks
 mkdir -p %{buildroot}%{_var_home}/plugins/functions
+mkdir -p %{buildroot}%{_var_home}/plugins/portable
 mkdir -p %{buildroot}%{_initddir}
 
 

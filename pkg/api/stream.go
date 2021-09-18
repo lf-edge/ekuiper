@@ -25,22 +25,22 @@ type SourceTuple interface {
 }
 
 type DefaultSourceTuple struct {
-	message map[string]interface{}
-	meta    map[string]interface{}
+	Mess map[string]interface{} `json:"message"`
+	M    map[string]interface{} `json:"meta"`
 }
 
 func NewDefaultSourceTuple(message map[string]interface{}, meta map[string]interface{}) *DefaultSourceTuple {
 	return &DefaultSourceTuple{
-		message: message,
-		meta:    meta,
+		Mess: message,
+		M:    meta,
 	}
 }
 
 func (t *DefaultSourceTuple) Message() map[string]interface{} {
-	return t.message
+	return t.Mess
 }
 func (t *DefaultSourceTuple) Meta() map[string]interface{} {
-	return t.meta
+	return t.M
 }
 
 type Logger interface {

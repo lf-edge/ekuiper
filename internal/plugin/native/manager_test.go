@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
+	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"net/http"
 	"net/http/httptest"
@@ -49,7 +50,7 @@ func TestManager_Register(t *testing.T) {
 	endpoint := s.URL
 
 	data := []struct {
-		t       PluginType
+		t       plugin.PluginType
 		n       string
 		u       string
 		v       string
@@ -58,62 +59,62 @@ func TestManager_Register(t *testing.T) {
 		err     error
 	}{
 		{
-			t:   SOURCE,
+			t:   plugin.SOURCE,
 			n:   "",
 			u:   "",
 			err: errors.New("invalid name : should not be empty"),
 		}, {
-			t:   SOURCE,
+			t:   plugin.SOURCE,
 			n:   "zipMissConf",
 			u:   endpoint + "/sources/zipMissConf.zip",
 			err: errors.New("fail to install plugin: invalid zip file: so file or conf file is missing"),
 		}, {
-			t:   SINK,
+			t:   plugin.SINK,
 			n:   "urlerror",
 			u:   endpoint + "/sinks/nozip",
 			err: errors.New("invalid uri " + endpoint + "/sinks/nozip"),
 		}, {
-			t:   SINK,
+			t:   plugin.SINK,
 			n:   "zipWrongname",
 			u:   endpoint + "/sinks/zipWrongName.zip",
 			err: errors.New("fail to install plugin: invalid zip file: so file or conf file is missing"),
 		}, {
-			t:   FUNCTION,
+			t:   plugin.FUNCTION,
 			n:   "zipMissSo",
 			u:   endpoint + "/functions/zipMissSo.zip",
 			err: errors.New("fail to install plugin: invalid zip file: so file or conf file is missing"),
 		}, {
-			t: SOURCE,
+			t: plugin.SOURCE,
 			n: "random2",
 			u: endpoint + "/sources/random2.zip",
 		}, {
-			t: SOURCE,
+			t: plugin.SOURCE,
 			n: "random3",
 			u: endpoint + "/sources/random3.zip",
 			v: "1.0.0",
 		}, {
-			t:       SINK,
+			t:       plugin.SINK,
 			n:       "file2",
 			u:       endpoint + "/sinks/file2.zip",
 			lowerSo: true,
 		}, {
-			t: FUNCTION,
+			t: plugin.FUNCTION,
 			n: "echo2",
 			u: endpoint + "/functions/echo2.zip",
 			f: []string{"echo2", "echo3"},
 		}, {
-			t:   FUNCTION,
+			t:   plugin.FUNCTION,
 			n:   "echo2",
 			u:   endpoint + "/functions/echo2.zip",
 			err: errors.New("invalid name echo2: duplicate"),
 		}, {
-			t:   FUNCTION,
+			t:   plugin.FUNCTION,
 			n:   "misc",
 			u:   endpoint + "/functions/echo2.zip",
 			f:   []string{"misc", "echo3"},
 			err: errors.New("function name echo3 already exists"),
 		}, {
-			t: FUNCTION,
+			t: plugin.FUNCTION,
 			n: "comp",
 			u: endpoint + "/functions/comp.zip",
 		},
@@ -121,17 +122,17 @@ func TestManager_Register(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 	for i, tt := range data {
-		var p Plugin
-		if tt.t == FUNCTION {
-			p = &FuncPlugin{
-				IOPlugin: IOPlugin{
+		var p plugin.Plugin
+		if tt.t == plugin.FUNCTION {
+			p = &plugin.FuncPlugin{
+				IOPlugin: plugin.IOPlugin{
 					Name: tt.n,
 					File: tt.u,
 				},
 				Functions: tt.f,
 			}
 		} else {
-			p = &IOPlugin{
+			p = &plugin.IOPlugin{
 				Name: tt.n,
 				File: tt.u,
 			}
@@ -151,17 +152,17 @@ func TestManager_Register(t *testing.T) {
 
 func TestManager_List(t *testing.T) {
 	data := []struct {
-		t PluginType
+		t plugin.PluginType
 		r []string
 	}{
 		{
-			t: SOURCE,
+			t: plugin.SOURCE,
 			r: []string{"random", "random2", "random3"},
 		}, {
-			t: SINK,
+			t: plugin.SINK,
 			r: []string{"file", "file2"},
 		}, {
-			t: FUNCTION,
+			t: plugin.FUNCTION,
 			r: []string{"accumulateWordCount", "comp", "countPlusOne", "echo", "echo2"},
 		},
 	}
@@ -183,7 +184,7 @@ func TestManager_Symbols(t *testing.T) {
 	if !reflect.DeepEqual(r, result) {
 		t.Errorf("result mismatch:\n  exp=%v\n  got=%v\n\n", r, result)
 	}
-	p, ok := manager.GetPluginBySymbol(FUNCTION, "echo3")
+	p, ok := manager.GetPluginBySymbol(plugin.FUNCTION, "echo3")
 	if !ok {
 		t.Errorf("cannot find echo3 symbol")
 	}
@@ -194,26 +195,26 @@ func TestManager_Symbols(t *testing.T) {
 
 func TestManager_Desc(t *testing.T) {
 	data := []struct {
-		t PluginType
+		t plugin.PluginType
 		n string
 		r map[string]interface{}
 	}{
 		{
-			t: SOURCE,
+			t: plugin.SOURCE,
 			n: "random2",
 			r: map[string]interface{}{
 				"name":    "random2",
 				"version": "",
 			},
 		}, {
-			t: SOURCE,
+			t: plugin.SOURCE,
 			n: "random3",
 			r: map[string]interface{}{
 				"name":    "random3",
 				"version": "1.0.0",
 			},
 		}, {
-			t: FUNCTION,
+			t: plugin.FUNCTION,
 			n: "echo2",
 			r: map[string]interface{}{
 				"name":      "echo2",
@@ -238,24 +239,24 @@ func TestManager_Desc(t *testing.T) {
 
 func TestManager_Delete(t *testing.T) {
 	data := []struct {
-		t   PluginType
+		t   plugin.PluginType
 		n   string
 		err error
 	}{
 		{
-			t: SOURCE,
+			t: plugin.SOURCE,
 			n: "random2",
 		}, {
-			t: SINK,
+			t: plugin.SINK,
 			n: "file2",
 		}, {
-			t: FUNCTION,
+			t: plugin.FUNCTION,
 			n: "echo2",
 		}, {
-			t: SOURCE,
+			t: plugin.SOURCE,
 			n: "random3",
 		}, {
-			t: FUNCTION,
+			t: plugin.FUNCTION,
 			n: "comp",
 		},
 	}
@@ -269,7 +270,7 @@ func TestManager_Delete(t *testing.T) {
 	}
 }
 
-func checkFile(pluginDir string, etcDir string, t PluginType, name string, version string, lowerSo bool) error {
+func checkFile(pluginDir string, etcDir string, t plugin.PluginType, name string, version string, lowerSo bool) error {
 	var soName string
 	if !lowerSo {
 		soName = ucFirst(name) + ".so"
@@ -283,13 +284,13 @@ func checkFile(pluginDir string, etcDir string, t PluginType, name string, versi
 		}
 	}
 
-	soPath := path.Join(pluginDir, PluginTypes[t], soName)
+	soPath := path.Join(pluginDir, plugin.PluginTypes[t], soName)
 	_, err := os.Stat(soPath)
 	if err != nil {
 		return err
 	}
-	if t == SOURCE {
-		etcPath := path.Join(etcDir, PluginTypes[t], name+".yaml")
+	if t == plugin.SOURCE {
+		etcPath := path.Join(etcDir, plugin.PluginTypes[t], name+".yaml")
 		_, err = os.Stat(etcPath)
 		if err != nil {
 			return err

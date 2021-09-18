@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/meta"
 )
 
+// Bind Must run after function and io bound
 func Bind() {
 	if err := meta.ReadSourceMetaDir(func(name string) bool {
 		s, _ := io.Source(name)

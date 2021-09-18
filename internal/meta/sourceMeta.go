@@ -62,7 +62,7 @@ func newUiSource(fi *fileSource) (*uiSource, error) {
 	return ui, nil
 }
 
-var gSourceproperty map[string]*sourceProperty
+var gSourceproperty = make(map[string]*sourceProperty)
 
 func UninstallSource(name string) {
 	if v, ok := gSourceproperty[name+".json"]; ok {
@@ -114,7 +114,6 @@ func ReadSourceMetaFile(filePath string, installed bool) error {
 }
 
 func ReadSourceMetaDir(checker InstallChecker) error {
-	gSourceproperty = make(map[string]*sourceProperty)
 	confDir, err := conf.GetConfLoc()
 	if nil != err {
 		return err

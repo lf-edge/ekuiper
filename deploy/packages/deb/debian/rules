@@ -37,6 +37,7 @@ install: build
 	mkdir -p debian/kuiper/var/lib/kuiper/plugins/sources
 	mkdir -p debian/kuiper/var/lib/kuiper/plugins/sinks
 	mkdir -p debian/kuiper/var/lib/kuiper/plugins/functions
+	mkdir -p debian/kuiper/var/lib/kuiper/plugins/portable
 	mkdir -p debian/kuiper/var/log/kuiper
 	mkdir -p debian/kuiper/etc/kuiper
 	mkdir -p debian/kuiper/lib/systemd/system

@@ -44,7 +44,9 @@ type randomSource struct {
 }
 
 func (s *randomSource) Configure(topic string, props map[string]interface{}) error {
-	cfg := &randomSourceConfig{}
+	cfg := &randomSourceConfig{
+		Format: "json",
+	}
 	err := cast.MapToStruct(props, cfg)
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
@@ -55,7 +57,7 @@ func (s *randomSource) Configure(topic string, props map[string]interface{}) err
 	if cfg.Pattern == nil {
 		return fmt.Errorf("source `random` property `pattern` is required")
 	}
-	if cfg.Interval <= 0 {
+	if cfg.Seed <= 0 {
 		return fmt.Errorf("source `random` property `seed` must be a positive integer but got %d", cfg.Seed)
 	}
 	if strings.ToLower(cfg.Format) != message.FormatJson {
