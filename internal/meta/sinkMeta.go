@@ -155,10 +155,9 @@ func newUiSink(fi *fileSink) (*uiSink, error) {
 	return ui, err
 }
 
-var gSinkmetadata map[string]*uiSink //immutable
+var gSinkmetadata = make(map[string]*uiSink) //immutable
 
 func ReadSinkMetaDir(checker InstallChecker) error {
-	gSinkmetadata = make(map[string]*uiSink)
 	confDir, err := conf.GetConfLoc()
 	if nil != err {
 		return err

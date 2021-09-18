@@ -25,10 +25,10 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	plugin2 "github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -78,8 +78,8 @@ func InitManager() (*Manager, error) {
 		return nil, fmt.Errorf("error when opening db: %v", err)
 	}
 	plugins := make([]map[string]string, 3)
-	for i := range PluginTypes {
-		names, err := findAll(PluginType(i), pluginDir)
+	for i := range plugin2.PluginTypes {
+		names, err := findAll(plugin2.PluginType(i), pluginDir)
 		if err != nil {
 			return nil, fmt.Errorf("fail to find existing plugins: %s", err)
 		}
@@ -87,7 +87,7 @@ func InitManager() (*Manager, error) {
 	}
 	registry := &Manager{plugins: plugins, symbols: make(map[string]string), db: db, pluginDir: pluginDir, etcDir: etcDir, runtime: make(map[string]plugin.Symbol)}
 
-	for pf := range plugins[FUNCTION] {
+	for pf := range plugins[plugin2.FUNCTION] {
 		l := make([]string, 0)
 		if ok, err := db.Get(pf, &l); ok {
 			registry.storeSymbols(pf, l)
@@ -101,9 +101,9 @@ func InitManager() (*Manager, error) {
 	return registry, nil
 }
 
-func findAll(t PluginType, pluginDir string) (result map[string]string, err error) {
+func findAll(t plugin2.PluginType, pluginDir string) (result map[string]string, err error) {
 	result = make(map[string]string)
-	dir := path.Join(pluginDir, PluginTypes[t])
+	dir := path.Join(pluginDir, plugin2.PluginTypes[t])
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return
@@ -123,7 +123,7 @@ func GetManager() *Manager {
 	return manager
 }
 
-func (rr *Manager) get(t PluginType, name string) (string, bool) {
+func (rr *Manager) get(t plugin2.PluginType, name string) (string, bool) {
 	rr.RLock()
 	result := rr.plugins[t]
 	rr.RUnlock()
@@ -131,7 +131,7 @@ func (rr *Manager) get(t PluginType, name string) (string, bool) {
 	return r, ok
 }
 
-func (rr *Manager) store(t PluginType, name string, version string) {
+func (rr *Manager) store(t plugin2.PluginType, name string, version string) {
 	rr.Lock()
 	rr.plugins[t][name] = version
 	rr.Unlock()
@@ -161,7 +161,7 @@ func (rr *Manager) removeSymbols(symbols []string) {
 
 // API for management
 
-func (rr *Manager) List(t PluginType) []string {
+func (rr *Manager) List(t plugin2.PluginType) []string {
 	rr.RLock()
 	result := rr.plugins[t]
 	rr.RUnlock()
@@ -183,9 +183,9 @@ func (rr *Manager) ListSymbols() []string {
 	return keys
 }
 
-func (rr *Manager) GetPluginVersionBySymbol(t PluginType, symbolName string) (string, bool) {
+func (rr *Manager) GetPluginVersionBySymbol(t plugin2.PluginType, symbolName string) (string, bool) {
 	switch t {
-	case FUNCTION:
+	case plugin2.FUNCTION:
 		rr.RLock()
 		result := rr.plugins[t]
 		name, ok := rr.symbols[symbolName]
@@ -201,9 +201,9 @@ func (rr *Manager) GetPluginVersionBySymbol(t PluginType, symbolName string) (st
 	}
 }
 
-func (rr *Manager) GetPluginBySymbol(t PluginType, symbolName string) (string, bool) {
+func (rr *Manager) GetPluginBySymbol(t plugin2.PluginType, symbolName string) (string, bool) {
 	switch t {
-	case FUNCTION:
+	case plugin2.FUNCTION:
 		rr.RLock()
 		defer rr.RUnlock()
 		name, ok := rr.symbols[symbolName]
@@ -213,7 +213,7 @@ func (rr *Manager) GetPluginBySymbol(t PluginType, symbolName string) (string, b
 	}
 }
 
-func (rr *Manager) Register(t PluginType, j Plugin) error {
+func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	name, uri, shellParas := j.GetName(), j.GetFile(), j.GetShellParas()
 	//Validation
 	name = strings.Trim(name, " ")
@@ -232,7 +232,7 @@ func (rr *Manager) Register(t PluginType, j Plugin) error {
 		}
 	}
 	var err error
-	if t == FUNCTION {
+	if t == plugin2.FUNCTION {
 		if len(j.GetSymbols()) > 0 {
 			err = rr.db.Set(name, j.GetSymbols())
 			if err != nil {
@@ -262,7 +262,7 @@ func (rr *Manager) Register(t PluginType, j Plugin) error {
 		err = rr.db.Set(name, j.GetSymbols())
 	}
 	if err != nil { //Revert for any errors
-		if t == SOURCE && len(unzipFiles) == 1 { //source that only copy so file
+		if t == plugin2.SOURCE && len(unzipFiles) == 1 { //source that only copy so file
 			os.RemoveAll(unzipFiles[0])
 		}
 		if len(j.GetSymbols()) > 0 {
@@ -275,16 +275,16 @@ func (rr *Manager) Register(t PluginType, j Plugin) error {
 	rr.store(t, name, version)
 
 	switch t {
-	case SINK:
-		if err := meta.ReadSinkMetaFile(path.Join(rr.etcDir, PluginTypes[t], name+`.json`), true); nil != err {
+	case plugin2.SINK:
+		if err := meta.ReadSinkMetaFile(path.Join(rr.etcDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
 			conf.Log.Errorf("readSinkFile:%v", err)
 		}
-	case SOURCE:
-		if err := meta.ReadSourceMetaFile(path.Join(rr.etcDir, PluginTypes[t], name+`.json`), true); nil != err {
+	case plugin2.SOURCE:
+		if err := meta.ReadSourceMetaFile(path.Join(rr.etcDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
 			conf.Log.Errorf("readSourceFile:%v", err)
 		}
-	case FUNCTION:
-		if err := meta.ReadFuncMetaFile(path.Join(rr.etcDir, PluginTypes[t], name+`.json`), true); nil != err {
+	case plugin2.FUNCTION:
+		if err := meta.ReadFuncMetaFile(path.Join(rr.etcDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
 			conf.Log.Errorf("readFuncFile:%v", err)
 		}
 	}
@@ -311,7 +311,7 @@ func (rr *Manager) RegisterFuncs(name string, functions []string) error {
 	return rr.storeSymbols(name, functions)
 }
 
-func (rr *Manager) Delete(t PluginType, name string, stop bool) error {
+func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 	name = strings.Trim(name, " ")
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
@@ -325,19 +325,19 @@ func (rr *Manager) Delete(t PluginType, name string, stop bool) error {
 		soPath,
 	}
 	// Find etc folder
-	etcPath := path.Join(rr.etcDir, PluginTypes[t], name)
+	etcPath := path.Join(rr.etcDir, plugin2.PluginTypes[t], name)
 	if fi, err := os.Stat(etcPath); err == nil {
 		if fi.Mode().IsDir() {
 			paths = append(paths, etcPath)
 		}
 	}
 	switch t {
-	case SOURCE:
-		paths = append(paths, path.Join(rr.etcDir, PluginTypes[t], name+".yaml"))
+	case plugin2.SOURCE:
+		paths = append(paths, path.Join(rr.etcDir, plugin2.PluginTypes[t], name+".yaml"))
 		meta.UninstallSource(name)
-	case SINK:
+	case plugin2.SINK:
 		meta.UninstallSink(name)
-	case FUNCTION:
+	case plugin2.FUNCTION:
 		old := make([]string, 0)
 		if ok, err := rr.db.Get(name, &old); err != nil {
 			return err
@@ -366,7 +366,7 @@ func (rr *Manager) Delete(t PluginType, name string, stop bool) error {
 	}
 
 	if len(results) > 0 {
-		return errors.New(strings.Join(results, "\n"))
+		return fmt.Errorf(strings.Join(results, "\n"))
 	} else {
 		rr.store(t, name, DELETED)
 		if stop {
@@ -378,7 +378,7 @@ func (rr *Manager) Delete(t PluginType, name string, stop bool) error {
 		return nil
 	}
 }
-func (rr *Manager) GetPluginInfo(t PluginType, name string) (map[string]interface{}, bool) {
+func (rr *Manager) GetPluginInfo(t plugin2.PluginType, name string) (map[string]interface{}, bool) {
 	v, ok := rr.get(t, name)
 	if strings.HasPrefix(v, "v") {
 		v = v[1:]
@@ -388,7 +388,7 @@ func (rr *Manager) GetPluginInfo(t PluginType, name string) (map[string]interfac
 			"name":    name,
 			"version": v,
 		}
-		if t == FUNCTION {
+		if t == plugin2.FUNCTION {
 			l := make([]string, 0)
 			if ok, _ := rr.db.Get(name, &l); ok {
 				r["functions"] = l
@@ -400,9 +400,9 @@ func (rr *Manager) GetPluginInfo(t PluginType, name string) (map[string]interfac
 	return nil, false
 }
 
-func (rr *Manager) install(t PluginType, name, src string, shellParas []string) ([]string, string, error) {
+func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []string) ([]string, string, error) {
 	var filenames []string
-	var tempPath = path.Join(rr.pluginDir, "temp", PluginTypes[t], name)
+	var tempPath = path.Join(rr.pluginDir, "temp", plugin2.PluginTypes[t], name)
 	defer os.RemoveAll(tempPath)
 	r, err := zip.OpenReader(src)
 	if err != nil {
@@ -413,9 +413,9 @@ func (rr *Manager) install(t PluginType, name, src string, shellParas []string) 
 	soPrefix := regexp.MustCompile(fmt.Sprintf(`^((%s)|(%s))(@.*)?\.so$`, name, ucFirst(name)))
 	var yamlFile, yamlPath, version string
 	expFiles := 1
-	if t == SOURCE {
+	if t == plugin2.SOURCE {
 		yamlFile = name + ".yaml"
-		yamlPath = path.Join(rr.etcDir, PluginTypes[t], yamlFile)
+		yamlPath = path.Join(rr.etcDir, plugin2.PluginTypes[t], yamlFile)
 		expFiles = 2
 	}
 	var revokeFiles []string
@@ -430,14 +430,14 @@ func (rr *Manager) install(t PluginType, name, src string, shellParas []string) 
 			revokeFiles = append(revokeFiles, yamlPath)
 			filenames = append(filenames, yamlPath)
 		} else if fileName == name+".json" {
-			jsonPath := path.Join(rr.etcDir, PluginTypes[t], fileName)
+			jsonPath := path.Join(rr.etcDir, plugin2.PluginTypes[t], fileName)
 			if err := filex.UnzipTo(file, jsonPath); nil != err {
 				conf.Log.Errorf("Failed to decompress the metadata %s file", fileName)
 			} else {
 				revokeFiles = append(revokeFiles, jsonPath)
 			}
 		} else if soPrefix.Match([]byte(fileName)) {
-			soPath := path.Join(rr.pluginDir, PluginTypes[t], fileName)
+			soPath := path.Join(rr.pluginDir, plugin2.PluginTypes[t], fileName)
 			err = filex.UnzipTo(file, soPath)
 			if err != nil {
 				return filenames, "", err
@@ -446,7 +446,7 @@ func (rr *Manager) install(t PluginType, name, src string, shellParas []string) 
 			revokeFiles = append(revokeFiles, soPath)
 			_, version = parseName(fileName)
 		} else if strings.HasPrefix(fileName, "etc/") {
-			err = filex.UnzipTo(file, path.Join(rr.etcDir, PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
+			err = filex.UnzipTo(file, path.Join(rr.etcDir, plugin2.PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
 			if err != nil {
 				return filenames, "", err
 			}
@@ -484,7 +484,7 @@ func (rr *Manager) install(t PluginType, name, src string, shellParas []string) 
 			return filenames, "", err
 		} else {
 			conf.Log.Infof(`run install script:%s`, outb.String())
-			conf.Log.Infof("install %s plugin %s", PluginTypes[t], name)
+			conf.Log.Infof("install %s plugin %s", plugin2.PluginTypes[t], name)
 		}
 	}
 	return filenames, version, nil
@@ -493,7 +493,7 @@ func (rr *Manager) install(t PluginType, name, src string, shellParas []string) 
 // binder factory implementations
 
 func (rr *Manager) Source(name string) (api.Source, error) {
-	nf, err := rr.loadRuntime(SOURCE, name)
+	nf, err := rr.loadRuntime(plugin2.SOURCE, name)
 	if err != nil {
 		return nil, err
 	}
@@ -511,7 +511,7 @@ func (rr *Manager) Source(name string) (api.Source, error) {
 }
 
 func (rr *Manager) Sink(name string) (api.Sink, error) {
-	nf, err := rr.loadRuntime(SINK, name)
+	nf, err := rr.loadRuntime(plugin2.SINK, name)
 	if err != nil {
 		return nil, err
 	}
@@ -531,7 +531,7 @@ func (rr *Manager) Sink(name string) (api.Sink, error) {
 }
 
 func (rr *Manager) Function(name string) (api.Function, error) {
-	nf, err := rr.loadRuntime(FUNCTION, name)
+	nf, err := rr.loadRuntime(plugin2.FUNCTION, name)
 	if err != nil {
 		return nil, err
 	}
@@ -551,14 +551,14 @@ func (rr *Manager) Function(name string) (api.Function, error) {
 }
 
 func (rr *Manager) HasFunctionSet(name string) bool {
-	_, ok := rr.get(FUNCTION, name)
+	_, ok := rr.get(plugin2.FUNCTION, name)
 	return ok
 }
 
 // If not found, return nil,nil; Other errors return nil, err
-func (rr *Manager) loadRuntime(t PluginType, name string) (plugin.Symbol, error) {
+func (rr *Manager) loadRuntime(t plugin2.PluginType, name string) (plugin.Symbol, error) {
 	ut := ucFirst(name)
-	ptype := PluginTypes[t]
+	ptype := plugin2.PluginTypes[t]
 	key := ptype + "/" + name
 	var nf plugin.Symbol
 	rr.RLock()
@@ -590,7 +590,7 @@ func (rr *Manager) loadRuntime(t PluginType, name string) (plugin.Symbol, error)
 }
 
 // Return the lowercase version of so name. It may be upper case in path.
-func (rr *Manager) getSoFilePath(t PluginType, name string, isSoName bool) (string, error) {
+func (rr *Manager) getSoFilePath(t plugin2.PluginType, name string, isSoName bool) (string, error) {
 	var (
 		v      string
 		soname string
@@ -614,9 +614,9 @@ func (rr *Manager) getSoFilePath(t PluginType, name string, isSoName bool) (stri
 	if v != "" {
 		soFile = fmt.Sprintf("%s@%s.so", soname, v)
 	}
-	p := path.Join(rr.pluginDir, PluginTypes[t], soFile)
+	p := path.Join(rr.pluginDir, plugin2.PluginTypes[t], soFile)
 	if _, err := os.Stat(p); err != nil {
-		p = path.Join(rr.pluginDir, PluginTypes[t], ucFirst(soFile))
+		p = path.Join(rr.pluginDir, plugin2.PluginTypes[t], ucFirst(soFile))
 	}
 	if _, err := os.Stat(p); err != nil {
 		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("cannot find .so file for plugin %s", soname))

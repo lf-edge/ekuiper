@@ -22,7 +22,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/meta"
+	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/native"
+	"github.com/lf-edge/ekuiper/internal/plugin/portable"
 	"github.com/lf-edge/ekuiper/internal/service"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -108,7 +110,6 @@ func createRestServer(ip string, port int) *http.Server {
 	r.HandleFunc("/plugins/sources", sourcesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/sources/prebuild", prebuildSourcePlugins).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/sources/{name}", sourceHandler).Methods(http.MethodDelete, http.MethodGet)
-
 	r.HandleFunc("/plugins/sinks", sinksHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/sinks/prebuild", prebuildSinkPlugins).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/sinks/{name}", sinkHandler).Methods(http.MethodDelete, http.MethodGet)
@@ -119,11 +120,12 @@ func createRestServer(ip string, port int) *http.Server {
 	r.HandleFunc("/plugins/udfs", functionsListHandler).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/udfs/{name}", functionsGetHandler).Methods(http.MethodGet)
 
-	r.HandleFunc("/metadata/functions", functionsMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/plugins/portables", portablesHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/plugins/portables/{name}", portableHandler).Methods(http.MethodGet, http.MethodDelete)
 
+	r.HandleFunc("/metadata/functions", functionsMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sinks", sinksMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sinks/{name}", newSinkMetaHandler).Methods(http.MethodGet)
-
 	r.HandleFunc("/metadata/sources", sourcesMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/yaml/{name}", sourceConfHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/{name}", sourceMetaHandler).Methods(http.MethodGet)
@@ -422,7 +424,7 @@ func getTopoRuleHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(content))
 }
 
-func pluginsHandler(w http.ResponseWriter, r *http.Request, t native.PluginType) {
+func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) {
 	pluginManager := native.GetManager()
 	defer r.Body.Close()
 	switch r.Method {
@@ -430,24 +432,24 @@ func pluginsHandler(w http.ResponseWriter, r *http.Request, t native.PluginType)
 		content := pluginManager.List(t)
 		jsonResponse(content, w, logger)
 	case http.MethodPost:
-		sd := native.NewPluginByType(t)
+		sd := plugin.NewPluginByType(t)
 		err := json.NewDecoder(r.Body).Decode(sd)
 		// Problems decoding
 		if err != nil {
-			handleError(w, err, fmt.Sprintf("Invalid body: Error decoding the %s plugin json", native.PluginTypes[t]), logger)
+			handleError(w, err, fmt.Sprintf("Invalid body: Error decoding the %s plugin json", plugin.PluginTypes[t]), logger)
 			return
 		}
 		err = pluginManager.Register(t, sd)
 		if err != nil {
-			handleError(w, err, fmt.Sprintf("%s plugins create command error", native.PluginTypes[t]), logger)
+			handleError(w, err, fmt.Sprintf("%s plugins create command error", plugin.PluginTypes[t]), logger)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("%s plugin %s is created", native.PluginTypes[t], sd.GetName())))
+		w.Write([]byte(fmt.Sprintf("%s plugin %s is created", plugin.PluginTypes[t], sd.GetName())))
 	}
 }
 
-func pluginHandler(w http.ResponseWriter, r *http.Request, t native.PluginType) {
+func pluginHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
@@ -458,11 +460,11 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t native.PluginType) 
 		r := cb == "1"
 		err := pluginManager.Delete(t, name, r)
 		if err != nil {
-			handleError(w, err, fmt.Sprintf("delete %s plugin %s error", native.PluginTypes[t], name), logger)
+			handleError(w, err, fmt.Sprintf("delete %s plugin %s error", plugin.PluginTypes[t], name), logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		result := fmt.Sprintf("%s plugin %s is deleted", native.PluginTypes[t], name)
+		result := fmt.Sprintf("%s plugin %s is deleted", plugin.PluginTypes[t], name)
 		if r {
 			result = fmt.Sprintf("%s and Kuiper will be stopped", result)
 		} else {
@@ -472,7 +474,7 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t native.PluginType) 
 	case http.MethodGet:
 		j, ok := pluginManager.GetPluginInfo(t, name)
 		if !ok {
-			handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("describe %s plugin %s error", native.PluginTypes[t], name), logger)
+			handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("describe %s plugin %s error", plugin.PluginTypes[t], name), logger)
 			return
 		}
 		jsonResponse(j, w, logger)
@@ -481,27 +483,27 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t native.PluginType) 
 
 //list or create source plugin
 func sourcesHandler(w http.ResponseWriter, r *http.Request) {
-	pluginsHandler(w, r, native.SOURCE)
+	pluginsHandler(w, r, plugin.SOURCE)
 }
 
 //delete a source plugin
 func sourceHandler(w http.ResponseWriter, r *http.Request) {
-	pluginHandler(w, r, native.SOURCE)
+	pluginHandler(w, r, plugin.SOURCE)
 }
 
 //list or create sink plugin
 func sinksHandler(w http.ResponseWriter, r *http.Request) {
-	pluginsHandler(w, r, native.SINK)
+	pluginsHandler(w, r, plugin.SINK)
 }
 
 //delete a sink plugin
 func sinkHandler(w http.ResponseWriter, r *http.Request) {
-	pluginHandler(w, r, native.SINK)
+	pluginHandler(w, r, plugin.SINK)
 }
 
 //list or create function plugin
 func functionsHandler(w http.ResponseWriter, r *http.Request) {
-	pluginsHandler(w, r, native.FUNCTION)
+	pluginsHandler(w, r, plugin.FUNCTION)
 }
 
 //list all user defined functions in all function plugins
@@ -515,7 +517,7 @@ func functionsGetHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 	pluginManager := native.GetManager()
-	j, ok := pluginManager.GetPluginBySymbol(native.FUNCTION, name)
+	j, ok := pluginManager.GetPluginBySymbol(plugin.FUNCTION, name)
 	if !ok {
 		handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("describe function %s error", name), logger)
 		return
@@ -525,7 +527,7 @@ func functionsGetHandler(w http.ResponseWriter, r *http.Request) {
 
 //delete a function plugin
 func functionHandler(w http.ResponseWriter, r *http.Request) {
-	pluginHandler(w, r, native.FUNCTION)
+	pluginHandler(w, r, plugin.FUNCTION)
 }
 
 type functionList struct {
@@ -540,9 +542,9 @@ func functionRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 	pluginManager := native.GetManager()
-	_, ok := pluginManager.GetPluginInfo(native.FUNCTION, name)
+	_, ok := pluginManager.GetPluginInfo(plugin.FUNCTION, name)
 	if !ok {
-		handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("register %s plugin %s error", native.PluginTypes[native.FUNCTION], name), logger)
+		handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("register %s plugin %s error", plugin.PluginTypes[plugin.FUNCTION], name), logger)
 		return
 	}
 	sd := functionList{}
@@ -561,16 +563,66 @@ func functionRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("function plugin %s function list is registered", name)))
 }
 
+func portablesHandler(w http.ResponseWriter, r *http.Request) {
+	m := portable.GetManager()
+	defer r.Body.Close()
+	switch r.Method {
+	case http.MethodGet:
+		content := m.List()
+		jsonResponse(content, w, logger)
+	case http.MethodPost:
+		sd := plugin.NewPluginByType(plugin.PORTABLE)
+		err := json.NewDecoder(r.Body).Decode(sd)
+		// Problems decoding
+		if err != nil {
+			handleError(w, err, "Invalid body: Error decoding the portable plugin json", logger)
+			return
+		}
+		err = m.Register(sd)
+		if err != nil {
+			handleError(w, err, "portable plugin create command error", logger)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(fmt.Sprintf("portable plugin %s is created", sd.GetName())))
+	}
+}
+
+func portableHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+	m := portable.GetManager()
+	switch r.Method {
+	case http.MethodDelete:
+		err := m.Delete(name)
+		if err != nil {
+			handleError(w, err, fmt.Sprintf("delete portable plugin %s error", name), logger)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		result := fmt.Sprintf("portable plugin %s is deleted", name)
+		w.Write([]byte(result))
+	case http.MethodGet:
+		j, ok := m.GetPluginInfo(name)
+		if !ok {
+			handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("describe portable plugin %s error", name), logger)
+			return
+		}
+		jsonResponse(j, w, logger)
+	}
+}
+
 func prebuildSourcePlugins(w http.ResponseWriter, r *http.Request) {
-	prebuildPluginsHandler(w, r, native.SOURCE)
+	prebuildPluginsHandler(w, r, plugin.SOURCE)
 }
 
 func prebuildSinkPlugins(w http.ResponseWriter, r *http.Request) {
-	prebuildPluginsHandler(w, r, native.SINK)
+	prebuildPluginsHandler(w, r, plugin.SINK)
 }
 
 func prebuildFuncsPlugins(w http.ResponseWriter, r *http.Request) {
-	prebuildPluginsHandler(w, r, native.FUNCTION)
+	prebuildPluginsHandler(w, r, plugin.FUNCTION)
 }
 
 func isOffcialDockerImage() bool {
@@ -580,7 +632,7 @@ func isOffcialDockerImage() bool {
 	return true
 }
 
-func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t native.PluginType) {
+func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) {
 	emsg := "It's strongly recommended to install plugins at official released Debian Docker images. If you choose to proceed to install plugin, please make sure the plugin is already validated in your own build."
 	if !isOffcialDockerImage() {
 		handleError(w, fmt.Errorf(emsg), "", logger)
@@ -596,9 +648,9 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t native.Plu
 		if strings.Contains(prettyName, "DEBIAN") {
 			hosts := conf.Config.Basic.PluginHosts
 			ptype := "sources"
-			if t == native.SINK {
+			if t == plugin.SINK {
 				ptype = "sinks"
-			} else if t == native.FUNCTION {
+			} else if t == plugin.FUNCTION {
 				ptype = "functions"
 			}
 			if err, plugins := fetchPluginList(hosts, ptype, os, runtime.GOARCH); err != nil {

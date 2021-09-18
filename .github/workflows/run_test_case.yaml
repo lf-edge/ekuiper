@@ -36,6 +36,11 @@ jobs:
             go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/Echo.so extensions/functions/echo/echo.go
             go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
             go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
+            mkdir -p plugins/portable/mirror
+            cd sdk/go/example/mirror
+            go build -o ../../../../plugins/portable/mirror/mirror .
+            cp mirror.json ../../../../plugins/portable/mirror
+            cd ../../../../
             go test --tags="edgex test" ./...
         - uses: actions/upload-artifact@v1
           if: failure()

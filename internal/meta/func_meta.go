@@ -63,10 +63,9 @@ func newUiFuncs(fi *fileFuncs) *uiFuncs {
 	return uis
 }
 
-var gFuncmetadata map[string]*uiFuncs
+var gFuncmetadata = make(map[string]*uiFuncs)
 
 func ReadFuncMetaDir(checker InstallChecker) error {
-	gFuncmetadata = make(map[string]*uiFuncs)
 	confDir, err := conf.GetConfLoc()
 	if nil != err {
 		return err

@@ -107,12 +107,12 @@ func doStartRule(rs *RuleState) error {
 		case err := <-tp.Open():
 			if err != nil {
 				tp.GetContext().SetError(err)
-				logger.Printf("closing rule %s for error: %v", rs.Name, err)
+				logger.Errorf("closing rule %s for error: %v", rs.Name, err)
 				tp.Cancel()
 				rs.Triggered = false
 			} else {
 				rs.Triggered = false
-				logger.Printf("closing rule %s", rs.Name)
+				logger.Infof("closing rule %s", rs.Name)
 			}
 		}
 	}()
