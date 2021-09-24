@@ -8,8 +8,8 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en/plugins/sinks/tdengine.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh/plugins/sinks/tdengine.md"
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/plugins/sinks/tdengine.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/plugins/sinks/tdengine.md"
 		},
 		"description": {
 			"en_US": "This a sink plugin for TDengine, it can be used for saving the analysis data into TDengine.",
