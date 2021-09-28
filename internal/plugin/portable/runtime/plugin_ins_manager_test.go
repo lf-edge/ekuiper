@@ -49,7 +49,7 @@ func TestPluginInstance(t *testing.T) {
 		t.Errorf("can't ack handshake: %s", err.Error())
 		return
 	}
-	ins := &pluginIns{
+	ins := &PluginIns{
 		name:     "test",
 		process:  nil,
 		ctrlChan: ch,
