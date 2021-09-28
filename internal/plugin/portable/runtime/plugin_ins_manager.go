@@ -34,14 +34,23 @@ var PortbleConf = &PortableConfig{
 	SendTimeout: 1000,
 }
 
-type pluginIns struct {
+type PluginIns struct {
 	process      *os.Process
 	ctrlChan     ControlChannel
 	runningCount int
 	name         string
 }
 
-func (i *pluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
+func NewPluginIns(name string, ctrlChan ControlChannel, process *os.Process) *PluginIns {
+	return &PluginIns{
+		process:      process,
+		ctrlChan:     ctrlChan,
+		runningCount: 0,
+		name:         name,
+	}
+}
+
+func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	arg, err := json.Marshal(ctrl)
 	if err != nil {
 		return err
@@ -62,7 +71,7 @@ func (i *pluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	return err
 }
 
-func (i *pluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
+func (i *PluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
 	arg, err := json.Marshal(ctrl)
 	if err != nil {
 		return err
@@ -89,28 +98,33 @@ func (i *pluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
 	return err
 }
 
-func (i *pluginIns) Stop() error {
-	_ = i.ctrlChan.Close()
-	err := i.process.Kill()
+func (i *PluginIns) Stop() error {
+	var err error
+	if i.ctrlChan != nil {
+		err = i.ctrlChan.Close()
+	}
+	if i.process != nil {
+		err = i.process.Kill()
+	}
 	return err
 }
 
 // Manager plugin process and control socket
 type pluginInsManager struct {
-	instances map[string]*pluginIns
+	instances map[string]*PluginIns
 	sync.RWMutex
 }
 
 func GetPluginInsManager() *pluginInsManager {
 	once.Do(func() {
 		pm = &pluginInsManager{
-			instances: make(map[string]*pluginIns),
+			instances: make(map[string]*PluginIns),
 		}
 	})
 	return pm
 }
 
-func (p *pluginInsManager) getPluginIns(name string) (*pluginIns, bool) {
+func (p *pluginInsManager) getPluginIns(name string) (*PluginIns, bool) {
 	p.RLock()
 	defer p.RUnlock()
 	ins, ok := p.instances[name]
@@ -123,7 +137,7 @@ func (p *pluginInsManager) deletePluginIns(name string) {
 	delete(p.instances, name)
 }
 
-func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (*pluginIns, error) {
+func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (*PluginIns, error) {
 	p.Lock()
 	defer p.Unlock()
 	if ins, ok := p.instances[pluginMeta.Name]; ok {
@@ -181,11 +195,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		return nil, fmt.Errorf("plugin %s control handshake error: %v", pluginMeta.Executable, err)
 	}
 
-	ins := &pluginIns{
-		name:     pluginMeta.Name,
-		process:  process,
-		ctrlChan: ctrlChan,
-	}
+	ins := NewPluginIns(pluginMeta.Name, ctrlChan, process)
 	p.instances[pluginMeta.Name] = ins
 	conf.Log.Println("plugin start running")
 	return ins, nil
@@ -210,7 +220,7 @@ func (p *pluginInsManager) KillAll() error {
 	for _, ins := range p.instances {
 		_ = ins.Stop()
 	}
-	p.instances = make(map[string]*pluginIns)
+	p.instances = make(map[string]*PluginIns)
 	return nil
 }
 

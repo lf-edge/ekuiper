@@ -194,7 +194,7 @@ func listenWithRetry(sock mangos.Socket, url string) error {
 	for {
 		err := sock.Listen(url)
 		if err == nil {
-			conf.Log.Infof("start to listen after %d tries", 301-retryCount)
+			conf.Log.Infof("start to listen at %s after %d tries", url, 301-retryCount)
 			return err
 		}
 		retryCount--
