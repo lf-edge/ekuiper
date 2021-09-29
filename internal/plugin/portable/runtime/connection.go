@@ -127,6 +127,7 @@ func CreateSourceChannel(ctx api.StreamContext) (DataInChannel, error) {
 	if err = listenWithRetry(sock, url); err != nil {
 		return nil, fmt.Errorf("can't listen on pull socket for %s: %s", url, err.Error())
 	}
+	conf.Log.Infof("source channel created: %s", url)
 	return sock, nil
 }
 
@@ -144,6 +145,7 @@ func CreateFunctionChannel(symbolName string) (DataReqChannel, error) {
 	if err = listenWithRetry(sock, url); err != nil {
 		return nil, fmt.Errorf("can't listen on rep socket for %s: %s", url, err.Error())
 	}
+	conf.Log.Infof("function channel created: %s", url)
 	return &NanomsgReqRepChannel{sock: sock}, nil
 }
 
@@ -160,6 +162,7 @@ func CreateSinkChannel(ctx api.StreamContext) (DataOutChannel, error) {
 	if err = sock.Dial(url); err != nil {
 		return nil, fmt.Errorf("can't dial on push socket: %s", err.Error())
 	}
+	conf.Log.Infof("sink channel created: %s", url)
 	return sock, nil
 }
 
@@ -177,6 +180,7 @@ func CreateControlChannel(pluginName string) (ControlChannel, error) {
 	if err = listenWithRetry(sock, url); err != nil {
 		return nil, fmt.Errorf("can't listen on rep socket: %s", err.Error())
 	}
+	conf.Log.Infof("sink channel created: %s", url)
 	return &NanomsgReqChannel{sock: sock}, nil
 }
 

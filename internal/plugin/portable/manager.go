@@ -78,6 +78,24 @@ func GetManager() *Manager {
 	return manager
 }
 
+func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
+	registry := &registry{
+		RWMutex:   sync.RWMutex{},
+		plugins:   make(map[string]*PluginInfo),
+		sources:   make(map[string]string),
+		sinks:     make(map[string]string),
+		functions: make(map[string]string),
+	}
+	for name, pi := range plugins {
+		err := pi.Validate(name)
+		if err != nil {
+			return nil, err
+		}
+		registry.Set(name, pi)
+	}
+	return &Manager{reg: registry}, nil
+}
+
 func (m *Manager) syncRegistry() error {
 	files, err := ioutil.ReadDir(m.pluginDir)
 	if err != nil {

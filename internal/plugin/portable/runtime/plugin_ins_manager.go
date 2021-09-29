@@ -42,10 +42,16 @@ type PluginIns struct {
 }
 
 func NewPluginIns(name string, ctrlChan ControlChannel, process *os.Process) *PluginIns {
+	// if process is not passed, it is run in simulator mode. Then do not count running.
+	// so that it won't be automatically close.
+	rc := 0
+	if process == nil {
+		rc = 1
+	}
 	return &PluginIns{
 		process:      process,
 		ctrlChan:     ctrlChan,
-		runningCount: 0,
+		runningCount: rc,
 		name:         name,
 	}
 }
@@ -135,6 +141,13 @@ func (p *pluginInsManager) deletePluginIns(name string) {
 	p.Lock()
 	defer p.Unlock()
 	delete(p.instances, name)
+}
+
+// AddPluginIns For mock only
+func (p *pluginInsManager) AddPluginIns(name string, ins *PluginIns) {
+	p.Lock()
+	defer p.Unlock()
+	p.instances[name] = ins
 }
 
 func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (*PluginIns, error) {

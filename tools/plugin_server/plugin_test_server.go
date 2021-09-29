@@ -15,54 +15,94 @@
 package main
 
 import (
+	context2 "context"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/plugin/portable"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"net/http"
+	"sync"
 	"time"
+)
+
+// Only support to test a single plugin Testing process.
+// 0. Edit the testingPlugin variable to match your plugin meta.
+// 1. Start this server, and wait for handshake.
+// 2. Start or debug your plugin. Make sure the handshake completed.
+// 3. Issue startSymbol/stopSymbol REST API to debug your plugin symbol.
+
+// EDIT HERE: Define the plugins that you want to test.
+var testingPlugin = &portable.PluginInfo{
+	PluginMeta: runtime.PluginMeta{
+		Name:       "mirror",
+		Version:    "v1",
+		Language:   "go",
+		Executable: "mirror.py",
+	},
+	Sources:   []string{"pyjson"},
+	Sinks:     []string{"print"},
+	Functions: []string{"revert"},
+}
+
+var mockSinkData = []map[string]interface{}{
+	{
+		"name":  "hello",
+		"count": 5,
+	}, {
+		"name":  "world",
+		"count": 10,
+	},
+}
+
+var mockFuncData = [][]interface{}{
+	{"twelve"},
+	{"eleven"},
+}
+
+var (
+	ins     *runtime.PluginIns
+	m       *portable.Manager
+	ctx     api.StreamContext
+	cancels sync.Map
 )
 
 func main() {
 	var err error
-	ins, err = startPluginIns()
+	m, err = portable.MockManager(map[string]*portable.PluginInfo{testingPlugin.Name: testingPlugin})
+	if err != nil {
+		panic(err)
+	}
+	ins, err := startPluginIns(testingPlugin)
 	if err != nil {
 		panic(err)
 	}
 	defer ins.Stop()
+	runtime.GetPluginInsManager().AddPluginIns(testingPlugin.Name, ins)
 	c := context.WithValue(context.Background(), context.LoggerKey, conf.Log)
 	ctx = c.WithMeta("rule1", "op1", &state.MemoryStore{}).WithInstance(1)
 	server := createRestServer("127.0.0.1", 33333)
 	server.ListenAndServe()
 }
 
-const (
-	pluginName = "$$test"
-)
-
-var (
-	ctx api.StreamContext
-	ins *runtime.PluginIns
-)
-
-func startPluginIns() (*runtime.PluginIns, error) {
+func startPluginIns(info *portable.PluginInfo) (*runtime.PluginIns, error) {
 	conf.Log.Infof("create control channel")
-	ctrlChan, err := runtime.CreateControlChannel(pluginName)
+	ctrlChan, err := runtime.CreateControlChannel(info.Name)
 	if err != nil {
 		return nil, fmt.Errorf("can't create new control channel: %s", err.Error())
 	}
 	conf.Log.Println("waiting handshake")
 	err = ctrlChan.Handshake()
 	if err != nil {
-		return nil, fmt.Errorf("plugin %s control handshake error: %v", pluginName, err)
+		return nil, fmt.Errorf("plugin %s control handshake error: %v", info.Name, err)
 	}
 	conf.Log.Println("plugin start running")
-	return runtime.NewPluginIns(pluginName, ctrlChan, nil), nil
+	return runtime.NewPluginIns(info.Name, ctrlChan, nil), nil
 }
 
 func createRestServer(ip string, port int) *http.Server {
@@ -87,12 +127,117 @@ func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Invalid body: decode error %v", err), http.StatusBadRequest)
 		return
 	}
-	err = ins.StartSymbol(ctx, ctrl)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("start symbol error: %v", err), http.StatusBadRequest)
-		return
+	switch ctrl.PluginType {
+	case runtime.TYPE_SOURCE:
+		source, err := m.Source(ctrl.SymbolName)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("running source %s %v", ctrl.SymbolName, err), http.StatusBadRequest)
+			return
+		}
+		newctx, cancel := ctx.WithCancel()
+		if _, ok := cancels.LoadOrStore(ctrl.PluginType+ctrl.SymbolName, cancel); ok {
+			http.Error(w, fmt.Sprintf("source symbol %s already exists", ctrl.SymbolName), http.StatusBadRequest)
+			return
+		}
+		consumer := make(chan api.SourceTuple)
+		errCh := make(chan error)
+		go func() {
+			defer func() {
+				source.Close(newctx)
+				cancels.Delete(ctrl.PluginType + ctrl.SymbolName)
+			}()
+			for {
+				select {
+				case tuple := <-consumer:
+					fmt.Println(tuple)
+				case err := <-errCh:
+					conf.Log.Error(err)
+					return
+				case <-newctx.Done():
+					return
+				}
+			}
+		}()
+		go source.Open(newctx, consumer, errCh)
+	case runtime.TYPE_SINK:
+		sink, err := m.Sink(ctrl.SymbolName)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("running sink %s %v", ctrl.SymbolName, err), http.StatusBadRequest)
+			return
+		}
+		newctx, cancel := ctx.WithCancel()
+		if _, ok := cancels.LoadOrStore(ctrl.PluginType+ctrl.SymbolName, cancel); ok {
+			http.Error(w, fmt.Sprintf("source symbol %s already exists", ctrl.SymbolName), http.StatusBadRequest)
+			return
+		}
+		err = sink.Open(newctx)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("open sink %s %v", ctrl.SymbolName, err), http.StatusBadRequest)
+			return
+		}
+		go func() {
+			defer func() {
+				sink.Close(newctx)
+				cancels.Delete(ctrl.PluginType + ctrl.SymbolName)
+			}()
+			for {
+				for _, m := range mockSinkData {
+					b, err := json.Marshal(m)
+					if err != nil {
+						fmt.Printf("cannot marshall data: %v\n", err)
+						continue
+					}
+					err = sink.Collect(newctx, b)
+					if err != nil {
+						fmt.Printf("cannot collect data: %v\n", err)
+						continue
+					}
+					select {
+					case <-ctx.Done():
+						ctx.GetLogger().Info("stop sink")
+						return
+					default:
+					}
+					time.Sleep(1 * time.Second)
+				}
+			}
+		}()
+	case runtime.TYPE_FUNC:
+		f, err := m.Function(ctrl.SymbolName)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("running function %s %v", ctrl.SymbolName, err), http.StatusBadRequest)
+			return
+		}
+		newctx, cancel := ctx.WithCancel()
+		fc := context.NewDefaultFuncContext(newctx, 1)
+		if _, ok := cancels.LoadOrStore(ctrl.PluginType+ctrl.SymbolName, cancel); ok {
+			http.Error(w, fmt.Sprintf("source symbol %s already exists", ctrl.SymbolName), http.StatusBadRequest)
+			return
+		}
+		go func() {
+			defer func() {
+				cancels.Delete(ctrl.PluginType + ctrl.SymbolName)
+			}()
+			for {
+				for _, m := range mockFuncData {
+					r, ok := f.Exec(m, fc)
+					if !ok {
+						fmt.Print("cannot exec func\n")
+						continue
+					}
+					fmt.Println(r)
+					select {
+					case <-ctx.Done():
+						ctx.GetLogger().Info("stop sink")
+						return
+					default:
+					}
+					time.Sleep(1 * time.Second)
+				}
+			}
+		}()
 	}
-	go receive(ctx)
+
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("ok"))
 }
@@ -103,9 +248,11 @@ func stopSymbolHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Invalid body: decode error %v", err), http.StatusBadRequest)
 		return
 	}
-	err = ins.StopSymbol(ctx, ctrl)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("start symbol error: %v", err), http.StatusBadRequest)
+	if cancel, ok := cancels.Load(ctrl.PluginType + ctrl.SymbolName); ok {
+		cancel.(context2.CancelFunc)()
+		cancels.Delete(ctrl.PluginType + ctrl.SymbolName)
+	} else {
+		http.Error(w, fmt.Sprintf("Symbol %s already close", ctrl.SymbolName), http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -117,32 +264,4 @@ func decode(r *http.Request) (*runtime.Control, error) {
 	ctrl := &runtime.Control{}
 	err := json.NewDecoder(r.Body).Decode(ctrl)
 	return ctrl, err
-}
-
-func receive(ctx api.StreamContext) {
-	dataCh, err := runtime.CreateSourceChannel(ctx)
-	if err != nil {
-		fmt.Printf("cannot create source channel: %s\n", err.Error())
-	}
-	for {
-		var msg []byte
-		msg, err := dataCh.Recv()
-		if err != nil {
-			fmt.Printf("cannot receive from mangos Socket: %s\n", err.Error())
-			return
-		}
-		result := &api.DefaultSourceTuple{}
-		e := json.Unmarshal(msg, result)
-		if e != nil {
-			ctx.GetLogger().Errorf("Invalid data format, cannot decode %s to json format with error %s", string(msg), e)
-			continue
-		}
-		fmt.Println(result)
-		select {
-		case <-ctx.Done():
-			ctx.GetLogger().Info("stop source")
-			return
-		default:
-		}
-	}
 }
