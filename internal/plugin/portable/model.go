@@ -28,7 +28,7 @@ type PluginInfo struct {
 
 var langMap = map[string]bool{
 	"go":     true,
-	"python": false,
+	"python": true,
 }
 
 // Validate TODO validate duplication of source, sink and functions

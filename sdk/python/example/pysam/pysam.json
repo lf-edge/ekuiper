@@ -1,0 +1,14 @@
+{
+  "version": "v1.0.0",
+  "language": "python",
+  "executable": "pysam.py",
+  "sources": [
+    "pyjson"
+  ],
+  "sinks": [
+    "print"
+  ],
+  "functions": [
+    "revert"
+  ]
+}

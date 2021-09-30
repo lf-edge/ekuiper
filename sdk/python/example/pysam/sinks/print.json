@@ -1,0 +1,15 @@
+{
+	"about": {
+		"trial": true,
+		"author": {
+			"name": "EMQ",
+			"email": "contact@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"description": {
+			"en_US": "Example sink plugin to print with python logger",
+			"zh_CN": "示例 python 插件，使用 python 打出日志"
+		}
+	}
+}
