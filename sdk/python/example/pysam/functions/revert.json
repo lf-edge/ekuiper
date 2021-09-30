@@ -1,0 +1,23 @@
+{
+	"about": {
+		"trial": false,
+		"author": {
+			"name": "EMQ",
+			"email": "contact@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"description": {
+			"en_US": "Example python plugin to revert the input string",
+			"zh_CN": "示例python插件，用于反转输入的字符串"
+		}
+	},
+	"functions": [{
+		"name": "revert",
+		"example": "revert(col1)",
+		"hint": {
+			"en_US": "Revert the input string",
+			"zh_CN": "输出反转参数值。"
+		}
+	}]
+}
