@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/plugin/portable"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/internal/processor"
+	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -51,10 +52,8 @@ func init() {
 	}
 }
 
-const CACHE_FILE = "cache2"
-
 func TestSourceAndFunc(t *testing.T) {
-	streamList := []string{"ext"}
+	streamList := []string{"ext", "extpy"}
 	topotest.HandleStream(false, streamList, t)
 	var tests = []struct {
 		Name string
@@ -64,7 +63,7 @@ func TestSourceAndFunc(t *testing.T) {
 	}{
 		{
 			Name: `TestPortableRule1`,
-			Rule: `{"sql":"SELECT echo(count) as ee FROM ext","actions":[{"file":{"path":"` + CACHE_FILE + `"}}]}`,
+			Rule: `{"sql":"SELECT echo(count) as ee FROM ext","actions":[{"file":{"path":"cache1"}}]}`,
 			R: [][]map[string]interface{}{
 				{{
 					"ee": float64(50),
@@ -82,13 +81,35 @@ func TestSourceAndFunc(t *testing.T) {
 				"source_ext_0_records_out_total":  int64(3),
 				"sink_file_0_0_records_out_total": int64(3),
 			},
+		}, {
+			Name: `TestPythonRule`,
+			Rule: `{"sql":"SELECT revert(name) as ee FROM extpy","actions":[{"file":{"path":"cache2"}},{"print":{}}]}`,
+			R: [][]map[string]interface{}{
+				{{
+					"ee": "nosjyp",
+				}},
+				{{
+					"ee": "nosjyp",
+				}},
+				{{
+					"ee": "nosjyp",
+				}},
+			},
+			M: map[string]interface{}{
+				"source_extpy_0_exceptions_total":  int64(0),
+				"source_extpy_0_records_in_total":  int64(3),
+				"source_extpy_0_records_out_total": int64(3),
+				"sink_file_0_0_records_out_total":  int64(3),
+				"sink_print_1_0_records_out_total": int64(3),
+			},
 		},
 	}
-	topotest.HandleStream(true, streamList, t)
+
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	defer runtime.GetPluginInsManager().KillAll()
 	for i, tt := range tests {
-		_ = os.Remove(CACHE_FILE)
+		_ = os.Remove(fmt.Sprintf("cache%d", i+1))
+		topotest.HandleStream(true, streamList[i:i+1], t)
 		rs, err := CreateRule(tt.Name, tt.Rule)
 		if err != nil {
 			t.Errorf("failed to create rule: %s.", err)
@@ -111,17 +132,18 @@ func TestSourceAndFunc(t *testing.T) {
 			}
 			fmt.Println("all exit")
 		}(ctx)
+		topotest.HandleStream(false, streamList[i:i+1], t)
 		for {
 			if ctx.Err() != nil {
 				t.Errorf("Exiting with error %v", ctx.Err())
 				break
 			}
 			time.Sleep(10 * time.Millisecond)
-			if err := topotest.CompareMetrics(tp, tt.M); err == nil {
+			if compareMetrics(tp, tt.M) {
 				cancel()
 				// need to wait for file results
 				time.Sleep(10 * time.Millisecond)
-				results := getResults()
+				results := getResults(fmt.Sprintf("cache%d", i+1))
 				fmt.Printf("get results %v\n", results)
 				time.Sleep(10 * time.Millisecond)
 				var mm [][]map[string]interface{}
@@ -144,13 +166,40 @@ func TestSourceAndFunc(t *testing.T) {
 			}
 		}
 	}
-	topotest.HandleStream(false, streamList, t)
 	// wait for rule clean up
 	time.Sleep(1 * time.Second)
 }
 
-func getResults() []string {
-	f, err := os.Open(CACHE_FILE)
+func compareMetrics(tp *topo.Topo, m map[string]interface{}) bool {
+	keys, values := tp.GetMetrics()
+	for k, v := range m {
+		var (
+			index   int
+			key     string
+			matched bool
+		)
+		for index, key = range keys {
+			if k == key {
+				va, ok := values[index].(int64)
+				if !ok {
+					continue
+				}
+				ve := v.(int64)
+				if va < ve {
+					return false
+				}
+				matched = true
+			}
+		}
+		if !matched {
+			return false
+		}
+	}
+	return true
+}
+
+func getResults(fileName string) []string {
+	f, err := os.Open(fileName)
 	if err != nil {
 		panic(err)
 	}

@@ -91,5 +91,8 @@ func (ps *PortableSink) Collect(ctx api.StreamContext, item interface{}) error {
 }
 
 func (ps *PortableSink) Close(ctx api.StreamContext) error {
-	return ps.clean()
+	if ps.clean != nil {
+		return ps.clean()
+	}
+	return nil
 }
