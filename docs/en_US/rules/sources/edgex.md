@@ -87,6 +87,49 @@ The server address of  EdgeX message bus, default value is ``localhost``.
 
 The port of EdgeX message bus, default value is ``5573``.
 
+### connectionSelector
+
+specify the stream to reuse the connection to EdgeX message bus. The connection profile located in ``connection.yaml``.
+```yaml
+mqtt:
+  mqtt_conf1: #connection key
+    servers: [tcp://127.0.0.1:1883]
+    username: ekuiper
+    password: password
+    #certificationPath: /var/kuiper/xyz-certificate.pem
+    #privateKeyPath: /var/kuiper/xyz-private.pem.key
+    #insecureSkipVerify: false
+    #protocolVersion: 3
+    clientid: ekuiper
+  mqtt_conf2: #connection key
+    servers: ["tcp://127.0.0.1:1883"]
+
+edgex:
+  edgex_conf1: #connection key
+    protocol: redis
+    server: 127.0.0.1
+    port: 6379
+    type: redis
+```
+There is one configuration group for EdgeX message bus in the example, user need use ``edgex.edgex_conf1`` as the selector.
+For example
+```yaml
+#Global Edgex configurations
+default:
+  protocol: tcp
+  server: localhost
+  port: 5573
+  connectionSelector: edgex.edgex_conf1
+  topic: events
+  messageType: event
+  #  optional:
+  #    ClientId: client1
+  #    Username: user1
+  #    Password: password
+```
+*Note*: once specify the connectionSelector in specific configuration group , all connection related parameters will be ignored , in this case ``protocol: tcp | server: localhost | port: 5573``
+
+
 ### topic
 
 The topic name of EdgeX message bus, default value is ``events``. Users can subscribe to the topics of message bus

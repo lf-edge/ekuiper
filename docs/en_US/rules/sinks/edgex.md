@@ -12,6 +12,7 @@ The action is used for publishing output message into EdgeX message bus.
 | protocol      | true     | The protocol. If it's not specified, then use default value ``redis``. |
 | host          | true     | The host of message bus. If not specified, then use default value ``localhost``. |
 | port          | true     | The port of message bus. If not specified, then use default value ``6379``. |
+| connectionSelector | true     | reuse the connection to EdgeX message bus. [more info](../sources/edgex.md#connectionselector)
 | topic         | true     | The topic to be published. The topic is static across all messages. To use dynamic topic, leave this empty and specify the topicPrefix property. Only one of the topic and topicPrefix properties can be specified. If both are not specified, then use default topic value ``application``. |
 | topicPrefix         | true     | The prefix of a dynamic topic to be published. The topic will become a concatenation of `$topicPrefix/$profileName/$deviceName/$sourceName`. |
 | contentType   | true     | The content type of message to be published. If not specified, then use the default value ``application/json``. |

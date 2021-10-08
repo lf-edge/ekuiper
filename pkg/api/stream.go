@@ -149,6 +149,8 @@ type StreamContext interface {
 	PutState(key string, value interface{}) error
 	GetState(key string) (interface{}, error)
 	DeleteState(key string) error
+	GetConnection(connectSelector string) (interface{}, error)
+	ReleaseConnection(connectSelector string)
 }
 
 type Operator interface {

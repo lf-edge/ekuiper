@@ -171,7 +171,7 @@ func TestConfigure(t *testing.T) {
 				"messageType": "requests",
 				"contentType": "application/json",
 			},
-			error: "read properties map[contentType:application/json host:edgex-redis messageType:requests port:6379 protocol:redis topicPrefix:edgex/events/device type:20] fail with error: json: cannot unmarshal number into Go struct field EdgexConf.type of type string",
+			error: "read properties map[contentType:application/json host:edgex-redis messageType:requests port:6379 protocol:redis topicPrefix:edgex/events/device type:20] fail with error: 1 error(s) decoding:\n\n* 'type' expected type 'string', got unconvertible type 'int', value: '20'",
 		}, { // 6
 			conf: map[string]interface{}{
 				"type":        "redis",

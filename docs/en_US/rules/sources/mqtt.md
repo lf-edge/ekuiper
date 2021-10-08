@@ -11,6 +11,7 @@ default:
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
   #privateKeyPath: /var/kuiper/xyz-private.pem.key
+  #connectionSelector: mqtt.mqtt_conf1
 
 
 #Override the global configurations
@@ -47,6 +48,45 @@ The location of certification path. It can be an absolute path, or a relative pa
 ### privateKeyPath
 
 The location of private key path. It can be an absolute path, or a relative path.  For more detailed information, please refer to ``certificationPath``. Such as ``d3807d9fa5-private.pem.key``.
+
+### connectionSelector
+
+specify the stream to reuse the connection to mqtt broker. The connection profile located in ``connection.yaml``.
+```yaml
+mqtt:
+  mqtt_conf1: #connection key
+    servers: [tcp://127.0.0.1:1883]
+    username: ekuiper
+    password: password
+    #certificationPath: /var/kuiper/xyz-certificate.pem
+    #privateKeyPath: /var/kuiper/xyz-private.pem.ke
+    #insecureSkipVerify: false
+    #protocolVersion: 3
+    clientid: ekuiper
+  mqtt_conf2: #connection key
+    servers: ["tcp://127.0.0.1:1883"]
+
+edgex:
+  edgex_conf1: #connection key
+    protocol: redis
+    server: 127.0.0.1
+    port: 6379
+    type: redis
+```
+There are two configuration groups for mqtt in the example, user need use ``mqtt.mqtt_conf1`` or ``mqtt.mqtt_conf2`` as the selector.
+For example
+```yaml
+#Global MQTT configurations
+default:
+  qos: 1
+  servers: [tcp://127.0.0.1:1883]
+  #username: user1
+  #password: password
+  #certificationPath: /var/kuiper/xyz-certificate.pem
+  #privateKeyPath: /var/kuiper/xyz-private.pem.key
+  connectionSelector: mqtt.mqtt_conf1
+```
+*Note*: once specify the connectionSelector in specific configuration group , all connection related parameters will be ignored , in this case ``servers: [tcp://127.0.0.1:1883]``
 
 ### bufferLength
 

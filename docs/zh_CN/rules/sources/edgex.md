@@ -87,6 +87,44 @@ EdgeX 消息总线的地址，缺省为 `localhost`
 
 EdgeX 消息总线的端口，缺省为 `5573`
 
+## connectionSelector
+
+复用 EdgeX 源连接。连接配置信息位于 ``connection.yaml``.
+```yaml
+mqtt:
+  mqtt_conf1: #connection key
+    servers: [tcp://127.0.0.1:1883]
+    username: ekuiper
+    password: password
+    #certificationPath: /var/kuiper/xyz-certificate.pem
+    #privateKeyPath: /var/kuiper/xyz-private.pem.key
+    #insecureSkipVerify: false
+    #protocolVersion: 3
+    clientid: ekuiper
+  mqtt_conf2: #connection key
+    servers: ["tcp://127.0.0.1:1883"]
+
+edgex:
+  edgex_conf1: #connection key
+    protocol: redis
+    server: 127.0.0.1
+    port: 6379
+    type: redis
+```
+对于 EdgeX 连接，这里有一个配置组。用户应该使用 ``edgex.edgex_conf1`` 来作为参数。举例如下：
+```yaml
+#Global Edgex configurations
+default:
+  protocol: tcp
+  server: localhost
+  port: 5573
+  connectionSelector: edgex.edgex_conf1
+  topic: events
+  messageType: event
+```
+*注意*: 相应配置组一旦指定 connectionSelector 参数，所有关于连接的参数都会被忽略. 上面例子中，`` protocol: tcp | server: localhost | port: 5573`` 会被忽略。
+
+
 ## topic
 
 EdgeX 消息总线上监听的主题名称，缺省为 `events`。用户可以直接连接到 EdgeX 消息总线上的主题也可以连接到 application service 暴露的主题。需要注意的是，两种主题的消息数据类型不同，需要设置正确的
