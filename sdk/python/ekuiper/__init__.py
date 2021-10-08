@@ -22,3 +22,5 @@ from ekuiper.source import Source
 __all__ = [
     'plugin', 'PluginConfig', 'Source', 'Sink', 'Function', 'Context'
 ]
+
+name = "ekuiper"
