@@ -40,19 +40,20 @@ const (
 )
 
 type EdgexConf struct {
-	Protocol    string            `json:"protocol"`
-	Host        string            `json:"host"`
-	Port        int               `json:"port"`
-	Topic       string            `json:"topic"`
-	TopicPrefix string            `json:"topicPrefix"`
-	Type        string            `json:"type"`
-	MessageType messageType       `json:"messageType"`
-	ContentType string            `json:"contentType"`
-	DeviceName  string            `json:"deviceName"`
-	ProfileName string            `json:"profileName"`
-	SourceName  string            `json:"sourceName"`
-	Metadata    string            `json:"metadata"`
-	Optional    map[string]string `json:"optional"`
+	Protocol           string            `json:"protocol"`
+	Host               string            `json:"host"`
+	Port               int               `json:"port"`
+	Topic              string            `json:"topic"`
+	TopicPrefix        string            `json:"topicPrefix"`
+	Type               string            `json:"type"`
+	MessageType        messageType       `json:"messageType"`
+	ContentType        string            `json:"contentType"`
+	DeviceName         string            `json:"deviceName"`
+	ProfileName        string            `json:"profileName"`
+	SourceName         string            `json:"sourceName"`
+	Metadata           string            `json:"metadata"`
+	Optional           map[string]string `json:"optional"`
+	ConnectionSelector string            `json:"connectionSelector"`
 }
 
 type EdgexMsgBusSink struct {
@@ -64,36 +65,68 @@ type EdgexMsgBusSink struct {
 }
 
 func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
+
+	var (
+		defaultProtocol = "redis"
+		defaultServer   = "localhost"
+		defaultType     = messaging.Redis
+		defaultPort     = 6379
+	)
+
 	c := &EdgexConf{
-		Protocol:    "redis",
-		Host:        "localhost",
-		Port:        6379,
-		Type:        messaging.Redis,
 		MessageType: MessageTypeEvent,
 		ContentType: "application/json",
 		DeviceName:  "ekuiper",
 		ProfileName: "ekuiperProfile",
-		// SourceName is set in open as the rule id
 	}
+
 	err := cast.MapToStruct(ps, c)
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", ps, err)
 	}
 
-	if c.Port < 0 {
-		return fmt.Errorf("specified wrong port value, expect positive integer but got %d", c.Port)
-	}
+	if c.ConnectionSelector != "" {
+		conf.Log.Infof("use connection selector %s for edgex sink", c.ConnectionSelector)
+		if c.Protocol != "" || c.Host != "" || c.Type != "" || c.Port != 0 {
+			return fmt.Errorf("connectionSelector can not coexist with other connection configs, properties %v", ps)
+		}
 
-	if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT && c.Type != messaging.Redis {
-		return fmt.Errorf("specified wrong type value %s", c.Type)
-	}
+		if c.MessageType != MessageTypeEvent && c.MessageType != MessageTypeRequest {
+			return fmt.Errorf("specified wrong messageType value %s", c.MessageType)
+		}
 
-	if c.MessageType != MessageTypeEvent && c.MessageType != MessageTypeRequest {
-		return fmt.Errorf("specified wrong messageType value %s", c.MessageType)
-	}
+		if c.MessageType == MessageTypeEvent && c.ContentType != "application/json" {
+			return fmt.Errorf("specified wrong contentType value %s: only 'application/json' is supported if messageType is event", c.ContentType)
+		}
+	} else {
 
-	if c.MessageType == MessageTypeEvent && c.ContentType != "application/json" {
-		return fmt.Errorf("specified wrong contentType value %s: only 'application/json' is supported if messageType is event", c.ContentType)
+		if c.Host == "" {
+			c.Host = defaultServer
+		}
+		if c.Protocol == "" {
+			c.Protocol = defaultProtocol
+		}
+		if c.Type == "" {
+			c.Type = defaultType
+		}
+		if c.Port == 0 {
+			c.Port = defaultPort
+		}
+		if c.Port < 0 {
+			return fmt.Errorf("specified wrong port value, expect positive integer but got %d", c.Port)
+		}
+
+		if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT && c.Type != messaging.Redis {
+			return fmt.Errorf("specified wrong type value %s", c.Type)
+		}
+
+		if c.MessageType != MessageTypeEvent && c.MessageType != MessageTypeRequest {
+			return fmt.Errorf("specified wrong messageType value %s", c.MessageType)
+		}
+
+		if c.MessageType == MessageTypeEvent && c.ContentType != "application/json" {
+			return fmt.Errorf("specified wrong contentType value %s: only 'application/json' is supported if messageType is event", c.ContentType)
+		}
 	}
 
 	if c.Topic != "" && c.TopicPrefix != "" {
@@ -114,18 +147,37 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 	return nil
 }
 
+func (ems *EdgexMsgBusSink) getClient(ctx api.StreamContext) error {
+	log := ctx.GetLogger()
+	if ems.c.ConnectionSelector != "" {
+		con, err := ctx.GetConnection(ems.c.ConnectionSelector)
+		if err != nil {
+			log.Errorf("The edgex client for connection selector %s get fail with error: %s", ems.c.ConnectionSelector, err)
+			return err
+		}
+		ems.client = con.(messaging.MessageClient)
+		log.Infof("The edge client for connection selector %s get successfully", ems.c.ConnectionSelector)
+	} else {
+		c, err := messaging.NewMessageClient(*ems.conf)
+		if err != nil {
+			return err
+		}
+		ems.client = c
+		if err := ems.client.Connect(); err != nil {
+			return fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
+		}
+		log.Infof("The connection to edgex messagebus is established successfully.")
+	}
+	return nil
+}
+
 func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
 	log.Infof("Using configuration for EdgeX message bus sink: %+v", ems.c)
-	if msgClient, err := messaging.NewMessageClient(*ems.conf); err != nil {
-		return err
-	} else {
-		if ec := msgClient.Connect(); ec != nil {
-			return ec
-		} else {
-			ems.client = msgClient
-		}
+	if err := ems.getClient(ctx); err != nil {
+		return fmt.Errorf("Failed to get edgex message client: " + err.Error())
 	}
+
 	if ems.c.SourceName == "" {
 		ems.c.SourceName = ctx.GetRuleId()
 	}
@@ -431,10 +483,13 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 func (ems *EdgexMsgBusSink) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing edgex sink")
-	if ems.client != nil {
+	if ems.client != nil && ems.c.ConnectionSelector == "" {
 		if e := ems.client.Disconnect(); e != nil {
 			return e
 		}
+	}
+	if ems.c.ConnectionSelector != "" {
+		ctx.ReleaseConnection(ems.c.ConnectionSelector)
 	}
 	return nil
 }

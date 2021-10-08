@@ -15,6 +15,7 @@ The action is used for publish output message into an MQTT server.
 | privateKeyPath     | true     | The private key path. It can be either absolute path, or relative path, which is similar to use of certificationPath. |
 | insecureSkipVerify | true     | If InsecureSkipVerify is `true`, TLS accepts any certificate presented by the server and any host name in that certificate.  In this mode, TLS is susceptible to man-in-the-middle attacks. The default value is `false`. The configuration item can only be used with TLS connections. |
 | retained           | true     | If retained is `true`,The broker stores the last retained message and the corresponding QoS for that topic.The default value is `false`.
+| connectionSelector | true     | reuse the connection to mqtt broker. [more info](../sources/mqtt.md#connectionselector)
 
 Below is sample configuration for connecting to Azure IoT Hub by using SAS authentication.
 ```json

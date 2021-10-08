@@ -15,8 +15,8 @@
 package cast
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"html/template"
 	"reflect"
 	"strconv"
@@ -952,19 +952,41 @@ func ToBytesSlice(input interface{}, sn Strictness) ([][]byte, error) {
 	return result, nil
 }
 
+//MapToStruct
 /*
 *   Convert a map into a struct. The output parameter must be a pointer to a struct
 *   The struct can have the json meta data
  */
 func MapToStruct(input, output interface{}) error {
-	// convert map to json
-	jsonString, err := json.Marshal(input)
+	config := &mapstructure.DecoderConfig{
+		TagName: "json",
+		Result:  output,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
 	if err != nil {
 		return err
 	}
 
-	// convert json to struct
-	return json.Unmarshal(jsonString, output)
+	return decoder.Decode(input)
+}
+
+// MapToStructStrict
+/*
+*   Convert a map into a struct. The output parameter must be a pointer to a struct
+*   If the input have key/value pair output do not defined, will report error
+ */
+func MapToStructStrict(input, output interface{}) error {
+	config := &mapstructure.DecoderConfig{
+		ErrorUnused: true,
+		TagName:     "json",
+		Result:      output,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(input)
 }
 
 func ConvertMap(s map[interface{}]interface{}) map[string]interface{} {

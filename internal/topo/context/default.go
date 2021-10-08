@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/connection"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/sirupsen/logrus"
@@ -197,4 +198,12 @@ func (c *DefaultContext) SaveState(checkpointId int64) error {
 	}
 	c.snapshot = nil
 	return nil
+}
+
+func (c *DefaultContext) GetConnection(connectSelector string) (interface{}, error) {
+	return connection.GetConnection(connectSelector)
+}
+
+func (c *DefaultContext) ReleaseConnection(connectSelector string) {
+	connection.ReleaseConnection(connectSelector)
 }

@@ -12,6 +12,7 @@
 | protocol    | 是     | 协议，如未指定，使用缺省值 `tcp` 。  |
 | host        | 是    | 消息总线主机地址，使用缺省值 `*` 。                    |
 | port        | 是    | 消息总线端口号。 如未指定，使用缺省值 `5563` 。              |
+| connectionSelector | 是     | 复用到 EdgeX 消息总线的连接，详细信息，[请参考](../sources/edgex.md#connectionselector)
 | topic       | 是    | 发布的主题名称。该主题为固定值。若不同的消息需要动态指定主题，则将该属性置空，并设置 topicPrefix 属性。这两个属性只能设置一个。若两者都未设置，则使用缺省主题 `application` 。          |
 | topicPrefix | 是     | 发布的主题的前缀。发送的主题将采用动态拼接，格式为`$topicPrefix/$profileName/$deviceName/$sourceName` 。|
 | contentType | 是    | 发布消息的内容类型，如未指定，使用缺省值 `application/json` 。|

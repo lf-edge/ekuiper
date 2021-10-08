@@ -90,3 +90,309 @@ func errstring(err error) string {
 	}
 	return ""
 }
+
+func TestMapToStructStrict(t *testing.T) {
+	type args struct {
+		input  interface{}
+		output interface{}
+		expect interface{}
+	}
+
+	type Result struct {
+		Foo string `json:"foo"`
+		Bar string `json:"bar"`
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "normal parse",
+			args: args{
+				input: map[string]interface{}{
+					"foo": "foo",
+					"bar": "bar",
+				},
+				output: &Result{},
+				expect: &Result{
+					Foo: "foo",
+					Bar: "bar",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "input have more than keys",
+			args: args{
+				input: map[string]interface{}{
+					"foo":    "foo",
+					"bar":    "bar",
+					"foobar": "foobar",
+				},
+				output: &Result{},
+			},
+			wantErr: true,
+		},
+		{
+			name: "input have less keys",
+			args: args{
+				input: map[string]interface{}{
+					"foo": "foo",
+				},
+				output: &Result{},
+				expect: &Result{
+					Foo: "foo",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "input have unused keys",
+			args: args{
+				input: map[string]interface{}{
+					"foo":    "foo",
+					"foobar": "foobar",
+				},
+				output: &Result{},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := MapToStructStrict(tt.args.input, tt.args.output)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MapToStructure() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr == false && !reflect.DeepEqual(tt.args.output, tt.args.expect) {
+				t.Errorf(" got = %v, want %v", tt.args.output, tt.args.expect)
+			}
+		})
+	}
+}
+
+func TestMapToStruct(t *testing.T) {
+	type args struct {
+		input  interface{}
+		output interface{}
+		expect interface{}
+	}
+
+	type Result struct {
+		Foo string `json:"foo"`
+		Bar string `json:"bar"`
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "normal parse",
+			args: args{
+				input: map[string]interface{}{
+					"foo": "foo",
+					"bar": "bar",
+				},
+				output: &Result{},
+				expect: &Result{
+					Foo: "foo",
+					Bar: "bar",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "input have more than keys",
+			args: args{
+				input: map[string]interface{}{
+					"foo":    "foo",
+					"bar":    "bar",
+					"foobar": "foobar",
+				},
+				output: &Result{},
+				expect: &Result{
+					Foo: "foo",
+					Bar: "bar",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "input have less keys",
+			args: args{
+				input: map[string]interface{}{
+					"foo": "foo",
+				},
+				output: &Result{},
+				expect: &Result{
+					Foo: "foo",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "input have unused keys",
+			args: args{
+				input: map[string]interface{}{
+					"foo":    "foo",
+					"foobar": "foobar",
+				},
+				output: &Result{},
+				expect: &Result{
+					Foo: "foo",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := MapToStruct(tt.args.input, tt.args.output); (err != nil) != tt.wantErr {
+				t.Errorf("MapToStructure() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestMapToStructNotCaseSensitive(t *testing.T) {
+	type args struct {
+		input  interface{}
+		output interface{}
+		expect interface{}
+	}
+
+	type Result struct {
+		Foo string `json:"foo"`
+		Bar string
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "normal parse",
+			args: args{
+				input: map[string]interface{}{
+					"foo": "foo",
+					"bar": "bar",
+				},
+				output: &Result{},
+				expect: &Result{
+					Foo: "foo",
+					Bar: "bar",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "not case sensitive",
+			args: args{
+				input: map[string]interface{}{
+					"FOO": "foo",
+					"BAR": "bar",
+				},
+				output: &Result{},
+				expect: &Result{
+					Foo: "foo",
+					Bar: "bar",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "keys must match",
+			args: args{
+				input: map[string]interface{}{
+					"foo":  "foo",
+					"BARS": "bars",
+				},
+				output: &Result{},
+				expect: &Result{
+					Foo: "foo",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := MapToStruct(tt.args.input, tt.args.output); (err != nil) != tt.wantErr {
+				t.Errorf("MapToStructure() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestMapToStructTag(t *testing.T) {
+	type args struct {
+		input  interface{}
+		output interface{}
+		expect interface{}
+	}
+
+	type Result struct {
+		Foo string `json:"fo"`
+		Bar string
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "normal parse",
+			args: args{
+				input: map[string]interface{}{
+					"fo":  "foo",
+					"bar": "bar",
+				},
+				output: &Result{},
+				expect: &Result{
+					Foo: "foo",
+					Bar: "bar",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "key tag not match",
+			args: args{
+				input: map[string]interface{}{
+					"FOO": "foo",
+					"BAR": "bar",
+				},
+				output: &Result{},
+				expect: &Result{
+					Bar: "bar",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "key tag not match",
+			args: args{
+				input: map[string]interface{}{
+					"foo":  "foo",
+					"BARS": "bars",
+				},
+				output: &Result{},
+				expect: &Result{},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := MapToStruct(tt.args.input, tt.args.output); (err != nil) != tt.wantErr {
+				t.Errorf("MapToStructure() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

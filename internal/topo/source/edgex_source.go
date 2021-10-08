@@ -33,6 +33,9 @@ import (
 )
 
 type EdgexSource struct {
+	mbconf types.MessageBusConfig
+	conSel string
+
 	client      messaging.MessageClient
 	subscribed  bool
 	topic       string
@@ -40,14 +43,15 @@ type EdgexSource struct {
 }
 
 type EdgexConf struct {
-	Format      string            `json:"format"`
-	Protocol    string            `json:"protocol"`
-	Server      string            `json:"server"`
-	Port        int               `json:"port"`
-	Topic       string            `json:"topic"`
-	Type        string            `json:"type"`
-	MessageType messageType       `json:"messageType"`
-	Optional    map[string]string `json:"optional"`
+	Format             string            `json:"format"`
+	Protocol           string            `json:"protocol"`
+	Server             string            `json:"server"`
+	Port               int               `json:"port"`
+	Topic              string            `json:"topic"`
+	Type               string            `json:"type"`
+	MessageType        messageType       `json:"messageType"`
+	Optional           map[string]string `json:"optional"`
+	ConnectionSelector string            `json:"connectionSelector"`
 }
 
 type messageType string
@@ -84,15 +88,17 @@ func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 
 	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: c.Protocol, Host: c.Server, Port: c.Port}, Type: c.Type}
 	mbconf.Optional = c.Optional
-	printConf(mbconf)
-	if client, err := messaging.NewMessageClient(mbconf); err != nil {
-		return err
+	if c.ConnectionSelector == "" {
+		printConf(mbconf)
 	} else {
-		es.client = client
-		es.messageType = c.MessageType
-		es.topic = c.Topic
-		return nil
+		conf.Log.Infof("use connection selector %s for edgex source", c.ConnectionSelector)
 	}
+	es.conSel = c.ConnectionSelector
+	es.mbconf = mbconf
+	es.messageType = c.MessageType
+	es.topic = c.Topic
+
+	return nil
 }
 
 // Modify the copied conf to print no password.
@@ -109,15 +115,39 @@ func printConf(mbconf types.MessageBusConfig) {
 	conf.Log.Infof("Use configuration for edgex messagebus %v", mbconf)
 }
 
+func (es *EdgexSource) getClient(ctx api.StreamContext) error {
+	log := ctx.GetLogger()
+	if es.conSel != "" {
+		con, err := ctx.GetConnection(es.conSel)
+		if err != nil {
+			log.Errorf("The edgex client for connection selector %s get fail with error: %s", es.conSel, err)
+			return err
+		}
+		es.client = con.(messaging.MessageClient)
+		log.Infof("The edge client for connection selector %s get successfully", es.conSel)
+	} else {
+		c, err := messaging.NewMessageClient(es.mbconf)
+		if err != nil {
+			return err
+		}
+		es.client = c
+
+		if err := es.client.Connect(); err != nil {
+			return fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
+		}
+		log.Infof("The connection to edgex messagebus is established successfully.")
+	}
+	return nil
+}
+
 func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	log := ctx.GetLogger()
-	if err := es.client.Connect(); err != nil {
-		info := fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
+	if err := es.getClient(ctx); err != nil {
+		info := fmt.Errorf("Failed to get edgex message client: " + err.Error())
 		log.Errorf(info.Error())
 		errCh <- info
 		return
 	}
-	log.Infof("The connection to edgex messagebus is established successfully.")
 	messages := make(chan types.MessageEnvelope)
 	topics := []types.TopicChannel{{Topic: es.topic, Messages: messages}}
 	err := make(chan error)
@@ -315,11 +345,14 @@ func convertFloatArray(v string, bitSize int) (interface{}, error) {
 	}
 }
 
-func (es *EdgexSource) Close(_ api.StreamContext) error {
-	if es.subscribed {
+func (es *EdgexSource) Close(ctx api.StreamContext) error {
+	if es.subscribed && es.conSel == "" {
 		if e := es.client.Disconnect(); e != nil {
 			return e
 		}
+	}
+	if es.conSel != "" {
+		ctx.ReleaseConnection(es.conSel)
 	}
 	return nil
 }

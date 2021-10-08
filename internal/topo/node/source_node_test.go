@@ -81,7 +81,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 		Interval: 100,
 		Seed:     1,
 		Pattern: map[string]interface{}{
-			"count": float64(50),
+			"count": 50,
 		},
 		Deduplicate: 50,
 	}
