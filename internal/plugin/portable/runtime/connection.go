@@ -180,7 +180,7 @@ func CreateControlChannel(pluginName string) (ControlChannel, error) {
 	if err = listenWithRetry(sock, url); err != nil {
 		return nil, fmt.Errorf("can't listen on rep socket: %s", err.Error())
 	}
-	conf.Log.Infof("sink channel created: %s", url)
+	conf.Log.Infof("control channel created: %s", url)
 	return &NanomsgReqChannel{sock: sock}, nil
 }
 
