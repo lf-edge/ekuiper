@@ -17,7 +17,6 @@
 		}
 	},
 	"libs": [
-		"github.com/taosdata/driver-go@master"
 	],
 	"properties": [{
 		"name": "ip",
