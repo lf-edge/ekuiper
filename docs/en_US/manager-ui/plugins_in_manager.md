@@ -67,7 +67,7 @@ Describe the basic information of the plugin, including plug-in author, help fil
 
 **properties**
 
-Describe the configurable attribute information of the plugin, including parameter information and how to display on the interface. The attribute information of Source is specified by the corresponding configuration file, and multiple configuration groups can be specified in the configuration file. For details, please refer to [Source Configuration Document](../extension/source.md#Deal-with-configuration). In the metadata file, there can be multiple configuration group names under `properties`, such as `default` in the example; each configuration group has multiple attribute metadata.
+Describe the configurable attribute information of the plugin, including parameter information and how to display on the interface. The attribute information of Source is specified by the corresponding configuration file, and multiple configuration groups can be specified in the configuration file. For details, please refer to [Source Configuration Document](../extension/native/source.md#Deal-with-configuration). In the metadata file, there can be multiple configuration group names under `properties`, such as `default` in the example; each configuration group has multiple attribute metadata.
 
 On the stream management page of the management console, click `Source Configuration` to expand any source, and all configuration groups of metadata can be displayed.
 

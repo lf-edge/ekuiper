@@ -471,7 +471,7 @@ func main() {
 		{
 			Name:    "drop",
 			Aliases: []string{"drop"},
-			Usage:   "drop stream $stream_name | drop table $table_name |drop rule $rule_name | drop plugin $plugin_type $plugin_name -r $stop | drop service $service_name",
+			Usage:   "drop stream $stream_name | drop table $table_name |drop rule $rule_name | drop plugin $plugin_type $plugin_name -s $stop | drop service $service_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -904,8 +904,10 @@ func getPluginType(arg string) (ptype int, err error) {
 		ptype = 1
 	case "function":
 		ptype = 2
+	case "portable":
+		ptype = 3
 	default:
-		err = fmt.Errorf("Invalid plugin type %s, should be \"source\", \"sink\" or \"function\".\n", arg)
+		err = fmt.Errorf("Invalid plugin type %s, should be \"source\", \"sink\", \"function\" or \"portable\".\n", arg)
 	}
 	return
 }

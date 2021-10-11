@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/req"
+	"sync"
 	"testing"
 )
 
@@ -103,6 +104,8 @@ func TestPluginInstance(t *testing.T) {
 	ctx := context.WithValue(context.Background(), context.LoggerKey, conf.Log)
 	sctx := ctx.WithMeta("rule1", "op1", &state.MemoryStore{}).WithInstance(1)
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
 		err := ins.StartSymbol(sctx, tests[0].c)
 		if err != nil {
@@ -121,6 +124,7 @@ func TestPluginInstance(t *testing.T) {
 				return
 			}
 		}
+		wg.Done()
 	}()
 	// start symbol1 to avoild instance clean
 	msg, err := client.Recv()
@@ -162,6 +166,7 @@ func TestPluginInstance(t *testing.T) {
 	if err != nil {
 		t.Errorf("close ins error %v", err)
 	}
+	wg.Wait()
 }
 
 func createMockClient(pluginName string) (mangos.Socket, error) {

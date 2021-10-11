@@ -1,78 +1,45 @@
 # Extension
 
-eKuiper allows users to customize extension to support more functions. Users can write plugins for extension. They can also extend functions in SQL through configuration to call existing external REST or RPC services.
+eKuiper allows users to customize extension to support more functions. Users can write plugins for extension by native golang plugin system or by the eKuiper portable plugin system which supports more languages. They can also extend functions in SQL through configuration to call existing external REST or RPC services.
 
-Extension by the use of plugin is more complex and requires users to write code and compile by themselves, which has a certain development cost. The scenarios used include:
+All these 3 extension methods have their own suitable scenarios. Generally, native plugin has the best performance but have the biggest complexity and the least compatibility. While portable plugin has a better balance of performance and complexity. And the external extension does not need coding but has the most performance overhead and only supports function extension. Let's look at each extension method in a nutshell and discuss when to use which one.
 
-- Need to extend the source or sink
-- With high performance requirements
+## Native Plugin Extension
 
-Extension by the use of external function requires only configuration, but it needs to be called through the network, which has a certain performance loss. The scenarios used include:
+Native plugin extension leverage the native golang plugin system to dynamically load the custom extensions in runtime. Native plugin was originally supported by eKuiper. But it has a log of limitations due to the golang plugin system itself such as:
 
-- Call existing services, such as AI services provided by REST or grpc
-- Services that require flexible deployment
+- Only support on Linux, FreeBSD and MacOS and hard to work on Alpine linux.
+- A plugin is only initialized once, and cannot be closed which means the plugin cannot be unloaded and managed after installed.
+- Very harsh requirements to build and deploy which brings a lot of problems in the community. For example, the plugin must be built with the exact same go version, dependency versions etc. with the eKuiper program. Which means, the plugin will always need to be rebuilt when upgrading eKuiper main program.
 
-## Plugin extension
+After installed, the native plugin is actually running like the native code and can share or transfer data in memory with the main program which will guarantee the best performance.
 
-eKuiper allows user to customize the different kinds of extensions.  
+Thus, the native plugin extension fits in scenarios where the user only runs in the supported os and environment, has the ability or infrastructure to rebuild the plugin during update, do not need to unload the plugin in runtime and is only using golang. 
 
-- The source extension is used for extending different stream source, such as consuming data from other message brokers. eKuiper has built-in source support for [MQTT broker](../rules/sources/mqtt.md).
-- Sink/Action extension is used for extending pub/push data to different targets, such as database, other message system, web interfaces or file systems. Built-in action is supported in eKuiper, see [MQTT](../rules/sinks/mqtt.md) & [log files](../rules/sinks/logs.md).
-- Functions extension allows user to extend different functions that used in SQL. Built-in functions is supported in eKuiper, see [functions](../sqls/built-in_functions.md).
+## Portable Plugin Extension
 
-Please read the following to learn how to implement different extensions.
+Portable plugin extension leverages a plugin system implemented by eKuiper itself based on IPC communication. Potentially, it will support all programming languages. And currently, **go** and **python** are supported. Compared to native plugins, it is portable because the plugins will run in a separate process and do not have those harsh build/deployment requirements. 
 
-- [Source extension](./source.md)
-- [Sink/Action extension](./sink.md)
-- [Function extension](./function.md)
+Portable plugin extension aims to provide the equal functionality with native plugin but support much easier build and deployment. If developers use go, it is even possible to reuse the plugin code with very small modification, and only build and deploy standalone plugins.
 
-## Naming
+Thus, portable plugin extension is a supplement of native plugin. It is suitable to code with multiple programming languages and want to build once and run against all versions. 
 
-We recommend plugin name to be camel case. Notice that, there are some restrictions for the names:
-
-1. The name of the export symbol of the plugin should be camel case with an **upper case first letter**. It must be the same as the plugin name except the first letter. For example, plugin name _file_ must export a export symbol name _File_ .
-2. The name of _.so_ file must be the same as the export symbol name or the plugin name. For example, _MySource.so_ or _mySink.so_.
-
-### State storage
-
-eKuiper extension exposes a key value state storage interface through the context parameter, which can be used for all types of extensions, including Source/Sink/Function extensions.
-
-States are key-value pairs, where the key is a string and the value is arbitrary data. Keys are scoped the to current extended instance.
-
-Users can access the state storage through the context object. State-related methods include putState, getState, incrCounter, getCounter and deleteState.
-
-Below is an example of a function extension to access states. This function will count the number of words passed in and save the cumulative number in the state.
-
-```go
-func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-    logger := ctx.GetLogger()    
-	err := ctx.IncrCounter("allwordcount", len(strings.Split(args[0], args[1])))
-	if err != nil {
-		return err, false
-	}
-	if c, err := ctx.GetCounter("allwordcount"); err != nil   {
-		return err, false
-	} else {
-		return c, true
-	}
-}
-```
-
-### Runtime dependencies
-
-Some plugin may need to access dependencies in the file system. Those files is put under {{eKuiperPath}}/etc/{{pluginType}}/{{pluginName}} directory. When packaging the plugin, put those files in [etc directory](../restapi/plugins.md#plugin-file-format). After installation, they will be moved to the recommended place.
-
-In the plugin source code, developers can access the dependencies of file system by getting the eKuiper root path from the context:
-
-```go
-ctx.GetRootPath()
-```
-
-## External function extension
+## External Function Extension
 
 A configuration method is provided that eKuiper can use SQL to directly call external services in a functional manner, including various rpc services, http services, and so on. This method will greatly improve the ease of eKuiper extensions. External functions will be used as a supplement to the plugin system, and plugins are only recommended for high performance requirements.
 
 Take the getFeature function as an example, and suppose an AI service provides getFeature service based on grpc. After eKuiper is configured, you can use the method of `SELECT getFeature(self) from demo` to call the AI service without customizing the plugin.
 
-For detailed configuration method, please refer to [External function](external_func.md).
+For detailed configuration method, please refer to [External function](external/external_func.md).
 
+It is useful when the users already have exported services and do not want to write codes. It is a way to easily extend SQL functions in batch.
+
+## Comparison
+
+Let's do some comparisons for all these 3 methods. In the table, *dynamic reload* means if the plugin can be updated or deleted during runtime. *Rebuild for update* means if the plugin needs to be rebuilt when updating the main program. If yes, the version update will become complex. *Separate process* means if the plugin is running standalone from the main program. If yes, the plugin crash won't affect the main program. *Communication* means how to communicate between the main program and the plugin. In memory must be the most efficient method and needs to be run in the same process. IPC requires running in the same machine and has the middle performance and reliance. Web means the communication is transported through web protocol like TCP, it is possible to run in different machines. 
+
+| Extension      | Extended types | Need to code? | Language | OS | Dynamic Reload | Rebuild for update? | Separate Process? | Communication |
+| ----------- | ----------- |----------- |----------- |----------- |----------- |----------- |----------- |----------- |
+| Native      | Source, Sink, Function  | Yes | Go | Linux, FreeBSD, MacOs | No | Yes | No | In memory |
+| Portable    | Source, Sink,Function  | Yes | Go, Python and more in the future | Any | Yes | No | Yes | IPC |
+| External    | Function  | No | JSON, protobuf | Any | Yes | No | Yes | Web |

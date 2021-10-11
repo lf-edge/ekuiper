@@ -6,12 +6,13 @@ eKuiper REST api 允许您管理插件，例如创建、删除和列出插件。
 
 ## 创建插件
 
-该API接受JSON内容以创建新的插件。 每种插件类型都有一个独立的端点。 支持的类型为 `["源", "目标", "函数"]`。 插件由名称标识。 名称必须唯一。
+该API接受JSON内容以创建新的插件。 每种插件类型都有一个独立的端点。 支持的类型为 `["源", "目标", "函数", "便捷插件"]`。 插件由名称标识。 名称必须唯一。
 
 ```shell
 POST http://localhost:9081/plugins/sources
 POST http://localhost:9081/plugins/sinks
 POST http://localhost:9081/plugins/functions
+POST http://localhost:9081/plugins/portables
 ```
 文件在http服务器上时的请求示例：
 
@@ -36,6 +37,8 @@ POST http://localhost:9081/plugins/functions
 2. file：插件文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 eKuiper 服务器所在的机器上。它必须是一个 zip 文件，其中包含：编译后的 so 文件和yaml 文件（仅源必需）。 如果插件依赖于某些外部依赖项，则可以提供一个名为install.sh 的 bash 脚本来进行依赖项安装。 文件名称必须与插件名称匹配。 请参考 [扩展](../extension/overview.md) 了解命名规则。
 
 ### 插件文件格式
+`注意`：针对`便捷插件`类型的文件格式，请参考这篇[文章](../extension/portable/overview.md#package) 
+
 名为 random.zip 的源的示例 zip 文件
 1. Random@v1.0.0.so
 2. random.yaml
@@ -88,6 +91,7 @@ echo "Done"
 GET http://localhost:9081/plugins/sources
 GET http://localhost:9081/plugins/sinks
 GET http://localhost:9081/plugins/functions
+GET http://localhost:9081/plugins/portables
 ```
 
 响应示例：
@@ -104,6 +108,7 @@ GET http://localhost:9081/plugins/functions
 GET http://localhost:9081/plugins/sources/{name}
 GET http://localhost:9081/plugins/sinks/{name}
 GET http://localhost:9081/plugins/functions/{name}
+GET http://localhost:9081/plugins/portables/{name}
 ```
 
 路径参数 `name` 是插件的名称。
@@ -125,11 +130,12 @@ GET http://localhost:9081/plugins/functions/{name}
 DELETE http://localhost:9081/plugins/sources/{name}
 DELETE http://localhost:9081/plugins/sinks/{name}
 DELETE http://localhost:9081/plugins/functions/{name}
+DELETE http://localhost:9081/plugins/portables/{name}
 ```
-用户可以传递查询参数来决定是否应在删除后停止 eKuiper，以使删除生效。 参数是`restart`，只有当值是1时，eKuiper 才停止。 用户必须手动重新启动它。
+用户可以传递查询参数来决定是否应在删除后停止 eKuiper，以使删除生效。 参数是`stop`，只有当值是1时，eKuiper 才停止。 用户必须手动重新启动它。
 
 ```shell
-DELETE http://localhost:9081/plugins/sources/{name}?restart=1
+DELETE http://localhost:9081/plugins/sources/{name}?stop=1
 ```
 
 ## 用于导出多函数的函数插件的相关 API

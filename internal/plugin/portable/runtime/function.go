@@ -148,7 +148,7 @@ func (f *PortableFunc) IsAggregate() bool {
 
 func (f *PortableFunc) Close() error {
 	return f.dataCh.Close()
-	// Symbol must be cloased by instance manager
+	// Symbol must be closed by instance manager
 	//		ins.StopSymbol(ctx, c)
 }
 

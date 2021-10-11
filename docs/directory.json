@@ -171,24 +171,55 @@
 		{
 			"title": "扩展 Kuiper",
 			"children": [{
-					"title": "Introduction",
-					"path": "extension/overview"
+				"title": "扩展",
+				"path": "extension/overview"
 				},
 				{
-					"title": "函数扩展",
-					"path": "extension/function"
+					"title": "扩展",
+					"children": [
+						{
+							"title": "外部函数",
+							"path": "extension/external/external_func"
+						}
+					]
 				},
 				{
-					"title": "Sink/Action 扩展",
-					"path": "extension/sink"
+					"title": "原生插件",
+					"children": [
+						{
+							"title": "函数扩展",
+							"path": "extension/native/function"
+						},
+						{
+							"title": "扩展",
+							"path": "extension/native/overview"
+						},
+						{
+							"title": "目标 （Sink） 扩展",
+							"path": "extension/native/sink"
+						},
+						{
+							"title": "源（ Source ）扩展",
+							"path": "extension/native/source"
+						}
+					]
 				},
 				{
-					"title": "源扩展",
-					"path": "extension/source"
-				},
-				{
-					"title": "外部函数",
-					"path": "extension/external_func"
+					"title": "Portable",
+					"children": [
+						{
+							"title": "Portable Plugin",
+							"path": "extension/portable/overview"
+						},
+						{
+							"title": "GO SDK for Portable Plugin",
+							"path": "extension/portable/go_sdk"
+						},
+						{
+							"title": "Python SDK for Portable Plugin",
+							"path": "extension/portable/python_sdk"
+						}
+					]
 				}
 			]
 		},
@@ -421,20 +452,51 @@
 					"path": "extension/overview"
 				},
 				{
-					"title": "Function Extension",
-					"path": "extension/function"
+					"title": "External",
+					"children": [
+						{
+							"title": "External Function",
+							"path": "extension/external/external_func"
+						}
+					]
 				},
 				{
-					"title": "Sink Extension",
-					"path": "extension/sink"
+					"title": "Native",
+					"children": [
+						{
+							"title": "Function Extension",
+							"path": "extension/native/function"
+						},
+						{
+							"title": "Native Plugin",
+							"path": "extension/native/overview"
+						},
+						{
+							"title": "Sink Extension",
+							"path": "extension/native/sink"
+						},
+						{
+							"title": "Source Extension",
+							"path": "extension/native/source"
+						}
+					]
 				},
 				{
-					"title": "Source Extension",
-					"path": "extension/source"
-				},
-				{
-					"title": "External Function",
-					"path": "extension/external_func"
+					"title": "Portable",
+					"children": [
+						{
+							"title": "Portable Plugin",
+							"path": "extension/portable/overview"
+						},
+						{
+							"title": "GO SDK for Portable Plugin",
+							"path": "extension/portable/go_sdk"
+						},
+						{
+							"title": "Python SDK for Portable Plugin",
+							"path": "extension/portable/python_sdk"
+						}
+					]
 				}
 			]
 		},

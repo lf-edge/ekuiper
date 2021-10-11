@@ -48,7 +48,7 @@ To create a function plugin with multiple exported functions, specify the export
 ```
 
 ### parameters
-1. plugin_type: the type of the plugin. Available values are `["source", "sink", "functions"]`
+1. plugin_type: the type of the plugin. Available values are `["source", "sink", "function", "portable"]`
 2. plugin_name: a unique name of the plugin. The name must be the same as the camel case version of the plugin with lowercase first letter. For example, if the exported plugin name is `Random`, then the name of this plugin is `random`.
 3. file: the url of the plugin files. It must be a zip file with: a compiled so file and the yaml file(only required for sources). The name of the files must match the name of the plugin. Please check [Extension](../extension/overview.md) for the naming rule.
 4. functions: only apply to function plugin which exports multiple functions. The property specifies the exported function names.

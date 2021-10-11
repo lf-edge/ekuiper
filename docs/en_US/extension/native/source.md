@@ -1,6 +1,6 @@
 # Source Extension
 
-Sources feed data into eKuiper from other systems. eKuiper has built-in source support for [MQTT broker](../rules/sources/mqtt.md). There are still needs to consume data from various external systems include messaging systems and data pipelines etc. Source extension is presented to meet this requirement.
+Sources feed data into eKuiper from other systems. eKuiper has built-in source support for [MQTT broker](../../rules/sources/mqtt.md). There are still needs to consume data from various external systems include messaging systems and data pipelines etc. Source extension is presented to meet this requirement.
 
 ## Developing
 
@@ -8,7 +8,7 @@ Sources feed data into eKuiper from other systems. eKuiper has built-in source s
 
 To develop a source for eKuiper is to implement [api.Source](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface and export it as a golang plugin.
 
-Before starting the development, you must [setup the environment for golang plugin](overview.md#setup-the-plugin-developing-environment). 
+Before starting the development, you must [setup the environment for golang plugin](../overview.md#setup-the-plugin-developing-environment). 
 
 To develop a source, the _Configure_ method must be implemented. This method will be called once the source is initialized. In this method, you can retrieve the _DATASOURCE_ property of the stream (which is topic for mqtt and other messaging system) from the first parameter. Then in the second parameter, a map that contains the configuration in your _yaml_ file is passed. See [configuration](#deal-with-configuration) for more detail. Typically, there will be information such as host, port, user and password of the external system. You can use this map to initialize this source.
 
@@ -30,7 +30,7 @@ The last method to implement is _Close_ which literally close the connection. It
 Close(ctx StreamContext) error
 ```
 
-As the source itself is a plugin, it must be in the main package. Given the source struct name is mySource. At last of the file, the source must be exported as a symbol as below. There are [2 types of exported symbol supported](overview.md#plugin-development). For source extension, states are usually needed, so it is recommended to export a constructor function.
+As the source itself is a plugin, it must be in the main package. Given the source struct name is mySource. At last of the file, the source must be exported as a symbol as below. There are [2 types of exported symbol supported](../overview.md#plugin-development). For source extension, states are usually needed, so it is recommended to export a constructor function.
 
 ```go
 function MySource() api.Source{
@@ -41,7 +41,7 @@ function MySource() api.Source{
 The [Random Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/sources/random/random.go) is a good example.
 
 ### Rewindable source
-If the [rule checkpoint](../rules/state_and_fault_tolerance.md#source-consideration) is enabled, the source requires to be rewindable. That means the source need to implement both ``api.Source`` and ``api.Rewindable`` interface. 
+If the [rule checkpoint](../../rules/state_and_fault_tolerance.md#source-consideration) is enabled, the source requires to be rewindable. That means the source need to implement both ``api.Source`` and ``api.Rewindable`` interface. 
 
 A typical implementation is to save an ``offset`` as a field of the source. And update the offset value when reading in new value. Notice that, when implementing GetOffset() will be called by eKuiper system which means the offset value can be accessed by multiple go routines. So a lock is required when read or write the offset.
 
@@ -51,12 +51,12 @@ A typical implementation is to save an ``offset`` as a field of the source. And 
 
 eKuiper configurations are formatted as yaml and it provides a centralize location _/etc_ to hold all the configurations. Inside it, a subfolder _sources_ is provided for the source configurations including the extended sources.
 
-A configuration system is supported for eKuiper extension which will automatically read the configuration in yaml file and feed into the _Configure_ method of the source. If the [CONF_KEY](../sqls/streams.md#create-stream) property is specified in the stream, the configuration of that key will be fed. Otherwise, the default configuration is used.
+A configuration system is supported for eKuiper extension which will automatically read the configuration in yaml file and feed into the _Configure_ method of the source. If the [CONF_KEY](../../sqls/streams.md#create-stream) property is specified in the stream, the configuration of that key will be fed. Otherwise, the default configuration is used.
  
  To use configuration in your source, the following conventions must be followed.
  1. The name of your configuration file must be the same as the plugin name. For example, mySource.yaml.
  2. The yaml file must be located inside _etc/sources_
- 3. The format of the yaml file could be found [here](../rules/sources/mqtt.md)
+ 3. The format of the yaml file could be found [here](../../rules/sources/mqtt.md)
  
 #### common configuration field
 
@@ -74,7 +74,7 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources
 
 ### Usage
 
-The customized source is specified in a [stream definition](../sqls/streams.md#create-stream). The related properties are:
+The customized source is specified in a [stream definition](../../sqls/streams.md#create-stream). The related properties are:
 
 - TYPE: specify the name of the source, must be camel case.
 - CONF_KEY: specify the key of the configuration to be used.

@@ -6,5 +6,5 @@ eKuiper offers a SQL-like query language for performing transformations and comp
 - [Built-in functions](built-in_functions.md)
 - Extension
   - [Plugin extension](../extension/overview.md)
-  - [External service extension](../extension/external_func.md)
+  - [External service extension](../extension/external/external_func.md)
 

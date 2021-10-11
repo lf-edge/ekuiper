@@ -6,11 +6,12 @@ The eKuiper REST api for plugins allows you to manage plugins, such as create, d
 
 ## create a plugin
 
-The API accepts a JSON content to create a new plugin. Each plugin type has a standalone endpoint. The supported types are `["sources", "sinks", "functions"]`. The plugin is identified by the name. The name must be unique.
+The API accepts a JSON content to create a new plugin. Each plugin type has a standalone endpoint. The supported types are `["sources", "sinks", "functions","portables"]`. The plugin is identified by the name. The name must be unique.
 ```shell
 POST http://localhost:9081/plugins/sources
 POST http://localhost:9081/plugins/sinks
 POST http://localhost:9081/plugins/functions
+POST http://localhost:9081/plugins/portables
 ```
 Request Sample when the file locates in a http server
 
@@ -36,6 +37,8 @@ Request Sample for files locates in the same machine of the Kuiepr server.
 2. file: the url of the plugin files. The url can be `http` or `https` scheme or `file` scheme to refer to a local file path of the eKuiper server. It must be a zip file with: a compiled so file and the yaml file(only required for sources). If the plugin depends on some external dependencies, a bash script named install.sh can be provided to do the dependency installation. The name of the files must match the name of the plugin. Please check [Extension](../extension/overview.md) for the naming rule.
 
 ### Plugin File Format
+`Note`: For `portables` type, please refer to this [format](../extension/portable/overview.md#package).
+
 A sample zip file for a source named random.zip
 1. Random@v1.0.0.so
 2. random.yaml
@@ -87,6 +90,7 @@ The API is used for displaying all of plugins defined in the server for a plugin
 GET http://localhost:9081/plugins/sources
 GET http://localhost:9081/plugins/sinks
 GET http://localhost:9081/plugins/functions
+GET http://localhost:9081/plugins/portables
 ```
 
 Response Sample:
@@ -103,6 +107,7 @@ The API is used to print out the detailed definition of a plugin.
 GET http://localhost:9081/plugins/sources/{name}
 GET http://localhost:9081/plugins/sinks/{name}
 GET http://localhost:9081/plugins/functions/{name}
+GET http://localhost:9081/plugins/portables/{name}
 ```
 
 Path parameter `name` is the name of the plugin.
@@ -124,10 +129,11 @@ The API is used for drop the plugin. The eKuiper server needs to be restarted to
 DELETE http://localhost:9081/plugins/sources/{name}
 DELETE http://localhost:9081/plugins/sinks/{name}
 DELETE http://localhost:9081/plugins/functions/{name}
+DELETE http://localhost:9081/plugins/portables/{name}
 ```
-The user can pass a query parameter to decide if eKuiper should be stopped after a delete in order to make the deletion take effect. The parameter is `restart` and only when the value is `1` will the eKuiper be stopped. The user has to manually restart it.
+The user can pass a query parameter to decide if eKuiper should be stopped after a delete in order to make the deletion take effect. The parameter is `stop` and only when the value is `1` will the eKuiper be stopped. The user has to manually restart it.
 ```shell
-DELETE http://localhost:9081/plugins/sources/{name}?restart=1
+DELETE http://localhost:9081/plugins/sources/{name}?stop=1
 ```
 
 ## APIs to handle function plugin with multiple functions
