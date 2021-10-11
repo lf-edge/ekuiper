@@ -21,7 +21,6 @@ import (
 )
 
 func main() {
-	// TODO key case sensitive?
 	sdk.Start(os.Args, &sdk.PluginConfig{
 		Name: "mirror",
 		Sources: map[string]sdk.NewSourceFunc{

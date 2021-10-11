@@ -48,7 +48,7 @@ create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_typ
 ```
 
 ### 参数
-1. plugin_type：插件类型，可用值为 `["source", "sink", "functions"]`
+1. plugin_type：插件类型，可用值为 `["source", "sink", "function", "portable"]`
 2. plugin_name：插件的唯一名称。名称首字母必须小写。例如，如果导出的插件名称为 `Random`，则此插件的名称为 `Random`。
 3. file：插件文件的网址。 它必须是一个 zip 文件，其中包含：编译后的 so 文件和 yaml 文件（仅源文件需要）。 文件名称必须与插件名称匹配。 关于命名规则，查看 [扩展名](../extension/overview.md) 。
 4. functions：仅用于导出多个函数的函数插件。该参数指明插件导出的所有函数名。

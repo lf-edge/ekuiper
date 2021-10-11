@@ -1,6 +1,6 @@
 # Sink Extension
 
-Sink feed data from eKuiper into external systems. eKuiper has built-in sink support for [MQTT broker](../rules/sinks/mqtt.md) and [log sink](../rules/sinks/logs.md). There are still needs to publish data to various external systems include messaging systems and database etc. Sink extension is presented to meet this requirement.
+Sink feed data from eKuiper into external systems. eKuiper has built-in sink support for [MQTT broker](../../rules/sinks/mqtt.md) and [log sink](../../rules/sinks/logs.md). There are still needs to publish data to various external systems include messaging systems and database etc. Sink extension is presented to meet this requirement.
 
 ## Developing
 
@@ -8,9 +8,9 @@ Sink feed data from eKuiper into external systems. eKuiper has built-in sink sup
 
 To develop a sink for eKuiper is to implement [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface and export it as a golang plugin.
 
-Before starting the development, you must [setup the environment for golang plugin](overview.md#setup-the-plugin-developing-environment). 
+Before starting the development, you must [setup the environment for golang plugin](../overview.md#setup-the-plugin-developing-environment). 
 
-To develop a sink, the _Configure_ method must be implemented. This method will be called once the sink is initialized. In this method, a map that contains the configuration in the [rule actions definition](../rules/overview.md#actions) is passed in. Typically, there will be information such as host, port, user and password of the external system. You can use this map to initialize this sink.
+To develop a sink, the _Configure_ method must be implemented. This method will be called once the sink is initialized. In this method, a map that contains the configuration in the [rule actions definition](../../rules/overview.md#actions) is passed in. Typically, there will be information such as host, port, user and password of the external system. You can use this map to initialize this sink.
 
 ```go
 //Called during initialization. Configure the sink with the properties from action definition 
@@ -35,7 +35,7 @@ The last method to implement is _Close_ which literally close the connection. It
 Close(ctx StreamContext) error
 ```
 
-As the sink itself is a plugin, it must be in the main package. Given the sink struct name is mySink. At last of the file, the sink must be exported as a symbol as below. There are [2 types of exported symbol supported](overview.md#plugin-development). For sink extension, states are usually needed, so it is recommended to export a constructor function.
+As the sink itself is a plugin, it must be in the main package. Given the sink struct name is mySink. At last of the file, the sink must be exported as a symbol as below. There are [2 types of exported symbol supported](../overview.md#plugin-development). For sink extension, states are usually needed, so it is recommended to export a constructor function.
 
 ```go
 func MySink() api.Sink {
@@ -54,7 +54,7 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o extensions/sink
 
 ### Usage
 
-The customized sink is specified in a [actions definition](../rules/overview.md#actions). Its name is used as the key of the action. The configuration is the value.
+The customized sink is specified in a [actions definition](../../rules/overview.md#actions). Its name is used as the key of the action. The configuration is the value.
 
 If you have developed a sink implementation MySink, you should have:
 1. In the plugin file, symbol MySink is exported.
