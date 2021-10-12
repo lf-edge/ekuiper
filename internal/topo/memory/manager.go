@@ -15,19 +15,29 @@
 package memory
 
 import (
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"regexp"
 	"sync"
 )
 
 const IdProperty = "topic"
 
-type channels struct {
-	producerCount int
-	consumers     map[string]chan map[string]interface{} // The consumer channel list [sourceId]chan
+type pubConsumers struct {
+	count     int
+	consumers map[string]chan map[string]interface{} // The consumer channel list [sourceId]chan
 }
 
-var topics = make(map[string]*channels)
-var mu = sync.RWMutex{}
+type subChan struct {
+	regex *regexp.Regexp
+	ch    chan map[string]interface{}
+}
+
+var (
+	pubTopics = make(map[string]*pubConsumers)
+	subExps   = make(map[string]*subChan)
+	mu        = sync.RWMutex{}
+)
 
 func GetSink() *sink {
 	return &sink{}
@@ -37,77 +47,111 @@ func GetSource() *source {
 	return &source{}
 }
 
-func getOrCreateSinkChannels(topic string) {
+func createPub(topic string) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if c, exists := topics[topic]; exists {
-		c.producerCount += 1
+	if c, exists := pubTopics[topic]; exists {
+		c.count += 1
 		return
 	}
-	c := &channels{
-		producerCount: 1,
-		consumers:     make(map[string]chan map[string]interface{}),
+	c := &pubConsumers{
+		count:     1,
+		consumers: make(map[string]chan map[string]interface{}),
 	}
-	topics[topic] = c
+	pubTopics[topic] = c
+	for sourceId, sc := range subExps {
+		if sc.regex.MatchString(topic) {
+			addPubConsumer(topic, sourceId, sc.ch)
+		}
+	}
 }
 
-func getOrCreateSinkConsumerChannel(sink string, source string) chan map[string]interface{} {
+func createSub(wildcard string, regex *regexp.Regexp, sourceId string) chan map[string]interface{} {
 	mu.Lock()
 	defer mu.Unlock()
-	var sinkConsumerChannels *channels
-	if c, exists := topics[sink]; exists {
+	ch := make(chan map[string]interface{})
+	if regex != nil {
+		subExps[sourceId] = &subChan{
+			regex: regex,
+			ch:    ch,
+		}
+		for topic := range pubTopics {
+			if regex.MatchString(topic) {
+				addPubConsumer(topic, sourceId, ch)
+			}
+		}
+	} else {
+		addPubConsumer(wildcard, sourceId, ch)
+	}
+	return ch
+}
+
+func addPubConsumer(topic string, sourceId string, ch chan map[string]interface{}) {
+	var sinkConsumerChannels *pubConsumers
+	if c, exists := pubTopics[topic]; exists {
 		sinkConsumerChannels = c
 	} else {
-		sinkConsumerChannels = &channels{
+		sinkConsumerChannels = &pubConsumers{
 			consumers: make(map[string]chan map[string]interface{}),
 		}
 	}
-	var ch chan map[string]interface{}
-	if _, exists := sinkConsumerChannels.consumers[source]; !exists {
-		ch = make(chan map[string]interface{})
-		sinkConsumerChannels.consumers[source] = ch
+	if _, exists := sinkConsumerChannels.consumers[sourceId]; exists {
+		conf.Log.Warnf("create memory source consumer for %s which is already exists", sourceId)
+	} else {
+		sinkConsumerChannels.consumers[sourceId] = ch
 	}
-	return ch
 }
 
 func closeSourceConsumerChannel(topic string, sourceId string) error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if sinkConsumerChannels, exists := topics[topic]; exists {
-		if sourceChannel, exists := sinkConsumerChannels.consumers[sourceId]; exists {
-			close(sourceChannel)
-			delete(sinkConsumerChannels.consumers, sourceId)
+	if sc, exists := subExps[sourceId]; exists {
+		close(sc.ch)
+		delete(subExps, sourceId)
+		for _, c := range pubTopics {
+			removePubConsumer(topic, sourceId, c)
 		}
-		if len(sinkConsumerChannels.consumers) == 0 && sinkConsumerChannels.producerCount == 0 {
-			delete(topics, topic)
+	} else {
+		if sinkConsumerChannels, exists := pubTopics[topic]; exists {
+			removePubConsumer(topic, sourceId, sinkConsumerChannels)
 		}
 	}
 	return nil
+}
+
+func removePubConsumer(topic string, sourceId string, c *pubConsumers) {
+	if _, exists := c.consumers[sourceId]; exists {
+		delete(c.consumers, sourceId)
+	}
+	if len(c.consumers) == 0 && c.count == 0 {
+		delete(pubTopics, topic)
+	}
 }
 
 func closeSink(topic string) error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if sinkConsumerChannels, exists := topics[topic]; exists {
-		sinkConsumerChannels.producerCount -= 1
-		if len(sinkConsumerChannels.consumers) == 0 && sinkConsumerChannels.producerCount == 0 {
-			delete(topics, topic)
+	if sinkConsumerChannels, exists := pubTopics[topic]; exists {
+		sinkConsumerChannels.count -= 1
+		if len(sinkConsumerChannels.consumers) == 0 && sinkConsumerChannels.count == 0 {
+			delete(pubTopics, topic)
 		}
 	}
 	return nil
 }
 
 func produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
-	c, exists := topics[topic]
+	c, exists := pubTopics[topic]
 	if !exists {
 		return
 	}
 	logger := ctx.GetLogger()
 	var wg sync.WaitGroup
 	mu.RLock()
+	// blocking to retain the sequence, expect the source to consume the data immediately
 	wg.Add(len(c.consumers))
 	for n, out := range c.consumers {
 		go func(name string, output chan<- map[string]interface{}) {

@@ -17,15 +17,18 @@ package memory
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"regexp"
+	"strings"
 )
 
 type source struct {
-	topic string
-	input <-chan map[string]interface{}
+	topic      string
+	topicRegex *regexp.Regexp
+	input      <-chan map[string]interface{}
 }
 
 func (s *source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
-	ch := getOrCreateSinkConsumerChannel(s.topic, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
+	ch := createSub(s.topic, s.topicRegex, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
 	s.input = ch
 	for {
 		select {
@@ -42,7 +45,29 @@ func (s *source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ 
 
 func (s *source) Configure(datasource string, _ map[string]interface{}) error {
 	s.topic = datasource
+	if strings.ContainsAny(datasource, "+#") {
+		r, err := getRegexp(datasource)
+		if err != nil {
+			return err
+		}
+		s.topicRegex = r
+	}
 	return nil
+}
+
+func getRegexp(topic string) (*regexp.Regexp, error) {
+	if len(topic) == 0 {
+		return nil, fmt.Errorf("invalid empty topic")
+	}
+
+	levels := strings.Split(topic, "/")
+	for i, level := range levels {
+		if level == "#" && i != len(levels)-1 {
+			return nil, fmt.Errorf("invalid topic %s: # must at the last level", topic)
+		}
+	}
+	regstr := strings.Replace(strings.ReplaceAll(topic, "+", "([^/]+)"), "#", ".", 1)
+	return regexp.Compile(regstr)
 }
 
 func (s *source) Close(ctx api.StreamContext) error {

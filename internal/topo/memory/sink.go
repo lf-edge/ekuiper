@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"strings"
 )
 
 type sink struct {
@@ -26,13 +27,16 @@ type sink struct {
 
 func (s *sink) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("Opening memory sink: %v", s.topic)
-	getOrCreateSinkChannels(s.topic)
+	createPub(s.topic)
 	return nil
 }
 
 func (s *sink) Configure(props map[string]interface{}) error {
 	if t, ok := props[IdProperty]; ok {
 		if id, casted := t.(string); casted {
+			if strings.ContainsAny(id, "#+") {
+				return fmt.Errorf("invalid memory topic %s: wildcard found", id)
+			}
 			s.topic = id
 			return nil
 		} else {
