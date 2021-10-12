@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package shared
+package memory
 
 import (
 	"encoding/json"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
@@ -28,16 +29,23 @@ func TestSharedInmemoryNode(t *testing.T) {
 	sinkProps := make(map[string]interface{})
 	sinkProps[IdProperty] = id
 	src := GetSource()
-	snk, err := GetSink(sinkProps)
-	if err != nil {
-		t.Error(err)
-	}
-	ctx := context.Background()
+	snk := GetSink()
+	contextLogger := conf.Log.WithField("rule", "test")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	consumer := make(chan api.SourceTuple)
 	errorChannel := make(chan error)
 	srcProps := make(map[string]interface{})
 	srcProps["option"] = "value"
-
+	err := snk.Configure(sinkProps)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = snk.Open(ctx)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	go func() {
 		src.Open(ctx, consumer, errorChannel)
 	}()
@@ -48,7 +56,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 
 	srcProps[IdProperty] = id
 
-	if _, contains := sinkChannels[id]; !contains {
+	if _, contains := topics[id]; !contains {
 		t.Errorf("there should be memory node for topic")
 	}
 
