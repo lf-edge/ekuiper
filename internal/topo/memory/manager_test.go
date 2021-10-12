@@ -56,7 +56,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 
 	srcProps[IdProperty] = id
 
-	if _, contains := topics[id]; !contains {
+	if _, contains := pubTopics[id]; !contains {
 		t.Errorf("there should be memory node for topic")
 	}
 
