@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package shared
+package memory
 
 import (
 	"encoding/json"
@@ -21,28 +21,36 @@ import (
 )
 
 type sink struct {
-	id string
-	ch *channels
+	topic string
 }
 
 func (s *sink) Open(ctx api.StreamContext) error {
+	ctx.GetLogger().Debugf("Opening memory sink: %v", s.topic)
+	getOrCreateSinkChannels(s.topic)
 	return nil
 }
 
 func (s *sink) Configure(props map[string]interface{}) error {
-	return nil
+	if t, ok := props[IdProperty]; ok {
+		if id, casted := t.(string); casted {
+			s.topic = id
+			return nil
+		} else {
+			return fmt.Errorf("can't cast value %s to string", t)
+		}
+	}
+	return fmt.Errorf("there is no topic property in the memory action")
 }
 
 func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
+	ctx.GetLogger().Debugf("receive %+v", data)
 	if b, casted := data.([]byte); casted {
 		d, err := toMap(b)
 		if err != nil {
 			return err
 		}
 		for _, el := range d {
-			for _, c := range s.ch.consumers {
-				c <- el
-			}
+			produce(ctx, s.topic, el)
 		}
 		return nil
 	}
@@ -50,7 +58,8 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 }
 
 func (s *sink) Close(ctx api.StreamContext) error {
-	return closeSink(s.id)
+	ctx.GetLogger().Debugf("closing memory sink")
+	return closeSink(s.topic)
 }
 
 func toMap(data []byte) ([]map[string]interface{}, error) {

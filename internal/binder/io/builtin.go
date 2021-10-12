@@ -15,6 +15,7 @@
 package io
 
 import (
+	"github.com/lf-edge/ekuiper/internal/topo/memory"
 	"github.com/lf-edge/ekuiper/internal/topo/sink"
 	"github.com/lf-edge/ekuiper/internal/topo/source"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -28,6 +29,7 @@ var (
 		"mqtt":     func() api.Source { return &source.MQTTSource{} },
 		"httppull": func() api.Source { return &source.HTTPPullSource{} },
 		"file":     func() api.Source { return &source.FileSource{} },
+		"memory":   func() api.Source { return memory.GetSource() },
 	}
 	sinks = map[string]NewSinkFunc{
 		"log":         sink.NewLogSink,
@@ -35,6 +37,7 @@ var (
 		"mqtt":        func() api.Sink { return &sink.MQTTSink{} },
 		"rest":        func() api.Sink { return &sink.RestSink{} },
 		"nop":         func() api.Sink { return &sink.NopSink{} },
+		"memory":      func() api.Sink { return memory.GetSink() },
 	}
 )
 
