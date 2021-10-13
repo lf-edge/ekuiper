@@ -27,7 +27,13 @@ import (
 	"time"
 )
 
+func reset() {
+	pubTopics = make(map[string]*pubConsumers)
+	subExps = make(map[string]*subChan)
+}
+
 func TestSharedInmemoryNode(t *testing.T) {
+	reset()
 	id := "test_id"
 	sinkProps := make(map[string]interface{})
 	sinkProps[IdProperty] = id
@@ -91,6 +97,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 }
 
 func TestCreateAndClose(t *testing.T) {
+	reset()
 	var (
 		sourceTopics = []string{"h/d1/c1/s2", "h/+/+/s1", "h/d3/#", "h/d1/c1/s2", "h/+/c1/s1"}
 		sinkTopics   = []string{"h/d1/c1/s1", "h/d1/c1/s2", "h/d2/c2/s1", "h/d3/c3/s1", "h/d1/c1/s1"}
@@ -170,6 +177,7 @@ func TestCreateAndClose(t *testing.T) {
 }
 
 func TestMultipleTopics(t *testing.T) {
+	reset()
 	var (
 		sourceTopics = []string{"h/d1/c1/s2", "h/+/+/s1", "h/d3/#", "h/d1/c1/s2", "h/+/c1/s1"}
 		sinkTopics   = []string{"h/d1/c1/s1", "h/d1/c1/s2", "h/d2/c2/s1", "h/d3/c3/s1"}
