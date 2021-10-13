@@ -87,22 +87,6 @@ func createSub(wildcard string, regex *regexp.Regexp, sourceId string) chan map[
 	return ch
 }
 
-func addPubConsumer(topic string, sourceId string, ch chan map[string]interface{}) {
-	var sinkConsumerChannels *pubConsumers
-	if c, exists := pubTopics[topic]; exists {
-		sinkConsumerChannels = c
-	} else {
-		sinkConsumerChannels = &pubConsumers{
-			consumers: make(map[string]chan map[string]interface{}),
-		}
-	}
-	if _, exists := sinkConsumerChannels.consumers[sourceId]; exists {
-		conf.Log.Warnf("create memory source consumer for %s which is already exists", sourceId)
-	} else {
-		sinkConsumerChannels.consumers[sourceId] = ch
-	}
-}
-
 func closeSourceConsumerChannel(topic string, sourceId string) error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -119,15 +103,6 @@ func closeSourceConsumerChannel(topic string, sourceId string) error {
 		}
 	}
 	return nil
-}
-
-func removePubConsumer(topic string, sourceId string, c *pubConsumers) {
-	if _, exists := c.consumers[sourceId]; exists {
-		delete(c.consumers, sourceId)
-	}
-	if len(c.consumers) == 0 && c.count == 0 {
-		delete(pubTopics, topic)
-	}
 }
 
 func closeSink(topic string) error {
@@ -166,4 +141,29 @@ func produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
 	}
 	mu.RUnlock()
 	wg.Wait()
+}
+
+func addPubConsumer(topic string, sourceId string, ch chan map[string]interface{}) {
+	var sinkConsumerChannels *pubConsumers
+	if c, exists := pubTopics[topic]; exists {
+		sinkConsumerChannels = c
+	} else {
+		sinkConsumerChannels = &pubConsumers{
+			consumers: make(map[string]chan map[string]interface{}),
+		}
+	}
+	if _, exists := sinkConsumerChannels.consumers[sourceId]; exists {
+		conf.Log.Warnf("create memory source consumer for %s which is already exists", sourceId)
+	} else {
+		sinkConsumerChannels.consumers[sourceId] = ch
+	}
+}
+
+func removePubConsumer(topic string, sourceId string, c *pubConsumers) {
+	if _, exists := c.consumers[sourceId]; exists {
+		delete(c.consumers, sourceId)
+	}
+	if len(c.consumers) == 0 && c.count == 0 {
+		delete(pubTopics, topic)
+	}
 }
