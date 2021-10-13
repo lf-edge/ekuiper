@@ -1,0 +1,22 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/plugins/sources/memory.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/plugins/sources/memory.md"
+    },
+    "description": {
+      "en_US": "The source subscribes to topics to consume events from memory sink to form a rule pipeline.",
+      "zh_CN": "内存源可通过订阅主题来消费内存sink里的消息，从而实现规则流水线。"
+    }
+  },
+  "libs": [],
+  "properties": {
+  }
+}
