@@ -1,16 +1,16 @@
-# Rule Pipeline
+# 规则管道
 
-We can form rule pipelines by importing results of prior rule into the following rule. This is possible by employing intermediate storage or MQ such as mqtt broker. By using the pair of [memory source](./sources/memory.md) and [sink](./sinks/memory.md), we can create rule pipelines without external dependencies.
+我们可以通过将先前规则的结果导入后续规则来形成规则管道。 这可以通过使用中间存储或 MQ（例如 mqtt 消息服务器）来实现。 通过同时使用 [内存源](./sources/memory.md) 和 [目标](./sinks/memory.md)，我们可以创建没有外部依赖的规则管道。
 
-## Usage
+## 使用
 
-Rule pipeline will be implicit. Each rule can use an memory sink / source. This means that each step will be created separately using existing api (example below).
+规则管道将是隐式的。 每个规则都可以使用一个内存目标/源。 这意味着每个步骤将使用现有的 api 单独创建（示例如下所示）。
 
 ```shell
-#1 Create the source stream
+#1 创建源流
 {"sql" : "create stream demo () WITH (DATASOURCE=\"demo\", FORMAT=\"JSON\")"}
 
-#2 Create rule and sink to memory
+#2 创建规则和内存目标
 {
   "id": "rule1",
   "sql": "SELECT * FROM demo WHERE isNull(temperature)=false",
@@ -23,10 +23,10 @@ Rule pipeline will be implicit. Each rule can use an memory sink / source. This 
   }]
 }
 
-#3 Create a stream from the memory topic
+#3 从内存主题创建一个流
 {"sql" : "create stream sensor1 () WITH (DATASOURCE=\"home/+/sensor1\", FORMAT=\"JSON\", TYPE=\"memory\")"}
 
-#4 Create another rules to consume from the memory topic
+#4 从内存主题创建另一个要使用的规则
 {
   "id": "rule2-1",
   "sql": "SELECT avg(temperature) FROM sensor1 GROUP BY CountWindow(10)",
@@ -50,9 +50,8 @@ Rule pipeline will be implicit. Each rule can use an memory sink / source. This 
 
 ```
 
-By using the memory topic as the bridge, we now form a rule pipeline:
-`rule1->{rule2-1, rule2-2}`. The pipeline can be multiple to multiple and very flexible. 
+通过使用内存主题作为桥梁，我们现在创建一个规则管道：`rule1->{rule2-1, rule2-2}`。 管道可以是多对多的，而且非常灵活。 
 
-Notice that, the memory sink can be used together with other sinks to create multiple rule actions for a rule. And the memory source topic can use wildcard to subscirbe to a filtered topic list.
+请注意，内存目标可以与其他目标一起使用，为一个规则创建多个规则动作。 并且内存源主题可以使用通配符订阅过滤后的主题列表。
 
-     
+​     

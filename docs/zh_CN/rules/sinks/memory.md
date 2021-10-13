@@ -1,12 +1,12 @@
-# Memory action
+# 内存动作
 
-The action is used to flush the result into an in-memory topic so that it can be consumed by the [memory source](../sources/memory.md). The topic is like pubsub topic such as mqtt, so that there could be multiple memory sinks which publish to the same topic and multiple memory sources which subscribe to the same topic. The typical usage for memory action is to form [rule pipelines](../rule_pipeline.md).
+该动作用于将结果刷新到内存中的主题中，以便 [内存源](../sources/memory.md) 可以使用它。 该主题类似于 pubsub 主题，例如 mqtt，因此可能有多个内存目标发布到同一主题，也可能有多个内存源订阅同一主题。 内存动作的典型用途是形成[规则管道](../rule_pipeline.md)。
 
-| Property name      | Optional | Description                                                  |
-| ------------------ | -------- | ------------------------------------------------------------ |
-| topic              | false    | The in-memory topic, such as `analysis/result`                    |
+| 属性名称 | 是否可选 | 描述                                 |
+| -------- | -------- | ------------------------------------ |
+| topic    | 否       | 内存中的主题，例如 `analysis/result` |
 
-Below is a sample memory action configuration:
+下面是一个内存动作配置示例：
 
 ```json
 {
