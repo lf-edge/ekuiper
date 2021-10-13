@@ -1,0 +1,36 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/memory.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/memory.md"
+    },
+    "description": {
+      "en_US": "The action is used to flush the result into an in-memory topic so that it can be consumed by the memory source.",
+      "zh_CN": "该操作用于将输出消息发送到内存主题中，以便内存源可以消费。"
+    }
+  },
+  "properties": [
+    {
+      "name": "topic",
+      "optional": false,
+      "control": "text",
+      "default": "",
+      "type": "string",
+      "hint": {
+        "en_US": "The topic, such as analysis/result",
+        "zh_CN": "主题，例如 analysis/result"
+      },
+      "label": {
+        "en_US": "Topic",
+        "zh_CN": "主题"
+      }
+    }
+  ]
+}
