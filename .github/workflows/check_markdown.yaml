@@ -1,6 +1,6 @@
 name: Check markdown
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   Markdown_Checker:
@@ -8,7 +8,7 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@main
-  
+
     - name: Install markdownlint
       run: sudo npm install -g markdownlint-cli
 
@@ -20,6 +20,6 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@main
-  
+
     - name: Check directory config
       run: python3 .github/workflows/directory_check.py directory.json $(pwd)/docs

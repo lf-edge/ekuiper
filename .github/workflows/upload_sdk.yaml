@@ -1,0 +1,44 @@
+name: Upload sdk
+
+on:
+  push:
+    tags:
+      - "*"
+  pull_request:
+  release:
+    types:
+      - published
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+      - run: python3 -m pip install --user --upgrade setuptools wheel twine
+      - name: Upload test pypi
+        if: github.event_name != 'release'
+        env:
+          TWINE_USERNAME: ${{ secrets.TEST_PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_PASSWORD }}
+        working-directory: "sdk/python"
+        run: |
+          version=$(grep -E ".+version.+" setup.py | sed -r 's [ \t]*version=(.*), \1 g' | sed $'s/\'//g')
+          test_version="${version}-${GITHUB_RUN_ID}"
+          sed -i -r "s|([ \t]*version=).*|\1'$test_version',|1" setup.py
+          python3 setup.py sdist bdist_wheel
+          python3 -m twine upload --skip-existing --repository-url https://test.pypi.org/legacy/ dist/*
+          python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps ekuiper=="${version}.post${GITHUB_RUN_ID}"
+      - name: Upload test pypi
+        if: github.event_name == 'release'
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        working-directory: "sdk/python"
+        run: |
+          python3 setup.py sdist bdist_wheel
+          python3 -m twine upload --skip-existing dist/*
+          python3 -m pip install --no-deps ekuiper
