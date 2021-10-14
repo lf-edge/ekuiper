@@ -1,11 +1,17 @@
 name: Run test cases
 
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
-    push:
-    pull_request:
-    release:
-        types:
-            - published
+  push:
+    tags:
+      - "*"
+  pull_request:
+  release:
+    types:
+      - published
 
 jobs:
     run_test_case:

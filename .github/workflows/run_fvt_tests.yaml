@@ -1,11 +1,17 @@
 name: Run fvt tests
 
+concurrency:
+  group: fvt-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
-    push:
-    pull_request:
-    release:
-        types:
-            - published
+  push:
+    tags:
+      - "*"
+  pull_request:
+  release:
+    types:
+      - published
 
 jobs:
     fvt_tests_with_edgex:
