@@ -160,6 +160,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        golang:
+          - 1.15.11
+        arch:
+          - linux/amd64
+          - linux/arm64
         plugin:
           - sinks/file
           - sinks/image
@@ -175,6 +180,9 @@ jobs:
           - functions/image
           - functions/geohash
           - functions/labelImage
+        exclude:
+          - arch: linux/arm64
+            plugin: functions/labelImage
 
     steps:
     - uses: actions/checkout@v2
@@ -195,11 +203,15 @@ jobs:
         tags: ${{ github.repository }}
         file: deploy/docker/Dockerfile
     - name: build debian plugins
-      env:
-        PLUGIN: ${{ matrix.plugin }}
       run: |
-          make ${PLUGIN}
+        docker run -i --rm \
+            -v $(pwd):/ekuiper \
+            --workdir /ekuiper \
+            --platform ${{ matrix.arch }} \
+            ghcr.io/${{ github.repository }}/base:${{ matrix.golang }}-debian \
+            bash -euc "make ${{ make.plugin }}"
     - name: test docker and plugins
+      if: matrix.arch == 'linux/amd64'
       env:
         PLUGIN: ${{ matrix.plugin }}
       run: |
