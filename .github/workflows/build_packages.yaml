@@ -118,18 +118,18 @@ jobs:
         platforms: linux/amd64
         push: false
         load: true
-        tags: ${{ github.repository }}
+        tags: docker.io/lfedge/ekuiper
         file: deploy/docker/Dockerfile${{ matrix.suffix }}
     - name: Test docker image
       run: |
-        docker run -d --name ekuiper ${{ github.repository }}
+        docker run -d --name ekuiper docker.io/lfedge/ekuiper
         ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ekuiper)
         sleep 5
         if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
     - uses: docker/metadata-action@v3
       id: meta
       with:
-        images: ${{ github.repository }}
+        images: docker.io/lfedge/ekuiper
         flavor: |
           latest=${{ github.event_name == 'release' && !github.event.release.prerelease}}
           suffix=${{ matrix.suffix }}
@@ -192,7 +192,7 @@ jobs:
         platforms: linux/amd64
         push: false
         load: true
-        tags: ${{ github.repository }}
+        tags: docker.io/lfedge/ekuiper
         file: deploy/docker/Dockerfile
     - name: build debian plugins
       env:
@@ -207,7 +207,7 @@ jobs:
         plugin_type=$(echo ${PLUGIN%%/*})
         plugin_name=$(echo ${PLUGIN##*/})
 
-        container_id=$(docker run -d -v $(pwd)/_plugins:/var/plugins ${{ github.repository }})
+        container_id=$(docker run -d -v $(pwd)/_plugins:/var/plugins docker.io/lfedge/ekuiper)
         ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
         os=$(docker exec -i ${container_id} sh -c "sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g'" )
         sleep 5
@@ -259,17 +259,17 @@ jobs:
         platforms: linux/amd64
         push: false
         load: true
-        tags: lfedge/ekuiper-kubernetes-tool
+        tags: docker.io/lfedge/ekuiper-kubernetes-tool
         file: deploy/docker/Dockerfile-kubernetes-tool
     - name: Test docker image
       run: |
-        docker run -d --name kuiper-kubernetes-tool lfedge/ekuiper-kubernetes-tool
+        docker run -d --name kuiper-kubernetes-tool docker.io/lfedge/ekuiper-kubernetes-tool
         sleep 5
         if [[ "$(docker logs kuiper-kubernetes-tool)" != *"Kuiper kubernetes tool is started successfully!"*  ]]; then exit 1; fi
     - uses: docker/metadata-action@v3
       id: meta
       with:
-        images: deploy/docker/Dockerfile-kubernetes-tool
+        images: docker.io/lfedge/ekuiper-kubernetes-tool
         flavor: |
           latest=${{ github.event_name == 'release' && !github.event.release.prerelease}}
         tags: |
