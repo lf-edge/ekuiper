@@ -27,6 +27,7 @@ node_modules/
 
 _build
 _packages
+_plugins
 jmeter_logs
 kuiper_conf_util
 corss_build.tar
