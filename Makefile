@@ -75,26 +75,6 @@ docker:
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-slim -f deploy/docker/Dockerfile-slim . --load
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-alpine -f deploy/docker/Dockerfile-alpine . --load
 
-.PHONY:cross_docker
-cross_docker: cross_prepare
-	docker buildx build --no-cache \
-	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
-	-t $(TARGET):$(VERSION) \
-	-f deploy/docker/Dockerfile . \
-	--push
-
-	docker buildx build --no-cache \
-	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
-	-t $(TARGET):$(VERSION)-slim \
-	-f deploy/docker/Dockerfile-slim . \
-	--push
-
-	docker buildx build --no-cache \
-	--platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
-	-t $(TARGET):$(VERSION)-alpine \
-	-f deploy/docker/Dockerfile-alpine . \
-	--push
-
 PLUGINS := sinks/file \
 	sinks/influx \
 	sinks/zmq \

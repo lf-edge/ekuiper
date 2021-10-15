@@ -14,331 +14,326 @@ on:
       - published
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-        strategy:
-            matrix:
-                golang:
-                - 1.15.11
-                arch:
-                - linux/amd64
-                - linux/arm64
-                os:
-                - debian
-                - centos
+    strategy:
+      matrix:
+        golang:
+          - 1.15.11
+        arch:
+          - linux/amd64
+          - linux/arm64
+        os:
+          - debian
+          - centos
 
-        steps:
-        - uses: actions/checkout@v2
-          with:
-            fetch-depth: 0
-        - uses: docker/setup-buildx-action@v1
-        - uses: docker/setup-qemu-action@v1
-          with:
-            image: tonistiigi/binfmt:latest
-            platforms: all
-        - name: get docker sha256
-          id: disgest
-          run: |
-              digest=$(docker buildx imagetools inspect ghcr.io/${{ github.repository }}/base:${{ matrix.golang }}-${{ matrix.os }} --raw | jq --raw-output '.manifests[] | select(.platform.architecture=="amd64").digest')
-              echo "::set-output name=image::ghcr.io/${{ github.repository }}/base@${digest}"
-        - run: docker pull ${{ steps.disgest.outputs.image }}
-        - name: build base image
-          uses: docker/build-push-action@v2
-          with:
-            pull: true
-            load: true
-            cache-from: ${{ steps.disgest.outputs.image }}
-            platforms: ${{ matrix.arch }}
-            build-args: GO_VERSION=${{ matrix.golang }}
-            tags: ghcr.io/${{ github.repository }}/base:${{ matrix.golang }}-${{ matrix.os }}
-            file: .github/dockerfile/Dockerfile.${{ matrix.os }}
-        - name: build
-          run: |
-            docker run -i --rm \
-            -v $(pwd):/ekuiper \
-            --workdir /ekuiper \
-            --platform ${{ matrix.arch }} \
-            ghcr.io/${{ github.repository }}/base:${{ matrix.golang }}-${{ matrix.os }} \
-            bash -euc "make pkg  && .github/scripts/test.sh"
-            cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
-        - uses: actions/upload-artifact@v1
-          with:
-            name: packages
-            path: _packages/.
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: docker/setup-buildx-action@v1
+    - uses: docker/setup-qemu-action@v1
+      with:
+        image: tonistiigi/binfmt:latest
+        platforms: all
+    - name: get docker sha256
+      id: disgest
+      run: |
+          digest=$(docker buildx imagetools inspect ghcr.io/${{ github.repository }}/base:${{ matrix.golang }}-${{ matrix.os }} --raw | jq --raw-output '.manifests[] | select(.platform.architecture=="amd64").digest')
+          echo "::set-output name=image::ghcr.io/${{ github.repository }}/base@${digest}"
+    - run: docker pull ${{ steps.disgest.outputs.image }}
+    - name: build base image
+      uses: docker/build-push-action@v2
+      with:
+        pull: true
+        load: true
+        cache-from: ${{ steps.disgest.outputs.image }}
+        platforms: ${{ matrix.arch }}
+        build-args: GO_VERSION=${{ matrix.golang }}
+        tags: ghcr.io/${{ github.repository }}/base:${{ matrix.golang }}-${{ matrix.os }}
+        file: .github/dockerfile/Dockerfile.${{ matrix.os }}
+    - name: build
+      run: |
+        docker run -i --rm \
+        -v $(pwd):/ekuiper \
+        --workdir /ekuiper \
+        --platform ${{ matrix.arch }} \
+        ghcr.io/${{ github.repository }}/base:${{ matrix.golang }}-${{ matrix.os }} \
+        bash -euc "make pkg  && .github/scripts/test.sh"
+        cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
+    - uses: actions/upload-artifact@v1
+      with:
+        name: packages
+        path: _packages/.
 
-    build-on-mac:
-        runs-on: macos-latest
+  build-on-mac:
+    runs-on: macos-latest
 
-        steps:
-        - uses: actions/checkout@v2
-          with:
-            fetch-depth: 0
-        - uses: actions/setup-go@v2
-          with:
-            go-version: '1.15.1'
-        - name: prepare
-          run: |
-              brew install curl zip unzip gnu-sed upx pkg-config zmq
-              echo "/usr/local/bin:$PATH" >> ~/.bashrc
-        - name: build
-          run: |
-            make pkg
-            cd _packages && for var in $(ls); do openssl dgst -sha256 $var | awk '{print $2}' > $var.sha256; done && cd -
-        - uses: actions/upload-artifact@v1
-          with:
-            name: packages-mac
-            path: _packages/.
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.15.1'
+    - name: prepare
+      run: |
+          brew install curl zip unzip gnu-sed upx pkg-config zmq
+          echo "/usr/local/bin:$PATH" >> ~/.bashrc
+    - name: build
+      run: |
+        make pkg
+        cd _packages && for var in $(ls); do openssl dgst -sha256 $var | awk '{print $2}' > $var.sha256; done && cd -
+    - uses: actions/upload-artifact@v1
+      with:
+        name: packages-mac
+        path: _packages/.
 
-    build-docker-images:
-        runs-on: ubuntu-latest
+  build-docker-images:
+    runs-on: ubuntu-latest
 
-        strategy:
-            fail-fast: false
-            matrix:
-                suffix:
-                - ""
-                - "-slim"
-                - "-alpine"
+    strategy:
+        fail-fast: false
+        matrix:
+            suffix:
+            - ""
+            - "-slim"
+            - "-alpine"
 
-        steps:
-        - uses: actions/checkout@v2
-          with:
-            fetch-depth: 0
-        - uses: docker/setup-buildx-action@v1
-        - uses: docker/setup-qemu-action@v1
-          with:
-            image: tonistiigi/binfmt:latest
-            platforms: all
-        - name: Build single platform image
-          id: single_image
-          uses: docker/build-push-action@v2
-          with:
-            context: .
-            platforms: linux/amd64
-            push: false
-            load: true
-            tags: ${{ github.repository }}
-            file: deploy/docker/Dockerfile${{ matrix.suffix }}
-        - name: Test docker image
-          run: |
-            docker run -d --name ekuiper ${{ github.repository }}
-            ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ekuiper)
-            sleep 5
-            if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
-        - uses: docker/metadata-action@v3
-          id: meta
-          with:
-            images: ${{ github.repository }}
-            flavor: |
-              latest=${{ github.event_name == 'release' && !github.event.release.prerelease}}
-              suffix=${{ matrix.suffix }}
-            tags: |
-              type=ref,event=branch
-              type=ref,event=pr
-              type=ref,event=tag
-              type=semver,pattern={{version}}
-              type=semver,pattern={{major}}.{{minor}}
-        - uses: docker/login-action@v1
-          if: github.event_name == 'release'
-          with:
-            username: ${{ secrets.DOCKER_HUB_USER }}
-            password: ${{ secrets.DOCKER_HUB_TOKEN }}
-        - name: Build multi platform image
-          uses: docker/build-push-action@v2
-          with:
-            context: .
-            platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
-            push: ${{ github.event_name == 'release' }}
-            tags: ${{ steps.meta.outputs.tags }}
-            labels: ${{ steps.meta.outputs.labels }}
-            file: deploy/docker/Dockerfile${{ matrix.suffix }}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: docker/setup-buildx-action@v1
+    - uses: docker/setup-qemu-action@v1
+      with:
+        image: tonistiigi/binfmt:latest
+        platforms: all
+    - name: Build single platform image
+      id: single_image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        platforms: linux/amd64
+        push: false
+        load: true
+        tags: ${{ github.repository }}
+        file: deploy/docker/Dockerfile${{ matrix.suffix }}
+    - name: Test docker image
+      run: |
+        docker run -d --name ekuiper ${{ github.repository }}
+        ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ekuiper)
+        sleep 5
+        if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
+    - uses: docker/metadata-action@v3
+      id: meta
+      with:
+        images: ${{ github.repository }}
+        flavor: |
+          latest=${{ github.event_name == 'release' && !github.event.release.prerelease}}
+          suffix=${{ matrix.suffix }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=ref,event=tag
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+    - uses: docker/login-action@v1
+      if: github.event_name == 'release'
+      with:
+        username: ${{ secrets.DOCKER_HUB_USER }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
+    - name: Build multi platform image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
+        push: ${{ github.event_name == 'release' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        file: deploy/docker/Dockerfile${{ matrix.suffix }}
 
-    build-plugins:
-        runs-on: ubuntu-latest
+  build-plugins:
+    runs-on: ubuntu-latest
 
-        strategy:
-            fail-fast: false
-            matrix:
-                plugin:
-                - sinks/file
-                - sinks/image
-                - sinks/influx
-                - sinks/tdengine
-                - sinks/zmq
-                - sinks/redis
-                - sources/random
-                - sources/zmq
-                - functions/accumulateWordCount
-                - functions/countPlusOne
-                - functions/echo
-                - functions/image
-                - functions/geohash
-                - functions/labelImage
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin:
+          - sinks/file
+          - sinks/image
+          - sinks/influx
+          - sinks/tdengine
+          - sinks/zmq
+          - sinks/redis
+          - sources/random
+          - sources/zmq
+          - functions/accumulateWordCount
+          - functions/countPlusOne
+          - functions/echo
+          - functions/image
+          - functions/geohash
+          - functions/labelImage
 
-        steps:
-        - uses: actions/checkout@v2
-          with:
-            fetch-depth: 0
-        - uses: docker/setup-buildx-action@v1
-        - uses: docker/setup-qemu-action@v1
-          with:
-            image: tonistiigi/binfmt:latest
-            platforms: all
-        - name: Build single platform image
-          uses: docker/build-push-action@v2
-          with:
-            context: .
-            platforms: linux/amd64
-            push: false
-            load: true
-            tags: ${{ github.repository }}
-            file: deploy/docker/Dockerfile
-        - name: build debian plugins
-          env:
-            PLUGIN: ${{ matrix.plugin }}
-          run: |
-              make ${PLUGIN}
-        - uses: actions/download-artifact@v1
-          with:
-            name: kuiper-image
-            path: .
-        - name: test docker and plugins
-          env:
-            PLUGIN: ${{ matrix.plugin }}
-          run: |
-            set -e -x -u
-            docker load < kuiper-image.tar.gz
-            plugin_type=$(echo ${PLUGIN%%/*})
-            plugin_name=$(echo ${PLUGIN##*/})
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: docker/setup-buildx-action@v1
+    - uses: docker/setup-qemu-action@v1
+      with:
+        image: tonistiigi/binfmt:latest
+        platforms: all
+    - name: Build single platform image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        platforms: linux/amd64
+        push: false
+        load: true
+        tags: ${{ github.repository }}
+        file: deploy/docker/Dockerfile
+    - name: build debian plugins
+      env:
+        PLUGIN: ${{ matrix.plugin }}
+      run: |
+          make ${PLUGIN}
+    - name: test docker and plugins
+      env:
+        PLUGIN: ${{ matrix.plugin }}
+      run: |
+        set -e -x -u
+        plugin_type=$(echo ${PLUGIN%%/*})
+        plugin_name=$(echo ${PLUGIN##*/})
 
-            container_id=$(docker run -d -v $(pwd)/_plugins:/var/plugins ${{ github.repository }})
-            ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
-            os=$(docker exec -i ${container_id} sh -c "sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g'" )
-            sleep 5
-            if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
-            if [ "${plugin_name}" = "tdengine" ]; then
-                curl \
-                ${ip_address}:9081/plugins/${plugin_type} \
-                -X POST \
-                -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"shellParas\": [\"2.0.3.1\"]}"
-            elif [ "${plugin_name}" = "image" ]; then
-                 curl \
-                 ${ip_address}:9081/plugins/${plugin_type} \
-                 -X POST \
-                 -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"functions\": [\"resize\",\"thumbnail\"]}"
-            elif [ "${plugin_name}" = "geohash" ]; then
-                 curl \
-                 ${ip_address}:9081/plugins/${plugin_type} \
-                 -X POST \
-                 -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"functions\": [\"geohashEncode\", \"geohashEncodeInt\", \"geohashDecode\", \"geohashDecodeInt\", \"geohashBoundingBox\", \"geohashBoundingBoxInt\", \"geohashNeighbor\", \"geohashNeighborInt\", \"geohashNeighbors\", \"geohashNeighborsInt\"]}"
-            else
-                curl \
-                ${ip_address}:9081/plugins/${plugin_type} \
-                -X POST \
-                -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\"}"
-            fi
-            docker logs ${container_id}
-            [ $plugin_name = $(curl ${ip_address}:9081/plugins/${plugin_type}/${plugin_name} | jq '.name'| sed 's/\"//g' ) ] || exit 1
-        - uses: actions/upload-artifact@v2
-          with:
-            name: plugins
-            path: "_plugins/"
+        container_id=$(docker run -d -v $(pwd)/_plugins:/var/plugins ${{ github.repository }})
+        ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
+        os=$(docker exec -i ${container_id} sh -c "sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g'" )
+        sleep 5
+        if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
+        if [ "${plugin_name}" = "tdengine" ]; then
+            curl \
+            ${ip_address}:9081/plugins/${plugin_type} \
+            -X POST \
+            -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"shellParas\": [\"2.0.3.1\"]}"
+        elif [ "${plugin_name}" = "image" ]; then
+             curl \
+             ${ip_address}:9081/plugins/${plugin_type} \
+             -X POST \
+             -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"functions\": [\"resize\",\"thumbnail\"]}"
+        elif [ "${plugin_name}" = "geohash" ]; then
+             curl \
+             ${ip_address}:9081/plugins/${plugin_type} \
+             -X POST \
+             -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"functions\": [\"geohashEncode\", \"geohashEncodeInt\", \"geohashDecode\", \"geohashDecodeInt\", \"geohashBoundingBox\", \"geohashBoundingBoxInt\", \"geohashNeighbor\", \"geohashNeighborInt\", \"geohashNeighbors\", \"geohashNeighborsInt\"]}"
+        else
+            curl \
+            ${ip_address}:9081/plugins/${plugin_type} \
+            -X POST \
+            -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\"}"
+        fi
+        docker logs ${container_id}
+        [ $plugin_name = $(curl ${ip_address}:9081/plugins/${plugin_type}/${plugin_name} | jq '.name'| sed 's/\"//g' ) ] || exit 1
+    - uses: actions/upload-artifact@v2
+      with:
+        name: plugins
+        path: "_plugins/"
 
-    build-kubernetes-tool:
-        runs-on: ubuntu-latest
+  build-kubernetes-tool:
+    runs-on: ubuntu-latest
 
-        steps:
-        - uses: actions/checkout@v2
-          with:
-            fetch-depth: 0
-        - uses: docker/setup-buildx-action@v1
-        - uses: docker/setup-qemu-action@v1
-          with:
-            image: tonistiigi/binfmt:latest
-            platforms: all
-        - name: Build single platform image
-          uses: docker/build-push-action@v2
-          with:
-            context: .
-            platforms: linux/amd64
-            push: false
-            load: true
-            tags: lfedge/ekuiper-kubernetes-tool
-            file: deploy/docker/Dockerfile-kubernetes-tool
-        - name: Test docker image
-          run: |
-            docker run -d --name kuiper-kubernetes-tool lfedge/ekuiper-kubernetes-tool
-            sleep 5
-            if [[ "$(docker logs kuiper-kubernetes-tool)" != *"Kuiper kubernetes tool is started successfully!"*  ]]; then exit 1; fi
-        - uses: docker/metadata-action@v3
-          id: meta
-          with:
-            images: deploy/docker/Dockerfile-kubernetes-tool
-            flavor: |
-              latest=${{ github.event_name == 'release' && !github.event.release.prerelease}}
-            tags: |
-              type=ref,event=branch
-              type=ref,event=pr
-              type=ref,event=tag
-              type=semver,pattern={{version}}
-              type=semver,pattern={{major}}.{{minor}}
-        - uses: docker/login-action@v1
-          if: github.event_name == 'release'
-          with:
-            username: ${{ secrets.DOCKER_HUB_USER }}
-            password: ${{ secrets.DOCKER_HUB_TOKEN }}
-        - name: Build multi platform image
-          uses: docker/build-push-action@v2
-          with:
-            context: .
-            platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
-            push: ${{ github.event_name == 'release' }}
-            tags: ${{ steps.meta.outputs.tags }}
-            labels: ${{ steps.meta.outputs.labels }}
-            file: deploy/docker/Dockerfile-kubernetes-tool
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: docker/setup-buildx-action@v1
+    - uses: docker/setup-qemu-action@v1
+      with:
+        image: tonistiigi/binfmt:latest
+        platforms: all
+    - name: Build single platform image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        platforms: linux/amd64
+        push: false
+        load: true
+        tags: lfedge/ekuiper-kubernetes-tool
+        file: deploy/docker/Dockerfile-kubernetes-tool
+    - name: Test docker image
+      run: |
+        docker run -d --name kuiper-kubernetes-tool lfedge/ekuiper-kubernetes-tool
+        sleep 5
+        if [[ "$(docker logs kuiper-kubernetes-tool)" != *"Kuiper kubernetes tool is started successfully!"*  ]]; then exit 1; fi
+    - uses: docker/metadata-action@v3
+      id: meta
+      with:
+        images: deploy/docker/Dockerfile-kubernetes-tool
+        flavor: |
+          latest=${{ github.event_name == 'release' && !github.event.release.prerelease}}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=ref,event=tag
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+    - uses: docker/login-action@v1
+      if: github.event_name == 'release'
+      with:
+        username: ${{ secrets.DOCKER_HUB_USER }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
+    - name: Build multi platform image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
+        push: ${{ github.event_name == 'release' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        file: deploy/docker/Dockerfile-kubernetes-tool
 
-    release:
-        runs-on: ubuntu-latest
+  release:
+    runs-on: ubuntu-latest
 
-        needs:
-        - build
-        - build-on-mac
-        - build-plugins
+    needs:
+    - build
+    - build-on-mac
+    - build-plugins
 
-        steps:
-        - uses: actions/checkout@v2
-        - uses: actions/download-artifact@v1
-          with:
-            name: packages
-            path: _packages
-        - uses: actions/download-artifact@v1
-          with:
-            name: packages-mac
-            path: _packages
-        - uses: actions/download-artifact@v1
-          with:
-            name: plugins
-            path: _plugins
-        - name: check packages
-          run: |
-            cd _packages && for var in $( ls |grep -v sha256); do
-              echo "$(cat $var.sha256) $var" | sha256sum -c || exit 1
-            done
-        - uses: Rory-Z/upload-release-asset@v1
-          if: github.event_name == 'release'
-          with:
-            repo: ekuiper
-            path: "_packages/kuiper-*"
-            token: ${{ secrets.GITHUB_TOKEN }}
-        - name: upload plugins to s3
-          if: github.event_name == 'release'
-          run: |
-            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
-            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws configure set default.region us-west-2
-            aws s3 rm --quiet --recursive s3://packages.emqx/kuiper/$version
-            aws s3 cp --quiet --recursive ./_packages s3://packages.emqx/kuiper/$version
-            aws s3 cp --quiet --recursive ./_plugins s3://packages.emqx/kuiper-plugins/$version
-            aws cloudfront create-invalidation --distribution-id E170YEULGLT8XB --paths "/kuiper/$version/*,/kuiper-plugins/$version/*"
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v1
+      with:
+        name: packages
+        path: _packages
+    - uses: actions/download-artifact@v1
+      with:
+        name: packages-mac
+        path: _packages
+    - uses: actions/download-artifact@v1
+      with:
+        name: plugins
+        path: _plugins
+    - name: check packages
+      run: |
+        cd _packages && for var in $( ls |grep -v sha256); do
+          echo "$(cat $var.sha256) $var" | sha256sum -c || exit 1
+        done
+    - uses: Rory-Z/upload-release-asset@v1
+      if: github.event_name == 'release'
+      with:
+        repo: ekuiper
+        path: "_packages/kuiper-*"
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: upload plugins to s3
+      if: github.event_name == 'release'
+      run: |
+        version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
+        aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws configure set default.region us-west-2
+        aws s3 rm --quiet --recursive s3://packages.emqx/kuiper/$version
+        aws s3 cp --quiet --recursive ./_packages s3://packages.emqx/kuiper/$version
+        aws s3 cp --quiet --recursive ./_plugins s3://packages.emqx/kuiper-plugins/$version
+        aws cloudfront create-invalidation --distribution-id E170YEULGLT8XB --paths "/kuiper/$version/*,/kuiper-plugins/$version/*"

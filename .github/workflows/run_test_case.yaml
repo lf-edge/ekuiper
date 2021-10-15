@@ -14,49 +14,49 @@ on:
       - published
 
 jobs:
-    run_test_case:
-        runs-on: ubuntu-latest
+  run_test_case:
+    runs-on: ubuntu-latest
 
-        steps:
-        - uses: actions/checkout@v2
-        - uses: actions/setup-go@v2
-          with:
-            go-version: '1.15.1'
-        - uses: actions/setup-python@v2
-          with:
-            python-version: '3.x'
-            architecture: 'x64'
-        - run: pip3 install pynng
-        - name: run code static check
-          run : |
-            if [ ! -z "$(gofmt -l .)" ];then
-              echo "code static check error"
-              gofmt -l .
-              exit 1
-            fi
-        - name: install lib
-          run: sudo apt-get update && sudo apt-get install libzmq3-dev -y
-        - name: run test case
-          run: |
-            set -e -u -x
-            mkdir -p data
-            mkdir -p log
-            sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
-            go build -modfile extensions.mod --buildmode=plugin -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
-            go build -modfile extensions.mod --buildmode=plugin -o plugins/sinks/File@v1.0.0.so extensions/sinks/file/file.go
-            go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/Echo.so extensions/functions/echo/echo.go
-            go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
-            go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
-            mkdir -p plugins/portable/mirror
-            cd sdk/go/example/mirror
-            go build -o ../../../../plugins/portable/mirror/mirror .
-            cp mirror.json ../../../../plugins/portable/mirror
-            cd ../../../../
-            cp -r sdk/python/example/pysam plugins/portable/pysam
-            cp -r sdk/python/ekuiper plugins/portable/pysam/
-            go test --tags="edgex test" ./...
-        - uses: actions/upload-artifact@v1
-          if: failure()
-          with:
-            name: stream.log
-            path: log/stream.log
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.15.1'
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+        architecture: 'x64'
+    - run: pip3 install pynng
+    - name: run code static check
+      run : |
+        if [ ! -z "$(gofmt -l .)" ];then
+          echo "code static check error"
+          gofmt -l .
+          exit 1
+        fi
+    - name: install lib
+      run: sudo apt-get update && sudo apt-get install libzmq3-dev -y
+    - name: run test case
+      run: |
+        set -e -u -x
+        mkdir -p data
+        mkdir -p log
+        sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
+        go build -modfile extensions.mod --buildmode=plugin -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
+        go build -modfile extensions.mod --buildmode=plugin -o plugins/sinks/File@v1.0.0.so extensions/sinks/file/file.go
+        go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/Echo.so extensions/functions/echo/echo.go
+        go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
+        go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
+        mkdir -p plugins/portable/mirror
+        cd sdk/go/example/mirror
+        go build -o ../../../../plugins/portable/mirror/mirror .
+        cp mirror.json ../../../../plugins/portable/mirror
+        cd ../../../../
+        cp -r sdk/python/example/pysam plugins/portable/pysam
+        cp -r sdk/python/ekuiper plugins/portable/pysam/
+        go test --tags="edgex test" ./...
+    - uses: actions/upload-artifact@v1
+      if: failure()
+      with:
+        name: stream.log
+        path: log/stream.log
