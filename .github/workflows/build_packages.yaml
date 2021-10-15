@@ -94,6 +94,7 @@ jobs:
         runs-on: ubuntu-latest
 
         strategy:
+            fail-fast: false
             matrix:
                 suffix:
                 - ""
@@ -109,6 +110,22 @@ jobs:
           with:
             image: tonistiigi/binfmt:latest
             platforms: all
+        - name: Build single platform image
+          id: single_image
+          uses: docker/build-push-action@v2
+          with:
+            context: .
+            platforms: linux/amd64
+            push: false
+            load: true
+            tags: ${{ github.repository }}
+            file: deploy/docker/Dockerfile${{ matrix.suffix }}
+        - name: Test docker image
+          run: |
+            docker run -d --name ekuiper ${{ github.repository }}
+            ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ekuiper)
+            sleep 5
+            if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
         - uses: docker/metadata-action@v3
           id: meta
           with:
@@ -127,23 +144,6 @@ jobs:
           with:
             username: ${{ secrets.DOCKER_HUB_USER }}
             password: ${{ secrets.DOCKER_HUB_TOKEN }}
-        - name: Build single platform image
-          id: single_image
-          uses: docker/build-push-action@v2
-          with:
-            context: .
-            platforms: linux/amd64
-            push: false
-            load: true
-            tags: ${{ steps.meta.outputs.tags }}
-            labels: ${{ steps.meta.outputs.labels }}
-            file: deploy/docker/Dockerfile${{ matrix.suffix }}
-        - name: Test docker image
-          run: |
-            docker run -d --name ekuiper "${{ github.repository }}@${{ steps.single_image.outputs.digest }}"
-            ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ekuiper)
-            sleep 5
-            if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
         - name: Build multi platform image
           uses: docker/build-push-action@v2
           with:
@@ -156,8 +156,6 @@ jobs:
 
     build-plugins:
         runs-on: ubuntu-latest
-
-        needs: build-docker-images
 
         strategy:
             fail-fast: false
@@ -259,27 +257,46 @@ jobs:
           with:
             image: tonistiigi/binfmt:latest
             platforms: all
-        - name: build docker image
-          run: docker build --no-cache -t lfedge/ekuiper-kubernetes-tool:$(git describe --tags --always) -f deploy/docker/Dockerfile-kubernetes-tool .
-        - name: test docker image
+        - name: Build single platform image
+          uses: docker/build-push-action@v2
+          with:
+            context: .
+            platforms: linux/amd64
+            push: false
+            load: true
+            tags: lfedge/ekuiper-kubernetes-tool
+            file: deploy/docker/Dockerfile-kubernetes-tool
+        - name: Test docker image
           run: |
-            set -e -u -x
-            docker run -d --name kuiper-kubernetes-tool lfedge/ekuiper-kubernetes-tool:$(git describe --tags --always)
+            docker run -d --name kuiper-kubernetes-tool lfedge/ekuiper-kubernetes-tool
             sleep 5
             if [[ "$(docker logs kuiper-kubernetes-tool)" != *"Kuiper kubernetes tool is started successfully!"*  ]]; then exit 1; fi
+        - uses: docker/metadata-action@v3
+          id: meta
+          with:
+            images: deploy/docker/Dockerfile-kubernetes-tool
+            flavor: |
+              latest=${{ github.event_name == 'release' && !github.event.release.prerelease}}
+            tags: |
+              type=ref,event=branch
+              type=ref,event=pr
+              type=ref,event=tag
+              type=semver,pattern={{version}}
+              type=semver,pattern={{major}}.{{minor}}
         - uses: docker/login-action@v1
           if: github.event_name == 'release'
           with:
             username: ${{ secrets.DOCKER_HUB_USER }}
             password: ${{ secrets.DOCKER_HUB_TOKEN }}
-        - name: buildx docker image
-          if: github.event_name == 'release'
-          run: |
-            docker buildx build --no-cache \
-                --platform=linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
-                -t lfedge/ekuiper-kubernetes-tool:$(git describe --tags --always) \
-                -f deploy/docker/Dockerfile-kubernetes-tool . \
-                --push
+        - name: Build multi platform image
+          uses: docker/build-push-action@v2
+          with:
+            context: .
+            platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
+            push: ${{ github.event_name == 'release' }}
+            tags: ${{ steps.meta.outputs.tags }}
+            labels: ${{ steps.meta.outputs.labels }}
+            file: deploy/docker/Dockerfile-kubernetes-tool
 
     release:
         runs-on: ubuntu-latest
