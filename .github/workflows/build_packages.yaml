@@ -125,7 +125,11 @@ jobs:
         docker run -d --name ekuiper ${{ github.repository }}
         ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ekuiper)
         sleep 5
-        if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
+        if ! curl ${ip_address}:9081  >/dev/null 2>&1; then
+            echo "docker image failed"
+            docker logs ekuiper
+            exit 1
+        fi
     - uses: docker/metadata-action@v3
       id: meta
       with:
@@ -175,6 +179,14 @@ jobs:
           - functions/image
           - functions/geohash
           - functions/labelImage
+        arch:
+          - linux/amd64
+          - linux/arm64
+        golang:
+          - 1.15.11
+        exclude:
+          - arch: linux/arm64
+            plugin: functions/labelImage
 
     steps:
     - uses: actions/checkout@v2
@@ -185,8 +197,17 @@ jobs:
       with:
         image: tonistiigi/binfmt:latest
         platforms: all
-    - name: Build single platform image
+    - name: build debian plugins
+      run: |
+        docker run -i --rm \
+            -v $(pwd):/ekuiper \
+            --workdir /ekuiper \
+            --platform ${{ matrix.arch }} \
+            ghcr.io/${{ github.repository }}/base:${{ matrix.golang }}-debian \
+            bash -euc "make ${{ matrix.plugin }}"
+    - name: Build ekuiper image
       uses: docker/build-push-action@v2
+      if: matrix.arch == 'linux/amd64'
       with:
         context: .
         platforms: linux/amd64
@@ -194,12 +215,8 @@ jobs:
         load: true
         tags: ${{ github.repository }}
         file: deploy/docker/Dockerfile
-    - name: build debian plugins
-      env:
-        PLUGIN: ${{ matrix.plugin }}
-      run: |
-          make ${PLUGIN}
     - name: test docker and plugins
+      if: matrix.arch == 'linux/amd64'
       env:
         PLUGIN: ${{ matrix.plugin }}
       run: |
