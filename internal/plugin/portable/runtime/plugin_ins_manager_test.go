@@ -107,6 +107,7 @@ func TestPluginInstance(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		err := ins.StartSymbol(sctx, tests[0].c)
 		if err != nil {
 			t.Errorf("start command err %v", err)
@@ -120,13 +121,12 @@ func TestPluginInstance(t *testing.T) {
 			}
 			err = ins.StopSymbol(sctx, tt.c)
 			if err != nil {
-				t.Errorf("stop command err %v", err)
-				return
+				fmt.Printf("stop command err %v\n", err)
+				continue
 			}
 		}
-		wg.Done()
 	}()
-	// start symbol1 to avoild instance clean
+	// start symbol1 to avoid instance clean
 	msg, err := client.Recv()
 	if err != nil {
 		t.Errorf("receive start command err %v", err)

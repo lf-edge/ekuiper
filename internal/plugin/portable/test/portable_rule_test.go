@@ -142,7 +142,7 @@ func TestSourceAndFunc(t *testing.T) {
 			if compareMetrics(tp, tt.M) {
 				cancel()
 				// need to wait for file results
-				time.Sleep(10 * time.Millisecond)
+				time.Sleep(100 * time.Millisecond)
 				results := getResults(fmt.Sprintf("cache%d", i+1))
 				fmt.Printf("get results %v\n", results)
 				time.Sleep(10 * time.Millisecond)
@@ -160,7 +160,7 @@ func TestSourceAndFunc(t *testing.T) {
 					mm = append(mm, mapRes)
 				}
 				if !reflect.DeepEqual(tt.R, mm) {
-					t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.Rule, tt.R, results)
+					t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.Rule, tt.R, mm)
 				}
 				break
 			}
