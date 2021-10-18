@@ -126,7 +126,7 @@ func (f *funcExecutor) Exec(_ []interface{}, _ api.FunctionContext) (interface{}
 	return fmt.Errorf("unknow name"), false
 }
 
-func (f *funcExecutor) ExecWithName(args []interface{}, _ api.FunctionContext, name string) (interface{}, bool) {
+func (f *funcExecutor) ExecWithName(args []interface{}, ctx api.FunctionContext, name string) (interface{}, bool) {
 	lowerName := strings.ToLower(name)
 	switch getFuncType(lowerName) {
 	case AggFunc:
@@ -140,7 +140,7 @@ func (f *funcExecutor) ExecWithName(args []interface{}, _ api.FunctionContext, n
 	case HashFunc:
 		return hashCall(lowerName, args)
 	case JsonFunc:
-		return jsonCall(lowerName, args)
+		return jsonCall(ctx, lowerName, args)
 	case OtherFunc:
 		return otherCall(lowerName, args)
 	}

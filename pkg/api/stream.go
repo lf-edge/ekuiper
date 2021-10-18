@@ -143,14 +143,18 @@ type StreamContext interface {
 	WithInstance(instanceId int) StreamContext
 	WithCancel() (StreamContext, context.CancelFunc)
 	SetError(e error)
-	//State handling
+	// State handling
 	IncrCounter(key string, amount int) error
 	GetCounter(key string) (int, error)
 	PutState(key string, value interface{}) error
 	GetState(key string) (interface{}, error)
 	DeleteState(key string) error
+	// Connection related methods
 	GetConnection(connectSelector string) (interface{}, error)
 	ReleaseConnection(connectSelector string)
+	// Properties processing, prop is a json path
+	ParseDynamicProp(prop string, data interface{}) (interface{}, error)
+	//TransformOutput(data []map[string]interface{}) interface{}
 }
 
 type Operator interface {

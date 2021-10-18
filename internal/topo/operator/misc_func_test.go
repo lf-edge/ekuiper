@@ -833,7 +833,7 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
 		pp := &ProjectOp{Fields: stmt.Fields}
-		fv, afv := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(ctx)
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		switch rt := result.(type) {
 		case []byte:

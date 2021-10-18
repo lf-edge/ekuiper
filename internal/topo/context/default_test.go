@@ -15,6 +15,7 @@
 package context
 
 import (
+	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -104,5 +105,96 @@ func cleanStateData() {
 	err = os.RemoveAll(c)
 	if err != nil {
 		conf.Log.Error(err)
+	}
+}
+
+func TestDynamicProp(t *testing.T) {
+	var tests = []struct {
+		j string
+		v []interface{} // values
+		r []interface{} // parsed results
+	}{
+		{
+			j: "$.a",
+			v: []interface{}{
+				map[string]interface{}{
+					"a": 123,
+					"b": "dafds",
+				},
+				map[string]interface{}{
+					"a": "single",
+					"c": 20.2,
+				},
+				map[string]interface{}{
+					"b": "b",
+					"c": "c",
+				},
+			},
+			r: []interface{}{
+				123,
+				"single",
+				nil,
+			},
+		}, {
+			j: "$[0].a",
+			v: []interface{}{
+				[]map[string]interface{}{{
+					"a": 123,
+					"b": "dafds",
+				}},
+				[]map[string]interface{}{},
+				[]map[string]interface{}{
+					{
+						"a": "single",
+						"c": 20.2,
+					},
+					{
+						"b": "b",
+						"c": "c",
+					},
+				},
+			},
+			r: []interface{}{
+				123,
+				nil,
+				"single",
+			},
+		}, {
+			j: "a",
+			v: []interface{}{
+				map[string]interface{}{
+					"a": 123,
+					"b": "dafds",
+				},
+				map[string]interface{}{
+					"a": "single",
+					"c": 20.2,
+				},
+				map[string]interface{}{
+					"b": "b",
+					"c": "c",
+				},
+			},
+			r: []interface{}{
+				"a",
+				"a",
+				"a",
+			},
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	ctx := Background().WithMeta("testStateRule", "op1", &state.MemoryStore{})
+	for i, tt := range tests {
+		var result []interface{}
+		for _, v := range tt.v {
+			prop, err := ctx.ParseDynamicProp(tt.j, v)
+			if err != nil {
+				fmt.Printf("%d:%s parse %v error\n", i, tt.j, v)
+			}
+			result = append(result, prop)
+		}
+		if !reflect.DeepEqual(tt.r, result) {
+			t.Errorf("%d. %s\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.j, tt.r, result)
+		}
 	}
 }
