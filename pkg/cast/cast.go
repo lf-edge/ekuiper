@@ -1040,3 +1040,39 @@ func isIntegral64(val float64) bool {
 func isIntegral32(val float32) bool {
 	return val == float32(int(val))
 }
+
+func ConvertToInterfaceArr(orig map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+	for k, v := range orig {
+		vt := reflect.TypeOf(v)
+		if vt == nil {
+			result[k] = nil
+			continue
+		}
+		switch vt.Kind() {
+		case reflect.Slice:
+			result[k] = ConvertSlice(v)
+		case reflect.Map:
+			result[k] = ConvertToInterfaceArr(v.(map[string]interface{}))
+		default:
+			result[k] = v
+		}
+	}
+	return result
+}
+
+func ConvertSlice(v interface{}) []interface{} {
+	value := reflect.ValueOf(v)
+	tempArr := make([]interface{}, value.Len())
+	for i := 0; i < value.Len(); i++ {
+		item := value.Index(i)
+		if item.Kind() == reflect.Map {
+			tempArr[i] = ConvertToInterfaceArr(item.Interface().(map[string]interface{}))
+		} else if item.Kind() == reflect.Slice {
+			tempArr[i] = ConvertSlice(item.Interface())
+		} else {
+			tempArr[i] = item.Interface()
+		}
+	}
+	return tempArr
+}

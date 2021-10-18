@@ -15,18 +15,15 @@
 package function
 
 import (
-	"context"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	b64 "encoding/base64"
-	"encoding/json"
 	"fmt"
-	"github.com/PaesslerAG/gval"
-	"github.com/PaesslerAG/jsonpath"
 	"github.com/google/uuid"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"hash"
 	"io"
@@ -259,34 +256,8 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 	}
 }
 
-func jsonCall(name string, args []interface{}) (interface{}, bool) {
-	var input interface{}
-	at := reflect.TypeOf(args[0])
-	if at != nil {
-		switch at.Kind() {
-		case reflect.Map:
-			input = convertToInterfaceArr(args[0].(map[string]interface{}))
-		case reflect.Slice:
-			input = convertSlice(args[0])
-		case reflect.String:
-			v, _ := args[0].(string)
-			err := json.Unmarshal([]byte(v), &input)
-			if err != nil {
-				return fmt.Errorf("%s function error: the first argument '%v' is not a valid json string", name, args[0]), false
-			}
-		default:
-			return fmt.Errorf("%s function error: the first argument must be a map but got %v", name, args[0]), false
-		}
-	} else {
-		return fmt.Errorf("%s function error: the first argument must be a map but got nil", name), false
-	}
-
-	builder := gval.Full(jsonpath.PlaceholderExtension())
-	path, err := builder.NewEvaluable(args[1].(string))
-	if err != nil {
-		return fmt.Errorf("%s function error: %s", name, err), false
-	}
-	result, err := path(context.Background(), input)
+func jsonCall(ctx api.StreamContext, name string, args []interface{}) (interface{}, bool) {
+	result, err := ctx.ParseDynamicProp(args[1].(string), args[0])
 	if err != nil {
 		if name == "json_path_exists" {
 			return false, true
@@ -316,40 +287,4 @@ func jsonCall(name string, args []interface{}) (interface{}, bool) {
 		return e, true
 	}
 	return fmt.Errorf("invalid function name: %s", name), false
-}
-
-func convertToInterfaceArr(orig map[string]interface{}) map[string]interface{} {
-	result := make(map[string]interface{})
-	for k, v := range orig {
-		vt := reflect.TypeOf(v)
-		if vt == nil {
-			result[k] = nil
-			continue
-		}
-		switch vt.Kind() {
-		case reflect.Slice:
-			result[k] = convertSlice(v)
-		case reflect.Map:
-			result[k] = convertToInterfaceArr(v.(map[string]interface{}))
-		default:
-			result[k] = v
-		}
-	}
-	return result
-}
-
-func convertSlice(v interface{}) []interface{} {
-	value := reflect.ValueOf(v)
-	tempArr := make([]interface{}, value.Len())
-	for i := 0; i < value.Len(); i++ {
-		item := value.Index(i)
-		if item.Kind() == reflect.Map {
-			tempArr[i] = convertToInterfaceArr(item.Interface().(map[string]interface{}))
-		} else if item.Kind() == reflect.Slice {
-			tempArr[i] = convertSlice(item.Interface())
-		} else {
-			tempArr[i] = item.Interface()
-		}
-	}
-	return tempArr
 }

@@ -67,10 +67,12 @@ func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionConte
 ctx.GetRootPath()
 ```
 
-## 外部函数扩展
+## 解析动态属性
 
-提供一种配置的方式，使得 eKuiper 可以使用 SQL 以函数的方式直接调用外部服务，包括各种 rpc 服务， http 服务等。该方式将可大提高 eKuiper 扩展的易用性。外部函数将作为插件系统的补充，仅在性能要求较高的情况下才建议使用插件。
+在自定义的 sink 插件中，用户可能仍然想要像内置的 sink 一样支持[动态属性](../../rules/overview.md#动态属性)。 我们在 context 对象中提供了 `ParseDynamicProp` 方法使得开发者可以方便地解析动态属性并应用于插件中。开发组应当根据业务逻辑，设计那些属性支持动态值。然后在代码编写时，使用此方法解析用户传入的属性值。
 
-以 getFeature 函数为例，假设有 AI 服务基于 grpc 提供getFeature 服务。则可在 eKuiper 配置之后，使用 `SELECT getFeature(self) from demo` 的方式，无需定制插件而调用该 AI 服务。
-
-详细配置方法，请参考[外部函数](../external/external_func.md)。
+```go
+// Parse the prop of jsonpath syntax against the current data.
+value, err := ctx.ParseDynamicProp(s.prop, data)
+// Use the parsed value for the following business logic.
+```

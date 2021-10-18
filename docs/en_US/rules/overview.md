@@ -166,3 +166,22 @@ eKuiper extends several functions that can be used in data template.
 
 - (deprecated)`json para1`: The `json` function is used for convert the map content to a JSON string. Use`toJson` from sprig instead.
 - (deprecated)`base64 para1`: The `base64` function is used for encoding parameter value to a base64 string. Convert the pramater to string type and use `b64enc` from sprig instead.
+
+### Dynamic properties
+
+In the sink, it is common to fetch a property value from the result data to achieve dynamic output. For example, to write data into a dynamic topic of mqtt. The dynamic properties will all follow the json path syntax. In below example, the sink topic is gotten from the selected topic by using jsonpath syntax.
+
+```json
+{
+  "id": "rule1",
+  "sql": "SELECT topic FROM demo",
+  "actions": [{
+    "mqtt": {
+      "sendSingle": true,
+      "topic": "$.topic"
+    }
+  }]
+}
+```
+
+In the above example, `sendSingle` property is used, so the sink data is a map by default. If not using `sendSingle`, you can get the topic by index with jsonapth `$[0].topic`.

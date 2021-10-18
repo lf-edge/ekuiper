@@ -53,3 +53,15 @@ In the plugin source code, developers can access the dependencies of file system
 ```go
 ctx.GetRootPath()
 ```
+
+## Parse dynamic properties
+
+For customized sink plugins, users may still want to support [dynamic properties](../../rules/overview.md#dynamic-properties) like the built-in ones. 
+
+In the context object, a function `ParseDynamicProp` is provided to support the parsing of the dynamic property syntax. In the customized sink, developers can specify some properties to be dynamic according to the business logic. And in the plugin code, use this function to parse the user input in the collect function or elsewhere.
+
+```go
+// Parse the prop of jsonpath syntax against the current data.
+value, err := ctx.ParseDynamicProp(s.prop, data)
+// Use the parsed value for the following business logic.
+```

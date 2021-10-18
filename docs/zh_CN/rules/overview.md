@@ -169,3 +169,21 @@ eKuiper 扩展了几个可以在模版中使用的函数。
 - (deprecated)`json para1`: `json` 函数用于将 map 内容转换为 JSON 字符串。本函数已弃用，建议使用 sprig 扩展的 `toJson` 函数。
 - (deprecated)`base64 para1`: `base64` 函数用于将参数值编码为 base64 字符串。本函数已弃用，建议将参数转换为 string 类型后，使用 sprig 扩展的 `b64enc` 函数。
 
+### 动态属性
+
+有些情况下，用户需要按照数据把结果发送到不同的目标中。例如，根据收到的数据，把计算结果发到不同的 mqtt 主题中。使用基于 jsonpath 格式的动态属性，可以实现这样的功能。在以下的例子中，目标的 topic 属性是一个 jsonpath 格式的字符串从而在运行时会将消息发送到动态的主题中。 
+
+```json
+{
+  "id": "rule1",
+  "sql": "SELECT topic FROM demo",
+  "actions": [{
+    "mqtt": {
+      "sendSingle": true,
+      "topic": "$.topic"
+    }
+  }]
+}
+```
+
+需要注意的是，上例中的 `sendSingle` 属性已设置。在默认情况下，目标接收到的是数组，使用的 jsonpath 需要采用 `$[0].topic`。
