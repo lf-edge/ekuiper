@@ -23,6 +23,8 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 )
@@ -105,10 +107,16 @@ func TestCreateAndClose(t *testing.T) {
 	)
 	for i, topic := range sinkTopics {
 		createPub(topic)
-		r, err := getRegexp(sourceTopics[i])
-		if err != nil {
-			t.Error(err)
-			return
+		var (
+			r   *regexp.Regexp
+			err error
+		)
+		if strings.ContainsAny(sourceTopics[i], "+#") {
+			r, err = getRegexp(sourceTopics[i])
+			if err != nil {
+				t.Error(err)
+				return
+			}
 		}
 		c := createSub(sourceTopics[i], r, fmt.Sprintf("%d", i))
 		chans = append(chans, c)
