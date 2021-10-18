@@ -151,6 +151,7 @@ func addPubConsumer(topic string, sourceId string, ch chan map[string]interface{
 		sinkConsumerChannels = &pubConsumers{
 			consumers: make(map[string]chan map[string]interface{}),
 		}
+		pubTopics[topic] = sinkConsumerChannels
 	}
 	if _, exists := sinkConsumerChannels.consumers[sourceId]; exists {
 		conf.Log.Warnf("create memory source consumer for %s which is already exists", sourceId)
