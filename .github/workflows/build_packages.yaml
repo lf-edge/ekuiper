@@ -1,7 +1,7 @@
 name: Build packages
 
 concurrency:
-  group: build-${{ github.ref }}
+  group: build-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 on:
@@ -37,6 +37,7 @@ jobs:
       with:
         image: tonistiigi/binfmt:latest
         platforms: all
+    - uses: docker/setup-buildx-action@v1
     - name: get docker sha256
       id: disgest
       run: |

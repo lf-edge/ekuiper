@@ -1,7 +1,7 @@
 name: Run fvt tests
 
 concurrency:
-  group: fvt-${{ github.ref }}
+  group: fvt-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 on:
