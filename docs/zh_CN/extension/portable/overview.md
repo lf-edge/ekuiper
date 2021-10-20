@@ -75,7 +75,7 @@
 要在运行时管理可移植插件，我们可以使用 [REST](../../restapi/plugins.md) 或 [CLI](../../cli/plugins.md) 命令。
 ## 限制
 
-目前，与原生插件相比，有两个限制：
+目前，与原生插件相比，有两个方面的区别：
 
-1. 不支持 [State](../native/overview.md#state-storage) 和 Connection API。而 state 计划在未来得到支持。
-2. 在函数接口中，参数不能通过AST传递，即用户无法验证参数类型。唯一支持的验证可能是参数计数。
+1. 支持的 Context 方法较少，例如 [State](../native/overview.md#state-storage) ， Connection API 暂不支持；动态参数解析需要开发者自行计算。而 state 计划在未来得到支持。
+2. 在函数接口中，参数不能通过AST传递，即用户无法验证参数类型。唯一支持的验证可能是参数计数。在 Sink 接口中，collect 函数的数据类型为 json 编码的 `[]byte`，需要开发者自行解码。

@@ -15,7 +15,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -125,47 +124,17 @@ func (r *RedisSink) Open(ctx api.StreamContext) (err error) {
 
 func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
-
-	if v, ok := data.([]byte); ok {
-		if r.field != "" {
-			if !r.sendSingle {
-				var out []map[string]interface{}
-				if err := json.Unmarshal(v, &out); err != nil {
-					logger.Debug("Failed to unmarshal data with error: ", err, " data:", string(v))
-					return err
-				}
-
-				for _, m := range out {
-					key := r.field
-					field, ok := m[key].(string)
-					if ok {
-						key = field
-					}
-
-					if r.dataType == "list" {
-						err := r.cli.LPush(key, v).Err()
-						if err != nil {
-							logger.Error(err)
-							return err
-						}
-						logger.Debugf("send redis list success, key:%s data: %s", key, string(v))
-					} else {
-						err := r.cli.Set(key, v, r.expiration*time.Second).Err()
-						if err != nil {
-							logger.Error(err)
-							return err
-						}
-						logger.Debugf("send redis string success, key:%s data: %s", key, string(v))
-					}
-				}
-			} else {
-				var out map[string]interface{}
-				if err := json.Unmarshal(v, &out); err != nil {
-					logger.Debug("Failed to unmarshal data with error: ", err, " data:", string(v))
-					return err
-				}
+	v, _, err := ctx.TransformOutput()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if r.field != "" {
+		switch out := data.(type) {
+		case []map[string]interface{}:
+			for _, m := range out {
 				key := r.field
-				field, ok := out[key].(string)
+				field, ok := m[key].(string)
 				if ok {
 					key = field
 				}
@@ -186,29 +155,47 @@ func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 					logger.Debugf("send redis string success, key:%s data: %s", key, string(v))
 				}
 			}
+		case map[string]interface{}:
+			key := r.field
+			field, ok := out[key].(string)
+			if ok {
+				key = field
+			}
 
-		} else if r.key != "" {
 			if r.dataType == "list" {
-				err := r.cli.LPush(r.key, v).Err()
+				err := r.cli.LPush(key, v).Err()
 				if err != nil {
 					logger.Error(err)
 					return err
 				}
-				logger.Debugf("send redis list success, key:%s data: %s", r.key, string(v))
+				logger.Debugf("send redis list success, key:%s data: %s", key, string(v))
 			} else {
-				err := r.cli.Set(r.key, v, r.expiration*time.Second).Err()
+				err := r.cli.Set(key, v, r.expiration*time.Second).Err()
 				if err != nil {
 					logger.Error(err)
 					return err
 				}
-				logger.Debugf("send redis string success, key:%s data: %s", r.key, string(v))
+				logger.Debugf("send redis string success, key:%s data: %s", key, string(v))
 			}
 		}
-
-		logger.Debug("insert success", string(v))
-	} else {
-		logger.Debug("insert failed data is not []byte data:", data)
+	} else if r.key != "" {
+		if r.dataType == "list" {
+			err := r.cli.LPush(r.key, v).Err()
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			logger.Debugf("send redis list success, key:%s data: %s", r.key, string(v))
+		} else {
+			err := r.cli.Set(r.key, v, r.expiration*time.Second).Err()
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			logger.Debugf("send redis string success, key:%s data: %s", r.key, string(v))
+		}
 	}
+	logger.Debug("insert success %v", data)
 	return nil
 }
 

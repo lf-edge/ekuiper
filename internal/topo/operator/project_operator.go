@@ -15,7 +15,6 @@
 package operator
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -93,11 +92,7 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		return fmt.Errorf("run Select error: invalid input %[1]T(%[1]v)", input)
 	}
 
-	if ret, err := json.Marshal(results); err == nil {
-		return ret
-	} else {
-		return fmt.Errorf("run Select error: %v", err)
-	}
+	return results
 }
 
 func (pp *ProjectOp) getVE(tuple xsql.DataValuer, agg xsql.AggregateData, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) *xsql.ValuerEval {

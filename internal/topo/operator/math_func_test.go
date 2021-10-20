@@ -15,7 +15,6 @@
 package operator
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -40,7 +39,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"a": float64(1), //Actually it should be 1, it's caused by json Unmarshal method, which convert int to float64
+				"a": 1,
 			}},
 		},
 
@@ -121,7 +120,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				Message: nil,
 			},
 			result: []map[string]interface{}{{
-				"a": float64(1),
+				"a": 1,
 			}},
 		},
 
@@ -141,7 +140,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				Message: nil,
 			},
 			result: []map[string]interface{}{{
-				"a": float64(1),
+				"a": 1,
 			}},
 		},
 
@@ -152,7 +151,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				Message: nil,
 			},
 			result: []map[string]interface{}{{
-				"a": float64(0),
+				"a": 0,
 			}},
 		},
 
@@ -163,7 +162,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				Message: nil,
 			},
 			result: []map[string]interface{}{{
-				"a": float64(-2),
+				"a": -2,
 			}},
 		},
 
@@ -273,9 +272,9 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				Message: nil,
 			},
 			result: []map[string]interface{}{{
-				"a": float64(1),
-				"b": float64(-1),
-				"c": float64(0),
+				"a": 1,
+				"b": -1,
+				"c": 0,
 			}},
 		},
 
@@ -341,7 +340,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				Message: nil,
 			},
 			result: []map[string]interface{}{{
-				"a": float64(1),
+				"a": 1,
 			}},
 		},
 
@@ -352,7 +351,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				Message: nil,
 			},
 			result: []map[string]interface{}{{
-				"a": float64(5),
+				"a": 5,
 			}},
 		},
 
@@ -418,7 +417,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				Message: nil,
 			},
 			result: []map[string]interface{}{{
-				"a": float64(0),
+				"a": int32(0),
 			}},
 		},
 
@@ -429,7 +428,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 				Message: nil,
 			},
 			result: []map[string]interface{}{{
-				"a": float64(97),
+				"a": int32(97),
 			}},
 		},
 
@@ -482,20 +481,8 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 		pp := &ProjectOp{Fields: stmt.Fields}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
-		var mapRes []map[string]interface{}
-		if v, ok := result.([]byte); ok {
-			err := json.Unmarshal(v, &mapRes)
-			if err != nil {
-				t.Errorf("Failed to parse the input into map.\n")
-				continue
-			}
-			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
-
-			if !reflect.DeepEqual(tt.result, mapRes) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
-			}
-		} else {
-			t.Errorf("The returned result is not type of []byte\n")
+		if !reflect.DeepEqual(tt.result, result) {
+			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
 	}
 }

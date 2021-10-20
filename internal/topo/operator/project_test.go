@@ -15,7 +15,6 @@
 package operator
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -47,8 +46,8 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			},
 			result: []map[string]interface{}{{
 				"a": "val_a",
-				"__meta": map[string]interface{}{
-					"id":    float64(45),
+				"__meta": xsql.Metadata{
+					"id":    45,
 					"other": "mock",
 				},
 			}},
@@ -73,7 +72,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"ts": "2019-09-19T00:56:13.431Z",
+				"ts": cast.TimeFromUnixMilli(1568854573431),
 			}},
 		},
 		//Schemaless may return a message without selecting column
@@ -130,7 +129,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				Message: xsql.Message{},
 			},
 			result: []map[string]interface{}{{
-				"": 5.0,
+				"": 5,
 			}},
 		},
 		//8
@@ -160,7 +159,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"a":    "val_a",
 				"b":    "value",
 				"Pi":   3.14,
-				"Zero": 0.0,
+				"Zero": 0,
 			}},
 		},
 		//10
@@ -257,9 +256,9 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"ab": []interface{}{
-					map[string]interface{}{"b": "hello3"},
-					map[string]interface{}{"b": "hello4"},
+				"ab": []map[string]interface{}{
+					{"b": "hello3"},
+					{"b": "hello4"},
 				},
 			}},
 		},
@@ -279,10 +278,10 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"ab": []interface{}{
-					map[string]interface{}{"b": "hello3"},
-					map[string]interface{}{"b": "hello4"},
-					map[string]interface{}{"b": "hello5"},
+				"ab": []map[string]interface{}{
+					{"b": "hello3"},
+					{"b": "hello4"},
+					{"b": "hello5"},
 				},
 			}},
 		},
@@ -349,7 +348,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"ab": []interface{}{
+				"ab": []float64{
 					3.14, 3.141, 3.1415, 3.14159,
 				},
 			}},
@@ -366,7 +365,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"ab": []interface{}{
+				"ab": []float64{
 					3.14,
 				},
 			}},
@@ -505,7 +504,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				Message: xsql.Message{},
 			},
 			result: []map[string]interface{}{{
-				"f1": float64(12),
+				"f1": int64(12),
 			}},
 		},
 		//32
@@ -559,20 +558,8 @@ func TestProjectPlan_Apply1(t *testing.T) {
 		pp := &ProjectOp{Fields: stmt.Fields, SendMeta: true}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
-		var mapRes []map[string]interface{}
-		if v, ok := result.([]byte); ok {
-			err := json.Unmarshal(v, &mapRes)
-			if err != nil {
-				t.Errorf("Failed to parse the input into map.\n")
-				continue
-			}
-			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
-
-			if !reflect.DeepEqual(tt.result, mapRes) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
-			}
-		} else {
-			t.Errorf("%d. The returned result %#v is not type of []byte\n", result, i)
+		if !reflect.DeepEqual(tt.result, result) {
+			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
 	}
 }
@@ -592,7 +579,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"abc": float64(6), //json marshall problem
+				"abc": int64(6),
 			}},
 		},
 		//1
@@ -606,7 +593,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"abc": float64(34),
+				"abc": int64(34),
 			}},
 		},
 		//2
@@ -632,11 +619,11 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id1": float64(1),
+				"id1": 1,
 			}, {
-				"id1": float64(2),
+				"id1": 2,
 			}, {
-				"id1": float64(3),
+				"id1": 3,
 			}},
 		},
 		//3
@@ -662,9 +649,9 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id1": float64(1),
+				"id1": 1,
 			}, {}, {
-				"id1": float64(3),
+				"id1": 3,
 			}},
 		},
 		//4
@@ -690,13 +677,13 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id1": float64(1),
+				"id1": 1,
 				"f1":  "v1",
 			}, {
-				"id1": float64(2),
+				"id1": 2,
 				"f1":  "v2",
 			}, {
-				"id1": float64(3),
+				"id1": 3,
 				"f1":  "v1",
 			}},
 		},
@@ -723,13 +710,13 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id1": float64(1),
+				"id1": 1,
 				"f1":  "v1",
 			}, {
-				"id2": float64(2),
+				"id2": 2,
 				"f2":  "v2",
 			}, {
-				"id1": float64(3),
+				"id1": 3,
 				"f1":  "v1",
 			}},
 		},
@@ -756,13 +743,13 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id1": float64(1),
+				"id1": 1,
 				"f1":  "v1",
 			}, {
-				"id1": float64(2),
+				"id1": 2,
 				"f1":  "v2",
 			}, {
-				"id1": float64(3),
+				"id1": 3,
 				"f1":  "v1",
 			}},
 		},
@@ -791,11 +778,11 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id1": float64(1),
+				"id1": 1,
 			}, {
-				"id1": float64(2),
+				"id1": 2,
 			}, {
-				"id1": float64(3),
+				"id1": 3,
 			}},
 		},
 		//8
@@ -823,9 +810,9 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id1": float64(1),
+				"id1": 1,
 			}, {
-				"id1": float64(2),
+				"id1": 2,
 			}, {}},
 		},
 		//9
@@ -845,7 +832,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"abc": float64(6),
+				"abc": int64(6),
 			}},
 		},
 		//10
@@ -891,9 +878,9 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id1": float64(1),
+				"id1": 1,
 			}, {
-				"id1": float64(2),
+				"id1": 2,
 			}},
 		},
 		//12
@@ -922,7 +909,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id1": float64(1),
+				"id1": 1,
 			}, {}},
 		},
 		//13
@@ -960,9 +947,9 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id2": float64(2),
+				"id2": 2,
 			}, {
-				"id2": float64(4),
+				"id2": 4,
 			}, {}},
 		},
 		//14
@@ -990,15 +977,15 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id1": float64(1),
+				"id1": 1,
 				"f1":  "v1",
 				"f2":  "w2",
 			}, {
-				"id1": float64(2),
+				"id1": 2,
 				"f1":  "v2",
 				"f2":  "w3",
 			}, {
-				"id1": float64(3),
+				"id1": 3,
 				"f1":  "v1",
 			}},
 		},
@@ -1027,15 +1014,15 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id": float64(1),
+				"id": 1,
 				"f1": "v1",
 				"f2": "w2",
 			}, {
-				"id": float64(2),
+				"id": 2,
 				"f1": "v2",
 				"f2": "w3",
 			}, {
-				"id": float64(3),
+				"id": 3,
 				"f1": "v1",
 			}},
 		},
@@ -1065,10 +1052,10 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id1": float64(1),
+				"id1": 1,
 				"f1":  "v1",
 			}, {
-				"id1": float64(2),
+				"id1": 2,
 				"f1":  "v2",
 			}},
 		},
@@ -1107,15 +1094,15 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id2": float64(2),
-				"id1": float64(1),
+				"id2": 2,
+				"id1": 1,
 				"f1":  "v1",
 			}, {
-				"id2": float64(4),
-				"id1": float64(2),
+				"id2": 4,
+				"id1": 2,
 				"f1":  "v2",
 			}, {
-				"id1": float64(3),
+				"id1": 3,
 				"f1":  "v1",
 			}},
 		},
@@ -1154,15 +1141,15 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"id2": float64(2),
-				"id1": float64(1),
+				"id2": 2,
+				"id1": 1,
 				"f1":  "v1",
 			}, {
-				"id2": float64(4),
-				"id1": float64(2),
+				"id2": 4,
+				"id1": 2,
 				"f1":  "v2",
 			}, {
-				"id1": float64(3),
+				"id1": 3,
 				"f1":  "v1",
 			}},
 		},
@@ -1177,21 +1164,8 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 		pp := &ProjectOp{Fields: stmt.Fields}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
-		var mapRes []map[string]interface{}
-		if v, ok := result.([]byte); ok {
-			err := json.Unmarshal(v, &mapRes)
-			if err != nil {
-				t.Errorf("Failed to parse the input into map.\n")
-				continue
-			}
-
-			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
-
-			if !reflect.DeepEqual(tt.result, mapRes) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
-			}
-		} else {
-			t.Errorf("The returned result is not type of []byte\n")
+		if !reflect.DeepEqual(tt.result, result) {
+			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
 	}
 }
@@ -1351,7 +1325,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"r": float64(1),
+				"r": 1,
 			}},
 		},
 		//6
@@ -1400,21 +1374,8 @@ func TestProjectPlan_Funcs(t *testing.T) {
 		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
-		var mapRes []map[string]interface{}
-		if v, ok := result.([]byte); ok {
-			err := json.Unmarshal(v, &mapRes)
-			if err != nil {
-				t.Errorf("Failed to parse the input into map.\n")
-				continue
-			}
-
-			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
-
-			if !reflect.DeepEqual(tt.result, mapRes) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
-			}
-		} else {
-			t.Errorf("%d. The returned result is not type of []byte\n", i)
+		if !reflect.DeepEqual(tt.result, result) {
+			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
 	}
 }
@@ -1471,15 +1432,15 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"c":  float64(2),
+				"c":  2,
 				"r":  float64(122),
-				"ws": float64(1541152486013),
-				"we": float64(1541152487013),
+				"ws": int64(1541152486013),
+				"we": int64(1541152487013),
 			}, {
-				"c":  float64(2),
+				"c":  2,
 				"r":  float64(89),
-				"ws": float64(1541152486013),
-				"we": float64(1541152487013),
+				"ws": int64(1541152486013),
+				"we": int64(1541152487013),
 			}},
 		},
 		//1
@@ -1520,13 +1481,13 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"c":   float64(1),
+				"c":   1,
 				"a":   122.33,
 				"s":   122.33,
 				"min": 122.33,
 				"max": 122.33,
 			}, {
-				"c":   float64(2),
+				"c":   2,
 				"s":   103.63,
 				"a":   51.815,
 				"min": 14.6,
@@ -1669,8 +1630,8 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 
 			result: []map[string]interface{}{{
 				"min":          68.55,
-				"window_start": float64(1541152486013),
-				"window_end":   float64(1541152487013),
+				"window_start": int64(1541152486013),
+				"window_end":   int64(1541152487013),
 			}},
 		},
 		//5
@@ -1700,8 +1661,8 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			},
 
 			result: []map[string]interface{}{{
-				"all": float64(3),
-				"c":   float64(2),
+				"all": 3,
+				"c":   2,
 				"a":   123.03,
 				"s":   246.06,
 				"min": 68.55,
@@ -1734,9 +1695,9 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"sum":        float64(123203),
-				"ws":         float64(1541152486013),
-				"window_end": float64(1541152487013),
+				"sum":        123203,
+				"ws":         int64(1541152486013),
+				"window_end": int64(1541152487013),
 			}},
 		},
 		//7
@@ -1761,7 +1722,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"s": float64(123203),
+				"s": 123203,
 			}},
 		},
 		//8
@@ -1786,7 +1747,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"sum": float64(123203),
+				"sum": 123203,
 			}},
 		},
 		//9
@@ -1811,12 +1772,12 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"all": float64(3),
-				"c":   float64(2),
-				"a":   float64(40),
-				"s":   float64(80),
-				"min": float64(27),
-				"max": float64(53),
+				"all": 3,
+				"c":   2,
+				"a":   40,
+				"s":   80,
+				"min": 27,
+				"max": 53,
 			}},
 		},
 		//10
@@ -1857,10 +1818,10 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"count": float64(2),
+				"count": 2,
 				"meta":  "devicea",
 			}, {
-				"count": float64(2),
+				"count": 2,
 				"meta":  "devicec",
 			}},
 		},
@@ -1902,10 +1863,10 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"c": float64(2),
+				"c": 2,
 				"d": "devicea",
 			}, {
-				"c": float64(2),
+				"c": 2,
 				"d": "devicec",
 			}},
 		},
@@ -1956,16 +1917,16 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			},
 			result: []map[string]interface{}{{
 				"a":     122.33,
-				"c":     float64(2),
+				"c":     2,
 				"color": "w2",
-				"id":    float64(1),
-				"r":     float64(122),
+				"id":    1,
+				"r":     122,
 			}, {
 				"a":     89.03,
-				"c":     float64(2),
+				"c":     2,
 				"color": "w1",
-				"id":    float64(2),
-				"r":     float64(89),
+				"id":    2,
+				"r":     89,
 			}},
 		},
 		//13
@@ -2036,8 +1997,8 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"c1": map[string]interface{}{
-					"a": float64(27),
+				"c1": xsql.Message{
+					"a": 27,
 				},
 			}},
 		},
@@ -2063,7 +2024,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"c1": float64(27),
+				"c1": 27,
 			}},
 		},
 		//16
@@ -2131,12 +2092,12 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			result: []map[string]interface{}{
 				{
 					"r1": []interface{}{
-						map[string]interface{}{"a": 122.33, "c": float64(2), "color": "w2", "id": float64(1), "r": float64(122)},
-						map[string]interface{}{"a": 177.51, "color": "w2", "id": float64(5)}},
+						xsql.Message{"a": 122.33, "c": 2, "color": "w2", "id": 1, "r": 122},
+						xsql.Message{"a": 177.51, "color": "w2", "id": 5}},
 				}, {
 					"r1": []interface{}{
-						map[string]interface{}{"a": 89.03, "c": float64(2), "color": "w1", "id": float64(2), "r": float64(89)},
-						map[string]interface{}{"a": 14.6, "color": "w1", "id": float64(4)}},
+						xsql.Message{"a": 89.03, "c": 2, "color": "w1", "id": 2, "r": 89},
+						xsql.Message{"a": 14.6, "color": "w1", "id": 4}},
 				},
 			},
 		},
@@ -2162,7 +2123,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"c1": float64(123123),
+				"c1": 123123,
 			}},
 		},
 		//19
@@ -2232,8 +2193,8 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			},
 			result: []map[string]interface{}{{
 				"var2": "moduleB topic",
-				"max2": float64(1),
-				"max3": float64(100),
+				"max2": 1,
+				"max3": 100,
 			}},
 		},
 	}
@@ -2249,21 +2210,8 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: true}
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		result := pp.Apply(ctx, tt.data, fv, afv)
-		var mapRes []map[string]interface{}
-		if v, ok := result.([]byte); ok {
-			err := json.Unmarshal(v, &mapRes)
-			if err != nil {
-				t.Errorf("Failed to parse the input into map.\n")
-				continue
-			}
-
-			//fmt.Printf("%t\n", mapRes["kuiper_field_0"])
-
-			if !reflect.DeepEqual(tt.result, mapRes) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, mapRes)
-			}
-		} else {
-			t.Errorf("%d. %q\n\nThe returned result is not type of []byte: %#v\n", i, tt.sql, result)
+		if !reflect.DeepEqual(tt.result, result) {
+			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
 	}
 }

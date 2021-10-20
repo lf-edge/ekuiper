@@ -438,7 +438,7 @@ func (ems *EdgexMsgBusSink) getMeta(result []map[string]interface{}) *meta {
 
 func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	if payload, ok := item.([]byte); ok {
+	if payload, _, err := ctx.TransformOutput(); err == nil {
 		logger.Debugf("EdgeX message bus sink: %s\n", payload)
 		evt, err := ems.produceEvents(ctx, payload)
 		if err != nil {
@@ -475,7 +475,7 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 		}
 		logger.Debugf("Published %+v to EdgeX message bus topic %s", evt, topic)
 	} else {
-		return fmt.Errorf("Unkown type %t, the message cannot be published.\n", item)
+		return fmt.Errorf("Unkown type of data %v, the message cannot be published.\n", err)
 	}
 	return nil
 }

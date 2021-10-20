@@ -15,7 +15,6 @@
 package runtime
 
 import (
-	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -81,12 +80,12 @@ func (ps *PortableSink) Open(ctx api.StreamContext) error {
 
 func (ps *PortableSink) Collect(ctx api.StreamContext, item interface{}) error {
 	ctx.GetLogger().Debugf("Receive %+v", item)
-	// TODO item type
-	switch input := item.(type) {
-	case []byte:
-		return ps.dataCh.Send(input)
-	default:
-		return ps.dataCh.Send([]byte(fmt.Sprintf("%v", input)))
+	if val, _, err := ctx.TransformOutput(); err == nil {
+		ctx.GetLogger().Debugf("Send %s", val)
+		return ps.dataCh.Send(val)
+	} else {
+		ctx.GetLogger().Errorf("Found error %s", err.Error())
+		return err
 	}
 }
 

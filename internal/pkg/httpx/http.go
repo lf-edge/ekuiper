@@ -32,6 +32,7 @@ import (
 
 var BodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
 
+// Send v must be a []byte or map
 func Send(logger api.Logger, client *http.Client, bodyType string, method string, u string, headers map[string]string, sendSingle bool, v interface{}) (*http.Response, error) {
 	var req *http.Request
 	var err error
@@ -47,7 +48,11 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 		case []byte:
 			body = bytes.NewBuffer(t)
 		default:
-			return nil, fmt.Errorf("invalid content: %v", v)
+			vj, err := json.Marshal(v)
+			if err != nil {
+				return nil, fmt.Errorf("invalid content: %v", v)
+			}
+			body = bytes.NewBuffer(vj)
 		}
 		req, err = http.NewRequest(method, u, body)
 		if err != nil {
@@ -103,6 +108,20 @@ func convertToMap(v interface{}, sendSingle bool) (map[string]interface{}, error
 			} else {
 				r["result"] = string(t)
 			}
+		}
+		return r, nil
+	case map[string]interface{}:
+		return t, nil
+	case []map[string]interface{}:
+		r := make(map[string]interface{})
+		if sendSingle {
+			return nil, fmt.Errorf("invalid content: %v", t)
+		} else {
+			j, err := json.Marshal(t)
+			if err != nil {
+				return nil, err
+			}
+			r["result"] = string(j)
 		}
 		return r, nil
 	default:

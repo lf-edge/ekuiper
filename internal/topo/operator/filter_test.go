@@ -402,7 +402,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 			t.Errorf("statement %d parse error %s", i, err)
 			break
 		}
-		fv, afv := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(ctx)
 		pp := &FilterOp{Condition: stmt.Condition}
 		result := pp.Apply(ctx, tt.data, fv, afv)
 		if !reflect.DeepEqual(tt.result, result) {

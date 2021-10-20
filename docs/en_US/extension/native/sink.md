@@ -22,7 +22,13 @@ The next task is to implement _open_ method. The implementation should be synchr
 Open(ctx StreamContext) error
 ```  
 
-The main task for a Sink is to implement _collect_ method. The function will be invoked when eKuiper feed any data into the sink. As an infinite stream, this function will be invoked continuously. The task of this function is to publish data to the external system. The first parameter is the context, and the second parameter is the data received from eKuiper.
+The main task for a Sink is to implement _collect_ method. The function will be invoked when eKuiper feed any data into the sink. As an infinite stream, this function will be invoked continuously. The task of this function is to publish data to the external system. The first parameter is the context, and the second parameter is the data received from eKuiper. The data could be 2 types:
+1. Map slice `[]map[string]interface{}`: this is the default data type.
+2. Map `map[string]interface{}`: this is a possible data type when the `sendSingle` property is set.
+
+Most of the time, the map content will be the selective fields. But if `sendError` property is enabled and there are errors happen in the rule, the map content will be like `{"error":"error message here"}`.
+
+The developer can fetch the transformed result from the context method `ctx.TransformOutput()`. The return values are the transformed value of `[]byte` type. Currently, it will be transformed to the json byte array be default or formatted with the set [`dataTemlate` property](../../rules/overview.md#data-template). If the value is transformed by dataTemplate, the second return value will be true. 
 
 ```go
 //Called when each row of data has transferred to this sink
@@ -44,6 +50,18 @@ func MySink() api.Sink {
 ```
 
 The [Memory Sink](https://github.com/lf-edge/ekuiper/blob/master/extensions/sinks/memory/memory.go) is a good example.
+
+#### Parse dynamic properties
+
+For customized sink plugins, users may still want to support [dynamic properties](../../rules/overview.md#dynamic-properties) like the built-in ones.
+
+In the context object, a function `ParseDynamicProp` is provided to support the parsing of the dynamic property syntax. In the customized sink, developers can specify some properties to be dynamic according to the business logic. And in the plugin code, use this function to parse the user input in the collect function or elsewhere.
+
+```go
+// Parse the prop of jsonpath syntax against the current data.
+value, err := ctx.ParseDynamicProp(s.prop, data)
+// Use the parsed value for the following business logic.
+```
 
 ### Package the sink
 Build the implemented sink as a go plugin and make sure the output so file resides in the plugins/sinks folder.

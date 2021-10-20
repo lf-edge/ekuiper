@@ -75,12 +75,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 	list := make([]map[string]interface{}, 0)
 	list = append(list, data)
 	go func() {
-		var buf []byte
-		buf, err = asJsonBytes(list)
-		if err != nil {
-			t.Error(err)
-		}
-		err = snk.Collect(ctx, buf)
+		err = snk.Collect(ctx, list)
 		if err != nil {
 			t.Error(err)
 		}

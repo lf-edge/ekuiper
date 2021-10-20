@@ -36,11 +36,11 @@ func (m *MockSink) Open(ctx api.StreamContext) error {
 
 func (m *MockSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	if v, ok := item.([]byte); ok {
+	if v, _, err := ctx.TransformOutput(); err == nil {
 		logger.Debugf("mock sink receive %s", item)
 		m.results = append(m.results, v)
 	} else {
-		logger.Info("mock sink receive non byte data")
+		logger.Info("mock sink tranform data error: %v", err)
 	}
 	return nil
 }

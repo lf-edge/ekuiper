@@ -15,7 +15,6 @@
 package memory
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"strings"
@@ -48,29 +47,22 @@ func (s *sink) Configure(props map[string]interface{}) error {
 
 func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 	ctx.GetLogger().Debugf("receive %+v", data)
-	if b, casted := data.([]byte); casted {
-		d, err := toMap(b)
-		if err != nil {
-			return err
-		}
-		for _, el := range d {
-			produce(ctx, s.topic, el)
-		}
-		return nil
+	var outs []map[string]interface{}
+	switch d := data.(type) {
+	case []map[string]interface{}:
+		outs = d
+	case map[string]interface{}:
+		outs = append(outs, d)
+	default:
+		return fmt.Errorf("unrecognized format of %s", data)
 	}
-	return fmt.Errorf("unrecognized format of %s", data)
+	for _, el := range outs {
+		produce(ctx, s.topic, el)
+	}
+	return nil
 }
 
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing memory sink")
 	return closeSink(s.topic)
-}
-
-func toMap(data []byte) ([]map[string]interface{}, error) {
-	res := make([]map[string]interface{}, 0)
-	err := json.Unmarshal(data, &res)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
 }
