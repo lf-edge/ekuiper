@@ -17,7 +17,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"image/jpeg"
@@ -163,28 +162,37 @@ func (m *imageSink) saveFile(b []byte, fpath string) error {
 	return nil
 }
 
-func (m *imageSink) saveFiles(msg []map[string][]byte) error {
-	for _, images := range msg {
-		for k, v := range images {
-			suffix := m.getSuffix()
-			fname := fmt.Sprintf(`%s%s.%s`, k, suffix, m.format)
-			fpath := filepath.Join(m.path, fname)
-			m.saveFile(v, fpath)
+func (m *imageSink) saveFiles(images map[string]interface{}) error {
+	for k, v := range images {
+		image, ok := v.([]byte)
+		if !ok {
+			return fmt.Errorf("found none bytes data %v for path %s", image, k)
 		}
+		suffix := m.getSuffix()
+		fname := fmt.Sprintf(`%s%s.%s`, k, suffix, m.format)
+		fpath := filepath.Join(m.path, fname)
+		m.saveFile(image, fpath)
 	}
 	return nil
 }
 
 func (m *imageSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	if v, ok := item.([]byte); ok {
-		var msg []map[string][]byte
-		if err := json.Unmarshal(v, &msg); nil != err {
-			return fmt.Errorf("The sink only accepts bytea field, other types are not supported.")
+	switch v := item.(type) {
+	case []map[string]interface{}:
+		var outer error
+		for _, vm := range v {
+			err := m.saveFiles(vm)
+			if err != nil {
+				outer = err
+				logger.Error(err)
+			}
 		}
-		return m.saveFiles(msg)
-	} else {
-		logger.Debug("image sink receive non byte data")
+		return outer
+	case map[string]interface{}:
+		return m.saveFiles(v)
+	default:
+		fmt.Errorf("image sink receive invalid data %v", item)
 	}
 	return nil
 }

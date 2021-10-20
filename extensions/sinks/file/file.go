@@ -107,13 +107,13 @@ func (m *fileSink) save(logger api.Logger) {
 
 func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	if v, ok := item.([]byte); ok {
+	if v, _, err := ctx.TransformOutput(); err == nil {
 		logger.Debugf("file sink receive %s", item)
 		m.mux.Lock()
 		m.results = append(m.results, v)
 		m.mux.Unlock()
 	} else {
-		logger.Debug("file sink receive non byte data")
+		return fmt.Errorf("file sink transform data error: %v", err)
 	}
 	return nil
 }

@@ -44,12 +44,12 @@ func TestState(t *testing.T) {
 		}
 	)
 	//initialization
-	store, err := state.CreateStore(ruleId, api.AtLeastOnce)
+	cStore, err := state.CreateStore(ruleId, api.AtLeastOnce)
 	if err != nil {
 		t.Errorf("Get store for rule %s error: %s", ruleId, err)
 		return
 	}
-	ctx := Background().WithMeta("testStateRule", "op1", store).(*DefaultContext)
+	ctx := Background().WithMeta("testStateRule", "op1", cStore).(*DefaultContext)
 	defer cleanStateData()
 	// Do state function
 	_ = ctx.IncrCounter("key1", 20)
@@ -195,6 +195,46 @@ func TestDynamicProp(t *testing.T) {
 		}
 		if !reflect.DeepEqual(tt.r, result) {
 			t.Errorf("%d. %s\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.j, tt.r, result)
+		}
+	}
+}
+
+func TestTransition(t *testing.T) {
+	mockFunc := func(d interface{}) ([]byte, bool, error) {
+		return []byte(fmt.Sprintf("%v", d)), true, nil
+	}
+	var tests = []struct {
+		trans *TransConfig
+		r     []byte
+	}{
+		{
+			trans: &TransConfig{
+				Data:  "hello",
+				TFunc: mockFunc,
+			},
+			r: []byte(`hello`),
+		}, {
+			trans: &TransConfig{
+				Data:  "world",
+				TFunc: mockFunc,
+			},
+			r: []byte(`world`),
+		}, {
+			trans: &TransConfig{
+				Data:  map[string]interface{}{"a": "hello"},
+				TFunc: mockFunc,
+			},
+			r: []byte(`map[a:hello]`),
+		},
+	}
+
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	ctx := Background().WithMeta("testTransRule", "op1", &state.MemoryStore{}).(*DefaultContext)
+	for i, tt := range tests {
+		nc := WithValue(ctx, TransKey, tt.trans)
+		r, _, _ := nc.TransformOutput()
+		if !reflect.DeepEqual(tt.r, r) {
+			t.Errorf("%d\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, string(tt.r), string(r))
 		}
 	}
 }

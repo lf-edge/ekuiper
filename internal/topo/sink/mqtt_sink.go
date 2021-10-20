@@ -241,11 +241,15 @@ func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 	return nil
 }
 
-func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
+func (ms *MQTTSink) Collect(ctx api.StreamContext, _ interface{}) error {
 	logger := ctx.GetLogger()
+	jsonBytes, _, err := ctx.TransformOutput()
+	if err != nil {
+		return err
+	}
 	c := ms.conn
-	logger.Debugf("%s publish %s", ctx.GetOpId(), item)
-	if token := c.Publish(ms.tpc, ms.qos, ms.retained, item); token.Wait() && token.Error() != nil {
+	logger.Debugf("%s publish %s", ctx.GetOpId(), jsonBytes)
+	if token := c.Publish(ms.tpc, ms.qos, ms.retained, jsonBytes); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("publish error: %s", token.Error())
 	}
 	return nil

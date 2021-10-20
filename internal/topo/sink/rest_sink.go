@@ -176,12 +176,17 @@ func (me MultiErrors) Error() string {
 
 func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	v, ok := item.([]byte)
-	if !ok {
-		logger.Warnf("rest sink receive non []byte data: %v", item)
-	}
 	logger.Debugf("rest sink receive %s", item)
-	resp, err := ms.Send(v, logger)
+	output, transed, err := ctx.TransformOutput()
+	if err != nil {
+		logger.Warnf("rest sink decode data error: %v", err)
+		return nil
+	}
+	var d = item
+	if transed {
+		d = output
+	}
+	resp, err := ms.Send(d, logger)
 	if err != nil {
 		return fmt.Errorf("rest sink fails to send out the data: %s", err)
 	} else {

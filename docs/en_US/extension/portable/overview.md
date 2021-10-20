@@ -84,6 +84,6 @@ To manage the portable plugins in runtime, we can use the [REST](../../restapi/p
 
 Currently, there are two limitations compared to native plugins:
 
-1. [State](../native/overview.md#state-storage) and Connection API are not supported. Whereas, state is planned to be supported in the future.
-2. In the [Function interface], the arguments cannot be transferred with the AST which means the user cannot validate the argument types. The only validation supported may be the argument count.
+1. Support less context methods. For example, [State](../native/overview.md#state-storage) and Connection API are not supported; dynamic properties are required to be parsed by developers. Whereas, state is planned to be supported in the future.
+2. In the function interface, the arguments cannot be transferred with the AST which means the user cannot validate the argument types. The only validation supported may be the argument count. In the sink interface, the collect function parameter data will always be a json encoded `[]byte`, developers need to decode by themselves.
 

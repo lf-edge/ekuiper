@@ -15,10 +15,10 @@
 package sink
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -185,6 +185,7 @@ func TestRestSink_Apply(t *testing.T) {
 		contextLogger.Debugf(string(body))
 		fmt.Fprintf(w, string(body))
 	}))
+	tf, _ := transform.GenTransform("")
 	defer ts.Close()
 	for i, tt := range tests {
 		requests = nil
@@ -198,20 +199,18 @@ func TestRestSink_Apply(t *testing.T) {
 		s.Open(ctx)
 		if ss.(bool) {
 			for _, d := range tt.data {
-				input, err := json.Marshal(d)
-				if err != nil {
-					t.Errorf("Failed to parse the input into []byte]")
-					continue
-				}
-				s.Collect(ctx, input)
+				vCtx := context.WithValue(ctx, context.TransKey, &context.TransConfig{
+					Data:  d,
+					TFunc: tf,
+				})
+				s.Collect(vCtx, d)
 			}
 		} else {
-			input, err := json.Marshal(tt.data)
-			if err != nil {
-				t.Errorf("Failed to parse the input into []byte]")
-				continue
-			}
-			s.Collect(ctx, input)
+			vCtx := context.WithValue(ctx, context.TransKey, &context.TransConfig{
+				Data:  tt.data,
+				TFunc: tf,
+			})
+			s.Collect(vCtx, tt.data)
 		}
 
 		s.Close(ctx)
@@ -361,7 +360,13 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 		s.Configure(tt.config)
 		s.Open(ctx)
 		for _, d := range tt.data {
-			s.Collect(ctx, d)
+			vCtx := context.WithValue(ctx, context.TransKey, &context.TransConfig{
+				Data: d,
+				TFunc: func(_ interface{}) ([]byte, bool, error) {
+					return d, true, nil
+				},
+			})
+			s.Collect(vCtx, d)
 		}
 		s.Close(ctx)
 		if !reflect.DeepEqual(tt.result, requests) {

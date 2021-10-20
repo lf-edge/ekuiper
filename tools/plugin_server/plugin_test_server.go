@@ -182,12 +182,7 @@ func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
 			}()
 			for {
 				for _, m := range mockSinkData {
-					b, err := json.Marshal(m)
-					if err != nil {
-						fmt.Printf("cannot marshall data: %v\n", err)
-						continue
-					}
-					err = sink.Collect(newctx, b)
+					err = sink.Collect(newctx, m)
 					if err != nil {
 						fmt.Printf("cannot collect data: %v\n", err)
 						continue

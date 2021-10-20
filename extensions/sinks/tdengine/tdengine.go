@@ -18,7 +18,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -156,17 +155,11 @@ func (m *taosSink) Open(ctx api.StreamContext) (err error) {
 
 func (m *taosSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	data, ok := item.([]byte)
-	if !ok {
-		logger.Debug("tdengine sink receive non string data")
-		return nil
-	}
 	logger.Debugf("tdengine sink receive %s", item)
 
-	var sliData []map[string]interface{}
-	err := json.Unmarshal(data, &sliData)
-	if nil != err {
-		return err
+	sliData, ok := item.([]map[string]interface{})
+	if !ok {
+		return fmt.Errorf("tdengine sink receive non map slice data: %#v", item)
 	}
 	for _, mapData := range sliData {
 		sql, err := m.conf.buildSql(ctx, mapData)

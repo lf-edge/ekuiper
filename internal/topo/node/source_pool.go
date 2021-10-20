@@ -262,6 +262,7 @@ func (ss *sourceSingleton) detach(instanceKey string) bool {
 	} else {
 		// should not happen
 		ss.ctx.GetLogger().Warnf("detach source instance %s, not found", instanceKey)
+		return false
 	}
 	delete(ss.outputs, instanceKey)
 	if len(ss.outputs) == 0 {

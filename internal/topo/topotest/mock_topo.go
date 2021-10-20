@@ -97,7 +97,7 @@ func CommonResultFunc(result [][]byte) interface{} {
 		var mapRes []map[string]interface{}
 		err := json.Unmarshal(v, &mapRes)
 		if err != nil {
-			panic("Failed to parse the input into map")
+			panic(fmt.Sprintf("Failed to parse the input %v into map", string(v)))
 		}
 		maps = append(maps, mapRes)
 	}
