@@ -51,10 +51,10 @@ The location of private key path. It can be an absolute path, or a relative path
 
 ### connectionSelector
 
-specify the stream to reuse the connection to mqtt broker. The connection profile located in ``connection.yaml``.
+specify the stream to reuse the connection to mqtt broker. The connection profile located in ``connections/connection.yaml``.
 ```yaml
 mqtt:
-  mqtt_conf1: #connection key
+  localConnection: #connection key
     servers: [tcp://127.0.0.1:1883]
     username: ekuiper
     password: password
@@ -63,17 +63,17 @@ mqtt:
     #insecureSkipVerify: false
     #protocolVersion: 3
     clientid: ekuiper
-  mqtt_conf2: #connection key
-    servers: ["tcp://127.0.0.1:1883"]
+  cloudConnection: #connection key
+    servers: ["tcp://broker.emqx.io:1883"]
+    username: user1
+    password: password
+    #certificationPath: /var/kuiper/xyz-certificate.pem
+    #privateKeyPath: /var/kuiper/xyz-private.pem.ke
+    #insecureSkipVerify: false
+    #protocolVersion: 3
 
-edgex:
-  edgex_conf1: #connection key
-    protocol: redis
-    server: 127.0.0.1
-    port: 6379
-    type: redis
 ```
-There are two configuration groups for mqtt in the example, user need use ``mqtt.mqtt_conf1`` or ``mqtt.mqtt_conf2`` as the selector.
+There are two configuration groups for mqtt in the example, user need use ``mqtt.localConnection`` or ``mqtt.cloudConnection`` as the selector.
 For example
 ```yaml
 #Global MQTT configurations
@@ -84,7 +84,7 @@ default:
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
   #privateKeyPath: /var/kuiper/xyz-private.pem.key
-  connectionSelector: mqtt.mqtt_conf1
+  connectionSelector: mqtt.localConnection
 ```
 *Note*: once specify the connectionSelector in specific configuration group , all connection related parameters will be ignored , in this case ``servers: [tcp://127.0.0.1:1883]``
 

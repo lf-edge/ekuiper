@@ -8,7 +8,6 @@ import (
 
 func Test_getConnectionConf(t *testing.T) {
 	type args struct {
-		connectionType     string
 		connectionSelector string
 	}
 	tests := []struct {
@@ -18,10 +17,9 @@ func Test_getConnectionConf(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "mqtt:mqtt_conf1",
+			name: "mqtt:localConnection",
 			args: args{
-				connectionType:     "mqtt",
-				connectionSelector: "mqtt_conf1",
+				connectionSelector: "mqtt.localConnection",
 			},
 			want: map[string]interface{}{
 				"servers":  []interface{}{"tcp://127.0.0.1:1883"},
@@ -32,37 +30,28 @@ func Test_getConnectionConf(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "mqtt:mqtt_conf2",
+			name: "mqtt:cloudConnection",
 			args: args{
-				connectionType:     "mqtt",
-				connectionSelector: "mqtt_conf2",
+				connectionSelector: "mqtt.cloudConnection",
 			},
 			want: map[string]interface{}{
-				"servers": []interface{}{"tcp://127.0.0.1:1883"},
+				"servers":  []interface{}{"tcp://broker.emqx.io:1883"},
+				"username": "user1",
+				"password": "password",
 			},
 			wantErr: false,
 		},
 		{
 			name: "mqtt:mqtt_conf3 not exist",
 			args: args{
-				connectionType:     "mqtt",
-				connectionSelector: "mqtt_conf3",
+				connectionSelector: "mqtt.mqtt_conf3",
 			},
 			wantErr: true,
 		},
 		{
-			name: "mqtts:mqtt_conf3 not exist",
+			name: "edgex:redisMsgBus",
 			args: args{
-				connectionType:     "mqtts",
-				connectionSelector: "mqtt_conf3",
-			},
-			wantErr: true,
-		},
-		{
-			name: "edgex:edgex_conf1",
-			args: args{
-				connectionType:     "edgex",
-				connectionSelector: "edgex_conf1",
+				connectionSelector: "edgex.redisMsgBus",
 			},
 			want: map[string]interface{}{
 				"protocol": "redis",
@@ -76,9 +65,9 @@ func Test_getConnectionConf(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := ConSelector{
-				Type:   tt.args.connectionType,
-				CfgKey: tt.args.connectionSelector,
+				ConnSelectorCfg: tt.args.connectionSelector,
 			}
+			_ = c.Init()
 
 			got, err := c.ReadCfgFromYaml()
 			if (err != nil) != tt.wantErr {
@@ -93,10 +82,10 @@ func Test_getConnectionConf(t *testing.T) {
 }
 
 func Test_getConnectionConfWithEnv(t *testing.T) {
-	mqttServerKey := "CONNECTION__MQTT__MQTT_CONF1__SERVERS"
+	mqttServerKey := "CONNECTION__MQTT__LOCALCONNECTION__SERVERS"
 	mqttServerValue := "[tcp://broker.emqx.io:1883]"
 
-	edgexPortKey := "CONNECTION__EDGEX__EDGEX_CONF1__PORT"
+	edgexPortKey := "CONNECTION__EDGEX__REDISMSGBUS__PORT"
 	edgexPortValue := "6666"
 
 	err := os.Setenv(mqttServerKey, mqttServerValue)
@@ -109,7 +98,6 @@ func Test_getConnectionConfWithEnv(t *testing.T) {
 	}
 
 	type args struct {
-		connectionType     string
 		connectionSelector string
 	}
 	tests := []struct {
@@ -119,10 +107,9 @@ func Test_getConnectionConfWithEnv(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "mqtt:mqtt_conf1",
+			name: "mqtt:localConnection",
 			args: args{
-				connectionType:     "mqtt",
-				connectionSelector: "mqtt_conf1",
+				connectionSelector: "mqtt.localConnection",
 			},
 			want: map[string]interface{}{
 				"servers":  []interface{}{"tcp://broker.emqx.io:1883"},
@@ -133,10 +120,9 @@ func Test_getConnectionConfWithEnv(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "edgex:edgex_conf1",
+			name: "edgex:redisMsgBus",
 			args: args{
-				connectionType:     "edgex",
-				connectionSelector: "edgex_conf1",
+				connectionSelector: "edgex.redisMsgBus",
 			},
 			want: map[string]interface{}{
 				"protocol": "redis",
@@ -150,9 +136,9 @@ func Test_getConnectionConfWithEnv(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := ConSelector{
-				Type:   tt.args.connectionType,
-				CfgKey: tt.args.connectionSelector,
+				ConnSelectorCfg: tt.args.connectionSelector,
 			}
+			_ = c.Init()
 
 			got, err := c.ReadCfgFromYaml()
 			if (err != nil) != tt.wantErr {

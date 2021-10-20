@@ -37,7 +37,7 @@ func TestManager(t *testing.T) {
 		return &MockClient{selector: super}
 	})
 
-	conSelector := "mqtt.mqtt_conf1"
+	conSelector := "mqtt.localConnection"
 
 	connection, err := GetConnection(conSelector)
 	if err != nil {

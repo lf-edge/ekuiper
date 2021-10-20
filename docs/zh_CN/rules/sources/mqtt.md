@@ -51,10 +51,10 @@ MQTT 连接密码。如果指定了 `certificationPath` 或者 `privateKeyPath`�
 
 ### connectionSelector
 
-复用 MQTT 源连接。连接配置信息位于 ``connection.yaml``.
+复用 MQTT 源连接。连接配置信息位于 ``connections/connection.yaml``.
 ```yaml
 mqtt:
-  mqtt_conf1: #connection key
+  localConnection: #connection key
     servers: [tcp://127.0.0.1:1883]
     username: ekuiper
     password: password
@@ -63,17 +63,16 @@ mqtt:
     #insecureSkipVerify: false
     #protocolVersion: 3
     clientid: ekuiper
-  mqtt_conf2: #connection key
-    servers: ["tcp://127.0.0.1:1883"]
-
-edgex:
-  edgex_conf1: #connection key
-    protocol: redis
-    server: 127.0.0.1
-    port: 6379
-    type: redis
+  cloudConnection: #connection key
+    servers: ["tcp://broker.emqx.io:1883"]
+    username: user1
+    password: password
+    #certificationPath: /var/kuiper/xyz-certificate.pem
+    #privateKeyPath: /var/kuiper/xyz-private.pem.ke
+    #insecureSkipVerify: false
+    #protocolVersion: 3
 ```
-对于 MQTT 连接，这里有两个配置组。用户应该使用 ``mqtt.mqtt_conf1`` 或者 ``mqtt.mqtt_conf2`` 来作为参数。举例如下：
+对于 MQTT 连接，这里有两个配置组。用户应该使用 ``mqtt.localConnection`` 或者 ``mqtt.cloudConnection`` 来作为参数。举例如下：
 ```yaml
 #Global MQTT configurations
 default:
@@ -83,7 +82,7 @@ default:
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
   #privateKeyPath: /var/kuiper/xyz-private.pem.key
-  connectionSelector: mqtt.mqtt_conf
+  connectionSelector: mqtt.localConnection
 ```
 *注意*: 相应配置组一旦指定 connectionSelector 参数，所有关于连接的参数都会被忽略. 上面例子中，`` servers: [tcp://127.0.0.1:1883]`` 会被忽略。
 

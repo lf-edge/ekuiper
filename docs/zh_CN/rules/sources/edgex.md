@@ -89,36 +89,38 @@ EdgeX 消息总线的端口，缺省为 `5573`
 
 ## connectionSelector
 
-复用 EdgeX 源连接。连接配置信息位于 ``connection.yaml``.
+复用 EdgeX 源连接。连接配置信息位于 ``connections/connection.yaml``.
 ```yaml
-mqtt:
-  mqtt_conf1: #connection key
-    servers: [tcp://127.0.0.1:1883]
-    username: ekuiper
-    password: password
-    #certificationPath: /var/kuiper/xyz-certificate.pem
-    #privateKeyPath: /var/kuiper/xyz-private.pem.key
-    #insecureSkipVerify: false
-    #protocolVersion: 3
-    clientid: ekuiper
-  mqtt_conf2: #connection key
-    servers: ["tcp://127.0.0.1:1883"]
-
 edgex:
-  edgex_conf1: #connection key
+  redisMsgBus: #connection key
     protocol: redis
     server: 127.0.0.1
     port: 6379
     type: redis
+    #  Below is optional configurations settings for mqtt
+    #  type: mqtt
+    #  optional:
+    #    ClientId: client1
+    #    Username: user1
+    #    Password: password
+    #    Qos: 1
+    #    KeepAlive: 5000
+    #    Retained: true/false
+    #    ConnectionPayload:
+    #    CertFile:
+    #    KeyFile:
+    #    CertPEMBlock:
+    #    KeyPEMBlock:
+    #    SkipCertVerify: true/false
 ```
-对于 EdgeX 连接，这里有一个配置组。用户应该使用 ``edgex.edgex_conf1`` 来作为参数。举例如下：
+对于 EdgeX 连接，这里有一个配置组。用户应该使用 ``edgex.redisMsgBus`` 来作为参数。举例如下：
 ```yaml
 #Global Edgex configurations
 default:
   protocol: tcp
   server: localhost
   port: 5573
-  connectionSelector: edgex.edgex_conf1
+  connectionSelector: edgex.redisMsgBus
   topic: events
   messageType: event
 ```

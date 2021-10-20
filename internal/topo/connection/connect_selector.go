@@ -8,6 +8,8 @@ import (
 
 var SUPPORTE_CONTYPE = []string{"mqtt", "edgex"}
 
+const CONNECTION_CONF = "connections/connection.yaml"
+
 type ConSelector struct {
 	ConnSelectorCfg string
 
@@ -24,8 +26,8 @@ func (c *ConSelector) Init() error {
 	if len(conTypeSel) != 2 {
 		return fmt.Errorf("not a valid connection selector : %s", c.ConnSelectorCfg)
 	}
-	c.Type = conTypeSel[0]
-	c.CfgKey = conTypeSel[1]
+	c.Type = strings.ToLower(conTypeSel[0])
+	c.CfgKey = strings.ToLower(conTypeSel[1])
 	return nil
 }
 
@@ -36,7 +38,7 @@ func (c *ConSelector) ReadCfgFromYaml() (props map[string]interface{}, err error
 	)
 
 	cfg := make(map[string]interface{})
-	err = conf.LoadConfigByName("connection.yaml", &cfg)
+	err = conf.LoadConfigByName(CONNECTION_CONF, &cfg)
 	if err != nil {
 		return nil, err
 	}
