@@ -17,6 +17,7 @@ package main
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	zmq "github.com/pebbe/zmq4"
 )
 
@@ -81,7 +82,8 @@ func (m *zmqSink) Collect(ctx api.StreamContext, item interface{}) (err error) {
 		logger.Debug("zmq sink receive non byte data %v", item)
 	}
 	if err != nil {
-		logger.Debugf("send to zmq error %v", err)
+		logger.Errorf("send to zmq error %v", err)
+		return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
 	}
 	return
 }

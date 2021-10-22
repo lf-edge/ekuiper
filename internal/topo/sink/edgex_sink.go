@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"reflect"
 )
 
@@ -436,7 +437,7 @@ func (ems *EdgexMsgBusSink) getMeta(result []map[string]interface{}) *meta {
 	return newMetaFromMap(nil)
 }
 
-func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) error {
+func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, _ interface{}) error {
 	logger := ctx.GetLogger()
 	if payload, _, err := ctx.TransformOutput(); err == nil {
 		logger.Debugf("EdgeX message bus sink: %s\n", payload)
@@ -470,8 +471,8 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 		}
 
 		if e := ems.client.Publish(env, topic); e != nil {
-			logger.Errorf("Found error %s when publish to EdgeX message bus.\n", e)
-			return e
+			logger.Errorf("%s: found error %s when publish to EdgeX message bus.\n", e)
+			return fmt.Errorf("%s:%s", errorx.IOErr, e.Error())
 		}
 		logger.Debugf("Published %+v to EdgeX message bus topic %s", evt, topic)
 	} else {

@@ -23,6 +23,8 @@ const (
 	NOT_FOUND
 )
 
+const IOErr = "io error"
+
 var NotFoundErr = NewWithCode(NOT_FOUND, "not found")
 
 type Error struct {

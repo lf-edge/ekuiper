@@ -33,6 +33,8 @@ Sink （目标）的主要任务是实现 _collect_ 方法。 当 eKuiper 将任
 
 需要注意的是，当 [`dataTemlate` 属性](../../rules/overview.md#数据模板) 设置时，开发者可通过 context 方法`ctx.TransformOutput()` 获取转换后的数据。若数据模板未设置，则该方法返回空值。
 
+该方法可以返回任何错误类型。但是，如果想要让自动重试机制生效，返回的错误消息必须以 "io error" 开头。大多数情况下，也只有 io 问题才有重试的需要。
+
 ```go
 //Called when each row of data has transferred to this sink
 Collect(ctx StreamContext, data interface{}) error

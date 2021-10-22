@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"strings"
 	"sync"
 	"time"
@@ -296,7 +297,7 @@ func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, st
 			if err := sink.Collect(vCtx, outData); err != nil {
 				stats.IncTotalExceptions()
 				ctx.GetLogger().Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), outData, err)
-				if sconf.RetryInterval > 0 && retries > 0 && strings.HasPrefix(err.Error(), "io error") {
+				if sconf.RetryInterval > 0 && retries > 0 && strings.HasPrefix(err.Error(), errorx.IOErr) {
 					retries--
 					time.Sleep(time.Duration(sconf.RetryInterval) * time.Millisecond)
 					ctx.GetLogger().Debugf("try again")

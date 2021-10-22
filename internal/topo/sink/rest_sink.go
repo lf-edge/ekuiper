@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -199,10 +200,10 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
 			if buf, bodyErr := ioutil.ReadAll(resp.Body); bodyErr != nil {
 				logger.Errorf("%s\n", bodyErr)
-				return fmt.Errorf("rest sink fails to err http return code: %d and error message %s.", resp.StatusCode, bodyErr)
+				return fmt.Errorf("%s: http return code: %d and error message %s", errorx.IOErr, resp.StatusCode, bodyErr)
 			} else {
 				logger.Errorf("%s\n", string(buf))
-				return fmt.Errorf("rest sink fails to err http return code: %d and error message %s.", resp.StatusCode, string(buf))
+				return fmt.Errorf("%s: http return code: %d and error message %s", errorx.IOErr, resp.StatusCode, string(buf))
 			}
 		} else {
 			if ms.debugResp {
