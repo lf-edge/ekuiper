@@ -241,7 +241,7 @@ func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 	return nil
 }
 
-func (ms *MQTTSink) Collect(ctx api.StreamContext, _ interface{}) error {
+func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	jsonBytes, _, err := ctx.TransformOutput()
 	if err != nil {
@@ -249,7 +249,14 @@ func (ms *MQTTSink) Collect(ctx api.StreamContext, _ interface{}) error {
 	}
 	c := ms.conn
 	logger.Debugf("%s publish %s", ctx.GetOpId(), jsonBytes)
-	if token := c.Publish(ms.tpc, ms.qos, ms.retained, jsonBytes); token.Wait() && token.Error() != nil {
+	tpc, err := ctx.ParseDynamicProp(ms.tpc, item)
+	if err != nil {
+		return err
+	}
+	if tpc, ok := tpc.(string); !ok {
+		return fmt.Errorf("the value %v of dynamic prop %s for topic is not a string", ms.tpc, tpc)
+	}
+	if token := c.Publish(tpc.(string), ms.qos, ms.retained, jsonBytes); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("publish error: %s", token.Error())
 	}
 	return nil

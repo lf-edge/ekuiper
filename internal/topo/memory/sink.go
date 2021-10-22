@@ -47,17 +47,23 @@ func (s *sink) Configure(props map[string]interface{}) error {
 
 func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 	ctx.GetLogger().Debugf("receive %+v", data)
-	var outs []map[string]interface{}
+	tpc, err := ctx.ParseDynamicProp(s.topic, data)
+	if err != nil {
+		return err
+	}
+	topic, ok := tpc.(string)
+	if !ok {
+		return fmt.Errorf("the value %v of dynamic prop %s for topic is not a string", s.topic, tpc)
+	}
 	switch d := data.(type) {
 	case []map[string]interface{}:
-		outs = d
+		for _, el := range d {
+			produce(ctx, topic, el)
+		}
 	case map[string]interface{}:
-		outs = append(outs, d)
+		produce(ctx, topic, d)
 	default:
 		return fmt.Errorf("unrecognized format of %s", data)
-	}
-	for _, el := range outs {
-		produce(ctx, s.topic, el)
 	}
 	return nil
 }

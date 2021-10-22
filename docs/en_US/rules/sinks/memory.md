@@ -15,3 +15,13 @@ Below is a sample memory action configuration:
   }
 }
 ```
+
+Below is another sample for dynamic topic action:
+
+```json
+{
+  "memory": {
+    "topic": "$.topic"
+  }
+}
+```

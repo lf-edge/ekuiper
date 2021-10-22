@@ -54,3 +54,37 @@ Example for taosdb rest：
   ]
 }
 ```
+
+## Configure dynamic properties
+
+There are many scenarios that we need to sink to dynamic url and configurations through REST sink. The properties `method`, `url`,`bodyType` and `headers` support dynamic property through jsonpath syntax. Let's look at an example to modify the previous sample to a dynamic version. Assume we receive data which have metadata like http method and url postfix. We can modify the SQL to fetch these metadata in the result. The rule result will be like:
+
+```json
+{
+  "method":"post",
+  "url":"http://xxx.xxx.xxx.xxx:6041/rest/sql",
+  "temperature": 20,
+  "humidity": 80
+}
+```
+
+Then in the action, we set the `method` and `url` to be the value of the result by using jsonpath syntax as below:
+
+```json
+{"id": "rest2",
+  "sql": "SELECT tele[0]->Tag00001 AS temperature, tele[0]->Tag00002 AS humidity, method, concat(\"http://xxx.xxx.xxx.xxx:6041/rest/sql\", urlPostfix) as url FROM neuron", 
+  "actions": [
+    {
+      "rest": {
+        "bodyType": "text",
+        "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})", 
+        "debugResp": true,
+        "headers": {"Authorization": "Basic cm9vdDp0YW9zZGF0YQ=="},
+        "method": "$.method",
+        "sendSingle": true,
+        "url": "$.url"
+      }
+    }
+  ]
+}
+```
