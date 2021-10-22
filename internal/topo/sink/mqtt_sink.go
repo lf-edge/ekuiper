@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"strings"
 )
 
@@ -257,7 +258,7 @@ func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
 		return fmt.Errorf("the value %v of dynamic prop %s for topic is not a string", ms.tpc, tpc)
 	}
 	if token := c.Publish(tpc.(string), ms.qos, ms.retained, jsonBytes); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("publish error: %s", token.Error())
+		return fmt.Errorf("%s: %s", errorx.IOErr, token.Error())
 	}
 	return nil
 }

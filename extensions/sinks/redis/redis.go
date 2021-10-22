@@ -16,6 +16,8 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -143,14 +145,14 @@ func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 					err := r.cli.LPush(key, v).Err()
 					if err != nil {
 						logger.Error(err)
-						return err
+						return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
 					}
 					logger.Debugf("send redis list success, key:%s data: %s", key, string(v))
 				} else {
 					err := r.cli.Set(key, v, r.expiration*time.Second).Err()
 					if err != nil {
 						logger.Error(err)
-						return err
+						return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
 					}
 					logger.Debugf("send redis string success, key:%s data: %s", key, string(v))
 				}
@@ -166,14 +168,14 @@ func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 				err := r.cli.LPush(key, v).Err()
 				if err != nil {
 					logger.Error(err)
-					return err
+					return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
 				}
 				logger.Debugf("send redis list success, key:%s data: %s", key, string(v))
 			} else {
 				err := r.cli.Set(key, v, r.expiration*time.Second).Err()
 				if err != nil {
 					logger.Error(err)
-					return err
+					return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
 				}
 				logger.Debugf("send redis string success, key:%s data: %s", key, string(v))
 			}
@@ -183,14 +185,14 @@ func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 			err := r.cli.LPush(r.key, v).Err()
 			if err != nil {
 				logger.Error(err)
-				return err
+				return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
 			}
 			logger.Debugf("send redis list success, key:%s data: %s", r.key, string(v))
 		} else {
 			err := r.cli.Set(r.key, v, r.expiration*time.Second).Err()
 			if err != nil {
 				logger.Error(err)
-				return err
+				return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
 			}
 			logger.Debugf("send redis string success, key:%s data: %s", r.key, string(v))
 		}

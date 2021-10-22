@@ -15,7 +15,9 @@
 package runtime
 
 import (
+	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 type PortableSink struct {
@@ -82,7 +84,11 @@ func (ps *PortableSink) Collect(ctx api.StreamContext, item interface{}) error {
 	ctx.GetLogger().Debugf("Receive %+v", item)
 	if val, _, err := ctx.TransformOutput(); err == nil {
 		ctx.GetLogger().Debugf("Send %s", val)
-		return ps.dataCh.Send(val)
+		e := ps.dataCh.Send(val)
+		if e != nil {
+			return fmt.Errorf("%s:%s", errorx.IOErr, e)
+		}
+		return nil
 	} else {
 		ctx.GetLogger().Errorf("Found error %s", err.Error())
 		return err
