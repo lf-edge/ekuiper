@@ -5,7 +5,7 @@
 | 属性名称 | 是否可选 | 说明                                          |
 | ------------- | -------- | ---------------------------------------------------- |
 | server        | 否    | MQTT  服务器地址，例如 `tcp://127.0.0.1:1883` |
-| topic          | 否    | MQTT 主题，例如 `analysis/result`                     |
+| topic          | 否    | MQTT 主题，例如 `analysis/result` , 也可设置为动态属性，例如 `$.col`, 将会把结果中的 col 列的值作为主题                   |
 | clientId      | 是     | MQTT 连接的客户端 ID。 如果未指定，将使用一个 uuid |
 | protocolVersion   | 是    | MQTT 协议版本。3.1 (也被称为 MQTT 3) 或者 3.1.1 (也被称为 MQTT 4)。 如果未指定，缺省值为 3.1。 |
 | qos               | 是    | 消息转发的服务质量                               |
@@ -40,6 +40,24 @@
       "mqtt": {
         "server": "ssl://xyz-ats.iot.us-east-1.amazonaws.com:8883",
         "topic": "devices/result",
+        "qos": 1,
+        "clientId": "demo_001",
+        "certificationPath": "keys/d3807d9fa5-certificate.pem",
+        "privateKeyPath": "keys/d3807d9fa5-private.pem.key",
+        "retained": false
+      }
+    }
+```
+
+## 动态主题
+
+若结果数据中包含主题内容，可以将其作为主题属性，从而实现动态主题的需求。假设 SQL 选出的数据包含 `mytopic`, 则可以使用 jsonpath 语法将其设置为 `topic` 属性的值，如下所示：
+
+```json
+    {
+      "mqtt": {
+        "server": "ssl://xyz-ats.iot.us-east-1.amazonaws.com:8883",
+        "topic": "$.mytopic",
         "qos": 1,
         "clientId": "demo_001",
         "certificationPath": "keys/d3807d9fa5-certificate.pem",

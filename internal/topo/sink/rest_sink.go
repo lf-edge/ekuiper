@@ -30,6 +30,7 @@ type RestSink struct {
 	method             string
 	url                string
 	headers            map[string]string
+	headersTemplate    string
 	bodyType           string
 	timeout            int64
 	sendSingle         bool
@@ -74,16 +75,19 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 
 	temp, ok = ps["headers"]
 	if ok {
-		ms.headers = make(map[string]string)
-		if m, ok := temp.(map[string]interface{}); ok {
-			for k, v := range m {
+		switch h := temp.(type) {
+		case map[string]interface{}:
+			ms.headers = make(map[string]string)
+			for k, v := range h {
 				if v1, ok1 := v.(string); ok1 {
 					ms.headers[k] = v1
 				} else {
 					return fmt.Errorf("header value %s for header %s is not a string", v, k)
 				}
 			}
-		} else {
+		case string:
+			ms.headersTemplate = h
+		default:
 			return fmt.Errorf("rest sink property headers %v is not a map[string]interface", temp)
 		}
 	}
@@ -186,7 +190,7 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 	if transed {
 		d = output
 	}
-	resp, err := ms.Send(d, logger)
+	resp, err := ms.Send(ctx, d, logger)
 	if err != nil {
 		return fmt.Errorf("rest sink fails to send out the data: %s", err)
 	} else {
@@ -213,8 +217,45 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 	return nil
 }
 
-func (ms *RestSink) Send(v interface{}, logger api.Logger) (*http.Response, error) {
-	return httpx.Send(logger, ms.client, ms.bodyType, ms.method, ms.url, ms.headers, ms.sendSingle, v)
+func (ms *RestSink) Send(ctx api.StreamContext, v interface{}, logger api.Logger) (*http.Response, error) {
+	temp, err := ctx.ParseDynamicProp(ms.bodyType, v)
+	if err != nil {
+		return nil, err
+	}
+	bodyType, ok := temp.(string)
+	if !ok {
+		return nil, fmt.Errorf("the value %v of dynamic prop %s for bodyType is not a string", ms.bodyType, temp)
+	}
+	temp, err = ctx.ParseDynamicProp(ms.method, v)
+	if err != nil {
+		return nil, err
+	}
+	method, ok := temp.(string)
+	if !ok {
+		return nil, fmt.Errorf("the value %v of dynamic prop %s for method is not a string", ms.method, temp)
+	}
+	temp, err = ctx.ParseDynamicProp(ms.url, v)
+	if err != nil {
+		return nil, err
+	}
+	url, ok := temp.(string)
+	if !ok {
+		return nil, fmt.Errorf("the value %v of dynamic prop %s for url is not a string", ms.url, temp)
+	}
+	var headers map[string]string
+	if ms.headers != nil {
+		headers = ms.headers
+	} else if ms.headersTemplate != "" {
+		temp, err = ctx.ParseDynamicProp(ms.headersTemplate, v)
+		if err != nil {
+			return nil, err
+		}
+		headers, ok = temp.(map[string]string)
+		if !ok {
+			return nil, fmt.Errorf("the value %v of dynamic prop %s for headers is not a map[string]string", ms.headersTemplate, temp)
+		}
+	}
+	return httpx.Send(logger, ms.client, bodyType, method, url, headers, ms.sendSingle, v)
 }
 
 func (ms *RestSink) Close(ctx api.StreamContext) error {

@@ -51,3 +51,20 @@ Below is another sample configuration for connecting to AWS IoT by using certifi
     }
 ```
 
+## Dynamic Topic
+
+If the result data contains the topic name, we can use it as the property of the mqtt action to achieve dynamic topic support. Assume the selected data has a field named `mytopic`, we can use jsonpath syntax to set it as the property value for `topic` as below:
+
+```json
+    {
+      "mqtt": {
+        "server": "ssl://xyz-ats.iot.us-east-1.amazonaws.com:8883",
+        "topic": "$.mytopic",
+        "qos": 1,
+        "clientId": "demo_001",
+        "certificationPath": "keys/d3807d9fa5-certificate.pem",
+        "privateKeyPath": "keys/d3807d9fa5-private.pem.key",
+        "retained": false
+      }
+    }
+```
