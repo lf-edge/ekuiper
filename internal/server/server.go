@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,26 +15,19 @@
 package server
 
 import (
-	"github.com/lf-edge/ekuiper/internal/binder"
+	"context"
+	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/binder/meta"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/internal/plugin/native"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/internal/processor"
-	"github.com/lf-edge/ekuiper/internal/service"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"context"
-	"fmt"
 	"net/http"
-	"net/rpc"
 	"os"
 	"os/signal"
+	"sort"
 	"syscall"
 	"time"
 )
@@ -62,24 +55,14 @@ func StartUp(Version, LoadFileType string) {
 	ruleProcessor = processor.NewRuleProcessor()
 	streamProcessor = processor.NewStreamProcessor()
 
+	// register all extensions
+	for k, v := range components {
+		logger.Infof("register component %s", k)
+		v.register()
+	}
+
 	// Bind the source, function, sink
-	nativeManager, err := native.InitManager()
-	if err != nil {
-		panic(err)
-	}
-	portableManager, err := portable.InitManager()
-	if err != nil {
-		panic(err)
-	}
-	serviceManager, err := service.InitManager()
-	if err != nil {
-		panic(err)
-	}
-	entries := []binder.FactoryEntry{
-		{Name: "native plugin", Factory: nativeManager},
-		{Name: "portable plugin", Factory: portableManager},
-		{Name: "external service", Factory: serviceManager},
-	}
+	sort.Sort(entries)
 	err = function.Initialize(entries)
 	if err != nil {
 		panic(err)
@@ -91,8 +74,6 @@ func StartUp(Version, LoadFileType string) {
 	meta.Bind()
 
 	registry = &RuleRegistry{internal: make(map[string]*RuleState)}
-
-	server := new(Server)
 	//Start rules
 	if rules, err := ruleProcessor.GetAllRules(); err != nil {
 		logger.Infof("Start rules error: %s", err)
@@ -108,32 +89,6 @@ func StartUp(Version, LoadFileType string) {
 		}
 	}
 
-	//Start prometheus service
-	var srvPrometheus *http.Server = nil
-	if conf.Config.Basic.Prometheus {
-		portPrometheus := conf.Config.Basic.PrometheusPort
-		if portPrometheus <= 0 {
-			logger.Fatal("Miss configuration prometheusPort")
-		}
-		mux := http.NewServeMux()
-		mux.Handle("/metrics", promhttp.Handler())
-		srvPrometheus = &http.Server{
-			Addr:         fmt.Sprintf("0.0.0.0:%d", portPrometheus),
-			WriteTimeout: time.Second * 15,
-			ReadTimeout:  time.Second * 15,
-			IdleTimeout:  time.Second * 60,
-			Handler:      mux,
-		}
-		go func() {
-			if err := srvPrometheus.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				logger.Fatal("Listen prometheus error: ", err)
-			}
-		}()
-		msg := fmt.Sprintf("Serving prometheus metrics on port http://localhost:%d/metrics", portPrometheus)
-		logger.Infof(msg)
-		fmt.Println(msg)
-	}
-
 	//Start rest service
 	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort, conf.Config.Basic.Authentication)
 	go func() {
@@ -144,30 +99,15 @@ func StartUp(Version, LoadFileType string) {
 			err = srvRest.ListenAndServeTLS(conf.Config.Basic.RestTls.Certfile, conf.Config.Basic.RestTls.Keyfile)
 		}
 		if err != nil && err != http.ErrServerClosed {
-			logger.Fatal("Error serving rest service: ", err)
+			logger.Errorf("Error serving rest service: %s", err)
 		}
 	}()
 
-	// Start rpc service
-	portRpc := conf.Config.Basic.Port
-	ipRpc := conf.Config.Basic.Ip
-	rpcSrv := rpc.NewServer()
-	err = rpcSrv.Register(server)
-	if err != nil {
-		logger.Fatal("Format of service Server isn'restHttpType correct. ", err)
+	// Start extend services
+	for k, v := range servers {
+		logger.Infof("start service %s", k)
+		v.serve()
 	}
-	srvRpc := &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", ipRpc, portRpc),
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
-		IdleTimeout:  time.Second * 60,
-		Handler:      rpcSrv,
-	}
-	go func() {
-		if err = srvRpc.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatal("Error serving rpc service:", err)
-		}
-	}()
 
 	//Startup message
 	restHttpType := "http"
@@ -183,23 +123,15 @@ func StartUp(Version, LoadFileType string) {
 	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
 	<-sigint
 
-	runtime.GetPluginInsManager().KillAll()
-
-	if err = srvRpc.Shutdown(context.TODO()); err != nil {
-		logger.Errorf("rpc server shutdown error: %v", err)
-	}
-	logger.Info("rpc server shutdown.")
-
 	if err = srvRest.Shutdown(context.TODO()); err != nil {
 		logger.Errorf("rest server shutdown error: %v", err)
 	}
 	logger.Info("rest server successfully shutdown.")
 
-	if srvPrometheus != nil {
-		if err = srvPrometheus.Shutdown(context.TODO()); err != nil {
-			logger.Errorf("prometheus server shutdown error: %v", err)
-		}
-		logger.Info("prometheus server successfully shutdown.")
+	// close extend services
+	for k, v := range servers {
+		logger.Infof("close service %s", k)
+		v.close()
 	}
 
 	os.Exit(0)
