@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	ct "github.com/lf-edge/ekuiper/internal/template"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"text/template"
 )
 
@@ -27,7 +27,7 @@ type TransFunc func(interface{}) ([]byte, bool, error)
 func GenTransform(dt string) (TransFunc, error) {
 	var tp *template.Template = nil
 	if dt != "" {
-		temp, err := template.New("sink").Funcs(ct.FuncMap).Parse(dt)
+		temp, err := template.New("sink").Funcs(conf.FuncMap).Parse(dt)
 		if err != nil {
 			return nil, err
 		}
@@ -49,5 +49,5 @@ func GenTransform(dt string) (TransFunc, error) {
 }
 
 func GenTp(dt string) (*template.Template, error) {
-	return template.New("sink").Funcs(ct.FuncMap).Parse(dt)
+	return template.New("sink").Funcs(conf.FuncMap).Parse(dt)
 }

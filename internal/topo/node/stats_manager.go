@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,18 @@ package node
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/prometheus/client_golang/prometheus"
-	"strconv"
 	"time"
 )
+
+const RecordsInTotal = "records_in_total"
+const RecordsOutTotal = "records_out_total"
+const ExceptionsTotal = "exceptions_total"
+const ProcessLatencyUs = "process_latency_us"
+const LastInvocation = "last_invocation"
+const BufferLength = "buffer_length"
+
+var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ExceptionsTotal, ProcessLatencyUs, BufferLength, LastInvocation}
 
 type StatManager interface {
 	IncTotalRecordsIn()
@@ -50,17 +56,7 @@ type DefaultStatManager struct {
 	instanceId       int
 }
 
-type PrometheusStatManager struct {
-	DefaultStatManager
-	//prometheus metrics
-	pTotalRecordsIn  prometheus.Counter
-	pTotalRecordsOut prometheus.Counter
-	pTotalExceptions prometheus.Counter
-	pProcessLatency  prometheus.Gauge
-	pBufferLength    prometheus.Gauge
-}
-
-func NewStatManager(opType string, ctx api.StreamContext) (StatManager, error) {
+func NewStatManager(ctx api.StreamContext, opType string) (StatManager, error) {
 	var prefix string
 	switch opType {
 	case "source":
@@ -73,35 +69,13 @@ func NewStatManager(opType string, ctx api.StreamContext) (StatManager, error) {
 		return nil, fmt.Errorf("invalid opType %s, must be \"source\", \"sink\" or \"op\"", opType)
 	}
 
-	var sm StatManager
-	if conf.Config != nil && conf.Config.Basic.Prometheus {
-		ctx.GetLogger().Debugf("Create prometheus stat manager")
-		psm := &PrometheusStatManager{
-			DefaultStatManager: DefaultStatManager{
-				opType:     opType,
-				prefix:     prefix,
-				opId:       ctx.GetOpId(),
-				instanceId: ctx.GetInstanceId(),
-			},
-		}
-		//assign prometheus
-		mg := GetPrometheusMetrics().GetMetricsGroup(opType)
-		strInId := strconv.Itoa(ctx.GetInstanceId())
-		psm.pTotalRecordsIn = mg.TotalRecordsIn.WithLabelValues(ctx.GetRuleId(), opType, ctx.GetOpId(), strInId)
-		psm.pTotalRecordsOut = mg.TotalRecordsOut.WithLabelValues(ctx.GetRuleId(), opType, ctx.GetOpId(), strInId)
-		psm.pTotalExceptions = mg.TotalExceptions.WithLabelValues(ctx.GetRuleId(), opType, ctx.GetOpId(), strInId)
-		psm.pProcessLatency = mg.ProcessLatency.WithLabelValues(ctx.GetRuleId(), opType, ctx.GetOpId(), strInId)
-		psm.pBufferLength = mg.BufferLength.WithLabelValues(ctx.GetRuleId(), opType, ctx.GetOpId(), strInId)
-		sm = psm
-	} else {
-		sm = &DefaultStatManager{
-			opType:     opType,
-			prefix:     prefix,
-			opId:       ctx.GetOpId(),
-			instanceId: ctx.GetInstanceId(),
-		}
+	ds := DefaultStatManager{
+		opType:     opType,
+		prefix:     prefix,
+		opId:       ctx.GetOpId(),
+		instanceId: ctx.GetInstanceId(),
 	}
-	return sm, nil
+	return getStatManager(ctx, ds)
 }
 
 func (sm *DefaultStatManager) IncTotalRecordsIn() {
@@ -131,35 +105,6 @@ func (sm *DefaultStatManager) ProcessTimeEnd() {
 
 func (sm *DefaultStatManager) SetBufferLength(l int64) {
 	sm.bufferLength = l
-}
-
-func (sm *PrometheusStatManager) IncTotalRecordsIn() {
-	sm.totalRecordsIn++
-	sm.pTotalRecordsIn.Inc()
-}
-
-func (sm *PrometheusStatManager) IncTotalRecordsOut() {
-	sm.totalRecordsOut++
-	sm.pTotalRecordsOut.Inc()
-}
-
-func (sm *PrometheusStatManager) IncTotalExceptions() {
-	sm.totalExceptions++
-	sm.pTotalExceptions.Inc()
-	var t time.Time
-	sm.processTimeStart = t
-}
-
-func (sm *PrometheusStatManager) ProcessTimeEnd() {
-	if !sm.processTimeStart.IsZero() {
-		sm.processLatency = int64(time.Since(sm.processTimeStart) / time.Microsecond)
-		sm.pProcessLatency.Set(float64(sm.processLatency))
-	}
-}
-
-func (sm *PrometheusStatManager) SetBufferLength(l int64) {
-	sm.bufferLength = l
-	sm.pBufferLength.Set(float64(l))
 }
 
 func (sm *DefaultStatManager) GetMetrics() []interface{} {

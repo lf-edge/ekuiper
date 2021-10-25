@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,4 +37,19 @@ type FuncFactory interface {
 type FactoryEntry struct {
 	Name    string
 	Factory interface{}
+	Weight  int // bigger weight will be initialized first
+}
+
+type Entries []FactoryEntry
+
+func (e Entries) Len() int {
+	return len(e)
+}
+
+func (e Entries) Less(i, j int) bool {
+	return e[i].Weight > e[j].Weight
+}
+
+func (e Entries) Swap(i, j int) {
+	e[i], e[j] = e[j], e[i]
 }
