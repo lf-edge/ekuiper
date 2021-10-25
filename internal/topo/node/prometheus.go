@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build prometheus || !core
+// +build prometheus !core
+
 package node
 
 import (
@@ -19,15 +22,7 @@ import (
 	"sync"
 )
 
-const RecordsInTotal = "records_in_total"
-const RecordsOutTotal = "records_out_total"
-const ExceptionsTotal = "exceptions_total"
-const ProcessLatencyUs = "process_latency_us"
-const LastInvocation = "last_invocation"
-const BufferLength = "buffer_length"
-
 var (
-	MetricNames        = []string{RecordsInTotal, RecordsOutTotal, ExceptionsTotal, ProcessLatencyUs, BufferLength, LastInvocation}
 	prometheuseMetrics *PrometheusMetrics
 	mutex              sync.RWMutex
 )

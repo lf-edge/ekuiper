@@ -175,7 +175,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 					sink = m.sinks[instance]
 				}
 
-				stats, err := NewStatManager("sink", ctx)
+				stats, err := NewStatManager(ctx, "sink")
 				if err != nil {
 					m.drainError(result, err, ctx, logger)
 					return

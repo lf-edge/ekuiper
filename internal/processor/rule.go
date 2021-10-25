@@ -20,9 +20,6 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/internal/topo"
-	"github.com/lf-edge/ekuiper/internal/topo/node"
-	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -169,26 +166,6 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 		return nil, fmt.Errorf("rule option lateTolerance %d is invalid, require a positive integer", rule.Options.LateTol)
 	}
 	return rule, nil
-}
-
-func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*topo.Topo, error) {
-	if tp, err := planner.PlanWithSourcesAndSinks(p.getDefaultRule(ruleid, sql), nil, []*node.SinkNode{node.NewSinkNode("sink_memory_log", "logToMemory", nil)}); err != nil {
-		return nil, err
-	} else {
-		go func() {
-			select {
-			case err := <-tp.Open():
-				if err != nil {
-					log.Infof("closing query for error: %v", err)
-					tp.GetContext().SetError(err)
-					tp.Cancel()
-				} else {
-					log.Info("closing query")
-				}
-			}
-		}()
-		return tp, nil
-	}
 }
 
 func (p *RuleProcessor) ExecDesc(name string) (string, error) {
