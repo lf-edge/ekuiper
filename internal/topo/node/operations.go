@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		cancel()
 	}()
 
-	stats, err := NewStatManager("op", ctx)
+	stats, err := NewStatManager(ctx, "op")
 	if err != nil {
 		o.drainError(errCh, err, ctx)
 		return

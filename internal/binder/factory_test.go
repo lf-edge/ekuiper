@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@ package binder
 
 import (
 	"github.com/lf-edge/ekuiper/internal/binder/mock"
+	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -27,5 +29,32 @@ func TestEntry(t *testing.T) {
 	}
 	if e == nil {
 		t.Errorf("cannot instantiate FactoryEntry")
+	}
+}
+
+func TestEntriesSort(t *testing.T) {
+	m := mock.NewMockFactory()
+	e := FactoryEntry{
+		Name:    "mock",
+		Factory: m,
+		Weight:  10,
+	}
+	e2 := FactoryEntry{
+		Name:    "mock2",
+		Factory: m,
+		Weight:  5,
+	}
+	e3 := FactoryEntry{
+		Name:    "mock3",
+		Factory: m,
+		Weight:  8,
+	}
+	entries := Entries{e, e2, e3}
+	sort.Sort(entries)
+
+	expect := Entries{e, e3, e2}
+
+	if reflect.DeepEqual(entries, expect) == false {
+		t.Errorf("sort error, expect: %v, actual: %v", expect, entries)
 	}
 }

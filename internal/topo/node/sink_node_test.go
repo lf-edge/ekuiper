@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build template || !core
+// +build template !core
+
 package node
 
 import (
@@ -19,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"reflect"
 	"testing"
@@ -27,6 +31,7 @@ import (
 
 func TestSinkTemplate_Apply(t *testing.T) {
 	conf.InitConf()
+	transform.RegisterAdditionalFuncs()
 	var tests = []struct {
 		config map[string]interface{}
 		data   []map[string]interface{}

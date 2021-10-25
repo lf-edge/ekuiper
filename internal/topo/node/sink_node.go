@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -175,7 +175,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 					sink = m.sinks[instance]
 				}
 
-				stats, err := NewStatManager("sink", ctx)
+				stats, err := NewStatManager(ctx, "sink")
 				if err != nil {
 					m.drainError(result, err, ctx, logger)
 					return
