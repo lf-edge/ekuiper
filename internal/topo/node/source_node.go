@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 					buffer.Close()
 				}()
 
-				stats, err := NewStatManager("source", ctx)
+				stats, err := NewStatManager(ctx, "source")
 				if err != nil {
 					m.drainError(errCh, err, ctx, logger)
 					return

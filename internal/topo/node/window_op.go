@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		go func() { errCh <- fmt.Errorf("no output channel found") }()
 		return
 	}
-	stats, err := NewStatManager("op", ctx)
+	stats, err := NewStatManager(ctx, "op")
 	if err != nil {
 		go func() { errCh <- err }()
 		return

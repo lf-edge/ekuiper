@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package template
+//go:build template || !core
+// +build template !core
+
+package transform
 
 import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/sprig/v3"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"reflect"
 	"strconv"
 	"text/template"
 )
 
-var FuncMap template.FuncMap
-
-func init() {
-	FuncMap = template.FuncMap(sprig.FuncMap())
-	FuncMap["json"] = FuncMap["toJson"]
-	FuncMap["base64"] = Base64Encode
+func RegisterAdditionalFuncs() {
+	conf.FuncMap = template.FuncMap(sprig.FuncMap())
+	conf.FuncMap["json"] = conf.FuncMap["toJson"]
+	conf.FuncMap["base64"] = Base64Encode
 }
 
 func Base64Encode(para interface{}) (string, error) {
