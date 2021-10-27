@@ -212,14 +212,11 @@ Sample result:
     "source_stream"
   ],
   "edges": {
-    "op_preprocessor_stream": [
-      "op_project"
-    ],
     "op_project": [
       "sink_log"
     ],
     "source_stream": [
-      "op_preprocessor_stream"
+      "op_project"
     ]
   }
 }

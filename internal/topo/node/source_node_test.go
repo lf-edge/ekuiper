@@ -42,10 +42,10 @@ func TestGetConf_Apply(t *testing.T) {
 			},
 		},
 	}
-	n := NewSourceNode("test", ast.TypeStream, &ast.Options{
+	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "RFC_READ_TABLE",
 		TYPE:       "test",
-	})
+	}, false)
 	contextLogger := conf.Log.WithField("rule", "test")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	conf := getSourceConf(ctx, n.sourceType, n.options)
@@ -64,11 +64,11 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 		},
 		"deduplicate": 50,
 	}
-	n := NewSourceNode("test", ast.TypeStream, &ast.Options{
+	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "test",
 		TYPE:       "random",
 		CONF_KEY:   "dedup",
-	})
+	}, false)
 	contextLogger := conf.Log.WithField("rule", "test")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	conf := getSourceConf(ctx, n.sourceType, n.options)

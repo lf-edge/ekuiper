@@ -24,30 +24,30 @@ import (
 )
 
 func TestSourcePool(t *testing.T) {
-	n := NewSourceNode("test", ast.TypeStream, &ast.Options{
+	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "demo",
 		TYPE:       "mock",
 		SHARED:     true,
-	})
+	}, false)
 	n.concurrency = 2
 	contextLogger := conf.Log.WithField("rule", "mockRule0")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	n.ctx = ctx.WithMeta("mockRule0", "test", tempStore)
-	n1 := NewSourceNode("test", ast.TypeStream, &ast.Options{
+	n1 := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "demo1",
 		TYPE:       "mock",
 		SHARED:     true,
-	})
+	}, false)
 
 	contextLogger = conf.Log.WithField("rule", "mockRule1")
 	ctx = context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	tempStore, _ = state.CreateStore("mockRule1", api.AtMostOnce)
 	n1.ctx = ctx.WithMeta("mockRule1", "test1", tempStore)
-	n2 := NewSourceNode("test2", ast.TypeStream, &ast.Options{
+	n2 := NewSourceNode("test2", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "demo1",
 		TYPE:       "mock",
-	})
+	}, false)
 	contextLogger = conf.Log.WithField("rule", "mockRule2")
 	ctx = context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	tempStore, _ = state.CreateStore("mockRule2", api.AtMostOnce)

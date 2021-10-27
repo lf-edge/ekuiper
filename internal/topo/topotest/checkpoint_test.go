@@ -72,9 +72,6 @@ func TestCheckpoint(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"op_1_preprocessor_demo_0_records_in_total":  int64(3),
-				"op_1_preprocessor_demo_0_records_out_total": int64(3),
-
 				"op_3_project_0_records_in_total":  int64(3),
 				"op_3_project_0_records_out_total": int64(3),
 
@@ -91,9 +88,6 @@ func TestCheckpoint(t *testing.T) {
 		PauseSize: 3,
 		Cc:        2,
 		PauseMetric: map[string]interface{}{
-			"op_1_preprocessor_demo_0_records_in_total":  int64(3),
-			"op_1_preprocessor_demo_0_records_out_total": int64(3),
-
 			"op_3_project_0_records_in_total":  int64(1),
 			"op_3_project_0_records_out_total": int64(1),
 
