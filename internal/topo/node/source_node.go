@@ -32,9 +32,10 @@ type SourceNode struct {
 	props        map[string]interface{}
 	mutex        sync.RWMutex
 	sources      []api.Source
+	preprocessOp UnOperation
 }
 
-func NewSourceNode(name string, st ast.StreamType, options *ast.Options) *SourceNode {
+func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.Options, sendError bool) *SourceNode {
 	t := options.TYPE
 	if t == "" {
 		if st == ast.TypeStream {
@@ -50,8 +51,10 @@ func NewSourceNode(name string, st ast.StreamType, options *ast.Options) *Source
 			name:        name,
 			outputs:     make(map[string]chan<- interface{}),
 			concurrency: 1,
+			sendError:   sendError,
 		},
-		options: options,
+		preprocessOp: op,
+		options:      options,
 	}
 }
 
@@ -131,10 +134,20 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						stats.IncTotalRecordsIn()
 						stats.ProcessTimeStart()
 						tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: conf.GetNowInMilli(), Metadata: data.Meta()}
+						processedData := m.preprocessOp.Apply(ctx, tuple, nil, nil)
 						stats.ProcessTimeEnd()
 						logger.Debugf("source node %s is sending tuple %+v of timestamp %d", m.name, tuple, tuple.Timestamp)
 						//blocking
-						m.Broadcast(tuple)
+						switch val := processedData.(type) {
+						case nil:
+							continue
+						case error:
+							logger.Errorf("Source %s preprocess error: %s", ctx.GetOpId(), val)
+							m.Broadcast(val)
+							stats.IncTotalExceptions()
+						default:
+							m.Broadcast(val)
+						}
 						stats.IncTotalRecordsOut()
 						stats.SetBufferLength(int64(buffer.GetLength()))
 						if rw, ok := si.source.(api.Rewindable); ok {

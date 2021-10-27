@@ -110,7 +110,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	}
 	newIndex++
 	var (
-		op  node.OperatorNode
+		op  api.Emitter
 		err error
 	)
 	switch t := lp.(type) {
@@ -123,7 +123,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 			}
 			var srcNode *node.SourceNode
 			if len(sources) == 0 {
-				sourceNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, t.streamStmt.Options)
+				sourceNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError)
 				srcNode = sourceNode
 			} else {
 				srcNode = getMockSource(sources, string(t.name))
@@ -132,8 +132,8 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 				}
 			}
 			tp.AddSrc(srcNode)
-			op = Transform(pp, fmt.Sprintf("%d_preprocessor_%s", newIndex, t.name), options)
 			inputs = []api.Emitter{srcNode}
+			op = srcNode
 		case ast.TypeTable:
 			pp, err := operator.NewTableProcessor(string(t.name), t.streamFields, t.streamStmt.Options)
 			if err != nil {
@@ -144,11 +144,11 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 				srcNode = getMockSource(sources, string(t.name))
 			}
 			if srcNode == nil {
-				srcNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, t.streamStmt.Options)
+				srcNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError)
 			}
 			tp.AddSrc(srcNode)
-			op = Transform(pp, fmt.Sprintf("%d_tableprocessor_%s", newIndex, t.name), options)
 			inputs = []api.Emitter{srcNode}
+			op = srcNode
 		}
 	case *WindowPlan:
 		if t.condition != nil {
@@ -186,7 +186,9 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	if uop, ok := op.(*node.UnaryOperator); ok {
 		uop.SetConcurrency(options.Concurrency)
 	}
-	tp.AddOperator(inputs, op)
+	if onode, ok := op.(node.OperatorNode); ok {
+		tp.AddOperator(inputs, onode)
+	}
 	return op, newIndex, nil
 }
 
