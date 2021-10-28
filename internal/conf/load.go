@@ -69,6 +69,26 @@ func LoadConfigFromPath(p string, c interface{}) error {
 	return mapstructure.Decode(configs, c)
 }
 
+func CorrectsConfigKeysByJson(configs map[string]interface{}, jsonFilePath string) error {
+	dir, err := GetConfLoc()
+	if err != nil {
+		return err
+	}
+	path := path.Join(dir, jsonFilePath)
+	m, err := loadJsonForYaml(path)
+	if err != nil {
+		return err
+	}
+	names, err := extractNamesFromProperties(m)
+	if err != nil {
+		return err
+	}
+
+	applyKeys(configs, names)
+
+	return nil
+}
+
 func getPrefix(p string) string {
 	_, file := path.Split(p)
 	return strings.ToUpper(strings.TrimSuffix(file, filepath.Ext(file)))
@@ -230,19 +250,30 @@ func extractNamesFromProperties(jsonMap map[string]interface{}) ([]string, error
 		return nil, fmt.Errorf("json map does not have properties value")
 	}
 	if propertiesAsMap, success := properties.(map[string]interface{}); success {
-		list := propertiesAsMap["default"]
-		if interfaceList, isList := list.([]interface{}); isList {
-			for _, element := range interfaceList {
-				if m, isMap := element.(map[string]interface{}); isMap {
-					n := m["name"]
-					if s, isString := n.(string); isString {
-						result = append(result, s)
-					}
-				}
-			}
-		}
+		re := extractNamesFromElement(propertiesAsMap)
+		result = append(result, re...)
 	} else {
 		return nil, fmt.Errorf("failed to cast to list of properties")
 	}
 	return result, nil
+}
+
+func extractNamesFromElement(jsonMap map[string]interface{}) []string {
+	result := make([]string, 0)
+	list := jsonMap["default"]
+	if interfaceList, isList := list.([]interface{}); isList {
+		for _, element := range interfaceList {
+			if m, isMap := element.(map[string]interface{}); isMap {
+				re := extractNamesFromElement(m)
+				result = append(result, re...)
+			}
+		}
+	} else {
+		n := jsonMap["name"]
+		if s, isString := n.(string); isString {
+			result = append(result, s)
+		}
+	}
+
+	return result
 }

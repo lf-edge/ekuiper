@@ -66,6 +66,35 @@ func TestJsonCamelCase(t *testing.T) {
 	}
 }
 
+func TestNestedFields(t *testing.T) {
+	key := "EDGEX__DEFAULT__OPTIONAL__PASSWORD"
+	value := "password"
+
+	err := os.Setenv(key, value)
+	if err != nil {
+		t.Error(err)
+	}
+
+	const ConfigName = "sources/edgex.yaml"
+	c := make(map[string]interface{})
+	err = LoadConfigByName(ConfigName, &c)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if casted, success := c["default"].(map[string]interface{}); success {
+		if optional, ok := casted["optional"].(map[string]interface{}); ok {
+			if optional["Password"] != "password" {
+				t.Errorf("Password variable should set it to password")
+			}
+		} else {
+			t.Errorf("returned value does not contains map under 'optional' key")
+		}
+	} else {
+		t.Errorf("returned value does not contains map under 'Basic' key")
+	}
+}
+
 func TestKeysReplacement(t *testing.T) {
 	input := createRandomConfigMap()
 	expected := createExpectedRandomConfigMap()

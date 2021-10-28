@@ -46,10 +46,16 @@ type EdgexConf struct {
 
 func (es *EdgexClient) CfgValidate(props map[string]interface{}) error {
 
-	c := &EdgexConf{}
-	err := cast.MapToStructStrict(props, c)
+	edgexJsonPath := "sources/edgex.json"
+	err := conf.CorrectsConfigKeysByJson(props, edgexJsonPath)
 	if err != nil {
 		return fmt.Errorf("read properties %v fail for connection selector %s with error: %v", props, es.selector.ConnSelectorCfg, err)
+	}
+
+	c := &EdgexConf{}
+	err = cast.MapToStructStrict(props, c)
+	if err != nil {
+		return fmt.Errorf("map config map to struct %v fail for connection selector %s with error: %v", props, es.selector.ConnSelectorCfg, err)
 	}
 
 	if c.Server == "" {
