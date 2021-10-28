@@ -18,6 +18,7 @@ package connection
 
 import (
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	"reflect"
 	"testing"
 )
 
@@ -126,4 +127,40 @@ func TestEdgex_CfgValidate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEdgex_CorrectsConfigKey(t *testing.T) {
+	var props = map[string]interface{}{
+		"protocol": "tcp",
+		"server":   "127.0.0.1",
+		"port":     int64(1883),
+		"type":     "mqtt",
+		"optional": map[string]interface{}{
+			"clientid": "client1",
+			"username": "user1",
+			"password": "password",
+		},
+	}
+
+	es := &EdgexClient{
+		selector: &ConSelector{
+			ConnSelectorCfg: "testSelector",
+		},
+	}
+
+	err := es.CfgValidate(props)
+	if err != nil {
+		t.Errorf("Error %v", err)
+	}
+
+	expectOps := map[string]string{
+		"ClientId": "client1",
+		"Username": "user1",
+		"Password": "password",
+	}
+
+	if !reflect.DeepEqual(es.mbconf.Optional, expectOps) {
+		t.Errorf("CfgValidate() expect = %+v, actual %+v", expectOps, es.mbconf.Optional)
+	}
+
 }

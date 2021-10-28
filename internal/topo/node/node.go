@@ -170,6 +170,22 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 	return data, false
 }
 
+func printable(m map[string]interface{}) map[string]interface{} {
+	printableMap := make(map[string]interface{})
+	for k, v := range m {
+		if strings.EqualFold(k, "password") {
+			printableMap[k] = "*"
+		} else {
+			if vm, ok := v.(map[string]interface{}); ok {
+				printableMap[k] = printable(vm)
+			} else {
+				printableMap[k] = v
+			}
+		}
+	}
+	return printableMap
+}
+
 func getSourceConf(ctx api.StreamContext, sourceType string, options *ast.Options) map[string]interface{} {
 	confkey := options.CONF_KEY
 	logger := ctx.GetLogger()
@@ -205,6 +221,6 @@ func getSourceConf(ctx api.StreamContext, sourceType string, options *ast.Option
 		f = "json"
 	}
 	props["format"] = strings.ToLower(f)
-	logger.Debugf("get conf for %s with conf key %s: %v", sourceType, confkey, props)
+	logger.Debugf("get conf for %s with conf key %s: %v", sourceType, confkey, printable(props))
 	return props
 }
