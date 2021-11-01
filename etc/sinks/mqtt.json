@@ -162,8 +162,23 @@
       }
     },
     {
+      "name": "rootCaPath",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of root ca path. It can be an absolute path, or a relative path. ",
+        "zh_CN": "根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径。"
+      },
+      "label": {
+        "en_US": "Root Ca path",
+        "zh_CN": "根证书路径"
+      }
+    },
+    {
       "name": "insecureSkipVerify",
-      "default": true,
+      "default": false,
       "optional": true,
       "control": "radio",
       "type": "bool",

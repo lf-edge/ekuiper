@@ -117,6 +117,20 @@
 				"en_US": "Body type",
 				"zh_CN": "正文类型"
 			}
+		},  {
+			"name": "insecureSkipVerify",
+			"default": true,
+			"optional": true,
+			"control": "radio",
+			"type": "bool",
+			"hint": {
+				"en_US": "Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification.",
+				"zh_CN": "控制是否跳过证书认证。如果被设置为 true，那么跳过证书认证；否则进行证书验证。"
+			},
+			"label": {
+				"en_US": "Skip Certification verification",
+				"zh_CN": "跳过证书验证"
+			}
 		}, {
 			"name": "headers",
 			"default": [{                                                 

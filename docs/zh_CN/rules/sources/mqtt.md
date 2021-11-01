@@ -35,11 +35,11 @@ MQTT 消息代理的服务器列表。 当前，只能指定一个服务器。
 
 ### username
 
-MQTT 连接用户名。如果指定了 `certificationPath`  或者 `privateKeyPath`，那么该项配置不会被使用。
+MQTT 连接用户名。
 
 ### password
 
-MQTT 连接密码。如果指定了 `certificationPath` 或者 `privateKeyPath`，那么该项配置不会被使用。
+MQTT 连接密码。
 
 ### certificationPath
 
@@ -48,6 +48,14 @@ MQTT 连接密码。如果指定了 `certificationPath` 或者 `privateKeyPath`�
 ### privateKeyPath
 
 私钥路径。可以为绝对路径，也可以为相对路径。更详细的信息，请参考 `certificationPath`，比如 `d3807d9fa5-private.pem.key`。
+
+### rootCaPath
+
+根证书路径。可以为绝对路径，也可以为相对路径。.
+
+### insecureSkipVerify
+
+如果 InsecureSkipVerify 设置为 true, TLS接受服务器提供的任何证书以及该证书中的任何主机名。 在这种模式下，TLS容易受到中间人攻击。默认值为false。配置项只能用于TLS连接
 
 ### connectionSelector
 

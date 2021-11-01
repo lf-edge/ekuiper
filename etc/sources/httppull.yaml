@@ -15,6 +15,8 @@ default:
   body: '{}'
   # Body type, none|text|json|html|xml|javascript|form
   bodyType: json
+  # Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification
+  insecureSkipVerify: true
   # HTTP headers required for the request
   headers:
     Accept: application/json

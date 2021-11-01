@@ -6,6 +6,7 @@ import (
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"strings"
 )
@@ -24,6 +25,7 @@ type MQTTConnectionConfig struct {
 	Password           string   `json:"password"`
 	Certification      string   `json:"certificationPath"`
 	PrivateKPath       string   `json:"privateKeyPath"`
+	RootCaPath         string   `json:"rootCaPath"`
 	InsecureSkipVerify bool     `json:"insecureSkipVerify"`
 }
 
@@ -33,9 +35,7 @@ type MQTTClient struct {
 	pVersion uint
 	uName    string
 	password string
-	certPath string
-	pkeyPath string
-	Insecure bool
+	tls      *tls.Config
 
 	selector *ConSelector
 	conn     MQTT.Client
@@ -71,21 +71,22 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 		ms.pVersion = 4
 	}
 
-	if cfg.Certification != "" || cfg.PrivateKPath != "" {
-		ms.certPath, err = conf.ProcessPath(cfg.Certification)
-		if err != nil {
-			return fmt.Errorf("failed to get certPath for %s, the error is %s", ms.selector.ConnSelectorCfg, err)
-		}
-
-		ms.pkeyPath, err = conf.ProcessPath(cfg.PrivateKPath)
-		if err != nil {
-			return fmt.Errorf("failed to get keyPath for %s, the error is %s", ms.selector.ConnSelectorCfg, err)
-		}
+	tlsOpts := cert.TlsConfigurationOptions{
+		SkipCertVerify: cfg.InsecureSkipVerify,
+		CertFile:       cfg.Certification,
+		KeyFile:        cfg.PrivateKPath,
+		CaFile:         cfg.RootCaPath,
 	}
+	conf.Log.Infof("Connect MQTT broker with TLS configs: %v for connection selector: %s.", tlsOpts, ms.selector.ConnSelectorCfg)
+	tlscfg, err := cert.GenerateTLSForClient(tlsOpts)
+	if err != nil {
+		return err
+	}
+
+	ms.tls = tlscfg
 
 	ms.uName = cfg.Uname
 	ms.password = strings.Trim(cfg.Password, " ")
-	ms.Insecure = cfg.InsecureSkipVerify
 
 	return nil
 }
@@ -94,19 +95,13 @@ func (ms *MQTTClient) GetClient() (interface{}, error) {
 
 	opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(ms.pVersion).SetCleanSession(false)
 
-	if ms.certPath != "" && ms.pkeyPath != "" {
-		if cer, err := tls.LoadX509KeyPair(ms.certPath, ms.pkeyPath); err != nil {
-			return nil, fmt.Errorf("error when load cert/key for %s, the error is: %s", ms.selector.ConnSelectorCfg, err)
-		} else {
-			opts.SetTLSConfig(&tls.Config{Certificates: []tls.Certificate{cer}, InsecureSkipVerify: ms.Insecure})
-		}
-	} else {
-		if ms.uName != "" {
-			opts = opts.SetUsername(ms.uName)
-		}
-		if ms.password != "" {
-			opts = opts.SetPassword(ms.password)
-		}
+	opts = opts.SetTLSConfig(ms.tls)
+
+	if ms.uName != "" {
+		opts = opts.SetUsername(ms.uName)
+	}
+	if ms.password != "" {
+		opts = opts.SetPassword(ms.password)
 	}
 	opts = opts.SetClientID(ms.clientid)
 	opts = opts.SetAutoReconnect(true)
