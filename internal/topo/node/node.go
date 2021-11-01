@@ -206,7 +206,7 @@ func getSourceConf(ctx api.StreamContext, sourceType string, options *ast.Option
 			if def1, ok1 := def.(map[string]interface{}); ok1 {
 				props = def1
 			}
-			if c, ok := cfg[confkey]; ok {
+			if c, ok := cfg[strings.ToLower(confkey)]; ok {
 				if c1, ok := c.(map[string]interface{}); ok {
 					c2 := c1
 					for k, v := range c2 {

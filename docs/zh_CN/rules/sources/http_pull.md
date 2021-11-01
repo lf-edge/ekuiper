@@ -61,6 +61,9 @@ http 请求的超时时间，单位为 ms。
 
 正文类型,可以是 none|text|json|html|xml|javascript|form。
 
+### insecureSkipVerify 
+控制是否跳过证书认证。如果被设置为 `true`，那么跳过证书认证；否则进行证书验证。缺省为 `true`
+
 ### headers
 
 需要与 HTTP 请求一起发送的 HTTP 请求标头。

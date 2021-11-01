@@ -11,6 +11,8 @@ default:
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
   #privateKeyPath: /var/kuiper/xyz-private.pem.key
+  #rootCaPath: /var/kuiper/xyz-rootca.pem
+  #insecureSkipVerify: true
   #connectionSelector: mqtt.mqtt_conf1
 
 
@@ -35,11 +37,11 @@ The server list for MQTT message broker. Currently, only ``ONE`` server can be s
 
 ### username
 
-The username for MQTT connection. The configuration will not be used if ``certificationPath`` or ``privateKeyPath`` is specified.
+The username for MQTT connection. 
 
 ### password
 
-The password for MQTT connection. The configuration will not be used if ``certificationPath`` or ``privateKeyPath`` is specified.
+The password for MQTT connection. 
 
 ### certificationPath
 
@@ -48,6 +50,14 @@ The location of certification path. It can be an absolute path, or a relative pa
 ### privateKeyPath
 
 The location of private key path. It can be an absolute path, or a relative path.  For more detailed information, please refer to ``certificationPath``. Such as ``d3807d9fa5-private.pem.key``.
+
+### rootCaPath
+
+The location of root ca path. It can be an absolute path, or a relative path.
+
+### insecureSkipVerify
+
+Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification
 
 ### connectionSelector
 

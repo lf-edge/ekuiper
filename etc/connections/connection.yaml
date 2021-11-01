@@ -4,7 +4,8 @@ mqtt:
     username: ekuiper
     password: password
     #certificationPath: /var/kuiper/xyz-certificate.pem
-    #privateKeyPath: /var/kuiper/xyz-private.pem.ke
+    #privateKeyPath: /var/kuiper/xyz-private.pem.key
+    #rootCaPath: /var/kuiper/xyz-rootca.pem
     #insecureSkipVerify: false
     #protocolVersion: 3
     clientid: ekuiper
@@ -14,6 +15,7 @@ mqtt:
     password: password
     #certificationPath: /var/kuiper/xyz-certificate.pem
     #privateKeyPath: /var/kuiper/xyz-private.pem.ke
+    #rootCaPath: /var/kuiper/xyz-rootca.pem
     #insecureSkipVerify: false
     #protocolVersion: 3
 

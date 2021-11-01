@@ -16,6 +16,7 @@ package source
 
 import (
 	"crypto/md5"
+	"crypto/tls"
 	"encoding/hex"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -34,15 +35,16 @@ const DEFAULT_INTERVAL = 10000
 const DEFAULT_TIMEOUT = 5000
 
 type HTTPPullSource struct {
-	url           string
-	method        string
-	interval      int
-	timeout       int
-	incremental   bool
-	body          string
-	bodyType      string
-	headers       map[string]string
-	messageFormat string
+	url                string
+	method             string
+	interval           int
+	timeout            int
+	incremental        bool
+	body               string
+	bodyType           string
+	headers            map[string]string
+	messageFormat      string
+	insecureSkipVerify bool
 
 	client *http.Client
 }
@@ -126,6 +128,14 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 		}
 	}
 
+	hps.insecureSkipVerify = true
+	if i, ok := props["incremental"]; ok {
+		if i1, ok1 := i.(bool); ok1 {
+			hps.insecureSkipVerify = i1
+		} else {
+			return fmt.Errorf("Not valid insecureSkipVerify value %v.", i1)
+		}
+	}
 	hps.headers = make(map[string]string)
 	if h, ok := props["headers"]; ok {
 		if h1, ok1 := h.(map[string]interface{}); ok1 {
@@ -149,8 +159,13 @@ func (hps *HTTPPullSource) Open(ctx api.StreamContext, consumer chan<- api.Sourc
 		errCh <- e
 		return
 	}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: hps.insecureSkipVerify},
+	}
 
-	hps.client = &http.Client{Timeout: time.Duration(hps.timeout) * time.Millisecond}
+	hps.client = &http.Client{
+		Transport: tr,
+		Timeout:   time.Duration(hps.timeout) * time.Millisecond}
 	hps.initTimerPull(ctx, consumer, errCh)
 }
 

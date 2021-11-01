@@ -21,6 +21,7 @@ default:
   # Body type, none|text|json|html|xml|javascript|form
   bodyType: json
   # HTTP headers required for the request
+  insecureSkipVerify: true
   headers:
     Accept: application/json
 
@@ -60,6 +61,10 @@ The body of request, such as `'{"data": "data", "method": 1}'`
 ### bodyType
 
 Body type, it could be none|text|json|html|xml|javascript|format.
+
+### insecureSkipVerify
+
+Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification
 
 ### headers
 

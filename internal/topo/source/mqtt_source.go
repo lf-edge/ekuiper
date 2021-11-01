@@ -15,11 +15,11 @@
 package source
 
 import (
-	"crypto/tls"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
@@ -29,18 +29,19 @@ import (
 )
 
 type MQTTSource struct {
-	srv      string
-	qos      int
-	format   string
-	tpc      string
-	clientid string
-	pVersion uint
-	uName    string
-	password string
-	certPath string
-	pkeyPath string
-	conSel   string
-	InSecure bool
+	srv        string
+	qos        int
+	format     string
+	tpc        string
+	clientid   string
+	pVersion   uint
+	uName      string
+	password   string
+	certPath   string
+	pkeyPath   string
+	rootCapath string
+	conSel     string
+	InSecure   bool
 
 	model  modelVersion
 	schema map[string]interface{}
@@ -57,6 +58,7 @@ type MQTTConfig struct {
 	Password           string   `json:"password"`
 	Certification      string   `json:"certificationPath"`
 	PrivateKPath       string   `json:"privateKeyPath"`
+	RootCaPath         string   `json:"rootCaPath"`
 	InsecureSkipVerify bool     `json:"insecureSkipVerify"`
 	KubeedgeModelFile  string   `json:"kubeedgeModelFile"`
 	KubeedgeVersion    string   `json:"kubeedgeVersion"`
@@ -95,6 +97,7 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 	ms.password = strings.Trim(cfg.Password, " ")
 	ms.certPath = cfg.Certification
 	ms.pkeyPath = cfg.PrivateKPath
+	ms.rootCapath = cfg.RootCaPath
 
 	if 0 != len(cfg.KubeedgeModelFile) {
 		p := path.Join("sources", cfg.KubeedgeModelFile)
@@ -134,39 +137,32 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 			opts = opts.SetClientID(ms.clientid)
 		}
 
-		if ms.certPath != "" || ms.pkeyPath != "" {
-			log.Infof("Connect MQTT broker with certification and keys.")
-			if cp, err := conf.ProcessPath(ms.certPath); err == nil {
-				log.Infof("The certification file is %s.", cp)
-				if kp, err1 := conf.ProcessPath(ms.pkeyPath); err1 == nil {
-					log.Infof("The private key file is %s.", kp)
-					if cer, err2 := tls.LoadX509KeyPair(cp, kp); err2 != nil {
-						errCh <- err2
-						return
-					} else {
-						opts.SetTLSConfig(&tls.Config{Certificates: []tls.Certificate{cer}, InsecureSkipVerify: ms.InSecure})
-					}
-				} else {
-					errCh <- err1
-					return
-				}
-			} else {
-				errCh <- err
-				return
-			}
-		} else {
-			log.Infof("Connect MQTT broker with username and password.")
-			if ms.uName != "" {
-				opts = opts.SetUsername(ms.uName)
-			} else {
-				log.Infof("The username is empty.")
-			}
+		tlsOpts := cert.TlsConfigurationOptions{
+			SkipCertVerify: ms.InSecure,
+			CertFile:       ms.certPath,
+			KeyFile:        ms.pkeyPath,
+			CaFile:         ms.rootCapath,
+		}
+		log.Infof("Connect MQTT broker with TLS configs. %v", tlsOpts)
+		tlscfg, err := cert.GenerateTLSForClient(tlsOpts)
+		if err != nil {
+			errCh <- err
+			return
+		}
 
-			if ms.password != "" {
-				opts = opts.SetPassword(ms.password)
-			} else {
-				log.Infof("The password is empty.")
-			}
+		opts = opts.SetTLSConfig(tlscfg)
+
+		log.Infof("Connect MQTT broker with username and password.")
+		if ms.uName != "" {
+			opts = opts.SetUsername(ms.uName)
+		} else {
+			log.Infof("The username is empty.")
+		}
+
+		if ms.password != "" {
+			opts = opts.SetPassword(ms.password)
+		} else {
+			log.Infof("The password is empty.")
 		}
 		opts.SetAutoReconnect(true)
 		var reconn = false
