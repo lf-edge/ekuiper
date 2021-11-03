@@ -43,7 +43,7 @@ So how the EdgeX data are managed in eKuiper? Let's take an example.
 
 As in below - firstly, user creates an EdgeX stream named ``events`` with yellow color.
 
-<img src="create_stream.png" style="zoom:50%;" />
+<img src="./create_stream.png" style="zoom:50%;" />
 
 Secondly, one message is published to message bus as in below. 
 
@@ -51,7 +51,7 @@ Secondly, one message is published to message bus as in below.
 - Reading name ``temperature`` & ``Humidity`` with red color. 
 - It has some ``metadata`` that is not necessary to "visible", but it probably will be used during data analysis, such as ``DeviceName`` field in ``Event`` structure. eKuiper saves these values into message tuple named metadata, and user can get these values during analysis. **Notice that, metadata name `DeviceName` was renamed from `Device` in EdgeX v2.**
 
-<img src="bus_data.png" style="zoom:50%;" />
+<img src="./bus_data.png" style="zoom:50%;" />
 
 Thirdly, a SQL is provided for data analysis. Please notice that,
 
@@ -59,7 +59,7 @@ Thirdly, a SQL is provided for data analysis. Please notice that,
 - The SELECT fields ``temperature`` & ``humidity`` are red color, which are the ``Name`` field of readings.
 - The WHERE clause ``meta(deviceName)`` in green color, which is ued for extracting ``DeviceName`` field from ``Events`` structure. The SQL statement will filter data that device names are not ``demo``.
 
-<img src="sql.png" style="zoom:50%;" />
+<img src="./sql.png" style="zoom:50%;" />
 
 Below are some other samples that extract other metadata through ``meta`` function.
 
