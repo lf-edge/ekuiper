@@ -43,7 +43,7 @@
 
 如下所示，首先用户创建了一个名为 ``events`` 的 EdgeX 流定义（以黄色高亮标示）。
 
-<img src="create_stream.png" style="zoom:50%;" />
+<img src="./create_stream.png" style="zoom:50%;" />
 
 其次，如下所示，一条消息被发送到消息总线。
 
@@ -51,7 +51,7 @@
 - Reading 名称为 ``temperature`` & ``Humidity`` ，用红色高亮标示
 - 这里有些 ``元数据`` 是没有必要「可见」的，但是这些值在分析的时候可能会被用到，例如``Event`` 结构体中的 ``DeviceName`` 字段。eKuiper 将这些值保存在 eKuiper 消息中的名为 metadata 的字段中，用户在分析阶段可以获取到这些值。**需要注意的是, EdgeX v2 中元数据 `Device` 已重命名为 `DeviceName` 。**
 
-<img src="bus_data.png" style="zoom:50%;" />
+<img src="./bus_data.png" style="zoom:50%;" />
 
 最后，提供一条 SQL 用于数据分析，此处请注意，
 
@@ -59,7 +59,7 @@
 - SELECT 中的 ``temperature`` & ``humidity`` 字段为红色高亮，它们是 readings 中的 ``Name`` 字段的值。
 - WHERE 子句中的 ``meta(deviceName)`` 为绿色高亮，用于从 ``Events ``结构体中抽取 ``device`` 字段。该 SQL 语句将过滤所有设备名称不是 ``demo`` 的记录。
 
-<img src="sql.png" style="zoom:50%;" />
+<img src="./sql.png" style="zoom:50%;" />
 
 以下是使用 ``meta`` 函数抽取别的元数据的一些例子。
 
@@ -91,4 +91,3 @@ Kuper 的 ``meta`` 函数可以用于访问元数据，以下列出了所有在 
 
 - Events: id, deviceName, profileName, sourceName, origin, tags, correlationid
 - Readning: id, deviceName, profileName, origin, valueType
-
