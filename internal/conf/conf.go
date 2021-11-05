@@ -52,6 +52,7 @@ type KuiperConf struct {
 		Prometheus     bool     `yaml:"prometheus"`
 		PrometheusPort int      `yaml:"prometheusPort"`
 		PluginHosts    string   `yaml:"pluginHosts"`
+		Authentication bool     `yaml:"authentication"`
 	}
 	Rule api.RuleOption
 	Sink struct {

@@ -17,6 +17,8 @@ basic:
   restIp: 0.0.0.0
   # REST service port
   restPort: 9081
+  # true|false, when true, will check the RSA jwt token for rest api
+  authentication: false
   #  restTls:
   #    certfile: /var/https-server.crt
   #    keyfile: /var/https-server.key
