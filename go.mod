@@ -7,6 +7,7 @@ require (
 	github.com/alicebob/miniredis/v2 v2.15.1
 	github.com/benbjohnson/clock v1.0.0
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/eclipse/paho.mqtt.golang v1.3.5
 	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.0.0
 	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.1
@@ -32,7 +33,6 @@ require (
 	github.com/msgpack-rpc/msgpack-rpc-go v0.0.0-20131026060856-c76397e1782b
 	github.com/msgpack/msgpack-go v0.0.0-20130625150338-8224460e6fa3 // indirect
 	github.com/pebbe/zmq4 v1.2.7
-	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/client_golang v1.2.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/smartystreets/goconvey v1.6.4 // indirect

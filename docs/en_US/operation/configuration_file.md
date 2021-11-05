@@ -65,6 +65,14 @@ The port for the rest api http server to listen to.
 ### restTls
 The tls cert file path and key file path setting. If restTls is not set, the rest api server will listen on http. Otherwise, it will listen on https.
 
+## authentication 
+eKuiper will check the ``Token`` for rest api when ``authentication`` option is true. please check this file for [more info](./operations.md).
+
+```yaml
+basic:
+  authentication: false
+```
+
 ## Prometheus Configuration
 
 eKuiper can export metrics to prometheus if ``prometheus`` option is true. The prometheus will be served with the port specified by ``prometheusPort`` option.

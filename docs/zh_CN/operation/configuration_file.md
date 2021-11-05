@@ -45,6 +45,15 @@ REST http 服务器监听端口
 ### restTls
 TLS 证书 cert 文件和 key 文件位置。如果 restTls 选项未配置，则 REST 服务器将启动为 http 服务器，否则启动为 https 服务器。
 
+## authentication 
+当 ``authentication`` 选项为 true 时，eKuiper 将为 rest api 请求检查 ``Token`` 。请检查此文件以获取 [更多信息](./operations.md)。
+
+```yaml
+basic:
+  authentication: false
+```
+
+
 ## Prometheus 配置
 
 如果 `prometheus` 参数设置为 true，eKuiper 将把运行指标暴露到 prometheus。Prometheus 将运行在 `prometheusPort` 参数指定的端口上。

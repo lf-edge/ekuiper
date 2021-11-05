@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/native"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable"
+	"github.com/lf-edge/ekuiper/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/internal/service"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -91,7 +92,7 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 	}
 }
 
-func createRestServer(ip string, port int) *http.Server {
+func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
@@ -137,6 +138,10 @@ func createRestServer(ip string, port int) *http.Server {
 	r.HandleFunc("/services/functions", serviceFunctionsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/services/functions/{name}", serviceFunctionHandler).Methods(http.MethodGet)
 	r.HandleFunc("/services/{name}", serviceHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
+
+	if needToken {
+		r.Use(middleware.Auth)
+	}
 
 	server := &http.Server{
 		Addr: fmt.Sprintf("%s:%d", ip, port),

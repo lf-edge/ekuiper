@@ -133,7 +133,7 @@ func StartUp(Version, LoadFileType string) {
 	}
 
 	//Start rest service
-	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort)
+	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort, conf.Config.Basic.Authentication)
 	go func() {
 		var err error
 		if conf.Config.Basic.RestTls == nil {
