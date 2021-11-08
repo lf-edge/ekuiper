@@ -3,7 +3,7 @@ package jwt
 import (
 	"crypto/rsa"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"io/ioutil"
 	"path"

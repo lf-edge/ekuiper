@@ -129,7 +129,7 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 	}
 
 	hps.insecureSkipVerify = true
-	if i, ok := props["incremental"]; ok {
+	if i, ok := props["insecureSkipVerify"]; ok {
 		if i1, ok1 := i.(bool); ok1 {
 			hps.insecureSkipVerify = i1
 		} else {
