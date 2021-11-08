@@ -34,6 +34,7 @@ class FunctionRuntime(SymbolRuntime):
         self.funcs = {}
 
     def run(self):
+        self.running = True
         reg.setr(self.key, self)
         # noinspection PyBroadException
         try:
