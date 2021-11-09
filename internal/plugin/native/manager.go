@@ -410,6 +410,17 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 	}
 	defer r.Close()
 
+	haveInstallFile := false
+	for _, file := range r.File {
+		fileName := file.Name
+		if fileName == "install.sh" {
+			haveInstallFile = true
+		}
+	}
+	if len(shellParas) != 0 && !haveInstallFile {
+		return filenames, "", fmt.Errorf("have shell parameters : %s but no install.sh file", shellParas)
+	}
+
 	soPrefix := regexp.MustCompile(fmt.Sprintf(`^((%s)|(%s))(@.*)?\.so$`, name, ucFirst(name)))
 	var yamlFile, yamlPath, version string
 	expFiles := 1
@@ -419,7 +430,6 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		expFiles = 2
 	}
 	var revokeFiles []string
-	needInstall := false
 	for _, file := range r.File {
 		fileName := file.Name
 		if yamlFile == fileName {
@@ -455,14 +465,11 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			if err != nil {
 				return filenames, "", err
 			}
-			if fileName == "install.sh" {
-				needInstall = true
-			}
 		}
 	}
 	if len(filenames) != expFiles {
 		return filenames, version, fmt.Errorf("invalid zip file: so file or conf file is missing")
-	} else if needInstall {
+	} else if haveInstallFile {
 		//run install script if there is
 		spath := path.Join(tempPath, "install.sh")
 		shellParas = append(shellParas, spath)
