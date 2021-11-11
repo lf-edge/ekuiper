@@ -70,7 +70,8 @@ func (r *registry) GetSymbol(pt plugin.PluginType, symbolName string) (string, b
 func (r *registry) List() []*PluginInfo {
 	r.RLock()
 	defer r.RUnlock()
-	var result []*PluginInfo
+	// return empty slice instead of nil to help json marshal
+	result := make([]*PluginInfo, 0, len(r.plugins))
 	for _, v := range r.plugins {
 		result = append(result, v)
 	}
