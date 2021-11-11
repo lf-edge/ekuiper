@@ -244,6 +244,51 @@ func pubToMQTT(host string) {
 	}
 }
 
+func pubToRedis(host string) {
+	var msgConfig2 = types.MessageBusConfig{
+		PublishHost: types.HostInfo{
+			Host:     host,
+			Port:     6379,
+			Protocol: "redis",
+		},
+		Type: messaging.Redis,
+	}
+	if msgClient, err := messaging.NewMessageClient(msgConfig2); err != nil {
+		log.Fatal(err)
+	} else {
+		if ec := msgClient.Connect(); ec != nil {
+			log.Fatal(ec)
+		}
+		testEvent := dtos.NewEvent("demo1Profile", "demo1", "demo1Source")
+		testEvent.Origin = 123
+		err := testEvent.AddSimpleReading("Temperature", common.ValueTypeInt64, int64(20))
+		if err != nil {
+			fmt.Printf("Add reading error for Temperature: %v\n", 20)
+		}
+		err = testEvent.AddSimpleReading("Humidity", common.ValueTypeInt64, int64(30))
+		if err != nil {
+			fmt.Printf("Add reading error for Humidity: %v\n", 20)
+		}
+
+		data, err := json.Marshal(testEvent)
+		if err != nil {
+			fmt.Printf("unexpected error MarshalEvent %v", err)
+		} else {
+			fmt.Println(string(data))
+		}
+
+		env := types.NewMessageEnvelope(data, context.Background())
+		env.ContentType = "application/json"
+
+		if e := msgClient.Publish(env, "events"); e != nil {
+			log.Fatal(e)
+		} else {
+			fmt.Printf("pubToRedis successful: %s\n", data)
+		}
+		time.Sleep(1500 * time.Millisecond)
+	}
+}
+
 func pubMetaSource() {
 	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
 		log.Fatal(err)
@@ -308,6 +353,10 @@ func main() {
 		if v := os.Args[1]; v == "mqtt" {
 			//The 2nd parameter is MQTT broker server address
 			pubToMQTT(os.Args[2])
+		}
+		if v := os.Args[1]; v == "redis" {
+			//The 2nd parameter is MQTT broker server address
+			pubToRedis(os.Args[2])
 		}
 	}
 }

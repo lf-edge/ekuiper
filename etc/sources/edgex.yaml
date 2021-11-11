@@ -41,3 +41,11 @@ mqtt_conf: #Conf_key
   type: mqtt
   optional:
     ClientId: "client1"
+
+share_conf: #Conf_key
+  protocol: tcp
+  server: 127.0.0.1
+  port: 1883
+  topic: events
+  type: mqtt
+  connectionSelector: edgex.redisMsgBus
