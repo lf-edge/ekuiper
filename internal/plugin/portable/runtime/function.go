@@ -135,7 +135,7 @@ func (f *PortableFunc) IsAggregate() bool {
 	if fr.State {
 		r, ok := fr.Result.(bool)
 		if !ok {
-			conf.Log.Errorf("IsAggregate result is not bool, got %v", res)
+			conf.Log.Errorf("IsAggregate result is not bool, got %s", string(res))
 			return false
 		} else {
 			return r
