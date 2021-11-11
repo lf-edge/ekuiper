@@ -99,6 +99,10 @@ if test $with_edgex = true; then
   /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/edgex_mqtt_sink_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/edgex_mqtt_sink_rule.jtl -j jmeter_logs/edgex_mqtt_sink_rule.log
   echo -e "---------------------------------------------\n"
 
+   /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/edgex_redis_share_connection_sink_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/edgex_redis_share_connection_sink_rule.jtl -j jmeter_logs/edgex_redis_share_connection_sink_rule.log
+  echo -e "---------------------------------------------\n"
+
+
   /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/edgex_array_rule.jmx  -Dfvt="$fvt_dir" -l jmeter_logs/edgex_array_rule.jtl -j jmeter_logs/edgex_array_rule.log
   echo -e "---------------------------------------------\n"
 fi

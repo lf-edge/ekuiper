@@ -192,6 +192,7 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   This test script, you need to prepare ``pub`` application.
 
 - [An end to end plugin test](plugin_end_2_end.jmx)
+  
   The script is an end-2-end plugin test. It requires a mock http server, and also a plugin.
     ```shell
     # go build -o test/plugins/service/http_server test/plugins/service/server.go 
@@ -232,3 +233,75 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
   - Create 3 rules which all select from the stream just created with different where filter. They should share the same mqtt source instance.
   - Send data to the stream. Make sure all 3 rules receive the exact same copy of data but conduct different filter by checking the result.
   - The result data will be sent back to MQTT broker again and compared with `select_condition_iot_data.txt`, `select_condition_iot_data2.txt` and `select_condition_iot_data3.txt` respectively.
+  
+
+- [Connection selector test](edgex_redis_share_connection_sink_rule.jmx)
+
+The test script is used for testing [eKuiper EdgeX connection selector](../docs/en_US/rules/sources/edgex.md#connectionselector). To run the script,
+
+- Redis Server need installed since EdgeX are using Redis as message bus
+  * modify the `etc/connections/connection.yaml`, make sure the server and port is correct
+    ```yaml
+    edgex:
+      redisMsgBus: #connection key
+        protocol: redis
+        server: 127.0.0.1
+        port: 6379
+        type: redis
+    ```
+  * modify the jmeter [script](edgex_redis_share_connection_sink_rule.jmx), make sure the ``redis_srv`` is set to the right redis address  
+
+- An EdgeX message bus publish/subscribe tool should be compiled and run during running test.
+
+  ```shell
+  # go build -o test/edgex/pub test/edgex/pub.go
+  # go build -o test/edgex/sub test/edgex/sub.go 
+  ```
+
+- Run the JMeter with following command, and specify the ``fvt`` property in the JMeter command line, the ``fvt`` is where you develop eKuiper, script will search ``test/edgex/pub`` and ``test/edgex/sub`` from the location.
+
+  ```shell
+  bin/jmeter.sh -Dfvt="/Users/rockyjin/Downloads/workspace/edge/src/ekuiper"
+  ```
+
+- The Jmeter script will direct eKuiper to subscribe data from EdgeX redis message bus according to the connection info from ``etc/connections/connection.yaml`` and sink the result to EdgeX redis message bus using the same 
+  connection info 
+  Jmeter use ``pub tool`` to generate data, ``sub tool`` to get the processed result and assert message number and contents
+
+
+- [Redis KV Storage](redis_kv_storage.jmx)
+
+The test script is used for testing [Redis KV Storage](../docs/en_US/operation/configuration_file.md#redis). To run the script,
+
+- Redis Server need installed since eKuiper will use Redis as kv storage 
+  * modify the `etc/kuiper.yaml`, make sure type is set to ``redis``, and server, port and password is correct
+    ```yaml
+    store:
+      #Type of store that will be used for keeping state of the application
+      type: redis
+      redis:
+        host: localhost
+        port: 6379
+        password: kuiper
+        #Timeout in ms
+        timeout: 1000
+      sqlite:
+        #Sqlite file name, if left empty name of db will be sqliteKV.db
+        name:
+    ```
+  * modify the jmeter [script](redis_kv_storage.jmx), make sure the ``redis_srv`` is set to the right redis address
+
+- A redis client tool should be compiled and run during running test.
+
+  ```shell
+  # go build -o test/redis/set test/redis/set.go
+  ```
+
+- Run the JMeter with following command, and specify the ``fvt`` property in the JMeter command line, the ``fvt`` is where you develop eKuiper, script will search ``test/redis/set`` from the location.
+
+  ```shell
+  bin/jmeter.sh -Dfvt="/Users/rockyjin/Downloads/workspace/edge/src/ekuiper"
+  ```
+
+- The Jmeter script will create streams and rules by rest api, all metadata will be stored in redis.
+  Jmeter use ``redis client tool`` to get the configuration directly from redis and compare it with the rest api created ones 
