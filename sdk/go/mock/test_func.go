@@ -15,7 +15,7 @@
 package mock
 
 import (
-	"github.com/lf-edge/ekuiper/sdk/api"
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"reflect"
 	"testing"
 )

@@ -16,8 +16,8 @@ package connection
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/sdk/api"
-	"github.com/lf-edge/ekuiper/sdk/context"
+	"github.com/lf-edge/ekuiper/sdk/go/api"
+	"github.com/lf-edge/ekuiper/sdk/go/context"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pull"
 	"go.nanomsg.org/mangos/v3/protocol/push"

@@ -1,4 +1,4 @@
-module github.com/lf-edge/ekuiper/sdk
+module github.com/lf-edge/ekuiper/sdk/go
 
 go 1.16
 

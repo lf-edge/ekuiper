@@ -15,8 +15,8 @@
 package main
 
 import (
-	"github.com/lf-edge/ekuiper/sdk/api"
-	sdk "github.com/lf-edge/ekuiper/sdk/runtime"
+	"github.com/lf-edge/ekuiper/sdk/go/api"
+	sdk "github.com/lf-edge/ekuiper/sdk/go/runtime"
 	"os"
 )
 

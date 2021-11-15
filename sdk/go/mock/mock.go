@@ -17,7 +17,7 @@ package mock
 import (
 	"context"
 	filename "github.com/keepeye/logrus-filename"
-	"github.com/lf-edge/ekuiper/sdk/api"
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/sirupsen/logrus"
 	"time"
 )

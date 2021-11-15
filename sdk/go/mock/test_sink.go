@@ -14,7 +14,7 @@
 
 package mock
 
-import "github.com/lf-edge/ekuiper/sdk/api"
+import "github.com/lf-edge/ekuiper/sdk/go/api"
 
 func RunSinkCollect(s api.Sink, exp []string) error {
 	ctx := newMockContext("rule1", "op1")

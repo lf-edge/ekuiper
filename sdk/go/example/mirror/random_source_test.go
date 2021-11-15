@@ -16,8 +16,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/sdk/api"
-	"github.com/lf-edge/ekuiper/sdk/mock"
+	"github.com/lf-edge/ekuiper/sdk/go/api"
+	"github.com/lf-edge/ekuiper/sdk/go/mock"
 	"reflect"
 	"testing"
 )

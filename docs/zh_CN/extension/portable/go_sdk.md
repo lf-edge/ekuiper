@@ -8,7 +8,7 @@
 
 由于 portable 插件 GO SDK 提供了类似原生插件的API，用户做简单的修改即可复用以前编写的原生插件
 
-用户只需依赖 `github.com/lf-edge/ekuiper/sdk` 而不是 eKuiper 主项目即可编写 portable 插件，用户需要实现 `github.com/lf-edge/ekuiper/sdk/api` 中的相应接口即可
+用户只需依赖 `github.com/lf-edge/ekuiper/sdk/go` 而不是 eKuiper 主项目即可编写 portable 插件，用户需要实现 `github.com/lf-edge/ekuiper/sdk/go/api` 中的相应接口即可
 
 对于源，实现跟[原生源插件](../native/source.md)中一样的接口即可 
 
@@ -57,8 +57,8 @@ type Function interface {
 package main
 
 import (
-	"github.com/lf-edge/ekuiper/sdk/api"
-	sdk "github.com/lf-edge/ekuiper/sdk/runtime"
+	"github.com/lf-edge/ekuiper/sdk/go/api"
+	sdk "github.com/lf-edge/ekuiper/sdk/go/runtime"
 	"os"
 )
 
