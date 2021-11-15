@@ -18,9 +18,9 @@ import (
 	context2 "context"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/sdk/api"
-	"github.com/lf-edge/ekuiper/sdk/connection"
-	"github.com/lf-edge/ekuiper/sdk/context"
+	"github.com/lf-edge/ekuiper/sdk/go/api"
+	"github.com/lf-edge/ekuiper/sdk/go/connection"
+	"github.com/lf-edge/ekuiper/sdk/go/context"
 	"sync"
 )
 

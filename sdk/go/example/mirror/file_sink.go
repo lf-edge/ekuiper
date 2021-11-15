@@ -18,7 +18,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/lf-edge/ekuiper/sdk/api"
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"os"
 	"sync"
 	"time"

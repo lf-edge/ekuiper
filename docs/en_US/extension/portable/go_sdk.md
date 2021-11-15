@@ -8,7 +8,7 @@ By using GO SDK for portable plugins, user can develop portable plugins with go 
 
 As the GO SDK provides almost identical API interfaces, the user's source, sink and function plugin can almost reuse by only some small modifications.
 
-To develop the portable plugin, users need to depend on `github.com/lf-edge/ekuiper/sdk` instead of eKuiper main project. Then to implement source, just implement the interfaces in package `github.com/lf-edge/ekuiper/sdk/api`.
+To develop the portable plugin, users need to depend on `github.com/lf-edge/ekuiper/sdk/go` instead of eKuiper main project. Then to implement source, just implement the interfaces in package `github.com/lf-edge/ekuiper/sdk/go/api`.
 
 For source, implement the source interface as below as the same as described in [native plugin source](../native/source.md).
 
@@ -58,8 +58,8 @@ As the portable plugin is a standalone program, it needs a main program to be ab
 package main
 
 import (
-	"github.com/lf-edge/ekuiper/sdk/api"
-	sdk "github.com/lf-edge/ekuiper/sdk/runtime"
+	"github.com/lf-edge/ekuiper/sdk/go/api"
+	sdk "github.com/lf-edge/ekuiper/sdk/go/runtime"
 	"os"
 )
 

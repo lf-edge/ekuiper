@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/lf-edge/ekuiper/sdk/mock"
+	"github.com/lf-edge/ekuiper/sdk/go/mock"
 	"testing"
 )
 

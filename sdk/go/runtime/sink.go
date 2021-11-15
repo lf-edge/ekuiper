@@ -17,8 +17,8 @@ package runtime
 import (
 	context2 "context"
 	"fmt"
-	"github.com/lf-edge/ekuiper/sdk/api"
-	"github.com/lf-edge/ekuiper/sdk/connection"
+	"github.com/lf-edge/ekuiper/sdk/go/api"
+	"github.com/lf-edge/ekuiper/sdk/go/connection"
 )
 
 type sinkRuntime struct {

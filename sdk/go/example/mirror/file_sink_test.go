@@ -16,7 +16,7 @@ package main
 
 import (
 	"bufio"
-	"github.com/lf-edge/ekuiper/sdk/mock"
+	"github.com/lf-edge/ekuiper/sdk/go/mock"
 	"os"
 	"reflect"
 	"testing"

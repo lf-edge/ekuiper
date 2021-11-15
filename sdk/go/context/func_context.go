@@ -16,7 +16,7 @@ package context
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/sdk/api"
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 )
 
 type DefaultFuncContext struct {

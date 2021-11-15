@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/sdk/api"
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/mitchellh/mapstructure"
 	"math/rand"
 	"strings"
