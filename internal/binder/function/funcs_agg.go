@@ -16,12 +16,10 @@ package function
 
 import (
 	"fmt"
-	"strings"
 )
 
 func aggCall(name string, args []interface{}) (interface{}, bool) {
-	lowerName := strings.ToLower(name)
-	switch lowerName {
+	switch name {
 	case "avg":
 		arg0 := args[0].([]interface{})
 		c := getCount(arg0)

@@ -29,6 +29,9 @@ type FuncFactory interface {
 	// HasFunctionSet Some functions are bundled together into a plugin which shares the same json file.
 	// This function can return if the function set name exists.
 	HasFunctionSet(funcName string) bool
+	// ConvName Convert the name of the function usually to lowercase.
+	// This is only be used when parsing the SQL statement.
+	ConvName(funcName string) (string, bool)
 }
 
 type FactoryEntry struct {

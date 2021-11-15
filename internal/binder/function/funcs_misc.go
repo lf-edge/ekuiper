@@ -37,7 +37,6 @@ func convCall(name string, args []interface{}) (interface{}, bool) {
 	switch name {
 	case "cast":
 		if v, ok := args[1].(string); ok {
-			v = strings.ToLower(v)
 			switch v {
 			case "bigint":
 				if v1, ok1 := args[0].(int); ok1 {
@@ -149,8 +148,7 @@ func convCall(name string, args []interface{}) (interface{}, bool) {
 		}
 	case "encode":
 		if v, ok := args[1].(string); ok {
-			v = strings.ToLower(v)
-			if v == "base64" {
+			if strings.EqualFold(v, "base64") {
 				if v1, ok1 := args[0].(string); ok1 {
 					return b64.StdEncoding.EncodeToString([]byte(v1)), true
 				} else {

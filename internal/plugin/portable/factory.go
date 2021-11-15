@@ -63,6 +63,11 @@ func (m *Manager) HasFunctionSet(funcName string) bool {
 	return ok
 }
 
+func (m *Manager) ConvName(funcName string) (string, bool) {
+	_, ok := m.GetPluginMeta(plugin.FUNCTION, funcName)
+	return funcName, ok
+}
+
 // Clean up function map
 func (m *Manager) Clean() {
 	funcInsMap.Range(func(_, ins interface{}) bool {

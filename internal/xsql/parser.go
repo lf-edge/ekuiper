@@ -17,6 +17,7 @@ package xsql
 import (
 	"fmt"
 	"github.com/golang-collections/collections/stack"
+	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
 	"io"
@@ -643,8 +644,30 @@ func (p *Parser) parseAs(f *ast.Field) (*ast.Field, error) {
 	return f, nil
 }
 
-func (p *Parser) parseCall(name string) (ast.Expr, error) {
-	if strings.ToLower(name) == "meta" || strings.ToLower(name) == "mqtt" {
+var WindowFuncs = map[string]struct{}{
+	"tumblingwindow": {},
+	"hoppingwindow":  {},
+	"sessionwindow":  {},
+	"slidingwindow":  {},
+	"countwindow":    {},
+}
+
+func convFuncName(n string) (string, bool) {
+	lname := strings.ToLower(n)
+	if _, ok := WindowFuncs[lname]; ok {
+		return lname, ok
+	} else {
+		return function.ConvName(n)
+	}
+}
+
+func (p *Parser) parseCall(n string) (ast.Expr, error) {
+	// Check if n function exists and convert it to lowercase for built-in func
+	name, ok := convFuncName(n)
+	if !ok {
+		return nil, fmt.Errorf("function %s not found", n)
+	}
+	if name == "meta" || name == "mqtt" {
 		p.inmeta = true
 		defer func() {
 			p.inmeta = false
@@ -779,8 +802,7 @@ loop:
 	return c, nil
 }
 
-func validateWindows(name string, args []ast.Expr) (ast.WindowType, error) {
-	fname := strings.ToLower(name)
+func validateWindows(fname string, args []ast.Expr) (ast.WindowType, error) {
 	switch fname {
 	case "tumblingwindow":
 		if err := validateWindow(fname, 2, args); err != nil {

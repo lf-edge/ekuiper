@@ -238,7 +238,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT length("test") FROM tbl`,
+			s: `SELECT LenGth("test") FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{
@@ -1389,22 +1389,6 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: nil,
 			err:  "invalid CASE expression, WHEN expression must be a bool condition",
 		}, {
-			s: `SELECT echo(*) FROM tbl`,
-			stmt: &ast.SelectStatement{
-				Fields: []ast.Field{
-					{
-						AName: "",
-						Name:  "echo",
-						Expr: &ast.Call{
-							Name: "echo",
-							Args: []ast.Expr{&ast.Wildcard{Token: ast.ASTERISK}},
-						},
-					},
-				},
-				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
-			},
-		},
-		{
 			s: `SELECT count(*)-10 FROM demo`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{

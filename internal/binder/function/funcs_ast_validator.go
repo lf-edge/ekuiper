@@ -25,41 +25,40 @@ type AllowTypes struct {
 }
 
 func validateFuncs(funcName string, args []ast.Expr) error {
-	lowerName := strings.ToLower(funcName)
-	switch getFuncType(lowerName) {
+	switch getFuncType(funcName) {
 	case AggFunc:
-		return validateAggFunc(lowerName, args)
+		return validateAggFunc(funcName, args)
 	case MathFunc:
-		return validateMathFunc(lowerName, args)
+		return validateMathFunc(funcName, args)
 	case ConvFunc:
-		return validateConvFunc(lowerName, args)
+		return validateConvFunc(funcName, args)
 	case StrFunc:
-		return validateStrFunc(lowerName, args)
+		return validateStrFunc(funcName, args)
 	case HashFunc:
-		return validateHashFunc(lowerName, args)
+		return validateHashFunc(funcName, args)
 	case JsonFunc:
-		return validateJsonFunc(lowerName, args)
+		return validateJsonFunc(funcName, args)
 	case OtherFunc:
-		return validateOtherFunc(lowerName, args)
+		return validateOtherFunc(funcName, args)
 	default:
 		// should not happen
-		return fmt.Errorf("unkndow function %s", lowerName)
+		return fmt.Errorf("unkndow function %s", funcName)
 	}
 }
 
 func validateMathFunc(name string, args []ast.Expr) error {
-	len := len(args)
+	l := len(args)
 	switch name {
 	case "abs", "acos", "asin", "atan", "ceil", "cos", "cosh", "exp", "ln", "log", "round", "sign", "sin", "sinh",
 		"sqrt", "tan", "tanh":
-		if err := ast.ValidateLen(name, 1, len); err != nil {
+		if err := ast.ValidateLen(name, 1, l); err != nil {
 			return err
 		}
 		if ast.IsStringArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
 			return ast.ProduceErrInfo(name, 0, "number - float or int")
 		}
 	case "bitand", "bitor", "bitxor":
-		if err := ast.ValidateLen(name, 2, len); err != nil {
+		if err := ast.ValidateLen(name, 2, l); err != nil {
 			return err
 		}
 		if ast.IsFloatArg(args[0]) || ast.IsStringArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
@@ -70,7 +69,7 @@ func validateMathFunc(name string, args []ast.Expr) error {
 		}
 
 	case "bitnot":
-		if err := ast.ValidateLen(name, 1, len); err != nil {
+		if err := ast.ValidateLen(name, 1, l); err != nil {
 			return err
 		}
 		if ast.IsFloatArg(args[0]) || ast.IsStringArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
@@ -78,7 +77,7 @@ func validateMathFunc(name string, args []ast.Expr) error {
 		}
 
 	case "atan2", "mod", "power":
-		if err := ast.ValidateLen(name, 2, len); err != nil {
+		if err := ast.ValidateLen(name, 2, l); err != nil {
 			return err
 		}
 		if ast.IsStringArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
@@ -89,7 +88,7 @@ func validateMathFunc(name string, args []ast.Expr) error {
 		}
 
 	case "rand":
-		if err := ast.ValidateLen(name, 0, len); err != nil {
+		if err := ast.ValidateLen(name, 0, l); err != nil {
 			return err
 		}
 	}
@@ -97,10 +96,10 @@ func validateMathFunc(name string, args []ast.Expr) error {
 }
 
 func validateStrFunc(name string, args []ast.Expr) error {
-	len := len(args)
+	l := len(args)
 	switch name {
 	case "concat":
-		if len == 0 {
+		if l == 0 {
 			return fmt.Errorf("The arguments for %s should be at least one.\n", name)
 		}
 		for i, a := range args {
@@ -109,7 +108,7 @@ func validateStrFunc(name string, args []ast.Expr) error {
 			}
 		}
 	case "endswith", "indexof", "regexp_matches", "startswith":
-		if err := ast.ValidateLen(name, 2, len); err != nil {
+		if err := ast.ValidateLen(name, 2, l); err != nil {
 			return err
 		}
 		for i := 0; i < 2; i++ {
@@ -118,7 +117,7 @@ func validateStrFunc(name string, args []ast.Expr) error {
 			}
 		}
 	case "format_time":
-		if err := ast.ValidateLen(name, 2, len); err != nil {
+		if err := ast.ValidateLen(name, 2, l); err != nil {
 			return err
 		}
 
@@ -130,7 +129,7 @@ func validateStrFunc(name string, args []ast.Expr) error {
 		}
 
 	case "regexp_replace":
-		if err := ast.ValidateLen(name, 3, len); err != nil {
+		if err := ast.ValidateLen(name, 3, l); err != nil {
 			return err
 		}
 		for i := 0; i < 3; i++ {
@@ -139,14 +138,14 @@ func validateStrFunc(name string, args []ast.Expr) error {
 			}
 		}
 	case "length", "lower", "ltrim", "numbytes", "rtrim", "trim", "upper":
-		if err := ast.ValidateLen(name, 1, len); err != nil {
+		if err := ast.ValidateLen(name, 1, l); err != nil {
 			return err
 		}
 		if ast.IsNumericArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
 			return ast.ProduceErrInfo(name, 0, "string")
 		}
 	case "lpad", "rpad":
-		if err := ast.ValidateLen(name, 2, len); err != nil {
+		if err := ast.ValidateLen(name, 2, l); err != nil {
 			return err
 		}
 		if ast.IsNumericArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
@@ -156,13 +155,13 @@ func validateStrFunc(name string, args []ast.Expr) error {
 			return ast.ProduceErrInfo(name, 1, "int")
 		}
 	case "substring":
-		if len != 2 && len != 3 {
+		if l != 2 && l != 3 {
 			return fmt.Errorf("the arguments for substring should be 2 or 3")
 		}
 		if ast.IsNumericArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
 			return ast.ProduceErrInfo(name, 0, "string")
 		}
-		for i := 1; i < len; i++ {
+		for i := 1; i < l; i++ {
 			if ast.IsFloatArg(args[i]) || ast.IsTimeArg(args[i]) || ast.IsBooleanArg(args[i]) || ast.IsStringArg(args[i]) {
 				return ast.ProduceErrInfo(name, i, "int")
 			}
@@ -173,7 +172,7 @@ func validateStrFunc(name string, args []ast.Expr) error {
 			if sv < 0 {
 				return fmt.Errorf("The start index should not be a nagtive integer.")
 			}
-			if len == 3 {
+			if l == 3 {
 				if e, ok1 := args[2].(*ast.IntegerLiteral); ok1 {
 					ev := e.Val
 					if ev < sv {
@@ -183,7 +182,7 @@ func validateStrFunc(name string, args []ast.Expr) error {
 			}
 		}
 	case "split_value":
-		if len != 3 {
+		if l != 3 {
 			return fmt.Errorf("the arguments for split_value should be 3")
 		}
 		if ast.IsNumericArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
@@ -205,10 +204,10 @@ func validateStrFunc(name string, args []ast.Expr) error {
 }
 
 func validateConvFunc(name string, args []ast.Expr) error {
-	len := len(args)
+	l := len(args)
 	switch name {
 	case "cast":
-		if err := ast.ValidateLen(name, 2, len); err != nil {
+		if err := ast.ValidateLen(name, 2, l); err != nil {
 			return err
 		}
 		a := args[1]
@@ -221,14 +220,14 @@ func validateConvFunc(name string, args []ast.Expr) error {
 			}
 		}
 	case "chr":
-		if err := ast.ValidateLen(name, 1, len); err != nil {
+		if err := ast.ValidateLen(name, 1, l); err != nil {
 			return err
 		}
 		if ast.IsFloatArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
 			return ast.ProduceErrInfo(name, 0, "int")
 		}
 	case "encode":
-		if err := ast.ValidateLen(name, 2, len); err != nil {
+		if err := ast.ValidateLen(name, 2, l); err != nil {
 			return err
 		}
 
@@ -246,7 +245,7 @@ func validateConvFunc(name string, args []ast.Expr) error {
 			}
 		}
 	case "trunc":
-		if err := ast.ValidateLen(name, 2, len); err != nil {
+		if err := ast.ValidateLen(name, 2, l); err != nil {
 			return err
 		}
 
@@ -262,10 +261,10 @@ func validateConvFunc(name string, args []ast.Expr) error {
 }
 
 func validateHashFunc(name string, args []ast.Expr) error {
-	len := len(args)
+	l := len(args)
 	switch name {
 	case "md5", "sha1", "sha224", "sha256", "sha384", "sha512":
-		if err := ast.ValidateLen(name, 1, len); err != nil {
+		if err := ast.ValidateLen(name, 1, l); err != nil {
 			return err
 		}
 
@@ -277,29 +276,29 @@ func validateHashFunc(name string, args []ast.Expr) error {
 }
 
 func validateOtherFunc(name string, args []ast.Expr) error {
-	len := len(args)
+	l := len(args)
 	switch name {
 	case "isNull":
-		if err := ast.ValidateLen(name, 1, len); err != nil {
+		if err := ast.ValidateLen(name, 1, l); err != nil {
 			return err
 		}
 	case "cardinality":
-		if err := ast.ValidateLen(name, 1, len); err != nil {
+		if err := ast.ValidateLen(name, 1, l); err != nil {
 			return err
 		}
 	case "nanvl":
-		if err := ast.ValidateLen(name, 2, len); err != nil {
+		if err := ast.ValidateLen(name, 2, l); err != nil {
 			return err
 		}
 		if ast.IsIntegerArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) || ast.IsStringArg(args[0]) {
 			return ast.ProduceErrInfo(name, 1, "float")
 		}
 	case "newuuid":
-		if err := ast.ValidateLen(name, 0, len); err != nil {
+		if err := ast.ValidateLen(name, 0, l); err != nil {
 			return err
 		}
 	case "mqtt":
-		if err := ast.ValidateLen(name, 1, len); err != nil {
+		if err := ast.ValidateLen(name, 1, l); err != nil {
 			return err
 		}
 		if ast.IsIntegerArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) || ast.IsStringArg(args[0]) || ast.IsFloatArg(args[0]) {
@@ -312,7 +311,7 @@ func validateOtherFunc(name string, args []ast.Expr) error {
 			}
 		}
 	case "meta":
-		if err := ast.ValidateLen(name, 1, len); err != nil {
+		if err := ast.ValidateLen(name, 1, l); err != nil {
 			return err
 		}
 		if _, ok := args[0].(*ast.MetaRef); ok {
@@ -335,8 +334,8 @@ func validateOtherFunc(name string, args []ast.Expr) error {
 }
 
 func validateJsonFunc(name string, args []ast.Expr) error {
-	len := len(args)
-	if err := ast.ValidateLen(name, 2, len); err != nil {
+	l := len(args)
+	if err := ast.ValidateLen(name, 2, l); err != nil {
 		return err
 	}
 	if !ast.IsStringArg(args[1]) {
@@ -346,25 +345,25 @@ func validateJsonFunc(name string, args []ast.Expr) error {
 }
 
 func validateAggFunc(name string, args []ast.Expr) error {
-	len := len(args)
+	l := len(args)
 	switch name {
 	case "avg", "max", "min", "sum":
-		if err := ast.ValidateLen(name, 1, len); err != nil {
+		if err := ast.ValidateLen(name, 1, l); err != nil {
 			return err
 		}
 		if ast.IsStringArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
 			return ast.ProduceErrInfo(name, 0, "number - float or int")
 		}
 	case "count":
-		if err := ast.ValidateLen(name, 1, len); err != nil {
+		if err := ast.ValidateLen(name, 1, l); err != nil {
 			return err
 		}
 	case "collect":
-		if err := ast.ValidateLen(name, 1, len); err != nil {
+		if err := ast.ValidateLen(name, 1, l); err != nil {
 			return err
 		}
 	case "deduplicate":
-		if err := ast.ValidateLen(name, 2, len); err != nil {
+		if err := ast.ValidateLen(name, 2, l); err != nil {
 			return err
 		}
 		if !ast.IsBooleanArg(args[1]) {
