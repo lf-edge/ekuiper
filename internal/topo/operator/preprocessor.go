@@ -19,7 +19,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"strings"
 )
 
 type Preprocessor struct {
@@ -75,7 +74,7 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, _ *xsql.Fu
 		newMeta := make(xsql.Metadata)
 		for _, f := range p.metaFields {
 			if m, ok := tuple.Metadata.Value(f); ok {
-				newMeta[strings.ToLower(f)] = m
+				newMeta[f] = m
 			}
 		}
 		tuple.Metadata = newMeta

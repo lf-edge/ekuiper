@@ -58,8 +58,7 @@ func (m Message) Value(key string) (interface{}, bool) {
 		conf.Log.Println("Invalid key: " + key + ", expect source.field or field.")
 		return nil, false
 	}
-	key1 := strings.ToLower(colkey)
-	if v, ok := m[key1]; ok {
+	if v, ok := m[colkey]; ok {
 		return v, ok
 	} else {
 		//Only when with 'SELECT * FROM ...'  and 'schemaless', the key in map is not convert to lower case.
@@ -70,9 +69,8 @@ func (m Message) Value(key string) (interface{}, bool) {
 
 func (m Message) getIgnoreCase(key interface{}) (interface{}, bool) {
 	if k, ok := key.(string); ok {
-		key = strings.ToLower(k)
-		for k, v := range m {
-			if strings.ToLower(k) == key {
+		for mk, v := range m {
+			if strings.EqualFold(k, mk) {
 				return v, true
 			}
 		}
