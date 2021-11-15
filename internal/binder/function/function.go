@@ -96,7 +96,7 @@ var otherFuncMap = map[string]string{"isnull": "",
 
 func getFuncType(name string) funcType {
 	for i, m := range maps {
-		if _, ok := m[strings.ToLower(name)]; ok {
+		if _, ok := m[name]; ok {
 			return funcType(i)
 		}
 	}
@@ -127,22 +127,21 @@ func (f *funcExecutor) Exec(_ []interface{}, _ api.FunctionContext) (interface{}
 }
 
 func (f *funcExecutor) ExecWithName(args []interface{}, ctx api.FunctionContext, name string) (interface{}, bool) {
-	lowerName := strings.ToLower(name)
-	switch getFuncType(lowerName) {
+	switch getFuncType(name) {
 	case AggFunc:
-		return aggCall(lowerName, args)
+		return aggCall(name, args)
 	case MathFunc:
-		return mathCall(lowerName, args)
+		return mathCall(name, args)
 	case ConvFunc:
-		return convCall(lowerName, args)
+		return convCall(name, args)
 	case StrFunc:
-		return strCall(lowerName, args)
+		return strCall(name, args)
 	case HashFunc:
-		return hashCall(lowerName, args)
+		return hashCall(name, args)
 	case JsonFunc:
-		return jsonCall(ctx, lowerName, args)
+		return jsonCall(ctx, name, args)
 	case OtherFunc:
-		return otherCall(lowerName, args)
+		return otherCall(name, args)
 	}
 	return fmt.Errorf("unknow name"), false
 }
@@ -152,8 +151,7 @@ func (f *funcExecutor) IsAggregate() bool {
 }
 
 func (f *funcExecutor) IsAggregateWithName(name string) bool {
-	lowerName := strings.ToLower(name)
-	return getFuncType(lowerName) == AggFunc
+	return getFuncType(name) == AggFunc
 }
 
 var staticFuncExecutor = &funcExecutor{}
@@ -170,6 +168,15 @@ func (m *Manager) Function(name string) (api.Function, error) {
 
 func (m *Manager) HasFunctionSet(name string) bool {
 	return name == "internal"
+}
+
+func (m *Manager) ConvName(n string) (string, bool) {
+	name := strings.ToLower(n)
+	ft := getFuncType(name)
+	if ft != NotFoundFunc {
+		return name, true
+	}
+	return name, false
 }
 
 var m = &Manager{}

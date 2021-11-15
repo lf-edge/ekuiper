@@ -51,6 +51,10 @@ func (f *MockFactory) Function(name string) (api.Function, error) {
 	}
 }
 
+func (f *MockFactory) ConvName(name string) (string, bool) {
+	return name, true
+}
+
 func (f *MockFactory) HasFunctionSet(funcName string) bool {
 	if strings.HasPrefix(funcName, "mock") {
 		return true

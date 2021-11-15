@@ -72,6 +72,16 @@ func HasFunctionSet(name string) bool {
 	return false
 }
 
+func ConvName(name string) (string, bool) {
+	for _, sf := range funcFactories {
+		r, ok := sf.ConvName(name)
+		if ok {
+			return r, ok
+		}
+	}
+	return name, false
+}
+
 type multiAggFunc interface {
 	IsAggregateWithName(name string) bool
 }

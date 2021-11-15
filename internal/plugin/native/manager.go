@@ -562,6 +562,14 @@ func (rr *Manager) HasFunctionSet(name string) bool {
 	return ok
 }
 
+func (rr *Manager) ConvName(name string) (string, bool) {
+	_, err := rr.Function(name)
+	if err == nil {
+		return name, true
+	}
+	return name, false
+}
+
 // If not found, return nil,nil; Other errors return nil, err
 func (rr *Manager) loadRuntime(t plugin2.PluginType, name string) (plugin.Symbol, error) {
 	ut := ucFirst(name)
