@@ -375,11 +375,11 @@ func (m *Manager) unzip(name, src string) error {
 		return err
 	}
 	defer r.Close()
-	baseName := strings.ToLower(name + ".json")
+	baseName := name + ".json"
 	// Try unzip
 	found := false
 	for _, file := range r.File {
-		if strings.ToLower(file.Name) == baseName {
+		if strings.EqualFold(file.Name, baseName) {
 			found = true
 			break
 		}

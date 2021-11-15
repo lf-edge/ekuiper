@@ -205,7 +205,7 @@ func (p *DataSourcePlan) getProps() error {
 	if p.streamStmt.Options.TIMESTAMP_FORMAT != "" {
 		p.timestampFormat = p.streamStmt.Options.TIMESTAMP_FORMAT
 	}
-	if strings.ToLower(p.streamStmt.Options.FORMAT) == message.FormatBinary {
+	if strings.EqualFold(p.streamStmt.Options.FORMAT, message.FormatBinary) {
 		p.isBinary = true
 	}
 	return nil

@@ -53,7 +53,7 @@ func (this *device) getName() string {
 }
 func (this *device) findDataType(name string) string {
 	for _, v := range this.Properties {
-		if strings.ToLower(v.getName()) == strings.ToLower(name) {
+		if strings.EqualFold(v.getName(), name) {
 			return v.getDataType()
 		}
 	}
@@ -61,7 +61,7 @@ func (this *device) findDataType(name string) string {
 }
 func (this *deviceModel) findDataType(deviceId, dataName string) string {
 	for _, v := range this.Devices {
-		if strings.ToLower(v.getName()) == strings.ToLower(deviceId) {
+		if strings.EqualFold(v.getName(), deviceId) {
 			return v.findDataType(dataName)
 		}
 	}

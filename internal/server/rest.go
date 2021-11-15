@@ -631,7 +631,7 @@ func prebuildFuncsPlugins(w http.ResponseWriter, r *http.Request) {
 }
 
 func isOffcialDockerImage() bool {
-	if strings.ToLower(os.Getenv("MAINTAINER")) != "emqx.io" {
+	if !strings.EqualFold(os.Getenv("MAINTAINER"), "emqx.io") {
 		return false
 	}
 	return true

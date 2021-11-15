@@ -105,7 +105,7 @@ func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 func printConf(mbconf types.MessageBusConfig) {
 	var printableOptional = make(map[string]string)
 	for k, v := range mbconf.Optional {
-		if strings.ToLower(k) == "password" {
+		if strings.EqualFold(k, "password") {
 			printableOptional[k] = "*"
 		} else {
 			printableOptional[k] = v
@@ -166,7 +166,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 				if !ok { // the source is closed
 					return
 				}
-				if strings.ToLower(env.ContentType) == "application/json" {
+				if strings.EqualFold(env.ContentType, "application/json") {
 					var r interface{}
 					switch es.messageType {
 					case MessageTypeEvent:
