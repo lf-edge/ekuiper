@@ -26,7 +26,6 @@ import (
 	"math"
 	"reflect"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -204,7 +203,7 @@ func (p *defaultFieldProcessor) addRecField(ft ast.FieldType, r map[string]inter
 			}
 			nextR := make(map[string]interface{})
 			for _, nextF := range st.StreamFields {
-				nextP := strings.ToLower(nextF.Name)
+				nextP := nextF.Name
 				if e := p.addRecField(nextF.FieldType, nextR, nextJ, nextP); e != nil {
 					return e
 				}

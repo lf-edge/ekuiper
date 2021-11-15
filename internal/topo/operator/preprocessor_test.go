@@ -101,13 +101,13 @@ func TestPreprocessor_Apply(t *testing.T) {
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
 					{Name: "abc", FieldType: &ast.BasicType{Type: ast.FLOAT}},
-					{Name: "def", FieldType: &ast.BasicType{Type: ast.STRINGS}},
+					{Name: "dEf", FieldType: &ast.BasicType{Type: ast.STRINGS}},
 				},
 			},
 			data: []byte(`{"abc": 34, "def" : "hello", "ghi": 50}`),
 			result: &xsql.Tuple{Message: xsql.Message{
 				"abc": float64(34),
-				"def": "hello",
+				"dEf": "hello",
 			},
 			},
 		},
