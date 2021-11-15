@@ -60,7 +60,7 @@ func (s *randomSource) Configure(topic string, props map[string]interface{}) err
 	if cfg.Seed <= 0 {
 		return fmt.Errorf("source `random` property `seed` must be a positive integer but got %d", cfg.Seed)
 	}
-	if strings.ToLower(cfg.Format) != message.FormatJson {
+	if !strings.EqualFold(cfg.Format, message.FormatJson) {
 		return fmt.Errorf("random source only supports `json` format")
 	}
 	s.conf = cfg

@@ -177,21 +177,23 @@ func newFieldsMap(isSchemaless bool, defaultStream ast.StreamName) *fieldsMap {
 }
 
 func (f *fieldsMap) reserve(fieldName string, streamName ast.StreamName) {
-	if fm, ok := f.content[strings.ToLower(fieldName)]; ok {
+	lname := strings.ToLower(fieldName)
+	if fm, ok := f.content[lname]; ok {
 		fm.add(streamName)
 	} else {
 		fm := newStreamFieldStore(f.isSchemaless, f.defaultStream)
 		fm.add(streamName)
-		f.content[strings.ToLower(fieldName)] = fm
+		f.content[lname] = fm
 	}
 }
 
 func (f *fieldsMap) save(fieldName string, streamName ast.StreamName, field *ast.AliasRef) error {
-	fm, ok := f.content[strings.ToLower(fieldName)]
+	lname := strings.ToLower(fieldName)
+	fm, ok := f.content[lname]
 	if !ok {
 		if streamName == ast.AliasStream || f.isSchemaless {
 			fm = newStreamFieldStore(f.isSchemaless, f.defaultStream)
-			f.content[strings.ToLower(fieldName)] = fm
+			f.content[lname] = fm
 		} else {
 			return fmt.Errorf("unknown field %s", fieldName)
 		}
@@ -204,11 +206,12 @@ func (f *fieldsMap) save(fieldName string, streamName ast.StreamName, field *ast
 }
 
 func (f *fieldsMap) bind(fr *ast.FieldRef) error {
-	fm, ok := f.content[strings.ToLower(fr.Name)]
+	lname := strings.ToLower(fr.Name)
+	fm, ok := f.content[lname]
 	if !ok {
 		if f.isSchemaless && fr.Name != "" {
 			fm = newStreamFieldStore(f.isSchemaless, f.defaultStream)
-			f.content[strings.ToLower(fr.Name)] = fm
+			f.content[lname] = fm
 		} else {
 			return fmt.Errorf("unknown field %s", fr.Name)
 		}

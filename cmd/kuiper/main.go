@@ -110,7 +110,7 @@ func main() {
 					// convert CRLF to LF
 					text = strings.Replace(text, "\n", "", -1)
 
-					if strings.ToLower(text) == "quit" || strings.ToLower(text) == "exit" {
+					if strings.EqualFold(text, "quit") || strings.EqualFold(text, "exit") {
 						break
 					} else if strings.Trim(text, " ") == "" {
 						continue
@@ -834,7 +834,7 @@ func main() {
 							return nil
 						}
 						ptype := c.Args()[0]
-						if strings.ToLower(ptype) != "function" {
+						if !strings.EqualFold(ptype, "function") {
 							fmt.Printf("Plugin type must be function.\n")
 							return nil
 						}

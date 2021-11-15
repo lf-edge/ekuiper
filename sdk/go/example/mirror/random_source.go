@@ -59,7 +59,7 @@ func (s *randomSource) Configure(_ string, props map[string]interface{}) error {
 	if cfg.Seed <= 0 {
 		return fmt.Errorf("source `random` property `seed` must be a positive integer but got %d", cfg.Seed)
 	}
-	if strings.ToLower(cfg.Format) != "json" {
+	if !strings.EqualFold(cfg.Format, "json") {
 		return fmt.Errorf("random source only supports `json` format")
 	}
 	s.conf = cfg
