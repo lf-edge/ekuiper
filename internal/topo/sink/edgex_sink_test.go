@@ -17,6 +17,7 @@
 package sink
 
 import (
+	"encoding/json"
 	"fmt"
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
@@ -460,7 +461,9 @@ func TestProduceEvents(t1 *testing.T) {
 		if ems.c.SourceName == "" {
 			ems.c.SourceName = "ruleTest"
 		}
-		result, err := ems.produceEvents(ctx, []byte(t.input))
+		var payload []map[string]interface{}
+		json.Unmarshal([]byte(t.input), &payload)
+		result, err := ems.produceEvents(ctx, payload)
 		if !reflect.DeepEqual(t.error, testx.Errstring(err)) {
 			t1.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, t.input, t.error, err)
 		} else if t.error == "" && !compareEvent(t.expected, result) {
