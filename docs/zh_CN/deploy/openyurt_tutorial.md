@@ -186,7 +186,7 @@ $ curl http://192.168.2.143:9081
 ...
 containers:
    - name: kmanager
-     image: emqx/kuiper-manager:1.2.1
+     image: emqx/ekuiper-manager:1.3.1
 ...
 ```
 
