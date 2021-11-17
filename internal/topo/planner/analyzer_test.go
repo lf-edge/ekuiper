@@ -119,9 +119,13 @@ var tests = []struct {
 		sql: `SELECT collect(*)[-1] as current FROM src1 GROUP BY COUNTWINDOW(2, 1) HAVING isNull(current->name) = false`,
 		r:   newErrorStruct(""),
 	},
-	{ // 14
+	{ // 15
 		sql: `SELECT sum(next->nid) as nid FROM src1 WHERE next->nid > 20 `,
 		r:   newErrorStruct(""),
+	},
+	{ // 16
+		sql: `SELECT collect(*)[0] as last FROM src1 GROUP BY SlidingWindow(ss,5) HAVING last.temp > 30`,
+		r:   newErrorStruct("stream last not found"),
 	},
 }
 

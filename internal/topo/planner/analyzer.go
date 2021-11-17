@@ -99,6 +99,20 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt,
 		case ast.Fields: // do not bind selection fields, should have done above
 			return false
 		case *ast.FieldRef:
+			if f.StreamName != "" && f.StreamName != ast.DefaultStream {
+				// check if stream exists
+				found := false
+				for _, sn := range streamsFromStmt {
+					if sn == string(f.StreamName) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					walkErr = fmt.Errorf("stream %s not found", f.StreamName)
+					return true
+				}
+			}
 			walkErr = fieldsMap.bind(f)
 		}
 		return true
