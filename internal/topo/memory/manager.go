@@ -25,12 +25,12 @@ const IdProperty = "topic"
 
 type pubConsumers struct {
 	count     int
-	consumers map[string]chan map[string]interface{} // The consumer channel list [sourceId]chan
+	consumers map[string]chan api.SourceTuple // The consumer channel list [sourceId]chan
 }
 
 type subChan struct {
 	regex *regexp.Regexp
-	ch    chan map[string]interface{}
+	ch    chan api.SourceTuple
 }
 
 var (
@@ -57,7 +57,7 @@ func createPub(topic string) {
 	}
 	c := &pubConsumers{
 		count:     1,
-		consumers: make(map[string]chan map[string]interface{}),
+		consumers: make(map[string]chan api.SourceTuple),
 	}
 	pubTopics[topic] = c
 	for sourceId, sc := range subExps {
@@ -67,10 +67,10 @@ func createPub(topic string) {
 	}
 }
 
-func createSub(wildcard string, regex *regexp.Regexp, sourceId string) chan map[string]interface{} {
+func createSub(wildcard string, regex *regexp.Regexp, sourceId string) chan api.SourceTuple {
 	mu.Lock()
 	defer mu.Unlock()
-	ch := make(chan map[string]interface{})
+	ch := make(chan api.SourceTuple)
 	if regex != nil {
 		subExps[sourceId] = &subChan{
 			regex: regex,
@@ -87,7 +87,7 @@ func createSub(wildcard string, regex *regexp.Regexp, sourceId string) chan map[
 	return ch
 }
 
-func closeSourceConsumerChannel(topic string, sourceId string) error {
+func closeSourceConsumerChannel(topic string, sourceId string) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -102,10 +102,9 @@ func closeSourceConsumerChannel(topic string, sourceId string) error {
 			removePubConsumer(topic, sourceId, sinkConsumerChannels)
 		}
 	}
-	return nil
 }
 
-func closeSink(topic string) error {
+func closeSink(topic string) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -115,7 +114,6 @@ func closeSink(topic string) error {
 			delete(pubTopics, topic)
 		}
 	}
-	return nil
 }
 
 func produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
@@ -129,9 +127,9 @@ func produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
 	// blocking to retain the sequence, expect the source to consume the data immediately
 	wg.Add(len(c.consumers))
 	for n, out := range c.consumers {
-		go func(name string, output chan<- map[string]interface{}) {
+		go func(name string, output chan<- api.SourceTuple) {
 			select {
-			case output <- data:
+			case output <- api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": topic}):
 				logger.Debugf("broadcast from topic %s to %s done", topic, name)
 			case <-ctx.Done():
 				// rule stop so stop waiting
@@ -143,13 +141,13 @@ func produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
 	wg.Wait()
 }
 
-func addPubConsumer(topic string, sourceId string, ch chan map[string]interface{}) {
+func addPubConsumer(topic string, sourceId string, ch chan api.SourceTuple) {
 	var sinkConsumerChannels *pubConsumers
 	if c, exists := pubTopics[topic]; exists {
 		sinkConsumerChannels = c
 	} else {
 		sinkConsumerChannels = &pubConsumers{
-			consumers: make(map[string]chan map[string]interface{}),
+			consumers: make(map[string]chan api.SourceTuple),
 		}
 		pubTopics[topic] = sinkConsumerChannels
 	}

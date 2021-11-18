@@ -15,7 +15,6 @@
 package memory
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/gdexlab/go-render/render"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -83,7 +82,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 	for {
 		select {
 		case res := <-consumer:
-			expected := api.NewDefaultSourceTuple(data, make(map[string]interface{}))
+			expected := api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": "test_id"})
 			if !reflect.DeepEqual(expected, res) {
 				t.Errorf("result %s should be equal to %s", res, expected)
 			}
@@ -98,7 +97,7 @@ func TestCreateAndClose(t *testing.T) {
 	var (
 		sourceTopics = []string{"h/d1/c1/s2", "h/+/+/s1", "h/d3/#", "h/d1/c1/s2", "h/+/c1/s1"}
 		sinkTopics   = []string{"h/d1/c1/s1", "h/d1/c1/s2", "h/d2/c2/s1", "h/d3/c3/s1", "h/d1/c1/s1"}
-		chans        []chan map[string]interface{}
+		chans        []chan api.SourceTuple
 	)
 	for i, topic := range sinkTopics {
 		createPub(topic)
@@ -120,27 +119,27 @@ func TestCreateAndClose(t *testing.T) {
 	expPub := map[string]*pubConsumers{
 		"h/d1/c1/s1": {
 			count: 2,
-			consumers: map[string]chan map[string]interface{}{
+			consumers: map[string]chan api.SourceTuple{
 				"1": chans[1],
 				"4": chans[4],
 			},
 		},
 		"h/d1/c1/s2": {
 			count: 1,
-			consumers: map[string]chan map[string]interface{}{
+			consumers: map[string]chan api.SourceTuple{
 				"0": chans[0],
 				"3": chans[3],
 			},
 		},
 		"h/d2/c2/s1": {
 			count: 1,
-			consumers: map[string]chan map[string]interface{}{
+			consumers: map[string]chan api.SourceTuple{
 				"1": chans[1],
 			},
 		},
 		"h/d3/c3/s1": {
 			count: 1,
-			consumers: map[string]chan map[string]interface{}{
+			consumers: map[string]chan api.SourceTuple{
 				"1": chans[1],
 				"2": chans[2],
 			},
@@ -159,19 +158,19 @@ func TestCreateAndClose(t *testing.T) {
 	expPub = map[string]*pubConsumers{
 		"h/d1/c1/s1": {
 			count: 1,
-			consumers: map[string]chan map[string]interface{}{
+			consumers: map[string]chan api.SourceTuple{
 				"4": chans[4],
 			},
 		},
 		"h/d1/c1/s2": {
 			count: 0,
-			consumers: map[string]chan map[string]interface{}{
+			consumers: map[string]chan api.SourceTuple{
 				"3": chans[3],
 			},
 		},
 		"h/d3/c3/s1": {
 			count:     1,
-			consumers: map[string]chan map[string]interface{}{},
+			consumers: map[string]chan api.SourceTuple{},
 		},
 	}
 	if !reflect.DeepEqual(expPub, pubTopics) {
@@ -245,147 +244,189 @@ func TestMultipleTopics(t *testing.T) {
 					"id":   1,
 					"temp": 23,
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d1/c1/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":   1,
 					"temp": 23,
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d1/c1/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":    4,
 					"color": "red",
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d1/c1/s2",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":    4,
 					"color": "red",
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d1/c1/s2",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":  7,
 					"hum": 67.5,
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d2/c2/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":     10,
 					"status": "on",
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d3/c3/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":     10,
 					"status": "on",
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d3/c3/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":   2,
 					"temp": 34,
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d1/c1/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":   2,
 					"temp": 34,
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d1/c1/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":    5,
 					"color": "red",
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d1/c1/s2",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":    5,
 					"color": "red",
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d1/c1/s2",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":  8,
 					"hum": 77.1,
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d2/c2/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":     11,
 					"status": "off",
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d3/c3/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":     11,
 					"status": "off",
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d3/c3/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":   3,
 					"temp": 28,
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d1/c1/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":   3,
 					"temp": 28,
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d1/c1/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":    6,
 					"color": "green",
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d1/c1/s2",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":    6,
 					"color": "green",
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d1/c1/s2",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":  9,
 					"hum": 90.3,
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d2/c2/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":     12,
 					"status": "on",
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d3/c3/s1",
+				},
 			},
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":     12,
 					"status": "on",
 				},
-				M: make(map[string]interface{}),
+				M: map[string]interface{}{
+					"topic": "h/d3/c3/s1",
+				},
 			},
 		}
 	)
@@ -452,10 +493,6 @@ func TestMultipleTopics(t *testing.T) {
 		results = append(results, res)
 	}
 	if !reflect.DeepEqual(expected, results) {
-		t.Errorf("Expect\t %v\n but got\t\t\t %v", render.AsCode(expected), render.AsCode(results))
+		t.Errorf("Expect\t %v\n but got\t\t\t\t %v", render.AsCode(expected), render.AsCode(results))
 	}
-}
-
-func asJsonBytes(m []map[string]interface{}) ([]byte, error) {
-	return json.Marshal(m)
 }

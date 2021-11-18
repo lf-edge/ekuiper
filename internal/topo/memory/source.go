@@ -24,7 +24,7 @@ import (
 type source struct {
 	topic      string
 	topicRegex *regexp.Regexp
-	input      <-chan map[string]interface{}
+	input      <-chan api.SourceTuple
 }
 
 func (s *source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
@@ -36,7 +36,7 @@ func (s *source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ 
 			if !opened {
 				return
 			}
-			consumer <- api.NewDefaultSourceTuple(v, make(map[string]interface{}))
+			consumer <- v
 		case <-ctx.Done():
 			return
 		}
@@ -72,5 +72,6 @@ func getRegexp(topic string) (*regexp.Regexp, error) {
 
 func (s *source) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing memory source")
-	return closeSourceConsumerChannel(s.topic, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
+	closeSourceConsumerChannel(s.topic, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
+	return nil
 }
