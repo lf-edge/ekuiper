@@ -24,13 +24,13 @@ There may be binary operations in each sql clause. In this example, `Select temp
 
 Array and struct are not supported in any binary operations. The compatibility of other data types are listed in below table. Whereas, the row header is the left operand data type and the column header is the right operand data. The value is the compatibility in which Y stands for yes and N stands for no.
 
-| bigint   | float | string | datetime                  | boolean |
-| -------- | ----- | ------ | ------------------------- | ------- |
-| bigint   | Y     | Y      | N                         | N       |
-| float    | Y     | Y      | N                         | N       |
-| string   | N     | N      | Y                         | N       |
-| datetime | Y     | Y      | Y, if in the valid format | Y       |
-| boolean  | N     | N      | N                         | N       |
+| #        / bigint| float  | string                    | datetime| boolean |
+| -------- | ----- | ------ | ------------------------- | ------- | ------- /
+| bigint   | Y     | Y      | N                         | N       |  N      /
+| float    | Y     | Y      | N                         | N       |  N      /
+| string   | N     | N      | Y                         | N       |  N      /
+| datetime | Y     | Y      | Y, if in the valid format | Y       |  N      /
+| boolean  | N     | N      | N                         | N       |  Y      /
 
  The default format for datetime string is ``"2006-01-02T15:04:05.000Z07:00"``
 
