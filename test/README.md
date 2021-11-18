@@ -305,3 +305,11 @@ The test script is used for testing [Redis KV Storage](../docs/en_US/operation/c
 
 - The Jmeter script will create streams and rules by rest api, all metadata will be stored in redis.
   Jmeter use ``redis client tool`` to get the configuration directly from redis and compare it with the rest api created ones 
+
+- [Rule pipeline test](rule_pipeline.jmx)
+
+  This script verifies the memory source/sink to form a rule pipeline of multiple rules and the usage of dynamic properties in the mqtt sink to publish the result to multiple topics. This test also verifies event time window to guarantee the result is constant. 
+  - Create two mqtt streams device1 and device2 to simulate two sensors. The data is read from `iot_data_ts.txt` which contains timestamp.
+  - Create a memory stream to store the convergence of filtered data from the previous two sensors. The stream subscribe to a wildcard memory topic to receive the data from multiple memory sinks.
+  - Create two rules against the two mqtt streams to do some filtering and sink the result to memory sink topic.
+  - Create the final rule against the memory stream and calculate the average temperature for each device with group by. The result then sink to dynamic mqtt topic by using the dynamic prop.
