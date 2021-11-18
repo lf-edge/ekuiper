@@ -70,5 +70,6 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing memory sink")
-	return closeSink(s.topic)
+	closeSink(s.topic)
+	return nil
 }
