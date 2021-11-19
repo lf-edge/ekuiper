@@ -53,7 +53,8 @@ class SinkRuntime(SymbolRuntime):
             if self.running:
                 logging.error(traceback.format_exc())
         finally:
-            self.stop()
+            if self.running:
+                self.stop()
 
     def stop(self):
         self.running = False
