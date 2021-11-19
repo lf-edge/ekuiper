@@ -198,6 +198,15 @@ For most of scripts, you can just start JMeter by default way, such as ``bin/jme
     # go build -o test/plugins/service/http_server test/plugins/service/server.go 
     ```
 
+
+- [An end to end portable plugin test](portalbe_end2_end.jmx)
+
+  The script is an end-2-end portable plugin test. It requires a mock http server, and also a plugin which will be built in the `prepare_plugin.sh`.
+    ```shell
+    # go build -o test/plugins/service/http_server test/plugins/service/server.go 
+    ```
+  The script has two parts to test go and python sdk respectively. It covers the portable plugin CRUD operations and the running of the source, function and sink that are defined in that plugin.
+
 - [Pull HTTP test](http_pull_rule.jmx)
   
   The test script verifies HTTP pull source. It sends request to a [server](test/plugins/service/server.go). The script set incremental to true, so it will compare with last result; If response of two requests are the same, then will skip sending out the result.

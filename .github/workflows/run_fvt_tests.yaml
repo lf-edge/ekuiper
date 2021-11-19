@@ -47,6 +47,14 @@ jobs:
         java-version: '8' # The JDK version to make available on the path.
         java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
         architecture: x64 # (x64 or x86) - defaults to x64
+    - uses: actions/setup-python@v2  # For the test of python portable plugin
+      with:
+        python-version: '3.x'
+        architecture: 'x64'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pynng
     - name: install jmeter
       timeout-minutes: 10
       env:
@@ -67,7 +75,7 @@ jobs:
         go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functions/Image.so extensions/functions/image/*.go
     - name: run edgex && kuiper
       run: |
-        sudo ./test/setup_env.sh
+        ./test/setup_env.sh
         ln -s _build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log kuiper_logs
     - name: run fvt tests
       timeout-minutes: 8

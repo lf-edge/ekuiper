@@ -59,6 +59,28 @@ mkdir -p plugins/service/web/plugins/
 mv zmq.zip plugins/service/web/plugins/
 mv image.zip plugins/service/web/plugins/
 
+# prepare portable plugins
+cd ..
+mkdir test/temp
+
+mkdir test/temp/mirror
+cd sdk/go/example/mirror
+go build -o ../../../../test/temp/mirror/mirror .
+cd ../../../..
+cp sdk/go/example/mirror/mirror.json test/temp/mirror
+cp -r sdk/go/example/mirror/sources test/temp/mirror/
+cd test/temp/mirror
+zip -r ../../plugins/service/web/plugins/mirror.zip *
+cd ../../..
+
+cp -r sdk/python/example/pysam test/temp/pysam
+cp -r sdk/python/ekuiper test/temp/pysam/
+cd test/temp/pysam
+zip -r ../../plugins/service/web/plugins/pysam.zip *
+cd ../..
+
+rm -r temp
+
 cd plugins/service/
 export BUILD_ID=dontKillMe
 
