@@ -30,11 +30,13 @@ def get(name: str) -> SymbolRuntime:
 
 
 def setr(name: str, r: SymbolRuntime):
+    logging.info("set {}".format(name))
     runtimes[name] = r
 
 
 def delete(name: str):
     # noinspection PyBroadException
+    logging.info("delete {}".format(name))
     try:
         del runtimes[name]
     except Exception:

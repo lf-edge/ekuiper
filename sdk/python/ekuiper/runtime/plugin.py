@@ -113,7 +113,7 @@ def command_reply(req: bytes) -> bytes:
         elif cmd['cmd'] == shared.CMD_STOP:
             regkey = f"{ctrl['meta']['ruleId']}_{ctrl['meta']['opId']}" \
                      f"_{ctrl['meta']['instanceId']}_{ctrl['symbolName']}"
-            logging.info("stopping ", regkey)
+            logging.info("stopping {}".format(regkey))
             if reg.has(regkey):
                 runtime = reg.get(regkey)
                 if runtime.is_running():
