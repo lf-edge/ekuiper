@@ -19,6 +19,96 @@
 	"libs": [],
 	"properties": {
 		"default": [{
+			"name": "connectionSelector",
+			"default": "",
+			"optional": true,
+			"control": "select",
+			"type": "string",
+			"values": [],
+			"hint": {
+				"en_US": "specify the source to reuse the connection defined in connection configuration.",
+				"zh_CN": "此数据源复用 connection 中定义的连接"
+			},
+			"label": {
+				"en_US": "Connection selector",
+				"zh_CN": "复用连接信息"
+			}
+		}, {
+			"name": "servers",
+			"default": ["tcp://127.0.0.1:1883"],
+			"optional": true,
+			"connection_related": true,
+			"control": "list",
+			"type": "list_string",
+			"hint": {
+				"en_US": "The server list for MQTT message broker. Currently, only ONE server can be specified.",
+				"zh_CN": "MQTT 消息代理的服务器列表。 当前，只能指定一个服务器。"
+			},
+			"label": {
+				"en_US": "Server list",
+				"zh_CN": "服务器列表"
+			}
+		}, {
+			"name": "username",
+			"default": "",
+			"optional": true,
+			"connection_related": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The username for MQTT connection.",
+				"zh_CN": "MQTT 连接用户名。"
+			},
+			"label": {
+				"en_US": "Username",
+				"zh_CN": "用户名"
+			}
+		}, {
+			"name": "password",
+			"default": "",
+			"optional": true,
+			"connection_related": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The password for MQTT connection.",
+				"zh_CN": "MQTT 连接密码。"
+			},
+			"label": {
+				"en_US": "Password",
+				"zh_CN": "密码"
+			}
+		}, {
+			"name": "protocolVersion",
+			"default": "3.1",
+			"optional": true,
+			"connection_related": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "MQTT protocol version. 3.1 (also refer as MQTT 3) or 3.1.1 (also refer as MQTT 4). If not specified, the default value is 3.1.",
+				"zh_CN": "MQTT 协议版本。3.1 (也被称为 MQTT 3) 或者 3.1.1 (也被称为 MQTT 4)。 如果未指定，缺省值为 3.1。 "
+			},
+			"label": {
+				"en_US": "protocolVersion",
+				"zh_CN": "MQTT 协议版本"
+			}
+		}, {
+			"name": "clientid",
+			"default": "",
+			"optional": true,
+			"connection_related": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The client id for MQTT connection. If not specified, an uuid will be used.",
+				"zh_CN": "MQTT 连接的客户端 ID。 如果未指定，将使用一个 uuid。"
+			},
+			"label": {
+				"en_US": "clientid",
+				"zh_CN": "客户端 ID"
+			}
+		}, {
 			"name": "qos",
 			"default": 1,
 			"optional": true,
@@ -34,51 +124,10 @@
 				"zh_CN": "QoS 级别"
 			}
 		}, {
-			"name": "servers",
-			"default": ["tcp://127.0.0.1:1883"],
-			"optional": true,
-			"control": "list",
-			"type": "list_string",
-			"hint": {
-				"en_US": "The server list for MQTT message broker. Currently, only ONE server can be specified.",
-				"zh_CN": "MQTT 消息代理的服务器列表。 当前，只能指定一个服务器。"
-			},
-			"label": {
-				"en_US": "Server list",
-				"zh_CN": "服务器列表"
-			}
-		}, {
-			"name": "username",
-			"default": "",
-			"optional": true,
-			"control": "text",
-			"type": "string",
-			"hint": {
-				"en_US": "The username for MQTT connection. The configuration will not be used if certificationPath or privateKeyPath is specified.",
-				"zh_CN": "MQTT 连接用户名。如果指定了 certificationPath 或者 privateKeyPath，那么该项配置不会被使用。"
-			},
-			"label": {
-				"en_US": "Username",
-				"zh_CN": "用户名"
-			}
-		}, {
-			"name": "password",
-			"default": "",
-			"optional": true,
-			"control": "text",
-			"type": "string",
-			"hint": {
-				"en_US": "The password for MQTT connection. The configuration will not be used if certificationPath or privateKeyPath is specified.",
-				"zh_CN": "MQTT 连接密码。如果指定了 certificationPath 或者 privateKeyPath，那么该项配置不会被使用。"
-			},
-			"label": {
-				"en_US": "Password",
-				"zh_CN": "密码"
-			}
-		}, {
 			"name": "certificationPath",
 			"default": "",
 			"optional": true,
+			"connection_related": true,
 			"control": "text",
 			"type": "string",
 			"hint": {
@@ -93,6 +142,7 @@
 			"name": "privateKeyPath",
 			"default": "",
 			"optional": true,
+			"connection_related": true,
 			"control": "text",
 			"type": "string",
 			"hint": {
@@ -107,6 +157,7 @@
 			"name": "rootCaPath",
 			"default": "",
 			"optional": true,
+			"connection_related": true,
 			"control": "text",
 			"type": "string",
 			"hint": {
@@ -114,13 +165,14 @@
 				"zh_CN": "根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径。"
 			},
 			"label": {
-				"en_US": "Root Ca path",
+				"en_US": "Root CA path",
 				"zh_CN": "根证书路径"
 			}
 		}, {
 			"name": "insecureSkipVerify",
 			"default": false,
 			"optional": true,
+			"connection_related": true,
 			"control": "radio",
 			"type": "bool",
 			"hint": {

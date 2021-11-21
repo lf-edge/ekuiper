@@ -41,7 +41,16 @@ The username for MQTT connection.
 
 ### password
 
-The password for MQTT connection. 
+The password for MQTT connection.
+
+### protocolVersion
+
+MQTT protocol version. 3.1 (also refer as MQTT 3) or 3.1.1 (also refer as MQTT 4). If not specified, the default value is 3.1.
+
+### clientid
+
+The client id for MQTT connection. If not specified, an uuid will be used.
+
 
 ### certificationPath
 

@@ -17,10 +17,28 @@
 		}
 	},
 	"properties": {
-		"default": [{
+		"default": [
+			{
+				"name": "connectionSelector",
+				"default": "",
+				"optional": true,
+				"control": "select",
+				"type": "string",
+				"values": [],
+				"hint": {
+					"en_US": "specify the source to reuse the connection defined in connection configuration.",
+					"zh_CN": "此数据源复用 connection 中定义的连接"
+				},
+				"label": {
+					"en_US": "Connection selector",
+					"zh_CN": "复用连接信息"
+				}
+			},
+			{
 				"name": "protocol",
 				"default": "tcp",
 				"optional": true,
+				"connection_related": true,
 				"control": "select",
 				"values": [
 					"tcp"
@@ -39,6 +57,7 @@
 				"name": "server",
 				"default": "localhost",
 				"optional": true,
+				"connection_related": true,
 				"control": "text",
 				"type": "string",
 				"hint": {
@@ -55,6 +74,7 @@
 				"default": 5573,
 				"optional": false,
 				"control": "text",
+				"connection_related": true,
 				"type": "int",
 				"hint": {
 					"en_US": "The port of EdgeX message bus, default value is 5573.",
@@ -85,6 +105,7 @@
 				"default": "zero",
 				"optional": true,
 				"control": "text",
+				"connection_related": true,
 				"type": "string",
 				"hint": {
 					"en_US": "The EdgeX message bus type, currently two types of message buses are supported. If specified other values, then will use the default zero value.",
@@ -281,6 +302,7 @@
 				],
 				"optional": true,
 				"control": "list",
+				"connection_related": true,
 				"type": "list_object",
 				"hint": {
 					"en_US": "If MQTT message bus is used, some other optional configurations can be specified. Please notice that all of values in optional are string type, so values for these configurations should be string - such as KeepAlive: \"5000\".",

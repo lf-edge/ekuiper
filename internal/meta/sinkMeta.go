@@ -41,14 +41,15 @@ type (
 		Chinese string `json:"zh_CN"`
 	}
 	fileField struct {
-		Name     string        `json:"name"`
-		Default  interface{}   `json:"default"`
-		Control  string        `json:"control"`
-		Optional bool          `json:"optional"`
-		Type     string        `json:"type"`
-		Hint     *fileLanguage `json:"hint"`
-		Label    *fileLanguage `json:"label"`
-		Values   interface{}   `json:"values"`
+		Name              string        `json:"name"`
+		Default           interface{}   `json:"default"`
+		Control           string        `json:"control"`
+		ConnectionRelated bool          `json:"connection_related"`
+		Optional          bool          `json:"optional"`
+		Type              string        `json:"type"`
+		Hint              *fileLanguage `json:"hint"`
+		Label             *fileLanguage `json:"label"`
+		Values            interface{}   `json:"values"`
 	}
 	fileAbout struct {
 		Trial       bool          `json:"trial"`
@@ -74,15 +75,16 @@ type (
 		Description *language `json:"description"`
 	}
 	field struct {
-		Exist    bool        `json:"exist"`
-		Name     string      `json:"name"`
-		Default  interface{} `json:"default"`
-		Type     string      `json:"type"`
-		Control  string      `json:"control"`
-		Optional bool        `json:"optional"`
-		Values   interface{} `json:"values"`
-		Hint     *language   `json:"hint"`
-		Label    *language   `json:"label"`
+		Exist             bool        `json:"exist"`
+		Name              string      `json:"name"`
+		Default           interface{} `json:"default"`
+		Type              string      `json:"type"`
+		Control           string      `json:"control"`
+		ConnectionRelated bool        `json:"connection_related"`
+		Optional          bool        `json:"optional"`
+		Values            interface{} `json:"values"`
+		Hint              *language   `json:"hint"`
+		Label             *language   `json:"label"`
 	}
 
 	uiSink struct {
@@ -107,13 +109,14 @@ func newField(fis []*fileField) (uis []field, err error) {
 			continue
 		}
 		ui := field{
-			Name:     fi.Name,
-			Type:     fi.Type,
-			Control:  fi.Control,
-			Optional: fi.Optional,
-			Values:   fi.Values,
-			Hint:     newLanguage(fi.Hint),
-			Label:    newLanguage(fi.Label),
+			Name:              fi.Name,
+			Type:              fi.Type,
+			Control:           fi.Control,
+			ConnectionRelated: fi.ConnectionRelated,
+			Optional:          fi.Optional,
+			Values:            fi.Values,
+			Hint:              newLanguage(fi.Hint),
+			Label:             newLanguage(fi.Label),
 		}
 		uis = append(uis, ui)
 		switch t := fi.Default.(type) {

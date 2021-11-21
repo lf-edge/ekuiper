@@ -73,10 +73,11 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 
 	hps.interval = DEFAULT_INTERVAL
 	if i, ok := props["interval"]; ok {
-		if i1, ok1 := i.(int); ok1 {
-			hps.interval = i1
-		} else {
+		i1, err := cast.ToInt(i, cast.CONVERT_SAMEKIND)
+		if err != nil {
 			return fmt.Errorf("Not valid interval value %v.", i1)
+		} else {
+			hps.interval = i1
 		}
 	}
 
@@ -178,6 +179,7 @@ func (hps *HTTPPullSource) Close(ctx api.StreamContext) error {
 func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
 	ticker := time.NewTicker(time.Millisecond * time.Duration(hps.interval))
 	logger := ctx.GetLogger()
+	logger.Infof("################*******************%v ", hps)
 	defer ticker.Stop()
 	var omd5 = ""
 	for {
