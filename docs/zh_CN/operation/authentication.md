@@ -1,12 +1,3 @@
-## 配置
-
-- [eKuiper 基本配置](configuration_file.md)
-- [MQTT  源配置](../rules/sources/mqtt.md)
-
-## Restful APIs
-
-eKuiper 提供了一些 RESTful 管理 API。eKuiper 提供了一些 RESTful 管理 APIs。请参考 [Rest-API 文档](../restapi/overview.md)以获取更详细信息。
-
 ## Authentication
 
 如果使能的话， eKuiper 从 1.4.0 起将为 RESTful API 提供基于 ``JWT RSA256`` 的身份验证。用户需要将他们的公钥放在 ``etc/mgmt`` 文件夹中，并使用相应的私钥来签署 JWT 令牌。

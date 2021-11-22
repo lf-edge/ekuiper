@@ -72,6 +72,9 @@ type KuiperConf struct {
 			Name string `yaml:"name"`
 		}
 	}
+	Portable struct {
+		PythonBin string `yaml:"pythonBin"`
+	}
 }
 
 func InitConf() {

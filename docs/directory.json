@@ -274,6 +274,19 @@
 					"path": "plugins/functions/functions"
 				}
 			]
+		},
+		{
+			"title": "运营",
+			"children": [
+				{
+					"title": "配置文件",
+					"path": "operation/configuration_file"
+				},
+				{
+					"title": "认证",
+					"path": "operation/authentication"
+				}
+			]
 		}
 	],
 	"en": [{
@@ -549,6 +562,19 @@
 				{
 					"title": "Custom function",
 					"path": "plugins/functions/functions"
+				}
+			]
+		},
+		{
+			"title": "Operation",
+			"children": [
+				{
+					"title": "Configuration File",
+					"path": "operation/configuration_file"
+				},
+				{
+					"title": "Authentication",
+					"path": "operation/authentication"
 				}
 			]
 		}

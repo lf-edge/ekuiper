@@ -4,7 +4,9 @@ By using Python SDK for portable plugins, user can develop portable plugins with
 
 To run python plugin, there are two prerequisites in the runtime environment:
 1. Install Python 3.x environment.
-2. Install ekuiper package by `pip install ekuiper`.
+2. Install nng and ekuiper package by `pip install nng ekuiper`.
+
+By default, the eKuiper portable plugin runtime will run python script with `python userscript.py`. If users have multiple python instance or an alternative python executable command, they can specify the python command in [the configuration file](../../operation/configuration_file.md#portable-plugin-configurations).
 
 ## Development
 
