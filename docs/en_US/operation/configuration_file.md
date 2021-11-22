@@ -66,7 +66,7 @@ The port for the rest api http server to listen to.
 The tls cert file path and key file path setting. If restTls is not set, the rest api server will listen on http. Otherwise, it will listen on https.
 
 ## authentication 
-eKuiper will check the ``Token`` for rest api when ``authentication`` option is true. please check this file for [more info](./operations.md).
+eKuiper will check the ``Token`` for rest api when ``authentication`` option is true. please check this file for [more info](./authentication.md).
 
 ```yaml
 basic:
@@ -198,4 +198,15 @@ It has properties
       sqlite:
         #Sqlite file name, if left empty name of db will be sqliteKV.db
         name:
+```
+
+## Portable plugin configurations
+
+This section configures the portable plugin runtime.
+
+```yaml
+  portable:
+      # The executable of python. Specify this if you have multiple python instances in your system
+      # or other circumstance where the python executable cannot be successfully invoked through the default command.
+      pythonBin: python
 ```

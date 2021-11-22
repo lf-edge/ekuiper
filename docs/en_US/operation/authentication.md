@@ -1,13 +1,3 @@
-## Configuration
-
-- [eKuiper basic configuration](configuration_file.md)
-- [MQTT source configuration](../rules/sources/mqtt.md)
-
-## Restful APIs
-
-eKuiper provides some RESTful management APIs. Please refer to [Rest-API doc](../restapi/overview.md) for more detailed information.
-
-
 ## Authentication
 
 eKuiper support ``JWT RSA256`` authentication for the RESTful management APIs since ``1.4.0`` if enabled . Users need put their Public Key in ``etc/mgmt`` folder and use the corresponding Private key to sign the JWT Tokens.

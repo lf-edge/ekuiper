@@ -46,7 +46,7 @@ REST http 服务器监听端口
 TLS 证书 cert 文件和 key 文件位置。如果 restTls 选项未配置，则 REST 服务器将启动为 http 服务器，否则启动为 https 服务器。
 
 ## authentication 
-当 ``authentication`` 选项为 true 时，eKuiper 将为 rest api 请求检查 ``Token`` 。请检查此文件以获取 [更多信息](./operations.md)。
+当 ``authentication`` 选项为 true 时，eKuiper 将为 rest api 请求检查 ``Token`` 。请检查此文件以获取 [更多信息](./authentication.md)。
 
 ```yaml
 basic:
@@ -179,4 +179,15 @@ http://host:port/kuiper-plugins/0.9.1/alpine/functions
       sqlite:
         #Sqlite file name, if left empty name of db will be sqliteKV.db
         name:
+```
+
+## Portable 插件配置
+
+配置 portable 插件的运行时属性。
+
+```yaml
+  portable:
+      # 配置 python 可执行文件的位置或命令。
+      # 若系统中有多个 python 版本，可通过此配置指定具体的 python 地址。
+      pythonBin: python
 ```
