@@ -18,10 +18,27 @@
   },
   "properties": [
     {
+      "name": "connectionSelector",
+      "default": "",
+      "optional": true,
+      "control": "select",
+      "type": "string",
+      "values": [],
+      "hint": {
+        "en_US": "specify the source to reuse the connection defined in connection configuration.",
+        "zh_CN": "复用 connection 中定义的连接"
+      },
+      "label": {
+        "en_US": "Connection selector",
+        "zh_CN": "复用连接信息"
+      }
+    },
+    {
       "name": "protocol",
       "default": "tcp",
       "optional": true,
       "control": "select",
+      "connection_related": true,
       "values": [
         "tcp"
       ],
@@ -41,6 +58,7 @@
       "control": "text",
       "default": "*",
       "type": "string",
+      "connection_related": true,
       "hint": {
         "en_US": "The host of message bus. If not specified, then use default value '*'",
         "zh_CN": "消息总线主机地址，使用缺省值 *."
@@ -56,6 +74,7 @@
       "control": "text",
       "default": 5563,
       "type": "int",
+      "connection_related": true,
       "hint": {
         "en_US": "The port of message bus",
         "zh_CN": "消息总线端口号"
@@ -130,6 +149,7 @@
       "default": "zero",
       "optional": true,
       "control": "select",
+      "connection_related": true,
       "values": [
         "mqtt",
         "zero"
@@ -149,6 +169,7 @@
       "optional": true,
       "control": "list",
       "type": "list_object",
+      "connection_related": true,
       "hint": {
         "en_US": "If MQTT message bus is used, some other optional configurations can be specified. Please notice that all of values in optional are string type, so values for these configurations should be string - such as KeepAlive: \"5000\".",
         "zh_CN": "如果使用了 MQTT 消息总线，还可以指定别的一些可选配置项。请注意，所有在可选的配置项里指定的值都必须为**字符类型**，因此这里出现的所有的配置应该是字符类型的 - 例如 KeepAlive: \"5000\"。"

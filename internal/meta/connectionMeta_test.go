@@ -20,7 +20,7 @@ import (
 	"testing"
 )
 
-func TestGetMqttSourceMeta(t *testing.T) {
+func TestGetMqttConnectionMeta(t *testing.T) {
 	confDir, err := conf.GetConfLoc()
 	if nil != err {
 		return
@@ -30,7 +30,7 @@ func TestGetMqttSourceMeta(t *testing.T) {
 		return
 	}
 
-	showMeta, err := GetSourceMeta("mqtt", "zh_CN")
+	showMeta, err := GetConnectionMeta("mqtt", "zh_CN")
 	if nil != err {
 		t.Error(err)
 	}
@@ -40,5 +40,4 @@ func TestGetMqttSourceMeta(t *testing.T) {
 	if len(fields) == 0 {
 		t.Errorf("default fields %v", fields)
 	}
-
 }

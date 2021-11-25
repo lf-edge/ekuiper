@@ -94,12 +94,15 @@ jobs:
       run: |
         sudo apt update && sudo apt install -y libxml2-utils
         cd jmeter_logs
-        if [ ! -z "$(cat *.jtl| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
-           [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
+        for file in `ls *.jtl`
+        do
+          if [ ! -z "$(cat $file| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
+           [ "$(xmllint --format --xpath '/testResults/sample/@rc' $file | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
             echo -e "---------------------------------------------\n"
-            echo "FVT tests error"
+            echo "FVT tests error for $file"
             exit 1
-        fi
+          fi
+        done
 
   fvt_tests_redis_as_storage:
     runs-on: ubuntu-latest
@@ -184,12 +187,15 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y libxml2-utils
           cd jmeter_logs
-          if [ ! -z "$(cat *.jtl| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
-             [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
+          for file in `ls *.jtl`
+          do
+            if [ ! -z "$(cat $file| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
+             [ "$(xmllint --format --xpath '/testResults/sample/@rc' $file | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
               echo -e "---------------------------------------------\n"
-              echo "FVT tests error"
+              echo "FVT tests error for $file"
               exit 1
-          fi
+            fi
+          done
 
   fvt_tests_for_container_in_helm:
     runs-on: ubuntu-latest
@@ -315,9 +321,12 @@ jobs:
       run: |
         sudo apt update && sudo apt install -y libxml2-utils
         cd jmeter_logs
-        if [ ! -z "$(cat *.jtl| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
-           [ "$(xmllint --format --xpath '/testResults/sample/@rc' $(ls *.jtl) | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
+        for file in `ls *.jtl`
+        do
+          if [ ! -z "$(cat $file| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
+           [ "$(xmllint --format --xpath '/testResults/sample/@rc' $file | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
             echo -e "---------------------------------------------\n"
-            echo "FVT tests error"
+            echo "FVT tests error for $file"
             exit 1
-        fi
+          fi
+        done

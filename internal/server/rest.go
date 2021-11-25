@@ -128,11 +128,16 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/metadata/sinks", sinksMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sinks/{name}", newSinkMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources", sourcesMetaHandler).Methods(http.MethodGet)
-	r.HandleFunc("/metadata/sources/yaml/{name}", sourceConfHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/{name}", sourceMetaHandler).Methods(http.MethodGet)
-	r.HandleFunc("/metadata/sources/{name}/confKeys", sourceConfKeysHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources/yaml/{name}", sourceConfHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/{name}/confKeys/{confKey}", sourceConfKeyHandler).Methods(http.MethodDelete, http.MethodPost)
 	r.HandleFunc("/metadata/sources/{name}/confKeys/{confKey}/field", sourceConfKeyFieldsHandler).Methods(http.MethodDelete, http.MethodPost)
+
+	r.HandleFunc("/metadata/connections", connectionsMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/connections/{name}", connectionMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/connections/yaml/{name}", connectionConfHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/connections/{name}/confKeys/{confKey}", connectionConfKeyHandler).Methods(http.MethodDelete, http.MethodPost)
+	r.HandleFunc("/metadata/connections/{name}/confKeys/{confKey}/field", connectionConfKeyFieldsHandler).Methods(http.MethodDelete, http.MethodPost)
 
 	r.HandleFunc("/services", servicesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/services/functions", serviceFunctionsHandler).Methods(http.MethodGet)
@@ -785,7 +790,17 @@ func functionsMetaHandler(w http.ResponseWriter, r *http.Request) {
 //list source plugin
 func sourcesMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	ret := meta.GetSources()
+	ret := meta.GetSourcesPlugins()
+	if nil != ret {
+		jsonResponse(ret, w, logger)
+		return
+	}
+}
+
+//list shareMeta
+func connectionsMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	ret := meta.GetConnectionPlugins()
 	if nil != ret {
 		jsonResponse(ret, w, logger)
 		return
@@ -809,13 +824,31 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//Get source metadata when creating stream
+func connectionMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	language := getLanguage(r)
+	ret, err := meta.GetConnectionMeta(pluginName, language)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	if nil != ret {
+		jsonResponse(ret, w, logger)
+		return
+	}
+}
+
 //Get source yaml
 func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 	language := getLanguage(r)
-	ret, err := meta.GetSourceConf(pluginName, language)
+	configOperatorKey := fmt.Sprintf(meta.SourceCfgOperatorKeyTemplate, pluginName)
+	ret, err := meta.GetYamlConf(configOperatorKey, language)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
@@ -824,15 +857,19 @@ func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//Get confKeys of the source metadata
-func sourceConfKeysHandler(w http.ResponseWriter, r *http.Request) {
+//Get share yaml
+func connectionConfHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
-	ret := meta.GetSourceConfKeys(pluginName)
-	if nil != ret {
-		jsonResponse(ret, w, logger)
+	language := getLanguage(r)
+	configOperatorKey := fmt.Sprintf(meta.ConnectionCfgOperatorKeyTemplate, pluginName)
+	ret, err := meta.GetYamlConf(configOperatorKey, language)
+	if err != nil {
+		handleError(w, err, "", logger)
 		return
+	} else {
+		w.Write(ret)
 	}
 }
 
@@ -840,7 +877,6 @@ func sourceConfKeysHandler(w http.ResponseWriter, r *http.Request) {
 func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
-	var ret interface{}
 	var err error
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
@@ -850,8 +886,8 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		err = meta.DelSourceConfKey(pluginName, confKey, language)
 	case http.MethodPost:
-		v, err := ioutil.ReadAll(r.Body)
-		if err != nil {
+		v, err1 := ioutil.ReadAll(r.Body)
+		if err1 != nil {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
@@ -861,8 +897,30 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	}
-	if nil != ret {
-		jsonResponse(ret, w, logger)
+}
+
+//Add  del confkey
+func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
+
+	defer r.Body.Close()
+	var err error
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	confKey := vars["confKey"]
+	language := getLanguage(r)
+	switch r.Method {
+	case http.MethodDelete:
+		err = meta.DelConnectionConfKey(pluginName, confKey, language)
+	case http.MethodPost:
+		v, err1 := ioutil.ReadAll(r.Body)
+		if err1 != nil {
+			handleError(w, err1, "Invalid body", logger)
+			return
+		}
+		err = meta.AddConnectionConfKey(pluginName, confKey, language, v)
+	}
+	if err != nil {
+		handleError(w, err, "", logger)
 		return
 	}
 }
@@ -870,7 +928,6 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 //Del and Update field of confkey
 func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	var ret interface{}
 	var err error
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
@@ -892,11 +949,34 @@ func sourceConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	}
-	if nil != ret {
-		jsonResponse(ret, w, logger)
+}
+
+//Del and Update field of confkey
+func connectionConfKeyFieldsHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var err error
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	confKey := vars["confKey"]
+	v, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		handleError(w, err, "Invalid body", logger)
+		return
+	}
+
+	language := getLanguage(r)
+	switch r.Method {
+	case http.MethodDelete:
+		err = meta.DelConnectionConfKeyField(pluginName, confKey, language, v)
+	case http.MethodPost:
+		err = meta.AddConnectionConfKeyField(pluginName, confKey, language, v)
+	}
+	if err != nil {
+		handleError(w, err, "", logger)
 		return
 	}
 }
+
 func getLanguage(r *http.Request) string {
 	language := r.Header.Get("Content-Language")
 	if 0 == len(language) {
