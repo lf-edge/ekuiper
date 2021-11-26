@@ -1,6 +1,6 @@
-## File source
+## 文件源
 
-eKuiper provides built-in support for reading file content into the eKuiper processing pipeline. The file source is usually used as a [table](../../sqls/tables.md) and it is the default type for create table statement.
+eKuiper 提供了内置支持，可将文件内容读入 eKuiper 处理管道。 文件源通常用作 [表格](../../sqls/tables.md)， 并且采用 create table 语句的默认类型。
 
 ```sql
 CREATE TABLE table1 (
@@ -10,17 +10,16 @@ CREATE TABLE table1 (
 ) WITH (DATASOURCE="lookup.json", FORMAT="json", TYPE="file");
 ```
 
-
-The configure file for the file source is in */etc/sources/file.yaml* in which the path to the file can be specified.
+文件源的配置文件是 */etc/sources/file.yaml* ，可以在其中指定文件的路径。
 
 ```yaml
 default:
   fileType: json
-  # The directory of the file relative to eKuiper root or an absolute path.
-  # Do not include the file name here. The file name should be defined in the stream data source
+  # 文件以 eKuiper 为根目录的目录或文件的绝对路径。
+  # 请勿在此处包含文件名。文件名应在流数据源中定义
   path: data
-  # The interval between reading the files, time unit is ms. If only read once, set it to 0
+  # 读取文件的时间间隔，单位为ms。 如果只读取一次，则将其设置为 0
   interval: 0
 ```
 
-With this yaml file, the table will refer to the file *${eKuiper}/data/lookup.json* and read it in json format.
+通过这个 yaml 文件，该表将引用文件 *${eKuiper}/data/lookup.json* 并以 json 格式读取它。
