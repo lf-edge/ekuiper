@@ -1,10 +1,10 @@
 #Global Edgex configurations
 default:
-  protocol: tcp
+  protocol: redis
   server: localhost
   port: 5563
   topic: events
-  type: zero
+  type: redis
   # Could be 'event' or 'request'.
   # If the message is from app service, the message type is an event;
   # Otherwise, if it is from the message bus directly, it should be a request
@@ -26,11 +26,20 @@ default:
 #    SkipCertVerify: true/false
 
 #Override the global configurations
+zmq_conf: #Conf_key
+  protocol: tcp
+  server: localhost
+  port: 5563
+  topic: events
+  type: zero
+  messageType: event
+
 application_conf: #Conf_key
   protocol: tcp
   server: localhost
   port: 5571
   topic: application
+  type: zero
   messageType: request
 
 mqtt_conf: #Conf_key

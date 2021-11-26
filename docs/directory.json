@@ -49,7 +49,7 @@
 						},
 						{
 							"title": "日志操作",
-							"path": "rules/sinks/logs"
+							"path": "rules/sinks/log"
 						}
 					]
 				},
@@ -137,9 +137,9 @@
 			]
 		},
 		{
-			"title": "Kuiper SQL 参考",
+			"title": "eKuiper SQL 参考",
 			"children": [{
-					"title": "Kuiper SQL 介绍",
+					"title": "eKuiper SQL 介绍",
 					"path": "sqls/overview"
 				},
 				{
@@ -159,7 +159,7 @@
 					"path": "sqls/built-in_functions"
 				},
 				{
-					"title": "Kuiper 词汇元素",
+					"title": "eKuiper 词汇元素",
 					"path": "sqls/lexical_elements"
 				},
 				{
@@ -169,7 +169,7 @@
 			]
 		},
 		{
-			"title": "扩展 Kuiper",
+			"title": "扩展 eKuiper",
 			"children": [{
 				"title": "扩展",
 				"path": "extension/overview"
@@ -339,7 +339,7 @@
 						},
 						{
 							"title": "Log action",
-							"path": "rules/sinks/logs"
+							"path": "rules/sinks/log"
 						}
 					]
 				},
@@ -391,7 +391,7 @@
 			]
 		},
 		{
-			"title": "Kuiper management console",
+			"title": "eKuiper management console",
 			"children": [{
 					"title": "Introduction",
 					"path": "manager-ui/overview"
@@ -427,7 +427,7 @@
 			]
 		},
 		{
-			"title": "Kuiper SQL",
+			"title": "eKuiper SQL",
 			"children": [{
 					"title": "Introduction",
 					"path": "sqls/overview"
@@ -449,7 +449,7 @@
 					"path": "sqls/built-in_functions"
 				},
 				{
-					"title": "Kuiper lexical elements",
+					"title": "eKuiper lexical elements",
 					"path": "sqls/lexical_elements"
 				},
 				{
@@ -459,7 +459,7 @@
 			]
 		},
 		{
-			"title": "Extend Kuiper",
+			"title": "Extend eKuiper",
 			"children": [{
 					"title": "Introduction",
 					"path": "extension/overview"

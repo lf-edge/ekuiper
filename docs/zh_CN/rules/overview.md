@@ -71,7 +71,7 @@
 
 当前，支持以下目标/动作：
 
-- [log](./sinks/logs.md): 将结果发送到日志文件。
+- [log](./sinks/log.md): 将结果发送到日志文件。
 - [mqtt](./sinks/mqtt.md): 将结果发送到 MQTT 消息服务器。 
 - [edgex](./sinks/edgex.md): 将结果发送到 EdgeX 消息总线。
 - [rest](./sinks/rest.md): 将结果发送到 Rest HTTP 服务器。

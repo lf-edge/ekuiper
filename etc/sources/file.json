@@ -1,0 +1,66 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/file.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/file.md"
+    },
+    "description": {
+      "en_US": "Reading file content into the eKuiper processing pipeline. The file source is usually used as a table and it is the default type for create table statement.",
+      "zh_CN": "读取文件内容，并且将数据放入 eKuiper 数据处理流水线中。通常用于表格，且为使用 create table 语句时，默认的源类型。"
+    }
+  },
+  "libs": [],
+  "properties": {
+    "default": [
+      {
+        "name": "fileType",
+        "default": "json",
+        "optional": true,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The file format type.",
+          "zh_CN": "文件格式类型"
+        },
+        "label": {
+          "en_US": "File type",
+          "zh_CN": "文件类型"
+        }
+      },{
+        "name": "path",
+        "default": "",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The directory of the file relative to eKuiper root or an absolute path. Do not include the file name here. The file name should be defined in the stream data source.",
+          "zh_CN": "文件所在文件夹的路径。请勿包含文件名，文件名应该在数据源中定义。"
+        },
+        "label": {
+          "en_US": "Path",
+          "zh_CN": "文件夹路径"
+        }
+      },{
+        "name": "interval",
+        "default": 0,
+        "optional": false,
+        "control": "text",
+        "type": "int",
+        "hint": {
+          "en_US": "The interval between reading the files, time unit is ms. If only read once, set it to 0",
+          "zh_CN": "读取文件的间隔时间。如果只需读取一次，设置为0。"
+        },
+        "label": {
+          "en_US": "Interval",
+          "zh_CN": "间隔时间"
+        }
+      }]
+  }
+}

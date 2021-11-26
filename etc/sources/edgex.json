@@ -12,8 +12,8 @@
 			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/edgex.md"
 		},
 		"description": {
-			"en_US": "Kuiper provides built-in support for EdgeX source stream, which can subscribe the message from EdgeX message bus and feed into the Kuiper streaming process pipeline.",
-			"zh_CN": "Kuiper 提供了内置的 EdgeX 源支持，它可以被用来订阅来自于EdgeX 消息总线的数据，并且将数据放入 Kuiper 数据处理流水线中。"
+			"en_US": "eKuiper provides built-in support for EdgeX source stream, which can subscribe the message from EdgeX message bus and feed into the eKuiper streaming process pipeline.",
+			"zh_CN": "eKuiper 提供了内置的 EdgeX 源支持，它可以被用来订阅来自于EdgeX 消息总线的数据，并且将数据放入 eKuiper 数据处理流水线中。"
 		}
 	},
 	"properties": {
@@ -36,12 +36,13 @@
 			},
 			{
 				"name": "protocol",
-				"default": "tcp",
+				"default": "redis",
 				"optional": true,
 				"connection_related": true,
 				"control": "select",
 				"values": [
-					"tcp"
+					"tcp",
+					"redis"
 				],
 				"type": "string",
 				"hint": {
@@ -102,14 +103,19 @@
 			},
 			{
 				"name": "type",
-				"default": "zero",
+				"default": "redis",
 				"optional": true,
-				"control": "text",
+				"control": "select",
 				"connection_related": true,
-				"type": "string",
+				"values": [
+					"mqtt",
+					"zero",
+					"redis"
+				],
+				"type": "list_string",
 				"hint": {
-					"en_US": "The EdgeX message bus type, currently two types of message buses are supported. If specified other values, then will use the default zero value.",
-					"zh_CN": "EdgeX 消息总线类型，目前支持两种消息总线。如果指定了错误的消息总线类型，那么会使用缺省 zero 类型。"
+					"en_US": "The EdgeX message bus type, currently two types of message buses are supported. If specified other values, then will use the default redis value.",
+					"zh_CN": "EdgeX 消息总线类型，目前支持两种消息总线。如果指定了错误的消息总线类型，那么会使用缺省 redis 类型。"
 				},
 				"label": {
 					"en_US": "Type",
