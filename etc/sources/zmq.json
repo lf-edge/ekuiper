@@ -13,7 +13,7 @@
     },
     "description": {
       "en_US": "The source will subscribe to a Zero Mq topic to import the messages into kuiper.",
-      "zh_CN": "源将订阅 Zero Mq 主题以将消息导入 kuiper。"
+      "zh_CN": "源将订阅 Zero Mq 主题以将消息导入 eKuiper。"
     }
   },
   "libs": [

@@ -1,6 +1,6 @@
 # 目标 （Sink） 扩展
 
-eKuiper 可以将数据接收到外部系统。 eKuiper具有对  [MQTT 消息服务器](../../rules/sinks/mqtt.md) 和 [日志目标](../../rules/sinks/logs.md)的内置接收器支持。然而， 仍然需要将数据发布到各种外部系统，包括消息传递系统和数据库等。Sink （目标）扩展正是为了满足这一要求。
+eKuiper 可以将数据接收到外部系统。 eKuiper具有对  [MQTT 消息服务器](../../rules/sinks/mqtt.md) 和 [日志目标](../../rules/sinks/log.md)的内置接收器支持。然而， 仍然需要将数据发布到各种外部系统，包括消息传递系统和数据库等。Sink （目标）扩展正是为了满足这一要求。
 
 ## 开发
 

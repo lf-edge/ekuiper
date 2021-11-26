@@ -8,12 +8,12 @@
       "website": "https://www.emqx.io"
     },
     "helpUrl": {
-      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/mqtt.md",
-      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/mqtt.md"
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/log.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/log.md"
     },
     "description": {
-      "en_US": "The action is used for print output message into log file, the log file is at $kuiper_install/log/stream.log by default.",
-      "zh_CN": "该操作用于将输出消息打印到日志文件中，默认情况下，该日志文件位于 $kuiper_install/log/stream.log 中。"
+      "en_US": "The action is used for print output message into log file, the log file is at $ekuiper_install/log/stream.log by default.",
+      "zh_CN": "该操作用于将输出消息打印到日志文件中，默认情况下，该日志文件位于 $ekuiper_install/log/stream.log 中。"
     }
   },
   "properties": [

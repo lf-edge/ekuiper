@@ -8,8 +8,8 @@
       "website": "https://www.emqx.io"
     },
     "helpUrl": {
-      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/mqtt.md",
-      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/mqtt.md"
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/edgex.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/edgex.md"
     },
     "description": {
       "en_US": "The action is used for publishing output message into EdgeX message bus.",
@@ -35,17 +35,18 @@
     },
     {
       "name": "protocol",
-      "default": "tcp",
+      "default": "redis",
       "optional": true,
       "control": "select",
       "connection_related": true,
       "values": [
-        "tcp"
+        "tcp",
+        "redis"
       ],
       "type": "list_string",
       "hint": {
-        "en_US": "The protocol. If it's not specified, then use default value 'tcp'.",
-        "zh_CN": "协议，如未指定，使用缺省值 tcp。"
+        "en_US": "The protocol. If it's not specified, then use default value 'redis'.",
+        "zh_CN": "协议，如未指定，使用缺省值 redis。"
       },
       "label": {
         "en_US": "Protocol",
@@ -56,12 +57,12 @@
       "name": "host",
       "optional": true,
       "control": "text",
-      "default": "*",
+      "default": "localhost",
       "type": "string",
       "connection_related": true,
       "hint": {
-        "en_US": "The host of message bus. If not specified, then use default value '*'",
-        "zh_CN": "消息总线主机地址，使用缺省值 *."
+        "en_US": "The host of message bus. If not specified, then use default value 'localhost'",
+        "zh_CN": "消息总线主机地址，使用缺省值 localhost."
       },
       "label": {
         "en_US": "Binding host",
@@ -72,7 +73,7 @@
       "name": "port",
       "optional": true,
       "control": "text",
-      "default": 5563,
+      "default": 6379,
       "type": "int",
       "connection_related": true,
       "hint": {
@@ -86,17 +87,72 @@
     },
     {
       "name": "topic",
-      "default": "events",
+      "default": "application",
       "optional": true,
       "control": "text",
       "type": "string",
       "hint": {
-        "en_US": "The topic to be published. If not specified, then use default value 'events'.",
-        "zh_CN": "发布的主题名称，如未指定，使用缺省值 events."
+        "en_US": "The topic to be published. If not specified, then use default value 'application'.",
+        "zh_CN": "发布的主题名称，如未指定，使用缺省值 application."
       },
       "label": {
         "en_US": "Topic",
         "zh_CN": "主题"
+      }
+    },
+    {
+      "name": "topicPrefix",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The prefix of a dynamic topic to be published. The topic will become a concatenation of `$topicPrefix/$profileName/$deviceName/$sourceName`",
+        "zh_CN": " 发布的主题的前缀。发送的主题将采用动态拼接，格式为`$topicPrefix/$profileName/$deviceName/$sourceName` 。"
+      },
+      "label": {
+        "en_US": "Topic",
+        "zh_CN": "主题"
+      }
+    },
+    {
+      "name": "type",
+      "default": "redis",
+      "optional": true,
+      "control": "select",
+      "connection_related": true,
+      "values": [
+        "mqtt",
+        "zero",
+        "redis"
+      ],
+      "type": "list_string",
+      "hint": {
+        "en_US": "The message bus type, two types of message buses are supported,'redis', 'zero' or 'mqtt', and 'redis' is the default value.",
+        "zh_CN": "消息总线类型，目前支持两种类型的消息总线，'redis', 'zero' 或者 'mqtt'，其中 'redis' 为缺省类型。"
+      },
+      "label": {
+        "en_US": "Message bus type",
+        "zh_CN": "消息总线类型"
+      }
+    },
+    {
+      "name": "messageType",
+      "default": "event",
+      "optional": true,
+      "control": "select",
+      "values": [
+        "event",
+        "request"
+      ],
+      "type": "list_string",
+      "hint": {
+        "en_US": "The EdgeX message model type. To publish the message as an event like EdgeX application service, use `event`. Otherwise, to publish the message as an event request like EdgeX device service or core data service, use `request`. If not specified, then use the default value `event`.",
+        "zh_CN": "EdgeX 消息模型类型。若要将消息发送为类似 apllication service 的 event 类型，则应设置为 `event`。否则，若要将消息发送为类似 device service 或者 core data service 的 event request 类型，则应设置为 `request`。如未指定，使用缺省值 `event` 。"
+      },
+      "label": {
+        "en_US": "Message type",
+        "zh_CN": "消息类型"
       }
     },
     {
@@ -136,8 +192,8 @@
       "control": "text",
       "type": "string",
       "hint": {
-        "en_US": "Allows user to specify the device name in the event structure that are sent from Kuiper.",
-        "zh_CN": "允许用户指定设备名称，该名称将作为从 Kuiper 中发送出来的 Event 结构体的设备名称"
+        "en_US": "Allows user to specify the device name in the event structure that are sent from eKuiper.",
+        "zh_CN": "允许用户指定设备名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的设备名称"
       },
       "label": {
         "en_US": "Device name",
@@ -145,23 +201,37 @@
       }
     },
     {
-      "name": "type",
-      "default": "zero",
+      "name": "profileName",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Allows user to specify the profile name in the event structure that are sent from eKuiper. The profileName in the meta take precedence if specified.",
+        "zh_CN": "允许用户指定设备名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的 profile 名称。若在 metadata 中设置了 profileName 将会优先采用。"
+      },
+      "label": {
+        "en_US": "Profile name",
+        "zh_CN": "Profile 名称"
+      }
+    },
+    {
+      "name": "sourceName",
+      "default": "",
       "optional": true,
       "control": "select",
-      "connection_related": true,
       "values": [
         "mqtt",
         "zero"
       ],
       "type": "list_string",
       "hint": {
-        "en_US": "The message bus type, two types of message buses are supported, 'zero' or 'mqtt', and 'zero' is the default value.",
-        "zh_CN": "消息总线类型，目前支持两种类型的消息总线，'zero' 或者 'mqtt'，其中 'zero' 为缺省类型。"
+        "en_US": "Allows user to specify the source name in the event structure that are sent from eKuiper. The sourceName in the meta take precedence if specified.",
+        "zh_CN": "允许用户指定源名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的源名称。若在 metadata 中设置了 sourceName 将会优先采用。"
       },
       "label": {
-        "en_US": "Message bus type",
-        "zh_CN": "消息总线类型"
+        "en_US": "Source name",
+        "zh_CN": "源名称"
       }
     },
     {

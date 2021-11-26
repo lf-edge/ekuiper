@@ -71,7 +71,7 @@ The rule options can be defined globally in ``etc/kuiper.yaml`` under the ``rule
 
 Currently, below kinds of sinks/actions are supported:
 
-- [log](./sinks/logs.md): Send the result to log file.
+- [log](./sinks/log.md): Send the result to log file.
 - [mqtt](./sinks/mqtt.md): Send the result to an MQTT broker.
 - [edgex](./sinks/edgex.md): Send the result to EdgeX message bus.
 - [rest](./sinks/rest.md): Send the result to a Rest HTTP server.

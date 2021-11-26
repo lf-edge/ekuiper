@@ -12,8 +12,8 @@
 			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/mqtt.md"
 		},
 		"description": {
-			"en_US": "Kuiper provides built-in support for MQTT source stream, which can subscribe the message from MQTT broker and feed into the Kuiper processing pipeline.",
-			"zh_CN": "Kuiper 为 MQTT 源流提供了内置支持，流可以订阅来自 MQTT 代理的消息并输入Kuiper 处理管道。"
+			"en_US": "eKuiper provides built-in support for MQTT source stream, which can subscribe the message from MQTT broker and feed into the eKuiper processing pipeline.",
+			"zh_CN": "eKuiper 为 MQTT 源流提供了内置支持，流可以订阅来自 MQTT 代理的消息并输入 eKuiper 处理管道。"
 		}
 	},
 	"libs": [],

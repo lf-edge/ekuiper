@@ -1,6 +1,6 @@
 # Sink Extension
 
-Sink feed data from eKuiper into external systems. eKuiper has built-in sink support for [MQTT broker](../../rules/sinks/mqtt.md) and [log sink](../../rules/sinks/logs.md). There are still needs to publish data to various external systems include messaging systems and database etc. Sink extension is presented to meet this requirement.
+Sink feed data from eKuiper into external systems. eKuiper has built-in sink support for [MQTT broker](../../rules/sinks/mqtt.md) and [log sink](../../rules/sinks/log.md). There are still needs to publish data to various external systems include messaging systems and database etc. Sink extension is presented to meet this requirement.
 
 ## Developing
 

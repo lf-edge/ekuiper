@@ -19,7 +19,7 @@
 | messageType   | 是   | EdgeX 消息模型类型。若要将消息发送为类似 apllication service 的 event 类型，则应设置为 `event`。否则，若要将消息发送为类似 device service 或者 core data service 的 event request 类型，则应设置为 `request`。如未指定，使用缺省值 ``event`` 。|
 
 | metadata    | 是    | 该属性为一个字段名称，该字段是 SQL SELECT 子句的一个字段名称，这个字段应该类似于 `meta(*) AS xxx` ，用于选出消息中所有的 EdgeX 元数据 。 |
-| profileName  | 是    | 允许用户指定设备名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的 profile 名称。若在 metadata 中设置了 profileName 将会优先采用。|
+| profileName  | 是    | 允许用户指定 Profile 名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的 profile 名称。若在 metadata 中设置了 profileName 将会优先采用。|
 | deviceName  | 是    | 允许用户指定设备名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的设备名称。若在 metadata 中设置了 deviceName 将会优先采用。 |
 | sourceName    | 是   | 允许用户指定源名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的源名称。若在 metadata 中设置了 sourceName 将会优先采用。 |
 | optional      | 是    | 如果指定了 `mqtt` 消息总线，那么还可以指定一下可选的值。请参考以下可选的支持的配置类型。 |
