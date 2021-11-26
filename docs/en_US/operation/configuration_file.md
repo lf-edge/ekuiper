@@ -183,6 +183,11 @@ It has properties
 * port     - port of redis
 * password - password used for auth in redis, if left empty auth won't be used
 * timeout  - timeout fo connection
+* connectionSelector - reuse the connection info defined in etc/connections/connection.yaml, mainly used for edgeX redis in secure mode
+  * only applicable to redis connection information
+  * the server, port and password in connection info will overwrite the host port and password above
+  * [more info](../rules/sources/edgex.md#connectionselector)
+    
 
 ### Config
 ```yaml

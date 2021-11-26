@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	registerClientFactory("mqtt", func(s *ConSelector) Client {
+	registerClientFactory("mqtt", func(s *conf.ConSelector) Client {
 		return &MQTTClient{selector: s}
 	})
 }
@@ -37,7 +37,7 @@ type MQTTClient struct {
 	password string
 	tls      *tls.Config
 
-	selector *ConSelector
+	selector *conf.ConSelector
 	conn     MQTT.Client
 }
 
@@ -47,18 +47,18 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 
 	err := cast.MapToStructStrict(props, &cfg)
 	if err != nil {
-		return fmt.Errorf("failed to get config for %s, the error is %s", ms.selector.ConnSelectorCfg, err)
+		return fmt.Errorf("failed to get config for %s, the error is %s", ms.selector.ConnSelectorStr, err)
 	}
 
 	if srvs := cfg.Servers; srvs != nil && len(srvs) > 0 {
 		ms.srv = srvs[0]
 	} else {
-		return fmt.Errorf("missing server property for %s", ms.selector.ConnSelectorCfg)
+		return fmt.Errorf("missing server property for %s", ms.selector.ConnSelectorStr)
 	}
 
 	if cfg.ClientId == "" {
 		if newUUID, err := uuid.NewUUID(); err != nil {
-			return fmt.Errorf("failed to get uuid for %s, the error is %s", ms.selector.ConnSelectorCfg, err)
+			return fmt.Errorf("failed to get uuid for %s, the error is %s", ms.selector.ConnSelectorStr, err)
 		} else {
 			ms.clientid = newUUID.String()
 		}
@@ -77,7 +77,7 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 		KeyFile:        cfg.PrivateKPath,
 		CaFile:         cfg.RootCaPath,
 	}
-	conf.Log.Infof("Connect MQTT broker with TLS configs: %v for connection selector: %s.", tlsOpts, ms.selector.ConnSelectorCfg)
+	conf.Log.Infof("Connect MQTT broker with TLS configs: %v for connection selector: %s.", tlsOpts, ms.selector.ConnSelectorStr)
 	tlscfg, err := cert.GenerateTLSForClient(tlsOpts)
 	if err != nil {
 		return err
@@ -108,17 +108,17 @@ func (ms *MQTTClient) GetClient() (interface{}, error) {
 
 	c := MQTT.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		conf.Log.Errorf("The connection to mqtt broker failed for connection selector: %s ", ms.selector.ConnSelectorCfg)
-		return nil, fmt.Errorf("found error when connecting for connection selector %s: %s", ms.selector.ConnSelectorCfg, token.Error())
+		conf.Log.Errorf("The connection to mqtt broker failed for connection selector: %s ", ms.selector.ConnSelectorStr)
+		return nil, fmt.Errorf("found error when connecting for connection selector %s: %s", ms.selector.ConnSelectorStr, token.Error())
 	}
-	conf.Log.Infof("The connection to mqtt broker is established successfully for connection selector: %s.", ms.selector.ConnSelectorCfg)
+	conf.Log.Infof("The connection to mqtt broker is established successfully for connection selector: %s.", ms.selector.ConnSelectorStr)
 
 	ms.conn = c
 	return c, nil
 }
 
 func (ms *MQTTClient) CloseClient() error {
-	conf.Log.Infof("Closing the connection to mqtt broker for connection selector: %s", ms.selector.ConnSelectorCfg)
+	conf.Log.Infof("Closing the connection to mqtt broker for connection selector: %s", ms.selector.ConnSelectorStr)
 	if ms.conn != nil && ms.conn.IsConnected() {
 		ms.conn.Disconnect(5000)
 	}

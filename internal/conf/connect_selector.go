@@ -1,30 +1,22 @@
-package connection
+package conf
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"strings"
 )
-
-var SUPPORTE_CONTYPE = []string{"mqtt", "edgex"}
 
 const CONNECTION_CONF = "connections/connection.yaml"
 
 type ConSelector struct {
-	ConnSelectorCfg string
-
-	Type          string // mqtt edgex
-	CfgKey        string // config key
-	SupportedType []string
+	ConnSelectorStr string
+	Type            string // mqtt edgex
+	CfgKey          string // config key
 }
 
 func (c *ConSelector) Init() error {
-
-	c.SupportedType = SUPPORTE_CONTYPE
-
-	conTypeSel := strings.SplitN(c.ConnSelectorCfg, ".", 2)
+	conTypeSel := strings.SplitN(c.ConnSelectorStr, ".", 2)
 	if len(conTypeSel) != 2 {
-		return fmt.Errorf("not a valid connection selector : %s", c.ConnSelectorCfg)
+		return fmt.Errorf("not a valid connection selector : %s", c.ConnSelectorStr)
 	}
 	c.Type = strings.ToLower(conTypeSel[0])
 	c.CfgKey = strings.ToLower(conTypeSel[1])
@@ -38,7 +30,7 @@ func (c *ConSelector) ReadCfgFromYaml() (props map[string]interface{}, err error
 	)
 
 	cfg := make(map[string]interface{})
-	err = conf.LoadConfigByName(CONNECTION_CONF, &cfg)
+	err = LoadConfigByName(CONNECTION_CONF, &cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -53,10 +45,15 @@ func (c *ConSelector) ReadCfgFromYaml() (props map[string]interface{}, err error
 			}
 		}
 	}
-
 	if !found {
 		return nil, fmt.Errorf("not found connection Type and Selector:  %s.%s", c.Type, c.CfgKey)
 	}
 
-	return
+	jsonPath := "sources/" + c.Type + ".json"
+	if c.Type == "mqtt" {
+		jsonPath = "mqtt_source.json"
+	}
+
+	err = CorrectsConfigKeysByJson(props, jsonPath)
+	return props, err
 }

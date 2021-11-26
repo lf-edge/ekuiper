@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"reflect"
 	"testing"
 )
@@ -11,7 +12,7 @@ var GetCalledNumber int
 var CloseCalledNumber int
 
 type MockClient struct {
-	selector *ConSelector
+	selector *conf.ConSelector
 
 	mockCon string
 }
@@ -33,7 +34,7 @@ func (m *MockClient) CloseClient() error {
 }
 
 func TestManager(t *testing.T) {
-	registerClientFactory("mqtt", func(super *ConSelector) Client {
+	registerClientFactory("mqtt", func(super *conf.ConSelector) Client {
 		return &MockClient{selector: super}
 	})
 

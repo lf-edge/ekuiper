@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"reflect"
 	"testing"
 )
@@ -85,8 +86,8 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ms := &MQTTClient{
-				selector: &ConSelector{
-					ConnSelectorCfg: "testSelector",
+				selector: &conf.ConSelector{
+					ConnSelectorStr: "testSelector",
 				},
 			}
 			err := ms.CfgValidate(tt.args.props)
@@ -106,8 +107,8 @@ func TestMQTTClient_CfgResult(t *testing.T) {
 	}
 
 	ms := &MQTTClient{
-		selector: &ConSelector{
-			ConnSelectorCfg: "testSelector",
+		selector: &conf.ConSelector{
+			ConnSelectorStr: "testSelector",
 		},
 	}
 

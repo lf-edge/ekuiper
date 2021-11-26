@@ -1,6 +1,10 @@
 package connection
 
-type ClientFactoryFunc func(super *ConSelector) Client
+import (
+	"github.com/lf-edge/ekuiper/internal/conf"
+)
+
+type ClientFactoryFunc func(super *conf.ConSelector) Client
 
 type Client interface {
 	CfgValidate(map[string]interface{}) error
@@ -14,7 +18,7 @@ type clientWrapper struct {
 	refCnt uint32
 }
 
-func NewClientWrapper(client Client, selector *ConSelector) (*clientWrapper, error) {
+func NewClientWrapper(client Client, selector *conf.ConSelector) (*clientWrapper, error) {
 	props, err := selector.ReadCfgFromYaml()
 	if err != nil {
 		return nil, err

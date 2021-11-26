@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"os"
 	"reflect"
 	"testing"
@@ -64,8 +65,8 @@ func Test_getConnectionConf(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := ConSelector{
-				ConnSelectorCfg: tt.args.connectionSelector,
+			c := conf.ConSelector{
+				ConnSelectorStr: tt.args.connectionSelector,
 			}
 			_ = c.Init()
 
@@ -135,8 +136,8 @@ func Test_getConnectionConfWithEnv(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := ConSelector{
-				ConnSelectorCfg: tt.args.connectionSelector,
+			c := conf.ConSelector{
+				ConnSelectorStr: tt.args.connectionSelector,
 			}
 			_ = c.Init()
 
