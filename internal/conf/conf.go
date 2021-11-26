@@ -63,10 +63,11 @@ type KuiperConf struct {
 	Store struct {
 		Type  string `yaml:"type"`
 		Redis struct {
-			Host     string `yaml:"host"`
-			Port     int    `yaml:"port"`
-			Password string `yaml:"password"`
-			Timeout  int    `yaml:"timeout"`
+			Host               string `yaml:"host"`
+			Port               int    `yaml:"port"`
+			Password           string `yaml:"password"`
+			Timeout            int    `yaml:"timeout"`
+			ConnectionSelector string `yaml:"connectionSelector"`
 		}
 		Sqlite struct {
 			Name string `yaml:"name"`
@@ -135,6 +136,13 @@ func InitConf() {
 	} else if Config.Basic.ConsoleLog {
 		Log.SetOutput(os.Stdout)
 	}
+
+	if Config.Store.Type == "redis" && Config.Store.Redis.ConnectionSelector != "" {
+		if err := RedisStorageConSelectorApply(Config.Store.Redis.ConnectionSelector, Config); err != nil {
+			Log.Fatal(err)
+		}
+	}
+
 }
 
 func init() {

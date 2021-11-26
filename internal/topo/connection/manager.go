@@ -7,20 +7,23 @@ import (
 )
 
 var m = clientManager{
-	clientFactory: make(map[string]ClientFactoryFunc),
-	lock:          sync.Mutex{},
-	clientMap:     make(map[string]*clientWrapper),
+	clientFactory:       make(map[string]ClientFactoryFunc),
+	lock:                sync.Mutex{},
+	supportedClientType: make([]string, 0),
+	clientMap:           make(map[string]*clientWrapper),
 }
 
 type clientManager struct {
-	lock          sync.Mutex
-	clientFactory map[string]ClientFactoryFunc
-	clientMap     map[string]*clientWrapper
+	lock                sync.Mutex
+	supportedClientType []string
+	clientFactory       map[string]ClientFactoryFunc
+	clientMap           map[string]*clientWrapper
 }
 
 func registerClientFactory(clientType string, creatorFunc ClientFactoryFunc) {
 	m.lock.Lock()
 	m.clientFactory[clientType] = creatorFunc
+	m.supportedClientType = append(m.supportedClientType, clientType)
 	m.lock.Unlock()
 }
 
@@ -36,8 +39,8 @@ func GetConnection(connectSelector string) (interface{}, error) {
 	if found {
 		cliWpr.addRef()
 	} else {
-		selectCfg := &ConSelector{
-			ConnSelectorCfg: connectSelector,
+		selectCfg := &conf.ConSelector{
+			ConnSelectorStr: connectSelector,
 		}
 		err := selectCfg.Init()
 		if err != nil {
@@ -47,8 +50,8 @@ func GetConnection(connectSelector string) (interface{}, error) {
 
 		clientCreator, ok := m.clientFactory[selectCfg.Type]
 		if !ok {
-			conf.Log.Errorf("can not find clientCreator for connection selector : %s only support %s", connectSelector, selectCfg.SupportedType)
-			return nil, fmt.Errorf("can not find clientCreator for connection selector : %s. only support %s", connectSelector, selectCfg.SupportedType)
+			conf.Log.Errorf("can not find clientCreator for connection selector : %s only support %s", connectSelector, m.supportedClientType)
+			return nil, fmt.Errorf("can not find clientCreator for connection selector : %s. only support %s", connectSelector, m.supportedClientType)
 		}
 
 		client := clientCreator(selectCfg)

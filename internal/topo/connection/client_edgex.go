@@ -25,13 +25,13 @@ import (
 )
 
 func init() {
-	registerClientFactory("edgex", func(s *ConSelector) Client {
+	registerClientFactory("edgex", func(s *conf.ConSelector) Client {
 		return &EdgexClient{selector: s}
 	})
 }
 
 type EdgexClient struct {
-	selector *ConSelector
+	selector *conf.ConSelector
 	mbconf   types.MessageBusConfig
 	client   messaging.MessageClient
 }
@@ -45,29 +45,22 @@ type EdgexConf struct {
 }
 
 func (es *EdgexClient) CfgValidate(props map[string]interface{}) error {
-
-	edgexJsonPath := "sources/edgex.json"
-	err := conf.CorrectsConfigKeysByJson(props, edgexJsonPath)
-	if err != nil {
-		return fmt.Errorf("read properties %v fail for connection selector %s with error: %v", props, es.selector.ConnSelectorCfg, err)
-	}
-
 	c := &EdgexConf{}
-	err = cast.MapToStructStrict(props, c)
+	err := cast.MapToStructStrict(props, c)
 	if err != nil {
-		return fmt.Errorf("map config map to struct %v fail for connection selector %s with error: %v", props, es.selector.ConnSelectorCfg, err)
+		return fmt.Errorf("map config map to struct %v fail for connection selector %s with error: %v", props, es.selector.ConnSelectorStr, err)
 	}
 
 	if c.Server == "" {
-		return fmt.Errorf("missing server property for connection selector %s", es.selector.ConnSelectorCfg)
+		return fmt.Errorf("missing server property for connection selector %s", es.selector.ConnSelectorStr)
 	}
 
 	if c.Port == 0 {
-		return fmt.Errorf("missing port property for connection selector %s", es.selector.ConnSelectorCfg)
+		return fmt.Errorf("missing port property for connection selector %s", es.selector.ConnSelectorStr)
 	}
 
 	if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT && c.Type != messaging.Redis {
-		return fmt.Errorf("specified wrong type value %s for connection selector %s", c.Type, es.selector.ConnSelectorCfg)
+		return fmt.Errorf("specified wrong type value %s for connection selector %s", c.Type, es.selector.ConnSelectorStr)
 	}
 
 	mbconf := types.MessageBusConfig{
@@ -96,17 +89,17 @@ func (es *EdgexClient) GetClient() (interface{}, error) {
 	}
 
 	if err := client.Connect(); err != nil {
-		conf.Log.Errorf("The connection to edgex messagebus failed for connection selector : %s.", es.selector.ConnSelectorCfg)
+		conf.Log.Errorf("The connection to edgex messagebus failed for connection selector : %s.", es.selector.ConnSelectorStr)
 		return nil, fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
 	}
-	conf.Log.Infof("The connection to edgex messagebus is established successfully for connection selector : %s.", es.selector.ConnSelectorCfg)
+	conf.Log.Infof("The connection to edgex messagebus is established successfully for connection selector : %s.", es.selector.ConnSelectorStr)
 
 	es.client = client
 	return client, nil
 }
 
 func (es *EdgexClient) CloseClient() error {
-	conf.Log.Infof("Closing the connection to edgex messagebus for connection selector : %s.", es.selector.ConnSelectorCfg)
+	conf.Log.Infof("Closing the connection to edgex messagebus for connection selector : %s.", es.selector.ConnSelectorStr)
 	if e := es.client.Disconnect(); e != nil {
 		return e
 	}
