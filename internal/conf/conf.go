@@ -143,6 +143,9 @@ func InitConf() {
 		}
 	}
 
+	if Config.Portable.PythonBin == "" {
+		Config.Portable.PythonBin = "python"
+	}
 }
 
 func init() {
