@@ -21,16 +21,12 @@ import (
 
 const TransKey = "$$trans"
 
-type TransConfig struct {
-	Data  interface{}
-	TFunc transform.TransFunc
-}
-
 // TransformOutput Lazy transform output to bytes
-func (c *DefaultContext) TransformOutput() ([]byte, bool, error) {
-	cc, ok := c.Value(TransKey).(*TransConfig)
+func (c *DefaultContext) TransformOutput(data interface{}) ([]byte, bool, error) {
+	v := c.Value(TransKey)
+	f, ok := v.(transform.TransFunc)
 	if ok {
-		return cc.TFunc(cc.Data)
+		return f(data)
 	}
 	return nil, false, fmt.Errorf("no transform configured")
 }

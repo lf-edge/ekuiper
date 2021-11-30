@@ -244,7 +244,7 @@ func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 
 func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	jsonBytes, _, err := ctx.TransformOutput()
+	jsonBytes, _, err := ctx.TransformOutput(item)
 	if err != nil {
 		return err
 	}

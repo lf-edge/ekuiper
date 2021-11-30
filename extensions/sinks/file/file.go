@@ -107,7 +107,7 @@ func (m *fileSink) save(logger api.Logger) {
 
 func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	if v, _, err := ctx.TransformOutput(); err == nil {
+	if v, _, err := ctx.TransformOutput(item); err == nil {
 		logger.Debugf("file sink receive %s", item)
 		m.mux.Lock()
 		m.results = append(m.results, v)

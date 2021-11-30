@@ -67,7 +67,7 @@ func (m *zmqSink) Open(ctx api.StreamContext) (err error) {
 
 func (m *zmqSink) Collect(ctx api.StreamContext, item interface{}) (err error) {
 	logger := ctx.GetLogger()
-	if v, _, err := ctx.TransformOutput(); err == nil {
+	if v, _, err := ctx.TransformOutput(item); err == nil {
 		logger.Debugf("zmq sink receive %s", item)
 		if m.topic == "" {
 			_, err = m.publisher.Send(string(v), 0)

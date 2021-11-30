@@ -29,9 +29,9 @@ Sink （目标）的主要任务是实现 _collect_ 方法。 当 eKuiper 将任
 
 大多数时候，收到到的 map 的内容为规则选择的列的值。但是，如果 `sendError` 属性设置为 true 且规则有错误，则错误信息会放到 map 里，形似 `{"error":"error message here"}` 。
 
-开发者可通过 context 方法`ctx.TransformOutput()` 获取转换后的字节数组。默认情况下，该方法将返回 json 编码的字节数组，若 [`dataTemlate` 属性](../../rules/overview.md#数据模板) 有设置，则返回格式化后的字符串数组，且第二个返回值设为 true，表示结果已经过变换。
+开发者可通过 context 方法`ctx.TransformOutput(data)` 获取转换后的字节数组。默认情况下，该方法将返回 json 编码的字节数组，若 [`dataTemlate` 属性](../../rules/overview.md#数据模板) 有设置，则返回格式化后的字符串数组，且第二个返回值设为 true，表示结果已经过变换。
 
-需要注意的是，当 [`dataTemlate` 属性](../../rules/overview.md#数据模板) 设置时，开发者可通过 context 方法`ctx.TransformOutput()` 获取转换后的数据。若数据模板未设置，则该方法返回空值。
+需要注意的是，当 [`dataTemlate` 属性](../../rules/overview.md#数据模板) 设置时，开发者可通过 context 方法`ctx.TransformOutput(data)` 获取转换后的数据。若数据模板未设置，则该方法返回空值。
 
 该方法可以返回任何错误类型。但是，如果想要让自动重试机制生效，返回的错误消息必须以 "io error" 开头。大多数情况下，也只有 io 问题才有重试的需要。
 

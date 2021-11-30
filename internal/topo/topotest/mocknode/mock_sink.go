@@ -36,7 +36,7 @@ func (m *MockSink) Open(ctx api.StreamContext) error {
 
 func (m *MockSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	if v, _, err := ctx.TransformOutput(); err == nil {
+	if v, _, err := ctx.TransformOutput(item); err == nil {
 		logger.Debugf("mock sink receive %s", item)
 		m.results = append(m.results, v)
 	} else {

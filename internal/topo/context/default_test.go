@@ -19,6 +19,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"log"
 	"os"
@@ -200,39 +201,30 @@ func TestDynamicProp(t *testing.T) {
 }
 
 func TestTransition(t *testing.T) {
-	mockFunc := func(d interface{}) ([]byte, bool, error) {
+	var mockFunc transform.TransFunc = func(d interface{}) ([]byte, bool, error) {
 		return []byte(fmt.Sprintf("%v", d)), true, nil
 	}
 	var tests = []struct {
-		trans *TransConfig
-		r     []byte
+		data interface{}
+		r    []byte
 	}{
 		{
-			trans: &TransConfig{
-				Data:  "hello",
-				TFunc: mockFunc,
-			},
-			r: []byte(`hello`),
+			data: "hello",
+			r:    []byte(`hello`),
 		}, {
-			trans: &TransConfig{
-				Data:  "world",
-				TFunc: mockFunc,
-			},
-			r: []byte(`world`),
+			data: "world",
+			r:    []byte(`world`),
 		}, {
-			trans: &TransConfig{
-				Data:  map[string]interface{}{"a": "hello"},
-				TFunc: mockFunc,
-			},
-			r: []byte(`map[a:hello]`),
+			data: map[string]interface{}{"a": "hello"},
+			r:    []byte(`map[a:hello]`),
 		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	ctx := Background().WithMeta("testTransRule", "op1", &state.MemoryStore{}).(*DefaultContext)
+	nc := WithValue(ctx, TransKey, mockFunc)
 	for i, tt := range tests {
-		nc := WithValue(ctx, TransKey, tt.trans)
-		r, _, _ := nc.TransformOutput()
+		r, _, _ := nc.TransformOutput(tt.data)
 		if !reflect.DeepEqual(tt.r, r) {
 			t.Errorf("%d\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, string(tt.r), string(r))
 		}
