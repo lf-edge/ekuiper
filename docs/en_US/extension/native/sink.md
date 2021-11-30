@@ -28,7 +28,7 @@ The main task for a Sink is to implement _collect_ method. The function will be 
 
 Most of the time, the map content will be the selective fields. But if `sendError` property is enabled and there are errors happen in the rule, the map content will be like `{"error":"error message here"}`.
 
-The developer can fetch the transformed result from the context method `ctx.TransformOutput()`. The return values are the transformed value of `[]byte` type. Currently, it will be transformed to the json byte array be default or formatted with the set [`dataTemlate` property](../../rules/overview.md#data-template). If the value is transformed by dataTemplate, the second return value will be true. 
+The developer can fetch the transformed result from the context method `ctx.TransformOutput(data)`. The return values are the transformed value of `[]byte` type. Currently, it will be transformed to the json byte array be default or formatted with the set [`dataTemlate` property](../../rules/overview.md#data-template). If the value is transformed by dataTemplate, the second return value will be true. 
 
 The developer can return any errors. However, to leverage the retry feature of eKuiper, the developer must return an error whose message starts with "io error".
 

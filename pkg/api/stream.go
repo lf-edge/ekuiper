@@ -155,7 +155,7 @@ type StreamContext interface {
 	// Properties processing, prop is a json path
 	ParseDynamicProp(prop string, data interface{}) (interface{}, error)
 	// Transform output according to the properties like syntax
-	TransformOutput() ([]byte, bool, error)
+	TransformOutput(data interface{}) ([]byte, bool, error)
 }
 
 type Operator interface {

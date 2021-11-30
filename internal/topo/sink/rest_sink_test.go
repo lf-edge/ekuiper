@@ -197,19 +197,12 @@ func TestRestSink_Apply(t *testing.T) {
 		tt.config["url"] = ts.URL
 		s.Configure(tt.config)
 		s.Open(ctx)
+		vCtx := context.WithValue(ctx, context.TransKey, tf)
 		if ss.(bool) {
 			for _, d := range tt.data {
-				vCtx := context.WithValue(ctx, context.TransKey, &context.TransConfig{
-					Data:  d,
-					TFunc: tf,
-				})
 				s.Collect(vCtx, d)
 			}
 		} else {
-			vCtx := context.WithValue(ctx, context.TransKey, &context.TransConfig{
-				Data:  tt.data,
-				TFunc: tf,
-			})
 			s.Collect(vCtx, tt.data)
 		}
 
@@ -359,13 +352,10 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 		tt.config["url"] = ts.URL
 		s.Configure(tt.config)
 		s.Open(ctx)
+		vCtx := context.WithValue(ctx, context.TransKey, transform.TransFunc(func(d interface{}) ([]byte, bool, error) {
+			return d.([]byte), true, nil
+		}))
 		for _, d := range tt.data {
-			vCtx := context.WithValue(ctx, context.TransKey, &context.TransConfig{
-				Data: d,
-				TFunc: func(_ interface{}) ([]byte, bool, error) {
-					return d, true, nil
-				},
-			})
 			s.Collect(vCtx, d)
 		}
 		s.Close(ctx)

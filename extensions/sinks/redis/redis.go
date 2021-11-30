@@ -126,7 +126,7 @@ func (r *RedisSink) Open(ctx api.StreamContext) (err error) {
 
 func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
-	v, _, err := ctx.TransformOutput()
+	v, _, err := ctx.TransformOutput(data)
 	if err != nil {
 		logger.Error(err)
 		return err

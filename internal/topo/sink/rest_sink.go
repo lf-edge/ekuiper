@@ -182,7 +182,7 @@ func (me MultiErrors) Error() string {
 func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	logger.Debugf("rest sink receive %s", item)
-	output, transed, err := ctx.TransformOutput()
+	output, transed, err := ctx.TransformOutput(item)
 	if err != nil {
 		logger.Warnf("rest sink decode data error: %v", err)
 		return nil
