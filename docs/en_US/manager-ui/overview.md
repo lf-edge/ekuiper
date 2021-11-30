@@ -83,13 +83,14 @@ You need to provide the address, user name, and password of kuiper-manager when 
 
   ![login](./resources/login.png)
 
-### Create a eKuiper node
+### Create a eKuiper service
 
-When creating a eKuiper node, you need to fill in the "node type", "node name" and "endpoint URL".
+When creating a eKuiper service, you need to fill in the "service type", "service name" and "endpoint URL".
 
-* Node Type: Select `Direct Connect Node` (`Huawei IEF Node` is dedicated to Huawei users).
+* Service Type: Select `Direct Connect service` (`Huawei IEF service` is dedicated to Huawei users).
 
-* Node name: self-made, this example uses `example`.
+* * Service Type: Select `Direct Connect service` (`Huawei IEF service` is dedicated to Huawei users).
+ name: self-made, this example uses `example`.
 
 * Endpoint URL: `http://$IP:9081`, the IP acquisition command is as follows:
 
@@ -97,13 +98,13 @@ When creating a eKuiper node, you need to fill in the "node type", "node name" a
   docker inspect kuiper |  grep IPAddress
   ```
 
-The example of creating a eKuiper node is shown in the figure below. If the port is exposed to the host, then the 9081 port address on the host can also be used directly.
+The example of creating a eKuiper service is shown in the figure below. If the port is exposed to the host, then the 9081 port address on the host can also be used directly.
 
-![addNode](./resources/add_node.png)
+![addNode](./resources/add_service.png)
 
 ### Install the plugin
 
-In our scenario, the target plugin named file will be used. Select "Plugins" > "Install plugin", and the following dialog box will pop up: Select the target plugin named file in the drop-down list to download and install it, and the plugin will write data to the file specified by the user. As shown in the figure below, after the reader selects the plug-in with the corresponding name, the  input box of "File" will automatically be filled with the corresponding plug-in download address. After clicking the "Submit" button, eKuiper will automatically download the corresponding plugin from the relevant address on `https://www.emqx.io/downloads` and install it into the system automatically.
+In our scenario, the target plugin named file will be used. Select "Plugins" > "Install plugin", and the following dialog box will pop up: Select the target plugin named file in the drop-down list to download and install it, and the plugin will write data to the file specified by the user. As shown in the figure below, after the reader selects the plug-in with the corresponding name, the  input box of "File" will automatically be filled with the corresponding plug-in download address, Enter the extended parameter configuration of the installation plug-in script. After clicking the "Submit" button, eKuiper will automatically download the corresponding plugin from the relevant address on `https://www.emqx.io/downloads` and install it into the system automatically.
 
 ![newPlugine](./resources/new_plugin.png)
 
@@ -132,7 +133,7 @@ Create a stream named `demoStream`, as shown below:
 
 ![newStream](./resources/new_stream.png)
 
-As shown above, the "default" configuration group is used. Users can also write their own configuration according to their needs. The specific operation is to click `Source Configuration` on the page of creating a steam, and a dialog box will pop up as shown in the figure below. If the user enters the value of any configuration item here, the corresponding default configuration will be overwritten; if no value is entered, the default configuration value will be used.
+As shown above, the "default" configuration group is used. Users can also write their own configuration according to their needs. The specific operation is to click `Source Configuration` on the page of creating a steam, Jump to the configuration page, expand the type of configuration you need, and click the plus sign to create source config.
 
 ![sourceConf](./resources/source_conf.png)
 
