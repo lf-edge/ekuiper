@@ -68,7 +68,7 @@ MQTT 连接的客户端 ID。 如果未指定，将使用一个 uuid。
 
 ### connectionSelector
 
-复用 MQTT 源连接。连接配置信息位于 ``connections/connection.yaml``.
+重用 MQTT 源连接。连接配置信息位于 ``connections/connection.yaml``.
 ```yaml
 mqtt:
   localConnection: #connection key

@@ -73,6 +73,49 @@ c78419bc5096   consul:1.9.5                                                    "
 d4b236a7b561   redis:6.2.4-alpine                                              "docker-entrypoint.s…"   13 minutes ago   Up 13 minutes   127.0.0.1:6379->6379/tcp                                                               edgex-redis
 ```
 
+### 连接重用
+
+当 eKuiper 从 messageBus 获取数据并返回处理结果时，用户需要在创建源和接收器时分别指定连接信息。
+从 `eKuiper 1.4.0` 和 `EdgeX Jakarta` 开始，有一个新功能支持用户可以在固定位置指定连接信息，然后源和目标输出可以参考。
+* ``redis`` 消息总线： 这个功能在 EdgeX 使用 `secure` 模式时特别有用，在这种情况下，客户端凭据将在服务引导时自动注入该共享位置。
+  为了使用这个功能，用户需要对目标`docker-compose`文件的`rulesengine`服务部分做部分修改
+  将这些添加到 ``environment`` 部分并确保镜像是 ``1.4.0`` 或更高版本
+  ```yaml
+  environment:
+      CONNECTION__EDGEX__REDISMSGBUS__PORT: 6379
+      CONNECTION__EDGEX__REDISMSGBUS__PROTOCOL: redis
+      CONNECTION__EDGEX__REDISMSGBUS__SERVER: edgex-redis
+      CONNECTION__EDGEX__REDISMSGBUS__TYPE: redis
+      EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.redisMsgBus
+  ```
+* ``mqtt/zeromq`` 消息总线: 根据目标总线类型填写相应参数，指定必要的客户端凭证
+  这里以 mqtt 消息总线为例，确保相应的连接信息存在于此文件 ``etc/connections/connection.yaml`` 中, [更多信息](../rules/sources/edgex.md#connectionselector) 请参考
+  ```yaml
+  environment:
+      CONNECTION__EDGEX__MQTTMSGBUS__PORT: 1883
+      CONNECTION__EDGEX__MQTTMSGBUS__PROTOCOL: tcp
+      CONNECTION__EDGEX__MQTTMSGBUS__SERVER: edgex-mqtt
+      CONNECTION__EDGEX__MQTTMSGBUS__TYPE: mqtt
+      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__USERNAME: username
+      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__PASSWORD: password
+      EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.mqttMsgBus
+  ```
+  
+做完这些修改后，请参考这篇[文档](../rules/sinks/edgex.md#使用连接重用功能发布)了解如何使用连接重用功能
+
+
+### 使用 Redis 作为 KV 存储
+
+从 `1.4.0` 开始，eKuiper 支持 redis 来存储 KV 元数据，用户可以对目标 `docker-compose` 文件的 `rulesengine` 服务部分进行一些修改以应用此更改。
+用户可以将这些添加到 ``environment`` 部分并确保映像为 ``1.4.0`` 或更高版本
+  ```yaml
+  environment:
+    KUIPER__STORE__TYPE: redis
+    KUIPER__STORE__REDIS__HOST: edgex-redis
+    KUIPER__STORE__REDIS__PORT: 6379
+  ```
+
+
 ### 原生 (native) 方式运行
 
 出于运行效率考虑，读者可能需要直接以原生方式运行 eKuiper，但是可能会发现直接使用下载的 eKuiper

@@ -163,7 +163,7 @@ http://host:port/kuiper-plugins/0.9.1/alpine/functions
 * port     - redis 服务器端口。
 * password - redis 服务器密码。若 redis 未配置认证系统，则可不设置密码。
 * timeout  - 连接超时时间。
-* connectionSelector - 复用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
+* connectionSelector - 重用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
     * 只适用于 edgex redis 的连接信息 
     * 连接信息中的 server， port 和 password 会覆盖以上定义的 host， port 和 password
     * [具体信息可参考](../rules/sources/edgex.md#connectionselector)
