@@ -266,10 +266,28 @@ func getValueType(v interface{}) (string, interface{}, error) {
 		return v2.ValueTypeBool, v, nil
 	case reflect.String:
 		return v2.ValueTypeString, v, nil
+	case reflect.Uint8:
+		return v2.ValueTypeUint8, v, nil
+	case reflect.Uint16:
+		return v2.ValueTypeUint16, v, nil
+	case reflect.Uint32:
+		return v2.ValueTypeUint32, v, nil
+	case reflect.Uint64:
+		return v2.ValueTypeUint64, v, nil
+	case reflect.Uint:
+		return v2.ValueTypeUint64, uint64(v.(uint)), nil
+	case reflect.Int8:
+		return v2.ValueTypeInt8, v, nil
+	case reflect.Int16:
+		return v2.ValueTypeInt16, v, nil
+	case reflect.Int32:
+		return v2.ValueTypeInt32, v, nil
 	case reflect.Int64:
 		return v2.ValueTypeInt64, v, nil
 	case reflect.Int:
 		return v2.ValueTypeInt64, int64(v.(int)), nil
+	case reflect.Float32:
+		return v2.ValueTypeFloat32, v, nil
 	case reflect.Float64:
 		return v2.ValueTypeFloat64, v, nil
 	case reflect.Slice:
@@ -301,6 +319,36 @@ func getValueType(v interface{}) (string, interface{}, error) {
 						result[i] = temp
 					}
 					return v2.ValueTypeStringArray, result, nil
+				case reflect.Int8:
+					result := make([]int8, len(arrayValue))
+					for i, av := range arrayValue {
+						temp, ok := av.(int8)
+						if !ok {
+							return "", nil, fmt.Errorf("unable to cast value to []int8 for %v", v)
+						}
+						result[i] = temp
+					}
+					return v2.ValueTypeInt8Array, result, nil
+				case reflect.Int16:
+					result := make([]int16, len(arrayValue))
+					for i, av := range arrayValue {
+						temp, ok := av.(int16)
+						if !ok {
+							return "", nil, fmt.Errorf("unable to cast value to []int16 for %v", v)
+						}
+						result[i] = temp
+					}
+					return v2.ValueTypeInt16Array, result, nil
+				case reflect.Int32:
+					result := make([]int32, len(arrayValue))
+					for i, av := range arrayValue {
+						temp, ok := av.(int32)
+						if !ok {
+							return "", nil, fmt.Errorf("unable to cast value to []int32 for %v", v)
+						}
+						result[i] = temp
+					}
+					return v2.ValueTypeInt32Array, result, nil
 				case reflect.Int64, reflect.Int:
 					result := make([]int64, len(arrayValue))
 					for i, av := range arrayValue {
@@ -311,6 +359,56 @@ func getValueType(v interface{}) (string, interface{}, error) {
 						result[i] = temp
 					}
 					return v2.ValueTypeInt64Array, result, nil
+				case reflect.Uint8:
+					result := make([]uint8, len(arrayValue))
+					for i, av := range arrayValue {
+						temp, ok := av.(uint8)
+						if !ok {
+							return "", nil, fmt.Errorf("unable to cast value to []uint8 for %v", v)
+						}
+						result[i] = temp
+					}
+					return v2.ValueTypeUint8Array, result, nil
+				case reflect.Uint16:
+					result := make([]uint16, len(arrayValue))
+					for i, av := range arrayValue {
+						temp, ok := av.(uint16)
+						if !ok {
+							return "", nil, fmt.Errorf("unable to cast value to []uint16 for %v", v)
+						}
+						result[i] = temp
+					}
+					return v2.ValueTypeUint16Array, result, nil
+				case reflect.Uint32:
+					result := make([]uint32, len(arrayValue))
+					for i, av := range arrayValue {
+						temp, ok := av.(uint32)
+						if !ok {
+							return "", nil, fmt.Errorf("unable to cast value to []uint32 for %v", v)
+						}
+						result[i] = temp
+					}
+					return v2.ValueTypeUint32Array, result, nil
+				case reflect.Uint64, reflect.Uint:
+					result := make([]uint64, len(arrayValue))
+					for i, av := range arrayValue {
+						temp, ok := av.(uint64)
+						if !ok {
+							return "", nil, fmt.Errorf("unable to cast value to []uint64 for %v", v)
+						}
+						result[i] = temp
+					}
+					return v2.ValueTypeUint64Array, result, nil
+				case reflect.Float32:
+					result := make([]float32, len(arrayValue))
+					for i, av := range arrayValue {
+						temp, ok := av.(float32)
+						if !ok {
+							return "", nil, fmt.Errorf("unable to cast value to []float32 for %v", v)
+						}
+						result[i] = temp
+					}
+					return v2.ValueTypeFloat64Array, result, nil
 				case reflect.Float64:
 					result := make([]float64, len(arrayValue))
 					for i, av := range arrayValue {
