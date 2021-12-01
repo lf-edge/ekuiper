@@ -133,9 +133,11 @@ Create a stream named `demoStream`, as shown below:
 
 ![newStream](./resources/new_stream.png)
 
-As shown above, the "default" configuration group is used. Users can also write their own configuration according to their needs. The specific operation is to click `Source Configuration` on the page of creating a steam, Jump to the configuration page, expand the type of configuration you need, and click the plus sign to create source config.
+As shown above, the "default" configuration group is used. Users can also write their own configuration according to their needs. The specific operation is to click `Source Configuration` on the page of creating a steam, Jump to the configuration page, expand the type of configuration you need, and click the plus sign to create source config and a dialog box will pop up as shown below.
 
 ![sourceConf](./resources/source_conf.png)
+
+![sourceConf](./resources/create_conf.png)
 
 ### Create a rule
 
