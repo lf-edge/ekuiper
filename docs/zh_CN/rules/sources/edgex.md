@@ -89,7 +89,7 @@ EdgeX 消息总线的端口，缺省为 `5573`
 
 ## connectionSelector
 
-复用 EdgeX 源连接。连接配置信息位于 ``connections/connection.yaml``.
+重用 EdgeX 源连接。连接配置信息位于 ``connections/connection.yaml``.
 ```yaml
 edgex:
   redisMsgBus: #connection key

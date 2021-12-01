@@ -21,7 +21,7 @@ mqtt:
 
 
 edgex:
-  redisMsgBus: #connection key
+  redisMsgBus: #redis connection key
     protocol: redis
     server: 127.0.0.1
     port: 6379
@@ -45,7 +45,12 @@ edgex:
     protocol: tcp
     server: 127.0.0.1
     port: 1883
-    topic: events
     type: mqtt
     optional:
       ClientId: "client1"
+
+  zeroMsgBus: #connection key
+    protocol: tcp
+    server: localhost
+    port: 5571
+    type: zero

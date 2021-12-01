@@ -77,6 +77,47 @@ c78419bc5096   consul:1.9.5                                                    "
 d4b236a7b561   redis:6.2.4-alpine                                              "docker-entrypoint.s…"   13 minutes ago   Up 13 minutes   127.0.0.1:6379->6379/tcp                                                               edgex-redis
 ```
 
+#### Connection reuse
+
+When eKuiper gets data from messageBus and send back the processed result, user needs to specify the connection info separately when creating the source and sink.
+Since `eKuiper 1.4.0` and `EdgeX Jakarta`, there is a new feature that user can specify the connection info in a fixed place and then source and sink can make a reference to it.
+* ``redis`` messageBus: this is especially useful when EdgeX use `secure` mode, in which case the client credentials will be injected into that share place automatically when services bootstrap.
+In order to use this feature, users need do some modifications on the target ``docker-compose`` file's `rulesengine` service part
+add these in ``environment`` part and make sure the image is ``1.4.0`` or later. 
+  ```yaml
+  environment:
+      CONNECTION__EDGEX__REDISMSGBUS__PORT: 6379
+      CONNECTION__EDGEX__REDISMSGBUS__PROTOCOL: redis
+      CONNECTION__EDGEX__REDISMSGBUS__SERVER: edgex-redis
+      CONNECTION__EDGEX__REDISMSGBUS__TYPE: redis
+      EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.redisMsgBus
+  ```
+  
+* ``mqtt/zeromq`` messageBus: adjust the parameters accordingly and specify the client credentials if have.
+  There is a ``mqtt`` message bus example, make sure the connection info exists in ``etc/connections/connection.yaml``, for [more info](../rules/sources/edgex.md#connectionselector) please check this. 
+  ```yaml
+  environment:
+      CONNECTION__EDGEX__MQTTMSGBUS__PORT: 1883
+      CONNECTION__EDGEX__MQTTMSGBUS__PROTOCOL: tcp
+      CONNECTION__EDGEX__MQTTMSGBUS__SERVER: edgex-mqtt
+      CONNECTION__EDGEX__MQTTMSGBUS__TYPE: mqtt
+      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__USERNAME: username
+      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__PASSWORD: password
+      EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.mqttMsgBus
+  ```
+After these modifications and eKuiper starts up, please read [this](../rules/sinks/edgex.md#connectionreusepublishexample) to learn how to refer to the connection info
+
+#### Use Redis as KV storage
+
+Since `1.4.0`, eKuiper supports redis to store the KV metadata, user can make some modifications on the target ``docker-compose`` file's `rulesengine` service part to apply this change.
+Users can add these in ``environment`` part and make sure the image is ``1.4.0`` or later.
+  ```yaml
+  environment:
+    KUIPER__STORE__TYPE: redis
+    KUIPER__STORE__REDIS__HOST: edgex-redis
+    KUIPER__STORE__REDIS__PORT: 6379
+  ```
+
 #### Run with native
 
 For performance reason, reader probably wants to run eKuiper with native approach. But you may find

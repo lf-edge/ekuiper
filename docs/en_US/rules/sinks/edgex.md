@@ -142,6 +142,30 @@ Below is a rule that send analysis result to zeromq message bus.
 }
 ```
 
+## Connection reuse publish example
+
+Below is an example for how to use connection reuse feature. We just need remove the connection related parameters and
+use the ``connectionSelector`` to specify the connection to reuse. [more info](../sources/edgex.md#connectionselector)
+
+```json
+{
+  "id": "ruleRedisDevice",
+  "sql": "SELECT temperature, humidity, humidity*2 as h1 FROM demo WHERE temperature = 20",
+  "actions": [
+    {
+      "edgex": {
+        "connectionSelector": "edgex.redisMsgBus",
+        "topic": "application",
+        "profileName": "myprofile",
+        "deviceName": "mydevice",        
+        "contentType": "application/json"
+      }
+    }
+  ]
+}
+```
+
+
 ## Dynamic metadata
 
 ### Publish result to a new EdgeX message bus without keeping original metadata
