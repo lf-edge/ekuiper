@@ -105,7 +105,7 @@ add these in ``environment`` part and make sure the image is ``1.4.0`` or later.
       CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__PASSWORD: password
       EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.mqttMsgBus
   ```
-After these modifications and eKuiper starts up, please read [this](../rules/sinks/edgex.md#connectionreusepublishexample) to learn how to refer to the connection info
+After these modifications and eKuiper starts up, please read [this](../rules/sinks/edgex.md#connection-reuse-publish-example) to learn how to refer to the connection info
 
 #### Use Redis as KV storage
 
