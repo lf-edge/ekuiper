@@ -15,7 +15,7 @@ Below is the list of data types supported.
 | 3    | string    | Text values, comprised of Unicode characters.                |
 | 4    | datetime  | datatime type.          |
 | 5    | boolean   | The boolean type, the value could be ``true`` or ``false``.  |
-| 6    | array     | The array type, can be any types from simple data or struct type (#1 - #5, and #7). |
+| 6    | array     | The array type, can be any types from simple data or struct type |
 | 7    | struct    | The complex type. Set of name/value pairs. Values must be of supported data type. |
 
 ## Compatibility of comparison and calculation
