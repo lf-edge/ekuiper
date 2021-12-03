@@ -34,8 +34,8 @@ type ProjectOp struct {
  *  output: []map[string]interface{}
  */
 func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
-	log := ctx.GetLogger()
-	log.Debugf("project plan receive %s", data)
+	//log := ctx.GetLogger()
+	//log.Debugf("project plan receive %s", data)
 	var results []map[string]interface{}
 	switch input := data.(type) {
 	case error:

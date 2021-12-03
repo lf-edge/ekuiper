@@ -203,13 +203,11 @@ func (ss *sourceSingleton) run(name, key string) {
 }
 
 func (ss *sourceSingleton) broadcast(val api.SourceTuple) {
-	logger := ss.ctx.GetLogger()
 	ss.RLock()
 	for n, out := range ss.outputs {
 		go func(name string, dataCh *DynamicChannelBuffer) {
 			select {
 			case dataCh.In <- val:
-				logger.Debugf("broadcast from source pool to %s done", name)
 			case <-ss.ctx.Done():
 			case <-dataCh.done:
 				// detached
