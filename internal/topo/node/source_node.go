@@ -136,7 +136,6 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: conf.GetNowInMilli(), Metadata: data.Meta()}
 						processedData := m.preprocessOp.Apply(ctx, tuple, nil, nil)
 						stats.ProcessTimeEnd()
-						logger.Debugf("source node %s is sending tuple %+v of timestamp %d", m.name, tuple, tuple.Timestamp)
 						//blocking
 						switch val := processedData.(type) {
 						case nil:
@@ -161,7 +160,6 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 								logger.Debugf("Source save offset %v", offset)
 							}
 						}
-						logger.Debugf("source node %s has consumed tuple of timestamp %d", m.name, tuple.Timestamp)
 					}
 				}
 			}(i)

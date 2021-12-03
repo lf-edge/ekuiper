@@ -104,21 +104,19 @@ func (o *defaultNode) Broadcast(val interface{}) error {
 }
 
 func (o *defaultNode) doBroadcast(val interface{}) error {
-	logger := o.ctx.GetLogger()
 	var wg sync.WaitGroup
 	wg.Add(len(o.outputs))
 	for n, out := range o.outputs {
 		go func(name string, output chan<- interface{}) {
 			select {
 			case output <- val:
-				logger.Debugf("broadcast from %s to %s done", o.ctx.GetOpId(), name)
+				// do nothing
 			case <-o.ctx.Done():
 				// rule stop so stop waiting
 			}
 			wg.Done()
 		}(n, out)
 	}
-	logger.Debugf("broadcasting from %s", o.ctx.GetOpId())
 	wg.Wait()
 	return nil
 }
