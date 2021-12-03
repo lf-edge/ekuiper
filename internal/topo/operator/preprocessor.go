@@ -73,7 +73,7 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, _ *xsql.Fu
 	if !p.allMeta && p.metaFields != nil && len(p.metaFields) > 0 {
 		newMeta := make(xsql.Metadata)
 		for _, f := range p.metaFields {
-			if m, ok := tuple.Metadata.Value(f); ok {
+			if m, ok := tuple.Metadata.Value(f, ""); ok {
 				newMeta[f] = m
 			}
 		}

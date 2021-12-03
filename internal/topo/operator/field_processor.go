@@ -52,7 +52,7 @@ func (p *defaultFieldProcessor) processField(tuple *xsql.Tuple, _ *xsql.Function
 				if p.isBinary {
 					result = tuple.Message
 				} else {
-					if m, ok := tuple.Message.Value(sf); ok {
+					if m, ok := tuple.Message.Value(sf, ""); ok {
 						result[sf] = m
 					}
 				}
@@ -68,7 +68,7 @@ func (p *defaultFieldProcessor) processField(tuple *xsql.Tuple, _ *xsql.Function
 }
 
 func (p *defaultFieldProcessor) addRecField(ft ast.FieldType, r map[string]interface{}, j xsql.Message, n string) error {
-	if t, ok := j.Value(n); ok {
+	if t, ok := j.Value(n, ""); ok {
 		v := reflect.ValueOf(t)
 		jtype := v.Kind()
 		switch st := ft.(type) {

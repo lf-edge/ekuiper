@@ -177,8 +177,10 @@ type Window struct {
 }
 
 type SortField struct {
-	Name      string
-	Ascending bool
+	Name       string
+	StreamName StreamName
+	Uname      string // unique name of a field
+	Ascending  bool
 
 	Expr
 }

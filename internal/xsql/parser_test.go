@@ -996,7 +996,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						},
 					},
 				},
-				SortFields: []ast.SortField{{Name: "name", Ascending: true}},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: true}},
 			},
 		},
 
@@ -1017,7 +1017,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						},
 					},
 				},
-				SortFields: []ast.SortField{{Name: "s1\007name", Ascending: true}},
+				SortFields: []ast.SortField{{Uname: "s1\007name", Name: "name", StreamName: ast.StreamName("s1"), Ascending: true}},
 			},
 		},
 
@@ -1038,7 +1038,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						},
 					},
 				},
-				SortFields: []ast.SortField{{Name: "name", Ascending: false}},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false}},
 			},
 		},
 
@@ -1052,7 +1052,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						AName: ""},
 				},
 				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1"}},
-				SortFields: []ast.SortField{{Name: "name", Ascending: false}},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false}},
 			},
 		},
 
@@ -1066,7 +1066,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						AName: ""},
 				},
 				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1"}},
-				SortFields: []ast.SortField{{Name: "name", Ascending: false}, {Name: "name2", Ascending: true}},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false}, {Uname: "name2", Name: "name2", Ascending: true}},
 			},
 		},
 
@@ -1090,7 +1090,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						},
 					},
 				},
-				SortFields: []ast.SortField{{Name: "name", Ascending: false}, {Name: "name2", Ascending: true}},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false}, {Uname: "name2", Name: "name2", Ascending: true}},
 			},
 		},
 
