@@ -27,12 +27,14 @@ type Preprocessor struct {
 	allMeta        bool
 	metaFields     []string //only needed if not allMeta
 	isEventTime    bool
+	isSchemaless   bool
 	timestampField string
 }
 
-func NewPreprocessor(fields []interface{}, allMeta bool, metaFields []string, iet bool, timestampField string, timestampFormat string, isBinary bool, strictValidation bool) (*Preprocessor, error) {
+func NewPreprocessor(isSchemaless bool, fields []interface{}, allMeta bool, metaFields []string, iet bool, timestampField string, timestampFormat string, isBinary bool, strictValidation bool) (*Preprocessor, error) {
 	p := &Preprocessor{
-		allMeta: allMeta, metaFields: metaFields, isEventTime: iet, timestampField: timestampField}
+		allMeta: allMeta, metaFields: metaFields, isEventTime: iet,
+		isSchemaless: isSchemaless, timestampField: timestampField}
 	p.defaultFieldProcessor = defaultFieldProcessor{
 		streamFields: fields, isBinary: isBinary, timestampFormat: timestampFormat, strictValidation: strictValidation,
 	}
@@ -51,13 +53,19 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, _ *xsql.Fu
 	}
 
 	log.Debugf("preprocessor receive %s", tuple.Message)
-
-	result, err := p.processField(tuple, nil)
-	if err != nil {
-		return fmt.Errorf("error in preprocessor: %s", err)
+	var (
+		result map[string]interface{}
+		err    error
+	)
+	if !p.isSchemaless && p.streamFields != nil {
+		result, err = p.processField(tuple, nil)
+		if err != nil {
+			return fmt.Errorf("error in preprocessor: %s", err)
+		}
+		tuple.Message = result
+	} else {
+		result = tuple.Message
 	}
-
-	tuple.Message = result
 	if p.isEventTime {
 		if t, ok := result[p.timestampField]; ok {
 			if ts, err := cast.InterfaceToUnixMilli(t, p.timestampFormat); err != nil {
@@ -70,14 +78,15 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, _ *xsql.Fu
 			return fmt.Errorf("cannot find timestamp field %s in tuple %v", p.timestampField, result)
 		}
 	}
-	if !p.allMeta && p.metaFields != nil && len(p.metaFields) > 0 {
-		newMeta := make(xsql.Metadata)
-		for _, f := range p.metaFields {
-			if m, ok := tuple.Metadata.Value(f, ""); ok {
-				newMeta[f] = m
-			}
-		}
-		tuple.Metadata = newMeta
-	}
+	// No need to reconstruct meta as the memory has been allocated earlier
+	//if !p.allMeta && p.metaFields != nil && len(p.metaFields) > 0 {
+	//	newMeta := make(xsql.Metadata)
+	//	for _, f := range p.metaFields {
+	//		if m, ok := tuple.Metadata.Value(f, ""); ok {
+	//			newMeta[f] = m
+	//		}
+	//	}
+	//	tuple.Metadata = newMeta
+	//}
 	return tuple
 }

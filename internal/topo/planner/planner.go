@@ -115,9 +115,10 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	)
 	switch t := lp.(type) {
 	case *DataSourcePlan:
+		isSchemaless := t.streamStmt.StreamFields == nil
 		switch t.streamStmt.StreamType {
 		case ast.TypeStream:
-			pp, err := operator.NewPreprocessor(t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary, t.streamStmt.Options.STRICT_VALIDATION)
+			pp, err := operator.NewPreprocessor(isSchemaless, t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary, t.streamStmt.Options.STRICT_VALIDATION)
 			if err != nil {
 				return nil, 0, err
 			}
@@ -135,7 +136,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 			inputs = []api.Emitter{srcNode}
 			op = srcNode
 		case ast.TypeTable:
-			pp, err := operator.NewTableProcessor(string(t.name), t.streamFields, t.streamStmt.Options)
+			pp, err := operator.NewTableProcessor(isSchemaless, string(t.name), t.streamFields, t.streamStmt.Options)
 			if err != nil {
 				return nil, 0, err
 			}
