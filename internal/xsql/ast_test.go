@@ -25,6 +25,7 @@ import (
 func Test_MessageValTest(t *testing.T) {
 	var tests = []struct {
 		key     string
+		table   string
 		message Message
 		exptV   interface{}
 		exptOk  bool
@@ -60,7 +61,8 @@ func Test_MessageValTest(t *testing.T) {
 		},
 
 		{
-			key: "key1" + ast.COLUMN_SEPARATOR + "subkey",
+			key:   "subkey",
+			table: "key1",
 			message: Message{
 				"Key1":   "val1",
 				"subkey": "subval",
@@ -80,7 +82,8 @@ func Test_MessageValTest(t *testing.T) {
 		},
 
 		{
-			key: "parent" + ast.COLUMN_SEPARATOR + "child",
+			key:   "child",
+			table: "parent",
 			message: Message{
 				"key1":         "val1",
 				"child":        "child_val",
@@ -116,7 +119,7 @@ func Test_MessageValTest(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		//fmt.Printf("Parsing SQL %q.\n", tt.s)
-		v, ok := tt.message.Value(tt.key)
+		v, ok := tt.message.Value(tt.key, tt.table)
 		if tt.exptOk != ok {
 			t.Errorf("%d. error mismatch:\n  exp=%t\n  got=%t\n\n", i, tt.exptOk, ok)
 		} else if tt.exptOk && !reflect.DeepEqual(tt.exptV, v) {

@@ -315,7 +315,7 @@ func (d *wrappedProtoDescriptor) unfoldMap(ft *desc.MessageDescriptor, i interfa
 	result := make([]interface{}, len(fields))
 	if m, ok := xsql.ToMessage(i); ok {
 		for _, field := range fields {
-			v, ok := m.Value(field.GetName())
+			v, ok := m.Value(field.GetName(), "")
 			if !ok {
 				return nil, fmt.Errorf("field %s not found", field.GetName())
 			}

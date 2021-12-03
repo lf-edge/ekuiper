@@ -22,7 +22,6 @@ import (
 	"math"
 	"reflect"
 	"sort"
-	"strings"
 	"time"
 )
 
@@ -34,8 +33,8 @@ var implicitValueFuncs = map[string]bool{
 // Valuer is the interface that wraps the Value() method.
 type Valuer interface {
 	// Value returns the value and existence flag for a given key.
-	Value(key string) (interface{}, bool)
-	Meta(key string) (interface{}, bool)
+	Value(key, table string) (interface{}, bool)
+	Meta(key, table string) (interface{}, bool)
 	AppendAlias(key string, value interface{}) bool
 }
 
@@ -73,21 +72,14 @@ type WildcardValuer struct {
 	Data Wildcarder
 }
 
-//TODO deal with wildcard of a stream, e.g. SELECT Table.* from Table inner join Table1
-func (wv *WildcardValuer) Value(key string) (interface{}, bool) {
-	if key == "" {
-		return wv.Data.All(key)
-	} else {
-		a := strings.Index(key, ast.COLUMN_SEPARATOR+"*")
-		if a <= 0 {
-			return nil, false
-		} else {
-			return wv.Data.All(key[:a])
-		}
+func (wv *WildcardValuer) Value(key, table string) (interface{}, bool) {
+	if key == "*" {
+		return wv.Data.All(table)
 	}
+	return nil, false
 }
 
-func (wv *WildcardValuer) Meta(string) (interface{}, bool) {
+func (wv *WildcardValuer) Meta(_, _ string) (interface{}, bool) {
 	return nil, false
 }
 
@@ -129,7 +121,7 @@ func (ms *MultiSorter) Less(i, j int) bool {
 	p, q := ms.values[i], ms.values[j]
 	v := &ValuerEval{Valuer: MultiValuer(ms.valuer)}
 	for _, field := range ms.fields {
-		n := field.Name
+		n := field.Uname
 		vp, _ := p[n]
 		vq, _ := q[n]
 		if vp == nil && vq != nil {
@@ -169,8 +161,7 @@ func (ms *MultiSorter) Sort(data SortingData) error {
 		p := data.Index(i)
 		vep := &ValuerEval{Valuer: MultiValuer(p, ms.valuer)}
 		for j, field := range ms.fields {
-			n := field.Name
-			vp, _ := vep.Valuer.Value(n)
+			vp, _ := vep.Valuer.Value(field.Name, string(field.StreamName))
 			if err, ok := vp.(error); ok {
 				return err
 			} else {
@@ -180,7 +171,7 @@ func (ms *MultiSorter) Sort(data SortingData) error {
 				if err := validate(types[j], vp); err != nil {
 					return err
 				} else {
-					ms.values[i][n] = vp
+					ms.values[i][field.Uname] = vp
 				}
 			}
 		}
@@ -256,18 +247,18 @@ func MultiValuer(valuers ...Valuer) Valuer {
 
 type multiValuer []Valuer
 
-func (a multiValuer) Value(key string) (interface{}, bool) {
+func (a multiValuer) Value(key, table string) (interface{}, bool) {
 	for _, valuer := range a {
-		if v, ok := valuer.Value(key); ok {
+		if v, ok := valuer.Value(key, table); ok {
 			return v, true
 		}
 	}
 	return nil, false
 }
 
-func (a multiValuer) Meta(key string) (interface{}, bool) {
+func (a multiValuer) Meta(key, table string) (interface{}, bool) {
 	for _, valuer := range a {
-		if v, ok := valuer.Meta(key); ok {
+		if v, ok := valuer.Meta(key, table); ok {
 			return v, true
 		}
 	}
@@ -422,16 +413,19 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		}
 		return nil
 	case *ast.FieldRef:
-		var n string
+		var (
+			t, n string
+		)
 		if expr.IsAlias() { // alias is renamed internally to avoid accidentally evaled as a col with the same name
-			n = fmt.Sprintf("%s%s", PRIVATE_PREFIX, expr.Name)
+			n = PRIVATE_PREFIX + expr.Name
 		} else if expr.StreamName == ast.DefaultStream {
 			n = expr.Name
 		} else {
-			n = fmt.Sprintf("%s%s%s", string(expr.StreamName), ast.COLUMN_SEPARATOR, expr.Name)
+			t = string(expr.StreamName)
+			n = expr.Name
 		}
 		if n != "" {
-			val, ok := v.Valuer.Value(n)
+			val, ok := v.Valuer.Value(n, t)
 			if ok {
 				return val
 			}
@@ -444,22 +438,22 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		return nil
 	case *ast.MetaRef:
 		if expr.StreamName == "" || expr.StreamName == ast.DefaultStream {
-			val, _ := v.Valuer.Meta(expr.Name)
+			val, _ := v.Valuer.Meta(expr.Name, "")
 			return val
 		} else {
 			//The field specified with stream source
-			val, _ := v.Valuer.Meta(string(expr.StreamName) + ast.COLUMN_SEPARATOR + expr.Name)
+			val, _ := v.Valuer.Meta(expr.Name, string(expr.StreamName))
 			return val
 		}
 	case *ast.JsonFieldRef:
-		val, ok := v.Valuer.Value(expr.Name)
+		val, ok := v.Valuer.Value(expr.Name, "")
 		if ok {
 			return val
 		} else {
 			return nil
 		}
 	case *ast.Wildcard:
-		val, _ := v.Valuer.Value("")
+		val, _ := v.Valuer.Value("*", "")
 		return val
 	case *ast.CaseExpr:
 		return v.evalCase(expr)

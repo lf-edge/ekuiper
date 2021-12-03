@@ -360,7 +360,13 @@ func (p *Parser) parseSorts() (ast.SortFields, error) {
 
 					p.unscan()
 					if name, err := p.parseFieldNameSections(); err == nil {
-						s.Name = strings.Join(name, ast.COLUMN_SEPARATOR)
+						if len(name) == 2 {
+							s.StreamName = ast.StreamName(name[0])
+							s.Name = name[1]
+						} else {
+							s.Name = name[0]
+						}
+						s.Uname = strings.Join(name, ast.COLUMN_SEPARATOR)
 					} else {
 						return nil, err
 					}
