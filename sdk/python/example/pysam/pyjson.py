@@ -32,6 +32,7 @@ from ekuiper import Source, Context
 class PyJson(Source):
     def __init__(self):
         self.data = {"name": "pyjson", "value": 2021}
+        self.running = True
 
     def configure(self, datasource: str, conf: dict):
         logging.info("configuring with datasource {} and conf {}".format(datasource, conf))
@@ -39,10 +40,11 @@ class PyJson(Source):
     # noinspection PyTypeChecker
     def open(self, ctx: Context):
         print("opening")
-        for i in range(100):
+        while self.running:
             ctx.emit(self.data, None)
-            print("emit")
             time.sleep(0.2)
+        print("closed")
 
     def close(self, ctx: Context):
         print("closing")
+        self.running = False
