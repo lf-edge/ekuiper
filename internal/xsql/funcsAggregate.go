@@ -64,6 +64,10 @@ func (*AggregateFunctionValuer) AppendAlias(string, interface{}) bool {
 	return false
 }
 
+func (v *AggregateFunctionValuer) AliasValue(_ string) (interface{}, bool) {
+	return nil, false
+}
+
 func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
 	nf, fctx, err := v.fv.runtime.Get(name)
 	switch err {

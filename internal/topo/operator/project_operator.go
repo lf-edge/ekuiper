@@ -20,7 +20,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"strings"
 )
 
 type ProjectOp struct {
@@ -34,8 +33,8 @@ type ProjectOp struct {
  *  output: []map[string]interface{}
  */
 func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
-	//log := ctx.GetLogger()
-	//log.Debugf("project plan receive %s", data)
+	log := ctx.GetLogger()
+	log.Debugf("project plan receive %s", data)
 	var results []map[string]interface{}
 	switch input := data.(type) {
 	case error:
@@ -115,7 +114,7 @@ func (pp *ProjectOp) getVE(tuple xsql.DataValuer, agg xsql.AggregateData, fv *xs
 }
 
 func project(fs ast.Fields, ve *xsql.ValuerEval) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
+	result := make(map[string]interface{}, len(fs))
 	for _, f := range fs {
 		v := ve.Eval(f.Expr)
 		if e, ok := v.(error); ok {
@@ -141,9 +140,7 @@ func project(fs ast.Fields, ve *xsql.ValuerEval) (map[string]interface{}, error)
 		} else {
 			if v != nil {
 				n := assignName(f.Name, f.AName)
-				if _, ok := result[n]; !ok {
-					result[n] = v
-				}
+				result[n] = v
 			}
 		}
 	}
@@ -151,12 +148,8 @@ func project(fs ast.Fields, ve *xsql.ValuerEval) (map[string]interface{}, error)
 }
 
 func assignName(name, alias string) string {
-	if result := strings.Trim(alias, " "); result != "" {
-		return result
+	if alias != "" {
+		return alias
 	}
-
-	if result := strings.Trim(name, " "); result != "" {
-		return result
-	}
-	return ""
+	return name
 }

@@ -48,7 +48,7 @@ func ToMessage(input interface{}) (Message, bool) {
 }
 
 // Value returns the value for a key in the Message.
-func (m Message) Value(key, table string) (interface{}, bool) {
+func (m Message) Value(key, _ string) (interface{}, bool) {
 	if v, ok := m[key]; ok {
 		return v, ok
 	} else {
@@ -81,6 +81,10 @@ func (m Message) AppendAlias(k string, v interface{}) bool {
 	return false
 }
 
+func (m Message) AliasValue(_ string) (interface{}, bool) {
+	return nil, false
+}
+
 type Event interface {
 	GetTimestamp() int64
 	IsWatermark() bool
@@ -101,15 +105,16 @@ func (m Metadata) Meta(key, table string) (interface{}, bool) {
 	return msg.Meta(key, table)
 }
 
+// Alias alias will not need to convert cases
 type Alias struct {
-	AliasMap Message
+	AliasMap map[string]interface{}
 }
 
 func (a *Alias) AppendAlias(key string, value interface{}) bool {
 	if a.AliasMap == nil {
 		a.AliasMap = make(map[string]interface{})
 	}
-	a.AliasMap[PRIVATE_PREFIX+key] = value
+	a.AliasMap[key] = value
 	return true
 }
 
@@ -117,7 +122,8 @@ func (a *Alias) AliasValue(key string) (interface{}, bool) {
 	if a.AliasMap == nil {
 		return nil, false
 	}
-	return a.AliasMap.Value(key, "")
+	v, ok := a.AliasMap[key]
+	return v, ok
 }
 
 type Tuple struct {
@@ -204,6 +210,10 @@ func (r *WindowRangeValuer) Meta(_, _ string) (interface{}, bool) {
 
 func (r *WindowRangeValuer) AppendAlias(_ string, _ interface{}) bool {
 	return false
+}
+
+func (r *WindowRangeValuer) AliasValue(_ string) (interface{}, bool) {
+	return nil, false
 }
 
 type WindowRange struct {
