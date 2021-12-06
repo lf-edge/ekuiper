@@ -36,6 +36,7 @@ type Valuer interface {
 	Value(key, table string) (interface{}, bool)
 	Meta(key, table string) (interface{}, bool)
 	AppendAlias(key string, value interface{}) bool
+	AliasValue(name string) (interface{}, bool)
 }
 
 // CallValuer implements the Call method for evaluating function calls.
@@ -86,6 +87,10 @@ func (wv *WildcardValuer) Meta(_, _ string) (interface{}, bool) {
 func (wv *WildcardValuer) AppendAlias(string, interface{}) bool {
 	// do nothing
 	return false
+}
+
+func (wv *WildcardValuer) AliasValue(_ string) (interface{}, bool) {
+	return nil, false
 }
 
 type SortingData interface {
@@ -274,6 +279,15 @@ func (a multiValuer) AppendAlias(key string, value interface{}) bool {
 	return false
 }
 
+func (a multiValuer) AliasValue(key string) (interface{}, bool) {
+	for _, valuer := range a {
+		if v, ok := valuer.AliasValue(key); ok {
+			return v, true
+		}
+	}
+	return nil, false
+}
+
 func (a multiValuer) FuncValue(key string) (interface{}, bool) {
 	for _, valuer := range a {
 		if vv, ok := valuer.(FuncValuer); ok {
@@ -416,8 +430,11 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		var (
 			t, n string
 		)
-		if expr.IsAlias() { // alias is renamed internally to avoid accidentally evaled as a col with the same name
-			n = PRIVATE_PREFIX + expr.Name
+		if expr.IsAlias() {
+			val, ok := v.Valuer.AliasValue(expr.Name)
+			if ok {
+				return val
+			}
 		} else if expr.StreamName == ast.DefaultStream {
 			n = expr.Name
 		} else {
