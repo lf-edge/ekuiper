@@ -113,6 +113,7 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
     KUIPER__STORE__TYPE: redis
     KUIPER__STORE__REDIS__HOST: edgex-redis
     KUIPER__STORE__REDIS__PORT: 6379
+    KUIPER__STORE__REDIS__PASSWORD: ""
   ```
 
 
