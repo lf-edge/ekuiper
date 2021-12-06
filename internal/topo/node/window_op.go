@@ -272,8 +272,12 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 						errCh <- er
 					} else {
 						log.Debugf(fmt.Sprintf("It has %d of count window.", tl.count()))
+						triggerTime := conf.GetNowInMilli()
 						for tl.hasMoreCountWindow() {
 							tsets := tl.nextCountWindow()
+							tsets.WindowStart = triggerTime
+							triggerTime = conf.GetNowInMilli()
+							tsets.WindowEnd = triggerTime
 							log.Debugf("Sent: %v", tsets)
 							//blocking if one of the channel is full
 							o.Broadcast(tsets)
@@ -365,7 +369,8 @@ func (tl *TupleList) count() int {
 
 func (tl *TupleList) nextCountWindow() xsql.WindowTuplesSet {
 	results := xsql.WindowTuplesSet{
-		Content: make([]xsql.WindowTuples, 0),
+		Content:     make([]xsql.WindowTuples, 0),
+		WindowRange: &xsql.WindowRange{},
 	}
 	var subT []*xsql.Tuple
 	subT = tl.tuples[len(tl.tuples)-tl.size : len(tl.tuples)]
