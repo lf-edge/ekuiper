@@ -51,10 +51,12 @@ func ToMessage(input interface{}) (Message, bool) {
 func (m Message) Value(key, _ string) (interface{}, bool) {
 	if v, ok := m[key]; ok {
 		return v, ok
-	} else {
+	} else if conf.Config == nil || conf.Config.Basic.IgnoreCase {
 		//Only when with 'SELECT * FROM ...'  and 'schemaless', the key in map is not convert to lower case.
 		//So all of keys in map should be convert to lowercase and then compare them.
 		return m.getIgnoreCase(key)
+	} else {
+		return nil, false
 	}
 }
 
