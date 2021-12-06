@@ -29,6 +29,8 @@ basic:
   # There could be several hosts (host can be separated with comma), if same package could be found in the several hosts,
   # then the package in the 1st host will have the highest priority.
   pluginHosts: https://packages.emqx.net
+  # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
+  ignoreCase: true
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:

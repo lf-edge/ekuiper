@@ -18,8 +18,12 @@ basic:
   rotateTime: 24
   # Maximum file storage hours
   maxAge: 72
+  # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
+  ignoreCase: true
 ```
 for debug option in basic following env is valid `KUIPER_BASIC_DEBUG=true` and if used debug value will be set to true.
+
+Configuration **ignoreCase** is used to ignore case in SQL processing. By default, it's set to true to comply with standard SQL. In this case, data ingested can be case-insensitive. If the column names in the SQL, stream definition and the ingested data can be unified as a case-sensitive name, it is recommended to set to true to gain a better performance.
 
 ## Log level
 

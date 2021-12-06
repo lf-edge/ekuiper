@@ -449,6 +449,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		}
 		if expr.IsAlias() {
 			r := v.Eval(expr.Expression)
+			// TODO possible performance elevation to eliminate this cal
 			v.Valuer.AppendAlias(expr.Name, r)
 			return r
 		}
