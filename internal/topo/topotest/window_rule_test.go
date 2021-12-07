@@ -560,10 +560,11 @@ func TestWindow(t *testing.T) {
 			},
 		}, {
 			Name: `TestCountWindowRule1`,
-			Sql:  `SELECT collect(*)[0]->color as c FROM demo GROUP BY COUNTWINDOW(3)`,
+			Sql:  `SELECT collect(*)[0]->color as c, window_end() as we FROM demo GROUP BY COUNTWINDOW(3)`,
 			R: [][]map[string]interface{}{
 				{{
-					"c": "red",
+					"c":  "red",
+					"we": 1.541152487632e+12,
 				}},
 			},
 			M: map[string]interface{}{
