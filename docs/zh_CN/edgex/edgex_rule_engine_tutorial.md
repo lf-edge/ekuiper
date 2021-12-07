@@ -115,7 +115,7 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
     KUIPER__STORE__REDIS__PORT: 6379
     KUIPER__STORE__REDIS__PASSWORD: ""
   ```
-
+*注意*: 这个功能仅适用于 redis 工作在非安全模式时
 
 ### 原生 (native) 方式运行
 

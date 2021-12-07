@@ -118,6 +118,7 @@ Users can add these in ``environment`` part and make sure the image is ``1.4.0``
     KUIPER__STORE__REDIS__PORT: 6379
     KUIPER__STORE__REDIS__PASSWORD: ""
   ```
+*Note*: This feature only works when redis in ``no-secty`` mode
 
 #### Run with native
 
