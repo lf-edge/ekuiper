@@ -163,6 +163,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 type information struct {
 	Version       string `json:"version"`
 	Os            string `json:"os"`
+	Arch          string `json:"arch"`
 	UpTimeSeconds int64  `json:"upTimeSeconds"`
 }
 
@@ -176,6 +177,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		info.Version = version
 		info.UpTimeSeconds = time.Now().Unix() - startTimeStamp
 		info.Os = runtime.GOOS
+		info.Arch = runtime.GOARCH
 		byteInfo, _ := json.Marshal(info)
 		w.Write(byteInfo)
 	}

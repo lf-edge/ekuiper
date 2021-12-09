@@ -10,6 +10,9 @@ The action is used for publish output message into a RESTful API.
 | timeout   | true     | The timeout (milliseconds) for a HTTP request, defaults to 5000 ms |
 | headers            | true     | The additional headers to be set for the HTTP request. |
 | debugResp | true | Control if print the response information into the console. If set it to `true`, then print response; If set to `false`, then skip print log. The default is `false`. |
+| certificationPath  | true     | The certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the `kuiperd` command. For example, if you run `bin/kuiperd` from `/var/kuiper`, then the base path is `/var/kuiper`; If you run `./kuiperd` from `/var/kuiper/bin`, then the base path is `/var/kuiper/bin`. |
+| privateKeyPath     | true     | The private key path. It can be either absolute path, or relative path, which is similar to use of certificationPath. |
+| rootCaPath     | true     | The location of root ca path. It can be an absolute path, or a relative path, which is similar to use of certificationPath. |
 | insecureSkipVerify | true | Control if to skip the certification verification. If it is set to `true`, then skip certification verification; Otherwise, verify the certification. The default value is `true`. |
 
 ::: v-pre

@@ -15,8 +15,8 @@
 package sink
 
 import (
-	"crypto/tls"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -37,6 +37,9 @@ type RestSink struct {
 	sendSingle         bool
 	debugResp          bool
 	insecureSkipVerify bool
+	certificationPath  string
+	privateKeyPath     string
+	rootCaPath         string
 
 	client *http.Client
 }
@@ -145,18 +148,56 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 			return fmt.Errorf("rest sink property insecureSkipVerify %v is not a bool", temp)
 		}
 	}
+
+	if certPath, ok := ps["certificationPath"]; ok {
+		if certPath1, ok1 := certPath.(string); ok1 {
+			ms.certificationPath = certPath1
+		} else {
+			return fmt.Errorf("not valid rest sink property certificationPath value %v", certPath)
+		}
+	}
+
+	if privPath, ok := ps["privateKeyPath"]; ok {
+		if privPath1, ok1 := privPath.(string); ok1 {
+			ms.privateKeyPath = privPath1
+		} else {
+			return fmt.Errorf("not valid rest sink property privateKeyPath value %v", privPath)
+		}
+	}
+
+	if rootPath, ok := ps["rootCaPath"]; ok {
+		if rootPath1, ok1 := rootPath.(string); ok1 {
+			ms.rootCaPath = rootPath1
+		} else {
+			return fmt.Errorf("not valid rest sink property rootCaPath value %v", rootPath)
+		}
+	}
+
 	return nil
 }
 
 func (ms *RestSink) Open(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: ms.insecureSkipVerify},
+
+	tlsOpts := cert.TlsConfigurationOptions{
+		SkipCertVerify: ms.insecureSkipVerify,
+		CertFile:       ms.certificationPath,
+		KeyFile:        ms.privateKeyPath,
+		CaFile:         ms.rootCaPath,
 	}
+	tlscfg, err := cert.GenerateTLSForClient(tlsOpts)
+	if err != nil {
+		return err
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: tlscfg,
+	}
+
 	ms.client = &http.Client{
 		Transport: tr,
 		Timeout:   time.Duration(ms.timeout) * time.Millisecond}
-	logger.Infof("open rest sink with configuration: {method: %s, url: %s, bodyType: %s, timeout: %d,header: %v, sendSingle: %v, insecureSkipVerify: %v", ms.method, ms.url, ms.bodyType, ms.timeout, ms.headers, ms.sendSingle, ms.insecureSkipVerify)
+	logger.Infof("open rest sink with configuration: {method: %s, url: %s, bodyType: %s, timeout: %d, header: %v, sendSingle: %v, tls cfg: %v", ms.method, ms.url, ms.bodyType, ms.timeout, ms.headers, ms.sendSingle, tlsOpts)
 
 	if _, err := url.Parse(ms.url); err != nil {
 		return err

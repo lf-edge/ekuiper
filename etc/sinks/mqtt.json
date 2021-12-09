@@ -212,8 +212,8 @@
         "zh_CN": "如果 InsecureSkipVerify 设置为 true, TLS接受服务器提供的任何证书以及该证书中的任何主机名。 在这种模式下，TLS容易受到中间人攻击。默认值为false。配置项只能用于TLS连接。"
       },
       "label": {
-        "en_US": "Insecure skip verify",
-        "zh_CN": "非安全跳过验证"
+        "en_US": "Skip Certification verification",
+        "zh_CN": "跳过证书验证"
       }
     }
   ]

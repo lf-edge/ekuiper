@@ -109,6 +109,54 @@
       }
     },
     {
+      "name": "certificationPath",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of certification path. It can be an absolute path, or a relative path.",
+        "zh_CN": "证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 server 命令的路径。"
+      },
+      "label": {
+        "en_US": "Certification path",
+        "zh_CN": "证书路径"
+      }
+    },
+    {
+      "name": "privateKeyPath",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of private key path. It can be an absolute path, or a relative path. ",
+        "zh_CN": "私钥路径。可以为绝对路径，也可以为相对路径。"
+      },
+      "label": {
+        "en_US": "Private key path",
+        "zh_CN": "私钥路径"
+      }
+    },
+    {
+      "name": "rootCaPath",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of root ca path. It can be an absolute path, or a relative path. ",
+        "zh_CN": "根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径。"
+      },
+      "label": {
+        "en_US": "Root CA path",
+        "zh_CN": "根证书路径"
+      }
+    },
+    {
       "name": "insecureSkipVerify",
       "default": true,
       "optional": true,
@@ -119,8 +167,8 @@
         "zh_CN": "控制是否跳过证书认证。如果被设置为 true，那么跳过证书认证；否则进行证书验证。"
       },
       "label": {
-        "en_US": "Certification verification",
-        "zh_CN": "证书验证"
+        "en_US": "Skip Certification verification",
+        "zh_CN": "跳过证书验证"
       }
     },
     {

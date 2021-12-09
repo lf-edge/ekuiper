@@ -10,6 +10,9 @@
 | timeout   | 是    | HTTP 请求超时的时间（毫秒），默认为5000毫秒 |
 | headers            | 是    | 要为 HTTP 请求设置的其它 HTTP 头。支持动态获取。 |
 | debugResp | 是 | 控制是否将响应信息打印到控制台中。 如果将其设置为 `true`，则打印响应。 如果设置为`false`，则跳过打印日志。 默认值为 `false`。 |
+| certificationPath | 是    | 证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 `kuiperd` 命令的路径。比如，如果你在 `/var/kuiper` 中运行 `bin/kuiperd` ，那么父目录为 `/var/kuiper`; 如果运行从 `/var/kuiper/bin` 中运行`./kuiperd`，那么父目录为 `/var/kuiper/bin`。 |
+| privateKeyPath    | 是    | 私钥路径。可以为绝对路径，也可以为相对路径，相对路径的用法与 `certificationPath` 类似。 |
+| rootCaPath    | 是    | 根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径，相对路径的用法与 `certificationPath` 类似。 |
 | insecureSkipVerify | 是 | 控制是否跳过证书认证。如果被设置为 `true`，那么跳过证书认证；否则进行证书验证。缺省为 `true`。 |
 
 ::: v-pre
