@@ -62,6 +62,18 @@ The body of request, such as `'{"data": "data", "method": 1}'`
 
 Body type, it could be none|text|json|html|xml|javascript|format.
 
+### certificationPath
+
+The location of certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the ``kuiperd`` command. For example, if you run ``bin/kuiperd`` from ``/var/kuiper``, then the base path is ``/var/kuiper``; If you run ``./kuiperd`` from ``/var/kuiper/bin``, then the base path is ``/var/kuiper/bin``.  Such as  ``d3807d9fa5-certificate.pem``.
+
+### privateKeyPath
+
+The location of private key path. It can be an absolute path, or a relative path.  For more detailed information, please refer to ``certificationPath``. Such as ``d3807d9fa5-private.pem.key``.
+
+### rootCaPath
+
+The location of root ca path. It can be an absolute path, or a relative path.
+
 ### insecureSkipVerify
 
 Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification

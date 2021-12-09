@@ -61,6 +61,18 @@ http 请求的超时时间，单位为 ms。
 
 正文类型,可以是 none|text|json|html|xml|javascript|form。
 
+### certificationPath
+
+证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 `kuiperd` 命令的路径。比如，如果你在 `/var/kuiper` 中运行 `bin/kuiperd` ，那么父目录为 `/var/kuiper`; 如果运行从`/var/kuiper/bin`中运行`./kuiperd`，那么父目录为 `/var/kuiper/bin`。 比如  `d3807d9fa5-certificate.pem`。
+
+### privateKeyPath
+
+私钥路径。可以为绝对路径，也可以为相对路径。更详细的信息，请参考 `certificationPath`，比如 `d3807d9fa5-private.pem.key`。
+
+### rootCaPath
+
+根证书路径。可以为绝对路径，也可以为相对路径。
+
 ### insecureSkipVerify 
 控制是否跳过证书认证。如果被设置为 `true`，那么跳过证书认证；否则进行证书验证。缺省为 `true`
 
