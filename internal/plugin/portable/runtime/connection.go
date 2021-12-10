@@ -29,7 +29,8 @@ import (
 
 // Options Initialized in config
 var Options = map[string]interface{}{
-	mangos.OptionSendDeadline: 1000,
+	mangos.OptionSendDeadline: 1000 * time.Millisecond,
+	mangos.OptionRecvDeadline: 1000 * time.Millisecond,
 }
 
 type Closable interface {
@@ -70,8 +71,17 @@ func (r *NanomsgReqChannel) SendCmd(arg []byte) error {
 
 // Handshake should only be called once
 func (r *NanomsgReqChannel) Handshake() error {
-	_, err := r.sock.Recv()
-	return err
+	for {
+		_, err := r.sock.Recv()
+		switch err {
+		case nil:
+			return nil
+		case mangos.ErrRecvTimeout:
+			continue
+		default:
+			return err
+		}
+	}
 }
 
 type DataInChannel interface {
@@ -140,7 +150,6 @@ func CreateFunctionChannel(symbolName string) (DataReqChannel, error) {
 		return nil, fmt.Errorf("can't get new rep socket: %s", err)
 	}
 	setSockOptions(sock)
-	sock.SetOption(mangos.OptionRecvDeadline, 1000)
 	url := fmt.Sprintf("ipc:///tmp/func_%s.ipc", symbolName)
 	if err = listenWithRetry(sock, url); err != nil {
 		return nil, fmt.Errorf("can't listen on rep socket for %s: %s", url, err.Error())
@@ -175,7 +184,6 @@ func CreateControlChannel(pluginName string) (ControlChannel, error) {
 		return nil, fmt.Errorf("can't get new rep socket: %s", err)
 	}
 	setSockOptions(sock)
-	sock.SetOption(mangos.OptionRecvDeadline, 100)
 	url := fmt.Sprintf("ipc:///tmp/plugin_%s.ipc", pluginName)
 	if err = listenWithRetry(sock, url); err != nil {
 		return nil, fmt.Errorf("can't listen on rep socket: %s", err.Error())
@@ -186,7 +194,7 @@ func CreateControlChannel(pluginName string) (ControlChannel, error) {
 
 func setSockOptions(sock mangos.Socket) {
 	for k, v := range Options {
-		sock.SetOption(k, v)
+		_ = sock.SetOption(k, v)
 	}
 }
 

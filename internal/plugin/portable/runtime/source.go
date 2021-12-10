@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"go.nanomsg.org/mangos/v3"
 )
 
 // Error handling: wrap all error in a function to handle
@@ -25,6 +27,7 @@ import (
 type PortableSource struct {
 	symbolName string
 	reg        *PluginMeta
+	clean      func() error
 
 	topic string
 	props map[string]interface{}
@@ -53,10 +56,6 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 		errCh <- err
 		return
 	}
-	defer func() {
-		ctx.GetLogger().Info("Closing source data channel")
-		dataCh.Close()
-	}()
 
 	// Control: send message to plugin to ask starting symbol
 	c := &Control{
@@ -73,14 +72,37 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 	err = ins.StartSymbol(ctx, c)
 	if err != nil {
 		errCh <- err
+		_ = dataCh.Close()
 		return
 	}
-	defer ins.StopSymbol(ctx, c)
+	ps.clean = func() error {
+		ctx.GetLogger().Info("clean up source")
+		err1 := dataCh.Close()
+		err2 := ins.StopSymbol(ctx, c)
+		e := make(errorx.MultiError)
+		if err1 != nil {
+			e["dataCh"] = err1
+		}
+		if err != nil {
+			e["symbol"] = err2
+		}
+		return e.GetError()
+	}
 
 	for {
 		var msg []byte
+		// make sure recv has timeout
 		msg, err = dataCh.Recv()
-		if err != nil {
+		switch err {
+		case mangos.ErrClosed:
+			ctx.GetLogger().Info("stop source after close")
+			break
+		case mangos.ErrRecvTimeout:
+			ctx.GetLogger().Debug("source receive timeout, retry")
+			continue
+		case nil:
+			// do nothing
+		default:
 			errCh <- fmt.Errorf("cannot receive from mangos Socket: %s", err.Error())
 			return
 		}
@@ -108,5 +130,8 @@ func (ps *PortableSource) Configure(topic string, props map[string]interface{}) 
 
 func (ps *PortableSource) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing source %s", ps.symbolName)
+	if ps.clean != nil {
+		return ps.clean()
+	}
 	return nil
 }

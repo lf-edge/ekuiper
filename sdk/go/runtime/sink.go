@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/lf-edge/ekuiper/sdk/go/connection"
+	"go.nanomsg.org/mangos/v3"
 )
 
 type sinkRuntime struct {
@@ -56,21 +57,29 @@ func setupSinkRuntime(con *Control, s api.Sink) (*sinkRuntime, error) {
 func (s *sinkRuntime) run() {
 	err := s.s.Open(s.ctx)
 	if err != nil {
-		s.stop()
+		_ = s.stop()
 		return
 	}
 	for {
 		var msg []byte
+		// blocking read, must be interrupted when stopping
 		msg, err = s.ch.Recv()
-		if err != nil {
+		switch err {
+		case mangos.ErrClosed:
+			break
+		case mangos.ErrRecvTimeout:
+			continue
+		case nil:
+			// do nothing
+		default:
 			s.ctx.GetLogger().Errorf("cannot receive from mangos Socket: %s", err.Error())
-			s.stop()
+			_ = s.stop()
 			return
 		}
 		err = s.s.Collect(s.ctx, msg)
 		if err != nil {
 			s.ctx.GetLogger().Errorf("collect error: %s", err.Error())
-			s.stop()
+			_ = s.stop()
 			return
 		}
 	}
@@ -78,7 +87,7 @@ func (s *sinkRuntime) run() {
 
 func (s *sinkRuntime) stop() error {
 	s.cancel()
-	s.s.Close(s.ctx)
+	_ = s.s.Close(s.ctx)
 	err := s.ch.Close()
 	if err != nil {
 		s.ctx.GetLogger().Info(err)
