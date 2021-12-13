@@ -120,7 +120,6 @@ func (p *sourcePool) addInstance(k string, node *SourceNode, source api.Source, 
 	if !ok {
 		contextLogger := conf.Log.WithField("source_pool", k)
 		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
-		// TODO cancel
 		sctx, cancel := ctx.WithCancel()
 		si, err := start(sctx, node, source, index)
 		if err != nil {
@@ -209,7 +208,7 @@ func (ss *sourceSingleton) broadcast(val api.SourceTuple) {
 	for n, out := range ss.outputs {
 		go func(name string, dataCh *DynamicChannelBuffer) {
 			select {
-			case dataCh.Out <- val:
+			case dataCh.In <- val:
 				logger.Debugf("broadcast from source pool to %s done", name)
 			case <-ss.ctx.Done():
 			case <-dataCh.done:

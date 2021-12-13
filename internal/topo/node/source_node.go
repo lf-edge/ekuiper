@@ -88,7 +88,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			props["$retainSize"] = m.options.RETAIN_SIZE
 		}
 		m.reset()
-		logger.Infof("open source node %d instances", m.concurrency)
+		logger.Infof("open source node with props %v, concurrency: %d, bufferLength: %d", m.props, m.concurrency, m.bufferLength)
 		for i := 0; i < m.concurrency; i++ { // workers
 			go func(instance int) {
 				//Do open source instances
