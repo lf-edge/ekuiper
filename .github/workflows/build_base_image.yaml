@@ -21,7 +21,7 @@ jobs:
           - debian
           - centos
         golang:
-          - 1.15.11
+          - 1.17.3
 
     steps:
       - uses: actions/checkout@v2
