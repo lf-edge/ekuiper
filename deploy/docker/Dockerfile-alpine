@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.15.1-alpine AS builder
+FROM golang:1.17.3-alpine AS builder
 
 COPY . /go/kuiper
 
@@ -21,7 +21,7 @@ WORKDIR /go/kuiper
 RUN apk add gcc make git libc-dev binutils-gold pkgconfig zeromq-dev 
 RUN make build_with_edgex
 
-FROM alpine:3.12
+FROM python:3.8.12-alpine3.15
 
 # Set environment vars
 ENV MAINTAINER="emqx.io" \

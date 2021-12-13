@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.15.1 AS builder
+FROM golang:1.17.3 AS builder
 
 COPY . /go/kuiper
 
@@ -21,7 +21,7 @@ WORKDIR /go/kuiper
 RUN apt update && apt install -y pkg-config libczmq-dev
 RUN make build_with_edgex
 
-FROM debian:10
+FROM python:3.8.12-slim-bullseye
 
 COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/

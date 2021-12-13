@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.15.1-alpine AS builder
+FROM golang:1.17.3-alpine AS builder
 
 COPY . /go/kuiper
 
@@ -20,7 +20,7 @@ WORKDIR /go/kuiper/tools/kubernetes
 
 RUN go build -o kuiper-kubernetes-tool main.go
 
-FROM alpine:3.12
+FROM alpine:3.15
 
 WORKDIR /kuiper-kubernetes-tool
 
