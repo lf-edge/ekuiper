@@ -1,6 +1,6 @@
 module github.com/lf-edge/ekuiper/extensions
 
-go 1.16
+go 1.17
 
 require (
 	github.com/go-redis/redis/v7 v7.3.0
@@ -11,6 +11,13 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pebbe/zmq4 v1.2.7
 	github.com/taosdata/driver-go/v2 v2.0.0
+)
+
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/mattn/go-pointer v0.0.0-20190911064623-a0a44394634f // indirect
+	github.com/mitchellh/mapstructure v1.4.1 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 replace github.com/lf-edge/ekuiper => ../

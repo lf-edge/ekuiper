@@ -96,7 +96,7 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 		switch err {
 		case mangos.ErrClosed:
 			ctx.GetLogger().Info("stop source after close")
-			break
+			return
 		case mangos.ErrRecvTimeout:
 			ctx.GetLogger().Debug("source receive timeout, retry")
 			continue

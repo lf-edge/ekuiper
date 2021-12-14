@@ -1,6 +1,6 @@
 module github.com/lf-edge/ekuiper/sdk/go
 
-go 1.16
+go 1.17
 
 require (
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
@@ -9,6 +9,6 @@ require (
 )
 
 require (
-	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/Microsoft/go-winio v0.4.11 // indirect
 	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
 )

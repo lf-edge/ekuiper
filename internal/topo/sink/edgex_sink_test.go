@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build edgex
 // +build edgex
 
 package sink
@@ -290,7 +291,7 @@ func TestProduceEvents(t1 *testing.T) {
 				ProfileName: "demoProfile",
 				SourceName:  "demoSource",
 				Origin:      3,
-				Tags:        map[string]string{"auth": "admin"},
+				Tags:        map[string]interface{}{"auth": "admin"},
 				Readings: []dtos.BaseReading{
 					{
 						ResourceName:  "h1",
@@ -426,7 +427,7 @@ func TestProduceEvents(t1 *testing.T) {
 				ProfileName: "demoProfile",
 				SourceName:  "ds",
 				Origin:      3,
-				Tags:        map[string]string{"auth": "admin"},
+				Tags:        map[string]interface{}{"auth": "admin"},
 				Readings: []dtos.BaseReading{
 					{
 						DeviceName:    "demo",

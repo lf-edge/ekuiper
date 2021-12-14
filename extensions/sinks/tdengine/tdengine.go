@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build plugins
 // +build plugins
 
 package main
@@ -19,7 +20,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -123,15 +123,12 @@ func (m *taosSink) Configure(props map[string]interface{}) error {
 	}
 	if cfg.Ip == "" {
 		cfg.Ip = "127.0.0.1"
-		conf.Log.Infof("Not find IP conf, will use default value '127.0.0.1'.")
 	}
 	if cfg.User == "" {
 		cfg.User = "root"
-		conf.Log.Infof("Not find user conf, will use default value 'root'.")
 	}
 	if cfg.Password == "" {
 		cfg.Password = "taosdata"
-		conf.Log.Infof("Not find password conf, will use default value 'taosdata'.")
 	}
 	if cfg.Database == "" {
 		return fmt.Errorf("property database is required")
