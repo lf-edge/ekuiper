@@ -606,7 +606,7 @@ type eventMeta struct {
 	profileName string
 	sourceName  string
 	origin      *int64
-	tags        map[string]string
+	tags        map[string]interface{}
 }
 
 type readingMeta struct {
@@ -675,14 +675,7 @@ func newMetaFromMap(m1 map[string]interface{}) *meta {
 			}
 		case "tags":
 			if v1, ok1 := v.(map[string]interface{}); ok1 {
-				r := make(map[string]string)
-				for k, vi := range v1 {
-					s, ok := vi.(string)
-					if ok {
-						r[k] = s
-					}
-				}
-				result.tags = r
+				result.tags = v1
 			}
 		default:
 			if result.readingMetas == nil {

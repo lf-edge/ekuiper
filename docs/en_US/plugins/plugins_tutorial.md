@@ -154,7 +154,7 @@ Developing a plugin needs to extend the interface in eKuiper, so it must depend 
 ```go
 module samplePlugin
 
-go 1.16
+go 1.17
 
 require (
 	github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
@@ -165,7 +165,7 @@ mysql.go also have a dependency for mysql package, so the finial go.mod is this.
  ```go
 module samplePlugin
 
-go 1.16
+go 1.17
 
 require (
 	github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
@@ -198,7 +198,7 @@ However, if developers create plugin project outside eKuiper, he needs following
       ```
       module samplePlugin
 
-      go 1.16
+      go 1.17
 
       require (
         github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
@@ -211,7 +211,7 @@ However, if developers create plugin project outside eKuiper, he needs following
       Here is an example if your plugin project in the same directory with eKuiper project
       ```
       module github.com/lf-edge/ekuiper
-      go 1.16
+      go 1.17
       require samplePlugin v0.0.0
       replace samplePlugin => ../samplePlugin   # replace samplePlugin with local samplePlugin module
       ```
@@ -286,7 +286,7 @@ cd $EKUIPER_SOURCE
 
 cat <<EOF >$EKUIPER_SOURCE/sample.mod
 module github.com/lf-edge/ekuiper
-go 1.16
+go 1.17
 require samplePlugin v0.0.0
 replace samplePlugin => $PLUGIN_SOURCE
 EOF
