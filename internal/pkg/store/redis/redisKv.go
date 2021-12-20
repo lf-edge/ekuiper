@@ -26,6 +26,9 @@ import (
 
 const KvPrefix = "KV:STORE"
 
+// PageSize The number of elements returned at every iteration, the number is before the match options
+const PageSize = 1000
+
 type redisKvStore struct {
 	database  dbRedis.Instance
 	table     string
@@ -113,11 +116,30 @@ func (kv redisKvStore) Delete(key string) error {
 
 func (kv redisKvStore) Keys() ([]string, error) {
 	keys := make([]string, 0)
+	cursor := 0
 	err := kv.database.Apply(func(conn redis.Conn) error {
 		pattern := fmt.Sprintf("%s:*", kv.keyPrefix)
-		reply, err := conn.Do("KEYS", pattern)
-		keys, err = redis.Strings(reply, err)
-		return err
+		tmpKeys := make([]string, 0)
+		for {
+			if arr, err := redis.Values(conn.Do("SCAN", cursor, "MATCH", pattern, "COUNT", PageSize)); err != nil {
+				return err
+			} else {
+				if cursor, err = redis.Int(arr[0], nil); err != nil {
+					return err
+				}
+				if tmpKeys, err = redis.Strings(arr[1], nil); err != nil {
+					return err
+				}
+			}
+			if tmpKeys != nil && len(tmpKeys) > 0 {
+				keys = append(keys, tmpKeys...)
+			}
+			// check if we need to stop...
+			if cursor == 0 {
+				break
+			}
+		}
+		return nil
 	})
 	result := make([]string, 0)
 	for _, k := range keys {

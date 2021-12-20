@@ -109,16 +109,17 @@ After these modifications and eKuiper starts up, please read [this](../rules/sin
 
 #### Use Redis as KV storage
 
-Since `1.4.0`, eKuiper supports redis to store the KV metadata, user can make some modifications on the target ``docker-compose`` file's `rulesengine` service part to apply this change.
-Users can add these in ``environment`` part and make sure the image is ``1.4.0`` or later.
+Since `1.4.1`, eKuiper supports redis to store the KV metadata, user can make some modifications on the target ``docker-compose`` file's `rulesengine` service part to apply this change.
+Users can add these in ``environment`` part and make sure the image is ``1.4.1`` or later.
   ```yaml
   environment:
+    CONNECTION__EDGEX__REDISMSGBUS__PORT: 6379
+    CONNECTION__EDGEX__REDISMSGBUS__PROTOCOL: redis
+    CONNECTION__EDGEX__REDISMSGBUS__SERVER: edgex-redis
+    CONNECTION__EDGEX__REDISMSGBUS__TYPE: redis
     KUIPER__STORE__TYPE: redis
-    KUIPER__STORE__REDIS__HOST: edgex-redis
-    KUIPER__STORE__REDIS__PORT: 6379
-    KUIPER__STORE__REDIS__PASSWORD: ""
+    KUIPER__STORE__REDIS__CONNECTIONSELECTOR: edgex.redisMsgBus
   ```
-*Note*: This feature only works when redis in ``no-secty`` mode
 
 #### Run with native
 

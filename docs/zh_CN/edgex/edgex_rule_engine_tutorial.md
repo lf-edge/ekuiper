@@ -106,16 +106,17 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
 
 ### 使用 Redis 作为 KV 存储
 
-从 `1.4.0` 开始，eKuiper 支持 redis 来存储 KV 元数据，用户可以对目标 `docker-compose` 文件的 `rulesengine` 服务部分进行一些修改以应用此更改。
-用户可以将这些添加到 ``environment`` 部分并确保映像为 ``1.4.0`` 或更高版本
+从 `1.4.1` 开始，eKuiper 支持 redis 来存储 KV 元数据，用户可以对目标 `docker-compose` 文件的 `rulesengine` 服务部分进行一些修改以应用此更改。
+用户可以将这些添加到 ``environment`` 部分并确保映像为 ``1.4.1`` 或更高版本
   ```yaml
   environment:
+    CONNECTION__EDGEX__REDISMSGBUS__PORT: 6379
+    CONNECTION__EDGEX__REDISMSGBUS__PROTOCOL: redis
+    CONNECTION__EDGEX__REDISMSGBUS__SERVER: edgex-redis
+    CONNECTION__EDGEX__REDISMSGBUS__TYPE: redis
     KUIPER__STORE__TYPE: redis
-    KUIPER__STORE__REDIS__HOST: edgex-redis
-    KUIPER__STORE__REDIS__PORT: 6379
-    KUIPER__STORE__REDIS__PASSWORD: ""
+    KUIPER__STORE__REDIS__CONNECTIONSELECTOR: edgex.redisMsgBus
   ```
-*注意*: 这个功能仅适用于 redis 工作在非安全模式时
 
 ### 原生 (native) 方式运行
 
