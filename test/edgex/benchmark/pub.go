@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build benchmark
 // +build benchmark
 
 //Not necessary to build the file, until for the edgex benchmark test
