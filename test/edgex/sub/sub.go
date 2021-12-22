@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build edgex
 // +build edgex
 
 package main
@@ -91,7 +92,7 @@ func subEventsFromMQTT(host string) {
 				//log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
 				conf.Log.Fatal(e)
 			} else {
-				var count int = 0
+				var count = 0
 				for {
 					select {
 					case e1 := <-err:
@@ -134,7 +135,7 @@ func subEventsFromRedis(host string) {
 				//log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
 				conf.Log.Fatal(e)
 			} else {
-				var count int = 0
+				var count = 0
 				for {
 					select {
 					case e1 := <-err:
