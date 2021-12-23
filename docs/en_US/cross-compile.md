@@ -1,10 +1,19 @@
 ## Cross-compile binaries
 
-**Notice: eKuiper plugins bases on Golang, and due to Golang restrictions, ``CGO_ENABLED``  flag must be set to 0 to use the Golang cross-compile. But with this flag mode, the Golang plugins will not work. So if you want to use plugins in eKuiper, you can NOT use cross-compile to produce the binary packages.**
+Go supports cross-compiling binaries for multiple platforms which applies to eKuiper as well. Because eKuiper depends on sqlite, CGO_ENABLED must be set to 1 which requires to install and specify the gcc of the target system. 
 
-- Preparation
-  - docker version >= 19.03
-  - Enable Docker CLI  experimental mode
-- Cross-compile binary files: ``$ make cross_build``
-- Cross-compile images for all platforms and push to registry:``$ make cross_docker``
+ - Install the GNU toolchain/gcc of the target system.
+- Modify the Makefile to specify `GOOS`, `GOARCH` and `CC`  and then build.
+
+For example, to cross build ARM64 binaries in AMD64 ubuntu/debian machine, do these steps:
+
+1. Install the GNU toolchain/gcc of the target system ARM64
+  ```shell
+  apt-get install gcc-aarch64-linux-gnu
+  ```
+2. Update the Makefile in the build command. Examples:
+  ```shell
+  GO111MODULE=on CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiperd cmd/kuiperd/main.go
+  ```
+3. Run `make`
 
