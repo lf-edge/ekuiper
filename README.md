@@ -163,7 +163,7 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/CO
 
   > Docker images support EdgeX by default
 
-To using cross-compilation, refer to [this doc](docs/en_US/cross-compile.md).
+Prebuilt binaries are provided in the release assets. If using os or arch which does not have prebuilt binaries, please use cross-compilation, refer to [this doc](docs/en_US/cross-compile.md).
 
 ## Open source license
 
