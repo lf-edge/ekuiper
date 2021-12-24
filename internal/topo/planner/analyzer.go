@@ -241,6 +241,7 @@ func (f *fieldsMap) getDefaultName() string {
 	for i := 0; i < 2048; i++ {
 		key := xsql.DEFAULT_FIELD_NAME_PREFIX + strconv.Itoa(i)
 		if _, ok := f.content[key]; !ok {
+			f.content[key] = nil
 			return key
 		}
 	}
