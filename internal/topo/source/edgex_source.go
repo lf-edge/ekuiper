@@ -318,6 +318,8 @@ func (es *EdgexSource) getValue(r dtos.BaseReading, logger api.Logger) (interfac
 		}
 	case v2.ValueTypeBinary:
 		return r.BinaryValue, nil
+	case v2.ValueTypeObject:
+		return r.ObjectValue, nil
 	default:
 		logger.Warnf("Not supported type %s, and processed as string value", t)
 		return v, nil
