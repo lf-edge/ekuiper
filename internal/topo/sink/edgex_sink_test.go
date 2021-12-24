@@ -39,7 +39,7 @@ func compareEvent(expected, actual *dtos.Event) bool {
 	if (expected.Id == actual.Id || (expected.Id == "" && actual.Id != "")) && expected.ProfileName == actual.ProfileName && expected.DeviceName == actual.DeviceName && (expected.Origin == actual.Origin || (expected.Origin == 0 && actual.Origin > 0)) && reflect.DeepEqual(expected.Tags, actual.Tags) && expected.SourceName == actual.SourceName && len(expected.Readings) == len(actual.Readings) {
 		for i, r := range expected.Readings {
 			if !compareReading(r, actual.Readings[i]) {
-				break
+				return false
 			}
 		}
 		return true
@@ -49,6 +49,11 @@ func compareEvent(expected, actual *dtos.Event) bool {
 
 func compareReading(expected, actual dtos.BaseReading) bool {
 	if (expected.Id == actual.Id || (expected.Id == "" && actual.Id != "")) && expected.ProfileName == actual.ProfileName && expected.DeviceName == actual.DeviceName && (expected.Origin == actual.Origin || (expected.Origin == 0 && actual.Origin > 0)) && expected.ResourceName == actual.ResourceName && expected.Value == actual.Value && expected.ValueType == actual.ValueType {
+		if expected.ValueType == v2.ValueTypeObject {
+			if !reflect.DeepEqual(expected.ObjectValue, actual.ObjectValue) {
+				return false
+			}
+		}
 		return true
 	}
 	return false
@@ -260,7 +265,7 @@ func TestProduceEvents(t1 *testing.T) {
 					{
 						ResourceName:  "temperature",
 						DeviceName:    "test device name2",
-						ProfileName:   "kuiperProfile",
+						ProfileName:   "ekuiperProfile",
 						Id:            "22",
 						Origin:        24,
 						ValueType:     v2.ValueTypeFloat64,
@@ -365,7 +370,7 @@ func TestProduceEvents(t1 *testing.T) {
 					},
 					{
 						ResourceName:  "sa",
-						SimpleReading: dtos.SimpleReading{Value: "[\"1\",\"2\",\"3\",\"4\"]"},
+						SimpleReading: dtos.SimpleReading{Value: "[1, 2, 3, 4]"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
 						ValueType:     v2.ValueTypeStringArray,
@@ -444,6 +449,67 @@ func TestProduceEvents(t1 *testing.T) {
 						Id:            "12",
 						Origin:        14,
 						ValueType:     v2.ValueTypeBinary,
+					},
+				},
+			},
+			error: "",
+		}, { // 7
+			input: `[
+						{"meta":{
+							"correlationid":"","deviceName":"demo","id":"","origin":3,
+							"obj":{"deviceName":"test device name1","id":"12","origin":14,"valueType":"Object"}
+							}
+						},
+						{"obj":{"a":1,"b":"sttt"}}
+					]`,
+			conf: map[string]interface{}{
+				"metadata": "meta",
+			},
+			expected: &dtos.Event{
+				Id:          "",
+				DeviceName:  "demo",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "ruleTest",
+				Origin:      3,
+				Readings: []dtos.BaseReading{
+					{
+						ResourceName: "obj",
+						DeviceName:   "test device name1",
+						ProfileName:  "ekuiperProfile",
+						Id:           "12",
+						Origin:       14,
+						ValueType:    v2.ValueTypeObject,
+						ObjectReading: dtos.ObjectReading{ObjectValue: map[string]interface{}{
+							"a": float64(1),
+							"b": "sttt",
+						}},
+					},
+				},
+			},
+			error: "",
+		}, { // 8
+			input: `[
+						{"obj":{"a":1,"b":"sttt"}}
+					]`,
+			conf: map[string]interface{}{},
+			expected: &dtos.Event{
+				Id:          "",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "ruleTest",
+				Origin:      0,
+				Readings: []dtos.BaseReading{
+					{
+						ResourceName: "obj",
+						DeviceName:   "ekuiper",
+						ProfileName:  "ekuiperProfile",
+						Id:           "",
+						Origin:       0,
+						ValueType:    v2.ValueTypeObject,
+						ObjectReading: dtos.ObjectReading{ObjectValue: map[string]interface{}{
+							"a": float64(1),
+							"b": "sttt",
+						}},
 					},
 				},
 			},

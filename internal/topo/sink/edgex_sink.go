@@ -237,6 +237,8 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, m []map[string]
 				case v2.ValueTypeBinary:
 					// default media type
 					event.AddBinaryReading(k1, vv.([]byte), "application/text")
+				case v2.ValueTypeObject:
+					event.AddObjectReading(k1, vv)
 				default:
 					err = event.AddSimpleReading(k1, vt, vv)
 				}
@@ -425,11 +427,9 @@ func getValueType(v interface{}) (string, interface{}, error) {
 			}
 		case []byte:
 			return v2.ValueTypeBinary, v, nil
-		default:
-			return "", nil, fmt.Errorf("unable to cast value to []interface{} for %v", v)
 		}
 	}
-	return "", nil, fmt.Errorf("unsupported value %v(%s)", v, k)
+	return v2.ValueTypeObject, v, nil
 }
 
 func getValueByType(v interface{}, vt string) (interface{}, error) {
@@ -512,6 +512,8 @@ func getValueByType(v interface{}, vt string) (interface{}, error) {
 			return nil, fmt.Errorf("fail to decode binary value from %v: not binary type", vv)
 		}
 		return bv, nil
+	case v2.ValueTypeObject:
+		return v, nil
 	default:
 		return nil, fmt.Errorf("unsupported type %v", vt)
 	}
