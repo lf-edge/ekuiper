@@ -301,12 +301,15 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 			shellParas[0] = spath
 		}
 		cmd := exec.Command("/bin/sh", shellParas...)
+		conf.Log.Infof("run install script %s", strings.Join(shellParas, " "))
 		var outb, errb bytes.Buffer
 		cmd.Stdout = &outb
 		cmd.Stderr = &errb
 		err = cmd.Run()
 		if err != nil {
-			return err
+			return fmt.Errorf(`err:%v stdout:%s stderr:%s`, err, outb.String(), errb.String())
+		} else {
+			conf.Log.Infof(`install script ouput: %s`, outb.String())
 		}
 	}
 	return m.doRegister(name, pi, false)
