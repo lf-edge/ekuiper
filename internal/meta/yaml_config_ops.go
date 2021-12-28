@@ -159,12 +159,7 @@ func (c *ConfigKeys) AddConfKey(confKey string, reqField map[string]interface{})
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	_, ok := c.cf[confKey]
-	if ok {
-		return fmt.Errorf("confKey %s already exist", confKey)
-	} else {
-		c.cf[confKey] = reqField
-	}
+	c.cf[confKey] = reqField
 
 	return nil
 }

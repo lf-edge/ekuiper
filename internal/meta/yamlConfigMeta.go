@@ -139,7 +139,7 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
 	}
 
 	if err := cfgOps.AddConfKey(confKey, reqField); err != nil {
-		return fmt.Errorf(`%s%s`, getMsg(language, source, "confkey_already_exist"), configOperatorKey)
+		return err
 	}
 
 	err = cfgOps.SaveCfgToFile()
@@ -177,87 +177,12 @@ func AddConnectionConfKey(plgName, confKey, language string, content []byte) err
 	}
 
 	if err := cfgOps.AddConfKey(confKey, reqField); err != nil {
-		return fmt.Errorf(`%s%s`, getMsg(language, source, "confkey_already_exist"), configOperatorKey)
-	}
-
-	err = cfgOps.SaveCfgToFile()
-	if err != nil {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
-	}
-	return nil
-}
-
-func AddSourceConfKeyField(plgName, confKey, language string, content []byte) error {
-	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
-	return addConfKeyField(configOperatorKey, confKey, language, content)
-}
-
-func AddConnectionConfKeyField(plgName, confKey, language string, content []byte) error {
-	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
-	return addConfKeyField(configOperatorKey, confKey, language, content)
-}
-
-func addConfKeyField(configOperatorKey, confKey, language string, content []byte) error {
-
-	ConfigManager.lock.Lock()
-	defer ConfigManager.lock.Unlock()
-
-	reqField := make(map[string]interface{})
-	err := json.Unmarshal(content, &reqField)
-	if nil != err {
 		return err
 	}
 
-	cfgOps, found := ConfigManager.cfgOperators[configOperatorKey]
-	if !found {
-		return fmt.Errorf(`%s%s`, getMsg(language, source, "not_found_plugin"), configOperatorKey)
-	}
-
-	err = cfgOps.AddConfKeyField(confKey, reqField)
-	if err != nil {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "not_found_confkey"), confKey, err)
-	}
 	err = cfgOps.SaveCfgToFile()
 	if err != nil {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
 	}
 	return nil
-}
-
-func DelSourceConfKeyField(plgName, confKey, language string, content []byte) error {
-	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
-	return delConfKeyField(configOperatorKey, confKey, language, content)
-}
-
-func DelConnectionConfKeyField(plgName, confKey, language string, content []byte) error {
-	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
-	return delConfKeyField(configOperatorKey, confKey, language, content)
-}
-
-func delConfKeyField(configOperatorKey, confKey, language string, content []byte) error {
-
-	ConfigManager.lock.Lock()
-	defer ConfigManager.lock.Unlock()
-
-	cfgOps, found := ConfigManager.cfgOperators[configOperatorKey]
-	if !found {
-		return fmt.Errorf(`%s%s`, getMsg(language, source, "not_found_plugin"), configOperatorKey)
-	}
-
-	reqField := make(map[string]interface{})
-	err := json.Unmarshal(content, &reqField)
-	if nil != err {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "json_marshal_fail"), configOperatorKey, err)
-	}
-
-	err = cfgOps.DeleteConfKeyField(confKey, reqField)
-	if err != nil {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), configOperatorKey, err)
-	}
-	err = cfgOps.SaveCfgToFile()
-	if err != nil {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
-	}
-	return nil
-
 }

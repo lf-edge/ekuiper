@@ -154,7 +154,7 @@ func (s *Topo) Open() <-chan error {
 		defer s.mu.Unlock()
 		var err error
 		if s.store, err = state.CreateStore(s.name, s.qos); err != nil {
-			fmt.Println(err)
+			s.ctx.GetLogger().Errorf("topo %s create store error %v", s.name, err)
 			s.drain <- err
 			return
 		}
