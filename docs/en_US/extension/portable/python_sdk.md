@@ -94,3 +94,7 @@ For the full example, please check the [python sdk example](https://github.com/l
 ## Package
 
 As python is an interpretive language, we don't need to build an executable for it. Just specify the main program python file in the plugin json file is ok. For detail, please check [packaing](./overview.md#package).
+
+## Deployment requirements
+
+Running python script requires the python environment. Make sure python 3.x are installed in the target environment. If using docker image, we recommend to use tags like `lfedge/ekuiper:<tag>-slim-python` which have both eKuiper and python environment.

@@ -93,3 +93,7 @@ if __name__ == '__main__':
 ## 打包发布
 
 由于 python 是解释性语言，不需要编译出可执行文件，需要确保 json 描述文件中可执行文件名字的准确性即可。详细信息，请[参考](./overview.md#package)
+
+## 部署要求
+
+运行 python 脚本需要有 python 环境。所以，目标系统必须安装 python 3.x 环境。如果使用 docker ，建议使用 `lfedge/ekuiper:<tag>-slim-python` 版本。该版本包含 eKuiper 和 python 环境，无需再手动安装。
