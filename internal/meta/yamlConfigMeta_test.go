@@ -54,35 +54,7 @@ func TestYamlConfigMeta_Ops(t *testing.T) {
 
 	//Exist ConfigKey , fail
 	err = AddSourceConfKey(plgName, "new", "en_US", []byte(addData))
-	if err == nil {
-		t.Error("should return error when overwrite exist config key")
-	}
-
-	addData1 := `{"interval":10000, "timeout":200}`
-
-	// no exist key, fail
-	noExistKey := "noexist"
-	err = AddSourceConfKeyField(noExistKey, "new", "en_US", []byte(addData1))
-	if err == nil {
-		t.Error("should return error when no exist key")
-	}
-
-	// exist key, success
-	ExistKey := plgName
-	err = AddSourceConfKeyField(ExistKey, "new", "en_US", []byte(addData1))
 	if err != nil {
-		t.Error(err)
-	}
-
-	// exist key, success
-	err = DelSourceConfKeyField(ExistKey, "new", "en_US", []byte(addData1))
-	if err != nil {
-		t.Error(err)
-	}
-
-	// exist key, success
-	err = DelSourceConfKey(ExistKey, "new", "en_US")
-	if err != nil {
-		t.Error(err)
+		t.Error("should overwrite exist config key")
 	}
 }

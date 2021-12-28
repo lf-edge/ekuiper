@@ -231,7 +231,18 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 			return fmt.Errorf("invalid name %s: duplicate", name)
 		}
 	}
+
 	var err error
+	zipPath := path.Join(rr.pluginDir, name+".zip")
+	var unzipFiles []string
+	//clean up: delete zip file and unzip files in error
+	defer os.Remove(zipPath)
+	//download
+	err = httpx.DownloadFile(zipPath, uri)
+	if err != nil {
+		return fmt.Errorf("fail to download file %s: %s", uri, err)
+	}
+
 	if t == plugin2.FUNCTION {
 		if len(j.GetSymbols()) > 0 {
 			err = rr.db.Set(name, j.GetSymbols())
@@ -247,15 +258,6 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 		return err
 	}
 
-	zipPath := path.Join(rr.pluginDir, name+".zip")
-	var unzipFiles []string
-	//clean up: delete zip file and unzip files in error
-	defer os.Remove(zipPath)
-	//download
-	err = httpx.DownloadFile(zipPath, uri)
-	if err != nil {
-		return fmt.Errorf("fail to download file %s: %s", uri, err)
-	}
 	//unzip and copy to destination
 	unzipFiles, version, err := rr.install(t, name, zipPath, shellParas)
 	if err == nil && len(j.GetSymbols()) > 0 {
