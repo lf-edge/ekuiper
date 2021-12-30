@@ -3,13 +3,14 @@
 eKuiper provides built-in support for reading file content into the eKuiper processing pipeline. The file source is usually used as a [table](../../sqls/tables.md) and it is the default type for create table statement.
 
 ```sql
-CREATE TABLE table1 (
+create table table1 (
     name STRING,
     size BIGINT,
     id BIGINT
 ) WITH (DATASOURCE="lookup.json", FORMAT="json", TYPE="file");
 ```
 
+You can use [cli](../../cli/tables.md) or [rest api](../../restapi/tables.md) to manage the tables.
 
 The configure file for the file source is in */etc/sources/file.yaml* in which the path to the file can be specified.
 
