@@ -74,6 +74,7 @@ FORMAT: json
 KEY: id
 DATASOURCE: lookup.json
 ```
+ *Note*: eKuiper do not support query table data by cli. Users need join the table with a stream and check the result
 
 ## drop a table
 
