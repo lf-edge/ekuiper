@@ -33,10 +33,10 @@ build(){
             ;;
         tdengine )
             if [ "$(uname -m)" = "x86_64" ]; then
-                wget "https://www.taosdata.com/assets-download/TDengine-client-2.2.0.5-Linux-x64.tar.gz" -O /tmp/TDengine-client-2.2.0.5.tar.gz;
+                cp extensions/sinks/tdengine/TDengine-client-2.2.0.5-Linux-x64.tar.gz /tmp/TDengine-client-2.2.0.5.tar.gz
             fi;
             if [ "$(uname -m)" = "aarch64" ]; then
-                wget "https://www.taosdata.com/assets-download/TDengine-client-2.2.0.5-Linux-aarch64.tar.gz" -O /tmp/TDengine-client-2.2.0.5.tar.gz;
+                cp extensions/sinks/tdengine/TDengine-client-2.2.0.5-Linux-aarch64.tar.gz /tmp/TDengine-client-2.2.0.5.tar.gz
             fi;
             tar -zxvf /tmp/TDengine-client-2.2.0.5.tar.gz
             cd TDengine-client-2.2.0.5 && ./install_client.sh && cd -
