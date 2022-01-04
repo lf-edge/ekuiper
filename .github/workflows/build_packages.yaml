@@ -83,10 +83,9 @@ jobs:
         matrix:
             suffix:
             - ""
-            - "-slim"
             - "-alpine"
+            - "-slim"
             - "-slim-python"
-            - "-alpine-python"
 
     steps:
     - uses: actions/checkout@v2
@@ -135,40 +134,18 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USER }}
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
+    - name: Update version for setup.py
+      if: github.event_name == 'release'
+      run: sed -i -r "s|([ \t]*version=).*|\1'${GITHUB_REF#refs/tags/}',|1" sdk/python/setup.py
     - name: Build multi platform image
-      if: endsWith( matrix.suffix, 'python') == false
       uses: docker/build-push-action@v2
       with:
         context: .
-        platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
+        platforms: linux/amd64,linux/arm64
         push: ${{ github.event_name == 'release' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         file: deploy/docker/Dockerfile${{ matrix.suffix }}
-    - name: Build multi platform image
-      if: matrix.suffix == '-slim-python'
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
-        push: ${{ github.event_name == 'release' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        file: deploy/docker/Dockerfile-slim
-        build-args: |
-          RUN_FROM=python:3.8.12-slim-bullseye
-    - name: Build multi platform image
-      if: matrix.suffix == '-alpine-python'
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
-        push: ${{ github.event_name == 'release' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        file: deploy/docker/Dockerfile-alpine
-        build-args: |
-          RUN_FROM=python:3.8.12-alpine3.15
 
   build-plugins:
     runs-on: ubuntu-latest
