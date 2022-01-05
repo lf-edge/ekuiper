@@ -20,7 +20,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config pass",
 			args: args{
 				props: map[string]interface{}{
-					"servers": []string{"tcp:127.0.0.1"},
+					"server": "tcp:127.0.0.1",
 				},
 			},
 			wantErr: false,
@@ -29,7 +29,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config are not case sensitive",
 			args: args{
 				props: map[string]interface{}{
-					"SERVERS": []string{"tcp:127.0.0.1"},
+					"SERVER": "tcp:127.0.0.1",
 				},
 			},
 			wantErr: false,
@@ -38,7 +38,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config server addr key error",
 			args: args{
 				props: map[string]interface{}{
-					"server": []string{"tcp:127.0.0.1"},
+					"servers": []string{"tcp:127.0.0.1"},
 				},
 			},
 			wantErr: true,
@@ -47,8 +47,8 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config have unwanted topic fields",
 			args: args{
 				props: map[string]interface{}{
-					"servers": []string{"tcp:127.0.0.1"},
-					"topic":   "demo",
+					"server": "tcp:127.0.0.1",
+					"topic":  "demo",
 				},
 			},
 			wantErr: true,
@@ -66,7 +66,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config no server addr",
 			args: args{
 				props: map[string]interface{}{
-					"servers": []string{},
+					"server": "",
 				},
 			},
 			wantErr: true,
@@ -75,7 +75,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config miss cert key file",
 			args: args{
 				props: map[string]interface{}{
-					"servers":           []string{"tcp:127.0.0.1"},
+					"server":            "tcp:127.0.0.1",
 					"certificationPath": "./not_exist.crt",
 					"privateKeyPath":    "./not_exist.key",
 				},
@@ -100,7 +100,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 
 func TestMQTTClient_CfgResult(t *testing.T) {
 	props := map[string]interface{}{
-		"servers":  []string{"tcp:127.0.0.1:1883"},
+		"server":   "tcp:127.0.0.1:1883",
 		"USERNAME": "demo",
 		"Password": "password",
 		"clientID": "clientid",

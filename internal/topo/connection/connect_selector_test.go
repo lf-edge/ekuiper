@@ -23,7 +23,7 @@ func Test_getConnectionConf(t *testing.T) {
 				connectionSelector: "mqtt.localConnection",
 			},
 			want: map[string]interface{}{
-				"servers":  []interface{}{"tcp://127.0.0.1:1883"},
+				"server":   "tcp://127.0.0.1:1883",
 				"username": "ekuiper",
 				"password": "password",
 				"clientid": "ekuiper",
@@ -36,7 +36,7 @@ func Test_getConnectionConf(t *testing.T) {
 				connectionSelector: "mqtt.cloudConnection",
 			},
 			want: map[string]interface{}{
-				"servers":  []interface{}{"tcp://broker.emqx.io:1883"},
+				"server":   "tcp://broker.emqx.io:1883",
 				"username": "user1",
 				"password": "password",
 			},
@@ -83,8 +83,8 @@ func Test_getConnectionConf(t *testing.T) {
 }
 
 func Test_getConnectionConfWithEnv(t *testing.T) {
-	mqttServerKey := "CONNECTION__MQTT__LOCALCONNECTION__SERVERS"
-	mqttServerValue := "[tcp://broker.emqx.io:1883]"
+	mqttServerKey := "CONNECTION__MQTT__LOCALCONNECTION__SERVER"
+	mqttServerValue := "tcp://broker.emqx.io:1883"
 
 	edgexPortKey := "CONNECTION__EDGEX__REDISMSGBUS__PORT"
 	edgexPortValue := "6666"
@@ -113,7 +113,7 @@ func Test_getConnectionConfWithEnv(t *testing.T) {
 				connectionSelector: "mqtt.localConnection",
 			},
 			want: map[string]interface{}{
-				"servers":  []interface{}{"tcp://broker.emqx.io:1883"},
+				"server":   "tcp://broker.emqx.io:1883",
 				"username": "ekuiper",
 				"password": "password",
 				"clientid": "ekuiper",

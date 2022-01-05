@@ -50,7 +50,7 @@ my_stream
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```
 
-该流将订阅 MQTT 主题`topic/temperature`，服务器连接使用配置文件`$ekuiper/etc/mqtt_source.yaml` 中默认部分的 servers 键。
+该流将订阅 MQTT 主题`topic/temperature`，服务器连接使用配置文件`$ekuiper/etc/mqtt_source.yaml` 中默认部分的 server 键。
 
 - 有关更多信息，请参见 [MQTT source](../rules/sources/mqtt.md) 
 

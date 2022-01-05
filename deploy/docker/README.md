@@ -104,7 +104,7 @@ docker run -d -v `pwd`:$somewhere lfedge/ekuiper:$tag $somecommand
 For example
 
 ```shell
-docker run -p 9081:9081 -d --name ekuiper MQTT_SOURCE__DEFAULT__SERVERS=[$MQTT_BROKER_ADDRESS] lfedge/ekuiper:$tag
+docker run -p 9081:9081 -d --name ekuiper MQTT_SOURCE__DEFAULT__SERVER="$MQTT_BROKER_ADDRESS" lfedge/ekuiper:$tag
 ```
 
 #### 5 minutes quick start
@@ -112,7 +112,7 @@ docker run -p 9081:9081 -d --name ekuiper MQTT_SOURCE__DEFAULT__SERVERS=[$MQTT_B
 1. Set eKuiper source to an MQTT server. This sample uses server locating at ``tcp://broker.emqx.io:1883``. ``broker.emqx.io`` is a public MQTT test server hosted by [EMQ](https://www.emqx.io).
 
    ```shell
-   docker run -p 9081:9081 -d --name ekuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] lfedge/ekuiper:$tag
+   docker run -p 9081:9081 -d --name ekuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:$tag
    ```
 
 2. Create a stream - the stream is your stream data schema, similar to table definition in database. Let's say the temperature & humidity data are sent to ``broker.emqx.io``, and those data will be processed in your **LOCAL RUN** eKuiper docker instance.  Below steps will create a stream named ``demo``, and data are sent to ``devices/device_001/messages`` topic, while ``device_001`` could be other devices, such as ``device_002``, all of those data will be subscribed and handled by ``demo`` stream.
@@ -169,6 +169,14 @@ MQTT_SOURCE__DEMO_CONF__QOS => demo_conf.qos in etc/mqtt_source.yaml
 ```
 
 The environment variables are separated by two "_", the content of the first part after the separation matches the file name of the configuration file, and the remaining content matches the different levels of the configuration item.
+
+
+### Migration Guide
+
+Since 1.5.0, eKuiper changes the mqtt source broker configuration from `servers` to `server` and users can only configure a mqtt broker address instead of address array.
+Users who are using mqtt broker as stream source in previous release and want to migrate to 1.5.0 release or later, need make sure the ``etc/mqtt_source.yaml`` file ``server`` 's configuration is right.
+Users who are using environment variable to configure the mqtt source address need change their ENV successfully, for example, their broker address is ``tcp://broker.emqx.io:1883``. They need change the ENV from
+``MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883]`` to ``MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883"``
 
 ### About EdgeX
 

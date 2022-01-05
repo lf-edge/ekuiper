@@ -5,7 +5,7 @@
 2. 设置 eKuiper 源为一个 MQTT 服务器。本例使用位于 `tcp://broker.emqx.io:1883` 的 MQTT 服务器， `broker.emqx.io` 是一个由 [EMQ](https://www.emqx.cn) 提供的公有 MQTT 服务器。
 
    ```shell
-   docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] lfedge/ekuiper:$tag
+   docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:$tag
    ```
 
 3. 创建流（stream）- 流式数据的结构定义，类似于数据库中的表格类型定义。比如说要发送温度与湿度的数据到 `broker.emqx.io`，这些数据将会被在**本地运行的** eKuiper docker 实例中处理。以下的步骤将创建一个名字为 `demo` 的流，并且数据将会被发送至 `devices/device_001/messages` 主题，这里的 `device_001` 可以是别的设备，比如 `device_002`，所有的这些数据会被 `demo` 流订阅并处理。

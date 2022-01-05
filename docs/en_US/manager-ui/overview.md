@@ -33,7 +33,7 @@ From eKuiper version 0.9.1, whenever a new version of eKuiper is released, the c
 - Run the eKuiper container (for convenience, we will use the public MQTT server provided by [EMQ](https://www.emqx.io), and the address can be set by the `-e` option when running the container). If you want to access the eKuiper instance through the host, you can expose port 9081 by adding the `-p 9081:9081` parameter when starting the container.
 
   ```shell
-  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] lfedge/ekuiper:1.3.1-slim
+  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:1.3.1-slim
   ```
   
   When the container is running, the MQTT server address can be set through the `-e` option, and the data is written to the MQTT source configuration file, which can be viewed by the following command:
@@ -43,14 +43,13 @@ From eKuiper version 0.9.1, whenever a new version of eKuiper is released, the c
   # cat etc/mqtt_source.yaml
   ```
   
-  Some output of this file is shown below, and the value of `servers` is set to `tcp://broker.emqx.io:1883`.
+  Some output of this file is shown below, and the value of `server` is set to `tcp://broker.emqx.io:1883`.
   
   ```yaml
   default:
     concurrency: 1
     qos: 1
-    servers:
-    - tcp://broker.emqx.io:1883
+    server: "tcp://broker.emqx.io:1883"
     sharedSubscription: true
   ....
   ```

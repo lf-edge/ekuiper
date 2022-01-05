@@ -18,15 +18,15 @@ func init() {
 }
 
 type MQTTConnectionConfig struct {
-	Servers            []string `json:"servers"`
-	PVersion           string   `json:"protocolVersion"`
-	ClientId           string   `json:"clientid"`
-	Uname              string   `json:"username"`
-	Password           string   `json:"password"`
-	Certification      string   `json:"certificationPath"`
-	PrivateKPath       string   `json:"privateKeyPath"`
-	RootCaPath         string   `json:"rootCaPath"`
-	InsecureSkipVerify bool     `json:"insecureSkipVerify"`
+	Server             string `json:"server"`
+	PVersion           string `json:"protocolVersion"`
+	ClientId           string `json:"clientid"`
+	Uname              string `json:"username"`
+	Password           string `json:"password"`
+	Certification      string `json:"certificationPath"`
+	PrivateKPath       string `json:"privateKeyPath"`
+	RootCaPath         string `json:"rootCaPath"`
+	InsecureSkipVerify bool   `json:"insecureSkipVerify"`
 }
 
 type MQTTClient struct {
@@ -50,8 +50,8 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 		return fmt.Errorf("failed to get config for %s, the error is %s", ms.selector.ConnSelectorStr, err)
 	}
 
-	if srvs := cfg.Servers; srvs != nil && len(srvs) > 0 {
-		ms.srv = srvs[0]
+	if srv := cfg.Server; srv != "" {
+		ms.srv = srv
 	} else {
 		return fmt.Errorf("missing server property for %s", ms.selector.ConnSelectorStr)
 	}
