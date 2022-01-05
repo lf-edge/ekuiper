@@ -15,13 +15,13 @@ import logging
 import time
 from typing import Callable
 
-from pynng import Req0, Push0, Pull0
+from pynng import Req0, Push0, Pull0, Timeout
 
 
 class PairChannel:
 
     def __init__(self, name: str, typ: int):
-        s = Req0()
+        s = Req0(resend_time=0)
         """TODO options"""
         if typ == 0:
             url = "ipc:///tmp/plugin_{}.ipc".format(name)
@@ -35,9 +35,13 @@ class PairChannel:
     def run(self, reply_func: Callable[[bytes], bytes]):
         self.sock.send(b'handshake')
         while True:
-            msg = self.sock.recv()
-            reply = reply_func(msg)
-            self.sock.send(reply)
+            try:
+                msg = self.sock.recv()
+                reply = reply_func(msg)
+                self.sock.send(reply)
+            except Timeout:
+                print('pair timeout')
+                pass
 
     def close(self):
         self.sock.close()
