@@ -279,7 +279,7 @@ export VERSION=0.0.1
 mkdir -p $PLUGIN_TARGET/sinks
 
 # replace eKuiper dependency with local eKuiper
-go mod edit -replace github.com/emqx/kuiper=$EKUIPER_SOURCE
+go mod edit -replace github.com/lf-edge/ekuiper=$EKUIPER_SOURCE
 
 # go to eKuiper main path
 cd $EKUIPER_SOURCE
