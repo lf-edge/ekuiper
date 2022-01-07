@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ type PortableFunc struct {
 	symbolName string
 	reg        *PluginMeta
 	dataCh     DataReqChannel
+	isAgg      int // 0 - not calculate yet, 1 - no, 2 - yes
 }
 
 func NewPortableFunc(symbolName string, reg *PluginMeta) (*PortableFunc, error) {
@@ -115,7 +116,9 @@ func (f *PortableFunc) Exec(args []interface{}, ctx api.FunctionContext) (interf
 }
 
 func (f *PortableFunc) IsAggregate() bool {
-	// TODO error handling
+	if f.isAgg > 0 {
+		return f.isAgg > 1
+	}
 	jsonArg, err := encode("IsAggregate", nil)
 	if err != nil {
 		conf.Log.Error(err)
@@ -138,6 +141,11 @@ func (f *PortableFunc) IsAggregate() bool {
 			conf.Log.Errorf("IsAggregate result is not bool, got %s", string(res))
 			return false
 		} else {
+			if r {
+				f.isAgg = 2
+			} else {
+				f.isAgg = 1
+			}
 			return r
 		}
 	} else {
