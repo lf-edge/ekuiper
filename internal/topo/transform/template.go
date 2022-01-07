@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,4 +46,8 @@ func GenTransform(dt string) (TransFunc, error) {
 			return j, false, err
 		}
 	}, nil
+}
+
+func GenTp(dt string) (*template.Template, error) {
+	return template.New("sink").Funcs(ct.FuncMap).Parse(dt)
 }

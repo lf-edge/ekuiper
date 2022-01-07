@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ func TestDynamicProp(t *testing.T) {
 		r []interface{} // parsed results
 	}{
 		{
-			j: "$.a",
+			j: "{$.a",
 			v: []interface{}{
 				map[string]interface{}{
 					"a": 123,
@@ -137,7 +137,7 @@ func TestDynamicProp(t *testing.T) {
 				nil,
 			},
 		}, {
-			j: "$[0].a",
+			j: "{$[0].a",
 			v: []interface{}{
 				[]map[string]interface{}{{
 					"a": 123,
@@ -161,7 +161,7 @@ func TestDynamicProp(t *testing.T) {
 				"single",
 			},
 		}, {
-			j: "a",
+			j: "$a",
 			v: []interface{}{
 				map[string]interface{}{
 					"a": 123,
@@ -177,9 +177,30 @@ func TestDynamicProp(t *testing.T) {
 				},
 			},
 			r: []interface{}{
-				"a",
-				"a",
-				"a",
+				"$a",
+				"$a",
+				"$a",
+			},
+		}, {
+			j: "devices/{{.a}}",
+			v: []interface{}{
+				map[string]interface{}{
+					"a": 123,
+					"b": "dafds",
+				},
+				map[string]interface{}{
+					"a": "single",
+					"c": 20.2,
+				},
+				map[string]interface{}{
+					"b": "b",
+					"c": "c",
+				},
+			},
+			r: []interface{}{
+				"devices/123",
+				"devices/single",
+				"devices/<no value>",
 			},
 		},
 	}
