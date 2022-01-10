@@ -153,6 +153,8 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/CO
 
   - Binary files that support EdgeX: `$ make build_with_edgex`
 
+  - Minimal binary file with core runtime only: `$ make build_core`
+
 + Packages: `` $ make pkg``
 
   - Packages: `$ make pkg`
@@ -164,6 +166,8 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/CO
   > Docker images support EdgeX by default
 
 Prebuilt binaries are provided in the release assets. If using os or arch which does not have prebuilt binaries, please use cross-compilation, refer to [this doc](docs/en_US/cross-compile.md).
+
+During compilation, features can be selected through go build tags so that users can build a customized product with only the desired feature set to reduce binary size. This is critical when the target deployment environment has resource constraint. Please refer to [features](docs/en_US/features.md) for more detail.
 
 ## Open source license
 
