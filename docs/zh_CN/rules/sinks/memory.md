@@ -21,7 +21,7 @@
 ```json
 {
   "memory": {
-    "topic": "$.topic"
+    "topic": "{{.topic}}"
   }
 }
 ```

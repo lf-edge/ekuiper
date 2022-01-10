@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package sink
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
@@ -280,7 +281,7 @@ func (ms *RestSink) Send(ctx api.StreamContext, v interface{}, logger api.Logger
 	if err != nil {
 		return nil, err
 	}
-	url, ok := temp.(string)
+	u, ok := temp.(string)
 	if !ok {
 		return nil, fmt.Errorf("the value %v of dynamic prop %s for url is not a string", ms.url, temp)
 	}
@@ -292,12 +293,16 @@ func (ms *RestSink) Send(ctx api.StreamContext, v interface{}, logger api.Logger
 		if err != nil {
 			return nil, err
 		}
-		headers, ok = temp.(map[string]string)
+		tstr, ok := temp.(string)
 		if !ok {
-			return nil, fmt.Errorf("the value %v of dynamic prop %s for headers is not a map[string]string", ms.headersTemplate, temp)
+			return nil, fmt.Errorf("the value %v of dynamic prop %s for headersTemplate is not a string", ms.headersTemplate, temp)
+		}
+		err = json.Unmarshal([]byte(tstr), &headers)
+		if err != nil {
+			return nil, fmt.Errorf("rest sink headers template decode error: %v", err)
 		}
 	}
-	return httpx.Send(logger, ms.client, bodyType, method, url, headers, ms.sendSingle, v)
+	return httpx.Send(logger, ms.client, bodyType, method, u, headers, ms.sendSingle, v)
 }
 
 func (ms *RestSink) Close(ctx api.StreamContext) error {

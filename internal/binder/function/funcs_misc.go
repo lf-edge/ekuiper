@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -255,7 +255,8 @@ func otherCall(name string, args []interface{}) (interface{}, bool) {
 }
 
 func jsonCall(ctx api.StreamContext, name string, args []interface{}) (interface{}, bool) {
-	result, err := ctx.ParseDynamicProp(args[1].(string), args[0])
+	// TO BE REMOVED prefix { to avoid conflict with regular string
+	result, err := ctx.ParseDynamicProp("{"+args[1].(string), args[0])
 	if err != nil {
 		if name == "json_path_exists" {
 			return false, true

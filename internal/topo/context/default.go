@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,15 +15,19 @@
 package context
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/sirupsen/logrus"
+	"regexp"
 	"strings"
 	"sync"
+	"text/template"
 	"time"
 )
 
@@ -40,7 +44,8 @@ type DefaultContext struct {
 	state    *sync.Map
 	snapshot map[string]interface{}
 	// cache
-	jsonEvalReg sync.Map
+	tpReg sync.Map
+	jpReg sync.Map
 }
 
 func Background() *DefaultContext {
@@ -110,24 +115,45 @@ func (c *DefaultContext) SetError(err error) {
 }
 
 func (c *DefaultContext) ParseDynamicProp(prop string, data interface{}) (interface{}, error) {
-	// If not a json path, just return itself
-	if !strings.HasPrefix(prop, "$") {
+	re := regexp.MustCompile(`{{(.*?)}}`)
+	if re.Match([]byte(prop)) {
+		var (
+			tp  *template.Template
+			err error
+		)
+		if raw, ok := c.tpReg.Load(prop); ok {
+			tp = raw.(*template.Template)
+		} else {
+			tp, err = transform.GenTp(prop)
+			if err != nil {
+				return fmt.Sprintf("%v", data), err
+			}
+			c.tpReg.Store(prop, tp)
+		}
+		var output bytes.Buffer
+		err = tp.Execute(&output, data)
+		if err != nil {
+			return fmt.Sprintf("%v", data), err
+		}
+		return output.String(), nil
+	} else if strings.HasPrefix(prop, "{$") { //TO BE REMOVED: will be extracted as a new function in the next release
+		var (
+			je  conf.JsonPathEval
+			err error
+		)
+		if raw, ok := c.jpReg.Load(prop); ok {
+			je = raw.(conf.JsonPathEval)
+		} else {
+			je, err = conf.GetJsonPathEval(prop[1:])
+			if err != nil {
+				return nil, err
+			}
+			c.jpReg.Store(prop, je)
+		}
+		return je.Eval(data)
+	} else {
 		return prop, nil
 	}
-	var (
-		je  conf.JsonPathEval
-		err error
-	)
-	if raw, ok := c.jsonEvalReg.Load(prop); ok {
-		je = raw.(conf.JsonPathEval)
-	} else {
-		je, err = conf.GetJsonPathEval(prop)
-		if err != nil {
-			return nil, err
-		}
-		c.jsonEvalReg.Store(prop, je)
-	}
-	return je.Eval(data)
 }
 
 func (c *DefaultContext) WithMeta(ruleId string, opId string, store api.Store) api.StreamContext {
@@ -136,13 +162,14 @@ func (c *DefaultContext) WithMeta(ruleId string, opId string, store api.Store) a
 		c.GetLogger().Warnf("Initialize context store error for %s: %s", opId, err)
 	}
 	return &DefaultContext{
-		ruleId:      ruleId,
-		opId:        opId,
-		instanceId:  0,
-		ctx:         c.ctx,
-		store:       store,
-		state:       s,
-		jsonEvalReg: sync.Map{},
+		ruleId:     ruleId,
+		opId:       opId,
+		instanceId: 0,
+		ctx:        c.ctx,
+		store:      store,
+		state:      s,
+		tpReg:      sync.Map{},
+		jpReg:      sync.Map{},
 	}
 }
 

@@ -2,18 +2,18 @@
 
 The action is used for publish output message into a RESTful API.
 
-| Property name     | Optional | Description                                                  |
-| ----------------- | -------- | ------------------------------------------------------------ |
-| method            | true    | The HTTP method for the RESTful API. It is a case insensitive string whose value is among "get", "post", "put", "patch", "delete" and "head". The default value is "get". |
-| url             | false    | The RESTful API endpoint, such as ``https://www.example.com/api/dummy``                  |
-| bodyType          | true     | The type of the body. Currently, these types are supported: "none", "json", "text", "html", "xml", "javascript" and "form". For "get" and "head", no body is required so the default value is "none". For other http methods, the default value is "json" For "html", "xml" and "javascript", the dataTemplate must be carefully set up to make sure the format is correct. |
-| timeout   | true     | The timeout (milliseconds) for a HTTP request, defaults to 5000 ms |
-| headers            | true     | The additional headers to be set for the HTTP request. |
-| debugResp | true | Control if print the response information into the console. If set it to `true`, then print response; If set to `false`, then skip print log. The default is `false`. |
-| certificationPath  | true     | The certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the `kuiperd` command. For example, if you run `bin/kuiperd` from `/var/kuiper`, then the base path is `/var/kuiper`; If you run `./kuiperd` from `/var/kuiper/bin`, then the base path is `/var/kuiper/bin`. |
-| privateKeyPath     | true     | The private key path. It can be either absolute path, or relative path, which is similar to use of certificationPath. |
-| rootCaPath     | true     | The location of root ca path. It can be an absolute path, or a relative path, which is similar to use of certificationPath. |
-| insecureSkipVerify | true | Control if to skip the certification verification. If it is set to `true`, then skip certification verification; Otherwise, verify the certification. The default value is `true`. |
+| Property name      | Optional | Description                                                                                                                                                                                                                                                                                                                                                                 |
+|--------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| method             | true     | The HTTP method for the RESTful API. It is a case insensitive string whose value is among "get", "post", "put", "patch", "delete" and "head". The default value is "get".                                                                                                                                                                                                   |
+| url                | false    | The RESTful API endpoint, such as ``https://www.example.com/api/dummy``                                                                                                                                                                                                                                                                                                     |
+| bodyType           | true     | The type of the body. Currently, these types are supported: "none", "json", "text", "html", "xml", "javascript" and "form". For "get" and "head", no body is required so the default value is "none". For other http methods, the default value is "json" For "html", "xml" and "javascript", the dataTemplate must be carefully set up to make sure the format is correct. |
+| timeout            | true     | The timeout (milliseconds) for a HTTP request, defaults to 5000 ms                                                                                                                                                                                                                                                                                                          |
+| headers            | true     | The additional headers to be set for the HTTP request.                                                                                                                                                                                                                                                                                                                      |
+| debugResp          | true     | Control if print the response information into the console. If set it to `true`, then print response; If set to `false`, then skip print log. The default is `false`.                                                                                                                                                                                                       |
+| certificationPath  | true     | The certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the `kuiperd` command. For example, if you run `bin/kuiperd` from `/var/kuiper`, then the base path is `/var/kuiper`; If you run `./kuiperd` from `/var/kuiper/bin`, then the base path is `/var/kuiper/bin`.                   |
+| privateKeyPath     | true     | The private key path. It can be either absolute path, or relative path, which is similar to use of certificationPath.                                                                                                                                                                                                                                                       |
+| rootCaPath         | true     | The location of root ca path. It can be an absolute path, or a relative path, which is similar to use of certificationPath.                                                                                                                                                                                                                                                 |
+| insecureSkipVerify | true     | Control if to skip the certification verification. If it is set to `true`, then skip certification verification; Otherwise, verify the certification. The default value is `true`.                                                                                                                                                                                          |
 
 ::: v-pre
 REST service usually requires a specific data format. That can be imposed by the common sink property `dataTemplate`. Please check the [data template](../overview.md#data-template). Below is a sample configuration for connecting to Edgex Foundry core command. The dataTemplate `{{.key}}` means it will print out the value of key, that is result[key]. So the template here is to select only field ``key`` in the result and change the field name to ``newKey``. `sendSingle` is another common property. Set to true means that if the result is an array, each element will be sent individually.
@@ -71,7 +71,7 @@ There are many scenarios that we need to sink to dynamic url and configurations 
 }
 ```
 
-Then in the action, we set the `method` and `url` to be the value of the result by using jsonpath syntax as below:
+Then in the action, we set the `method` and `url` to be the value of the result by using data template syntax as below:
 
 ```json
 {"id": "rest2",
@@ -83,9 +83,9 @@ Then in the action, we set the `method` and `url` to be the value of the result 
         "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})", 
         "debugResp": true,
         "headers": {"Authorization": "Basic cm9vdDp0YW9zZGF0YQ=="},
-        "method": "$.method",
+        "method": "{{.method}}",
         "sendSingle": true,
-        "url": "$.url"
+        "url": "{{.url}}"
       }
     }
   ]

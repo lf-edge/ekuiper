@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021 EMQ Technologies Co., Ltd.
+  ~ Copyright 2022 EMQ Technologies Co., Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -344,7 +344,7 @@
     &quot;mqtt&quot;: {&#xd;
       &quot;server&quot;: &quot;tcp://${mqtt_srv}:1883&quot;,&#xd;
       &quot;sendSingle&quot;: true,&#xd;
-      &quot;topic&quot;: &quot;$.t&quot;&#xd;
+      &quot;topic&quot;: &quot;{{.t}}&quot;&#xd;
     }&#xd;
   }],&#xd;
   &quot;options&quot;: {&#xd;
