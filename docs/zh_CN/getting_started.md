@@ -106,7 +106,7 @@ MQTT 源将通过`tcp://localhost:1883`连接到 MQTT 消息服务器，如果�
 default:
   qos: 1
   sharedsubscription: true
-  servers: [tcp://127.0.0.1:1883]
+  server: "tcp://127.0.0.1:1883"
 ```
 
 您可以使用`kuiper show streams` 命令来查看是否创建了 `demo` 流。

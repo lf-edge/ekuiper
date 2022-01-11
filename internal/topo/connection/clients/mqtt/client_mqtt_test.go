@@ -51,7 +51,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config server addr key error",
 			args: args{
 				props: map[string]interface{}{
-					"servers": []string{"tcp:127.0.0.1"},
+					"server": "tcp:127.0.0.1",
 				},
 			},
 			wantErr: false,

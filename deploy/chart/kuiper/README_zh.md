@@ -178,7 +178,7 @@ eKuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s �
       default:
         qos: 1
         sharedSubscription: true
-        servers: [tcp://127.0.0.1:1883]
+        server: tcp://127.0.0.1:1883
         concurrency: 1
         #username: user1
         #password: password
