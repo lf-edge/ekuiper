@@ -33,7 +33,7 @@
 - 运行 eKuiper 容器（为了方便，我们将使用由 [EMQ](https://www.emqx.cn) 提供的公有 MQTT 服务器，在运行容器时可通过 `-e` 选项设置地址）。如果您想通过主机访问 eKuiper 实例，可以通过在启动容器的时候加入 `-p 9081:9081` 参数来暴露 9081 端口。
 
   ```shell
-  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] lfedge/ekuiper:1.3.1-slim
+  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:1.3.1-slim
   ```
   
   在运行容器时通过 `-e` 选项设置了 MQTT 服务器地址，数据写到了 MQTT 源配置文件中，通过以下命令可以查看：
@@ -43,14 +43,13 @@
   # cat etc/mqtt_source.yaml
   ```
   
-  该文件的部分输出如下所示，`servers` 的值被设置为 `tcp://broker.emqx.io:1883`。
+  该文件的部分输出如下所示，`server` 的值被设置为 `tcp://broker.emqx.io:1883`。
   
   ```yaml
   default:
     concurrency: 1
     qos: 1
-    servers:
-    - tcp://broker.emqx.io:1883
+    server: tcp://broker.emqx.io:1883
     sharedSubscription: true
   ....
   ```

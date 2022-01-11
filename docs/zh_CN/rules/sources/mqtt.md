@@ -6,7 +6,7 @@ eKuiper 为 MQTT 源流提供了内置支持，流可以订阅来自 MQTT 代理
 #全局MQTT配置
 default:
   qos: 1
-  servers: [tcp://127.0.0.1:1883]
+  server: "tcp://127.0.0.1:1883"
   #username: user1
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -18,7 +18,7 @@ default:
 #重载全局配置
 demo: #Conf_key
   qos: 0
-  servers: [tcp://10.211.55.6:1883]
+  server: "tcp://10.211.55.6:1883"
 ```
 
 ## 全局 MQTT 配置
@@ -29,9 +29,9 @@ demo: #Conf_key
 
 默认订阅QoS级别。
 
-### servers
+### server
 
-MQTT 消息代理的服务器列表。 当前，只能指定一个服务器。
+MQTT 消息代理的服务器。
 
 ### username
 
@@ -71,7 +71,7 @@ MQTT 连接的客户端 ID。 如果未指定，将使用一个 uuid。
 ```yaml
 mqtt:
   localConnection: #connection key
-    servers: [tcp://127.0.0.1:1883]
+    server: "tcp://127.0.0.1:1883"
     username: ekuiper
     password: password
     #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -80,7 +80,7 @@ mqtt:
     #protocolVersion: 3
     clientid: ekuiper
   cloudConnection: #connection key
-    servers: ["tcp://broker.emqx.io:1883"]
+    server: "tcp://broker.emqx.io:1883"
     username: user1
     password: password
     #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -93,14 +93,14 @@ mqtt:
 #Global MQTT configurations
 default:
   qos: 1
-  servers: [tcp://127.0.0.1:1883]
+  server: "tcp://127.0.0.1:1883"
   #username: user1
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
   #privateKeyPath: /var/kuiper/xyz-private.pem.key
   connectionSelector: mqtt.localConnection
 ```
-*注意*: 相应配置组一旦指定 connectionSelector 参数，所有关于连接的参数都会被忽略. 上面例子中，`` servers: [tcp://127.0.0.1:1883]`` 会被忽略。
+*注意*: 相应配置组一旦指定 connectionSelector 参数，所有关于连接的参数都会被忽略. 上面例子中，`` server: "tcp://127.0.0.1:1883"`` 会被忽略。
 
 ### bufferLength
 
@@ -155,3 +155,8 @@ demo (
 
 这些特定设置使用的配置键与 `default` 设置中的配置键相同，在特定设置中指定的任何值都将覆盖 `default` 部分中的值。
 
+## 迁移指南
+从 1.5.0 开始，eKuiper 将 mqtt 源地址配置从 `servers` 更改为 `server`，用户只能配置一个 mqtt 源地址而不是一个地址数组。
+使用之前版本并把 mqtt broker 作为数据源的用户，想要迁移到 1.5.0 或更高版本，需要确保 ``etc/mqtt_source.yaml`` 文件 ``server`` 的配置是正确的。
+使用环境变量配置 mqtt 源地址的用户需要成功更改配置，假设其地址为 ``tcp://broker.emqx.io:1883``。他们需要将环境变量 从
+``MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883]`` 改为 ``MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883"``

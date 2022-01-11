@@ -49,20 +49,20 @@ type MQTTSource struct {
 }
 
 type MQTTConfig struct {
-	Format             string   `json:"format"`
-	Qos                int      `json:"qos"`
-	Servers            []string `json:"servers"`
-	Clientid           string   `json:"clientid"`
-	PVersion           string   `json:"protocolVersion"`
-	Uname              string   `json:"username"`
-	Password           string   `json:"password"`
-	Certification      string   `json:"certificationPath"`
-	PrivateKPath       string   `json:"privateKeyPath"`
-	RootCaPath         string   `json:"rootCaPath"`
-	InsecureSkipVerify bool     `json:"insecureSkipVerify"`
-	KubeedgeModelFile  string   `json:"kubeedgeModelFile"`
-	KubeedgeVersion    string   `json:"kubeedgeVersion"`
-	ConnectionSelector string   `json:"connectionSelector"`
+	Format             string `json:"format"`
+	Qos                int    `json:"qos"`
+	Server             string `json:"server"`
+	Clientid           string `json:"clientid"`
+	PVersion           string `json:"protocolVersion"`
+	Uname              string `json:"username"`
+	Password           string `json:"password"`
+	Certification      string `json:"certificationPath"`
+	PrivateKPath       string `json:"privateKeyPath"`
+	RootCaPath         string `json:"rootCaPath"`
+	InsecureSkipVerify bool   `json:"insecureSkipVerify"`
+	KubeedgeModelFile  string `json:"kubeedgeModelFile"`
+	KubeedgeVersion    string `json:"kubeedgeVersion"`
+	ConnectionSelector string `json:"connectionSelector"`
 }
 
 func (ms *MQTTSource) WithSchema(_ string) *MQTTSource {
@@ -77,8 +77,8 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 	}
 	ms.tpc = topic
 	if cfg.ConnectionSelector == "" {
-		if srvs := cfg.Servers; srvs != nil && len(srvs) > 0 {
-			ms.srv = srvs[0]
+		if srv := cfg.Server; srv != "" {
+			ms.srv = srv
 		} else {
 			return fmt.Errorf("missing server property")
 		}
