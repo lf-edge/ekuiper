@@ -178,7 +178,7 @@ eKuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s a
       default:
         qos: 1
         sharedSubscription: true
-        servers: [tcp://127.0.0.1:1883]
+        server: tcp://127.0.0.1:1883
         concurrency: 1
         #username: user1
         #password: password

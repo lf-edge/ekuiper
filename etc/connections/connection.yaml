@@ -1,6 +1,6 @@
 mqtt:
   localConnection: #connection key
-    servers: [tcp://127.0.0.1:1883]
+    server: "tcp://127.0.0.1:1883"
     username: ekuiper
     password: password
     #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -9,7 +9,7 @@ mqtt:
     #insecureSkipVerify: false
     #protocolVersion: 3
   cloudConnection: #connection key
-    servers: ["tcp://broker.emqx.io:1883"]
+    server: "tcp://broker.emqx.io:1883"
     username: user1
     password: password
     #certificationPath: /var/kuiper/xyz-certificate.pem
