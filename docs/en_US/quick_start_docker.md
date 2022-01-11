@@ -5,7 +5,7 @@
 2. Set eKuiper source to an MQTT server. This sample uses server locating at `tcp://broker.emqx.io:1883`. `broker.emqx.io` is a public MQTT test server hosted by [EMQ](https://www.emqx.io).
 
    ```shell
-   docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] lfedge/ekuiper:$tag
+   docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:$tag
    ```
 
 3. Create a stream - the stream is your stream data schema, similar to table definition in database. Let's say the temperature & humidity data are sent to `broker.emqx.io`, and those data will be processed in your **LOCAL RUN** eKuiper docker instance.  Below steps will create a stream named `demo`, and data are sent to `devices/device_001/messages` topic, while `device_001` could be other devices, such as `device_002`, all of those data will be subscribed and handled by `demo` stream.
