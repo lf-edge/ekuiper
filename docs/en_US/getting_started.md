@@ -104,13 +104,13 @@ We create a stream named `demo` which consumes MQTT `demo` topic as specified in
 ```sh
 $ bin/kuiper create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="demo")'
 ```
-The MQTT source will connect to MQTT broker at `tcp://localhost:1883`. If your MQTT broker is in another location, specify it in the `etc/mqtt_source.yaml`.  You can change the servers configuration as in below.
+The MQTT source will connect to MQTT broker at `tcp://localhost:1883`. If your MQTT broker is in another location, specify it in the `etc/mqtt_source.yaml`.  You can change the server configuration as in below.
 
 ```yaml
 default:
   qos: 1
   sharedsubscription: true
-  servers: [tcp://127.0.0.1:1883]
+  server: "tcp://127.0.0.1:1883"
 ```
 
 You can use command `kuiper show streams` to see if the `demo` stream was created or not.

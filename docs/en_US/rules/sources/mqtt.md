@@ -6,7 +6,7 @@ eKuiper provides built-in support for MQTT source stream, which can subscribe th
 #Global MQTT configurations
 default:
   qos: 1
-  servers: [tcp://127.0.0.1:1883]
+  server: "tcp://127.0.0.1:1883"
   #username: user1
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -19,7 +19,7 @@ default:
 #Override the global configurations
 demo_conf: #Conf_key
   qos: 0
-  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
+  server: "tcp://10.211.55.6:1883"
 
 ```
 
@@ -31,9 +31,9 @@ Use can specify the global MQTT settings here. The configuration items specified
 
 The default subscription QoS level.
 
-### servers
+### server
 
-The server list for MQTT message broker. Currently, only `ONE` server can be specified.
+The server for MQTT message broker. 
 
 ### username
 
@@ -74,7 +74,7 @@ specify the stream to reuse the connection to mqtt broker. The connection profil
 ```yaml
 mqtt:
   localConnection: #connection key
-    servers: [tcp://127.0.0.1:1883]
+    server: "tcp://127.0.0.1:1883"
     username: ekuiper
     password: password
     #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -83,7 +83,7 @@ mqtt:
     #protocolVersion: 3
     clientid: ekuiper
   cloudConnection: #connection key
-    servers: ["tcp://broker.emqx.io:1883"]
+    server: "tcp://broker.emqx.io:1883"
     username: user1
     password: password
     #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -98,14 +98,14 @@ For example
 #Global MQTT configurations
 default:
   qos: 1
-  servers: [tcp://127.0.0.1:1883]
+  server: "tcp://127.0.0.1:1883"
   #username: user1
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem
   #privateKeyPath: /var/kuiper/xyz-private.pem.key
   connectionSelector: mqtt.localConnection
 ```
-*Note*: once specify the connectionSelector in specific configuration group , all connection related parameters will be ignored , in this case `servers: [tcp://127.0.0.1:1883]`
+*Note*: once specify the connectionSelector in specific configuration group , all connection related parameters will be ignored , in this case ``servers: [tcp://127.0.0.1:1883]``
 
 ### bufferLength
 
@@ -193,3 +193,10 @@ When create rules using the defined streams, the rules will share the same conne
 The `DATASOURCE` here will be used as mqtt subscription topics, and subscription  `Qos` defined in config section.
 So stream `demo` will subscribe to topic `test/` with Qos 0 and stream `demo2` will subscribe to topic `test2/` with Qos 0 in this example.
 But if  `DATASOURCE` is same and `qos` not, will only subscribe one time when the first rule starts.       
+
+## Migration Guide
+
+Since 1.5.0, eKuiper changes the mqtt source broker configuration from `servers` to `server` and users can only configure a mqtt broker address instead of address array.
+Users who are using mqtt broker as stream source in previous release and want to migrate to 1.5.0 release or later, need make sure the ``etc/mqtt_source.yaml`` file ``server`` 's configuration is right.
+Users who are using environment variable to configure the mqtt source address need change their ENV successfully, for example, their broker address is ``tcp://broker.emqx.io:1883``. They need change the ENV from
+``MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883]`` to ``MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883"``

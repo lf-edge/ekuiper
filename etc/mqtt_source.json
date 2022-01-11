@@ -34,19 +34,19 @@
 				"zh_CN": "复用连接信息"
 			}
 		}, {
-			"name": "servers",
-			"default": ["tcp://127.0.0.1:1883"],
+			"name": "server",
+			"default": "tcp://127.0.0.1:1883",
 			"optional": true,
 			"connection_related": true,
-			"control": "list",
-			"type": "list_string",
+			"control": "text",
+			"type": "string",
 			"hint": {
-				"en_US": "The server list for MQTT message broker. Currently, only ONE server can be specified.",
-				"zh_CN": "MQTT 消息代理的服务器列表。 当前，只能指定一个服务器。"
+				"en_US": "The server for MQTT message broker.",
+				"zh_CN": "MQTT 消息代理的服务器。"
 			},
 			"label": {
-				"en_US": "Server list",
-				"zh_CN": "服务器列表"
+				"en_US": "Server Address",
+				"zh_CN": "服务器地址"
 			}
 		}, {
 			"name": "username",

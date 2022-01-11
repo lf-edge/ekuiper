@@ -153,7 +153,7 @@ kuiperConfig:
   "connections/connection.yaml":
     mqtt:
       localConnection: #connection key
-        servers: [ tcp://127.0.0.1:1883 ]
+        server: "tcp://127.0.0.1:1883"
         username: ekuiper
         password: password
         #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -163,7 +163,7 @@ kuiperConfig:
         #protocolVersion: 3
         clientid: ekuiper
       cloudConnection: #connection key
-        servers: [ "tcp://broker.emqx.io:1883" ]
+        server: "tcp://broker.emqx.io:1883"
         username: user1
         password: password
         #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -204,7 +204,7 @@ kuiperConfig:
     #Global MQTT configurations
     default:
       qos: 1
-      servers: [ tcp://127.0.0.1:1883 ]
+      server: "tcp://127.0.0.1:1883"
       #username: user1
       #password: password
       #certificationPath: /var/kuiper/xyz-certificate.pem
@@ -217,7 +217,7 @@ kuiperConfig:
 
     demo_conf: #Conf_key
       qos: 0
-      servers: [ tcp://10.211.55.6:1883, tcp://127.0.0.1 ]
+      server: "tcp://10.211.55.6:1883"
   "sources/edgex.yaml":
     #Global Edgex configurations
     default:
