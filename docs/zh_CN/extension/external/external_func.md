@@ -189,7 +189,7 @@ import "google/api/annotations.proto";
 
 外部服务配置需要1个 json 文件和至少一个 schema（.proto） 文件。配置定义了服务映射的3个层次。
 
-1. eKuiper 外部服务层: 外部服务名通过 json 文件名定义。这个名字将作为 [REST API](../../restapi/services.md) 中描述，删除和更新整体外部服务的键。
+1. eKuiper 外部服务层: 外部服务名通过 json 文件名定义。这个名字将作为 [REST API](../../operation/restapi/services.md) 中描述，删除和更新整体外部服务的键。
 2. 接口层: 定义于 json 文件的 `interfaces` 部分。该层为用户不可见的虚拟层，主要用于将一组服务聚合，以便可以只定义一次一组函数共有的属性，例如 schema，访问地址等。 
 3. eKuiper 函数层: 函数定义于 proto 文件中的`rpc`。需要注意的是，proto 文件中的 `rpc` 必须定义在 proto 文件中的 `service` 之下。此 `sevice` 与 eKuiper 中的外部服务概念不同，且没有关联，其取名没有任何限制。默认情况下，外部函数的名字与 rpc 名字相同。用户可通过修改 json 文件中，interface 下的 functions 部分来覆盖函数名的映射关系。 
 
@@ -233,7 +233,7 @@ eKuiper 启动时，会读取配置文件夹 *etc/services* 里的外部服务�
    ```
 注意：eKuiper 启动之后，修改配置文件**不能**自动载入系统。需要动态更新时，请使用 REST 服务。
 
-服务的动态注册和管理，请参考[外部服务管理 API](../../restapi/services.md)。
+服务的动态注册和管理，请参考[外部服务管理 API](../../operation/restapi/services.md)。
 
 ## 使用
 

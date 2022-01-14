@@ -13,7 +13,7 @@
 
 LF Edge eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of eKuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  eKuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
 
-![arch](./docs/en_US/arch.png)
+![arch](docs/en_US/resources/arch.png)
 
 **User scenarios**
 
@@ -82,7 +82,7 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/CO
 
 - Using JMeter MQTT plugin to send simulation data to EMQ X Broker, such as: ``{"temperature": 10, "humidity" : 90}``, the value of temperature and humidity are random integer between 0 - 100.
 - eKuiper subscribe from EMQ X Broker, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50 `` 
-- The analysis result are wrote to local file by using [file sink plugin](docs/en_US/plugins/sinks/file.md).
+- The analysis result are wrote to local file by using [file sink plugin](docs/en_US/extension/native/sinks/file.md).
 
 | Devices                                        | Message # per second | CPU usage     | Memory usage |
 | ---------------------------------------------- | -------------------- | ------------- | ------------ |
@@ -133,11 +133,11 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/CO
 
 - [Reference guide](docs/en_US/reference.md)
   - [Install and operation](docs/en_US/operation/overview.md)
-  - [Command line interface tools - CLI](docs/en_US/cli/overview.md)
+  - [Command line interface tools - CLI](docs/en_US/operation/cli/overview.md)
   - [eKuiper SQL reference](docs/en_US/sqls/overview.md)
   - [Rules](docs/en_US/rules/overview.md)
   - [Extend eKuiper](docs/en_US/extension/overview.md)
-  - [Plugins](docs/en_US/plugins/overview.md)
+  - [Plugins](docs/en_US/extension/native/develop/overview.md)
 
 ## Build from source
 
@@ -163,7 +163,7 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/CO
 
   > Docker images support EdgeX by default
 
-Prebuilt binaries are provided in the release assets. If using os or arch which does not have prebuilt binaries, please use cross-compilation, refer to [this doc](docs/en_US/cross-compile.md).
+Prebuilt binaries are provided in the release assets. If using os or arch which does not have prebuilt binaries, please use cross-compilation, refer to [this doc](docs/en_US/operation/compile/cross-compile.md).
 
 ## Open source license
 

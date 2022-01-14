@@ -72,7 +72,7 @@
 
 通过将内容（json、可执行文件和所有支持文件）放在`plugins/portables/${pluginName}`中，并将配置放在`etc`下的相应目录中，可以在启动时自动加载可移植插件。
 
-要在运行时管理可移植插件，我们可以使用 [REST](../../restapi/plugins.md) 或 [CLI](../../cli/plugins.md) 命令。
+要在运行时管理可移植插件，我们可以使用 [REST](../../operation/restapi/plugins.md) 或 [CLI](../../operation/cli/plugins.md) 命令。
 ## 限制
 
 目前，与原生插件相比，有两个方面的区别：

@@ -2,7 +2,7 @@
 
 Please download the installation package, and refer to below for the instruction of installing for different operate systems.
 
-- [Cent-OS](cent-os.md)
+- [Cent-OS](./cent-os.md)
 - ...
 
 ## Installation structure 
@@ -43,5 +43,5 @@ All of the log files are under this folder. The default log file name is ``strea
 ## Next steps
 
 - See [getting started](../../getting_started.md) for your first eKuiper experience.
-- See [CLI tools](../../cli/overview.md) for usage of eKuiper CLI tools.
+- See [CLI tools](../cli/overview.md) for usage of eKuiper CLI tools.
 

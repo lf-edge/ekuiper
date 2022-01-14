@@ -10,7 +10,7 @@
 
 用户只需依赖 `github.com/lf-edge/ekuiper/sdk/go` 而不是 eKuiper 主项目即可编写 portable 插件，用户需要实现 `github.com/lf-edge/ekuiper/sdk/go/api` 中的相应接口即可
 
-对于源，实现跟[原生源插件](../native/source.md)中一样的接口即可 
+对于源，实现跟[原生源插件](../native/develop/source.md)中一样的接口即可 
 
 ```go
 type Source interface {
@@ -22,7 +22,7 @@ type Source interface {
 }
 ```
 
-对于目标，实现跟[原生目标插件](../native/sink.md)中一样的接口即可
+对于目标，实现跟[原生目标插件](../native/develop/sink.md)中一样的接口即可
 
 ```go
 type Sink interface {
@@ -36,7 +36,7 @@ type Sink interface {
 }
 ```
 
-对于函数，实现跟[原生函数插件](../native/function.md)中一样的接口即可
+对于函数，实现跟[原生函数插件](../native/develop/function.md)中一样的接口即可
 
 ```go
 type Function interface {

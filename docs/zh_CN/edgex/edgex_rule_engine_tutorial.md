@@ -8,7 +8,7 @@
 - SQL：SQL 是你流式数据处理指定业务逻辑的地方，eKuiper 提供了 SQL 语句可以对数据进行抽取、过滤和转换；
 - 目标（Sink）：目标用于将分析结果发送到特定的目标。例如，将分析结果发送到另外的 MQTT 服务器，或者一个 HTTP Rest 地址；
 
-![](../arch.png)
+![](../resources/arch.png)
 
 使用 eKuiper，一般需要完成以下三个步骤。
 
@@ -143,7 +143,7 @@ curl -X POST \
 }'
 ```
 
-关于其它 API，请参考[该文档](../restapi/overview.md).
+关于其它 API，请参考[该文档](../operation/restapi/overview.md).
 
 ### 方式2: 使用 eKuiper 命令行
 
@@ -159,7 +159,7 @@ docker exec -it kuiper /bin/sh
 bin/kuiper create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
 ```
 
-其它命令行，请参考[该文档](../cli/overview.md)。
+其它命令行，请参考[该文档](../operation/cli/overview.md)。
 
 ------
 
@@ -284,7 +284,7 @@ time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint3
 ...
 ```
 
-你也可以敲入以下的命令来查看规则执行的状态。相关的查看规则状态的 REST API 也有提供，请检查[相关文档](../restapi/overview.md).
+你也可以敲入以下的命令来查看规则执行的状态。相关的查看规则状态的 REST API 也有提供，请检查[相关文档](../operation/restapi/overview.md).
 
 ```shell
 # bin/kuiper getstatus rule rule1
@@ -322,16 +322,16 @@ Connecting to 127.0.0.1:20498...
 
 ## 更多练习
 
-目前的规则没有过滤发送给 eKuiper 的任何数据，那么如何过滤数据呢？请使用[删除规则](../cli/rules.md)，然后试着更改一下 SQL 语句，完成更改后，重新部署规则。这时候如果监听 MQTT 服务的结果主题，检查一下相关的规则是否起作用？
+目前的规则没有过滤发送给 eKuiper 的任何数据，那么如何过滤数据呢？请使用[删除规则](../operation/cli/rules.md)，然后试着更改一下 SQL 语句，完成更改后，重新部署规则。这时候如果监听 MQTT 服务的结果主题，检查一下相关的规则是否起作用？
 
 ### 扩展阅读
 
-- 从 eKuiper 0.9.1 版本开始，通过一个单独的 Docker 镜像提供了 [可视化 web 用户交互界面](../manager-ui/overview.md)，您可以通过该 web 界面进行流、规则和插件等管理。
+- 从 eKuiper 0.9.1 版本开始，通过一个单独的 Docker 镜像提供了 [可视化 web 用户交互界面](../operation/manager-ui/overview.md)，您可以通过该 web 界面进行流、规则和插件等管理。
 - 阅读 [EdgeX 源](../rules/sources/edgex.md) 获取更多详细信息，以及类型转换等。
 - [如何使用 meta 函数抽取在 EdgeX 消息总线中发送的更多信息？](edgex_meta.md) 设备服务往总线上发送数据的时候，一些额外的信息也随之发送，比如时间创建时间，id 等。如果你想在 SQL 语句中使用这些信息，请参考这篇文章。
 - [eKuiper 中使用 Golang 模版 (template) 定制分析结果](../rules/data_template.md) 分析结果在发送给不同的 sink 之前，可以使用数据模版对结果进行二次处理，参考这片文章可以获取更多的关于数据模版的使用场景。
 - [EdgeX 消息总线目标](../rules/sinks/edgex.md). 该文档描述了如何使用 EdgeX 消息总线目标。如果想把你的分析结果被别的 EdgeX 服务消费，你可以通过这个 sink 发送 EdgeX 格式的数据，别的 EdgeX 服务可以通过这个 eKuiper sink 暴露出来的新的消息总线进行订阅。
-- [eKuiper 插件开发教程](../plugins/plugins_tutorial.md): eKuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松散耦合的插件程序，在运行时动态加载和绑定，如果您对开发插件有兴趣，请参考该文章。
+- [eKuiper 插件开发教程](../extension/native/develop/plugins_tutorial.md): eKuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松散耦合的插件程序，在运行时动态加载和绑定，如果您对开发插件有兴趣，请参考该文章。
 
 如想了解更多的 LF Edge eKuiper 的信息，请参考以下资源。
 

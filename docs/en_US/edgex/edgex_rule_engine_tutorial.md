@@ -8,7 +8,7 @@ In EdgeX Geneva, [LF Edge eKuiper - an SQL based rule engine](https://github.com
 - SQL: SQL is where you specify the business logic of streaming data processing. eKuiper provides SQL-like statements to allow you to extract, filter & transform data. 
 - Sink: Sink is used for sending analysis result to a specified target. For example, send analysis result to another MQTT broker, or an HTTP rest address.
 
-![](../arch.png)
+![](../resources/arch.png)
 
 Following three steps are required for using eKuiper.
 
@@ -151,7 +151,7 @@ curl -X POST \
 }'
 ```
 
-For other Rest APIs, please refer to [this doc](../restapi/overview.md).
+For other Rest APIs, please refer to [this doc](../operation/restapi/overview.md).
 
 #### Option 2: Use eKuiper CLI
 
@@ -167,7 +167,7 @@ Use following command to create a stream named ``demo``.
 bin/kuiper create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
 ```
 
-For other command line tools, please refer to [this doc](../cli/overview.md).
+For other command line tools, please refer to [this doc](../operation/cli/overview.md).
 
 ------
 
@@ -296,7 +296,7 @@ $ mosquitto_sub -h broker.emqx.io -t result
 ...
 ```
 
-You can also type below command to look at the rule execution status. The corresponding REST API is also available for getting rule status, please check [related document](../restapi/overview.md).
+You can also type below command to look at the rule execution status. The corresponding REST API is also available for getting rule status, please check [related document](../operation/restapi/overview.md).
 
 ```shell
 # bin/kuiper getstatus rule rule1
@@ -335,16 +335,16 @@ In this tutorial,  we introduce a very simple use of EdgeX eKuiper rule engine. 
 
 ### More Excecise 
 
-Current rule does not filter any data that are sent to eKuiper, so how to filter data?  Please [drop rule](../cli/rules.md) and change the SQL in previous rule accordingly.  After update the rule file, and then deploy the rule again. Please monitor the ``result`` topic of MQTT broker, and please verify see if the rule works or not.
+Current rule does not filter any data that are sent to eKuiper, so how to filter data?  Please [drop rule](../operation/cli/rules.md) and change the SQL in previous rule accordingly.  After update the rule file, and then deploy the rule again. Please monitor the ``result`` topic of MQTT broker, and please verify see if the rule works or not.
 
 #### Extended Reading
 
-- Starting from eKuiper 0.9.1 version, [a visualized web UI](../manager-ui/overview.md) is released with a separated Docker image. You can manage the streams, rules and plugins through web page. 
+- Starting from eKuiper 0.9.1 version, [a visualized web UI](../operation/manager-ui/overview.md) is released with a separated Docker image. You can manage the streams, rules and plugins through web page. 
 - Read [EdgeX source](../rules/sources/edgex.md) for more detailed information of configurations and data type conversion.
 - [How to use meta function to extract additional data from EdgeX message bus?](edgex_meta.md) There are some other information are sent along with device service, such as event created time, event id etc. If you want to use such metadata information in your SQL statements, please refer to this doc.
 - [Use Golang template to customize analaysis result in eKuiper](../rules/data_template.md) Before the analysis result is sent to different sinks, the data template can be used to make more processing. You can refer to this doc for more scenarios of using data templates.
 - [EdgeX message bus sink doc](../rules/sinks/edgex.md). The document describes how to use EdgeX message bus sink. If you'd like to have your analysis result be consumed by other EdgeX services, you can send analysis data with EdgeX data format through this sink, and other EdgeX services can subscribe new message bus exposed by eKuiper sink.
-- [eKuiper plugin development tutorial](../plugins/plugins_tutorial.md): eKuiper plugin is based on the plugin mechanism of Golang, users can build loosely-coupled plugin applications,  dynamic loading and binding when it is running. You can refer to this article if you're interested in eKuiper plugin development.
+- [eKuiper plugin development tutorial](../extension/native/develop/plugins_tutorial.md): eKuiper plugin is based on the plugin mechanism of Golang, users can build loosely-coupled plugin applications,  dynamic loading and binding when it is running. You can refer to this article if you're interested in eKuiper plugin development.
 
  If you want to explore more features of eKuiper, please refer to below resources.
 

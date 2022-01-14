@@ -69,7 +69,7 @@ The stream will subscribe to MQTT topic ``test/``, the server connection uses se
 
 - See [MQTT source](../rules/sources/mqtt.md) for more info.
 
-- See [rules and streams CLI docs](../cli/overview.md) for more information of rules & streams management.
+- See [rules and streams CLI docs](../operation/cli/overview.md) for more information of rules & streams management.
 
 ### Share source instance across rules
 

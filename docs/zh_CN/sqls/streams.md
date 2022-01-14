@@ -71,7 +71,7 @@ demo (
 
 - 有关更多信息，请参见 [MQTT source](../rules/sources/mqtt.md) 
 
-- 有关规则和流管理的更多信息，请参见 [规则和流 CLI docs](../cli/overview.md) 
+- 有关规则和流管理的更多信息，请参见 [规则和流 CLI docs](../operation/cli/overview.md) 
 
 ### 共享源实例
 
