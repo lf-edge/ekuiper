@@ -6,7 +6,7 @@ To run python plugin, there are two prerequisites in the runtime environment:
 1. 安装 Python 3.x 环境.
 2. 通过 `pip install nng ekuiper` 安装 nng 和 ekuiper 包.
 
-默认情况下，eKuiper 的 portable 插件运行时会通过 `python` 命令来运行插件。如果您的环境不支持 `python` 命令，请通过[配置文件](../../operation/configuration_file.md#portable-插件配置)更换为可用的 Python 命令。
+默认情况下，eKuiper 的 portable 插件运行时会通过 `python` 命令来运行插件。如果您的环境不支持 `python` 命令，请通过[配置文件](../../operation/config/configuration_file.md#portable-插件配置)更换为可用的 Python 命令。
 
 ## 插件开发
 

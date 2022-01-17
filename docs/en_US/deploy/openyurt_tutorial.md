@@ -1,7 +1,7 @@
 # Deploy and Manage eKuiper with OpenYurt
 
 LF Edge eKuiper is lightweight IoT data analytics and streaming software which is usually running in the edge side.
-A [manager dashboard](../manager-ui/overview.md) is provided to manage one or multiple eKuiper instances. Typically, the
+A [manager dashboard](../operation/manager-ui/overview.md) is provided to manage one or multiple eKuiper instances. Typically, the
 dashboard is deployed in a cloud node to manage eKuiper instances across many edge nodes.
 
 In most circumstances, the edge node is physically un-accessible from the cloud node due to security or other
@@ -320,7 +320,7 @@ healthy like the below screenshot:
 ![system](./ping.png)
 
 Great! Now we can manage the eKuiper in the edge by the dashboard, as if it was deployed in the cloud. Follow
-the [manager ui tutorial](../manager-ui/overview.md) to create and manage your stream, rule and plugins and any other
+the [manager ui tutorial](../operation/manager-ui/overview.md) to create and manage your stream, rule and plugins and any other
 management works of eKuiper from the cloud.
 
 ## Extended Reading
@@ -330,4 +330,4 @@ If you want to explore more features of eKuiper or OpenYurt, please refer to bel
 - [eKuiper Github code repository](https://github.com/lf-edge/ekuiper/)
 - [eKuiper reference guide](https://github.com/lf-edge/ekuiper/blob/edgex/docs/en_US/reference.md)
 - [OpenYurt tutorials](https://github.com/openyurtio/openyurt/tree/master/docs/tutorial)
-- [eKuiper manager ui tutorial](../manager-ui/overview.md)
+- [eKuiper manager ui tutorial](../operation/manager-ui/overview.md)

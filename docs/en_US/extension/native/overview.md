@@ -8,9 +8,9 @@ eKuiper allows user to customize the different kinds of extensions by the native
 
 Please read the following to learn how to implement different extensions.
 
-- [Source extension](./source.md)
-- [Sink/Action extension](./sink.md)
-- [Function extension](./function.md)
+- [Source extension](develop/source.md)
+- [Sink/Action extension](develop/sink.md)
+- [Function extension](develop/function.md)
 
 ## Naming
 
@@ -46,7 +46,7 @@ func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionConte
 
 ## Runtime dependencies
 
-Some plugin may need to access dependencies in the file system. Those files is put under {{eKuiperPath}}/etc/{{pluginType}}/{{pluginName}} directory. When packaging the plugin, put those files in [etc directory](../../restapi/plugins.md#plugin-file-format). After installation, they will be moved to the recommended place.
+Some plugin may need to access dependencies in the file system. Those files is put under {{eKuiperPath}}/etc/{{pluginType}}/{{pluginName}} directory. When packaging the plugin, put those files in [etc directory](../../operation/restapi/plugins.md#plugin-file-format). After installation, they will be moved to the recommended place.
 
 In the plugin source code, developers can access the dependencies of file system by getting the eKuiper root path from the context:
 

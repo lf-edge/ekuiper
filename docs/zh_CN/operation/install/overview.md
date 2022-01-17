@@ -43,5 +43,5 @@ eKuiper 允许用户开发自己的插件，并将这些插件放入此文件夹
 ## 下一步
 
 - 参考 [入门指导](../../getting_started.md) 开始您的 eKuiper 体验。
-- 参考 [CLI 工具](../../cli/overview.md) 了解 eKuiper CLI 工具的使用。
+- 参考 [CLI 工具](../cli/overview.md) 了解 eKuiper CLI 工具的使用。
 

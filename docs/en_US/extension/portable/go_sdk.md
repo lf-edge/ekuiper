@@ -10,7 +10,7 @@ As the GO SDK provides almost identical API interfaces, the user's source, sink 
 
 To develop the portable plugin, users need to depend on `github.com/lf-edge/ekuiper/sdk/go` instead of eKuiper main project. Then to implement source, just implement the interfaces in package `github.com/lf-edge/ekuiper/sdk/go/api`.
 
-For source, implement the source interface as below as the same as described in [native plugin source](../native/source.md).
+For source, implement the source interface as below as the same as described in [native plugin source](../native/develop/source.md).
 
 ```go
 type Source interface {
@@ -22,7 +22,7 @@ type Source interface {
 }
 ```
 
-For sink, implement the sink interface as below as the same as described in [native plugin sink](../native/sink.md).
+For sink, implement the sink interface as below as the same as described in [native plugin sink](../native/develop/sink.md).
 
 ```go
 type Sink interface {
@@ -36,7 +36,7 @@ type Sink interface {
 }
 ```
 
-For function, implement the function interface as below as the same as described in [native plugin function](../native/function.md).
+For function, implement the function interface as below as the same as described in [native plugin function](../native/develop/function.md).
 
 ```go
 type Function interface {

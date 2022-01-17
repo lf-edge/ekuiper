@@ -12,7 +12,7 @@
 
 LF Edge eKuiper 是 Golang 实现的轻量级物联网边缘分析、流式处理开源软件，可以运行在各类资源受限的边缘设备上。eKuiper 设计的一个主要目标就是将在云端运行的实时流式计算框架（比如 [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) 和 [Apache Flink](https://flink.apache.org) 等）迁移到边缘端。eKuiper 参考了上述云端流式处理项目的架构与实现，结合边缘流式数据处理的特点，采用了编写基于``源 (Source)``，``SQL (业务逻辑处理)``, ``目标 (Sink)`` 的规则引擎来实现边缘端的流式数据处理。
 
-![arch](./docs/zh_CN/arch.png)
+![arch](docs/zh_CN/resources/arch.png)
 
 **应用场景**
 
@@ -90,7 +90,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 - 使用 JMeter MQTT 插件来发送数据到 EMQ X 服务器，消息类似于 ``{"temperature": 10, "humidity" : 90}``， 温度与湿度的值是介于 0 ～ 100 之间的随机整数值
 - eKuiper 从 EMQ X 服务器订阅消息，并且通过 SQL 分析数据： ``SELECT * FROM demo WHERE temperature > 50 `` 
-- 分析结果通过 [文件插件](docs/zh_CN/plugins/sinks/file.md) 写到本地的文件系统里
+- 分析结果通过 [文件插件](docs/zh_CN/extension/native/sinks/file.md) 写到本地的文件系统里
 
 | 设备                                                 | 每秒发送消息数 | CPU 使用        | 内存 |
 | ---------------------------------------------------- | -------------- | --------------- | ---- |
@@ -141,11 +141,11 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 - [参考指南](docs/zh_CN/reference.md)
   - [安装与操作](docs/zh_CN/operation/overview.md)
-  - [命令行界面工具-CLI](docs/zh_CN/cli/overview.md)
+  - [命令行界面工具-CLI](docs/zh_CN/operation/cli/overview.md)
   - [eKuiper SQL参考](docs/zh_CN/sqls/overview.md)
   - [规则](docs/zh_CN/rules/overview.md)
   - [扩展eKuiper](docs/zh_CN/extension/overview.md)
-  - [插件](docs/zh_CN/plugins/overview.md)
+  - [插件](docs/zh_CN/extension/native/develop/overview.md)
 
 ## 视频教程
 
@@ -178,7 +178,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
   > Docker 镜像默认支持 EdgeX
 
 
-项目版本页面里提供了预编译的二进制文件。如果您的操作系统或架构没有预编译的文件，请使用交叉编译自行构建，请参考[此文档](docs/zh_CN/cross-compile.md)。
+项目版本页面里提供了预编译的二进制文件。如果您的操作系统或架构没有预编译的文件，请使用交叉编译自行构建，请参考[此文档](docs/zh_CN/operation/compile/cross-compile.md)。
 
 ## 开源版权
 

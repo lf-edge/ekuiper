@@ -280,7 +280,7 @@ The test script is used for testing [eKuiper EdgeX connection selector](../docs/
 
 - [Redis KV Storage](redis_kv_storage.jmx)
 
-The test script is used for testing [Redis KV Storage](../docs/en_US/operation/configuration_file.md#redis). To run the script,
+The test script is used for testing [Redis KV Storage](../docs/en_US/operation/config/configuration_file.md#redis). To run the script,
 
 - Redis Server need installed since eKuiper will use Redis as kv storage 
   * modify the `etc/kuiper.yaml`, make sure type is set to ``redis``, and server, port and password is correct

@@ -191,15 +191,15 @@ Check the stream log located at "`log/stream.log`", and you would see the filter
 ```
 
 ### Managing the rules
-You can use command line tool to stop the rule for a while and restart it and other management work. The rule name is the identifier of a rule. Check [Rule Management CLI](cli/rules.md) for detail
+You can use command line tool to stop the rule for a while and restart it and other management work. The rule name is the identifier of a rule. Check [Rule Management CLI](operation/cli/rules.md) for detail
 ```sh
 $ bin/kuiper stop rule ruleDemo
 ```
 
 Refer to the following topics for guidance on using the eKuiper.
 
-- [Command line interface tools - CLI](./cli/overview.md)
+- [Command line interface tools - CLI](operation/cli/overview.md)
 - [eKuiper SQL reference](./sqls/overview.md)
 - [Rules](./rules/overview.md)
 - [Extend eKuiper](./extension/overview.md)
-- [Plugins](./plugins/overview.md)
+- [Plugins](extension/native/develop/overview.md)

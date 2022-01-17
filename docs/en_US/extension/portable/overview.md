@@ -78,7 +78,7 @@ A plugin can contain multiple sources, sinks and functions, define them in the c
 
 The portable plugins can be automatically loaded in start up by putting the content(the json, the executable and all supportive files) inside `plugins/portables/${pluginName}` and the configurations to the corresponding directories under `etc`.
 
-To manage the portable plugins in runtime, we can use the [REST](../../restapi/plugins.md) or [CLI](../../cli/plugins.md) commands.
+To manage the portable plugins in runtime, we can use the [REST](../../operation/restapi/plugins.md) or [CLI](../../operation/cli/plugins.md) commands.
 
 ## Restrictions
 
