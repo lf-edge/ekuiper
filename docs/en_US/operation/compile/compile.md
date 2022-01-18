@@ -6,7 +6,7 @@
 
   - Binary files that support EdgeX: `$ make build_with_edgex`
 
-+ Packages: `` $ make pkg``
++ Packages: ` $ make pkg`
 
   - Packages: `$ make pkg`
 

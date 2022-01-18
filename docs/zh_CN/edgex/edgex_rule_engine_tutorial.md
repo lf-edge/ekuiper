@@ -26,7 +26,7 @@
 
 - 扩展了一个 EdgeX 消息总线源，支持从 EdgeX 消息总线中接收数据  
 
-- 为了可以分析数据，eKuiper 需知道传入的数据流的格式。一般来说，用户最好在创建流的时候指定被分析的流数据的格式。如下所示，一个 ``demo`` 流包含了一个名为 ``temperature`` 的字段。这与在关系型数据库中创建表格定义的时候非常像。在创建了流定义以后，eKuiper 可以在编译或者运行时对进入的数据进行类型检查，相应错误也会报告给用户。
+- 为了可以分析数据，eKuiper 需知道传入的数据流的格式。一般来说，用户最好在创建流的时候指定被分析的流数据的格式。如下所示，一个 `demo` 流包含了一个名为 `temperature` 的字段。这与在关系型数据库中创建表格定义的时候非常像。在创建了流定义以后，eKuiper 可以在编译或者运行时对进入的数据进行类型检查，相应错误也会报告给用户。
 
   ```shell
   CREATE STREAM demo (temperature bigint) WITH (FORMAT="JSON"...)
@@ -53,7 +53,7 @@ eKuiper v1.2.1 之后的版本将仅支持 EdgeX v2 ( Ireland 及之后的版本
 # docker-compose -f ./docker-compose-no-secty.yml up -d --build
 ```
 
-所有的容器启动完毕之后，请使用 ``docker ps`` 命令确定所有的容器已经正常启动。
+所有的容器启动完毕之后，请使用 `docker ps` 命令确定所有的容器已经正常启动。
 
 ```shell
 $ docker ps
@@ -77,9 +77,9 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
 
 当 eKuiper 从 messageBus 获取数据并返回处理结果时，用户需要在创建源和接收器时分别指定连接信息。
 从 `eKuiper 1.4.0` 和 `EdgeX Jakarta` 开始，有一个新功能支持用户可以在固定位置指定连接信息，然后源和目标输出可以参考。
-* ``redis`` 消息总线： 这个功能在 EdgeX 使用 `secure` 模式时特别有用，在这种情况下，客户端凭据将在服务引导时自动注入该共享位置。
+* `redis` 消息总线： 这个功能在 EdgeX 使用 `secure` 模式时特别有用，在这种情况下，客户端凭据将在服务引导时自动注入该共享位置。
   为了使用这个功能，用户需要对目标`docker-compose`文件的`rulesengine`服务部分做部分修改
-  将这些添加到 ``environment`` 部分并确保镜像是 ``1.4.0`` 或更高版本
+  将这些添加到 `environment` 部分并确保镜像是 `1.4.0` 或更高版本
   ```yaml
   environment:
       CONNECTION__EDGEX__REDISMSGBUS__PORT: 6379
@@ -88,8 +88,8 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
       CONNECTION__EDGEX__REDISMSGBUS__TYPE: redis
       EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.redisMsgBus
   ```
-* ``mqtt/zeromq`` 消息总线: 根据目标总线类型填写相应参数，指定必要的客户端凭证
-  这里以 mqtt 消息总线为例，确保相应的连接信息存在于此文件 ``etc/connections/connection.yaml`` 中, [更多信息](../rules/sources/edgex.md#connectionselector) 请参考
+* `mqtt/zeromq` 消息总线: 根据目标总线类型填写相应参数，指定必要的客户端凭证
+  这里以 mqtt 消息总线为例，确保相应的连接信息存在于此文件 `etc/connections/connection.yaml` 中, [更多信息](../rules/sources/edgex.md#connectionselector) 请参考
   ```yaml
   environment:
       CONNECTION__EDGEX__MQTTMSGBUS__PORT: 1883
@@ -107,7 +107,7 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
 ### 使用 Redis 作为 KV 存储
 
 从 `1.4.0` 开始，eKuiper 支持 redis 来存储 KV 元数据，用户可以对目标 `docker-compose` 文件的 `rulesengine` 服务部分进行一些修改以应用此更改。
-用户可以将这些添加到 ``environment`` 部分并确保映像为 ``1.4.0`` 或更高版本
+用户可以将这些添加到 `environment` 部分并确保映像为 `1.4.0` 或更高版本
   ```yaml
   environment:
     KUIPER__STORE__TYPE: redis
@@ -130,9 +130,9 @@ Edgex</u>** 。如果读者需要以原生方式运行 eKuiper 并且支持 `Edg
 
 ### 方式1: 使用 Rest API
 
-请注意: EdgeX 中的 eKuiper Rest 接口使用``59720``端口，而不是缺省的``9081``端口。所以在 EdgeX 调用 eKuiper Rest 的时候，请将文档中所有的 9081 替换为 59720。
+请注意: EdgeX 中的 eKuiper Rest 接口使用`59720`端口，而不是缺省的`9081`端口。所以在 EdgeX 调用 eKuiper Rest 的时候，请将文档中所有的 9081 替换为 59720。
 
-请将 ``$eKuiper_server`` 替换为本地运行的 eKuiper 实例的地址。
+请将 `$eKuiper_server` 替换为本地运行的 eKuiper 实例的地址。
 
 ```shell
 curl -X POST \
@@ -153,7 +153,7 @@ curl -X POST \
 docker exec -it kuiper /bin/sh
 ```
 
-使用以下命令，创建一个名为 ``demo`` 的流定义.
+使用以下命令，创建一个名为 `demo` 的流定义.
 
 ```shell
 bin/kuiper create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
@@ -163,7 +163,7 @@ bin/kuiper create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
 
 ------
 
-现在流已经创建好了，但是你可能好奇 eKuiper 是如何知道消息总线的地址和端口，因为此类信息在 ``CREATE STREAM`` 并未指定。实际上这些信息是在配置文件  ``etc/sources/edgex.yaml`` 中指定的，你可以在命令行窗口中输入 ``cat etc/sources/edgex.yaml`` 来查看文件的内容。如果你有不同的服务器、端口和服务的地址，请更新相应的配置。正如之前提到的，这些配置选项可以在容器启动的时候进行重写。
+现在流已经创建好了，但是你可能好奇 eKuiper 是如何知道消息总线的地址和端口，因为此类信息在 `CREATE STREAM` 并未指定。实际上这些信息是在配置文件  `etc/sources/edgex.yaml` 中指定的，你可以在命令行窗口中输入 `cat etc/sources/edgex.yaml` 来查看文件的内容。如果你有不同的服务器、端口和服务的地址，请更新相应的配置。正如之前提到的，这些配置选项可以在容器启动的时候进行重写。
 
 ```yaml
 #Global Edgex configurations
@@ -181,9 +181,9 @@ default:
 
 让我们创建一条规则，将分析结果发送至 MQTT 服务器，关于 MQTT 目标的相关配置，请参考[这个链接](../rules/sinks/mqtt.md)。与创建流的过程类似，你可以选择使用 REST 或者命令行来管理规则。
 
-以下例子将选出所有 ``events`` 主题上所有的数据，分析结果将被
+以下例子将选出所有 `events` 主题上所有的数据，分析结果将被
 
-- 发布到公共的 MQTT 服务器 ``broker.emqx.io`` 的主题``result`` 上；
+- 发布到公共的 MQTT 服务器 `broker.emqx.io` 的主题`result` 上；
 - 打印至日志文件
 
 ### 选项1: 使用 Rest API
@@ -212,7 +212,7 @@ curl -X POST \
 
 ### 选项2: 使用 eKuiper 命令行
 
-你可以使用任意编辑器来创建一条规则，将下列内容拷贝到编辑器中，并命名为 ``rule.txt``。
+你可以使用任意编辑器来创建一条规则，将下列内容拷贝到编辑器中，并命名为 `rule.txt`。
 
 ```json
 {
@@ -243,7 +243,7 @@ Rule rule1 was created successfully, please use 'cli getstatus rule rule1' comma
 
 ------
 
-如想将结果发送到别的目标，请参考 eKuiper 中支持的[其它目标](../rules/overview.md#目标动作)。你现在可以看一下在 ``log/stream.log``中的日志文件，查看规则的详细信息。
+如想将结果发送到别的目标，请参考 eKuiper 中支持的[其它目标](../rules/overview.md#目标动作)。你现在可以看一下在 `log/stream.log`中的日志文件，查看规则的详细信息。
 
 ```
 time="2021-07-08 01:03:08" level=info msg="Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720. \n" file="server/server.go:144"
@@ -261,7 +261,7 @@ time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint3
 
 ## 监控分析结果
 
-因为所有的分析结果都被发布到``tcp://broker.emqx.io:1883``，你可以直接使用以下的  ``mosquitto_sub`` 命令来监听结果，你也可以参考别的 [MQTT 客户端工具](https://www.emqx.cn/blog/mqtt-client-tools).
+因为所有的分析结果都被发布到`tcp://broker.emqx.io:1883`，你可以直接使用以下的  `mosquitto_sub` 命令来监听结果，你也可以参考别的 [MQTT 客户端工具](https://www.emqx.cn/blog/mqtt-client-tools).
 
 ```shell
 # mosquitto_sub -h broker.emqx.io -t result

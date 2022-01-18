@@ -6,9 +6,9 @@ This document describes how to install on CentOS.
 
 Unzip the installation package.
 
-``unzip kuiper-centos7-v0.0.1.zip``
+`unzip kuiper-centos7-v0.0.1.zip`
 
-Run the ``kuiper`` to verify eKuiper is installed successfully or not.
+Run the `kuiper` to verify eKuiper is installed successfully or not.
 
 ```shell
 # cd kuiper

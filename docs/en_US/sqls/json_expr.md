@@ -35,7 +35,7 @@
 
 ### Identifier 
 
-Source Dereference (`.`) The source dereference operator can be used to specify columns by dereferencing the source stream or table. The ``->`` dereference selects a key in a nested JSON object.
+Source Dereference (`.`) The source dereference operator can be used to specify columns by dereferencing the source stream or table. The `->` dereference selects a key in a nested JSON object.
 
 ```
 SELECT demo.age FROM demo
@@ -106,7 +106,7 @@ SELECT d.friends[0]->last FROM demo AS d
 
 Slices allow you to select a contiguous subset of an array. 
 
-``field[from:to)``is the interval before closing and opening, excluding to. If from is not specified, then it means start from the 1st element of array; If to is not specified, then it means end with the last element of array.
+`field[from:to)`is the interval before closing and opening, excluding to. If from is not specified, then it means start from the 1st element of array; If to is not specified, then it means end with the last element of array.
 
 ```
 SELECT children[0:1] FROM demo

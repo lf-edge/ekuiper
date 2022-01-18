@@ -23,7 +23,7 @@ EdgeX 源会试图取得某个字段的类型，
 
 ### Boolean
 
-如果 `reading` 中  `ValueType` 的值为 `Bool` ，那么 eKuiper 会试着将其转换为 ``boolean`` 类型，以下的值将被转化为 `true`。
+如果 `reading` 中  `ValueType` 的值为 `Bool` ，那么 eKuiper 会试着将其转换为 `boolean` 类型，以下的值将被转化为 `true`。
 
 - "1", "t", "T", "true", "TRUE", "True" 
 
@@ -89,7 +89,7 @@ EdgeX 消息总线的端口，缺省为 `5573`
 
 ## connectionSelector
 
-重用 EdgeX 源连接。连接配置信息位于 ``connections/connection.yaml``.
+重用 EdgeX 源连接。连接配置信息位于 `connections/connection.yaml`.
 ```yaml
 edgex:
   redisMsgBus: #connection key
@@ -113,7 +113,7 @@ edgex:
     #    KeyPEMBlock:
     #    SkipCertVerify: true/false
 ```
-对于 EdgeX 连接，这里有一个配置组。用户应该使用 ``edgex.redisMsgBus`` 来作为参数。举例如下：
+对于 EdgeX 连接，这里有一个配置组。用户应该使用 `edgex.redisMsgBus` 来作为参数。举例如下：
 ```yaml
 #Global Edgex configurations
 default:
@@ -124,7 +124,7 @@ default:
   topic: events
   messageType: event
 ```
-*注意*: 相应配置组一旦指定 connectionSelector 参数，所有关于连接的参数都会被忽略. 上面例子中，`` protocol: tcp | server: localhost | port: 5573`` 会被忽略。
+*注意*: 相应配置组一旦指定 connectionSelector 参数，所有关于连接的参数都会被忽略. 上面例子中，` protocol: tcp | server: localhost | port: 5573` 会被忽略。
 
 
 ## topic
@@ -145,8 +145,8 @@ EdgeX 消息总线类型，目前支持三种消息总线。如果指定了错�
 EdgeX 消息模型类型。如果连接到 EdgeX application service 的 topic, 则消息为 "event" 类型。否则，如果直接连接到消息总线的 topic，接收到 device service 或者 core
 data 发出的数据，则消息类型为 "request"。该参数支持两种类型：
 
-- ``event``: 消息将会解码为 `dtos.Event` 类型。该选项为默认值。
-- ``request``: 消息将会解码为 `requests.AddEventRequest` 类型。
+- `event`: 消息将会解码为 `dtos.Event` 类型。该选项为默认值。
+- `request`: 消息将会解码为 `requests.AddEventRequest` 类型。
 
 ## optional
 

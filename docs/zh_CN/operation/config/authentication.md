@@ -1,11 +1,11 @@
 ## Authentication
 
-如果使能的话， eKuiper 从 1.4.0 起将为 RESTful API 提供基于 ``JWT RSA256`` 的身份验证。用户需要将他们的公钥放在 ``etc/mgmt`` 文件夹中，并使用相应的私钥来签署 JWT 令牌。
-当用户请求 RESTful API 时，将 ``Token`` 放在 http 请求头中，格式如下：
+如果使能的话， eKuiper 从 1.4.0 起将为 RESTful API 提供基于 `JWT RSA256` 的身份验证。用户需要将他们的公钥放在 `etc/mgmt` 文件夹中，并使用相应的私钥来签署 JWT 令牌。
+当用户请求 RESTful API 时，将 `Token` 放在 http 请求头中，格式如下：
 ```
 Authorization：XXXXXXXXXXXXXXX
 ```
-如果token正确，eKuiper会响应结果；否则，它将返回 http ``401`` 代码。
+如果token正确，eKuiper会响应结果；否则，它将返回 http `401` 代码。
 
 
 ### JWT Header
@@ -23,8 +23,8 @@ JWT Payload 应使用以下格式
 
 |  字段   | 是否可选 |  意义  |
 |  ----  | ----  | ----  |
-| iss  | 否| 颁发者 ,  此字段必须与``etc/mgmt``目录中的相应公钥文件名字一致|
-| aud  | 否 |颁发对象 , 此字段必须是 ``eKuiper`` |
+| iss  | 否| 颁发者 ,  此字段必须与`etc/mgmt`目录中的相应公钥文件名字一致|
+| aud  | 否 |颁发对象 , 此字段必须是 `eKuiper` |
 | exp  | 是 |过期时间 |
 | jti  | 是 |JWT ID |
 | iat  | 是 |颁发时间 |
@@ -38,8 +38,8 @@ JWT Payload 应使用以下格式
   "adu": "eKuiper"
 }
 ```
-使用此格式时，用户必须确保正确的公钥文件 ``sample_key.pub`` 位于 ``etc/mgmt`` 下。
+使用此格式时，用户必须确保正确的公钥文件 `sample_key.pub` 位于 `etc/mgmt` 下。
 
 ### JWT Signature
 
-需要使用私钥对令牌进行签名，并将相应的公钥放在 ``etc/mgmt`` 中。
+需要使用私钥对令牌进行签名，并将相应的公钥放在 `etc/mgmt` 中。

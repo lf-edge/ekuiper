@@ -8,7 +8,7 @@ create table $table_name $table_def | create table -f $table_def_file
 ```
 
 - 在命令行中定义表信息.
-  以下例子通过命令行创建了一个名为 ``my_table``的表。
+  以下例子通过命令行创建了一个名为 `my_table`的表。
 ```shell
 # bin/kuiper create table my_table '(id bigint, name string, score float) WITH ( datasource = "lookup.json", FORMAT = "json", KEY = "id");'
 table my_table created
@@ -22,7 +22,7 @@ table my_table created
 table my_table created
 ```
 
-  以下是 ``my_table.txt``的内容.
+  以下是 `my_table.txt`的内容.
 ```
 my_table(id bigint, name string, score float)
     WITH ( datasource = "lookup.json", FORMAT = "json", KEY = "id");

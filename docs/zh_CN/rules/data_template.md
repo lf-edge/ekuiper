@@ -59,7 +59,7 @@ Golang 的模版可以作用于各种数据结构，比如 map、切片 (slice)�
 ```
 
 ::: v-pre
-在发送到 sink 的时候，希望每条数据分开发送，首先需要将 sink 的 ``sendSingle`` 设置为 `true`，然后使用数据模版：`{{json .}}`，完整配置如下，用户可以将其拷贝到某 sink 配置的最后。
+在发送到 sink 的时候，希望每条数据分开发送，首先需要将 sink 的 `sendSingle` 设置为 `true`，然后使用数据模版：`{{json .}}`，完整配置如下，用户可以将其拷贝到某 sink 配置的最后。
 :::
 
 ```json
@@ -68,7 +68,7 @@ Golang 的模版可以作用于各种数据结构，比如 map、切片 (slice)�
  "dataTemplate": "{{toJson .}}"
 ```
 
-- 将 ``sendSingle`` 设置为 `true`后，eKuiper 把传递给 sink 的 `[]map[string]interface{}` 数据类型进行遍历处理，对于遍历过程中的每一条数据都会应用用户指定的数据模版
+- 将 `sendSingle` 设置为 `true`后，eKuiper 把传递给 sink 的 `[]map[string]interface{}` 数据类型进行遍历处理，对于遍历过程中的每一条数据都会应用用户指定的数据模版
 - `toJson` 是 eKuiper 提供的函数（用户可以参考 [eKuiper 扩展模版函数](./overview.md#模版中支持的函数)来了解更多的 eKuiper 扩展），可以将传入的参数转化为 JSON 字符串输出，对于遍历到的每一条数据，将 map 中的内容转换为 JSON 字符串
 
 Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置提供的函数](https://golang.org/pkg/text/template/#hdr-Functions)来获取更多函数信息。

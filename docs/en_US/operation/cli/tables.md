@@ -19,9 +19,9 @@ Sample:
 table my_table created
 ```
 
-The command create a table named ``my_table``. 
+The command create a table named `my_table`. 
 
-- Specify the table definition in file. If the table is complex, or the table is already wrote in text files with well organized formats, you can just specify the table definition through ``-f`` option.
+- Specify the table definition in file. If the table is complex, or the table is already wrote in text files with well organized formats, you can just specify the table definition through `-f` option.
 
 Sample:
 
@@ -30,7 +30,7 @@ Sample:
 table my_table created
 ```
 
-Below is the contents of ``my_table.txt``.
+Below is the contents of `my_table.txt`.
 
 ```
 my_table(id bigint, name string, score float)

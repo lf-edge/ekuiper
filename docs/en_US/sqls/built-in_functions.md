@@ -94,7 +94,7 @@ Aggregate functions perform a calculation on a set of values and return a single
 | rtrim    | rtrim(col1) | Removes all trailing whitespace (tabs and spaces) from the provided String.                                                |
 | substring| substring(col1, start, end) |  returns the substring of the provided String from the provided Int index (0-based, inclusive) to the end of the String.                                                           |
 | startswith| startswith(col1, str) | Returns Boolean, whether the first string argument starts with the second string argument.                  |
-| split_value | split_value(col1, str_splitter, index) | Split the value of the 1st parameter with the 2nd parameter, and return the value of split array that indexed with the 3rd parameter.<br />``split_value("/test/device001/message","/",0) AS a``, the returned value of function is empty; <br />``split_value("/test/device001/message","/",3) AS a``, the returned value of function is ``message``; |
+| split_value | split_value(col1, str_splitter, index) | Split the value of the 1st parameter with the 2nd parameter, and return the value of split array that indexed with the 3rd parameter.<br />`split_value("/test/device001/message","/",0) AS a`, the returned value of function is empty; <br />`split_value("/test/device001/message","/",3) AS a`, the returned value of function is `message`; |
 | trim      | trim(col1) | Removes all leading and trailing whitespace (tabs and spaces) from the provided String.                                    |
 | upper     | upper(col1)| Returns the uppercase version of the given String.|
 
@@ -139,7 +139,7 @@ When casting to datetime type, the supported column type and casting rule are:
 
 1. If column is datatime type, just return the value.
 2. If column is bigint or float type, the number will be treated as the milliseconds elapsed since January 1, 1970 00:00:00 UTC and converted.
-3. If column is string, it will be parsed to datetime with the default format: ``"2006-01-02T15:04:05.000Z07:00"``.
+3. If column is string, it will be parsed to datetime with the default format: `"2006-01-02T15:04:05.000Z07:00"`.
 4. Other types are not supported.
 
 ## Hashing Functions
@@ -166,7 +166,7 @@ When casting to datetime type, the supported column type and casting rule are:
 | cardinality | cardinality(col1) | The number of members in the group. The null value is 0.     |
 | newuuid     | newuuid()         | Returns a random 16-byte UUID.                               |
 | tstamp      | tstamp()          | Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970 |
-| mqtt        | mqtt(topic)       | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src1.topic)``<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as ``mqtt(src2.messageid)`` |
-| meta        | meta(topic)       | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as ``meta(device)``<br />- A qualified key to specify the stream, such as ``meta(src1.device)`` <br />- A key with arrow for multi level meta data, such as ``meta(src1.reading->device->name)`` This assumes reading is a map structure meta data. |
+| mqtt        | mqtt(topic)       | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as `mqtt(src1.topic)`<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as `mqtt(src2.messageid)` |
+| meta        | meta(topic)       | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as `meta(device)`<br />- A qualified key to specify the stream, such as `meta(src1.device)` <br />- A key with arrow for multi level meta data, such as `meta(src1.reading->device->name)` This assumes reading is a map structure meta data. |
 | window_start| window_start()   | Return the window start timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.   |
 | window_end| window_end()   | Return the window end timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.  |

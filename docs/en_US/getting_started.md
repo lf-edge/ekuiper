@@ -113,11 +113,11 @@ default:
   servers: [tcp://127.0.0.1:1883]
 ```
 
-You can use command ``kuiper show streams`` to see if the ``demo`` stream was created or not.
+You can use command `kuiper show streams` to see if the `demo` stream was created or not.
 
 ### Testing the stream through query tool
 
-Now the stream is created, it can be tested from ``kuiper query`` command. The `kuiper` prompt is displayed as below after typing `cli query`.
+Now the stream is created, it can be tested from `kuiper query` command. The `kuiper` prompt is displayed as below after typing `cli query`.
 
 ```sh
 $ bin/kuiper query
@@ -132,7 +132,7 @@ kuiper > select count(*), avg(humidity) as avg_hum, max(humidity) as max_hum fro
 query is submit successfully.
 ```
 
-Now if any data are published to the MQTT server available at ``tcp://127.0.0.1:1883``, then it prints message as following.
+Now if any data are published to the MQTT server available at `tcp://127.0.0.1:1883`, then it prints message as following.
 
 ```
 kuiper > [{"avg_hum":41,"count":4,"max_hum":91}]
@@ -146,7 +146,7 @@ kuiper > [{"avg_hum":41,"count":4,"max_hum":91}]
 ...
 ```
 
-You can press ``ctrl + c`` to break the query, and server will terminate streaming if detecting client disconnects from the query. Below is the log print at server.
+You can press `ctrl + c` to break the query, and server will terminate streaming if detecting client disconnects from the query. Below is the log print at server.
 
 ```
 ...

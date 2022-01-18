@@ -6,7 +6,7 @@
 
 解压安装包。
 
-``unzip kuiper-centos7-v0.0.1.zip``
+`unzip kuiper-centos7-v0.0.1.zip`
 
 运行 `kuiper` 来验证 eKuiper 是否已成功安装。
 

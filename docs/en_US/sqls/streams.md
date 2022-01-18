@@ -48,7 +48,7 @@ my_stream
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```
 
-The stream will subscribe to MQTT topic ``topic/temperature``, the server connection uses ``servers`` key of ``default`` section in configuration file ``$ekuiper/etc/mqtt_source.yaml``. 
+The stream will subscribe to MQTT topic `topic/temperature`, the server connection uses `servers` key of `default` section in configuration file `$ekuiper/etc/mqtt_source.yaml`. 
 
 - See [MQTT source](../rules/sources/mqtt.md) for more info.
 
@@ -65,7 +65,7 @@ demo (
 	) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
 ```
 
-The stream will subscribe to MQTT topic ``test/``, the server connection uses settings of ``demo`` section in configuration file ``$ekuiper/etc/mqtt_source.yaml``. 
+The stream will subscribe to MQTT topic `test/`, the server connection uses settings of `demo` section in configuration file `$ekuiper/etc/mqtt_source.yaml`. 
 
 - See [MQTT source](../rules/sources/mqtt.md) for more info.
 
@@ -108,7 +108,7 @@ schemaless_stream
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```
 
-Schema-less stream field data type will be determined at runtime. If the field is used in an incompatible clause, a runtime error will be thrown and send to the sink. For example, ``where temperature > 30``. Once a temperature is not a number, an error will be sent to the sink.
+Schema-less stream field data type will be determined at runtime. If the field is used in an incompatible clause, a runtime error will be thrown and send to the sink. For example, `where temperature > 30`. Once a temperature is not a number, an error will be sent to the sink.
 
 See [Query languange element](query_language_elements.md) for more inforamtion of SQL language.
 

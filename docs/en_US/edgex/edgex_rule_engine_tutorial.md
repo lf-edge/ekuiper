@@ -2,7 +2,7 @@
 
 ## Overview
 
-In EdgeX Geneva, [LF Edge eKuiper - an SQL based rule engine](https://github.com/lf-edge/ekuiper) is integrated with EdgeX. Before diving into this tutorial, let's spend a little time on learning basic knowledge of eKuiper. eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. eKuiper rules are based on ``Source``, ``SQL`` and ``Sink``.
+In EdgeX Geneva, [LF Edge eKuiper - an SQL based rule engine](https://github.com/lf-edge/ekuiper) is integrated with EdgeX. Before diving into this tutorial, let's spend a little time on learning basic knowledge of eKuiper. eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. eKuiper rules are based on `Source`, `SQL` and `Sink`.
 
 - Source: The data source of streaming data, such as data from MQTT broker. In EdgeX scenario, the data source is EdgeX message bus, which could be ZeroMQ or MQTT broker.
 - SQL: SQL is where you specify the business logic of streaming data processing. eKuiper provides SQL-like statements to allow you to extract, filter & transform data. 
@@ -26,7 +26,7 @@ EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to ex
 
 - An EdgeX message bus source is extended to support consuming data from EdgeX message bus.  
 
-- To analyze the data, eKuiper need to know data types that passed through it. Generally, user would be better to specify data schema for analysis data when a stream is created. Such as in below, a ``demo`` stream has a field named ``temperature`` field. It is very similar to create table schema in relational database system. After creating the stream definition, eKuiper can perform type checking during compilation or runtime, and invalid SQLs or data will be reported to user.
+- To analyze the data, eKuiper need to know data types that passed through it. Generally, user would be better to specify data schema for analysis data when a stream is created. Such as in below, a `demo` stream has a field named `temperature` field. It is very similar to create table schema in relational database system. After creating the stream definition, eKuiper can perform type checking during compilation or runtime, and invalid SQLs or data will be reported to user.
 
   ```shell
   CREATE STREAM demo (temperature bigint) WITH (FORMAT="JSON"...)
@@ -57,7 +57,7 @@ Go to [EdgeX-compose project](https://github.com/edgexfoundry/edgex-compose), an
 $ docker-compose -f ./docker-compose-no-secty.yml up -d --build
 ```
 
-After all of the Docker instances are started, you can use ``docker ps`` command to verify all services are running correctly.
+After all of the Docker instances are started, you can use `docker ps` command to verify all services are running correctly.
 
 ```shell
 $ docker ps
@@ -81,9 +81,9 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
 
 When eKuiper gets data from messageBus and send back the processed result, user needs to specify the connection info separately when creating the source and sink.
 Since `eKuiper 1.4.0` and `EdgeX Jakarta`, there is a new feature that user can specify the connection info in a fixed place and then source and sink can make a reference to it.
-* ``redis`` messageBus: this is especially useful when EdgeX use `secure` mode, in which case the client credentials will be injected into that share place automatically when services bootstrap.
-In order to use this feature, users need do some modifications on the target ``docker-compose`` file's `rulesengine` service part
-add these in ``environment`` part and make sure the image is ``1.4.0`` or later. 
+* `redis` messageBus: this is especially useful when EdgeX use `secure` mode, in which case the client credentials will be injected into that share place automatically when services bootstrap.
+In order to use this feature, users need do some modifications on the target `docker-compose` file's `rulesengine` service part
+add these in `environment` part and make sure the image is `1.4.0` or later. 
   ```yaml
   environment:
       CONNECTION__EDGEX__REDISMSGBUS__PORT: 6379
@@ -93,8 +93,8 @@ add these in ``environment`` part and make sure the image is ``1.4.0`` or later.
       EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.redisMsgBus
   ```
   
-* ``mqtt/zeromq`` messageBus: adjust the parameters accordingly and specify the client credentials if have.
-  There is a ``mqtt`` message bus example, make sure the connection info exists in ``etc/connections/connection.yaml``, for [more info](../rules/sources/edgex.md#connectionselector) please check this. 
+* `mqtt/zeromq` messageBus: adjust the parameters accordingly and specify the client credentials if have.
+  There is a `mqtt` message bus example, make sure the connection info exists in `etc/connections/connection.yaml`, for [more info](../rules/sources/edgex.md#connectionselector) please check this. 
   ```yaml
   environment:
       CONNECTION__EDGEX__MQTTMSGBUS__PORT: 1883
@@ -109,8 +109,8 @@ After these modifications and eKuiper starts up, please read [this](../rules/sin
 
 #### Use Redis as KV storage
 
-Since `1.4.0`, eKuiper supports redis to store the KV metadata, user can make some modifications on the target ``docker-compose`` file's `rulesengine` service part to apply this change.
-Users can add these in ``environment`` part and make sure the image is ``1.4.0`` or later.
+Since `1.4.0`, eKuiper supports redis to store the KV metadata, user can make some modifications on the target `docker-compose` file's `rulesengine` service part to apply this change.
+Users can add these in `environment` part and make sure the image is `1.4.0` or later.
   ```yaml
   environment:
     KUIPER__STORE__TYPE: redis
@@ -118,7 +118,7 @@ Users can add these in ``environment`` part and make sure the image is ``1.4.0``
     KUIPER__STORE__REDIS__PORT: 6379
     KUIPER__STORE__REDIS__PASSWORD: ""
   ```
-*Note*: This feature only works when redis in ``no-secty`` mode
+*Note*: This feature only works when redis in `no-secty` mode
 
 #### Run with native
 
@@ -136,10 +136,10 @@ There are two approaches to manage stream, you can use your preferred approach.
 
 #### Option 1: Use Rest API
 
-Notice: Rest API of eKuiper in EdgeX uses ``59720`` instead of default ``9081``. So please change 9081 to 59720 in all
+Notice: Rest API of eKuiper in EdgeX uses `59720` instead of default `9081`. So please change 9081 to 59720 in all
 of documents when you use EdgeX eKuiper Rest API.
 
-The next step is to create a stream that can consume data from EdgeX message bus. Please change ``$kuiper_docker`` to
+The next step is to create a stream that can consume data from EdgeX message bus. Please change `$kuiper_docker` to
 eKuiper docker instance IP address.
 
 ```shell
@@ -161,7 +161,7 @@ Run following command to enter the running eKuiper docker instance.
 docker exec -it edgex-kuiper /bin/sh
 ```
 
-Use following command to create a stream named ``demo``.
+Use following command to create a stream named `demo`.
 
 ```shell
 bin/kuiper create stream demo'() WITH (FORMAT="JSON", TYPE="edgex")'
@@ -171,7 +171,7 @@ For other command line tools, please refer to [this doc](../operation/cli/overvi
 
 ------
 
-Now the stream is created. But you may be curious about how eKuiper knows the message bus IP address & port, because such information are not specified in ``CREATE STREAM`` statement. Those configurations are managed in ``etc/sources/edgex.yaml`` , you can type ``cat etc/sources/edgex.yaml`` command to take a look at the contents of file.  If you have different server, ports & service server configurations, please update it accordingly. As mentioned previously, these configurations could be overrode when bring-up the Docker instances.
+Now the stream is created. But you may be curious about how eKuiper knows the message bus IP address & port, because such information are not specified in `CREATE STREAM` statement. Those configurations are managed in `etc/sources/edgex.yaml` , you can type `cat etc/sources/edgex.yaml` command to take a look at the contents of file.  If you have different server, ports & service server configurations, please update it accordingly. As mentioned previously, these configurations could be overrode when bring-up the Docker instances.
 
 ```yaml
 #Global Edgex configurations
@@ -189,9 +189,9 @@ For more detailed information of configuration file, please refer to [this doc](
 
 Let's create a rule that send result data to an MQTT broker, for detailed information of MQTT sink, please refer to [this link](../rules/sinks/mqtt.md).  Similar to create a stream, you can also choose REST or CLI to manage rules. 
 
-So the below rule will get all of values from ``event`` topic. The sink result will 
+So the below rule will get all of values from `event` topic. The sink result will 
 
-- Published to topic ``result`` of public MQTT broker ``broker.emqx.io``. 
+- Published to topic `result` of public MQTT broker `broker.emqx.io`. 
 - Print to log file.
 
 #### Option 1: Use Rest API
@@ -220,7 +220,7 @@ curl -X POST \
 
 #### Option 2: Use eKuiper CLI
 
-You can create a rule file with any text editor, and copy following contents into it. Let's say the file name is ``rule.txt``.  
+You can create a rule file with any text editor, and copy following contents into it. Let's say the file name is `rule.txt`.  
 
 ```json
 {
@@ -254,7 +254,7 @@ Rule rule1 was created successfully, please use 'cli getstatus rule rule1' comma
 If you want to send analysis result to another sink, please refer to [other sinks](../rules/overview.md#sinksactions)
 that supported in eKuiper.
 
-Now you can also take a look at the log file under ``log/stream.log``, or through command ``docker logs edgex-kuiper ``
+Now you can also take a look at the log file under `log/stream.log`, or through command `docker logs edgex-kuiper `
 to see detailed info of rule.
 
 ```
@@ -273,7 +273,7 @@ time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint3
 
 ### Monitor analysis result
 
-Since all of the analysis result are published to  ``tcp://broker.emqx.io:1883``, so you can just use below ``mosquitto_sub`` command to monitor the result. You can also use other [MQTT client tools](https://www.emqx.io/blog/mqtt-client-tools).
+Since all of the analysis result are published to  `tcp://broker.emqx.io:1883`, so you can just use below `mosquitto_sub` command to monitor the result. You can also use other [MQTT client tools](https://www.emqx.io/blog/mqtt-client-tools).
 
 ```shell
 $ mosquitto_sub -h broker.emqx.io -t result
@@ -335,7 +335,7 @@ In this tutorial,  we introduce a very simple use of EdgeX eKuiper rule engine. 
 
 ### More Excecise 
 
-Current rule does not filter any data that are sent to eKuiper, so how to filter data?  Please [drop rule](../operation/cli/rules.md) and change the SQL in previous rule accordingly.  After update the rule file, and then deploy the rule again. Please monitor the ``result`` topic of MQTT broker, and please verify see if the rule works or not.
+Current rule does not filter any data that are sent to eKuiper, so how to filter data?  Please [drop rule](../operation/cli/rules.md) and change the SQL in previous rule accordingly.  After update the rule file, and then deploy the rule again. Please monitor the `result` topic of MQTT broker, and please verify see if the rule works or not.
 
 #### Extended Reading
 

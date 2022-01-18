@@ -20,9 +20,9 @@ Sample:
 # bin/kuiper create rule rule1 '{"sql": "SELECT * from demo","actions": [{"log":  {}},{"mqtt":  {"server":"tcp://127.0.0.1:1883", "topic":"demoSink"}}]}'
 ```
 
-The command create a rule named ``rule1``. 
+The command create a rule named `rule1`. 
 
-- Specify the rule definition in file. If the rule is complex, or the rule is already wrote in text files with well organized formats, you can just specify the rule definition through ``-f`` option.
+- Specify the rule definition in file. If the rule is complex, or the rule is already wrote in text files with well organized formats, you can just specify the rule definition through `-f` option.
 
 Sample:
 
@@ -30,7 +30,7 @@ Sample:
 # bin/kuiper create rule rule1 -f /tmp/rule.txt
 ```
 
-Below is the contents of ``rule.txt``.
+Below is the contents of `rule.txt`.
 
 ```json
 {

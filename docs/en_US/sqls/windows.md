@@ -8,7 +8,7 @@ All the windowing operations output results at the end of the window. The output
 
 ## Time-units
 
-There are 5 time-units can be used in the windows. For example, ``TUMBLINGWINDOW(ss, 10)``, which means group the data with tumbling with with 10  seconds interval.
+There are 5 time-units can be used in the windows. For example, `TUMBLINGWINDOW(ss, 10)`, which means group the data with tumbling with with 10  seconds interval.
 
 **DD**: day unit
 
@@ -132,13 +132,13 @@ SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER(where revenue > 100)
 
 Every event has a timestamp associated with it. The timestamp will be used to calculate the window. By default, a timestamp will be added when an event feed into the source which is called `processing time`. We also support to specify a field as the timestamp, which is called `event time`. The timestamp field is specified in the stream definition. In the below definition, the field `ts` is specified as the timestamp field.
 
-``
+`
 CREATE STREAM demo (
 					color STRING,
 					size BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"
-``
+`
 
 In event time mode, the watermark algorithm is used to calculate a window.
 

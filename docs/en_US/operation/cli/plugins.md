@@ -23,9 +23,9 @@ Sample:
 # bin/kuiper create plugin source random {"file":"http://127.0.0.1/plugins/sources/random.zip"}
 ```
 
-The command create a source plugin named ``random``. 
+The command create a source plugin named `random`. 
 
-- Specify the plugin definition in a file. If the plugin is complex, or the plugin is already wrote in text files with well organized formats, you can just specify the plugin definition through ``-f`` option.
+- Specify the plugin definition in a file. If the plugin is complex, or the plugin is already wrote in text files with well organized formats, you can just specify the plugin definition through `-f` option.
 
 Sample:
 
@@ -33,7 +33,7 @@ Sample:
 # bin/kuiper create plugin sink plugin1 -f /tmp/plugin1.txt
 ```
 
-Below is the contents of ``plugin1.txt``.
+Below is the contents of `plugin1.txt`.
 
 ```json
 {

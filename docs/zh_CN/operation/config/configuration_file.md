@@ -51,7 +51,7 @@ REST http 服务器监听端口
 TLS 证书 cert 文件和 key 文件位置。如果 restTls 选项未配置，则 REST 服务器将启动为 http 服务器，否则启动为 https 服务器。
 
 ## authentication 
-当 ``authentication`` 选项为 true 时，eKuiper 将为 rest api 请求检查 ``Token`` 。请检查此文件以获取 [更多信息](authentication.md)。
+当 `authentication` 选项为 true 时，eKuiper 将为 rest api 请求检查 `Token` 。请检查此文件以获取 [更多信息](authentication.md)。
 
 ```yaml
 basic:

@@ -14,7 +14,7 @@ or
 $ tar -xzf kuiper-$VERISON-$OS-$ARCH.zip
 ```
 
-运行 ``bin/kuiperd`` 以启动 eKuiper 服务器
+运行 `bin/kuiperd` 以启动 eKuiper 服务器
 
 ```sh
 $ bin/kuiperd
@@ -96,7 +96,7 @@ eKuiper 具有许多用于复杂分析的内置函数和扩展，您可以访问
 
 流需要具有一个名称和一个架构，以定义每个传入事件应包含的数据。 对于这种情况，我们将使用 MQTT 源应对温度事件。 输入流可以通过 SQL 语言定义。
 
-我们创建一个名为 ``demo`` 的流，该流使用 ``DATASOURCE`` 属性中指定的 MQTT ``demo`` 主题。
+我们创建一个名为 `demo` 的流，该流使用 `DATASOURCE` 属性中指定的 MQTT `demo` 主题。
 ```sh
 $ bin/kuiper create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="demo")'
 ```
@@ -109,18 +109,18 @@ default:
   servers: [tcp://127.0.0.1:1883]
 ```
 
-您可以使用``kuiper show streams`` 命令来查看是否创建了 ``demo`` 流。
+您可以使用`kuiper show streams` 命令来查看是否创建了 `demo` 流。
 
 ### 通过查询工具测试流
 
-现在已经创建了流，可以通过 ``kuiper query`` 命令对其进行测试。键入``kuiper query``后，显示 ``kuiper``提示符。
+现在已经创建了流，可以通过 `kuiper query` 命令对其进行测试。键入`kuiper query`后，显示 `kuiper`提示符。
 
 ```sh
 $ bin/kuiper query
 kuiper > 
 ```
 
-在 ``kuiper``提示符下，您可以键入 SQL 并根据流验证 SQL。
+在 `kuiper`提示符下，您可以键入 SQL 并根据流验证 SQL。
 
 ```sh
 kuiper > select count(*), avg(humidity) as avg_hum, max(humidity) as max_hum from demo where temperature > 30 group by TUMBLINGWINDOW(ss, 5);
@@ -128,7 +128,7 @@ kuiper > select count(*), avg(humidity) as avg_hum, max(humidity) as max_hum fro
 query is submit successfully.
 ```
 
-现在，如果有任何数据发布到位于``tcp://127.0.0.1:1883``的 MQTT 服务器，那么它打印如下消息。
+现在，如果有任何数据发布到位于`tcp://127.0.0.1:1883`的 MQTT 服务器，那么它打印如下消息。
 
 ```
 kuiper > [{"avg_hum":41,"count":4,"max_hum":91}]
@@ -142,7 +142,7 @@ kuiper > [{"avg_hum":41,"count":4,"max_hum":91}]
 ...
 ```
 
-您可以按 ``ctrl + c`` 键中断查询，如果检测到客户端与查询断开连接，服务器将终止流传输。 以下是服务器上的日志打印。
+您可以按 `ctrl + c` 键中断查询，如果检测到客户端与查询断开连接，服务器将终止流传输。 以下是服务器上的日志打印。
 
 ```
 ...
@@ -158,7 +158,7 @@ time="2019-09-09T21:46:54+08:00" level=info msg="stop the query."
 * sql：针对规则运行的查询
 * 动作：规则的输出动作
 
-我们可以运行 ``kuiper rule`` 命令来创建规则并在文件中指定规则定义
+我们可以运行 `kuiper rule` 命令来创建规则并在文件中指定规则定义
 
 ```sh
 $ bin/kuiper create rule ruleDemo -f myRule
@@ -173,10 +173,10 @@ $ bin/kuiper create rule ruleDemo -f myRule
     }]
 }
 ```
-您应该在流日志中看到一条成功的消息`` rule ruleDemo created``。 现在，规则已经建立并开始运行。
+您应该在流日志中看到一条成功的消息` rule ruleDemo created`。 现在，规则已经建立并开始运行。
 
 ### 测试规则
-现在，规则引擎已准备就绪，可以接收来自 MQTT ``demo`` 主题的事件。 要对其进行测试，只需使用 MQTT 客户端将消息发布到 ``demo`` 主题即可。 该消息应为 json 格式，如下所示：
+现在，规则引擎已准备就绪，可以接收来自 MQTT `demo` 主题的事件。 要对其进行测试，只需使用 MQTT 客户端将消息发布到 `demo` 主题即可。 该消息应为 json 格式，如下所示：
 
 ```json
 {"temperature":31.2, "humidity": 77}
