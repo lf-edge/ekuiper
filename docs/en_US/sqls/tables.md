@@ -67,7 +67,7 @@ CREATE TABLE stateTable (
 		triggered bool
 	) WITH (DATASOURCE="myTopic", FORMAT="JSON", TYPE="mqtt");
 
-SELECT * FROM demo LEFT JOIN stateTable WHERE triggered=true
+SELECT * FROM demo LEFT JOIN stateTable on demo.id = stateTable.id  WHERE triggered=true
 ```
 
 In this example, a table `stateTable` is created to record the trigger state from mqtt topic *myTopic*. In the rule, the data of `demo` stream is filtered with the current trigger state.

@@ -184,7 +184,7 @@ POST http://{{host}}/plugins/functions/{plugin_name}/register
 
 ## Get the available plugins
 
-According to the configuration `pluginHosts` in file `etc/kuiper.yaml` ,  it returns the plugins list that can be installed at local run eKuiper instance. By default, it get the list from `https://packages.emqx.io` .
+According to the configuration `pluginHosts` in file `etc/kuiper.yaml` ,  it returns the plugins list that can be installed at local run eKuiper instance. By default, it get the list from `https://packages.emqx.net` .
 
 ```
 GET http://localhost:9081/plugins/sources/prebuild
