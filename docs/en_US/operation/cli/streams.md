@@ -19,9 +19,9 @@ Sample:
 stream my_stream created
 ```
 
-The command create a stream named ``my_stream``. 
+The command create a stream named `my_stream`. 
 
-- Specify the stream definition in file. If the stream is complex, or the stream is already wrote in text files with well organized formats, you can just specify the stream definition through ``-f`` option.
+- Specify the stream definition in file. If the stream is complex, or the stream is already wrote in text files with well organized formats, you can just specify the stream definition through `-f` option.
 
 Sample:
 
@@ -30,7 +30,7 @@ Sample:
 stream my_stream created
 ```
 
-Below is the contents of ``my_stream.txt``.
+Below is the contents of `my_stream.txt`.
 
 ```json
 my_stream(id bigint, name string, score float)
@@ -103,7 +103,7 @@ Sample:
 kuiper > 
 ```
 
-After typing ``query`` sub-command, it prompts ``kuiper > ``, then type SQLs (see [eKuiper SQL reference](../../sqls/overview.md) for how to use eKuiper SQL) in the command prompt and press enter. 
+After typing `query` sub-command, it prompts `kuiper > `, then type SQLs (see [eKuiper SQL reference](../../sqls/overview.md) for how to use eKuiper SQL) in the command prompt and press enter. 
 
 The results will be print in the console.
 
@@ -112,7 +112,7 @@ kuiper > SELECT * FROM my_stream WHERE id > 10;
 [{"...":"..." ....}]
 ...
 ```
-- Press ``CTRL + C`` to stop the query; 
+- Press `CTRL + C` to stop the query; 
 
-- If no SQL are type, you can type ``quit`` or ``exit`` to quit the ``kuiper`` prompt console.
+- If no SQL are type, you can type `quit` or `exit` to quit the `kuiper` prompt console.
 

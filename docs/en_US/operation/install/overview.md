@@ -22,11 +22,11 @@ log
 
 ### bin
 
-The ``bin`` directory includes all of executable files. Such as ``kuiper`` command.
+The `bin` directory includes all of executable files. Such as `kuiper` command.
 
 ### etc
 
-The ``etc`` directory contains the configuration files of eKuiper. Such as MQTT source configurations etc.
+The `etc` directory contains the configuration files of eKuiper. Such as MQTT source configurations etc.
 
 ### data
 
@@ -38,7 +38,7 @@ eKuiper allows users to develop your own plugins, and put these plugins into thi
 
 ### log
 
-All of the log files are under this folder. The default log file name is ``stream.log``.
+All of the log files are under this folder. The default log file name is `stream.log`.
 
 ## Next steps
 

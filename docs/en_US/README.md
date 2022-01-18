@@ -2,7 +2,7 @@
 
 ## Overview
 
-LF Edge eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of eKuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  eKuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
+LF Edge eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of eKuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  eKuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on `Source`, `SQL (business logic)` and `Sink`, rule engine is used for developing streaming applications at edge side.
 
 ![arch](resources/arch.png)
 
@@ -31,7 +31,7 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
 
 - Highly extensibile 
 
-  Plugin system is provided,  and it supports to extend at ``Source``, ``SQL functions `` and ``Sink``.
+  Plugin system is provided,  and it supports to extend at `Source`, `SQL functions ` and `Sink`.
 
   - Source: embedded support for MQTT, and provide extension points for sources
   - Sink: embedded support for MQTT and HTTP, and provide extension points for sinks
@@ -59,8 +59,8 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
 
 ### MQTT throughput test
 
-- Using JMeter MQTT plugin to send simulation data to EMQ X Broker, such as: ``{"temperature": 10, "humidity" : 90}``, the value of temperature and humidity are random integer between 0 - 100.
-- eKuiper subscribe from EMQ X Broker, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50 `` 
+- Using JMeter MQTT plugin to send simulation data to EMQ X Broker, such as: `{"temperature": 10, "humidity" : 90}`, the value of temperature and humidity are random integer between 0 - 100.
+- eKuiper subscribe from EMQ X Broker, and analyze data with SQL: `SELECT * FROM demo WHERE temperature > 50 ` 
 - The analysis result are wrote to local file by using [file sink plugin](extension/native/sinks/file.md).
 
 | Devices                                        | Message # per second | CPU usage     | Memory usage |
@@ -83,7 +83,7 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
   }
   ```
 
-- eKuiper subscribe from EdgeX ZeroMQ message bus, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50``. 90% of data will be filtered by the rule.
+- eKuiper subscribe from EdgeX ZeroMQ message bus, and analyze data with SQL: `SELECT * FROM demo WHERE temperature > 50`. 90% of data will be filtered by the rule.
 
 - The analysis result are sent to [nop sink](./rules/sinks/nop.md), all of the result data will be ignored.
 
@@ -132,7 +132,7 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
 
   - Binary files that support EdgeX: `$ make build_with_edgex`
 
-+ Packages: `` $ make pkg``
++ Packages: ` $ make pkg`
 
   - Packages: `$ make pkg`
 

@@ -130,13 +130,13 @@ SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FITLER(where revenue > 100)
 
 每个事件都有一个与之关联的时间戳。 时间戳将用于计算窗口。 默认情况下，当事件输入到源时，将添加时间戳，称为`处理时间`。 我们还支持将某个字段指定为时间戳，称为`事件时间`。 时间戳字段在流定义中指定。 在下面的定义中，字段 `ts` 被指定为时间戳字段。
 
-``
+`
 CREATE STREAM demo (
 					color STRING,
 					size BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"
-``
+`
 
 在事件时间模式下，水印算法用于计算窗口。
 

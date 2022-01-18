@@ -3,7 +3,7 @@
 
 ## 概览
 
-LF Edge eKuiper 是 Golang 实现的轻量级物联网边缘分析、流式处理开源软件，可以运行在各类资源受限的边缘设备上。eKuiper 设计的一个主要目标就是将在云端运行的实时流式计算框架（比如 [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) 和 [Apache Flink](https://flink.apache.org) 等）迁移到边缘端。eKuiper 参考了上述云端流式处理项目的架构与实现，结合边缘流式数据处理的特点，采用了编写基于``源 (Source)``，``SQL (业务逻辑处理)``, ``目标 (Sink)`` 的规则引擎来实现边缘端的流式数据处理。
+LF Edge eKuiper 是 Golang 实现的轻量级物联网边缘分析、流式处理开源软件，可以运行在各类资源受限的边缘设备上。eKuiper 设计的一个主要目标就是将在云端运行的实时流式计算框架（比如 [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) 和 [Apache Flink](https://flink.apache.org) 等）迁移到边缘端。eKuiper 参考了上述云端流式处理项目的架构与实现，结合边缘流式数据处理的特点，采用了编写基于`源 (Source)`，``SQL (业务逻辑处理)`, `目标 (Sink)` 的规则引擎来实现边缘端的流式数据处理。
 
 ![arch](resources/arch.png)
 
@@ -32,7 +32,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 - 高可扩展性
 
-  提供插件扩展机制，可以支持在``源 (Source)``，``SQL 函数 ``, ``目标 (Sink)`` 三个方面的扩展
+  提供插件扩展机制，可以支持在`源 (Source)`，``SQL 函数 `, `目标 (Sink)` 三个方面的扩展
 
   - 源 (Source) ：内置支持 MQTT 数据的接入，提供了扩展点支持任意的类型的接入
   - 目标(Sink)：内置支持 MQTT、HTTP，提供扩展点支持任意数据目标的支持
@@ -59,8 +59,8 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 ### MQTT 吞吐量测试支持
 
-- 使用 JMeter MQTT 插件来发送数据到 EMQ X 服务器，消息类似于 ``{"temperature": 10, "humidity" : 90}``， 温度与湿度的值是介于 0 ～ 100 之间的随机整数值
-- eKuiper 从 EMQ X 服务器订阅消息，并且通过 SQL 分析数据： ``SELECT * FROM demo WHERE temperature > 50 `` 
+- 使用 JMeter MQTT 插件来发送数据到 EMQ X 服务器，消息类似于 `{"temperature": 10, "humidity" : 90}`， 温度与湿度的值是介于 0 ～ 100 之间的随机整数值
+- eKuiper 从 EMQ X 服务器订阅消息，并且通过 SQL 分析数据： `SELECT * FROM demo WHERE temperature > 50 ` 
 - 分析结果通过 [文件插件](extension/native/sinks/file.md) 写到本地的文件系统里
 
 | 设备                                                 | 每秒发送消息数 | CPU 使用        | 内存 |
@@ -83,7 +83,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
   }
   ```
 
-- eKuiper 从 EdgeX ZeroMQ 消息总线订阅数据，并且使用 ``SELECT * FROM demo WHERE temperature > 50 `` 来分析数据，其中 90% 数据被规则所过滤。
+- eKuiper 从 EdgeX ZeroMQ 消息总线订阅数据，并且使用 `SELECT * FROM demo WHERE temperature > 50 ` 来分析数据，其中 90% 数据被规则所过滤。
 
 - 分析结果将被发送到 [nop sink](./rules/sinks/nop.md)，所有的数据都被忽略。
 

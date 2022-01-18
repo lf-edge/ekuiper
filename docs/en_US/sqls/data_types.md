@@ -14,7 +14,7 @@ Below is the list of data types supported.
 | 2    | float     | The float type.                                              |
 | 3    | string    | Text values, comprised of Unicode characters.                |
 | 4    | datetime  | datatime type.          |
-| 5    | boolean   | The boolean type, the value could be ``true`` or ``false``.  |
+| 5    | boolean   | The boolean type, the value could be `true` or `false`.  |
 | 6    | array     | The array type, can be any types from simple data or struct type |
 | 7    | struct    | The complex type. Set of name/value pairs. Values must be of supported data type. |
 
@@ -32,7 +32,7 @@ Array and struct are not supported in any binary operations. The compatibility o
 | datetime | Y     | Y      | Y, if in the valid format | Y       |  N     |
 | boolean  | N     | N      | N                         | N       |  Y     |
 
- The default format for datetime string is ``"2006-01-02T15:04:05.000Z07:00"``
+ The default format for datetime string is `"2006-01-02T15:04:05.000Z07:00"`
 
  For `nil` value, we follow the rules:
 

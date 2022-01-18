@@ -56,13 +56,13 @@ The current options includes:
 
 For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](./state_and_fault_tolerance.md).
 
-The rule options can be defined globally in ``etc/kuiper.yaml`` under the ``rules`` section. The options defined in the rule json will override the global setting.
+The rule options can be defined globally in `etc/kuiper.yaml` under the `rules` section. The options defined in the rule json will override the global setting.
 
 ## Sources
 
 - eKuiper provides embeded following 3 sources,
   - MQTT source, see  [MQTT source stream](./sources/mqtt.md) for more detailed info.
-  - EdgeX source by default is shipped in [docker images](https://hub.docker.com/r/lfedge/ekuiper), but NOT included in single download binary files, you use ``make pkg_with_edgex`` command to build a binary package that supports EdgeX source. Please see [EdgeX source stream](./sources/edgex.md) for more detailed info.
+  - EdgeX source by default is shipped in [docker images](https://hub.docker.com/r/lfedge/ekuiper), but NOT included in single download binary files, you use `make pkg_with_edgex` command to build a binary package that supports EdgeX source. Please see [EdgeX source stream](./sources/edgex.md) for more detailed info.
   - HTTP pull source, regularly pull the contents at user's specified interval time, see [here](./sources/http_pull.md) for more detailed info.
 - See [SQL](../sqls/overview.md) for more info of eKuiper SQL.
 - Sources can be customized, see [extension](../extension/overview.md) for more detailed info.
@@ -89,7 +89,7 @@ Each action can define its own properties. There are several common properties:
 | cacheLength       | int:1024             | Specify how many messages can be cached. The cached messages will be resent to external system until the data sent out successfully. The cached message will be sent in order except in runAsync or concurrent mode. The cached message will be saved to disk in fixed intervals.                                                                                                                                                                                                   |
 | cacheSaveInterval | int:1000             | Specify the interval to save cached message to the disk. Notice that, if the rule is closed in plan, all the cached messages will be saved at close. A larger value can reduce the saving overhead but may lose more cache messages when the system is interrupted in error.                                                                                                                                                                                                        |
 | omitIfEmpty       | bool: false          | If the configuration item is set to true, when SELECT result is empty, then the result will not feed to sink operator.                                                                                                                                                                                                                                                                                                                                                              |
-| sendSingle        | true                 | The output messages are received as an array. This is indicate whether to send the results one by one. If false, the output message will be ``{"result":"${the string of received message}"}``. For example, ``{"result":"[{\"count\":30},"\"count\":20}]"}``. Otherwise, the result message will be sent one by one with the actual field name. For the same example as above, it will send ``{"count":30}``, then send ``{"count":20}`` to the RESTful endpoint.Default to false. |
+| sendSingle        | true                 | The output messages are received as an array. This is indicate whether to send the results one by one. If false, the output message will be `{"result":"${the string of received message}"}`. For example, `{"result":"[{\"count\":30},"\"count\":20}]"}`. Otherwise, the result message will be sent one by one with the actual field name. For the same example as above, it will send `{"count":30}`, then send `{"count":20}` to the RESTful endpoint.Default to false. |
 | dataTemplate      | true                 | The [golang template](https://golang.org/pkg/html/template) format string to specify the output data format. The input of the template is the sink message which is always an array of map. If no data template is specified, the raw input will be the data.                                                                                                                                                                                                                       |
 
 ### Data Template

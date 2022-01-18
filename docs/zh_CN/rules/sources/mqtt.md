@@ -67,7 +67,7 @@ MQTT 连接的客户端 ID。 如果未指定，将使用一个 uuid。
 
 ### connectionSelector
 
-重用 MQTT 源连接。连接配置信息位于 ``connections/connection.yaml``.
+重用 MQTT 源连接。连接配置信息位于 `connections/connection.yaml`.
 ```yaml
 mqtt:
   localConnection: #connection key
@@ -88,7 +88,7 @@ mqtt:
     #insecureSkipVerify: false
     #protocolVersion: 3
 ```
-对于 MQTT 连接，这里有两个配置组。用户应该使用 ``mqtt.localConnection`` 或者 ``mqtt.cloudConnection`` 来作为参数。举例如下：
+对于 MQTT 连接，这里有两个配置组。用户应该使用 `mqtt.localConnection` 或者 `mqtt.cloudConnection` 来作为参数。举例如下：
 ```yaml
 #Global MQTT configurations
 default:
@@ -100,7 +100,7 @@ default:
   #privateKeyPath: /var/kuiper/xyz-private.pem.key
   connectionSelector: mqtt.localConnection
 ```
-*注意*: 相应配置组一旦指定 connectionSelector 参数，所有关于连接的参数都会被忽略. 上面例子中，`` servers: [tcp://127.0.0.1:1883]`` 会被忽略。
+*注意*: 相应配置组一旦指定 connectionSelector 参数，所有关于连接的参数都会被忽略. 上面例子中，` servers: [tcp://127.0.0.1:1883]` 会被忽略。
 
 ### bufferLength
 

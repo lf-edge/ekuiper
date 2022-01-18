@@ -1,6 +1,6 @@
 # Basic configurations
 
-The configuration file for eKuiper is at ``$kuiper/etc/kuiper.yaml``. The configuration file is yaml format.
+The configuration file for eKuiper is at `$kuiper/etc/kuiper.yaml`. The configuration file is yaml format.
 Application can be configured through environment variables. Environment variables are taking precedence over their counterparts
 in the yaml file. In order to use env variable for given config we must use formatting as follows:
 `KUIPER__` prefix + config path elements connected by `__`.
@@ -70,7 +70,7 @@ The port for the rest api http server to listen to.
 The tls cert file path and key file path setting. If restTls is not set, the rest api server will listen on http. Otherwise, it will listen on https.
 
 ## authentication 
-eKuiper will check the ``Token`` for rest api when ``authentication`` option is true. please check this file for [more info](authentication.md).
+eKuiper will check the `Token` for rest api when `authentication` option is true. please check this file for [more info](authentication.md).
 
 ```yaml
 basic:
@@ -79,7 +79,7 @@ basic:
 
 ## Prometheus Configuration
 
-eKuiper can export metrics to prometheus if ``prometheus`` option is true. The prometheus will be served with the port specified by ``prometheusPort`` option.
+eKuiper can export metrics to prometheus if `prometheus` option is true. The prometheus will be served with the port specified by `prometheusPort` option.
 
 ```yaml
 basic:

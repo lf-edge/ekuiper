@@ -216,7 +216,7 @@ require (
           extensions.mod     //existing extensions mod file for plugins
         samplePlugin
           go.mod             //new plugin project default mod file
-       ``
+       `
        
 5. 在 eKuiper 目录下，编译插件和eKuiper
    ```shell
