@@ -57,7 +57,7 @@ To minimize image size, it's uncommon for additional related tools (such as `git
 
 LF Edge eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of eKuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  eKuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
 
-![eKuiper architect](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/arch.png)
+![eKuiper architect](https://raw.githubusercontent.com/lf-edge/ekuiper/master/docs/en_US/resources/arch.png)
 
 **User scenarios**
 

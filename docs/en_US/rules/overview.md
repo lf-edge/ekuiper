@@ -184,4 +184,4 @@ In the sink, it is common to fetch a property value from the result data to achi
 }
 ```
 
-In the above example, `sendSingle` property is used, so the sink data is a map by default. If not using `sendSingle`, you can get the topic by index with data template `{{index . 0 \"topic\"}}`.
+In the above example, `sendSingle` property is used, so the sink data is a map by default. If not using `sendSingle`, you can get the topic by index with data template <code v-pre>{{index . 0 "topic"}}</code>.
