@@ -186,4 +186,4 @@ eKuiper 扩展了几个可以在模版中使用的函数。
 }
 ```
 
-需要注意的是，上例中的 `sendSingle` 属性已设置。在默认情况下，目标接收到的是数组，使用的 jsonpath 需要采用 `{{index . 0 \"topic\"}}`。
+需要注意的是，上例中的 `sendSingle` 属性已设置。在默认情况下，目标接收到的是数组，使用的 jsonpath 需要采用 <code v-pre>{{index . 0 "topic"}}</code>。

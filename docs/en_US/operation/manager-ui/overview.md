@@ -18,7 +18,7 @@ From eKuiper version 0.9.1, whenever a new version of eKuiper is released, the c
 * Kuiper-manager: Management console, which essentially is a reverse HTTP proxy service, providing the services of user management, permission verification. It can be deployed in the cloud or at the edge
 * eKuiper instance: managed eKuiper node instance, Kuiper-manager can manage multiple eKuiper nodes at the same time
 
-![construct](resources/arch.png)
+![construct](./resources/arch.png)
 
 ## Install the management console
 
