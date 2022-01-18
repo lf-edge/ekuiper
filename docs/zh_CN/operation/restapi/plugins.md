@@ -186,7 +186,7 @@ POST http://{{host}}/plugins/functions/{plugin_name}/register
 
 ## 获取可安装的插件
 
-根据在 `etc/kuiper.yaml` 文件中 `pluginHosts` 的配置，获取适合本 eKuiper 实例运行的插件列表，缺省会从 `https://packages.emqx.io` 上去获取。
+根据在 `etc/kuiper.yaml` 文件中 `pluginHosts` 的配置，获取适合本 eKuiper 实例运行的插件列表，缺省会从 `https://packages.emqx.net` 上去获取。
 
 ```
 GET http://localhost:9081/plugins/sources/prebuild

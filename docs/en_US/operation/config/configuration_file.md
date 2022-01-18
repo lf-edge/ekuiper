@@ -90,71 +90,27 @@ For such a default configuration, eKuiper will export metrics and serve promethe
 
 ## Pluginhosts Configuration
 
-The URL where hosts all of pre-build plugins. By default it's at `packages.emqx.io`. There could be several hosts (host can be separated with comma), if same package could be found in the several hosts, then the package in the 1st host will have the highest priority.
+The URL where hosts all of pre-build [native plugins](../../extension/native/overview.md). By default, it's at `packages.emqx.net`. 
 
-Please notice that only the plugins that can be installed to the current eKuiper instance will be listed through below Rest-APIs.  
+All plugins list as follows:
+
+|  plugin types  |        pre-build plugins                                        |
+|  -----------   |  ---------------------------------------------------------------|
+|  source        |    random zmq                                                   |
+|  sink          |  file image influx redis tdengine zmq                           |
+|  function      |  accumulateWordCount countPlusOne echo geohash image labelImage |
+
+User can get all pre-build plugins names and address by below Rest-APIs:
 
 ```
 GET http://localhost:9081/plugins/sources/prebuild
 GET http://localhost:9081/plugins/sinks/prebuild
 GET http://localhost:9081/plugins/functions/prebuild
-```
-It has following conditions to make the plugins listed through previous APIs,
+``` 
 
-- eKuiper version: The plugins must be built for the eKuiper instance version. If the plugins cannot be found  for a specific version, no plugins will be returned.
-- Operating system: Now only Linux system is supported, so if eKuiper is running at other operating systems,  no plugins will be returned.
-- CPU architecture: Only with correct CPU architecture built plugins are found in the plugin repository can the plugins be returned.
-- EMQ official released Docker images: Only when the eKuiper is running at EMQ official released Docker images can the plugins be returned.
+After get the plugin info, users can try these plugins, [more info](../restapi/plugins.md) 
 
-
-```yaml
-pluginHosts: https://packages.emqx.io
-```
-
-It could be also as following, you can specify a local repository, and the plugin in that repository will have higher priorities.
-
-```yaml
-pluginHosts: https://local.repo.net, https://packages.emqx.io
-```
-
-The directory structure of the plugins should be similar as following.
-
-```
-http://host:port/kuiper-plugins/0.9.1/alpine/sinks
-http://host:port/kuiper-plugins/0.9.1/alpine/sources
-http://host:port/kuiper-plugins/0.9.1/alpine/functions
-```
-
-The content of the page should be similar as below.
-
-```html
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<html>
-<title>Directory listing for enterprise: /4.1.1/</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta name="robots" content="noindex,nofollow">
-<body>
-	<h2>Directory listing for enterprise: /4.1.1/</h2>
-	<hr>
-	<ul>
-		<li><a href="file_386.zip">file_386.zip</a>
-		<li><a href="file_amd64.zip">file_amd64.zip</a>
-		<li><a href="file_arm.zip">file_arm.zip</a>
-		<li><a href="file_arm64.zip">file_arm64.zip</a>
-		<li><a href="file_ppc64le.zip">file_ppc64le.zip</a>
-
-		<li><a href="influx_386.zip">influx_386.zip</a>
-		<li><a href="influx_amd64.zip">influx_amd64.zip</a>
-		<li><a href="influx_arm.zip">influx_arm.zip</a>
-		<li><a href="influx_arm64.zip">influx_arm64.zip</a>
-		<li><a href="influx_ppc64le.zip">influx_ppc64le.zip</a>
-	</ul>
-	<hr>
-</body>
-</html>
-```
-
-
+**Note: only the official released debian based docker images support these operations**
 
 ## Sink configurations
 

@@ -1,13 +1,12 @@
-# Table specs
+# 表规格
 
-eKuiper streams is unbounded and immutable, any new data are appended in the current stream for processing.  **Table** is provided to represent the current state of the stream. It can be considered as a snapshot of the stream. Users can use table to retain a batch of data for processing.
+eKuiper 流是无界且不可变的，任何新数据都会附加到当前流中进行处理。 **Table** 用于表示流的当前状态。它可以被认为是流的快照。用户可以使用 table 来保留一批数据进行处理。
 
-Table is not allowed to use alone in eKuiper. It is only recommended to join with streams. When joining with stream, table will be updated continuously when new event coming. However, only events arriving on the stream side trigger downstream updates and produce join output.
+在 eKuiper 中不允许单独使用表格。仅建议与流进行 join 操作。join 流时，表格将在新事件到来时不断更新。但是，只有到达流端的事件才会触发下游更新并产生连接输出。
 
-## Syntax
+## 语法定义
 
-Table supports almost the same syntax as streams. To create a table, run the below SQL:
-
+表支持与流几乎相同的语法。要创建表，请运行以下 SQL：
 ```sql
 CREATE TABLE   
     table_name   
@@ -15,18 +14,16 @@ CREATE TABLE
     WITH ( property_name = expression [, ...] );
 ```
 
-Table supports the same [data types](./streams.md#data-types) as stream. 
+表支持与流相同的 [数据类型](./streams.md#data-types)。
+表还支持所有[流的属性](./streams.md#language-definitions)。因此，表中也支持所有源类型。许多源不是批处理的，它们在任何给定时间点都有一个事件，这意味着表将始终只有一个事件。一个附加属性 `RETAIN_SIZE` 来指定表快照的大小，以便表可以保存任意数量的历史数据。
 
-Table also supports all [the properties of the stream](./streams.md#language-definitions). Thus, all the source type are also supported in table. Many sources are not batched which have one event at any given time point, which means the table will always have only one event. An additional property `RETAIN_SIZE` to specify the size of the table snapshot so that the table can hold an arbitrary amount of history data.
+## 使用场景
 
-## Usage scenarios
+通常，表格将与带有或不带有窗口的流连接。与流连接时，表数据不会影响下游更新数据，它被视为静态引用数据，尽管它可能会在内部更新。
 
-Typically, table will be joined with stream with or without a window. When joining with stream, table data won't affect the downstream updata, it is treated like a static referenced data although it may be updated internally.
+### 查询表
 
-### Lookup table
-
-A typical usage for table is as a lookup table. Sample SQL will be like:
-
+表的典型用法是作为查找表。示例 SQL 将类似于：
 ```sql
 CREATE TABLE table1 (
 		id BIGINT,
@@ -36,10 +33,9 @@ CREATE TABLE table1 (
 SELECT * FROM demo INNER JOIN table1 on demo.id = table1.id
 ```
 
-In this example, a table `table1` is created to read json data from file *lookup.json*. Then in the rule, `table1` is joined with the stream `demo` so that the stream can lookup the name from the id.
+在这个例子中，创建了一个表 `table1` 来从文件 *lookup.json* 中读取 json 数据。然后在规则中，将 `table1` 与流 `demo` 连接起来，以便流可以从 id 中查找名称。
 
-The content of *lookup.json* file should be an array of objects. Below is an example:
-
+*lookup.json* 文件的内容应该是一个对象数组。下面是一个例子：
 ```json
 [
   {
@@ -57,17 +53,15 @@ The content of *lookup.json* file should be an array of objects. Below is an exa
 ]
 ```
 
-### Filter by history state
+### 按历史状态过滤
 
-In some scenario, we may have an event stream for data and another event stream as the control information. 
-
+在某些情况下，我们可能有一个用于数据的事件流和另一个作为控制信息的事件流。
 ```sql
 CREATE TABLE stateTable (
 		id BIGINT,
 		triggered bool
 	) WITH (DATASOURCE="myTopic", FORMAT="JSON", TYPE="mqtt");
 
-SELECT * FROM demo LEFT JOIN stateTable WHERE triggered=true
+SELECT * FROM demo LEFT JOIN stateTable on demo.id = stateTable.id WHERE triggered=true
 ```
-
-In this example, a table `stateTable` is created to record the trigger state from mqtt topic *myTopic*. In the rule, the data of `demo` stream is filtered with the current trigger state.
+在此示例中，创建了一个表 `stateTable` 来记录来自 mqtt 主题 *myTopic* 的触发器状态。在规则中，会根据当前触发状态来过滤 `demo` 流的数据。
