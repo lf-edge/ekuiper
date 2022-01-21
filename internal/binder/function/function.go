@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,91 +21,38 @@ import (
 	"strings"
 )
 
-type funcType int
+type funcExe func(ctx api.FunctionContext, args []interface{}) (interface{}, bool)
+type funcVal func(ctx api.FunctionContext, args []ast.Expr) error
 
-const (
-	NotFoundFunc funcType = iota - 1
-	AggFunc
-	MathFunc
-	StrFunc
-	ConvFunc
-	HashFunc
-	JsonFunc
-	OtherFunc
-)
-
-var maps = []map[string]string{
-	aggFuncMap, mathFuncMap, strFuncMap, convFuncMap, hashFuncMap, jsonFuncMap, otherFuncMap,
+type builtinFunc struct {
+	fType FuncType
+	exec  funcExe
+	val   funcVal
 }
 
-var aggFuncMap = map[string]string{"avg": "",
-	"count": "",
-	"max":   "", "min": "",
-	"sum":         "",
-	"collect":     "",
-	"deduplicate": "",
+var builtins map[string]builtinFunc
+
+func init() {
+	builtins = make(map[string]builtinFunc)
+	registerAggFunc()
+	registerMathFunc()
+	registerStrFunc()
+	registerMiscFunc()
 }
 
-var funcWithAsteriskSupportMap = map[string]string{
-	"collect": "",
-	"count":   "",
-}
-
-var mathFuncMap = map[string]string{"abs": "", "acos": "", "asin": "", "atan": "", "atan2": "",
-	"bitand": "", "bitor": "", "bitxor": "", "bitnot": "",
-	"ceil": "", "cos": "", "cosh": "",
-	"exp": "",
-	"ln":  "", "log": "",
-	"mod":   "",
-	"power": "",
-	"rand":  "", "round": "",
-	"sign": "", "sin": "", "sinh": "", "sqrt": "",
-	"tan": "", "tanh": "",
-}
-
-var strFuncMap = map[string]string{"concat": "",
-	"endswith":    "",
-	"format_time": "",
-	"indexof":     "",
-	"length":      "", "lower": "", "lpad": "", "ltrim": "",
-	"numbytes":       "",
-	"regexp_matches": "", "regexp_replace": "", "regexp_substr": "", "rpad": "", "rtrim": "",
-	"substring": "", "startswith": "", "split_value": "",
-	"trim":  "",
-	"upper": "",
-}
-
-var convFuncMap = map[string]string{"concat": "", "cast": "", "chr": "",
-	"encode": "",
-	"trunc":  "",
-}
-
-var hashFuncMap = map[string]string{"md5": "",
-	"sha1": "", "sha256": "", "sha384": "", "sha512": "",
-}
-
-var jsonFuncMap = map[string]string{
-	"json_path_query": "", "json_path_query_first": "", "json_path_exists": "",
-}
-
-var otherFuncMap = map[string]string{"isnull": "",
-	"newuuid": "", "tstamp": "", "mqtt": "", "meta": "", "cardinality": "",
-	"window_start": "",
-	"window_end":   "",
-}
-
-func getFuncType(name string) funcType {
-	for i, m := range maps {
-		if _, ok := m[name]; ok {
-			return funcType(i)
-		}
-	}
-	return NotFoundFunc
-}
+//var funcWithAsteriskSupportMap = map[string]string{
+//	"collect": "",
+//	"count":   "",
+//}
 
 type funcExecutor struct{}
 
 func (f *funcExecutor) ValidateWithName(args []ast.Expr, name string) error {
+	fs, ok := builtins[name]
+	if !ok {
+		return fmt.Errorf("validate function %s error: unknown name", name)
+	}
+
 	var eargs []ast.Expr
 	for _, arg := range args {
 		if t, ok := arg.(ast.Expr); ok {
@@ -115,7 +62,8 @@ func (f *funcExecutor) ValidateWithName(args []ast.Expr, name string) error {
 			return fmt.Errorf("receive invalid arg %v", arg)
 		}
 	}
-	return validateFuncs(name, eargs)
+	// TODO pass in ctx
+	return fs.val(nil, eargs)
 }
 
 func (f *funcExecutor) Validate(_ []interface{}) error {
@@ -127,43 +75,36 @@ func (f *funcExecutor) Exec(_ []interface{}, _ api.FunctionContext) (interface{}
 }
 
 func (f *funcExecutor) ExecWithName(args []interface{}, ctx api.FunctionContext, name string) (interface{}, bool) {
-	switch getFuncType(name) {
-	case AggFunc:
-		return aggCall(name, args)
-	case MathFunc:
-		return mathCall(name, args)
-	case ConvFunc:
-		return convCall(name, args)
-	case StrFunc:
-		return strCall(name, args)
-	case HashFunc:
-		return hashCall(name, args)
-	case JsonFunc:
-		return jsonCall(ctx, name, args)
-	case OtherFunc:
-		return otherCall(name, args)
+	fs, ok := builtins[name]
+	if !ok {
+		return fmt.Errorf("unknow name"), false
 	}
-	return fmt.Errorf("unknow name"), false
+	return fs.exec(ctx, args)
 }
 
 func (f *funcExecutor) IsAggregate() bool {
 	return false
 }
 
-func (f *funcExecutor) IsAggregateWithName(name string) bool {
-	return getFuncType(name) == AggFunc
+func (f *funcExecutor) GetFuncType(name string) FuncType {
+	fs, ok := builtins[name]
+	if !ok {
+		return FuncTypeUnknown
+	}
+	return fs.fType
 }
 
 var staticFuncExecutor = &funcExecutor{}
 
 type Manager struct{}
 
+// Function the name is converted to lowercase if needed during parsing
 func (m *Manager) Function(name string) (api.Function, error) {
-	ft := getFuncType(name)
-	if ft != NotFoundFunc {
-		return staticFuncExecutor, nil
+	_, ok := builtins[name]
+	if !ok {
+		return nil, nil
 	}
-	return nil, nil
+	return staticFuncExecutor, nil
 }
 
 func (m *Manager) HasFunctionSet(name string) bool {
@@ -172,11 +113,8 @@ func (m *Manager) HasFunctionSet(name string) bool {
 
 func (m *Manager) ConvName(n string) (string, bool) {
 	name := strings.ToLower(n)
-	ft := getFuncType(name)
-	if ft != NotFoundFunc {
-		return name, true
-	}
-	return name, false
+	_, ok := builtins[name]
+	return name, ok
 }
 
 var m = &Manager{}
