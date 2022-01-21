@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -470,12 +470,11 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "TestMathAndConversionFunc_Apply1")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		//fmt.Println("Running test " + strconv.Itoa(i))
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil && tt.result == nil {
 			continue
 		} else if err != nil && tt.result != nil {
-			t.Errorf("%q", err)
+			t.Errorf("%d: found error %q", i, err)
 			continue
 		}
 		pp := &ProjectOp{Fields: stmt.Fields}

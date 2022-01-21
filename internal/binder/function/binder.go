@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,14 @@ import (
 var ( // init once and read only
 	funcFactories      []binder.FuncFactory
 	funcFactoriesNames []string
+)
+
+type FuncType int
+
+const (
+	FuncTypeUnknown FuncType = iota - 1
+	FuncTypeScalar
+	FuncTypeAgg
 )
 
 func init() {
@@ -83,14 +91,14 @@ func ConvName(name string) (string, bool) {
 }
 
 type multiAggFunc interface {
-	IsAggregateWithName(name string) bool
+	GetFuncType(name string) FuncType
 }
 
 func IsAggFunc(funcName string) bool {
 	f, _ := Function(funcName)
 	if f != nil {
 		if mf, ok := f.(multiAggFunc); ok {
-			return mf.IsAggregateWithName(funcName)
+			return mf.GetFuncType(funcName) == FuncTypeAgg
 		} else {
 			return f.IsAggregate()
 		}

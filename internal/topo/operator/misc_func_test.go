@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -786,7 +786,7 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 					},
 				},
 			},
-			err: "run Select error: call func json_path_query error: json_path_query function error: invalid data nil for jsonpath",
+			err: "run Select error: call func json_path_query error: invalid data nil for jsonpath",
 		},
 	}
 

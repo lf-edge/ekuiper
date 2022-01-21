@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,22 +13,6 @@
 // limitations under the License.
 
 package ast
-
-import "fmt"
-
-// ProduceErrInfo Index is starting from 0
-func ProduceErrInfo(name string, index int, expect string) (err error) {
-	index++
-	err = fmt.Errorf("Expect %s type for %d parameter of function %s.", expect, index, name)
-	return
-}
-
-func ValidateLen(funcName string, exp, actual int) error {
-	if actual != exp {
-		return fmt.Errorf("The arguments for %s should be %d.", funcName, exp)
-	}
-	return nil
-}
 
 func IsNumericArg(arg Expr) bool {
 	if _, ok := arg.(*NumberLiteral); ok {
