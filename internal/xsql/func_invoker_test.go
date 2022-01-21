@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ func TestInvoke(t *testing.T) {
 		return
 	}
 	err = validateFuncs("sum", []ast.Expr{})
-	if err == nil || err.Error() != "The arguments for sum should be 1." {
+	if err == nil || err.Error() != "Expect 1 arguments but found 0." {
 		t.Error(err)
 	}
 	err = validateFuncs("window_start", []ast.Expr{})
