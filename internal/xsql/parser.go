@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ type Parser struct {
 		lit string
 	}
 	inmeta bool
+	f      int // anonymous field index number
 }
 
 func (p *Parser) parseCondition() (ast.Expr, error) {
@@ -445,6 +446,10 @@ func (p *Parser) parseField() (*ast.Field, error) {
 		if alias != "" {
 			field.AName = alias
 		}
+	}
+	if field.Name == "" && field.AName == "" {
+		field.Name = DEFAULT_FIELD_NAME_PREFIX + strconv.Itoa(p.f)
+		p.f += 1
 	}
 
 	return field, nil
