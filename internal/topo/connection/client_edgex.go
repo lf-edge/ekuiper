@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,61 +23,86 @@ import (
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"strings"
 )
 
 func init() {
-	registerClientFactory("edgex", func(s *conf.ConSelector) Client {
-		return &EdgexClient{selector: s}
+	registerClientFactory("edgex", func() Client {
+		return &EdgexClient{}
 	})
 }
 
 type EdgexClient struct {
-	selector *conf.ConSelector
-	mbconf   types.MessageBusConfig
-	client   messaging.MessageClient
+	mbconf types.MessageBusConfig
+	client messaging.MessageClient
 }
 
 type EdgexConf struct {
 	Protocol string            `json:"protocol"`
 	Server   string            `json:"server"`
+	Host     string            `json:"host"`
 	Port     int               `json:"port"`
 	Type     string            `json:"type"`
 	Optional map[string]string `json:"optional"`
 }
 
+// Modify the copied conf to print no password.
+func printConf(mbconf types.MessageBusConfig) {
+	var printableOptional = make(map[string]string)
+	for k, v := range mbconf.Optional {
+		if strings.EqualFold(k, "password") {
+			printableOptional[k] = "*"
+		} else {
+			printableOptional[k] = v
+		}
+	}
+	mbconf.Optional = printableOptional
+	conf.Log.Infof("Use configuration for edgex messagebus %v", mbconf)
+}
+
 func (es *EdgexClient) CfgValidate(props map[string]interface{}) error {
-	c := &EdgexConf{}
-	err := cast.MapToStructStrict(props, c)
+	edgeAddr := "localhost"
+	c := &EdgexConf{
+		Protocol: "redis",
+		Port:     6379,
+		Type:     messaging.Redis,
+		Optional: nil,
+	}
+
+	err := cast.MapToStruct(props, c)
 	if err != nil {
-		return fmt.Errorf("map config map to struct %v fail for connection selector %s with error: %v", props, es.selector.ConnSelectorStr, err)
+		return fmt.Errorf("map config map to struct %v fail for connection %v with error: %v", props, c, err)
 	}
 
-	if c.Server == "" {
-		return fmt.Errorf("missing server property for connection selector %s", es.selector.ConnSelectorStr)
-	}
-
-	if c.Port == 0 {
-		return fmt.Errorf("missing port property for connection selector %s", es.selector.ConnSelectorStr)
+	if c.Host != "" {
+		edgeAddr = c.Host
+	} else if c.Server != "" {
+		edgeAddr = c.Server
 	}
 
 	if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT && c.Type != messaging.Redis {
-		return fmt.Errorf("specified wrong type value %s for connection selector %s", c.Type, es.selector.ConnSelectorStr)
+		return fmt.Errorf("specified wrong type value %s for connection %v", c.Type, c)
+	}
+	if c.Port < 0 {
+		return fmt.Errorf("specified wrong port value, expect positive integer but got %d", c.Port)
 	}
 
 	mbconf := types.MessageBusConfig{
 		SubscribeHost: types.HostInfo{
-			Protocol: c.Protocol,
-			Host:     c.Server,
+			Host:     edgeAddr,
 			Port:     c.Port,
+			Protocol: c.Protocol,
 		},
 		PublishHost: types.HostInfo{
-			Host:     c.Server,
+			Host:     edgeAddr,
 			Port:     c.Port,
 			Protocol: c.Protocol,
 		},
 		Type: c.Type}
 	mbconf.Optional = c.Optional
 	es.mbconf = mbconf
+
+	printConf(mbconf)
 
 	return nil
 }
@@ -90,17 +115,17 @@ func (es *EdgexClient) GetClient() (interface{}, error) {
 	}
 
 	if err := client.Connect(); err != nil {
-		conf.Log.Errorf("The connection to edgex messagebus failed for connection selector : %s.", es.selector.ConnSelectorStr)
+		conf.Log.Errorf("The connection to edgex messagebus failed for connection : %v.", es.mbconf)
 		return nil, fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
 	}
-	conf.Log.Infof("The connection to edgex messagebus is established successfully for connection selector : %s.", es.selector.ConnSelectorStr)
+	conf.Log.Infof("The connection to edgex messagebus is established successfully for connection : %v.", es.mbconf)
 
 	es.client = client
 	return client, nil
 }
 
 func (es *EdgexClient) CloseClient() error {
-	conf.Log.Infof("Closing the connection to edgex messagebus for connection selector : %s.", es.selector.ConnSelectorStr)
+	conf.Log.Infof("Closing the connection to edgex messagebus for connection : %v.", es.mbconf)
 	if e := es.client.Disconnect(); e != nil {
 		return e
 	}

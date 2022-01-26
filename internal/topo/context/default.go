@@ -252,10 +252,12 @@ func (c *DefaultContext) SaveState(checkpointId int64) error {
 	return nil
 }
 
-func (c *DefaultContext) GetConnection(connectSelector string) (interface{}, error) {
-	return connection.GetConnection(connectSelector)
+func (c *DefaultContext) GetConnection(clientType string, props map[string]interface{}) (interface{}, error) {
+	reqId := fmt.Sprintf("%s_%s_%d", c.GetRuleId(), c.GetOpId(), c.GetInstanceId())
+	return connection.GetConnection(reqId, clientType, props)
 }
 
-func (c *DefaultContext) ReleaseConnection(connectSelector string) {
-	connection.ReleaseConnection(connectSelector)
+func (c *DefaultContext) ReleaseConnection(props map[string]interface{}) {
+	reqId := fmt.Sprintf("%s_%s_%d", c.GetRuleId(), c.GetOpId(), c.GetInstanceId())
+	connection.ReleaseConnection(reqId, props)
 }

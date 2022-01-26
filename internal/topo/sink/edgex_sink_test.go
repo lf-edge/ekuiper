@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import (
 	"fmt"
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
-	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -70,10 +69,6 @@ func TestConfigure(t *testing.T) {
 				"metadata": "meta",
 			},
 			expected: &EdgexConf{
-				Protocol:    "redis",
-				Host:        "localhost",
-				Port:        6379,
-				Type:        messaging.Redis,
 				MessageType: MessageTypeEvent,
 				ContentType: "application/json",
 				DeviceName:  "ekuiper",
@@ -94,10 +89,6 @@ func TestConfigure(t *testing.T) {
 				"contentType": "application/json",
 			},
 			expected: &EdgexConf{
-				Protocol:    "redis",
-				Host:        "edgex-redis",
-				Port:        6379,
-				Type:        messaging.Redis,
 				MessageType: MessageTypeEvent,
 				ContentType: "application/json",
 				DeviceName:  "ekuiper",
@@ -120,10 +111,6 @@ func TestConfigure(t *testing.T) {
 				},
 			},
 			expected: &EdgexConf{
-				Protocol:    "tcp",
-				Host:        "127.0.0.1",
-				Port:        1883,
-				Type:        messaging.MQTT,
 				MessageType: MessageTypeEvent,
 				ContentType: "application/json",
 				DeviceName:  "ekuiper",
@@ -131,9 +118,6 @@ func TestConfigure(t *testing.T) {
 				SourceName:  "",
 				Metadata:    "edgex_meta",
 				Topic:       "result",
-				Optional: map[string]string{
-					"ClientId": "edgex_message_bus_001",
-				},
 			},
 		}, { // 3
 			conf: map[string]interface{}{
@@ -146,10 +130,6 @@ func TestConfigure(t *testing.T) {
 				"contentType": "application/json",
 			},
 			expected: &EdgexConf{
-				Protocol:    "redis",
-				Host:        "edgex-redis",
-				Port:        6379,
-				Type:        messaging.Redis,
 				MessageType: MessageTypeRequest,
 				ContentType: "application/json",
 				DeviceName:  "ekuiper",
@@ -168,39 +148,6 @@ func TestConfigure(t *testing.T) {
 				"contentType": "application/json",
 			},
 			error: "specified wrong messageType value requests",
-		}, { // 5
-			conf: map[string]interface{}{
-				"type":        20,
-				"protocol":    "redis",
-				"host":        "edgex-redis",
-				"port":        6379,
-				"topicPrefix": "edgex/events/device",
-				"messageType": "requests",
-				"contentType": "application/json",
-			},
-			error: "read properties map[contentType:application/json host:edgex-redis messageType:requests port:6379 protocol:redis topicPrefix:edgex/events/device type:20] fail with error: 1 error(s) decoding:\n\n* 'type' expected type 'string', got unconvertible type 'int', value: '20'",
-		}, { // 6
-			conf: map[string]interface{}{
-				"type":        "redis",
-				"protocol":    "redis",
-				"host":        "edgex-redis",
-				"port":        -1,
-				"topicPrefix": "edgex/events/device",
-				"messageType": "requests",
-				"contentType": "application/json",
-			},
-			error: "specified wrong port value, expect positive integer but got -1",
-		}, { // 7
-			conf: map[string]interface{}{
-				"type":        "zmq",
-				"protocol":    "redis",
-				"host":        "edgex-redis",
-				"port":        6379,
-				"topicPrefix": "edgex/events/device",
-				"messageType": "requests",
-				"contentType": "application/json",
-			},
-			error: "specified wrong type value zmq",
 		}, { // 8
 			conf: map[string]interface{}{
 				"protocol":    "redis",

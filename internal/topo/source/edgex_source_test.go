@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import (
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"math"
 	"reflect"
@@ -310,23 +309,6 @@ func TestWrongValue(t *testing.T) {
 		if _, e := es.getValue(v, conf.Log); e == nil {
 			t.Errorf("Expected an error!")
 		}
-	}
-}
-
-func TestPrintConf(t *testing.T) {
-	expMbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: "tcp", Host: "127.0.0.1", Port: 6625}, Type: "mbus", Optional: map[string]string{
-		"proa":     "proa",
-		"Password": "fafsadfsadf=",
-		"Prob":     "Prob",
-	}}
-	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: "tcp", Host: "127.0.0.1", Port: 6625}, Type: "mbus", Optional: map[string]string{
-		"proa":     "proa",
-		"Password": "fafsadfsadf=",
-		"Prob":     "Prob",
-	}}
-	printConf(mbconf)
-	if !reflect.DeepEqual(expMbconf, mbconf) {
-		t.Errorf("conf changed after printing")
 	}
 }
 

@@ -1,3 +1,17 @@
+// Copyright 2022 EMQ Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package connection
 
 import (
@@ -34,13 +48,22 @@ func (m *MockClient) CloseClient() error {
 }
 
 func TestManager(t *testing.T) {
-	registerClientFactory("mqtt", func(super *conf.ConSelector) Client {
-		return &MockClient{selector: super}
+	MQTT := "mqtt"
+	registerClientFactory(MQTT, func() Client {
+		return &MockClient{}
 	})
 
 	conSelector := "mqtt.localConnection"
+	reqId := "test"
+	props := map[string]interface{}{
+		"server":             "tcp:127.0.0.1:1883",
+		"USERNAME":           "demo",
+		"Password":           "password",
+		"clientID":           "clientid",
+		"connectionSelector": conSelector,
+	}
 
-	connection, err := GetConnection(conSelector)
+	connection, err := GetConnection(reqId, MQTT, props)
 	if err != nil {
 		t.Errorf("GetConnection Error")
 	}
@@ -49,17 +72,17 @@ func TestManager(t *testing.T) {
 		t.Errorf("Error")
 	}
 
-	connection, err = GetConnection(conSelector)
+	connection, err = GetConnection(reqId, MQTT, props)
 	if err != nil {
 		t.Errorf("GetConnection Error")
 	}
 
-	wrapper := m.clientMap[conSelector]
+	wrapper := m.shareClientStore[conSelector]
 	if !reflect.DeepEqual(wrapper.refCnt, uint32(2)) {
 		t.Errorf("Error, ectual=%v, want=%v", wrapper.refCnt, 2)
 	}
 
-	connection, err = GetConnection(conSelector)
+	connection, err = GetConnection(reqId, MQTT, props)
 	if err != nil {
 		t.Errorf("GetConnection Error")
 	}
@@ -67,22 +90,22 @@ func TestManager(t *testing.T) {
 		t.Errorf("Error")
 	}
 
-	ReleaseConnection(conSelector)
+	ReleaseConnection(reqId, props)
 	if !reflect.DeepEqual(wrapper.refCnt, uint32(2)) {
 		t.Errorf("Error")
 	}
 
-	ReleaseConnection(conSelector)
+	ReleaseConnection(reqId, props)
 	if !reflect.DeepEqual(wrapper.refCnt, uint32(1)) {
 		t.Errorf("Error")
 	}
 
-	ReleaseConnection(conSelector)
+	ReleaseConnection(reqId, props)
 	if !reflect.DeepEqual(wrapper.refCnt, uint32(0)) {
 		t.Errorf("Error")
 	}
 
-	if _, ok := m.clientMap[conSelector]; ok {
+	if _, ok := m.shareClientStore[conSelector]; ok {
 		t.Errorf("Error")
 	}
 

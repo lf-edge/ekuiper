@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
 	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
@@ -34,9 +33,7 @@ import (
 )
 
 type EdgexSource struct {
-	mbconf types.MessageBusConfig
-	conSel string
-
+	config      map[string]interface{}
 	client      messaging.MessageClient
 	subscribed  bool
 	topic       string
@@ -44,15 +41,9 @@ type EdgexSource struct {
 }
 
 type EdgexConf struct {
-	Format             string            `json:"format"`
-	Protocol           string            `json:"protocol"`
-	Server             string            `json:"server"`
-	Port               int               `json:"port"`
-	Topic              string            `json:"topic"`
-	Type               string            `json:"type"`
-	MessageType        messageType       `json:"messageType"`
-	Optional           map[string]string `json:"optional"`
-	ConnectionSelector string            `json:"connectionSelector"`
+	Format      string      `json:"format"`
+	Topic       string      `json:"topic"`
+	MessageType messageType `json:"messageType"`
 }
 
 type messageType string
@@ -65,10 +56,6 @@ const (
 func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 	c := &EdgexConf{
 		Format:      message.FormatJson,
-		Protocol:    "redis",
-		Server:      "localhost",
-		Port:        6379,
-		Type:        messaging.Redis,
 		MessageType: MessageTypeEvent,
 	}
 	err := cast.MapToStruct(props, c)
@@ -83,61 +70,23 @@ func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 		return fmt.Errorf("specified wrong messageType value %s", c.MessageType)
 	}
 
-	if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT && c.Type != messaging.Redis {
-		return fmt.Errorf("specified wrong type value %s", c.Type)
-	}
-
-	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: c.Protocol, Host: c.Server, Port: c.Port}, Type: c.Type}
-	mbconf.Optional = c.Optional
-	if c.ConnectionSelector == "" {
-		printConf(mbconf)
-	} else {
-		conf.Log.Infof("use connection selector %s for edgex source", c.ConnectionSelector)
-	}
-	es.conSel = c.ConnectionSelector
-	es.mbconf = mbconf
+	es.config = props
 	es.messageType = c.MessageType
 	es.topic = c.Topic
 
 	return nil
 }
 
-// Modify the copied conf to print no password.
-func printConf(mbconf types.MessageBusConfig) {
-	var printableOptional = make(map[string]string)
-	for k, v := range mbconf.Optional {
-		if strings.EqualFold(k, "password") {
-			printableOptional[k] = "*"
-		} else {
-			printableOptional[k] = v
-		}
-	}
-	mbconf.Optional = printableOptional
-	conf.Log.Infof("Use configuration for edgex messagebus %v", mbconf)
-}
-
 func (es *EdgexSource) getClient(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
-	if es.conSel != "" {
-		con, err := ctx.GetConnection(es.conSel)
-		if err != nil {
-			log.Errorf("The edgex client for connection selector %s get fail with error: %s", es.conSel, err)
-			return err
-		}
-		es.client = con.(messaging.MessageClient)
-		log.Infof("The edge client for connection selector %s get successfully", es.conSel)
-	} else {
-		c, err := messaging.NewMessageClient(es.mbconf)
-		if err != nil {
-			return err
-		}
-		es.client = c
-
-		if err := es.client.Connect(); err != nil {
-			return fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
-		}
-		log.Infof("The connection to edgex messagebus is established successfully.")
+	con, err := ctx.GetConnection("edgex", es.config)
+	if err != nil {
+		log.Errorf("The edgex client for connection %v get fail with error: %s", es.config, err)
+		return err
 	}
+	es.client = con.(messaging.MessageClient)
+	log.Infof("The edge client for connection %v get successfully", es.config)
+
 	return nil
 }
 
@@ -349,13 +298,8 @@ func convertFloatArray(v string, bitSize int) (interface{}, error) {
 }
 
 func (es *EdgexSource) Close(ctx api.StreamContext) error {
-	if es.subscribed && es.conSel == "" {
-		if e := es.client.Disconnect(); e != nil {
-			return e
-		}
-	}
-	if es.conSel != "" {
-		ctx.ReleaseConnection(es.conSel)
+	if es.subscribed {
+		ctx.ReleaseConnection(es.config)
 	}
 	return nil
 }

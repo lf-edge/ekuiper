@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -150,8 +150,8 @@ type StreamContext interface {
 	GetState(key string) (interface{}, error)
 	DeleteState(key string) error
 	// Connection related methods
-	GetConnection(connectSelector string) (interface{}, error)
-	ReleaseConnection(connectSelector string)
+	GetConnection(clientType string, props map[string]interface{}) (interface{}, error)
+	ReleaseConnection(props map[string]interface{})
 	// Properties processing, prop is a json path
 	ParseDynamicProp(prop string, data interface{}) (interface{}, error)
 	// Transform output according to the properties like syntax

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,12 +56,14 @@ func (c *DefaultFuncContext) GetFuncId() int {
 	return c.funcId
 }
 
-func (c *DefaultFuncContext) GetConnection(connectSelector string) (interface{}, error) {
-	return connection.GetConnection(connectSelector)
+func (c *DefaultFuncContext) GetConnection(clientType string, props map[string]interface{}) (interface{}, error) {
+	reqId := fmt.Sprintf("%s_%s_%d", c.GetRuleId(), c.GetOpId(), c.GetInstanceId())
+	return connection.GetConnection(reqId, clientType, props)
 }
 
-func (c *DefaultFuncContext) ReleaseConnection(connectSelector string) {
-	connection.ReleaseConnection(connectSelector)
+func (c *DefaultFuncContext) ReleaseConnection(props map[string]interface{}) {
+	reqId := fmt.Sprintf("%s_%s_%d", c.GetRuleId(), c.GetOpId(), c.GetInstanceId())
+	connection.ReleaseConnection(reqId, props)
 }
 
 func (c *DefaultFuncContext) convertKey(key string) string {

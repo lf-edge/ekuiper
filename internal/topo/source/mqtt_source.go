@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,52 +17,30 @@ package source
 import (
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"github.com/google/uuid"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
 	"path"
 	"strconv"
-	"strings"
 )
 
 type MQTTSource struct {
-	srv        string
-	qos        int
-	format     string
-	tpc        string
-	clientid   string
-	pVersion   uint
-	uName      string
-	password   string
-	certPath   string
-	pkeyPath   string
-	rootCapath string
-	conSel     string
-	InSecure   bool
+	qos    int
+	format string
+	tpc    string
 
+	config map[string]interface{}
 	model  modelVersion
 	schema map[string]interface{}
 	conn   MQTT.Client
 }
 
 type MQTTConfig struct {
-	Format             string `json:"format"`
-	Qos                int    `json:"qos"`
-	Server             string `json:"server"`
-	Clientid           string `json:"clientid"`
-	PVersion           string `json:"protocolVersion"`
-	Uname              string `json:"username"`
-	Password           string `json:"password"`
-	Certification      string `json:"certificationPath"`
-	PrivateKPath       string `json:"privateKeyPath"`
-	RootCaPath         string `json:"rootCaPath"`
-	InsecureSkipVerify bool   `json:"insecureSkipVerify"`
-	KubeedgeModelFile  string `json:"kubeedgeModelFile"`
-	KubeedgeVersion    string `json:"kubeedgeVersion"`
-	ConnectionSelector string `json:"connectionSelector"`
+	Format            string `json:"format"`
+	Qos               int    `json:"qos"`
+	KubeedgeModelFile string `json:"kubeedgeModelFile"`
+	KubeedgeVersion   string `json:"kubeedgeVersion"`
 }
 
 func (ms *MQTTSource) WithSchema(_ string) *MQTTSource {
@@ -76,28 +54,9 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
 	ms.tpc = topic
-	if cfg.ConnectionSelector == "" {
-		if srv := cfg.Server; srv != "" {
-			ms.srv = srv
-		} else {
-			return fmt.Errorf("missing server property")
-		}
-	}
-	ms.conSel = cfg.ConnectionSelector
 	ms.format = cfg.Format
-	ms.clientid = cfg.Clientid
 	ms.qos = cfg.Qos
-
-	ms.pVersion = 3
-	if cfg.PVersion == "3.1.1" {
-		ms.pVersion = 4
-	}
-
-	ms.uName = cfg.Uname
-	ms.password = strings.Trim(cfg.Password, " ")
-	ms.certPath = cfg.Certification
-	ms.pkeyPath = cfg.PrivateKPath
-	ms.rootCapath = cfg.RootCaPath
+	ms.config = props
 
 	if 0 != len(cfg.KubeedgeModelFile) {
 		p := path.Join("sources", cfg.KubeedgeModelFile)
@@ -114,79 +73,14 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 	var client MQTT.Client
 	log := ctx.GetLogger()
 
-	if ms.conSel != "" {
-		con, err := ctx.GetConnection(ms.conSel)
-		if err != nil {
-			log.Errorf("The mqtt client for connection selector %s get fail with error: %s", ms.conSel, err)
-			errCh <- err
-			return
-		}
-		client = con.(MQTT.Client)
-		log.Infof("The mqtt client for connection selector %s get successfully", ms.conSel)
-	} else {
-		opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(ms.pVersion)
-		if ms.clientid == "" {
-			if newUUID, err := uuid.NewUUID(); err != nil {
-				errCh <- fmt.Errorf("failed to get uuid, the error is %s", err)
-				return
-			} else {
-				ms.clientid = newUUID.String()
-				opts = opts.SetClientID(newUUID.String())
-			}
-		} else {
-			opts = opts.SetClientID(ms.clientid)
-		}
-
-		tlsOpts := cert.TlsConfigurationOptions{
-			SkipCertVerify: ms.InSecure,
-			CertFile:       ms.certPath,
-			KeyFile:        ms.pkeyPath,
-			CaFile:         ms.rootCapath,
-		}
-		log.Infof("Connect MQTT broker with TLS configs. %v", tlsOpts)
-		tlscfg, err := cert.GenerateTLSForClient(tlsOpts)
-		if err != nil {
-			errCh <- err
-			return
-		}
-
-		opts = opts.SetTLSConfig(tlscfg)
-
-		log.Infof("Connect MQTT broker with username and password.")
-		if ms.uName != "" {
-			opts = opts.SetUsername(ms.uName)
-		} else {
-			log.Infof("The username is empty.")
-		}
-
-		if ms.password != "" {
-			opts = opts.SetPassword(ms.password)
-		} else {
-			log.Infof("The password is empty.")
-		}
-		opts.SetAutoReconnect(true)
-		var reconn = false
-		opts.SetConnectionLostHandler(func(client MQTT.Client, e error) {
-			log.Errorf("The connection %s is disconnected due to error %s, will try to re-connect later.", ms.srv+": "+ms.clientid, e)
-			reconn = true
-			subscribe(ms, client, ctx, consumer)
-		})
-
-		opts.SetOnConnectHandler(func(client MQTT.Client) {
-			if reconn {
-				log.Infof("The connection is %s re-established successfully.", ms.srv+": "+ms.clientid)
-				subscribe(ms, client, ctx, consumer)
-			}
-		})
-
-		client = MQTT.NewClient(opts)
-
-		if token := client.Connect(); token.Wait() && token.Error() != nil {
-			errCh <- fmt.Errorf("found error when connecting to %s: %s", ms.srv, token.Error())
-			return
-		}
-		log.Infof("The connection to server %s:%s was established successfully", ms.srv, ms.clientid)
+	con, err := ctx.GetConnection("mqtt", ms.config)
+	if err != nil {
+		log.Errorf("The mqtt client for connection %v get fail with error: %s", ms.config, err)
+		errCh <- err
+		return
 	}
+	client = con.(MQTT.Client)
+	log.Infof("The mqtt client for connection  %v get successfully", ms.config)
 
 	ms.conn = client
 	subscribe(ms, client, ctx, consumer)
@@ -231,11 +125,9 @@ func subscribe(ms *MQTTSource, client MQTT.Client, ctx api.StreamContext, consum
 
 func (ms *MQTTSource) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Mqtt Source instance %d Done", ctx.GetInstanceId())
-	if ms.conn != nil && ms.conn.IsConnected() && ms.conSel == "" {
-		ms.conn.Disconnect(5000)
+	if ms.conn != nil && ms.conn.IsConnected() {
+		ms.conn.Unsubscribe(ms.tpc)
 	}
-	if ms.conSel != "" {
-		ctx.ReleaseConnection(ms.conSel)
-	}
+	ctx.ReleaseConnection(ms.config)
 	return nil
 }
