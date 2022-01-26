@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package operator
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -116,12 +117,12 @@ func (pp *ProjectOp) getVE(tuple xsql.DataValuer, agg xsql.AggregateData, fv *xs
 func project(fs ast.Fields, ve *xsql.ValuerEval) (map[string]interface{}, error) {
 	result := make(map[string]interface{}, len(fs))
 	for _, f := range fs {
-		v := ve.Eval(f.Expr)
-		if e, ok := v.(error); ok {
+		vi := ve.Eval(f.Expr)
+		if e, ok := vi.(error); ok {
 			return nil, e
 		}
 		if _, ok := f.Expr.(*ast.Wildcard); ok || f.Name == "*" {
-			switch val := v.(type) {
+			switch val := vi.(type) {
 			case map[string]interface{}:
 				for k, v := range val {
 					if _, ok := result[k]; !ok {
@@ -138,9 +139,18 @@ func project(fs ast.Fields, ve *xsql.ValuerEval) (map[string]interface{}, error)
 				return nil, fmt.Errorf("wildcarder does not return map")
 			}
 		} else {
-			if v != nil {
-				n := assignName(f.Name, f.AName)
-				result[n] = v
+			if vi != nil {
+				switch vt := vi.(type) {
+				case function.ResultCols:
+					for k, v := range vt {
+						if _, ok := result[k]; !ok {
+							result[k] = v
+						}
+					}
+				default:
+					n := assignName(f.Name, f.AName)
+					result[n] = vt
+				}
 			}
 		}
 	}
