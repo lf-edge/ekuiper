@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -503,6 +503,44 @@ func TestSingleSQL(t *testing.T) {
 				"source_table1_0_exceptions_total":  int64(0),
 				"source_table1_0_records_in_total":  int64(4),
 				"source_table1_0_records_out_total": int64(1),
+			},
+		}, {
+			Name: `TestChanged13`,
+			Sql:  "SELECT changed_cols(\"tt_\", true, color, size) FROM demo",
+			R: [][]map[string]interface{}{
+				{{
+					"tt_color": "red",
+					"tt_size":  float64(3),
+				}},
+				{{
+					"tt_color": "blue",
+					"tt_size":  float64(6),
+				}},
+				{{
+					"tt_size": float64(2),
+				}},
+				{{
+					"tt_color": "yellow",
+					"tt_size":  float64(4),
+				}},
+				{{
+					"tt_color": "red",
+					"tt_size":  float64(1),
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(5),
+				"op_2_project_0_records_out_total":  int64(5),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
 			},
 		},
 	}

@@ -31,6 +31,7 @@ const (
 	FuncTypeUnknown FuncType = iota - 1
 	FuncTypeScalar
 	FuncTypeAgg
+	FuncTypeCols
 )
 
 func init() {
@@ -104,4 +105,18 @@ func IsAggFunc(funcName string) bool {
 		}
 	}
 	return false
+}
+
+func GetFuncType(funcName string) FuncType {
+	f, _ := Function(funcName)
+	if f != nil {
+		if mf, ok := f.(multiAggFunc); ok {
+			return mf.GetFuncType(funcName)
+		}
+		if f.IsAggregate() {
+			return FuncTypeAgg
+		}
+		return FuncTypeScalar
+	}
+	return FuncTypeUnknown
 }
