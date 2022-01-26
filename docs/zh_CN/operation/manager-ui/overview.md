@@ -24,16 +24,16 @@
 
 ### 安装 eKuiper
 
-- 从 [Docker 镜像库](https://hub.docker.com/r/lfedge/ekuiper/tags)拉取 eKuiper 的 Docker 镜像。由于本文中要安装插件，必须使用`ekuiper:1.3.1-slim`镜像（`ekuiper:1.3.1-alpine` 镜像比较小，安装比较方便，但是由于缺少一些必要的库文件，插件无法正常运行；而 `ekuiper:1.3.1` 镜像是开发版本的镜像，适合于开发阶段使用）。
+- 从 [Docker 镜像库](https://hub.docker.com/r/lfedge/ekuiper/tags)拉取 eKuiper 的 Docker 镜像。由于本文中要安装插件，必须使用`ekuiper:1.4-slim`镜像（`ekuiper:1.4-alpine` 镜像比较小，安装比较方便，但是由于缺少一些必要的库文件，插件无法正常运行；而 `ekuiper:1.4` 镜像是开发版本的镜像，适合于开发阶段使用）。
 
   ```shell
-  docker pull lfedge/ekuiper:1.3.1-slim
+  docker pull lfedge/ekuiper:1.4-slim
   ```
 
 - 运行 eKuiper 容器（为了方便，我们将使用由 [EMQ](https://www.emqx.cn) 提供的公有 MQTT 服务器，在运行容器时可通过 `-e` 选项设置地址）。如果您想通过主机访问 eKuiper 实例，可以通过在启动容器的时候加入 `-p 9081:9081` 参数来暴露 9081 端口。
 
   ```shell
-  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] lfedge/ekuiper:1.3.1-slim
+  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] lfedge/ekuiper:1.4-slim
   ```
   
   在运行容器时通过 `-e` 选项设置了 MQTT 服务器地址，数据写到了 MQTT 源配置文件中，通过以下命令可以查看：
@@ -57,16 +57,16 @@
 
 ### 安装管理控制台
 
-- 从 [Docker 镜像库](https://hub.docker.com/r/emqx/ekuiper-manager/tags) 拉取 kuiper-manager 的 Docker 镜像 ，`1.3.1-ief` 为华为 IEF 用户专用镜像，本例使用`1.3.1` 镜像。
+- 从 [Docker 镜像库](https://hub.docker.com/r/emqx/ekuiper-manager/tags) 拉取 kuiper-manager 的 Docker 镜像 ，`1.4-ief` 为华为 IEF 用户专用镜像，本例使用`1.4` 镜像。
 
   ```shell
-  docker pull emqx/ekuiper-manager:1.3.1
+  docker pull emqx/ekuiper-manager:1.4
   ```
 
 - 运行 Kuiper-manager 容器并暴露 9082 端口。
 
   ```shell
-  docker run --name kuiperManager -d -p 9082:9082 emqx/ekuiper-manager:1.3.1
+  docker run --name kuiperManager -d -p 9082:9082 emqx/ekuiper-manager:1.4
   ```
 
 ## 开始使用
@@ -81,7 +81,7 @@
 
 * 密码：public
 
-  ![login](resources/login.png)
+  ![login](./resources/login.png)
 
 ### 创建 eKuiper 服务
 
@@ -99,13 +99,13 @@
 
 创建 eKuiper 服务样例如下图所示，如果把端口暴露到了主机，那么也可以直接使用主机上的 9081 端口地址。
 
-![addNode](resources/add_service.png)
+![addNode](./resources/add_service.png)
 
 ### 安装插件
 
 我们的场景中会使用名为 file 的目标插件，选择「插件」> 「安装插件」，弹出以下对话框：在下拉列表中选择名为 file 的目标插件进行下载和安装，该插件将数据写入到用户指定的文件中。如下图所示，读者选择了对应名称的插件后，「文件」输入框中会自动填入对应的插件下载地址,「脚本参数」输入框中输入安装插件额外的参数配置。点击「提交」按钮后，eKuiper 将会从 `https://www.emqx.cn/downloads` 上相关的地址自动下载对应的插件，并自动安装到系统中。
 
-![newPlugine](resources/new_plugin.png)
+![newPlugine](./resources/new_plugin.png)
 
 **注意：插件安装、并且通过规则使用后，插件已经被加载到内存中，由于 Golang 语言的限制，在插件删除的时候，无法将其真正卸载，所以想重新进行插件的安装，eKuiper 必须重启才可生效；目前只支持在 debian 的 Docker 环境里的插件安装，其余环境暂不支持。**
 
@@ -130,23 +130,23 @@
 
 - 「流格式」，与「流类型」类似，用户不选的话，使用缺省的「json」
 
-![newStream](resources/new_stream.png)
+![newStream](./resources/new_stream.png)
 
 如上所示用的是缺省的「default」配置组。用户也可以根据需求编写自己的配置，具体操作为，在创建流的页面中点击`源配置`，跳转到配置页面，展开你需要的配置类型，点击加号创建源配置，弹出如下对话框。
 
-![sourceConf](resources/source_conf.png)
+![sourceConf](./resources/source_conf.png)
 
-![sourceConf](resources/create_conf.png)
+![sourceConf](./resources/create_conf.png)
 
 ### 创建规则
 
 如下图，创建一条名为 demoRule 的规则，将数据中 temperature > 30 的数据过滤出来。SQL 编辑器在用户写 SQL 的过程中可以给出提示，方便用户完成 SQL 的编写。
 
-![newRule](resources/new_rule.png)
+![newRule](./resources/new_rule.png)
 
 单击「添加」按钮，弹出对话框如下所示。输入结果存储的文件路径为 `/kuiper/demoFile` 。更多关于 file 目标的信息可以查看[帮助文件](../../extension/native/sinks/file.md)。目标 file 处于 `Beta` 状态，不能作为实际生产环境使用。
 
-![sinkConf](resources/sink_conf.png)
+![sinkConf](./resources/sink_conf.png)
 
 创建规则后，如果一切正常，那么规则处于运行状态。
 
@@ -174,10 +174,10 @@
 - 重启规则
 - 删除规则
 
-![ruleOp](resources/rule_op.png)
+![ruleOp](./resources/rule_op.png)
 
 ## 扩展阅读
 
-- [如何将自定义的插件展示在管理控制台的安装列表](plugins_in_manager.md)：eKuiper 提供了插件的扩展机制，用户可以基于扩展接口来实现自定义的插件。在管理控制台上，用户可以直接通过界面进行插件的安装。如果读者有自定义的插件，也想出现在管理控制台的安装列表中，该文章可以给读者一些参考。
+- [如何将自定义的插件展示在管理控制台的安装列表](./plugins_in_manager.md)：eKuiper 提供了插件的扩展机制，用户可以基于扩展接口来实现自定义的插件。在管理控制台上，用户可以直接通过界面进行插件的安装。如果读者有自定义的插件，也想出现在管理控制台的安装列表中，该文章可以给读者一些参考。
 - 如果想开发自己的插件，读者可以参考[插件开发教程](../../extension/native/develop/plugins_tutorial.md)来获取更多信息。
 - [EMQ edge-stack 项目](https://github.com/emqx/edge-stack)：该项目可以让用户更简单地实现 EMQ 边缘系列产品的安装和试用，实现工业数据解析，边缘数据汇聚，以及基于 eKuiper 的边缘数据分析等一站式边缘解决方案。
