@@ -23,7 +23,7 @@ import (
 // ProduceErrInfo Index is starting from 0
 func ProduceErrInfo(index int, expect string) (err error) {
 	index++
-	err = fmt.Errorf("Expect %s type for %d parameter", expect, index)
+	err = fmt.Errorf("Expect %s type for parameter %d", expect, index)
 	return
 }
 
