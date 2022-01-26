@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -407,19 +407,51 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 			}
 		} else {
 			if valuer, ok := v.Valuer.(CallValuer); ok {
-				var args []interface{}
-				if len(expr.Args) > 0 {
+				var (
 					args = make([]interface{}, len(expr.Args))
-					for i, arg := range expr.Args {
-						if aggreValuer, ok := valuer.(AggregateCallValuer); function.IsAggFunc(expr.Name) && ok {
-							args[i] = aggreValuer.GetAllTuples().AggregateEval(arg, aggreValuer.GetSingleCallValuer())
-						} else {
+					ft   = function.GetFuncType(expr.Name)
+				)
+				if len(expr.Args) > 0 {
+					switch ft {
+					case function.FuncTypeAgg:
+						for i, arg := range expr.Args {
+							if aggreValuer, ok := valuer.(AggregateCallValuer); ok {
+								args[i] = aggreValuer.GetAllTuples().AggregateEval(arg, aggreValuer.GetSingleCallValuer())
+							} else {
+								args[i] = v.Eval(arg)
+								if _, ok := args[i].(error); ok {
+									return args[i]
+								}
+							}
+						}
+					case function.FuncTypeScalar:
+						for i, arg := range expr.Args {
 							args[i] = v.Eval(arg)
 							if _, ok := args[i].(error); ok {
 								return args[i]
 							}
 						}
+					case function.FuncTypeCols:
+						keys := make([]string, len(expr.Args))
+						for i, arg := range expr.Args { // In the parser, the col func arguments must be ColField
+							cf, ok := arg.(*ast.ColFuncField)
+							if !ok {
+								// won't happen
+								return fmt.Errorf("expect colFuncField but got %v", arg)
+							}
+							temp := v.Eval(cf.Expr)
+							if _, ok := temp.(error); ok {
+								return temp
+							}
+							args[i] = temp
+							keys[i] = cf.Name
+						}
+						args = append(args, keys)
+					default:
+						// won't happen
+						return fmt.Errorf("unknown function type")
 					}
+
 				}
 				val, _ := valuer.Call(expr.Name, args)
 				return val

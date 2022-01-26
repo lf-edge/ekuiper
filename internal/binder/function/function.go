@@ -38,6 +38,7 @@ func init() {
 	registerMathFunc()
 	registerStrFunc()
 	registerMiscFunc()
+	registerColsFunc()
 }
 
 //var funcWithAsteriskSupportMap = map[string]string{

@@ -269,3 +269,11 @@ type JsonFieldRef struct {
 
 func (fr *JsonFieldRef) expr() {}
 func (fr *JsonFieldRef) node() {}
+
+type ColFuncField struct {
+	Name string
+	Expr Expr
+}
+
+func (fr *ColFuncField) expr() {}
+func (fr *ColFuncField) node() {}
