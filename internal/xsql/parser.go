@@ -38,6 +38,7 @@ type Parser struct {
 	}
 	inmeta bool
 	f      int // anonymous field index number
+	clause string
 }
 
 func (p *Parser) parseCondition() (ast.Expr, error) {
@@ -128,25 +129,25 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 	} else if tok != ast.SELECT {
 		return nil, fmt.Errorf("Found %q, Expected SELECT.\n", lit)
 	}
-
+	p.clause = "select"
 	if fields, err := p.parseFields(); err != nil {
 		return nil, err
 	} else {
 		selects.Fields = fields
 	}
-
+	p.clause = "from"
 	if src, err := p.parseSource(); err != nil {
 		return nil, err
 	} else {
 		selects.Sources = src
 	}
-
+	p.clause = "join"
 	if joins, err := p.parseJoins(); err != nil {
 		return nil, err
 	} else {
 		selects.Joins = joins
 	}
-
+	p.clause = "where"
 	if exp, err := p.parseCondition(); err != nil {
 		return nil, err
 	} else {
@@ -154,25 +155,25 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 			selects.Condition = exp
 		}
 	}
-
+	p.clause = "groupby"
 	if dims, err := p.parseDimensions(); err != nil {
 		return nil, err
 	} else {
 		selects.Dimensions = dims
 	}
-
+	p.clause = "having"
 	if having, err := p.parseHaving(); err != nil {
 		return nil, err
 	} else {
 		selects.Having = having
 	}
-
+	p.clause = "orderby"
 	if sorts, err := p.parseSorts(); err != nil {
 		return nil, err
 	} else {
 		selects.SortFields = sorts
 	}
-
+	p.clause = ""
 	if tok, lit := p.scanIgnoreWhitespace(); tok == ast.SEMICOLON {
 		p.unscan()
 		return selects, nil
@@ -432,11 +433,7 @@ func (p *Parser) parseField() (*ast.Field, error) {
 	if exp, err := p.ParseExpr(); err != nil {
 		return nil, err
 	} else {
-		if e, ok := exp.(*ast.FieldRef); ok {
-			field.Name = e.Name
-		} else if e, ok := exp.(*ast.Call); ok {
-			field.Name = e.Name
-		}
+		field.Name = nameExpr(exp)
 		field.Expr = exp
 	}
 
@@ -453,6 +450,17 @@ func (p *Parser) parseField() (*ast.Field, error) {
 	}
 
 	return field, nil
+}
+
+func nameExpr(exp ast.Expr) string {
+	switch e := exp.(type) {
+	case *ast.FieldRef:
+		return e.Name
+	case *ast.Call:
+		return e.Name
+	default:
+		return ""
+	}
 }
 
 func (p *Parser) parseAlias() (string, error) {
@@ -684,6 +692,10 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 			p.inmeta = false
 		}()
 	}
+	ft := function.GetFuncType(name)
+	if ft == function.FuncTypeCols && p.clause != "select" {
+		return nil, fmt.Errorf("function %s can only be used inside the select clause", n)
+	}
 	var args []ast.Expr
 	for {
 		if tok, _ := p.scanIgnoreWhitespace(); tok == ast.RPAREN {
@@ -709,7 +721,12 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 		if exp, err := p.ParseExpr(); err != nil {
 			return nil, err
 		} else {
-			args = append(args, exp)
+			if ft == function.FuncTypeCols {
+				field := &ast.ColFuncField{Expr: exp, Name: nameExpr(exp)}
+				args = append(args, field)
+			} else {
+				args = append(args, exp)
+			}
 		}
 
 		if tok, _ := p.scanIgnoreWhitespace(); tok != ast.COMMA {
