@@ -45,7 +45,7 @@ type QueryResult struct {
 var QR = &QueryResult{LastFetch: time.Now()}
 
 func NewLogSinkToMemory() api.Sink {
-	QR.Results = make([]string, 10)
+	QR.Results = make([]string, 0, 10)
 	return collector.Func(func(ctx api.StreamContext, data interface{}) error {
 		var result string
 		if v, _, err := ctx.TransformOutput(data); err == nil {
