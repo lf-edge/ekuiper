@@ -118,8 +118,8 @@ func (t *Server) GetQueryResult(_ string, reply *string) error {
 	sink.QR.LastFetch = time.Now()
 	sink.QR.Mux.Lock()
 	if len(sink.QR.Results) > 0 {
-		*reply = strings.Join(sink.QR.Results, "")
-		sink.QR.Results = make([]string, 10)
+		*reply = strings.Join(sink.QR.Results, "\n")
+		sink.QR.Results = make([]string, 0, 10)
 	} else {
 		*reply = ""
 	}
