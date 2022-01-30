@@ -43,7 +43,7 @@
 
 6. 如果想停止测试，在`bin/kuiper query`命令行窗口中敲 `ctrl + c ` ，或者输入 `exit` 后回车
 
-你可以参考 [eKuiper 管理控制台](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/manager-ui/overview.md) 这篇文章来了解更好的产品使用体验。
+你可以参考 [eKuiper 管理控制台](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/operation/manager-ui/overview.md) 这篇文章来了解更好的产品使用体验。
 
 想了解更多 LF Edge eKuiper 的功能？请参考以下关于在边缘端使用 LF Edge eKuiper 与 AWS/Azure IoT 云集成的案例。
 

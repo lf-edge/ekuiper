@@ -43,7 +43,7 @@
 
 6. To stop the test, just press `ctrl + c` in `bin/kuiper query` command console, or input `exit` and press enter.
 
-You can also refer to [eKuiper dashboard documentation](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/manager-ui/overview.md) for better using experience.
+You can also refer to [eKuiper dashboard documentation](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/operation/manager-ui/overview.md) for better using experience.
 
 Next for exploring more powerful features of eKuiper? Refer to below for how to apply LF Edge eKuiper in edge and integrate with AWS / Azure IoT cloud.
 
