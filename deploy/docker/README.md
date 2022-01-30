@@ -150,7 +150,7 @@ docker run -p 9081:9081 -d --name ekuiper MQTT_SOURCE__DEFAULT__SERVERS=[$MQTT_B
 
 5. To stop the test, just press ``ctrl + c `` in ``bin/kuiper query`` command console.
 
-You can also refer to [eKuiper dashboard documentation](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/manager-ui/overview.md) for better using experience.
+You can also refer to [eKuiper dashboard documentation](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/operation/manager-ui/overview.md) for better using experience.
 
 Next for exploring more powerful features of eKuiper? Refer to below for how to apply LF Edge eKuiper in edge and integrate with AWS / Azure IoT cloud.
 
