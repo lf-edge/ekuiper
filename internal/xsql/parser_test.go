@@ -459,7 +459,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s: `SELECT "abc" FROM tbl`,
 			stmt: &ast.SelectStatement{
-				Fields:  []ast.Field{{AName: "", Name: "", Expr: &ast.StringLiteral{Val: "abc"}}},
+				Fields:  []ast.Field{{AName: "", Name: "kuiper_field_0", Expr: &ast.StringLiteral{Val: "abc"}}},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
 		},
@@ -598,7 +598,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						AName: "",
-						Name:  "",
+						Name:  "kuiper_field_0",
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream},
 							OP:  ast.ADD,
@@ -616,7 +616,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						AName: "",
-						Name:  "",
+						Name:  "kuiper_field_0",
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "abc"},
 							OP:  ast.ADD,
@@ -634,7 +634,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						AName: "",
-						Name:  "",
+						Name:  "kuiper_field_0",
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream},
 							OP:  ast.ADD,
@@ -652,7 +652,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						AName: "",
-						Name:  "",
+						Name:  "kuiper_field_0",
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.BinaryExpr{
 								LHS: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream},
@@ -756,7 +756,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						AName: "",
-						Name:  "",
+						Name:  "kuiper_field_0",
 						Expr:  &ast.NumberLiteral{Val: 0.2},
 					},
 				},
@@ -770,7 +770,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						AName: "",
-						Name:  "",
+						Name:  "kuiper_field_0",
 						Expr:  &ast.NumberLiteral{Val: 0.2},
 					},
 				},
@@ -1394,7 +1394,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						AName: "",
-						Name:  "",
+						Name:  "kuiper_field_0",
 						Expr: &ast.BinaryExpr{
 							OP: ast.SUB,
 							LHS: &ast.Call{
@@ -1708,7 +1708,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							OP:  ast.SUBSET,
 							RHS: &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: 0}},
 						},
-						Name:  "",
+						Name:  "kuiper_field_0",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
@@ -1730,7 +1730,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.JsonFieldRef{Name: "first"},
 						},
 
-						Name:  "",
+						Name:  "kuiper_field_0",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
@@ -1752,7 +1752,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: 2}},
 						},
 
-						Name:  "",
+						Name:  "kuiper_field_0",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
@@ -1778,7 +1778,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.JsonFieldRef{Name: "test"},
 						},
 
-						Name:  "",
+						Name:  "kuiper_field_0",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
@@ -1795,7 +1795,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							OP:  ast.SUBSET,
 							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
 						},
-						Name:  "",
+						Name:  "kuiper_field_0",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
@@ -1812,7 +1812,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							OP:  ast.SUBSET,
 							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
 						},
-						Name:  "",
+						Name:  "kuiper_field_0",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
@@ -1829,7 +1829,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							OP:  ast.SUBSET,
 							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: math.MinInt32}},
 						},
-						Name:  "",
+						Name:  "kuiper_field_0",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
@@ -1932,7 +1932,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							OP:  ast.SUBSET,
 							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
 						},
-						Name:  "",
+						Name:  "kuiper_field_0",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
@@ -1963,7 +1963,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							OP:  ast.SUBSET,
 							RHS: &ast.IndexExpr{Index: &ast.FieldRef{Name: "index", StreamName: ast.DefaultStream}},
 						},
-						Name:  "",
+						Name:  "kuiper_field_0",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
