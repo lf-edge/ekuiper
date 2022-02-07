@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -115,6 +115,103 @@ func TestSinkTemplate_Apply(t *testing.T) {
 		s.Open(ctx, make(chan error))
 		s.input <- tt.data
 		time.Sleep(1 * time.Second)
+		s.close(ctx, contextLogger)
+		results := mockSink.GetResults()
+		if !reflect.DeepEqual(tt.result, results) {
+			t.Errorf("%d \tresult mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, results)
+		}
+	}
+}
+
+func TestOmitEmpty_Apply(t *testing.T) {
+	conf.InitConf()
+	var tests = []struct {
+		config map[string]interface{}
+		data   []map[string]interface{}
+		result [][]byte
+	}{
+		{ // 0
+			config: map[string]interface{}{
+				"sendSingle":  true,
+				"omitIfEmpty": true,
+			},
+			data:   []map[string]interface{}{{"ab": "hello1"}, {"ab": "hello2"}},
+			result: [][]byte{[]byte(`{"ab":"hello1"}`), []byte(`{"ab":"hello2"}`)},
+		}, { // 1
+			config: map[string]interface{}{
+				"sendSingle":  false,
+				"omitIfEmpty": true,
+			},
+			data:   []map[string]interface{}{{"ab": "hello1"}, {"ab": "hello2"}},
+			result: [][]byte{[]byte(`[{"ab":"hello1"},{"ab":"hello2"}]`)},
+		}, { // 2
+			config: map[string]interface{}{
+				"sendSingle":  false,
+				"omitIfEmpty": false,
+			},
+			data:   []map[string]interface{}{},
+			result: [][]byte{[]byte(`[]`)},
+		}, { // 3
+			config: map[string]interface{}{
+				"sendSingle":  false,
+				"omitIfEmpty": false,
+			},
+			data:   nil,
+			result: [][]byte{[]byte(`null`)},
+		}, { // 4
+			config: map[string]interface{}{
+				"sendSingle":  true,
+				"omitIfEmpty": false,
+			},
+			data:   []map[string]interface{}{},
+			result: nil,
+		}, { // 5
+			config: map[string]interface{}{
+				"sendSingle":  false,
+				"omitIfEmpty": true,
+			},
+			data:   []map[string]interface{}{},
+			result: nil,
+		}, { // 6
+			config: map[string]interface{}{
+				"sendSingle":  false,
+				"omitIfEmpty": true,
+			},
+			data:   nil,
+			result: nil,
+		}, { // 7
+			config: map[string]interface{}{
+				"sendSingle":  true,
+				"omitIfEmpty": false,
+			},
+			data:   []map[string]interface{}{},
+			result: nil,
+		}, { // 8
+			config: map[string]interface{}{
+				"sendSingle":  true,
+				"omitIfEmpty": true,
+			},
+			data:   []map[string]interface{}{{"ab": "hello1"}, {}},
+			result: [][]byte{[]byte(`{"ab":"hello1"}`)},
+		}, { // 9
+			config: map[string]interface{}{
+				"sendSingle":  true,
+				"omitIfEmpty": false,
+			},
+			data:   []map[string]interface{}{{"ab": "hello1"}, {}},
+			result: [][]byte{[]byte(`{"ab":"hello1"}`), []byte(`{}`)},
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := conf.Log.WithField("rule", "TestOmitEmpty_Apply")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	for i, tt := range tests {
+		mockSink := mocknode.NewMockSink()
+		s := NewSinkNodeWithSink("mockSink", mockSink, tt.config)
+		s.Open(ctx, make(chan error))
+		s.input <- tt.data
+		time.Sleep(100 * time.Millisecond)
 		s.close(ctx, contextLogger)
 		results := mockSink.GetResults()
 		if !reflect.DeepEqual(tt.result, results) {
