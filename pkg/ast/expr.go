@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -172,7 +172,6 @@ const (
 //  1.1 Explicit field "stream.col"
 //  1.2 Implicit field "col"  -> only exist in schemaless stream. Otherwise, explicit stream name will be bound
 //  1.3 Alias field "expr as c" -> refer to an Expression or column
-// 2. Json Expression field like a->b
 type FieldRef struct {
 	// optional, bind in analyzer, empty means alias, default means not set
 	// MUST have after binding for SQL fields. For 1.2,1.3 and 1.4, use special constant as stream name

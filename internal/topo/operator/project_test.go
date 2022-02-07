@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				Message: xsql.Message{},
 			},
 			result: []map[string]interface{}{{
-				"": "value",
+				"kuiper_field_0": "value",
 			}},
 		},
 		//6
@@ -118,7 +118,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				Message: xsql.Message{},
 			},
 			result: []map[string]interface{}{{
-				"": 3.4,
+				"kuiper_field_0": 3.4,
 			}},
 		},
 		//7
@@ -129,7 +129,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				Message: xsql.Message{},
 			},
 			result: []map[string]interface{}{{
-				"": 5,
+				"kuiper_field_0": 5,
 			}},
 		},
 		//8
