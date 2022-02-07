@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"strconv"
 	"strings"
 )
 
@@ -70,10 +69,6 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt,
 		})
 		if walkErr != nil {
 			return nil, walkErr
-		}
-		// assign name for anonymous select expression
-		if f.Name == "" && f.AName == "" {
-			s.Fields[i].Name = fieldsMap.getDefaultName()
 		}
 		if f.AName != "" {
 			aliasFields = append(aliasFields, &s.Fields[i])
@@ -235,17 +230,6 @@ func (f *fieldsMap) bind(fr *ast.FieldRef) error {
 		return fmt.Errorf("%s%s", err, fr.Name)
 	}
 	return nil
-}
-
-func (f *fieldsMap) getDefaultName() string {
-	for i := 0; i < 2048; i++ {
-		key := xsql.DEFAULT_FIELD_NAME_PREFIX + strconv.Itoa(i)
-		if _, ok := f.content[key]; !ok {
-			f.content[key] = nil
-			return key
-		}
-	}
-	return ""
 }
 
 type streamFieldStore interface {

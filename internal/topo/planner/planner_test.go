@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -416,7 +416,7 @@ func Test_createLogicalPlan(t *testing.T) {
 				fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "kuiper_field_0",
+						Name:  "",
 						AName: ""},
 				},
 				isAggregate: false,
@@ -1446,7 +1446,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "kuiper_field_0",
+						Name:  "",
 						AName: ""},
 				},
 				isAggregate: false,
