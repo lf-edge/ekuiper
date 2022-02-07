@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -266,7 +266,7 @@ func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats Sta
 		outs = val
 	default:
 		outs = []map[string]interface{}{
-			{"error": fmt.Sprintf("result is not a string but found %#v", val)},
+			{"error": fmt.Sprintf("result is not a map slice but found %#v", val)},
 		}
 	}
 	if sconf.Omitempty && (item == nil || len(outs) == 0) {
@@ -277,6 +277,10 @@ func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats Sta
 		doCollectData(ctx, sink, outs, stats, sconf, signalCh)
 	} else {
 		for _, d := range outs {
+			if sconf.Omitempty && (d == nil || len(d) == 0) {
+				ctx.GetLogger().Debugf("receive empty in sink")
+				continue
+			}
 			doCollectData(ctx, sink, d, stats, sconf, signalCh)
 		}
 	}
