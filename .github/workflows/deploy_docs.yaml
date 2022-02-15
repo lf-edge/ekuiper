@@ -8,6 +8,8 @@ on:
   push:
     branches:
       - master
+    paths:
+      - 'docs/**'
 
 jobs:
   deploy:
@@ -50,36 +52,12 @@ jobs:
          echo "VERSION=$VERSION" >> $GITHUB_ENV
          echo "DOCS_TYPE=kuiper" >> $GITHUB_ENV
 
-    - name: get last version
-      run: |
-         cd docs-files
-         last_sha_url=https://docs.emqx.com/sha/${DOCS_TYPE}
-         if [[ "$VERSION" != "latest" ]];
-         then
-            is_changed=1
-         elif curl -fs $last_sha_url > /dev/null;
-         then
-            last_sha=$(curl $last_sha_url)
-            echo $last_sha;
-            if [[ -n $(git diff --name-only "$last_sha"...HEAD -- "docs") ]]
-            then 
-                is_changed=1
-            else
-                is_changed=0
-            fi
-         else
-            is_changed=1
-         fi
-         echo "CHANGED=$is_changed" >> $GITHUB_ENV
-
     - name: remove unused files
-      if: ${{ env.CHANGED == '1' }}
       run: |
         cd docs-files
         python3 .ci/remove_unused.py $(pwd)/docs
 
     - name: move files
-      if: ${{ env.CHANGED == '1' }}
       run: |
         rm frontend/docs/en/README.md || true
         rm frontend/docs/zh/README.md || true
@@ -94,19 +72,11 @@ jobs:
         echo "[\"latest\"]" > frontend/docs/.vuepress/public/api/${DOCS_TYPE}_versions.json
 
     - name: build docs
-      if: ${{ env.CHANGED == '1' }}
       run: |
         cd frontend
         yarn && yarn build
-        if [[ "$VERSION" == "latest" ]];
-        then
-            mkdir -p docs/.vuepress/dist/sha/
-            touch docs/.vuepress/dist/sha/${DOCS_TYPE}
-            echo $GITHUB_SHA >> docs/.vuepress/dist/sha/${DOCS_TYPE}
-        fi
 
     - name: upload dist
-      if: ${{ env.CHANGED == '1' }}
       run: |
         pip3 install coscmd
         coscmd config -a ${{ secrets.COS_ID }} -s ${{ secrets.COS_KEY }} -b ${{ secrets.COS_NAME }} -r ${{ secrets.COS_REGION }}
@@ -118,14 +88,13 @@ jobs:
         coscmd upload docs-dist-${DOCS_TYPE}-${VERSION}.zip docs-zip/
         sleep 90
 
-    - name: flush CDN
-      if: ${{ env.CHANGED == '1' }}
+    - name: flush cdn
       run: |
         pip3 install tccli
         tccli configure set secretId ${{ secrets.COS_ID }}
         tccli configure set secretKey ${{ secrets.COS_KEY }}
         tccli configure set region ${{ secrets.COS_REGION }}
-        tccli cdn PurgePathCache --cli-unfold-argument --Paths https://docs.emqx.com/zh/${DOCS_TYPE}/${VERSION}/ https://docs.emqx.com/en/${DOCS_TYPE}/${VERSION}/ https://docs.emqx.com/sha/ --FlushType delete
+        tccli cdn PurgePathCache --cli-unfold-argument --Paths https://docs.emqx.com/zh/${DOCS_TYPE}/${VERSION}/ https://docs.emqx.com/en/${DOCS_TYPE}/${VERSION}/ --FlushType delete
         tccli cdn PurgeUrlsCache --cli-unfold-argument --Urls https://docs.emqx.com/api/${DOCS_TYPE}_versions.json https://docs.emqx.com/sitemap_${DOCS_TYPE}_${VERSION}.xml
 
     - name: clone docsearch
@@ -134,7 +103,7 @@ jobs:
         repository: 'Swilder-M/docsearch-scraper-simple'
         path: docsearch
 
-    - name: Install pipenv
+    - name: install pipenv
       run: |
           python -m pip install --upgrade pipenv wheel
 
@@ -151,7 +120,7 @@ jobs:
         pipenv install --keep-outdated
 
     - name: update current version
-      if: ${{ env.VERSION == 'latest' && env.CHANGED == '1' }}
+      if: env.VERSION == 'latest'
       env:
         APPLICATION_ID: ${{ secrets.DOCS_APPLICATION_ID }}
         API_KEY: ${{ secrets.DOCS_API_KEY }}
