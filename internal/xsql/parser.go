@@ -36,8 +36,8 @@ type Parser struct {
 		tok ast.Token
 		lit string
 	}
-	inmeta bool
-	f      int // anonymous field index number
+	inFunc string // currently parsing function name
+	f      int    // anonymous field index number
 	clause string
 }
 
@@ -543,7 +543,7 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 		if n, err := p.parseFieldNameSections(); err != nil {
 			return nil, err
 		} else {
-			if p.inmeta {
+			if p.inmeta() {
 				if len(n) == 2 {
 					return &ast.MetaRef{StreamName: ast.StreamName(n[0]), Name: n[1]}, nil
 				}
@@ -580,6 +580,8 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 		}
 	} else if tok.IsTimeLiteral() {
 		return &ast.TimeLiteral{Val: tok}, nil
+	} else if tok == ast.ASTERISK {
+		return p.parseAsterisk()
 	}
 
 	return nil, fmt.Errorf("found %q, expected expression.", lit)
@@ -686,12 +688,8 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 	if !ok {
 		return nil, fmt.Errorf("function %s not found", n)
 	}
-	if name == "meta" || name == "mqtt" {
-		p.inmeta = true
-		defer func() {
-			p.inmeta = false
-		}()
-	}
+	p.inFunc = name
+	defer func() { p.inFunc = "" }()
 	ft := function.GetFuncType(name)
 	if ft == function.FuncTypeCols && p.clause != "select" {
 		return nil, fmt.Errorf("function %s can only be used inside the select clause", n)
@@ -703,17 +701,6 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 				return nil, valErr
 			}
 			return &ast.Call{Name: name, Args: args}, nil
-		} else if tok == ast.ASTERISK {
-			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 != ast.RPAREN {
-				return nil, fmt.Errorf("found %q, expected right paren.", lit2)
-			} else {
-				if p.inmeta {
-					args = append(args, &ast.MetaRef{StreamName: ast.DefaultStream, Name: "*"})
-				} else {
-					args = append(args, &ast.Wildcard{Token: ast.ASTERISK})
-				}
-				return &ast.Call{Name: name, Args: args}, nil
-			}
 		} else {
 			p.unscan()
 		}
@@ -1357,4 +1344,19 @@ func (p *Parser) parseFilter() (ast.Expr, error) {
 		return nil, fmt.Errorf("Found %q after FILTER, expect right parentheses.", lit)
 	}
 	return expr, nil
+}
+
+func (p *Parser) parseAsterisk() (ast.Expr, error) {
+	switch p.inFunc {
+	case "mqtt", "meta":
+		return &ast.MetaRef{StreamName: ast.DefaultStream, Name: "*"}, nil
+	case "":
+		return nil, fmt.Errorf("unsupported * expression, it must be used inside fields or function parameters.")
+	default:
+		return &ast.Wildcard{Token: ast.ASTERISK}, nil
+	}
+}
+
+func (p *Parser) inmeta() bool {
+	return p.inFunc == "meta" || p.inFunc == "mqtt"
 }

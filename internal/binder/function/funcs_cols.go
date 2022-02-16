@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"reflect"
 )
 
 type ResultCols map[string]interface{}
@@ -86,7 +87,7 @@ func changedFunc(ctx api.FunctionContext, args []interface{}, keys []string) (Re
 		if err != nil {
 			return nil, err
 		}
-		if lv != v {
+		if !reflect.DeepEqual(v, lv) {
 			if r == nil {
 				r = make(ResultCols)
 			}
