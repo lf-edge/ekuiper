@@ -151,7 +151,7 @@ func (t *Tuple) Meta(key, table string) (interface{}, bool) {
 	return t.Metadata.Value(key, table)
 }
 
-func (t *Tuple) All(string) (interface{}, bool) {
+func (t *Tuple) All(string) (Message, bool) {
 	return t.Message, true
 }
 
@@ -370,7 +370,7 @@ func (jt *JoinTuple) Meta(key, table string) (interface{}, bool) {
 	return jt.doGetValue(key, table, false)
 }
 
-func (jt *JoinTuple) All(stream string) (interface{}, bool) {
+func (jt *JoinTuple) All(stream string) (Message, bool) {
 	if stream != "" {
 		for _, t := range jt.Tuples {
 			if t.Emitter == stream {

@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -76,14 +77,58 @@ func TestChangedColsFunc_Apply1(t *testing.T) {
 			}}, {{}}, {{
 				"c": "c2",
 			}}},
+		}, {
+			sql: `SELECT changed_cols("", true, *, c) FROM test`,
+			data: []interface{}{
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"b": "b1",
+					},
+				},
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"b": "b2",
+						"c": "c1",
+					},
+				},
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"c": "c1",
+					},
+				},
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"b": "b2",
+						"c": "c2",
+					},
+				},
+			},
+			result: [][]map[string]interface{}{{{
+				"a": "a1",
+				"b": "b1",
+			}}, {{
+				"b": "b2",
+				"c": "c1",
+			}}, {{}}, {{
+				"c": "c2",
+			}}},
 		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestMiscFunc_Apply1")
-	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("mockRule0", "project", tempStore)
+
 	for i, tt := range tests {
+		tempStore, _ := state.CreateStore("mockRule"+strconv.Itoa(i), api.AtMostOnce)
+		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("mockRule"+strconv.Itoa(i), "project", tempStore)
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
