@@ -170,3 +170,99 @@ When casting to datetime type, the supported column type and casting rule are:
 | meta         | meta(topic)       | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as `meta(device)`<br />- A qualified key to specify the stream, such as `meta(src1.device)` <br />- A key with arrow for multi level meta data, such as `meta(src1.reading->device->name)` This assumes reading is a map structure meta data.              |
 | window_start | window_start()    | Return the window start timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.                                        |
 | window_end   | window_end()      | Return the window end timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.                                          |
+
+## Multiple Column Functions
+
+A multiple column function is a function that returns multiple columns. Contrast to normal scalar function, which returns a single column of a single row.
+
+Multiple column function can only be used in the `SELECT` clause of a query. 
+
+| Function     | Example                                      | Description                                                                                                  |
+|--------------|----------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| changed_cols | changed_cols(prefix, ignoreNull, colA, colB) | Return the changed columns whose name are prefixed. Check [changed_cols](#changed_cols-function) for detail. |
+
+### Changed_cols function
+
+This function returns multiple columns, so it is only allowed in the SELECT clause.
+
+**Syntax**
+
+```CHANGED_COLS (<prefix>, <ignoreNull>, <expr> [,...,<exprN>])```
+
+**Arguments**
+
+**prefix**: The prefix of the selected column name. By default, the selected name will be the same as select the expr directly. For example, `CHANGED_COLS("", true, col1)` will return `col1` as the name. If setting a prefix, the return name will have that prefix. For example, `CHANGED_COLS("changed_", true, col1)` will return `changed_col1` as the name.
+
+**ignoreNull**: whether to ignore null values when detecting changes. If true, the null value won’t trigger a change.
+
+**expr**: An expression to be selected and monitored for the changed status. Allow any expression that can be used in select clause. The expression can be a `*` which will return multiple columns by one expression.
+
+**Returns**
+
+Return all changed values compared to the previous sink result. So if using in a scalar rule, it will compare to the previous value emit. If using in a window, it will compare to the previous window result.
+
+In the first run, all expressions will be returned because there is no previous result.
+
+In the consequent runs, if nothing changed, it can emit nothing. And if the sink has the default omitEmpty, the sink will not be triggerred.
+
+**Notice**
+
+The multiple column outputs can only be used in the select clause. Even the selected result cannot be access in WHERE or other place. If filter based on the value is needed, use CHANGED_COL or set the result of multiple column outputs as the prior rule in a rule chain.
+
+For multiple column outputs, the alias can only be set  generally with the prefix. To set alias for each column separately, try to call the changed function for each column respectively and use as to set alias. 
+
+**Examples**
+
+Create a stream demo and have below inputs
+
+```json lines
+{"ts":1, "temperature":23, "humdity":88}
+{"ts":2, "temperature":23, "humdity":88}
+{"ts":3, "temperature":23, "humdity":88}
+{"ts":4, "temperature":25, "humdity":88}
+{"ts":5, "temperature":25, "humdity":90}
+{"ts":6, "temperature":25, "humdity":91}
+{"ts":7, "temperature":25, "humdity":91}
+{"ts":8, "temperature":25, "humdity":91}
+```
+
+Rule to get the changed temperature values:
+
+```text
+SQL: SELECT CHANGED_COLS("", true, temperature) FROM demo
+___________________________________________________
+{"temperature":23}
+{"temperature":25}
+```
+
+Rule to get the changed temperature and humidity values, and rename the changed value in a unified prefix:
+
+```text
+SQL: SELECT CHANGED_COLS("c_", true, temperature, humidity) FROM demo
+_________________________________________________________
+{"c_temperature":23,"c_humidity":88}
+{"c_temperature":25}
+{"c_humidity":90}
+{"c_humidity":91}
+```
+
+Rule to get the changed values of all columns and do not ignore null:
+
+```text
+SQL: SELECT CHANGED_COLS("c_", false, *) FROM demo
+_________________________________________________________
+{"c_temperature":23,"c_humidity":88}
+{"c_temperature":25}
+{"c_humidity":90}
+{"c_humidity":91}
+```
+
+Rule to get the average value change in a window:
+
+```text
+SQL: SELECT CHANGED_COLS("t", true, avg(temperature)) FROM demo GROUP BY CountWindow(2)
+_________________________________________________________________
+{"tavg":23}
+{"tavg":24}
+{"tavg":25}
+```
