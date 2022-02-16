@@ -436,7 +436,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s:    `SELECT count(*, f1) FROM tbl`,
 			stmt: nil,
-			err:  `found ",", expected right paren.`,
+			err:  `Expect 1 arguments but found 2.`,
 		},
 
 		{
@@ -1460,6 +1460,41 @@ func TestParser_ParseStatement(t *testing.T) {
 								&ast.ColFuncField{Name: "b", Expr: &ast.FieldRef{
 									StreamName: ast.DefaultStream,
 									Name:       "b",
+								}},
+								&ast.ColFuncField{Name: "c", Expr: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "c",
+								}},
+							},
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		}, {
+			s: `SELECT changed_cols("",true,a,*,c) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "changed_cols",
+						Expr: &ast.Call{
+							Name: "changed_cols",
+							Args: []ast.Expr{
+								&ast.ColFuncField{
+									Name: "",
+									Expr: &ast.StringLiteral{Val: ""},
+								},
+								&ast.ColFuncField{
+									Name: "",
+									Expr: &ast.BooleanLiteral{Val: true},
+								},
+								&ast.ColFuncField{Name: "a", Expr: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "a",
+								}},
+								&ast.ColFuncField{Name: "", Expr: &ast.Wildcard{
+									Token: ast.ASTERISK,
 								}},
 								&ast.ColFuncField{Name: "c", Expr: &ast.FieldRef{
 									StreamName: ast.DefaultStream,
