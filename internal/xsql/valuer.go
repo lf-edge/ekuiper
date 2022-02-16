@@ -59,8 +59,8 @@ type AggregateCallValuer interface {
 }
 
 type Wildcarder interface {
-	// Value returns the value and existence flag for a given key.
-	All(stream string) (interface{}, bool)
+	// All Value returns the value and existence flag for a given key.
+	All(stream string) (Message, bool)
 }
 
 type DataValuer interface {
@@ -99,7 +99,7 @@ type SortingData interface {
 	Index(i int) Valuer
 }
 
-// multiSorter implements the Sort interface, sorting the changes within.Hi
+// MultiSorter multiSorter implements the Sort interface, sorting the changes within.Hi
 type MultiSorter struct {
 	SortingData
 	fields ast.SortFields
@@ -408,12 +408,13 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		} else {
 			if valuer, ok := v.Valuer.(CallValuer); ok {
 				var (
-					args = make([]interface{}, len(expr.Args))
+					args []interface{}
 					ft   = function.GetFuncType(expr.Name)
 				)
 				if len(expr.Args) > 0 {
 					switch ft {
 					case function.FuncTypeAgg:
+						args = make([]interface{}, len(expr.Args))
 						for i, arg := range expr.Args {
 							if aggreValuer, ok := valuer.(AggregateCallValuer); ok {
 								args[i] = aggreValuer.GetAllTuples().AggregateEval(arg, aggreValuer.GetSingleCallValuer())
@@ -425,6 +426,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 							}
 						}
 					case function.FuncTypeScalar:
+						args = make([]interface{}, len(expr.Args))
 						for i, arg := range expr.Args {
 							args[i] = v.Eval(arg)
 							if _, ok := args[i].(error); ok {
@@ -432,8 +434,8 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 							}
 						}
 					case function.FuncTypeCols:
-						keys := make([]string, len(expr.Args))
-						for i, arg := range expr.Args { // In the parser, the col func arguments must be ColField
+						var keys []string
+						for _, arg := range expr.Args { // In the parser, the col func arguments must be ColField
 							cf, ok := arg.(*ast.ColFuncField)
 							if !ok {
 								// won't happen
@@ -443,8 +445,20 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 							if _, ok := temp.(error); ok {
 								return temp
 							}
-							args[i] = temp
-							keys[i] = cf.Name
+							switch cf.Expr.(type) {
+							case *ast.Wildcard:
+								m, ok := temp.(Message)
+								if !ok {
+									return fmt.Errorf("wildcarder return non message result")
+								}
+								for kk, vv := range m {
+									args = append(args, vv)
+									keys = append(keys, kk)
+								}
+							default:
+								args = append(args, temp)
+								keys = append(keys, cf.Name)
+							}
 						}
 						args = append(args, keys)
 					default:
