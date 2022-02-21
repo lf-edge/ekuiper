@@ -87,8 +87,7 @@ SELECT temperature,humidity, meta(id) AS eid,meta(origin) AS eo, meta(temperatur
 
 ## Summary
 
-`meta` function can be used in eKuiper to access metadata values. Below lists all available keys for `Events` and `Reading`.
+`meta` function can be used in eKuiper to access metadata values. Below lists all available keys for `Event` and `Reading`.
 
-- Events: id, deviceName, profileName, sourceName, origin, tags, correlationid
-- Readning: id, deviceName, profileName, origin, valueType
-
+- Event: id, deviceName, profileName, sourceName, origin, tags, correlationid
+- Reading: id, deviceName, profileName, origin, valueType
