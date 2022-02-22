@@ -160,16 +160,17 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 **请参阅 [json 路径函数](./json_expr.md#Json-路径函数) 了解如何编写json路径。**
 
 ## 其它函数
-| 函数           | 示例                | 说明                                                                                                                                                                                |
-|--------------|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| isNull       | isNull(col1)      | 如果参数为空值，则返回 true。                                                                                                                                                                 |
-| cardinality  | cardinality(col1) | 组中成员的数量。空值为0。                                                                                                                                                                     |
-| newuuid      | newuuid()         | 返回一个随机的16字节 UUID。                                                                                                                                                                 |
-| tstamp       | tstamp()          | 返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。                                                                                                                                       |
-| mqtt         | mqtt(topic)       | 返回指定键的 MQTT 元数据。 当前支持的键包括<br />-topic：返回消息的主题。 如果有多个流源，则在参数中指定源名称。 如 `mqtt(src1.topic)`<br />- messageid：返回消息的消息ID。 如果有多个流源，则在参数中指定源名称。 如 `mqtt(src2.messageid)`                  |
-| meta         | meta(topic)       | 返回指定键的元数据。 键可能是：<br/>-如果 from 子句中只有一个来源，则为独立键，例如`meta(device)`<br />-用于指定流的合格键，例如 `meta(src1.device)` <br />-用于多级元数据的带有箭头的键，例如 `meta(src1.reading->device->name)`。这里假定读取是地图结构元数据。 |
-| window_start | window_start()    | 返回窗口的开始时间戳，格式为 int64。若运行时没有时间窗口，则返回默认值0。窗口的时间与规则所用的时间系统相同。若规则采用处理时间，则窗口的时间也为处理时间；若规则采用事件事件，则窗口的时间也为事件时间。                                                                          |
-| window_end   | window_end()      | 返回窗口的结束时间戳，格式为 int64。若运行时没有时间窗口，则返回默认值0。窗口的时间与规则所用的时间系统相同。若规则采用处理时间，则窗口的时间也为处理时间；若规则采用事件事件，则窗口的时间也为事件时间。                                                                          |
+| 函数           | 示例                     | 说明                                                                                                                                                                                |
+|--------------|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| isNull       | isNull(col1)           | 如果参数为空值，则返回 true。                                                                                                                                                                 |
+| cardinality  | cardinality(col1)      | 组中成员的数量。空值为0。                                                                                                                                                                     |
+| newuuid      | newuuid()              | 返回一个随机的16字节 UUID。                                                                                                                                                                 |
+| tstamp       | tstamp()               | 返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。                                                                                                                                       |
+| mqtt         | mqtt(topic)            | 返回指定键的 MQTT 元数据。 当前支持的键包括<br />-topic：返回消息的主题。 如果有多个流源，则在参数中指定源名称。 如 `mqtt(src1.topic)`<br />- messageid：返回消息的消息ID。 如果有多个流源，则在参数中指定源名称。 如 `mqtt(src2.messageid)`                  |
+| meta         | meta(topic)            | 返回指定键的元数据。 键可能是：<br/>-如果 from 子句中只有一个来源，则为独立键，例如`meta(device)`<br />-用于指定流的合格键，例如 `meta(src1.device)` <br />-用于多级元数据的带有箭头的键，例如 `meta(src1.reading->device->name)`。这里假定读取是地图结构元数据。 |
+| window_start | window_start()         | 返回窗口的开始时间戳，格式为 int64。若运行时没有时间窗口，则返回默认值0。窗口的时间与规则所用的时间系统相同。若规则采用处理时间，则窗口的时间也为处理时间；若规则采用事件事件，则窗口的时间也为事件时间。                                                                          |
+| window_end   | window_end()           | 返回窗口的结束时间戳，格式为 int64。若运行时没有时间窗口，则返回默认值0。窗口的时间与规则所用的时间系统相同。若规则采用处理时间，则窗口的时间也为处理时间；若规则采用事件事件，则窗口的时间也为事件时间。                                                                          |
+| changed_col  | changed_col(true, col) | 返回列的相比上次执行后的变化值。若未变化则返回 null 。                                                                                                                                                    |
 
 ## 多列函数
 
@@ -180,6 +181,26 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 | 函数           | 示例                                           | 说明                                                            |
 |--------------|----------------------------------------------|---------------------------------------------------------------|
 | changed_cols | changed_cols(prefix, ignoreNull, colA, colB) | 返回值有变化的列，列名添加指定前缀。请看 [changed_cols](#changed_cols-函数) 了解更多用法。 |
+
+## 监控变化的函数
+
+### Changed_col 函数
+
+该函数为普通的标量函数，因此可在任意的子句，包括 SELECT 和 WHERE 中使用。
+
+**语法**
+
+```CHANGED_COL(<ignoreNull>, <expr>)```
+
+**参数**
+
+**ignoreNull**:  判断变化时是否忽略 null 值。若为 true，则收到 null 值或未收到值不会触发变化。
+
+**expr**: 用来监控变化状态和输出变化值的表达式。
+
+**返回值**
+
+返回变化后的值或者 null （未变化）。与所有标量函数相同，该函数默认返回的列名未函数的名字 changed_col 。可使用 `as alias` 赋别名。
 
 ### Changed_cols 函数
 
@@ -211,7 +232,7 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 
 函数返回的列命别名仅能通过 prefix 参数做全局的设置。若需要给每个列设置单独的别名，则需要使用 CHANGED_COL 函数。
 
-**范例**
+### 范例
 
 创建流 demo，并给与如下输入。
 
@@ -265,4 +286,46 @@ _________________________________________________________________
 {"tavg":23}
 {"tavg":24}
 {"tavg":25}
+```
+
+当 temperature 或者 humidity 变化时获取数据:
+
+```text
+SQL: SELECT id, temperature, humidity FROM demo
+WHERE ISNULL(CHANGED_COL(temperature)) = false OR ISNULL(CHANGED_COL(humidity)) = false
+_________________________________________________________
+{"ts":1,temperature":23,"humidity":88}
+{"ts":4,temperature":25,"humidity":88}
+{"ts":5,temperature":25,"humidity":90}
+{"ts":6,temperature":25,"humidity":91}
+```
+
+当 temperature 变化且 humidity 未变化时获取数据:
+
+```text
+SQL: SELECT id, temperature, humidity FROM demo 
+WHERE ISNULL(HAD_CHANGED(temperature)) = false AND ISNULL(HAD_CHANGED(humidity))
+_________________________________________________________
+{"ts":1,temperature":23,"humidity":88}
+{"ts":4,temperature":25,"humidity":88}
+```
+
+获取 temperature 和 humidity 的变化值并赋自定义名:
+
+```text
+SQL: SELECT CHANGED_COL(temperature) AS myTemp, CHANGED_COL(humidity) AS myHum FROM demo
+_________________________________________________________
+{"myTemp":23,"myHum":88}
+{"myTemp":25}
+{"myHum":90}
+{"myHum":91}
+```
+
+当 temperature 值变化后大于 24 时获取数据:
+
+```text
+SQL: SELECT id, temperature, humidity FROM demo 
+WHERE CHANGED_COL(temperature) > 24
+_________________________________________________________
+{"ts":4,temperature":25,"humidity":88}
 ```
