@@ -324,7 +324,6 @@ func TestPrintConf(t *testing.T) {
 		"Password": "fafsadfsadf=",
 		"Prob":     "Prob",
 	}}
-	printConf(mbconf)
 	if !reflect.DeepEqual(expMbconf, mbconf) {
 		t.Errorf("conf changed after printing")
 	}
