@@ -23,36 +23,26 @@ import (
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
-	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
-	"github.com/lf-edge/ekuiper/internal/conf"
+	connectionType "github.com/lf-edge/ekuiper/internal/topo/connection/types"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/message"
 	"strconv"
 	"strings"
 )
 
 type EdgexSource struct {
-	mbconf types.MessageBusConfig
-	conSel string
+	cli connectionType.MessageClient
 
-	client      messaging.MessageClient
-	subscribed  bool
+	config      map[string]interface{}
 	topic       string
 	messageType messageType
+	buflen      int
 }
 
 type EdgexConf struct {
-	Format             string            `json:"format"`
-	Protocol           string            `json:"protocol"`
-	Server             string            `json:"server"`
-	Port               int               `json:"port"`
-	Topic              string            `json:"topic"`
-	Type               string            `json:"type"`
-	MessageType        messageType       `json:"messageType"`
-	Optional           map[string]string `json:"optional"`
-	ConnectionSelector string            `json:"connectionSelector"`
+	Topic       string      `json:"topic"`
+	MessageType messageType `json:"messageType"`
+	BufferLen   int         `json:"bufferLength"`
 }
 
 type messageType string
@@ -64,109 +54,54 @@ const (
 
 func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 	c := &EdgexConf{
-		Format:      message.FormatJson,
-		Protocol:    "redis",
-		Server:      "localhost",
-		Port:        6379,
-		Type:        messaging.Redis,
 		MessageType: MessageTypeEvent,
 	}
 	err := cast.MapToStruct(props, c)
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
-	if c.Format != message.FormatJson {
-		return fmt.Errorf("edgex source only supports `json` format")
+	if c.BufferLen <= 0 {
+		c.BufferLen = 1024
 	}
-
-	if c.MessageType != MessageTypeEvent && c.MessageType != MessageTypeRequest {
-		return fmt.Errorf("specified wrong messageType value %s", c.MessageType)
-	}
-
-	if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT && c.Type != messaging.Redis {
-		return fmt.Errorf("specified wrong type value %s", c.Type)
-	}
-
-	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: c.Protocol, Host: c.Server, Port: c.Port}, Type: c.Type}
-	mbconf.Optional = c.Optional
-	if c.ConnectionSelector == "" {
-		printConf(mbconf)
-	} else {
-		conf.Log.Infof("use connection selector %s for edgex source", c.ConnectionSelector)
-	}
-	es.conSel = c.ConnectionSelector
-	es.mbconf = mbconf
+	es.buflen = c.BufferLen
 	es.messageType = c.MessageType
 	es.topic = c.Topic
 
 	return nil
 }
 
-// Modify the copied conf to print no password.
-func printConf(mbconf types.MessageBusConfig) {
-	var printableOptional = make(map[string]string)
-	for k, v := range mbconf.Optional {
-		if strings.EqualFold(k, "password") {
-			printableOptional[k] = "*"
-		} else {
-			printableOptional[k] = v
-		}
-	}
-	mbconf.Optional = printableOptional
-	conf.Log.Infof("Use configuration for edgex messagebus %v", mbconf)
-}
-
-func (es *EdgexSource) getClient(ctx api.StreamContext) error {
-	log := ctx.GetLogger()
-	if es.conSel != "" {
-		con, err := ctx.GetConnection(es.conSel)
-		if err != nil {
-			log.Errorf("The edgex client for connection selector %s get fail with error: %s", es.conSel, err)
-			return err
-		}
-		es.client = con.(messaging.MessageClient)
-		log.Infof("The edge client for connection selector %s get successfully", es.conSel)
-	} else {
-		c, err := messaging.NewMessageClient(es.mbconf)
-		if err != nil {
-			return err
-		}
-		es.client = c
-
-		if err := es.client.Connect(); err != nil {
-			return fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
-		}
-		log.Infof("The connection to edgex messagebus is established successfully.")
-	}
-	return nil
-}
-
 func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	log := ctx.GetLogger()
-	if err := es.getClient(ctx); err != nil {
-		info := fmt.Errorf("Failed to get edgex message client: " + err.Error())
-		log.Errorf(info.Error())
-		errCh <- info
+
+	cli, err := ctx.GetClient("edgex", es.config)
+	if err != nil {
+		errCh <- err
+		log.Errorf("found error when get edgex client, error %s", err.Error())
 		return
 	}
-	messages := make(chan types.MessageEnvelope)
-	topics := []types.TopicChannel{{Topic: es.topic, Messages: messages}}
-	err := make(chan error)
-	if e := es.client.Subscribe(topics, err); e != nil {
+
+	es.cli = cli.(connectionType.MessageClient)
+
+	messages := make(chan *connectionType.MessageEnvelope, es.buflen)
+	topics := []connectionType.TopicChannel{{Topic: es.topic, Messages: messages}}
+	subErrs := make(chan error, len(topics))
+	if e := es.cli.Subscribe(ctx, topics, subErrs); e != nil {
 		log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
 		errCh <- e
 	} else {
-		es.subscribed = true
 		log.Infof("Successfully subscribed to edgex messagebus topic %s.", es.topic)
 		for {
 			select {
-			case e1 := <-err:
+			case <-ctx.Done():
+				return
+			case e1 := <-subErrs:
 				errCh <- e1
 				return
-			case env, ok := <-messages:
+			case msg, ok := <-messages:
 				if !ok { // the source is closed
 					return
 				}
+				env := msg.EdgexMsg
 				if strings.EqualFold(env.ContentType, "application/json") {
 					var r interface{}
 					switch es.messageType {
@@ -349,13 +284,8 @@ func convertFloatArray(v string, bitSize int) (interface{}, error) {
 }
 
 func (es *EdgexSource) Close(ctx api.StreamContext) error {
-	if es.subscribed && es.conSel == "" {
-		if e := es.client.Disconnect(); e != nil {
-			return e
-		}
-	}
-	if es.conSel != "" {
-		ctx.ReleaseConnection(es.conSel)
+	if es.cli != nil {
+		es.cli.Release(ctx)
 	}
 	return nil
 }

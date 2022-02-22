@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/service"
+	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"context"
@@ -51,6 +52,7 @@ func StartUp(Version, LoadFileType string) {
 	conf.LoadFileType = LoadFileType
 	startTimeStamp = time.Now().Unix()
 	conf.InitConf()
+	factory.InitClientsFactory()
 
 	err := store.SetupWithKuiperConfig(conf.Config)
 	if err != nil {

@@ -24,9 +24,10 @@ import (
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
-	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/edgex"
+	connectionType "github.com/lf-edge/ekuiper/internal/topo/connection/types"
+	defaultCtx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -41,39 +42,27 @@ const (
 )
 
 type EdgexConf struct {
-	Protocol           string            `json:"protocol"`
-	Host               string            `json:"host"`
-	Port               int               `json:"port"`
-	Topic              string            `json:"topic"`
-	TopicPrefix        string            `json:"topicPrefix"`
-	Type               string            `json:"type"`
-	MessageType        messageType       `json:"messageType"`
-	ContentType        string            `json:"contentType"`
-	DeviceName         string            `json:"deviceName"`
-	ProfileName        string            `json:"profileName"`
-	SourceName         string            `json:"sourceName"`
-	Metadata           string            `json:"metadata"`
-	Optional           map[string]string `json:"optional"`
-	ConnectionSelector string            `json:"connectionSelector"`
-	DataTemplate       string            `json:"dataTemplate"`
+	Topic        string      `json:"topic"`
+	TopicPrefix  string      `json:"topicPrefix"`
+	MessageType  messageType `json:"messageType"`
+	ContentType  string      `json:"contentType"`
+	DeviceName   string      `json:"deviceName"`
+	ProfileName  string      `json:"profileName"`
+	SourceName   string      `json:"sourceName"`
+	Metadata     string      `json:"metadata"`
+	DataTemplate string      `json:"dataTemplate"`
 }
 
 type EdgexMsgBusSink struct {
 	c *EdgexConf
 
+	config map[string]interface{}
 	topic  string
-	conf   *types.MessageBusConfig
-	client messaging.MessageClient
+
+	cli connectionType.MessageClient
 }
 
 func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
-
-	var (
-		defaultProtocol = "redis"
-		defaultServer   = "localhost"
-		defaultType     = messaging.Redis
-		defaultPort     = 6379
-	)
 
 	c := &EdgexConf{
 		MessageType: MessageTypeEvent,
@@ -87,47 +76,12 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 		return fmt.Errorf("read properties %v fail with error: %v", ps, err)
 	}
 
-	if c.ConnectionSelector != "" {
-		conf.Log.Infof("use connection selector %s for edgex sink", c.ConnectionSelector)
-		if c.Protocol != "" || c.Host != "" || c.Type != "" || c.Port != 0 {
-			return fmt.Errorf("connectionSelector can not coexist with other connection configs, properties %v", ps)
-		}
+	if c.MessageType != MessageTypeEvent && c.MessageType != MessageTypeRequest {
+		return fmt.Errorf("specified wrong messageType value %s", c.MessageType)
+	}
 
-		if c.MessageType != MessageTypeEvent && c.MessageType != MessageTypeRequest {
-			return fmt.Errorf("specified wrong messageType value %s", c.MessageType)
-		}
-
-		if c.MessageType == MessageTypeEvent && c.ContentType != "application/json" {
-			return fmt.Errorf("specified wrong contentType value %s: only 'application/json' is supported if messageType is event", c.ContentType)
-		}
-	} else {
-		if c.Host == "" {
-			c.Host = defaultServer
-		}
-		if c.Protocol == "" {
-			c.Protocol = defaultProtocol
-		}
-		if c.Type == "" {
-			c.Type = defaultType
-		}
-		if c.Port == 0 {
-			c.Port = defaultPort
-		}
-		if c.Port < 0 {
-			return fmt.Errorf("specified wrong port value, expect positive integer but got %d", c.Port)
-		}
-
-		if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT && c.Type != messaging.Redis {
-			return fmt.Errorf("specified wrong type value %s", c.Type)
-		}
-
-		if c.MessageType != MessageTypeEvent && c.MessageType != MessageTypeRequest {
-			return fmt.Errorf("specified wrong messageType value %s", c.MessageType)
-		}
-
-		if c.MessageType == MessageTypeEvent && c.ContentType != "application/json" {
-			return fmt.Errorf("specified wrong contentType value %s: only 'application/json' is supported if messageType is event", c.ContentType)
-		}
+	if c.MessageType == MessageTypeEvent && c.ContentType != "application/json" {
+		return fmt.Errorf("specified wrong contentType value %s: only 'application/json' is supported if messageType is event", c.ContentType)
 	}
 
 	if c.Topic != "" && c.TopicPrefix != "" {
@@ -137,50 +91,21 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 		conf.Log.Warn("edgex sink does not support dataTemplate, just ignore")
 	}
 
-	ems.c = c
-	ems.conf = &types.MessageBusConfig{
-		PublishHost: types.HostInfo{
-			Host:     c.Host,
-			Port:     c.Port,
-			Protocol: c.Protocol,
-		},
-		Type:     c.Type,
-		Optional: c.Optional,
-	}
+	ems.config = ps
 
-	return nil
-}
-
-func (ems *EdgexMsgBusSink) getClient(ctx api.StreamContext) error {
-	log := ctx.GetLogger()
-	if ems.c.ConnectionSelector != "" {
-		con, err := ctx.GetConnection(ems.c.ConnectionSelector)
-		if err != nil {
-			log.Errorf("The edgex client for connection selector %s get fail with error: %s", ems.c.ConnectionSelector, err)
-			return err
-		}
-		ems.client = con.(messaging.MessageClient)
-		log.Infof("The edge client for connection selector %s get successfully", ems.c.ConnectionSelector)
-	} else {
-		c, err := messaging.NewMessageClient(*ems.conf)
-		if err != nil {
-			return err
-		}
-		ems.client = c
-		if err := ems.client.Connect(); err != nil {
-			return fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
-		}
-		log.Infof("The connection to edgex messagebus is established successfully.")
-	}
 	return nil
 }
 
 func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
-	log.Infof("Using configuration for EdgeX message bus sink: %+v", ems.c)
-	if err := ems.getClient(ctx); err != nil {
-		return fmt.Errorf("Failed to get edgex message client: " + err.Error())
+
+	cli, err := ctx.GetClient("edgex", ems.config)
+	if err != nil {
+		log.Errorf("found error when get edgex client, error %s", err.Error())
+		return err
 	}
+
+	ems.cli = cli.(connectionType.MessageClient)
 
 	if ems.c.SourceName == "" {
 		ems.c.SourceName = ctx.GetRuleId()
@@ -570,8 +495,6 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 			return fmt.Errorf("unexpected error MarshalEvent %v", err)
 		}
 	}
-	env := types.NewMessageEnvelope(data, ctx)
-	env.ContentType = ems.c.ContentType
 
 	if ems.topic == "" { // dynamic topic
 		topic = fmt.Sprintf("%s/%s/%s/%s", ems.c.TopicPrefix, evt.ProfileName, evt.DeviceName, evt.SourceName)
@@ -579,7 +502,12 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 		topic = ems.topic
 	}
 
-	if e := ems.client.Publish(env, topic); e != nil {
+	req := &edgex.RequestInfo{
+		ContentType: ems.c.ContentType,
+	}
+	c := edgex.WithRequestInfo(ctx.(*defaultCtx.DefaultContext), req)
+
+	if e := ems.cli.Publish(c, topic, data); e != nil {
 		logger.Errorf("%s: found error %s when publish to EdgeX message bus.\n", e)
 		return fmt.Errorf("%s:%s", errorx.IOErr, e.Error())
 	}
@@ -591,13 +519,8 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 func (ems *EdgexMsgBusSink) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing edgex sink")
-	if ems.client != nil && ems.c.ConnectionSelector == "" {
-		if e := ems.client.Disconnect(); e != nil {
-			return e
-		}
-	}
-	if ems.c.ConnectionSelector != "" {
-		ctx.ReleaseConnection(ems.c.ConnectionSelector)
+	if ems.cli != nil {
+		ems.cli.Release(ctx)
 	}
 	return nil
 }

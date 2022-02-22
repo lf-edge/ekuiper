@@ -150,8 +150,7 @@ type StreamContext interface {
 	GetState(key string) (interface{}, error)
 	DeleteState(key string) error
 	// Connection related methods
-	GetConnection(connectSelector string) (interface{}, error)
-	ReleaseConnection(connectSelector string)
+	GetClient(clientType string, config map[string]interface{}) (interface{}, error)
 	// Properties processing, prop is a json path
 	ParseDynamicProp(prop string, data interface{}) (interface{}, error)
 	// Transform output according to the properties like syntax

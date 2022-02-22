@@ -1,7 +1,20 @@
-package connection
+// Copyright 2022 EMQ Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package mqtt
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"reflect"
 	"testing"
 )
@@ -20,7 +33,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config pass",
 			args: args{
 				props: map[string]interface{}{
-					"servers": []string{"tcp:127.0.0.1"},
+					"server": "tcp:127.0.0.1",
 				},
 			},
 			wantErr: false,
@@ -29,7 +42,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config are not case sensitive",
 			args: args{
 				props: map[string]interface{}{
-					"SERVERS": []string{"tcp:127.0.0.1"},
+					"SERVER": "tcp:127.0.0.1",
 				},
 			},
 			wantErr: false,
@@ -38,7 +51,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config server addr key error",
 			args: args{
 				props: map[string]interface{}{
-					"server": []string{"tcp:127.0.0.1"},
+					"servers": []string{"tcp:127.0.0.1"},
 				},
 			},
 			wantErr: true,
@@ -47,11 +60,11 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config have unwanted topic fields",
 			args: args{
 				props: map[string]interface{}{
-					"servers": []string{"tcp:127.0.0.1"},
-					"topic":   "demo",
+					"server": "tcp:127.0.0.1",
+					"topic":  "demo",
 				},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "config no server addr",
@@ -66,7 +79,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config no server addr",
 			args: args{
 				props: map[string]interface{}{
-					"servers": []string{},
+					"server": "",
 				},
 			},
 			wantErr: true,
@@ -75,7 +88,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 			name: "config miss cert key file",
 			args: args{
 				props: map[string]interface{}{
-					"servers":           []string{"tcp:127.0.0.1"},
+					"server":            "tcp:127.0.0.1",
 					"certificationPath": "./not_exist.crt",
 					"privateKeyPath":    "./not_exist.key",
 				},
@@ -85,11 +98,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ms := &MQTTClient{
-				selector: &conf.ConSelector{
-					ConnSelectorStr: "testSelector",
-				},
-			}
+			ms := &MQTTClient{}
 			err := ms.CfgValidate(tt.args.props)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CfgValidate() error = %v, wantErr %v", err, tt.wantErr)
@@ -100,17 +109,13 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 
 func TestMQTTClient_CfgResult(t *testing.T) {
 	props := map[string]interface{}{
-		"servers":  []string{"tcp:127.0.0.1:1883"},
+		"server":   "tcp:127.0.0.1:1883",
 		"USERNAME": "demo",
 		"Password": "password",
 		"clientID": "clientid",
 	}
 
-	ms := &MQTTClient{
-		selector: &conf.ConSelector{
-			ConnSelectorStr: "testSelector",
-		},
-	}
+	ms := &MQTTClient{}
 
 	_ = ms.CfgValidate(props)
 
