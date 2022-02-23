@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,10 @@
 
 package checkpoint
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/lf-edge/ekuiper/internal/infra"
+)
 
 type Responder interface {
 	TriggerCheckpoint(checkpointId int64) error
@@ -58,7 +61,7 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 	if err != nil {
 		return err
 	}
-	go func() {
+	go infra.SafeRun(func() error {
 		state := ACK
 		err := sctx.SaveState(checkpointId)
 		if err != nil {
@@ -72,6 +75,7 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 		}
 		re.responder <- signal
 		logger.Debugf("Complete checkpoint %d on task %s", checkpointId, name)
-	}()
+		return nil
+	})
 	return nil
 }
