@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -133,9 +134,25 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 	log.Infof("Start with window state triggerTime: %d, msgCount: %d", o.triggerTime, o.msgCount)
 	if o.isEventTime {
-		go o.execEventWindow(ctx, inputs, errCh)
+		go func() {
+			err := infra.SafeRun(func() error {
+				o.execEventWindow(ctx, inputs, errCh)
+				return nil
+			})
+			if err != nil {
+				errCh <- err
+			}
+		}()
 	} else {
-		go o.execProcessingWindow(ctx, inputs, errCh)
+		go func() {
+			err := infra.SafeRun(func() error {
+				o.execProcessingWindow(ctx, inputs, errCh)
+				return nil
+			})
+			if err != nil {
+				errCh <- err
+			}
+		}()
 	}
 }
 

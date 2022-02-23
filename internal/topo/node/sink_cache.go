@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -90,7 +91,15 @@ func NewTimebasedCache(in <-chan interface{}, limit int, saveInterval int, errCh
 		Complete: make(chan int),
 		errorCh:  errCh,
 	}
-	go c.timebasedRun(ctx, saveInterval)
+	go func() {
+		err := infra.SafeRun(func() error {
+			c.timebasedRun(ctx, saveInterval)
+			return nil
+		})
+		if err != nil {
+			c.drainError(err)
+		}
+	}()
 	return c
 }
 
@@ -149,7 +158,10 @@ func (c *Cache) timebasedRun(ctx api.StreamContext, saveInterval int) {
 				clone := c.pending.clone()
 				c.changed = false
 				go func() {
-					if err := c.saveCache(logger, clone); err != nil {
+					err := infra.SafeRun(func() error {
+						return c.saveCache(logger, clone)
+					})
+					if err != nil {
 						logger.Debugf("%v", err)
 						c.drainError(err)
 					}
@@ -218,7 +230,15 @@ func NewCheckpointbasedCache(in <-chan interface{}, limit int, tch <-chan struct
 		Complete: make(chan int),
 		errorCh:  errCh,
 	}
-	go c.checkpointbasedRun(ctx, tch)
+	go func() {
+		err := infra.SafeRun(func() error {
+			c.checkpointbasedRun(ctx, tch)
+			return nil
+		})
+		if err != nil {
+			c.drainError(err)
+		}
+	}()
 	return c
 }
 
@@ -256,7 +276,10 @@ func (c *Cache) checkpointbasedRun(ctx api.StreamContext, tch <-chan struct{}) {
 			clone := c.pending.clone()
 			if c.changed {
 				go func() {
-					if err := c.saveCache(logger, clone); err != nil {
+					err := infra.SafeRun(func() error {
+						return c.saveCache(logger, clone)
+					})
+					if err != nil {
 						logger.Debugf("%v", err)
 						c.drainError(err)
 					}
