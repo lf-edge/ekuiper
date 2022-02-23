@@ -17,7 +17,6 @@ package sink
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/mqtt"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/types"
 	defaultCtx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -30,7 +29,7 @@ type MQTTSink struct {
 	retained bool
 
 	config map[string]interface{}
-	cli    types.MessageClient
+	cli    api.MessageClient
 }
 
 func (ms *MQTTSink) hasKeys(str []string, ps map[string]interface{}) bool {
@@ -82,7 +81,7 @@ func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 		return err
 	}
 
-	ms.cli = cli.(types.MessageClient)
+	ms.cli = cli
 
 	return nil
 }

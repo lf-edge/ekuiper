@@ -18,12 +18,12 @@
 package factory
 
 import (
+	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/edgex"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/types"
 )
 
 func init() {
-	clientsFactory["edgex"] = func(props map[string]interface{}) (types.ClientWrapper, error) {
+	clientsFactory["edgex"] = func(props map[string]interface{}) (clients.ClientWrapper, error) {
 		return edgex.NewEdgeClientWrapper(props)
 	}
 }

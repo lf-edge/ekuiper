@@ -23,7 +23,6 @@ import (
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
-	connectionType "github.com/lf-edge/ekuiper/internal/topo/connection/types"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"strconv"
@@ -31,7 +30,7 @@ import (
 )
 
 type EdgexSource struct {
-	cli connectionType.MessageClient
+	cli api.MessageClient
 
 	config      map[string]interface{}
 	topic       string
@@ -66,6 +65,7 @@ func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 	es.buflen = c.BufferLen
 	es.messageType = c.MessageType
 	es.topic = c.Topic
+	es.config = props
 
 	return nil
 }
@@ -79,11 +79,10 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 		log.Errorf("found error when get edgex client, error %s", err.Error())
 		return
 	}
+	es.cli = cli.(api.MessageClient)
 
-	es.cli = cli.(connectionType.MessageClient)
-
-	messages := make(chan *connectionType.MessageEnvelope, es.buflen)
-	topics := []connectionType.TopicChannel{{Topic: es.topic, Messages: messages}}
+	messages := make(chan *api.MessageEnvelope, es.buflen)
+	topics := []api.TopicChannel{{Topic: es.topic, Messages: messages}}
 	subErrs := make(chan error, len(topics))
 	if e := es.cli.Subscribe(ctx, topics, subErrs); e != nil {
 		log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
@@ -93,12 +92,14 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 		for {
 			select {
 			case <-ctx.Done():
+				log.Infof("Exit subscription to edgex messagebus topic %s.", es.topic)
 				return
 			case e1 := <-subErrs:
 				errCh <- e1
 				return
 			case msg, ok := <-messages:
 				if !ok { // the source is closed
+					log.Infof("Exit subscription to edgex messagebus topic %s.", es.topic)
 					return
 				}
 				env := msg.EdgexMsg
@@ -284,6 +285,8 @@ func convertFloatArray(v string, bitSize int) (interface{}, error) {
 }
 
 func (es *EdgexSource) Close(ctx api.StreamContext) error {
+	log := ctx.GetLogger()
+	log.Infof("EdgeX Source instance %d Done.", ctx.GetInstanceId())
 	if es.cli != nil {
 		es.cli.Release(ctx)
 	}

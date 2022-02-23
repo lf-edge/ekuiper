@@ -110,7 +110,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 
 				defer func() {
 					logger.Infof("source %s done", m.name)
-					m.close(ctx, logger)
+					m.close()
 					buffer.Close()
 				}()
 
@@ -180,14 +180,8 @@ func (m *SourceNode) drainError(errCh chan<- error, err error, ctx api.StreamCon
 	return
 }
 
-func (m *SourceNode) close(ctx api.StreamContext, logger api.Logger) {
-	if !m.options.SHARED {
-		for _, s := range m.sources {
-			if err := s.Close(ctx); err != nil {
-				logger.Warnf("close source fails: %v", err)
-			}
-		}
-	} else {
+func (m *SourceNode) close() {
+	if m.options.SHARED {
 		removeSourceInstance(m)
 	}
 }

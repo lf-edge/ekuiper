@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/mqtt"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/types"
 	defaultCtx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -37,7 +36,7 @@ type MQTTSource struct {
 	model  modelVersion
 	schema map[string]interface{}
 
-	cli types.MessageClient
+	cli api.MessageClient
 }
 
 type MQTTConfig struct {
@@ -89,8 +88,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 		log.Errorf("found error when get mqtt client config %v, error %s", ms.config, err.Error())
 		return
 	}
-
-	ms.cli = cli.(types.MessageClient)
+	ms.cli = cli
 	err = subscribe(ms, ctx, consumer)
 	if err != nil {
 		errCh <- err
@@ -100,8 +98,8 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.SourceTuple) error {
 	log := ctx.GetLogger()
 
-	messages := make(chan *types.MessageEnvelope, ms.buflen)
-	topics := []types.TopicChannel{{Topic: ms.tpc, Messages: messages}}
+	messages := make(chan *api.MessageEnvelope, ms.buflen)
+	topics := []api.TopicChannel{{Topic: ms.tpc, Messages: messages}}
 	err := make(chan error, len(topics))
 	req := &mqtt.RequestInfo{
 		Qos: byte(ms.qos),
@@ -116,12 +114,14 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 		for {
 			select {
 			case <-ctx.Done():
+				log.Infof("Exit subscription to edgex messagebus topic %s.", ms.tpc)
 				return nil
 			case e1 := <-err:
 				log.Errorf("the subscription to mqtt topic %s have error %s.\n", ms.tpc, e1.Error())
 				return e1
 			case env, ok := <-messages:
 				if !ok { // the source is closed
+					log.Infof("Exit subscription to edgex messagebus topic %s.", ms.tpc)
 					return nil
 				}
 				msg := env.MqttMsg

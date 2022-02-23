@@ -16,10 +16,9 @@ package factory
 
 import (
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/types"
 )
 
-var clientsFactory = make(map[string]types.ClientFactoryFunc)
+var clientsFactory = make(map[string]clients.ClientFactoryFunc)
 
 func InitClientsFactory() {
 	for k, v := range clientsFactory {

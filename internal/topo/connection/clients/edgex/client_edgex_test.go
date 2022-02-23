@@ -19,41 +19,75 @@ package edgex
 
 import (
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	"reflect"
 	"testing"
 )
 
 func TestEdgex_CfgValidate(t *testing.T) {
-	type fields struct {
-		mbconf types.MessageBusConfig
-	}
-	type args struct {
-		props map[string]interface{}
-	}
+
 	tests := []struct {
 		name    string
-		fields  fields
-		args    args
+		expConf types.MessageBusConfig
+		props   map[string]interface{}
 		wantErr bool
 	}{
 		{
-			name:   "config pass",
-			fields: fields{},
-			args: args{props: map[string]interface{}{
+			name: "config pass",
+			props: map[string]interface{}{
 				"protocol": "tcp",
 				"server":   "127.0.0.1",
-				"port":     int64(1883),
+				"port":     1883,
 				"type":     "mqtt",
 				"optional": map[string]string{
 					"ClientId": "client1",
 					"Username": "user1",
 				},
-			}},
+			},
 			wantErr: false,
+			expConf: types.MessageBusConfig{
+				PublishHost: types.HostInfo{
+					Host:     "127.0.0.1",
+					Port:     1883,
+					Protocol: "tcp",
+				},
+				SubscribeHost: types.HostInfo{
+					Host:     "127.0.0.1",
+					Port:     1883,
+					Protocol: "tcp",
+				},
+				Type: "mqtt",
+				Optional: map[string]string{
+					"ClientId": "client1",
+					"Username": "user1",
+				},
+			},
 		},
 		{
-			name:   "config not case sensitive",
-			fields: fields{},
-			args: args{props: map[string]interface{}{
+			name: "config pass",
+			props: map[string]interface{}{
+				"protocol": "redis",
+				"server":   "edgex-redis",
+				"port":     6379,
+				"type":     "redis",
+			},
+			wantErr: false,
+			expConf: types.MessageBusConfig{
+				PublishHost: types.HostInfo{
+					Host:     "edgex-redis",
+					Port:     6379,
+					Protocol: "redis",
+				},
+				SubscribeHost: types.HostInfo{
+					Host:     "edgex-redis",
+					Port:     6379,
+					Protocol: "redis",
+				},
+				Type: "redis",
+			},
+		},
+		{
+			name: "config not case sensitive",
+			props: map[string]interface{}{
 				"Protocol": "tcp",
 				"server":   "127.0.0.1",
 				"Port":     1883,
@@ -62,31 +96,29 @@ func TestEdgex_CfgValidate(t *testing.T) {
 					"ClientId": "client1",
 					"Username": "user1",
 				},
-			}},
-
-			wantErr: false,
-		},
-		{
-			name:   "have unwanted config items topic",
-			fields: fields{},
-			args: args{props: map[string]interface{}{
-				"protocol": "tcp",
-				"server":   "127.0.0.1",
-				"port":     1883,
-				"type":     "mqtt",
-				"optional": map[string]string{
+			},
+			expConf: types.MessageBusConfig{
+				PublishHost: types.HostInfo{
+					Host:     "127.0.0.1",
+					Port:     1883,
+					Protocol: "tcp",
+				},
+				SubscribeHost: types.HostInfo{
+					Host:     "127.0.0.1",
+					Port:     1883,
+					Protocol: "tcp",
+				},
+				Type: "mqtt",
+				Optional: map[string]string{
 					"ClientId": "client1",
 					"Username": "user1",
 				},
-				"topic": "demo",
-			}},
-
+			},
 			wantErr: false,
 		},
 		{
-			name:   "config type not in zero/mqtt/redis ",
-			fields: fields{},
-			args: args{props: map[string]interface{}{
+			name: "config type not in zero/mqtt/redis ",
+			props: map[string]interface{}{
 				"protocol": "tcp",
 				"server":   "127.0.0.1",
 				"port":     1883,
@@ -95,28 +127,39 @@ func TestEdgex_CfgValidate(t *testing.T) {
 					"ClientId": "client1",
 					"Username": "user1",
 				},
-			}},
-
+			},
 			wantErr: true,
 		},
 		{
-			name:   "do not have enough config items ",
-			fields: fields{},
-			args: args{props: map[string]interface{}{
-				"protocol": "tcp",
-				"type":     "mqtt",
+			name: "do not have enough config items ",
+			props: map[string]interface{}{
 				"optional": map[string]string{
 					"ClientId": "client1",
 					"Username": "user1",
 				},
-			}},
-
+			},
+			expConf: types.MessageBusConfig{
+				PublishHost: types.HostInfo{
+					Host:     "localhost",
+					Port:     6379,
+					Protocol: "redis",
+				},
+				SubscribeHost: types.HostInfo{
+					Host:     "localhost",
+					Port:     6379,
+					Protocol: "redis",
+				},
+				Type: "redis",
+				Optional: map[string]string{
+					"ClientId": "client1",
+					"Username": "user1",
+				},
+			},
 			wantErr: false,
 		},
 		{
-			name:   "type is not right",
-			fields: fields{},
-			args: args{props: map[string]interface{}{
+			name: "type is not right",
+			props: map[string]interface{}{
 				"type":     20,
 				"protocol": "redis",
 				"host":     "edgex-redis",
@@ -125,14 +168,13 @@ func TestEdgex_CfgValidate(t *testing.T) {
 					"ClientId": "client1",
 					"Username": "user1",
 				},
-			}},
+			},
 			wantErr: true,
 		},
 		{
-			name:   "port is not right",
-			fields: fields{},
-			args: args{props: map[string]interface{}{
-				"type":     20,
+			name: "port is not right",
+			props: map[string]interface{}{
+				"type":     "mqtt",
 				"protocol": "redis",
 				"host":     "edgex-redis",
 				"port":     -1,
@@ -140,13 +182,12 @@ func TestEdgex_CfgValidate(t *testing.T) {
 					"ClientId": "client1",
 					"Username": "user1",
 				},
-			}},
+			},
 			wantErr: true,
 		},
 		{
-			name:   "wrong type value",
-			fields: fields{},
-			args: args{props: map[string]interface{}{
+			name: "wrong type value",
+			props: map[string]interface{}{
 				"type":     "zmq",
 				"protocol": "redis",
 				"host":     "edgex-redis",
@@ -155,17 +196,19 @@ func TestEdgex_CfgValidate(t *testing.T) {
 					"ClientId": "client1",
 					"Username": "user1",
 				},
-			}},
+			},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			es := &EdgexClient{
-				mbconf: tt.fields.mbconf,
-			}
-			if err := es.CfgValidate(tt.args.props); (err != nil) != tt.wantErr {
+			es := &EdgexClient{}
+			if err := es.CfgValidate(tt.props); (err != nil) != tt.wantErr {
 				t.Errorf("CfgValidate() error = %v, wantErr %v", err, tt.wantErr)
+			} else {
+				if !reflect.DeepEqual(tt.expConf, es.mbconf) {
+					t.Errorf("CfgValidate() expect = %v, actual %v", tt.expConf, es.mbconf)
+				}
 			}
 		})
 	}

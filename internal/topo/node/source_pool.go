@@ -154,7 +154,7 @@ func (p *sourcePool) deleteInstance(k string, node *SourceNode, index int) {
 		end := s.detach(instanceKey)
 		if end {
 			s.cancel()
-			_ = s.source.Close(s.ctx)
+
 			s.dataCh.Close()
 			delete(p.registry, k)
 		}
@@ -300,7 +300,11 @@ func start(poolCtx api.StreamContext, node *SourceNode, s api.Source, instanceIn
 	}
 	chs := newSourceInstanceChannels(node.bufferLength)
 
-	go s.Open(ctx.WithInstance(instanceIndex), chs.dataCh.In, chs.errorCh)
+	go func() {
+		nctx := ctx.WithInstance(instanceIndex)
+		defer s.Close(nctx)
+		s.Open(nctx, chs.dataCh.In, chs.errorCh)
+	}()
 	return &sourceInstance{
 		source:                 s,
 		sourceInstanceChannels: chs,

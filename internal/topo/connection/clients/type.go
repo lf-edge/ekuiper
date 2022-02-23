@@ -14,14 +14,26 @@
 
 package clients
 
-import "github.com/lf-edge/ekuiper/internal/topo/connection/types"
+import (
+	"github.com/lf-edge/ekuiper/pkg/api"
+)
 
 type ConsumerInfo struct {
 	ConsumerId   string
-	ConsumerChan chan<- *types.MessageEnvelope
+	ConsumerChan chan<- *api.MessageEnvelope
 	SubErrors    chan error
 }
 
 type SubscribedTopics struct {
 	Topics []string
+}
+
+type ClientFactoryFunc func(props map[string]interface{}) (ClientWrapper, error)
+
+type ClientWrapper interface {
+	Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error) error
+	Release(c api.StreamContext)
+	Publish(c api.StreamContext, topic string, message []byte) error
+	SetConnectionSelector(conSelector string)
+	AddRef()
 }

@@ -22,7 +22,6 @@ import (
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
-	types2 "github.com/lf-edge/ekuiper/internal/topo/connection/types"
 	defaultCtx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"strings"
@@ -54,10 +53,13 @@ func GetRequestInfo(parent *defaultCtx.DefaultContext) *RequestInfo {
 	return nil
 }
 
-type edgexSubscriptionInfo struct {
-	topic   string
-	msgChan chan types2.MessageEnvelope
+type messageHandler func(stopChan chan struct{}, msgChan chan types.MessageEnvelope)
 
+type edgexSubscriptionInfo struct {
+	topic          string
+	msgChan        chan api.MessageEnvelope
+	handler        messageHandler
+	stop           chan struct{}
 	topicConsumers []*clients.ConsumerInfo
 }
 
@@ -78,7 +80,10 @@ type edgexClientWrapper struct {
 	refCnt  uint64
 }
 
-func NewEdgeClientWrapper(props map[string]interface{}) (types2.ClientWrapper, error) {
+func NewEdgeClientWrapper(props map[string]interface{}) (clients.ClientWrapper, error) {
+	if props == nil {
+		conf.Log.Warnf("props is nill for mqtt client wrapper")
+	}
 	client := &EdgexClient{}
 	err := client.CfgValidate(props)
 	if err != nil {
@@ -115,27 +120,28 @@ func (mc *edgexClientWrapper) Publish(c api.StreamContext, topic string, message
 	return nil
 }
 
-func (mc *edgexClientWrapper) messageHandler(sub *edgexSubscriptionInfo) func(ctx api.StreamContext, msgChan chan types.MessageEnvelope) {
-	return func(ctx api.StreamContext, msgChan chan types.MessageEnvelope) {
+func (mc *edgexClientWrapper) messageHandler(topic string, sub *edgexSubscriptionInfo) func(stopChan chan struct{}, msgChan chan types.MessageEnvelope) {
+	return func(stopChan chan struct{}, msgChan chan types.MessageEnvelope) {
 		for {
 			select {
-			case <-ctx.Done():
+			case <-stopChan:
+				conf.Log.Infof("message handler for topic %s stopped", topic)
 				return
 			case msg, ok := <-msgChan:
 				if !ok {
+					for _, consumer := range sub.topicConsumers {
+						close(consumer.ConsumerChan)
+					}
 					return
 				}
 				//broadcast to all topic subscribers
 				if sub != nil {
 					for _, consumer := range sub.topicConsumers {
-						go func(c *clients.ConsumerInfo) {
-							select {
-							case c.ConsumerChan <- &types2.MessageEnvelope{EdgexMsg: msg}:
-								break
-							case <-ctx.Done():
-								break
-							}
-						}(consumer)
+						select {
+						case consumer.ConsumerChan <- &api.MessageEnvelope{EdgexMsg: msg}:
+							break
+						default:
+						}
 					}
 				}
 			}
@@ -143,23 +149,7 @@ func (mc *edgexClientWrapper) messageHandler(sub *edgexSubscriptionInfo) func(ct
 	}
 }
 
-func (mc *edgexClientWrapper) newMessageHandler(ctx api.StreamContext, sub *edgexSubscriptionInfo, topic string) error {
-	message := make(chan types.MessageEnvelope)
-	err := make(chan error)
-
-	e := mc.cli.Subscribe(message, topic, err)
-	if e != nil {
-		return e
-	}
-
-	handler := mc.messageHandler(sub)
-	go handler(ctx, message)
-
-	return nil
-
-}
-
-func (mc *edgexClientWrapper) Subscribe(c api.StreamContext, subChan []types2.TopicChannel, messageErrors chan error) error {
+func (mc *edgexClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error) error {
 	log := c.GetLogger()
 
 	mc.subLock.Lock()
@@ -187,6 +177,7 @@ func (mc *edgexClientWrapper) Subscribe(c api.StreamContext, subChan []types2.To
 		} else {
 			sub := &edgexSubscriptionInfo{
 				topic: tpc,
+				stop:  make(chan struct{}, 1),
 				topicConsumers: []*clients.ConsumerInfo{
 					{
 						ConsumerId:   subId,
@@ -196,9 +187,15 @@ func (mc *edgexClientWrapper) Subscribe(c api.StreamContext, subChan []types2.To
 				},
 			}
 			log.Infof("new subscription for topic %s, reqId is %s", tpc, subId)
-			if err := mc.newMessageHandler(c, sub, tpc); err != nil {
-				messageErrors <- err
+			message := make(chan types.MessageEnvelope)
+			errChan := make(chan error)
+
+			if err := mc.cli.Subscribe(message, tpc, errChan); err != nil {
+				return err
 			}
+			sub.handler = mc.messageHandler(tpc, sub)
+			go sub.handler(sub.stop, message)
+
 			mc.topicSubscriptions[tpc] = sub
 		}
 	}
@@ -215,6 +212,7 @@ func (mc *edgexClientWrapper) unsubscribe(c api.StreamContext) {
 	subId := fmt.Sprintf("%s_%s_%d", c.GetRuleId(), c.GetOpId(), c.GetInstanceId())
 	subTopics, found := mc.subscribers[subId]
 	if !found {
+		log.Errorf("not found subscription id %s", subId)
 		return
 	}
 
@@ -229,6 +227,7 @@ func (mc *edgexClientWrapper) unsubscribe(c api.StreamContext) {
 			}
 			if 0 == len(sub.topicConsumers) {
 				delete(mc.topicSubscriptions, tpc)
+				sub.stop <- struct{}{}
 			}
 		}
 	}
@@ -252,6 +251,7 @@ func (mc *edgexClientWrapper) AddRef() {
 	defer mc.refLock.Unlock()
 
 	mc.refCnt = mc.refCnt + 1
+	conf.Log.Infof("edgex client wrapper add refence for connection selector %s total refcount %d", mc.conSelector, mc.refCnt)
 }
 
 func (mc *edgexClientWrapper) DeRef(c api.StreamContext) {
@@ -260,6 +260,9 @@ func (mc *edgexClientWrapper) DeRef(c api.StreamContext) {
 	defer mc.refLock.Unlock()
 
 	mc.refCnt = mc.refCnt - 1
+	if mc.refCnt != 0 {
+		conf.Log.Infof("edgex client wrapper derefence for connection selector %s total refcount %d", mc.conSelector, mc.refCnt)
+	}
 	if mc.refCnt == 0 {
 		log.Infof("mqtt client wrapper reference count 0")
 		if mc.conSelector != "" {
@@ -268,4 +271,5 @@ func (mc *edgexClientWrapper) DeRef(c api.StreamContext) {
 		}
 		_ = mc.cli.Disconnect()
 	}
+
 }
