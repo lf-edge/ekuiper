@@ -16,6 +16,8 @@ package api
 
 import (
 	"context"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"sync"
 )
 
@@ -150,7 +152,7 @@ type StreamContext interface {
 	GetState(key string) (interface{}, error)
 	DeleteState(key string) error
 	// Connection related methods
-	GetClient(clientType string, config map[string]interface{}) (interface{}, error)
+	GetClient(clientType string, config map[string]interface{}) (MessageClient, error)
 	// Properties processing, prop is a json path
 	ParseDynamicProp(prop string, data interface{}) (interface{}, error)
 	// Transform output according to the properties like syntax
@@ -187,3 +189,26 @@ const (
 )
 
 type Qos int
+
+type MessageClient interface {
+	Subscribe(c StreamContext, subChan []TopicChannel, messageErrors chan error) error
+	Release(c StreamContext)
+	Publish(c StreamContext, topic string, message []byte) error
+}
+
+type MessageEnvelope struct {
+	Payload []byte
+
+	//mqtt
+	MqttMsg MQTT.Message
+	//edgex
+	EdgexMsg types.MessageEnvelope
+}
+
+// TopicChannel is the data structure for subscriber
+type TopicChannel struct {
+	// Topic for subscriber to filter on if any
+	Topic string
+	// Messages is the returned message channel for the subscriber
+	Messages chan<- *MessageEnvelope
+}

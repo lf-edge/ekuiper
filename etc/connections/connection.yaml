@@ -8,7 +8,6 @@ mqtt:
     #rootCaPath: /var/kuiper/xyz-rootca.pem
     #insecureSkipVerify: false
     #protocolVersion: 3
-    clientid: ekuiper
   cloudConnection: #connection key
     servers: ["tcp://broker.emqx.io:1883"]
     username: user1

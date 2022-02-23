@@ -15,12 +15,12 @@
 package factory
 
 import (
+	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/mqtt"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/types"
 )
 
 func init() {
-	clientsFactory["mqtt"] = func(props map[string]interface{}) (types.ClientWrapper, error) {
+	clientsFactory["mqtt"] = func(props map[string]interface{}) (clients.ClientWrapper, error) {
 		return mqtt.NewMqttClientWrapper(props)
 	}
 }

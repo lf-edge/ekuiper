@@ -56,7 +56,7 @@ func (c *DefaultFuncContext) GetFuncId() int {
 	return c.funcId
 }
 
-func (c *DefaultFuncContext) GetClient(clientType string, config map[string]interface{}) (interface{}, error) {
+func (c *DefaultFuncContext) GetClient(clientType string, config map[string]interface{}) (api.MessageClient, error) {
 	return clients.GetClient(clientType, config)
 }
 

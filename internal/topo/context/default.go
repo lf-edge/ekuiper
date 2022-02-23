@@ -252,6 +252,6 @@ func (c *DefaultContext) SaveState(checkpointId int64) error {
 	return nil
 }
 
-func (c *DefaultContext) GetClient(clientType string, config map[string]interface{}) (interface{}, error) {
+func (c *DefaultContext) GetClient(clientType string, config map[string]interface{}) (api.MessageClient, error) {
 	return clients.GetClient(clientType, config)
 }

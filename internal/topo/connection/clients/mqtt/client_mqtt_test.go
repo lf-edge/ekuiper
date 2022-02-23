@@ -54,7 +54,7 @@ func TestMQTTClient_CfgValidate(t *testing.T) {
 					"servers": []string{"tcp:127.0.0.1"},
 				},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "config have unwanted topic fields",

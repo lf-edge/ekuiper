@@ -19,7 +19,6 @@ import (
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/types"
 	defaultCtx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"strings"
@@ -77,7 +76,10 @@ type mqttClientWrapper struct {
 	refCnt  uint64
 }
 
-func NewMqttClientWrapper(props map[string]interface{}) (types.ClientWrapper, error) {
+func NewMqttClientWrapper(props map[string]interface{}) (clients.ClientWrapper, error) {
+	if props == nil {
+		conf.Log.Warnf("props is nill for mqtt client wrapper")
+	}
 	client := &MQTTClient{}
 	err := client.CfgValidate(props)
 	if err != nil {
@@ -115,18 +117,15 @@ func (mc *mqttClientWrapper) onConnectHandler(_ pahoMqtt.Client) {
 	}
 }
 
-func (mc *mqttClientWrapper) newMessageHandler(ctx api.StreamContext, sub *mqttSubscriptionInfo) pahoMqtt.MessageHandler {
+func (mc *mqttClientWrapper) newMessageHandler(sub *mqttSubscriptionInfo) pahoMqtt.MessageHandler {
 	return func(client pahoMqtt.Client, message pahoMqtt.Message) {
 		if sub != nil {
 			for _, consumer := range sub.topicConsumers {
-				go func(c *clients.ConsumerInfo) {
-					select {
-					case c.ConsumerChan <- &types.MessageEnvelope{MqttMsg: message}:
-						break
-					case <-ctx.Done():
-						break
-					}
-				}(consumer)
+				select {
+				case consumer.ConsumerChan <- &api.MessageEnvelope{MqttMsg: message}:
+					break
+				default:
+				}
 			}
 		}
 	}
@@ -145,7 +144,7 @@ func (mc *mqttClientWrapper) Publish(c api.StreamContext, topic string, message 
 	return nil
 }
 
-func (mc *mqttClientWrapper) Subscribe(c api.StreamContext, subChan []types.TopicChannel, messageErrors chan error) error {
+func (mc *mqttClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error) error {
 	log := c.GetLogger()
 
 	mc.subLock.Lock()
@@ -187,7 +186,7 @@ func (mc *mqttClientWrapper) Subscribe(c api.StreamContext, subChan []types.Topi
 					},
 				},
 			}
-			sub.topicHandler = mc.newMessageHandler(c, sub)
+			sub.topicHandler = mc.newMessageHandler(sub)
 			log.Infof("new subscription for topic %s, reqId is %s", tpc, subId)
 			token := mc.cli.conn.Subscribe(tpc, reqInfo.Qos, sub.topicHandler)
 			if token.Error() != nil {
@@ -210,6 +209,7 @@ func (mc *mqttClientWrapper) unsubscribe(c api.StreamContext) {
 	subId := fmt.Sprintf("%s_%s_%d", c.GetRuleId(), c.GetOpId(), c.GetInstanceId())
 	subTopics, found := mc.subscribers[subId]
 	if !found {
+		log.Errorf("not found subscription id %s", subId)
 		return
 	}
 

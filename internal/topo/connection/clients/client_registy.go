@@ -17,7 +17,7 @@ package clients
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/types"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"strings"
 	"sync"
 )
@@ -25,18 +25,18 @@ import (
 type clientRegistry struct {
 	Lock                sync.Mutex
 	supportedClientType []string
-	clientFactory       map[string]types.ClientFactoryFunc
-	ShareClientStore    map[string]types.ClientWrapper
+	clientFactory       map[string]ClientFactoryFunc
+	ShareClientStore    map[string]ClientWrapper
 }
 
 var ClientRegistry = clientRegistry{
-	clientFactory:       make(map[string]types.ClientFactoryFunc),
+	clientFactory:       make(map[string]ClientFactoryFunc),
 	Lock:                sync.Mutex{},
 	supportedClientType: make([]string, 0),
-	ShareClientStore:    make(map[string]types.ClientWrapper),
+	ShareClientStore:    make(map[string]ClientWrapper),
 }
 
-func RegisterClientFactory(clientType string, creatorFunc types.ClientFactoryFunc) {
+func RegisterClientFactory(clientType string, creatorFunc ClientFactoryFunc) {
 	ClientRegistry.Lock.Lock()
 	ClientRegistry.clientFactory[clientType] = creatorFunc
 	ClientRegistry.supportedClientType = append(ClientRegistry.supportedClientType, clientType)
@@ -56,7 +56,7 @@ func getConnectionSelector(props map[string]interface{}) (ConnectionSelector str
 	return "", nil
 }
 
-func GetClient(connectionType string, props map[string]interface{}) (types.MessageClient, error) {
+func GetClient(connectionType string, props map[string]interface{}) (api.MessageClient, error) {
 	ClientRegistry.Lock.Lock()
 	defer ClientRegistry.Lock.Unlock()
 
@@ -94,6 +94,7 @@ func GetClient(connectionType string, props map[string]interface{}) (types.Messa
 			return nil, err
 		}
 		cliWpr.SetConnectionSelector(connectSelector)
+		conf.Log.Infof("Init client wrapper for client type %s and connection selector %s", connectionType, connectSelector)
 		ClientRegistry.ShareClientStore[connectSelector] = cliWpr
 		return cliWpr, nil
 	} else {
@@ -102,6 +103,7 @@ func GetClient(connectionType string, props map[string]interface{}) (types.Messa
 			conf.Log.Errorf("can not create client for cfg : %v have error %s", props, err)
 			return nil, err
 		}
+		conf.Log.Infof("Init client wrapper for client type %s", connectionType)
 		return cliWpr, nil
 	}
 }

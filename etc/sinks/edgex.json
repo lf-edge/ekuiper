@@ -54,7 +54,7 @@
       }
     },
     {
-      "name": "host",
+      "name": "server",
       "optional": true,
       "control": "text",
       "default": "localhost",
@@ -111,8 +111,8 @@
         "zh_CN": " 发布的主题的前缀。发送的主题将采用动态拼接，格式为`$topicPrefix/$profileName/$deviceName/$sourceName` 。"
       },
       "label": {
-        "en_US": "Topic",
-        "zh_CN": "主题"
+        "en_US": "Topic Prefix",
+        "zh_CN": "主题前缀"
       }
     },
     {

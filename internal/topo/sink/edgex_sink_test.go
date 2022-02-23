@@ -119,7 +119,8 @@ func TestConfigure(t *testing.T) {
 				Metadata:    "edgex_meta",
 				Topic:       "result",
 			},
-		}, { // 3
+		},
+		{ // 3
 			conf: map[string]interface{}{
 				"type":        "redis",
 				"protocol":    "redis",
@@ -137,7 +138,8 @@ func TestConfigure(t *testing.T) {
 				SourceName:  "",
 				TopicPrefix: "edgex/events/device",
 			},
-		}, { // 4
+		},
+		{ // 4
 			conf: map[string]interface{}{
 				"type":        "redis",
 				"protocol":    "redis",
@@ -148,40 +150,8 @@ func TestConfigure(t *testing.T) {
 				"contentType": "application/json",
 			},
 			error: "specified wrong messageType value requests",
-		}, { // 5
-			conf: map[string]interface{}{
-				"type":        20,
-				"protocol":    "redis",
-				"host":        "edgex-redis",
-				"port":        6379,
-				"topicPrefix": "edgex/events/device",
-				"messageType": "requests",
-				"contentType": "application/json",
-			},
-			error: "read properties map[contentType:application/json host:edgex-redis messageType:requests port:6379 protocol:redis topicPrefix:edgex/events/device type:20] fail with error: 1 error(s) decoding:\n\n* 'type' expected type 'string', got unconvertible type 'int', value: '20'",
-		}, { // 6
-			conf: map[string]interface{}{
-				"type":        "redis",
-				"protocol":    "redis",
-				"host":        "edgex-redis",
-				"port":        -1,
-				"topicPrefix": "edgex/events/device",
-				"messageType": "requests",
-				"contentType": "application/json",
-			},
-			error: "specified wrong port value, expect positive integer but got -1",
-		}, { // 7
-			conf: map[string]interface{}{
-				"type":        "zmq",
-				"protocol":    "redis",
-				"host":        "edgex-redis",
-				"port":        6379,
-				"topicPrefix": "edgex/events/device",
-				"messageType": "requests",
-				"contentType": "application/json",
-			},
-			error: "specified wrong type value zmq",
-		}, { // 8
+		},
+		{ // 5
 			conf: map[string]interface{}{
 				"protocol":    "redis",
 				"host":        "edgex-redis",

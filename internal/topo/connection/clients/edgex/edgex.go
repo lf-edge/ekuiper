@@ -65,7 +65,7 @@ func (es *EdgexClient) CfgValidate(props map[string]interface{}) error {
 
 	err := cast.MapToStruct(props, c)
 	if err != nil {
-		return fmt.Errorf("map config map to struct %v fail for connection %v with error: %v", props, c, err)
+		return fmt.Errorf("map config map to struct fail with error: %v", err)
 	}
 
 	if c.Host != "" {
@@ -75,7 +75,7 @@ func (es *EdgexClient) CfgValidate(props map[string]interface{}) error {
 	}
 
 	if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT && c.Type != messaging.Redis {
-		return fmt.Errorf("specified wrong type value %s for connection %v", c.Type, c)
+		return fmt.Errorf("specified wrong type value %s", c.Type)
 	}
 	if c.Port < 0 {
 		return fmt.Errorf("specified wrong port value, expect positive integer but got %d", c.Port)
@@ -108,7 +108,7 @@ func (es *EdgexClient) Connect() error {
 	}
 
 	if err := client.Connect(); err != nil {
-		conf.Log.Errorf("The connection to edgex messagebus failed for connection : %v.", es.mbconf)
+		conf.Log.Errorf("The connection to edgex messagebus failed.")
 		return fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
 	}
 	es.client = client
@@ -141,17 +141,17 @@ func (es *EdgexClient) GetClient() (interface{}, error) {
 	}
 
 	if err := client.Connect(); err != nil {
-		conf.Log.Errorf("The connection to edgex messagebus failed for connection : %v.", es.mbconf)
+		conf.Log.Errorf("The connection to edgex messagebus failed.")
 		return nil, fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
 	}
-	conf.Log.Infof("The connection to edgex messagebus is established successfully for connection : %v.", es.mbconf)
+	conf.Log.Infof("The connection to edgex messagebus is established successfully.")
 
 	es.client = client
 	return client, nil
 }
 
 func (es *EdgexClient) Disconnect() error {
-	conf.Log.Infof("Closing the connection to edgex messagebus for connection : %v.", es.mbconf)
+	conf.Log.Infof("Closing the connection to edgex messagebus.")
 	if e := es.client.Disconnect(); e != nil {
 		return e
 	}

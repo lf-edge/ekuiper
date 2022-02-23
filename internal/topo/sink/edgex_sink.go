@@ -26,7 +26,6 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/edgex"
-	connectionType "github.com/lf-edge/ekuiper/internal/topo/connection/types"
 	defaultCtx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -59,7 +58,7 @@ type EdgexMsgBusSink struct {
 	config map[string]interface{}
 	topic  string
 
-	cli connectionType.MessageClient
+	cli api.MessageClient
 }
 
 func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
@@ -90,7 +89,7 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 	if c.DataTemplate != "" {
 		conf.Log.Warn("edgex sink does not support dataTemplate, just ignore")
 	}
-
+	ems.c = c
 	ems.config = ps
 
 	return nil
@@ -105,7 +104,7 @@ func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 		return err
 	}
 
-	ems.cli = cli.(connectionType.MessageClient)
+	ems.cli = cli
 
 	if ems.c.SourceName == "" {
 		ems.c.SourceName = ctx.GetRuleId()
