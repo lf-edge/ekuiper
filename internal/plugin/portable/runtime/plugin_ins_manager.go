@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"os"
 	"os/exec"
@@ -190,7 +191,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	}
 	process := cmd.Process
 	conf.Log.Printf("plugin started pid: %d\n", process.Pid)
-	go func() {
+	go infra.SafeRun(func() error { // just print out error inside
 		err = cmd.Wait()
 		if err != nil {
 			conf.Log.Printf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
@@ -200,7 +201,8 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 			_ = ins.ctrlChan.Close()
 			p.deletePluginIns(pluginMeta.Name)
 		}
-	}()
+		return nil
+	})
 
 	conf.Log.Println("waiting handshake")
 	err = ctrlChan.Handshake()

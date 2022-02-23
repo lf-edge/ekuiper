@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package checkpoint
 import (
 	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"sync"
@@ -165,67 +166,70 @@ func (c *Coordinator) Activate() error {
 	c.ticker = conf.GetTicker(c.baseInterval)
 	tc := c.ticker.C
 	go func() {
-		c.activated = true
-		toBeClean := 0
-		for {
-			select {
-			case n := <-tc:
-				//trigger checkpoint
-				//TODO pose max attempt and min pause check for consequent pendingCheckpoints
+		err := infra.SafeRun(func() error {
+			c.activated = true
+			toBeClean := 0
+			for {
+				select {
+				case n := <-tc:
+					//trigger checkpoint
+					//TODO pose max attempt and min pause check for consequent pendingCheckpoints
 
-				// TODO Check if all tasks are running
+					// TODO Check if all tasks are running
 
-				//Create a pending checkpoint
-				checkpointId := cast.TimeToUnixMilli(n)
-				checkpoint := newPendingCheckpoint(checkpointId, c.tasksToWaitFor)
-				logger.Debugf("Create checkpoint %d", checkpointId)
-				c.pendingCheckpoints.Store(checkpointId, checkpoint)
-				//Let the sources send out a barrier
-				for _, r := range c.tasksToTrigger {
-					go func(t Responder) {
-						if err := t.TriggerCheckpoint(checkpointId); err != nil {
-							logger.Infof("Fail to trigger checkpoint for source %s with error %v, cancel it", t.GetName(), err)
-							c.cancel(checkpointId)
+					//Create a pending checkpoint
+					checkpointId := cast.TimeToUnixMilli(n)
+					checkpoint := newPendingCheckpoint(checkpointId, c.tasksToWaitFor)
+					logger.Debugf("Create checkpoint %d", checkpointId)
+					c.pendingCheckpoints.Store(checkpointId, checkpoint)
+					//Let the sources send out a barrier
+					for _, r := range c.tasksToTrigger {
+						go func(t Responder) {
+							if err := t.TriggerCheckpoint(checkpointId); err != nil {
+								logger.Infof("Fail to trigger checkpoint for source %s with error %v, cancel it", t.GetName(), err)
+								c.cancel(checkpointId)
+							}
+						}(r)
+					}
+					toBeClean++
+					if toBeClean >= c.cleanThreshold {
+						c.store.Clean()
+						toBeClean = 0
+					}
+				case s := <-c.signal:
+					switch s.Message {
+					case STOP:
+						logger.Debug("Stop checkpoint scheduler")
+						if c.ticker != nil {
+							c.ticker.Stop()
 						}
-					}(r)
-				}
-				toBeClean++
-				if toBeClean >= c.cleanThreshold {
-					c.store.Clean()
-					toBeClean = 0
-				}
-			case s := <-c.signal:
-				switch s.Message {
-				case STOP:
-					logger.Debug("Stop checkpoint scheduler")
+						return nil
+					case ACK:
+						logger.Debugf("Receive ack from %s for checkpoint %d", s.OpId, s.CheckpointId)
+						if cp, ok := c.pendingCheckpoints.Load(s.CheckpointId); ok {
+							checkpoint := cp.(*pendingCheckpoint)
+							checkpoint.ack(s.OpId)
+							if checkpoint.isFullyAck() {
+								c.complete(s.CheckpointId)
+							}
+						} else {
+							logger.Debugf("Receive ack from %s for non existing checkpoint %d", s.OpId, s.CheckpointId)
+						}
+					case DEC:
+						logger.Debugf("Receive dec from %s for checkpoint %d, cancel it", s.OpId, s.CheckpointId)
+						c.cancel(s.CheckpointId)
+					}
+				case <-c.ctx.Done():
+					logger.Infoln("Cancelling coordinator....")
 					if c.ticker != nil {
 						c.ticker.Stop()
+						logger.Infoln("Stop coordinator ticker")
 					}
-					return
-				case ACK:
-					logger.Debugf("Receive ack from %s for checkpoint %d", s.OpId, s.CheckpointId)
-					if cp, ok := c.pendingCheckpoints.Load(s.CheckpointId); ok {
-						checkpoint := cp.(*pendingCheckpoint)
-						checkpoint.ack(s.OpId)
-						if checkpoint.isFullyAck() {
-							c.complete(s.CheckpointId)
-						}
-					} else {
-						logger.Debugf("Receive ack from %s for non existing checkpoint %d", s.OpId, s.CheckpointId)
-					}
-				case DEC:
-					logger.Debugf("Receive dec from %s for checkpoint %d, cancel it", s.OpId, s.CheckpointId)
-					c.cancel(s.CheckpointId)
+					return nil
 				}
-			case <-c.ctx.Done():
-				logger.Infoln("Cancelling coordinator....")
-				if c.ticker != nil {
-					c.ticker.Stop()
-					logger.Infoln("Stop coordinator ticker")
-				}
-				return
 			}
-		}
+		})
+		logger.Error(err)
 	}()
 	return nil
 }

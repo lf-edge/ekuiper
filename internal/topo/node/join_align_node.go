@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
@@ -67,81 +68,87 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 	n.statManager = stats
 	go func() {
-		// restore batch state
-		if s, err := ctx.GetState(BatchKey); err == nil {
-			switch st := s.(type) {
-			case []xsql.WindowTuples:
-				if len(st) == len(n.emitters) {
-					n.batch = &xsql.WindowTuplesSet{Content: st}
-					log.Infof("Restore batch state %+v", st)
-				} else {
-					log.Warnf("Restore batch state got different emitter length so discarded: %+v", st)
-				}
-			case nil:
-				log.Debugf("Restore batch state, nothing")
-			default:
-				errCh <- fmt.Errorf("restore batch state %v error, invalid type", st)
-			}
-		} else {
-			log.Warnf("Restore batch state fails: %s", err)
-		}
-		if n.batch == nil {
-			n.batch = &xsql.WindowTuplesSet{
-				Content: make([]xsql.WindowTuples, len(n.emitters)),
-			}
-		}
+		err := infra.SafeRun(func() error {
+			// restore batch state
+			if s, err := ctx.GetState(BatchKey); err == nil {
 
-		for {
-			log.Debugf("JoinAlignNode %s is looping", n.name)
-			select {
-			// process incoming item from both streams(transformed) and tables
-			case item, opened := <-n.input:
-				processed := false
-				if item, processed = n.preprocess(item); processed {
-					break
-				}
-				n.statManager.IncTotalRecordsIn()
-				n.statManager.ProcessTimeStart()
-				if !opened {
-					n.statManager.IncTotalExceptions()
-					break
-				}
-				switch d := item.(type) {
-				case error:
-					n.Broadcast(d)
-					n.statManager.IncTotalExceptions()
-				case *xsql.Tuple:
-					log.Debugf("JoinAlignNode receive tuple input %s", d)
-					temp := xsql.WindowTuplesSet{
-						Content: make([]xsql.WindowTuples, 0),
+				switch st := s.(type) {
+				case []xsql.WindowTuples:
+					if len(st) == len(n.emitters) {
+						n.batch = &xsql.WindowTuplesSet{Content: st}
+						log.Infof("Restore batch state %+v", st)
+					} else {
+						log.Warnf("Restore batch state got different emitter length so discarded: %+v", st)
 					}
-					temp = temp.AddTuple(d)
-					n.alignBatch(ctx, temp)
-				case xsql.WindowTuplesSet:
-					log.Debugf("JoinAlignNode receive window input %s", d)
-					n.alignBatch(ctx, d)
-				case xsql.WindowTuples: // batch input
-					log.Debugf("JoinAlignNode receive batch source %s", d)
-					// Buffer and update batch inputs
-					index, ok := n.emitters[d.Emitter]
-					if !ok {
-						n.Broadcast(fmt.Errorf("run JoinAlignNode error: receive batch input from unknown emitter %[1]T(%[1]v)", d))
+				case nil:
+					log.Debugf("Restore batch state, nothing")
+				default:
+					errCh <- fmt.Errorf("restore batch state %v error, invalid type", st)
+				}
+			} else {
+				log.Warnf("Restore batch state fails: %s", err)
+			}
+			if n.batch == nil {
+				n.batch = &xsql.WindowTuplesSet{
+					Content: make([]xsql.WindowTuples, len(n.emitters)),
+				}
+			}
+
+			for {
+				log.Debugf("JoinAlignNode %s is looping", n.name)
+				select {
+				// process incoming item from both streams(transformed) and tables
+				case item, opened := <-n.input:
+					processed := false
+					if item, processed = n.preprocess(item); processed {
+						break
+					}
+					n.statManager.IncTotalRecordsIn()
+					n.statManager.ProcessTimeStart()
+					if !opened {
+						n.statManager.IncTotalExceptions()
+						break
+					}
+					switch d := item.(type) {
+					case error:
+						n.Broadcast(d)
+						n.statManager.IncTotalExceptions()
+					case *xsql.Tuple:
+						log.Debugf("JoinAlignNode receive tuple input %s", d)
+						temp := xsql.WindowTuplesSet{
+							Content: make([]xsql.WindowTuples, 0),
+						}
+						temp = temp.AddTuple(d)
+						n.alignBatch(ctx, temp)
+					case xsql.WindowTuplesSet:
+						log.Debugf("JoinAlignNode receive window input %s", d)
+						n.alignBatch(ctx, d)
+					case xsql.WindowTuples: // batch input
+						log.Debugf("JoinAlignNode receive batch source %s", d)
+						// Buffer and update batch inputs
+						index, ok := n.emitters[d.Emitter]
+						if !ok {
+							n.Broadcast(fmt.Errorf("run JoinAlignNode error: receive batch input from unknown emitter %[1]T(%[1]v)", d))
+							n.statManager.IncTotalExceptions()
+						}
+						if n.batch != nil && len(n.batch.Content) > index {
+							n.batch.Content[index] = d
+							ctx.PutState(BatchKey, n.batch)
+						} else {
+							log.Errorf("Invalid index %d for batch %v", index, n.batch)
+						}
+					default:
+						n.Broadcast(fmt.Errorf("run JoinAlignNode error: invalid input type but got %[1]T(%[1]v)", d))
 						n.statManager.IncTotalExceptions()
 					}
-					if n.batch != nil && len(n.batch.Content) > index {
-						n.batch.Content[index] = d
-						ctx.PutState(BatchKey, n.batch)
-					} else {
-						log.Errorf("Invalid index %d for batch %v", index, n.batch)
-					}
-				default:
-					n.Broadcast(fmt.Errorf("run JoinAlignNode error: invalid input type but got %[1]T(%[1]v)", d))
-					n.statManager.IncTotalExceptions()
+				case <-ctx.Done():
+					log.Infoln("Cancelling join align node....")
+					return nil
 				}
-			case <-ctx.Done():
-				log.Infoln("Cancelling join align node....")
-				return
 			}
+		})
+		if err != nil {
+			errCh <- err
 		}
 	}()
 }
