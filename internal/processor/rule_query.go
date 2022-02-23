@@ -18,6 +18,7 @@
 package processor
 
 import (
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
@@ -28,15 +29,21 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*topo.Topo, error) {
 		return nil, err
 	} else {
 		go func() {
-			select {
-			case err := <-tp.Open():
-				if err != nil {
-					log.Infof("closing query for error: %v", err)
-					tp.GetContext().SetError(err)
-					tp.Cancel()
-				} else {
-					log.Info("closing query")
+			err := infra.SafeRun(func() error {
+				select {
+				case err := <-tp.Open():
+					if err != nil {
+						tp.GetContext().SetError(err)
+						tp.Cancel()
+						return err
+					}
 				}
+				return nil
+			})
+			if err != nil {
+				log.Infof("closing query for error: %v", err)
+			} else {
+				log.Info("closing query")
 			}
 		}()
 		return tp, nil

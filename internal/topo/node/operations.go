@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"sync"
@@ -81,7 +82,15 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 
 	for i := 0; i < o.concurrency; i++ { // workers
 		instance := i
-		go o.doOp(ctx.WithInstance(instance), errCh)
+		go func() {
+			err := infra.SafeRun(func() error {
+				o.doOp(ctx.WithInstance(instance), errCh)
+				return nil
+			})
+			if err != nil {
+				errCh <- err
+			}
+		}()
 	}
 }
 

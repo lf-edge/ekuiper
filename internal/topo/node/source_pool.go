@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -68,10 +69,19 @@ func getSourceInstance(node *SourceNode, index int) (*sourceInstance, error) {
 	} else {
 		ns, err := io.Source(node.sourceType)
 		if ns != nil {
-			si, err = start(nil, node, ns, index)
+			si, err = start(nil, node, ns)
 			if err != nil {
 				return nil, err
 			}
+			go func() {
+				err := infra.SafeRun(func() error {
+					si.source.Open(node.ctx.WithInstance(index), si.dataCh.In, si.errorCh)
+					return nil
+				})
+				if err != nil {
+					si.errorCh <- err
+				}
+			}()
 		} else {
 			if err != nil {
 				return nil, err
@@ -129,7 +139,7 @@ func (p *sourcePool) addInstance(k string, node *SourceNode, source api.Source, 
 			return nil, err
 		}
 		sctx, cancel := ctx.WithMeta(ruleId, opId, store).WithCancel()
-		si, err := start(sctx, node, source, index)
+		si, err := start(sctx, node, source)
 		if err != nil {
 			return nil, err
 		}
@@ -139,7 +149,24 @@ func (p *sourcePool) addInstance(k string, node *SourceNode, source api.Source, 
 			cancel:         cancel,
 		}
 		p.registry[k] = newS
-		go newS.run(node.sourceType, node.name)
+		go func() {
+			err := infra.SafeRun(func() error {
+				si.source.Open(node.ctx.WithInstance(index), si.dataCh.In, si.errorCh)
+				return nil
+			})
+			if err != nil {
+				newS.broadcastError(err)
+			}
+		}()
+		go func() {
+			err := infra.SafeRun(func() error {
+				newS.run(node.sourceType, node.name)
+				return nil
+			})
+			if err != nil {
+				newS.broadcastError(err)
+			}
+		}()
 		s = newS
 	}
 	return s, nil
@@ -277,7 +304,7 @@ func (ss *sourceSingleton) detach(instanceKey string) bool {
 	return false
 }
 
-func start(poolCtx api.StreamContext, node *SourceNode, s api.Source, instanceIndex int) (*sourceInstance, error) {
+func start(poolCtx api.StreamContext, node *SourceNode, s api.Source) (*sourceInstance, error) {
 	err := s.Configure(node.options.DATASOURCE, node.props)
 	if err != nil {
 		return nil, err
@@ -299,12 +326,6 @@ func start(poolCtx api.StreamContext, node *SourceNode, s api.Source, instanceIn
 		}
 	}
 	chs := newSourceInstanceChannels(node.bufferLength)
-
-	go func() {
-		nctx := ctx.WithInstance(instanceIndex)
-		defer s.Close(nctx)
-		s.Open(nctx, chs.dataCh.In, chs.errorCh)
-	}()
 	return &sourceInstance{
 		source:                 s,
 		sourceInstanceChannels: chs,

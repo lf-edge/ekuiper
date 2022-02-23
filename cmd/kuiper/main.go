@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/urfave/cli"
 	"io/ioutil"
@@ -123,18 +124,22 @@ func main() {
 						} else {
 							fmt.Println(reply)
 							go func() {
-								for {
-									<-ticker.C
-									var result string
-									e := client.Call("Server.GetQueryResult", "", &result)
-									if e != nil {
-										fmt.Println(e)
-										fmt.Print("kuiper > ")
-										return
+								err := infra.SafeRun(func() error {
+									for {
+										<-ticker.C
+										var result string
+										e := client.Call("Server.GetQueryResult", "", &result)
+										if e != nil {
+											return e
+										}
+										if result != "" {
+											fmt.Println(result)
+										}
 									}
-									if result != "" {
-										fmt.Println(result)
-									}
+								})
+								if err != nil {
+									fmt.Println(err)
+									fmt.Print("kuiper > ")
 								}
 							}()
 						}

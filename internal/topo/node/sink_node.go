@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -101,162 +102,184 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 		m.tch = make(chan struct{})
 	}
 	go func() {
-		sconf := &SinkConf{
-			Concurrency:       1,
-			RunAsync:          false,
-			RetryInterval:     1000,
-			RetryCount:        0,
-			CacheLength:       1024,
-			CacheSaveInterval: 1000,
-			Omitempty:         false,
-			SendSingle:        false,
-			DataTemplate:      "",
-		}
-		err := cast.MapToStruct(m.options, sconf)
-		if err != nil {
-			result <- fmt.Errorf("read properties %v fail with error: %v", m.options, err)
-			return
-		}
-		if sconf.Concurrency <= 0 {
-			logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", sconf.Concurrency)
-			sconf.Concurrency = 1
-		}
-		m.concurrency = sconf.Concurrency
-		if sconf.RetryInterval <= 0 {
-			logger.Warnf("invalid type for retryInterval property, should be positive integer but found %t", sconf.RetryInterval)
-			sconf.RetryInterval = 1000
-		}
-		if sconf.RetryCount < 0 {
-			logger.Warnf("invalid type for retryCount property, should be positive integer but found %t", sconf.RetryCount)
-			sconf.RetryCount = 3
-		}
-		if sconf.CacheLength < 0 {
-			logger.Warnf("invalid type for cacheLength property, should be positive integer but found %t", sconf.CacheLength)
-			sconf.CacheLength = 1024
-		}
-		if sconf.CacheSaveInterval < 0 {
-			logger.Warnf("invalid type for cacheSaveInterval property, should be positive integer but found %t", sconf.CacheSaveInterval)
-			sconf.CacheSaveInterval = 1000
-		}
+		err := infra.SafeRun(func() error {
+			sconf := &SinkConf{
+				Concurrency:       1,
+				RunAsync:          false,
+				RetryInterval:     1000,
+				RetryCount:        0,
+				CacheLength:       1024,
+				CacheSaveInterval: 1000,
+				Omitempty:         false,
+				SendSingle:        false,
+				DataTemplate:      "",
+			}
+			err := cast.MapToStruct(m.options, sconf)
+			if err != nil {
+				return fmt.Errorf("read properties %v fail with error: %v", m.options, err)
+			}
+			if sconf.Concurrency <= 0 {
+				logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", sconf.Concurrency)
+				sconf.Concurrency = 1
+			}
+			m.concurrency = sconf.Concurrency
+			if sconf.RetryInterval <= 0 {
+				logger.Warnf("invalid type for retryInterval property, should be positive integer but found %t", sconf.RetryInterval)
+				sconf.RetryInterval = 1000
+			}
+			if sconf.RetryCount < 0 {
+				logger.Warnf("invalid type for retryCount property, should be positive integer but found %t", sconf.RetryCount)
+				sconf.RetryCount = 3
+			}
+			if sconf.CacheLength < 0 {
+				logger.Warnf("invalid type for cacheLength property, should be positive integer but found %t", sconf.CacheLength)
+				sconf.CacheLength = 1024
+			}
+			if sconf.CacheSaveInterval < 0 {
+				logger.Warnf("invalid type for cacheSaveInterval property, should be positive integer but found %t", sconf.CacheSaveInterval)
+				sconf.CacheSaveInterval = 1000
+			}
 
-		tf, err := transform.GenTransform(sconf.DataTemplate)
-		if err != nil {
-			msg := fmt.Sprintf("property dataTemplate %v is invalid: %v", sconf.DataTemplate, err)
-			logger.Warnf(msg)
-			result <- fmt.Errorf(msg)
-			return
-		}
-		ctx = context.WithValue(ctx.(*context.DefaultContext), context.TransKey, tf)
+			tf, err := transform.GenTransform(sconf.DataTemplate)
+			if err != nil {
+				msg := fmt.Sprintf("property dataTemplate %v is invalid: %v", sconf.DataTemplate, err)
+				logger.Warnf(msg)
+				return fmt.Errorf(msg)
+			}
+			ctx = context.WithValue(ctx.(*context.DefaultContext), context.TransKey, tf)
 
-		m.reset()
-		logger.Infof("open sink node %d instances", m.concurrency)
-		for i := 0; i < m.concurrency; i++ { // workers
-			go func(instance int) {
-				var sink api.Sink
-				var err error
-				if !m.isMock {
-					logger.Debugf("Trying to get sink for rule %s with options %v\n", ctx.GetRuleId(), m.options)
-					sink, err = getSink(m.sinkType, m.options)
-					if err != nil {
-						m.drainError(result, err, ctx, logger)
-						return
-					}
-					logger.Debugf("Successfully get the sink %s", m.sinkType)
-					m.mutex.Lock()
-					m.sinks = append(m.sinks, sink)
-					m.mutex.Unlock()
-					logger.Debugf("Now is to open sink for rule %s.\n", ctx.GetRuleId())
-					if err := sink.Open(ctx); err != nil {
-						m.drainError(result, err, ctx, logger)
-						return
-					}
-					logger.Debugf("Successfully open sink for rule %s.\n", ctx.GetRuleId())
-				} else {
-					sink = m.sinks[instance]
-				}
-
-				stats, err := NewStatManager(ctx, "sink")
-				if err != nil {
-					m.drainError(result, err, ctx, logger)
-					return
-				}
-				m.mutex.Lock()
-				m.statManagers = append(m.statManagers, stats)
-				m.mutex.Unlock()
-
-				if conf.Config.Sink.DisableCache {
-					for {
-						select {
-						case data := <-m.input:
-							if temp, processed := m.preprocess(data); processed {
-								break
-							} else {
-								data = temp
+			m.reset()
+			logger.Infof("open sink node %d instances", m.concurrency)
+			for i := 0; i < m.concurrency; i++ { // workers
+				go func(instance int) {
+					panicOrError := infra.SafeRun(func() error {
+						var (
+							sink api.Sink
+							err  error
+						)
+						if !m.isMock {
+							logger.Debugf("Trying to get sink for rule %s with options %v\n", ctx.GetRuleId(), m.options)
+							sink, err = getSink(m.sinkType, m.options)
+							if err != nil {
+								return err
 							}
-							stats.SetBufferLength(int64(len(m.input)))
-							if sconf.RunAsync {
-								go doCollect(ctx, sink, data, stats, sconf)
-							} else {
-								doCollect(ctx, sink, data, stats, sconf)
+							logger.Debugf("Successfully get the sink %s", m.sinkType)
+							m.mutex.Lock()
+							m.sinks = append(m.sinks, sink)
+							m.mutex.Unlock()
+							logger.Debugf("Now is to open sink for rule %s.\n", ctx.GetRuleId())
+							if err := sink.Open(ctx); err != nil {
+								return err
 							}
-						case <-ctx.Done():
-							logger.Infof("sink node %s instance %d done", m.name, instance)
-							if err := sink.Close(ctx); err != nil {
-								logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
-							}
-							return
-						case <-m.tch:
-							logger.Debugf("rule %s sink receive checkpoint, do nothing", ctx.GetRuleId())
+							logger.Debugf("Successfully open sink for rule %s.\n", ctx.GetRuleId())
+						} else {
+							sink = m.sinks[instance]
 						}
-					}
-				} else {
-					logger.Infof("Creating sink cache")
-					var cache *Cache
-					if m.qos >= api.AtLeastOnce {
-						cache = NewCheckpointbasedCache(m.input, sconf.CacheLength, m.tch, result, ctx.WithInstance(instance))
-					} else {
-						cache = NewTimebasedCache(m.input, sconf.CacheLength, sconf.CacheSaveInterval, result, ctx.WithInstance(instance))
-					}
-					for {
-						select {
-						case data := <-cache.Out:
-							if temp, processed := m.preprocess(data.data); processed {
-								break
-							} else {
-								data.data = temp
-							}
-							stats.SetBufferLength(int64(len(m.input)))
-							if sconf.RunAsync {
-								go func() {
-									doCollect(ctx, sink, data.data, stats, sconf)
-									if cache.Complete != nil {
-										select {
-										case cache.Complete <- data.index:
-										default:
-											ctx.GetLogger().Warnf("sink cache missing response for %d", data.index)
-										}
+
+						stats, err := NewStatManager(ctx, "sink")
+						if err != nil {
+							return err
+						}
+						m.mutex.Lock()
+						m.statManagers = append(m.statManagers, stats)
+						m.mutex.Unlock()
+
+						if conf.Config.Sink.DisableCache {
+							for {
+								select {
+								case data := <-m.input:
+									if temp, processed := m.preprocess(data); processed {
+										break
+									} else {
+										data = temp
 									}
-								}()
-							} else {
-								doCollect(ctx, sink, data.data, stats, sconf)
-								if cache.Complete != nil {
-									select {
-									case cache.Complete <- data.index:
-									default:
-										ctx.GetLogger().Warnf("sink cache missing response for %d", data.index)
+									stats.SetBufferLength(int64(len(m.input)))
+									if sconf.RunAsync {
+										go func() {
+											p := infra.SafeRun(func() error {
+												doCollect(ctx, sink, data, stats, sconf)
+												return nil
+											})
+											if p != nil {
+												infra.DrainError(ctx, p, result)
+											}
+										}()
+									} else {
+										doCollect(ctx, sink, data, stats, sconf)
 									}
+								case <-ctx.Done():
+									logger.Infof("sink node %s instance %d done", m.name, instance)
+									if err := sink.Close(ctx); err != nil {
+										logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
+									}
+									return nil
+								case <-m.tch:
+									logger.Debugf("rule %s sink receive checkpoint, do nothing", ctx.GetRuleId())
 								}
 							}
-						case <-ctx.Done():
-							logger.Infof("sink node %s instance %d done", m.name, instance)
-							if err := sink.Close(ctx); err != nil {
-								logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
+						} else {
+							logger.Infof("Creating sink cache")
+							var cache *Cache
+							if m.qos >= api.AtLeastOnce {
+								cache = NewCheckpointbasedCache(m.input, sconf.CacheLength, m.tch, result, ctx.WithInstance(instance))
+							} else {
+								cache = NewTimebasedCache(m.input, sconf.CacheLength, sconf.CacheSaveInterval, result, ctx.WithInstance(instance))
 							}
-							return
+							for {
+								select {
+								case data := <-cache.Out:
+									if temp, processed := m.preprocess(data.data); processed {
+										break
+									} else {
+										data.data = temp
+									}
+									stats.SetBufferLength(int64(len(m.input)))
+									if sconf.RunAsync {
+										go func() {
+											p := infra.SafeRun(func() error {
+												doCollect(ctx, sink, data.data, stats, sconf)
+												return nil
+											})
+											if p != nil {
+												infra.DrainError(ctx, p, result)
+											}
+											if cache.Complete != nil {
+												select {
+												case cache.Complete <- data.index:
+												default:
+													ctx.GetLogger().Warnf("sink cache missing response for %d", data.index)
+												}
+											}
+										}()
+									} else {
+										doCollect(ctx, sink, data.data, stats, sconf)
+										if cache.Complete != nil {
+											select {
+											case cache.Complete <- data.index:
+											default:
+												ctx.GetLogger().Warnf("sink cache missing response for %d", data.index)
+											}
+										}
+									}
+								case <-ctx.Done():
+									logger.Infof("sink node %s instance %d done", m.name, instance)
+									if err := sink.Close(ctx); err != nil {
+										logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
+									}
+									return nil
+								}
+							}
 						}
+					})
+					if panicOrError != nil {
+						infra.DrainError(ctx, panicOrError, result)
 					}
-				}
-			}(i)
+				}(i)
+			}
+			return nil
+		})
+		if err != nil {
+			infra.DrainError(ctx, err, result)
 		}
 	}()
 }
@@ -361,30 +384,10 @@ func (m *SinkNode) Broadcast(_ interface{}) error {
 	return fmt.Errorf("sink %s cannot add broadcast", m.name)
 }
 
-func (m *SinkNode) drainError(errCh chan<- error, err error, ctx api.StreamContext, logger api.Logger) {
-	go func() {
-		select {
-		case errCh <- err:
-			ctx.GetLogger().Errorf("error in sink %s", err)
-		case <-ctx.Done():
-			m.close(ctx, logger)
-		}
-	}()
-}
-
-func (m *SinkNode) close(ctx api.StreamContext, logger api.Logger) {
-	for _, s := range m.sinks {
-		if err := s.Close(ctx); err != nil {
-			logger.Warnf("close sink fails: %v", err)
-		}
-	}
-	if m.tch != nil {
-		close(m.tch)
-		m.tch = nil
-	}
-}
-
 // SaveCache Only called when checkpoint enabled
 func (m *SinkNode) SaveCache() {
-	m.tch <- struct{}{}
+	select {
+	case m.tch <- struct{}{}:
+	case <-m.ctx.Done():
+	}
 }

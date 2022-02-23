@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/topo/sink"
@@ -264,7 +265,7 @@ func marshalDesc(m interface{}) (string, error) {
 
 func init() {
 	ticker := time.NewTicker(time.Second * 5)
-	go func() {
+	go infra.SafeRun(func() error {
 		for {
 			<-ticker.C
 			if registry != nil {
@@ -278,9 +279,9 @@ func init() {
 					logger.Printf("The client seems no longer fetch the query result, stop the query now.")
 					stopQuery()
 					ticker.Stop()
-					return
+					return nil
 				}
 			}
 		}
-	}()
+	})
 }

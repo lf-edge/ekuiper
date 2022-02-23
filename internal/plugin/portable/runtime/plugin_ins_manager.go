@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"os"
 	"os/exec"
@@ -203,7 +204,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 			_ = process.Kill()
 		}
 	}()
-	go func() {
+	go infra.SafeRun(func() error { // just print out error inside
 		err = cmd.Wait()
 		if err != nil {
 			conf.Log.Printf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
@@ -215,7 +216,8 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 			}
 			p.deletePluginIns(pluginMeta.Name)
 		}
-	}()
+		return nil
+	})
 
 	conf.Log.Println("waiting handshake")
 	err = ctrlChan.Handshake()

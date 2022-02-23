@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -107,17 +108,20 @@ func doStartRule(rs *RuleState) error {
 	}
 	go func() {
 		tp := rs.Topology
-		select {
-		case err := <-tp.Open():
-			if err != nil {
-				tp.GetContext().SetError(err)
-				logger.Errorf("closing rule %s for error: %v", rs.Name, err)
-				tp.Cancel()
-				rs.Triggered = false
-			} else {
-				rs.Triggered = false
-				logger.Infof("closing rule %s", rs.Name)
+		err := infra.SafeRun(func() error {
+			select {
+			case err := <-tp.Open():
+				return err
 			}
+		})
+		if err != nil {
+			tp.GetContext().SetError(err)
+			logger.Errorf("closing rule %s for error: %v", rs.Name, err)
+			tp.Cancel()
+			rs.Triggered = false
+		} else {
+			rs.Triggered = false
+			logger.Infof("closing rule %s", rs.Name)
 		}
 	}()
 	return nil

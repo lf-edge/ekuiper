@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/dynamic"
 	"github.com/jhump/protoreflect/dynamic/grpcdynamic"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -111,17 +112,18 @@ type grpcExecutor struct {
 	conn *grpc.ClientConn
 }
 
-func (d *grpcExecutor) InvokeFunction(ctx api.FunctionContext, name string, params []interface{}) (interface{}, error) {
+func (d *grpcExecutor) InvokeFunction(_ api.FunctionContext, name string, params []interface{}) (interface{}, error) {
 	if d.conn == nil {
 		dialCtx, cancel := context.WithTimeout(context.Background(), time.Duration(d.timeout)*time.Millisecond)
 		var (
 			conn *grpc.ClientConn
 			e    error
 		)
-		go func() {
+		go infra.SafeRun(func() error {
 			defer cancel()
 			conn, e = grpc.DialContext(dialCtx, d.addr.Host, grpc.WithInsecure(), grpc.WithBlock())
-		}()
+			return e
+		})
 
 		select {
 		case <-dialCtx.Done():
@@ -152,10 +154,11 @@ func (d *grpcExecutor) InvokeFunction(ctx api.FunctionContext, name string, para
 		o proto.Message
 		e error
 	)
-	go func() {
+	go infra.SafeRun(func() error {
 		defer cancel()
 		o, e = stub.InvokeRpc(timeoutCtx, d.descriptor.MethodDescriptor(name), message)
-	}()
+		return e
+	})
 
 	select {
 	case <-timeoutCtx.Done():

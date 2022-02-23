@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package checkpoint
 
 import (
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -163,11 +164,12 @@ func (h *BarrierAligner) processBarrier(b *Barrier, ctx api.StreamContext) {
 		for _, d := range h.buffer {
 			temp = append(temp, d)
 		}
-		go func() {
+		go infra.SafeRun(func() error {
 			for _, d := range temp {
 				h.output <- d
 			}
-		}()
+			return nil
+		})
 		h.buffer = make([]*BufferOrEvent, 0)
 	}
 }
