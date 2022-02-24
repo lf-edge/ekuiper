@@ -17,6 +17,7 @@ package infra
 import (
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 // SafeRun will catch and return the panic error together with other errors
@@ -39,4 +40,16 @@ func SafeRun(fn func() error) (err error) {
 	}()
 	err = fn()
 	return err
+}
+
+// DrainError a non-block function to send out the error to the error channel
+// Only the first error will be sent out and received then the rule will be terminated
+// Thus the latter error will just skip
+// It is usually the error outlet of a op/rule.
+func DrainError(ctx api.StreamContext, err error, errCh chan<- error) {
+	ctx.GetLogger().Errorf("sending error: %v", err)
+	select {
+	case errCh <- err:
+	default:
+	}
 }

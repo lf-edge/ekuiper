@@ -71,7 +71,7 @@ func (s *Topo) Cancel() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// completion signal
-	s.drainErr(nil)
+	infra.DrainError(s.ctx, nil, s.drain)
 	s.cancel()
 	s.store = nil
 	s.coordinator = nil
@@ -127,17 +127,6 @@ func (s *Topo) prepareContext() {
 	}
 }
 
-func (s *Topo) drainErr(err error) {
-	select {
-	case s.drain <- err:
-		if err != nil {
-			s.ctx.GetLogger().Errorf("topo %s drain error %v", s.name, err)
-		}
-	default:
-		s.ctx.GetLogger().Infof("topo %s drain error %v, but receiver closed so ignored", s.name, err)
-	}
-}
-
 func (s *Topo) Open() <-chan error {
 
 	//if stream has opened, do nothing
@@ -169,8 +158,8 @@ func (s *Topo) Open() <-chan error {
 			}
 
 			// open source, if err bail
-			for _, node := range s.sources {
-				node.Open(s.ctx.WithMeta(s.name, node.GetName(), s.store), s.drain)
+			for _, source := range s.sources {
+				source.Open(s.ctx.WithMeta(s.name, source.GetName(), s.store), s.drain)
 			}
 
 			// activate checkpoint
@@ -180,7 +169,7 @@ func (s *Topo) Open() <-chan error {
 			return nil
 		})
 		if err != nil {
-			s.drainErr(err)
+			infra.DrainError(s.ctx, err, s.drain)
 		}
 	}()
 

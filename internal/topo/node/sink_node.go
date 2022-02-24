@@ -243,13 +243,6 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 											if p != nil {
 												infra.DrainError(ctx, p, result)
 											}
-											if cache.Complete != nil {
-												select {
-												case cache.Complete <- data.index:
-												default:
-													ctx.GetLogger().Warnf("sink cache missing response for %d", data.index)
-												}
-											}
 										}()
 									} else {
 										doCollect(ctx, sink, data.data, stats, sconf)
