@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -140,7 +141,7 @@ func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple, current int64, 
 	}
 }
 
-func (w *WatermarkGenerator) getNextSessionWindow(inputs []*xsql.Tuple, current int64, watermark int64, triggered bool) (int64, bool) {
+func (w *WatermarkGenerator) getNextSessionWindow(inputs []*xsql.Tuple) (int64, bool) {
 	if len(inputs) > 0 {
 		timeout, duration := int64(w.window.Interval), int64(w.window.Length)
 		sort.SliceStable(inputs, func(i, j int) bool {
@@ -190,7 +191,8 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 		if si, ok := s.(int64); ok {
 			o.watermarkGenerator.lastWatermarkTs = si
 		} else {
-			errCh <- fmt.Errorf("restore window state `lastWatermarkTs` %v error, invalid type", s)
+			infra.DrainError(ctx, fmt.Errorf("restore window state `lastWatermarkTs` %v error, invalid type", s), errCh)
+			return
 		}
 	}
 	log.Infof("Start with window state lastWatermarkTs: %d", o.watermarkGenerator.lastWatermarkTs)
@@ -220,7 +222,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 					//Session window needs a recalculation of window because its window end depends the inputs
 					if windowEndTs == math.MaxInt64 || o.window.Type == ast.SESSION_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 						if o.window.Type == ast.SESSION_WINDOW {
-							windowEndTs, ticked = o.watermarkGenerator.getNextSessionWindow(inputs, prevWindowEndTs, watermarkTs, triggered)
+							windowEndTs, ticked = o.watermarkGenerator.getNextSessionWindow(inputs)
 						} else {
 							windowEndTs = o.watermarkGenerator.getNextWindow(inputs, prevWindowEndTs, watermarkTs, triggered)
 						}
@@ -236,7 +238,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 						prevWindowEndTs = windowEndTs
 						lastTicked = ticked
 						if o.window.Type == ast.SESSION_WINDOW {
-							windowEndTs, ticked = o.watermarkGenerator.getNextSessionWindow(inputs, prevWindowEndTs, watermarkTs, triggered)
+							windowEndTs, ticked = o.watermarkGenerator.getNextSessionWindow(inputs)
 						} else {
 							windowEndTs = o.watermarkGenerator.getNextWindow(inputs, prevWindowEndTs, watermarkTs, triggered)
 						}

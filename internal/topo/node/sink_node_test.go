@@ -120,7 +120,6 @@ func TestSinkTemplate_Apply(t *testing.T) {
 		s.Open(ctx, make(chan error))
 		s.input <- tt.data
 		time.Sleep(1 * time.Second)
-		s.close(ctx, contextLogger)
 		results := mockSink.GetResults()
 		if !reflect.DeepEqual(tt.result, results) {
 			t.Errorf("%d \tresult mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, results)
@@ -217,7 +216,6 @@ func TestOmitEmpty_Apply(t *testing.T) {
 		s.Open(ctx, make(chan error))
 		s.input <- tt.data
 		time.Sleep(100 * time.Millisecond)
-		s.close(ctx, contextLogger)
 		results := mockSink.GetResults()
 		if !reflect.DeepEqual(tt.result, results) {
 			t.Errorf("%d \tresult mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, results)
