@@ -97,7 +97,7 @@ func NewTimebasedCache(in <-chan interface{}, limit int, saveInterval int, errCh
 			return nil
 		})
 		if err != nil {
-			c.drainError(err)
+			infra.DrainError(ctx, err, errCh)
 		}
 	}()
 	return c
@@ -112,13 +112,14 @@ func (c *Cache) initStore(ctx api.StreamContext) {
 	var err error
 	err, c.store = store.GetKV(path.Join("sink", ctx.GetRuleId()))
 	if err != nil {
-		c.drainError(err)
+		infra.DrainError(ctx, err, c.errorCh)
+		return
 	}
 	c.key = ctx.GetOpId() + strconv.Itoa(ctx.GetInstanceId())
 	logger.Debugf("cache saved to key %s", c.key)
 	//load cache
 	if err := c.loadCache(); err != nil {
-		go c.drainError(err)
+		infra.DrainError(ctx, err, c.errorCh)
 		return
 	}
 }
@@ -163,7 +164,8 @@ func (c *Cache) timebasedRun(ctx api.StreamContext, saveInterval int) {
 					})
 					if err != nil {
 						logger.Debugf("%v", err)
-						c.drainError(err)
+						infra.DrainError(ctx, err, c.errorCh)
+						return
 					}
 				}()
 			}
@@ -215,10 +217,6 @@ func (c *Cache) saveCache(logger api.Logger, p *LinkedQueue) error {
 	return c.store.Set(c.key, p)
 }
 
-func (c *Cache) drainError(err error) {
-	c.errorCh <- err
-}
-
 func (c *Cache) Length() int {
 	return c.pending.length()
 }
@@ -236,7 +234,7 @@ func NewCheckpointbasedCache(in <-chan interface{}, limit int, tch <-chan struct
 			return nil
 		})
 		if err != nil {
-			c.drainError(err)
+			infra.DrainError(ctx, err, c.errorCh)
 		}
 	}()
 	return c
@@ -281,7 +279,7 @@ func (c *Cache) checkpointbasedRun(ctx api.StreamContext, tch <-chan struct{}) {
 					})
 					if err != nil {
 						logger.Debugf("%v", err)
-						c.drainError(err)
+						infra.DrainError(ctx, err, c.errorCh)
 					}
 				}()
 			}

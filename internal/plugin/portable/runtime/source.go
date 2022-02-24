@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"go.nanomsg.org/mangos/v3"
@@ -45,7 +46,7 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 	pm := GetPluginInsManager()
 	ins, err := pm.getOrStartProcess(ps.reg, PortbleConf)
 	if err != nil {
-		errCh <- err
+		infra.DrainError(ctx, err, errCh)
 		return
 	}
 	ctx.GetLogger().Infof("Plugin started successfully")
@@ -53,7 +54,7 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 	// wait for plugin data
 	dataCh, err := CreateSourceChannel(ctx)
 	if err != nil {
-		errCh <- err
+		infra.DrainError(ctx, err, errCh)
 		return
 	}
 
@@ -71,7 +72,7 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 	}
 	err = ins.StartSymbol(ctx, c)
 	if err != nil {
-		errCh <- err
+		infra.DrainError(ctx, err, errCh)
 		_ = dataCh.Close()
 		return
 	}
@@ -103,7 +104,7 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 		case nil:
 			// do nothing
 		default:
-			errCh <- fmt.Errorf("cannot receive from mangos Socket: %s", err.Error())
+			infra.DrainError(ctx, fmt.Errorf("cannot receive from mangos Socket: %s", err.Error()), errCh)
 			return
 		}
 		result := &api.DefaultSourceTuple{}

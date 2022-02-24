@@ -58,12 +58,12 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log.Debugf("JoinAlignNode %s is started", n.name)
 
 	if len(n.outputs) <= 0 {
-		go func() { errCh <- fmt.Errorf("no output channel found") }()
+		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return
 	}
 	stats, err := NewStatManager(ctx, "op")
 	if err != nil {
-		go func() { errCh <- err }()
+		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return
 	}
 	n.statManager = stats
@@ -83,7 +83,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				case nil:
 					log.Debugf("Restore batch state, nothing")
 				default:
-					errCh <- fmt.Errorf("restore batch state %v error, invalid type", st)
+					infra.DrainError(ctx, fmt.Errorf("restore batch state %v error, invalid type", st), errCh)
 				}
 			} else {
 				log.Warnf("Restore batch state fails: %s", err)
@@ -148,7 +148,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			}
 		})
 		if err != nil {
-			errCh <- err
+			infra.DrainError(ctx, err, errCh)
 		}
 	}()
 }

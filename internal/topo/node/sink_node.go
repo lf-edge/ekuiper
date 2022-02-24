@@ -202,7 +202,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 												return nil
 											})
 											if p != nil {
-												m.drainError(result, p, ctx, logger)
+												infra.DrainError(ctx, p, result)
 											}
 										}()
 									} else {
@@ -242,7 +242,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 												return nil
 											})
 											if p != nil {
-												m.drainError(result, p, ctx, logger)
+												infra.DrainError(ctx, p, result)
 											}
 										}()
 									} else {
@@ -259,14 +259,14 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 						}
 					})
 					if panicOrError != nil {
-						m.drainError(result, panicOrError, ctx, logger)
+						infra.DrainError(ctx, panicOrError, result)
 					}
 				}(i)
 			}
 			return nil
 		})
 		if err != nil {
-			m.drainError(result, err, ctx, logger)
+			infra.DrainError(ctx, err, result)
 		}
 	}()
 }
@@ -382,30 +382,10 @@ func (m *SinkNode) Broadcast(_ interface{}) error {
 	return fmt.Errorf("sink %s cannot add broadcast", m.name)
 }
 
-func (m *SinkNode) drainError(errCh chan<- error, err error, ctx api.StreamContext, logger api.Logger) {
-	go func() {
-		select {
-		case errCh <- err:
-			ctx.GetLogger().Errorf("error in sink %s", err)
-		case <-ctx.Done():
-			m.close(ctx, logger)
-		}
-	}()
-}
-
-func (m *SinkNode) close(ctx api.StreamContext, logger api.Logger) {
-	for _, s := range m.sinks {
-		if err := s.Close(ctx); err != nil {
-			logger.Warnf("close sink fails: %v", err)
-		}
-	}
-	if m.tch != nil {
-		close(m.tch)
-		m.tch = nil
-	}
-}
-
 // SaveCache Only called when checkpoint enabled
 func (m *SinkNode) SaveCache() {
-	m.tch <- struct{}{}
+	select {
+	case m.tch <- struct{}{}:
+	case <-m.ctx.Done():
+	}
 }

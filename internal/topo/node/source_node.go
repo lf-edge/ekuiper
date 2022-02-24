@@ -151,7 +151,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 								stats.SetBufferLength(int64(buffer.GetLength()))
 								if rw, ok := si.source.(api.Rewindable); ok {
 									if offset, err := rw.GetOffset(); err != nil {
-										m.drainError(errCh, err, ctx, logger)
+										infra.DrainError(ctx, err, errCh)
 									} else {
 										err = ctx.PutState(OffsetKey, offset)
 										if err != nil {
@@ -162,32 +162,22 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 								}
 							}
 						}
-						return nil
 					})
 					if poe != nil {
-						m.drainError(errCh, poe, ctx, logger)
+						infra.DrainError(ctx, poe, errCh)
 					}
 				}(i)
 			}
 			return nil
 		})
 		if panicOrError != nil {
-			m.drainError(errCh, panicOrError, ctx, logger)
+			infra.DrainError(ctx, panicOrError, errCh)
 		}
 	}()
 }
 
 func (m *SourceNode) reset() {
 	m.statManagers = nil
-}
-
-func (m *SourceNode) drainError(errCh chan<- error, err error, ctx api.StreamContext, logger api.Logger) {
-	select {
-	case errCh <- err:
-		logger.Debugf("sent error: %v", err)
-	case <-ctx.Done():
-	}
-	return
 }
 
 func (m *SourceNode) close() {

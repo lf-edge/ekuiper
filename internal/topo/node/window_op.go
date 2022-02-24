@@ -93,12 +93,12 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log.Debugf("Window operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
-		go func() { errCh <- fmt.Errorf("no output channel found") }()
+		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return
 	}
 	stats, err := NewStatManager(ctx, "op")
 	if err != nil {
-		go func() { errCh <- err }()
+		infra.DrainError(ctx, err, errCh)
 		return
 	}
 	o.statManager = stats
@@ -111,7 +111,8 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		case nil:
 			log.Debugf("Restore window state, nothing")
 		default:
-			errCh <- fmt.Errorf("restore window state `inputs` %v error, invalid type", st)
+			infra.DrainError(ctx, fmt.Errorf("restore window state `inputs` %v error, invalid type", st), errCh)
+			return
 		}
 	} else {
 		log.Warnf("Restore window state fails: %s", err)
@@ -129,7 +130,8 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		if si, ok := s.(int); ok {
 			o.msgCount = si
 		} else {
-			errCh <- fmt.Errorf("restore window state `msgCount` %v error, invalid type", s)
+			infra.DrainError(ctx, fmt.Errorf("restore window state `msgCount` %v error, invalid type", s), errCh)
+			return
 		}
 	}
 	log.Infof("Start with window state triggerTime: %d, msgCount: %d", o.triggerTime, o.msgCount)
@@ -140,7 +142,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 				return nil
 			})
 			if err != nil {
-				errCh <- err
+				infra.DrainError(ctx, err, errCh)
 			}
 		}()
 	} else {
@@ -150,7 +152,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 				return nil
 			})
 			if err != nil {
-				errCh <- err
+				infra.DrainError(ctx, err, errCh)
 			}
 		}()
 	}
@@ -286,7 +288,8 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 
 					if tl, er := NewTupleList(inputs, o.window.Length); er != nil {
 						log.Error(fmt.Sprintf("Found error when trying to "))
-						errCh <- er
+						infra.DrainError(ctx, er, errCh)
+						return
 					} else {
 						log.Debugf(fmt.Sprintf("It has %d of count window.", tl.count()))
 						triggerTime := conf.GetNowInMilli()

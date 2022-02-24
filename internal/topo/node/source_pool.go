@@ -79,7 +79,7 @@ func getSourceInstance(node *SourceNode, index int) (*sourceInstance, error) {
 					return nil
 				})
 				if err != nil {
-					si.errorCh <- err
+					infra.DrainError(node.ctx, err, si.errorCh)
 				}
 			}()
 		} else {
@@ -259,12 +259,7 @@ func (ss *sourceSingleton) broadcastError(err error) {
 	wg.Add(len(ss.outputs))
 	for n, out := range ss.outputs {
 		go func(name string, output chan<- error) {
-			select {
-			case output <- err:
-				logger.Debugf("broadcast error from source pool to %s done", name)
-			case <-ss.ctx.Done():
-				// rule stop so stop waiting
-			}
+			infra.DrainError(ss.ctx, err, output)
 			wg.Done()
 		}(n, out.errorCh)
 	}
