@@ -69,7 +69,7 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log.Debugf("Unary operator %s is started", o.name)
 
 	if len(o.outputs) <= 0 {
-		go func() { errCh <- fmt.Errorf("no output channel found") }()
+		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return
 	}
 
@@ -88,7 +88,7 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 				return nil
 			})
 			if err != nil {
-				errCh <- err
+				infra.DrainError(ctx, err, errCh)
 			}
 		}()
 	}
@@ -109,7 +109,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 
 	stats, err := NewStatManager(ctx, "op")
 	if err != nil {
-		o.drainError(errCh, err, ctx)
+		infra.DrainError(ctx, err, errCh)
 		return
 	}
 	o.mutex.Lock()
@@ -153,15 +153,4 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			return
 		}
 	}
-}
-
-func (o *UnaryOperator) drainError(errCh chan<- error, err error, ctx api.StreamContext) {
-	go func() {
-		select {
-		case errCh <- err:
-			ctx.GetLogger().Errorf("unary operator %s error %s", o.name, err)
-		case <-ctx.Done():
-			// stop waiting
-		}
-	}()
 }
