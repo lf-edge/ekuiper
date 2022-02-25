@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, repla
 	return err
 }
 
-func (p *StreamProcessor) ExecReplaceStream(statement string, st ast.StreamType) (string, error) {
+func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st ast.StreamType) (string, error) {
 	parser := xsql.NewParser(strings.NewReader(statement))
 	stmt, err := xsql.Language.Parse(parser)
 	if err != nil {
@@ -126,6 +126,9 @@ func (p *StreamProcessor) ExecReplaceStream(statement string, st ast.StreamType)
 	case *ast.StreamStmt:
 		if s.StreamType != st {
 			return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s %s is not found", ast.StreamTypeMap[st], s.Name))
+		}
+		if string(s.Name) != name {
+			return "", fmt.Errorf("Replace %s fails: the sql statement must update the %s source.", name, name)
 		}
 		err = p.execSave(s, statement, true)
 		if err != nil {

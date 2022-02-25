@@ -236,7 +236,7 @@ func sourceManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamTy
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		content, err := streamProcessor.ExecReplaceStream(v.Sql, st)
+		content, err := streamProcessor.ExecReplaceStream(name, v.Sql, st)
 		if err != nil {
 			handleError(w, err, fmt.Sprintf("%s command error", strings.Title(ast.StreamTypeMap[st])), logger)
 			return
@@ -622,15 +622,15 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func prebuildSourcePlugins(w http.ResponseWriter, r *http.Request) {
+func prebuildSourcePlugins(w http.ResponseWriter, _ *http.Request) {
 	prebuildPluginsHandler(w, plugin.SOURCE)
 }
 
-func prebuildSinkPlugins(w http.ResponseWriter, r *http.Request) {
+func prebuildSinkPlugins(w http.ResponseWriter, _ *http.Request) {
 	prebuildPluginsHandler(w, plugin.SINK)
 }
 
-func prebuildFuncsPlugins(w http.ResponseWriter, r *http.Request) {
+func prebuildFuncsPlugins(w http.ResponseWriter, _ *http.Request) {
 	prebuildPluginsHandler(w, plugin.FUNCTION)
 }
 
