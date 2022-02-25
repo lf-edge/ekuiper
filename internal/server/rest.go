@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -179,7 +179,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func pingHandler(w http.ResponseWriter, r *http.Request) {
+func pingHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -283,17 +283,18 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			result = fmt.Sprintf("Rule %s was created successfully.", r.Id)
 		}
-		//Start the rule
-		rs, err := createRuleState(r)
-		if err != nil {
-			result = err.Error()
-		} else {
-			err = doStartRule(rs)
+		go func() {
+			//Start the rule
+			rs, err := createRuleState(r)
 			if err != nil {
 				result = err.Error()
+			} else {
+				err = doStartRule(rs)
+				if err != nil {
+					result = err.Error()
+				}
 			}
-		}
-
+		}()
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(result))
 	case http.MethodGet:
@@ -515,7 +516,7 @@ func functionsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 //list all user defined functions in all function plugins
-func functionsListHandler(w http.ResponseWriter, r *http.Request) {
+func functionsListHandler(w http.ResponseWriter, _ *http.Request) {
 	pluginManager := native.GetManager()
 	content := pluginManager.ListSymbols()
 	jsonResponse(content, w, logger)
@@ -622,15 +623,15 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func prebuildSourcePlugins(w http.ResponseWriter, r *http.Request) {
-	prebuildPluginsHandler(w, r, plugin.SOURCE)
+	prebuildPluginsHandler(w, plugin.SOURCE)
 }
 
 func prebuildSinkPlugins(w http.ResponseWriter, r *http.Request) {
-	prebuildPluginsHandler(w, r, plugin.SINK)
+	prebuildPluginsHandler(w, plugin.SINK)
 }
 
 func prebuildFuncsPlugins(w http.ResponseWriter, r *http.Request) {
-	prebuildPluginsHandler(w, r, plugin.FUNCTION)
+	prebuildPluginsHandler(w, plugin.FUNCTION)
 }
 
 func isOffcialDockerImage() bool {
@@ -640,7 +641,7 @@ func isOffcialDockerImage() bool {
 	return true
 }
 
-func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) {
+func prebuildPluginsHandler(w http.ResponseWriter, t plugin.PluginType) {
 	emsg := "It's strongly recommended to install plugins at official released Debian Docker images. If you choose to proceed to install plugin, please make sure the plugin is already validated in your own build."
 	if !isOffcialDockerImage() {
 		handleError(w, fmt.Errorf(emsg), "", logger)
@@ -652,11 +653,11 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.Plu
 			return
 		}
 		prettyName := strings.ToUpper(osrelease["PRETTY_NAME"])
-		os := "debian"
+		o := "debian"
 		if strings.Contains(prettyName, "DEBIAN") {
 			hosts := conf.Config.Basic.PluginHosts
 
-			if err, plugins := fetchPluginList(t, hosts, os, runtime.GOARCH); err != nil {
+			if err, plugins := fetchPluginList(t, hosts, o, runtime.GOARCH); err != nil {
 				handleError(w, err, "", logger)
 			} else {
 				jsonResponse(plugins, w, logger)
@@ -951,7 +952,7 @@ func serviceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func serviceFunctionsHandler(w http.ResponseWriter, r *http.Request) {
+func serviceFunctionsHandler(w http.ResponseWriter, _ *http.Request) {
 	serviceManager := service.GetManager()
 	content, err := serviceManager.ListFunctions()
 	if err != nil {

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,13 +71,18 @@ func (r *NanomsgReqChannel) SendCmd(arg []byte) error {
 
 // Handshake should only be called once
 func (r *NanomsgReqChannel) Handshake() error {
+	retryCount := 3
 	for {
 		_, err := r.sock.Recv()
 		switch err {
 		case nil:
 			return nil
 		case mangos.ErrRecvTimeout:
-			continue
+			conf.Log.Warnf("handshake timeout, retry %d", retryCount)
+			retryCount--
+			if retryCount == 0 {
+				return fmt.Errorf("handshake timeout")
+			}
 		default:
 			return err
 		}
