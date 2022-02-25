@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"sync"
 )
@@ -120,7 +121,14 @@ func (p *sourcePool) addInstance(k string, node *SourceNode, source api.Source, 
 	if !ok {
 		contextLogger := conf.Log.WithField("source_pool", k)
 		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
-		sctx, cancel := ctx.WithCancel()
+		ruleId := "$$source_pool_" + k
+		opId := "source_pool_" + k
+		store, err := state.CreateStore("source_pool_"+k, 0)
+		if err != nil {
+			ctx.GetLogger().Errorf("source pool %s create store error %v", k, err)
+			return nil, err
+		}
+		sctx, cancel := ctx.WithMeta(ruleId, opId, store).WithCancel()
 		si, err := start(sctx, node, source, index)
 		if err != nil {
 			return nil, err
