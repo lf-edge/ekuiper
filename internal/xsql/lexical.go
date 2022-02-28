@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -308,7 +308,10 @@ func (s *Scanner) ScanString() (tok ast.Token, lit string) {
 			buf.WriteRune(ch)
 		}
 	}
-	r, _ := strconv.Unquote(buf.String())
+	r, err := strconv.Unquote(buf.String())
+	if err != nil {
+		return ast.ILLEGAL, "invalid string: " + buf.String()
+	}
 	return ast.STRING, r
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1435,6 +1435,10 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
+		},
+		{
+			s:   `SELECT ".*(/)(?!.*\1)" FROM topic/sensor1 AS t1`,
+			err: `found "invalid string: \".*(/)(?!.*\\1)\"", expected expression.`,
 		},
 	}
 
