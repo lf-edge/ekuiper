@@ -15,6 +15,7 @@
 package conf
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -148,4 +149,18 @@ func createExpectedRandomConfigMap() map[string]interface{} {
 		defMap["Seed"] = tmp
 	}
 	return input
+}
+
+func TestPrintable(t *testing.T) {
+	bef := map[string]interface{}{
+		"password": "password",
+		"Password": "password",
+		"optional": map[string]interface{}{
+			"password": "password",
+			"Password": "password",
+		},
+	}
+	after := Printable(bef)
+
+	_, _ = fmt.Printf("after %v", after)
 }

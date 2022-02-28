@@ -291,3 +291,19 @@ func extractNamesFromElement(jsonMap map[string]interface{}) []string {
 
 	return result
 }
+
+func Printable(m map[string]interface{}) map[string]interface{} {
+	printableMap := make(map[string]interface{})
+	for k, v := range m {
+		if strings.ToLower(k) == "password" {
+			printableMap[k] = "***"
+		} else {
+			if vm, ok := v.(map[string]interface{}); ok {
+				printableMap[k] = Printable(vm)
+			} else {
+				printableMap[k] = v
+			}
+		}
+	}
+	return printableMap
+}
