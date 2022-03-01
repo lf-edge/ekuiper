@@ -20,7 +20,7 @@ import (
 
 type ConsumerInfo struct {
 	ConsumerId   string
-	ConsumerChan chan<- *api.MessageEnvelope
+	ConsumerChan chan<- interface{}
 	SubErrors    chan error
 }
 

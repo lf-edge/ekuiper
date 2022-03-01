@@ -148,14 +148,48 @@ Expected field type.
 
 ## Override the default settings
 
-If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with `demo`.  Then you can specify the configuration with option `CONF_KEY` when creating the stream definition (see [stream specs](../../sqls/streams.md) for more info).
+If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with `demo_conf`.  Then you can specify the configuration with option `CONF_KEY` when creating the stream definition (see [stream specs](../../sqls/streams.md) for more info).
 
 **Sample**
 
 ```
 demo (
 		...
-	) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
+	) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo_conf");
 ```
 
 The configuration keys used for these specific settings are the same as in `default` settings, any values specified in specific settings will overwrite the values in `default` section.
+
+## Use same connection selector in multiple customized config section
+
+If user creates two config sections, for example
+
+```yaml
+#Override the global configurations
+demo_conf: #Conf_key
+  qos: 0
+  connectionSelector: mqtt.localConnection 
+  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
+
+#Override the global configurations
+demo2_conf: #Conf_key
+  qos: 0
+  connentionSelector: mqtt.localConnection
+  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
+```
+
+create two streams using the config defined above
+```
+demo (
+		...
+	) WITH (DATASOURCE="test/", FORMAT="JSON", CONF_KEY="demo_conf");
+
+demo2 (
+		...
+	) WITH (DATASOURCE="test2/", FORMAT="JSON", CONF_KEY="demo2_conf");
+
+```
+When create rules using the defined streams, the rules will share the same connection in source part. 
+The `DATASOURCE` here will be used as mqtt subscription topics, and subscription  `Qos` defined in config section.
+So stream `demo` will subscribe to topic `test/` with Qos 0 and stream `demo2` will subscribe to topic `test2/` with Qos 0 in this example.
+But if  `DATASOURCE` is same and `qos` not, will only subscribe one time when the first rule starts.       
