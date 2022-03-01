@@ -57,7 +57,6 @@ type messageHandler func(stopChan chan struct{}, msgChan chan types.MessageEnvel
 
 type edgexSubscriptionInfo struct {
 	topic          string
-	msgChan        chan api.MessageEnvelope
 	handler        messageHandler
 	stop           chan struct{}
 	topicConsumers []*clients.ConsumerInfo
@@ -138,9 +137,10 @@ func (mc *edgexClientWrapper) messageHandler(topic string, sub *edgexSubscriptio
 				if sub != nil {
 					for _, consumer := range sub.topicConsumers {
 						select {
-						case consumer.ConsumerChan <- &api.MessageEnvelope{EdgexMsg: msg}:
+						case consumer.ConsumerChan <- &msg:
 							break
 						default:
+							conf.Log.Warnf("consumer chan full for request id %s", consumer.ConsumerId)
 						}
 					}
 				}

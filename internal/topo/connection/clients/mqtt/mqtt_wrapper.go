@@ -122,9 +122,10 @@ func (mc *mqttClientWrapper) newMessageHandler(sub *mqttSubscriptionInfo) pahoMq
 		if sub != nil {
 			for _, consumer := range sub.topicConsumers {
 				select {
-				case consumer.ConsumerChan <- &api.MessageEnvelope{MqttMsg: message}:
+				case consumer.ConsumerChan <- message:
 					break
 				default:
+					conf.Log.Warnf("consumer chan full for request id %s", consumer.ConsumerId)
 				}
 			}
 		}

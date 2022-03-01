@@ -155,3 +155,36 @@ demo (
 
 这些特定设置使用的配置键与 `default` 设置中的配置键相同，在特定设置中指定的任何值都将覆盖 `default` 部分中的值。
 
+## 在多个配置块中引用同一个 connectionSelector
+
+如下所示，用户创建了两个配置项
+```yaml
+#Override the global configurations
+demo_conf: #Conf_key
+  qos: 0
+  connectionSelector: mqtt.localConnection 
+  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
+
+#Override the global configurations
+demo2_conf: #Conf_key
+  qos: 0
+  connentionSelector: mqtt.localConnection
+  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
+```
+基于以上配置，创建了两个数据流
+
+```
+demo (
+		...
+	) WITH (DATASOURCE="test/", FORMAT="JSON", CONF_KEY="demo_conf");
+
+demo2 (
+		...
+	) WITH (DATASOURCE="test2/", FORMAT="JSON", CONF_KEY="demo2_conf");
+
+```
+
+当相应的规则分别引用以上数据流时，规则之间的源部分将共享连接。
+在这里 `DATASOURCE` 对应 mqtt 订阅的 topic, 配置项中的 `qos` 将用作订阅时的 `Qos`.
+在这个例子中，`demo` 以 Qos 0 订阅 topic `test/`,`demo2` 以 Qos 0 订阅 topic `test2/`
+值得注意的是如果两个规则订阅的 `topic` 完全一样而 `Qos` 不同，那么只会订阅一次并以首先启动的规则订阅为准。

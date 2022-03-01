@@ -16,6 +16,7 @@ package source
 
 import (
 	"fmt"
+	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/mqtt"
 	defaultCtx "github.com/lf-edge/ekuiper/internal/topo/context"
@@ -98,7 +99,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.SourceTuple) error {
 	log := ctx.GetLogger()
 
-	messages := make(chan *api.MessageEnvelope, ms.buflen)
+	messages := make(chan interface{}, ms.buflen)
 	topics := []api.TopicChannel{{Topic: ms.tpc, Messages: messages}}
 	err := make(chan error, len(topics))
 	req := &mqtt.RequestInfo{
@@ -124,8 +125,11 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 					log.Infof("Exit subscription to edgex messagebus topic %s.", ms.tpc)
 					return nil
 				}
-				msg := env.MqttMsg
-
+				msg, ok := env.(pahoMqtt.Message)
+				if !ok {
+					log.Errorf("can not convert interface data to mqtt message %s.", ms.tpc)
+					return nil
+				}
 				result, e := message.Decode(msg.Payload(), ms.format)
 				//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
 				if e != nil {

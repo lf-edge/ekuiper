@@ -23,6 +23,7 @@ import (
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
+	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"strconv"
@@ -81,7 +82,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 	}
 	es.cli = cli.(api.MessageClient)
 
-	messages := make(chan *api.MessageEnvelope, es.buflen)
+	messages := make(chan interface{}, es.buflen)
 	topics := []api.TopicChannel{{Topic: es.topic, Messages: messages}}
 	subErrs := make(chan error, len(topics))
 	if e := es.cli.Subscribe(ctx, topics, subErrs); e != nil {
@@ -102,7 +103,13 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 					log.Infof("Exit subscription to edgex messagebus topic %s.", es.topic)
 					return
 				}
-				env := msg.EdgexMsg
+
+				env, ok := msg.(*types.MessageEnvelope)
+				if !ok {
+					log.Errorf("can not convert interface data to mqtt message.")
+					return
+				}
+
 				if strings.EqualFold(env.ContentType, "application/json") {
 					var r interface{}
 					switch es.messageType {

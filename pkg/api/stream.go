@@ -16,8 +16,6 @@ package api
 
 import (
 	"context"
-	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"sync"
 )
 
@@ -196,19 +194,10 @@ type MessageClient interface {
 	Publish(c StreamContext, topic string, message []byte) error
 }
 
-type MessageEnvelope struct {
-	Payload []byte
-
-	//mqtt
-	MqttMsg MQTT.Message
-	//edgex
-	EdgexMsg types.MessageEnvelope
-}
-
 // TopicChannel is the data structure for subscriber
 type TopicChannel struct {
 	// Topic for subscriber to filter on if any
 	Topic string
 	// Messages is the returned message channel for the subscriber
-	Messages chan<- *MessageEnvelope
+	Messages chan<- interface{}
 }
