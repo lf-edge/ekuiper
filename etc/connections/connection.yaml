@@ -46,7 +46,7 @@ edgex:
     port: 1883
     type: mqtt
     optional:
-      ClientId: "client1"
+      KeepAlive: "50"
 
   zeroMsgBus: #connection key
     protocol: tcp

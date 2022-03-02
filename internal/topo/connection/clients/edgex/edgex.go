@@ -63,6 +63,21 @@ func (es *EdgexClient) CfgValidate(props map[string]interface{}) error {
 		Optional: nil,
 	}
 
+	if o, ok := props["optional"]; ok {
+		switch ot := o.(type) {
+		case map[string]string:
+			c.Optional = ot
+		case map[string]interface{}:
+			c.Optional = make(map[string]string)
+			for k, v := range ot {
+				c.Optional[k] = fmt.Sprintf("%v", v)
+			}
+		default:
+			return fmt.Errorf("invalid optional config %v, must be a map", o)
+		}
+		delete(props, "optional")
+	}
+
 	err := cast.MapToStruct(props, c)
 	if err != nil {
 		return fmt.Errorf("map config map to struct fail with error: %v", err)
