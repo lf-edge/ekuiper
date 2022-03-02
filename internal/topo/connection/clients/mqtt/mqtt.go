@@ -56,7 +56,7 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 
 	err := cast.MapToStruct(props, &cfg)
 	if err != nil {
-		return fmt.Errorf("failed to get config for %v, the error is %s", cfg, err)
+		return fmt.Errorf("failed to get config, the error is %s", err)
 	}
 
 	if srv := cfg.Servers; len(srv) != 0 {
@@ -64,12 +64,12 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 	} else if cfg.Server != "" {
 		ms.srv = cfg.Server
 	} else {
-		return fmt.Errorf("missing server property for %v", cfg)
+		return fmt.Errorf("missing server property")
 	}
 
 	if cfg.ClientId == "" {
 		if newUUID, err := uuid.NewUUID(); err != nil {
-			return fmt.Errorf("failed to get uuid for %v, the error is %s", cfg, err)
+			return fmt.Errorf("failed to get uuid, the error is %s", err)
 		} else {
 			ms.clientid = newUUID.String()
 		}
