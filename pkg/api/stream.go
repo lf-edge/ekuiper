@@ -189,9 +189,9 @@ const (
 type Qos int
 
 type MessageClient interface {
-	Subscribe(c StreamContext, subChan []TopicChannel, messageErrors chan error) error
+	Subscribe(c StreamContext, subChan []TopicChannel, messageErrors chan error, params map[string]interface{}) error
 	Release(c StreamContext)
-	Publish(c StreamContext, topic string, message []byte) error
+	Publish(c StreamContext, topic string, message []byte, params map[string]interface{}) error
 }
 
 // TopicChannel is the data structure for subscriber

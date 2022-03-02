@@ -16,8 +16,6 @@ package sink
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/mqtt"
-	defaultCtx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -102,13 +100,12 @@ func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
 		return fmt.Errorf("the value %v of dynamic prop %s for topic is not a string", ms.tpc, tpc)
 	}
 
-	req := &mqtt.RequestInfo{
-		Qos:      ms.qos,
-		Retained: ms.retained,
+	para := map[string]interface{}{
+		"qos":      ms.qos,
+		"retained": ms.retained,
 	}
-	c := mqtt.WithRequestInfo(ctx.(*defaultCtx.DefaultContext), req)
 
-	if err := ms.cli.Publish(c, tpc.(string), jsonBytes); err != nil {
+	if err := ms.cli.Publish(ctx, tpc.(string), jsonBytes, para); err != nil {
 		return fmt.Errorf("%s: %s", errorx.IOErr, err.Error())
 	}
 	return nil

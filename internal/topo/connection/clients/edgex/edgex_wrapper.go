@@ -22,36 +22,10 @@ import (
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
-	defaultCtx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"strings"
 	"sync"
 )
-
-type edgexCtxKey int
-
-const (
-	_ edgexCtxKey = iota
-	ctxKeyEdgeXRequest
-)
-
-type RequestInfo struct {
-	ContentType string
-}
-
-// WithRequestInfo creates a new context that has MqttRequestInfo injected.
-func WithRequestInfo(parent *defaultCtx.DefaultContext, reqInfo *RequestInfo) *defaultCtx.DefaultContext {
-	return defaultCtx.WithValue(parent, ctxKeyEdgeXRequest, reqInfo)
-}
-
-// GetRequestInfo tries to retrieve MqttRequestInfo from the given context.
-// If it doesn't exist, an nil is returned.
-func GetRequestInfo(parent *defaultCtx.DefaultContext) *RequestInfo {
-	if reqInfo := parent.Value(ctxKeyEdgeXRequest); reqInfo != nil {
-		return reqInfo.(*RequestInfo)
-	}
-	return nil
-}
 
 type messageHandler func(stopChan chan struct{}, msgChan chan types.MessageEnvelope)
 
@@ -104,14 +78,15 @@ func NewEdgeClientWrapper(props map[string]interface{}) (clients.ClientWrapper, 
 	return cliWpr, nil
 }
 
-func (mc *edgexClientWrapper) Publish(c api.StreamContext, topic string, message []byte) error {
+func (mc *edgexClientWrapper) Publish(c api.StreamContext, topic string, message []byte, params map[string]interface{}) error {
 	env := types.NewMessageEnvelope(message, c)
-	reqInfo := GetRequestInfo(c.(*defaultCtx.DefaultContext))
-	if reqInfo == nil {
-		return fmt.Errorf("not find reqInfo for mqtt subscription %s_%s_%d", c.GetRuleId(), c.GetOpId(), c.GetInstanceId())
-	}
-	env.ContentType = reqInfo.ContentType
 
+	env.ContentType = "application/json"
+	if pk, ok := params["contentType"]; ok {
+		if v, ok := pk.(string); ok {
+			env.ContentType = v
+		}
+	}
 	err := mc.cli.Publish(env, topic)
 	if err != nil {
 		return err
@@ -149,7 +124,7 @@ func (mc *edgexClientWrapper) messageHandler(topic string, sub *edgexSubscriptio
 	}
 }
 
-func (mc *edgexClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error) error {
+func (mc *edgexClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error, _ map[string]interface{}) error {
 	log := c.GetLogger()
 
 	mc.subLock.Lock()

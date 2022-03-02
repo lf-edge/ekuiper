@@ -25,8 +25,6 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/edgex"
-	defaultCtx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -501,12 +499,10 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 		topic = ems.topic
 	}
 
-	req := &edgex.RequestInfo{
-		ContentType: ems.c.ContentType,
+	para := map[string]interface{}{
+		"contentType": ems.c.ContentType,
 	}
-	c := edgex.WithRequestInfo(ctx.(*defaultCtx.DefaultContext), req)
-
-	if e := ems.cli.Publish(c, topic, data); e != nil {
+	if e := ems.cli.Publish(ctx, topic, data, para); e != nil {
 		logger.Errorf("%s: found error %s when publish to EdgeX message bus.\n", e)
 		return fmt.Errorf("%s:%s", errorx.IOErr, e.Error())
 	}
