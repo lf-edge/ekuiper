@@ -100,7 +100,7 @@ func GetClient(connectionType string, props map[string]interface{}) (api.Message
 	} else {
 		cliWpr, err := clientCreator(props)
 		if err != nil {
-			conf.Log.Errorf("can not create client for cfg : %v have error %s", props, err)
+			conf.Log.Errorf("can not create client for cfg : %v have error %s", conf.Printable(props), err)
 			return nil, err
 		}
 		conf.Log.Infof("Init client wrapper for client type %s", connectionType)
