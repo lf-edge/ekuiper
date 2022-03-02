@@ -18,8 +18,6 @@ import (
 	"fmt"
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/mqtt"
-	defaultCtx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
@@ -102,12 +100,11 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 	messages := make(chan interface{}, ms.buflen)
 	topics := []api.TopicChannel{{Topic: ms.tpc, Messages: messages}}
 	err := make(chan error, len(topics))
-	req := &mqtt.RequestInfo{
-		Qos: byte(ms.qos),
-	}
-	c := mqtt.WithRequestInfo(ctx.(*defaultCtx.DefaultContext), req)
 
-	if e := ms.cli.Subscribe(c, topics, err); e != nil {
+	para := map[string]interface{}{
+		"qos": byte(ms.qos),
+	}
+	if e := ms.cli.Subscribe(ctx, topics, err, para); e != nil {
 		log.Errorf("Failed to subscribe to mqtt topic %s, error %s\n", ms.tpc, e.Error())
 		return e
 	} else {

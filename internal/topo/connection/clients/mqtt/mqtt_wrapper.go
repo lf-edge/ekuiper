@@ -19,37 +19,10 @@ import (
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
-	defaultCtx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"strings"
 	"sync"
 )
-
-type mqttCtxKey int
-
-const (
-	_ mqttCtxKey = iota
-	ctxKeyMqttRequest
-)
-
-type RequestInfo struct {
-	Qos      byte
-	Retained bool
-}
-
-// WithRequestInfo creates a new context that has MqttRequestInfo injected.
-func WithRequestInfo(parent *defaultCtx.DefaultContext, reqInfo *RequestInfo) *defaultCtx.DefaultContext {
-	return defaultCtx.WithValue(parent, ctxKeyMqttRequest, reqInfo)
-}
-
-// GetRequestInfo tries to retrieve MqttRequestInfo from the given context.
-// If it doesn't exist, an nil is returned.
-func GetRequestInfo(parent *defaultCtx.DefaultContext) *RequestInfo {
-	if reqInfo := parent.Value(ctxKeyMqttRequest); reqInfo != nil {
-		return reqInfo.(*RequestInfo)
-	}
-	return nil
-}
 
 type mqttSubscriptionInfo struct {
 	topic        string
@@ -132,12 +105,21 @@ func (mc *mqttClientWrapper) newMessageHandler(sub *mqttSubscriptionInfo) pahoMq
 	}
 }
 
-func (mc *mqttClientWrapper) Publish(c api.StreamContext, topic string, message []byte) error {
-	reqInfo := GetRequestInfo(c.(*defaultCtx.DefaultContext))
-	if reqInfo == nil {
-		return fmt.Errorf("not find reqInfo for mqtt subscription %s_%s_%d", c.GetRuleId(), c.GetOpId(), c.GetInstanceId())
+func (mc *mqttClientWrapper) Publish(_ api.StreamContext, topic string, message []byte, params map[string]interface{}) error {
+	var Qos byte = 0
+	if pq, ok := params["qos"]; ok {
+		if v, ok := pq.(byte); ok {
+			Qos = v
+		}
 	}
-	err := mc.cli.Publish(topic, reqInfo.Qos, reqInfo.Retained, message)
+	retained := false
+	if pk, ok := params["retained"]; ok {
+		if v, ok := pk.(bool); ok {
+			retained = v
+		}
+	}
+
+	err := mc.cli.Publish(topic, Qos, retained, message)
 	if err != nil {
 		return err
 	}
@@ -145,7 +127,7 @@ func (mc *mqttClientWrapper) Publish(c api.StreamContext, topic string, message 
 	return nil
 }
 
-func (mc *mqttClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error) error {
+func (mc *mqttClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error, params map[string]interface{}) error {
 	log := c.GetLogger()
 
 	mc.subLock.Lock()
@@ -155,9 +137,12 @@ func (mc *mqttClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicC
 	if _, ok := mc.subscribers[subId]; ok {
 		return fmt.Errorf("already have subscription %s", subId)
 	}
-	reqInfo := GetRequestInfo(c.(*defaultCtx.DefaultContext))
-	if reqInfo == nil {
-		return fmt.Errorf("not find reqInfo for mqtt subscription %s", subId)
+
+	var Qos byte = 0
+	if pq, ok := params["qos"]; ok {
+		if v, ok := pq.(byte); ok {
+			Qos = v
+		}
 	}
 
 	subTopics := clients.SubscribedTopics{
@@ -178,7 +163,7 @@ func (mc *mqttClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicC
 		} else {
 			sub := &mqttSubscriptionInfo{
 				topic: tpc,
-				qos:   reqInfo.Qos,
+				qos:   Qos,
 				topicConsumers: []*clients.ConsumerInfo{
 					{
 						ConsumerId:   subId,
@@ -189,7 +174,7 @@ func (mc *mqttClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicC
 			}
 			sub.topicHandler = mc.newMessageHandler(sub)
 			log.Infof("new subscription for topic %s, reqId is %s", tpc, subId)
-			token := mc.cli.conn.Subscribe(tpc, reqInfo.Qos, sub.topicHandler)
+			token := mc.cli.conn.Subscribe(tpc, Qos, sub.topicHandler)
 			if token.Error() != nil {
 				messageErrors <- token.Error()
 				return token.Error()

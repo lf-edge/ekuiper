@@ -31,9 +31,9 @@ type SubscribedTopics struct {
 type ClientFactoryFunc func(props map[string]interface{}) (ClientWrapper, error)
 
 type ClientWrapper interface {
-	Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error) error
+	Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error, params map[string]interface{}) error
 	Release(c api.StreamContext)
-	Publish(c api.StreamContext, topic string, message []byte) error
+	Publish(c api.StreamContext, topic string, message []byte, params map[string]interface{}) error
 	SetConnectionSelector(conSelector string)
 	AddRef()
 }

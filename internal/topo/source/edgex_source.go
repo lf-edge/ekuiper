@@ -85,7 +85,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 	messages := make(chan interface{}, es.buflen)
 	topics := []api.TopicChannel{{Topic: es.topic, Messages: messages}}
 	subErrs := make(chan error, len(topics))
-	if e := es.cli.Subscribe(ctx, topics, subErrs); e != nil {
+	if e := es.cli.Subscribe(ctx, topics, subErrs, nil); e != nil {
 		log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
 		errCh <- e
 	} else {
