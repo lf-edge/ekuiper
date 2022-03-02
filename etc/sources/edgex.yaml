@@ -49,7 +49,7 @@ mqtt_conf: #Conf_key
   topic: events
   type: mqtt
   optional:
-    ClientId: "client1"
+    KeepAlive: "50"
 
 share_conf: #Conf_key
   protocol: tcp
