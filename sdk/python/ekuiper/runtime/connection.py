@@ -27,7 +27,11 @@ class PairChannel:
             url = "ipc:///tmp/plugin_{}.ipc".format(name)
         else:
             url = "ipc:///tmp/func_{}.ipc".format(name)
-        s.dial(url)
+        try:
+            s.dial(url, block=True)
+        except Exception as e:
+            print(e)
+            exit(0)
         self.sock = s
 
     """ run this in a new thread"""

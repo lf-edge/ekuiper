@@ -71,7 +71,7 @@ func (r *NanomsgReqChannel) SendCmd(arg []byte) error {
 
 // Handshake should only be called once
 func (r *NanomsgReqChannel) Handshake() error {
-	retryCount := 3
+	retryCount := 10
 	for {
 		_, err := r.sock.Recv()
 		switch err {
