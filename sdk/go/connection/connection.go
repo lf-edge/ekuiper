@@ -77,7 +77,6 @@ func (r *NanomsgRepChannel) Run(f ReplyFunc) error {
 			return fmt.Errorf("can't send reply: %s", err.Error())
 		}
 	}
-	return nil
 }
 
 func (r *NanomsgRepChannel) Close() error {
@@ -95,7 +94,9 @@ func CreateControlChannel(pluginName string) (ControlChannel, error) {
 	setSockOptions(sock)
 	sock.SetOption(mangos.OptionRetryTime, 0)
 	url := fmt.Sprintf("ipc:///tmp/plugin_%s.ipc", pluginName)
-	if err = sock.Dial(url); err != nil {
+	if err = sock.DialOptions(url, map[string]interface{}{
+		mangos.OptionDialAsynch: false,
+	}); err != nil {
 		return nil, fmt.Errorf("can't dial on req socket: %s", err.Error())
 	}
 	return &NanomsgRepChannel{sock: sock}, nil
