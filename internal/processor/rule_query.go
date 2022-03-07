@@ -18,10 +18,10 @@
 package processor
 
 import (
-	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
 func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*topo.Topo, error) {
