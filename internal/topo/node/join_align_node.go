@@ -16,9 +16,9 @@ package node
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
 // JoinAlignNode will block the stream and buffer all the table tuples. Once buffered, it will combine the later input with the buffer
