@@ -15,8 +15,8 @@
 package checkpoint
 
 import (
-	"github.com/lf-edge/ekuiper/internal/infra"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
 type BarrierHandler interface {
