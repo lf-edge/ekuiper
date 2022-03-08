@@ -27,10 +27,11 @@ import (
 	"time"
 )
 
+// TODO to design timeout strategy
+
 // Options Initialized in config
 var Options = map[string]interface{}{
-	mangos.OptionSendDeadline: 1000 * time.Millisecond,
-	mangos.OptionRecvDeadline: 1000 * time.Millisecond,
+	mangos.OptionRecvDeadline: 1 * time.Hour,
 }
 
 type Closable interface {
@@ -71,22 +72,23 @@ func (r *NanomsgReqChannel) SendCmd(arg []byte) error {
 
 // Handshake should only be called once
 func (r *NanomsgReqChannel) Handshake() error {
-	retryCount := 10
-	for {
-		_, err := r.sock.Recv()
-		switch err {
-		case nil:
-			return nil
-		case mangos.ErrRecvTimeout:
-			conf.Log.Warnf("handshake timeout, retry %d", retryCount)
-			retryCount--
-			if retryCount == 0 {
-				return fmt.Errorf("handshake timeout")
-			}
-		default:
-			return err
-		}
+	t, err := r.sock.GetOption(mangos.OptionRecvDeadline)
+	if err != nil {
+		return err
 	}
+	err = r.sock.SetOption(mangos.OptionRecvDeadline, 5*time.Second)
+	if err != nil {
+		return err
+	}
+	_, err = r.sock.Recv()
+	if err != nil {
+		return err
+	}
+	err = r.sock.SetOption(mangos.OptionRecvDeadline, t)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 type DataInChannel interface {
