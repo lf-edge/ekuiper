@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -162,7 +162,11 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	if err != nil {
 		return nil, fmt.Errorf("can't create new control channel: %s", err.Error())
 	}
-
+	defer func() {
+		if err != nil {
+			_ = ctrlChan.Close()
+		}
+	}()
 	conf.Log.Infof("executing plugin")
 	jsonArg, err := json.Marshal(pconf)
 	if err != nil {
@@ -190,6 +194,11 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	}
 	process := cmd.Process
 	conf.Log.Printf("plugin started pid: %d\n", process.Pid)
+	defer func() {
+		if err != nil {
+			_ = process.Kill()
+		}
+	}()
 	go func() {
 		err = cmd.Wait()
 		if err != nil {
@@ -207,7 +216,6 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	if err != nil {
 		return nil, fmt.Errorf("plugin %s control handshake error: %v", pluginMeta.Executable, err)
 	}
-
 	ins := NewPluginIns(pluginMeta.Name, ctrlChan, process)
 	p.instances[pluginMeta.Name] = ins
 	conf.Log.Println("plugin start running")
