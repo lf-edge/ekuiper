@@ -29,10 +29,18 @@ import (
 
 // TODO to design timeout strategy
 
-// Options Initialized in config
-var Options = map[string]interface{}{
-	mangos.OptionRecvDeadline: 1 * time.Hour,
-}
+// sockOptions Initialized in config
+var (
+	sockOptions = map[string]interface{}{
+		mangos.OptionRecvDeadline: 1 * time.Hour,
+		mangos.OptionRetryTime:    0,
+	}
+	dialOptions = map[string]interface{}{
+		mangos.OptionDialAsynch:       false,
+		mangos.OptionMaxReconnectTime: 5 * time.Second,
+		mangos.OptionReconnectTime:    100 * time.Millisecond,
+	}
+)
 
 type Closable interface {
 	Close() error
@@ -175,7 +183,7 @@ func CreateSinkChannel(ctx api.StreamContext) (DataOutChannel, error) {
 	}
 	setSockOptions(sock)
 	url := fmt.Sprintf("ipc:///tmp/%s_%s_%d.ipc", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	if err = sock.Dial(url); err != nil {
+	if err = sock.DialOptions(url, dialOptions); err != nil {
 		return nil, fmt.Errorf("can't dial on push socket: %s", err.Error())
 	}
 	conf.Log.Infof("sink channel created: %s", url)
@@ -200,8 +208,11 @@ func CreateControlChannel(pluginName string) (ControlChannel, error) {
 }
 
 func setSockOptions(sock mangos.Socket) {
-	for k, v := range Options {
-		_ = sock.SetOption(k, v)
+	for k, v := range sockOptions {
+		err := sock.SetOption(k, v)
+		if err != nil {
+			conf.Log.Errorf("can't set socket option %s: %s", k, err.Error())
+		}
 	}
 }
 

@@ -27,7 +27,16 @@ import (
 )
 
 // Options Initialized in plugin.go Start according to the config
-var Options map[string]interface{}
+var (
+	SockOptions = map[string]interface{}{
+		mangos.OptionRetryTime: 0,
+	}
+	dialOptions = map[string]interface{}{
+		mangos.OptionDialAsynch:       false,
+		mangos.OptionMaxReconnectTime: 5 * time.Second,
+		mangos.OptionReconnectTime:    100 * time.Millisecond,
+	}
+)
 
 type Closable interface {
 	Close() error
@@ -92,11 +101,8 @@ func CreateControlChannel(pluginName string) (ControlChannel, error) {
 		return nil, fmt.Errorf("can't get new req socket: %s", err)
 	}
 	setSockOptions(sock)
-	sock.SetOption(mangos.OptionRetryTime, 0)
 	url := fmt.Sprintf("ipc:///tmp/plugin_%s.ipc", pluginName)
-	if err = sock.DialOptions(url, map[string]interface{}{
-		mangos.OptionDialAsynch: false,
-	}); err != nil {
+	if err = sock.DialOptions(url, dialOptions); err != nil {
 		return nil, fmt.Errorf("can't dial on req socket: %s", err.Error())
 	}
 	return &NanomsgRepChannel{sock: sock}, nil
@@ -112,7 +118,7 @@ func CreateSourceChannel(ctx api.StreamContext) (DataOutChannel, error) {
 	}
 	setSockOptions(sock)
 	url := fmt.Sprintf("ipc:///tmp/%s_%s_%d.ipc", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	if err = sock.Dial(url); err != nil {
+	if err = sock.DialOptions(url, dialOptions); err != nil {
 		return nil, fmt.Errorf("can't dial on push socket: %s", err.Error())
 	}
 	return sock, nil
@@ -127,9 +133,8 @@ func CreateFuncChannel(symbolName string) (DataInOutChannel, error) {
 		return nil, fmt.Errorf("can't get new req socket: %s", err)
 	}
 	setSockOptions(sock)
-	sock.SetOption(mangos.OptionRetryTime, 0)
 	url := fmt.Sprintf("ipc:///tmp/func_%s.ipc", symbolName)
-	if err = sock.Dial(url); err != nil {
+	if err = sock.DialOptions(url, dialOptions); err != nil {
 		return nil, fmt.Errorf("can't dial on req socket: %s", err.Error())
 	}
 	return &NanomsgRepChannel{sock: sock}, nil
@@ -152,8 +157,11 @@ func CreateSinkChannel(ctx api.StreamContext) (DataInChannel, error) {
 }
 
 func setSockOptions(sock mangos.Socket) {
-	for k, v := range Options {
-		sock.SetOption(k, v)
+	for k, v := range SockOptions {
+		err := sock.SetOption(k, v)
+		if err != nil {
+			context.Log.Warnf("can't set option %s: %s", k, err.Error())
+		}
 	}
 }
 
