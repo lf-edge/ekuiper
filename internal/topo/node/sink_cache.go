@@ -198,7 +198,7 @@ func (c *Cache) loadCache() error {
 
 func (c *Cache) saveCache(logger api.Logger, p *LinkedQueue) error {
 	logger.Infof("clean the cache and reopen")
-	c.store.Clean()
+	_ = c.store.Delete(c.key)
 
 	return c.store.Set(c.key, p)
 }

@@ -24,4 +24,5 @@ type KeyValue interface {
 	Delete(key string) error
 	Keys() (keys []string, err error)
 	Clean() error
+	Drop() error
 }

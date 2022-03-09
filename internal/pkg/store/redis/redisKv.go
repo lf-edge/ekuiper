@@ -112,6 +112,18 @@ func (kv redisKvStore) Delete(key string) error {
 }
 
 func (kv redisKvStore) Keys() ([]string, error) {
+	keys, err := kv.metaKeys()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, 0)
+	for _, k := range keys {
+		result = append(result, kv.trimPrefix(k))
+	}
+	return result, nil
+}
+
+func (kv redisKvStore) metaKeys() ([]string, error) {
 	keys := make([]string, 0)
 	err := kv.database.Apply(func(conn redis.Conn) error {
 		pattern := fmt.Sprintf("%s:*", kv.keyPrefix)
@@ -119,20 +131,32 @@ func (kv redisKvStore) Keys() ([]string, error) {
 		keys, err = redis.Strings(reply, err)
 		return err
 	})
-	result := make([]string, 0)
-	for _, k := range keys {
-		result = append(result, kv.trimPrefix(k))
-	}
-	return result, err
+	return keys, err
 }
 
 func (kv redisKvStore) Clean() error {
-	keys, err := kv.Keys()
+	keys, err := kv.metaKeys()
 	if err != nil {
 		return err
 	}
 	keysToRemove := make([]interface{}, len(keys))
-	for i, v := range keysToRemove {
+	for i, v := range keys {
+		keysToRemove[i] = v
+	}
+	err = kv.database.Apply(func(conn redis.Conn) error {
+		_, err := conn.Do("DEL", keysToRemove...)
+		return err
+	})
+	return err
+}
+
+func (kv redisKvStore) Drop() error {
+	keys, err := kv.metaKeys()
+	if err != nil {
+		return err
+	}
+	keysToRemove := make([]interface{}, len(keys))
+	for i, v := range keys {
 		keysToRemove[i] = v
 	}
 	err = kv.database.Apply(func(conn redis.Conn) error {

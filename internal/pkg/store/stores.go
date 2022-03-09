@@ -65,6 +65,16 @@ func (s *stores) GetKV(table string) (error, kv2.KeyValue) {
 	return nil, ks
 }
 
+func (s *stores) DropKV(table string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if ks, contains := s.kv[table]; contains {
+		_ = ks.Drop()
+		delete(s.ts, table)
+	}
+}
+
 func (s *stores) GetTS(table string) (error, kv2.Tskv) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -77,6 +87,16 @@ func (s *stores) GetTS(table string) (error, kv2.Tskv) {
 	}
 	s.ts[table] = tts
 	return nil, tts
+}
+
+func (s *stores) DropTS(table string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if tts, contains := s.ts[table]; contains {
+		_ = tts.Drop()
+		delete(s.ts, table)
+	}
 }
 
 var globalStores *stores = nil
@@ -99,4 +119,20 @@ func GetTS(table string) (error, kv2.Tskv) {
 		return fmt.Errorf("global stores are not initialized"), nil
 	}
 	return globalStores.GetTS(table)
+}
+
+func DropTS(table string) error {
+	if globalStores == nil {
+		return fmt.Errorf("global stores are not initialized")
+	}
+	globalStores.DropTS(table)
+	return nil
+}
+
+func DropKV(table string) error {
+	if globalStores == nil {
+		return fmt.Errorf("global stores are not initialized")
+	}
+	globalStores.DropKV(table)
+	return nil
 }

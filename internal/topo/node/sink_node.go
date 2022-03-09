@@ -195,9 +195,9 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							}
 							stats.SetBufferLength(int64(len(m.input)))
 							if sconf.RunAsync {
-								go doCollect(ctx, sink, data, stats, sconf, nil)
+								go doCollect(ctx, sink, data, stats, sconf)
 							} else {
-								doCollect(ctx, sink, data, stats, sconf, nil)
+								doCollect(ctx, sink, data, stats, sconf)
 							}
 						case <-ctx.Done():
 							logger.Infof("sink node %s instance %d done", m.name, instance)
@@ -213,9 +213,9 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 					logger.Infof("Creating sink cache")
 					var cache *Cache
 					if m.qos >= api.AtLeastOnce {
-						cache = NewCheckpointbasedCache(m.input, sconf.CacheLength, m.tch, result, ctx)
+						cache = NewCheckpointbasedCache(m.input, sconf.CacheLength, m.tch, result, ctx.WithInstance(instance))
 					} else {
-						cache = NewTimebasedCache(m.input, sconf.CacheLength, sconf.CacheSaveInterval, result, ctx)
+						cache = NewTimebasedCache(m.input, sconf.CacheLength, sconf.CacheSaveInterval, result, ctx.WithInstance(instance))
 					}
 					for {
 						select {
@@ -227,9 +227,25 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							}
 							stats.SetBufferLength(int64(len(m.input)))
 							if sconf.RunAsync {
-								go doCollect(ctx, sink, data, stats, sconf, cache.Complete)
+								go func() {
+									doCollect(ctx, sink, data.data, stats, sconf)
+									if cache.Complete != nil {
+										select {
+										case cache.Complete <- data.index:
+										default:
+											ctx.GetLogger().Warnf("sink cache missing response for %d", data.index)
+										}
+									}
+								}()
 							} else {
-								doCollect(ctx, sink, data, stats, sconf, cache.Complete)
+								doCollect(ctx, sink, data.data, stats, sconf)
+								if cache.Complete != nil {
+									select {
+									case cache.Complete <- data.index:
+									default:
+										ctx.GetLogger().Warnf("sink cache missing response for %d", data.index)
+									}
+								}
 							}
 						case <-ctx.Done():
 							logger.Infof("sink node %s instance %d done", m.name, instance)
@@ -252,7 +268,7 @@ func (m *SinkNode) reset() {
 	m.statManagers = nil
 }
 
-func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats StatManager, sconf *SinkConf, signalCh chan<- int) {
+func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats StatManager, sconf *SinkConf) {
 	stats.IncTotalRecordsIn()
 	stats.ProcessTimeStart()
 	defer stats.ProcessTimeEnd()
@@ -274,20 +290,20 @@ func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats Sta
 		return
 	}
 	if !sconf.SendSingle {
-		doCollectData(ctx, sink, outs, stats, sconf, signalCh)
+		doCollectData(ctx, sink, outs, stats, sconf)
 	} else {
 		for _, d := range outs {
 			if sconf.Omitempty && (d == nil || len(d) == 0) {
 				ctx.GetLogger().Debugf("receive empty in sink")
 				continue
 			}
-			doCollectData(ctx, sink, d, stats, sconf, signalCh)
+			doCollectData(ctx, sink, d, stats, sconf)
 		}
 	}
 }
 
 // doCollectData outData must be map or []map
-func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, stats StatManager, sconf *SinkConf, signalCh chan<- int) {
+func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, stats StatManager, sconf *SinkConf) {
 	retries := sconf.RetryCount
 	for {
 		select {
@@ -308,17 +324,6 @@ func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, st
 			} else {
 				ctx.GetLogger().Debugf("success")
 				stats.IncTotalRecordsOut()
-				if signalCh != nil {
-					cacheTuple, ok := outData.(*CacheTuple)
-					if !ok {
-						ctx.GetLogger().Warnf("got none cache tuple %v, should not happen", outData)
-					}
-					select {
-					case signalCh <- cacheTuple.index:
-					default:
-						ctx.GetLogger().Warnf("sink cache missing response for %d", cacheTuple.index)
-					}
-				}
 				return
 			}
 		}
