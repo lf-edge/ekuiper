@@ -28,7 +28,7 @@ class PairChannel:
         else:
             url = "ipc:///tmp/func_{}.ipc".format(name)
         try:
-            s.dial(url, block=True)
+            dial_with_retry(s, url)
         except Exception as e:
             print(e)
             exit(0)
@@ -57,7 +57,7 @@ class SourceChannel:
         s = Push0()
         url = "ipc:///tmp/{}_{}_{}.ipc".format(meta['ruleId'], meta['opId'], meta['instanceId'])
         logging.info(url)
-        s.dial(url)
+        dial_with_retry(s, url)
         self.sock = s
 
     def send(self, data: bytes):
@@ -90,6 +90,20 @@ def listen_with_retry(sock, url: str):
         # noinspection PyBroadException
         try:
             sock.listen(url)
+            break
+        except Exception:
+            retry_count -= 1
+            if retry_count < 0:
+                raise
+        time.sleep(retry_interval)
+
+
+def dial_with_retry(sock, url: str):
+    retry_count = 50
+    retry_interval = 0.1
+    while True:
+        try:
+            sock.dial(url, block=True)
             break
         except Exception:
             retry_count -= 1

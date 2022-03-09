@@ -47,12 +47,8 @@ func initVars(args []string, conf *PluginConfig) {
 		if err != nil {
 			panic(fmt.Sprintf("fail to parse args %v", args))
 		}
-		connection.Options = map[string]interface{}{
-			mangos.OptionSendDeadline: pc.SendTimeout,
-		}
+		connection.SockOptions[mangos.OptionSendDeadline] = pc.SendTimeout
 		logger.Infof("config parsed to %v", pc)
-	} else {
-		connection.Options = make(map[string]interface{})
 	}
 }
 
