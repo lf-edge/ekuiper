@@ -149,3 +149,11 @@ func (kv *sqlKvStore) Clean() error {
 		return err
 	})
 }
+
+func (kv *sqlKvStore) Drop() error {
+	return kv.database.Apply(func(db *sql.DB) error {
+		query := fmt.Sprintf("Drop table '%s';", kv.table)
+		_, err := db.Exec(query)
+		return err
+	})
+}

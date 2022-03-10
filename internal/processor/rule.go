@@ -25,9 +25,9 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	"path"
 )
 
 type RuleProcessor struct {
@@ -233,33 +233,17 @@ func (p *RuleProcessor) ExecDrop(name string) (string, error) {
 }
 
 func cleanCheckpoint(name string) error {
-	err, db := store.GetTS(name)
+	err := store.DropTS(name)
 	if err != nil {
 		return err
 	}
-	return db.Drop()
+	return nil
 }
 
 func cleanSinkCache(rule *api.Rule) error {
-	err, store := store.GetKV("sink")
+	err := store.DropKV(path.Join("sink", rule.Id))
 	if err != nil {
 		return err
-	}
-	for d, m := range rule.Actions {
-		con := 1
-		for name, action := range m {
-			props, _ := action.(map[string]interface{})
-			if c, ok := props["concurrency"]; ok {
-				if t, err := cast.ToInt(c, cast.STRICT); err == nil && t > 0 {
-					con = t
-				}
-			}
-			for i := 0; i < con; i++ {
-				key := fmt.Sprintf("%s%s_%d%d", rule.Id, name, d, i)
-				conf.Log.Debugf("delete cache key %s", key)
-				store.Delete(key)
-			}
-		}
 	}
 	return nil
 }

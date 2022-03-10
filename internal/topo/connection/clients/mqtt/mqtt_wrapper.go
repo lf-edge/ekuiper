@@ -232,6 +232,7 @@ func (mc *mqttClientWrapper) AddRef() {
 	mc.refLock.Lock()
 	defer mc.refLock.Unlock()
 	mc.refCnt = mc.refCnt + 1
+	conf.Log.Infof("mqtt client wrapper add refence for connection selector %s total refcount %d", mc.conSelector, mc.refCnt)
 }
 
 func (mc *mqttClientWrapper) DeRef(c api.StreamContext) {
