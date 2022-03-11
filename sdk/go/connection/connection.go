@@ -159,7 +159,7 @@ func CreateSinkChannel(ctx api.StreamContext) (DataInChannel, error) {
 func setSockOptions(sock mangos.Socket) {
 	for k, v := range SockOptions {
 		err := sock.SetOption(k, v)
-		if err != nil {
+		if err != nil && err != mangos.ErrBadOption {
 			context.Log.Warnf("can't set option %s: %s", k, err.Error())
 		}
 	}

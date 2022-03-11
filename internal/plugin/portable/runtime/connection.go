@@ -210,7 +210,7 @@ func CreateControlChannel(pluginName string) (ControlChannel, error) {
 func setSockOptions(sock mangos.Socket) {
 	for k, v := range sockOptions {
 		err := sock.SetOption(k, v)
-		if err != nil {
+		if err != nil && err != mangos.ErrBadOption {
 			conf.Log.Errorf("can't set socket option %s: %s", k, err.Error())
 		}
 	}
