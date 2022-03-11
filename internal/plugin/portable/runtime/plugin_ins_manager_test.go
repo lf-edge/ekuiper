@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -177,7 +177,9 @@ func createMockClient(pluginName string) (mangos.Socket, error) {
 	if sock, err = req.NewSocket(); err != nil {
 		return nil, fmt.Errorf("can't get new req socket: %s", err)
 	}
-	setSockOptions(sock)
+	setSockOptions(sock, map[string]interface{}{
+		mangos.OptionRetryTime: 0,
+	})
 	url := fmt.Sprintf("ipc:///tmp/plugin_%s.ipc", pluginName)
 	if err = sock.Dial(url); err != nil {
 		return nil, fmt.Errorf("can't dial on req socket: %s", err.Error())

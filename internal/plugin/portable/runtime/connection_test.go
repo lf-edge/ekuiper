@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import (
 	"go.nanomsg.org/mangos/v3/protocol/req"
 	"reflect"
 	"testing"
+	"time"
 )
 
 var okMsg = []byte("ok")
@@ -269,7 +270,6 @@ func createMockControlChannel(pluginName string) (*mockControlClient, error) {
 	if sock, err = req.NewSocket(); err != nil {
 		return nil, fmt.Errorf("can't get new req socket: %s", err)
 	}
-	setSockOptions(sock)
 	url := fmt.Sprintf("ipc:///tmp/plugin_%s.ipc", pluginName)
 	if err = sock.Dial(url); err != nil {
 		return nil, fmt.Errorf("can't dial on req socket: %s", err.Error())
@@ -285,7 +285,9 @@ func createMockSourceChannel(ctx api.StreamContext) (mangos.Socket, error) {
 	if sock, err = push.NewSocket(); err != nil {
 		return nil, fmt.Errorf("can't get new push socket: %s", err)
 	}
-	setSockOptions(sock)
+	setSockOptions(sock, map[string]interface{}{
+		mangos.OptionRecvDeadline: 500 * time.Millisecond,
+	})
 	url := fmt.Sprintf("ipc:///tmp/%s_%s_%d.ipc", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
 	if err = sock.Dial(url); err != nil {
 		return nil, fmt.Errorf("can't dial on push socket: %s", err.Error())
@@ -301,7 +303,9 @@ func createMockSinkChannel(ctx api.StreamContext) (mangos.Socket, error) {
 	if sock, err = pull.NewSocket(); err != nil {
 		return nil, fmt.Errorf("can't get new pull socket: %s", err)
 	}
-	setSockOptions(sock)
+	setSockOptions(sock, map[string]interface{}{
+		mangos.OptionSendDeadline: 1000 * time.Millisecond,
+	})
 	url := fmt.Sprintf("ipc:///tmp/%s_%s_%d.ipc", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
 	if err = listenWithRetry(sock, url); err != nil {
 		return nil, fmt.Errorf("can't listen on pull socket for %s: %s", url, err.Error())

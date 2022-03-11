@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -99,7 +99,11 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 			return
 		case mangos.ErrRecvTimeout:
 			ctx.GetLogger().Debug("source receive timeout, retry")
-			continue
+			select {
+			case <-ctx.Done():
+				ctx.GetLogger().Info("stop source")
+				return
+			}
 		case nil:
 			// do nothing
 		default:

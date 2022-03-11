@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/lf-edge/ekuiper/sdk/go/connection"
 	"github.com/lf-edge/ekuiper/sdk/go/context"
-	"go.nanomsg.org/mangos/v3"
 	"os"
 	"os/signal"
 	"sync"
@@ -47,7 +46,6 @@ func initVars(args []string, conf *PluginConfig) {
 		if err != nil {
 			panic(fmt.Sprintf("fail to parse args %v", args))
 		}
-		connection.SockOptions[mangos.OptionSendDeadline] = pc.SendTimeout
 		logger.Infof("config parsed to %v", pc)
 	}
 }

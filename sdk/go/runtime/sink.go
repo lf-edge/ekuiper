@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ func (s *sinkRuntime) run() {
 	for {
 		var msg []byte
 		// blocking read, must be interrupted when stopping
+		// Will be stopped by closing the socket in stop
 		msg, err = s.ch.Recv()
 		switch err {
 		case mangos.ErrClosed:
