@@ -28,9 +28,6 @@ import (
 
 // Options Initialized in plugin.go Start according to the config
 var (
-	SockOptions = map[string]interface{}{
-		mangos.OptionRetryTime: 0,
-	}
 	dialOptions = map[string]interface{}{
 		mangos.OptionDialAsynch:       false,
 		mangos.OptionMaxReconnectTime: 5 * time.Second,
@@ -100,7 +97,9 @@ func CreateControlChannel(pluginName string) (ControlChannel, error) {
 	if sock, err = req.NewSocket(); err != nil {
 		return nil, fmt.Errorf("can't get new req socket: %s", err)
 	}
-	setSockOptions(sock)
+	setSockOptions(sock, map[string]interface{}{
+		mangos.OptionRetryTime: 0,
+	})
 	url := fmt.Sprintf("ipc:///tmp/plugin_%s.ipc", pluginName)
 	if err = sock.DialOptions(url, dialOptions); err != nil {
 		return nil, fmt.Errorf("can't dial on req socket: %s", err.Error())
@@ -116,7 +115,9 @@ func CreateSourceChannel(ctx api.StreamContext) (DataOutChannel, error) {
 	if sock, err = push.NewSocket(); err != nil {
 		return nil, fmt.Errorf("can't get new push socket: %s", err)
 	}
-	setSockOptions(sock)
+	setSockOptions(sock, map[string]interface{}{
+		mangos.OptionSendDeadline: 1000 * time.Millisecond,
+	})
 	url := fmt.Sprintf("ipc:///tmp/%s_%s_%d.ipc", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
 	if err = sock.DialOptions(url, dialOptions); err != nil {
 		return nil, fmt.Errorf("can't dial on push socket: %s", err.Error())
@@ -132,7 +133,11 @@ func CreateFuncChannel(symbolName string) (DataInOutChannel, error) {
 	if sock, err = req.NewSocket(); err != nil {
 		return nil, fmt.Errorf("can't get new req socket: %s", err)
 	}
-	setSockOptions(sock)
+	// The recv should not have timeout because it is event driven
+	setSockOptions(sock, map[string]interface{}{
+		mangos.OptionSendDeadline: 1000 * time.Millisecond,
+		mangos.OptionRetryTime:    0,
+	})
 	url := fmt.Sprintf("ipc:///tmp/func_%s.ipc", symbolName)
 	if err = sock.DialOptions(url, dialOptions); err != nil {
 		return nil, fmt.Errorf("can't dial on req socket: %s", err.Error())
@@ -148,7 +153,9 @@ func CreateSinkChannel(ctx api.StreamContext) (DataInChannel, error) {
 	if sock, err = pull.NewSocket(); err != nil {
 		return nil, fmt.Errorf("can't get new pull socket: %s", err)
 	}
-	setSockOptions(sock)
+	setSockOptions(sock, map[string]interface{}{
+		mangos.OptionRecvDeadline: 500 * time.Millisecond,
+	})
 	url := fmt.Sprintf("ipc:///tmp/%s_%s_%d.ipc", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
 	if err = listenWithRetry(sock, url); err != nil {
 		return nil, fmt.Errorf("can't listen on pull socket for %s: %s", url, err.Error())
@@ -156,11 +163,11 @@ func CreateSinkChannel(ctx api.StreamContext) (DataInChannel, error) {
 	return sock, nil
 }
 
-func setSockOptions(sock mangos.Socket) {
-	for k, v := range SockOptions {
+func setSockOptions(sock mangos.Socket, sockOptions map[string]interface{}) {
+	for k, v := range sockOptions {
 		err := sock.SetOption(k, v)
-		if err != nil {
-			context.Log.Warnf("can't set option %s: %s", k, err.Error())
+		if err != nil && err != mangos.ErrBadOption {
+			context.Log.Errorf("can't set socket option %s: %s", k, err.Error())
 		}
 	}
 }

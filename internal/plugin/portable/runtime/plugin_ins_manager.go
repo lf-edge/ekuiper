@@ -109,7 +109,7 @@ func (i *PluginIns) Stop() error {
 	if i.ctrlChan != nil {
 		err = i.ctrlChan.Close()
 	}
-	if i.process != nil {
+	if i.process != nil { // will also trigger process exit clean up
 		err = i.process.Kill()
 	}
 	return err
@@ -150,6 +150,10 @@ func (p *pluginInsManager) AddPluginIns(name string, ins *PluginIns) {
 	p.instances[name] = ins
 }
 
+// getOrStartProcess Control the plugin process lifecycle.
+// Need to manage the resources: instances map, control socket, plugin process
+// 1. During creation, clean up those resources for any errors in defer immediately after the resource is created.
+// 2. During plugin running, when detecting plugin process exit, clean up those resources for the current ins.
 func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (*PluginIns, error) {
 	p.Lock()
 	defer p.Unlock()
@@ -204,9 +208,11 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		if err != nil {
 			conf.Log.Printf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
 		}
-
-		if ins, ok := p.getPluginIns(pluginMeta.Name); ok {
-			_ = ins.ctrlChan.Close()
+		// must make sure the plugin ins is not cleaned up yet by checking the process identity
+		if ins, ok := p.getPluginIns(pluginMeta.Name); ok && ins.process == cmd.Process {
+			if ins.ctrlChan != nil {
+				_ = ins.ctrlChan.Close()
+			}
 			p.deletePluginIns(pluginMeta.Name)
 		}
 	}()

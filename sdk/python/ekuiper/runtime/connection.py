@@ -54,7 +54,7 @@ class PairChannel:
 class SourceChannel:
 
     def __init__(self, meta: dict):
-        s = Push0()
+        s = Push0(send_timeout=1000)
         url = "ipc:///tmp/{}_{}_{}.ipc".format(meta['ruleId'], meta['opId'], meta['instanceId'])
         logging.info(url)
         dial_with_retry(s, url)
