@@ -299,7 +299,6 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 							triggerTime = conf.GetNowInMilli()
 							tsets.WindowEnd = triggerTime
 							log.Debugf("Sent: %v", tsets)
-							//blocking if one of the channel is full
 							o.Broadcast(tsets)
 							o.statManager.IncTotalRecordsOut()
 						}
@@ -459,7 +458,6 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 			results.Sort()
 		}
 		log.Debugf("Sent: %v", results)
-		//blocking if one of the channel is full
 		o.Broadcast(results)
 		triggered = true
 		o.triggerTime = triggerTime

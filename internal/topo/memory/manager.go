@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -122,23 +122,20 @@ func produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
 		return
 	}
 	logger := ctx.GetLogger()
-	var wg sync.WaitGroup
 	mu.RLock()
-	// blocking to retain the sequence, expect the source to consume the data immediately
-	wg.Add(len(c.consumers))
-	for n, out := range c.consumers {
-		go func(name string, output chan<- api.SourceTuple) {
-			select {
-			case output <- api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": topic}):
-				logger.Debugf("broadcast from topic %s to %s done", topic, name)
-			case <-ctx.Done():
-				// rule stop so stop waiting
-			}
-			wg.Done()
-		}(n, out)
+	defer mu.RUnlock()
+	// broadcast to all consumers
+	for name, out := range c.consumers {
+		select {
+		case out <- api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": topic}):
+			logger.Debugf("memory source broadcast from topic %s to %s done", topic, name)
+		case <-ctx.Done():
+			// rule stop so stop waiting
+		default:
+			logger.Errorf("memory source topic %s drop message to %s", topic, name)
+		}
 	}
-	mu.RUnlock()
-	wg.Wait()
+
 }
 
 func addPubConsumer(topic string, sourceId string, ch chan api.SourceTuple) {
