@@ -93,6 +93,7 @@ func (mc *mqttClientWrapper) onConnectHandler(_ pahoMqtt.Client) {
 func (mc *mqttClientWrapper) newMessageHandler(sub *mqttSubscriptionInfo) pahoMqtt.MessageHandler {
 	return func(client pahoMqtt.Client, message pahoMqtt.Message) {
 		if sub != nil {
+			// broadcast to all consumers
 			for _, consumer := range sub.topicConsumers {
 				select {
 				case consumer.ConsumerChan <- message:
