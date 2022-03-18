@@ -243,17 +243,17 @@ func (ss *sourceSingleton) run(name, key string) {
 
 func (ss *sourceSingleton) broadcast(val api.SourceTuple) {
 	ss.RLock()
-	for n, out := range ss.outputs {
-		go func(name string, dataCh *DynamicChannelBuffer) {
-			select {
-			case dataCh.In <- val:
-			case <-ss.ctx.Done():
-			case <-dataCh.done:
-				// detached
-			}
-		}(n, out.dataCh)
+	defer ss.RUnlock()
+	for name, out := range ss.outputs {
+		select {
+		case out.dataCh.In <- val:
+		case <-ss.ctx.Done():
+		case <-out.dataCh.done:
+			// detached
+		default:
+			ss.ctx.GetLogger().Errorf("share source drop message to %s", name)
+		}
 	}
-	ss.RUnlock()
 }
 
 func (ss *sourceSingleton) broadcastError(err error) {

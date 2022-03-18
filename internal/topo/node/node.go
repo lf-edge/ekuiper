@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
-	"sync"
 )
 
 type OperatorNode interface {
@@ -98,27 +97,24 @@ func (o *defaultNode) Broadcast(val interface{}) error {
 			Data:    val,
 			Channel: o.name,
 		}
-		return o.doBroadcast(boe)
+		o.doBroadcast(boe)
+		return nil
 	}
-	return o.doBroadcast(val)
+	o.doBroadcast(val)
+	return nil
 }
 
-func (o *defaultNode) doBroadcast(val interface{}) error {
-	var wg sync.WaitGroup
-	wg.Add(len(o.outputs))
-	for n, out := range o.outputs {
-		go func(name string, output chan<- interface{}) {
-			select {
-			case output <- val:
-				// do nothing
-			case <-o.ctx.Done():
-				// rule stop so stop waiting
-			}
-			wg.Done()
-		}(n, out)
+func (o *defaultNode) doBroadcast(val interface{}) {
+	for name, out := range o.outputs {
+		select {
+		case out <- val:
+			// do nothing
+		case <-o.ctx.Done():
+			// rule stop so stop waiting
+		default:
+			o.ctx.GetLogger().Errorf("drop message from %s to %s", o.name, name)
+		}
 	}
-	wg.Wait()
-	return nil
 }
 
 func (o *defaultNode) GetStreamContext() api.StreamContext {
