@@ -101,22 +101,22 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 
 时间格式为一些特定符号和字母组成的字符串。eKuiper 里支持的符号如下表所示：
 
-| 符号  | 含义  | 示例  |
-|-----|-----|-----|
-/ G        /  公元        / G(AD)    /
-/ Y        /  年/ YYYY(2004), YY(04) /
-/ M   / 月 / M(1), MM(01), MMM(Jan), MMMM(January) /
-/ d  / 日期 / d(2), dd(02) /
-/ E / 星期几 / EEE(Mon), EEEE(Monday) /
-/ H / 24小时制的小时 / HH(15) /
-/ h / 12小时制的小时 / h(2), hh(03) /
-/ a / AM 或 PM / a(PM) /
-/ m / 分 / m(4), mm(04) /
-/ s / 秒 / s(5), ss(05) /
-/ S / 秒的分数 / S(.0), SS(.00), SSS(.000) /
-/ z / 时区名 / z(MST) /
-/ Z / 4位数的时区 / Z(-0700) /
-/ X / 时区 / X(-07), XX(-0700), XXX(-07:00) /
+| 符号  | 含义       | 示例                                    |
+|-----|----------|---------------------------------------|
+| G   | 公元       | G(AD)                                 |
+| Y   | 年        | YYYY(2004), YY(04)                    |
+| M   | 月        | M(1), MM(01), MMM(Jan), MMMM(January) |
+| d   | 日期       | d(2), dd(02)                          |
+| E   | 星期几      | EEE(Mon), EEEE(Monday)                |
+| H   | 24小时制的小时 | HH(15)                                |
+| h   | 12小时制的小时 | h(2), hh(03)                          |
+| a   | AM 或 PM  | a(PM)                                 |
+| m   | 分        | m(4), mm(04)                          |
+| s   | 秒        | s(5), ss(05)                          |
+| S   | 秒的分数     | S(.0), SS(.00), SSS(.000)             |
+| z   | 时区名      | z(MST)                                |
+| Z   | 4位数的时区   | Z(-0700)                              |
+| X   | 时区       | X(-07), XX(-0700), XXX(-07:00)        |
 
 示例:
 
@@ -126,18 +126,19 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 
 ## 转换函数
 
-| 函数     | 示例                     | 说明                                                                         |
-|--------|------------------------|----------------------------------------------------------------------------|
-| cast   | cast(col,  "bigint")   | 将值从一种数据类型转换为另一种数据类型。 支持的类型包括：bigint，float，string，boolean 和 datetime。       |
-| chr    | chr(col1)              | 返回与给定 Int 参数对应的 ASCII 字符                                                   |
-| encode | encode(col1, "base64") | 使用 encode 函数根据编码方案将负载（可能是非 JSON 数据）编码为其字符串表示形式。目前，只支持"base64"econding 类型。  |
-| trunc  | trunc(dec, int)        | 将第一个参数截断为第二个参数指定的小数位数。 如果第二个参数小于零，则将其设置为零。 如果第二个参数大于34，则将其设置为34。从结果中去除尾随零。 |
+| 函数               | 示例                               | 说明                                                                         |
+|------------------|----------------------------------|----------------------------------------------------------------------------|
+| cast             | cast(col,  "bigint")             | 将值从一种数据类型转换为另一种数据类型。 支持的类型包括：bigint，float，string，boolean 和 datetime。       |
+| chr              | chr(col1)                        | 返回与给定 Int 参数对应的 ASCII 字符                                                   |
+| encode           | encode(col1, "base64")           | 使用 encode 函数根据编码方案将负载（可能是非 JSON 数据）编码为其字符串表示形式。目前，只支持"base64" 编码类型。        |
+| trunc            | trunc(dec, int)                  | 将第一个参数截断为第二个参数指定的小数位数。 如果第二个参数小于零，则将其设置为零。 如果第二个参数大于34，则将其设置为34。从结果中去除尾随零。 |
+| object_construct | object_construct(key1, col, ...) | 返回由参数构建的 oject/map 。参数为一系列的键值对，因此必须为偶数个。键必须为 string 类型，值可以为任意类型。           |
 
 ### 转换为 datetime 类型
 
-使用 cast 函数转换到 datatime 类型时，转换规则如下：
+使用 cast 函数转换到 datetime 类型时，转换规则如下：
 
-1. 如果参数为 datatime 类型，则直接返回原值。
+1. 如果参数为 datetime 类型，则直接返回原值。
 2. 如果参数为 bigint 或者 float 类型，则其数值会作为自 1970年1月1日0时起至今的毫秒值而转换为 datetime 类型。
 3. 如果参数为 string 类型，则会用默认格式 `"2006-01-02T15:04:05.000Z07:00"`  将其转换为 datetime类型。
 4. 其他类型的参数均不支持转换。
@@ -238,14 +239,14 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 创建流 demo，并给与如下输入。
 
 ```json lines
-{"ts":1, "temperature":23, "humdity":88}
-{"ts":2, "temperature":23, "humdity":88}
-{"ts":3, "temperature":23, "humdity":88}
-{"ts":4, "temperature":25, "humdity":88}
-{"ts":5, "temperature":25, "humdity":90}
-{"ts":6, "temperature":25, "humdity":91}
-{"ts":7, "temperature":25, "humdity":91}
-{"ts":8, "temperature":25, "humdity":91}
+{"ts":1, "temperature":23, "humidity":88}
+{"ts":2, "temperature":23, "humidity":88}
+{"ts":3, "temperature":23, "humidity":88}
+{"ts":4, "temperature":25, "humidity":88}
+{"ts":5, "temperature":25, "humidity":90}
+{"ts":6, "temperature":25, "humidity":91}
+{"ts":7, "temperature":25, "humidity":91}
+{"ts":8, "temperature":25, "humidity":91}
 ```
 
 获取 temperature 变化值的规则:
@@ -293,7 +294,7 @@ _________________________________________________________________
 
 ```text
 SQL: SELECT id, temperature, humidity FROM demo
-WHERE ISNULL(CHANGED_COL(temperature)) = false OR ISNULL(CHANGED_COL(humidity)) = false
+WHERE ISNULL(CHANGED_COL(true, temperature)) = false OR ISNULL(true, CHANGED_COL(humidity)) = false
 _________________________________________________________
 {"ts":1,temperature":23,"humidity":88}
 {"ts":4,temperature":25,"humidity":88}
@@ -305,7 +306,7 @@ _________________________________________________________
 
 ```text
 SQL: SELECT id, temperature, humidity FROM demo 
-WHERE ISNULL(HAD_CHANGED(temperature)) = false AND ISNULL(HAD_CHANGED(humidity))
+WHERE ISNULL(CHANGED_COL(true, temperature)) = false AND ISNULL(true, CHANGED_COL(humidity)) = false
 _________________________________________________________
 {"ts":1,temperature":23,"humidity":88}
 {"ts":4,temperature":25,"humidity":88}
@@ -314,7 +315,7 @@ _________________________________________________________
 获取 temperature 和 humidity 的变化值并赋自定义名:
 
 ```text
-SQL: SELECT CHANGED_COL(temperature) AS myTemp, CHANGED_COL(humidity) AS myHum FROM demo
+SQL: SELECT CHANGED_COL(true, temperature) AS myTemp, CHANGED_COL(true, humidity) AS myHum FROM demo
 _________________________________________________________
 {"myTemp":23,"myHum":88}
 {"myTemp":25}
@@ -326,7 +327,7 @@ _________________________________________________________
 
 ```text
 SQL: SELECT id, temperature, humidity FROM demo 
-WHERE CHANGED_COL(temperature) > 24
+WHERE CHANGED_COL(true, temperature) > 24
 _________________________________________________________
 {"ts":4,temperature":25,"humidity":88}
 ```

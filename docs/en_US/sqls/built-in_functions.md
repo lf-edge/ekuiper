@@ -4,7 +4,7 @@ eKuiper has many built-in functions for performing calculations on data.
 
 ## Aggregate Functions
 Aggregate functions perform a calculation on a set of values and return a single value. Aggregate functions can be used as expressions only in the following:
-* The select list of a SELECT statement (either a subquery or an outer query).
+* The select list of a SELECT statement (either a sub-query or an outer query).
 * A HAVING clause.
 
 | Function    | Example                   | Description                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -19,7 +19,7 @@ Aggregate functions perform a calculation on a set of values and return a single
 
 ### Collect() Examples
 
-- Get an array of column `a` of the current window. Assume the column a is of int type, the result will be like: `[{"r1":[32, 45]}]`
+- Get an array of column `a` of the current window. Assume the column `a` is of int type, the result will be like: `[{"r1":[32, 45]}]`
     ```sql
     SELECT collect(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
@@ -100,24 +100,24 @@ Aggregate functions perform a calculation on a set of values and return a single
 
 ### Format_time patterns
 
-A pattern is used to create a format string. Patterns are based on a simple sequence of letters and symbols which is common in many languages like Java etc. The supported symbols in Kuiepr are
+A pattern is used to create a format string. Patterns are based on a simple sequence of letters and symbols which is common in many languages like Java etc. The supported symbols in Kuiper are
 
-| Symbol | Meaning | Example |
-|--------|---------|---------|
-/ G        /  era        / G(AD)    /
-/ Y        /  year/ YYYY(2004), YY(04) /
-/ M   / month / M(1), MM(01), MMM(Jan), MMMM(January) /
-/ d  / day of month / d(2), dd(02) /
-/ E / day of week / EEE(Mon), EEEE(Monday) /
-/ H / hour in 24 hours format / HH(15) /
-/ h / hour in 12 hours format / h(2), hh(03) /
-/ a / AM or PM / a(PM) /
-/ m / minute / m(4), mm(04) /
-/ s / second / s(5), ss(05) /
-/ S / fraction of second / S(.0), SS(.00), SSS(.000) /
-/ z / time zone name / z(MST) /
-/ Z / 4 digits time zone offset / Z(-0700) /
-/ X / time zone offset / X(-07), XX(-0700), XXX(-07:00) /
+| Symbol | Meaning                   | Example                               |
+|--------|---------------------------|---------------------------------------|
+| G      | era                       | G(AD)                                 |
+| Y      | year                      | YYYY(2004), YY(04)                    |
+| M      | month                     | M(1), MM(01), MMM(Jan), MMMM(January) |
+| d      | day of month              | d(2), dd(02)                          |
+| E      | day of week               | EEE(Mon), EEEE(Monday)                |
+| H      | hour in 24 hours format   | HH(15)                                |
+| h      | hour in 12 hours format   | h(2), hh(03)                          |
+| a      | AM or PM                  | a(PM)                                 |
+| m      | minute                    | m(4), mm(04)                          |
+| s      | second                    | s(5), ss(05)                          |
+| S      | fraction of second        | S(.0), SS(.00), SSS(.000)             |
+| z      | time zone name            | z(MST)                                |
+| Z      | 4 digits time zone offset | Z(-0700)                              |
+| X      | time zone offset          | X(-07), XX(-0700), XXX(-07:00)        |
 
 Examples:
 
@@ -126,18 +126,19 @@ Examples:
  
 ## Conversion Functions
 
-| Function | Example                | Description                                                                                                                                                                                                                                                           |
-|----------|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| cast     | cast(col,  "bigint")   | Converts a value from one data type to another. The supported types includes: bigint, float, string, boolean and datetime.                                                                                                                                            |
-| chr      | chr(col1)              | Returns the ASCII character that corresponds to the given Int argument                                                                                                                                                                                                |
-| encode   | encode(col1, "base64") | Use the encode function to encode the payload, which potentially might be non-JSON data, into its string representation based on the encoding scheme. Currently, only "base64" econding type is supported.                                                            |
-| trunc    | trunc(dec, int)        | Truncates the first argument to the number of Decimal places specified by the second argument. If the second argument is less than zero, it is set to zero. If the second argument is greater than 34, it is set to 34. Trailing zeroes are stripped from the result. |
+| Function         | Example                          | Description                                                                                                                                                                                                                                                           |
+|------------------|----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| cast             | cast(col,  "bigint")             | Converts a value from one data type to another. The supported types includes: bigint, float, string, boolean and datetime.                                                                                                                                            |
+| chr              | chr(col1)                        | Returns the ASCII character that corresponds to the given Int argument                                                                                                                                                                                                |
+| encode           | encode(col1, "base64")           | Use the encode function to encode the payload, which potentially might be non-JSON data, into its string representation based on the encoding scheme. Currently, only "base64" encoding type is supported.                                                            |
+| trunc            | trunc(dec, int)                  | Truncates the first argument to the number of Decimal places specified by the second argument. If the second argument is less than zero, it is set to zero. If the second argument is greater than 34, it is set to 34. Trailing zeroes are stripped from the result. |
+| object_construct | object_construct(key1, col, ...) | Return a struct type object/map constructed by the arguments. The arguments are series of key value pairs, thus the arguments count must be an odd number. The key must a string and the value can be of any type.                                                    |
 
 ### Cast to datetime
 
 When casting to datetime type, the supported column type and casting rule are:
 
-1. If column is datatime type, just return the value.
+1. If column is datetime type, just return the value.
 2. If column is bigint or float type, the number will be treated as the milliseconds elapsed since January 1, 1970 00:00:00 UTC and converted.
 3. If column is string, it will be parsed to datetime with the default format: `"2006-01-02T15:04:05.000Z07:00"`.
 4. Other types are not supported.
@@ -170,7 +171,7 @@ When casting to datetime type, the supported column type and casting rule are:
 | meta         | meta(topic)            | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as `meta(device)`<br />- A qualified key to specify the stream, such as `meta(src1.device)` <br />- A key with arrow for multi level meta data, such as `meta(src1.reading->device->name)` This assumes reading is a map structure meta data.              |
 | window_start | window_start()         | Return the window start timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.                                        |
 | window_end   | window_end()           | Return the window end timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.                                          |
-| changed_col  | changed_col(true, col) | Return the column value if it has changed from the last execution.                                                                                                                                                                                                                                                                                                                                    |
+| changed_col  | changed_col(true, col) | Return the column value if it has changed from the last execution.                                                                                                                                                                                                                                                                                                                                |
 
 ## Multiple Column Functions
 
@@ -237,14 +238,14 @@ For multiple column outputs, the alias can only be set  generally with the prefi
 Create a stream demo and have below inputs
 
 ```json lines
-{"ts":1, "temperature":23, "humdity":88}
-{"ts":2, "temperature":23, "humdity":88}
-{"ts":3, "temperature":23, "humdity":88}
-{"ts":4, "temperature":25, "humdity":88}
-{"ts":5, "temperature":25, "humdity":90}
-{"ts":6, "temperature":25, "humdity":91}
-{"ts":7, "temperature":25, "humdity":91}
-{"ts":8, "temperature":25, "humdity":91}
+{"ts":1, "temperature":23, "humidity":88}
+{"ts":2, "temperature":23, "humidity":88}
+{"ts":3, "temperature":23, "humidity":88}
+{"ts":4, "temperature":25, "humidity":88}
+{"ts":5, "temperature":25, "humidity":90}
+{"ts":6, "temperature":25, "humidity":91}
+{"ts":7, "temperature":25, "humidity":91}
+{"ts":8, "temperature":25, "humidity":91}
 ```
 
 Rule to get the changed temperature values:
@@ -292,7 +293,7 @@ Rule to get the events when temperature or humidity changed:
 
 ```text
 SQL: SELECT id, temperature, humidity FROM demo
-WHERE ISNULL(CHANGED_COL(temperature)) = false OR ISNULL(CHANGED_COL(humidity)) = false
+WHERE ISNULL(CHANGED_COL(true, temperature)) = false OR ISNULL(CHANGED_COL(humidity)) = false
 _________________________________________________________
 {"ts":1,temperature":23,"humidity":88}
 {"ts":4,temperature":25,"humidity":88}
@@ -304,7 +305,7 @@ Rule to get the events when temperature has changed but humidity has NOT changed
 
 ```text
 SQL: SELECT id, temperature, humidity FROM demo 
-WHERE ISNULL(HAD_CHANGED(temperature)) = false AND ISNULL(HAD_CHANGED(humidity))
+WHERE ISNULL(CHANGED_COL(true, temperature)) = false AND ISNULL(CHANGED_COL(true, humidity))
 _________________________________________________________
 {"ts":1,temperature":23,"humidity":88}
 {"ts":4,temperature":25,"humidity":88}
@@ -313,7 +314,7 @@ _________________________________________________________
 Rule to get the changed temperature and humidity value with customized names:
 
 ```text
-SQL: SELECT CHANGED_COL(temperature) AS myTemp, CHANGED_COL(humidity) AS myHum FROM demo
+SQL: SELECT CHANGED_COL(true, temperature) AS myTemp, CHANGED_COL(true, humidity) AS myHum FROM demo
 _________________________________________________________
 {"myTemp":23,"myHum":88}
 {"myTemp":25}
@@ -325,7 +326,7 @@ Rule to get the changed values when the temperature had changed to value bigger 
 
 ```text
 SQL: SELECT id, temperature, humidity FROM demo 
-WHERE CHANGED_COL(temperature) > 24
+WHERE CHANGED_COL(true, temperature) > 24
 _________________________________________________________
 {"ts":4,temperature":25,"humidity":88}
 ```
