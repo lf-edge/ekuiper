@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@ package store
 
 import (
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/db"
-	"github.com/lf-edge/ekuiper/internal/pkg/db/redis"
-	"github.com/lf-edge/ekuiper/internal/pkg/db/sql/sqlite"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 )
 
 func SetupDefault() error {
@@ -27,10 +25,10 @@ func SetupDefault() error {
 		return err
 	}
 
-	c := db.Config{
+	c := definition.Config{
 		Type:  "sqlite",
-		Redis: redis.Config{},
-		Sqlite: sqlite.Config{
+		Redis: definition.RedisConfig{},
+		Sqlite: definition.SqliteConfig{
 			Path: dir,
 			Name: "",
 		},
@@ -44,15 +42,15 @@ func SetupWithKuiperConfig(kconf *conf.KuiperConf) error {
 	if err != nil {
 		return err
 	}
-	c := db.Config{
+	c := definition.Config{
 		Type: kconf.Store.Type,
-		Redis: redis.Config{
+		Redis: definition.RedisConfig{
 			Host:     kconf.Store.Redis.Host,
 			Port:     kconf.Store.Redis.Port,
 			Password: kconf.Store.Redis.Password,
 			Timeout:  kconf.Store.Redis.Timeout,
 		},
-		Sqlite: sqlite.Config{
+		Sqlite: definition.SqliteConfig{
 			Path: dir,
 			Name: kconf.Store.Sqlite.Name,
 		},
@@ -60,16 +58,11 @@ func SetupWithKuiperConfig(kconf *conf.KuiperConf) error {
 	return Setup(c)
 }
 
-func Setup(config db.Config) error {
-	database, err := db.CreateDatabase(config)
+func Setup(config definition.Config) error {
+	s, err := newStores(config)
 	if err != nil {
 		return err
 	}
-
-	err = InitGlobalStores(database)
-	if err != nil {
-		return err
-	}
-
+	globalStores = s
 	return nil
 }

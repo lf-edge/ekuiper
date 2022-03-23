@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store
+package sql
 
 import (
-	"github.com/lf-edge/ekuiper/internal/pkg/db/sql/sqlite"
-	sb "github.com/lf-edge/ekuiper/internal/pkg/store/sql"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/sql/sqlite"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 	"os"
@@ -25,8 +25,8 @@ import (
 	"testing"
 )
 
-const DbName = "sqliteKV.db"
-const Table = "test"
+const SDbName = "sqliteKV.db"
+const STable = "test"
 
 func TestSqlKvSetnx(t *testing.T) {
 	ks, db, abs := setupSqlKv()
@@ -55,14 +55,14 @@ func TestSqlKvKeys(t *testing.T) {
 }
 
 func deleteIfExists(abs string) error {
-	absPath := path.Join(abs, DbName)
+	absPath := path.Join(abs, SDbName)
 	if f, _ := os.Stat(absPath); f != nil {
 		return os.Remove(absPath)
 	}
 	return nil
 }
 
-func setupSqlKv() (kv.KeyValue, *sqlite.Database, string) {
+func setupSqlKv() (kv.KeyValue, definition.Database, string) {
 	absPath, err := filepath.Abs("test")
 	if err != nil {
 		panic(err)
@@ -71,26 +71,31 @@ func setupSqlKv() (kv.KeyValue, *sqlite.Database, string) {
 	if err != nil {
 		panic(err)
 	}
-	config := sqlite.Config{
-		Path: absPath,
-		Name: DbName,
+	config := definition.Config{
+		Type:  "sqlite",
+		Redis: definition.RedisConfig{},
+		Sqlite: definition.SqliteConfig{
+			Path: absPath,
+			Name: SDbName,
+		},
 	}
-	_, db := sqlite.NewSqliteDatabase(config)
+
+	db, _ := sqlite.NewSqliteDatabase(config)
 	err = db.Connect()
 	if err != nil {
 		panic(err)
 	}
 
-	builder := sb.NewStoreBuilder(db)
+	builder := NewStoreBuilder(db.(Database))
 	var store kv.KeyValue
-	store, err = builder.CreateStore(Table)
+	store, err = builder.CreateStore(STable)
 	if err != nil {
 		panic(err)
 	}
 	return store, db, absPath
 }
 
-func cleanSqlKv(db *sqlite.Database, abs string) {
+func cleanSqlKv(db definition.Database, abs string) {
 	if err := db.Disconnect(); err != nil {
 		panic(err)
 	}

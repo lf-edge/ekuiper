@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2022-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build redisdb || !core
+// +build redisdb !core
+
 package redis
 
 import (
 	"fmt"
 	"github.com/gomodule/redigo/redis"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 	"sync"
 	"time"
 )
@@ -25,22 +29,23 @@ type Instance struct {
 	ConnectionString string
 	pool             *redis.Pool
 	mu               *sync.Mutex
-	config           Config
+	config           definition.RedisConfig
 }
 
-func NewRedisFromConf(conf Config) Instance {
+func NewRedisFromConf(c definition.Config) (definition.Database, error) {
+	conf := c.Redis
 	host := conf.Host
 	port := conf.Port
-	return Instance{
+	return &Instance{
 		ConnectionString: connectionString(host, port),
 		pool:             nil,
 		mu:               &sync.Mutex{},
 		config:           conf,
-	}
+	}, nil
 }
 
-func NewRedis(host string, port int) Instance {
-	return Instance{
+func NewRedis(host string, port int) *Instance {
+	return &Instance{
 		ConnectionString: connectionString(host, port),
 		pool:             nil,
 		mu:               &sync.Mutex{},

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build redisdb || !core
+// +build redisdb !core
+
 package redis
 
 import (
@@ -19,7 +22,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/gomodule/redigo/redis"
-	dbRedis "github.com/lf-edge/ekuiper/internal/pkg/db/redis"
 	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 	"strings"
 )
@@ -27,12 +29,12 @@ import (
 const KvPrefix = "KV:STORE"
 
 type redisKvStore struct {
-	database  dbRedis.Instance
+	database  *Instance
 	table     string
 	keyPrefix string
 }
 
-func CreateRedisKvStore(redis dbRedis.Instance, table string) (*redisKvStore, error) {
+func CreateRedisKvStore(redis *Instance, table string) (*redisKvStore, error) {
 	store := &redisKvStore{
 		database:  redis,
 		table:     table,

@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,25 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build redisdb || !core
-// +build redisdb !core
+package definition
 
-package redis
-
-import (
-	"github.com/lf-edge/ekuiper/pkg/kv"
-)
-
-type StoreBuilder struct {
-	database *Instance
+type Database interface {
+	Connect() error
+	Disconnect() error
 }
 
-func NewStoreBuilder(redis *Instance) StoreBuilder {
-	return StoreBuilder{
-		database: redis,
-	}
+type Config struct {
+	Type   string
+	Redis  RedisConfig
+	Sqlite SqliteConfig
 }
 
-func (b StoreBuilder) CreateStore(table string) (kv.KeyValue, error) {
-	return CreateRedisKvStore(b.database, table)
+type RedisConfig struct {
+	Host     string
+	Port     int
+	Password string
+	Timeout  int
+}
+
+type SqliteConfig struct {
+	Path string
+	Name string
 }

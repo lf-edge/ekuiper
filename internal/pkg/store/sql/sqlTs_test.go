@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
 package sql
 
 import (
-	"github.com/lf-edge/ekuiper/internal/pkg/db/sql/sqlite"
-	"github.com/lf-edge/ekuiper/internal/pkg/ts/test/common"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/sql/sqlite"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
 	ts2 "github.com/lf-edge/ekuiper/pkg/kv"
 	"os"
 	"path"
@@ -25,89 +26,92 @@ import (
 )
 
 const (
-	DbName = "sqliteTS.db"
-	Table  = "test"
+	TDbName = "sqliteTS.db"
+	TTable  = "test"
 )
 
 func TestSqlTsSet(t *testing.T) {
-	ks, db, abs := setupSqlKv()
-	defer cleanSqlKv(db, abs)
+	ks, db, abs := setupTSqlKv()
+	defer cleanTSqlKv(db, abs)
 
 	common.TestTsSet(ks, t)
 }
 
 func TestSqlTsLast(t *testing.T) {
-	ks, db, abs := setupSqlKv()
-	defer cleanSqlKv(db, abs)
+	ks, db, abs := setupTSqlKv()
+	defer cleanTSqlKv(db, abs)
 
 	common.TestTsLast(ks, t)
 }
 
 func TestSqlTsGet(t *testing.T) {
-	ks, db, abs := setupSqlKv()
-	defer cleanSqlKv(db, abs)
+	ks, db, abs := setupTSqlKv()
+	defer cleanTSqlKv(db, abs)
 
 	common.TestTsGet(ks, t)
 }
 
 func TestSqlTsDelete(t *testing.T) {
-	ks, db, abs := setupSqlKv()
-	defer cleanSqlKv(db, abs)
+	ks, db, abs := setupTSqlKv()
+	defer cleanTSqlKv(db, abs)
 
 	common.TestTsDelete(ks, t)
 }
 
 func TestSqlTsDeleteBefore(t *testing.T) {
-	ks, db, abs := setupSqlKv()
-	defer cleanSqlKv(db, abs)
+	ks, db, abs := setupTSqlKv()
+	defer cleanTSqlKv(db, abs)
 
 	common.TestTsDeleteBefore(ks, t)
 }
 
-func deleteIfExists(abs string) error {
-	absPath := path.Join(abs, DbName)
+func deleteTIfExists(abs string) error {
+	absPath := path.Join(abs, TDbName)
 	if f, _ := os.Stat(absPath); f != nil {
 		return os.Remove(absPath)
 	}
 	return nil
 }
 
-func setupSqlKv() (ts2.Tskv, *sqlite.Database, string) {
+func setupTSqlKv() (ts2.Tskv, definition.Database, string) {
 	absPath, err := filepath.Abs("test")
 	if err != nil {
 		panic(err)
 	}
-	err = deleteIfExists(absPath)
+	err = deleteTIfExists(absPath)
 	if err != nil {
 		panic(err)
 	}
-	config := sqlite.Config{
-		Path: absPath,
-		Name: DbName,
+	config := definition.Config{
+		Type: "sqlite",
+		Sqlite: definition.SqliteConfig{
+			Path: absPath,
+			Name: TDbName,
+		},
 	}
-	_, db := sqlite.NewSqliteDatabase(config)
+	db, _ := sqlite.NewSqliteDatabase(config)
 	err = db.Connect()
 	if err != nil {
 		panic(err)
 	}
 
-	builder := NewTsBuilder(db)
+	builder := NewTsBuilder(db.(Database))
 	if err != nil {
 		panic(err)
 	}
 	var store ts2.Tskv
-	err, store = builder.CreateTs(Table)
+	err, store = builder.CreateTs(TTable)
 	if err != nil {
 		panic(err)
 	}
 	return store, db, absPath
 }
 
-func cleanSqlKv(db *sqlite.Database, abs string) {
+func cleanTSqlKv(db definition.Database, abs string) {
 	if err := db.Disconnect(); err != nil {
 		panic(err)
 	}
-	if err := deleteIfExists(abs); err != nil {
+	if err := deleteTIfExists(abs); err != nil {
 		panic(err)
 	}
 }

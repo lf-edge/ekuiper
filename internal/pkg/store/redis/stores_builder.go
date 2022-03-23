@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build redisdb || !core
+// +build redisdb !core
+
 package redis
 
 import (
-	"github.com/lf-edge/ekuiper/internal/pkg/db/redis"
-	st "github.com/lf-edge/ekuiper/pkg/kv"
+	"fmt"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 )
 
-type TsBuilder struct {
-	redis redis.Instance
-}
-
-func NewTsBuilder(d redis.Instance) TsBuilder {
-	return TsBuilder{
-		redis: d,
+func BuildStores(c definition.Config) (definition.StoreBuilder, definition.TsBuilder, error) {
+	db, err := NewRedisFromConf(c)
+	if err != nil {
+		return nil, nil, err
 	}
-}
-
-func (b TsBuilder) CreateTs(table string) (error, st.Tskv) {
-	return createRedisTs(b.redis, table)
+	err = db.Connect()
+	if err != nil {
+		return nil, nil, err
+	}
+	d, ok := db.(*Instance)
+	if !ok {
+		return nil, nil, fmt.Errorf("unrecognized database type")
+	}
+	kvBuilder := NewStoreBuilder(d)
+	tsBuilder := NewTsBuilder(d)
+	return kvBuilder, tsBuilder, nil
 }

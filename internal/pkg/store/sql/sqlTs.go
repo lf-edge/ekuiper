@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2022-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,12 +19,11 @@ import (
 	"database/sql"
 	"encoding/gob"
 	"fmt"
-	dbSql "github.com/lf-edge/ekuiper/internal/pkg/db/sql"
 	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 )
 
 type ts struct {
-	database dbSql.Database
+	database Database
 	table    string
 	last     int64
 }
@@ -33,7 +32,7 @@ func init() {
 	gob.Register(make(map[string]interface{}))
 }
 
-func createSqlTs(database dbSql.Database, table string) (error, *ts) {
+func createSqlTs(database Database, table string) (error, *ts) {
 	store := &ts{
 		database: database,
 		table:    table,
@@ -141,7 +140,7 @@ func (t ts) Drop() error {
 	})
 }
 
-func getLast(d dbSql.Database, table string) int64 {
+func getLast(d Database, table string) int64 {
 	var last int64 = 0
 	_ = d.Apply(func(db *sql.DB) error {
 		query := fmt.Sprintf("SELECT key FROM %s Order by key DESC Limit 1;", table)

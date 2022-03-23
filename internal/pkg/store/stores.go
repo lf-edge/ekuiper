@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,42 +16,50 @@ package store
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/pkg/db"
-	"github.com/lf-edge/ekuiper/internal/pkg/ts"
-	kv2 "github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/sql"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"sync"
 )
 
+type StoreCreator func(conf definition.Config) (definition.StoreBuilder, definition.TsBuilder, error)
+
+var (
+	storeBuilders = map[string]StoreCreator{
+		"sqlite": sql.BuildStores,
+	}
+	globalStores *stores = nil
+)
+
 type stores struct {
-	kv        map[string]kv2.KeyValue
-	ts        map[string]kv2.Tskv
+	kv        map[string]kv.KeyValue
+	ts        map[string]kv.Tskv
 	mu        sync.Mutex
-	kvBuilder Builder
-	tsBuilder ts.Builder
+	kvBuilder definition.StoreBuilder
+	tsBuilder definition.TsBuilder
 }
 
-func newStores(db db.Database) (error, *stores) {
-	var err error
-	var kvBuilder Builder
-	var tsBuilder ts.Builder
-	kvBuilder, err = CreateStoreBuilder(db)
-	if err != nil {
-		return err, nil
-	}
-	err, tsBuilder = ts.CreateTsBuilder(db)
-	if err != nil {
-		return err, nil
-	}
-	return nil, &stores{
-		kv:        make(map[string]kv2.KeyValue),
-		ts:        make(map[string]kv2.Tskv),
-		mu:        sync.Mutex{},
-		kvBuilder: kvBuilder,
-		tsBuilder: tsBuilder,
+func newStores(c definition.Config) (*stores, error) {
+	databaseType := c.Type
+	if builder, ok := storeBuilders[databaseType]; ok {
+		kvBuilder, tsBuilder, err := builder(c)
+		if err != nil {
+			return nil, err
+		} else {
+			return &stores{
+				kv:        make(map[string]kv.KeyValue),
+				ts:        make(map[string]kv.Tskv),
+				mu:        sync.Mutex{},
+				kvBuilder: kvBuilder,
+				tsBuilder: tsBuilder,
+			}, nil
+		}
+	} else {
+		return nil, fmt.Errorf("unknown database type: %s", databaseType)
 	}
 }
 
-func (s *stores) GetKV(table string) (error, kv2.KeyValue) {
+func (s *stores) GetKV(table string) (error, kv.KeyValue) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if ks, contains := s.kv[table]; contains {
@@ -75,7 +83,7 @@ func (s *stores) DropKV(table string) {
 	}
 }
 
-func (s *stores) GetTS(table string) (error, kv2.Tskv) {
+func (s *stores) GetTS(table string) (error, kv.Tskv) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if tts, contains := s.ts[table]; contains {
@@ -99,22 +107,14 @@ func (s *stores) DropTS(table string) {
 	}
 }
 
-var globalStores *stores = nil
-
-func InitGlobalStores(db db.Database) error {
-	var err error
-	err, globalStores = newStores(db)
-	return err
-}
-
-func GetKV(table string) (error, kv2.KeyValue) {
+func GetKV(table string) (error, kv.KeyValue) {
 	if globalStores == nil {
 		return fmt.Errorf("global stores are not initialized"), nil
 	}
 	return globalStores.GetKV(table)
 }
 
-func GetTS(table string) (error, kv2.Tskv) {
+func GetTS(table string) (error, kv.Tskv) {
 	if globalStores == nil {
 		return fmt.Errorf("global stores are not initialized"), nil
 	}
