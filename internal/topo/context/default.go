@@ -25,7 +25,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/sirupsen/logrus"
 	"regexp"
-	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -80,7 +79,6 @@ func (c *DefaultContext) Value(key interface{}) interface{} {
 	return c.ctx.Value(key)
 }
 
-// Stream metas
 func (c *DefaultContext) GetContext() context.Context {
 	return c.ctx
 }
@@ -114,7 +112,7 @@ func (c *DefaultContext) SetError(err error) {
 	c.err = err
 }
 
-func (c *DefaultContext) ParseDynamicProp(prop string, data interface{}) (interface{}, error) {
+func (c *DefaultContext) ParseTemplate(prop string, data interface{}) (interface{}, error) {
 	re := regexp.MustCompile(`{{(.*?)}}`)
 	if re.Match([]byte(prop)) {
 		var (
@@ -136,24 +134,26 @@ func (c *DefaultContext) ParseDynamicProp(prop string, data interface{}) (interf
 			return fmt.Sprintf("%v", data), err
 		}
 		return output.String(), nil
-	} else if strings.HasPrefix(prop, "{$") { //TO BE REMOVED: will be extracted as a new function in the next release
-		var (
-			je  conf.JsonPathEval
-			err error
-		)
-		if raw, ok := c.jpReg.Load(prop); ok {
-			je = raw.(conf.JsonPathEval)
-		} else {
-			je, err = conf.GetJsonPathEval(prop[1:])
-			if err != nil {
-				return nil, err
-			}
-			c.jpReg.Store(prop, je)
-		}
-		return je.Eval(data)
 	} else {
 		return prop, nil
 	}
+}
+
+func (c *DefaultContext) ParseJsonPath(prop string, data interface{}) (interface{}, error) {
+	var (
+		je  conf.JsonPathEval
+		err error
+	)
+	if raw, ok := c.jpReg.Load(prop); ok {
+		je = raw.(conf.JsonPathEval)
+	} else {
+		je, err = conf.GetJsonPathEval(prop)
+		if err != nil {
+			return nil, err
+		}
+		c.jpReg.Store(prop, je)
+	}
+	return je.Eval(data)
 }
 
 func (c *DefaultContext) WithMeta(ruleId string, opId string, store api.Store) api.StreamContext {

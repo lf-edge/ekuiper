@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
 	}
 
 	logger.Debugf("%s publish %s", ctx.GetOpId(), jsonBytes)
-	tpc, err := ctx.ParseDynamicProp(ms.tpc, item)
+	tpc, err := ctx.ParseTemplate(ms.tpc, item)
 	if err != nil {
 		return err
 	}

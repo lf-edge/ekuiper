@@ -261,7 +261,7 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 }
 
 func (ms *RestSink) Send(ctx api.StreamContext, v interface{}, logger api.Logger) (*http.Response, error) {
-	temp, err := ctx.ParseDynamicProp(ms.bodyType, v)
+	temp, err := ctx.ParseTemplate(ms.bodyType, v)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (ms *RestSink) Send(ctx api.StreamContext, v interface{}, logger api.Logger
 	if !ok {
 		return nil, fmt.Errorf("the value %v of dynamic prop %s for bodyType is not a string", ms.bodyType, temp)
 	}
-	temp, err = ctx.ParseDynamicProp(ms.method, v)
+	temp, err = ctx.ParseTemplate(ms.method, v)
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +277,7 @@ func (ms *RestSink) Send(ctx api.StreamContext, v interface{}, logger api.Logger
 	if !ok {
 		return nil, fmt.Errorf("the value %v of dynamic prop %s for method is not a string", ms.method, temp)
 	}
-	temp, err = ctx.ParseDynamicProp(ms.url, v)
+	temp, err = ctx.ParseTemplate(ms.url, v)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +289,7 @@ func (ms *RestSink) Send(ctx api.StreamContext, v interface{}, logger api.Logger
 	if ms.headers != nil {
 		headers = ms.headers
 	} else if ms.headersTemplate != "" {
-		temp, err = ctx.ParseDynamicProp(ms.headersTemplate, v)
+		temp, err = ctx.ParseTemplate(ms.headersTemplate, v)
 		if err != nil {
 			return nil, err
 		}
