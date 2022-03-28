@@ -156,6 +156,7 @@ type StreamContext interface {
 	// ParseJsonPath parse the jsonPath string with the given data
 	ParseJsonPath(jsonPath string, data interface{}) (interface{}, error)
 	// TransformOutput Transform output according to the properties including dataTemplate, sendSingle
+	// The second parameter is whether the data is transformed or just return as its json format.
 	TransformOutput(data interface{}) ([]byte, bool, error)
 }
 

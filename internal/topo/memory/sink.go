@@ -26,7 +26,7 @@ type sink struct {
 
 func (s *sink) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("Opening memory sink: %v", s.topic)
-	createPub(s.topic)
+	CreatePub(s.topic)
 	return nil
 }
 
@@ -54,10 +54,10 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 	switch d := data.(type) {
 	case []map[string]interface{}:
 		for _, el := range d {
-			produce(ctx, topic, el)
+			Produce(ctx, topic, el)
 		}
 	case map[string]interface{}:
-		produce(ctx, topic, d)
+		Produce(ctx, topic, d)
 	default:
 		return fmt.Errorf("unrecognized format of %s", data)
 	}
@@ -66,6 +66,6 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing memory sink")
-	closeSink(s.topic)
+	RemovePub(s.topic)
 	return nil
 }
