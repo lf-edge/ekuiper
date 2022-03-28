@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package io
 
 import (
 	"github.com/lf-edge/ekuiper/internal/topo/memory"
+	"github.com/lf-edge/ekuiper/internal/topo/neuron"
 	"github.com/lf-edge/ekuiper/internal/topo/sink"
 	"github.com/lf-edge/ekuiper/internal/topo/source"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -30,6 +31,7 @@ var (
 		"httppull": func() api.Source { return &source.HTTPPullSource{} },
 		"file":     func() api.Source { return &source.FileSource{} },
 		"memory":   func() api.Source { return memory.GetSource() },
+		"neuron":   func() api.Source { return neuron.GetSource() },
 	}
 	sinks = map[string]NewSinkFunc{
 		"log":         sink.NewLogSink,
@@ -38,6 +40,7 @@ var (
 		"rest":        func() api.Sink { return &sink.RestSink{} },
 		"nop":         func() api.Sink { return &sink.NopSink{} },
 		"memory":      func() api.Sink { return memory.GetSink() },
+		"neuron":      func() api.Sink { return neuron.GetSink() },
 	}
 )
 

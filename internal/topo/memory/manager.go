@@ -47,7 +47,7 @@ func GetSource() *source {
 	return &source{}
 }
 
-func createPub(topic string) {
+func CreatePub(topic string) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -67,7 +67,7 @@ func createPub(topic string) {
 	}
 }
 
-func createSub(wildcard string, regex *regexp.Regexp, sourceId string, bufferLength int) chan api.SourceTuple {
+func CreateSub(wildcard string, regex *regexp.Regexp, sourceId string, bufferLength int) chan api.SourceTuple {
 	mu.Lock()
 	defer mu.Unlock()
 	ch := make(chan api.SourceTuple, bufferLength)
@@ -87,7 +87,7 @@ func createSub(wildcard string, regex *regexp.Regexp, sourceId string, bufferLen
 	return ch
 }
 
-func closeSourceConsumerChannel(topic string, sourceId string) {
+func CloseSourceConsumerChannel(topic string, sourceId string) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -104,7 +104,7 @@ func closeSourceConsumerChannel(topic string, sourceId string) {
 	}
 }
 
-func closeSink(topic string) {
+func RemovePub(topic string) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -116,7 +116,7 @@ func closeSink(topic string) {
 	}
 }
 
-func produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
+func Produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
 	c, exists := pubTopics[topic]
 	if !exists {
 		return

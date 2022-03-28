@@ -100,7 +100,7 @@ func TestCreateAndClose(t *testing.T) {
 		chans        []chan api.SourceTuple
 	)
 	for i, topic := range sinkTopics {
-		createPub(topic)
+		CreatePub(topic)
 		var (
 			r   *regexp.Regexp
 			err error
@@ -112,7 +112,7 @@ func TestCreateAndClose(t *testing.T) {
 				return
 			}
 		}
-		c := createSub(sourceTopics[i], r, fmt.Sprintf("%d", i), 100)
+		c := CreateSub(sourceTopics[i], r, fmt.Sprintf("%d", i), 100)
 		chans = append(chans, c)
 	}
 
@@ -151,8 +151,8 @@ func TestCreateAndClose(t *testing.T) {
 	}
 	i := 0
 	for i < 3 {
-		closeSourceConsumerChannel(sourceTopics[i], fmt.Sprintf("%d", i))
-		closeSink(sinkTopics[i])
+		CloseSourceConsumerChannel(sourceTopics[i], fmt.Sprintf("%d", i))
+		RemovePub(sinkTopics[i])
 		i++
 	}
 	expPub = map[string]*pubConsumers{
@@ -480,7 +480,7 @@ func TestMultipleTopics(t *testing.T) {
 		for c < 3 {
 			for i, v := range sinkData {
 				time.Sleep(10 * time.Millisecond)
-				produce(ctx, sinkTopics[i], v[c])
+				Produce(ctx, sinkTopics[i], v[c])
 			}
 			c++
 		}
