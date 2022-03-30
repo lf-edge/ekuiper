@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"runtime/debug"
 )
 
 // SafeRun will catch and return the panic error together with other errors
@@ -28,6 +29,7 @@ import (
 func SafeRun(fn func() error) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
+			debug.PrintStack()
 			switch x := r.(type) {
 			case string:
 				err = errors.New(x)
