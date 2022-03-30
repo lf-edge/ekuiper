@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store
+//go:build redisdb || !core
+// +build redisdb !core
+
+package redis
 
 import (
 	"github.com/alicebob/miniredis/v2"
-	"github.com/lf-edge/ekuiper/internal/pkg/db/redis"
-	rb "github.com/lf-edge/ekuiper/internal/pkg/store/redis"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 	"strconv"
@@ -50,26 +51,26 @@ func TestRedisKvKeys(t *testing.T) {
 	common.TestKvKeys(length, ks, t)
 }
 
-func setupRedisKv() (kv.KeyValue, *redis.Instance, *miniredis.Miniredis) {
+func setupRedisKv() (kv.KeyValue, *Instance, *miniredis.Miniredis) {
 	minRedis, err := miniredis.Run()
 	if err != nil {
 		panic(err)
 	}
-	redisDB := redis.NewRedis("localhost", stringToInt(minRedis.Port()))
+	redisDB := NewRedis("localhost", stringToInt(minRedis.Port()))
 	err = redisDB.Connect()
 	if err != nil {
 		panic(err)
 	}
-	builder := rb.NewStoreBuilder(redisDB)
+	builder := NewStoreBuilder(redisDB)
 	var ks kv.KeyValue
 	ks, err = builder.CreateStore("test")
 	if err != nil {
 		panic(err)
 	}
-	return ks, &redisDB, minRedis
+	return ks, redisDB, minRedis
 }
 
-func cleanRedisKv(instance *redis.Instance, minRedis *miniredis.Miniredis) {
+func cleanRedisKv(instance *Instance, minRedis *miniredis.Miniredis) {
 	instance.Disconnect()
 	minRedis.Close()
 }

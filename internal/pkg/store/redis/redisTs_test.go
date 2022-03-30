@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,58 +12,59 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build redisdb || !core
+// +build redisdb !core
+
 package redis
 
 import (
 	"github.com/alicebob/miniredis/v2"
-	"github.com/lf-edge/ekuiper/internal/pkg/db/redis"
-	"github.com/lf-edge/ekuiper/internal/pkg/ts/test/common"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
 	ts2 "github.com/lf-edge/ekuiper/pkg/kv"
-	"strconv"
 	"testing"
 )
 
 func TestRedisTsSet(t *testing.T) {
-	ks, db, minRedis := setupRedisKv()
+	ks, db, minRedis := setupTRedisKv()
 	defer cleanRedisKv(db, minRedis)
 
 	common.TestTsSet(ks, t)
 }
 
 func TestRedisTsLast(t *testing.T) {
-	ks, db, minRedis := setupRedisKv()
+	ks, db, minRedis := setupTRedisKv()
 	defer cleanRedisKv(db, minRedis)
 
 	common.TestTsLast(ks, t)
 }
 
 func TestRedisTsGet(t *testing.T) {
-	ks, db, minRedis := setupRedisKv()
+	ks, db, minRedis := setupTRedisKv()
 	defer cleanRedisKv(db, minRedis)
 
 	common.TestTsGet(ks, t)
 }
 
 func TestRedisTsDelete(t *testing.T) {
-	ks, db, minRedis := setupRedisKv()
+	ks, db, minRedis := setupTRedisKv()
 	defer cleanRedisKv(db, minRedis)
 
 	common.TestTsDelete(ks, t)
 }
 
 func TestRedisTsDeleteBefore(t *testing.T) {
-	ks, db, minRedis := setupRedisKv()
+	ks, db, minRedis := setupTRedisKv()
 	defer cleanRedisKv(db, minRedis)
 
 	common.TestTsDeleteBefore(ks, t)
 }
 
-func setupRedisKv() (ts2.Tskv, *redis.Instance, *miniredis.Miniredis) {
+func setupTRedisKv() (ts2.Tskv, *Instance, *miniredis.Miniredis) {
 	minRedis, err := miniredis.Run()
 	if err != nil {
 		panic(err)
 	}
-	redisDB := redis.NewRedis("localhost", stringToInt(minRedis.Port()))
+	redisDB := NewRedis("localhost", stringToInt(minRedis.Port()))
 	err = redisDB.Connect()
 	if err != nil {
 		panic(err)
@@ -75,18 +76,5 @@ func setupRedisKv() (ts2.Tskv, *redis.Instance, *miniredis.Miniredis) {
 	if err != nil {
 		panic(err)
 	}
-	return ks, &redisDB, minRedis
-}
-
-func cleanRedisKv(instance *redis.Instance, minRedis *miniredis.Miniredis) {
-	instance.Disconnect()
-	minRedis.Close()
-}
-
-func stringToInt(svalue string) int {
-	ivalue, err := strconv.Atoi(svalue)
-	if err != nil {
-		panic(err)
-	}
-	return ivalue
+	return ks, redisDB, minRedis
 }

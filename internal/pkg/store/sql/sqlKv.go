@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,18 +19,17 @@ import (
 	"database/sql"
 	"encoding/gob"
 	"fmt"
-	dbSql "github.com/lf-edge/ekuiper/internal/pkg/db/sql"
 	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"strings"
 )
 
 type sqlKvStore struct {
-	database dbSql.Database
+	database Database
 	table    string
 }
 
-func createSqlKvStore(database dbSql.Database, table string) (*sqlKvStore, error) {
+func createSqlKvStore(database Database, table string) (*sqlKvStore, error) {
 	store := &sqlKvStore{
 		database: database,
 		table:    table,

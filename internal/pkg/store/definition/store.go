@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2022-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package redis
+package definition
 
-type Config struct {
-	Host     string
-	Port     int
-	Password string
-	Timeout  int
+import (
+	"github.com/lf-edge/ekuiper/pkg/kv"
+)
+
+type StoreBuilder interface {
+	CreateStore(table string) (kv.KeyValue, error)
+}
+
+type TsBuilder interface {
+	CreateTs(table string) (error, kv.Tskv)
 }

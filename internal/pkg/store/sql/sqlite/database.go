@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2022-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sqlite
 import (
 	"database/sql"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"path"
@@ -29,7 +30,8 @@ type Database struct {
 	mu   sync.Mutex
 }
 
-func NewSqliteDatabase(conf Config) (error, *Database) {
+func NewSqliteDatabase(c definition.Config) (definition.Database, error) {
+	conf := c.Sqlite
 	dir := conf.Path
 	name := "sqliteKV.db"
 	if conf.Name != "" {
@@ -39,11 +41,11 @@ func NewSqliteDatabase(conf Config) (error, *Database) {
 		os.MkdirAll(dir, os.ModePerm)
 	}
 	dbPath := path.Join(dir, name)
-	return nil, &Database{
+	return &Database{
 		db:   nil,
 		Path: dbPath,
 		mu:   sync.Mutex{},
-	}
+	}, nil
 }
 
 func (d *Database) Connect() error {

@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,9 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlite
+//go:build redisdb || !core
+// +build redisdb !core
 
-type Config struct {
-	Path string
-	Name string
+package redis
+
+import (
+	st "github.com/lf-edge/ekuiper/pkg/kv"
+)
+
+type TsBuilder struct {
+	redis *Instance
+}
+
+func NewTsBuilder(d *Instance) TsBuilder {
+	return TsBuilder{
+		redis: d,
+	}
+}
+
+func (b TsBuilder) CreateTs(table string) (error, st.Tskv) {
+	return createRedisTs(b.redis, table)
 }
