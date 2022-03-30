@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build redisdb || !core
+// +build redisdb !core
+
 package redis
 
 import (
@@ -19,7 +22,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/gomodule/redigo/redis"
-	dbRedis "github.com/lf-edge/ekuiper/internal/pkg/db/redis"
 	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 	"strconv"
 )
@@ -34,7 +36,7 @@ const (
 )
 
 type ts struct {
-	redis dbRedis.Instance
+	redis *Instance
 	table string
 	last  int64
 	key   string
@@ -44,7 +46,7 @@ func init() {
 	gob.Register(make(map[string]interface{}))
 }
 
-func createRedisTs(redis dbRedis.Instance, table string) (error, *ts) {
+func createRedisTs(redis *Instance, table string) (error, *ts) {
 	key := fmt.Sprintf("%s:%s", TsPrefix, table)
 	err, lastTs := getLast(redis, key)
 	if err != nil {
@@ -165,7 +167,7 @@ func (t ts) Drop() error {
 	})
 }
 
-func getLast(db dbRedis.Instance, key string) (error, int64) {
+func getLast(db *Instance, key string) (error, int64) {
 	var lastTs int64
 	err := db.Apply(func(conn redis.Conn) error {
 		reply, err := conn.Do(ReversedRange, key, 0, 0, "WITHSCORES")

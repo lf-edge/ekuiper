@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,20 +15,19 @@
 package sql
 
 import (
-	"github.com/lf-edge/ekuiper/internal/pkg/db/sql"
-	ts2 "github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 type TsBuilder struct {
-	database sql.Database
+	database Database
 }
 
-func NewTsBuilder(d sql.Database) TsBuilder {
+func NewTsBuilder(d Database) TsBuilder {
 	return TsBuilder{
 		database: d,
 	}
 }
 
-func (b TsBuilder) CreateTs(table string) (error, ts2.Tskv) {
+func (b TsBuilder) CreateTs(table string) (error, kv.Tskv) {
 	return createSqlTs(b.database, table)
 }

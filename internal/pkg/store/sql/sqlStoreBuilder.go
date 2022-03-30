@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,15 +15,14 @@
 package sql
 
 import (
-	"github.com/lf-edge/ekuiper/internal/pkg/db/sql"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 type StoreBuilder struct {
-	database sql.Database
+	database Database
 }
 
-func NewStoreBuilder(d sql.Database) StoreBuilder {
+func NewStoreBuilder(d Database) StoreBuilder {
 	return StoreBuilder{
 		database: d,
 	}
