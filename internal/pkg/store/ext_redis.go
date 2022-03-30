@@ -1,4 +1,4 @@
-// Copyright 2021 INTECH Process Automation Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sql
+//go:build redisdb || !core
+// +build redisdb !core
 
-import "database/sql"
+package store
 
-type Database interface {
-	Apply(f func(db *sql.DB) error) error
+import "github.com/lf-edge/ekuiper/internal/pkg/store/redis"
+
+func init() {
+	storeBuilders["redis"] = redis.BuildStores
 }
