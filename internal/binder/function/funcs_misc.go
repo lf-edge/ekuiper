@@ -517,11 +517,13 @@ func registerMiscFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			result := make(map[string]interface{})
 			for i := 0; i < len(args); i += 2 {
-				s, err := cast.ToString(args[i], cast.CONVERT_SAMEKIND)
-				if err != nil {
-					return fmt.Errorf("key %v is not a string", args[i]), false
+				if args[i+1] != nil {
+					s, err := cast.ToString(args[i], cast.CONVERT_SAMEKIND)
+					if err != nil {
+						return fmt.Errorf("key %v is not a string", args[i]), false
+					}
+					result[s] = args[i+1]
 				}
-				result[s] = args[i+1]
 			}
 			return result, true
 		},

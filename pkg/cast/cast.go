@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package cast
 import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
-	"html/template"
 	"reflect"
 	"strconv"
 	"sync"
@@ -78,16 +77,6 @@ func ToString(input interface{}, sn Strictness) (string, error) {
 				return strconv.FormatUint(uint64(s), 10), nil
 			case uint8:
 				return strconv.FormatUint(uint64(s), 10), nil
-			case template.HTML:
-				return string(s), nil
-			case template.URL:
-				return string(s), nil
-			case template.JS:
-				return string(s), nil
-			case template.CSS:
-				return string(s), nil
-			case template.HTMLAttr:
-				return string(s), nil
 			case nil:
 				return "", nil
 			case fmt.Stringer:
