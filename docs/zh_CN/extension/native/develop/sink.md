@@ -58,11 +58,11 @@ func MySink() api.Sink {
 
 #### 解析动态属性
 
-在自定义的 sink 插件中，用户可能仍然想要像内置的 sink 一样支持[动态属性](../../../rules/overview.md#动态属性)。 我们在 context 对象中提供了 `ParseDynamicProp` 方法使得开发者可以方便地解析动态属性并应用于插件中。开发组应当根据业务逻辑，设计那些属性支持动态值。然后在代码编写时，使用此方法解析用户传入的属性值。
+在自定义的 sink 插件中，用户可能仍然想要像内置的 sink 一样支持[动态属性](../../../rules/overview.md#动态属性)。 我们在 context 对象中提供了 `ParseTemplate` 方法使得开发者可以方便地解析动态属性并应用于插件中。开发组应当根据业务逻辑，设计那些属性支持动态值。然后在代码编写时，使用此方法解析用户传入的属性值。
 
 ```go
-// Parse the prop of jsonpath syntax against the current data.
-value, err := ctx.ParseDynamicProp(s.prop, data)
+// Parse the prop of go template syntax against the current data.
+value, err := ctx.ParseTemplate(s.prop, data)
 // Use the parsed value for the following business logic.
 ```
 

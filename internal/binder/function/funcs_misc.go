@@ -553,6 +553,9 @@ func toFixed(num float64, precision int) float64 {
 }
 
 func jsonCall(ctx api.StreamContext, args []interface{}) (interface{}, error) {
-	// TO BE REMOVED prefix { to avoid conflict with regular string
-	return ctx.ParseDynamicProp("{"+args[1].(string), args[0])
+	jp, ok := args[1].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid jsonPath, must be a string but got %v", args[1])
+	}
+	return ctx.ParseJsonPath(jp, args[0])
 }
