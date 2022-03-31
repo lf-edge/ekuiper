@@ -106,6 +106,7 @@ func (mc *edgexClientWrapper) messageHandler(topic string, sub *edgexSubscriptio
 					for _, consumer := range sub.topicConsumers {
 						close(consumer.ConsumerChan)
 					}
+					conf.Log.Errorf("message handler for topic %s stopped", topic)
 					return
 				}
 				//broadcast to all topic subscribers
@@ -195,7 +196,6 @@ func (mc *edgexClientWrapper) unsubscribe(c api.StreamContext) {
 		if sub, found := mc.topicSubscriptions[tpc]; found {
 			for index, consumer := range sub.topicConsumers {
 				if strings.EqualFold(subId, consumer.ConsumerId) {
-					close(consumer.ConsumerChan)
 					sub.topicConsumers = append(sub.topicConsumers[:index], sub.topicConsumers[index+1:]...)
 					log.Infof("unsubscription topic %s for reqId %s, total subs %d", tpc, subId, len(sub.topicConsumers))
 				}

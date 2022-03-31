@@ -203,7 +203,6 @@ func (mc *mqttClientWrapper) unsubscribe(c api.StreamContext) {
 		if sub, found := mc.topicSubscriptions[tpc]; found {
 			for index, consumer := range sub.topicConsumers {
 				if strings.EqualFold(subId, consumer.ConsumerId) {
-					close(consumer.ConsumerChan)
 					sub.topicConsumers = append(sub.topicConsumers[:index], sub.topicConsumers[index+1:]...)
 					log.Infof("unsubscription topic %s for reqId %s, total subs %d", tpc, subId, len(sub.topicConsumers))
 				}
