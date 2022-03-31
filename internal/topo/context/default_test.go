@@ -109,14 +109,14 @@ func cleanStateData() {
 	}
 }
 
-func TestDynamicProp(t *testing.T) {
+func TestParseJsonPath(t *testing.T) {
 	var tests = []struct {
 		j string
 		v []interface{} // values
 		r []interface{} // parsed results
 	}{
 		{
-			j: "{$.a",
+			j: "$.a",
 			v: []interface{}{
 				map[string]interface{}{
 					"a": 123,
@@ -137,7 +137,7 @@ func TestDynamicProp(t *testing.T) {
 				nil,
 			},
 		}, {
-			j: "{$[0].a",
+			j: "$[0].a",
 			v: []interface{}{
 				[]map[string]interface{}{{
 					"a": 123,
@@ -160,28 +160,32 @@ func TestDynamicProp(t *testing.T) {
 				nil,
 				"single",
 			},
-		}, {
-			j: "$a",
-			v: []interface{}{
-				map[string]interface{}{
-					"a": 123,
-					"b": "dafds",
-				},
-				map[string]interface{}{
-					"a": "single",
-					"c": 20.2,
-				},
-				map[string]interface{}{
-					"b": "b",
-					"c": "c",
-				},
-			},
-			r: []interface{}{
-				"$a",
-				"$a",
-				"$a",
-			},
-		}, {
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	ctx := Background().WithMeta("testStateRule", "op1", &state.MemoryStore{})
+	for i, tt := range tests {
+		var result []interface{}
+		for _, v := range tt.v {
+			prop, err := ctx.ParseJsonPath(tt.j, v)
+			if err != nil {
+				fmt.Printf("%d:%s parse %v error\n", i, tt.j, v)
+			}
+			result = append(result, prop)
+		}
+		if !reflect.DeepEqual(tt.r, result) {
+			t.Errorf("%d. %s\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.j, tt.r, result)
+		}
+	}
+}
+
+func TestParseTemplate(t *testing.T) {
+	var tests = []struct {
+		j string
+		v []interface{} // values
+		r []interface{} // parsed results
+	}{
+		{
 			j: "devices/{{.a}}",
 			v: []interface{}{
 				map[string]interface{}{
@@ -209,7 +213,7 @@ func TestDynamicProp(t *testing.T) {
 	for i, tt := range tests {
 		var result []interface{}
 		for _, v := range tt.v {
-			prop, err := ctx.ParseDynamicProp(tt.j, v)
+			prop, err := ctx.ParseTemplate(tt.j, v)
 			if err != nil {
 				fmt.Printf("%d:%s parse %v error\n", i, tt.j, v)
 			}
