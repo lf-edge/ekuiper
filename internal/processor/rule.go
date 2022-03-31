@@ -150,7 +150,7 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 		return nil, fmt.Errorf("Missing rule actions.")
 	}
 	if rule.Options == nil {
-		rule.Options = &api.RuleOption{}
+		rule.Options = &opt
 	}
 	//Setnx default options
 	if rule.Options.CheckpointInterval < 0 {
