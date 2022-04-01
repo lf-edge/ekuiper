@@ -463,8 +463,6 @@ func init() {
 				if v := n.Sub(sink.QR.LastFetch); v >= w {
 					logger.Printf("The client seems no longer fetch the query result, stop the query now.")
 					stopQuery()
-					ticker.Stop()
-					return
 				}
 			}
 		}
