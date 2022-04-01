@@ -43,9 +43,9 @@ It can be run at various IoT edge use scenarios, such as real-time processing of
   - Plugins, streams and rules management through CLI & REST API
   - Easily be integrate with [KubeEdge](https://github.com/kubeedge/kubeedge), [K3s](https://github.com/rancher/k3s) and [Baetyl](https://github.com/baetyl/baetyl), which bases Kubernetes
 
-- Integration with EMQ X Edge
+- Integration with EMQX Edge
 
-  Seamless integration with EMQ X Neuron & EMQ X Edge, and provided an end to end solution from messaging to analytics. 
+  Seamless integration with EMQX Neuron & EMQX Edge, and provided an end to end solution from messaging to analytics. 
 
 ## Quick start
 
@@ -59,8 +59,8 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
 
 ### MQTT throughput test
 
-- Using JMeter MQTT plugin to send simulation data to EMQ X Broker, such as: `{"temperature": 10, "humidity" : 90}`, the value of temperature and humidity are random integer between 0 - 100.
-- eKuiper subscribe from EMQ X Broker, and analyze data with SQL: `SELECT * FROM demo WHERE temperature > 50 ` 
+- Using JMeter MQTT plugin to send simulation data to EMQX Broker, such as: `{"temperature": 10, "humidity" : 90}`, the value of temperature and humidity are random integer between 0 - 100.
+- eKuiper subscribe from EMQX Broker, and analyze data with SQL: `SELECT * FROM demo WHERE temperature > 50 ` 
 - The analysis result are wrote to local file by using [file sink plugin](extension/native/sinks/file.md).
 
 | Devices                                        | Message # per second | CPU usage     | Memory usage |
