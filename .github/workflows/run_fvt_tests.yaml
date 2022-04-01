@@ -58,7 +58,7 @@ jobs:
     - name: install jmeter
       timeout-minutes: 10
       env:
-          JMETER_VERSION: 5.3
+          JMETER_VERSION: 5.4.3
       run: |
         wget --no-check-certificate -O /tmp/apache-jmeter.tgz https://downloads.apache.org//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
         cd /tmp && tar -xvf apache-jmeter.tgz
@@ -140,7 +140,7 @@ jobs:
       - name: install jmeter
         timeout-minutes: 10
         env:
-          JMETER_VERSION: 5.3
+          JMETER_VERSION: 5.4.3
         run: |
           wget --no-check-certificate -O /tmp/apache-jmeter.tgz https://downloads.apache.org//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
           cd /tmp && tar -xvf apache-jmeter.tgz
@@ -210,7 +210,7 @@ jobs:
     - name: install jmeter
       timeout-minutes: 10
       env:
-          JMETER_VERSION: 5.3
+          JMETER_VERSION: 5.4.3
       run: |
         wget --no-check-certificate -O /tmp/apache-jmeter.tgz https://downloads.apache.org//jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
         cd /tmp && tar -xvf apache-jmeter.tgz

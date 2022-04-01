@@ -38,7 +38,7 @@ func GenTransform(dt string) (TransFunc, error) {
 			var output bytes.Buffer
 			err := tp.Execute(&output, d)
 			if err != nil {
-				return nil, false, fmt.Errorf("fail to encode data %v with dataTemplate", d)
+				return nil, false, fmt.Errorf("fail to encode data %v with dataTemplate for error %v", d, err)
 			}
 			return output.Bytes(), true, nil
 		} else {
