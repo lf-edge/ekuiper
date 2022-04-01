@@ -191,7 +191,7 @@ func (mc *edgexClientWrapper) unsubscribe(c api.StreamContext) {
 		log.Errorf("not found subscription id %s", subId)
 		return
 	}
-
+	// just clean the consumers, do not clean the topic subscription
 	for _, tpc := range subTopics.Topics {
 		if sub, found := mc.topicSubscriptions[tpc]; found {
 			for index, consumer := range sub.topicConsumers {
@@ -199,10 +199,6 @@ func (mc *edgexClientWrapper) unsubscribe(c api.StreamContext) {
 					sub.topicConsumers = append(sub.topicConsumers[:index], sub.topicConsumers[index+1:]...)
 					log.Infof("unsubscription topic %s for reqId %s, total subs %d", tpc, subId, len(sub.topicConsumers))
 				}
-			}
-			if 0 == len(sub.topicConsumers) {
-				delete(mc.topicSubscriptions, tpc)
-				sub.stop <- struct{}{}
 			}
 		}
 	}
@@ -244,7 +240,10 @@ func (mc *edgexClientWrapper) DeRef(c api.StreamContext) {
 			conf.Log.Infof("remove mqtt client wrapper for connection selector %s", mc.conSelector)
 			delete(clients.ClientRegistry.ShareClientStore, mc.conSelector)
 		}
+		// clean the go routine that waiting on the messages
+		for _, sub := range mc.topicSubscriptions {
+			sub.stop <- struct{}{}
+		}
 		_ = mc.cli.Disconnect()
 	}
-
 }

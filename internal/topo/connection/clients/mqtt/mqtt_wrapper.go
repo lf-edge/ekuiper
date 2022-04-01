@@ -209,6 +209,8 @@ func (mc *mqttClientWrapper) unsubscribe(c api.StreamContext) {
 			}
 			if 0 == len(sub.topicConsumers) {
 				delete(mc.topicSubscriptions, tpc)
+				log.Infof("delete subscription for topic %s", tpc)
+				mc.cli.conn.Unsubscribe(tpc)
 			}
 		}
 	}
