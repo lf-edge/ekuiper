@@ -24,18 +24,18 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN make build_with_edgex \
-    && ln -s /go/kuiper/_build/kuiper-$(git describe --tags --always)-$(go env GOOS)-$(go env GOARCH) /usr/local/kuiper
+    && ln -s /go/kuiper/_build/kuiper-$(git describe --tags --always)-$(go env GOOS)-$(go env GOARCH) /kuiper
 
 RUN ln -s /go/kuiper/deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 
 EXPOSE 9081 20498
 
 ENV MAINTAINER="emqx.io"
-ENV KUIPER_HOME /usr/local/kuiper
+ENV KUIPER_HOME /kuiper
 ENV KUIPER__BASIC__CONSOLELOG true
 
-WORKDIR /usr/local/kuiper
-VOLUME ["/usr/local/kuiper/etc", "/usr/local/kuiper/data", "/usr/local/kuiper/plugins", "/usr/local/kuiper/log"]
+WORKDIR /kuiper
+VOLUME ["kuiper/etc", "kuiper/data", "kuiper/plugins", "kuiper/log"]
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
 CMD ["./bin/kuiperd"]
