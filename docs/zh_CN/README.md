@@ -43,9 +43,9 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
   - 通过命令行和 REST API 对流、规则和插件进行管理
   - 与 [KubeEdge](https://github.com/kubeedge/kubeedge)、[K3s](https://github.com/rancher/k3s)、[Baetyl](https://github.com/baetyl/baetyl) 等基于边缘 Kubernetes 框架的集成能力
 
-- 与 EMQ X Edge 集成
+- 与 EMQX Edge 集成
 
-  提供了与 EMQ X Neuron 和 EMQ X Edge 的无缝集成，实现在边缘端从消息接入到数据分析端到端的场景实现能力
+  提供了与 EMQX Neuron 和 EMQX Edge 的无缝集成，实现在边缘端从消息接入到数据分析端到端的场景实现能力
 
 ## 快速入门
 
@@ -59,8 +59,8 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 ### MQTT 吞吐量测试支持
 
-- 使用 JMeter MQTT 插件来发送数据到 EMQ X 服务器，消息类似于 `{"temperature": 10, "humidity" : 90}`， 温度与湿度的值是介于 0 ～ 100 之间的随机整数值
-- eKuiper 从 EMQ X 服务器订阅消息，并且通过 SQL 分析数据： `SELECT * FROM demo WHERE temperature > 50 ` 
+- 使用 JMeter MQTT 插件来发送数据到 EMQX 服务器，消息类似于 `{"temperature": 10, "humidity" : 90}`， 温度与湿度的值是介于 0 ～ 100 之间的随机整数值
+- eKuiper 从 EMQX 服务器订阅消息，并且通过 SQL 分析数据： `SELECT * FROM demo WHERE temperature > 50 ` 
 - 分析结果通过 [文件插件](extension/native/sinks/file.md) 写到本地的文件系统里
 
 | 设备                                                 | 每秒发送消息数 | CPU 使用        | 内存 |

@@ -90,7 +90,7 @@ eKuiper 具有许多用于复杂分析的内置函数和扩展，您可以访问
 
 ### 先决条件
 
-我们假设已经有一个 MQTT 消息服务器作为 eKuiper 服务器的数据源。 如果您没有，建议使用 EMQ X。 请按照 [EMQ Broker 安装指南](https://docs.emqx.cn/cn/broker/latest/getting-started/install.html)设置 MQTT 消息服务器。
+我们假设已经有一个 MQTT 消息服务器作为 eKuiper 服务器的数据源。 如果您没有，建议使用 EMQX。 请按照 [EMQ Broker 安装指南](https://docs.emqx.cn/cn/broker/latest/getting-started/install.html)设置 MQTT 消息服务器。
 
 ### 定义输入流
 
