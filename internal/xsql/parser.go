@@ -42,7 +42,7 @@ type Parser struct {
 	clause string
 }
 
-func (p *Parser) parseCondition() (ast.Expr, error) {
+func (p *Parser) ParseCondition() (ast.Expr, error) {
 	if tok, _ := p.scanIgnoreWhitespace(); tok != ast.WHERE {
 		p.unscan()
 		return nil, nil
@@ -149,7 +149,7 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 		selects.Joins = joins
 	}
 	p.clause = "where"
-	if exp, err := p.parseCondition(); err != nil {
+	if exp, err := p.ParseCondition(); err != nil {
 		return nil, err
 	} else {
 		if exp != nil {

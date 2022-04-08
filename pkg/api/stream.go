@@ -124,12 +124,32 @@ type RuleOption struct {
 	CheckpointInterval int   `json:"checkpointInterval" yaml:"checkpointInterval"`
 }
 
+type PrintableTopo struct {
+	Sources []string            `json:"sources"`
+	Edges   map[string][]string `json:"edges"`
+}
+
+type GraphNode struct {
+	Type     string                 `json:"type"`
+	NodeType string                 `json:"nodeType"`
+	Props    map[string]interface{} `json:"props"`
+}
+
+type RuleGraph struct {
+	Nodes map[string]*GraphNode `json:"nodes"`
+	Topo  *PrintableTopo        `json:"topo"`
+}
+
+// Rule the definition of the business logic
+// Sql and Graph are mutually exclusive, at least one of them should be set
 type Rule struct {
-	Triggered bool                     `json:"triggered"`
-	Id        string                   `json:"id"`
-	Sql       string                   `json:"sql"`
-	Actions   []map[string]interface{} `json:"actions"`
-	Options   *RuleOption              `json:"options"`
+	Triggered bool                     `json:"triggered,omitempty"`
+	Id        string                   `json:"id,omitempty"`
+	Name      string                   `json:"name,omitempty"` // The display name of a rule
+	Sql       string                   `json:"sql,omitempty"`
+	Graph     *RuleGraph               `json:"graph,omitempty"`
+	Actions   []map[string]interface{} `json:"actions,omitempty"`
+	Options   *RuleOption              `json:"options,omitempty"`
 }
 
 type StreamContext interface {

@@ -29,11 +29,15 @@ import (
 )
 
 func Plan(rule *api.Rule) (*topo.Topo, error) {
-	return PlanWithSourcesAndSinks(rule, nil, nil)
+	if rule.Sql != "" {
+		return PlanSQLWithSourcesAndSinks(rule, nil, nil)
+	} else {
+		return PlanByGraph(rule)
+	}
 }
 
-// For test only
-func PlanWithSourcesAndSinks(rule *api.Rule, sources []*node.SourceNode, sinks []*node.SinkNode) (*topo.Topo, error) {
+// PlanSQLWithSourcesAndSinks For test only
+func PlanSQLWithSourcesAndSinks(rule *api.Rule, sources []*node.SourceNode, sinks []*node.SinkNode) (*topo.Topo, error) {
 	sql := rule.Sql
 
 	conf.Log.Infof("Init rule with options %+v", rule.Options)

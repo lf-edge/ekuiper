@@ -19,6 +19,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
@@ -87,12 +88,16 @@ func (o *defaultNode) GetMetrics() (result [][]interface{}) {
 }
 
 func (o *defaultNode) Broadcast(val interface{}) error {
-	if !o.sendError {
-		if _, ok := val.(error); ok {
+	switch d := val.(type) {
+	case error:
+		if !o.sendError {
 			return nil
 		}
+	case xsql.TupleRow:
+		val = d.Clone()
+	case xsql.Collection:
+		val = d.Clone()
 	}
-
 	if o.qos >= api.AtLeastOnce {
 		boe := &checkpoint.BufferOrEvent{
 			Data:    val,

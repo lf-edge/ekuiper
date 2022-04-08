@@ -15,7 +15,6 @@
 package topotest
 
 import (
-	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"testing"
 )
@@ -223,7 +222,7 @@ func TestWindow(t *testing.T) {
 				"op_4_join_0_records_in_total":   int64(10),
 				"op_4_join_0_records_out_total":  int64(8),
 			},
-			T: &topo.PrintableTopo{
+			T: &api.PrintableTopo{
 				Sources: []string{"source_demo", "source_demo1"},
 				Edges: map[string][]string{
 					"source_demo":  {"op_3_window"},
