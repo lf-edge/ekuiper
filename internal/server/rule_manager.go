@@ -36,10 +36,10 @@ type RuleState struct {
 	Topology  *topo.Topo
 	Triggered bool
 	// temporary storage for topo graph to make sure even rule close, the graph is still available
-	topoGraph *topo.PrintableTopo
+	topoGraph *api.PrintableTopo
 }
 
-func (rs *RuleState) GetTopoGraph() *topo.PrintableTopo {
+func (rs *RuleState) GetTopoGraph() *api.PrintableTopo {
 	if rs.topoGraph != nil {
 		return rs.topoGraph
 	} else if rs.Topology != nil {
@@ -293,7 +293,7 @@ func recoverRule(name string) string {
 			Name: name,
 		}
 		registry.Store(name, rs)
-		return fmt.Sprintf("Rule %s was stoped.", name)
+		return fmt.Sprintf("Rule %s was stopped.", name)
 	}
 
 	err = startRule(name)

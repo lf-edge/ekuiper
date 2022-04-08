@@ -16,7 +16,6 @@ package topotest
 
 import (
 	"encoding/json"
-	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"testing"
@@ -72,7 +71,7 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 			},
-			T: &topo.PrintableTopo{
+			T: &api.PrintableTopo{
 				Sources: []string{"source_demo"},
 				Edges: map[string][]string{
 					"source_demo":  {"op_2_project"},
@@ -366,7 +365,7 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 			},
-			T: &topo.PrintableTopo{
+			T: &api.PrintableTopo{
 				Sources: []string{"source_demo"},
 				Edges: map[string][]string{
 					"source_demo":  {"op_2_project"},

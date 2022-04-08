@@ -129,7 +129,7 @@ func (p *RuleProcessor) getDefaultRule(name, sql string) *api.Rule {
 	}
 }
 
-func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) {
+func (p *RuleProcessor) getRuleByJson(id, ruleJson string) (*api.Rule, error) {
 	opt := conf.Config.Rule
 	//set default rule options
 	rule := &api.Rule{
@@ -140,23 +140,29 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	}
 
 	//validation
-	if rule.Id == "" && name == "" {
+	if rule.Id == "" && id == "" {
 		return nil, fmt.Errorf("Missing rule id.")
 	}
-	if name != "" && rule.Id != "" && name != rule.Id {
+	if id != "" && rule.Id != "" && id != rule.Id {
 		return nil, fmt.Errorf("Name is not consistent with rule id.")
 	}
 	if rule.Id == "" {
-		rule.Id = name
+		rule.Id = id
 	}
-	if rule.Sql == "" {
-		return nil, fmt.Errorf("Missing rule SQL.")
-	}
-	if _, err := xsql.GetStatementFromSql(rule.Sql); err != nil {
-		return nil, err
-	}
-	if rule.Actions == nil || len(rule.Actions) == 0 {
-		return nil, fmt.Errorf("Missing rule actions.")
+	if rule.Sql != "" {
+		if rule.Graph != nil {
+			return nil, fmt.Errorf("Rule %s has both sql and graph.", rule.Id)
+		}
+		if _, err := xsql.GetStatementFromSql(rule.Sql); err != nil {
+			return nil, err
+		}
+		if rule.Actions == nil || len(rule.Actions) == 0 {
+			return nil, fmt.Errorf("Missing rule actions.")
+		}
+	} else {
+		if rule.Graph == nil {
+			return nil, fmt.Errorf("Rule %s has neither sql nor graph.", rule.Id)
+		}
 	}
 	if rule.Options == nil {
 		rule.Options = &opt
