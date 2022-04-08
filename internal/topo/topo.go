@@ -29,11 +29,6 @@ import (
 	"sync"
 )
 
-type PrintableTopo struct {
-	Sources []string            `json:"sources"`
-	Edges   map[string][]string `json:"edges"`
-}
-
 type Topo struct {
 	sources            []node.DataSourceNode
 	sinks              []*node.SinkNode
@@ -46,7 +41,7 @@ type Topo struct {
 	checkpointInterval int
 	store              api.Store
 	coordinator        *checkpoint.Coordinator
-	topo               *PrintableTopo
+	topo               *api.PrintableTopo
 	mu                 sync.Mutex
 }
 
@@ -55,7 +50,7 @@ func NewWithNameAndQos(name string, qos api.Qos, checkpointInterval int) (*Topo,
 		name:               name,
 		qos:                qos,
 		checkpointInterval: checkpointInterval,
-		topo: &PrintableTopo{
+		topo: &api.PrintableTopo{
 			Sources: make([]string, 0),
 			Edges:   make(map[string][]string),
 		},
@@ -229,6 +224,6 @@ func (s *Topo) GetMetrics() (keys []string, values []interface{}) {
 	return
 }
 
-func (s *Topo) GetTopo() *PrintableTopo {
+func (s *Topo) GetTopo() *api.PrintableTopo {
 	return s.topo
 }
