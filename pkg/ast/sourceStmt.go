@@ -76,19 +76,19 @@ type RecType struct {
 	FieldType
 }
 
-// The stream AST tree
+// Options The stream AST tree
 type Options struct {
-	DATASOURCE        string
-	KEY               string
-	FORMAT            string
-	CONF_KEY          string
-	TYPE              string
-	STRICT_VALIDATION bool
-	TIMESTAMP         string
-	TIMESTAMP_FORMAT  string
-	RETAIN_SIZE       int
-	SHARED            bool
-	SCHEMAID          string
+	DATASOURCE        string `json:"datasource,omitempty"`
+	KEY               string `json:"key,omitempty"`
+	FORMAT            string `json:"format,omitempty"`
+	CONF_KEY          string `json:"confKey,omitempty"`
+	TYPE              string `json:"type,omitempty"`
+	STRICT_VALIDATION bool   `json:"strictValidation,omitempty"`
+	TIMESTAMP         string `json:"timestamp,omitempty"`
+	TIMESTAMP_FORMAT  string `json:"timestampFormat,omitempty"`
+	RETAIN_SIZE       int    `json:"retainSize,omitempty"`
+	SHARED            bool   `json:"shared,omitempty"`
+	SCHEMAID          string `json:"schemaid,omitempty"`
 }
 
 func (o Options) node() {}
