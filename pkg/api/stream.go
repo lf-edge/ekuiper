@@ -152,7 +152,7 @@ type StreamContext interface {
 	// GetClient Connection related methods
 	GetClient(clientType string, config map[string]interface{}) (MessageClient, error)
 	// ParseTemplate parse the template string with the given data
-	ParseTemplate(template string, data interface{}) (interface{}, error)
+	ParseTemplate(template string, data interface{}) (string, error)
 	// ParseJsonPath parse the jsonPath string with the given data
 	ParseJsonPath(jsonPath string, data interface{}) (interface{}, error)
 	// TransformOutput Transform output according to the properties including dataTemplate, sendSingle
