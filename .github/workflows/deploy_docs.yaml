@@ -55,7 +55,7 @@ jobs:
     - name: remove unused files
       run: |
         cd docs-files
-        python3 .ci/remove_unused.py $(pwd)/docs
+        python3 .github/scripts/remove_unused.py $(pwd)/docs
 
     - name: move files
       run: |
@@ -93,36 +93,12 @@ jobs:
         access_key_secret: ${{ secrets.ALI_OSS_ACCESSKEY_SECRET }}
         file_paths: https://ekuiper.org/docs/ 
 
-    - name: clone docsearch
-      if: env.VERSION == 'latest'
-      uses: actions/checkout@v2
-      with:
-        repository: 'Swilder-M/docsearch-scraper-simple'
-        path: docsearch
-
-    - name: install pipenv
-      if: env.VERSION == 'latest'
-      run: |
-          python -m pip install --upgrade pipenv wheel
-
-    - id: cache-pipenv
-      if: env.VERSION == 'latest'
-      uses: actions/cache@v1
-      with:
-        path: ~/.local/share/virtualenvs
-        key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
-
-    - name: install dependencies
-      if: env.VERSION == 'latest' && steps.cache-pipenv.outputs.cache-hit != 'true'
-      run: |
-        cd docsearch
-        pipenv install --keep-outdated
-
-    - name: update current version
-      if: env.VERSION == 'latest'
+    - name: update search index
+      if: env.LATEST_VERSION == env.VERSION
+      uses: Swilder-M/docsearch-scraper-simple@v3
       env:
         APPLICATION_ID: ${{ secrets.ALGOLIA_APPLICATION_ID }}
         API_KEY: ${{ secrets.ALGOLIA_API_KEY }}
-      run: |
-        cd docsearch
-        pipenv run python -m src.index config ${DOCS_TYPE} ${VERSION}
+      with:
+        docs_type: ${{ env.DOCS_TYPE }}
+        docs_version: ${{ env.VERSION }}
