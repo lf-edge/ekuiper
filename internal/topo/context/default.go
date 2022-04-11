@@ -112,7 +112,7 @@ func (c *DefaultContext) SetError(err error) {
 	c.err = err
 }
 
-func (c *DefaultContext) ParseTemplate(prop string, data interface{}) (interface{}, error) {
+func (c *DefaultContext) ParseTemplate(prop string, data interface{}) (string, error) {
 	re := regexp.MustCompile(`{{(.*?)}}`)
 	if re.Match([]byte(prop)) {
 		var (

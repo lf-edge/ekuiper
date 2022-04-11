@@ -261,41 +261,25 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 }
 
 func (ms *RestSink) Send(ctx api.StreamContext, v interface{}, logger api.Logger) (*http.Response, error) {
-	temp, err := ctx.ParseTemplate(ms.bodyType, v)
+	bodyType, err := ctx.ParseTemplate(ms.bodyType, v)
 	if err != nil {
 		return nil, err
 	}
-	bodyType, ok := temp.(string)
-	if !ok {
-		return nil, fmt.Errorf("the value %v of dynamic prop %s for bodyType is not a string", ms.bodyType, temp)
-	}
-	temp, err = ctx.ParseTemplate(ms.method, v)
+	method, err := ctx.ParseTemplate(ms.method, v)
 	if err != nil {
 		return nil, err
 	}
-	method, ok := temp.(string)
-	if !ok {
-		return nil, fmt.Errorf("the value %v of dynamic prop %s for method is not a string", ms.method, temp)
-	}
-	temp, err = ctx.ParseTemplate(ms.url, v)
+	u, err := ctx.ParseTemplate(ms.url, v)
 	if err != nil {
 		return nil, err
-	}
-	u, ok := temp.(string)
-	if !ok {
-		return nil, fmt.Errorf("the value %v of dynamic prop %s for url is not a string", ms.url, temp)
 	}
 	var headers map[string]string
 	if ms.headers != nil {
 		headers = ms.headers
 	} else if ms.headersTemplate != "" {
-		temp, err = ctx.ParseTemplate(ms.headersTemplate, v)
+		tstr, err := ctx.ParseTemplate(ms.headersTemplate, v)
 		if err != nil {
 			return nil, err
-		}
-		tstr, ok := temp.(string)
-		if !ok {
-			return nil, fmt.Errorf("the value %v of dynamic prop %s for headersTemplate is not a string", ms.headersTemplate, temp)
 		}
 		err = json.Unmarshal([]byte(tstr), &headers)
 		if err != nil {

@@ -47,13 +47,9 @@ func (s *sink) Configure(props map[string]interface{}) error {
 
 func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 	ctx.GetLogger().Debugf("receive %+v", data)
-	tpc, err := ctx.ParseTemplate(s.topic, data)
+	topic, err := ctx.ParseTemplate(s.topic, data)
 	if err != nil {
 		return err
-	}
-	topic, ok := tpc.(string)
-	if !ok {
-		return fmt.Errorf("the value %v of dynamic prop %s for topic is not a string", s.topic, tpc)
 	}
 	switch d := data.(type) {
 	case []map[string]interface{}:

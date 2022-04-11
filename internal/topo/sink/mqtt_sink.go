@@ -96,16 +96,13 @@ func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
 	if err != nil {
 		return err
 	}
-	if tpc, ok := tpc.(string); !ok {
-		return fmt.Errorf("the value %v of dynamic prop %s for topic is not a string", ms.tpc, tpc)
-	}
 
 	para := map[string]interface{}{
 		"qos":      ms.qos,
 		"retained": ms.retained,
 	}
 
-	if err := ms.cli.Publish(ctx, tpc.(string), jsonBytes, para); err != nil {
+	if err := ms.cli.Publish(ctx, tpc, jsonBytes, para); err != nil {
 		return fmt.Errorf("%s: %s", errorx.IOErr, err.Error())
 	}
 	return nil
