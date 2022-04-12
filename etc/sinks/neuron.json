@@ -1,0 +1,51 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/neuron.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/neuron.md"
+    },
+    "description": {
+      "en_US": "The action is used to publish the result into the local neuron instance.",
+      "zh_CN": "该操作用于发送消息到本地的 neuron 中。"
+    }
+  },
+  "properties": [
+    {
+      "name": "nodeName",
+      "optional": false,
+      "control": "text",
+      "default": "",
+      "type": "string",
+      "hint": {
+        "en_US": "The neuron node name",
+        "zh_CN": "Neuron 节点名称"
+      },
+      "label": {
+        "en_US": "Node Name",
+        "zh_CN": "节点名称"
+      }
+    },
+    {
+      "name": "raw",
+      "optional": true,
+      "control": "text",
+      "default": "",
+      "type": "bool",
+      "hint": {
+        "en_US": "Whether to send the raw string",
+        "zh_CN": "是否发送原始字符串"
+      },
+      "label": {
+        "en_US": "Raw",
+        "zh_CN": "原始字符串"
+      }
+    }
+  ]
+}
