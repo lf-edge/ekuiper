@@ -1,0 +1,22 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/neuron.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/neuron.md"
+    },
+    "description": {
+      "en_US": "The source consumes events from the local neuron.",
+      "zh_CN": "从本地的 neuron 中消费消息。"
+    }
+  },
+  "libs": [],
+  "properties": {
+  }
+}
