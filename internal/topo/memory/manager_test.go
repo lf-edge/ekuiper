@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ func TestCreateAndClose(t *testing.T) {
 				return
 			}
 		}
-		c := createSub(sourceTopics[i], r, fmt.Sprintf("%d", i))
+		c := createSub(sourceTopics[i], r, fmt.Sprintf("%d", i), 100)
 		chans = append(chans, c)
 	}
 
