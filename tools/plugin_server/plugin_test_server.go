@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -158,6 +158,7 @@ func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}()
+		source.Configure("", ctrl.Config)
 		go source.Open(newctx, consumer, errCh)
 	case runtime.TYPE_SINK:
 		sink, err := m.Sink(ctrl.SymbolName)
@@ -170,6 +171,7 @@ func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("source symbol %s already exists", ctrl.SymbolName), http.StatusBadRequest)
 			return
 		}
+		sink.Configure(ctrl.Config)
 		err = sink.Open(newctx)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("open sink %s %v", ctrl.SymbolName, err), http.StatusBadRequest)
