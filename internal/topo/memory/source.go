@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,22 +17,22 @@ package memory
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"regexp"
 	"strings"
 )
 
 type source struct {
-	topic      string
-	topicRegex *regexp.Regexp
-	input      <-chan api.SourceTuple
+	topic        string
+	topicRegex   *regexp.Regexp
+	bufferLength int
 }
 
 func (s *source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
-	ch := createSub(s.topic, s.topicRegex, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
-	s.input = ch
+	ch := createSub(s.topic, s.topicRegex, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), s.bufferLength)
 	for {
 		select {
-		case v, opened := <-s.input:
+		case v, opened := <-ch:
 			if !opened {
 				return
 			}
@@ -43,8 +43,14 @@ func (s *source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ 
 	}
 }
 
-func (s *source) Configure(datasource string, _ map[string]interface{}) error {
+func (s *source) Configure(datasource string, props map[string]interface{}) error {
 	s.topic = datasource
+	s.bufferLength = 1024
+	if c, ok := props["bufferLength"]; ok {
+		if bl, err := cast.ToInt(c, cast.STRICT); err != nil || bl > 0 {
+			s.bufferLength = bl
+		}
+	}
 	if strings.ContainsAny(datasource, "+#") {
 		r, err := getRegexp(datasource)
 		if err != nil {

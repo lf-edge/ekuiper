@@ -67,10 +67,10 @@ func createPub(topic string) {
 	}
 }
 
-func createSub(wildcard string, regex *regexp.Regexp, sourceId string) chan api.SourceTuple {
+func createSub(wildcard string, regex *regexp.Regexp, sourceId string, bufferLength int) chan api.SourceTuple {
 	mu.Lock()
 	defer mu.Unlock()
-	ch := make(chan api.SourceTuple)
+	ch := make(chan api.SourceTuple, bufferLength)
 	if regex != nil {
 		subExps[sourceId] = &subChan{
 			regex: regex,
