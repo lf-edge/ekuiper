@@ -41,6 +41,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
       - uses: docker/build-push-action@v2
+        if: matrix.os == 'centos'
+        with:
+          push: true
+          pull: true
+          cache-from: type=local,src=/tmp/.docker-buildx-cache,mode=max
+          cache-to: type=local,dest=/tmp/.docker-buildx-cache-new,mode=max
+          platforms: linux/amd64,linux/arm64
+          build-args: GO_VERSION=${{ matrix.golang }}
+          tags: ghcr.io/${{ github.repository }}/base:${{ matrix.golang }}-${{ matrix.os }}
+          file: .github/dockerfile/Dockerfile.${{ matrix.os }}
+      - uses: docker/build-push-action@v2
+        if: matrix.os == 'debian'
         with:
           push: true
           pull: true
