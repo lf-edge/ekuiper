@@ -94,7 +94,7 @@ jobs:
         file_paths: https://ekuiper.org/docs/ 
 
     - name: update search index
-      if: env.LATEST_VERSION == env.VERSION
+      if: env.VERSION == 'latest'
       uses: Swilder-M/docsearch-scraper-simple@v3
       env:
         APPLICATION_ID: ${{ secrets.ALGOLIA_APPLICATION_ID }}
