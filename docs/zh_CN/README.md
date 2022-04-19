@@ -61,12 +61,12 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 - 使用 JMeter MQTT 插件来发送数据到 EMQX 服务器，消息类似于 `{"temperature": 10, "humidity" : 90}`， 温度与湿度的值是介于 0 ～ 100 之间的随机整数值
 - eKuiper 从 EMQX 服务器订阅消息，并且通过 SQL 分析数据： `SELECT * FROM demo WHERE temperature > 50 ` 
-- 分析结果通过 [文件插件](extension/native/sinks/file.md) 写到本地的文件系统里
+- 分析结果通过 [文件插件](rules/sinks/plugin/file.md) 写到本地的文件系统里
 
-| 设备                                                 | 每秒发送消息数 | CPU 使用        | 内存 |
-| ---------------------------------------------------- | -------------- | --------------- | ---- |
-| 树莓派 3B+                                           | 12k            | sys + user: 70% | 20M  |
-| AWS t2.micro (x86: 1 Core * 1 GB) <br />Ubuntu 18.04 | 10k            | sys + user: 25% | 20M  |
+| 设备                                                   | 每秒发送消息数 | CPU 使用          | 内存  |
+|------------------------------------------------------|---------|-----------------|-----|
+| 树莓派 3B+                                              | 12k     | sys + user: 70% | 20M |
+| AWS t2.micro (x86: 1 Core * 1 GB) <br />Ubuntu 18.04 | 10k     | sys + user: 25% | 20M |
 
 ### EdgeX 吞吐量测试
 
@@ -85,11 +85,11 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 - eKuiper 从 EdgeX ZeroMQ 消息总线订阅数据，并且使用 `SELECT * FROM demo WHERE temperature > 50 ` 来分析数据，其中 90% 数据被规则所过滤。
 
-- 分析结果将被发送到 [nop sink](./rules/sinks/nop.md)，所有的数据都被忽略。
+- 分析结果将被发送到 [nop sink](./rules/sinks/builtin/nop.md)，所有的数据都被忽略。
 
-|                                                | 每秒发送消息数 | CPU 使用      | 内存 |
-| ---------------------------------------------- | -------------- | ------------- | ---- |
-| AWS t2.micro( 1 Core * 1 GB) <br />Ubuntu18.04 | 11.4 k         | sys+user: 75% | 32M  |
+|                                                | 每秒发送消息数 | CPU 使用        | 内存  |
+|------------------------------------------------|---------|---------------|-----|
+| AWS t2.micro( 1 Core * 1 GB) <br />Ubuntu18.04 | 11.4 k  | sys+user: 75% | 32M |
 
 ### 最大规则数支持
 

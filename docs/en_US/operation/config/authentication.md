@@ -21,15 +21,15 @@ If the token is correct, eKuiper will respond the result; otherwise, it will ret
 ### JWT payload
 The JWT Payload should use the following format
 
-|  field   | optional |  meaning  |
-|  ----  | ----  | ----  |
-| iss  | false| Issuer , must use the same name with the public key put in `etc/mgmt`|
-| aud  | false |Audience , must be `eKuiper` |
-| exp  | true |Expiration Time |
-| jti  | true |JWT ID |
-| iat  | true |Issued At |
-| nbf  | true |Not Before |
-| sub  | true |Subject |
+| field | optional | meaning                                                               |
+|-------|----------|-----------------------------------------------------------------------|
+| iss   | false    | Issuer , must use the same name with the public key put in `etc/mgmt` |
+| aud   | false    | Audience , must be `eKuiper`                                          |
+| exp   | true     | Expiration Time                                                       |
+| jti   | true     | JWT ID                                                                |
+| iat   | true     | Issued At                                                             |
+| nbf   | true     | Not Before                                                            |
+| sub   | true     | Subject                                                               |
 
 There is an example in json format
 ```json

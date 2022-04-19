@@ -88,4 +88,4 @@ func main() {
 完整例子请参考这个[例子](https://github.com/lf-edge/ekuiper/tree/master/sdk/go/example/mirror)
 
 ## 打包发布
-我们需要将可执行文件和 json 描述文件一起打包，使用 GO SDK，仅仅需要 `go build`编译出可执行文件即可。由于在不同操作系统下编译出到的可执行文件名字有所不同，需要确保 json 描述文件中可执行文件名字的准确性。详细信息，请[参考](./overview.md#package)
+我们需要将可执行文件和 json 描述文件一起打包，使用 GO SDK，仅仅需要 `go build`编译出可执行文件即可。由于在不同操作系统下编译出到的可执行文件名字有所不同，需要确保 json 描述文件中可执行文件名字的准确性。详细信息，请[参考](./overview.md#打包发布)

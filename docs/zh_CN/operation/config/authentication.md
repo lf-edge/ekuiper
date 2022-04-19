@@ -21,15 +21,15 @@ Authorization：XXXXXXXXXXXXXXX
 ### JWT Payload
 JWT Payload 应使用以下格式
 
-|  字段   | 是否可选 |  意义  |
-|  ----  | ----  | ----  |
-| iss  | 否| 颁发者 ,  此字段必须与`etc/mgmt`目录中的相应公钥文件名字一致|
-| aud  | 否 |颁发对象 , 此字段必须是 `eKuiper` |
-| exp  | 是 |过期时间 |
-| jti  | 是 |JWT ID |
-| iat  | 是 |颁发时间 |
-| nbf  | 是 |Not Before |
-| sub  | 是 |主题 |
+| 字段  | 是否可选 | 意义                                    |
+|-----|------|---------------------------------------|
+| iss | 否    | 颁发者 ,  此字段必须与`etc/mgmt`目录中的相应公钥文件名字一致 |
+| aud | 否    | 颁发对象 , 此字段必须是 `eKuiper`               |
+| exp | 是    | 过期时间                                  |
+| jti | 是    | JWT ID                                |
+| iat | 是    | 颁发时间                                  |
+| nbf | 是    | Not Before                            |
+| sub | 是    | 主题                                    |
 
 这里有一个 json 格式的例子
 ```json
