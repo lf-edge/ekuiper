@@ -55,13 +55,13 @@ var LabelImage = labelImage{
 }
 ```
 
-查阅 [本教程](../develop/plugins_tutorial.md) 以获得创建 eKuiper 插件的详细步骤。请参阅 [labelImage.go](https://github.com/lf-edge/ekuiper/blob/master/extensions/functions/labelImage/labelImage.go) 以获取完整的源代码。
+查阅 [本教程](../../extension/native/develop/plugins_tutorial.md) 以获得创建 eKuiper 插件的详细步骤。请参阅 [labelImage.go](https://github.com/lf-edge/ekuiper/blob/master/extensions/functions/labelImage/labelImage.go) 以获取完整的源代码。
 
 ## 构建并安装插件
 
 要使用该插件，我们需要在运行 eKuiper 的环境中对其进行构建，然后将其安装在 eKuiper 中。
 
-### 通过预构建的  zip 安装
+### 通过预构建的 zip 安装
 
 如果使用基于 debian 的带有 1.1.1 或 1.1.1-slim标签的 eKuiper docker 镜像，我们可以安装预构建的 labelImage插件。 例如，要在 docker image lfedge/ekuiper:1.1.2-slim 中安装 eKuiper 1.1.2 插件，则预构建的 zip 文件位于 *https://www.emqx.io/downloads/kuiper-plugins/v1.1.2/debian/functions/labelImage_amd64.zip*。 按如下所示运行 rest命令以进行安装。
 
@@ -138,7 +138,7 @@ $ cp -r extensions/functions/labelImage plugins/functions
 - LabelImage.so
 - tflite.conf
 
-将打包的插件安装到目标系统，如 [通过预构建 zip 安装](#install-by-pre-built-zip) 所示。
+将打包的插件安装到目标系统，如 [通过预构建 zip 安装](#通过预构建的-zip-安装) 所示。
 
 ## 运行插件
 

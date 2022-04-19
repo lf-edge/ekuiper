@@ -1,11 +1,11 @@
 # 定制函数
 
-eKuiper 可以定制函数，函数的开发、编译及使用请[参见这里](../develop/function.md)。
+eKuiper 可以定制函数，函数的开发、编译及使用请[参见这里](../extension/native/develop/function.md)。
 
 ## echo 插件
 
-| 函数 | 示例      | 说明           |
-| ---- | --------- | -------------- |
+| 函数   | 示例        | 说明      |
+|------|-----------|---------|
 | echo | echo(avg) | 原样输出参数值 |
 
 echo(avg) 示例

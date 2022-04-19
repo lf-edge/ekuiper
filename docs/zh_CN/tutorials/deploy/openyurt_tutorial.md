@@ -1,6 +1,6 @@
 # 使用 OpenYurt 部署和管理 eKuiper
 
-LF Edge eKuiper 是轻量级物联网数据分析和流处理软件，通常在边缘端运行。 它提供了一个 [管理仪表板](../operation/manager-ui/overview.md) 来管理一个或多个 eKuiper 实例。
+LF Edge eKuiper 是轻量级物联网数据分析和流处理软件，通常在边缘端运行。 它提供了一个 [管理仪表板](../../operation/manager-ui/overview.md) 来管理一个或多个 eKuiper 实例。
 通常，仪表板部署在云节点中，用于管理跨多个边缘节点的 eKuiper 实例。
 
 在大多数情况下，出于安全或其他考虑，边缘节点在物理上无法从云节点访问。 这使得部署变得困难，并且无法进行云到边缘管理。 [OpenYurt](https://github.com/openyurtio/openyurt) 改变了这种情况。
@@ -284,7 +284,7 @@ kubectl apply -f config/setup/yurt-tunnel-agent.yaml
 
 ![system](./ping.png)
 
-很棒！ 现在我们可以通过仪表板在边缘管理 eKuiper，就像它部署在云端一样。参照 [manager ui教程](../operation/manager-ui/overview.md)，可以从云端创建和管理 eKuiper
+很棒！ 现在我们可以通过仪表板在边缘管理 eKuiper，就像它部署在云端一样。参照 [manager ui教程](../../operation/manager-ui/overview.md)，可以从云端创建和管理 eKuiper
 的流、规则和插件以及任何类似的管理工作。
 
 ## 扩展阅读
@@ -294,4 +294,4 @@ kubectl apply -f config/setup/yurt-tunnel-agent.yaml
 - [eKuiper Github 代码库](https://github.com/lf-edge/ekuiper/)
 - [eKuiper 参考指南](https://github.com/lf-edge/ekuiper/blob/edgex/docs/en_US/reference.md)
 - [OpenYurt 教程](https://github.com/openyurtio/openyurt/tree/master/docs/tutorial)
-- [eKuiper 管理控制台教程](../operation/manager-ui/overview.md)
+- [eKuiper 管理控制台教程](../../operation/manager-ui/overview.md)
