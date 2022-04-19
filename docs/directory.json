@@ -158,6 +158,10 @@
 									"path": "rules/sources/builtin/mqtt"
 								},
 								{
+									"title": "Neuron 源",
+									"path": "rules/sources/builtin/neuron"
+								},
+								{
 									"title": "EdgeX 源",
 									"path": "rules/sources/builtin/edgex"
 								},
@@ -207,6 +211,10 @@
 								{
 									"title": "MQTT 动作",
 									"path": "rules/sinks/builtin/mqtt"
+								},
+								{
+									"title": "Neuron 动作",
+									"path": "rules/sinks/builtin/neuron"
 								},
 								{
 									"title": "EdgeX 动作",
@@ -487,6 +495,10 @@
 						{
 							"title": "交叉编译",
 							"path": "operation/compile/cross-compile"
+						},
+						{
+							"title": "按需编译",
+							"path": "features"
 						}
 					]
 				}
@@ -656,6 +668,10 @@
 									"path": "rules/sources/builtin/mqtt"
 								},
 								{
+									"title": "Neuron source",
+									"path": "rules/sources/builtin/neuron"
+								},
+								{
 									"title": "EdgeX Source",
 									"path": "rules/sources/builtin/edgex"
 								},
@@ -705,6 +721,10 @@
 								{
 									"title": "MQTT action",
 									"path": "rules/sinks/builtin/mqtt"
+								},
+								{
+									"title": "Neuron action",
+									"path": "rules/sinks/builtin/neuron"
 								},
 								{
 									"title": "EdgeX Message Bus action",
@@ -985,6 +1005,10 @@
 						{
 							"title": "Cross Compile",
 							"path": "operation/compile/cross-compile"
+						},
+						{
+							"title": "Compile selected features only",
+							"path": "features"
 						}
 					]
 				}

@@ -7,6 +7,7 @@ In the eKuiper source code, there are built-in sources and sources in extension.
 Users can directly use the built-in sources in the standard eKuiper instance. The list of built-in sources are:
 
 - [Mqtt source](./builtin/mqtt.md): read data from mqtt topics.
+- [Neuron source](./builtin/neuron.md): read data from the local neuron instance.
 - [EdgeX source](./builtin/edgex.md): read data from EdgeX foundry.
 - [Http pull source](./builtin/http_pull.md): source to pull data from http servers.
 - [Memory source](./builtin/memory.md): source to read from eKuiper memory topic to form rule pipelines.
