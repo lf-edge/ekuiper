@@ -71,11 +71,11 @@
 
 当前，支持以下目标/动作：
 
-- [log](./sinks/log.md): 将结果发送到日志文件。
-- [mqtt](./sinks/mqtt.md): 将结果发送到 MQTT 消息服务器。 
-- [edgex](./sinks/edgex.md): 将结果发送到 EdgeX 消息总线。
-- [rest](./sinks/rest.md): 将结果发送到 Rest HTTP 服务器。
-- [nop](./sinks/nop.md): 将结果发送到 nop 操作。
+- [log](./sinks/builtin/log.md): 将结果发送到日志文件。
+- [mqtt](./sinks/builtin/mqtt.md): 将结果发送到 MQTT 消息服务器。 
+- [edgex](./sinks/builtin/edgex.md): 将结果发送到 EdgeX 消息总线。
+- [rest](./sinks/builtin/rest.md): 将结果发送到 Rest HTTP 服务器。
+- [nop](./sinks/builtin/nop.md): 将结果发送到 nop 操作。
 
 每个动作可以定义自己的属性。当前有以下的公共属性:
 

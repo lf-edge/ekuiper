@@ -32,7 +32,7 @@ eKuiper 允许用户自定义不同类型的扩展。
 1. 插件输出变量必须为**插件名的首字母大写形式**。 例如，插件名为 _file_ ，则其输出变量名必须为 _File_。
 2. _.so_ 文件的名字必须与输出变量名或者插件名相同。例如， _MySource.so_ 或 _mySink.so_。
 
-### Version
+### 版本
 
 The user can **optionally** add a version string to the name of _.so_ to help identify the version of the plugin. The version can be then retrieved through describe CLI command or REST API. The naming convention is to add a version string to the name after _@_. The version can be any string. If the version string starts with "v", the "v" will be ignored in the return result. Below are some typical examples.
 
@@ -41,7 +41,7 @@ The user can **optionally** add a version string to the name of _.so_ to help id
 
 If multiple versions of plugins with the same name in place, only the latest version(ordered by the version string) will be taken effect.
 
-## Setup the plugin developing environment
+## 插件开发环境设置
 
 It is required to build the plugin with exactly the same version of dependencies. And the plugin must implement interfaces exported by Kuiper, so the Kuiper project must be in the gopath.
 
@@ -55,7 +55,7 @@ go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so plugins/sou
 
 Notice that, the `-trimpath` build flag is required if using the prebuilte kuiper or kuiper docker image because the kuiperd is also built with the flag to improve build reproducibility.
 
-### Plugin development
+### 插件开发
 
 The development of plugins is to implement a specific interface according to the plugin type and export the implementation with a specific name. There are two types of exported symbol supported:
 

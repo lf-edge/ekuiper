@@ -76,11 +76,11 @@ basic:
 
 所有插件列表如下：
 
-|  插件类型        |        预构建插件列表                                             |
-|  -----------   |  ---------------------------------------------------------------|
-|  source        |    random zmq                                                   |
-|  sink          |  file image influx redis tdengine zmq                           |
-|  function      |  accumulateWordCount countPlusOne echo geohash image labelImage |
+| 插件类型     | 预构建插件列表                                                        |
+|----------|----------------------------------------------------------------|
+| source   | random zmq                                                     |
+| sink     | file image influx redis tdengine zmq                           |
+| function | accumulateWordCount countPlusOne echo geohash image labelImage |
 
 用户可以通过以下 Rest-API 获取所有预构建插件的名称和地址：
 
@@ -127,7 +127,7 @@ GET http://localhost:9081/plugins/functions/prebuild
 * connectionSelector - 重用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
     * 只适用于 edgex redis 的连接信息 
     * 连接信息中的 server， port 和 password 会覆盖以上定义的 host， port 和 password
-    * [具体信息可参考](../../rules/sources/edgex.md#connectionselector)
+    * [具体信息可参考](../../rules/sources/builtin/edgex.md#connectionselector)
 
 
 ### 配置示例

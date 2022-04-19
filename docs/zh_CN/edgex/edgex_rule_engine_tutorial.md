@@ -32,7 +32,7 @@
   CREATE STREAM demo (temperature bigint) WITH (FORMAT="JSON"...)
   ```
 
-  然而在 EdgeX 中，数据类型定义在 EdgeX event/reading 中已经指定，为了提升使用体验，用户可以在创建流的时候不指定数据类型。当接收到来自于消息总线的数据的时候，会根规则转换为[相应的数据类型](../rules/sources/edgex.md)。
+  然而在 EdgeX 中，数据类型定义在 EdgeX event/reading 中已经指定，为了提升使用体验，用户可以在创建流的时候不指定数据类型。当接收到来自于消息总线的数据的时候，会根规则转换为[相应的数据类型](../rules/sources/builtin/edgex.md)。
 
 - 扩展支持 EdgeX 消息总线目标（sink），用于将处理结果写回至 EdgeX 消息总线。用户也可以选择将分析结果发送到 eKuiper 之前已经支持的 RestAPI 接口等。
 
@@ -89,7 +89,7 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
       EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.redisMsgBus
   ```
 * `mqtt/zeromq` 消息总线: 根据目标总线类型填写相应参数，指定必要的客户端凭证
-  这里以 mqtt 消息总线为例，确保相应的连接信息存在于此文件 `etc/connections/connection.yaml` 中, [更多信息](../rules/sources/edgex.md#connectionselector) 请参考
+  这里以 mqtt 消息总线为例，确保相应的连接信息存在于此文件 `etc/connections/connection.yaml` 中, [更多信息](../rules/sources/builtin/edgex.md#connectionselector) 请参考
   ```yaml
   environment:
       CONNECTION__EDGEX__MQTTMSGBUS__PORT: 1883
@@ -101,7 +101,7 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
       EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.mqttMsgBus
   ```
   
-做完这些修改后，请参考这篇[文档](../rules/sinks/edgex.md#使用连接重用功能发布)了解如何使用连接重用功能
+做完这些修改后，请参考这篇[文档](../rules/sinks/builtin/edgex.md#使用连接重用功能发布)了解如何使用连接重用功能
 
 
 ### 使用 Redis 作为 KV 存储
@@ -175,11 +175,11 @@ default:
 .....  
 ```
 
-更多关于配置文件的信息，请参考[该文档](../rules/sources/edgex.md).
+更多关于配置文件的信息，请参考[该文档](../rules/sources/builtin/edgex.md).
 
 ## 创建规则
 
-让我们创建一条规则，将分析结果发送至 MQTT 服务器，关于 MQTT 目标的相关配置，请参考[这个链接](../rules/sinks/mqtt.md)。与创建流的过程类似，你可以选择使用 REST 或者命令行来管理规则。
+让我们创建一条规则，将分析结果发送至 MQTT 服务器，关于 MQTT 目标的相关配置，请参考[这个链接](../rules/sinks/builtin/mqtt.md)。与创建流的过程类似，你可以选择使用 REST 或者命令行来管理规则。
 
 以下例子将选出所有 `events` 主题上所有的数据，分析结果将被
 
@@ -243,7 +243,7 @@ Rule rule1 was created successfully, please use 'cli getstatus rule rule1' comma
 
 ------
 
-如想将结果发送到别的目标，请参考 eKuiper 中支持的[其它目标](../rules/overview.md#目标动作)。你现在可以看一下在 `log/stream.log`中的日志文件，查看规则的详细信息。
+如想将结果发送到别的目标，请参考 eKuiper 中支持的[其它目标](../rules/overview.md#目标/动作)。你现在可以看一下在 `log/stream.log`中的日志文件，查看规则的详细信息。
 
 ```
 time="2021-07-08 01:03:08" level=info msg="Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720. \n" file="server/server.go:144"
@@ -327,10 +327,10 @@ Connecting to 127.0.0.1:20498...
 ### 扩展阅读
 
 - 从 eKuiper 0.9.1 版本开始，通过一个单独的 Docker 镜像提供了 [可视化 web 用户交互界面](../operation/manager-ui/overview.md)，您可以通过该 web 界面进行流、规则和插件等管理。
-- 阅读 [EdgeX 源](../rules/sources/edgex.md) 获取更多详细信息，以及类型转换等。
+- 阅读 [EdgeX 源](../rules/sources/builtin/edgex.md) 获取更多详细信息，以及类型转换等。
 - [如何使用 meta 函数抽取在 EdgeX 消息总线中发送的更多信息？](edgex_meta.md) 设备服务往总线上发送数据的时候，一些额外的信息也随之发送，比如时间创建时间，id 等。如果你想在 SQL 语句中使用这些信息，请参考这篇文章。
 - [eKuiper 中使用 Golang 模版 (template) 定制分析结果](../rules/data_template.md) 分析结果在发送给不同的 sink 之前，可以使用数据模版对结果进行二次处理，参考这片文章可以获取更多的关于数据模版的使用场景。
-- [EdgeX 消息总线目标](../rules/sinks/edgex.md). 该文档描述了如何使用 EdgeX 消息总线目标。如果想把你的分析结果被别的 EdgeX 服务消费，你可以通过这个 sink 发送 EdgeX 格式的数据，别的 EdgeX 服务可以通过这个 eKuiper sink 暴露出来的新的消息总线进行订阅。
+- [EdgeX 消息总线目标](../rules/sinks/builtin/edgex.md). 该文档描述了如何使用 EdgeX 消息总线目标。如果想把你的分析结果被别的 EdgeX 服务消费，你可以通过这个 sink 发送 EdgeX 格式的数据，别的 EdgeX 服务可以通过这个 eKuiper sink 暴露出来的新的消息总线进行订阅。
 - [eKuiper 插件开发教程](../extension/native/develop/plugins_tutorial.md): eKuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松散耦合的插件程序，在运行时动态加载和绑定，如果您对开发插件有兴趣，请参考该文章。
 
 如想了解更多的 LF Edge eKuiper 的信息，请参考以下资源。

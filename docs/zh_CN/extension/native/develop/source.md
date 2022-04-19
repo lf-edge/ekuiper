@@ -1,6 +1,6 @@
 # 源（ Source ）扩展 
 
-源将数据从其他系统反馈到 eKuiper。eKuiper 支持  [MQTT 消息服务器](../../../rules/sources/mqtt.md)的内置源。 然而，用户仍然需要从各种外部系统（包括消息传递系统和数据管道等）中获取数据。源扩展正是为了满足此要求。
+源将数据从其他系统反馈到 eKuiper。eKuiper 支持  [MQTT 消息服务器](../../../rules/sources/builtin/mqtt.md)的内置源。 然而，用户仍然需要从各种外部系统（包括消息传递系统和数据管道等）中获取数据。源扩展正是为了满足此要求。
 
 ## 开发
 
@@ -8,9 +8,9 @@
 
 为 eKuiper 开发源的 是实现 [api.Source](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 接口并将其导出为 golang 插件。
 
-在开始开发之前，您必须为 [golang 插件设置环境](../../overview.md#setup-the-plugin-developing-environment)。
+在开始开发之前，您必须为 [golang 插件设置环境](../overview.md#插件开发环境设置)。
 
-要开发源，必须实现 _Configure_ 方法。 初始化源后，将调用此方法。 在此方法中，您可以从第一个参数检索流的 _DATASOURCE_ 属性（这是 mqtt 和其他消息传递系统的主题）。 然后在第二个参数中，传递包含 _yaml_ 文件中的配置的映射。 有关更多详细信息，请参见 [配置](#deal-with-configuration)。 通常，将有外部系统的信息，例如主机、端口、用户和密码。 您可以使用此映射来初始化此源。
+要开发源，必须实现 _Configure_ 方法。 初始化源后，将调用此方法。 在此方法中，您可以从第一个参数检索流的 _DATASOURCE_ 属性（这是 mqtt 和其他消息传递系统的主题）。 然后在第二个参数中，传递包含 _yaml_ 文件中的配置的映射。 有关更多详细信息，请参见 [配置](#处理配置)。 通常，将有外部系统的信息，例如主机、端口、用户和密码。 您可以使用此映射来初始化此源。
 
 ```go
 //在初始化期间调用。 使用数据源（例如，mqtt 的主题）和从 Yaml 读取的属性来配置源 
@@ -30,7 +30,7 @@ Open(ctx StreamContext, consumer chan<- SourceTuple, errCh chan<- error)
 Close(ctx StreamContext) error
 ```
 
-由于源本身是一个插件，因此它必须位于主程序包中。 给定源结构名称为 mySource。 在文件的最后，必须将源作为符号导出，如下所示。 有 [2种类型的导出符号](../../overview.md#plugin-development)。 对于源扩展，通常需要状态，因此建议导出构造函数。
+由于源本身是一个插件，因此它必须位于主程序包中。 给定源结构名称为 mySource。 在文件的最后，必须将源作为符号导出，如下所示。 有 [2种类型的导出符号](../overview.md#插件开发)。 对于源扩展，通常需要状态，因此建议导出构造函数。
 
 ```go
 function MySource() api.Source{
@@ -44,12 +44,12 @@ function MySource() api.Source{
 
 eKuiper 配置的格式为 yaml，它提供了一个集中位置  _/etc_  来保存所有配置。 在其中，为源配置提供了一个子文件夹  _sources_，同时也适用于扩展源。
 
-eKuiper 扩展支持配置系统自动读取 yaml 文件中的配置，并将其输入到源的 _Configure_ 方法中。 如果在流中指定了 [CONF_KEY](../../../sqls/streams.md#create-stream)  属性，则将输入该键的配置。 否则，将使用默认配置。
+eKuiper 扩展支持配置系统自动读取 yaml 文件中的配置，并将其输入到源的 _Configure_ 方法中。 如果在流中指定了 [CONF_KEY](../../../sqls/streams.md#语言定义)  属性，则将输入该键的配置。 否则，将使用默认配置。
 
 要在源中使用配置，必须遵循以下约定：
  1. 您的配置文件名称必须与插件名字相同，例如，mySource.yaml。
   2. yaml 文件必须位于 _etc/sources_ 内。
-  3. 可以在 [此处](../../../rules/sources/mqtt.md)找到 yaml 文件的格式。
+  3. 可以在 [此处](../../../rules/sources/builtin/mqtt.md)找到 yaml 文件的格式。
 
 #### 通用配置字段
 
@@ -67,7 +67,7 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources
 
 ### 使用
 
-在[流定义](../../../sqls/streams.md#create-stream)中指定自定义源， 相关属性为：
+在[流定义](../../../sqls/streams.md#语言定义)中指定自定义源， 相关属性为：
 
 - TYPE：指定源名称，必须为驼峰式命名。
 - CONF_KEY：指定要使用的配置键。

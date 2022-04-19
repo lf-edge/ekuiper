@@ -143,7 +143,7 @@
 
 ![newRule](./resources/new_rule.png)
 
-单击「添加」按钮，弹出对话框如下所示。输入结果存储的文件路径为 `/kuiper/demoFile` 。更多关于 file 目标的信息可以查看[帮助文件](../../extension/native/sinks/file.md)。目标 file 处于 `Beta` 状态，不能作为实际生产环境使用。
+单击「添加」按钮，弹出对话框如下所示。输入结果存储的文件路径为 `/kuiper/demoFile` 。更多关于 file 目标的信息可以查看[帮助文件](../../rules/sinks/plugin/file.md)。目标 file 处于 `Beta` 状态，不能作为实际生产环境使用。
 
 ![sinkConf](./resources/sink_conf.png)
 
