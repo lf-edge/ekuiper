@@ -61,9 +61,9 @@ The rule options can be defined globally in `etc/kuiper.yaml` under the `rules` 
 ## Sources
 
 - eKuiper provides embeded following 3 sources,
-  - MQTT source, see  [MQTT source stream](./sources/mqtt.md) for more detailed info.
-  - EdgeX source by default is shipped in [docker images](https://hub.docker.com/r/lfedge/ekuiper), but NOT included in single download binary files, you use `make pkg_with_edgex` command to build a binary package that supports EdgeX source. Please see [EdgeX source stream](./sources/edgex.md) for more detailed info.
-  - HTTP pull source, regularly pull the contents at user's specified interval time, see [here](./sources/http_pull.md) for more detailed info.
+  - MQTT source, see  [MQTT source stream](./sources/builtin/mqtt.md) for more detailed info.
+  - EdgeX source by default is shipped in [docker images](https://hub.docker.com/r/lfedge/ekuiper), but NOT included in single download binary files, you use `make pkg_with_edgex` command to build a binary package that supports EdgeX source. Please see [EdgeX source stream](./sources/builtin/edgex.md) for more detailed info.
+  - HTTP pull source, regularly pull the contents at user's specified interval time, see [here](./sources/builtin/http_pull.md) for more detailed info.
 - See [SQL](../sqls/overview.md) for more info of eKuiper SQL.
 - Sources can be customized, see [extension](../extension/overview.md) for more detailed info.
 
@@ -71,11 +71,11 @@ The rule options can be defined globally in `etc/kuiper.yaml` under the `rules` 
 
 Currently, below kinds of sinks/actions are supported:
 
-- [log](./sinks/log.md): Send the result to log file.
-- [mqtt](./sinks/mqtt.md): Send the result to an MQTT broker.
-- [edgex](./sinks/edgex.md): Send the result to EdgeX message bus.
-- [rest](./sinks/rest.md): Send the result to a Rest HTTP server.
-- [nop](./sinks/nop.md): Send the result to a nop operation.
+- [log](./sinks/builtin/log.md): Send the result to log file.
+- [mqtt](./sinks/builtin/mqtt.md): Send the result to an MQTT broker.
+- [edgex](./sinks/builtin/edgex.md): Send the result to EdgeX message bus.
+- [rest](./sinks/builtin/rest.md): Send the result to a Rest HTTP server.
+- [nop](./sinks/builtin/nop.md): Send the result to a nop operation.
 
 Each action can define its own properties. There are several common properties:
 

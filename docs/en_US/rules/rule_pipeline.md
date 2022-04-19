@@ -1,6 +1,6 @@
 # Rule Pipeline
 
-We can form rule pipelines by importing results of prior rule into the following rule. This is possible by employing intermediate storage or MQ such as mqtt broker. By using the pair of [memory source](./sources/memory.md) and [sink](./sinks/memory.md), we can create rule pipelines without external dependencies.
+We can form rule pipelines by importing results of prior rule into the following rule. This is possible by employing intermediate storage or MQ such as mqtt broker. By using the pair of [memory source](./sources/builtin/memory.md) and [sink](./sinks/builtin/memory.md), we can create rule pipelines without external dependencies.
 
 ## Usage
 

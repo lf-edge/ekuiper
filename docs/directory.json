@@ -1,5 +1,6 @@
 {
-	"cn": [{
+	"cn": [
+		{
 			"title": "概要",
 			"path": "./"
 		},
@@ -342,154 +343,331 @@
 			]
 		}
 	],
-	"en": [{
-			"title": "Introduction",
-			"path": "./"
+	"en": [
+		{
+			"title": "Home",
+			"path": "reference"
 		},
 		{
-			"title": "Install and operation",
-			"children": [{
-					"title": "Download and install quick start",
+			"title": "Getting Started",
+			"children": [
+				{
+					"title": "Run eKuiper locally",
 					"path": "getting_started"
 				},
 				{
-					"title": "Docker installation tutorial",
+					"title": "Run eKuiper in Docker",
 					"path": "quick_start_docker"
 				},
 				{
-					"title": "EdgeX Foundry installation",
+					"title": "Run eKuiper with EdgeX Foundry",
 					"path": "edgex/edgex_rule_engine_tutorial"
-				},
-				{
-					"title": "How to use meta function to extract addtional data from EdgeX message bus",
-					"path": "edgex/edgex_meta"
 				}
 			]
 		},
 		{
-			"title": "Rules",
-			"children": [{
-					"title": "Introduction",
-					"path": "rules/overview"
+			"title": "Concepts",
+			"children": [
+				{
+					"title": "Why eKuiper",
+					"path": "concepts/ekuiper"
 				},
 				{
-					"title": "Rule Pipeline",
-					"path": "rules/rule_pipeline"
+					"title": "Rules",
+					"path": "concepts/rules"
+				},
+				{
+					"title": "Sources",
+					"children": [
+						{
+							"title": "Overview",
+							"path": "concepts/sources/overview"
+						},
+						{
+							"title": "Stream",
+							"path": "concepts/sources/stream"
+						},
+						{
+							"title": "Table",
+							"path": "concepts/sources/table"
+						}
+					]
 				},
 				{
 					"title": "Sinks",
-					"children": [{
-							"title": "EdgeX Message Bus action",
-							"path": "rules/sinks/edgex"
+					"path": "concepts/sinks"
+				},
+				{
+					"title": "SQL Queries",
+					"path": "concepts/sql"
+				},
+				{
+					"title": "Stream Processing",
+					"children": [
+						{
+							"title": "Overview",
+							"path": "concepts/streaming/overview"
 						},
 						{
-							"title": "MQTT action",
-							"path": "rules/sinks/mqtt"
+							"title": "Time Attribute",
+							"path": "concepts/streaming/time"
 						},
 						{
-							"title": "Memory action",
-							"path": "rules/sinks/memory"
+							"title": "Windowing",
+							"path": "concepts/streaming/windowing"
 						},
 						{
-							"title": "Nop action",
-							"path": "rules/sinks/nop"
+							"title": "Join",
+							"path": "concepts/streaming/join"
+						}
+					]
+				},
+				{
+					"title": "Extensions",
+					"path": "concepts/extensions"
+				}
+			]
+		},
+		{
+			"title": "Tutorials",
+			"children": [
+				{
+					"title": "AI",
+					"children": [
+						{
+							"title": "Label image by tensorflow lite model with eKuiper native plugin",
+							"path": "tutorials/ai/tensorflow_lite_tutorial"
+						}
+					]
+				},
+				{
+					"title": "Working with EdgeX Foundry",
+					"children": [
+						{
+							"title": "EdgeX Foundry rule engine tutorial",
+							"path": "edgex/edgex_rule_engine_tutorial"
 						},
 						{
-							"title": "REST action",
-							"path": "rules/sinks/rest"
+							"title": "Meta function for EdgeX stream",
+							"path": "edgex/edgex_meta"
 						},
 						{
-							"title": "Log action",
-							"path": "rules/sinks/log"
+							"title": "Command device with EdgeX eKuiper rules enginem",
+							"path": "edgex/edgex_rule_engine_command"
+						},
+						{
+							"title": "EdgeX source configuration command",
+							"path": "edgex/edgex_source_tutorial"
+						}
+					]
+				},
+				{
+					"title": "Deploy by OpenYurt",
+					"path": "tutorials/deploy/openyurt_tutorial"
+				}
+			]
+		},
+		{
+			"title": "References",
+			"children": [
+				{
+					"title": "Rules",
+					"children": [
+						{
+							"title": "Introduction",
+							"path": "rules/overview"
+						},
+						{
+							"title": "Rule Pipeline",
+							"path": "rules/rule_pipeline"
+						},
+						{
+							"title": "State and Fault Tolerance",
+							"path": "rules/state_and_fault_tolerance"
 						}
 					]
 				},
 				{
 					"title": "Sources",
-					"children": [{
-							"title": "EdgeX Source",
-							"path": "rules/sources/edgex"
+					"children": [
+						{
+							"title": "Overview",
+							"path": "rules/sources/overview"
 						},
 						{
-							"title": "HTTP pull source",
-							"path": "rules/sources/http_pull"
+							"title": "Built-in sources",
+							"children": [
+								{
+									"title": "MQTT source",
+									"path": "rules/sources/builtin/mqtt"
+								},
+								{
+									"title": "EdgeX Source",
+									"path": "rules/sources/builtin/edgex"
+								},
+								{
+									"title": "HTTP pull source",
+									"path": "rules/sources/builtin/http_pull"
+								},
+								{
+									"title": "Memory source",
+									"path": "rules/sources/builtin/memory"
+								},
+								{
+									"title": "File source",
+									"path": "rules/sources/builtin/file"
+								}
+							]
 						},
 						{
-							"title": "File source",
-							"path": "rules/sources/file"
-						},
-						{
-							"title": "Memory source",
-							"path": "rules/sources/memory"
-						},
-						{
-							"title": "MQTT source",
-							"path": "rules/sources/mqtt"
+							"title": "Predefined source plugins",
+							"children": [
+								{
+									"title": "Zmq source",
+									"path": "rules/sources/plugin/zmq"
+								},
+								{
+									"title": "Random source",
+									"path": "rules/sources/plugin/random"
+								}
+							]
 						}
 					]
 				},
 				{
-					"title": "Golang template",
-					"path": "rules/data_template"
+					"title": "Sinks",
+					"children": [
+						{
+							"title": "Overview",
+							"path": "rules/sinks/overview"
+						},
+						{
+							"title": "Data Template",
+							"path": "rules/data_template"
+						},
+						{
+							"title": "Built-in sinks",
+							"children": [
+								{
+									"title": "MQTT action",
+									"path": "rules/sinks/builtin/mqtt"
+								},
+								{
+									"title": "EdgeX Message Bus action",
+									"path": "rules/sinks/builtin/edgex"
+								},
+								{
+									"title": "REST action",
+									"path": "rules/sinks/builtin/rest"
+								},
+								{
+									"title": "Memory action",
+									"path": "rules/sinks/builtin/memory"
+								},
+								{
+									"title": "Log action",
+									"path": "rules/sinks/builtin/log"
+								},
+								{
+									"title": "Nop action",
+									"path": "rules/sinks/builtin/nop"
+								}
+							]
+						},
+						{
+							"title": "Predefined sink plugins",
+							"children": [
+								{
+									"title": "Zmq sink",
+									"path": "rules/sinks/plugin/zmq"
+								},
+								{
+									"title": "File sink",
+									"path": "rules/sinks/plugin/file"
+								},
+								{
+									"title": "InfluxDB sink",
+									"path": "rules/sinks/plugin/influx"
+								},
+								{
+									"title": "TDengine sink",
+									"path": "rules/sinks/plugin/tdengine"
+								},
+								{
+									"title": "Redis sink",
+									"path": "rules/sinks/plugin/redis"
+								},
+								{
+									"title": "Image sink",
+									"path": "rules/sinks/plugin/image"
+								}
+							]
+						}
+					]
 				},
 				{
-					"title": "State and Fault Tolerance",
-					"path": "rules/state_and_fault_tolerance"
+					"title": "SQL",
+					"children": [
+						{
+							"title": "Syntax",
+							"children": [
+								{
+									"title": "Introduction",
+									"path": "sqls/overview"
+								},
+								{
+									"title": "Lexical elements",
+									"path": "sqls/lexical_elements"
+								},
+								{
+									"title": "Data types",
+									"path": "sqls/data_types"
+								},
+								{
+									"title": "JSON Expressions",
+									"path": "sqls/json_expr"
+								},
+								{
+									"title": "Query language element",
+									"path": "sqls/query_language_elements"
+								}
+							]
+						},
+						{
+							"title": "Statements",
+							"children": [
+								{
+									"title": "Streams",
+									"path": "sqls/streams"
+								},
+								{
+									"title": "Tables",
+									"path": "sqls/tables"
+								}
+							]
+						},
+						{
+							"title": "Windows",
+							"path": "sqls/windows"
+						},
+						{
+							"title": "Built-in Functions",
+							"path": "sqls/built-in_functions"
+						},
+						{
+							"title": "Predefined function plugins",
+							"path": "sqls/custom_functions"
+						}
+					]
 				}
-
 			]
 		},
-
 		{
-			"title": "eKuiper SQL",
-			"children": [{
-					"title": "Introduction",
-					"path": "sqls/overview"
-				},
-				{
-					"title": "Streams",
-					"path": "sqls/streams"
-				},
-				{
-					"title": "Tables",
-					"path": "sqls/tables"
-				},
-				{
-					"title": "Data types",
-					"path": "sqls/data_types"
-				},
-				{
-					"title": "Query language element",
-					"path": "sqls/query_language_elements"
-				},
-				{
-					"title": "Windows",
-					"path": "sqls/windows"
-				},
-				{
-					"title": "Functions",
-					"path": "sqls/built-in_functions"
-				},
-				{
-					"title": "eKuiper lexical elements",
-					"path": "sqls/lexical_elements"
-				},
-				{
-					"title": "JSON Expressions",
-					"path": "sqls/json_expr"
-				}
-			]
-		},
-		{
-			"title": "Extend eKuiper",
+			"title": "Extension Programming",
 			"children": [
 				{
 					"title": "Introduction",
 					"path": "extension/overview"
-				},
-				{
-					"title": "External function",
-					"path": "extension/external/external_func"
 				},
 				{
 					"title": "Native plugin develop",
@@ -522,51 +700,6 @@
 									"path": "extension/native/develop/source"
 								}
 							]
-						},
-						{
-							"title": "Predefined sink plugins",
-							"children": [
-								{
-									"title": "File sink",
-									"path": "extension/native/sinks/file"
-								},
-								{
-									"title": "Image sink",
-									"path": "extension/native/sinks/image"
-								},
-								{
-									"title": "InfluxDB sink",
-									"path": "extension/native/sinks/influx"
-								},
-								{
-									"title": "Redis sink",
-									"path": "extension/native/sinks/redis"
-								},
-								{
-									"title": "TDengine sink",
-									"path": "extension/native/sinks/tdengine"
-								},
-								{
-									"title": "Zmq sink",
-									"path": "extension/native/sinks/zmq"
-								}
-							]
-						},
-						{
-							"title": "Predefined source plugins",
-							"children": [{
-								"title": "Random source",
-								"path": "extension/native/sources/random"
-							},
-								{
-									"title": "Zmq source",
-									"path": "extension/native/sources/zmq"
-								}
-							]
-						},
-						{
-							"title": "Predefined sink plugins",
-							"path": "extension/native/functions/functions"
 						}
 					]
 				},
@@ -586,62 +719,43 @@
 							"path": "extension/portable/python_sdk"
 						}
 					]
+				},
+				{
+					"title": "External function",
+					"path": "extension/external/external_func"
 				}
 			]
 		},
-
 		{
-			"title": "Operation",
+			"title": "Operations",
 			"children": [
 				{
+					"title": "Introduction",
+					"path": "operation/overview"
+				},
+				{
 					"title": "Install",
-					"path": "operation/install/overview"
-				},
-				{
-					"title": "centos",
-					"path": "operation/install/cent-os"
-				},
-				{
-					"title": "Configuration File",
-					"path": "operation/config/configuration_file"
-				},
-				{
-					"title": "Authentication",
-					"path": "operation/config/authentication"
-				},
-				{
-					"title": "Command line tool",
-					"children": [{
-						"title": "Introduction",
-						"path": "operation/cli/overview"
-					},
+					"children": [
 						{
-							"title": "Streams",
-							"path": "operation/cli/streams"
+							"title": "overview",
+							"path": "operation/install/overview"
 						},
 						{
-							"title": "Rules",
-							"path": "operation/cli/rules"
-						},
-						{
-							"title": "Tables",
-							"path": "operation/cli/tables"
-						},
-						{
-							"title": "Plugins",
-							"path": "operation/cli/plugins"
+							"title": "centos",
+							"path": "operation/install/cent-os"
 						}
 					]
 				},
 				{
-					"title": "eKuiper management console",
-					"children": [{
-						"title": "Introduction",
-						"path": "operation/manager-ui/overview"
-					},
+					"title": "Configuration",
+					"children": [
 						{
-							"title": "How to display custom plugins in the installation list of the management console",
-							"path": "operation/manager-ui/plugins_in_manager"
+							"title": "Configuration File",
+							"path": "operation/config/configuration_file"
+						},
+						{
+							"title": "Authentication",
+							"path": "operation/config/authentication"
 						}
 					]
 				},
@@ -674,10 +788,60 @@
 					]
 				},
 				{
-					"title": "Cross Compile",
-					"path": "operation/compile/cross-compile"
+					"title": "Command line tool",
+					"children": [{
+						"title": "Introduction",
+						"path": "operation/cli/overview"
+					},
+						{
+							"title": "Streams",
+							"path": "operation/cli/streams"
+						},
+						{
+							"title": "Rules",
+							"path": "operation/cli/rules"
+						},
+						{
+							"title": "Tables",
+							"path": "operation/cli/tables"
+						},
+						{
+							"title": "Plugins",
+							"path": "operation/cli/plugins"
+						}
+					]
+				},
+				{
+					"title": "Management console",
+					"children": [
+						{
+							"title": "Introduction",
+							"path": "operation/manager-ui/overview"
+						},
+						{
+							"title": "How to display custom plugins in the installation list of the management console",
+							"path": "operation/manager-ui/plugins_in_manager"
+						}
+					]
+				},
+				{
+					"title": "Compile",
+					"children": [
+						{
+							"title": "Compile",
+							"path": "operation/compile/compile"
+						},
+						{
+							"title": "Cross Compile",
+							"path": "operation/compile/cross-compile"
+						}
+					]
 				}
 			]
+		},
+		{
+			"title": "Contribute",
+			"path": "CONTRIBUTING"
 		}
 	]
 }

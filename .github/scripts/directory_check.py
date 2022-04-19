@@ -27,7 +27,7 @@ def check_md_content(md_file):
     for url in url_list:
         if url[0].endswith('!'):
             continue
-        if url[2].startswith(('http://', 'https://', '<', '#')):
+        if url[2].startswith(('http://', 'https://', '<', '#', 'mailto:')) or url[2].find('.md') == -1:
             continue
         url_path = url[2].split('.md')[0]
         ref_md_path = os.path.join(f'{"/".join(md_file.split("/")[:-1])}/', f'{url_path}.md')

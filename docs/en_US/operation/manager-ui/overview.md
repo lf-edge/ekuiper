@@ -144,7 +144,7 @@ As shown in the figure below, a rule named demoRule is created to filter out the
 
 ![newRule](./resources/new_rule.png)
 
-Click the "Add" button and a dialog box will pop up as shown below. The file path of `/ekuiper/demoFile` where the input result is stored is input . More information about the file sink can be found in [Help File](../../extension/native/sinks/file.md). The target file is in the `Beta` state and cannot be used as an actual production environment.
+Click the "Add" button and a dialog box will pop up as shown below. The file path of `/ekuiper/demoFile` where the input result is stored is input . More information about the file sink can be found in [Help File](../../rules/sinks/plugin/file.md). The target file is in the `Beta` state and cannot be used as an actual production environment.
 
 ![sinkConf](./resources/sink_conf.png)
 

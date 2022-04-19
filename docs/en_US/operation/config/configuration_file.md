@@ -94,11 +94,11 @@ The URL where hosts all of pre-build [native plugins](../../extension/native/ove
 
 All plugins list as follows:
 
-|  plugin types  |        pre-build plugins                                        |
-|  -----------   |  ---------------------------------------------------------------|
-|  source        |    random zmq                                                   |
-|  sink          |  file image influx redis tdengine zmq                           |
-|  function      |  accumulateWordCount countPlusOne echo geohash image labelImage |
+| plugin types | pre-build plugins                                              |
+|--------------|----------------------------------------------------------------|
+| source       | random zmq                                                     |
+| sink         | file image influx redis tdengine zmq                           |
+| function     | accumulateWordCount countPlusOne echo geohash image labelImage |
 
 User can get all pre-build plugins names and address by below Rest-APIs:
 
@@ -146,7 +146,7 @@ It has properties
 * connectionSelector - reuse the connection info defined in etc/connections/connection.yaml, mainly used for edgeX redis in secure mode
   * only applicable to redis connection information
   * the server, port and password in connection info will overwrite the host port and password above
-  * [more info](../../rules/sources/edgex.md#connectionselector)
+  * [more info](../../rules/sources/builtin/edgex.md#connectionselector)
     
 
 ### Config

@@ -6,16 +6,16 @@ In eKuiper, each column or an expression has a related data type. A data type de
 
 Below is the list of data types supported.
 
-| #    | Data type | Description                                                  |
-| ---- | --------- | ------------------------------------------------------------ |
-| 1    | bigint    |                                                              |
-| 2    | float     |                                                              |
-| 3    | string    |                                                              |
-| 4    | datetime  |                                                 |
-| 5    | boolean   |                                                              |
-| 6    | bytea   |  A sequence of bytes to store binary data. If the stream format is "JSON", the bytea field must be a base64 encoded string |
-| 7    | array     | The array type, can be any simple types or array and type. |
-| 8    | struct    | The complex type.                                            |
+| #   | Data type | Description                                                                                                               |
+|-----|-----------|---------------------------------------------------------------------------------------------------------------------------|
+| 1   | bigint    |                                                                                                                           |
+| 2   | float     |                                                                                                                           |
+| 3   | string    |                                                                                                                           |
+| 4   | datetime  |                                                                                                                           |
+| 5   | boolean   |                                                                                                                           |
+| 6   | bytea     | A sequence of bytes to store binary data. If the stream format is "JSON", the bytea field must be a base64 encoded string |
+| 7   | array     | The array type, can be any simple types or array and type.                                                                |
+| 8   | struct    | The complex type.                                                                                                         |
 
 ## Language definitions
 
@@ -28,17 +28,17 @@ CREATE STREAM
 
 **The supported property names.**
 
-| Property name | Optional | Description                                                  |
-| ------------- | -------- | ------------------------------------------------------------ |
-| DATASOURCE | false    | The value is determined by source type. The topic names list if it's a MQTT data source. Please refer to related document for other sources. |
-| FORMAT        | true | The data format, currently the value can be "JSON" and "BINARY". The default is "JSON". Check [Binary Stream](#Binary Stream) for more detail. |
-| KEY           | true     | Reserved key, currently the field is not used. It will be used for GROUP BY statements. |
-| TYPE     | true | The source type, if not specified, the value is "mqtt". |
-| StrictValidation     | true | To control validation behavior of message field against stream schema. See [Strict Validation](#Strict Validation) for more info. |
-| CONF_KEY | true | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../rules/sources/mqtt.md) for more info. |
-| SHARED | true | Whether the source instance will be shared across all rules using this stream |
-| TIMESTAMP | true | The field to represent the event's timestamp. If specified, the rule will run with event time. Otherwise, it will run with processing time. Please refer to [timestamp management](./windows.md#timestamp-management) for details. |
-| TIMESTAMP_FORMAT | true | The default format to be used when converting string to or from datetime type. |
+| Property name    | Optional | Description                                                                                                                                                                                                                        |
+|------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| DATASOURCE       | false    | The value is determined by source type. The topic names list if it's a MQTT data source. Please refer to related document for other sources.                                                                                       |
+| FORMAT           | true     | The data format, currently the value can be "JSON" and "BINARY". The default is "JSON". Check [Binary Stream](#Binary Stream) for more detail.                                                                                     |
+| KEY              | true     | Reserved key, currently the field is not used. It will be used for GROUP BY statements.                                                                                                                                            |
+| TYPE             | true     | The source type, if not specified, the value is "mqtt".                                                                                                                                                                            |
+| StrictValidation | true     | To control validation behavior of message field against stream schema. See [Strict Validation](#Strict Validation) for more info.                                                                                                  |
+| CONF_KEY         | true     | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../rules/sources/builtin/mqtt.md) for more info.                                                               |
+| SHARED           | true     | Whether the source instance will be shared across all rules using this stream                                                                                                                                                      |
+| TIMESTAMP        | true     | The field to represent the event's timestamp. If specified, the rule will run with event time. Otherwise, it will run with processing time. Please refer to [timestamp management](./windows.md#timestamp-management) for details. |
+| TIMESTAMP_FORMAT | true     | The default format to be used when converting string to or from datetime type.                                                                                                                                                     |
 
 **Example 1,**
 
@@ -50,7 +50,7 @@ WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 
 The stream will subscribe to MQTT topic ``topic/temperature``, the server connection uses ``server`` key of ``default`` section in configuration file ``$ekuiper/etc/mqtt_source.yaml``. 
 
-- See [MQTT source](../rules/sources/mqtt.md) for more info.
+- See [MQTT source](../rules/sources/builtin/mqtt.md) for more info.
 
 **Example 2,**
 
@@ -67,7 +67,7 @@ demo (
 
 The stream will subscribe to MQTT topic `test/`, the server connection uses settings of `demo` section in configuration file `$ekuiper/etc/mqtt_source.yaml`. 
 
-- See [MQTT source](../rules/sources/mqtt.md) for more info.
+- See [MQTT source](../rules/sources/builtin/mqtt.md) for more info.
 
 - See [rules and streams CLI docs](../operation/cli/overview.md) for more information of rules & streams management.
 

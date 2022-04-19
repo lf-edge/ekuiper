@@ -10,10 +10,10 @@ Developers of eKuiper plugin can specify metadata files during the development p
 
 ## Sources
 
-| Name                        | Descriptiom                                                  | Remarks                                                   |
-| --------------------------- | ------------------------------------------------------------ | --------------------------------------------------------- |
-| [zmq](../sources/zmq.md)       | The plugin listens to Zero Mq messages and sends them to the eKuiper stream | Sample of plugin, not available in production environment |
-| [random](../sources/random.md) | The plugin generates messages according to the specified pattern | Sample of plugin, not available in production environment |
+| Name                                              | Description                                                                 | Remarks                                                   |
+|---------------------------------------------------|-----------------------------------------------------------------------------|-----------------------------------------------------------|
+| [zmq](../../../rules/sources/plugin/zmq.md)       | The plugin listens to Zero Mq messages and sends them to the eKuiper stream | Sample of plugin, not available in production environment |
+| [random](../../../rules/sources/plugin/random.md) | The plugin generates messages according to the specified pattern            | Sample of plugin, not available in production environment |
 
 ### source metadata file format
 
@@ -157,12 +157,12 @@ The following is a sample of metadata file.
 
 ## Sinks/Actions
 
-| Name                        | Description                                                  | Remarks                                                   |
-| --------------------------- | ------------------------------------------------------------ | --------------------------------------------------------- |
-| [file](../sinks/file.md)       | The plugin saves the analysis results to a specified file system | Sample of plugin, not available in production environment |
-| [zmq](../sinks/zmq.md)         | The plugin sends the analysis results to the topic of Zero Mq | Sample of plugin, not available in production environment |
-| [Influxdb](../sinks/influx.md) | The plugin sends the analysis results to InfluxDB            | Provided by [@smart33690](https://github.com/smart33690)  |
-| [TDengine](../sinks/tdengine.md)   | The plugin sends the analysis results to TDengine            |                                                           |
+| Name                                                | Description                                                      | Remarks                                                   |
+|-----------------------------------------------------|------------------------------------------------------------------|-----------------------------------------------------------|
+| [file](../../../rules/sinks/plugin/file.md)         | The plugin saves the analysis results to a specified file system | Sample of plugin, not available in production environment |
+| [zmq](../../../rules/sinks/plugin/zmq.md)           | The plugin sends the analysis results to the topic of Zero Mq    | Sample of plugin, not available in production environment |
+| [Influxdb](../../../rules/sinks/plugin/influx.md)   | The plugin sends the analysis results to InfluxDB                | Provided by [@smart33690](https://github.com/smart33690)  |
+| [TDengine](../../../rules/sinks/plugin/tdengine.md) | The plugin sends the analysis results to TDengine                |                                                           |
 
 ### sink metadata file format
 
@@ -276,13 +276,13 @@ The following is a sample of metadata file.
 
 ## Functions
 
-| Name                                          | Description                                                  | Remarks                                                 |
-| --------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------- |
-| [echo](../functions/functions.md)                | Output parameter value as it is                              | Plugin sample, not available for production environment |
-| [countPlusOne](../functions/functions.md)        | Output the value of the parameter length plus one            | Plugin sample, not available for production environment |
-| [accumulateWordCount](../functions/functions.md) | The function counts how many words there are                 | Plugin sample, not available for production environment |
-| [resize](../functions/functions.md)              | Create a scaled image with new dimensions (width, height). If width or height is set to 0, it is set to the reserved value of aspect ratio | Plugin sample, not available for production environment |
-| [thumbnail](../functions/functions.md)           | Reduce the image that retains the aspect ratio to the maximum size (maxWidth, maxHeight). | Plugin sample, not available for production environment |
+| Name                                                     | Description                                                                                                                                | Remarks                                                 |
+|----------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
+| [echo](../../../sqls/custom_functions.md)                | Output parameter value as it is                                                                                                            | Plugin sample, not available for production environment |
+| [countPlusOne](../../../sqls/custom_functions.md)        | Output the value of the parameter length plus one                                                                                          | Plugin sample, not available for production environment |
+| [accumulateWordCount](../../../sqls/custom_functions.md) | The function counts how many words there are                                                                                               | Plugin sample, not available for production environment |
+| [resize](../../../sqls/custom_functions.md)              | Create a scaled image with new dimensions (width, height). If width or height is set to 0, it is set to the reserved value of aspect ratio | Plugin sample, not available for production environment |
+| [thumbnail](../../../sqls/custom_functions.md)           | Reduce the image that retains the aspect ratio to the maximum size (maxWidth, maxHeight).                                                  | Plugin sample, not available for production environment |
 
 eKuiper has many built-in functions that can perform calculations on data. (Refer to https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/built-in_functions.md for specific documentation)
 
