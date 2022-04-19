@@ -58,7 +58,7 @@ var LabelImage = labelImage{
 }
 ```
 
-Check [this tutorial](../develop/plugins_tutorial.md) for detail steps of creating eKuiper plugins.  Please refer to [labelImage.go](https://github.com/lf-edge/ekuiper/blob/master/extensions/functions/labelImage/labelImage.go) for the full source code.
+Check [this tutorial](../../extension/native/develop/plugins_tutorial.md) for detail steps of creating eKuiper plugins.  Please refer to [labelImage.go](https://github.com/lf-edge/ekuiper/blob/master/extensions/functions/labelImage/labelImage.go) for the full source code.
 
 ## Build and install the plugin
 

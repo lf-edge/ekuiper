@@ -32,7 +32,7 @@ EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to ex
   CREATE STREAM demo (temperature bigint) WITH (FORMAT="JSON"...)
   ```
 
-  However, data type definitions are already specified in the EdgeX events/readings and to improve the using experience, user are NOT necessary to specify data types when creating stream. For any data sending from message bus, it will be converted into [corresponding data types](../rules/sources/edgex.md).
+  However, data type definitions are already specified in the EdgeX events/readings and to improve the using experience, user are NOT necessary to specify data types when creating stream. For any data sending from message bus, it will be converted into [corresponding data types](../rules/sources/builtin/edgex.md).
 
 - An EdgeX message bus sink is extended to support send analysis result back to EdgeX Message Bus. User can also choose to send analysis result to RestAPI, eKuiper already supported it. 
 
@@ -94,7 +94,7 @@ add these in `environment` part and make sure the image is `1.4.0` or later.
   ```
   
 * `mqtt/zeromq` messageBus: adjust the parameters accordingly and specify the client credentials if have.
-  There is a `mqtt` message bus example, make sure the connection info exists in `etc/connections/connection.yaml`, for [more info](../rules/sources/edgex.md#connectionselector) please check this. 
+  There is a `mqtt` message bus example, make sure the connection info exists in `etc/connections/connection.yaml`, for [more info](../rules/sources/builtin/edgex.md#connectionselector) please check this. 
   ```yaml
   environment:
       CONNECTION__EDGEX__MQTTMSGBUS__PORT: 1883
@@ -105,7 +105,7 @@ add these in `environment` part and make sure the image is `1.4.0` or later.
       CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__PASSWORD: password
       EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.mqttMsgBus
   ```
-After these modifications and eKuiper starts up, please read [this](../rules/sinks/edgex.md#connection-reuse-publish-example) to learn how to refer to the connection info
+After these modifications and eKuiper starts up, please read [this](../rules/sinks/builtin/edgex.md#connection-reuse-publish-example) to learn how to refer to the connection info
 
 #### Use Redis as KV storage
 
@@ -183,11 +183,11 @@ default:
 .....  
 ```
 
-For more detailed information of configuration file, please refer to [this doc](../rules/sources/edgex.md).
+For more detailed information of configuration file, please refer to [this doc](../rules/sources/builtin/edgex.md).
 
 ### Create a rule
 
-Let's create a rule that send result data to an MQTT broker, for detailed information of MQTT sink, please refer to [this link](../rules/sinks/mqtt.md).  Similar to create a stream, you can also choose REST or CLI to manage rules. 
+Let's create a rule that send result data to an MQTT broker, for detailed information of MQTT sink, please refer to [this link](../rules/sinks/builtin/mqtt.md).  Similar to create a stream, you can also choose REST or CLI to manage rules. 
 
 So the below rule will get all of values from `event` topic. The sink result will 
 
@@ -340,10 +340,10 @@ Current rule does not filter any data that are sent to eKuiper, so how to filter
 #### Extended Reading
 
 - Starting from eKuiper 0.9.1 version, [a visualized web UI](../operation/manager-ui/overview.md) is released with a separated Docker image. You can manage the streams, rules and plugins through web page. 
-- Read [EdgeX source](../rules/sources/edgex.md) for more detailed information of configurations and data type conversion.
+- Read [EdgeX source](../rules/sources/builtin/edgex.md) for more detailed information of configurations and data type conversion.
 - [How to use meta function to extract additional data from EdgeX message bus?](edgex_meta.md) There are some other information are sent along with device service, such as event created time, event id etc. If you want to use such metadata information in your SQL statements, please refer to this doc.
 - [Use Golang template to customize analaysis result in eKuiper](../rules/data_template.md) Before the analysis result is sent to different sinks, the data template can be used to make more processing. You can refer to this doc for more scenarios of using data templates.
-- [EdgeX message bus sink doc](../rules/sinks/edgex.md). The document describes how to use EdgeX message bus sink. If you'd like to have your analysis result be consumed by other EdgeX services, you can send analysis data with EdgeX data format through this sink, and other EdgeX services can subscribe new message bus exposed by eKuiper sink.
+- [EdgeX message bus sink doc](../rules/sinks/builtin/edgex.md). The document describes how to use EdgeX message bus sink. If you'd like to have your analysis result be consumed by other EdgeX services, you can send analysis data with EdgeX data format through this sink, and other EdgeX services can subscribe new message bus exposed by eKuiper sink.
 - [eKuiper plugin development tutorial](../extension/native/develop/plugins_tutorial.md): eKuiper plugin is based on the plugin mechanism of Golang, users can build loosely-coupled plugin applications,  dynamic loading and binding when it is running. You can refer to this article if you're interested in eKuiper plugin development.
 
  If you want to explore more features of eKuiper, please refer to below resources.

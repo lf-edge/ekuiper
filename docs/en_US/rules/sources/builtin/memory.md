@@ -1,6 +1,6 @@
 # Memory Source
 
-Memory source is provided to consume events produced by the [memory sink](../sinks/memory.md) through topics. The topic is like pubsub topic such as mqtt, so that there could be multiple memory sinks which publish to the same topic and multiple memory sources which subscribe to the same topic. The typical usage for memory action is to form [rule pipelines](../rule_pipeline.md).
+Memory source is provided to consume events produced by the [memory sink](../../sinks/builtin/memory.md) through topics. The topic is like pubsub topic such as mqtt, so that there could be multiple memory sinks which publish to the same topic and multiple memory sources which subscribe to the same topic. The typical usage for memory action is to form [rule pipelines](../../rule_pipeline.md).
 
 There is no configuration properties. The topic is specified by the stream data source property like below examples:
 

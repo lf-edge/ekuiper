@@ -17,7 +17,7 @@ EdgeX source will try to get the data type of fields,
 - or keep original value if  field of a type can not be found in the readings's ValueType field;
 - or if failed to conver the value, then the value will be **dropped**, and a warning message print in the log;
 
-The types defined in readings will be converted into related [data types](../../sqls/streams.md) that supported in eKuiper.
+The types defined in readings will be converted into related [data types](../../../sqls/streams.md) that supported in eKuiper.
 
 #### Boolean
 
@@ -189,7 +189,7 @@ demo1: #Conf_key
   topic: events
 ```
 
-If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with `demo1`.  Then you can specify the configuration with option `CONF_KEY` when creating the stream definition (see [stream specs](../../sqls/streams.md) for more info).
+If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with `demo1`.  Then you can specify the configuration with option `CONF_KEY` when creating the stream definition (see [stream specs](../../../sqls/streams.md) for more info).
 
 **Sample**
 
