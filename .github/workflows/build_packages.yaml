@@ -336,7 +336,7 @@ jobs:
         repo: ekuiper
         path: "_packages/kuiper-*"
         token: ${{ secrets.GITHUB_TOKEN }}
-    - name: upload plugins to s3
+    - name: upload packages to s3
       if: github.event_name == 'release'
       run: |
         version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
@@ -347,3 +347,14 @@ jobs:
         aws s3 cp --quiet --recursive ./_packages s3://packages.emqx/kuiper/$version
         aws s3 cp --quiet --recursive ./_plugins s3://packages.emqx/kuiper-plugins/$version
         aws cloudfront create-invalidation --distribution-id E170YEULGLT8XB --paths "/kuiper/$version/*,/kuiper-plugins/$version/*"
+    - name: update ekuiper.org
+      if: github.event_name == 'release'
+      run: |
+        set -e -x -u
+        curl -w %{http_code} \
+             --insecure \
+             -H "Content-Type: application/json" \
+             -H "token: ${{ secrets.EMQX_IO_TOKEN }}" \
+             -X POST \
+             -d "{\"repo\":\"lf-edge/ekuiper\", \"tag\": \"${{ github.ref_name }}\" }" \
+             ${{ secrets.EMQX_IO_RELEASE_API }}
