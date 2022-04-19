@@ -1,6 +1,6 @@
 ## 文件源
 
-eKuiper 提供了内置支持，可将文件内容读入 eKuiper 处理管道。 文件源通常用作 [表格](../../sqls/tables.md)， 并且采用 create table 语句的默认类型。
+eKuiper 提供了内置支持，可将文件内容读入 eKuiper 处理管道。 文件源通常用作 [表格](../../../sqls/tables.md)， 并且采用 create table 语句的默认类型。
 
 ```sql
 CREATE TABLE table1 (
@@ -10,7 +10,7 @@ CREATE TABLE table1 (
 ) WITH (DATASOURCE="lookup.json", FORMAT="json", TYPE="file");
 ```
 
-您可以使用 [cli](../../operation/cli/tables.md) 或 [rest api](../../operation/restapi/tables.md) 来管理表
+您可以使用 [cli](../../../operation/cli/tables.md) 或 [rest api](../../../operation/restapi/tables.md) 来管理表
 
 文件源的配置文件是 */etc/sources/file.yaml* ，可以在其中指定文件的路径。
 

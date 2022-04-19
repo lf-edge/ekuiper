@@ -6,22 +6,22 @@
 
 **另外，如果你需要在别的主机上对你的端口可以进行访问，你需要在开始运行 eKuiper 服务之前，把端口号映射到主机上。**
 
-| 名称                 | 可选  | Description                                                                                                                                                                      |
-|--------------------|-----|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| type               | 是   | 消息总线类型，目前支持三种类型的消息总线， `redis`, `zero` 或者 `mqtt`，其中 `redis` 为缺省类型。                                                                                                                |
-| protocol           | 是   | 协议，如未指定，使用缺省值 `tcp` 。                                                                                                                                                            |
-| host               | 是   | 消息总线主机地址，使用缺省值 `*` 。                                                                                                                                                             |
-| port               | 是   | 消息总线端口号。 如未指定，使用缺省值 `5563` 。                                                                                                                                                     |
-| connectionSelector | 是   | 重用到 EdgeX 消息总线的连接，详细信息，[请参考](../sources/edgex.md#connectionselector)                                                                                                             |
-| topic              | 是   | 发布的主题名称。该主题为固定值。若不同的消息需要动态指定主题，则将该属性置空，并设置 topicPrefix 属性。这两个属性只能设置一个。若两者都未设置，则使用缺省主题 `application` 。                                                                            |
-| topicPrefix        | 是   | 发布的主题的前缀。发送的主题将采用动态拼接，格式为`$topicPrefix/$profileName/$deviceName/$sourceName` 。                                                                                                   |
-| contentType        | 是   | 发布消息的内容类型，如未指定，使用缺省值 `application/json` 。                                                                                                                                        |
+| 名称                 | 可选  | Description                                                                                                                                                                    |
+|--------------------|-----|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| type               | 是   | 消息总线类型，目前支持三种类型的消息总线， `redis`, `zero` 或者 `mqtt`，其中 `redis` 为缺省类型。                                                                                                              |
+| protocol           | 是   | 协议，如未指定，使用缺省值 `tcp` 。                                                                                                                                                          |
+| host               | 是   | 消息总线主机地址，使用缺省值 `*` 。                                                                                                                                                           |
+| port               | 是   | 消息总线端口号。 如未指定，使用缺省值 `5563` 。                                                                                                                                                   |
+| connectionSelector | 是   | 重用到 EdgeX 消息总线的连接，详细信息，[请参考](../../sources/builtin/edgex.md#connectionselector)                                                                                                |
+| topic              | 是   | 发布的主题名称。该主题为固定值。若不同的消息需要动态指定主题，则将该属性置空，并设置 topicPrefix 属性。这两个属性只能设置一个。若两者都未设置，则使用缺省主题 `application` 。                                                                          |
+| topicPrefix        | 是   | 发布的主题的前缀。发送的主题将采用动态拼接，格式为`$topicPrefix/$profileName/$deviceName/$sourceName` 。                                                                                                 |
+| contentType        | 是   | 发布消息的内容类型，如未指定，使用缺省值 `application/json` 。                                                                                                                                      |
 | messageType        | 是   | EdgeX 消息模型类型。若要将消息发送为类似 apllication service 的 event 类型，则应设置为 `event`。否则，若要将消息发送为类似 device service 或者 core data service 的 event request 类型，则应设置为 `request`。如未指定，使用缺省值 `event` 。 |
-| metadata           | 是   | 该属性为一个字段名称，该字段是 SQL SELECT 子句的一个字段名称，这个字段应该类似于 `meta(*) AS xxx` ，用于选出消息中所有的 EdgeX 元数据 。                                                                                          |
-| profileName        | 是   | 允许用户指定 Profile 名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的 profile 名称。若在 metadata 中设置了 profileName 将会优先采用。                                                                              |
-| deviceName         | 是   | 允许用户指定设备名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的设备名称。若在 metadata 中设置了 deviceName 将会优先采用。                                                                                             |
-| sourceName         | 是   | 允许用户指定源名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的源名称。若在 metadata 中设置了 sourceName 将会优先采用。                                                                                               |
-| optional           | 是   | 如果指定了 `mqtt` 消息总线，那么还可以指定一下可选的值。请参考以下可选的支持的配置类型。                                                                                                                                 |
+| metadata           | 是   | 该属性为一个字段名称，该字段是 SQL SELECT 子句的一个字段名称，这个字段应该类似于 `meta(*) AS xxx` ，用于选出消息中所有的 EdgeX 元数据 。                                                                                        |
+| profileName        | 是   | 允许用户指定 Profile 名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的 profile 名称。若在 metadata 中设置了 profileName 将会优先采用。                                                                            |
+| deviceName         | 是   | 允许用户指定设备名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的设备名称。若在 metadata 中设置了 deviceName 将会优先采用。                                                                                           |
+| sourceName         | 是   | 允许用户指定源名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的源名称。若在 metadata 中设置了 sourceName 将会优先采用。                                                                                             |
+| optional           | 是   | 如果指定了 `mqtt` 消息总线，那么还可以指定一下可选的值。请参考以下可选的支持的配置类型。                                                                                                                               |
 
 以下为支持的可选的配置列表，您可以参考 MQTT 协议规范来获取更详尽的信息。
 
@@ -144,7 +144,7 @@
 
 ## 使用连接重用功能发布
 
-以下是如何使用连接重用功能的示例。我们只需要删除连接相关的参数并使用 `connectionSelector` 指定要重用的连接。 [更多信息](../sources/edgex.md#connectionselector)
+以下是如何使用连接重用功能的示例。我们只需要删除连接相关的参数并使用 `connectionSelector` 指定要重用的连接。 [更多信息](../../sources/builtin/edgex.md#connectionselector)
 
 ```json
 {

@@ -37,7 +37,7 @@ POST http://localhost:9081/plugins/portables
 2. file：插件文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 eKuiper 服务器所在的机器上。它必须是一个 zip 文件，其中包含：编译后的 so 文件和yaml 文件（仅源必需）。 如果插件依赖于某些外部依赖项，则可以提供一个名为install.sh 的 bash 脚本来进行依赖项安装。 文件名称必须与插件名称匹配。 请参考 [扩展](../../extension/overview.md) 了解命名规则。
 
 ### 插件文件格式
-`注意`：针对`便捷插件`类型的文件格式，请参考这篇[文章](../../extension/portable/overview.md#package) 
+`注意`：针对`便捷插件`类型的文件格式，请参考这篇[文章](../../extension/portable/overview.md#打包发布) 
 
 名为 random.zip 的源的示例 zip 文件
 1. Random@v1.0.0.so
@@ -173,7 +173,7 @@ GET http://localhost:9081/plugins/udfs/{name}
 }
 ```
 
-### register functions
+### 注册函数
 
 该 API 用于给自动载入的函数插件注册其导出的所有函数或者用于更改插件导出的函数列表。如果插件是经由命令行的创建命令或者 REST API 创建，且创建时提供了 functions 参数，则无需再执行此命令除非用于更改导出函数。此命令将会持久化到 KV 中。因此，除非需要更改导出函数列表，用户仅需执行注册函数一次。
 
