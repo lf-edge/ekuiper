@@ -8,7 +8,7 @@ In the eKuiper SQL syntax, [many built-in functions](../../../sqls/built-in_func
 
 To develop a function for eKuiper is to implement [api.Function](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface and export it as a golang plugin.
 
-Before starting the development, you must [setup the environment for golang plugin](../../overview.md#setup-the-plugin-developing-environment). 
+Before starting the development, you must [setup the environment for golang plugin](../overview.md#setup-the-plugin-developing-environment). 
 
 To develop a function, the _Validate_ method is firstly to be implemented. This method will be called during SQL validation. In this method, a slice of [xsql.Expr](https://github.com/lf-edge/ekuiper/blob/master/pkg/ast/expr.go) is passed as the parameter that contains the arguments for this function in the runtime. The developer can do a validation against it to check the argument count and type etc. If validation is successful, return nil. Otherwise, return an error object.
 
@@ -30,7 +30,7 @@ The main task for a Function is to implement _exec_ method. The method will be l
 Exec(args []interface{}) (interface{}, bool)
 ```  
 
-As the function itself is a plugin, it must be in the main package. Given the function struct name is myFunction. At last of the file, the source must be exported as a symbol as below. There are [2 types of exported symbol supported](../../overview.md#plugin-development). For function extension, if there is no internal state, it is recommended to export a singleton instance.
+As the function itself is a plugin, it must be in the main package. Given the function struct name is myFunction. At last of the file, the source must be exported as a symbol as below. There are [2 types of exported symbol supported](../overview.md#plugin-development). For function extension, if there is no internal state, it is recommended to export a singleton instance.
 
 ```go
 var MyFunction myFunction
@@ -65,7 +65,7 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functio
 eKuiper will load plugins in the plugin folders automatically. The auto loaded function plugin assumes there is a function named the same as the plugin name. If multiple functions are exported, users need to explicitly register them to make them available. There are two ways to register the functions.
 
 1. In development environment, we recommend to build plugin .so file directly into the plugin folder so that eKuiper can auto load it. Then call [CLI register functions command](../../../operation/cli/plugins.md#register-functions) or [REST register functions API](../../../operation/restapi/plugins.md#register-functions).
-2. In production environment, [package the plugin into zip file](plugins_tutorial.md#plugin-deployment-1), then call [CLI function plugin create command](../../../operation/cli/plugins.md#create-a-plugin) or [REST function plugin create API](../../../operation/restapi/plugins.md#create-a-plugin) with functions list specified.
+2. In production environment, [package the plugin into zip file](plugins_tutorial.md#deployment), then call [CLI function plugin create command](../../../operation/cli/plugins.md#create-a-plugin) or [REST function plugin create API](../../../operation/restapi/plugins.md#create-a-plugin) with functions list specified.
 
 ## Usage
 

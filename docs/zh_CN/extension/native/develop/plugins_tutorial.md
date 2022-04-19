@@ -324,19 +324,19 @@ zip -o $PLUGIN_TARGET/sinks/mysql.zip $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so
 
 eKuiper 生产环境和开发环境如果不同，开发的插件需要重新编译并部署到生产环境。假设生产环境采用 eKuiper docker 进行部署，本节将描述如何部署插件到生产环境中。
 
-### 插件编译
+### 编译
 
 插件原则上应该与生产环境 eKuiper 采用相同环境进行编译。假设生产环境为 eKuiper docker，则应当采用与生产环境相同版本的 dev docker 环境编译插件。例如，生产环境采用 [lfedge/ekuiper:0.4.0-slim](https://registry.hub.docker.com/layers/lfedge/ekuiper/0.4.0-alpine/images/sha256-f79e9afd020a05f443d1864ee08007fe472e0d15e266d48a1f636fbd0343d507?context=explore) 的docker镜像，则插件需要在[lfedge/ekuiper:0.4.0](https://registry.hub.docker.com/layers/lfedge/ekuiper/0.4.0/images/sha256-dcc1420cbbd501aedd1bfe4093818a69726de1d6365974b69e99e1d5bc671836?context=explore) 的环境中进行编译。
 
 编译过程请参考[ Docker 编译](#Docker编译)。编译完成的插件可以直接在开发 Docker 中进行调试。
 
-### 插件部署
+### 部署
 
 可以采用 [REST API](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/restapi/plugins.md) 或者 [CLI](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/cli/plugins.md) 进行插件管理。下文以 REST API 为例，将上一节编译的插件部署到生产环境中。
 
 1. 插件打包并放到 http 服务器。将上一节编译好的插件 `.so` 文件及默认配置文件（只有 source 需要） `.yaml` 文件一起打包到一个 `.zip` 文件中，假设为 `mysqlSink.zip`。把该文件放置到生产环境也可访问的 http 服务器中。
    
-   - 某些插件可能依赖 eKuiper 环境未安装的库。用户可以选择自行到 eKuiper 服务器安装依赖或者在插件包中放入名为 install.sh 安装脚本和依赖。插件管理系统会运行插件包中的 install.sh 文件。详情请参考[ 插件文件格式](../../../operation/restapi/plugins.md#plugin-file-format)。
+   - 某些插件可能依赖 eKuiper 环境未安装的库。用户可以选择自行到 eKuiper 服务器安装依赖或者在插件包中放入名为 install.sh 安装脚本和依赖。插件管理系统会运行插件包中的 install.sh 文件。详情请参考[ 插件文件格式](../../../operation/restapi/plugins.md#插件文件格式)。
 2. 使用 REST API 创建插件：
    ```
    POST http://{$production_eKuiper_ip}:9081/plugins/sinks

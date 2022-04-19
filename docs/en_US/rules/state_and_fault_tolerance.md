@@ -2,7 +2,7 @@
 
 eKuiper supports stateful rule stream. There are two kinds of states in eKuiper:
 1. Internal state for window operation and rewindable source
-2. User state exposed to extensions with stream context, check [state storage](../extension/overview.md#state-storage).
+2. User state exposed to extensions with stream context, check [state storage](../extension/native/overview.md#state-storage).
 
 ## Fault Tolerance
 

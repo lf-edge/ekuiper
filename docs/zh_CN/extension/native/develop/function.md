@@ -8,7 +8,7 @@
 
 为 eKuiper 开发函数的过程，就是实现 [api.Function](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 接口并将其导出为 golang 插件。
 
-在开始开发之前，您必须为 [golang 插件设置环境](../../overview.md#setup-the-plugin-developing-environment)。
+在开始开发之前，您必须为 [golang 插件设置环境](../overview.md#插件开发环境设置)。
 
 为了开发函数，首先要实现 _Validate_ 方法。 在 SQL 验证期间将调用此方法。 在此方法中，将传递 [xsql.Expr](https://github.com/lf-edge/ekuiper/blob/master/pkg/ast/expr.go) 的切片作为参数，该参数包含运行时该函数的参数。 开发人员可以对其进行验证，以检查参数计数和类型等。如果验证成功，则返回 nil。 否则，返回一个错误对象。
 
@@ -30,7 +30,7 @@ IsAggregate() bool
 Exec(args []interface{}) (interface{}, bool)
 ```
 
-由于该函数本身是一个插件，因此必须位于 main 程序包中。 给定的函数结构名称为 myFunction。 在文件的最后，必须将源文件作为符号导出，如下所示。 有[2种类型的导出符号被支持](../../overview.md#plugin-development)。 对于函数扩展，如果没有内部状态，建议导出单例实例。
+由于该函数本身是一个插件，因此必须位于 main 程序包中。 给定的函数结构名称为 myFunction。 在文件的最后，必须将源文件作为符号导出，如下所示。 有[2种类型的导出符号被支持](../overview.md#插件开发)。 对于函数扩展，如果没有内部状态，建议导出单例实例。
 
 ```go
 var MyFunction myFunction
@@ -40,7 +40,7 @@ var MyFunction myFunction
 
 ### 导出多个函数
 
-开发者可在一个函数插件中导出多个函数。每个函数均需实现 [api.Function](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 接口，正如 [开发一个定制函数](#develop-a-customized-function) 所描述的那样。需要确保所有函数都导出了，如下所示：
+开发者可在一个函数插件中导出多个函数。每个函数均需实现 [api.Function](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 接口，正如 [开发一个定制函数](#开发一个定制函数) 所描述的那样。需要确保所有函数都导出了，如下所示：
 
 ```go
 var(
@@ -63,8 +63,8 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functio
 
 eKuiper 启动时会自动载入插件目录里已编译好的插件。自动载入的函数插件假设插件里仅导出一个同名的函数。如果插件导出多个函数，则需要显示运行一次注册操作。有两种方法可以注册函数：
 
-1. 在开发环境中，建议直接构建插件 .so 文件到插件目录中以便 eKuiper 自动载入。构建完成后，运行 [CLI 注册函数命令](../../../operation/cli/plugins.md#register-functions) or [REST 注册函数 API](../../../operation/restapi/plugins.md#register-functions) 进行注册。
-2. 在生产环境中，[打包插件到 zip 压缩包](plugins_tutorial.md#plugin-deployment-1)，然后运行 [CLI 创建函数插件命令](../../../operation/cli/plugins.md#create-a-plugin) 或者 [REST 创建函数 API](../../../operation/restapi/plugins.md#create-a-plugin) 并设置 functions 参数以指定导出函数名。
+1. 在开发环境中，建议直接构建插件 .so 文件到插件目录中以便 eKuiper 自动载入。构建完成后，运行 [CLI 注册函数命令](../../../operation/cli/plugins.md#注册函数) or [REST 注册函数 API](../../../operation/restapi/plugins.md#注册函数) 进行注册。
+2. 在生产环境中，[打包插件到 zip 压缩包](plugins_tutorial.md#部署)，然后运行 [CLI 创建函数插件命令](../../../operation/cli/plugins.md#创建插件) 或者 [REST 创建函数 API](../../../operation/restapi/plugins.md#创建插件) 并设置 functions 参数以指定导出函数名。
 
 ### 使用
 

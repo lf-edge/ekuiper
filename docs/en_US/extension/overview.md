@@ -38,8 +38,8 @@ It is useful when the users already have exported services and do not want to wr
 
 Let's do some comparisons for all these 3 methods. In the table, *dynamic reload* means if the plugin can be updated or deleted during runtime. *Rebuild for update* means if the plugin needs to be rebuilt when updating the main program. If yes, the version update will become complex. *Separate process* means if the plugin is running standalone from the main program. If yes, the plugin crash won't affect the main program. *Communication* means how to communicate between the main program and the plugin. In memory must be the most efficient method and needs to be run in the same process. IPC requires running in the same machine and has the middle performance and reliance. Web means the communication is transported through web protocol like TCP, it is possible to run in different machines. 
 
-| Extension      | Extended types | Need to code? | Language | OS | Dynamic Reload | Rebuild for update? | Separate Process? | Communication |
-| ----------- | ----------- |----------- |----------- |----------- |----------- |----------- |----------- |----------- |
-| Native      | Source, Sink, Function  | Yes | Go | Linux, FreeBSD, MacOs | No | Yes | No | In memory |
-| Portable    | Source, Sink,Function  | Yes | Go, Python and more in the future | Any | Yes | No | Yes | IPC |
-| External    | Function  | No | JSON, protobuf | Any | Yes | No | Yes | Web |
+| Extension | Extended types         | Need to code? | Language                          | OS                    | Dynamic Reload | Rebuild for update? | Separate Process? | Communication |
+|-----------|------------------------|---------------|-----------------------------------|-----------------------|----------------|---------------------|-------------------|---------------|
+| Native    | Source, Sink, Function | Yes           | Go                                | Linux, FreeBSD, MacOs | No             | Yes                 | No                | In memory     |
+| Portable  | Source, Sink,Function  | Yes           | Go, Python and more in the future | Any                   | Yes            | No                  | Yes               | IPC           |
+| External  | Function               | No            | JSON, protobuf                    | Any                   | Yes            | No                  | Yes               | Web           |

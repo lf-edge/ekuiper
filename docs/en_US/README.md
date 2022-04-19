@@ -61,10 +61,10 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
 
 - Using JMeter MQTT plugin to send simulation data to EMQX Broker, such as: `{"temperature": 10, "humidity" : 90}`, the value of temperature and humidity are random integer between 0 - 100.
 - eKuiper subscribe from EMQX Broker, and analyze data with SQL: `SELECT * FROM demo WHERE temperature > 50 ` 
-- The analysis result are wrote to local file by using [file sink plugin](extension/native/sinks/file.md).
+- The analysis result are wrote to local file by using [file sink plugin](rules/sinks/plugin/file.md).
 
 | Devices                                        | Message # per second | CPU usage     | Memory usage |
-| ---------------------------------------------- | -------------------- | ------------- | ------------ |
+|------------------------------------------------|----------------------|---------------|--------------|
 | Raspberry Pi 3B+                               | 12k                  | sys+user: 70% | 20M          |
 | AWS t2.micro( 1 Core * 1 GB) <br />Ubuntu18.04 | 10k                  | sys+user: 25% | 20M          |
 
@@ -85,7 +85,7 @@ Join our [Slack](https://join.slack.com/t/lfedge/shared_invite/zt-7kavdtmq-SeyFz
 
 - eKuiper subscribe from EdgeX ZeroMQ message bus, and analyze data with SQL: `SELECT * FROM demo WHERE temperature > 50`. 90% of data will be filtered by the rule.
 
-- The analysis result are sent to [nop sink](./rules/sinks/nop.md), all of the result data will be ignored.
+- The analysis result are sent to [nop sink](./rules/sinks/builtin/nop.md), all of the result data will be ignored.
 
 |                                                | Message # per second | CPU usage     | Memory usage |
 | ---------------------------------------------- | -------------------- | ------------- | ------------ |

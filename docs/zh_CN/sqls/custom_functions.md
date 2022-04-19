@@ -18,8 +18,8 @@ echo(avg) 示例
 
 ## countPlusOne 插件
 
-| 函数         | 示例              | 说明                 |
-| ------------ | ----------------- | -------------------- |
+| 函数           | 示例                | 说明         |
+|--------------|-------------------|------------|
 | countPlusOne | countPlusOne(avg) | 输出参数长度加一的值 |
 
 countPlusOne(avg) 示例
@@ -32,8 +32,8 @@ countPlusOne(avg) 示例
 
 ## accumulateWordCount 插件
 
-| 函数                | 示例                         | 说明                     |
-| ------------------- | ---------------------------- | ------------------------ |
+| 函数                  | 示例                           | 说明           |
+|---------------------|------------------------------|--------------|
 | accumulateWordCount | accumulateWordCount(avg,sep) | 函数统计一共有多少个单词 |
 
 accumulateWordCount(avg,sep) 示例
@@ -48,10 +48,10 @@ accumulateWordCount(avg,sep) 示例
 
 图像处理目前暂时只支持`png`和`jpeg`格式
 
-| 函数      | 示例                               | 说明                                                         |
-| --------- | ---------------------------------- | ------------------------------------------------------------ |
+| 函数        | 示例                                 | 说明                                                      |
+|-----------|------------------------------------|---------------------------------------------------------|
 | resize    | resize(avg,width, height)          | 创建具有新尺寸（宽度，高度）的缩放图像。如果 width 或 height 设置为0，则将其设置为长宽比保留值 |
-| thumbnail | thumbnail(avg,maxWidth, maxHeight) | 将保留宽高比的图像缩小到最大尺寸( maxWidth，maxHeight)。     |
+| thumbnail | thumbnail(avg,maxWidth, maxHeight) | 将保留宽高比的图像缩小到最大尺寸( maxWidth，maxHeight)。                  |
 
 resize(avg,width, height)示例
 
@@ -71,18 +71,18 @@ thumbnail(avg,maxWidth, maxHeight)示例
 
 ### Geohash 插件
 
-| 函数                  | 示例                                                     | 说明                                                         |
-| --------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
-| geohashEncode         | geohashEncode(la,lo float64)(string)                     | 将经纬度编码为字符串                                         |
-| geohashEncodeInt      | geohashEncodeInt(la,lo float64)(uint64)                  | 将经纬度编码为无类型整数                                     |
-| geohashDecode         | geohashDecode(hash string)(la,lo float64)                | 将字符串解码为经纬度                                         |
-| geohashDecodeInt      | geohashDecodeInt(hash uint64)(la,lo float64)             | 将无类型整数解码为经纬度                                     |
-| geohashBoundingBox    | geohashBoundingBox(hash string)(string)                  | 返回字符串编码的区域                                         |
-| geohashBoundingBoxInt | geohashBoundingBoxInt(hash uint64)(string)               | 返回无类型整数编码的区域                                     |
-| geohashNeighbor       | geohashNeighbor(hash string,direction string)(string)    | 返回一个字符串对应方向上的邻居（方向列表：North NorthEast East SouthEast South SouthWest West NorthWest） |
+| 函数                    | 示例                                                       | 说明                                                                                    |
+|-----------------------|----------------------------------------------------------|---------------------------------------------------------------------------------------|
+| geohashEncode         | geohashEncode(la,lo float64)(string)                     | 将经纬度编码为字符串                                                                            |
+| geohashEncodeInt      | geohashEncodeInt(la,lo float64)(uint64)                  | 将经纬度编码为无类型整数                                                                          |
+| geohashDecode         | geohashDecode(hash string)(la,lo float64)                | 将字符串解码为经纬度                                                                            |
+| geohashDecodeInt      | geohashDecodeInt(hash uint64)(la,lo float64)             | 将无类型整数解码为经纬度                                                                          |
+| geohashBoundingBox    | geohashBoundingBox(hash string)(string)                  | 返回字符串编码的区域                                                                            |
+| geohashBoundingBoxInt | geohashBoundingBoxInt(hash uint64)(string)               | 返回无类型整数编码的区域                                                                          |
+| geohashNeighbor       | geohashNeighbor(hash string,direction string)(string)    | 返回一个字符串对应方向上的邻居（方向列表：North NorthEast East SouthEast South SouthWest West NorthWest）   |
 | geohashNeighborInt    | geohashNeighborInt(hash uint64,direction string)(uint64) | 返回一个无类型整数对应方向上的邻居（方向列表：North NorthEast East SouthEast South SouthWest West NorthWest） |
-| geohashNeighbors      | geohashNeighbors(hash string)([]string)                  | 返回一个字符串的所有邻居                                     |
-| geohashNeighborsInt   | geohashNeighborsInt(hash uint64)([]uint64)               | 返回一个无类型整数的所有邻居                                 |
+| geohashNeighbors      | geohashNeighbors(hash string)([]string)                  | 返回一个字符串的所有邻居                                                                          |
+| geohashNeighborsInt   | geohashNeighborsInt(hash uint64)([]uint64)               | 返回一个无类型整数的所有邻居                                                                        |
 
  geohashEncode 示例
 

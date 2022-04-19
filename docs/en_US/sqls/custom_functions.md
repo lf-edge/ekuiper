@@ -5,7 +5,7 @@ eKuiper can customize functions. For the development, compilation and use of fun
 ## echo plugin
 
 | Function | Example   | Description                     |
-| -------- | --------- | ------------------------------- |
+|----------|-----------|---------------------------------|
 | echo     | echo(avg) | Output parameter value as it is |
 
 echo(avg) example
@@ -19,7 +19,7 @@ echo(avg) example
 ## countPlusOne plugin
 
 | Function     | Example           | Description                                       |
-| ------------ | ----------------- | ------------------------------------------------- |
+|--------------|-------------------|---------------------------------------------------|
 | countPlusOne | countPlusOne(avg) | Output the value of the parameter length plus one |
 
 countPlusOne(avg) example
@@ -33,7 +33,7 @@ countPlusOne(avg) example
 ## accumulateWordCount plugin
 
 | Function            | Example                      | Description                                  |
-| ------------------- | ---------------------------- | -------------------------------------------- |
+|---------------------|------------------------------|----------------------------------------------|
 | accumulateWordCount | accumulateWordCount(avg,sep) | The function counts how many words there are |
 
 accumulateWordCount(avg,sep) example
@@ -48,10 +48,10 @@ accumulateWordCount(avg,sep) example
 
 Image processing currently only supports the formats of `png` and `jpeg` 
 
-| Function  | Example                            | Description                                                  |
-| --------- | ---------------------------------- | ------------------------------------------------------------ |
+| Function  | Example                            | Description                                                                                                                                |
+|-----------|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
 | resize    | resize(avg,width, height)          | Create a scaled image with new dimensions (width, height). If width or height is set to 0, it is set to the reserved value of aspect ratio |
-| thumbnail | thumbnail(avg,maxWidth, maxHeight) | Reduce the image that retains the aspect ratio to the maximum size (maxWidth, maxHeight). |
+| thumbnail | thumbnail(avg,maxWidth, maxHeight) | Reduce the image that retains the aspect ratio to the maximum size (maxWidth, maxHeight).                                                  |
 
 resize(avg,width, height) example
 
@@ -71,18 +71,18 @@ thumbnail(avg,maxWidth, maxHeight) example
 
 ### Geohash plugin
 
-| Function              | Example                                                  | Description                                                  |
-| --------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
-| geohashEncode         | geohashEncode(la,lo float64)(string)                     | Encode latitude and longitude as a string                    |
-| geohashEncodeInt      | geohashEncodeInt(la,lo float64)(uint64)                  | Encode latitude and longitude as an unsigned integer         |
-| geohashDecode         | geohashDecode(hash string)(la,lo float64)                | Decode a string into latitude and longitude                  |
-| geohashDecodeInt      | geohashDecodeInt(hash uint64)(la,lo float64)             | Decode an unsigned integers into latitude and longitude      |
-| geohashBoundingBox    | geohashBoundingBox(hash string)(string)                  | Returns the area encoded by a string                         |
-| geohashBoundingBoxInt | geohashBoundingBoxInt(hash uint64)(string)               | Returns the area encoded by an unsigned integer              |
-| geohashNeighbor       | geohashNeighbor(hash string,direction string)(string)    | Returns the neighbor in the corresponding direction of a string (Direction list: North NorthEast East SouthEast South SouthWest West NorthWest) |
+| Function              | Example                                                  | Description                                                                                                                                                |
+|-----------------------|----------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| geohashEncode         | geohashEncode(la,lo float64)(string)                     | Encode latitude and longitude as a string                                                                                                                  |
+| geohashEncodeInt      | geohashEncodeInt(la,lo float64)(uint64)                  | Encode latitude and longitude as an unsigned integer                                                                                                       |
+| geohashDecode         | geohashDecode(hash string)(la,lo float64)                | Decode a string into latitude and longitude                                                                                                                |
+| geohashDecodeInt      | geohashDecodeInt(hash uint64)(la,lo float64)             | Decode an unsigned integers into latitude and longitude                                                                                                    |
+| geohashBoundingBox    | geohashBoundingBox(hash string)(string)                  | Returns the area encoded by a string                                                                                                                       |
+| geohashBoundingBoxInt | geohashBoundingBoxInt(hash uint64)(string)               | Returns the area encoded by an unsigned integer                                                                                                            |
+| geohashNeighbor       | geohashNeighbor(hash string,direction string)(string)    | Returns the neighbor in the corresponding direction of a string (Direction list: North NorthEast East SouthEast South SouthWest West NorthWest)            |
 | geohashNeighborInt    | geohashNeighborInt(hash uint64,direction string)(uint64) | Returns the neighbor in the corresponding direction of an unsigned integer (Direction list: North NorthEast East SouthEast South SouthWest West NorthWest) |
-| geohashNeighbors      | geohashNeighbors(hash string)([]string)                  | Return all neighbors of a string                             |
-| geohashNeighborsInt   | geohashNeighborsInt(hash uint64)([]uint64)               | Return all neighbors of an unsigned integer                  |
+| geohashNeighbors      | geohashNeighbors(hash string)([]string)                  | Return all neighbors of a string                                                                                                                           |
+| geohashNeighborsInt   | geohashNeighborsInt(hash uint64)([]uint64)               | Return all neighbors of an unsigned integer                                                                                                                |
 
  geohashEncode example
 

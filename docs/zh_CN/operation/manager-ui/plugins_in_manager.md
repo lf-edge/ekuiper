@@ -14,7 +14,7 @@ eKuiper 提供了插件的扩展机制，用户可以基于扩展接口来实现
 
 **源（Source）**
 
-Source 元数据的详细配置请参考 [source 元数据配置](../../extension/native/develop/overview.md#source-元数据文件格式)。配置文件的示例如下：
+Source 元数据的详细配置请参考 [source 元数据配置](../../extension/native/develop/overview.md#source-)。配置文件的示例如下：
 
 ```json
 {
@@ -79,7 +79,7 @@ Source 元数据的配置参数主要由两部分组成：
 
 **动作（Sink）**
 
-Sink 元数据配置与 Source 基本相同。详细配置请参考 [sink 元数据配置](../../extension/native/develop/overview.md#sink-元数据文件格式)。
+Sink 元数据配置与 Source 基本相同。详细配置请参考 [sink 元数据配置](../../extension/native/develop/overview.md#sink-)。
 
 Sink 元数据的配置参数主要也由两部分组成：
 
@@ -91,13 +91,13 @@ Sink 元数据的配置参数主要也由两部分组成：
 
 **properties**
 
-描述插件的可配置属性信息，包括参数的信息以及如何进行界面展示。与 Source 不同的时，Sink 的属性不保存在配置文件里，而是在规则创建时进行配置。对应的元数据配置中，Sink 不再有配置组概念。在管理控制台的规则创建页面，添加动作弹出窗口中，选中插件后将展示帮助文档链接以及元数据中定义的属性。需要注意的时，Sink 有一些[共同属性](../../rules/overview.md#目标动作)，在所有 Sink 中都会展示。
+描述插件的可配置属性信息，包括参数的信息以及如何进行界面展示。与 Source 不同的时，Sink 的属性不保存在配置文件里，而是在规则创建时进行配置。对应的元数据配置中，Sink 不再有配置组概念。在管理控制台的规则创建页面，添加动作弹出窗口中，选中插件后将展示帮助文档链接以及元数据中定义的属性。需要注意的时，Sink 有一些[共同属性](../../rules/overview.md#目标/动作)，在所有 Sink 中都会展示。
 
 ![sink config](resources/sink_conf.png)
 
 **函数（Functions）**
 
-Function 元数据详细配置请参考 [sink 元数据配置](../../extension/native/develop/overview.md#functions-元数据文件格式)。其中，`about` 部分与 Source 和 Sink 完全相同。`function` 部分配置了函数的名称，样例和提示信息，用于新建规则的 SQL 编辑器中进行代码提示。
+Function 元数据详细配置请参考 [sink 元数据配置](../../extension/native/develop/overview.md#functions-)。其中，`about` 部分与 Source 和 Sink 完全相同。`function` 部分配置了函数的名称，样例和提示信息，用于新建规则的 SQL 编辑器中进行代码提示。
 
 ![function about](resources/function_about.png)
 

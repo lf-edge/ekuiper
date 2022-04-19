@@ -91,7 +91,7 @@ Describe the basic information of the plugin, including plugin author, help file
 
 **properties**
 
-Describe the configurable attribute information of the plugin, including parameter information and how to display on the interface. Unlike Source, the attributes of Sink are not stored in the configuration file, but are configured when the rule is created. In the corresponding metadata configuration, it no longer has the concept of configuration group for Sink. On the rule creation page of the management console, in the pop-up window of adding action , after selecting the plugin, the help document link and the attributes defined in the metadata will be displayed. It is worth noting that Sink has some [common attributes](../../rules/overview.md#sinks/actions), which will be displayed in all sinks.
+Describe the configurable attribute information of the plugin, including parameter information and how to display on the interface. Unlike Source, the attributes of Sink are not stored in the configuration file, but are configured when the rule is created. In the corresponding metadata configuration, it no longer has the concept of configuration group for Sink. On the rule creation page of the management console, in the pop-up window of adding action , after selecting the plugin, the help document link and the attributes defined in the metadata will be displayed. It is worth noting that Sink has some [common attributes](../../rules/overview.md#sinksactions), which will be displayed in all sinks.
 
 ![sink config](resources/sink_conf.png)
 
