@@ -8,16 +8,16 @@
 
 以下是支持的数据类型的列表。
 
-| #    | 数据类型 | 说明                                                   |
-| ---- | -------- | ------------------------------------------------------ |
-| 1    | bigint   |                                                        |
-| 2    | float    |                                                        |
-| 3    | string   |                                                        |
-| 4    | datetime |                                                  |
-| 5    | boolean  |                                                        |
-| 6    | bytea   |  用于存储二进制数据的字节数组。如果在格式为 "JSON" 的流中使用此类型，则传入的数据需要为 base64 编码的字符串。 |
-| 7    | array    | 数组类型可以是任何简单类型，数组类型或结构类型。 |
-| 8    | struct   | 复杂类型                                               |
+| #   | 数据类型     | 说明                                                             |
+|-----|----------|----------------------------------------------------------------|
+| 1   | bigint   |                                                                |
+| 2   | float    |                                                                |
+| 3   | string   |                                                                |
+| 4   | datetime |                                                                |
+| 5   | boolean  |                                                                |
+| 6   | bytea    | 用于存储二进制数据的字节数组。如果在格式为 "JSON" 的流中使用此类型，则传入的数据需要为 base64 编码的字符串。 |
+| 7   | array    | 数组类型可以是任何简单类型，数组类型或结构类型。                                       |
+| 8   | struct   | 复杂类型                                                           |
 
 ## 语言定义
 
@@ -30,17 +30,17 @@ CREATE STREAM
 
 **支持的属性名称**
 
-| 属性名称 | 可选 | 说明                                              |
-| ------------- | -------- | ------------------------------------------------------------ |
-| DATASOURCE | 否   | 取决于不同的源类型；如果是 MQTT 源，则为 MQTT 数据源主题名；其它源请参考相关的文档。 |
-| FORMAT        | 是      | 传入的数据类型，支持 "JSON" 和 "BINARY"，默认为 "JSON" 。关于 "BINARY" 类型的更多信息，请参阅 [Binary Stream](#二进制流)。 |
-| KEY           | 是    | 保留配置，当前未使用该字段。 它将用于 GROUP BY 语句。 |
-| TYPE    | 是      | 源类型，如未指定，值为 "mqtt"。 |
-| StrictValidation     | 是  | 针对流模式控制消息字段的验证行为。 有关更多信息，请参见 [Strict Validation](#Strict Validation) |
-| CONF_KEY | 是 | 如果需要配置其他配置项，请在此处指定 config 键。 有关更多信息，请参见 [MQTT stream](../rules/sources/mqtt.md) 。 |
-| SHARED | 是 | 是否在使用该流的规则中共享源的实例 |
-| TIMESTAMP | 是 | 代表该事件时间戳的字段名。如果有设置，则使用此流的规则将采用事件时间；否则将采用处理时间。详情请看[时间戳管理](./windows.md#时间戳管理)。 |
-| TIMESTAMP_FORMAT | 是 | 字符串和时间格式转换时使用的默认格式。 |
+| 属性名称             | 可选  | 说明                                                                                        |
+|------------------|-----|-------------------------------------------------------------------------------------------|
+| DATASOURCE       | 否   | 取决于不同的源类型；如果是 MQTT 源，则为 MQTT 数据源主题名；其它源请参考相关的文档。                                          |
+| FORMAT           | 是   | 传入的数据类型，支持 "JSON" 和 "BINARY"，默认为 "JSON" 。关于 "BINARY" 类型的更多信息，请参阅 [Binary Stream](#二进制流)。  |
+| KEY              | 是   | 保留配置，当前未使用该字段。 它将用于 GROUP BY 语句。                                                          |
+| TYPE             | 是   | 源类型，如未指定，值为 "mqtt"。                                                                       |
+| StrictValidation | 是   | 针对流模式控制消息字段的验证行为。 有关更多信息，请参见 [Strict Validation](#Strict Validation)                      |
+| CONF_KEY         | 是   | 如果需要配置其他配置项，请在此处指定 config 键。 有关更多信息，请参见 [MQTT stream](../rules/sources/builtin/mqtt.md) 。 |
+| SHARED           | 是   | 是否在使用该流的规则中共享源的实例                                                                         |
+| TIMESTAMP        | 是   | 代表该事件时间戳的字段名。如果有设置，则使用此流的规则将采用事件时间；否则将采用处理时间。详情请看[时间戳管理](./windows.md#时间戳管理)。             |
+| TIMESTAMP_FORMAT | 是   | 字符串和时间格式转换时使用的默认格式。                                                                       |
 
 **示例1**
 
@@ -52,7 +52,7 @@ WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 
 该流将订阅 MQTT 主题`topic/temperature`，服务器连接使用配置文件`$ekuiper/etc/mqtt_source.yaml` 中默认部分的 server 键。
 
-- 有关更多信息，请参见 [MQTT source](../rules/sources/mqtt.md) 
+- 有关更多信息，请参见 [MQTT source](../rules/sources/builtin/mqtt.md) 
 
 **示例2**
 
@@ -69,7 +69,7 @@ demo (
 
  流将订阅 MQTT 主题 `test/`，服务器连接使用配置文件`$ekuiper/etc/mqtt_source.yaml` 中 demo 部分的设置。
 
-- 有关更多信息，请参见 [MQTT source](../rules/sources/mqtt.md) 
+- 有关更多信息，请参见 [MQTT source](../rules/sources/builtin/mqtt.md) 
 
 - 有关规则和流管理的更多信息，请参见 [规则和流 CLI docs](../operation/cli/overview.md) 
 

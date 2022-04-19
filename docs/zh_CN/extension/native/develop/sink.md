@@ -1,6 +1,6 @@
 # 目标 （Sink） 扩展
 
-eKuiper 可以将数据接收到外部系统。 eKuiper具有对  [MQTT 消息服务器](../../../rules/sinks/mqtt.md) 和 [日志目标](../../../rules/sinks/log.md)的内置接收器支持。然而， 仍然需要将数据发布到各种外部系统，包括消息传递系统和数据库等。Sink （目标）扩展正是为了满足这一要求。
+eKuiper 可以将数据接收到外部系统。 eKuiper具有对  [MQTT 消息服务器](../../../rules/sinks/builtin/mqtt.md) 和 [日志目标](../../../rules/sinks/builtin/log.md)的内置接收器支持。然而， 仍然需要将数据发布到各种外部系统，包括消息传递系统和数据库等。Sink （目标）扩展正是为了满足这一要求。
 
 ## 开发
 
@@ -8,9 +8,9 @@ eKuiper 可以将数据接收到外部系统。 eKuiper具有对  [MQTT 消息�
 
 为 eKuiper 开发 Sink （目标），是实现 [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 接口并将其导出为 golang 插件。
 
-在开始开发之前，您必须为 [golang 插件设置环境](../../overview.md#setup-the-plugin-developing-environment)。
+在开始开发之前，您必须为 [golang 插件设置环境](../overview.md#插件开发环境设置)。
 
-要开发 Sink （目标），必须实现 _Configure_ 方法。 接收器初始化后，将调用此方法。 在此方法中，将传入包含 [规则操作定义](../../../rules/overview.md#actions)中的配置映射，通常，将包含诸如外部系统的主机、端口、用户和密码之类的信息。您可以使用此映射来初始化此 Sink （目标）。
+要开发 Sink （目标），必须实现 _Configure_ 方法。 接收器初始化后，将调用此方法。 在此方法中，将传入包含 [规则操作定义](../../../rules/overview.md#目标/动作)中的配置映射，通常，将包含诸如外部系统的主机、端口、用户和密码之类的信息。您可以使用此映射来初始化此 Sink （目标）。
 
 ```go
 //Called during initialization. Configure the sink with the properties from action definition 
@@ -46,7 +46,7 @@ Collect(ctx StreamContext, data interface{}) error
 Close(ctx StreamContext) error
 ```
 
-由于 Sink （目标）本身是一个插件，因此它必须位于主程序包中。 给定 Sink （目标）结构名称为 mySink。 在文件的最后，必须将 Sink （目标）导出为以下符号。 共有 [2种类型的导出符号](../../overview.md#plugin-development)。 对于 Sink （目标）扩展，通常需要状态，因此建议导出构造函数。
+由于 Sink （目标）本身是一个插件，因此它必须位于主程序包中。 给定 Sink （目标）结构名称为 mySink。 在文件的最后，必须将 Sink （目标）导出为以下符号。 共有 [2种类型的导出符号](../overview.md#插件开发)。 对于 Sink （目标）扩展，通常需要状态，因此建议导出构造函数。
 
 ```go
 func MySink() api.Sink {
@@ -75,7 +75,7 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/M
 
 ### 使用
 
-自定义 Sink （目标）在 [动作定义](../../../rules/overview.md#actions)规定。 它的名称用作操作的键， 配置就是值。
+自定义 Sink （目标）在 [动作定义](../../../rules/overview.md#目标/动作)规定。 它的名称用作操作的键， 配置就是值。
 
 如果您开发了 Sink （目标）实现 MySink，则应该具有：
 1. 在插件文件中，将导出符号 MySink。
