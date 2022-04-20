@@ -16,7 +16,7 @@ FROM centos:7
 
 RUN yum install -y make wget git which rpm-build gcc
 
-ARG GO_VERSION=1.16.3
+ARG GO_VERSION=1.17.9
 
 RUN case $(arch) in \
         x86_64) \

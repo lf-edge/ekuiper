@@ -85,4 +85,4 @@ require (
 
 replace github.com/lf-edge/ekuiper/extensions => ./extensions
 
-go 1.16
+go 1.17
