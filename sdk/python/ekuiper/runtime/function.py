@@ -102,5 +102,8 @@ class FunctionRuntime(SymbolRuntime):
         return self.running
 
 
-def encode_reply(state: bool, arg: str):
-    return str.encode(json.dumps({'state': state, 'result': arg}))
+def encode_reply(state: bool, arg: any):
+    try:
+        return str.encode(json.dumps({'state': state, 'result': arg}))
+    except Exception:
+        return str.encode(json.dumps({'state': false, 'result': traceback.format_exc()}))
