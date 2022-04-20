@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/infra"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -249,15 +250,18 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 			result = fmt.Sprintf("Rule %s was created successfully.", r.Id)
 		}
 		go func() {
-			//Start the rule
-			rs, err := createRuleState(r)
-			if err != nil {
-				result = err.Error()
-			} else {
-				err = doStartRule(rs)
+			panicOrError := infra.SafeRun(func() error {
+				//Start the rule
+				rs, err := createRuleState(r)
 				if err != nil {
-					result = err.Error()
+					return err
+				} else {
+					err = doStartRule(rs)
+					return err
 				}
+			})
+			if panicOrError != nil {
+				logger.Errorf("Rule %s start failed: %s", r.Id, panicOrError)
 			}
 		}()
 		w.WriteHeader(http.StatusCreated)
