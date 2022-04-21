@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -112,14 +112,14 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 		for {
 			select {
 			case <-ctx.Done():
-				log.Infof("Exit subscription to edgex messagebus topic %s.", ms.tpc)
+				log.Infof("Exit subscription to mqtt messagebus topic %s.", ms.tpc)
 				return nil
 			case e1 := <-err:
 				log.Errorf("the subscription to mqtt topic %s have error %s.\n", ms.tpc, e1.Error())
 				return e1
 			case env, ok := <-messages:
 				if !ok { // the source is closed
-					log.Infof("Exit subscription to edgex messagebus topic %s.", ms.tpc)
+					log.Infof("Exit subscription to mqtt messagebus topic %s.", ms.tpc)
 					return nil
 				}
 				msg, ok := env.(pahoMqtt.Message)
