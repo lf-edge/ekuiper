@@ -74,7 +74,7 @@ If you get stuck, check out our community support resources.
 - Mail to eKuiper help [mail list](mailto:ekuiper+help@lists.lfedge.org).
 - Join WeChat group, scan the below QR code and mark "eKuiper". 
   
-  <img src="../wechat.png" alt="drawing" width="200"/>
+  <img src="./wechat.png" alt="drawing" width="200"/>
 
 ## Contribute
 
