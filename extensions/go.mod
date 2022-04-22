@@ -13,11 +13,6 @@ require (
 	github.com/taosdata/driver-go/v2 v2.0.0
 )
 
-require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/mattn/go-pointer v0.0.0-20190911064623-a0a44394634f // indirect
-	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
-)
+require gopkg.in/yaml.v2 v2.4.0 // indirect
 
 replace github.com/lf-edge/ekuiper => ../
