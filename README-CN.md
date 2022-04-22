@@ -82,7 +82,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 ## 贡献
 
-感谢您的贡献！请参阅 [CONTRIBUTING.md](./docs/CONTRIBUTING.md) 获取详细信息。
+感谢您的贡献！请参阅 [CONTRIBUTING.md](./docs/zh_CN/CONTRIBUTING.md) 获取详细信息。
 
 ## 性能测试结果
 
@@ -90,7 +90,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 - 使用 JMeter MQTT 插件来发送数据到 EMQ X 服务器，消息类似于 ``{"temperature": 10, "humidity" : 90}``， 温度与湿度的值是介于 0 ～ 100 之间的随机整数值
 - eKuiper 从 EMQ X 服务器订阅消息，并且通过 SQL 分析数据： ``SELECT * FROM demo WHERE temperature > 50 `` 
-- 分析结果通过 [文件插件](docs/zh_CN/extension/native/sinks/file.md) 写到本地的文件系统里
+- 分析结果通过 [文件插件](docs/zh_CN/rules/sinks/plugin/file.md) 写到本地的文件系统里
 
 | 设备                                                 | 每秒发送消息数 | CPU 使用        | 内存 |
 | ---------------------------------------------------- | -------------- | --------------- | ---- |
@@ -114,7 +114,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 - eKuiper 从 EdgeX ZeroMQ 消息总线订阅数据，并且使用 ``SELECT * FROM demo WHERE temperature > 50 `` 来分析数据，其中 90% 数据被规则所过滤。
 
-- 分析结果将被发送到 [nop sink](docs/zh_CN/rules/sinks/nop.md)，所有的数据都被忽略。
+- 分析结果将被发送到 [nop sink](docs/zh_CN/rules/sinks/builtin/nop.md)，所有的数据都被忽略。
 
 |                                                | 每秒发送消息数 | CPU 使用      | 内存 |
 | ---------------------------------------------- | -------------- | ------------- | ---- |
@@ -139,7 +139,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 - [开始使用](docs/zh_CN/getting_started.md) 
 
-- [参考指南](docs/zh_CN/reference.md)
+- [参考指南](docs/zh_CN/README.md)
   - [安装与操作](docs/zh_CN/operation/overview.md)
   - [命令行界面工具-CLI](docs/zh_CN/operation/cli/overview.md)
   - [eKuiper SQL参考](docs/zh_CN/sqls/overview.md)

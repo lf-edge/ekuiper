@@ -2,7 +2,7 @@
 	"cn": [
 		{
 			"title": "概要",
-			"path": "reference"
+			"path": "./"
 		},
 		{
 			"title": "快速开始",
@@ -512,7 +512,7 @@
 	"en": [
 		{
 			"title": "Home",
-			"path": "reference"
+			"path": "./"
 		},
 		{
 			"title": "Getting Started",

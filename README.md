@@ -74,7 +74,7 @@ Weekly community meeting at Friday 10:30AM GMT+8:
 - [Meeting minutes](https://wiki.lfedge.org/display/EKUIPER/Weekly+Development+Meeting)
 
 ## Contributing
-Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for more information.
+Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en_US/CONTRIBUTING.md) for more information.
 
 ## Performance test result
 
@@ -82,7 +82,7 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/CO
 
 - Using JMeter MQTT plugin to send simulation data to EMQ X Broker, such as: ``{"temperature": 10, "humidity" : 90}``, the value of temperature and humidity are random integer between 0 - 100.
 - eKuiper subscribe from EMQ X Broker, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50 `` 
-- The analysis result are wrote to local file by using [file sink plugin](docs/en_US/extension/native/sinks/file.md).
+- The analysis result are wrote to local file by using [file sink plugin](docs/en_US/rules/sinks/plugin/file.md).
 
 | Devices                                        | Message # per second | CPU usage     | Memory usage |
 | ---------------------------------------------- | -------------------- | ------------- | ------------ |
@@ -106,7 +106,7 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/CO
 
 - eKuiper subscribe from EdgeX ZeroMQ message bus, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50``. 90% of data will be filtered by the rule.
 
-- The analysis result are sent to [nop sink](docs/en_US/rules/sinks/nop.md), all of the result data will be ignored.
+- The analysis result are sent to [nop sink](docs/en_US/rules/sinks/builtin/nop.md), all of the result data will be ignored.
 
 |                                                | Message # per second | CPU usage     | Memory usage |
 | ---------------------------------------------- | -------------------- | ------------- | ------------ |
@@ -131,7 +131,7 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/CO
 
 - [Getting started](docs/en_US/getting_started.md) 
 
-- [Reference guide](docs/en_US/reference.md)
+- [Reference guide](docs/en_US/README.md)
   - [Install and operation](docs/en_US/operation/overview.md)
   - [Command line interface tools - CLI](docs/en_US/operation/cli/overview.md)
   - [eKuiper SQL reference](docs/en_US/sqls/overview.md)
