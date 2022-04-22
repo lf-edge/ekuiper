@@ -112,6 +112,13 @@ func (f *PortableFunc) Exec(args []interface{}, ctx api.FunctionContext) (interf
 	if err != nil {
 		return err, false
 	}
+	if !fr.State {
+		if fr.Result != nil {
+			return fmt.Errorf("%s", fr.Result), false
+		} else {
+			return nil, false
+		}
+	}
 	return fr.Result, fr.State
 }
 

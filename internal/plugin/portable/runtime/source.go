@@ -104,6 +104,8 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 			case <-ctx.Done():
 				ctx.GetLogger().Info("stop source")
 				return
+			default:
+				continue
 			}
 		case nil:
 			// do nothing
