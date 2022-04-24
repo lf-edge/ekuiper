@@ -52,8 +52,7 @@ eKuiper is designed to run in edge side either in edge gateway or edge device wi
 - Cross CPU and OS support: X86, ARM and PPC CPU arch; Linux distributions, OpenWrt Linux, macOS and Docker
 - Connect to different data source:MQTT, EdgeX, HTTP and file etc
 - SQL analytics: ANSI SQL queries for quick IoT data analytics
-- Sink to different destination: MQTT, EdgeX, HTTP, log, file and InfluxDB etc
-- Flexible approach to deploy analytic applications: Text-based rules for business logic implementation and deployment through rest-api
+- Sink to different destination: MQTT, EdgeX, HTTP, log, file and databases etc
+- Flexible approach to deploy analytic applications: Text-based rules for business logic implementation and deployment through REST API
 - Machine learning: Integrate machine learning algorithms and run against streaming data
 - Highly extensible: Python and Go language extension SDK for source, sink and function
-

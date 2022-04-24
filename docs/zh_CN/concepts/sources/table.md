@@ -1,17 +1,17 @@
-# Table
+# 表
 
-In eKuiper, a table is a snapshot of the source data. In contrast to the common static tables that represent batch data, eKuiper tables can change over time.
+在 eKuiper 中，表是源数据在当前时间的快照。相比于普通的数据库表，eKuiper 中的表会随着时间而变化。
 
-The source for table can be either bounded or unbounded. For bounded source table, the content of the table is static. For unbounded table, the content of the table is dynamic.
+表的数据源既可以是无界的也可以是有界的。对于有界数据源来说，其表的内容为静态的。若表的数据源为无界数据流，则其内容会动态变化。
 
-## Table Updates
+## 表内容更新
 
-Currently, the table update in eKuiper is append-only. Users can specify the properties to limit the table size to avoid too much memory consumption.
+当前，表的内容更新仅支持追加。用户创建表时，可以指定参数限制表的大小，防止占用过多内存。
 
-## Table Usages
+## 表的使用
 
-Table cannot be used standalone in a rule. It is usually used to join with streams. It can be used to enrich stream data or as a switch for calculation.
+表不能在规则中单独使用，必须与流搭配，通常用于与流进行连接。表可用于补全流数据或作为计算的开关。
 
-## More Readings
+## 更多信息
 
-- [Table Reference](../../sqls/tables.md)
+- [表用法](../../sqls/tables.md)

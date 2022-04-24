@@ -1,59 +1,58 @@
-# What is eKuiper
+# 什么是eKuiper
 
-LF Edge eKuiper is an edge lightweight IoT data analytics and stream processing engine. It is a universal edge computing service or middleware designed for resource constrained edge gateways or devices. 
+LF Edge eKuiper 是物联网数据分析和流式计算引擎。它是一个通用的边缘计算服务或中间件，为资源有限的边缘网关或设备而设计。
 
-One goal of eKuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  eKuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
+eKuiper 设计的一个主要目标就是将在云端运行的实时流式计算框架（比如 [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) 和 [Apache Flink](https://flink.apache.org) 等）迁移到边缘端。eKuiper 参考了上述云端流式处理项目的架构与实现，结合边缘流式数据处理的特点，采用了编写基于``源 (Source)``，``SQL (业务逻辑处理)``, ``目标 (Sink)`` 的规则引擎来实现边缘端的流式数据处理。
 
-## Why eKuiper
+## 为什么选择eKuiper
 
-In the IoT era, companies in manufacturing, oil and gas, and transportation, as well as those architecting smart cities and smart buildings keep producing billions of streaming data. The data are massive, continuous and somehow "useless" if they are not analyzed. It is nearly impossible to deal with the streaming data by the traditional batch processing due to the data amount and latency requirements. Stream processing is leveraged to analyze streaming data, and it is becoming even more important in the edge side because the requirements of latency, data security and saving bandwidth cost.
+在物联网时代，制造业、石油和天然气、运输业的公司，以及那些构建智能城市和智能建筑的公司不断产生数十亿的流媒体数据。这些数据是海量的、连续的，如果不对其进行分析，难以发掘数据的价值。由于数据量和延迟要求，用传统的批处理方法处理流数据几乎是不可能的。流处理被用来分析流数据，而且由于延迟、数据安全和节省带宽成本的要求，流处理在边缘侧变得更加重要。
 
-To address these challenges, eKuiper offers a stream processing engine designed for edge computing with these advantages:
+为了应对这些挑战，eKuiper提供了一个专为边缘计算设计的流处理引擎，具有以下优势：
 
-1. Low latency: Streaming process near to device generating data and quickly responds to system based on result.
-2. More data security: Keep private data in-house without sending over Internet, reduce risk of data breach.
-3. Less bandwidth usage: Less bandwidth usage.
-4. Simplicity: Use SQL to compose the business logic.
+1. 低延时。流处理过程靠近产生数据的设备，并根据结果迅速对系统做出反应。
+2. 数据更安全。将私人数据保存在内部，无需通过互联网发送，减少数据泄露的风险。
+3. 更少的带宽使用。减少带宽的使用。
+4. 简单。使用SQL来组成业务逻辑。
 
-## Use scenarios
+## 使用场景
 
-It can be run at various IoT edge use scenarios, some common usage scenarios are listed below:
+它可以在各种物联网边缘使用场景中运行，一些常见的使用场景如下。
 
-- Real-time processing of production line data in the IIoT
-- Gateway of Connected Vehicle analyze the data from data-bus in real time
-- Real-time analysis of urban facility data in smart city scenarios. 
+- IIoT 中生产线数据的实时处理。
+- 车联网的网关实时分析数据总线的数据。
+- 智慧城市场景中城市设施数据的实时分析。
 
-The use cases of eKuiper rules include:
+eKuiper规则的使用案例包括。
 
-- Data transformation pipeline: Form a pipeline to transform data format and do calculation between external data sources like mqtt to another external data sink/consumer.
-- Realtime analytic and aggregation: Do calculation near real time. Aggregate data and calculate within continuous time window.
-- Data enrich: Join the streaming data with table to enrich the information.
-- Abnormal detect and alert: Continuous detect abnormal data and trigger alert.
-- Binary processing: Processing binary data such as image and audio. Typical scenario includes auto image thumbnail and image resizing etc.
-- Continuous AI infer: Leverage mainstream AI framework to infer streaming data by pre-trained models.
+- 数据转换管道。形成一个管道来转换数据格式，并在外部数据源（如 mqtt ）和另一个外部数据输出/消费者之间做计算。
+- 实时分析和聚合。做近乎实时的计算。在连续的时间窗口内聚集数据并进行计算。
+- 流批结合的数据补全。将流媒体数据与表格结合起来，以丰富信息。
+- 异常检测和警报：连续检测异常数据并触发警报。
+- 二进制处理。处理二进制数据，如图像和音频。典型场景包括自动生成图像缩略图和图像调整大小等。
+- 自动人工智能推断。利用主流的人工智能框架，通过预先训练的模型来推断流数据。
 
-## Computing components
+## 计算组件
 
-In eKuiper, a computing job is presented as a [rule](rules.md). The rule defines the streaming data sources as the input, the computing logic by SQL and the sinks/actions as the output. 
+在eKuiper中，一项计算工作以[规则]（rules.md）的形式呈现。该规则将流数据源定义为输入，通过SQL定义计算逻辑，将动作定义为输出。
 
-Once a rule is defined, it will run continuously. It will keep fetching data from the source, calculate according to the SQL logic and trigger the actions with the result. 
+一旦定义了一个规则，它将持续运行。它将不断从源头获取数据，根据SQL逻辑进行计算，并根据结果触发行动。
 
-## How to submit a computing job
+## 如何提交一个计算任务
 
-The eKuiper is a long-running service with multiple computing jobs aka. rules running simultaneously. Users can submit and manage the rules through [REST API](../operation/restapi/overview.md), [CLI](../operation/cli/overview.md) and [management UI](../operation/manager-ui/overview.md).
+eKuiper是一个长期运行的服务，有多个计算作业（规则）同时运行。用户可以通过 [REST API](../operation/restapi/overview.md) 、[命令行](../operation/cli/overview.md)和[管理控制台界面](../operation/manager-ui/overview.md)提交和管理这些规则。
 
-## Where to deploy
+## 部署平台
 
-eKuiper is designed to run in edge side either in edge gateway or edge device with more than 128MB memory. There is no harm to run in cloud side. However, eKuiper can only run in single instance mode until now.
+eKuiper被设计为在边缘侧运行，可部署在边缘网关或者在内存超过 128MB 的边缘设备上。在云端运行也无妨。目前，eKuiper只能以单实例模式运行。
 
-## Key Features
+## 主要特点
 
-- Lightweight and high efficiency: Optimized for resource constraint devices with high throughput processing
-- Cross CPU and OS support: X86, ARM and PPC CPU arch; Linux distributions, OpenWrt Linux, macOS and Docker
-- Connect to different data source:MQTT, EdgeX, HTTP and file etc
-- SQL analytics: ANSI SQL queries for quick IoT data analytics
-- Sink to different destination: MQTT, EdgeX, HTTP, log, file and InfluxDB etc
-- Flexible approach to deploy analytic applications: Text-based rules for business logic implementation and deployment through rest-api
-- Machine learning: Integrate machine learning algorithms and run against streaming data
-- Highly extensible: Python and Go language extension SDK for source, sink and function
-
+- 轻量高效。针对资源紧张的设备进行优化，具有高吞吐量的处理能力
+- 跨 CPU 和操作系统支持。X86、ARM 和 PPC CPU架构；支持各种 Linux 发行版、OpenWrt Linux、MacOS 和 Docker 等。
+- 连接到不同的数据源：MQTT、EdgeX、HTTP 和文件等。
+- SQL分析。用于快速物联网数据分析的 ANSI SQL 查询
+- 结果发送到不同的目的地。MQTT、EdgeX、HTTP、日志、文件和各种数据库等。
+- 灵活的方法来部署分析应用程序。基于文本的业务逻辑实施规则，并通过 REST API进行部署。
+- 机器学习。集成机器学习算法并针对流式数据运行。
+- 高度的可扩展性。Python 和 Go 语言扩展 SDK 用于自定义源、动作和函数扩展。

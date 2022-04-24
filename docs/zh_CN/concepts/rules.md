@@ -1,19 +1,19 @@
-# Rules
+# 规则
 
-Each rule represents a computing job to run in eKuiper. It defines the continuous streaming data source as the input, the computing logic and the result actions as the output.
+每条规则都代表了在 eKuiper 中运行的一项计算工作。它定义了连续流数据源作为输入，计算逻辑和结果 sink 作为输出。
 
-## Rule Lifecycle
+## 规则生命周期
 
-Currently, eKuiper only supports stream processing rule, which means that at lease one of the rule source must be a continuous stream. Thus, the rule will run continuously once started and only stopped if the user send stop command explicitly. The rule may stop abnormally for errors or the eKuiper instance exits.
+目前，eKuiper 只支持流处理规则，这意味着至少有一个规则源必须是连续流。规则一旦启动就会连续运行，只有在用户明确发送停止命令时才会停止。规则可能会因为错误或 eKuiper 实例退出而异常停止。
 
-## Rules Relationship
+## 规则关系
 
-It is common to run multiple rules simultaneously. As eKuiper is a single instance process, the rules are running in the same memory space. However, there are separated in the runtime and the error in one rule should not affect others. Regarding workload, all rules share the same hardware resource. Each rule can specify the operator buffer to limit the processing rate to avoid taking all resources.
+同时运行多个规则是很常见的。由于 eKuiper 是一个单一的实例进程，这些规则在同一个内存空间中运行。规则在运行时上是分开的，一个规则的错误不应该影响其他规则。关于工作负载，所有的规则都共享相同的硬件资源。每条规则可以指定算子缓冲区，以限制处理速度，避免占用所有资源。
 
-## Rule Pipeline
+## 规则流水线
 
-Multiple rules can form a processing pipeline by specifying a joint point in sink/source. For example, the first rule produce the result to a topic in memory sink and the other rule subscribe to that topic in its memory source. Besides the pair of memory sink/source, users can also use mqtt or other sink/source pair to connect rules.
+多个规则可以通过指定 sink /源的联合点形成一个处理管道。例如，第一条规则在内存 sink 中产生结果，其他规则在其内存源中订阅该主题。除了一对内存 sink /源，用户还可以使用 mqtt 或其他 sink /源对来连接规则。
 
-## More Readings
+## 参考阅读
 
-- [Rule Reference](../rules/overview.md)
+- [规则参考](../rules/overview.md)

@@ -1,31 +1,30 @@
-# Stream Processing
+# 流式处理
 
-Streaming data is a sequence of data elements made available over time. Stream processing is the processing of streaming data in motion. Unlike batch processing, streaming data is processed one at a time once it is produced.
+流数据是随着时间的推移而产生的数据元素序列。流处理是对流数据的处理。与批处理不同，流数据会在产生后立即被逐一处理。
 
-## Streaming Characteristic
+## 流处理的特点
 
-Stream processing has the below characteristics:
+流处理具有以下特点。
 
-- Unbounded data: streaming data is a type of ever-growing, essentially infinite data set which cannot be operated as a whole. 
-- Unbounded data processing: As applying to unbounded data, the stream processing itself is also unbounded. The workload can distribute evenly across time compared to batch processing.
-- Low-latency, near real-time: stream processing can process data once it is produced to get the result in a very low latency.
+- 无界数据：流数据是一种不断增长的、无限的数据集，不能作为一个整体来操作。
+- 无界的数据处理：由于适用于无界数据，流处理本身也是无界的。与批处理相比，工作负载可以均匀地分布在不同的时间。
+- 低延迟、近实时：流处理可以在数据产生后就进行处理，以极低的延迟获得结果。
 
-Stream processing unifies applications and analytics. This simplifies the overall infrastructure, because many systems can be built on a common architecture, and also allows a developer to build applications that use analytical results to respond to insights in the data to take action–directly.
+流处理将应用和分析统一起来。这简化了整个基础设施，因为许多系统可以建立在一个共同的架构上，也允许开发人员建立应用程序，使用分析结果来响应数据中的洞察力，以采取行动。
 
-## Edge Stream Processing
+## 边缘流处理
 
-On the edge side, the majority of data are born as continuous streams such as sensor events. With the wide application of IoT, more and more edge computing nodes need to access the cloud network and generate huge amount of data. In order to reduce the communication cost, reduce the data volume of data on the cloud, and at the same time improve the real-time data processing to achieve the purpose of local timely response and also local timely data processing in case of network disconnection, it is necessary to introduce real-time stream processing at the edge.
+在边缘侧，大部分数据都是以连续流的形式诞生，如传感器事件等。随着物联网的广泛应用，越来越多的边缘计算节点需要访问云网络并产生大量的数据。为了降低通信成本，减少云端的数据量，同时提高数据处理的实时性，达到本地及时响应的目的，同时在网络断开的情况下进行本地及时数据处理，有必要在边缘引入实时流处理。
 
-## Stateful Stream Processing
+## 有状态的流处理
 
-Stateful stream processing is a subset of stream processing in which the computation maintains contextual state. Some examples of stateful stream processing:
+有状态的流处理是流处理的一个子集，其中的计算保持着上下文状态。有状态流处理的例子包括：
 
-- When aggregating events to calculate sum, count or average values.
-- When detecting event changes.
-- When searching for a pattern across a series of events.
+- 聚合事件以计算总和、计数或平均值时。
+- 检测事件的变化。
+- 在一系列事件中搜索一个模式。
 
-The state information can be found or managed by:
+状态信息可以通过以下方式找到或管理。
 
-- [Windows](./windowing.md)
-- State API
-
+- [窗口](./windowing.md)
+- [状态API](../../extension/native/overview.md#状态存储)

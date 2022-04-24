@@ -10,7 +10,7 @@ Stream processing has the below characteristics:
 - Unbounded data processing: As applying to unbounded data, the stream processing itself is also unbounded. The workload can distribute evenly across time compared to batch processing.
 - Low-latency, near real-time: stream processing can process data once it is produced to get the result in a very low latency.
 
-Stream processing unifies applications and analytics. This simplifies the overall infrastructure, because many systems can be built on a common architecture, and also allows a developer to build applications that use analytical results to respond to insights in the data to take action–directly.
+Stream processing unifies applications and analytics. This simplifies the overall infrastructure, because many systems can be built on a common architecture, and also allows a developer to build applications that use analytical results to respond to insights in the data to take action directly.
 
 ## Edge Stream Processing
 
@@ -27,5 +27,5 @@ Stateful stream processing is a subset of stream processing in which the computa
 The state information can be found or managed by:
 
 - [Windows](./windowing.md)
-- State API
+- [State API](../../extension/native/overview.md#state-storage)
 
