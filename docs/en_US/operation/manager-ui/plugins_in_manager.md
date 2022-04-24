@@ -63,7 +63,7 @@ The configuration parameters of Source metadata are mainly consist of two parts:
 
 Describe the basic information of the plugin, including plug-in author, help file, description, etc. All attributes support multi-language description. After the plugin is installed, when the stream type is selected on the stream management page of the management console, the information defined in the plugin metadata will be displayed. After the plugin is selected, a link to the help document defined by the metadata will be displayed on the interface.
 
-![plugin abouot](resources/source_about.png)
+![plugin abouot](./resources/source_about.png)
 
 **properties**
 
@@ -71,11 +71,11 @@ Describe the configurable attribute information of the plugin, including paramet
 
 On the stream management page of the management console, click `Source Configuration` to expand any source, and all configuration groups of metadata can be displayed.
 
-![plugin conf group](resources/source_confkey.png)
+![plugin conf group](./resources/source_confkey.png)
 
 Click any configuration group to view the configuration group parameters. Click the add icon to enter the parameter configuration page as shown below. The displayed name and control information of parameter configuration come from the definition of metadata JSON file.
 
-![source configure](resources/source_conf.png)
+![source configure](./resources/source_conf.png)
 
 **Sink**
 
@@ -87,19 +87,19 @@ The configuration parameters of Sink metadata mainly consist of two parts:
 
 Describe the basic information of the plugin, including plugin author, help file, description, etc. All attributes support multi-language description. After the plugin is installed, on the rule creation page of the management console, click the `add` button in the action module, and click the drop-down box in the pop-up window to select sink. The information defined in the plugin metadata will be listed in the drop-down box.
 
-![sink about](resources/sink_about.png)
+![sink about](./resources/sink_about.png)
 
 **properties**
 
 Describe the configurable attribute information of the plugin, including parameter information and how to display on the interface. Unlike Source, the attributes of Sink are not stored in the configuration file, but are configured when the rule is created. In the corresponding metadata configuration, it no longer has the concept of configuration group for Sink. On the rule creation page of the management console, in the pop-up window of adding action , after selecting the plugin, the help document link and the attributes defined in the metadata will be displayed. It is worth noting that Sink has some [common attributes](../../rules/overview.md#sinksactions), which will be displayed in all sinks.
 
-![sink config](resources/sink_conf.png)
+![sink config](./resources/sink_conf.png)
 
 **Functions**
 
 For detailed configuration of Function metadata, please refer to [sink metadata configuration](../../extension/native/develop/overview.md#functions-metadata-file-format). Among them, the `about` part is exactly the same as Source and Sink. The `function` part is configured with the name, examples and prompt information of the function, which are used for code prompting in the SQL editor of the new rule.
 
-![function about](resources/function_about.png)
+![function about](./resources/function_about.png)
 
 ### Plugin compilation and packaging format
 
