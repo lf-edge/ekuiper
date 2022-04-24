@@ -179,3 +179,222 @@ func TestToMap(t *testing.T) {
 		}
 	}
 }
+
+func TestHadChangedValidation(t *testing.T) {
+	f, ok := builtins["had_changed"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	var tests = []struct {
+		args []ast.Expr
+		err  error
+	}{
+		{
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "foo"},
+			},
+			err: fmt.Errorf("expect more than one arg but got 1"),
+		}, {
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "foo"},
+				&ast.StringLiteral{Val: "bar"},
+				&ast.StringLiteral{Val: "baz"},
+			},
+			err: fmt.Errorf("Expect bool type for parameter 1"),
+		}, {
+			args: []ast.Expr{
+				&ast.IntegerLiteral{Val: 20},
+				&ast.BooleanLiteral{Val: true},
+				&ast.StringLiteral{Val: "baz"},
+			},
+			err: fmt.Errorf("Expect bool type for parameter 1"),
+		}, {
+			args: []ast.Expr{
+				&ast.FieldRef{
+					StreamName: "demo",
+					Name:       "a",
+					AliasRef:   nil,
+				},
+				&ast.BooleanLiteral{Val: true},
+				&ast.StringLiteral{Val: "baz"},
+			},
+			err: nil,
+		},
+	}
+	for i, tt := range tests {
+		err := f.val(nil, tt.args)
+		if !reflect.DeepEqual(err, tt.err) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, err, tt.err)
+		}
+	}
+}
+
+func TestHadChangedExec(t *testing.T) {
+	f, ok := builtins["had_changed"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
+	var tests = []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				"foo",
+				"bar",
+				"baz",
+			},
+			result: fmt.Errorf("first arg is not a bool but got foo"),
+		}, { // 1
+			args: []interface{}{
+				"foo",
+				"bar",
+			},
+			result: fmt.Errorf("first arg is not a bool but got foo"),
+		}, { // 2
+			args: []interface{}{
+				true,
+				"bar",
+				20,
+			},
+			result: true,
+		}, { // 3
+			args: []interface{}{
+				true,
+				"baz",
+				44,
+			},
+			result: true,
+		}, { // 4
+			args: []interface{}{
+				true,
+				"baz",
+				44,
+			},
+			result: false,
+		}, { // 5
+			args: []interface{}{
+				true,
+				"foo",
+				44,
+			},
+			result: true,
+		}, { // 6
+			args: []interface{}{
+				true,
+				"foo",
+				45,
+			},
+			result: true,
+		}, { // 7
+			args: []interface{}{
+				true,
+				"foo",
+				45,
+			},
+			result: false,
+		}, { // 8
+			args: []interface{}{
+				true,
+				"baz",
+				44,
+			},
+			result: true,
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}
+
+func TestHadChangedExecIgnoreNull(t *testing.T) {
+	f, ok := builtins["had_changed"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
+	var tests = []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				"foo",
+				"bar",
+				"baz",
+			},
+			result: fmt.Errorf("first arg is not a bool but got foo"),
+		}, { // 1
+			args: []interface{}{
+				"foo",
+				"bar",
+			},
+			result: fmt.Errorf("first arg is not a bool but got foo"),
+		}, { // 2
+			args: []interface{}{
+				false,
+				"bar",
+				20,
+			},
+			result: true,
+		}, { // 3
+			args: []interface{}{
+				false,
+				"baz",
+				nil,
+			},
+			result: true,
+		}, { // 4
+			args: []interface{}{
+				false,
+				"baz",
+				44,
+			},
+			result: true,
+		}, { // 5
+			args: []interface{}{
+				false,
+				nil,
+				44,
+			},
+			result: false,
+		}, { // 6
+			args: []interface{}{
+				false,
+				"baz",
+				44,
+			},
+			result: false,
+		}, { // 7
+			args: []interface{}{
+				true,
+				nil,
+				nil,
+			},
+			result: false,
+		}, { // 8
+			args: []interface{}{
+				true,
+				"baz",
+				44,
+			},
+			result: false,
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}

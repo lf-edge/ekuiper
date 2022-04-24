@@ -512,31 +512,76 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
-	builtins["object_construct"] = builtinFunc{
+	builtins["changed_col"] = builtinFunc{
 		fType: FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			result := make(map[string]interface{})
-			for i := 0; i < len(args); i += 2 {
-				if args[i+1] != nil {
-					s, err := cast.ToString(args[i], cast.CONVERT_SAMEKIND)
+			ignoreNull, ok := args[0].(bool)
+			if !ok {
+				return fmt.Errorf("first arg is not a bool but got %v", args[0]), false
+			}
+			if ignoreNull && args[1] == nil {
+				return nil, true
+			}
+			lv, err := ctx.GetState("self")
+			if err != nil {
+				return err, false
+			}
+			if !reflect.DeepEqual(args[1], lv) {
+				err := ctx.PutState("self", args[1])
+				if err != nil {
+					return err, false
+				}
+				return args[1], true
+			}
+			return nil, true
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(2, len(args)); err != nil {
+				return err
+			}
+			if ast.IsNumericArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsStringArg(args[0]) {
+				return ProduceErrInfo(0, "boolean")
+			}
+			return nil
+		},
+	}
+	builtins["had_changed"] = builtinFunc{
+		fType: FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if len(args) <= 1 {
+				return fmt.Errorf("expect more than one arg but got %d", len(args)), false
+			}
+			ignoreNull, ok := args[0].(bool)
+			if !ok {
+				return fmt.Errorf("first arg is not a bool but got %v", args[0]), false
+			}
+			result := false
+			for i := 1; i < len(args); i++ {
+				v := args[i]
+				k := strconv.Itoa(i)
+				if ignoreNull && v == nil {
+					continue
+				}
+				lv, err := ctx.GetState(k)
+				if err != nil {
+					return fmt.Errorf("error getting state for %s: %v", k, err), false
+				}
+				if !reflect.DeepEqual(v, lv) {
+					result = true
+					err := ctx.PutState(k, v)
 					if err != nil {
-						return fmt.Errorf("key %v is not a string", args[i]), false
+						return fmt.Errorf("error setting state for %s: %v", k, err), false
 					}
-					result[s] = args[i+1]
 				}
 			}
 			return result, true
 		},
 		val: func(_ api.FunctionContext, args []ast.Expr) error {
-			if len(args)%2 != 0 {
-				return fmt.Errorf("the args must be key value pairs")
+			if len(args) <= 1 {
+				return fmt.Errorf("expect more than one arg but got %d", len(args))
 			}
-			for i, arg := range args {
-				if i%2 == 0 {
-					if ast.IsNumericArg(arg) || ast.IsTimeArg(arg) || ast.IsBooleanArg(arg) {
-						return ProduceErrInfo(i, "string")
-					}
-				}
+			if ast.IsNumericArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsStringArg(args[0]) {
+				return ProduceErrInfo(0, "bool")
 			}
 			return nil
 		},
