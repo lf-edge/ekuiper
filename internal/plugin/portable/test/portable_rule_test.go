@@ -142,7 +142,7 @@ func TestSourceAndFunc(t *testing.T) {
 			if compareMetrics(tp, tt.M) {
 				cancel()
 				// need to wait for file results
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(500 * time.Millisecond)
 				results := getResults(fmt.Sprintf("cache%d", i+1))
 				fmt.Printf("get results %v\n", results)
 				time.Sleep(10 * time.Millisecond)
