@@ -1,6 +1,6 @@
 # Sources
 
-Sources are used to read data from external systems. The source can be unbounded streaming data named stream or bounded batch data named table. When using in a rule, at least one of  the source must be a stream.
+Sources are used to read data from external systems. The source can be unbounded streaming data named stream or bounded batch data named table. When using in a rule, at least one of the source must be a stream.
 
 The source basically defines how to connect to an external resource and fetch data from the resource in a streaming way. After fetching the data, common tasks like decode and transform by schema can be done by setting properties.
 
@@ -8,7 +8,7 @@ The source basically defines how to connect to an external resource and fetch da
 
 When define a source stream or table, it actually creates the logical definition instead of a physical running data input. The logical definition can then be used in rule's SQL in the `from` clause. The source only starts to run when any of the rules refer to it has started.
 
-By default, if multiple rules refer to the same source. Each rule will have its own, standalone source instance from other rules so that the rules are total separated. To boost performance when users want to process the same data across multiple rules, they can define the source as shared. Then the rules refer to the same shared source will share the same running source instance.
+By default, if multiple rules refer to the same source, each rule will have its own, standalone source instance from other rules so that the rules are total separated. To boost performance when users want to process the same data across multiple rules, they can define the source as [shared](../../sqls/streams.md#share-source-instance-across-rules). Then the rules refer to the same shared source will share the same running source instance.
 
 ## Decode
 

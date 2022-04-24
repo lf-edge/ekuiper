@@ -1,25 +1,25 @@
-# Available Sources
+# 可用的源
 
-In the eKuiper source code, there are built-in sources and sources in extension.
+在 eKuiper 源代码中，有内置源和扩展源。
 
-## Built-in Sources
+## 内置源
 
-Users can directly use the built-in sources in the standard eKuiper instance. The list of built-in sources are:
+用户可以直接使用标准 eKuiper 实例中的内置源。内置源的列表如下。
 
-- [Mqtt source](./builtin/mqtt.md): read data from mqtt topics.
-- [Neuron source](./builtin/neuron.md): read data from the local neuron instance.
-- [EdgeX source](./builtin/edgex.md): read data from EdgeX foundry.
-- [Http pull source](./builtin/http_pull.md): source to pull data from http servers.
-- [Memory source](./builtin/memory.md): source to read from eKuiper memory topic to form rule pipelines.
-- [File source](./builtin/file.md): source to read from file, usually used as tables.
+- [Mqtt source](./builtin/mqtt.md)：从mqtt主题读取数据。
+- [Neuron source](./builtin/neuron.md): 从本地 Neuron 实例读取数据。
+- [EdgeX source](./builtin/edgex.md): 从 EdgeX foundry 读取数据。
+- [Http pull source](./builtin/http_pull.md)：从http服务器中拉取数据。
+- [Memory source](./builtin/memory.md)：从 eKuiper 内存主题读取数据以形成规则管道。
+- [File source](./builtin/file.md)：从文件中读取数据，通常用作表格。
 
-## Predefined Source Plugins
+## 预定义的源插件
 
-We have developed some official source plugins. These plugins can be found in eKuiper's source code and users need to build them manually. Please check each source about how to build and use.
+我们已经开发了一些官方的源码插件。这些插件可以在 eKuiper 的源代码中找到，用户需要手动构建它们。关于如何构建和使用，请查看每个源的文档。
 
-Additionally, these plugins have pre-built binaries for the mainstream cpu architecture such as AMD or ARM. The pre-built plugin hosted in `https://packages.emqx.net/kuiper-plugins/$version/$os/sources/$type_$arch.zip`. For example, to get zmq source for debian amd64, install it from `https://packages.emqx.net/kuiper-plugins/1.4.4/debian/sources/zmq_amd64.zip`.
+这些插件有预编译的二进制文件，用于主流的cpu架构，如AMD或ARM。预编译建的插件托管在 `https://packages.emqx.net/kuiper-plugins/$version/$os/sources/$type_$arch.zip` 。例如，要获得 debian amd64 的 zmq 源插件，请从 `https://packages.emqx.net/kuiper-plugins/1.4.4/debian/sources/zmq_amd64.zip` 安装。
 
-The list of predefined source plugins:
+预定义的源插件列表：
 
-- [Zero MQ source](./plugin/zmq.md): read data from zero mq.
-- [Random source](./plugin/random.md): a source to generate random data for testing.
+- [Zero MQ source](./plugin/zmq.md)：从Zero MQ读取数据。
+- [Random source](./plugin/random.md): 一个生成随机数据的源，用于测试。

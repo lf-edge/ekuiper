@@ -1,30 +1,31 @@
-# Sources
+# 源 Sources
 
-Sources are used to read data from external systems. The source can be unbounded streaming data named stream or bounded batch data named table. When using in a rule, at least one of  the source must be a stream.
+源（source）用于从外部系统中读取数据。数据源既可以是无界的流式数据，即流；也可以是有界的批量数据，即表。在规则中使用时，至少有一个源必须为流。
 
-The source basically defines how to connect to an external resource and fetch data from the resource in a streaming way. After fetching the data, common tasks like decode and transform by schema can be done by setting properties.
+源定义了如何连接到外部资源，然后采用流式方式获取数据。获取数据后，通常源还会根据定义的数据模型进行数据解码和转换。
 
-## Define and Run
+## 定义和运行
 
-When define a source stream or table, it actually creates the logical definition instead of a physical running data input. The logical definition can then be used in rule's SQL in the `from` clause. The source only starts to run when any of the rules refer to it has started.
+在 eKuiper 中，定义数据源的流或者表之后，系统实际上只是创建了一个数据源的逻辑定义而非真正物理运行的数据输入。此逻辑定义可在多个规则的 SQL 的 `from` 子句中使用。只有当使用了该定义的规则启动之后，数据流才会真正运行。
 
-By default, if multiple rules refer to the same source. Each rule will have its own, standalone source instance from other rules so that the rules are total separated. To boost performance when users want to process the same data across multiple rules, they can define the source as shared. Then the rules refer to the same shared source will share the same running source instance.
+默认情况下，多个规则使用同一个源的情况下，每个规则会启动一个独立的源的运行时，与其他规则中的同名源完全隔离。若多个规则需要使用完全相同的输入数据或者提高性能，源可定义为[共享源](../../sqls/streams.md#共享源实例)，从而在多个规则中共享同一个实例。
 
-## Decode
+## 解码
 
-Users can define the format to decode by setting `format` property. Currently, only `json` and `binary` format are supported. For other formats, customized source must be developed.
+用户可以在创建源时通过指定 `format` 属性来定义解码方式。当前只支持 `json` 和 `binary` 两种格式。若需要支持其他编码格式，用户需要开发自定义源插件。
 
-## Schema
+## 数据结构
 
-Users can define the data schema like a common SQL table. In eKuiper runtime, the data will be validated and transformed according to the schema. To avoid conversion overhead if the data is fixed and clean or to consume unknown schema data, users can define schemaless source.
+用户可以像定义关系数据库表结构一样定义数据源的结构。在 eKuiper 的运行时中，数据会根据定义的结构进行验证和类型转换。若输入数据为预处理过的干净数据或者数据结构未知或不固定，用户可不定义数据结构，从而也可以避免数据转换的开销。
 
-## Stream & Table
+## 流和表
 
-The source defines the external system connection. When using in a rule, users can define them as stream or table according to the processing mechanism. Check [stream](stream.md) and [table](table.md) for detail.
+源定义了与外部系统的连接方式。在规则中，根据数据使用逻辑，数据源可作为流或者表使用。
+详细信息请参见[流](stream.md)和[表](table.md)。
 
-## More Readings
+## 更多信息
 
-- [Source Reference](../../rules/sources/overview.md)
+- [数据源使用参考](../../rules/sources/overview.md)
 
 
 

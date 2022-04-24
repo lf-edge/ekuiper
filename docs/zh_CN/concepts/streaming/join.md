@@ -1,10 +1,10 @@
-# Join of sources
+# 多源连接
 
-Currently, join is the only way to merge multiple sources in eKuiper. It requires a way to align multiple sources and trigger the join result.
+目前，连接是 eKuiper 中合并多个数据源的唯一方法。它需要一种方法来对齐多个来源并触发连接结果。
 
-The supported joins in eKuiper include:
+eKuiper支持的连接包括：
 
-- Join of streams: must do in a window.
-- Join of stream and table: the stream will be the trigger of join operation.
+- 多流的连接：必须在一个窗口中进行。
+- 流和表的连接：流将是连接操作的触发器。
 
-The supported join type includes LEFT, RIGHT, FULL & CROSS in eKuiper.
+eKuiper 支持的连接类型包括 LEFT, RIGHT, FULL 和 CROSS 。

@@ -1,13 +1,13 @@
-# Sinks
+# 动作
 
-Sinks are used to write data to an external system. Sinks can be used to write control data to trigger an action. Sinks can also be used to write status data and save in an external storage.
+动作是用来向外部系统写入数据的。动作可以用来写控制数据以触发一个动作，还可以用来写状态数据并保存在外部存储器中。
 
-In a rule, the sink type are used as an action. A rule can have more than one actions and the differenct actions can be the same sink type.
+一个规则可以有多个动作，不同的动作可以是同一个动作类型。
 
-## Result Encoding
+## 结果编码
 
-The sink result is a string as always. It will be encoded into json string by default. Users can change the format by setting `dataTemplate` which leverage the go template syntax to format the result into a string. For even detail control of the result format, users can develop a sink extension.
+动作的结是一个字符串。默认情况下，它将被编码为 json 字符串。用户可以通过设置`dataTemplate` 来改变格式，它利用 go 模板语法将结果格式化为字符串。为了更详细地控制结果的格式，用户可以开发一个动作扩展。
 
-## More Readings
+## 参考阅读
 
-- [Sink Reference](../rules/sinks/overview.md)
+- [动作参考](../rules/sinks/overview.md)

@@ -1,84 +1,84 @@
-# LF Edge eKuiper - An edge lightweight IoT data analytics software
+# LF Edge eKuiper - 超轻量物联网边缘数据分析软件
 
-eKuiper is an open source stream processing engine for edge computing. The open source project is hosted by [LF Edge](https://lfedge.org/).
+LF Edge eKuiper 是 Golang 实现的轻量级物联网边缘分析、流式处理开源软件，可以运行在各类资源受限的边缘设备上。eKuiper 设计的一个主要目标就是将在云端运行的实时流式计算框架（比如 [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) 和 [Apache Flink](https://flink.apache.org) 等）迁移到边缘端。eKuiper 参考了上述云端流式处理项目的架构与实现，结合边缘流式数据处理的特点，采用了编写基于`源 (Source)`，``SQL (业务逻辑处理)`, `目标 (Sink)` 的规则引擎来实现边缘端的流式数据处理。
 
-It can be run at all kinds of resource constrained edge devices. One goal of eKuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  eKuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on `Source`, `SQL (business logic)` and `Sink`, rule engine is used for developing streaming applications at edge side.
+eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物联网中对生产线数据进行实时处理；车联网中的车机对来自汽车总线数据的即时分析；智能城市场景中，对来自于各类城市设施数据的实时分析。通过 eKuiper 在边缘端的处理，可以提升系统响应速度，节省网络带宽费用和存储成本，以及提高系统安全性等。
 
 ![arch](./resources/arch.png)
 
-## Understand eKuiper
+## 理解 eKuiper
 
-Learn about eKuiper and its fundamental concepts.
+了解 eKuiper 的基本概念。
 
-- [Why eKuiper](./concepts/ekuiper.md)
-- [Stream Processing Concept](./concepts/streaming/overview.md)
-- [Rule Composition](./concepts/rules.md)
-- [Source](./concepts/sources/overview.md)
-- [Sink](./concepts/sinks.md)
-- [Rule logic by SQL](./concepts/sql.md)
-- [Extension](./concepts/extensions.md)
+- [eKuiper 是什么](./concepts/ekuiper.md)
+- [流式处理概念](./concepts/streaming/overview.md)
+- [规则及其组成](./concepts/rules.md)
+- [源 Source](./concepts/sources/overview.md)
+- [动作 Sink](./concepts/sinks.md)
+- [基于 SQL 的规则逻辑](./concepts/sql.md)
+- [扩展](./concepts/extensions.md)
 
-[View Concepts](./concepts/ekuiper.md)
+[查看概念](./concepts/ekuiper.md)
 
-## Try eKuiper
+## 快速上手
 
-Follow tutorials to learn how to use eKuiper.
+按照教程学习如何使用 eKuiper 。
 
-- [Getting started locally](./getting_started.md)
-- [Getting started in Docker](./quick_start_docker.md)
-- [Getting started by dashboard](./operation/manager-ui/overview.md)
-- [Run as EdgeX Foundry rule engine](./edgex/edgex_rule_engine_tutorial.md)
-- [Deploy by OpenYurt](./tutorials/deploy/openyurt_tutorial.md)
+- [本地快速开始](./getting_started.md)
+- [使用 docker 快速开始](./quick_start_docker.md)
+- [使用控制台界面](./operation/manager-ui/overview.md)
+- [作为 EdgeX Foundry 规则引擎运行](./edgex/edgex_rule_engine_tutorial.md)
+- [使用 OpenYurt 部署](./tutorials/deploy/openyurt_tutorial.md)
 
-[View Tutorials](./tutorials/ai/tensorflow_lite_tutorial.md)
+[查看教程](./tutorials/ai/tensorflow_lite_tutorial.md)
 
-## Look up reference information
+## 查阅参考信息
 
-Refer to the syntax and properties.
+浏览语法和属性。
 
-- [Rule Syntax](./rules/overview.md)
-- [Available Sources](./rules/sources/overview.md)
-- [Available Sinks](./rules/sinks/overview.md)
-- [Available Functions](./sqls/built-in_functions.md)
-- [SQL Reference](./sqls/overview.md)
+- [规则语法](./rules/overview.md)
+- [可用源](./rules/sources/overview.md)
+- [可用动作](./rules/sinks/overview.md)
+- [可用函数](./sqls/built-in_functions.md)
+- [SQL 语法](./sqls/overview.md)
 
-[View Reference](./sqls/overview.md)
+[查看参考](./sqls/overview.md)
 
-## Learn how to use eKuiper
+## 使用 eKuiper
 
-Learn how to create and manage rules and how to modify configurations etc.
+了解如何创建和管理规则以及修改配置等运营知识。
 
-- [Configuration](./operation/config/configuration_file.md)
+- [配置](./operation/config/configuration_file.md)
 - [Rest API](./operation/restapi/overview.md)
-- [CLI](./operation/cli/overview.md)
+- [命令行](./operation/cli/overview.md)
 
-[View Operations](./operation/overview.md)
+[查看使用指南](./operation/overview.md)
 
-## Develop extensions
+## 开发扩展
 
-Learn how to develop custom extensions.
+了解如何开发自定义扩展。
 
-- [Native go plugin development](./extension/native/develop/overview.md)
-- [Portable go plugin development](./extension/portable/go_sdk.md)
-- [Python plugin development](./extension/portable/python_sdk.md)
+- [原生 Go 插件开发](./extension/native/develop/overview.md)
+- [Portable Go 插件开发](./extension/portable/go_sdk.md)
+- [Python 插件开发](./extension/portable/python_sdk.md)
 
-[View Extension Programming](./extension/overview.md)
+[查看扩展开发](./extension/overview.md)
 
-## Get Help
+## 获取帮助
 
-If you get stuck, check out our community support resources.
+如果您遇到问题，欢迎通过以下渠道寻求社区帮助：
 
-- Open GitHub [issue](https://github.com/lf-edge/ekuiper/issues).
-- Ask in the [forum](https://askemq.com/c/ekuiper).
-- Join our [Slack](https://slack.lfedge.org/), and then join [ekuiper](https://lfedge.slack.com/archives/C024F4P7KCK) or [ekuiper-user](https://lfedge.slack.com/archives/C024F4SMEMR) channel.
-- Mail to eKuiper help [mail list](mailto:ekuiper+help@lists.lfedge.org).
-- Join WeChat group, scan the below QR code and mark "eKuiper". 
+- 创建 GitHub [issue](https://github.com/lf-edge/ekuiper/issues) 。
+- [论坛](https://askemq.com/c/ekuiper)提问。
+- 加入 [Slack](https://slack.lfedge.org/)的 [ekuiper](https://lfedge.slack.com/archives/C024F4P7KCK) 或者 [ekuiper-user](https://lfedge.slack.com/archives/C024F4SMEMR) 频道。
+- 写邮件到 ekuiper [邮件组](mailto:ekuiper+help@lists.lfedge.org)。
+- 加入微信群，扫描二维码，留言 "eKuiper"，工作人员将拉您进群。
   
   <img src="./wechat.png" alt="drawing" width="200"/>
 
-## Contribute
+## 贡献
 
-Anyone can contribute for anything, not just code.
+任何人都可以参与项目，可通过贡献代码或者文档，回答问题等任何方式加入社区。
 
-- [Edit Doc in GitHub](https://github.com/lf-edge/ekuiper/tree/master/docs)
-- [How to contribute](./CONTRIBUTING.md)
+- [编辑文档](https://github.com/lf-edge/ekuiper/tree/master/docs)
+- [如何参与](./CONTRIBUTING.md)

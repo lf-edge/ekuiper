@@ -1,10 +1,10 @@
-# Stream
+# 流
 
-A stream is the runtime form of a source in eKuiper. It must specify a source type to define how to connect to the external resource.
+在 eKuiper 中，流指的是数据源的一种运行时形态。流定义需要指定其数据源类型以定义与外部资源的连接方式。
 
-When using as a stream, the source must be unbounded. The stream acts like a trigger for the rule. Each event will trigger a calculation in the rule.
+数据源作为流使用时，源必须为无界的。在规则中，流的行为类似事件触发器。每个事件都会触发规则的一次计算。
 
-## More Readings
+## 更多信息
 
-- [Stream Reference](../../sqls/streams.md)
+- [流用法](../../sqls/streams.md)
 

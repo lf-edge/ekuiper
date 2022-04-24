@@ -91,7 +91,7 @@
 					"title": "AI 教程",
 					"children": [
 						{
-							"title": "Label image by tensorflow lite model with eKuiper native plugin",
+							"title": "使用 eKuiper 原生插件实现图像标注",
 							"path": "tutorials/ai/tensorflow_lite_tutorial"
 						}
 					]
@@ -100,19 +100,19 @@
 					"title": "EdgeX Foundry 相关教程",
 					"children": [
 						{
-							"title": "EdgeX Foundry rule engine tutorial",
+							"title": "EdgeX Foundry 规则引擎教程",
 							"path": "edgex/edgex_rule_engine_tutorial"
 						},
 						{
-							"title": "Meta function for EdgeX stream",
+							"title": "使用 EdgeX 流的 meta 函数",
 							"path": "edgex/edgex_meta"
 						},
 						{
-							"title": "Command device with EdgeX eKuiper rules enginem",
+							"title": "EdgeX 规则引擎使用 command 服务",
 							"path": "edgex/edgex_rule_engine_command"
 						},
 						{
-							"title": "EdgeX source configuration command",
+							"title": "EdgeX 源配置教程",
 							"path": "edgex/edgex_source_tutorial"
 						}
 					]
@@ -618,7 +618,7 @@
 							"path": "edgex/edgex_meta"
 						},
 						{
-							"title": "Command device with EdgeX eKuiper rules enginem",
+							"title": "Command device with EdgeX eKuiper rules engine",
 							"path": "edgex/edgex_rule_engine_command"
 						},
 						{

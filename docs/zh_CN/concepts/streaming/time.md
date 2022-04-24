@@ -1,18 +1,18 @@
-# Timely Stream Processing
+# 基于时间的流式处理
 
-Streaming data is a sequence of data over time, in which time is a intrinsic attribute of the data. In timely stream processing, time plays an important role of the computing. For example, when doing aggregations based on certain time periods (typically called windows), to define the time is significant.
+流数据是一个随时间变化的数据序列，其中时间是数据的一个固有属性。在流处理中，时间在计算中起着重要的作用。例如，在做基于某些时间段（通常称为窗口）的聚合时，定义时间的概念是很重要的。
 
-## Notion of time
+## 时间的概念
 
-There are typically two domains of time we care about:
+我们关心的时间通常有两个类型。
 
-- Event time, which is the time at which events actually occurred. Usually, the event should have a timestamp field to indicate its produced time.
-- Processing time, which is the time at which events are observed in the system.
+- 事件时间，即事件实际发生的时间。通常情况下，事件应该有一个时间戳字段来表明其产生的时间。
+- 处理时间，即在系统中观察到事件的时间。
 
-In eKuiper, both notion of time are supported.
+在eKuiper中，两种时间概念都支持。
 
-## Event time and watermark
+## 事件时间和水印
 
-A stream processor that supports event time needs a way to measure the progress of event time. For example, a window operator that builds hourly windows needs to be notified when event time has passed beyond the end of an hour, so that the operator can close the window in progress.
+一个支持事件时间的流处理器需要一种方法来衡量事件时间的进展。例如，创建一个小时的时间窗口时，内部的算子需要在事件时间超过一小时后得到通知，这样算子就可以发布正在进行的窗口。
 
-The mechanism in eKuiper to measure progress in event time is watermarks. Watermarks flow as part of the data stream and carry a timestamp t. A Watermark(t) declares that event time has reached time t in that stream, meaning that there should be no more elements from the stream with a timestamp t' <= t (i.e. events with timestamps older or equal to the watermark). In eKuiper, watermark is in rule level, meaning when reading data from multiple streams, the watermark will flow for all input streams.
+eKuiper 中衡量事件时间进展的机制是水印。水印作为数据流的一部分，带有一个时间戳 t 。一个水印（ t ）声明事件时间在该数据流中已经达到了时间 t ，意味着该数据流中不应该再有时间戳 t' <= t 的元素（即时间戳大于或等于水印的事件）。在 eKuiper 中，水印是在规则层面上的，这意味着当从多个数据流中读取数据时，水印将在所有输入流中流动。

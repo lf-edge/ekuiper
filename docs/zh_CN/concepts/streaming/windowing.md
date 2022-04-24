@@ -1,12 +1,12 @@
-# Windowing
+# 窗口
 
-As streaming data is infinite, it is impossible to process it as a whole. Windowing provides a mechanism to split the unbounded data into a continuous series of bounded data to calculate.
+由于流媒体数据是无限的，因此不可能将其作为一个整体来处理。窗口提供了一种机制，将无界的数据分割成一系列连续的有界数据来计算。
 
-In eKuiper, the built-in windowing supports:
+在eKuiper中，内置的窗口包括两种类型：
 
-- Time window: window split by time
-- Count window: window split by element count
+- 时间窗口：按时间分割的窗口
+- 计数窗口：按元素计数分割的窗口
 
-In time window, both processing time and event time are supported.
+在时间窗口中，同时支持处理时间和事件时间。
 
-For all the supported window type, please check [window functions](../../sqls/windows.md).
+对于所有支持的窗口类型，请查看[窗口函数]（.../.../sqls/windows.md）。

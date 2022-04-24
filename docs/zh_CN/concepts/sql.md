@@ -1,11 +1,11 @@
 # SQL
 
-The SQL language support in eKuiper includes Data Definition Language (DDL), Data Manipulation Language (DML) and Query Language. The SQL support in eKuiper is a subset of ANSI SQL and has some customized extensions.
+eKuiper 中的 SQL 语言支持包括数据定义语言（DDL）、数据操作语言（DML）和查询语言。eKuiper 中的 SQL 支持是 ANSI SQL 的一个子集，并有一些定制的扩展。
 
-## SQL in source definition
+## 源定义中的 SQL
 
-When create and manage stream or table source, SQL DDL and DML are used as the command payload. Check [streams](../sqls/streams.md) and [tables](../sqls/tables.md) for detail.
+当创建和管理流或表源时，SQL DDL和DML被用来作为命令的有效载荷。查看[流](../sqls/streams.md)和[表](../sqls/tables.md)以了解详情。
 
-## SQL queries in rules
+## 规则中的 SQL 查询
 
-In rules, SQL queries are used to define the business logic. Please check [sql reference](../sqls/overview.md) for detail.
+在规则中，SQL查询被用来定义业务逻辑。请查看[SQL 参考](../sqls/overview.md)了解详情。

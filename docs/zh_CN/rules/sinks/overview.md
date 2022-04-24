@@ -1,30 +1,30 @@
-# Available Sinks
+# 可用的动作
 
-In the eKuiper source code, there are built-in sinks and sinks in extension.
+在 eKuiper 源代码中，有内置的动作和扩展的动作。
 
-## Built-in Sinks
+## 内置动作
 
-Users can directly use the built-in sinks in the standard eKuiper instance. The list of built-in sinks are:
+用户可以直接使用标准 eKuiper 实例中的内置动作。内建动作的列表如下。
 
-- [Mqtt sink](./builtin/mqtt.md): sink to external mqtt broker.
-- [Neuron sink](./builtin/neuron.md): sink to the local neuron instance.
-- [EdgeX sink](./builtin/edgex.md): sink to EdgeX Foundry. This sink only exist when enabling edgex build tag.
-- [Rest sink](./builtin/rest.md): sink to external http server.
-- [Memory sink](./builtin/memory.md): sink to eKuiper memory topic to form rule pipelines.
-- [Log sink](./builtin/log.md): sink to log, usually for debug only.
-- [Nop sink](./builtin/nop.md): sink to nowhere. It is used for performance testing now.
+- [Mqtt sink](./builtin/mqtt.md)：输出到外部 mqtt 服务。
+- [Neuron sink](./builtin/neuron.md)：输出到本地的 Neuron 实例。
+- [EdgeX sink](./builtin/edgex.md)：输出到 EdgeX Foundry。此动作仅在启用 edgex 编译标签时存在。
+- [Rest sink](./builtin/rest.md)：输出到外部 http 服务器。
+- [Memory sink](./builtin/memory.md)：输出到 eKuiper 内存主题以形成规则管道。
+- [Log sink](./builtin/log.md)：写入日志，通常只用于调试。
+- [Nop sink](./builtin/nop.md)：不输出，用于性能测试。
 
-## Predefined Sink Plugins
+## 预定义的动作插件
 
-We have developed some official sink plugins. These plugins can be found in eKuiper's source code and users need to build them manually. Please check each sink about how to build and use.
+我们已经开发了一些官方的动作插件。这些插件可以在 eKuiper 的源代码中找到，用户需要手动构建它们。详细信息请查看每个动作的构建和使用方法。
 
-Additionally, these plugins have pre-built binaries for the mainstream cpu architecture such as AMD or ARM. The pre-built plugin hosted in `https://packages.emqx.net/kuiper-plugins/$version/$os/sinks/$type_$arch.zip`. For example, to get tdengine sink for debian amd64, install it from `https://packages.emqx.net/kuiper-plugins/1.4.4/debian/sinks/tdengine_amd64.zip`.
+这些插件有预编译的二进制文件，用于主流cpu架构，如AMD或ARM。预编译的插件托管在 `https：//packages.emqx.net/kuiper-plugins/$version/$os/sinks/$type_$arch.zip` 中。例如，要获得用于 debian amd64 的 tdengine 插件，请从 `https：//packages.emqx.net/kuiper-plugins/1.4.4/debian/sinks/tdengine_amd64.zip` 安装。
 
-The list of predefined sink plugins:
+预定义的动作插件列表。
 
-- [Zero MQ sink](./plugin/zmq.md): sink to zero mq.
-- [File sink](./plugin/file.md): sink to a file.
-- [InfluxDB sink](./plugin/influx.md): sink to influx db.
-- [Tdengine sink](./plugin/tdengine.md): sink to tdengine.
-- [Redis sink](./plugin/redis.md): sink to redis.
-- [Image sink](./plugin/image.md): sink to an image file. Only used to handle binary result.
+- [Zero MQ sink](./plugin/zmq.md)：输出到 Zero MQ 。
+- [File sink](./plugin/file.md)： 写入文件。
+- [InfluxDB sink](./plugin/influx.md)： 写入 Influx DB 。
+- [Tdengine sink](./plugin/tdengine.md)： 写入 Tdengine 。
+- [Redis sink](./plugin/redis.md)： 写入 redis 。
+- [Image sink](./plugin/image.md)： 写入一个图像文件。仅用于处理二进制结果。
