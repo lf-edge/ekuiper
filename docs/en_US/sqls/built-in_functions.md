@@ -161,17 +161,18 @@ When casting to datetime type, the supported column type and casting rule are:
 **Please refer to [json path functions](./json_expr.md#json-path-functions) for how to compose a json path.**  
 
 ## Other Functions
-| Function     | Example                | Description                                                                                                                                                                                                                                                                                                                                                                                       |
-|--------------|------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| isNull       | isNull(col1)           | Returns true if the argument is the Null value.                                                                                                                                                                                                                                                                                                                                                   |
-| cardinality  | cardinality(col1)      | The number of members in the group. The null value is 0.                                                                                                                                                                                                                                                                                                                                          |
-| newuuid      | newuuid()              | Returns a random 16-byte UUID.                                                                                                                                                                                                                                                                                                                                                                    |
-| tstamp       | tstamp()               | Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970                                                                                                                                                                                                                                                                            |
-| mqtt         | mqtt(topic)            | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as `mqtt(src1.topic)`<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as `mqtt(src2.messageid)` |
-| meta         | meta(topic)            | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as `meta(device)`<br />- A qualified key to specify the stream, such as `meta(src1.device)` <br />- A key with arrow for multi level meta data, such as `meta(src1.reading->device->name)` This assumes reading is a map structure meta data.              |
-| window_start | window_start()         | Return the window start timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.                                        |
-| window_end   | window_end()           | Return the window end timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.                                          |
-| changed_col  | changed_col(true, col) | Return the column value if it has changed from the last execution.                                                                                                                                                                                                                                                                                                                                |
+| Function     | Example                              | Description                                                                                                                                                                                                                                                                                                                                                                                       |
+|--------------|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| isNull       | isNull(col1)                         | Returns true if the argument is the Null value.                                                                                                                                                                                                                                                                                                                                                   |
+| cardinality  | cardinality(col1)                    | The number of members in the group. The null value is 0.                                                                                                                                                                                                                                                                                                                                          |
+| newuuid      | newuuid()                            | Returns a random 16-byte UUID.                                                                                                                                                                                                                                                                                                                                                                    |
+| tstamp       | tstamp()                             | Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970                                                                                                                                                                                                                                                                            |
+| mqtt         | mqtt(topic)                          | Returns the MQTT meta-data of specified key. The current supported keys<br />- topic: return the topic of message.  If there are multiple stream source, then specify the source name in parameter. Such as `mqtt(src1.topic)`<br />- messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as `mqtt(src2.messageid)` |
+| meta         | meta(topic)                          | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as `meta(device)`<br />- A qualified key to specify the stream, such as `meta(src1.device)` <br />- A key with arrow for multi level meta data, such as `meta(src1.reading->device->name)` This assumes reading is a map structure meta data.              |
+| window_start | window_start()                       | Return the window start timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.                                        |
+| window_end   | window_end()                         | Return the window end timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.                                          |
+| changed_col  | changed_col(true, col)               | Return the column value if it has changed from the last execution.                                                                                                                                                                                                                                                                                                                                |
+| had_changed  | had_changed(true, expr1, expr2, ...) | Return if any of the columns had changed since the last run. The expression could be * to easily detect the change status of all columns.                                                                                                                                                                                                                                                         |
 
 ## Multiple Column Functions
 
@@ -233,6 +234,22 @@ The multiple column outputs can only be used in the select clause. Even the sele
 
 For multiple column outputs, the alias can only be set  generally with the prefix. To set alias for each column separately, try to call the changed function for each column respectively and use as to set alias. 
 
+### Had_changed function
+
+This function is a scalar function with one or more arguments.
+
+```HAD_CHANGED (<ignoreNull>, <expr> [,...,<exprN>])```
+
+**Arguments**
+
+**ignoreNull**: whether to ignore null values when detecting changes. If true, the null value won’t trigger a change.
+
+**expr**: An expression to be monitored for the changed status. Allow any expression that can be used in select clause. The expression can be a `*` to detect changes of all columns easily.
+
+**Returns**
+
+Return a bool value to indicate the changed status if any of the arguments had changed since the last run. The multiple arguments' version is a handy way to check HAD_CHANGED(expr1) OR HAD_CHANGED(expr2) ... OR HAD_CHANGED(exprN). To detect other relationship, just use separate HAD_CHANGED functions. For example, to check if all expressions are changed HAD_CHANGED(expr1) AND HAD_CHANGED(expr2) ... AND HAD_CHANGED(exprN).
+
 ### Examples
 
 Create a stream demo and have below inputs
@@ -293,7 +310,7 @@ Rule to get the events when temperature or humidity changed:
 
 ```text
 SQL: SELECT id, temperature, humidity FROM demo
-WHERE ISNULL(CHANGED_COL(true, temperature)) = false OR ISNULL(CHANGED_COL(humidity)) = false
+WHERE HAD_CHANGED(true, temperature, humidity) = true
 _________________________________________________________
 {"ts":1,temperature":23,"humidity":88}
 {"ts":4,temperature":25,"humidity":88}
@@ -305,7 +322,7 @@ Rule to get the events when temperature has changed but humidity has NOT changed
 
 ```text
 SQL: SELECT id, temperature, humidity FROM demo 
-WHERE ISNULL(CHANGED_COL(true, temperature)) = false AND ISNULL(CHANGED_COL(true, humidity))
+WHERE HAD_CHANGED(true, temperature) = true AND HAD_CHANGED(true, humidity) = false
 _________________________________________________________
 {"ts":1,temperature":23,"humidity":88}
 {"ts":4,temperature":25,"humidity":88}
