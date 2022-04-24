@@ -586,6 +586,35 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
+	builtins["object_construct"] = builtinFunc{
+		fType: FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			result := make(map[string]interface{})
+			for i := 0; i < len(args); i += 2 {
+				if args[i+1] != nil {
+					s, err := cast.ToString(args[i], cast.CONVERT_SAMEKIND)
+					if err != nil {
+						return fmt.Errorf("key %v is not a string", args[i]), false
+					}
+					result[s] = args[i+1]
+				}
+			}
+			return result, true
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if len(args)%2 != 0 {
+				return fmt.Errorf("the args must be key value pairs")
+			}
+			for i, arg := range args {
+				if i%2 == 0 {
+					if ast.IsNumericArg(arg) || ast.IsTimeArg(arg) || ast.IsBooleanArg(arg) {
+						return ProduceErrInfo(i, "string")
+					}
+				}
+			}
+			return nil
+		},
+	}
 }
 
 func round(num float64) int {

@@ -287,14 +287,14 @@ func TestHadChangedExec(t *testing.T) {
 			args: []interface{}{
 				true,
 				"foo",
-				45,
+				nil,
 			},
-			result: true,
+			result: false,
 		}, { // 7
 			args: []interface{}{
 				true,
 				"foo",
-				45,
+				44,
 			},
 			result: false,
 		}, { // 8
@@ -314,7 +314,7 @@ func TestHadChangedExec(t *testing.T) {
 	}
 }
 
-func TestHadChangedExecIgnoreNull(t *testing.T) {
+func TestHadChangedExecAllowNull(t *testing.T) {
 	f, ok := builtins["had_changed"]
 	if !ok {
 		t.Fatal("builtin not found")
@@ -367,28 +367,35 @@ func TestHadChangedExecIgnoreNull(t *testing.T) {
 				nil,
 				44,
 			},
-			result: false,
+			result: true,
 		}, { // 6
 			args: []interface{}{
 				false,
 				"baz",
 				44,
 			},
-			result: false,
+			result: true,
 		}, { // 7
 			args: []interface{}{
-				true,
-				nil,
-				nil,
-			},
-			result: false,
-		}, { // 8
-			args: []interface{}{
-				true,
+				false,
 				"baz",
 				44,
 			},
 			result: false,
+		}, { // 8
+			args: []interface{}{
+				false,
+				nil,
+				nil,
+			},
+			result: true,
+		}, { // 9
+			args: []interface{}{
+				false,
+				"baz",
+				44,
+			},
+			result: true,
 		},
 	}
 	for i, tt := range tests {
