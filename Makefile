@@ -87,6 +87,7 @@ PLUGINS := sinks/file \
 	sinks/redis \
 	sources/random \
 	sources/zmq \
+	sources/sql \
 	sinks/tdengine \
 	functions/accumulateWordCount \
 	functions/countPlusOne \

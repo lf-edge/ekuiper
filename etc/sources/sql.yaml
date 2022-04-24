@@ -1,0 +1,40 @@
+default:
+  interval: 10000
+  url: mysql://user:test@140.210.204.147/user?parseTime=true
+  internalSqlQueryCfg:
+    table: test
+    limit: 1
+    indexField: registerTime
+    indexValue: "2022-04-21 10:23:55"
+    indexFieldType: "DATETIME"
+    dateTimeFormat: "YYYY-MM-dd HH:mm:ss"
+
+sqlserver_config:
+  url: sqlserver://username:password@140.210.204.147/testdb
+  internalSqlQueryCfg:
+    table: Student
+    limit: 10
+    indexField: id
+    indexValue: 1000
+#    indexFieldType: "DATETIME"
+#    dateTimeFormat: "YYYY-MM-dd HH:mm:ssSSS"
+# select top 10 * from Student where id > 1010 order by id ASC
+
+mysql_config:
+  interval: 10000
+  url: mysql://user:test@140.210.204.147/user?parseTime=true
+  internalSqlQueryCfg:
+    table: test
+    limit: 1
+    indexField: registerTime
+    indexValue: "2022-04-21 10:23:55"
+    indexFieldType: "DATETIME"
+    dateTimeFormat: "YYYY-MM-dd HH:mm:ss"
+
+sqltemplate_config:
+  templateSqlQueryCfg:
+    TemplateSql: "select * from table where entry_data > {{.entry_data}}"
+    indexField: entry_data
+    indexValue: "2022-04-13 06:22:32.233"
+    indexFieldType: "DATETIME"
+    dateTimeFormat: "YYYY-MM-dd HH:mm:ssSSS"
