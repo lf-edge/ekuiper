@@ -8,7 +8,7 @@ OpenYurt 基于原生 Kubernetes 构建，可以对其进行扩展以无缝支�
 
 在本教程中，我们将展示如何在 OpenYurt 集群中部署 eKuiper 及其仪表板，并利用 yurt 隧道实现从云到边缘的管理。 为了模拟云节点和边缘节点可能位于不同网络区域的真实场景，我们使用了一个两节点的 kubernetes 集群。 eKuiper 实例将部署到边缘节点，仪表板将部署到云节点。
 
-<img src="ekuiper_openyurt.png" alt="arch" width="80%"/>
+<img src="./ekuiper_openyurt.png" alt="arch" width="80%"/>
 
 ## 先决条件
 

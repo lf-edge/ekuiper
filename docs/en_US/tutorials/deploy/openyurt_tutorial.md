@@ -15,7 +15,7 @@ tunnel to enable the management from cloud to the edge. To mimic the real scenar
 may locate in separate network regions, we use a two-nodes kubernetes cluster. The eKuiper instance will be deployed to
 the edge node, and the dashboard will be deployed to the cloud node.
 
-<img src="ekuiper_openyurt.png" alt="arch" width="80%"/>
+<img src="./ekuiper_openyurt.png" alt="arch" width="80%"/>
 
 ## Prerequisite
 
