@@ -163,6 +163,8 @@ require (
 	github.com/msgpack/msgpack-go v0.0.0-20130625150338-8224460e6fa3 // indirect
 	github.com/nakagami/firebirdsql v0.9.4 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
+	github.com/mattn/go-tflite v1.0.1 // indirect
+	github.com/mattn/go-pointer v0.0.0-20190911064623-a0a44394634f // indirect
 	github.com/pierrec/lz4/v4 v4.1.11 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
