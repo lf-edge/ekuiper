@@ -1,5 +1,3 @@
-//go:build (all || snowflake) && !no_snowflake
-
 /*
  * Copyright 2022 EMQ Technologies Co., Ltd.
  *
@@ -15,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+//go:build (all || snowflake) && !no_snowflake
 
 package driver
 

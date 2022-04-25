@@ -1,7 +1,3 @@
-//go:build (!no_base || mysql) && !no_mysql
-// +build !no_base mysql
-// +build !no_mysql
-
 /*
  * Copyright 2022 EMQ Technologies Co., Ltd.
  *
@@ -17,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+//go:build (!no_base || mysql) && !no_mysql
+// +build !no_base mysql
+// +build !no_mysql
 
 package driver
 

@@ -1,7 +1,3 @@
-//go:build (!no_base || sqlserver) && !no_sqlserver
-// +build !no_base sqlserver
-// +build !no_sqlserver
-
 /*
  * Copyright 2022 EMQ Technologies Co., Ltd.
  *
@@ -17,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+//go:build (!no_base || sqlserver) && !no_sqlserver
+// +build !no_base sqlserver
+// +build !no_sqlserver
 
 package driver
 

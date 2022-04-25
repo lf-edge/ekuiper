@@ -1,5 +1,3 @@
-//go:build (!no_base || sqlite3) && !no_sqlite3
-
 /*
  * Copyright 2022 EMQ Technologies Co., Ltd.
  *
@@ -15,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+//go:build (!no_base || sqlite3) && !no_sqlite3
 
 package driver
 

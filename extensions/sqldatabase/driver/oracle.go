@@ -1,5 +1,3 @@
-//go:build (!no_base || oracle) && !no_oracle
-
 /*
  * Copyright 2022 EMQ Technologies Co., Ltd.
  *
@@ -15,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+//go:build (!no_base || oracle) && !no_oracle
 
 package driver
 
