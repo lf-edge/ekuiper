@@ -103,7 +103,7 @@ func TestInterfaceToTime(t *testing.T) {
 				i:      "2022-04-13 06:22:32.233",
 				format: "YYYY-MM-dd HH:mm:ssSSS",
 			},
-			want:    time.Now(),
+			want:    time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
 			wantErr: false,
 		},
 	}
