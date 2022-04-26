@@ -163,6 +163,15 @@ func (m *sqlsource) scanIntoMap(mapValue map[string]interface{}, values []interf
 	}
 }
 
+func (m *sqlsource) GetOffset() (interface{}, error) {
+	return m.Query.GetIndexValue(), nil
+}
+
+func (m *sqlsource) Rewind(offset interface{}) error {
+	m.Query.SetIndexValue(offset)
+	return nil
+}
+
 func (m *sqlsource) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Debugf("Closing sql stream to %v", m.conf)

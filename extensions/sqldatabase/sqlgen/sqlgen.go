@@ -21,8 +21,14 @@ import (
 )
 
 type SqlQueryGenerator interface {
+	IndexValuer
 	SqlQueryStatement() (string, error)
 	UpdateMaxIndexValue(rows map[string]interface{})
+}
+
+type IndexValuer interface {
+	SetIndexValue(interface{})
+	GetIndexValue() interface{}
 }
 
 const DATETIME_TYPE = "DATETIME"
@@ -36,12 +42,28 @@ type InternalSqlQueryCfg struct {
 	DateTimeFormat string      `json:"dateTimeFormat"`
 }
 
+func (i *InternalSqlQueryCfg) SetIndexValue(val interface{}) {
+	i.IndexValue = val
+}
+
+func (i *InternalSqlQueryCfg) GetIndexValue() interface{} {
+	return i.IndexValue
+}
+
 type TemplateSqlQueryCfg struct {
 	TemplateSql    string      `json:"templateSql"`
 	IndexField     string      `json:"indexField"`
 	IndexValue     interface{} `json:"indexValue"`
 	IndexFieldType string      `json:"indexFieldType"`
 	DateTimeFormat string      `json:"dateTimeFormat"`
+}
+
+func (i *TemplateSqlQueryCfg) SetIndexValue(val interface{}) {
+	i.IndexValue = val
+}
+
+func (i *TemplateSqlQueryCfg) GetIndexValue() interface{} {
+	return i.IndexValue
 }
 
 type sqlConfig struct {

@@ -17,10 +17,12 @@ package encoding
 import (
 	"bytes"
 	"encoding/gob"
+	"time"
 )
 
 func Encode(value interface{}) (error, []byte) {
 	var buff bytes.Buffer
+	gob.Register(time.Time{})
 	gob.Register(value)
 	enc := gob.NewEncoder(&buff)
 	if err := enc.Encode(value); err != nil {
