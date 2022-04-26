@@ -1,0 +1,253 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/sql.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/sql.md"
+    },
+    "description": {
+      "en_US": "Read message from sql database",
+      "zh_CN": "从数据库中读取消息"
+    }
+  },
+  "libs": [],
+  "properties": {
+    "default": [
+      {
+        "name": "url",
+        "default": "",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The url of the database",
+          "zh_CN": "数据库服务器的 URL"
+        },
+        "label": {
+          "en_US": "server address",
+          "zh_CN": "数据库地址"
+        }
+      },
+      {
+        "name": "interval",
+        "default": 1000,
+        "optional": false,
+        "control": "text",
+        "type": "int",
+        "hint": {
+          "en_US": "The interval (ms) to issue a query",
+          "zh_CN": "发出消息的间隔（毫秒）"
+        },
+        "label": {
+          "en_US": "Interval",
+          "zh_CN": "间隔时间"
+        }
+      },
+      {
+        "name": "internalSqlQueryCfg",
+        "default": [
+          {
+            "name": "table",
+            "default": "tableName",
+            "optional": false,
+            "control": "text",
+            "type": "string",
+            "hint": {
+              "en_US": "table name to query",
+              "zh_CN": "指定查询的数据库表名"
+            },
+            "label": {
+              "en_US": "tableName",
+              "zh_CN": "表名"
+            }
+          },
+          {
+            "name": "indexField",
+            "default": "",
+            "optional": true,
+            "control": "text",
+            "type": "string",
+            "hint": {
+              "en_US": "index field",
+              "zh_CN": "索引字段名"
+            },
+            "label": {
+              "en_US": "indexField",
+              "zh_CN": "索引字段名"
+            }
+          },
+          {
+            "name": "indexValue",
+            "default": "",
+            "optional": true,
+            "control": "text",
+            "type": "string",
+            "hint": {
+              "en_US": "index init value",
+              "zh_CN": "索引字段初始值"
+            },
+            "label": {
+              "en_US": "index init value",
+              "zh_CN": "索引字段初始值"
+            }
+          },
+          {
+            "name": "limit",
+            "default": 10,
+            "optional": true,
+            "control": "text",
+            "type": "int",
+            "hint": {
+              "en_US": "query result limit",
+              "zh_CN": "查询结果条数限制"
+            },
+            "label": {
+              "en_US": "Limit",
+              "zh_CN": "查询条数限制"
+            }
+          },
+          {
+            "name": "indexFieldType",
+            "default": "",
+            "optional": true,
+            "control": "select",
+            "type": "string",
+            "values": ["DATETIME"],
+            "hint": {
+              "en_US": "is the index datetime type",
+              "zh_CN": "是否为时间格式"
+            },
+            "label": {
+              "en_US": "indexFieldType",
+              "zh_CN": "indexFieldType"
+            }
+          },
+          {
+            "name": "dateTimeFormat",
+            "default": "",
+            "optional": true,
+            "control": "text",
+            "type": "string",
+            "hint": {
+              "en_US": "dateTimeFormat",
+              "zh_CN": "dateTimeFormat"
+            },
+            "label": {
+              "en_US": "dateTimeFormat",
+              "zh_CN": "dateTimeFormat"
+            }
+          }
+        ],
+        "optional": true,
+        "control": "list",
+        "type": "list_object",
+        "hint": {
+          "en_US": "basic configuration for the query",
+          "zh_CN": "查询基础配置"
+        },
+        "label": {
+          "en_US": "QueryPattern",
+          "zh_CN": "查询样式"
+        }
+      },
+      {
+        "name": "templateSqlQueryCfg",
+        "default": [
+          {
+            "name": "TemplateSql",
+            "default": "",
+            "optional": false,
+            "control": "text",
+            "type": "string",
+            "hint": {
+              "en_US": "query template",
+              "zh_CN": "查询语句模版"
+            },
+            "label": {
+              "en_US": "query template",
+              "zh_CN": "查询语句模版"
+            }
+          },
+          {
+            "name": "indexField",
+            "default": "",
+            "optional": true,
+            "control": "text",
+            "type": "string",
+            "hint": {
+              "en_US": "index field",
+              "zh_CN": "索引字段名"
+            },
+            "label": {
+              "en_US": "indexField",
+              "zh_CN": "索引字段名"
+            }
+          },
+          {
+            "name": "indexValue",
+            "default": "",
+            "optional": true,
+            "control": "text",
+            "type": "string",
+            "hint": {
+              "en_US": "index init value",
+              "zh_CN": "索引字段初始值"
+            },
+            "label": {
+              "en_US": "index init value",
+              "zh_CN": "索引字段初始值"
+            }
+          },
+          {
+            "name": "indexFieldType",
+            "default": "",
+            "optional": true,
+            "control": "select",
+            "type": "string",
+            "values": ["DATETIME"],
+            "hint": {
+              "en_US": "is the index datetime type",
+              "zh_CN": "是否为时间格式"
+            },
+            "label": {
+              "en_US": "indexFieldType",
+              "zh_CN": "indexFieldType"
+            }
+          },
+          {
+            "name": "dateTimeFormat",
+            "default": "",
+            "optional": true,
+            "control": "text",
+            "type": "string",
+            "hint": {
+              "en_US": "dateTimeFormat",
+              "zh_CN": "dateTimeFormat"
+            },
+            "label": {
+              "en_US": "dateTimeFormat",
+              "zh_CN": "dateTimeFormat"
+            }
+          }
+        ],
+        "optional": true,
+        "control": "list",
+        "type": "list_object",
+        "hint": {
+          "en_US": "user defined query",
+          "zh_CN": "自定义查询"
+        },
+        "label": {
+          "en_US": "user defined query",
+          "zh_CN": "自定义查询"
+        }
+      }
+    ]
+  }
+}

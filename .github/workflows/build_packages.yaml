@@ -166,6 +166,7 @@ jobs:
           - sinks/redis
           - sources/random
           - sources/zmq
+          - sources/sql
           - functions/accumulateWordCount
           - functions/countPlusOne
           - functions/echo

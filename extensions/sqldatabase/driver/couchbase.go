@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package encoding
+//go:build (all || most || couchbase) && !no_couchbase
+
+package driver
 
 import (
-	"bytes"
-	"encoding/gob"
-	"time"
+	_ "github.com/couchbase/go_n1ql" // Couchbase driver
 )
-
-func Encode(value interface{}) (error, []byte) {
-	var buff bytes.Buffer
-	gob.Register(time.Time{})
-	gob.Register(value)
-	enc := gob.NewEncoder(&buff)
-	if err := enc.Encode(value); err != nil {
-		return err, nil
-	}
-	return nil, buff.Bytes()
-}
