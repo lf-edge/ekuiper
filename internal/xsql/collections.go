@@ -304,7 +304,7 @@ func (w WindowTuplesSet) AggregateEval(expr ast.Expr, v CallValuer) []interface{
 		return nil
 	}
 	for _, t := range w.Content[0].Tuples {
-		result = append(result, Eval(expr, MultiValuer(&t, v, &WildcardValuer{&t})))
+		result = append(result, Eval(expr, MultiValuer(&t, &WindowRangeValuer{WindowRange: w.WindowRange}, v, &WildcardValuer{&t})))
 	}
 	return result
 }
@@ -411,7 +411,7 @@ func (s *JoinTupleSets) Index(i int) Valuer { return &(s.Content[i]) }
 func (s *JoinTupleSets) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
 	var result []interface{}
 	for _, t := range s.Content {
-		result = append(result, Eval(expr, MultiValuer(&t, v, &WildcardValuer{&t})))
+		result = append(result, Eval(expr, MultiValuer(&t, &WindowRangeValuer{WindowRange: s.WindowRange}, v, &WildcardValuer{&t})))
 	}
 	return result
 }
@@ -424,7 +424,7 @@ type GroupedTuples struct {
 func (s GroupedTuples) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
 	var result []interface{}
 	for _, t := range s.Content {
-		result = append(result, Eval(expr, MultiValuer(t, v, &WildcardValuer{t})))
+		result = append(result, Eval(expr, MultiValuer(t, &WindowRangeValuer{WindowRange: s.WindowRange}, v, &WildcardValuer{t})))
 	}
 	return result
 }
