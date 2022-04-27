@@ -122,3 +122,53 @@ func TestTemplateQuery(t *testing.T) {
 		t.Errorf("SqlQueryStatement() = %v, want %v", nextSqlStr, want)
 	}
 }
+
+func TestTemplateQuery_DateTime(t *testing.T) {
+	tempCfg := map[string]interface{}{
+		"templateSql":    "select * from table where responseTime > `{{.responseTime}}`",
+		"indexField":     "responseTime",
+		"indexValue":     "2008-10-25 14:56:59.123",
+		"indexFieldType": DATETIME_TYPE,
+		"dateTimeFormat": "YYYY-MM-dd HH:mm:ssSSS",
+	}
+
+	props := map[string]interface{}{
+		"templateSqlQueryCfg": tempCfg,
+	}
+
+	sqlcfg := &sqlConfig{}
+	_ = sqlcfg.Init(props)
+
+	s, _ := NewTemplateSqlQuery(sqlcfg.TemplateSqlQueryCfg)
+
+	//query
+	firstSqlStr, _ := s.SqlQueryStatement()
+
+	want := "select * from table where responseTime > `2008-10-25 14:56:59.123`"
+
+	if !reflect.DeepEqual(firstSqlStr, want) {
+		t.Errorf("SqlQueryStatement() = %v, want %v", firstSqlStr, want)
+	}
+
+	//query result
+	s.UpdateMaxIndexValue(map[string]interface{}{
+		"responseTime": getDatetimeFromstring("2008-10-29 14:56:59"),
+	})
+	s.UpdateMaxIndexValue(map[string]interface{}{
+		"responseTime": getDatetimeFromstring("2008-11-11 11:12:01"),
+	})
+	s.UpdateMaxIndexValue(map[string]interface{}{
+		"responseTime": getDatetimeFromstring("2008-11-09 15:45:21"),
+	})
+	s.UpdateMaxIndexValue(map[string]interface{}{
+		"responseTime": getDatetimeFromstring("2008-11-11 13:23:44"),
+	})
+
+	nextSqlStr, _ := s.SqlQueryStatement()
+
+	want = "select * from table where responseTime > `2008-11-11 13:23:44.000`"
+
+	if !reflect.DeepEqual(nextSqlStr, want) {
+		t.Errorf("SqlQueryStatement() = %v, want %v", nextSqlStr, want)
+	}
+}
