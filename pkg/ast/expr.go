@@ -121,8 +121,9 @@ func (sl *StringLiteral) literal() {}
 func (sl *StringLiteral) node()    {}
 
 type Call struct {
-	Name string
-	Args []Expr
+	Name   string
+	FuncId int
+	Args   []Expr
 }
 
 func (c *Call) expr()    {}

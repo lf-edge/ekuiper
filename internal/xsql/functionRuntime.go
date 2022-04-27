@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import (
 //Each operator has a single instance of this to hold the context
 type funcRuntime struct {
 	sync.Mutex
-	regs      map[string]*funcReg
+	regs      []*funcReg
 	parentCtx api.StreamContext
 }
 
@@ -41,13 +41,15 @@ func NewFuncRuntime(ctx api.StreamContext) *funcRuntime {
 	}
 }
 
-func (fp *funcRuntime) Get(name string) (api.Function, api.FunctionContext, error) {
+func (fp *funcRuntime) Get(name string, funcId int) (api.Function, api.FunctionContext, error) {
 	fp.Lock()
 	defer fp.Unlock()
-	if fp.regs == nil {
-		fp.regs = make(map[string]*funcReg)
+	if len(fp.regs) <= funcId {
+		for i := len(fp.regs); i <= funcId; i++ {
+			fp.regs = append(fp.regs, nil)
+		}
 	}
-	if reg, ok := fp.regs[name]; !ok {
+	if reg := fp.regs[funcId]; reg == nil {
 		var (
 			nf  api.Function
 			err error
@@ -61,8 +63,8 @@ func (fp *funcRuntime) Get(name string) (api.Function, api.FunctionContext, erro
 				return nil, nil, err
 			}
 		}
-		fctx := context.NewDefaultFuncContext(fp.parentCtx, len(fp.regs))
-		fp.regs[name] = &funcReg{
+		fctx := context.NewDefaultFuncContext(fp.parentCtx, funcId)
+		fp.regs[funcId] = &funcReg{
 			ins: nf,
 			ctx: fctx,
 		}

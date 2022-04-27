@@ -404,7 +404,7 @@ func Test_createLogicalPlan(t *testing.T) {
 								},
 							},
 							condition: &ast.BinaryExpr{
-								LHS: &ast.Call{Name: "count", Args: []ast.Expr{&ast.Wildcard{
+								LHS: &ast.Call{Name: "count", FuncId: 0, Args: []ast.Expr{&ast.Wildcard{
 									Token: ast.ASTERISK,
 								}}},
 								OP:  ast.GT,
@@ -883,7 +883,8 @@ func Test_createLogicalPlan(t *testing.T) {
 							},
 							condition: &ast.BinaryExpr{
 								LHS: &ast.Call{
-									Name: "meta",
+									Name:   "meta",
+									FuncId: 2,
 									Args: []ast.Expr{&ast.MetaRef{
 										Name:       "device",
 										StreamName: ast.DefaultStream,
@@ -904,7 +905,7 @@ func Test_createLogicalPlan(t *testing.T) {
 						AName: "",
 					}, {
 						Expr: &ast.FieldRef{Name: "eid", StreamName: ast.AliasStream, AliasRef: ast.MockAliasRef(
-							&ast.Call{Name: "meta", Args: []ast.Expr{&ast.MetaRef{
+							&ast.Call{Name: "meta", FuncId: 0, Args: []ast.Expr{&ast.MetaRef{
 								Name:       "id",
 								StreamName: ast.DefaultStream,
 							}}},
@@ -915,7 +916,7 @@ func Test_createLogicalPlan(t *testing.T) {
 						AName: "eid",
 					}, {
 						Expr: &ast.FieldRef{Name: "hdevice", StreamName: ast.AliasStream, AliasRef: ast.MockAliasRef(
-							&ast.Call{Name: "meta", Args: []ast.Expr{
+							&ast.Call{Name: "meta", FuncId: 1, Args: []ast.Expr{
 								&ast.BinaryExpr{
 									OP:  ast.ARROW,
 									LHS: &ast.MetaRef{Name: "Humidity", StreamName: ast.DefaultStream},
@@ -1072,7 +1073,8 @@ func Test_createLogicalPlan(t *testing.T) {
 							},
 							condition: &ast.BinaryExpr{
 								LHS: &ast.Call{
-									Name: "meta",
+									Name:   "meta",
+									FuncId: 1,
 									Args: []ast.Expr{&ast.MetaRef{
 										Name:       "device",
 										StreamName: ast.DefaultStream,
@@ -1093,7 +1095,7 @@ func Test_createLogicalPlan(t *testing.T) {
 						AName: "",
 					}, {
 						Expr: &ast.FieldRef{Name: "m", StreamName: ast.AliasStream, AliasRef: ast.MockAliasRef(
-							&ast.Call{Name: "meta", Args: []ast.Expr{&ast.MetaRef{
+							&ast.Call{Name: "meta", FuncId: 0, Args: []ast.Expr{&ast.MetaRef{
 								Name:       "*",
 								StreamName: ast.DefaultStream,
 							}}},
@@ -1434,7 +1436,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 								},
 							},
 							condition: &ast.BinaryExpr{
-								LHS: &ast.Call{Name: "count", Args: []ast.Expr{&ast.Wildcard{
+								LHS: &ast.Call{Name: "count", FuncId: 0, Args: []ast.Expr{&ast.Wildcard{
 									Token: ast.ASTERISK,
 								}}},
 								OP:  ast.GT,
@@ -1863,7 +1865,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 							},
 							condition: &ast.BinaryExpr{
 								LHS: &ast.Call{
-									Name: "meta",
+									Name:   "meta",
+									FuncId: 2,
 									Args: []ast.Expr{&ast.MetaRef{
 										Name:       "device",
 										StreamName: ast.DefaultStream,
@@ -1884,7 +1887,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 						AName: "",
 					}, {
 						Expr: &ast.FieldRef{Name: "eid", StreamName: ast.AliasStream, AliasRef: ast.MockAliasRef(
-							&ast.Call{Name: "meta", Args: []ast.Expr{&ast.MetaRef{
+							&ast.Call{Name: "meta", FuncId: 0, Args: []ast.Expr{&ast.MetaRef{
 								Name:       "id",
 								StreamName: ast.DefaultStream,
 							}}},
@@ -1895,7 +1898,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 						AName: "eid",
 					}, {
 						Expr: &ast.FieldRef{Name: "hdevice", StreamName: ast.AliasStream, AliasRef: ast.MockAliasRef(
-							&ast.Call{Name: "meta", Args: []ast.Expr{
+							&ast.Call{Name: "meta", FuncId: 1, Args: []ast.Expr{
 								&ast.BinaryExpr{
 									OP:  ast.ARROW,
 									LHS: &ast.MetaRef{Name: "Humidity", StreamName: ast.DefaultStream},

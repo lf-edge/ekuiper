@@ -44,7 +44,7 @@ type CallValuer interface {
 	Valuer
 
 	// Call is invoked to evaluate a function call (if possible).
-	Call(name string, args []interface{}) (interface{}, bool)
+	Call(name string, funcId int, args []interface{}) (interface{}, bool)
 }
 
 // FuncValuer can calculate function type value like window_start and window_end
@@ -299,10 +299,10 @@ func (a multiValuer) FuncValue(key string) (interface{}, bool) {
 	return nil, false
 }
 
-func (a multiValuer) Call(name string, args []interface{}) (interface{}, bool) {
+func (a multiValuer) Call(name string, funcId int, args []interface{}) (interface{}, bool) {
 	for _, valuer := range a {
 		if valuer, ok := valuer.(CallValuer); ok {
-			if v, ok := valuer.Call(name, args); ok {
+			if v, ok := valuer.Call(name, funcId, args); ok {
 				return v, true
 			} else {
 				return fmt.Errorf("call func %s error: %v", name, v), false
@@ -326,18 +326,18 @@ func MultiAggregateValuer(data AggregateData, singleCallValuer CallValuer, value
 	}
 }
 
-func (a *multiAggregateValuer) Call(name string, args []interface{}) (interface{}, bool) {
+func (a *multiAggregateValuer) Call(name string, funcId int, args []interface{}) (interface{}, bool) {
 	// assume the aggFuncMap already cache the custom agg funcs in IsAggFunc()
 	isAgg := function.IsAggFunc(name)
 	for _, valuer := range a.multiValuer {
 		if a, ok := valuer.(AggregateCallValuer); ok && isAgg {
-			if v, ok := a.Call(name, args); ok {
+			if v, ok := a.Call(name, funcId, args); ok {
 				return v, true
 			} else {
 				return fmt.Errorf("call func %s error: %v", name, v), false
 			}
 		} else if c, ok := valuer.(CallValuer); ok && !isAgg {
-			if v, ok := c.Call(name, args); ok {
+			if v, ok := c.Call(name, funcId, args); ok {
 				return v, true
 			}
 		}
@@ -467,7 +467,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 					}
 
 				}
-				val, _ := valuer.Call(expr.Name, args)
+				val, _ := valuer.Call(expr.Name, expr.FuncId, args)
 				return val
 			}
 		}

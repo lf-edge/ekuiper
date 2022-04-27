@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -68,8 +68,8 @@ func (v *AggregateFunctionValuer) AliasValue(_ string) (interface{}, bool) {
 	return nil, false
 }
 
-func (v *AggregateFunctionValuer) Call(name string, args []interface{}) (interface{}, bool) {
-	nf, fctx, err := v.fv.runtime.Get(name)
+func (v *AggregateFunctionValuer) Call(name string, funcId int, args []interface{}) (interface{}, bool) {
+	nf, fctx, err := v.fv.runtime.Get(name, funcId)
 	switch err {
 	case errorx.NotFoundErr:
 		return nil, false

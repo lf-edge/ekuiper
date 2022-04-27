@@ -512,39 +512,6 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
-	builtins["changed_col"] = builtinFunc{
-		fType: FuncTypeScalar,
-		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			ignoreNull, ok := args[0].(bool)
-			if !ok {
-				return fmt.Errorf("first arg is not a bool but got %v", args[0]), false
-			}
-			if ignoreNull && args[1] == nil {
-				return nil, true
-			}
-			lv, err := ctx.GetState("self")
-			if err != nil {
-				return err, false
-			}
-			if !reflect.DeepEqual(args[1], lv) {
-				err := ctx.PutState("self", args[1])
-				if err != nil {
-					return err, false
-				}
-				return args[1], true
-			}
-			return nil, true
-		},
-		val: func(_ api.FunctionContext, args []ast.Expr) error {
-			if err := ValidateLen(2, len(args)); err != nil {
-				return err
-			}
-			if ast.IsNumericArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsStringArg(args[0]) {
-				return ProduceErrInfo(0, "boolean")
-			}
-			return nil
-		},
-	}
 	builtins["had_changed"] = builtinFunc{
 		fType: FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
