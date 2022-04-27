@@ -114,7 +114,7 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en
 
 ### Max number of rules support
 
-- 8000 rules with 800 message/second
+- 8000 rules with 800 message/second in total
 - Configurations
   - 2 core * 4GB memory in AWS
   - Ubuntu
@@ -126,6 +126,24 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en
   - Source: MQTT
   - SQL: SELECT temperature FROM source WHERE temperature > 20 (90% data are filtered) 
   - Sink: Log
+
+### Multiple rules with shared source instance
+
+- 300 rules with a shared mqtt stream instance.
+  - 500 messages/second in the mqtt source
+  - 150,000 message processing per second in total
+- Configurations:
+  - 2 Core * 2GB memory in AWS
+  - Ubuntu
+- Resource usage
+  - Memory: 95MB
+  - CPU: 50%
+- Rule
+  - Source: MQTT
+  - SQL: SELECT temperature FROM source WHERE temperature > 20 (90% data are filtered)
+  - Sink: 90% nop and 10% MQTT
+
+To run this benchmark by yourself, please check [the instruction](./test/benchmark/multiple_rules/readme.md).
 
 ## Documents
 

@@ -122,7 +122,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 ### 最大规则数支持
 
-- 8000 条规则，吞吐量为 800 条消息/秒
+- 8000 条规则，总吞吐量为 800 条消息/秒
 - 配置
   - AWS 2 核 * 4GB 内存 
   - Ubuntu
@@ -134,6 +134,24 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
   - 源: MQTT
   - SQL: SELECT temperature FROM source WHERE temperature > 20 (90% 数据被过滤) 
   - 目标: 日志
+
+### 多规则共享源实例测试
+
+- 300 条规则，处理一个共享流
+  - MQTT 源吞吐量为 500 条消息/秒
+  - 总的消息处理吞吐量为 150，000 条消息/秒
+- 配置
+  - AWS 2 核 * 2GB 内存
+  - Ubuntu
+- 资源消耗
+  - 内存: ~95MB
+  - CPU: 50%
+- 规则
+  - 源: MQTT
+  - SQL: SELECT temperature FROM source WHERE temperature > 20 (90% 数据被过滤)
+  - 目标: 90% nop 10% MQTT
+
+请参考[测试指南](./test/benchmark/multiple_rules/readme.md)进行该基准测试。
 
 ## 文档
 
