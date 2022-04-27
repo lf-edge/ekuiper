@@ -1,0 +1,65 @@
+{
+	"about": {
+		"trial": true,
+		"author": {
+			"name": "EMQ",
+			"email": "contact@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/sql.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/sql.md"
+		},
+		"description": {
+			"en_US": "This a sink plugin for Sql based Database, it can be used for saving the analysis data into Sql based database.",
+			"zh_CN": "本插件为 SQL Database 的持久化插件，可以用于将分析数据存入支持 SQL 语法的数据库中"
+		}
+	},
+	"libs": [
+	],
+	"properties": [{
+		"name": "url",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The url of the database",
+			"zh_CN": "数据库服务器的 URL"
+		},
+		"label": {
+			"en_US": "server address",
+			"zh_CN": "数据库地址"
+		}
+	}, {
+		"name": "table",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "Table name",
+			"zh_CN": "表名"
+		},
+		"label": {
+			"en_US": "Table name",
+			"zh_CN": "表名"
+		}
+	}, {
+		"name": "fields",
+		"default": [],
+		"optional": false,
+		"control": "list",
+		"type": "list_string",
+		"hint": {
+			"en_US": "Field of table",
+			"zh_CN": "表字段"
+		},
+		"label": {
+			"en_US": "Table field",
+			"zh_CN": "表字段"
+		}
+	}
+ ]
+}

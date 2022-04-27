@@ -8,8 +8,8 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/plugins/sinks/zmq.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/plugins/sinks/zmq.md"
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/zmq.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/zmq.md"
 		},
 		"description": {
 			"en_US": "This a demo 0MQ sink plugin, it cannot be used in production env.",

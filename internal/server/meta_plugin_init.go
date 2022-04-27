@@ -88,7 +88,7 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.Plu
 }
 
 var NativeSourcePlugin = []string{"random", "zmq", "sql"}
-var NativeSinkPlugin = []string{"file", "image", "influx", "redis", "tdengine", "zmq"}
+var NativeSinkPlugin = []string{"file", "image", "influx", "redis", "tdengine", "zmq", "sql"}
 var NativeFunctionPlugin = []string{"accumulateWordCount", "countPlusOne", "echo", "geohash", "image", "labelImage"}
 
 func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (err error, result map[string]string) {

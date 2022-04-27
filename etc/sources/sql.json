@@ -8,8 +8,8 @@
       "website": "https://www.emqx.io"
     },
     "helpUrl": {
-      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/sql.md",
-      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/sql.md"
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/plugin/sql.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/plugin/sql.md"
     },
     "description": {
       "en_US": "Read message from sql database",

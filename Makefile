@@ -85,6 +85,7 @@ PLUGINS := sinks/file \
 	sinks/zmq \
 	sinks/image \
 	sinks/redis \
+	sinks/sql   \
 	sources/random \
 	sources/zmq \
 	sources/sql \
