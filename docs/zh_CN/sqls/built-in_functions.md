@@ -291,10 +291,14 @@ _________________________________________________________
 ```text
 SQL: SELECT CHANGED_COLS("c_", false, *) FROM demo
 _________________________________________________________
-{"c_temperature":23,"c_humidity":88}
-{"c_temperature":25}
-{"c_humidity":90}
-{"c_humidity":91}
+{"c_ts":1, "c_temperature":23, "c_humidity":88}
+{"c_ts":2}
+{"c_ts":3}
+{"c_ts":4, "c_temperature":25}
+{"c_ts":5, "c_humidity":90}
+{"c_ts":6, "c_humidity":91}
+{"c_ts":7}
+{"c_ts":8}
 ```
 
 获取窗口中平均值变化的规则:
@@ -310,7 +314,7 @@ _________________________________________________________________
 当 temperature 或者 humidity 变化时获取数据:
 
 ```text
-SQL: SELECT id, temperature, humidity FROM demo
+SQL: SELECT ts, temperature, humidity FROM demo
 WHERE HAD_CHANGED(true, temperature, humidity) = true
 _________________________________________________________
 {"ts":1,temperature":23,"humidity":88}
@@ -322,10 +326,9 @@ _________________________________________________________
 当 temperature 变化且 humidity 未变化时获取数据:
 
 ```text
-SQL: SELECT id, temperature, humidity FROM demo 
+SQL: SELECT ts, temperature, humidity FROM demo 
 WHERE HAD_CHANGED(true, temperature) = true AND HAD_CHANGED(true, humidity) = false
 _________________________________________________________
-{"ts":1,temperature":23,"humidity":88}
 {"ts":4,temperature":25,"humidity":88}
 ```
 
@@ -343,7 +346,7 @@ _________________________________________________________
 当 temperature 值变化后大于 24 时获取数据:
 
 ```text
-SQL: SELECT id, temperature, humidity FROM demo 
+SQL: SELECT ts, temperature, humidity FROM demo 
 WHERE CHANGED_COL(true, temperature) > 24
 _________________________________________________________
 {"ts":4,temperature":25,"humidity":88}

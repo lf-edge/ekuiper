@@ -38,6 +38,7 @@ type Parser struct {
 	}
 	inFunc string // currently parsing function name
 	f      int    // anonymous field index number
+	fn     int    // function index number
 	clause string
 }
 
@@ -700,7 +701,9 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 			if valErr := validateFuncs(name, nil); valErr != nil {
 				return nil, valErr
 			}
-			return &ast.Call{Name: name, Args: args}, nil
+			c := &ast.Call{Name: name, Args: args, FuncId: p.fn}
+			p.fn += 1
+			return c, nil
 		} else {
 			p.unscan()
 		}
@@ -733,7 +736,9 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 		if name == "deduplicate" {
 			args = append([]ast.Expr{&ast.Wildcard{Token: ast.ASTERISK}}, args...)
 		}
-		return &ast.Call{Name: name, Args: args}, nil
+		c := &ast.Call{Name: name, Args: args, FuncId: p.fn}
+		p.fn += 1
+		return c, nil
 	} else {
 		if err != nil {
 			return nil, err

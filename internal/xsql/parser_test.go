@@ -350,7 +350,8 @@ func TestParser_ParseStatement(t *testing.T) {
 						AName: "",
 						Name:  "lpad",
 						Expr: &ast.Call{
-							Name: "lpad",
+							Name:   "lpad",
+							FuncId: 1,
 							Args: []ast.Expr{
 								&ast.Call{
 									Name: "lower",
@@ -375,7 +376,8 @@ func TestParser_ParseStatement(t *testing.T) {
 						AName: "field1",
 						Name:  "lpad",
 						Expr: &ast.Call{
-							Name: "lpad",
+							Name:   "lpad",
+							FuncId: 1,
 							Args: []ast.Expr{
 								&ast.Call{
 									Name: "lower",
@@ -400,7 +402,8 @@ func TestParser_ParseStatement(t *testing.T) {
 						AName: "",
 						Name:  "length",
 						Expr: &ast.Call{
-							Name: "length",
+							Name:   "length",
+							FuncId: 1,
 							Args: []ast.Expr{
 								&ast.Call{
 									Name: "lower",

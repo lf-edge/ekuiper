@@ -279,10 +279,14 @@ Rule to get the changed temperature and humidity values, and rename the changed 
 ```text
 SQL: SELECT CHANGED_COLS("c_", true, temperature, humidity) FROM demo
 _________________________________________________________
-{"c_temperature":23,"c_humidity":88}
-{"c_temperature":25}
-{"c_humidity":90}
-{"c_humidity":91}
+{"c_ts":1, "c_temperature":23, "c_humidity":88}
+{"c_ts":2}
+{"c_ts":3}
+{"c_ts":4, "c_temperature":25}
+{"c_ts":5, "c_humidity":90}
+{"c_ts":6, "c_humidity":91}
+{"c_ts":7}
+{"c_ts":8}
 ```
 
 Rule to get the changed values of all columns and do not ignore null:
@@ -309,7 +313,7 @@ _________________________________________________________________
 Rule to get the events when temperature or humidity changed:
 
 ```text
-SQL: SELECT id, temperature, humidity FROM demo
+SQL: SELECT ts, temperature, humidity FROM demo
 WHERE HAD_CHANGED(true, temperature, humidity) = true
 _________________________________________________________
 {"ts":1,temperature":23,"humidity":88}
@@ -321,10 +325,9 @@ _________________________________________________________
 Rule to get the events when temperature has changed but humidity has NOT changed:
 
 ```text
-SQL: SELECT id, temperature, humidity FROM demo 
+SQL: SELECT ts, temperature, humidity FROM demo 
 WHERE HAD_CHANGED(true, temperature) = true AND HAD_CHANGED(true, humidity) = false
 _________________________________________________________
-{"ts":1,temperature":23,"humidity":88}
 {"ts":4,temperature":25,"humidity":88}
 ```
 
@@ -342,7 +345,7 @@ _________________________________________________________
 Rule to get the changed values when the temperature had changed to value bigger than 24:
 
 ```text
-SQL: SELECT id, temperature, humidity FROM demo 
+SQL: SELECT ts, temperature, humidity FROM demo 
 WHERE CHANGED_COL(true, temperature) > 24
 _________________________________________________________
 {"ts":4,temperature":25,"humidity":88}
