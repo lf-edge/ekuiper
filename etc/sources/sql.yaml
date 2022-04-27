@@ -31,10 +31,10 @@ mysql_config:
     indexFieldType: "DATETIME"
     dateTimeFormat: "YYYY-MM-dd HH:mm:ss"
 
-sqltemplate_config:
+template_config:
   templateSqlQueryCfg:
-    TemplateSql: "select * from table where entry_data > {{.entry_data}}"
-    indexField: entry_data
+    TemplateSql: "select * from table where entry_date > '{{.entry_date}}'"
+    indexField: entry_date
     indexValue: "2022-04-13 06:22:32.233"
     indexFieldType: "DATETIME"
     dateTimeFormat: "YYYY-MM-dd HH:mm:ssSSS"

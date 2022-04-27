@@ -80,6 +80,25 @@ func (cfg *sqlConfig) Init(props map[string]interface{}) error {
 	if cfg.TemplateSqlQueryCfg == nil && cfg.InternalSqlQueryCfg == nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
+
+	if cfg.TemplateSqlQueryCfg != nil && cfg.TemplateSqlQueryCfg.IndexFieldType == DATETIME_TYPE && cfg.TemplateSqlQueryCfg.DateTimeFormat != "" {
+		t, err := cast.InterfaceToTime(cfg.TemplateSqlQueryCfg.IndexValue, cfg.TemplateSqlQueryCfg.DateTimeFormat)
+		if err != nil {
+			err = fmt.Errorf("TemplateSqlQueryCfg InterfaceToTime datetime convert got error %v", err)
+			return err
+		}
+		cfg.TemplateSqlQueryCfg.IndexValue = t
+	}
+
+	if cfg.InternalSqlQueryCfg != nil && cfg.InternalSqlQueryCfg.IndexFieldType == DATETIME_TYPE && cfg.InternalSqlQueryCfg.DateTimeFormat != "" {
+		t, err := cast.InterfaceToTime(cfg.InternalSqlQueryCfg.IndexValue, cfg.InternalSqlQueryCfg.DateTimeFormat)
+		if err != nil {
+			err = fmt.Errorf("InternalSqlQueryCfg InterfaceToTime datetime convert got error %v", err)
+			return err
+		}
+		cfg.InternalSqlQueryCfg.IndexValue = t
+	}
+
 	return nil
 }
 
