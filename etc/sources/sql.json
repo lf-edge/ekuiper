@@ -152,8 +152,8 @@
           "zh_CN": "查询基础配置"
         },
         "label": {
-          "en_US": "QueryPattern",
-          "zh_CN": "查询样式"
+          "en_US": "Query Parameters",
+          "zh_CN": "查询参数"
         }
       },
       {
@@ -240,12 +240,12 @@
         "control": "list",
         "type": "list_object",
         "hint": {
-          "en_US": "user defined query",
-          "zh_CN": "自定义查询"
+          "en_US": "Query Template",
+          "zh_CN": "查询模版"
         },
         "label": {
-          "en_US": "user defined query",
-          "zh_CN": "自定义查询"
+          "en_US": "Query Template",
+          "zh_CN": "查询模版"
         }
       }
     ]

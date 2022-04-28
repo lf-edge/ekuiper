@@ -14,9 +14,9 @@ Restart the eKuiper server to activate the plugin.
 
 ## Properties
 
-| Property name | Optional | Description                                                  |
-| ------------- | -------- | ------------------------------------------------------------ |
-| path          | false    | The file path for saving the result, such as `/tmp/result.txt` |
+| Property name | Optional | Description                                                                                                                                     |
+|---------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| path          | false    | The file path for saving the result, such as `/tmp/result.txt`                                                                                  |
 | interval      | true     | The time interval (ms) for writing the analysis result. The default value is 1000, which means write the analysis result with every one second. |
 
 ## Sample usage
