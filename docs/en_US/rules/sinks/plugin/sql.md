@@ -8,7 +8,7 @@ This plugin must be used in conjunction with at least a database driver. We are 
 This [repository](https://github.com/lf-edge/ekuiper/tree/master/extensions/sqldatabase/driver) lists all the supported drivers.
 
 This plugin supports `sqlserver\postgres\mysql\sqlite3\oracle` drivers by default. User can compile plugin that only support one driver by himself,
-for example, if he only wants sqlserver, then he can build with build tag `mysql`.
+for example, if he only wants mysql, then he can build with build tag `mysql`.
 
 ### Default build command
 ```shell
