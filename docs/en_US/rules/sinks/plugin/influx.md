@@ -22,16 +22,16 @@ Restart the eKuiper server to activate the plugin.
 
 ## Properties
 
-| Property name | Optional | Description                                                  |
-| ------------- | -------- | ------------------------------------------------------------ |
-| addr          | true     | The addr of the InfluxDB |
+| Property name | Optional | Description                                       |
+|---------------|----------|---------------------------------------------------|
+| addr          | true     | The addr of the InfluxDB                          |
 | measurement   | true     | The measurement of the InfluxDb (like table name) |
-| username      | false    | The InfluxDB login username |
-| password      | false    | The InfluxDB login password |
-| databasename  | true     | The database of the InfluxDB |
-| tagkey        | true     | The tag key of the InfluxDB |
-| tagvalue      | true     | The tag value of the InfluxDB |
-| fields     | true       | The column of the InfluxDB,split with ","  |
+| username      | false    | The InfluxDB login username                       |
+| password      | false    | The InfluxDB login password                       |
+| databasename  | true     | The database of the InfluxDB                      |
+| tagkey        | true     | The tag key of the InfluxDB                       |
+| tagvalue      | true     | The tag value of the InfluxDB                     |
+| fields        | true     | The column of the InfluxDB,split with ","         |
 ## Sample usage
 
 Below is a sample for selecting temperature great than 50 degree, and some profiles only for your reference.

@@ -14,12 +14,12 @@ Restart the eKuiper server to activate the plugin.
 
 ## Attribute
 
-| Attribute name | Optional | Description                                                  |
-| -------------- | -------- | ------------------------------------------------------------ |
+| Attribute name | Optional | Description                                                                                                                                                                     |
+|----------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | path           | False    | The name of the folder where the pictures are saved, such as `./tmp`. Note: For multiple rules, their paths cannot be repeated, otherwise they will be deleted from each other. |
-| format         | False    | File format, support jpeg and png.                           |
-| maxAge         | True     | Maximum file storage time (hours). The default value is 72, which means that the picture can be stored for up to 3 days. |
-| maxCount       | True     | The maximum number of stored pictures. The default value is 1000. The earlier pictures will be deleted. The relationship with `maxAge` is OR. |
+| format         | False    | File format, support jpeg and png.                                                                                                                                              |
+| maxAge         | True     | Maximum file storage time (hours). The default value is 72, which means that the picture can be stored for up to 3 days.                                                        |
+| maxCount       | True     | The maximum number of stored pictures. The default value is 1000. The earlier pictures will be deleted. The relationship with `maxAge` is OR.                                   |
 
 ## Usage example
 
