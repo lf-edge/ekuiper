@@ -46,6 +46,117 @@ Take GoLand as an example, developers can debug the code:
 1. Debug the whole program. Make sure all directories mentioned in [Makefile](../../Makefile) build_prepare sections are created in your eKuiper root path. Add your breakpoints. Open `cmd/kuiperd/main.go`. In the main function, you'll find a green triangle in the ruler, click it and select debug. Then create your stream/rule that would run through your breakpoint, the debugger will pause there.
 2. To debug a small portion of code, we recommend writing a unit test and debug it. You can go to any test file and find the same green triangle to run in debug mode. For example, `pkg/cast/cast_test.go` TestMapConvert_Funcs can run as debug.
 
+#### Debug edgex code
+
+Users can modify edgex source/sink code to meet their requirement. In this case, the best practice is letting the other services running in docker mode but eKuiper run locally.
+Users can follow these steps to set up the environment.
+
+#### expose message bus
+
+  eKuiper subscribe messages by topic and by default edgex is using redis as message bus. This guide will use redis as example to show how to expose message bus.
+  In the docker-compose file, find the redis service and in ports part change 127.0.0.1:6379
+to 0.0.0.0:6379, then restart all the services.
+
+```yaml
+ database:
+    container_name: edgex-redis
+    environment:
+      CLIENTS_CORE_COMMAND_HOST: edgex-core-command
+      CLIENTS_CORE_DATA_HOST: edgex-core-data
+      CLIENTS_CORE_METADATA_HOST: edgex-core-metadata
+      CLIENTS_SUPPORT_NOTIFICATIONS_HOST: edgex-support-notifications
+      CLIENTS_SUPPORT_SCHEDULER_HOST: edgex-support-scheduler
+      DATABASES_PRIMARY_HOST: edgex-redis
+      EDGEX_SECURITY_SECRET_STORE: "false"
+      REGISTRY_HOST: edgex-core-consul
+    hostname: edgex-redis
+    image: redis:6.2-alpine
+    networks:
+      edgex-network: {}
+    ports:
+    - 0.0.0.0:6379:6379/tcp
+    read_only: true
+    restart: always
+    security_opt:
+    - no-new-privileges:true
+    user: root:root
+    volumes:
+    - db-data:/data:z
+
+```
+
+#### change edgex local config
+
+Change edgex source config according to message bus type, the following table is message bus configuration
+the file locates in `etc/sources/edgex.yaml`.
+
+| message bus   | type  | protocol | server       | port |
+|---------------|-------|----------|--------------|------|
+| redis  server | redis | redis    | 10.65.38.224 | 6379 |
+| mqtt  broker  | mqtt  | tcp      | 10.65.38.224 | 1883 |
+| zemo mq       | zero  | tcp      | 10.65.38.224 | 5566 |
+
+Take the redis as example, the following config will let eKuiper connect to 10.65.38.224's 6379 port.
+
+```yaml
+default:
+  protocol: redis
+  server: 10.65.38.224
+  port: 6379
+  topic: rules-events
+  type: redis
+  # Could be 'event' or 'request'.
+  # If the message is from app service, the message type is an event;
+  # Otherwise, if it is from the message bus directly, it should be a request
+  messageType: event
+```
+
+After changing this, redis will listen on the host 6379 port, developers can connect to the machine that edgex runs remotely by the server address.
+For example, the host ip address is 10.65.38.224 , users can connect to this machine by the ip address.
+
+
+#### enable eKuiper console log and set rest api port
+
+Change the config file in `etc/kuiper.yaml`, set the console log true and set eKuiper rest api port to 59720
+
+```yaml
+basic:
+  # true|false, with debug level, it prints more debug info
+  debug: false
+  # true|false, if it's set to true, then the log will be print to console
+  consoleLog: true
+  # true|false, if it's set to true, then the log will be print to log file
+  fileLog: true
+  # How many hours to split the file
+  rotateTime: 24
+  # Maximum file storage hours
+  maxAge: 72
+  # CLI ip
+  ip: 0.0.0.0
+  # CLI port
+  port: 20498
+  # REST service ip
+  restIp: 0.0.0.0
+  # REST service port
+  restPort: 59720
+  # true|false, when true, will check the RSA jwt token for rest api
+  authentication: false
+  #  restTls:
+  #    certfile: /var/https-server.crt
+  #    keyfile: /var/https-server.key
+  # Prometheus settings
+  prometheus: false
+  prometheusPort: 20499
+  # The URL where hosts all of pre-build plugins. By default it's at packages.emqx.net
+  pluginHosts: https://packages.emqx.net
+  # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
+  ignoreCase: true
+```
+
+#### run locally
+  Use the [former method](./CONTRIBUTING.md#debug-your-code) to run the eKuiper
+
+
 ### Testing
 
 The eKuiper project leverages Github actions to run unit test & FVT (functional verification test), so please take a
