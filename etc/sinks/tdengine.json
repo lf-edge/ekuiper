@@ -1,151 +1,188 @@
 {
-	"about": {
-		"trial": true,
-		"author": {
-			"name": "EMQ",
-			"email": "contact@emqx.io",
-			"company": "EMQ Technologies Co., Ltd",
-			"website": "https://www.emqx.io"
-		},
-		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/tdengine.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/tdengine.md"
-		},
-		"description": {
-			"en_US": "This a sink plugin for TDengine, it can be used for saving the analysis data into TDengine.",
-			"zh_CN": "本插件为 TDengine 的持久化插件，可以用于将分析数据存入 TDengine 中"
-		}
-	},
-	"libs": [
-	],
-	"properties": [{
-		"name": "ip",
-		"default": "127.0.0.1",
-		"optional": false,
-		"control": "text",
-		"type": "string",
-		"hint": {
-			"en_US": "IP address of Taosdb",
-			"zh_CN": "Taosdb IP 地址"
-		},
-		"label": {
-			"en_US": "Database address",
-			"zh_CN": "数据库地址"
-		}
-	}, {
-		"name": "port",
-		"default": 0,
-		"optional": false,
-		"control": "text",
-		"type": "int",
-		"hint": {
-			"en_US": "Database port",
-			"zh_CN": "数据库端口号"
-		},
-		"label": {
-			"en_US": "Port",
-			"zh_CN": "端口号"
-		}
-	}, {
-		"name": "user",
-		"default": "root",
-		"optional": false,
-		"control": "text",
-		"type": "string",
-		"hint": {
-			"en_US": "Username",
-			"zh_CN": "用户名"
-		},
-		"label": {
-			"en_US": "Username",
-			"zh_CN": "用户名"
-		}
-	}, {
-		"name": "password",
-		"default": "taosdata",
-		"optional": false,
-		"control": "text",
-		"type": "string",
-		"hint": {
-			"en_US": "Password of Taosdb",
-			"zh_CN": "数据库密码"
-		},
-		"label": {
-			"en_US": "Password",
-			"zh_CN": "密码"
-		}
-	}, {
-		"name": "database",
-		"default": "",
-		"optional": false,
-		"control": "text",
-		"type": "string",
-		"hint": {
-			"en_US": "Database name",
-			"zh_CN": "库名称"
-		},
-		"label": {
-			"en_US": "Database name",
-			"zh_CN": "库名称"
-		}
-	}, {
-		"name": "table",
-		"default": "",
-		"optional": false,
-		"control": "text",
-		"type": "string",
-		"hint": {
-			"en_US": "Table name",
-			"zh_CN": "表名"
-		},
-		"label": {
-			"en_US": "Table name",
-			"zh_CN": "表名"
-		}
-	}, 
-  {
-		"name": "fields",
-		"default": [],
-		"optional": false,
-		"control": "list",
-		"type": "list_string",
-		"hint": {
-			"en_US": "Field of table",
-			"zh_CN": "表字段"
-		},
-		"label": {
-			"en_US": "Table field",
-			"zh_CN": "表字段"
-		}
-	},
-  {
-		"name": "provideTs",
-		"default": false,
-		"optional": false,
-		"control": "radio",
-		"type": "bool",
-		"hint": {
-			"en_US": "Whether to provide a timestamp",
-			"zh_CN": "是否提供时间戳"
-		},
-		"label": {
-			"en_US": "Whether to provide a timestamp",
-			"zh_CN": "是否提供时间戳"
-		}
-	},
-  {
-		"name": "tsFieldName",
-		"default":"",
-		"optional": false,
-		"control": "text",
-		"type": "string",
-		"hint": {
-			"en_US": "Timestamp field name",
-			"zh_CN": "时间戳字段名"
-		},
-		"label": {
-			"en_US": "Timestamp field name",
-			"zh_CN": "时间戳字段名"
-		}
-	}]
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/tdengine.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/tdengine.md"
+    },
+    "description": {
+      "en_US": "This a sink plugin for TDengine, it can be used for saving the analysis data into TDengine.",
+      "zh_CN": "本插件为 TDengine 的持久化插件，可以用于将分析数据存入 TDengine 中"
+    }
+  },
+  "libs": [
+  ],
+  "properties": [
+    {
+      "name": "host",
+      "default": "127.0.0.1",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Address of Taosdb, must be a host",
+        "zh_CN": "Taosdb 地址，必须为域名"
+      },
+      "label": {
+        "en_US": "Database address",
+        "zh_CN": "数据库地址"
+      }
+    },
+    {
+      "name": "port",
+      "default": 0,
+      "optional": false,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Database port",
+        "zh_CN": "数据库端口号"
+      },
+      "label": {
+        "en_US": "Port",
+        "zh_CN": "端口号"
+      }
+    },
+    {
+      "name": "user",
+      "default": "root",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Username",
+        "zh_CN": "用户名"
+      },
+      "label": {
+        "en_US": "Username",
+        "zh_CN": "用户名"
+      }
+    },
+    {
+      "name": "password",
+      "default": "taosdata",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Password of Taosdb",
+        "zh_CN": "数据库密码"
+      },
+      "label": {
+        "en_US": "Password",
+        "zh_CN": "密码"
+      }
+    },
+    {
+      "name": "database",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Database name",
+        "zh_CN": "库名称"
+      },
+      "label": {
+        "en_US": "Database name",
+        "zh_CN": "库名称"
+      }
+    },
+    {
+      "name": "table",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Table name",
+        "zh_CN": "表名"
+      },
+      "label": {
+        "en_US": "Table name",
+        "zh_CN": "表名"
+      }
+    },
+    {
+      "name": "fields",
+      "default": [],
+      "optional": false,
+      "control": "list",
+      "type": "list_string",
+      "hint": {
+        "en_US": "Field of table",
+        "zh_CN": "表字段"
+      },
+      "label": {
+        "en_US": "Table field",
+        "zh_CN": "表字段"
+      }
+    },
+    {
+      "name": "provideTs",
+      "default": false,
+      "optional": false,
+      "control": "radio",
+      "type": "bool",
+      "hint": {
+        "en_US": "Whether to provide a timestamp",
+        "zh_CN": "是否提供时间戳"
+      },
+      "label": {
+        "en_US": "Whether to provide a timestamp",
+        "zh_CN": "是否提供时间戳"
+      }
+    },
+    {
+      "name": "tsFieldName",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Timestamp field name",
+        "zh_CN": "时间戳字段名"
+      },
+      "label": {
+        "en_US": "Timestamp field name",
+        "zh_CN": "时间戳字段名"
+      }
+    },
+    {
+      "name": "sTable",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Super Table name",
+        "zh_CN": "超级表名"
+      },
+      "label": {
+        "en_US": "Super Table name",
+        "zh_CN": "超级表名"
+      }
+    },
+    {
+      "name": "tagFields",
+      "default": [],
+      "optional": false,
+      "control": "list",
+      "type": "list_string",
+      "hint": {
+        "en_US": "Fields for tags",
+        "zh_CN": "标签字段"
+      },
+      "label": {
+        "en_US": "Tags fields",
+        "zh_CN": "标签字段"
+      }
+    }
+  ]
 }
