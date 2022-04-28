@@ -6,14 +6,18 @@
 
 - **Where to get help**:
 
-  **<u>Web</u>**
+  **<u>Website</u>**
+
+  - https://ekuiper.org
+
+  **<u>Github</u>**
 
   - https://github.com/lf-edge/ekuiper
 
   **<u>Documents</u>**
 
-  - [Getting started](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/getting_started.md) 
-  - [Reference guide](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/reference.md)
+  - [Getting started](https://ekuiper.org/docs/en/latest/quick_start_docker.html) 
+  - [Reference guide](https://ekuiper.org/docs/en/latest/)
 
 - **Where to file issues:**
 
@@ -57,7 +61,7 @@ To minimize image size, it's uncommon for additional related tools (such as `git
 
 LF Edge eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of eKuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  eKuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
 
-![eKuiper architect](https://raw.githubusercontent.com/lf-edge/ekuiper/master/docs/en_US/resources/arch.png)
+![eKuiper architect](https://ekuiper.org/docs/docs-assets/img/arch.349f5fae.png)
 
 **User scenarios**
 
@@ -106,6 +110,8 @@ For example
 ```shell
 docker run -p 9081:9081 -d --name ekuiper MQTT_SOURCE__DEFAULT__SERVER="$MQTT_BROKER_ADDRESS" lfedge/ekuiper:$tag
 ```
+
+> Notice that, before v1.5.0 the mqtt server property is an array. Please check [migration guide](#migration-guide) for detail.
 
 #### 5 minutes quick start
 
