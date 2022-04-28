@@ -45,6 +45,115 @@ $ git checkout -b <my-branch> upstream/master
 1. 调试整个程序。确保 [Makefile](../../Makefile) build_prepare 部分提到的所有目录都在你的eKuiper根路径中创建。添加你的断点。打开 `cmd/kuiperd/main.go` 。在主函数中，你会发现标尺上有一个绿色的三角形，点击它并选择调试。然后创建你的流/规则，让它运行到你的断点，调试器会在那里暂停。
 2. 要调试一小部分代码，我们建议写一个单元测试并调试它。你可以到任何一个测试文件中，找到同样的绿色三角形，在调试模式下运行。例如，`pkg/cast/cast_test.go` TestMapConvert_Funcs 可以作为调试运行。
 
+#### 调试 edgex 代码
+
+用户可以修改 edgex 源/目标代码以满足他们的要求。在这种情况下，最佳实践是让其他服务在 docker 模式下运行，但 eKuiper 在本地运行。
+用户可以按照以下步骤设置环境
+
+#### 暴露消息总线
+
+eKuiper 按主题订阅消息，默认情况下，edgex 使用 redis 作为消息总线。本指南将使用 redis 作为示例来展示如何公开消息总线。
+在 docker-compose 文件中，找到 redis 服务并在端口部分更改 127.0.0.1:6379
+到 0.0.0.0:6379，然后重启所有服务。
+
+```yaml
+ database:
+    container_name: edgex-redis
+    environment:
+      CLIENTS_CORE_COMMAND_HOST: edgex-core-command
+      CLIENTS_CORE_DATA_HOST: edgex-core-data
+      CLIENTS_CORE_METADATA_HOST: edgex-core-metadata
+      CLIENTS_SUPPORT_NOTIFICATIONS_HOST: edgex-support-notifications
+      CLIENTS_SUPPORT_SCHEDULER_HOST: edgex-support-scheduler
+      DATABASES_PRIMARY_HOST: edgex-redis
+      EDGEX_SECURITY_SECRET_STORE: "false"
+      REGISTRY_HOST: edgex-core-consul
+    hostname: edgex-redis
+    image: redis:6.2-alpine
+    networks:
+      edgex-network: {}
+    ports:
+    - 0.0.0.0:6379:6379/tcp
+    read_only: true
+    restart: always
+    security_opt:
+    - no-new-privileges:true
+    user: root:root
+    volumes:
+    - db-data:/data:z
+
+```
+
+#### 修改本地 edgex 的配置
+
+根据消息总线类型更改 edgex 源配置，下表为消息总线配置
+该文件位于 `etc/sources/edgex.yaml` 中。
+
+| message bus   | type  | protocol | server       | port |
+|---------------|-------|----------|--------------|------|
+| redis  server | redis | redis    | 10.65.38.224 | 6379 |
+| mqtt  broker  | mqtt  | tcp      | 10.65.38.224 | 1883 |
+| zemo mq       | zero  | tcp      | 10.65.38.224 | 5566 |
+
+以redis为例，下面的配置会让eKuiper连接到10.65.38.224的6379端口。
+
+```yaml
+default:
+  protocol: redis
+  server: 10.65.38.224
+  port: 6379
+  topic: rules-events
+  type: redis
+  # Could be 'event' or 'request'.
+  # If the message is from app service, the message type is an event;
+  # Otherwise, if it is from the message bus directly, it should be a request
+  messageType: event
+```
+
+修改后 redis 会监听主机的6379端口，开发者可以通过服务器地址连接到edgex远程运行的机器。
+例如机器 ip 地址为 10.65.38.224 ，用户可以通过该ip地址连接。
+
+#### 打开 eKuiper 的控制台日志，修改 rest 端口
+
+更改 `etc/kuiper.yaml` 中的配置文件，将控制台日志设置为 true 并将 eKuiper rest api 端口设置为 59720
+```yaml
+basic:
+  # true|false, with debug level, it prints more debug info
+  debug: false
+  # true|false, if it's set to true, then the log will be print to console
+  consoleLog: true
+  # true|false, if it's set to true, then the log will be print to log file
+  fileLog: true
+  # How many hours to split the file
+  rotateTime: 24
+  # Maximum file storage hours
+  maxAge: 72
+  # CLI ip
+  ip: 0.0.0.0
+  # CLI port
+  port: 20498
+  # REST service ip
+  restIp: 0.0.0.0
+  # REST service port
+  restPort: 59720
+  # true|false, when true, will check the RSA jwt token for rest api
+  authentication: false
+  #  restTls:
+  #    certfile: /var/https-server.crt
+  #    keyfile: /var/https-server.key
+  # Prometheus settings
+  prometheus: false
+  prometheusPort: 20499
+  # The URL where hosts all of pre-build plugins. By default it's at packages.emqx.net
+  pluginHosts: https://packages.emqx.net
+  # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
+  ignoreCase: true
+```
+
+#### run locally
+
+使用前面提到的[启动方法](./CONTRIBUTING.md#调试你的代码) 运行 eKuiper
+
 ### 测试
 
 eKuiper 项目利用 Github actions 来运行单元测试和 FVT（功能验证测试），所以请看一下 PR 状态的运行结果，并确保所有的测试用例都能成功运行。
