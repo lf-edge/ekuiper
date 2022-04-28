@@ -33,10 +33,40 @@
       }
     },
     {
-      "name": "raw",
-      "optional": true,
+      "name": "groupName",
+      "optional": false,
       "control": "text",
       "default": "",
+      "type": "string",
+      "hint": {
+        "en_US": "The neuron group name",
+        "zh_CN": "Neuron 分组名称"
+      },
+      "label": {
+        "en_US": "Group Name",
+        "zh_CN": "分组名称"
+      }
+    },
+    {
+      "name": "tags",
+      "default": [],
+      "optional": false,
+      "control": "list",
+      "type": "list_string",
+      "hint": {
+        "en_US": "Tags of neuron to be sent",
+        "zh_CN": "要写入的Neuron标签"
+      },
+      "label": {
+        "en_US": "Tags",
+        "zh_CN": "标签字段"
+      }
+    },
+    {
+      "name": "raw",
+      "optional": true,
+      "control": "radio",
+      "default": false,
       "type": "bool",
       "hint": {
         "en_US": "Whether to send the raw string",
