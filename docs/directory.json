@@ -187,6 +187,10 @@
 									"path": "rules/sources/plugin/zmq"
 								},
 								{
+									"title": "SQL 源",
+									"path": "rules/sources/plugin/sql"
+								},
+								{
 									"title": "随机源",
 									"path": "rules/sources/plugin/random"
 								}
@@ -248,6 +252,10 @@
 								{
 									"title": "文件动作",
 									"path": "rules/sinks/plugin/file"
+								},
+								{
+									"title": "SQL 动作",
+									"path": "rules/sinks/plugin/sql"
 								},
 								{
 									"title": "InfluxDB 动作",
@@ -697,6 +705,10 @@
 									"path": "rules/sources/plugin/zmq"
 								},
 								{
+									"title": "SQL source",
+									"path": "rules/sources/plugin/sql"
+								},
+								{
 									"title": "Random source",
 									"path": "rules/sources/plugin/random"
 								}
@@ -758,6 +770,10 @@
 								{
 									"title": "File sink",
 									"path": "rules/sinks/plugin/file"
+								},
+								{
+									"title": "SQL sink",
+									"path": "rules/sinks/plugin/sql"
 								},
 								{
 									"title": "InfluxDB sink",
