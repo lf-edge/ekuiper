@@ -17,6 +17,16 @@
 
 set -e
 
+pids=`ps aux|grep "kuiperd" | grep "bin"|awk '{printf $2 " "}'`
+if [ "$pids" = "" ] ; then
+   echo "No kuiper server was started"
+else
+  for pid in $pids ; do
+    echo "kill kuiper " $pid
+    kill -9 $pid
+  done
+fi
+
 ver=`git describe --tags --always`
 os=`uname -s | tr "[A-Z]" "[a-z]"`
 base_dir=_build/kuiper-"$ver"-"$os"-amd64

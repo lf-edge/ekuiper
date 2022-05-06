@@ -33,13 +33,13 @@ build(){
             ;;
         tdengine )
             if [ "$(uname -m)" = "x86_64" ]; then
-                wget "https://www.taosdata.com/assets-download/TDengine-client-2.2.0.5-Linux-x64.tar.gz" -O /tmp/TDengine-client-2.2.0.5.tar.gz;
+                wget "https://www.taosdata.com/assets-download/TDengine-client-2.4.0.18-Linux-x64.tar.gz" -O /tmp/TDengine-client-2.4.0.18.tar.gz;
             fi;
             if [ "$(uname -m)" = "aarch64" ]; then
-                wget "https://www.taosdata.com/assets-download/TDengine-client-2.2.0.5-Linux-aarch64.tar.gz" -O /tmp/TDengine-client-2.2.0.5.tar.gz;
+                wget "https://www.taosdata.com/assets-download/TDengine-client-2.4.0.18-Linux-aarch64.tar.gz" -O /tmp/TDengine-client-2.4.0.18.tar.gz;
             fi;
-            tar -zxvf /tmp/TDengine-client-2.2.0.5.tar.gz
-            cd TDengine-client-2.2.0.5 && ./install_client.sh && cd -
+            tar -zxvf /tmp/TDengine-client-2.4.0.18.tar.gz
+            cd TDengine-client-2.4.0.18 && ./install_client.sh && cd -
             go build -trimpath -modfile extensions.mod --buildmode=plugin -tags plugins -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go
             ;;
         labelImage )
