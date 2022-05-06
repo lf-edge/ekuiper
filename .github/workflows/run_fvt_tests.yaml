@@ -84,6 +84,7 @@ jobs:
     - name: run edgex && kuiper
       run: |
         ./test/setup_env.sh
+        ./test/prepare_plugins.sh
         ln -s _build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log kuiper_logs
     - name: run fvt tests
       timeout-minutes: 8

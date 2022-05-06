@@ -109,8 +109,17 @@ cd ../..
 
 rm -r temp
 
+pids=`ps aux | grep http_server | grep "./" | awk '{printf $2 " "}'`
+if [ "$pids" = "" ] ; then
+   echo "No http mockup server was started"
+else
+  for pid in $pids ; do
+    echo "kill http mockup server " $pid
+    kill -9 $pid
+  done
+fi
+
 cd plugins/service/
 export BUILD_ID=dontKillMe
-
 echo "starting mock http server..."
 nohup ./http_server > http_server.out 2>&1 &
