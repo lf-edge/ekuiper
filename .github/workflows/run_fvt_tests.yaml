@@ -69,9 +69,14 @@ jobs:
     - name: install tdengine client
       timeout-minutes: 10
       env:
-        TD_VERSION: 2.2.0.5
+        TD_VERSION: 2.4.0.18
       run: |
-        wget "https://www.taosdata.com/assets-download/TDengine-client-$TD_VERSION-Linux-x64.tar.gz" -O /tmp/TDengine-client-$TD_VERSION.tar.gz
+        if [ "$(uname -m)" = "x86_64" ]; then
+          wget "https://www.taosdata.com/assets-download/TDengine-client-$TD_VERSION-Linux-x64.tar.gz" -O /tmp/TDengine-client-2.4.0.18.tar.gz;
+        fi;
+        if [ "$(uname -m)" = "aarch64" ]; then
+          wget "https://www.taosdata.com/assets-download/TDengine-client-$TD_VERSION-Linux-aarch64.tar.gz" -O /tmp/TDengine-client-2.4.0.18.tar.gz;
+        fi;
         tar -zxvf /tmp/TDengine-client-$TD_VERSION.tar.gz
         cd TDengine-client-$TD_VERSION && ./install_client.sh
     - uses: actions/checkout@v2
