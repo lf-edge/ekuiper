@@ -106,6 +106,8 @@ func (pp *ProjectOp) getVE(tuple xsql.DataValuer, agg xsql.AggregateData, fv *xs
 			wr = input.WindowRange
 		case *xsql.JoinTupleSets:
 			wr = input.WindowRange
+		case xsql.GroupedTuples:
+			wr = input.WindowRange
 		}
 		if wr != nil {
 			return &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, &xsql.WindowRangeValuer{WindowRange: wr}, fv, &xsql.WildcardValuer{Data: tuple})}
