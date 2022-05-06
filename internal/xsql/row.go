@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package xsql
 
 import (
+	"encoding/json"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
@@ -358,6 +359,14 @@ func (t *Tuple) ToMap() map[string]interface{} {
 		t.AffiliateRow.MergeMap(t.cachedMap)
 	}
 	return t.cachedMap
+}
+
+func (t *Tuple) String() string {
+	b, err := json.Marshal(t.ToMap())
+	if err != nil {
+		return err.Error()
+	}
+	return string(b)
 }
 
 func (t *Tuple) Meta(key, table string) (interface{}, bool) {

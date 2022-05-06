@@ -28,8 +28,9 @@ const BufferLength = "buffer_length"
 const ExceptionsTotal = "exceptions_total"
 const LastException = "last_exception"
 const LastExceptionTime = "last_exception_time"
+const OutputData = "output_data"
 
-var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ProcessLatencyUs, BufferLength, LastInvocation, ExceptionsTotal, LastException, LastExceptionTime}
+var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ProcessLatencyUs, BufferLength, LastInvocation, ExceptionsTotal, LastException, LastExceptionTime, OutputData}
 
 type StatManager interface {
 	IncTotalRecordsIn()
@@ -38,6 +39,7 @@ type StatManager interface {
 	ProcessTimeStart()
 	ProcessTimeEnd()
 	SetBufferLength(l int64)
+	SetOutData(data string)
 	GetMetrics() []interface{}
 	// Clean remove all metrics history
 	Clean(ruleId string)
@@ -54,12 +56,15 @@ type DefaultStatManager struct {
 	totalExceptions   int64
 	lastException     string
 	lastExceptionTime time.Time
+	outData           string
 	//configs
-	opType           string //"source", "op", "sink"
-	prefix           string
+	opType     string //"source", "op", "sink"
+	prefix     string
+	opId       string
+	instanceId int
+	// state
 	processTimeStart time.Time
-	opId             string
-	instanceId       int
+	result           []interface{}
 }
 
 func NewStatManager(ctx api.StreamContext, opType string) (StatManager, error) {
@@ -80,6 +85,7 @@ func NewStatManager(ctx api.StreamContext, opType string) (StatManager, error) {
 		prefix:     prefix,
 		opId:       ctx.GetOpId(),
 		instanceId: ctx.GetInstanceId(),
+		result:     make([]interface{}, len(MetricNames)),
 	}
 	return getStatManager(ctx, ds)
 }
@@ -115,6 +121,10 @@ func (sm *DefaultStatManager) SetBufferLength(l int64) {
 	sm.bufferLength = l
 }
 
+func (sm *DefaultStatManager) SetOutData(data string) {
+	sm.outData = data
+}
+
 func (sm *DefaultStatManager) GetMetrics() []interface{} {
 	result := []interface{}{
 		sm.totalRecordsIn,
@@ -125,6 +135,7 @@ func (sm *DefaultStatManager) GetMetrics() []interface{} {
 		sm.totalExceptions,
 		sm.lastException,
 		0,
+		sm.outData,
 	}
 
 	if !sm.lastInvocation.IsZero() {
@@ -133,6 +144,7 @@ func (sm *DefaultStatManager) GetMetrics() []interface{} {
 	if !sm.lastExceptionTime.IsZero() {
 		result[7] = sm.lastExceptionTime.Format("2006-01-02T15:04:05.999999")
 	}
+
 	return result
 }
 

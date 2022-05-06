@@ -100,3 +100,9 @@ func (sm *PrometheusStatManager) Clean(ruleId string) {
 		mg.BufferLength.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
 	}
 }
+
+// SetOutData
+// TODO to implement
+func (sm *PrometheusStatManager) SetOutData(data string) {
+	panic("not implemented")
+}

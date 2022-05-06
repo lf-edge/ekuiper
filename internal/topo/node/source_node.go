@@ -166,8 +166,9 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 									logger.Errorf("Source %s preprocess error: %s", ctx.GetOpId(), val)
 									m.Broadcast(val)
 									stats.IncTotalExceptions(val.Error())
-								default:
+								default: // table
 									m.Broadcast(val)
+									stats.SetOutData(fmt.Sprintf("%s", val))
 								}
 								stats.IncTotalRecordsOut()
 								stats.SetBufferLength(int64(buffer.GetLength()))
