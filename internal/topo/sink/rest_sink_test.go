@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -185,7 +185,7 @@ func TestRestSink_Apply(t *testing.T) {
 		contextLogger.Debugf(string(body))
 		fmt.Fprintf(w, string(body))
 	}))
-	tf, _ := transform.GenTransform("")
+	tf, _ := transform.GenTransform("", "json", "")
 	defer ts.Close()
 	for i, tt := range tests {
 		requests = nil

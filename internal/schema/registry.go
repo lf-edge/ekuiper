@@ -125,16 +125,11 @@ func CreateOrUpdateSchema(info *Info) error {
 	return nil
 }
 
-func GetSchemaContent(schemaType def.SchemaType, name string) (*Info, error) {
-	registry.RLock()
-	defer registry.RUnlock()
-	if _, ok := registry.schemas[schemaType]; !ok {
-		return nil, fmt.Errorf("schema type %s not found", schemaType)
+func GetSchema(schemaType def.SchemaType, name string) (*Info, error) {
+	schemaFile, err := getSchemaFile(schemaType, name)
+	if err != nil {
+		return nil, err
 	}
-	if _, ok := registry.schemas[schemaType][name]; !ok {
-		return nil, fmt.Errorf("schema %s.%s not found", schemaType, name)
-	}
-	schemaFile := registry.schemas[schemaType][name]
 	content, err := ioutil.ReadFile(schemaFile)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read schema file %s: %s", schemaFile, err)
@@ -145,6 +140,19 @@ func GetSchemaContent(schemaType def.SchemaType, name string) (*Info, error) {
 		Content:  string(content),
 		FilePath: schemaFile,
 	}, nil
+}
+
+func getSchemaFile(schemaType def.SchemaType, name string) (string, error) {
+	registry.RLock()
+	defer registry.RUnlock()
+	if _, ok := registry.schemas[schemaType]; !ok {
+		return "", fmt.Errorf("schema type %s not found", schemaType)
+	}
+	if _, ok := registry.schemas[schemaType][name]; !ok {
+		return "", fmt.Errorf("schema %s.%s not found", schemaType, name)
+	}
+	schemaFile := registry.schemas[schemaType][name]
+	return schemaFile, nil
 }
 
 func DeleteSchema(schemaType def.SchemaType, name string) error {

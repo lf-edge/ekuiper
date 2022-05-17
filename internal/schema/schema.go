@@ -14,7 +14,11 @@
 
 package schema
 
-import "github.com/lf-edge/ekuiper/internal/pkg/def"
+import (
+	"fmt"
+	"github.com/lf-edge/ekuiper/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/internal/schema/protobuf"
+)
 
 type Info struct {
 	Type     def.SchemaType `json:"type"`
@@ -28,3 +32,22 @@ var (
 		def.PROTOBUF: ".proto",
 	}
 )
+
+// Converter converts bytes & map or []map according to the schema
+type Converter interface {
+	Encode(d interface{}) ([]byte, error)
+	Decode(b []byte) (interface{}, error)
+}
+
+func GetOrCreateSchema(t def.SchemaType, schemaFile string, schemaId string) (Converter, error) {
+	switch t {
+	case def.PROTOBUF:
+		fileName, err := getSchemaFile(t, schemaFile)
+		if err != nil {
+			return nil, err
+		}
+		return protobuf.NewConverter(schemaId, fileName)
+	default:
+		return nil, fmt.Errorf("unsupported schema type: %s", t)
+	}
+}
