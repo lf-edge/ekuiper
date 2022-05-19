@@ -118,6 +118,10 @@
 					]
 				},
 				{
+					"title": "使用 eKuiper 对 Neuron 采集的数据进行流式处理",
+					"path": "tutorials/neuron/neuron_integration_tutorial"
+				},
+				{
 					"title": "通过 OpenYurt 部署教程",
 					"path": "tutorials/deploy/openyurt_tutorial"
 				}
@@ -634,6 +638,10 @@
 							"path": "edgex/edgex_source_tutorial"
 						}
 					]
+				},
+				{
+					"title": "Stream processing of data collected by Neuron using eKuiper",
+					"path": "tutorials/neuron/neuron_integration_tutorial"
 				},
 				{
 					"title": "Deploy by OpenYurt",

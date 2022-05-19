@@ -1,19 +1,21 @@
 # 使用 eKuiper 对 Neuron 采集的数据进行流式处理
 
-[Neuron](https://neugates.io/zh) 是一个 EMQ 发起并开源的工业物联网（IIoT）边缘工业协议网关软件，用于现代大数据技术，以发挥工业 4.0 的力量。它支持对多种工业协议的一站式访问，并将其转换为标准 MQTT 协议以访问工业物联网平台。Neuron 和 eKuiper 整合使用，可以方便地进行 IIoT 边缘数据采集和计算。
+[Neuron](https://neugates.io/zh) 是运行在各类物联网边缘网关硬件上的工业协议网关软件，旨在解决工业 4.0 背景下设备数据统一接入难的问题。通过将来自繁杂多样工业设备的不同协议类型数据转换为统一标准的物联网 MQTT 消息，实现设备与工业物联网系统之间、设备彼此之间的互联互通，进行远程的直接控制和信息获取，为智能生产制造提供数据支撑。
 
-在 eKuiper 1.5.0 之前的版本中，Neuron 与 eKuiper 之间需要采用 MQTT 作为中转。二者协同时，需要额外部署 MQTT broker。同时，用户需要自行处理数据格式，包括读入和输出时的解码编码工作。eKuiper 1.5.0 版本加入了 Neuron source 和 sink，使得用户无需配置即可在 eKuiper 中接入 Neruon 中采集到的数据，进行计算；也可以方便地从 eKuiper 中反控 Neuron 。两个产品的整合，可以显著降低边缘计算解决方案的部署成本，简化使用门槛。
+Neuron 支持同时为多个不同通讯协议设备、数十种工业协议进行一站式接入及 MQTT 协议转换，仅占用超低资源，即可以原生或容器的方式部署在 X86、ARM 等架构的各类边缘硬件中。同时，用户可以通过基于 Web 的管理控制台实现在线的网关配置管理。
+
+在 eKuiper 1.5.0 之前的版本中，Neuron 与 eKuiper 之间需要采用 MQTT 作为中转。二者协同时，需要额外部署 MQTT broker。同时，用户需要自行处理数据格式，包括读入和输出时的解码编码工作。eKuiper 1.5.0 版本加入了 Neuron source 和 sink，使得用户无需配置即可在 eKuiper 中接入 Neuron 中采集到的数据进行计算；也可以方便地从 eKuiper 中通过 Neuron 控制设备 。两个产品的整合，可以显著降低边缘计算解决方案对资源的使用要求，降低使用门槛。
 
 ## Neuron 与 eKuiper 的集成
 
 Neuron 2.0 中，北向应用增加了 eKuiper 支持。当 Neuron 开启北向 eKuiper 应用之后，二者之间通过 NNG 协议的进程间通信方式进行连接，从而显著降低网络通信消耗，提高性能。
 
-![img.png](eKuiper_to_neuron.png)
+![ekuiper to neuron](eKuiper_to_neuron.png)
 
 eKuiper 与 Neuron 之间的集成是双向的，其实现主要包含两个部分:
 
 - 提供了一个 Neuron 源，支持从 Neuron 订阅数据。
-- 提供了一个 Neuron sink, 支持反控 Neuron
+- 提供了一个 Neuron sink, 支持通过 Neuron 控制设备。
 
 典型的工业物联网边缘数据处理场景中，Neuron 和 eKuiper 部署在同一台边缘机器上。这也是目前二者集成所支持的场景。若需要通过网络进行通信，则仍然可以通过之前 MQTT 的方式进行协同。
 
@@ -21,13 +23,16 @@ eKuiper 与 Neuron 之间的集成是双向的，其实现主要包含两个部�
 
 本教程将以工业物联网数据采集和清洗的场景为例，手把手地介绍如何一步一步完成云边协同的数据采集，数据清理和数据反控。
 
-其中，Neuron 和 eKuiper 部署在靠近设备的边缘端。Neuron 采集的数据经过 eKuiper 处理后发送到云端的 MQTT broker 以便于云端的应用进行下一步的处理。同时，eKuiper 可以接收云端 MQTT 的指令，反控本地的 Neuron。
+其中，Neuron 和 eKuiper 部署在靠近设备的边缘端网关，或者工控机上。Neuron 采集的数据经过 eKuiper 处理后发送到云端的 MQTT broker 以便于云端的应用进行下一步的处理。同时，eKuiper 可以接收云端 MQTT 的指令，通过 Neuron 控制本地的设备。
 
-开始动手操作之前，需要准备云端的 MQTT broker，例如[快速开始 EMQX](https://www.emqx.io/docs/zh/v4.4/getting-started/getting-started.html#%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B)。另外，为了方便观察运行结果，我们需要安装一个 MQTT 客户端，例如 [MQTT X](https://mqttx.app/) 。假设云端 MQTT broker 地址为 `tcp://cloud.host:1883`, 以下教程将以此地址为例。
+开始动手操作之前，需要准备以下环境：
+
+- 云端的 MQTT broker，例如[快速开始 EMQX](https://www.emqx.io/docs/zh/v4.4/getting-started/getting-started.html#%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B)。假设云端 MQTT broker 地址为 `tcp://cloud.host:1883`, 以下教程将以此地址为例。
+- 为了方便观察运行结果，我们需要安装一个 MQTT 客户端，例如 [MQTT X](https://mqttx.app/) 。
 
 ## 快速部署
 
-Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方案。本文以 Docker 方案为例，采用 docker compose 方式，一键完成边缘端两个组件的快速部署。
+Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方案。本文以 Docker 方案为例，采用 [docker compose](https://docs.docker.com/compose/) 方式，一键完成边缘端两个组件的快速部署。
 
 1. 复制 [docker-compose.yml](./docker-compose.yml) 文件到部署的机器上。其内容如下，包含了 Neuron，eKuiper 以及 eKuiper 的管理界面 eKuiper manager（可选）。其中，eKuiper 和 neuron 共享了名为 nng-ipc 的 volume ，用于二者通信。
 
@@ -160,7 +165,7 @@ curl -X POST --location http://127.0.0.1:9081/rules \
 
 打开 MQTT X，连接到云端 broker， 订阅 `modbus-plus-tcp-1/group-1` 主题，则可得到如下结果。由于采集频率为100ms 一次，此处收到的数据也是类似的频率。
 
-![ruleNAll result](ruleNAllResult.png)。
+![ruleNAll result](ruleNAllResult.png)
 
 在 Modbus TCP 模拟器修改数据，可得到变化的输出。
 
@@ -186,11 +191,11 @@ curl -X POST --location http://127.0.0.1:9081/rules \
 
 打开 MQTT X，连接到云端 broker， 订阅 `changed/modbus-plus-tcp-1/group-1` 主题，收到数据的频率大大降低。在 Modbus TCP 模拟器修改数据才可收到新的数据。
 
-## 反控 Neuron
+## 通过 Neuron 控制设备
 
-得益于 neuron sink 组件，eKuiper 可以在数据处理后对 neuron 进行反控。在下面的规则中，eKuiper 接收 MQTT 的指令，对 neuron 进行动态的反控。
+得益于 neuron sink 组件，eKuiper 可以在数据处理后通过 neuron 控制设备。在下面的规则中，eKuiper 接收 MQTT 的指令，对 neuron 进行动态的反控。
 
-首先，我们需要创建一个 MQTT 流，用于接收来自 `command` 主题的指令。
+假设有个应用场景，用户通过往云端的 MQTT 服务器的某个主题发送控制指令来对部署在边缘端的设备进行控制操作，比如设定目标设备的期望的温度。首先，我们在 eKuiper 中需要创建一个 MQTT 流，用于接收从别的应用发到 `command` MQTT 主题的指令。
 
 ```shell
 curl -X POST --location "http://127.0.0.1:9081/streams" \
@@ -198,7 +203,7 @@ curl -X POST --location "http://127.0.0.1:9081/streams" \
     -d '{"sql":"CREATE STREAM mqttCommand() WITH (TYPE=\"mqtt\",SHARED=\"TRUE\",DATASOURCE=\"command\");"}'
 ```
 
-接着，我们创建一个规则，读取来自该 MQTT 流的数据，并反控 Neuron。该规则读取 MQTT payload 中的 temperature 值并乘 10 之后作为 tag1 的值；使用 payload 中的 nodeName, groupName 字段作为写到 Neuron 中的动态 node 和 group 名。
+接着，我们创建一个规则，读取来自该 MQTT 流的数据，并根据规则通过 Neuron 写入数据。与前文相同，假设 tag1 为温度传感器的 decimal 类型的读数。该规则读取 MQTT payload 中的 temperature 值并乘 10 之后作为 tag1 的值；使用 payload 中的 nodeName, groupName 字段作为写到 Neuron 中的动态 node 和 group 名。
 
 ```shell
 curl -X POST --location http://127.0.0.1:9081/rules \
