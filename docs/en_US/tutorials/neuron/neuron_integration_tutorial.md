@@ -10,7 +10,7 @@ In versions prior to eKuiper 1.5.0, MQTT was required as a transit between Neuro
 
 In Neuron 2.0, eKuiper support has been added to northbound applications. When Neuron opens a northbound eKuiper application, the two are connected by inter-process communication via the NNG protocol, which significantly reduces network communication consumption and improves performance.
 
-![eKuiper to neuron](eKuiper_to_neuron.png)
+![eKuiper to neuron](./eKuiper_to_neuron.png)
 
 The integration between eKuiper and Neuron is bi-directional and the implementation consists of two main parts:
 
@@ -103,7 +103,7 @@ Step 1: Add a north application.
 3. The drop-down box shows the northbound applications available to us in this software version, in this case we choose the ekuiper plugin, as shown below.
    ![select app](https://neugates.io/docs/docs-assets/img/south-devices-add.6034f3a7.png)
 4. After the application is created successfully, a card of the application just created will appear in the North application management interface, at this time, the application is in the initialization state and the connection state is in the disconnection state.
-![neuron ekuiper app](neuron_ekuiper_app.png)
+![neuron ekuiper app](./neuron_ekuiper_app.png)
 5. 
 Step 2: Subscribe to Group.
 
@@ -165,7 +165,7 @@ curl -X POST --location http://127.0.0.1:9081/rules \
 
 Open MQTT X, connect to the cloud broker, subscribe to the `modbus-plus-tcp-1/group-1` topic, and you get the following results. Since the collection frequency is 100ms at a time, the data received here is of a similar frequency.
 
-![ruleNAll result](ruleNAllResult.png)
+![ruleNAll result](./ruleNAllResult.png)
 
 Modify the data in the Modbus TCP simulator to get the changed output.
 
@@ -236,7 +236,7 @@ After the rule is run, open MQTT X and write a JSON string in the following form
 
 Turn on Neuron's data monitor and see the tag1 data change to 240, indicating a successful counter-control.
 
-![data monitor after control](data_monitor.png)
+![data monitor after control](./data_monitor.png)
 
 Also, the two rules created in the previous section should capture the new values.
 
