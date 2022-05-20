@@ -50,7 +50,7 @@ func InitRegistry() error {
 		return fmt.Errorf("cannot find etc folder: %s", err)
 	}
 	for _, schemaType := range def.SchemaTypes {
-		schemaDir := filepath.Join(etcDir, string(schemaType))
+		schemaDir := filepath.Join(etcDir, "schemas", string(schemaType))
 		var newSchemas map[string]string
 		files, err := ioutil.ReadDir(schemaDir)
 		if err != nil {
@@ -97,7 +97,7 @@ func CreateOrUpdateSchema(info *Info) error {
 		return fmt.Errorf("schema type %s not found", info.Type)
 	}
 	etcDir, _ := conf.GetConfLoc()
-	etcDir = filepath.Join(etcDir, string(info.Type))
+	etcDir = filepath.Join(etcDir, "schemas", string(info.Type))
 	if err := os.MkdirAll(etcDir, os.ModePerm); err != nil {
 		return err
 	}

@@ -233,7 +233,7 @@ func TestFormat_Apply(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	etcDir = filepath.Join(etcDir, "protobuf")
+	etcDir = filepath.Join(etcDir, "schemas", "protobuf")
 	err = os.MkdirAll(etcDir, os.ModePerm)
 	if err != nil {
 		t.Fatal(err)
