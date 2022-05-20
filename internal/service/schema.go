@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import (
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/dynamic"
 	kconf "github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/schema/protobuf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
@@ -121,6 +122,7 @@ func parse(schema schema, file string) (descriptor, error) {
 			result := &wrappedProtoDescriptor{
 				FileDescriptor: fds[0],
 				mf:             dynamic.NewMessageFactoryWithDefaults(),
+				fc:             protobuf.GetFieldConverter(),
 			}
 			err := result.parseHttpOptions()
 			if err != nil {
@@ -138,6 +140,7 @@ type wrappedProtoDescriptor struct {
 	*desc.FileDescriptor
 	methodOptions map[string]*httpOptions
 	mf            *dynamic.MessageFactory
+	fc            *protobuf.FieldConverter
 }
 
 //TODO support for duplicate names
@@ -236,7 +239,7 @@ func (d *wrappedProtoDescriptor) convertParams(im *desc.MessageDescriptor, param
 		}
 		// For non map params, treat it as special case of multiple params
 		if len(fields) == 1 {
-			param0, err := d.encodeField(fields[0], params[0])
+			param0, err := d.fc.EncodeField(fields[0], params[0])
 			if err != nil {
 				return nil, err
 			}
@@ -247,7 +250,7 @@ func (d *wrappedProtoDescriptor) convertParams(im *desc.MessageDescriptor, param
 	default:
 		if len(fields) == len(params) {
 			for i, field := range fields {
-				param, err := d.encodeField(field, params[i])
+				param, err := d.fc.EncodeField(field, params[i])
 				if err != nil {
 					return nil, err
 				}
@@ -319,7 +322,7 @@ func (d *wrappedProtoDescriptor) unfoldMap(ft *desc.MessageDescriptor, i interfa
 			if !ok {
 				return nil, fmt.Errorf("field %s not found", field.GetName())
 			}
-			fv, err := d.encodeField(field, v)
+			fv, err := d.fc.EncodeField(field, v)
 			if err != nil {
 				return nil, err
 			}
@@ -329,172 +332,6 @@ func (d *wrappedProtoDescriptor) unfoldMap(ft *desc.MessageDescriptor, i interfa
 		return nil, fmt.Errorf("not a map")
 	}
 	return result, nil
-}
-
-func (d *wrappedProtoDescriptor) encodeMap(im *desc.MessageDescriptor, i interface{}) (*dynamic.Message, error) {
-	result := d.mf.NewDynamicMessage(im)
-	fields := im.GetFields()
-	if m, ok := i.(map[string]interface{}); ok {
-		for _, field := range fields {
-			v, ok := m[field.GetName()]
-			if !ok {
-				return nil, fmt.Errorf("field %s not found", field.GetName())
-			}
-			fv, err := d.encodeField(field, v)
-			if err != nil {
-				return nil, err
-			}
-			result.SetFieldByName(field.GetName(), fv)
-		}
-	}
-	return result, nil
-}
-
-func (d *wrappedProtoDescriptor) encodeField(field *desc.FieldDescriptor, v interface{}) (interface{}, error) {
-	fn := field.GetName()
-	ft := field.GetType()
-	if field.IsRepeated() {
-		var (
-			result interface{}
-			err    error
-		)
-		switch ft {
-		case dpb.FieldDescriptorProto_TYPE_DOUBLE:
-			result, err = cast.ToFloat64Slice(v, cast.STRICT)
-		case dpb.FieldDescriptorProto_TYPE_FLOAT:
-			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
-				r, err := cast.ToFloat64(input, sn)
-				if err != nil {
-					return 0, nil
-				} else {
-					return float32(r), nil
-				}
-			}, "float", cast.STRICT)
-		case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32:
-			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
-				r, err := cast.ToInt(input, sn)
-				if err != nil {
-					return 0, nil
-				} else {
-					return int32(r), nil
-				}
-			}, "int", cast.STRICT)
-		case dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64:
-			result, err = cast.ToInt64Slice(v, cast.STRICT)
-		case dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32:
-			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
-				r, err := cast.ToUint64(input, sn)
-				if err != nil {
-					return 0, nil
-				} else {
-					return uint32(r), nil
-				}
-			}, "uint", cast.STRICT)
-		case dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
-			result, err = cast.ToUint64Slice(v, cast.STRICT)
-		case dpb.FieldDescriptorProto_TYPE_BOOL:
-			result, err = cast.ToBoolSlice(v, cast.STRICT)
-		case dpb.FieldDescriptorProto_TYPE_STRING:
-			result, err = cast.ToStringSlice(v, cast.STRICT)
-		case dpb.FieldDescriptorProto_TYPE_BYTES:
-			result, err = cast.ToBytesSlice(v, cast.STRICT)
-		case dpb.FieldDescriptorProto_TYPE_MESSAGE:
-			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
-				r, err := cast.ToStringMap(v)
-				if err == nil {
-					return d.encodeMap(field.GetMessageType(), r)
-				} else {
-					return nil, fmt.Errorf("invalid type for map type field '%s': %v", fn, err)
-				}
-			}, "map", cast.STRICT)
-		default:
-			return nil, fmt.Errorf("invalid type for field '%s'", fn)
-		}
-		if err != nil {
-			err = fmt.Errorf("failed to encode field '%s':%v", fn, err)
-		}
-		return result, err
-	} else {
-		return d.encodeSingleField(field, v)
-	}
-}
-
-func (d *wrappedProtoDescriptor) encodeSingleField(field *desc.FieldDescriptor, v interface{}) (interface{}, error) {
-	fn := field.GetName()
-	switch field.GetType() {
-	case dpb.FieldDescriptorProto_TYPE_DOUBLE:
-		r, err := cast.ToFloat64(v, cast.STRICT)
-		if err == nil {
-			return r, nil
-		} else {
-			return nil, fmt.Errorf("invalid type for float type field '%s': %v", fn, err)
-		}
-	case dpb.FieldDescriptorProto_TYPE_FLOAT:
-		r, err := cast.ToFloat64(v, cast.STRICT)
-		if err == nil {
-			return float32(r), nil
-		} else {
-			return nil, fmt.Errorf("invalid type for float type field '%s': %v", fn, err)
-		}
-	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32:
-		r, err := cast.ToInt(v, cast.STRICT)
-		if err == nil {
-			return int32(r), nil
-		} else {
-			return nil, fmt.Errorf("invalid type for int type field '%s': %v", fn, err)
-		}
-	case dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64:
-		r, err := cast.ToInt64(v, cast.STRICT)
-		if err == nil {
-			return r, nil
-		} else {
-			return nil, fmt.Errorf("invalid type for int type field '%s': %v", fn, err)
-		}
-	case dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32:
-		r, err := cast.ToUint64(v, cast.STRICT)
-		if err == nil {
-			return uint32(r), nil
-		} else {
-			return nil, fmt.Errorf("invalid type for uint type field '%s': %v", fn, err)
-		}
-	case dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
-		r, err := cast.ToUint64(v, cast.STRICT)
-		if err == nil {
-			return r, nil
-		} else {
-			return nil, fmt.Errorf("invalid type for uint type field '%s': %v", fn, err)
-		}
-	case dpb.FieldDescriptorProto_TYPE_BOOL:
-		r, err := cast.ToBool(v, cast.STRICT)
-		if err == nil {
-			return r, nil
-		} else {
-			return nil, fmt.Errorf("invalid type for bool type field '%s': %v", fn, err)
-		}
-	case dpb.FieldDescriptorProto_TYPE_STRING:
-		r, err := cast.ToString(v, cast.STRICT)
-		if err == nil {
-			return r, nil
-		} else {
-			return nil, fmt.Errorf("invalid type for string type field '%s': %v", fn, err)
-		}
-	case dpb.FieldDescriptorProto_TYPE_BYTES:
-		r, err := cast.ToBytes(v, cast.STRICT)
-		if err == nil {
-			return r, nil
-		} else {
-			return nil, fmt.Errorf("invalid type for bytes type field '%s': %v", fn, err)
-		}
-	case dpb.FieldDescriptorProto_TYPE_MESSAGE:
-		r, err := cast.ToStringMap(v)
-		if err == nil {
-			return d.encodeMap(field.GetMessageType(), r)
-		} else {
-			return nil, fmt.Errorf("invalid type for map type field '%s': %v", fn, err)
-		}
-	default:
-		return nil, fmt.Errorf("invalid type for field '%s'", fn)
-	}
 }
 
 func decodeMessage(message *dynamic.Message, outputType *desc.MessageDescriptor) interface{} {

@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"strings"
 	"sync"
 	"time"
@@ -39,6 +40,8 @@ type SinkConf struct {
 	Omitempty         bool   `json:"omitIfEmpty"`
 	SendSingle        bool   `json:"sendSingle"`
 	DataTemplate      string `json:"dataTemplate"`
+	Format            string `json:"format"`
+	SchemaId          string `json:"schemaId"`
 }
 
 type SinkNode struct {
@@ -139,8 +142,14 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				logger.Warnf("invalid type for cacheSaveInterval property, should be positive integer but found %t", sconf.CacheSaveInterval)
 				sconf.CacheSaveInterval = 1000
 			}
+			if sconf.Format == "" {
+				sconf.Format = "json"
+			} else if sconf.Format != message.FormatJson && sconf.Format != message.FormatProtobuf {
+				logger.Warnf("invalid type for format property, should be json or protobuf but found %s", sconf.Format)
+				sconf.Format = "json"
+			}
 
-			tf, err := transform.GenTransform(sconf.DataTemplate)
+			tf, err := transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId)
 			if err != nil {
 				msg := fmt.Sprintf("property dataTemplate %v is invalid: %v", sconf.DataTemplate, err)
 				logger.Warnf(msg)
