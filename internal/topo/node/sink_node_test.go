@@ -20,10 +20,14 @@ package node
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/internal/xsql"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
@@ -219,6 +223,79 @@ func TestOmitEmpty_Apply(t *testing.T) {
 		results := mockSink.GetResults()
 		if !reflect.DeepEqual(tt.result, results) {
 			t.Errorf("%d \tresult mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, results)
+		}
+	}
+}
+
+func TestFormat_Apply(t *testing.T) {
+	conf.InitConf()
+	etcDir, err := conf.GetConfLoc()
+	if err != nil {
+		t.Fatal(err)
+	}
+	etcDir = filepath.Join(etcDir, "schemas", "protobuf")
+	err = os.MkdirAll(etcDir, os.ModePerm)
+	if err != nil {
+		t.Fatal(err)
+	}
+	//Copy init.proto
+	bytesRead, err := ioutil.ReadFile("../../schema/test/test1.proto")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ioutil.WriteFile(filepath.Join(etcDir, "test1.proto"), bytesRead, 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err = os.RemoveAll(etcDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	schema.InitRegistry()
+	transform.RegisterAdditionalFuncs()
+	var tests = []struct {
+		config map[string]interface{}
+		data   []map[string]interface{}
+		result [][]byte
+	}{
+		{
+			config: map[string]interface{}{
+				"sendSingle": true,
+				"format":     `protobuf`,
+				"schemaId":   "test1.Person",
+			},
+			data: []map[string]interface{}{{
+				"name":  "test",
+				"id":    1,
+				"email": "Dddd",
+			}},
+			result: [][]byte{{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74, 0x10, 0x01, 0x1a, 0x04, 0x44, 0x64, 0x64, 0x64}},
+		}, {
+			config: map[string]interface{}{
+				"sendSingle":   true,
+				"dataTemplate": `{"name":"test","email":"{{.ab}}","id":1}`,
+				"format":       `protobuf`,
+				"schemaId":     "test1.Person",
+			},
+			data:   []map[string]interface{}{{"ab": "Dddd"}},
+			result: [][]byte{{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74, 0x10, 0x01, 0x1a, 0x04, 0x44, 0x64, 0x64, 0x64}},
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := conf.Log.WithField("rule", "TestSinkFormat_Apply")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	for i, tt := range tests {
+		mockSink := mocknode.NewMockSink()
+		s := NewSinkNodeWithSink("mockSink", mockSink, tt.config)
+		s.Open(ctx, make(chan error))
+		s.input <- tt.data
+		time.Sleep(1 * time.Second)
+		results := mockSink.GetResults()
+		if !reflect.DeepEqual(tt.result, results) {
+			t.Errorf("%d \tresult mismatch:\n\nexp=%x\n\ngot=%x\n\n", i, tt.result, results)
 		}
 	}
 }

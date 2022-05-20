@@ -33,7 +33,7 @@ func TestRegistry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	etcDir = filepath.Join(etcDir, "protobuf")
+	etcDir = filepath.Join(etcDir, "schemas", "protobuf")
 	err = os.MkdirAll(etcDir, os.ModePerm)
 	if err != nil {
 		t.Fatal(err)
@@ -81,7 +81,7 @@ func TestRegistry(t *testing.T) {
 		Content:  "syntax = \"proto3\";message Person {string name = 1;int32 id = 2;string email = 3;}",
 		FilePath: filepath.Join(etcDir, "test1.proto"),
 	}
-	gottenSchema, err := GetSchemaContent("protobuf", "test1")
+	gottenSchema, err := GetSchema("protobuf", "test1")
 	if !reflect.DeepEqual(gottenSchema, expectedSchema) {
 		t.Errorf("Get test1 unmatch: Expect\n%v\nbut got\n%v", *expectedSchema, *gottenSchema)
 		return

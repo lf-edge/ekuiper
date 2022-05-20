@@ -85,7 +85,7 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 	name := vars["name"]
 	switch r.Method {
 	case http.MethodGet:
-		j, err := schema.GetSchemaContent(def.SchemaType(st), name)
+		j, err := schema.GetSchema(def.SchemaType(st), name)
 		if err != nil {
 			handleError(w, err, "", logger)
 			return
