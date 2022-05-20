@@ -19,13 +19,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/internal/schema"
+	"github.com/lf-edge/ekuiper/pkg/message"
+	"strings"
 	"text/template"
 )
 
 type TransFunc func(interface{}) ([]byte, bool, error)
 
-func GenTransform(dt string) (TransFunc, error) {
-	var tp *template.Template = nil
+func GenTransform(dt string, format string, schemaId string) (TransFunc, error) {
+	var (
+		tp  *template.Template = nil
+		c   schema.Converter
+		err error
+	)
+	switch format {
+	case message.FormatProtobuf:
+		r := strings.Split(schemaId, ".")
+		if len(r) != 2 {
+			return nil, fmt.Errorf("invalid schemaId: %s", schemaId)
+		}
+		c, err = schema.GetOrCreateSchema(def.PROTOBUF, r[0], schemaId)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if dt != "" {
 		temp, err := template.New("sink").Funcs(conf.FuncMap).Parse(dt)
 		if err != nil {
@@ -34,16 +54,39 @@ func GenTransform(dt string) (TransFunc, error) {
 		tp = temp
 	}
 	return func(d interface{}) ([]byte, bool, error) {
+		var (
+			bs          []byte
+			transformed bool
+		)
 		if tp != nil {
 			var output bytes.Buffer
 			err := tp.Execute(&output, d)
 			if err != nil {
 				return nil, false, fmt.Errorf("fail to encode data %v with dataTemplate for error %v", d, err)
 			}
-			return output.Bytes(), true, nil
-		} else {
+			bs = output.Bytes()
+			transformed = true
+		}
+		switch format {
+		case message.FormatJson:
+			if transformed {
+				return bs, transformed, nil
+			}
 			j, err := json.Marshal(d)
 			return j, false, err
+		case message.FormatProtobuf:
+			if transformed {
+				m := make(map[string]interface{})
+				err := json.Unmarshal(bs, &m)
+				if err != nil {
+					return nil, false, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(bs), err)
+				}
+				d = m
+			}
+			b, err := c.Encode(d)
+			return b, transformed, err
+		default: // should not happen
+			return nil, false, fmt.Errorf("unsupported format %v", format)
 		}
 	}, nil
 }
