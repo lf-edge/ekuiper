@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 func init() {
@@ -230,6 +231,8 @@ func getLanguage(r *http.Request) string {
 	language := r.Header.Get("Content-Language")
 	if 0 == len(language) {
 		language = "en_US"
+	} else {
+		strings.ReplaceAll(language, "-", "_")
 	}
 	return language
 }
