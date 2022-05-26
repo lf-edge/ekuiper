@@ -17,8 +17,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/golang/protobuf/proto"
-	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/dynamic"
@@ -29,31 +27,6 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	"sync"
 )
-
-const (
-	wrapperBool   = "google.protobuf.BoolValue"
-	wrapperBytes  = "google.protobuf.BytesValue"
-	wrapperDouble = "google.protobuf.DoubleValue"
-	wrapperFloat  = "google.protobuf.FloatValue"
-	wrapperInt32  = "google.protobuf.Int32Value"
-	wrapperInt64  = "google.protobuf.Int64Value"
-	wrapperString = "google.protobuf.StringValue"
-	wrapperUInt32 = "google.protobuf.UInt32Value"
-	wrapperUInt64 = "google.protobuf.UInt64Value"
-	wrapperVoid   = "google.protobuf.EMPTY"
-)
-
-var WRAPPER_TYPES = map[string]struct{}{
-	wrapperBool:   {},
-	wrapperBytes:  {},
-	wrapperDouble: {},
-	wrapperFloat:  {},
-	wrapperInt32:  {},
-	wrapperInt64:  {},
-	wrapperString: {},
-	wrapperUInt32: {},
-	wrapperUInt64: {},
-}
 
 type descriptor interface {
 	GetFunctions() []string
@@ -143,7 +116,7 @@ type wrappedProtoDescriptor struct {
 	fc            *protobuf.FieldConverter
 }
 
-//TODO support for duplicate names
+// GetFunctions TODO support for duplicate names
 func (d *wrappedProtoDescriptor) GetFunctions() (result []string) {
 	for _, s := range d.GetServices() {
 		for _, m := range s.GetMethods() {
@@ -195,7 +168,7 @@ func (d *wrappedProtoDescriptor) ConvertParamsToJson(method string, params []int
 			return nil, fmt.Errorf("can't find method %s in proto", method)
 		}
 		im := m.GetInputType()
-		if im.GetFullyQualifiedName() == wrapperString {
+		if im.GetFullyQualifiedName() == protobuf.WrapperString {
 			ss, err := cast.ToString(params[0], cast.STRICT)
 			if err != nil {
 				return nil, err
@@ -266,11 +239,11 @@ func (d *wrappedProtoDescriptor) convertParams(im *desc.MessageDescriptor, param
 func (d *wrappedProtoDescriptor) ConvertReturn(method string, returnVal interface{}) (interface{}, error) {
 	m := d.MethodDescriptor(method)
 	t := m.GetOutputType()
-	if _, ok := WRAPPER_TYPES[t.GetFullyQualifiedName()]; ok {
-		return decodeField(returnVal, t.FindFieldByNumber(1), cast.STRICT)
+	if _, ok := protobuf.WRAPPER_TYPES[t.GetFullyQualifiedName()]; ok {
+		return d.fc.DecodeField(returnVal, t.FindFieldByNumber(1), cast.STRICT)
 	} else { // MUST be a map
 		if retMap, ok := returnVal.(map[string]interface{}); ok {
-			return decodeMap(retMap, t, cast.CONVERT_SAMEKIND)
+			return d.fc.DecodeMap(retMap, t, cast.CONVERT_SAMEKIND)
 		} else {
 			return nil, fmt.Errorf("fail to convert return val, must be a map but got %v", returnVal)
 		}
@@ -279,7 +252,7 @@ func (d *wrappedProtoDescriptor) ConvertReturn(method string, returnVal interfac
 
 func (d *wrappedProtoDescriptor) ConvertReturnMessage(method string, returnVal *dynamic.Message) (interface{}, error) {
 	m := d.MethodDescriptor(method)
-	return decodeMessage(returnVal, m.GetOutputType()), nil
+	return d.fc.DecodeMessage(returnVal, m.GetOutputType()), nil
 }
 
 func (d *wrappedProtoDescriptor) ConvertReturnJson(method string, returnVal []byte) (interface{}, error) {
@@ -289,14 +262,14 @@ func (d *wrappedProtoDescriptor) ConvertReturnJson(method string, returnVal []by
 		return nil, err
 	}
 	m := d.MethodDescriptor(method)
-	return decodeMap(r, m.GetOutputType(), cast.CONVERT_SAMEKIND)
+	return d.fc.DecodeMap(r, m.GetOutputType(), cast.CONVERT_SAMEKIND)
 }
 
 func (d *wrappedProtoDescriptor) ConvertReturnText(method string, returnVal []byte) (interface{}, error) {
 	m := d.MethodDescriptor(method)
 	t := m.GetOutputType()
-	if _, ok := WRAPPER_TYPES[t.GetFullyQualifiedName()]; ok {
-		return decodeField(string(returnVal), t.FindFieldByNumber(1), cast.CONVERT_ALL)
+	if _, ok := protobuf.WRAPPER_TYPES[t.GetFullyQualifiedName()]; ok {
+		return d.fc.DecodeField(string(returnVal), t.FindFieldByNumber(1), cast.CONVERT_ALL)
 	} else {
 		return nil, fmt.Errorf("fail to convert return val to text, return type must be primitive type but got %s", t.GetName())
 	}
@@ -332,118 +305,4 @@ func (d *wrappedProtoDescriptor) unfoldMap(ft *desc.MessageDescriptor, i interfa
 		return nil, fmt.Errorf("not a map")
 	}
 	return result, nil
-}
-
-func decodeMessage(message *dynamic.Message, outputType *desc.MessageDescriptor) interface{} {
-	if _, ok := WRAPPER_TYPES[outputType.GetFullyQualifiedName()]; ok {
-		return message.GetFieldByNumber(1)
-	} else if wrapperVoid == outputType.GetFullyQualifiedName() {
-		return nil
-	}
-	result := make(map[string]interface{})
-	for _, field := range outputType.GetFields() {
-		decodeMessageField(message.GetField(field), field, result, cast.STRICT)
-	}
-	return result
-}
-
-func decodeMessageField(src interface{}, field *desc.FieldDescriptor, result map[string]interface{}, sn cast.Strictness) error {
-	if f, err := decodeField(src, field, sn); err != nil {
-		return err
-	} else {
-		result[field.GetName()] = f
-		return nil
-	}
-}
-
-func decodeField(src interface{}, field *desc.FieldDescriptor, sn cast.Strictness) (interface{}, error) {
-	var (
-		r interface{}
-		e error
-	)
-	fn := field.GetName()
-	switch field.GetType() {
-	case dpb.FieldDescriptorProto_TYPE_DOUBLE, dpb.FieldDescriptorProto_TYPE_FLOAT:
-		if field.IsRepeated() {
-			r, e = cast.ToFloat64Slice(src, sn)
-		} else {
-			r, e = cast.ToFloat64(src, sn)
-		}
-	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32, dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64, dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32, dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
-		if field.IsRepeated() {
-			r, e = cast.ToInt64Slice(src, sn)
-		} else {
-			r, e = cast.ToInt64(src, sn)
-		}
-	case dpb.FieldDescriptorProto_TYPE_BOOL:
-		if field.IsRepeated() {
-			r, e = cast.ToBoolSlice(src, sn)
-		} else {
-			r, e = cast.ToBool(src, sn)
-		}
-	case dpb.FieldDescriptorProto_TYPE_STRING:
-		if field.IsRepeated() {
-			r, e = cast.ToStringSlice(src, sn)
-		} else {
-			r, e = cast.ToString(src, sn)
-		}
-	case dpb.FieldDescriptorProto_TYPE_BYTES:
-		if field.IsRepeated() {
-			r, e = cast.ToBytesSlice(src, sn)
-		} else {
-			r, e = cast.ToBytes(src, sn)
-		}
-	case dpb.FieldDescriptorProto_TYPE_MESSAGE:
-		if field.IsRepeated() {
-			r, e = cast.ToTypedSlice(src, func(input interface{}, ssn cast.Strictness) (interface{}, error) {
-				return decodeSubMessage(input, field.GetMessageType(), ssn)
-			}, "map", sn)
-		} else {
-			r, e = decodeSubMessage(src, field.GetMessageType(), sn)
-		}
-	default:
-		return nil, fmt.Errorf("unsupported type for %s", fn)
-	}
-	if e != nil {
-		e = fmt.Errorf("invalid type of return value for '%s': %v", fn, e)
-	}
-	return r, e
-}
-
-func decodeMap(src map[string]interface{}, ft *desc.MessageDescriptor, sn cast.Strictness) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
-	for _, field := range ft.GetFields() {
-		val, ok := src[field.GetName()]
-		if !ok {
-			continue
-		}
-		err := decodeMessageField(val, field, result, sn)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
-func decodeSubMessage(input interface{}, ft *desc.MessageDescriptor, sn cast.Strictness) (interface{}, error) {
-	var m = map[string]interface{}{}
-	switch v := input.(type) {
-	case map[interface{}]interface{}:
-		for k, val := range v {
-			m[cast.ToStringAlways(k)] = val
-		}
-		return decodeMap(m, ft, sn)
-	case map[string]interface{}:
-		return decodeMap(v, ft, sn)
-	case proto.Message:
-		message, err := dynamic.AsDynamicMessage(v)
-		if err != nil {
-			return nil, err
-		}
-		return decodeMessage(message, ft), nil
-	case *dynamic.Message:
-		return decodeMessage(v, ft), nil
-	default:
-		return nil, fmt.Errorf("cannot decode %[1]T(%[1]v) to map", input)
-	}
 }

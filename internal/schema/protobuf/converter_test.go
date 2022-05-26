@@ -57,3 +57,33 @@ func TestEncode(t *testing.T) {
 		}
 	}
 }
+
+func TestDecode(t *testing.T) {
+	c, err := NewConverter("test1.Person", "../test/test1.proto")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		m map[string]interface{}
+		r []byte
+		e string
+	}{
+		{
+			m: map[string]interface{}{
+				"name":  "test",
+				"id":    int64(1),
+				"email": "Dddd",
+			},
+			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74, 0x10, 0x01, 0x1a, 0x04, 0x44, 0x64, 0x64, 0x64},
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	for i, tt := range tests {
+		a, err := c.Decode(tt.r)
+		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
+			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
+		} else if tt.e == "" && !reflect.DeepEqual(tt.m, a) {
+			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.m, a)
+		}
+	}
+}

@@ -15,12 +15,16 @@
 package node
 
 import (
+	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/schema"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"strings"
 	"sync"
 )
 
@@ -89,6 +93,23 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			if m.options.RETAIN_SIZE > 0 && m.streamType == ast.TypeTable {
 				props["$retainSize"] = m.options.RETAIN_SIZE
 			}
+			format := fmt.Sprintf("%v", props["format"])
+			schemaFile := ""
+			schemaId := m.options.SCHEMAID
+			if schemaId != "" {
+				r := strings.Split(schemaId, ".")
+				if len(r) != 2 {
+					return fmt.Errorf("invalid schemaId: %s", schemaId)
+				}
+				schemaFile = r[0]
+			}
+			converter, err := schema.GetOrCreateConverter(format, schemaFile, schemaId)
+			if err != nil {
+				msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s", format, schemaId)
+				logger.Warnf(msg)
+				return fmt.Errorf(msg)
+			}
+			ctx = context.WithValue(ctx.(*context.DefaultContext), context.DecodeKey, converter)
 			m.reset()
 			logger.Infof("open source node with props %v, concurrency: %d, bufferLength: %d", conf.Printable(m.props), m.concurrency, m.bufferLength)
 			for i := 0; i < m.concurrency; i++ { // workers

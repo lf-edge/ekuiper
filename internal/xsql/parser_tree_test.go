@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,6 +41,25 @@ func TestParser_ParseTree(t *testing.T) {
 				Options: &ast.Options{
 					DATASOURCE:        "users",
 					FORMAT:            "JSON",
+					KEY:               "USERID",
+					SHARED:            true,
+					STRICT_VALIDATION: true,
+				},
+			},
+		},
+		{
+			s: `CREATE STREAM demo (
+					USERID BIGINT,
+				) WITH (DATASOURCE="users", FORMAT="PROTOBUF", KEY="USERID", SCHEMAID="proto1.Book", SHARED="true");`,
+			stmt: &ast.StreamStmt{
+				Name: ast.StreamName("demo"),
+				StreamFields: []ast.StreamField{
+					{Name: "USERID", FieldType: &ast.BasicType{Type: ast.BIGINT}},
+				},
+				Options: &ast.Options{
+					DATASOURCE:        "users",
+					FORMAT:            "PROTOBUF",
+					SCHEMAID:          "proto1.Book",
 					KEY:               "USERID",
 					SHARED:            true,
 					STRICT_VALIDATION: true,
