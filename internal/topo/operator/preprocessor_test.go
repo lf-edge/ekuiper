@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -1109,11 +1110,13 @@ func TestPreprocessorForBinary(t *testing.T) {
 		pp := &Preprocessor{}
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
 		pp.isBinary = tt.isBinary
-		format := "json"
+		format := message.FormatJson
 		if tt.isBinary {
-			format = "binary"
+			format = message.FormatBinary
 		}
-		if dm, e := message.Decode(tt.data, format); e != nil {
+		converter, _ := schema.GetOrCreateConverter(format, "", "")
+		nCtx := context.WithValue(ctx, context.DecodeKey, converter)
+		if dm, e := nCtx.Decode(tt.data); e != nil {
 			log.Fatal(e)
 			return
 		} else {

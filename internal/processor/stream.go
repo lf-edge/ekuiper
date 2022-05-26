@@ -225,6 +225,9 @@ func printOptions(opts *ast.Options, buff *bytes.Buffer) {
 	if opts.FORMAT != "" {
 		buff.WriteString(fmt.Sprintf("FORMAT: %s\n", opts.FORMAT))
 	}
+	if opts.SCHEMAID != "" {
+		buff.WriteString(fmt.Sprintf("SCHEMAID: %s\n", opts.SCHEMAID))
+	}
 	if opts.KEY != "" {
 		buff.WriteString(fmt.Sprintf("KEY: %s\n", opts.KEY))
 	}

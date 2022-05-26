@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,16 +18,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/message"
 	zmq "github.com/pebbe/zmq4"
 )
 
 type zmqSource struct {
-	subscriber    *zmq.Socket
-	srv           string
-	topic         string
-	messageFormat string
-	cancel        context.CancelFunc
+	subscriber *zmq.Socket
+	srv        string
+	topic      string
+	cancel     context.CancelFunc
 }
 
 func (s *zmqSource) Configure(topic string, props map[string]interface{}) error {
@@ -37,12 +35,6 @@ func (s *zmqSource) Configure(topic string, props map[string]interface{}) error 
 		return fmt.Errorf("zmq source is missing property server")
 	}
 	s.srv = srv.(string)
-	f, ok := props["format"]
-	if !ok {
-		s.messageFormat = message.FormatJson
-	} else {
-		s.messageFormat = f.(string)
-	}
 	return nil
 }
 
@@ -80,9 +72,9 @@ func (s *zmqSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			if s.topic != "" {
 				meta["topic"] = string(msgs[0])
 			}
-			result, e := message.Decode(m, s.messageFormat)
+			result, e := ctx.Decode(m)
 			if e != nil {
-				logger.Errorf("Invalid data format, cannot decode %v to %s format with error %s", m, s.messageFormat, e)
+				logger.Errorf("Invalid data format, cannot decode %v with error %s", m, e)
 			} else {
 				consumer <- api.NewDefaultSourceTuple(result, meta)
 			}

@@ -17,7 +17,10 @@ package schema
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/internal/schema/binary"
+	"github.com/lf-edge/ekuiper/internal/schema/json"
 	"github.com/lf-edge/ekuiper/internal/schema/protobuf"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 type Info struct {
@@ -33,16 +36,14 @@ var (
 	}
 )
 
-// Converter converts bytes & map or []map according to the schema
-type Converter interface {
-	Encode(d interface{}) ([]byte, error)
-	Decode(b []byte) (interface{}, error)
-}
-
-func GetOrCreateSchema(t def.SchemaType, schemaFile string, schemaId string) (Converter, error) {
+func GetOrCreateConverter(t string, schemaFile string, schemaId string) (message.Converter, error) {
 	switch t {
-	case def.PROTOBUF:
-		fileName, err := getSchemaFile(t, schemaFile)
+	case message.FormatJson:
+		return json.GetConverter()
+	case message.FormatBinary:
+		return binary.GetConverter()
+	case message.FormatProtobuf:
+		fileName, err := getSchemaFile(def.SchemaType(t), schemaFile)
 		if err != nil {
 			return nil, err
 		}

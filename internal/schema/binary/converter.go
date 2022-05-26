@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,32 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package message
+package binary
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-const (
-	FormatBinary   = "binary"
-	FormatJson     = "json"
-	FormatProtobuf = "protobuf"
+type Converter struct {
+}
 
-	DefaultField = "self"
-	MetaKey      = "__meta"
-)
+var converter = &Converter{}
 
-func Decode(payload []byte, format string) (map[string]interface{}, error) {
+func GetConverter() (*Converter, error) {
+	return converter, nil
+}
+
+func (c *Converter) Encode(d interface{}) ([]byte, error) {
+	return nil, fmt.Errorf("not supported")
+}
+
+func (c *Converter) Decode(b []byte) (interface{}, error) {
 	result := make(map[string]interface{})
-	switch strings.ToLower(format) {
-	case FormatJson:
-		e := json.Unmarshal(payload, &result)
-		return result, e
-	case FormatBinary:
-		result[DefaultField] = payload
-		return result, nil
-	}
-	return nil, fmt.Errorf("invalid format %s", format)
+	result[message.DefaultField] = b
+	return result, nil
 }

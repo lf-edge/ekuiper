@@ -979,9 +979,8 @@ func validateStream(stmt *ast.StreamStmt) error {
 	if f == "" {
 		f = message.FormatJson
 	}
-	switch strings.ToLower(f) {
-	case message.FormatJson:
-		//do nothing
+	lf := strings.ToLower(f)
+	switch lf {
 	case message.FormatBinary:
 		if stmt.StreamType == ast.TypeTable {
 			return fmt.Errorf("'binary' format is not supported for table")
@@ -1001,7 +1000,9 @@ func validateStream(stmt *ast.StreamStmt) error {
 			return fmt.Errorf("'binary' format stream can have only one field")
 		}
 	default:
-		return fmt.Errorf("option 'format=%s' is invalid", f)
+		if !message.IsFormatSupported(lf) {
+			return fmt.Errorf("option 'format=%s' is invalid", f)
+		}
 	}
 	return nil
 }
@@ -1281,7 +1282,7 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok == ast.LPAREN {
 		lStack.Push(ast.LPAREN)
 		for {
-			if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == ast.DATASOURCE || tok1 == ast.FORMAT || tok1 == ast.KEY || tok1 == ast.CONF_KEY || tok1 == ast.STRICT_VALIDATION || tok1 == ast.TYPE || tok1 == ast.TIMESTAMP || tok1 == ast.TIMESTAMP_FORMAT || tok1 == ast.RETAIN_SIZE || tok1 == ast.SHARED {
+			if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == ast.DATASOURCE || tok1 == ast.FORMAT || tok1 == ast.KEY || tok1 == ast.CONF_KEY || tok1 == ast.STRICT_VALIDATION || tok1 == ast.TYPE || tok1 == ast.TIMESTAMP || tok1 == ast.TIMESTAMP_FORMAT || tok1 == ast.RETAIN_SIZE || tok1 == ast.SHARED || tok1 == ast.SCHEMAID {
 				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.EQ {
 					if tok3, lit3 := p.scanIgnoreWhitespace(); tok3 == ast.STRING {
 						switch tok1 {
@@ -1327,7 +1328,7 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 					return nil, fmt.Errorf("Parenthesis is not matched in options definition.")
 				}
 			} else {
-				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE).", lit1)
+				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE|SCHEMAID).", lit1)
 			}
 		}
 	} else {

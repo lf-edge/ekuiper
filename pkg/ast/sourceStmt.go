@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -88,6 +88,7 @@ type Options struct {
 	TIMESTAMP_FORMAT  string
 	RETAIN_SIZE       int
 	SHARED            bool
+	SCHEMAID          string
 }
 
 func (o Options) node() {}
