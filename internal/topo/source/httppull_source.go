@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/message"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -43,7 +42,6 @@ type HTTPPullSource struct {
 	body               string
 	bodyType           string
 	headers            map[string]string
-	messageFormat      string
 	insecureSkipVerify bool
 	certificationPath  string
 	privateKeyPath     string
@@ -112,15 +110,6 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 			}
 		} else {
 			return fmt.Errorf("Not valid body type value %v.", c)
-		}
-	}
-
-	hps.messageFormat = message.FormatJson
-	if c, ok := props["format"]; ok {
-		if c1, ok1 := c.(string); ok1 {
-			hps.messageFormat = c1
-		} else {
-			return fmt.Errorf("Not valid format value %v.", c)
 		}
 	}
 
@@ -249,10 +238,10 @@ func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 					}
 				}
 
-				result, e := message.Decode(c, hps.messageFormat)
+				result, e := ctx.Decode(c)
 				meta := make(map[string]interface{})
 				if e != nil {
-					logger.Errorf("Invalid data format, cannot decode %s to %s format with error %s", string(c), hps.messageFormat, e)
+					logger.Errorf("Invalid data format, cannot decode %s with error %s", string(c), e)
 					return
 				}
 

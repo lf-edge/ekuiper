@@ -20,7 +20,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/message"
 	"path"
 	"strconv"
 )
@@ -127,7 +126,7 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 					log.Errorf("can not convert interface data to mqtt message %s.", ms.tpc)
 					return nil
 				}
-				result, e := message.Decode(msg.Payload(), ms.format)
+				result, e := ctx.Decode(msg.Payload())
 				//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
 				if e != nil {
 					log.Errorf("Invalid data format, cannot decode %s to %s format with error %s", string(msg.Payload()), ms.format, e)
