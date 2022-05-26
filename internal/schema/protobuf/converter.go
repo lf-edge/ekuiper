@@ -69,6 +69,10 @@ func (c *Converter) Encode(d interface{}) ([]byte, error) {
 }
 
 func (c *Converter) Decode(b []byte) (interface{}, error) {
-	//TODO implement me
-	panic("implement me")
+	result := mf.NewDynamicMessage(c.descriptor)
+	err := result.Unmarshal(b)
+	if err != nil {
+		return nil, err
+	}
+	return c.fc.DecodeMessage(result, c.descriptor), nil
 }

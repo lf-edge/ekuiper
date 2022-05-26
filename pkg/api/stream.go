@@ -158,6 +158,9 @@ type StreamContext interface {
 	// TransformOutput Transform output according to the properties including dataTemplate, sendSingle
 	// The second parameter is whether the data is transformed or just return as its json format.
 	TransformOutput(data interface{}) ([]byte, bool, error)
+	// Decode is set in the source according to the format.
+	// It decodes byte array into map or map slice.
+	Decode(data []byte) (map[string]interface{}, error)
 }
 
 type Operator interface {
