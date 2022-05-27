@@ -21,7 +21,7 @@ import (
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/dynamic"
 	kconf "github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/schema/protobuf"
+	"github.com/lf-edge/ekuiper/internal/converter/protobuf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	_ "google.golang.org/genproto/googleapis/api/annotations"

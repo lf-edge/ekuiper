@@ -24,7 +24,7 @@ type Converter struct {
 
 var converter = &Converter{}
 
-func GetConverter() (*Converter, error) {
+func GetConverter() (message.Converter, error) {
 	return converter, nil
 }
 

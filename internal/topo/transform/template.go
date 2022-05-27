@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/schema"
+	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/pkg/message"
 	"strings"
 	"text/template"
@@ -39,7 +39,7 @@ func GenTransform(dt string, format string, schemaId string) (TransFunc, error) 
 		if len(r) != 2 {
 			return nil, fmt.Errorf("invalid schemaId: %s", schemaId)
 		}
-		c, err = schema.GetOrCreateConverter(message.FormatProtobuf, r[0], schemaId)
+		c, err = converter.GetOrCreateConverter(message.FormatProtobuf, r[0], schemaId)
 		if err != nil {
 			return nil, err
 		}
