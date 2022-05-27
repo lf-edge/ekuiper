@@ -151,7 +151,7 @@ func main() {
 		{
 			Name:    "create",
 			Aliases: []string{"create"},
-			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create table $table_name | create table $table_name -f $table_def_file| create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file | create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file | create service $service_name $service_json ",
+			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create table $table_name | create table $table_name -f $table_def_file| create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file | create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file | create service $service_name $service_json | create schema $schema_type $schema_name $schema_json",
 
 			Subcommands: []cli.Command{
 				{
@@ -336,12 +336,34 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "schema",
+					Usage: "create schema $schema_type $schema_name $schema_json",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) < 3 {
+							fmt.Printf("Expect plugin type, name and json.\n")
+							return nil
+						}
+						var reply string
+						err = client.Call("Server.CreateSchema", &model.RPCTypedArgDesc{
+							Type: c.Args()[0],
+							Name: c.Args()[1],
+							Json: c.Args()[2],
+						}, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 		{
 			Name:    "describe",
 			Aliases: []string{"describe"},
-			Usage:   "describe stream $stream_name | describe table $table_name | describe rule $rule_name | describe plugin $plugin_type $plugin_name | describe udf $udf_name | describe service $service_name | describe service_func $service_func_name",
+			Usage:   "describe stream $stream_name | describe table $table_name | describe rule $rule_name | describe plugin $plugin_type $plugin_name | describe udf $udf_name | describe service $service_name | describe service_func $service_func_name | describe schema $schema_type $schema_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -470,13 +492,35 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "schema",
+					Usage: "describe schema $schema_type $schema_name",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 2 {
+							fmt.Printf("Expect schema type and name.\n")
+							return nil
+						}
+						args := &model.RPCTypedArgDesc{
+							Type: c.Args()[0],
+							Name: c.Args()[1],
+						}
+						var reply string
+						err = client.Call("Server.DescSchema", args, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 
 		{
 			Name:    "drop",
 			Aliases: []string{"drop"},
-			Usage:   "drop stream $stream_name | drop table $table_name |drop rule $rule_name | drop plugin $plugin_type $plugin_name -s $stop | drop service $service_name",
+			Usage:   "drop stream $stream_name | drop table $table_name |drop rule $rule_name | drop plugin $plugin_type $plugin_name -s $stop | drop service $service_name | drop schema $schema_type $schema_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -578,13 +622,35 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "schema",
+					Usage: "drop schema $schema_type $schema_name",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 2 {
+							fmt.Printf("Expect schema type and name.\n")
+							return nil
+						}
+						args := &model.RPCTypedArgDesc{
+							Type: c.Args()[0],
+							Name: c.Args()[1],
+						}
+						var reply string
+						err = client.Call("Server.DropSchema", args, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 
 		{
 			Name:    "show",
 			Aliases: []string{"show"},
-			Usage:   "show streams | show tables | show rules | show plugins $plugin_type | show services | show service_funcs",
+			Usage:   "show streams | show tables | show rules | show plugins $plugin_type | show services | show service_funcs | show schemas $schema_type",
 
 			Subcommands: []cli.Command{
 				{
@@ -672,6 +738,23 @@ func main() {
 					Action: func(c *cli.Context) error {
 						var reply string
 						err = client.Call("Server.ShowServiceFuncs", 0, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				}, {
+					Name:  "schemas",
+					Usage: "show schemas $schema_type",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 1 {
+							fmt.Printf("Expect schema type.\n")
+							return nil
+						}
+						var reply string
+						err = client.Call("Server.ShowSchemas", c.Args()[0], &reply)
 						if err != nil {
 							fmt.Println(err)
 						} else {
