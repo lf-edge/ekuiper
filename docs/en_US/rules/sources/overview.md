@@ -23,3 +23,7 @@ The list of predefined source plugins:
 
 - [Zero MQ source](./plugin/zmq.md): read data from zero mq.
 - [Random source](./plugin/random.md): a source to generate random data for testing.
+
+## Use of sources
+
+The user uses sources by means of streams or tables. The type `TYPE` property needs to be set to the name of the desired source in the stream properties created. The user can also change the behavior of the source during stream creation by configuring various general source attributes, such as the decoding type (default is JSON), etc. For the general properties and creation syntax supported by creating streams, please refer to the [Stream Specification](../../sqls/streams.md).

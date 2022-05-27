@@ -15,6 +15,7 @@
 | [UI 元数据API](./operation/manager-ui/overview.md)                         | ui         | 元数据的 REST API，通常由 UI 端消费                                     |
 | [Prometheus 指标](./operation/config/configuration_file.md#prometheus-配置) | prometheus | 支持发送指标到 prometheus 中                                         |
 | [扩展模板函数](./rules/overview.md#模版中支持的函数)                                  | template   | 支持除 go 语言默认的模板函数之外的扩展函数，主要来自 sprig                           |
+| [有模式编解码](./rules/codecs.md)                                             | schema     | 支持模式注册及有模式的编解码格式，例如 protobuf                                 |
 
 ## Usage
 
