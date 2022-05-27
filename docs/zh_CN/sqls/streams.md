@@ -30,17 +30,18 @@ CREATE STREAM
 
 **支持的属性名称**
 
-| 属性名称             | 可选  | 说明                                                                                        |
-|------------------|-----|-------------------------------------------------------------------------------------------|
-| DATASOURCE       | 否   | 取决于不同的源类型；如果是 MQTT 源，则为 MQTT 数据源主题名；其它源请参考相关的文档。                                          |
-| FORMAT           | 是   | 传入的数据类型，支持 "JSON" 和 "BINARY"，默认为 "JSON" 。关于 "BINARY" 类型的更多信息，请参阅 [Binary Stream](#二进制流)。  |
-| KEY              | 是   | 保留配置，当前未使用该字段。 它将用于 GROUP BY 语句。                                                          |
-| TYPE             | 是   | 源类型，如未指定，值为 "mqtt"。                                                                       |
-| StrictValidation | 是   | 针对流模式控制消息字段的验证行为。 有关更多信息，请参见 [Strict Validation](#Strict Validation)                      |
-| CONF_KEY         | 是   | 如果需要配置其他配置项，请在此处指定 config 键。 有关更多信息，请参见 [MQTT stream](../rules/sources/builtin/mqtt.md) 。 |
-| SHARED           | 是   | 是否在使用该流的规则中共享源的实例                                                                         |
-| TIMESTAMP        | 是   | 代表该事件时间戳的字段名。如果有设置，则使用此流的规则将采用事件时间；否则将采用处理时间。详情请看[时间戳管理](./windows.md#时间戳管理)。             |
-| TIMESTAMP_FORMAT | 是   | 字符串和时间格式转换时使用的默认格式。                                                                       |
+| 属性名称             | 可选  | 说明                                                                                                                                                                      |
+|------------------|-----|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| DATASOURCE       | 否   | 取决于不同的源类型；如果是 MQTT 源，则为 MQTT 数据源主题名；其它源请参考相关的文档。                                                                                                                        |
+| FORMAT           | 是   | 传入的数据类型，支持 "JSON", "PROTOBUF" 和 "BINARY"，默认为 "JSON" 。关于 "BINARY" 类型的更多信息，请参阅 [Binary Stream](#二进制流)。该属性是否生效取决于源的类型，某些源自身解析的时固定私有格式的数据，则该配置不起作用。可支持该属性的源包括 MQTT 和 ZMQ 等。 |
+| SCHEMAID         | 是   | 解码时使用的模式，目前仅在格式为 PROTOBUF 的情况下使用。                                                                                                                                       |
+| KEY              | 是   | 保留配置，当前未使用该字段。 它将用于 GROUP BY 语句。                                                                                                                                        |
+| TYPE             | 是   | 源类型，如未指定，值为 "mqtt"。                                                                                                                                                     |
+| StrictValidation | 是   | 针对流模式控制消息字段的验证行为。 有关更多信息，请参见 [Strict Validation](#Strict Validation)                                                                                                    |
+| CONF_KEY         | 是   | 如果需要配置其他配置项，请在此处指定 config 键。 有关更多信息，请参见 [MQTT stream](../rules/sources/builtin/mqtt.md) 。                                                                               |
+| SHARED           | 是   | 是否在使用该流的规则中共享源的实例                                                                                                                                                       |
+| TIMESTAMP        | 是   | 代表该事件时间戳的字段名。如果有设置，则使用此流的规则将采用事件时间；否则将采用处理时间。详情请看[时间戳管理](./windows.md#时间戳管理)。                                                                                           |
+| TIMESTAMP_FORMAT | 是   | 字符串和时间格式转换时使用的默认格式。                                                                                                                                                     |
 
 **示例1**
 
@@ -68,6 +69,14 @@ demo (
 ```
 
  流将订阅 MQTT 主题 `test/`，服务器连接使用配置文件`$ekuiper/etc/mqtt_source.yaml` 中 demo 部分的设置。
+
+**示例3**
+
+```sql
+demo () WITH (DATASOURCE="test/", FORMAT="protobuf", SCHEMAID="proto1.Book");
+```
+
+流将订阅 MQTT 主题 `test/`，使用 PROTOBUF 格式，根据在 `$ekuiper/etc/schemas/protobuf/schema1.proto` 文件中的 `Book` 定义对流入的数据进行解码。其中，模式的管理详见[模式注册表](../rules/codecs.md#模式)。
 
 - 有关更多信息，请参见 [MQTT source](../rules/sources/builtin/mqtt.md) 
 

@@ -28,10 +28,12 @@ CREATE STREAM
 
 **The supported property names.**
 
-| Property name    | Optional | Description                                                                                                                                                                                                                        |
-|------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| DATASOURCE       | false    | The value is determined by source type. The topic names list if it's a MQTT data source. Please refer to related document for other sources.                                                                                       |
-| FORMAT           | true     | The data format, currently the value can be "JSON" and "BINARY". The default is "JSON". Check [Binary Stream](#Binary Stream) for more detail.                                                                                     |
+| Property name | Optional | Description                                                                                                                                                |
+|---------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| DATASOURCE    | false    | The value is determined by source type. The topic names list if it's a MQTT data source. Please refer to related document for other sources.               |
+| FORMAT        | true     | The data format, currently the value can be "JSON", "PROTOBUF" and "BINARY". The default is "JSON". Check [Binary Stream](#Binary Stream) for more detail. |
+| SCHEMAID      | true     | The schema to be used when decoding the events. Currently, only use when format is PROTOBUF.                                                               |
+
 | KEY              | true     | Reserved key, currently the field is not used. It will be used for GROUP BY statements.                                                                                                                                            |
 | TYPE             | true     | The source type, if not specified, the value is "mqtt".                                                                                                                                                                            |
 | StrictValidation | true     | To control validation behavior of message field against stream schema. See [Strict Validation](#Strict Validation) for more info.                                                                                                  |
@@ -66,6 +68,14 @@ demo (
 ```
 
 The stream will subscribe to MQTT topic `test/`, the server connection uses settings of `demo` section in configuration file `$ekuiper/etc/mqtt_source.yaml`. 
+
+**Example 3**
+
+```sql
+demo () WITH (DATASOURCE="test/", FORMAT="protobuf", SCHEMAID="proto1.Book");
+```
+
+The stream will subscribe to MQTT topic `test/` and using PROTOBUF format to decode the data. The decode schema is defined by `BOOK` message type in `$ekuiper/etc/schemas/protobuf/schema1.proto` file. Regardng the management of schema, please refer to [schema registry](../rules/codecs.md#schema).
 
 - See [MQTT source](../rules/sources/builtin/mqtt.md) for more info.
 
