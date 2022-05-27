@@ -67,8 +67,8 @@ func createOrGetConnection(sc api.StreamContext, url string) error {
 		sctx := ctx.WithMeta(ruleId, opId, store)
 		memory.CreatePub(NeuronTopic)
 		go run(sctx)
-		connectionCount++
 	}
+	connectionCount++
 	return nil
 }
 

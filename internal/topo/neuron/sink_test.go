@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-func TestSink(t *testing.T) {
+func sinkTest(t *testing.T) {
 	server, ch := mockNeuron(false, true)
 	defer server.Close()
 
@@ -79,4 +79,5 @@ func TestSink(t *testing.T) {
 	if !reflect.DeepEqual(actual, exp) {
 		t.Errorf("result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", exp, actual)
 	}
+	time.Sleep(100 * time.Millisecond)
 }
