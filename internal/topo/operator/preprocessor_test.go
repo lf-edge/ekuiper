@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/schema"
+	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -1114,7 +1114,7 @@ func TestPreprocessorForBinary(t *testing.T) {
 		if tt.isBinary {
 			format = message.FormatBinary
 		}
-		converter, _ := schema.GetOrCreateConverter(format, "", "")
+		converter, _ := converter.GetOrCreateConverter(format, "", "")
 		nCtx := context.WithValue(ctx, context.DecodeKey, converter)
 		if dm, e := nCtx.Decode(tt.data); e != nil {
 			log.Fatal(e)
