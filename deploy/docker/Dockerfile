@@ -34,8 +34,8 @@ ENV MAINTAINER="emqx.io"
 ENV KUIPER_HOME /kuiper
 ENV KUIPER__BASIC__CONSOLELOG true
 
-WORKDIR /kuiper
-VOLUME ["kuiper/etc", "kuiper/data", "kuiper/plugins", "kuiper/log"]
+WORKDIR ${KUIPER_HOME}
+VOLUME ["${KUIPER_HOME}/etc", "${KUIPER_HOME}/data", "${KUIPER_HOME}/plugins", "${KUIPER_HOME}/log"]
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
 CMD ["./bin/kuiperd"]
