@@ -21,7 +21,7 @@ import (
 )
 
 func RunSinkCollect(s api.Sink, data []interface{}) error {
-	ctx := newMockContext("rule1", "op1")
+	ctx := newMockContext("ruleSink", "op1")
 	err := s.Open(ctx)
 	if err != nil {
 		return err

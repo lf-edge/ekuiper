@@ -106,7 +106,6 @@ func TestMultiSourceSink(t *testing.T) {
 	})
 
 	server, ch := mockNeuron(true, true)
-	defer server.Close()
 	wg := sync.WaitGroup{}
 	wg.Add(3)
 	go func() {
@@ -170,4 +169,7 @@ func TestMultiSourceSink(t *testing.T) {
 		t.Errorf("result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", sexp, actual)
 	}
 	wg.Wait()
+	server.Close()
+	time.Sleep(100 * time.Millisecond)
+	sinkTest(t)
 }

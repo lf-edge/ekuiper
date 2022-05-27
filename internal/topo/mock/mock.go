@@ -22,7 +22,7 @@ import (
 )
 
 func newMockContext(ruleId string, opId string) api.StreamContext {
-	contextLogger := conf.Log.WithField("rule", "mockRule0")
+	contextLogger := conf.Log.WithField("rule", ruleId)
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore(ruleId, api.AtMostOnce)
 	return ctx.WithMeta(ruleId, opId, tempStore)
