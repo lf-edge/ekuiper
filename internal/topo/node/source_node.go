@@ -17,7 +17,7 @@ package node
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/schema"
+	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -103,9 +103,9 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				}
 				schemaFile = r[0]
 			}
-			converter, err := schema.GetOrCreateConverter(format, schemaFile, schemaId)
+			converter, err := converter.GetOrCreateConverter(format, schemaFile, schemaId)
 			if err != nil {
-				msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s", format, schemaId)
+				msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", format, schemaId, err)
 				logger.Warnf(msg)
 				return fmt.Errorf(msg)
 			}

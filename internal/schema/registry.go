@@ -126,7 +126,7 @@ func CreateOrUpdateSchema(info *Info) error {
 }
 
 func GetSchema(schemaType def.SchemaType, name string) (*Info, error) {
-	schemaFile, err := getSchemaFile(schemaType, name)
+	schemaFile, err := GetSchemaFile(schemaType, name)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func GetSchema(schemaType def.SchemaType, name string) (*Info, error) {
 	}, nil
 }
 
-func getSchemaFile(schemaType def.SchemaType, name string) (string, error) {
+func GetSchemaFile(schemaType def.SchemaType, name string) (string, error) {
 	registry.RLock()
 	defer registry.RUnlock()
 	if _, ok := registry.schemas[schemaType]; !ok {

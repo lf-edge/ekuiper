@@ -22,7 +22,7 @@ import (
 )
 
 func TestEncode(t *testing.T) {
-	c, err := NewConverter("test1.Person", "../test/test1.proto")
+	c, err := NewConverter("test1.Person", "../../schema/test/test1.proto")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestEncode(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	c, err := NewConverter("test1.Person", "../test/test1.proto")
+	c, err := NewConverter("test1.Person", "../../schema/test/test1.proto")
 	if err != nil {
 		t.Fatal(err)
 	}

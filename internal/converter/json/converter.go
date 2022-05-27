@@ -12,21 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package schema
+package json
 
 import (
-	"github.com/lf-edge/ekuiper/internal/pkg/def"
+	"encoding/json"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-type Info struct {
-	Type     def.SchemaType `json:"type"`
-	Name     string         `json:"name"`
-	Content  string         `json:"content"`
-	FilePath string         `json:"file"`
+type Converter struct {
 }
 
-var (
-	schemaExt = map[def.SchemaType]string{
-		def.PROTOBUF: ".proto",
-	}
-)
+var converter = &Converter{}
+
+func GetConverter() (message.Converter, error) {
+	return converter, nil
+}
+
+func (c *Converter) Encode(d interface{}) ([]byte, error) {
+	return json.Marshal(d)
+}
+
+func (c *Converter) Decode(b []byte) (interface{}, error) {
+	result := make(map[string]interface{})
+	e := json.Unmarshal(b, &result)
+	return result, e
+}
