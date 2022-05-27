@@ -15,6 +15,7 @@ Except core runtime and REST api, there are some features that are allowed to be
 | [UI Meta API](./operation/manager-ui/overview.md)                                       | ui         | The REST API of the metadata which is usually consumed by the ui                                                                                       |
 | [Prometheus Metrics](./operation/config/configuration_file.md#prometheus-configuration) | prometheus | Support to send metrics to prometheus                                                                                                                  |
 | [Extended template functions](./rules/overview.md#functions-supported-in-template)      | template   | Support additional data template function from sprig besides default go text/template functions                                                        |
+| [Codecs with schema](./rules/codecs.md)                                                 | schema     | Support schema registry and codecs with schema such as protobuf                                                                                        |
 
 ## Usage
 
