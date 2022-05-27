@@ -12,27 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package json
+//go:build schema || !core
+// +build schema !core
+
+package converter
 
 import (
-	"encoding/json"
+	"github.com/lf-edge/ekuiper/internal/converter/protobuf"
+	"github.com/lf-edge/ekuiper/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/internal/schema"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-type Converter struct {
-}
-
-var converter = &Converter{}
-
-func GetConverter() (*Converter, error) {
-	return converter, nil
-}
-
-func (c *Converter) Encode(d interface{}) ([]byte, error) {
-	return json.Marshal(d)
-}
-
-func (c *Converter) Decode(b []byte) (interface{}, error) {
-	result := make(map[string]interface{})
-	e := json.Unmarshal(b, &result)
-	return result, e
+func init() {
+	converters[message.FormatProtobuf] = func(t string, schemaFile string, schemaId string) (message.Converter, error) {
+		fileName, err := schema.GetSchemaFile(def.SchemaType(t), schemaFile)
+		if err != nil {
+			return nil, err
+		}
+		return protobuf.NewConverter(schemaId, fileName)
+	}
 }
