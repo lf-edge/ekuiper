@@ -140,6 +140,9 @@
 						{
 							"title": "状态和容错",
 							"path": "rules/state_and_fault_tolerance"
+						},{
+							"title": "编解码",
+							"path": "rules/codecs"
 						}
 					]
 				},
@@ -452,6 +455,9 @@
 						{
 							"title": "外部函数管理",
 							"path": "operation/restapi/services"
+						},{
+							"title": "模式管理",
+							"path": "operation/restapi/schemas"
 						}
 					]
 				},
@@ -477,6 +483,9 @@
 						{
 							"title": "插件管理",
 							"path": "operation/cli/plugins"
+						},{
+							"title": "模式管理",
+							"path": "operation/cli/schemas"
 						}
 					]
 				},
@@ -658,6 +667,9 @@
 						{
 							"title": "State and Fault Tolerance",
 							"path": "rules/state_and_fault_tolerance"
+						},{
+							"title": "Codecs",
+							"path": "rules/codecs"
 						}
 					]
 				},
@@ -970,6 +982,9 @@
 						{
 							"title": "External Services",
 							"path": "operation/restapi/services"
+						},{
+							"title": "Schemas",
+							"path": "operation/restapi/schemas"
 						}
 					]
 				},
@@ -995,6 +1010,9 @@
 						{
 							"title": "Plugins",
 							"path": "operation/cli/plugins"
+						},{
+							"title": "Schemas",
+							"path": "operation/cli/schemas"
 						}
 					]
 				},
