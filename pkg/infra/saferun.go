@@ -49,7 +49,7 @@ func SafeRun(fn func() error) (err error) {
 // Thus the latter error will just skip
 // It is usually the error outlet of a op/rule.
 func DrainError(ctx api.StreamContext, err error, errCh chan<- error) {
-	ctx.GetLogger().Errorf("sending error: %v", err)
+	ctx.GetLogger().Errorf("runtime error: %v", err)
 	select {
 	case errCh <- err:
 	default:

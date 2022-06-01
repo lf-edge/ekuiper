@@ -109,7 +109,7 @@ func connect(url string) error {
 		mangos.OptionMaxReconnectTime: 5 * time.Second,
 		mangos.OptionReconnectTime:    100 * time.Millisecond,
 	}); err != nil {
-		return fmt.Errorf("can't dial to neuron: %s", err.Error())
+		return fmt.Errorf("please make sure neuron has started and configured, can't dial to neuron: %s", err.Error())
 	}
 
 	return nil
