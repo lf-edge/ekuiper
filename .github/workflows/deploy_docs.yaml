@@ -75,23 +75,24 @@ jobs:
       run: |
         cd frontend
         yarn && yarn build
-
+    
     - name: upload dist
       run: |
         cd frontend/docs/.vuepress/
-        wget http://gosspublic.alicdn.com/ossutil/1.7.8/ossutil64
-        chmod 755 ./ossutil64
-        ./ossutil64 config -e https://oss-accelerate.aliyuncs.com -i ${{ secrets.ALI_OSS_ACCESSKEY_ID }} -k ${{ secrets.ALI_OSS_ACCESSKEY_SECRET }} -L CH
-        ./ossutil64 rm -r -f oss://ekuiper-org/docs/zh/${VERSION}/
-        ./ossutil64 rm -r -f oss://ekuiper-org/docs/en/${VERSION}/
-        ./ossutil64 cp -r dist/ oss://ekuiper-org/docs/ -u
+        pip3 install coscmd
+        coscmd config -a ${{ secrets.TENCENT_COS_ID }} -s ${{ secrets.TENCENT_COS_KEY }} -b ekuiper-org-1302406139 -r ap-hongkong
+        coscmd delete -r -f docs/en/${VERSION} || true
+        coscmd delete -r -f docs/zh/${VERSION} || true
+        coscmd config -a ${{ secrets.TENCENT_COS_ID }} -s ${{ secrets.TENCENT_COS_KEY }} -b ekuiper-org-1302406139 -e cos.accelerate.myqcloud.com
+        coscmd upload -r dist/ /docs/
 
     - name: refresh cdn cache
-      uses: Swilder-M/refresh-ali-cdn@v1
-      with:
-        access_key_id: ${{ secrets.ALI_OSS_ACCESSKEY_ID }}
-        access_key_secret: ${{ secrets.ALI_OSS_ACCESSKEY_SECRET }}
-        file_paths: https://ekuiper.org/docs/ 
+      run: |
+        pip3 install tccli
+        tccli configure set secretId ${{ secrets.TENCENT_COS_ID }}
+        tccli configure set secretKey ${{ secrets.TENCENT_COS_KEY }}
+        tccli configure set region ap-hongkong
+        tccli cdn PurgePathCache --Paths '["https://ekuiper.org/docs/"]' --FlushType delete
 
     - name: update search index
       if: env.VERSION == 'latest'
