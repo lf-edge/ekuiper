@@ -77,13 +77,13 @@ func closeConnection(ctx api.StreamContext, url string) error {
 	defer m.Unlock()
 	ctx.GetLogger().Infof("closeConnection count: %d", connectionCount)
 	memory.RemovePub(NeuronTopic)
-	connectionCount--
-	if connectionCount == 0 {
+	if connectionCount == 1 {
 		err := disconnect(url)
 		if err != nil {
 			return err
 		}
 	}
+	connectionCount--
 	return nil
 }
 
@@ -147,9 +147,6 @@ func publish(ctx api.StreamContext, data []byte) error {
 }
 
 func disconnect(_ string) error {
-	defer func() {
-		sock = nil
-	}()
 	if sock != nil {
 		err := sock.Close()
 		if err != nil {
