@@ -15,13 +15,15 @@
 package memory
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"strings"
 )
 
 type sink struct {
-	topic string
+	topic        string
+	hasTransform bool
 }
 
 func (s *sink) Open(ctx api.StreamContext) error {
@@ -37,12 +39,14 @@ func (s *sink) Configure(props map[string]interface{}) error {
 				return fmt.Errorf("invalid memory topic %s: wildcard found", id)
 			}
 			s.topic = id
-			return nil
 		} else {
 			return fmt.Errorf("can't cast value %s to string", t)
 		}
 	}
-	return fmt.Errorf("there is no topic property in the memory action")
+	if _, ok := props["dataTemplate"]; ok {
+		s.hasTransform = true
+	}
+	return nil
 }
 
 func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
@@ -51,6 +55,19 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 	if err != nil {
 		return err
 	}
+	if s.hasTransform {
+		jsonBytes, _, err := ctx.TransformOutput(data)
+		if err != nil {
+			return err
+		}
+		m := make(map[string]interface{})
+		err = json.Unmarshal(jsonBytes, &m)
+		if err != nil {
+			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
+		}
+		data = m
+	}
+
 	switch d := data.(type) {
 	case []map[string]interface{}:
 		for _, el := range d {
