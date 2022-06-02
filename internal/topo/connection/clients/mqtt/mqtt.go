@@ -103,7 +103,7 @@ func (ms *MQTTClient) onConnectLost(_ MQTT.Client, err error) {
 
 func (ms *MQTTClient) Connect(handler MQTT.OnConnectHandler) error {
 
-	opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(ms.pVersion).SetCleanSession(false)
+	opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(ms.pVersion)
 
 	opts = opts.SetTLSConfig(ms.tls)
 
