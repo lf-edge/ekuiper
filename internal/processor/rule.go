@@ -94,6 +94,15 @@ func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (err e
 	return err
 }
 
+func (p *RuleProcessor) GetRuleJson(name string) (string, error) {
+	var s1 string
+	f, _ := p.db.Get(name, &s1)
+	if !f {
+		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found.", name))
+	}
+	return s1, nil
+}
+
 func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
 	var s1 string
 	f, _ := p.db.Get(name, &s1)
@@ -190,16 +199,13 @@ func (p *RuleProcessor) ExecDrop(name string) (string, error) {
 	result := fmt.Sprintf("Rule %s is dropped.", name)
 	var ruleJson string
 	if ok, _ := p.db.Get(name, &ruleJson); ok {
-		rule, err := p.getRuleByJson(name, ruleJson)
-		if err != nil {
-			return "", err
-		}
-		if err := cleanSinkCache(rule); err != nil {
+		if err := cleanSinkCache(name); err != nil {
 			result = fmt.Sprintf("%s. Clean sink cache faile: %s.", result, err)
 		}
 		if err := cleanCheckpoint(name); err != nil {
 			result = fmt.Sprintf("%s. Clean checkpoint cache faile: %s.", result, err)
 		}
+
 	}
 	err := p.db.Delete(name)
 	if err != nil {
@@ -217,8 +223,8 @@ func cleanCheckpoint(name string) error {
 	return nil
 }
 
-func cleanSinkCache(rule *api.Rule) error {
-	err := store.DropKV(path.Join("sink", rule.Id))
+func cleanSinkCache(name string) error {
+	err := store.DropKV(path.Join("sink", name))
 	if err != nil {
 		return err
 	}
