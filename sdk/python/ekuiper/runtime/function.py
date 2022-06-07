@@ -106,4 +106,4 @@ def encode_reply(state: bool, arg: any):
     try:
         return str.encode(json.dumps({'state': state, 'result': arg}))
     except Exception:
-        return str.encode(json.dumps({'state': false, 'result': traceback.format_exc()}))
+        return str.encode(json.dumps({'state': False, 'result': traceback.format_exc()}))
