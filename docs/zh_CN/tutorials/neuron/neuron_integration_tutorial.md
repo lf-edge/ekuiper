@@ -34,7 +34,7 @@ eKuiper 与 Neuron 之间的集成是双向的，其实现主要包含两个部�
 
 Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方案。本文以 Docker 方案为例，采用 [docker compose](https://docs.docker.com/compose/) 方式，一键完成边缘端两个组件的快速部署。
 
-1. 复制 [docker-compose.yml](./docker-compose.yml) 文件到部署的机器上。其内容如下，包含了 Neuron，eKuiper 以及 eKuiper 的管理界面 eKuiper manager（可选）。其中，eKuiper 和 neuron 共享了名为 nng-ipc 的 volume ，用于二者通信。
+1. 复制 [docker-compose.yml](./docker-compose.yml) 文件到部署的机器上。其内容如下，包含了 Neuron，eKuiper 以及 eKuiper 的管理界面 eKuiper manager（可选）。其中，eKuiper 和 neuron 共享了名为 nng-ipc 的 volume ，用于二者通信。如果要使用 eKuiper alpine 版本，需要在 compose 文件的 eKuiper 部分添加 `user: root:root` 赋予写入 ipc 文件的权限，否则连接将无法建立。
 
    ```yaml
    version: '3.4'
@@ -46,7 +46,7 @@ Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方�
        ports:
          - "9082:9082"
      ekuiper:
-       image: lfedge/ekuiper:1.5.0-slim
+       image: lfedge/ekuiper:1.5-slim
        ports:
          - "9081:9081"
          - "127.0.0.1:20498:20498"

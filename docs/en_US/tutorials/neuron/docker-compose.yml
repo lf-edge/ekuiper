@@ -2,12 +2,12 @@ version: '3.4'
 
 services:
   manager:
-    image: emqx/ekuiper-manager:1.5.0
+    image: emqx/ekuiper-manager:1.5
     container_name: ekuiper-manager
     ports:
       - "9082:9082"
   ekuiper:
-    image: lfedge/ekuiper:1.5.0-slim
+    image: lfedge/ekuiper:1.5-slim
     ports:
       - "9081:9081"
       - "127.0.0.1:20498:20498"
