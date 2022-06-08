@@ -284,12 +284,13 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		rule, err := ruleProcessor.GetRuleByName(name)
+		rule, err := ruleProcessor.GetRuleJson(name)
 		if err != nil {
 			handleError(w, err, "describe rule error", logger)
 			return
 		}
-		jsonResponse(rule, w, logger)
+		w.Header().Add(ContentType, ContentTypeJSON)
+		w.Write([]byte(rule))
 	case http.MethodDelete:
 		deleteRule(name)
 		content, err := ruleProcessor.ExecDrop(name)
