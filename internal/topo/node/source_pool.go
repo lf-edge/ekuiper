@@ -43,7 +43,7 @@ func getSourceInstance(node *SourceNode, index int) (*sourceInstance, error) {
 		if !ok {
 			ns, err := io.Source(node.sourceType)
 			if ns != nil {
-				s, err = pool.addInstance(rkey, node, ns, index)
+				s, err = pool.addInstance(rkey, node, ns)
 				if err != nil {
 					return nil, err
 				}
@@ -126,7 +126,7 @@ func (p *sourcePool) load(k string) (*sourceSingleton, bool) {
 	return s, ok
 }
 
-func (p *sourcePool) addInstance(k string, node *SourceNode, source api.Source, index int) (*sourceSingleton, error) {
+func (p *sourcePool) addInstance(k string, node *SourceNode, source api.Source) (*sourceSingleton, error) {
 	p.Lock()
 	defer p.Unlock()
 	s, ok := p.registry[k]
@@ -153,9 +153,8 @@ func (p *sourcePool) addInstance(k string, node *SourceNode, source api.Source, 
 		p.registry[k] = newS
 		go func() {
 			err := infra.SafeRun(func() error {
-				nctx := node.ctx.WithInstance(index)
-				defer si.source.Close(nctx)
-				si.source.Open(nctx, si.dataCh.In, si.errorCh)
+				defer si.source.Close(sctx)
+				si.source.Open(sctx, si.dataCh.In, si.errorCh)
 				return nil
 			})
 			if err != nil {
