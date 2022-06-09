@@ -39,6 +39,8 @@ Below optional configurations are supported, please check MQTT specification for
   - KeyPEMBlock
   - SkipCertVerify
 
+Notice that, the edgex action can support data templates to vary the result format, but the result of the data template must be in the object form of a JSON string, e.g. `"{\"key\":\"{{.key}}\"}"`. JSON strings in the form of arrays or non-JSON strings are not supported.
+
 ## Send to various targets
 
 By setting the combination of the properties, we can send the result to various EdgeX message bus settings.
@@ -271,4 +273,3 @@ Please notice that,
 - If your SQL has aggregated function, then it does not make sense to keep these metadata, but eKuiper will still fill with metadata from a particular message in the time window. For example, with following SQL, 
 ```SELECT avg(temperature) AS temperature, meta(*) AS edgex_meta FROM ... GROUP BY TUMBLINGWINDOW(ss, 10)```. 
 In this case, there are possibly several messages in the window, the metadata value for `temperature` will be filled with value from 1st message that received from bus.
-

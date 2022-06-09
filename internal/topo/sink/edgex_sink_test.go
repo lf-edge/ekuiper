@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"reflect"
 	"testing"
 )
@@ -262,8 +264,7 @@ func TestProduceEvents(t1 *testing.T) {
 
 		{ // 2
 			input: `[
-						{"meta": 50},
-						{"h1":100}
+						{"meta": 50,"h1":100}
 					]`,
 			conf: map[string]interface{}{
 				"sourceName": "demo",
@@ -481,6 +482,116 @@ func TestProduceEvents(t1 *testing.T) {
 		var payload []map[string]interface{}
 		json.Unmarshal([]byte(t.input), &payload)
 		result, err := ems.produceEvents(ctx, payload)
+		if !reflect.DeepEqual(t.error, testx.Errstring(err)) {
+			t1.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, t.input, t.error, err)
+		} else if t.error == "" && !compareEvent(t.expected, result) {
+			t1.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, t.input, t.expected, result)
+		}
+	}
+}
+
+func TestEdgeXTemplate_Apply(t1 *testing.T) {
+	var tests = []struct {
+		input    string
+		conf     map[string]interface{}
+		expected *dtos.Event
+		error    string
+	}{
+		{ // 0
+			input: `[{"meta":{
+							"correlationid":"","deviceName":"demo","id":"","origin":3,
+							"humidity":{"deviceName":"test device name1","id":"12","origin":14,"valueType":"Int64"},
+							"temperature":{"deviceName":"test device name2","id":"22","origin":24}
+							},
+						"humidity":100,
+						"temperature":50}
+					]`,
+			conf: map[string]interface{}{
+				"metadata": "meta",
+
+				"dataTemplate": `{"wrapper":"w1","ab":"{{.humidity}}"}`,
+			},
+			expected: &dtos.Event{
+				Id:          "",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "ruleTest",
+				Origin:      0,
+				Readings: []dtos.BaseReading{
+					{
+						ResourceName:  "wrapper",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						Id:            "",
+						Origin:        0,
+						ValueType:     v2.ValueTypeString,
+						SimpleReading: dtos.SimpleReading{Value: "w1"},
+					},
+					{
+						ResourceName:  "ab",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						Id:            "",
+						Origin:        0,
+						ValueType:     v2.ValueTypeString,
+						SimpleReading: dtos.SimpleReading{Value: "100"},
+					},
+				},
+			},
+			error: "",
+		}, {
+			input: `[{"json":"{\"a\":24,\"b\":\"c\"}"}]`,
+			conf: map[string]interface{}{
+				"dataTemplate": `{{.json}}`,
+			},
+			expected: &dtos.Event{
+				Id:          "",
+				DeviceName:  "ekuiper",
+				ProfileName: "ekuiperProfile",
+				SourceName:  "ruleTest",
+				Origin:      0,
+				Readings: []dtos.BaseReading{
+					{
+						ResourceName:  "a",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						Id:            "",
+						Origin:        0,
+						ValueType:     v2.ValueTypeFloat64,
+						SimpleReading: dtos.SimpleReading{Value: "2.400000e+01"},
+					},
+					{
+						ResourceName:  "b",
+						DeviceName:    "ekuiper",
+						ProfileName:   "ekuiperProfile",
+						Id:            "",
+						Origin:        0,
+						ValueType:     v2.ValueTypeString,
+						SimpleReading: dtos.SimpleReading{Value: "c"},
+					},
+				},
+			},
+			error: "",
+		},
+	}
+
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	for i, t := range tests {
+		ems := EdgexMsgBusSink{}
+		err := ems.Configure(t.conf)
+		if err != nil {
+			t1.Errorf("%d: configure error %v", i, err)
+			continue
+		}
+		if ems.c.SourceName == "" {
+			ems.c.SourceName = "ruleTest"
+		}
+		var payload []map[string]interface{}
+		json.Unmarshal([]byte(t.input), &payload)
+		dt := t.conf["dataTemplate"]
+		tf, _ := transform.GenTransform(cast.ToStringAlways(dt))
+		vCtx := context.WithValue(ctx, context.TransKey, tf)
+		result, err := ems.produceEvents(vCtx, payload[0])
 		if !reflect.DeepEqual(t.error, testx.Errstring(err)) {
 			t1.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, t.input, t.error, err)
 		} else if t.error == "" && !compareEvent(t.expected, result) {

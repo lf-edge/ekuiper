@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -84,9 +84,6 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 	if c.Topic != "" && c.TopicPrefix != "" {
 		return fmt.Errorf("not allow to specify both topic and topicPrefix, please set one only")
 	}
-	if c.DataTemplate != "" {
-		conf.Log.Warn("edgex sink does not support dataTemplate, just ignore")
-	}
 	ems.c = c
 	ems.config = ps
 
@@ -120,7 +117,29 @@ func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 	return nil
 }
 
-func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, m []map[string]interface{}) (*dtos.Event, error) {
+func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item interface{}) (*dtos.Event, error) {
+	if ems.c.DataTemplate != "" {
+		jsonBytes, _, err := ctx.TransformOutput(item)
+		if err != nil {
+			return nil, err
+		}
+		tm := make(map[string]interface{})
+		err = json.Unmarshal(jsonBytes, &tm)
+		if err != nil {
+			return nil, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
+		}
+		item = tm
+	}
+	var m []map[string]interface{}
+	switch payload := item.(type) {
+	case map[string]interface{}:
+		m = []map[string]interface{}{payload}
+	case []map[string]interface{}:
+		m = payload
+	default:
+		// impossible
+		return nil, fmt.Errorf("receive invalid data %v", item)
+	}
 	m1 := ems.getMeta(m)
 	event := m1.createEvent()
 	//Override the devicename if user specified the value
@@ -460,19 +479,7 @@ func (ems *EdgexMsgBusSink) getMeta(result []map[string]interface{}) *meta {
 
 func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	var (
-		evt *dtos.Event
-		err error
-	)
-	switch payload := item.(type) {
-	case map[string]interface{}:
-		evt, err = ems.produceEvents(ctx, []map[string]interface{}{payload})
-	case []map[string]interface{}:
-		evt, err = ems.produceEvents(ctx, payload)
-	default:
-		// impossible
-		return fmt.Errorf("receive invalid data %v", item)
-	}
+	evt, err := ems.produceEvents(ctx, item)
 	if err != nil {
 		return fmt.Errorf("Failed to convert to EdgeX event: %s.", err.Error())
 	}
