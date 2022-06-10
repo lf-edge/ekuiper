@@ -16,6 +16,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -27,18 +28,19 @@ import (
 
 type (
 	taosConfig struct {
-		ProvideTs   bool     `json:"provideTs"`
-		Port        int      `json:"port"`
-		Ip          string   `json:"ip"` // To be deprecated
-		Host        string   `json:"host"`
-		User        string   `json:"user"`
-		Password    string   `json:"password"`
-		Database    string   `json:"database"`
-		Table       string   `json:"table"`
-		TsFieldName string   `json:"tsFieldName"`
-		Fields      []string `json:"fields"`
-		STable      string   `json:"sTable"`
-		TagFields   []string `json:"tagFields"`
+		ProvideTs    bool     `json:"provideTs"`
+		Port         int      `json:"port"`
+		Ip           string   `json:"ip"` // To be deprecated
+		Host         string   `json:"host"`
+		User         string   `json:"user"`
+		Password     string   `json:"password"`
+		Database     string   `json:"database"`
+		Table        string   `json:"table"`
+		TsFieldName  string   `json:"tsFieldName"`
+		Fields       []string `json:"fields"`
+		STable       string   `json:"sTable"`
+		TagFields    []string `json:"tagFields"`
+		DataTemplate string   `json:"dataTemplate"`
 	}
 	taosSink struct {
 		conf *taosConfig
@@ -191,7 +193,18 @@ func (m *taosSink) Open(ctx api.StreamContext) (err error) {
 
 func (m *taosSink) Collect(ctx api.StreamContext, item interface{}) error {
 	ctx.GetLogger().Debugf("tdengine sink receive %s", item)
-
+	if m.conf.DataTemplate != "" {
+		jsonBytes, _, err := ctx.TransformOutput(item)
+		if err != nil {
+			return err
+		}
+		tm := make(map[string]interface{})
+		err = json.Unmarshal(jsonBytes, &tm)
+		if err != nil {
+			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
+		}
+		item = tm
+	}
 	switch v := item.(type) {
 	case []map[string]interface{}:
 		var err error
