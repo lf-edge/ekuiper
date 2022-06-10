@@ -219,11 +219,11 @@ msgpack-rpc 服务有以下限制：
 
 eKuiper 启动时，会读取配置文件夹 *etc/services* 里的外部服务配置文件并注册。用户可在启动之前，将配置文件遵循如下规则放入配置文件夹：
 1. 文件名必须为 *$服务名$.json*。例如，*sample.json* 会注册为 sample 服务。
-2. 使用的 Schema 文件必须放入 schema 文件夹。其目录结构类似为:
+2. 使用的 Schema 文件必须放入 schemas 文件夹。其目录结构类似为:
    ```
    etc
      services
-       schema
+       schemas
          sample.proto
          random.proto
          ...

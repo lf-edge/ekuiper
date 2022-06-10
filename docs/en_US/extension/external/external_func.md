@@ -224,12 +224,12 @@ When eKuiper is started, it will read and register the external service configur
 
 1. The file name must be *$service name$.json*. For example, *sample.json* will be registered as a sample service.
 
-2. The Schema file used must be placed in the schema folder. The directory structure is similar to:
+2. The Schema file used must be placed in the schemas folder. The directory structure is similar to:
 
    ```
    etc
      services
-       schema
+       schemas
          sample.proto
          random.proto
          ...

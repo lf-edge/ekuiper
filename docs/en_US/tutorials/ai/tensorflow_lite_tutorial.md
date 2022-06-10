@@ -66,13 +66,13 @@ To use the plugin, we need to build it in the environment where eKuiper will run
 
 ### Install by pre-built zip
 
-If using eKuiper docker images with tags like 1.1.1 or 1.1.1-slim which are based on debian, we can install the pre-built labelImage plugin. For example, to install the plugin for eKuiper 1.1.2 in docker image lfedge/ekuiper:1.1.2-slim, the pre-built zip file locates in *https://www.emqx.io/downloads/kuiper-plugins/v1.1.2/debian/functions/labelImage_amd64.zip*. Run the rest command as below to install.
+If using eKuiper docker images with tags like 1.1.1 or 1.1.1-slim which are based on debian, we can install the pre-built labelImage plugin. For example, to install the plugin for eKuiper 1.1.2 in docker image lfedge/ekuiper:1.1.2-slim, the pre-built zip file locates in *https://packages.emqx.net/kuiper-plugins/1.1.2/debian/functions/labelImage_amd64.zip*. Run the rest command as below to install.
 
 ```shell
 POST http://{{eKuiperHost:eKuiperRestPort}}/plugins/functions
 Content-Type: application/json
 
-{"name":"labelImage", "file": "https://www.emqx.io/downloads/kuiper-plugins/v1.1.2/debian/functions/labelImage_amd64.zip"}
+{"name":"labelImage", "file": "https://packages.emqx.net/kuiper-plugins/1.1.2/debian/functions/labelImage_amd64.zip"}
 ```
 
 ### Manual build
