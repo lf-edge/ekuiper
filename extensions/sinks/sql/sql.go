@@ -16,6 +16,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -26,9 +27,10 @@ import (
 )
 
 type sqlConfig struct {
-	Url    string   `json:"url"`
-	Table  string   `json:"table"`
-	Fields []string `json:"fields"`
+	Url          string   `json:"url"`
+	Table        string   `json:"table"`
+	Fields       []string `json:"fields"`
+	DataTemplate string   `json:"dataTemplate"`
 }
 
 func (t *sqlConfig) buildSql(ctx api.StreamContext, mapData map[string]interface{}) (string, error) {
@@ -126,7 +128,18 @@ func (m *sqlSink) writeToDB(ctx api.StreamContext, mapData map[string]interface{
 
 func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 	ctx.GetLogger().Debugf("sql sink receive %s", item)
-
+	if m.conf.DataTemplate != "" {
+		jsonBytes, _, err := ctx.TransformOutput(item)
+		if err != nil {
+			return err
+		}
+		tm := make(map[string]interface{})
+		err = json.Unmarshal(jsonBytes, &tm)
+		if err != nil {
+			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
+		}
+		item = tm
+	}
 	switch v := item.(type) {
 	case []map[string]interface{}:
 		var err error

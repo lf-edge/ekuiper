@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,9 +30,11 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	_ "github.com/influxdata/influxdb1-client/v2"
 	client "github.com/influxdata/influxdb1-client/v2"
-	api "github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"strings"
 	"time"
 )
@@ -48,6 +50,7 @@ type influxSink struct {
 	fields       string
 	cli          client.Client
 	fieldmap     map[string]interface{}
+	hasTransform bool
 }
 
 func (m *influxSink) Configure(props map[string]interface{}) error {
@@ -91,6 +94,9 @@ func (m *influxSink) Configure(props map[string]interface{}) error {
 			m.fields = i
 		}
 	}
+	if _, ok := props["dataTemplate"]; ok {
+		m.hasTransform = true
+	}
 	return nil
 }
 
@@ -111,6 +117,18 @@ func (m *influxSink) Open(ctx api.StreamContext) (err error) {
 
 func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
+	if m.hasTransform {
+		jsonBytes, _, err := ctx.TransformOutput(data)
+		if err != nil {
+			return err
+		}
+		m := make(map[string]interface{})
+		err = json.Unmarshal(jsonBytes, &m)
+		if err != nil {
+			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
+		}
+		data = m
+	}
 	var output map[string]interface{}
 	switch v := data.(type) {
 	case map[string]interface{}:

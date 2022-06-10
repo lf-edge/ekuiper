@@ -38,8 +38,17 @@ var (
 
 func compareEvent(expected, actual *dtos.Event) bool {
 	if (expected.Id == actual.Id || (expected.Id == "" && actual.Id != "")) && expected.ProfileName == actual.ProfileName && expected.DeviceName == actual.DeviceName && (expected.Origin == actual.Origin || (expected.Origin == 0 && actual.Origin > 0)) && reflect.DeepEqual(expected.Tags, actual.Tags) && expected.SourceName == actual.SourceName && len(expected.Readings) == len(actual.Readings) {
-		for i, r := range expected.Readings {
-			if !compareReading(r, actual.Readings[i]) {
+		for _, r := range expected.Readings {
+			compared := false
+			for _, a := range actual.Readings {
+				if r.ResourceName == a.ResourceName {
+					compared = true
+					if !compareReading(r, a) {
+						return false
+					}
+				}
+			}
+			if !compared {
 				return false
 			}
 		}
