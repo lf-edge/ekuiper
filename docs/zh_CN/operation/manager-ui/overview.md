@@ -24,16 +24,16 @@
 
 ### 安装 eKuiper
 
-- 从 [Docker 镜像库](https://hub.docker.com/r/lfedge/ekuiper/tags)拉取 eKuiper 的 Docker 镜像。由于本文中要安装插件，必须使用`ekuiper:1.4-slim`镜像（`ekuiper:1.4-alpine` 镜像比较小，安装比较方便，但是由于缺少一些必要的库文件，插件无法正常运行；而 `ekuiper:1.4` 镜像是开发版本的镜像，适合于开发阶段使用）。
+- 从 [Docker 镜像库](https://hub.docker.com/r/lfedge/ekuiper/tags)拉取 eKuiper 的 Docker 镜像。由于本文中要安装插件，必须使用`ekuiper:1.5-slim`镜像（`ekuiper:1.5-alpine` 镜像比较小，安装比较方便，但是由于缺少一些必要的库文件，插件无法正常运行；而 `ekuiper:1.5` 镜像是开发版本的镜像，适合于开发阶段使用）。
 
   ```shell
-  docker pull lfedge/ekuiper:1.4-slim
+  docker pull lfedge/ekuiper:1.5-slim
   ```
 
 - 运行 eKuiper 容器（为了方便，我们将使用由 [EMQ](https://www.emqx.cn) 提供的公有 MQTT 服务器，在运行容器时可通过 `-e` 选项设置地址）。如果您想通过主机访问 eKuiper 实例，可以通过在启动容器的时候加入 `-p 9081:9081` 参数来暴露 9081 端口。
 
   ```shell
-  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:1.4-slim
+  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:1.5-slim
   ```
   
   在运行容器时通过 `-e` 选项设置了 MQTT 服务器地址，数据写到了 MQTT 源配置文件中，通过以下命令可以查看：
@@ -56,16 +56,16 @@
 
 ### 安装管理控制台
 
-- 从 [Docker 镜像库](https://hub.docker.com/r/emqx/ekuiper-manager/tags) 拉取 kuiper-manager 的 Docker 镜像 ，`1.4-ief` 为华为 IEF 用户专用镜像，本例使用`1.4` 镜像。
+- 从 [Docker 镜像库](https://hub.docker.com/r/emqx/ekuiper-manager/tags) 拉取 kuiper-manager 的 Docker 镜像 ，`1.5-ief` 为华为 IEF 用户专用镜像，本例使用`1.5` 镜像。
 
   ```shell
-  docker pull emqx/ekuiper-manager:1.4
+  docker pull emqx/ekuiper-manager:1.5
   ```
 
 - 运行 Kuiper-manager 容器并暴露 9082 端口。
 
   ```shell
-  docker run --name kuiperManager -d -p 9082:9082 emqx/ekuiper-manager:1.4
+  docker run --name kuiperManager -d -p 9082:9082 emqx/ekuiper-manager:1.5
   ```
 
 ## 开始使用
