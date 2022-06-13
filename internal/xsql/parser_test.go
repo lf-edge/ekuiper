@@ -999,7 +999,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						},
 					},
 				},
-				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: true}},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: true, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
 			},
 		},
 
@@ -1020,7 +1020,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						},
 					},
 				},
-				SortFields: []ast.SortField{{Uname: "s1\007name", Name: "name", StreamName: ast.StreamName("s1"), Ascending: true}},
+				SortFields: []ast.SortField{{Uname: "s1\007name", Name: "name", StreamName: ast.StreamName("s1"), Ascending: true, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
 			},
 		},
 
@@ -1041,7 +1041,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						},
 					},
 				},
-				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false}},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
 			},
 		},
 
@@ -1055,7 +1055,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						AName: ""},
 				},
 				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1"}},
-				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false}},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
 			},
 		},
 
@@ -1069,7 +1069,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						AName: ""},
 				},
 				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1"}},
-				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false}, {Uname: "name2", Name: "name2", Ascending: true}},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}, {Uname: "name2", Name: "name2", Ascending: true, FieldExpr: &ast.FieldRef{Name: "name2", StreamName: ast.DefaultStream}}},
 			},
 		},
 
@@ -1093,7 +1093,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						},
 					},
 				},
-				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false}, {Uname: "name2", Name: "name2", Ascending: true}},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}, {Uname: "name2", Name: "name2", Ascending: true, FieldExpr: &ast.FieldRef{Name: "name2", StreamName: ast.DefaultStream}}},
 			},
 		},
 

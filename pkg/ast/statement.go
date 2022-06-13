@@ -181,6 +181,7 @@ type SortField struct {
 	StreamName StreamName
 	Uname      string // unique name of a field
 	Ascending  bool
+	FieldExpr  Expr
 
 	Expr
 }

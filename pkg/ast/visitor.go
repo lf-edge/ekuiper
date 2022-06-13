@@ -80,7 +80,7 @@ func Walk(v Visitor, node Node) {
 
 	case SortFields:
 		for _, sf := range n {
-			Walk(v, &sf)
+			Walk(v, sf.FieldExpr)
 		}
 
 	//case *SortField:

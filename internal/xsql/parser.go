@@ -374,6 +374,13 @@ func (p *Parser) parseSorts() (ast.SortFields, error) {
 						return nil, err
 					}
 
+					p.unscan()
+					if exp, err := p.ParseExpr(); err != nil {
+						return nil, err
+					} else {
+						s.FieldExpr = exp
+					}
+
 					if t2, _ := p.scanIgnoreWhitespace(); t2 == ast.DESC {
 						s.Ascending = false
 						ss = append(ss, s)

@@ -542,6 +542,34 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 			},
+		}, {
+			Name: `TestAliasOrderBy14`,
+			Sql:  "SELECT color, count(*) as c FROM demo where color != \"red\" GROUP BY COUNTWINDOW(5), color Order by c DESC",
+			R: [][]map[string]interface{}{
+				{{
+					"color": "blue",
+					"c":     float64(2),
+				},
+					{
+						"color": "yellow",
+						"c":     float64(1),
+					},
+				},
+			},
+			M: map[string]interface{}{
+				"op_6_project_0_exceptions_total":   int64(0),
+				"op_6_project_0_process_latency_us": int64(0),
+				"op_6_project_0_records_in_total":   int64(1),
+				"op_6_project_0_records_out_total":  int64(1),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(1),
+				"sink_mockSink_0_records_out_total": int64(1),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+			},
 		},
 	}
 	HandleStream(true, streamList, t)

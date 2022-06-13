@@ -102,17 +102,19 @@ type SortingData interface {
 // MultiSorter multiSorter implements the Sort interface, sorting the changes within.Hi
 type MultiSorter struct {
 	SortingData
-	fields ast.SortFields
-	valuer CallValuer
-	values []map[string]interface{}
+	fields    ast.SortFields
+	valuer    *FunctionValuer
+	aggValuer *AggregateFunctionValuer
+	values    []map[string]interface{}
 }
 
 // OrderedBy returns a Sorter that sorts using the less functions, in order.
 // Call its Sort method to sort the data.
-func OrderedBy(fields ast.SortFields, fv *FunctionValuer) *MultiSorter {
+func OrderedBy(fields ast.SortFields, fv *FunctionValuer, afv *AggregateFunctionValuer) *MultiSorter {
 	return &MultiSorter{
-		fields: fields,
-		valuer: fv,
+		fields:    fields,
+		valuer:    fv,
+		aggValuer: afv,
 	}
 }
 
@@ -161,15 +163,16 @@ func (ms *MultiSorter) Sort(data SortingData) error {
 	types := make([]string, len(ms.fields))
 	ms.values = make([]map[string]interface{}, data.Len())
 	//load and validate data
-	for i := 0; i < data.Len(); i++ {
-		ms.values[i] = make(map[string]interface{})
-		p := data.Index(i)
-		vep := &ValuerEval{Valuer: MultiValuer(p, ms.valuer)}
-		for j, field := range ms.fields {
-			vp, _ := vep.Valuer.Value(field.Name, string(field.StreamName))
-			if err, ok := vp.(error); ok {
-				return err
-			} else {
+	switch input := data.(type) {
+	case error:
+		return input
+	case GroupedTuplesSet:
+		for i, v := range input {
+			ms.values[i] = make(map[string]interface{})
+			ms.aggValuer.SetData(v)
+			vep := &ValuerEval{Valuer: MultiAggregateValuer(v, ms.valuer, v.Content[0], ms.valuer, ms.aggValuer, &WildcardValuer{Data: v.Content[0]})}
+			for j, field := range ms.fields {
+				vp := vep.Eval(field.FieldExpr)
 				if types[j] == "" && vp != nil {
 					types[j] = fmt.Sprintf("%T", vp)
 				}
@@ -178,6 +181,44 @@ func (ms *MultiSorter) Sort(data SortingData) error {
 				} else {
 					ms.values[i][field.Uname] = vp
 				}
+			}
+		}
+	case WindowTuplesSet:
+		if len(input.Content) != 1 {
+			return fmt.Errorf("run Order error: input WindowTuplesSet with multiple tuples cannot be evaluated")
+		}
+		wdtps := input.Content[0].Tuples
+		for i, v := range wdtps {
+			ms.values[i] = make(map[string]interface{})
+			vep := &ValuerEval{Valuer: MultiValuer(ms.valuer, &v, ms.valuer, &WildcardValuer{Data: &v})}
+			for j, field := range ms.fields {
+				vp := vep.Eval(field.FieldExpr)
+				if types[j] == "" && vp != nil {
+					types[j] = fmt.Sprintf("%T", vp)
+				}
+				if err := validate(types[j], vp); err != nil {
+					return err
+				} else {
+					ms.values[i][field.Uname] = vp
+				}
+			}
+		}
+	case *JoinTupleSets:
+		joinTps := input.Content
+		for i, v := range joinTps {
+			ms.values[i] = make(map[string]interface{})
+			vep := &ValuerEval{Valuer: MultiValuer(ms.valuer, &v, ms.valuer, &WildcardValuer{Data: &v})}
+			for j, field := range ms.fields {
+				vp := vep.Eval(field.FieldExpr)
+				if types[j] == "" && vp != nil {
+					types[j] = fmt.Sprintf("%T", vp)
+				}
+				if err := validate(types[j], vp); err != nil {
+					return err
+				} else {
+					ms.values[i][field.Uname] = vp
+				}
+
 			}
 		}
 	}
