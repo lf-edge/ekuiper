@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
+	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
@@ -48,7 +49,7 @@ type defaultNode struct {
 	outputs      map[string]chan<- interface{}
 	concurrency  int
 	sendError    bool
-	statManagers []StatManager
+	statManagers []metric.StatManager
 	ctx          api.StreamContext
 	qos          api.Qos
 }

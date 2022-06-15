@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -25,7 +26,7 @@ import (
 // The input for batch table MUST be *WindowTuples
 type JoinAlignNode struct {
 	*defaultSinkNode
-	statManager StatManager
+	statManager metric.StatManager
 	emitters    map[string]int
 	// states
 	batch *xsql.WindowTuplesSet
@@ -61,7 +62,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return
 	}
-	stats, err := NewStatManager(ctx, "op")
+	stats, err := metric.NewStatManager(ctx, "op")
 	if err != nil {
 		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return

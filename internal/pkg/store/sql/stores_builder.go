@@ -20,8 +20,8 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/store/sql/sqlite"
 )
 
-func BuildStores(c definition.Config) (definition.StoreBuilder, definition.TsBuilder, error) {
-	db, err := sqlite.NewSqliteDatabase(c)
+func BuildStores(c definition.Config, name string) (definition.StoreBuilder, definition.TsBuilder, error) {
+	db, err := sqlite.NewSqliteDatabase(c, name)
 	if err != nil {
 		return nil, nil, err
 	}

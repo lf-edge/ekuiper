@@ -262,10 +262,6 @@ func (c *Coordinator) complete(checkpointId int64) {
 			//TODO handle checkpoint error
 			return
 		}
-		//sink save cache
-		for _, sink := range c.sinkTasks {
-			sink.SaveCache()
-		}
 		c.completedCheckpoints.add(ccp.(*pendingCheckpoint).finalize())
 		c.pendingCheckpoints.Delete(checkpointId)
 		//Drop the previous pendingCheckpoints

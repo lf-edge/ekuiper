@@ -30,10 +30,9 @@ type Database struct {
 	mu   sync.Mutex
 }
 
-func NewSqliteDatabase(c definition.Config) (definition.Database, error) {
+func NewSqliteDatabase(c definition.Config, name string) (definition.Database, error) {
 	conf := c.Sqlite
 	dir := conf.Path
-	name := "sqliteKV.db"
 	if conf.Name != "" {
 		name = conf.Name
 	}
@@ -61,7 +60,7 @@ func (d *Database) Connect() error {
 }
 
 func connectionString(dpath string) string {
-	return fmt.Sprintf("file:%s?cache=shared", dpath)
+	return fmt.Sprintf("file:%s?cache=shared&_journal=WAL&sync=2", dpath)
 }
 
 func (d *Database) Disconnect() error {

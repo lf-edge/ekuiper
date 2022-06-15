@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -35,6 +36,61 @@ var (
 type tlsConf struct {
 	Certfile string `yaml:"certfile"`
 	Keyfile  string `yaml:"keyfile"`
+}
+
+type SinkConf struct {
+	MemoryCacheThreshold int  `json:"memoryCacheThreshold" yaml:"memoryCacheThreshold"`
+	MaxDiskCache         int  `json:"maxDiskCache" yaml:"maxDiskCache"`
+	BufferPageSize       int  `json:"bufferPageSize" yaml:"bufferPageSize"`
+	EnableCache          bool `json:"enableCache" yaml:"enableCache"`
+	ResendInterval       int  `json:"resendInterval" yaml:"resendInterval"`
+	CleanCacheAtStop     bool `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
+}
+
+// Validate the configuration and reset to the default value for invalid values.
+func (sc SinkConf) Validate() error {
+	e := make(errorx.MultiError)
+	if sc.MemoryCacheThreshold < 0 {
+		sc.MemoryCacheThreshold = 1024
+		Log.Warnf("memoryCacheThreshold is less than 0, set to 1024")
+		e["memoryCacheThreshold"] = fmt.Errorf("memoryCacheThreshold must be positive")
+	}
+	if sc.MaxDiskCache < 0 {
+		sc.MaxDiskCache = 1024000
+		Log.Warnf("maxDiskCache is less than 0, set to 1024000")
+		e["maxDiskCache"] = fmt.Errorf("maxDiskCache must be positive")
+	}
+	if sc.BufferPageSize < 0 {
+		sc.BufferPageSize = 256
+		Log.Warnf("bufferPageSize is less than 0, set to 256")
+		e["bufferPageSize"] = fmt.Errorf("bufferPageSize must be positive")
+	}
+	if sc.ResendInterval < 0 {
+		sc.ResendInterval = 0
+		Log.Warnf("resendInterval is less than 0, set to 0")
+		e["resendInterval"] = fmt.Errorf("resendInterval must be positive")
+	}
+	if sc.BufferPageSize > sc.MemoryCacheThreshold {
+		sc.MemoryCacheThreshold = sc.BufferPageSize
+		Log.Warnf("memoryCacheThreshold is less than bufferPageSize, set to %d", sc.BufferPageSize)
+		e["memoryCacheThresholdTooSmall"] = fmt.Errorf("memoryCacheThreshold must be greater than or equal to bufferPageSize")
+	}
+	if sc.MemoryCacheThreshold%sc.BufferPageSize != 0 {
+		sc.MemoryCacheThreshold = sc.BufferPageSize * (sc.MemoryCacheThreshold/sc.BufferPageSize + 1)
+		Log.Warnf("memoryCacheThreshold is not a multiple of bufferPageSize, set to %d", sc.MemoryCacheThreshold)
+		e["memoryCacheThresholdNotMultiple"] = fmt.Errorf("memoryCacheThreshold must be a multiple of bufferPageSize")
+	}
+	if sc.BufferPageSize > sc.MaxDiskCache {
+		sc.MaxDiskCache = sc.BufferPageSize
+		Log.Warnf("maxDiskCache is less than bufferPageSize, set to %d", sc.BufferPageSize)
+		e["maxDiskCacheTooSmall"] = fmt.Errorf("maxDiskCache must be greater than bufferPageSize")
+	}
+	if sc.MaxDiskCache%sc.BufferPageSize != 0 {
+		sc.MaxDiskCache = sc.BufferPageSize * (sc.MaxDiskCache/sc.BufferPageSize + 1)
+		Log.Warnf("maxDiskCache is not a multiple of bufferPageSize, set to %d", sc.MaxDiskCache)
+		e["maxDiskCacheNotMultiple"] = fmt.Errorf("maxDiskCache must be a multiple of bufferPageSize")
+	}
+	return e.GetError()
 }
 
 type KuiperConf struct {
@@ -55,12 +111,8 @@ type KuiperConf struct {
 		Authentication bool     `yaml:"authentication"`
 		IgnoreCase     bool     `yaml:"ignoreCase"`
 	}
-	Rule api.RuleOption
-	Sink struct {
-		CacheThreshold    int  `yaml:"cacheThreshold"`
-		CacheTriggerCount int  `yaml:"cacheTriggerCount"`
-		DisableCache      bool `yaml:"disableCache"`
-	}
+	Rule  api.RuleOption
+	Sink  *SinkConf
 	Store struct {
 		Type  string `yaml:"type"`
 		Redis struct {
@@ -147,6 +199,7 @@ func InitConf() {
 	if Config.Portable.PythonBin == "" {
 		Config.Portable.PythonBin = "python"
 	}
+	_ = Config.Sink.Validate()
 }
 
 func init() {

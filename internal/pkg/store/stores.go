@@ -22,13 +22,14 @@ import (
 	"sync"
 )
 
-type StoreCreator func(conf definition.Config) (definition.StoreBuilder, definition.TsBuilder, error)
+type StoreCreator func(conf definition.Config, name string) (definition.StoreBuilder, definition.TsBuilder, error)
 
 var (
 	storeBuilders = map[string]StoreCreator{
 		"sqlite": sql.BuildStores,
 	}
 	globalStores *stores = nil
+	cacheStores  *stores = nil
 )
 
 type stores struct {
@@ -39,10 +40,10 @@ type stores struct {
 	tsBuilder definition.TsBuilder
 }
 
-func newStores(c definition.Config) (*stores, error) {
+func newStores(c definition.Config, name string) (*stores, error) {
 	databaseType := c.Type
 	if builder, ok := storeBuilders[databaseType]; ok {
-		kvBuilder, tsBuilder, err := builder(c)
+		kvBuilder, tsBuilder, err := builder(c, name)
 		if err != nil {
 			return nil, err
 		} else {
@@ -134,5 +135,20 @@ func DropKV(table string) error {
 		return fmt.Errorf("global stores are not initialized")
 	}
 	globalStores.DropKV(table)
+	return nil
+}
+
+func GetCacheKV(table string) (error, kv.KeyValue) {
+	if cacheStores == nil {
+		return fmt.Errorf("cache stores are not initialized"), nil
+	}
+	return cacheStores.GetKV(table)
+}
+
+func DropCacheKV(table string) error {
+	if cacheStores == nil {
+		return fmt.Errorf("cache stores are not initialized")
+	}
+	cacheStores.DropKV(table)
 	return nil
 }
