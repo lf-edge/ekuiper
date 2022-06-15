@@ -65,7 +65,7 @@ func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.Plu
 	} else if runtime.GOOS == "linux" {
 		osrelease, err := Read()
 		if err != nil {
-			logger.Infof("")
+			handleError(w, err, "", logger)
 			return
 		}
 		prettyName := strings.ToUpper(osrelease["PRETTY_NAME"])
