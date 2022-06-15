@@ -203,7 +203,7 @@ $ curl http://192.168.2.143:9081
 
 ## Deploy the eKuiper dashboard to cloud
 
-We will deploy ekuiper dashboard in the cloud node by kubectl tool with [kmanager.yaml](./kmanager.yaml). In the
+We will deploy ekuiper dashboard in the cloud node by kubectl tool with [kmanager.yaml](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/tutorials/deploy/kmanager.yaml). In the
 configuration file, we define a deployment and a service for eKuiper manager which is a web based UI. First, we need to
 revise the manager docker tag to the correct version that matches the eKuiper version in line 21:
 

@@ -177,7 +177,7 @@ $ curl http://192.168.2.143:9081
 
 ## 将 eKuiper 仪表板部署到云端
 
-我们将使用 [kmanager.yaml](./kmanager.yaml) 和 kubectl 工具在云节点中部署 ekuiper 仪表板。 eKuiper manager 是一个基于 web
+我们将使用 [kmanager.yaml](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/tutorials/deploy/kmanager.yaml) 和 kubectl 工具在云节点中部署 ekuiper 仪表板。 eKuiper manager 是一个基于 web
 的用户界面。在配置文件中，我们为eKuiper manager 定义了部署和服务。
 
 首先，我们需要确保文件中使用的仪表盘版本跟 eKuiper 版本相匹配。打开并修改 kmanager.yaml 第21行，确保版本正确。
