@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"strings"
 	"sync"
 )
@@ -45,6 +46,8 @@ type mqttClientWrapper struct {
 
 	conSelector string
 
+	connected bool
+
 	refLock sync.RWMutex
 	refCnt  uint64
 }
@@ -66,7 +69,7 @@ func NewMqttClientWrapper(props map[string]interface{}) (clients.ClientWrapper, 
 		refCnt:             1,
 	}
 
-	err = client.Connect(cliWpr.onConnectHandler)
+	err = client.Connect(cliWpr.onConnectHandler, cliWpr.onConnectLost)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +81,9 @@ func (mc *mqttClientWrapper) onConnectHandler(_ pahoMqtt.Client) {
 	// activeSubscriptions will be empty on the first connection.
 	// On a re-connect is when the subscriptions must be re-created.
 	conf.Log.Infof("The connection to mqtt broker %s client id %s established", mc.cli.srv, mc.cli.clientid)
-	mc.subLock.RLock()
-	defer mc.subLock.RUnlock()
+	mc.subLock.Lock()
+	defer mc.subLock.Unlock()
+	mc.connected = true
 	for topic, subscription := range mc.topicSubscriptions {
 		token := mc.cli.conn.Subscribe(topic, subscription.qos, subscription.topicHandler)
 		if token.Error() != nil {
@@ -88,6 +92,13 @@ func (mc *mqttClientWrapper) onConnectHandler(_ pahoMqtt.Client) {
 			}
 		}
 	}
+}
+
+func (mc *mqttClientWrapper) onConnectLost(_ pahoMqtt.Client, err error) {
+	mc.subLock.Lock()
+	defer mc.subLock.Unlock()
+	mc.connected = false
+	conf.Log.Warnf("The connection to mqtt broker %s client id %s disconnected with error: %s ", mc.cli.srv, mc.cli.clientid, err.Error())
 }
 
 func (mc *mqttClientWrapper) newMessageHandler(sub *mqttSubscriptionInfo) pahoMqtt.MessageHandler {
@@ -107,6 +118,10 @@ func (mc *mqttClientWrapper) newMessageHandler(sub *mqttSubscriptionInfo) pahoMq
 }
 
 func (mc *mqttClientWrapper) Publish(_ api.StreamContext, topic string, message []byte, params map[string]interface{}) error {
+	err := mc.checkConn()
+	if err != nil {
+		return err
+	}
 	var Qos byte = 0
 	if pq, ok := params["qos"]; ok {
 		if v, ok := pq.(byte); ok {
@@ -120,11 +135,20 @@ func (mc *mqttClientWrapper) Publish(_ api.StreamContext, topic string, message 
 		}
 	}
 
-	err := mc.cli.Publish(topic, Qos, retained, message)
+	err = mc.cli.Publish(topic, Qos, retained, message)
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (mc *mqttClientWrapper) checkConn() error {
+	mc.subLock.RLock()
+	defer mc.subLock.RUnlock()
+	if !mc.connected {
+		return fmt.Errorf("%s: %s", errorx.IOErr, "mqtt client is not connected")
+	}
 	return nil
 }
 
