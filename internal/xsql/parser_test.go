@@ -902,6 +902,22 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE t NOT IN arraySet OR name NOT IN arraySet`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.NOTIN, RHS: &ast.ValueSetExpr{ArrayExpr: &ast.FieldRef{Name: "arraySet", StreamName: ast.DefaultStream}}},
+					OP:  ast.OR,
+					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.NOTIN, RHS: &ast.ValueSetExpr{ArrayExpr: &ast.FieldRef{Name: "arraySet", StreamName: ast.DefaultStream}}},
+				},
+			},
+		},
+
+		{
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE t IN (20.5, 20.4) OR name IN ("dname", "ename")`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -911,6 +927,22 @@ func TestParser_ParseStatement(t *testing.T) {
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
 				Condition: &ast.BinaryExpr{
 					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.NumberLiteral{Val: 20.5}, &ast.NumberLiteral{Val: 20.4}}}},
+					OP:  ast.OR,
+					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.StringLiteral{Val: "dname"}, &ast.StringLiteral{Val: "ename"}}}},
+				},
+			},
+		},
+
+		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE t NOT IN (20.5, 20.4) OR name IN ("dname", "ename")`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.NOTIN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.NumberLiteral{Val: 20.5}, &ast.NumberLiteral{Val: 20.4}}}},
 					OP:  ast.OR,
 					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.StringLiteral{Val: "dname"}, &ast.StringLiteral{Val: "ename"}}}},
 				},

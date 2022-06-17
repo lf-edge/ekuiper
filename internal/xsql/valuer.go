@@ -627,6 +627,18 @@ func (v *ValuerEval) evalSetsExpr(lhs interface{}, op ast.Token, rhsSet interfac
 			}
 		}
 		return false
+	case ast.NOTIN:
+		for i := 0; i < rhsSetVals.Len(); i++ {
+			switch r := v.simpleDataEval(lhs, rhsSetVals.Index(i).Interface(), ast.EQ).(type) {
+			case error:
+				return fmt.Errorf("evaluate in expression error: %s", r)
+			case bool:
+				if r {
+					return false
+				}
+			}
+		}
+		return true
 	default:
 		return fmt.Errorf("%v is an invalid operation for %T", op, lhs)
 	}

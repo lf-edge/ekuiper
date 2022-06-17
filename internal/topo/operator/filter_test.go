@@ -149,6 +149,24 @@ func TestFilterPlan_Apply(t *testing.T) {
 		},
 
 		{
+			sql: "SELECT abc FROM tbl WHERE def NOT IN (\"ello\") AND abc NOT IN (35, 33)",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": "hello",
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": "hello",
+				},
+			},
+		},
+
+		{
 			sql: "SELECT abc FROM tbl WHERE def IN strArraySet AND abc IN intArraySet",
 			data: &xsql.Tuple{
 				Emitter: "tbl",
@@ -166,6 +184,28 @@ func TestFilterPlan_Apply(t *testing.T) {
 					"def":         "hello",
 					"strArraySet": []string{"hello", "world"},
 					"intArraySet": []int{33, 34},
+				},
+			},
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE def NOT IN strArraySet AND abc NOT IN intArraySet",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc":         int64(34),
+					"def":         "hello",
+					"strArraySet": []string{"ello", "world"},
+					"intArraySet": []int{33, 35},
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc":         int64(34),
+					"def":         "hello",
+					"strArraySet": []string{"ello", "world"},
+					"intArraySet": []int{33, 35},
 				},
 			},
 		},

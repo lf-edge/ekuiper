@@ -499,6 +499,16 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 		} else if op == ast.IN { //IN is a special token, need to unscan
 			op = ast.IN
 			p.unscan()
+		} else if op == ast.NOT {
+			afterNot, tk1 := p.scanIgnoreWhitespace()
+			switch afterNot {
+			case ast.IN: //IN is a special token, need to unscan
+				op = ast.NOTIN
+				p.unscan()
+				break
+			default:
+				return nil, fmt.Errorf("found %q, expected expression", tk1)
+			}
 		}
 
 		var rhs ast.Expr
