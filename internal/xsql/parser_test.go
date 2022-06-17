@@ -886,6 +886,38 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE t IN arraySet OR name IN arraySet`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{ArrayExpr: &ast.FieldRef{Name: "arraySet", StreamName: ast.DefaultStream}}},
+					OP:  ast.OR,
+					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{ArrayExpr: &ast.FieldRef{Name: "arraySet", StreamName: ast.DefaultStream}}},
+				},
+			},
+		},
+
+		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE t IN (20.5, 20.4) OR name IN ("dname", "ename")`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.NumberLiteral{Val: 20.5}, &ast.NumberLiteral{Val: 20.4}}}},
+					OP:  ast.OR,
+					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.StringLiteral{Val: "dname"}, &ast.StringLiteral{Val: "ename"}}}},
+				},
+			},
+		},
+
+		{
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY name`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -1517,6 +1549,27 @@ func TestParser_ParseStatement(t *testing.T) {
 			s:   `SELECT ".*(/)(?!.*\1)" FROM topic/sensor1 AS t1`,
 			err: `found "invalid string: \".*(/)(?!.*\\1)\"", expected expression.`,
 		},
+		{
+			s: `SELECT name FROM tbl WHERE name IN ("A", "B","C")`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: ""},
+				},
+				Sources:   []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.StringLiteral{Val: "A"}, &ast.StringLiteral{Val: "B"}, &ast.StringLiteral{Val: "C"}}}},
+			},
+		},
+		{
+			s:   `SELECT name FROM tbl WHERE name IN ()`,
+			err: `expect elements for IN expression, but found ")", expected expression.`,
+		},
+		{
+			s:   `SELECT name FROM tbl WHERE name IN (abc,def OR name in (abc)`,
+			err: `expect ) for IN expression, but got "EOF"`,
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -1732,6 +1785,37 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 								LHS: &ast.FieldRef{Name: "revenue", StreamName: ast.DefaultStream},
 								OP:  ast.GT,
 								RHS: &ast.IntegerLiteral{Val: 100},
+							},
+						},
+					},
+					ast.Dimension{Expr: &ast.FieldRef{Name: "year", StreamName: ast.DefaultStream}},
+				},
+			},
+		},
+
+		{
+			s: `SELECT * FROM demo GROUP BY department, COUNTWINDOW(3,1) FILTER( where revenue IN (100, 200)), year`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
+						Name:  "",
+						AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "demo"}},
+				Dimensions: ast.Dimensions{
+					ast.Dimension{Expr: &ast.FieldRef{Name: "department", StreamName: ast.DefaultStream}},
+					ast.Dimension{
+						Expr: &ast.Window{
+							WindowType: ast.COUNT_WINDOW,
+							Length:     &ast.IntegerLiteral{Val: 3},
+							Interval:   &ast.IntegerLiteral{Val: 1},
+							Filter: &ast.BinaryExpr{
+								LHS: &ast.FieldRef{Name: "revenue", StreamName: ast.DefaultStream},
+								OP:  ast.IN,
+								RHS: &ast.ValueSetExpr{
+									LiteralExprs: []ast.Expr{&ast.IntegerLiteral{Val: 100}, &ast.IntegerLiteral{Val: 200}},
+								},
 							},
 						},
 					},

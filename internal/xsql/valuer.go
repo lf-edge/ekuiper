@@ -521,6 +521,8 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		return val
 	case *ast.CaseExpr:
 		return v.evalCase(expr)
+	case *ast.ValueSetExpr:
+		return v.evalValueSet(expr)
 	default:
 		return nil
 	}
@@ -553,6 +555,9 @@ func (v *ValuerEval) evalBinaryExpr(expr *ast.BinaryExpr) interface{} {
 	rhs := v.Eval(expr.RHS)
 	if _, ok := rhs.(error); ok {
 		return rhs
+	}
+	if isSliceOrArray(rhs) {
+		return v.evalSetsExpr(lhs, expr.OP, rhs)
 	}
 	return v.simpleDataEval(lhs, rhs, expr.OP)
 }
@@ -587,6 +592,44 @@ func (v *ValuerEval) evalCase(expr *ast.CaseExpr) interface{} {
 		return v.Eval(expr.ElseClause)
 	}
 	return nil
+}
+
+func (v *ValuerEval) evalValueSet(expr *ast.ValueSetExpr) interface{} {
+	var valueSet []interface{}
+
+	if expr.LiteralExprs != nil {
+		for _, exp := range expr.LiteralExprs {
+			valueSet = append(valueSet, v.Eval(exp))
+		}
+		return valueSet
+	}
+
+	value := v.Eval(expr.ArrayExpr)
+	if isSliceOrArray(value) {
+		return value
+	}
+	return nil
+}
+
+func (v *ValuerEval) evalSetsExpr(lhs interface{}, op ast.Token, rhsSet interface{}) interface{} {
+	rhsSetVals := reflect.ValueOf(rhsSet)
+	//TODO handle rhs is nil case
+	switch op {
+	case ast.IN:
+		for i := 0; i < rhsSetVals.Len(); i++ {
+			switch r := v.simpleDataEval(lhs, rhsSetVals.Index(i).Interface(), ast.EQ).(type) {
+			case error:
+				return fmt.Errorf("evaluate in expression error: %s", r)
+			case bool:
+				if r {
+					return true
+				}
+			}
+		}
+		return false
+	default:
+		return fmt.Errorf("%v is an invalid operation for %T", op, lhs)
+	}
 }
 
 func isSliceOrArray(v interface{}) bool {
