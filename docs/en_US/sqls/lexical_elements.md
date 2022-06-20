@@ -64,7 +64,7 @@ CREATE STREAM `stream` (
 Following operators are provided.
 
 ```
-+, -, *, /, %, &, |, ^, =, !=, <, <=, >, >=, [], ->, ()
++, -, *, /, %, &, |, ^, =, !=, <, <=, >, >=, [], ->, (), IN, NOT IN
 ```
 
 ## Literals

@@ -211,6 +211,97 @@ func TestFilterPlan_Apply(t *testing.T) {
 		},
 
 		{
+			sql: "SELECT abc FROM tbl WHERE def IN (\"ello\")",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+				},
+			},
+			result: nil,
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE def NOT IN (\"ello\")",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+				},
+			},
+			result: nil,
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE def IN strArraySet",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc":         int64(34),
+					"def":         "hello",
+					"strArraySet": nil,
+				},
+			},
+			result: nil,
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE def NOT IN strArraySet",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc":         int64(34),
+					"def":         "hello",
+					"strArraySet": nil,
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc":         int64(34),
+					"def":         "hello",
+					"strArraySet": nil,
+				},
+			},
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE abc IN (abc, def, ghm)",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": "hello",
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": "hello",
+				},
+			},
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE abc NOT IN (def, ghm)",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": int64(35),
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": int64(35),
+				},
+			},
+		},
+
+		{
 			sql: "SELECT abc FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: xsql.WindowTuplesSet{
 				Content: []xsql.WindowTuples{
