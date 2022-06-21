@@ -113,6 +113,12 @@ func Walk(v Visitor, node Node) {
 
 	case *ColFuncField:
 		Walk(v, n.Expr)
+
+	case *ValueSetExpr:
+		for _, l := range n.LiteralExprs {
+			Walk(v, l)
+		}
+		Walk(v, n.ArrayExpr)
 	}
 }
 

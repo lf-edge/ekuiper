@@ -3,15 +3,15 @@
 
 eKuiper provides a variety of elements for building queries. They are summarized below.
 
-| Element               | Summary                                                      |
-| --------------------- | ------------------------------------------------------------ |
-| [SELECT](#select)     | SELECT is used to retrieve rows from input streams and enables the selection of one or many columns from one or many input streams in eKuiper. |
-| [FROM](#from)         | FROM specifies the input stream. The FROM clause is always required for any SELECT statement. |
+| Element               | Summary                                                                                                                                                                                                                                       |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [SELECT](#select)     | SELECT is used to retrieve rows from input streams and enables the selection of one or many columns from one or many input streams in eKuiper.                                                                                                |
+| [FROM](#from)         | FROM specifies the input stream. The FROM clause is always required for any SELECT statement.                                                                                                                                                 |
 | [JOIN](#join)         | JOIN is used to combine records from two or more input streams. JOIN includes LEFT, RIGHT, FULL & CROSS. Join can apply to multiple streams join or stream/table join. To join multiple streams, it must run within a [window](./windows.md). |
-| [WHERE](#where)       | WHERE specifies the search condition for the rows returned by the query. |
-| [GROUP BY](#group-by) | GROUP BY groups a selected set of rows into a set of summary rows grouped by the values of one or more columns or expressions. It must run within a [window](./windows.md). |
-| [ORDER BY](#order-by) | Order the rows by values of one or more columns.             |
-| [HAVING](#having)     | HAVING specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression.             |
+| [WHERE](#where)       | WHERE specifies the search condition for the rows returned by the query.                                                                                                                                                                      |
+| [GROUP BY](#group-by) | GROUP BY groups a selected set of rows into a set of summary rows grouped by the values of one or more columns or expressions. It must run within a [window](./windows.md).                                                                   |
+| [ORDER BY](#order-by) | Order the rows by values of one or more columns.                                                                                                                                                                                              |
+| [HAVING](#having)     | HAVING specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression.                                                                                                                          |
 
 ## SELECT
 
@@ -207,6 +207,21 @@ Is the operator used to test the condition of one expression being less than the
 **<=**
 
 Is the operator used to test the condition of one expression being less than or equal to the other expression.
+
+**[NOT] IN**
+
+Is the operator used to test the condition of one expression (not) being part of to the other expression. support these two formats
+
+```sql
+  expression [NOT] IN (expression2,...n)
+```
+*Note*： support multiple expressions at the same time, but each expression must return single value
+
+```sql
+  expression [NOT] IN expression2
+```
+
+*Note*：user must make sure the result of expression2 is in array format 
 
 ```sql
 SELECT column1, column2, ...
