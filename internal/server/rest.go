@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -27,6 +28,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -36,6 +39,8 @@ const (
 	ContentType     = "Content-Type"
 	ContentTypeJSON = "application/json"
 )
+
+var uploadDir string
 
 type statementDescriptor struct {
 	Sql string `json:"sql,omitempty"`
@@ -85,6 +90,17 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 }
 
 func createRestServer(ip string, port int, needToken bool) *http.Server {
+	// Create upload path for upload api
+	etcDir, err := conf.GetConfLoc()
+	if err != nil {
+		panic(err)
+	}
+	uploadDir = filepath.Join(etcDir, "uploads")
+	err = os.MkdirAll(uploadDir, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
@@ -99,6 +115,8 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
+	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
 
 	// Register extended routes
 	for k, v := range components {
@@ -120,6 +138,106 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	}
 	server.SetKeepAlivesEnabled(false)
 	return server
+}
+
+type fileContent struct {
+	Name    string `json:"name"`
+	Content string `json:"content"`
+}
+
+func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	// Upload or overwrite a file
+	case http.MethodPost:
+		switch r.Header.Get("Content-Type") {
+		case "application/json":
+			fc := &fileContent{}
+			defer r.Body.Close()
+			err := json.NewDecoder(r.Body).Decode(fc)
+			if err != nil {
+				handleError(w, err, "Invalid body: Error decoding file json", logger)
+				return
+			}
+			if fc.Content == "" || fc.Name == "" {
+				handleError(w, nil, "Invalid body: name and content are required", logger)
+				return
+			}
+			filePath := filepath.Join(uploadDir, fc.Name)
+			dst, err := os.Create(filePath)
+			defer dst.Close()
+			if err != nil {
+				handleError(w, err, "Error creating the file", logger)
+				return
+			}
+			_, err = dst.Write([]byte(fc.Content))
+			if err != nil {
+				handleError(w, err, "Error writing the file", logger)
+				return
+			}
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(filePath))
+		default:
+			// Maximum upload of 1 GB files
+			err := r.ParseMultipartForm(1024 << 20)
+			if err != nil {
+				handleError(w, err, "Error parse the multi part form", logger)
+				return
+			}
+
+			// Get handler for filename, size and headers
+			file, handler, err := r.FormFile("uploadFile")
+			if err != nil {
+				handleError(w, err, "Error Retrieving the File", logger)
+				return
+			}
+
+			defer file.Close()
+
+			// Create file
+			filePath := filepath.Join(uploadDir, handler.Filename)
+			dst, err := os.Create(filePath)
+			defer dst.Close()
+			if err != nil {
+				handleError(w, err, "Error creating the file", logger)
+				return
+			}
+
+			// Copy the uploaded file to the created file on the filesystem
+			if _, err := io.Copy(dst, file); err != nil {
+				handleError(w, err, "Error writing the file", logger)
+				return
+			}
+
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(filePath))
+		}
+
+	case http.MethodGet:
+		// Get the list of files in the upload directory
+		files, err := ioutil.ReadDir(uploadDir)
+		if err != nil {
+			handleError(w, err, "Error reading the file upload dir", logger)
+			return
+		}
+		fileNames := make([]string, len(files))
+		for i, f := range files {
+			fileNames[i] = filepath.Join(uploadDir, f.Name())
+		}
+		jsonResponse(fileNames, w, logger)
+	}
+}
+
+func fileDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+	filePath := filepath.Join(uploadDir, name)
+	e := os.Remove(filePath)
+	if e != nil {
+		handleError(w, e, "Error deleting the file", logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("ok"))
 }
 
 type information struct {

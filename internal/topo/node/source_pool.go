@@ -141,6 +141,7 @@ func (p *sourcePool) addInstance(k string, node *SourceNode, source api.Source) 
 			return nil, err
 		}
 		sctx, cancel := ctx.WithMeta(ruleId, opId, store).WithCancel()
+		sctx = kctx.WithValue(sctx.(*kctx.DefaultContext), kctx.DecodeKey, node.ctx.Value(kctx.DecodeKey))
 		si, err := start(sctx, node, source)
 		if err != nil {
 			return nil, err
