@@ -1,4 +1,4 @@
-The eKuiper REST api for schemas allows you to manage schemas, such as create, show, drop and describe rules
+The eKuiper REST api for schemas allows you to manage schemas, such as create, show, drop and describe schemas.
 
 ## Create a schema
 
