@@ -496,6 +496,19 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 		} else if op == ast.LBRACKET { //LBRACKET is a special token, need to unscan
 			op = ast.SUBSET
 			p.unscan()
+		} else if op == ast.IN { //IN is a special token, need to unscan
+			op = ast.IN
+			p.unscan()
+		} else if op == ast.NOT {
+			afterNot, tk1 := p.scanIgnoreWhitespace()
+			switch afterNot {
+			case ast.IN: //IN is a special token, need to unscan
+				op = ast.NOTIN
+				p.unscan()
+				break
+			default:
+				return nil, fmt.Errorf("found %q, expected expression", tk1)
+			}
 		}
 
 		var rhs ast.Expr
@@ -528,6 +541,8 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 		return &ast.ParenExpr{Expr: expr}, nil
 	} else if tok1 == ast.LBRACKET {
 		return p.parseBracketExpr()
+	} else if tok1 == ast.IN {
+		return p.parseValueSetExpr()
 	}
 
 	p.unscan()
@@ -586,6 +601,45 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 	}
 
 	return nil, fmt.Errorf("found %q, expected expression.", lit)
+}
+
+func (p *Parser) parseValueSetExpr() (ast.Expr, error) {
+	valsetExpr := &ast.ValueSetExpr{
+		LiteralExprs: nil,
+		ArrayExpr:    nil,
+	}
+	// IN ("A", "B") or IN expression
+	tk, _ := p.scanIgnoreWhitespace()
+	if tk == ast.LPAREN {
+		for {
+			element, err := p.ParseExpr()
+			if err != nil {
+				return nil, fmt.Errorf("expect elements for IN expression, but %v", err)
+			}
+			valsetExpr.LiteralExprs = append(valsetExpr.LiteralExprs, element)
+
+			if tok2, _ := p.scanIgnoreWhitespace(); tok2 != ast.COMMA {
+				p.unscan()
+				break
+			}
+		}
+
+		if tok, lit := p.scanIgnoreWhitespace(); tok != ast.RPAREN {
+			return nil, fmt.Errorf("expect ) for IN expression, but got %q", lit)
+		}
+
+		return valsetExpr, nil
+	} else {
+		//back to IN
+		p.unscan()
+	}
+
+	if exp, err := p.parseUnaryExpr(false); err != nil {
+		return nil, fmt.Errorf("expect Ident expression after IN, but got error %v", err)
+	} else {
+		valsetExpr.ArrayExpr = exp
+		return valsetExpr, nil
+	}
 }
 
 func (p *Parser) parseBracketExpr() (ast.Expr, error) {

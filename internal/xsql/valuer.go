@@ -521,6 +521,8 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		return val
 	case *ast.CaseExpr:
 		return v.evalCase(expr)
+	case *ast.ValueSetExpr:
+		return v.evalValueSet(expr)
 	default:
 		return nil
 	}
@@ -553,6 +555,9 @@ func (v *ValuerEval) evalBinaryExpr(expr *ast.BinaryExpr) interface{} {
 	rhs := v.Eval(expr.RHS)
 	if _, ok := rhs.(error); ok {
 		return rhs
+	}
+	if isSetOperator(expr.OP) {
+		return v.evalSetsExpr(lhs, expr.OP, rhs)
 	}
 	return v.simpleDataEval(lhs, rhs, expr.OP)
 }
@@ -589,9 +594,103 @@ func (v *ValuerEval) evalCase(expr *ast.CaseExpr) interface{} {
 	return nil
 }
 
+func (v *ValuerEval) evalValueSet(expr *ast.ValueSetExpr) interface{} {
+	var valueSet []interface{}
+
+	if expr.LiteralExprs != nil {
+		for _, exp := range expr.LiteralExprs {
+			valueSet = append(valueSet, v.Eval(exp))
+		}
+		return valueSet
+	}
+
+	value := v.Eval(expr.ArrayExpr)
+	if isSliceOrArray(value) {
+		return value
+	}
+	return nil
+}
+
+func isBlank(value reflect.Value) bool {
+	switch value.Kind() {
+	case reflect.String:
+		return value.Len() == 0
+	case reflect.Bool:
+		return !value.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return value.Int() == 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return value.Uint() == 0
+	case reflect.Float32, reflect.Float64:
+		return value.Float() == 0
+	case reflect.Interface, reflect.Ptr:
+		return value.IsNil()
+	}
+	return reflect.DeepEqual(value.Interface(), reflect.Zero(value.Type()).Interface())
+}
+
+func (v *ValuerEval) evalSetsExpr(lhs interface{}, op ast.Token, rhsSet interface{}) interface{} {
+	switch op {
+	/*Semantic rules
+
+	When using the IN operator, the following semantics apply in this order:
+
+	Returns FALSE if value_set is empty.
+	Returns NULL if search_value is NULL.
+	Returns TRUE if value_set contains a value equal to search_value.
+	Returns NULL if value_set contains a NULL.
+	Returns FALSE.
+	When using the NOT IN operator, the following semantics apply in this order:
+
+	Returns TRUE if value_set is empty.
+	Returns NULL if search_value is NULL.
+	Returns FALSE if value_set contains a value equal to search_value.
+	Returns NULL if value_set contains a NULL.
+	Returns TRUE.
+	*/
+	case ast.IN, ast.NOTIN:
+		if rhsSet == nil {
+			if op == ast.IN {
+				return false
+			} else {
+				return true
+			}
+		}
+		if lhs == nil {
+			return nil
+		}
+		rhsSetVals := reflect.ValueOf(rhsSet)
+		for i := 0; i < rhsSetVals.Len(); i++ {
+			switch r := v.simpleDataEval(lhs, rhsSetVals.Index(i).Interface(), ast.EQ).(type) {
+			case error:
+				return fmt.Errorf("evaluate in expression error: %s", r)
+			case bool:
+				if r {
+					if op == ast.IN {
+						return true
+					} else {
+						return false
+					}
+				}
+			}
+		}
+		if op == ast.IN {
+			return false
+		} else {
+			return true
+		}
+	default:
+		return fmt.Errorf("%v is an invalid operation for %T", op, lhs)
+	}
+}
+
 func isSliceOrArray(v interface{}) bool {
 	kind := reflect.ValueOf(v).Kind()
 	return kind == reflect.Array || kind == reflect.Slice
+}
+
+func isSetOperator(op ast.Token) bool {
+	return op == ast.IN || op == ast.NOTIN
 }
 
 func (v *ValuerEval) evalJsonExpr(result interface{}, op ast.Token, expr ast.Expr) interface{} {

@@ -45,6 +45,8 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 			if r {
 				return input
 			}
+		case nil: // nil is false
+			break
 		default:
 			return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", r)
 		}
@@ -60,6 +62,8 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 				if val {
 					f = append(f, t)
 				}
+			case nil:
+				break
 			default:
 				return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
@@ -82,6 +86,8 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 				if val {
 					r = append(r, v)
 				}
+			case nil:
+				break
 			default:
 				return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
@@ -103,6 +109,8 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 				if val {
 					r = append(r, v)
 				}
+			case nil:
+				break
 			default:
 				return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 			}

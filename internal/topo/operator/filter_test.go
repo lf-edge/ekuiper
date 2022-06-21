@@ -131,6 +131,177 @@ func TestFilterPlan_Apply(t *testing.T) {
 		},
 
 		{
+			sql: "SELECT abc FROM tbl WHERE def IN (\"hello\") AND abc IN (34, 33)",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": "hello",
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": "hello",
+				},
+			},
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE def NOT IN (\"ello\") AND abc NOT IN (35, 33)",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": "hello",
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": "hello",
+				},
+			},
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE def IN strArraySet AND abc IN intArraySet",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc":         int64(34),
+					"def":         "hello",
+					"strArraySet": []string{"hello", "world"},
+					"intArraySet": []int{33, 34},
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc":         int64(34),
+					"def":         "hello",
+					"strArraySet": []string{"hello", "world"},
+					"intArraySet": []int{33, 34},
+				},
+			},
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE def NOT IN strArraySet AND abc NOT IN intArraySet",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc":         int64(34),
+					"def":         "hello",
+					"strArraySet": []string{"ello", "world"},
+					"intArraySet": []int{33, 35},
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc":         int64(34),
+					"def":         "hello",
+					"strArraySet": []string{"ello", "world"},
+					"intArraySet": []int{33, 35},
+				},
+			},
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE def IN (\"ello\")",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+				},
+			},
+			result: nil,
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE def NOT IN (\"ello\")",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+				},
+			},
+			result: nil,
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE def IN strArraySet",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc":         int64(34),
+					"def":         "hello",
+					"strArraySet": nil,
+				},
+			},
+			result: nil,
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE def NOT IN strArraySet",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc":         int64(34),
+					"def":         "hello",
+					"strArraySet": nil,
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc":         int64(34),
+					"def":         "hello",
+					"strArraySet": nil,
+				},
+			},
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE abc IN (abc, def, ghm)",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": "hello",
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": "hello",
+				},
+			},
+		},
+
+		{
+			sql: "SELECT abc FROM tbl WHERE abc NOT IN (def, ghm)",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": int64(35),
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"abc": int64(34),
+					"def": int64(35),
+				},
+			},
+		},
+
+		{
 			sql: "SELECT abc FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: xsql.WindowTuplesSet{
 				Content: []xsql.WindowTuples{
@@ -248,7 +419,53 @@ func TestFilterPlan_Apply(t *testing.T) {
 				},
 			},
 		},
-
+		{
+			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2 WHERE src1.f1 IN (\"v1\") GROUP BY TUMBLINGWINDOW(ss, 10)",
+			data: &xsql.JoinTupleSets{
+				Content: []xsql.JoinTuple{
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
+						},
+					},
+				},
+				WindowRange: &xsql.WindowRange{
+					WindowStart: 1541152486013,
+					WindowEnd:   1541152487013,
+				},
+			},
+			result: &xsql.JoinTupleSets{
+				Content: []xsql.JoinTuple{
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
+							{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
+						},
+					},
+					{
+						Tuples: []xsql.Tuple{
+							{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
+						},
+					},
+				},
+				WindowRange: &xsql.WindowRange{
+					WindowStart: 1541152486013,
+					WindowEnd:   1541152487013,
+				},
+			},
+		},
 		{
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2 WHERE src1.f1 = \"v22\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.JoinTupleSets{

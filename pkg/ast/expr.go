@@ -159,6 +159,14 @@ type CaseExpr struct {
 func (c *CaseExpr) expr() {}
 func (c *CaseExpr) node() {}
 
+type ValueSetExpr struct {
+	LiteralExprs []Expr // ("A", "B", "C") or (1, 2, 3)
+	ArrayExpr    Expr
+}
+
+func (c *ValueSetExpr) expr() {}
+func (c *ValueSetExpr) node() {}
+
 type StreamName string
 
 func (sn *StreamName) node() {}

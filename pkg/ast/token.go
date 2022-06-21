@@ -55,6 +55,9 @@ const (
 
 	SUBSET //[
 	ARROW  //->
+	IN     // IN
+	NOT    // NOT
+	NOTIN  // NOT
 
 	operatorEnd
 
@@ -165,6 +168,7 @@ var Tokens = []string{
 
 	SUBSET: "[]",
 	ARROW:  "->",
+	IN:     "IN",
 
 	ASTERISK: "*",
 	COMMA:    ",",
@@ -192,6 +196,12 @@ var Tokens = []string{
 	BY:     "BY",
 	ASC:    "ASC",
 	DESC:   "DESC",
+	FILTER: "FILTER",
+	CASE:   "CASE",
+	WHEN:   "WHEN",
+	THEN:   "THEN",
+	ELSE:   "ELSE",
+	END:    "END",
 
 	CREATE:   "CREATE",
 	DROP:     "RROP",
@@ -228,6 +238,7 @@ var Tokens = []string{
 	OR:    "OR",
 	TRUE:  "TRUE",
 	FALSE: "FALSE",
+	NOTIN: "NOTIN",
 
 	DD: "DD",
 	HH: "HH",
@@ -264,7 +275,7 @@ func (tok Token) Precedence() int {
 		return 1
 	case AND:
 		return 2
-	case EQ, NEQ, LT, LTE, GT, GTE:
+	case EQ, NEQ, LT, LTE, GT, GTE, IN, NOTIN:
 		return 3
 	case ADD, SUB, BITWISE_OR, BITWISE_XOR:
 		return 4

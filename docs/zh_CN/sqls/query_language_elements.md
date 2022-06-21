@@ -3,16 +3,16 @@
 
 eKuiper 提供了用于构建查询的各种元素。 总结如下。
 
-| 元素                  | 总结                                                         |
-| --------------------- | ------------------------------------------------------------ |
-| [SELECT](#select)     | SELECT 用于从输入流中检索行，并允许从 eKuiper 中的一个或多个输入流中选择一个或多个列。 |
-| [FROM](#from)         | FROM 指定输入流。 任何 SELECT 语句始终需要 FROM 子句。       |
-| [JOIN](#join)         | JOIN 用于合并来自两个或更多输入流的记录。 JOIN 包括 LEFT，RIGHT，FULL 和 CROSS。JOIN 可用于多个流或者流和表格。当用于多个流时，必须运行在[窗口](./windows.md)中，否则每次单条数据，JOIN 没有意义。|
-| [WHERE](#where)       | WHERE 指定查询返回的行的搜索条件。                           |
-| [GROUP BY](#group-by) | GROUP BY 将一组选定的行分组为一组汇总行，这些汇总行按一个或多个列或表达式的值分组。该语句必须运行在[窗口](./windows.md)中。 |
-| [ORDER BY](#order-by) | 按一列或多列的值对行进行排序。                               |
-| [HAVING](#having)     | HAVING 为组或集合指定搜索条件。 HAVING 只能与 SELECT 表达式一起使用。 |
-|                       |                                                              |
+| 元素                    | 总结                                                                                                                             |
+|-----------------------|--------------------------------------------------------------------------------------------------------------------------------|
+| [SELECT](#select)     | SELECT 用于从输入流中检索行，并允许从 eKuiper 中的一个或多个输入流中选择一个或多个列。                                                                            |
+| [FROM](#from)         | FROM 指定输入流。 任何 SELECT 语句始终需要 FROM 子句。                                                                                          |
+| [JOIN](#join)         | JOIN 用于合并来自两个或更多输入流的记录。 JOIN 包括 LEFT，RIGHT，FULL 和 CROSS。JOIN 可用于多个流或者流和表格。当用于多个流时，必须运行在[窗口](./windows.md)中，否则每次单条数据，JOIN 没有意义。 |
+| [WHERE](#where)       | WHERE 指定查询返回的行的搜索条件。                                                                                                           |
+| [GROUP BY](#group-by) | GROUP BY 将一组选定的行分组为一组汇总行，这些汇总行按一个或多个列或表达式的值分组。该语句必须运行在[窗口](./windows.md)中。                                                     |
+| [ORDER BY](#order-by) | 按一列或多列的值对行进行排序。                                                                                                                |
+| [HAVING](#having)     | HAVING 为组或集合指定搜索条件。 HAVING 只能与 SELECT 表达式一起使用。                                                                                 |
+|                       |                                                                                                                                |
 
 ## SELECT
 
@@ -154,7 +154,7 @@ WHERE <search_condition>
     [ { AND | OR } { <predicate> | ( <search_condition> ) } ]   
 [ ,...n ]   
 <predicate> ::=   
-    { expression { = | < > | ! = | > | > = | < | < = } expression   
+    { expression { = | < > | ! = | > | > = | < | < = | NOT IN} expression   
 ```
 
 ### 参数
@@ -208,6 +208,22 @@ WHERE <search_condition>
 **<=**
 
 用于测试一个表达式小于或等于另一个表达式的条件的运算符。
+
+**[NOT] IN**
+
+用于测试一个表达式是否属于另一个表达式的条件的运算符。
+使用方法支持以下两种
+
+```sql
+  expression [NOT] IN (expression2,...n)
+```
+*注意*： 支持同时设置多个表达式， 但用户须确保每个表达式返回值为单一值
+
+```sql
+  expression [NOT] IN expression2
+```
+
+*注意*： 用户须确保 expression2 的返回值为数组
 
 ```sql
 SELECT column1, column2, ...
