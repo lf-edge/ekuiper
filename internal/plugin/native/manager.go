@@ -112,6 +112,10 @@ func findAll(t plugin2.PluginType, pluginDir string) (result map[string]string, 
 	for _, file := range files {
 		baseName := filepath.Base(file.Name())
 		if strings.HasSuffix(baseName, ".so") {
+			//load the plugins when ekuiper set up
+			if _, err := manager.loadRuntime(t, "", file.Name()); err != nil {
+				continue
+			}
 			n, v := parseName(baseName)
 			result[n] = v
 		}
@@ -234,7 +238,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 
 	var err error
 	zipPath := path.Join(rr.pluginDir, name+".zip")
-	var unzipFiles []string
+
 	//clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
 	//download
@@ -259,14 +263,11 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	}
 
 	//unzip and copy to destination
-	unzipFiles, version, err := rr.install(t, name, zipPath, shellParas)
+	version, err := rr.install(t, name, zipPath, shellParas)
 	if err == nil && len(j.GetSymbols()) > 0 {
 		err = rr.db.Set(name, j.GetSymbols())
 	}
 	if err != nil { //Revert for any errors
-		if t == plugin2.SOURCE && len(unzipFiles) == 1 { //source that only copy so file
-			os.RemoveAll(unzipFiles[0])
-		}
 		if len(j.GetSymbols()) > 0 {
 			rr.removeSymbols(j.GetSymbols())
 		} else {
@@ -402,13 +403,13 @@ func (rr *Manager) GetPluginInfo(t plugin2.PluginType, name string) (map[string]
 	return nil, false
 }
 
-func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []string) ([]string, string, error) {
+func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []string) (string, error) {
 	var filenames []string
 	var tempPath = path.Join(rr.pluginDir, "temp", plugin2.PluginTypes[t], name)
 	defer os.RemoveAll(tempPath)
 	r, err := zip.OpenReader(src)
 	if err != nil {
-		return filenames, "", err
+		return "", err
 	}
 	defer r.Close()
 
@@ -420,10 +421,11 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		}
 	}
 	if len(shellParas) != 0 && !haveInstallFile {
-		return filenames, "", fmt.Errorf("have shell parameters : %s but no install.sh file", shellParas)
+		return "", fmt.Errorf("have shell parameters : %s but no install.sh file", shellParas)
 	}
 
 	soPrefix := regexp.MustCompile(fmt.Sprintf(`^((%s)|(%s))(@.*)?\.so$`, name, ucFirst(name)))
+	var soPath string
 	var yamlFile, yamlPath, version string
 	expFiles := 1
 	if t == plugin2.SOURCE {
@@ -437,7 +439,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		if yamlFile == fileName {
 			err = filex.UnzipTo(file, yamlPath)
 			if err != nil {
-				return filenames, "", err
+				goto errout
 			}
 			revokeFiles = append(revokeFiles, yamlPath)
 			filenames = append(filenames, yamlPath)
@@ -449,10 +451,10 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 				revokeFiles = append(revokeFiles, jsonPath)
 			}
 		} else if soPrefix.Match([]byte(fileName)) {
-			soPath := path.Join(rr.pluginDir, plugin2.PluginTypes[t], fileName)
+			soPath = path.Join(rr.pluginDir, plugin2.PluginTypes[t], fileName)
 			err = filex.UnzipTo(file, soPath)
 			if err != nil {
-				return filenames, "", err
+				goto errout
 			}
 			filenames = append(filenames, soPath)
 			revokeFiles = append(revokeFiles, soPath)
@@ -460,17 +462,18 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		} else if strings.HasPrefix(fileName, "etc/") {
 			err = filex.UnzipTo(file, path.Join(rr.etcDir, plugin2.PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
 			if err != nil {
-				return filenames, "", err
+				goto errout
 			}
 		} else { //unzip other files
 			err = filex.UnzipTo(file, path.Join(tempPath, fileName))
 			if err != nil {
-				return filenames, "", err
+				goto errout
 			}
 		}
 	}
 	if len(filenames) != expFiles {
-		return filenames, version, fmt.Errorf("invalid zip file: so file or conf file is missing")
+		err = fmt.Errorf("invalid zip file: so file or conf file is missing")
+		goto errout
 	} else if haveInstallFile {
 		//run install script if there is
 		spath := path.Join(tempPath, "install.sh")
@@ -486,23 +489,32 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		err := cmd.Run()
 
 		if err != nil {
-			for _, f := range revokeFiles {
-				os.RemoveAll(f)
-			}
 			conf.Log.Infof(`err:%v stdout:%s stderr:%s`, err, outb.String(), errb.String())
-			return filenames, "", err
-		} else {
-			conf.Log.Infof(`run install script:%s`, outb.String())
-			conf.Log.Infof("install %s plugin %s", plugin2.PluginTypes[t], name)
+			goto errout
 		}
+		conf.Log.Infof(`run install script:%s`, outb.String())
 	}
-	return filenames, version, nil
+
+	// load the runtime first
+	_, err = manager.loadRuntime(t, "", soPath)
+	if err != nil {
+		goto errout
+	}
+
+	conf.Log.Infof("install %s plugin %s", plugin2.PluginTypes[t], name)
+	return version, nil
+
+errout:
+	for _, f := range revokeFiles {
+		os.RemoveAll(f)
+	}
+	return version, err
 }
 
 // binder factory implementations
 
 func (rr *Manager) Source(name string) (api.Source, error) {
-	nf, err := rr.loadRuntime(plugin2.SOURCE, name)
+	nf, err := rr.loadRuntime(plugin2.SOURCE, name, "")
 	if err != nil {
 		return nil, err
 	}
@@ -520,7 +532,7 @@ func (rr *Manager) Source(name string) (api.Source, error) {
 }
 
 func (rr *Manager) Sink(name string) (api.Sink, error) {
-	nf, err := rr.loadRuntime(plugin2.SINK, name)
+	nf, err := rr.loadRuntime(plugin2.SINK, name, "")
 	if err != nil {
 		return nil, err
 	}
@@ -540,7 +552,7 @@ func (rr *Manager) Sink(name string) (api.Sink, error) {
 }
 
 func (rr *Manager) Function(name string) (api.Function, error) {
-	nf, err := rr.loadRuntime(plugin2.FUNCTION, name)
+	nf, err := rr.loadRuntime(plugin2.FUNCTION, name, "")
 	if err != nil {
 		return nil, err
 	}
@@ -573,7 +585,7 @@ func (rr *Manager) ConvName(name string) (string, bool) {
 }
 
 // If not found, return nil,nil; Other errors return nil, err
-func (rr *Manager) loadRuntime(t plugin2.PluginType, name string) (plugin.Symbol, error) {
+func (rr *Manager) loadRuntime(t plugin2.PluginType, name, soFilepath string) (plugin.Symbol, error) {
 	ut := ucFirst(name)
 	ptype := plugin2.PluginTypes[t]
 	key := ptype + "/" + name
@@ -582,23 +594,30 @@ func (rr *Manager) loadRuntime(t plugin2.PluginType, name string) (plugin.Symbol
 	nf, ok := rr.runtime[key]
 	rr.RUnlock()
 	if !ok {
-		mod, err := rr.getSoFilePath(t, name, false)
-		if err != nil {
-			conf.Log.Debugf(fmt.Sprintf("cannot find the native plugin in path: %v", err))
-			return nil, nil
+		var soPath string
+		if soFilepath != "" {
+			soPath = soFilepath
+		} else {
+			mod, err := rr.getSoFilePath(t, name, false)
+			if err != nil {
+				conf.Log.Warnf(fmt.Sprintf("cannot find the native plugin %s in path: %v", name, err))
+				return nil, nil
+			}
+			soPath = mod
 		}
-		conf.Log.Debugf("Opening plugin %s", mod)
-		plug, err := plugin.Open(mod)
+		conf.Log.Debugf("Opening plugin %s", soPath)
+		plug, err := plugin.Open(soPath)
 		if err != nil {
-			return nil, fmt.Errorf("cannot open %s: %v", mod, err)
+			conf.Log.Errorf(fmt.Sprintf("plugin %s open error: %v", name, err))
+			return nil, fmt.Errorf("cannot open %s: %v", soPath, err)
 		}
-		conf.Log.Debugf("Successfully open plugin %s", mod)
+		conf.Log.Debugf("Successfully open plugin %s", soPath)
 		nf, err = plug.Lookup(ut)
 		if err != nil {
 			conf.Log.Debugf(fmt.Sprintf("cannot find symbol %s, please check if it is exported", name))
 			return nil, nil
 		}
-		conf.Log.Debugf("Successfully look-up plugin %s", mod)
+		conf.Log.Debugf("Successfully look-up plugin %s", soPath)
 		rr.Lock()
 		rr.runtime[key] = nf
 		rr.Unlock()
