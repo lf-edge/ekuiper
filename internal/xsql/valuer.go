@@ -35,8 +35,14 @@ type Valuer interface {
 	// Value returns the value and existence flag for a given key.
 	Value(key, table string) (interface{}, bool)
 	Meta(key, table string) (interface{}, bool)
-	AppendAlias(key string, value interface{}) bool
+}
+
+// AliasValuer is used to calculate and cache the alias value
+type AliasValuer interface {
+	// AliasValue Get the value of alias
 	AliasValue(name string) (interface{}, bool)
+	// AppendAlias set the alias result
+	AppendAlias(key string, value interface{}) bool
 }
 
 // CallValuer implements the Call method for evaluating function calls.
@@ -61,12 +67,6 @@ type AggregateCallValuer interface {
 type Wildcarder interface {
 	// All Value returns the value and existence flag for a given key.
 	All(stream string) (Message, bool)
-}
-
-type DataValuer interface {
-	Valuer
-	Wildcarder
-	Clone() DataValuer
 }
 
 type WildcardValuer struct {
@@ -262,14 +262,6 @@ func validate(t string, v interface{}) error {
 	}
 }
 
-type EvalResultMessage struct {
-	Emitter string
-	Result  interface{}
-	Message Message
-}
-
-type ResultsAndMessages []EvalResultMessage
-
 // Eval evaluates expr against a map.
 func Eval(expr ast.Expr, m Valuer) interface{} {
 	eval := ValuerEval{Valuer: m}
@@ -313,8 +305,10 @@ func (a multiValuer) Meta(key, table string) (interface{}, bool) {
 
 func (a multiValuer) AppendAlias(key string, value interface{}) bool {
 	for _, valuer := range a {
-		if ok := valuer.AppendAlias(key, value); ok {
-			return true
+		if vv, ok := valuer.(AliasValuer); ok {
+			if ok := vv.AppendAlias(key, value); ok {
+				return true
+			}
 		}
 	}
 	return false
@@ -322,8 +316,8 @@ func (a multiValuer) AppendAlias(key string, value interface{}) bool {
 
 func (a multiValuer) AliasValue(key string) (interface{}, bool) {
 	for _, valuer := range a {
-		if v, ok := valuer.AliasValue(key); ok {
-			return v, true
+		if vv, ok := valuer.(AliasValuer); ok {
+			return vv.AliasValue(key)
 		}
 	}
 	return nil, false
@@ -403,6 +397,7 @@ func (ber *BracketEvalResult) isIndex() bool {
 }
 
 // Eval evaluates an expression and returns a value.
+// map the expression to the correct valuer
 func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 	if expr == nil {
 		return nil
@@ -518,10 +513,18 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 			t, n string
 		)
 		if expr.IsAlias() {
-			val, ok := v.Valuer.AliasValue(expr.Name)
-			if ok {
-				return val
+			if valuer, ok := v.Valuer.(AliasValuer); ok {
+				val, ok := valuer.AliasValue(expr.Name)
+				if ok {
+					return val
+				} else {
+					r := v.Eval(expr.Expression)
+					// TODO possible performance elevation to eliminate this cal
+					valuer.AppendAlias(expr.Name, r)
+					return r
+				}
 			}
+
 		} else if expr.StreamName == ast.DefaultStream {
 			n = expr.Name
 		} else {
@@ -533,12 +536,6 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 			if ok {
 				return val
 			}
-		}
-		if expr.IsAlias() {
-			r := v.Eval(expr.Expression)
-			// TODO possible performance elevation to eliminate this cal
-			v.Valuer.AppendAlias(expr.Name, r)
-			return r
 		}
 		return nil
 	case *ast.MetaRef:
@@ -650,24 +647,6 @@ func (v *ValuerEval) evalValueSet(expr *ast.ValueSetExpr) interface{} {
 		return value
 	}
 	return nil
-}
-
-func isBlank(value reflect.Value) bool {
-	switch value.Kind() {
-	case reflect.String:
-		return value.Len() == 0
-	case reflect.Bool:
-		return !value.Bool()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return value.Int() == 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return value.Uint() == 0
-	case reflect.Float32, reflect.Float64:
-		return value.Float() == 0
-	case reflect.Interface, reflect.Ptr:
-		return value.IsNil()
-	}
-	return reflect.DeepEqual(value.Interface(), reflect.Zero(value.Type()).Interface())
 }
 
 func (v *ValuerEval) evalSetsExpr(lhs interface{}, op ast.Token, rhsSet interface{}) interface{} {
