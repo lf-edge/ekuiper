@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -357,7 +357,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 			sql: "SELECT abc FROM tbl group by abc ORDER BY def",
 			data: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "tbl",
 							Message: xsql.Message{
@@ -370,7 +370,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "tbl",
 							Message: xsql.Message{
@@ -386,7 +386,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10), f1 ORDER BY id1 desc",
 			data: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -398,7 +398,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 2, "f1": "v2"},
@@ -408,7 +408,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 2, "f1": "v2"},
@@ -416,7 +416,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -433,7 +433,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 			sql: "SELECT count(*) as c FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10), f1 ORDER BY c",
 			data: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 1, "f1": "v1", "c": 2},
@@ -445,7 +445,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 2, "f1": "v2", "c": 1},
@@ -455,7 +455,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 2, "f1": "v2", "c": 1},
@@ -463,7 +463,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 1, "f1": "v1", "c": 2},
@@ -480,7 +480,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 			sql: "SELECT src2.id2 FROM src1 left join src2 on src1.id1 = src2.id2 GROUP BY src2.f2, TUMBLINGWINDOW(ss, 10) ORDER BY src2.id2 DESC",
 			data: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
@@ -494,7 +494,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
@@ -508,7 +508,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
@@ -523,7 +523,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
@@ -537,7 +537,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
@@ -551,7 +551,7 @@ func TestOrderPlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},

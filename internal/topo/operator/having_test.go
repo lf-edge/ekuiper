@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -178,7 +178,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10), f1 having f1 = \"v2\"",
 			data: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -194,7 +194,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 2, "f1": "v2"},
@@ -208,7 +208,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 2, "f1": "v2"},
@@ -224,7 +224,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 			sql: "SELECT count(*) as c, round(a) as r FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color having a > 100",
 			data: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33}},
@@ -244,7 +244,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "test", Message: xsql.Message{"id": 2, "a": 89.03}},
@@ -266,7 +266,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33}},
@@ -416,7 +416,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 			sql: "SELECT count(*) as c FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10), f1 having c > 1",
 			data: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 1, "f1": "v1", "c": 2},
@@ -428,7 +428,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 2, "f1": "v2", "c": 1},
@@ -438,7 +438,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 1, "f1": "v1", "c": 2},
@@ -454,7 +454,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 			sql: "SELECT count(*) as c, round(a) as r FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color having c > 1",
 			data: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33, "c": 2}},
@@ -470,7 +470,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "test", Message: xsql.Message{"id": 2, "a": 89.03, "c": 1}},
@@ -482,7 +482,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33, "c": 2}},
@@ -555,7 +555,7 @@ func TestHavingPlanError(t *testing.T) {
 			sql: "SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10), f1 having f1 = \"v2\"",
 			data: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 1, "f1": 3},
@@ -567,7 +567,7 @@ func TestHavingPlanError(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 2, "f1": "v2"},
