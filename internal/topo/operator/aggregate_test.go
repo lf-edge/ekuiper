@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{&xsql.Tuple{
+					Content: []xsql.Row{&xsql.Tuple{
 						Emitter: "tbl",
 						Message: xsql.Message{
 							"abc": int64(6),
@@ -81,7 +81,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -97,7 +97,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 2, "f1": "v2"},
@@ -132,7 +132,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -140,7 +140,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 2, "f1": "v2"},
@@ -148,7 +148,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 3, "f1": "v1"},
@@ -182,7 +182,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter:  "src1",
 							Message:  xsql.Message{"id1": 1, "f1": "v1"},
@@ -196,7 +196,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter:  "src1",
 							Message:  xsql.Message{"id1": 2, "f1": "v2"},
@@ -235,7 +235,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
@@ -249,7 +249,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
@@ -263,7 +263,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
@@ -302,7 +302,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
@@ -317,7 +317,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
@@ -353,7 +353,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1", "ts": cast.TimeFromUnixMilli(1568854515000)}},
@@ -368,7 +368,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2", "ts": cast.TimeFromUnixMilli(1568854573431)}},
@@ -401,7 +401,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -409,7 +409,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 					},
 				},
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Emitter: "src1",
 							Message: xsql.Message{"id1": 2, "f1": "v2"},
@@ -441,7 +441,7 @@ func TestAggregatePlan_Apply(t *testing.T) {
 			},
 			result: xsql.GroupedTuplesSet{
 				{
-					Content: []xsql.DataValuer{
+					Content: []xsql.Row{
 						&xsql.JoinTuple{
 							Tuples: []xsql.Tuple{
 								{Emitter: "B", Message: xsql.Message{"module": 1, "topic": "moduleB topic", "value": 1}},

@@ -17,20 +17,70 @@ package xsql
 import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"sort"
 	"strings"
 )
 
-/**********************************
-**	Various Data Types for SQL transformation
- */
+type Row interface {
+	Valuer
+	AliasValuer
+	Wildcarder
+	// Set Only for some ops like functionOp
+	Set(col string, value interface{})
 
-type AggregateData interface {
-	AggregateEval(expr ast.Expr, v CallValuer) []interface{}
+	// Clone when broadcast to make sure each row are dealt single threaded
+	Clone() Row
+	// ToMap converts the row to a map to export to other systems
+	ToMap() map[string]interface{}
 }
 
-// Message is a valuer that substitutes values for the mapped interface.
+// Collection A collection of rows as a table. It is used for window, join, group by, etc.
+type Collection interface {
+	Index(index int) Row
+	Len() int
+}
+
+// Message is a valuer that substitutes values for the mapped interface. It is the basic type for data events.
 type Message map[string]interface{}
+
+var _ Valuer = Message{}
+
+type Metadata Message
+
+// Alias will not need to convert cases
+type Alias struct {
+	AliasMap map[string]interface{}
+}
+
+// All rows definitions, watermark, barrier
+
+// Tuple The input row, produced by the source
+type Tuple struct {
+	Emitter   string
+	Message   Message // immutable
+	Timestamp int64
+	Metadata  Metadata // immutable
+	Alias
+}
+
+var _ Row = &Tuple{}
+
+// JoinTuple is a row produced by a join operation
+type JoinTuple struct {
+	Tuples []Tuple
+	Alias
+}
+
+var _ Row = &JoinTuple{}
+
+// GroupedTuples is a collection of tuples grouped by a key
+type GroupedTuples struct {
+	Content []Row
+	*WindowRange
+}
+
+var _ Row = &GroupedTuples{}
+
+// Message implementation
 
 func ToMessage(input interface{}) (Message, bool) {
 	var result Message
@@ -47,7 +97,6 @@ func ToMessage(input interface{}) (Message, bool) {
 	return result, true
 }
 
-// Value returns the value for a key in the Message.
 func (m Message) Value(key, _ string) (interface{}, bool) {
 	if v, ok := m[key]; ok {
 		return v, ok
@@ -78,21 +127,7 @@ func (m Message) Meta(key, table string) (interface{}, bool) {
 	return m.Value(key, table)
 }
 
-func (m Message) AppendAlias(k string, v interface{}) bool {
-	conf.Log.Debugf("append alias %s:%v\n", k, v)
-	return false
-}
-
-func (m Message) AliasValue(_ string) (interface{}, bool) {
-	return nil, false
-}
-
-type Event interface {
-	GetTimestamp() int64
-	IsWatermark() bool
-}
-
-type Metadata Message
+// MetaData implementation
 
 func (m Metadata) Value(key, table string) (interface{}, bool) {
 	msg := Message(m)
@@ -107,10 +142,7 @@ func (m Metadata) Meta(key, table string) (interface{}, bool) {
 	return msg.Meta(key, table)
 }
 
-// Alias alias will not need to convert cases
-type Alias struct {
-	AliasMap map[string]interface{}
-}
+// Alias implementation
 
 func (a *Alias) AppendAlias(key string, value interface{}) bool {
 	if a.AliasMap == nil {
@@ -128,13 +160,7 @@ func (a *Alias) AliasValue(key string) (interface{}, bool) {
 	return v, ok
 }
 
-type Tuple struct {
-	Emitter   string
-	Message   Message // immutable
-	Timestamp int64
-	Metadata  Metadata // immutable
-	Alias
-}
+// Tuple implementation
 
 func (t *Tuple) Value(key, table string) (interface{}, bool) {
 	r, ok := t.AliasValue(key)
@@ -149,6 +175,38 @@ func (t *Tuple) Meta(key, table string) (interface{}, bool) {
 		return map[string]interface{}(t.Metadata), true
 	}
 	return t.Metadata.Value(key, table)
+}
+
+func (t *Tuple) Set(col string, value interface{}) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t *Tuple) Clone() Row {
+	c := &Tuple{
+		Emitter:   t.Emitter,
+		Timestamp: t.Timestamp,
+	}
+	if t.Message != nil {
+		m := Message{}
+		for k, v := range t.Message {
+			m[k] = v
+		}
+		c.Message = m
+	}
+	if t.Metadata != nil {
+		md := Metadata{}
+		for k, v := range t.Metadata {
+			md[k] = v
+		}
+		c.Metadata = md
+	}
+	return c
+}
+
+func (t *Tuple) ToMap() map[string]interface{} {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (t *Tuple) All(string) (Message, bool) {
@@ -171,148 +229,7 @@ func (t *Tuple) IsWatermark() bool {
 	return false
 }
 
-func (t *Tuple) Clone() DataValuer {
-	c := &Tuple{
-		Emitter:   t.Emitter,
-		Timestamp: t.Timestamp,
-	}
-	if t.Message != nil {
-		m := Message{}
-		for k, v := range t.Message {
-			m[k] = v
-		}
-		c.Message = m
-	}
-	if t.Metadata != nil {
-		md := Metadata{}
-		for k, v := range t.Metadata {
-			md[k] = v
-		}
-		c.Metadata = md
-	}
-	return c
-}
-
-type WindowTuples struct {
-	Emitter string
-	Tuples  []Tuple
-}
-
-type WindowRangeValuer struct {
-	*WindowRange
-}
-
-func (r *WindowRangeValuer) Value(_, _ string) (interface{}, bool) {
-	return nil, false
-}
-
-func (r *WindowRangeValuer) Meta(_, _ string) (interface{}, bool) {
-	return nil, false
-}
-
-func (r *WindowRangeValuer) AppendAlias(_ string, _ interface{}) bool {
-	return false
-}
-
-func (r *WindowRangeValuer) AliasValue(_ string) (interface{}, bool) {
-	return nil, false
-}
-
-type WindowRange struct {
-	WindowStart int64
-	WindowEnd   int64
-}
-
-func (r *WindowRange) FuncValue(key string) (interface{}, bool) {
-	switch key {
-	case "window_start":
-		return r.WindowStart, true
-	case "window_end":
-		return r.WindowEnd, true
-	default:
-		return nil, false
-	}
-}
-
-type WindowTuplesSet struct {
-	Content []WindowTuples
-	*WindowRange
-}
-
-func (w WindowTuplesSet) GetBySrc(src string) []Tuple {
-	for _, me := range w.Content {
-		if me.Emitter == src {
-			return me.Tuples
-		}
-	}
-	return nil
-}
-
-func (w WindowTuplesSet) Len() int {
-	if len(w.Content) > 0 {
-		return len(w.Content[0].Tuples)
-	}
-	return 0
-}
-func (w WindowTuplesSet) Swap(i, j int) {
-	if len(w.Content) > 0 {
-		s := w.Content[0].Tuples
-		s[i], s[j] = s[j], s[i]
-	}
-}
-func (w WindowTuplesSet) Index(i int) Valuer {
-	if len(w.Content) > 0 {
-		s := w.Content[0].Tuples
-		return &(s[i])
-	}
-	return nil
-}
-
-func (w WindowTuplesSet) AddTuple(tuple *Tuple) WindowTuplesSet {
-	found := false
-	for i, t := range w.Content {
-		if t.Emitter == tuple.Emitter {
-			t.Tuples = append(t.Tuples, *tuple)
-			found = true
-			w.Content[i] = t
-			break
-		}
-	}
-
-	if !found {
-		ets := &WindowTuples{Emitter: tuple.Emitter}
-		ets.Tuples = append(ets.Tuples, *tuple)
-		w.Content = append(w.Content, *ets)
-	}
-	return w
-}
-
-//Sort by tuple timestamp
-func (w WindowTuplesSet) Sort() {
-	for _, t := range w.Content {
-		tuples := t.Tuples
-		sort.SliceStable(tuples, func(i, j int) bool {
-			return tuples[i].Timestamp < tuples[j].Timestamp
-		})
-		t.Tuples = tuples
-	}
-}
-
-func (w WindowTuplesSet) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
-	var result []interface{}
-	if len(w.Content) != 1 { //should never happen
-		return nil
-	}
-	for _, t := range w.Content[0].Tuples {
-		result = append(result, Eval(expr, MultiValuer(&t, &WindowRangeValuer{WindowRange: w.WindowRange}, v, &WildcardValuer{&t})))
-	}
-	return result
-}
-
-type JoinTuple struct {
-	Tuples []Tuple
-	Alias
-}
+// JoinTuple implementation
 
 func (jt *JoinTuple) AddTuple(tuple Tuple) {
 	jt.Tuples = append(jt.Tuples, tuple)
@@ -321,14 +238,6 @@ func (jt *JoinTuple) AddTuple(tuple Tuple) {
 func (jt *JoinTuple) AddTuples(tuples []Tuple) {
 	for _, t := range tuples {
 		jt.Tuples = append(jt.Tuples, t)
-	}
-}
-
-func getTupleValue(tuple Tuple, key string, isVal bool) (interface{}, bool) {
-	if isVal {
-		return tuple.Value(key, "")
-	} else {
-		return tuple.Meta(key, "")
 	}
 }
 
@@ -391,7 +300,7 @@ func (jt *JoinTuple) All(stream string) (Message, bool) {
 	return nil, false
 }
 
-func (jt *JoinTuple) Clone() DataValuer {
+func (jt *JoinTuple) Clone() Row {
 	ts := make([]Tuple, len(jt.Tuples))
 	for i, t := range jt.Tuples {
 		ts[i] = *(t.Clone().(*Tuple))
@@ -399,27 +308,17 @@ func (jt *JoinTuple) Clone() DataValuer {
 	return &JoinTuple{Tuples: ts}
 }
 
-type JoinTupleSets struct {
-	Content []JoinTuple
-	*WindowRange
+func (jt *JoinTuple) Set(col string, value interface{}) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (s *JoinTupleSets) Len() int           { return len(s.Content) }
-func (s *JoinTupleSets) Swap(i, j int)      { s.Content[i], s.Content[j] = s.Content[j], s.Content[i] }
-func (s *JoinTupleSets) Index(i int) Valuer { return &(s.Content[i]) }
-
-func (s *JoinTupleSets) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
-	var result []interface{}
-	for _, t := range s.Content {
-		result = append(result, Eval(expr, MultiValuer(&t, &WindowRangeValuer{WindowRange: s.WindowRange}, v, &WildcardValuer{&t})))
-	}
-	return result
+func (jt *JoinTuple) ToMap() map[string]interface{} {
+	//TODO implement me
+	panic("implement me")
 }
 
-type GroupedTuples struct {
-	Content []DataValuer
-	*WindowRange
-}
+// GroupedTuple implementation
 
 func (s GroupedTuples) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
 	var result []interface{}
@@ -429,8 +328,42 @@ func (s GroupedTuples) AggregateEval(expr ast.Expr, v CallValuer) []interface{} 
 	return result
 }
 
-type GroupedTuplesSet []GroupedTuples
+func (s GroupedTuples) Value(key, table string) (interface{}, bool) {
+	//TODO implement me
+	panic("implement me")
+}
 
-func (s GroupedTuplesSet) Len() int           { return len(s) }
-func (s GroupedTuplesSet) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s GroupedTuplesSet) Index(i int) Valuer { return s[i].Content[0] }
+func (s GroupedTuples) Meta(key, table string) (interface{}, bool) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s GroupedTuples) AliasValue(name string) (interface{}, bool) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s GroupedTuples) Set(col string, value interface{}) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s GroupedTuples) AppendAlias(key string, value interface{}) bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s GroupedTuples) Clone() Row {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s GroupedTuples) ToMap() map[string]interface{} {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s GroupedTuples) All(stream string) (Message, bool) {
+	//TODO implement me
+	panic("implement me")
+}
