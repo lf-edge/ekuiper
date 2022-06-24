@@ -894,9 +894,9 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
 				Condition: &ast.BinaryExpr{
-					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{ArrayExpr: &ast.FieldRef{Name: "arraySet", StreamName: ast.DefaultStream}}},
+					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.FieldRef{Name: "arraySet", StreamName: ast.DefaultStream}},
 					OP:  ast.OR,
-					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{ArrayExpr: &ast.FieldRef{Name: "arraySet", StreamName: ast.DefaultStream}}},
+					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.FieldRef{Name: "arraySet", StreamName: ast.DefaultStream}},
 				},
 			},
 		},
@@ -910,9 +910,9 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
 				Condition: &ast.BinaryExpr{
-					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.NOTIN, RHS: &ast.ValueSetExpr{ArrayExpr: &ast.FieldRef{Name: "arraySet", StreamName: ast.DefaultStream}}},
+					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.NOTIN, RHS: &ast.FieldRef{Name: "arraySet", StreamName: ast.DefaultStream}},
 					OP:  ast.OR,
-					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.NOTIN, RHS: &ast.ValueSetExpr{ArrayExpr: &ast.FieldRef{Name: "arraySet", StreamName: ast.DefaultStream}}},
+					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.NOTIN, RHS: &ast.FieldRef{Name: "arraySet", StreamName: ast.DefaultStream}},
 				},
 			},
 		},
@@ -2137,6 +2137,36 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 					},
 					OP:  ast.GT,
 					RHS: &ast.IntegerLiteral{Val: 12},
+				},
+			},
+		},
+
+		{
+			s: `SELECT children[:1] FROM demo WHERE abc[0] IN demo.children[2:]->first`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream},
+							OP:  ast.SUBSET,
+							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
+						},
+						Name:  "kuiper_field_0",
+						AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "demo"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.BinaryExpr{
+						LHS: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream},
+						OP:  ast.SUBSET,
+						RHS: &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: 0}},
+					},
+					OP: ast.IN,
+					RHS: &ast.BinaryExpr{
+						LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{StreamName: ast.StreamName("demo"), Name: "children"}, OP: ast.SUBSET, RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 2}, End: &ast.IntegerLiteral{Val: math.MinInt32}}},
+						OP:  ast.ARROW,
+						RHS: &ast.JsonFieldRef{Name: "first"},
+					},
 				},
 			},
 		},
