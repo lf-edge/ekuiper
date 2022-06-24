@@ -302,6 +302,33 @@ func TestFilterPlan_Apply(t *testing.T) {
 		},
 
 		{
+
+			sql: "SELECT abc FROM tbl WHERE json->abc IN json->intArraySet",
+			data: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"json": map[string]interface{}{
+						"abc":         int64(34),
+						"def":         "hello",
+						"strArraySet": []string{"hello", "world"},
+						"intArraySet": []int{33, 34},
+					},
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter: "tbl",
+				Message: xsql.Message{
+					"json": map[string]interface{}{
+						"abc":         int64(34),
+						"def":         "hello",
+						"strArraySet": []string{"hello", "world"},
+						"intArraySet": []int{33, 34},
+					},
+				},
+			},
+		},
+
+		{
 			sql: "SELECT abc FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: xsql.WindowTuplesSet{
 				Content: []xsql.WindowTuples{

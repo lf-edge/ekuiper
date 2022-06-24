@@ -635,10 +635,9 @@ func (p *Parser) parseValueSetExpr() (ast.Expr, error) {
 	}
 
 	if exp, err := p.parseUnaryExpr(false); err != nil {
-		return nil, fmt.Errorf("expect Ident expression after IN, but got error %v", err)
+		return nil, fmt.Errorf("expect expression after IN, but got error %v", err)
 	} else {
-		valsetExpr.ArrayExpr = exp
-		return valsetExpr, nil
+		return exp, nil
 	}
 }
 
