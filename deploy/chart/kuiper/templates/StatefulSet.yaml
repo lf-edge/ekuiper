@@ -77,7 +77,7 @@ spec:
       {{- end }}
       containers:
         - name: kuiper
-          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}-alpine"
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}-slim"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["./bin/kuiperd"]
           ports:
