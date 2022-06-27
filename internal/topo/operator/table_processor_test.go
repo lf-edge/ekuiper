@@ -47,7 +47,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 			},
 			data: []byte(`[{"a": [{"b" : "hello1"}, {"b" : "hello2"}]},{"a": [{"b" : "hello2"}, {"b" : "hello3"}]},{"a": [{"b" : "hello3"}, {"b" : "hello4"}]}]`),
 			result: &xsql.WindowTuples{
-				Content: []xsql.Row{
+				Content: []xsql.TupleRow{
 					&xsql.Tuple{
 						Message: xsql.Message{
 							"a": []map[string]interface{}{
@@ -84,7 +84,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 			},
 			data: []byte(`[{"a": {"b" : "hello", "c": {"d": 35.2}}},{"a": {"b" : "world", "c": {"d": 65.2}}}]`),
 			result: &xsql.WindowTuples{
-				Content: []xsql.Row{
+				Content: []xsql.TupleRow{
 					&xsql.Tuple{
 						Message: xsql.Message{
 							"a": map[string]interface{}{
@@ -120,7 +120,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 		pp := &TableProcessor{isBatchInput: true, emitterName: "demo"}
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
 		pp.output = &xsql.WindowTuples{
-			Content: make([]xsql.Row, 0),
+			Content: make([]xsql.TupleRow, 0),
 		}
 
 		var dm []map[string]interface{}

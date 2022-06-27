@@ -33,9 +33,9 @@ func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 		return input
 	case xsql.Collection:
 		var groups []int
-		err := input.GroupRange(func(i int, rows xsql.AggregateData, firstRow xsql.Row) (bool, error) {
-			afv.SetData(rows)
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(rows, fv, firstRow, fv, afv, &xsql.WildcardValuer{Data: firstRow})}
+		err := input.GroupRange(func(i int, aggRow xsql.CollectionRow) (bool, error) {
+			afv.SetData(aggRow)
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(aggRow, fv, aggRow, fv, afv, &xsql.WildcardValuer{Data: aggRow})}
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:

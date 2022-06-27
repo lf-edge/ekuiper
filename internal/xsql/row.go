@@ -39,14 +39,25 @@ type Row interface {
 	Valuer
 	AliasValuer
 	Wildcarder
+}
+
+type TupleRow interface {
+	Row
 	// Set Only for some ops like functionOp
 	Set(col string, value interface{})
 	// GetEmitter returns the emitter of the row
 	GetEmitter() string
 	// Clone when broadcast to make sure each row are dealt single threaded
-	Clone() Row
+	Clone() TupleRow
 	// ToMap converts the row to a map to export to other systems
 	ToMap() map[string]interface{}
+}
+
+// CollectionRow is the aggregation row of a non-grouped collection. Thinks of it as a single group.
+// The row data is immutable
+type CollectionRow interface {
+	Row
+	AggregateData
 }
 
 /*
@@ -78,24 +89,24 @@ type Tuple struct {
 	Alias
 }
 
-var _ Row = &Tuple{}
+var _ TupleRow = &Tuple{}
 
 // JoinTuple is a row produced by a join operation
 type JoinTuple struct {
-	Tuples []Row
+	Tuples []TupleRow
 	Alias
 }
 
-var _ Row = &JoinTuple{}
+var _ TupleRow = &JoinTuple{}
 
 // GroupedTuples is a collection of tuples grouped by a key
 type GroupedTuples struct {
-	Content []Row
+	Content []TupleRow
 	*WindowRange
 	Alias
 }
 
-var _ Row = &GroupedTuples{}
+var _ CollectionRow = &GroupedTuples{}
 
 /*
  *   Implementations
@@ -201,7 +212,7 @@ func (t *Tuple) Set(col string, value interface{}) {
 	panic("implement me")
 }
 
-func (t *Tuple) Clone() Row {
+func (t *Tuple) Clone() TupleRow {
 	c := &Tuple{
 		Emitter:   t.Emitter,
 		Timestamp: t.Timestamp,
@@ -253,11 +264,11 @@ func (t *Tuple) IsWatermark() bool {
 
 // JoinTuple implementation
 
-func (jt *JoinTuple) AddTuple(tuple Row) {
+func (jt *JoinTuple) AddTuple(tuple TupleRow) {
 	jt.Tuples = append(jt.Tuples, tuple)
 }
 
-func (jt *JoinTuple) AddTuples(tuples []Row) {
+func (jt *JoinTuple) AddTuples(tuples []TupleRow) {
 	for _, t := range tuples {
 		jt.Tuples = append(jt.Tuples, t)
 	}
@@ -323,10 +334,10 @@ func (jt *JoinTuple) All(stream string) (Message, bool) {
 }
 
 // TODO deal with cascade
-func (jt *JoinTuple) Clone() Row {
-	ts := make([]Row, len(jt.Tuples))
+func (jt *JoinTuple) Clone() TupleRow {
+	ts := make([]TupleRow, len(jt.Tuples))
 	for i, t := range jt.Tuples {
-		ts[i] = t.Clone()
+		ts[i] = t.Clone().(TupleRow)
 	}
 	return &JoinTuple{Tuples: ts}
 }
@@ -368,25 +379,6 @@ func (s *GroupedTuples) Meta(key, table string) (interface{}, bool) {
 	return s.Content[0].Meta(key, table)
 }
 
-func (s *GroupedTuples) Set(col string, value interface{}) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s *GroupedTuples) Clone() Row {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s *GroupedTuples) ToMap() map[string]interface{} {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (s *GroupedTuples) All(stream string) (Message, bool) {
 	return s.Content[0].All(stream)
-}
-
-func (s *GroupedTuples) GetEmitter() string {
-	return "$$GROUP"
 }
