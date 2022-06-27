@@ -29,10 +29,9 @@ type ProjectOp struct {
 	SendMeta    bool
 }
 
-/**
- *  input: *xsql.Tuple from preprocessor or filterOp | xsql.WindowTuplesSet from windowOp or filterOp | xsql.JoinTupleSets from joinOp or filterOp
- *  output: []map[string]interface{}
- */
+// Apply
+//  input: *xsql.Tuple| xsql.Collection
+// output: []map[string]interface{}
 func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("project plan receive %s", data)
@@ -41,7 +40,7 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 	case error:
 		return input
 	case *xsql.Tuple:
-		ve := pp.getVE(input, input, fv, afv)
+		ve := pp.getVE(input, input, nil, fv, afv)
 		if r, err := project(pp.Fields, ve); err != nil {
 			return fmt.Errorf("run Select error: %s", err)
 		} else {
@@ -50,43 +49,38 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 			}
 			results = append(results, r)
 		}
-	case xsql.WindowTuplesSet:
-		if len(input.Content) != 1 {
-			return fmt.Errorf("run Select error: the input WindowTuplesSet with multiple tuples cannot be evaluated)")
+	case xsql.Collection:
+		var err error
+		if pp.IsAggregate {
+			err = input.GroupRange(func(_ int, agg xsql.AggregateData, row xsql.Row) (bool, error) {
+				ve := pp.getVE(row, agg, input.GetWindowRange(), fv, afv)
+				if r, err := project(pp.Fields, ve); err != nil {
+					return false, fmt.Errorf("run Select error: %s", err)
+				} else {
+					results = append(results, r)
+				}
+				return true, nil
+			})
+		} else {
+			err = input.Range(func(_ int, row xsql.Row) (bool, error) {
+				aggData, ok := row.(xsql.AggregateData)
+				if !ok {
+					aggData, ok = input.(xsql.AggregateData)
+					if !ok {
+						return false, fmt.Errorf("unexpected type, cannot find aggregate data")
+					}
+				}
+				ve := pp.getVE(row, aggData, input.GetWindowRange(), fv, afv)
+				if r, err := project(pp.Fields, ve); err != nil {
+					return false, fmt.Errorf("run Select error: %s", err)
+				} else {
+					results = append(results, r)
+				}
+				return true, nil
+			})
 		}
-		ms := input.Content[0].Tuples
-		for _, v := range ms {
-			ve := pp.getVE(&v, input, fv, afv)
-			if r, err := project(pp.Fields, ve); err != nil {
-				return fmt.Errorf("run Select error: %s", err)
-			} else {
-				results = append(results, r)
-			}
-			if pp.IsAggregate {
-				break
-			}
-		}
-	case *xsql.JoinTupleSets:
-		ms := input.Content
-		for _, v := range ms {
-			ve := pp.getVE(&v, input, fv, afv)
-			if r, err := project(pp.Fields, ve); err != nil {
-				return err
-			} else {
-				results = append(results, r)
-			}
-			if pp.IsAggregate {
-				break
-			}
-		}
-	case xsql.GroupedTuplesSet:
-		for _, v := range input {
-			ve := pp.getVE(v.Content[0], v, fv, afv)
-			if r, err := project(pp.Fields, ve); err != nil {
-				return fmt.Errorf("run Select error: %s", err)
-			} else {
-				results = append(results, r)
-			}
+		if err != nil {
+			return err
 		}
 	default:
 		return fmt.Errorf("run Select error: invalid input %[1]T(%[1]v)", input)
@@ -95,20 +89,11 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 	return results
 }
 
-func (pp *ProjectOp) getVE(tuple xsql.Row, agg xsql.AggregateData, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) *xsql.ValuerEval {
+func (pp *ProjectOp) getVE(tuple xsql.Row, agg xsql.AggregateData, wr *xsql.WindowRange, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) *xsql.ValuerEval {
 	afv.SetData(agg)
 	if pp.IsAggregate {
 		return &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(agg, fv, tuple, fv, afv, &xsql.WildcardValuer{Data: tuple})}
 	} else {
-		var wr *xsql.WindowRange
-		switch input := agg.(type) {
-		case xsql.WindowTuplesSet:
-			wr = input.WindowRange
-		case *xsql.JoinTupleSets:
-			wr = input.WindowRange
-		case xsql.GroupedTuples:
-			wr = input.WindowRange
-		}
 		if wr != nil {
 			return &xsql.ValuerEval{Valuer: xsql.MultiValuer(tuple, &xsql.WindowRangeValuer{WindowRange: wr}, fv, &xsql.WildcardValuer{Data: tuple})}
 		}

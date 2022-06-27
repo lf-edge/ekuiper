@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ type TableProcessor struct {
 	retainSize   int  // how many(maximum) messages to be retained for each output
 	emitterName  string
 	// States
-	output       xsql.WindowTuples // current batched message collection
-	batchEmitted bool              // if batch input, this is the signal for whether the last batch has emitted. If true, reinitialize.
+	output       *xsql.WindowTuples // current batched message collection
+	batchEmitted bool               // if batch input, this is the signal for whether the last batch has emitted. If true, reinitialize.
 }
 
 func NewTableProcessor(isSchemaless bool, name string, fields []interface{}, options *ast.Options) (*TableProcessor, error) {
@@ -62,9 +62,8 @@ func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql
 	}
 	logger.Debugf("preprocessor receive %v", tuple)
 	if p.batchEmitted {
-		p.output = xsql.WindowTuples{
-			Emitter: p.emitterName,
-			Tuples:  make([]xsql.Tuple, 0),
+		p.output = &xsql.WindowTuples{
+			Content: make([]xsql.Row, 0),
 		}
 		p.batchEmitted = false
 	}
@@ -76,17 +75,17 @@ func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql
 			}
 			tuple.Message = result
 		}
-		var newTuples []xsql.Tuple
-		for i, ot := range p.output.Tuples {
-			if p.retainSize > 0 && len(p.output.Tuples) == p.retainSize && i == 0 {
-				continue
+		var newTuples []xsql.Row
+		_ = p.output.Range(func(i int, r xsql.Row) (bool, error) {
+			if p.retainSize > 0 && p.output.Len() == p.retainSize && i == 0 {
+				return true, nil
 			}
-			newTuples = append(newTuples, ot)
-		}
-		newTuples = append(newTuples, *tuple)
-		p.output = xsql.WindowTuples{
-			Emitter: p.emitterName,
-			Tuples:  newTuples,
+			newTuples = append(newTuples, r)
+			return true, nil
+		})
+		newTuples = append(newTuples, tuple)
+		p.output = &xsql.WindowTuples{
+			Content: newTuples,
 		}
 		if !p.isBatchInput {
 			return p.output

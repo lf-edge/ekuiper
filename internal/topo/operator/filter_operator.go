@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ type FilterOp struct {
 }
 
 /**
- *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
- *  output: *xsql.Tuple | xsql.WindowTuplesSet | xsql.JoinTupleSets
+ *  input: *xsql.Tuple from preprocessor | xsql.WindowTuples from windowOp | xsql.JoinTuples from joinOp
+ *  output: *xsql.Tuple | xsql.WindowTuples | xsql.JoinTuples
  */
 func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
@@ -50,75 +50,33 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 		default:
 			return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", r)
 		}
-	case xsql.WindowTuples: // For batch table, will return the batch
-		var f []xsql.Tuple
-		for _, t := range input.Tuples {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&t, fv)}
+	case xsql.Collection:
+		var sel []int
+		err := input.Range(func(i int, r xsql.Row) (bool, error) {
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(r, fv)}
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {
 			case error:
-				return fmt.Errorf("run Where error: %s", val)
+				return false, fmt.Errorf("run Where error: %s", val)
 			case bool:
 				if val {
-					f = append(f, t)
+					sel = append(sel, i)
 				}
 			case nil:
 				break
 			default:
-				return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
+				return false, fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
 			}
+			return true, nil
+		})
+		if err != nil {
+			return err
 		}
-		input.Tuples = f
-		return input
-	case xsql.WindowTuplesSet:
-		if len(input.Content) != 1 {
-			return fmt.Errorf("run Where error: the input WindowTuplesSet with multiple tuples cannot be evaluated")
+		r := input.Filter(sel)
+		if r.Len() == 0 {
+			return nil
 		}
-		ms := input.Content[0].Tuples
-		r := ms[:0]
-		for _, v := range ms {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&v, fv)}
-			result := ve.Eval(p.Condition)
-			switch val := result.(type) {
-			case error:
-				return fmt.Errorf("run Where error: %s", val)
-			case bool:
-				if val {
-					r = append(r, v)
-				}
-			case nil:
-				break
-			default:
-				return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
-			}
-		}
-		if len(r) > 0 {
-			input.Content[0].Tuples = r
-			return input
-		}
-	case *xsql.JoinTupleSets:
-		ms := input.Content
-		r := ms[:0]
-		for _, v := range ms {
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(&v, fv)}
-			result := ve.Eval(p.Condition)
-			switch val := result.(type) {
-			case error:
-				return fmt.Errorf("run Where error: %s", val)
-			case bool:
-				if val {
-					r = append(r, v)
-				}
-			case nil:
-				break
-			default:
-				return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", val)
-			}
-		}
-		input.Content = r
-		if len(r) > 0 {
-			return input
-		}
+		return r
 	default:
 		return fmt.Errorf("run Where error: invalid input %[1]T(%[1]v)", input)
 	}
