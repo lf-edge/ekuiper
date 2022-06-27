@@ -77,6 +77,8 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error when opening db: %v", err)
 	}
+	registry := &Manager{symbols: make(map[string]string), db: db, pluginDir: pluginDir, etcDir: etcDir, runtime: make(map[string]plugin.Symbol)}
+	manager = registry
 	plugins := make([]map[string]string, 3)
 	for i := range plugin2.PluginTypes {
 		names, err := findAll(plugin2.PluginType(i), pluginDir)
@@ -85,7 +87,7 @@ func InitManager() (*Manager, error) {
 		}
 		plugins[i] = names
 	}
-	registry := &Manager{plugins: plugins, symbols: make(map[string]string), db: db, pluginDir: pluginDir, etcDir: etcDir, runtime: make(map[string]plugin.Symbol)}
+	registry.plugins = plugins
 
 	for pf := range plugins[plugin2.FUNCTION] {
 		l := make([]string, 0)
@@ -97,7 +99,6 @@ func InitManager() (*Manager, error) {
 			registry.storeSymbols(pf, []string{pf})
 		}
 	}
-	manager = registry
 	return registry, nil
 }
 
@@ -113,8 +114,10 @@ func findAll(t plugin2.PluginType, pluginDir string) (result map[string]string, 
 		baseName := filepath.Base(file.Name())
 		if strings.HasSuffix(baseName, ".so") {
 			//load the plugins when ekuiper set up
-			if _, err := manager.loadRuntime(t, "", file.Name()); err != nil {
-				continue
+			if !conf.IsTesting {
+				if _, err := manager.loadRuntime(t, "", file.Name()); err != nil {
+					continue
+				}
 			}
 			n, v := parseName(baseName)
 			result[n] = v
@@ -495,10 +498,12 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		conf.Log.Infof(`run install script:%s`, outb.String())
 	}
 
-	// load the runtime first
-	_, err = manager.loadRuntime(t, "", soPath)
-	if err != nil {
-		goto errout
+	if !conf.IsTesting {
+		// load the runtime first
+		_, err = manager.loadRuntime(t, "", soPath)
+		if err != nil {
+			goto errout
+		}
 	}
 
 	conf.Log.Infof("install %s plugin %s", plugin2.PluginTypes[t], name)
