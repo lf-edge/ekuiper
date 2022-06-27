@@ -115,7 +115,7 @@ func findAll(t plugin2.PluginType, pluginDir string) (result map[string]string, 
 		if strings.HasSuffix(baseName, ".so") {
 			//load the plugins when ekuiper set up
 			if !conf.IsTesting {
-				if _, err := manager.loadRuntime(t, "", file.Name()); err != nil {
+				if _, err := manager.loadRuntime(t, "", path.Join(dir, baseName)); err != nil {
 					continue
 				}
 			}
