@@ -35,7 +35,7 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 	switch input := data.(type) {
 	case error:
 		return input
-	case xsql.Valuer:
+	case xsql.TupleRow:
 		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, fv)}
 		result := ve.Eval(p.Condition)
 		switch r := result.(type) {
@@ -50,9 +50,9 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 		default:
 			return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", r)
 		}
-	case xsql.Collection:
+	case xsql.SingleCollection:
 		var sel []int
-		err := input.Range(func(i int, r xsql.Row) (bool, error) {
+		err := input.Range(func(i int, r xsql.TupleRow) (bool, error) {
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(r, fv)}
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {

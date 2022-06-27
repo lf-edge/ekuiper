@@ -50,10 +50,9 @@ func NewTableProcessor(isSchemaless bool, name string, fields []interface{}, opt
 	return p, nil
 }
 
-/*
- *	input: *xsql.Tuple or BatchCount
- *	output: WindowTuples
- */
+// Apply
+//	input: *xsql.Tuple or BatchCount
+//	output: WindowTuples
 func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	logger := ctx.GetLogger()
 	tuple, ok := data.(*xsql.Tuple)
@@ -63,7 +62,7 @@ func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql
 	logger.Debugf("preprocessor receive %v", tuple)
 	if p.batchEmitted {
 		p.output = &xsql.WindowTuples{
-			Content: make([]xsql.Row, 0),
+			Content: make([]xsql.TupleRow, 0),
 		}
 		p.batchEmitted = false
 	}
@@ -75,8 +74,8 @@ func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql
 			}
 			tuple.Message = result
 		}
-		var newTuples []xsql.Row
-		_ = p.output.Range(func(i int, r xsql.Row) (bool, error) {
+		var newTuples []xsql.TupleRow
+		_ = p.output.Range(func(i int, r xsql.TupleRow) (bool, error) {
 			if p.retainSize > 0 && p.output.Len() == p.retainSize && i == 0 {
 				return true, nil
 			}

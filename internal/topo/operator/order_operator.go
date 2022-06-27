@@ -36,7 +36,7 @@ func (p *OrderOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 	switch input := data.(type) {
 	case error:
 		return input
-	case xsql.Valuer:
+	case xsql.TupleRow:
 		return input
 	case xsql.SortingData:
 		if err := sorter.Sort(input); err != nil {
