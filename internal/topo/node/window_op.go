@@ -297,9 +297,10 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 						triggerTime := conf.GetNowInMilli()
 						for tl.hasMoreCountWindow() {
 							tsets := tl.nextCountWindow()
-							tsets.WindowStart = triggerTime
+							windowStart := triggerTime
 							triggerTime = conf.GetNowInMilli()
-							tsets.WindowEnd = triggerTime
+							windowEnd := triggerTime
+							tsets.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
 							log.Debugf("Sent: %v", tsets)
 							o.Broadcast(tsets)
 							o.statManager.IncTotalRecordsOut()
@@ -388,10 +389,9 @@ func (tl *TupleList) count() int {
 	}
 }
 
-func (tl *TupleList) nextCountWindow() xsql.WindowTuplesSet {
-	results := xsql.WindowTuplesSet{
-		Content:     make([]xsql.WindowTuples, 0),
-		WindowRange: &xsql.WindowRange{},
+func (tl *TupleList) nextCountWindow() *xsql.WindowTuples {
+	results := &xsql.WindowTuples{
+		Content: make([]xsql.Row, 0),
 	}
 	var subT []*xsql.Tuple
 	subT = tl.tuples[len(tl.tuples)-tl.size : len(tl.tuples)]
@@ -412,15 +412,16 @@ func (tl *TupleList) getRestTuples() []*xsql.Tuple {
 func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, bool) {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
-	var delta int64
+	var (
+		delta       int64
+		windowStart int64
+		windowEnd   = triggerTime
+	)
 	if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 		delta = o.calDelta(triggerTime, delta, log)
 	}
-	results := xsql.WindowTuplesSet{
-		Content: make([]xsql.WindowTuples, 0),
-		WindowRange: &xsql.WindowRange{
-			WindowEnd: triggerTime,
-		},
+	results := &xsql.WindowTuples{
+		Content: make([]xsql.Row, 0),
 	}
 	i := 0
 	//Sync table
@@ -449,12 +450,13 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 	if len(results.Content) > 0 {
 		switch o.window.Type {
 		case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
-			results.WindowStart = o.triggerTime
+			windowStart = o.triggerTime
 		case ast.HOPPING_WINDOW:
-			results.WindowStart = o.triggerTime - int64(o.window.Interval)
+			windowStart = o.triggerTime - int64(o.window.Interval)
 		case ast.SLIDING_WINDOW:
-			results.WindowStart = triggerTime - int64(o.window.Length)
+			windowStart = triggerTime - int64(o.window.Length)
 		}
+		results.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
 		log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
 		if o.isEventTime {
 			results.Sort()

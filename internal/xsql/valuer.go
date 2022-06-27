@@ -21,7 +21,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"math"
 	"reflect"
-	"sort"
 	"time"
 )
 
@@ -29,6 +28,10 @@ var implicitValueFuncs = map[string]bool{
 	"window_start": true,
 	"window_end":   true,
 }
+
+/*
+ *  Valuer definitions
+ */
 
 // Valuer is the interface that wraps the Value() method.
 type Valuer interface {
@@ -64,11 +67,6 @@ type AggregateCallValuer interface {
 	GetSingleCallValuer() CallValuer
 }
 
-type Wildcarder interface {
-	// All Value returns the value and existence flag for a given key.
-	All(stream string) (Message, bool)
-}
-
 type WildcardValuer struct {
 	Data Wildcarder
 }
@@ -82,199 +80,6 @@ func (wv *WildcardValuer) Value(key, table string) (interface{}, bool) {
 
 func (wv *WildcardValuer) Meta(_, _ string) (interface{}, bool) {
 	return nil, false
-}
-
-func (wv *WildcardValuer) AppendAlias(string, interface{}) bool {
-	// do nothing
-	return false
-}
-
-func (wv *WildcardValuer) AliasValue(_ string) (interface{}, bool) {
-	return nil, false
-}
-
-type SortingData interface {
-	Len() int
-	Swap(i, j int)
-	Index(i int) Valuer
-}
-
-// MultiSorter multiSorter implements the Sort interface, sorting the changes within.Hi
-type MultiSorter struct {
-	SortingData
-	fields    ast.SortFields
-	valuer    *FunctionValuer
-	aggValuer *AggregateFunctionValuer
-	values    []map[string]interface{}
-}
-
-// OrderedBy returns a Sorter that sorts using the less functions, in order.
-// Call its Sort method to sort the data.
-func OrderedBy(fields ast.SortFields, fv *FunctionValuer, afv *AggregateFunctionValuer) *MultiSorter {
-	return &MultiSorter{
-		fields:    fields,
-		valuer:    fv,
-		aggValuer: afv,
-	}
-}
-
-// Less is part of sort.Interface. It is implemented by looping along the
-// less functions until it finds a comparison that discriminates between
-// the two items (one is less than the other). Note that it can call the
-// less functions twice per call. We could change the functions to return
-// -1, 0, 1 and reduce the number of calls for greater efficiency: an
-// exercise for the reader.
-func (ms *MultiSorter) Less(i, j int) bool {
-	p, q := ms.values[i], ms.values[j]
-	v := &ValuerEval{Valuer: MultiValuer(ms.valuer)}
-	for _, field := range ms.fields {
-		n := field.Uname
-		vp, _ := p[n]
-		vq, _ := q[n]
-		if vp == nil && vq != nil {
-			return false
-		} else if vp != nil && vq == nil {
-			ms.valueSwap(true, i, j)
-			return true
-		} else if vp == nil && vq == nil {
-			return false
-		}
-		switch {
-		case v.simpleDataEval(vp, vq, ast.LT):
-			ms.valueSwap(field.Ascending, i, j)
-			return field.Ascending
-		case v.simpleDataEval(vq, vp, ast.LT):
-			ms.valueSwap(!field.Ascending, i, j)
-			return !field.Ascending
-		}
-	}
-	return false
-}
-
-func (ms *MultiSorter) valueSwap(s bool, i, j int) {
-	if s {
-		ms.values[i], ms.values[j] = ms.values[j], ms.values[i]
-	}
-}
-
-// Sort sorts the argument slice according to the less functions passed to OrderedBy.
-func (ms *MultiSorter) Sort(data SortingData) error {
-	ms.SortingData = data
-	types := make([]string, len(ms.fields))
-	ms.values = make([]map[string]interface{}, data.Len())
-	//load and validate data
-	switch input := data.(type) {
-	case error:
-		return input
-	case GroupedTuplesSet:
-		for i, v := range input {
-			ms.values[i] = make(map[string]interface{})
-			ms.aggValuer.SetData(v)
-			vep := &ValuerEval{Valuer: MultiAggregateValuer(v, ms.valuer, v.Content[0], ms.valuer, ms.aggValuer, &WildcardValuer{Data: v.Content[0]})}
-			for j, field := range ms.fields {
-				vp := vep.Eval(field.FieldExpr)
-				if types[j] == "" && vp != nil {
-					types[j] = fmt.Sprintf("%T", vp)
-				}
-				if err := validate(types[j], vp); err != nil {
-					return err
-				} else {
-					ms.values[i][field.Uname] = vp
-				}
-			}
-		}
-	case WindowTuplesSet:
-		if len(input.Content) != 1 {
-			return fmt.Errorf("run Order error: input WindowTuplesSet with multiple tuples cannot be evaluated")
-		}
-		wdtps := input.Content[0].Tuples
-		for i, v := range wdtps {
-			ms.values[i] = make(map[string]interface{})
-			vep := &ValuerEval{Valuer: MultiValuer(ms.valuer, &v, ms.valuer, &WildcardValuer{Data: &v})}
-			for j, field := range ms.fields {
-				vp := vep.Eval(field.FieldExpr)
-				if types[j] == "" && vp != nil {
-					types[j] = fmt.Sprintf("%T", vp)
-				}
-				if err := validate(types[j], vp); err != nil {
-					return err
-				} else {
-					ms.values[i][field.Uname] = vp
-				}
-			}
-		}
-	case *JoinTupleSets:
-		joinTps := input.Content
-		for i, v := range joinTps {
-			ms.values[i] = make(map[string]interface{})
-			vep := &ValuerEval{Valuer: MultiValuer(ms.valuer, &v, ms.valuer, &WildcardValuer{Data: &v})}
-			for j, field := range ms.fields {
-				vp := vep.Eval(field.FieldExpr)
-				if types[j] == "" && vp != nil {
-					types[j] = fmt.Sprintf("%T", vp)
-				}
-				if err := validate(types[j], vp); err != nil {
-					return err
-				} else {
-					ms.values[i][field.Uname] = vp
-				}
-
-			}
-		}
-	}
-	sort.Sort(ms)
-	return nil
-}
-
-func validate(t string, v interface{}) error {
-	if v == nil || t == "" {
-		return nil
-	}
-	vt := fmt.Sprintf("%T", v)
-	switch t {
-	case "int", "int64", "float64", "uint64":
-		if vt == "int" || vt == "int64" || vt == "float64" || vt == "uint64" {
-			return nil
-		} else {
-			return fmt.Errorf("incompatible types for comparison: %s and %s", t, vt)
-		}
-	case "bool":
-		if vt == "bool" {
-			return nil
-		} else {
-			return fmt.Errorf("incompatible types for comparison: %s and %s", t, vt)
-		}
-	case "string":
-		if vt == "string" {
-			return nil
-		} else {
-			return fmt.Errorf("incompatible types for comparison: %s and %s", t, vt)
-		}
-	case "time.Time":
-		_, err := cast.InterfaceToTime(v, "")
-		if err != nil {
-			return fmt.Errorf("incompatible types for comparison: %s and %s", t, vt)
-		} else {
-			return nil
-		}
-	default:
-		return fmt.Errorf("incompatible types for comparison: %s and %s", t, vt)
-	}
-}
-
-// Eval evaluates expr against a map.
-func Eval(expr ast.Expr, m Valuer) interface{} {
-	eval := ValuerEval{Valuer: m}
-	return eval.Eval(expr)
-}
-
-// ValuerEval will evaluate an expression using the Valuer.
-type ValuerEval struct {
-	Valuer Valuer
-
-	// IntegerFloatDivision will set the eval system to treat
-	// a division between two integers as a floating point division.
-	IntegerFloatDivision bool
 }
 
 // MultiValuer returns a Valuer that iterates over multiple Valuer instances
@@ -388,12 +193,42 @@ func (a *multiAggregateValuer) GetSingleCallValuer() CallValuer {
 	return a.singleCallValuer
 }
 
-type BracketEvalResult struct {
-	Start, End int
+func (a *multiAggregateValuer) AppendAlias(key string, value interface{}) bool {
+	if vv, ok := a.data.(AliasValuer); ok {
+		if ok := vv.AppendAlias(key, value); ok {
+			return true
+		}
+		return false
+	} else {
+		return a.multiValuer.AppendAlias(key, value)
+	}
 }
 
-func (ber *BracketEvalResult) isIndex() bool {
-	return ber.Start == ber.End
+func (a *multiAggregateValuer) AliasValue(key string) (interface{}, bool) {
+	if vv, ok := a.data.(AliasValuer); ok {
+		return vv.AliasValue(key)
+	} else {
+		return a.multiValuer.AliasValue(key)
+	}
+}
+
+/*
+ * Eval Logics
+ */
+
+// Eval evaluates expr against a map.
+func Eval(expr ast.Expr, m Valuer) interface{} {
+	eval := ValuerEval{Valuer: m}
+	return eval.Eval(expr)
+}
+
+// ValuerEval will evaluate an expression using the Valuer.
+type ValuerEval struct {
+	Valuer Valuer
+
+	// IntegerFloatDivision will set the eval system to treat
+	// a division between two integers as a floating point division.
+	IntegerFloatDivision bool
 }
 
 // Eval evaluates an expression and returns a value.
@@ -702,15 +537,6 @@ func (v *ValuerEval) evalSetsExpr(lhs interface{}, op ast.Token, rhsSet interfac
 	default:
 		return fmt.Errorf("%v is an invalid operation for %T", op, lhs)
 	}
-}
-
-func isSliceOrArray(v interface{}) bool {
-	kind := reflect.ValueOf(v).Kind()
-	return kind == reflect.Array || kind == reflect.Slice
-}
-
-func isSetOperator(op ast.Token) bool {
-	return op == ast.IN || op == ast.NOTIN
 }
 
 func (v *ValuerEval) evalJsonExpr(result interface{}, op ast.Token, expr ast.Expr) interface{} {
@@ -1188,6 +1014,27 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op ast.Token) interfac
 	default:
 		return invalidOpError(lhs, op, rhs)
 	}
+}
+
+/*
+ * Helper functions
+ */
+
+type BracketEvalResult struct {
+	Start, End int
+}
+
+func (ber *BracketEvalResult) isIndex() bool {
+	return ber.Start == ber.End
+}
+
+func isSliceOrArray(v interface{}) bool {
+	kind := reflect.ValueOf(v).Kind()
+	return kind == reflect.Array || kind == reflect.Slice
+}
+
+func isSetOperator(op ast.Token) bool {
+	return op == ast.IN || op == ast.NOTIN
 }
 
 func invalidOpError(lhs interface{}, op ast.Token, rhs interface{}) error {
