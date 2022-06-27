@@ -49,11 +49,11 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 			}
 			results = append(results, r)
 		}
-	case xsql.Collection:
+	case xsql.SingleCollection:
 		var err error
 		if pp.IsAggregate {
-			err = input.GroupRange(func(_ int, agg xsql.AggregateData, row xsql.Row) (bool, error) {
-				ve := pp.getVE(row, agg, input.GetWindowRange(), fv, afv)
+			err = input.GroupRange(func(_ int, aggRow xsql.CollectionRow) (bool, error) {
+				ve := pp.getVE(aggRow, aggRow, input.GetWindowRange(), fv, afv)
 				if r, err := project(pp.Fields, ve); err != nil {
 					return false, fmt.Errorf("run Select error: %s", err)
 				} else {
@@ -62,13 +62,10 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 				return true, nil
 			})
 		} else {
-			err = input.Range(func(_ int, row xsql.Row) (bool, error) {
-				aggData, ok := row.(xsql.AggregateData)
+			err = input.Range(func(_ int, row xsql.TupleRow) (bool, error) {
+				aggData, ok := input.(xsql.AggregateData)
 				if !ok {
-					aggData, ok = input.(xsql.AggregateData)
-					if !ok {
-						return false, fmt.Errorf("unexpected type, cannot find aggregate data")
-					}
+					return false, fmt.Errorf("unexpected type, cannot find aggregate data")
 				}
 				ve := pp.getVE(row, aggData, input.GetWindowRange(), fv, afv)
 				if r, err := project(pp.Fields, ve); err != nil {
@@ -79,6 +76,19 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 				return true, nil
 			})
 		}
+		if err != nil {
+			return err
+		}
+	case xsql.GroupedCollection: // The order is important, because single collection usually is also a groupedCollection
+		err := input.GroupRange(func(_ int, aggRow xsql.CollectionRow) (bool, error) {
+			ve := pp.getVE(aggRow, aggRow, input.GetWindowRange(), fv, afv)
+			if r, err := project(pp.Fields, ve); err != nil {
+				return false, fmt.Errorf("run Select error: %s", err)
+			} else {
+				results = append(results, r)
+			}
+			return true, nil
+		})
 		if err != nil {
 			return err
 		}

@@ -37,10 +37,10 @@ func (p *AggregateOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fu
 		switch input := data.(type) {
 		case error:
 			return input
-		case xsql.Collection:
+		case xsql.SingleCollection:
 			wr := input.GetWindowRange()
 			result := make(map[string]*xsql.GroupedTuples)
-			err := input.Range(func(i int, r xsql.Row) (bool, error) {
+			err := input.Range(func(i int, r xsql.TupleRow) (bool, error) {
 				var name string
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(r, &xsql.WindowRangeValuer{WindowRange: wr}, fv)}
 				for _, d := range p.Dimensions {
@@ -52,7 +52,7 @@ func (p *AggregateOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fu
 					}
 				}
 				if ts, ok := result[name]; !ok {
-					result[name] = &xsql.GroupedTuples{Content: []xsql.Row{r}, WindowRange: wr}
+					result[name] = &xsql.GroupedTuples{Content: []xsql.TupleRow{r}, WindowRange: wr}
 				} else {
 					ts.Content = append(ts.Content, r)
 				}

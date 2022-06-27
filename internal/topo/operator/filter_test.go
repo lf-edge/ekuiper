@@ -331,7 +331,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 		{
 			sql: "SELECT abc FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.WindowTuples{
-				Content: []xsql.Row{
+				Content: []xsql.TupleRow{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -346,7 +346,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
 			},
 			result: &xsql.WindowTuples{
-				Content: []xsql.Row{
+				Content: []xsql.TupleRow{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -361,7 +361,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 		{
 			sql: "SELECT abc FROM src1 WHERE f1 = \"v8\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.WindowTuples{
-				Content: []xsql.Row{
+				Content: []xsql.TupleRow{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -381,19 +381,19 @@ func TestFilterPlan_Apply(t *testing.T) {
 			data: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
 							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 						},
 					},
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
 							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 						},
 					},
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 						},
 					},
@@ -403,13 +403,13 @@ func TestFilterPlan_Apply(t *testing.T) {
 			result: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
 							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 						},
 					},
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 						},
 					},
@@ -422,19 +422,19 @@ func TestFilterPlan_Apply(t *testing.T) {
 			data: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
 							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 						},
 					},
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
 							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 						},
 					},
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 						},
 					},
@@ -444,13 +444,13 @@ func TestFilterPlan_Apply(t *testing.T) {
 			result: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
 							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 						},
 					},
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 						},
 					},
@@ -463,19 +463,19 @@ func TestFilterPlan_Apply(t *testing.T) {
 			data: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": "v1"}},
 							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 						},
 					},
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
 							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 						},
 					},
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 						},
 					},
@@ -645,7 +645,7 @@ func TestFilterPlanError(t *testing.T) {
 		{
 			sql: "SELECT abc FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.WindowTuples{
-				Content: []xsql.Row{
+				Content: []xsql.TupleRow{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -668,7 +668,7 @@ func TestFilterPlanError(t *testing.T) {
 				},
 			},
 			result: &xsql.WindowTuples{
-				Content: []xsql.Row{
+				Content: []xsql.TupleRow{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -688,7 +688,7 @@ func TestFilterPlanError(t *testing.T) {
 		{
 			sql: "SELECT abc FROM src1 WHERE f1 = \"v8\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.WindowTuples{
-				Content: []xsql.Row{
+				Content: []xsql.TupleRow{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -708,19 +708,19 @@ func TestFilterPlanError(t *testing.T) {
 			data: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 1, "f1": 50}},
 							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 						},
 					},
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 2, "f1": "v2"}},
 							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": 4, "f2": "w3"}},
 						},
 					},
 					{
-						Tuples: []xsql.Row{
+						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 3, "f1": "v1"}},
 						},
 					},

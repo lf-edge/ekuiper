@@ -126,7 +126,7 @@ func (jp *JoinOp) evalSet(input xsql.MergedCollection, join ast.Join, fv *xsql.F
 		}
 	}
 
-	var lefts, rights []xsql.Row
+	var lefts, rights []xsql.TupleRow
 
 	lefts = input.GetBySrc(leftStream)
 	rights = input.GetBySrc(rightStream)
@@ -218,7 +218,7 @@ func (jp *JoinOp) evalSetWithRightJoin(input xsql.MergedCollection, join ast.Joi
 	}
 	leftStream := streams[0]
 	rightStream := streams[1]
-	var lefts, rights []xsql.Row
+	var lefts, rights []xsql.TupleRow
 
 	lefts = input.GetBySrc(leftStream)
 	rights = input.GetBySrc(rightStream)

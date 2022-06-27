@@ -28,13 +28,13 @@ type JoinAlignNode struct {
 	*defaultSinkNode
 	statManager metric.StatManager
 	// states
-	batch map[string][]xsql.Row
+	batch map[string][]xsql.TupleRow
 }
 
 const BatchKey = "$$batchInputs"
 
 func NewJoinAlignNode(name string, emitters []string, options *api.RuleOption) (*JoinAlignNode, error) {
-	batch := make(map[string][]xsql.Row, len(emitters))
+	batch := make(map[string][]xsql.TupleRow, len(emitters))
 	for _, e := range emitters {
 		batch[e] = nil
 	}
@@ -72,7 +72,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			// restore batch state
 			if s, err := ctx.GetState(BatchKey); err == nil {
 				switch st := s.(type) {
-				case map[string][]xsql.Row:
+				case map[string][]xsql.TupleRow:
 					n.batch = st
 					log.Infof("Restore batch state %+v", st)
 				case nil:
@@ -84,7 +84,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				log.Warnf("Restore batch state fails: %s", err)
 			}
 			if n.batch == nil {
-				n.batch = make(map[string][]xsql.Row)
+				n.batch = make(map[string][]xsql.TupleRow)
 			}
 
 			for {
@@ -109,7 +109,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					case *xsql.Tuple:
 						log.Debugf("JoinAlignNode receive tuple input %s", d)
 						temp := &xsql.WindowTuples{
-							Content: make([]xsql.Row, 0),
+							Content: make([]xsql.TupleRow, 0),
 						}
 						temp = temp.AddTuple(d)
 						n.alignBatch(ctx, temp)
