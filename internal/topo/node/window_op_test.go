@@ -79,7 +79,7 @@ func TestCountWindow(t *testing.T) {
 			expWinCount: 1,
 			winTupleSets: []xsql.WindowTuples{
 				{
-					Content: []xsql.Row{
+					Content: []xsql.TupleRow{
 
 						&xsql.Tuple{
 							Message: map[string]interface{}{
@@ -141,7 +141,7 @@ func TestCountWindow(t *testing.T) {
 			expWinCount: 1,
 			winTupleSets: []xsql.WindowTuples{
 				{
-					Content: []xsql.Row{
+					Content: []xsql.TupleRow{
 						&xsql.Tuple{
 							Message: map[string]interface{}{
 								"f3": "v3",
@@ -182,7 +182,7 @@ func TestCountWindow(t *testing.T) {
 			expWinCount: 1,
 			winTupleSets: []xsql.WindowTuples{
 				{
-					Content: []xsql.Row{
+					Content: []xsql.TupleRow{
 						&xsql.Tuple{
 							Message: map[string]interface{}{
 								"f4": "v4",

@@ -391,7 +391,7 @@ func (tl *TupleList) count() int {
 
 func (tl *TupleList) nextCountWindow() *xsql.WindowTuples {
 	results := &xsql.WindowTuples{
-		Content: make([]xsql.Row, 0),
+		Content: make([]xsql.TupleRow, 0),
 	}
 	var subT []*xsql.Tuple
 	subT = tl.tuples[len(tl.tuples)-tl.size : len(tl.tuples)]
@@ -421,7 +421,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 		delta = o.calDelta(triggerTime, delta, log)
 	}
 	results := &xsql.WindowTuples{
-		Content: make([]xsql.Row, 0),
+		Content: make([]xsql.TupleRow, 0),
 	}
 	i := 0
 	//Sync table

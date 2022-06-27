@@ -37,18 +37,26 @@ type SortingData interface {
 // Collection A collection of rows as a table. It is used for window, join, group by, etc.
 type Collection interface {
 	SortingData
-	// Range through each row. For grouped collection, each row is an aggregation of groups
-	Range(func(i int, r Row) (bool, error)) error
 	// GroupRange through each group. For non-grouped collection, the whole data is a single group
-	GroupRange(func(i int, rows AggregateData, firstRow Row) (bool, error)) error
+	GroupRange(func(i int, aggRow CollectionRow) (bool, error)) error
 	Filter(indexes []int) Collection
 	GetWindowRange() *WindowRange
+}
+
+type SingleCollection interface {
+	Collection
+	// Range through each row. For grouped collection, each row is an aggregation of groups
+	Range(func(i int, r TupleRow) (bool, error)) error
+}
+
+type GroupedCollection interface {
+	Collection
 }
 
 // MergedCollection is a collection of rows that are from different sources
 type MergedCollection interface {
 	Collection
-	GetBySrc(emitter string) []Row
+	GetBySrc(emitter string) []TupleRow
 }
 
 /*
@@ -56,13 +64,16 @@ type MergedCollection interface {
  */
 
 type WindowTuples struct {
-	Content []Row // immutable
+	Content []TupleRow // immutable
 	*WindowRange
 	Alias
-	contentBySrc map[string][]Row // volatile, temporary cache
+	contentBySrc map[string][]TupleRow // volatile, temporary cache
 }
 
 var _ MergedCollection = &WindowTuples{}
+
+// Window Tuples is also an aggregate row
+var _ CollectionRow = &WindowTuples{}
 
 type JoinTuples struct {
 	Content []*JoinTuple
@@ -71,6 +82,7 @@ type JoinTuples struct {
 }
 
 var _ Collection = &JoinTuples{}
+var _ CollectionRow = &JoinTuples{}
 
 type GroupedTuplesSet struct {
 	Groups []*GroupedTuples
@@ -95,13 +107,13 @@ func (w *WindowTuples) Swap(i, j int) {
 	w.Content[i], w.Content[j] = w.Content[j], w.Content[i]
 }
 
-func (w *WindowTuples) GetBySrc(emitter string) []Row {
+func (w *WindowTuples) GetBySrc(emitter string) []TupleRow {
 	if w.contentBySrc == nil {
-		w.contentBySrc = make(map[string][]Row)
+		w.contentBySrc = make(map[string][]TupleRow)
 		for _, t := range w.Content {
 			e := t.GetEmitter()
 			if _, hasEmitter := w.contentBySrc[e]; !hasEmitter {
-				w.contentBySrc[e] = make([]Row, 0)
+				w.contentBySrc[e] = make([]TupleRow, 0)
 			}
 			w.contentBySrc[e] = append(w.contentBySrc[e], t)
 		}
@@ -113,7 +125,7 @@ func (w *WindowTuples) GetWindowRange() *WindowRange {
 	return w.WindowRange
 }
 
-func (w *WindowTuples) Range(f func(i int, r Row) (bool, error)) error {
+func (w *WindowTuples) Range(f func(i int, r TupleRow) (bool, error)) error {
 	for i, r := range w.Content {
 		b, e := f(i, r)
 		if e != nil {
@@ -126,8 +138,8 @@ func (w *WindowTuples) Range(f func(i int, r Row) (bool, error)) error {
 	return nil
 }
 
-func (w *WindowTuples) GroupRange(f func(i int, rows AggregateData, firstRow Row) (bool, error)) error {
-	_, err := f(0, w, w.Content[0])
+func (w *WindowTuples) GroupRange(f func(i int, aggRow CollectionRow) (bool, error)) error {
+	_, err := f(0, w)
 	return err
 }
 
@@ -153,12 +165,24 @@ func (w *WindowTuples) AggregateEval(expr ast.Expr, v CallValuer) []interface{} 
 
 // Filter the tuples by the given predicate
 func (w *WindowTuples) Filter(indexes []int) Collection {
-	newC := make([]Row, 0, len(indexes))
+	newC := make([]TupleRow, 0, len(indexes))
 	for _, i := range indexes {
 		newC = append(newC, w.Content[i])
 	}
 	w.Content = newC
 	return w
+}
+
+func (w *WindowTuples) Value(key, table string) (interface{}, bool) {
+	return w.Content[0].Value(key, table)
+}
+
+func (w *WindowTuples) Meta(key, table string) (interface{}, bool) {
+	return w.Content[0].Meta(key, table)
+}
+
+func (w *WindowTuples) All(stream string) (Message, bool) {
+	return w.Content[0].All(stream)
 }
 
 func (s *JoinTuples) Len() int        { return len(s.Content) }
@@ -177,7 +201,7 @@ func (s *JoinTuples) GetWindowRange() *WindowRange {
 	return s.WindowRange
 }
 
-func (s *JoinTuples) Range(f func(i int, r Row) (bool, error)) error {
+func (s *JoinTuples) Range(f func(i int, r TupleRow) (bool, error)) error {
 	for i, r := range s.Content {
 		b, e := f(i, r)
 		if e != nil {
@@ -190,8 +214,8 @@ func (s *JoinTuples) Range(f func(i int, r Row) (bool, error)) error {
 	return nil
 }
 
-func (s *JoinTuples) GroupRange(f func(i int, rows AggregateData, firstRow Row) (bool, error)) error {
-	_, err := f(0, s, s.Content[0])
+func (s *JoinTuples) GroupRange(f func(i int, aggRow CollectionRow) (bool, error)) error {
+	_, err := f(0, s)
 	return err
 }
 
@@ -205,6 +229,18 @@ func (s *JoinTuples) Filter(indexes []int) Collection {
 	return s
 }
 
+func (s *JoinTuples) Value(key, table string) (interface{}, bool) {
+	return s.Content[0].Value(key, table)
+}
+
+func (s *JoinTuples) Meta(key, table string) (interface{}, bool) {
+	return s.Content[0].Meta(key, table)
+}
+
+func (s *JoinTuples) All(stream string) (Message, bool) {
+	return s.Content[0].All(stream)
+}
+
 func (s *GroupedTuplesSet) Len() int        { return len(s.Groups) }
 func (s *GroupedTuplesSet) Swap(i, j int)   { s.Groups[i], s.Groups[j] = s.Groups[j], s.Groups[i] }
 func (s *GroupedTuplesSet) Index(i int) Row { return s.Groups[i] }
@@ -213,22 +249,9 @@ func (s *GroupedTuplesSet) GetWindowRange() *WindowRange {
 	return s.WindowRange
 }
 
-func (s *GroupedTuplesSet) Range(f func(i int, r Row) (bool, error)) error {
+func (s *GroupedTuplesSet) GroupRange(f func(i int, aggRow CollectionRow) (bool, error)) error {
 	for i, r := range s.Groups {
 		b, e := f(i, r)
-		if e != nil {
-			return e
-		}
-		if !b {
-			break
-		}
-	}
-	return nil
-}
-
-func (s *GroupedTuplesSet) GroupRange(f func(i int, rows AggregateData, firstRow Row) (bool, error)) error {
-	for i, r := range s.Groups {
-		b, e := f(i, r, r)
 		if e != nil {
 			return e
 		}
