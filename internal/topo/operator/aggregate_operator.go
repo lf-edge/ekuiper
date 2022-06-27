@@ -25,70 +25,54 @@ type AggregateOp struct {
 	Dimensions ast.Dimensions
 }
 
-/**
- *  input: *xsql.Tuple from preprocessor | xsql.WindowTuplesSet from windowOp | xsql.JoinTupleSets from joinOp
- *  output: xsql.GroupedTuplesSet
+// Apply
+/*  input: Collection
+ *  output: Collection
  */
 func (p *AggregateOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("aggregate plan receive %s", data)
 	grouped := data
-	var wr *xsql.WindowRange
 	if p.Dimensions != nil {
-		var ms []xsql.Row
 		switch input := data.(type) {
 		case error:
 			return input
-		case xsql.Row:
-			ms = append(ms, input)
-		case xsql.WindowTuplesSet:
-			if len(input.Content) != 1 {
-				return fmt.Errorf("run Group By error: the input WindowTuplesSet with multiple tuples cannot be evaluated")
+		case xsql.Collection:
+			wr := input.GetWindowRange()
+			result := make(map[string]*xsql.GroupedTuples)
+			err := input.Range(func(i int, r xsql.Row) (bool, error) {
+				var name string
+				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(r, &xsql.WindowRangeValuer{WindowRange: wr}, fv)}
+				for _, d := range p.Dimensions {
+					r := ve.Eval(d.Expr)
+					if _, ok := r.(error); ok {
+						return false, fmt.Errorf("run Group By error: %s", r)
+					} else {
+						name += fmt.Sprintf("%v,", r)
+					}
+				}
+				if ts, ok := result[name]; !ok {
+					result[name] = &xsql.GroupedTuples{Content: []xsql.Row{r}, WindowRange: wr}
+				} else {
+					ts.Content = append(ts.Content, r)
+				}
+				return true, nil
+			})
+			if err != nil {
+				return err
 			}
-			ms = make([]xsql.Row, len(input.Content[0].Tuples))
-			for i, m := range input.Content[0].Tuples {
-				//this is needed or it will always point to the last
-				t := m
-				ms[i] = &t
+			if len(result) > 0 {
+				g := make([]*xsql.GroupedTuples, 0, len(result))
+				for _, v := range result {
+					g = append(g, v)
+				}
+				grouped = &xsql.GroupedTuplesSet{Groups: g}
+			} else {
+				grouped = nil
 			}
-			wr = input.WindowRange
-		case *xsql.JoinTupleSets:
-			ms = make([]xsql.Row, len(input.Content))
-			for i, m := range input.Content {
-				t := m
-				ms[i] = &t
-			}
-			wr = input.WindowRange
+			return grouped
 		default:
 			return fmt.Errorf("run Group By error: invalid input %[1]T(%[1]v)", input)
-		}
-
-		result := make(map[string]*xsql.GroupedTuples)
-		for _, m := range ms {
-			var name string
-			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(m, &xsql.WindowRangeValuer{WindowRange: wr}, fv)}
-			for _, d := range p.Dimensions {
-				r := ve.Eval(d.Expr)
-				if _, ok := r.(error); ok {
-					return fmt.Errorf("run Group By error: %s", r)
-				} else {
-					name += fmt.Sprintf("%v,", r)
-				}
-			}
-			if ts, ok := result[name]; !ok {
-				result[name] = &xsql.GroupedTuples{Content: []xsql.Row{m}, WindowRange: wr}
-			} else {
-				ts.Content = append(ts.Content, m)
-			}
-		}
-		if len(result) > 0 {
-			g := make([]xsql.GroupedTuples, 0, len(result))
-			for _, v := range result {
-				g = append(g, *v)
-			}
-			grouped = xsql.GroupedTuplesSet(g)
-		} else {
-			grouped = nil
 		}
 	}
 	return grouped

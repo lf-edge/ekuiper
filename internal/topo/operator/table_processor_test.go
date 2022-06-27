@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import (
 )
 
 func TestTableProcessor_Apply(t *testing.T) {
-
 	var tests = []struct {
 		stmt   *ast.StreamStmt
 		data   []byte
@@ -47,10 +46,9 @@ func TestTableProcessor_Apply(t *testing.T) {
 				},
 			},
 			data: []byte(`[{"a": [{"b" : "hello1"}, {"b" : "hello2"}]},{"a": [{"b" : "hello2"}, {"b" : "hello3"}]},{"a": [{"b" : "hello3"}, {"b" : "hello4"}]}]`),
-			result: xsql.WindowTuples{
-				Emitter: "demo",
-				Tuples: []xsql.Tuple{
-					{
+			result: &xsql.WindowTuples{
+				Content: []xsql.Row{
+					&xsql.Tuple{
 						Message: xsql.Message{
 							"a": []map[string]interface{}{
 								{"b": "hello1"},
@@ -59,7 +57,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 						},
 						Emitter: "demo",
 					},
-					{
+					&xsql.Tuple{
 						Message: xsql.Message{
 							"a": []map[string]interface{}{
 								{"b": "hello2"},
@@ -68,7 +66,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 						},
 						Emitter: "demo",
 					},
-					{
+					&xsql.Tuple{
 						Message: xsql.Message{
 							"a": []map[string]interface{}{
 								{"b": "hello3"},
@@ -85,10 +83,9 @@ func TestTableProcessor_Apply(t *testing.T) {
 				StreamFields: nil,
 			},
 			data: []byte(`[{"a": {"b" : "hello", "c": {"d": 35.2}}},{"a": {"b" : "world", "c": {"d": 65.2}}}]`),
-			result: xsql.WindowTuples{
-				Emitter: "demo",
-				Tuples: []xsql.Tuple{
-					{
+			result: &xsql.WindowTuples{
+				Content: []xsql.Row{
+					&xsql.Tuple{
 						Message: xsql.Message{
 							"a": map[string]interface{}{
 								"b": "hello",
@@ -99,7 +96,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 						},
 						Emitter: "demo",
 					},
-					{
+					&xsql.Tuple{
 						Message: xsql.Message{
 							"a": map[string]interface{}{
 								"b": "world",
@@ -122,9 +119,8 @@ func TestTableProcessor_Apply(t *testing.T) {
 	for i, tt := range tests {
 		pp := &TableProcessor{isBatchInput: true, emitterName: "demo"}
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
-		pp.output = xsql.WindowTuples{
-			Emitter: "demo",
-			Tuples:  make([]xsql.Tuple, 0),
+		pp.output = &xsql.WindowTuples{
+			Content: make([]xsql.Row, 0),
 		}
 
 		var dm []map[string]interface{}

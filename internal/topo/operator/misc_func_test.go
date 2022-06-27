@@ -266,17 +266,17 @@ func TestMiscFunc_Apply1(t *testing.T) {
 func TestMqttFunc_Apply2(t *testing.T) {
 	var tests = []struct {
 		sql    string
-		data   *xsql.JoinTupleSets
+		data   *xsql.JoinTuples
 		result []map[string]interface{}
 	}{
 		{
 			sql: "SELECT id1, mqtt(src1.topic) AS a, mqtt(src2.topic) as b FROM src1 LEFT JOIN src2 ON src1.id1 = src2.id1",
-			data: &xsql.JoinTupleSets{
-				Content: []xsql.JoinTuple{
+			data: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{
 					{
-						Tuples: []xsql.Tuple{
-							{Emitter: "src1", Message: xsql.Message{"id1": "1", "f1": "v1"}, Metadata: xsql.Metadata{"topic": "devices/type1/device001"}},
-							{Emitter: "src2", Message: xsql.Message{"id2": "1", "f2": "w1"}, Metadata: xsql.Metadata{"topic": "devices/type2/device001"}},
+						Tuples: []xsql.Row{
+							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": "1", "f1": "v1"}, Metadata: xsql.Metadata{"topic": "devices/type1/device001"}},
+							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": "1", "f2": "w1"}, Metadata: xsql.Metadata{"topic": "devices/type2/device001"}},
 						},
 					},
 				},
@@ -931,7 +931,7 @@ func TestChangedFuncs_Apply1(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestChangedFuncs_Apply1")
 
-	for i, tt := range tests[1:] {
+	for i, tt := range tests {
 		tempStore, _ := state.CreateStore("mockRule"+strconv.Itoa(i), api.AtMostOnce)
 		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("mockRule"+strconv.Itoa(i), "project", tempStore)
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
