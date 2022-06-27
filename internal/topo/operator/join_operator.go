@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,27 +21,28 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
-//TODO join expr should only be the equal op between 2 streams like tb1.id = tb2.id
+// JoinOp TODO join expr should only be the equal op between 2 streams like tb1.id = tb2.id
 type JoinOp struct {
 	From  *ast.Table
 	Joins ast.Joins
 }
 
-// input:  xsql.WindowTuplesSet from windowOp, window is required for join
-// output: xsql.JoinTupleSets
+// Apply
+// input:  MergedCollection, the Row must be a Tuple
+// output: Collection
 func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
-	var input xsql.WindowTuplesSet
+	var input xsql.MergedCollection
 	switch v := data.(type) {
 	case error:
 		return v
-	case xsql.WindowTuplesSet:
+	case xsql.MergedCollection:
 		input = v
 		log.Debugf("join plan receive %v", data)
 	default:
 		return fmt.Errorf("run Join error: join is only supported in window")
 	}
-	result := &xsql.JoinTupleSets{Content: make([]xsql.JoinTuple, 0)}
+	result := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 	for i, join := range jp.Joins {
 		if i == 0 {
 			v, err := jp.evalSet(input, join, fv)
@@ -54,7 +55,7 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 			if err != nil {
 				return fmt.Errorf("run Join error: %s", err)
 			}
-			if v1, ok := r1.(*xsql.JoinTupleSets); ok {
+			if v1, ok := r1.(*xsql.JoinTuples); ok {
 				result = v1
 			}
 		}
@@ -63,7 +64,7 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 		log.Debugf("join plan yields nothing")
 		return nil
 	}
-	result.WindowRange = input.WindowRange
+	result.WindowRange = input.GetWindowRange()
 	return result
 }
 
@@ -101,7 +102,7 @@ func (jp *JoinOp) getStreamNames(join *ast.Join) ([]string, error) {
 	return srcs, nil
 }
 
-func (jp *JoinOp) evalSet(input xsql.WindowTuplesSet, join ast.Join, fv *xsql.FunctionValuer) (*xsql.JoinTupleSets, error) {
+func (jp *JoinOp) evalSet(input xsql.MergedCollection, join ast.Join, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
 	var leftStream, rightStream string
 
 	if join.JoinType != ast.CROSS_JOIN {
@@ -125,12 +126,12 @@ func (jp *JoinOp) evalSet(input xsql.WindowTuplesSet, join ast.Join, fv *xsql.Fu
 		}
 	}
 
-	var lefts, rights []xsql.Tuple
+	var lefts, rights []xsql.Row
 
 	lefts = input.GetBySrc(leftStream)
 	rights = input.GetBySrc(rightStream)
 
-	sets := &xsql.JoinTupleSets{Content: make([]xsql.JoinTuple, 0)}
+	sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 
 	if join.JoinType == ast.RIGHT_JOIN {
 		return jp.evalSetWithRightJoin(input, join, false, fv)
@@ -151,7 +152,7 @@ func (jp *JoinOp) evalSet(input xsql.WindowTuplesSet, join ast.Join, fv *xsql.Fu
 				temp.AddTuple(left)
 				temp.AddTuple(right)
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, fv)}
-				result := evalOn(join, ve, &left, &right)
+				result := evalOn(join, ve, left, right)
 				merged.AliasMap = temp.AliasMap
 				switch val := result.(type) {
 				case error:
@@ -173,14 +174,14 @@ func (jp *JoinOp) evalSet(input xsql.WindowTuplesSet, join ast.Join, fv *xsql.Fu
 			}
 			if tupleJoined || (!leftJoined && index == len(rights)-1 && len(merged.Tuples) > 0) {
 				leftJoined = true
-				sets.Content = append(sets.Content, *merged)
+				sets.Content = append(sets.Content, merged)
 			}
 		}
 		// If no messages in the right
 		if !leftJoined && join.JoinType != ast.INNER_JOIN && join.JoinType != ast.CROSS_JOIN {
 			merged := &xsql.JoinTuple{}
 			merged.AddTuple(left)
-			sets.Content = append(sets.Content, *merged)
+			sets.Content = append(sets.Content, merged)
 		}
 	}
 
@@ -198,7 +199,7 @@ func (jp *JoinOp) evalSet(input xsql.WindowTuplesSet, join ast.Join, fv *xsql.Fu
 	return sets, nil
 }
 
-func evalOn(join ast.Join, ve *xsql.ValuerEval, left interface{}, right *xsql.Tuple) interface{} {
+func evalOn(join ast.Join, ve *xsql.ValuerEval, left interface{}, right xsql.Row) interface{} {
 	var result interface{}
 	if join.Expr != nil {
 		result = ve.Eval(join.Expr)
@@ -210,19 +211,19 @@ func evalOn(join ast.Join, ve *xsql.ValuerEval, left interface{}, right *xsql.Tu
 	return result
 }
 
-func (jp *JoinOp) evalSetWithRightJoin(input xsql.WindowTuplesSet, join ast.Join, excludeJoint bool, fv *xsql.FunctionValuer) (*xsql.JoinTupleSets, error) {
+func (jp *JoinOp) evalSetWithRightJoin(input xsql.MergedCollection, join ast.Join, excludeJoint bool, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
 	streams, err := jp.getStreamNames(&join)
 	if err != nil {
 		return nil, err
 	}
 	leftStream := streams[0]
 	rightStream := streams[1]
-	var lefts, rights []xsql.Tuple
+	var lefts, rights []xsql.Row
 
 	lefts = input.GetBySrc(leftStream)
 	rights = input.GetBySrc(rightStream)
 
-	sets := &xsql.JoinTupleSets{Content: make([]xsql.JoinTuple, 0)}
+	sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 
 	for _, right := range rights {
 		isJoint := false
@@ -234,7 +235,7 @@ func (jp *JoinOp) evalSetWithRightJoin(input xsql.WindowTuplesSet, join ast.Join
 			temp.AddTuple(right)
 			temp.AddTuple(left)
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, fv)}
-			result := evalOn(join, ve, &left, &right)
+			result := evalOn(join, ve, left, right)
 			merged.AliasMap = temp.AliasMap
 			switch val := result.(type) {
 			case error:
@@ -250,19 +251,19 @@ func (jp *JoinOp) evalSetWithRightJoin(input xsql.WindowTuplesSet, join ast.Join
 			}
 			if !excludeJoint && (tupleJoined || (!isJoint && index == len(lefts)-1 && len(merged.Tuples) > 0)) {
 				isJoint = true
-				sets.Content = append(sets.Content, *merged)
+				sets.Content = append(sets.Content, merged)
 			}
 		}
 		if !isJoint {
 			merged := &xsql.JoinTuple{}
 			merged.AddTuple(right)
-			sets.Content = append(sets.Content, *merged)
+			sets.Content = append(sets.Content, merged)
 		}
 	}
 	return sets, nil
 }
 
-func (jp *JoinOp) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesSet, join ast.Join, fv *xsql.FunctionValuer) (interface{}, error) {
+func (jp *JoinOp) evalJoinSets(set *xsql.JoinTuples, input xsql.MergedCollection, join ast.Join, fv *xsql.FunctionValuer) (interface{}, error) {
 	var rightStream string
 	if join.Alias == "" {
 		rightStream = join.Name
@@ -272,7 +273,7 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesS
 
 	rights := input.GetBySrc(rightStream)
 
-	newSets := &xsql.JoinTupleSets{Content: make([]xsql.JoinTuple, 0)}
+	newSets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 	if join.JoinType == ast.RIGHT_JOIN {
 		return jp.evalRightJoinSets(set, input, join, false, fv)
 	}
@@ -293,7 +294,7 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesS
 				temp.AddTuple(right)
 
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, fv)}
-				result := evalOn(join, ve, &left, &right)
+				result := evalOn(join, ve, left, right)
 				merged.AliasMap = left.AliasMap
 				switch val := result.(type) {
 				case error:
@@ -313,14 +314,14 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesS
 			}
 			if tupleJoined || (!leftJoined && index == len(rights)-1 && len(merged.Tuples) > 0) {
 				leftJoined = true
-				newSets.Content = append(newSets.Content, *merged)
+				newSets.Content = append(newSets.Content, merged)
 			}
 		}
 
 		if !leftJoined && join.JoinType != ast.INNER_JOIN && join.JoinType != ast.CROSS_JOIN {
 			merged := &xsql.JoinTuple{}
 			merged.AddTuples(left.Tuples)
-			newSets.Content = append(newSets.Content, *merged)
+			newSets.Content = append(newSets.Content, merged)
 		}
 	}
 
@@ -335,7 +336,7 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesS
 	return newSets, nil
 }
 
-func (jp *JoinOp) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTuplesSet, join ast.Join, excludeJoint bool, fv *xsql.FunctionValuer) (*xsql.JoinTupleSets, error) {
+func (jp *JoinOp) evalRightJoinSets(set *xsql.JoinTuples, input xsql.MergedCollection, join ast.Join, excludeJoint bool, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
 	var rightStream string
 	if join.Alias == "" {
 		rightStream = join.Name
@@ -344,7 +345,7 @@ func (jp *JoinOp) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTu
 	}
 	rights := input.GetBySrc(rightStream)
 
-	newSets := &xsql.JoinTupleSets{Content: make([]xsql.JoinTuple, 0)}
+	newSets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 
 	for _, right := range rights {
 		isJoint := false
@@ -357,7 +358,7 @@ func (jp *JoinOp) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTu
 			temp.AddTuples(left.Tuples)
 			temp.AddTuple(right)
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(temp, fv)}
-			result := evalOn(join, ve, &left, &right)
+			result := evalOn(join, ve, left, right)
 			merged.AliasMap = left.AliasMap
 			switch val := result.(type) {
 			case error:
@@ -373,14 +374,14 @@ func (jp *JoinOp) evalRightJoinSets(set *xsql.JoinTupleSets, input xsql.WindowTu
 			}
 			if !excludeJoint && (tupleJoined || (!isJoint && index == len(set.Content)-1 && len(merged.Tuples) > 0)) {
 				isJoint = true
-				newSets.Content = append(newSets.Content, *merged)
+				newSets.Content = append(newSets.Content, merged)
 			}
 		}
 
 		if !isJoint {
 			merged := &xsql.JoinTuple{}
 			merged.AddTuple(right)
-			newSets.Content = append(newSets.Content, *merged)
+			newSets.Content = append(newSets.Content, merged)
 		}
 	}
 	return newSets, nil

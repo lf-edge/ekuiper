@@ -27,20 +27,19 @@ import (
 type JoinAlignNode struct {
 	*defaultSinkNode
 	statManager metric.StatManager
-	emitters    map[string]int
 	// states
-	batch *xsql.WindowTuplesSet
+	batch map[string][]xsql.Row
 }
 
 const BatchKey = "$$batchInputs"
 
 func NewJoinAlignNode(name string, emitters []string, options *api.RuleOption) (*JoinAlignNode, error) {
-	emap := make(map[string]int, len(emitters))
-	for i, e := range emitters {
-		emap[e] = i
+	batch := make(map[string][]xsql.Row, len(emitters))
+	for _, e := range emitters {
+		batch[e] = nil
 	}
 	n := &JoinAlignNode{
-		emitters: emap,
+		batch: batch,
 	}
 	n.defaultSinkNode = &defaultSinkNode{
 		input: make(chan interface{}, options.BufferLength),
@@ -72,15 +71,10 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 		err := infra.SafeRun(func() error {
 			// restore batch state
 			if s, err := ctx.GetState(BatchKey); err == nil {
-
 				switch st := s.(type) {
-				case []xsql.WindowTuples:
-					if len(st) == len(n.emitters) {
-						n.batch = &xsql.WindowTuplesSet{Content: st}
-						log.Infof("Restore batch state %+v", st)
-					} else {
-						log.Warnf("Restore batch state got different emitter length so discarded: %+v", st)
-					}
+				case map[string][]xsql.Row:
+					n.batch = st
+					log.Infof("Restore batch state %+v", st)
 				case nil:
 					log.Debugf("Restore batch state, nothing")
 				default:
@@ -90,9 +84,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				log.Warnf("Restore batch state fails: %s", err)
 			}
 			if n.batch == nil {
-				n.batch = &xsql.WindowTuplesSet{
-					Content: make([]xsql.WindowTuples, len(n.emitters)),
-				}
+				n.batch = make(map[string][]xsql.Row)
 			}
 
 			for {
@@ -116,27 +108,28 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						n.statManager.IncTotalExceptions()
 					case *xsql.Tuple:
 						log.Debugf("JoinAlignNode receive tuple input %s", d)
-						temp := xsql.WindowTuplesSet{
-							Content: make([]xsql.WindowTuples, 0),
+						temp := &xsql.WindowTuples{
+							Content: make([]xsql.Row, 0),
 						}
 						temp = temp.AddTuple(d)
 						n.alignBatch(ctx, temp)
-					case xsql.WindowTuplesSet:
-						log.Debugf("JoinAlignNode receive window input %s", d)
-						n.alignBatch(ctx, d)
-					case xsql.WindowTuples: // batch input
-						log.Debugf("JoinAlignNode receive batch source %s", d)
-						// Buffer and update batch inputs
-						index, ok := n.emitters[d.Emitter]
-						if !ok {
-							n.Broadcast(fmt.Errorf("run JoinAlignNode error: receive batch input from unknown emitter %[1]T(%[1]v)", d))
-							n.statManager.IncTotalExceptions()
-						}
-						if n.batch != nil && len(n.batch.Content) > index {
-							n.batch.Content[index] = d
-							ctx.PutState(BatchKey, n.batch)
-						} else {
-							log.Errorf("Invalid index %d for batch %v", index, n.batch)
+					case *xsql.WindowTuples:
+						if d.WindowRange != nil { // real window
+							log.Debugf("JoinAlignNode receive window input %s", d)
+							n.alignBatch(ctx, d)
+						} else { // table window
+							log.Debugf("JoinAlignNode receive batch source %s", d)
+							emitter := d.Content[0].GetEmitter()
+							// Buffer and update batch inputs
+							_, ok := n.batch[emitter]
+							if !ok {
+								n.Broadcast(fmt.Errorf("run JoinAlignNode error: receive batch input from unknown emitter %[1]T(%[1]v)", d))
+								n.statManager.IncTotalExceptions()
+								break
+							} else {
+								n.batch[emitter] = d.Content
+								ctx.PutState(BatchKey, n.batch)
+							}
 						}
 					default:
 						n.Broadcast(fmt.Errorf("run JoinAlignNode error: invalid input type but got %[1]T(%[1]v)", d))
@@ -154,9 +147,14 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (n *JoinAlignNode) alignBatch(_ api.StreamContext, w xsql.WindowTuplesSet) {
+func (n *JoinAlignNode) alignBatch(_ api.StreamContext, w *xsql.WindowTuples) {
 	n.statManager.ProcessTimeStart()
-	w.Content = append(w.Content, n.batch.Content...)
+	for _, v := range n.batch {
+		if v != nil {
+			w.Content = append(w.Content, v...)
+		}
+	}
+
 	n.Broadcast(w)
 	n.statManager.ProcessTimeEnd()
 	n.statManager.IncTotalRecordsOut()

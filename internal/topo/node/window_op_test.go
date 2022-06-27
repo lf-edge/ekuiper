@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ func TestCountWindow(t *testing.T) {
 	var tests = []struct {
 		tuplelist     TupleList
 		expWinCount   int
-		winTupleSets  []xsql.WindowTuplesSet
+		winTupleSets  []xsql.WindowTuples
 		expRestTuples []*xsql.Tuple
 	}{
 		{
@@ -77,37 +77,33 @@ func TestCountWindow(t *testing.T) {
 				size:   5,
 			},
 			expWinCount: 1,
-			winTupleSets: []xsql.WindowTuplesSet{
+			winTupleSets: []xsql.WindowTuples{
 				{
-					Content: []xsql.WindowTuples{
-						{
-							Emitter: "",
-							Tuples: []xsql.Tuple{
-								{
-									Message: map[string]interface{}{
-										"f1": "v1",
-									},
-								},
-								{
-									Message: map[string]interface{}{
-										"f2": "v2",
-									},
-								},
-								{
-									Message: map[string]interface{}{
-										"f3": "v3",
-									},
-								},
-								{
-									Message: map[string]interface{}{
-										"f4": "v4",
-									},
-								},
-								{
-									Message: map[string]interface{}{
-										"f5": "v5",
-									},
-								},
+					Content: []xsql.Row{
+
+						&xsql.Tuple{
+							Message: map[string]interface{}{
+								"f1": "v1",
+							},
+						},
+						&xsql.Tuple{
+							Message: map[string]interface{}{
+								"f2": "v2",
+							},
+						},
+						&xsql.Tuple{
+							Message: map[string]interface{}{
+								"f3": "v3",
+							},
+						},
+						&xsql.Tuple{
+							Message: map[string]interface{}{
+								"f4": "v4",
+							},
+						},
+						&xsql.Tuple{
+							Message: map[string]interface{}{
+								"f5": "v5",
 							},
 						},
 					},
@@ -143,27 +139,22 @@ func TestCountWindow(t *testing.T) {
 				size:   3,
 			},
 			expWinCount: 1,
-			winTupleSets: []xsql.WindowTuplesSet{
+			winTupleSets: []xsql.WindowTuples{
 				{
-					Content: []xsql.WindowTuples{
-						{
-							Emitter: "",
-							Tuples: []xsql.Tuple{
-								{
-									Message: map[string]interface{}{
-										"f3": "v3",
-									},
-								},
-								{
-									Message: map[string]interface{}{
-										"f4": "v4",
-									},
-								},
-								{
-									Message: map[string]interface{}{
-										"f5": "v5",
-									},
-								},
+					Content: []xsql.Row{
+						&xsql.Tuple{
+							Message: map[string]interface{}{
+								"f3": "v3",
+							},
+						},
+						&xsql.Tuple{
+							Message: map[string]interface{}{
+								"f4": "v4",
+							},
+						},
+						&xsql.Tuple{
+							Message: map[string]interface{}{
+								"f5": "v5",
 							},
 						},
 					},
@@ -189,27 +180,23 @@ func TestCountWindow(t *testing.T) {
 				size:   2,
 			},
 			expWinCount: 1,
-			winTupleSets: []xsql.WindowTuplesSet{
+			winTupleSets: []xsql.WindowTuples{
 				{
-					Content: []xsql.WindowTuples{
-						{
-							Emitter: "",
-							Tuples: []xsql.Tuple{
-								{
-									Message: map[string]interface{}{
-										"f4": "v4",
-									},
-								},
-								{
-									Message: map[string]interface{}{
-										"f5": "v5",
-									},
-								},
+					Content: []xsql.Row{
+						&xsql.Tuple{
+							Message: map[string]interface{}{
+								"f4": "v4",
+							},
+						},
+						&xsql.Tuple{
+							Message: map[string]interface{}{
+								"f5": "v5",
 							},
 						},
 					},
 				},
 			},
+
 			expRestTuples: []*xsql.Tuple{
 				{
 					Message: map[string]interface{}{
@@ -268,9 +255,6 @@ func TestCountWindow(t *testing.T) {
 					t.Errorf("%d \n Expect more element, but cannot find more element.", i)
 				}
 				cw := tt.tuplelist.nextCountWindow()
-				if cw.WindowRange == nil {
-					t.Errorf("%d. got nil window range", i)
-				}
 				if !reflect.DeepEqual(tt.winTupleSets[j].Content, cw.Content) {
 					t.Errorf("%d. \nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.winTupleSets[j], cw)
 				}
