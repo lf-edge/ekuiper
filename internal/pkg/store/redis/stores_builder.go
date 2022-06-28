@@ -22,7 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 )
 
-func BuildStores(c definition.Config) (definition.StoreBuilder, definition.TsBuilder, error) {
+func BuildStores(c definition.Config, _ string) (definition.StoreBuilder, definition.TsBuilder, error) {
 	db, err := NewRedisFromConf(c)
 	if err != nil {
 		return nil, nil, err

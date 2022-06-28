@@ -15,7 +15,7 @@
 //go:build prometheus || !core
 // +build prometheus !core
 
-package node
+package metric
 
 import (
 	"github.com/prometheus/client_golang/prometheus"

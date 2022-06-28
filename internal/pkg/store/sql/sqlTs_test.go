@@ -89,7 +89,7 @@ func setupTSqlKv() (ts2.Tskv, definition.Database, string) {
 			Name: TDbName,
 		},
 	}
-	db, _ := sqlite.NewSqliteDatabase(config)
+	db, _ := sqlite.NewSqliteDatabase(config, "sqliteKV.db")
 	err = db.Connect()
 	if err != nil {
 		panic(err)
