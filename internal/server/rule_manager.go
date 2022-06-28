@@ -241,10 +241,12 @@ func startRule(name string) error {
 		if err != nil {
 			return err
 		}
-	}
-	err := doStartRule(rs)
-	if err != nil {
-		return err
+		err = doStartRule(rs)
+		if err != nil {
+			return err
+		}
+	} else {
+		conf.Log.Warnf("Rule %s is already started", name)
 	}
 	return nil
 }
