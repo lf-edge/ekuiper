@@ -52,7 +52,7 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 		}
 	case xsql.SingleCollection:
 		var sel []int
-		err := input.Range(func(i int, r xsql.TupleRow) (bool, error) {
+		err := input.Range(func(i int, r xsql.Row) (bool, error) {
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(r, fv)}
 			result := ve.Eval(p.Condition)
 			switch val := result.(type) {

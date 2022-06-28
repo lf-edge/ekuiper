@@ -138,6 +138,10 @@ func TestChangedColsFunc_Apply1(t *testing.T) {
 		r := make([][]map[string]interface{}, 0, len(tt.data))
 		for _, d := range tt.data {
 			result := pp.Apply(ctx, d, fv, afv)
+			if e, ok := result.(error); ok {
+				t.Errorf("apply sql %s error %v", tt.sql, e)
+				continue
+			}
 			r = append(r, result.([]map[string]interface{}))
 		}
 		if !reflect.DeepEqual(tt.result, r) {
