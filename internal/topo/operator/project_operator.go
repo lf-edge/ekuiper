@@ -62,7 +62,7 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 				return true, nil
 			})
 		} else {
-			err = input.Range(func(_ int, row xsql.TupleRow) (bool, error) {
+			err = input.Range(func(_ int, row xsql.Row) (bool, error) {
 				aggData, ok := input.(xsql.AggregateData)
 				if !ok {
 					return false, fmt.Errorf("unexpected type, cannot find aggregate data")
