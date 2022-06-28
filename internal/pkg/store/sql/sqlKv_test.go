@@ -80,7 +80,7 @@ func setupSqlKv() (kv.KeyValue, definition.Database, string) {
 		},
 	}
 
-	db, _ := sqlite.NewSqliteDatabase(config)
+	db, _ := sqlite.NewSqliteDatabase(config, "sqliteKV.db")
 	err = db.Connect()
 	if err != nil {
 		panic(err)

@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
+	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -204,7 +205,7 @@ func (s *Topo) GetMetrics() (keys []string, values []interface{}) {
 	for _, sn := range s.sources {
 		for ins, metrics := range sn.GetMetrics() {
 			for i, v := range metrics {
-				keys = append(keys, "source_"+sn.GetName()+"_"+strconv.Itoa(ins)+"_"+node.MetricNames[i])
+				keys = append(keys, "source_"+sn.GetName()+"_"+strconv.Itoa(ins)+"_"+metric.MetricNames[i])
 				values = append(values, v)
 			}
 		}
@@ -212,7 +213,7 @@ func (s *Topo) GetMetrics() (keys []string, values []interface{}) {
 	for _, so := range s.ops {
 		for ins, metrics := range so.GetMetrics() {
 			for i, v := range metrics {
-				keys = append(keys, "op_"+so.GetName()+"_"+strconv.Itoa(ins)+"_"+node.MetricNames[i])
+				keys = append(keys, "op_"+so.GetName()+"_"+strconv.Itoa(ins)+"_"+metric.MetricNames[i])
 				values = append(values, v)
 			}
 		}
@@ -220,7 +221,7 @@ func (s *Topo) GetMetrics() (keys []string, values []interface{}) {
 	for _, sn := range s.sinks {
 		for ins, metrics := range sn.GetMetrics() {
 			for i, v := range metrics {
-				keys = append(keys, "sink_"+sn.GetName()+"_"+strconv.Itoa(ins)+"_"+node.MetricNames[i])
+				keys = append(keys, "sink_"+sn.GetName()+"_"+strconv.Itoa(ins)+"_"+metric.MetricNames[i])
 				values = append(values, v)
 			}
 		}

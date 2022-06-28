@@ -59,10 +59,15 @@ func SetupWithKuiperConfig(kconf *conf.KuiperConf) error {
 }
 
 func Setup(config definition.Config) error {
-	s, err := newStores(config)
+	s, err := newStores(config, "sqliteKV.db")
 	if err != nil {
 		return err
 	}
 	globalStores = s
+	s, err = newStores(config, "cache.db")
+	if err != nil {
+		return err
+	}
+	cacheStores = s
 	return nil
 }

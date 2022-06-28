@@ -18,6 +18,7 @@
 package node
 
 import (
+	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
@@ -296,6 +297,108 @@ func TestFormat_Apply(t *testing.T) {
 		results := mockSink.GetResults()
 		if !reflect.DeepEqual(tt.result, results) {
 			t.Errorf("%d \tresult mismatch:\n\nexp=%x\n\ngot=%x\n\n", i, tt.result, results)
+		}
+	}
+}
+
+func TestConfig(t *testing.T) {
+	var tests = []struct {
+		config map[string]interface{}
+		sconf  *SinkConf
+		err    error
+	}{
+		{
+			config: map[string]interface{}{
+				"sendSingle": true,
+			},
+			sconf: &SinkConf{
+				Concurrency:  1,
+				SendSingle:   true,
+				Format:       "json",
+				BufferLength: 1024,
+				SinkConf: conf.SinkConf{
+					MemoryCacheThreshold: 1024,
+					MaxDiskCache:         1024000,
+					BufferPageSize:       256,
+					EnableCache:          false,
+					ResendInterval:       0,
+					CleanCacheAtStop:     false,
+				},
+			},
+		}, {
+			config: map[string]interface{}{
+				"enableCache":          true,
+				"memoryCacheThreshold": 2,
+				"bufferPageSize":       2,
+				"sendSingle":           true,
+				"maxDiskCache":         6,
+				"resendInterval":       10,
+			},
+			sconf: &SinkConf{
+				Concurrency:  1,
+				SendSingle:   true,
+				Format:       "json",
+				BufferLength: 1024,
+				SinkConf: conf.SinkConf{
+					MemoryCacheThreshold: 2,
+					MaxDiskCache:         6,
+					BufferPageSize:       2,
+					EnableCache:          true,
+					ResendInterval:       10,
+					CleanCacheAtStop:     false,
+				},
+			},
+		}, {
+			config: map[string]interface{}{
+				"enableCache":          true,
+				"memoryCacheThreshold": 2,
+				"bufferPageSize":       2,
+				"runAsync":             true,
+				"maxDiskCache":         6,
+				"resendInterval":       10,
+			},
+			err: errors.New("cache is not supported for async sink, do not use enableCache and runAsync properties together"),
+		}, {
+			config: map[string]interface{}{
+				"enableCache":          true,
+				"memoryCacheThreshold": 256,
+				"bufferLength":         10,
+				"maxDiskCache":         6,
+				"resendInterval":       10,
+			},
+			err: errors.New("invalid cache properties: \nmaxDiskCacheTooSmall:maxDiskCache must be greater than bufferPageSize"),
+		}, {
+			config: map[string]interface{}{
+				"enableCache":          true,
+				"memoryCacheThreshold": 7,
+				"bufferPageSize":       3,
+				"sendSingle":           true,
+				"maxDiskCache":         21,
+				"resendInterval":       10,
+			},
+			err: errors.New("invalid cache properties: \nmemoryCacheThresholdNotMultiple:memoryCacheThreshold must be a multiple of bufferPageSize"),
+		}, {
+			config: map[string]interface{}{
+				"enableCache":          true,
+				"memoryCacheThreshold": 9,
+				"bufferPageSize":       3,
+				"sendSingle":           true,
+				"maxDiskCache":         22,
+				"resendInterval":       10,
+			},
+			err: errors.New("invalid cache properties: \nmaxDiskCacheNotMultiple:maxDiskCache must be a multiple of bufferPageSize"),
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := conf.Log.WithField("rule", "TestConfig")
+	conf.InitConf()
+	for i, tt := range tests {
+		mockSink := NewSinkNode(fmt.Sprintf("test_%d", i), "mockSink", tt.config)
+		sconf, err := mockSink.parseConf(contextLogger)
+		if !reflect.DeepEqual(tt.err, err) {
+			t.Errorf("%d \terror mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.err, err)
+		} else if !reflect.DeepEqual(tt.sconf, sconf) {
+			t.Errorf("%d \tresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.sconf, sconf)
 		}
 	}
 }

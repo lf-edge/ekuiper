@@ -19,6 +19,8 @@ import (
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/node/cache"
+	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -27,21 +29,18 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/message"
 	"strings"
 	"sync"
-	"time"
 )
 
 type SinkConf struct {
-	Concurrency       int    `json:"concurrency"`
-	RunAsync          bool   `json:"runAsync"`
-	RetryInterval     int    `json:"retryInterval"`
-	RetryCount        int    `json:"retryCount"`
-	CacheLength       int    `json:"cacheLength"`
-	CacheSaveInterval int    `json:"cacheSaveInterval"`
-	Omitempty         bool   `json:"omitIfEmpty"`
-	SendSingle        bool   `json:"sendSingle"`
-	DataTemplate      string `json:"dataTemplate"`
-	Format            string `json:"format"`
-	SchemaId          string `json:"schemaId"`
+	Concurrency  int    `json:"concurrency"`
+	RunAsync     bool   `json:"runAsync"`
+	Omitempty    bool   `json:"omitIfEmpty"`
+	SendSingle   bool   `json:"sendSingle"`
+	DataTemplate string `json:"dataTemplate"`
+	Format       string `json:"format"`
+	SchemaId     string `json:"schemaId"`
+	BufferLength int    `json:"bufferLength"`
+	conf.SinkConf
 }
 
 type SinkNode struct {
@@ -54,7 +53,6 @@ type SinkNode struct {
 	isMock  bool
 	//states varies after restart
 	sinks []api.Sink
-	tch   chan struct{} //channel to trigger cache saved, will be trigger by checkpoint only
 }
 
 func NewSinkNode(name string, sinkType string, props map[string]interface{}) *SinkNode {
@@ -101,52 +99,11 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	m.ctx = ctx
 	logger := ctx.GetLogger()
 	logger.Debugf("open sink node %s", m.name)
-	if m.qos >= api.AtLeastOnce {
-		m.tch = make(chan struct{})
-	}
 	go func() {
 		err := infra.SafeRun(func() error {
-			sconf := &SinkConf{
-				Concurrency:       1,
-				RunAsync:          false,
-				RetryInterval:     1000,
-				RetryCount:        0,
-				CacheLength:       1024,
-				CacheSaveInterval: 1000,
-				Omitempty:         false,
-				SendSingle:        false,
-				DataTemplate:      "",
-			}
-			err := cast.MapToStruct(m.options, sconf)
+			sconf, err := m.parseConf(logger)
 			if err != nil {
-				return fmt.Errorf("read properties %v fail with error: %v", m.options, err)
-			}
-			if sconf.Concurrency <= 0 {
-				logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", sconf.Concurrency)
-				sconf.Concurrency = 1
-			}
-			m.concurrency = sconf.Concurrency
-			if sconf.RetryInterval <= 0 {
-				logger.Warnf("invalid type for retryInterval property, should be positive integer but found %t", sconf.RetryInterval)
-				sconf.RetryInterval = 1000
-			}
-			if sconf.RetryCount < 0 {
-				logger.Warnf("invalid type for retryCount property, should be positive integer but found %t", sconf.RetryCount)
-				sconf.RetryCount = 3
-			}
-			if sconf.CacheLength < 0 {
-				logger.Warnf("invalid type for cacheLength property, should be positive integer but found %t", sconf.CacheLength)
-				sconf.CacheLength = 1024
-			}
-			if sconf.CacheSaveInterval < 0 {
-				logger.Warnf("invalid type for cacheSaveInterval property, should be positive integer but found %t", sconf.CacheSaveInterval)
-				sconf.CacheSaveInterval = 1000
-			}
-			if sconf.Format == "" {
-				sconf.Format = "json"
-			} else if sconf.Format != message.FormatJson && sconf.Format != message.FormatProtobuf {
-				logger.Warnf("invalid type for format property, should be json or protobuf but found %s", sconf.Format)
-				sconf.Format = "json"
+				return err
 			}
 
 			tf, err := transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId)
@@ -185,7 +142,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							sink = m.sinks[instance]
 						}
 
-						stats, err := NewStatManager(ctx, "sink")
+						stats, err := metric.NewStatManager(ctx, "sink")
 						if err != nil {
 							return err
 						}
@@ -193,7 +150,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 						m.statManagers = append(m.statManagers, stats)
 						m.mutex.Unlock()
 
-						if conf.Config.Sink.DisableCache {
+						if !sconf.EnableCache {
 							for {
 								select {
 								case data := <-m.input:
@@ -203,10 +160,11 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 										data = temp
 									}
 									stats.SetBufferLength(int64(len(m.input)))
+									stats.IncTotalRecordsIn()
 									if sconf.RunAsync {
 										go func() {
 											p := infra.SafeRun(func() error {
-												doCollect(ctx, sink, data, stats, sconf)
+												_ = doCollect(ctx, sink, data, stats, sconf)
 												return nil
 											})
 											if p != nil {
@@ -214,7 +172,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 											}
 										}()
 									} else {
-										doCollect(ctx, sink, data, stats, sconf)
+										_ = doCollect(ctx, sink, data, stats, sconf)
 									}
 								case <-ctx.Done():
 									logger.Infof("sink node %s instance %d done", m.name, instance)
@@ -222,56 +180,51 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 										logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
 									}
 									return nil
-								case <-m.tch:
-									logger.Debugf("rule %s sink receive checkpoint, do nothing", ctx.GetRuleId())
 								}
 							}
 						} else {
 							logger.Infof("Creating sink cache")
-							var cache *Cache
-							if m.qos >= api.AtLeastOnce {
-								cache = NewCheckpointbasedCache(m.input, sconf.CacheLength, m.tch, result, ctx.WithInstance(instance))
-							} else {
-								cache = NewTimebasedCache(m.input, sconf.CacheLength, sconf.CacheSaveInterval, result, ctx.WithInstance(instance))
-							}
-							for {
-								select {
-								case data := <-cache.Out:
-									if temp, processed := m.preprocess(data.data); processed {
-										break
-									} else {
-										data.data = temp
-									}
-									stats.SetBufferLength(int64(len(m.input)))
-									if sconf.RunAsync {
-										go func() {
-											p := infra.SafeRun(func() error {
-												doCollect(ctx, sink, data.data, stats, sconf)
-												return nil
-											})
-											if p != nil {
-												infra.DrainError(ctx, p, result)
-											}
-										}()
-									} else {
-										doCollect(ctx, sink, data.data, stats, sconf)
-										if cache.Complete != nil {
-											select {
-											case cache.Complete <- data.index:
-											default:
-												ctx.GetLogger().Warnf("sink cache missing response for %d", data.index)
-											}
+							if sconf.RunAsync { // async mode, the ack must have an id
+								// is not supported and validated in the configure, should not go here
+								return fmt.Errorf("async mode is not supported for cache sink")
+							} else { // sync mode, the ack is already in order
+								c := cache.NewSyncCache(ctx, m.input, result, stats, &sconf.SinkConf, sconf.BufferLength)
+								for {
+									select {
+									case data := <-c.Out:
+										if temp, processed := m.preprocess(data); processed {
+											break
+										} else {
+											data = temp
 										}
+										ack := true
+										err := doCollect(ctx, sink, data, stats, sconf)
+										// Only recoverable error should be cached
+										if err != nil {
+											if strings.HasPrefix(err.Error(), errorx.IOErr) { // do not log to prevent a lot of logs!
+												ack = false
+											} else {
+												ctx.GetLogger().Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), data, err)
+											}
+										} else {
+											ctx.GetLogger().Debugf("sent data to MQTT: %v", data)
+										}
+										select {
+										case c.Ack <- ack:
+										case <-ctx.Done():
+										}
+									case <-ctx.Done():
+										logger.Infof("sink node %s instance %d done", m.name, instance)
+										if err := sink.Close(ctx); err != nil {
+											logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
+										}
+										return nil
 									}
-								case <-ctx.Done():
-									logger.Infof("sink node %s instance %d done", m.name, instance)
-									if err := sink.Close(ctx); err != nil {
-										logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
-									}
-									return nil
 								}
 							}
+
 						}
+						return nil
 					})
 					if panicOrError != nil {
 						infra.DrainError(ctx, panicOrError, result)
@@ -286,6 +239,45 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	}()
 }
 
+func (m *SinkNode) parseConf(logger api.Logger) (*SinkConf, error) {
+	sconf := &SinkConf{
+		Concurrency:  1,
+		RunAsync:     false,
+		Omitempty:    false,
+		SendSingle:   false,
+		DataTemplate: "",
+		SinkConf:     *conf.Config.Sink,
+		BufferLength: 1024,
+	}
+	err := cast.MapToStruct(m.options, sconf)
+	if err != nil {
+		return nil, fmt.Errorf("read properties %v fail with error: %v", m.options, err)
+	}
+	if sconf.Concurrency <= 0 {
+		logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", sconf.Concurrency)
+		sconf.Concurrency = 1
+	}
+	m.concurrency = sconf.Concurrency
+	if sconf.Format == "" {
+		sconf.Format = "json"
+	} else if sconf.Format != message.FormatJson && sconf.Format != message.FormatProtobuf {
+		logger.Warnf("invalid type for format property, should be json or protobuf but found %s", sconf.Format)
+		sconf.Format = "json"
+	}
+	err = cast.MapToStruct(m.options, &sconf.SinkConf)
+	if err != nil {
+		return nil, fmt.Errorf("read properties %v to cache conf fail with error: %v", m.options, err)
+	}
+	if sconf.SinkConf.EnableCache && sconf.RunAsync {
+		return nil, fmt.Errorf("cache is not supported for async sink, do not use enableCache and runAsync properties together")
+	}
+	err = sconf.SinkConf.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("invalid cache properties: %v", err)
+	}
+	return sconf, err
+}
+
 func (m *SinkNode) reset() {
 	if !m.isMock {
 		m.sinks = nil
@@ -293,8 +285,7 @@ func (m *SinkNode) reset() {
 	m.statManagers = nil
 }
 
-func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats StatManager, sconf *SinkConf) {
-	stats.IncTotalRecordsIn()
+func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats metric.StatManager, sconf *SinkConf) error {
 	stats.ProcessTimeStart()
 	defer stats.ProcessTimeEnd()
 	var outs []map[string]interface{}
@@ -312,47 +303,43 @@ func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats Sta
 	}
 	if sconf.Omitempty && (item == nil || len(outs) == 0) {
 		ctx.GetLogger().Debugf("receive empty in sink")
-		return
+		return nil
 	}
 	if !sconf.SendSingle {
-		doCollectData(ctx, sink, outs, stats, sconf)
+		return doCollectData(ctx, sink, outs, stats)
 	} else {
+		var err error
 		for _, d := range outs {
 			if sconf.Omitempty && (d == nil || len(d) == 0) {
 				ctx.GetLogger().Debugf("receive empty in sink")
 				continue
 			}
-			doCollectData(ctx, sink, d, stats, sconf)
+			newErr := doCollectData(ctx, sink, d, stats)
+			if newErr != nil {
+				err = newErr
+			}
 		}
+		return err
 	}
 }
 
 // doCollectData outData must be map or []map
-func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, stats StatManager, sconf *SinkConf) {
-	retries := sconf.RetryCount
-	for {
-		select {
-		case <-ctx.Done():
-			ctx.GetLogger().Infof("sink node %s instance %d stops data resending", ctx.GetOpId(), ctx.GetInstanceId())
-			return
-		default:
-			if err := sink.Collect(ctx, outData); err != nil {
-				stats.IncTotalExceptions()
-				ctx.GetLogger().Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), outData, err)
-				if sconf.RetryInterval > 0 && retries > 0 && strings.HasPrefix(err.Error(), errorx.IOErr) {
-					retries--
-					time.Sleep(time.Duration(sconf.RetryInterval) * time.Millisecond)
-					ctx.GetLogger().Debugf("try again")
-				} else {
-					return
-				}
-			} else {
-				ctx.GetLogger().Debugf("success")
-				stats.IncTotalRecordsOut()
-				return
-			}
+func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, stats metric.StatManager) error {
+	select {
+	case <-ctx.Done():
+		ctx.GetLogger().Infof("sink node %s instance %d stops data resending", ctx.GetOpId(), ctx.GetInstanceId())
+		return nil
+	default:
+		if err := sink.Collect(ctx, outData); err != nil {
+			stats.IncTotalExceptions()
+			return err
+		} else {
+			ctx.GetLogger().Debugf("success")
+			stats.IncTotalRecordsOut()
+			return nil
 		}
 	}
+
 }
 
 func getSink(name string, action map[string]interface{}) (api.Sink, error) {
@@ -384,12 +371,4 @@ func (m *SinkNode) AddOutput(_ chan<- interface{}, name string) error {
 // Broadcast Override defaultNode
 func (m *SinkNode) Broadcast(_ interface{}) error {
 	return fmt.Errorf("sink %s cannot add broadcast", m.name)
-}
-
-// SaveCache Only called when checkpoint enabled
-func (m *SinkNode) SaveCache() {
-	select {
-	case m.tch <- struct{}{}:
-	case <-m.ctx.Done():
-	}
 }

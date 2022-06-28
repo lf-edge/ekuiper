@@ -23,6 +23,7 @@ basic:
 
 ## 系统日志
 用户将名为 KuiperSyslogKey 的环境变量的值设置为 true 时，日志将打印到系统日志中。
+
 ## Cli 地址
 ```yaml
 basic:
@@ -96,16 +97,26 @@ GET http://localhost:9081/plugins/functions/prebuild
 
 ## Sink 配置
 
+配置 sink 的默认属性，目前主要用于配置[缓存策略](../../rules/sinks/overview.md#缓存)。在规则层有同样的配置选项，可以覆盖这些默认配置。
+
 ```yaml
-  #缓存持久化阈值。 如果接收器高速缓存中的消息大于10，则它将触发持久化。 如果发现远程系统响应速度慢或接收器吞吐量很小，则建议增加2种以下配置，此时需要更多内存。
+  # 是否开启缓存
+  enableCache: false
+  
+  # 内存缓存的最大存储条数
+  memoryCacheThreshold: 1024
 
-  # 如果消息计数达到以下值，则会触发持久化。
-  cacheThreshold: 10
-  # 消息持久化由代码触发，cacheTriggerCount 用于使用配置计数来触发持久化过程，而不管消息号是否达到cacheThreshold。 这是为了防止由于缓存永远不会超过阈值而无法保存数据。
-  cacheTriggerCount: 15
+  # 磁盘缓存的最大存储条数
+  maxDiskCache: 1024000
 
-  # 控制是否禁用缓存。 如果将其设置为true，则将禁用缓存，否则将启用缓存。
-  disableCache: false
+  # 读写磁盘的缓存页条数，作为磁盘读写的基本单位
+  bufferPageSize: 256
+
+  # 重发的间隔时间，单位为毫秒
+  resendInterval: 0
+
+  # 规则停止后是否清除缓存
+  cleanCacheAtStop: false
 ```
 
 ## 存储配置
