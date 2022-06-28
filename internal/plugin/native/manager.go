@@ -437,12 +437,19 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		expFiles = 2
 	}
 	var revokeFiles []string
+	defer func() {
+		if err != nil {
+			for _, f := range revokeFiles {
+				os.RemoveAll(f)
+			}
+		}
+	}()
 	for _, file := range r.File {
 		fileName := file.Name
 		if yamlFile == fileName {
 			err = filex.UnzipTo(file, yamlPath)
 			if err != nil {
-				goto errout
+				return version, err
 			}
 			revokeFiles = append(revokeFiles, yamlPath)
 			filenames = append(filenames, yamlPath)
@@ -457,7 +464,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			soPath = path.Join(rr.pluginDir, plugin2.PluginTypes[t], fileName)
 			err = filex.UnzipTo(file, soPath)
 			if err != nil {
-				goto errout
+				return version, err
 			}
 			filenames = append(filenames, soPath)
 			revokeFiles = append(revokeFiles, soPath)
@@ -465,18 +472,18 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		} else if strings.HasPrefix(fileName, "etc/") {
 			err = filex.UnzipTo(file, path.Join(rr.etcDir, plugin2.PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
 			if err != nil {
-				goto errout
+				return version, err
 			}
 		} else { //unzip other files
 			err = filex.UnzipTo(file, path.Join(tempPath, fileName))
 			if err != nil {
-				goto errout
+				return version, err
 			}
 		}
 	}
 	if len(filenames) != expFiles {
 		err = fmt.Errorf("invalid zip file: so file or conf file is missing")
-		goto errout
+		return version, err
 	} else if haveInstallFile {
 		//run install script if there is
 		spath := path.Join(tempPath, "install.sh")
@@ -493,7 +500,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 
 		if err != nil {
 			conf.Log.Infof(`err:%v stdout:%s stderr:%s`, err, outb.String(), errb.String())
-			goto errout
+			return version, err
 		}
 		conf.Log.Infof(`run install script:%s`, outb.String())
 	}
@@ -502,18 +509,12 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		// load the runtime first
 		_, err = manager.loadRuntime(t, "", soPath)
 		if err != nil {
-			goto errout
+			return version, err
 		}
 	}
 
 	conf.Log.Infof("install %s plugin %s", plugin2.PluginTypes[t], name)
 	return version, nil
-
-errout:
-	for _, f := range revokeFiles {
-		os.RemoveAll(f)
-	}
-	return version, err
 }
 
 // binder factory implementations
