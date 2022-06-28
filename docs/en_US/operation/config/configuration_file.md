@@ -114,16 +114,27 @@ After get the plugin info, users can try these plugins, [more info](../restapi/p
 
 ## Sink configurations
 
+Configure the default properties of sink, currently mainly used to configure [cache policy](../../rules/sinks/overview.md#Caching). The same configuration options are available at the rules level to override these default configurations.
+
 ```yaml
-  #The cache persistence threshold size. If the message in sink cache is larger than 10, then it triggers persistence. If you find the remote system is slow to response, or sink throughput is small, then it's recommend to increase below 2 configurations.More memory is required with the increase of below 2 configurations.
-
-  # If the message count reaches below value, then it triggers persistence.
-  cacheThreshold: 10
-  # The message persistence is triggered by a ticker, and cacheTriggerCount is for using configure the count to trigger the persistence procedure regardless if the message number reaches cacheThreshold or not. This is to prevent the data won't be saved as the cache never pass the threshold.
-  cacheTriggerCount: 15
-
+  sink:
   # Control to disable cache or not. If it's set to true, then the cache will be disabled, otherwise, it will be enabled.
-  disableCache: false
+  enableCache: false
+
+  # The maximum number of messages to be cached in memory.
+  memoryCacheThreshold: 1024
+
+  # The maximum number of messages to be cached in the disk.
+  maxDiskCache: 1024000
+
+  # The number of messages for a buffer page which is the unit to read/write to disk batchly to prevent frequent IO
+  bufferPageSize: 256
+
+  # The interval in millisecond to resend the cached messages
+  resendInterval: 0
+
+  # Whether to clean the cache when the rule stops
+  cleanCacheAtStop: false
 ```
 
 ## Store configurations

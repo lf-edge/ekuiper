@@ -19,6 +19,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -137,7 +138,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 							buffer.Close()
 						}()
 
-						stats, err := NewStatManager(ctx, "source")
+						stats, err := metric.NewStatManager(ctx, "source")
 						if err != nil {
 							return err
 						}

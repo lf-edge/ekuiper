@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -41,7 +42,7 @@ type WindowOperator struct {
 	isEventTime        bool
 	watermarkGenerator *WatermarkGenerator //For event time only
 
-	statManager StatManager
+	statManager metric.StatManager
 	ticker      *clock.Ticker //For processing time only
 	// states
 	triggerTime int64
@@ -54,6 +55,7 @@ const MSG_COUNT_KEY = "$$msgCount"
 
 func init() {
 	gob.Register([]*xsql.Tuple{})
+	gob.Register([]map[string]interface{}{})
 }
 
 func NewWindowOp(name string, w WindowConfig, streams []string, options *api.RuleOption) (*WindowOperator, error) {
@@ -96,7 +98,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return
 	}
-	stats, err := NewStatManager(ctx, "op")
+	stats, err := metric.NewStatManager(ctx, "op")
 	if err != nil {
 		infra.DrainError(ctx, err, errCh)
 		return
