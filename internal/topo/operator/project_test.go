@@ -1061,10 +1061,12 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"id2": 2,
 				"id1": 1,
 				"f1":  "v1",
+				"f2":  "w2",
 			}, {
 				"id2": 4,
 				"id1": 2,
 				"f1":  "v2",
+				"f2":  "w3",
 			}, {
 				"id1": 3,
 				"f1":  "v1",
@@ -1110,10 +1112,12 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"id2": 2,
 				"id1": 1,
 				"f1":  "v1",
+				"f2":  "w2",
 			}, {
 				"id2": 4,
 				"id1": 2,
 				"f1":  "v2",
+				"f2":  "w3",
 			}, {
 				"id1": 3,
 				"f1":  "v1",

@@ -39,14 +39,20 @@ type Collection interface {
 	SortingData
 	// GroupRange through each group. For non-grouped collection, the whole data is a single group
 	GroupRange(func(i int, aggRow CollectionRow) (bool, error)) error
+	// Range through each row. For grouped collection, each row is an aggregation of groups
+	Range(func(i int, r Row) (bool, error)) error
 	Filter(indexes []int) Collection
 	GetWindowRange() *WindowRange
+	Clone() Collection
+	// ToAggMaps returns the aggregated data as a map
+	ToAggMaps() []map[string]interface{}
+	// ToRowMaps returns all the data in the collection
+	ToRowMaps() []map[string]interface{}
 }
 
 type SingleCollection interface {
 	Collection
-	// Range through each row. For grouped collection, each row is an aggregation of groups
-	Range(func(i int, r TupleRow) (bool, error)) error
+	CollectionRow
 }
 
 type GroupedCollection interface {
@@ -66,11 +72,14 @@ type MergedCollection interface {
 type WindowTuples struct {
 	Content []TupleRow // immutable
 	*WindowRange
-	Alias
-	contentBySrc map[string][]TupleRow // volatile, temporary cache
+	contentBySrc map[string][]TupleRow // volatile, temporary cache]
+
+	AffiliateRow
+	cachedMap map[string]interface{}
 }
 
 var _ MergedCollection = &WindowTuples{}
+var _ SingleCollection = &WindowTuples{}
 
 // Window Tuples is also an aggregate row
 var _ CollectionRow = &WindowTuples{}
@@ -78,10 +87,12 @@ var _ CollectionRow = &WindowTuples{}
 type JoinTuples struct {
 	Content []*JoinTuple
 	*WindowRange
-	Alias
+
+	AffiliateRow
+	cachedMap map[string]interface{}
 }
 
-var _ Collection = &JoinTuples{}
+var _ SingleCollection = &JoinTuples{}
 var _ CollectionRow = &JoinTuples{}
 
 type GroupedTuplesSet struct {
@@ -89,7 +100,7 @@ type GroupedTuplesSet struct {
 	*WindowRange
 }
 
-var _ Collection = &GroupedTuplesSet{}
+var _ GroupedCollection = &GroupedTuplesSet{}
 
 /*
  *   Collection implementations
@@ -104,6 +115,7 @@ func (w *WindowTuples) Len() int {
 }
 
 func (w *WindowTuples) Swap(i, j int) {
+	w.cachedMap = nil
 	w.Content[i], w.Content[j] = w.Content[j], w.Content[i]
 }
 
@@ -125,7 +137,7 @@ func (w *WindowTuples) GetWindowRange() *WindowRange {
 	return w.WindowRange
 }
 
-func (w *WindowTuples) Range(f func(i int, r TupleRow) (bool, error)) error {
+func (w *WindowTuples) Range(f func(i int, r Row) (bool, error)) error {
 	for i, r := range w.Content {
 		b, e := f(i, r)
 		if e != nil {
@@ -150,6 +162,7 @@ func (w *WindowTuples) AddTuple(tuple *Tuple) *WindowTuples {
 
 //Sort by tuple timestamp
 func (w *WindowTuples) Sort() {
+	w.cachedMap = nil
 	sort.SliceStable(w.Content, func(i, j int) bool {
 		return w.Content[i].(Event).GetTimestamp() < w.Content[j].(Event).GetTimestamp()
 	})
@@ -165,6 +178,7 @@ func (w *WindowTuples) AggregateEval(expr ast.Expr, v CallValuer) []interface{} 
 
 // Filter the tuples by the given predicate
 func (w *WindowTuples) Filter(indexes []int) Collection {
+	w.cachedMap = nil
 	newC := make([]TupleRow, 0, len(indexes))
 	for _, i := range indexes {
 		newC = append(newC, w.Content[i])
@@ -174,6 +188,10 @@ func (w *WindowTuples) Filter(indexes []int) Collection {
 }
 
 func (w *WindowTuples) Value(key, table string) (interface{}, bool) {
+	r, ok := w.AffiliateRow.Value(key, table)
+	if ok {
+		return r, ok
+	}
 	return w.Content[0].Value(key, table)
 }
 
@@ -182,11 +200,51 @@ func (w *WindowTuples) Meta(key, table string) (interface{}, bool) {
 }
 
 func (w *WindowTuples) All(stream string) (Message, bool) {
-	return w.Content[0].All(stream)
+	return w.ToMap(), true
 }
 
-func (s *JoinTuples) Len() int        { return len(s.Content) }
-func (s *JoinTuples) Swap(i, j int)   { s.Content[i], s.Content[j] = s.Content[j], s.Content[i] }
+func (w *WindowTuples) ToMap() map[string]interface{} {
+	if w.cachedMap == nil {
+		m := make(map[string]interface{})
+		for k, v := range w.Content[0].ToMap() {
+			m[k] = v
+		}
+		w.cachedMap = m
+	}
+	w.AffiliateRow.MergeMap(w.cachedMap)
+	return w.cachedMap
+}
+
+func (w *WindowTuples) Clone() Collection {
+	ts := make([]TupleRow, len(w.Content))
+	for i, t := range w.Content {
+		ts[i] = t.Clone()
+	}
+	c := &WindowTuples{
+		Content:      ts,
+		WindowRange:  w.WindowRange,
+		AffiliateRow: w.AffiliateRow.Clone(),
+	}
+	return c
+}
+
+func (w *WindowTuples) ToAggMaps() []map[string]interface{} {
+	return []map[string]interface{}{w.ToMap()}
+}
+
+func (w *WindowTuples) ToRowMaps() []map[string]interface{} {
+	r := make([]map[string]interface{}, len(w.Content))
+	for i, t := range w.Content {
+		r[i] = t.ToMap()
+	}
+	return r
+}
+
+func (s *JoinTuples) Len() int { return len(s.Content) }
+func (s *JoinTuples) Swap(i, j int) {
+	s.cachedMap = nil
+	s.Content[i], s.Content[j] = s.Content[j], s.Content[i]
+}
 func (s *JoinTuples) Index(i int) Row { return s.Content[i] }
 
 func (s *JoinTuples) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
@@ -201,7 +259,7 @@ func (s *JoinTuples) GetWindowRange() *WindowRange {
 	return s.WindowRange
 }
 
-func (s *JoinTuples) Range(f func(i int, r TupleRow) (bool, error)) error {
+func (s *JoinTuples) Range(f func(i int, r Row) (bool, error)) error {
 	for i, r := range s.Content {
 		b, e := f(i, r)
 		if e != nil {
@@ -226,10 +284,15 @@ func (s *JoinTuples) Filter(indexes []int) Collection {
 		newC = append(newC, s.Content[i])
 	}
 	s.Content = newC
+	s.cachedMap = nil
 	return s
 }
 
 func (s *JoinTuples) Value(key, table string) (interface{}, bool) {
+	r, ok := s.AffiliateRow.Value(key, table)
+	if ok {
+		return r, ok
+	}
 	return s.Content[0].Value(key, table)
 }
 
@@ -238,7 +301,44 @@ func (s *JoinTuples) Meta(key, table string) (interface{}, bool) {
 }
 
 func (s *JoinTuples) All(stream string) (Message, bool) {
-	return s.Content[0].All(stream)
+	return s.ToMap(), true
+}
+
+func (s *JoinTuples) ToMap() map[string]interface{} {
+	if s.cachedMap == nil {
+		m := make(map[string]interface{})
+		for k, v := range s.Content[0].ToMap() {
+			m[k] = v
+		}
+		s.cachedMap = m
+	}
+	s.AffiliateRow.MergeMap(s.cachedMap)
+	return s.cachedMap
+}
+
+func (s *JoinTuples) Clone() Collection {
+	ts := make([]*JoinTuple, len(s.Content))
+	for i, t := range s.Content {
+		ts[i] = t.Clone().(*JoinTuple)
+	}
+	c := &JoinTuples{
+		Content:      ts,
+		WindowRange:  s.WindowRange,
+		AffiliateRow: s.AffiliateRow.Clone(),
+	}
+	return c
+}
+
+func (s *JoinTuples) ToAggMaps() []map[string]interface{} {
+	return []map[string]interface{}{s.ToMap()}
+}
+
+func (s *JoinTuples) ToRowMaps() []map[string]interface{} {
+	r := make([]map[string]interface{}, len(s.Content))
+	for i, t := range s.Content {
+		r[i] = t.ToMap()
+	}
+	return r
 }
 
 func (s *GroupedTuplesSet) Len() int        { return len(s.Groups) }
@@ -247,6 +347,19 @@ func (s *GroupedTuplesSet) Index(i int) Row { return s.Groups[i] }
 
 func (s *GroupedTuplesSet) GetWindowRange() *WindowRange {
 	return s.WindowRange
+}
+
+func (s *GroupedTuplesSet) Range(f func(i int, r Row) (bool, error)) error {
+	for i, r := range s.Groups {
+		b, e := f(i, r)
+		if e != nil {
+			return e
+		}
+		if !b {
+			break
+		}
+	}
+	return nil
 }
 
 func (s *GroupedTuplesSet) GroupRange(f func(i int, aggRow CollectionRow) (bool, error)) error {
@@ -270,6 +383,29 @@ func (s *GroupedTuplesSet) Filter(groups []int) Collection {
 	}
 	s.Groups = newC
 	return s
+}
+
+func (s *GroupedTuplesSet) Clone() Collection {
+	ng := make([]*GroupedTuples, len(s.Groups))
+	for i, g := range s.Groups {
+		ng[i] = g.Clone().(*GroupedTuples)
+	}
+	return &GroupedTuplesSet{
+		Groups:      ng,
+		WindowRange: s.WindowRange,
+	}
+}
+
+func (s *GroupedTuplesSet) ToAggMaps() []map[string]interface{} {
+	return s.ToRowMaps()
+}
+
+func (s *GroupedTuplesSet) ToRowMaps() []map[string]interface{} {
+	r := make([]map[string]interface{}, len(s.Groups))
+	for i, t := range s.Groups {
+		r[i] = t.ToMap()
+	}
+	return r
 }
 
 /*
