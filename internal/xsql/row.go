@@ -24,7 +24,6 @@ import (
  *  Interfaces definition
  */
 
-// TODO how to be more efficient?
 type Wildcarder interface {
 	// All Value returns the value and existence flag for a given key.
 	All(stream string) (Message, bool)
@@ -39,18 +38,19 @@ type Row interface {
 	Valuer
 	AliasValuer
 	Wildcarder
+	// Set Only for some ops like functionOp *
+	Set(col string, value interface{})
+	// ToMap converts the row to a map to export to other systems *
+	ToMap() map[string]interface{}
 }
 
+// TupleRow is a mutable row. Function with * could modify the row.
 type TupleRow interface {
 	Row
-	// Set Only for some ops like functionOp
-	Set(col string, value interface{})
 	// GetEmitter returns the emitter of the row
 	GetEmitter() string
 	// Clone when broadcast to make sure each row are dealt single threaded
 	Clone() TupleRow
-	// ToMap converts the row to a map to export to other systems
-	ToMap() map[string]interface{}
 }
 
 // CollectionRow is the aggregation row of a non-grouped collection. Thinks of it as a single group.
@@ -58,6 +58,65 @@ type TupleRow interface {
 type CollectionRow interface {
 	Row
 	AggregateData
+	// Clone when broadcast to make sure each row are dealt single threaded
+	//Clone() CollectionRow
+}
+
+// AffiliateRow part of other row types do help calculation of newly added cols
+type AffiliateRow struct {
+	CalCols map[string]interface{} // mutable and must be cloned when broadcast
+	Alias
+}
+
+func (d *AffiliateRow) Value(key, table string) (interface{}, bool) {
+	if table == "" {
+		r, ok := d.AliasValue(key)
+		if ok {
+			return r, ok
+		}
+		r, ok = d.CalCols[key]
+		if ok {
+			return r, ok
+		}
+	}
+	return nil, false
+}
+
+func (d *AffiliateRow) Set(col string, value interface{}) {
+	if d.CalCols == nil {
+		d.CalCols = make(map[string]interface{})
+	}
+	d.CalCols[col] = value
+}
+
+func (d *AffiliateRow) Clone() AffiliateRow {
+	nd := &AffiliateRow{}
+	if d.CalCols != nil && len(d.CalCols) > 0 {
+		nd.CalCols = make(map[string]interface{}, len(d.CalCols))
+		for k, v := range d.CalCols {
+			nd.CalCols[k] = v
+		}
+	}
+	if d.AliasMap != nil && len(d.AliasMap) > 0 {
+		nd.AliasMap = make(map[string]interface{}, len(d.AliasMap))
+		for k, v := range d.AliasMap {
+			nd.AliasMap[k] = v
+		}
+	}
+	return *nd
+}
+
+func (d *AffiliateRow) IsEmpty() bool {
+	return len(d.CalCols) == 0 && len(d.AliasMap) == 0
+}
+
+func (d *AffiliateRow) MergeMap(cachedMap map[string]interface{}) {
+	for k, v := range d.CalCols {
+		cachedMap[k] = v
+	}
+	for k, v := range d.AliasMap {
+		cachedMap[k] = v
+	}
 }
 
 /*
@@ -83,18 +142,26 @@ type Alias struct {
 // Tuple The input row, produced by the source
 type Tuple struct {
 	Emitter   string
-	Message   Message // immutable
+	Message   Message // the original pointer is immutable & big; may be cloned
 	Timestamp int64
 	Metadata  Metadata // immutable
-	Alias
+
+	AffiliateRow
+
+	cachedMap map[string]interface{} // clone of the row and cached for performance
 }
 
 var _ TupleRow = &Tuple{}
 
 // JoinTuple is a row produced by a join operation
 type JoinTuple struct {
-	Tuples []TupleRow
-	Alias
+	Tuples []TupleRow // The content is immutable, but the slice may be add or removed
+	AffiliateRow
+	cachedMap map[string]interface{} // clone of the row and cached for performance of toMap
+}
+
+func (jt *JoinTuple) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
+	return []interface{}{Eval(expr, MultiValuer(jt, v, &WildcardValuer{jt}))}
 }
 
 var _ TupleRow = &JoinTuple{}
@@ -103,7 +170,8 @@ var _ TupleRow = &JoinTuple{}
 type GroupedTuples struct {
 	Content []TupleRow
 	*WindowRange
-	Alias
+	AffiliateRow
+	cachedMap map[string]interface{} // clone of the row and cached for performance of toMap
 }
 
 var _ CollectionRow = &GroupedTuples{}
@@ -193,11 +261,42 @@ func (a *Alias) AliasValue(key string) (interface{}, bool) {
 // Tuple implementation
 
 func (t *Tuple) Value(key, table string) (interface{}, bool) {
-	r, ok := t.AliasValue(key)
+	r, ok := t.AffiliateRow.Value(key, table)
 	if ok {
 		return r, ok
 	}
 	return t.Message.Value(key, table)
+}
+
+func (t *Tuple) All(string) (Message, bool) {
+	return t.ToMap(), true
+}
+
+func (t *Tuple) Clone() TupleRow {
+	return &Tuple{
+		Emitter:      t.Emitter,
+		Timestamp:    t.Timestamp,
+		Message:      t.Message,
+		Metadata:     t.Metadata,
+		AffiliateRow: t.AffiliateRow.Clone(),
+	}
+}
+
+// ToMap should only use in sink.
+func (t *Tuple) ToMap() map[string]interface{} {
+	if t.AffiliateRow.IsEmpty() {
+		return t.Message
+	}
+	if t.cachedMap == nil { // clone the message
+		m := make(map[string]interface{})
+		for k, v := range t.Message {
+			m[k] = v
+		}
+		t.cachedMap = m
+		t.Message = t.cachedMap
+	}
+	t.AffiliateRow.MergeMap(t.cachedMap)
+	return t.cachedMap
 }
 
 func (t *Tuple) Meta(key, table string) (interface{}, bool) {
@@ -207,43 +306,8 @@ func (t *Tuple) Meta(key, table string) (interface{}, bool) {
 	return t.Metadata.Value(key, table)
 }
 
-func (t *Tuple) Set(col string, value interface{}) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (t *Tuple) Clone() TupleRow {
-	c := &Tuple{
-		Emitter:   t.Emitter,
-		Timestamp: t.Timestamp,
-	}
-	if t.Message != nil {
-		m := Message{}
-		for k, v := range t.Message {
-			m[k] = v
-		}
-		c.Message = m
-	}
-	if t.Metadata != nil {
-		md := Metadata{}
-		for k, v := range t.Metadata {
-			md[k] = v
-		}
-		c.Metadata = md
-	}
-	return c
-}
-
-func (t *Tuple) ToMap() map[string]interface{} {
-	return t.Message
-}
-
 func (t *Tuple) GetEmitter() string {
 	return t.Emitter
-}
-
-func (t *Tuple) All(string) (Message, bool) {
-	return t.Message, true
 }
 
 func (t *Tuple) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
@@ -252,10 +316,6 @@ func (t *Tuple) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
 
 func (t *Tuple) GetTimestamp() int64 {
 	return t.Timestamp
-}
-
-func (t *Tuple) GetMetadata() Metadata {
-	return t.Metadata
 }
 
 func (t *Tuple) IsWatermark() bool {
@@ -308,8 +368,12 @@ func getTupleValue(tuple Row, key string, isVal bool) (interface{}, bool) {
 	}
 }
 
+func (jt *JoinTuple) GetEmitter() string {
+	return "$$JOIN"
+}
+
 func (jt *JoinTuple) Value(key, table string) (interface{}, bool) {
-	r, ok := jt.AliasValue(key)
+	r, ok := jt.AffiliateRow.Value(key, table)
 	if ok {
 		return r, ok
 	}
@@ -333,32 +397,30 @@ func (jt *JoinTuple) All(stream string) (Message, bool) {
 	return nil, false
 }
 
-// TODO deal with cascade
 func (jt *JoinTuple) Clone() TupleRow {
 	ts := make([]TupleRow, len(jt.Tuples))
 	for i, t := range jt.Tuples {
-		ts[i] = t.Clone().(TupleRow)
+		ts[i] = t
 	}
-	return &JoinTuple{Tuples: ts}
-}
-
-func (jt *JoinTuple) Set(col string, value interface{}) {
-	//TODO implement me
-	panic("implement me")
+	c := &JoinTuple{
+		Tuples:       ts,
+		AffiliateRow: jt.AffiliateRow.Clone(),
+	}
+	return c
 }
 
 func (jt *JoinTuple) ToMap() map[string]interface{} {
-	m := make(map[string]interface{})
-	for i := len(jt.Tuples) - 1; i >= 0; i-- {
-		for k, v := range jt.Tuples[i].ToMap() {
-			m[k] = v
+	if jt.cachedMap == nil { // clone the message
+		m := make(map[string]interface{})
+		for i := len(jt.Tuples) - 1; i >= 0; i-- {
+			for k, v := range jt.Tuples[i].ToMap() {
+				m[k] = v
+			}
 		}
+		jt.cachedMap = m
 	}
-	return m
-}
-
-func (jt *JoinTuple) GetEmitter() string {
-	return "$$JOIN"
+	jt.AffiliateRow.MergeMap(jt.cachedMap)
+	return jt.cachedMap
 }
 
 // GroupedTuple implementation
@@ -372,6 +434,10 @@ func (s *GroupedTuples) AggregateEval(expr ast.Expr, v CallValuer) []interface{}
 }
 
 func (s *GroupedTuples) Value(key, table string) (interface{}, bool) {
+	r, ok := s.AffiliateRow.Value(key, table)
+	if ok {
+		return r, ok
+	}
 	return s.Content[0].Value(key, table)
 }
 
@@ -379,6 +445,31 @@ func (s *GroupedTuples) Meta(key, table string) (interface{}, bool) {
 	return s.Content[0].Meta(key, table)
 }
 
-func (s *GroupedTuples) All(stream string) (Message, bool) {
-	return s.Content[0].All(stream)
+func (s *GroupedTuples) All(_ string) (Message, bool) {
+	return s.ToMap(), true
+}
+
+func (s *GroupedTuples) ToMap() map[string]interface{} {
+	if s.cachedMap == nil {
+		m := make(map[string]interface{})
+		for k, v := range s.Content[0].ToMap() {
+			m[k] = v
+		}
+		s.cachedMap = m
+	}
+	s.AffiliateRow.MergeMap(s.cachedMap)
+	return s.cachedMap
+}
+
+func (s *GroupedTuples) Clone() CollectionRow {
+	ts := make([]TupleRow, len(s.Content))
+	for i, t := range s.Content {
+		ts[i] = t
+	}
+	c := &GroupedTuples{
+		Content:      ts,
+		WindowRange:  s.WindowRange,
+		AffiliateRow: s.AffiliateRow.Clone(),
+	}
+	return c
 }
