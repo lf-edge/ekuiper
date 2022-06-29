@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,6 +50,9 @@ func (p DataSourcePlan) Init() *DataSourcePlan {
 
 // Presume no children for data source
 func (p *DataSourcePlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
+	if p.streamStmt.StreamType == ast.TypeTable {
+		return condition, p.self
+	}
 	owned, other := p.extract(condition)
 	if owned != nil {
 		// Add a filter plan for children

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -629,35 +629,21 @@ func TestWindow(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				//"op_4_project_0_exceptions_total":   int64(0),
-				//"op_4_project_0_process_latency_us": int64(0),
-				//"op_4_project_0_records_in_total":   int64(2),
-				//"op_4_project_0_records_out_total":  int64(2),
+				"op_2_window_0_exceptions_total":   int64(0),
+				"op_2_window_0_process_latency_us": int64(0),
+				"op_2_window_0_records_in_total":   int64(5),
+				"op_2_window_0_records_out_total":  int64(4),
 
-				"op_3_window_0_exceptions_total":   int64(0),
-				"op_3_window_0_process_latency_us": int64(0),
-				"op_3_window_0_records_in_total":   int64(3),
-				"op_3_window_0_records_out_total":  int64(2),
+				"op_4_join_aligner_0_records_in_total":  int64(5),
+				"op_4_join_aligner_0_records_out_total": int64(4),
 
-				"op_2_filter_0_exceptions_total":   int64(0),
-				"op_2_filter_0_process_latency_us": int64(0),
-				"op_2_filter_0_records_in_total":   int64(5),
-				"op_2_filter_0_records_out_total":  int64(3),
+				"op_5_join_0_exceptions_total":  int64(0),
+				"op_5_join_0_records_in_total":  int64(4),
+				"op_5_join_0_records_out_total": int64(1),
 
-				"op_5_filter_0_exceptions_total":  int64(0),
-				"op_5_filter_0_records_in_total":  int64(1),
-				"op_5_filter_0_records_out_total": int64(1),
-
-				"op_6_join_aligner_0_records_in_total":  int64(3),
-				"op_6_join_aligner_0_records_out_total": int64(2),
-
-				"op_7_join_0_exceptions_total":  int64(0),
-				"op_7_join_0_records_in_total":  int64(2),
-				"op_7_join_0_records_out_total": int64(1),
-
-				"op_8_project_0_exceptions_total":  int64(0),
-				"op_8_project_0_records_in_total":  int64(1),
-				"op_8_project_0_records_out_total": int64(1),
+				"op_6_project_0_exceptions_total":  int64(0),
+				"op_6_project_0_records_in_total":  int64(1),
+				"op_6_project_0_records_out_total": int64(1),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
 				"sink_mockSink_0_records_in_total":  int64(1),

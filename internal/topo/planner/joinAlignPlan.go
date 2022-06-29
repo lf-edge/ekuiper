@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,13 +34,6 @@ func (p *JoinAlignPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, Logical
 	rest := condition
 	for i, child := range p.children {
 		if _, ok := child.(*DataSourcePlan); ok {
-			var newChild LogicalPlan
-			rest, newChild = child.PushDownPredicate(rest)
-			p.children[i] = newChild
-		}
-	}
-	for i, child := range p.children {
-		if _, ok := child.(*DataSourcePlan); !ok {
 			var newChild LogicalPlan
 			rest, newChild = child.PushDownPredicate(rest)
 			p.children[i] = newChild
