@@ -686,31 +686,20 @@ func Test_createLogicalPlan(t *testing.T) {
 														},
 													},
 												}.Init(),
-												FilterPlan{
-													baseLogicalPlan: baseLogicalPlan{
-														children: []LogicalPlan{
-															DataSourcePlan{
-																name: "tableInPlanner",
-																streamFields: []interface{}{
-																	&ast.StreamField{
-																		Name:      "hum",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
-																	},
-																	&ast.StreamField{
-																		Name:      "id",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
-																	},
-																},
-																streamStmt: streams["tableInPlanner"],
-																metaFields: []string{},
-															}.Init(),
+												DataSourcePlan{
+													name: "tableInPlanner",
+													streamFields: []interface{}{
+														&ast.StreamField{
+															Name:      "hum",
+															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														},
+														&ast.StreamField{
+															Name:      "id",
+															FieldType: &ast.BasicType{Type: ast.BIGINT},
 														},
 													},
-													condition: &ast.BinaryExpr{
-														OP:  ast.LT,
-														LHS: &ast.FieldRef{Name: "hum", StreamName: "tableInPlanner"},
-														RHS: &ast.IntegerLiteral{Val: 60},
-													},
+													streamStmt: streams["tableInPlanner"],
+													metaFields: []string{},
 												}.Init(),
 											},
 										},
@@ -727,9 +716,17 @@ func Test_createLogicalPlan(t *testing.T) {
 									Alias:    "",
 									JoinType: ast.INNER_JOIN,
 									Expr: &ast.BinaryExpr{
-										LHS: &ast.FieldRef{Name: "id1", StreamName: "src1"},
-										OP:  ast.EQ,
-										RHS: &ast.FieldRef{Name: "id", StreamName: "tableInPlanner"},
+										OP: ast.AND,
+										LHS: &ast.BinaryExpr{
+											LHS: &ast.FieldRef{Name: "id1", StreamName: "src1"},
+											OP:  ast.EQ,
+											RHS: &ast.FieldRef{Name: "id", StreamName: "tableInPlanner"},
+										},
+										RHS: &ast.BinaryExpr{
+											OP:  ast.LT,
+											LHS: &ast.FieldRef{Name: "hum", StreamName: "tableInPlanner"},
+											RHS: &ast.IntegerLiteral{Val: 60},
+										},
 									},
 								},
 							},
@@ -759,39 +756,21 @@ func Test_createLogicalPlan(t *testing.T) {
 												WindowPlan{
 													baseLogicalPlan: baseLogicalPlan{
 														children: []LogicalPlan{
-															FilterPlan{
-																baseLogicalPlan: baseLogicalPlan{
-																	children: []LogicalPlan{
-																		DataSourcePlan{
-																			name: "src1",
-																			streamFields: []interface{}{
-																				&ast.StreamField{
-																					Name:      "id1",
-																					FieldType: &ast.BasicType{Type: ast.BIGINT},
-																				},
-																				&ast.StreamField{
-																					Name:      "temp",
-																					FieldType: &ast.BasicType{Type: ast.BIGINT},
-																				},
-																			},
-																			streamStmt: streams["src1"],
-																			metaFields: []string{},
-																		}.Init(),
+
+															DataSourcePlan{
+																name: "src1",
+																streamFields: []interface{}{
+																	&ast.StreamField{
+																		Name:      "id1",
+																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																	},
+																	&ast.StreamField{
+																		Name:      "temp",
+																		FieldType: &ast.BasicType{Type: ast.BIGINT},
 																	},
 																},
-																condition: &ast.BinaryExpr{
-																	RHS: &ast.BinaryExpr{
-																		OP:  ast.GT,
-																		LHS: &ast.FieldRef{Name: "temp", StreamName: "src1"},
-																		RHS: &ast.IntegerLiteral{Val: 20},
-																	},
-																	OP: ast.AND,
-																	LHS: &ast.BinaryExpr{
-																		OP:  ast.GT,
-																		LHS: &ast.FieldRef{Name: "id1", StreamName: "src1"},
-																		RHS: &ast.IntegerLiteral{Val: 111},
-																	},
-																},
+																streamStmt: streams["src1"],
+																metaFields: []string{},
 															}.Init(),
 														},
 													},
@@ -801,31 +780,20 @@ func Test_createLogicalPlan(t *testing.T) {
 													interval:  0,
 													limit:     0,
 												}.Init(),
-												FilterPlan{
-													baseLogicalPlan: baseLogicalPlan{
-														children: []LogicalPlan{
-															DataSourcePlan{
-																name: "tableInPlanner",
-																streamFields: []interface{}{
-																	&ast.StreamField{
-																		Name:      "hum",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
-																	},
-																	&ast.StreamField{
-																		Name:      "id",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
-																	},
-																},
-																streamStmt: streams["tableInPlanner"],
-																metaFields: []string{},
-															}.Init(),
+												DataSourcePlan{
+													name: "tableInPlanner",
+													streamFields: []interface{}{
+														&ast.StreamField{
+															Name:      "hum",
+															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														},
+														&ast.StreamField{
+															Name:      "id",
+															FieldType: &ast.BasicType{Type: ast.BIGINT},
 														},
 													},
-													condition: &ast.BinaryExpr{
-														OP:  ast.LT,
-														LHS: &ast.FieldRef{Name: "hum", StreamName: "tableInPlanner"},
-														RHS: &ast.IntegerLiteral{Val: 60},
-													},
+													streamStmt: streams["tableInPlanner"],
+													metaFields: []string{},
 												}.Init(),
 											},
 										},
@@ -842,9 +810,33 @@ func Test_createLogicalPlan(t *testing.T) {
 									Alias:    "",
 									JoinType: ast.INNER_JOIN,
 									Expr: &ast.BinaryExpr{
-										LHS: &ast.FieldRef{Name: "id1", StreamName: "src1"},
-										OP:  ast.EQ,
-										RHS: &ast.FieldRef{Name: "id", StreamName: "tableInPlanner"},
+										OP: ast.AND,
+										LHS: &ast.BinaryExpr{
+											LHS: &ast.FieldRef{Name: "id1", StreamName: "src1"},
+											OP:  ast.EQ,
+											RHS: &ast.FieldRef{Name: "id", StreamName: "tableInPlanner"},
+										},
+										RHS: &ast.BinaryExpr{
+											RHS: &ast.BinaryExpr{
+												OP: ast.AND,
+												LHS: &ast.BinaryExpr{
+													OP:  ast.GT,
+													LHS: &ast.FieldRef{Name: "temp", StreamName: "src1"},
+													RHS: &ast.IntegerLiteral{Val: 20},
+												},
+												RHS: &ast.BinaryExpr{
+													OP:  ast.LT,
+													LHS: &ast.FieldRef{Name: "hum", StreamName: "tableInPlanner"},
+													RHS: &ast.IntegerLiteral{Val: 60},
+												},
+											},
+											OP: ast.AND,
+											LHS: &ast.BinaryExpr{
+												OP:  ast.GT,
+												LHS: &ast.FieldRef{Name: "id1", StreamName: "src1"},
+												RHS: &ast.IntegerLiteral{Val: 111},
+											},
+										},
 									},
 								},
 							},
@@ -1751,32 +1743,13 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 												WindowPlan{
 													baseLogicalPlan: baseLogicalPlan{
 														children: []LogicalPlan{
-															FilterPlan{
-																baseLogicalPlan: baseLogicalPlan{
-																	children: []LogicalPlan{
-																		DataSourcePlan{
-																			name: "src1",
-																			streamFields: []interface{}{
-																				"id1", "temp",
-																			},
-																			streamStmt: streams["src1"],
-																			metaFields: []string{},
-																		}.Init(),
-																	},
+															DataSourcePlan{
+																name: "src1",
+																streamFields: []interface{}{
+																	"id1", "temp",
 																},
-																condition: &ast.BinaryExpr{
-																	RHS: &ast.BinaryExpr{
-																		OP:  ast.GT,
-																		LHS: &ast.FieldRef{Name: "temp", StreamName: "src1"},
-																		RHS: &ast.IntegerLiteral{Val: 20},
-																	},
-																	OP: ast.AND,
-																	LHS: &ast.BinaryExpr{
-																		OP:  ast.GT,
-																		LHS: &ast.FieldRef{Name: "id1", StreamName: "src1"},
-																		RHS: &ast.IntegerLiteral{Val: 111},
-																	},
-																},
+																streamStmt: streams["src1"],
+																metaFields: []string{},
 															}.Init(),
 														},
 													},
@@ -1786,31 +1759,20 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 													interval:  0,
 													limit:     0,
 												}.Init(),
-												FilterPlan{
-													baseLogicalPlan: baseLogicalPlan{
-														children: []LogicalPlan{
-															DataSourcePlan{
-																name: "tableInPlanner",
-																streamFields: []interface{}{
-																	&ast.StreamField{
-																		Name:      "hum",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
-																	},
-																	&ast.StreamField{
-																		Name:      "id",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
-																	},
-																},
-																streamStmt: streams["tableInPlanner"],
-																metaFields: []string{},
-															}.Init(),
+												DataSourcePlan{
+													name: "tableInPlanner",
+													streamFields: []interface{}{
+														&ast.StreamField{
+															Name:      "hum",
+															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														},
+														&ast.StreamField{
+															Name:      "id",
+															FieldType: &ast.BasicType{Type: ast.BIGINT},
 														},
 													},
-													condition: &ast.BinaryExpr{
-														OP:  ast.LT,
-														LHS: &ast.FieldRef{Name: "hum", StreamName: "tableInPlanner"},
-														RHS: &ast.IntegerLiteral{Val: 60},
-													},
+													streamStmt: streams["tableInPlanner"],
+													metaFields: []string{},
 												}.Init(),
 											},
 										},
@@ -1827,9 +1789,33 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 									Alias:    "",
 									JoinType: ast.INNER_JOIN,
 									Expr: &ast.BinaryExpr{
-										LHS: &ast.FieldRef{Name: "id1", StreamName: "src1"},
-										OP:  ast.EQ,
-										RHS: &ast.FieldRef{Name: "id", StreamName: "tableInPlanner"},
+										OP: ast.AND,
+										LHS: &ast.BinaryExpr{
+											LHS: &ast.FieldRef{Name: "id1", StreamName: "src1"},
+											OP:  ast.EQ,
+											RHS: &ast.FieldRef{Name: "id", StreamName: "tableInPlanner"},
+										},
+										RHS: &ast.BinaryExpr{
+											RHS: &ast.BinaryExpr{
+												OP: ast.AND,
+												LHS: &ast.BinaryExpr{
+													OP:  ast.GT,
+													LHS: &ast.FieldRef{Name: "temp", StreamName: "src1"},
+													RHS: &ast.IntegerLiteral{Val: 20},
+												},
+												RHS: &ast.BinaryExpr{
+													OP:  ast.LT,
+													LHS: &ast.FieldRef{Name: "hum", StreamName: "tableInPlanner"},
+													RHS: &ast.IntegerLiteral{Val: 60},
+												},
+											},
+											OP: ast.AND,
+											LHS: &ast.BinaryExpr{
+												OP:  ast.GT,
+												LHS: &ast.FieldRef{Name: "id1", StreamName: "src1"},
+												RHS: &ast.IntegerLiteral{Val: 111},
+											},
+										},
 									},
 								},
 							},
