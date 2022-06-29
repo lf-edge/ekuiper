@@ -45,7 +45,7 @@ func GenTransform(dt string, format string, schemaId string) (TransFunc, error) 
 	}
 
 	if dt != "" {
-		temp, err := template.New("sink").Funcs(conf.FuncMap).Parse(dt)
+		temp, err := template.New("sink").Option("missingkey=zero").Funcs(conf.FuncMap).Parse(dt)
 		if err != nil {
 			return nil, err
 		}
