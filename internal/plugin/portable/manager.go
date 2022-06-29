@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package portable
 import (
 	"archive/zip"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/meta"
@@ -25,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -234,7 +234,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 			if err != nil {
 				return err
 			}
-			err = json.Unmarshal(allBytes, pi)
+			err = message.Unmarshal(allBytes, pi)
 			if err != nil {
 				return err
 			}

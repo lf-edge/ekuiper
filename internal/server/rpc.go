@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/topo/sink"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"net/http"
 	"net/rpc"
 	"strings"
@@ -223,7 +224,7 @@ func (t *Server) ShowRules(_ int, reply *string) error {
 	if len(r) == 0 {
 		*reply = "No rule definitions are found."
 	} else {
-		result, err := json.Marshal(r)
+		result, err := message.Marshal(r)
 		if err != nil {
 			return fmt.Errorf("Show rule error : %s.", err)
 		}
@@ -252,7 +253,7 @@ func (t *Server) DropRule(name string, reply *string) error {
 }
 
 func marshalDesc(m interface{}) (string, error) {
-	s, err := json.Marshal(m)
+	s, err := message.Marshal(m)
 	if err != nil {
 		return "", fmt.Errorf("invalid json %v", m)
 	}

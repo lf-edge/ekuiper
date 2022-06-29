@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 package source
 
 import (
-	"encoding/json"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"reflect"
 	"testing"
 )
@@ -23,7 +23,7 @@ import (
 func TestCheckType(t *testing.T) {
 	strModel := `{"deviceModels":[{"name":"device1","properties":[{"name":"temperature","dataType":"int"},{"name":"humidity","dataType":"int"}]},{"name":"device2","properties":[{"name":"temperature","dataType":"string"},{"name":"humidity","dataType":"string"}]}]}`
 	mode := new(deviceModel)
-	json.Unmarshal([]byte(strModel), mode)
+	message.Unmarshal([]byte(strModel), mode)
 
 	datas := []map[string]interface{}{
 		{"temperature": 1, "humidity": 1},

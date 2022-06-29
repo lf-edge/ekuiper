@@ -15,12 +15,12 @@
 package sink
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -281,7 +281,7 @@ func (ms *RestSink) Send(ctx api.StreamContext, v interface{}, logger api.Logger
 		if err != nil {
 			return nil, err
 		}
-		err = json.Unmarshal([]byte(tstr), &headers)
+		err = message.Unmarshal([]byte(tstr), &headers)
 		if err != nil {
 			return nil, fmt.Errorf("rest sink headers template decode error: %v", err)
 		}

@@ -15,7 +15,6 @@
 package planner
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/gdexlab/go-render/render"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
@@ -23,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"reflect"
 	"strings"
 	"testing"
@@ -62,7 +62,7 @@ func Test_createLogicalPlan(t *testing.T) {
 		"tableInPlanner": ast.TypeTable,
 	}
 	for name, sql := range streamSqls {
-		s, err := json.Marshal(&xsql.StreamInfo{
+		s, err := message.Marshal(&xsql.StreamInfo{
 			StreamType: types[name],
 			Statement:  sql,
 		})
@@ -1161,7 +1161,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 		"tableInPlanner": ast.TypeTable,
 	}
 	for name, sql := range streamSqls {
-		s, err := json.Marshal(&xsql.StreamInfo{
+		s, err := message.Marshal(&xsql.StreamInfo{
 			StreamType: types[name],
 			Statement:  sql,
 		})

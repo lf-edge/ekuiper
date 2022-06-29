@@ -15,7 +15,6 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
@@ -24,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/converter/protobuf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	"sync"
 )
@@ -257,7 +257,7 @@ func (d *wrappedProtoDescriptor) ConvertReturnMessage(method string, returnVal *
 
 func (d *wrappedProtoDescriptor) ConvertReturnJson(method string, returnVal []byte) (interface{}, error) {
 	r := make(map[string]interface{})
-	err := json.Unmarshal(returnVal, &r)
+	err := message.Unmarshal(returnVal, &r)
 	if err != nil {
 		return nil, err
 	}

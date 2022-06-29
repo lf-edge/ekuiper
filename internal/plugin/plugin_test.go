@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 package plugin
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"reflect"
 	"testing"
 )
@@ -55,7 +55,7 @@ func TestDecode(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		p := NewPluginByType(tt.t)
-		err := json.Unmarshal([]byte(tt.j), p)
+		err := message.Unmarshal([]byte(tt.j), p)
 		if err != nil {
 			t.Error(err)
 			return

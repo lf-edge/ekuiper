@@ -15,9 +15,9 @@
 package memory
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"strings"
 )
 
@@ -61,7 +61,7 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 			return err
 		}
 		m := make(map[string]interface{})
-		err = json.Unmarshal(jsonBytes, &m)
+		err = message.Unmarshal(jsonBytes, &m)
 		if err != nil {
 			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
 		}

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package operator
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -2498,7 +2497,7 @@ func TestCrossJoinPlanError(t *testing.T) {
 
 func str2Map(s string) map[string]interface{} {
 	var input map[string]interface{}
-	if err := json.Unmarshal([]byte(s), &input); err != nil {
+	if err := message.Unmarshal([]byte(s), &input); err != nil {
 		fmt.Printf("Failed to parse the JSON data.\n")
 		return nil
 	}

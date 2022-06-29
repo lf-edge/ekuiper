@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
 package xsql
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"strings"
 )
 
@@ -63,7 +63,7 @@ func GetDataSourceStatement(m kv.KeyValue, name string) (*StreamInfo, error) {
 		vs = &StreamInfo{}
 	)
 	if ok, _ := m.Get(name, &v); ok {
-		if err := json.Unmarshal([]byte(v), vs); err != nil {
+		if err := message.Unmarshal([]byte(v), vs); err != nil {
 			return nil, fmt.Errorf("error unmarshall %s, the data in db may be corrupted", name)
 		} else {
 			return vs, nil

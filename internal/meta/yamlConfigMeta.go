@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
 package meta
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"sync"
 )
 
@@ -76,7 +76,7 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 	}
 
 	cf := cfgOps.CopyConfContent()
-	if b, err = json.Marshal(cf); nil != err {
+	if b, err = message.Marshal(cf); nil != err {
 		return nil, fmt.Errorf(`%s%v`, getMsg(language, source, "json_marshal_fail"), cf)
 	} else {
 		return b, err
@@ -118,7 +118,7 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
 	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
 
 	reqField := make(map[string]interface{})
-	err := json.Unmarshal(content, &reqField)
+	err := message.Unmarshal(content, &reqField)
 	if nil != err {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), plgName, err)
 	}
@@ -156,7 +156,7 @@ func AddConnectionConfKey(plgName, confKey, language string, content []byte) err
 	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
 
 	reqField := make(map[string]interface{})
-	err := json.Unmarshal(content, &reqField)
+	err := message.Unmarshal(content, &reqField)
 	if nil != err {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), plgName, err)
 	}

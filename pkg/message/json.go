@@ -12,27 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package json
+package message
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/message"
+	jsoniter "github.com/json-iterator/go"
 )
 
-type Converter struct {
+var jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
+
+func Marshal(v interface{}) ([]byte, error) {
+	return jsoni.Marshal(v)
 }
 
-var converter = &Converter{}
-
-func GetConverter() (message.Converter, error) {
-	return converter, nil
-}
-
-func (c *Converter) Encode(d interface{}) ([]byte, error) {
-	return message.Marshal(d)
-}
-
-func (c *Converter) Decode(b []byte) (interface{}, error) {
-	result := make(map[string]interface{})
-	e := message.Unmarshal(b, &result)
-	return result, e
+func Unmarshal(b []byte, v interface{}) error {
+	return jsoni.Unmarshal(b, v)
 }

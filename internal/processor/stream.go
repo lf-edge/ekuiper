@@ -16,7 +16,6 @@ package processor
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
@@ -24,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"strings"
 )
 
@@ -100,7 +100,7 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 }
 
 func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, replace bool) error {
-	s, err := json.Marshal(xsql.StreamInfo{
+	s, err := message.Marshal(xsql.StreamInfo{
 		StreamType: stmt.StreamType,
 		Statement:  statement,
 	})
@@ -173,7 +173,7 @@ func (p *StreamProcessor) ShowStream(st ast.StreamType) ([]string, error) {
 	)
 	for _, k := range keys {
 		if ok, _ := p.db.Get(k, &v); ok {
-			if err := json.Unmarshal([]byte(v), vs); err == nil && vs.StreamType == st {
+			if err := message.Unmarshal([]byte(v), vs); err == nil && vs.StreamType == st {
 				result = append(result, k)
 			}
 		}

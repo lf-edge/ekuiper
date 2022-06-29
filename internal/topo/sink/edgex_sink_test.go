@@ -18,7 +18,6 @@
 package sink
 
 import (
-	"encoding/json"
 	"fmt"
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
@@ -27,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"reflect"
 	"testing"
 )
@@ -489,7 +489,7 @@ func TestProduceEvents(t1 *testing.T) {
 			ems.c.SourceName = "ruleTest"
 		}
 		var payload []map[string]interface{}
-		json.Unmarshal([]byte(t.input), &payload)
+		message.Unmarshal([]byte(t.input), &payload)
 		result, err := ems.produceEvents(ctx, payload)
 		if !reflect.DeepEqual(t.error, testx.Errstring(err)) {
 			t1.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, t.input, t.error, err)
@@ -596,9 +596,9 @@ func TestEdgeXTemplate_Apply(t1 *testing.T) {
 			ems.c.SourceName = "ruleTest"
 		}
 		var payload []map[string]interface{}
-		json.Unmarshal([]byte(t.input), &payload)
+		message.Unmarshal([]byte(t.input), &payload)
 		dt := t.conf["dataTemplate"]
-		tf, _ := transform.GenTransform(cast.ToStringAlways(dt))
+		tf, _ := transform.GenTransform(cast.ToStringAlways(dt), "json", "")
 		vCtx := context.WithValue(ctx, context.TransKey, tf)
 		result, err := ems.produceEvents(vCtx, payload[0])
 		if !reflect.DeepEqual(t.error, testx.Errstring(err)) {

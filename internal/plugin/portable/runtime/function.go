@@ -15,11 +15,11 @@
 package runtime
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 // PortableFunc each function symbol only has a singleton
@@ -82,7 +82,7 @@ func (f *PortableFunc) Validate(args []interface{}) error {
 		return err
 	}
 	fr := &FuncReply{}
-	err = json.Unmarshal(res, fr)
+	err = message.Unmarshal(res, fr)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (f *PortableFunc) Exec(args []interface{}, ctx api.FunctionContext) (interf
 		return err, false
 	}
 	fr := &FuncReply{}
-	err = json.Unmarshal(res, fr)
+	err = message.Unmarshal(res, fr)
 	if err != nil {
 		return err, false
 	}
@@ -137,7 +137,7 @@ func (f *PortableFunc) IsAggregate() bool {
 		return false
 	}
 	fr := &FuncReply{}
-	err = json.Unmarshal(res, fr)
+	err = message.Unmarshal(res, fr)
 	if err != nil {
 		conf.Log.Error(err)
 		return false
@@ -172,7 +172,7 @@ func encode(funcName string, arg interface{}) ([]byte, error) {
 		Func: funcName,
 		Arg:  arg,
 	}
-	return json.Marshal(c)
+	return message.Marshal(c)
 }
 
 func encodeCtx(ctx api.FunctionContext) (string, error) {
@@ -184,6 +184,6 @@ func encodeCtx(ctx api.FunctionContext) (string, error) {
 		},
 		FuncId: ctx.GetFuncId(),
 	}
-	bs, err := json.Marshal(m)
+	bs, err := message.Marshal(m)
 	return string(bs), err
 }

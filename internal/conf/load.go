@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@
 package conf
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -245,7 +245,7 @@ func loadJsonForYaml(filePath string) (map[string]interface{}, error) {
 		return nil, err
 	}
 	m := make(map[string]interface{})
-	err = json.Unmarshal(data, &m)
+	err = message.Unmarshal(data, &m)
 	if err != nil {
 		return nil, err
 	}

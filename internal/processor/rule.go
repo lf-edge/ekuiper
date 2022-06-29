@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"path"
 )
 
@@ -80,7 +81,7 @@ func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (err e
 	}
 
 	rule.Triggered = triggered
-	ruleJson, err := json.Marshal(rule)
+	ruleJson, err := message.Marshal(rule)
 	if err != nil {
 		return fmt.Errorf("Marshal rule %s error : %s.", name, err)
 	}
@@ -135,7 +136,7 @@ func (p *RuleProcessor) getRuleByJson(name, ruleJson string) (*api.Rule, error) 
 	rule := &api.Rule{
 		Options: &opt,
 	}
-	if err := json.Unmarshal([]byte(ruleJson), &rule); err != nil {
+	if err := message.Unmarshal([]byte(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)
 	}
 

@@ -19,10 +19,10 @@ package transform
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"reflect"
 	"strconv"
 	"text/template"
@@ -58,7 +58,7 @@ func Base64Encode(para interface{}) (string, error) {
 	case reflect.String:
 		return base64.StdEncoding.EncodeToString([]byte(v.String())), nil
 	case reflect.Map:
-		if a, err := json.Marshal(para); err != nil {
+		if a, err := message.Marshal(para); err != nil {
 			return "", err
 		} else {
 			en := base64.StdEncoding.EncodeToString(a)

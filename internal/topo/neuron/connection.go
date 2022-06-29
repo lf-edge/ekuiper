@@ -15,13 +15,13 @@
 package neuron
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/memory"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pair"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
@@ -124,7 +124,7 @@ func run(ctx api.StreamContext) {
 		if msg, err := sock.Recv(); err == nil {
 			ctx.GetLogger().Debugf("neuron received message %s", string(msg))
 			result := make(map[string]interface{})
-			err := json.Unmarshal(msg, &result)
+			err := message.Unmarshal(msg, &result)
 			if err != nil {
 				ctx.GetLogger().Errorf("neuron decode message error %v", err)
 				continue

@@ -15,11 +15,11 @@
 package runtime
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"go.nanomsg.org/mangos/v3"
 )
 
@@ -114,7 +114,7 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 			return
 		}
 		result := &api.DefaultSourceTuple{}
-		e := json.Unmarshal(msg, result)
+		e := message.Unmarshal(msg, result)
 		if e != nil {
 			ctx.GetLogger().Errorf("Invalid data format, cannot decode %s to json format with error %s", string(msg), e)
 			continue

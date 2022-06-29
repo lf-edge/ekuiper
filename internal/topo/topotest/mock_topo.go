@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package topotest
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/processor"
@@ -29,6 +28,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"reflect"
 	"strings"
 	"testing"
@@ -95,7 +95,7 @@ func CommonResultFunc(result [][]byte) interface{} {
 	var maps [][]map[string]interface{}
 	for _, v := range result {
 		var mapRes []map[string]interface{}
-		err := json.Unmarshal(v, &mapRes)
+		err := message.Unmarshal(v, &mapRes)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to parse the input %v into map", string(v)))
 		}

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
 package source
 
 import (
-	"encoding/json"
 	"fmt"
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
@@ -26,6 +25,7 @@ import (
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"strconv"
 	"strings"
 )
@@ -118,7 +118,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 					case MessageTypeRequest:
 						r = &requests.AddEventRequest{}
 					}
-					if err := json.Unmarshal(env.Payload, r); err != nil {
+					if err := message.Unmarshal(env.Payload, r); err != nil {
 						l := len(env.Payload)
 						if l > 200 {
 							l = 200
@@ -229,21 +229,21 @@ func (es *EdgexSource) getValue(r dtos.BaseReading, logger api.Logger) (interfac
 		return v, nil
 	case v2.ValueTypeBoolArray:
 		var val []bool
-		if e := json.Unmarshal([]byte(v), &val); e == nil {
+		if e := message.Unmarshal([]byte(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
 		}
 	case v2.ValueTypeInt8Array, v2.ValueTypeInt16Array, v2.ValueTypeInt32Array, v2.ValueTypeInt64Array, v2.ValueTypeUint8Array, v2.ValueTypeUint16Array, v2.ValueTypeUint32Array:
 		var val []int
-		if e := json.Unmarshal([]byte(v), &val); e == nil {
+		if e := message.Unmarshal([]byte(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
 		}
 	case v2.ValueTypeUint64Array:
 		var val []uint64
-		if e := json.Unmarshal([]byte(v), &val); e == nil {
+		if e := message.Unmarshal([]byte(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
@@ -254,7 +254,7 @@ func (es *EdgexSource) getValue(r dtos.BaseReading, logger api.Logger) (interfac
 		return convertFloatArray(v, 64)
 	case v2.ValueTypeStringArray:
 		var val []string
-		if e := json.Unmarshal([]byte(v), &val); e == nil {
+		if e := message.Unmarshal([]byte(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
@@ -271,7 +271,7 @@ func (es *EdgexSource) getValue(r dtos.BaseReading, logger api.Logger) (interfac
 
 func convertFloatArray(v string, bitSize int) (interface{}, error) {
 	var val1 []string
-	if e := json.Unmarshal([]byte(v), &val1); e == nil {
+	if e := message.Unmarshal([]byte(v), &val1); e == nil {
 		var ret []float64
 		for _, v := range val1 {
 			if fv, err := strconv.ParseFloat(v, bitSize); err != nil {
@@ -283,7 +283,7 @@ func convertFloatArray(v string, bitSize int) (interface{}, error) {
 		return ret, nil
 	} else {
 		var val []float64
-		if e := json.Unmarshal([]byte(v), &val); e == nil {
+		if e := message.Unmarshal([]byte(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e

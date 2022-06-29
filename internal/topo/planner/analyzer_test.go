@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
 package planner
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"reflect"
 	"strings"
 	"testing"
@@ -147,7 +147,7 @@ func Test_validation(t *testing.T) {
 		"src1": ast.TypeStream,
 	}
 	for name, sql := range streamSqls {
-		s, err := json.Marshal(&xsql.StreamInfo{
+		s, err := message.Marshal(&xsql.StreamInfo{
 			StreamType: types[name],
 			Statement:  sql,
 		})
@@ -205,7 +205,7 @@ func Test_validationSchemaless(t *testing.T) {
 		"src1": ast.TypeStream,
 	}
 	for name, sql := range streamSqls {
-		s, err := json.Marshal(&xsql.StreamInfo{
+		s, err := message.Marshal(&xsql.StreamInfo{
 			StreamType: types[name],
 			Statement:  sql,
 		})

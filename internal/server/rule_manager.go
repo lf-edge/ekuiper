@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"sort"
 	"sync"
 )
@@ -218,7 +219,7 @@ func getRuleTopo(name string) (string, error) {
 		if graph == nil {
 			return "", errorx.New(fmt.Sprintf("Fail to get rule %s's topo, make sure the rule has been started before", name))
 		}
-		bs, err := json.Marshal(graph)
+		bs, err := message.Marshal(graph)
 		if err != nil {
 			return "", errorx.New(fmt.Sprintf("Fail to encode rule %s's topo", name))
 		} else {

@@ -15,10 +15,10 @@
 package topotest
 
 import (
-	"encoding/json"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"testing"
 )
 
@@ -780,7 +780,7 @@ func TestSingleSQLTemplate(t *testing.T) {
 		var maps []map[string]interface{}
 		for _, v := range result {
 			var mapRes map[string]interface{}
-			err := json.Unmarshal(v, &mapRes)
+			err := message.Unmarshal(v, &mapRes)
 			if err != nil {
 				t.Errorf("Failed to parse the input into map")
 				continue
@@ -886,7 +886,7 @@ func TestSingleSQLForBinary(t *testing.T) {
 		var maps [][]map[string]interface{}
 		for _, v := range result {
 			var mapRes []map[string][]byte
-			err := json.Unmarshal(v, &mapRes)
+			err := message.Unmarshal(v, &mapRes)
 			if err != nil {
 				panic("Failed to parse the input into map")
 			}

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
 package meta
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"path"
 	"reflect"
 	"sync"
@@ -69,7 +69,7 @@ func (c *ConfigKeys) GetConfContentByte() ([]byte, error) {
 		cf[key] = aux
 	}
 
-	return json.Marshal(cf)
+	return message.Marshal(cf)
 }
 
 func (c *ConfigKeys) CopyConfContent() map[string]map[string]interface{} {

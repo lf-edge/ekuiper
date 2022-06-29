@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@
 package source
 
 import (
-	"encoding/json"
 	"fmt"
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"math"
 	"reflect"
 	"testing"
@@ -113,7 +113,7 @@ func TestGetValue_IntFloatArr(t *testing.T) {
 	var testEvent = models.Event{DeviceName: "test"}
 	for i := 1; i < 8; i++ {
 		ia := []int{i, i * 2}
-		jsonValue, _ := json.Marshal(ia)
+		jsonValue, _ := message.Marshal(ia)
 		name := fmt.Sprintf("ia%d", i)
 		r1 := models.SimpleReading{
 			BaseReading: models.BaseReading{

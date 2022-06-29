@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -140,7 +141,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		info.UpTimeSeconds = time.Now().Unix() - startTimeStamp
 		info.Os = runtime.GOOS
 		info.Arch = runtime.GOARCH
-		byteInfo, _ := json.Marshal(info)
+		byteInfo, _ := message.Marshal(info)
 		w.Write(byteInfo)
 	}
 }

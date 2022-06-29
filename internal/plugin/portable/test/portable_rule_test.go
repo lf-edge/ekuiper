@@ -17,7 +17,6 @@ package test
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
@@ -29,6 +28,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"log"
 	"os"
 	"reflect"
@@ -152,7 +152,7 @@ func TestSourceAndFunc(t *testing.T) {
 						break
 					}
 					var mapRes []map[string]interface{}
-					err := json.Unmarshal([]byte(v), &mapRes)
+					err := message.Unmarshal([]byte(v), &mapRes)
 					if err != nil {
 						t.Errorf("Failed to parse the input into map")
 						continue

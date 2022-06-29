@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
 package operator
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"reflect"
 	"testing"
 )
@@ -128,7 +128,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 		}
 
 		var dm []map[string]interface{}
-		if e := json.Unmarshal(tt.data, &dm); e != nil {
+		if e := message.Unmarshal(tt.data, &dm); e != nil {
 			t.Log(e)
 			t.Fail()
 		} else {

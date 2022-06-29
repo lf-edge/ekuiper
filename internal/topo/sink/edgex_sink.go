@@ -19,7 +19,6 @@ package sink
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
@@ -28,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"reflect"
 )
 
@@ -124,7 +124,7 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item interface{
 			return nil, err
 		}
 		tm := make(map[string]interface{})
-		err = json.Unmarshal(jsonBytes, &tm)
+		err = message.Unmarshal(jsonBytes, &tm)
 		if err != nil {
 			return nil, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
 		}
@@ -494,7 +494,7 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 			return fmt.Errorf("unexpected error encode event %v", err)
 		}
 	} else {
-		data, err = json.Marshal(evt)
+		data, err = message.Marshal(evt)
 		if err != nil {
 			return fmt.Errorf("unexpected error MarshalEvent %v", err)
 		}

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 package meta
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"testing"
 )
 
@@ -68,7 +68,7 @@ func TestConfigKeys_Ops(t *testing.T) {
 	delData := `{"method":"","headers":{"Accept":""}}`
 
 	reqField := make(map[string]interface{})
-	_ = json.Unmarshal([]byte(addData), &reqField)
+	_ = message.Unmarshal([]byte(addData), &reqField)
 
 	err = httpCfg.AddConfKey("new", reqField)
 	if err != nil {
@@ -80,7 +80,7 @@ func TestConfigKeys_Ops(t *testing.T) {
 	}
 
 	delField := make(map[string]interface{})
-	_ = json.Unmarshal([]byte(delData), &delField)
+	_ = message.Unmarshal([]byte(delData), &delField)
 
 	err = httpCfg.DeleteConfKeyField("new", delField)
 	if err != nil {
@@ -94,16 +94,16 @@ func TestConfigKeys_Ops(t *testing.T) {
 }
 
 func marshalUn(input, output interface{}) error {
-	jsonString, err := json.Marshal(input)
+	jsonString, err := message.Marshal(input)
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(jsonString, output)
+	return message.Unmarshal(jsonString, output)
 }
 
 func isDelData(js string, cf map[string]interface{}) error {
 	var delNode map[string]interface{}
-	if err := json.Unmarshal([]byte(js), &delNode); nil != err {
+	if err := message.Unmarshal([]byte(js), &delNode); nil != err {
 		return err
 	}
 	for delk, delv := range delNode {
@@ -121,7 +121,7 @@ func isDelData(js string, cf map[string]interface{}) error {
 				}
 			}
 		case map[string]interface{}:
-			if b, err := json.Marshal(t); nil != err {
+			if b, err := message.Marshal(t); nil != err {
 				return fmt.Errorf("request format error")
 			} else {
 				var auxCf map[string]interface{}
@@ -138,7 +138,7 @@ func isDelData(js string, cf map[string]interface{}) error {
 }
 func isAddData(js string, cf map[string]interface{}) error {
 	var addNode map[string]interface{}
-	if err := json.Unmarshal([]byte(js), &addNode); nil != err {
+	if err := message.Unmarshal([]byte(js), &addNode); nil != err {
 		return err
 	}
 	for addk := range addNode {

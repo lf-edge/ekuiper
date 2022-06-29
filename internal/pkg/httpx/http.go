@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package httpx
 import (
 	"bytes"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -48,7 +48,7 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 		case []byte:
 			body = bytes.NewBuffer(t)
 		default:
-			vj, err := json.Marshal(v)
+			vj, err := message.Marshal(v)
 			if err != nil {
 				return nil, fmt.Errorf("invalid content: %v", v)
 			}
@@ -69,7 +69,7 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 			var vstr string
 			switch value.(type) {
 			case []interface{}, map[string]interface{}:
-				if temp, err := json.Marshal(value); err != nil {
+				if temp, err := message.Marshal(value); err != nil {
 					return nil, fmt.Errorf("fail to parse from value: %v", err)
 				} else {
 					vstr = string(temp)
@@ -102,7 +102,7 @@ func convertToMap(v interface{}, sendSingle bool) (map[string]interface{}, error
 	switch t := v.(type) {
 	case []byte:
 		r := make(map[string]interface{})
-		if err := json.Unmarshal(t, &r); err != nil {
+		if err := message.Unmarshal(t, &r); err != nil {
 			if sendSingle {
 				return nil, fmt.Errorf("fail to decode content: %v", err)
 			} else {
@@ -117,7 +117,7 @@ func convertToMap(v interface{}, sendSingle bool) (map[string]interface{}, error
 		if sendSingle {
 			return nil, fmt.Errorf("invalid content: %v", t)
 		} else {
-			j, err := json.Marshal(t)
+			j, err := message.Marshal(t)
 			if err != nil {
 				return nil, err
 			}

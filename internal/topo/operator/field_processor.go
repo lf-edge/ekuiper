@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package operator
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -169,7 +168,7 @@ func (p *defaultFieldProcessor) addRecField(ft ast.FieldType, r map[string]inter
 			} else if jtype == reflect.Slice {
 				s = t.([]interface{})
 			} else if jtype == reflect.String {
-				err := json.Unmarshal([]byte(t.(string)), &s)
+				err := message.Unmarshal([]byte(t.(string)), &s)
 				if err != nil {
 					return fmt.Errorf("invalid data type for %s, expect array but found %[2]T(%[2]v)", n, t)
 				}
@@ -194,7 +193,7 @@ func (p *defaultFieldProcessor) addRecField(ft ast.FieldType, r map[string]inter
 					return fmt.Errorf("invalid data type for %s, expect map but found %[2]T(%[2]v)", n, t)
 				}
 			} else if jtype == reflect.String {
-				err := json.Unmarshal([]byte(t.(string)), &nextJ)
+				err := message.Unmarshal([]byte(t.(string)), &nextJ)
 				if err != nil {
 					return fmt.Errorf("invalid data type for %s, expect map but found %[2]T(%[2]v)", n, t)
 				}
@@ -270,7 +269,7 @@ func (p *defaultFieldProcessor) addArrayField(ft *ast.ArrayType, srcSlice []inte
 				} else if jtype == reflect.Slice || jtype == reflect.Array {
 					s = t.([]interface{})
 				} else if jtype == reflect.String {
-					err := json.Unmarshal([]byte(t.(string)), &s)
+					err := message.Unmarshal([]byte(t.(string)), &s)
 					if err != nil {
 						return nil, fmt.Errorf("invalid data type for [%d], expect array but found %[2]T(%[2]v)", i, t)
 					}
@@ -308,7 +307,7 @@ func (p *defaultFieldProcessor) addArrayField(ft *ast.ArrayType, srcSlice []inte
 					}
 
 				} else if jtype == reflect.String {
-					err := json.Unmarshal([]byte(t.(string)), &j)
+					err := message.Unmarshal([]byte(t.(string)), &j)
 					if err != nil {
 						return nil, fmt.Errorf("invalid data type for [%d], expect map but found %[2]T(%[2]v)", i, t)
 					}

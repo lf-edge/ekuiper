@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@ package conf
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/PaesslerAG/gval"
 	"github.com/PaesslerAG/jsonpath"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"reflect"
 )
 
@@ -45,7 +45,7 @@ func (e *gvalPathEval) Eval(data interface{}) (interface{}, error) {
 			input = cast.ConvertSlice(data)
 		case reflect.String:
 			v, _ := data.(string)
-			err := json.Unmarshal([]byte(v), &input)
+			err := message.Unmarshal([]byte(v), &input)
 			if err != nil {
 				return nil, fmt.Errorf("data '%v' is not a valid json string", data)
 			}

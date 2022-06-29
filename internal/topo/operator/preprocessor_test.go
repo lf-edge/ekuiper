@@ -16,7 +16,6 @@ package operator
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -577,7 +576,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
 
 		dm := make(map[string]interface{})
-		if e := json.Unmarshal(tt.data, &dm); e != nil {
+		if e := message.Unmarshal(tt.data, &dm); e != nil {
 			log.Fatal(e)
 			return
 		} else {
@@ -713,7 +712,7 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 			pp.timestampFormat = tt.stmt.Options.TIMESTAMP_FORMAT
 		}
 		dm := make(map[string]interface{})
-		if e := json.Unmarshal(tt.data, &dm); e != nil {
+		if e := message.Unmarshal(tt.data, &dm); e != nil {
 			log.Fatal(e)
 			return
 		} else {
@@ -903,7 +902,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 		}
 
 		dm := make(map[string]interface{})
-		if e := json.Unmarshal(tt.data, &dm); e != nil {
+		if e := message.Unmarshal(tt.data, &dm); e != nil {
 			log.Fatal(e)
 			return
 		} else {
@@ -983,7 +982,7 @@ func TestPreprocessorError(t *testing.T) {
 		pp.strictValidation = true
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
 		dm := make(map[string]interface{})
-		if e := json.Unmarshal(tt.data, &dm); e != nil {
+		if e := message.Unmarshal(tt.data, &dm); e != nil {
 			log.Fatal(e)
 			return
 		} else {

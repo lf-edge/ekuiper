@@ -15,11 +15,11 @@
 package neuron
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"sort"
 )
 
@@ -170,7 +170,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, el map[string]interface{})
 }
 
 func doPublish(ctx api.StreamContext, t *neuronTemplate) error {
-	r, err := json.Marshal(t)
+	r, err := message.Marshal(t)
 	if err != nil {
 		return fmt.Errorf("Error marshall the tag payload %v: %v", t, err)
 	}

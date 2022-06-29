@@ -16,7 +16,6 @@ package transform
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
@@ -71,12 +70,12 @@ func GenTransform(dt string, format string, schemaId string) (TransFunc, error) 
 			if transformed {
 				return bs, transformed, nil
 			}
-			j, err := json.Marshal(d)
+			j, err := message.Marshal(d)
 			return j, false, err
 		case message.FormatProtobuf:
 			if transformed {
 				m := make(map[string]interface{})
-				err := json.Unmarshal(bs, &m)
+				err := message.Unmarshal(bs, &m)
 				if err != nil {
 					return nil, false, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(bs), err)
 				}

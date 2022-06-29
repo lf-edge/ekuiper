@@ -15,11 +15,11 @@
 package runtime
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"os"
 	"os/exec"
 	"sync"
@@ -58,7 +58,7 @@ func NewPluginIns(name string, ctrlChan ControlChannel, process *os.Process) *Pl
 }
 
 func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
-	arg, err := json.Marshal(ctrl)
+	arg, err := message.Marshal(ctrl)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 		Cmd: CMD_START,
 		Arg: string(arg),
 	}
-	jsonArg, err := json.Marshal(c)
+	jsonArg, err := message.Marshal(c)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 }
 
 func (i *PluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
-	arg, err := json.Marshal(ctrl)
+	arg, err := message.Marshal(ctrl)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (i *PluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
 		Cmd: CMD_STOP,
 		Arg: string(arg),
 	}
-	jsonArg, err := json.Marshal(c)
+	jsonArg, err := message.Marshal(c)
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		}
 	}()
 	conf.Log.Infof("executing plugin")
-	jsonArg, err := json.Marshal(pconf)
+	jsonArg, err := message.Marshal(pconf)
 	if err != nil {
 		return nil, fmt.Errorf("invalid conf: %v", pconf)
 	}

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 package filex
 
 import (
-	"encoding/json"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 )
@@ -25,7 +25,7 @@ func ReadJsonUnmarshal(path string, ret interface{}) error {
 	if nil != err {
 		return err
 	}
-	err = json.Unmarshal(sliByte, ret)
+	err = message.Unmarshal(sliByte, ret)
 	if nil != err {
 		return err
 	}
