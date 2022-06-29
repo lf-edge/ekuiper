@@ -118,9 +118,8 @@ func newField(fis []*fileField) (uis []field, err error) {
 			Hint:              newLanguage(fi.Hint),
 			Label:             newLanguage(fi.Label),
 		}
-		uis = append(uis, ui)
 		switch t := fi.Default.(type) {
-		case []map[string]interface{}:
+		case []interface{}:
 			var auxFi []*fileField
 			if err = cast.MapToStruct(t, &auxFi); nil != err {
 				return nil, err
@@ -131,6 +130,7 @@ func newField(fis []*fileField) (uis []field, err error) {
 		default:
 			ui.Default = fi.Default
 		}
+		uis = append(uis, ui)
 	}
 	return uis, err
 }
