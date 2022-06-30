@@ -828,6 +828,10 @@ func ToTypedSlice(input interface{}, conv func(interface{}, Strictness) (interfa
 	if s.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to %s slice)", input, eleType)
 	}
+	if s.Len() == 0 {
+		result := reflect.MakeSlice(reflect.TypeOf([]interface{}{}), s.Len(), s.Len())
+		return result.Interface(), nil
+	}
 	ele, err := conv(s.Index(0).Interface(), sn)
 	et := reflect.TypeOf(ele)
 	if err != nil || et == nil {
