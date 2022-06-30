@@ -66,7 +66,11 @@ func (fc *FieldConverter) encodeMap(im *desc.MessageDescriptor, i interface{}) (
 		for _, field := range fields {
 			v, ok := m[field.GetName()]
 			if !ok {
-				return nil, fmt.Errorf("field %s not found", field.GetName())
+				if field.IsRequired() {
+					return nil, fmt.Errorf("field %s not found", field.GetName())
+				} else {
+					v = field.GetDefaultValue()
+				}
 			}
 			fv, err := fc.EncodeField(field, v)
 			if err != nil {
