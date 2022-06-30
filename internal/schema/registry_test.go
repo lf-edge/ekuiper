@@ -78,7 +78,7 @@ func TestRegistry(t *testing.T) {
 	expectedSchema := &Info{
 		Type:     "protobuf",
 		Name:     "test1",
-		Content:  "syntax = \"proto3\";message Person {string name = 1;int32 id = 2;string email = 3;}",
+		Content:  "syntax = \"proto2\";message Person {required string name = 1;optional int32 id = 2;optional string email = 3;repeated ListOfDoubles code = 4;}message ListOfDoubles {repeated double doubles=1;}",
 		FilePath: filepath.Join(etcDir, "test1.proto"),
 	}
 	gottenSchema, err := GetSchema("protobuf", "test1")

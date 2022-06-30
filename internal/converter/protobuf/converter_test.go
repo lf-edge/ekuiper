@@ -37,7 +37,7 @@ func TestEncode(t *testing.T) {
 				"id":   1,
 				"age":  1,
 			},
-			e: "field email not found",
+			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74, 0x10, 0x01, 0x1a, 0x00},
 		}, {
 			m: map[string]interface{}{
 				"name":  "test",
@@ -73,6 +73,7 @@ func TestDecode(t *testing.T) {
 				"name":  "test",
 				"id":    int64(1),
 				"email": "Dddd",
+				"code":  []interface{}{},
 			},
 			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74, 0x10, 0x01, 0x1a, 0x04, 0x44, 0x64, 0x64, 0x64},
 		},
