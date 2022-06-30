@@ -15,6 +15,7 @@
 package meta
 
 import (
+	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"path"
 	"testing"
@@ -27,6 +28,7 @@ func TestGetMqttSourceMeta(t *testing.T) {
 	}
 
 	if err = ReadSourceMetaFile(path.Join(confDir, "mqtt_source.json"), true); nil != err {
+		t.Error(err)
 		return
 	}
 
@@ -41,4 +43,56 @@ func TestGetMqttSourceMeta(t *testing.T) {
 		t.Errorf("default fields %v", fields)
 	}
 
+}
+
+func TestGetSqlSourceMeta(t *testing.T) {
+	confDir, err := conf.GetConfLoc()
+	if nil != err {
+		return
+	}
+
+	if err = ReadSourceMetaFile(path.Join(confDir, "sources", "sql.json"), true); nil != err {
+		t.Error(err)
+		return
+	}
+
+	showMeta, err := GetSourceMeta("sql", "zh_CN")
+	if nil != err {
+		t.Error(err)
+	}
+
+	fields := showMeta.ConfKeys["default"]
+
+	for _, value := range fields {
+		if value.Default == nil {
+			t.Errorf("value  %v default field is null", value)
+		}
+	}
+}
+
+func TestGetSqlSinkMeta(t *testing.T) {
+	confDir, err := conf.GetConfLoc()
+	if nil != err {
+		return
+	}
+
+	if err = ReadSinkMetaFile(path.Join(confDir, "sinks", "sql.json"), true); nil != err {
+		t.Error(err)
+		return
+	}
+
+	showMeta, err := GetSinkMeta("sql", "zh_CN")
+	if nil != err {
+		t.Error(err)
+		return
+	}
+
+	fields := showMeta.Fields
+
+	for _, value := range fields {
+		fmt.Printf("value %v", value)
+		if value.Default == nil {
+			t.Errorf("value %v default field is null", value)
+		}
+	}
 }
