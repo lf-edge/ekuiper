@@ -2,7 +2,7 @@ eKuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s �
 
 ## Prepare：
 
-+ 安装 K3S: 
++ 安装 K3S:
   ```shell
   $ curl -sfL https://get.k3s.io | sh -
   $ sudo chmod 644 /etc/rancher/k3s/k3s.yaml
@@ -17,7 +17,7 @@ eKuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s �
   Downloading https://get.helm.sh/helm-v3.0.1-linux-amd64.tar.gz
   Preparing to install helm into /usr/local/bin
   helm installed into /usr/local/bin/helm
-  
+
   ## K8S 可以跳过这一步
   $ export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   ```
@@ -132,7 +132,7 @@ eKuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s �
   $ kubectl get pods
   NAME       READY   STATUS    RESTARTS   AGE
   my-kuiper-0   1/1     Running   0          19s
-  
+
   $ kubectl exec -it  my-kuiper-0 sh
   /kuiper # ./bin/kuiper
   Connecting to 127.0.0.1:20498...
@@ -219,3 +219,4 @@ eKuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s �
   /kuiper # ./bin/kuiper
   Connecting to 127.0.0.1:20498...
   ```
+

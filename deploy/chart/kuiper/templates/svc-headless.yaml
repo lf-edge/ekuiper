@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ekuiper.fullname" . }}-headless
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ekuiper.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - name: {{ .Values.service.portNames.restapi }}
+      port: {{ .Values.service.ports.restapi | default 9081 }}
+      protocol: TCP
+      targetPort: restapi
+    - name: {{ .Values.service.portNames.kuiper }}
+      port: {{ .Values.service.ports.kuiper | default 20498 }}
+      protocol: TCP
+      targetPort: kuiper
+  selector:
+    {{- include "ekuiper.selectorLabels" . | nindent 4 }}

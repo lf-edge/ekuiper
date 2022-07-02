@@ -1,5 +1,5 @@
 apiVersion: v2
-name: kuiper
+name: ekuiper
 description: A lightweight IoT edge analytic software
 
 # A chart can be either an 'application' or a 'library' chart.
