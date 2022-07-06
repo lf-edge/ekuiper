@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/node/cache"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -224,7 +225,6 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							}
 
 						}
-						return nil
 					})
 					if panicOrError != nil {
 						infra.DrainError(ctx, panicOrError, result)
@@ -294,8 +294,18 @@ func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats met
 		outs = []map[string]interface{}{
 			{"error": val.Error()},
 		}
-	case []map[string]interface{}:
+		break
+	case xsql.Collection: // The order is important here, because some element is both a collection and a row, such as WindowTuples, JoinTuples, etc.
+		outs = val.ToMaps()
+		break
+	case xsql.Row:
+		outs = []map[string]interface{}{
+			val.ToMap(),
+		}
+		break
+	case []map[string]interface{}: // for test only
 		outs = val
+		break
 	default:
 		outs = []map[string]interface{}{
 			{"error": fmt.Sprintf("result is not a map slice but found %#v", val)},

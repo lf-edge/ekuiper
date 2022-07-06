@@ -20,6 +20,9 @@ import (
 	"strings"
 )
 
+// The original message map may be big. Make sure it is immutable so that never make a copy of it.
+// The tuple clone should be cheap.
+
 /*
  *  Interfaces definition
  */
@@ -34,14 +37,21 @@ type Event interface {
 	IsWatermark() bool
 }
 
-type Row interface {
+type ReadonlyRow interface {
 	Valuer
 	AliasValuer
 	Wildcarder
+}
+
+type Row interface {
+	ReadonlyRow
 	// Set Only for some ops like functionOp *
 	Set(col string, value interface{})
 	// ToMap converts the row to a map to export to other systems *
 	ToMap() map[string]interface{}
+	// Pick the columns and discard others. It replaces the underlying message with a new value. There are 3 types to pick: column, alias and annonymous expressions.
+	// cols is a list [columnname, tablename]
+	Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool)
 }
 
 // TupleRow is a mutable row. Function with * could modify the row.
@@ -117,6 +127,11 @@ func (d *AffiliateRow) MergeMap(cachedMap map[string]interface{}) {
 	for k, v := range d.AliasMap {
 		cachedMap[k] = v
 	}
+}
+
+func (d *AffiliateRow) Reset() {
+	d.CalCols = nil
+	d.AliasMap = nil
 }
 
 /*
@@ -322,6 +337,29 @@ func (t *Tuple) IsWatermark() bool {
 	return false
 }
 
+func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+	if !allWildcard && wildcardEmitters[t.Emitter] {
+		allWildcard = true
+	}
+	if !allWildcard {
+		if len(cols) > 0 {
+			t.cachedMap = make(map[string]interface{})
+			for _, colTab := range cols {
+				if colTab[1] == "" || colTab[1] == string(ast.DefaultStream) || colTab[1] == t.Emitter {
+					if v, ok := t.Message.Value(colTab[0], colTab[1]); ok {
+						t.cachedMap[colTab[0]] = v
+					}
+				}
+			}
+			t.Message = t.cachedMap
+		} else {
+			t.Message = make(map[string]interface{})
+			t.cachedMap = t.Message
+		}
+	}
+	t.AffiliateRow.Reset()
+}
+
 // JoinTuple implementation
 
 func (jt *JoinTuple) AddTuple(tuple TupleRow) {
@@ -400,7 +438,7 @@ func (jt *JoinTuple) All(stream string) (Message, bool) {
 func (jt *JoinTuple) Clone() TupleRow {
 	ts := make([]TupleRow, len(jt.Tuples))
 	for i, t := range jt.Tuples {
-		ts[i] = t
+		ts[i] = t.Clone()
 	}
 	c := &JoinTuple{
 		Tuples:       ts,
@@ -421,6 +459,23 @@ func (jt *JoinTuple) ToMap() map[string]interface{} {
 	}
 	jt.AffiliateRow.MergeMap(jt.cachedMap)
 	return jt.cachedMap
+}
+
+func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+	if !allWildcard {
+		if len(cols) > 0 {
+			for _, tuple := range jt.Tuples {
+				if _, ok := wildcardEmitters[tuple.GetEmitter()]; ok {
+					continue
+				}
+				tuple.Pick(allWildcard, cols, wildcardEmitters)
+			}
+		} else {
+			jt.Tuples = jt.Tuples[:0]
+		}
+	}
+	jt.cachedMap = nil
+	jt.AffiliateRow.Reset()
 }
 
 // GroupedTuple implementation
@@ -472,4 +527,9 @@ func (s *GroupedTuples) Clone() CollectionRow {
 		AffiliateRow: s.AffiliateRow.Clone(),
 	}
 	return c
+}
+
+func (s *GroupedTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+	s.Content[0].Pick(allWildcard, cols, wildcardEmitters)
+	s.AffiliateRow.Reset()
 }

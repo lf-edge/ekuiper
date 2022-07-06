@@ -75,7 +75,7 @@ func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql
 			tuple.Message = result
 		}
 		var newTuples []xsql.TupleRow
-		_ = p.output.Range(func(i int, r xsql.Row) (bool, error) {
+		_ = p.output.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
 			if p.retainSize > 0 && p.output.Len() == p.retainSize && i == 0 {
 				return true, nil
 			}

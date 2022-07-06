@@ -477,9 +477,15 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 			t.Errorf("%d: found error %q", i, err)
 			continue
 		}
-		pp := &ProjectOp{Fields: stmt.Fields}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		opResult := pp.Apply(ctx, tt.data, fv, afv)
+		result, err := parseResult(opResult, pp.IsAggregate)
+		if err != nil {
+			t.Errorf("parse result error： %s", err)
+			continue
+		}
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
