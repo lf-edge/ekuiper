@@ -88,15 +88,20 @@ func (o *defaultNode) GetMetrics() (result [][]interface{}) {
 }
 
 func (o *defaultNode) Broadcast(val interface{}) error {
+
 	switch d := val.(type) {
 	case error:
 		if !o.sendError {
 			return nil
 		}
 	case xsql.TupleRow:
-		val = d.Clone()
+		if len(o.outputs) > 1 {
+			val = d.Clone()
+		}
 	case xsql.Collection:
-		val = d.Clone()
+		if len(o.outputs) > 1 {
+			val = d.Clone()
+		}
 	}
 	if o.qos >= api.AtLeastOnce {
 		boe := &checkpoint.BufferOrEvent{
