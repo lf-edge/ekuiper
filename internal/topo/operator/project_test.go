@@ -20,11 +20,49 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"reflect"
 	"strings"
 	"testing"
 )
+
+func parseStmt(p *ProjectOp, fields ast.Fields) {
+	p.AllWildcard = false
+	p.WildcardEmitters = make(map[string]bool)
+	for _, field := range fields {
+		if field.AName != "" {
+			p.AliasFields = append(p.AliasFields, field)
+			p.AliasNames = append(p.AliasNames, field.AName)
+		} else {
+			switch ft := field.Expr.(type) {
+			case *ast.Wildcard:
+				p.AllWildcard = true
+			case *ast.FieldRef:
+				if ft.Name == "*" {
+					p.WildcardEmitters[string(ft.StreamName)] = true
+				} else {
+					p.ColNames = append(p.ColNames, []string{ft.Name, string(ft.StreamName)})
+				}
+			default:
+				p.ExprFields = append(p.ExprFields, field)
+				p.ExprNames = append(p.ExprNames, field.Name)
+			}
+		}
+	}
+}
+
+func parseResult(opResult interface{}, aggregate bool) (result []map[string]interface{}, err error) {
+	switch rt := opResult.(type) {
+	case xsql.TupleRow:
+		result = append(result, rt.ToMap())
+	case xsql.Collection:
+		result = rt.ToMaps()
+	default:
+		err = errors.New("unexpected result type")
+	}
+	return
+}
 
 func TestProjectPlan_Apply1(t *testing.T) {
 	var tests = []struct {
@@ -555,9 +593,15 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			t.Errorf("parse sql error： %s", err)
 			continue
 		}
-		pp := &ProjectOp{Fields: stmt.Fields, SendMeta: true}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		opResult := pp.Apply(ctx, tt.data, fv, afv)
+		result, err := parseResult(opResult, pp.IsAggregate)
+		if err != nil {
+			t.Errorf("parse result error： %s", err)
+			continue
+		}
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
@@ -1061,12 +1105,10 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"id2": 2,
 				"id1": 1,
 				"f1":  "v1",
-				"f2":  "w2",
 			}, {
 				"id2": 4,
 				"id1": 2,
 				"f1":  "v2",
-				"f2":  "w3",
 			}, {
 				"id1": 3,
 				"f1":  "v1",
@@ -1112,12 +1154,10 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"id2": 2,
 				"id1": 1,
 				"f1":  "v1",
-				"f2":  "w2",
 			}, {
 				"id2": 4,
 				"id1": 2,
 				"f1":  "v2",
-				"f2":  "w3",
 			}, {
 				"id1": 3,
 				"f1":  "v1",
@@ -1131,9 +1171,15 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
-		pp := &ProjectOp{Fields: stmt.Fields}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		opResult := pp.Apply(ctx, tt.data, fv, afv)
+		result, err := parseResult(opResult, pp.IsAggregate)
+		if err != nil {
+			t.Errorf("parse result error： %s", err)
+			continue
+		}
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
@@ -1327,9 +1373,15 @@ func TestProjectPlan_Funcs(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		opResult := pp.Apply(ctx, tt.data, fv, afv)
+		result, err := parseResult(opResult, pp.IsAggregate)
+		if err != nil {
+			t.Errorf("parse result error： %s", err)
+			continue
+		}
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
@@ -2096,9 +2148,15 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: true}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: true}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		opResult := pp.Apply(ctx, tt.data, fv, afv)
+		result, err := parseResult(opResult, pp.IsAggregate)
+		if err != nil {
+			t.Errorf("parse result error： %s", err)
+			continue
+		}
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
@@ -2248,12 +2306,12 @@ func TestProjectPlanError(t *testing.T) {
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-
-		pp := &ProjectOp{Fields: stmt.Fields, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		result := pp.Apply(ctx, tt.data, fv, afv)
-		if !reflect.DeepEqual(tt.result, result) {
-			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
+		opResult := pp.Apply(ctx, tt.data, fv, afv)
+		if !reflect.DeepEqual(tt.result, opResult) {
+			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, opResult)
 		}
 	}
 }

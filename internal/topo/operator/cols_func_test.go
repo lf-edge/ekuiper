@@ -133,16 +133,18 @@ func TestChangedColsFunc_Apply1(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectOp{Fields: stmt.Fields}
+		pp := &ProjectOp{}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(ctx)
 		r := make([][]map[string]interface{}, 0, len(tt.data))
 		for _, d := range tt.data {
-			result := pp.Apply(ctx, d, fv, afv)
-			if e, ok := result.(error); ok {
-				t.Errorf("apply sql %s error %v", tt.sql, e)
+			opResult := pp.Apply(ctx, d, fv, afv)
+			result, err := parseResult(opResult, pp.IsAggregate)
+			if err != nil {
+				t.Errorf("apply sql %s error %v", tt.sql, err)
 				continue
 			}
-			r = append(r, result.([]map[string]interface{}))
+			r = append(r, result)
 		}
 		if !reflect.DeepEqual(tt.result, r) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, r)

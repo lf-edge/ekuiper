@@ -255,9 +255,15 @@ func TestMiscFunc_Apply1(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectOp{Fields: stmt.Fields}
+		pp := &ProjectOp{}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		opResult := pp.Apply(ctx, tt.data, fv, afv)
+		result, err := parseResult(opResult, pp.IsAggregate)
+		if err != nil {
+			t.Errorf("parse result error： %s", err)
+			continue
+		}
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
@@ -297,9 +303,15 @@ func TestMqttFunc_Apply2(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectOp{Fields: stmt.Fields}
+		pp := &ProjectOp{}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		opResult := pp.Apply(ctx, tt.data, fv, afv)
+		result, err := parseResult(opResult, pp.IsAggregate)
+		if err != nil {
+			t.Errorf("parse result error： %s", err)
+			continue
+		}
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
@@ -401,9 +413,15 @@ func TestMetaFunc_Apply1(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectOp{Fields: stmt.Fields}
+		pp := &ProjectOp{}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		opResult := pp.Apply(ctx, tt.data, fv, afv)
+		result, err := parseResult(opResult, pp.IsAggregate)
+		if err != nil {
+			t.Errorf("parse result error： %s", err)
+			continue
+		}
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
@@ -801,11 +819,18 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectOp{Fields: stmt.Fields}
+		pp := &ProjectOp{}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(ctx)
-		result := pp.Apply(ctx, tt.data, fv, afv)
-		switch rt := result.(type) {
-		case []map[string]interface{}:
+		opResult := pp.Apply(ctx, tt.data, fv, afv)
+		if rt, ok := opResult.(error); ok {
+			if tt.err == "" {
+				t.Errorf("%d: got error:\n  exp=%s\n  got=%s\n\n", i, tt.result, rt)
+			} else if !reflect.DeepEqual(tt.err, testx.Errstring(rt)) {
+				t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, rt)
+			}
+		} else {
+			result, _ := parseResult(opResult, pp.IsAggregate)
 			if tt.err == "" {
 				if !reflect.DeepEqual(tt.result, result) {
 					t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
@@ -813,16 +838,7 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 			} else {
 				t.Errorf("%d: invalid result:\n  exp error %s\n  got=%s\n\n", i, tt.err, result)
 			}
-		case error:
-			if tt.err == "" {
-				t.Errorf("%d: got error:\n  exp=%s\n  got=%s\n\n", i, tt.result, rt)
-			} else if !reflect.DeepEqual(tt.err, testx.Errstring(rt)) {
-				t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, rt)
-			}
-		default:
-			t.Errorf("%d: Invalid returned result found %v", i, result)
 		}
-
 	}
 }
 
@@ -938,13 +954,20 @@ func TestChangedFuncs_Apply1(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectOp{Fields: stmt.Fields}
+		pp := &ProjectOp{}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(ctx)
 		r := make([][]map[string]interface{}, 0, len(tt.data))
 		for _, d := range tt.data {
-			result := pp.Apply(ctx, d, fv, afv)
-			r = append(r, result.([]map[string]interface{}))
+			opResult := pp.Apply(ctx, d, fv, afv)
+			result, err := parseResult(opResult, pp.IsAggregate)
+			if err != nil {
+				t.Errorf("parse result error： %s", err)
+				continue
+			}
+			r = append(r, result)
 		}
+
 		if !reflect.DeepEqual(tt.result, r) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, r)
 		}

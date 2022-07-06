@@ -24,9 +24,19 @@ import (
 )
 
 type ProjectOp struct {
-	Fields      ast.Fields
-	IsAggregate bool
-	SendMeta    bool
+	ColNames         [][]string // list of [col, table]
+	AliasNames       []string   // list of alias name
+	ExprNames        []string   // list of expr name
+	AllWildcard      bool
+	WildcardEmitters map[string]bool
+	AliasFields      ast.Fields
+	ExprFields       ast.Fields
+	IsAggregate      bool
+
+	SendMeta bool
+
+	kvs   []interface{}
+	alias []interface{}
 }
 
 // Apply
@@ -35,43 +45,38 @@ type ProjectOp struct {
 func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("project plan receive %s", data)
-	var results []map[string]interface{}
 	switch input := data.(type) {
 	case error:
 		return input
 	case *xsql.Tuple:
 		ve := pp.getVE(input, input, nil, fv, afv)
-		if r, err := project(pp.Fields, ve); err != nil {
+		if err := pp.project(input, ve); err != nil {
 			return fmt.Errorf("run Select error: %s", err)
 		} else {
 			if pp.SendMeta && input.Metadata != nil {
-				r[message.MetaKey] = input.Metadata
+				input.Set(message.MetaKey, input.Metadata)
 			}
-			results = append(results, r)
 		}
 	case xsql.SingleCollection:
 		var err error
 		if pp.IsAggregate {
+			input.SetIsAgg(true)
 			err = input.GroupRange(func(_ int, aggRow xsql.CollectionRow) (bool, error) {
 				ve := pp.getVE(aggRow, aggRow, input.GetWindowRange(), fv, afv)
-				if r, err := project(pp.Fields, ve); err != nil {
+				if err := pp.project(aggRow, ve); err != nil {
 					return false, fmt.Errorf("run Select error: %s", err)
-				} else {
-					results = append(results, r)
 				}
 				return true, nil
 			})
 		} else {
-			err = input.Range(func(_ int, row xsql.Row) (bool, error) {
+			err = input.RangeSet(func(_ int, row xsql.Row) (bool, error) {
 				aggData, ok := input.(xsql.AggregateData)
 				if !ok {
 					return false, fmt.Errorf("unexpected type, cannot find aggregate data")
 				}
 				ve := pp.getVE(row, aggData, input.GetWindowRange(), fv, afv)
-				if r, err := project(pp.Fields, ve); err != nil {
+				if err := pp.project(row, ve); err != nil {
 					return false, fmt.Errorf("run Select error: %s", err)
-				} else {
-					results = append(results, r)
 				}
 				return true, nil
 			})
@@ -82,10 +87,8 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 	case xsql.GroupedCollection: // The order is important, because single collection usually is also a groupedCollection
 		err := input.GroupRange(func(_ int, aggRow xsql.CollectionRow) (bool, error) {
 			ve := pp.getVE(aggRow, aggRow, input.GetWindowRange(), fv, afv)
-			if r, err := project(pp.Fields, ve); err != nil {
+			if err := pp.project(aggRow, ve); err != nil {
 				return false, fmt.Errorf("run Select error: %s", err)
-			} else {
-				results = append(results, r)
 			}
 			return true, nil
 		})
@@ -96,7 +99,7 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		return fmt.Errorf("run Select error: invalid input %[1]T(%[1]v)", input)
 	}
 
-	return results
+	return data
 }
 
 func (pp *ProjectOp) getVE(tuple xsql.Row, agg xsql.AggregateData, wr *xsql.WindowRange, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) *xsql.ValuerEval {
@@ -111,52 +114,44 @@ func (pp *ProjectOp) getVE(tuple xsql.Row, agg xsql.AggregateData, wr *xsql.Wind
 	}
 }
 
-func project(fs ast.Fields, ve *xsql.ValuerEval) (map[string]interface{}, error) {
-	result := make(map[string]interface{}, len(fs))
-	for _, f := range fs {
+func (pp *ProjectOp) project(row xsql.Row, ve *xsql.ValuerEval) error {
+	// Calculate all fields then pick the needed ones
+	// To make sure all calculations are run with the same context (e.g. alias values)
+	// Do not set value during calculations
+
+	for _, f := range pp.ExprFields {
 		vi := ve.Eval(f.Expr)
 		if e, ok := vi.(error); ok {
-			return nil, e
+			return e
 		}
-		if _, ok := f.Expr.(*ast.Wildcard); ok || f.Name == "*" {
-			switch val := vi.(type) {
-			case map[string]interface{}:
-				for k, v := range val {
-					if _, ok := result[k]; !ok {
-						result[k] = v
-					}
-				}
-			case xsql.Message:
-				for k, v := range val {
-					if _, ok := result[k]; !ok {
-						result[k] = v
-					}
+		if vi != nil {
+			switch vt := vi.(type) {
+			case function.ResultCols:
+				for k, v := range vt {
+					pp.kvs = append(pp.kvs, k, v)
 				}
 			default:
-				return nil, fmt.Errorf("wildcarder does not return map")
-			}
-		} else {
-			if vi != nil {
-				switch vt := vi.(type) {
-				case function.ResultCols:
-					for k, v := range vt {
-						if _, ok := result[k]; !ok {
-							result[k] = v
-						}
-					}
-				default:
-					n := assignName(f.Name, f.AName)
-					result[n] = vt
-				}
+				pp.kvs = append(pp.kvs, f.Name, vi)
 			}
 		}
 	}
-	return result, nil
-}
-
-func assignName(name, alias string) string {
-	if alias != "" {
-		return alias
+	for _, f := range pp.AliasFields {
+		vi := ve.Eval(f.Expr)
+		if e, ok := vi.(error); ok {
+			return e
+		}
+		if vi != nil {
+			pp.alias = append(pp.alias, f.AName, vi)
+		}
 	}
-	return name
+	row.Pick(pp.AllWildcard, pp.ColNames, pp.WildcardEmitters)
+	for i := 0; i < len(pp.kvs); i += 2 {
+		row.Set(pp.kvs[i].(string), pp.kvs[i+1])
+	}
+	pp.kvs = pp.kvs[:0]
+	for i := 0; i < len(pp.alias); i += 2 {
+		row.AppendAlias(pp.alias[i].(string), pp.alias[i+1])
+	}
+	pp.alias = pp.alias[:0]
+	return nil
 }
