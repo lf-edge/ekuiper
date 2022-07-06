@@ -198,7 +198,7 @@ func TestCollectionAgg(t *testing.T) {
 			wg.Add(1)
 			go func(si int, set []map[string]interface{}) {
 				nr := tt.collO.Clone()
-				nr.Range(func(_ int, row Row) (bool, error) {
+				nr.RangeSet(func(_ int, row Row) (bool, error) {
 					for k, v := range set[0] {
 						if strings.HasPrefix(k, "@") {
 							row.AppendAlias(k[1:], v)
@@ -208,13 +208,16 @@ func TestCollectionAgg(t *testing.T) {
 					}
 					return true, nil
 				})
-				intermaps[si] = nr.ToRowMaps()
+				intermaps[si] = nr.ToMaps()
 				var wg2 sync.WaitGroup
 				result[si] = make([][]map[string]interface{}, len(set)-1)
 				for j := 1; j < len(set); j++ {
 					wg2.Add(1)
 					go func(j int) {
 						nnr := nr.Clone()
+						if nnsr, ok := nnr.(SingleCollection); ok {
+							nnsr.SetIsAgg(true)
+						}
 						nnr.GroupRange(func(_ int, aggRow CollectionRow) (bool, error) {
 							for k, v := range set[j] {
 								if strings.HasPrefix(k, "@") {
@@ -225,7 +228,7 @@ func TestCollectionAgg(t *testing.T) {
 							}
 							return true, nil
 						})
-						result[si][j-1] = nnr.ToAggMaps()
+						result[si][j-1] = nnr.ToMaps()
 						wg2.Done()
 					}(j)
 				}

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -658,9 +658,15 @@ func TestStrFunc_Apply1(t *testing.T) {
 		if err != nil || stmt == nil {
 			t.Errorf("parse sql %s error %v", tt.sql, err)
 		}
-		pp := &ProjectOp{Fields: stmt.Fields}
+		pp := &ProjectOp{}
+		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		result := pp.Apply(ctx, tt.data, fv, afv)
+		opResult := pp.Apply(ctx, tt.data, fv, afv)
+		result, err := parseResult(opResult, pp.IsAggregate)
+		if err != nil {
+			t.Errorf("parse result error： %s", err)
+			continue
+		}
 		if !reflect.DeepEqual(tt.result, result) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
 		}
