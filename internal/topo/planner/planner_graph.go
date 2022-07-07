@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/topo"
+	"github.com/lf-edge/ekuiper/internal/topo/graph"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
 	"github.com/lf-edge/ekuiper/internal/topo/operator"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -100,6 +101,13 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 				}
 				op := Transform(fop, nodeName, rule.Options)
 				nodeMap[nodeName] = op
+			case "pick":
+				pop, err := parsePick(gn.Props)
+				if err != nil {
+					return nil, err
+				}
+				op := Transform(pop, nodeName, rule.Options)
+				nodeMap[nodeName] = op
 			default: // TODO other node type
 				return nil, fmt.Errorf("unknown operator type %s", gn.NodeType)
 			}
@@ -134,6 +142,20 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 		}
 	}
 	return tp, nil
+}
+
+func parsePick(props map[string]interface{}) (*operator.ProjectOp, error) {
+	n := &graph.Select{}
+	cast.MapToStruct(props, n)
+	stmt, err := xsql.NewParser(strings.NewReader("select " + strings.Join(n.Fields, ",") + " from nonexist")).Parse()
+	if err != nil {
+		return nil, err
+	}
+	t := ProjectPlan{
+		fields:      stmt.Fields,
+		isAggregate: xsql.IsAggStatement(stmt),
+	}.Init()
+	return &operator.ProjectOp{ColNames: t.colNames, AliasNames: t.aliasNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, ExprNames: t.exprNames, SendMeta: t.sendMeta}, nil
 }
 
 func parseFunc(props map[string]interface{}) (*operator.FuncOp, error) {
