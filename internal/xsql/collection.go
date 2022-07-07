@@ -272,12 +272,12 @@ func (w *WindowTuples) ToMaps() []map[string]interface{} {
 }
 
 func (w *WindowTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+	cols = w.AffiliateRow.Pick(cols)
 	for i, t := range w.Content {
 		tc := t.Clone()
 		tc.Pick(allWildcard, cols, wildcardEmitters)
 		w.Content[i] = tc
 	}
-	w.AffiliateRow.Reset()
 }
 
 func (w *WindowTuples) SetIsAgg(_ bool) {
@@ -410,12 +410,12 @@ func (s *JoinTuples) ToMaps() []map[string]interface{} {
 }
 
 func (s *JoinTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+	cols = s.AffiliateRow.Pick(cols)
 	for i, t := range s.Content {
 		tc := t.Clone().(*JoinTuple)
 		tc.Pick(allWildcard, cols, wildcardEmitters)
 		s.Content[i] = tc
 	}
-	s.AffiliateRow.Reset()
 }
 
 func (s *JoinTuples) SetIsAgg(_ bool) {

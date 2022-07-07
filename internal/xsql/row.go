@@ -134,6 +134,35 @@ func (d *AffiliateRow) Reset() {
 	d.AliasMap = nil
 }
 
+func (d *AffiliateRow) Pick(cols [][]string) [][]string {
+	if len(cols) > 0 {
+		newAliasMap := make(map[string]interface{})
+		newCalCols := make(map[string]interface{})
+		var newCols [][]string
+		for _, a := range cols {
+			if a[1] == "" || a[1] == string(ast.DefaultStream) {
+				if v, ok := d.AliasMap[a[0]]; ok {
+					newAliasMap[a[0]] = v
+					continue
+				}
+				if v, ok := d.CalCols[a[0]]; ok {
+					newCalCols[a[0]] = v
+					continue
+				}
+			}
+			newCols = append(newCols, a)
+		}
+		d.AliasMap = newAliasMap
+		d.CalCols = newCalCols
+		return newCols
+	} else {
+		d.AliasMap = nil
+		d.CalCols = nil
+		return cols
+	}
+
+}
+
 /*
  *  Message definition
  */
@@ -338,6 +367,7 @@ func (t *Tuple) IsWatermark() bool {
 }
 
 func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+	cols = t.AffiliateRow.Pick(cols)
 	if !allWildcard && wildcardEmitters[t.Emitter] {
 		allWildcard = true
 	}
@@ -357,7 +387,6 @@ func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[str
 			t.cachedMap = t.Message
 		}
 	}
-	t.AffiliateRow.Reset()
 }
 
 // JoinTuple implementation
@@ -462,6 +491,7 @@ func (jt *JoinTuple) ToMap() map[string]interface{} {
 }
 
 func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+	cols = jt.AffiliateRow.Pick(cols)
 	if !allWildcard {
 		if len(cols) > 0 {
 			for _, tuple := range jt.Tuples {
@@ -475,7 +505,6 @@ func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters ma
 		}
 	}
 	jt.cachedMap = nil
-	jt.AffiliateRow.Reset()
 }
 
 // GroupedTuple implementation
@@ -530,6 +559,6 @@ func (s *GroupedTuples) Clone() CollectionRow {
 }
 
 func (s *GroupedTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+	cols = s.AffiliateRow.Pick(cols)
 	s.Content[0].Pick(allWildcard, cols, wildcardEmitters)
-	s.AffiliateRow.Reset()
 }
