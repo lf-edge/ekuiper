@@ -88,20 +88,8 @@ func (o *defaultNode) GetMetrics() (result [][]interface{}) {
 }
 
 func (o *defaultNode) Broadcast(val interface{}) error {
-
-	switch d := val.(type) {
-	case error:
-		if !o.sendError {
-			return nil
-		}
-	case xsql.TupleRow:
-		if len(o.outputs) > 1 {
-			val = d.Clone()
-		}
-	case xsql.Collection:
-		if len(o.outputs) > 1 {
-			val = d.Clone()
-		}
+	if _, ok := val.(error); ok && !o.sendError {
+		return nil
 	}
 	if o.qos >= api.AtLeastOnce {
 		boe := &checkpoint.BufferOrEvent{
@@ -124,6 +112,13 @@ func (o *defaultNode) doBroadcast(val interface{}) {
 			// rule stop so stop waiting
 		default:
 			o.ctx.GetLogger().Errorf("drop message from %s to %s", o.name, name)
+		}
+		switch vt := val.(type) {
+		case xsql.Collection:
+			val = vt.Clone()
+			break
+		case xsql.TupleRow:
+			val = vt.Clone()
 		}
 	}
 }
