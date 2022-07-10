@@ -21,6 +21,7 @@ service:
   # -- service type
   type: ClusterIP
 
+  # -- Service ports
   ports:
     ekuiper:
       # -- eKuiper port name
