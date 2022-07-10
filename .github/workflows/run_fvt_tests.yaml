@@ -286,16 +286,16 @@ jobs:
       run: |
         version=$(git describe --tags --always)
         emqx_address=$(kubectl get svc --namespace default emqx -o jsonpath="{.spec.clusterIP}")
-        
+
         sudo docker save lfedge/ekuiper:$version-alpine -o kuier.tar.gz
         sudo k3s ctr image import kuier.tar.gz
 
-        sed -i -r "s/^appVersion: .*$/appVersion: \"${version}\"/g" deploy/chart/kuiper/Chart.yaml
-        sed -i -r 's/  pullPolicy: .*$/  pullPolicy: Never/g' deploy/chart/kuiper/values.yaml
-        sed -i -r "s/      server: .*$/      server: tcp:\/\/${emqx_address}:1883/g" deploy/chart/kuiper/values.yaml
-        
-        helm install kuiper deploy/chart/kuiper --debug --dry-run
-        helm install kuiper deploy/chart/kuiper
+        sed -i -r "s/^appVersion: .*$/appVersion: \"${version}\"/g" deploy/chart/ekuiper/Chart.yaml
+        sed -i -r 's/  pullPolicy: .*$/  pullPolicy: Never/g' deploy/chart/ekuiper/values.yaml
+        sed -i -r "s/      server: .*$/      server: tcp:\/\/${emqx_address}:1883/g" deploy/chart/ekuiper/values.yaml
+
+        helm install kuiper deploy/chart/ekuiper --debug --dry-run
+        helm install kuiper deploy/chart/ekuiper
         while [ "$(kubectl get StatefulSet -l app.kubernetes.io/name=kuiper -o jsonpath='{.items[0].status.replicas}')" \
           != "$(kubectl get StatefulSet -l app.kubernetes.io/name=kuiper -o jsonpath='{.items[0].status.readyReplicas}')" ]; do
           echo "=============================="
