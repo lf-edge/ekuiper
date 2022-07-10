@@ -1,0 +1,636 @@
+make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+# GNU Make 3.81
+# Copyright (C) 2006  Free Software Foundation, Inc.
+# This is free software; see the source for copying conditions.
+# There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+# This program built for i386-apple-darwin11.3.0
+
+# Make data base, printed on Wed Jul  6 15:00:00 2022
+
+# Variables
+
+# automatic
+<D = $(patsubst %/,%,$(dir $<))
+# automatic
+?F = $(notdir $?)
+# makefile (from `Makefile', line 2)
+PACKAGES_PATH = _packages
+# makefile (from `Makefile', line 11)
+KUIPER_SOURCE := /Users/bxb/workbench/emq/ekuiper
+# environment
+VSCODE_LOG_NATIVE = false
+# makefile (from `Makefile', line 9)
+TARGET = lfedge/ekuiper
+# automatic
+?D = $(patsubst %/,%,$(dir $?))
+# environment
+rvm_path = /Users/bxb/.rvm
+# automatic
+@D = $(patsubst %/,%,$(dir $@))
+# automatic
+@F = $(notdir $@)
+# makefile
+CURDIR := /Users/bxb/workbench/emq/ekuiper
+# makefile
+SHELL = /bin/sh
+# environment
+VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
+# environment
+_ = /usr/bin/make
+# makefile (from `Makefile', line 1)
+MAKEFILE_LIST :=  Makefile
+# environment
+GO111MODULE = on
+# environment
+VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
+# makefile (from `Makefile', line 4)
+VERSION := 1.5.1-9-g00805b36
+# environment
+VSCODE_VERBOSE_LOGGING = true
+# makefile (from `Makefile', line 83)
+PLUGINS := sinks/file sinks/influx sinks/zmq sinks/image sinks/redis sinks/sql sources/random sources/zmq sources/sql sinks/tdengine functions/accumulateWordCount functions/countPlusOne functions/image functions/geohash functions/echo functions/labelImage
+# environment
+__CFBundleIdentifier = com.microsoft.VSCode
+# environment
+VSCODE_IPC_HOOK_EXTHOST = /var/folders/xm/6k_8q5jx3bvgzmy0827qk1v80000gn/T/vscode-ipc-7e257339-280d-4903-87e5-33a8e60173cd.sock
+# environment
+VSCODE_CWD = /
+# environment
+GOPROXY = direct
+# environment
+PATH = /Users/bxb/.rbenv/shims:/Users/bxb/.rbenv/bin:/Library/Frameworks/Python.framework/Versions/2.7/bin:/Library/Frameworks/Python.framework/Versions/3.9/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin:/usr/local/bin/terraform:/Users/bxb/.rvm/bin
+# environment
+LSCOLORS = Gxfxcxdxbxegedabagacad
+# environment
+GOPATH = /Users/bxb/go
+# environment
+LaunchInstanceID = 29385947-B040-41DA-8B39-A9C96A6AE1D2
+# environment
+VSCODE_LOG_STACK = false
+# environment
+ELECTRON_RUN_AS_NODE = 1
+# default
+.FEATURES := target-specific order-only second-expansion else-if archives jobserver check-symlink
+# environment
+SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.4XkRD52khd/Listeners
+# automatic
+%F = $(notdir $%)
+# environment
+VSCODE_PIPE_LOGGING = true
+# environment
+rvm_bin_path = /Users/bxb/.rvm/bin
+# environment
+PWD = /Users/bxb/workbench/emq/ekuiper
+# environment
+ORIGINAL_XDG_CURRENT_DESKTOP = undefined
+# environment
+GOMODCACHE = /Users/bxb/go/pkg/mod
+# environment
+HOME = /Users/bxb
+# default
+MAKEFILEPATH = $(shell /usr/bin/xcode-select -print-path 2>/dev/null || echo /Developer)/Makefiles
+# environment
+VSCODE_CODE_CACHE_PATH = /Users/bxb/Library/Application Support/Code/CachedData/30d9c6cd9483b2cc586687151bcbcd635f373630
+# environment
+LOGNAME = bxb
+# environment
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
+# environment
+ZSH = /Users/bxb/.oh-my-zsh
+# environment
+VSCODE_HANDLES_UNCAUGHT_ERRORS = true
+# automatic
+^D = $(patsubst %/,%,$(dir $^))
+# environment
+XPC_FLAGS = 0x0
+# makefile (from `Makefile', line 1)
+BUILD_PATH = _build
+# default
+MAKE = $(MAKE_COMMAND)
+# default
+MAKECMDGOALS := all
+# environment
+SHLVL = 1
+# default
+MAKE_VERSION := 3.81
+# environment
+USER = bxb
+# makefile
+.DEFAULT_GOAL := build
+# environment
+rvm_version = 1.29.12 (latest)
+# environment
+LESS = -R
+# automatic
+%D = $(patsubst %/,%,$(dir $%))
+# default
+MAKE_COMMAND := /Library/Developer/CommandLineTools/usr/bin/make
+# default
+.VARIABLES := 
+# environment
+TMPDIR = /var/folders/xm/6k_8q5jx3bvgzmy0827qk1v80000gn/T/
+# automatic
+*F = $(notdir $*)
+# makefile (from `Makefile', line 6)
+OS := darwin
+# environment
+VSCODE_IPC_HOOK = /Users/bxb/Library/Application Support/Code/1.68.1-main.sock
+# makefile (from `Makefile', line 5)
+ARCH := amd64
+# makefile
+MAKEFLAGS = Rrqp
+# environment
+MFLAGS = -Rrqp
+# automatic
+*D = $(patsubst %/,%,$(dir $*))
+# environment
+XPC_SERVICE_NAME = application.com.microsoft.VSCode.34918517.34918523
+# automatic
++D = $(patsubst %/,%,$(dir $+))
+# environment
+GOSUMDB = off
+# automatic
++F = $(notdir $+)
+# makefile (from `Makefile', line 7)
+PACKAGE_NAME := kuiper-1.5.1-9-g00805b36-darwin-amd64
+# environment
+__CF_USER_TEXT_ENCODING = 0x1F5:0x0:0x0
+# environment
+COMMAND_MODE = unix2003
+# default
+MAKEFILES := 
+# environment
+RBENV_SHELL = zsh
+# automatic
+<F = $(notdir $<)
+# environment
+PAGER = less
+# environment
+LC_ALL = C
+# environment
+SECURITYSESSIONID = 186a4
+# automatic
+^F = $(notdir $^)
+# environment
+rvm_prefix = /Users/bxb
+# default
+SUFFIXES := 
+# default
+.INCLUDE_DIRS = /usr/local/include
+# environment
+MAKELEVEL := 0
+# environment
+LANG = C
+# environment
+TERRAFORM_HOME = /usr/local/bin/terraform
+# environment
+VSCODE_PID = 14171
+# variable set hash-table stats:
+# Load=88/1024=9%, Rehash=0, Collisions=5/163=3%
+
+# Pattern-specific Variable Values
+
+# No pattern-specific variable values.
+
+# Directories
+
+# . (device 16777223, inode 35701308): 26 files, no impossibilities.
+
+# 26 files, no impossibilities in 1 directories.
+
+# Implicit Rules
+
+# No implicit rules.
+
+# Files
+
+sources/zmq:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+pkg_with_edgex: build_with_edgex
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 67):
+	@make real_pkg
+	
+
+sinks/sql:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+build_core: build_prepare
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 60):
+	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags core -o kuiperd cmd/kuiperd/main.go
+	@if [ ! -z $$(which upx) ]; then upx ./kuiperd; fi
+	@mv ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@echo "Build successfully"
+	
+
+# Not a target:
+all:
+#  Command-line target.
+#  Implicit rule search has been done.
+#  File does not exist.
+#  File has not been updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
+
+functions/geohash:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+ 
+make: *** No rule to make target `all'.  Stop.
+
+.PHONY: build pkg build_prepare build_without_edgex pkg_without_edgex build_with_edgex build_core pkg_with_edgex real_pkg docker plugins sinks/file sinks/influx sinks/zmq sinks/image sinks/redis sinks/sql sources/random sources/zmq sources/sql sinks/tdengine functions/accumulateWordCount functions/countPlusOne functions/image functions/geohash functions/echo functions/labelImage clean
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+build_without_edgex: build_prepare
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 40):
+	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiper cmd/kuiper/main.go
+	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiperd cmd/kuiperd/main.go
+	@if [ ! -z $$(which upx) ]; then upx ./kuiper; upx ./kuiperd; fi
+	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@echo "Build successfully"
+	
+
+# Not a target:
+.SUFFIXES:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+Makefile:
+#  Implicit rule search has been done.
+#  Last modified 2022-06-23 14:58:32
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
+
+pkg_without_edgex: build_without_edgex
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 48):
+	@make real_pkg
+	
+
+real_pkg:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 71):
+	@mkdir -p $(PACKAGES_PATH)
+	@cd $(BUILD_PATH) && zip -rq $(PACKAGE_NAME).zip $(PACKAGE_NAME)
+	@cd $(BUILD_PATH) && tar -czf $(PACKAGE_NAME).tar.gz $(PACKAGE_NAME)
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME).zip $(BUILD_PATH)/$(PACKAGE_NAME).tar.gz $(PACKAGES_PATH)
+	@echo "Package build success"
+	
+
+build: build_without_edgex
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+sources/sql:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+sinks/influx:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+plugins: sinks/file sinks/influx sinks/zmq sinks/image sinks/redis sinks/sql sources/random sources/zmq sources/sql sinks/tdengine functions/accumulateWordCount functions/countPlusOne functions/image functions/geohash functions/echo functions/labelImage
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+pkg: pkg_without_edgex
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 18):
+	@if [ "$$(uname -s)" = "Linux" ]; then make -C deploy/packages; fi
+	
+
+sinks/image:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+functions/echo:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+sinks/redis:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+# Not a target:
+.DEFAULT:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+functions/image:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+sinks/zmq:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+clean:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 110):
+	@rm -rf cross_build.tar linux_amd64 linux_arm64 linux_arm_v7 linux_386
+	@rm -rf _build _packages _plugins
+	
+
+build_prepare:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 22):
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/etc
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/etc/sources
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/etc/sinks
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/etc/services
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/etc/services/schemas
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/data
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/sources
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/sinks
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/functions
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/portable
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/log
+	@cp -r etc/* $(BUILD_PATH)/$(PACKAGE_NAME)/etc
+	
+
+docker:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+ 
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 79):
+	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile . --load
+	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-slim -f deploy/docker/Dockerfile-slim . --load
+	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-alpine -f deploy/docker/Dockerfile-alpine . --load
+	
+
+sinks/file:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+functions/labelImage:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+sinks/tdengine:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+functions/accumulateWordCount:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+build_with_edgex: build_prepare
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 52):
+	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags edgex -o kuiper cmd/kuiper/main.go
+	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags edgex -o kuiperd cmd/kuiperd/main.go
+	@if [ ! -z $$(which upx) ]; then upx ./kuiper; upx ./kuiperd; fi
+	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@echo "Build successfully"
+	
+
+sources/random:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+functions/countPlusOne:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+# makefile (from `Makefile', line 104)
+# PLUGIN_NAME = $(word 2, $(subst /, , $@))
+# makefile (from `Makefile', line 103)
+# PLUGIN_TYPE = $(word 1, $(subst /, , $@))
+# variable set hash-table stats:
+# Load=2/32=6%, Rehash=0, Collisions=0/2=0%
+#  commands to execute (from `Makefile', line 106):
+	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+	
+
+# files hash-table stats:
+# Load=33/1024=3%, Rehash=0, Collisions=0/155=0%
+# VPATH Search Paths
+
+# No `vpath' search paths.
+
+# No general (`VPATH' variable) search path.
+
+# # of strings in strcache: 1
+# # of strcache buffers: 1
+# strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
+# strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
+
+# Finished Make data base on Wed Jul  6 15:00:00 2022
+
+ 
