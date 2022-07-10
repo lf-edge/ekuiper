@@ -37,3 +37,5 @@ corss_build_for_rpm.tar
 *.history
 
 */**/*.db
+
+.vscode/
