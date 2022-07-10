@@ -2,8 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# -- only support one replica
-replicaCount: 1
 
 image:
   repository: lfedge/ekuiper
@@ -173,7 +171,7 @@ kuiperConfig:
 
 # TODO
 # -- remove this when the mqtt_source configmap is available
-kuiperEnv:
+ekuiperEnv:
   enabled: true
   key:
     mqttDefaultServer: MQTT_SOURCE__DEFAULT__SERVER

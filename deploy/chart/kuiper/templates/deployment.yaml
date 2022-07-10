@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "ekuiper.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       {{- include "ekuiper.selectorLabels" . | nindent 6 }}
@@ -43,13 +43,13 @@ spec:
               path: xyz-private.pem.key
         {{- end }}
       containers:
-        - name: kuiper
+        - name: ekuiper
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}-slim"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if .Values.kuiperEnv.enabled }}
+          {{- if .Values.ekuiperEnv.enabled }}
           env:
-          - name: {{ .Values.kuiperEnv.key.mqttDefaultServer }}
-            value: {{ .Values.kuiperEnv.value.mqttDefaultServer }}
+          - name: {{ .Values.ekuiperEnv.key.mqttDefaultServer }}
+            value: {{ .Values.ekuiperEnv.value.mqttDefaultServer }}
           {{- end }}
           command: ["./bin/kuiperd"]
           readinessProbe:
