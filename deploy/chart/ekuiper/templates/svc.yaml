@@ -16,8 +16,8 @@ spec:
   {{- end }}
   {{- end }}
   ports:
-  - name: {{ .Values.service.portNames.restapi }}
-    port:  {{ .Values.service.ports.restapi | default 9081 }}
+  - name: {{ .Values.service.ports.restapi.name }}
+    port:  {{ .Values.service.ports.restapi.port | default 9081 }}
     protocol: TCP
     targetPort:  restapi
     {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) (not (empty .Values.service.nodePorts.restapi)) }}
@@ -25,12 +25,12 @@ spec:
     {{- else if eq .Values.service.type "ClusterIP" }}
     nodePort: null
     {{- end }}
-  - name: {{ .Values.service.portNames.kuiper }}
-    port: {{ .Values.service.ports.kuiper | default 20498 }}
+  - name: {{ .Values.service.ports.ekuiper.name }}
+    port: {{ .Values.service.ports.ekuiper.port | default 20498 }}
     protocol: TCP
-    targetPort: kuiper
-    {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) (not (empty .Values.service.nodePorts.kuiper)) }}
-    nodePort: {{ .Values.service.nodePorts.kuiper }}
+    targetPort: ekuiper
+    {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) (not (empty .Values.service.nodePorts.ekuiper)) }}
+    nodePort: {{ .Values.service.nodePorts.ekuiper }}
     {{- else if eq .Values.service.type "ClusterIP" }}
     nodePort: null
     {{- end }}

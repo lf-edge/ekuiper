@@ -22,22 +22,22 @@ service:
   type: ClusterIP
 
   ports:
-    # -- service.ports.kuiper eKuiper port
-    kuiper: 20498
-    # -- service.ports.restapi eKuiper API port
-    restapi: 9081
+    ekuiper:
+      # -- eKuiper port name
+      name: "ekuiper"
+      # -- eKuiper port
+      port: 20498
+    restapi:
+      # -- eKuiper restapi port name
+      name: "restapi"
+      # -- eKuiper restapi port
+      port: 9081
 
-  # -- Service ports name
-  portNames:
-    # -- service.portNames.kuiper eKuiper portname
-    kuiper: "kuiper"
-    # -- service.portNames.restapi eKuiper API port name
-    restapi: "restapi"
 
   # -- Specify the nodePort(s) value for the LoadBalancer and NodePort service types.
   # ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
   nodePorts:
-    kuiper:
+    ekuiper:
     restapi:
   ## Set the LoadBalancer service type to internal only.
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer

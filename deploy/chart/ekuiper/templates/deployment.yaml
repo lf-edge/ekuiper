@@ -63,7 +63,7 @@ spec:
             - name: restapi
               containerPort: {{ $restPort | default 9081 }}
             {{- $port := index .Values "kuiperConfig" "kuiper.yaml" "basic" "port" }}
-            - name: kuiper
+            - name: ekuiper
               containerPort: {{ $port | default 20498 }}
           volumeMounts:
           - name: ekuiper-data
