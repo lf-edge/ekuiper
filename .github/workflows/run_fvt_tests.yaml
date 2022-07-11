@@ -294,8 +294,8 @@ jobs:
         sed -i -r 's/  pullPolicy: .*$/  pullPolicy: Never/g' deploy/chart/ekuiper/values.yaml
         sed -i -r "s/      server: .*$/      server: tcp:\/\/${emqx_address}:1883/g" deploy/chart/ekuiper/values.yaml
 
-        helm install kuiper deploy/chart/ekuiper --debug --dry-run
-        helm install kuiper deploy/chart/ekuiper
+        helm install ekuiper deploy/chart/ekuiper --debug --dry-run
+        helm install ekuiper deploy/chart/ekuiper
         while [ "$(kubectl get Deployment -l app.kubernetes.io/name=ekuiper -o jsonpath='{.items[0].status.replicas}')" \
           != "$(kubectl get Deployment -l app.kubernetes.io/name=ekuiper -o jsonpath='{.items[0].status.readyReplicas}')" ]; do
           echo "=============================="
