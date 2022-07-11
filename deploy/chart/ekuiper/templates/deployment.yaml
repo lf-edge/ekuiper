@@ -44,7 +44,7 @@ spec:
         {{- end }}
       containers:
         - name: ekuiper
-          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}-slim"
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}-alpine"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.ekuiperEnv.enabled }}
           env:
