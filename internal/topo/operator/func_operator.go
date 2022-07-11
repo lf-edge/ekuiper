@@ -22,29 +22,70 @@ import (
 )
 
 type FuncOp struct {
+	IsAgg    bool
 	CallExpr *ast.Call
 	Name     string
 }
 
-func (p *FuncOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
+func (p *FuncOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	ctx.GetLogger().Debugf("FuncOp receive: %s", data)
 	switch input := data.(type) {
 	case error:
 		return input
-	case xsql.Valuer:
+	case xsql.TupleRow:
 		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, fv)}
 		result := ve.Eval(p.CallExpr)
 		if e, ok := result.(error); ok {
 			return e
 		}
-		switch val := input.(type) {
-		case xsql.Row:
-			val.Set(p.Name, result)
-			return val
-		default:
-			return fmt.Errorf("unknow type")
+		input.Set(p.Name, result)
+	case xsql.SingleCollection:
+		var err error
+		if p.IsAgg {
+			input.SetIsAgg(true)
+			err = input.GroupRange(func(_ int, aggRow xsql.CollectionRow) (bool, error) {
+				afv.SetData(aggRow)
+				ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(aggRow, fv, aggRow, fv, afv, &xsql.WildcardValuer{Data: aggRow})}
+				result := ve.Eval(p.CallExpr)
+				if e, ok := result.(error); ok {
+					return false, e
+				}
+				aggRow.Set(p.Name, result)
+				return true, nil
+			})
+		} else {
+			err = input.RangeSet(func(_ int, row xsql.Row) (bool, error) {
+				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(row, &xsql.WindowRangeValuer{WindowRange: input.GetWindowRange()}, fv, &xsql.WildcardValuer{Data: row})}
+				result := ve.Eval(p.CallExpr)
+				if e, ok := result.(error); ok {
+					return false, e
+				}
+				row.Set(p.Name, result)
+				return true, nil
+			})
+		}
+		if err != nil {
+			return err
+		}
+	case xsql.GroupedCollection: // The order is important, because single collection usually is also a groupedCollection
+		if !p.IsAgg {
+			return fmt.Errorf("FuncOp: GroupedCollection is not supported for non-aggregate function")
+		}
+		err := input.GroupRange(func(_ int, aggRow xsql.CollectionRow) (bool, error) {
+			afv.SetData(aggRow)
+			ve := &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(aggRow, fv, aggRow, fv, afv, &xsql.WildcardValuer{Data: aggRow})}
+			result := ve.Eval(p.CallExpr)
+			if e, ok := result.(error); ok {
+				return false, e
+			}
+			aggRow.Set(p.Name, result)
+			return true, nil
+		})
+		if err != nil {
+			return err
 		}
 	default:
 		return fmt.Errorf("run func error: invalid input %[1]T(%[1]v)", input)
 	}
+	return data
 }

@@ -25,3 +25,29 @@ type Filter struct {
 type Select struct {
 	Fields []string `json:"fields"`
 }
+
+type Window struct {
+	Type     string `json:"type"`
+	Unit     string `json:"unit"`
+	Size     int    `json:"size"`
+	Interval int    `json:"interval"`
+}
+
+type Join struct {
+	From  string `json:"from"`
+	Joins []struct {
+		Type string `json:"type"`
+		On   string `json:"on"`
+	}
+}
+
+type Groupby struct {
+	Dimensions []string `json:"dimensions"`
+}
+
+type Orderby struct {
+	Sorts []struct {
+		Field string `json:"field"`
+		Order string `json:"order"`
+	}
+}
