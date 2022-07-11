@@ -296,19 +296,18 @@ jobs:
 
         helm install kuiper deploy/chart/ekuiper --debug --dry-run
         helm install kuiper deploy/chart/ekuiper
-        while [ "$(kubectl get StatefulSet -l app.kubernetes.io/name=kuiper -o jsonpath='{.items[0].status.replicas}')" \
-          != "$(kubectl get StatefulSet -l app.kubernetes.io/name=kuiper -o jsonpath='{.items[0].status.readyReplicas}')" ]; do
-          echo "=============================="
-          kubectl describe pods kuiper-0
+        while [ "$(kubectl get Deployment -l app.kubernetes.io/name=ekuiper -o jsonpath='{.items[0].status.replicas}')" \
+          != "$(kubectl get Deployment -l app.kubernetes.io/name=ekuiper -o jsonpath='{.items[0].status.readyReplicas}')" ]; do
           echo "=============================="
           kubectl get pods
           echo "=============================="
-          echo "waiting kuiper started"
+          echo "waiting ekuiper started"
           sleep 10
         done
-        kuiper_address=$(kubectl get svc --namespace default kuiper -o jsonpath="{.spec.clusterIP}")
+        kuiper_address=$(kubectl get svc --namespace default ekuiper -o jsonpath="{.spec.clusterIP}")
         if [ $(curl -w %{http_code} -fsSL -o /dev/null $kuiper_address:9081) != 200 ];then
-          kubectl logs kuiper-0
+          ekuiper_pod=$(kubectl get pod -l app.kubernetes.io/instance=ekuiper -o jsonpath="{.items[0].metadata.name}")
+          kubectl logs $ekuiper_pod
           exit 1;
         fi
     - name: check kuiper
@@ -317,10 +316,11 @@ jobs:
       timeout-minutes: 5
       run: |
         emqx_address=$(kubectl get svc --namespace default emqx -o jsonpath="{.spec.clusterIP}")
-        kuiper_address=$(kubectl get svc --namespace default kuiper -o jsonpath="{.spec.clusterIP}")
+        kuiper_address=$(kubectl get svc --namespace default ekuiper -o jsonpath="{.spec.clusterIP}")
         /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/select_aggr_rule.jmx -Dsrv=${kuiper_address} -Dmqtt_srv=${emqx_address} -l jmeter_logs/select_aggr_rule.jtl -j jmeter_logs/select_aggr_rule.log
         mkdir -p kuiper_logs
-        kubectl exec kuiper-0 -- cat /kuiper/log/stream.log > kuiper_logs/stream.log
+        ekuiper_pod=$(kubectl get pod -l app.kubernetes.io/instance=ekuiper -o jsonpath="{.items[0].metadata.name}")
+        kubectl exec $ekuiper_pod -- cat /kuiper/log/stream.log > kuiper_logs/stream.log
     - uses: actions/upload-artifact@v1
       if: always()
       with:
