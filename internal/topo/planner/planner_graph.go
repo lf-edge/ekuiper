@@ -47,6 +47,9 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 	for nodeName, gn := range ruleGraph.Nodes {
 		switch gn.Type {
 		case "source":
+			if _, ok := ruleGraph.Topo.Edges[nodeName]; !ok {
+				return nil, fmt.Errorf("no edge defined for source node %s", nodeName)
+			}
 			sourceType, ok := gn.Props["source_type"]
 			if !ok {
 				sourceType = "stream"
@@ -74,6 +77,7 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 				tp.AddSrc(srcNode)
 			case "table":
 				// TODO add table
+				return nil, fmt.Errorf("table source is not supported yet")
 			default:
 				return nil, fmt.Errorf("unknown source type %s", st)
 			}
@@ -85,6 +89,9 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 			nodeMap[nodeName] = node.NewSinkNode(nodeName, gn.NodeType, gn.Props)
 			sinks[nodeName] = true
 		case "operator":
+			if _, ok := ruleGraph.Topo.Edges[nodeName]; !ok {
+				return nil, fmt.Errorf("no edge defined for operator node %s", nodeName)
+			}
 			switch strings.ToLower(gn.NodeType) {
 			case "function":
 				fop, err := parseFunc(gn.Props)
@@ -153,17 +160,76 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 			return nil, fmt.Errorf("unknown node type %s", gn.Type)
 		}
 	}
+
 	// validate source node
 	for _, nodeName := range ruleGraph.Topo.Sources {
 		if _, ok := sources[nodeName]; !ok {
 			return nil, fmt.Errorf("source %s is not a source type node", nodeName)
 		}
 	}
+
 	// reverse edges
 	reversedEdges := make(map[string][]string)
+	rclone := make(map[string][]string)
 	for fromNode, toNodes := range ruleGraph.Topo.Edges {
+		if _, ok := ruleGraph.Nodes[fromNode]; !ok {
+			return nil, fmt.Errorf("node %s is not defined", fromNode)
+		}
 		for _, toNode := range toNodes {
+			if _, ok := ruleGraph.Nodes[toNode]; !ok {
+				return nil, fmt.Errorf("node %s is not defined", toNode)
+			}
 			reversedEdges[toNode] = append(reversedEdges[toNode], fromNode)
+			rclone[toNode] = append(rclone[toNode], fromNode)
+		}
+	}
+	// sort the nodes by topological order
+	nodesInOrder := make([]string, len(ruleGraph.Nodes))
+	i := 0
+	genNodesInOrder(ruleGraph.Topo.Sources, ruleGraph.Topo.Edges, rclone, nodesInOrder, i)
+
+	// validate the typo
+	// the map is to record the output for each node
+	dataFlow := make(map[string]*graph.IOType)
+	for _, n := range nodesInOrder {
+		gn := ruleGraph.Nodes[n]
+		if gn.Type == "source" {
+			dataFlow[n] = &graph.IOType{
+				Type:           graph.IOINPUT_TYPE_ROW,
+				RowType:        graph.IOROW_TYPE_SINGLE,
+				CollectionType: graph.IOCOLLECTION_TYPE_ANY,
+				AllowMulti:     false,
+			}
+		} else if gn.Type == "sink" {
+			continue
+		} else {
+			nodeIO, ok := graph.OpIO[strings.ToLower(gn.NodeType)]
+			if !ok {
+				return nil, fmt.Errorf("can't find the io definiton for node type %s", gn.NodeType)
+			}
+			dataInCondition := nodeIO[0]
+			innodes := reversedEdges[n]
+			if len(innodes) > 1 {
+				if dataInCondition.AllowMulti {
+					for _, innode := range innodes {
+						_, err = graph.Fit(dataFlow[innode], dataInCondition)
+						if err != nil {
+							return nil, fmt.Errorf("node %s output does not match node %s input: %v", innode, n, err)
+						}
+					}
+				} else {
+					return nil, fmt.Errorf("operator %s of type %s does not allow multiple inputs", n, gn.NodeType)
+				}
+			} else if len(innodes) == 1 {
+				_, err := graph.Fit(dataFlow[innodes[0]], dataInCondition)
+				if err != nil {
+					return nil, fmt.Errorf("node %s output does not match node %s input: %v", innodes[0], n, err)
+				}
+			} else {
+				return nil, fmt.Errorf("operator %s of type %s has no input", n, gn.NodeType)
+			}
+			out := nodeIO[1]
+			dataFlow[n] = graph.MapOut(dataFlow[innodes[0]], out)
 		}
 	}
 	// add the linkages
@@ -183,6 +249,19 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 		}
 	}
 	return tp, nil
+}
+
+func genNodesInOrder(toNodes []string, edges map[string][]string, reversedEdges map[string][]string, nodesInOrder []string, i int) int {
+	for _, src := range toNodes {
+		if len(reversedEdges[src]) > 1 {
+			reversedEdges[src] = reversedEdges[src][1:]
+			continue
+		}
+		nodesInOrder[i] = src
+		i++
+		i = genNodesInOrder(edges[src], edges, reversedEdges, nodesInOrder, i)
+	}
+	return i
 }
 
 func parseOrderBy(props map[string]interface{}) (*operator.OrderOp, error) {
