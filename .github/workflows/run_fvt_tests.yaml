@@ -292,7 +292,6 @@ jobs:
 
         sed -i -r "s/^appVersion: .*$/appVersion: \"${version}\"/g" deploy/chart/ekuiper/Chart.yaml
         sed -i -r 's/  pullPolicy: .*$/  pullPolicy: Never/g' deploy/chart/ekuiper/values.yaml
-        sed -i -r "s/      server: .*$/      server: tcp:\/\/${emqx_address}:1883/g" deploy/chart/ekuiper/values.yaml
 
         helm install ekuiper deploy/chart/ekuiper --debug --dry-run
         helm install ekuiper deploy/chart/ekuiper
