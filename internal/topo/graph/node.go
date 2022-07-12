@@ -36,6 +36,7 @@ type Window struct {
 type Join struct {
 	From  string `json:"from"`
 	Joins []struct {
+		Name string `json:"name"`
 		Type string `json:"type"`
 		On   string `json:"on"`
 	}
