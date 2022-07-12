@@ -310,37 +310,3 @@ jobs:
           kubectl logs $ekuiper_pod
           exit 1;
         fi
-    - name: check kuiper
-      env:
-        KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
-      timeout-minutes: 5
-      run: |
-        emqx_address=$(kubectl get svc --namespace default emqx -o jsonpath="{.spec.clusterIP}")
-        kuiper_address=$(kubectl get svc --namespace default ekuiper -o jsonpath="{.spec.clusterIP}")
-        /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/select_aggr_rule.jmx -Dsrv=${kuiper_address} -Dmqtt_srv=${emqx_address} -l jmeter_logs/select_aggr_rule.jtl -j jmeter_logs/select_aggr_rule.log
-        mkdir -p kuiper_logs
-        ekuiper_pod=$(kubectl get pod -l app.kubernetes.io/instance=ekuiper -o jsonpath="{.items[0].metadata.name}")
-        kubectl exec $ekuiper_pod -- cat /kuiper/log/stream.log > kuiper_logs/stream.log
-    - uses: actions/upload-artifact@v1
-      if: always()
-      with:
-        name: kuiper_logs_with_helm
-        path: ./kuiper_logs
-    - uses: actions/upload-artifact@v1
-      if: always()
-      with:
-        name: jmeter_logs_with_helm
-        path: ./jmeter_logs
-    - name: check logs
-      run: |
-        sudo apt update && sudo apt install -y libxml2-utils
-        cd jmeter_logs
-        for file in `ls *.jtl`
-        do
-          if [ ! -z "$(cat $file| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
-           [ "$(xmllint --format --xpath '/testResults/sample/@rc' $file | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
-            echo -e "---------------------------------------------\n"
-            echo "FVT tests error for $file"
-            exit 1
-          fi
-        done
