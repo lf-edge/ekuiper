@@ -193,6 +193,9 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 	dataFlow := make(map[string]*graph.IOType)
 	for _, n := range nodesInOrder {
 		gn := ruleGraph.Nodes[n]
+		if gn == nil {
+			return nil, fmt.Errorf("can't find node %s", n)
+		}
 		if gn.Type == "source" {
 			dataFlow[n] = &graph.IOType{
 				Type:           graph.IOINPUT_TYPE_ROW,
@@ -229,7 +232,17 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 				return nil, fmt.Errorf("operator %s of type %s has no input", n, gn.NodeType)
 			}
 			out := nodeIO[1]
-			dataFlow[n] = graph.MapOut(dataFlow[innodes[0]], out)
+			in := dataFlow[innodes[0]]
+			dataFlow[n] = graph.MapOut(in, out)
+			// convert filter to having if the input is aggregated
+			if gn.NodeType == "filter" && in.Type == graph.IOINPUT_TYPE_COLLECTION && in.CollectionType == graph.IOCOLLECTION_TYPE_GROUPED {
+				fop, err := parseHaving(gn.Props)
+				if err != nil {
+					return nil, err
+				}
+				op := Transform(fop, n, rule.Options)
+				nodeMap[n] = op
+			}
 		}
 	}
 	// add the linkages
@@ -270,7 +283,7 @@ func parseOrderBy(props map[string]interface{}) (*operator.OrderOp, error) {
 	if err != nil {
 		return nil, err
 	}
-	stmt := "ORDER BY"
+	stmt := "SELECT * FROM unknown ORDER BY"
 	for _, s := range n.Sorts {
 		stmt += " " + s.Field + " " + s.Order
 	}
@@ -462,6 +475,26 @@ func parseFilter(props map[string]interface{}) (*operator.FilterOp, error) {
 	} else {
 		if exp != nil {
 			return &operator.FilterOp{Condition: exp}, nil
+		}
+	}
+	return nil, fmt.Errorf("expr %v is not a condition", m)
+}
+
+func parseHaving(props map[string]interface{}) (*operator.HavingOp, error) {
+	m, ok := props["expr"]
+	if !ok {
+		return nil, errors.New("no expr")
+	}
+	conditionExpr, ok := m.(string)
+	if !ok {
+		return nil, fmt.Errorf("expr %v is not string", m)
+	}
+	p := xsql.NewParser(strings.NewReader("where " + conditionExpr))
+	if exp, err := p.ParseCondition(); err != nil {
+		return nil, err
+	} else {
+		if exp != nil {
+			return &operator.HavingOp{Condition: exp}, nil
 		}
 	}
 	return nil, fmt.Errorf("expr %v is not a condition", m)

@@ -25,7 +25,8 @@ type FilterOp struct {
 	Condition ast.Expr
 }
 
-/**
+// Apply
+/*
  *  input: *xsql.Tuple from preprocessor | xsql.WindowTuples from windowOp | xsql.JoinTuples from joinOp
  *  output: *xsql.Tuple | xsql.WindowTuples | xsql.JoinTuples
  */
