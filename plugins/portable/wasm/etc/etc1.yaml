@@ -1,0 +1,7 @@
+---
+function: fib
+instanceNum: 1
+pluginName: etc1
+vmConfig:
+  engineName: wasmedge
+  path: /home/erfenjiao/ekuiper/plugins/portable/wasm/file/fibonacci.wasm

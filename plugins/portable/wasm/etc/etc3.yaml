@@ -1,0 +1,6 @@
+plugin_name: etc1
+instance_num: 1
+vm_config:
+  engine_name: wasmedge
+  path: ../wasm/file/fibonacci.wasm
+function: fibonacci
