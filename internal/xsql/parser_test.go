@@ -443,6 +443,35 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s:    `SELECT lag() FROM tbl`,
+			stmt: nil,
+			err:  `expect one two or three args but got 0`,
+		},
+
+		{
+			s:    `SELECT lag(a, b, "default value") FROM tbl`,
+			stmt: nil,
+			err:  `Expect int type for parameter 2`,
+		},
+
+		{
+			s: `SELECT lag(a, 2, 20) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "lag",
+						Expr: &ast.Call{
+							Name: "lag",
+							Args: []ast.Expr{&ast.FieldRef{Name: "a", StreamName: ast.DefaultStream}, &ast.IntegerLiteral{Val: 2}, &ast.IntegerLiteral{Val: 20}},
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
 			s: `SELECT deduplicate(temperature, false) FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{

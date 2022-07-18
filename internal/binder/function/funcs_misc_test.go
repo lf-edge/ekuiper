@@ -405,3 +405,193 @@ func TestHadChangedExecAllowNull(t *testing.T) {
 		}
 	}
 }
+
+func TestLagExec(t *testing.T) {
+	f, ok := builtins["lag"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	var tests = []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args:   []interface{}{},
+			result: fmt.Errorf("expect one two or three args but got 0"),
+		}, { // 1
+			args: []interface{}{
+				"foo",
+			},
+			result: nil,
+		},
+		{ // 2
+			args: []interface{}{
+				"bar",
+			},
+			result: "foo",
+		},
+		{ // 3
+			args: []interface{}{
+				"bar",
+			},
+			result: "bar",
+		},
+		{ // 4
+			args: []interface{}{
+				"foo",
+			},
+			result: "bar",
+		},
+		{ // 4
+			args: []interface{}{
+				"foo",
+			},
+			result: "foo",
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}
+
+func TestLagExecIndexWithDefaultValue(t *testing.T) {
+	f, ok := builtins["lag"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	var tests = []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				"foo",
+				"bar",
+				"baz",
+				"baw",
+			},
+			result: fmt.Errorf("expect one two or three args but got 4"),
+		}, { // 1
+			args: []interface{}{
+				"bar",
+				2,
+				"no result",
+			},
+			result: "no result",
+		},
+		{ // 2
+			args: []interface{}{
+				"bar",
+				2,
+				"no result",
+			},
+			result: "no result",
+		},
+		{ // 3
+			args: []interface{}{
+				"foo",
+				2,
+				"no result",
+			},
+			result: "bar",
+		},
+		{ // 4
+			args: []interface{}{
+				"foo",
+				2,
+				"no result",
+			},
+			result: "bar",
+		},
+		{ // 4
+			args: []interface{}{
+				"foo",
+				2,
+				"no result",
+			},
+			result: "foo",
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}
+
+func TestLagExecIndex(t *testing.T) {
+	f, ok := builtins["lag"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	var tests = []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				"foo",
+				"bar",
+				"baz",
+				"baw",
+			},
+			result: fmt.Errorf("expect one two or three args but got 4"),
+		}, { // 1
+			args: []interface{}{
+				"bar",
+				2,
+			},
+			result: nil,
+		},
+		{ // 2
+			args: []interface{}{
+				"bar",
+				2,
+			},
+			result: nil,
+		},
+		{ // 3
+			args: []interface{}{
+				"foo",
+				2,
+			},
+			result: "bar",
+		},
+		{ // 4
+			args: []interface{}{
+				"foo",
+				2,
+			},
+			result: "bar",
+		},
+		{ // 4
+			args: []interface{}{
+				"foo",
+				2,
+			},
+			result: "foo",
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}
