@@ -133,6 +133,7 @@ type GraphNode struct {
 	Type     string                 `json:"type"`
 	NodeType string                 `json:"nodeType"`
 	Props    map[string]interface{} `json:"props"`
+	UI       map[string]interface{} `json:"ui"` //placeholder for ui properties
 }
 
 type RuleGraph struct {
