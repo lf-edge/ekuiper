@@ -15,7 +15,7 @@ helm install my-ekuiper .
 - From Helm repo
 ```
 helm repo add emqx https://repos.emqx.io/charts
-helm install my-ekuiper emqx/kuiper
+helm install my-ekuiper emqx/ekuiper
 ```
 
 
