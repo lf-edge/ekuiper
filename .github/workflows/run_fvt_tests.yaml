@@ -295,16 +295,15 @@ jobs:
 
         helm install ekuiper deploy/chart/ekuiper --debug --dry-run
         helm install ekuiper deploy/chart/ekuiper
-        while [ "$(kubectl get Deployment -l app.kubernetes.io/name=ekuiper -o jsonpath='{.items[0].status.replicas}')" \
-          != "$(kubectl get Deployment -l app.kubernetes.io/name=ekuiper -o jsonpath='{.items[0].status.readyReplicas}')" ]; do
-          echo "=============================="
-          kubectl get pods
-          echo "=============================="
-          echo "waiting ekuiper started"
-          sleep 10
+        while [ "$(kubectl get pods -l app.kubernetes.io/name=ekuiper -o json | jq '.items[0].status.containerStatuses[] | select(.ready==true) | .containerID')" = "" ]; do
+            echo "=============================="
+            kubectl get pods
+            echo "=============================="
+            echo "waiting ekuiper started"
+            sleep 10
         done
-        kuiper_address=$(kubectl get svc --namespace default ekuiper -o jsonpath="{.spec.clusterIP}")
-        if [ $(curl -w %{http_code} -fsSL -o /dev/null $kuiper_address:9081) != 200 ];then
+        ekuiper_address=$(kubectl get svc --namespace default ekuiper -o jsonpath="{.spec.clusterIP}")
+        if [ $(curl -w %{http_code} -fsSL -o /dev/null $ekuiper_address:9081) != 200 ];then
           ekuiper_pod=$(kubectl get pod -l app.kubernetes.io/instance=ekuiper -o jsonpath="{.items[0].metadata.name}")
           kubectl logs $ekuiper_pod
           exit 1;
