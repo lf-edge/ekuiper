@@ -553,6 +553,77 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
+
+	builtins["lag"] = builtinFunc{
+		fType: FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if len(args) != 1 && len(args) != 2 && len(args) != 3 {
+				return fmt.Errorf("expect one two or three args but got %d", len(args)), false
+			}
+			lagkey := "self"
+			v, err := ctx.GetState(lagkey)
+			if err != nil {
+				return fmt.Errorf("error getting state for %s: %v", lagkey, err), false
+			}
+			if v == nil {
+				size := 0
+				var dftVal interface{} = nil
+				if len(args) == 3 {
+					dftVal = args[2]
+				}
+				// first time call, need create state for lag
+				if len(args) == 1 {
+					size = 1
+				} else {
+					siz, ok := args[1].(int)
+					if !ok {
+						return fmt.Errorf("second arg is not a int but got %v", args[1]), false
+					}
+					size = siz
+				}
+
+				rq := newRingqueue(size)
+				rq.fill(dftVal)
+
+				rtnVal, _ := rq.fetch()
+				rq.append(args[0])
+				err := ctx.PutState(lagkey, rq)
+				if err != nil {
+					return fmt.Errorf("error setting state for %s: %v", lagkey, err), false
+				}
+				return rtnVal, true
+			} else {
+				rq, ok := v.(*ringqueue)
+				if !ok {
+					return fmt.Errorf("error getting state for %s: %v", lagkey, err), false
+				}
+				rtnVal, _ := rq.fetch()
+				rq.append(args[0])
+				err := ctx.PutState(lagkey, rq)
+				if err != nil {
+					return fmt.Errorf("error setting state for %s: %v", lagkey, err), false
+				}
+				return rtnVal, true
+			}
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if len(args) != 1 && len(args) != 2 && len(args) != 3 {
+				return fmt.Errorf("expect one two or three args but got %d", len(args))
+			}
+			if len(args) >= 2 {
+				if ast.IsFloatArg(args[1]) || ast.IsTimeArg(args[1]) || ast.IsBooleanArg(args[1]) || ast.IsStringArg(args[1]) || ast.IsFieldRefArg(args[1]) {
+					return ProduceErrInfo(1, "int")
+				}
+				if s, ok := args[1].(*ast.IntegerLiteral); ok {
+					if s.Val < 0 {
+						return fmt.Errorf("the index should not be a nagtive integer")
+					}
+				}
+			}
+			return nil
+		},
+	}
+
 	builtins["object_construct"] = builtinFunc{
 		fType: FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -599,4 +670,64 @@ func jsonCall(ctx api.StreamContext, args []interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("invalid jsonPath, must be a string but got %v", args[1])
 	}
 	return ctx.ParseJsonPath(jp, args[0])
+}
+
+// page Rotate storage for in memory cache
+// Not thread safe!
+type ringqueue struct {
+	data []interface{}
+	h    int
+	t    int
+	l    int
+	size int
+}
+
+func newRingqueue(size int) *ringqueue {
+	return &ringqueue{
+		data: make([]interface{}, size),
+		h:    0, // When deleting, head++, if tail == head, it is empty
+		t:    0, // When append, tail++, if tail== head, it is full
+		size: size,
+	}
+}
+
+// fill item will fill the queue with item value
+func (p *ringqueue) fill(item interface{}) {
+	for {
+		if !p.append(item) {
+			return
+		}
+	}
+}
+
+// append item if list is not full and return true; otherwise return false
+func (p *ringqueue) append(item interface{}) bool {
+	if p.l == p.size { // full
+		return false
+	}
+	p.data[p.t] = item
+	p.t++
+	if p.t == p.size {
+		p.t = 0
+	}
+	p.l++
+	return true
+}
+
+// fetch get the first item in the cache
+func (p *ringqueue) fetch() (interface{}, bool) {
+	if p.l == 0 {
+		return nil, false
+	}
+	result := p.data[p.h]
+	p.h++
+	if p.h == p.size {
+		p.h = 0
+	}
+	p.l--
+	return result, true
+}
+
+func (p *ringqueue) isFull() bool {
+	return p.l == p.size
 }
