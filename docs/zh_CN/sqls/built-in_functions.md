@@ -172,6 +172,7 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 | meta         | meta(topic)                          | 返回指定键的元数据。 键可能是：<br/>-如果 from 子句中只有一个来源，则为独立键，例如`meta(device)`<br />-用于指定流的合格键，例如 `meta(src1.device)` <br />-用于多级元数据的带有箭头的键，例如 `meta(src1.reading->device->name)`。这里假定读取是地图结构元数据。 |
 | window_start | window_start()                       | 返回窗口的开始时间戳，格式为 int64。若运行时没有时间窗口，则返回默认值0。窗口的时间与规则所用的时间系统相同。若规则采用处理时间，则窗口的时间也为处理时间；若规则采用事件事件，则窗口的时间也为事件时间。                                                                          |
 | window_end   | window_end()                         | 返回窗口的结束时间戳，格式为 int64。若运行时没有时间窗口，则返回默认值0。窗口的时间与规则所用的时间系统相同。若规则采用处理时间，则窗口的时间也为处理时间；若规则采用事件事件，则窗口的时间也为事件时间。                                                                          |
+| lag          | lag(expr, [offset], [default value]) | 返回表达式前一个值在偏移 offset 处的结果，如果没有找到，则返回默认值，如果没有指定默认值则返回 nil。如果除 expression 外其余参数均未指定，偏移量默认为 1，默认值为 nil                                                                                |
 | changed_col  | changed_col(true, col)               | 返回列的相比上次执行后的变化值。若未变化则返回 null 。                                                                                                                                                    |
 | had_changed  | had_changed(true, expr1, expr2, ...) | 返回是否上次运行后列的值有变化。 其参数可以为 * 以方便地监测所有列。                                                                                                                                              |
 

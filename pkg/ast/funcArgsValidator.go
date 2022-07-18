@@ -66,3 +66,10 @@ func IsTimeArg(arg Expr) bool {
 	}
 	return false
 }
+
+func IsFieldRefArg(arg Expr) bool {
+	if _, ok := arg.(*FieldRef); ok {
+		return true
+	}
+	return false
+}

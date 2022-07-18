@@ -967,6 +967,172 @@ func TestChangedFuncs_Apply1(t *testing.T) {
 			}
 			r = append(r, result)
 		}
+		if !reflect.DeepEqual(tt.result, r) {
+			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, r)
+		}
+	}
+}
+
+func TestLagFuncs_Apply1(t *testing.T) {
+	var tests = []struct {
+		sql    string
+		data   []interface{}
+		result [][]map[string]interface{}
+	}{
+		{
+			sql: `SELECT lag(a) as a, lag(b) as b FROM test`,
+			data: []interface{}{
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"b": "b1",
+						"c": "c1",
+					},
+				},
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"b": "b2",
+						"c": "c1",
+					},
+				},
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"c": "c1",
+					},
+				},
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"b": "b2",
+						"c": "c2",
+					},
+				},
+			},
+			result: [][]map[string]interface{}{{{}}, {{
+				"a": "a1",
+				"b": "b1",
+			}}, {{
+				"a": "a1",
+				"b": "b2",
+			}}, {{
+				"a": "a1",
+			}}},
+		},
+
+		{
+			sql: `SELECT lag(a, 2, "a10") as a FROM test`,
+			data: []interface{}{
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"b": "b1",
+					},
+				},
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a2",
+						"c": "c1",
+					},
+				},
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"c": "c1",
+					},
+				},
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"b": "b2",
+						"c": "c2",
+					},
+				},
+			},
+			result: [][]map[string]interface{}{{{
+				"a": "a10",
+			}}, {{
+				"a": "a10",
+			}}, {{
+				"a": "a1",
+			}}, {{
+				"a": "a2",
+			}}},
+		},
+
+		{
+			sql: `SELECT lag(a, 2) as a FROM test`,
+			data: []interface{}{
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"b": "b1",
+					},
+				},
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a2",
+						"c": "c1",
+					},
+				},
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"c": "c1",
+					},
+				},
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: xsql.Message{
+						"a": "a1",
+						"b": "b2",
+						"c": "c2",
+					},
+				},
+			},
+			result: [][]map[string]interface{}{{{}}, {{}}, {{
+				"a": "a1",
+			}}, {{
+				"a": "a2",
+			}}},
+		},
+	}
+
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := conf.Log.WithField("rule", "TestChangedFuncs_Apply1")
+
+	for i, tt := range tests {
+		tempStore, _ := state.CreateStore("mockRule"+strconv.Itoa(i), api.AtMostOnce)
+		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("mockRule"+strconv.Itoa(i), "project", tempStore)
+		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+		if err != nil || stmt == nil {
+			t.Errorf("parse sql %s error %v", tt.sql, err)
+		}
+		pp := &ProjectOp{}
+		parseStmt(pp, stmt.Fields)
+		fv, afv := xsql.NewFunctionValuersForOp(ctx)
+		r := make([][]map[string]interface{}, 0, len(tt.data))
+		for _, d := range tt.data {
+			opResult := pp.Apply(ctx, d, fv, afv)
+			result, err := parseResult(opResult, pp.IsAggregate)
+			if err != nil {
+				t.Errorf("parse result error： %s", err)
+				continue
+			}
+			r = append(r, result)
+		}
 
 		if !reflect.DeepEqual(tt.result, r) {
 			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, r)
