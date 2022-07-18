@@ -147,6 +147,9 @@
 						},{
 							"title": "编解码",
 							"path": "rules/codecs"
+						},{
+							"title": "图规则",
+							"path": "rules/graph_rule"
 						}
 					]
 				},
@@ -678,6 +681,9 @@
 						},{
 							"title": "Codecs",
 							"path": "rules/codecs"
+						},{
+							"title": "Graph Rule",
+							"path": "rules/graph_rule"
 						}
 					]
 				},
