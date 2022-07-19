@@ -18,11 +18,12 @@ type WasmPluginConfig struct {
 	PluginName string   `yaml:"pluginName"`
 	VmConfig   VmConfig `yaml:"vmConfig"`
 	//path        string   `yaml:"path"`
-	InstanceNum int    `yaml:"instanceNum"`
-	Function    string `yaml:"function"`
+	InstanceNum   int    `yaml:"instanceNum"`
+	Function      string `yaml:"function"`
+	WasmPluginMap map[string]WasmPluginConfig
 }
 
-func (w *WasmPluginConfig) GetConfig() *WasmPluginConfig {
+func (w *WasmPluginConfig) GetConfig(Y) *WasmPluginConfig {
 	//conf := w.getConf()
 	yamlFile, err := ioutil.ReadFile("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
 	if err != nil {
@@ -89,8 +90,12 @@ func NewWasmPlugin(config WasmPluginConfig) bool {
 		fmt.Println(res[0].(int32))
 	}
 
+	//
+
 	return true
 }
+
+// add
 
 func (w *WasmPluginConfig) AddWasmPlugin(PluginName string) bool {
 	//config := w.GetConfig()
@@ -105,13 +110,50 @@ func (w *WasmPluginConfig) AddWasmPlugin(PluginName string) bool {
 	// add new wasm plugin
 	if NewWasmPlugin(*w) == false {
 		fmt.Println("[wasm][manager-AddWasmPlugin] NewWasmPlugin failed !!!")
+	} else {
+		fmt.Println("[wasm][manager-AddWasmPlugin] NewWasmPlugin successful")
 	}
 	return true
 }
 
+// search
+
+func (w *WasmPluginConfig) GetWasmPluginConfigByName(PluginName string) *WasmPluginConfig {
+	if w.PluginName == "" {
+		log.Fatalln("[error][wasm][manager-GetWasmPluginConfigByName] PluginName is nil")
+	}
+	if v, ok := w.WasmPluginMap.Load(w.PluginName); ok {
+		pw, ok := v.(*WasmPluginConfig)
+		if !ok {
+			log.Fatalln("[error][wasm][manager-GetWasmPluginConfigByName] unexpected object type in map")
+		}
+		//fmt.Println("[wasm][manager-GetWasmPluginConfigByName] pw: ", pw)
+		return pw
+	}
+	log.Fatalln("[error][wasm][manager-GetWasmPluginConfigByName] not found !!!")
+	return nil
+}
+
+// delete
+
+//func (w *WasmPluginConfig) DeleteWasmPluginConfigByName() *WasmPluginConfig {
+//	v, ok := w.WasmPluginMap.Load(w.PluginName)
+//	if !ok{
+//
+//	}
+//}
+
+//
+// abi
+//
+
+func GetAbiImport() {
+
+}
+
 // yaml test
 type conf struct {
-	Host   string `yaml: "host"`
+	Host   string `yaml:"host"`
 	User   string `yaml:"user"`
 	Pwd    string `yaml:"pwd"`
 	Dbname string `yaml:"dbname"`

@@ -31,5 +31,14 @@ func TestWasmPluginConfig_AddWasmPlugin(t *testing.T) {
 	if w.AddWasmPlugin(w.PluginName) == false {
 		log.Fatalln("[test][wasm][manager-AddWasmPlugin] Add FAILED!!!")
 	}
+}
 
+func TestWasmPluginConfig_GetWasmPluginConfigByName(t *testing.T) {
+	fmt.Println("[test][wasm][manager-GetWasmPluginConfigByName] start")
+	w := new(WasmPluginConfig)
+	w = w.GetConfig()
+	if w.AddWasmPlugin(w.PluginName) == false {
+		log.Fatalln("[test][wasm][manager-AddWasmPlugin] Add FAILED!!!")
+	}
+	fmt.Println("[test][wasm][manager-GetWasmPluginConfigByName] ", w.GetWasmPluginConfigByName(w.PluginName))
 }
