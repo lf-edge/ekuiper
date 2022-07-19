@@ -109,9 +109,9 @@ func TestRun(t *testing.T) {
 	}{
 		{ // 0
 			sconf: &conf.SinkConf{
-				MemoryCacheThreshold: 6,
+				MemoryCacheThreshold: 4,
 				MaxDiskCache:         12,
-				BufferPageSize:       3,
+				BufferPageSize:       2,
 				EnableCache:          true,
 				ResendInterval:       0,
 				CleanCacheAtStop:     false,
