@@ -32,6 +32,16 @@ func InitClock() {
 	}
 }
 
+func GetLocalZone() int {
+	if IsTesting {
+		return 28800 // default to UTC+8
+	} else {
+		_, offset := time.Now().Local().Zone()
+		return offset
+	}
+
+}
+
 //Time related. For Mock
 func GetTicker(duration int) *clock.Ticker {
 	return Clock.Ticker(time.Duration(duration) * time.Millisecond)
@@ -42,7 +52,11 @@ func GetTimer(duration int) *clock.Timer {
 }
 
 func GetTimerByTime(t time.Time) *clock.Timer {
-	return Clock.Timer(time.Until(t))
+	if IsTesting {
+		return Clock.Timer(time.Duration(t.UnixMilli()-GetNowInMilli()) * time.Millisecond)
+	} else {
+		return Clock.Timer(time.Until(t))
+	}
 }
 
 func GetNowInMilli() int64 {

@@ -162,7 +162,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 
 func getAlignedWindowEndTime(n, interval int64) time.Time {
 	now := time.UnixMilli(n)
-	_, offset := now.Local().Zone()
+	offset := conf.GetLocalZone()
 	start := now.Truncate(24 * time.Hour).Add(time.Duration(-1*offset) * time.Second)
 	diff := now.Sub(start).Milliseconds()
 	return now.Add(time.Duration(interval-(diff%interval)) * time.Millisecond)

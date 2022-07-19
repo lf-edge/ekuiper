@@ -8,7 +8,7 @@ All the windowing operations output results at the end of the window. The output
 
 ## Time-units
 
-There are 5 time-units can be used in the windows. For example, `TUMBLINGWINDOW(ss, 10)`, which means group the data with tumbling with with 10  seconds interval.
+There are 5 time-units can be used in the windows. For example, `TUMBLINGWINDOW(ss, 10)`, which means group the data with tumbling with 10  seconds interval. The time intervals will align to the nature time. For example, a 10 second time window will always end at each 10s second such as 10, 20 or 30 regardless of the rule start time. A day window will always end in 24:00 local time.
 
 **DD**: day unit
 
