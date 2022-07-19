@@ -54,3 +54,16 @@ func TestWasmPluginConfig_DeleteWasmPluginConfig(t *testing.T) {
 		log.Fatalln("[test][wasm][manager-DeleteWasmPluginConfig] delete failed!!")
 	}
 }
+
+func TestCheckRepeat(t *testing.T) {
+	w := new(WasmPluginConfig)
+	w = w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
+	if w.AddWasmPlugin(w.PluginName) == false {
+		log.Fatalln("[test][wasm][manager-AddWasmPlugin] Add FAILED!!!")
+	}
+	w = w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc2.yaml")
+	if w.AddWasmPlugin(w.PluginName) == false {
+		log.Fatalln("[test][wasm][manager-AddWasmPlugin] Add FAILED!!!")
+	}
+
+}

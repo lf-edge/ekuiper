@@ -1,4 +1,7 @@
-host: localhost:3306
-user: root
-pwd: 123456
-dbname: test
+---
+function: fib
+instanceNum: 1
+pluginName: etc1
+vmConfig:
+  engineName: wasmedge
+  path: /home/erfenjiao/ekuiper/plugins/portable/wasm/file/fibonacci.wasm

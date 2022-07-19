@@ -113,6 +113,14 @@ func (w *WasmPluginConfig) AddWasmPlugin(PluginName string) bool {
 	}
 
 	// if exist
+
+	if v, ok := WasmPluginMap.Load(w.PluginName); ok {
+		if !ok {
+			log.Fatalln("[wasm][manager-AddWasmPlugin] unexpected type in map")
+		}
+		log.Fatalln("[wasm][manager-AddWasmPlugin] Plugin already exit, you also can delete this map v:", v)
+	}
+
 	//
 	// add new wasm plugin
 	if NewWasmPlugin(*w) == false {
