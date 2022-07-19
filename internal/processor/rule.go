@@ -24,7 +24,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"path"
 )
 
 type RuleProcessor struct {
@@ -230,7 +229,7 @@ func cleanCheckpoint(name string) error {
 }
 
 func cleanSinkCache(name string) error {
-	err := store.DropKV(path.Join("sink", name))
+	err := store.DropCacheKVForRule(name)
 	if err != nil {
 		return err
 	}
