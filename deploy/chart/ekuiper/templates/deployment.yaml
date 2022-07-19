@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ekuiper.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ekuiper.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "ekuiper.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ekuiper.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "ekuiper.serviceAccountName" . }}
+      volumes:
+      - name: ekuiper-data
+        {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ (tpl .Values.persistence.existingClaim $) | default (include "ekuiper.fullname" .) }}
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      - name: kuiper-config
+        configMap:
+          name: {{ include "ekuiper.fullname" . }}
+          items:
+          - key: kuiper.yaml
+            path: kuiper.yaml
+      {{- if .Values.tls.enabled }}
+      - name: certs
+        secret:
+          secretName: {{ template "neuron.tlsSecretName" . }}
+          items:
+            - key: {{ ternary "tls.crt" "ca.crt" .Values.tls.existingSecretFullChain }}
+              path: xyz-rootca.pem
+            - key: tls.crt
+              path: xyz-certificate.pem
+            - key: tls.key
+              path: xyz-private.pem.key
+        {{- end }}
+      containers:
+        - name: ekuiper
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}-alpine"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.ekuiperEnv.enabled }}
+          env:
+          - name: {{ .Values.ekuiperEnv.key.mqttDefaultServer }}
+            value: {{ .Values.ekuiperEnv.value.mqttDefaultServer }}
+          {{- end }}
+          command: ["./bin/kuiperd"]
+          readinessProbe:
+            httpGet:
+              {{- $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
+              port: {{ $restPort | default 9081 }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          ports:
+            {{- $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
+            - name: restapi
+              containerPort: {{ $restPort | default 9081 }}
+            {{- $port := index .Values "kuiperConfig" "kuiper.yaml" "basic" "port" }}
+            - name: ekuiper
+              containerPort: {{ $port | default 20498 }}
+          volumeMounts:
+          - name: ekuiper-data
+            mountPath: "/kuiper/data"
+          {{- if .Values.tls.enabled }}
+          - name: certs
+            mountPath: "/var/kuiper/xyz-rootca.pem"
+            subPath: "xyz-rootca.pem"
+            readOnly: true
+          - name: certs
+            mountPath: "/var/kuiper/xyz-certificate.pem"
+            subPath: "xyz-certificate.pem"
+            readOnly: true
+          - name: certs
+            mountPath: "/var/kuiper/xyz-private.pem.key"
+            subPath: "xyz-private.pem.key"
+            readOnly: true
+          {{- end }}
+          - name: kuiper-config
+            mountPath: "/kuiper/etc/kuiper.yaml"
+            subPath: "kuiper.yaml"
+          resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+
+
+

@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "kuiper.fullname" . }}
+  name: {{ include "ekuiper.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "kuiper.labels" . | nindent 4 }}
+    {{- include "ekuiper.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   {{- if eq .Values.service.type "LoadBalancer" }}
@@ -16,8 +16,8 @@ spec:
   {{- end }}
   {{- end }}
   ports:
-  - name: restapi
-    port:  {{ .Values.service.restapi | default 9081 }}
+  - name: {{ .Values.service.ports.restapi.name }}
+    port:  {{ .Values.service.ports.restapi.port | default 9081 }}
     protocol: TCP
     targetPort:  restapi
     {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) (not (empty .Values.service.nodePorts.restapi)) }}
@@ -25,29 +25,14 @@ spec:
     {{- else if eq .Values.service.type "ClusterIP" }}
     nodePort: null
     {{- end }}
-  - name: kuiper
-    port: {{ .Values.service.kuiper | default 20498 }}
+  - name: {{ .Values.service.ports.ekuiper.name }}
+    port: {{ .Values.service.ports.ekuiper.port | default 20498 }}
     protocol: TCP
-    targetPort: kuiper
-    {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) (not (empty .Values.service.nodePorts.kuiper)) }}
-    nodePort: {{ .Values.service.nodePorts.kuiper }}
+    targetPort: ekuiper
+    {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) (not (empty .Values.service.nodePorts.ekuiper)) }}
+    nodePort: {{ .Values.service.nodePorts.ekuiper }}
     {{- else if eq .Values.service.type "ClusterIP" }}
     nodePort: null
     {{- end }}
   selector:
-    {{- include "kuiper.selectorLabels" . | nindent 4 }}
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "kuiper.fullname" . }}-headless
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "kuiper.labels" . | nindent 4 }}
-spec:
-  type: ClusterIP
-  sessionAffinity: None
-  clusterIP: None
-  selector:
-    {{- include "kuiper.selectorLabels" . | nindent 4 }}
+    {{- include "ekuiper.selectorLabels" . | nindent 4 }}
