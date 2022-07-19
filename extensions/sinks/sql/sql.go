@@ -27,32 +27,24 @@ import (
 )
 
 type sqlConfig struct {
-	Url          string   `json:"url"`
-	Table        string   `json:"table"`
-	Fields       []string `json:"fields"`
-	DataTemplate string   `json:"dataTemplate"`
+	Url            string   `json:"url"`
+	Table          string   `json:"table"`
+	Fields         []string `json:"fields"`
+	DataTemplate   string   `json:"dataTemplate"`
+	TableDataField string   `json:"tableDataField"`
 }
 
-func (t *sqlConfig) buildSql(ctx api.StreamContext, mapData map[string]interface{}) (string, error) {
+func (t *sqlConfig) buildSql(ctx api.StreamContext, mapData map[string]interface{}) ([]string, string, error) {
 	if 0 == len(mapData) {
-		return "", fmt.Errorf("data is empty.")
+		return nil, "", fmt.Errorf("data is empty.")
 	}
 	logger := ctx.GetLogger()
-	var (
-		table      string
-		keys, vals []string
-		err        error
-	)
-	table, err = ctx.ParseTemplate(t.Table, mapData)
-	if err != nil {
-		logger.Errorf("parse template for table %s error: %v", t.Table, err)
-		return "", err
-	}
+	var keys, vals []string
 
 	if len(t.Fields) != 0 {
 		for _, k := range t.Fields {
+			keys = append(keys, k)
 			if v, ok := mapData[k]; ok {
-				keys = append(keys, k)
 				if reflect.String == reflect.TypeOf(v).Kind() {
 					vals = append(vals, fmt.Sprintf("'%v'", v))
 				} else {
@@ -60,6 +52,7 @@ func (t *sqlConfig) buildSql(ctx api.StreamContext, mapData map[string]interface
 				}
 			} else {
 				logger.Warnln("not found field:", k)
+				vals = append(vals, fmt.Sprintf(`NULL`))
 			}
 		}
 	} else {
@@ -73,9 +66,8 @@ func (t *sqlConfig) buildSql(ctx api.StreamContext, mapData map[string]interface
 		}
 	}
 
-	sqlStr := fmt.Sprintf("INSERT INTO %s (%s)", table, strings.Join(keys, ","))
-	sqlStr += " values (" + strings.Join(vals, ",") + ");"
-	return sqlStr, nil
+	sqlStr := "(" + strings.Join(vals, ",") + ")"
+	return keys, sqlStr, nil
 }
 
 type sqlSink struct {
@@ -113,13 +105,9 @@ func (m *sqlSink) Open(ctx api.StreamContext) (err error) {
 	return
 }
 
-func (m *sqlSink) writeToDB(ctx api.StreamContext, mapData map[string]interface{}) error {
-	sqlStr, err := m.conf.buildSql(ctx, mapData)
-	if nil != err {
-		return err
-	}
-	ctx.GetLogger().Debugf(sqlStr)
-	rows, err := m.db.Query(sqlStr)
+func (m *sqlSink) writeToDB(ctx api.StreamContext, sqlStr *string) error {
+	ctx.GetLogger().Debugf(*sqlStr)
+	rows, err := m.db.Query(*sqlStr)
 	if err != nil {
 		return err
 	}
@@ -140,18 +128,90 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 		}
 		item = tm
 	}
+
+	var table string
+	var err error
+	v, ok := item.(map[string]interface{})
+	if ok {
+		table, err = ctx.ParseTemplate(m.conf.Table, v)
+		if err != nil {
+			ctx.GetLogger().Errorf("parse template for table %s error: %v", m.conf.Table, err)
+			return err
+		}
+		if m.conf.TableDataField != "" {
+			item = v[m.conf.TableDataField]
+		}
+	}
+
+	var keys []string = nil
+	var values []string = nil
+	var vars string
+
 	switch v := item.(type) {
 	case []map[string]interface{}:
-		var err error
 		for _, mapData := range v {
-			e := m.writeToDB(ctx, mapData)
-			if e != nil {
-				err = e
+			keys, vars, err = m.conf.buildSql(ctx, mapData)
+			if err != nil {
+				return err
 			}
+			values = append(values, vars)
 		}
-		return err
+		if keys != nil {
+			sqlStr := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+			return m.writeToDB(ctx, &sqlStr)
+		}
+		return nil
 	case map[string]interface{}:
-		return m.writeToDB(ctx, v)
+		keys, vars, err = m.conf.buildSql(ctx, v)
+		if err != nil {
+			return err
+		}
+		values = append(values, vars)
+		if keys != nil {
+			sqlStr := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+			return m.writeToDB(ctx, &sqlStr)
+		}
+		return nil
+	case []interface{}:
+		for _, data := range v {
+			mapData, ok := data.(map[string]interface{})
+			if !ok {
+				ctx.GetLogger().Errorf("unsupported type: %T", data)
+				return fmt.Errorf("unsupported type: %T", data)
+			}
+
+			keys, vars, err = m.conf.buildSql(ctx, mapData)
+			if err != nil {
+				ctx.GetLogger().Errorf("sql sink build sql error %v for data", err, mapData)
+				return err
+			}
+			values = append(values, vars)
+		}
+
+		if keys != nil {
+			sqlStr := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+			return m.writeToDB(ctx, &sqlStr)
+		}
+		return nil
+
+	case interface{}:
+		mapData, ok := v.(map[string]interface{})
+		if !ok {
+			ctx.GetLogger().Errorf("unsupported type: %T", v)
+			return fmt.Errorf("unsupported type: %T", v)
+		}
+
+		keys, vars, err = m.conf.buildSql(ctx, mapData)
+		if err != nil {
+			return err
+		}
+		values = append(values, vars)
+		if keys != nil {
+			sqlStr := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+			return m.writeToDB(ctx, &sqlStr)
+		}
+		return nil
+
 	default: // never happen
 		return fmt.Errorf("unsupported type: %T", item)
 	}

@@ -47,6 +47,20 @@
 			"zh_CN": "表名"
 		}
 	}, {
+		"name": "tableDataField",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "table Data from Stream Field",
+			"zh_CN": "表数据来源"
+		},
+		"label": {
+			"en_US": "Table Data from Stream Field",
+			"zh_CN": "表数据来源"
+		}
+	}, {
 		"name": "fields",
 		"default": [],
 		"optional": false,

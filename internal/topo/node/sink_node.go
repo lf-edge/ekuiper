@@ -341,6 +341,7 @@ func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, st
 		return nil
 	default:
 		if err := sink.Collect(ctx, outData); err != nil {
+			ctx.GetLogger().Errorf("sink node %s instance %d send data error %v", ctx.GetOpId(), ctx.GetInstanceId(), err)
 			stats.IncTotalExceptions()
 			return err
 		} else {
