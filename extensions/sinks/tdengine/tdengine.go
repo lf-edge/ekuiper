@@ -28,19 +28,20 @@ import (
 
 type (
 	taosConfig struct {
-		ProvideTs    bool     `json:"provideTs"`
-		Port         int      `json:"port"`
-		Ip           string   `json:"ip"` // To be deprecated
-		Host         string   `json:"host"`
-		User         string   `json:"user"`
-		Password     string   `json:"password"`
-		Database     string   `json:"database"`
-		Table        string   `json:"table"`
-		TsFieldName  string   `json:"tsFieldName"`
-		Fields       []string `json:"fields"`
-		STable       string   `json:"sTable"`
-		TagFields    []string `json:"tagFields"`
-		DataTemplate string   `json:"dataTemplate"`
+		ProvideTs      bool     `json:"provideTs"`
+		Port           int      `json:"port"`
+		Ip             string   `json:"ip"` // To be deprecated
+		Host           string   `json:"host"`
+		User           string   `json:"user"`
+		Password       string   `json:"password"`
+		Database       string   `json:"database"`
+		Table          string   `json:"table"`
+		TsFieldName    string   `json:"tsFieldName"`
+		Fields         []string `json:"fields"`
+		STable         string   `json:"sTable"`
+		TagFields      []string `json:"tagFields"`
+		DataTemplate   string   `json:"dataTemplate"`
+		TableDataField string   `json:"tableDataField"`
 	}
 	taosSink struct {
 		conf *taosConfig
@@ -133,14 +134,14 @@ func (t *taosConfig) buildSql(ctx api.StreamContext, mapData map[string]interfac
 		}
 	}
 
-	sqlStr := fmt.Sprintf("INSERT INTO %s (%s)", table, strings.Join(keys, ","))
+	sqlStr := fmt.Sprintf("%s (%s)", table, strings.Join(keys, ","))
 	if sTable != "" {
 		sqlStr += " using " + sTable
 	}
 	if len(tags) != 0 {
 		sqlStr += " tags (" + strings.Join(tags, ",") + ")"
 	}
-	sqlStr += " values (" + strings.Join(vals, ",") + ");"
+	sqlStr += " values (" + strings.Join(vals, ",") + ")"
 	return sqlStr, nil
 }
 
@@ -205,30 +206,81 @@ func (m *taosSink) Collect(ctx api.StreamContext, item interface{}) error {
 		}
 		item = tm
 	}
+
+	if m.conf.TableDataField != "" {
+		mapData, ok := item.(map[string]interface{})
+		if ok {
+			item = mapData[m.conf.TableDataField]
+		}
+	}
+
 	switch v := item.(type) {
 	case []map[string]interface{}:
-		var err error
+		strSli := make([]string, len(v))
 		for _, mapData := range v {
-			e := m.writeToDB(ctx, mapData)
-			if e != nil {
-				err = e
+			str, err := m.conf.buildSql(ctx, mapData)
+			if err != nil {
+				ctx.GetLogger().Errorf("tdengine sink build sql error %v for data", err, mapData)
+				return err
 			}
+			strSli = append(strSli, str)
 		}
-		return err
+		if len(strSli) > 0 {
+			strBatch := strings.Join(strSli, " ")
+			return m.writeToDB(ctx, &strBatch)
+		}
+		return nil
 	case map[string]interface{}:
-		return m.writeToDB(ctx, v)
+		strBatch, err := m.conf.buildSql(ctx, v)
+		if err != nil {
+			ctx.GetLogger().Errorf("tdengine sink build sql error %v for data", err, v)
+			return err
+		}
+		return m.writeToDB(ctx, &strBatch)
+	case []interface{}:
+		strSli := make([]string, len(v))
+		for _, data := range v {
+			mapData, ok := data.(map[string]interface{})
+			if !ok {
+				ctx.GetLogger().Errorf("unsupported type: %T", data)
+				return fmt.Errorf("unsupported type: %T", data)
+			}
+
+			str, err := m.conf.buildSql(ctx, mapData)
+			if err != nil {
+				ctx.GetLogger().Errorf("tdengine sink build sql error %v for data", err, mapData)
+				return err
+			}
+			strSli = append(strSli, str)
+		}
+		if len(strSli) > 0 {
+			strBatch := strings.Join(strSli, " ")
+			return m.writeToDB(ctx, &strBatch)
+		}
+		return nil
+	case interface{}:
+		mapData, ok := v.(map[string]interface{})
+		if !ok {
+			ctx.GetLogger().Errorf("unsupported type: %T", v)
+			return fmt.Errorf("unsupported type: %T", v)
+		}
+
+		strBatch, err := m.conf.buildSql(ctx, mapData)
+		if err != nil {
+			ctx.GetLogger().Errorf("tdengine sink build sql error %v for data", err, mapData)
+			return err
+		}
+		return m.writeToDB(ctx, &strBatch)
 	default: // never happen
+		ctx.GetLogger().Errorf("unsupported type: %T", v)
 		return fmt.Errorf("unsupported type: %T", item)
 	}
 }
 
-func (m *taosSink) writeToDB(ctx api.StreamContext, mapData map[string]interface{}) error {
-	sql, err := m.conf.buildSql(ctx, mapData)
-	if nil != err {
-		return err
-	}
-	ctx.GetLogger().Debugf(sql)
-	rows, err := m.db.Query(sql)
+func (m *taosSink) writeToDB(ctx api.StreamContext, SqlVal *string) error {
+	finalSql := "INSERT INTO " + *SqlVal + ";"
+	ctx.GetLogger().Debugf(finalSql)
+	rows, err := m.db.Query(finalSql)
 	if err != nil {
 		return err
 	}
