@@ -128,10 +128,10 @@ func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple, current int64, 
 		} else {
 			interval := int64(w.interval)
 			nextTs := getEarliestEventTs(inputs, current, watermark)
-			if nextTs == math.MaxInt64 || nextTs%interval == 0 {
+			if nextTs == math.MaxInt64 {
 				return nextTs
 			}
-			return nextTs + (interval - nextTs%interval)
+			return getAlignedWindowEndTime(nextTs, interval).UnixMilli()
 		}
 	case ast.SLIDING_WINDOW:
 		nextTs := getEarliestEventTs(inputs, current, watermark)
@@ -148,10 +148,7 @@ func (w *WatermarkGenerator) getNextSessionWindow(inputs []*xsql.Tuple) (int64, 
 			return inputs[i].Timestamp < inputs[j].Timestamp
 		})
 		et := inputs[0].Timestamp
-		tick := et + (duration - et%duration)
-		if et%duration == 0 {
-			tick = et
-		}
+		tick := getAlignedWindowEndTime(et, duration).UnixMilli()
 		var p int64
 		ticked := false
 		for _, tuple := range inputs {

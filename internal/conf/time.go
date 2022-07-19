@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@ package conf
 
 import (
 	"github.com/benbjohnson/clock"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 	"time"
 )
 
-var Clock clock.Clock
+var (
+	Clock clock.Clock
+)
 
 func InitClock() {
 	if IsTesting {
@@ -40,8 +41,12 @@ func GetTimer(duration int) *clock.Timer {
 	return Clock.Timer(time.Duration(duration) * time.Millisecond)
 }
 
+func GetTimerByTime(t time.Time) *clock.Timer {
+	return Clock.Timer(time.Until(t))
+}
+
 func GetNowInMilli() int64 {
-	return cast.TimeToUnixMilli(Clock.Now())
+	return Clock.Now().UnixMilli()
 }
 
 func GetNow() time.Time {

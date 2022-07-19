@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,16 +52,17 @@ func TestCheckpoint(t *testing.T) {
 					"color": "blue",
 					"size":  float64(2),
 					"ts":    float64(1541152487632),
-				}, {
-					"color": "yellow",
-					"size":  float64(4),
-					"ts":    float64(1541152488442),
 				}},
 				{{
 					"color": "blue",
 					"size":  float64(2),
 					"ts":    float64(1541152487632),
 				}, {
+					"color": "yellow",
+					"size":  float64(4),
+					"ts":    float64(1541152488442),
+				}},
+				{{
 					"color": "yellow",
 					"size":  float64(4),
 					"ts":    float64(1541152488442),
@@ -72,17 +73,17 @@ func TestCheckpoint(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"op_3_project_0_records_in_total":  int64(3),
-				"op_3_project_0_records_out_total": int64(3),
+				"op_3_project_0_records_in_total":  int64(4),
+				"op_3_project_0_records_out_total": int64(4),
 
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
 
 				"source_demo_0_records_in_total":  int64(3),
 				"source_demo_0_records_out_total": int64(3),
 
 				"op_2_window_0_records_in_total":  int64(3),
-				"op_2_window_0_records_out_total": int64(3),
+				"op_2_window_0_records_out_total": int64(4),
 			},
 		},
 		PauseSize: 3,
