@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+	"sync"
 )
 
 type VmConfig struct {
@@ -18,14 +19,15 @@ type WasmPluginConfig struct {
 	PluginName string   `yaml:"pluginName"`
 	VmConfig   VmConfig `yaml:"vmConfig"`
 	//path        string   `yaml:"path"`
-	InstanceNum   int    `yaml:"instanceNum"`
-	Function      string `yaml:"function"`
-	WasmPluginMap map[string]WasmPluginConfig
+	InstanceNum int    `yaml:"instanceNum"`
+	Function    string `yaml:"function"`
 }
 
-func (w *WasmPluginConfig) GetConfig(Y) *WasmPluginConfig {
+var WasmPluginMap sync.Map
+
+func (w *WasmPluginConfig) GetConfig(YamlFile string) *WasmPluginConfig {
 	//conf := w.getConf()
-	yamlFile, err := ioutil.ReadFile("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
+	yamlFile, err := ioutil.ReadFile(YamlFile)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -48,6 +50,8 @@ func (w *WasmPluginConfig) GetConfig(Y) *WasmPluginConfig {
 
 	//fmt.Print("[wasm][manager-GetConfig]w = ")
 	//fmt.Println(w)
+	//w.WasmPluginMap[w.PluginName] = *w
+	//w *WasmPluginConfig
 	return w
 }
 
@@ -90,7 +94,10 @@ func NewWasmPlugin(config WasmPluginConfig) bool {
 		fmt.Println(res[0].(int32))
 	}
 
-	//
+	//w.WasmPluginMap.LoadOrStore(w.PluginName, &w)
+	WasmPluginMap.LoadOrStore(config.PluginName, config)
+	test, _ := WasmPluginMap.Load(config.PluginName)
+	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] map LoadOrStore ,map: ", test)
 
 	return true
 }
@@ -118,30 +125,35 @@ func (w *WasmPluginConfig) AddWasmPlugin(PluginName string) bool {
 
 // search
 
-func (w *WasmPluginConfig) GetWasmPluginConfigByName(PluginName string) *WasmPluginConfig {
+func (w *WasmPluginConfig) GetWasmPluginConfig() WasmPluginConfig {
 	if w.PluginName == "" {
 		log.Fatalln("[error][wasm][manager-GetWasmPluginConfigByName] PluginName is nil")
 	}
-	if v, ok := w.WasmPluginMap.Load(w.PluginName); ok {
-		pw, ok := v.(*WasmPluginConfig)
+	if v, ok := WasmPluginMap.Load(w.PluginName); ok {
+		//pw := new(WasmPluginConfig)
+		pw, ok := v.(WasmPluginConfig)
 		if !ok {
-			log.Fatalln("[error][wasm][manager-GetWasmPluginConfigByName] unexpected object type in map")
+			log.Fatalln("[error][wasm][manager-GetWasmPluginConfigByName] unexpected object type in map, v: ", v)
 		}
-		//fmt.Println("[wasm][manager-GetWasmPluginConfigByName] pw: ", pw)
+		fmt.Println("[wasm][manager-GetWasmPluginConfigByName] v: ", v)
 		return pw
 	}
 	log.Fatalln("[error][wasm][manager-GetWasmPluginConfigByName] not found !!!")
-	return nil
+	err := new(WasmPluginConfig)
+	return *err
 }
 
 // delete
 
-//func (w *WasmPluginConfig) DeleteWasmPluginConfigByName() *WasmPluginConfig {
-//	v, ok := w.WasmPluginMap.Load(w.PluginName)
-//	if !ok{
-//
-//	}
-//}
+func (w *WasmPluginConfig) DeleteWasmPluginConfig() bool {
+	v, ok := WasmPluginMap.Load(w.PluginName)
+	if !ok {
+		log.Fatalln("[error][wasm][manager-DeleteWasmPluginConfigByName] plugin not found, v: ", v)
+	}
+
+	WasmPluginMap.Delete(w.PluginName)
+	return true
+}
 
 //
 // abi

@@ -15,7 +15,7 @@ func TestGetConfig(t *testing.T) {
 	*/
 	fmt.Println("[test][wasm][test-TestGetConfig] start")
 	w := new(WasmPluginConfig)
-	w = w.GetConfig()
+	w = w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
 	//if w.GetConfig() != false {
 	//	fmt.Println("[wasm][test]GetConfig() successful!!")
 	//}
@@ -26,19 +26,31 @@ func TestWasmPluginConfig_AddWasmPlugin(t *testing.T) {
 	fmt.Println("[test][wasm][manager-AddWasmPlugin] start")
 	fmt.Println("[test][wasm][manager-AddWasmPlugin] GetConfig")
 	w := new(WasmPluginConfig)
-	w = w.GetConfig()
+	w = w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
 	//fmt.Println("[test][wasm][manager-AddWasmPlugin] Add PluginName:", w.PluginName)
 	if w.AddWasmPlugin(w.PluginName) == false {
 		log.Fatalln("[test][wasm][manager-AddWasmPlugin] Add FAILED!!!")
 	}
 }
 
-func TestWasmPluginConfig_GetWasmPluginConfigByName(t *testing.T) {
+func TestWasmPluginConfig_GetWasmPluginConfig(t *testing.T) {
 	fmt.Println("[test][wasm][manager-GetWasmPluginConfigByName] start")
 	w := new(WasmPluginConfig)
-	w = w.GetConfig()
+	w = w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
 	if w.AddWasmPlugin(w.PluginName) == false {
 		log.Fatalln("[test][wasm][manager-AddWasmPlugin] Add FAILED!!!")
 	}
-	fmt.Println("[test][wasm][manager-GetWasmPluginConfigByName] ", w.GetWasmPluginConfigByName(w.PluginName))
+	fmt.Println("[test][wasm][manager-GetWasmPluginConfigByName] ", w.GetWasmPluginConfig())
+}
+
+func TestWasmPluginConfig_DeleteWasmPluginConfig(t *testing.T) {
+	fmt.Println("[test][wasm][manager-DeleteWasmPluginConfig] delete start")
+	w := new(WasmPluginConfig)
+	w = w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
+	if w.AddWasmPlugin(w.PluginName) == false {
+		log.Fatalln("[test][wasm][manager-AddWasmPlugin] Add FAILED!!!")
+	}
+	if w.DeleteWasmPluginConfig() == false {
+		log.Fatalln("[test][wasm][manager-DeleteWasmPluginConfig] delete failed!!")
+	}
 }
