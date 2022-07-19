@@ -19,6 +19,8 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/sql"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	"path"
+	"strings"
 	"sync"
 )
 
@@ -81,6 +83,18 @@ func (s *stores) DropKV(table string) {
 	if ks, contains := s.kv[table]; contains {
 		_ = ks.Drop()
 		delete(s.ts, table)
+	}
+}
+
+func (s *stores) DropRefKVs(tablePrefix string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for table, ks := range s.kv {
+		if strings.HasPrefix(table, tablePrefix) {
+			_ = ks.Drop()
+			delete(s.kv, table)
+		}
 	}
 }
 
@@ -150,5 +164,13 @@ func DropCacheKV(table string) error {
 		return fmt.Errorf("cache stores are not initialized")
 	}
 	cacheStores.DropKV(table)
+	return nil
+}
+
+func DropCacheKVForRule(rule string) error {
+	if cacheStores == nil {
+		return fmt.Errorf("cache stores are not initialized")
+	}
+	cacheStores.DropRefKVs(path.Join("sink", rule))
 	return nil
 }
