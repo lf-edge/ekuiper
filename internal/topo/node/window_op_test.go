@@ -19,6 +19,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"reflect"
 	"testing"
+	"time"
 )
 
 var fivet = []*xsql.Tuple{
@@ -47,6 +48,55 @@ var fivet = []*xsql.Tuple{
 			"f5": "v5",
 		},
 	},
+}
+
+func TestTime(t *testing.T) {
+	var tests = []struct {
+		interval int
+		end      time.Time
+	}{
+		{
+			interval: 10,
+			end:      time.UnixMilli(1658218371340),
+		}, {
+			interval: 500,
+			end:      time.UnixMilli(1658218371500),
+		}, {
+			interval: 1000,
+			end:      time.UnixMilli(1658218372000),
+		}, {
+			interval: 40000, // 4oms
+			end:      time.UnixMilli(1658218400000),
+		}, {
+			interval: 60000,
+			end:      time.UnixMilli(1658218380000),
+		}, {
+			interval: 180000,
+			end:      time.UnixMilli(1658218500000),
+		}, {
+			interval: 3600000,
+			end:      time.UnixMilli(1658221200000),
+		}, {
+			interval: 7200000,
+			end:      time.UnixMilli(1658224800000),
+		}, {
+			interval: 18000000, // 5 hours
+			end:      time.UnixMilli(1658232000000),
+		}, {
+			interval: 3600000 * 24, // 1 day
+			end:      time.UnixMilli(1658246400000),
+		}, {
+			interval: 3600000 * 24 * 7, // 1 week
+			end:      time.UnixMilli(1658764800000),
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	for i, tt := range tests {
+		ae := getAlignedWindowEndTime(1658218371337, int64(tt.interval))
+		if tt.end.UnixMilli() != ae.UnixMilli() {
+			t.Errorf("%d for interval %d. error mismatch:\n  exp=%s(%d)\n  got=%s(%d)\n\n", i, tt.interval, tt.end, tt.end.UnixMilli(), ae, ae.UnixMilli())
+		}
+	}
 }
 
 func TestNewTupleList(t *testing.T) {
