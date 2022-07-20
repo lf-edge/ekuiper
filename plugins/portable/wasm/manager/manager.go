@@ -118,7 +118,8 @@ func (w *WasmPluginConfig) AddWasmPlugin(PluginName string) bool {
 		if !ok {
 			log.Fatalln("[wasm][manager-AddWasmPlugin] unexpected type in map")
 		}
-		log.Fatalln("[wasm][manager-AddWasmPlugin] Plugin already exit, you also can delete this map v:", v)
+		fmt.Println("[wasm][manager-AddWasmPlugin] Plugin already exit, you also can delete this map v:", v)
+		return false
 	}
 
 	//
@@ -151,6 +152,12 @@ func (w *WasmPluginConfig) GetWasmPluginConfig() WasmPluginConfig {
 	return *err
 }
 
+// update
+
+//func (w *WasmPluginConfig) UpdateWasmPluginConfig() bool {
+//
+//}
+
 // delete
 
 func (w *WasmPluginConfig) DeleteWasmPluginConfig() bool {
@@ -163,7 +170,16 @@ func (w *WasmPluginConfig) DeleteWasmPluginConfig() bool {
 	return true
 }
 
-//
+// delete by name
+func (w *WasmPluginConfig) DeleteWasmPluginConfigByName(PluginConfigName string) bool {
+	v, ok := WasmPluginMap.Load(PluginConfigName)
+	if !ok {
+		log.Fatalln("[error][wasm][manager-DeleteWasmPluginConfigByName] plugin not found, v: ", v)
+	}
+	WasmPluginMap.Delete(PluginConfigName)
+	return true
+}
+
 // abi
 //
 

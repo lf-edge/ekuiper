@@ -55,6 +55,19 @@ func TestWasmPluginConfig_DeleteWasmPluginConfig(t *testing.T) {
 	}
 }
 
+func TestDeleteWasmPluginConfigNyName(t *testing.T) {
+	fmt.Println("[test][wasm][manager-DeleteWasmPluginConfig] delete start")
+	w := new(WasmPluginConfig)
+	w = w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
+	if w.AddWasmPlugin(w.PluginName) == false {
+		log.Fatalln("[test][wasm][manager-AddWasmPlugin] Add FAILED!!!")
+	}
+	DeletePluginName := "etc1"
+	if w.DeleteWasmPluginConfigByName(DeletePluginName) == false {
+		log.Fatalln("[test][wasm][manager-DeleteWasmPluginConfig] delete failed!!")
+	}
+}
+
 func TestCheckRepeat(t *testing.T) {
 	w := new(WasmPluginConfig)
 	w = w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
@@ -63,7 +76,12 @@ func TestCheckRepeat(t *testing.T) {
 	}
 	w = w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc2.yaml")
 	if w.AddWasmPlugin(w.PluginName) == false {
-		log.Fatalln("[test][wasm][manager-AddWasmPlugin] Add FAILED!!!")
+		fmt.Println("[test][wasm][manager-AddWasmPlugin] search repeated Plugin, delete")
+		//log.Fatalln("[test][wasm][manager-AddWasmPlugin] Add FAILED!!!")
+		if w.DeleteWasmPluginConfigByName(w.PluginName) == false {
+			log.Fatalln("[test][wasm][delete] failed!!")
+		}
+		fmt.Println("[test][wasm][delete] delete successful!!")
 	}
 
 }
