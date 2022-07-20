@@ -7,23 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
-	"sync"
 )
-
-type VmConfig struct {
-	EngineName string `yaml:"engineName"` //执行引擎
-	Path       string `yaml:"path"`       //文件路径
-}
-
-type WasmPluginConfig struct {
-	PluginName string   `yaml:"pluginName"`
-	VmConfig   VmConfig `yaml:"vmConfig"`
-	//path        string   `yaml:"path"`
-	InstanceNum int    `yaml:"instanceNum"`
-	Function    string `yaml:"function"`
-}
-
-var WasmPluginMap sync.Map
 
 func (w *WasmPluginConfig) GetConfig(YamlFile string) *WasmPluginConfig {
 	//conf := w.getConf()
@@ -57,6 +41,9 @@ func (w *WasmPluginConfig) GetConfig(YamlFile string) *WasmPluginConfig {
 
 func NewWasmPlugin(config WasmPluginConfig) bool {
 	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] NewWasmPlugin start")
+	//ensure  engine
+	VmEngine := config.VmConfig.EngineName
+	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] VmEngine: ", VmEngine)
 	conf := wasmedge.NewConfigure()
 	store := wasmedge.NewStore()
 
@@ -154,9 +141,10 @@ func (w *WasmPluginConfig) GetWasmPluginConfig() WasmPluginConfig {
 
 // update
 
-//func (w *WasmPluginConfig) UpdateWasmPluginConfig() bool {
-//
-//}
+func (w *WasmPluginConfig) UpdateWasmPluginConfig() bool {
+	fmt.Print("[wasm][manager-UpdateWasmPluginConfig] update start")
+
+}
 
 // delete
 
@@ -183,7 +171,7 @@ func (w *WasmPluginConfig) DeleteWasmPluginConfigByName(PluginConfigName string)
 // abi
 //
 
-func GetAbiImport() {
+func (w *WasmPluginConfig) ExecuteFunction() {
 
 }
 
