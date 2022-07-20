@@ -18,13 +18,13 @@ type WasmPluginConfig struct {
 	Function    string `yaml:"function"`
 }
 
-var WasmPluginMap sync.Map
-
 type WasmEngine struct {
-	vm wasmedge.VM
+	vm *wasmedge.VM
 }
 
 type WasmManager struct {
-	WasmPluginConfig WasmPluginConfig // Config
-	WasmEngine       WasmEngine
+	WasmPluginConfig         WasmPluginConfig // Config
+	WasmEngine               WasmEngine
+	WasmPluginMap            sync.Map
+	WasmFunctionIntParameter []int
 }

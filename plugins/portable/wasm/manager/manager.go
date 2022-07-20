@@ -9,17 +9,17 @@ import (
 	"log"
 )
 
-func (w *WasmPluginConfig) GetConfig(YamlFile string) *WasmPluginConfig {
+func (w *WasmManager) GetConfig(YamlFile string) *WasmManager {
 	//conf := w.getConf()
 	yamlFile, err := ioutil.ReadFile(YamlFile)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	err = yaml.UnmarshalStrict(yamlFile, w)
+	err = yaml.UnmarshalStrict(yamlFile, w.WasmPluginConfig)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	fmt.Print("[wasm][manager-GetConfig()] w:\t")
+	fmt.Print("[wasm][manager-GetConfig()] WasmPluginConfig:\t")
 	fmt.Println(w)
 	//fmt.Print("[wasm][manager-GetConfig] conf:\t")
 	//fmt.Println(conf)
@@ -39,10 +39,10 @@ func (w *WasmPluginConfig) GetConfig(YamlFile string) *WasmPluginConfig {
 	return w
 }
 
-func NewWasmPlugin(config WasmPluginConfig) bool {
+func NewWasmPlugin(config WasmManager) bool {
 	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] NewWasmPlugin start")
 	//ensure  engine
-	VmEngine := config.VmConfig.EngineName
+	VmEngine := config.WasmPluginConfig.VmConfig.EngineName
 	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] VmEngine: ", VmEngine)
 	conf := wasmedge.NewConfigure()
 	store := wasmedge.NewStore()
@@ -50,7 +50,7 @@ func NewWasmPlugin(config WasmPluginConfig) bool {
 	vm := wasmedge.NewVMWithConfigAndStore(conf, store)
 	//step 1: Load WASM file
 	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 1: Load WASM file: ", config.VmConfig.Path)
-	err := vm.LoadWasmFile(config.VmConfig.Path)
+	err := vm.LoadWasmFile(config.WasmPluginConfig.VmConfig.Path)
 	if err != nil {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Load WASM from file FAILED: ")
 		log.Fatalln(err.Error())
@@ -72,7 +72,7 @@ func NewWasmPlugin(config WasmPluginConfig) bool {
 	//step 4: Execute WASM functions.Parameters: (funcname, args...)
 	//
 	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 4: Execute WASM functions.Parameters: (funcname, args...)")
-	function := config.Function
+	function := config.WasmPluginConfig.Function
 	res, err := vm.Execute(function, uint32(25))
 	if err != nil {
 		log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
@@ -81,27 +81,65 @@ func NewWasmPlugin(config WasmPluginConfig) bool {
 		fmt.Println(res[0].(int32))
 	}
 
+	config.WasmEngine.vm = vm
+
 	//w.WasmPluginMap.LoadOrStore(w.PluginName, &w)
-	WasmPluginMap.LoadOrStore(config.PluginName, config)
-	test, _ := WasmPluginMap.Load(config.PluginName)
+	//WasmPluginMap.LoadOrStore(config.PluginName, config)
+	test, _ := config.WasmPluginMap.Load(config.WasmPluginConfig.PluginName)
 	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] map LoadOrStore ,map: ", test)
 
 	return true
 }
 
+func (w *WasmManager) ExecuteFunction(Function string) {
+	var args []int
+	for i := 0; i < len(w.WasmFunctionIntParameter); i++ {
+		args = append(args, w.WasmFunctionIntParameter[i])
+	}
+	len := len(args)
+	switch len {
+	case 0:
+		//w.WasmEngine.vm.Execute(Function)
+		res, err := w.WasmEngine.vm.Execute(Function, uint32(args[0]))
+		if err != nil {
+			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
+		} else {
+			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
+			fmt.Println(res[0].(int32))
+		}
+	case 1:
+		//w.WasmEngine.vm.Execute(Function, args[0])
+		res, err := w.WasmEngine.vm.Execute(Function, uint32(args[0]), uint32(args[1]))
+		if err != nil {
+			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
+		} else {
+			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
+			fmt.Println(res[0].(int32))
+		}
+	case 2:
+		res, err := w.WasmEngine.vm.Execute(Function, uint32(args[0]), uint32(args[1]), uint32(args[2]))
+		if err != nil {
+			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
+		} else {
+			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
+			fmt.Println(res[0].(int32))
+		}
+	}
+}
+
 // add
 
-func (w *WasmPluginConfig) AddWasmPlugin(PluginName string) bool {
+func (w *WasmManager) AddWasmPlugin(PluginName string) bool {
 	//config := w.GetConfig()
 	fmt.Print("[wasm][manager-AddWasmPlugin] w.PluginName:\t")
-	fmt.Println(w.PluginName)
-	if w.PluginName == "" {
+	fmt.Println(w.WasmPluginConfig.PluginName)
+	if w.WasmPluginConfig.PluginName == "" {
 		log.Fatalln("[wasm][manager-AddWasmPlugin] pluginName is empty")
 	}
 
 	// if exist
 
-	if v, ok := WasmPluginMap.Load(w.PluginName); ok {
+	if v, ok := w.WasmPluginMap.Load(w.WasmPluginConfig.PluginName); ok {
 		if !ok {
 			log.Fatalln("[wasm][manager-AddWasmPlugin] unexpected type in map")
 		}
@@ -121,11 +159,11 @@ func (w *WasmPluginConfig) AddWasmPlugin(PluginName string) bool {
 
 // search
 
-func (w *WasmPluginConfig) GetWasmPluginConfig() WasmPluginConfig {
-	if w.PluginName == "" {
+func (w *WasmManager) GetWasmPluginConfig() WasmPluginConfig {
+	if w.WasmPluginConfig.PluginName == "" {
 		log.Fatalln("[error][wasm][manager-GetWasmPluginConfigByName] PluginName is nil")
 	}
-	if v, ok := WasmPluginMap.Load(w.PluginName); ok {
+	if v, ok := w.WasmPluginMap.Load(w.WasmPluginConfig.PluginName); ok {
 		//pw := new(WasmPluginConfig)
 		pw, ok := v.(WasmPluginConfig)
 		if !ok {
@@ -139,41 +177,37 @@ func (w *WasmPluginConfig) GetWasmPluginConfig() WasmPluginConfig {
 	return *err
 }
 
-// update
-
-func (w *WasmPluginConfig) UpdateWasmPluginConfig() bool {
-	fmt.Print("[wasm][manager-UpdateWasmPluginConfig] update start")
-
-}
-
-// delete
-
-func (w *WasmPluginConfig) DeleteWasmPluginConfig() bool {
-	v, ok := WasmPluginMap.Load(w.PluginName)
-	if !ok {
-		log.Fatalln("[error][wasm][manager-DeleteWasmPluginConfigByName] plugin not found, v: ", v)
-	}
-
-	WasmPluginMap.Delete(w.PluginName)
-	return true
-}
-
-// delete by name
-func (w *WasmPluginConfig) DeleteWasmPluginConfigByName(PluginConfigName string) bool {
-	v, ok := WasmPluginMap.Load(PluginConfigName)
-	if !ok {
-		log.Fatalln("[error][wasm][manager-DeleteWasmPluginConfigByName] plugin not found, v: ", v)
-	}
-	WasmPluginMap.Delete(PluginConfigName)
-	return true
-}
+//// update
+//
+//func (w *WasmPluginConfig) UpdateWasmPluginConfig() bool {
+//	fmt.Print("[wasm][manager-UpdateWasmPluginConfig] update start")
+//
+//}
+//
+//// delete
+//
+//func (w *WasmPluginConfig) DeleteWasmPluginConfig() bool {
+//	v, ok := WasmPluginMap.Load(w.PluginName)
+//	if !ok {
+//		log.Fatalln("[error][wasm][manager-DeleteWasmPluginConfigByName] plugin not found, v: ", v)
+//	}
+//
+//	WasmPluginMap.Delete(w.PluginName)
+//	return true
+//}
+//
+//// delete by name
+//func (w *WasmPluginConfig) DeleteWasmPluginConfigByName(PluginConfigName string) bool {
+//	v, ok := WasmPluginMap.Load(PluginConfigName)
+//	if !ok {
+//		log.Fatalln("[error][wasm][manager-DeleteWasmPluginConfigByName] plugin not found, v: ", v)
+//	}
+//	WasmPluginMap.Delete(PluginConfigName)
+//	return true
+//}
 
 // abi
 //
-
-func (w *WasmPluginConfig) ExecuteFunction() {
-
-}
 
 // yaml test
 type conf struct {
