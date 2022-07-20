@@ -19,7 +19,7 @@ type WasmPluginConfig struct {
 }
 
 type WasmEngine struct {
-	vm *wasmedge.VM
+	vm *wasmedge.VM //好像没什么用，vm地址无法索引到
 }
 
 type WasmManager struct {
