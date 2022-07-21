@@ -217,6 +217,8 @@ func (s *Scanner) ScanIdent() (tok ast.Token, lit string) {
 		return ast.IN, lit
 	case "NOT":
 		return ast.NOT, lit
+	case "BETWEEN":
+		return ast.BETWEEN, lit
 	case "CREATE":
 		return ast.CREATE, lit
 	case "DROP":

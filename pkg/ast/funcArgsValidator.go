@@ -43,7 +43,7 @@ func IsBooleanArg(arg Expr) bool {
 		return true
 	case *BinaryExpr:
 		switch t.OP {
-		case AND, OR, EQ, NEQ, LT, LTE, GT, GTE:
+		case AND, OR, EQ, NEQ, LT, LTE, GT, GTE, BETWEEN, NOTBETWEEN, IN, NOTIN:
 			return true
 		default:
 			return false

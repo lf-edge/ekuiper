@@ -167,6 +167,14 @@ type ValueSetExpr struct {
 func (c *ValueSetExpr) expr() {}
 func (c *ValueSetExpr) node() {}
 
+type BetweenExpr struct {
+	Lower  Expr
+	Higher Expr
+}
+
+func (b *BetweenExpr) expr() {}
+func (b *BetweenExpr) node() {}
+
 type StreamName string
 
 func (sn *StreamName) node() {}

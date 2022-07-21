@@ -209,6 +209,15 @@ WHERE <search_condition>
 
 用于测试一个表达式小于或等于另一个表达式的条件的运算符。
 
+
+**[NOT] BETWEEN**
+
+用于测试一个表达式的值是否在指定的区间。
+
+```sql
+expression [NOT] BETWEEN expression1 AND expression2
+```
+
 **[NOT] IN**
 
 用于测试一个表达式是否属于另一个表达式的条件的运算符。

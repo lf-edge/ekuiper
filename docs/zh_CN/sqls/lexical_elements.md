@@ -64,7 +64,7 @@ CREATE STREAM `stream` (
 提供了以下运算符。
 
 ```
-+, -, *, /, %, &, |, ^, =, !=, <, <=, >, >=, [], ->, (), IN, NOT IN
++, -, *, /, %, &, |, ^, =, !=, <, <=, >, >=, [], ->, (), IN, NOT IN, BETWEEN, NOT BETWEEN
 ```
 
 ## 字面量（Literals）

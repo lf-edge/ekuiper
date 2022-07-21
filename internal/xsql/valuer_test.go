@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,112 +31,112 @@ func TestComparison(t *testing.T) {
 		m Message
 		r []interface{}
 	}{
-		{
+		{ // 0
 			m: map[string]interface{}{
 				"a": float64(32),
 				"b": float64(72),
 			},
 			r: []interface{}{
 				false, true, errors.New("invalid operation float64(32) = string(string literal)"),
-				false, true, false, true,
+				false, true, false, true, true, false,
 			},
-		}, {
+		}, { // 1
 			m: map[string]interface{}{
 				"a": int64(32),
 				"b": int64(72),
 			},
 			r: []interface{}{
 				false, true, errors.New("invalid operation int64(32) = string(string literal)"),
-				false, true, false, true,
+				false, true, false, true, true, false,
 			},
-		}, {
+		}, { // 2
 			m: map[string]interface{}{
 				"a": "32",
 				"b": "72",
 			},
 			r: []interface{}{
 				errors.New("invalid operation string(32) > int64(72)"), errors.New("invalid operation string(32) <= int64(32)"), false,
-				false, true, false, true,
+				false, true, false, true, errors.New("between operator cannot compare string(32) and int(30)"), errors.New("between operator cannot compare string(32) and int(2)"),
 			},
-		}, {
+		}, { // 3
 			m: map[string]interface{}{
 				"a": []interface{}{32, 72},
 				"b": []interface{}{32, 72},
 			},
 			r: []interface{}{
 				errors.New("> is an invalid operation for []interface {}"), errors.New("<= is an invalid operation for []interface {}"), errors.New("= is an invalid operation for []interface {}"),
-				errors.New(">= is an invalid operation for []interface {}"), errors.New("< is an invalid operation for []interface {}"), errors.New("= is an invalid operation for []interface {}"), errors.New("!= is an invalid operation for []interface {}"),
+				errors.New(">= is an invalid operation for []interface {}"), errors.New("< is an invalid operation for []interface {}"), errors.New("= is an invalid operation for []interface {}"), errors.New("!= is an invalid operation for []interface {}"), errors.New("BETWEEN is an invalid operation for []interface {}"), errors.New("NOT BETWEEN is an invalid operation for []interface {}"),
 			},
-		}, {
+		}, { // 4
 			m: map[string]interface{}{
 				"a": map[string]interface{}{"c": 5},
 				"b": map[string]interface{}{"d": 5},
 			},
 			r: []interface{}{
 				errors.New("> is an invalid operation for map[string]interface {}"), errors.New("<= is an invalid operation for map[string]interface {}"), errors.New("= is an invalid operation for map[string]interface {}"),
-				errors.New(">= is an invalid operation for map[string]interface {}"), errors.New("< is an invalid operation for map[string]interface {}"), errors.New("= is an invalid operation for map[string]interface {}"), errors.New("!= is an invalid operation for map[string]interface {}"),
+				errors.New(">= is an invalid operation for map[string]interface {}"), errors.New("< is an invalid operation for map[string]interface {}"), errors.New("= is an invalid operation for map[string]interface {}"), errors.New("!= is an invalid operation for map[string]interface {}"), errors.New("BETWEEN is an invalid operation for map[string]interface {}"), errors.New("NOT BETWEEN is an invalid operation for map[string]interface {}"),
 			},
-		}, {
+		}, { // 5
 			m: map[string]interface{}{
 				"a": float64(55),
 				"b": int64(55),
 			},
 			r: []interface{}{
 				false, false, errors.New("invalid operation float64(55) = string(string literal)"),
-				true, false, true, false,
+				true, false, true, false, true, false,
 			},
-		}, {
+		}, { // 6
 			m: map[string]interface{}{
 				"a": testTime,
 				"b": int64(1541152388442),
 			},
 			r: []interface{}{
 				true, false, errors.New("invalid operation time.Time(2018-11-02 09:54:48.442 +0000 UTC) = string(string literal)"),
-				true, false, false, true,
+				true, false, false, true, false, true,
 			},
-		}, {
+		}, { // 7
 			m: map[string]interface{}{
 				"a": testTime,
 				"b": "2020-02-26T02:37:21.822Z",
 			},
 			r: []interface{}{
 				true, false, errors.New("invalid operation time.Time(2018-11-02 09:54:48.442 +0000 UTC) = string(string literal)"),
-				false, true, false, true,
+				false, true, false, true, false, false,
 			},
-		}, {
+		}, { // 8
 			m: map[string]interface{}{
 				"a": int64(1541152388442),
 				"b": testTime,
 			},
 			r: []interface{}{
 				true, false, errors.New("invalid operation int64(1541152388442) = string(string literal)"),
-				errors.New("invalid operation int64(1541152388442) >= time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation int64(1541152388442) < time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation int64(1541152388442) = time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation int64(1541152388442) != time.Time(2018-11-02 09:54:48.442 +0000 UTC)"),
+				errors.New("invalid operation int64(1541152388442) >= time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation int64(1541152388442) < time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation int64(1541152388442) = time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation int64(1541152388442) != time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), false, errors.New("between operator cannot compare int64(1541152388442) and time.Time(2018-11-02 09:54:48.442 +0000 UTC)"),
 			},
-		}, {
+		}, { // 9
 			m: map[string]interface{}{
 				"a": "2020-02-26T02:37:21.822Z",
 				"b": testTime,
 			},
 			r: []interface{}{
 				errors.New("invalid operation string(2020-02-26T02:37:21.822Z) > int64(72)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) <= int64(32)"), false,
-				errors.New("invalid operation string(2020-02-26T02:37:21.822Z) >= time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) < time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) = time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) != time.Time(2018-11-02 09:54:48.442 +0000 UTC)"),
+				errors.New("invalid operation string(2020-02-26T02:37:21.822Z) >= time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) < time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) = time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) != time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("between operator cannot compare string(2020-02-26T02:37:21.822Z) and int(30)"), errors.New("between operator cannot compare string(2020-02-26T02:37:21.822Z) and int(2)"),
 			},
-		}, {
+		}, { // 10
 			m: map[string]interface{}{
 				"c": "nothing",
 			},
 			r: []interface{}{
 				false, false, false,
-				true, false, true, false,
+				true, false, true, false, false, true,
 			},
-		}, {
+		}, { // 11
 			m: map[string]interface{}{
 				"a": 12,
 				"c": "nothing",
 			},
 			r: []interface{}{
 				false, true, errors.New("invalid operation int64(12) = string(string literal)"),
-				false, false, false, true,
+				false, false, false, true, false, true,
 			},
 		},
 	}
@@ -148,6 +148,8 @@ func TestComparison(t *testing.T) {
 		"select * from src where a < b",
 		"select * from src where a = b",
 		"select * from src where a != b",
+		"select * from src where a between 30 and 100",
+		"select * from src where a not between 2 and b",
 	}
 	var conditions []ast.Expr
 	for _, sql := range sqls {

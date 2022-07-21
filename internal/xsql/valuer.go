@@ -396,6 +396,10 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		return v.evalCase(expr)
 	case *ast.ValueSetExpr:
 		return v.evalValueSet(expr)
+	case *ast.BetweenExpr:
+		return []interface{}{
+			v.Eval(expr.Lower), v.Eval(expr.Higher),
+		}
 	default:
 		return nil
 	}
@@ -432,7 +436,32 @@ func (v *ValuerEval) evalBinaryExpr(expr *ast.BinaryExpr) interface{} {
 	if isSetOperator(expr.OP) {
 		return v.evalSetsExpr(lhs, expr.OP, rhs)
 	}
-	return v.simpleDataEval(lhs, rhs, expr.OP)
+	switch expr.OP {
+	case ast.BETWEEN, ast.NOTBETWEEN:
+		arr, ok := rhs.([]interface{})
+		if !ok {
+			return fmt.Errorf("between operator expects two arguments, but found %v", rhs)
+		}
+		andLeft := v.simpleDataEval(lhs, arr[0], ast.GTE)
+		switch andLeft.(type) {
+		case error:
+			return fmt.Errorf("between operator cannot compare %[1]T(%[1]v) and %[2]T(%[2]v)", lhs, arr[0])
+		}
+		andRight := v.simpleDataEval(lhs, arr[1], ast.LTE)
+		switch andRight.(type) {
+		case error:
+			return fmt.Errorf("between operator cannot compare %[1]T(%[1]v) and %[2]T(%[2]v)", lhs, arr[1])
+		}
+		r := v.simpleDataEval(andLeft, andRight, ast.AND)
+		br, ok := r.(bool)
+		if expr.OP == ast.NOTBETWEEN && ok {
+			return !br
+		} else {
+			return r
+		}
+	default:
+		return v.simpleDataEval(lhs, rhs, expr.OP)
+	}
 }
 
 func (v *ValuerEval) evalCase(expr *ast.CaseExpr) interface{} {

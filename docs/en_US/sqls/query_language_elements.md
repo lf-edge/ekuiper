@@ -208,6 +208,14 @@ Is the operator used to test the condition of one expression being less than the
 
 Is the operator used to test the condition of one expression being less than or equal to the other expression.
 
+**[NOT] BETWEEN**
+
+Is the operator used to test the condition of one expression in (not) within the range specified.
+
+```sql
+expression [NOT] BETWEEN expression1 AND expression2
+```
+
 **[NOT] IN**
 
 Is the operator used to test the condition of one expression (not) being part of to the other expression. support these two formats
