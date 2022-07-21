@@ -10,6 +10,11 @@ import (
 	"reflect"
 )
 
+/*
+	manager.go
+
+*/
+
 func (w *WasmManager) GetConfig(YamlFile string) *WasmManager {
 	//conf := w.getConf()
 	yamlFile, err := ioutil.ReadFile(YamlFile)
@@ -40,6 +45,32 @@ func (w *WasmManager) GetConfig(YamlFile string) *WasmManager {
 	//w.WasmPluginMap[w.PluginName] = *w
 	//w *WasmPluginConfig
 	return w
+}
+
+func (w *WasmManager) GetConfigNotReturn(YamlFile string) {
+	//conf := w.getConf()
+	yamlFile, err := ioutil.ReadFile(YamlFile)
+	fmt.Println("[wasm][manager][GetConfig] GetConfig start, YamlFile: ", YamlFile)
+
+	if err != nil {
+		fmt.Println("[wasm][manager]ReadFile failed!!!", err.Error())
+	}
+	err = yaml.UnmarshalStrict(yamlFile, &w.WasmPluginConfig)
+	if err != nil {
+		fmt.Println("[wasm][manager]UnmarshalStrict failed!!!", err.Error())
+	}
+	fmt.Print("[wasm][manager-GetConfig()] WasmPluginConfig:\t")
+	fmt.Println(w.WasmPluginConfig)
+	//fmt.Print("[wasm][manager-GetConfig] conf:\t")
+	//fmt.Println(conf)
+
+	//将对象，转换成json格式
+	data, err := json.Marshal(w.WasmPluginConfig)
+	if err != nil {
+		log.Fatalln("[wasm][manager-GetConfig] err:\t", err.Error())
+	}
+	//fmt.Println("[wasm][manager-GetConfig] data:\t", string(data))
+
 }
 
 func (w *WasmManager) ExecuteFunction() {
@@ -86,6 +117,7 @@ func (w *WasmManager) ExecuteFunction() {
 			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
 			fmt.Println(res[0].(int32))
 		}
+		vm.Release()
 	case 1:
 		//w.WasmEngine.vm.Execute(Function, args[0])
 		fmt.Println("[wasm][manager-ExecuteFunction] step 4: Execute WASM functions.Parameters(1): ", args[0])
@@ -97,6 +129,7 @@ func (w *WasmManager) ExecuteFunction() {
 			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
 			fmt.Println(res[0].(int32))
 		}
+		vm.Release()
 	case 2:
 		fmt.Println("[wasm][manager-ExecuteFunction] step 4: Execute WASM functions.Parameters(2): ", args[0], args[1])
 		res, err := vm.Execute(w.WasmPluginConfig.Function, uint32(args[0]), uint32(args[1]))
@@ -106,77 +139,76 @@ func (w *WasmManager) ExecuteFunction() {
 			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
 			fmt.Println(res[0].(int32))
 		}
+		vm.Release()
 	}
 }
 
-func NewWasmPlugin(config WasmManager) bool {
-	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] NewWasmPlugin start")
-	//ensure  engine
-	VmEngine := config.WasmPluginConfig.VmConfig.EngineName
-	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] VmEngine: ", VmEngine)
-	conf := wasmedge.NewConfigure()
-	store := wasmedge.NewStore()
-
-	vm := wasmedge.NewVMWithConfigAndStore(conf, store)
-	//step 1: Load WASM file
-	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 1: Load WASM file: ", config.WasmPluginConfig.VmConfig.Path)
-	err := vm.LoadWasmFile(config.WasmPluginConfig.VmConfig.Path)
-	if err != nil {
-		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Load WASM from file FAILED: ")
-		log.Fatalln(err.Error())
-	}
-	//step 2: Validate the WASM module
-	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 2: Validate the WASM module")
-	err = vm.Validate()
-	if err != nil {
-		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Validate FAILED: ")
-		log.Fatalln(err.Error())
-	}
-	//step 3: Instantiate the WASM moudle
-	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 3: Instantiate the WASM moudle")
-	err = vm.Instantiate()
-	if err != nil {
-		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Instantiate FAILED: ")
-		log.Fatalln(err.Error())
-	}
-	//step 4: Execute WASM functions.Parameters: (funcname, args...)
-	//
-	//fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 4: Execute WASM functions.Parameters: (funcname, args...)")
-	//function := config.WasmPluginConfig.Function
-	//res, err := vm.Execute(function, uint32(25))
-	//if err != nil {
-	//	log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-	//} else {
-	//	fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
-	//	fmt.Println(res[0].(int32))
-	//}
-	//config.ExecuteFunction(&config.WasmEngine.vm)
-
-	config.WasmEngine.vm = vm
-
-	//w.WasmPluginMap.LoadOrStore(w.PluginName, &w)
-	//WasmPluginMap.LoadOrStore(config.PluginName, config)
-
-	return true
-}
+//func NewWasmPlugin(config WasmManager) bool {
+//	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] NewWasmPlugin start")
+//	//ensure  engine
+//	VmEngine := config.WasmPluginConfig.VmConfig.EngineName
+//	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] VmEngine: ", VmEngine)
+//	conf := wasmedge.NewConfigure()
+//	store := wasmedge.NewStore()
+//
+//	vm := wasmedge.NewVMWithConfigAndStore(conf, store)
+//	//step 1: Load WASM file
+//	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 1: Load WASM file: ", config.WasmPluginConfig.VmConfig.Path)
+//	err := vm.LoadWasmFile(config.WasmPluginConfig.VmConfig.Path)
+//	if err != nil {
+//		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Load WASM from file FAILED: ")
+//		log.Fatalln(err.Error())
+//	}
+//	//step 2: Validate the WASM module
+//	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 2: Validate the WASM module")
+//	err = vm.Validate()
+//	if err != nil {
+//		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Validate FAILED: ")
+//		log.Fatalln(err.Error())
+//	}
+//	//step 3: Instantiate the WASM moudle
+//	fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 3: Instantiate the WASM moudle")
+//	err = vm.Instantiate()
+//	if err != nil {
+//		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Instantiate FAILED: ")
+//		log.Fatalln(err.Error())
+//	}
+//	//step 4: Execute WASM functions.Parameters: (funcname, args...)
+//	//
+//	//fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 4: Execute WASM functions.Parameters: (funcname, args...)")
+//	//function := config.WasmPluginConfig.Function
+//	//res, err := vm.Execute(function, uint32(25))
+//	//if err != nil {
+//	//	log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
+//	//} else {
+//	//	fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
+//	//	fmt.Println(res[0].(int32))
+//	//}
+//	//config.ExecuteFunction(&config.WasmEngine.vm)
+//
+//	config.WasmEngine.vm = vm
+//
+//	//w.WasmPluginMap.LoadOrStore(w.PluginName, &w)
+//	//WasmPluginMap.LoadOrStore(config.PluginName, config)
+//
+//	return true
+//}
 
 // add
 
 func (w *WasmManager) AddWasmPlugin(PluginName string) bool {
-	//config := w.GetConfig()
-	fmt.Print("[wasm][manager-AddWasmPlugin] w.PluginName:\t")
-	fmt.Println(w.WasmPluginConfig.PluginName)
+	//fmt.Print("[wasm][manager-AddWasmPlugin] w.PluginName:\t")
+	//fmt.Println(w.WasmPluginConfig.PluginName)
 	if w.WasmPluginConfig.PluginName == "" {
 		log.Fatalln("[wasm][manager-AddWasmPlugin] pluginName is empty")
 	}
 
 	// if exist
-
 	if v, ok := w.WasmPluginMap.Load(w.WasmPluginConfig.PluginName); ok {
 		if !ok {
 			log.Fatalln("[wasm][manager-AddWasmPlugin] unexpected type in map")
 		}
-		fmt.Println("[wasm][manager-AddWasmPlugin] Plugin already exit, you also can delete this map v:", v)
+		fmt.Println("[wasm][manager-AddWasmPlugin] Plugin already exit, you also can delete this map ?v:", v)
 		return false
 	}
 
@@ -185,11 +217,32 @@ func (w *WasmManager) AddWasmPlugin(PluginName string) bool {
 	//test, _ := w.WasmPluginMap.Load(w.WasmPluginConfig.PluginName)
 	//fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] map LoadOrStore ,map: ", test)
 
-	//if NewWasmPlugin(*w) == false {
-	//	fmt.Println("[wasm][manager-AddWasmPlugin] NewWasmPlugin failed !!!")
-	//} else {
-	//	fmt.Println("[wasm][manager-AddWasmPlugin] NewWasmPlugin successful")
+	return true
+}
+
+//add by etc_file
+func (w *WasmManager) AddWasmPluginByName(EtcName string) bool {
+	fmt.Print("[wasm][manager-AddWasmPluginByName] GetConfig")
+	//fmt.Println(w.WasmPluginConfig.PluginName)
+	//if w.WasmPluginConfig.PluginName == "" {
+	//	log.Fatalln("[wasm][manager-AddWasmPlugin] pluginName is empty")
 	//}
+	w.GetConfig(EtcName)
+	
+	// if exist
+	if v, ok := w.WasmPluginMap.Load(w.WasmPluginConfig.PluginName); ok {
+		if !ok {
+			log.Fatalln("[wasm][manager-AddWasmPlugin] unexpected type in map")
+		}
+		fmt.Println("[wasm][manager-AddWasmPlugin] Plugin already exit, you also can delete this map ?v:", v)
+		return false
+	}
+
+	// add new wasm plugin
+	w.WasmPluginMap.LoadOrStore(w.WasmPluginConfig.PluginName, w.WasmPluginConfig)
+	//test, _ := w.WasmPluginMap.Load(w.WasmPluginConfig.PluginName)
+	//fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] map LoadOrStore ,map: ", test)
+
 	return true
 }
 
@@ -226,17 +279,24 @@ func (w *WasmManager) GetWasmPluginConfig(PluginName string) WasmPluginConfig {
 // delete by Name
 
 func (w *WasmManager) DeleteWasmPluginConfigByName(PluginName string) bool {
-	v, ok := w.WasmPluginMap.Load(w.WasmPluginConfig.PluginName)
+	v, ok := w.WasmPluginMap.Load(PluginName)
 	if !ok {
 		log.Fatalln("[error][wasm][manager-DeleteWasmPluginConfigByName] plugin not found, v: ", v)
 	}
 
-	w.WasmPluginMap.Delete(w.WasmPluginConfig.PluginName)
+	w.WasmPluginMap.Delete(PluginName)
 	return true
 }
 
-// abi
-//
+func walk(key, value interface{}) bool {
+	fmt.Println("Key =", key, "Value =", value)
+	return true
+}
+
+func (w *WasmManager) GetAllPlugin() {
+	fmt.Println("[wasm][manager] GetAllPlugin start")
+	w.WasmPluginMap.Range(walk)
+}
 
 // yaml test
 type conf struct {
