@@ -351,9 +351,9 @@ func ExecuteFunctionByName(Function string, args []int) {
 		log.Fatalln(err.Error())
 	}
 	//var args []int
-	for i := 0; i < len(args); i++ {
-		args = append(args, args[i])
-	}
+	//for i := 0; i < len(args); i++ {
+	//	args = append(args, args[i])
+	//}
 	Len := len(args)
 	switch Len {
 	case 0:
