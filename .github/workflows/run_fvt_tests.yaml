@@ -92,7 +92,7 @@ jobs:
         ./test/prepare_plugins.sh
         ln -s _build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log kuiper_logs
     - name: run fvt tests
-      timeout-minutes: 15
+      timeout-minutes: 30
       run: ./test/run_jmeter.sh with_edgex=true
     - uses: actions/upload-artifact@v1
       if: always()
