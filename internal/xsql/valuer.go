@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"math"
 	"reflect"
+	"regexp"
 	"time"
 )
 
@@ -400,6 +401,20 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		return []interface{}{
 			v.Eval(expr.Lower), v.Eval(expr.Higher),
 		}
+	case *ast.LikePattern:
+		if expr.Pattern != nil {
+			return expr.Pattern
+		}
+		v := v.Eval(expr.Expr)
+		str, ok := v.(string)
+		if !ok {
+			return fmt.Errorf("invalid LIKE pattern, must be a string but got %v", v)
+		}
+		re, err := expr.Compile(str)
+		if err != nil {
+			return err
+		}
+		return re
 	default:
 		return nil
 	}
@@ -459,6 +474,26 @@ func (v *ValuerEval) evalBinaryExpr(expr *ast.BinaryExpr) interface{} {
 		} else {
 			return r
 		}
+	case ast.LIKE, ast.NOTLIKE:
+		ls, ok := lhs.(string)
+		if !ok {
+			return fmt.Errorf("LIKE operator left operand expects string, but found %v", lhs)
+		}
+		var result bool
+		switch rr := rhs.(type) {
+		case string:
+		case *regexp.Regexp: // literal
+			result = rr.MatchString(ls)
+		}
+		rs, ok := rhs.(*regexp.Regexp)
+		if !ok {
+			return fmt.Errorf("LIKE operator right operand expects string, but found %v", rhs)
+		}
+		result = rs.MatchString(ls)
+		if expr.OP == ast.NOTLIKE {
+			result = !result
+		}
+		return result
 	default:
 		return v.simpleDataEval(lhs, rhs, expr.OP)
 	}

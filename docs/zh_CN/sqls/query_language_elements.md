@@ -218,6 +218,23 @@ WHERE <search_condition>
 expression [NOT] BETWEEN expression1 AND expression2
 ```
 
+**[NOT] LIKE**
+
+用于测试字符串是否满足模式。模式可使用以下通配符：
+
+- "%" 匹配0个或多个字符。
+- "_" 匹配单个字符
+
+```sql
+expression [NOT] LIKE expression1
+```
+
+示例:
+
+```sql
+a LIKE "string%"
+```
+
 **[NOT] IN**
 
 用于测试一个表达式是否属于另一个表达式的条件的运算符。

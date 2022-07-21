@@ -60,6 +60,8 @@ const (
 	NOTIN  // NOT
 	BETWEEN
 	NOTBETWEEN
+	LIKE
+	NOTLIKE
 
 	operatorEnd
 
@@ -243,6 +245,8 @@ var Tokens = []string{
 	NOTIN:      "NOT IN",
 	BETWEEN:    "BETWEEN",
 	NOTBETWEEN: "NOT BETWEEN",
+	LIKE:       "LIKE",
+	NOTLIKE:    "NOT LIKE",
 
 	DD: "DD",
 	HH: "HH",
@@ -279,7 +283,7 @@ func (tok Token) Precedence() int {
 		return 1
 	case AND:
 		return 2
-	case EQ, NEQ, LT, LTE, GT, GTE, IN, NOTIN, BETWEEN, NOTBETWEEN:
+	case EQ, NEQ, LT, LTE, GT, GTE, IN, NOTIN, BETWEEN, NOTBETWEEN, LIKE, NOTLIKE:
 		return 3
 	case ADD, SUB, BITWISE_OR, BITWISE_XOR:
 		return 4

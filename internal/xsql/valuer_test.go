@@ -384,3 +384,72 @@ func TestArray(t *testing.T) {
 		}
 	}
 }
+
+func TestLike(t *testing.T) {
+	data := []struct {
+		m Message
+		r []interface{}
+	}{
+		{
+			m: map[string]interface{}{
+				"a": "string1",
+				"b": 12,
+			},
+			r: []interface{}{
+				false, errors.New("LIKE operator left operand expects string, but found 12"), false, true, false, errors.New("invalid LIKE pattern, must be a string but got 12"),
+			},
+		}, {
+			m: map[string]interface{}{
+				"a": "string2",
+				"b": "another",
+			},
+			r: []interface{}{
+				false, true, true, true, false, false,
+			},
+		}, {
+			m: map[string]interface{}{
+				"a": `str\_ng`,
+				"b": "str_ng",
+			},
+			r: []interface{}{
+				false, false, true, true, true, false,
+			},
+		}, {
+			m: map[string]interface{}{
+				"a": `str_ng`,
+				"b": "str_ng",
+			},
+			r: []interface{}{
+				false, false, true, true, false, true,
+			},
+		},
+	}
+	sqls := []string{
+		`select a LIKE "string" as t from src`,
+		`select b LIKE "an_ther" from src`,
+		`select a NOT LIKE "string1" as t from src`,
+		`select a LIKE "str%" as t from src`,
+		`select a LIKE "str\\_ng" as t from src`,
+		`select a LIKE b as t from src`,
+	}
+	var projects []ast.Expr
+	for _, sql := range sqls {
+		stmt, err := NewParser(strings.NewReader(sql)).Parse()
+		if err != nil {
+			t.Errorf("%s: %s", sql, err)
+			return
+		}
+		projects = append(projects, stmt.Fields[0].Expr)
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(data)*len(sqls))
+	for i, tt := range data {
+		for j, c := range projects {
+			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: conf.GetNowInMilli(), Metadata: nil}
+			ve := &ValuerEval{Valuer: MultiValuer(tuple)}
+			result := ve.Eval(c)
+			if !reflect.DeepEqual(tt.r[j], result) {
+				t.Errorf("%d-%s. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, sqls[j], tt.r[j], result)
+			}
+		}
+	}
+}

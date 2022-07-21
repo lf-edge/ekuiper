@@ -16,6 +16,8 @@ package ast
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 )
 
 type Node interface {
@@ -174,6 +176,25 @@ type BetweenExpr struct {
 
 func (b *BetweenExpr) expr() {}
 func (b *BetweenExpr) node() {}
+
+type LikePattern struct {
+	Expr    Expr
+	Pattern *regexp.Regexp
+}
+
+func (l *LikePattern) expr() {}
+func (l *LikePattern) node() {}
+
+func (l *LikePattern) Compile(likestr string) (*regexp.Regexp, error) {
+	likestr = strings.ReplaceAll(strings.ReplaceAll(likestr, `\%`, `!@#`), `\_`, `!@$`)
+	regstr := strings.ReplaceAll(strings.ReplaceAll(likestr, "%", ".*"), "_", ".")
+	regstr = strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(regstr, `!@$`, `\_`), `!@#`, `\%`), `\`, `\\`)
+	re, err := regexp.Compile("^" + regstr + "$")
+	if err != nil {
+		return nil, err
+	}
+	return re, nil
+}
 
 type StreamName string
 

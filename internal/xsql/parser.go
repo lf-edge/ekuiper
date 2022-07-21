@@ -531,6 +531,8 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 
 				node.RHS = expr
 				continue
+			case ast.LIKE:
+				op = ast.NOTLIKE
 			default:
 				return nil, fmt.Errorf("found %q, expected expression", tk1)
 			}
@@ -557,7 +559,18 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 		if rhs, err = p.parseUnaryExpr(op == ast.ARROW); err != nil {
 			return nil, err
 		}
-
+		if op == ast.LIKE || op == ast.NOTLIKE {
+			lp := &ast.LikePattern{
+				Expr: rhs,
+			}
+			if l, ok := lp.Expr.(*ast.StringLiteral); ok {
+				lp.Pattern, err = lp.Compile(l.Val)
+				if err != nil {
+					return nil, fmt.Errorf("invalid LIKE pattern: %s", err)
+				}
+			}
+			rhs = lp
+		}
 		for node := root; ; {
 			r, ok := node.RHS.(*ast.BinaryExpr)
 			if !ok || r.OP.Precedence() >= op.Precedence() {
