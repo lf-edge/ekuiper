@@ -1,7 +1,6 @@
----
-function: allocate
+function: [allocate, fib_array]
 instanceNum: 1
-pluginName: etc2
+pluginName: etc3
 vmConfig:
   engineName: wasmedge
   path: /home/erfenjiao/ekuiper/plugins/portable/wasm/file/rust_access_memory_lib.wasm

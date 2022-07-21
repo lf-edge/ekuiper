@@ -8,6 +8,8 @@ import (
 	"testing"
 )
 
+// test1
+
 func TestGetConfig(t *testing.T) {
 	w := new(WasmManager)
 	fmt.Println("[test][wasm][test-TestGetConfig] start")
@@ -17,6 +19,8 @@ func TestGetConfig(t *testing.T) {
 	//}
 	//fmt.Printf("w.getconf(): %v\n", w.getConf())
 }
+
+// test2
 
 func TestWasmPluginConfig_AddWasmPlugin(t *testing.T) {
 	fmt.Println("[test][wasm][manager-AddWasmPlugin] AddWasmPlugin Start")
@@ -38,6 +42,8 @@ func TestWasmPluginConfig_AddWasmPlugin(t *testing.T) {
 	w.ExecuteFunction()
 }
 
+// test3
+
 func TestWasmPluginConfig_GetWasmPluginConfig(t *testing.T) {
 	fmt.Println("[test][wasm][manager-GetWasmPluginConfigByName] start")
 	w := new(WasmManager)
@@ -47,6 +53,8 @@ func TestWasmPluginConfig_GetWasmPluginConfig(t *testing.T) {
 	}
 	fmt.Println("[test][wasm][manager-GetWasmPluginConfigByName] Config: ", w.GetWasmPluginConfig("etc1"))
 }
+
+// test4
 
 func TestWasmPluginConfig_DeleteWasmPluginConfig(t *testing.T) {
 	fmt.Println("[test][wasm][manager-DeleteWasmPluginConfig] delete start")
@@ -62,6 +70,8 @@ func TestWasmPluginConfig_DeleteWasmPluginConfig(t *testing.T) {
 	}
 }
 
+// test5
+
 func TestDeleteWasmPluginConfigNyName(t *testing.T) {
 	fmt.Println("[test][wasm][manager-DeleteWasmPluginConfig] delete start")
 	w := new(WasmManager)
@@ -74,6 +84,8 @@ func TestDeleteWasmPluginConfigNyName(t *testing.T) {
 		log.Fatalln("[test][wasm][manager-DeleteWasmPluginConfig] delete failed!!")
 	}
 }
+
+// test6
 
 func TestCheckRepeat(t *testing.T) {
 	w := new(WasmManager)
@@ -92,9 +104,27 @@ func TestCheckRepeat(t *testing.T) {
 	}
 }
 
-func TestWasmManager_GetAllPlugin(t *testing.T) {
-	w := new(WasmManager)
-	w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
-	w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc3.yaml")
+// test7
 
+func TestWasmManager_GetAllPlugin(t *testing.T) {
+	//w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
+	//w.GetConfig("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc3.yaml")
+	AddWasmPluginByName("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
+	AddWasmPluginByName("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc3.yaml")
+	fmt.Println("[test][manager] GetAllPlugin")
+	GetAllPlugin()
+	//AddWasmPluginByName("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc2.yaml")
+	EtcName, _ := WasmpluginmapTest.Load("fib")
+	fmt.Println("[test]EtcName: ", EtcName)
+}
+
+//test8
+
+func TestExecuteFunctionByName(t *testing.T) {
+	AddWasmPluginByName("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc1.yaml")
+	var args []int
+	args = append(args, 25)
+	//w.WasmFunctionIntParameter = append(w.WasmFunctionIntParameter, 25)
+	//w.NewWasmPlugin()
+	ExecuteFunctionByName("fib", args)
 }

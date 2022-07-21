@@ -14,8 +14,8 @@ type WasmPluginConfig struct {
 	PluginName string   `yaml:"pluginName"`
 	VmConfig   VmConfig `yaml:"vmConfig"`
 	//path        string   `yaml:"path"`
-	InstanceNum int    `yaml:"instanceNum"`
-	Function    string `yaml:"function"`
+	InstanceNum int      `yaml:"instanceNum"`
+	Function    []string `yaml:"function"`
 }
 
 type WasmEngine struct {
@@ -28,3 +28,6 @@ type WasmManager struct {
 	WasmPluginMap            sync.Map
 	WasmFunctionIntParameter []int
 }
+
+var WasmpluginmapTest sync.Map
+var WasmfunctionmapTest sync.Map
