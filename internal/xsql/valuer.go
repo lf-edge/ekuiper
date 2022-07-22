@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"math"
 	"reflect"
+	"regexp"
 	"time"
 )
 
@@ -396,6 +397,24 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		return v.evalCase(expr)
 	case *ast.ValueSetExpr:
 		return v.evalValueSet(expr)
+	case *ast.BetweenExpr:
+		return []interface{}{
+			v.Eval(expr.Lower), v.Eval(expr.Higher),
+		}
+	case *ast.LikePattern:
+		if expr.Pattern != nil {
+			return expr.Pattern
+		}
+		v := v.Eval(expr.Expr)
+		str, ok := v.(string)
+		if !ok {
+			return fmt.Errorf("invalid LIKE pattern, must be a string but got %v", v)
+		}
+		re, err := expr.Compile(str)
+		if err != nil {
+			return err
+		}
+		return re
 	default:
 		return nil
 	}
@@ -432,7 +451,52 @@ func (v *ValuerEval) evalBinaryExpr(expr *ast.BinaryExpr) interface{} {
 	if isSetOperator(expr.OP) {
 		return v.evalSetsExpr(lhs, expr.OP, rhs)
 	}
-	return v.simpleDataEval(lhs, rhs, expr.OP)
+	switch expr.OP {
+	case ast.BETWEEN, ast.NOTBETWEEN:
+		arr, ok := rhs.([]interface{})
+		if !ok {
+			return fmt.Errorf("between operator expects two arguments, but found %v", rhs)
+		}
+		andLeft := v.simpleDataEval(lhs, arr[0], ast.GTE)
+		switch andLeft.(type) {
+		case error:
+			return fmt.Errorf("between operator cannot compare %[1]T(%[1]v) and %[2]T(%[2]v)", lhs, arr[0])
+		}
+		andRight := v.simpleDataEval(lhs, arr[1], ast.LTE)
+		switch andRight.(type) {
+		case error:
+			return fmt.Errorf("between operator cannot compare %[1]T(%[1]v) and %[2]T(%[2]v)", lhs, arr[1])
+		}
+		r := v.simpleDataEval(andLeft, andRight, ast.AND)
+		br, ok := r.(bool)
+		if expr.OP == ast.NOTBETWEEN && ok {
+			return !br
+		} else {
+			return r
+		}
+	case ast.LIKE, ast.NOTLIKE:
+		ls, ok := lhs.(string)
+		if !ok {
+			return fmt.Errorf("LIKE operator left operand expects string, but found %v", lhs)
+		}
+		var result bool
+		switch rr := rhs.(type) {
+		case string:
+		case *regexp.Regexp: // literal
+			result = rr.MatchString(ls)
+		}
+		rs, ok := rhs.(*regexp.Regexp)
+		if !ok {
+			return fmt.Errorf("LIKE operator right operand expects string, but found %v", rhs)
+		}
+		result = rs.MatchString(ls)
+		if expr.OP == ast.NOTLIKE {
+			result = !result
+		}
+		return result
+	default:
+		return v.simpleDataEval(lhs, rhs, expr.OP)
+	}
 }
 
 func (v *ValuerEval) evalCase(expr *ast.CaseExpr) interface{} {

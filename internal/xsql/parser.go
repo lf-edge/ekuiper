@@ -504,7 +504,6 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 			op = ast.SUBSET
 			p.unscan()
 		} else if op == ast.IN { //IN is a special token, need to unscan
-			op = ast.IN
 			p.unscan()
 		} else if op == ast.NOT {
 			afterNot, tk1 := p.scanIgnoreWhitespace()
@@ -513,16 +512,65 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 				op = ast.NOTIN
 				p.unscan()
 				break
+			case ast.BETWEEN:
+				op = ast.NOTBETWEEN
+				node := root
+				var lhs ast.Expr
+				for {
+					r, ok := node.RHS.(*ast.BinaryExpr)
+					if !ok || r.OP.Precedence() >= op.Precedence() {
+						lhs = node.RHS
+						break
+					}
+					node = r
+				}
+				expr, err := p.parseBetween(lhs, ast.NOTBETWEEN)
+				if err != nil {
+					return nil, err
+				}
+
+				node.RHS = expr
+				continue
+			case ast.LIKE:
+				op = ast.NOTLIKE
 			default:
 				return nil, fmt.Errorf("found %q, expected expression", tk1)
 			}
+		} else if op == ast.BETWEEN {
+			node := root
+			var lhs ast.Expr
+			for {
+				r, ok := node.RHS.(*ast.BinaryExpr)
+				if !ok || r.OP.Precedence() >= op.Precedence() {
+					lhs = node.RHS
+					break
+				}
+				node = r
+			}
+			expr, err := p.parseBetween(lhs, op)
+			if err != nil {
+				return nil, err
+			}
+			node.RHS = expr
+			continue
 		}
 
 		var rhs ast.Expr
 		if rhs, err = p.parseUnaryExpr(op == ast.ARROW); err != nil {
 			return nil, err
 		}
-
+		if op == ast.LIKE || op == ast.NOTLIKE {
+			lp := &ast.LikePattern{
+				Expr: rhs,
+			}
+			if l, ok := lp.Expr.(*ast.StringLiteral); ok {
+				lp.Pattern, err = lp.Compile(l.Val)
+				if err != nil {
+					return nil, fmt.Errorf("invalid LIKE pattern: %s", err)
+				}
+			}
+			rhs = lp
+		}
 		for node := root; ; {
 			r, ok := node.RHS.(*ast.BinaryExpr)
 			if !ok || r.OP.Precedence() >= op.Precedence() {
@@ -532,6 +580,29 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 			node = r
 		}
 	}
+}
+
+func (p *Parser) parseBetween(lhs ast.Expr, op ast.Token) (ast.Expr, error) {
+	alhs, err := p.parseUnaryExpr(false)
+	if err != nil {
+		return nil, err
+	}
+	opp, _ := p.scanIgnoreWhitespace()
+	if opp != ast.AND {
+		return nil, fmt.Errorf("expect AND expression after between but found %s", opp)
+	}
+	arhs, err := p.parseUnaryExpr(false)
+	if err != nil {
+		return nil, err
+	}
+	return &ast.BinaryExpr{
+		LHS: lhs,
+		OP:  op,
+		RHS: &ast.BetweenExpr{
+			Lower:  alhs,
+			Higher: arhs,
+		},
+	}, nil
 }
 
 func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {

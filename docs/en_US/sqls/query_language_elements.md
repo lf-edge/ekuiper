@@ -208,6 +208,31 @@ Is the operator used to test the condition of one expression being less than the
 
 Is the operator used to test the condition of one expression being less than or equal to the other expression.
 
+**[NOT] BETWEEN**
+
+Is the operator used to test the condition of one expression in (not) within the range specified.
+
+```sql
+expression [NOT] BETWEEN expression1 AND expression2
+```
+
+**[NOT] LIKE**
+
+Is the operator used to check if the STRING in the first operand matches a pattern specified by the second operand. Patterns can contain these characters:
+
+- "%" matches any number of characters.
+- "_" matches a single character.
+
+```sql
+expression [NOT] LIKE expression1
+```
+
+Example:
+
+```sql
+a LIKE "string%"
+```
+
 **[NOT] IN**
 
 Is the operator used to test the condition of one expression (not) being part of to the other expression. support these two formats

@@ -20,12 +20,16 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"math"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 )
 
 // Ensure the parser can parse strings into Statement ASTs.
 func TestParser_ParseStatement(t *testing.T) {
+	re1, _ := regexp.Compile("^foo$")
+	re2, _ := regexp.Compile("^fo.o.*$")
+	re3, _ := regexp.Compile("^foo\\\\%$")
 	var tests = []struct {
 		s    string
 		stmt *ast.SelectStatement
@@ -866,6 +870,161 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 
+		{
+			s: `SELECT power(.2, 4) AS f1 FROM tbl WHERE f1 BETWEEN 1 AND 2`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "f1",
+						Name:  "power",
+						Expr: &ast.Call{
+							Name: "power",
+							Args: []ast.Expr{&ast.NumberLiteral{Val: 0.2}, &ast.IntegerLiteral{Val: 4}},
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.FieldRef{Name: "f1", StreamName: ast.DefaultStream},
+					OP:  ast.BETWEEN,
+					RHS: &ast.BetweenExpr{
+						Lower:  &ast.IntegerLiteral{Val: 1},
+						Higher: &ast.IntegerLiteral{Val: 2},
+					},
+				},
+			},
+		},
+		{
+			s: `SELECT a FROM tbl WHERE f1 > 4 AND f2 BETWEEN 1 AND 2`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "a",
+						Expr:  &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{
+					OP: ast.AND,
+					LHS: &ast.BinaryExpr{
+						LHS: &ast.FieldRef{Name: "f1", StreamName: ast.DefaultStream},
+						OP:  ast.GT,
+						RHS: &ast.IntegerLiteral{Val: 4},
+					},
+					RHS: &ast.BinaryExpr{
+						LHS: &ast.FieldRef{Name: "f2", StreamName: ast.DefaultStream},
+						OP:  ast.BETWEEN,
+						RHS: &ast.BetweenExpr{
+							Lower:  &ast.IntegerLiteral{Val: 1},
+							Higher: &ast.IntegerLiteral{Val: 2},
+						},
+					},
+				},
+			},
+		},
+		{
+			s: `SELECT a FROM tbl WHERE f1 NOT BETWEEN b AND c AND f2 BETWEEN 1 AND 2 AND f3 > 4`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "a",
+						Expr:  &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{
+					OP: ast.AND,
+					LHS: &ast.BinaryExpr{
+						OP: ast.AND,
+						LHS: &ast.BinaryExpr{
+							LHS: &ast.FieldRef{Name: "f1", StreamName: ast.DefaultStream},
+							OP:  ast.NOTBETWEEN,
+							RHS: &ast.BetweenExpr{
+								Lower:  &ast.FieldRef{Name: "b", StreamName: ast.DefaultStream},
+								Higher: &ast.FieldRef{Name: "c", StreamName: ast.DefaultStream},
+							},
+						},
+						RHS: &ast.BinaryExpr{
+							LHS: &ast.FieldRef{Name: "f2", StreamName: ast.DefaultStream},
+							OP:  ast.BETWEEN,
+							RHS: &ast.BetweenExpr{
+								Lower:  &ast.IntegerLiteral{Val: 1},
+								Higher: &ast.IntegerLiteral{Val: 2},
+							},
+						},
+					},
+					RHS: &ast.BinaryExpr{
+						OP:  ast.GT,
+						LHS: &ast.FieldRef{Name: "f3", StreamName: ast.DefaultStream},
+						RHS: &ast.IntegerLiteral{Val: 4},
+					},
+				},
+			},
+		},
+		{
+			s:   `SELECT a FROM tbl WHERE f1 NOT BETWEEN b`,
+			err: "expect AND expression after between but found EOF",
+		},
+		{
+			s:   `SELECT a FROM tbl WHERE f1 NOT BETWEEN 1 OR 2`,
+			err: "expect AND expression after between but found OR",
+		},
+		{
+			s: `SELECT a FROM tbl WHERE a LIKE "foo"`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "a",
+						Expr:  &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					OP:  ast.LIKE,
+					RHS: &ast.LikePattern{Expr: &ast.StringLiteral{Val: "foo"}, Pattern: re1},
+				},
+			},
+		},
+		{
+			s: `SELECT a FROM tbl WHERE a NOT LIKE "fo_o%"`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "a",
+						Expr:  &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					OP:  ast.NOTLIKE,
+					RHS: &ast.LikePattern{Expr: &ast.StringLiteral{Val: "fo_o%"}, Pattern: re2},
+				},
+			},
+		},
+		{
+			s: `SELECT a FROM tbl WHERE a LIKE "foo\\%"`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "a",
+						Expr:  &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					OP:  ast.LIKE,
+					RHS: &ast.LikePattern{Expr: &ast.StringLiteral{Val: "foo\\%"}, Pattern: re3},
+				},
+			},
+		},
 		{
 			s: `SELECT deviceId, name FROM topic/sensor1 WHERE deviceId=1 AND name = "dname"`,
 			stmt: &ast.SelectStatement{
