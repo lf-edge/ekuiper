@@ -88,6 +88,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 	if e := es.cli.Subscribe(ctx, topics, subErrs, nil); e != nil {
 		log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
 		errCh <- e
+		return
 	} else {
 		log.Infof("Successfully subscribed to edgex messagebus topic %s.", es.topic)
 		for {
@@ -96,8 +97,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 				log.Infof("Exit subscription to edgex messagebus topic %s.", es.topic)
 				return
 			case e1 := <-subErrs:
-				errCh <- e1
-				return
+				log.Errorf("Subscription to edgex messagebus received error %v.\n", e1)
 			case msg, ok := <-messages:
 				if !ok { // the source is closed
 					log.Infof("Exit subscription to edgex messagebus topic %s.", es.topic)
