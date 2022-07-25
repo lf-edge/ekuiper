@@ -258,21 +258,7 @@ func (m *taosSink) Collect(ctx api.StreamContext, item interface{}) error {
 			return m.writeToDB(ctx, &strBatch)
 		}
 		return nil
-	case interface{}:
-		mapData, ok := v.(map[string]interface{})
-		if !ok {
-			ctx.GetLogger().Errorf("unsupported type: %T", v)
-			return fmt.Errorf("unsupported type: %T", v)
-		}
-
-		strBatch, err := m.conf.buildSql(ctx, mapData)
-		if err != nil {
-			ctx.GetLogger().Errorf("tdengine sink build sql error %v for data", err, mapData)
-			return err
-		}
-		return m.writeToDB(ctx, &strBatch)
 	default: // never happen
-		ctx.GetLogger().Errorf("unsupported type: %T", v)
 		return fmt.Errorf("unsupported type: %T", item)
 	}
 }
