@@ -94,13 +94,25 @@ func (mc *edgexClientWrapper) Publish(c api.StreamContext, topic string, message
 	return nil
 }
 
-func (mc *edgexClientWrapper) messageHandler(topic string, sub *edgexSubscriptionInfo) func(stopChan chan struct{}, msgChan chan types.MessageEnvelope) {
+func (mc *edgexClientWrapper) messageHandler(topic string, sub *edgexSubscriptionInfo, messageErrors chan error) func(stopChan chan struct{}, msgChan chan types.MessageEnvelope) {
 	return func(stopChan chan struct{}, msgChan chan types.MessageEnvelope) {
 		for {
 			select {
 			case <-stopChan:
 				conf.Log.Infof("message handler for topic %s stopped", topic)
 				return
+			case msgErr := <-messageErrors:
+				//broadcast to all topic subscribers
+				if sub != nil {
+					for _, consumer := range sub.topicConsumers {
+						select {
+						case consumer.SubErrors <- msgErr:
+							break
+						default:
+							conf.Log.Warnf("consumer SubErrors channel full for request id %s", consumer.ConsumerId)
+						}
+					}
+				}
 			case msg, ok := <-msgChan:
 				if !ok {
 					for _, consumer := range sub.topicConsumers {
@@ -169,7 +181,7 @@ func (mc *edgexClientWrapper) Subscribe(c api.StreamContext, subChan []api.Topic
 			if err := mc.cli.Subscribe(message, tpc, errChan); err != nil {
 				return err
 			}
-			sub.handler = mc.messageHandler(tpc, sub)
+			sub.handler = mc.messageHandler(tpc, sub, errChan)
 			go sub.handler(sub.stop, message)
 
 			mc.topicSubscriptions[tpc] = sub

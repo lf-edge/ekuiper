@@ -115,7 +115,6 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 				return nil
 			case e1 := <-err:
 				log.Errorf("the subscription to mqtt topic %s have error %s.\n", ms.tpc, e1.Error())
-				return e1
 			case env, ok := <-messages:
 				if !ok { // the source is closed
 					log.Infof("Exit subscription to mqtt messagebus topic %s.", ms.tpc)

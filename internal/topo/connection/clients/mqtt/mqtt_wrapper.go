@@ -201,7 +201,6 @@ func (mc *mqttClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicC
 			log.Infof("new subscription for topic %s, reqId is %s", tpc, subId)
 			token := mc.cli.conn.Subscribe(tpc, Qos, sub.topicHandler)
 			if token.Error() != nil {
-				messageErrors <- token.Error()
 				return token.Error()
 			}
 			mc.topicSubscriptions[tpc] = sub
