@@ -24,12 +24,13 @@
 
 ## Properties
 
-| Property name | Optional | Description                                 |
-|---------------|----------|---------------------------------------------|
-| url           | false    | 目标数据库的url                                   |
-| table         | false    | 结果的表名                                       |
-| fields        | false    | 要插入的字段。结果映射和数据库都应该有这些字段。如果未指定，将插入结果映射中的所有字段 |
- 
+| Property name  | Optional | Description                                 |
+|----------------|----------|---------------------------------------------|
+| url            | false    | 目标数据库的url                                   |
+| table          | false    | 结果的表名                                       |
+| fields         | false    | 要插入的字段。结果映射和数据库都应该有这些字段。如果未指定，将插入结果映射中的所有字段 |
+| tableDataField | false    | 将 tableDataField 的嵌套值写入数据库。                 |
+
 ## 使用样例
 
 下面是一个获取目标数据并写入 mysql 数据库的示例
@@ -51,4 +52,43 @@
   ]
 }
 ```
+
+根据 tableDataField 配置将结果写入数据库:
+
+以下配置将 telemetry 字段的对应值写入数据库
+
+```json
+{
+  "telemetry": [{
+    "temperature": 32.32,
+    "humidity": 80.8,
+    "ts": 1388082430
+  },{
+    "temperature": 34.32,
+    "humidity": 81.8,
+    "ts": 1388082440
+  }]
+}
+```
+
+```json lines
+{
+  "id": "rule",
+  "sql": "SELECT telemetry FROM dataStream",
+  "actions": [
+    {
+      "log": {
+      },
+      "sql": {
+        "url": "mysql://user:test@140.210.204.147/user?parseTime=true",
+        "table": "test",
+        "fields": ["temperature","humidity"],
+        "tableDataField":  "telemetry",
+      }
+    }
+  ]
+}
+```
+
+
 
