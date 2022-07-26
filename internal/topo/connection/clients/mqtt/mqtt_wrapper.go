@@ -88,7 +88,12 @@ func (mc *mqttClientWrapper) onConnectHandler(_ pahoMqtt.Client) {
 		token := mc.cli.conn.Subscribe(topic, subscription.qos, subscription.topicHandler)
 		if token.Error() != nil {
 			for _, con := range subscription.topicConsumers {
-				con.SubErrors <- token.Error()
+				select {
+				case con.SubErrors <- token.Error():
+					break
+				default:
+					conf.Log.Warnf("consumer SubErrors channel full for request id %s", con.ConsumerId)
+				}
 			}
 		}
 	}
