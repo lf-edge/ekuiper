@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         golang:
-          - 1.17.9
+          - 1.18
         arch:
           - linux/amd64
           - linux/arm64
@@ -65,7 +65,7 @@ jobs:
         fetch-depth: 0
     - uses: actions/setup-go@v2
       with:
-        go-version: '1.17.9'
+        go-version: '1.18'
     - name: prepare
       run: |
           brew install curl zip unzip gnu-sed upx pkg-config zmq
@@ -178,7 +178,7 @@ jobs:
           - linux/amd64
           - linux/arm64
         golang:
-          - 1.17.9
+          - 1.18
         exclude:
           - arch: linux/arm64
             plugin: functions/labelImage

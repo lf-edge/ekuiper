@@ -151,7 +151,7 @@ samplePlugin
 ```go
 module samplePlugin
 
-go 1.17
+go 1.18
 
 require (
 	github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
@@ -161,7 +161,7 @@ require (
  ```go
 module samplePlugin
 
-go 1.17
+go 1.18
 
 require (
 	github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
@@ -193,7 +193,7 @@ require (
     1. 在插件项目下，运行 `go mod edit -replace github.com/lf-edge/ekuiper=$eKuiperPath`，使得 eKuiper 依赖指向本地 eKuiper，这里$eKuiperPath将被替换为步骤1下载目录，下同。这一步执行后的效果，这里有个例子:
        ```go
           module samplePlugin
-          go 1.17
+          go 1.18
 
           require (
             github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
@@ -204,7 +204,7 @@ require (
     2. 由于 Go 语言插件系统对依赖的路径有非常严格的要求，为了确保插件可以顺利运行，建议在 eKuiper 主项目里进行编译。在 eKuiper 项目里，添加如下名为 sample.mod 的文件并让它指向真正的插件项目，以便于插件编译。如果你的eKuiper与插件项目在同一目录，这里有个例子：
        ```
        module github.com/lf-edge/ekuiper
-       go 1.17
+       go 1.18
        require samplePlugin v0.0.0
        replace samplePlugin => ../samplePlugin   # replace samplePlugin with local samplePlugin module
        ```
@@ -282,7 +282,7 @@ cd $EKUIPER_SOURCE
 
 cat <<EOF >$EKUIPER_SOURCE/sample.mod
 module github.com/lf-edge/ekuiper
-go 1.17
+go 1.18
 require samplePlugin v0.0.0
 replace samplePlugin => $PLUGIN_SOURCE
 EOF
