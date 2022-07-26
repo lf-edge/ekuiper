@@ -461,6 +461,7 @@ func getStatusRuleHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "get rule status error", logger)
 		return
 	}
+	w.Header().Set(ContentType, ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(content))
 }

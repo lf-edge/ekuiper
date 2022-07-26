@@ -189,6 +189,7 @@ func getRuleStatus(name string) (string, error) {
 		if result == "Running" {
 			keys, values := (*rs.Topology).GetMetrics()
 			metrics := "{"
+			metrics += `"status": "running",`
 			for i, key := range keys {
 				value := values[i]
 				switch value.(type) {
@@ -205,6 +206,8 @@ func getRuleStatus(name string) (string, error) {
 			} else {
 				result = dst.String()
 			}
+		} else {
+			result = fmt.Sprintf(`{"status": "stopped", "message": "%s"}`, result)
 		}
 		return result, nil
 	} else {
