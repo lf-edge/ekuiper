@@ -510,7 +510,7 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 		"contentType": ems.c.ContentType,
 	}
 	if e := ems.cli.Publish(ctx, topic, data, para); e != nil {
-		logger.Errorf("%s: found error %s when publish to EdgeX message bus.\n", e)
+		logger.Errorf("%s: found error %s when publish to EdgeX message bus.\n", e.Error(), e.Error())
 		return fmt.Errorf("%s:%s", errorx.IOErr, e.Error())
 	}
 	logger.Debugf("Published %+v to EdgeX message bus topic %s", evt, topic)
