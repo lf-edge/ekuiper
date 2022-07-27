@@ -419,7 +419,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(content))
 	case http.MethodPut:
-		_, err := ruleProcessor.GetRuleByName(name)
+		_, err := ruleProcessor.GetRuleById(name)
 		if err != nil {
 			handleError(w, err, "not found this rule", logger)
 			return

@@ -32,7 +32,7 @@ import (
 var registry *RuleRegistry
 
 type RuleState struct {
-	Name      string
+	RuleId    string
 	Topology  *topo.Topo
 	Triggered bool
 	// temporary storage for topo graph to make sure even rule close, the graph is still available
@@ -88,7 +88,7 @@ func (rr *RuleRegistry) Delete(key string) (*RuleState, bool) {
 
 func createRuleState(rule *api.Rule) (*RuleState, error) {
 	rs := &RuleState{
-		Name: rule.Id,
+		RuleId: rule.Id,
 	}
 	registry.Store(rule.Id, rs)
 	if tp, err := planner.Plan(rule); err != nil {
@@ -102,7 +102,7 @@ func createRuleState(rule *api.Rule) (*RuleState, error) {
 
 // Assume rs is started with topo instantiated
 func doStartRule(rs *RuleState) error {
-	err := ruleProcessor.ExecReplaceRuleState(rs.Name, true)
+	err := ruleProcessor.ExecReplaceRuleState(rs.RuleId, true)
 	if err != nil {
 		return err
 	}
@@ -116,31 +116,37 @@ func doStartRule(rs *RuleState) error {
 		})
 		if err != nil {
 			tp.GetContext().SetError(err)
-			logger.Errorf("closing rule %s for error: %v", rs.Name, err)
+			logger.Errorf("closing rule %s for error: %v", rs.RuleId, err)
 			tp.Cancel()
 			rs.Triggered = false
 		} else {
 			rs.Triggered = false
-			logger.Infof("closing rule %s", rs.Name)
+			logger.Infof("closing rule %s", rs.RuleId)
 		}
 	}()
 	return nil
 }
 
 func getAllRulesWithStatus() ([]map[string]interface{}, error) {
-	names, err := ruleProcessor.GetAllRules()
+	ruleIds, err := ruleProcessor.GetAllRules()
 	if err != nil {
 		return nil, err
 	}
-	sort.Strings(names)
-	result := make([]map[string]interface{}, len(names))
-	for i, name := range names {
-		s, err := getRuleState(name)
+	sort.Strings(ruleIds)
+	result := make([]map[string]interface{}, len(ruleIds))
+	for i, id := range ruleIds {
+		ruleName := id
+		rule, _ := ruleProcessor.GetRuleById(id)
+		if rule != nil && rule.Name != "" {
+			ruleName = rule.Name
+		}
+		s, err := getRuleState(id)
 		if err != nil {
 			s = fmt.Sprintf("error: %s", err)
 		}
 		result[i] = map[string]interface{}{
-			"id":     name,
+			"id":     id,
+			"name":   ruleName,
 			"status": s,
 		}
 	}
@@ -236,7 +242,7 @@ func startRule(name string) error {
 	var rs *RuleState
 	rs, ok := registry.Load(name)
 	if !ok || (!rs.Triggered) {
-		r, err := ruleProcessor.GetRuleByName(name)
+		r, err := ruleProcessor.GetRuleById(name)
 		if err != nil {
 			return err
 		}
@@ -286,14 +292,14 @@ func restartRule(name string) error {
 }
 
 func recoverRule(name string) string {
-	rule, err := ruleProcessor.GetRuleByName(name)
+	rule, err := ruleProcessor.GetRuleById(name)
 	if err != nil {
 		return fmt.Sprintf("%v", err)
 	}
 
 	if !rule.Triggered {
 		rs := &RuleState{
-			Name: name,
+			RuleId: name,
 		}
 		registry.Store(name, rs)
 		return fmt.Sprintf("Rule %s was stopped.", name)
