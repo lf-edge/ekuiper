@@ -73,7 +73,7 @@ func (p *RuleProcessor) ExecUpdate(name, ruleJson string) (*api.Rule, error) {
 }
 
 func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (err error) {
-	rule, err := p.GetRuleByName(name)
+	rule, err := p.GetRuleById(name)
 	if err != nil {
 		return err
 	}
@@ -93,22 +93,22 @@ func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (err e
 	return err
 }
 
-func (p *RuleProcessor) GetRuleJson(name string) (string, error) {
+func (p *RuleProcessor) GetRuleJson(id string) (string, error) {
 	var s1 string
-	f, _ := p.db.Get(name, &s1)
+	f, _ := p.db.Get(id, &s1)
 	if !f {
-		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found.", name))
+		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found.", id))
 	}
 	return s1, nil
 }
 
-func (p *RuleProcessor) GetRuleByName(name string) (*api.Rule, error) {
+func (p *RuleProcessor) GetRuleById(id string) (*api.Rule, error) {
 	var s1 string
-	f, _ := p.db.Get(name, &s1)
+	f, _ := p.db.Get(id, &s1)
 	if !f {
-		return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found.", name))
+		return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found.", id))
 	}
-	return p.getRuleByJson(name, s1)
+	return p.getRuleByJson(id, s1)
 }
 
 func (p *RuleProcessor) getDefaultRule(name, sql string) *api.Rule {
@@ -143,7 +143,7 @@ func (p *RuleProcessor) getRuleByJson(id, ruleJson string) (*api.Rule, error) {
 		return nil, fmt.Errorf("Missing rule id.")
 	}
 	if id != "" && rule.Id != "" && id != rule.Id {
-		return nil, fmt.Errorf("Name is not consistent with rule id.")
+		return nil, fmt.Errorf("RuleId is not consistent with rule id.")
 	}
 	if rule.Id == "" {
 		rule.Id = id

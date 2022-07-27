@@ -88,7 +88,7 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 	if err != nil {
 		return err
 	} else {
-		rs := &RuleState{Name: QueryRuleId, Topology: tp, Triggered: true}
+		rs := &RuleState{RuleId: QueryRuleId, Topology: tp, Triggered: true}
 		registry.Store(QueryRuleId, rs)
 		msg := fmt.Sprintf("Query was submit successfully.")
 		logger.Println(msg)
