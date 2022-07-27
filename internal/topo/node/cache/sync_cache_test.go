@@ -34,23 +34,33 @@ func TestPage(t *testing.T) {
 	if !p.isEmpty() {
 		t.Errorf("page is not empty")
 	}
-	if !p.append(1) {
+	if !p.append([]map[string]interface{}{
+		{"a": 1},
+	}) {
 		t.Fatal("append failed")
 	}
-	if !p.append(2) {
+	if !p.append([]map[string]interface{}{
+		{"a": 2},
+	}) {
 		t.Fatal("append failed")
 	}
-	if p.append(3) {
+	if p.append([]map[string]interface{}{
+		{"a": 3},
+	}) {
 		t.Fatal("should append fail")
 	}
 	v, ok := p.peak()
 	if !ok {
 		t.Fatal("peak failed")
 	}
-	if v != 1 {
-		t.Fatalf("peak value mismatch, expect 3 but got %v", v)
+	if !reflect.DeepEqual(v, []map[string]interface{}{
+		{"a": 1},
+	}) {
+		t.Fatalf("peak value mismatch, expect 1 but got %v", v)
 	}
-	if p.append(4) {
+	if p.append([]map[string]interface{}{
+		{"a": 4},
+	}) {
 		t.Fatal("should append failed")
 	}
 	if !p.delete() {
@@ -60,11 +70,15 @@ func TestPage(t *testing.T) {
 	if !ok {
 		t.Fatal("peak failed")
 	}
-	if v != 2 {
+	if !reflect.DeepEqual(v, []map[string]interface{}{
+		{"a": 2},
+	}) {
 		t.Fatalf("peak value mismatch, expect 2 but got %v", v)
 	}
 	p.reset()
-	if !p.append(5) {
+	if !p.append([]map[string]interface{}{
+		{"a": 5},
+	}) {
 		t.Fatal("append failed")
 	}
 	if p.isEmpty() {
@@ -73,10 +87,14 @@ func TestPage(t *testing.T) {
 	if !p.delete() {
 		t.Fatal("delete failed")
 	}
-	if !p.append(5) {
+	if !p.append([]map[string]interface{}{
+		{"a": 5},
+	}) {
 		t.Fatal("append failed")
 	}
-	if !p.append(6) {
+	if !p.append([]map[string]interface{}{
+		{"a": 6},
+	}) {
 		t.Fatal("append failed")
 	}
 	if !p.delete() {
@@ -103,8 +121,8 @@ func TestPage(t *testing.T) {
 func TestRun(t *testing.T) {
 	var tests = []struct {
 		sconf   *conf.SinkConf
-		dataIn  []interface{}
-		dataOut []interface{}
+		dataIn  [][]map[string]interface{}
+		dataOut [][]map[string]interface{}
 		stopPt  int // restart the rule in this point
 	}{
 		{ // 0
@@ -116,8 +134,8 @@ func TestRun(t *testing.T) {
 				ResendInterval:       0,
 				CleanCacheAtStop:     false,
 			},
-			dataIn: []interface{}{
-				1, 2, 3, 4, 5,
+			dataIn: [][]map[string]interface{}{
+				{{"a": 1}}, {{"a": 2}}, {{"a": 3}}, {{"a": 4}}, {{"a": 5}},
 			},
 			stopPt: 4,
 		},
@@ -130,8 +148,8 @@ func TestRun(t *testing.T) {
 				ResendInterval:       0,
 				CleanCacheAtStop:     false,
 			},
-			dataIn: []interface{}{
-				1, 2, 3, 4, 5, 6,
+			dataIn: [][]map[string]interface{}{
+				{{"a": 1}}, {{"a": 2}}, {{"a": 3}}, {{"a": 4}}, {{"a": 5}}, {{"a": 6}},
 			},
 			stopPt: 5,
 		},
@@ -144,8 +162,8 @@ func TestRun(t *testing.T) {
 				ResendInterval:       0,
 				CleanCacheAtStop:     false,
 			},
-			dataIn: []interface{}{
-				1, 2, 3, 4, 5, 6,
+			dataIn: [][]map[string]interface{}{
+				{{"a": 1}}, {{"a": 2}}, {{"a": 3}}, {{"a": 4}}, {{"a": 5}}, {{"a": 6}},
 			},
 			stopPt: 4,
 		},
@@ -158,11 +176,11 @@ func TestRun(t *testing.T) {
 				ResendInterval:       0,
 				CleanCacheAtStop:     false,
 			},
-			dataIn: []interface{}{
-				1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+			dataIn: [][]map[string]interface{}{
+				{{"a": 1}}, {{"a": 2}}, {{"a": 3}}, {{"a": 4}}, {{"a": 5}}, {{"a": 6}}, {{"a": 7}}, {{"a": 8}}, {{"a": 9}}, {{"a": 10}}, {{"a": 11}}, {{"a": 12}}, {{"a": 13}},
 			},
-			dataOut: []interface{}{
-				1, 6, 7, 8, 9, 10, 11, 12, 13,
+			dataOut: [][]map[string]interface{}{
+				{{"a": 1}}, {{"a": 6}}, {{"a": 7}}, {{"a": 8}}, {{"a": 9}}, {{"a": 10}}, {{"a": 11}}, {{"a": 12}}, {{"a": 13}},
 			},
 			stopPt: 4,
 		},
@@ -179,7 +197,7 @@ func TestRun(t *testing.T) {
 			t.Fatal(err)
 			return
 		}
-		in := make(chan interface{})
+		in := make(chan []map[string]interface{})
 		errCh := make(chan error)
 		var result []interface{}
 		go func() {
@@ -218,8 +236,15 @@ func TestRun(t *testing.T) {
 		if tt.dataOut == nil {
 			tt.dataOut = tt.dataIn
 		}
-		if !reflect.DeepEqual(tt.dataOut, result) {
+		if len(tt.dataOut) != len(result) {
 			t.Errorf("test %d data mismatch\nexpect\t%v\nbut got\t%v", i, tt.dataOut, result)
+			continue
+		}
+		for i, v := range result {
+			if !reflect.DeepEqual(tt.dataOut[i], v) {
+				t.Errorf("test %d data mismatch\nexpect\t%v\nbut got\t%v", i, tt.dataOut, result)
+				break
+			}
 		}
 	}
 }
