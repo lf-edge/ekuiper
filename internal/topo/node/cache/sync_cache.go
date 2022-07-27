@@ -17,7 +17,6 @@ package cache
 import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -32,7 +31,7 @@ type AckResult bool
 // page Rotate storage for in memory cache
 // Not thread safe!
 type page struct {
-	Data []interface{}
+	Data [][]map[string]interface{}
 	H    int
 	T    int
 	L    int
@@ -43,7 +42,7 @@ type page struct {
 // TODO the page is created even not used, need dynamic?
 func newPage(size int) *page {
 	return &page{
-		Data: make([]interface{}, size),
+		Data: make([][]map[string]interface{}, size),
 		H:    0, // When deleting, head++, if tail == head, it is empty
 		T:    0, // When append, tail++, if tail== head, it is full
 		Size: size,
@@ -51,7 +50,7 @@ func newPage(size int) *page {
 }
 
 // append item if list is not full and return true; otherwise return false
-func (p *page) append(item interface{}) bool {
+func (p *page) append(item []map[string]interface{}) bool {
 	if p.L == p.Size { // full
 		return false
 	}
@@ -65,7 +64,7 @@ func (p *page) append(item interface{}) bool {
 }
 
 // peak get the first item in the cache
-func (p *page) peak() (interface{}, bool) {
+func (p *page) peak() ([]map[string]interface{}, bool) {
 	if p.L == 0 {
 		return nil, false
 	}
@@ -96,8 +95,8 @@ func (p *page) reset() {
 
 type SyncCache struct {
 	// The input data to the cache
-	in        <-chan interface{}
-	Out       chan interface{}
+	in        <-chan []map[string]interface{}
+	Out       chan []map[string]interface{}
 	Ack       chan bool
 	cacheCtrl chan interface{} // CacheCtrl is the only place to control the cache; sync in and ack result
 	errorCh   chan<- error
@@ -119,11 +118,11 @@ type SyncCache struct {
 	store kv.KeyValue
 }
 
-func NewSyncCache(ctx api.StreamContext, in <-chan interface{}, errCh chan<- error, stats metric.StatManager, cacheConf *conf.SinkConf, bufferLength int) *SyncCache {
+func NewSyncCache(ctx api.StreamContext, in <-chan []map[string]interface{}, errCh chan<- error, stats metric.StatManager, cacheConf *conf.SinkConf, bufferLength int) *SyncCache {
 	c := &SyncCache{
 		cacheConf:  cacheConf,
 		in:         in,
-		Out:        make(chan interface{}, bufferLength),
+		Out:        make(chan []map[string]interface{}, bufferLength),
 		Ack:        make(chan bool, 10),
 		cacheCtrl:  make(chan interface{}, 10),
 		errorCh:    errCh,
@@ -154,15 +153,6 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 	for {
 		select {
 		case item := <-c.in:
-			// possibility of barrier, ignore if found
-			if boe, ok := item.(*checkpoint.BufferOrEvent); ok {
-				if _, ok := boe.Data.(*checkpoint.Barrier); ok {
-					c.Out <- item
-					ctx.GetLogger().Debugf("sink cache send out barrier %v", boe.Data)
-					break
-				}
-			}
-			c.stats.IncTotalRecordsIn()
 			ctx.GetLogger().Debugf("send to cache")
 			c.cacheCtrl <- item
 		case isSuccess := <-c.Ack:
@@ -181,13 +171,15 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 					c.sendStatus = 2
 					ctx.GetLogger().Debug("send status to 2 after false ack")
 				}
-			default:
+			case []map[string]interface{}:
 				ctx.GetLogger().Debugf("adding cache %v", data)
-				c.addCache(ctx, data)
+				c.addCache(ctx, r)
 				if c.sendStatus == 2 {
 					c.sendStatus = 0
 					ctx.GetLogger().Debug("send status to 0 after adding cache in error state")
 				}
+			default:
+				ctx.GetLogger().Errorf("unknown cache control command %v", data)
 			}
 			c.stats.SetBufferLength(int64(len(c.in) + c.cacheLength))
 			if c.sendStatus == 0 {
@@ -221,7 +213,7 @@ func (c *SyncCache) send(ctx api.StreamContext) {
 }
 
 // addCache not thread safe!
-func (c *SyncCache) addCache(ctx api.StreamContext, item interface{}) {
+func (c *SyncCache) addCache(ctx api.StreamContext, item []map[string]interface{}) {
 	isNotFull := c.appendMemCache(item)
 	if !isNotFull {
 		if c.diskBufferPage == nil {
@@ -260,6 +252,7 @@ func (c *SyncCache) addCache(ctx api.StreamContext, item interface{}) {
 		ctx.GetLogger().Debugf("added cache to mem cache %v", c.memCache)
 	}
 	c.cacheLength++
+	ctx.GetLogger().Infof("added cache %d", c.cacheLength)
 }
 
 // deleteCache not thread safe!
@@ -284,12 +277,12 @@ func (c *SyncCache) deleteCache(ctx api.StreamContext) {
 			c.diskBufferPage = nil
 		}
 	}
-	ctx.GetLogger().Debugf("deleted cache. cacheLength: %d, diskSize: %d, memCache: %v", c.cacheLength, c.diskSize, c.memCache)
+	ctx.GetLogger().Infof("deleted cache. cacheLength: %d, diskSize: %d, memCache: %v", c.cacheLength, c.diskSize, c.memCache)
 }
 
 func (c *SyncCache) loadFromDisk(ctx api.StreamContext) {
 	// load page from the disk
-	ctx.GetLogger().Debugf("loading from disk %d. cacheLength: %d, diskSize: %d", c.diskPageTail, c.cacheLength, c.diskSize)
+	ctx.GetLogger().Infof("loading from disk %d. cacheLength: %d, diskSize: %d", c.diskPageTail, c.cacheLength, c.diskSize)
 	hotPage := newPage(c.cacheConf.BufferPageSize)
 	ok, err := c.store.Get(strconv.Itoa(c.diskPageHead), hotPage)
 	if err != nil {
@@ -320,7 +313,7 @@ func (c *SyncCache) loadFromDisk(ctx api.StreamContext) {
 	ctx.GetLogger().Debugf("loaded from disk %d. cacheLength: %d, diskSize: %d", c.diskPageTail, c.cacheLength, c.diskSize)
 }
 
-func (c *SyncCache) appendMemCache(item interface{}) bool {
+func (c *SyncCache) appendMemCache(item []map[string]interface{}) bool {
 	if len(c.memCache) > c.maxMemPage {
 		return false
 	}
@@ -338,7 +331,7 @@ func (c *SyncCache) appendMemCache(item interface{}) bool {
 	return true
 }
 
-func (c *SyncCache) peakMemCache(_ api.StreamContext) (interface{}, bool) {
+func (c *SyncCache) peakMemCache(_ api.StreamContext) ([]map[string]interface{}, bool) {
 	if len(c.memCache) == 0 {
 		return nil, false
 	}

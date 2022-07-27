@@ -189,17 +189,30 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 								// is not supported and validated in the configure, should not go here
 								return fmt.Errorf("async mode is not supported for cache sink")
 							} else { // sync mode, the ack is already in order
-								c := cache.NewSyncCache(ctx, m.input, result, stats, &sconf.SinkConf, sconf.BufferLength)
+								dataCh := make(chan []map[string]interface{}, sconf.BufferLength)
+								c := cache.NewSyncCache(ctx, dataCh, result, stats, &sconf.SinkConf, sconf.BufferLength)
 								for {
 									select {
-									case data := <-c.Out:
+									case data := <-m.input:
 										if temp, processed := m.preprocess(data); processed {
 											break
 										} else {
 											data = temp
 										}
+										stats.IncTotalRecordsIn()
+										outs := itemToMap(data)
+										if sconf.Omitempty && (data == nil || len(outs) == 0) {
+											ctx.GetLogger().Debugf("receive empty in sink")
+											return nil
+										}
+										select {
+										case dataCh <- outs:
+										case <-ctx.Done():
+										}
+									case data := <-c.Out:
+										stats.ProcessTimeStart()
 										ack := true
-										err := doCollect(ctx, sink, data, stats, sconf)
+										err := doCollectMaps(ctx, sink, sconf, data, stats)
 										// Only recoverable error should be cached
 										if err != nil {
 											if strings.HasPrefix(err.Error(), errorx.IOErr) { // do not log to prevent a lot of logs!
@@ -214,6 +227,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 										case c.Ack <- ack:
 										case <-ctx.Done():
 										}
+										stats.ProcessTimeEnd()
 									case <-ctx.Done():
 										logger.Infof("sink node %s instance %d done", m.name, instance)
 										if err := sink.Close(ctx); err != nil {
@@ -288,6 +302,34 @@ func (m *SinkNode) reset() {
 func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats metric.StatManager, sconf *SinkConf) error {
 	stats.ProcessTimeStart()
 	defer stats.ProcessTimeEnd()
+	outs := itemToMap(item)
+	if sconf.Omitempty && (item == nil || len(outs) == 0) {
+		ctx.GetLogger().Debugf("receive empty in sink")
+		return nil
+	}
+	return doCollectMaps(ctx, sink, sconf, outs, stats)
+}
+
+func doCollectMaps(ctx api.StreamContext, sink api.Sink, sconf *SinkConf, outs []map[string]interface{}, stats metric.StatManager) error {
+	if !sconf.SendSingle {
+		return doCollectData(ctx, sink, outs, stats)
+	} else {
+		var err error
+		for _, d := range outs {
+			if sconf.Omitempty && (d == nil || len(d) == 0) {
+				ctx.GetLogger().Debugf("receive empty in sink")
+				continue
+			}
+			newErr := doCollectData(ctx, sink, d, stats)
+			if newErr != nil {
+				err = newErr
+			}
+		}
+		return err
+	}
+}
+
+func itemToMap(item interface{}) []map[string]interface{} {
 	var outs []map[string]interface{}
 	switch val := item.(type) {
 	case error:
@@ -311,26 +353,7 @@ func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats met
 			{"error": fmt.Sprintf("result is not a map slice but found %#v", val)},
 		}
 	}
-	if sconf.Omitempty && (item == nil || len(outs) == 0) {
-		ctx.GetLogger().Debugf("receive empty in sink")
-		return nil
-	}
-	if !sconf.SendSingle {
-		return doCollectData(ctx, sink, outs, stats)
-	} else {
-		var err error
-		for _, d := range outs {
-			if sconf.Omitempty && (d == nil || len(d) == 0) {
-				ctx.GetLogger().Debugf("receive empty in sink")
-				continue
-			}
-			newErr := doCollectData(ctx, sink, d, stats)
-			if newErr != nil {
-				err = newErr
-			}
-		}
-		return err
-	}
+	return outs
 }
 
 // doCollectData outData must be map or []map
@@ -341,7 +364,6 @@ func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, st
 		return nil
 	default:
 		if err := sink.Collect(ctx, outData); err != nil {
-			ctx.GetLogger().Errorf("sink node %s instance %d send data error %v", ctx.GetOpId(), ctx.GetInstanceId(), err)
 			stats.IncTotalExceptions()
 			return err
 		} else {
