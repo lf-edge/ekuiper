@@ -93,6 +93,7 @@ func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 	}
 }
 
+// should only return fatal error
 func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.SourceTuple) error {
 	log := ctx.GetLogger()
 
@@ -123,13 +124,13 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 				msg, ok := env.(pahoMqtt.Message)
 				if !ok {
 					log.Errorf("can not convert interface data to mqtt message %s.", ms.tpc)
-					return nil
+					continue
 				}
 				result, e := ctx.Decode(msg.Payload())
 				//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
 				if e != nil {
 					log.Errorf("Invalid data format, cannot decode %s to %s format with error %s", string(msg.Payload()), ms.format, e)
-					return e
+					continue
 				}
 
 				meta := make(map[string]interface{})
