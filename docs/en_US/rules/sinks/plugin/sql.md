@@ -31,7 +31,7 @@ for example, if he only wants mysql, then he can build with build tag `mysql`.
 |----------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | url            | false    | The url of the target database                                                                                                                                |
 | table          | false    | The table name of the result                                                                                                                                  |
-| fields         | false    | The fields to be inserted to. The result map and the database should both have these fields. If not specified, all fields in the result map will be inserted. |
+| fields         | true     | The fields to be inserted to. The result map and the database should both have these fields. If not specified, all fields in the result map will be inserted. |
 | tableDataField | true     | Write the nested values of the tableDataField into database.                                                                                                  |
 
 ## Sample usage

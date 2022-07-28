@@ -49,7 +49,7 @@
 	}, {
 		"name": "tableDataField",
 		"default": "",
-		"optional": false,
+		"optional": true,
 		"control": "text",
 		"type": "string",
 		"hint": {
@@ -63,7 +63,7 @@
 	}, {
 		"name": "fields",
 		"default": [],
-		"optional": false,
+		"optional": true,
 		"control": "list",
 		"type": "list_string",
 		"hint": {

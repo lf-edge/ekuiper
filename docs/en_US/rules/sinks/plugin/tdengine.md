@@ -23,7 +23,7 @@ As the tdengine database requires a timestamp field in the table, the user must 
 | table          | string   | false    | Table Name, could be a [dynamic property](../../overview.md#dynamic-properties).                                                                                 |
 | fields         | []string | true     | The fields to be inserted to. The result map and the database should both have these fields. If not specified, all fields in the result map will be inserted.    |
 | provideTs      | Bool     | true     | Whether the user provides a timestamp field, default to false.                                                                                                   |
-| tsFieldName    | String   | true     | Timestamp field name                                                                                                                                             |
+| tsFieldName    | String   | false    | Timestamp field name                                                                                                                                             |
 | tagFields      | []String | true     | The result fields to be used as the tag values in order. If sTable is specified, this is required.                                                               |
 | sTable         | String   | true     | The super table to be use, could be a [dynamic property](../../overview.md#dynamic-properties).                                                                  |
 | tableDataField | String   | true     | Write the nested values of the tableDataField into database.                                                                                                     |
@@ -74,9 +74,9 @@ Write into dynamic table:
     "database":    "dab",
     "table":       "{{.table}}", // dynamic value, get from the table field of the result
     "tsfieldname": "ts",
-    "fields":      []string{"f1", "f2"}, // Write f1, f2 fields in result into f1, f2 columns in the db
+    "fields":      ["f1", "f2"], // Write f1, f2 fields in result into f1, f2 columns in the db
     "sTable":      "myStable", // super table name, also allow dynamic
-    "tagFields":   []string{"f3","f4"} // Write f3, f4 fields' values in the result as tags in order
+    "tagFields":   ["f3","f4"] // Write f3, f4 fields' values in the result as tags in order
   }
 }
 ```
@@ -112,10 +112,10 @@ The following configuration will write telemetry field's values into database
     "database":    "dab",
     "table":       "tableName", // dynamic value, get from the table field of the result
     "tsfieldname": "ts",
-    "fields":      []string{"temperature", "humidity"}, // Write f1, f2 fields in result into f1, f2 columns in the db
+    "fields":      ["temperature","humidity"], // Write f1, f2 fields in result into f1, f2 columns in the db
     "sTable":      "myStable", // super table name, also allow dynamic
     "tableDataField":      "telemetry", // write values of telemetry field into database
-    "tagFields":   []string{"f3","f4"} // Write f3, f4 fields' values in the result as tags in order
+    "tagFields":   ["f3","f4"] // Write f3, f4 fields' values in the result as tags in order
   }
 }
 ```
