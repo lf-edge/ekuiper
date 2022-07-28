@@ -43,7 +43,7 @@ rule:
   sendError: true
 
 sink:
-  # Control to disable cache or not. If it's set to true, then the cache will be disabled, otherwise, it will be enabled.
+  # Control to enable cache or not. If it's set to true, then the cache will be enabled, otherwise, it will be disabled.
   enableCache: false
 
   # The maximum number of messages to be cached in memory.
@@ -52,7 +52,7 @@ sink:
   # The maximum number of messages to be cached in the disk.
   maxDiskCache: 1024000
 
-  # The number of messages for a buffer page which is the unit to read/write to disk batchly to prevent frequent IO
+  # The number of messages for a buffer page which is the unit to read/write to disk in batch to prevent frequent IO
   bufferPageSize: 256
 
   # The interval in millisecond to resend the cached messages
