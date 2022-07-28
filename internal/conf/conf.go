@@ -60,9 +60,9 @@ func (sc SinkConf) Validate() error {
 		Log.Warnf("maxDiskCache is less than 0, set to 1024000")
 		e["maxDiskCache"] = fmt.Errorf("maxDiskCache must be positive")
 	}
-	if sc.BufferPageSize < 0 {
+	if sc.BufferPageSize <= 0 {
 		sc.BufferPageSize = 256
-		Log.Warnf("bufferPageSize is less than 0, set to 256")
+		Log.Warnf("bufferPageSize is less than or equal to 0, set to 256")
 		e["bufferPageSize"] = fmt.Errorf("bufferPageSize must be positive")
 	}
 	if sc.ResendInterval < 0 {
