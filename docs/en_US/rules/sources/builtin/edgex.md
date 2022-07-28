@@ -63,7 +63,7 @@ default:
   protocol: tcp
   server: localhost
   port: 5573
-  topic: events
+  topic: rules-events
   messageType: event
 #  optional:
 #    ClientId: client1
@@ -122,7 +122,7 @@ default:
   server: localhost
   port: 5573
   connectionSelector: edgex.redisMsgBus
-  topic: events
+  topic: rules-events
   messageType: event
   #  optional:
   #    ClientId: client1
@@ -134,7 +134,7 @@ default:
 
 ### topic
 
-The topic name of EdgeX message bus, default value is `events`. Users can subscribe to the topics of message bus
+The topic name of EdgeX message bus, default value is `rules-events`. Users can subscribe to the topics of message bus
 directly or subscribe to topics exported by EdgeX application service. Notice that, the message type of the two types of
 topics are different, remember to set the appropriate messageType property.
 
@@ -186,7 +186,7 @@ demo1: #Conf_key
   protocol: tcp
   server: 10.211.55.6
   port: 5571
-  topic: events
+  topic: rules-events
 ```
 
 If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with `demo1`.  Then you can specify the configuration with option `CONF_KEY` when creating the stream definition (see [stream specs](../../../sqls/streams.md) for more info).

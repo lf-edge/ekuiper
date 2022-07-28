@@ -1,9 +1,9 @@
 #Global Edgex configurations
 default:
   protocol: redis
-  server: localhost
-  port: 5563
-  topic: events
+  server: edgex-redis
+  port: 6379
+  topic: rules-events
   type: redis
   # Could be 'event' or 'request'.
   # If the message is from app service, the message type is an event;

@@ -65,7 +65,7 @@ default:
   protocol: tcp
   server: localhost
   port: 5573
-  topic: events
+  topic: rules-events
   messageType: event
 #  optional:
 #    ClientId: client1
@@ -121,7 +121,7 @@ default:
   server: localhost
   port: 5573
   connectionSelector: edgex.redisMsgBus
-  topic: events
+  topic: rules-events
   messageType: event
 ```
 *注意*: 相应配置组一旦指定 connectionSelector 参数，所有关于连接的参数都会被忽略. 上面例子中，` protocol: tcp | server: localhost | port: 5573` 会被忽略。
@@ -129,7 +129,7 @@ default:
 
 ## topic
 
-EdgeX 消息总线上监听的主题名称，缺省为 `events`。用户可以直接连接到 EdgeX 消息总线上的主题也可以连接到 application service 暴露的主题。需要注意的是，两种主题的消息数据类型不同，需要设置正确的
+EdgeX 消息总线上监听的主题名称，缺省为 `rules-events`。用户可以直接连接到 EdgeX 消息总线上的主题也可以连接到 application service 暴露的主题。需要注意的是，两种主题的消息数据类型不同，需要设置正确的
 messageType 类型。
 
 ## type
@@ -177,7 +177,7 @@ demo1: #Conf_key
   protocol: tcp
   server: 10.211.55.6
   port: 5571
-  topic: events
+  topic: rules-events
 ```
 
 如果你有个特定的源需要覆盖缺省的设置，你可以定义一个自定义的配置段。在上面的例子中，我们创建了一个新的配置 `demo1`，然后你在创建流定义的时候可以使用选项 `CONF_KEY` 来使用新的配置 (参考 [流定义规范](../../../sqls/streams.md) 获取更多详细信息)。

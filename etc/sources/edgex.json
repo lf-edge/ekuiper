@@ -56,7 +56,7 @@
 			},
 			{
 				"name": "server",
-				"default": "localhost",
+				"default": "edgex-redis",
 				"optional": true,
 				"connection_related": true,
 				"control": "text",
@@ -72,7 +72,7 @@
 			},
 			{
 				"name": "port",
-				"default": 5573,
+				"default": 6379,
 				"optional": false,
 				"control": "text",
 				"connection_related": true,
@@ -88,7 +88,7 @@
 			},
 			{
 				"name": "topic",
-				"default": "events",
+				"default": "rules-events",
 				"optional": false,
 				"control": "text",
 				"type": "string",
@@ -120,6 +120,25 @@
 				"label": {
 					"en_US": "Type",
 					"zh_CN": "类型"
+				}
+			},
+			{
+				"name": "messageType",
+				"default": "event",
+				"optional": true,
+				"control": "select",
+				"values": [
+					"event",
+					"request"
+				],
+				"type": "list_string",
+				"hint": {
+					"en_US": "The EdgeX message model type. If connected to the topic of EdgeX application service, the message model is an event. Otherwise, if connected to the topic of EdgeX message bus directly to receive the message from device service or core data, the message is request.",
+					"zh_CN": "EdgeX 消息模型类型。如果连接到 EdgeX application service 的 topic, 则消息为 event 类型。否则，如果直接连接到消息总线的 topic，接收到 device service 或者 core data 发出的数据，则消息类型为 request。"
+				},
+				"label": {
+					"en_US": "Message Type",
+					"zh_CN": "消息类型"
 				}
 			},
 			{
