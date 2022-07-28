@@ -252,7 +252,7 @@ func (c *SyncCache) addCache(ctx api.StreamContext, item []map[string]interface{
 		ctx.GetLogger().Debugf("added cache to mem cache %v", c.memCache)
 	}
 	c.cacheLength++
-	ctx.GetLogger().Infof("added cache %d", c.cacheLength)
+	ctx.GetLogger().Debugf("added cache %d", c.cacheLength)
 }
 
 // deleteCache not thread safe!
@@ -277,12 +277,12 @@ func (c *SyncCache) deleteCache(ctx api.StreamContext) {
 			c.diskBufferPage = nil
 		}
 	}
-	ctx.GetLogger().Infof("deleted cache. cacheLength: %d, diskSize: %d, memCache: %v", c.cacheLength, c.diskSize, c.memCache)
+	ctx.GetLogger().Debugf("deleted cache. cacheLength: %d, diskSize: %d, memCache: %v", c.cacheLength, c.diskSize, c.memCache)
 }
 
 func (c *SyncCache) loadFromDisk(ctx api.StreamContext) {
 	// load page from the disk
-	ctx.GetLogger().Infof("loading from disk %d. cacheLength: %d, diskSize: %d", c.diskPageTail, c.cacheLength, c.diskSize)
+	ctx.GetLogger().Debugf("loading from disk %d. cacheLength: %d, diskSize: %d", c.diskPageTail, c.cacheLength, c.diskSize)
 	hotPage := newPage(c.cacheConf.BufferPageSize)
 	ok, err := c.store.Get(strconv.Itoa(c.diskPageHead), hotPage)
 	if err != nil {
