@@ -36,7 +36,7 @@
     },
     {
       "name": "port",
-      "default": 0,
+      "default": 6030,
       "optional": false,
       "control": "text",
       "type": "int",
@@ -112,7 +112,7 @@
     {
       "name": "fields",
       "default": [],
-      "optional": false,
+      "optional": true,
       "control": "list",
       "type": "list_string",
       "hint": {
@@ -157,7 +157,7 @@
     {
       "name": "sTable",
       "default": "",
-      "optional": false,
+      "optional": true,
       "control": "text",
       "type": "string",
       "hint": {
@@ -172,7 +172,7 @@
     {
       "name": "tableDataField",
       "default": "",
-      "optional": false,
+      "optional": true,
       "control": "text",
       "type": "string",
       "hint": {
@@ -187,7 +187,7 @@
     {
       "name": "tagFields",
       "default": [],
-      "optional": false,
+      "optional": true,
       "control": "list",
       "type": "list_string",
       "hint": {

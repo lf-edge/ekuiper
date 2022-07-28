@@ -28,8 +28,8 @@
 |----------------|----------|---------------------------------------------|
 | url            | false    | 目标数据库的url                                   |
 | table          | false    | 结果的表名                                       |
-| fields         | false    | 要插入的字段。结果映射和数据库都应该有这些字段。如果未指定，将插入结果映射中的所有字段 |
-| tableDataField | false    | 将 tableDataField 的嵌套值写入数据库。                 |
+| fields         | true     | 要插入的字段。结果映射和数据库都应该有这些字段。如果未指定，将插入结果映射中的所有字段 |
+| tableDataField | true     | 将 tableDataField 的嵌套值写入数据库。                 |
 
 ## 使用样例
 
