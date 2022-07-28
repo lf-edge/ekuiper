@@ -124,6 +124,15 @@
 				{
 					"title": "通过 OpenYurt 部署教程",
 					"path": "tutorials/deploy/openyurt_tutorial"
+				},
+				{
+					"title": "功能使用教程",
+					"children": [
+						{
+							"title": "使用 Protobuf 编解码教程",
+							"path": "tutorials/usage/protobuf_tutorial"
+						}
+					]
 				}
 			]
 		},
@@ -658,6 +667,15 @@
 				{
 					"title": "Deploy by OpenYurt",
 					"path": "tutorials/deploy/openyurt_tutorial"
+				},
+				{
+					"title": "Usage Tutorial",
+					"children": [
+						{
+							"title": "Protobuf Codec Tutorial",
+							"path": "tutorials/usage/protobuf_tutorial"
+						}
+					]
 				}
 			]
 		},
