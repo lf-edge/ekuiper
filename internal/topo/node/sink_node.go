@@ -165,7 +165,10 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 									if sconf.RunAsync {
 										go func() {
 											p := infra.SafeRun(func() error {
-												_ = doCollect(ctx, sink, data, stats, sconf)
+												err := doCollect(ctx, sink, data, stats, sconf)
+												if err != nil {
+													logger.Warnf("sink collect error: %v", err)
+												}
 												return nil
 											})
 											if p != nil {
@@ -173,7 +176,10 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 											}
 										}()
 									} else {
-										_ = doCollect(ctx, sink, data, stats, sconf)
+										err := doCollect(ctx, sink, data, stats, sconf)
+										if err != nil {
+											logger.Warnf("sink collect error: %v", err)
+										}
 									}
 								case <-ctx.Done():
 									logger.Infof("sink node %s instance %d done", m.name, instance)
