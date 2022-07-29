@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	_ "github.com/taosdata/driver-go/v2/taosSql"
 	"reflect"
 	"strings"
@@ -268,7 +269,7 @@ func (m *taosSink) writeToDB(ctx api.StreamContext, SqlVal *string) error {
 	ctx.GetLogger().Debugf(finalSql)
 	rows, err := m.db.Query(finalSql)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s: %s", errorx.IOErr, err.Error())
 	}
 	rows.Close()
 	return nil

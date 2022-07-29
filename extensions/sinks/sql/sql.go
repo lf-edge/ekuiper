@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/xo/dburl"
 	"reflect"
 	"strings"
@@ -109,7 +110,7 @@ func (m *sqlSink) writeToDB(ctx api.StreamContext, sqlStr *string) error {
 	ctx.GetLogger().Debugf(*sqlStr)
 	rows, err := m.db.Query(*sqlStr)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s: %s", errorx.IOErr, err.Error())
 	}
 	return rows.Close()
 }
