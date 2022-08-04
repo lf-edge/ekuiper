@@ -74,10 +74,12 @@ func (r *NanomsgRepChannel) Run(f ReplyFunc) error {
 	}
 	for {
 		msg, err := r.sock.Recv()
+		fmt.Println("[main.go][plugin.go][connection.go][Run] msg{string): ", string(msg))
 		if err != nil {
 			return fmt.Errorf("cannot receive on rep socket: %s", err.Error())
 		}
 		reply := f(msg)
+		fmt.Println("[main.go][plugin.go][connection.go][Run] reply(string): ", string(reply))
 		err = r.sock.Send(reply)
 		if err != nil {
 			return fmt.Errorf("can't send reply: %s", err.Error())
@@ -90,17 +92,28 @@ func (r *NanomsgRepChannel) Close() error {
 }
 
 func CreateControlChannel(pluginName string) (ControlChannel, error) {
+	fmt.Println("[sdk][go][connection.go][CreateControlChannel] start: ")
 	var (
 		sock mangos.Socket
 		err  error
 	)
 	if sock, err = req.NewSocket(); err != nil {
+		/*
+			s := &socket{
+				proto:         proto,
+				reconnMinTime: defaultReconnMinTime,
+				reconnMaxTime: defaultReconnMaxTime,
+				maxRxSize:     defaultMaxRxSize,
+			}
+		*/
 		return nil, fmt.Errorf("can't get new req socket: %s", err)
 	}
+	fmt.Println("[sdk][go][connection.go][CreateControlChannel] sock: ", sock)
 	setSockOptions(sock, map[string]interface{}{
 		mangos.OptionRetryTime: 0,
 	})
 	url := fmt.Sprintf("ipc:///tmp/plugin_%s.ipc", pluginName)
+	fmt.Println("[sdk][go][connection.go][CreateControlChannel] url: ", url)
 	if err = sock.DialOptions(url, dialOptions); err != nil {
 		return nil, fmt.Errorf("can't dial on req socket: %s", err.Error())
 	}

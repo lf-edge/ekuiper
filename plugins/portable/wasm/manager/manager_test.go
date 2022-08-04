@@ -114,7 +114,7 @@ func TestWasmManager_GetAllPlugin(t *testing.T) {
 	fmt.Println("[test][manager] GetAllPlugin")
 	GetAllPlugin()
 	//AddWasmPluginByName("/home/erfenjiao/ekuiper/plugins/portable/wasm/etc/etc2.yaml")
-	EtcName, _ := WasmpluginmapTest.Load("fib")
+	EtcName, _ := WasmpluginmapTest.Load("fibonacci")
 	fmt.Println("[test]EtcName: ", EtcName)
 }
 
@@ -126,5 +126,5 @@ func TestExecuteFunctionByName(t *testing.T) {
 	args = append(args, 25)
 	//w.WasmFunctionIntParameter = append(w.WasmFunctionIntParameter, 25)
 	//w.NewWasmPlugin()
-	ExecuteFunctionByName("fib", args)
+	ExecuteFunctionByName("fibonacci", args)
 }

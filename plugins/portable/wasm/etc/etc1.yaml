@@ -1,5 +1,5 @@
 ---
-function: [fib]
+function: [fibonacci]
 instanceNum: 1
 pluginName: etc1
 vmConfig:

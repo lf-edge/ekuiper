@@ -21,8 +21,8 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/internal/plugin/wasm"
+	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -38,70 +38,58 @@ import (
 // 3. Issue startSymbol/stopSymbol REST API to debug your plugin symbol.
 
 // EDIT HERE: Define the plugins that you want to test.
-var testingPlugin = &portable.PluginInfo{
+var testingPlugin = &wasm.PluginInfo{
 	PluginMeta: runtime.PluginMeta{
-		Name:       "mirror",
+		Name:       "fib",
 		Version:    "v1",
 		Language:   "go",
-		Executable: "mirror",
+		Executable: "fib",
+		WasmFile:   "/home/erfenjiao/ekuiper/sdk/go/example/fib/fibonacci.wasm",
+		WasmEngine: "wasmedge",
 	},
-	//Sources:   []string{"pyjson"},
-	//Sinks:     []string{"print"},
-	//Functions: []string{"revert"},
-	Sources:   []string{"random"},
-	Sinks:     []string{"file"},
-	Functions: []string{"echo"},
-}
-
-var mockSinkData = []map[string]interface{}{
-	{
-		"name":  "hello",
-		"count": 5,
-	}, {
-		"name":  "world",
-		"count": 10,
-	},
+	Functions: []string{"fib"},
 }
 
 var mockFuncData = [][]interface{}{
-	{"twelve"},
-	{"eleven"},
+	{25},
+	{12},
 }
 
 var (
 	ins     *runtime.PluginIns
-	m       *portable.Manager
+	m       *wasm.Manager
 	ctx     api.StreamContext
 	cancels sync.Map
 )
 
 func main() {
 	var err error
-	fmt.Println("[plugin_test_server.go] start:")
-	m, err = portable.MockManager(map[string]*portable.PluginInfo{testingPlugin.Name: testingPlugin})
-	fmt.Println("[plugin_test_server.go] m: ", m)
+	fmt.Println("[wasm_test_server.go] start:")
+	m, err = wasm.MockManager(map[string]*wasm.PluginInfo{testingPlugin.Name: testingPlugin})
+	fmt.Println("[wasm_test_server.go] m: ", m)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("[plugin_test_server.go] testingPlugin: ", testingPlugin)
+	fmt.Println("[wasm_test_server.go] testingPlugin: ", testingPlugin)
 	ins, err := startPluginIns(testingPlugin)
-	fmt.Println("[plugin_test_server.go] ins: ", ins)
+	fmt.Println("[wasm_test_server.go] ins: ", ins)
 	if err != nil {
+		fmt.Println("err: ", err)
 		panic(err)
 	}
 	defer ins.Stop()
-	fmt.Println("[plugin_test_server.go][main] AddPluginIns: ")
+	fmt.Println("[wasm_test_server.go][main] AddPluginIns: ")
 	runtime.GetPluginInsManager().AddPluginIns(testingPlugin.Name, ins)
 	c := context.WithValue(context.Background(), context.LoggerKey, conf.Log)
 	ctx = c.WithMeta("rule1", "op1", &state.MemoryStore{}).WithInstance(1)
-	fmt.Println("[plugin_test_server.go][main] creatRestServe:")
+	fmt.Println("[wasm_test_server.go][main] creatRestServe:")
 	server := createRestServer("127.0.0.1", 33333)
 	server.ListenAndServe()
 }
 
-func startPluginIns(info *portable.PluginInfo) (*runtime.PluginIns, error) {
-	fmt.Println("[plugin_test_server.go][startPluginIns] start:")
-	fmt.Println("[plugin_test_server.go][startPluginIns] info: ", info)
+func startPluginIns(info *wasm.PluginInfo) (*runtime.PluginIns, error) {
+	fmt.Println("[wasm_test_server.go][startPluginIns] start:")
+	fmt.Println("[wasm_test_server.go][startPluginIns] info: ", info)
 	conf.Log.Infof("create control channel")
 	ctrlChan, err := runtime.CreateControlChannel(info.Name)
 	if err != nil {
@@ -133,85 +121,14 @@ func createRestServer(ip string, port int) *http.Server {
 }
 
 func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("[plugin_test_server.go][startSymbolHandler] start")
+	fmt.Println("[wasm_test_server.go][startSymbolHandler] start")
 	ctrl, err := decode(r)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Invalid body: decode error %v", err), http.StatusBadRequest)
 		return
 	}
-	fmt.Println("[plugin_test_server.go][startSymbolHangder] Plugin: ", ctrl)
+	fmt.Println("[wasm_test_server.go][startSymbolHangder] Plugin: ", ctrl)
 	switch ctrl.PluginType {
-	case runtime.TYPE_SOURCE:
-		source, err := m.Source(ctrl.SymbolName)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("running source %s %v", ctrl.SymbolName, err), http.StatusBadRequest)
-			return
-		}
-		newctx, cancel := ctx.WithCancel()
-		if _, ok := cancels.LoadOrStore(ctrl.PluginType+ctrl.SymbolName, cancel); ok {
-			http.Error(w, fmt.Sprintf("source symbol %s already exists", ctrl.SymbolName), http.StatusBadRequest)
-			return
-		}
-		consumer := make(chan api.SourceTuple)
-		errCh := make(chan error)
-		go func() {
-			defer func() {
-				source.Close(newctx)
-				cancels.Delete(ctrl.PluginType + ctrl.SymbolName)
-			}()
-			for {
-				select {
-				case tuple := <-consumer:
-					fmt.Println(tuple)
-				case err := <-errCh:
-					conf.Log.Error(err)
-					return
-				case <-newctx.Done():
-					return
-				}
-			}
-		}()
-		source.Configure("", ctrl.Config)
-		go source.Open(newctx, consumer, errCh)
-	case runtime.TYPE_SINK:
-		sink, err := m.Sink(ctrl.SymbolName)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("running sink %s %v", ctrl.SymbolName, err), http.StatusBadRequest)
-			return
-		}
-		newctx, cancel := ctx.WithCancel()
-		if _, ok := cancels.LoadOrStore(ctrl.PluginType+ctrl.SymbolName, cancel); ok {
-			http.Error(w, fmt.Sprintf("source symbol %s already exists", ctrl.SymbolName), http.StatusBadRequest)
-			return
-		}
-		sink.Configure(ctrl.Config)
-		err = sink.Open(newctx)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("open sink %s %v", ctrl.SymbolName, err), http.StatusBadRequest)
-			return
-		}
-		go func() {
-			defer func() {
-				sink.Close(newctx)
-				cancels.Delete(ctrl.PluginType + ctrl.SymbolName)
-			}()
-			for {
-				for _, m := range mockSinkData {
-					err = sink.Collect(newctx, m)
-					if err != nil {
-						fmt.Printf("cannot collect data: %v\n", err)
-						continue
-					}
-					select {
-					case <-ctx.Done():
-						ctx.GetLogger().Info("stop sink")
-						return
-					default:
-					}
-					time.Sleep(1 * time.Second)
-				}
-			}
-		}()
 	case runtime.TYPE_FUNC:
 		f, err := m.Function(ctrl.SymbolName)
 		if err != nil {
@@ -219,23 +136,23 @@ func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		//fmt.Println("[plugin_test_server.go][startSymbolHanger] f: ", f)
-		fmt.Println("[plugin_test_server.go][startSymbolHanger] ctrl.SymbolName: ", ctrl.SymbolName)
+		fmt.Println("[wasm_test_server.go][startSymbolHanger] ctrl.SymbolName: ", ctrl.SymbolName)
 		newctx, cancel := ctx.WithCancel()
-		fmt.Println("[plugin_test_server.go][startSymbolHanger] newctx: ", newctx)
+		fmt.Println("[wasm_test_server.go][startSymbolHanger] newctx: ", newctx)
 		fc := context.NewDefaultFuncContext(newctx, 1)
 		if _, ok := cancels.LoadOrStore(ctrl.PluginType+ctrl.SymbolName, cancel); ok {
 			http.Error(w, fmt.Sprintf("source symbol %s already exists", ctrl.SymbolName), http.StatusBadRequest)
 			return
 		}
-		fmt.Println("[plugin_test_server.go][startSymbolHanger] fc: ", fc)
+		fmt.Println("[wasm_test_server.go][startSymbolHanger] fc: ", fc)
 		go func() {
 			defer func() {
 				cancels.Delete(ctrl.PluginType + ctrl.SymbolName)
 			}()
-			fmt.Println("[plugin_test_server.go][startSymbolHanger][go func()]")
+			fmt.Println("[wasm_test_server.go][startSymbolHanger][go func()]")
 			for {
 				for _, m := range mockFuncData {
-					fmt.Println("[plugin_test_server.go][startSymbolHanger][go func()] m: ", m)
+					fmt.Println("[wasm_test_server.go][startSymbolHanger][go func()] m: ", m)
 					r, ok := f.Exec(m, fc)
 					//fmt.Println("[plugin_test_server.go][startSymbolHanger][go func()] Exec after")
 					if !ok {

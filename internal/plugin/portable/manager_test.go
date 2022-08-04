@@ -79,7 +79,11 @@ func TestManager_Install(t *testing.T) {
 			Name: tt.n,
 			File: tt.u,
 		}
+		fmt.Println("------------")
+		fmt.Println("p: ", p)
+		fmt.Println("Register: ")
 		err := manager.Register(p)
+		fmt.Println("err :", err)
 		if !reflect.DeepEqual(tt.err, err) {
 			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
 		} else if tt.err == nil {
@@ -105,6 +109,8 @@ func TestManager_Read(t *testing.T) {
 			Functions: []string{"echoGo"},
 		},
 	}
+	//fmt.Println("Executable: ", PluginInfo{PluginMeta: runtime.PluginMeta{Executable: filepath.Clean(path.Join(manager.pluginDir, "mirror2", "mirror2"))}})
+	///home/erfenjiao/ekuiper/plugins/portable/mirror2/mirror2
 	result := manager.List()
 	if len(result) != 3 {
 		t.Errorf("list result mismatch:\n  exp=%v\n  got=%v\n\n", expPlugins, result)
@@ -188,4 +194,8 @@ func checkFileForMirror(pluginDir, etcDir string, exist bool) error {
 		}
 	}
 	return nil
+}
+
+func TestInitManager(t *testing.T) {
+	InitManager()
 }

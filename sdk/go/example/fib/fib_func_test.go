@@ -21,7 +21,7 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-	f := &echo{}
+	f := &fib{}
 	var args []interface{}
 	err := f.Validate(args)
 	fmt.Println("args: ", args)
@@ -51,6 +51,6 @@ func TestExec(t *testing.T) {
 			Ok:     true,
 		},
 	}
-	f := &echo{}
+	f := &fib{}
 	mock.TestFuncExec(f, tests, t)
 }

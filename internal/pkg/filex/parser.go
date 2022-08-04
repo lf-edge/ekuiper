@@ -16,6 +16,7 @@ package filex
 
 import (
 	"encoding/json"
+	"fmt"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 )
@@ -25,6 +26,7 @@ func ReadJsonUnmarshal(path string, ret interface{}) error {
 	if nil != err {
 		return err
 	}
+	fmt.Println("path:", path)
 	err = json.Unmarshal(sliByte, ret)
 	if nil != err {
 		return err

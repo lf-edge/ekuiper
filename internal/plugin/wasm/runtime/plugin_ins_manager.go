@@ -1,17 +1,3 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package runtime
 
 import (
@@ -30,8 +16,7 @@ var (
 	pm   *pluginInsManager
 )
 
-// TODO setting configuration
-var PortbleConf = &PortableConfig{
+var WasmConf = &WasmConfig{
 	SendTimeout: 1000,
 }
 
@@ -45,6 +30,7 @@ type PluginIns struct {
 func NewPluginIns(name string, ctrlChan ControlChannel, process *os.Process) *PluginIns {
 	// if process is not passed, it is run in simulator mode. Then do not count running.
 	// so that it won't be automatically close.
+	fmt.Println("[internal][plugin][wasm][runtime][plugin_ins_manager.go][NewPluginIns] start")
 	rc := 0
 	if process == nil {
 		rc = 1
@@ -60,7 +46,7 @@ func NewPluginIns(name string, ctrlChan ControlChannel, process *os.Process) *Pl
 func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	arg, err := json.Marshal(ctrl)
 	if err != nil {
-		fmt.Println("[internal][plugin][portable][runtime][plugin_ins_manager.go] json.Marshal(1) err: ", err)
+		fmt.Println("[plugin][wasm][runtime][plugin_ins_manager.go][StartSymbol] json.Marshal(1) err: ", err)
 		return err
 	}
 	c := Command{
@@ -69,15 +55,16 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	}
 	jsonArg, err := json.Marshal(c)
 	if err != nil {
-		fmt.Println("[internal][plugin][portable][runtime][plugin_ins_manager.go] json.Marshal(2) err: ", err)
+		fmt.Println("[plugin][wasm][runtime][plugin_ins_manager.go] json.Marshal(2) err: ", err)
 		return err
 	}
+	fmt.Println("[plugin][wasm][runtime][plugin_ins_manager.go] (string)jsonArg: ", string(jsonArg))
 	err = i.ctrlChan.SendCmd(jsonArg)
 	if err == nil {
 		i.runningCount++
 		ctx.GetLogger().Infof("started symbol %s", ctrl.SymbolName)
 	}
-	fmt.Println("[internal][plugin][portable][runtime][plugin_ins_manager.go] SendCmd err: ", err)
+	fmt.Println("[plugin][wasm][runtime][plugin_ins_manager.go] SendCmd err: ", err)
 	return err
 }
 
@@ -94,6 +81,7 @@ func (i *PluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("[plugin][wasm][runtime][plugin_ins_manager.go][StopSymbol] (string)jsonArg: ", string(jsonArg))
 	err = i.ctrlChan.SendCmd(jsonArg)
 	i.runningCount--
 	ctx.GetLogger().Infof("stopped symbol %s", ctrl.SymbolName)
@@ -125,15 +113,6 @@ type pluginInsManager struct {
 	sync.RWMutex
 }
 
-func GetPluginInsManager() *pluginInsManager {
-	once.Do(func() {
-		pm = &pluginInsManager{
-			instances: make(map[string]*PluginIns),
-		}
-	})
-	return pm
-}
-
 func (p *pluginInsManager) getPluginIns(name string) (*PluginIns, bool) {
 	p.RLock()
 	defer p.RUnlock()
@@ -151,15 +130,20 @@ func (p *pluginInsManager) deletePluginIns(name string) {
 func (p *pluginInsManager) AddPluginIns(name string, ins *PluginIns) {
 	p.Lock()
 	defer p.Unlock()
-	fmt.Println("[plugin][portable][runtime][plugin_ins_manager.go] ins: ", ins)
+	fmt.Println("[plugin][wasm][runtime][plugin_ins_manager.go] ins: ", ins)
 	p.instances[name] = ins
 }
 
-// getOrStartProcess Control the plugin process lifecycle.
-// Need to manage the resources: instances map, control socket, plugin process
-// 1. During creation, clean up those resources for any errors in defer immediately after the resource is created.
-// 2. During plugin running, when detecting plugin process exit, clean up those resources for the current ins.
-func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (*PluginIns, error) {
+func GetPluginInsManager() *pluginInsManager {
+	once.Do(func() {
+		pm = &pluginInsManager{
+			instances: make(map[string]*PluginIns),
+		}
+	})
+	return pm
+}
+
+func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *WasmConfig) (*PluginIns, error) {
 	p.Lock()
 	defer p.Unlock()
 	if ins, ok := p.instances[pluginMeta.Name]; ok {
@@ -247,20 +231,11 @@ func (p *pluginInsManager) Kill(name string) error {
 	return err
 }
 
-func (p *pluginInsManager) KillAll() error {
-	p.Lock()
-	defer p.Unlock()
-	for _, ins := range p.instances {
-		_ = ins.Stop()
-	}
-	p.instances = make(map[string]*PluginIns)
-	return nil
-}
-
 type PluginMeta struct {
 	Name       string `json:"name"`
 	Version    string `json:"version"`
 	Language   string `json:"language"`
 	Executable string `json:"executable"`
-	//WasmFilePath string `json:"wasmfilepath"`
+	WasmFile   string `json:"wasmFile"`
+	WasmEngine string `json:"wasmEngine"`
 }

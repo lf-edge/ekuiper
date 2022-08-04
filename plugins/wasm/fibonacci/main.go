@@ -1,3 +1,11 @@
+package fib
+
+import (
+	"github.com/lf-edge/ekuiper/sdk/go/api"
+	sdk "github.com/lf-edge/ekuiper/sdk/go/runtime"
+	"os"
+)
+
 // Copyright 2021 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,26 +23,18 @@
 package main
 
 import (
-	"fmt"
-	"github.com/lf-edge/ekuiper/sdk/go/api"
+"github.com/lf-edge/ekuiper/sdk/go/api"
+sdk "github.com/lf-edge/ekuiper/sdk/go/runtime"
+"os"
 )
 
-type echo struct {
-}
-
-func (f *echo) Validate(args []interface{}) error {
-	if len(args) != 1 {
-		return fmt.Errorf("echo function only supports 1 parameter but got %d", len(args))
-	}
-	return nil
-}
-
-func (f *echo) Exec(args []interface{}, _ api.FunctionContext) (interface{}, bool) {
-	fmt.Println("[sdk][go][example][mirror][echo-Exec] start")
-	result := args[0]
-	return result, true
-}
-
-func (f *echo) IsAggregate() bool {
-	return false
+func main() {
+	sdk.Start(os.Args, &sdk.PluginConfig{
+		Name: "fibonacci",
+		Functions: map[string]sdk.NewFunctionFunc{
+			"fibonacci": func() api.Function {
+				return &fib{}
+			},
+		},
+	})
 }

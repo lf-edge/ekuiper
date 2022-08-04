@@ -91,6 +91,7 @@ func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("name, pi: ", name, pi)
 		registry.Set(name, pi)
 	}
 	return &Manager{reg: registry}, nil

@@ -23,12 +23,15 @@ class RevertFunc(Function):
         pass
 
     def validate(self, args: List[Any]):
+        print("[sdk][python][revert.py] Validate start")
         return ""
 
     def exec(self, args: List[Any], ctx: Context):
+        print("[sdk][python][revert.py] Exec start")
         return args[0][::-1]
 
     def is_aggregate(self):
+        print("[sdk][python][revert.py] is_aggregate start")
         return False
 
 

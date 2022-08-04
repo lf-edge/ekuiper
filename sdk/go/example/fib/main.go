@@ -15,26 +15,18 @@
 package main
 
 import (
-	"fmt"
 	"github.com/lf-edge/ekuiper/sdk/go/api"
+	sdk "github.com/lf-edge/ekuiper/sdk/go/runtime"
+	"os"
 )
 
-type echo struct {
-}
-
-func (f *echo) Validate(args []interface{}) error {
-	if len(args) != 1 {
-		return fmt.Errorf("echo function only supports 1 parameter but got %d", len(args))
-	}
-	return nil
-}
-
-func (f *echo) Exec(args []interface{}, _ api.FunctionContext) (interface{}, bool) {
-	fmt.Println("[sdk][go][example][mirror][echo-Exec] start")
-	result := args[0]
-	return result, true
-}
-
-func (f *echo) IsAggregate() bool {
-	return false
+func main() {
+	sdk.Start(os.Args, &sdk.PluginConfig{
+		Name: "fib",
+		Functions: map[string]sdk.NewFunctionFunc{
+			"fib": func() api.Function {
+				return &fib{}
+			},
+		},
+	})
 }

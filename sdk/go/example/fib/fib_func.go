@@ -19,22 +19,23 @@ import (
 	"github.com/lf-edge/ekuiper/sdk/go/api"
 )
 
-type echo struct {
+type fib struct {
 }
 
-func (f *echo) Validate(args []interface{}) error {
+func (f *fib) Validate(args []interface{}) error {
 	if len(args) != 1 {
 		return fmt.Errorf("echo function only supports 1 parameter but got %d", len(args))
 	}
 	return nil
 }
 
-func (f *echo) Exec(args []interface{}, _ api.FunctionContext) (interface{}, bool) {
-	fmt.Println("[sdk][go][example][mirror][echo-Exec] start")
+func (f *fib) Exec(args []interface{}, _ api.FunctionContext) (interface{}, bool) {
+	//ExecWasmFile(args)
+	fmt.Println("[sdk][go][example][fib][fib-Exec] start")
 	result := args[0]
 	return result, true
 }
 
-func (f *echo) IsAggregate() bool {
+func (f *fib) IsAggregate() bool {
 	return false
 }
