@@ -474,6 +474,9 @@
 						},{
 							"title": "模式管理",
 							"path": "operation/restapi/schemas"
+						},{
+							"title": "上传文件管理",
+							"path": "operation/restapi/uploads"
 						}
 					]
 				},
@@ -1017,6 +1020,9 @@
 						},{
 							"title": "Schemas",
 							"path": "operation/restapi/schemas"
+						},{
+							"title": "Upload files",
+							"path": "operation/restapi/uploads"
 						}
 					]
 				},
