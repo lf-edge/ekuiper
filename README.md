@@ -161,7 +161,7 @@ To run this benchmark by yourself, please check [the instruction](./test/benchma
 
 #### Preparation
 
-- Go version >= 1.18
+- Go version >= 1.13
 
 #### Compile
 
