@@ -43,13 +43,27 @@ jobs:
         platforms: all
     - uses: docker/setup-buildx-action@v1
     - name: build
+      if: matrix.os == 'debian'
       run: |
         docker run -i --rm \
         -v $(pwd):/ekuiper \
         --workdir /ekuiper \
+        --env KUIPER_SOURCE='/ekuiper' \
         --platform ${{ matrix.arch }} \
         ghcr.io/lf-edge/ekuiper/base:${{ matrix.golang }}-${{ matrix.os }} \
-        bash -euc "make pkg  && .github/scripts/test.sh"
+        bash -euc "make pkg && .github/scripts/test.sh"
+    - name: build
+      if: matrix.os == 'centos'
+      run: |
+        docker run -i --rm \
+        -v $(pwd):/ekuiper \
+        --workdir /ekuiper \
+        --env KUIPER_SOURCE='/ekuiper' \
+        --platform ${{ matrix.arch }} \
+        ghcr.io/lf-edge/ekuiper/base:${{ matrix.golang }}-${{ matrix.os }} \
+        bash -euc "make -C deploy/packages && .github/scripts/test.sh"
+    - name: create sha file
+      run: |
         cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
     - uses: actions/upload-artifact@v1
       with:
