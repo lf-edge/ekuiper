@@ -73,10 +73,10 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 	} else {
 		ms.clientid = cfg.ClientId
 	}
-
-	ms.pVersion = 3
-	if cfg.PVersion == "3.1.1" {
-		ms.pVersion = 4
+	// Default to MQTT 3.1.1 or NanoMQ cannot connect
+	ms.pVersion = 4
+	if cfg.PVersion == "3.1" {
+		ms.pVersion = 3
 	}
 
 	tlsOpts := cert.TlsConfigurationOptions{
@@ -98,8 +98,10 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 }
 
 func (ms *MQTTClient) Connect(connHandler MQTT.OnConnectHandler, lostHandler MQTT.ConnectionLostHandler) error {
-
-	opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(ms.pVersion)
+	if conf.Config.Basic.Debug {
+		MQTT.DEBUG = conf.Log
+	}
+	opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(4)
 
 	opts = opts.SetTLSConfig(ms.tls)
 
