@@ -131,7 +131,7 @@ func TestMQTTClient_CfgResult(t *testing.T) {
 	if !reflect.DeepEqual("clientid", ms.clientid) {
 		t.Errorf("result mismatch:\n\n got=%#v\n\n", ms.clientid)
 	}
-	if !reflect.DeepEqual(uint(3), ms.pVersion) {
+	if !reflect.DeepEqual(uint(4), ms.pVersion) {
 		t.Errorf("result mismatch:\n\n got=%#v\n\n", ms.pVersion)
 	}
 
