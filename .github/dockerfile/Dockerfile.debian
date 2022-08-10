@@ -12,12 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG GO_VERSION=1.18
-FROM golang:${GO_VERSION} AS builder
+FROM debian:stretch
+
+ARG GO_VERSION=1.18.5
+
+RUN apt update \
+    && apt install -y zip upx pkg-config libczmq-dev build-essential debhelper jq zip
+
+RUN wget --no-verbose https://golang.org/dl/go$GO_VERSION.linux-$(dpkg --print-architecture).tar.gz \
+    && tar -C /usr/local -xzf go$GO_VERSION.linux-$(dpkg --print-architecture).tar.gz
+
+ENV PATH=$PATH:/usr/local/go/bin
 
 COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
-RUN apt update \
-    && apt install -y zip upx pkg-config libczmq-dev build-essential debhelper jq zip
+ENV KUIPER_SOURCE=/go/kuiper
