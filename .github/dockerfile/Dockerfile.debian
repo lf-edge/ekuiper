@@ -19,8 +19,16 @@ ARG GO_VERSION=1.18.5
 RUN apt update \
     && apt install -y wget zip upx pkg-config libczmq-dev build-essential debhelper jq zip
 
-RUN wget --no-verbose https://golang.org/dl/go$GO_VERSION.linux-$(dpkg --print-architecture).tar.gz \
-    && tar -C /usr/local -xzf go$GO_VERSION.linux-$(dpkg --print-architecture).tar.gz
+RUN case $(dpkg --print-architecture) in \
+        arm|armhf|armv7) \
+            ARCH=armv6l \
+        ;; \
+        *) \
+            ARCH=$(dpkg --print-architecture)\
+        ;; \
+    esac \
+    && wget --no-verbose https://golang.org/dl/go$GO_VERSION.linux-$ARCH.tar.gz \
+    && tar -C /usr/local -xzf go$GO_VERSION.linux-$ARCH.tar.gz
 
 ENV PATH=$PATH:/usr/local/go/bin
 
