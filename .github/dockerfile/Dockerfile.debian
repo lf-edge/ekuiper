@@ -17,7 +17,7 @@ FROM debian:stretch
 ARG GO_VERSION=1.18.5
 
 RUN apt update \
-    && apt install -y wget zip upx pkg-config libczmq-dev build-essential debhelper jq zip
+    && apt install -y make wget git zip upx pkg-config libczmq-dev build-essential debhelper jq zip
 
 RUN case $(dpkg --print-architecture) in \
         arm|armhf|armv7) \
