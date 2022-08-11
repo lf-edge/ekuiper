@@ -17,7 +17,7 @@ FROM debian:stretch
 ARG GO_VERSION=1.18.5
 
 RUN apt update \
-    && apt install -y make wget git curl procps zip upx pkg-config libczmq-dev build-essential debhelper jq zip
+    && apt install -y make wget git curl procps zip libucl-dev zlib1g-dev pkg-config libczmq-dev build-essential debhelper jq zip
 
 RUN case $(dpkg --print-architecture) in \
         arm|armhf|armv7) \
@@ -31,6 +31,10 @@ RUN case $(dpkg --print-architecture) in \
     && tar -C /usr/local -xzf go$GO_VERSION.linux-$ARCH.tar.gz
 
 ENV PATH=$PATH:/usr/local/go/bin
+
+RUN wget --no-verbose https://github.com/upx/upx/releases/download/v3.96/upx-3.96-src.tar.xz -O - | tar -xvJC /usr/local \ 
+   && cd /usr/local/upx-3.96-src && make all \
+   && ln -s /usr/local/upx-3.96-src/src/upx.out /usr/bin/upx
 
 COPY . /go/kuiper
 
