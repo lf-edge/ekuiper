@@ -227,7 +227,7 @@ jobs:
         push: false
         load: true
         tags: docker.io/lfedge/ekuiper
-        file: deploy/docker/Dockerfile
+        file: deploy/docker/Dockerfile-alpine
     - name: test docker and plugins
       if: matrix.arch == 'linux/amd64'
       env:
@@ -240,6 +240,7 @@ jobs:
         container_id=$(docker run -d -v $(pwd)/_plugins:/var/plugins docker.io/lfedge/ekuiper)
         ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
         os=$(docker exec -i ${container_id} sh -c "sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g'" )
+        os=debian
         sleep 5
         if ! curl ${ip_address}:9081  >/dev/null 2>&1; then echo "docker image failed"; exit 1; fi
         if [ "${plugin_name}" = "tdengine" ]; then
