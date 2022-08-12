@@ -167,7 +167,7 @@ eKuiper 项目利用 Github actions 来运行单元测试和 FVT（功能验证�
 
 ### Signoff
 
-Sifnoff 是为了证明提交的来源。它是提交给这个项目的必要条件。如果你设置了
+Signoff 是为了证明提交的来源。它是提交给这个项目的必要条件。如果你设置了
 你的`user.name`和`user.email`的 git 配置，你可以用`git commit -s`自动签署你的提交。每次提交都必须签名。
 
 ### 同步

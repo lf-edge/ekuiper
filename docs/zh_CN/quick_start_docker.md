@@ -26,7 +26,7 @@
    
    ```
 
-4. 您可以使用任何[ MQTT 客户端工具](https://www.emqx.cn/blog/mqtt-client-tools)来发布传感器数据到服务器 `tcp://broker.emqx.io:1883`的主题 `devices/device_001/messages` 。以下例子使用 `mosquitto_pub`。
+4. 您可以使用任何[ MQTT 客户端工具](https://www.emqx.com/zh/blog/mqtt-client-tools)来发布传感器数据到服务器 `tcp://broker.emqx.io:1883`的主题 `devices/device_001/messages` 。以下例子使用 `mosquitto_pub`。
 
    ```shell
    # mosquitto_pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages
