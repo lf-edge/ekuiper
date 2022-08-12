@@ -13,7 +13,7 @@
 # limitations under the License.
 
 ARG GO_VERSION=1.18.5
-FROM golang:$GO_VERSION AS builder
+FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-debian AS builder
 
 COPY . /go/kuiper
 
