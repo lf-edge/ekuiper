@@ -32,6 +32,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -42,10 +43,8 @@ import (
 	"strings"
 )
 
-const Separator = "__"
-
 func LoadConfig(c interface{}) error {
-	return LoadConfigByName(ConfFileName, c)
+	return LoadConfigByName(internal.KuiperConf, c)
 }
 
 func LoadConfigByName(name string, c interface{}) error {
@@ -149,12 +148,12 @@ func handle(conf map[string]interface{}, keysLeft []string, val string) {
 }
 
 func trimPrefix(key string, prefix string) string {
-	p := fmt.Sprintf("%s%s", prefix, Separator)
+	p := fmt.Sprintf("%s%s", prefix, internal.Separator)
 	return strings.TrimPrefix(key, p)
 }
 
 func nameToKeys(key string) []string {
-	return strings.Split(strings.ToLower(key), Separator)
+	return strings.Split(strings.ToLower(key), internal.Separator)
 }
 
 func getConfigKey(key string) string {
@@ -254,7 +253,8 @@ func loadJsonForYaml(filePath string) (map[string]interface{}, error) {
 
 func jsonPathForFile(yamlPath string) string {
 	p := strings.TrimSuffix(yamlPath, filepath.Ext(yamlPath))
-	return fmt.Sprintf("%s.json", p)
+	//return fmt.Sprintf("%s.json", p)
+	return p + internal.JsonFileSuffix
 }
 
 func extractNamesFromProperties(jsonMap map[string]interface{}) ([]string, error) {

@@ -18,13 +18,14 @@
 package conf
 
 import (
+	"github.com/lf-edge/ekuiper/internal"
 	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
 	"log/syslog"
 	"os"
 )
 
 func initSyslog() {
-	if "true" == os.Getenv(KuiperSyslogKey) {
+	if "true" == os.Getenv(internal.EnvKuiperSyslogKey) {
 		if hook, err := logrus_syslog.NewSyslogHook("", "", syslog.LOG_INFO, ""); err != nil {
 			Log.Error("Unable to connect to local syslog daemon")
 		} else {

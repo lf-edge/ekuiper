@@ -21,10 +21,6 @@ import (
 	"strings"
 )
 
-const (
-	logFileName = "stream.log"
-)
-
 var (
 	Log     *logrus.Logger
 	logFile *os.File

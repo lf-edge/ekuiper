@@ -17,6 +17,7 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -66,7 +67,7 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 			InstanceId: ctx.GetInstanceId(),
 		},
 		SymbolName: ps.symbolName,
-		PluginType: TYPE_SOURCE,
+		PluginType: internal.Source,
 		DataSource: ps.topic,
 		Config:     ps.props,
 	}

@@ -17,6 +17,7 @@ package memory
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"strings"
 )
@@ -33,7 +34,7 @@ func (s *sink) Open(ctx api.StreamContext) error {
 }
 
 func (s *sink) Configure(props map[string]interface{}) error {
-	if t, ok := props[IdProperty]; ok {
+	if t, ok := props[internal.Topic]; ok {
 		if id, casted := t.(string); casted {
 			if strings.ContainsAny(id, "#+") {
 				return fmt.Errorf("invalid memory topic %s: wildcard found", id)

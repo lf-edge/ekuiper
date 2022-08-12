@@ -2,10 +2,9 @@ package conf
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"strings"
 )
-
-const CONNECTION_CONF = "connections/connection.yaml"
 
 type ConSelector struct {
 	ConnSelectorStr string
@@ -30,7 +29,7 @@ func (c *ConSelector) ReadCfgFromYaml() (props map[string]interface{}, err error
 	)
 
 	cfg := make(map[string]interface{})
-	err = LoadConfigByName(CONNECTION_CONF, &cfg)
+	err = LoadConfigByName(internal.ConnectionConf, &cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +48,7 @@ func (c *ConSelector) ReadCfgFromYaml() (props map[string]interface{}, err error
 		return nil, fmt.Errorf("not found connection Type and Selector:  %s.%s", c.Type, c.CfgKey)
 	}
 
-	jsonPath := "sources/" + c.Type + ".json"
+	jsonPath := "sources/" + c.Type + internal.JsonFileSuffix
 	if c.Type == "mqtt" {
 		jsonPath = "mqtt_source.json"
 	}

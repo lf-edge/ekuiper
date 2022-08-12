@@ -16,6 +16,7 @@ package meta
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"io/ioutil"
@@ -78,11 +79,11 @@ func ReadFuncMetaDir(checker InstallChecker) error {
 	}
 	for _, file := range files {
 		fname := file.Name()
-		if !strings.HasSuffix(fname, ".json") {
+		if !strings.HasSuffix(fname, internal.JsonFileSuffix) {
 			continue
 		}
 
-		if err := ReadFuncMetaFile(path.Join(dir, fname), checker(strings.TrimSuffix(fname, ".json"))); nil != err {
+		if err := ReadFuncMetaFile(path.Join(dir, fname), checker(strings.TrimSuffix(fname, internal.JsonFileSuffix))); nil != err {
 			return err
 		}
 	}
@@ -90,7 +91,7 @@ func ReadFuncMetaDir(checker InstallChecker) error {
 }
 
 func UninstallFunc(name string) {
-	if ui, ok := gFuncmetadata[name+".json"]; ok {
+	if ui, ok := gFuncmetadata[name+internal.JsonFileSuffix]; ok {
 		if nil != ui.About {
 			ui.About.Installed = false
 		}

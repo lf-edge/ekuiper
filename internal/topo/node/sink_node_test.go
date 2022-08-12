@@ -20,6 +20,7 @@ package node
 import (
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -117,7 +118,7 @@ func TestSinkTemplate_Apply(t *testing.T) {
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestSinkTemplate_Apply")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 
 	for i, tt := range tests {
 		mockSink := mocknode.NewMockSink()
@@ -213,7 +214,7 @@ func TestOmitEmpty_Apply(t *testing.T) {
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestOmitEmpty_Apply")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 
 	for i, tt := range tests {
 		mockSink := mocknode.NewMockSink()
@@ -286,7 +287,7 @@ func TestFormat_Apply(t *testing.T) {
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestSinkFormat_Apply")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 
 	for i, tt := range tests {
 		mockSink := mocknode.NewMockSink()

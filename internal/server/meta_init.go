@@ -20,6 +20,7 @@ package server
 import (
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"io/ioutil"
 	"net/http"
@@ -149,7 +150,7 @@ func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 	language := getLanguage(r)
-	configOperatorKey := fmt.Sprintf(meta.SourceCfgOperatorKeyTemplate, pluginName)
+	configOperatorKey := fmt.Sprintf(internal.SourceCfgOperatorKeyTemplate, pluginName)
 	ret, err := meta.GetYamlConf(configOperatorKey, language)
 	if err != nil {
 		handleError(w, err, "", logger)
@@ -165,7 +166,7 @@ func connectionConfHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pluginName := vars["name"]
 	language := getLanguage(r)
-	configOperatorKey := fmt.Sprintf(meta.ConnectionCfgOperatorKeyTemplate, pluginName)
+	configOperatorKey := fmt.Sprintf(internal.ConnectionCfgOperatorKeyTemplate, pluginName)
 	ret, err := meta.GetYamlConf(configOperatorKey, language)
 	if err != nil {
 		handleError(w, err, "", logger)

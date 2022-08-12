@@ -16,17 +16,13 @@ package meta
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"io/ioutil"
 	"path"
 	"strings"
-)
-
-const (
-	sink   = `sink`
-	source = `source`
 )
 
 type (
@@ -173,12 +169,12 @@ func ReadSinkMetaDir(checker InstallChecker) error {
 	}
 	for _, file := range files {
 		fname := file.Name()
-		if !strings.HasSuffix(fname, ".json") {
+		if !strings.HasSuffix(fname, internal.JsonFileSuffix) {
 			continue
 		}
 
 		filePath := path.Join(dir, fname)
-		if err := ReadSinkMetaFile(filePath, checker(strings.TrimSuffix(fname, ".json"))); nil != err {
+		if err := ReadSinkMetaFile(filePath, checker(strings.TrimSuffix(fname, internal.JsonFileSuffix))); nil != err {
 			return err
 		}
 	}
@@ -186,7 +182,7 @@ func ReadSinkMetaDir(checker InstallChecker) error {
 }
 
 func UninstallSink(name string) {
-	if ui, ok := gSinkmetadata[name+".json"]; ok {
+	if ui, ok := gSinkmetadata[name+internal.JsonFileSuffix]; ok {
 		if nil != ui.About {
 			ui.About.Installed = false
 		}
@@ -213,11 +209,11 @@ func ReadSinkMetaFile(filePath string, installed bool) error {
 }
 
 func GetSinkMeta(pluginName, language string) (*uiSink, error) {
-	fileName := pluginName + `.json`
+	fileName := pluginName + internal.JsonFileSuffix
 	sinkMetadata := gSinkmetadata
 	data, ok := sinkMetadata[fileName]
 	if !ok || data == nil {
-		return nil, fmt.Errorf(`%s%s`, getMsg(language, sink, "not_found_plugin"), pluginName)
+		return nil, fmt.Errorf(`%s%s`, getMsg(language, internal.Sink, "not_found_plugin"), pluginName)
 	}
 	return data, nil
 }
@@ -231,7 +227,7 @@ func GetSinks() (sinks []*pluginfo) {
 	sinkMeta := gSinkmetadata
 	for fileName, v := range sinkMeta {
 		node := new(pluginfo)
-		node.Name = strings.TrimSuffix(fileName, `.json`)
+		node.Name = strings.TrimSuffix(fileName, internal.JsonFileSuffix)
 		node.About = v.About
 		i := 0
 		for ; i < len(sinks); i++ {

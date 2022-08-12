@@ -22,6 +22,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/topo/sink"
@@ -31,8 +32,6 @@ import (
 	"strings"
 	"time"
 )
-
-const QueryRuleId = "internal-ekuiper_query_rule"
 
 func init() {
 	servers["rpc"] = rpcComp{}
@@ -81,15 +80,15 @@ func (r rpcComp) close() {
 type Server int
 
 func (t *Server) CreateQuery(sql string, reply *string) error {
-	if _, ok := registry.Load(QueryRuleId); ok {
+	if _, ok := registry.Load(internal.QueryRuleId); ok {
 		stopQuery()
 	}
-	tp, err := ruleProcessor.ExecQuery(QueryRuleId, sql)
+	tp, err := ruleProcessor.ExecQuery(internal.QueryRuleId, sql)
 	if err != nil {
 		return err
 	} else {
-		rs := &RuleState{RuleId: QueryRuleId, Topology: tp, Triggered: true}
-		registry.Store(QueryRuleId, rs)
+		rs := &RuleState{RuleId: internal.QueryRuleId, Topology: tp, Triggered: true}
+		registry.Store(internal.QueryRuleId, rs)
 		msg := fmt.Sprintf("Query was submit successfully.")
 		logger.Println(msg)
 		*reply = fmt.Sprintf(msg)
@@ -98,10 +97,10 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 }
 
 func stopQuery() {
-	if rs, ok := registry.Load(QueryRuleId); ok {
+	if rs, ok := registry.Load(internal.QueryRuleId); ok {
 		logger.Printf("stop the query.")
 		(*rs.Topology).Cancel()
-		registry.Delete(QueryRuleId)
+		registry.Delete(internal.QueryRuleId)
 	}
 }
 
@@ -109,7 +108,7 @@ func stopQuery() {
  * qid is not currently used.
  */
 func (t *Server) GetQueryResult(_ string, reply *string) error {
-	if rs, ok := registry.Load(QueryRuleId); ok {
+	if rs, ok := registry.Load(internal.QueryRuleId); ok {
 		c := (*rs.Topology).GetContext()
 		if c != nil && c.Err() != nil {
 			return c.Err()
@@ -269,7 +268,7 @@ func init() {
 		for {
 			<-ticker.C
 			if registry != nil {
-				if _, ok := registry.Load(QueryRuleId); !ok {
+				if _, ok := registry.Load(internal.QueryRuleId); !ok {
 					continue
 				}
 

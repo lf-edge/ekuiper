@@ -16,6 +16,7 @@ package meta
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"sync"
 	"testing"
 )
@@ -35,7 +36,7 @@ func (m MockSourcesConfigOps) SaveCfgToFile() error {
 func TestYamlConfigMeta_Ops(t *testing.T) {
 	plgName := "mocksource"
 
-	yamlKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
+	yamlKey := fmt.Sprintf(internal.SourceCfgOperatorKeyTemplate, plgName)
 	addData := `{"url":"127.0.0.1","method":"post","headers":{"Accept":"json"}}`
 
 	ConfigManager.cfgOperators[yamlKey] = MockSourcesConfigOps{

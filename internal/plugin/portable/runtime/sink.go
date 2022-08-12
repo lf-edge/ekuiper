@@ -16,6 +16,7 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
@@ -57,7 +58,7 @@ func (ps *PortableSink) Open(ctx api.StreamContext) error {
 			InstanceId: ctx.GetInstanceId(),
 		},
 		SymbolName: ps.symbolName,
-		PluginType: TYPE_SINK,
+		PluginType: internal.Sink,
 		Config:     ps.props,
 	}
 	err = ins.StartSymbol(ctx, c)

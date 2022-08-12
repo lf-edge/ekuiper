@@ -17,6 +17,7 @@ package conf
 import (
 	"fmt"
 	"github.com/lestrrat-go/file-rotatelogs"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/sirupsen/logrus"
@@ -25,8 +26,6 @@ import (
 	"path"
 	"time"
 )
-
-const ConfFileName = "kuiper.yaml"
 
 var (
 	Config    *KuiperConf
@@ -146,7 +145,7 @@ func InitConf() {
 		},
 	}
 
-	err = LoadConfigFromPath(path.Join(cpath, ConfFileName), &kc)
+	err = LoadConfigFromPath(path.Join(cpath, internal.KuiperConf), &kc)
 	if err != nil {
 		Log.Fatal(err)
 		panic(err)
@@ -164,12 +163,12 @@ func InitConf() {
 	}
 
 	if Config.Basic.FileLog {
-		logDir, err := GetLoc(logDir)
+		logDir, err := GetLoc(internal.LogDir)
 		if err != nil {
 			Log.Fatal(err)
 		}
 
-		file := path.Join(logDir, logFileName)
+		file := path.Join(logDir, internal.StreamLogFile)
 		logWriter, err := rotatelogs.New(
 			file+".%Y-%m-%d_%H-%M-%S",
 			rotatelogs.WithLinkName(file),

@@ -14,12 +14,6 @@
 
 package runtime
 
-const (
-	TYPE_SOURCE = "source"
-	TYPE_SINK   = "sink"
-	TYPE_FUNC   = "func"
-)
-
 type Meta struct {
 	RuleId     string `json:"ruleId"`
 	OpId       string `json:"opId"`
@@ -43,15 +37,6 @@ type Command struct {
 	Cmd string `json:"cmd"`
 	Arg string `json:"arg"`
 }
-
-const (
-	CMD_START = "start"
-	CMD_STOP  = "stop"
-)
-
-const (
-	REPLY_OK = "ok"
-)
 
 type PortableConfig struct {
 	SendTimeout int64 `json:"sendTimeout"`

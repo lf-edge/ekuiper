@@ -16,36 +16,28 @@ package conf
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 )
 
-const (
-	etcDir          = "etc"
-	dataDir         = "data"
-	logDir          = "log"
-	pluginsDir      = "plugins"
-	KuiperBaseKey   = "KuiperBaseKey"
-	KuiperSyslogKey = "KuiperSyslogKey"
-)
-
 var LoadFileType = "relative"
 var AbsoluteMapping = map[string]string{
-	etcDir:     "/etc/kuiper",
-	dataDir:    "/var/lib/kuiper/data",
-	logDir:     "/var/log/kuiper",
-	pluginsDir: "/var/lib/kuiper/plugins",
+	internal.EtcDir:     "/etc/kuiper",
+	internal.DataDir:    "/var/lib/kuiper/data",
+	internal.LogDir:     "/var/log/kuiper",
+	internal.PluginsDir: "/var/lib/kuiper/plugins",
 }
 
 func GetConfLoc() (string, error) {
-	return GetLoc(etcDir)
+	return GetLoc(internal.EtcDir)
 }
 
 func GetDataLoc() (string, error) {
 	if IsTesting {
-		dataDir, err := GetLoc(dataDir)
+		dataDir, err := GetLoc(internal.DataDir)
 		if err != nil {
 			return "", err
 		}
@@ -58,11 +50,11 @@ func GetDataLoc() (string, error) {
 		}
 		return d, nil
 	}
-	return GetLoc(dataDir)
+	return GetLoc(internal.DataDir)
 }
 
 func GetPluginsLoc() (string, error) {
-	return GetLoc(pluginsDir)
+	return GetLoc(internal.PluginsDir)
 }
 
 func absolutePath(loc string) (dir string, err error) {
@@ -96,7 +88,7 @@ func relativePath(subdir string) (dir string, err error) {
 		return "", err
 	}
 
-	if base := os.Getenv(KuiperBaseKey); base != "" {
+	if base := os.Getenv(internal.EnvKuiperBaseKey); base != "" {
 		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
 		dir = base
 	}

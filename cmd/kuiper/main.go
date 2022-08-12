@@ -17,6 +17,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -33,8 +34,6 @@ type clientConf struct {
 	Host string `yaml:"host"`
 	Port int    `yaml:"port"`
 }
-
-const ClientYaml = "client.yaml"
 
 func streamProcess(client *rpc.Client, args string) {
 	var reply string
@@ -65,7 +64,7 @@ func main() {
 	//	}}
 
 	var cfg map[string]clientConf
-	err := conf.LoadConfigByName(ClientYaml, &cfg)
+	err := conf.LoadConfigByName(internal.ClientConf, &cfg)
 	if err != nil {
 		conf.Log.Fatal(err)
 		fmt.Printf("Failed to load config file with error %s.\n", err)

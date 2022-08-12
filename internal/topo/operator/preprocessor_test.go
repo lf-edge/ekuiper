@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -566,7 +567,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 
 	defer conf.CloseLogger()
 	contextLogger := conf.Log.WithField("rule", "TestPreprocessor_Apply")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		pp := &Preprocessor{}
 		if tt.stmt.Options != nil {
@@ -705,7 +706,7 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 
 	defer conf.CloseLogger()
 	contextLogger := conf.Log.WithField("rule", "TestPreprocessorTime_Apply")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		pp := &Preprocessor{}
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
@@ -889,7 +890,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 
 	defer conf.CloseLogger()
 	contextLogger := conf.Log.WithField("rule", "TestPreprocessorEventtime_Apply")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
 		pp := &Preprocessor{
@@ -976,7 +977,7 @@ func TestPreprocessorError(t *testing.T) {
 
 	defer conf.CloseLogger()
 	contextLogger := conf.Log.WithField("rule", "TestPreprocessorError")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
 		pp := &Preprocessor{}
@@ -1105,7 +1106,7 @@ func TestPreprocessorForBinary(t *testing.T) {
 
 	defer conf.CloseLogger()
 	contextLogger := conf.Log.WithField("rule", "TestPreprocessorForBinary")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		pp := &Preprocessor{}
 		pp.streamFields = convertFields(tt.stmt.StreamFields)
@@ -1115,7 +1116,7 @@ func TestPreprocessorForBinary(t *testing.T) {
 			format = message.FormatBinary
 		}
 		converter, _ := converter.GetOrCreateConverter(format, "", "")
-		nCtx := context.WithValue(ctx, context.DecodeKey, converter)
+		nCtx := context.WithValue(ctx, internal.DecodeKey, converter)
 		if dm, e := nCtx.Decode(tt.data); e != nil {
 			log.Fatal(e)
 			return

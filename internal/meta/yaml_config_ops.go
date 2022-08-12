@@ -17,6 +17,7 @@ package meta
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -199,7 +200,7 @@ func (c *SourceConfigKeysOps) SaveCfgToFile() error {
 		pluginName = "mqtt_source"
 		dir = confDir
 	}
-	filePath := path.Join(dir, pluginName+".yaml")
+	filePath := path.Join(dir, pluginName+internal.YamlFileSuffix)
 	cfg := c.CopyConfContent()
 	err = filex.WriteYamlMarshal(filePath, cfg)
 	if nil != err {
@@ -260,7 +261,7 @@ func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) 
 		fileName = "mqtt_source"
 		dir = confDir
 	}
-	filePath := path.Join(dir, fileName+`.yaml`)
+	filePath := path.Join(dir, fileName+internal.YamlFileSuffix)
 	err = filex.ReadYamlUnmarshal(filePath, &c.cf)
 	if nil != err {
 		return nil, err

@@ -17,6 +17,7 @@ package meta
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"sync"
 )
@@ -34,14 +35,11 @@ var ConfigManager = configManager{
 	cfgOperators: make(map[string]ConfigOperator),
 }
 
-const SourceCfgOperatorKeyTemplate = "sources.%s"
-const ConnectionCfgOperatorKeyTemplate = "connections.%s"
-
 // loadConfigOperatorForSource
 // Try to load ConfigOperator for plugin xxx from /etc/sources/xxx.yaml
 // If plugin xxx not exist in /etc/sources/xxx.yaml, no error response
 func loadConfigOperatorForSource(pluginName string) {
-	yamlKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, pluginName)
+	yamlKey := fmt.Sprintf(internal.SourceCfgOperatorKeyTemplate, pluginName)
 
 	if cfg, _ := NewConfigOperatorFromSourceYaml(pluginName); cfg != nil {
 		ConfigManager.lock.Lock()
@@ -55,7 +53,7 @@ func loadConfigOperatorForSource(pluginName string) {
 // Try to load ConfigOperator for plugin from /etc/connections/connection.yaml
 // If plugin not exist in /etc/connections/connection.yaml, no error response
 func loadConfigOperatorForConnection(pluginName string) {
-	yamlKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, pluginName)
+	yamlKey := fmt.Sprintf(internal.ConnectionCfgOperatorKeyTemplate, pluginName)
 
 	if cfg, _ := NewConfigOperatorFromConnectionYaml(pluginName); cfg != nil {
 		ConfigManager.lock.Lock()
@@ -72,24 +70,24 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 
 	cfgOps, ok := ConfigManager.cfgOperators[configOperatorKey]
 	if !ok {
-		return nil, fmt.Errorf(`%s%s`, getMsg(language, source, "not_found_plugin"), configOperatorKey)
+		return nil, fmt.Errorf(`%s%s`, getMsg(language, internal.Source, "not_found_plugin"), configOperatorKey)
 	}
 
 	cf := cfgOps.CopyConfContent()
 	if b, err = json.Marshal(cf); nil != err {
-		return nil, fmt.Errorf(`%s%v`, getMsg(language, source, "json_marshal_fail"), cf)
+		return nil, fmt.Errorf(`%s%v`, getMsg(language, internal.Source, "json_marshal_fail"), cf)
 	} else {
 		return b, err
 	}
 }
 
 func DelSourceConfKey(plgName, confKey, language string) error {
-	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
+	configOperatorKey := fmt.Sprintf(internal.SourceCfgOperatorKeyTemplate, plgName)
 	return delConfKey(configOperatorKey, confKey, language)
 }
 
 func DelConnectionConfKey(plgName, confKey, language string) error {
-	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
+	configOperatorKey := fmt.Sprintf(internal.ConnectionCfgOperatorKeyTemplate, plgName)
 	return delConfKey(configOperatorKey, confKey, language)
 }
 
@@ -99,14 +97,14 @@ func delConfKey(configOperatorKey, confKey, language string) error {
 
 	cfgOps, ok := ConfigManager.cfgOperators[configOperatorKey]
 	if !ok {
-		return fmt.Errorf(`%s%s`, getMsg(language, source, "not_found_plugin"), configOperatorKey)
+		return fmt.Errorf(`%s%s`, getMsg(language, internal.Source, "not_found_plugin"), configOperatorKey)
 	}
 
 	cfgOps.DeleteConfKey(confKey)
 
 	err := cfgOps.SaveCfgToFile()
 	if err != nil {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
+		return fmt.Errorf(`%s%s.%v`, getMsg(language, internal.Source, "write_data_fail"), configOperatorKey, err)
 	}
 	return nil
 }
@@ -115,12 +113,12 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
-	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
+	configOperatorKey := fmt.Sprintf(internal.SourceCfgOperatorKeyTemplate, plgName)
 
 	reqField := make(map[string]interface{})
 	err := json.Unmarshal(content, &reqField)
 	if nil != err {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), plgName, err)
+		return fmt.Errorf(`%s%s.%v`, getMsg(language, internal.Source, "type_conversion_fail"), plgName, err)
 	}
 
 	var cfgOps ConfigOperator
@@ -144,7 +142,7 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
 
 	err = cfgOps.SaveCfgToFile()
 	if err != nil {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
+		return fmt.Errorf(`%s%s.%v`, getMsg(language, internal.Source, "write_data_fail"), configOperatorKey, err)
 	}
 	return nil
 }
@@ -153,12 +151,12 @@ func AddConnectionConfKey(plgName, confKey, language string, content []byte) err
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
-	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
+	configOperatorKey := fmt.Sprintf(internal.ConnectionCfgOperatorKeyTemplate, plgName)
 
 	reqField := make(map[string]interface{})
 	err := json.Unmarshal(content, &reqField)
 	if nil != err {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), plgName, err)
+		return fmt.Errorf(`%s%s.%v`, getMsg(language, internal.Source, "type_conversion_fail"), plgName, err)
 	}
 
 	var cfgOps ConfigOperator
@@ -182,7 +180,7 @@ func AddConnectionConfKey(plgName, confKey, language string, content []byte) err
 
 	err = cfgOps.SaveCfgToFile()
 	if err != nil {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
+		return fmt.Errorf(`%s%s.%v`, getMsg(language, internal.Source, "write_data_fail"), configOperatorKey, err)
 	}
 	return nil
 }

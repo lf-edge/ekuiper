@@ -17,6 +17,7 @@ package service
 import (
 	"archive/zip"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	kconf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
@@ -106,7 +107,7 @@ func (m *Manager) InitByFiles() error {
 	// Parse schemas in batch. So we have 2 loops. First loop to collect files and the second to save the result.
 	for _, file := range files {
 		baseName := filepath.Base(file.Name())
-		if filepath.Ext(baseName) == ".json" {
+		if filepath.Ext(baseName) == internal.JsonFileSuffix {
 			err := m.initFile(baseName)
 			if err != nil {
 				kconf.Log.Errorf("%v", err)
@@ -310,10 +311,10 @@ func (m *Manager) Create(r *ServiceCreationRequest) error {
 	if ok, _ := m.serviceKV.Get(name, &serviceInfo{}); ok {
 		return fmt.Errorf("service %s exist", name)
 	}
-	if !httpx.IsValidUrl(uri) || !strings.HasSuffix(uri, ".zip") {
+	if !httpx.IsValidUrl(uri) || !strings.HasSuffix(uri, internal.ZipFileSuffix) {
 		return fmt.Errorf("invalid file path %s", uri)
 	}
-	zipPath := path.Join(m.etcDir, name+".zip")
+	zipPath := path.Join(m.etcDir, name+internal.ZipFileSuffix)
 	//clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
 	//download
@@ -327,7 +328,7 @@ func (m *Manager) Create(r *ServiceCreationRequest) error {
 		return err
 	}
 	// init file to serviceKV
-	return m.initFile(name + ".json")
+	return m.initFile(name + internal.JsonFileSuffix)
 }
 
 func (m *Manager) Delete(name string) error {
@@ -341,7 +342,7 @@ func (m *Manager) Delete(name string) error {
 	if err != nil {
 		return err
 	}
-	path := path.Join(m.etcDir, name+".json")
+	path := path.Join(m.etcDir, name+internal.JsonFileSuffix)
 	err = os.Remove(path)
 	if err != nil {
 		kconf.Log.Errorf("remove service json fails: %v", err)
@@ -375,7 +376,7 @@ func (m *Manager) unzip(name, src string) error {
 		return err
 	}
 	defer r.Close()
-	baseName := name + ".json"
+	baseName := name + internal.JsonFileSuffix
 	// Try unzip
 	found := false
 	for _, file := range r.File {

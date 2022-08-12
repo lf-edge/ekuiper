@@ -22,6 +22,7 @@ import (
 	b64 "encoding/base64"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -378,7 +379,7 @@ func registerMiscFunc() {
 			}
 			if p, ok := args[0].(*ast.MetaRef); ok {
 				name := strings.ToLower(p.Name)
-				if name != "topic" && name != "messageid" {
+				if name != internal.Topic && name != "messageid" {
 					return fmt.Errorf("Parameter of mqtt function can be only topic or messageid.")
 				}
 			}

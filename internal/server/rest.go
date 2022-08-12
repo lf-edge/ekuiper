@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -33,11 +34,6 @@ import (
 	"runtime"
 	"strings"
 	"time"
-)
-
-const (
-	ContentType     = "Content-Type"
-	ContentTypeJSON = "application/json"
 )
 
 var uploadDir string
@@ -80,7 +76,7 @@ func handleError(w http.ResponseWriter, err error, prefix string, logger api.Log
 }
 
 func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
-	w.Header().Add(ContentType, ContentTypeJSON)
+	w.Header().Add(internal.ContentType, internal.ContentTypeJSON)
 	enc := json.NewEncoder(w)
 	err := enc.Encode(i)
 	// Problems encoding
@@ -407,7 +403,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "describe rule error", logger)
 			return
 		}
-		w.Header().Add(ContentType, ContentTypeJSON)
+		w.Header().Add(internal.ContentType, internal.ContentTypeJSON)
 		w.Write([]byte(rule))
 	case http.MethodDelete:
 		deleteRule(name)
@@ -461,7 +457,7 @@ func getStatusRuleHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "get rule status error", logger)
 		return
 	}
-	w.Header().Set(ContentType, ContentTypeJSON)
+	w.Header().Set(internal.ContentType, internal.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(content))
 }
@@ -518,6 +514,6 @@ func getTopoRuleHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "get rule topo error", logger)
 		return
 	}
-	w.Header().Set(ContentType, ContentTypeJSON)
+	w.Header().Set(internal.ContentType, internal.ContentTypeJSON)
 	w.Write([]byte(content))
 }

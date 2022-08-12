@@ -16,14 +16,13 @@ package context
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 )
 
-const TransKey = "$$trans"
-
 // TransformOutput Lazy transform output to bytes
 func (c *DefaultContext) TransformOutput(data interface{}) ([]byte, bool, error) {
-	v := c.Value(TransKey)
+	v := c.Value(internal.TransKey)
 	f, ok := v.(transform.TransFunc)
 	if ok {
 		return f(data)

@@ -17,6 +17,7 @@ package topo
 import (
 	"context"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
@@ -118,7 +119,7 @@ func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 func (s *Topo) prepareContext() {
 	if s.ctx == nil || s.ctx.Err() != nil {
 		contextLogger := conf.Log.WithField("rule", s.name)
-		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+		ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, contextLogger)
 		s.ctx, s.cancel = ctx.WithCancel()
 	}
 }

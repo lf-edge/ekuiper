@@ -17,6 +17,7 @@ package neuron
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -45,7 +46,7 @@ type neuronTemplate struct {
 }
 
 func (s *sink) Configure(props map[string]interface{}) error {
-	s.url = NeuronUrl
+	s.url = internal.NeuronUrl
 	cc := &c{
 		NodeName:  "unknown",
 		GroupName: "unknown",

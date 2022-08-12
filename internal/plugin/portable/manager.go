@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
@@ -132,17 +133,17 @@ func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 
 	if !isInit {
 		for _, s := range pi.Sources {
-			if err := meta.ReadSourceMetaFile(path.Join(m.etcDir, plugin.PluginTypes[plugin.SOURCE], s+`.json`), true); nil != err {
+			if err := meta.ReadSourceMetaFile(path.Join(m.etcDir, plugin.PluginTypes[plugin.SOURCE], s+internal.JsonFileSuffix), true); nil != err {
 				conf.Log.Errorf("read source json file:%v", err)
 			}
 		}
 		for _, s := range pi.Sinks {
-			if err := meta.ReadSinkMetaFile(path.Join(m.etcDir, plugin.PluginTypes[plugin.SINK], s+`.json`), true); nil != err {
+			if err := meta.ReadSinkMetaFile(path.Join(m.etcDir, plugin.PluginTypes[plugin.SINK], s+internal.JsonFileSuffix), true); nil != err {
 				conf.Log.Errorf("read sink json file:%v", err)
 			}
 		}
 		for _, s := range pi.Functions {
-			if err := meta.ReadFuncMetaFile(path.Join(m.etcDir, plugin.PluginTypes[plugin.FUNCTION], s+`.json`), true); nil != err {
+			if err := meta.ReadFuncMetaFile(path.Join(m.etcDir, plugin.PluginTypes[plugin.FUNCTION], s+internal.JsonFileSuffix), true); nil != err {
 				conf.Log.Errorf("read function json file:%v", err)
 			}
 		}
@@ -153,7 +154,7 @@ func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 }
 
 func (m *Manager) parsePluginJson(name string) (*PluginInfo, error) {
-	jsonPath := filepath.Join(m.pluginDir, name, name+".json")
+	jsonPath := filepath.Join(m.pluginDir, name, name+internal.JsonFileSuffix)
 	pi := &PluginInfo{PluginMeta: runtime.PluginMeta{Name: name}}
 	err := filex.ReadJsonUnmarshal(jsonPath, pi)
 	if err != nil {
@@ -174,7 +175,7 @@ func (m *Manager) Register(p plugin.Plugin) error {
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
 	}
-	if !httpx.IsValidUrl(uri) || !strings.HasSuffix(uri, ".zip") {
+	if !httpx.IsValidUrl(uri) || !strings.HasSuffix(uri, internal.ZipFileSuffix) {
 		return fmt.Errorf("invalid uri %s", uri)
 	}
 
@@ -182,7 +183,7 @@ func (m *Manager) Register(p plugin.Plugin) error {
 		return fmt.Errorf("invalid name %s: duplicate", name)
 	}
 
-	zipPath := path.Join(m.pluginDir, name+".zip")
+	zipPath := path.Join(m.pluginDir, name+internal.ZipFileSuffix)
 	//clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
 	//download
@@ -200,7 +201,7 @@ func (m *Manager) Register(p plugin.Plugin) error {
 
 func (m *Manager) install(name, src string, shellParas []string) (resultErr error) {
 	var (
-		jsonName     = name + ".json"
+		jsonName     = name + internal.JsonFileSuffix
 		pluginTarget = filepath.Join(m.pluginDir, name)
 		// The map of install files. Used to check if all required files are installed and for reverting
 		installedMap  = make(map[string]string)
@@ -348,19 +349,19 @@ func (m *Manager) Delete(name string) error {
 	m.reg.Delete(name)
 	// delete files and uninstall metas
 	for _, s := range pinfo.Sources {
-		p := path.Join(m.etcDir, plugin.PluginTypes[plugin.SOURCE], s+".yaml")
+		p := path.Join(m.etcDir, plugin.PluginTypes[plugin.SOURCE], s+internal.YamlFileSuffix)
 		os.Remove(p)
-		p = path.Join(m.etcDir, plugin.PluginTypes[plugin.SOURCE], s+".json")
+		p = path.Join(m.etcDir, plugin.PluginTypes[plugin.SOURCE], s+internal.JsonFileSuffix)
 		os.Remove(p)
 		meta.UninstallSource(s)
 	}
 	for _, s := range pinfo.Sinks {
-		p := path.Join(m.etcDir, plugin.PluginTypes[plugin.SINK], s+".json")
+		p := path.Join(m.etcDir, plugin.PluginTypes[plugin.SINK], s+internal.JsonFileSuffix)
 		os.Remove(p)
 		meta.UninstallSink(s)
 	}
 	for _, s := range pinfo.Functions {
-		p := path.Join(m.etcDir, plugin.PluginTypes[plugin.FUNCTION], s+".json")
+		p := path.Join(m.etcDir, plugin.PluginTypes[plugin.FUNCTION], s+internal.JsonFileSuffix)
 		os.Remove(p)
 		meta.UninstallFunc(s)
 	}

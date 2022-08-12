@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
@@ -189,7 +190,7 @@ func printable(m map[string]interface{}) map[string]interface{} {
 func getSourceConf(ctx api.StreamContext, sourceType string, options *ast.Options) map[string]interface{} {
 	confkey := options.CONF_KEY
 	logger := ctx.GetLogger()
-	confPath := "sources/" + sourceType + ".yaml"
+	confPath := "sources/" + sourceType + internal.YamlFileSuffix
 	if sourceType == "mqtt" {
 		confPath = "mqtt_source.yaml"
 	}

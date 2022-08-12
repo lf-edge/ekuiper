@@ -16,6 +16,7 @@ package sink
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
@@ -166,7 +167,7 @@ func TestRestSink_Apply(t *testing.T) {
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestRestSink_Apply")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 
 	var requests []request
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +198,7 @@ func TestRestSink_Apply(t *testing.T) {
 		tt.config["url"] = ts.URL
 		s.Configure(tt.config)
 		s.Open(ctx)
-		vCtx := context.WithValue(ctx, context.TransKey, tf)
+		vCtx := context.WithValue(ctx, internal.TransKey, tf)
 		if ss.(bool) {
 			for _, d := range tt.data {
 				s.Collect(vCtx, d)
@@ -326,7 +327,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestRestSink_Apply")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 
 	var requests []request
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -352,7 +353,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 		tt.config["url"] = ts.URL
 		s.Configure(tt.config)
 		s.Open(ctx)
-		vCtx := context.WithValue(ctx, context.TransKey, transform.TransFunc(func(d interface{}) ([]byte, bool, error) {
+		vCtx := context.WithValue(ctx, internal.TransKey, transform.TransFunc(func(d interface{}) ([]byte, bool, error) {
 			return d.([]byte), true, nil
 		}))
 		for _, d := range tt.data {

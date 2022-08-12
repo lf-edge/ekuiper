@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -73,7 +74,7 @@ func TestChangedColExec(t *testing.T) {
 		t.Fatal("builtin not found")
 	}
 	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
 	var tests = []struct {
@@ -138,7 +139,7 @@ func TestToMap(t *testing.T) {
 		t.Fatal("builtin not found")
 	}
 	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
 	var tests = []struct {
@@ -235,7 +236,7 @@ func TestHadChangedExec(t *testing.T) {
 		t.Fatal("builtin not found")
 	}
 	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
 	var tests = []struct {
@@ -320,7 +321,7 @@ func TestHadChangedExecAllowNull(t *testing.T) {
 		t.Fatal("builtin not found")
 	}
 	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
 	var tests = []struct {
@@ -412,7 +413,7 @@ func TestLagExec(t *testing.T) {
 		t.Fatal("builtin not found")
 	}
 	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
 	var tests = []struct {
@@ -467,7 +468,7 @@ func TestLagExecIndexWithDefaultValue(t *testing.T) {
 		t.Fatal("builtin not found")
 	}
 	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
 	var tests = []struct {
@@ -537,7 +538,7 @@ func TestLagExecIndex(t *testing.T) {
 		t.Fatal("builtin not found")
 	}
 	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
 	var tests = []struct {

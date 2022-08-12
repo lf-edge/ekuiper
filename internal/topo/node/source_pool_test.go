@@ -15,6 +15,7 @@
 package node
 
 import (
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -31,7 +32,7 @@ func TestSourcePool(t *testing.T) {
 	}, false)
 	n.concurrency = 2
 	contextLogger := conf.Log.WithField("rule", "mockRule0")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	n.ctx = ctx.WithMeta("mockRule0", "test", tempStore)
 	n1 := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
@@ -41,7 +42,7 @@ func TestSourcePool(t *testing.T) {
 	}, false)
 
 	contextLogger = conf.Log.WithField("rule", "mockRule1")
-	ctx = context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx = context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ = state.CreateStore("mockRule1", api.AtMostOnce)
 	n1.ctx = ctx.WithMeta("mockRule1", "test1", tempStore)
 	n2 := NewSourceNode("test2", ast.TypeStream, nil, &ast.Options{
@@ -49,7 +50,7 @@ func TestSourcePool(t *testing.T) {
 		TYPE:       "mock",
 	}, false)
 	contextLogger = conf.Log.WithField("rule", "mockRule2")
-	ctx = context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx = context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ = state.CreateStore("mockRule2", api.AtMostOnce)
 	n2.ctx = ctx.WithMeta("mockRule2", "test2", tempStore)
 

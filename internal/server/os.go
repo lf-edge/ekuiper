@@ -18,19 +18,17 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"github.com/lf-edge/ekuiper/internal"
 	"os"
 	"strings"
 )
 
-const EtcOsRelease string = "/etc/os-release"
-const UsrLibOsRelease string = "/usr/lib/os-release"
-
 // Read and return os-release, trying EtcOsRelease, followed by UsrLibOsRelease.
 // err will contain an error message if neither file exists or failed to parse
 func Read() (osrelease map[string]string, err error) {
-	osrelease, err = ReadFile(EtcOsRelease)
+	osrelease, err = ReadFile(internal.EtcOsRelease)
 	if err != nil {
-		osrelease, err = ReadFile(UsrLibOsRelease)
+		osrelease, err = ReadFile(internal.UsrLibOsRelease)
 	}
 	return
 }

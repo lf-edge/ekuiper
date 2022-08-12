@@ -21,8 +21,6 @@ import (
 	"sync"
 )
 
-const IdProperty = "topic"
-
 type pubConsumers struct {
 	count     int
 	consumers map[string]chan api.SourceTuple // The consumer channel list [sourceId]chan

@@ -17,6 +17,7 @@ package neuron
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/memory"
@@ -27,11 +28,6 @@ import (
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 	"sync"
 	"time"
-)
-
-const (
-	NeuronTopic = "$$neuron"
-	NeuronUrl   = "ipc:///tmp/neuron-ekuiper.ipc"
 )
 
 var (
@@ -56,7 +52,7 @@ func createOrGetConnection(sc api.StreamContext, url string) error {
 		}
 		sc.GetLogger().Infof("Neuron connected")
 		contextLogger := conf.Log.WithField("neuron_connection", 0)
-		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+		ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, contextLogger)
 		ruleId := "$$neuron_connection"
 		opId := "$$neuron_connection"
 		store, err := state.CreateStore(ruleId, 0)
@@ -65,7 +61,7 @@ func createOrGetConnection(sc api.StreamContext, url string) error {
 			return err
 		}
 		sctx := ctx.WithMeta(ruleId, opId, store)
-		memory.CreatePub(NeuronTopic)
+		memory.CreatePub(internal.NeuronTopic)
 		go run(sctx)
 	}
 	connectionCount++
@@ -76,7 +72,7 @@ func closeConnection(ctx api.StreamContext, url string) error {
 	m.Lock()
 	defer m.Unlock()
 	ctx.GetLogger().Infof("closeConnection count: %d", connectionCount)
-	memory.RemovePub(NeuronTopic)
+	memory.RemovePub(internal.NeuronTopic)
 	if connectionCount == 1 {
 		err := disconnect(url)
 		if err != nil {
@@ -129,7 +125,7 @@ func run(ctx api.StreamContext) {
 				ctx.GetLogger().Errorf("neuron decode message error %v", err)
 				continue
 			}
-			memory.Produce(ctx, NeuronTopic, result)
+			memory.Produce(ctx, internal.NeuronTopic, result)
 		} else if err == mangos.ErrClosed {
 			ctx.GetLogger().Infof("neuron connection closed, exit receiving loop")
 			return

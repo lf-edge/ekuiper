@@ -16,6 +16,7 @@ package meta
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 )
 
 func GetConnectionMeta(connectionName, language string) (ptrSourceProperty *uiSource, err error) {
@@ -23,9 +24,9 @@ func GetConnectionMeta(connectionName, language string) (ptrSourceProperty *uiSo
 	gSourcemetaLock.RLock()
 	defer gSourcemetaLock.RUnlock()
 
-	v, found := gSourcemetadata[connectionName+`.json`]
+	v, found := gSourcemetadata[connectionName+internal.JsonFileSuffix]
 	if !found {
-		return nil, fmt.Errorf(`%s%s`, getMsg(language, source, "not_found_plugin"), connectionName)
+		return nil, fmt.Errorf(`%s%s`, getMsg(language, internal.Source, "not_found_plugin"), connectionName)
 	}
 	ret := make(map[string][]field)
 	for kcfg, cfg := range v.ConfKeys {
@@ -54,7 +55,7 @@ func GetConnectionPlugins() (sources []*pluginfo) {
 
 		plugName := conf.GetPluginName()
 
-		uiSourceRepKey := plugName + `.json`
+		uiSourceRepKey := plugName + internal.JsonFileSuffix
 		gSourcemetaLock.RLock()
 		v, found := gSourcemetadata[uiSourceRepKey]
 		if !found {

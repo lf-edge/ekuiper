@@ -22,6 +22,7 @@ import (
 	"fmt"
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -33,7 +34,7 @@ import (
 
 var (
 	contextLogger = conf.Log.WithField("rule", "testEdgexSink")
-	ctx           = context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx           = context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 )
 
 func compareEvent(expected, actual *dtos.Event) bool {
@@ -599,7 +600,7 @@ func TestEdgeXTemplate_Apply(t1 *testing.T) {
 		json.Unmarshal([]byte(t.input), &payload)
 		dt := t.conf["dataTemplate"]
 		tf, _ := transform.GenTransform(cast.ToStringAlways(dt), "json", "")
-		vCtx := context.WithValue(ctx, context.TransKey, tf)
+		vCtx := context.WithValue(ctx, internal.TransKey, tf)
 		result, err := ems.produceEvents(vCtx, payload[0])
 		if !reflect.DeepEqual(t.error, testx.Errstring(err)) {
 			t1.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, t.input, t.error, err)

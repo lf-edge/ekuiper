@@ -15,6 +15,7 @@
 package conf
 
 import (
+	"github.com/lf-edge/ekuiper/internal"
 	"strings"
 	"testing"
 )
@@ -31,7 +32,7 @@ func TestAbsolutePath(t *testing.T) {
 			r: "data/",
 			a: "/var/lib/kuiper/data/",
 		}, {
-			r: logDir,
+			r: internal.LogDir,
 			a: "/var/log/kuiper",
 		}, {
 			r: "plugins",

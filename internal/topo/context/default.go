@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
@@ -29,8 +30,6 @@ import (
 	"text/template"
 	"time"
 )
-
-const LoggerKey = "$$logger"
 
 type DefaultContext struct {
 	ruleId     string
@@ -84,7 +83,7 @@ func (c *DefaultContext) GetContext() context.Context {
 }
 
 func (c *DefaultContext) GetLogger() api.Logger {
-	l, ok := c.ctx.Value(LoggerKey).(*logrus.Entry)
+	l, ok := c.ctx.Value(internal.LoggerKey).(*logrus.Entry)
 	if l != nil && ok {
 		return l
 	}

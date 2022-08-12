@@ -17,6 +17,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
@@ -133,7 +134,7 @@ func (p *sourcePool) addInstance(k string, node *SourceNode, source api.Source) 
 	s, ok := p.registry[k]
 	if !ok {
 		contextLogger := conf.Log.WithField("source_pool", k)
-		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+		ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, contextLogger)
 		ruleId := "$$source_pool_" + k
 		opId := "source_pool_" + k
 		store, err := state.CreateStore("source_pool_"+k, 0)
@@ -142,7 +143,7 @@ func (p *sourcePool) addInstance(k string, node *SourceNode, source api.Source) 
 			return nil, err
 		}
 		sctx, cancel := ctx.WithMeta(ruleId, opId, store).WithCancel()
-		sctx = kctx.WithValue(sctx.(*kctx.DefaultContext), kctx.DecodeKey, node.ctx.Value(kctx.DecodeKey))
+		sctx = kctx.WithValue(sctx.(*kctx.DefaultContext), internal.DecodeKey, node.ctx.Value(internal.DecodeKey))
 		si, err := start(sctx, node, source)
 		if err != nil {
 			return nil, err
@@ -326,7 +327,7 @@ func start(poolCtx api.StreamContext, node *SourceNode, s api.Source) (*sourceIn
 	if poolCtx == nil {
 		ctx = node.ctx
 		if rw, ok := s.(api.Rewindable); ok {
-			if offset, err := ctx.GetState(OffsetKey); err != nil {
+			if offset, err := ctx.GetState(internal.OffsetKey); err != nil {
 				return nil, err
 			} else if offset != nil {
 				ctx.GetLogger().Infof("Source rewind from %v", offset)

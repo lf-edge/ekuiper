@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -86,7 +87,7 @@ func TestExec(t *testing.T) {
 		t.Fatal("builtin not found")
 	}
 	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
 	var nilResult ResultCols
@@ -197,7 +198,7 @@ func TestExecIgnoreNull(t *testing.T) {
 		t.Fatal("builtin not found")
 	}
 	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
 	var nilResult ResultCols

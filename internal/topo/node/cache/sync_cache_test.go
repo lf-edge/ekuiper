@@ -16,6 +16,7 @@ package cache
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -191,7 +192,7 @@ func TestRun(t *testing.T) {
 	deleteCachedb()
 	for i, tt := range tests {
 		contextLogger := conf.Log.WithField("rule", fmt.Sprintf("TestRun-%d", i))
-		ctx, cancel := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta(fmt.Sprintf("rule%d", i), fmt.Sprintf("op%d", i), tempStore).WithCancel()
+		ctx, cancel := context.WithValue(context.Background(), internal.LoggerKey, contextLogger).WithMeta(fmt.Sprintf("rule%d", i), fmt.Sprintf("op%d", i), tempStore).WithCancel()
 		stats, err := metric.NewStatManager(ctx, "sink")
 		if err != nil {
 			t.Fatal(err)
@@ -214,7 +215,7 @@ func TestRun(t *testing.T) {
 		cancel()
 
 		// send the second half data
-		ctx, cancel = context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta(fmt.Sprintf("rule%d", i), fmt.Sprintf("op%d", i), tempStore).WithCancel()
+		ctx, cancel = context.WithValue(context.Background(), internal.LoggerKey, contextLogger).WithMeta(fmt.Sprintf("rule%d", i), fmt.Sprintf("op%d", i), tempStore).WithCancel()
 		sc = NewSyncCache(ctx, in, errCh, stats, tt.sconf, 100)
 		for i := tt.stopPt; i < len(tt.dataIn); i++ {
 			in <- tt.dataIn[i]

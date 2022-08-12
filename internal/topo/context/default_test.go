@@ -16,6 +16,7 @@ package context
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -247,7 +248,7 @@ func TestTransition(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	ctx := Background().WithMeta("testTransRule", "op1", &state.MemoryStore{}).(*DefaultContext)
-	nc := WithValue(ctx, TransKey, mockFunc)
+	nc := WithValue(ctx, internal.TransKey, mockFunc)
 	for i, tt := range tests {
 		r, _, _ := nc.TransformOutput(tt.data)
 		if !reflect.DeepEqual(tt.r, r) {

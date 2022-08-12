@@ -17,6 +17,7 @@ package memory
 import (
 	"fmt"
 	"github.com/gdexlab/go-render/render"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -37,11 +38,11 @@ func TestSharedInmemoryNode(t *testing.T) {
 	reset()
 	id := "test_id"
 	sinkProps := make(map[string]interface{})
-	sinkProps[IdProperty] = id
+	sinkProps[internal.Topic] = id
 	src := GetSource()
 	snk := GetSink()
 	contextLogger := conf.Log.WithField("rule", "test")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 	consumer := make(chan api.SourceTuple)
 	errorChannel := make(chan error)
 	srcProps := make(map[string]interface{})
@@ -56,7 +57,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	srcProps[IdProperty] = id
+	srcProps[internal.Topic] = id
 	err = src.Configure(id, srcProps)
 	if err != nil {
 		t.Error(err)
@@ -432,7 +433,7 @@ func TestMultipleTopics(t *testing.T) {
 	)
 
 	contextLogger := conf.Log.WithField("rule", "test")
-	ctx, cancel := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithCancel()
+	ctx, cancel := context.WithValue(context.Background(), internal.LoggerKey, contextLogger).WithCancel()
 	consumer := make(chan api.SourceTuple)
 	errorChannel := make(chan error)
 

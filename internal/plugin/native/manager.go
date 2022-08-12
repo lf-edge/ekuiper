@@ -20,6 +20,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
@@ -44,8 +45,6 @@ import (
 
 // Manager Initialized in the binder
 var manager *Manager
-
-const DELETED = "$deleted"
 
 //Manager is append only because plugin cannot delete or reload. To delete a plugin, restart the server to reindex
 type Manager struct {
@@ -227,12 +226,12 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
 	}
-	if !httpx.IsValidUrl(uri) || !strings.HasSuffix(uri, ".zip") {
+	if !httpx.IsValidUrl(uri) || !strings.HasSuffix(uri, internal.ZipFileSuffix) {
 		return fmt.Errorf("invalid uri %s", uri)
 	}
 
 	if v, ok := rr.get(t, name); ok {
-		if v == DELETED {
+		if v == internal.Delete {
 			return fmt.Errorf("invalid name %s: the plugin is marked as deleted but Kuiper is not restarted for the change to take effect yet", name)
 		} else {
 			return fmt.Errorf("invalid name %s: duplicate", name)
@@ -240,7 +239,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	}
 
 	var err error
-	zipPath := path.Join(rr.pluginDir, name+".zip")
+	zipPath := path.Join(rr.pluginDir, name+internal.ZipFileSuffix)
 
 	//clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
@@ -282,15 +281,15 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 
 	switch t {
 	case plugin2.SINK:
-		if err := meta.ReadSinkMetaFile(path.Join(rr.etcDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
+		if err := meta.ReadSinkMetaFile(path.Join(rr.etcDir, plugin2.PluginTypes[t], name+internal.JsonFileSuffix), true); nil != err {
 			conf.Log.Errorf("readSinkFile:%v", err)
 		}
 	case plugin2.SOURCE:
-		if err := meta.ReadSourceMetaFile(path.Join(rr.etcDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
+		if err := meta.ReadSourceMetaFile(path.Join(rr.etcDir, plugin2.PluginTypes[t], name+internal.JsonFileSuffix), true); nil != err {
 			conf.Log.Errorf("readSourceFile:%v", err)
 		}
 	case plugin2.FUNCTION:
-		if err := meta.ReadFuncMetaFile(path.Join(rr.etcDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
+		if err := meta.ReadFuncMetaFile(path.Join(rr.etcDir, plugin2.PluginTypes[t], name+internal.JsonFileSuffix), true); nil != err {
 			conf.Log.Errorf("readFuncFile:%v", err)
 		}
 	}
@@ -339,7 +338,7 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 	}
 	switch t {
 	case plugin2.SOURCE:
-		paths = append(paths, path.Join(rr.etcDir, plugin2.PluginTypes[t], name+".yaml"))
+		paths = append(paths, path.Join(rr.etcDir, plugin2.PluginTypes[t], name+internal.YamlFileSuffix))
 		meta.UninstallSource(name)
 	case plugin2.SINK:
 		meta.UninstallSink(name)
@@ -374,7 +373,7 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 	if len(results) > 0 {
 		return fmt.Errorf(strings.Join(results, "\n"))
 	} else {
-		rr.store(t, name, DELETED)
+		rr.store(t, name, internal.Delete)
 		if stop {
 			go func() {
 				time.Sleep(1 * time.Second)
@@ -432,7 +431,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 	var yamlFile, yamlPath, version string
 	expFiles := 1
 	if t == plugin2.SOURCE {
-		yamlFile = name + ".yaml"
+		yamlFile = name + internal.YamlFileSuffix
 		yamlPath = path.Join(rr.etcDir, plugin2.PluginTypes[t], yamlFile)
 		expFiles = 2
 	}
@@ -453,7 +452,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			}
 			revokeFiles = append(revokeFiles, yamlPath)
 			filenames = append(filenames, yamlPath)
-		} else if fileName == name+".json" {
+		} else if fileName == name+internal.JsonFileSuffix {
 			jsonPath := path.Join(rr.etcDir, plugin2.PluginTypes[t], fileName)
 			if err := filex.UnzipTo(file, jsonPath); nil != err {
 				conf.Log.Errorf("Failed to decompress the metadata %s file", fileName)
@@ -470,7 +469,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			revokeFiles = append(revokeFiles, soPath)
 			_, version = parseName(fileName)
 		} else if strings.HasPrefix(fileName, "etc/") {
-			err = filex.UnzipTo(file, path.Join(rr.etcDir, plugin2.PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
+			err = filex.UnzipTo(file, path.Join(rr.etcDir, plugin2.PluginTypes[t], strings.Replace(fileName, internal.EtcDir, name, 1)))
 			if err != nil {
 				return version, err
 			}
@@ -652,7 +651,7 @@ func (rr *Manager) getSoFilePath(t plugin2.PluginType, name string, isSoName boo
 		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("invalid name %s: not exist", soname))
 	}
 
-	soFile := soname + ".so"
+	soFile := soname + internal.SoFileSuffix
 	if v != "" {
 		soFile = fmt.Sprintf("%s@%s.so", soname, v)
 	}
@@ -667,7 +666,7 @@ func (rr *Manager) getSoFilePath(t plugin2.PluginType, name string, isSoName boo
 }
 
 func parseName(n string) (string, string) {
-	result := strings.Split(n, ".so")
+	result := strings.Split(n, internal.SoFileSuffix)
 	result = strings.Split(result[0], "@")
 	name := lcFirst(result[0])
 	if len(result) > 1 {

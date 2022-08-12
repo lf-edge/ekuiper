@@ -17,6 +17,7 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -63,7 +64,7 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 		return err
 	}
 	c := Command{
-		Cmd: CMD_START,
+		Cmd: internal.Start,
 		Arg: string(arg),
 	}
 	jsonArg, err := json.Marshal(c)
@@ -84,7 +85,7 @@ func (i *PluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
 		return err
 	}
 	c := Command{
-		Cmd: CMD_STOP,
+		Cmd: internal.Stop,
 		Arg: string(arg),
 	}
 	jsonArg, err := json.Marshal(c)

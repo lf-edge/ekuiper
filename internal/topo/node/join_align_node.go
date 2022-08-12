@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -30,8 +31,6 @@ type JoinAlignNode struct {
 	// states
 	batch map[string][]xsql.TupleRow
 }
-
-const BatchKey = "$$batchInputs"
 
 func NewJoinAlignNode(name string, emitters []string, options *api.RuleOption) (*JoinAlignNode, error) {
 	batch := make(map[string][]xsql.TupleRow, len(emitters))
@@ -70,7 +69,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	go func() {
 		err := infra.SafeRun(func() error {
 			// restore batch state
-			if s, err := ctx.GetState(BatchKey); err == nil {
+			if s, err := ctx.GetState(internal.BatchKey); err == nil {
 				switch st := s.(type) {
 				case map[string][]xsql.TupleRow:
 					n.batch = st
@@ -128,7 +127,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 								break
 							} else {
 								n.batch[emitter] = d.Content
-								ctx.PutState(BatchKey, n.batch)
+								ctx.PutState(internal.BatchKey, n.batch)
 							}
 						}
 					default:

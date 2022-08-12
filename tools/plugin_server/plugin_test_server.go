@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
@@ -84,7 +85,7 @@ func main() {
 	}
 	defer ins.Stop()
 	runtime.GetPluginInsManager().AddPluginIns(testingPlugin.Name, ins)
-	c := context.WithValue(context.Background(), context.LoggerKey, conf.Log)
+	c := context.WithValue(context.Background(), internal.LoggerKey, conf.Log)
 	ctx = c.WithMeta("rule1", "op1", &state.MemoryStore{}).WithInstance(1)
 	server := createRestServer("127.0.0.1", 33333)
 	server.ListenAndServe()
@@ -128,7 +129,7 @@ func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch ctrl.PluginType {
-	case runtime.TYPE_SOURCE:
+	case internal.Source:
 		source, err := m.Source(ctrl.SymbolName)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("running source %s %v", ctrl.SymbolName, err), http.StatusBadRequest)
@@ -160,7 +161,7 @@ func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
 		}()
 		source.Configure("", ctrl.Config)
 		go source.Open(newctx, consumer, errCh)
-	case runtime.TYPE_SINK:
+	case internal.Sink:
 		sink, err := m.Sink(ctrl.SymbolName)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("running sink %s %v", ctrl.SymbolName, err), http.StatusBadRequest)
@@ -199,7 +200,7 @@ func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}()
-	case runtime.TYPE_FUNC:
+	case internal.Func:
 		f, err := m.Function(ctrl.SymbolName)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("running function %s %v", ctrl.SymbolName, err), http.StatusBadRequest)

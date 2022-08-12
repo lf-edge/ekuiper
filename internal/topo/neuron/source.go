@@ -16,6 +16,7 @@ package neuron
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/topo/memory"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -29,7 +30,7 @@ type source struct {
 }
 
 func (s *source) Configure(_ string, props map[string]interface{}) error {
-	s.url = NeuronUrl
+	s.url = internal.NeuronUrl
 	s.bufferLength = 1024
 	if c, ok := props["bufferLength"]; ok {
 		if bl, err := cast.ToInt(c, cast.STRICT); err != nil || bl > 0 {
@@ -46,8 +47,8 @@ func (s *source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, er
 		return
 	}
 	defer closeConnection(ctx, s.url)
-	ch := memory.CreateSub(NeuronTopic, nil, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), s.bufferLength)
-	defer memory.CloseSourceConsumerChannel(NeuronTopic, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
+	ch := memory.CreateSub(internal.NeuronTopic, nil, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), s.bufferLength)
+	defer memory.CloseSourceConsumerChannel(internal.NeuronTopic, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
 	for {
 		select {
 		case v, opened := <-ch:

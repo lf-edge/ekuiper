@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -64,8 +65,6 @@ func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.
 	}
 }
 
-const OffsetKey = "$$offset"
-
 func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	m.ctx = ctx
 	logger := ctx.GetLogger()
@@ -110,7 +109,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				logger.Warnf(msg)
 				return fmt.Errorf(msg)
 			}
-			ctx = context.WithValue(ctx.(*context.DefaultContext), context.DecodeKey, converter)
+			ctx = context.WithValue(ctx.(*context.DefaultContext), internal.DecodeKey, converter)
 			m.reset()
 			logger.Infof("open source node with props %v, concurrency: %d, bufferLength: %d", conf.Printable(m.props), m.concurrency, m.bufferLength)
 			for i := 0; i < m.concurrency; i++ { // workers
@@ -175,7 +174,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 									if offset, err := rw.GetOffset(); err != nil {
 										infra.DrainError(ctx, err, errCh)
 									} else {
-										err = ctx.PutState(OffsetKey, offset)
+										err = ctx.PutState(internal.OffsetKey, offset)
 										if err != nil {
 											return err
 										}

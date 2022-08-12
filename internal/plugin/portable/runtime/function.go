@@ -17,6 +17,7 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -51,9 +52,9 @@ func NewPortableFunc(symbolName string, reg *PluginMeta) (*PortableFunc, error) 
 	// Start symbol
 	c := &Control{
 		SymbolName: symbolName,
-		PluginType: TYPE_FUNC,
+		PluginType: internal.Func,
 	}
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, conf.Log)
+	ctx := kctx.WithValue(kctx.Background(), internal.LoggerKey, conf.Log)
 	err = ins.StartSymbol(ctx, c)
 	if err != nil {
 		return nil, err

@@ -15,6 +15,7 @@
 package mock
 
 import (
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -23,7 +24,7 @@ import (
 
 func newMockContext(ruleId string, opId string) api.StreamContext {
 	contextLogger := conf.Log.WithField("rule", ruleId)
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore(ruleId, api.AtMostOnce)
 	return ctx.WithMeta(ruleId, opId, tempStore)
 }

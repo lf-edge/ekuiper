@@ -21,6 +21,7 @@ package server
 import (
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"net/http"
@@ -115,7 +116,7 @@ func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (err error, re
 		url := strings.Join(tmp, "/")
 
 		for _, p := range plugins {
-			result[p] = url + "/" + p + "_" + arch + ".zip"
+			result[p] = url + "/" + p + "_" + arch + internal.ZipFileSuffix
 		}
 	}
 	return

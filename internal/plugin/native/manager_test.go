@@ -17,6 +17,7 @@ package native
 import (
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/plugin"
@@ -290,7 +291,7 @@ func checkFile(pluginDir string, etcDir string, t plugin.PluginType, name string
 		return err
 	}
 	if t == plugin.SOURCE {
-		etcPath := path.Join(etcDir, plugin.PluginTypes[t], name+".yaml")
+		etcPath := path.Join(etcDir, plugin.PluginTypes[t], name+internal.YamlFileSuffix)
 		_, err = os.Stat(etcPath)
 		if err != nil {
 			return err

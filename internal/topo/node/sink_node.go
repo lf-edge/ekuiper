@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -113,7 +114,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				logger.Warnf(msg)
 				return fmt.Errorf(msg)
 			}
-			ctx = context.WithValue(ctx.(*context.DefaultContext), context.TransKey, tf)
+			ctx = context.WithValue(ctx.(*context.DefaultContext), internal.TransKey, tf)
 
 			m.reset()
 			logger.Infof("open sink node %d instances", m.concurrency)

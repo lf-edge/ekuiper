@@ -17,6 +17,7 @@ package operator
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -115,7 +116,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 
 	defer conf.CloseLogger()
 	contextLogger := conf.Log.WithField("rule", "TestPreprocessor_Apply")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		pp := &TableProcessor{isBatchInput: true, emitterName: "demo"}
 		pp.streamFields = convertFields(tt.stmt.StreamFields)

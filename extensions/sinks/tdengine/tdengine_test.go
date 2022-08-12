@@ -16,6 +16,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -225,7 +226,7 @@ func TestBuildSql(t *testing.T) {
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "mockRule0")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("testTD", "op1", &state.MemoryStore{})
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, contextLogger).WithMeta("testTD", "op1", &state.MemoryStore{})
 	for i, test := range tests {
 		sql, err := test.conf.buildSql(ctx, test.data)
 		if !reflect.DeepEqual(test.error, testx.Errstring(err)) {

@@ -16,6 +16,7 @@ package meta
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"io/ioutil"
@@ -62,7 +63,7 @@ func UninstallSource(name string) {
 	gSourcemetaLock.RLock()
 	defer gSourcemetaLock.RUnlock()
 
-	if v, ok := gSourcemetadata[name+".json"]; ok {
+	if v, ok := gSourcemetadata[name+internal.JsonFileSuffix]; ok {
 		if nil != v.About {
 			v.About.Installed = false
 		}
@@ -90,8 +91,8 @@ func ReadSourceMetaFile(filePath string, installed bool) error {
 	gSourcemetadata[fileName] = meta
 	gSourcemetaLock.Unlock()
 
-	loadConfigOperatorForSource(strings.TrimSuffix(fileName, `.json`))
-	loadConfigOperatorForConnection(strings.TrimSuffix(fileName, `.json`))
+	loadConfigOperatorForSource(strings.TrimSuffix(fileName, internal.JsonFileSuffix))
+	loadConfigOperatorForConnection(strings.TrimSuffix(fileName, internal.JsonFileSuffix))
 
 	return err
 }
@@ -115,9 +116,9 @@ func ReadSourceMetaDir(checker InstallChecker) error {
 
 	for _, info := range infos {
 		fileName := info.Name()
-		if strings.HasSuffix(fileName, ".json") {
+		if strings.HasSuffix(fileName, internal.JsonFileSuffix) {
 			filePath := path.Join(dir, fileName)
-			if err = ReadSourceMetaFile(filePath, checker(strings.TrimSuffix(fileName, ".json"))); nil != err {
+			if err = ReadSourceMetaFile(filePath, checker(strings.TrimSuffix(fileName, internal.JsonFileSuffix))); nil != err {
 				return err
 			}
 			conf.Log.Infof("Loading metadata file for source : %s", fileName)
@@ -131,9 +132,9 @@ func GetSourceMeta(sourceName, language string) (ptrSourceProperty *uiSource, er
 	gSourcemetaLock.RLock()
 	defer gSourcemetaLock.RUnlock()
 
-	v, found := gSourcemetadata[sourceName+`.json`]
+	v, found := gSourcemetadata[sourceName+internal.JsonFileSuffix]
 	if !found {
-		return nil, fmt.Errorf(`%s%s`, getMsg(language, source, "not_found_plugin"), sourceName)
+		return nil, fmt.Errorf(`%s%s`, getMsg(language, internal.Source, "not_found_plugin"), sourceName)
 	}
 
 	ui := new(uiSource)
@@ -147,7 +148,7 @@ func GetSourcesPlugins() (sources []*pluginfo) {
 
 	for fileName, v := range gSourcemetadata {
 		node := new(pluginfo)
-		node.Name = strings.TrimSuffix(fileName, `.json`)
+		node.Name = strings.TrimSuffix(fileName, internal.JsonFileSuffix)
 		if nil == v {
 			continue
 		}

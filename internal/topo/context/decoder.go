@@ -16,13 +16,12 @@ package context
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-const DecodeKey = "$$decode"
-
 func (c *DefaultContext) Decode(data []byte) (map[string]interface{}, error) {
-	v := c.Value(DecodeKey)
+	v := c.Value(internal.DecodeKey)
 	f, ok := v.(message.Converter)
 	if ok {
 		t, err := f.Decode(data)

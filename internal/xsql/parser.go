@@ -17,6 +17,7 @@ package xsql
 import (
 	"fmt"
 	"github.com/golang-collections/collections/stack"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
@@ -453,7 +454,7 @@ func (p *Parser) parseField() (*ast.Field, error) {
 		}
 	}
 	if field.Name == "" && field.AName == "" {
-		field.Name = DEFAULT_FIELD_NAME_PREFIX + strconv.Itoa(p.f)
+		field.Name = internal.KuiperFieldPREFIX + strconv.Itoa(p.f)
 		p.f += 1
 	}
 

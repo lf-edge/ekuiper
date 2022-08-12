@@ -16,6 +16,7 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -101,7 +102,7 @@ func TestPluginInstance(t *testing.T) {
 			ej: "{\"cmd\":\"stop\",\"arg\":\"{\\\"symbolName\\\":\\\"symbol3\\\",\\\"meta\\\":{\\\"ruleId\\\":\\\"rule1\\\",\\\"opId\\\":\\\"op3\\\",\\\"instanceId\\\":0},\\\"pluginType\\\":\\\"sinks\\\",\\\"config\\\":{\\\"def\\\":{\\\"ci\\\":\\\"aaa\\\"}}}\"}",
 		},
 	}
-	ctx := context.WithValue(context.Background(), context.LoggerKey, conf.Log)
+	ctx := context.WithValue(context.Background(), internal.LoggerKey, conf.Log)
 	sctx := ctx.WithMeta("rule1", "op1", &state.MemoryStore{}).WithInstance(1)
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	var wg sync.WaitGroup
