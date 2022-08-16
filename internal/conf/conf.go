@@ -48,7 +48,7 @@ type SinkConf struct {
 }
 
 // Validate the configuration and reset to the default value for invalid values.
-func (sc SinkConf) Validate() error {
+func (sc *SinkConf) Validate() error {
 	e := make(errorx.MultiError)
 	if sc.MemoryCacheThreshold < 0 {
 		sc.MemoryCacheThreshold = 1024
@@ -198,6 +198,9 @@ func InitConf() {
 
 	if Config.Portable.PythonBin == "" {
 		Config.Portable.PythonBin = "python"
+	}
+	if Config.Sink == nil {
+		Config.Sink = &SinkConf{}
 	}
 	_ = Config.Sink.Validate()
 }
