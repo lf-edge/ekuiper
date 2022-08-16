@@ -38,7 +38,7 @@ var (
 	m               sync.RWMutex
 	connectionCount int
 	sock            mangos.Socket
-	sendTimeout     int
+	sendTimeout     = 100
 )
 
 // createOrGetNeuronConnection creates a new neuron connection or returns an existing one
@@ -105,7 +105,7 @@ func connect(url string) error {
 	//sock.SetOption(mangos.OptionReadQLen, 100)
 	//sock.SetOption(mangos.OptionBestEffort, false)
 	if err = sock.DialOptions(url, map[string]interface{}{
-		mangos.OptionDialAsynch:       false, // will reports error after max reconnect time
+		mangos.OptionDialAsynch:       true, // will not report error and keep connecting
 		mangos.OptionMaxReconnectTime: 5 * time.Second,
 		mangos.OptionReconnectTime:    100 * time.Millisecond,
 	}); err != nil {

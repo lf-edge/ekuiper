@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"sort"
 )
 
@@ -133,8 +134,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, el map[string]interface{})
 				t.Value = el[k]
 				err := doPublish(ctx, t)
 				if err != nil {
-					ctx.GetLogger().Error(err)
-					continue
+					return err
 				}
 			}
 		} else {
@@ -143,8 +143,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, el map[string]interface{})
 				t.Value = v
 				err := doPublish(ctx, t)
 				if err != nil {
-					ctx.GetLogger().Error(err)
-					continue
+					return err
 				}
 			}
 		}
@@ -162,7 +161,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, el map[string]interface{})
 			}
 			err := doPublish(ctx, t)
 			if err != nil {
-				ctx.GetLogger().Error(err)
+				return err
 			}
 		}
 	}
@@ -176,7 +175,7 @@ func doPublish(ctx api.StreamContext, t *neuronTemplate) error {
 	}
 	err = publish(ctx, r)
 	if err != nil {
-		return fmt.Errorf("Error publish the tag payload %s: %v", t.TagName, err)
+		return fmt.Errorf("%s: Error publish the tag payload %s: %v", errorx.IOErr, t.TagName, err)
 	}
 	ctx.GetLogger().Debugf("Publish %s", r)
 	return nil
