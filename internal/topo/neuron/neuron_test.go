@@ -105,7 +105,6 @@ func TestMultiSourceSink(t *testing.T) {
 		"groupName": "grp",
 	})
 
-	server, ch := mockNeuron(true, true)
 	wg := sync.WaitGroup{}
 	wg.Add(3)
 	go func() {
@@ -116,7 +115,8 @@ func TestMultiSourceSink(t *testing.T) {
 		mock.TestSourceOpen(s2, exp, t)
 		wg.Done()
 	}()
-
+	// let the server start after the rule to test async dial behavior
+	server, ch := mockNeuron(true, true)
 	data := []interface{}{
 		map[string]interface{}{
 			"temperature": 22,

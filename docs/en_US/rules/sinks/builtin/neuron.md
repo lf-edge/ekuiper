@@ -1,6 +1,6 @@
 # Neuron action
 
-The action is used to publish result to the local neuron instance. Notice that, the sink is bound to the local neuron only which must be able to communicate through nanomsg ipc protocol without network. In the eKuiper side, all neuron source and sink instances share the same connection.
+The action is used to publish result to the local neuron instance. Notice that, the sink is bound to the local neuron only which must be able to communicate through nanomsg ipc protocol without network. In the eKuiper side, all neuron source and sink instances share the same connection. Notice that, the dial to neuron is async which will run in the background and always redial when the previous attempt fails, which means that the rule using neuron sink will not see an error even when neuron is down. Additionally, there is a send queue of 128 messages in the nanomsg client, thus the neuron sink can have 128 messages send out even when neuron is down. The rule will only start to get timeout errors after 128 queued messages. Once the connection is restored, the queued messages will be sent out automatically.
 
 | Property name | Optional | Description                                                                                                                             |
 |---------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------|
