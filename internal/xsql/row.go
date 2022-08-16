@@ -18,6 +18,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
+	"sync"
 )
 
 // The original message map may be big. Make sure it is immutable so that never make a copy of it.
@@ -191,6 +192,7 @@ type Tuple struct {
 	Metadata  Metadata // immutable
 
 	AffiliateRow
+	lock sync.Mutex
 
 	cachedMap map[string]interface{} // clone of the row and cached for performance
 }
@@ -328,6 +330,8 @@ func (t *Tuple) Clone() TupleRow {
 
 // ToMap should only use in sink.
 func (t *Tuple) ToMap() map[string]interface{} {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 	if t.AffiliateRow.IsEmpty() {
 		return t.Message
 	}
