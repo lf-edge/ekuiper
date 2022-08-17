@@ -46,9 +46,3 @@ RUN case $(arch) in \
     && tar -C /usr/local -xzf go$GO_VERSION.linux-$ARCH.tar.gz
 
 ENV PATH=$PATH:/usr/local/go/bin
-
-COPY . /go/kuiper
-
-WORKDIR /go/kuiper
-
-ENV KUIPER_SOURCE=/go/kuiper
