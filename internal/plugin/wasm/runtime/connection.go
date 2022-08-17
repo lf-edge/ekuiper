@@ -122,7 +122,7 @@ func (r *NanomsgReqRepChannel) Close() error {
 }
 
 func (r *NanomsgReqRepChannel) Req(arg []byte) ([]byte, error) {
-	fmt.Println("[plugin][wasm][runtime][connection] Req")
+	fmt.Println("[plugin][wasm][runtime][connection.go] Req")
 	r.Lock()
 	defer r.Unlock()
 	if err := r.sock.Send(arg); err != nil {

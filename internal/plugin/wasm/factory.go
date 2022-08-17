@@ -13,15 +13,15 @@ var funcInsMap = &sync.Map{}
 
 func (m *Manager) Function(name string) (api.Function, error) {
 	fmt.Println("[plugin][wasm][factory.go] start")
-	ins, ok := funcInsMap.Load(name)
-	if ok {
-		return ins.(api.Function), nil
-	}
+	//ins, ok := funcInsMap.Load(name)
+	//if ok {
+	//	return ins.(api.Function), nil
+	//}
 	meta, ok := m.GetPluginMeta(plugin.FUNCTION, name)
 	if !ok {
 		return nil, nil
 	}
-	f, err := runtime.NewPortableFunc(name, meta)
+	f, err := runtime.NewWasmFunc(name, meta)
 	if err != nil {
 		conf.Log.Errorf("Error creating function %v", err)
 		return nil, err

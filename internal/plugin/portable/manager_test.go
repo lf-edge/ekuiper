@@ -47,30 +47,33 @@ func TestManager_Install(t *testing.T) {
 		v   string
 		err error
 	}{
-		{ // 0
-			n:   "",
-			u:   "",
-			err: errors.New("invalid name : should not be empty"),
-		}, { // 1
+		//{ // 0
+		//	n:   "",
+		//	u:   "",
+		//	err: errors.New("invalid name : should not be empty"),
+		//},
+		{ // 1
 			n:   "zipMissJson",
 			u:   endpoint + "/functions/misc.zip",
 			err: errors.New("fail to install plugin: missing or invalid json file zipMissJson.json"),
-		}, { // 2
-			n:   "urlerror",
-			u:   endpoint + "/sinks/nozip",
-			err: errors.New("invalid uri " + endpoint + "/sinks/nozip"),
-		}, { // 3
-			n:   "wrong",
-			u:   endpoint + "/portables/wrong.zip",
-			err: errors.New("fail to install plugin: missing mirror.exe"),
-		}, { // 4
-			n:   "wrongname",
-			u:   endpoint + "/portables/mirror.zip",
-			err: errors.New("fail to install plugin: missing or invalid json file wrongname.json"),
-		}, { // 5
-			n: "mirror2",
-			u: endpoint + "/portables/mirror.zip",
 		},
+		//{ // 2
+		//	n:   "urlerror",
+		//	u:   endpoint + "/sinks/nozip",
+		//	err: errors.New("invalid uri " + endpoint + "/sinks/nozip"),
+		//}, { // 3
+		//	n:   "wrong",
+		//	u:   endpoint + "/portables/wrong.zip",
+		//	err: errors.New("fail to install plugin: missing mirror.exe"),
+		//}, { // 4
+		//	n:   "wrongname",
+		//	u:   endpoint + "/portables/mirror.zip",
+		//	err: errors.New("fail to install plugin: missing or invalid json file wrongname.json"),
+		//},
+		//{ // 5
+		//	n: "mirror2",
+		//	u: endpoint + "/portables/mirror.zip",
+		//},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))

@@ -40,10 +40,10 @@ import (
 // EDIT HERE: Define the plugins that you want to test.
 var testingPlugin = &wasm.PluginInfo{
 	PluginMeta: runtime.PluginMeta{
-		Name:       "fib",
-		Version:    "v1",
-		Language:   "go",
-		Executable: "fib",
+		Name:     "fib",
+		Version:  "v1",
+		Language: "go",
+		//Executable: "fib",
 		WasmFile:   "/home/erfenjiao/ekuiper/sdk/go/example/fib/fibonacci.wasm",
 		WasmEngine: "wasmedge",
 	},
@@ -63,6 +63,7 @@ var (
 )
 
 func main() {
+
 	var err error
 	fmt.Println("[wasm_test_server.go] start:")
 	m, err = wasm.MockManager(map[string]*wasm.PluginInfo{testingPlugin.Name: testingPlugin})
@@ -70,39 +71,45 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("[wasm_test_server.go] testingPlugin: ", testingPlugin)
-	ins, err := startPluginIns(testingPlugin)
-	fmt.Println("[wasm_test_server.go] ins: ", ins)
-	if err != nil {
-		fmt.Println("err: ", err)
-		panic(err)
-	}
-	defer ins.Stop()
-	fmt.Println("[wasm_test_server.go][main] AddPluginIns: ")
-	runtime.GetPluginInsManager().AddPluginIns(testingPlugin.Name, ins)
+	//fmt.Println("[wasm_test_server.go] testingPlugin: ", testingPlugin)
+	//ins, err := startPluginIns(testingPlugin)
+	//fmt.Println("[wasm_test_server.go] ins: ", ins)
+	//if err != nil {
+	//	fmt.Println("err: ", err)
+	//	panic(err)
+	//}
+	//defer ins.Stop()
+	//fmt.Println("[wasm_test_server.go][main] AddPluginIns: ")
+	//runtime.GetPluginInsManager().AddPluginIns(testingPlugin.Name, ins)
 	c := context.WithValue(context.Background(), context.LoggerKey, conf.Log)
+	/*
+		func WithValue(parent *DefaultContext, key, val interface{}) *DefaultContext {
+			parent.ctx = context.WithValue(parent.ctx, key, val)
+			return parent
+		}
+	*/
 	ctx = c.WithMeta("rule1", "op1", &state.MemoryStore{}).WithInstance(1)
 	fmt.Println("[wasm_test_server.go][main] creatRestServe:")
 	server := createRestServer("127.0.0.1", 33333)
 	server.ListenAndServe()
 }
 
-func startPluginIns(info *wasm.PluginInfo) (*runtime.PluginIns, error) {
-	fmt.Println("[wasm_test_server.go][startPluginIns] start:")
-	fmt.Println("[wasm_test_server.go][startPluginIns] info: ", info)
-	conf.Log.Infof("create control channel")
-	ctrlChan, err := runtime.CreateControlChannel(info.Name)
-	if err != nil {
-		return nil, fmt.Errorf("can't create new control channel: %s", err.Error())
-	}
-	conf.Log.Println("waiting handshake")
-	err = ctrlChan.Handshake()
-	if err != nil {
-		return nil, fmt.Errorf("plugin %s control handshake error: %v", info.Name, err)
-	}
-	conf.Log.Println("plugin start running")
-	return runtime.NewPluginIns(info.Name, ctrlChan, nil), nil
-}
+//func startPluginIns(info *wasm.PluginInfo) (*runtime.PluginIns, error) {
+//	fmt.Println("[wasm_test_server.go][startPluginIns] start:")
+//	fmt.Println("[wasm_test_server.go][startPluginIns] info: ", info)
+//	conf.Log.Infof("create control channel")
+//	ctrlChan, err := runtime.CreateControlChannel(info.Name)
+//	if err != nil {
+//		return nil, fmt.Errorf("can't create new control channel: %s", err.Error())
+//	}
+//	conf.Log.Println("waiting handshake")
+//	err = ctrlChan.Handshake()
+//	if err != nil {
+//		return nil, fmt.Errorf("plugin %s control handshake error: %v", info.Name, err)
+//	}
+//	conf.Log.Println("plugin start running")
+//	return runtime.NewPluginIns(info.Name, ctrlChan, nil), nil
+//}
 
 func createRestServer(ip string, port int) *http.Server {
 	r := mux.NewRouter()

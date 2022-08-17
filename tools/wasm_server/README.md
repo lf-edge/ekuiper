@@ -1,4 +1,4 @@
-wasm plugin 运行测试步骤：
+wasm plugin 行测试步骤：
 
 1. 启动wasm_test_server.go服务器
 2. 运行sdk/go/example/fib 文件夹中main.go

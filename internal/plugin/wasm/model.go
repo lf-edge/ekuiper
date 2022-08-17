@@ -22,9 +22,9 @@ func (p *PluginInfo) Validate(expectedName string) error {
 	if p.Language == "" {
 		return fmt.Errorf("invalid plugin, missing language")
 	}
-	if p.Executable == "" {
-		return fmt.Errorf("invalid plugin, missing executable")
-	}
+	//if p.Executable == "" {
+	//	return fmt.Errorf("invalid plugin, missing executable")
+	//}
 	if len(p.Functions) == 0 {
 		return fmt.Errorf("invalid plugin, must define at lease one function")
 	}

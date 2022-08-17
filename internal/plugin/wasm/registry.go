@@ -1,6 +1,7 @@
 package wasm
 
 import (
+	"fmt"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"sync"
 )
@@ -25,6 +26,7 @@ func (r *registry) Get(name string) (*PluginInfo, bool) {
 	r.RLock()
 	defer r.RUnlock()
 	result, ok := r.plugins[name]
+	fmt.Println("[plugin][wasm][registry.go][Get] name:", name)
 	return result, ok
 }
 

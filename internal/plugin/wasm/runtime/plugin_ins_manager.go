@@ -3,11 +3,8 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/infra"
 	"os"
-	"os/exec"
 	"sync"
 )
 
@@ -143,80 +140,80 @@ func GetPluginInsManager() *pluginInsManager {
 	return pm
 }
 
-func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *WasmConfig) (*PluginIns, error) {
-	p.Lock()
-	defer p.Unlock()
-	if ins, ok := p.instances[pluginMeta.Name]; ok {
-		return ins, nil
-	}
-
-	conf.Log.Infof("create control channel")
-	ctrlChan, err := CreateControlChannel(pluginMeta.Name)
-	if err != nil {
-		return nil, fmt.Errorf("can't create new control channel: %s", err.Error())
-	}
-	defer func() {
-		if err != nil {
-			_ = ctrlChan.Close()
-		}
-	}()
-	conf.Log.Infof("executing plugin")
-	jsonArg, err := json.Marshal(pconf)
-	if err != nil {
-		return nil, fmt.Errorf("invalid conf: %v", pconf)
-	}
-	var cmd *exec.Cmd
-	switch pluginMeta.Language {
-	case "go":
-		conf.Log.Printf("starting go plugin executable %s", pluginMeta.Executable)
-		cmd = exec.Command(pluginMeta.Executable, string(jsonArg))
-
-	case "python":
-		conf.Log.Printf("starting python plugin executable %s with script %s\n", conf.Config.Portable.PythonBin, pluginMeta.Executable)
-		cmd = exec.Command(conf.Config.Portable.PythonBin, pluginMeta.Executable, string(jsonArg))
-	default:
-		return nil, fmt.Errorf("unsupported language: %s", pluginMeta.Language)
-	}
-	cmd.Stdout = conf.Log.Out
-	cmd.Stderr = conf.Log.Out
-
-	conf.Log.Println("plugin starting")
-	err = cmd.Start()
-	if err != nil {
-		return nil, fmt.Errorf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
-	}
-	process := cmd.Process
-	conf.Log.Printf("plugin started pid: %d\n", process.Pid)
-	defer func() {
-		if err != nil {
-			_ = process.Kill()
-		}
-	}()
-	go infra.SafeRun(func() error { // just print out error inside
-		err = cmd.Wait()
-		if err != nil {
-			conf.Log.Printf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
-		}
-		// must make sure the plugin ins is not cleaned up yet by checking the process identity
-		if ins, ok := p.getPluginIns(pluginMeta.Name); ok && ins.process == cmd.Process {
-			if ins.ctrlChan != nil {
-				_ = ins.ctrlChan.Close()
-			}
-			p.deletePluginIns(pluginMeta.Name)
-		}
-		return nil
-	})
-
-	conf.Log.Println("waiting handshake")
-	err = ctrlChan.Handshake()
-	if err != nil {
-		return nil, fmt.Errorf("plugin %s control handshake error: %v", pluginMeta.Executable, err)
-	}
-	ins := NewPluginIns(pluginMeta.Name, ctrlChan, process)
-	p.instances[pluginMeta.Name] = ins
-	conf.Log.Println("plugin start running")
-	return ins, nil
-}
+//func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *WasmConfig) (*PluginIns, error) {
+//	p.Lock()
+//	defer p.Unlock()
+//	if ins, ok := p.instances[pluginMeta.Name]; ok {
+//		return ins, nil
+//	}
+//
+//	conf.Log.Infof("create control channel")
+//	ctrlChan, err := CreateControlChannel(pluginMeta.Name)
+//	if err != nil {
+//		return nil, fmt.Errorf("can't create new control channel: %s", err.Error())
+//	}
+//	defer func() {
+//		if err != nil {
+//			_ = ctrlChan.Close()
+//		}
+//	}()
+//	conf.Log.Infof("executing plugin")
+//	jsonArg, err := json.Marshal(pconf)
+//	if err != nil {
+//		return nil, fmt.Errorf("invalid conf: %v", pconf)
+//	}
+//	var cmd *exec.Cmd
+//	switch pluginMeta.Language {
+//	case "go":
+//		conf.Log.Printf("starting go plugin executable %s", pluginMeta.Executable)
+//		cmd = exec.Command(pluginMeta.Executable, string(jsonArg))
+//	case "python":
+//		conf.Log.Printf("starting python plugin executable %s with script %s\n", conf.Config.Portable.PythonBin, pluginMeta.Executable)
+//		cmd = exec.Command(conf.Config.Portable.PythonBin, pluginMeta.Executable, string(jsonArg))
+//	default:
+//		return nil, fmt.Errorf("unsupported language: %s", pluginMeta.Language)
+//	}
+//	cmd.Stdout = conf.Log.Out
+//	cmd.Stderr = conf.Log.Out
+//
+//	conf.Log.Println("plugin starting")
+//	err = cmd.Start()
+//	if err != nil {
+//		// error
+//		return nil, fmt.Errorf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
+//	}
+//	process := cmd.Process
+//	conf.Log.Printf("plugin started pid: %d\n", process.Pid)
+//	defer func() {
+//		if err != nil {
+//			_ = process.Kill()
+//		}
+//	}()
+//	go infra.SafeRun(func() error { // just print out error inside
+//		err = cmd.Wait()
+//		if err != nil {
+//			conf.Log.Printf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
+//		}
+//		// must make sure the plugin ins is not cleaned up yet by checking the process identity
+//		if ins, ok := p.getPluginIns(pluginMeta.Name); ok && ins.process == cmd.Process {
+//			if ins.ctrlChan != nil {
+//				_ = ins.ctrlChan.Close()
+//			}
+//			p.deletePluginIns(pluginMeta.Name)
+//		}
+//		return nil
+//	})
+//
+//	conf.Log.Println("waiting handshake")
+//	err = ctrlChan.Handshake()
+//	if err != nil {
+//		return nil, fmt.Errorf("plugin %s control handshake error: %v", pluginMeta.Executable, err)
+//	}
+//	ins := NewPluginIns(pluginMeta.Name, ctrlChan, process)
+//	p.instances[pluginMeta.Name] = ins
+//	conf.Log.Println("plugin start running")
+//	return ins, nil
+//}
 
 func (p *pluginInsManager) Kill(name string) error {
 	p.Lock()
@@ -232,10 +229,10 @@ func (p *pluginInsManager) Kill(name string) error {
 }
 
 type PluginMeta struct {
-	Name       string `json:"name"`
-	Version    string `json:"version"`
-	Language   string `json:"language"`
-	Executable string `json:"executable"`
+	Name     string `json:"name"`
+	Version  string `json:"version"`
+	Language string `json:"language"`
+	//Executable string `json:"executable"`
 	WasmFile   string `json:"wasmFile"`
 	WasmEngine string `json:"wasmEngine"`
 }

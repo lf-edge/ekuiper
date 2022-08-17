@@ -16,10 +16,10 @@ func TestValidate(t *testing.T) {
 		{
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
-					Name:       "mirror",
-					Version:    "1.0.0",
-					Language:   "go",
-					Executable: "mirror.exe",
+					Name:     "mirror",
+					Version:  "1.0.0",
+					Language: "go",
+					//Executable: "mirror.exe",
 				},
 			},
 			err: "invalid plugin, must define at lease one function",
@@ -36,9 +36,9 @@ func TestValidate(t *testing.T) {
 		}, {
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
-					Name:       "mirror",
-					Version:    "1.0.0",
-					Executable: "tt",
+					Name:    "mirror",
+					Version: "1.0.0",
+					//Executable: "tt",
 				},
 				Functions: []string{"aa"},
 			},
@@ -46,10 +46,10 @@ func TestValidate(t *testing.T) {
 		}, {
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
-					Name:       "mirror",
-					Version:    "1.0.0",
-					Language:   "c",
-					Executable: "tt",
+					Name:     "mirror",
+					Version:  "1.0.0",
+					Language: "c",
+					//Executable: "tt",
 				},
 				Functions: []string{"aa"},
 			},
