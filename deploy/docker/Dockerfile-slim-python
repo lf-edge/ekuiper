@@ -19,7 +19,6 @@ COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
-RUN apt update && apt install -y pkg-config libczmq-dev
 RUN make build_with_edgex
 
 FROM python:3.8.12-slim-bullseye

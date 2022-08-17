@@ -13,13 +13,12 @@
 # limitations under the License.
 
 ARG GO_VERSION=1.18.5
-FROM golang:$GO_VERSION-alpine AS builder
+FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-alpine AS builder
 
 COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
-RUN apk add gcc make git libc-dev binutils-gold pkgconfig zeromq-dev 
 RUN make build_with_edgex
 
 FROM alpine:3.15

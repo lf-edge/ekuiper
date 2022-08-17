@@ -6,9 +6,10 @@ cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")"
 PLUGIN_TYPE=$1
 PLUGIN_NAME=$2
 VERSION=$(git describe --tags --always)
+OS=$(sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g')
 
 pre(){
-    mkdir -p _plugins/debian/$PLUGIN_TYPE
+    mkdir -p _plugins/$OS/$PLUGIN_TYPE
     if [  $(cat etc/$PLUGIN_TYPE/$PLUGIN_NAME.json | jq -r ".libs") != 'null' ]; then
         for lib in $(cat etc/$PLUGIN_TYPE/$PLUGIN_NAME.json | jq -r ".libs[]"); do
             go get $lib;
@@ -23,7 +24,7 @@ post(){
     cd extensions/$PLUGIN_TYPE/$PLUGIN_NAME
     zip -r ${PLUGIN_NAME}_$(go env GOARCH).zip .
     cd -
-    mv $(find extensions/$PLUGIN_TYPE/$PLUGIN_NAME -name "*.zip")  _plugins/debian/$PLUGIN_TYPE
+    mv $(find extensions/$PLUGIN_TYPE/$PLUGIN_NAME -name "*.zip")  _plugins/$OS/$PLUGIN_TYPE
 }
 
 build(){
