@@ -35,9 +35,3 @@ ENV PATH=$PATH:/usr/local/go/bin
 RUN wget --no-verbose https://github.com/upx/upx/releases/download/v3.96/upx-3.96-src.tar.xz -O - | tar -xvJC /usr/local \ 
    && cd /usr/local/upx-3.96-src && make all \
    && ln -s /usr/local/upx-3.96-src/src/upx.out /usr/bin/upx
-
-COPY . /go/kuiper
-
-WORKDIR /go/kuiper
-
-ENV KUIPER_SOURCE=/go/kuiper

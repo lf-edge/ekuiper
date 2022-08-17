@@ -18,3 +18,5 @@ FROM golang:$GO_VERSION-alpine AS builder
 RUN apk add gcc make git libc-dev zip curl jq bash binutils-gold pkgconfig zeromq-dev
 
 RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
+
+RUN git config --global --add safe.directory '*'
