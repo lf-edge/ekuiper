@@ -24,7 +24,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"net/http"
-	"os"
 	"runtime"
 	"strings"
 )
@@ -50,37 +49,25 @@ func prebuildFuncsPlugins(w http.ResponseWriter, r *http.Request) {
 	prebuildPluginsHandler(w, r, plugin.FUNCTION)
 }
 
-func isOffcialDockerImage() bool {
-	if !strings.EqualFold(os.Getenv("MAINTAINER"), "emqx.io") {
-		return false
-	}
-	return true
-}
-
-func prebuildPluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) {
-	emsg := "It's strongly recommended to install plugins at official released Debian Docker images. If you choose to proceed to install plugin, please make sure the plugin is already validated in your own build."
-	if !isOffcialDockerImage() {
-		handleError(w, fmt.Errorf(emsg), "", logger)
-		return
-	} else if runtime.GOOS == "linux" {
+func prebuildPluginsHandler(w http.ResponseWriter, _ *http.Request, t plugin.PluginType) {
+	emsg := "It's strongly recommended to install plugins at linux. If you choose to proceed to install plugin, please make sure the plugin is already validated in your own build."
+	if runtime.GOOS == "linux" {
 		osrelease, err := Read()
 		if err != nil {
 			handleError(w, err, "", logger)
 			return
 		}
 		prettyName := strings.ToUpper(osrelease["PRETTY_NAME"])
-		os := "debian"
-		if strings.Contains(prettyName, "DEBIAN") {
-			hosts := conf.Config.Basic.PluginHosts
+		var os = "debian"
+		if strings.Contains(prettyName, "ALPINE") {
+			os = "alpine"
+		}
 
-			if err, plugins := fetchPluginList(t, hosts, os, runtime.GOARCH); err != nil {
-				handleError(w, err, "", logger)
-			} else {
-				jsonResponse(plugins, w, logger)
-			}
+		hosts := conf.Config.Basic.PluginHosts
+		if err, plugins := fetchPluginList(t, hosts, os, runtime.GOARCH); err != nil {
+			handleError(w, err, "", logger)
 		} else {
-			handleError(w, fmt.Errorf(emsg), "", logger)
-			return
+			jsonResponse(plugins, w, logger)
 		}
 	} else {
 		handleError(w, fmt.Errorf(emsg), "", logger)
