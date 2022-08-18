@@ -25,6 +25,9 @@ import (
 func (t *Server) doRegister(pt plugin.PluginType, p plugin.Plugin) error {
 	if pt == plugin.PORTABLE {
 		return portableManager.Register(p)
+	} else if pt == plugin.WASM {
+		fmt.Println("[rpc_plugin_both][doRegister] wasm:")
+		return wasmManager.Register(p)
 	} else {
 		return nativeManager.Register(pt, p)
 	}

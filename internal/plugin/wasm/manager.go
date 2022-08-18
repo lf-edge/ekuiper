@@ -139,9 +139,9 @@ func (m *Manager) parsePluginJson(name string) (*PluginInfo, error) {
 
 func (m *Manager) Register(p plugin.Plugin) error {
 	name, uri, shellParas := p.GetName(), p.GetFile(), p.GetShellParas()
-	//fmt.Println("[internal][plugin][wasm][Register] name: ", name)
-	//fmt.Println("[internal][plugin][wasm][Register] uri: ", uri)
-	//fmt.Println("[internal][plugin][wasm][Register] shellParas: ", shellParas)
+	fmt.Println("[internal][plugin][wasm][Register] name: ", name)
+	fmt.Println("[internal][plugin][wasm][Register] uri: ", uri)
+	fmt.Println("[internal][plugin][wasm][Register] shellParas: ", shellParas)
 	name = strings.Trim(name, " ")
 	if name == " " {
 		return fmt.Errorf("invalid name %s: should not be empty", name)

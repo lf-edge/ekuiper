@@ -67,12 +67,12 @@ func TestManager_Install(t *testing.T) {
 		//	err: errors.New("fail to install plugin: missing mirror.exe"),
 		//}, { // 4
 		//	n:   "wrongname",
-		//	u:   endpoint + "/portables/mirror.zip",
+		//	u:   endpoint + "/portables/mirror2.zip",
 		//	err: errors.New("fail to install plugin: missing or invalid json file wrongname.json"),
 		//},
 		//{ // 5
 		//	n: "mirror2",
-		//	u: endpoint + "/portables/mirror.zip",
+		//	u: endpoint + "/portables/mirror2.zip",
 		//},
 	}
 

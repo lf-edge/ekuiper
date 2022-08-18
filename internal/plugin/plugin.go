@@ -21,9 +21,10 @@ const (
 	SINK
 	FUNCTION
 	PORTABLE
+	WASM
 )
 
-var PluginTypes = []string{"sources", "sinks", "functions"}
+var PluginTypes = []string{"sources", "sinks", "functions", "wasm"}
 
 type Plugin interface {
 	GetName() string

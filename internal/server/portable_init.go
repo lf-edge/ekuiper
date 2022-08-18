@@ -24,11 +24,13 @@ import (
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable"
+	"github.com/lf-edge/ekuiper/internal/plugin/wasm"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"net/http"
 )
 
 var portableManager *portable.Manager
+var wasmManager *wasm.Manager
 
 func init() {
 	components["portable"] = portableComp{}

@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/native"
+	"github.com/lf-edge/ekuiper/internal/plugin/wasm"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"net/http"
 )
@@ -42,6 +43,9 @@ func (p pluginComp) register() {
 	if err != nil {
 		panic(err)
 	}
+	//----------- add --------------
+	wasmManager, err = wasm.InitManager()
+	//-----------------------------
 	entries = append(entries, binder.FactoryEntry{Name: "native plugin", Factory: nativeManager, Weight: 9})
 }
 
