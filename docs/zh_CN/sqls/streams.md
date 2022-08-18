@@ -37,7 +37,7 @@ CREATE STREAM
 | SCHEMAID         | 是   | 解码时使用的模式，目前仅在格式为 PROTOBUF 的情况下使用。                                                                                                                                       |
 | KEY              | 是   | 保留配置，当前未使用该字段。 它将用于 GROUP BY 语句。                                                                                                                                        |
 | TYPE             | 是   | 源类型，如未指定，值为 "mqtt"。                                                                                                                                                     |
-| StrictValidation | 是   | 针对流模式控制消息字段的验证行为。 有关更多信息，请参见 [Strict Validation](#Strict Validation)                                                                                                    |
+| StrictValidation | 是   | 针对流模式控制消息字段的验证行为。 有关更多信息，请参见 [Strict Validation](#strict-validation)                                                                                                    |
 | CONF_KEY         | 是   | 如果需要配置其他配置项，请在此处指定 config 键。 有关更多信息，请参见 [MQTT stream](../rules/sources/builtin/mqtt.md) 。                                                                               |
 | SHARED           | 是   | 是否在使用该流的规则中共享源的实例                                                                                                                                                       |
 | TIMESTAMP        | 是   | 代表该事件时间戳的字段名。如果有设置，则使用此流的规则将采用事件时间；否则将采用处理时间。详情请看[时间戳管理](./windows.md#时间戳管理)。                                                                                           |
