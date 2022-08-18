@@ -4,6 +4,6 @@
   "functions": [
     "fib"
   ],
-  "wasmFile": "/home/erfenjiao/ekuiper/plugins/wasm/fib/fibonacci.wasm",
+  "wasmFile": "/home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fibonacci.wasm",
   "wasmEngine": "wasmedge"
 }
