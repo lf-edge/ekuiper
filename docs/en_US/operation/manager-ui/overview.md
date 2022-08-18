@@ -107,7 +107,7 @@ In our scenario, the target plugin named file will be used. Select "Plugins" > "
 
 ![newPlugine](./resources/new_plugin.png)
 
-**Note: After the plug-in is installed and used through the rules, the plug-in has been loaded into the memory. Due to the limitations of the Golang language, when the plug-in is deleted, it cannot be uninstalled in practice. Therefore, if you want to reinstall the plug-in, you must restart eKuiper before it can take effect. Currently only the installation in the Docker environment of debian is supported, and other environments are not supported temporarily. **
+**Note: After the plug-in is installed and used through the rules, the plug-in has been loaded into the memory. Due to the limitations of the Golang language, when the plug-in is deleted, it cannot be uninstalled in practice. Therefore, if you want to reinstall the plug-in, you must restart eKuiper before it can take effect. Currently only the installation in the Docker environment of debian is supported, and other environments are not supported temporarily.**
 
 ### Create a stream
 
