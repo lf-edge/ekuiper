@@ -18,6 +18,7 @@ import (
 	"fmt"
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"path"
@@ -109,50 +110,58 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 		return e
 	} else {
 		log.Infof("Successfully subscribed to topic %s.", ms.tpc)
+		var t api.SourceTuple
 		for {
 			select {
 			case <-ctx.Done():
 				log.Infof("Exit subscription to mqtt messagebus topic %s.", ms.tpc)
 				return nil
 			case e1 := <-err:
-				log.Errorf("the subscription to mqtt topic %s have error %s.\n", ms.tpc, e1.Error())
+				t = &xsql.ErrorSourceTuple{
+					Error: fmt.Errorf("the subscription to mqtt topic %s have error %s.\n", ms.tpc, e1.Error()),
+				}
 			case env, ok := <-messages:
 				if !ok { // the source is closed
 					log.Infof("Exit subscription to mqtt messagebus topic %s.", ms.tpc)
 					return nil
 				}
-				msg, ok := env.(pahoMqtt.Message)
-				if !ok {
-					log.Errorf("can not convert interface data to mqtt message %s.", ms.tpc)
-					continue
-				}
-				result, e := ctx.Decode(msg.Payload())
-				//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
-				if e != nil {
-					log.Errorf("Invalid data format, cannot decode %s to %s format with error %s", string(msg.Payload()), ms.format, e)
-					continue
-				}
-
-				meta := make(map[string]interface{})
-				meta["topic"] = msg.Topic()
-				meta["messageid"] = strconv.Itoa(int(msg.MessageID()))
-
-				if nil != ms.model {
-					sliErr := ms.model.checkType(result, msg.Topic())
-					for _, v := range sliErr {
-						log.Errorf(v)
-					}
-				}
-
-				select {
-				case consumer <- api.NewDefaultSourceTuple(result, meta):
-					log.Debugf("send data to source node")
-				case <-ctx.Done():
-					return nil
-				}
+				t = getTuple(ctx, ms, env)
+			}
+			select {
+			case consumer <- t:
+				log.Debugf("send data to source node")
+			case <-ctx.Done():
+				return nil
 			}
 		}
 	}
+}
+
+func getTuple(ctx api.StreamContext, ms *MQTTSource, env interface{}) api.SourceTuple {
+	msg, ok := env.(pahoMqtt.Message)
+	if !ok { // should never happen
+		return &xsql.ErrorSourceTuple{
+			Error: fmt.Errorf("can not convert interface data to mqtt message %v.", env),
+		}
+	}
+	result, e := ctx.Decode(msg.Payload())
+	//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
+	if e != nil {
+		return &xsql.ErrorSourceTuple{
+			Error: fmt.Errorf("Invalid data format, cannot decode %s with error %s", string(msg.Payload()), e),
+		}
+	}
+	meta := make(map[string]interface{})
+	meta["topic"] = msg.Topic()
+	meta["messageid"] = strconv.Itoa(int(msg.MessageID()))
+
+	if nil != ms.model {
+		sliErr := ms.model.checkType(result, msg.Topic())
+		for _, v := range sliErr {
+			ctx.GetLogger().Errorf(v)
+		}
+	}
+	return api.NewDefaultSourceTuple(result, meta)
 }
 
 func (ms *MQTTSource) Close(ctx api.StreamContext) error {

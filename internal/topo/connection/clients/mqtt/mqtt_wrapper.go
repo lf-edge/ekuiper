@@ -103,7 +103,21 @@ func (mc *mqttClientWrapper) onConnectLost(_ pahoMqtt.Client, err error) {
 	mc.subLock.Lock()
 	defer mc.subLock.Unlock()
 	mc.connected = false
-	conf.Log.Warnf("The connection to mqtt broker %s client id %s disconnected with error: %s ", mc.cli.srv, mc.cli.clientid, err.Error())
+	e := fmt.Errorf("The connection to mqtt broker %s client id %s disconnected with error: %s ", mc.cli.srv, mc.cli.clientid, err.Error())
+	conf.Log.Warnf(e.Error())
+	for _, sub := range mc.topicSubscriptions {
+		if sub != nil {
+			// broadcast errors to all consumers
+			for _, consumer := range sub.topicConsumers {
+				select {
+				case consumer.SubErrors <- e:
+					break
+				default:
+					conf.Log.Warnf("consumer chan full for request id %s", consumer.ConsumerId)
+				}
+			}
+		}
+	}
 }
 
 func (mc *mqttClientWrapper) newMessageHandler(sub *mqttSubscriptionInfo) pahoMqtt.MessageHandler {

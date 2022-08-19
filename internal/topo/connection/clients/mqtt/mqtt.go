@@ -100,6 +100,7 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 func (ms *MQTTClient) Connect(connHandler MQTT.OnConnectHandler, lostHandler MQTT.ConnectionLostHandler) error {
 	if conf.Config.Basic.Debug {
 		MQTT.DEBUG = conf.Log
+		MQTT.ERROR = conf.Log
 	}
 	opts := MQTT.NewClientOptions().AddBroker(ms.srv).SetProtocolVersion(4)
 
@@ -115,6 +116,9 @@ func (ms *MQTTClient) Connect(connHandler MQTT.OnConnectHandler, lostHandler MQT
 	opts = opts.SetAutoReconnect(true)
 	opts.OnConnect = connHandler
 	opts.OnConnectionLost = lostHandler
+	opts.OnReconnecting = func(MQTT.Client, *MQTT.ClientOptions) {
+		conf.Log.Infof("Reconnecting to mqtt broker %s client id %s", ms.srv, ms.clientid)
+	}
 
 	c := MQTT.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
