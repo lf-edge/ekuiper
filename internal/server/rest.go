@@ -31,6 +31,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -81,8 +82,14 @@ func handleError(w http.ResponseWriter, err error, prefix string, logger api.Log
 
 func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 	w.Header().Add(ContentType, ContentTypeJSON)
-	enc := json.NewEncoder(w)
-	err := enc.Encode(i)
+
+	jsonByte, err := json.Marshal(i)
+	if err != nil {
+		handleError(w, err, "", logger)
+	}
+	w.Header().Add("Content-Length", strconv.Itoa(len(jsonByte)))
+
+	_, err = w.Write(jsonByte)
 	// Problems encoding
 	if err != nil {
 		handleError(w, err, "", logger)

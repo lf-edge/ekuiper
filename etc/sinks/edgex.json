@@ -219,12 +219,8 @@
       "name": "sourceName",
       "default": "",
       "optional": true,
-      "control": "select",
-      "values": [
-        "mqtt",
-        "zero"
-      ],
-      "type": "list_string",
+      "control": "text",
+      "type": "string",
       "hint": {
         "en_US": "Allows user to specify the source name in the event structure that are sent from eKuiper. The sourceName in the meta take precedence if specified.",
         "zh_CN": "允许用户指定源名称，该名称将作为从 eKuiper 中发送出来的 Event 结构体的源名称。若在 metadata 中设置了 sourceName 将会优先采用。"
