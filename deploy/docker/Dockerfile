@@ -19,9 +19,7 @@ COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
-RUN apt-get update \
-    && apt-get install -y pkg-config libczmq-dev wget \
-    && apt-get clean \
+RUN apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN make build_with_edgex \
