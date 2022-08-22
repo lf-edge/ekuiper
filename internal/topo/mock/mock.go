@@ -21,7 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-func newMockContext(ruleId string, opId string) api.StreamContext {
+func NewMockContext(ruleId string, opId string) api.StreamContext {
 	contextLogger := conf.Log.WithField("rule", ruleId)
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore(ruleId, api.AtMostOnce)

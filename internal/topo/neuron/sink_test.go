@@ -81,3 +81,38 @@ func sinkTest(t *testing.T) {
 	}
 	time.Sleep(100 * time.Millisecond)
 }
+
+func sinkConnExpTest(t *testing.T) {
+	s := GetSink()
+	s.Configure(map[string]interface{}{
+		"nodeName":  "test1",
+		"groupName": "grp",
+		"tags":      []string{"temperature", "status"},
+		"raw":       false,
+	})
+	data := []interface{}{
+		map[string]interface{}{
+			"temperature": 22,
+			"humidity":    50,
+			"status":      "green",
+		},
+		map[string]interface{}{
+			"temperature": 25,
+			"humidity":    82,
+			"status":      "wet",
+		},
+		map[string]interface{}{
+			"temperature": 33,
+			"humidity":    60,
+			"status":      "hot",
+		},
+	}
+	expErrStr := "io error: Error publish the tag payload temperature: io error: neuron connection is not established"
+	err := mock.RunSinkCollect(s, data)
+	if err == nil {
+		t.Errorf("should have error")
+		return
+	} else if err.Error() != expErrStr {
+		t.Errorf("error mismatch:\n\nexp=%s\n\ngot=%s\n\n", expErrStr, err.Error())
+	}
+}

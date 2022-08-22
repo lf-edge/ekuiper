@@ -16,6 +16,7 @@ package memory
 
 import (
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"regexp"
 	"sync"
@@ -129,6 +130,28 @@ func Produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
 		select {
 		case out <- api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": topic}):
 			logger.Debugf("memory source broadcast from topic %s to %s done", topic, name)
+		case <-ctx.Done():
+			// rule stop so stop waiting
+		default:
+			logger.Errorf("memory source topic %s drop message to %s", topic, name)
+		}
+	}
+
+}
+
+func ProduceError(ctx api.StreamContext, topic string, err error) {
+	c, exists := pubTopics[topic]
+	if !exists {
+		return
+	}
+	logger := ctx.GetLogger()
+	mu.RLock()
+	defer mu.RUnlock()
+	// broadcast to all consumers
+	for name, out := range c.consumers {
+		select {
+		case out <- &xsql.ErrorSourceTuple{Error: err}:
+			logger.Debugf("memory source broadcast error from topic %s to %s done", topic, name)
 		case <-ctx.Done():
 			// rule stop so stop waiting
 		default:

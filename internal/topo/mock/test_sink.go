@@ -21,11 +21,12 @@ import (
 )
 
 func RunSinkCollect(s api.Sink, data []interface{}) error {
-	ctx := newMockContext("ruleSink", "op1")
+	ctx := NewMockContext("ruleSink", "op1")
 	err := s.Open(ctx)
 	if err != nil {
 		return err
 	}
+	time.Sleep(time.Second)
 	for _, e := range data {
 		err := s.Collect(ctx, e)
 		if err != nil {
