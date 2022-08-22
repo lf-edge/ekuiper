@@ -203,14 +203,14 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 			}
 			o.statManager.ProcessTimeStart()
 			if !opened {
-				o.statManager.IncTotalExceptions()
+				o.statManager.IncTotalExceptions("input channel closed")
 				break
 			}
 			switch d := item.(type) {
 			case error:
 				o.statManager.IncTotalRecordsIn()
 				o.Broadcast(d)
-				o.statManager.IncTotalExceptions()
+				o.statManager.IncTotalExceptions(d.Error())
 			case xsql.Event:
 				if d.IsWatermark() {
 					watermarkTs := d.GetTimestamp()
@@ -257,8 +257,9 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				ctx.PutState(WINDOW_INPUTS_KEY, inputs)
 			default:
 				o.statManager.IncTotalRecordsIn()
-				o.Broadcast(fmt.Errorf("run Window error: expect xsql.Event type but got %[1]T(%[1]v)", d))
-				o.statManager.IncTotalExceptions()
+				e := fmt.Errorf("run Window error: expect xsql.Event type but got %[1]T(%[1]v)", d)
+				o.Broadcast(e)
+				o.statManager.IncTotalExceptions(e.Error())
 			}
 		// is cancelling
 		case <-ctx.Done():

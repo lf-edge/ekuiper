@@ -22,17 +22,19 @@ import (
 
 const RecordsInTotal = "records_in_total"
 const RecordsOutTotal = "records_out_total"
-const ExceptionsTotal = "exceptions_total"
 const ProcessLatencyUs = "process_latency_us"
 const LastInvocation = "last_invocation"
 const BufferLength = "buffer_length"
+const ExceptionsTotal = "exceptions_total"
+const LastException = "last_exception"
+const LastExceptionTime = "last_exception_time"
 
-var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ExceptionsTotal, ProcessLatencyUs, BufferLength, LastInvocation}
+var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ProcessLatencyUs, BufferLength, LastInvocation, ExceptionsTotal, LastException, LastExceptionTime}
 
 type StatManager interface {
 	IncTotalRecordsIn()
 	IncTotalRecordsOut()
-	IncTotalExceptions()
+	IncTotalExceptions(err string)
 	ProcessTimeStart()
 	ProcessTimeEnd()
 	SetBufferLength(l int64)
@@ -42,12 +44,14 @@ type StatManager interface {
 //The statManager is not thread safe. Make sure it is used in only one instance
 type DefaultStatManager struct {
 	//metrics
-	totalRecordsIn  int64
-	totalRecordsOut int64
-	totalExceptions int64
-	processLatency  int64
-	lastInvocation  time.Time
-	bufferLength    int64
+	totalRecordsIn    int64
+	totalRecordsOut   int64
+	processLatency    int64
+	lastInvocation    time.Time
+	bufferLength      int64
+	totalExceptions   int64
+	lastException     string
+	lastExceptionTime time.Time
 	//configs
 	opType           string //"source", "op", "sink"
 	prefix           string
@@ -86,10 +90,12 @@ func (sm *DefaultStatManager) IncTotalRecordsOut() {
 	sm.totalRecordsOut++
 }
 
-func (sm *DefaultStatManager) IncTotalExceptions() {
+func (sm *DefaultStatManager) IncTotalExceptions(err string) {
 	sm.totalExceptions++
 	var t time.Time
 	sm.processTimeStart = t
+	sm.lastException = err
+	sm.lastExceptionTime = time.Now()
 }
 
 func (sm *DefaultStatManager) ProcessTimeStart() {
@@ -109,14 +115,21 @@ func (sm *DefaultStatManager) SetBufferLength(l int64) {
 
 func (sm *DefaultStatManager) GetMetrics() []interface{} {
 	result := []interface{}{
-		sm.totalRecordsIn, sm.totalRecordsOut, sm.totalExceptions, sm.processLatency, sm.bufferLength,
+		sm.totalRecordsIn,
+		sm.totalRecordsOut,
+		sm.processLatency,
+		sm.bufferLength,
+		0,
+		sm.totalExceptions,
+		sm.lastException,
+		0,
 	}
 
 	if !sm.lastInvocation.IsZero() {
-		result = append(result, sm.lastInvocation.Format("2006-01-02T15:04:05.999999"))
-	} else {
-		result = append(result, 0)
+		result[4] = sm.lastInvocation.Format("2006-01-02T15:04:05.999999")
 	}
-
+	if !sm.lastExceptionTime.IsZero() {
+		result[7] = sm.lastExceptionTime.Format("2006-01-02T15:04:05.999999")
+	}
 	return result
 }

@@ -370,7 +370,7 @@ func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, st
 		return nil
 	default:
 		if err := sink.Collect(ctx, outData); err != nil {
-			stats.IncTotalExceptions()
+			stats.IncTotalExceptions(err.Error())
 			return err
 		} else {
 			ctx.GetLogger().Debugf("success")
