@@ -113,13 +113,13 @@ func findAll(t plugin2.PluginType, pluginDir string) (result map[string]string, 
 	for _, file := range files {
 		baseName := filepath.Base(file.Name())
 		if strings.HasSuffix(baseName, ".so") {
+			n, v := parseName(baseName)
 			//load the plugins when ekuiper set up
 			if !conf.IsTesting {
-				if _, err := manager.loadRuntime(t, "", path.Join(dir, baseName)); err != nil {
+				if _, err := manager.loadRuntime(t, n, path.Join(dir, baseName)); err != nil {
 					continue
 				}
 			}
-			n, v := parseName(baseName)
 			result[n] = v
 		}
 	}
@@ -429,7 +429,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 
 	soPrefix := regexp.MustCompile(fmt.Sprintf(`^((%s)|(%s))(@.*)?\.so$`, name, ucFirst(name)))
 	var soPath string
-	var yamlFile, yamlPath, version string
+	var yamlFile, yamlPath, version, soName string
 	expFiles := 1
 	if t == plugin2.SOURCE {
 		yamlFile = name + ".yaml"
@@ -468,7 +468,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			}
 			filenames = append(filenames, soPath)
 			revokeFiles = append(revokeFiles, soPath)
-			_, version = parseName(fileName)
+			soName, version = parseName(fileName)
 		} else if strings.HasPrefix(fileName, "etc/") {
 			err = filex.UnzipTo(file, path.Join(rr.etcDir, plugin2.PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
 			if err != nil {
@@ -507,7 +507,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 
 	if !conf.IsTesting {
 		// load the runtime first
-		_, err = manager.loadRuntime(t, "", soPath)
+		_, err = manager.loadRuntime(t, soName, soPath)
 		if err != nil {
 			return version, err
 		}
@@ -620,7 +620,7 @@ func (rr *Manager) loadRuntime(t plugin2.PluginType, name, soFilepath string) (p
 		conf.Log.Debugf("Successfully open plugin %s", soPath)
 		nf, err = plug.Lookup(ut)
 		if err != nil {
-			conf.Log.Debugf(fmt.Sprintf("cannot find symbol %s, please check if it is exported", name))
+			conf.Log.Warnf(fmt.Sprintf("cannot find symbol %s, please check if it is exported: %v", ut, err))
 			return nil, nil
 		}
 		conf.Log.Debugf("Successfully look-up plugin %s", soPath)
