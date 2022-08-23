@@ -135,6 +135,7 @@ func TestMultiSourceSink(t *testing.T) {
 		},
 	}
 	go func() {
+		time.Sleep(100 * time.Millisecond)
 		err = mock.RunSinkCollect(sin, data)
 		if err != nil {
 			t.Errorf(err.Error())
@@ -172,4 +173,6 @@ func TestMultiSourceSink(t *testing.T) {
 	server.Close()
 	time.Sleep(100 * time.Millisecond)
 	sinkTest(t)
+	sinkConnExpTest(t)
+	connectFailTest(t)
 }

@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mock
+package xsql
 
-import (
-	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"time"
-)
+type ErrorSourceTuple struct {
+	Error error `json:"error"`
+}
 
-func RunSinkCollect(s api.Sink, data []interface{}) error {
-	ctx := NewMockContext("ruleSink", "op1")
-	err := s.Open(ctx)
-	if err != nil {
-		return err
-	}
-	time.Sleep(time.Second)
-	for _, e := range data {
-		err := s.Collect(ctx, e)
-		if err != nil {
-			return err
-		}
-	}
-	time.Sleep(time.Second)
-	fmt.Println("closing sink")
-	return s.Close(ctx)
+func (t *ErrorSourceTuple) Message() map[string]interface{} {
+	return nil
+}
+
+func (t *ErrorSourceTuple) Meta() map[string]interface{} {
+	return nil
 }

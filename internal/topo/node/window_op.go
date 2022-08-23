@@ -272,13 +272,13 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			o.statManager.IncTotalRecordsIn()
 			o.statManager.ProcessTimeStart()
 			if !opened {
-				o.statManager.IncTotalExceptions()
+				o.statManager.IncTotalExceptions("input channel closed")
 				break
 			}
 			switch d := item.(type) {
 			case error:
 				o.Broadcast(d)
-				o.statManager.IncTotalExceptions()
+				o.statManager.IncTotalExceptions(d.Error())
 			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
 				inputs = append(inputs, d)
@@ -332,8 +332,9 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				ctx.PutState(WINDOW_INPUTS_KEY, inputs)
 				ctx.PutState(MSG_COUNT_KEY, o.msgCount)
 			default:
-				o.Broadcast(fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d))
-				o.statManager.IncTotalExceptions()
+				e := fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d)
+				o.Broadcast(e)
+				o.statManager.IncTotalExceptions(e.Error())
 			}
 		case now := <-firstC:
 			log.Debugf("First tick at %v(%d), defined at %d", now, now.UnixMilli(), firstTime)

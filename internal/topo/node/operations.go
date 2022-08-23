@@ -136,7 +136,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			case error:
 				logger.Errorf("Operation %s error: %s", ctx.GetOpId(), val)
 				o.Broadcast(val)
-				stats.IncTotalExceptions()
+				stats.IncTotalExceptions(val.Error())
 				continue
 			default:
 				stats.ProcessTimeEnd()

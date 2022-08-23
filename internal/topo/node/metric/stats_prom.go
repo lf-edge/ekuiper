@@ -67,11 +67,9 @@ func (sm *PrometheusStatManager) IncTotalRecordsOut() {
 	sm.pTotalRecordsOut.Inc()
 }
 
-func (sm *PrometheusStatManager) IncTotalExceptions() {
-	sm.totalExceptions++
+func (sm *PrometheusStatManager) IncTotalExceptions(err string) {
 	sm.pTotalExceptions.Inc()
-	var t time.Time
-	sm.processTimeStart = t
+	sm.DefaultStatManager.IncTotalExceptions(err)
 }
 
 func (sm *PrometheusStatManager) ProcessTimeEnd() {

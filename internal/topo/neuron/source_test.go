@@ -15,10 +15,14 @@
 package neuron
 
 import (
+	"fmt"
 	"github.com/lf-edge/ekuiper/internal/topo/mock"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
+	"reflect"
 	"testing"
+	"time"
 )
 
 func TestRun(t *testing.T) {
@@ -36,4 +40,32 @@ func TestRun(t *testing.T) {
 	server, _ := mockNeuron(true, false)
 	defer server.Close()
 	mock.TestSourceOpen(s, exp, t)
+}
+
+func connectFailTest(t *testing.T) {
+	s := GetSource()
+	err := s.Configure("new", nil)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	ctx, cancel := mock.NewMockContext("ruleTestReconnect", "op1").WithCancel()
+	consumer := make(chan api.SourceTuple)
+	errCh := make(chan error)
+	server, _ := mockNeuron(false, false)
+	go s.Open(ctx, consumer, errCh)
+	go func() {
+		select {
+		case err := <-errCh:
+			t.Errorf("received error: %v", err)
+		case tuple := <-consumer:
+			if !reflect.DeepEqual(tuple, &xsql.ErrorSourceTuple{Error: fmt.Errorf("neuron connection detached")}) {
+				t.Errorf("received unexpected tuple: %v", tuple)
+			}
+		}
+		cancel()
+	}()
+	time.Sleep(1 * time.Second)
+	server.Close()
+	time.Sleep(1 * time.Second)
 }

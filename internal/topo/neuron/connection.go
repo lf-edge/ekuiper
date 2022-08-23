@@ -22,10 +22,12 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/memory"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pair"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -38,6 +40,7 @@ var (
 	m               sync.RWMutex
 	connectionCount int
 	sock            mangos.Socket
+	opened          int32
 	sendTimeout     = 100
 )
 
@@ -50,11 +53,6 @@ func createOrGetConnection(sc api.StreamContext, url string) error {
 	sc.GetLogger().Infof("createOrGetConnection count: %d", connectionCount)
 	if connectionCount == 0 {
 		sc.GetLogger().Infof("Creating neuron connection")
-		err := connect(url)
-		if err != nil {
-			return err
-		}
-		sc.GetLogger().Infof("Neuron connected")
 		contextLogger := conf.Log.WithField("neuron_connection", 0)
 		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 		ruleId := "$$neuron_connection"
@@ -65,6 +63,11 @@ func createOrGetConnection(sc api.StreamContext, url string) error {
 			return err
 		}
 		sctx := ctx.WithMeta(ruleId, opId, store)
+		err = connect(sctx, url)
+		if err != nil {
+			return err
+		}
+		sc.GetLogger().Infof("Neuron connected")
 		memory.CreatePub(NeuronTopic)
 		go run(sctx)
 	}
@@ -90,7 +93,7 @@ func closeConnection(ctx api.StreamContext, url string) error {
 // nng connections
 
 // connect to nng
-func connect(url string) error {
+func connect(ctx api.StreamContext, url string) error {
 	var err error
 	sock, err = pair.NewSocket()
 	if err != nil {
@@ -101,6 +104,19 @@ func connect(url string) error {
 	if err != nil {
 		return err
 	}
+	sock.SetPipeEventHook(func(ev mangos.PipeEvent, p mangos.Pipe) {
+		switch ev {
+		case mangos.PipeEventAttached:
+			atomic.StoreInt32(&opened, 1)
+			conf.Log.Infof("neuron connection attached")
+		case mangos.PipeEventAttaching:
+			conf.Log.Infof("neuron connection is attaching")
+		case mangos.PipeEventDetached:
+			atomic.StoreInt32(&opened, 0)
+			conf.Log.Warnf("neuron connection detached")
+			memory.ProduceError(ctx, NeuronTopic, fmt.Errorf("neuron connection detached"))
+		}
+	})
 	//sock.SetOption(mangos.OptionWriteQLen, 100)
 	//sock.SetOption(mangos.OptionReadQLen, 100)
 	//sock.SetOption(mangos.OptionBestEffort, false)
@@ -141,10 +157,10 @@ func run(ctx api.StreamContext) {
 
 func publish(ctx api.StreamContext, data []byte) error {
 	ctx.GetLogger().Debugf("publish to neuron: %s", string(data))
-	if sock != nil {
+	if sock != nil && atomic.LoadInt32(&opened) == 1 {
 		return sock.Send(data)
 	}
-	return fmt.Errorf("neuron connection is not established")
+	return fmt.Errorf("%s: neuron connection is not established", errorx.IOErr)
 }
 
 func disconnect(_ string) error {

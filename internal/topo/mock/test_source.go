@@ -31,7 +31,7 @@ func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
 		count.Store(1)
 		c = 0
 	}
-	ctx, cancel := newMockContext(fmt.Sprintf("rule%d", c), "op1").WithCancel()
+	ctx, cancel := NewMockContext(fmt.Sprintf("rule%d", c), "op1").WithCancel()
 	count.Store(c.(int) + 1)
 	consumer := make(chan api.SourceTuple)
 	errCh := make(chan error)

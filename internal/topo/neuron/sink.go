@@ -78,22 +78,20 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 			return err
 		}
 		return publish(ctx, r)
-
 	} else {
 		switch d := data.(type) {
 		case []map[string]interface{}:
 			for _, el := range d {
 				err := s.SendMapToNeuron(ctx, el)
 				if err != nil {
-					ctx.GetLogger().Errorf("Error sending map to neuron: %v", err)
+					return err
 				}
 			}
 			return nil
 		case map[string]interface{}:
 			return s.SendMapToNeuron(ctx, d)
 		default:
-			ctx.GetLogger().Errorf("unrecognized format of %s", data)
-			return nil
+			return fmt.Errorf("unrecognized format of %s", data)
 		}
 	}
 }
@@ -148,6 +146,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, el map[string]interface{})
 			}
 		}
 	} else {
+		// Send as many tags as possible in order and drop the tag if it is invalid
 		for _, tag := range s.c.Tags {
 			t.TagName, err = ctx.ParseTemplate(tag, el)
 			if err != nil {

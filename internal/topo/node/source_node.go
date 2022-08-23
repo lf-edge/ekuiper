@@ -153,6 +153,11 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 							case err := <-si.errorCh:
 								return err
 							case data := <-buffer.Out:
+								if t, ok := data.(*xsql.ErrorSourceTuple); ok {
+									logger.Errorf("Source %s error: %v", ctx.GetOpId(), t.Error)
+									stats.IncTotalExceptions(t.Error.Error())
+									continue
+								}
 								stats.IncTotalRecordsIn()
 								stats.ProcessTimeStart()
 								tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: conf.GetNowInMilli(), Metadata: data.Meta()}
@@ -165,7 +170,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 								case error:
 									logger.Errorf("Source %s preprocess error: %s", ctx.GetOpId(), val)
 									m.Broadcast(val)
-									stats.IncTotalExceptions()
+									stats.IncTotalExceptions(val.Error())
 								default:
 									m.Broadcast(val)
 								}
