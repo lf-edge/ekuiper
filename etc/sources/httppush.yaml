@@ -1,0 +1,5 @@
+#Global httppull configurations
+default:
+  # the address to listen on
+  server: ":8900"
+  endpoint: "/"
