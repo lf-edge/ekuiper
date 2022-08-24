@@ -91,12 +91,12 @@ device_conf: # Filter only Random-Integer-Device
   messageType: request
 another_app_service_conf:
   topic: new-rules-events
-int8_conf: # Filter only Random-Integer-Device int8 reading
-  topic: edgex/events/#/Random-Integer-Device/int8
+int8_conf: # Filter only Random-Integer-Device Int8 reading
+  topic: edgex/events/#/Random-Integer-Device/Int8
   messageType: request
 ```
 
-With this configuration, users have 3 confkey that would connect to different edgeX data flows. For example, if a user have two rules: rule1 need to process all events while rule2 only process the int8 reading of Random-Integer-Device. Then the user can create two streams: edgexAll and edgexInt8.
+With this configuration, users have 3 confkey that would connect to different edgeX data flows. For example, if a user have two rules: rule1 need to process all events while rule2 only process the Int8 reading of Random-Integer-Device. Then the user can create two streams: edgexAll and edgexInt8.
 
 ```sql
 CREATE STREAM edgexAll() WITH (FORMAT="JSON", TYPE="edgex")
@@ -108,7 +108,7 @@ With this definition, the default confkey will be used and the rules using this 
 CREATE STREAM edgexInt8(int8 bigint) WITH (FORMAT="JSON", TYPE="edgex", CONF_KEY="int8_conf")
 ```
 
-Differently, the edgexInt8 specify the confkey explicitly to use `int8_conf` which configures to filtered topic for Random-Integer-Device device int8 reading. Thus, it will only receive int8 reading for every event and the event structure is fixed. So, the stream definition also define the schema instead of schemaless.
+Differently, the edgexInt8 specify the confkey explicitly to use `int8_conf` which configures to filtered topic for Random-Integer-Device device Int8 reading. Thus, it will only receive Int8 reading for every event and the event structure is fixed. So, the stream definition also define the schema instead of schemaless.
 
 Similarly, users can create streams for each confkey. And each rule can pick the streams depending on its interests.
 
