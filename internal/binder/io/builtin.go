@@ -29,6 +29,7 @@ var (
 	sources = map[string]NewSourceFunc{
 		"mqtt":     func() api.Source { return &source.MQTTSource{} },
 		"httppull": func() api.Source { return &source.HTTPPullSource{} },
+		"httppush": func() api.Source { return &source.HTTPPushSource{} },
 		"file":     func() api.Source { return &source.FileSource{} },
 		"memory":   func() api.Source { return memory.GetSource() },
 		"neuron":   func() api.Source { return neuron.GetSource() },

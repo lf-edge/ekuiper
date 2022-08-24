@@ -1,0 +1,37 @@
+{
+	"libs": [],
+	"about": {
+		"trial": false,
+		"author": {
+			"name": "EMQ",
+			"email": "contact@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/builtin/http_pull.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/builtin/http_pull.md"
+		},
+		"description": {
+			"en_US": "eKuiper provides built-in support for pulling HTTP source stream, which can pull the message from HTTP server broker and feed into the eKuiper processing pipeline.",
+			"zh_CN": "eKuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 eKuiper 处理管道。"
+		}
+	},
+	"properties": {
+		"default": [{
+			"name": "server",
+			"default": ":9999",
+			"optional": false,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The address to listen on.",
+				"zh_CN": "http服务器监听地址"
+			},
+			"label": {
+				"en_US": "Server",
+				"zh_CN": "服务器"
+			}
+		}]
+	}
+}
