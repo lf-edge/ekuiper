@@ -294,6 +294,7 @@ func (c *SyncCache) loadFromDisk(ctx api.StreamContext) {
 	} else if !ok {
 		ctx.GetLogger().Errorf("nothing in the disk, should not happen")
 	} else {
+		_ = c.store.Delete(strconv.Itoa(c.diskPageHead))
 		if len(c.memCache) >= c.maxMemPage {
 			ctx.GetLogger().Warnf("drop a page of %d items in memory", c.memCache[0].L)
 			c.cacheLength -= c.memCache[0].L
