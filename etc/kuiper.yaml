@@ -61,6 +61,16 @@ sink:
   # Whether to clean the cache when the rule stops
   cleanCacheAtStop: false
 
+source:
+  ## Configurations for the global http data server for httppush source
+  # HTTP data service ip
+  httpServerIp: 0.0.0.0
+  # HTTP data service port
+  httpServerPort: 10081
+  # httpServerTls:
+  #    certfile: /var/https-server.crt
+  #    keyfile: /var/https-server.key
+
 store:
   #Type of store that will be used for keeping state of the application
   type: sqlite

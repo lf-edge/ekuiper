@@ -9,28 +9,29 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/builtin/http_pull.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/builtin/http_pull.md"
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/builtin/http_push.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/builtin/http_push.md"
 		},
 		"description": {
-			"en_US": "eKuiper provides built-in support for pulling HTTP source stream, which can pull the message from HTTP server broker and feed into the eKuiper processing pipeline.",
-			"zh_CN": "eKuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 eKuiper 处理管道。"
+			"en_US": "eKuiper provides built-in support for HTTP server to receive the stream data pushed by HTTP protocol.",
+			"zh_CN": "eKuiper 提供了内置的 HTTP 服务支持，用于接收 HTTP 协议推送的流数据。"
 		}
 	},
 	"properties": {
 		"default": [{
-			"name": "server",
-			"default": ":9999",
-			"optional": false,
+			"name": "method",
+			"default": "POST",
+			"optional": true,
 			"control": "text",
 			"type": "string",
+			"values": ["POST","PUT"],
 			"hint": {
-				"en_US": "The address to listen on.",
-				"zh_CN": "http服务器监听地址"
+				"en_US": "The method to bind the http service",
+				"zh_CN": "http 请求方法"
 			},
 			"label": {
-				"en_US": "Server",
-				"zh_CN": "服务器"
+				"en_US": "Method",
+				"zh_CN": "请求方法"
 			}
 		}]
 	}

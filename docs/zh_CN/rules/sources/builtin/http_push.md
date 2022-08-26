@@ -1,40 +1,54 @@
-# HTTP 接收源
+# HTTP push 源
 
-eKuiper 为接收 HTTP 源流提供了内置支持，该支持可从 HTTP 客户端接收消息并输入 eKuiper 处理管道。 HTTP接收源的配置文件位于 `etc/sources/httppush.yaml`中。 以下是文件格式。
+eKuiper 提供了内置的 HTTP 源，它作为一个 HTTP 服务器，可以接收来自 HTTP 客户端的消息。所有的 HTTP 推送源共用单一的全局 HTTP 数据服务器。每个源可以有自己的 URL，这样就可以支持多个端点。
+
+## 配置
+
+配置分成两个部分：全局服务器配置和源配置。
+
+### 服务器配置
+
+服务器配置在 `etc/kuiper.yaml` 中的 `source` 部分。
 
 ```yaml
-#全局httppull配置
+source:
+  ## Configurations for the global http data server for httppush source
+  # HTTP data service ip
+  httpServerIp: 0.0.0.0
+  # HTTP data service port
+  httpServerPort: 10081
+  # httpServerTls:
+  #    certfile: /var/https-server.crt
+  #    keyfile: /var/https-server.key
+```
+
+用户可以指定以下属性：
+
+- httpServerIp：用于绑定 http 数据服务器的IP。
+- httpServerPort：用于绑定 http 数据服务器的端口。
+- httpServerTls: http 服务器 TLS 的配置。
+
+一旦有任何需要 httppush 源的规则启动，全局服务器就会启动。一旦所有引用的规则都关闭，它就会关闭。
+
+### 源配置
+
+每个流可以配置它的 URL 端点和 http 请求方法。端点属性被映射到创建流语句中的 `datasource` 属性。
+
+在以下示例中，源被绑定到 `/api/data` 端点。此时，在默认的服务器配置下，它将监听`http://localhost:10081/api/data` 。
+
+```sql
+CREATE STREAM httpDemo() WITH (DATASOURCE="/api/data", FORMAT="json", TYPE="httppush")
+```
+
+HTTP 推送源的配置文件在 `etc/sources/httppush.yaml` 。目前仅一个属性 `method` ，用于配置 HTTP 监听的请求方法。
+
+```yaml
+#Global httppush configurations
 default:
-  # 接收服务器地址
-  server: ":8900" 
- 
-
-#重载全局配置
+  # the request method to listen on
+  method: "POST"
+    
+#Override the global configurations
 application_conf: #Conf_key
-  server: ":9000"
+  server: "PUT"
 ```
-
-## 全局HTTP接收配置
-
-用户可以在此处指定全局 HTTP 接收设置。 `default` 部分中指定的配置项将用作所有HTTP 连接的默认设置。
-
-### server
-
-接收数据的服务器地址。
-
-
-
-## 重载默认设置
-
-如果您有特定的连接需要重载默认设置，则可以创建一个自定义部分。 在上一个示例中，我们创建了一个名为 `application_conf` 的特定设置。 然后，您可以在创建流定义时使用选项 `CONF_KEY` 指定配置（有关更多信息，请参见 [流规格](../../../sqls/streams.md)）。
-
-**样例**
-
-```
-demo (
-		...
-	) WITH (DATASOURCE="/feed", FORMAT="JSON", TYPE="httppush", KEY="USERID", CONF_KEY="application_conf");
-```
-
-这些特定设置所使用的配置键与 `default` 设置中的配置键相同，在特定设置中指定的任何值都将重载 `default` 部分中的值。
-

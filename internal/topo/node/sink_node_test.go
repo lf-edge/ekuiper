@@ -366,7 +366,7 @@ func TestConfig(t *testing.T) {
 				"maxDiskCache":         6,
 				"resendInterval":       10,
 			},
-			err: errors.New("invalid cache properties: \nmaxDiskCacheTooSmall:maxDiskCache must be greater than bufferPageSize"),
+			err: errors.New("invalid cache properties: maxDiskCacheTooSmall:maxDiskCache must be greater than bufferPageSize"),
 		}, {
 			config: map[string]interface{}{
 				"enableCache":          true,
@@ -376,7 +376,7 @@ func TestConfig(t *testing.T) {
 				"maxDiskCache":         21,
 				"resendInterval":       10,
 			},
-			err: errors.New("invalid cache properties: \nmemoryCacheThresholdNotMultiple:memoryCacheThreshold must be a multiple of bufferPageSize"),
+			err: errors.New("invalid cache properties: memoryCacheThresholdNotMultiple:memoryCacheThreshold must be a multiple of bufferPageSize"),
 		}, {
 			config: map[string]interface{}{
 				"enableCache":          true,
@@ -386,7 +386,7 @@ func TestConfig(t *testing.T) {
 				"maxDiskCache":         22,
 				"resendInterval":       10,
 			},
-			err: errors.New("invalid cache properties: \nmaxDiskCacheNotMultiple:maxDiskCache must be a multiple of bufferPageSize"),
+			err: errors.New("invalid cache properties: maxDiskCacheNotMultiple:maxDiskCache must be a multiple of bufferPageSize"),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
