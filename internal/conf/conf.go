@@ -93,6 +93,25 @@ func (sc *SinkConf) Validate() error {
 	return e.GetError()
 }
 
+type SourceConf struct {
+	HttpServerIp   string   `json:"httpServerIp" yaml:"httpServerIp"`
+	HttpServerPort int      `json:"httpServerPort" yaml:"httpServerPort"`
+	HttpServerTls  *tlsConf `json:"httpServerTls" yaml:"httpServerTls"`
+}
+
+func (sc *SourceConf) Validate() error {
+	e := make(errorx.MultiError)
+	if sc.HttpServerIp == "" {
+		sc.HttpServerIp = "0.0.0.0"
+	}
+	if sc.HttpServerPort <= 0 || sc.HttpServerPort > 65535 {
+		Log.Warnf("invalid source.httpServerPort configuration %d, set to 10081", sc.HttpServerPort)
+		e["invalidHttpServerPort"] = fmt.Errorf("httpServerPort must between 0 and 65535")
+		sc.HttpServerPort = 10081
+	}
+	return e
+}
+
 type KuiperConf struct {
 	Basic struct {
 		Debug          bool     `yaml:"debug"`
@@ -111,9 +130,10 @@ type KuiperConf struct {
 		Authentication bool     `yaml:"authentication"`
 		IgnoreCase     bool     `yaml:"ignoreCase"`
 	}
-	Rule  api.RuleOption
-	Sink  *SinkConf
-	Store struct {
+	Rule   api.RuleOption
+	Sink   *SinkConf
+	Source *SourceConf
+	Store  struct {
 		Type  string `yaml:"type"`
 		Redis struct {
 			Host               string `yaml:"host"`
@@ -199,6 +219,10 @@ func InitConf() {
 	if Config.Portable.PythonBin == "" {
 		Config.Portable.PythonBin = "python"
 	}
+	if Config.Source == nil {
+		Config.Source = &SourceConf{}
+	}
+	_ = Config.Source.Validate()
 	if Config.Sink == nil {
 		Config.Sink = &SinkConf{}
 	}

@@ -25,7 +25,6 @@ import (
 type source struct {
 	url          string
 	bufferLength int
-	connected    bool
 }
 
 func (s *source) Configure(_ string, props map[string]interface{}) error {

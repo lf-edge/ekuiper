@@ -15,10 +15,10 @@
 package source
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/memory"
+	"github.com/lf-edge/ekuiper/internal/topo/source/httpserver"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -27,8 +27,10 @@ import (
 )
 
 type HTTPPushConf struct {
-	Server   string `json:"server"`
-	Endpoint string `json:"endpoint"`
+	Method       string `json:"method"`
+	ContentType  string `json:"contentType"`
+	BufferLength int    `json:"bufferLength"`
+	Endpoint     string `json:"endpoint"`
 }
 
 type HTTPPushSource struct {
@@ -37,15 +39,19 @@ type HTTPPushSource struct {
 
 func (hps *HTTPPushSource) Configure(endpoint string, props map[string]interface{}) error {
 	cfg := &HTTPPushConf{
-		Server:   ":9999",
-		Endpoint: "",
+		Method:       http.MethodPost,
+		ContentType:  "application/json",
+		BufferLength: 1024,
 	}
 	err := cast.MapToStruct(props, cfg)
 	if err != nil {
 		return err
 	}
-	if strings.Trim(cfg.Server, " ") == "" {
-		return fmt.Errorf("property `server` is required")
+	if cfg.Method != http.MethodPost && cfg.Method != http.MethodPut {
+		return fmt.Errorf("method %s is not supported, must be POST or PUT", cfg.Method)
+	}
+	if cfg.ContentType != "application/json" {
+		return fmt.Errorf("property `contentType` must be application/json")
 	}
 	if !strings.HasPrefix(endpoint, "/") {
 		return fmt.Errorf("property `endpoint` must start with /")
@@ -58,47 +64,27 @@ func (hps *HTTPPushSource) Configure(endpoint string, props map[string]interface
 }
 
 func (hps *HTTPPushSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
-	r := mux.NewRouter()
-	meta := make(map[string]interface{})
-	r.HandleFunc(hps.conf.Endpoint, func(w http.ResponseWriter, r *http.Request) {
-		ctx.GetLogger().Debugf("receive getGPS request")
-		defer r.Body.Close()
-		m := make(map[string]interface{})
-		err := json.NewDecoder(r.Body).Decode(&m)
-		if err != nil {
-			handleError(w, err, "Fail to decode data")
-			return
-		}
-		ctx.GetLogger().Debugf("message: %v", m)
-		select {
-		case consumer <- api.NewDefaultSourceTuple(m, meta):
-			ctx.GetLogger().Debugf("send data from http push source")
-		case <-ctx.Done():
-			handleError(w, err, "stopped")
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
-	})
-	// TODO global server
-	srv := &http.Server{
-		Addr:    hps.conf.Server,
-		Handler: r,
+	t, done, err := httpserver.RegisterEndpoint(hps.conf.Endpoint, hps.conf.Method, hps.conf.ContentType)
+	if err != nil {
+		infra.DrainError(ctx, err, errCh)
+		return
 	}
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			ctx.GetLogger().Errorf("listen: %s", err)
-			infra.DrainError(ctx, err, errCh)
+	defer httpserver.UnregisterEndpoint(hps.conf.Endpoint)
+	ch := memory.CreateSub(t, nil, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), hps.conf.BufferLength)
+	defer memory.CloseSourceConsumerChannel(t, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
+	for {
+		select {
+		case <-done: // http data server error
+			infra.DrainError(ctx, fmt.Errorf("http data server shutdown"), errCh)
+			return
+		case v, opened := <-ch:
+			if !opened {
+				return
+			}
+			consumer <- v
+		case <-ctx.Done():
+			return
 		}
-	}()
-	ctx.GetLogger().Infof("http server source listen at: %s", hps.conf.Server)
-	select {
-	case <-ctx.Done():
-		ctx.GetLogger().Infof("shutting down server...")
-		if err := srv.Shutdown(ctx); err != nil {
-			ctx.GetLogger().Errorf("shutdown: %s\n", err)
-		}
-		ctx.GetLogger().Infof("server exiting")
 	}
 }
 
@@ -106,13 +92,4 @@ func (hps *HTTPPushSource) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing HTTP push source")
 	return nil
-}
-
-func handleError(w http.ResponseWriter, err error, prefix string) {
-	message := prefix
-	if message != "" {
-		message += ": "
-	}
-	message += err.Error()
-	http.Error(w, message, http.StatusBadRequest)
 }

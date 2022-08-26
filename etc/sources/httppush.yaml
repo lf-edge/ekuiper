@@ -1,5 +1,4 @@
-#Global httppull configurations
+#Global httppush configurations
 default:
-  # the address to listen on
-  server: ":8900"
-  endpoint: "/"
+  # the http method to use
+  method: "POST"

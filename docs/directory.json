@@ -189,6 +189,10 @@
 									"path": "rules/sources/builtin/http_pull"
 								},
 								{
+									"title": "HTTP 推送源",
+									"path": "rules/sources/builtin/http_push"
+								},
+								{
 									"title": "内存源",
 									"path": "rules/sources/builtin/memory"
 								},
@@ -733,6 +737,10 @@
 								{
 									"title": "HTTP pull source",
 									"path": "rules/sources/builtin/http_pull"
+								},
+								{
+									"title": "HTTP push source",
+									"path": "rules/sources/builtin/http_push"
 								},
 								{
 									"title": "Memory source",
