@@ -131,6 +131,10 @@
 						{
 							"title": "使用 Protobuf 编解码教程",
 							"path": "tutorials/usage/protobuf_tutorial"
+						},
+						{
+							"title": "使用 Prometheus 监控规则运行状态",
+							"path": "tutorials/usage/monitor_with_prometheus"
 						}
 					]
 				}
@@ -677,6 +681,10 @@
 						{
 							"title": "Protobuf Codec Tutorial",
 							"path": "tutorials/usage/protobuf_tutorial"
+						},
+						{
+							"title": "Monitor rule status with Prometheus",
+							"path": "tutorials/usage/monitor_with_prometheus"
 						}
 					]
 				}
