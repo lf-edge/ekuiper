@@ -154,11 +154,15 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 		select {
 		case item := <-c.in:
 			ctx.GetLogger().Debugf("send to cache")
-			c.cacheCtrl <- item
+			go func() { // avoid deadlock when cacheCtrl is full
+				c.cacheCtrl <- item
+			}()
 		case isSuccess := <-c.Ack:
 			// only send the next sink after receiving an ack
 			ctx.GetLogger().Debugf("cache ack")
-			c.cacheCtrl <- AckResult(isSuccess)
+			go func() {
+				c.cacheCtrl <- AckResult(isSuccess)
+			}()
 		case data := <-c.cacheCtrl: // The only place to manipulate cache
 			switch r := data.(type) {
 			case AckResult:
@@ -290,6 +294,7 @@ func (c *SyncCache) loadFromDisk(ctx api.StreamContext) {
 	} else if !ok {
 		ctx.GetLogger().Errorf("nothing in the disk, should not happen")
 	} else {
+		_ = c.store.Delete(strconv.Itoa(c.diskPageHead))
 		if len(c.memCache) >= c.maxMemPage {
 			ctx.GetLogger().Warnf("drop a page of %d items in memory", c.memCache[0].L)
 			c.cacheLength -= c.memCache[0].L
