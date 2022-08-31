@@ -91,12 +91,12 @@ device_conf: # 只过滤 Random-Integer-Device
   messageType: request
 another_app_service_conf:
   topic: new-rules-events
-int8_conf: # 只过滤 Random-Integer-Device int8 reading
-  topic: edgex/events/#/Random-Integer-Device/int8
+int8_conf: # 只过滤 Random-Integer-Device Int8 reading
+  topic: edgex/events/#/Random-Integer-Device/Int8
   messageType: request
 ```
 
-通过这种配置，用户有 3 个 confkey 可以连接到不同的 edgeX 数据流。 例如，如果用户有两个规则：rule1 需要处理所有事件，而 rule2 只处理 Random-Integer-Device 的 int8 读取。 然后用户可以创建两个流：edgexAll 和 edgexInt8。
+通过这种配置，用户有 3 个 confkey 可以连接到不同的 edgeX 数据流。 例如，如果用户有两个规则：rule1 需要处理所有事件，而 rule2 只处理 Random-Integer-Device 的 Int8 读取。 然后用户可以创建两个流：edgexAll 和 edgexInt8。
 
 ```sql
 CREATE STREAM edgexAll() WITH (FORMAT="JSON", TYPE="edgex")
@@ -108,7 +108,7 @@ CREATE STREAM edgexAll() WITH (FORMAT="JSON", TYPE="edgex")
 CREATE STREAM edgexInt8(int8 bigint) WITH (FORMAT="JSON", TYPE="edgex", CONF_KEY="int8_conf")
 ```
 
-不同之处在于，edgexInt8 明确指定 confkey 使用 `int8_conf`，它配置为 Random-Integer-Device 设备 int8读取的筛选主题。 因此，它只会接收每个事件的 int8 读取，并且事件结构是固定的。 因此，流定义也定义了模式，而不是无模式。
+不同之处在于，edgexInt8 明确指定 confkey 使用 `int8_conf`，它配置为 Random-Integer-Device 设备 Int8读取的筛选主题。 因此，它只会接收每个事件的 Int8 读取，并且事件结构是固定的。 因此，流定义也定义了模式，而不是无模式。
 
 同样，用户可以为每个 confkey 创建流。 每个规则都可以根据其关注点选择流。
 
