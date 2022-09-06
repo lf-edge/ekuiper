@@ -1,0 +1,52 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/sqls/query_language_elements.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/query_language_elements.md"
+    },
+    "description": {
+      "en_US": "An operation to group the events by the condition.",
+      "zh_CN": "用于按条件对事件进行分组的操作。"
+    }
+  },
+  "properties": [{
+    "name": "dimensions",
+    "default": "[]",
+    "optional": false,
+    "control": "text",
+    "type": "list_string",
+    "hint": {
+      "en_US": "the dimension fields to group by",
+      "zh_CN": "分组的维度字段"
+    },
+    "label": {
+      "en_US": "Dimensions",
+      "zh_CN": "维度"
+    }
+  }],
+  "node": {
+    "display": true,
+    "category": "op",
+    "input": {
+      "type": "collection",
+      "rowType": "single",
+      "collectionType": "any"
+    },
+    "output": {
+      "type": "collection",
+      "strategy": "grouped"
+    },
+    "icon": "iconPath",
+    "label": {
+      "en": "Group By",
+      "zh": "分组"
+    }
+  }
+}

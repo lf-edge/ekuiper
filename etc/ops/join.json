@@ -1,0 +1,119 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/sqls/query_language_elements.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/query_language_elements.md"
+    },
+    "description": {
+      "en_US": "An operation to combine rows from two or more tables, based on a related column between them.",
+      "zh_CN": "用于基于两个或多个表之间的相关列连接行的操作。"
+    }
+  },
+  "properties": [{
+    "name": "from",
+    "default": "",
+    "optional": false,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "From table name",
+      "zh_CN": "来源表的名字"
+    },
+    "label": {
+      "en_US": "From",
+      "zh_CN": "来源表"
+    }
+  },{
+    "name": "joins",
+    "optional": false,
+    "control": "list",
+    "type": "list_object",
+    "hint": {
+      "en_US": "Join conditions",
+      "zh_CN": "连接条件"
+    },
+    "label": {
+      "en_US": "Joins",
+      "zh_CN": "连接"
+    },
+    "default": [
+      {
+        "name": "name",
+        "default": "",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "Join table name",
+          "zh_CN": "连接的表名"
+        },
+        "label": {
+          "en_US": "Table Name",
+          "zh_CN": "表名"
+        }
+      },
+      {
+        "name": "type",
+        "default": "",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "values": [
+          "inner",
+          "left",
+          "right",
+          "full",
+          "cross"
+        ],
+        "hint": {
+          "en_US": "Join type",
+          "zh_CN": "连接类型"
+        },
+        "label": {
+          "en_US": "Type",
+          "zh_CN": "类型"
+        }
+      },
+      {
+        "name": "on",
+        "default": "",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "join condition expression",
+          "zh_CN": "连接条件语句"
+        },
+        "label": {
+          "en_US": "Condition",
+          "zh_CN": "条件"
+        }
+      }
+    ]
+  }],
+  "node": {
+    "display": true,
+    "category": "op",
+    "input": {
+      "type": "collection",
+      "rowType": "single",
+      "collectionType": "single"
+    },
+    "output": {
+      "type": "collection",
+      "strategy": "append"
+    },
+    "icon": "iconPath",
+    "label": {
+      "en": "Join",
+      "zh": "连接"
+    }
+  }
+}
