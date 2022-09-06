@@ -416,5 +416,13 @@
         }
       ]
     }
-  ]
+  ],
+  "node": {
+    "category": "Sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "EDGEX output",
+      "zh": "EDGEX 输出"
+    }
+  }
 }

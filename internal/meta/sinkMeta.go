@@ -58,10 +58,16 @@ type (
 		HelpUrl     *fileLanguage `json:"helpUrl"`
 		Description *fileLanguage `json:"description"`
 	}
+	fileNode struct {
+		Category string        `json:"category"`
+		Icon     string        `json:"iconPath"`
+		Label    *fileLanguage `json:"label"`
+	}
 	fileSink struct {
 		About  *fileAbout   `json:"about"`
 		Libs   []string     `json:"libs"`
 		Fields []*fileField `json:"properties"`
+		Node   *fileNode    `json:"node"`
 	}
 	language struct {
 		English string `json:"en"`
@@ -86,11 +92,16 @@ type (
 		Hint              *language   `json:"hint"`
 		Label             *language   `json:"label"`
 	}
-
+	node struct {
+		Category string    `json:"category"`
+		Icon     string    `json:"iconPath"`
+		Label    *language `json:"label"`
+	}
 	uiSink struct {
 		About  *about   `json:"about"`
 		Libs   []string `json:"libs"`
 		Fields []field  `json:"properties"`
+		Node   *node    `json:"node"`
 	}
 )
 
@@ -146,6 +157,16 @@ func newAbout(fi *fileAbout) *about {
 	ui.Description = newLanguage(fi.Description)
 	return ui
 }
+func newNode(fi *fileNode) *node {
+	if nil == fi {
+		return nil
+	}
+	ui := new(node)
+	ui.Category = fi.Category
+	ui.Icon = fi.Icon
+	ui.Label = newLanguage(fi.Label)
+	return ui
+}
 func newUiSink(fi *fileSink) (*uiSink, error) {
 	if nil == fi {
 		return nil, nil
@@ -154,6 +175,7 @@ func newUiSink(fi *fileSink) (*uiSink, error) {
 	ui := new(uiSink)
 	ui.Libs = fi.Libs
 	ui.About = newAbout(fi.About)
+	ui.Node = newNode(fi.Node)
 	ui.Fields, err = newField(fi.Fields)
 	return ui, err
 }

@@ -205,5 +205,22 @@
 				"zh_CN": "HTTP标头"
 			}
 		}]
+	},
+	"outputs": [
+		{
+			"label": {
+				"en_US": "Output",
+				"zh_CN": "输出"
+			},
+			"value": "signal"
+		}
+	],
+	"node": {
+		"category": "Protocol/Protocol1",
+		"icon": "iconPath",
+		"label": {
+			"en_US": "HTTP PULL",
+			"zh_CN": "HTTP PULL"
+		}
 	}
 }

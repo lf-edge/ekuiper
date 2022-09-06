@@ -29,11 +29,15 @@ type (
 		About    *fileAbout              `json:"about"`
 		Libs     []string                `json:"libs"`
 		ConfKeys map[string][]*fileField `json:"properties"`
+		Node     *fileNode               `json:"node"`
+		Outputs  []interface{}           `json:"outputs"`
 	}
 	uiSource struct {
 		About    *about             `json:"about"`
 		Libs     []string           `json:"libs"`
 		ConfKeys map[string][]field `json:"properties"`
+		Node     *node              `json:"node"`
+		Outputs  []interface{}      `json:"outputs"`
 	}
 )
 
@@ -45,8 +49,12 @@ func newUiSource(fi *fileSource) (*uiSource, error) {
 	ui := new(uiSource)
 	ui.Libs = fi.Libs
 	ui.About = newAbout(fi.About)
+	ui.Node = newNode(fi.Node)
+	ui.Outputs = make([]interface{}, len(fi.Outputs))
+	for k, field := range fi.Outputs {
+		ui.Outputs[k] = field
+	}
 	ui.ConfKeys = make(map[string][]field)
-
 	for k, fields := range fi.ConfKeys {
 		if ui.ConfKeys[k], err = newField(fields); nil != err {
 			return nil, err

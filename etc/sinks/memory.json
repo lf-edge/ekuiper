@@ -32,5 +32,13 @@
         "zh_CN": "主题"
       }
     }
-  ]
+  ],
+  "node": {
+    "category": "Sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "Memory output",
+      "zh": "内存输出"
+    }
+  }
 }

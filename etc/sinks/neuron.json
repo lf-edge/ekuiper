@@ -77,5 +77,13 @@
         "zh_CN": "原始字符串"
       }
     }
-  ]
+  ],
+  "node": {
+    "category": "Sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "Neuron output",
+      "zh": "Neuron 输出"
+    }
+  }
 }

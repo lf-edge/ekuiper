@@ -62,5 +62,22 @@
           "zh_CN": "间隔时间"
         }
       }]
+  },
+  "outputs": [
+    {
+      "label": {
+        "en_US": "Output",
+        "zh_CN": "输出"
+      },
+      "value": "signal"
+    }
+  ],
+  "node": {
+    "category": "Protocol/Protocol1",
+    "icon": "iconPath",
+    "label": {
+      "en_US": "File",
+      "zh_CN": "File"
+    }
   }
 }

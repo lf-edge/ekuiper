@@ -24,6 +24,68 @@
 		"hint": {
 			"en_US": "Creates a scaled image with new dimensions (width, height) .If either width or height is set to 0, it will be set to an aspect ratio preserving value.",
 			"zh_CN": "创建具有新尺寸（宽度，高度）的缩放图像。如果width或height设置为0，则将其设置为长宽比保留值。"
+		},
+		"args": [
+			{
+				"name": "image",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				}
+			},{
+				"name": "width",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Input width",
+					"zh_CN": "输入宽度"
+				},
+				"label": {
+					"en_US": "Input width",
+					"zh_CN": "输入宽度"
+				}
+			},{
+				"name": "height",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Input height",
+					"zh_CN": "输入高度"
+				},
+				"label": {
+					"en_US": "Input height",
+					"zh_CN": "输入高度"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "resize"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "resize",
+				"zh_CN": "resize"
+			}
 		}
 	}, {
 		"name": "thumbnail",
@@ -31,6 +93,68 @@
 		"hint": {
 			"en_US": "Downscales an image preserving its aspect ratio to the maximum dimensions (maxWidth, maxHeight).",
 			"zh_CN": "将保留宽高比的图像缩小到最大尺寸（maxWidth，maxHeight）。"
+		},
+		"args": [
+			{
+				"name": "image",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				}
+			},{
+				"name": "maxWidth",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Input maxWidth",
+					"zh_CN": "输入最大宽度"
+				},
+				"label": {
+					"en_US": "Input maxWidth",
+					"zh_CN": "输入最大宽度"
+				}
+			},{
+				"name": "maxHeight",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Input maxHeight",
+					"zh_CN": "输入最大高度"
+				},
+				"label": {
+					"en_US": "Input maxHeight",
+					"zh_CN": "输入最大高度"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "thumbnail"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "thumbnail",
+				"zh_CN": "thumbnail"
+			}
 		}
 	}]
 }

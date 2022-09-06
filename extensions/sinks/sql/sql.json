@@ -75,5 +75,13 @@
 			"zh_CN": "表字段"
 		}
 	}
- ]
+ ],
+	"node": {
+		"category": "Sink",
+		"icon": "iconPath",
+		"label": {
+			"en": "SQL",
+			"zh": "SQL"
+		}
+	}
 }

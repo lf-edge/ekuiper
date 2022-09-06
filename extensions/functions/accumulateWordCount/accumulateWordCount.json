@@ -19,9 +19,45 @@
 	"functions": [{
 		"name": "accumulateWordCount",
 		"example": "accumulateWordCount(col1)",
+		"aggregate": false,
 		"hint": {
 			"en_US": "This function counts the total number of words",
 			"zh_CN": "该函数统计一共有多少个单词"
+		},
+		"args": [
+			{
+				"name": "inputData",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"values": []
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "accumulateWordCount"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "AccumulateWordCount",
+				"zh_CN": "AccumulateWordCount"
+			}
 		}
 	}]
 }

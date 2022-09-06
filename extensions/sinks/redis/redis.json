@@ -129,5 +129,13 @@
 				"zh_CN": "超时时间"
 			}
 		}
-	]
+	],
+	"node": {
+		"category": "Sink",
+		"icon": "iconPath",
+		"label": {
+			"en": "Redis",
+			"zh": "Redis"
+		}
+	}
 }

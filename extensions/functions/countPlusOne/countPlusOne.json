@@ -22,6 +22,40 @@
 		"hint": {
 			"en_US": "The value of the output parameter length plus one",
 			"zh_CN": "输出参数长度加一的值"
+		},
+		"args": [
+			{
+				"name": "inputData",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "countPlusOne"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "countPlusOne",
+				"zh_CN": "countPlusOne"
+			}
 		}
 	}]
 }

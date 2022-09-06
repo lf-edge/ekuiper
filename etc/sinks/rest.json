@@ -186,5 +186,13 @@
         "zh_CN": "打印 HTTP 响应"
       }
     }
-  ]
+  ],
+  "node": {
+    "category": "Sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "Rest output",
+      "zh": "rest 输出"
+    }
+  }
 }
