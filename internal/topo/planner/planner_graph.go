@@ -285,7 +285,10 @@ func parseOrderBy(props map[string]interface{}) (*operator.OrderOp, error) {
 	}
 	stmt := "SELECT * FROM unknown ORDER BY"
 	for _, s := range n.Sorts {
-		stmt += " " + s.Field + " " + s.Order
+		stmt += " " + s.Field + " "
+		if s.Desc {
+			stmt += "DESC"
+		}
 	}
 	p, err := xsql.NewParser(strings.NewReader(stmt)).Parse()
 	if err != nil {
