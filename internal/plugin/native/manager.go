@@ -340,13 +340,16 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 	switch t {
 	case plugin2.SOURCE:
 		paths = append(paths, path.Join(rr.etcDir, plugin2.PluginTypes[t], name+".yaml"))
-		paths = append(paths, path.Join(rr.etcDir, plugin2.PluginTypes[plugin2.SOURCE], name+".json"))
+		srcJsonPath := path.Join(rr.etcDir, plugin2.PluginTypes[plugin2.SOURCE], name+".json")
+		_ = os.RemoveAll(srcJsonPath)
 		meta.UninstallSource(name)
 	case plugin2.SINK:
-		paths = append(paths, path.Join(rr.etcDir, plugin2.PluginTypes[plugin2.SINK], name+".json"))
+		sinkJsonPaths := path.Join(rr.etcDir, plugin2.PluginTypes[plugin2.SINK], name+".json")
+		_ = os.RemoveAll(sinkJsonPaths)
 		meta.UninstallSink(name)
 	case plugin2.FUNCTION:
-		paths = append(paths, path.Join(rr.etcDir, plugin2.PluginTypes[plugin2.FUNCTION], name+".json"))
+		funcJsonPath := path.Join(rr.etcDir, plugin2.PluginTypes[plugin2.FUNCTION], name+".json")
+		_ = os.RemoveAll(funcJsonPath)
 		old := make([]string, 0)
 		if ok, err := rr.db.Get(name, &old); err != nil {
 			return err
