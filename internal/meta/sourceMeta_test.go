@@ -51,12 +51,12 @@ func TestGetSqlSourceMeta(t *testing.T) {
 		return
 	}
 
-	if err = ReadSourceMetaFile(path.Join(confDir, "sources", "sql.json"), true); nil != err {
+	if err = ReadSourceMetaFile(path.Join(confDir, "sources", "httppull.json"), true); nil != err {
 		t.Error(err)
 		return
 	}
 
-	showMeta, err := GetSourceMeta("sql", "zh_CN")
+	showMeta, err := GetSourceMeta("httppull", "zh_CN")
 	if nil != err {
 		t.Error(err)
 	}
@@ -76,12 +76,12 @@ func TestGetSqlSinkMeta(t *testing.T) {
 		return
 	}
 
-	if err = ReadSinkMetaFile(path.Join(confDir, "sinks", "sql.json"), true); nil != err {
+	if err = ReadSinkMetaFile(path.Join(confDir, "sinks", "mqtt.json"), true); nil != err {
 		t.Error(err)
 		return
 	}
 
-	showMeta, err := GetSinkMeta("sql", "zh_CN")
+	showMeta, err := GetSinkMeta("mqtt", "zh_CN")
 	if nil != err {
 		t.Error(err)
 		return

@@ -25,23 +25,29 @@ import (
 
 type (
 	fileFunc struct {
-		Name    string        `json:"name"`
-		Example string        `json:"example"`
-		Hint    *fileLanguage `json:"hint"`
+		Name       string        `json:"name"`
+		Example    string        `json:"example"`
+		Hint       *fileLanguage `json:"hint"`
+		Aggregate  bool          `json:"aggregate"`
+		ArgsFields []*fileField  `json:"args"`
 	}
 	fileFuncs struct {
 		About   *fileAbout  `json:"about"`
 		Name    string      `json:"name"`
+		Version string      `json:"version"`
 		FiFuncs []*fileFunc `json:"functions"`
 	}
 	uiFunc struct {
-		Name    string    `json:"name"`
-		Example string    `json:"example"`
-		Hint    *language `json:"hint"`
+		Name       string       `json:"name"`
+		Example    string       `json:"example"`
+		Hint       *language    `json:"hint"`
+		Aggregate  bool         `json:"aggregate"`
+		ArgsFields []*fileField `json:"args"`
 	}
 	uiFuncs struct {
 		About   *about    `json:"about"`
 		Name    string    `json:"name"`
+		Version string    `json:"version"`
 		UiFuncs []*uiFunc `json:"functions"`
 	}
 )
@@ -58,6 +64,8 @@ func newUiFuncs(fi *fileFuncs) *uiFuncs {
 		ui.Name = v.Name
 		ui.Example = v.Example
 		ui.Hint = newLanguage(v.Hint)
+		ui.Aggregate = v.Aggregate
+		ui.ArgsFields = v.ArgsFields
 		uis.UiFuncs = append(uis.UiFuncs, ui)
 	}
 	return uis
