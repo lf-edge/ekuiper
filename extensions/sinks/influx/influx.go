@@ -95,7 +95,7 @@ func (m *influxSink) Configure(props map[string]interface{}) error {
 		}
 	}
 	if i, ok := props["dataTemplate"]; ok {
-		if i.(string) != "" {
+		if i, ok := i.(string); ok && i != "" {
 			m.hasTransform = true
 		}
 	}
