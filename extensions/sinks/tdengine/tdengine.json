@@ -199,5 +199,13 @@
         "zh_CN": "标签字段"
       }
     }
-  ]
+  ],
+  "node": {
+    "category": "Sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "Tdengine",
+      "zh": "Tdengine"
+    }
+  }
 }

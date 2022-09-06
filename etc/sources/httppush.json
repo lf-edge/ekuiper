@@ -34,5 +34,20 @@
 				"zh_CN": "请求方法"
 			}
 		}]
+	},
+	"outputs": [{
+		"label": {
+			"en_US": "Output",
+			"zh_CN": "输出"
+		},
+		"value": "signal"
+	}],
+	"node": {
+		"category": "Protocol/Protocol1",
+		"icon": "iconPath",
+		"label": {
+			"en_US": "HTTP PUSH",
+			"zh_CN": "HTTP PUSH"
+		}
 	}
 }

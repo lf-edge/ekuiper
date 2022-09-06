@@ -32,5 +32,13 @@
         "zh_CN": "打印日志"
       }
     }
-  ]
+  ],
+  "node": {
+    "category": "Sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "Nop output",
+      "zh": "Nop 输出"
+    }
+  }
 }

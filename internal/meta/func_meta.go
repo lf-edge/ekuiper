@@ -30,6 +30,8 @@ type (
 		Hint       *fileLanguage `json:"hint"`
 		Aggregate  bool          `json:"aggregate"`
 		ArgsFields []*fileField  `json:"args"`
+		Node       *fileNode     `json:"node"`
+		Outputs    []interface{} `json:"outputs"`
 	}
 	fileFuncs struct {
 		About   *fileAbout  `json:"about"`
@@ -38,11 +40,13 @@ type (
 		FiFuncs []*fileFunc `json:"functions"`
 	}
 	uiFunc struct {
-		Name       string       `json:"name"`
-		Example    string       `json:"example"`
-		Hint       *language    `json:"hint"`
-		Aggregate  bool         `json:"aggregate"`
-		ArgsFields []*fileField `json:"args"`
+		Name       string        `json:"name"`
+		Example    string        `json:"example"`
+		Hint       *language     `json:"hint"`
+		Aggregate  bool          `json:"aggregate"`
+		ArgsFields []*fileField  `json:"args"`
+		Node       *node         `json:"node"`
+		Outputs    []interface{} `json:"outputs"`
 	}
 	uiFuncs struct {
 		About   *about    `json:"about"`
@@ -66,6 +70,11 @@ func newUiFuncs(fi *fileFuncs) *uiFuncs {
 		ui.Hint = newLanguage(v.Hint)
 		ui.Aggregate = v.Aggregate
 		ui.ArgsFields = v.ArgsFields
+		ui.Node = newNode(v.Node)
+		ui.Outputs = make([]interface{}, len(v.Outputs))
+		for k, field := range v.Outputs {
+			ui.Outputs[k] = field
+		}
 		uis.UiFuncs = append(uis.UiFuncs, ui)
 	}
 	return uis

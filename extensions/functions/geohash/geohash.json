@@ -20,10 +20,59 @@
   "name":"geohash",
 	"functions": [{
 		"name": "geohashEncode",
-		"example": "geohashEncode(la,lo )",
+		"example": "geohashEncode(la,lo)",
 		"hint": {
 			"en_US": "Encode latitude and longitude as characters",
 			"zh_CN": "将经纬度编码为字符"
+		},
+		"args": [
+			{
+				"name": "la",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input la",
+					"zh_CN": "输入经度"
+				},
+				"label": {
+					"en_US": "Input la",
+					"zh_CN": "输入经度"
+				}
+			},
+			{
+				"name": "lo",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input lo",
+					"zh_CN": "输入纬度"
+				},
+				"label": {
+					"en_US": "Input lo",
+					"zh_CN": "输入纬度"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "geohashEncode"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "geohashEncode",
+				"zh_CN": "geohashEncode"
+			}
 		}
 	}, {
 		"name": "geohashEncodeInt",
@@ -31,6 +80,55 @@
 		"hint": {
 			"en_US": "Encode latitude and longitude as numbers",
 			"zh_CN": "将经纬度编码为数字"
+		},
+		"args": [
+			{
+				"name": "la",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input la",
+					"zh_CN": "输入经度"
+				},
+				"label": {
+					"en_US": "Input la",
+					"zh_CN": "输入经度"
+				}
+			},
+			{
+				"name": "lo",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input lo",
+					"zh_CN": "输入纬度"
+				},
+				"label": {
+					"en_US": "Input lo",
+					"zh_CN": "输入纬度"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "geohashEncodeInt"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "geohashEncodeInt",
+				"zh_CN": "geohashEncodeInt"
+			}
 		}
 	}, {
 		"name": "geohashDecode",
@@ -38,6 +136,40 @@
 		"hint": {
 			"en_US": "Decode characters into latitude and longitude",
 			"zh_CN": "将字符解码为经纬度"
+		},
+		"args": [
+			{
+				"name": "data",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "geohashDecode"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "geohashDecode",
+				"zh_CN": "geohashDecode"
+			}
 		}
 	}, {
 		"name": "geohashDecodeInt",
@@ -45,6 +177,40 @@
 		"hint": {
 			"en_US": "Decode numbers into latitude and longitude",
 			"zh_CN": "将数字解码为经纬度"
+		},
+		"args": [
+			{
+				"name": "data",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "geohashDecodeInt"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "geohashDecodeInt",
+				"zh_CN": "geohashDecodeInt"
+			}
 		}
 	}, {
 		"name": "geohashBoundingBox",
@@ -52,6 +218,40 @@
 		"hint": {
 			"en_US": "Area for calculating character codes",
 			"zh_CN": "计算字符编码的区域"
+		},
+		"args": [
+			{
+				"name": "data",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "geohashBoundingBox"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "geohashBoundingBox",
+				"zh_CN": "geohashBoundingBox"
+			}
 		}
 	}, {
 		"name": "geohashBoundingBoxInt",
@@ -59,6 +259,40 @@
 		"hint": {
 			"en_US": "Calculate the area of digital coding",
 			"zh_CN": "计算数字编码的区域"
+		},
+		"args": [
+			{
+				"name": "data",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "geohashBoundingBoxInt"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "geohashBoundingBoxInt",
+				"zh_CN": "geohashBoundingBoxInt"
+			}
 		}
 	}, {
 		"name": "geohashNeighbor",
@@ -66,6 +300,55 @@
 		"hint": {
 			"en_US": "Calculate the neighbor of the corresponding direction of the character encoding",
 			"zh_CN": "计算字符编码对应方向的邻居"
+		},
+		"args": [
+			{
+				"name": "hash",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				}
+			},
+			{
+				"name": "direction",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input direction",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input direction",
+					"zh_CN": "输入数据"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "geohashNeighbor"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "geohashNeighbor",
+				"zh_CN": "geohashNeighbor"
+			}
 		}
 	}, {
 		"name": "geohashNeighborInt",
@@ -73,6 +356,55 @@
 		"hint": {
 			"en_US": "Calculate the neighbors in the corresponding direction of the digital code",
 			"zh_CN": "计算数字编码对应方向的邻居"
+		},
+		"args": [
+			{
+				"name": "hash",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				}
+			},
+			{
+				"name": "direction",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input direction",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input direction",
+					"zh_CN": "输入数据"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "geohashNeighborInt"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "geohashNeighborInt",
+				"zh_CN": "geohashNeighborInt"
+			}
 		}
 	}, {
 		"name": "geohashNeighbors",
@@ -80,6 +412,40 @@
 		"hint": {
 			"en_US": "Calculate all neighbors of character encoding",
 			"zh_CN": "计算字符编码的所有邻居"
+		},
+		"args": [
+			{
+				"name": "hash",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "geohashNeighbors"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "geohashNeighbors",
+				"zh_CN": "geohashNeighbors"
+			}
 		}
 	}, {
 		"name": "geohashNeighborsInt",
@@ -87,6 +453,36 @@
 		"hint": {
 			"en_US": "Calculate all neighbors of digital encoding",
 			"zh_CN": "计算数字编码的所有邻居"
-		}
+		},
+		"args": [{
+				"name": "hash",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				}
+			}],
+		"outputs": [{
+			"label": {
+				"en_US": "Output",
+				"zh_CN": "输出"
+			},
+			"value": "geohashNeighbors"
+		}],
+		"node": {
+				"category": "abc",
+				"icon": "iconPath",
+				"label": {
+					"en_US": "geohashNeighbors",
+					"zh_CN": "geohashNeighbors"
+				}
+			}
 	}]
 }

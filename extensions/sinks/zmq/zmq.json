@@ -47,5 +47,13 @@
 			"en_US": "Topic",
 			"zh_CN": "主题"
 		}
-	}]
+	}],
+	"node": {
+		"category": "Sink",
+		"icon": "iconPath",
+		"label": {
+			"en": "ZMQ",
+			"zh": "ZMQ"
+		}
+	}
 }

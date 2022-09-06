@@ -216,5 +216,13 @@
         "zh_CN": "跳过证书验证"
       }
     }
-  ]
+  ],
+  "node": {
+    "category": "Sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "MQTT output",
+      "zh": "MQTT 输出"
+    }
+  }
 }

@@ -22,6 +22,40 @@
 		"hint": {
 			"en_US": "The parameter value is output as it is.",
 			"zh_CN": "原样输出参数值。"
+		},
+		"args": [
+			{
+				"name": "inputData",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "echo"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "countPlusOne",
+				"zh_CN": "countPlusOne"
+			}
 		}
 	}]
 }
