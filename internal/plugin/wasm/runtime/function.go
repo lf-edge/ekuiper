@@ -71,24 +71,25 @@ func (f *WasmFunc) Validate(args []interface{}) error {
 	//panic("implement me")
 	fmt.Println("[plugin][wasm][runtime][function.go][Validate] start: ")
 	jsonArg, err := encode("Validate", args)
-	fmt.Println("[plugin][wasm][runtime][function.go][Validate] (string)jsonArg: ", jsonArg)
+	fmt.Println("[plugin][wasm][runtime][function.go][Validate] (string)jsonArg: ", string(jsonArg))
 	if err != nil {
 		return err
 	}
-	res, err := f.dataCh.Req(jsonArg)
-	if err != nil {
-		return err
-	}
-	fr := &FuncReply{}
-	err = json.Unmarshal(res, fr)
-	if err != nil {
-		return err
-	}
-	if fr.State {
-		return nil
-	} else {
-		return fmt.Errorf("validate return state is false, got %+v", fr)
-	}
+	//res, err := f.dataCh.Req(jsonArg)
+	//if err != nil {
+	//	return err
+	//}
+	//fr := &FuncReply{}
+	//err = json.Unmarshal(res, fr)
+	//if err != nil {
+	//	return err
+	//}
+	//if fr.State {
+	//	return nil
+	//} else {
+	//	return fmt.Errorf("validate return state is false, got %+v", fr)
+	//}
+	return err
 }
 
 func (f *WasmFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
@@ -104,6 +105,13 @@ func (f *WasmFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{
 	//{"ruleId":"rule1","opId":"op1","instanceId":1,"funcId":1}
 	//---------------------------------------
 	//value := args[0].(int)
+	//var Args [][]interface{}
+	//Args = args
+	//for _, num := range args{
+	//
+	//}
+	fmt.Println("[---Exec---] args :", args) // [[25]]
+
 	res := f.ExecWasmFunc(args)
 	//---------------------------------------
 	//jsonArg, err := encode("Exec", append(args, ctxRaw))
@@ -141,39 +149,41 @@ func (f *WasmFunc) IsAggregate() bool {
 	if f.isAgg > 0 {
 		return f.isAgg > 1
 	}
-	jsonArg, err := encode("IsAggregate", nil)
-	if err != nil {
-		conf.Log.Error(err)
-		return false
-	}
-	res, err := f.dataCh.Req(jsonArg)
-	if err != nil {
-		conf.Log.Error(err)
-		return false
-	}
-	fr := &FuncReply{}
-	err = json.Unmarshal(res, fr)
-	if err != nil {
-		conf.Log.Error(err)
-		return false
-	}
-	if fr.State {
-		r, ok := fr.Result.(bool)
-		if !ok {
-			conf.Log.Errorf("IsAggregate result is not bool, got %s", string(res))
-			return false
-		} else {
-			if r {
-				f.isAgg = 2
-			} else {
-				f.isAgg = 1
-			}
-			return r
-		}
-	} else {
-		conf.Log.Errorf("IsAggregate return state is false, got %+v", fr)
-		return false
-	}
+	fmt.Println("[wasm][IsAggregate] start")
+	//jsonArg, err := encode("IsAggregate", nil)
+	//if err != nil {
+	//	conf.Log.Error(err)
+	//	return false
+	//}
+	//res, err := f.dataCh.Req(jsonArg)
+	//if err != nil {
+	//	conf.Log.Error(err)
+	//	return false
+	//}
+	//fr := &FuncReply{}
+	//err = json.Unmarshal(res, fr)
+	//if err != nil {
+	//	conf.Log.Error(err)
+	//	return false
+	//}
+	//if fr.State {
+	//	r, ok := fr.Result.(bool)
+	//	if !ok {
+	//		conf.Log.Errorf("IsAggregate result is not bool, got %s", string(res))
+	//		return false
+	//	} else {
+	//		if r {
+	//			f.isAgg = 2
+	//		} else {
+	//			f.isAgg = 1
+	//		}
+	//		return r
+	//	}
+	//} else {
+	//	conf.Log.Errorf("IsAggregate return state is false, got %+v", fr)
+	//	return false
+	//}
+	return true
 }
 
 func (f *WasmFunc) Close() error {
@@ -201,7 +211,7 @@ func encodeCtx(ctx api.FunctionContext) (string, error) {
 	return string(bs), err
 }
 
-func (f *WasmFunc) ExecWasmFunc(args interface{}) []interface{} {
+func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 	funcname := f.symbolName
 	fmt.Println("[internal][plugin][wasm][runtime][function.go] funcname: ", funcname)
 	WasmFile := f.reg.WasmFile
@@ -211,40 +221,88 @@ func (f *WasmFunc) ExecWasmFunc(args interface{}) []interface{} {
 	store := wasmedge.NewStore()
 	vm := wasmedge.NewVMWithConfigAndStore(conf, store)
 	//step 1: Load WASM file
-	//fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 1: Load WASM file: ")
 	err := vm.LoadWasmFile(WasmFile)
 	if err != nil {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Load WASM from file FAILED: ")
 		fmt.Errorf(err.Error())
 	}
 	//step 2: Validate the WASM module
-	//fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 2: Validate the WASM module")
 	err = vm.Validate()
 	if err != nil {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Validate FAILED: ")
 		fmt.Errorf(err.Error())
 	}
 	//step 3: Instantiate the WASM moudle
-	//fmt.Println("[wasm][manager-AddWasmPlugin-NewWasmPlugin] step 3: Instantiate the WASM moudle")
 	err = vm.Instantiate()
 	if err != nil {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Instantiate FAILED: ")
 		fmt.Errorf(err.Error())
 	}
 	// step 4: Execute WASM functions.Parameters(1)
-	//fmt.Println("[wasm][manager-ExecuteFunction] step 4: Execute WASM functions.Parameters(1): ", args[0])
-	//fmt.Println("[wasm][manager-ExecuteFunction] function: ", w.WasmPluginConfig.Function)
-	value := args.(int)
-	//fmt.Println("The value is ", value)
-	fmt.Println("The value(uint32) is ", uint32(value))
-	res, err := vm.Execute(funcname, uint32(value))
-	if err != nil {
-		log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-	} else {
-		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
-		fmt.Println(res[0].(int32))
+	fmt.Println("[-----] args: ", args) // [[25]]
+	var Args []int
+	for _, num := range args {
+		//for _, x := range num {
+		//	fmt.Println("[sliceSum] num: ", num)
+		//	y := x.(int)
+		//	fmt.Println("[sliceSum] y: ", y)
+		//	Args = append(Args, y)
+		//}
+		x := num.(int)
+		x, ok := (num).(int)
+		if !ok {
+			fmt.Println("Failed!!")
+		}
+		//x := int(num)
+		//y := x.(float64)
+		fmt.Println("[sliceSum] num(int):", x)
 	}
-	//fr.Result = res
-	vm.Release()
+
+	Len := len(args)
+	var res []interface{}
+	switch Len {
+	case 0:
+		res, err = vm.Execute(funcname)
+		if err != nil {
+			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
+		} else {
+			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
+			fmt.Println(res[0].(int32))
+		}
+		//fr.Result = res
+		vm.Release()
+		//return res
+	case 1:
+		res, err = vm.Execute(funcname, uint32(Args[0]))
+		if err != nil {
+			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
+		} else {
+			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
+			fmt.Println(res[0].(int32))
+		}
+		//fr.Result = res
+		vm.Release()
+		//return res
+	case 2:
+		res, err = vm.Execute(funcname, args[0], args[1])
+		if err != nil {
+			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
+		} else {
+			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
+			fmt.Println(res[0].(int32))
+		}
+		//fr.Result = res
+		vm.Release()
+	}
 	return res
 }
+
+//func sliceSum(args []interface{}) []int {
+//	var Args []int
+//	for _, num := range args {
+//		x := num.(int)
+//		fmt.Println("[sliceSum] num(int):", x)
+//		Args = append(Args, x)
+//	}
+//	return Args
+//}

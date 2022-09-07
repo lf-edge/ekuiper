@@ -152,6 +152,7 @@ func (m *Manager) Register(p plugin.Plugin) error {
 	}
 
 	if _, ok := m.reg.Get(name); ok {
+		fmt.Println("[internal][plugin][wasm][Register]")
 		return fmt.Errorf("invalid name %s: duplicate", name)
 	}
 	zipPath := path.Join(m.pluginDir, name+".zip")

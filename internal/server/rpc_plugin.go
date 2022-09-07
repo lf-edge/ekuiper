@@ -59,6 +59,8 @@ func (t *Server) DropPlugin(arg *model.PluginDesc, reply *string) error {
 	} else {
 		if pt == plugin.PORTABLE {
 			*reply = fmt.Sprintf("Plugin %s is dropped .", p.GetName())
+		} else if pt == plugin.WASM {
+			*reply = fmt.Sprintf("Wasm Plugin %s is dropped .", p.GetName())
 		} else {
 			if arg.Stop {
 				*reply = fmt.Sprintf("Plugin %s is dropped and Kuiper will be stopped.", p.GetName())

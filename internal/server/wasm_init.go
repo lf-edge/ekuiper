@@ -23,75 +23,75 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable"
+	"github.com/lf-edge/ekuiper/internal/plugin/wasm"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"net/http"
 )
 
-var portableManager *portable.Manager
+var wasmManager *wasm.Manager
 
 func init() {
-	components["portable"] = portableComp{}
+	components["wasm"] = wasmComp{}
 }
 
-type portableComp struct{}
+type wasmComp struct{}
 
-func (p portableComp) register() {
+func (p wasmComp) register() {
 	var err error
-	portableManager, err = portable.InitManager()
+	wasmManager, err = wasm.InitManager()
 	if err != nil {
 		panic(err)
 	}
-	entries = append(entries, binder.FactoryEntry{Name: "portable plugin", Factory: portableManager, Weight: 8})
+	entries = append(entries, binder.FactoryEntry{Name: "wasm plugin", Factory: wasmManager, Weight: 8})
 }
 
-func (p portableComp) rest(r *mux.Router) {
-	r.HandleFunc("/plugins/portables", portablesHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/plugins/portables/{name}", portableHandler).Methods(http.MethodGet, http.MethodDelete)
+func (p wasmComp) rest(r *mux.Router) {
+	r.HandleFunc("/plugins/wasm", wasmsHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/plugins/wasm/{name}", wasmHandler).Methods(http.MethodGet, http.MethodDelete)
 }
 
-func portablesHandler(w http.ResponseWriter, r *http.Request) {
+func wasmsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	switch r.Method {
 	case http.MethodGet:
-		content := portableManager.List()
+		content := wasmManager.List()
 		jsonResponse(content, w, logger)
 	case http.MethodPost:
-		sd := plugin.NewPluginByType(plugin.PORTABLE)
+		sd := plugin.NewPluginByType(plugin.WASM)
 		err := json.NewDecoder(r.Body).Decode(sd)
 		// Problems decoding
 		if err != nil {
-			handleError(w, err, "Invalid body: Error decoding the portable plugin json", logger)
+			handleError(w, err, "Invalid body: Error decoding the wasm plugin json", logger)
 			return
 		}
-		err = portableManager.Register(sd)
+		err = wasmManager.Register(sd)
 		if err != nil {
-			handleError(w, err, "portable plugin create command error", logger)
+			handleError(w, err, "wasm plugin create command error", logger)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("portable plugin %s is created", sd.GetName())))
+		w.Write([]byte(fmt.Sprintf("wasm plugin %s is created", sd.GetName())))
 	}
 }
 
-func portableHandler(w http.ResponseWriter, r *http.Request) {
+func wasmHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
 	name := vars["name"]
 	switch r.Method {
 	case http.MethodDelete:
-		err := portableManager.Delete(name)
+		err := wasmManager.Delete(name)
 		if err != nil {
-			handleError(w, err, fmt.Sprintf("delete portable plugin %s error", name), logger)
+			handleError(w, err, fmt.Sprintf("delete wasm plugin %s error", name), logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		result := fmt.Sprintf("portable plugin %s is deleted", name)
+		result := fmt.Sprintf("wasm plugin %s is deleted", name)
 		w.Write([]byte(result))
 	case http.MethodGet:
-		j, ok := portableManager.GetPluginInfo(name)
+		j, ok := wasmManager.GetPluginInfo(name)
 		if !ok {
-			handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("describe portable plugin %s error", name), logger)
+			handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("describe wasm plugin %s error", name), logger)
 			return
 		}
 		jsonResponse(j, w, logger)

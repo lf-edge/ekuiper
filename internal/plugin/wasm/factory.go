@@ -1,7 +1,6 @@
 package wasm
 
 import (
-	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
@@ -12,7 +11,7 @@ import (
 var funcInsMap = &sync.Map{}
 
 func (m *Manager) Function(name string) (api.Function, error) {
-	fmt.Println("[plugin][wasm][factory.go] start")
+	//fmt.Println("[plugin][wasm][factory.go] start")
 	//ins, ok := funcInsMap.Load(name)
 	//if ok {
 	//	return ins.(api.Function), nil
@@ -28,4 +27,14 @@ func (m *Manager) Function(name string) (api.Function, error) {
 	}
 	funcInsMap.Store(name, f)
 	return f, nil
+}
+
+func (m *Manager) HasFunctionSet(funcName string) bool {
+	_, ok := m.reg.GetSymbol(plugin.FUNCTION, funcName)
+	return ok
+}
+
+func (m *Manager) ConvName(funcName string) (string, bool) {
+	_, ok := m.GetPluginMeta(plugin.FUNCTION, funcName)
+	return funcName, ok
 }

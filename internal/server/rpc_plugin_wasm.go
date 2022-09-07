@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !core || (rpc && portable && plugin)
-// +build !core rpc,portable,plugin
+//go:build portable && rpc && core && !plugin
+// +build portable,rpc,core,!plugin
 
 package server
 
@@ -23,40 +23,29 @@ import (
 )
 
 func (t *Server) doRegister(pt plugin.PluginType, p plugin.Plugin) error {
-	if pt == plugin.PORTABLE {
-		return portableManager.Register(p)
-	} else if pt == plugin.WASM {
-		fmt.Println("[rpc_plugin_both][doRegister] wasm:")
+	if pt == plugin.WASM {
 		return wasmManager.Register(p)
 	} else {
-		return nativeManager.Register(pt, p)
+		return fmt.Errorf("native plugin support is disabled")
 	}
 }
 
 func (t *Server) doDelete(pt plugin.PluginType, name string, stopRun bool) error {
-	if pt == plugin.PORTABLE {
-		return portableManager.Delete(name)
-	} else if pt == plugin.WASM {
+	if pt == plugin.WASM {
 		return wasmManager.Delete(name)
 	} else {
-		return nativeManager.Delete(pt, name, stopRun)
+		return fmt.Errorf("native plugin support is disabled")
 	}
 }
 
 func (t *Server) doDesc(pt plugin.PluginType, name string) (interface{}, error) {
-	var (
-		result interface{}
-		ok     bool
-	)
-	if pt == plugin.PORTABLE {
-		result, ok = portableManager.GetPluginInfo(name)
-	} else if pt == plugin.WASM {
-		result, ok = wasmManager.GetPluginInfo(name)
+	if pt == plugin.WASM {
+		r, ok := wasmManager.GetPluginInfo(name)
+		if !ok {
+			return nil, fmt.Errorf("not found")
+		}
+		return r, nil
 	} else {
-		result, ok = nativeManager.GetPluginInfo(pt, name)
+		return nil, fmt.Errorf("native plugin support is disabled")
 	}
-	if !ok {
-		return nil, fmt.Errorf("not found")
-	}
-	return result, nil
 }
