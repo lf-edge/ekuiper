@@ -280,8 +280,8 @@ func (m *SinkNode) parseConf(logger api.Logger) (*SinkConf, error) {
 	m.concurrency = sconf.Concurrency
 	if sconf.Format == "" {
 		sconf.Format = "json"
-	} else if sconf.Format != message.FormatJson && sconf.Format != message.FormatProtobuf {
-		logger.Warnf("invalid type for format property, should be json or protobuf but found %s", sconf.Format)
+	} else if sconf.Format != message.FormatJson && sconf.Format != message.FormatProtobuf && sconf.Format != message.FormatBinary {
+		logger.Warnf("invalid type for format property, should be json protobuf or binary but found %s", sconf.Format)
 		sconf.Format = "json"
 	}
 	err = cast.MapToStruct(m.options, &sconf.SinkConf)
