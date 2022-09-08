@@ -1,6 +1,6 @@
 # InfluxDB Sink
 
-The sink will publish the result into a InfluxDB.
+The sink will publish the result into a InfluxDB `V2.X` .
 
 ## Compile & deploy plugin
 
@@ -75,7 +75,7 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
   "actions": [
     {
       "log": {},
-      "influx":{
+      "influx_v2":{
         "addr": "http://192.168.100.245:8086",
         "token": "test_token",
         "org": "admin",

@@ -73,7 +73,7 @@ $(PLUGINS_CUSTOM):
   "actions": [
     {
       "log": {},
-      "influx":{
+      "influx_v2":{
        "addr": "http://192.168.100.245:8086",
        "token": "test_token",
        "org": "admin",
