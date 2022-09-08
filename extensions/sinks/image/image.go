@@ -37,7 +37,7 @@ type imageSink struct {
 }
 
 func (m *imageSink) Configure(props map[string]interface{}) error {
-	if i, ok := props["format"]; ok {
+	if i, ok := props["imageFormat"]; ok {
 		if i, ok := i.(string); ok {
 			if "png" != i && "jpeg" != i {
 				return fmt.Errorf("%s image type is not currently supported", i)
