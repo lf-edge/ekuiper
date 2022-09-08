@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ func (p *baseLogicalPlan) SetChildren(children []LogicalPlan) {
 	p.children = children
 }
 
-// By default, push down the predicate to the first child instead of the children
+// PushDownPredicate By default, push down the predicate to the first child instead of the children
 // as most plan cannot have multiple children
 func (p *baseLogicalPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
 	if len(p.children) == 0 {

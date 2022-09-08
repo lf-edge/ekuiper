@@ -29,6 +29,11 @@ var StreamTypeMap = map[StreamType]string{
 	TypeTable:  "table",
 }
 
+const (
+	StreamKindLookup = "lookup"
+	StreamKindScan   = "scan"
+)
+
 type StreamType int
 
 type StreamStmt struct {
@@ -86,9 +91,12 @@ type Options struct {
 	STRICT_VALIDATION bool   `json:"strictValidation,omitempty"`
 	TIMESTAMP         string `json:"timestamp,omitempty"`
 	TIMESTAMP_FORMAT  string `json:"timestampFormat,omitempty"`
-	RETAIN_SIZE       int    `json:"retainSize,omitempty"`
 	SHARED            bool   `json:"shared,omitempty"`
 	SCHEMAID          string `json:"schemaid,omitempty"`
+	// for scan table only
+	RETAIN_SIZE int `json:"retainSize,omitempty"`
+	// for table only, to distinguish lookup & scan
+	KIND string `json:"kind,omitempty"`
 }
 
 func (o Options) node() {}

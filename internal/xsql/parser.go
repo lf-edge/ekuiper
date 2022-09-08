@@ -1406,7 +1406,7 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok == ast.LPAREN {
 		lStack.Push(ast.LPAREN)
 		for {
-			if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == ast.DATASOURCE || tok1 == ast.FORMAT || tok1 == ast.KEY || tok1 == ast.CONF_KEY || tok1 == ast.STRICT_VALIDATION || tok1 == ast.TYPE || tok1 == ast.TIMESTAMP || tok1 == ast.TIMESTAMP_FORMAT || tok1 == ast.RETAIN_SIZE || tok1 == ast.SHARED || tok1 == ast.SCHEMAID {
+			if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == ast.DATASOURCE || tok1 == ast.FORMAT || tok1 == ast.KEY || tok1 == ast.CONF_KEY || tok1 == ast.STRICT_VALIDATION || tok1 == ast.TYPE || tok1 == ast.TIMESTAMP || tok1 == ast.TIMESTAMP_FORMAT || tok1 == ast.RETAIN_SIZE || tok1 == ast.SHARED || tok1 == ast.SCHEMAID || tok1 == ast.KIND {
 				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.EQ {
 					if tok3, lit3 := p.scanIgnoreWhitespace(); tok3 == ast.STRING {
 						switch tok1 {
@@ -1428,6 +1428,9 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 							} else {
 								opts.SHARED = val == "TRUE"
 							}
+						case ast.KIND:
+							val := strings.ToLower(lit3)
+							opts.KIND = val
 						default:
 							f := v.Elem().FieldByName(lit1)
 							if f.IsValid() {

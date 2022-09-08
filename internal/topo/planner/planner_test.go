@@ -2074,3 +2074,491 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 		}
 	}
 }
+
+func Test_createLogicalPlan4Lookup(t *testing.T) {
+	err, store := store.GetKV("stream")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	streamSqls := map[string]string{
+		"src1":   `CREATE STREAM src1 () WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,
+		"table1": `CREATE TABLE table1 () WITH (DATASOURCE="table1",TYPE="sql", KIND="lookup");`,
+		"table2": `CREATE TABLE table2 () WITH (DATASOURCE="table2",TYPE="sql", KIND="lookup");`,
+	}
+	types := map[string]ast.StreamType{
+		"src1":   ast.TypeStream,
+		"table1": ast.TypeTable,
+		"table2": ast.TypeTable,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: types[name],
+			Statement:  sql,
+		})
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
+		err = store.Set(name, string(s))
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
+	}
+	streams := make(map[string]*ast.StreamStmt)
+	for n := range streamSqls {
+		streamStmt, err := xsql.GetDataSource(store, n)
+		if err != nil {
+			t.Errorf("fail to get stream %s, please check if stream is created", n)
+			return
+		}
+		streams[n] = streamStmt
+	}
+	var tests = []struct {
+		sql string
+		p   LogicalPlan
+		err string
+	}{
+		{ // 0
+			sql: `SELECT src1.a, table1.b FROM src1 INNER JOIN table1 ON src1.id = table1.id`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						LookupPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									DataSourcePlan{
+										baseLogicalPlan: baseLogicalPlan{},
+										name:            "src1",
+										streamFields: []interface{}{
+											"a",
+										},
+										streamStmt: streams["src1"],
+										metaFields: []string{},
+									}.Init(),
+								},
+							},
+							joinExpr: ast.Join{
+								Name:     "table1",
+								Alias:    "",
+								JoinType: ast.INNER_JOIN,
+								Expr: &ast.BinaryExpr{
+									OP: ast.EQ,
+									LHS: &ast.FieldRef{
+										StreamName: "src1",
+										Name:       "id",
+									},
+									RHS: &ast.FieldRef{
+										StreamName: "table1",
+										Name:       "id",
+									},
+								},
+							},
+							keys: []string{"id"},
+							valvars: []ast.Expr{
+								&ast.FieldRef{
+									StreamName: "src1",
+									Name:       "id",
+								},
+							},
+							options: &ast.Options{
+								DATASOURCE:        "table1",
+								TYPE:              "sql",
+								STRICT_VALIDATION: true,
+								KIND:              "lookup",
+							},
+							conditions: nil,
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Expr: &ast.FieldRef{
+							StreamName: "src1",
+							Name:       "a",
+						},
+						Name:  "a",
+						AName: "",
+					},
+					{
+						Expr: &ast.FieldRef{
+							StreamName: "table1",
+							Name:       "b",
+						},
+						Name:  "b",
+						AName: "",
+					},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
+		},
+		{ // 1
+			sql: `SELECT src1.a, table1.b FROM src1 INNER JOIN table1 ON table1.b > 20 AND src1.c < 40 AND src1.id = table1.id`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						FilterPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									LookupPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												FilterPlan{
+													baseLogicalPlan: baseLogicalPlan{
+														children: []LogicalPlan{
+															DataSourcePlan{
+																baseLogicalPlan: baseLogicalPlan{},
+																name:            "src1",
+																streamFields: []interface{}{
+																	"a",
+																},
+																streamStmt: streams["src1"],
+																metaFields: []string{},
+															}.Init(),
+														},
+													},
+													condition: &ast.BinaryExpr{
+														OP: ast.LT,
+														LHS: &ast.FieldRef{
+															StreamName: "src1",
+															Name:       "c",
+														},
+														RHS: &ast.IntegerLiteral{Val: 40},
+													},
+												}.Init(),
+											},
+										},
+										joinExpr: ast.Join{
+											Name:     "table1",
+											Alias:    "",
+											JoinType: ast.INNER_JOIN,
+											Expr: &ast.BinaryExpr{
+												OP: ast.AND,
+												RHS: &ast.BinaryExpr{
+													OP: ast.EQ,
+													LHS: &ast.FieldRef{
+														StreamName: "src1",
+														Name:       "id",
+													},
+													RHS: &ast.FieldRef{
+														StreamName: "table1",
+														Name:       "id",
+													},
+												},
+												LHS: &ast.BinaryExpr{
+													OP: ast.AND,
+													LHS: &ast.BinaryExpr{
+														OP: ast.GT,
+														LHS: &ast.FieldRef{
+															StreamName: "table1",
+															Name:       "b",
+														},
+														RHS: &ast.IntegerLiteral{Val: 20},
+													},
+													RHS: &ast.BinaryExpr{
+														OP: ast.LT,
+														LHS: &ast.FieldRef{
+															StreamName: "src1",
+															Name:       "c",
+														},
+														RHS: &ast.IntegerLiteral{Val: 40},
+													},
+												},
+											},
+										},
+										keys: []string{"id"},
+										valvars: []ast.Expr{
+											&ast.FieldRef{
+												StreamName: "src1",
+												Name:       "id",
+											},
+										},
+										options: &ast.Options{
+											DATASOURCE:        "table1",
+											TYPE:              "sql",
+											STRICT_VALIDATION: true,
+											KIND:              "lookup",
+										},
+										conditions: &ast.BinaryExpr{
+											OP: ast.AND,
+											LHS: &ast.BinaryExpr{
+												OP: ast.GT,
+												LHS: &ast.FieldRef{
+													StreamName: "table1",
+													Name:       "b",
+												},
+												RHS: &ast.IntegerLiteral{Val: 20},
+											},
+											RHS: &ast.BinaryExpr{
+												OP: ast.LT,
+												LHS: &ast.FieldRef{
+													StreamName: "src1",
+													Name:       "c",
+												},
+												RHS: &ast.IntegerLiteral{Val: 40},
+											},
+										},
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								OP: ast.GT,
+								LHS: &ast.FieldRef{
+									StreamName: "table1",
+									Name:       "b",
+								},
+								RHS: &ast.IntegerLiteral{Val: 20},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Expr: &ast.FieldRef{
+							StreamName: "src1",
+							Name:       "a",
+						},
+						Name:  "a",
+						AName: "",
+					},
+					{
+						Expr: &ast.FieldRef{
+							StreamName: "table1",
+							Name:       "b",
+						},
+						Name:  "b",
+						AName: "",
+					},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
+		},
+		{ // 0
+			sql: `SELECT src1.a, table1.b, table2.c FROM src1 INNER JOIN table1 ON src1.id = table1.id INNER JOIN table2 on table1.id = table2.id`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						LookupPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									LookupPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													baseLogicalPlan: baseLogicalPlan{},
+													name:            "src1",
+													streamFields: []interface{}{
+														"a",
+													},
+													streamStmt: streams["src1"],
+													metaFields: []string{},
+												}.Init(),
+											},
+										},
+										joinExpr: ast.Join{
+											Name:     "table1",
+											Alias:    "",
+											JoinType: ast.INNER_JOIN,
+											Expr: &ast.BinaryExpr{
+												OP: ast.EQ,
+												LHS: &ast.FieldRef{
+													StreamName: "src1",
+													Name:       "id",
+												},
+												RHS: &ast.FieldRef{
+													StreamName: "table1",
+													Name:       "id",
+												},
+											},
+										},
+										keys: []string{"id"},
+										valvars: []ast.Expr{
+											&ast.FieldRef{
+												StreamName: "src1",
+												Name:       "id",
+											},
+										},
+										options: &ast.Options{
+											DATASOURCE:        "table1",
+											TYPE:              "sql",
+											STRICT_VALIDATION: true,
+											KIND:              "lookup",
+										},
+										conditions: nil,
+									}.Init(),
+								},
+							},
+							joinExpr: ast.Join{
+								Name:     "table2",
+								Alias:    "",
+								JoinType: ast.INNER_JOIN,
+								Expr: &ast.BinaryExpr{
+									OP: ast.EQ,
+									LHS: &ast.FieldRef{
+										StreamName: "table1",
+										Name:       "id",
+									},
+									RHS: &ast.FieldRef{
+										StreamName: "table2",
+										Name:       "id",
+									},
+								},
+							},
+							keys: []string{"id"},
+							valvars: []ast.Expr{
+								&ast.FieldRef{
+									StreamName: "table1",
+									Name:       "id",
+								},
+							},
+							options: &ast.Options{
+								DATASOURCE:        "table2",
+								TYPE:              "sql",
+								STRICT_VALIDATION: true,
+								KIND:              "lookup",
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Expr: &ast.FieldRef{
+							StreamName: "src1",
+							Name:       "a",
+						},
+						Name:  "a",
+						AName: "",
+					},
+					{
+						Expr: &ast.FieldRef{
+							StreamName: "table1",
+							Name:       "b",
+						},
+						Name:  "b",
+						AName: "",
+					},
+					{
+						Expr: &ast.FieldRef{
+							StreamName: "table2",
+							Name:       "c",
+						},
+						Name:  "c",
+						AName: "",
+					},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
+		},
+		{ // 3
+			sql: `SELECT src1.a, table1.b FROM src1 INNER JOIN table1 ON src1.id = table1.id GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						LookupPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									WindowPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													baseLogicalPlan: baseLogicalPlan{},
+													name:            "src1",
+													streamFields: []interface{}{
+														"a",
+													},
+													streamStmt: streams["src1"],
+													metaFields: []string{},
+												}.Init(),
+											},
+										},
+										condition: nil,
+										wtype:     ast.TUMBLING_WINDOW,
+										length:    10000,
+										interval:  0,
+										limit:     0,
+									}.Init(),
+								},
+							},
+							joinExpr: ast.Join{
+								Name:     "table1",
+								Alias:    "",
+								JoinType: ast.INNER_JOIN,
+								Expr: &ast.BinaryExpr{
+									OP: ast.EQ,
+									LHS: &ast.FieldRef{
+										StreamName: "src1",
+										Name:       "id",
+									},
+									RHS: &ast.FieldRef{
+										StreamName: "table1",
+										Name:       "id",
+									},
+								},
+							},
+							keys: []string{"id"},
+							valvars: []ast.Expr{
+								&ast.FieldRef{
+									StreamName: "src1",
+									Name:       "id",
+								},
+							},
+							options: &ast.Options{
+								DATASOURCE:        "table1",
+								TYPE:              "sql",
+								STRICT_VALIDATION: true,
+								KIND:              "lookup",
+							},
+							conditions: nil,
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Expr: &ast.FieldRef{
+							StreamName: "src1",
+							Name:       "a",
+						},
+						Name:  "a",
+						AName: "",
+					},
+					{
+						Expr: &ast.FieldRef{
+							StreamName: "table1",
+							Name:       "b",
+						},
+						Name:  "b",
+						AName: "",
+					},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
+		},
+	}
+	for i, tt := range tests {
+		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+		if err != nil {
+			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
+			continue
+		}
+		p, err := createLogicalPlan(stmt, &api.RuleOption{
+			IsEventTime:        false,
+			LateTol:            0,
+			Concurrency:        0,
+			BufferLength:       0,
+			SendMetaToSink:     false,
+			Qos:                0,
+			CheckpointInterval: 0,
+			SendError:          true,
+		}, store)
+		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
+			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
+		} else if !reflect.DeepEqual(tt.p, p) {
+			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, render.AsCode(tt.p), render.AsCode(p))
+		}
+	}
+}
