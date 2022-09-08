@@ -24,6 +24,7 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	"github.com/fxamacker/cbor/v2"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"strconv"
@@ -110,81 +111,94 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 					return
 				}
 
+				var r interface{}
+				switch es.messageType {
+				case MessageTypeEvent:
+					r = &dtos.Event{}
+				case MessageTypeRequest:
+					r = &requests.AddEventRequest{}
+				}
+
 				if strings.EqualFold(env.ContentType, "application/json") {
-					var r interface{}
-					switch es.messageType {
-					case MessageTypeEvent:
-						r = &dtos.Event{}
-					case MessageTypeRequest:
-						r = &requests.AddEventRequest{}
-					}
 					if err := json.Unmarshal(env.Payload, r); err != nil {
 						l := len(env.Payload)
 						if l > 200 {
 							l = 200
 						}
 						log.Warnf("payload %s unmarshal fail: %v", env.Payload[0:(l-1)], err)
-					} else {
-						result := make(map[string]interface{})
-						meta := make(map[string]interface{})
-						var e *dtos.Event
-						switch t := r.(type) {
-						case *dtos.Event:
-							e = t
-						case *requests.AddEventRequest:
-							e = &t.Event
+						break
+					}
+				} else if strings.EqualFold(env.ContentType, "application/cbor") {
+					if err := cbor.Unmarshal(env.Payload, r); err != nil {
+						l := len(env.Payload)
+						if l > 200 {
+							l = 200
 						}
-
-						log.Debugf("receive message %s from device %s", env.Payload, e.DeviceName)
-						for _, r := range e.Readings {
-							if r.ResourceName != "" {
-								if v, err := es.getValue(r, log); err != nil {
-									log.Warnf("fail to get value for %s: %v", r.ResourceName, err)
-								} else {
-									result[r.ResourceName] = v
-								}
-								r_meta := map[string]interface{}{}
-								r_meta["id"] = r.Id
-								//r_meta["created"] = r.Created
-								//r_meta["modified"] = r.Modified
-								r_meta["origin"] = r.Origin
-								//r_meta["pushed"] = r.Pushed
-								r_meta["deviceName"] = r.DeviceName
-								r_meta["profileName"] = r.ProfileName
-								r_meta["valueType"] = r.ValueType
-								if r.MediaType != "" {
-									r_meta["mediaType"] = r.MediaType
-								}
-								meta[r.ResourceName] = r_meta
-							} else {
-								log.Warnf("The name of readings should not be empty!")
-							}
-						}
-						if len(result) > 0 {
-							meta["id"] = e.Id
-							//meta["pushed"] = e.Pushed
-							meta["deviceName"] = e.DeviceName
-							meta["profileName"] = e.ProfileName
-							meta["sourceName"] = e.SourceName
-							//meta["created"] = e.Created
-							//meta["modified"] = e.Modified
-							meta["origin"] = e.Origin
-							meta["tags"] = e.Tags
-							meta["correlationid"] = env.CorrelationID
-
-							select {
-							case consumer <- api.NewDefaultSourceTuple(result, meta):
-								log.Debugf("send data to device node")
-							case <-ctx.Done():
-								return
-							}
-						} else {
-							log.Warnf("No readings are processed for the event, so ignore it.")
-						}
+						log.Warnf("payload %s unmarshal fail: %v", env.Payload[0:(l-1)], err)
+						break
 					}
 				} else {
 					log.Errorf("Unsupported data type %s.", env.ContentType)
+					break
 				}
+
+				result := make(map[string]interface{})
+				meta := make(map[string]interface{})
+				var e *dtos.Event
+				switch t := r.(type) {
+				case *dtos.Event:
+					e = t
+				case *requests.AddEventRequest:
+					e = &t.Event
+				}
+
+				log.Debugf("receive message %s from device %s", env.Payload, e.DeviceName)
+				for _, r := range e.Readings {
+					if r.ResourceName != "" {
+						if v, err := es.getValue(r, log); err != nil {
+							log.Warnf("fail to get value for %s: %v", r.ResourceName, err)
+						} else {
+							result[r.ResourceName] = v
+						}
+						r_meta := map[string]interface{}{}
+						r_meta["id"] = r.Id
+						//r_meta["created"] = r.Created
+						//r_meta["modified"] = r.Modified
+						r_meta["origin"] = r.Origin
+						//r_meta["pushed"] = r.Pushed
+						r_meta["deviceName"] = r.DeviceName
+						r_meta["profileName"] = r.ProfileName
+						r_meta["valueType"] = r.ValueType
+						if r.MediaType != "" {
+							r_meta["mediaType"] = r.MediaType
+						}
+						meta[r.ResourceName] = r_meta
+					} else {
+						log.Warnf("The name of readings should not be empty!")
+					}
+				}
+				if len(result) > 0 {
+					meta["id"] = e.Id
+					//meta["pushed"] = e.Pushed
+					meta["deviceName"] = e.DeviceName
+					meta["profileName"] = e.ProfileName
+					meta["sourceName"] = e.SourceName
+					//meta["created"] = e.Created
+					//meta["modified"] = e.Modified
+					meta["origin"] = e.Origin
+					meta["tags"] = e.Tags
+					meta["correlationid"] = env.CorrelationID
+
+					select {
+					case consumer <- api.NewDefaultSourceTuple(result, meta):
+						log.Debugf("send data to device node")
+					case <-ctx.Done():
+						return
+					}
+				} else {
+					log.Warnf("No readings are processed for the event, so ignore it.")
+				}
+
 			}
 		}
 	}
