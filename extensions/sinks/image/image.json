@@ -1,0 +1,82 @@
+{
+	"about": {
+		"trial": true,
+		"author": {
+			"name": "EMQ",
+			"email": "contact@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/file.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/file.md"
+		},
+		"description": {
+			"en_US": "This a sink plugin for file, it can be used for saving the analysis data into file system.",
+			"zh_CN": "本插件为文件持久化插件，可以用于将分析数据存入指定的文件中。"
+		}
+	},
+	"libs": [
+	],
+	"properties": [{
+		"name": "path",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "The name of the folder where the pictures are saved, such as ./tmp. Note: For multiple rules, their paths cannot be repeated, otherwise they will be deleted from each other.",
+			"zh_CN": "保存图片的文件夹名，例如 ./tmp。注意：多条 rule 路径不能重复，否则会出现彼此删除的现象。"
+		},
+		"label": {
+			"en_US": "Path of file",
+			"zh_CN": "文件路径"
+		}
+	}, {
+		"name": "imageFormat",
+		"default": "jpeg",
+		"optional": true,
+		"control": "select",
+		"values": [
+			"jpeg",
+			"png"
+		],
+		"type": "list_string",
+		"hint": {
+			"en_US": "File format, support jpeg and png.",
+			"zh_CN": "文件格式，支持 jpeg 和 png。"
+		},
+		"label": {
+			"en_US": "The format of image",
+			"zh_CN": "图片格式"
+		}
+	},{
+		"name": "maxAge",
+		"default": 1000,
+		"optional": true,
+		"control": "text",
+		"type": "int",
+		"hint": {
+			"en_US": "Maximum file storage time (hours). The default value is 72, which means that the picture can be stored for up to 3 days.",
+			"zh_CN": "最长文件存储时间(小时)。默认值为72，这表示图片最多保存3天。"
+		},
+		"label": {
+			"en_US": "maxAge",
+			"zh_CN": "最长保留时间"
+		}
+	},{
+		"name": "maxCount",
+		"default": 1000,
+		"optional": true,
+		"control": "text",
+		"type": "int",
+		"hint": {
+			"en_US": "The maximum number of stored pictures. The default value is 1000. The earlier pictures will be deleted. The relationship with maxAge is OR.",
+			"zh_CN": "存储图片的最大数量，默认值是1000，删除时间较早的图片，与maxAge是或的关系。"
+		},
+		"label": {
+			"en_US": "maxCount",
+			"zh_CN": "最大写入数量"
+		}
+	}]
+}
