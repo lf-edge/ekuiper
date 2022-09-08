@@ -171,6 +171,8 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 		if err != nil {
 			return nil, 0, err
 		}
+	case *LookupPlan:
+		op, err = node.NewLookupNode(t.joinExpr.Name, t.keys, t.joinExpr.JoinType, t.valvars, t.options, options)
 	case *JoinAlignPlan:
 		op, err = node.NewJoinAlignNode(fmt.Sprintf("%d_join_aligner", newIndex), t.Emitters, options)
 	case *JoinPlan:
@@ -213,10 +215,11 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		p        LogicalPlan
 		children []LogicalPlan
 		// If there are tables, the plan graph will be different for join/window
-		tableChildren []LogicalPlan
-		tableEmitters []string
-		w             *ast.Window
-		ds            ast.Dimensions
+		lookupTableChildren map[string]*ast.Options
+		scanTableChildren   []LogicalPlan
+		scanTableEmitters   []string
+		w                   *ast.Window
+		ds                  ast.Dimensions
 	)
 
 	streamStmts, err := decorateStmt(stmt, store)
@@ -225,17 +228,24 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 	}
 
 	for _, streamStmt := range streamStmts {
-		p = DataSourcePlan{
-			name:       streamStmt.Name,
-			streamStmt: streamStmt,
-			iet:        opt.IsEventTime,
-			allMeta:    opt.SendMetaToSink,
-		}.Init()
-		if streamStmt.StreamType == ast.TypeStream {
-			children = append(children, p)
+		if streamStmt.StreamType == ast.TypeTable && streamStmt.Options.KIND == ast.StreamKindLookup {
+			if lookupTableChildren == nil {
+				lookupTableChildren = make(map[string]*ast.Options)
+			}
+			lookupTableChildren[string(streamStmt.Name)] = streamStmt.Options
 		} else {
-			tableChildren = append(tableChildren, p)
-			tableEmitters = append(tableEmitters, string(streamStmt.Name))
+			p = DataSourcePlan{
+				name:       streamStmt.Name,
+				streamStmt: streamStmt,
+				iet:        opt.IsEventTime,
+				allMeta:    opt.SendMetaToSink,
+			}.Init()
+			if streamStmt.StreamType == ast.TypeStream {
+				children = append(children, p)
+			} else {
+				scanTableChildren = append(scanTableChildren, p)
+				scanTableEmitters = append(scanTableEmitters, string(streamStmt.Name))
+			}
 		}
 	}
 	if dimensions != nil {
@@ -252,7 +262,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			if w.Interval != nil {
 				wp.interval = w.Interval.Val
 			} else if w.WindowType == ast.COUNT_WINDOW {
-				//if no interval value is set and it's count window, then set interval to length value.
+				//if no interval value is set, and it's count window, then set interval to length value.
 				wp.interval = w.Length.Val
 			}
 			if w.Filter != nil {
@@ -266,22 +276,50 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		}
 	}
 	if stmt.Joins != nil {
-		if len(tableChildren) > 0 {
-			p = JoinAlignPlan{
-				Emitters: tableEmitters,
-			}.Init()
-			p.SetChildren(append(children, tableChildren...))
-			children = []LogicalPlan{p}
-		} else if w == nil {
+		if len(lookupTableChildren) == 0 && len(scanTableChildren) == 0 && w == nil {
 			return nil, errors.New("a time window or count window is required to join multiple streams")
 		}
-		// TODO extract on filter
-		p = JoinPlan{
-			from:  stmt.Sources[0].(*ast.Table),
-			joins: stmt.Joins,
-		}.Init()
-		p.SetChildren(children)
-		children = []LogicalPlan{p}
+		if len(lookupTableChildren) > 0 {
+			var joins []ast.Join
+			for _, join := range stmt.Joins {
+				if streamOpt, ok := lookupTableChildren[join.Name]; ok {
+					lookupPlan := LookupPlan{
+						joinExpr: join,
+						options:  streamOpt,
+					}
+					if !lookupPlan.validateAndExtractCondition() {
+						return nil, fmt.Errorf("join condition %s is invalid, at least one equi-join predicate is required", join.Expr)
+					}
+					p = lookupPlan.Init()
+					p.SetChildren(children)
+					children = []LogicalPlan{p}
+					delete(lookupTableChildren, join.Name)
+				} else {
+					joins = append(joins, join)
+				}
+			}
+			if len(lookupTableChildren) > 0 {
+				return nil, fmt.Errorf("cannot find lookup table %v in any join", lookupTableChildren)
+			}
+			stmt.Joins = joins
+		}
+		// Not all joins are lookup joins, so we need to create a join plan for the remaining joins
+		if len(stmt.Joins) > 0 {
+			if len(scanTableChildren) > 0 {
+				p = JoinAlignPlan{
+					Emitters: scanTableEmitters,
+				}.Init()
+				p.SetChildren(append(children, scanTableChildren...))
+				children = []LogicalPlan{p}
+			}
+			// TODO extract on filter
+			p = JoinPlan{
+				from:  stmt.Sources[0].(*ast.Table),
+				joins: stmt.Joins,
+			}.Init()
+			p.SetChildren(children)
+			children = []LogicalPlan{p}
+		}
 	}
 	if stmt.Condition != nil {
 		p = FilterPlan{

@@ -18,6 +18,7 @@ import "github.com/lf-edge/ekuiper/pkg/api"
 
 type SourceFactory interface {
 	Source(name string) (api.Source, error)
+	LookupSource(name string) (api.LookupSource, error)
 }
 
 type SinkFactory interface {

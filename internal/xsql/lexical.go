@@ -283,6 +283,8 @@ func (s *Scanner) ScanIdent() (tok ast.Token, lit string) {
 		return ast.SHARED, lit
 	case "SCHEMAID":
 		return ast.SCHEMAID, lit
+	case "KIND":
+		return ast.KIND, lit
 	case "DD":
 		return ast.DD, lit
 	case "HH":

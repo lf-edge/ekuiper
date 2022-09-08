@@ -78,12 +78,15 @@ type Source interface {
 	Closable
 }
 
-type TableSource interface {
-	// Load the data at batch
-	Load(ctx StreamContext) ([]SourceTuple, error)
+type LookupSource interface {
+	// Open creates the connection to the external data source
+	Open(ctx StreamContext) error
 	// Configure Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties
 	//read from the yaml
-	Configure(datasource string, props map[string]interface{}) error
+	Configure(datasource string, props map[string]interface{}, lookupKeys []string) error
+	// Lookup receive lookup values to construct the query and return query results
+	Lookup(ctx StreamContext, values []interface{}) ([]map[string]interface{}, error)
+	Closable
 }
 
 type Sink interface {

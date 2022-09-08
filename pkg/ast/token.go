@@ -136,6 +136,7 @@ const (
 	RETAIN_SIZE
 	SHARED
 	SCHEMAID
+	KIND
 
 	DD
 	HH

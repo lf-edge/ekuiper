@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ func GetStreams(stmt *ast.SelectStatement) (result []string) {
 	if stmt == nil {
 		return nil
 	}
+	// TODO sources must be a stream
 	for _, source := range stmt.Sources {
 		if s, ok := source.(*ast.Table); ok {
 			result = append(result, s.Name)

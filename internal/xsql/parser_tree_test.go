@@ -108,6 +108,28 @@ func TestParser_ParseTree(t *testing.T) {
 			},
 		},
 		{
+			s: `CREATE TABLE table1 (
+					name STRING,
+					size BIGINT,
+					id BIGINT
+				) WITH (DATASOURCE="devices", KIND="LOOKUP", TYPE="sql");`,
+			stmt: &ast.StreamStmt{
+				Name: ast.StreamName("table1"),
+				StreamFields: []ast.StreamField{
+					{Name: "name", FieldType: &ast.BasicType{Type: ast.STRINGS}},
+					{Name: "size", FieldType: &ast.BasicType{Type: ast.BIGINT}},
+					{Name: "id", FieldType: &ast.BasicType{Type: ast.BIGINT}},
+				},
+				Options: &ast.Options{
+					DATASOURCE:        "devices",
+					STRICT_VALIDATION: true,
+					KIND:              ast.StreamKindLookup,
+					TYPE:              "sql",
+				},
+				StreamType: ast.TypeTable,
+			},
+		},
+		{
 			s:    `SHOW STREAMS`,
 			stmt: &ast.ShowStreamsStatement{},
 		},

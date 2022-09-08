@@ -23,6 +23,7 @@ import (
 )
 
 type NewSourceFunc func() api.Source
+type NewLookupSourceFunc func() api.LookupSource
 type NewSinkFunc func() api.Sink
 
 var (
@@ -43,12 +44,20 @@ var (
 		"memory":      func() api.Sink { return memory.GetSink() },
 		"neuron":      func() api.Sink { return neuron.GetSink() },
 	}
+	lookupSources = map[string]NewLookupSourceFunc{}
 )
 
 type Manager struct{}
 
 func (m *Manager) Source(name string) (api.Source, error) {
 	if s, ok := sources[name]; ok {
+		return s(), nil
+	}
+	return nil, nil
+}
+
+func (m *Manager) LookupSource(name string) (api.LookupSource, error) {
+	if s, ok := lookupSources[name]; ok {
 		return s(), nil
 	}
 	return nil, nil

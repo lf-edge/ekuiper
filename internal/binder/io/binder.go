@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -73,6 +73,20 @@ func Sink(name string) (api.Sink, error) {
 		r, err := sf.Sink(name)
 		if err != nil {
 			e[sinkFactoriesNames[i]] = err
+		}
+		if r != nil {
+			return r, e.GetError()
+		}
+	}
+	return nil, e.GetError()
+}
+
+func LookupSource(name string) (api.LookupSource, error) {
+	e := make(errorx.MultiError)
+	for i, sf := range sourceFactories {
+		r, err := sf.LookupSource(name)
+		if err != nil {
+			e[sourceFactoriesNames[i]] = err
 		}
 		if r != nil {
 			return r, e.GetError()
