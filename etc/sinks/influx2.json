@@ -1,0 +1,135 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "elpsyr",
+      "email": "hellccqcq@gmail.com",
+      "company": "",
+      "website": "https://github.com/elpsyr"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/influx2.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/influx2.md"
+    },
+    "description": {
+      "en_US": "This a sink plugin for InfluxDB2, it can be used for saving the analysis data into InfluxDB V2.X .",
+      "zh_CN": "本插件为 InfluxDB2 的持久化插件，可以用于将分析数据存入 InfluxDB V2.X 中"
+    }
+  },
+  "libs": [
+    "github.com/influxdata/influxdb-client-go/v2"
+  ],
+  "properties": [{
+    "name": "addr",
+    "default": "http://192.168.100.245:8086",
+    "optional": false,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The addr of the InfluxDB",
+      "zh_CN": "InfluxDB的地址"
+    },
+    "label": {
+      "en_US": "Addr",
+      "zh_CN": "地址"
+    }
+  }, {
+    "name": "measurement",
+    "default": "test",
+    "optional": true,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The measurement of the InfluxDB",
+      "zh_CN": "InfluxDB的测量"
+    },
+    "label": {
+      "en_US": "Measurement",
+      "zh_CN": "测量"
+    }
+  }, {
+    "name": "token",
+    "default": "",
+    "optional": false,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The InfluxDB api token",
+      "zh_CN": "InfluxDB 验证 api token"
+    },
+    "label": {
+      "en_US": "API Token",
+      "zh_CN": "API Token"
+    }
+  }, {
+    "name": "org",
+    "default": "",
+    "optional": false,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The InfluxDB org",
+      "zh_CN": "InfluxDB org"
+    },
+    "label": {
+      "en_US": "org",
+      "zh_CN": "组织"
+    }
+  }, {
+    "name": "bucket",
+    "default": "",
+    "optional": false,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The InfluxDB bucket",
+      "zh_CN": "InfluxDB bucket"
+    },
+    "label": {
+      "en_US": "bucket",
+      "zh_CN": "桶"
+    }
+  }, {
+    "name": "tagKey",
+    "default": "tagKey",
+    "optional": true,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The tag key of the InfluxDB",
+      "zh_CN": "InfluxDB 的标签键"
+    },
+    "label": {
+      "en_US": "Tag",
+      "zh_CN": "标签键"
+    }
+  }, {
+    "name": "tagValue",
+    "default": "tagValue",
+    "optional": true,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The tag value of the InfluxDB",
+      "zh_CN": "InfluxDB 的标签值"
+    },
+    "label": {
+      "en_US": "Tag value",
+      "zh_CN": "标签值"
+    }
+  }, {
+    "name": "fields",
+    "default": "humidity,temperature,pressure",
+    "optional": true,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The column of the InfluxDB",
+      "zh_CN": "InfluxDB 的列名"
+    },
+    "label": {
+      "en_US": "Column",
+      "zh_CN": "列名"
+    }
+  }]
+}
