@@ -290,7 +290,7 @@
 								},
 								{
 									"title": "InfluxDBV2 动作",
-									"path": "rules/sinks/plugin/influx_v2"
+									"path": "rules/sinks/plugin/influx2"
 								},
 								{
 									"title": "TDengine 动作",
@@ -848,7 +848,7 @@
 								},
 								{
 									"title": "InfluxDBV2 sink",
-									"path": "rules/sinks/plugin/influx_v2"
+									"path": "rules/sinks/plugin/influx2"
 								},
 								{
 									"title": "TDengine sink",

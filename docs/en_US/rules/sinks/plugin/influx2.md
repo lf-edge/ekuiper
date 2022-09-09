@@ -12,11 +12,11 @@ Please make following update before compile the plugin,
 ### build in shell
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/influx_v2.so extensions/sinks/influx/influx_v2.go
-# zip influx_v2.zip plugins/sinks/influx_v2.so
+# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/influx2.so extensions/sinks/influx/influx2.go
+# zip influx2.zip plugins/sinks/influx2.so
 # cp influx.zip /root/tomcat_path/webapps/ROOT/
-# bin/kuiper create plugin sink influx_v2 -f /tmp/influxPlugin.txt
-# bin/kuiper create rule influx_v2 -f /tmp/influxRule.txt
+# bin/kuiper create plugin sink influx2 -f /tmp/influxPlugin.txt
+# bin/kuiper create rule influx2 -f /tmp/influxRule.txt
 ```
 
 ### build with image
@@ -38,7 +38,7 @@ CMD ["sleep","3600"]
 ```
 add this in Makefile：
 ```
-PLUGINS_CUSTOM := sinks/influx_v2
+PLUGINS_CUSTOM := sinks/influx2
 
 .PHONY: plugins_c $(PLUGINS_CUSTOM)
 plugins_c: $(PLUGINS_CUSTOM)
@@ -75,7 +75,7 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
   "actions": [
     {
       "log": {},
-      "influx_v2":{
+      "influx2":{
         "addr": "http://192.168.100.245:8086",
         "token": "test_token",
         "org": "admin",
@@ -92,7 +92,7 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
 ### /tmp/influxPlugin.txt
 ```json
 {
-   "file":"http://localhost:8080/influx_v2.zip"
+   "file":"http://localhost:8080/influx2.zip"
  }
 ```
 ### plugins/go.mod

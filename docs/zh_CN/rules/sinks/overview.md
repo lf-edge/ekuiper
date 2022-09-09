@@ -25,7 +25,7 @@
 - [Zero MQ sink](./plugin/zmq.md)：输出到 Zero MQ 。
 - [File sink](./plugin/file.md)： 写入文件。
 - [InfluxDB sink](./plugin/influx.md)： 写入 Influx DB `v1.x`。
-- [InfluxDBV2 sink](./plugin/influx_v2.md)： 写入 Influx DB `v2.x`。
+- [InfluxDBV2 sink](./plugin/influx2.md)： 写入 Influx DB `v2.x`。
 - [Tdengine sink](./plugin/tdengine.md)： 写入 Tdengine 。
 - [Redis sink](./plugin/redis.md)： 写入 redis 。
 - [Image sink](./plugin/image.md)： 写入一个图像文件。仅用于处理二进制结果。

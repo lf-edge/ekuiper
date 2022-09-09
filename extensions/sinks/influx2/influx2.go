@@ -36,7 +36,7 @@ import (
 	"time"
 )
 
-type influxSinkV2 struct {
+type influxSink2 struct {
 	addr         string
 	token        string
 	measurement  string
@@ -50,7 +50,7 @@ type influxSinkV2 struct {
 	hasTransform bool
 }
 
-func (m *influxSinkV2) Configure(props map[string]interface{}) error {
+func (m *influxSink2) Configure(props map[string]interface{}) error {
 	if i, ok := props["addr"]; ok {
 		if i, ok := i.(string); ok {
 			m.addr = i
@@ -101,15 +101,15 @@ func (m *influxSinkV2) Configure(props map[string]interface{}) error {
 	return nil
 }
 
-func (m *influxSinkV2) Open(ctx api.StreamContext) (err error) {
+func (m *influxSink2) Open(ctx api.StreamContext) (err error) {
 	logger := ctx.GetLogger()
-	logger.Debug("Opening influx_v2 sink")
+	logger.Debug("Opening influx2 sink")
 	options := client.DefaultOptions().SetBatchSize(100)
 	m.cli = client.NewClientWithOptions(m.addr, m.token, options)
 	return nil
 }
 
-func (m *influxSinkV2) Collect(ctx api.StreamContext, data interface{}) error {
+func (m *influxSink2) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
 	if m.hasTransform {
 		jsonBytes, _, err := ctx.TransformOutput(data)
@@ -154,16 +154,16 @@ func (m *influxSinkV2) Collect(ctx api.StreamContext, data interface{}) error {
 		logger.Debug(err)
 		return err
 	}
-	logger.Debug("insert data into influxdb_v2 success")
+	logger.Debug("insert data into influxdb2 success")
 
 	return nil
 }
 
-func (m *influxSinkV2) Close(ctx api.StreamContext) error {
+func (m *influxSink2) Close(ctx api.StreamContext) error {
 	m.cli.Close()
 	return nil
 }
 
-func Influx_v2() api.Sink {
-	return &influxSinkV2{}
+func Influx2() api.Sink {
+	return &influxSink2{}
 }

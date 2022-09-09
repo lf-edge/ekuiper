@@ -24,7 +24,7 @@ import (
 func TestConfig(t *testing.T) {
 	var tests = []struct {
 		conf     map[string]interface{}
-		expected *influxSinkV2
+		expected *influxSink2
 		error    string
 	}{
 		{ //0
@@ -38,7 +38,7 @@ func TestConfig(t *testing.T) {
 				"tagValue":    "value",
 				"fields":      "temperature",
 			},
-			expected: &influxSinkV2{
+			expected: &influxSink2{
 				addr:         "http://192.168.0.3:8086",
 				token:        "Token_test",
 				measurement:  "test",
@@ -64,7 +64,7 @@ func TestConfig(t *testing.T) {
 				"fields":       "temperature",
 				"dataTemplate": "",
 			},
-			expected: &influxSinkV2{
+			expected: &influxSink2{
 				addr:         "http://192.168.0.3:8086",
 				token:        "Token_test",
 				measurement:  "test",
@@ -90,7 +90,7 @@ func TestConfig(t *testing.T) {
 				"fields":       "temperature",
 				"dataTemplate": "{{funcname .arg1 .arg2}}",
 			},
-			expected: &influxSinkV2{
+			expected: &influxSink2{
 				addr:         "http://192.168.0.3:8086",
 				token:        "Token_test",
 				measurement:  "test",
@@ -108,7 +108,7 @@ func TestConfig(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, test := range tests {
-		ifsink := &influxSinkV2{}
+		ifsink := &influxSink2{}
 		err := ifsink.Configure(test.conf)
 		if !reflect.DeepEqual(test.error, testx.Errstring(err)) {
 			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, test.error, err)

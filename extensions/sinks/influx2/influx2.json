@@ -8,12 +8,12 @@
 			"website": "https://github.com/elpsyr"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/influx_v2.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/influx_v2.md"
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/influx2.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/influx2.md"
 		},
 		"description": {
-			"en_US": "This a sink plugin for InfluxDB_V2, it can be used for saving the analysis data into InfluxDB V2.X .",
-			"zh_CN": "本插件为 InfluxDB_V2 的持久化插件，可以用于将分析数据存入 InfluxDB V2.X 中"
+			"en_US": "This a sink plugin for InfluxDB2, it can be used for saving the analysis data into InfluxDB V2.X .",
+			"zh_CN": "本插件为 InfluxDB2 的持久化插件，可以用于将分析数据存入 InfluxDB V2.X 中"
 		}
 	},
 	"libs": [
