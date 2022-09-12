@@ -159,7 +159,7 @@ func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("[wasm_test_server.go][startSymbolHanger][go func()]")
 			for {
 				for _, m := range mockFuncData {
-					fmt.Println("[wasm_test_server.go][startSymbolHanger][go func()] m: ", m)
+					fmt.Println("[wasm_test_server.go][startSymbolHanger][go func()] m: ", m) //25
 					r, ok := f.Exec(m, fc)
 					//fmt.Println("[plugin_test_server.go][startSymbolHanger][go func()] Exec after")
 					if !ok {

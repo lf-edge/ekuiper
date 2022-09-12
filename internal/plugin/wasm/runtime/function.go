@@ -61,7 +61,8 @@ func NewWasmFunc(symbolName string, reg *PluginMeta) (*WasmFunc, error) {
 	conf.Log.Infof("Start running  wasm function meta %+v", reg)
 
 	return &WasmFunc{
-		symbolName: reg.Name,
+		//symbolName: reg.Name,
+		symbolName: symbolName,
 		reg:        reg,
 	}, nil
 }
@@ -183,7 +184,7 @@ func (f *WasmFunc) IsAggregate() bool {
 	//	conf.Log.Errorf("IsAggregate return state is false, got %+v", fr)
 	//	return false
 	//}
-	return true
+	return false
 }
 
 func (f *WasmFunc) Close() error {
@@ -212,6 +213,7 @@ func encodeCtx(ctx api.FunctionContext) (string, error) {
 }
 
 func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
+	fmt.Println("[internal][plugin][wasm][runtime][function.go] WasmFunc(f): ", f)
 	funcname := f.symbolName
 	fmt.Println("[internal][plugin][wasm][runtime][function.go] funcname: ", funcname)
 	WasmFile := f.reg.WasmFile
@@ -239,23 +241,16 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 		fmt.Errorf(err.Error())
 	}
 	// step 4: Execute WASM functions.Parameters(1)
-	fmt.Println("[-----] args: ", args) // [[25]]
-	var Args []int
+	fmt.Println("[-----] args: ", args) // [25]
+	var Args []float64
 	for _, num := range args {
-		//for _, x := range num {
-		//	fmt.Println("[sliceSum] num: ", num)
-		//	y := x.(int)
-		//	fmt.Println("[sliceSum] y: ", y)
-		//	Args = append(Args, y)
-		//}
-		x := num.(int)
-		x, ok := (num).(int)
+		//x := num.(int)
+		x, ok := (num).(float64)
 		if !ok {
 			fmt.Println("Failed!!")
 		}
-		//x := int(num)
-		//y := x.(float64)
-		fmt.Println("[sliceSum] num(int):", x)
+		//fmt.Println("[sliceSum] num(int):", x)
+		Args = append(Args, x)
 	}
 
 	Len := len(args)
@@ -284,7 +279,7 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 		vm.Release()
 		//return res
 	case 2:
-		res, err = vm.Execute(funcname, args[0], args[1])
+		res, err = vm.Execute(funcname, uint32(Args[0]), uint32(Args[1]))
 		if err != nil {
 			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
 		} else {
