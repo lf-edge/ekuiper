@@ -1,0 +1,52 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/sqls/query_language_elements.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/query_language_elements.md"
+    },
+    "description": {
+      "en_US": "An operation to filter out rows based on a filter condition.",
+      "zh_CN": "用于过滤数据流的操作"
+    }
+  },
+  "properties": [{
+    "name": "expr",
+    "default": "",
+    "optional": false,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "filter condition expression",
+      "zh_CN": "过滤条件语句"
+    },
+    "label": {
+      "en_US": "Condition",
+      "zh_CN": "条件"
+    }
+  }],
+  "node": {
+    "display": true,
+    "category": "op",
+    "input": {
+      "type": "any",
+      "rowType": "any",
+      "collectionType": "any"
+    },
+    "output": {
+      "type": "same",
+      "strategy": "keep"
+    },
+    "icon": "iconPath",
+    "label": {
+      "en": "Filter",
+      "zh": "过滤"
+    }
+  }
+}

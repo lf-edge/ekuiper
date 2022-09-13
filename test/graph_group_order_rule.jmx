@@ -190,7 +190,7 @@
         &quot;props&quot;: {&#xd;
           &quot;sorts&quot;: [{&#xd;
             &quot;field&quot;: &quot;count&quot;,&#xd;
-            &quot;order&quot;: &quot;desc&quot;&#xd;
+            &quot;desc&quot;: true&#xd;
           }]&#xd;
         }&#xd;
       },&#xd;

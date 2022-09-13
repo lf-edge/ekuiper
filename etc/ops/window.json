@@ -1,0 +1,110 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/sqls/query_language_elements.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/query_language_elements.md"
+    },
+    "description": {
+      "en_US": "An operation to create a streaming window",
+      "zh_CN": "用于创建窗口的操作"
+    }
+  },
+  "properties": [
+    {
+      "name": "type",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "values": [
+        "tumblingwindow",
+        "hoppingwindow",
+        "slidingwindow",
+        "sessionwindow",
+        "countwindow"
+      ],
+      "hint": {
+        "en_US": "window type",
+        "zh_CN": "窗口类型"
+      },
+      "label": {
+        "en_US": "Window Type",
+        "zh_CN": "窗口类型"
+      }
+    },{
+      "name": "unit",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "values": [
+        "ms",
+        "ss",
+        "mi",
+        "hh",
+        "dd"
+      ],
+      "hint": {
+        "en_US": "Time unit for the window",
+        "zh_CN": "窗口的时间单位"
+      },
+      "label": {
+        "en_US": "Time Unit",
+        "zh_CN": "时间单位"
+      }
+    },{
+      "name": "size",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Window Length",
+        "zh_CN": "窗口长度"
+      },
+      "label": {
+        "en_US": "Window Length",
+        "zh_CN": "窗口长度"
+      }
+    },{
+      "name": "interval",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Window trigger interval",
+        "zh_CN": "窗口触发周期"
+      },
+      "label": {
+        "en_US": "Window Trigger Interval",
+        "zh_CN": "窗口触发周期"
+      }
+  }],
+  "node": {
+    "display": false,
+    "category": "op",
+    "input": {
+      "type": "row",
+      "rowType": "any",
+      "collectionType": "any",
+      "allowMulti": true
+    },
+    "output": {
+      "type": "collection",
+      "strategy": "append"
+    },
+    "icon": "iconPath",
+    "label": {
+      "en": "Window",
+      "zh": "窗口"
+    }
+  }
+}

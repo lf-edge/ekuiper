@@ -1,0 +1,83 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/sqls/query_language_elements.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/query_language_elements.md"
+    },
+    "description": {
+      "en_US": "An operation to order the rows.",
+      "zh_CN": "用于排序的操作"
+    }
+  },
+  "properties": [{
+    "name": "sorts",
+    "optional": false,
+    "control": "list",
+    "type": "list_object",
+    "hint": {
+      "en_US": "order expression",
+      "zh_CN": "排序语句"
+    },
+    "label": {
+      "en_US": "Order",
+      "zh_CN": "排序"
+    },
+    "default": [
+      {
+        "name": "field",
+        "default": "",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "Order by field",
+          "zh_CN": "用于排序的字段名"
+        },
+        "label": {
+          "en_US": "Field",
+          "zh_CN": "字段"
+        }
+      },
+      {
+        "name": "order",
+        "default": false,
+        "optional": false,
+        "control": "checkbox",
+        "type": "boolean",
+        "hint": {
+          "en_US": "Order by descending",
+          "zh_CN": "是否降序"
+        },
+        "label": {
+          "en_US": "Descending",
+          "zh_CN": "降序"
+        }
+      }
+    ]
+  }],
+  "node": {
+    "display": true,
+    "category": "op",
+    "input": {
+      "type": "any",
+      "rowType": "any",
+      "collectionType": "any"
+    },
+    "output": {
+      "type": "same",
+      "strategy": "keep"
+    },
+    "icon": "iconPath",
+    "label": {
+      "en": "Filter",
+      "zh": "过滤"
+    }
+  }
+}

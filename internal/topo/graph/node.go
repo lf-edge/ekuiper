@@ -49,6 +49,6 @@ type Groupby struct {
 type Orderby struct {
 	Sorts []struct {
 		Field string `json:"field"`
-		Order string `json:"order"`
+		Desc  bool   `json:"desc"`
 	}
 }

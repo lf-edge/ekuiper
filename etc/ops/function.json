@@ -1,0 +1,52 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/sqls/query_language_elements.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/query_language_elements.md"
+    },
+    "description": {
+      "en_US": "An operation to invoke a function",
+      "zh_CN": "用于调用函数的操作"
+    }
+  },
+  "properties": [{
+    "name": "expr",
+    "default": "",
+    "optional": false,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "Function call expression",
+      "zh_CN": "函数调用语句"
+    },
+    "label": {
+      "en_US": "Expression",
+      "zh_CN": "函数语句"
+    }
+  }],
+  "node": {
+    "display": false,
+    "category": "op",
+    "input": {
+      "type": "any",
+      "rowType": "any",
+      "collectionType": "single"
+    },
+    "output": {
+      "type": "same",
+      "strategy": "append"
+    },
+    "icon": "iconPath",
+    "label": {
+      "en": "Function",
+      "zh": "函数"
+    }
+  }
+}
