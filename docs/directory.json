@@ -93,6 +93,10 @@
 						{
 							"title": "使用 eKuiper 原生插件实现图像标注",
 							"path": "tutorials/ai/tensorflow_lite_tutorial"
+						},
+						{
+							"title": "使用 Python 函数插件运行 AI 算法",
+							"path": "tutorials/ai/python_tensorflow_lite_tutorial"
 						}
 					]
 				},
@@ -643,6 +647,10 @@
 						{
 							"title": "Label image by tensorflow lite model with eKuiper native plugin",
 							"path": "tutorials/ai/tensorflow_lite_tutorial"
+						},
+						{
+							"title": "Running AI Algorithms with Python Function Plugins",
+							"path": "tutorials/ai/python_tensorflow_lite_tutorial"
 						}
 					]
 				},
