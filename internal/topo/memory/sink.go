@@ -17,6 +17,7 @@ package memory
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/topo/memory/pubsub"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"strings"
 )
@@ -28,12 +29,12 @@ type sink struct {
 
 func (s *sink) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("Opening memory sink: %v", s.topic)
-	CreatePub(s.topic)
+	pubsub.CreatePub(s.topic)
 	return nil
 }
 
 func (s *sink) Configure(props map[string]interface{}) error {
-	if t, ok := props[IdProperty]; ok {
+	if t, ok := props[pubsub.IdProperty]; ok {
 		if id, casted := t.(string); casted {
 			if strings.ContainsAny(id, "#+") {
 				return fmt.Errorf("invalid memory topic %s: wildcard found", id)
@@ -71,10 +72,10 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 	switch d := data.(type) {
 	case []map[string]interface{}:
 		for _, el := range d {
-			Produce(ctx, topic, el)
+			pubsub.Produce(ctx, topic, el)
 		}
 	case map[string]interface{}:
-		Produce(ctx, topic, d)
+		pubsub.Produce(ctx, topic, d)
 	default:
 		return fmt.Errorf("unrecognized format of %s", data)
 	}
@@ -83,6 +84,6 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing memory sink")
-	RemovePub(s.topic)
+	pubsub.RemovePub(s.topic)
 	return nil
 }

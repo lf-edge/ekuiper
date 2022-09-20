@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package memory
+package pubsub
 
 import (
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -39,14 +39,6 @@ var (
 	subExps   = make(map[string]*subChan)
 	mu        = sync.RWMutex{}
 )
-
-func GetSink() *sink {
-	return &sink{}
-}
-
-func GetSource() *source {
-	return &source{}
-}
 
 func CreatePub(topic string) {
 	mu.Lock()
@@ -185,4 +177,10 @@ func removePubConsumer(topic string, sourceId string, c *pubConsumers) {
 	if len(c.consumers) == 0 && c.count == 0 {
 		delete(pubTopics, topic)
 	}
+}
+
+// Reset For testing only
+func Reset() {
+	pubTopics = make(map[string]*pubConsumers)
+	subExps = make(map[string]*subChan)
 }

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -540,6 +540,24 @@ func (rr *Manager) Source(name string) (api.Source, error) {
 		return t(), nil
 	default:
 		return nil, fmt.Errorf("exported symbol %s is not type of api.Source or function that return api.Source", t)
+	}
+}
+
+func (rr *Manager) LookupSource(name string) (api.LookupSource, error) {
+	nf, err := rr.loadRuntime(plugin2.SOURCE, name+"Lookup", "")
+	if err != nil {
+		return nil, err
+	}
+	if nf == nil {
+		return nil, nil
+	}
+	switch t := nf.(type) {
+	case api.LookupSource:
+		return t, nil
+	case func() api.LookupSource:
+		return t(), nil
+	default:
+		return nil, fmt.Errorf("exported symbol %s is not type of api.LookupSource or function that return api.LookupSource", t)
 	}
 }
 

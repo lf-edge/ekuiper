@@ -17,7 +17,7 @@ package source
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/memory"
+	"github.com/lf-edge/ekuiper/internal/topo/memory/pubsub"
 	"github.com/lf-edge/ekuiper/internal/topo/source/httpserver"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -70,8 +70,8 @@ func (hps *HTTPPushSource) Open(ctx api.StreamContext, consumer chan<- api.Sourc
 		return
 	}
 	defer httpserver.UnregisterEndpoint(hps.conf.Endpoint)
-	ch := memory.CreateSub(t, nil, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), hps.conf.BufferLength)
-	defer memory.CloseSourceConsumerChannel(t, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
+	ch := pubsub.CreateSub(t, nil, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), hps.conf.BufferLength)
+	defer pubsub.CloseSourceConsumerChannel(t, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
 	for {
 		select {
 		case <-done: // http data server error

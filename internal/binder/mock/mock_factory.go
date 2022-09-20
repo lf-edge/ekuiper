@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,6 +33,10 @@ func (f *MockFactory) Source(name string) (api.Source, error) {
 	} else {
 		return nil, errorx.NotFoundErr
 	}
+}
+
+func (f *MockFactory) LookupSource(name string) (api.LookupSource, error) {
+	return nil, errorx.NotFoundErr
 }
 
 func (f *MockFactory) Sink(name string) (api.Sink, error) {

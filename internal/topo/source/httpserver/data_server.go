@@ -21,7 +21,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/memory"
+	"github.com/lf-edge/ekuiper/internal/topo/memory/pubsub"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"net/http"
@@ -75,7 +75,7 @@ func RegisterEndpoint(endpoint string, method string, _ string) (string, chan st
 		return "", nil, err
 	}
 	topic := TopicPrefix + endpoint
-	memory.CreatePub(topic)
+	pubsub.CreatePub(topic)
 	router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		sctx.GetLogger().Debugf("receive http request: %s", r.URL.String())
 		defer r.Body.Close()
@@ -83,11 +83,11 @@ func RegisterEndpoint(endpoint string, method string, _ string) (string, chan st
 		err := json.NewDecoder(r.Body).Decode(&m)
 		if err != nil {
 			handleError(w, err, "Fail to decode data")
-			memory.ProduceError(sctx, topic, fmt.Errorf("fail to decode data %s: %v", r.Body, err))
+			pubsub.ProduceError(sctx, topic, fmt.Errorf("fail to decode data %s: %v", r.Body, err))
 			return
 		}
 		sctx.GetLogger().Debugf("httppush received message %s", m)
-		memory.Produce(sctx, topic, m)
+		pubsub.Produce(sctx, topic, m)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	}).Methods(method)
@@ -97,7 +97,7 @@ func RegisterEndpoint(endpoint string, method string, _ string) (string, chan st
 func UnregisterEndpoint(endpoint string) {
 	lock.Lock()
 	defer lock.Unlock()
-	memory.RemovePub(TopicPrefix + endpoint)
+	pubsub.RemovePub(TopicPrefix + endpoint)
 	refCount--
 	// TODO async close server
 	if refCount == 0 {

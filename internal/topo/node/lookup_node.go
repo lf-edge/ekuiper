@@ -193,7 +193,8 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.TupleRow, fv *xsql.Fun
 			merged.AddTuple(d)
 			t := &xsql.Tuple{
 				Emitter:   n.name,
-				Message:   v,
+				Message:   v.Message(),
+				Metadata:  v.Meta(),
 				Timestamp: conf.GetNowInMilli(),
 			}
 			merged.AddTuple(t)
