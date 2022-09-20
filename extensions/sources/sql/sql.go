@@ -16,14 +16,12 @@ package main
 
 import (
 	"database/sql"
-	"database/sql/driver"
 	"fmt"
 	driver2 "github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/sqlgen"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/xo/dburl"
-	"reflect"
 	"time"
 )
 
@@ -113,7 +111,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			for rows.Next() {
 				data := make(map[string]interface{})
 				columns := make([]interface{}, len(cols))
-				m.prepareValues(columns, types, cols)
+				prepareValues(columns, types, cols)
 
 				err := rows.Scan(columns...)
 				if err != nil {
@@ -122,43 +120,12 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 					return
 				}
 
-				m.scanIntoMap(data, columns, cols)
+				scanIntoMap(data, columns, cols)
 				m.Query.UpdateMaxIndexValue(data)
 				consumer <- api.NewDefaultSourceTuple(data, nil)
 			}
 		case <-ctx.Done():
 			return
-		}
-	}
-}
-
-func (m *sqlsource) prepareValues(values []interface{}, columnTypes []*sql.ColumnType, columns []string) {
-	if len(columnTypes) > 0 {
-		for idx, columnType := range columnTypes {
-			if columnType.ScanType() != nil {
-				values[idx] = reflect.New(reflect.PtrTo(columnType.ScanType())).Interface()
-			} else {
-				values[idx] = new(interface{})
-			}
-		}
-	} else {
-		for idx := range columns {
-			values[idx] = new(interface{})
-		}
-	}
-}
-
-func (m *sqlsource) scanIntoMap(mapValue map[string]interface{}, values []interface{}, columns []string) {
-	for idx, column := range columns {
-		if reflectValue := reflect.Indirect(reflect.Indirect(reflect.ValueOf(values[idx]))); reflectValue.IsValid() {
-			mapValue[column] = reflectValue.Interface()
-			if valuer, ok := mapValue[column].(driver.Valuer); ok {
-				mapValue[column], _ = valuer.Value()
-			} else if b, ok := mapValue[column].(sql.RawBytes); ok {
-				mapValue[column] = string(b)
-			}
-		} else {
-			mapValue[column] = nil
 		}
 	}
 }
