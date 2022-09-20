@@ -1,0 +1,35 @@
+default:
+  url: "rabbitmq:5672"
+  exchange: "cloudExchange"
+  exchangeType: "topic"
+  routingKey: "device-data"
+  queueName: "device-data"
+  username: "root"
+  password: "password"
+
+device_data_conf: #Conf_key
+  url: "rabbitmq:5672"
+  exchange: "cloudExchange"
+  exchangeType: "topic"
+  routingKey: "device-data"
+  queueName: "device-data"
+  username: "root"
+  password: "password"
+
+device_status_conf: #Conf_key
+  url: "rabbitmq:5672"
+  exchange: "cloudExchange"
+  exchangeType: "topic"
+  routingKey: "device-status"
+  queueName: "device-status"
+  username: "root"
+  password: "password"
+
+device_command_status_conf: #Conf_key
+  url: "rabbitmq:5672"
+  exchange: "cloudExchange"
+  exchangeType: "topic"
+  routingKey: "device-command-status"
+  queueName: "device-command-status"
+  username: "root"
+  password: "password"

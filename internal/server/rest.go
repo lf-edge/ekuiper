@@ -17,31 +17,26 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"runtime"
+	"strings"
+	"time"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
-	"runtime"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
 	ContentType     = "Content-Type"
 	ContentTypeJSON = "application/json"
 )
-
-var uploadDir string
 
 type statementDescriptor struct {
 	Sql string `json:"sql,omitempty"`
@@ -82,14 +77,8 @@ func handleError(w http.ResponseWriter, err error, prefix string, logger api.Log
 
 func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 	w.Header().Add(ContentType, ContentTypeJSON)
-
-	jsonByte, err := json.Marshal(i)
-	if err != nil {
-		handleError(w, err, "", logger)
-	}
-	w.Header().Add("Content-Length", strconv.Itoa(len(jsonByte)))
-
-	_, err = w.Write(jsonByte)
+	enc := json.NewEncoder(w)
+	err := enc.Encode(i)
 	// Problems encoding
 	if err != nil {
 		handleError(w, err, "", logger)
@@ -97,17 +86,6 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 }
 
 func createRestServer(ip string, port int, needToken bool) *http.Server {
-	// Create upload path for upload api
-	etcDir, err := conf.GetConfLoc()
-	if err != nil {
-		panic(err)
-	}
-	uploadDir = filepath.Join(etcDir, "uploads")
-	err = os.MkdirAll(uploadDir, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
@@ -122,9 +100,8 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
-	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
-	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
-
+	r.HandleFunc("/sources/{id}", writeSourceHandler).Methods(http.MethodPost)
+	r.HandleFunc("/sources/{id}", deleteSourceHandler).Methods(http.MethodDelete)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
@@ -145,106 +122,6 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	}
 	server.SetKeepAlivesEnabled(false)
 	return server
-}
-
-type fileContent struct {
-	Name    string `json:"name"`
-	Content string `json:"content"`
-}
-
-func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	// Upload or overwrite a file
-	case http.MethodPost:
-		switch r.Header.Get("Content-Type") {
-		case "application/json":
-			fc := &fileContent{}
-			defer r.Body.Close()
-			err := json.NewDecoder(r.Body).Decode(fc)
-			if err != nil {
-				handleError(w, err, "Invalid body: Error decoding file json", logger)
-				return
-			}
-			if fc.Content == "" || fc.Name == "" {
-				handleError(w, nil, "Invalid body: name and content are required", logger)
-				return
-			}
-			filePath := filepath.Join(uploadDir, fc.Name)
-			dst, err := os.Create(filePath)
-			defer dst.Close()
-			if err != nil {
-				handleError(w, err, "Error creating the file", logger)
-				return
-			}
-			_, err = dst.Write([]byte(fc.Content))
-			if err != nil {
-				handleError(w, err, "Error writing the file", logger)
-				return
-			}
-			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(filePath))
-		default:
-			// Maximum upload of 1 GB files
-			err := r.ParseMultipartForm(1024 << 20)
-			if err != nil {
-				handleError(w, err, "Error parse the multi part form", logger)
-				return
-			}
-
-			// Get handler for filename, size and headers
-			file, handler, err := r.FormFile("uploadFile")
-			if err != nil {
-				handleError(w, err, "Error Retrieving the File", logger)
-				return
-			}
-
-			defer file.Close()
-
-			// Create file
-			filePath := filepath.Join(uploadDir, handler.Filename)
-			dst, err := os.Create(filePath)
-			defer dst.Close()
-			if err != nil {
-				handleError(w, err, "Error creating the file", logger)
-				return
-			}
-
-			// Copy the uploaded file to the created file on the filesystem
-			if _, err := io.Copy(dst, file); err != nil {
-				handleError(w, err, "Error writing the file", logger)
-				return
-			}
-
-			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(filePath))
-		}
-
-	case http.MethodGet:
-		// Get the list of files in the upload directory
-		files, err := ioutil.ReadDir(uploadDir)
-		if err != nil {
-			handleError(w, err, "Error reading the file upload dir", logger)
-			return
-		}
-		fileNames := make([]string, len(files))
-		for i, f := range files {
-			fileNames[i] = filepath.Join(uploadDir, f.Name())
-		}
-		jsonResponse(fileNames, w, logger)
-	}
-}
-
-func fileDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	name := vars["name"]
-	filePath := filepath.Join(uploadDir, name)
-	e := os.Remove(filePath)
-	if e != nil {
-		handleError(w, e, "Error deleting the file", logger)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok"))
 }
 
 type information struct {
@@ -426,7 +303,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(content))
 	case http.MethodPut:
-		_, err := ruleProcessor.GetRuleById(name)
+		_, err := ruleProcessor.GetRuleByName(name)
 		if err != nil {
 			handleError(w, err, "not found this rule", logger)
 			return
@@ -468,7 +345,6 @@ func getStatusRuleHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "get rule status error", logger)
 		return
 	}
-	w.Header().Set(ContentType, ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(content))
 }
@@ -527,4 +403,42 @@ func getTopoRuleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set(ContentType, ContentTypeJSON)
 	w.Write([]byte(content))
+}
+
+//write source file
+func writeSourceHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	id := vars["id"]
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		handleError(w, err, "read body error", logger)
+		return
+	}
+	rabbitmqConfig := RabbitmqConfig{}
+	err = json.Unmarshal(body, &rabbitmqConfig)
+	if err != nil {
+		handleError(w, err, "unmarshal body error", logger)
+	}
+	err = WriteSource(id, rabbitmqConfig)
+	if err != nil {
+		handleError(w, err, "write source error", logger)
+		return
+	}
+	w.Header().Set(ContentType, ContentTypeJSON)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{code:200,msg:write source success}"))
+}
+
+func deleteSourceHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	id := vars["id"]
+	err := DeleteSource(id)
+	if err != nil {
+		handleError(w, err, "delete source error", logger)
+	}
+	w.Header().Set(ContentType, ContentTypeJSON)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{code:200,msg:delete source success}"))
 }
