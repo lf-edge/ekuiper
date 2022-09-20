@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,11 @@ func (m *Manager) Source(name string) (api.Source, error) {
 		return nil, nil
 	}
 	return runtime.NewPortableSource(name, meta), nil
+}
+
+func (m *Manager) LookupSource(_ string) (api.LookupSource, error) {
+	// TODO add support
+	return nil, nil
 }
 
 func (m *Manager) Sink(name string) (api.Sink, error) {

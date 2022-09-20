@@ -40,50 +40,50 @@ func (m *mockLookupSrc) Configure(_ string, _ map[string]interface{}, _ []string
 }
 
 // Lookup accept int value as the first array value
-func (m *mockLookupSrc) Lookup(_ api.StreamContext, values []interface{}) ([]map[string]interface{}, error) {
+func (m *mockLookupSrc) Lookup(_ api.StreamContext, values []interface{}) ([]api.SourceTuple, error) {
 	a1, ok := values[0].(int)
 	if ok {
-		var result []map[string]interface{}
+		var result []api.SourceTuple
 		c := a1 % 2
 		if c != 0 {
-			result = append(result, map[string]interface{}{
+			result = append(result, api.NewDefaultSourceTuple(map[string]interface{}{
 				"newA": c,
 				"newB": c * 2,
-			})
+			}, nil))
 		}
 		c = a1 % 3
 		if c != 0 {
-			result = append(result, map[string]interface{}{
+			result = append(result, api.NewDefaultSourceTuple(map[string]interface{}{
 				"newA": c,
 				"newB": c * 2,
-			})
+			}, nil))
 		}
 		c = a1 % 5
 		if c != 0 {
-			result = append(result, map[string]interface{}{
+			result = append(result, api.NewDefaultSourceTuple(map[string]interface{}{
 				"newA": c,
 				"newB": c * 2,
-			})
+			}, nil))
 		}
 		c = a1 % 7
 		if c != 0 {
-			result = append(result, map[string]interface{}{
+			result = append(result, api.NewDefaultSourceTuple(map[string]interface{}{
 				"newA": c,
 				"newB": c * 2,
-			})
+			}, nil))
 		}
 		return result, nil
 	} else {
-		return []map[string]interface{}{
-			{
+		return []api.SourceTuple{
+			api.NewDefaultSourceTuple(map[string]interface{}{
 				"newA": 0,
 				"newB": 0,
-			},
+			}, nil),
 		}, nil
 	}
 }
 
-func (m *mockLookupSrc) Close(ctx api.StreamContext) error {
+func (m *mockLookupSrc) Close(_ api.StreamContext) error {
 	// do nothing
 	return nil
 }

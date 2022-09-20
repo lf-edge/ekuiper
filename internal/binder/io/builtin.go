@@ -44,7 +44,9 @@ var (
 		"memory":      func() api.Sink { return memory.GetSink() },
 		"neuron":      func() api.Sink { return neuron.GetSink() },
 	}
-	lookupSources = map[string]NewLookupSourceFunc{}
+	lookupSources = map[string]NewLookupSourceFunc{
+		"memory": func() api.LookupSource { return memory.GetLookupSource() },
+	}
 )
 
 type Manager struct{}

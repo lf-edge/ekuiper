@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/memory"
+	"github.com/lf-edge/ekuiper/internal/topo/memory/pubsub"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -68,7 +68,7 @@ func createOrGetConnection(sc api.StreamContext, url string) error {
 			return err
 		}
 		sc.GetLogger().Infof("Neuron connected")
-		memory.CreatePub(NeuronTopic)
+		pubsub.CreatePub(NeuronTopic)
 		go run(sctx)
 	}
 	connectionCount++
@@ -79,7 +79,7 @@ func closeConnection(ctx api.StreamContext, url string) error {
 	m.Lock()
 	defer m.Unlock()
 	ctx.GetLogger().Infof("closeConnection count: %d", connectionCount)
-	memory.RemovePub(NeuronTopic)
+	pubsub.RemovePub(NeuronTopic)
 	if connectionCount == 1 {
 		err := disconnect(url)
 		if err != nil {
@@ -114,7 +114,7 @@ func connect(ctx api.StreamContext, url string) error {
 		case mangos.PipeEventDetached:
 			atomic.StoreInt32(&opened, 0)
 			conf.Log.Warnf("neuron connection detached")
-			memory.ProduceError(ctx, NeuronTopic, fmt.Errorf("neuron connection detached"))
+			pubsub.ProduceError(ctx, NeuronTopic, fmt.Errorf("neuron connection detached"))
 		}
 	})
 	//sock.SetOption(mangos.OptionWriteQLen, 100)
@@ -145,7 +145,7 @@ func run(ctx api.StreamContext) {
 				ctx.GetLogger().Errorf("neuron decode message error %v", err)
 				continue
 			}
-			memory.Produce(ctx, NeuronTopic, result)
+			pubsub.Produce(ctx, NeuronTopic, result)
 		} else if err == mangos.ErrClosed {
 			ctx.GetLogger().Infof("neuron connection closed, exit receiving loop")
 			return

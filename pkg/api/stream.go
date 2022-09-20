@@ -85,7 +85,7 @@ type LookupSource interface {
 	//read from the yaml
 	Configure(datasource string, props map[string]interface{}, lookupKeys []string) error
 	// Lookup receive lookup values to construct the query and return query results
-	Lookup(ctx StreamContext, values []interface{}) ([]map[string]interface{}, error)
+	Lookup(ctx StreamContext, values []interface{}) ([]SourceTuple, error)
 	Closable
 }
 
