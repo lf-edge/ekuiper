@@ -46,19 +46,14 @@ func (tc *tableCount) Decrease() int {
 
 type database struct {
 	sync.RWMutex
-	tables map[string]map[string]*tableCount // topic: index: []value
+	tables map[string]*tableCount // topic: table
 }
 
-// getTable return the table of the topic/values.
-// The second bool indicates if the topic exists
-func (db *database) getTable(topic string, key string) (*Table, bool) {
+// getTable return the table of the topic.
+func (db *database) getTable(topic string) (*Table, bool) {
 	db.RLock()
 	defer db.RUnlock()
-	r, ok := db.tables[topic]
-	if !ok {
-		return nil, false
-	}
-	tc, ok := r[key]
+	tc, ok := db.tables[topic]
 	if ok {
 		return tc.t, true
 	} else {
@@ -70,24 +65,19 @@ func (db *database) getTable(topic string, key string) (*Table, bool) {
 // If the table already exists, return the existing table;
 // otherwise, create a new table and return it.
 // The second argument is to indicate if the table is newly created
-func (db *database) addTable(topic string, key string) (*Table, bool) {
+func (db *database) addTable(topic string, keys []string) (*Table, bool) {
 	db.Lock()
 	defer db.Unlock()
-	r, ok := db.tables[topic]
-	if !ok {
-		r = make(map[string]*tableCount)
-		db.tables[topic] = r
-	}
-	tc, ok := r[key]
+	tc, ok := db.tables[topic]
 	if ok {
 		tc.Increase()
 	} else {
-		t := createTable()
+		t := createTable(keys)
 		tc = &tableCount{
 			count: 1,
 			t:     t,
 		}
-		r[key] = tc
+		db.tables[topic] = tc
 	}
 	return tc.t, !ok
 }
@@ -95,54 +85,93 @@ func (db *database) addTable(topic string, key string) (*Table, bool) {
 // dropTable drop the table of the topic/values
 // stops to accumulate job
 // deletes the cache data
-func (db *database) dropTable(topic string, key string) error {
+func (db *database) dropTable(topic string) error {
 	db.Lock()
 	defer db.Unlock()
-	if r, ok := db.tables[topic]; ok {
-		if tc, tok := r[key]; tok {
-			if tc.Decrease() == 0 {
-				if tc.t != nil && tc.t.cancel != nil {
-					tc.t.cancel()
-				}
-				delete(r, key)
+	if tc, ok := db.tables[topic]; ok {
+		if tc.Decrease() == 0 {
+			if tc.t != nil && tc.t.cancel != nil {
+				tc.t.cancel()
 			}
-			return nil
+			delete(db.tables, topic)
 		}
+		return nil
 	}
-	return fmt.Errorf("Table %s/%s not found", topic, key)
+	return fmt.Errorf("Table %s not found", topic)
 }
 
 // Table has one writer and multiple reader
 type Table struct {
 	sync.RWMutex
-	datamap map[string][]api.SourceTuple
+	// datamap is the overall data
+	datamap  []api.SourceTuple
+	hasIndex bool
+	// indexes is the indexed data
+	indexes map[string]map[interface{}][]api.SourceTuple
 	cancel  context.CancelFunc
 }
 
-func createTable() *Table {
-	return &Table{
-		datamap: make(map[string][]api.SourceTuple),
+func createTable(keys []string) *Table {
+	t := &Table{}
+	if len(keys) > 0 {
+		t.indexes = make(map[string]map[interface{}][]api.SourceTuple, len(keys))
+		for _, k := range keys {
+			t.indexes[k] = make(map[interface{}][]api.SourceTuple)
+		}
+		t.hasIndex = true
 	}
+	return t
 }
 
-func (t *Table) add(key string, value api.SourceTuple) {
+func (t *Table) add(value api.SourceTuple) {
 	t.Lock()
 	defer t.Unlock()
-	t.datamap[key] = append(t.datamap[key], value)
+	t.datamap = append(t.datamap, value)
+	for k, v := range t.indexes {
+		if val, ok := value.Message()[k]; ok {
+			if _, ok := v[val]; !ok {
+				v[val] = make([]api.SourceTuple, 0)
+			}
+			v[val] = append(v[val], value)
+		}
+	}
 }
 
-func (t *Table) Read(values []interface{}) ([]api.SourceTuple, error) {
+func (t *Table) Read(keys []string, values []interface{}) ([]api.SourceTuple, error) {
 	t.RLock()
 	defer t.RUnlock()
-	mapkey := ""
-	for _, k := range values {
-		mapkey += fmt.Sprintf("%v,", k)
+	data := t.datamap
+	excludeKey := -1
+	if t.hasIndex {
+		// Find the first indexed key
+		for i, k := range keys {
+			if d, ok := t.indexes[k]; ok {
+				data = d[values[i]]
+				excludeKey = i
+			}
+		}
 	}
-	return t.datamap[mapkey], nil
+	var result []api.SourceTuple
+	for _, v := range data {
+		match := true
+		for i, k := range keys {
+			if i == excludeKey {
+				continue
+			}
+			if val, ok := v.Message()[k]; !ok || val != values[i] {
+				match = false
+				break
+			}
+		}
+		if match {
+			result = append(result, v)
+		}
+	}
+	return result, nil
 }
 
 var (
 	db = &database{
-		tables: make(map[string]map[string]*tableCount),
+		tables: make(map[string]*tableCount),
 	}
 )

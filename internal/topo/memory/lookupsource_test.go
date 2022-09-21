@@ -29,7 +29,7 @@ func TestSingleKeyLookup(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "test")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	ls := GetLookupSource()
-	err := ls.Configure("test", map[string]interface{}{"option": "value"}, []string{"ff"})
+	err := ls.Configure("test", map[string]interface{}{"option": "value"})
 	if err != nil {
 		t.Error(err)
 		return
@@ -62,7 +62,7 @@ func TestSingleKeyLookup(t *testing.T) {
 		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test"}),
 		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value4"}, map[string]interface{}{"topic": "test"}),
 	}
-	result, err := ls.Lookup(ctx, []interface{}{"value1"})
+	result, err := ls.Lookup(ctx, []string{"ff"}, []interface{}{"value1"})
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("expect %v but got %v", expected, result)
 	}

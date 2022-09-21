@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package node
 import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"reflect"
@@ -44,7 +45,7 @@ func TestGetConf_Apply(t *testing.T) {
 	}, false)
 	contextLogger := conf.Log.WithField("rule", "test")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	conf := getSourceConf(ctx, n.sourceType, n.options)
+	conf := nodeConf.GetSourceConf(ctx, n.sourceType, n.options)
 	if !reflect.DeepEqual(result, conf) {
 		t.Errorf("result mismatch:\n\nexp=%s\n\ngot=%s\n\n", result, conf)
 	}
@@ -72,7 +73,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 	}, false)
 	contextLogger := conf.Log.WithField("rule", "test")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	conf := getSourceConf(ctx, n.sourceType, n.options)
+	conf := nodeConf.GetSourceConf(ctx, n.sourceType, n.options)
 	if !reflect.DeepEqual(result, conf) {
 		t.Errorf("result mismatch:\n\nexp=%s\n\ngot=%s\n\n", result, conf)
 		return

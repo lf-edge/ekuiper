@@ -24,10 +24,10 @@ import (
 
 // Reg registers a topic to save it to memory store
 // Create a new go routine to listen to the topic and save the data to memory
-func Reg(topic string, topicRegex *regexp.Regexp, key string, keys []string) (*Table, error) {
-	t, isNew := db.addTable(topic, key)
+func Reg(topic string, topicRegex *regexp.Regexp, keys []string) (*Table, error) {
+	t, isNew := db.addTable(topic, keys)
 	if isNew {
-		go runTable(topic, topicRegex, key, keys, t)
+		go runTable(topic, topicRegex, t)
 	}
 	return t, nil
 }
@@ -35,9 +35,9 @@ func Reg(topic string, topicRegex *regexp.Regexp, key string, keys []string) (*T
 // runTable should only run in a single instance.
 // This go routine is used to accumulate data in memory
 // If the go routine close, the go routine exits but the data will be kept until table dropped
-func runTable(topic string, topicRegex *regexp.Regexp, key string, keys []string, t *Table) {
-	conf.Log.Infof("runTable %s_%s", topic, key)
-	ch := pubsub.CreateSub(topic, topicRegex, fmt.Sprintf("store_%s_%s", topic, key), 1024)
+func runTable(topic string, topicRegex *regexp.Regexp, t *Table) {
+	conf.Log.Infof("runTable %s", topic)
+	ch := pubsub.CreateSub(topic, topicRegex, fmt.Sprintf("store_%s", topic), 1024)
 	ctx, cancel := context.WithCancel(context.Background())
 	t.cancel = cancel
 	for {
@@ -46,12 +46,8 @@ func runTable(topic string, topicRegex *regexp.Regexp, key string, keys []string
 			if !opened { // exit go routine is not sync with drop table
 				return
 			}
-			mapkey := ""
-			for _, k := range keys {
-				mapkey += fmt.Sprintf("%v,", v.Message()[k])
-			}
-			t.add(mapkey, v)
-			conf.Log.Debugf("receive data %v for %s_%s", v, topic, key)
+			t.add(v)
+			conf.Log.Debugf("receive data %v for %s", v, topic)
 		case <-ctx.Done():
 			return
 		}
@@ -59,7 +55,7 @@ func runTable(topic string, topicRegex *regexp.Regexp, key string, keys []string
 }
 
 // Unreg unregisters a topic to remove it from memory store
-func Unreg(topic string, key string) error {
+func Unreg(topic string) error {
 	// Must be an atomic operation
-	return db.dropTable(topic, key)
+	return db.dropTable(topic)
 }

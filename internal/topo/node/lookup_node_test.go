@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -35,12 +36,12 @@ func (m *mockLookupSrc) Open(_ api.StreamContext) error {
 	return nil
 }
 
-func (m *mockLookupSrc) Configure(_ string, _ map[string]interface{}, _ []string) error {
+func (m *mockLookupSrc) Configure(_ string, _ map[string]interface{}) error {
 	return nil
 }
 
 // Lookup accept int value as the first array value
-func (m *mockLookupSrc) Lookup(_ api.StreamContext, values []interface{}) ([]api.SourceTuple, error) {
+func (m *mockLookupSrc) Lookup(_ api.StreamContext, _ []string, values []interface{}) ([]api.SourceTuple, error) {
 	a1, ok := values[0].(int)
 	if ok {
 		var result []api.SourceTuple
@@ -289,17 +290,19 @@ func TestLookup(t *testing.T) {
 			},
 		},
 	}
+	options := &ast.Options{
+		DATASOURCE:        "mock",
+		TYPE:              "mock",
+		STRICT_VALIDATION: true,
+		KIND:              "lookup",
+	}
+	lookup.CreateInstance("mock", "mock", options)
 	contextLogger := conf.Log.WithField("rule", "TestLookup")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	l, _ := NewLookupNode("mock", []string{"a"}, ast.INNER_JOIN, []ast.Expr{&ast.FieldRef{
 		StreamName: "",
 		Name:       "a",
-	}}, &ast.Options{
-		DATASOURCE:        "mock",
-		TYPE:              "mock",
-		STRICT_VALIDATION: true,
-		KIND:              "lookup",
-	}, &api.RuleOption{
+	}}, options, &api.RuleOption{
 		IsEventTime:        false,
 		LateTol:            0,
 		Concurrency:        0,

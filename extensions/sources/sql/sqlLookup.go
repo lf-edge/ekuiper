@@ -29,7 +29,6 @@ type sqlLookupConfig struct {
 type sqlLookupSource struct {
 	url      string
 	template string
-	keys     []string
 	db       *sql.DB
 }
 
@@ -44,7 +43,7 @@ func (s *sqlLookupSource) Open(ctx api.StreamContext) error {
 	return nil
 }
 
-func (s *sqlLookupSource) Configure(datasource string, props map[string]interface{}, keys []string) error {
+func (s *sqlLookupSource) Configure(datasource string, props map[string]interface{}) error {
 	cfg := &sqlLookupConfig{}
 	err := cast.MapToStruct(props, cfg)
 	if err != nil {
@@ -58,15 +57,14 @@ func (s *sqlLookupSource) Configure(datasource string, props map[string]interfac
 		return fmt.Errorf("dburl.Parse %s fail with error: %v", cfg.Url, err)
 	}
 	s.url = cfg.Url
-	s.keys = keys
 	s.template = fmt.Sprintf("SELECT * FROM `%s` WHERE ", datasource)
 	return nil
 }
 
-func (s *sqlLookupSource) Lookup(ctx api.StreamContext, values []interface{}) ([]api.SourceTuple, error) {
+func (s *sqlLookupSource) Lookup(ctx api.StreamContext, keys []string, values []interface{}) ([]api.SourceTuple, error) {
 	ctx.GetLogger().Debug("Start to lookup tuple")
 	query := s.template
-	for i, k := range s.keys {
+	for i, k := range keys {
 		if i > 0 {
 			query += " AND "
 		}
