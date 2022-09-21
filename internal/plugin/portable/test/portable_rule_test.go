@@ -15,9 +15,7 @@
 package test
 
 import (
-	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
@@ -26,11 +24,11 @@ import (
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/topo"
+	"github.com/lf-edge/ekuiper/internal/topo/memory"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"log"
-	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -63,27 +61,24 @@ func TestSourceAndFunc(t *testing.T) {
 	}{
 		{
 			Name: `TestPortableRule1`,
-			Rule: `{"sql":"SELECT echo(count) as ee FROM ext","actions":[{"file":{"path":"cache1"}}]}`,
+			Rule: `{"sql":"SELECT count as ee FROM ext","actions":[{"memory":{"topic":"cache"}}]}`,
 			R: [][]map[string]interface{}{
 				{{
-					"ee": float64(50),
+					"ee": 50,
 				}},
 				{{
-					"ee": float64(50),
+					"ee": 50,
 				}},
 				{{
-					"ee": float64(50),
+					"ee": 50,
 				}},
 			},
 			M: map[string]interface{}{
-				"source_ext_0_exceptions_total":   int64(0),
-				"source_ext_0_records_in_total":   int64(3),
-				"source_ext_0_records_out_total":  int64(3),
-				"sink_file_0_0_records_out_total": int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 			},
 		}, {
 			Name: `TestPythonRule`,
-			Rule: `{"sql":"SELECT revert(name) as ee FROM extpy","actions":[{"file":{"path":"cache2"}},{"print":{}}]}`,
+			Rule: `{"sql":"SELECT revert(name) as ee FROM extpy","actions":[{"memory":{"topic":"cache"}},{"print":{}}]}`,
 			R: [][]map[string]interface{}{
 				{{
 					"ee": "nosjyp",
@@ -96,11 +91,7 @@ func TestSourceAndFunc(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"source_extpy_0_exceptions_total":  int64(0),
-				"source_extpy_0_records_in_total":  int64(3),
-				"source_extpy_0_records_out_total": int64(3),
-				"sink_file_0_0_records_out_total":  int64(3),
-				"sink_print_1_0_records_out_total": int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 			},
 		},
 	}
@@ -108,7 +99,6 @@ func TestSourceAndFunc(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	defer runtime.GetPluginInsManager().KillAll()
 	for i, tt := range tests {
-		_ = os.Remove(fmt.Sprintf("cache%d", i+1))
 		topotest.HandleStream(true, streamList[i:i+1], t)
 		rs, err := CreateRule(tt.Name, tt.Rule)
 		if err != nil {
@@ -120,7 +110,9 @@ func TestSourceAndFunc(t *testing.T) {
 			t.Errorf("fail to init rule: %v", err)
 			continue
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		var mm [][]map[string]interface{}
+		ch := memory.CreateSub("cache", nil, fmt.Sprintf("cache%d", i+1), 10)
+		ctx, cancel := context.WithTimeout(context.Background(), 10000*time.Second)
 		go func(ctx context.Context) {
 			select {
 			case err := <-tp.Open():
@@ -132,6 +124,18 @@ func TestSourceAndFunc(t *testing.T) {
 			}
 			fmt.Println("all exit")
 		}(ctx)
+		go func(ctx context.Context) {
+			for {
+				select {
+				case s := <-ch:
+					log.Printf("get %v", s)
+					mm = append(mm, []map[string]interface{}{s.Message()})
+				case <-ctx.Done():
+					log.Printf("ctx done %v\n", ctx.Err())
+					return
+				}
+			}
+		}(ctx)
 		topotest.HandleStream(false, streamList[i:i+1], t)
 		for {
 			if ctx.Err() != nil {
@@ -141,24 +145,6 @@ func TestSourceAndFunc(t *testing.T) {
 			time.Sleep(10 * time.Millisecond)
 			if compareMetrics(tp, tt.M) {
 				cancel()
-				// need to wait for file results
-				time.Sleep(1 * time.Second)
-				results := getResults(fmt.Sprintf("cache%d", i+1))
-				fmt.Printf("get results %v\n", results)
-				time.Sleep(10 * time.Millisecond)
-				var mm [][]map[string]interface{}
-				for i, v := range results {
-					if i >= 3 {
-						break
-					}
-					var mapRes []map[string]interface{}
-					err := json.Unmarshal([]byte(v), &mapRes)
-					if err != nil {
-						t.Errorf("Failed to parse the input into map")
-						continue
-					}
-					mm = append(mm, mapRes)
-				}
 				if !reflect.DeepEqual(tt.R, mm) {
 					t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.Rule, tt.R, mm)
 				}
@@ -166,8 +152,6 @@ func TestSourceAndFunc(t *testing.T) {
 			}
 		}
 	}
-	// wait for rule clean up
-	time.Sleep(1 * time.Second)
 }
 
 func compareMetrics(tp *topo.Topo, m map[string]interface{}) bool {
@@ -196,23 +180,6 @@ func compareMetrics(tp *topo.Topo, m map[string]interface{}) bool {
 		}
 	}
 	return true
-}
-
-func getResults(fileName string) []string {
-	f, err := os.Open(fileName)
-	if err != nil {
-		panic(err)
-	}
-	result := make([]string, 0)
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		result = append(result, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		panic(err)
-	}
-	f.Close()
-	return result
 }
 
 func CreateRule(name, sql string) (*api.Rule, error) {
