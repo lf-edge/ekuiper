@@ -16,8 +16,8 @@ package node
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -34,7 +34,7 @@ type LookupNode struct {
 	vals        []ast.Expr
 
 	srcOptions *ast.Options
-	Keys       []string
+	keys       []string
 }
 
 func NewLookupNode(name string, keys []string, joinType ast.JoinType, vals []ast.Expr, srcOptions *ast.Options, options *api.RuleOption) (*LookupNode, error) {
@@ -43,7 +43,7 @@ func NewLookupNode(name string, keys []string, joinType ast.JoinType, vals []ast
 		return nil, fmt.Errorf("source type is not specified")
 	}
 	n := &LookupNode{
-		Keys:       keys,
+		keys:       keys,
 		srcOptions: srcOptions,
 		sourceType: t,
 		joinType:   joinType,
@@ -77,21 +77,11 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	n.statManager = stats
 	go func() {
 		err := infra.SafeRun(func() error {
-			props := getSourceConf(ctx, n.sourceType, n.srcOptions)
-			ctx.GetLogger().Infof("open lookup source node with props %v", conf.Printable(props))
-			// Create the lookup source according to the source options
-			ns, err := io.LookupSource(n.sourceType)
+			ns, err := lookup.Attach(n.name)
 			if err != nil {
 				return err
 			}
-			err = ns.Configure(n.srcOptions.DATASOURCE, props, n.Keys)
-			if err != nil {
-				return err
-			}
-			err = ns.Open(ctx)
-			if err != nil {
-				return err
-			}
+			defer lookup.Detach(n.name)
 			fv, _ := xsql.NewFunctionValuersForOp(ctx)
 			// Start the lookup source loop
 			for {
@@ -171,10 +161,20 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.TupleRow, fv *xsql.FunctionValuer, ns api.LookupSource, tuples *xsql.JoinTuples) error {
 	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
 	cvs := make([]interface{}, len(n.vals))
+	hasNil := false
 	for i, val := range n.vals {
 		cvs[i] = ve.Eval(val)
+		if cvs[i] == nil {
+			hasNil = true
+		}
 	}
-	r, e := ns.Lookup(ctx, cvs)
+	var (
+		r []api.SourceTuple
+		e error
+	)
+	if !hasNil { // if any of the value is nil, the lookup will always return empty result
+		r, e = ns.Lookup(ctx, n.keys, cvs)
+	}
 	if e != nil {
 		return e
 	} else {

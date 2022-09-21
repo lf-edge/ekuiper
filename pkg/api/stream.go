@@ -83,9 +83,9 @@ type LookupSource interface {
 	Open(ctx StreamContext) error
 	// Configure Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties
 	//read from the yaml
-	Configure(datasource string, props map[string]interface{}, lookupKeys []string) error
+	Configure(datasource string, props map[string]interface{}) error
 	// Lookup receive lookup values to construct the query and return query results
-	Lookup(ctx StreamContext, values []interface{}) ([]SourceTuple, error)
+	Lookup(ctx StreamContext, keys []string, values []interface{}) ([]SourceTuple, error)
 	Closable
 }
 

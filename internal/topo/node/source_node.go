@@ -19,6 +19,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -72,7 +73,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	logger.Infof("open source node %s with option %v", m.name, m.options)
 	go func() {
 		panicOrError := infra.SafeRun(func() error {
-			props := getSourceConf(ctx, m.sourceType, m.options)
+			props := nodeConf.GetSourceConf(ctx, m.sourceType, m.options)
 			m.props = props
 			if c, ok := props["concurrency"]; ok {
 				if t, err := cast.ToInt(c, cast.STRICT); err != nil || t <= 0 {

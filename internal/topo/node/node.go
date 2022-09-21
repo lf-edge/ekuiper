@@ -16,13 +16,10 @@ package node
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"strings"
 )
 
 type OperatorNode interface {
@@ -168,59 +165,4 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 		}
 	}
 	return data, false
-}
-
-func printable(m map[string]interface{}) map[string]interface{} {
-	printableMap := make(map[string]interface{})
-	for k, v := range m {
-		if strings.EqualFold(k, "password") {
-			printableMap[k] = "*"
-		} else {
-			if vm, ok := v.(map[string]interface{}); ok {
-				printableMap[k] = printable(vm)
-			} else {
-				printableMap[k] = v
-			}
-		}
-	}
-	return printableMap
-}
-
-func getSourceConf(ctx api.StreamContext, sourceType string, options *ast.Options) map[string]interface{} {
-	confkey := options.CONF_KEY
-	logger := ctx.GetLogger()
-	confPath := "sources/" + sourceType + ".yaml"
-	if sourceType == "mqtt" {
-		confPath = "mqtt_source.yaml"
-	}
-	props := make(map[string]interface{})
-	cfg := make(map[string]interface{})
-	err := conf.LoadConfigByName(confPath, &cfg)
-	if err != nil {
-		logger.Warnf("fail to parse yaml for source %s. Return an empty configuration", sourceType)
-	} else {
-		def, ok := cfg["default"]
-		if !ok {
-			logger.Warnf("default conf is not found", confkey)
-		} else {
-			if def1, ok1 := def.(map[string]interface{}); ok1 {
-				props = def1
-			}
-			if c, ok := cfg[strings.ToLower(confkey)]; ok {
-				if c1, ok := c.(map[string]interface{}); ok {
-					c2 := c1
-					for k, v := range c2 {
-						props[k] = v
-					}
-				}
-			}
-		}
-	}
-	f := options.FORMAT
-	if f == "" {
-		f = "json"
-	}
-	props["format"] = strings.ToLower(f)
-	logger.Debugf("get conf for %s with conf key %s: %v", sourceType, confkey, printable(props))
-	return props
 }
