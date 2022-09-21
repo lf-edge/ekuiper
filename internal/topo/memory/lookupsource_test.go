@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-func TestSingleKeyLookup(t *testing.T) {
+func TestNoIndexLookup(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "test")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	ls := GetLookupSource()
@@ -61,6 +61,54 @@ func TestSingleKeyLookup(t *testing.T) {
 	expected := []api.SourceTuple{
 		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test"}),
 		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value4"}, map[string]interface{}{"topic": "test"}),
+	}
+	result, err := ls.Lookup(ctx, []string{"ff"}, []interface{}{"value1"})
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("expect %v but got %v", expected, result)
+	}
+	err = ls.Close(ctx)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+}
+
+func TestSingleIndexLookup(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "test2")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ls := GetLookupSource()
+	err := ls.Configure("test2", map[string]interface{}{"index": []string{"ff"}})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = ls.Open(ctx)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	// wait for the source to be ready
+	time.Sleep(100 * time.Millisecond)
+	pubsub.Produce(ctx, "test2", map[string]interface{}{"ff": "value1", "gg": "value2"})
+	pubsub.Produce(ctx, "test2", map[string]interface{}{"ff": "value2", "gg": "value2"})
+	pubsub.Produce(ctx, "test2", map[string]interface{}{"ff": "value1", "gg": "value4"})
+	// wait for table accumulation
+	time.Sleep(100 * time.Millisecond)
+	canctx, cancel := gocontext.WithCancel(gocontext.Background())
+	defer cancel()
+	go func() {
+		for {
+			select {
+			case <-canctx.Done():
+				return
+			case <-time.After(10 * time.Millisecond):
+				pubsub.Produce(ctx, "test", map[string]interface{}{"ff": "value4", "gg": "value2"})
+			}
+		}
+	}()
+	expected := []api.SourceTuple{
+		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test2"}),
+		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value4"}, map[string]interface{}{"topic": "test2"}),
 	}
 	result, err := ls.Lookup(ctx, []string{"ff"}, []interface{}{"value1"})
 	if !reflect.DeepEqual(result, expected) {

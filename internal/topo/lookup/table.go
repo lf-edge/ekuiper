@@ -72,16 +72,20 @@ func CreateInstance(name string, sourceType string, options *ast.Options) error 
 	// Create the lookup source according to the source options
 	ns, err := io.LookupSource(sourceType)
 	if err != nil {
+		ctx.GetLogger().Error(err)
 		return err
 	}
+	ctx.GetLogger().Debugf("lookup source %s is created", sourceType)
 	err = ns.Configure(options.DATASOURCE, props)
 	if err != nil {
 		return err
 	}
+	ctx.GetLogger().Debugf("lookup source %s is configured", sourceType)
 	err = ns.Open(ctx)
 	if err != nil {
 		return err
 	}
+	ctx.GetLogger().Debugf("lookup source %s is opened", sourceType)
 	instances[name] = &info{ls: ns, count: 0}
 	return nil
 }
@@ -97,6 +101,6 @@ func DropInstance(name string) error {
 		delete(instances, name)
 		return nil
 	} else {
-		return fmt.Errorf("lookup table %s is not found", name)
+		return nil
 	}
 }

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -99,7 +100,49 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 	return
 }
 
+func (p *StreamProcessor) RecoverLookupTable() error {
+	keys, err := p.db.Keys()
+	if err != nil {
+		return fmt.Errorf("error loading data from db: %v.", err)
+	}
+	var (
+		v  string
+		vs = &xsql.StreamInfo{}
+	)
+	for _, k := range keys {
+		if ok, _ := p.db.Get(k, &v); ok {
+			if err := json.Unmarshal([]byte(v), vs); err == nil && vs.StreamType == ast.TypeTable {
+				parser := xsql.NewParser(strings.NewReader(vs.Statement))
+				stmt, e := xsql.Language.Parse(parser)
+				if e != nil {
+					log.Error(err)
+				}
+				switch s := stmt.(type) {
+				case *ast.StreamStmt:
+					log.Infof("Starting lookup table %s", s.Name)
+					e = lookup.CreateInstance(string(s.Name), s.Options.TYPE, s.Options)
+					if err != nil {
+						log.Errorf("%s", err.Error())
+						return err
+					}
+				default:
+					log.Errorf("Invalid lookup table statement: %s", vs.Statement)
+				}
+
+			}
+		}
+	}
+	return nil
+}
+
 func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, replace bool) error {
+	if stmt.StreamType == ast.TypeTable && stmt.Options.KIND == ast.StreamKindLookup {
+		log.Infof("Creating lookup table %s", stmt.Name)
+		err := lookup.CreateInstance(string(stmt.Name), stmt.Options.TYPE, stmt.Options)
+		if err != nil {
+			return err
+		}
+	}
 	s, err := json.Marshal(xsql.StreamInfo{
 		StreamType: stmt.StreamType,
 		Statement:  statement,
@@ -281,6 +324,12 @@ func (p *StreamProcessor) execDrop(stmt ast.NameNode, st ast.StreamType) (string
 }
 
 func (p *StreamProcessor) DropStream(name string, st ast.StreamType) (string, error) {
+	if st == ast.TypeTable {
+		err := lookup.DropInstance(name)
+		if err != nil {
+			return "", err
+		}
+	}
 	_, err := p.getStream(name, st)
 	if err != nil {
 		return "", err

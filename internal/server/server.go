@@ -74,6 +74,8 @@ func StartUp(Version, LoadFileType string) {
 	meta.Bind()
 
 	registry = &RuleRegistry{internal: make(map[string]*RuleState)}
+	//Start lookup tables
+	streamProcessor.RecoverLookupTable()
 	//Start rules
 	if rules, err := ruleProcessor.GetAllRules(); err != nil {
 		logger.Infof("Start rules error: %s", err)
