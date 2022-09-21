@@ -55,7 +55,7 @@ type Manager struct {
 	// A map from function name to its plugin file name. It is constructed during initialization by reading kv info. All functions must have at least an entry, even the function resizes in a one function plugin.
 	symbols map[string]string
 	// loaded symbols in current runtime
-	runtime map[string]plugin.Symbol
+	runtime map[string]*plugin.Plugin
 	// dirs
 	pluginDir string
 	etcDir    string
@@ -77,7 +77,7 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error when opening db: %v", err)
 	}
-	registry := &Manager{symbols: make(map[string]string), db: db, pluginDir: pluginDir, etcDir: etcDir, runtime: make(map[string]plugin.Symbol)}
+	registry := &Manager{symbols: make(map[string]string), db: db, pluginDir: pluginDir, etcDir: etcDir, runtime: make(map[string]*plugin.Plugin)}
 	manager = registry
 	plugins := make([]map[string]string, 3)
 	for i := range plugin2.PluginTypes {
@@ -116,7 +116,7 @@ func findAll(t plugin2.PluginType, pluginDir string) (result map[string]string, 
 			n, v := parseName(baseName)
 			//load the plugins when ekuiper set up
 			if !conf.IsTesting {
-				if _, err := manager.loadRuntime(t, n, path.Join(dir, baseName)); err != nil {
+				if _, err := manager.loadRuntime(t, n, path.Join(dir, baseName), ""); err != nil {
 					continue
 				}
 			}
@@ -513,7 +513,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 
 	if !conf.IsTesting {
 		// load the runtime first
-		_, err = manager.loadRuntime(t, soName, soPath)
+		_, err = manager.loadRuntime(t, soName, soPath, "")
 		if err != nil {
 			return version, err
 		}
@@ -526,7 +526,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 // binder factory implementations
 
 func (rr *Manager) Source(name string) (api.Source, error) {
-	nf, err := rr.loadRuntime(plugin2.SOURCE, name, "")
+	nf, err := rr.loadRuntime(plugin2.SOURCE, name, "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -544,7 +544,7 @@ func (rr *Manager) Source(name string) (api.Source, error) {
 }
 
 func (rr *Manager) LookupSource(name string) (api.LookupSource, error) {
-	nf, err := rr.loadRuntime(plugin2.SOURCE, name+"Lookup", "")
+	nf, err := rr.loadRuntime(plugin2.SOURCE, name, "", ucFirst(name)+"Lookup")
 	if err != nil {
 		return nil, err
 	}
@@ -562,7 +562,7 @@ func (rr *Manager) LookupSource(name string) (api.LookupSource, error) {
 }
 
 func (rr *Manager) Sink(name string) (api.Sink, error) {
-	nf, err := rr.loadRuntime(plugin2.SINK, name, "")
+	nf, err := rr.loadRuntime(plugin2.SINK, name, "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -582,7 +582,7 @@ func (rr *Manager) Sink(name string) (api.Sink, error) {
 }
 
 func (rr *Manager) Function(name string) (api.Function, error) {
-	nf, err := rr.loadRuntime(plugin2.FUNCTION, name, "")
+	nf, err := rr.loadRuntime(plugin2.FUNCTION, name, "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -615,43 +615,50 @@ func (rr *Manager) ConvName(name string) (string, bool) {
 }
 
 // If not found, return nil,nil; Other errors return nil, err
-func (rr *Manager) loadRuntime(t plugin2.PluginType, name, soFilepath string) (plugin.Symbol, error) {
-	ut := ucFirst(name)
+func (rr *Manager) loadRuntime(t plugin2.PluginType, soName, soFilepath, symbolName string) (plugin.Symbol, error) {
 	ptype := plugin2.PluginTypes[t]
-	key := ptype + "/" + name
-	var nf plugin.Symbol
+	key := ptype + "/" + soName
+	var (
+		plug *plugin.Plugin
+		ok   bool
+		err  error
+	)
 	rr.RLock()
-	nf, ok := rr.runtime[key]
+	plug, ok = rr.runtime[key]
 	rr.RUnlock()
 	if !ok {
 		var soPath string
 		if soFilepath != "" {
 			soPath = soFilepath
 		} else {
-			mod, err := rr.getSoFilePath(t, name, false)
+			mod, err := rr.getSoFilePath(t, soName, false)
 			if err != nil {
-				conf.Log.Warnf(fmt.Sprintf("cannot find the native plugin %s in path: %v", name, err))
+				conf.Log.Warnf(fmt.Sprintf("cannot find the native plugin %s in path: %v", soName, err))
 				return nil, nil
 			}
 			soPath = mod
 		}
 		conf.Log.Debugf("Opening plugin %s", soPath)
-		plug, err := plugin.Open(soPath)
+		plug, err = plugin.Open(soPath)
 		if err != nil {
-			conf.Log.Errorf(fmt.Sprintf("plugin %s open error: %v", name, err))
+			conf.Log.Errorf(fmt.Sprintf("plugin %s open error: %v", soName, err))
 			return nil, fmt.Errorf("cannot open %s: %v", soPath, err)
 		}
-		conf.Log.Debugf("Successfully open plugin %s", soPath)
-		nf, err = plug.Lookup(ut)
-		if err != nil {
-			conf.Log.Warnf(fmt.Sprintf("cannot find symbol %s, please check if it is exported: %v", ut, err))
-			return nil, nil
-		}
-		conf.Log.Debugf("Successfully look-up plugin %s", soPath)
 		rr.Lock()
-		rr.runtime[key] = nf
+		rr.runtime[key] = plug
 		rr.Unlock()
+		conf.Log.Debugf("Successfully open plugin %s", soPath)
 	}
+	if symbolName == "" {
+		symbolName = ucFirst(soName)
+	}
+	conf.Log.Debugf("Loading symbol %s", symbolName)
+	nf, err := plug.Lookup(symbolName)
+	if err != nil {
+		conf.Log.Warnf(fmt.Sprintf("cannot find symbol %s, please check if it is exported: %v", symbolName, err))
+		return nil, nil
+	}
+	conf.Log.Debugf("Successfully look-up plugin %s", symbolName)
 	return nf, nil
 }
 
