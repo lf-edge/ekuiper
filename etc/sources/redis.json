@@ -1,0 +1,96 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/builtin/redis.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/builtin/redis.md"
+    },
+    "description": {
+      "en_US": "Read message from Redis",
+      "zh_CN": "从 Redis 中读取消息"
+    }
+  },
+  "libs": [],
+  "properties": {
+    "default": [
+      {
+        "name": "addr",
+        "default": "10.122.48.17:6379",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The addr of the Redis,example: 10.122.48.17:6379",
+          "zh_CN": "Redis的地址, 例如: 10.122.48.17:6379"
+        },
+        "label": {
+          "en_US": "Addr",
+          "zh_CN": "地址"
+        }
+      },
+      {
+        "name": "username",
+        "default": "",
+        "optional": true,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The Redis user name",
+          "zh_CN": "Redis 用户名"
+        },
+        "label": {
+          "en_US": "Username",
+          "zh_CN": "用户名"
+        }
+      },
+      {
+        "name": "password",
+        "default": "",
+        "optional": true,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The Redis login password",
+          "zh_CN": "Redis 登陆密码"
+        },
+        "label": {
+          "en_US": "Password",
+          "zh_CN": "密码"
+        }
+      },
+      {
+        "name": "dataType",
+        "default": "string",
+        "optional": false,
+        "control": "select",
+        "type": "string",
+        "values": [
+          "string",
+          "list"
+        ],
+        "hint": {
+          "en_US": "The Redis data type, could be string or list. The default is string.",
+          "zh_CN": "Redis 数据的类型，可以为 string 或者 list， 默认是 string。"
+        },
+        "label": {
+          "en_US": "data type",
+          "zh_CN": "数据类型"
+        }
+      }
+    ]
+  },
+  "node": {
+    "category": ["Protocol","Protocol1"],
+    "icon": "iconPath",
+    "label": {
+      "en_US": "Redis",
+      "zh_CN": "Redis"
+    }
+  }
+}

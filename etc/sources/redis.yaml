@@ -1,0 +1,7 @@
+default:
+  # the redis host address
+  addr: "127.0.0.1:6379"
+  # currently supports string and list only
+  datatype: "string"
+#  username: ""
+#  password: ""
