@@ -82,6 +82,7 @@ docker:
 
 PLUGINS := sinks/file \
 	sinks/influx \
+	sinks/influx2 \
 	sinks/zmq \
 	sinks/image \
 	sinks/redis \
