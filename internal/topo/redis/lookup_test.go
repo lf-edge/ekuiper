@@ -78,7 +78,7 @@ func TestSingle(t *testing.T) {
 		},
 	}
 	for i, tt := range tests {
-		actual, err := ls.Lookup(ctx, []string{"id"}, []interface{}{tt.value})
+		actual, err := ls.Lookup(ctx, []string{}, []string{"id"}, []interface{}{tt.value})
 		if err != nil {
 			t.Errorf("Test %d: %v", i, err)
 			continue
@@ -125,7 +125,7 @@ func TestList(t *testing.T) {
 		},
 	}
 	for i, tt := range tests {
-		actual, err := ls.Lookup(ctx, []string{"id"}, []interface{}{tt.value})
+		actual, err := ls.Lookup(ctx, []string{}, []string{"id"}, []interface{}{tt.value})
 		if err != nil {
 			t.Errorf("Test %d: %v", i, err)
 			continue

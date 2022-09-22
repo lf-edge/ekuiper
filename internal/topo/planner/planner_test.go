@@ -2155,7 +2155,8 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 									},
 								},
 							},
-							keys: []string{"id"},
+							keys:   []string{"id"},
+							fields: []string{"b"},
 							valvars: []ast.Expr{
 								&ast.FieldRef{
 									StreamName: "src1",
@@ -2195,7 +2196,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 			}.Init(),
 		},
 		{ // 1
-			sql: `SELECT src1.a, table1.b FROM src1 INNER JOIN table1 ON table1.b > 20 AND src1.c < 40 AND src1.id = table1.id`,
+			sql: `SELECT src1.a, table1.* FROM src1 INNER JOIN table1 ON table1.b > 20 AND src1.c < 40 AND src1.id = table1.id`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
@@ -2326,9 +2327,9 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 					{
 						Expr: &ast.FieldRef{
 							StreamName: "table1",
-							Name:       "b",
+							Name:       "*",
 						},
-						Name:  "b",
+						Name:  "*",
 						AName: "",
 					},
 				},
@@ -2336,7 +2337,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 				sendMeta:    false,
 			}.Init(),
 		},
-		{ // 0
+		{ // 2
 			sql: `SELECT src1.a, table1.b, table2.c FROM src1 INNER JOIN table1 ON src1.id = table1.id INNER JOIN table2 on table1.id = table2.id`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -2374,7 +2375,8 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 												},
 											},
 										},
-										keys: []string{"id"},
+										keys:   []string{"id"},
+										fields: []string{"b"},
 										valvars: []ast.Expr{
 											&ast.FieldRef{
 												StreamName: "src1",
@@ -2407,7 +2409,8 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 									},
 								},
 							},
-							keys: []string{"id"},
+							keys:   []string{"id"},
+							fields: []string{"c"},
 							valvars: []ast.Expr{
 								&ast.FieldRef{
 									StreamName: "table1",
@@ -2454,7 +2457,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 			}.Init(),
 		},
 		{ // 3
-			sql: `SELECT src1.a, table1.b FROM src1 INNER JOIN table1 ON src1.id = table1.id GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			sql: `SELECT * FROM src1 INNER JOIN table1 ON src1.id = table1.id GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
@@ -2467,11 +2470,9 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 												DataSourcePlan{
 													baseLogicalPlan: baseLogicalPlan{},
 													name:            "src1",
-													streamFields: []interface{}{
-														"a",
-													},
-													streamStmt: streams["src1"],
-													metaFields: []string{},
+													streamStmt:      streams["src1"],
+													metaFields:      []string{},
+													isWildCard:      true,
 												}.Init(),
 											},
 										},
@@ -2518,19 +2519,8 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 				},
 				fields: []ast.Field{
 					{
-						Expr: &ast.FieldRef{
-							StreamName: "src1",
-							Name:       "a",
-						},
-						Name:  "a",
-						AName: "",
-					},
-					{
-						Expr: &ast.FieldRef{
-							StreamName: "table1",
-							Name:       "b",
-						},
-						Name:  "b",
+						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
+						Name:  "",
 						AName: "",
 					},
 				},

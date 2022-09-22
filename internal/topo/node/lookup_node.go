@@ -34,15 +34,17 @@ type LookupNode struct {
 	vals        []ast.Expr
 
 	srcOptions *ast.Options
+	fields     []string
 	keys       []string
 }
 
-func NewLookupNode(name string, keys []string, joinType ast.JoinType, vals []ast.Expr, srcOptions *ast.Options, options *api.RuleOption) (*LookupNode, error) {
+func NewLookupNode(name string, fields []string, keys []string, joinType ast.JoinType, vals []ast.Expr, srcOptions *ast.Options, options *api.RuleOption) (*LookupNode, error) {
 	t := srcOptions.TYPE
 	if t == "" {
 		return nil, fmt.Errorf("source type is not specified")
 	}
 	n := &LookupNode{
+		fields:     fields,
 		keys:       keys,
 		srcOptions: srcOptions,
 		sourceType: t,
@@ -173,7 +175,7 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.TupleRow, fv *xsql.Fun
 		e error
 	)
 	if !hasNil { // if any of the value is nil, the lookup will always return empty result
-		r, e = ns.Lookup(ctx, n.keys, cvs)
+		r, e = ns.Lookup(ctx, n.fields, n.keys, cvs)
 	}
 	if e != nil {
 		return e

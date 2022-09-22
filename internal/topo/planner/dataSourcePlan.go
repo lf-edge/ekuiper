@@ -48,7 +48,7 @@ func (p DataSourcePlan) Init() *DataSourcePlan {
 	return &p
 }
 
-// Presume no children for data source
+// PushDownPredicate Presume no children for data source
 func (p *DataSourcePlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
 	if p.streamStmt.StreamType == ast.TypeTable {
 		return condition, p.self

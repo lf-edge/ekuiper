@@ -72,7 +72,7 @@ func (s *lookupSource) Open(ctx api.StreamContext) error {
 	return nil
 }
 
-func (s *lookupSource) Lookup(ctx api.StreamContext, keys []string, values []interface{}) ([]api.SourceTuple, error) {
+func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, values []interface{}) ([]api.SourceTuple, error) {
 	ctx.GetLogger().Debugf("Lookup redis %v", keys)
 	if len(keys) != 1 {
 		return nil, fmt.Errorf("redis lookup only support one key, but got %v", keys)
