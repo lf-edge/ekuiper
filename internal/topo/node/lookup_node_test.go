@@ -41,7 +41,7 @@ func (m *mockLookupSrc) Configure(_ string, _ map[string]interface{}) error {
 }
 
 // Lookup accept int value as the first array value
-func (m *mockLookupSrc) Lookup(_ api.StreamContext, _ []string, values []interface{}) ([]api.SourceTuple, error) {
+func (m *mockLookupSrc) Lookup(_ api.StreamContext, _ []string, _ []string, values []interface{}) ([]api.SourceTuple, error) {
 	a1, ok := values[0].(int)
 	if ok {
 		var result []api.SourceTuple
@@ -299,7 +299,7 @@ func TestLookup(t *testing.T) {
 	lookup.CreateInstance("mock", "mock", options)
 	contextLogger := conf.Log.WithField("rule", "TestLookup")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	l, _ := NewLookupNode("mock", []string{"a"}, ast.INNER_JOIN, []ast.Expr{&ast.FieldRef{
+	l, _ := NewLookupNode("mock", []string{}, []string{"a"}, ast.INNER_JOIN, []ast.Expr{&ast.FieldRef{
 		StreamName: "",
 		Name:       "a",
 	}}, options, &api.RuleOption{

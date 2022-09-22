@@ -27,9 +27,9 @@ type sqlLookupConfig struct {
 }
 
 type sqlLookupSource struct {
-	url      string
-	template string
-	db       *sql.DB
+	url   string
+	table string
+	db    *sql.DB
 }
 
 // Open establish a connection to the database
@@ -57,13 +57,24 @@ func (s *sqlLookupSource) Configure(datasource string, props map[string]interfac
 		return fmt.Errorf("dburl.Parse %s fail with error: %v", cfg.Url, err)
 	}
 	s.url = cfg.Url
-	s.template = fmt.Sprintf("SELECT * FROM `%s` WHERE ", datasource)
+	s.table = datasource
 	return nil
 }
 
-func (s *sqlLookupSource) Lookup(ctx api.StreamContext, keys []string, values []interface{}) ([]api.SourceTuple, error) {
+func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []string, values []interface{}) ([]api.SourceTuple, error) {
 	ctx.GetLogger().Debug("Start to lookup tuple")
-	query := s.template
+	query := "SELECT "
+	if len(fields) == 0 {
+		query += "*"
+	} else {
+		for i, f := range fields {
+			if i > 0 {
+				query += ","
+			}
+			query += f
+		}
+	}
+	query += fmt.Sprintf(" FROM %s WHERE ", s.table)
 	for i, k := range keys {
 		if i > 0 {
 			query += " AND "
@@ -76,7 +87,6 @@ func (s *sqlLookupSource) Lookup(ctx api.StreamContext, keys []string, values []
 		}
 	}
 	ctx.GetLogger().Debugf("Query is %s", query)
-	// TODO extract common functions
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, err
@@ -104,6 +114,7 @@ func (s *sqlLookupSource) Lookup(ctx api.StreamContext, keys []string, values []
 }
 
 func (s *sqlLookupSource) Close(ctx api.StreamContext) error {
+	ctx.GetLogger().Debugf("Closing sql lookup source")
 	defer func() { s.db = nil }()
 	if s.db != nil {
 		return s.db.Close()

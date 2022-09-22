@@ -21,9 +21,9 @@ import (
 // LookupPlan is the plan for table lookup and then merged/joined
 type LookupPlan struct {
 	baseLogicalPlan
-
 	joinExpr   ast.Join
 	keys       []string
+	fields     []string
 	valvars    []ast.Expr
 	options    *ast.Options
 	conditions ast.Expr
@@ -142,4 +142,39 @@ func flatConditions(condition ast.Expr) ([]*ast.BinaryExpr, []ast.Expr) {
 		}
 	}
 	return []*ast.BinaryExpr{}, []ast.Expr{condition}
+}
+
+func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
+	newFields := make([]ast.Expr, 0, len(fields))
+	isWildcard := false
+	strName := p.joinExpr.Name
+	fieldMap := make(map[string]struct{})
+	for _, field := range fields {
+		switch f := field.(type) {
+		case *ast.Wildcard:
+			isWildcard = true
+		case *ast.FieldRef:
+			if !isWildcard && (f.StreamName == ast.DefaultStream || string(f.StreamName) == strName) {
+				if f.Name == "*" {
+					isWildcard = true
+				} else {
+					fieldMap[f.Name] = struct{}{}
+				}
+				continue
+			}
+		case *ast.SortField:
+			if !isWildcard {
+				fieldMap[f.Name] = struct{}{}
+				continue
+			}
+		}
+		newFields = append(newFields, field)
+	}
+	if !isWildcard {
+		p.fields = make([]string, 0, len(fieldMap))
+		for k := range fieldMap {
+			p.fields = append(p.fields, k)
+		}
+	}
+	return p.baseLogicalPlan.PruneColumns(newFields)
 }

@@ -172,7 +172,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 			return nil, 0, err
 		}
 	case *LookupPlan:
-		op, err = node.NewLookupNode(t.joinExpr.Name, t.keys, t.joinExpr.JoinType, t.valvars, t.options, options)
+		op, err = node.NewLookupNode(t.joinExpr.Name, t.fields, t.keys, t.joinExpr.JoinType, t.valvars, t.options, options)
 	case *JoinAlignPlan:
 		op, err = node.NewJoinAlignNode(fmt.Sprintf("%d_join_aligner", newIndex), t.Emitters, options)
 	case *JoinPlan:

@@ -55,7 +55,7 @@ func (s *lookupsource) Configure(datasource string, props map[string]interface{}
 	return nil
 }
 
-func (s *lookupsource) Lookup(ctx api.StreamContext, keys []string, values []interface{}) ([]api.SourceTuple, error) {
+func (s *lookupsource) Lookup(ctx api.StreamContext, _ []string, keys []string, values []interface{}) ([]api.SourceTuple, error) {
 	ctx.GetLogger().Debugf("lookup source %s is looking up keys %v with values %v", s.topic, keys, values)
 	return s.table.Read(keys, values)
 }
