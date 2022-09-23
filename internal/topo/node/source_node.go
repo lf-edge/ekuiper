@@ -73,7 +73,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	logger.Infof("open source node %s with option %v", m.name, m.options)
 	go func() {
 		panicOrError := infra.SafeRun(func() error {
-			props := nodeConf.GetSourceConf(ctx, m.sourceType, m.options)
+			props := nodeConf.GetSourceConf(m.sourceType, m.options)
 			m.props = props
 			if c, ok := props["concurrency"]; ok {
 				if t, err := cast.ToInt(c, cast.STRICT); err != nil || t <= 0 {

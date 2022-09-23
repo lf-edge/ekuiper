@@ -18,12 +18,21 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/lookup"
+	"github.com/lf-edge/ekuiper/internal/topo/lookup/cache"
+	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
+
+type LookupConf struct {
+	Cache           bool `json:"cache"`
+	CacheTTL        int  `json:"cacheTtl"`
+	CacheMissingKey bool `json:"cacheMissingKey"`
+}
 
 // LookupNode will look up the data from the external source when receiving an event
 type LookupNode struct {
@@ -34,6 +43,7 @@ type LookupNode struct {
 	vals        []ast.Expr
 
 	srcOptions *ast.Options
+	conf       *LookupConf
 	fields     []string
 	keys       []string
 }
@@ -43,10 +53,19 @@ func NewLookupNode(name string, fields []string, keys []string, joinType ast.Joi
 	if t == "" {
 		return nil, fmt.Errorf("source type is not specified")
 	}
+	props := nodeConf.GetSourceConf(t, srcOptions)
+	lookupConf := &LookupConf{}
+	if lc, ok := props["lookup"].(map[string]interface{}); ok {
+		err := cast.MapToStruct(lc, lookupConf)
+		if err != nil {
+			return nil, err
+		}
+	}
 	n := &LookupNode{
 		fields:     fields,
 		keys:       keys,
 		srcOptions: srcOptions,
+		conf:       lookupConf,
 		sourceType: t,
 		joinType:   joinType,
 		vals:       vals,
@@ -85,6 +104,11 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			}
 			defer lookup.Detach(n.name)
 			fv, _ := xsql.NewFunctionValuersForOp(ctx)
+			var c *cache.Cache
+			if n.conf.Cache {
+				c = cache.NewCache(n.conf.CacheTTL, n.conf.CacheMissingKey)
+				defer c.Close()
+			}
 			// Start the lookup source loop
 			for {
 				log.Debugf("LookupNode %s is looping", n.name)
@@ -109,7 +133,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						log.Debugf("Lookup Node receive tuple input %s", d)
 						n.statManager.ProcessTimeStart()
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
-						err := n.lookup(ctx, d, fv, ns, sets)
+						err := n.lookup(ctx, d, fv, ns, sets, c)
 						if err != nil {
 							n.Broadcast(err)
 							n.statManager.IncTotalExceptions(err.Error())
@@ -128,7 +152,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							if !ok {
 								return false, fmt.Errorf("Invalid window element, must be a tuple row but got %v", r)
 							}
-							err := n.lookup(ctx, tr, fv, ns, sets)
+							err := n.lookup(ctx, tr, fv, ns, sets, c)
 							if err != nil {
 								return false, err
 							}
@@ -160,7 +184,8 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.TupleRow, fv *xsql.FunctionValuer, ns api.LookupSource, tuples *xsql.JoinTuples) error {
+// lookup will lookup the cache firstly, if expires, read the external source
+func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.TupleRow, fv *xsql.FunctionValuer, ns api.LookupSource, tuples *xsql.JoinTuples, c *cache.Cache) error {
 	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
 	cvs := make([]interface{}, len(n.vals))
 	hasNil := false
@@ -171,11 +196,24 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.TupleRow, fv *xsql.Fun
 		}
 	}
 	var (
-		r []api.SourceTuple
-		e error
+		r  []api.SourceTuple
+		e  error
+		ok bool
 	)
 	if !hasNil { // if any of the value is nil, the lookup will always return empty result
-		r, e = ns.Lookup(ctx, n.fields, n.keys, cvs)
+		if c != nil {
+			k := fmt.Sprintf("%v", cvs)
+			r, ok = c.Get(k)
+			if !ok {
+				r, e = ns.Lookup(ctx, n.fields, n.keys, cvs)
+				if e != nil {
+					return e
+				}
+				c.Set(k, r)
+			}
+		} else {
+			r, e = ns.Lookup(ctx, n.fields, n.keys, cvs)
+		}
 	}
 	if e != nil {
 		return e
