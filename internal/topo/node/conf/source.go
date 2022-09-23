@@ -16,14 +16,12 @@ package conf
 
 import (
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
 )
 
-func GetSourceConf(ctx api.StreamContext, sourceType string, options *ast.Options) map[string]interface{} {
+func GetSourceConf(sourceType string, options *ast.Options) map[string]interface{} {
 	confkey := options.CONF_KEY
-	logger := ctx.GetLogger()
 	confPath := "sources/" + sourceType + ".yaml"
 	if sourceType == "mqtt" {
 		confPath = "mqtt_source.yaml"
@@ -32,11 +30,11 @@ func GetSourceConf(ctx api.StreamContext, sourceType string, options *ast.Option
 	cfg := make(map[string]interface{})
 	err := conf.LoadConfigByName(confPath, &cfg)
 	if err != nil {
-		logger.Warnf("fail to parse yaml for source %s. Return an empty configuration", sourceType)
+		conf.Log.Warnf("fail to parse yaml for source %s. Return an empty configuration", sourceType)
 	} else {
 		def, ok := cfg["default"]
 		if !ok {
-			logger.Warnf("default conf is not found", confkey)
+			conf.Log.Warnf("default conf %s is not found", confkey)
 		} else {
 			if def1, ok1 := def.(map[string]interface{}); ok1 {
 				props = def1
@@ -56,7 +54,7 @@ func GetSourceConf(ctx api.StreamContext, sourceType string, options *ast.Option
 		f = "json"
 	}
 	props["format"] = strings.ToLower(f)
-	logger.Debugf("get conf for %s with conf key %s: %v", sourceType, confkey, printable(props))
+	conf.Log.Debugf("get conf for %s with conf key %s: %v", sourceType, confkey, printable(props))
 	return props
 }
 

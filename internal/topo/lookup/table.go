@@ -67,7 +67,7 @@ func CreateInstance(name string, sourceType string, options *ast.Options) error 
 	defer lock.Unlock()
 	contextLogger := conf.Log.WithField("table", name)
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
-	props := nodeConf.GetSourceConf(ctx, sourceType, options)
+	props := nodeConf.GetSourceConf(sourceType, options)
 	ctx.GetLogger().Infof("open lookup table with props %v", conf.Printable(props))
 	// Create the lookup source according to the source options
 	ns, err := io.LookupSource(sourceType)

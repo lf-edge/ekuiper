@@ -15,8 +15,6 @@
 package node
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -43,9 +41,7 @@ func TestGetConf_Apply(t *testing.T) {
 		DATASOURCE: "/feed",
 		TYPE:       "httppull",
 	}, false)
-	contextLogger := conf.Log.WithField("rule", "test")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	conf := nodeConf.GetSourceConf(ctx, n.sourceType, n.options)
+	conf := nodeConf.GetSourceConf(n.sourceType, n.options)
 	if !reflect.DeepEqual(result, conf) {
 		t.Errorf("result mismatch:\n\nexp=%s\n\ngot=%s\n\n", result, conf)
 	}
@@ -71,9 +67,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 		TYPE:       "httppull",
 		CONF_KEY:   "application_conf",
 	}, false)
-	contextLogger := conf.Log.WithField("rule", "test")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	conf := nodeConf.GetSourceConf(ctx, n.sourceType, n.options)
+	conf := nodeConf.GetSourceConf(n.sourceType, n.options)
 	if !reflect.DeepEqual(result, conf) {
 		t.Errorf("result mismatch:\n\nexp=%s\n\ngot=%s\n\n", result, conf)
 		return

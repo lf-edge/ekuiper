@@ -8,6 +8,10 @@ default:
     indexValue: "2022-04-21 10:23:55"
     indexFieldType: "DATETIME"
     dateTimeFormat: "YYYY-MM-dd HH:mm:ss"
+  lookup:
+    cache: true
+    cacheTtl: 600
+    cacheMissingKey: true
 
 sqlserver_config:
   url: sqlserver://username:password@140.210.204.147/testdb
