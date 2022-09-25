@@ -16,12 +16,13 @@ package meta
 
 import (
 	"fmt"
+	"os"
+	"path"
+	"strings"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"io/ioutil"
-	"path"
-	"strings"
 )
 
 const (
@@ -189,7 +190,7 @@ func ReadSinkMetaDir(checker InstallChecker) error {
 	}
 
 	dir := path.Join(confDir, "sinks")
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if nil != err {
 		return err
 	}

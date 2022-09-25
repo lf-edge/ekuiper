@@ -17,16 +17,16 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/model"
-	"github.com/lf-edge/ekuiper/pkg/infra"
-	"github.com/urfave/cli"
-	"io/ioutil"
 	"net/rpc"
 	"os"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/urfave/cli"
 )
 
 type clientConf struct {
@@ -1005,7 +1005,7 @@ func readDef(sfile string, t string) ([]byte, error) {
 		return nil, fmt.Errorf("The specified %s defenition file %s is not existed.\n", t, sfile)
 	}
 	fmt.Printf("Creating a new %s from file %s.\n", t, sfile)
-	if rule, err := ioutil.ReadFile(sfile); err != nil {
+	if rule, err := os.ReadFile(sfile); err != nil {
 		return nil, fmt.Errorf("Failed to read from %s definition file %s.\n", t, sfile)
 	} else {
 		return rule, nil

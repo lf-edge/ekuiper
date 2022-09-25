@@ -16,14 +16,15 @@ package sink
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 )
 
 type request struct {
@@ -170,7 +171,7 @@ func TestRestSink_Apply(t *testing.T) {
 
 	var requests []request
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			fmt.Printf("Error reading body: %v", err)
 			http.Error(w, "can't read body", http.StatusBadRequest)
@@ -330,7 +331,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 
 	var requests []request
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			fmt.Printf("Error reading body: %v", err)
 			http.Error(w, "can't read body", http.StatusBadRequest)

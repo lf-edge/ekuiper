@@ -15,14 +15,14 @@
 package binary
 
 import (
-	"io/ioutil"
+	"os"
 	"path"
 	"reflect"
 	"testing"
 )
 
 func TestMessageDecode(t *testing.T) {
-	image, err := ioutil.ReadFile(path.Join("../../../docs", "cover.jpg"))
+	image, err := os.ReadFile(path.Join("../../../docs", "cover.jpg"))
 	if err != nil {
 		t.Errorf("Cannot read image: %v", err)
 	}

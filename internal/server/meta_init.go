@@ -19,11 +19,12 @@ package server
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/lf-edge/ekuiper/internal/meta"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
+
+	"github.com/gorilla/mux"
+	"github.com/lf-edge/ekuiper/internal/meta"
 )
 
 func init() {
@@ -58,7 +59,7 @@ func (m metaComp) rest(r *mux.Router) {
 	}
 }
 
-//list sink plugin
+// list sink plugin
 func sinksMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	sinks := meta.GetSinks()
@@ -66,7 +67,7 @@ func sinksMetaHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-//Get sink metadata when creating rules
+// Get sink metadata when creating rules
 func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
@@ -81,7 +82,7 @@ func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(ptrMetadata, w, logger)
 }
 
-//list functions
+// list functions
 func functionsMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	sinks := meta.GetFunctions()
@@ -89,7 +90,7 @@ func functionsMetaHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-//list source plugin
+// list source plugin
 func sourcesMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	ret := meta.GetSourcesPlugins()
@@ -99,7 +100,7 @@ func sourcesMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//list shareMeta
+// list shareMeta
 func connectionsMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	ret := meta.GetConnectionPlugins()
@@ -109,7 +110,7 @@ func connectionsMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//Get source metadata when creating stream
+// Get source metadata when creating stream
 func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
@@ -126,7 +127,7 @@ func sourceMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//Get source metadata when creating stream
+// Get source metadata when creating stream
 func connectionMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
@@ -143,7 +144,7 @@ func connectionMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//Get source yaml
+// Get source yaml
 func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
@@ -159,7 +160,7 @@ func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//Get share yaml
+// Get share yaml
 func connectionConfHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
@@ -175,7 +176,7 @@ func connectionConfHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//Add  del confkey
+// Add  del confkey
 func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
@@ -188,7 +189,7 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		err = meta.DelSourceConfKey(pluginName, confKey, language)
 	case http.MethodPut:
-		v, err1 := ioutil.ReadAll(r.Body)
+		v, err1 := io.ReadAll(r.Body)
 		if err1 != nil {
 			handleError(w, err, "Invalid body", logger)
 			return
@@ -201,7 +202,7 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//Add  del confkey
+// Add  del confkey
 func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
@@ -214,7 +215,7 @@ func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		err = meta.DelConnectionConfKey(pluginName, confKey, language)
 	case http.MethodPut:
-		v, err1 := ioutil.ReadAll(r.Body)
+		v, err1 := io.ReadAll(r.Body)
 		if err1 != nil {
 			handleError(w, err1, "Invalid body", logger)
 			return

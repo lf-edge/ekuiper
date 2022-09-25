@@ -20,16 +20,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/meta"
-	"github.com/lf-edge/ekuiper/internal/pkg/filex"
-	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
-	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	plugin2 "github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/lf-edge/ekuiper/pkg/kv"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -40,6 +30,16 @@ import (
 	"sync"
 	"time"
 	"unicode"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/meta"
+	"github.com/lf-edge/ekuiper/internal/pkg/filex"
+	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	plugin2 "github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 // Manager Initialized in the binder
@@ -47,7 +47,7 @@ var manager *Manager
 
 const DELETED = "$deleted"
 
-//Manager is append only because plugin cannot delete or reload. To delete a plugin, restart the server to reindex
+// Manager is append only because plugin cannot delete or reload. To delete a plugin, restart the server to reindex
 type Manager struct {
 	sync.RWMutex
 	// 3 maps for source/sink/function. In each map, key is the plugin name, value is the version
@@ -105,7 +105,7 @@ func InitManager() (*Manager, error) {
 func findAll(t plugin2.PluginType, pluginDir string) (result map[string]string, err error) {
 	result = make(map[string]string)
 	dir := path.Join(pluginDir, plugin2.PluginTypes[t])
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return
 	}

@@ -15,15 +15,15 @@
 package schema
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func TestRegistry(t *testing.T) {
@@ -39,11 +39,11 @@ func TestRegistry(t *testing.T) {
 		t.Fatal(err)
 	}
 	//Copy init.proto
-	bytesRead, err := ioutil.ReadFile("test/init.proto")
+	bytesRead, err := os.ReadFile("test/init.proto")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = ioutil.WriteFile(filepath.Join(etcDir, "init.proto"), bytesRead, 0755)
+	err = os.WriteFile(filepath.Join(etcDir, "init.proto"), bytesRead, 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +164,7 @@ func TestRegistry(t *testing.T) {
 }
 
 func checkFile(etcDir string, schemas []string, t *testing.T) {
-	files, err := ioutil.ReadDir(etcDir)
+	files, err := os.ReadDir(etcDir)
 	if err != nil {
 		t.Fatal(err)
 	}

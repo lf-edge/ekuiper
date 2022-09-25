@@ -20,18 +20,18 @@ package node
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/internal/xsql"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestSinkTemplate_Apply(t *testing.T) {
@@ -240,11 +240,11 @@ func TestFormat_Apply(t *testing.T) {
 		t.Fatal(err)
 	}
 	//Copy init.proto
-	bytesRead, err := ioutil.ReadFile("../../schema/test/test1.proto")
+	bytesRead, err := os.ReadFile("../../schema/test/test1.proto")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = ioutil.WriteFile(filepath.Join(etcDir, "test1.proto"), bytesRead, 0755)
+	err = os.WriteFile(filepath.Join(etcDir, "test1.proto"), bytesRead, 0755)
 	if err != nil {
 		t.Fatal(err)
 	}

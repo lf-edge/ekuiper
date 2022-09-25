@@ -16,12 +16,13 @@ package filex
 
 import (
 	"encoding/json"
+	"os"
+
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 )
 
 func ReadJsonUnmarshal(path string, ret interface{}) error {
-	sliByte, err := ioutil.ReadFile(path)
+	sliByte, err := os.ReadFile(path)
 	if nil != err {
 		return err
 	}
@@ -36,11 +37,11 @@ func WriteYamlMarshal(path string, data interface{}) error {
 	if nil != err {
 		return err
 	}
-	return ioutil.WriteFile(path, y, 0666)
+	return os.WriteFile(path, y, 0666)
 }
 
 func ReadYamlUnmarshal(path string, ret interface{}) error {
-	sliByte, err := ioutil.ReadFile(path)
+	sliByte, err := os.ReadFile(path)
 	if nil != err {
 		return err
 	}

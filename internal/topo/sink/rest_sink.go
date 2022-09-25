@@ -17,15 +17,16 @@ package sink
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/pkg/cert"
-	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
+	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 type RestSink struct {
@@ -240,7 +241,7 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 		defer resp.Body.Close()
 		logger.Debugf("rest sink got response %v", resp)
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			if buf, bodyErr := ioutil.ReadAll(resp.Body); bodyErr != nil {
+			if buf, bodyErr := io.ReadAll(resp.Body); bodyErr != nil {
 				logger.Errorf("%s\n", bodyErr)
 				return fmt.Errorf("%s: http return code: %d and error message %s", errorx.IOErr, resp.StatusCode, bodyErr)
 			} else {
@@ -249,7 +250,7 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 			}
 		} else {
 			if ms.debugResp {
-				if buf, bodyErr := ioutil.ReadAll(resp.Body); bodyErr != nil {
+				if buf, bodyErr := io.ReadAll(resp.Body); bodyErr != nil {
 					logger.Errorf("%s\n", bodyErr)
 				} else {
 					logger.Infof("Response content: %s\n", string(buf))

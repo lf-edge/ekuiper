@@ -16,12 +16,13 @@ package meta
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/filex"
-	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 	"sync"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 )
 
 type (
@@ -111,7 +112,7 @@ func ReadSourceMetaDir(checker InstallChecker) error {
 	}
 
 	dir := path.Join(confDir, "sources")
-	infos, err := ioutil.ReadDir(dir)
+	dirEntries, err := os.ReadDir(dir)
 	if nil != err {
 		return err
 	}
@@ -121,8 +122,8 @@ func ReadSourceMetaDir(checker InstallChecker) error {
 	}
 	conf.Log.Infof("Loading metadata file for source : %s", "mqtt_source.json")
 
-	for _, info := range infos {
-		fileName := info.Name()
+	for _, entry := range dirEntries {
+		fileName := entry.Name()
 		if strings.HasSuffix(fileName, ".json") {
 			filePath := path.Join(dir, fileName)
 			if err = ReadSourceMetaFile(filePath, checker(strings.TrimSuffix(fileName, ".json"))); nil != err {

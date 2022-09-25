@@ -3,8 +3,9 @@ package cert
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"os"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"io/ioutil"
 )
 
 type TlsConfigurationOptions struct {
@@ -61,7 +62,7 @@ func certLoader(certFilePath, keyFilePath string) (tls.Certificate, error) {
 func caLoader(caFilePath string) (*x509.CertPool, error) {
 	if cp, err := conf.ProcessPath(caFilePath); err == nil {
 		pool := x509.NewCertPool()
-		caCrt, err1 := ioutil.ReadFile(cp)
+		caCrt, err1 := os.ReadFile(cp)
 		if err1 != nil {
 			return nil, err1
 		}
