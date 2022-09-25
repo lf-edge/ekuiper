@@ -16,14 +16,14 @@ package schema
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 )
 
 // Initialize in the server startup
@@ -52,7 +52,7 @@ func InitRegistry() error {
 	for _, schemaType := range def.SchemaTypes {
 		schemaDir := filepath.Join(etcDir, "schemas", string(schemaType))
 		var newSchemas map[string]string
-		files, err := ioutil.ReadDir(schemaDir)
+		files, err := os.ReadDir(schemaDir)
 		if err != nil {
 			conf.Log.Warnf("cannot read schema directory: %s", err)
 			newSchemas = make(map[string]string)
@@ -130,7 +130,7 @@ func GetSchema(schemaType def.SchemaType, name string) (*Info, error) {
 	if err != nil {
 		return nil, err
 	}
-	content, err := ioutil.ReadFile(schemaFile)
+	content, err := os.ReadFile(schemaFile)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read schema file %s: %s", schemaFile, err)
 	}

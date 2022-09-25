@@ -17,18 +17,18 @@ package service
 import (
 	"archive/zip"
 	"fmt"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"sync"
+
 	kconf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"io/ioutil"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
-	"sync"
 )
 
 var (
@@ -99,7 +99,7 @@ func GetManager() *Manager {
  */
 func (m *Manager) InitByFiles() error {
 	kconf.Log.Debugf("init service manager")
-	files, err := ioutil.ReadDir(m.etcDir)
+	files, err := os.ReadDir(m.etcDir)
 	if nil != err {
 		return err
 	}

@@ -1,12 +1,13 @@
 package middleware
 
 import (
-	"github.com/lf-edge/ekuiper/internal/pkg/jwt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/pkg/jwt"
 )
 
 func genToken(signKeyName, issuer, aud string) string {
@@ -69,7 +70,7 @@ func Test_AUTH(t *testing.T) {
 
 			res := tt.res.Result()
 
-			data, err := ioutil.ReadAll(res.Body)
+			data, err := io.ReadAll(res.Body)
 			if err != nil {
 				t.Errorf("expected error to be nil got %v", err)
 			}

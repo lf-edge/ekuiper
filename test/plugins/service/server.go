@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -26,14 +26,14 @@ import (
 )
 
 func alert(w http.ResponseWriter, req *http.Request) {
-	buf, bodyErr := ioutil.ReadAll(req.Body)
+	buf, bodyErr := io.ReadAll(req.Body)
 	if bodyErr != nil {
 		log.Print("bodyErr ", bodyErr.Error())
 		http.Error(w, bodyErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	rdr1 := ioutil.NopCloser(bytes.NewBuffer(buf))
+	rdr1 := io.NopCloser(bytes.NewBuffer(buf))
 	log.Printf("BODY: %q", rdr1)
 }
 
@@ -47,7 +47,7 @@ type Sensor struct {
 var s = &Sensor{}
 
 func pullSrv(w http.ResponseWriter, req *http.Request) {
-	buf, bodyErr := ioutil.ReadAll(req.Body)
+	buf, bodyErr := io.ReadAll(req.Body)
 	if bodyErr != nil {
 		log.Print("bodyErr ", bodyErr.Error())
 		http.Error(w, bodyErr.Error(), http.StatusInternalServerError)

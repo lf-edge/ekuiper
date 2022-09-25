@@ -15,10 +15,11 @@
 package meta
 
 import (
+	"os"
+	"path"
+
 	kconf "github.com/lf-edge/ekuiper/internal/conf"
 	"gopkg.in/ini.v1"
-	"io/ioutil"
-	"path"
 )
 
 var gUimsg map[string]*ini.File
@@ -41,13 +42,13 @@ func ReadUiMsgDir() error {
 	}
 
 	dir := path.Join(confDir, "multilingual")
-	infos, err := ioutil.ReadDir(dir)
+	dirEntries, err := os.ReadDir(dir)
 	if nil != err {
 		return err
 	}
 
-	for _, info := range infos {
-		fName := info.Name()
+	for _, entry := range dirEntries {
+		fName := entry.Name()
 		kconf.Log.Infof("uiMsg file : %s", fName)
 		fPath := path.Join(dir, fName)
 		if conf, err := ini.Load(fPath); nil != err {

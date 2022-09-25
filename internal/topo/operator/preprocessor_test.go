@@ -19,6 +19,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"os"
+	"path"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -26,12 +33,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"io/ioutil"
-	"log"
-	"path"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestPreprocessor_Apply(t *testing.T) {
@@ -1003,7 +1004,7 @@ func TestPreprocessorForBinary(t *testing.T) {
 	if err != nil {
 		t.Errorf("Cannot find docs folder: %v", err)
 	}
-	image, err := ioutil.ReadFile(path.Join(docsFolder, "cover.jpg"))
+	image, err := os.ReadFile(path.Join(docsFolder, "cover.jpg"))
 	if err != nil {
 		t.Errorf("Cannot read image: %v", err)
 	}

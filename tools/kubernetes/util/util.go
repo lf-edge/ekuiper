@@ -17,12 +17,12 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	kconf "github.com/lf-edge/ekuiper/tools/kubernetes/conf"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	kconf "github.com/lf-edge/ekuiper/tools/kubernetes/conf"
 )
 
 type (
@@ -143,10 +143,15 @@ func (s *server) saveHistoryFile() bool {
 	return true
 }
 
-func (s *server) isUpdate(info os.FileInfo) bool {
-	v := s.mapHistoryFile[info.Name()]
+func (s *server) isUpdate(entry os.DirEntry) bool {
+	v := s.mapHistoryFile[entry.Name()]
 	if nil == v {
 		return true
+	}
+
+	info, err := entry.Info()
+	if err != nil {
+		return false
 	}
 
 	if v.LoadTime < info.ModTime().Unix() {
@@ -156,27 +161,27 @@ func (s *server) isUpdate(info os.FileInfo) bool {
 }
 
 func (s *server) processDir() bool {
-	infos, err := ioutil.ReadDir(s.dirCommand)
+	dirEntries, err := os.ReadDir(s.dirCommand)
 	if nil != err {
 		s.logs = append(s.logs, fmt.Sprintf("read command dir:%v", err))
 		return false
 	}
 	conf := kconf.GetConf()
 	host := fmt.Sprintf(`http://%s:%d`, conf.GetIp(), conf.GetPort())
-	for _, info := range infos {
-		if !strings.HasSuffix(info.Name(), ".json") {
+	for _, entry := range dirEntries {
+		if !strings.HasSuffix(entry.Name(), ".json") {
 			continue
 		}
-		if !s.isUpdate(info) {
+		if !s.isUpdate(entry) {
 			continue
 		}
 
 		hisFile := new(historyFile)
-		hisFile.setName(info.Name())
+		hisFile.setName(entry.Name())
 		hisFile.setLoadTime(time.Now().Unix())
-		s.mapHistoryFile[info.Name()] = hisFile
+		s.mapHistoryFile[entry.Name()] = hisFile
 
-		filePath := path.Join(s.dirCommand, info.Name())
+		filePath := path.Join(s.dirCommand, entry.Name())
 		file := new(fileData)
 		err = kconf.LoadFileUnmarshal(filePath, file)
 		if nil != err {

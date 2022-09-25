@@ -18,16 +18,17 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
 )
 
 const DEFAULT_INTERVAL = 10000
@@ -223,7 +224,7 @@ func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 					logger.Warnf("Found error http return code: %d when trying to reach %v ", resp.StatusCode, hps)
 					break
 				}
-				c, err := ioutil.ReadAll(resp.Body)
+				c, err := io.ReadAll(resp.Body)
 				if err != nil {
 					logger.Warnf("Found error %s when trying to reach %v ", err, hps)
 				}

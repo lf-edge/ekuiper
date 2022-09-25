@@ -18,6 +18,16 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"net/rpc"
+	"net/url"
+	"reflect"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/dynamic"
 	"github.com/jhump/protoreflect/dynamic/grpcdynamic"
@@ -27,15 +37,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/infra"
 	"github.com/ugorji/go/codec"
 	"google.golang.org/grpc"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"net/rpc"
-	"net/url"
-	"reflect"
-	"strings"
-	"sync"
-	"time"
 )
 
 // NewExecutor
@@ -215,11 +216,11 @@ func (h *httpExecutor) InvokeFunction(ctx api.FunctionContext, name string, para
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		buf, _ := ioutil.ReadAll(resp.Body)
+		buf, _ := io.ReadAll(resp.Body)
 		ctx.GetLogger().Debugf("%s\n", string(buf))
 		return nil, fmt.Errorf("http executor fails to err http return code: %d and error message %s", resp.StatusCode, string(buf))
 	} else {
-		buf, bodyErr := ioutil.ReadAll(resp.Body)
+		buf, bodyErr := io.ReadAll(resp.Body)
 		if bodyErr != nil {
 			return nil, fmt.Errorf("http executor read response body error: %v", bodyErr)
 		}

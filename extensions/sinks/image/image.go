@@ -18,14 +18,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"image/jpeg"
 	"image/png"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 type imageSink struct {
@@ -102,9 +102,18 @@ func (m *imageSink) Open(ctx api.StreamContext) error {
 }
 
 func (m *imageSink) delFile(logger api.Logger) error {
-	files, err := ioutil.ReadDir(m.path)
-	if nil != err || 0 == len(files) {
+	dirEntries, err := os.ReadDir(m.path)
+	if nil != err || 0 == len(dirEntries) {
 		return err
+	}
+
+	files := make([]os.FileInfo, 0, len(dirEntries))
+	for _, entry := range dirEntries {
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		files = append(files, info)
 	}
 
 	pos := m.maxCount

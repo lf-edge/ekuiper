@@ -16,10 +16,11 @@ package mocknode
 
 import (
 	"encoding/base64"
+	"os"
+	"path"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
-	"io/ioutil"
-	"path"
 )
 
 // TestData The time diff must larger than timeleap
@@ -1010,7 +1011,7 @@ func getImg() ([]byte, string) {
 	if err != nil {
 		conf.Log.Fatalf("Cannot find docs folder: %v", err)
 	}
-	image, err := ioutil.ReadFile(path.Join(docsFolder, "cover.jpg"))
+	image, err := os.ReadFile(path.Join(docsFolder, "cover.jpg"))
 	if err != nil {
 		conf.Log.Fatalf("Cannot read image: %v", err)
 	}

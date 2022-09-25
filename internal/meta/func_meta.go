@@ -16,11 +16,12 @@ package meta
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/filex"
-	"io/ioutil"
+	"os"
 	"path"
 	"strings"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 )
 
 type (
@@ -89,7 +90,7 @@ func ReadFuncMetaDir(checker InstallChecker) error {
 	}
 
 	dir := path.Join(confDir, "functions")
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if nil != err {
 		return err
 	}

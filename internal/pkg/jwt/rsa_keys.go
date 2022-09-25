@@ -17,12 +17,13 @@ package jwt
 import (
 	"crypto/rsa"
 	"fmt"
-	"github.com/golang-jwt/jwt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 	"sync"
+
+	"github.com/golang-jwt/jwt"
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 var privateKeyRepository = make(map[string]*rsa.PrivateKey)
@@ -65,13 +66,13 @@ func insensitiveGetFilePath(prikeyName string) (string, error) {
 	}
 
 	dir := path.Join(confDir, RSAKeyDir)
-	infos, err := ioutil.ReadDir(dir)
+	dirEntries, err := os.ReadDir(dir)
 	if nil != err {
 		return "", err
 	}
 
-	for _, info := range infos {
-		fileName := info.Name()
+	for _, entry := range dirEntries {
+		fileName := entry.Name()
 		if strings.EqualFold(fileName, prikeyName) {
 			filePath := path.Join(dir, fileName)
 			return filePath, nil
@@ -85,7 +86,7 @@ func privateKeyFromFile(keyName string) (*rsa.PrivateKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	keyBytes, err := ioutil.ReadFile(keyPath)
+	keyBytes, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +102,7 @@ func publicKeyFromFile(keyName string) (*rsa.PublicKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	keyBytes, err := ioutil.ReadFile(keyPath)
+	keyBytes, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, err
 	}

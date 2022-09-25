@@ -19,15 +19,15 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 var BodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
@@ -79,7 +79,7 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 			}
 			form.Set(key, vstr)
 		}
-		body := ioutil.NopCloser(strings.NewReader(form.Encode()))
+		body := io.NopCloser(strings.NewReader(form.Encode()))
 		req, err = http.NewRequest(method, u, body)
 		if err != nil {
 			return nil, fmt.Errorf("fail to create request: %v", err)

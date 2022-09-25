@@ -32,14 +32,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/mitchellh/mapstructure"
+	"gopkg.in/yaml.v3"
 )
 
 const Separator = "__"
@@ -59,7 +59,7 @@ func LoadConfigByName(name string, c interface{}) error {
 
 func LoadConfigFromPath(p string, c interface{}) error {
 	prefix := getPrefix(p)
-	b, err := ioutil.ReadFile(p)
+	b, err := os.ReadFile(p)
 	if err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ func extractKeysFromJsonIfExists(yamlPath string) ([]string, error) {
 }
 
 func loadJsonForYaml(filePath string) (map[string]interface{}, error) {
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}

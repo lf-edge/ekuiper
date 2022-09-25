@@ -19,19 +19,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/meta"
-	"github.com/lf-edge/ekuiper/internal/pkg/filex"
-	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
-	"github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/meta"
+	"github.com/lf-edge/ekuiper/internal/pkg/filex"
+	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
 )
 
 var manager *Manager
@@ -97,7 +98,7 @@ func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
 }
 
 func (m *Manager) syncRegistry() error {
-	files, err := ioutil.ReadDir(m.pluginDir)
+	files, err := os.ReadDir(m.pluginDir)
 	if err != nil {
 		return fmt.Errorf("read path '%s' error: %v", m.pluginDir, err)
 	}
@@ -230,7 +231,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 				return err
 			}
 			pi = &PluginInfo{PluginMeta: runtime.PluginMeta{Name: name}}
-			allBytes, err := ioutil.ReadAll(jf)
+			allBytes, err := io.ReadAll(jf)
 			if err != nil {
 				return err
 			}

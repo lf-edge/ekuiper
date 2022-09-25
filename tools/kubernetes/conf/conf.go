@@ -18,9 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -29,6 +27,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -82,7 +81,7 @@ func (c *config) initConfig() bool {
 		fmt.Println("conf path err : ", err)
 		return false
 	}
-	sliByte, err := ioutil.ReadFile(confPath)
+	sliByte, err := os.ReadFile(confPath)
 	if nil != err {
 		fmt.Println("load conf err : ", err)
 		return false
@@ -171,7 +170,7 @@ func fetchContents(request *http.Request) (data []byte, err error) {
 		return nil, err
 	}
 	defer respon.Body.Close()
-	data, err = ioutil.ReadAll(respon.Body)
+	data, err = io.ReadAll(respon.Body)
 	if nil != err {
 		return nil, err
 	}
@@ -218,7 +217,7 @@ func Delete(inUrl string) (data []byte, err error) {
 }
 
 func LoadFileUnmarshal(path string, ret interface{}) error {
-	sliByte, err := ioutil.ReadFile(path)
+	sliByte, err := os.ReadFile(path)
 	if nil != err {
 		return err
 	}
@@ -234,5 +233,5 @@ func SaveFileMarshal(path string, content interface{}) error {
 	if nil != err {
 		return err
 	}
-	return ioutil.WriteFile(path, data, 0666)
+	return os.WriteFile(path, data, 0666)
 }
