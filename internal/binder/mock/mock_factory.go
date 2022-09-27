@@ -36,7 +36,7 @@ func (f *MockFactory) Source(name string) (api.Source, error) {
 }
 
 func (f *MockFactory) LookupSource(name string) (api.LookupSource, error) {
-	return nil, errorx.NotFoundErr
+	return nil, nil
 }
 
 func (f *MockFactory) Sink(name string) (api.Sink, error) {
