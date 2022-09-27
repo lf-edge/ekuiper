@@ -77,31 +77,23 @@ var (
 
 func main() {
 	var err error
-	fmt.Println("[plugin_test_server.go] start:")
 	m, err = portable.MockManager(map[string]*portable.PluginInfo{testingPlugin.Name: testingPlugin})
-	fmt.Println("[plugin_test_server.go] m: ", m)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("[plugin_test_server.go] testingPlugin: ", testingPlugin)
 	ins, err := startPluginIns(testingPlugin)
-	fmt.Println("[plugin_test_server.go] ins: ", ins)
 	if err != nil {
 		panic(err)
 	}
 	defer ins.Stop()
-	fmt.Println("[plugin_test_server.go][main] AddPluginIns: ")
 	runtime.GetPluginInsManager().AddPluginIns(testingPlugin.Name, ins)
 	c := context.WithValue(context.Background(), context.LoggerKey, conf.Log)
 	ctx = c.WithMeta("rule1", "op1", &state.MemoryStore{}).WithInstance(1)
-	fmt.Println("[plugin_test_server.go][main] creatRestServe:")
 	server := createRestServer("127.0.0.1", 33333)
 	server.ListenAndServe()
 }
 
 func startPluginIns(info *portable.PluginInfo) (*runtime.PluginIns, error) {
-	fmt.Println("[plugin_test_server.go][startPluginIns] start:")
-	fmt.Println("[plugin_test_server.go][startPluginIns] info: ", info)
 	conf.Log.Infof("create control channel")
 	ctrlChan, err := runtime.CreateControlChannel(info.Name)
 	if err != nil {
@@ -133,13 +125,11 @@ func createRestServer(ip string, port int) *http.Server {
 }
 
 func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("[plugin_test_server.go][startSymbolHandler] start")
 	ctrl, err := decode(r)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Invalid body: decode error %v", err), http.StatusBadRequest)
 		return
 	}
-	fmt.Println("[plugin_test_server.go][startSymbolHangder] Plugin: ", ctrl)
 	switch ctrl.PluginType {
 	case runtime.TYPE_SOURCE:
 		source, err := m.Source(ctrl.SymbolName)
@@ -218,26 +208,19 @@ func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("running function %s %v", ctrl.SymbolName, err), http.StatusBadRequest)
 			return
 		}
-		//fmt.Println("[plugin_test_server.go][startSymbolHanger] f: ", f)
-		fmt.Println("[plugin_test_server.go][startSymbolHanger] ctrl.SymbolName: ", ctrl.SymbolName)
 		newctx, cancel := ctx.WithCancel()
-		fmt.Println("[plugin_test_server.go][startSymbolHanger] newctx: ", newctx)
 		fc := context.NewDefaultFuncContext(newctx, 1)
 		if _, ok := cancels.LoadOrStore(ctrl.PluginType+ctrl.SymbolName, cancel); ok {
 			http.Error(w, fmt.Sprintf("source symbol %s already exists", ctrl.SymbolName), http.StatusBadRequest)
 			return
 		}
-		fmt.Println("[plugin_test_server.go][startSymbolHanger] fc: ", fc)
 		go func() {
 			defer func() {
 				cancels.Delete(ctrl.PluginType + ctrl.SymbolName)
 			}()
-			fmt.Println("[plugin_test_server.go][startSymbolHanger][go func()]")
 			for {
 				for _, m := range mockFuncData {
-					fmt.Println("[plugin_test_server.go][startSymbolHanger][go func()] m: ", m)
 					r, ok := f.Exec(m, fc)
-					//fmt.Println("[plugin_test_server.go][startSymbolHanger][go func()] Exec after")
 					if !ok {
 						fmt.Print("cannot exec func\n")
 						continue

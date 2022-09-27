@@ -15,7 +15,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/lf-edge/ekuiper/sdk/go/mock"
 	"testing"
 )
@@ -24,7 +23,6 @@ func TestValidate(t *testing.T) {
 	f := &echo{}
 	var args []interface{}
 	err := f.Validate(args)
-	fmt.Println("args: ", args)
 	if err != nil {
 		exp := "echo function only supports 1 parameter but got 0"
 		if err.Error() != exp {

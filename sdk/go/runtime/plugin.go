@@ -22,7 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/lf-edge/ekuiper/sdk/go/connection"
 	"github.com/lf-edge/ekuiper/sdk/go/context"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -36,11 +35,7 @@ var (
 )
 
 func initVars(args []string, conf *PluginConfig) {
-	fmt.Println("[runtime][plugin.go][initVars] start: ")
 	logger = context.LogEntry("plugin", conf.Name)
-	fmt.Println("[runtime][plugin.go][initVars] args: ", args)
-	fmt.Println("[runtime][plugin.go][initVars] len(args): ", len(args))
-	fmt.Println("[runtime][plugin.go][initVars] conf: ", conf)
 	reg = runtimes{
 		content: make(map[string]RuntimeInstance),
 		RWMutex: sync.RWMutex{},
@@ -48,15 +43,8 @@ func initVars(args []string, conf *PluginConfig) {
 	// parse Args
 	if len(args) == 2 {
 		pc := &PortableConfig{}
-		data, err := ioutil.ReadFile(args[1])
+		err := json.Unmarshal([]byte(args[1]), pc)
 		if err != nil {
-			fmt.Println("[runtime][plugin.go][initVars] ReadFile failed!!!", err.Error())
-		}
-		//err := json.Unmarshal([]byte(args[1]), pc)
-		err = json.Unmarshal(data, pc)
-		fmt.Println("[runtime][plugin.go][initVars] args[1]: ", args[1])
-		if err != nil {
-			fmt.Println("[runtime][plugin.go][initVars] err: ", err)
 			panic(fmt.Sprintf("fail to parse args %v", args))
 		}
 		logger.Infof("config parsed to %v", pc)
@@ -96,14 +84,10 @@ func (conf *PluginConfig) Get(pluginType string, symbolName string) (builderFunc
 // Start Connect to control plane
 // Only run once at process startup
 func Start(args []string, conf *PluginConfig) {
-	fmt.Println("[runtime][plugin.go][Start] args:", args)
-	fmt.Println("[runtime][plugin.go][Start] args:", conf)
 	initVars(args, conf)
 	logger.Info("starting plugin")
-	fmt.Println("[runtime][plugin.go][Start] conf.Name:", conf.Name)
 	ch, err := connection.CreateControlChannel(conf.Name)
 	if err != nil {
-		fmt.Println("[runtime][plugin.go][Start] err: ", err)
 		panic(err)
 	}
 	defer func(ch connection.ControlChannel) {

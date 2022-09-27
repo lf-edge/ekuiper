@@ -51,7 +51,6 @@ func setupFuncRuntime(con *Control, s api.Function) (*funcRuntime, error) {
 
 // TODO how to stop? Nearly never end because each function only have one instance
 func (s *funcRuntime) run() {
-	fmt.Println("[function.go][run()] start")
 	defer s.stop()
 	err := s.ch.Run(func(req []byte) []byte {
 		d := &FuncData{}
@@ -73,12 +72,10 @@ func (s *funcRuntime) run() {
 				return encodeReply(false, err.Error())
 			}
 		case "Exec":
-			fmt.Println("[function.go][run()][switch-case] Exec")
 			arg, ok := d.Arg.([]interface{})
 			if !ok {
 				return encodeReply(false, "argument is not interface array")
 			}
-			fmt.Println("[function.go][run()][switch-case] arg: ", arg)
 			farg, fctx, err := parseFuncContextArgs(arg)
 			if err != nil {
 				return encodeReply(false, err.Error())
@@ -128,15 +125,12 @@ func parseFuncContextArgs(args []interface{}) ([]interface{}, api.FunctionContex
 	if !ok {
 		return nil, nil, fmt.Errorf("cannot parse function raw context %v", temp)
 	}
-	fmt.Println("[function.go][run()][switch-case][parseFuncContextArgs] fargs: ", fargs)
-	fmt.Println("[function.go][run()][switch-case][parseFuncContextArgs] temp: ", temp)
 	// {"ruleId":"rule1","opId":"op1","instanceId":1,"funcId":1}
 	m := &FuncMeta{}
 	err := json.Unmarshal([]byte(rawCtx), m)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot parse function context %v", rawCtx)
 	}
-	fmt.Println("[function.go][run()][switch-case][parseFuncContextArgs] m: ", m)
 	if m.RuleId == "" || m.OpId == "" {
 		err := fmt.Sprintf("invalid arg %v, ruleId, opId are required", m)
 		context.Log.Errorf(err)
@@ -144,13 +138,13 @@ func parseFuncContextArgs(args []interface{}) ([]interface{}, api.FunctionContex
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", m.RuleId, m.OpId, m.InstanceId, m.FuncId)
 	if c, ok := exeFuncCtxMap.Load(key); ok {
-		return args, c.(api.FunctionContext), nil
+		return fargs, c.(api.FunctionContext), nil
 	} else {
 		contextLogger := context.LogEntry("rule", m.RuleId)
 		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta(m.RuleId, m.OpId)
 		fctx := context.NewDefaultFuncContext(ctx, m.FuncId)
 		exeFuncCtxMap.Store(key, fctx)
-		return args, fctx, nil
+		return fargs, fctx, nil
 	}
 }
 

@@ -30,7 +30,6 @@ func (f *echo) Validate(args []interface{}) error {
 }
 
 func (f *echo) Exec(args []interface{}, _ api.FunctionContext) (interface{}, bool) {
-	fmt.Println("[sdk][go][example][mirror][echo-Exec] start")
 	result := args[0]
 	return result, true
 }
