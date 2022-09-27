@@ -18,27 +18,27 @@ var WasmConf = &WasmConfig{
 }
 
 type PluginIns struct {
-	process      *os.Process
-	ctrlChan     ControlChannel
+	process *os.Process
+	//ctrlChan     ControlChannel
 	runningCount int
 	name         string
 }
 
-func NewPluginIns(name string, ctrlChan ControlChannel, process *os.Process) *PluginIns {
-	// if process is not passed, it is run in simulator mode. Then do not count running.
-	// so that it won't be automatically close.
-	fmt.Println("[internal][plugin][wasm][runtime][plugin_ins_manager.go][NewPluginIns] start")
-	rc := 0
-	if process == nil {
-		rc = 1
-	}
-	return &PluginIns{
-		process:      process,
-		ctrlChan:     ctrlChan,
-		runningCount: rc,
-		name:         name,
-	}
-}
+//func NewPluginIns(name string, ctrlChan ControlChannel, process *os.Process) *PluginIns {
+//	// if process is not passed, it is run in simulator mode. Then do not count running.
+//	// so that it won't be automatically close.
+//	fmt.Println("[internal][plugin][wasm][runtime][plugin_ins_manager.go][NewPluginIns] start")
+//	rc := 0
+//	if process == nil {
+//		rc = 1
+//	}
+//	return &PluginIns{
+//		process:      process,
+//		ctrlChan:     ctrlChan,
+//		runningCount: rc,
+//		name:         name,
+//	}
+//}
 
 func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	arg, err := json.Marshal(ctrl)
@@ -56,12 +56,6 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 		return err
 	}
 	fmt.Println("[plugin][wasm][runtime][plugin_ins_manager.go] (string)jsonArg: ", string(jsonArg))
-	err = i.ctrlChan.SendCmd(jsonArg)
-	if err == nil {
-		i.runningCount++
-		ctx.GetLogger().Infof("started symbol %s", ctrl.SymbolName)
-	}
-	fmt.Println("[plugin][wasm][runtime][plugin_ins_manager.go] SendCmd err: ", err)
 	return err
 }
 
@@ -79,25 +73,25 @@ func (i *PluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
 		return err
 	}
 	fmt.Println("[plugin][wasm][runtime][plugin_ins_manager.go][StopSymbol] (string)jsonArg: ", string(jsonArg))
-	err = i.ctrlChan.SendCmd(jsonArg)
-	i.runningCount--
-	ctx.GetLogger().Infof("stopped symbol %s", ctrl.SymbolName)
-	if i.runningCount == 0 {
-		err := GetPluginInsManager().Kill(i.name)
-		if err != nil {
-			ctx.GetLogger().Infof("fail to stop plugin %s: %v", i.name, err)
-			return err
-		}
-		ctx.GetLogger().Infof("stop plugin %s", i.name)
-	}
+	//err = i.ctrlChan.SendCmd(jsonArg)
+	//i.runningCount--
+	//ctx.GetLogger().Infof("stopped symbol %s", ctrl.SymbolName)
+	//if i.runningCount == 0 {
+	//	err := GetPluginInsManager().Kill(i.name)
+	//	if err != nil {
+	//		ctx.GetLogger().Infof("fail to stop plugin %s: %v", i.name, err)
+	//		return err
+	//	}
+	//	ctx.GetLogger().Infof("stop plugin %s", i.name)
+	//}
 	return err
 }
 
 func (i *PluginIns) Stop() error {
 	var err error
-	if i.ctrlChan != nil {
-		err = i.ctrlChan.Close()
-	}
+	//if i.ctrlChan != nil {
+	//	err = i.ctrlChan.Close()
+	//}
 	if i.process != nil { // will also trigger process exit clean up
 		err = i.process.Kill()
 	}
@@ -131,14 +125,14 @@ func (p *pluginInsManager) AddPluginIns(name string, ins *PluginIns) {
 	p.instances[name] = ins
 }
 
-func GetPluginInsManager() *pluginInsManager {
-	once.Do(func() {
-		pm = &pluginInsManager{
-			instances: make(map[string]*PluginIns),
-		}
-	})
-	return pm
-}
+//func GetPluginInsManager() *pluginInsManager {
+//	once.Do(func() {
+//		pm = &pluginInsManager{
+//			instances: make(map[string]*PluginIns),
+//		}
+//	})
+//	return pm
+//}
 
 //func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *WasmConfig) (*PluginIns, error) {
 //	p.Lock()

@@ -80,7 +80,7 @@ func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
 
 func (m *Manager) syncRegistry() error {
 	fmt.Println("[internal][plugin][wasm][syncRegistry] start :")
-	files, err := ioutil.ReadDir(m.pluginDir) // /home/erfenjiao/ekuiper/plugins/wasm
+	files, err := ioutil.ReadDir(m.pluginDir)
 	if err != nil {
 		return fmt.Errorf("read path '%s' error: %v", m.pluginDir, err)
 	}

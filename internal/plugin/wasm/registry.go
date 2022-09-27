@@ -18,6 +18,8 @@ func (r *registry) Set(name string, pi *PluginInfo) {
 	defer r.Unlock()
 	r.plugins[name] = pi
 	for _, s := range pi.Functions {
+		fmt.Println("[plugin][wasm][registry.go][Set] name:", name)
+		fmt.Println("[plugin][wasm][registry.go][Set] s:", s)
 		r.functions[s] = name
 	}
 }

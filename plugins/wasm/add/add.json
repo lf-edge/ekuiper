@@ -1,0 +1,9 @@
+{
+    "version": "v1.0.0",
+    "language": "go",
+    "functions": [
+      "add"
+    ],
+    "wasmFile": "/home/erfenjiao/ekuiper/plugins/wasm/add/add.wasm",
+    "wasmEngine": "wasmedge"
+  }

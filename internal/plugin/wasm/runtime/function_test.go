@@ -1,13 +1,8 @@
 package runtime
 
-import "testing"
-
-
-
-
-func (f *WasmFunc) fTestNewWasmFunc(t *testing.T) {
-	name := f.symbolName := "fibonacci"
-	f.reg.WasmFile := "/home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fibonacci.wasm"
-
-	ExecWasmFunc
-}
+//
+//func (f *WasmFunc)TestWasmFunc_ExecWasmFunc(t *testing.T) {
+//	var args []interface{}
+//	args = [10 20]
+//	result := f.E
+//}

@@ -12,7 +12,6 @@ import (
 type WasmFunc struct {
 	symbolName string
 	reg        *PluginMeta
-	dataCh     DataReqChannel
 	isAgg      int
 }
 
@@ -102,25 +101,10 @@ func (f *WasmFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{
 	if err != nil {
 		return err, false
 	}
-	//fmt.Println("[internal][plugin][wasm][runtime][function.go] ctxRaw: ", ctxRaw)
-	//{"ruleId":"rule1","opId":"op1","instanceId":1,"funcId":1}
-	//---------------------------------------
-	//value := args[0].(int)
-	//var Args [][]interface{}
-	//Args = args
-	//for _, num := range args{
-	//
-	//}
-	fmt.Println("[---Exec---] args :", args) // [[25]]
 
+	fmt.Println("[---Exec---] args :", args)
 	res := f.ExecWasmFunc(args)
-	//---------------------------------------
-	//jsonArg, err := encode("Exec", append(args, ctxRaw))
-	//if err != nil {
-	//	return err, false
-	//}
-	//fmt.Println("[internal][plugin][wasm][runtime][function.go] jsonArg(string):", string(jsonArg))
-	//{"func":"Exec","arg":["twelve","{\"ruleId\":\"rule1\",\"opId\":\"op1\",\"instanceId\":1,\"funcId\":1}"]}
+
 	jsonArg, err := encode("Exec", append(res, ctxRaw))
 	fmt.Println("[internal][plugin][wasm][runtime][function.go] jsonArg(string):", string(jsonArg))
 	//res2, err := f.dataCh.Req(jsonArg)
@@ -151,44 +135,11 @@ func (f *WasmFunc) IsAggregate() bool {
 		return f.isAgg > 1
 	}
 	fmt.Println("[wasm][IsAggregate] start")
-	//jsonArg, err := encode("IsAggregate", nil)
-	//if err != nil {
-	//	conf.Log.Error(err)
-	//	return false
-	//}
-	//res, err := f.dataCh.Req(jsonArg)
-	//if err != nil {
-	//	conf.Log.Error(err)
-	//	return false
-	//}
-	//fr := &FuncReply{}
-	//err = json.Unmarshal(res, fr)
-	//if err != nil {
-	//	conf.Log.Error(err)
-	//	return false
-	//}
-	//if fr.State {
-	//	r, ok := fr.Result.(bool)
-	//	if !ok {
-	//		conf.Log.Errorf("IsAggregate result is not bool, got %s", string(res))
-	//		return false
-	//	} else {
-	//		if r {
-	//			f.isAgg = 2
-	//		} else {
-	//			f.isAgg = 1
-	//		}
-	//		return r
-	//	}
-	//} else {
-	//	conf.Log.Errorf("IsAggregate return state is false, got %+v", fr)
-	//	return false
-	//}
 	return false
 }
 
-func (f *WasmFunc) Close() error {
-	return f.dataCh.Close()
+func (f *WasmFunc) Close() {
+	return
 }
 
 func encode(funcName string, arg interface{}) ([]byte, error) {
@@ -213,15 +164,18 @@ func encodeCtx(ctx api.FunctionContext) (string, error) {
 }
 
 func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
-	fmt.Println("[internal][plugin][wasm][runtime][function.go] WasmFunc(f): ", f)
 	funcname := f.symbolName
 	fmt.Println("[internal][plugin][wasm][runtime][function.go] funcname: ", funcname)
 	WasmFile := f.reg.WasmFile
 	fmt.Println("[internal][plugin][wasm][runtime][function.go] WasmFile: ", WasmFile)
 	//--------------------------------------
-	conf := wasmedge.NewConfigure()
+	//conf := wasmedge.NewConfigure()
+	//store := wasmedge.NewStore()
+	//vm := wasmedge.NewVMWithConfigAndStore(conf, store)
+	conf1 := wasmedge.NewConfigure(wasmedge.WASI)
 	store := wasmedge.NewStore()
-	vm := wasmedge.NewVMWithConfigAndStore(conf, store)
+	vm := wasmedge.NewVMWithConfigAndStore(conf1, store)
+	wasi := vm.GetImportModule(wasmedge.WASI)
 	//step 1: Load WASM file
 	err := vm.LoadWasmFile(WasmFile)
 	if err != nil {
@@ -264,7 +218,10 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
 			fmt.Println(res[0].(int32))
 		}
-		//fr.Result = res
+		exitcode := wasi.WasiGetExitCode()
+		if exitcode != 0 {
+			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
+		}
 		vm.Release()
 		//return res
 	case 1:
@@ -274,6 +231,10 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 		} else {
 			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
 			fmt.Println(res[0].(int32))
+		}
+		exitcode := wasi.WasiGetExitCode()
+		if exitcode != 0 {
+			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
 		}
 		//fr.Result = res
 		vm.Release()
@@ -285,6 +246,10 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 		} else {
 			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
 			fmt.Println(res[0].(int32))
+		}
+		exitcode := wasi.WasiGetExitCode()
+		if exitcode != 0 {
+			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
 		}
 		//fr.Result = res
 		vm.Release()
