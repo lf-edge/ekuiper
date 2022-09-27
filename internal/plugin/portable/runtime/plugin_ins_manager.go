@@ -60,7 +60,6 @@ func NewPluginIns(name string, ctrlChan ControlChannel, process *os.Process) *Pl
 func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	arg, err := json.Marshal(ctrl)
 	if err != nil {
-		fmt.Println("[internal][plugin][portable][runtime][plugin_ins_manager.go] json.Marshal(1) err: ", err)
 		return err
 	}
 	c := Command{
@@ -69,7 +68,6 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	}
 	jsonArg, err := json.Marshal(c)
 	if err != nil {
-		fmt.Println("[internal][plugin][portable][runtime][plugin_ins_manager.go] json.Marshal(2) err: ", err)
 		return err
 	}
 	err = i.ctrlChan.SendCmd(jsonArg)
@@ -77,7 +75,6 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 		i.runningCount++
 		ctx.GetLogger().Infof("started symbol %s", ctrl.SymbolName)
 	}
-	fmt.Println("[internal][plugin][portable][runtime][plugin_ins_manager.go] SendCmd err: ", err)
 	return err
 }
 
@@ -151,7 +148,6 @@ func (p *pluginInsManager) deletePluginIns(name string) {
 func (p *pluginInsManager) AddPluginIns(name string, ins *PluginIns) {
 	p.Lock()
 	defer p.Unlock()
-	fmt.Println("[plugin][portable][runtime][plugin_ins_manager.go] ins: ", ins)
 	p.instances[name] = ins
 }
 
@@ -262,5 +258,4 @@ type PluginMeta struct {
 	Version    string `json:"version"`
 	Language   string `json:"language"`
 	Executable string `json:"executable"`
-	//WasmFilePath string `json:"wasmfilepath"`
 }

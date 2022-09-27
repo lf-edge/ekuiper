@@ -15,7 +15,6 @@
 package portable
 
 import (
-	"fmt"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"sync"
 )
@@ -49,7 +48,6 @@ func (r *registry) Get(name string) (*PluginInfo, bool) {
 	r.RLock()
 	defer r.RUnlock()
 	result, ok := r.plugins[name]
-	fmt.Println("[plugin][portable][registry.go][Get] result, ok:", result, ok)
 	return result, ok
 }
 

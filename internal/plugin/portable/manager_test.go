@@ -51,13 +51,11 @@ func TestManager_Install(t *testing.T) {
 			n:   "",
 			u:   "",
 			err: errors.New("invalid name : should not be empty"),
-		},
-		{ // 1
+		}, { // 1
 			n:   "zipMissJson",
 			u:   endpoint + "/functions/misc.zip",
 			err: errors.New("fail to install plugin: missing or invalid json file zipMissJson.json"),
-		},
-		{ // 2
+		}, { // 2
 			n:   "urlerror",
 			u:   endpoint + "/sinks/nozip",
 			err: errors.New("invalid uri " + endpoint + "/sinks/nozip"),
@@ -67,12 +65,11 @@ func TestManager_Install(t *testing.T) {
 			err: errors.New("fail to install plugin: missing mirror.exe"),
 		}, { // 4
 			n:   "wrongname",
-			u:   endpoint + "/portables/mirror2.zip",
+			u:   endpoint + "/portables/mirror.zip",
 			err: errors.New("fail to install plugin: missing or invalid json file wrongname.json"),
-		},
-		{ // 5
+		}, { // 5
 			n: "mirror2",
-			u: endpoint + "/portables/mirror2.zip",
+			u: endpoint + "/portables/mirror.zip",
 		},
 	}
 

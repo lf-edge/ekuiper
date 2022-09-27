@@ -56,7 +56,6 @@ func NewPortableFunc(symbolName string, reg *PluginMeta) (*PortableFunc, error) 
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, conf.Log)
 	err = ins.StartSymbol(ctx, c)
 	if err != nil {
-		fmt.Println("[plugin][portable][runtime][function.go] StartSymbol err: ", err)
 		return nil, err
 	}
 
@@ -95,10 +94,8 @@ func (f *PortableFunc) Validate(args []interface{}) error {
 }
 
 func (f *PortableFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-	fmt.Println("[internal][plugin][portable][runtime][function.go] Exec")
 	ctx.GetLogger().Debugf("running portable func with args %+v", args)
 	ctxRaw, err := encodeCtx(ctx)
-	fmt.Println("[internal][plugin][portable][runtime][function.go] ctxRaw: ", ctxRaw)
 	if err != nil {
 		return err, false
 	}
@@ -106,18 +103,7 @@ func (f *PortableFunc) Exec(args []interface{}, ctx api.FunctionContext) (interf
 	if err != nil {
 		return err, false
 	}
-	fmt.Println("[internal][plugin][portable][runtime][function.go] jsonArg(string):", string(jsonArg))
 	res, err := f.dataCh.Req(jsonArg)
-	/*
-		[internal][plugin][portable][runtime][function.go] args:  [twelve]
-		[internal][plugin][portable][runtime][function.go] ctx:  &{0xc0001be480 1}
-		[internal][plugin][portable][runtime][function.go] jsonArg:  [123 34 102 117 110 99 34 58 34 69 120 101 99 34 44
-		34 97 114 103 34 58 91 34 116 119 101 108 118 101 34 44 34 123 92 34 114 117 108 101 73 100 92 34 58 92 34 114 117
-		108 101 49 92 34 44 92 34 111 112 73 100 92 34 58 92 34 111 112 49 92 34 44 92 34 105 110 115 116 97 110 99 101 73
-		100 92 34 58 49 44 92 34 102 117 110 99 73 100 92 34 58 49 125 34 93 125]
-		[internal][plugin][portable][runtime][function.go] res:  [123 34 115 116 97 116 101 34 58 116 114 117 101 44 34
-		114 101 115 117 108 116 34 58 34 116 119 101 108 118 101 34 125]
-	*/
 	if err != nil {
 		return err, false
 	}
