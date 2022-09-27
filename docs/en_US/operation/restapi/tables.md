@@ -31,6 +31,12 @@ Response Sample:
 ["mytable"]
 ```
 
+This API accepts one parameter kind, the value could be `scan` or `lookup` to query each kind of tables. Other values are invalid, it will return all kinds of tables. In below example, we can query all the lookup tables.
+
+```shell
+GET http://localhost:9081/tables?kind=lookup
+```
+
 ## describe a table
 
 The API is used for print the detailed definition of table.

@@ -55,6 +55,7 @@ func GetStatementFromSql(sql string) (*ast.SelectStatement, error) {
 
 type StreamInfo struct {
 	StreamType ast.StreamType `json:"streamType"`
+	StreamKind string         `json:"streamKind"`
 	Statement  string         `json:"statement"`
 }
 
