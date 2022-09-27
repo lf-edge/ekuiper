@@ -178,16 +178,22 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		return nil, fmt.Errorf("invalid conf: %v", pconf)
 	}
 	var cmd *exec.Cmd
-	switch pluginMeta.Language {
-	case "go":
-		conf.Log.Printf("starting go plugin executable %s", pluginMeta.Executable)
-		cmd = exec.Command(pluginMeta.Executable, string(jsonArg))
+	err = infra.SafeRun(func() error {
+		switch pluginMeta.Language {
+		case "go":
+			conf.Log.Printf("starting go plugin executable %s", pluginMeta.Executable)
+			cmd = exec.Command(pluginMeta.Executable, string(jsonArg))
 
-	case "python":
-		conf.Log.Printf("starting python plugin executable %s with script %s\n", conf.Config.Portable.PythonBin, pluginMeta.Executable)
-		cmd = exec.Command(conf.Config.Portable.PythonBin, pluginMeta.Executable, string(jsonArg))
-	default:
-		return nil, fmt.Errorf("unsupported language: %s", pluginMeta.Language)
+		case "python":
+			conf.Log.Printf("starting python plugin executable %s with script %s\n", conf.Config.Portable.PythonBin, pluginMeta.Executable)
+			cmd = exec.Command(conf.Config.Portable.PythonBin, pluginMeta.Executable, string(jsonArg))
+		default:
+			return fmt.Errorf("unsupported language: %s", pluginMeta.Language)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("fail to start plugin %s: %v", pluginMeta.Name, err)
 	}
 	cmd.Stdout = conf.Log.Out
 	cmd.Stderr = conf.Log.Out
