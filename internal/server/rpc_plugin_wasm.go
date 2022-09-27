@@ -26,7 +26,7 @@ func (t *Server) doRegister(pt plugin.PluginType, p plugin.Plugin) error {
 	if pt == plugin.WASM {
 		return wasmManager.Register(p)
 	} else {
-		return fmt.Errorf("native plugin support is disabled")
+		return fmt.Errorf("wasm plugin support is disabled")
 	}
 }
 
@@ -34,7 +34,7 @@ func (t *Server) doDelete(pt plugin.PluginType, name string, stopRun bool) error
 	if pt == plugin.WASM {
 		return wasmManager.Delete(name)
 	} else {
-		return fmt.Errorf("native plugin support is disabled")
+		return fmt.Errorf("wasm plugin support is disabled")
 	}
 }
 
@@ -46,6 +46,6 @@ func (t *Server) doDesc(pt plugin.PluginType, name string) (interface{}, error) 
 		}
 		return r, nil
 	} else {
-		return nil, fmt.Errorf("native plugin support is disabled")
+		return nil, fmt.Errorf("wasm plugin support is disabled")
 	}
 }
