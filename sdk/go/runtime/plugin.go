@@ -22,7 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/lf-edge/ekuiper/sdk/go/connection"
 	"github.com/lf-edge/ekuiper/sdk/go/context"
-	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -90,12 +89,7 @@ func Start(args []string, conf *PluginConfig) {
 	if err != nil {
 		panic(err)
 	}
-	defer func(ch connection.ControlChannel) {
-		err := ch.Close()
-		if err != nil {
-			log.Fatalln("[plugin/portable/plugin.go] ch.Close failed? ")
-		}
-	}(ch)
+	defer ch.Close()
 	go func() {
 		logger.Info("running control channel")
 		err = ch.Run(func(req []byte) []byte { // not parallel run now

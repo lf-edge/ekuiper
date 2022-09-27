@@ -40,17 +40,14 @@ import (
 // EDIT HERE: Define the plugins that you want to test.
 var testingPlugin = &portable.PluginInfo{
 	PluginMeta: runtime.PluginMeta{
-		Name:       "mirror",
+		Name:       "mirror.py",
 		Version:    "v1",
 		Language:   "go",
 		Executable: "mirror",
 	},
-	//Sources:   []string{"pyjson"},
-	//Sinks:     []string{"print"},
-	//Functions: []string{"revert"},
-	Sources:   []string{"random"},
-	Sinks:     []string{"file"},
-	Functions: []string{"echo"},
+	Sources:   []string{"pyjson"},
+	Sinks:     []string{"print"},
+	Functions: []string{"revert"},
 }
 
 var mockSinkData = []map[string]interface{}{
