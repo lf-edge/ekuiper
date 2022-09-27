@@ -47,33 +47,33 @@ func TestManager_Install(t *testing.T) {
 		v   string
 		err error
 	}{
-		//{ // 0
-		//	n:   "",
-		//	u:   "",
-		//	err: errors.New("invalid name : should not be empty"),
-		//},
+		{ // 0
+			n:   "",
+			u:   "",
+			err: errors.New("invalid name : should not be empty"),
+		},
 		{ // 1
 			n:   "zipMissJson",
 			u:   endpoint + "/functions/misc.zip",
 			err: errors.New("fail to install plugin: missing or invalid json file zipMissJson.json"),
 		},
-		//{ // 2
-		//	n:   "urlerror",
-		//	u:   endpoint + "/sinks/nozip",
-		//	err: errors.New("invalid uri " + endpoint + "/sinks/nozip"),
-		//}, { // 3
-		//	n:   "wrong",
-		//	u:   endpoint + "/portables/wrong.zip",
-		//	err: errors.New("fail to install plugin: missing mirror.exe"),
-		//}, { // 4
-		//	n:   "wrongname",
-		//	u:   endpoint + "/portables/mirror2.zip",
-		//	err: errors.New("fail to install plugin: missing or invalid json file wrongname.json"),
-		//},
-		//{ // 5
-		//	n: "mirror2",
-		//	u: endpoint + "/portables/mirror2.zip",
-		//},
+		{ // 2
+			n:   "urlerror",
+			u:   endpoint + "/sinks/nozip",
+			err: errors.New("invalid uri " + endpoint + "/sinks/nozip"),
+		}, { // 3
+			n:   "wrong",
+			u:   endpoint + "/portables/wrong.zip",
+			err: errors.New("fail to install plugin: missing mirror.exe"),
+		}, { // 4
+			n:   "wrongname",
+			u:   endpoint + "/portables/mirror2.zip",
+			err: errors.New("fail to install plugin: missing or invalid json file wrongname.json"),
+		},
+		{ // 5
+			n: "mirror2",
+			u: endpoint + "/portables/mirror2.zip",
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
@@ -82,11 +82,7 @@ func TestManager_Install(t *testing.T) {
 			Name: tt.n,
 			File: tt.u,
 		}
-		fmt.Println("------------")
-		fmt.Println("p: ", p)
-		fmt.Println("Register: ")
 		err := manager.Register(p)
-		fmt.Println("err :", err)
 		if !reflect.DeepEqual(tt.err, err) {
 			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
 		} else if tt.err == nil {
@@ -112,8 +108,6 @@ func TestManager_Read(t *testing.T) {
 			Functions: []string{"echoGo"},
 		},
 	}
-	//fmt.Println("Executable: ", PluginInfo{PluginMeta: runtime.PluginMeta{Executable: filepath.Clean(path.Join(manager.pluginDir, "mirror2", "mirror2"))}})
-	///home/erfenjiao/ekuiper/plugins/portable/mirror2/mirror2
 	result := manager.List()
 	if len(result) != 3 {
 		t.Errorf("list result mismatch:\n  exp=%v\n  got=%v\n\n", expPlugins, result)
@@ -197,8 +191,4 @@ func checkFileForMirror(pluginDir, etcDir string, exist bool) error {
 		}
 	}
 	return nil
-}
-
-func TestInitManager(t *testing.T) {
-	InitManager()
 }

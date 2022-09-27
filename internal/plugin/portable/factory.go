@@ -15,7 +15,6 @@
 package portable
 
 import (
-	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
@@ -42,7 +41,6 @@ func (m *Manager) Sink(name string) (api.Sink, error) {
 var funcInsMap = &sync.Map{}
 
 func (m *Manager) Function(name string) (api.Function, error) {
-	fmt.Println("[plugin][portable][factory.go] start")
 	ins, ok := funcInsMap.Load(name)
 	if ok {
 		return ins.(api.Function), nil
