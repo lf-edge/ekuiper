@@ -79,8 +79,6 @@ func InitManager() (*Manager, error) {
 	}
 	registry := &Manager{symbols: make(map[string]string), db: db, pluginDir: pluginDir, etcDir: etcDir, runtime: make(map[string]plugin.Symbol)}
 	manager = registry
-	// pr
-	//---------------- add ----------------------
 	len := len(plugin2.PluginTypes)
 	fmt.Println("[native][manager.go] len :", len)
 	plugins := make([]map[string]string, len)
