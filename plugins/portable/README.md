@@ -30,7 +30,7 @@ For example, users can define a plugin named `car` and export many symbols for s
 
 Each portable plugin requires the following structure:
 
-- A top-level directory of the name of the plugin.
+- A top-level directory of the name of the plugin. 
 - A json file inside the directory of the name of the plugin.
 - An executable file inside the directory.
 - All other dependencies.
