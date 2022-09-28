@@ -606,7 +606,6 @@ func (rr *Manager) loadRuntime(t plugin2.PluginType, name, soFilepath string) (p
 		} else {
 			mod, err := rr.getSoFilePath(t, name, false)
 			if err != nil {
-				conf.Log.Warnf(fmt.Sprintf("cannot find the native plugin %s in path: %v", name, err))
 				return nil, nil
 			}
 			soPath = mod
