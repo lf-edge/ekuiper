@@ -21,36 +21,34 @@ import (
 )
 
 func TestTable(t *testing.T) {
-	tb := createTable([]string{"a"})
+	tb := createTable("topicT", "a")
 	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "0"}, nil))
 	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 2, "b": "0"}, nil))
 	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 3, "b": "4"}, nil))
 	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil))
 	v, _ := tb.Read([]string{"a"}, []interface{}{1})
 	exp := []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "0"}, nil),
 		api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil),
 	}
 	if !reflect.DeepEqual(v, exp) {
-		t.Errorf("read 1 expect %v, but got %v", exp, v)
+		t.Errorf("read a 1 expect %v, but got %v", exp, v)
 		return
 	}
-	v, _ = tb.Read([]string{"a"}, []interface{}{3})
+	v, _ = tb.Read([]string{"b"}, []interface{}{"0"})
 	exp = []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"a": 3, "b": "4"}, nil),
+		api.NewDefaultSourceTuple(map[string]interface{}{"a": 2, "b": "0"}, nil),
 	}
 	if !reflect.DeepEqual(v, exp) {
-		t.Errorf("read 3 expect %v, but got %v", exp, v)
+		t.Errorf("read b 0 expect %v, but got %v", exp, v)
 		return
 	}
 	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 5, "b": "0"}, nil))
-	tb.delete("b", api.NewDefaultSourceTuple(map[string]interface{}{"a": 3, "b": "4"}, nil))
+	tb.delete(3)
 	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil))
-	v, _ = tb.Read([]string{"a"}, []interface{}{1})
+	v, _ = tb.Read([]string{"b"}, []interface{}{"0"})
 	exp = []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "0"}, nil),
-		api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil),
-		api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil),
+		api.NewDefaultSourceTuple(map[string]interface{}{"a": 2, "b": "0"}, nil),
+		api.NewDefaultSourceTuple(map[string]interface{}{"a": 5, "b": "0"}, nil),
 	}
 	if !reflect.DeepEqual(v, exp) {
 		t.Errorf("read 1 again expect %v, but got %v", exp, v)
@@ -58,7 +56,6 @@ func TestTable(t *testing.T) {
 	}
 	v, _ = tb.Read([]string{"a", "b"}, []interface{}{1, "1"})
 	exp = []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil),
 		api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil),
 	}
 	if !reflect.DeepEqual(v, exp) {
@@ -70,7 +67,7 @@ func TestTable(t *testing.T) {
 		t.Errorf("read a 3 expect nil, but got %v", v)
 		return
 	}
-	tb.delete("a", api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil))
+	tb.delete(1)
 	v, _ = tb.Read([]string{"a"}, []interface{}{1})
 	if v != nil {
 		t.Errorf("read a 1 expect nil, but got %v", v)
@@ -81,45 +78,45 @@ func TestDb(t *testing.T) {
 	db = &database{
 		tables: make(map[string]*tableCount),
 	}
-	db.addTable("t1", []string{"a"})
-	db.addTable("t1", []string{"a", "b"})
-	db.addTable("t2", []string{"a"})
-	db.addTable("t1", []string{"a"})
-	_, ok := db.getTable("t1")
+	db.addTable("t1", "a")
+	db.addTable("t1", "b")
+	db.addTable("t2", "a")
+	db.addTable("t1", "a")
+	_, ok := db.getTable("t1", "a")
 	if !ok {
 		t.Errorf("table t1 a should exist")
 		return
 	}
-	_, ok = db.getTable("t1")
+	_, ok = db.getTable("t1", "b")
 	if !ok {
 		t.Errorf("table t1 b should exist")
 		return
 	}
-	_, ok = db.getTable("t3")
+	_, ok = db.getTable("t3", "a")
 	if ok {
 		t.Errorf("table t1 c should not exist")
 		return
 	}
-	tc := db.tables["t1"]
-	if tc.count != 3 {
-		t.Errorf("table t1 a should have 2 instances but got %d", tc.count)
-		return
-	}
-	tc = db.tables["t2"]
-	if tc.count != 1 {
-		t.Errorf("table t1 a should have 1 instances")
-		return
-	}
-	db.dropTable("t1")
-	db.dropTable("t2")
-	_, ok = db.getTable("t2")
-	if ok {
-		t.Errorf("table ta a should not exist")
-		return
-	}
-	tc = db.tables["t1"]
+	tc := db.tables["t1_a"]
 	if tc.count != 2 {
 		t.Errorf("table t1 a should have 2 instances but got %d", tc.count)
+		return
+	}
+	tc = db.tables["t2_a"]
+	if tc.count != 1 {
+		t.Errorf("table t2 a should have 1 instances")
+		return
+	}
+	db.dropTable("t1", "a")
+	db.dropTable("t2", "a")
+	_, ok = db.getTable("t2", "a")
+	if ok {
+		t.Errorf("table t2 a should not exist")
+		return
+	}
+	tc = db.tables["t1_a"]
+	if tc.count != 1 {
+		t.Errorf("table t1 a should have 1 instances but got %d", tc.count)
 		return
 	}
 }

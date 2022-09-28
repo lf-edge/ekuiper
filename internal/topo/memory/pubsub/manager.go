@@ -113,11 +113,11 @@ func Produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
 	doProduce(ctx, topic, api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": topic}))
 }
 
-func ProduceUpdatable(ctx api.StreamContext, topic string, data map[string]interface{}, rowkind string, key string) {
+func ProduceUpdatable(ctx api.StreamContext, topic string, data map[string]interface{}, rowkind string, keyval interface{}) {
 	doProduce(ctx, topic, &UpdatableTuple{
 		DefaultSourceTuple: api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": topic}),
 		Rowkind:            rowkind,
-		Key:                key,
+		Keyval:             keyval,
 	})
 }
 

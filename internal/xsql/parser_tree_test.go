@@ -112,7 +112,7 @@ func TestParser_ParseTree(t *testing.T) {
 					name STRING,
 					size BIGINT,
 					id BIGINT
-				) WITH (DATASOURCE="devices", KIND="LOOKUP", TYPE="sql");`,
+				) WITH (DATASOURCE="devices", KIND="LOOKUP", TYPE="sql", KEY="id");`,
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("table1"),
 				StreamFields: []ast.StreamField{
@@ -125,9 +125,18 @@ func TestParser_ParseTree(t *testing.T) {
 					STRICT_VALIDATION: true,
 					KIND:              ast.StreamKindLookup,
 					TYPE:              "sql",
+					KEY:               "id",
 				},
 				StreamType: ast.TypeTable,
 			},
+		},
+		{
+			s: `CREATE TABLE table1 (
+					name STRING,
+					size BIGINT,
+					id BIGINT
+				) WITH (DATASOURCE="devices", KIND="LOOKUP", TYPE="memory");`,
+			err: `Option "key" is required for memory lookup table.`,
 		},
 		{
 			s:    `SHOW STREAMS`,

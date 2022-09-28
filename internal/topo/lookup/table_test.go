@@ -27,6 +27,7 @@ func TestTable(t *testing.T) {
 		DATASOURCE: "test",
 		TYPE:       "memory",
 		KIND:       "lookup",
+		KEY:        "id",
 	})
 	if err != nil {
 		t.Error(err)
@@ -36,6 +37,7 @@ func TestTable(t *testing.T) {
 		DATASOURCE: "test2",
 		TYPE:       "memory",
 		KIND:       "lookup",
+		KEY:        "id",
 	})
 	if err != nil {
 		t.Error(err)

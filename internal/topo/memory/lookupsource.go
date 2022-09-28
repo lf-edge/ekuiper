@@ -15,9 +15,9 @@
 package memory
 
 import (
+	"fmt"
 	"github.com/lf-edge/ekuiper/internal/topo/memory/store"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 	"regexp"
 	"strings"
 )
@@ -27,14 +27,14 @@ import (
 type lookupsource struct {
 	topic      string
 	topicRegex *regexp.Regexp
-	keys       []string
 	table      *store.Table
+	key        string
 }
 
 func (s *lookupsource) Open(ctx api.StreamContext) error {
-	ctx.GetLogger().Infof("lookup source %s is opened with keys %v", s.topic, s.keys)
+	ctx.GetLogger().Infof("lookup source %s is opened with key %v", s.topic, s.key)
 	var err error
-	s.table, err = store.Reg(s.topic, s.topicRegex, s.keys)
+	s.table, err = store.Reg(s.topic, s.topicRegex, s.key)
 	return err
 }
 
@@ -47,10 +47,13 @@ func (s *lookupsource) Configure(datasource string, props map[string]interface{}
 		}
 		s.topicRegex = r
 	}
-	if c, ok := props["index"]; ok {
-		if bl, err := cast.ToStringSlice(c, cast.CONVERT_SAMEKIND); err != nil {
-			s.keys = bl
+	if k, ok := props["key"]; ok {
+		if kk, ok := k.(string); ok {
+			s.key = kk
 		}
+	}
+	if s.key == "" {
+		return fmt.Errorf("key is required for lookup source")
 	}
 	return nil
 }
@@ -62,5 +65,5 @@ func (s *lookupsource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 
 func (s *lookupsource) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("lookup source %s is closing", s.topic)
-	return store.Unreg(s.topic)
+	return store.Unreg(s.topic, s.key)
 }

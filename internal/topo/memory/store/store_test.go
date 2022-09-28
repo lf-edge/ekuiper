@@ -23,18 +23,18 @@ func TestReg(t *testing.T) {
 	db = &database{
 		tables: make(map[string]*tableCount),
 	}
-	reg1, err := Reg("test", nil, []string{"a"})
+	reg1, err := Reg("test", nil, "a")
 	if err != nil {
 		t.Errorf("register test error: %v", err)
 		return
 	}
-	_, err2 := Reg("test", nil, []string{"a", "b"})
+	_, err2 := Reg("test", nil, "a")
 	if err2 != nil {
 		t.Errorf("register test error: %v", err2)
 		return
 	}
 	exp := map[string]*tableCount{
-		"test": {
+		"test_a": {
 			count: 2,
 			t:     reg1,
 		},
@@ -43,9 +43,9 @@ func TestReg(t *testing.T) {
 		t.Errorf("register expect %v, but got %v", exp, db.tables)
 		return
 	}
-	Unreg("test")
+	Unreg("test", "a")
 	exp = map[string]*tableCount{
-		"test": {
+		"test_a": {
 			count: 1,
 			t:     reg1,
 		},

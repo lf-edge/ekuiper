@@ -25,11 +25,11 @@ import (
 	"time"
 )
 
-func TestNoIndexLookup(t *testing.T) {
+func TestUpdateLookup(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "test")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	ls := GetLookupSource()
-	err := ls.Configure("test", map[string]interface{}{"option": "value"})
+	err := ls.Configure("test", map[string]interface{}{"key": "ff"})
 	if err != nil {
 		t.Error(err)
 		return
@@ -42,10 +42,10 @@ func TestNoIndexLookup(t *testing.T) {
 	// wait for the source to be ready
 	time.Sleep(100 * time.Millisecond)
 	pubsub.Produce(ctx, "test", map[string]interface{}{"ff": "value1", "gg": "value2"})
-	pubsub.ProduceUpdatable(ctx, "test", map[string]interface{}{"ff": "value1", "gg": "value2"}, "delete", "ff")
-	pubsub.ProduceUpdatable(ctx, "test", map[string]interface{}{"ff": "value2", "gg": "value2"}, "insert", "ff")
+	pubsub.ProduceUpdatable(ctx, "test", map[string]interface{}{"ff": "value1", "gg": "value2"}, "delete", "value1")
+	pubsub.ProduceUpdatable(ctx, "test", map[string]interface{}{"ff": "value2", "gg": "value2"}, "insert", "value2")
 	pubsub.Produce(ctx, "test", map[string]interface{}{"ff": "value1", "gg": "value4"})
-	pubsub.ProduceUpdatable(ctx, "test", map[string]interface{}{"ff": "value2", "gg": "value2"}, "delete", "ff")
+	pubsub.ProduceUpdatable(ctx, "test", map[string]interface{}{"ff": "value2", "gg": "value2"}, "delete", "value2")
 	pubsub.Produce(ctx, "test", map[string]interface{}{"ff": "value1", "gg": "value2"})
 	pubsub.Produce(ctx, "test", map[string]interface{}{"ff": "value2", "gg": "value2"})
 	// wait for table accumulation
@@ -63,7 +63,6 @@ func TestNoIndexLookup(t *testing.T) {
 		}
 	}()
 	expected := []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value4"}, map[string]interface{}{"topic": "test"}),
 		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test"}),
 	}
 	result, err := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
@@ -77,11 +76,11 @@ func TestNoIndexLookup(t *testing.T) {
 	}
 }
 
-func TestSingleIndexLookup(t *testing.T) {
+func TestLookup(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "test2")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	ls := GetLookupSource()
-	err := ls.Configure("test2", map[string]interface{}{"index": []string{"ff"}})
+	err := ls.Configure("test2", map[string]interface{}{"key": "gg"})
 	if err != nil {
 		t.Error(err)
 		return
@@ -94,7 +93,7 @@ func TestSingleIndexLookup(t *testing.T) {
 	// wait for the source to be ready
 	time.Sleep(100 * time.Millisecond)
 	pubsub.Produce(ctx, "test2", map[string]interface{}{"ff": "value1", "gg": "value2"})
-	pubsub.Produce(ctx, "test2", map[string]interface{}{"ff": "value2", "gg": "value2"})
+	pubsub.Produce(ctx, "test2", map[string]interface{}{"ff": "value2", "gg": "value3"})
 	pubsub.Produce(ctx, "test2", map[string]interface{}{"ff": "value1", "gg": "value4"})
 	// wait for table accumulation
 	time.Sleep(100 * time.Millisecond)
@@ -106,7 +105,7 @@ func TestSingleIndexLookup(t *testing.T) {
 			case <-canctx.Done():
 				return
 			case <-time.After(10 * time.Millisecond):
-				pubsub.Produce(ctx, "test", map[string]interface{}{"ff": "value4", "gg": "value2"})
+				pubsub.Produce(ctx, "test", map[string]interface{}{"ff": "value4", "gg": "value5"})
 			}
 		}
 	}()
@@ -115,6 +114,13 @@ func TestSingleIndexLookup(t *testing.T) {
 		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value4"}, map[string]interface{}{"topic": "test2"}),
 	}
 	result, err := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
+	if len(result) != 2 {
+		t.Errorf("expect %v but got %v", expected, result)
+	} else {
+		if result[0].Message()["gg"] != "value2" {
+			result[0], result[1] = result[1], result[0]
+		}
+	}
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("expect %v but got %v", expected, result)
 	}

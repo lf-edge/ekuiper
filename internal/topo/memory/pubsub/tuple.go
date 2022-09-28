@@ -19,5 +19,5 @@ import "github.com/lf-edge/ekuiper/pkg/api"
 type UpdatableTuple struct {
 	*api.DefaultSourceTuple
 	Rowkind string
-	Key     string
+	Keyval  interface{}
 }
