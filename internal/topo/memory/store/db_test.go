@@ -24,7 +24,7 @@ func TestTable(t *testing.T) {
 	tb := createTable([]string{"a"})
 	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "0"}, nil))
 	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 2, "b": "0"}, nil))
-	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 3, "b": "0"}, nil))
+	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 3, "b": "4"}, nil))
 	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil))
 	v, _ := tb.Read([]string{"a"}, []interface{}{1})
 	exp := []api.SourceTuple{
@@ -37,13 +37,14 @@ func TestTable(t *testing.T) {
 	}
 	v, _ = tb.Read([]string{"a"}, []interface{}{3})
 	exp = []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"a": 3, "b": "0"}, nil),
+		api.NewDefaultSourceTuple(map[string]interface{}{"a": 3, "b": "4"}, nil),
 	}
 	if !reflect.DeepEqual(v, exp) {
 		t.Errorf("read 3 expect %v, but got %v", exp, v)
 		return
 	}
 	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 5, "b": "0"}, nil))
+	tb.delete("b", api.NewDefaultSourceTuple(map[string]interface{}{"a": 3, "b": "4"}, nil))
 	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil))
 	v, _ = tb.Read([]string{"a"}, []interface{}{1})
 	exp = []api.SourceTuple{
@@ -63,6 +64,16 @@ func TestTable(t *testing.T) {
 	if !reflect.DeepEqual(v, exp) {
 		t.Errorf("read a,b expect %v, but got %v", exp, v)
 		return
+	}
+	v, _ = tb.Read([]string{"a"}, []interface{}{3})
+	if v != nil {
+		t.Errorf("read a 3 expect nil, but got %v", v)
+		return
+	}
+	tb.delete("a", api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil))
+	v, _ = tb.Read([]string{"a"}, []interface{}{1})
+	if v != nil {
+		t.Errorf("read a 1 expect nil, but got %v", v)
 	}
 }
 

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/memory/pubsub"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"regexp"
 )
 
@@ -46,7 +47,17 @@ func runTable(topic string, topicRegex *regexp.Regexp, t *Table) {
 			if !opened { // exit go routine is not sync with drop table
 				return
 			}
-			t.add(v)
+			switch vv := v.(type) {
+			case *pubsub.UpdatableTuple:
+				switch vv.Rowkind {
+				case ast.RowkindInsert, ast.RowkindUpdate, ast.RowkindUpsert:
+					t.add(vv.DefaultSourceTuple)
+				case ast.RowkindDelete:
+					t.delete(vv.Key, vv.DefaultSourceTuple)
+				}
+			default:
+				t.add(v)
+			}
 			conf.Log.Debugf("receive data %v for %s", v, topic)
 		case <-ctx.Done():
 			return

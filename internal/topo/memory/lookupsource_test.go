@@ -42,8 +42,12 @@ func TestNoIndexLookup(t *testing.T) {
 	// wait for the source to be ready
 	time.Sleep(100 * time.Millisecond)
 	pubsub.Produce(ctx, "test", map[string]interface{}{"ff": "value1", "gg": "value2"})
-	pubsub.Produce(ctx, "test", map[string]interface{}{"ff": "value2", "gg": "value2"})
+	pubsub.ProduceUpdatable(ctx, "test", map[string]interface{}{"ff": "value1", "gg": "value2"}, "delete", "ff")
+	pubsub.ProduceUpdatable(ctx, "test", map[string]interface{}{"ff": "value2", "gg": "value2"}, "insert", "ff")
 	pubsub.Produce(ctx, "test", map[string]interface{}{"ff": "value1", "gg": "value4"})
+	pubsub.ProduceUpdatable(ctx, "test", map[string]interface{}{"ff": "value2", "gg": "value2"}, "delete", "ff")
+	pubsub.Produce(ctx, "test", map[string]interface{}{"ff": "value1", "gg": "value2"})
+	pubsub.Produce(ctx, "test", map[string]interface{}{"ff": "value2", "gg": "value2"})
 	// wait for table accumulation
 	time.Sleep(100 * time.Millisecond)
 	canctx, cancel := gocontext.WithCancel(gocontext.Background())
@@ -59,8 +63,8 @@ func TestNoIndexLookup(t *testing.T) {
 		}
 	}()
 	expected := []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test"}),
 		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value4"}, map[string]interface{}{"topic": "test"}),
+		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test"}),
 	}
 	result, err := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
 	if !reflect.DeepEqual(result, expected) {

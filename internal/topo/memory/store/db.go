@@ -137,6 +137,45 @@ func (t *Table) add(value api.SourceTuple) {
 	}
 }
 
+func (t *Table) delete(key string, value api.SourceTuple) error {
+	v, ok := value.Message()[key]
+	if !ok {
+		return fmt.Errorf("value not found for key %s", key)
+	}
+	t.Lock()
+	defer t.Unlock()
+	if d, ok := t.indexes[key]; ok {
+		if _, kok := d[v]; kok {
+			delete(d, v)
+		} else {
+			// has index but not hit, so just return
+			return nil
+		}
+	}
+	// After delete index, also delete in the data
+	arr := make([]api.SourceTuple, 0, len(t.datamap))
+	for _, st := range t.datamap {
+		if val, ok := st.Message()[key]; ok && val == v {
+			for k, d := range t.indexes {
+				if kval, ok := st.Message()[k]; ok {
+					newarr := make([]api.SourceTuple, 0, len(d[kval]))
+					for _, tuple := range d[kval] {
+						if tv, ok := tuple.Message()[key]; ok && tv == v {
+							continue
+						}
+						newarr = append(newarr, tuple)
+					}
+					d[kval] = newarr
+				}
+			}
+			continue
+		}
+		arr = append(arr, st)
+	}
+	t.datamap = arr
+	return nil
+}
+
 func (t *Table) Read(keys []string, values []interface{}) ([]api.SourceTuple, error) {
 	t.RLock()
 	defer t.RUnlock()
