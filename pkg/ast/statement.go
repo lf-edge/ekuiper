@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -189,3 +189,10 @@ type SortField struct {
 type SortFields []SortField
 
 func (d SortFields) node() {}
+
+const (
+	RowkindInsert = "insert"
+	RowkindUpdate = "update"
+	RowkindUpsert = "upsert"
+	RowkindDelete = "delete"
+)

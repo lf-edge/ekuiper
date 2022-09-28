@@ -110,6 +110,18 @@ func RemovePub(topic string) {
 }
 
 func Produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
+	doProduce(ctx, topic, api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": topic}))
+}
+
+func ProduceUpdatable(ctx api.StreamContext, topic string, data map[string]interface{}, rowkind string, key string) {
+	doProduce(ctx, topic, &UpdatableTuple{
+		DefaultSourceTuple: api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": topic}),
+		Rowkind:            rowkind,
+		Key:                key,
+	})
+}
+
+func doProduce(ctx api.StreamContext, topic string, data api.SourceTuple) {
 	c, exists := pubTopics[topic]
 	if !exists {
 		return
@@ -120,7 +132,7 @@ func Produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
 	// broadcast to all consumers
 	for name, out := range c.consumers {
 		select {
-		case out <- api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": topic}):
+		case out <- data:
 			logger.Debugf("memory source broadcast from topic %s to %s done", topic, name)
 		case <-ctx.Done():
 			// rule stop so stop waiting
@@ -128,7 +140,6 @@ func Produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
 			logger.Errorf("memory source topic %s drop message to %s", topic, name)
 		}
 	}
-
 }
 
 func ProduceError(ctx api.StreamContext, topic string, err error) {

@@ -19,12 +19,23 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/topo/memory/pubsub"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"strings"
 )
+
+type config struct {
+	Topic        string `json:"topic"`
+	DataTemplate string `json:"dataTemplate"`
+	RowkindField string `json:"rowkindField"`
+	KeyField     string `json:"keyField"`
+}
 
 type sink struct {
 	topic        string
 	hasTransform bool
+	keyField     string
+	rowkindField string
 }
 
 func (s *sink) Open(ctx api.StreamContext) error {
@@ -34,18 +45,22 @@ func (s *sink) Open(ctx api.StreamContext) error {
 }
 
 func (s *sink) Configure(props map[string]interface{}) error {
-	if t, ok := props[pubsub.IdProperty]; ok {
-		if id, casted := t.(string); casted {
-			if strings.ContainsAny(id, "#+") {
-				return fmt.Errorf("invalid memory topic %s: wildcard found", id)
-			}
-			s.topic = id
-		} else {
-			return fmt.Errorf("can't cast value %s to string", t)
-		}
+	cfg := &config{}
+	err := cast.MapToStruct(props, cfg)
+	if err != nil {
+		return err
 	}
-	if _, ok := props["dataTemplate"]; ok {
+	if strings.ContainsAny(cfg.Topic, "#+") {
+		return fmt.Errorf("invalid memory topic %s: wildcard found", cfg.Topic)
+	}
+	s.topic = cfg.Topic
+	if cfg.DataTemplate != "" {
 		s.hasTransform = true
+	}
+	s.rowkindField = cfg.RowkindField
+	s.keyField = cfg.KeyField
+	if s.rowkindField != "" && s.keyField == "" {
+		return fmt.Errorf("keyField is required when rowkindField is set")
 	}
 	return nil
 }
@@ -68,14 +83,19 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 		}
 		data = m
 	}
-
 	switch d := data.(type) {
 	case []map[string]interface{}:
 		for _, el := range d {
-			pubsub.Produce(ctx, topic, el)
+			err := s.publish(ctx, topic, el)
+			if err != nil {
+				return fmt.Errorf("fail to publish data %v for error %v", d, err)
+			}
 		}
 	case map[string]interface{}:
-		pubsub.Produce(ctx, topic, d)
+		err := s.publish(ctx, topic, d)
+		if err != nil {
+			return fmt.Errorf("fail to publish data %v for error %v", d, err)
+		}
 	default:
 		return fmt.Errorf("unrecognized format of %s", data)
 	}
@@ -85,5 +105,29 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing memory sink")
 	pubsub.RemovePub(s.topic)
+	return nil
+}
+
+func (s *sink) publish(ctx api.StreamContext, topic string, el map[string]interface{}) error {
+	if s.rowkindField != "" {
+		c, ok := el[s.rowkindField]
+		if !ok {
+			return fmt.Errorf("rowkind field %s not found in data %v", s.rowkindField, el)
+		}
+		rowkind, ok := c.(string)
+		if !ok {
+			return fmt.Errorf("rowkind field %s is not a string in data %v", s.rowkindField, el)
+		}
+		if rowkind != ast.RowkindInsert && rowkind != ast.RowkindUpdate && rowkind != ast.RowkindDelete && rowkind != ast.RowkindUpsert {
+			return fmt.Errorf("invalid rowkind %s", rowkind)
+		}
+		c, ok = el[s.keyField]
+		if !ok {
+			return fmt.Errorf("key field %s not found in data %v", s.keyField, el)
+		}
+		pubsub.ProduceUpdatable(ctx, topic, el, rowkind, s.keyField)
+	} else {
+		pubsub.Produce(ctx, topic, el)
+	}
 	return nil
 }
