@@ -607,8 +607,8 @@ func (rr *Manager) HasFunctionSet(name string) bool {
 }
 
 func (rr *Manager) ConvName(name string) (string, bool) {
-	_, err := rr.Function(name)
-	if err == nil {
+	_, ok := rr.GetPluginBySymbol(plugin2.FUNCTION, name)
+	if ok {
 		return name, true
 	}
 	return name, false

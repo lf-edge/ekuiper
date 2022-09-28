@@ -42,7 +42,7 @@ func wrapColFunc(colFunc ColFunc) funcExe {
 
 func registerColsFunc() {
 	builtins["changed_cols"] = builtinFunc{
-		fType: FuncTypeCols,
+		fType: ast.FuncTypeCols,
 		exec:  wrapColFunc(changedFunc),
 		val: func(_ api.FunctionContext, args []ast.Expr) error {
 			if len(args) <= 2 {
