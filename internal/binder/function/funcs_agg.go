@@ -22,7 +22,7 @@ import (
 
 func registerAggFunc() {
 	builtins["avg"] = builtinFunc{
-		fType: FuncTypeAgg,
+		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := args[0].([]interface{})
 			c := getCount(arg0)
@@ -52,7 +52,7 @@ func registerAggFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["count"] = builtinFunc{
-		fType: FuncTypeAgg,
+		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := args[0].([]interface{})
 			return getCount(arg0), true
@@ -60,7 +60,7 @@ func registerAggFunc() {
 		val: ValidateOneArg,
 	}
 	builtins["max"] = builtinFunc{
-		fType: FuncTypeAgg,
+		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
@@ -101,7 +101,7 @@ func registerAggFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["min"] = builtinFunc{
-		fType: FuncTypeAgg,
+		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
@@ -142,7 +142,7 @@ func registerAggFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["sum"] = builtinFunc{
-		fType: FuncTypeAgg,
+		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
@@ -171,14 +171,14 @@ func registerAggFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["collect"] = builtinFunc{
-		fType: FuncTypeAgg,
+		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			return args[0], true
 		},
 		val: ValidateOneArg,
 	}
 	builtins["deduplicate"] = builtinFunc{
-		fType: FuncTypeAgg,
+		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			v1, ok1 := args[0].([]interface{})
 			v2, ok2 := args[1].([]interface{})

@@ -823,7 +823,7 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 	p.inFunc = name
 	defer func() { p.inFunc = "" }()
 	ft := function.GetFuncType(name)
-	if ft == function.FuncTypeCols && p.clause != "select" {
+	if ft == ast.FuncTypeCols && p.clause != "select" {
 		return nil, fmt.Errorf("function %s can only be used inside the select clause", n)
 	}
 	var args []ast.Expr
@@ -832,7 +832,7 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 			if valErr := validateFuncs(name, nil); valErr != nil {
 				return nil, valErr
 			}
-			c := &ast.Call{Name: name, Args: args, FuncId: p.fn}
+			c := &ast.Call{Name: name, Args: args, FuncId: p.fn, FuncType: ft}
 			p.fn += 1
 			return c, nil
 		} else {
@@ -842,7 +842,7 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 		if exp, err := p.ParseExpr(); err != nil {
 			return nil, err
 		} else {
-			if ft == function.FuncTypeCols {
+			if ft == ast.FuncTypeCols {
 				field := &ast.ColFuncField{Expr: exp, Name: nameExpr(exp)}
 				args = append(args, field)
 			} else {
@@ -867,7 +867,7 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 		if name == "deduplicate" {
 			args = append([]ast.Expr{&ast.Wildcard{Token: ast.ASTERISK}}, args...)
 		}
-		c := &ast.Call{Name: name, Args: args, FuncId: p.fn}
+		c := &ast.Call{Name: name, Args: args, FuncId: p.fn, FuncType: ft}
 		p.fn += 1
 		return c, nil
 	} else {

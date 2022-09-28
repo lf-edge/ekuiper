@@ -24,7 +24,7 @@ import (
 
 func registerMathFunc() {
 	builtins["abs"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, ok := args[0].(int); ok {
 				t := float64(v)
@@ -39,7 +39,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["acos"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Acos(v), true
@@ -50,7 +50,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["asin"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Asin(v), true
@@ -61,7 +61,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["atan"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Atan(v), true
@@ -72,7 +72,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["atan2"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v1, e := toF64(args[0]); e == nil {
 				if v2, e1 := toF64(args[1]); e1 == nil {
@@ -87,7 +87,7 @@ func registerMathFunc() {
 		val: ValidateTwoNumberArg,
 	}
 	builtins["bitand"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			v1, ok1 := args[0].(int)
 			v2, ok2 := args[1].(int)
@@ -100,7 +100,7 @@ func registerMathFunc() {
 		val: ValidateTwoIntArg,
 	}
 	builtins["bitor"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			v1, ok1 := args[0].(int)
 			v2, ok2 := args[1].(int)
@@ -113,7 +113,7 @@ func registerMathFunc() {
 		val: ValidateTwoIntArg,
 	}
 	builtins["bitxor"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			v1, ok1 := args[0].(int)
 			v2, ok2 := args[1].(int)
@@ -126,7 +126,7 @@ func registerMathFunc() {
 		val: ValidateTwoIntArg,
 	}
 	builtins["bitnot"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			v1, ok1 := args[0].(int)
 			if ok1 {
@@ -146,7 +146,7 @@ func registerMathFunc() {
 		},
 	}
 	builtins["ceil"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Ceil(v), true
@@ -157,7 +157,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["cos"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Cos(v), true
@@ -168,7 +168,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["cosh"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Cosh(v), true
@@ -179,7 +179,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["exp"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Exp(v), true
@@ -190,7 +190,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["ln"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Log2(v), true
@@ -201,7 +201,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["log"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Log10(v), true
@@ -212,7 +212,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["mod"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				if v1, e1 := toF64(args[1]); e == nil {
@@ -227,7 +227,7 @@ func registerMathFunc() {
 		val: ValidateTwoNumberArg,
 	}
 	builtins["power"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v1, e := toF64(args[0]); e == nil {
 				if v2, e2 := toF64(args[1]); e2 == nil {
@@ -242,14 +242,14 @@ func registerMathFunc() {
 		val: ValidateTwoNumberArg,
 	}
 	builtins["rand"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			return rand.Float64(), true
 		},
 		val: ValidateOneArg,
 	}
 	builtins["round"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Round(v), true
@@ -260,7 +260,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["sign"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				if v > 0 {
@@ -277,7 +277,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["sin"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Sin(v), true
@@ -288,7 +288,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["sinh"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Sinh(v), true
@@ -299,7 +299,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["sqrt"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Sqrt(v), true
@@ -310,7 +310,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["tan"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Tan(v), true
@@ -321,7 +321,7 @@ func registerMathFunc() {
 		val: ValidateOneNumberArg,
 	}
 	builtins["tanh"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := toF64(args[0]); e == nil {
 				return math.Tanh(v), true

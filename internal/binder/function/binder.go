@@ -17,21 +17,13 @@ package function
 import (
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 var ( // init once and read only
 	funcFactories      []binder.FuncFactory
 	funcFactoriesNames []string
-)
-
-type FuncType int
-
-const (
-	FuncTypeUnknown FuncType = iota - 1
-	FuncTypeScalar
-	FuncTypeAgg
-	FuncTypeCols
 )
 
 func init() {
@@ -92,14 +84,14 @@ func ConvName(name string) (string, bool) {
 }
 
 type multiAggFunc interface {
-	GetFuncType(name string) FuncType
+	GetFuncType(name string) ast.FuncType
 }
 
 func IsAggFunc(funcName string) bool {
 	f, _ := Function(funcName)
 	if f != nil {
 		if mf, ok := f.(multiAggFunc); ok {
-			return mf.GetFuncType(funcName) == FuncTypeAgg
+			return mf.GetFuncType(funcName) == ast.FuncTypeAgg
 		} else {
 			return f.IsAggregate()
 		}
@@ -107,16 +99,16 @@ func IsAggFunc(funcName string) bool {
 	return false
 }
 
-func GetFuncType(funcName string) FuncType {
+func GetFuncType(funcName string) ast.FuncType {
 	f, _ := Function(funcName)
 	if f != nil {
 		if mf, ok := f.(multiAggFunc); ok {
 			return mf.GetFuncType(funcName)
 		}
 		if f.IsAggregate() {
-			return FuncTypeAgg
+			return ast.FuncTypeAgg
 		}
-		return FuncTypeScalar
+		return ast.FuncTypeScalar
 	}
-	return FuncTypeUnknown
+	return ast.FuncTypeUnknown
 }

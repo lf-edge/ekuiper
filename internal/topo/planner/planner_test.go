@@ -406,7 +406,7 @@ func Test_createLogicalPlan(t *testing.T) {
 							condition: &ast.BinaryExpr{
 								LHS: &ast.Call{Name: "count", FuncId: 0, Args: []ast.Expr{&ast.Wildcard{
 									Token: ast.ASTERISK,
-								}}},
+								}}, FuncType: ast.FuncTypeAgg},
 								OP:  ast.GT,
 								RHS: &ast.IntegerLiteral{Val: 2},
 							},
@@ -1430,7 +1430,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 							condition: &ast.BinaryExpr{
 								LHS: &ast.Call{Name: "count", FuncId: 0, Args: []ast.Expr{&ast.Wildcard{
 									Token: ast.ASTERISK,
-								}}},
+								}}, FuncType: ast.FuncTypeAgg},
 								OP:  ast.GT,
 								RHS: &ast.IntegerLiteral{Val: 2},
 							},

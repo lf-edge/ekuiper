@@ -281,11 +281,11 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 			if valuer, ok := v.Valuer.(CallValuer); ok {
 				var (
 					args []interface{}
-					ft   = function.GetFuncType(expr.Name)
+					ft   = expr.FuncType
 				)
 				if len(expr.Args) > 0 {
 					switch ft {
-					case function.FuncTypeAgg:
+					case ast.FuncTypeAgg:
 						args = make([]interface{}, len(expr.Args))
 						for i, arg := range expr.Args {
 							if aggreValuer, ok := valuer.(AggregateCallValuer); ok {
@@ -297,7 +297,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 								}
 							}
 						}
-					case function.FuncTypeScalar:
+					case ast.FuncTypeScalar:
 						args = make([]interface{}, len(expr.Args))
 						for i, arg := range expr.Args {
 							args[i] = v.Eval(arg)
@@ -305,7 +305,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 								return args[i]
 							}
 						}
-					case function.FuncTypeCols:
+					case ast.FuncTypeCols:
 						var keys []string
 						for _, arg := range expr.Args { // In the parser, the col func arguments must be ColField
 							cf, ok := arg.(*ast.ColFuncField)
