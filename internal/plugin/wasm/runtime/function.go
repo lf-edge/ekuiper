@@ -15,52 +15,11 @@ type WasmFunc struct {
 	isAgg      int
 }
 
-//func NewWasmFunc(symbolName string, reg *PluginMeta) (*WasmFunc, error) {
-//	Setup channel and route the data
-//	conf.Log.Infof("Start running  wasm function meta %+v", reg)
-//	pm := GetPluginInsManager()
-//	ins, err := pm.getOrStartProcess(reg, WasmConf)
-//	if err != nil {
-//		return nil, err
-//	}
-//	conf.Log.Infof("Plugin started successfully")
-//
-//	Create function channel
-//	dataCh, err := CreateFunctionChannel(symbolName)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	Start symbol
-//	c := &Control{
-//		SymbolName: symbolName,
-//		PluginType: TYPE_FUNC,
-//	}
-//	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, conf.Log)
-//	err = ins.StartSymbol(ctx, c)
-//	if err != nil {
-//		fmt.Println("[plugin][wasm][runtime][function.go] StartSymbol err: ", err)
-//		return nil, err
-//	}
-//
-//	err = dataCh.Handshake()
-//	if err != nil {
-//		return nil, fmt.Errorf("function %s handshake error: %v", reg.Name, err)
-//	}
-//
-//	return &WasmFunc{
-//		symbolName: reg.Name,
-//		reg:        reg,
-//		dataCh:     dataCh,
-//	}, nil
-//}
-
 func NewWasmFunc(symbolName string, reg *PluginMeta) (*WasmFunc, error) {
 	// Setup channel and route the data
 	conf.Log.Infof("Start running  wasm function meta %+v", reg)
 
 	return &WasmFunc{
-		//symbolName: reg.Name,
 		symbolName: symbolName,
 		reg:        reg,
 	}, nil
@@ -75,26 +34,10 @@ func (f *WasmFunc) Validate(args []interface{}) error {
 	if err != nil {
 		return err
 	}
-	//res, err := f.dataCh.Req(jsonArg)
-	//if err != nil {
-	//	return err
-	//}
-	//fr := &FuncReply{}
-	//err = json.Unmarshal(res, fr)
-	//if err != nil {
-	//	return err
-	//}
-	//if fr.State {
-	//	return nil
-	//} else {
-	//	return fmt.Errorf("validate return state is false, got %+v", fr)
-	//}
 	return err
 }
 
 func (f *WasmFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-	//TODO implement me
-	//panic("implement me")
 	fmt.Println("[plugin][wasm][runtime][function.go][Exec] start: ")
 	ctx.GetLogger().Debugf("running wasm func with args %+v", args)
 	ctxRaw, err := encodeCtx(ctx)
@@ -102,12 +45,10 @@ func (f *WasmFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{
 		return err, false
 	}
 
-	fmt.Println("[---Exec---] args :", args)
 	res := f.ExecWasmFunc(args)
 
 	jsonArg, err := encode("Exec", append(res, ctxRaw))
-	fmt.Println("[internal][plugin][wasm][runtime][function.go] jsonArg(string):", string(jsonArg))
-	//res2, err := f.dataCh.Req(jsonArg)
+	//fmt.Println("[internal][plugin][wasm][runtime][function.go] jsonArg(string):", string(jsonArg))
 	if err != nil {
 		return err, false
 	}
@@ -134,7 +75,6 @@ func (f *WasmFunc) IsAggregate() bool {
 	if f.isAgg > 0 {
 		return f.isAgg > 1
 	}
-	fmt.Println("[wasm][IsAggregate] start")
 	return false
 }
 
@@ -167,7 +107,6 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 	funcname := f.symbolName
 	fmt.Println("[internal][plugin][wasm][runtime][function.go] funcname: ", funcname)
 	WasmFile := f.reg.WasmFile
-	//--------------------------------------
 	conf1 := wasmedge.NewConfigure(wasmedge.WASI)
 	store := wasmedge.NewStore()
 	vm := wasmedge.NewVMWithConfigAndStore(conf1, store)

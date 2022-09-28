@@ -1,7 +1,6 @@
 package wasm
 
 import (
-	"fmt"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"sync"
 )
@@ -18,8 +17,6 @@ func (r *registry) Set(name string, pi *PluginInfo) {
 	defer r.Unlock()
 	r.plugins[name] = pi
 	for _, s := range pi.Functions {
-		fmt.Println("[plugin][wasm][registry.go][Set] name:", name)
-		fmt.Println("[plugin][wasm][registry.go][Set] s:", s)
 		r.functions[s] = name
 	}
 }
@@ -27,20 +24,14 @@ func (r *registry) Set(name string, pi *PluginInfo) {
 func (r *registry) Get(name string) (*PluginInfo, bool) {
 	r.RLock()
 	defer r.RUnlock()
-	// fib --> finonacci
 	result, ok := r.plugins[name]
-	fmt.Println("[plugin][wasm][registry.go][Get] name:", name)
-	fmt.Println("[plugin][wasm][registry.go][Get] result:", result)
 	return result, ok
 }
 
 func (r *registry) GetSymbol(pt plugin.PluginType, symbolName string) (string, bool) {
 	switch pt {
 	case plugin.FUNCTION:
-		fmt.Println("[plugin][wasm][registry.go][GetSymbol] symbolName：", symbolName)
 		s, ok := r.functions[symbolName]
-		//s := symbolName
-		fmt.Println("[plugin][wasm][registry.go][GetSymbol] s：", s)
 		return s, ok
 	default:
 		return "", false
