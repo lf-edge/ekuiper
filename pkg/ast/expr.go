@@ -122,10 +122,20 @@ func (sl *StringLiteral) expr()    {}
 func (sl *StringLiteral) literal() {}
 func (sl *StringLiteral) node()    {}
 
+type FuncType int
+
+const (
+	FuncTypeUnknown FuncType = iota - 1
+	FuncTypeScalar
+	FuncTypeAgg
+	FuncTypeCols
+)
+
 type Call struct {
-	Name   string
-	FuncId int
-	Args   []Expr
+	Name     string
+	FuncId   int
+	FuncType FuncType
+	Args     []Expr
 }
 
 func (c *Call) expr()    {}

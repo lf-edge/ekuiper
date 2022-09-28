@@ -28,7 +28,7 @@ import (
 
 func registerStrFunc() {
 	builtins["concat"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			var b bytes.Buffer
 			for _, arg := range args {
@@ -49,7 +49,7 @@ func registerStrFunc() {
 		},
 	}
 	builtins["endswith"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil || args[1] == nil {
 				return false, true
@@ -60,7 +60,7 @@ func registerStrFunc() {
 		val: ValidateTwoStrArg,
 	}
 	builtins["indexof"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil || args[1] == nil {
 				return -1, true
@@ -71,7 +71,7 @@ func registerStrFunc() {
 		val: ValidateTwoStrArg,
 	}
 	builtins["length"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := cast.ToStringAlways(args[0])
 			return utf8.RuneCountInString(arg0), true
@@ -79,7 +79,7 @@ func registerStrFunc() {
 		val: ValidateOneStrArg,
 	}
 	builtins["lower"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil {
 				return nil, true
@@ -90,7 +90,7 @@ func registerStrFunc() {
 		val: ValidateOneStrArg,
 	}
 	builtins["lpad"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil {
 				return nil, true
@@ -105,7 +105,7 @@ func registerStrFunc() {
 		val: ValidateOneStrOneInt,
 	}
 	builtins["ltrim"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil {
 				return nil, true
@@ -116,7 +116,7 @@ func registerStrFunc() {
 		val: ValidateOneStrArg,
 	}
 	builtins["numbytes"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := cast.ToStringAlways(args[0])
 			return len(arg0), true
@@ -124,7 +124,7 @@ func registerStrFunc() {
 		val: ValidateOneStrArg,
 	}
 	builtins["format_time"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil {
 				return nil, true
@@ -155,7 +155,7 @@ func registerStrFunc() {
 		},
 	}
 	builtins["regexp_matches"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil || args[1] == nil {
 				return false, true
@@ -170,7 +170,7 @@ func registerStrFunc() {
 		val: ValidateTwoStrArg,
 	}
 	builtins["regexp_replace"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil || args[1] == nil || args[2] == nil {
 				return nil, true
@@ -195,7 +195,7 @@ func registerStrFunc() {
 		},
 	}
 	builtins["regexp_substr"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil || args[1] == nil {
 				return nil, true
@@ -210,7 +210,7 @@ func registerStrFunc() {
 		val: ValidateTwoStrArg,
 	}
 	builtins["rpad"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil {
 				return nil, true
@@ -225,7 +225,7 @@ func registerStrFunc() {
 		val: ValidateOneStrOneInt,
 	}
 	builtins["rtrim"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil {
 				return nil, true
@@ -236,7 +236,7 @@ func registerStrFunc() {
 		val: ValidateOneStrArg,
 	}
 	builtins["substring"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil {
 				return nil, true
@@ -306,7 +306,7 @@ func registerStrFunc() {
 		},
 	}
 	builtins["startswith"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil {
 				return false, true
@@ -317,7 +317,7 @@ func registerStrFunc() {
 		val: ValidateTwoStrArg,
 	}
 	builtins["split_value"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil || args[1] == nil {
 				return nil, true
@@ -354,7 +354,7 @@ func registerStrFunc() {
 		},
 	}
 	builtins["trim"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil {
 				return nil, true
@@ -365,7 +365,7 @@ func registerStrFunc() {
 		val: ValidateOneStrArg,
 	}
 	builtins["upper"] = builtinFunc{
-		fType: FuncTypeScalar,
+		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if args[0] == nil {
 				return nil, true
