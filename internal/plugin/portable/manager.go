@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -343,6 +343,11 @@ func (m *Manager) Delete(name string) error {
 	pinfo, ok := m.reg.Get(name)
 	if !ok {
 		return fmt.Errorf("portable plugin %s is not found", name)
+	}
+	pm := runtime.GetPluginInsManager()
+	err := pm.Kill(name)
+	if err != nil {
+		conf.Log.Errorf("fail to kill portable plugin %s process, please try to kill it manually", name)
 	}
 	// unregister the plugin
 	m.reg.Delete(name)
