@@ -25,7 +25,7 @@ type funcExe func(ctx api.FunctionContext, args []interface{}) (interface{}, boo
 type funcVal func(ctx api.FunctionContext, args []ast.Expr) error
 
 type builtinFunc struct {
-	fType FuncType
+	fType ast.FuncType
 	exec  funcExe
 	val   funcVal
 }
@@ -87,10 +87,10 @@ func (f *funcExecutor) IsAggregate() bool {
 	return false
 }
 
-func (f *funcExecutor) GetFuncType(name string) FuncType {
+func (f *funcExecutor) GetFuncType(name string) ast.FuncType {
 	fs, ok := builtins[name]
 	if !ok {
-		return FuncTypeUnknown
+		return ast.FuncTypeUnknown
 	}
 	return fs.fType
 }
