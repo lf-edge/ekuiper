@@ -125,7 +125,6 @@ func parseFuncContextArgs(args []interface{}) ([]interface{}, api.FunctionContex
 	if !ok {
 		return nil, nil, fmt.Errorf("cannot parse function raw context %v", temp)
 	}
-	// {"ruleId":"rule1","opId":"op1","instanceId":1,"funcId":1}
 	m := &FuncMeta{}
 	err := json.Unmarshal([]byte(rawCtx), m)
 	if err != nil {

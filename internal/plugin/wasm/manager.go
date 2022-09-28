@@ -116,13 +116,7 @@ func (m *Manager) parsePlugin(name string) error {
 func (m *Manager) parsePluginJson(name string) (*PluginInfo, error) {
 	jsonPath := filepath.Join(m.pluginDir, name, name+".json")
 	pi := &PluginInfo{PluginMeta: runtime.PluginMeta{Name: name}}
-	//fmt.Println("[internal][plugin][wasm][parsePluginJson] pi: ", pi)
 	err := filex.ReadJsonUnmarshal(jsonPath, pi)
-	//fmt.Println("[internal][plugin][wasm][parsePluginJson] jsonPath: ", jsonPath)
-	//fmt.Println("[internal][plugin][wasm][parsePluginJson] pi: ", pi)
-	// 读取jsonPath路径下的文件，并将其内容转成json格式填充进ret
-	//jsonPath:  /home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fibonacci.json
-	//pi:  &{{fibonacci v1.0.0 go /home/erfenjiao/ekuiper/plugins/wasm/fib/fibonacci.wasm wasmedge} [fib]}
 	if err != nil {
 		// json file `/home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fibonacci.json`
 		return nil, fmt.Errorf("cannot read json file `%s` when loading wasm plugins: %v", jsonPath, err)

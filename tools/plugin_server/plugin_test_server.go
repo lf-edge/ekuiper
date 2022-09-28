@@ -40,10 +40,10 @@ import (
 // EDIT HERE: Define the plugins that you want to test.
 var testingPlugin = &portable.PluginInfo{
 	PluginMeta: runtime.PluginMeta{
-		Name:       "mirror.py",
+		Name:       "mirror",
 		Version:    "v1",
 		Language:   "go",
-		Executable: "mirror",
+		Executable: "mirror.py",
 	},
 	Sources:   []string{"pyjson"},
 	Sinks:     []string{"print"},

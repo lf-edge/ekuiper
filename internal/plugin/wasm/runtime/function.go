@@ -167,11 +167,7 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 	funcname := f.symbolName
 	fmt.Println("[internal][plugin][wasm][runtime][function.go] funcname: ", funcname)
 	WasmFile := f.reg.WasmFile
-	fmt.Println("[internal][plugin][wasm][runtime][function.go] WasmFile: ", WasmFile)
 	//--------------------------------------
-	//conf := wasmedge.NewConfigure()
-	//store := wasmedge.NewStore()
-	//vm := wasmedge.NewVMWithConfigAndStore(conf, store)
 	conf1 := wasmedge.NewConfigure(wasmedge.WASI)
 	store := wasmedge.NewStore()
 	vm := wasmedge.NewVMWithConfigAndStore(conf1, store)
@@ -195,15 +191,12 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 		fmt.Errorf(err.Error())
 	}
 	// step 4: Execute WASM functions.Parameters(1)
-	fmt.Println("[-----] args: ", args) // [25]
 	var Args []float64
 	for _, num := range args {
-		//x := num.(int)
 		x, ok := (num).(float64)
 		if !ok {
-			fmt.Println("Failed!!")
+			fmt.Println("Type tranform Failed!!")
 		}
-		//fmt.Println("[sliceSum] num(int):", x)
 		Args = append(Args, x)
 	}
 
@@ -215,7 +208,7 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 		if err != nil {
 			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
 		} else {
-			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
+			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
 			fmt.Println(res[0].(int32))
 		}
 		exitcode := wasi.WasiGetExitCode()
@@ -223,46 +216,45 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
 		}
 		vm.Release()
-		//return res
 	case 1:
 		res, err = vm.Execute(funcname, uint32(Args[0]))
 		if err != nil {
 			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
 		} else {
-			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
+			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
 			fmt.Println(res[0].(int32))
 		}
 		exitcode := wasi.WasiGetExitCode()
 		if exitcode != 0 {
 			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
 		}
-		//fr.Result = res
 		vm.Release()
-		//return res
 	case 2:
 		res, err = vm.Execute(funcname, uint32(Args[0]), uint32(Args[1]))
 		if err != nil {
 			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
 		} else {
-			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get fibonacci[25]: ")
+			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
 			fmt.Println(res[0].(int32))
 		}
 		exitcode := wasi.WasiGetExitCode()
 		if exitcode != 0 {
 			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
 		}
-		//fr.Result = res
+		vm.Release()
+	case 3:
+		res, err = vm.Execute(funcname, uint32(Args[0]), uint32(Args[1]), uint32(Args[2]))
+		if err != nil {
+			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
+		} else {
+			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
+			fmt.Println(res[0].(int32))
+		}
+		exitcode := wasi.WasiGetExitCode()
+		if exitcode != 0 {
+			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
+		}
 		vm.Release()
 	}
 	return res
 }
-
-//func sliceSum(args []interface{}) []int {
-//	var Args []int
-//	for _, num := range args {
-//		x := num.(int)
-//		fmt.Println("[sliceSum] num(int):", x)
-//		Args = append(Args, x)
-//	}
-//	return Args
-//}
