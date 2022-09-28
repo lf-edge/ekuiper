@@ -29,7 +29,7 @@ type DynamicChannelBuffer struct {
 
 func NewDynamicChannelBuffer() *DynamicChannelBuffer {
 	buffer := &DynamicChannelBuffer{
-		In:     make(chan api.SourceTuple, 10),
+		In:     make(chan api.SourceTuple, 1024),
 		Out:    make(chan api.SourceTuple),
 		buffer: make([]api.SourceTuple, 0),
 		limit:  102400,
@@ -58,8 +58,10 @@ func (b *DynamicChannelBuffer) run() {
 		} else if l > 0 {
 			select {
 			case b.Out <- b.buffer[0]:
+				//fmt.Println("out loud")
 				b.buffer = b.buffer[1:]
 			case value := <-b.In:
+				//fmt.Printf("in loud with length %d\n", len(b.In))
 				b.buffer = append(b.buffer, value)
 			case <-b.done:
 				return
@@ -67,6 +69,7 @@ func (b *DynamicChannelBuffer) run() {
 		} else {
 			select {
 			case value := <-b.In:
+				//fmt.Printf("in quiet with length %d \n", len(b.In))
 				b.buffer = append(b.buffer, value)
 			case <-b.done:
 				return
