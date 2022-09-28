@@ -1461,6 +1461,9 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 	} else {
 		return nil, fmt.Errorf("found %q, expect stream options.", lit)
 	}
+	if opts.KIND == ast.StreamKindLookup && opts.TYPE == "memory" && opts.KEY == "" {
+		return nil, fmt.Errorf("Option \"key\" is required for memory lookup table.")
+	}
 	return opts, nil
 }
 

@@ -54,6 +54,7 @@ func GetSourceConf(sourceType string, options *ast.Options) map[string]interface
 		f = "json"
 	}
 	props["format"] = strings.ToLower(f)
+	props["key"] = strings.ToLower(options.KEY)
 	conf.Log.Debugf("get conf for %s with conf key %s: %v", sourceType, confkey, printable(props))
 	return props
 }

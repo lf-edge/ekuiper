@@ -17,6 +17,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"sync"
 )
@@ -39,21 +40,22 @@ func (tc *tableCount) Decrease() int {
 	defer tc.Unlock()
 	tc.count--
 	if tc.count < 0 {
-		fmt.Errorf("Table count is less than 0: %d", tc.count)
+		conf.Log.Errorf("Table count is less than 0: %d", tc.count)
 	}
 	return tc.count
 }
 
 type database struct {
 	sync.RWMutex
-	tables map[string]*tableCount // topic: table
+	tables map[string]*tableCount // topic_key: table
 }
 
 // getTable return the table of the topic.
-func (db *database) getTable(topic string) (*Table, bool) {
+func (db *database) getTable(topic string, key string) (*Table, bool) {
 	db.RLock()
 	defer db.RUnlock()
-	tc, ok := db.tables[topic]
+	tableId := fmt.Sprintf("%s_%s", topic, key)
+	tc, ok := db.tables[tableId]
 	if ok {
 		return tc.t, true
 	} else {
@@ -65,19 +67,20 @@ func (db *database) getTable(topic string) (*Table, bool) {
 // If the table already exists, return the existing table;
 // otherwise, create a new table and return it.
 // The second argument is to indicate if the table is newly created
-func (db *database) addTable(topic string, keys []string) (*Table, bool) {
+func (db *database) addTable(topic string, key string) (*Table, bool) {
 	db.Lock()
 	defer db.Unlock()
-	tc, ok := db.tables[topic]
+	tableId := fmt.Sprintf("%s_%s", topic, key)
+	tc, ok := db.tables[tableId]
 	if ok {
 		tc.Increase()
 	} else {
-		t := createTable(keys)
+		t := createTable(topic, key)
 		tc = &tableCount{
 			count: 1,
 			t:     t,
 		}
-		db.tables[topic] = tc
+		db.tables[tableId] = tc
 	}
 	return tc.t, !ok
 }
@@ -85,118 +88,81 @@ func (db *database) addTable(topic string, keys []string) (*Table, bool) {
 // dropTable drop the table of the topic/values
 // stops to accumulate job
 // deletes the cache data
-func (db *database) dropTable(topic string) error {
+func (db *database) dropTable(topic string, key string) error {
+	tableId := fmt.Sprintf("%s_%s", topic, key)
 	db.Lock()
 	defer db.Unlock()
-	if tc, ok := db.tables[topic]; ok {
+	if tc, ok := db.tables[tableId]; ok {
 		if tc.Decrease() == 0 {
 			if tc.t != nil && tc.t.cancel != nil {
 				tc.t.cancel()
 			}
-			delete(db.tables, topic)
+			delete(db.tables, tableId)
 		}
 		return nil
 	}
-	return fmt.Errorf("Table %s not found", topic)
+	return fmt.Errorf("Table %s not found", tableId)
 }
 
 // Table has one writer and multiple reader
 type Table struct {
 	sync.RWMutex
-	// datamap is the overall data
-	datamap  []api.SourceTuple
-	hasIndex bool
-	// indexes is the indexed data
-	indexes map[string]map[interface{}][]api.SourceTuple
+	topic string
+	key   string
+	// datamap is the overall data indexed by primary key
+	datamap map[interface{}]api.SourceTuple
 	cancel  context.CancelFunc
 }
 
-func createTable(keys []string) *Table {
-	t := &Table{}
-	if len(keys) > 0 {
-		t.indexes = make(map[string]map[interface{}][]api.SourceTuple, len(keys))
-		for _, k := range keys {
-			t.indexes[k] = make(map[interface{}][]api.SourceTuple)
-		}
-		t.hasIndex = true
-	}
+func createTable(topic string, key string) *Table {
+	t := &Table{topic: topic, key: key, datamap: make(map[interface{}]api.SourceTuple)}
 	return t
 }
 
 func (t *Table) add(value api.SourceTuple) {
 	t.Lock()
 	defer t.Unlock()
-	t.datamap = append(t.datamap, value)
-	for k, v := range t.indexes {
-		if val, ok := value.Message()[k]; ok {
-			if _, ok := v[val]; !ok {
-				v[val] = make([]api.SourceTuple, 0)
-			}
-			v[val] = append(v[val], value)
-		}
+	keyval, ok := value.Message()[t.key]
+	if !ok {
+		conf.Log.Errorf("add to table %s omitted, value not found for key %s", t.topic, t.key)
 	}
+	t.datamap[keyval] = value
 }
 
-func (t *Table) delete(key string, value api.SourceTuple) error {
-	v, ok := value.Message()[key]
-	if !ok {
-		return fmt.Errorf("value not found for key %s", key)
-	}
+func (t *Table) delete(key interface{}) {
 	t.Lock()
 	defer t.Unlock()
-	if d, ok := t.indexes[key]; ok {
-		if _, kok := d[v]; kok {
-			delete(d, v)
-		} else {
-			// has index but not hit, so just return
-			return nil
-		}
-	}
-	// After delete index, also delete in the data
-	arr := make([]api.SourceTuple, 0, len(t.datamap))
-	for _, st := range t.datamap {
-		if val, ok := st.Message()[key]; ok && val == v {
-			for k, d := range t.indexes {
-				if kval, ok := st.Message()[k]; ok {
-					newarr := make([]api.SourceTuple, 0, len(d[kval]))
-					for _, tuple := range d[kval] {
-						if tv, ok := tuple.Message()[key]; ok && tv == v {
-							continue
-						}
-						newarr = append(newarr, tuple)
-					}
-					d[kval] = newarr
-				}
-			}
-			continue
-		}
-		arr = append(arr, st)
-	}
-	t.datamap = arr
-	return nil
+	delete(t.datamap, key)
 }
 
 func (t *Table) Read(keys []string, values []interface{}) ([]api.SourceTuple, error) {
 	t.RLock()
 	defer t.RUnlock()
-	data := t.datamap
-	excludeKey := -1
-	if t.hasIndex {
-		// Find the first indexed key
+	// Find the primary key
+	var matched api.SourceTuple
+	for i, k := range keys {
+		if k == t.key {
+			matched = t.datamap[values[i]]
+		}
+	}
+	if matched != nil {
+		match := true
 		for i, k := range keys {
-			if d, ok := t.indexes[k]; ok {
-				data = d[values[i]]
-				excludeKey = i
+			if val, ok := matched.Message()[k]; !ok || val != values[i] {
+				match = false
+				break
 			}
+		}
+		if match {
+			return []api.SourceTuple{matched}, nil
+		} else {
+			return nil, nil
 		}
 	}
 	var result []api.SourceTuple
-	for _, v := range data {
+	for _, v := range t.datamap {
 		match := true
 		for i, k := range keys {
-			if i == excludeKey {
-				continue
-			}
 			if val, ok := v.Message()[k]; !ok || val != values[i] {
 				match = false
 				break

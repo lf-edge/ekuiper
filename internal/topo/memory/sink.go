@@ -111,21 +111,23 @@ func (s *sink) Close(ctx api.StreamContext) error {
 func (s *sink) publish(ctx api.StreamContext, topic string, el map[string]interface{}) error {
 	if s.rowkindField != "" {
 		c, ok := el[s.rowkindField]
+		var rowkind string
 		if !ok {
-			return fmt.Errorf("rowkind field %s not found in data %v", s.rowkindField, el)
+			rowkind = ast.RowkindUpsert
+		} else {
+			rowkind, ok = c.(string)
+			if !ok {
+				return fmt.Errorf("rowkind field %s is not a string in data %v", s.rowkindField, el)
+			}
+			if rowkind != ast.RowkindInsert && rowkind != ast.RowkindUpdate && rowkind != ast.RowkindDelete && rowkind != ast.RowkindUpsert {
+				return fmt.Errorf("invalid rowkind %s", rowkind)
+			}
 		}
-		rowkind, ok := c.(string)
-		if !ok {
-			return fmt.Errorf("rowkind field %s is not a string in data %v", s.rowkindField, el)
-		}
-		if rowkind != ast.RowkindInsert && rowkind != ast.RowkindUpdate && rowkind != ast.RowkindDelete && rowkind != ast.RowkindUpsert {
-			return fmt.Errorf("invalid rowkind %s", rowkind)
-		}
-		c, ok = el[s.keyField]
+		key, ok := el[s.keyField]
 		if !ok {
 			return fmt.Errorf("key field %s not found in data %v", s.keyField, el)
 		}
-		pubsub.ProduceUpdatable(ctx, topic, el, rowkind, s.keyField)
+		pubsub.ProduceUpdatable(ctx, topic, el, rowkind, key)
 	} else {
 		pubsub.Produce(ctx, topic, el)
 	}

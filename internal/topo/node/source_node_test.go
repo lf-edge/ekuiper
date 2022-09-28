@@ -31,6 +31,7 @@ func TestGetConf_Apply(t *testing.T) {
 		"incremental":        false,
 		"body":               "{}",
 		"bodyType":           "json",
+		"key":                "",
 		"format":             "json",
 		"insecureSkipVerify": true,
 		"headers": map[string]interface{}{
@@ -56,6 +57,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 		"incremental":        true,
 		"body":               "{}",
 		"bodyType":           "json",
+		"key":                "",
 		"format":             "json",
 		"insecureSkipVerify": true,
 		"headers": map[string]interface{}{

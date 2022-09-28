@@ -60,22 +60,22 @@ func TestUpdate(t *testing.T) {
 		&pubsub.UpdatableTuple{
 			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "1", "verb": "insert", "name": "test1"}, map[string]interface{}{"topic": "testupdate"}),
 			Rowkind:            "insert",
-			Key:                "id",
+			Keyval:             "1",
 		},
 		&pubsub.UpdatableTuple{
 			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "2", "verb": "insert", "name": "test2"}, map[string]interface{}{"topic": "testupdate"}),
 			Rowkind:            "insert",
-			Key:                "id",
+			Keyval:             "2",
 		},
 		&pubsub.UpdatableTuple{
 			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "1", "verb": "update", "name": "test1"}, map[string]interface{}{"topic": "testupdate"}),
 			Rowkind:            "update",
-			Key:                "id",
+			Keyval:             "1",
 		},
 		&pubsub.UpdatableTuple{
 			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "2", "verb": "delete", "name": "test2"}, map[string]interface{}{"topic": "testupdate"}),
 			Rowkind:            "delete",
-			Key:                "id",
+			Keyval:             "2",
 		},
 	}
 	if !reflect.DeepEqual(actual, expects) {

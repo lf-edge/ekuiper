@@ -25,8 +25,8 @@ import (
 
 // Reg registers a topic to save it to memory store
 // Create a new go routine to listen to the topic and save the data to memory
-func Reg(topic string, topicRegex *regexp.Regexp, keys []string) (*Table, error) {
-	t, isNew := db.addTable(topic, keys)
+func Reg(topic string, topicRegex *regexp.Regexp, key string) (*Table, error) {
+	t, isNew := db.addTable(topic, key)
 	if isNew {
 		go runTable(topic, topicRegex, t)
 	}
@@ -53,7 +53,7 @@ func runTable(topic string, topicRegex *regexp.Regexp, t *Table) {
 				case ast.RowkindInsert, ast.RowkindUpdate, ast.RowkindUpsert:
 					t.add(vv.DefaultSourceTuple)
 				case ast.RowkindDelete:
-					t.delete(vv.Key, vv.DefaultSourceTuple)
+					t.delete(vv.Keyval)
 				}
 			default:
 				t.add(v)
@@ -66,7 +66,7 @@ func runTable(topic string, topicRegex *regexp.Regexp, t *Table) {
 }
 
 // Unreg unregisters a topic to remove it from memory store
-func Unreg(topic string) error {
+func Unreg(topic string, key string) error {
 	// Must be an atomic operation
-	return db.dropTable(topic)
+	return db.dropTable(topic, key)
 }
