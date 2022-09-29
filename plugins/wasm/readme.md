@@ -1,4 +1,4 @@
-# Load Wasm` Plugin by File
+# Load Wasm Plugin by File
 
 There are 2 ways to install wasm plugins. One is to install by REST/CLI API. Another is to put all the plugin files with specified format into this path 'plugins/wasm'.
 
