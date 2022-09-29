@@ -20,8 +20,5 @@ func (p *PluginInfo) Validate(expectedName string) error {
 	if p.WasmEngine == "" {
 		return fmt.Errorf("invalid WasmEngine")
 	}
-	//if p.WasmFile == "" {
-	//	return fmt.Errorf("invalid WasmFile")
-	//}
 	return nil
 }

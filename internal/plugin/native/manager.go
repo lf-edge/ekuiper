@@ -79,7 +79,7 @@ func InitManager() (*Manager, error) {
 	}
 	registry := &Manager{symbols: make(map[string]string), db: db, pluginDir: pluginDir, etcDir: etcDir, runtime: make(map[string]plugin.Symbol)}
 	manager = registry
-	plugins := make([]map[string]string, 4)
+	plugins := make([]map[string]string, 3)
 	for i := range plugin2.PluginTypes {
 		names, err := findAll(plugin2.PluginType(i), pluginDir)
 		if err != nil {

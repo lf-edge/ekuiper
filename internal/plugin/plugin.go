@@ -24,7 +24,7 @@ const (
 	WASM
 )
 
-var PluginTypes = []string{"sources", "sinks", "functions", "wasm"}
+var PluginTypes = []string{"sources", "sinks", "functions"}
 
 type Plugin interface {
 	GetName() string
