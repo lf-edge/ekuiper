@@ -110,3 +110,165 @@ func TestSink(t *testing.T) {
 		}
 	}
 }
+
+func TestUpdateString(t *testing.T) {
+	s := &RedisSink{}
+	err := s.Configure(map[string]interface{}{
+		"addr":         addr,
+		"field":        "id",
+		"rowkindField": "action",
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	contextLogger := econf.Log.WithField("rule", "test")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	err = s.Open(ctx)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	var tests = []struct {
+		d interface{}
+		k string
+		v interface{}
+	}{
+		{
+			d: map[string]interface{}{ // add without action
+				"id": "testUpdate1", "name": "Susan",
+			},
+			k: "testUpdate1",
+			v: `{"id":"testUpdate1","name":"Susan"}`,
+		},
+		{
+			d: map[string]interface{}{ // update with action
+				"action": "update", "id": "testUpdate1", "name": "John",
+			},
+			k: "testUpdate1",
+			v: `{"action":"update","id":"testUpdate1","name":"John"}`,
+		},
+		{
+			d: map[string]interface{}{ // delete
+				"action": "delete", "id": "testUpdate1",
+			},
+			k: "testUpdate1",
+			v: ``,
+		},
+		{
+			d: []map[string]interface{}{ // multiple actions
+				{"action": "delete", "id": "testUpdate1"},
+				{"action": "insert", "id": "testUpdate1", "name": "Susan"},
+			},
+			k: "testUpdate1",
+			v: `{"action":"insert","id":"testUpdate1","name":"Susan"}`,
+		},
+	}
+	for i, tt := range tests {
+		err = s.Collect(ctx, tt.d)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		r, err := mr.Get(tt.k)
+		if tt.v == "" {
+			if err == nil || err.Error() != "ERR no such key" {
+				t.Errorf("case %d err %v", i, err)
+				return
+			}
+		} else {
+			if err != nil {
+				t.Errorf("case %d err %v", i, err)
+				return
+			}
+			if !reflect.DeepEqual(r, tt.v) {
+				t.Errorf("case %d expect %v, but got %v", i, tt.v, r)
+			}
+		}
+	}
+}
+
+func TestUpdateList(t *testing.T) {
+	s := &RedisSink{}
+	err := s.Configure(map[string]interface{}{
+		"addr":         addr,
+		"field":        "id",
+		"datatype":     "list",
+		"rowkindField": "action",
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	contextLogger := econf.Log.WithField("rule", "test")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	err = s.Open(ctx)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	var tests = []struct {
+		d interface{}
+		k string
+		v []string
+	}{
+		{
+			d: map[string]interface{}{ // add without action
+				"id": "testUpdateList", "name": "Susan",
+			},
+			k: "testUpdateList",
+			v: []string{`{"id":"testUpdateList","name":"Susan"}`},
+		},
+		{
+			d: map[string]interface{}{ // update with action
+				"action": "update", "id": "testUpdateList", "name": "John",
+			},
+			k: "testUpdateList",
+			v: []string{`{"action":"update","id":"testUpdateList","name":"John"}`, `{"id":"testUpdateList","name":"Susan"}`},
+		},
+		{
+			d: map[string]interface{}{ // delete
+				"action": "delete", "id": "testUpdateList",
+			},
+			k: "testUpdateList",
+			v: []string{`{"id":"testUpdateList","name":"Susan"}`},
+		},
+		{
+			d: []map[string]interface{}{ // multiple actions
+				{"action": "delete", "id": "testUpdateList"},
+				{"action": "insert", "id": "testUpdateList", "name": "Susan"},
+			},
+			k: "testUpdateList",
+			v: []string{`{"action":"insert","id":"testUpdateList","name":"Susan"}`},
+		},
+		{
+			d: map[string]interface{}{ // delete
+				"action": "delete", "id": "testUpdateList",
+			},
+			k: "testUpdateList",
+			v: nil,
+		},
+	}
+	for i, tt := range tests {
+		err = s.Collect(ctx, tt.d)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		r, err := mr.List(tt.k)
+		if tt.v == nil {
+			if err == nil || err.Error() != "ERR no such key" {
+				t.Errorf("case %d err %v", i, err)
+				return
+			}
+		} else {
+			if err != nil {
+				t.Errorf("case %d err %v", i, err)
+				return
+			}
+			if !reflect.DeepEqual(r, tt.v) {
+				t.Errorf("case %d expect %v, but got %v", i, tt.v, r)
+			}
+		}
+	}
+}
