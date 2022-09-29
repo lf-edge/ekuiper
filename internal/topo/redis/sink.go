@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -146,20 +146,52 @@ func (r *RedisSink) save(ctx api.StreamContext, data map[string]interface{}, val
 			return fmt.Errorf("key must be string or convertible to string, but got %v", keyval)
 		}
 	}
-	if r.c.DataType == "list" {
-		err = r.cli.LPush(key, val).Err()
-		if err != nil {
-			logger.Error(err)
-			return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
+	rowkind := ast.RowkindUpsert
+	if r.c.RowkindField != "" {
+		c, ok := data[r.c.RowkindField]
+		if ok {
+			rowkind, ok = c.(string)
+			if !ok {
+				return fmt.Errorf("rowkind field %s is not a string in data %v", r.c.RowkindField, data)
+			}
+			if rowkind != ast.RowkindInsert && rowkind != ast.RowkindUpdate && rowkind != ast.RowkindDelete && rowkind != ast.RowkindUpsert {
+				return fmt.Errorf("invalid rowkind %s", rowkind)
+			}
 		}
-		logger.Debugf("send redis list success, key:%s data: %v", key, val)
-	} else {
-		err = r.cli.Set(key, val, r.c.Expiration*time.Second).Err()
-		if err != nil {
-			logger.Error(err)
-			return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
+	}
+	switch rowkind {
+	case ast.RowkindInsert, ast.RowkindUpdate, ast.RowkindUpsert:
+		if r.c.DataType == "list" {
+			err = r.cli.LPush(key, val).Err()
+			if err != nil {
+				return fmt.Errorf("lpush %s:%s error, %v", key, val, err)
+			}
+			logger.Debugf("push redis list success, key:%s data: %v", key, val)
+		} else {
+			err = r.cli.Set(key, val, r.c.Expiration*time.Second).Err()
+			if err != nil {
+				return fmt.Errorf("set %s:%s error, %v", key, val, err)
+			}
+			logger.Debugf("set redis string success, key:%s data: %s", key, val)
 		}
-		logger.Debugf("send redis string success, key:%s data: %s", key, val)
+	case ast.RowkindDelete:
+		if r.c.DataType == "list" {
+			err = r.cli.LPop(key).Err()
+			if err != nil {
+				return fmt.Errorf("lpop %s error, %v", key, err)
+			}
+			logger.Debugf("pop redis list success, key:%s data: %v", key, val)
+		} else {
+			err = r.cli.Del(key).Err()
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			logger.Debugf("delete redis string success, key:%s data: %s", key, val)
+		}
+	default:
+		// never happen
+		logger.Errorf("unexpected rowkind %s", rowkind)
 	}
 	return nil
 }

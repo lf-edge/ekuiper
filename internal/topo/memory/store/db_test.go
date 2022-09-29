@@ -50,10 +50,19 @@ func TestTable(t *testing.T) {
 		api.NewDefaultSourceTuple(map[string]interface{}{"a": 2, "b": "0"}, nil),
 		api.NewDefaultSourceTuple(map[string]interface{}{"a": 5, "b": "0"}, nil),
 	}
-	if !reflect.DeepEqual(v, exp) {
+	if len(v) != 2 {
 		t.Errorf("read 1 again expect %v, but got %v", exp, v)
 		return
+	} else {
+		if v[0].Message()["a"] != 2 {
+			v[0], v[1] = v[1], v[0]
+		}
+		if !reflect.DeepEqual(v, exp) {
+			t.Errorf("read 1 again expect %v, but got %v", exp, v)
+			return
+		}
 	}
+
 	v, _ = tb.Read([]string{"a", "b"}, []interface{}{1, "1"})
 	exp = []api.SourceTuple{
 		api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil),
