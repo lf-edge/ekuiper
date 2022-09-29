@@ -13,7 +13,6 @@ require (
 	github.com/btnguyen2k/gocosmos v0.1.6
 	github.com/couchbase/go_n1ql v0.0.0-20220303011133-0ed4bf93e31d
 	github.com/denisenkom/go-mssqldb v0.12.2
-	github.com/go-redis/redis/v7 v7.3.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/godror/godror v0.34.0
 	github.com/googleapis/go-sql-spanner v0.0.0-20220321120010-12780e57be1c
