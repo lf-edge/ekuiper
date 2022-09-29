@@ -17,6 +17,7 @@
 package redis
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -28,87 +29,42 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
-type RedisSink struct {
+type config struct {
 	// host:port address.
-	addr     string
-	username string
+	Addr     string `json:"addr,omitempty"`
+	Username string `json:"username,omitempty"`
 	// Optional password. Must match the password specified in the
-	password string
+	Password string `json:"password,omitempty"`
 	// Database to be selected after connecting to the server.
-	db int
-
+	Db int `json:"db,omitempty"`
 	// key of field
-	field string
-
+	Field string `json:"field,omitempty"`
 	// key define
-	key string
+	Key          string        `json:"key,omitempty"`
+	DataType     string        `json:"dataType,omitempty"`
+	Expiration   time.Duration `json:"expiration,omitempty"`
+	RowkindField string        `json:"rowkindField"`
+	DataTemplate string        `json:"dataTemplate"`
+}
 
-	dataType string
-
-	expiration time.Duration
-
-	sendSingle bool
-
+type RedisSink struct {
+	c   *config
 	cli *redis.Client
 }
 
 func (r *RedisSink) Configure(props map[string]interface{}) error {
-	if i, ok := props["addr"]; ok {
-		if i, ok := i.(string); ok {
-			r.addr = i
-		}
-	} else {
-		return errors.New("redis addr is null")
+	c := &config{DataType: "string", Expiration: -1}
+	err := cast.MapToStruct(props, c)
+	if err != nil {
+		return err
 	}
-
-	if i, ok := props["password"]; ok {
-		if i, ok := i.(string); ok {
-			r.password = i
-		}
+	if c.Key == "" && c.Field == "" {
+		return errors.New("redis sink must have key or field")
 	}
-
-	r.db = 0
-	if i, ok := props["db"]; ok {
-		if t, err := cast.ToInt(i, cast.STRICT); err == nil {
-			r.db = t
-		}
+	if c.DataType != "string" && c.DataType != "list" {
+		return errors.New("redis sink only support string or list data type")
 	}
-
-	if i, ok := props["key"]; ok {
-		if i, ok := i.(string); ok {
-			r.key = i
-		}
-	} else {
-		return errors.New("not config data key for redis")
-	}
-
-	if i, ok := props["field"]; ok {
-		if i, ok := i.(string); ok {
-			r.field = i
-		}
-	}
-
-	r.sendSingle = true
-	if i, ok := props["sendSingle"]; ok {
-		if i, ok := i.(bool); ok {
-			r.sendSingle = i
-		}
-	}
-
-	r.dataType = "string"
-	if i, ok := props["dataType"]; ok {
-		if i, ok := i.(string); ok {
-			r.dataType = i
-		}
-	}
-
-	r.expiration = -1
-	if i, ok := props["expiration"]; ok {
-		if t, err := cast.ToInt(i, cast.STRICT); err == nil {
-			r.expiration = time.Duration(t)
-		}
-	}
-
+	r.c = c
 	return nil
 }
 
@@ -117,10 +73,10 @@ func (r *RedisSink) Open(ctx api.StreamContext) (err error) {
 	logger.Debug("Opening redis sink")
 
 	r.cli = redis.NewClient(&redis.Options{
-		Addr:     r.addr,
-		Username: r.username,
-		Password: r.password,
-		DB:       r.db, // use default DB
+		Addr:     r.c.Addr,
+		Username: r.c.Username,
+		Password: r.c.Password,
+		DB:       r.c.Db, // use default DB
 	})
 
 	return nil
@@ -128,84 +84,84 @@ func (r *RedisSink) Open(ctx api.StreamContext) (err error) {
 
 func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
-	v, _, err := ctx.TransformOutput(data)
-	if err != nil {
-		logger.Error(err)
-		return err
+	var val string
+	if r.c.DataTemplate != "" { // The result is a string
+		v, _, err := ctx.TransformOutput(data)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+		m := make(map[string]interface{})
+		err = json.Unmarshal(v, &m)
+		if err != nil {
+			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(v), err)
+		}
+		data = m
+		val = string(v)
 	}
-	if r.field != "" {
-		switch out := data.(type) {
-		case []map[string]interface{}:
-			for _, m := range out {
-				key := r.field
-				k, err := cast.ToString(m[key], cast.CONVERT_ALL)
-				if err != nil {
-					return fmt.Errorf("key must be string or convertible to string, but got %v", m[key])
-				}
-
-				if r.dataType == "list" {
-					err := r.cli.LPush(k, v).Err()
-					if err != nil {
-						logger.Error(err)
-						return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
-					}
-					logger.Debugf("send redis list success, key:%s data: %s", k, string(v))
-				} else {
-					err := r.cli.Set(k, v, r.expiration*time.Second).Err()
-					if err != nil {
-						logger.Error(err)
-						return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
-					}
-					logger.Debugf("send redis string success, key:%s data: %s", k, string(v))
-				}
-			}
-		case map[string]interface{}:
-			key := r.field
-			k, err := cast.ToString(out[key], cast.CONVERT_ALL)
+	switch d := data.(type) {
+	case []map[string]interface{}:
+		for _, el := range d {
+			err := r.save(ctx, el, val)
 			if err != nil {
-				return fmt.Errorf("key must be string or convertible to string, but got %v", out[key])
-			}
-
-			if r.dataType == "list" {
-				err := r.cli.LPush(k, v).Err()
-				if err != nil {
-					logger.Error(err)
-					return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
-				}
-				logger.Debugf("send redis list success, key:%s data: %s", k, string(v))
-			} else {
-				err := r.cli.Set(k, v, r.expiration*time.Second).Err()
-				if err != nil {
-					logger.Error(err)
-					return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
-				}
-				logger.Debugf("send redis string success, key:%s data: %s", k, string(v))
+				return err
 			}
 		}
-	} else if r.key != "" {
-		if r.dataType == "list" {
-			err := r.cli.LPush(r.key, v).Err()
-			if err != nil {
-				logger.Error(err)
-				return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
-			}
-			logger.Debugf("send redis list success, key:%s data: %s", r.key, string(v))
-		} else {
-			err := r.cli.Set(r.key, v, r.expiration*time.Second).Err()
-			if err != nil {
-				logger.Error(err)
-				return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
-			}
-			logger.Debugf("send redis string success, key:%s data: %s", r.key, string(v))
+	case map[string]interface{}:
+		err := r.save(ctx, d, val)
+		if err != nil {
+			return err
 		}
+	default:
+		return fmt.Errorf("unrecognized format of %s", data)
 	}
 	logger.Debug("insert success %v", data)
 	return nil
 }
 
 func (r *RedisSink) Close(ctx api.StreamContext) error {
+	ctx.GetLogger().Infof("Closing redis sink")
 	err := r.cli.Close()
 	return err
+}
+
+func (r *RedisSink) save(ctx api.StreamContext, data map[string]interface{}, val string) error {
+	logger := ctx.GetLogger()
+	if val == "" {
+		jsonBytes, err := json.Marshal(data)
+		if err != nil {
+			return err
+		}
+		val = string(jsonBytes)
+	}
+	key := r.c.Key
+	var err error
+	if r.c.Field != "" {
+		keyval, ok := data[r.c.Field]
+		if !ok {
+			return fmt.Errorf("field %s does not exist in data %v", r.c.Field, data)
+		}
+		key, err = cast.ToString(keyval, cast.CONVERT_ALL)
+		if err != nil {
+			return fmt.Errorf("key must be string or convertible to string, but got %v", keyval)
+		}
+	}
+	if r.c.DataType == "list" {
+		err = r.cli.LPush(key, val).Err()
+		if err != nil {
+			logger.Error(err)
+			return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
+		}
+		logger.Debugf("send redis list success, key:%s data: %v", key, val)
+	} else {
+		err = r.cli.Set(key, val, r.c.Expiration*time.Second).Err()
+		if err != nil {
+			logger.Error(err)
+			return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
+		}
+		logger.Debugf("send redis string success, key:%s data: %s", key, val)
+	}
+	return nil
 }
 
 func GetSink() api.Sink {
