@@ -4,6 +4,5 @@
     "functions": [
       "reduce"
     ],
-    "wasmFile": "/home/erfenjiao/ekuiper/plugins/wasm/reduce/reduce.wasm",
     "wasmEngine": "wasmedge"
 }

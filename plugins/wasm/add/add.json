@@ -4,6 +4,5 @@
     "functions": [
       "add"
     ],
-    "wasmFile": "/home/erfenjiao/ekuiper/plugins/wasm/add/add.wasm",
     "wasmEngine": "wasmedge"
   }
