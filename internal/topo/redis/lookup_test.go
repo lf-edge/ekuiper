@@ -25,7 +25,10 @@ import (
 	"testing"
 )
 
-var addr string
+var (
+	addr string
+	mr   *miniredis.Miniredis
+)
 
 func init() {
 	s, err := miniredis.Run()
@@ -41,6 +44,7 @@ func init() {
 	s.Lpush("group1", `{"id":2,"name":"Susan"}`)
 	s.Lpush("group2", `{"id":3,"name":"Nancy"}`)
 	s.Lpush("group3", `{"id":4,"name":"Tom"}`)
+	mr = s
 }
 
 // TestSingle test lookup value of a single map
