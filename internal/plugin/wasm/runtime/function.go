@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -26,32 +25,17 @@ func NewWasmFunc(symbolName string, reg *PluginMeta) (*WasmFunc, error) {
 }
 
 func (f *WasmFunc) Validate(args []interface{}) error {
-	jsonArg, err := encode("Validate", args)
-	fmt.Println("[plugin][wasm][runtime][function.go][Validate] (string)jsonArg: ", string(jsonArg))
-	if err != nil {
-		return err
+	if len(args) == 0 {
+		fmt.Println("[plugin][wasm][runtime][Validate] args is null")
 	}
+	var err error
 	return err
 }
 
 func (f *WasmFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-	ctx.GetLogger().Debugf("running wasm func with args %+v", args)
-	ctxRaw, err := encodeCtx(ctx)
-	if err != nil {
-		return err, false
-	}
-
 	res := f.ExecWasmFunc(args)
 
-	jsonArg, err := encode("Exec", append(res, ctxRaw))
-	if err != nil {
-		return err, false
-	}
 	fr := &FuncReply{}
-	err = json.Unmarshal(jsonArg, fr)
-	if err != nil {
-		return err, false
-	}
 	fr.Result = res
 	fr.State = true
 	if !fr.State {
@@ -71,34 +55,11 @@ func (f *WasmFunc) IsAggregate() bool {
 	return false
 }
 
-func (f *WasmFunc) Close() {
-	return
-}
-
-func encode(funcName string, arg interface{}) ([]byte, error) {
-	c := FuncData{
-		Func: funcName,
-		Arg:  arg,
-	}
-	return json.Marshal(c)
-}
-
-func encodeCtx(ctx api.FunctionContext) (string, error) {
-	m := FuncMeta{
-		Meta: Meta{
-			RuleId:     ctx.GetRuleId(),
-			OpId:       ctx.GetOpId(),
-			InstanceId: ctx.GetInstanceId(),
-		},
-		FuncId: ctx.GetFuncId(),
-	}
-	bs, err := json.Marshal(m)
-	return string(bs), err
-}
-
 func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 	funcname := f.symbolName
+
 	WasmFile := f.reg.WasmFile
+	fmt.Println("[wasm][ExecWasmFunc] WasmFile: ", WasmFile)
 	conf1 := wasmedge.NewConfigure(wasmedge.WASI)
 	store := wasmedge.NewStore()
 	vm := wasmedge.NewVMWithConfigAndStore(conf1, store)
@@ -106,7 +67,7 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 	//step 1: Load WASM file
 	err := vm.LoadWasmFile(WasmFile)
 	if err != nil {
-		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Load WASM from file FAILED: ")
+		fmt.Print("[wasm][ExecWasmFunc] Load WASM from file FAILED: ")
 		fmt.Errorf(err.Error())
 	}
 	//step 2: Validate the WASM module

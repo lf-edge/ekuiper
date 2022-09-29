@@ -39,7 +39,7 @@ func InitManager() (*Manager, error) {
 		fmt.Println("[internal][plugin][wasm] cannot find etc folder: ", err)
 		return nil, fmt.Errorf("cannot find etc folder: %s", err)
 	}
-	fmt.Println("[internal][plugin][wasm][InitManager] etcDir: ", etcDir) // etcDir : "/home/erfenjiao/ekuiper/etc"
+	//fmt.Println("[internal][plugin][wasm][InitManager] etcDir: ", etcDir)
 	registry := &registry{
 		RWMutex:   sync.RWMutex{},
 		plugins:   make(map[string]*PluginInfo),
@@ -47,7 +47,7 @@ func InitManager() (*Manager, error) {
 	}
 	// Read plugin info from file system
 	pluginDir = filepath.Join(pluginDir, "wasm")
-	fmt.Println("[internal][plugin][wasm][InitManager] pluginDir: ", pluginDir) // /home/erfenjiao/ekuiper/plugins/wasm
+	fmt.Println("[internal][plugin][wasm][InitManager] pluginDir: ", pluginDir)
 	m := &Manager{
 		pluginDir: pluginDir,
 		etcDir:    etcDir,
@@ -55,7 +55,7 @@ func InitManager() (*Manager, error) {
 	}
 	err = m.syncRegistry()
 	if err != nil {
-		fmt.Println("[internal][plugin][wasm][InitManager] syncRegistry err: ", err)
+		//fmt.Println("[internal][plugin][wasm][InitManager] syncRegistry err: ", err)
 		return nil, err
 	}
 	manager = m
@@ -79,13 +79,10 @@ func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
 }
 
 func (m *Manager) syncRegistry() error {
-	fmt.Println("[internal][plugin][wasm][syncRegistry] start :")
 	files, err := ioutil.ReadDir(m.pluginDir)
 	if err != nil {
 		return fmt.Errorf("read path '%s' error: %v", m.pluginDir, err)
 	}
-	//fmt.Println("[internal][plugin][wasm][syncRegistry] files: ", files)
-	// files:  [0xc000143520]
 	for _, file := range files {
 		if file.IsDir() { // is a Dir
 			err := m.parsePlugin(file.Name())
@@ -93,8 +90,7 @@ func (m *Manager) syncRegistry() error {
 				conf.Log.Warn(err)
 			}
 			filename := file.Name()
-			fmt.Println("[internal][plugin][wasm][syncRegistry] filename: ", filename) // fibonacci
-			err = m.parsePlugin(filename)                                              // dir : fibonacci
+			err = m.parsePlugin(filename)
 			if err != nil {
 				conf.Log.Warn(err)
 			}
@@ -106,7 +102,7 @@ func (m *Manager) syncRegistry() error {
 }
 
 func (m *Manager) parsePlugin(name string) error {
-	pi, err := m.parsePluginJson(name) // dir : fibonacci
+	pi, err := m.parsePluginJson(name)
 	if err != nil {
 		return err
 	}
@@ -115,18 +111,18 @@ func (m *Manager) parsePlugin(name string) error {
 
 func (m *Manager) parsePluginJson(name string) (*PluginInfo, error) {
 	jsonPath := filepath.Join(m.pluginDir, name, name+".json")
+	wasmPath := filepath.Join(m.pluginDir, name, name+".wasm")
 	pi := &PluginInfo{PluginMeta: runtime.PluginMeta{Name: name}}
+	pi.WasmFile = wasmPath
 	err := filex.ReadJsonUnmarshal(jsonPath, pi)
 	if err != nil {
-		// json file `/home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fibonacci.json`
 		return nil, fmt.Errorf("cannot read json file `%s` when loading wasm plugins: %v", jsonPath, err)
 	}
 	if err := pi.Validate(name); err != nil {
 		return nil, err
 	}
 	if result, ok := m.reg.Get(pi.Name); ok {
-		fmt.Println("result: ", result)
-		return nil, fmt.Errorf("Wasm plugin %s already exists", pi.Name)
+		return nil, fmt.Errorf("wasm plugin %s already exists. result : %s", pi.Name, result)
 	}
 	return pi, nil
 }

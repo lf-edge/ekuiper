@@ -1,7 +1,10 @@
 package wasm
 
 import (
+	"fmt"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin"
+	"path/filepath"
 	"sync"
 )
 
@@ -15,6 +18,12 @@ type registry struct {
 func (r *registry) Set(name string, pi *PluginInfo) {
 	r.Lock()
 	defer r.Unlock()
+	pluginDir, err := conf.GetPluginsLoc()
+	if err != nil {
+		fmt.Println("[internal][wasm] cannot find plugins folder:", err)
+	}
+	wasmPath := filepath.Join(pluginDir, "wasm", name, name+".wasm")
+	pi.WasmFile = wasmPath
 	r.plugins[name] = pi
 	for _, s := range pi.Functions {
 		r.functions[s] = name

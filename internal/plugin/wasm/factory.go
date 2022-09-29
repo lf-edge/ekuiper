@@ -11,11 +11,6 @@ import (
 var funcInsMap = &sync.Map{}
 
 func (m *Manager) Function(name string) (api.Function, error) {
-	//fmt.Println("[plugin][wasm][factory.go] start")
-	//ins, ok := funcInsMap.Load(name)
-	//if ok {
-	//	return ins.(api.Function), nil
-	//}
 	meta, ok := m.GetPluginMeta(plugin.FUNCTION, name)
 	if !ok {
 		return nil, nil

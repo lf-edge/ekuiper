@@ -1,11 +1,5 @@
 package runtime
 
-const (
-	TYPE_SOURCE = "source"
-	TYPE_SINK   = "sink"
-	TYPE_FUNC   = "func"
-)
-
 type Meta struct {
 	RuleId     string `json:"ruleId"`
 	OpId       string `json:"opId"`
@@ -15,7 +9,6 @@ type Meta struct {
 type FuncMeta struct {
 	Meta
 	FuncId int `json:"funcId"`
-	//FuncName string `json:"symbolName"`
 }
 
 type Control struct {
@@ -31,19 +24,6 @@ type Command struct {
 	Arg string `json:"arg"`
 }
 
-const (
-	CMD_START = "start"
-	CMD_STOP  = "stop"
-)
-
-const (
-	REPLY_OK = "ok"
-)
-
-type WasmConfig struct {
-	SendTimeout int64 `json:"sendTimeout"`
-}
-
 type FuncData struct {
 	Func string      `json:"func"`
 	Arg  interface{} `json:"arg"`
@@ -52,4 +32,12 @@ type FuncData struct {
 type FuncReply struct {
 	State  bool        `json:"state"`
 	Result interface{} `json:"result"`
+}
+
+type PluginMeta struct {
+	Name       string `json:"name"`
+	Version    string `json:"version"`
+	Language   string `json:"language"`
+	WasmFile   string `json:"wasmFile"`
+	WasmEngine string `json:"wasmEngine"`
 }

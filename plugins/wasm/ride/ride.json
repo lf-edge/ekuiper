@@ -1,0 +1,8 @@
+{
+    "version": "v1.0.0",
+    "language": "go",
+    "functions": [
+      "ride"
+    ],
+    "wasmEngine": "wasmedge"
+}
