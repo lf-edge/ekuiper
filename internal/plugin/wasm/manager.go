@@ -133,9 +133,6 @@ func (m *Manager) parsePluginJson(name string) (*PluginInfo, error) {
 
 func (m *Manager) Register(p plugin.Plugin) error {
 	name, uri, shellParas := p.GetName(), p.GetFile(), p.GetShellParas()
-	fmt.Println("[internal][plugin][wasm][Register] name: ", name)
-	fmt.Println("[internal][plugin][wasm][Register] uri: ", uri)
-	fmt.Println("[internal][plugin][wasm][Register] shellParas: ", shellParas)
 	name = strings.Trim(name, " ")
 	if name == " " {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
@@ -146,14 +143,12 @@ func (m *Manager) Register(p plugin.Plugin) error {
 	}
 
 	if _, ok := m.reg.Get(name); ok {
-		fmt.Println("[internal][plugin][wasm][Register]")
 		return fmt.Errorf("invalid name %s: duplicate", name)
 	}
 	zipPath := path.Join(m.pluginDir, name+".zip")
 	//clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
 	//download
-	//fmt.Println("[internal][plugin][wasm][Register] download")
 	err := httpx.DownloadFile(zipPath, uri)
 	if err != nil {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
@@ -177,8 +172,6 @@ func (m *Manager) doRegistry(name string, pi *PluginInfo, isInit bool) error {
 			}
 		}
 	}
-	fmt.Println("[doRegistry] pi: ", pi)
-	// pi:  &{{fibonacci v1.0.0 go /home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fib /home/erfenjiao/ekuiper/plugins/wasm/fib/fibonacci.wasm wasmedge} [fib]}
 	conf.Log.Infof("[doRegistry] Installed wasm plugin %s successfully", name)
 	return nil
 }
@@ -206,7 +199,6 @@ func (m *Manager) GetPluginInfo(pluginName string) (*PluginInfo, bool) {
 // registry install
 
 func (m *Manager) install(name, src string, shellParas []string) (resultErr error) {
-	fmt.Println("[wasm][manager.go][install] start: ")
 	var (
 		jsonName     = name + ".json"
 		pluginTarget = filepath.Join(m.pluginDir, name)
@@ -230,7 +222,6 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	defer r.Close()
 	var pi *PluginInfo
 	// Parse json file
-	//fmt.Println("[wasm][manager.go][install] r: ", r)
 	for _, file := range r.File {
 		if file.Name == jsonName {
 			jf, err := file.Open()
@@ -258,11 +249,6 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	if _, ok := m.reg.Get(pi.Name); ok {
 		return fmt.Errorf("wasm plugin %s already exists", pi.Name)
 	}
-
-	//requiredFiles = append(requiredFiles, pi.Executable)
-	//for _, src := range pi.Sources {
-	//	requiredFiles = append(requiredFiles, fmt.Sprintf("sources/%s.yaml", src))
-	//}
 
 	// file copying
 	d := filepath.Clean(pluginTarget)

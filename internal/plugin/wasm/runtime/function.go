@@ -26,9 +26,6 @@ func NewWasmFunc(symbolName string, reg *PluginMeta) (*WasmFunc, error) {
 }
 
 func (f *WasmFunc) Validate(args []interface{}) error {
-	//TODO implement me
-	//panic("implement me")
-	fmt.Println("[plugin][wasm][runtime][function.go][Validate] start: ")
 	jsonArg, err := encode("Validate", args)
 	fmt.Println("[plugin][wasm][runtime][function.go][Validate] (string)jsonArg: ", string(jsonArg))
 	if err != nil {
@@ -38,7 +35,6 @@ func (f *WasmFunc) Validate(args []interface{}) error {
 }
 
 func (f *WasmFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-	fmt.Println("[plugin][wasm][runtime][function.go][Exec] start: ")
 	ctx.GetLogger().Debugf("running wasm func with args %+v", args)
 	ctxRaw, err := encodeCtx(ctx)
 	if err != nil {
@@ -48,7 +44,6 @@ func (f *WasmFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{
 	res := f.ExecWasmFunc(args)
 
 	jsonArg, err := encode("Exec", append(res, ctxRaw))
-	//fmt.Println("[internal][plugin][wasm][runtime][function.go] jsonArg(string):", string(jsonArg))
 	if err != nil {
 		return err, false
 	}
@@ -70,8 +65,6 @@ func (f *WasmFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{
 }
 
 func (f *WasmFunc) IsAggregate() bool {
-	//TODO implement me
-	//panic("implement me")
 	if f.isAgg > 0 {
 		return f.isAgg > 1
 	}
@@ -105,7 +98,6 @@ func encodeCtx(ctx api.FunctionContext) (string, error) {
 
 func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 	funcname := f.symbolName
-	fmt.Println("[internal][plugin][wasm][runtime][function.go] funcname: ", funcname)
 	WasmFile := f.reg.WasmFile
 	conf1 := wasmedge.NewConfigure(wasmedge.WASI)
 	store := wasmedge.NewStore()
@@ -134,7 +126,7 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 	for _, num := range args {
 		x, ok := (num).(float64)
 		if !ok {
-			fmt.Println("Type tranform Failed!!")
+			fmt.Println("Type tranform not to float64!!")
 		}
 		Args = append(Args, x)
 	}
