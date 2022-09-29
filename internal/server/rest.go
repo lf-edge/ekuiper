@@ -278,7 +278,26 @@ func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamT
 	defer r.Body.Close()
 	switch r.Method {
 	case http.MethodGet:
-		content, err := streamProcessor.ShowStream(st)
+		var (
+			content []string
+			err     error
+			kind    string
+		)
+		if st == ast.TypeTable {
+			kind = r.URL.Query().Get("kind")
+			if kind == "scan" {
+				kind = ast.StreamKindScan
+			} else if kind == "lookup" {
+				kind = ast.StreamKindLookup
+			} else {
+				kind = ""
+			}
+		}
+		if kind != "" {
+			content, err = streamProcessor.ShowTable(kind)
+		} else {
+			content, err = streamProcessor.ShowStream(st)
+		}
 		if err != nil {
 			handleError(w, err, fmt.Sprintf("%s command error", strings.Title(ast.StreamTypeMap[st])), logger)
 			return

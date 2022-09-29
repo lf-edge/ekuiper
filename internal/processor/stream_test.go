@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -199,5 +199,39 @@ func TestTableProcessor(t *testing.T) {
 				t.Errorf("%d. %q\n\nstmt mismatch:\nexp=%s\ngot=%#v\n\n", i, tt.s, tt.r, results)
 			}
 		}
+	}
+}
+
+func TestTableList(t *testing.T) {
+	p := NewStreamProcessor()
+	p.ExecStmt(`CREATE TABLE tt1 () WITH (DATASOURCE="users", FORMAT="JSON", KIND="scan")`)
+	p.ExecStmt(`CREATE TABLE tt2 () WITH (DATASOURCE="users", TYPE="memory", FORMAT="JSON", KIND="lookup")`)
+	p.ExecStmt(`CREATE TABLE tt3 () WITH (DATASOURCE="users", TYPE="memory", FORMAT="JSON", KIND="lookup")`)
+	p.ExecStmt(`CREATE TABLE tt4 () WITH (DATASOURCE="users", FORMAT="JSON")`)
+	defer func() {
+		p.ExecStmt(`DROP TABLE tt1`)
+		p.ExecStmt(`DROP TABLE tt2`)
+		p.ExecStmt(`DROP TABLE tt3`)
+		p.ExecStmt(`DROP TABLE tt4`)
+	}()
+	la, err := p.ShowTable("lookup")
+	if err != nil {
+		t.Errorf("Show lookup table fails: %s", err)
+		return
+	}
+	le := []string{"tt2", "tt3"}
+	if !reflect.DeepEqual(le, la) {
+		t.Errorf("Show lookup table mismatch:\nexp=%s\ngot=%s", le, la)
+		return
+	}
+	ls, err := p.ShowTable("scan")
+	if err != nil {
+		t.Errorf("Show scan table fails: %s", err)
+		return
+	}
+	lse := []string{"tt1", "tt4"}
+	if !reflect.DeepEqual(lse, ls) {
+		t.Errorf("Show scan table mismatch:\nexp=%s\ngot=%s", lse, ls)
+		return
 	}
 }

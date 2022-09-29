@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,26 +33,36 @@ func TestBindings(t *testing.T) {
 		return
 	}
 	var tests = []struct {
-		name     string
-		isSource bool
-		isSink   bool
+		name           string
+		isSource       bool
+		isLookupSource bool
+		isSink         bool
 	}{
 		{
-			name:     "unknown",
-			isSource: false,
-			isSink:   false,
+			name:           "unknown",
+			isSource:       false,
+			isLookupSource: false,
+			isSink:         false,
 		}, {
-			name:     "mqtt",
-			isSource: true,
-			isSink:   true,
+			name:           "mqtt",
+			isSource:       true,
+			isLookupSource: false,
+			isSink:         true,
 		}, {
-			name:     "mock1",
-			isSource: true,
-			isSink:   true,
+			name:           "mock1",
+			isSource:       true,
+			isLookupSource: false,
+			isSink:         true,
 		}, {
-			name:     "rest",
-			isSource: false,
-			isSink:   true,
+			name:           "rest",
+			isSource:       false,
+			isLookupSource: false,
+			isSink:         true,
+		}, {
+			name:           "redis",
+			isSource:       false,
+			isLookupSource: true,
+			isSink:         true,
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -61,6 +71,10 @@ func TestBindings(t *testing.T) {
 		isSource := err == nil
 		if tt.isSource != isSource {
 			t.Errorf("%s is source: expect %v but got %v", tt.name, tt.isSource, isSource)
+		}
+		_, err = LookupSource(tt.name)
+		if tt.isLookupSource != (err == nil) {
+			t.Errorf("%s is lookup source: expect %v but got %v", tt.name, tt.isLookupSource, err == nil)
 		}
 		_, err = Sink(tt.name)
 		isSink := err == nil

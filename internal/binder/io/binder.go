@@ -15,6 +15,7 @@
 package io
 
 import (
+	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -92,5 +93,9 @@ func LookupSource(name string) (api.LookupSource, error) {
 			return r, e.GetError()
 		}
 	}
-	return nil, e.GetError()
+	err := e.GetError()
+	if err == nil {
+		err = fmt.Errorf("lookup source type %s not found", name)
+	}
+	return nil, err
 }

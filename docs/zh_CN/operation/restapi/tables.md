@@ -17,7 +17,7 @@ POST http://localhost:9081/tables
 
 ## 查看所有的表
 
-此API 用于显示 eKuiper 中定义的所有表
+此 API 用于显示 eKuiper 中定义的所有表
 ```shell
 GET http://localhost:9081/tables
 ```
@@ -25,6 +25,12 @@ GET http://localhost:9081/tables
 返回示例:
 ```json
 ["mytable"]
+```
+
+此 API 可接受一个参数 kind，用于指定所需查看的表的类型。类型值可为 `scan` 或者 `lookup`。其他类型值将返回所有表格。在如下例子中，我们将查看所有 lookup table。
+
+```shell
+GET http://localhost:9081/tables?kind=lookup
 ```
 
 ## 查看表的详细信息
