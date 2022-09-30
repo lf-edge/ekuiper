@@ -57,7 +57,7 @@ func (o *defaultNode) AddOutput(output chan<- interface{}, name string) error {
 	if _, ok := o.outputs[name]; !ok {
 		o.outputs[name] = output
 	} else {
-		return fmt.Errorf("fail to add output %s, node %s already has an output of the same name", name, o.name)
+		return fmt.Errorf("fail to test output %s, node %s already has an output of the same name", name, o.name)
 	}
 	return nil
 }

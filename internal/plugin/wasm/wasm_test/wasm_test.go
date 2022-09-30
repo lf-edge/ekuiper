@@ -22,9 +22,9 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"reflect"
 	"sync"
 	"testing"
-	"time"
 )
 
 // EDIT HERE: Define the plugins that you want to test.
@@ -37,9 +37,12 @@ var testingPlugin = &wasm.PluginInfo{
 	Functions: []string{"fib"},
 }
 
-var FuncData = [][]interface{}{
-	{25.0}, {12.0}, // float
+var FuncData = []interface{}{
+	25.0, // float
 }
+
+var i int32 = 121393
+var ResData = []int32{i}
 
 var (
 	m       *wasm.Manager
@@ -55,32 +58,21 @@ func TestExec(t *testing.T) {
 	}
 	c := context.WithValue(context.Background(), context.LoggerKey, conf.Log)
 	ctx = c.WithMeta("rule1", "op1", &state.MemoryStore{}).WithInstance(1)
-	ctrl := &runtime.Control{}
+	//ctrl := &Control{}
 	f, err := m.Function(testingPlugin.Functions[0])
 	if err != nil {
 		fmt.Println("[wasm_test_server.go] err:", err)
 		return
 	}
-	newctx, cancel := ctx.WithCancel()
+	newctx, _ := ctx.WithCancel()
 	fc := context.NewDefaultFuncContext(newctx, 1)
-	if _, ok := cancels.LoadOrStore(ctrl.PluginType+ctrl.SymbolName, cancel); ok {
-		fmt.Println("[wasm_test_server.go] source symbol  already exists")
-		return
+	r, ok := f.Exec(FuncData, fc)
+	if !ok {
+		fmt.Print("cannot exec func\n")
 	}
-	for {
-		for _, m := range FuncData {
-			r, ok := f.Exec(m, fc)
-			if !ok {
-				fmt.Print("cannot exec func\n")
-				continue
-			}
-			fmt.Println(r)
-			//select {
-			//case <-ctx.Done():
-			//	ctx.GetLogger().Info("stop sink")
-			//	return
-			//default:
-		}
-		time.Sleep(1 * time.Second)
+	if reflect.DeepEqual(ResData, r) { //! ==
+		t.Errorf("error mismatch:\n  exp=%d\n  got=%d\n\n", ResData, r)
+	} else {
+		fmt.Println("success")
 	}
 }

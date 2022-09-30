@@ -19,7 +19,7 @@
 2. 从你的个人分叉中**克隆**版本库。 `git clone https://github.com/<Github_user>/ekuiper.git` 。
 3. 添加 eKuiper repo 作为额外的 Git 远程仓库，这样你就可以在本地 repo 和eKuiper 之间进行同步。
    ```shell
-      git remote add upstream https://github.com/lf-edge/ekuiper.git
+      git remote test upstream https://github.com/lf-edge/ekuiper.git
    ```
 
 你可以使用你喜欢的IDE或编辑器来开发。你可以在 [Editors and IDEs for GO](https://github.com/golang/go/wiki/IDEsAndTextEditorPlugins) 中找到编辑器对Go工具的支持信息。

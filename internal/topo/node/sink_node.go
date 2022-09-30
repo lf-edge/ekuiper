@@ -369,12 +369,12 @@ func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 
 // AddOutput Override defaultNode
 func (m *SinkNode) AddOutput(_ chan<- interface{}, name string) error {
-	return fmt.Errorf("fail to add output %s, sink %s cannot add output", name, m.name)
+	return fmt.Errorf("fail to test output %s, sink %s cannot test output", name, m.name)
 }
 
 // Broadcast Override defaultNode
 func (m *SinkNode) Broadcast(_ interface{}) error {
-	return fmt.Errorf("sink %s cannot add broadcast", m.name)
+	return fmt.Errorf("sink %s cannot test broadcast", m.name)
 }
 
 // SaveCache Only called when checkpoint enabled

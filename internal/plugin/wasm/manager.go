@@ -73,7 +73,13 @@ func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
 		if err != nil {
 			return nil, err
 		}
-		registry.Set(name, pi)
+		wasmPath := filepath.Join(name + ".wasm")
+		fmt.Println("wasmPath:", wasmPath)
+		pi.WasmFile = wasmPath
+		registry.plugins[name] = pi
+		for _, s := range pi.Functions {
+			registry.functions[s] = name
+		}
 	}
 	return &Manager{reg: registry}, nil
 }
@@ -161,13 +167,13 @@ func (m *Manager) Register(p plugin.Plugin) error {
 func (m *Manager) doRegistry(name string, pi *PluginInfo, isInit bool) error {
 	m.reg.Set(name, pi)
 
-	if !isInit {
-		for _, s := range pi.Functions {
-			if err := meta.ReadFuncMetaFile(path.Join(m.etcDir, plugin.PluginTypes[plugin.FUNCTION], s+`.json`), true); nil != err {
-				conf.Log.Errorf("read function json file:%v", err)
-			}
-		}
-	}
+	//if !isInit {
+	//	for _, s := range pi.Functions {
+	//		if err := meta.ReadFuncMetaFile(path.Join(m.etcDir, plugin.PluginTypes[plugin.FUNCTION], s+`.json`), true); nil != err {
+	//			conf.Log.Errorf("read function json file:%v", err)
+	//		}
+	//	}
+	//}
 	conf.Log.Infof("[doRegistry] Installed wasm plugin %s successfully", name)
 	return nil
 }
@@ -236,6 +242,9 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 			}
 		}
 	}
+	//if pi.WasmFile == "" {
+	//	return fmt.Errorf("missing or invalid wasm file %s", pi.WasmFile)
+	//}
 	if pi == nil {
 		return fmt.Errorf("missing or invalid json file %s", jsonName)
 	}

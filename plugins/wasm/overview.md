@@ -32,9 +32,8 @@
 ```json
 {
     "version": "v1.0.0",
-    "language": "go",
     "functions": [
-      "add"
+      "test"
     ],
     "wasmEngine": "wasmedge"
   }

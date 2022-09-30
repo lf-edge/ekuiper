@@ -91,13 +91,13 @@ func TestSinkTemplate_Apply(t *testing.T) {
 			result: [][]byte{[]byte(`[{"__meta":{"messageid":45,"other":"mock"},"temp":33}]`)},
 		}, {
 			config: map[string]interface{}{
-				"dataTemplate": `[{{range $index, $ele := .}}{{if $index}},{{end}}{"result":{{add $ele.temperature $ele.humidity}}}{{end}}]`,
+				"dataTemplate": `[{{range $index, $ele := .}}{{if $index}},{{end}}{"result":{{test $ele.temperature $ele.humidity}}}{{end}}]`,
 			},
 			data:   []map[string]interface{}{{"temperature": 33, "humidity": 70}, {"temperature": 22.0, "humidity": 50}, {"temperature": 11, "humidity": 90}},
 			result: [][]byte{[]byte(`[{"result":103},{"result":72},{"result":101}]`)},
 		}, {
 			config: map[string]interface{}{
-				"dataTemplate": `{{$counter := 0}}{{range $index, $ele := .}}{{if ne 90 $ele.humidity}}{{$counter = add $counter 1}}{{end}}{{end}}{"result":{{$counter}}}`,
+				"dataTemplate": `{{$counter := 0}}{{range $index, $ele := .}}{{if ne 90 $ele.humidity}}{{$counter = test $counter 1}}{{end}}{{end}}{"result":{{$counter}}}`,
 			},
 			data:   []map[string]interface{}{{"temperature": 33, "humidity": 70}, {"temperature": 22.0, "humidity": 50}, {"temperature": 11, "humidity": 90}},
 			result: [][]byte{[]byte(`{"result":2}`)},

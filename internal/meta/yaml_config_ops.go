@@ -25,7 +25,7 @@ import (
 	"sync"
 )
 
-//ConfKeysOperator define interface to query/add/update/delete the configs in memory
+//ConfKeysOperator define interface to query/test/update/delete the configs in memory
 type ConfKeysOperator interface {
 	GetPluginName() string
 	GetConfContentByte() ([]byte, error)
@@ -37,7 +37,7 @@ type ConfKeysOperator interface {
 	AddConfKeyField(confKey string, reqField map[string]interface{}) error
 }
 
-//ConfigOperator define interface to query/add/update/delete the configs in disk
+//ConfigOperator define interface to query/test/update/delete the configs in disk
 type ConfigOperator interface {
 	ConfKeysOperator
 	IsSource() bool
@@ -46,7 +46,7 @@ type ConfigOperator interface {
 
 // ConfigKeys implement ConfKeysOperator interface, load the configs from etc/sources/xx.yaml and et/connections/connection.yaml
 // Hold the connection configs for each connection type in cf field
-// Provide method to query/add/update/delete the configs
+// Provide method to query/test/update/delete the configs
 type ConfigKeys struct {
 	lock       sync.RWMutex
 	pluginName string                            // source type, can be mqtt/edgex/httppull

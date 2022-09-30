@@ -53,7 +53,7 @@ func TestSourcePool(t *testing.T) {
 	tempStore, _ = state.CreateStore("mockRule2", api.AtMostOnce)
 	n2.ctx = ctx.WithMeta("mockRule2", "test2", tempStore)
 
-	// Test add source instance
+	// Test test source instance
 	getSourceInstance(n, 0)
 	getSourceInstance(n1, 0)
 	getSourceInstance(n, 1)

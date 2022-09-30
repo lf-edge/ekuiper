@@ -183,7 +183,7 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 		for _, d := range datas {
 			time.Sleep(time.Duration(wait) * time.Millisecond)
 			// Make sure time is going forward only
-			// gradually add up time to ensure checkpoint is triggered before the data send
+			// gradually test up time to ensure checkpoint is triggered before the data send
 			for n := conf.GetNowInMilli() + 100; d[i].Timestamp+100 > n; n += 100 {
 				if d[i].Timestamp < n {
 					n = d[i].Timestamp
@@ -202,7 +202,7 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 		}
 	}
 	mockClock.Add(time.Duration(postleap) * time.Millisecond)
-	conf.Log.Debugf("Clock add to %d", conf.GetNowInMilli())
+	conf.Log.Debugf("Clock test to %d", conf.GetNowInMilli())
 	// Check if stream done. Poll for metrics,
 	time.Sleep(10 * time.Millisecond)
 	var retry int

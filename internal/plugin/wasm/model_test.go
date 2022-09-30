@@ -16,9 +16,8 @@ func TestValidate(t *testing.T) {
 		{
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
-					Name:     "mirror",
-					Version:  "1.0.0",
-					Language: "go",
+					Name:    "mirror",
+					Version: "1.0.0",
 					//Executable: "mirror.exe",
 				},
 			},
@@ -26,9 +25,8 @@ func TestValidate(t *testing.T) {
 		}, {
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
-					Name:     "mirror",
-					Version:  "1.0.0",
-					Language: "go",
+					Name:    "mirror",
+					Version: "1.0.0",
 				},
 				Functions: []string{"aa"},
 			},
@@ -46,9 +44,8 @@ func TestValidate(t *testing.T) {
 		}, {
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
-					Name:     "mirror",
-					Version:  "1.0.0",
-					Language: "c",
+					Name:    "mirror",
+					Version: "1.0.0",
 					//Executable: "tt",
 				},
 				Functions: []string{"aa"},

@@ -19,7 +19,7 @@ We use GitHub pull request to review proposed code changes. So you'll need to ob
 2. **Clone** the repository locally from your personal fork. `git clone https://github.com/<Github_user>/ekuiper.git`.
 3. Add eKuiper repo as additional Git remote so that you can sync between local repo and eKuiper.
   ```shell
-  git remote add upstream https://github.com/lf-edge/ekuiper.git
+  git remote test upstream https://github.com/lf-edge/ekuiper.git
   ```
 
 You can use your favorite IDE or editor to develop. You can find information in editor support for Go tools in [Editors and IDEs for GO](https://github.com/golang/go/wiki/IDEsAndTextEditorPlugins).

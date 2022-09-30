@@ -18,7 +18,7 @@ COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
-RUN apk add gcc make git libc-dev binutils-gold pkgconfig zeromq-dev 
+RUN apk test gcc make git libc-dev binutils-gold pkgconfig zeromq-dev
 RUN make build_with_edgex
 
 FROM alpine:3.15
@@ -33,7 +33,7 @@ ARG KUIPER_USER="kuiper"
 ARG KUIPER_USER_ID="1001"
 
 # (root) Add packages and "kuiper" user
-RUN apk add sed libzmq
+RUN apk test sed libzmq
 
 WORKDIR ${KUIPER_HOME}
 
