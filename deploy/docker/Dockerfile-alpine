@@ -18,7 +18,7 @@ COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
-RUN apk add gcc make git libc-dev binutils-gold pkgconfig zeromq-dev 
+RUN apk add gcc make git libc-dev binutils-gold pkgconfig zeromq-dev
 RUN make build_with_edgex
 
 FROM alpine:3.15

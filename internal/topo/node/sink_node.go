@@ -369,7 +369,7 @@ func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 
 // AddOutput Override defaultNode
 func (m *SinkNode) AddOutput(_ chan<- interface{}, name string) error {
-	return fmt.Errorf("fail to add output %s, sink %s cannot test output", name, m.name)
+	return fmt.Errorf("fail to add output %s, sink %s cannot add output", name, m.name)
 }
 
 // Broadcast Override defaultNode
