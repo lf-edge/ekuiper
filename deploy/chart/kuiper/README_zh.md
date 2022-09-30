@@ -38,7 +38,7 @@ eKuiper 可以通过 Helm chart 部署在 k3s / k8s 集群上。下面以 k3s �
     + 添加Helm repo
 
       ```shell
-      $ helm repo test emqx https://repos.emqx.io/charts
+      $ helm repo add emqx https://repos.emqx.io/charts
       ```
 
     + 查询 Kuiper

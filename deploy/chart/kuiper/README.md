@@ -38,7 +38,7 @@ eKuiper can be deployed at k3s/k8s cluster through Helm chart. Below takes k3s a
     + Add Helm repo
 
       ```shell
-      $ helm repo test emqx https://repos.emqx.io/charts
+      $ helm repo add emqx https://repos.emqx.io/charts
       ```
 
     + Search Kuiper

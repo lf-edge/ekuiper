@@ -139,7 +139,7 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
 
 ```json
 "sendSingle": true,
-"dataTemplate": "{{$len := len .values}} {{$loopsize := test $len -1}} {\"device_id\": \"{{.device_id}}\", \"description\": [{{range $index, $ele := .values}} {{if le .temperature 25.0}}\"fine\"{{else if gt .temperature 25.0}}\"high\"{{end}} {{if eq $loopsize $index}}]{{else}},{{end}}{{end}}}"
+"dataTemplate": "{{$len := len .values}} {{$loopsize := add $len -1}} {\"device_id\": \"{{.device_id}}\", \"description\": [{{range $index, $ele := .values}} {{if le .temperature 25.0}}\"fine\"{{else if gt .temperature 25.0}}\"high\"{{end}} {{if eq $loopsize $index}}]{{else}},{{end}}{{end}}}"
 ```
 
 该数据模板比较复杂，解释如下，
