@@ -222,7 +222,7 @@ func (mc *edgexClientWrapper) AddRef() {
 	defer mc.refLock.Unlock()
 
 	mc.refCnt = mc.refCnt + 1
-	conf.Log.Infof("edgex client wrapper test refence for connection selector %s total refcount %d", mc.conSelector, mc.refCnt)
+	conf.Log.Infof("edgex client wrapper add refence for connection selector %s total refcount %d", mc.conSelector, mc.refCnt)
 }
 
 func (mc *edgexClientWrapper) DeRef(c api.StreamContext) {
