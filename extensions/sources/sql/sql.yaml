@@ -13,6 +13,9 @@ default:
     cacheTtl: 600
     cacheMissingKey: true
 
+sqlite_config:
+  url: sqlite:/tmp/test.db
+
 sqlserver_config:
   url: sqlserver://username:password@140.210.204.147/testdb
   internalSqlQueryCfg:
