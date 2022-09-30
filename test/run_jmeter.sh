@@ -158,3 +158,6 @@ echo -e "---------------------------------------------\n"
 
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/lookup_table_redis.jmx -Dfvt="$fvt_dir" -l jmeter_logs/lookup_table_redis.jtl -j jmeter_logs/lookup_table_redis.log
 echo -e "---------------------------------------------\n"
+
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/lookup_table_sql.jmx -Dfvt="$fvt_dir" -l jmeter_logs/lookup_table_sql.jtl -j jmeter_logs/lookup_table_sql.log
+echo -e "---------------------------------------------\n"

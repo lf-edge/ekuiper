@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2021 EMQ Technologies Co., Ltd.
+# Copyright 2021-2022 EMQ Technologies Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,9 @@ chmod +x test/plugins/pub/zmq_pub
 go build -o test/plugins/service/http_server test/plugins/service/server.go
 chmod +x test/plugins/service/http_server
 
+go build -o test/plugins/sql/create_table test/plugins/sql/create_table.go
+chmod +x test/plugins/sql/create_table
+
 cd test
 
 rm -rf zmq.* Zmq.so
@@ -36,7 +39,7 @@ else
 fi
 
 mv ../plugins/sources/Zmq.so .
-cp plugins/zmq.yaml .
+cp ../extensions/sources/zmq/zmq.yaml .
 zip zmq.zip Zmq.so zmq.yaml
 rm -rf zmq.yaml Zmq.so
 
@@ -70,7 +73,7 @@ rm -rf Tdengine.so
 # build sql plugins
 FILE=../plugins/sinks/Sql.so
 if [ -f "$FILE" ]; then
-    echo "$FILE exists, not requried to build plugin."
+    echo "$FILE exists, not required to build plugin."
 else
     echo "$FILE does not exist, will build the plugin."
     go build -trimpath -modfile ../extensions.mod --buildmode=plugin -o ../plugins/sinks/Sql.so ../extensions/sinks/sql/*.go
@@ -80,12 +83,26 @@ mv ../plugins/sinks/Sql.so .
 zip sql.zip Sql.so
 rm -rf Sql.so
 
+FILE=../plugins/sources/Sql.so
+if [ -f "$FILE" ]; then
+    echo "$FILE exists, not required to build plugin."
+else
+    echo "$FILE does not exist, will build the plugin."
+    go build -trimpath -modfile ../extensions.mod --buildmode=plugin -o ../plugins/sources/Sql.so ../extensions/sources/sql/*.go
+fi
+
+mv ../plugins/sources/Sql.so .
+cp ../extensions/sources/sql/sql.yaml .
+zip sqlSrc.zip Sql.so sql.yaml
+rm -rf Sql.so
+
 rm -rf plugins/service/web/plugins/
 mkdir -p plugins/service/web/plugins/
 mv zmq.zip plugins/service/web/plugins/
 mv image.zip plugins/service/web/plugins/
 mv tdengine.zip plugins/service/web/plugins/
 mv sql.zip plugins/service/web/plugins/
+mv sqlSrc.zip plugins/service/web/plugins/
 
 # prepare portable plugins
 cd ..
