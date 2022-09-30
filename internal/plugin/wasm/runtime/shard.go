@@ -37,7 +37,6 @@ type FuncReply struct {
 type PluginMeta struct {
 	Name       string `json:"name"`
 	Version    string `json:"version"`
-	Language   string `json:"language"`
 	WasmFile   string `json:"wasmFile"`
 	WasmEngine string `json:"wasmEngine"`
 }

@@ -70,9 +70,8 @@ func TestManager_Read(t *testing.T) {
 	expPlugins := []*PluginInfo{
 		{
 			PluginMeta: runtime.PluginMeta{
-				Name:    "fibonacci",
-				Version: "v1.0.0",
-				//Executable: filepath.Clean(path.Join(manager.pluginDir, "mirror2", "mirror2")),
+				Name:       "fibonacci",
+				Version:    "v1.0.0",
 				WasmFile:   "/home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fibonacci.wasm",
 				WasmEngine: "wasmedge",
 			},
@@ -82,14 +81,6 @@ func TestManager_Read(t *testing.T) {
 	fmt.Println("[TestManager_Read] List: ")
 	result := manager.List()
 	fmt.Println("[TestManager_Read] result: ", result)
-	//if len(result) != 3 {
-	//	t.Errorf("list result mismatch:\n  exp=%v\n  got=%v\n\n", expPlugins, result)
-	//}
-
-	//_, ok := manager.GetPluginInfo("fibonacci")
-	//if ok {
-	//	t.Error("find inexist plugin fib")
-	//}
 	pi, ok := manager.GetPluginInfo("fibonacci")
 	if !ok {
 		t.Error("can't find plugin fibonacci")
@@ -99,9 +90,6 @@ func TestManager_Read(t *testing.T) {
 	if !reflect.DeepEqual(expPlugins[0], pi) {
 		t.Errorf("Get plugin fibonacci mismatch:\n exp=%v\n got=%v", expPlugins[0], pi)
 	}
-	//if !reflect.DeepEqual(&(expPlugins[0].PluginMeta), m) {
-	//	t.Errorf("Get sink symbol mismatch:\n exp=%v\n got=%v", expPlugins[0].PluginMeta, m)
-	//}
 }
 
 func TestDelete(t *testing.T) {

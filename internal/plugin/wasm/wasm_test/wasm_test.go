@@ -32,8 +32,6 @@ var testingPlugin = &wasm.PluginInfo{
 	PluginMeta: runtime.PluginMeta{
 		Name:       "fibonacci",
 		Version:    "v1",
-		Language:   "go",
-		WasmFile:   "/home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fibonacci.wasm",
 		WasmEngine: "wasmedge",
 	},
 	Functions: []string{"fib"},
@@ -51,7 +49,6 @@ var (
 
 func TestExec(t *testing.T) {
 	var err error
-	fmt.Println("[wasm_test_server.go] start:")
 	m, err = wasm.MockManager(map[string]*wasm.PluginInfo{testingPlugin.Name: testingPlugin})
 	if err != nil {
 		panic(err)
@@ -78,13 +75,12 @@ func TestExec(t *testing.T) {
 				continue
 			}
 			fmt.Println(r)
-			select {
-			case <-ctx.Done():
-				ctx.GetLogger().Info("stop sink")
-				return
-			default:
-			}
-			time.Sleep(1 * time.Second)
+			//select {
+			//case <-ctx.Done():
+			//	ctx.GetLogger().Info("stop sink")
+			//	return
+			//default:
 		}
+		time.Sleep(1 * time.Second)
 	}
 }
