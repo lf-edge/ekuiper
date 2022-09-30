@@ -70,9 +70,8 @@ func TestManager_Read(t *testing.T) {
 	expPlugins := []*PluginInfo{
 		{
 			PluginMeta: runtime.PluginMeta{
-				Name:     "fibonacci",
-				Version:  "v1.0.0",
-				Language: "go",
+				Name:    "fibonacci",
+				Version: "v1.0.0",
 				//Executable: filepath.Clean(path.Join(manager.pluginDir, "mirror2", "mirror2")),
 				WasmFile:   "/home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fibonacci.wasm",
 				WasmEngine: "wasmedge",

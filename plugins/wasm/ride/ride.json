@@ -1,0 +1,7 @@
+{
+    "version": "v1.0.0",
+    "functions": [
+      "ride"
+    ],
+    "wasmEngine": "wasmedge"
+}
