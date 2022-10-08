@@ -106,6 +106,7 @@ func ReadSourceMetaFile(filePath string, installed bool) error {
 }
 
 func ReadSourceMetaDir(checker InstallChecker) error {
+	//load etc/sources meta data
 	confDir, err := conf.GetConfLoc()
 	if nil != err {
 		return err
@@ -132,6 +133,30 @@ func ReadSourceMetaDir(checker InstallChecker) error {
 			conf.Log.Infof("Loading metadata file for source : %s", fileName)
 		}
 	}
+
+	//load data/sources meta data
+	confDir, err = conf.GetDataLoc()
+	if nil != err {
+		return err
+	}
+
+	dir = path.Join(confDir, "sources")
+	dirEntries, err = os.ReadDir(dir)
+	if nil != err {
+		return err
+	}
+
+	for _, entry := range dirEntries {
+		fileName := entry.Name()
+		if strings.HasSuffix(fileName, ".json") {
+			filePath := path.Join(dir, fileName)
+			if err = ReadSourceMetaFile(filePath, checker(strings.TrimSuffix(fileName, ".json"))); nil != err {
+				return err
+			}
+			conf.Log.Infof("Loading metadata file for source : %s", fileName)
+		}
+	}
+
 	return nil
 }
 

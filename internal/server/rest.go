@@ -28,7 +28,6 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -96,27 +95,7 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 	}
 }
 
-func createPaths() {
-	dataDir, err := conf.GetDataLoc()
-	if err != nil {
-		panic(err)
-	}
-	dirs := []string{"sources", "sinks", "functions", "services", "services/schemas"}
-
-	for _, v := range dirs {
-		// Create dir if not exist
-		realDir := filepath.Join(dataDir, v)
-		if _, err := os.Stat(realDir); os.IsNotExist(err) {
-			if err := os.MkdirAll(realDir, os.ModePerm); err != nil {
-				panic(err)
-			}
-		}
-	}
-}
-
 func createRestServer(ip string, port int, needToken bool) *http.Server {
-	createPaths()
-
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
