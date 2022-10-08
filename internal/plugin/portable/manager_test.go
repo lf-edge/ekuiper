@@ -83,7 +83,7 @@ func TestManager_Install(t *testing.T) {
 		if !reflect.DeepEqual(tt.err, err) {
 			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
 		} else if tt.err == nil {
-			err := checkFileForMirror(manager.pluginDir, manager.etcDir, true)
+			err := checkFileForMirror(manager.pluginDir, manager.pluginConfDir, true)
 			if err != nil {
 				t.Errorf("%d: error : %s\n\n", i, err)
 			}
@@ -164,7 +164,7 @@ func TestDelete(t *testing.T) {
 	if err != nil {
 		t.Errorf("delete plugin error: %v", err)
 	}
-	err = checkFileForMirror(manager.pluginDir, manager.etcDir, false)
+	err = checkFileForMirror(manager.pluginDir, manager.pluginConfDir, false)
 	if err != nil {
 		t.Errorf("error : %s\n\n", err)
 	}

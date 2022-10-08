@@ -141,7 +141,7 @@ func TestManager_Register(t *testing.T) {
 		if !reflect.DeepEqual(tt.err, err) {
 			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
 		} else if tt.err == nil {
-			err := checkFile(manager.pluginDir, manager.etcDir, tt.t, tt.n, tt.v, tt.lowerSo)
+			err := checkFile(manager.pluginDir, manager.pluginConfDir, tt.t, tt.n, tt.v, tt.lowerSo)
 			if err != nil {
 				t.Errorf("%d: error : %s\n\n", i, err)
 			}
