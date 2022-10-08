@@ -69,7 +69,7 @@ var ( //Do not call these directly, use the get methods
 
 func ProtoParser() *protoparse.Parser {
 	once.Do(func() {
-		dir := "etc/services/schemas/"
+		dir := "data/services/schemas/"
 		if kconf.IsTesting {
 			dir = "service/test/schemas/"
 		}
