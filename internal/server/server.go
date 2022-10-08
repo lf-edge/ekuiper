@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"sort"
 	"syscall"
 	"time"
@@ -40,10 +41,29 @@ var (
 	streamProcessor *processor.StreamProcessor
 )
 
+func createPaths() {
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		panic(err)
+	}
+	dirs := []string{"sources", "sinks", "functions", "services", "services/schemas"}
+
+	for _, v := range dirs {
+		// Create dir if not exist
+		realDir := filepath.Join(dataDir, v)
+		if _, err := os.Stat(realDir); os.IsNotExist(err) {
+			if err := os.MkdirAll(realDir, os.ModePerm); err != nil {
+				panic(err)
+			}
+		}
+	}
+}
+
 func StartUp(Version, LoadFileType string) {
 	version = Version
 	conf.LoadFileType = LoadFileType
 	startTimeStamp = time.Now().Unix()
+	createPaths()
 	conf.InitConf()
 	factory.InitClientsFactory()
 

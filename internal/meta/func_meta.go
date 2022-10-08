@@ -104,6 +104,27 @@ func ReadFuncMetaDir(checker InstallChecker) error {
 			return err
 		}
 	}
+
+	confDir, err = conf.GetDataLoc()
+	if nil != err {
+		return err
+	}
+
+	dir = path.Join(confDir, "functions")
+	files, err = os.ReadDir(dir)
+	if nil != err {
+		return err
+	}
+	for _, file := range files {
+		fname := file.Name()
+		if !strings.HasSuffix(fname, ".json") {
+			continue
+		}
+
+		if err := ReadFuncMetaFile(path.Join(dir, fname), checker(strings.TrimSuffix(fname, ".json"))); nil != err {
+			return err
+		}
+	}
 	return nil
 }
 
