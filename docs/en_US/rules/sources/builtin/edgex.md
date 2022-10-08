@@ -1,5 +1,8 @@
 ## EdgeX Source
 
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
+
 eKuiper provides built-in support for EdgeX source stream, which can subscribe the message from [EdgeX message bus](https://github.com/edgexfoundry/go-mod-messaging) and feed into the eKuiper streaming process pipeline.  
 
 ### Stream definition for EdgeX

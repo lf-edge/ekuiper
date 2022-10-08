@@ -1,5 +1,8 @@
 # HTTP push source 
 
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
+
 eKuiper provides built-in HTTP source stream, which serves as an HTTP server and can receive the message from HTTP client. There will be a single global HTTP server for all HTTP push sources. Each source can have its own endpoint so that multiple endpoints are supported.
 
 ## Configurations

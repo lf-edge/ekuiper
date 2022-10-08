@@ -1,5 +1,9 @@
 # Sql 源
 
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white">lookup table source</span>
+
 源将定期查询数据库以获取数据流。
 
 ## 编译和部署插件
@@ -125,3 +129,28 @@ demo (
 ```
 
 将使用配置键 `template_config`
+
+## 查询表
+
+SQL 源支持成为一个查询表。我们可以使用创建表语句来创建一个 SQL 查询表。它将与实体关系数据库绑定并按需查询。
+
+```text
+CREATE TABLE alertTable() WITH (DATASOURCE="tableName", CONF_KEY="sqlite_config", TYPE="sql", KIND="lookup")
+```
+
+### 查询缓存
+
+查询外部数据库比在内存中计算要慢。如果吞吐量很高，可以使用查找缓存来提高性能。如果不启用查找缓存，那么所有的请求都被发送到外部数据库。当启用查找缓存时，每个查找表实例将持有一个缓存。当查询时，我们将首先查询缓存，然后再发送到外部数据库。
+
+缓存的配置在`sql.yaml`中。
+
+```yaml
+  lookup:
+    cache: true
+    cacheTtl: 600
+    cacheMissingKey: true
+```
+
+- cache: bool值，表示是否启用缓存。
+- cacheTtl: 缓存的生存时间，单位是秒。
+- cacheMissingKey：是否对空值进行缓存。

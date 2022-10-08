@@ -207,6 +207,10 @@
 								{
 									"title": "文件源",
 									"path": "rules/sources/builtin/file"
+								},
+								{
+									"title": "Redis 源",
+									"path": "rules/sources/builtin/redis"
 								}
 							]
 						},
@@ -270,6 +274,10 @@
 								{
 									"title": "Nop 动作",
 									"path": "rules/sinks/builtin/nop"
+								},
+								{
+									"title": "Redis 动作",
+									"path": "rules/sinks/builtin/redis"
 								}
 							]
 						},
@@ -299,10 +307,6 @@
 								{
 									"title": "TDengine 动作",
 									"path": "rules/sinks/plugin/tdengine"
-								},
-								{
-									"title": "Redis 动作",
-									"path": "rules/sinks/plugin/redis"
 								},
 								{
 									"title": "图像动作",
@@ -769,6 +773,10 @@
 								{
 									"title": "File source",
 									"path": "rules/sources/builtin/file"
+								},
+								{
+									"title": "Redis source",
+									"path": "rules/sources/builtin/redis"
 								}
 							]
 						},
@@ -832,6 +840,10 @@
 								{
 									"title": "Nop action",
 									"path": "rules/sinks/builtin/nop"
+								},
+								{
+									"title": "Redis sink",
+									"path": "rules/sinks/builtin/redis"
 								}
 							]
 						},
@@ -861,10 +873,6 @@
 								{
 									"title": "TDengine sink",
 									"path": "rules/sinks/plugin/tdengine"
-								},
-								{
-									"title": "Redis sink",
-									"path": "rules/sinks/plugin/redis"
 								},
 								{
 									"title": "Image sink",

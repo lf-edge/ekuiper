@@ -1,5 +1,9 @@
 # Sql Source
 
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white">lookup table source</span>
+
 The source will query the database periodically to get data stream.
 
 ## Compile & deploy plugin
@@ -127,3 +131,30 @@ demo (
 ```
 
 The configuration keys "template_config" will be used.
+
+## Lookup Table
+
+The SQL source supports to be a lookup table. We can use create table statement to create a SQL lookup table. It will bind to the physical SQL DB and query on demand.
+
+```text
+CREATE TABLE alertTable() WITH (DATASOURCE="tableName", CONF_KEY="sqlite_config", TYPE="sql", KIND="lookup")
+```
+
+### Lookup cache
+
+Query external DB is supposed to be slower than in memory calculation. If the throughput is high, the lookup cache can be used to improve the performance.
+
+If lookup cache is not enabled, so all the requests are sent to external database. When lookup cache is enabled, each lookup table instance will hold a cache. When querying, we will first look up the cache before sending to the external database.
+
+The cache configuration lies in the `sql.yaml`.
+
+```yaml
+  lookup:
+    cache: true
+    cacheTtl: 600
+    cacheMissingKey: true
+```
+
+- cache: bool value to indicate whether to enable cache.
+- cacheTtl: the time to live of the cache in seconds.
+- cacheMissingKey: whether to cache nil value for a key.

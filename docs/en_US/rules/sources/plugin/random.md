@@ -1,6 +1,9 @@
 # Random Source
 
-he source will generate random inputs with a specified pattern.
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
+
+The source will generate random inputs with a specified pattern.
 
 ## Compile & deploy plugin
 

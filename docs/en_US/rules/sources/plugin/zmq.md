@@ -1,5 +1,8 @@
 # Zmq Source
 
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
+
 The source will subscribe to a Zero Mq topic to import the messages into eKuiper
 
 ## Compile & deploy plugin

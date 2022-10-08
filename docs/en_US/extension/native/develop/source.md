@@ -4,6 +4,8 @@ Sources feed data into eKuiper from other systems. eKuiper has built-in source s
 
 ## Developing
 
+There are two kinds of sources. One is the normal source also named scan source, the other is the lookup source. A normal source can be used as a stream or scan table; A lookup source can be used as a lookup table. Users can develop one kind or both in a source plugin.
+
 ### Develop a source
 
 To develop a source for eKuiper is to implement [api.Source](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface and export it as a golang plugin.
@@ -39,6 +41,49 @@ function MySource() api.Source{
 ```
 
 The [Random Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/sources/random/random.go) is a good example.
+
+### Develop a lookup source
+
+To develop a lookup source for eKuiper is to implement [api.LookupSource](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface and export it.
+
+Before starting the development, you must [setup the environment for golang plugin](../overview.md#setup-the-plugin-developing-environment).
+
+To develop a lookup source, the _Configure_ method must be implemented. This method will be called once the source is initialized. In this method, you can retrieve the _DATASOURCE_ property of the stream (which is topic for mqtt and other messaging system) from the first parameter. Then in the second parameter, a map that contains the configuration in your _yaml_ file is passed. See [configuration](#deal-with-configuration) for more detail. Typically, there will be information such as host, port, user and password of the external system. You can use this map to initialize this source.
+
+```go
+//Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties read from the yaml 
+Configure(datasource string, props map[string]interface{}) error
+```
+
+The next task is to implement _open_ method. The method will be called once the source is created. It is responsible for initialization like establish the connection.
+
+```go
+// Open creates the connection to the external data source
+Open(ctx StreamContext) error
+```
+
+The main task for a Source is to implement _Lookup_ method. The method will be run for each join operation. The parameters are gotten at runtime about the fields, keys and values to be retrieved from the external system. Each lookup source have a different lookup mechanism. For example, the SQL lookup source will build a SQL query from these parameters to retrieve the lookup data.
+
+```go
+// Lookup receive lookup values to construct the query and return query results
+Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) ([]SourceTuple, error)
+```  
+
+The last method to implement is _Close_ which literally close the connection. It is called when the stream is about to terminate. You could also do any clean up work in this function.
+
+```go
+Close(ctx StreamContext) error
+```
+
+As the source itself is a plugin, it must be in the main package. The exported name must end with `Lookup` so that it can be refereed as the source named `MySource`. For source extension, states are usually needed, so it is recommended to export a constructor function.
+
+```go
+function MySourceLookup() api.LookupSource{
+    return &mySource{}
+}
+```
+
+The [SQL Lookup Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/sources/sql/sqlLookup.go) is a good example.
 
 ### Rewindable source
 If the [rule checkpoint](../../../rules/state_and_fault_tolerance.md#source-consideration) is enabled, the source requires to be rewindable. That means the source need to implement both `api.Source` and `api.Rewindable` interface. 

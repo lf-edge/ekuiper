@@ -53,6 +53,12 @@ func MySink() api.Sink {
 
 The [Memory Sink](https://github.com/lf-edge/ekuiper/blob/master/extensions/sinks/memory/memory.go) is a good example.
 
+#### Updatable Sink
+
+If your sink is updatable, you'll need to deal with the `rowkindField` property. Some sink may also need a `keyField` property to specify which field is the primary key to update.
+
+So in the _Configure_ method, parse the `rowkindField` to know which field in the data is the update action. Then in the _Collect_ method, retrieve the rowkind by the `rowkindField` and perform the proper action. The rowkind value could be `insert`, `update`, `upsert` and `delete`. For example, in SQL sink, each rowkind value will generate different SQL statement to execute.
+
 #### Parse dynamic properties
 
 For customized sink plugins, users may still want to support [dynamic properties](../../../rules/overview.md#dynamic-properties) like the built-in ones.

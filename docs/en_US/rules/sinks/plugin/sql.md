@@ -94,3 +94,25 @@ The following configuration will write telemetry field's values into database
 }
 ```
 
+### Update Sample
+
+By specifying the `rowkindField` and `keyField`, the sink can generate insert, update or delete statement against the primary key.
+
+```json
+{
+  "id": "ruleUpdateAlert",
+  "sql":"SELECT * FROM alertStream",
+  "actions":[
+    {
+      "sql": {
+        "url": "sqlite://test.db",
+        "keyField": "id",
+        "rowkindField": "action",
+        "table": "alertTable",
+        "sendSingle": true
+      }
+    }
+  ]
+}
+```
+

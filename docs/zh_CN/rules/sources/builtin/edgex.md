@@ -1,6 +1,7 @@
-
-
 # EdgeX 源
+
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
 
 eKuiper 提供了内置的 EdgeX 源支持，它可以被用来订阅来自于[EdgeX 消息总线](https://github.com/edgexfoundry/go-mod-messaging)的数据，并且将数据放入 eKuiper 数据处理流水线中。
 
@@ -55,7 +56,7 @@ EdgeX 中所有的 `INT8` , `INT16`, `INT32`,  `INT64` , `UINT8` , `UINT16` ,  `
 
 EdgeX 中所有的 `FLOAT32`, `FLOAT64`  数组类型会被转换为 `Float` 数组。 
 
-# 全局配置
+## 全局配置
 
 EdgeX 源配置文件为 `$ekuiper/etc/sources/edgex.yaml`，以下配置文件内容。
 

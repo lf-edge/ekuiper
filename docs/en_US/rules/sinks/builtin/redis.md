@@ -50,9 +50,25 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
   ]
 }
 ```
-### /tmp/redis.txt
+
+### Updatable sample
+
+By specifying the `rowkindField` property, the sink can update according the action specified in that field.
+
 ```json
 {
-   "file":"http://localhost:8080/redis.zip"
- }
+  "id": "ruleUpdateAlert",
+  "sql":"SELECT * FROM alertStream",
+  "actions":[
+    {
+      "redis": {
+        "addr": "127.0.0.1:6379",
+        "dataType": "string",
+        "field": "id",
+        "rowkindField": "action",
+        "sendSingle": true
+      }
+    }
+  ]
+}
 ```

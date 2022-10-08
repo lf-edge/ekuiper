@@ -1,5 +1,8 @@
 # HTTP pull source 
 
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
+
 eKuiper provides built-in support for pulling HTTP source stream, which can pull the message from HTTP server broker and feed into the eKuiper processing pipeline.  The configuration file of HTTP pull source is at `etc/sources/httppull.yaml`. Below is the file format.
 
 ```yaml

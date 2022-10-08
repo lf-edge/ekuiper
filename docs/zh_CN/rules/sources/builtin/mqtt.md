@@ -1,5 +1,8 @@
 # MQTT源
 
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
+
 eKuiper 为 MQTT 源流提供了内置支持，流可以订阅来自 MQTT 代理的消息并输入eKuiper 处理管道。 MQTT 源的配置文件位于 `$ekuiper/etc/mqtt_source.yaml`。 以下是文件格式。
 
 ```yaml
