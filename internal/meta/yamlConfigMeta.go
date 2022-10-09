@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import (
 
 type configManager struct {
 	lock         sync.RWMutex
-	cfgOperators map[string]ConfigOperator
+	cfgOperators map[string]conf.ConfigOperator
 }
 
 //ConfigManager Hold the ConfigOperator for yaml configs defined in etc/sources/xxx.yaml and etc/connections/connection.yaml
@@ -31,7 +31,7 @@ type configManager struct {
 // for configs in etc/connections/connection.yaml, the map key is connections.xxx format, xxx will be mqtt/edgex
 var ConfigManager = configManager{
 	lock:         sync.RWMutex{},
-	cfgOperators: make(map[string]ConfigOperator),
+	cfgOperators: make(map[string]conf.ConfigOperator),
 }
 
 const SourceCfgOperatorKeyTemplate = "sources.%s"
@@ -43,7 +43,7 @@ const ConnectionCfgOperatorKeyTemplate = "connections.%s"
 func loadConfigOperatorForSource(pluginName string) {
 	yamlKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, pluginName)
 
-	if cfg, _ := NewConfigOperatorFromSourceYaml(pluginName); cfg != nil {
+	if cfg, _ := conf.NewConfigOperatorFromSourceYaml(pluginName); cfg != nil {
 		ConfigManager.lock.Lock()
 		ConfigManager.cfgOperators[yamlKey] = cfg
 		ConfigManager.lock.Unlock()
@@ -57,7 +57,7 @@ func loadConfigOperatorForSource(pluginName string) {
 func loadConfigOperatorForConnection(pluginName string) {
 	yamlKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, pluginName)
 
-	if cfg, _ := NewConfigOperatorFromConnectionYaml(pluginName); cfg != nil {
+	if cfg, _ := conf.NewConfigOperatorFromConnectionYaml(pluginName); cfg != nil {
 		ConfigManager.lock.Lock()
 		ConfigManager.cfgOperators[yamlKey] = cfg
 		ConfigManager.lock.Unlock()
@@ -123,18 +123,12 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), plgName, err)
 	}
 
-	var cfgOps ConfigOperator
+	var cfgOps conf.ConfigOperator
 	var found bool
 
 	cfgOps, found = ConfigManager.cfgOperators[configOperatorKey]
 	if !found {
-		cfgOps = &SourceConfigKeysOps{
-			ConfigKeys: &ConfigKeys{
-				lock:       sync.RWMutex{},
-				pluginName: plgName,
-				cf:         map[string]map[string]interface{}{},
-			},
-		}
+		cfgOps = conf.NewConfigOperatorForSource(plgName)
 		ConfigManager.cfgOperators[configOperatorKey] = cfgOps
 	}
 
@@ -161,18 +155,12 @@ func AddConnectionConfKey(plgName, confKey, language string, content []byte) err
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), plgName, err)
 	}
 
-	var cfgOps ConfigOperator
+	var cfgOps conf.ConfigOperator
 	var found bool
 
 	cfgOps, found = ConfigManager.cfgOperators[configOperatorKey]
 	if !found {
-		cfgOps = &ConnectionConfigKeysOps{
-			ConfigKeys: &ConfigKeys{
-				lock:       sync.RWMutex{},
-				pluginName: plgName,
-				cf:         map[string]map[string]interface{}{},
-			},
-		}
+		cfgOps = conf.NewConfigOperatorForConnection(plgName)
 		ConfigManager.cfgOperators[configOperatorKey] = cfgOps
 	}
 

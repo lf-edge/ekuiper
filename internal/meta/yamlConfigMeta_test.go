@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,37 +15,47 @@
 package meta
 
 import (
-	"fmt"
-	"sync"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
-type MockSourcesConfigOps struct {
-	*ConfigKeys
-}
+func createPaths() {
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		panic(err)
+	}
+	dirs := []string{"sources", "sinks", "functions", "services", "services/schemas", "connections"}
 
-func (m MockSourcesConfigOps) IsSource() bool {
-	return true
-}
+	for _, v := range dirs {
+		// Create dir if not exist
+		realDir := filepath.Join(dataDir, v)
+		if _, err := os.Stat(realDir); os.IsNotExist(err) {
+			if err := os.MkdirAll(realDir, os.ModePerm); err != nil {
+				panic(err)
+			}
+		}
+	}
 
-func (m MockSourcesConfigOps) SaveCfgToFile() error {
-	return nil
+	files := []string{"connections/connection.yaml"}
+	for _, v := range files {
+		// Create dir if not exist
+		realFile := filepath.Join(dataDir, v)
+		if _, err := os.Stat(realFile); os.IsNotExist(err) {
+			if _, err := os.Create(realFile); err != nil {
+				panic(err)
+			}
+		}
+	}
+
 }
 
 func TestYamlConfigMeta_Ops(t *testing.T) {
+	createPaths()
+
 	plgName := "mocksource"
-
-	yamlKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
 	addData := `{"url":"127.0.0.1","method":"post","headers":{"Accept":"json"}}`
-
-	ConfigManager.cfgOperators[yamlKey] = MockSourcesConfigOps{
-		&ConfigKeys{
-			sync.RWMutex{},
-			plgName,
-			make(map[string]map[string]interface{}),
-		},
-	}
-
 	// init new ConfigOperator, success
 	err := AddSourceConfKey(plgName, "new", "en_US", []byte(addData))
 	if err != nil {

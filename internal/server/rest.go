@@ -17,6 +17,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"io"
 	"net/http"
 	"os"
@@ -96,6 +97,12 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 }
 
 func createRestServer(ip string, port int, needToken bool) *http.Server {
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		panic(err)
+	}
+	uploadDir = filepath.Join(dataDir, "uploads")
+
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)

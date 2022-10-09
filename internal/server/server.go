@@ -46,7 +46,7 @@ func createPaths() {
 	if err != nil {
 		panic(err)
 	}
-	dirs := []string{"sources", "sinks", "functions", "services", "services/schemas"}
+	dirs := []string{"uploads", "sources", "sinks", "functions", "services", "services/schemas", "connections"}
 
 	for _, v := range dirs {
 		// Create dir if not exist
@@ -57,6 +57,18 @@ func createPaths() {
 			}
 		}
 	}
+
+	files := []string{"connections/connection.yaml"}
+	for _, v := range files {
+		// Create dir if not exist
+		realFile := filepath.Join(dataDir, v)
+		if _, err := os.Stat(realFile); os.IsNotExist(err) {
+			if _, err := os.Create(realFile); err != nil {
+				panic(err)
+			}
+		}
+	}
+
 }
 
 func StartUp(Version, LoadFileType string) {

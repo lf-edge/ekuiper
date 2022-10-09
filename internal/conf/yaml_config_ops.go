@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package meta
+package conf
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"path"
@@ -30,7 +29,11 @@ type ConfKeysOperator interface {
 	GetPluginName() string
 	GetConfContentByte() ([]byte, error)
 	CopyConfContent() map[string]map[string]interface{}
+	CopyReadOnlyConfContent() map[string]map[string]interface{}
+	CopyUpdatableConfContent() map[string]map[string]interface{}
 	GetConfKeys() (keys []string)
+	GetReadOnlyConfKeys() (keys []string)
+	GetUpdatableConfKeys() (keys []string)
 	DeleteConfKey(confKey string)
 	DeleteConfKeyField(confKey string, reqField map[string]interface{}) error
 	AddConfKey(confKey string, reqField map[string]interface{}) error
@@ -45,12 +48,13 @@ type ConfigOperator interface {
 }
 
 // ConfigKeys implement ConfKeysOperator interface, load the configs from etc/sources/xx.yaml and et/connections/connection.yaml
-// Hold the connection configs for each connection type in cf field
+// Hold the connection configs for each connection type in etcCfg field
 // Provide method to query/add/update/delete the configs
 type ConfigKeys struct {
 	lock       sync.RWMutex
 	pluginName string                            // source type, can be mqtt/edgex/httppull
-	cf         map[string]map[string]interface{} // configs defined in yaml
+	etcCfg     map[string]map[string]interface{} // configs defined in etc/sources/yaml
+	dataCfg    map[string]map[string]interface{} // configs defined in etc/sources/
 }
 
 func (c *ConfigKeys) GetPluginName() string {
@@ -61,7 +65,15 @@ func (c *ConfigKeys) GetConfContentByte() ([]byte, error) {
 	cf := make(map[string]map[string]interface{})
 	c.lock.RLock()
 	defer c.lock.RUnlock()
-	for key, kvs := range c.cf {
+	for key, kvs := range c.etcCfg {
+		aux := make(map[string]interface{})
+		for k, v := range kvs {
+			aux[k] = v
+		}
+		cf[key] = aux
+	}
+
+	for key, kvs := range c.dataCfg {
 		aux := make(map[string]interface{})
 		for k, v := range kvs {
 			aux[k] = v
@@ -77,7 +89,47 @@ func (c *ConfigKeys) CopyConfContent() map[string]map[string]interface{} {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	for key, kvs := range c.cf {
+	for key, kvs := range c.etcCfg {
+		aux := make(map[string]interface{})
+		for k, v := range kvs {
+			aux[k] = v
+		}
+		cf[key] = aux
+	}
+
+	for key, kvs := range c.dataCfg {
+		aux := make(map[string]interface{})
+		for k, v := range kvs {
+			aux[k] = v
+		}
+		cf[key] = aux
+	}
+
+	return cf
+}
+
+func (c *ConfigKeys) CopyReadOnlyConfContent() map[string]map[string]interface{} {
+	cf := make(map[string]map[string]interface{})
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	for key, kvs := range c.etcCfg {
+		aux := make(map[string]interface{})
+		for k, v := range kvs {
+			aux[k] = v
+		}
+		cf[key] = aux
+	}
+
+	return cf
+}
+
+func (c *ConfigKeys) CopyUpdatableConfContent() map[string]map[string]interface{} {
+	cf := make(map[string]map[string]interface{})
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	for key, kvs := range c.dataCfg {
 		aux := make(map[string]interface{})
 		for k, v := range kvs {
 			aux[k] = v
@@ -89,10 +141,30 @@ func (c *ConfigKeys) CopyConfContent() map[string]map[string]interface{} {
 }
 
 func (c *ConfigKeys) GetConfKeys() (keys []string) {
+	ro := c.GetReadOnlyConfKeys()
+	keys = append(keys, ro...)
+
+	up := c.GetUpdatableConfKeys()
+	keys = append(keys, up...)
+
+	return keys
+}
+
+func (c *ConfigKeys) GetReadOnlyConfKeys() (keys []string) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	for k := range c.cf {
+	for k := range c.etcCfg {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func (c *ConfigKeys) GetUpdatableConfKeys() (keys []string) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	for k := range c.dataCfg {
 		keys = append(keys, k)
 	}
 	return keys
@@ -102,7 +174,7 @@ func (c *ConfigKeys) DeleteConfKey(confKey string) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	delete(c.cf, confKey)
+	delete(c.dataCfg, confKey)
 }
 
 func recursionDelMap(cf, fields map[string]interface{}) error {
@@ -117,7 +189,6 @@ func recursionDelMap(cf, fields map[string]interface{}) error {
 				delete(cf, k)
 				continue
 			}
-
 			var auxCf map[string]interface{}
 			if err := cast.MapToStruct(cf[k], &auxCf); nil != err {
 				return fmt.Errorf(`%s%s.%s`, "type_conversion_fail", k, delKey)
@@ -147,7 +218,7 @@ func (c *ConfigKeys) DeleteConfKeyField(confKey string, reqField map[string]inte
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	err := recursionDelMap(c.cf[confKey], reqField)
+	err := recursionDelMap(c.dataCfg[confKey], reqField)
 	if nil != err {
 		return err
 	}
@@ -159,7 +230,11 @@ func (c *ConfigKeys) AddConfKey(confKey string, reqField map[string]interface{})
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.cf[confKey] = reqField
+	if _, ok := c.etcCfg[confKey]; ok {
+		return fmt.Errorf("duplicate key %s, already exist in etc folder", confKey)
+	}
+
+	c.dataCfg[confKey] = reqField
 
 	return nil
 }
@@ -168,12 +243,12 @@ func (c *ConfigKeys) AddConfKeyField(confKey string, reqField map[string]interfa
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	if nil == c.cf[confKey] {
+	if nil == c.dataCfg[confKey] {
 		return fmt.Errorf(`%s`, "not_found_confkey")
 	}
 
 	for k, v := range reqField {
-		c.cf[confKey][k] = v
+		c.dataCfg[confKey][k] = v
 	}
 	return nil
 }
@@ -189,18 +264,14 @@ func (c *SourceConfigKeysOps) IsSource() bool {
 
 func (c *SourceConfigKeysOps) SaveCfgToFile() error {
 	pluginName := c.pluginName
-	confDir, err := conf.GetConfLoc()
+	confDir, err := GetDataLoc()
 	if nil != err {
 		return err
 	}
 
 	dir := path.Join(confDir, "sources")
-	if "mqtt" == pluginName {
-		pluginName = "mqtt_source"
-		dir = confDir
-	}
 	filePath := path.Join(dir, pluginName+".yaml")
-	cfg := c.CopyConfContent()
+	cfg := c.CopyUpdatableConfContent()
 	err = filex.WriteYamlMarshal(filePath, cfg)
 	if nil != err {
 		return err
@@ -219,12 +290,12 @@ func (p *ConnectionConfigKeysOps) IsSource() bool {
 
 func (p *ConnectionConfigKeysOps) SaveCfgToFile() error {
 	pluginName := p.pluginName
-	confDir, err := conf.GetConfLoc()
+	confDir, err := GetDataLoc()
 	if nil != err {
 		return err
 	}
 
-	cfg := p.CopyConfContent()
+	cfg := p.CopyUpdatableConfContent()
 
 	yamlPath := path.Join(confDir, "connections/connection.yaml")
 
@@ -239,21 +310,34 @@ func (p *ConnectionConfigKeysOps) SaveCfgToFile() error {
 	return filex.WriteYamlMarshal(yamlPath, yamlData)
 }
 
-// NewConfigOperatorFromSourceYaml construct function, Load the configs from etc/sources/xx.yaml
-func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) {
-	confDir, err := conf.GetConfLoc()
-	if nil != err {
-		return nil, err
-	}
-
+// NewConfigOperatorForSource construct function
+func NewConfigOperatorForSource(pluginName string) ConfigOperator {
 	c := &SourceConfigKeysOps{
 		&ConfigKeys{
 			lock:       sync.RWMutex{},
 			pluginName: pluginName,
-			cf:         map[string]map[string]interface{}{},
+			etcCfg:     map[string]map[string]interface{}{},
+			dataCfg:    map[string]map[string]interface{}{},
+		},
+	}
+	return c
+}
+
+// NewConfigOperatorFromSourceYaml construct function, Load the configs from etc/sources/xx.yaml
+func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) {
+	c := &SourceConfigKeysOps{
+		&ConfigKeys{
+			lock:       sync.RWMutex{},
+			pluginName: pluginName,
+			etcCfg:     map[string]map[string]interface{}{},
+			dataCfg:    map[string]map[string]interface{}{},
 		},
 	}
 
+	confDir, err := GetConfLoc()
+	if nil != err {
+		return nil, err
+	}
 	dir := path.Join(confDir, "sources")
 	fileName := pluginName
 	if "mqtt" == pluginName {
@@ -261,42 +345,60 @@ func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) 
 		dir = confDir
 	}
 	filePath := path.Join(dir, fileName+`.yaml`)
-	err = filex.ReadYamlUnmarshal(filePath, &c.cf)
+	_ = filex.ReadYamlUnmarshal(filePath, &c.etcCfg)
+
+	dataDir, err := GetDataLoc()
 	if nil != err {
 		return nil, err
 	}
+	dir = path.Join(dataDir, "sources")
+	fileName = pluginName
+
+	filePath = path.Join(dir, fileName+`.yaml`)
+	_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
 
 	return c, nil
 }
 
+// NewConfigOperatorForConnection construct function
+func NewConfigOperatorForConnection(pluginName string) ConfigOperator {
+	c := &ConnectionConfigKeysOps{
+		&ConfigKeys{
+			lock:       sync.RWMutex{},
+			pluginName: pluginName,
+			etcCfg:     map[string]map[string]interface{}{},
+			dataCfg:    map[string]map[string]interface{}{},
+		},
+	}
+	return c
+}
+
 // NewConfigOperatorFromConnectionYaml construct function, Load the configs from et/connections/connection.yaml
 func NewConfigOperatorFromConnectionYaml(pluginName string) (ConfigOperator, error) {
+	c := &ConnectionConfigKeysOps{
+		&ConfigKeys{
+			lock:       sync.RWMutex{},
+			pluginName: pluginName,
+			etcCfg:     map[string]map[string]interface{}{},
+			dataCfg:    map[string]map[string]interface{}{},
+		},
+	}
 
-	confDir, err := conf.GetConfLoc()
+	confDir, err := GetConfLoc()
 	if nil != err {
 		return nil, err
 	}
-
 	yamlPath := path.Join(confDir, "connections/connection.yaml")
 	yamlData := make(map[string]interface{})
 	err = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
 	if nil != err {
 		return nil, err
 	}
-
-	c := &ConnectionConfigKeysOps{
-		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			cf:         map[string]map[string]interface{}{},
-		},
-	}
-
 	if plgCnfs, ok := yamlData[pluginName]; ok {
 		if cf, ok1 := plgCnfs.(map[string]interface{}); ok1 {
 			for confKey, confVal := range cf {
 				if conf, ok := confVal.(map[string]interface{}); ok {
-					c.cf[confKey] = conf
+					c.etcCfg[confKey] = conf
 				} else {
 					return nil, fmt.Errorf("file content is not right: %s.%v", confKey, confVal)
 				}
@@ -308,5 +410,26 @@ func NewConfigOperatorFromConnectionYaml(pluginName string) (ConfigOperator, err
 		return nil, fmt.Errorf("not find the target connection type: %s", c.pluginName)
 	}
 
+	confDir, err = GetDataLoc()
+	if nil != err {
+		return nil, err
+	}
+	yamlPath = path.Join(confDir, "connections/connection.yaml")
+	yamlData = make(map[string]interface{})
+	_ = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
+
+	if plgCnfs, ok := yamlData[pluginName]; ok {
+		if cf, ok1 := plgCnfs.(map[string]interface{}); ok1 {
+			for confKey, confVal := range cf {
+				if conf, ok := confVal.(map[string]interface{}); ok {
+					c.dataCfg[confKey] = conf
+				} else {
+					return nil, fmt.Errorf("file content is not right: %s.%v", confKey, confVal)
+				}
+			}
+		} else {
+			return nil, fmt.Errorf("file content is not right: %v", plgCnfs)
+		}
+	}
 	return c, nil
 }
