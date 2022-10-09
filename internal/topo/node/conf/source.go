@@ -22,29 +22,24 @@ import (
 
 func GetSourceConf(sourceType string, options *ast.Options) map[string]interface{} {
 	confkey := options.CONF_KEY
-	confPath := "sources/" + sourceType + ".yaml"
-	if sourceType == "mqtt" {
-		confPath = "mqtt_source.yaml"
+
+	yamlOps, err := conf.NewConfigOperatorFromSourceYaml(sourceType)
+	if err != nil {
+		conf.Log.Warnf("fail to parse yaml for source %s. Return error %v", sourceType, err)
 	}
 	props := make(map[string]interface{})
-	cfg := make(map[string]interface{})
-	err := conf.LoadConfigByName(confPath, &cfg)
-	if err != nil {
+	cfg := yamlOps.CopyConfContent()
+	if len(cfg) == 0 {
 		conf.Log.Warnf("fail to parse yaml for source %s. Return an empty configuration", sourceType)
 	} else {
 		def, ok := cfg["default"]
 		if !ok {
 			conf.Log.Warnf("default conf %s is not found", confkey)
 		} else {
-			if def1, ok1 := def.(map[string]interface{}); ok1 {
-				props = def1
-			}
+			props = def
 			if c, ok := cfg[strings.ToLower(confkey)]; ok {
-				if c1, ok := c.(map[string]interface{}); ok {
-					c2 := c1
-					for k, v := range c2 {
-						props[k] = v
-					}
+				for k, v := range c {
+					props[k] = v
 				}
 			}
 		}
