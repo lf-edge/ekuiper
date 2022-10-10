@@ -71,7 +71,7 @@ func InitManager() (*Manager, error) {
 	}
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
-		return nil, fmt.Errorf("cannot find etc folder: %s", err)
+		return nil, fmt.Errorf("cannot find data folder: %s", err)
 	}
 	err, db := store.GetKV("pluginFuncs")
 	if err != nil {
