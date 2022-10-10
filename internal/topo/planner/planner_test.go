@@ -1101,6 +1101,86 @@ func Test_createLogicalPlan(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
+		}, { // 13 analytic function plan
+			sql: `SELECT lag(name), id1 FROM src1 WHERE lag(temp) > temp`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						FilterPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									AnalyticFuncsPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													name: "src1",
+													streamFields: []interface{}{
+														&ast.StreamField{
+															Name:      "id1",
+															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														},
+														&ast.StreamField{
+															Name:      "name",
+															FieldType: &ast.BasicType{Type: ast.STRINGS},
+														},
+														&ast.StreamField{
+															Name:      "temp",
+															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														},
+													},
+													streamStmt: streams["src1"],
+													metaFields: []string{},
+												}.Init(),
+											},
+										},
+										funcs: []*ast.Call{
+											{
+												Name: "lag", FuncId: 0, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}},
+											}, {
+												Name:        "lag",
+												FuncId:      1,
+												CachedField: "$$a_lag_1",
+												Args: []ast.Expr{&ast.FieldRef{
+													Name:       "temp",
+													StreamName: "src1",
+												}},
+											},
+										},
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{
+									Name:   "lag",
+									FuncId: 1,
+									Args: []ast.Expr{&ast.FieldRef{
+										Name:       "temp",
+										StreamName: "src1",
+									}},
+									CachedField: "$$a_lag_1",
+									Cached:      true,
+								},
+								OP: ast.GT,
+								RHS: &ast.FieldRef{
+									Name:       "temp",
+									StreamName: "src1",
+								},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Expr: &ast.Call{Name: "lag", FuncId: 0, FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}, CachedField: "$$a_lag_0", Cached: true},
+						Name: "lag",
+					}, {
+						Expr: &ast.FieldRef{Name: "id1", StreamName: "src1"},
+						Name: "id1",
+					},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

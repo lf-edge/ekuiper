@@ -573,7 +573,7 @@ func TestSingleSQL(t *testing.T) {
 		},
 		{
 			Name: `TestLagAlias`,
-			Sql:  "SELECT lag(size) as lastSize, size, lastSize/size as changeRate FROM demo",
+			Sql:  "SELECT lag(size) as lastSize, size, lastSize/size as changeRate FROM demo WHERE size > 2",
 			R: [][]map[string]interface{}{
 				{{
 					"size": float64(3),
@@ -584,30 +584,15 @@ func TestSingleSQL(t *testing.T) {
 					"changeRate": float64(0),
 				}},
 				{{
-					"lastSize":   float64(6),
-					"size":       float64(2),
-					"changeRate": float64(3),
-				}},
-				{{
 					"lastSize":   float64(2),
 					"size":       float64(4),
 					"changeRate": float64(0),
 				}},
-				{{
-					"lastSize":   float64(4),
-					"size":       float64(1),
-					"changeRate": float64(4),
-				}},
 			},
 			M: map[string]interface{}{
-				"op_2_project_0_exceptions_total":   int64(0),
-				"op_2_project_0_process_latency_us": int64(0),
-				"op_2_project_0_records_in_total":   int64(5),
-				"op_2_project_0_records_out_total":  int64(5),
-
 				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),

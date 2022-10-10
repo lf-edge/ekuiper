@@ -136,6 +136,11 @@ type Call struct {
 	FuncId   int
 	FuncType FuncType
 	Args     []Expr
+	// This is used for analytic functions.
+	// In planner, all analytic functions are planned to calculate in analytic_op which produce a new field.
+	// This cachedField cached the new field name and when evaluating, just return the field access evaluated value.
+	CachedField string
+	Cached      bool
 }
 
 func (c *Call) expr()    {}

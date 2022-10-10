@@ -270,6 +270,15 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		}
 		return &BracketEvalResult{Start: ii, End: ii}
 	case *ast.Call:
+		// The analytic function are calculated prior to all ops, so just get the cached field value
+		if expr.Cached {
+			val, ok := v.Valuer.Value(expr.CachedField, "")
+			if ok {
+				return val
+			} else {
+				return fmt.Errorf("call %s error: %v", expr.Name, val)
+			}
+		}
 		if _, ok := implicitValueFuncs[expr.Name]; ok {
 			if vv, ok := v.Valuer.(FuncValuer); ok {
 				val, ok := vv.FuncValue(expr.Name)

@@ -46,6 +46,19 @@ func init() {
 //	"count":   "",
 //}
 
+var analyticFuncs = map[string]struct{}{
+	"lag":         {},
+	"changed_col": {},
+	"had_changed": {},
+}
+
+const AnalyticPrefix = "$$a"
+
+func IsAnalyticFunc(name string) bool {
+	_, ok := analyticFuncs[name]
+	return ok
+}
+
 type funcExecutor struct{}
 
 func (f *funcExecutor) ValidateWithName(args []ast.Expr, name string) error {
