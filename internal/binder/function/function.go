@@ -38,6 +38,7 @@ func init() {
 	registerMathFunc()
 	registerStrFunc()
 	registerMiscFunc()
+	registerAnalyticFunc()
 	registerColsFunc()
 }
 

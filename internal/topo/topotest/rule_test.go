@@ -599,6 +599,45 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_out_total": int64(5),
 			},
 		},
+		{
+			Name: `TestLagPartition`,
+			Sql:  "SELECT color, lag(size) over (partition by color) as lastSize, size, lastSize/size as changeRate FROM demo",
+			R: [][]map[string]interface{}{
+				{{
+					"color": "red",
+					"size":  float64(3),
+				}},
+				{{
+					"color": "blue",
+					"size":  float64(6),
+				}},
+				{{
+					"color":      "blue",
+					"lastSize":   float64(6),
+					"size":       float64(2),
+					"changeRate": float64(3),
+				}},
+				{{
+					"color": "yellow",
+					"size":  float64(4),
+				}},
+				{{
+					"color":      "red",
+					"lastSize":   float64(3),
+					"size":       float64(1),
+					"changeRate": float64(3),
+				}},
+			},
+			M: map[string]interface{}{
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+			},
+		},
 	}
 	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
