@@ -18,6 +18,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
+	"sync"
 )
 
 // The original message map may be big. Make sure it is immutable so that never make a copy of it.
@@ -74,11 +75,34 @@ type CollectionRow interface {
 
 // AffiliateRow part of other row types do help calculation of newly added cols
 type AffiliateRow struct {
-	CalCols map[string]interface{} // mutable and must be cloned when broadcast
-	Alias
+	lock     sync.RWMutex
+	CalCols  map[string]interface{} // mutable and must be cloned when broadcast
+	AliasMap map[string]interface{}
+}
+
+func (d *AffiliateRow) AppendAlias(key string, value interface{}) bool {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	if d.AliasMap == nil {
+		d.AliasMap = make(map[string]interface{})
+	}
+	d.AliasMap[key] = value
+	return true
+}
+
+func (d *AffiliateRow) AliasValue(key string) (interface{}, bool) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	if d.AliasMap == nil {
+		return nil, false
+	}
+	v, ok := d.AliasMap[key]
+	return v, ok
 }
 
 func (d *AffiliateRow) Value(key, table string) (interface{}, bool) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 	if table == "" {
 		r, ok := d.AliasValue(key)
 		if ok {
@@ -93,6 +117,8 @@ func (d *AffiliateRow) Value(key, table string) (interface{}, bool) {
 }
 
 func (d *AffiliateRow) Set(col string, value interface{}) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	if d.CalCols == nil {
 		d.CalCols = make(map[string]interface{})
 	}
@@ -100,6 +126,8 @@ func (d *AffiliateRow) Set(col string, value interface{}) {
 }
 
 func (d *AffiliateRow) Clone() AffiliateRow {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 	nd := &AffiliateRow{}
 	if d.CalCols != nil && len(d.CalCols) > 0 {
 		nd.CalCols = make(map[string]interface{}, len(d.CalCols))
@@ -117,10 +145,14 @@ func (d *AffiliateRow) Clone() AffiliateRow {
 }
 
 func (d *AffiliateRow) IsEmpty() bool {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 	return len(d.CalCols) == 0 && len(d.AliasMap) == 0
 }
 
 func (d *AffiliateRow) MergeMap(cachedMap map[string]interface{}) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 	for k, v := range d.CalCols {
 		cachedMap[k] = v
 	}
@@ -129,12 +161,9 @@ func (d *AffiliateRow) MergeMap(cachedMap map[string]interface{}) {
 	}
 }
 
-func (d *AffiliateRow) Reset() {
-	d.CalCols = nil
-	d.AliasMap = nil
-}
-
 func (d *AffiliateRow) Pick(cols [][]string) [][]string {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	if len(cols) > 0 {
 		newAliasMap := make(map[string]interface{})
 		newCalCols := make(map[string]interface{})
@@ -282,24 +311,6 @@ func (m Metadata) Meta(key, table string) (interface{}, bool) {
 	}
 	msg := Message(m)
 	return msg.Meta(key, table)
-}
-
-// Alias implementation
-
-func (a *Alias) AppendAlias(key string, value interface{}) bool {
-	if a.AliasMap == nil {
-		a.AliasMap = make(map[string]interface{})
-	}
-	a.AliasMap[key] = value
-	return true
-}
-
-func (a *Alias) AliasValue(key string) (interface{}, bool) {
-	if a.AliasMap == nil {
-		return nil, false
-	}
-	v, ok := a.AliasMap[key]
-	return v, ok
 }
 
 // Tuple implementation

@@ -38,7 +38,7 @@ func TestCollectionRow(t *testing.T) {
 			wildcard: []string{""},
 			result:   []interface{}{1, "2", Message{"a": 1, "b": "2"}},
 		}, {
-			rowC:     &Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "c": 3}, Alias: Alias{AliasMap: map[string]interface{}{"b": "b1"}}}},
+			rowC:     &Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "c": 3}, AliasMap: map[string]interface{}{"b": "b1"}}},
 			value:    []string{"a", "b", "c"},
 			wildcard: []string{""},
 			result:   []interface{}{4, "b1", 3, Message{"a": 4, "b": "b1", "c": 3}},
@@ -54,7 +54,7 @@ func TestCollectionRow(t *testing.T) {
 			rowC: &JoinTuple{Tuples: []TupleRow{
 				&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}},
 				&Tuple{Emitter: "src2", Message: Message{"a": 2, "c": "w2"}},
-			}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, Alias: Alias{AliasMap: map[string]interface{}{"d": 4}}}},
+			}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, AliasMap: map[string]interface{}{"d": 4}}},
 			value:    []string{"a", "src2.a", "b", "c", "d"},
 			wildcard: []string{"", "src1"},
 			result:   []interface{}{4, 2, "v1", "w2", 4, Message{"a": 4, "b": "v1", "c": "w2", "d": 4}, Message{"a": 1, "b": "v1"}},
@@ -64,12 +64,12 @@ func TestCollectionRow(t *testing.T) {
 			wildcard: []string{""},
 			result:   []interface{}{1, "v1", Message{"a": 1, "b": "v1"}},
 		}, {
-			rowC:     &GroupedTuples{Content: []TupleRow{&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}}, &Tuple{Emitter: "src1", Message: Message{"a": 2, "b": "v2"}}}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, Alias: Alias{AliasMap: map[string]interface{}{"d": 4}}}},
+			rowC:     &GroupedTuples{Content: []TupleRow{&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}}, &Tuple{Emitter: "src1", Message: Message{"a": 2, "b": "v2"}}}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, AliasMap: map[string]interface{}{"d": 4}}},
 			value:    []string{"a", "b", "d"},
 			wildcard: []string{""},
 			result:   []interface{}{4, "v1", 4, Message{"a": 4, "b": "v1", "d": 4}},
 		}, {
-			rowC:     &WindowTuples{Content: []TupleRow{&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}}, &Tuple{Emitter: "src1", Message: Message{"a": 2, "b": "v2"}}}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, Alias: Alias{AliasMap: map[string]interface{}{"d": 4}}}},
+			rowC:     &WindowTuples{Content: []TupleRow{&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}}, &Tuple{Emitter: "src1", Message: Message{"a": 2, "b": "v2"}}}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, AliasMap: map[string]interface{}{"d": 4}}},
 			value:    []string{"a", "b", "d"},
 			wildcard: []string{""},
 			result:   []interface{}{4, "v1", 4, Message{"a": 4, "b": "v1", "d": 4}},
@@ -77,7 +77,7 @@ func TestCollectionRow(t *testing.T) {
 			rowC: &JoinTuples{Content: []*JoinTuple{{Tuples: []TupleRow{
 				&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}},
 				&Tuple{Emitter: "src2", Message: Message{"a": 2, "c": "w2"}},
-			}}}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, Alias: Alias{AliasMap: map[string]interface{}{"d": 4}}}},
+			}}}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, AliasMap: map[string]interface{}{"d": 4}}},
 			value:    []string{"a", "b", "d"},
 			wildcard: []string{""},
 			result:   []interface{}{4, "v1", 4, Message{"a": 4, "b": "v1", "c": "w2", "d": 4}},
