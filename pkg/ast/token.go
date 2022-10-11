@@ -101,6 +101,8 @@ const (
 	THEN
 	ELSE
 	END
+	OVER
+	PARTITION
 
 	TRUE
 	FALSE
@@ -188,25 +190,27 @@ var Tokens = []string{
 	COLON:     ":",
 	COLSEP:    "\007",
 
-	SELECT: "SELECT",
-	FROM:   "FROM",
-	JOIN:   "JOIN",
-	LEFT:   "LEFT",
-	INNER:  "INNER",
-	ON:     "ON",
-	WHERE:  "WHERE",
-	GROUP:  "GROUP",
-	ORDER:  "ORDER",
-	HAVING: "HAVING",
-	BY:     "BY",
-	ASC:    "ASC",
-	DESC:   "DESC",
-	FILTER: "FILTER",
-	CASE:   "CASE",
-	WHEN:   "WHEN",
-	THEN:   "THEN",
-	ELSE:   "ELSE",
-	END:    "END",
+	SELECT:    "SELECT",
+	FROM:      "FROM",
+	JOIN:      "JOIN",
+	LEFT:      "LEFT",
+	INNER:     "INNER",
+	ON:        "ON",
+	WHERE:     "WHERE",
+	GROUP:     "GROUP",
+	ORDER:     "ORDER",
+	HAVING:    "HAVING",
+	BY:        "BY",
+	ASC:       "ASC",
+	DESC:      "DESC",
+	FILTER:    "FILTER",
+	CASE:      "CASE",
+	WHEN:      "WHEN",
+	THEN:      "THEN",
+	ELSE:      "ELSE",
+	END:       "END",
+	OVER:      "OVER",
+	PARTITION: "PARTITION",
 
 	CREATE:   "CREATE",
 	DROP:     "RROP",

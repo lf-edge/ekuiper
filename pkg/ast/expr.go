@@ -141,11 +141,16 @@ type Call struct {
 	// This cachedField cached the new field name and when evaluating, just return the field access evaluated value.
 	CachedField string
 	Cached      bool
+	Partition   *PartitionExpr
 }
 
 func (c *Call) expr()    {}
 func (c *Call) literal() {}
 func (c *Call) node()    {}
+
+type PartitionExpr struct {
+	Exprs []Expr
+}
 
 type BinaryExpr struct {
 	OP  Token
