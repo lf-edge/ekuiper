@@ -25,14 +25,14 @@ import (
 
 // Analyze the select statement by decorating the info from stream statement.
 // Typically, set the correct stream name for fieldRefs
-func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt, error) {
+func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt, []*ast.Call, error) {
 	streamsFromStmt := xsql.GetStreams(s)
 	streamStmts := make([]*ast.StreamStmt, len(streamsFromStmt))
 	isSchemaless := false
 	for i, s := range streamsFromStmt {
 		streamStmt, err := xsql.GetDataSource(store, s)
 		if err != nil {
-			return nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
+			return nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
 		}
 		streamStmts[i] = streamStmt
 		// TODO fine grain control of schemaless
@@ -55,8 +55,9 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt,
 		}
 	}
 	var (
-		walkErr     error
-		aliasFields []*ast.Field
+		walkErr       error
+		aliasFields   []*ast.Field
+		analyticFuncs []*ast.Call
 	)
 	// Scan columns fields: bind all field refs, collect alias
 	for i, f := range s.Fields {
@@ -68,7 +69,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt,
 			return true
 		})
 		if walkErr != nil {
-			return nil, walkErr
+			return nil, nil, walkErr
 		}
 		if f.AName != "" {
 			aliasFields = append(aliasFields, &s.Fields[i])
@@ -88,7 +89,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt,
 			walkErr = fieldsMap.save(f.AName, ast.AliasStream, ar)
 		}
 	}
-	// bind field ref for alias AND set StreamName for all field ref
+	// Bind field ref for alias AND set StreamName for all field ref
 	ast.WalkFunc(s, func(n ast.Node) bool {
 		switch f := n.(type) {
 		case ast.Fields: // do not bind selection fields, should have done above
@@ -113,10 +114,31 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt,
 		return true
 	})
 	if walkErr != nil {
-		return nil, walkErr
+		return nil, nil, walkErr
 	}
 	walkErr = validate(s)
-	return streamStmts, walkErr
+	// Collect all analytic function calls so that we can let them run firstly
+	ast.WalkFunc(s, func(n ast.Node) bool {
+		switch f := n.(type) {
+		case *ast.Call:
+			if function.IsAnalyticFunc(f.Name) {
+				f.CachedField = fmt.Sprintf("%s_%s_%d", function.AnalyticPrefix, f.Name, f.FuncId)
+				f.Cached = true
+				analyticFuncs = append(analyticFuncs, &ast.Call{
+					Name:        f.Name,
+					FuncId:      f.FuncId,
+					FuncType:    f.FuncType,
+					Args:        f.Args,
+					CachedField: f.CachedField,
+				})
+			}
+		}
+		return true
+	})
+	if walkErr != nil {
+		return nil, nil, walkErr
+	}
+	return streamStmts, analyticFuncs, walkErr
 }
 
 func validate(s *ast.SelectStatement) (err error) {
