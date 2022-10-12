@@ -31,7 +31,7 @@ SELECT `a-b`, `hello world`, `中文Chinese` from demo
 **Reserved keywords for rule SQL**: If you'd like to use the following keyword in rule SQL, you will have to use backtick to enclose them.
 
 ```
-SELECT, FROM, JOIN, LEFT, INNER, ON, WHERE, GROUP, ORDER, HAVING, BY, ASC, DESC, AND, OR, CASE, WHEN, THEN, ELSE, END
+SELECT, FROM, JOIN, LEFT, INNER, ON, WHERE, GROUP, ORDER, HAVING, BY, ASC, DESC, AND, OR, CASE, WHEN, THEN, ELSE, END, IN, NOT, BETWEEN, LIKE, OVER, PARTITION
 ```
 
 The following is an example for using a stream named `from`, which is a reserved keyword in eKuiper.
@@ -43,7 +43,7 @@ SELECT * FROM demo1 where `from`="device1"
 **Reserved keywords for streams management**: If you'd like to use the following keywords in stream management command, you will have to use backtick to enclose them.
 
 ```
-CREATE, RROP, EXPLAIN, DESCRIBE, SHOW, STREAM, STREAMS, WITH, BIGINT, FLOAT, STRING, DATETIME, BOOLEAN, ARRAY, STRUCT, DATASOURCE, KEY, FORMAT,CONF_KEY, TYPE, STRICT_VALIDATION, TIMESTAMP, TIMESTAMP_FORMAT
+CREATE, RROP, EXPLAIN, DESCRIBE, SHOW, STREAM, STREAMS, WITH, BIGINT, FLOAT, STRING, DATETIME, BOOLEAN, ARRAY, STRUCT, DATASOURCE, KEY, FORMAT,CONF_KEY, TYPE, KIND, SCHEMAID, STRICT_VALIDATION, TIMESTAMP, TIMESTAMP_FORMAT
 ```
 
 The following is an example for how to use reserved keywords in stream creation statement.

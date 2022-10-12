@@ -1824,7 +1824,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 		{
 			s:   `SELECT avg(name) OVER (PARTITION BY device) FROM tbl`,
-			err: `found "(", expected FROM.`,
+			err: `Found OVER after non analytic function avg`,
 		},
 		{
 			s: `SELECT name FROM tbl WHERE lag(name) OVER (PARTITION BY device, groupName) > 3`,
