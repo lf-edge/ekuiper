@@ -176,6 +176,7 @@ AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>])
 | Function    | Example                              | Description                                                                                        |
 |-------------|--------------------------------------|----------------------------------------------------------------------------------------------------|
 | lag         | lag(expr, [offset], [default value]) | 返回表达式前一个值在偏移 offset 处的结果，如果没有找到，则返回默认值，如果没有指定默认值则返回 nil。如果除 expression 外其余参数均未指定，偏移量默认为 1，默认值为 nil |
+| latest      | latest(expr, [default value])        | 返回表达式最新的非空值。如果没有找到，则返回默认值。否则，返回 nil 。                                                              |
 | changed_col | changed_col(true, col)               | 返回列的相比上次执行后的变化值。若未变化则返回 null 。                                                                     |
 | had_changed | had_changed(true, expr1, expr2, ...) | 返回是否上次运行后列的值有变化。 其参数可以为 * 以方便地监测所有列。                                                               |
 

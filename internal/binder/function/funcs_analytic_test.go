@@ -816,3 +816,124 @@ func TestLagExecIndex(t *testing.T) {
 		}
 	}
 }
+
+func TestLatestExec(t *testing.T) {
+	f, ok := builtins["latest"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	var tests = []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args:   []interface{}{"self"},
+			result: fmt.Errorf("expect one or two args but got 0"),
+		}, { // 1
+			args: []interface{}{
+				"foo",
+				"self",
+			},
+			result: "foo",
+		},
+		{ // 2
+			args: []interface{}{
+				nil,
+				"self",
+			},
+			result: "foo",
+		},
+		{ // 3
+			args: []interface{}{
+				"bar",
+				"self",
+			},
+			result: "bar",
+		},
+		{ // 4
+			args: []interface{}{
+				nil,
+				"self",
+			},
+			result: "bar",
+		},
+		{ // 4
+			args: []interface{}{
+				"foo",
+				"self",
+			},
+			result: "foo",
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}
+
+func TestLatestPartition(t *testing.T) {
+	f, ok := builtins["latest"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	var tests = []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args:   []interface{}{"self"},
+			result: fmt.Errorf("expect one or two args but got 0"),
+		}, { // 1
+			args: []interface{}{
+				"foo",
+				"2",
+			},
+			result: "foo",
+		},
+		{ // 2
+			args: []interface{}{
+				nil,
+				"dd",
+				"1",
+			},
+			result: "dd",
+		},
+		{ // 3
+			args: []interface{}{
+				"bar",
+				"1",
+			},
+			result: "bar",
+		},
+		{ // 4
+			args: []interface{}{
+				nil,
+				"2",
+			},
+			result: "foo",
+		},
+		{ // 4
+			args: []interface{}{
+				"foo",
+				"1",
+			},
+			result: "foo",
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}

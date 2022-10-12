@@ -174,4 +174,40 @@ func registerAnalyticFunc() {
 			return nil
 		},
 	}
+
+	builtins["latest"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			l := len(args) - 1
+			key := args[l].(string)
+			if l != 1 && l != 2 {
+				return fmt.Errorf("expect one or two args but got %d", l), false
+			}
+			if args[0] == nil {
+				v, err := ctx.GetState(key)
+				if err != nil {
+					return fmt.Errorf("error getting state for %s: %v", key, err), false
+				}
+				if v == nil {
+					if l == 2 {
+						return args[1], true
+					} else {
+						return nil, true
+					}
+				} else {
+					return v, true
+				}
+			} else {
+				ctx.PutState(key, args[0])
+				return args[0], true
+			}
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			l := len(args)
+			if l != 1 && l != 2 {
+				return fmt.Errorf("expect one or two args but got %d", l)
+			}
+			return nil
+		},
+	}
 }
