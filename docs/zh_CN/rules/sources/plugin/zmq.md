@@ -1,5 +1,8 @@
 # Zmq 源
 
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
+
 源将订阅 Zero Mq 主题以将消息导入 eKuiper。
 
 ## 编译和部署插件

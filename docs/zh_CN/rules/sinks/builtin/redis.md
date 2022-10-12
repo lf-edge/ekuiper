@@ -57,3 +57,25 @@ redis 源代码在 extensions 目录中，但是需要在 eKuiper 根目录编�
   "file":"http://localhost:8080/redis.zip"
 }
 ```
+
+### 更新示例
+
+通过指定 `rowkindField` 属性，sink 可以根据该字段中指定的动作进行更新。
+
+```json
+{
+  "id": "ruleUpdateAlert",
+  "sql":"SELECT * FROM alertStream",
+  "actions":[
+    {
+      "redis": {
+        "addr": "127.0.0.1:6379",
+        "dataType": "string",
+        "field": "id",
+        "rowkindField": "action",
+        "sendSingle": true
+      }
+    }
+  ]
+}
+```

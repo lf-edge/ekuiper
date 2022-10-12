@@ -1,5 +1,8 @@
 # MQTT source 
 
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
+
 eKuiper provides built-in support for MQTT source stream, which can subscribe the message from MQTT broker and feed into the eKuiper processing pipeline.  The configuration file of MQTT source is at `$ekuiper/etc/mqtt_source.yaml`. Below is the file format.
 
 ```yaml

@@ -1,5 +1,7 @@
 ## File source
 
+<span style="background:green;color:white">scan table source</span>
+
 eKuiper provides built-in support for reading file content into the eKuiper processing pipeline. The file source is usually used as a [table](../../../sqls/tables.md) and it is the default type for create table statement.
 
 ```sql

@@ -1,5 +1,8 @@
 # 随机源
 
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
+
 随机源将生成具有指定样式的随机输入。
 
 ## 编译和部署插件

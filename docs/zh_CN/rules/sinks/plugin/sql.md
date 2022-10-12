@@ -90,5 +90,24 @@
 }
 ```
 
+### 更新示例
 
+通过指定 `rowkindField` 和 `keyField` 属性，sink 可以生成针对主键的插入、更新或删除语句。
 
+```json
+{
+  "id": "ruleUpdateAlert",
+  "sql":"SELECT * FROM alertStream",
+  "actions":[
+    {
+      "sql": {
+        "url": "sqlite://test.db",
+        "keyField": "id",
+        "rowkindField": "action",
+        "table": "alertTable",
+        "sendSingle": true
+      }
+    }
+  ]
+}
+```

@@ -56,6 +56,12 @@ func MySink() api.Sink {
 
 [Memory Sink](https://github.com/lf-edge/ekuiper/blob/master/extensions/sinks/memory/memory.go) 是一个很好的示例。
 
+#### 可更新的 Sink
+
+如果你的 Sink 是可更新的，你将需要处理 `rowkindField` 属性。有些 sink 可能还需要一个 `keyField' 属性来指定哪个字段是要更新的主键。
+
+因此，在_Configure_方法中，需要解析 `rowkindField` 以知道数据中的哪个字段表示更新的动作。然后在_Collect_方法中，通过该字段获取动作类型，并执行适当的操作。rowkind 的值可以是 `insert`、`update`、`upsert` 和 `delete`。例如，在 SQL sink 中，每种 rowkind 值将产生不同的SQL语句来执行。
+
 #### 解析动态属性
 
 在自定义的 sink 插件中，用户可能仍然想要像内置的 sink 一样支持[动态属性](../../../rules/overview.md#动态属性)。 我们在 context 对象中提供了 `ParseTemplate` 方法使得开发者可以方便地解析动态属性并应用于插件中。开发组应当根据业务逻辑，设计那些属性支持动态值。然后在代码编写时，使用此方法解析用户传入的属性值。

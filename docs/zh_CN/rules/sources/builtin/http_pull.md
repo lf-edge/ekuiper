@@ -1,5 +1,8 @@
 # HTTP 提取源
 
+<span style="background:green;color:white;">stream source</span>
+<span style="background:green;color:white">scan table source</span>
+
 eKuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 eKuiper 处理管道。 HTTP提取源的配置文件位于 `etc/sources/httppull.yaml`中。 以下是文件格式。
 
 ```yaml

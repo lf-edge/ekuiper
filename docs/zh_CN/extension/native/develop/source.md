@@ -4,7 +4,9 @@
 
 ## 开发
 
-### 开发一个源
+有两种类型的源。一种是普通源，即扫描源（Scan Source），另一种是查询源（Lookup Source）。一个正常的源可以作为一个流或扫描表使用；一个查询源可以作为一个查询表使用。用户可以在一个源插件中开发一种或两种源。
+
+### 开发普通源
 
 为 eKuiper 开发源的 是实现 [api.Source](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 接口并将其导出为 golang 插件。
 
@@ -39,6 +41,49 @@ function MySource() api.Source{
 ```
 
 [Random Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/sources/random/random.go)  是一个很好的示例。
+
+### 开发查询源
+
+为 eKuiper 开发一个查询源就是实现 [api.LookupSource](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 接口并将其导出。
+
+在开始开发之前，您必须为 [golang 插件设置环境](../overview.md#插件开发环境设置)。
+
+要开发一个查询源，必须实现 _Configure_ 方法。 初始化源后，将调用此方法。 在此方法中，您可以从第一个参数检索流的 _DATASOURCE_ 属性（这是 mqtt 和其他消息传递系统的主题）。 然后在第二个参数中，传递包含 _yaml_ 文件中的配置的映射。 有关更多详细信息，请参见 [配置](#处理配置)。 通常，将有外部系统的信息，例如主机、端口、用户和密码。 您可以使用此映射来初始化此源。
+
+```go
+//在初始化过程中调用。用数据源（例如mqtt的topic）和从yaml中读取的属性来配置这个源 
+Configure(datasource string, props map[string]interface{}) error
+```
+
+下一个任务是实现_open_方法。一旦源被创建，该方法将被调用。它负责初始化，比如建立连接。
+
+```go
+// Open 创建与外部数据源的连接
+Open(ctx StreamContext) error
+```
+
+查询源的主要任务是实现 _Lookup_ 方法。该方法将在每个连接操作中运行。参数是在运行时获得的，包括要从外部系统中检索的字段、键和值等信息。每个查询源都有不同的查询机制。例如，SQL查询源将从这些参数中组装一个 SQL 查询来检索查询数据。
+
+```go
+// Lookup 接收查询值以构建查询并返回查询结果
+Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) ([]SourceTuple, error)
+```  
+
+最后要实现的方法是 _Close_，它实际上用来关闭连接。 当流即将终止时调用它。 您也可以在此功能中执行任何清理工作。
+
+```go
+Close(ctx StreamContext) error
+```
+
+由于源本身是一个插件，因此它必须位于主程序包中。Export 的名称必须以 `Lookup` 结尾，这样它就可以被称为 `MySource` 的查询源。对于源扩展，通常需要状态，所以建议导出一个构造函数。
+
+```go
+function MySourceLookup() api.LookupSource{
+    return &mySource{}。
+}
+```
+
+[SQL Lookup Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/sources/sql/sqlLookup.go) 是一个很好的示例。。
 
 ### 处理配置
 
