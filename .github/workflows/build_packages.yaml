@@ -5,13 +5,11 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
-    tags:
-      - "*"
-  pull_request:
-  release:
+  workflow_run:
+    workflows: [ "Run fvt tests" ]
+    branches: [ main ]
     types:
-      - published
+      - completed
 
 jobs:
   build:
