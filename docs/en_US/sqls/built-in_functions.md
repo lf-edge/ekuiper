@@ -160,6 +160,36 @@ When casting to datetime type, the supported column type and casting rule are:
 
 **Please refer to [json path functions](./json_expr.md#json-path-functions) for how to compose a json path.**  
 
+## Analytic Functions
+
+Analytic functions always use state to do analytic jobs. In streaming processing, analytic functions are evaluated first so that they are not affected by predicates in WHERE clause.
+
+Analytic function computations are performed over all the input events of the current query input, optionally you can limit analytic function to only consider events that match the partition_by_clause.
+
+The syntax is like:
+
+```text
+AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>])
+```
+
+| Function     | Example                              | Description                                                                                                                                                                                                                                                                                                                                                                                       |
+|--------------|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| lag          | lag(expr, [offset], [default value]) | Return the former result of expression at offset, if not found, return the default value specified , if default value not set, return nil. if offset and default value not specified, offset is 1 and default value is nil                                                                                                                                                                        |
+| changed_col  | changed_col(true, col)               | Return the column value if it has changed from the last execution.                                                                                                                                                                                                                                                                                                                                |
+| had_changed  | had_changed(true, expr1, expr2, ...) | Return if any of the columns had changed since the last run. The expression could be * to easily detect the change status of all columns.                                                                                                                                                                                                                                                         |
+
+Example function call to get the previous temperature value:
+
+```text
+lag(temperature)
+```
+
+Example function call to get the previous temperature value with the same device id:
+
+```text
+lag(temperature) OVER (PARTITION BY deviceId)
+```
+
 ## Other Functions
 | Function     | Example                              | Description                                                                                                                                                                                                                                                                                                                                                                                       |
 |--------------|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -171,9 +201,6 @@ When casting to datetime type, the supported column type and casting rule are:
 | meta         | meta(topic)                          | Returns the meta-data of specified key. The key could be:<br/> - a standalone key if there is only one source in the from clause, such as `meta(device)`<br />- A qualified key to specify the stream, such as `meta(src1.device)` <br />- A key with arrow for multi level meta data, such as `meta(src1.reading->device->name)` This assumes reading is a map structure meta data.              |
 | window_start | window_start()                       | Return the window start timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.                                        |
 | window_end   | window_end()                         | Return the window end timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.                                          |
-| lag          | lag(expr, [offset], [default value]) | Return the former result of expression at offset, if not found, return the default value specified , if default value not set, return nil. if offset and default value not specified, offset is 1 and default value is nil                                                                                                                                                                        |
-| changed_col  | changed_col(true, col)               | Return the column value if it has changed from the last execution.                                                                                                                                                                                                                                                                                                                                |
-| had_changed  | had_changed(true, expr1, expr2, ...) | Return if any of the columns had changed since the last run. The expression could be * to easily detect the change status of all columns.                                                                                                                                                                                                                                                         |
 
 ## Multiple Column Functions
 

@@ -1795,6 +1795,89 @@ func TestParser_ParseStatement(t *testing.T) {
 			s:   `SELECT name FROM tbl WHERE name IN (abc,def OR name in (abc)`,
 			err: `expect ) for IN expression, but got "EOF"`,
 		},
+		{
+			s: `SELECT lag(name) OVER (PARTITION BY device) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.Call{
+							Name:   "lag",
+							FuncId: 0,
+							Args: []ast.Expr{
+								&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+							},
+							Partition: &ast.PartitionExpr{
+								Exprs: []ast.Expr{
+									&ast.FieldRef{Name: "device", StreamName: ast.DefaultStream},
+								},
+							},
+						},
+						Name:  "lag",
+						AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s:   `SELECT name OVER (PARTITION BY device) FROM tbl`,
+			err: `found "OVER", expected FROM.`,
+		},
+		{
+			s:   `SELECT avg(name) OVER (PARTITION BY device) FROM tbl`,
+			err: `Found OVER after non analytic function avg`,
+		},
+		{
+			s: `SELECT name FROM tbl WHERE lag(name) OVER (PARTITION BY device, groupName) > 3`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: ""},
+				},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.Call{
+						Name:   "lag",
+						FuncId: 0,
+						Args: []ast.Expr{
+							&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						},
+						Partition: &ast.PartitionExpr{
+							Exprs: []ast.Expr{
+								&ast.FieldRef{Name: "device", StreamName: ast.DefaultStream},
+								&ast.FieldRef{Name: "groupName", StreamName: ast.DefaultStream},
+							},
+						},
+					},
+					OP:  ast.GT,
+					RHS: &ast.IntegerLiteral{Val: 3},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT lag(name) OVER (PARTITION BY device) as ll FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.Call{
+							Name:   "lag",
+							FuncId: 0,
+							Args: []ast.Expr{
+								&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+							},
+							Partition: &ast.PartitionExpr{
+								Exprs: []ast.Expr{
+									&ast.FieldRef{Name: "device", StreamName: ast.DefaultStream},
+								},
+							},
+						},
+						Name:  "lag",
+						AName: "ll"},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

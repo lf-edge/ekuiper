@@ -829,12 +829,7 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 	var args []ast.Expr
 	for {
 		if tok, _ := p.scanIgnoreWhitespace(); tok == ast.RPAREN {
-			if valErr := validateFuncs(name, nil); valErr != nil {
-				return nil, valErr
-			}
-			c := &ast.Call{Name: name, Args: args, FuncId: p.fn, FuncType: ft}
-			p.fn += 1
-			return c, nil
+			break
 		} else {
 			p.unscan()
 		}
@@ -850,14 +845,12 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 			}
 		}
 
-		if tok, _ := p.scanIgnoreWhitespace(); tok != ast.COMMA {
-			p.unscan()
+		if tok, lit := p.scanIgnoreWhitespace(); tok != ast.COMMA {
+			if tok != ast.RPAREN {
+				return nil, fmt.Errorf("found function call %q, expected ), but with %q.", name, lit)
+			}
 			break
 		}
-	}
-
-	if tok, lit := p.scanIgnoreWhitespace(); tok != ast.RPAREN {
-		return nil, fmt.Errorf("found function call %q, expected ), but with %q.", name, lit)
 	}
 	if wt, err := validateWindows(name, args); wt == ast.NOT_WINDOW {
 		if valErr := validateFuncs(name, args); valErr != nil {
@@ -869,7 +862,8 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 		}
 		c := &ast.Call{Name: name, Args: args, FuncId: p.fn, FuncType: ft}
 		p.fn += 1
-		return c, nil
+		e := p.parseOverPartition(c)
+		return c, e
 	} else {
 		if err != nil {
 			return nil, err
@@ -1502,4 +1496,48 @@ func (p *Parser) parseAsterisk() (ast.Expr, error) {
 
 func (p *Parser) inmeta() bool {
 	return p.inFunc == "meta" || p.inFunc == "mqtt"
+}
+
+func (p *Parser) parseOverPartition(c *ast.Call) error {
+	if tok, _ := p.scanIgnoreWhitespace(); tok != ast.OVER {
+		p.unscan()
+		return nil
+	} else if function.IsAnalyticFunc(c.Name) {
+		if tok1, _ := p.scanIgnoreWhitespace(); tok1 == ast.LPAREN {
+			if t, _ := p.scanIgnoreWhitespace(); t == ast.PARTITION {
+				if t1, l1 := p.scanIgnoreWhitespace(); t1 == ast.BY {
+					pe := &ast.PartitionExpr{}
+					for {
+						if exp, err := p.ParseExpr(); err != nil {
+							return err
+						} else {
+							pe.Exprs = append(pe.Exprs, exp)
+						}
+						if tok, _ := p.scanIgnoreWhitespace(); tok == ast.COMMA {
+							continue
+						} else {
+							p.unscan()
+							break
+						}
+					}
+					if ttt, _ := p.scanIgnoreWhitespace(); ttt != ast.RPAREN {
+						return fmt.Errorf("found %q, expect right parentheses after PARTITION BY", ttt)
+					}
+					if len(pe.Exprs) == 0 {
+						return fmt.Errorf("PARTITION BY must have at least one expression.")
+					}
+					c.Partition = pe
+					return nil
+				} else {
+					return fmt.Errorf("found %q, expected by after partition.", l1)
+				}
+			} else {
+				return fmt.Errorf("Found %q after OVER (, expect partition by.", tok1)
+			}
+		} else {
+			return fmt.Errorf("Found %q after OVER, expect parentheses.", tok1)
+		}
+	} else {
+		return fmt.Errorf("Found OVER after non analytic function %s", c.Name)
+	}
 }

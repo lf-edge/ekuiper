@@ -346,7 +346,21 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 						// won't happen
 						return fmt.Errorf("unknown function type")
 					}
-
+				}
+				if function.IsAnalyticFunc(expr.Name) { // analytic func must put the partition key into the args
+					if expr.Partition != nil && len(expr.Partition.Exprs) > 0 {
+						pk := ""
+						for _, pe := range expr.Partition.Exprs {
+							temp := v.Eval(pe)
+							if _, ok := temp.(error); ok {
+								return temp
+							}
+							pk += fmt.Sprintf("%v", temp)
+						}
+						args = append(args, pk)
+					} else {
+						args = append(args, "self")
+					}
 				}
 				val, _ := valuer.Call(expr.Name, expr.FuncId, args)
 				return val
