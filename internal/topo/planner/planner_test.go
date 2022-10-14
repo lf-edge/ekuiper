@@ -416,7 +416,7 @@ func Test_createLogicalPlan(t *testing.T) {
 				fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: ""},
 				},
 				isAggregate: false,
@@ -1182,6 +1182,68 @@ func Test_createLogicalPlan(t *testing.T) {
 				sendMeta:    false,
 			}.Init(),
 		},
+		{ // 14
+			sql: `SELECT name, *, meta(device) FROM src1`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						DataSourcePlan{
+							baseLogicalPlan: baseLogicalPlan{},
+							name:            "src1",
+							streamFields: []interface{}{
+								&ast.StreamField{
+									Name:      "id1",
+									FieldType: &ast.BasicType{Type: ast.BIGINT},
+								},
+								&ast.StreamField{
+									Name:      "temp",
+									FieldType: &ast.BasicType{Type: ast.BIGINT},
+								},
+								&ast.StreamField{
+									Name:      "name",
+									FieldType: &ast.BasicType{Type: ast.STRINGS},
+								},
+								&ast.StreamField{
+									Name:      "myarray",
+									FieldType: &ast.ArrayType{Type: ast.STRINGS},
+								},
+							},
+							streamStmt: streams["src1"],
+							metaFields: []string{"device"},
+							isWildCard: true,
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: "src1"},
+						Name:  "name",
+						AName: "",
+					},
+					{
+						Name: "*",
+						Expr: &ast.Wildcard{
+							Token: ast.ASTERISK,
+						},
+					},
+					{
+						Name: "meta",
+						Expr: &ast.Call{
+							Name: "meta",
+							Args: []ast.Expr{
+								&ast.MetaRef{
+									StreamName: ast.DefaultStream,
+									Name:       "device",
+								},
+							},
+						},
+					},
+				},
+				isAggregate: false,
+				allWildcard: true,
+				sendMeta:    false,
+			}.Init(),
+		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
@@ -1520,7 +1582,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: ""},
 				},
 				isAggregate: false,
@@ -2600,7 +2662,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 				fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: "",
 					},
 				},

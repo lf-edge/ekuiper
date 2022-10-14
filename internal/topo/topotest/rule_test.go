@@ -29,32 +29,37 @@ func TestSingleSQL(t *testing.T) {
 	var tests = []RuleTest{
 		{
 			Name: `TestSingleSQLRule1`,
-			Sql:  `SELECT * FROM demo`,
+			Sql:  `SELECT *, upper(color) FROM demo`,
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"size":  float64(3),
 					"ts":    float64(1541152486013),
+					"upper": "RED",
 				}},
 				{{
 					"color": "blue",
 					"size":  float64(6),
 					"ts":    float64(1541152486822),
+					"upper": "BLUE",
 				}},
 				{{
 					"color": "blue",
 					"size":  float64(2),
 					"ts":    float64(1541152487632),
+					"upper": "BLUE",
 				}},
 				{{
 					"color": "yellow",
 					"size":  float64(4),
 					"ts":    float64(1541152488442),
+					"upper": "YELLOW",
 				}},
 				{{
 					"color": "red",
 					"size":  float64(1),
 					"ts":    float64(1541152489252),
+					"upper": "RED",
 				}},
 			},
 			M: map[string]interface{}{
