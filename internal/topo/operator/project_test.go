@@ -582,6 +582,29 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"b": "true",
 			}},
 		},
+		//35
+		{
+			sql: `SELECT a->b AS ab, *, abs(f1) FROM test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "test",
+					},
+					"b":  "b",
+					"f1": -12,
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": map[string]interface{}{
+					"b": "test",
+				},
+				"ab":  "test",
+				"abs": 12,
+				"b":   "b",
+				"f1":  -12,
+			}},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

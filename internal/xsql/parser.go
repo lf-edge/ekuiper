@@ -411,13 +411,6 @@ func (p *Parser) parseSorts() (ast.SortFields, error) {
 func (p *Parser) parseFields() (ast.Fields, error) {
 	var fields ast.Fields
 
-	tok, _ := p.scanIgnoreWhitespace()
-	if tok == ast.ASTERISK {
-		fields = append(fields, ast.Field{AName: "", Expr: &ast.Wildcard{Token: tok}})
-		return fields, nil
-	}
-	p.unscan()
-
 	for {
 		field, err := p.parseField()
 
@@ -427,7 +420,7 @@ func (p *Parser) parseFields() (ast.Fields, error) {
 			fields = append(fields, *field)
 		}
 
-		tok, _ = p.scanIgnoreWhitespace()
+		tok, _ := p.scanIgnoreWhitespace()
 		if tok != ast.COMMA {
 			p.unscan()
 			break
@@ -449,6 +442,9 @@ func (p *Parser) parseField() (*ast.Field, error) {
 		return nil, err
 	} else {
 		if alias != "" {
+			if field.Name == "*" {
+				return nil, fmt.Errorf("alias is not supported for *")
+			}
 			field.AName = alias
 		}
 	}
@@ -466,6 +462,8 @@ func nameExpr(exp ast.Expr) string {
 		return e.Name
 	case *ast.Call:
 		return e.Name
+	case *ast.Wildcard:
+		return ast.Tokens[ast.ASTERISK]
 	default:
 		return ""
 	}
@@ -1487,8 +1485,6 @@ func (p *Parser) parseAsterisk() (ast.Expr, error) {
 	switch p.inFunc {
 	case "mqtt", "meta":
 		return &ast.MetaRef{StreamName: ast.DefaultStream, Name: "*"}, nil
-	case "":
-		return nil, fmt.Errorf("unsupported * expression, it must be used inside fields or function parameters.")
 	default:
 		return &ast.Wildcard{Token: ast.ASTERISK}, nil
 	}

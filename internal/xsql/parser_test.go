@@ -194,7 +194,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
@@ -524,13 +524,13 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s:    `SELECT * AS alias FROM tbl`,
 			stmt: nil,
-			err:  `found "AS", expected FROM.`,
+			err:  `alias is not supported for *`,
 		},
 
 		{
 			s:    `SELECT *, FROM tbl`,
 			stmt: nil,
-			err:  `found ",", expected FROM.`,
+			err:  `found "FROM", expected expression.`,
 		},
 
 		{
@@ -1305,7 +1305,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: ""},
 				},
 				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1"}},
@@ -1319,7 +1319,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: ""},
 				},
 				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1"}},
@@ -1333,7 +1333,7 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
@@ -1752,7 +1752,7 @@ func TestParser_ParseStatement(t *testing.T) {
 									StreamName: ast.DefaultStream,
 									Name:       "a",
 								}},
-								&ast.ColFuncField{Name: "", Expr: &ast.Wildcard{
+								&ast.ColFuncField{Name: "*", Expr: &ast.Wildcard{
 									Token: ast.ASTERISK,
 								}},
 								&ast.ColFuncField{Name: "c", Expr: &ast.FieldRef{
@@ -1874,6 +1874,83 @@ func TestParser_ParseStatement(t *testing.T) {
 						},
 						Name:  "lag",
 						AName: "ll"},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT *, name, lower(name) as ln FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.Wildcard{
+							Token: ast.ASTERISK,
+						},
+						Name: "*",
+					},
+					{
+						Expr: &ast.FieldRef{
+							Name:       "name",
+							StreamName: ast.DefaultStream,
+						},
+						Name:  "name",
+						AName: "",
+					},
+					{
+						Expr: &ast.Call{
+							Name:   "lower",
+							FuncId: 0,
+							Args: []ast.Expr{
+								&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+							},
+						},
+						Name:  "lower",
+						AName: "ln",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT name, * FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.FieldRef{
+							Name:       "name",
+							StreamName: ast.DefaultStream,
+						},
+						Name:  "name",
+						AName: "",
+					},
+					{
+						Expr: &ast.Wildcard{
+							Token: ast.ASTERISK,
+						},
+						Name: "*",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT name, * FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.FieldRef{
+							Name:       "name",
+							StreamName: ast.DefaultStream,
+						},
+						Name:  "name",
+						AName: "",
+					},
+					{
+						Expr: &ast.Wildcard{
+							Token: ast.ASTERISK,
+						},
+						Name: "*",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -2052,7 +2129,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
@@ -2078,7 +2155,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
@@ -2107,7 +2184,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
@@ -2493,7 +2570,7 @@ func TestParser_ParseJoins(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
@@ -2515,7 +2592,7 @@ func TestParser_ParseJoins(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
@@ -2537,7 +2614,7 @@ func TestParser_ParseJoins(t *testing.T) {
 				Fields: []ast.Field{
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
-						Name:  "",
+						Name:  "*",
 						AName: ""},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
