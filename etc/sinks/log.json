@@ -18,7 +18,7 @@
   },
   "properties": [],
   "node": {
-    "category": "Sink",
+    "category": "sink",
     "icon": "iconPath",
     "label": {
       "en": "Log output",

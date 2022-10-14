@@ -1,4 +1,5 @@
 {
+  "name": "pick",
   "about": {
     "trial": false,
     "author": {
@@ -33,7 +34,7 @@
   }],
   "node": {
     "display": true,
-    "category": "op",
+    "category": "operator",
     "input": {
       "type": "any",
       "rowType": "any",

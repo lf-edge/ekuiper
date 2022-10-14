@@ -19,51 +19,303 @@
 	"functions": [{
 		"name": "avg",
 		"example": "avg(col1)",
+		"aggregate": true,
 		"hint": {
 			"en_US": "The average of the values in a group. The null values will be ignored.",
 			"zh_CN": "组中的平均值。空值不参与计算。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "The average of the values in a group. The null values will be ignored.",
+				"zh_CN": "组中的平均值。空值不参与计算。"
+			}
 		}
 	}, {
 		"name": "count",
 		"example": "count(*)",
+		"aggregate": true,
 		"hint": {
 			"en_US": "The number of items in a group. The null values will be ignored.",
 			"zh_CN": "组中的项目数。空值不参与计算。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "The number of items in a group. The null values will be ignored.",
+				"zh_CN": "组中的项目数。空值不参与计算。"
+			}
 		}
 	}, {
 		"name": "max",
 		"example": "max(col1)",
+		"aggregate": true,
 		"hint": {
 			"en_US": "The maximum value in a group. The null values will be ignored.",
 			"zh_CN": "组中的最大值。空值不参与计算。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "The maximum value in a group. The null values will be ignored.",
+				"zh_CN": "组中的最大值。空值不参与计算。"
+			}
 		}
 	}, {
 		"name": "min",
 		"example": "min(col1)",
+		"aggregate": true,
 		"hint": {
 			"en_US": "The minimum value in a group. The null values will be ignored.",
 			"zh_CN": "组中的最小值。空值不参与计算。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "The minimum value in a group. The null values will be ignored.",
+				"zh_CN": "组中的最小值。空值不参与计算。"
+			}
 		}
 	}, {
 		"name": "sum",
 		"example": "sum(col1)",
+		"aggregate": true,
 		"hint": {
 			"en_US": "The sum of all the values in a group. The null values will be ignored.",
 			"zh_CN": "组中所有值的总和。空值不参与计算。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "The sum of all the values in a group. The null values will be ignored.",
+				"zh_CN": "组中所有值的总和。空值不参与计算"
+			}
 		}
 	}, {
 		"name": "collect",
 		"example": "collect(*), collect(col1)",
+		"aggregate": true,
 		"hint": {
 			"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group.",
 			"zh_CN": "返回组中指定的列或整个消息（参数为*时）的值组成的数组。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回组中指定的列或整个消息（参数为*时）的值组成的数组。"
+			}
 		}
 	}, {
 		"name": "deduplicate",
 		"example": "deduplicate(col, false), deduplicate(col, true)",
+		"aggregate": true,
 		"hint": {
 			"en_US": "Returns the deduplicate results in the group, usually a window. The first argument is the column as the key to deduplicate; the second argument is whether to return all items or just the latest item which is not duplicate. If the latest item is a duplicate, the sink will receive an empty map.",
 			"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "abs",
@@ -71,6 +323,39 @@
 		"hint": {
 			"en_US": "The absolute value of a value",
 			"zh_CN": "绝对值"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "acos",
@@ -78,6 +363,39 @@
 		"hint": {
 			"en_US": "The inverse cosine of a number in radians",
 			"zh_CN": "弧度数的反余弦值"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "asin",
@@ -85,6 +403,39 @@
 		"hint": {
 			"en_US": "The inverse sine of a number in radians",
 			"zh_CN": "弧度数的反正弦值"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "atan",
@@ -92,6 +443,39 @@
 		"hint": {
 			"en_US": "The inverse tangent of a number in radians",
 			"zh_CN": "弧度数的反正切值"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "atan2",
@@ -99,6 +483,53 @@
 		"hint": {
 			"en_US": "The angle, in radians, between the positive x-axis and the (x, y) point defined in the two arguments",
 			"zh_CN": "正x轴与两个自变量中定义的（x，y）点之间的弧度角"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "bitand",
@@ -106,6 +537,53 @@
 		"hint": {
 			"en_US": "Performs a bitwise AND on the bit representations of the two Int(-converted) arguments",
 			"zh_CN": "对两个Int（-converted）参数的位表示执行按位“与”运算"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "bitor",
@@ -113,6 +591,53 @@
 		"hint": {
 			"en_US": "Performs a bitwise OR of the bit representations of the two arguments",
 			"zh_CN": "对两个参数的位表示进行或运算"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "bitxor",
@@ -120,6 +645,53 @@
 		"hint": {
 			"en_US": "Performs a bitwise XOR on the bit representations of the two Int(-converted) arguments",
 			"zh_CN": "对两个Int（-converted）参数的位表示执行逐位异或运算"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "bitnot",
@@ -127,6 +699,39 @@
 		"hint": {
 			"en_US": "Performs a bitwise NOT on the bit representations of the Int(-converted) argument",
 			"zh_CN": "在Int（-converted）参数的位表示形式上执行按位NOT运算"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "ceil",
@@ -134,6 +739,39 @@
 		"hint": {
 			"en_US": "Round a value up to the nearest BIGINT value.",
 			"zh_CN": "将值舍入到最接近的BIGINT值。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "cos",
@@ -141,6 +779,39 @@
 		"hint": {
 			"en_US": "Returns the cosine of a number in radians.",
 			"zh_CN": "返回以弧度为单位的数字的余弦值。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "cosh",
@@ -148,6 +819,39 @@
 		"hint": {
 			"en_US": "Returns the hyperbolic cosine of a number in radians.",
 			"zh_CN": "返回弧度数的双曲余弦值。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "exp",
@@ -155,6 +859,39 @@
 		"hint": {
 			"en_US": "Returns e raised to the Decimal argument.",
 			"zh_CN": "返回小数点参数的e。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "ln",
@@ -162,6 +899,39 @@
 		"hint": {
 			"en_US": "Returns the natural logarithm of the argument.",
 			"zh_CN": "返回参数的自然对数。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "log",
@@ -169,6 +939,39 @@
 		"hint": {
 			"en_US": "Returns the base 10 logarithm of the argument.",
 			"zh_CN": "返回参数的以10为底的对数。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "mod",
@@ -176,6 +979,53 @@
 		"hint": {
 			"en_US": "Returns the remainder of the division of the first argument by the second argument.",
 			"zh_CN": "返回第一个参数除以第二个参数的余数。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column2",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "power",
@@ -183,6 +1033,53 @@
 		"hint": {
 			"en_US": "Pow returns x**y, the base-x exponential of y.",
 			"zh_CN": "返回 x 的 y 次方。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column2",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "rand",
@@ -190,6 +1087,24 @@
 		"hint": {
 			"en_US": "Returns a pseudorandom, uniformly distributed double between 0.0 and 1.0.",
 			"zh_CN": "返回一个伪随机数，其均匀分布在0.0和1.0之间。"
+		},
+		"args": [],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "round",
@@ -197,6 +1112,39 @@
 		"hint": {
 			"en_US": "Round a value to the nearest BIGINT value.",
 			"zh_CN": "将值四舍五入到最接近的 BIGINT 值。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "sign",
@@ -204,6 +1152,39 @@
 		"hint": {
 			"en_US": "Returns the sign of the given number. When the sign of the argument is positive, 1 is returned. When the sign of the argument is negative, -1 is returned. If the argument is 0, 0 is returned.",
 			"zh_CN": "返回给定数字的符号。 当参数的符号为正时，将返回1。 当参数的符号为负数时，返回-1。 如果参数为0，则返回0。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "sin",
@@ -211,6 +1192,39 @@
 		"hint": {
 			"en_US": "Returns the sine of a number in radians.",
 			"zh_CN": "返回弧度数的正弦值。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "sinh",
@@ -218,6 +1232,39 @@
 		"hint": {
 			"en_US": "Returns the hyperbolic sine of a number in radians.",
 			"zh_CN": "返回弧度数的双曲正弦值。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "sqrt",
@@ -225,6 +1272,39 @@
 		"hint": {
 			"en_US": "Returns the square root of a number.",
 			"zh_CN": "返回数字的平方根。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "tan",
@@ -232,6 +1312,39 @@
 		"hint": {
 			"en_US": "Returns the tangent of a number in radians.",
 			"zh_CN": "返回以弧度表示的数字的正切值。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "tanh",
@@ -239,6 +1352,39 @@
 		"hint": {
 			"en_US": "Returns the hyperbolic tangent of a number in radians.",
 			"zh_CN": "返回弧度数的双曲正切值。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "concat",
@@ -246,6 +1392,53 @@
 		"hint": {
 			"en_US": "Concatenates arrays or strings. This function accepts any number of arguments and returns a String or an Array",
 			"zh_CN": "连接数组或字符串。 此函数接受任意数量的参数并返回 String 或 Array"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "endswith",
@@ -253,6 +1446,53 @@
 		"hint": {
 			"en_US": "Returns a Boolean indicating whether the first String argument ends with the second String argument.",
 			"zh_CN": "返回一个布尔值，该布尔值指示第一个 String参数是否以第二个 String 参数结尾。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column2",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "format_time",
@@ -260,6 +1500,53 @@
 		"hint": {
 			"en_US": "Format a datetime to string.",
 			"zh_CN": "将日期时间格式化为字符串。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "format",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "format value",
+					"zh_CN": "格式值"
+				},
+				"label": {
+					"en_US": "format value",
+					"zh_CN": "格式值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "indexof",
@@ -267,6 +1554,53 @@
 		"hint": {
 			"en_US": "Returns the first index (0-based) of the second argument as a substring in the first argument.",
 			"zh_CN": "返回第二个参数的第一个索引（从0开始），作为第一个参数中的子字符串。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column2",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "length",
@@ -274,6 +1608,39 @@
 		"hint": {
 			"en_US": "Returns the number of characters in the provided string.",
 			"zh_CN": "返回提供的字符串中的字符数。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "lower",
@@ -281,6 +1648,39 @@
 		"hint": {
 			"en_US": "Returns the lowercase version of the given String.",
 			"zh_CN": "返回给定 String 的小写版本。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "lpad",
@@ -288,6 +1688,53 @@
 		"hint": {
 			"en_US": "Returns the String argument, padded on the left side with the number of spaces specified by the second argument.",
 			"zh_CN": "返回 String，在左侧用第二个参数指定的空格数填充。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "number",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "number of spaces",
+					"zh_CN": "空格数"
+				},
+				"label": {
+					"en_US": "number of spaces",
+					"zh_CN": "空格数"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "ltrim",
@@ -295,6 +1742,39 @@
 		"hint": {
 			"en_US": "Removes all leading whitespace (tabs and spaces) from the provided String.",
 			"zh_CN": "从提供的字符串中删除所有前导空格（制表符和空格）。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "numbytes",
@@ -302,6 +1782,24 @@
 		"hint": {
 			"en_US": "Returns the number of bytes in the UTF-8 encoding of the provided string.",
 			"zh_CN": "以提供的字符串的 UTF-8 编码返回字节数。"
+		},
+		"args": [],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "regexp_matches",
@@ -309,6 +1807,55 @@
 		"hint": {
 			"en_US": "Returns true if the string (first argument) contains a match for the regular expression.",
 			"zh_CN": "如果字符串（第一个参数）包含正则表达式的匹配项，则返回 true。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "expression",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "regex expression",
+					"zh_CN": "正则表达式"
+				},
+				"label": {
+					"en_US": "regex expression",
+					"zh_CN": "正则表达式"
+				}
+			}
+
+
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "regexp_replace",
@@ -316,6 +1863,68 @@
 		"hint": {
 			"en_US": "Replaces all occurrences of the second argument (regular expression) in the first argument with the third argument.",
 			"zh_CN": "将第一个参数中所有出现的第二个参数（正则表达式）替换为第三个参数。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "expression",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "regex expression",
+					"zh_CN": "正则表达式"
+				},
+				"label": {
+					"en_US": "regex expression",
+					"zh_CN": "正则表达式"
+				}
+			},
+			{
+				"name": "value",
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "string value",
+					"zh_CN": "字符串值"
+				},
+				"label": {
+					"en_US": "string value",
+					"zh_CN": "字符串值"
+				}
+			}
+
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "regexp_substr",
@@ -323,6 +1932,53 @@
 		"hint": {
 			"en_US": "Finds the first match of the 2nd parameter (regex) in the first parameter.",
 			"zh_CN": "在第一个参数中找到第二个参数（regex）的第一个匹配项。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "expression",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "regex expression",
+					"zh_CN": "正则表达式"
+				},
+				"label": {
+					"en_US": "regex expression",
+					"zh_CN": "正则表达式"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "rpad",
@@ -330,6 +1986,53 @@
 		"hint": {
 			"en_US": "Returns the String argument, padded on the right side with the number of spaces specified by the second argument.",
 			"zh_CN": "返回字符串参数，在右侧填充第二个参数指定的空格数。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "value",
+				"optional": false,
+				"control": "text",
+				"type": "number",
+				"hint": {
+					"en_US": "spaces number",
+					"zh_CN": "空格数"
+				},
+				"label": {
+					"en_US": "spaces number",
+					"zh_CN": "空格数"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "rtrim",
@@ -337,6 +2040,39 @@
 		"hint": {
 			"en_US": "Removes all trailing whitespace (tabs and spaces) from the provided String.",
 			"zh_CN": "从提供的字符串中删除所有尾随空白（制表符和空格）。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "substring",
@@ -344,6 +2080,67 @@
 		"hint": {
 			"en_US": "returns the substring of the provided String from the provided Int index (0-based, inclusive) to the end of the String.",
 			"zh_CN": "从提供的 Int 索引（从0开始，包括0）到字符串的结尾，返回提供的String的子字符串。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "start",
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "start",
+					"zh_CN": "start"
+				},
+				"label": {
+					"en_US": "start",
+					"zh_CN": "start"
+				}
+			},
+			{
+				"name": "end",
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "end",
+					"zh_CN": "end"
+				},
+				"label": {
+					"en_US": "end",
+					"zh_CN": "end"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "startswith",
@@ -351,6 +2148,53 @@
 		"hint": {
 			"en_US": "Returns Boolean, whether the first string argument starts with the second string argument.",
 			"zh_CN": "返回布尔值，是否第一个字符串参数是否以第二个字符串参数开头。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "value",
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "string value",
+					"zh_CN": "字符串值"
+				},
+				"label": {
+					"en_US": "string value",
+					"zh_CN": "字符串值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "split_value",
@@ -358,6 +2202,67 @@
 		"hint": {
 			"en_US": "Splitthevalueofthe1stparameterwiththe2ndparameter,andreturnthevalueofsplitarraythatindexedwiththe3rdparameter.split_value(\"/test/device001/message\",\"/\",0)ASa,thereturnedvalueoffunctionisempty;split_value(\"/test/device001/message\",\"/\",3)ASa,thereturnedvalueoffunctionismessage;",
 			"zh_CN": "用第二个参数分割第一个参数的值，并返回用第三个参数索引的分割数组的值。split_value（“/test/device001/message”，“/”，0）ASa，函数的返回值为空；split_value（“/test/device001/message”，“/”，3）ASa，函数的返回值为message。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "str_splitter",
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "str_splitter",
+					"zh_CN": "分隔符"
+				},
+				"label": {
+					"en_US": "str_splitter",
+					"zh_CN": "分隔符"
+				}
+			},
+			{
+				"name": "index",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "index",
+					"zh_CN": "位次值"
+				},
+				"label": {
+					"en_US": "index",
+					"zh_CN": "位次值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "trim",
@@ -365,6 +2270,39 @@
 		"hint": {
 			"en_US": "Removes all leading and trailing whitespace (tabs and spaces) from the provided String.",
 			"zh_CN": "从提供的字符串中删除所有前导和尾随空格（制表符和空格）。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "upper",
@@ -372,6 +2310,39 @@
 		"hint": {
 			"en_US": "Returns the uppercase version of the given String.",
 			"zh_CN": "返回给定 String 的大写版本。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "cast",
@@ -379,6 +2350,53 @@
 		"hint": {
 			"en_US": "Converts a value from one data type to another. The supported types includes: bigint, float, string, boolean and datetime(not supported now).",
 			"zh_CN": "将值从一种数据类型转换为另一种数据类型。 支持的类型包括：bigint，float，string，boolean 和 datetime（现在不支持）。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "chr",
@@ -386,6 +2404,39 @@
 		"hint": {
 			"en_US": "Returns the ASCII character that corresponds to the given Int argument",
 			"zh_CN": "返回与给定 Int 参数对应的 ASCII 字符"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "encode",
@@ -393,6 +2444,53 @@
 		"hint": {
 			"en_US": "Use the encode function to encode the payload, which potentially might be non-JSON data, into its string representation based on the encoding scheme. Currently, only \"base64\" econding type is supported.",
 			"zh_CN": "使用 encode 函数根据编码方案将负载（可能是非 JSON 数据）编码为其字符串表示形式。目前，只支持\"base64\"econding 类型。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "trunc",
@@ -400,6 +2498,53 @@
 		"hint": {
 			"en_US": "iTruncates the first argument to the number of Decimal places specified by the second argument. If the second argument is less than zero, it is set to zero. If the second argument is greater than 34, it is set to 34. Trailing zeroes are stripped from the result.",
 			"zh_CN": "将第一个参数截断为第二个参数指定的小数位数。 如果第二个参数小于零，则将其设置为零。 如果第二个参数大于34，则将其设置为34。从结果中去除尾随零。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			},
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "md5",
@@ -407,6 +2552,39 @@
 		"hint": {
 			"en_US": "Hashed value of the argument",
 			"zh_CN": "参数的哈希值"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "sha1",
@@ -414,6 +2592,39 @@
 		"hint": {
 			"en_US": "Hashed value of the argument",
 			"zh_CN": "参数的哈希值"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "sha256",
@@ -421,6 +2632,39 @@
 		"hint": {
 			"en_US": "Hashed value of the argument",
 			"zh_CN": "参数的哈希值"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "sha384",
@@ -428,6 +2672,39 @@
 		"hint": {
 			"en_US": "Hashed value of the argument",
 			"zh_CN": "参数的哈希值"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "sha512",
@@ -435,6 +2712,39 @@
 		"hint": {
 			"en_US": "Hashed value of the argument",
 			"zh_CN": "参数的哈希值"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				},
+				"label": {
+					"en_US": "key field",
+					"zh_CN": "key 值"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "json_path_exists",
@@ -442,6 +2752,53 @@
 		"hint": {
 			"en_US": "Checks whether JSON path returns any item for the specified JSON value. Return bool value.",
 			"zh_CN": "检查 JSON 路径是否返回指定JSON 值的任何项目。 返回布尔值。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "the JSON field",
+					"zh_CN": "JSON字段"
+				},
+				"label": {
+					"en_US": "the JSON field",
+					"zh_CN": "JSON字段"
+				}
+			},
+			{
+				"name": "expr",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "json path expression",
+					"zh_CN": "json 路径表达式"
+				},
+				"label": {
+					"en_US": "json path expression.",
+					"zh_CN": "json 路径表达式"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "json_path_query",
@@ -449,6 +2806,53 @@
 		"hint": {
 			"en_US": "Gets all items returned by JSON path for the specified JSON value.",
 			"zh_CN": "获取 JSON 路径返回的指定 JSON值的所有项目。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "the JSON field",
+					"zh_CN": "JSON字段"
+				},
+				"label": {
+					"en_US": "the JSON field",
+					"zh_CN": "JSON字段"
+				}
+			},
+			{
+				"name": "expr",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "json path expression",
+					"zh_CN": "json 路径表达式"
+				},
+				"label": {
+					"en_US": "json path expression.",
+					"zh_CN": "json 路径表达式"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "json_path_query_first",
@@ -456,6 +2860,53 @@
 		"hint": {
 			"en_US": "Gets the first item returned by JSON path for the specified JSON value.",
 			"zh_CN": "获取 JSON 路径返回的指定 JSON值的第一项。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "the JSON field",
+					"zh_CN": "JSON字段"
+				},
+				"label": {
+					"en_US": "the JSON field",
+					"zh_CN": "JSON字段"
+				}
+			},
+			{
+				"name": "expr",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "json path expression",
+					"zh_CN": "json 路径表达式"
+				},
+				"label": {
+					"en_US": "json path expression.",
+					"zh_CN": "json 路径表达式"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "isNull",
@@ -463,6 +2914,39 @@
 		"hint": {
 			"en_US": "Returns true if the argument is the Null value.",
 			"zh_CN": "如果参数为空值，则返回 true。"
+		},
+		"args": [
+			{
+				"name": "column",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "Returns true if the argument is the Null value.",
+					"zh_CN": "如果参数为空值，则返回 true"
+				},
+				"label": {
+					"en_US": "Returns true if the argument is the Null value.",
+					"zh_CN": "如果参数为空值，则返回 true"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "newuuid",
@@ -470,6 +2954,24 @@
 		"hint": {
 			"en_US": "Returns a random 16-byte UUID.",
 			"zh_CN": "返回一个随机的16字节 UUID。"
+		},
+		"args": [],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "tstamp",
@@ -477,6 +2979,24 @@
 		"hint": {
 			"en_US": "Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970",
 			"zh_CN": "返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。"
+		},
+		"args": [],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "mqtt",
@@ -484,6 +3004,39 @@
 		"hint": {
 			"en_US": "Returns the MQTT meta-data of specified key. The current supported keys - topic: return the topic of message. If there are multiple stream source, then specify the source name in parameter. Such as mqtt(src1.topic) - messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as mqtt(src2.messageid)",
 			"zh_CN": "返回指定键的 MQTT 元数据。 当前支持的键包括 -topic：返回消息的主题。 如果有多个流源，则在参数中指定源名称。 如 mqtt(src1.topic) - messageid：返回消息的消息ID。 如果有多个流源，则在参数中指定源名称。 如 mqtt(src2.messageid)"
+		},
+		"args": [
+			{
+				"name": "key",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "Returns the MQTT meta-data of specified key.",
+					"zh_CN": "返回指定键的 MQTT 元数据"
+				},
+				"label": {
+					"en_US": "Returns the MQTT meta-data of specified key.",
+					"zh_CN": "返回指定键的 MQTT 元数据"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "meta",
@@ -491,6 +3044,39 @@
 		"hint": {
 			"en_US": "Returns the meta-data of specified key. The key could be: - a standalone key if there is only one source in the from clause, such as meta(device) - A qualified key to specify the stream, such as meta(src1.device) - A key with arrow for multi level meta data, such as meta(src1.reading->device->name) This assumes reading is a map structure meta data.",
 			"zh_CN": "返回指定键的元数据。 键可能是：-如果 from 子句中只有一个来源，则为独立键，例如meta(device) -用于指定流的合格键，例如 meta(src1.device) -用于多级元数据的带有箭头的键，例如 meta(src1.reading->device->name)。这里假定读取是地图结构元数据。"
+		},
+		"args": [
+			{
+				"name": "key",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "Returns the meta-data of specified key.",
+					"zh_CN": "返回指定键的元数据"
+				},
+				"label": {
+					"en_US": "Returns the meta-data of specified key.",
+					"zh_CN": "返回指定键的元数据"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "cardinality",
@@ -498,6 +3084,39 @@
 		"hint": {
 			"en_US": "The number of members in the group. The null value is 0.",
 			"zh_CN": "组中成员的数量。空值为0。"
+		},
+		"args": [
+			{
+				"name": "col",
+				"optional": false,
+				"control": "text",
+				"type": "any",
+				"hint": {
+					"en_US": "The number of members in the group. The null value is 0",
+					"zh_CN": "组中成员的数量。空值为0"
+				},
+				"label": {
+					"en_US": "The number of members in the group. The null value is 0",
+					"zh_CN": "组中成员的数量。空值为0"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "window_start",
@@ -505,6 +3124,24 @@
 		"hint": {
 			"en_US": "Return the window start timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.",
 			"zh_CN": "返回窗口的开始时间戳，格式为 int64。若运行时没有时间窗口，则返回默认值0。窗口的时间与规则所用的时间系统相同。若规则采用处理时间，则窗口的时间也为处理时间；若规则采用事件事件，则窗口的时间也为事件时间。"
+		},
+		"args": [],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}, {
 		"name": "window_end",
@@ -512,6 +3149,23 @@
 		"hint": {
 			"en_US": "Return the window end timestamp in int64 format. If there is no time window, it returns 0. The window time is aligned with the timestamp notion of the rule. If the rule is using processing time, then the window start timestamp is the processing timestamp. If the rule is using event time, then the window start timestamp is the event timestamp.",
 			"zh_CN": "返回窗口的结束时间戳，格式为 int64。若运行时没有时间窗口，则返回默认值0。窗口的时间与规则所用的时间系统相同。若规则采用处理时间，则窗口的时间也为处理时间；若规则采用事件事件，则窗口的时间也为事件时间。"
+		},
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "apply_butter_filter"
+			}
+		],
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
+				"zh_CN": "返回当前组去重的结果，通常用在窗口中。其中，第一个参数指定用于去重的列；第二个参数指定是否返回全部结果。若为 false ，则仅返回最近的未重复的项；若最近的项有重复，则返回空数组。"
+			}
 		}
 	}]
 }

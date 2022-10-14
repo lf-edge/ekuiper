@@ -23,55 +23,42 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
-func readFuncMetaDir() []fileContent {
+type fileContent []byte
+
+func readOpsMetaDir() ([]fileContent, error) {
 	var filesByte []fileContent
 
 	confDir, err := conf.GetConfLoc()
 	if nil != err {
-		return nil
+		return nil, err
 	}
 
-	dir := path.Join(confDir, "functions")
+	dir := path.Join(confDir, "ops")
 	files, err := os.ReadDir(dir)
 	if nil != err {
-		return nil
+		return nil, err
 	}
 	for _, file := range files {
 		fname := file.Name()
 		if !strings.HasSuffix(fname, ".json") {
 			continue
 		}
-		filesByte = append(filesByte, readFuncMetaFile(path.Join(dir, fname)))
+
+		filesByte = append(filesByte, readOpsMetaFile(path.Join(dir, fname)))
+
 	}
 
-	confDir, err = conf.GetDataLoc()
-	if nil != err {
-		return nil
-	}
-
-	dir = path.Join(confDir, "functions")
-	files, err = os.ReadDir(dir)
-	if nil != err {
-		return nil
-	}
-	for _, file := range files {
-		fname := file.Name()
-		if !strings.HasSuffix(fname, ".json") {
-			continue
-		}
-		filesByte = append(filesByte, readFuncMetaFile(path.Join(dir, fname)))
-	}
-	return filesByte
+	return filesByte, nil
 }
 
-func readFuncMetaFile(filePath string) fileContent {
+func readOpsMetaFile(filePath string) fileContent {
 	fiName := path.Base(filePath)
 	sliByte, _ := os.ReadFile(filePath)
-	conf.Log.Infof("funcMeta file : %s", fiName)
+	conf.Log.Infof("operatorMeta file : %s", fiName)
 	return sliByte
 }
 
-func GetFunctions() bytes.Buffer {
-	files := readFuncMetaDir()
+func GetOperators() bytes.Buffer {
+	files, _ := readOpsMetaDir()
 	return ConstructJsonArray(files)
 }

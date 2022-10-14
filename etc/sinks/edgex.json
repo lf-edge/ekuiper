@@ -418,7 +418,7 @@
     }
   ],
   "node": {
-    "category": "Sink",
+    "category": "sink",
     "icon": "iconPath",
     "label": {
       "en": "EDGEX output",

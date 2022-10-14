@@ -142,11 +142,6 @@ func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 				conf.Log.Errorf("read sink json file:%v", err)
 			}
 		}
-		for _, s := range pi.Functions {
-			if err := meta.ReadFuncMetaFile(path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.FUNCTION], s+`.json`), true); nil != err {
-				conf.Log.Errorf("read function json file:%v", err)
-			}
-		}
 	}
 
 	conf.Log.Infof("Installed portable plugin %s successfully", name)
@@ -368,7 +363,6 @@ func (m *Manager) Delete(name string) error {
 	for _, s := range pinfo.Functions {
 		p := path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.FUNCTION], s+".json")
 		os.Remove(p)
-		meta.UninstallFunc(s)
 	}
 	_ = os.RemoveAll(path.Join(m.pluginDir, name))
 	return nil

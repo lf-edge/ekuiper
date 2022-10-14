@@ -1,4 +1,5 @@
 {
+  "name": "window",
   "about": {
     "trial": false,
     "author": {
@@ -90,7 +91,7 @@
   }],
   "node": {
     "display": false,
-    "category": "op",
+    "category": "operator",
     "input": {
       "type": "row",
       "rowType": "any",

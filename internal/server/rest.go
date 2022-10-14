@@ -15,6 +15,7 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -90,6 +91,18 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 	w.Header().Add("Content-Length", strconv.Itoa(len(jsonByte)))
 
 	_, err = w.Write(jsonByte)
+	// Problems encoding
+	if err != nil {
+		handleError(w, err, "", logger)
+	}
+}
+
+func jsonByteResponse(buffer bytes.Buffer, w http.ResponseWriter, logger api.Logger) {
+	w.Header().Add(ContentType, ContentTypeJSON)
+
+	w.Header().Add("Content-Length", strconv.Itoa(buffer.Len()))
+
+	_, err := w.Write(buffer.Bytes())
 	// Problems encoding
 	if err != nil {
 		handleError(w, err, "", logger)
