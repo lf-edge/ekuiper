@@ -186,3 +186,7 @@ This section configures the portable plugin runtime.
       # or other circumstance where the python executable cannot be successfully invoked through the default command.
       pythonBin: python
 ```
+
+## Ruleset Provision
+
+Support file based stream and rule provisioning on startup. Users can put a [ruleset](../restapi/ruleset.md#ruleset-format) file named `init.json` into `data` directory to initialize the ruleset. The ruleset will only be import on the first startup of eKuiper.
