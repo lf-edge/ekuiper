@@ -291,24 +291,17 @@ func restartRule(name string) error {
 	return startRule(name)
 }
 
-func recoverRule(name string) string {
-	rule, err := ruleProcessor.GetRuleById(name)
-	if err != nil {
-		return fmt.Sprintf("%v", err)
-	}
-
+func recoverRule(rule *api.Rule) string {
 	if !rule.Triggered {
 		rs := &RuleState{
-			RuleId: name,
+			RuleId: rule.Id,
 		}
-		registry.Store(name, rs)
-		return fmt.Sprintf("Rule %s was stopped.", name)
+		registry.Store(rule.Id, rs)
+		return fmt.Sprintf("Rule %s was stopped.", rule.Id)
 	}
-
-	err = startRule(name)
+	err := startRule(rule.Id)
 	if err != nil {
 		return fmt.Sprintf("%v", err)
 	}
-	return fmt.Sprintf("Rule %s was started.", name)
-
+	return fmt.Sprintf("Rule %s was started.", rule.Id)
 }

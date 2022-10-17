@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -152,13 +152,14 @@ func IsValidUrl(uri string) bool {
 	return true
 }
 
-func DownloadFile(filepath string, uri string) error {
+// ReadFile Need to close the return reader
+func ReadFile(uri string) (io.ReadCloser, error) {
 	conf.Log.Infof("Start to download file %s\n", uri)
 	u, err := url.ParseRequestURI(uri)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	var src io.Reader
+	var src io.ReadCloser
 	switch u.Scheme {
 	case "file":
 		// deal with windows path
@@ -168,17 +169,16 @@ func DownloadFile(filepath string, uri string) error {
 		conf.Log.Debugf(u.Path)
 		sourceFileStat, err := os.Stat(u.Path)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if !sourceFileStat.Mode().IsRegular() {
-			return fmt.Errorf("%s is not a regular file", u.Path)
+			return nil, fmt.Errorf("%s is not a regular file", u.Path)
 		}
 		srcFile, err := os.Open(u.Path)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		defer srcFile.Close()
 		src = srcFile
 	case "http", "https":
 		// Get the data
@@ -191,16 +191,24 @@ func DownloadFile(filepath string, uri string) error {
 		}
 		resp, err := client.Get(uri)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("cannot download the file with status: %s", resp.Status)
+			return nil, fmt.Errorf("cannot download the file with status: %s", resp.Status)
 		}
-		defer resp.Body.Close()
 		src = resp.Body
 	default:
-		return fmt.Errorf("unsupported url scheme %s", u.Scheme)
+		return nil, fmt.Errorf("unsupported url scheme %s", u.Scheme)
 	}
+	return src, nil
+}
+
+func DownloadFile(filepath string, uri string) error {
+	src, err := ReadFile(uri)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
 	// Create the file
 	out, err := os.Create(filepath)
 	if err != nil {

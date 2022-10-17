@@ -15,9 +15,11 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"io"
 	"net/http"
 	"os"
@@ -117,6 +119,8 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
+	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
 
@@ -541,4 +545,68 @@ func getTopoRuleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set(ContentType, ContentTypeJSON)
 	w.Write([]byte(content))
+}
+
+type rulesetInfo struct {
+	Content  string `json:"content"`
+	FilePath string `json:"file"`
+}
+
+func importHandler(w http.ResponseWriter, r *http.Request) {
+	rsi := &rulesetInfo{}
+	err := json.NewDecoder(r.Body).Decode(rsi)
+	if err != nil {
+		handleError(w, err, "Invalid body: Error decoding json", logger)
+		return
+	}
+	if rsi.Content != "" && rsi.FilePath != "" {
+		handleError(w, nil, "Invalid body: Cannot specify both content and file", logger)
+		return
+	} else if rsi.Content == "" && rsi.FilePath == "" {
+		handleError(w, nil, "Invalid body: must specify content or file", logger)
+		return
+	}
+	content := []byte(rsi.Content)
+	if rsi.FilePath != "" {
+		reader, err := httpx.ReadFile(rsi.FilePath)
+		if err != nil {
+			handleError(w, nil, "Fail to read file", logger)
+			return
+		}
+		defer reader.Close()
+		buf := new(bytes.Buffer)
+		_, err = io.Copy(buf, reader)
+		if err != nil {
+			handleError(w, err, "fail to convert file", logger)
+			return
+		}
+		content = buf.Bytes()
+	}
+	rules, counts, err := rulesetProcessor.Import(content)
+	if err != nil {
+		handleError(w, nil, "Import ruleset error", logger)
+		return
+	}
+	infra.SafeRun(func() error {
+		for _, name := range rules {
+			err := startRule(name)
+			if err != nil {
+				logger.Error(err)
+			}
+		}
+		return nil
+	})
+	w.Write([]byte(fmt.Sprintf("imported %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])))
+}
+
+func exportHandler(w http.ResponseWriter, r *http.Request) {
+	const name = "ekuiper_export.json"
+	exported, _, err := rulesetProcessor.Export()
+	if err != nil {
+		handleError(w, err, "export error", logger)
+		return
+	}
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Add("Content-Disposition", "Attachment")
+	http.ServeContent(w, r, name, time.Now(), exported)
 }

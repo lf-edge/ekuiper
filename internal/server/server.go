@@ -34,11 +34,12 @@ import (
 )
 
 var (
-	logger          = conf.Log
-	startTimeStamp  int64
-	version         = ""
-	ruleProcessor   *processor.RuleProcessor
-	streamProcessor *processor.StreamProcessor
+	logger           = conf.Log
+	startTimeStamp   int64
+	version          = ""
+	ruleProcessor    *processor.RuleProcessor
+	streamProcessor  *processor.StreamProcessor
+	rulesetProcessor *processor.RulesetProcessor
 )
 
 func createPaths() {
@@ -86,6 +87,7 @@ func StartUp(Version, LoadFileType string) {
 
 	ruleProcessor = processor.NewRuleProcessor()
 	streamProcessor = processor.NewStreamProcessor()
+	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
 
 	// register all extensions
 	for k, v := range components {
@@ -114,7 +116,11 @@ func StartUp(Version, LoadFileType string) {
 	} else {
 		logger.Info("Starting rules")
 		var reply string
-		for _, rule := range rules {
+		for _, name := range rules {
+			rule, err := ruleProcessor.GetRuleById(name)
+			if err != nil {
+				logger.Error(err)
+			}
 			//err = server.StartRule(rule, &reply)
 			reply = recoverRule(rule)
 			if 0 != len(reply) {

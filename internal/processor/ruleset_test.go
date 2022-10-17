@@ -15,6 +15,7 @@
 package processor
 
 import (
+	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"io"
 	"reflect"
@@ -24,6 +25,7 @@ import (
 
 func TestIO(t *testing.T) {
 	expected := `{"streams":{"demo":"CREATE STREAM demo () WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"},"tables":{},"rules":{"rule1":"{\"id\":\"rule1\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{\"log\": {}}]}","rule2":"{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"}}`
+	expectedCounts := []int{1, 0, 2}
 	expectedStreams := []string{"demo"}
 	expectedRules := []string{"rule1", "rule2"}
 	sp := NewStreamProcessor()
@@ -32,10 +34,16 @@ func TestIO(t *testing.T) {
 	defer rp.db.Clean()
 	rsp := NewRulesetProcessor(rp, sp)
 
-	err := rsp.Import([]byte(expected), true)
+	names, counts, err := rsp.Import([]byte(expected))
 	if err != nil {
 		t.Errorf("fail to import ruleset: %v", err)
 		return
+	}
+	if !reflect.DeepEqual(names, expectedRules) {
+		t.Errorf("fail to return the imported rules, expect %v but got %v", expectedRules, names)
+	}
+	if !reflect.DeepEqual(counts, expectedCounts) {
+		t.Errorf("fail to return the correct counts, expect %v, but got %v", expectedCounts, counts)
 	}
 
 	streams, err := sp.execShow(ast.TypeStream)
@@ -58,7 +66,7 @@ func TestIO(t *testing.T) {
 		return
 	}
 
-	exp, err := rsp.Export()
+	exp, exCounts, err := rsp.Export()
 	if err != nil {
 		t.Errorf("fail to export ruleset: %v", err)
 		return
@@ -72,5 +80,29 @@ func TestIO(t *testing.T) {
 	actual := buf.String()
 	if actual != expected {
 		t.Errorf("Expect\t\n %v but got\t\n %v", expected, actual)
+	}
+	if !reflect.DeepEqual(exCounts, expectedCounts) {
+		t.Errorf("fail to return the correct counts, expect %v, but got %v", expectedCounts, exCounts)
+	}
+}
+
+func TestImportError(t *testing.T) {
+	contents := []string{
+		"notjson",
+		`{INvalid"streams":{"demo":"CREATE STREAM demo () WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"},"tables":{},"rules":{"rule1":"{\"id\":\"rule1\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{\"log\": {}}]}","rule2":"{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"}}`,
+	}
+	sp := NewStreamProcessor()
+	defer sp.db.Clean()
+	rp := NewRuleProcessor()
+	defer rp.db.Clean()
+	rsp := NewRulesetProcessor(rp, sp)
+
+	for i, content := range contents {
+		_, _, err := rsp.Import([]byte(content))
+		if err == nil {
+			t.Errorf("%d fail, expect error but pass", i)
+		} else {
+			fmt.Println(err)
+		}
 	}
 }
