@@ -26,8 +26,10 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/topo/sink"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"io"
 	"net/http"
 	"net/rpc"
+	"os"
 	"strings"
 	"time"
 )
@@ -248,6 +250,52 @@ func (t *Server) DropRule(name string, reply *string) error {
 		}
 	}
 	*reply = r
+	return nil
+}
+
+func (t *Server) Import(file string, reply *string) error {
+	f, err := os.Open(file)
+	if err != nil {
+		return fmt.Errorf("fail to read file %s: %v", file, err)
+	}
+	defer f.Close()
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, f)
+	if err != nil {
+		return fmt.Errorf("fail to convert file %s: %v", file, err)
+	}
+	content := buf.Bytes()
+	rules, counts, err := rulesetProcessor.Import(content)
+	if err != nil {
+		return fmt.Errorf("import ruleset error: %v", err)
+	}
+	infra.SafeRun(func() error {
+		for _, name := range rules {
+			err := startRule(name)
+			if err != nil {
+				logger.Error(err)
+			}
+		}
+		return nil
+	})
+	*reply = fmt.Sprintf("imported %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
+	return nil
+}
+
+func (t *Server) Export(file string, reply *string) error {
+	f, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	exported, counts, err := rulesetProcessor.Export()
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(f, exported)
+	if err != nil {
+		return fmt.Errorf("fail to save to file %s:%v", file, err)
+	}
+	*reply = fmt.Sprintf("exported %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
 	return nil
 }
 
