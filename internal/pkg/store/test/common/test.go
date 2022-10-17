@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -80,5 +80,33 @@ func TestKvKeys(length int, ks kv.KeyValue, t *testing.T) {
 	}
 	if !reflect.DeepEqual(keys, expected) {
 		t.Errorf("Keys do not match expected %s != %s", keys, expected)
+	}
+}
+
+func TestKvAll(length int, ks kv.KeyValue, t *testing.T) {
+
+	expected := make(map[string]string)
+	for i := 0; i < length; i++ {
+		key := fmt.Sprintf("key-%d", i)
+		value := fmt.Sprintf("value-%d", i)
+		if err := ks.Setnx(key, value); err != nil {
+			t.Errorf("It should be set")
+		}
+		expected[key] = value
+	}
+
+	var (
+		all map[string]string
+		err error
+	)
+	if all, err = ks.All(); err != nil {
+		t.Errorf("Failed to get value: %s.", err)
+		return
+	} else if length != len(all) {
+		t.Errorf("expect: %d, got: %d", length, len(all))
+		return
+	}
+	if !reflect.DeepEqual(all, expected) {
+		t.Errorf("All values do not match expected %s != %s", all, expected)
 	}
 }

@@ -22,6 +22,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/gomodule/redigo/redis"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 	"strings"
 )
@@ -121,6 +122,28 @@ func (kv redisKvStore) Keys() ([]string, error) {
 	result := make([]string, 0)
 	for _, k := range keys {
 		result = append(result, kv.trimPrefix(k))
+	}
+	return result, nil
+}
+
+func (kv redisKvStore) All() (map[string]string, error) {
+	keys, err := kv.metaKeys()
+	if err != nil {
+		return nil, err
+	}
+	var (
+		value  string
+		result = make(map[string]string)
+	)
+	for _, k := range keys {
+		key := kv.trimPrefix(k)
+		ok, err := kv.Get(key, &value)
+		if err != nil {
+			conf.Log.Errorf("get %s fail during get all in redi: %v", key, err)
+		}
+		if ok {
+			result[key] = value
+		}
 	}
 	return result, nil
 }

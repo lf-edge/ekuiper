@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -153,4 +153,36 @@ func TestRuleActionParse_Apply(t *testing.T) {
 		}
 	}
 
+}
+
+func TestAllRules(t *testing.T) {
+	expected := map[string]string{
+		"rule1": "{\"id\": \"rule1\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}",
+		"rule2": "{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}",
+		"rule3": "{\"id\": \"rule3\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}",
+	}
+	sp := NewStreamProcessor()
+	defer sp.db.Clean()
+	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
+	p := NewRuleProcessor()
+	p.db.Clean()
+	defer p.db.Clean()
+
+	for k, v := range expected {
+		_, err := p.ExecCreate(k, v)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		defer p.ExecDrop(k)
+	}
+
+	all, err := p.GetAllRulesJson()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if !reflect.DeepEqual(all, expected) {
+		t.Errorf("Expect\t %v\nBut got\t%v", expected, all)
+	}
 }

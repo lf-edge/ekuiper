@@ -235,3 +235,35 @@ func TestTableList(t *testing.T) {
 		return
 	}
 }
+
+func TestAll(t *testing.T) {
+	expected := map[string]map[string]string{
+		"streams": {
+			"demo":  "create stream demo () WITH (FORMAT=\"JSON\", DATASOURCE=\"demo\", SHARED=\"TRUE\")",
+			"demo1": "create stream demo1 () WITH (FORMAT=\"JSON\", DATASOURCE=\"demo\")",
+			"demo2": "create stream demo2 () WITH (FORMAT=\"JSON\", DATASOURCE=\"demo\", SHARED=\"TRUE\")",
+			"demo3": "create stream demo3 () WITH (FORMAT=\"JSON\", DATASOURCE=\"demo\", SHARED=\"TRUE\")",
+		},
+		"tables": {
+			"tt1": `CREATE TABLE tt1 () WITH (DATASOURCE="users", FORMAT="JSON", KIND="scan")`,
+			"tt3": `CREATE TABLE tt3 () WITH (DATASOURCE="users", TYPE="memory", FORMAT="JSON", KEY="id", KIND="lookup")`,
+		},
+	}
+	p := NewStreamProcessor()
+	p.db.Clean()
+	defer p.db.Clean()
+	for st, m := range expected {
+		for k, v := range m {
+			p.ExecStmt(v)
+			defer p.ExecStmt("Drop " + st + " " + k)
+		}
+	}
+	all, err := p.GetAll()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if !reflect.DeepEqual(all, expected) {
+		t.Errorf("Expect\t %v\nBut got\t%v", expected, all)
+	}
+}

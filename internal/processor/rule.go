@@ -200,6 +200,10 @@ func (p *RuleProcessor) GetAllRules() ([]string, error) {
 	return p.db.Keys()
 }
 
+func (p *RuleProcessor) GetAllRulesJson() (map[string]string, error) {
+	return p.db.All()
+}
+
 func (p *RuleProcessor) ExecDrop(name string) (string, error) {
 	result := fmt.Sprintf("Rule %s is dropped.", name)
 	var ruleJson string
