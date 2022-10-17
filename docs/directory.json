@@ -491,12 +491,18 @@
 						{
 							"title": "外部函数管理",
 							"path": "operation/restapi/services"
-						},{
+						},
+						{
 							"title": "模式管理",
 							"path": "operation/restapi/schemas"
-						},{
+						},
+						{
 							"title": "上传文件管理",
 							"path": "operation/restapi/uploads"
+						},
+						{
+							"title": "规则集管理",
+							"path": "operation/restapi/ruleset"
 						}
 					]
 				},
@@ -522,9 +528,14 @@
 						{
 							"title": "插件管理",
 							"path": "operation/cli/plugins"
-						},{
+						},
+						{
 							"title": "模式管理",
 							"path": "operation/cli/schemas"
+						},
+						{
+							"title": "规则集管理",
+							"path": "operation/cli/ruleset"
 						}
 					]
 				},
@@ -1057,12 +1068,18 @@
 						{
 							"title": "External Services",
 							"path": "operation/restapi/services"
-						},{
+						},
+						{
 							"title": "Schemas",
 							"path": "operation/restapi/schemas"
-						},{
+						},
+						{
 							"title": "Upload files",
 							"path": "operation/restapi/uploads"
+						},
+						{
+							"title": "Ruleset",
+							"path": "operation/restapi/ruleset"
 						}
 					]
 				},
@@ -1088,9 +1105,14 @@
 						{
 							"title": "Plugins",
 							"path": "operation/cli/plugins"
-						},{
+						},
+						{
 							"title": "Schemas",
 							"path": "operation/cli/schemas"
+						},
+						{
+							"title": "Ruleset",
+							"path": "operation/cli/ruleset"
 						}
 					]
 				},
