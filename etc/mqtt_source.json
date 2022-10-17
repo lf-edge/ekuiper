@@ -212,5 +212,22 @@
 				"zh_CN": "KubeEdge 模型文件"
 			}
 		}]
+	},
+	"outputs": [
+		{
+			"label": {
+				"en_US": "Output",
+				"zh_CN": "输出"
+			},
+			"value": "signal"
+		}
+	],
+	"node": {
+		"category": "source",
+		"icon": "iconPath",
+		"label": {
+			"en_US": "mqtt",
+			"zh_CN": "mqtt"
+		}
 	}
 }
