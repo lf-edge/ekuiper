@@ -168,3 +168,7 @@ GET http://localhost:9081/plugins/functions/prebuild
       # 若系统中有多个 python 版本，可通过此配置指定具体的 python 地址。
       pythonBin: python
 ```
+
+## 初始化规则集
+
+支持基于文件的流和规则的启动时配置。用户可以将名为 `init.json` 的[规则集](../restapi/ruleset.md#规则集格式)文件放入 `data` 目录，以初始化规则集。该规则集只在eKuiper 第一次启动时被导入。
