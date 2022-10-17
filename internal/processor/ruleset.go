@@ -40,37 +40,41 @@ func NewRulesetProcessor(r *RuleProcessor, s *StreamProcessor) *RulesetProcessor
 	}
 }
 
-func (rs *RulesetProcessor) Export() (io.Reader, error) {
+func (rs *RulesetProcessor) Export() (io.ReadSeeker, []int, error) {
 	var all ruleset
 	allStreams, err := rs.s.GetAll()
 	if err != nil {
-		return nil, fmt.Errorf("fail to get all streams: %v", err)
+		return nil, nil, fmt.Errorf("fail to get all streams: %v", err)
 	}
 	all.Streams = allStreams["streams"]
 	all.Tables = allStreams["tables"]
 	rules, err := rs.r.GetAllRulesJson()
 	if err != nil {
-		return nil, fmt.Errorf("fail to get all rules: %v", err)
+		return nil, nil, fmt.Errorf("fail to get all rules: %v", err)
 	}
 	all.Rules = rules
 	jsonBytes, err := json.Marshal(all)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return bytes.NewBuffer(jsonBytes), nil
+	counts := []int{len(all.Streams), len(all.Tables), len(all.Rules)}
+	return bytes.NewReader(jsonBytes), counts, nil
 }
 
-func (rs *RulesetProcessor) Import(content []byte, overwrite bool) error {
+func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 	all := &ruleset{}
 	err := json.Unmarshal(content, all)
 	if err != nil {
-		return fmt.Errorf("invalid import file: %v", err)
+		return nil, nil, fmt.Errorf("invalid import file: %v", err)
 	}
+	counts := make([]int, 3)
 	// restore streams
 	for k, v := range all.Streams {
 		_, e := rs.s.ExecStreamSql(v)
 		if e != nil {
 			conf.Log.Errorf("Fail to import stream %s(%s) with error: %v", k, v, e)
+		} else {
+			counts[0]++
 		}
 	}
 	// restore tables
@@ -78,14 +82,20 @@ func (rs *RulesetProcessor) Import(content []byte, overwrite bool) error {
 		_, e := rs.s.ExecStreamSql(v)
 		if e != nil {
 			conf.Log.Errorf("Fail to import table %s(%s) with error: %v", k, v, e)
+		} else {
+			counts[1]++
 		}
 	}
+	var rules []string
 	// restore rules
 	for k, v := range all.Rules {
-		_, e := rs.r.ExecCreate("", v)
+		_, e := rs.r.ExecCreate(k, v)
 		if e != nil {
 			conf.Log.Errorf("Fail to import rule %s(%s) with error: %v", k, v, e)
+		} else {
+			rules = append(rules, k)
+			counts[2]++
 		}
 	}
-	return nil
+	return rules, counts, nil
 }
