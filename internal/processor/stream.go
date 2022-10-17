@@ -398,3 +398,30 @@ func printFieldType(ft ast.FieldType) (result string) {
 	}
 	return
 }
+
+// GetAll return all streams and tables defined to export.
+func (p *StreamProcessor) GetAll() (result map[string]map[string]string, e error) {
+	defs, err := p.db.All()
+	if err != nil {
+		e = err
+		return
+	}
+	var (
+		vs = &xsql.StreamInfo{}
+	)
+	result = map[string]map[string]string{
+		"streams": make(map[string]string),
+		"tables":  make(map[string]string),
+	}
+	for k, v := range defs {
+		if err := json.Unmarshal([]byte(v), vs); err == nil {
+			switch vs.StreamType {
+			case ast.TypeStream:
+				result["streams"][k] = vs.Statement
+			case ast.TypeTable:
+				result["tables"][k] = vs.Statement
+			}
+		}
+	}
+	return
+}

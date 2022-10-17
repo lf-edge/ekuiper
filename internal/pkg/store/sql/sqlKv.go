@@ -141,6 +141,37 @@ func (kv *sqlKvStore) Keys() ([]string, error) {
 	return keys, err
 }
 
+func (kv *sqlKvStore) All() (all map[string]string, err error) {
+	err = kv.database.Apply(func(db *sql.DB) error {
+		query := fmt.Sprintf("SELECT * FROM '%s'", kv.table)
+		row, e := db.Query(query)
+		if nil != e {
+			return e
+		}
+		defer row.Close()
+		var (
+			key      string
+			valBytes []byte
+			value    string
+		)
+		all = make(map[string]string)
+		for row.Next() {
+			e = row.Scan(&key, &valBytes)
+			if nil != e {
+				return e
+			} else {
+				dec := gob.NewDecoder(bytes.NewBuffer(valBytes))
+				if err := dec.Decode(&value); err != nil {
+					return err
+				}
+				all[key] = value
+			}
+		}
+		return nil
+	})
+	return
+}
+
 func (kv *sqlKvStore) Clean() error {
 	return kv.database.Apply(func(db *sql.DB) error {
 		query := fmt.Sprintf("DELETE FROM '%s'", kv.table)

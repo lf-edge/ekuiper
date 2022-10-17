@@ -51,6 +51,14 @@ func TestRedisKvKeys(t *testing.T) {
 	common.TestKvKeys(length, ks, t)
 }
 
+func TestRedisKvAll(t *testing.T) {
+	ks, db, minRedis := setupRedisKv()
+	defer cleanRedisKv(db, minRedis)
+
+	length := 10
+	common.TestKvAll(length, ks, t)
+}
+
 func setupRedisKv() (kv.KeyValue, *Instance, *miniredis.Miniredis) {
 	minRedis, err := miniredis.Run()
 	if err != nil {
