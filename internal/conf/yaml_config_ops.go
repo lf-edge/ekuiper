@@ -345,7 +345,8 @@ func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) 
 		dir = confDir
 	}
 	filePath := path.Join(dir, fileName+`.yaml`)
-	_ = filex.ReadYamlUnmarshal(filePath, &c.etcCfg)
+	// Just ignore error if yaml not found
+	_ = LoadConfigFromPath(filePath, &c.etcCfg)
 
 	dataDir, err := GetDataLoc()
 	if nil != err {

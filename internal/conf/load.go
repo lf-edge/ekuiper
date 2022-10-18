@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -68,12 +68,15 @@ func LoadConfigFromPath(p string, c interface{}) error {
 	if err != nil {
 		return err
 	}
+	// Make all keys to lowercase to match environment variables then revert it back by checking json defs
 	configs := normalize(configMap)
 	err = process(configs, os.Environ(), prefix)
 	if err != nil {
 		return err
 	}
-	if _, success := c.(*map[string]interface{}); success {
+	// checking json keys
+	switch c.(type) {
+	case *map[string]interface{}, *map[string]map[string]interface{}:
 		names, err := extractKeysFromJsonIfExists(p)
 		if err != nil {
 			return err
