@@ -49,12 +49,15 @@ func (m metaComp) rest(r *mux.Router) {
 	r.HandleFunc("/metadata/sources/{name}", sourceMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/yaml/{name}", sourceConfHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/{name}/confKeys/{confKey}", sourceConfKeyHandler).Methods(http.MethodDelete, http.MethodPut)
+	r.HandleFunc("/metadata/sinks/yaml/{name}", sinkConfHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sinks/{name}/confKeys/{confKey}", sinkConfKeyHandler).Methods(http.MethodDelete, http.MethodPut)
 
 	r.HandleFunc("/metadata/connections", connectionsMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/connections/{name}", connectionMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/connections/yaml/{name}", connectionConfHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/connections/{name}/confKeys/{confKey}", connectionConfKeyHandler).Methods(http.MethodDelete, http.MethodPut)
 
+	r.HandleFunc("/metadata/resources", resourcesHandler).Methods(http.MethodGet)
 	for _, endpoint := range metaEndpoints {
 		endpoint(r)
 	}
@@ -181,7 +184,23 @@ func connectionConfHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	} else {
-		w.Write(ret)
+		_, _ = w.Write(ret)
+	}
+}
+
+// Get sink yaml
+func sinkConfHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	language := getLanguage(r)
+	configOperatorKey := fmt.Sprintf(meta.SinkCfgOperatorKeyTemplate, pluginName)
+	ret, err := meta.GetYamlConf(configOperatorKey, language)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	} else {
+		_, _ = w.Write(ret)
 	}
 }
 
@@ -212,6 +231,31 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Add  del confkey
+func sinkConfKeyHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var err error
+	vars := mux.Vars(r)
+	pluginName := vars["name"]
+	confKey := vars["confKey"]
+	language := getLanguage(r)
+	switch r.Method {
+	case http.MethodDelete:
+		err = meta.DelSinkConfKey(pluginName, confKey, language)
+	case http.MethodPut:
+		v, err1 := io.ReadAll(r.Body)
+		if err1 != nil {
+			handleError(w, err, "Invalid body", logger)
+			return
+		}
+		err = meta.AddSinkConfKey(pluginName, confKey, language, v)
+	}
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+}
+
+// Add  del confkey
 func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
@@ -234,6 +278,19 @@ func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
+	}
+}
+
+// get updatable resources
+func resourcesHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	language := getLanguage(r)
+	ret, err := meta.GetResources(language)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	} else {
+		_, _ = w.Write(ret)
 	}
 }
 

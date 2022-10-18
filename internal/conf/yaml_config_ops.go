@@ -230,11 +230,10 @@ func (c *ConfigKeys) AddConfKey(confKey string, reqField map[string]interface{})
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	if _, ok := c.etcCfg[confKey]; ok {
-		return fmt.Errorf("duplicate key %s, already exist in etc folder", confKey)
-	}
-
 	c.dataCfg[confKey] = reqField
+	if _, ok := c.etcCfg[confKey]; ok {
+		delete(c.etcCfg, confKey)
+	}
 
 	return nil
 }
@@ -270,6 +269,32 @@ func (c *SourceConfigKeysOps) SaveCfgToFile() error {
 	}
 
 	dir := path.Join(confDir, "sources")
+	filePath := path.Join(dir, pluginName+".yaml")
+	cfg := c.CopyUpdatableConfContent()
+	err = filex.WriteYamlMarshal(filePath, cfg)
+	if nil != err {
+		return err
+	}
+	return nil
+}
+
+// SinkConfigKeysOps implement ConfOperator interface, load the configs from data/sinks/xx.yaml
+type SinkConfigKeysOps struct {
+	*ConfigKeys
+}
+
+func (c *SinkConfigKeysOps) IsSource() bool {
+	return false
+}
+
+func (c *SinkConfigKeysOps) SaveCfgToFile() error {
+	pluginName := c.pluginName
+	confDir, err := GetDataLoc()
+	if nil != err {
+		return err
+	}
+
+	dir := path.Join(confDir, "sinks")
 	filePath := path.Join(dir, pluginName+".yaml")
 	cfg := c.CopyUpdatableConfContent()
 	err = filex.WriteYamlMarshal(filePath, cfg)
@@ -358,6 +383,49 @@ func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) 
 	filePath = path.Join(dir, fileName+`.yaml`)
 	_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
 
+	//delete the etc config keys that exist in data
+	for k, _ := range c.dataCfg {
+		if _, found := c.etcCfg[k]; found {
+			delete(c.etcCfg, k)
+		}
+	}
+
+	return c, nil
+}
+
+// NewConfigOperatorForSink construct function
+func NewConfigOperatorForSink(pluginName string) ConfigOperator {
+	c := &SinkConfigKeysOps{
+		&ConfigKeys{
+			lock:       sync.RWMutex{},
+			pluginName: pluginName,
+			etcCfg:     map[string]map[string]interface{}{},
+			dataCfg:    map[string]map[string]interface{}{},
+		},
+	}
+	return c
+}
+
+// NewConfigOperatorFromSinkYaml construct function, Load the configs from etc/sources/xx.yaml
+func NewConfigOperatorFromSinkYaml(pluginName string) (ConfigOperator, error) {
+	c := &SinkConfigKeysOps{
+		&ConfigKeys{
+			lock:       sync.RWMutex{},
+			pluginName: pluginName,
+			etcCfg:     map[string]map[string]interface{}{},
+			dataCfg:    map[string]map[string]interface{}{},
+		},
+	}
+
+	dataDir, err := GetDataLoc()
+	if nil != err {
+		return nil, err
+	}
+	dir := path.Join(dataDir, "sinks")
+
+	filePath := path.Join(dir, pluginName+`.yaml`)
+	_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
+
 	return c, nil
 }
 
@@ -432,5 +500,13 @@ func NewConfigOperatorFromConnectionYaml(pluginName string) (ConfigOperator, err
 			return nil, fmt.Errorf("file content is not right: %v", plgCnfs)
 		}
 	}
+
+	//delete the etc config keys that exist in data
+	for k, _ := range c.dataCfg {
+		if _, found := c.etcCfg[k]; found {
+			delete(c.etcCfg, k)
+		}
+	}
+
 	return c, nil
 }

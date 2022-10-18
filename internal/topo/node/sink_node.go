@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/node/cache"
+	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -388,7 +389,8 @@ func getSink(name string, action map[string]interface{}) (api.Sink, error) {
 	)
 	s, err = io.Sink(name)
 	if s != nil {
-		err = s.Configure(action)
+		newAction := nodeConf.GetSinkConf(name, action)
+		err = s.Configure(newAction)
 		if err != nil {
 			return nil, err
 		}

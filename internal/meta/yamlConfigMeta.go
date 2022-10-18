@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"strings"
 	"sync"
 )
 
@@ -35,11 +36,12 @@ var ConfigManager = configManager{
 }
 
 const SourceCfgOperatorKeyTemplate = "sources.%s"
+const SinkCfgOperatorKeyTemplate = "sinks.%s"
 const ConnectionCfgOperatorKeyTemplate = "connections.%s"
 
 // loadConfigOperatorForSource
-// Try to load ConfigOperator for plugin xxx from /etc/sources/xxx.yaml
-// If plugin xxx not exist in /etc/sources/xxx.yaml, no error response
+// Try to load ConfigOperator for plugin xxx from /etc/sources/xxx.yaml  /data/sources/xxx.yaml
+// If plugin xxx not exist, no error response
 func loadConfigOperatorForSource(pluginName string) {
 	yamlKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, pluginName)
 
@@ -51,8 +53,22 @@ func loadConfigOperatorForSource(pluginName string) {
 	}
 }
 
+// loadConfigOperatorForSink
+// Try to load ConfigOperator for plugin xxx from /data/sinks/xxx.yaml
+// If plugin xxx not exist, no error response
+func loadConfigOperatorForSink(pluginName string) {
+	yamlKey := fmt.Sprintf(SinkCfgOperatorKeyTemplate, pluginName)
+
+	if cfg, _ := conf.NewConfigOperatorFromSinkYaml(pluginName); cfg != nil {
+		ConfigManager.lock.Lock()
+		ConfigManager.cfgOperators[yamlKey] = cfg
+		ConfigManager.lock.Unlock()
+		conf.Log.Infof("Loading yaml file for sink: %s", pluginName)
+	}
+}
+
 // loadConfigOperatorForConnection
-// Try to load ConfigOperator for plugin from /etc/connections/connection.yaml
+// Try to load ConfigOperator for plugin from /etc/connections/connection.yaml /data/connections/connection.yaml
 // If plugin not exist in /etc/connections/connection.yaml, no error response
 func loadConfigOperatorForConnection(pluginName string) {
 	yamlKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, pluginName)
@@ -63,34 +79,6 @@ func loadConfigOperatorForConnection(pluginName string) {
 		ConfigManager.lock.Unlock()
 		conf.Log.Infof("Loading yaml file for connection: %s", pluginName)
 	}
-}
-
-func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
-
-	ConfigManager.lock.RLock()
-	defer ConfigManager.lock.RUnlock()
-
-	cfgOps, ok := ConfigManager.cfgOperators[configOperatorKey]
-	if !ok {
-		return nil, fmt.Errorf(`%s%s`, getMsg(language, source, "not_found_plugin"), configOperatorKey)
-	}
-
-	cf := cfgOps.CopyConfContent()
-	if b, err = json.Marshal(cf); nil != err {
-		return nil, fmt.Errorf(`%s%v`, getMsg(language, source, "json_marshal_fail"), cf)
-	} else {
-		return b, err
-	}
-}
-
-func DelSourceConfKey(plgName, confKey, language string) error {
-	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
-	return delConfKey(configOperatorKey, confKey, language)
-}
-
-func DelConnectionConfKey(plgName, confKey, language string) error {
-	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
-	return delConfKey(configOperatorKey, confKey, language)
 }
 
 func delConfKey(configOperatorKey, confKey, language string) error {
@@ -109,6 +97,39 @@ func delConfKey(configOperatorKey, confKey, language string) error {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
 	}
 	return nil
+}
+
+func DelSourceConfKey(plgName, confKey, language string) error {
+	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
+	return delConfKey(configOperatorKey, confKey, language)
+}
+
+func DelSinkConfKey(plgName, confKey, language string) error {
+	configOperatorKey := fmt.Sprintf(SinkCfgOperatorKeyTemplate, plgName)
+	return delConfKey(configOperatorKey, confKey, language)
+}
+
+func DelConnectionConfKey(plgName, confKey, language string) error {
+	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
+	return delConfKey(configOperatorKey, confKey, language)
+}
+
+func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
+
+	ConfigManager.lock.RLock()
+	defer ConfigManager.lock.RUnlock()
+
+	cfgOps, ok := ConfigManager.cfgOperators[configOperatorKey]
+	if !ok {
+		return nil, fmt.Errorf(`%s%s`, getMsg(language, source, "not_found_plugin"), configOperatorKey)
+	}
+
+	cf := cfgOps.CopyConfContent()
+	if b, err = json.Marshal(cf); nil != err {
+		return nil, fmt.Errorf(`%s%v`, getMsg(language, source, "json_marshal_fail"), cf)
+	} else {
+		return b, err
+	}
 }
 
 func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
@@ -143,6 +164,38 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
 	return nil
 }
 
+func AddSinkConfKey(plgName, confKey, language string, content []byte) error {
+	ConfigManager.lock.Lock()
+	defer ConfigManager.lock.Unlock()
+
+	configOperatorKey := fmt.Sprintf(SinkCfgOperatorKeyTemplate, plgName)
+
+	reqField := make(map[string]interface{})
+	err := json.Unmarshal(content, &reqField)
+	if nil != err {
+		return fmt.Errorf(`%s%s.%v`, getMsg(language, sink, "type_conversion_fail"), plgName, err)
+	}
+
+	var cfgOps conf.ConfigOperator
+	var found bool
+
+	cfgOps, found = ConfigManager.cfgOperators[configOperatorKey]
+	if !found {
+		cfgOps = conf.NewConfigOperatorForSink(plgName)
+		ConfigManager.cfgOperators[configOperatorKey] = cfgOps
+	}
+
+	if err := cfgOps.AddConfKey(confKey, reqField); err != nil {
+		return err
+	}
+
+	err = cfgOps.SaveCfgToFile()
+	if err != nil {
+		return fmt.Errorf(`%s%s.%v`, getMsg(language, sink, "write_data_fail"), configOperatorKey, err)
+	}
+	return nil
+}
+
 func AddConnectionConfKey(plgName, confKey, language string, content []byte) error {
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
@@ -173,4 +226,45 @@ func AddConnectionConfKey(plgName, confKey, language string, content []byte) err
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
 	}
 	return nil
+}
+
+func GetResources(language string) (b []byte, err error) {
+	ConfigManager.lock.RLock()
+	defer ConfigManager.lock.RUnlock()
+	var srcResources []map[string]string
+	var sinkResources []map[string]string
+
+	for key, ops := range ConfigManager.cfgOperators {
+		if strings.HasSuffix(key, ConnectionCfgOperatorKeyTemplate) {
+			continue
+		}
+		if strings.HasSuffix(key, SourceCfgOperatorKeyTemplate) {
+			plugin := strings.TrimPrefix(key, SourceCfgOperatorKeyTemplate)
+			resourceIds := ops.GetUpdatableConfKeys()
+			item := map[string]string{}
+			for _, v := range resourceIds {
+				item[plugin] = v
+			}
+			srcResources = append(srcResources, item)
+		}
+		if strings.HasSuffix(key, SinkCfgOperatorKeyTemplate) {
+			plugin := strings.TrimPrefix(key, SinkCfgOperatorKeyTemplate)
+			resourceIds := ops.GetUpdatableConfKeys()
+			item := map[string]string{}
+			for _, v := range resourceIds {
+				item[plugin] = v
+			}
+			sinkResources = append(sinkResources, item)
+		}
+	}
+
+	result := map[string]interface{}{}
+	result["sources"] = srcResources
+	result["sinks"] = sinkResources
+
+	if b, err = json.Marshal(result); nil != err {
+		return nil, fmt.Errorf(`%s%v`, getMsg(language, source, "json_marshal_fail"), result)
+	} else {
+		return b, err
+	}
 }
