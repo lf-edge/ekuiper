@@ -253,6 +253,7 @@ func ReadSinkMetaFile(filePath string, installed bool) error {
 	if nil != err {
 		return err
 	}
+	loadConfigOperatorForSink(strings.TrimSuffix(finame, `.json`))
 	conf.Log.Infof("Loading metadata file for sink: %s", finame)
 	return nil
 }
