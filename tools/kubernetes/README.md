@@ -13,10 +13,18 @@ The program is used for monitoring and processing files under folder. If program
 ]
 ```
 
-### 1.2 Command file format and meaning:
+### 1.2 Quick Start
+
+This program provides a docker image `lfedge/ekuiper-kubernetes-tool`. It is recommended to use this as a sidecar of the eKuiper docker container.
+
+```shell
+docker run lfedge/ekuiper-kubernetes-tool:$tag
+```
+
+### 1.3 Command file format and meaning:
 
 | Field       | Optional           | Type     | Description           |
-| ----------- | ------------------ | -------- | --------------------- |
+|-------------|--------------------|----------|-----------------------|
 | commands    | false              | array    | Command set           |
 | url         | false              | string   | http request path     |
 | method      | false              | string   | http request method   |
@@ -24,7 +32,7 @@ The program is used for monitoring and processing files under folder. If program
 | data        | false for creation | json obj | Creation content      |
 |             |                    |          |                       |
 
-### 1.3 Configuration file format and meaning:
+### 1.4 Configuration file format and meaning:
 ```yaml
 port: 9081  //eKuiper port
 timeout: 500  //Timeout for executing a command (unit: ms)
@@ -35,7 +43,7 @@ fileLog: false  //true|false, if it's set to true, then the log will be print to
 logPath: "./log/kubernetes.log" //Log save path
 commandDir: "./sample/" //Command folder path
 ```
-### 1.4 Compile the program:
+### 1.5 Compile the program:
 
 Execute the command of `go build -o tools/kubernetes/kuiper-kubernetes-tool tools/kubernetes/main.go` to generate the kubernetes program.
 

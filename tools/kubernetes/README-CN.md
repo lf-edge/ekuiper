@@ -2,7 +2,7 @@
 
 ### 1.1 程序说明：
 
-​    本程序用于监控并处理命令文件夹中的文件。当程序发现命令文件夹下存在新创建的文件或已更新的文件时，程序将加载这些文件并执行文件中的命令，之后程序将处理过的文件名记录在命令文件夹同级目录的 .history 文件中。 .history 的数据格式如下：
+本程序用于监控并处理命令文件夹中的文件。当程序发现命令文件夹下存在新创建的文件或已更新的文件时，程序将加载这些文件并执行文件中的命令，之后程序将处理过的文件名记录在命令文件夹同级目录的 .history 文件中。 .history 的数据格式如下：
 
 ```json
 [
@@ -12,18 +12,26 @@
     }]
 ```
 
-### 1.2 命令文件格式及含义：
+### 1.2 快速开始
 
-| 字段        | 是否必填   | 类型     | 释义         |
-| ----------- | ---------- | -------- | ------------ |
-| commands    | 必填       | array    | 命令集合     |
-| url         | 必填       | string   | http请求路径 |
-| method      | 必填       | string   | http请求方法 |
-| description | 选填       | string   | 操作描述     |
+本程序提供了 docker image `lfedge/ekuiper-kubernetes-tool`。建议作为 eKuiper docker container 的边车部署。
+
+```shell
+docker run lfedge/ekuiper-kubernetes-tool:$tag
+```
+
+### 1.3 命令文件格式及含义：
+
+| 字段          | 是否必填  | 类型       | 释义       |
+|-------------|-------|----------|----------|
+| commands    | 必填    | array    | 命令集合     |
+| url         | 必填    | string   | http请求路径 |
+| method      | 必填    | string   | http请求方法 |
+| description | 选填    | string   | 操作描述     |
 | data        | 创建时必填 | json obj | 创建内容     |
-|             |            |          |              |
+|             |       |          |          |
 
-### 1.3 配置文件格式及含义：
+### 1.4 配置文件格式及含义：
 ```yaml
 port: 9081  //eKuiper 端口
 timeout: 500  //执行一条命令超时时间（单位：毫秒）
@@ -34,7 +42,7 @@ fileLog: true   //是否需要打印log到log文件中，如果需要，log将�
 logPath: "./log/kubernetes.log" //日志保存路径
 commandDir: "./sample/" //命令文件夹路径
 ```
-### 1.4 编译程序：
+### 1.5 编译程序：
 
 执行 `go build -o tools/kubernetes/kubernetes tools/kubernetes/main.go` 命令即可生成 kubernetes 程序。
 
