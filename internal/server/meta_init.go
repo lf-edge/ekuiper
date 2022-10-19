@@ -18,7 +18,9 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/topo/node"
 	"io"
 	"net/http"
 	"strings"
@@ -58,6 +60,8 @@ func (m metaComp) rest(r *mux.Router) {
 	r.HandleFunc("/metadata/connections/{name}/confKeys/{confKey}", connectionConfKeyHandler).Methods(http.MethodDelete, http.MethodPut)
 
 	r.HandleFunc("/metadata/resources", resourcesHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/sources/connection/{name}", sourceConnectionHandler).Methods(http.MethodPost)
+	r.HandleFunc("/metadata/sinks/connection/{name}", sinkConnectionHandler).Methods(http.MethodPost)
 	for _, endpoint := range metaEndpoints {
 		endpoint(r)
 	}
@@ -302,4 +306,48 @@ func getLanguage(r *http.Request) string {
 		strings.ReplaceAll(language, "-", "_")
 	}
 	return language
+}
+
+func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+
+	sinkNm := vars["name"]
+	config := map[string]interface{}{}
+	v, _ := io.ReadAll(r.Body)
+	err := json.Unmarshal(v, &config)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+
+	err = node.SinkOpen(sinkNm, config)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func sourceConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+
+	sourceNm := vars["name"]
+	config := map[string]interface{}{}
+	v, _ := io.ReadAll(r.Body)
+	err := json.Unmarshal(v, &config)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+
+	err = node.SourceOpen(sourceNm, config)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
