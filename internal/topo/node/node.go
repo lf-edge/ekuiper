@@ -16,10 +16,16 @@ package node
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/binder/io"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
+	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 type OperatorNode interface {
@@ -165,4 +171,61 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 		}
 	}
 	return data, false
+}
+
+func SinkOpen(sinkType string, config map[string]interface{}) error {
+
+	sink, err := getSink(sinkType, config)
+	if err != nil {
+		return err
+	}
+
+	contextLogger := conf.Log.WithField("rule", "TestSinkOpen"+"_"+sinkType)
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	return sink.Open(ctx)
+}
+
+func SourceOpen(sourceType string, config map[string]interface{}) error {
+
+	options := &ast.Options{}
+	err := cast.MapToStruct(config, options)
+	if err != nil {
+		return err
+	}
+
+	props := nodeConf.GetSourceConf(sourceType, options)
+
+	ns, err := io.Source(sourceType)
+	if err != nil {
+		return err
+	}
+
+	err = ns.Configure(options.DATASOURCE, props)
+	if err != nil {
+		return err
+	}
+
+	contextLogger := conf.Log.WithField("rule", "TestSourceOpen"+"_"+sourceType)
+	ctx, cancel := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithCancel()
+
+	defer cancel()
+
+	var sourceDataChannel chan api.SourceTuple
+	var errChannel chan error
+
+	go func() {
+		ns.Open(ctx, sourceDataChannel, errChannel)
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil
+	case <-sourceDataChannel:
+		return nil
+	case err = <-errChannel:
+		return err
+	}
+
+	return nil
 }
