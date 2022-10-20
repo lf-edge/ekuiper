@@ -37,8 +37,8 @@
     "category": "sink",
     "icon": "iconPath",
     "label": {
-      "en": "Nop output",
-      "zh": "Nop 输出"
+      "en": "Nop",
+      "zh": "Nop"
     }
   }
 }

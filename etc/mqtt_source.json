@@ -226,8 +226,8 @@
 		"category": "source",
 		"icon": "iconPath",
 		"label": {
-			"en_US": "mqtt",
-			"zh_CN": "mqtt"
+			"en_US": "MQTT",
+			"zh_CN": "MQTT"
 		}
 	}
 }

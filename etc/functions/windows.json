@@ -23,13 +23,43 @@
 			"en_US": "Tumbling window functions are used to segment a data stream into distinct time segments and perform a function against them, such as the example below. The key differentiators of a Tumbling window are that they repeat, do not overlap, and an event cannot belong to more than one tumbling window.",
 			"zh_CN": "滚动窗口函数用于将数据流分割成不同的时间段，并对其执行函数，例如下面的示例。滚动窗口的关键区别在于它们重复不重叠，并且一个事件不能属于多个翻滚窗口。"
 		},
-		"args": [],
+		"args": [
+			{
+				"name": "timeunit",
+				"optional": false,
+				"control": "select",
+				"type": "string",
+				"values": ["ms", "ss", "mi", "hh", "dd"],
+				"hint": {
+					"en_US": "The time unit to calculate window time",
+					"zh_CN": "窗口时间单位"
+				},
+				"label": {
+					"en_US": "Timeunit",
+					"zh_CN": "时间单位"
+				}
+			},
+			{
+				"name": "length",
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Window length",
+					"zh_CN": "窗口长度"
+				},
+				"label": {
+					"en_US": "Window Length",
+					"zh_CN": "窗口长度"
+				}
+			}
+		],
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "bitor",
-				"zh_CN": "bitor"
+				"en_US": "Tumbling Window",
+				"zh_CN": "滚动窗口"
 			}
 		}
 	}, {
@@ -39,13 +69,57 @@
 			"en_US": "Hopping window functions hop forward in time by a fixed period. It may be easy to think of them as Tumbling windows that can overlap, so events can belong to more than one Hopping window result set. To make a Hopping window the same as a Tumbling window, specify the hop size to be the same as the window size.",
 			"zh_CN": "跳跃窗口功能会在时间上向前跳一段固定的时间。 将它们视为可能重叠的翻转窗口可能很容易，因此事件可以属于多个跳跃窗口结果集。 要使跳跃窗口与翻转窗口相同，请将跳跃大小指定为与窗口大小相同。"
 		},
-		"args": [],
+		"args": [
+			{
+				"name": "timeunit",
+				"optional": false,
+				"control": "select",
+				"type": "string",
+				"values": ["ms", "ss", "mi", "hh", "dd"],
+				"hint": {
+					"en_US": "The time unit to calculate window time",
+					"zh_CN": "窗口时间单位"
+				},
+				"label": {
+					"en_US": "Timeunit",
+					"zh_CN": "时间单位"
+				}
+			},
+			{
+				"name": "length",
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Window length",
+					"zh_CN": "窗口长度"
+				},
+				"label": {
+					"en_US": "Window Length",
+					"zh_CN": "窗口长度"
+				}
+			},
+			{
+				"name": "hopsize",
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Hop size",
+					"zh_CN": "窗口跳跃长度"
+				},
+				"label": {
+					"en_US": "Hop Size",
+					"zh_CN": "窗口跳跃长度"
+				}
+			}
+		],
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "bitor",
-				"zh_CN": "bitor"
+				"en_US": "Hopping Window",
+				"zh_CN": "跳跃窗口"
 			}
 		}
 	}, {
@@ -55,13 +129,43 @@
 			"en_US": "Sliding window functions, unlike Tumbling or Hopping windows, produce an output ONLY when an event occurs. Every window will have at least one event and the window continuously moves forward by an € (epsilon). Like hopping windows, events can belong to more than one sliding window.",
 			"zh_CN": "滑动窗口功能与翻转或跳动窗口不同，仅在事件发生时会产生输出。 每个窗口至少会有一个事件，并且该窗口连续向前移动€（ε）。 就像跳跃窗口一样，事件可以属于多个滑动窗口。"
 		},
-		"args": [],
+		"args": [
+			{
+				"name": "timeunit",
+				"optional": false,
+				"control": "select",
+				"type": "string",
+				"values": ["ms", "ss", "mi", "hh", "dd"],
+				"hint": {
+					"en_US": "The time unit to calculate window time",
+					"zh_CN": "窗口时间单位"
+				},
+				"label": {
+					"en_US": "Timeunit",
+					"zh_CN": "时间单位"
+				}
+			},
+			{
+				"name": "length",
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Window length",
+					"zh_CN": "窗口长度"
+				},
+				"label": {
+					"en_US": "Window Length",
+					"zh_CN": "窗口长度"
+				}
+			}
+		],
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "bitor",
-				"zh_CN": "bitor"
+				"en_US": "Sliding Window",
+				"zh_CN": "滑动窗口"
 			}
 		}
 	}, {
@@ -71,13 +175,57 @@
 			"en_US": "Session window functions group events that arrive at similar times, filtering out periods of time where there is no data. It has two main parameters: timeout and maximum duration.",
 			"zh_CN": "会话窗口功能对在相似时间到达的事件进行分组，以过滤掉没有数据的时间段。 它有两个主要参数：超时和最大持续时间。"
 		},
-		"args": [],
+		"args": [
+			{
+				"name": "timeunit",
+				"optional": false,
+				"control": "select",
+				"type": "string",
+				"values": ["ms", "ss", "mi", "hh", "dd"],
+				"hint": {
+					"en_US": "The time unit to calculate window time",
+					"zh_CN": "窗口时间单位"
+				},
+				"label": {
+					"en_US": "Timeunit",
+					"zh_CN": "时间单位"
+				}
+			},
+			{
+				"name": "length",
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Window length",
+					"zh_CN": "最大窗口长度"
+				},
+				"label": {
+					"en_US": "Window Length",
+					"zh_CN": "最大窗口长度"
+				}
+			},
+			{
+				"name": "timeout",
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Timeout",
+					"zh_CN": "超时时长"
+				},
+				"label": {
+					"en_US": "Timeout",
+					"zh_CN": "超时时长"
+				}
+			}
+		],
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "bitor",
-				"zh_CN": "bitor"
+				"en_US": "Session Window",
+				"zh_CN": "会话窗口"
 			}
 		}
 	}, {
@@ -87,13 +235,42 @@
 			"en_US": "Tumbling count window is similar to general tumbling window, events in a tumbling window can not repeat, do not overlap, and an event cannot belong to more than one tumbling window. Below is a count window with 5 events length.",
 			"zh_CN": "滚动计数窗口与一般的滚动窗口类似，在滚动窗口中的事件不重复、不重叠，一个事件不会属于多个滚动窗口。以下是一个长度为 5 的滚动计数窗口。"
 		},
-		"args": [],
+		"args": [
+			{
+				"name": "length",
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Window length",
+					"zh_CN": "窗口长度"
+				},
+				"label": {
+					"en_US": "Window Length",
+					"zh_CN": "窗口长度"
+				}
+			},
+			{
+				"name": "timeout",
+				"optional": true,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Trigger Length",
+					"zh_CN": "触发长度"
+				},
+				"label": {
+					"en_US": "Trigger Length",
+					"zh_CN": "触发长度"
+				}
+			}
+		],
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "bitor",
-				"zh_CN": "bitor"
+				"en_US": "Count Window",
+				"zh_CN": "计数窗口"
 			}
 		}
 	}]

@@ -21,8 +21,8 @@
     "category": "sink",
     "icon": "iconPath",
     "label": {
-      "en": "Log output",
-      "zh": "Log 输出"
+      "en": "Log",
+      "zh": "Log"
     }
   }
 }

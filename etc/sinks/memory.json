@@ -37,7 +37,7 @@
     "category": "sink",
     "icon": "iconPath",
     "label": {
-      "en": "Memory output",
+      "en": "Memory",
       "zh": "内存输出"
     }
   }

@@ -21,7 +21,7 @@
     "name": "fields",
     "default": "",
     "optional": false,
-    "control": "text",
+    "control": "list",
     "type": "list_string",
     "hint": {
       "en_US": "select fields",

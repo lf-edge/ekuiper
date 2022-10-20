@@ -22,7 +22,7 @@
       "name": "type",
       "default": "",
       "optional": false,
-      "control": "text",
+      "control": "select",
       "type": "string",
       "values": [
         "tumblingwindow",

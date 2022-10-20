@@ -82,8 +82,8 @@
     "category": "sink",
     "icon": "iconPath",
     "label": {
-      "en": "Neuron output",
-      "zh": "Neuron 输出"
+      "en": "Neuron",
+      "zh": "Neuron"
     }
   }
 }

@@ -26,26 +26,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate the average.",
+					"zh_CN": "用于计算平均值的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Average",
+				"zh_CN": "平均值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "The average of the values in a group. The null values will be ignored.",
-				"zh_CN": "组中的平均值。空值不参与计算。"
+				"en_US": "Average",
+				"zh_CN": "平均值"
 			}
 		}
 	}, {
@@ -58,26 +65,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "any",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate the count.",
+					"zh_CN": "用于计数的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Count",
+				"zh_CN": "计数值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "The number of items in a group. The null values will be ignored.",
-				"zh_CN": "组中的项目数。空值不参与计算。"
+				"en_US": "Count",
+				"zh_CN": "计数"
 			}
 		}
 	}, {
@@ -90,26 +104,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate the maximum value.",
+					"zh_CN": "用于计算最大值的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Maximum",
+				"zh_CN": "最大值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "The maximum value in a group. The null values will be ignored.",
-				"zh_CN": "组中的最大值。空值不参与计算。"
+				"en_US": "Maximum",
+				"zh_CN": "最大值"
 			}
 		}
 	}, {
@@ -122,26 +143,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate the minimum value.",
+					"zh_CN": "用于计算最小值的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Minimum",
+				"zh_CN": "最小值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "The minimum value in a group. The null values will be ignored.",
-				"zh_CN": "组中的最小值。空值不参与计算。"
+				"en_US": "Minimum",
+				"zh_CN": "最小值"
 			}
 		}
 	}, {
@@ -154,26 +182,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate the sum.",
+					"zh_CN": "用于计算总和的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Sum",
+				"zh_CN": "总和"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "The sum of all the values in a group. The null values will be ignored.",
-				"zh_CN": "组中所有值的总和。空值不参与计算"
+				"en_US": "Sum",
+				"zh_CN": "总和"
 			}
 		}
 	}, {
@@ -186,26 +221,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "any",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to return in the array.",
+					"zh_CN": "要返回列表的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "array",
+			"hint": {
+				"en_US": "Collection",
+				"zh_CN": "集合"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns an array with all column or the whole record (when the parameter is *) values from the group",
-				"zh_CN": "返回组中指定的列或整个消息（参数为*时）的值组成的数组。"
+				"en_US": "Collect",
+				"zh_CN": "集合"
 			}
 		}
 	}, {
@@ -218,34 +260,41 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "any",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to deduplicate.",
+					"zh_CN": "要去重的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			},
 			{
-				"name": "column",
+				"name": "all",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "checkbox",
+				"type": "boolean",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Whether return all fields",
+					"zh_CN": "是否返回全部字段"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Return all fields",
+					"zh_CN": "返回全部字段"
 				}
 			}
 		],
+		"return": {
+			"type": "array",
+			"hint": {
+				"en_US": "Deduplicate",
+				"zh_CN": "去重值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
@@ -263,25 +312,32 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "参与计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Abs",
+				"zh_CN": "绝对值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "The absolute value of a value",
+				"en_US": "Absolute",
 				"zh_CN": "绝对值"
 			}
 		}
@@ -294,26 +350,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "参与计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "aCos",
+				"zh_CN": "反余弦值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "The inverse cosine of a number in radians",
-				"zh_CN": "弧度数的反余弦值"
+				"en_US": "Inverse Cosine",
+				"zh_CN": "反余弦"
 			}
 		}
 	}, {
@@ -325,26 +388,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "参与计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "aSin",
+				"zh_CN": "反正弦值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "The inverse sine of a number in radians",
-				"zh_CN": "弧度数的反正弦值"
+				"en_US": "Inverse Sine",
+				"zh_CN": "反正弦"
 			}
 		}
 	}, {
@@ -356,26 +426,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "参与计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "aTan",
+				"zh_CN": "反正切值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "The inverse tangent of a number in radians",
-				"zh_CN": "弧度数的反正切值"
+				"en_US": "Inverse Tangent",
+				"zh_CN": "反正切值"
 			}
 		}
 	}, {
@@ -387,40 +464,47 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field1",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field of the first point to calculate.",
+					"zh_CN": "点X的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "X Field",
+					"zh_CN": "X 字段"
 				}
 			},
 			{
-				"name": "column",
+				"name": "field2",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field of the second point to calculate.",
+					"zh_CN": "点Y的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Y Field",
+					"zh_CN": "Y 字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Angle",
+				"zh_CN": "弧度角"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "The angle, in radian",
-				"zh_CN": "正x轴与两个自变量中定义的（x，y）点之间的弧度角。"
+				"en_US": "Angle",
+				"zh_CN": "弧度角"
 			}
 		}
 	}, {
@@ -432,40 +516,47 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field1",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The first field to calculate.",
+					"zh_CN": "参与计算的第一个字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field 1",
+					"zh_CN": "字段1"
 				}
 			},
 			{
-				"name": "column",
+				"name": "field2",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The second field to calculate.",
+					"zh_CN": "参与计算的第二个字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field 2",
+					"zh_CN": "字段2"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Bitand",
+				"zh_CN": "按位与"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "输出",
-				"zh_CN": "bitand"
+				"en_US": "Bit And",
+				"zh_CN": "按位与"
 			}
 		}
 	}, {
@@ -477,40 +568,47 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field1",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The first field to calculate.",
+					"zh_CN": "参与计算的第一个字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field 1",
+					"zh_CN": "字段1"
 				}
 			},
 			{
-				"name": "column",
+				"name": "field2",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The second field to calculate.",
+					"zh_CN": "参与计算的第二个字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field 2",
+					"zh_CN": "字段2"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Bitor",
+				"zh_CN": "按位或"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "bitor",
-				"zh_CN": "bitor"
+				"en_US": "Bit Or",
+				"zh_CN": "按位或"
 			}
 		}
 	}, {
@@ -522,40 +620,47 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field1",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The first field to calculate.",
+					"zh_CN": "参与计算的第一个字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field 1",
+					"zh_CN": "字段1"
 				}
 			},
 			{
-				"name": "column",
+				"name": "field2",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The second field to calculate.",
+					"zh_CN": "参与计算的第二个字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field 2",
+					"zh_CN": "字段2"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Bit Xor",
+				"zh_CN": "按位异或值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "bitxor",
-				"zh_CN": "bitxor"
+				"en_US": "Bit Xor",
+				"zh_CN": "按位异或"
 			}
 		}
 	}, {
@@ -567,26 +672,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Bit Not",
+				"zh_CN": "按位非值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "bitnot",
-				"zh_CN": "bitnot"
+				"en_US": "Bit Not",
+				"zh_CN": "按位非"
 			}
 		}
 	}, {
@@ -598,26 +710,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Ceil",
+				"zh_CN": "向上取整值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "ceil",
-				"zh_CN": "ceil"
+				"en_US": "Ceil",
+				"zh_CN": "向上取整"
 			}
 		}
 	}, {
@@ -629,26 +748,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Cosine",
+				"zh_CN": "余弦值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "cos",
-				"zh_CN": "cos"
+				"en_US": "Cosine",
+				"zh_CN": "余弦"
 			}
 		}
 	}, {
@@ -660,26 +786,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Hyperbolic Cosine",
+				"zh_CN": "双曲余弦值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "cosh",
-				"zh_CN": "cosh"
+				"en_US": "Hyperbolic Cosine",
+				"zh_CN": "双曲余弦"
 			}
 		}
 	}, {
@@ -691,26 +824,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Exponent",
+				"zh_CN": "幂数值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "exp",
-				"zh_CN": "exp"
+				"en_US": "Exponent",
+				"zh_CN": "幂数"
 			}
 		}
 	}, {
@@ -722,26 +862,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Natural Logarithm",
+				"zh_CN": "自然对数值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-					"en_US": "Returns the natural logarithm of the argument.",
-					"zh_CN": "返回参数的自然对数。"
+					"en_US": "Natural Logarithm",
+					"zh_CN": "自然对数"
 				}
 			}
 	}, {
@@ -753,26 +900,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Logarithm",
+				"zh_CN": "对数值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns the base 10 logarithm of the argument.",
-				"zh_CN": "返回参数的以10为底的对数。"
+				"en_US": "Logarithm",
+				"zh_CN": "对数"
 			}
 		}
 	}, {
@@ -784,40 +938,47 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "divided",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to be divided.",
+					"zh_CN": "被除数的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Divided Number",
+					"zh_CN": "被除数"
 				}
 			},
 			{
-				"name": "column2",
+				"name": "divisor",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to divide.",
+					"zh_CN": "除数的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Divisor",
+					"zh_CN": "除数"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Modulo",
+				"zh_CN": "取模值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns the remainder of the division of the first argument by the second argument.",
-				"zh_CN": "返回第一个参数除以第二个参数的余数。"
+				"en_US": "Modulo",
+				"zh_CN": "取模"
 			}
 		}
 	}, {
@@ -829,40 +990,47 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			},
 			{
-				"name": "column2",
+				"name": "power",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "int",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The power number",
+					"zh_CN": "乘方数"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Power",
+					"zh_CN": "乘方"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Power",
+				"zh_CN": "乘方"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Pow returns x**y, the base-x exponential of y.",
-				"zh_CN": "返回 x 的 y 次方。"
+				"en_US": "Power",
+				"zh_CN": "乘方"
 			}
 		}
 	}, {
@@ -873,12 +1041,19 @@
 			"zh_CN": "返回一个伪随机数，其均匀分布在0.0和1.0之间。"
 		},
 		"args": [],
+		"return": {
+			"type": "float",
+			"hint": {
+				"en_US": "Random Number",
+				"zh_CN": "随机数"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns a pseudorandom, uniformly distributed double between 0.0 and 1.0.",
-				"zh_CN": "返回一个伪随机数，其均匀分布在0.0和1.0之间。"
+				"en_US": "Random Number",
+				"zh_CN": "随机数"
 			}
 		}
 	}, {
@@ -890,26 +1065,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Round",
+				"zh_CN": "四舍五入值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Round a value to the nearest BIGINT value.",
-				"zh_CN": "将值四舍五入到最接近的 BIGINT 值。"
+				"en_US": "Round",
+				"zh_CN": "四舍五入"
 			}
 		}
 	}, {
@@ -921,26 +1103,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Sign",
+				"zh_CN": "正负号"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "sign",
-				"zh_CN": "sign"
+				"en_US": "Sign",
+				"zh_CN": "正负号"
 			}
 		}
 	}, {
@@ -952,26 +1141,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Sine",
+				"zh_CN": "正弦值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns the sine of a number in radians.",
-				"zh_CN": "返回弧度数的正弦值。"
+				"en_US": "Sine",
+				"zh_CN": "正弦"
 			}
 		}
 	}, {
@@ -983,26 +1179,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Hyperbolic Sine",
+				"zh_CN": "双曲正弦值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns the hyperbolic sine of a number in radians.",
-				"zh_CN": "返回弧度数的双曲正弦值。"
+				"en_US": "Hyperbolic Sine",
+				"zh_CN": "双曲正弦"
 			}
 		}
 	}, {
@@ -1014,26 +1217,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Square Root",
+				"zh_CN": "平方根值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns the square root of a number.",
-				"zh_CN": "返回数字的平方根。"
+				"en_US": "Square Root",
+				"zh_CN": "平方根"
 			}
 		}
 	}, {
@@ -1045,26 +1255,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Tangent",
+				"zh_CN": "正切值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns the tangent of a number in radians.",
-				"zh_CN": "返回以弧度表示的数字的正切值。"
+				"en_US": "Tangent",
+				"zh_CN": "正切"
 			}
 		}
 	}, {
@@ -1076,26 +1293,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to calculate.",
+					"zh_CN": "用于计算的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Hyperbolic Tangent",
+				"zh_CN": "双曲正切值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns the hyperbolic tangent of a number in radians.",
-				"zh_CN": "返回弧度数的双曲正切值。"
+				"en_US": "Hyperbolic Tangent",
+				"zh_CN": "双曲正切"
 			}
 		}
 	}, {
@@ -1107,40 +1331,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "stringField",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String or Array",
+					"zh_CN": "数组或字符串"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
-				}
-			},
-			{
-				"name": "column",
-				"optional": false,
-				"control": "text",
-				"type": "any",
-				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
-				},
-				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String or Array",
+					"zh_CN": "数组或字符串"
 				}
 			}
 		],
+		"return": {
+			"type": "any",
+			"hint": {
+				"en_US": "Concatenated array or string",
+				"zh_CN": "拼接完的数组或字符串"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "concat",
-				"zh_CN": "concat"
+				"en_US": "Concatenate",
+				"zh_CN": "字符串/数组拼接"
 			}
 		}
 	}, {
@@ -1152,40 +1369,47 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string1",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String argument 1",
+					"zh_CN": "String 参数 1"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String1",
+					"zh_CN": "String1"
 				}
 			},
 			{
-				"name": "column2",
+				"name": "string2",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String argument 2",
+					"zh_CN": "String 参数 2"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String2",
+					"zh_CN": "String2"
 				}
 			}
 		],
+		"return": {
+			"type": "bool",
+			"hint": {
+				"en_US": "Matched",
+				"zh_CN": "是否命中"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "endswith",
-				"zh_CN": "endswith"
+				"en_US": "Ends With",
+				"zh_CN": "Ends With"
 			}
 		}
 	}, {
@@ -1197,24 +1421,24 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "time",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "datetime",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The datetime value",
+					"zh_CN": "时间值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Datetime Value",
+					"zh_CN": "时间值"
 				}
 			},
 			{
 				"name": "format",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "string",
 				"hint": {
 					"en_US": "format value",
 					"zh_CN": "格式值"
@@ -1225,12 +1449,19 @@
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Formatted Time",
+				"zh_CN": "格式化的时间"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Format a datetime to string.",
-				"zh_CN": "将日期时间格式化为字符串。"
+				"en_US": "Format Time",
+				"zh_CN": "格式化时间"
 			}
 		}
 	}, {
@@ -1242,40 +1473,47 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			},
 			{
-				"name": "column2",
+				"name": "substring",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Substring to search for",
+					"zh_CN": "子字符串"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Substring to search for",
+					"zh_CN": "子字符串"
 				}
 			}
 		],
+		"return": {
+			"type": "bool",
+			"hint": {
+				"en_US": "Matched",
+				"zh_CN": "是否命中"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "indexof",
-				"zh_CN": "indexof"
+				"en_US": "Index Of",
+				"zh_CN": "Index Of"
 			}
 		}
 	}, {
@@ -1287,26 +1525,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			}
 		],
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "String Length",
+				"zh_CN": "字符长度"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "length",
-				"zh_CN": "length"
+				"en_US": "String Length",
+				"zh_CN": "字符长度"
 			}
 		}
 	}, {
@@ -1318,26 +1563,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "strng",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Lowercase",
+				"zh_CN": "小写值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns the lowercase version of the given String.",
-				"zh_CN": "返回给定 String 的小写版本。"
+				"en_US": "Lowercase",
+				"zh_CN": "字符串小写"
 			}
 		}
 	}, {
@@ -1349,24 +1601,24 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			},
 			{
 				"name": "number",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "int",
 				"hint": {
 					"en_US": "number of spaces",
 					"zh_CN": "空格数"
@@ -1377,12 +1629,19 @@
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Left Padding",
+				"zh_CN": "左侧填充值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "lpad",
-				"zh_CN": "lpad"
+				"en_US": "Left Padding",
+				"zh_CN": "左侧填充"
 			}
 		}
 	}, {
@@ -1394,26 +1653,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "text",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Left Trim",
+				"zh_CN": "左侧去空格值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "ltrim",
-				"zh_CN": "ltrim"
+				"en_US": "Left Trim",
+				"zh_CN": "左侧去空格"
 			}
 		}
 	}, {
@@ -1424,12 +1690,19 @@
 			"zh_CN": "以提供的字符串的 UTF-8 编码返回字节数。"
 		},
 		"args": [],
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Number of Bytes",
+				"zh_CN": "字节数"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "numbytes",
-				"zh_CN": "numbytes"
+				"en_US": "Number of Bytes",
+				"zh_CN": "字节数"
 			}
 		}
 	}, {
@@ -1441,24 +1714,24 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			},
 			{
 				"name": "expression",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "string",
 				"hint": {
 					"en_US": "regex expression",
 					"zh_CN": "正则表达式"
@@ -1468,15 +1741,20 @@
 					"zh_CN": "正则表达式"
 				}
 			}
-
-
 		],
+		"return": {
+			"type": "bool",
+			"hint": {
+				"en_US": "Matched",
+				"zh_CN": "是否命中"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "regexp_matches",
-				"zh_CN": "regexp_matches"
+				"en_US": "Regular Expression Match",
+				"zh_CN": "正则匹配"
 			}
 		}
 	}, {
@@ -1488,24 +1766,24 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			},
 			{
 				"name": "expression",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "string",
 				"hint": {
 					"en_US": "regex expression",
 					"zh_CN": "正则表达式"
@@ -1529,14 +1807,20 @@
 					"zh_CN": "字符串值"
 				}
 			}
-
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Regular Expression Replace",
+				"zh_CN": "正则替换值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "regexp_replace",
-				"zh_CN": "regexp_replace"
+				"en_US": "Regular Expression Replace",
+				"zh_CN": "正则替换"
 			}
 		}
 	}, {
@@ -1548,24 +1832,24 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			},
 			{
 				"name": "expression",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "string",
 				"hint": {
 					"en_US": "regex expression",
 					"zh_CN": "正则表达式"
@@ -1576,12 +1860,19 @@
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Regular Expression First Match",
+				"zh_CN": "正则匹配子串"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "regexp_substr",
-				"zh_CN": "regexp_substr"
+				"en_US": "Regular Expression First Match",
+				"zh_CN": "正则匹配子串"
 			}
 		}
 	}, {
@@ -1593,24 +1884,24 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			},
 			{
 				"name": "value",
 				"optional": false,
 				"control": "text",
-				"type": "number",
+				"type": "int",
 				"hint": {
 					"en_US": "spaces number",
 					"zh_CN": "空格数"
@@ -1621,12 +1912,19 @@
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Right Padding",
+				"zh_CN": "右侧填充值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "rpad",
-				"zh_CN": "rpad"
+				"en_US": "Right Padding",
+				"zh_CN": "右侧填充"
 			}
 		}
 	}, {
@@ -1638,26 +1936,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Right Trim",
+				"zh_CN": "右侧去空格值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "rtrim",
-				"zh_CN": "rtrim"
+				"en_US": "Right Trim",
+				"zh_CN": "右侧去空格"
 			}
 		}
 	}, {
@@ -1669,17 +1974,17 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			},
 			{
@@ -1711,12 +2016,19 @@
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Substring",
+				"zh_CN": "子字符串"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "substring",
-				"zh_CN": "substring"
+				"en_US": "Substring",
+				"zh_CN": "子字符串"
 			}
 		}
 	}, {
@@ -1728,40 +2040,47 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string1",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String argument 1",
+					"zh_CN": "String 参数 1"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String1",
+					"zh_CN": "String1"
 				}
 			},
 			{
-				"name": "value",
+				"name": "string2",
 				"optional": false,
 				"control": "text",
 				"type": "string",
 				"hint": {
-					"en_US": "string value",
-					"zh_CN": "字符串值"
+					"en_US": "String argument 2",
+					"zh_CN": "String 参数 2"
 				},
 				"label": {
-					"en_US": "string value",
-					"zh_CN": "字符串值"
+					"en_US": "String2",
+					"zh_CN": "String2"
 				}
 			}
 		],
+		"return": {
+			"type": "bool",
+			"hint": {
+				"en_US": "Matched",
+				"zh_CN": "是否命中"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "startswith",
-				"zh_CN": "startswith"
+				"en_US": "Starts With",
+				"zh_CN": "Starts With"
 			}
 		}
 	}, {
@@ -1773,17 +2092,17 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			},
 			{
@@ -1804,7 +2123,7 @@
 				"name": "index",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "int",
 				"hint": {
 					"en_US": "index",
 					"zh_CN": "位次值"
@@ -1815,12 +2134,19 @@
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Split String",
+				"zh_CN": "字符串分割值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "split_value",
-				"zh_CN": "split_value"
+				"en_US": "Split String",
+				"zh_CN": "字符串分割"
 			}
 		}
 	}, {
@@ -1832,26 +2158,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Trim",
+				"zh_CN": "去空格值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "trim",
-				"zh_CN": "trim"
+				"en_US": "Trim",
+				"zh_CN": "去空格"
 			}
 		}
 	}, {
@@ -1863,26 +2196,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "string",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "A String",
+					"zh_CN": "String 值"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "String",
+					"zh_CN": "String 值"
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Upper Case",
+				"zh_CN": "大写值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns the uppercase version of the given String.",
-				"zh_CN": "返回给定 String 的大写版本。"
+				"en_US": "Upper Case",
+				"zh_CN": "大写"
 			}
 		}
 	}, {
@@ -1894,40 +2234,48 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "any",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to cast.",
+					"zh_CN": "需要转换的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			},
 			{
-				"name": "column",
+				"name": "datatype",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "select",
+				"type": "string",
+				"values": ["bigint", "float", "string", "boolean", "datetime"],
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The data type to cast to",
+					"zh_CN": "转换类型"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Cast Type",
+					"zh_CN": "转换类型"
 				}
 			}
 		],
+		"return": {
+			"type": "any",
+			"hint": {
+				"en_US": "Casted Value",
+				"zh_CN": "类型转换值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "cast",
-				"zh_CN": "cast"
+				"en_US": "Cast",
+				"zh_CN": "类型转换"
 			}
 		}
 	}, {
@@ -1939,116 +2287,138 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "int",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "An int field or value",
+					"zh_CN": "Int 类型字段"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Int Expression",
+					"zh_CN": "Int 表达式"
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "ASCII Character",
+				"zh_CN": "ASCII 字符"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns the ASCII character that corresponds to the given Int argument",
-				"zh_CN": "返回与给定 Int 参数对应的 ASCII 字符"
+				"en_US": "ASCII Character",
+				"zh_CN": "ASCII 字符"
 			}
 		}
 	}, {
 		"name": "encode",
 		"example": "encode(col1, \"base64\")",
 		"hint": {
-			"en_US": "Use the encode function to encode the payload, which potentially might be non-JSON data, into its string representation based on the encoding scheme. Currently, only \"base64\" econding type is supported.",
+			"en_US": "Use the encode function to encode the payload, which potentially might be non-JSON data, into its string representation based on the encoding scheme. Currently, only \"base64\" encoding type is supported.",
 			"zh_CN": "使用 encode 函数根据编码方案将负载（可能是非 JSON 数据）编码为其字符串表示形式。目前，只支持\"base64\"econding 类型。"
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to encode.",
+					"zh_CN": "需要编码的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			},
 			{
-				"name": "column",
+				"name": "encodingType",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "select",
+				"type": "string",
+				"values": ["base64"],
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The type of encoding",
+					"zh_CN": "编码方案"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Encoding Type",
+					"zh_CN": "编码方案"
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Encoded Value",
+				"zh_CN": "编码值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "encode",
-				"zh_CN": "encode"
+				"en_US": "Encode",
+				"zh_CN": "Encode"
 			}
 		}
 	}, {
 		"name": "trunc",
 		"example": "trunc(dec, int)",
 		"hint": {
-			"en_US": "iTruncates the first argument to the number of Decimal places specified by the second argument. If the second argument is less than zero, it is set to zero. If the second argument is greater than 34, it is set to 34. Trailing zeroes are stripped from the result.",
+			"en_US": "Truncates the first argument to the number of Decimal places specified by the second argument. If the second argument is less than zero, it is set to zero. If the second argument is greater than 34, it is set to 34. Trailing zeroes are stripped from the result.",
 			"zh_CN": "将第一个参数截断为第二个参数指定的小数位数。 如果第二个参数小于零，则将其设置为零。 如果第二个参数大于34，则将其设置为34。从结果中去除尾随零。"
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "decimal",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "number",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The decimal number to be truncated.",
+					"zh_CN": "需要截断的数字"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Decimal",
+					"zh_CN": "浮点数"
 				}
 			},
 			{
-				"name": "column",
+				"name": "length",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "int",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Number of decimal places",
+					"zh_CN": "小数位数"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Decimal Places",
+					"zh_CN": "小数位数"
 				}
 			}
 		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "Truncated Value",
+				"zh_CN": "截断值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "trunc",
-				"zh_CN": "trunc"
+				"en_US": "Truncate",
+				"zh_CN": "截断"
 			}
 		}
 	}, {
@@ -2060,150 +2430,185 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to encode.",
+					"zh_CN": "需要编码的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "MD5 Value",
+				"zh_CN": "MD5 值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Hashed value of the argument",
-				"zh_CN": "参数的哈希值"
+				"en_US": "MD5",
+				"zh_CN": "MD5"
 			}
 		}
 	}, {
 		"name": "sha1",
 		"example": "sha1(col1)",
 		"hint": {
-			"en_US": "Hashed value of the argument",
-			"zh_CN": "参数的哈希值"
+			"en_US": "Hashed by SHA1",
+			"zh_CN": "参数的 SHA1 哈希值"
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to encode.",
+					"zh_CN": "需要编码的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "SHA1 Value",
+				"zh_CN": "SHA1 值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Hashed value of the argument",
-				"zh_CN": "参数的哈希值"
+				"en_US": "SHA1",
+				"zh_CN": "SHA1"
 			}
 		}
 	}, {
 		"name": "sha256",
 		"example": "sha256(col1)",
 		"hint": {
-			"en_US": "Hashed value of the argument",
-			"zh_CN": "参数的哈希值"
+			"en_US": "SHA256 hashed value of the argument",
+			"zh_CN": "参数的 SHA256 哈希值"
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to encode.",
+					"zh_CN": "需要编码的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "SHA256 Value",
+				"zh_CN": "SHA256 值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Hashed value of the argument",
-				"zh_CN": "参数的哈希值"
+				"en_US": "SHA256",
+				"zh_CN": "SHA256"
 			}
 		}
 	}, {
 		"name": "sha384",
 		"example": "sha384(col1)",
 		"hint": {
-			"en_US": "Hashed value of the argument",
-			"zh_CN": "参数的哈希值"
+			"en_US": "SHA384 Hashed value of the argument",
+			"zh_CN": "参数的 SHA384 哈希值"
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to encode.",
+					"zh_CN": "需要编码的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "SHA384 Value",
+				"zh_CN": "SHA384 值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Hashed value of the argument",
-				"zh_CN": "参数的哈希值"
+				"en_US": "SHA384",
+				"zh_CN": "SHA384"
 			}
 		}
 	}, {
 		"name": "sha512",
 		"example": "sha512(col1)",
 		"hint": {
-			"en_US": "Hashed value of the argument",
-			"zh_CN": "参数的哈希值"
+			"en_US": "SHA512 hashed value of the argument",
+			"zh_CN": "参数的 SHA512 哈希值"
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "The field to encode.",
+					"zh_CN": "需要编码的字段名"
 				},
 				"label": {
-					"en_US": "key field",
-					"zh_CN": "key 值"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "SHA512 Value",
+				"zh_CN": "SHA512 值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Hashed value of the argument",
-				"zh_CN": "参数的哈希值"
+				"en_US": "SHA 512 hashed value of the argument",
+				"zh_CN": "参数的 SHA512 哈希值"
 			}
 		}
 	}, {
@@ -2215,40 +2620,47 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "string",
 				"hint": {
-					"en_US": "the JSON field",
-					"zh_CN": "JSON字段"
+					"en_US": "The field to apply JSON Path, could be a struct or a string.",
+					"zh_CN": "应用 JSON Path 的字段名，可为 struct 或者 string 类型。"
 				},
 				"label": {
-					"en_US": "the JSON field",
-					"zh_CN": "JSON字段"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			},
 			{
 				"name": "expr",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "string",
 				"hint": {
-					"en_US": "json path expression",
-					"zh_CN": "json 路径表达式"
+					"en_US": "JSON path expression",
+					"zh_CN": "JSON 路径表达式"
 				},
 				"label": {
-					"en_US": "json path expression.",
-					"zh_CN": "json 路径表达式"
+					"en_US": "JSON Path",
+					"zh_CN": "JSON 路径"
 				}
 			}
 		],
+		"return": {
+			"type": "bool",
+			"hint": {
+				"en_US": "Existed",
+				"zh_CN": "是否存在"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Checks whether JSON path returns any item for the specified JSON value. Return bool value.",
-				"zh_CN": "检查 JSON 路径是否返回指定JSON 值的任何项目。 返回布尔值。"
+				"en_US": "JSON Path Exist",
+				"zh_CN": "JSON Path 检查"
 			}
 		}
 	}, {
@@ -2260,40 +2672,47 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "any",
 				"hint": {
-					"en_US": "the JSON field",
-					"zh_CN": "JSON字段"
+					"en_US": "The field to apply JSON Path, could be a struct or a string.",
+					"zh_CN": "应用 JSON Path 的字段名，可为 struct 或者 string 类型。"
 				},
 				"label": {
-					"en_US": "the JSON field",
-					"zh_CN": "JSON字段"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			},
 			{
 				"name": "expr",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "string",
 				"hint": {
-					"en_US": "json path expression",
-					"zh_CN": "json 路径表达式"
+					"en_US": "JSON path expression",
+					"zh_CN": "JSON 路径表达式"
 				},
 				"label": {
-					"en_US": "json path expression.",
-					"zh_CN": "json 路径表达式"
+					"en_US": "JSON Path",
+					"zh_CN": "JSON 路径"
 				}
 			}
 		],
+		"return": {
+			"type": "array",
+			"hint": {
+				"en_US": "JSON Path Queried Value",
+				"zh_CN": "JSON Path 查询返回值"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "json_path_query",
-				"zh_CN": "json_path_query"
+				"en_US": "JSON Path Query",
+				"zh_CN": "JSON Path 查询"
 			}
 		}
 	}, {
@@ -2305,40 +2724,47 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "any",
 				"hint": {
-					"en_US": "the JSON field",
-					"zh_CN": "JSON字段"
+					"en_US": "The field to apply JSON Path, could be a struct or a string.",
+					"zh_CN": "应用 JSON Path 的字段名，可为 struct 或者 string 类型。"
 				},
 				"label": {
-					"en_US": "the JSON field",
-					"zh_CN": "JSON字段"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			},
 			{
 				"name": "expr",
 				"optional": false,
 				"control": "text",
-				"type": "any",
+				"type": "string",
 				"hint": {
-					"en_US": "json path expression",
-					"zh_CN": "json 路径表达式"
+					"en_US": "JSON path expression",
+					"zh_CN": "JSON 路径表达式"
 				},
 				"label": {
-					"en_US": "json path expression.",
-					"zh_CN": "json 路径表达式"
+					"en_US": "JSON Path",
+					"zh_CN": "JSON 路径"
 				}
 			}
 		],
+		"return": {
+			"type": "any",
+			"hint": {
+				"en_US": "JSON Path Queried First Value",
+				"zh_CN": "JSON Path 查询返回值的第一项"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Gets the first item returned by JSON path for the specified JSON value.",
-				"zh_CN": "获取 JSON 路径返回的指定 JSON值的第一项。"
+				"en_US": "JSON Path Query First",
+				"zh_CN": "JSON Path 查询第一项"
 			}
 		}
 	}, {
@@ -2350,26 +2776,33 @@
 		},
 		"args": [
 			{
-				"name": "column",
+				"name": "field",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "any",
 				"hint": {
-					"en_US": "Returns true if the argument is the Null value.",
-					"zh_CN": "如果参数为空值，则返回 true"
+					"en_US": "The field to check.",
+					"zh_CN": "需要检查的字段名"
 				},
 				"label": {
-					"en_US": "Returns true if the argument is the Null value.",
-					"zh_CN": "如果参数为空值，则返回 true"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "bool",
+			"hint": {
+				"en_US": "Is null",
+				"zh_CN": "是否为空"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns true if the argument is the Null value.",
-				"zh_CN": "如果参数为空值，则返回 true。"
+				"en_US": "IsNull",
+				"zh_CN": "空值测试"
 			}
 		}
 	}, {
@@ -2380,12 +2813,19 @@
 			"zh_CN": "返回一个随机的16字节 UUID。"
 		},
 		"args": [],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "UUID",
+				"zh_CN": "UUID"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Returns a random 16-byte UUID.",
-				"zh_CN": "返回一个随机的16字节 UUID。"
+				"en_US": "UUID",
+				"zh_CN": "UUID"
 			}
 		}
 	}, {
@@ -2396,12 +2836,19 @@
 			"zh_CN": "返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。"
 		},
 		"args": [],
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "UTC value of current timestamp",
+				"zh_CN": "UTC 时间戳"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "tstamp",
-				"zh_CN": "tstamp"
+				"en_US": "Current Timestamp",
+				"zh_CN": "时间戳"
 			}
 		}
 	}, {
@@ -2427,12 +2874,19 @@
 				}
 			}
 		],
+		"return": {
+			"type": "any",
+			"hint": {
+				"en_US": "MQTT Meta",
+				"zh_CN": "MQTT 元数据"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "mqtt",
-				"zh_CN": "mqtt"
+				"en_US": "MQTT Meta",
+				"zh_CN": "MQTT 元数据"
 			}
 		}
 	}, {
@@ -2458,12 +2912,19 @@
 				}
 			}
 		],
+		"return": {
+			"type": "any",
+			"hint": {
+				"en_US": "MQTT Meta",
+				"zh_CN": "MQTT 元数据"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "meta",
-				"zh_CN": "meta"
+				"en_US": "Metadata",
+				"zh_CN": "元数据"
 			}
 		}
 	}, {
@@ -2475,26 +2936,33 @@
 		},
 		"args": [
 			{
-				"name": "col",
+				"name": "field",
 				"optional": false,
-				"control": "text",
-				"type": "any",
+				"control": "field",
+				"type": "array",
 				"hint": {
-					"en_US": "The number of members in the group. The null value is 0",
-					"zh_CN": "组中成员的数量。空值为0"
+					"en_US": "The field to check.",
+					"zh_CN": "需要检查的字段名"
 				},
 				"label": {
-					"en_US": "The number of members in the group. The null value is 0",
-					"zh_CN": "组中成员的数量。空值为0"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Cardinality",
+				"zh_CN": "数组长度"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "The number of members in the group. The null value is 0.",
-				"zh_CN": "组中成员的数量。空值为0。"
+				"en_US": "Cardinality",
+				"zh_CN": "数组长度"
 			}
 		}
 	}, {
@@ -2505,12 +2973,19 @@
 			"zh_CN": "返回窗口的开始时间戳，格式为 int64。若运行时没有时间窗口，则返回默认值0。窗口的时间与规则所用的时间系统相同。若规则采用处理时间，则窗口的时间也为处理时间；若规则采用事件事件，则窗口的时间也为事件时间。"
 		},
 		"args": [],
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Window Start Timestamp",
+				"zh_CN": "窗口开始时间戳"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "window_start",
-				"zh_CN": "window_start"
+				"en_US": "Window Start Time",
+				"zh_CN": "窗口开始时间"
 			}
 		}
 	}, {
@@ -2521,12 +2996,19 @@
 			"zh_CN": "返回窗口的结束时间戳，格式为 int64。若运行时没有时间窗口，则返回默认值0。窗口的时间与规则所用的时间系统相同。若规则采用处理时间，则窗口的时间也为处理时间；若规则采用事件事件，则窗口的时间也为事件时间。"
 		},
 		"args": [],
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Window Start Timestamp",
+				"zh_CN": "窗口开始时间戳"
+			}
+		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "window_end",
-				"zh_CN": "window_end"
+				"en_US": "Window End Time",
+				"zh_CN": "窗口结束时间"
 			}
 		}
 	}]

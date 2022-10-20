@@ -77,8 +77,8 @@
     },
     "icon": "iconPath",
     "label": {
-      "en": "Filter",
-      "zh": "过滤"
+      "en": "Sort",
+      "zh": "排序"
     }
   }
 }
