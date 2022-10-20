@@ -26,6 +26,8 @@ import (
 func (t *Server) doRegister(pt plugin.PluginType, p plugin.Plugin) error {
 	if pt == plugin.PORTABLE {
 		return portableManager.Register(p)
+	} else if pt == plugin.WASM {
+		return wasmManager.Register(p)
 	} else {
 		return nativeManager.Register(pt, p)
 	}
@@ -34,6 +36,8 @@ func (t *Server) doRegister(pt plugin.PluginType, p plugin.Plugin) error {
 func (t *Server) doDelete(pt plugin.PluginType, name string, stopRun bool) error {
 	if pt == plugin.PORTABLE {
 		return portableManager.Delete(name)
+	} else if pt == plugin.WASM {
+		return wasmManager.Delete(name)
 	} else {
 		return nativeManager.Delete(pt, name, stopRun)
 	}
@@ -46,6 +50,8 @@ func (t *Server) doDesc(pt plugin.PluginType, name string) (interface{}, error) 
 	)
 	if pt == plugin.PORTABLE {
 		result, ok = portableManager.GetPluginInfo(name)
+	} else if pt == plugin.WASM {
+		result, ok = wasmManager.GetPluginInfo(name)
 	} else {
 		result, ok = nativeManager.GetPluginInfo(pt, name)
 	}

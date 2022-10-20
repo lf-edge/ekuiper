@@ -9,6 +9,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.4.2-0.20220810043731-079a117b4614
 	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.2.0
 	github.com/edgexfoundry/go-mod-messaging/v2 v2.2.0
+	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/gdexlab/go-render v1.0.1
 	github.com/go-redis/redis/v7 v7.3.0
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
@@ -17,7 +18,7 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.4.2
-	github.com/gorilla/mux v1.7.3
+	github.com/gorilla/mux v1.8.0
 	github.com/jhump/protoreflect v1.8.2
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
@@ -26,6 +27,7 @@ require (
 	github.com/msgpack-rpc/msgpack-rpc-go v0.0.0-20131026060856-c76397e1782b
 	github.com/pebbe/zmq4 v1.2.7
 	github.com/prometheus/client_golang v1.11.0
+	github.com/second-state/WasmEdge-go v0.11.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/ugorji/go/codec v1.2.5
 	github.com/urfave/cli v1.22.4
@@ -46,7 +48,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
-	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.10.1 // indirect

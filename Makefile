@@ -31,6 +31,7 @@ build_prepare:
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/sinks
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/functions
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/portable
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/wasm
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/log
 
 	@cp -r etc/* $(BUILD_PATH)/$(PACKAGE_NAME)/etc
