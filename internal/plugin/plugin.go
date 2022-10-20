@@ -21,6 +21,7 @@ const (
 	SINK
 	FUNCTION
 	PORTABLE
+	WASM
 )
 
 var PluginTypes = []string{"sources", "sinks", "functions"}
