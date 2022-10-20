@@ -87,7 +87,9 @@ basic:
   prometheus: true
   prometheusPort: 20499
 ```
-在如上默认配置中，eKuiper 暴露于 Prometheusd 运行指标可通过 `http://localhost:20499/metrics` 访问。
+在如上默认配置中，eKuiper 暴露于 Prometheus 运行指标可通过 `http://localhost:20499/metrics` 访问。
+
+Prometheus 端口可设置为与 eKuiper 的 REST 服务端口相同。这样设置的话，两个服务将运行在同一个 HTTP 服务中。
 
 ## Pluginhosts 配置
 

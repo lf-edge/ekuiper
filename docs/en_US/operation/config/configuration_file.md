@@ -86,7 +86,9 @@ basic:
   prometheus: true
   prometheusPort: 20499
 ```
-For such a default configuration, eKuiper will export metrics and serve prometheus at `http://localhost:20499/metrics`
+For such a default configuration, eKuiper will export metrics and serve prometheus at `http://localhost:20499/metrics`.
+
+The prometheus port can be the same as the eKuiper REST API port. If so, both service will be served on the same server.
 
 ## Pluginhosts Configuration
 
