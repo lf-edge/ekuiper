@@ -92,7 +92,7 @@ jobs:
         tccli configure set secretId ${{ secrets.TENCENT_COS_ID }}
         tccli configure set secretKey ${{ secrets.TENCENT_COS_KEY }}
         tccli configure set region ap-hongkong
-        tccli cdn PurgePathCache --Paths '["https://ekuiper.org/docs/"]' --FlushType delete
+        tccli cdn PurgePathCache --Paths '["https://ekuiper.org/docs/", "https://ekuiper-docs.emqx.net/"]' --FlushType delete
 
     - name: update search index
       uses: Swilder-M/docsearch-scraper-simple@v4
