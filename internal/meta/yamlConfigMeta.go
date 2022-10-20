@@ -36,8 +36,11 @@ var ConfigManager = configManager{
 }
 
 const SourceCfgOperatorKeyTemplate = "sources.%s"
+const SourceCfgOperatorKeyPrefix = "sources."
 const SinkCfgOperatorKeyTemplate = "sinks.%s"
+const SinkCfgOperatorKeyPrefix = "sinks."
 const ConnectionCfgOperatorKeyTemplate = "connections.%s"
+const ConnectionCfgOperatorKeyPrefix = "connections."
 
 // loadConfigOperatorForSource
 // Try to load ConfigOperator for plugin xxx from /etc/sources/xxx.yaml  /data/sources/xxx.yaml
@@ -235,20 +238,22 @@ func GetResources(language string) (b []byte, err error) {
 	var sinkResources []map[string]string
 
 	for key, ops := range ConfigManager.cfgOperators {
-		if strings.HasSuffix(key, ConnectionCfgOperatorKeyTemplate) {
+		if strings.HasPrefix(key, ConnectionCfgOperatorKeyPrefix) {
 			continue
 		}
-		if strings.HasSuffix(key, SourceCfgOperatorKeyTemplate) {
-			plugin := strings.TrimPrefix(key, SourceCfgOperatorKeyTemplate)
+		if strings.HasPrefix(key, SourceCfgOperatorKeyPrefix) {
+			plugin := strings.TrimPrefix(key, SourceCfgOperatorKeyPrefix)
 			resourceIds := ops.GetUpdatableConfKeys()
-			item := map[string]string{}
-			for _, v := range resourceIds {
-				item[plugin] = v
+			if len(resourceIds) > 0 {
+				item := map[string]string{}
+				for _, v := range resourceIds {
+					item[v] = plugin
+				}
+				srcResources = append(srcResources, item)
 			}
-			srcResources = append(srcResources, item)
 		}
-		if strings.HasSuffix(key, SinkCfgOperatorKeyTemplate) {
-			plugin := strings.TrimPrefix(key, SinkCfgOperatorKeyTemplate)
+		if strings.HasSuffix(key, SinkCfgOperatorKeyPrefix) {
+			plugin := strings.TrimPrefix(key, SinkCfgOperatorKeyPrefix)
 			resourceIds := ops.GetUpdatableConfKeys()
 			item := map[string]string{}
 			for _, v := range resourceIds {
