@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"time"
 )
 
 type OperatorNode interface {
@@ -183,6 +184,10 @@ func SinkOpen(sinkType string, config map[string]interface{}) error {
 	contextLogger := conf.Log.WithField("rule", "TestSinkOpen"+"_"+sinkType)
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 
+	defer func() {
+		_ = sink.Close(ctx)
+	}()
+
 	return sink.Open(ctx)
 }
 
@@ -208,11 +213,15 @@ func SourceOpen(sourceType string, config map[string]interface{}) error {
 
 	contextLogger := conf.Log.WithField("rule", "TestSourceOpen"+"_"+sourceType)
 	ctx, cancel := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithCancel()
+	defer func() {
+		cancel()
+		_ = ns.Close(ctx)
+	}()
 
-	defer cancel()
-
-	var sourceDataChannel chan api.SourceTuple
-	var errChannel chan error
+	TimeOut := 2000
+	ticker := time.NewTicker(time.Millisecond * time.Duration(TimeOut))
+	var sourceDataChannel = make(chan api.SourceTuple)
+	var errChannel = make(chan error)
 
 	go func() {
 		ns.Open(ctx, sourceDataChannel, errChannel)
@@ -225,7 +234,7 @@ func SourceOpen(sourceType string, config map[string]interface{}) error {
 		return nil
 	case err = <-errChannel:
 		return err
+	case <-ticker.C:
+		return nil
 	}
-
-	return nil
 }
