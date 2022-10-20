@@ -1,5 +1,23 @@
 # 基本配置
-eKuiper 的配置文件位于 `$ eKuiper / etc / kuiper.yaml` 中。 配置文件为 yaml 格式。
+eKuiper 的配置文件位于 `$ eKuiper / etc / kuiper.yaml` 中。 配置文件为 yaml 格式。应用程序可以通过环境变量进行配置。环境变量优先于 yaml 文件中的对应项。为了对给定的配置使用 env 变量，我们必须使用如下格式： `KUIPER__`前缀 + 由`__`连接的路径元素。例如，在配置的情况下：
+```yaml
+basic:
+  # true|false, with debug level, it prints more debug info
+  debug: false
+  # true|false, if it's set to true, then the log will be print to console
+  consoleLog: false
+  # true|false, if it's set to true, then the log will be print to log file
+  fileLog: true
+  # How many hours to split the file
+  rotateTime: 24
+  # Maximum file storage hours
+  maxAge: 72
+  # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
+  ignoreCase: true
+```
+将basic项目下debug的值设置为true是有效的 `KUIPER__BASIC__DEBUG=true`。
+
+配置ignoreCase用于在SQL处理中忽略大小写。默认情况下，它设置为 true 以符合标准 SQL。在这种情况下，摄取的数据可能不区分大小写。如果 SQL 中的列名、流定义和摄取的数据可以统一为区分大小写的名称，建议设置为 false 以获得更好的性能。
 
 ## 日志级别
 
