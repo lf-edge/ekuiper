@@ -1052,8 +1052,10 @@ func getPluginType(arg string) (ptype int, err error) {
 		ptype = 2
 	case "portable":
 		ptype = 3
+	case "wasm":
+		ptype = 4
 	default:
-		err = fmt.Errorf("Invalid plugin type %s, should be \"source\", \"sink\", \"function\" or \"portable\".\n", arg)
+		err = fmt.Errorf("Invalid plugin type %s, should be \"source\", \"sink\", \"function\" or \"portable\" or \"wasm\".\n", arg)
 	}
 	return
 }

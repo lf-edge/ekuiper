@@ -17,7 +17,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.4.2
-	github.com/gorilla/mux v1.7.3
+	github.com/gorilla/mux v1.8.0
 	github.com/jhump/protoreflect v1.8.2
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
@@ -26,6 +26,7 @@ require (
 	github.com/msgpack-rpc/msgpack-rpc-go v0.0.0-20131026060856-c76397e1782b
 	github.com/pebbe/zmq4 v1.2.7
 	github.com/prometheus/client_golang v1.11.0
+	github.com/second-state/WasmEdge-go v0.11.2
 	github.com/sirupsen/logrus v1.8.1
 	github.com/ugorji/go/codec v1.2.5
 	github.com/urfave/cli v1.22.4

@@ -17,8 +17,9 @@ require (
 	github.com/couchbase/go_n1ql v0.0.0-20220303011133-0ed4bf93e31d
 	github.com/denisenkom/go-mssqldb v0.12.2
 	github.com/eclipse/paho.mqtt.golang v1.4.2-0.20220810043731-079a117b4614
-	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.2.0
-	github.com/edgexfoundry/go-mod-messaging/v2 v2.2.0
+	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.3.0
+	github.com/edgexfoundry/go-mod-messaging/v2 v2.3.0
+	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/gdexlab/go-render v1.0.1
 	github.com/go-redis/redis/v7 v7.3.0
 	github.com/go-sql-driver/mysql v1.6.0
@@ -50,6 +51,7 @@ require (
 	github.com/posener/order v0.0.1
 	github.com/prestodb/presto-go-client v0.0.0-20211201125635-ad28cec17d6c
 	github.com/prometheus/client_golang v1.11.0
+	github.com/second-state/WasmEdge-go v0.11.2
 	github.com/sijms/go-ora/v2 v2.4.28
 	github.com/sirupsen/logrus v1.8.1
 	github.com/snowflakedb/gosnowflake v1.6.11
@@ -182,6 +184,9 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/msgpack/msgpack-go v0.0.0-20130625150338-8224460e6fa3 // indirect
+	github.com/nats-io/nats.go v1.18.0 // indirect
+	github.com/nats-io/nkeys v0.3.0 // indirect
+	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.11 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
