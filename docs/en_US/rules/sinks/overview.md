@@ -104,3 +104,48 @@ In the following example configuration of the rule, log sink has no cache-relate
   }]
 }
 ```
+
+## Resource Reuse
+
+Like sources, actions also support configuration reuse. Users only need to create a yaml file with the same name as the target action in the sinks folder and write the configuration in the same form as the source.
+
+For example, for the MQTT action scenario, the user can create the mqtt.yaml file in the sinks directory and write the following content
+
+```yaml
+test:
+  qos: 1
+  server: "tcp://broker.emqx.io:1883"
+```
+
+When users need MQTT actions, in addition to the traditional configuration method, as shown below
+
+```json
+    {
+      "mqtt": {
+        "server": "tcp://broker.emqx.io:1883",
+        "topic": "devices/demo_001/messages/events/",
+        "protocolVersion": "3.1.1",
+        "qos": 1,
+        "clientId": "demo_001",
+        "username": "xyz.azure-devices.net/demo_001/?api-version=2018-06-30",
+        "password": "SharedAccessSignature sr=*******************",
+        "retained": false
+      }
+    }
+```
+
+Can also use the `resourceId` reference form with the following configuration
+
+```json
+{
+      "mqtt": {
+        "resourceId": "test",
+        "topic": "devices/demo_001/messages/events/",
+        "protocolVersion": "3.1.1",
+        "clientId": "demo_001",
+        "username": "xyz.azure-devices.net/demo_001/?api-version=2018-06-30",
+        "password": "SharedAccessSignature sr=*******************",
+        "retained": false
+      }
+}
+```
