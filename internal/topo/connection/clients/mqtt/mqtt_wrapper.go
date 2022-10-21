@@ -260,16 +260,17 @@ func (mc *mqttClientWrapper) unsubscribe(c api.StreamContext) {
 	delete(mc.subscribers, subId)
 }
 
-func (mc *mqttClientWrapper) Release(c api.StreamContext) {
+func (mc *mqttClientWrapper) Release(c api.StreamContext) bool {
 	mc.unsubscribe(c)
-
-	clients.ClientRegistry.Lock.Lock()
-	mc.DeRef(c)
-	clients.ClientRegistry.Lock.Unlock()
+	return mc.deRef(c)
 }
 
 func (mc *mqttClientWrapper) SetConnectionSelector(conSelector string) {
 	mc.conSelector = conSelector
+}
+
+func (mc *mqttClientWrapper) GetConnectionSelector() string {
+	return mc.conSelector
 }
 
 func (mc *mqttClientWrapper) AddRef() {
@@ -279,7 +280,7 @@ func (mc *mqttClientWrapper) AddRef() {
 	conf.Log.Infof("mqtt client wrapper add refence for connection selector %s total refcount %d", mc.conSelector, mc.refCnt)
 }
 
-func (mc *mqttClientWrapper) DeRef(c api.StreamContext) {
+func (mc *mqttClientWrapper) deRef(c api.StreamContext) bool {
 	log := c.GetLogger()
 	mc.refLock.Lock()
 	defer mc.refLock.Unlock()
@@ -287,10 +288,9 @@ func (mc *mqttClientWrapper) DeRef(c api.StreamContext) {
 	mc.refCnt = mc.refCnt - 1
 	if mc.refCnt == 0 {
 		log.Infof("mqtt client wrapper reference count 0")
-		if mc.conSelector != "" {
-			conf.Log.Infof("remove mqtt client wrapper for connection selector %s", mc.conSelector)
-			delete(clients.ClientRegistry.ShareClientStore, mc.conSelector)
-		}
 		_ = mc.cli.Disconnect()
+		return true
+	} else {
+		return false
 	}
 }

@@ -523,7 +523,7 @@ func (ems *EdgexMsgBusSink) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing edgex sink")
 	if ems.cli != nil {
-		ems.cli.Release(ctx)
+		clients.ReleaseClient(ctx, ems.cli)
 	}
 	return nil
 }

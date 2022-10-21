@@ -308,7 +308,7 @@ func (es *EdgexSource) Close(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
 	log.Infof("EdgeX Source instance %d Done.", ctx.GetInstanceId())
 	if es.cli != nil {
-		es.cli.Release(ctx)
+		clients.ReleaseClient(ctx, es.cli)
 	}
 	return nil
 }
