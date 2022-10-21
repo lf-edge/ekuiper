@@ -37,7 +37,7 @@ jobs:
     - name: install lib
       run: sudo apt-get update && sudo apt-get install libzmq3-dev -y
     - name: install wasm dependency
-      run: sudo curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash && sudo source $HOME/.wasmedge/env
+      run: sudo curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash && source $HOME/.wasmedge/env
     - name: run test case
       run: |
         set -e -u -x
