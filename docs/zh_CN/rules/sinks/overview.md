@@ -104,3 +104,44 @@ Sink 缓存的配置有两个层次。`etc/kuiper.yaml` 中的全局配置，定
   }]
 }
 ```
+
+## 资源引用
+ 
+像源一样，动作也支持配置复用，用户只需要在 sinks 文件夹中创建与目标动作同名的 yaml 文件并按照源一样的形式写入配置。
+
+例如，针对 MQTT 动作场景， 用户可以在 sinks 目录下创建 mqtt.yaml 文件，并写入如下内容
+```yaml
+test:
+  qos: 1
+  server: "tcp://broker.emqx.io:1883"
+```
+当用户需要 MQTT 动作时，除了采用传统的配置方式，如下所示
+```json
+    {
+      "mqtt": {
+        "server": "tcp://broker.emqx.io:1883",
+        "topic": "devices/demo_001/messages/events/",
+        "protocolVersion": "3.1.1",
+        "qos": 1,
+        "clientId": "demo_001",
+        "username": "xyz.azure-devices.net/demo_001/?api-version=2018-06-30",
+        "password": "SharedAccessSignature sr=*******************",
+        "retained": false
+      }
+    }
+```
+还可以通过 `resourceId` 引用形式，采用如下的配置
+
+```json
+ {
+      "mqtt": {
+        "resourceId": "test",
+        "topic": "devices/demo_001/messages/events/",
+        "protocolVersion": "3.1.1",
+        "clientId": "demo_001",
+        "username": "xyz.azure-devices.net/demo_001/?api-version=2018-06-30",
+        "password": "SharedAccessSignature sr=*******************",
+        "retained": false
+      }
+}
+```
