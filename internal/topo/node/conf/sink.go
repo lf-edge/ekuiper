@@ -18,7 +18,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
-const ResourceID = "resource_id"
+const ResourceID = "resourceId"
 
 func GetSinkConf(sinkType string, action map[string]interface{}) map[string]interface{} {
 	resourceId, ok := action[ResourceID].(string)

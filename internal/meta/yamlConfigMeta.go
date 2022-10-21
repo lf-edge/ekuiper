@@ -251,15 +251,19 @@ func GetResources(language string) (b []byte, err error) {
 				}
 				srcResources = append(srcResources, item)
 			}
+			continue
 		}
-		if strings.HasSuffix(key, SinkCfgOperatorKeyPrefix) {
+		if strings.HasPrefix(key, SinkCfgOperatorKeyPrefix) {
 			plugin := strings.TrimPrefix(key, SinkCfgOperatorKeyPrefix)
 			resourceIds := ops.GetUpdatableConfKeys()
-			item := map[string]string{}
-			for _, v := range resourceIds {
-				item[plugin] = v
+			if len(resourceIds) > 0 {
+				item := map[string]string{}
+				for _, v := range resourceIds {
+					item[v] = plugin
+				}
+				sinkResources = append(sinkResources, item)
 			}
-			sinkResources = append(sinkResources, item)
+			continue
 		}
 	}
 
