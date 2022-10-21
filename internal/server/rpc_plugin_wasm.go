@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build portable && rpc && core && !plugin
-// +build portable,rpc,core,!plugin
+//go:build wasm && rpc && core && !plugin
+// +build wasm,rpc,core,!plugin
 
 package server
 
