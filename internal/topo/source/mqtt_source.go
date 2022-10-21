@@ -18,6 +18,7 @@ import (
 	"fmt"
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -75,20 +76,18 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 			return err
 		}
 	}
+
+	cli, err := clients.GetClient("mqtt", ms.config)
+	if err != nil {
+		return err
+	}
+	ms.cli = cli
+
 	return nil
 }
 
 func (ms *MQTTSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
-	log := ctx.GetLogger()
-
-	cli, err := ctx.GetClient("mqtt", ms.config)
-	if err != nil {
-		errCh <- err
-		log.Errorf("found error when get mqtt client config %v, error %s", ms.config, err.Error())
-		return
-	}
-	ms.cli = cli
-	err = subscribe(ms, ctx, consumer)
+	err := subscribe(ms, ctx, consumer)
 	if err != nil {
 		errCh <- err
 	}

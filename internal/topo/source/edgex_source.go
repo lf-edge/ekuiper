@@ -25,6 +25,7 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/fxamacker/cbor/v2"
+	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"strconv"
@@ -69,19 +70,17 @@ func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 	es.topic = c.Topic
 	es.config = props
 
+	cli, err := clients.GetClient("edgex", es.config)
+	if err != nil {
+		return err
+	}
+	es.cli = cli.(api.MessageClient)
+
 	return nil
 }
 
 func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	log := ctx.GetLogger()
-
-	cli, err := ctx.GetClient("edgex", es.config)
-	if err != nil {
-		errCh <- err
-		log.Errorf("found error when get edgex client, error %s", err.Error())
-		return
-	}
-	es.cli = cli.(api.MessageClient)
 
 	messages := make(chan interface{}, es.buflen)
 	topics := []api.TopicChannel{{Topic: es.topic, Messages: messages}}

@@ -173,8 +173,6 @@ type StreamContext interface {
 	PutState(key string, value interface{}) error
 	GetState(key string) (interface{}, error)
 	DeleteState(key string) error
-	// GetClient Connection related methods
-	GetClient(clientType string, config map[string]interface{}) (MessageClient, error)
 	// ParseTemplate parse the template string with the given data
 	ParseTemplate(template string, data interface{}) (string, error)
 	// ParseJsonPath parse the jsonPath string with the given data

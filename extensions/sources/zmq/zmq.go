@@ -35,20 +35,22 @@ func (s *zmqSource) Configure(topic string, props map[string]interface{}) error 
 		return fmt.Errorf("zmq source is missing property server")
 	}
 	s.srv = srv.(string)
+
+	var err error
+	s.subscriber, err = zmq.NewSocket(zmq.SUB)
+	if err != nil {
+		return fmt.Errorf("zmq source fails to create socket: %v", err)
+	}
+	err = s.subscriber.Connect(s.srv)
+	if err != nil {
+		return fmt.Errorf("zmq source fails to connect to %s: %v", s.srv, err)
+	}
+
 	return nil
 }
 
 func (s *zmqSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	logger := ctx.GetLogger()
-	var err error
-	s.subscriber, err = zmq.NewSocket(zmq.SUB)
-	if err != nil {
-		errCh <- fmt.Errorf("zmq source fails to create socket: %v", err)
-	}
-	err = s.subscriber.Connect(s.srv)
-	if err != nil {
-		errCh <- fmt.Errorf("zmq source fails to connect to %s: %v", s.srv, err)
-	}
 	s.subscriber.SetSubscribe(s.topic)
 	logger.Debugf("zmq source subscribe to topic %s", s.topic)
 	exeCtx, cancel := ctx.WithCancel()

@@ -16,7 +16,6 @@ package context
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -54,10 +53,6 @@ func (c *DefaultFuncContext) DeleteState(key string) error {
 
 func (c *DefaultFuncContext) GetFuncId() int {
 	return c.funcId
-}
-
-func (c *DefaultFuncContext) GetClient(clientType string, config map[string]interface{}) (api.MessageClient, error) {
-	return clients.GetClient(clientType, config)
 }
 
 func (c *DefaultFuncContext) convertKey(key string) string {
