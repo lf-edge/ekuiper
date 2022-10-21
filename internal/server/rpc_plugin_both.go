@@ -13,13 +13,14 @@
 // limitations under the License.
 
 //go:build !core || (rpc && portable && plugin)
-// +build !core rpc,portable,plugin
 
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/plugin"
+	"strings"
 )
 
 func (t *Server) doRegister(pt plugin.PluginType, p plugin.Plugin) error {
@@ -52,4 +53,24 @@ func (t *Server) doDesc(pt plugin.PluginType, name string) (interface{}, error) 
 		return nil, fmt.Errorf("not found")
 	}
 	return result, nil
+}
+
+func (t *Server) doShow(pt plugin.PluginType) (string, error) {
+	var result string
+	if pt == plugin.PORTABLE {
+		l := portableManager.List()
+		jb, err := json.Marshal(l)
+		if err != nil {
+			return "", err
+		}
+		return string(jb), nil
+	} else {
+		l := nativeManager.List(pt)
+		if len(l) == 0 {
+			result = "No plugin is found."
+		} else {
+			result = strings.Join(l, "\n")
+		}
+		return result, nil
+	}
 }

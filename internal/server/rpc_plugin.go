@@ -13,8 +13,6 @@
 // limitations under the License.
 
 //go:build (rpc || !core) && (plugin || portable || !core)
-// +build rpc !core
-// +build plugin portable !core
 
 package server
 
@@ -87,6 +85,16 @@ func (t *Server) DescPlugin(arg *model.PluginDesc, reply *string) error {
 		}
 		*reply = r
 	}
+	return nil
+}
+
+func (t *Server) ShowPlugins(arg int, reply *string) error {
+	pt := plugin.PluginType(arg)
+	l, err := t.doShow(pt)
+	if err != nil {
+		return fmt.Errorf("Show plugin error: %s", err)
+	}
+	*reply = l
 	return nil
 }
 

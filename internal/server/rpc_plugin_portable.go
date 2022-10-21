@@ -18,6 +18,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 )
@@ -47,5 +48,18 @@ func (t *Server) doDesc(pt plugin.PluginType, name string) (interface{}, error) 
 		return r, nil
 	} else {
 		return nil, fmt.Errorf("native plugin support is disabled")
+	}
+}
+
+func (t *Server) doShow(pt plugin.PluginType) (string, error) {
+	if pt == plugin.PORTABLE {
+		l := portableManager.List()
+		jb, err := json.Marshal(l)
+		if err != nil {
+			return "", err
+		}
+		return string(jb), nil
+	} else {
+		return "", fmt.Errorf("native plugin support is disabled")
 	}
 }
