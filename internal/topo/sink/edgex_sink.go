@@ -25,6 +25,7 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -93,7 +94,7 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
 
-	cli, err := ctx.GetClient("edgex", ems.config)
+	cli, err := clients.GetClient("edgex", ems.config)
 	if err != nil {
 		log.Errorf("found error when get edgex client, error %s", err.Error())
 		return err

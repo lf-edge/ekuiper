@@ -16,6 +16,7 @@ package sink
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -72,8 +73,7 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 
 func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
-
-	cli, err := ctx.GetClient("mqtt", ms.config)
+	cli, err := clients.GetClient("mqtt", ms.config)
 	if err != nil {
 		log.Errorf("found error when get mqtt client config %v, error %s", ms.config, err.Error())
 		return err

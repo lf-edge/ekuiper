@@ -20,13 +20,10 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
-	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"time"
 )
 
 type OperatorNode interface {
@@ -194,47 +191,21 @@ func SinkOpen(sinkType string, config map[string]interface{}) error {
 func SourceOpen(sourceType string, config map[string]interface{}) error {
 
 	options := &ast.Options{}
-	err := cast.MapToStruct(config, options)
-	if err != nil {
-		return err
-	}
-
-	props := nodeConf.GetSourceConf(sourceType, options)
+	//_ = nodeConf.GetSourceConf(sourceType, options)
 
 	ns, err := io.Source(sourceType)
 	if err != nil {
 		return err
 	}
-
-	err = ns.Configure(options.DATASOURCE, props)
+	err = ns.Configure(options.DATASOURCE, config)
 	if err != nil {
 		return err
 	}
 
 	contextLogger := conf.Log.WithField("rule", "TestSourceOpen"+"_"+sourceType)
-	ctx, cancel := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithCancel()
-	defer func() {
-		cancel()
-		_ = ns.Close(ctx)
-	}()
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	defer ns.Close(ctx)
 
-	TimeOut := 2000
-	ticker := time.NewTicker(time.Millisecond * time.Duration(TimeOut))
-	var sourceDataChannel = make(chan api.SourceTuple)
-	var errChannel = make(chan error)
+	return nil
 
-	go func() {
-		ns.Open(ctx, sourceDataChannel, errChannel)
-	}()
-
-	select {
-	case <-ctx.Done():
-		return nil
-	case <-sourceDataChannel:
-		return nil
-	case err = <-errChannel:
-		return err
-	case <-ticker.C:
-		return nil
-	}
 }

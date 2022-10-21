@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -250,8 +249,4 @@ func (c *DefaultContext) SaveState(checkpointId int64) error {
 	}
 	c.snapshot = nil
 	return nil
-}
-
-func (c *DefaultContext) GetClient(clientType string, config map[string]interface{}) (api.MessageClient, error) {
-	return clients.GetClient(clientType, config)
 }

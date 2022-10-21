@@ -63,26 +63,18 @@ func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
 
 	m.Query = generator
 	m.conf = cfg
+
+	db, err := dburl.Open(m.conf.Url)
+	if err != nil {
+		return fmt.Errorf("connection to %s Open with error %v, support build tags are %v", m.conf.Url, err, driver2.KnownBuildTags())
+	}
+	m.db = db
+
 	return nil
 }
 
 func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	logger := ctx.GetLogger()
-	logger.Debugf("Opening sql stream %v", m.conf)
-
-	db, err := dburl.Open(m.conf.Url)
-	if err != nil {
-		logger.Errorf("connection to %s Open with error %v", m.conf.Url, err)
-		logger.Errorf("support build tags are %v", driver2.KnownBuildTags())
-		errCh <- err
-		return
-	}
-	m.db = db
-
-	defer func() {
-		_ = m.db.Close()
-	}()
-
 	t := time.NewTicker(time.Duration(m.conf.Interval) * time.Millisecond)
 	defer t.Stop()
 	for {
@@ -142,6 +134,9 @@ func (m *sqlsource) Rewind(offset interface{}) error {
 func (m *sqlsource) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Debugf("Closing sql stream to %v", m.conf)
+	if m.db != nil {
+		_ = m.db.Close()
+	}
 
 	return nil
 }

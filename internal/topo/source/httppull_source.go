@@ -18,6 +18,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"io"
 	"net/http"
 	"net/url"
@@ -25,7 +26,6 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -167,17 +167,10 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 		}
 	}
 
-	conf.Log.Debugf("Initialized with configurations %#v.", hps)
-	return nil
-}
-
-func (hps *HTTPPullSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
-	_, e := url.Parse(hps.url)
-	if e != nil {
-		errCh <- e
-		return
+	_, err := url.Parse(hps.url)
+	if err != nil {
+		return err
 	}
-	log := ctx.GetLogger()
 
 	tlsOpts := cert.TlsConfigurationOptions{
 		SkipCertVerify: hps.insecureSkipVerify,
@@ -185,11 +178,10 @@ func (hps *HTTPPullSource) Open(ctx api.StreamContext, consumer chan<- api.Sourc
 		KeyFile:        hps.privateKeyPath,
 		CaFile:         hps.rootCaPath,
 	}
-	log.Infof("Connect http source with TLS configs. %v", tlsOpts)
+
 	tlscfg, err := cert.GenerateTLSForClient(tlsOpts)
 	if err != nil {
-		errCh <- err
-		return
+		return err
 	}
 
 	tr := &http.Transport{
@@ -199,6 +191,12 @@ func (hps *HTTPPullSource) Open(ctx api.StreamContext, consumer chan<- api.Sourc
 	hps.client = &http.Client{
 		Transport: tr,
 		Timeout:   time.Duration(hps.timeout) * time.Millisecond}
+
+	conf.Log.Debugf("Initialized with configurations %#v.", hps)
+	return nil
+}
+
+func (hps *HTTPPullSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	hps.initTimerPull(ctx, consumer, errCh)
 }
 
