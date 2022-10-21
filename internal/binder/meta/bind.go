@@ -15,7 +15,6 @@
 package meta
 
 import (
-	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/meta"
@@ -34,11 +33,6 @@ func Bind() {
 		return s != nil
 	}); nil != err {
 		conf.Log.Errorf("readSinkMetaDir:%v", err)
-	}
-	if err := meta.ReadFuncMetaDir(func(name string) bool {
-		return function.HasFunctionSet(name)
-	}); nil != err {
-		conf.Log.Errorf("readFuncMetaDir:%v", err)
 	}
 	if err := meta.ReadUiMsgDir(); nil != err {
 		conf.Log.Errorf("readUiMsgDir:%v", err)

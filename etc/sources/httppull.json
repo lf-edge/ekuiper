@@ -216,7 +216,7 @@
 		}
 	],
 	"node": {
-		"category": "Protocol/Protocol1",
+		"category": "source",
 		"icon": "iconPath",
 		"label": {
 			"en_US": "HTTP PULL",

@@ -15,6 +15,7 @@
 package meta
 
 import (
+	"bytes"
 	"os"
 	"path"
 
@@ -58,4 +59,24 @@ func ReadUiMsgDir() error {
 		}
 	}
 	return nil
+}
+
+func ConstructJsonArray(jsonByteItems []fileContent) bytes.Buffer {
+	var buf bytes.Buffer
+	var length = len(jsonByteItems)
+	if length == 0 {
+		buf.Write([]byte("[]"))
+		return buf
+	}
+
+	buf.Write([]byte("["))
+	buf.Write(jsonByteItems[0])
+
+	for i := 1; i < length; i++ {
+		buf.Write([]byte(","))
+		buf.Write(jsonByteItems[i])
+	}
+
+	buf.Write([]byte("]"))
+	return buf
 }

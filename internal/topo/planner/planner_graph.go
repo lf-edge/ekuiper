@@ -17,6 +17,7 @@ package planner
 import (
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/graph"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
@@ -460,7 +461,7 @@ func parseFunc(props map[string]interface{}) (*operator.FuncOp, error) {
 	} else {
 		name = f.Name
 	}
-	return &operator.FuncOp{CallExpr: c, Name: name}, nil
+	return &operator.FuncOp{CallExpr: c, Name: name, IsAgg: function.IsAggFunc(name)}, nil
 }
 
 func parseFilter(props map[string]interface{}) (*operator.FilterOp, error) {

@@ -1,4 +1,5 @@
 {
+  "name": "pick",
   "about": {
     "trial": false,
     "author": {
@@ -20,7 +21,7 @@
     "name": "fields",
     "default": "",
     "optional": false,
-    "control": "text",
+    "control": "list",
     "type": "list_string",
     "hint": {
       "en_US": "select fields",
@@ -33,7 +34,7 @@
   }],
   "node": {
     "display": true,
-    "category": "op",
+    "category": "operator",
     "input": {
       "type": "any",
       "rowType": "any",

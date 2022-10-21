@@ -289,10 +289,6 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 		if err := meta.ReadSourceMetaFile(path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
 			conf.Log.Errorf("readSourceFile:%v", err)
 		}
-	case plugin2.FUNCTION:
-		if err := meta.ReadFuncMetaFile(path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
-			conf.Log.Errorf("readFuncFile:%v", err)
-		}
 	}
 	return nil
 }
@@ -362,7 +358,6 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 		} else if !ok {
 			rr.removeSymbols([]string{name})
 		}
-		meta.UninstallFunc(name)
 	}
 
 	for _, p := range paths {

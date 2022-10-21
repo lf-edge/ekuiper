@@ -1,4 +1,5 @@
 {
+  "name": "filter",
   "about": {
     "trial": false,
     "author": {
@@ -16,24 +17,26 @@
       "zh_CN": "用于过滤数据流的操作"
     }
   },
-  "properties": [{
-    "name": "expr",
-    "default": "",
-    "optional": false,
-    "control": "text",
-    "type": "string",
-    "hint": {
-      "en_US": "filter condition expression",
-      "zh_CN": "过滤条件语句"
-    },
-    "label": {
-      "en_US": "Condition",
-      "zh_CN": "条件"
+  "properties": [
+    {
+      "name": "expr",
+      "default": "12",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "filter condition expression",
+        "zh_CN": "过滤条件语句"
+      },
+      "label": {
+        "en_US": "Condition",
+        "zh_CN": "条件"
+      }
     }
-  }],
+  ],
   "node": {
     "display": true,
-    "category": "op",
+    "category": "operator",
     "input": {
       "type": "any",
       "rowType": "any",

@@ -42,6 +42,7 @@ func (m metaComp) register() {
 
 func (m metaComp) rest(r *mux.Router) {
 	r.HandleFunc("/metadata/functions", functionsMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/operators", operatorsMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sinks", sinksMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sinks/{name}", newSinkMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources", sourcesMetaHandler).Methods(http.MethodGet)
@@ -85,8 +86,16 @@ func newSinkMetaHandler(w http.ResponseWriter, r *http.Request) {
 // list functions
 func functionsMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	sinks := meta.GetFunctions()
-	jsonResponse(sinks, w, logger)
+	funcs := meta.GetFunctions()
+	jsonByteResponse(funcs, w, logger)
+	return
+}
+
+// list operators
+func operatorsMetaHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	ops := meta.GetOperators()
+	jsonByteResponse(ops, w, logger)
 	return
 }
 

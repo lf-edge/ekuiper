@@ -1,4 +1,5 @@
 {
+  "name": "join",
   "about": {
     "trial": false,
     "author": {
@@ -100,7 +101,7 @@
   }],
   "node": {
     "display": true,
-    "category": "op",
+    "category": "operator",
     "input": {
       "type": "collection",
       "rowType": "single",

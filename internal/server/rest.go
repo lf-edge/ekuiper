@@ -98,6 +98,18 @@ func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
 	}
 }
 
+func jsonByteResponse(buffer bytes.Buffer, w http.ResponseWriter, logger api.Logger) {
+	w.Header().Add(ContentType, ContentTypeJSON)
+
+	w.Header().Add("Content-Length", strconv.Itoa(buffer.Len()))
+
+	_, err := w.Write(buffer.Bytes())
+	// Problems encoding
+	if err != nil {
+		handleError(w, err, "", logger)
+	}
+}
+
 func createRestServer(ip string, port int, needToken bool) *http.Server {
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {

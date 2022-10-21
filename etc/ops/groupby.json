@@ -1,4 +1,5 @@
 {
+  "name": "groupby",
   "about": {
     "trial": false,
     "author": {
@@ -18,7 +19,7 @@
   },
   "properties": [{
     "name": "dimensions",
-    "default": "[]",
+    "default": "",
     "optional": false,
     "control": "text",
     "type": "list_string",
@@ -33,7 +34,7 @@
   }],
   "node": {
     "display": true,
-    "category": "op",
+    "category": "operator",
     "input": {
       "type": "collection",
       "rowType": "single",
