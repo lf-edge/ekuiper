@@ -26,21 +26,21 @@ type clientRegistry struct {
 	Lock                sync.Mutex
 	supportedClientType []string
 	clientFactory       map[string]ClientFactoryFunc
-	ShareClientStore    map[string]ClientWrapper
+	shareClientStore    map[string]ClientWrapper
 }
 
-var ClientRegistry = clientRegistry{
+var gClientRegistry = clientRegistry{
 	clientFactory:       make(map[string]ClientFactoryFunc),
 	Lock:                sync.Mutex{},
 	supportedClientType: make([]string, 0),
-	ShareClientStore:    make(map[string]ClientWrapper),
+	shareClientStore:    make(map[string]ClientWrapper),
 }
 
 func RegisterClientFactory(clientType string, creatorFunc ClientFactoryFunc) {
-	ClientRegistry.Lock.Lock()
-	ClientRegistry.clientFactory[clientType] = creatorFunc
-	ClientRegistry.supportedClientType = append(ClientRegistry.supportedClientType, clientType)
-	ClientRegistry.Lock.Unlock()
+	gClientRegistry.Lock.Lock()
+	gClientRegistry.clientFactory[clientType] = creatorFunc
+	gClientRegistry.supportedClientType = append(gClientRegistry.supportedClientType, clientType)
+	gClientRegistry.Lock.Unlock()
 }
 
 func getConnectionSelector(props map[string]interface{}) (ConnectionSelector string, err error) {
@@ -57,24 +57,24 @@ func getConnectionSelector(props map[string]interface{}) (ConnectionSelector str
 }
 
 func GetClient(connectionType string, props map[string]interface{}) (api.MessageClient, error) {
-	ClientRegistry.Lock.Lock()
-	defer ClientRegistry.Lock.Unlock()
+	gClientRegistry.Lock.Lock()
+	defer gClientRegistry.Lock.Unlock()
 
 	connectSelector, err := getConnectionSelector(props)
 	if err != nil {
 		return nil, err
 	}
 	if connectSelector != "" {
-		if cliWpr, found := ClientRegistry.ShareClientStore[connectSelector]; found {
+		if cliWpr, found := gClientRegistry.shareClientStore[connectSelector]; found {
 			cliWpr.AddRef()
 			return cliWpr, nil
 		}
 	}
 
-	clientCreator, ok := ClientRegistry.clientFactory[connectionType]
+	clientCreator, ok := gClientRegistry.clientFactory[connectionType]
 	if !ok {
-		conf.Log.Errorf("can not find clientCreator for connection type : %s. only support %s", connectionType, ClientRegistry.supportedClientType)
-		return nil, fmt.Errorf("can not find clientCreator for connection type : %s. only support %s", connectionType, ClientRegistry.supportedClientType)
+		conf.Log.Errorf("can not find clientCreator for connection type : %s. only support %s", connectionType, gClientRegistry.supportedClientType)
+		return nil, fmt.Errorf("can not find clientCreator for connection type : %s. only support %s", connectionType, gClientRegistry.supportedClientType)
 	}
 
 	if connectSelector != "" {
@@ -95,7 +95,7 @@ func GetClient(connectionType string, props map[string]interface{}) (api.Message
 		}
 		cliWpr.SetConnectionSelector(connectSelector)
 		conf.Log.Infof("Init client wrapper for client type %s and connection selector %s", connectionType, connectSelector)
-		ClientRegistry.ShareClientStore[connectSelector] = cliWpr
+		gClientRegistry.shareClientStore[connectSelector] = cliWpr
 		return cliWpr, nil
 	} else {
 		cliWpr, err := clientCreator(props)
@@ -105,5 +105,20 @@ func GetClient(connectionType string, props map[string]interface{}) (api.Message
 		}
 		conf.Log.Infof("Init client wrapper for client type %s", connectionType)
 		return cliWpr, nil
+	}
+}
+
+func ReleaseClient(ctx api.StreamContext, cli api.MessageClient) {
+	log := ctx.GetLogger()
+
+	wrapper := cli.(ClientWrapper)
+	sel := wrapper.GetConnectionSelector()
+	ok := wrapper.Release(ctx)
+
+	if sel != "" && ok {
+		log.Infof("remove mqtt client wrapper for connection selector %s", sel)
+		gClientRegistry.Lock.Lock()
+		delete(gClientRegistry.shareClientStore, sel)
+		gClientRegistry.Lock.Unlock()
 	}
 }

@@ -166,7 +166,7 @@ func getTuple(ctx api.StreamContext, ms *MQTTSource, env interface{}) api.Source
 func (ms *MQTTSource) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Mqtt Source instance %d Done", ctx.GetInstanceId())
 	if ms.cli != nil {
-		ms.cli.Release(ctx)
+		clients.ReleaseClient(ctx, ms.cli)
 	}
 	return nil
 }

@@ -228,12 +228,14 @@ func (mc *edgexClientWrapper) SetConnectionSelector(conSelector string) {
 	mc.conSelector = conSelector
 }
 
-func (mc *edgexClientWrapper) Release(c api.StreamContext) {
+func (mc *edgexClientWrapper) GetConnectionSelector() string {
+	return mc.conSelector
+}
+
+func (mc *edgexClientWrapper) Release(c api.StreamContext) bool {
 	mc.unsubscribe(c)
 
-	clients.ClientRegistry.Lock.Lock()
-	mc.DeRef(c)
-	clients.ClientRegistry.Lock.Unlock()
+	return mc.deRef(c)
 }
 
 func (mc *edgexClientWrapper) AddRef() {
@@ -244,7 +246,7 @@ func (mc *edgexClientWrapper) AddRef() {
 	conf.Log.Infof("edgex client wrapper add refence for connection selector %s total refcount %d", mc.conSelector, mc.refCnt)
 }
 
-func (mc *edgexClientWrapper) DeRef(c api.StreamContext) {
+func (mc *edgexClientWrapper) deRef(c api.StreamContext) bool {
 	log := c.GetLogger()
 	mc.refLock.Lock()
 	defer mc.refLock.Unlock()
@@ -255,14 +257,13 @@ func (mc *edgexClientWrapper) DeRef(c api.StreamContext) {
 	}
 	if mc.refCnt == 0 {
 		log.Infof("mqtt client wrapper reference count 0")
-		if mc.conSelector != "" {
-			conf.Log.Infof("remove mqtt client wrapper for connection selector %s", mc.conSelector)
-			delete(clients.ClientRegistry.ShareClientStore, mc.conSelector)
-		}
 		// clean the go routine that waiting on the messages
 		for _, sub := range mc.topicSubscriptions {
 			sub.stop <- struct{}{}
 		}
 		_ = mc.cli.Disconnect()
+		return true
+	} else {
+		return false
 	}
 }

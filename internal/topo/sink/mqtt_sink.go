@@ -112,7 +112,7 @@ func (ms *MQTTSink) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing mqtt sink")
 	if ms.cli != nil {
-		ms.cli.Release(ctx)
+		clients.ReleaseClient(ctx, ms.cli)
 	}
 	return nil
 }
