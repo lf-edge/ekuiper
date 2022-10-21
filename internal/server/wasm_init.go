@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build wasm || !core
-// +build wasm !core
+//go:build wasm
+// +build wasm
 
 package server
 
