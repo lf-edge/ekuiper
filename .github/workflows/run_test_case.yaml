@@ -38,6 +38,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install libzmq3-dev -y
     - name: run test case
       run: |
+        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash && source $HOME/.wasmedge/env
         set -e -u -x
         mkdir -p data
         mkdir -p log
@@ -55,7 +56,6 @@ jobs:
         cd ../../../../
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
-        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash && source $HOME/.wasmedge/env
         go test --tags="edgex test" ./...
     - uses: actions/upload-artifact@v1
       if: failure()
