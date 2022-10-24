@@ -97,6 +97,7 @@ func (c *ConfigKeys) CopyConfContent() map[string]map[string]interface{} {
 		cf[key] = aux
 	}
 
+	//note: config keys in data directory will overwrite those in etc directory with same name
 	for key, kvs := range c.dataCfg {
 		aux := make(map[string]interface{})
 		for k, v := range kvs {
@@ -231,9 +232,6 @@ func (c *ConfigKeys) AddConfKey(confKey string, reqField map[string]interface{})
 	defer c.lock.Unlock()
 
 	c.dataCfg[confKey] = reqField
-	if _, ok := c.etcCfg[confKey]; ok {
-		delete(c.etcCfg, confKey)
-	}
 
 	return nil
 }
@@ -383,13 +381,6 @@ func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) 
 	filePath = path.Join(dir, fileName+`.yaml`)
 	_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
 
-	//delete the etc config keys that exist in data
-	for k, _ := range c.dataCfg {
-		if _, found := c.etcCfg[k]; found {
-			delete(c.etcCfg, k)
-		}
-	}
-
 	return c, nil
 }
 
@@ -498,13 +489,6 @@ func NewConfigOperatorFromConnectionYaml(pluginName string) (ConfigOperator, err
 			}
 		} else {
 			return nil, fmt.Errorf("file content is not right: %v", plgCnfs)
-		}
-	}
-
-	//delete the etc config keys that exist in data
-	for k, _ := range c.dataCfg {
-		if _, found := c.etcCfg[k]; found {
-			delete(c.etcCfg, k)
 		}
 	}
 
