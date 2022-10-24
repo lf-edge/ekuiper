@@ -286,8 +286,8 @@ func (mc *mqttClientWrapper) deRef(c api.StreamContext) bool {
 	defer mc.refLock.Unlock()
 
 	mc.refCnt = mc.refCnt - 1
+	log.Infof("mqtt client wrapper reference count %d", mc.refCnt)
 	if mc.refCnt == 0 {
-		log.Infof("mqtt client wrapper reference count 0")
 		_ = mc.cli.Disconnect()
 		return true
 	} else {
