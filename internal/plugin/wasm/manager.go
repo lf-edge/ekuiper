@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/internal/plugin"
@@ -342,7 +341,6 @@ func (m *Manager) Delete(name string) error {
 	for _, s := range pinfo.Functions {
 		p := path.Join(m.etcDir, plugin.PluginTypes[plugin.FUNCTION], s+".json")
 		os.Remove(p)
-		meta.UninstallFunc(s)
 	}
 	_ = os.RemoveAll(path.Join(m.pluginDir, name))
 	return nil
