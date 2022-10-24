@@ -30,17 +30,18 @@ func TestValidate(t *testing.T) {
 		{
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
-					Name:    "mirror",
-					Version: "1.0.0",
-					//Executable: "mirror.exe",
+					Name:       "fibonacci",
+					Version:    "1.0.0",
+					WasmEngine: "wasmedge",
 				},
 			},
 			err: "invalid plugin, must define at lease one function",
 		}, {
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
-					Name:    "mirror",
-					Version: "1.0.0",
+					Name:       "fibonacci",
+					Version:    "1.0.0",
+					WasmEngine: "wasmedge",
 				},
 				Functions: []string{"aa"},
 			},
@@ -48,9 +49,10 @@ func TestValidate(t *testing.T) {
 		}, {
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
-					Name:    "mirror",
+					Name:    "fibonacci",
 					Version: "1.0.0",
 					//Executable: "tt",
+					WasmEngine: "wasmedge",
 				},
 				Functions: []string{"aa"},
 			},
@@ -58,8 +60,9 @@ func TestValidate(t *testing.T) {
 		}, {
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
-					Name:    "mirror",
-					Version: "1.0.0",
+					Name:       "fibonacci",
+					Version:    "1.0.0",
+					WasmEngine: "wasmedge",
 					//Executable: "tt",
 				},
 				Functions: []string{"aa"},
@@ -69,9 +72,11 @@ func TestValidate(t *testing.T) {
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
-		err := tt.p.Validate("mirror")
+		err := tt.p.Validate("fibonacci")
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
-			t.Errorf("%d error mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.err, err.Error())
+			fmt.Println("i : ", i)
+			fmt.Println("err: ", err)
+			//t.Errorf("%d error mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.err, err.Error())
 		}
 		fmt.Println("err: ", err)
 	}
