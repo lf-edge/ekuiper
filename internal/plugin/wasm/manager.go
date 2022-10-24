@@ -157,6 +157,7 @@ func (m *Manager) Register(p plugin.Plugin) error {
 		return fmt.Errorf("invalid uri %s", uri)
 	}
 
+	fmt.Println("name :", name)
 	if _, ok := m.reg.Get(name); ok {
 		return fmt.Errorf("invalid name %s: duplicate", name)
 	}
@@ -215,7 +216,8 @@ func (m *Manager) GetPluginInfo(pluginName string) (*PluginInfo, bool) {
 
 func (m *Manager) install(name, src string, shellParas []string) (resultErr error) {
 	var (
-		jsonName     = name + ".json"
+		jsonName = name + ".json"
+		//wasmName     = name + ".wasm"
 		pluginTarget = filepath.Join(m.pluginDir, name)
 		// The map of install files. Used to check if all required files are installed and for reverting
 		installedMap  = make(map[string]string)
