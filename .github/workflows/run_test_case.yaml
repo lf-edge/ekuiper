@@ -39,6 +39,7 @@ jobs:
     - name: run test case
       run: |
         curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash && source $HOME/.wasmedge/env
+        mkdir -p plugins/wasm
         set -e -u -x
         mkdir -p data
         mkdir -p log

@@ -64,7 +64,6 @@ func TestManager_Install(t *testing.T) {
 			File: tt.u,
 		}
 		fmt.Println("------------")
-		//fmt.Println("i: ", i)
 		fmt.Println(" p:", p)
 		err := manager.Register(p)
 		if !reflect.DeepEqual(tt.err, err) { //not same
