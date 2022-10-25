@@ -8,7 +8,7 @@
 2. 根据编程语言构建或打包插件
 3. 通过eKuiper文件/REST/CLI注册插件
 
-# 安装
+# 安装工具
 
 在 wasm 插件模式下，用选择的语言来实现函数，并将其编译成 wasm 文件。只要是 WebAssembly 支持的语言均可，例如Go,rust等。
 我们使用 tinygo 工具将 go 文件编译成 wasm 文件。 
