@@ -80,20 +80,25 @@ func TestManager_Install(t *testing.T) {
 }
 
 func TestManager_Read(t *testing.T) {
+	requiredFiles := []string{
+		path.Join(manager.pluginDir, "fibonacci", "fibonacci.wasm"),
+		path.Join(manager.pluginDir, "fibonacci", "fibonacci.json"),
+	}
 	expPlugins := []*PluginInfo{
 		{
 			PluginMeta: runtime.PluginMeta{
-				Name:       "fibonacci",
-				Version:    "v1.0.0",
-				WasmFile:   "/home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fibonacci.wasm",
+				Name:    "fibonacci",
+				Version: "v1.0.0",
+				//WasmFile:   "/home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fibonacci.wasm",
+				WasmFile:   requiredFiles[0],
 				WasmEngine: "wasmedge",
 			},
 			Functions: []string{"fib"},
 		},
 	}
-	fmt.Println("[TestManager_Read] List: ")
-	result := manager.List()
-	fmt.Println("[TestManager_Read] result: ", result)
+	//fmt.Println("[TestManager_Read] List: ")
+	//result := manager.List()
+	//fmt.Println("[TestManager_Read] result: ", result)
 	pi, ok := manager.GetPluginInfo("fibonacci")
 	if !ok {
 		t.Error("can't find plugin fibonacci")

@@ -74,10 +74,11 @@ func TestValidate(t *testing.T) {
 	for i, tt := range tests {
 		err := tt.p.Validate("fibonacci")
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
-			fmt.Println("i : ", i)
+			fmt.Print("i : ", i)
+			fmt.Print("    ")
 			fmt.Println("err: ", err)
 			//t.Errorf("%d error mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.err, err.Error())
 		}
-		fmt.Println("err: ", err)
+		//fmt.Println("err: ", err)
 	}
 }
