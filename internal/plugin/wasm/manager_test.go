@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
+	"github.com/lf-edge/ekuiper/internal/testx"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -47,14 +48,6 @@ func TestManager_Install(t *testing.T) {
 			n: "fibonacci",
 			u: endpoint + "/wasm/fibonacci.zip",
 		},
-		{ // 2
-			n: "wrong",
-			u: endpoint + "/wasm/fibonacci.zip",
-		},
-		{ // 3
-			n: "test",
-			u: endpoint + "/wasm/add.zip",
-		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
@@ -63,10 +56,8 @@ func TestManager_Install(t *testing.T) {
 			Name: tt.n,
 			File: tt.u,
 		}
-		fmt.Println("------------")
-		fmt.Println(" p:", p)
 		err := manager.Register(p)
-		if !reflect.DeepEqual(tt.err, err) { //not same
+		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) { //not same
 			fmt.Println("err: ", err)
 			//t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
 		} else { //same

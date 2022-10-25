@@ -27,7 +27,17 @@ func TestValidate(t *testing.T) {
 		p   *PluginInfo
 		err string
 	}{
-		{
+		{ //0 true
+			p: &PluginInfo{
+				PluginMeta: runtime.PluginMeta{
+					Name:       "fibonacci",
+					Version:    "1.0.0",
+					WasmEngine: "wasmedge",
+				},
+				Functions: []string{"fib"},
+			},
+			err: "",
+		}, { // 1
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
 					Name:       "fibonacci",
@@ -36,49 +46,34 @@ func TestValidate(t *testing.T) {
 				},
 			},
 			err: "invalid plugin, must define at lease one function",
-		}, {
+		}, { // 2
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
 					Name:       "fibonacci",
 					Version:    "1.0.0",
-					WasmEngine: "wasmedge",
+					WasmEngine: "",
 				},
-				Functions: []string{"aa"},
+				Functions: []string{"fib"},
 			},
-			err: "invalid plugin, missing executable",
-		}, {
+			err: "invalid WasmEngine",
+		}, { // 3
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
-					Name:    "fibonacci",
-					Version: "1.0.0",
-					//Executable: "tt",
-					WasmEngine: "wasmedge",
-				},
-				Functions: []string{"aa"},
-			},
-			err: "invalid plugin, missing language",
-		}, {
-			p: &PluginInfo{
-				PluginMeta: runtime.PluginMeta{
-					Name:       "fibonacci",
+					Name:       "wrong",
 					Version:    "1.0.0",
 					WasmEngine: "wasmedge",
-					//Executable: "tt",
 				},
-				Functions: []string{"aa"},
+				Functions: []string{"fib"},
 			},
-			err: "invalid plugin, language 'c' is not supported",
+			err: "invalid plugin, expect name 'fibonacci' but got 'wrong'",
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		err := tt.p.Validate("fibonacci")
-		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
-			fmt.Print("i : ", i)
-			fmt.Print("    ")
-			fmt.Println("err: ", err)
-			//t.Errorf("%d error mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.err, err.Error())
+		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) { //not same
+			t.Errorf("%d error mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.err, err.Error())
 		}
-		//fmt.Println("err: ", err)
+		fmt.Println("err: ", err)
 	}
 }
