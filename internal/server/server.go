@@ -122,6 +122,7 @@ func StartUp(Version, LoadFileType string) {
 			rule, err := ruleProcessor.GetRuleById(name)
 			if err != nil {
 				logger.Error(err)
+				continue
 			}
 			//err = server.StartRule(rule, &reply)
 			reply = recoverRule(rule)
