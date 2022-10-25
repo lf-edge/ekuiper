@@ -8,7 +8,7 @@
 2. 根据编程语言构建或打包插件
 3. 通过eKuiper文件/REST/CLI注册插件
 
-# 安装工具
+## 安装工具
 
 在 wasm 插件模式下，用选择的语言来实现函数，并将其编译成 wasm 文件。只要是 WebAssembly 支持的语言均可，例如Go,rust等。
 我们使用 tinygo 工具将 go 文件编译成 wasm 文件。 
@@ -40,7 +40,7 @@ curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/insta
 source $HOME/.wasmedge/env
 ```
 
-# 开发函数
+## 开发函数
 官方教程(https://wasmedge.org/book/en/write_wasm/go.html)
 
 开发 fibonacci 插件(相比官方，略有改动)
@@ -76,7 +76,7 @@ $ wasmedge --reactor fibonacci.wasm fib 10
 34
 ```
 
-# 打包发布
+## 打包发布
 
 开发完成后，我们需要将结果打包成zip进行安装。在 zip 文件中，文件结构必须遵循以下约定并使用正确的命名：
 
@@ -115,7 +115,7 @@ $HOME
 ```shell
 bin/kuiper describe plugin wasm fibonacci
 ```
-# 运行
+## 运行
 1. 创建流
 ```shell
 bin/kuiper create stream demo_fib '(num float) WITH (FORMAT="JSON", DATASOURCE="demo_fib")'
@@ -138,11 +138,12 @@ docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8883:8883 -p
 使用 TOOLS/Websocket 工具发送数据:
 
 Tpoic    : demo_fib 
+
 Messages : {“num” : 25}
 
-此时终端即可接收到执行结果.
+消息发送成功后，终端即可接收到执行结果.
 
-# 管理
+## 管理
 
 通过将内容（json、wasm文件）放在`plugins/wasm/${pluginName}`中，可以在启动时自动加载可移植插件。
 
