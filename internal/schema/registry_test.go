@@ -29,7 +29,7 @@ import (
 func TestRegistry(t *testing.T) {
 	testx.InitEnv()
 	// Move test schema file to etc dir
-	etcDir, err := conf.GetConfLoc()
+	etcDir, err := conf.GetDataLoc()
 	if err != nil {
 		t.Fatal(err)
 	}

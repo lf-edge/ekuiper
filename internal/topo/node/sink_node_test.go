@@ -230,7 +230,7 @@ func TestOmitEmpty_Apply(t *testing.T) {
 
 func TestFormat_Apply(t *testing.T) {
 	conf.InitConf()
-	etcDir, err := conf.GetConfLoc()
+	etcDir, err := conf.GetDataLoc()
 	if err != nil {
 		t.Fatal(err)
 	}

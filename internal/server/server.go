@@ -43,6 +43,7 @@ var (
 	rulesetProcessor *processor.RulesetProcessor
 )
 
+// Create path if mount an empty dir. For edgeX, all the folders must be created priorly
 func createPaths() {
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
@@ -55,7 +56,7 @@ func createPaths() {
 		realDir := filepath.Join(dataDir, v)
 		if _, err := os.Stat(realDir); os.IsNotExist(err) {
 			if err := os.MkdirAll(realDir, os.ModePerm); err != nil {
-				panic(err)
+				fmt.Printf("Failed to create dir %s: %v", realDir, err)
 			}
 		}
 	}
@@ -66,7 +67,7 @@ func createPaths() {
 		realFile := filepath.Join(dataDir, v)
 		if _, err := os.Stat(realFile); os.IsNotExist(err) {
 			if _, err := os.Create(realFile); err != nil {
-				panic(err)
+				fmt.Printf("Failed to create file %s: %v", realFile, err)
 			}
 		}
 	}
