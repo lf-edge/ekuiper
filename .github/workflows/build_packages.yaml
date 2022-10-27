@@ -197,8 +197,6 @@ jobs:
         golang:
           - 1.18.5
         exclude:
-          - arch: linux/arm64
-            plugin: functions/labelImage
           - os: [alpine,"alpine"]
             plugin: functions/labelImage
           - os: [alpine,"alpine"]
