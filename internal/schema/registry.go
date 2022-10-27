@@ -45,12 +45,12 @@ func InitRegistry() error {
 	registry = &Registry{
 		schemas: make(map[def.SchemaType]map[string]string, len(def.SchemaTypes)),
 	}
-	etcDir, err := conf.GetConfLoc()
+	dataDir, err := conf.GetDataLoc()
 	if err != nil {
 		return fmt.Errorf("cannot find etc folder: %s", err)
 	}
 	for _, schemaType := range def.SchemaTypes {
-		schemaDir := filepath.Join(etcDir, "schemas", string(schemaType))
+		schemaDir := filepath.Join(dataDir, "schemas", string(schemaType))
 		var newSchemas map[string]string
 		files, err := os.ReadDir(schemaDir)
 		if err != nil {
@@ -96,8 +96,8 @@ func CreateOrUpdateSchema(info *Info) error {
 	if _, ok := registry.schemas[info.Type]; !ok {
 		return fmt.Errorf("schema type %s not found", info.Type)
 	}
-	etcDir, _ := conf.GetConfLoc()
-	etcDir = filepath.Join(etcDir, "schemas", string(info.Type))
+	dataDir, _ := conf.GetDataLoc()
+	etcDir := filepath.Join(dataDir, "schemas", string(info.Type))
 	if err := os.MkdirAll(etcDir, os.ModePerm); err != nil {
 		return err
 	}
