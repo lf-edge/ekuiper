@@ -9,6 +9,9 @@ on:
     workflows: ["Run fvt tests","Run test cases"]
     types:
       - completed
+  release:
+    types:
+      - published
 
 jobs:
   build:
