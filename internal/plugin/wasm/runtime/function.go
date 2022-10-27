@@ -99,7 +99,7 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 	// step 4: Execute WASM functions.Parameters(1)
 	var Args []float64
 	for _, num := range args {
-		x, ok := (num).(float64)
+		x, ok := (num).(float32)
 		if !ok {
 			fmt.Println("Type tranform not to float64!!")
 		}

@@ -19,10 +19,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"sync"
 )
-
-var funcInsMap = &sync.Map{}
 
 func (m *Manager) Function(name string) (api.Function, error) {
 	meta, ok := m.GetPluginMeta(plugin.FUNCTION, name)
@@ -34,7 +31,6 @@ func (m *Manager) Function(name string) (api.Function, error) {
 		conf.Log.Errorf("Error creating function %v", err)
 		return nil, err
 	}
-	funcInsMap.Store(name, f)
 	return f, nil
 }
 

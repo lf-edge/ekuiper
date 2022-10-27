@@ -1,23 +1,23 @@
 # Wasm 插件
 
-作为对原生插件的补充，可移植插件旨在提供相同的功能，同时允许在更通用的环境中运行并由更多语言创建。
+作为对原生插件的补充  wasm 插件旨在提供相同的功能，同时允许在更通用的环境中运行并由更多语言创建。
 
 创建插件的步骤如下：
 
 1. 开发插件
 2. 根据编程语言构建或打包插件
-3. 通过eKuiper文件/REST/CLI注册插件
+3. 通过 eKuiper文件/REST/CLI 注册插件
 
 ## 安装工具
 
-在 wasm 插件模式下，用选择的语言来实现函数，并将其编译成 wasm 文件。只要是 WebAssembly 支持的语言均可，例如Go,rust等。
+在 wasm 插件模式下，用选择的语言来实现函数，并将其编译成 wasm 文件。只要是 webassembly 支持的语言均可，例如 go,rust 等。
 我们使用 tinygo 工具将 go 文件编译成 wasm 文件。 
 
-检查 Go 是否已经安装，执行以下命令
+检查 go 是否已经安装，执行以下命令
 ```shell
 go version
 ```
-检查 TinyGo 是否已经安装，请运行以下命令。
+检查 tinygo 是否已经安装，请运行以下命令。
 ```shell
 tinygo version
 ```
@@ -124,7 +124,7 @@ bin/kuiper query
 
 select fib(num) from demo_fib
 ```
-2. 安装 EMQX docker容器并运行
+2. 安装 emqx docker容器并运行
 ```shell
 docker pull emqx/emqx:v4.0.0
 docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8883:8883 -p 8084:8084 -p 18083:18083 emqx/emqx:v4.0.0
