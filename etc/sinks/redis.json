@@ -1,0 +1,133 @@
+{
+	"about": {
+		"trial": false,
+		"author": {
+			"name": "DengFeng HE",
+			"email": "894220128@qq.com",
+			"company": "personal",
+			"website": "https://github.com/feng-crazy"
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/reids.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/reids.md"
+		},
+		"description": {
+			"en_US": "This a sink for Redis, it can be used for saving the analysis data into Redis.",
+			"zh_CN": "为 Redis 的持久化插件，可以用于将分析数据存入 Redis 中"
+		}
+	},
+	"libs": [
+		"github.com/go-redis/redis/v7"
+	],
+	"properties": [
+		{
+			"name": "addr",
+			"default": "10.122.48.17:6379",
+			"optional": false,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The addr of the Redis,example: 10.122.48.17:6379",
+				"zh_CN": "Redis的地址, 例如: 10.122.48.17:6379"
+			},
+			"label": {
+				"en_US": "Addr",
+				"zh_CN": "地址"
+			}
+		},
+		{
+			"name": "password",
+			"default": "",
+			"optional": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The Redis login password",
+				"zh_CN": "Redis 登陆密码"
+			},
+			"label": {
+				"en_US": "Password",
+				"zh_CN": "密码"
+			}
+		},
+		{
+			"name": "db",
+			"default": 0,
+			"optional": false,
+			"control": "text",
+			"type": "int",
+			"hint": {
+				"en_US": "The database of the Redis,example: 0",
+				"zh_CN": "Redis 的数据库,例如0"
+			},
+			"label": {
+				"en_US": "DataBase name",
+				"zh_CN": "数据库名"
+			}
+		},
+		{
+			"name": "key",
+			"default": "key",
+			"optional": false,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "Select one of the Key, Key and field of Redis data and give priority to field",
+				"zh_CN": "Redis 数据的Key， key与field选择其中一个,优先field"
+			},
+			"label": {
+				"en_US": "Key",
+				"zh_CN": "Key"
+			}
+		},
+		{
+			"name": "field",
+			"default": "deviceName",
+			"optional": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "This field must exist and be of type string. Otherwise, use the field character as the key. Note: Do not use a data template to configure this value",
+				"zh_CN": "json数据某一个属性，配置它作为redis数据的key值, 例如 deviceName,该字段必须存在且为string类型，否则以field字符作为key,注意:配置该值不要使用数据模板"
+			},
+			"label": {
+				"en_US": "field",
+				"zh_CN": "field"
+			}
+		},
+		{
+			"name": "dataType",
+			"default": "string",
+			"optional": false,
+			"control": "select",
+			"type": "string",
+			"values": [
+				"string",
+				"list"
+			],
+			"hint": {
+				"en_US": "The default Redis data type is string. Note that the original key must be deleted after the Redis data type is changed. Otherwise, the modification is invalid。",
+				"zh_CN": "Redis 数据的类型, 默认是 string, 注意修改类型之后，需在redis中删除原有key，否则修改无效。"
+			},
+			"label": {
+				"en_US": "data type",
+				"zh_CN": "数据类型"
+			}
+		},
+		{
+			"name": "expiration",
+			"default": -1,
+			"optional": false,
+			"control": "text",
+			"type": "int",
+			"hint": {
+				"en_US": "Timeout duration of Redis data. This parameter is valid only for string data in seconds. The default value is -1 ",
+				"zh_CN": "Redis数据的超时时间，仅在string类型数据有效,单位是秒,默认是永久保存-1 "
+			},
+			"label": {
+				"en_US": "expiration",
+				"zh_CN": "超时时间"
+			}
+		}
+	]
+}
