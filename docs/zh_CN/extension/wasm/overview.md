@@ -1,6 +1,6 @@
 # Wasm 插件
 
-作为对原生插件的补充  wasm 插件旨在提供相同的功能，同时允许在更通用的环境中运行并由更多语言创建。
+作为对原生插件的补充  Wasm 插件旨在提供相同的功能，同时允许在更通用的环境中运行并由更多语言创建。
 
 创建插件的步骤如下：
 
@@ -10,8 +10,8 @@
 
 ## 安装工具
 
-在 wasm 插件模式下，用选择的语言来实现函数，并将其编译成 wasm 文件。只要是 webassembly 支持的语言均可，例如 go,rust 等。
-我们使用 tinygo 工具将 go 文件编译成 wasm 文件。 
+在 Wasm 插件模式下，用选择的语言来实现函数，并将其编译成 Wasm 文件。只要是 WebAssembly 支持的语言均可，例如 go,rust 等。
+我们使用 tinygo 工具将 go 文件编译成 Wasm 文件。 
 
 检查 go 是否已经安装，执行以下命令
 ```shell
@@ -145,6 +145,6 @@ Messages : {“num” : 25}
 
 ## 管理
 
-通过将内容（json、wasm文件）放在`plugins/wasm/${pluginName}`中，可以在启动时自动加载可移植插件。
+通过将内容（json、Wasm文件）放在`plugins/wasm/${pluginName}`中，可以在启动时自动加载可移植插件。
 
 要在运行时管理可移植插件，我们可以使用 [REST](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/operation/restapi/plugins.md) 或 [CLI](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/operation/cli/plugins.md) 命令。
