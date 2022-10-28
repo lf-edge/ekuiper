@@ -30,7 +30,7 @@ Example：
 # bin/kuiper create schema protobuf schema1 '{"name": "schema1","file": "file:///tmp/aschema.proto"}'
 ```
 
-This command creates a schema named `schema1` whose content is provided by `file` field in the json. The file will be copied into `etc/schemas/protobuf` and renamed to `schema1.proto.
+This command creates a schema named `schema1` whose content is provided by `file` field in the json. The file will be copied into `data/schemas/protobuf` and renamed to `schema1.proto.
 
 ### Parameters
 

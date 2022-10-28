@@ -76,7 +76,7 @@ demo (
 demo () WITH (DATASOURCE="test/", FORMAT="protobuf", SCHEMAID="proto1.Book");
 ```
 
-流将订阅 MQTT 主题 `test/`，使用 PROTOBUF 格式，根据在 `$ekuiper/etc/schemas/protobuf/schema1.proto` 文件中的 `Book` 定义对流入的数据进行解码。其中，模式的管理详见[模式注册表](../rules/codecs.md#模式)。
+流将订阅 MQTT 主题 `test/`，使用 PROTOBUF 格式，根据在 `$ekuiper/data/schemas/protobuf/schema1.proto` 文件中的 `Book` 定义对流入的数据进行解码。其中，模式的管理详见[模式注册表](../rules/codecs.md#模式)。
 
 - 有关更多信息，请参见 [MQTT source](../rules/sources/builtin/mqtt.md) 
 

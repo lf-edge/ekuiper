@@ -2,7 +2,7 @@ The eKuiper REST api for configuration file uploads allows you to upload configu
 
 ## Upload a configuration file
 
-The API supports to upload a local file or provide the text content of file. The upload request will save the file into your `${configPath}/uploads`. It will override the existed file of the same name. The response is the absolute path of the uploaded file which you can refer in other configurations.
+The API supports to upload a local file or provide the text content of file. The upload request will save the file into your `${dataPath}/uploads`. It will override the existed file of the same name. The response is the absolute path of the uploaded file which you can refer in other configurations.
 
 ### Upload by a file
 
@@ -45,7 +45,7 @@ POST http://localhost:9081/config/uploads
 
 ## Show uploaded file list
 
-The API is used for displaying all files in the `${configPath}/uploads` path.
+The API is used for displaying all files in the `${dataPath}/uploads` path.
 
 ```shell
 GET http://localhost:9081/config/uploads
@@ -55,14 +55,14 @@ Response Sample:
 
 ```json
 [
-   "/ekuiper/etc/uploads/zk.gif",
-   "/ekuiper/etc/uploads/abc.gif"
+   "/ekuiper/data/uploads/zk.gif",
+   "/ekuiper/data/uploads/abc.gif"
 ]
 ```
 
 ## Delete an uploaded file
 
-The API is used for deleting a file in the `${configPath}/uploads` path.
+The API is used for deleting a file in the `${dataPath}/uploads` path.
 
 ```shell
 DELETE http://localhost:9081/config/uploads/{fileName}

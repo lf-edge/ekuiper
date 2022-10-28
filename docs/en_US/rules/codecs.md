@@ -24,7 +24,7 @@ A schema is a set of metadata that defines the data structure. For example, the 
 
 ### Schema Registry
 
-Schemas are stored as files. The user can register the schema through the configuration file or the API. The schema is stored in `etc/schemas/${type}`. For example, a schema file in protobuf format should be placed in `etc/schemas/protobuf`.
+Schemas are stored as files. The user can register the schema through the configuration file or the API. The schema is stored in `data/schemas/${type}`. For example, a schema file in protobuf format should be placed in `data/schemas/protobuf`.
 
 When eKuiper starts, it will scan this configuration folder and automatically register the schemas inside. If you need to register or manage schemas on the fly, this can be done through the schema registry API, which acts on the file system.
 

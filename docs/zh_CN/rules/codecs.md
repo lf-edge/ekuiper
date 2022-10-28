@@ -24,7 +24,7 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
 
 ### 模式注册
 
-模式采用文件的形式存储。用户可以通过配置文件或者 API 进行模式的注册。模式的存放位置位于 `etc/schemas/${type}`。例如，protobuf 格式的模式文件，应该放置于 `etc/schemas/protobuf`。
+模式采用文件的形式存储。用户可以通过配置文件或者 API 进行模式的注册。模式的存放位置位于 `data/schemas/${type}`。例如，protobuf 格式的模式文件，应该放置于 `data/schemas/protobuf`。
 
 eKuiper 启动时，将会扫描该配置文件夹并自动注册里面的模式。若需要在运行中注册或管理模式，可通过模式注册表 API 来完成。API 的操作会作用到文件系统中。
 

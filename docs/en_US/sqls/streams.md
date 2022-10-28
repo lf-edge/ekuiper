@@ -74,7 +74,7 @@ The stream will subscribe to MQTT topic `test/`, the server connection uses sett
 demo () WITH (DATASOURCE="test/", FORMAT="protobuf", SCHEMAID="proto1.Book");
 ```
 
-The stream will subscribe to MQTT topic `test/` and using PROTOBUF format to decode the data. The decode schema is defined by `BOOK` message type in `$ekuiper/etc/schemas/protobuf/schema1.proto` file. Regardng the management of schema, please refer to [schema registry](../rules/codecs.md#schema).
+The stream will subscribe to MQTT topic `test/` and using PROTOBUF format to decode the data. The decode schema is defined by `BOOK` message type in `$ekuiper/data/schemas/protobuf/schema1.proto` file. Regardng the management of schema, please refer to [schema registry](../rules/codecs.md#schema).
 
 - See [MQTT source](../rules/sources/builtin/mqtt.md) for more info.
 
