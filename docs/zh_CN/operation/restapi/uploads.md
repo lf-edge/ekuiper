@@ -2,7 +2,7 @@ eKuiper REST api允许您上传配置文件并列出所有上传的文件。
 
 ## 上传配置文件
 
-支持两种方式上传配置文件：上传文件或者提供文件名和文本内容。上传请求将把文件保存到你的 `${configPath}/uploads` 。它将覆盖现有的同名文件。返回的响应是上传文件的绝对路径，从而可以在其他配置中使用。
+支持两种方式上传配置文件：上传文件或者提供文件名和文本内容。上传请求将把文件保存到你的 `${dataPath}/uploads` 。它将覆盖现有的同名文件。返回的响应是上传文件的绝对路径，从而可以在其他配置中使用。
 
 ### 上传文件
 
@@ -45,7 +45,7 @@ POST http://localhost:9081/config/uploads
 
 ## 获取上传文件的列表
 
-该API用于显示 `${configPath}/uploads` 路径中的所有文件。
+该API用于显示 `${dataPath}/uploads` 路径中的所有文件。
 
 ```shell
 GET http://localhost:9081/config/uploads
@@ -55,15 +55,15 @@ GET http://localhost:9081/config/uploads
 
 ```json
 [
-   "/ekuiper/etc/uploads/zk.gif",
-   "/ekuiper/etc/uploads/abc.gif"
+   "/ekuiper/data/uploads/zk.gif",
+   "/ekuiper/data/uploads/abc.gif"
 ]
 ```
 
 
 ## 删除已上传文件
 
-该 API 用于删除 `${configPath}/uploads` 路径下的文件。
+该 API 用于删除 `${dataPath}/uploads` 路径下的文件。
 
 ```shell
 DELETE http://localhost:9081/config/uploads/{fileName}

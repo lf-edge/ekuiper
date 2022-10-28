@@ -30,7 +30,7 @@ create schema $schema_type $schema_name $schema_json
 # bin/kuiper create schema protobuf schema1 '{"name": "schema1","file": "file:///tmp/aschema.proto"}'
 ```
 
-该命令创建一个名为 `schema1` 的模式，模式内容由 json 中的 file 指定。文件将被复制到 `etc/schemas/protobuf` 下并重命名为 `schema1.proto`。
+该命令创建一个名为 `schema1` 的模式，模式内容由 json 中的 file 指定。文件将被复制到 `data/schemas/protobuf` 下并重命名为 `schema1.proto`。
 
 ### 参数
 
