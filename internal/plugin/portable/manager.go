@@ -363,7 +363,6 @@ func (m *Manager) Delete(name string) error {
 	for _, s := range pinfo.Functions {
 		p := path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.FUNCTION], s+".json")
 		os.Remove(p)
-		meta.UninstallFunc(s)
 	}
 	_ = os.RemoveAll(path.Join(m.pluginDir, name))
 	return nil
