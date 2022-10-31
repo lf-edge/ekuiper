@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build redisdb || !core
-// +build redisdb !core
 
 package redis
 
@@ -21,7 +20,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"github.com/gomodule/redigo/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 	"strings"
@@ -30,12 +29,12 @@ import (
 const KvPrefix = "KV:STORE"
 
 type redisKvStore struct {
-	database  *Instance
+	database  *redis.Client
 	table     string
 	keyPrefix string
 }
 
-func CreateRedisKvStore(redis *Instance, table string) (*redisKvStore, error) {
+func createRedisKvStore(redis *redis.Client, table string) (*redisKvStore, error) {
 	store := &redisKvStore{
 		database:  redis,
 		table:     table,
@@ -45,22 +44,18 @@ func CreateRedisKvStore(redis *Instance, table string) (*redisKvStore, error) {
 }
 
 func (kv redisKvStore) Setnx(key string, value interface{}) error {
-	return kv.database.Apply(func(conn redis.Conn) error {
-		err, b := kvEncoding.Encode(value)
-		if nil != err {
-			return err
-		}
-		tKey := kv.tableKey(key)
-		reply, err := conn.Do("SETNX", tKey, b)
-		if err != nil {
-			return err
-		}
-		code, err := redis.Int(reply, err)
-		if code == 0 {
-			return fmt.Errorf("item %s already exists under %s key because of %s", key, tKey, err)
-		}
-		return nil
-	})
+	err, b := kvEncoding.Encode(value)
+	if nil != err {
+		return err
+	}
+	done, err := kv.database.SetNX(kv.tableKey(key), b, 0).Result()
+	if err != nil {
+		return err
+	}
+	if !done {
+		return fmt.Errorf("key %s already exists", key)
+	}
+	return nil
 }
 
 func (kv redisKvStore) Set(key string, value interface{}) error {
@@ -68,50 +63,23 @@ func (kv redisKvStore) Set(key string, value interface{}) error {
 	if nil != err {
 		return err
 	}
-	err = kv.database.Apply(func(conn redis.Conn) error {
-		tKey := kv.tableKey(key)
-		reply, err := conn.Do("SET", tKey, b)
-		code, err := redis.String(reply, err)
-		if err != nil {
-			return err
-		}
-		if code != "OK" {
-			return fmt.Errorf("item %s (under key %s) not set because of %s", key, tKey, err)
-		}
-		return nil
-	})
-	return err
+	return kv.database.SetNX(kv.tableKey(key), b, 0).Err()
 }
 
 func (kv redisKvStore) Get(key string, value interface{}) (bool, error) {
-	result := false
-	err := kv.database.Apply(func(conn redis.Conn) error {
-		tKey := kv.tableKey(key)
-		reply, err := conn.Do("GET", tKey)
-		if err != nil {
-			return err
-		}
-		buff, err := redis.Bytes(reply, err)
-		if err != nil {
-			result = false
-			return nil
-		}
-		dec := gob.NewDecoder(bytes.NewBuffer(buff))
-		if err := dec.Decode(value); err != nil {
-			return err
-		}
-		result = true
-		return nil
-	})
-	return result, err
+	val, err := kv.database.Get(kv.tableKey(key)).Result()
+	if err != nil {
+		return false, err
+	}
+	dec := gob.NewDecoder(bytes.NewBuffer([]byte(val)))
+	if err := dec.Decode(value); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (kv redisKvStore) Delete(key string) error {
-	return kv.database.Apply(func(conn redis.Conn) error {
-		tKey := kv.tableKey(key)
-		_, err := conn.Do("DEL", tKey)
-		return err
-	})
+	return kv.database.Del(kv.tableKey(key)).Err()
 }
 
 func (kv redisKvStore) Keys() ([]string, error) {
@@ -149,14 +117,7 @@ func (kv redisKvStore) All() (map[string]string, error) {
 }
 
 func (kv redisKvStore) metaKeys() ([]string, error) {
-	keys := make([]string, 0)
-	err := kv.database.Apply(func(conn redis.Conn) error {
-		pattern := fmt.Sprintf("%s:*", kv.keyPrefix)
-		reply, err := conn.Do("KEYS", pattern)
-		keys, err = redis.Strings(reply, err)
-		return err
-	})
-	return keys, err
+	return kv.database.Keys(fmt.Sprintf("%s:*", kv.keyPrefix)).Result()
 }
 
 func (kv redisKvStore) Clean() error {
@@ -164,31 +125,15 @@ func (kv redisKvStore) Clean() error {
 	if err != nil {
 		return err
 	}
-	keysToRemove := make([]interface{}, len(keys))
+	keysToRemove := make([]string, len(keys))
 	for i, v := range keys {
 		keysToRemove[i] = v
 	}
-	err = kv.database.Apply(func(conn redis.Conn) error {
-		_, err := conn.Do("DEL", keysToRemove...)
-		return err
-	})
-	return err
+	return kv.database.Del(keysToRemove...).Err()
 }
 
 func (kv redisKvStore) Drop() error {
-	keys, err := kv.metaKeys()
-	if err != nil {
-		return err
-	}
-	keysToRemove := make([]interface{}, len(keys))
-	for i, v := range keys {
-		keysToRemove[i] = v
-	}
-	err = kv.database.Apply(func(conn redis.Conn) error {
-		_, err := conn.Do("DEL", keysToRemove...)
-		return err
-	})
-	return err
+	return kv.Clean()
 }
 
 func (kv redisKvStore) tableKey(key string) string {

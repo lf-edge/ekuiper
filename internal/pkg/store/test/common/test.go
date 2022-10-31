@@ -28,7 +28,7 @@ func TestKvSetnx(ks kv.KeyValue, t *testing.T) {
 	}
 
 	if err := ks.Setnx("foo", "bar1"); nil == err {
-		t.Errorf("Can't overwrite an existing intem")
+		t.Errorf("Can't overwrite an existing intem: %v", err)
 	}
 }
 

@@ -81,7 +81,7 @@ func TestTsDeleteBefore(ks kv.Tskv, t *testing.T) {
 		t.Error("should allow key 3500")
 	}
 
-	if err := ks.DeleteBefore(3000); nil != err {
+	if err := ks.DeleteBefore(2999); nil != err {
 		t.Error(err)
 	}
 
