@@ -19,108 +19,22 @@ package redis
 
 import (
 	"fmt"
-	"github.com/gomodule/redigo/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
-	"sync"
 	"time"
 )
 
-type Instance struct {
-	ConnectionString string
-	pool             *redis.Pool
-	mu               *sync.Mutex
-	config           definition.RedisConfig
-}
-
-func NewRedisFromConf(c definition.Config) (definition.Database, error) {
+func NewRedisFromConf(c definition.Config) *redis.Client {
 	conf := c.Redis
-	host := conf.Host
-	port := conf.Port
-	return &Instance{
-		ConnectionString: connectionString(host, port),
-		pool:             nil,
-		mu:               &sync.Mutex{},
-		config:           conf,
-	}, nil
+	return redis.NewClient(&redis.Options{
+		Addr:        fmt.Sprintf("%s:%d", conf.Host, conf.Port),
+		Password:    conf.Password,
+		DialTimeout: time.Duration(conf.Timeout) * time.Millisecond,
+	})
 }
 
-func NewRedis(host string, port int) *Instance {
-	return &Instance{
-		ConnectionString: connectionString(host, port),
-		pool:             nil,
-		mu:               &sync.Mutex{},
-	}
-}
-
-func (r *Instance) Connect() error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.ConnectionString == "" {
-		return fmt.Errorf("connection string for redis not initalized")
-	}
-	err, pool := r.connectRedis()
-	if err != nil {
-		return err
-	}
-	conn := pool.Get()
-	defer conn.Close()
-	reply, err := conn.Do("PING")
-	if err != nil {
-		return err
-	}
-	response, err := redis.String(reply, err)
-	if err != nil {
-		return err
-	}
-	if response != "PONG" {
-		return fmt.Errorf("failed to connect to redis")
-	}
-	r.pool = pool
-	return nil
-}
-
-func (r *Instance) connectRedis() (error, *redis.Pool) {
-	opts := []redis.DialOption{
-		redis.DialConnectTimeout(time.Duration(r.config.Timeout) * time.Millisecond),
-	}
-	if r.config.Password != "" {
-		opts = append(opts, redis.DialPassword(r.config.Password))
-	}
-	dialFunction := func() (redis.Conn, error) {
-		conn, err := redis.Dial("tcp", r.ConnectionString, opts...)
-		if err == nil {
-			_, err = conn.Do("PING")
-			if err == nil {
-				return conn, nil
-			}
-		}
-		return nil, fmt.Errorf("could not dial redis: %s", err)
-	}
-	pool := &redis.Pool{
-		IdleTimeout: 0,
-		MaxIdle:     10,
-		Dial:        dialFunction,
-	}
-	return nil, pool
-}
-
-func connectionString(host string, port int) string {
-	return fmt.Sprintf("%s:%d", host, port)
-}
-
-func (r *Instance) Disconnect() error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r == nil {
-		return nil
-	}
-	err := r.pool.Close()
-	r.pool = nil
-	return err
-}
-
-func (r *Instance) Apply(f func(conn redis.Conn) error) error {
-	connection := r.pool.Get()
-	defer connection.Close()
-	return f(connection)
+func NewRedis(host string, port int) *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr: fmt.Sprintf("%s:%d", host, port),
+	})
 }

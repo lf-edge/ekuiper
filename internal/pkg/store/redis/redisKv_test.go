@@ -13,12 +13,12 @@
 // limitations under the License.
 
 //go:build redisdb || !core
-// +build redisdb !core
 
 package redis
 
 import (
 	"github.com/alicebob/miniredis/v2"
+	"github.com/go-redis/redis/v7"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 	"strconv"
@@ -59,16 +59,14 @@ func TestRedisKvAll(t *testing.T) {
 	common.TestKvAll(length, ks, t)
 }
 
-func setupRedisKv() (kv.KeyValue, *Instance, *miniredis.Miniredis) {
+func setupRedisKv() (kv.KeyValue, *redis.Client, *miniredis.Miniredis) {
 	minRedis, err := miniredis.Run()
 	if err != nil {
 		panic(err)
 	}
-	redisDB := NewRedis("localhost", stringToInt(minRedis.Port()))
-	err = redisDB.Connect()
-	if err != nil {
-		panic(err)
-	}
+	redisDB := redis.NewClient(&redis.Options{
+		Addr: minRedis.Addr(),
+	})
 	builder := NewStoreBuilder(redisDB)
 	var ks kv.KeyValue
 	ks, err = builder.CreateStore("test")
@@ -78,8 +76,8 @@ func setupRedisKv() (kv.KeyValue, *Instance, *miniredis.Miniredis) {
 	return ks, redisDB, minRedis
 }
 
-func cleanRedisKv(instance *Instance, minRedis *miniredis.Miniredis) {
-	instance.Disconnect()
+func cleanRedisKv(instance *redis.Client, minRedis *miniredis.Miniredis) {
+	instance.Close()
 	minRedis.Close()
 }
 

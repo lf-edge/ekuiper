@@ -26,7 +26,6 @@ require (
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/protobuf v1.5.2
-	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/googleapis/go-sql-spanner v0.0.0-20220321120010-12780e57be1c
 	github.com/gorilla/handlers v1.4.2

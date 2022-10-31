@@ -18,19 +18,20 @@
 package redis
 
 import (
+	"github.com/go-redis/redis/v7"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 type StoreBuilder struct {
-	database *Instance
+	database *redis.Client
 }
 
-func NewStoreBuilder(redis *Instance) StoreBuilder {
+func NewStoreBuilder(redis *redis.Client) StoreBuilder {
 	return StoreBuilder{
 		database: redis,
 	}
 }
 
 func (b StoreBuilder) CreateStore(table string) (kv.KeyValue, error) {
-	return CreateRedisKvStore(b.database, table)
+	return createRedisKvStore(b.database, table)
 }

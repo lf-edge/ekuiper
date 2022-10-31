@@ -13,12 +13,12 @@
 // limitations under the License.
 
 //go:build redisdb || !core
-// +build redisdb !core
 
 package redis
 
 import (
 	"github.com/alicebob/miniredis/v2"
+	"github.com/go-redis/redis/v7"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
 	ts2 "github.com/lf-edge/ekuiper/pkg/kv"
 	"testing"
@@ -59,16 +59,14 @@ func TestRedisTsDeleteBefore(t *testing.T) {
 	common.TestTsDeleteBefore(ks, t)
 }
 
-func setupTRedisKv() (ts2.Tskv, *Instance, *miniredis.Miniredis) {
+func setupTRedisKv() (ts2.Tskv, *redis.Client, *miniredis.Miniredis) {
 	minRedis, err := miniredis.Run()
 	if err != nil {
 		panic(err)
 	}
-	redisDB := NewRedis("localhost", stringToInt(minRedis.Port()))
-	err = redisDB.Connect()
-	if err != nil {
-		panic(err)
-	}
+	redisDB := redis.NewClient(&redis.Options{
+		Addr: minRedis.Addr(),
+	})
 
 	builder := NewTsBuilder(redisDB)
 	var ks ts2.Tskv
