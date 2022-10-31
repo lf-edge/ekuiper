@@ -578,7 +578,7 @@ func TestSingleSQL(t *testing.T) {
 		},
 		{
 			Name: `TestLagAlias`,
-			Sql:  "SELECT lag(size) as lastSize, size, lastSize/size as changeRate FROM demo WHERE size > 2",
+			Sql:  "SELECT lag(size) as lastSize, lag(had_changed(true,size)), size, lastSize/size as changeRate FROM demo WHERE size > 2",
 			R: [][]map[string]interface{}{
 				{{
 					"size": float64(3),
@@ -586,11 +586,13 @@ func TestSingleSQL(t *testing.T) {
 				{{
 					"lastSize":   float64(3),
 					"size":       float64(6),
+					"lag":        true,
 					"changeRate": float64(0),
 				}},
 				{{
 					"lastSize":   float64(2),
 					"size":       float64(4),
+					"lag":        true,
 					"changeRate": float64(0),
 				}},
 			},

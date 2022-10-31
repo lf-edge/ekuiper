@@ -22,7 +22,7 @@ import (
 )
 
 type AnalyticFuncsOp struct {
-	Funcs []*ast.Call
+	Funcs []*ast.Call // Must range from end to start, because the later one may use the result of the former one
 }
 
 func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
@@ -32,7 +32,9 @@ func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsq
 		return input
 	case xsql.TupleRow:
 		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, fv)}
-		for _, f := range p.Funcs {
+		// Must range from end to start, because the later one may use the result of the former one
+		for i := len(p.Funcs) - 1; i >= 0; i-- {
+			f := p.Funcs[i]
 			result := ve.Eval(f)
 			if e, ok := result.(error); ok {
 				return e
@@ -42,7 +44,8 @@ func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsq
 	case xsql.SingleCollection:
 		err := input.RangeSet(func(_ int, row xsql.Row) (bool, error) {
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(row, &xsql.WindowRangeValuer{WindowRange: input.GetWindowRange()}, fv, &xsql.WildcardValuer{Data: row})}
-			for _, f := range p.Funcs {
+			for i := len(p.Funcs) - 1; i >= 0; i-- {
+				f := p.Funcs[i]
 				result := ve.Eval(f)
 				if e, ok := result.(error); ok {
 					return false, e
