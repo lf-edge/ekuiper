@@ -123,7 +123,7 @@ SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT
 filter 子句必须跟在 window 函数后面。filter子句必须类似于 `FILTER(WHERE expr)`。例如：
 
 ```sql
-SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FITLER(where revenue > 100)
+SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER(where revenue > 100)
 ```
 
 ## 时间戳管理
