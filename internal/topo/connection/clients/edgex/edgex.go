@@ -89,7 +89,9 @@ func (es *EdgexClient) CfgValidate(props map[string]interface{}) error {
 		edgeAddr = c.Server
 	}
 
-	if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT && c.Type != messaging.Redis {
+	if c.Type != messaging.ZeroMQ && c.Type != messaging.MQTT &&
+		c.Type != messaging.Redis && c.Type != messaging.NatsCore &&
+		c.Type != messaging.NatsJetStream {
 		return fmt.Errorf("specified wrong type value %s", c.Type)
 	}
 	if c.Port < 0 {
