@@ -32,6 +32,12 @@ func TestCollectionAgg(t *testing.T) {
 		result    [][][]map[string]interface{}
 	}{
 		{
+			collO:     &WindowTuples{Content: []TupleRow{}},
+			set:       [][]map[string]interface{}{},
+			interMaps: [][]map[string]interface{}{},
+			result:    [][][]map[string]interface{}{},
+		},
+		{
 			collO: &WindowTuples{Content: []TupleRow{
 				&Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},
 				&Tuple{Emitter: "a", Message: map[string]interface{}{"a": 2, "b": "4"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},

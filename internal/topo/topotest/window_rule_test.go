@@ -99,20 +99,22 @@ func TestWindow(t *testing.T) {
 					"color": "blue",
 					"ts":    float64(1541152486822),
 				}},
+				{},
 				{{
 					"color": "yellow",
 					"ts":    float64(1541152488442),
 				}},
+				{},
 			},
 			M: map[string]interface{}{
 				"op_4_project_0_exceptions_total":   int64(0),
 				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(2),
-				"op_4_project_0_records_out_total":  int64(2),
+				"op_4_project_0_records_in_total":   int64(4),
+				"op_4_project_0_records_out_total":  int64(4),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(2),
-				"sink_mockSink_0_records_out_total": int64(2),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -121,7 +123,7 @@ func TestWindow(t *testing.T) {
 				"op_3_window_0_exceptions_total":   int64(0),
 				"op_3_window_0_process_latency_us": int64(0),
 				"op_3_window_0_records_in_total":   int64(3),
-				"op_3_window_0_records_out_total":  int64(2),
+				"op_3_window_0_records_out_total":  int64(4),
 
 				"op_2_filter_0_exceptions_total":   int64(0),
 				"op_2_filter_0_process_latency_us": int64(0),
@@ -444,16 +446,17 @@ func TestWindow(t *testing.T) {
 				{{
 					"error": "error in preprocessor: invalid data type for size, expect bigint but found string(blue)",
 				}},
+				{},
 			},
 			M: map[string]interface{}{
 				"op_3_project_0_exceptions_total":   int64(3),
 				"op_3_project_0_process_latency_us": int64(0),
-				"op_3_project_0_records_in_total":   int64(6),
-				"op_3_project_0_records_out_total":  int64(3),
+				"op_3_project_0_records_in_total":   int64(7),
+				"op_3_project_0_records_out_total":  int64(4),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(6),
-				"sink_mockSink_0_records_out_total": int64(6),
+				"sink_mockSink_0_records_in_total":  int64(7),
+				"sink_mockSink_0_records_out_total": int64(7),
 
 				"source_demoError_0_exceptions_total":  int64(3),
 				"source_demoError_0_records_in_total":  int64(5),
@@ -462,7 +465,7 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_exceptions_total":   int64(3),
 				"op_2_window_0_process_latency_us": int64(0),
 				"op_2_window_0_records_in_total":   int64(5),
-				"op_2_window_0_records_out_total":  int64(3),
+				"op_2_window_0_records_out_total":  int64(4),
 			},
 		}, {
 			Name: `TestWindowRule8`,
@@ -493,7 +496,7 @@ func TestWindow(t *testing.T) {
 				"op_3_window_0_exceptions_total":   int64(0),
 				"op_3_window_0_process_latency_us": int64(0),
 				"op_3_window_0_records_in_total":   int64(3),
-				"op_3_window_0_records_out_total":  int64(2),
+				"op_3_window_0_records_out_total":  int64(4),
 
 				"op_2_filter_0_exceptions_total":   int64(0),
 				"op_2_filter_0_process_latency_us": int64(0),
@@ -502,7 +505,7 @@ func TestWindow(t *testing.T) {
 
 				"op_4_having_0_exceptions_total":   int64(0),
 				"op_4_having_0_process_latency_us": int64(0),
-				"op_4_having_0_records_in_total":   int64(2),
+				"op_4_having_0_records_in_total":   int64(4),
 				"op_4_having_0_records_out_total":  int64(1),
 			},
 		}, {
@@ -778,11 +781,11 @@ func TestEventWindow(t *testing.T) {
 				"op_2_window_0_exceptions_total":   int64(0),
 				"op_2_window_0_process_latency_us": int64(0),
 				"op_2_window_0_records_in_total":   int64(6),
-				"op_2_window_0_records_out_total":  int64(4),
+				"op_2_window_0_records_out_total":  int64(5),
 
 				"op_3_filter_0_exceptions_total":   int64(0),
 				"op_3_filter_0_process_latency_us": int64(0),
-				"op_3_filter_0_records_in_total":   int64(4),
+				"op_3_filter_0_records_in_total":   int64(5),
 				"op_3_filter_0_records_out_total":  int64(2),
 			},
 		}, {
@@ -1260,17 +1263,17 @@ func TestWindowError(t *testing.T) {
 					"ts":    float64(1541152486013),
 				}}, {{
 					"ts": float64(1541152487632),
-				}},
+				}}, {}, {},
 			},
 			M: map[string]interface{}{
 				"op_4_project_0_exceptions_total":   int64(1),
 				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(3),
-				"op_4_project_0_records_out_total":  int64(2),
+				"op_4_project_0_records_in_total":   int64(5),
+				"op_4_project_0_records_out_total":  int64(4),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
@@ -1279,7 +1282,7 @@ func TestWindowError(t *testing.T) {
 				"op_3_window_0_exceptions_total":   int64(1),
 				"op_3_window_0_process_latency_us": int64(0),
 				"op_3_window_0_records_in_total":   int64(3),
-				"op_3_window_0_records_out_total":  int64(2),
+				"op_3_window_0_records_out_total":  int64(4),
 
 				"op_2_filter_0_exceptions_total":   int64(1),
 				"op_2_filter_0_process_latency_us": int64(0),

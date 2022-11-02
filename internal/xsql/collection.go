@@ -214,11 +214,17 @@ func (w *WindowTuples) Value(key, table string) (interface{}, bool) {
 	if ok {
 		return r, ok
 	}
-	return w.Content[0].Value(key, table)
+	if len(w.Content) > 0 {
+		return w.Content[0].Value(key, table)
+	}
+	return nil, false
 }
 
 func (w *WindowTuples) Meta(key, table string) (interface{}, bool) {
-	return w.Content[0].Meta(key, table)
+	if len(w.Content) > 0 {
+		return w.Content[0].Value(key, table)
+	}
+	return nil, false
 }
 
 func (w *WindowTuples) All(_ string) (Message, bool) {
@@ -228,8 +234,10 @@ func (w *WindowTuples) All(_ string) (Message, bool) {
 func (w *WindowTuples) ToMap() map[string]interface{} {
 	if w.cachedMap == nil {
 		m := make(map[string]interface{})
-		for k, v := range w.Content[0].ToMap() {
-			m[k] = v
+		if len(w.Content) > 0 {
+			for k, v := range w.Content[0].ToMap() {
+				m[k] = v
+			}
 		}
 		w.cachedMap = m
 	}

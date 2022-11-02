@@ -217,7 +217,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 						break
 					}
 					log.Debugf("triggered by restore inputs")
-					inputs, _ = o.scan(inputs, next, ctx)
+					inputs = o.scan(inputs, next, ctx)
 					ctx.PutState(WINDOW_INPUTS_KEY, inputs)
 					ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
 				}
@@ -253,7 +253,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 						break
 					}
 					log.Debugf("triggered by restore inputs")
-					inputs, _ = o.scan(inputs, next, ctx)
+					inputs = o.scan(inputs, next, ctx)
 					ctx.PutState(WINDOW_INPUTS_KEY, inputs)
 					ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
 				}
@@ -284,9 +284,9 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				inputs = append(inputs, d)
 				switch o.window.Type {
 				case ast.NOT_WINDOW:
-					inputs, _ = o.scan(inputs, d.Timestamp, ctx)
+					inputs = o.scan(inputs, d.Timestamp, ctx)
 				case ast.SLIDING_WINDOW:
-					inputs, _ = o.scan(inputs, d.Timestamp, ctx)
+					inputs = o.scan(inputs, d.Timestamp, ctx)
 				case ast.SESSION_WINDOW:
 					if timeoutTicker != nil {
 						timeoutTicker.Stop()
@@ -366,7 +366,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			if len(inputs) > 0 {
 				o.statManager.ProcessTimeStart()
 				log.Debugf("triggered by timeout")
-				inputs, _ = o.scan(inputs, cast.TimeToUnixMilli(now), ctx)
+				inputs = o.scan(inputs, cast.TimeToUnixMilli(now), ctx)
 				//expire all inputs, so that when timer scan there is no item
 				inputs = make([]*xsql.Tuple, 0)
 				o.statManager.ProcessTimeEnd()
@@ -395,15 +395,11 @@ func (o *WindowOperator) tick(ctx api.StreamContext, inputs []*xsql.Tuple, n int
 			return inputs
 		}
 	}
-	if len(inputs) > 0 {
-		o.statManager.ProcessTimeStart()
-		log.Debugf("triggered by ticker at %d", n)
-		inputs, _ = o.scan(inputs, n, ctx)
-		o.statManager.ProcessTimeEnd()
-		ctx.PutState(WINDOW_INPUTS_KEY, inputs)
-	} else {
-		o.triggerTime = n
-	}
+	o.statManager.ProcessTimeStart()
+	log.Debugf("triggered by ticker at %d", n)
+	inputs = o.scan(inputs, n, ctx)
+	o.statManager.ProcessTimeEnd()
+	ctx.PutState(WINDOW_INPUTS_KEY, inputs)
 	ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
 	return inputs
 }
@@ -459,7 +455,7 @@ func (tl *TupleList) getRestTuples() []*xsql.Tuple {
 	return tl.tuples[len(tl.tuples)-tl.size+1:]
 }
 
-func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, bool) {
+func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) []*xsql.Tuple {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
 	var (
@@ -496,32 +492,30 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 			results = results.AddTuple(tuple)
 		}
 	}
-	triggered := false
-	if len(results.Content) > 0 {
-		switch o.window.Type {
-		case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
-			windowStart = o.triggerTime
-		case ast.HOPPING_WINDOW:
-			windowStart = o.triggerTime - int64(o.window.Interval)
-		case ast.SLIDING_WINDOW:
-			windowStart = triggerTime - int64(o.window.Length)
-		}
-		if windowStart <= 0 {
-			windowStart = windowEnd - int64(o.window.Length)
-		}
-		results.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
-		log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
-		if o.isEventTime {
-			results.Sort()
-		}
-		log.Debugf("Sent: %v", results)
-		o.Broadcast(results)
-		triggered = true
-		o.statManager.IncTotalRecordsOut()
+
+	switch o.window.Type {
+	case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
+		windowStart = o.triggerTime
+	case ast.HOPPING_WINDOW:
+		windowStart = o.triggerTime - int64(o.window.Interval)
+	case ast.SLIDING_WINDOW:
+		windowStart = triggerTime - int64(o.window.Length)
 	}
+	if windowStart <= 0 {
+		windowStart = windowEnd - int64(o.window.Length)
+	}
+	results.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
+	log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
+	if o.isEventTime {
+		results.Sort()
+	}
+	log.Debugf("Sent: %v", results)
+	o.Broadcast(results)
+	o.statManager.IncTotalRecordsOut()
+
 	o.triggerTime = triggerTime
 	log.Debugf("new trigger time %d", o.triggerTime)
-	return inputs[:i], triggered
+	return inputs[:i]
 }
 
 func (o *WindowOperator) calDelta(triggerTime int64, delta int64, log api.Logger) int64 {
