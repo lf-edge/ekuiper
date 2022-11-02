@@ -16,10 +16,10 @@ package meta
 
 import (
 	"fmt"
+	"strings"
 )
 
 func GetConnectionMeta(connectionName, language string) (ptrSourceProperty *uiSource, err error) {
-
 	gSourcemetaLock.RLock()
 	defer gSourcemetaLock.RUnlock()
 
@@ -47,40 +47,39 @@ func GetConnectionPlugins() (sources []*pluginfo) {
 	ConfigManager.lock.RLock()
 	defer ConfigManager.lock.RUnlock()
 
-	for _, conf := range ConfigManager.cfgOperators {
-		if conf.IsSource() {
-			continue
-		}
+	for key, conf := range ConfigManager.cfgOperators {
+		if strings.HasPrefix(key, ConnectionCfgOperatorKeyPrefix) {
 
-		plugName := conf.GetPluginName()
+			plugName := conf.GetPluginName()
 
-		uiSourceRepKey := plugName + `.json`
-		gSourcemetaLock.RLock()
-		v, found := gSourcemetadata[uiSourceRepKey]
-		if !found {
-			gSourcemetaLock.RUnlock()
-			continue
-		}
-		gSourcemetaLock.RUnlock()
-
-		node := new(pluginfo)
-		node.Name = plugName
-
-		if nil == v.About {
-			continue
-		}
-		node.About = v.About
-		i := 0
-		for ; i < len(sources); i++ {
-			if node.Name <= sources[i].Name {
-				sources = append(sources, node)
-				copy(sources[i+1:], sources[i:])
-				sources[i] = node
-				break
+			uiSourceRepKey := plugName + `.json`
+			gSourcemetaLock.RLock()
+			v, found := gSourcemetadata[uiSourceRepKey]
+			if !found {
+				gSourcemetaLock.RUnlock()
+				continue
 			}
-		}
-		if len(sources) == i {
-			sources = append(sources, node)
+			gSourcemetaLock.RUnlock()
+
+			node := new(pluginfo)
+			node.Name = plugName
+
+			if nil == v.About {
+				continue
+			}
+			node.About = v.About
+			i := 0
+			for ; i < len(sources); i++ {
+				if node.Name <= sources[i].Name {
+					sources = append(sources, node)
+					copy(sources[i+1:], sources[i:])
+					sources[i] = node
+					break
+				}
+			}
+			if len(sources) == i {
+				sources = append(sources, node)
+			}
 		}
 	}
 	return sources
