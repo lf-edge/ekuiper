@@ -19,6 +19,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"io"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -39,6 +40,7 @@ func TestIO(t *testing.T) {
 		t.Errorf("fail to import ruleset: %v", err)
 		return
 	}
+	sort.Strings(names)
 	if !reflect.DeepEqual(names, expectedRules) {
 		t.Errorf("fail to return the imported rules, expect %v but got %v", expectedRules, names)
 	}
@@ -61,6 +63,7 @@ func TestIO(t *testing.T) {
 		t.Errorf("fail to get all rules: %v", err)
 		return
 	}
+	sort.Strings(rules)
 	if !reflect.DeepEqual(rules, expectedRules) {
 		t.Errorf("After import, expect rules %v, but got %v", expectedRules, rules)
 		return
