@@ -120,12 +120,12 @@ func (w *WatermarkGenerator) computeWatermarkTs(_ context.Context) int64 {
 }
 
 //If window end cannot be determined yet, return max int64 so that it can be recalculated for the next watermark
-func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple, current int64, watermark int64, triggered bool) int64 {
+func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple, current int64, watermark int64) int64 {
 	switch w.window.Type {
 	case ast.TUMBLING_WINDOW, ast.HOPPING_WINDOW:
-		if triggered {
+		if current > 0 {
 			return current + int64(w.interval)
-		} else {
+		} else { // first run without previous window
 			interval := int64(w.interval)
 			nextTs := getEarliestEventTs(inputs, current, watermark)
 			if nextTs == math.MaxInt64 {
@@ -177,7 +177,6 @@ func (w *WatermarkGenerator) getNextSessionWindow(inputs []*xsql.Tuple) (int64, 
 func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.Tuple, errCh chan<- error) {
 	log := ctx.GetLogger()
 	var (
-		triggered       bool
 		nextWindowEndTs int64
 		prevWindowEndTs int64
 		lastTicked      bool
@@ -216,12 +215,12 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 					watermarkTs := d.GetTimestamp()
 					windowEndTs := nextWindowEndTs
 					ticked := false
-					//Session window needs a recalculation of window because its window end depends the inputs
+					//Session window needs a recalculation of window because its window end depends on the inputs
 					if windowEndTs == math.MaxInt64 || o.window.Type == ast.SESSION_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 						if o.window.Type == ast.SESSION_WINDOW {
 							windowEndTs, ticked = o.watermarkGenerator.getNextSessionWindow(inputs)
 						} else {
-							windowEndTs = o.watermarkGenerator.getNextWindow(inputs, prevWindowEndTs, watermarkTs, triggered)
+							windowEndTs = o.watermarkGenerator.getNextWindow(inputs, prevWindowEndTs, watermarkTs)
 						}
 					}
 					for windowEndTs <= watermarkTs && windowEndTs >= 0 {
@@ -231,13 +230,15 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 						if o.window.Type == ast.SESSION_WINDOW && !lastTicked {
 							o.triggerTime = inputs[0].Timestamp
 						}
-						inputs, triggered = o.scan(inputs, windowEndTs, ctx)
+						if windowEndTs > 0 {
+							inputs = o.scan(inputs, windowEndTs, ctx)
+						}
 						prevWindowEndTs = windowEndTs
 						lastTicked = ticked
 						if o.window.Type == ast.SESSION_WINDOW {
 							windowEndTs, ticked = o.watermarkGenerator.getNextSessionWindow(inputs)
 						} else {
-							windowEndTs = o.watermarkGenerator.getNextWindow(inputs, prevWindowEndTs, watermarkTs, triggered)
+							windowEndTs = o.watermarkGenerator.getNextWindow(inputs, prevWindowEndTs, watermarkTs)
 						}
 					}
 					nextWindowEndTs = windowEndTs
