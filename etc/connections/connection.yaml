@@ -53,3 +53,19 @@ edgex:
     server: localhost
     port: 5571
     type: zero
+
+  natsMsgBus: #connection key
+    protocol: tcp
+    server: edgex-nats-server
+    port: 4222
+    type: nats-jetstream
+#    optional:
+#      ClientId ="<service-key>" # must be unique name of the service, thus the service key (core-data, etc) is used
+#     # Connection information
+#      Format =  "nats" # Use 'json' for backward compatability with services using MQTT
+#      ConnectTimeout = "5" # Seconds
+#      RetryOnFailedConnect = "true"
+#      QueueGroup = ""
+#      Durable =  "" # Jetstream only
+#      AutoProvision = "true" # Jetstream only
+#      Deliver = "new" # Jetstream only
