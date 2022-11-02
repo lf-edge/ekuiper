@@ -25,28 +25,20 @@ func (c *ConSelector) Init() error {
 
 func (c *ConSelector) ReadCfgFromYaml() (props map[string]interface{}, err error) {
 
-	var (
-		found = false
-	)
-
-	cfg := make(map[string]interface{})
-	err = LoadConfigByName(CONNECTION_CONF, &cfg)
+	yamlOps, err := NewConfigOperatorFromConnectionYaml(c.Type)
 	if err != nil {
 		return nil, err
 	}
 
-	if cons, ok := cfg[c.Type]; ok {
-		if connItems, ok1 := cons.(map[string]interface{}); ok1 {
-			if conItem, ok := connItems[c.CfgKey]; ok {
-				if item, ok1 := conItem.(map[string]interface{}); ok1 {
-					props = item
-					found = true
-				}
-			}
+	cfg := yamlOps.CopyConfContent()
+	if len(cfg) == 0 {
+		return nil, fmt.Errorf("fail to parse yaml for connection Type %s", c.Type)
+	} else {
+		if cons, found := cfg[c.CfgKey]; found {
+			props = cons
+		} else {
+			return nil, fmt.Errorf("not found connection Type and Selector:  %s.%s", c.Type, c.CfgKey)
 		}
-	}
-	if !found {
-		return nil, fmt.Errorf("not found connection Type and Selector:  %s.%s", c.Type, c.CfgKey)
 	}
 
 	jsonPath := "sources/" + c.Type + ".json"

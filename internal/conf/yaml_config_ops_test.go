@@ -21,40 +21,25 @@ import (
 )
 
 func TestConfigKeys_LoadSourceFile(t *testing.T) {
-
-	mqttCfg, err := NewConfigOperatorFromSourceYaml("mqtt")
+	_, err := NewConfigOperatorFromSourceYaml("mqtt")
 	if err != nil {
 		t.Error(err)
-	}
-
-	expect := mqttCfg.IsSource()
-	if expect != true {
-		t.Error(expect)
 	}
 }
 
 func TestConfigKeys_LoadConnectionMqtt(t *testing.T) {
-	mqttCfg, err := NewConfigOperatorFromConnectionYaml("mqtt")
+	_, err := NewConfigOperatorFromConnectionYaml("mqtt")
 	if err != nil {
 		t.Error(err)
-	}
-
-	actual := mqttCfg.IsSource()
-	if actual != false {
-		t.Errorf("should be false, but actual is %v", actual)
 	}
 }
 
 func TestConfigKeys_LoadConnectionEdgex(t *testing.T) {
-	edgeXCfg, err := NewConfigOperatorFromConnectionYaml("edgex")
+	_, err := NewConfigOperatorFromConnectionYaml("edgex")
 	if err != nil {
 		t.Error(err)
 	}
 
-	actual := edgeXCfg.IsSource()
-	if actual != false {
-		t.Errorf("should be false, but actual is %v", actual)
-	}
 }
 
 func TestConfigKeys_Ops(t *testing.T) {
