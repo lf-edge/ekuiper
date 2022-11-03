@@ -7,8 +7,8 @@ require (
 	github.com/alicebob/miniredis/v2 v2.15.1
 	github.com/benbjohnson/clock v1.0.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2-0.20220810043731-079a117b4614
-	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.3.0-dev.19
-	github.com/edgexfoundry/go-mod-messaging/v2 v2.3.0-dev.25
+	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.3.0
+	github.com/edgexfoundry/go-mod-messaging/v2 v2.3.0
 	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/gdexlab/go-render v1.0.1
 	github.com/go-redis/redis/v7 v7.3.0
