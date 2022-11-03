@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -307,6 +308,7 @@ func TestValidate(t *testing.T) {
 				t.Errorf("case %d: expect conditions %v but got %v", i, tt.c, tt.p.conditions)
 				continue
 			}
+			sort.Strings(tt.p.keys)
 			if !reflect.DeepEqual(tt.k, tt.p.keys) {
 				t.Errorf("case %d: expect keys %v but got %v", i, tt.k, tt.p.keys)
 				continue
