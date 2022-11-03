@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build (plugin || !core) && (ui || !core)
+//go:build plugin || !core
 // +build plugin !core
-// +build ui !core
 
 package server
 

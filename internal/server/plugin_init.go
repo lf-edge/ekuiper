@@ -22,10 +22,13 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/lf-edge/ekuiper/internal/binder"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/native"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"net/http"
+	"runtime"
+	"strings"
 )
 
 var nativeManager *native.Manager
@@ -46,6 +49,9 @@ func (p pluginComp) register() {
 }
 
 func (p pluginComp) rest(r *mux.Router) {
+	r.HandleFunc("/plugins/sources/prebuild", prebuildSourcePlugins).Methods(http.MethodGet)
+	r.HandleFunc("/plugins/sinks/prebuild", prebuildSinkPlugins).Methods(http.MethodGet)
+	r.HandleFunc("/plugins/functions/prebuild", prebuildFuncsPlugins).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/sources", sourcesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/sources/{name}", sourceHandler).Methods(http.MethodDelete, http.MethodGet)
 	r.HandleFunc("/plugins/sinks", sinksHandler).Methods(http.MethodGet, http.MethodPost)
@@ -189,4 +195,75 @@ func functionRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf("function plugin %s function list is registered", name)))
+}
+
+func prebuildSourcePlugins(w http.ResponseWriter, r *http.Request) {
+	prebuildPluginsHandler(w, r, plugin.SOURCE)
+}
+
+func prebuildSinkPlugins(w http.ResponseWriter, r *http.Request) {
+	prebuildPluginsHandler(w, r, plugin.SINK)
+}
+
+func prebuildFuncsPlugins(w http.ResponseWriter, r *http.Request) {
+	prebuildPluginsHandler(w, r, plugin.FUNCTION)
+}
+
+func prebuildPluginsHandler(w http.ResponseWriter, _ *http.Request, t plugin.PluginType) {
+	emsg := "It's strongly recommended to install plugins at linux. If you choose to proceed to install plugin, please make sure the plugin is already validated in your own build."
+	if runtime.GOOS == "linux" {
+		osrelease, err := Read()
+		if err != nil {
+			handleError(w, err, "", logger)
+			return
+		}
+		prettyName := strings.ToUpper(osrelease["PRETTY_NAME"])
+		var os = "debian"
+		if strings.Contains(prettyName, "ALPINE") {
+			os = "alpine"
+		}
+
+		hosts := conf.Config.Basic.PluginHosts
+		if err, plugins := fetchPluginList(t, hosts, os, runtime.GOARCH); err != nil {
+			handleError(w, err, "", logger)
+		} else {
+			jsonResponse(plugins, w, logger)
+		}
+	} else {
+		handleError(w, fmt.Errorf(emsg), "", logger)
+	}
+}
+
+var NativeSourcePlugin = []string{"random", "zmq", "sql"}
+var NativeSinkPlugin = []string{"file", "image", "influx", "tdengine", "zmq", "sql"}
+var NativeFunctionPlugin = []string{"accumulateWordCount", "countPlusOne", "echo", "geohash", "image", "labelImage"}
+
+func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (err error, result map[string]string) {
+	ptype := "sources"
+	plugins := NativeSourcePlugin
+	if t == plugin.SINK {
+		ptype = "sinks"
+		plugins = NativeSinkPlugin
+	} else if t == plugin.FUNCTION {
+		ptype = "functions"
+		plugins = NativeFunctionPlugin
+	}
+
+	if hosts == "" || ptype == "" || os == "" {
+		logger.Errorf("Invalid parameter value: hosts %s, ptype %s or os: %s should not be empty.", hosts, ptype, os)
+		return fmt.Errorf("invalid configruation for plugin host in kuiper.yaml"), nil
+	}
+	result = make(map[string]string)
+	hostsArr := strings.Split(hosts, ",")
+	for _, host := range hostsArr {
+		host := strings.Trim(host, " ")
+		tmp := []string{host, "kuiper-plugins", version, os, ptype}
+		//The url is similar to http://host:port/kuiper-plugins/0.9.1/debian/sinks/
+		url := strings.Join(tmp, "/")
+
+		for _, p := range plugins {
+			result[p] = url + "/" + p + "_" + arch + ".zip"
+		}
+	}
+	return
 }
