@@ -59,7 +59,7 @@ func decodeStatementDescriptor(reader io.ReadCloser) (statementDescriptor, error
 	return sd, nil
 }
 
-// Handle applies the specified error and error concept tot he HTTP response writer
+// Handle applies the specified error and error concept to the HTTP response writer
 func handleError(w http.ResponseWriter, err error, prefix string, logger api.Logger) {
 	message := prefix
 	if message != "" {
