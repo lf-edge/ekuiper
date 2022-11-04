@@ -366,7 +366,7 @@ func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) 
 	fileName = pluginName
 
 	filePath = path.Join(dir, fileName+`.yaml`)
-	_ = filex.ReadJsonUnmarshal(filePath, &c.dataCfg)
+	_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
 
 	return c, nil
 }
