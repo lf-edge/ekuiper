@@ -366,7 +366,7 @@ func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) 
 	fileName = pluginName
 
 	filePath = path.Join(dir, fileName+`.yaml`)
-	_ = LoadConfigFromPath(filePath, &c.dataCfg)
+	_ = filex.ReadJsonUnmarshal(filePath, &c.dataCfg)
 
 	return c, nil
 }
@@ -402,7 +402,7 @@ func NewConfigOperatorFromSinkYaml(pluginName string) (ConfigOperator, error) {
 	dir := path.Join(dataDir, "sinks")
 
 	filePath := path.Join(dir, pluginName+`.yaml`)
-	_ = LoadConfigFromPath(filePath, &c.dataCfg)
+	_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
 
 	return c, nil
 }
@@ -463,7 +463,7 @@ func NewConfigOperatorFromConnectionYaml(pluginName string) (ConfigOperator, err
 	}
 	yamlPath = path.Join(confDir, "connections/connection.yaml")
 	yamlData = make(map[string]interface{})
-	_ = LoadConfigFromPath(yamlPath, &yamlData)
+	_ = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
 
 	if plgCnfs, ok := yamlData[pluginName]; ok {
 		if cf, ok1 := plgCnfs.(map[string]interface{}); ok1 {

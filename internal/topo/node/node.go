@@ -23,7 +23,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 type OperatorNode interface {
@@ -189,15 +188,16 @@ func SinkOpen(sinkType string, config map[string]interface{}) error {
 }
 
 func SourceOpen(sourceType string, config map[string]interface{}) error {
-
-	options := &ast.Options{}
-	//_ = nodeConf.GetSourceConf(sourceType, options)
+	dataSource := "testSource"
+	if v, ok := config["DATASOURCE"]; ok {
+		dataSource = v.(string)
+	}
 
 	ns, err := io.Source(sourceType)
 	if err != nil {
 		return err
 	}
-	err = ns.Configure(options.DATASOURCE, config)
+	err = ns.Configure(dataSource, config)
 	if err != nil {
 		return err
 	}
