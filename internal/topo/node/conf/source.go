@@ -34,13 +34,13 @@ func GetSourceConf(sourceType string, options *ast.Options) map[string]interface
 	} else {
 		def, ok := cfg["default"]
 		if !ok {
-			conf.Log.Warnf("default conf %s is not found", confkey)
+			conf.Log.Warnf("default config_key not found")
 		} else {
 			props = def
-			if c, ok := cfg[strings.ToLower(confkey)]; ok {
-				for k, v := range c {
-					props[k] = v
-				}
+		}
+		if c, ok := cfg[strings.ToLower(confkey)]; ok {
+			for k, v := range c {
+				props[k] = v
 			}
 		}
 	}
