@@ -133,6 +133,10 @@
 					"title": "功能使用教程",
 					"children": [
 						{
+							"title": "流批结合计算",
+							"path": "tutorials/table/lookup"
+						},
+						{
 							"title": "使用 Protobuf 编解码教程",
 							"path": "tutorials/usage/protobuf_tutorial"
 						},
@@ -709,6 +713,10 @@
 				{
 					"title": "Usage Tutorial",
 					"children": [
+						{
+							"title": "Stream Batch Integrated Calculation",
+							"path": "tutorials/table/lookup"
+						},
 						{
 							"title": "Protobuf Codec Tutorial",
 							"path": "tutorials/usage/protobuf_tutorial"
