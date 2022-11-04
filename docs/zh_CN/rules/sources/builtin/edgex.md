@@ -141,6 +141,10 @@ EdgeX 消息总线类型，目前支持三种消息总线。如果指定了错�
 - `mqtt`：使用 MQTT 服务器作为消息总线
 - `redis`: 使用 Redis 服务器作为消息总线。使用 EdgeX docker compose 启动时，type参数会默认设置为该类型。
 
+EdgeX Levski 引入了两种信息消息总线类型，eKuiper 从 1.7.1 开始支持这两种新的类型，分别为
+- `nats-jetstream`
+- `nats-core`
+
 ### messageType
 
 EdgeX 消息模型类型。如果连接到 EdgeX application service 的 topic, 则消息为 "event" 类型。否则，如果直接连接到消息总线的 topic，接收到 device service 或者 core
