@@ -150,6 +150,10 @@ use the default `redis` value.
 - `mqtt`: Use the MQTT broker as EdgeX message bus.
 - `redis`: Use Redis as EdgeX message bus. When using EdgeX docker compose, the type will be set to this by default.
 
+EdgeX Levski introduces two types of information message bus, eKuiper supports these two new types from 1.7.1, respectively
+- `nats-jetstream`
+- `nats-core`
+
 ### messageType
 
 The EdgeX message model type. If connected to the topic of EdgeX application service, the message model is an "event".

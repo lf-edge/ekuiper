@@ -40,7 +40,8 @@ fi
 
 mv ../plugins/sources/Zmq.so .
 cp ../extensions/sources/zmq/zmq.yaml .
-zip zmq.zip Zmq.so zmq.yaml
+cp ../extensions/sources/zmq/zmq.json .
+zip zmq.zip Zmq.so zmq.yaml zmq.json
 rm -rf zmq.yaml Zmq.so
 
 rm -rf image.* Image.so
@@ -54,7 +55,8 @@ else
 fi
 
 mv ../plugins/functions/Image.so .
-zip image.zip Image.so
+cp ../extensions/functions/image/image.json .
+zip image.zip Image.so image.json
 rm -rf Image.so
 
 # build tdengine plugins
@@ -67,7 +69,8 @@ else
 fi
 
 mv ../plugins/sinks/Tdengine.so .
-zip tdengine.zip Tdengine.so
+mv ../extensions/sinks/tdengine/tdengine.json .
+zip tdengine.zip Tdengine.so tdengine.json
 rm -rf Tdengine.so
 
 # build sql plugins
@@ -80,7 +83,8 @@ else
 fi
 
 mv ../plugins/sinks/Sql.so .
-zip sql.zip Sql.so
+cp ../extensions/sources/sql/sql.json .
+zip sql.zip Sql.so sql.json
 rm -rf Sql.so
 
 FILE=../plugins/sources/Sql.so
@@ -93,7 +97,8 @@ fi
 
 mv ../plugins/sources/Sql.so .
 cp ../extensions/sources/sql/sql.yaml .
-zip sqlSrc.zip Sql.so sql.yaml
+cp ../extensions/sources/sql/sql.json .
+zip sqlSrc.zip Sql.so sql.yaml sql.json
 rm -rf Sql.so
 
 rm -rf plugins/service/web/plugins/

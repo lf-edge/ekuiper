@@ -110,7 +110,9 @@
 				"values": [
 					"mqtt",
 					"zero",
-					"redis"
+					"redis",
+					"nats-jetstream",
+					"nats-core"
 				],
 				"type": "list_string",
 				"hint": {
