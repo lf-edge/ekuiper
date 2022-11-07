@@ -116,7 +116,7 @@ Function 元数据详细配置请参考 [sink 元数据配置](../../extension/n
 https://$host/$folder/$version/$os/$type/$plugin.zip
 ```
 
-例如： https://127.0.0.1:9090/kuiper-plugins/1.3.1/debian/sinks/file.zip
+例如： https://127.0.0.1:9090/kuiper-plugins/1.7.1/debian/sinks/file.zip
 
 其中：
 
@@ -129,8 +129,8 @@ https://$host/$folder/$version/$os/$type/$plugin.zip
 
 由于`Go`语言插件机制的限制，插件的编译环境必须与`eKuiper`环境相同。因此，建议插件在`eKuiper`相同版本的`Docker` 容器中进行编译。同时，由于`alpine` 环境部分库缺失，不建议在上面运行插件。因此，若需要插件安装运行，建议使用如下容器：
 
-- eKuiper: 使用 slim 镜像，例如 `1.3.1-slim`
-- 插件：使用对应版本默认镜像进行编译，例如 `1.3.1`
+- eKuiper: 使用 slim 镜像，例如 `1.7.1-slim`
+- 插件：使用对应版本默认镜像进行编译，例如 `1.7.1-dev`
 
 ## 总结
 

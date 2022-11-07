@@ -24,16 +24,16 @@ From eKuiper version 0.9.1, whenever a new version of eKuiper is released, the c
 
 ### Install eKuiper
 
-- Pull eKuiper's Docker image from [Docker Image Library](https://hub.docker.com/r/lfedge/ekuiper/tags). Since it is required to install the plugin in this article, you must use the `ekuiper:1.5-slim` image (`ekuiper:1.5-alpine` image is relatively small and easy to install, but due to the lack of some necessary library files, the plug-in cannot run normally. The `ekuiper:1.5` image is the development version, which is suitable for use in the development phase).
+- Pull eKuiper's Docker image from [Docker Image Library](https://hub.docker.com/r/lfedge/ekuiper/tags). Since it is required to install the plugin in this article, you must use the `ekuiper:1.7-slim` image (`ekuiper:1.7-alpine` image is relatively small and easy to install, but due to the lack of some necessary library files, the plug-in cannot run normally. The `ekuiper:1.7-dev` image is the development version, which is suitable for use in the development phase).
 
   ```shell
-  docker pull lfedge/ekuiper:1.5-slim
+  docker pull lfedge/ekuiper:1.7-slim
   ```
 
 - Run the eKuiper container (for convenience, we will use the public MQTT server provided by [EMQ](https://www.emqx.io), and the address can be set by the `-e` option when running the container). If you want to access the eKuiper instance through the host, you can expose port 9081 by adding the `-p 9081:9081` parameter when starting the container.
 
   ```shell
-  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:1.5-slim
+  # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:1.7-slim
   ```
   
   When the container is running, the MQTT server address can be set through the `-e` option, and the data is written to the MQTT source configuration file, which can be viewed by the following command:
@@ -56,16 +56,16 @@ From eKuiper version 0.9.1, whenever a new version of eKuiper is released, the c
 
 ### Install management console
 
-- Pull the Docker image of kuiper-manager from [Docker Image Library](https://hub.docker.com/r/emqx/ekuiper-manager/tags), and `1.5-ief` is a dedicated image for Huawei IEF users, This example uses the `1.5` image.
+- Pull the Docker image of kuiper-manager from [Docker Image Library](https://hub.docker.com/r/emqx/ekuiper-manager/tags), and `1.7-ief` is a dedicated image for Huawei IEF users, This example uses the `1.7` image.
 
   ```shell
-  docker pull emqx/ekuiper-manager:1.5
+  docker pull emqx/ekuiper-manager:1.7
   ```
 
 - Run the Kuiper-manager container and expose port 9082.
 
   ```shell
-  docker run --name kuiperManager -d -p 9082:9082 emqx/ekuiper-manager:1.5
+  docker run --name kuiperManager -d -p 9082:9082 emqx/ekuiper-manager:1.7
   ```
 
 ## Getting started
