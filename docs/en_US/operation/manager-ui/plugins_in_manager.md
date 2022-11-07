@@ -116,7 +116,7 @@ In `etc/kuiper.yaml`, there is a `pluginHosts` configuration item, and users can
 https://$host/$folder/$version/$os/$type/$plugin.zip
 ```
 
-Example:  https://127.0.0.1:9090/kuiper-plugins/1.3.1/debian/sinks/file.zip
+Example:  https://127.0.0.1:9090/kuiper-plugins/1.7.1/debian/sinks/file.zip
 
 Among them:
 
@@ -129,8 +129,8 @@ Among them:
 
 Due to the limitation of `Go` language plugin mechanism, the compilation environment of the plugin must be the same as the `eKuiper` environment. Therefore, it is recommended that the plugin be compiled in a `Docker` container of the same version as `eKuiper`. At the same time, because some libraries in the `alpine` environment are missing, it is not recommended to run plugins on it. Therefore, if you need to install and run the plugin, it is recommended to use the following container:
 
-- eKuiper: Use slim image, such as `1.3.1-slim`
-- Plugin: compile with the default image of the corresponding version, such as `1.3.1`
+- eKuiper: Use slim image, such as `1.7.1-slim`
+- Plugin: compile with the default image of the corresponding version, such as `1.7.1-dev`
 
 ### Summary
 

@@ -37,25 +37,29 @@ The `lfedge/ekuiper` images come in many flavors, each designed for a specific u
 
 ## `lfedge/ekuiper:<tag>`
 
-This is the development Docker image, which is based on Debian and it also includes a Golang build environment. If you are unsure about what your needs  are, you probably want to use this one. It is designed to be used both as a throw away container (mount your source code, compile plugins for eKuiper,  and start the  container to run your app), as well as the base to build other images. Please be aware of that this image is the biggest size, and it's usually used for development purpose.
+This is the defacto image. If you are unsure about what your needs are, you probably want to use this one. It is an alias of tag `lfedge/ekuiper:<tag>-alpine`(see below) since 1.7.1. Previously, it is equivalent to the `lfedge/ekuiper:<tag>-dev` image
 
-Notice: This image is the equivalent to development image of `x.x.x-dev` in 0.3.x versions.
+## `lfedge/ekuiper:<tag>-alpine`
+
+This image is based on the popular [Alpine Linux project](http://alpinelinux.org), available in [the `alpine` official image](https://hub.docker.com/_/alpine). Alpine Linux is much smaller than most distribution base images (~5MB), and thus leads to much slimmer images in general.
+
+This variant is highly recommended when final image size being as  small as possible is desired. The main caveat to note is that it does  use [musl libc](http://www.musl-libc.org) instead of [glibc and friends](http://www.etalabs.net/compare_libcs.html), so certain software might run into issues depending on the depth of  their libc requirements. However, most software doesn't have an issue  with this, so this variant is usually a very safe choice. See [this Hacker News comment thread](https://news.ycombinator.com/item?id=10782897) for more discussion of the issues that might arise and some pro/con comparisons of using Alpine-based images.
+
+To minimize image size, it's uncommon for additional related tools (such as `git` or `bash`) to be included in Alpine-based images. Using this image as a base, add the things you need in your own Dockerfile (see the [`alpine` image description](https://hub.docker.com/_/alpine/) for examples of how to install packages if you are unfamiliar).
 
 ## `lfedge/ekuiper:<tag>-slim`
 
-This image is also based on Debian, and only contains the minimal packages needed to run eKuiper. The difference between this and previous image (`lfedge/ekuiper:<tag>`) is that this image does not include Golang development environment. The typical usage of this image would be deploy the plugins compiled in previous Docker image instances. This is the official recommended image if you want to deploy & run  customized plugins into eKuiper.
+This image is based on Debian, and only contains the minimal packages needed to run eKuiper. The difference between this and dev image (`lfedge/ekuiper:<tag>-dev`) is that this image does not include Golang development environment. The typical usage of this image would be deploy the plugins compiled in previous Docker image instances. This is the official recommended image if you want to deploy & run  customized plugins into eKuiper.
 
 ## `lfedge/ekuiper:<tag>-slim-python`
 
 This image is the same as slim except that it also contains python environment. It is recommended if using eKuiper python portable plugins.
 
-## `lfedge/ekuiper:<tag>-alpine`
+## `lfedge/ekuiper:<tag>-dev`
 
-This image is based on the popular [Alpine Linux project](http://alpinelinux.org), available in [the `alpine` official image](https://hub.docker.com/_/alpine). Alpine Linux is much smaller than most distribution base images (~5MB), and thus leads to much slimmer images in general. 
+This is the development Docker image, which is based on Debian and it also includes a Golang build environment. If you are unsure about what your needs  are, you probably want to use this one. It is designed to be used both as a throw away container (mount your source code, compile plugins for eKuiper,  and start the  container to run your app), as well as the base to build other images. Please be aware of that this image is the biggest size, and it's usually used for development purpose.
 
-This variant is highly recommended when final image size being as  small as possible is desired. The main caveat to note is that it does  use [musl libc](http://www.musl-libc.org) instead of [glibc and friends](http://www.etalabs.net/compare_libcs.html), so certain software might run into issues depending on the depth of  their libc requirements. However, most software doesn't have an issue  with this, so this variant is usually a very safe choice. See [this Hacker News comment thread](https://news.ycombinator.com/item?id=10782897) for more discussion of the issues that might arise and some pro/con comparisons of using Alpine-based images.
-
-To minimize image size, it's uncommon for additional related tools (such as `git` or `bash`) to be included in Alpine-based images. Using this image as a base, add the things you need in your own Dockerfile (see the [`alpine` image description](https://hub.docker.com/_/alpine/) for examples of how to install packages if you are unfamiliar).
+Notice: This image is the equivalent to development image of `x.x.x-dev` in 0.3.x versions.
 
 # What is eKuiper
 

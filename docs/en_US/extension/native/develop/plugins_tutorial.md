@@ -237,7 +237,7 @@ However, if developers create plugin project outside eKuiper, he needs following
 
 #### Docker compile
 
-eKuiper provides different docker images for different purpose. The development docker image should be used for compiling plugins. From 0.4.0, the eKuiper image with tag x.x.x (e.g. `lfedge/ekuiper:0.4.0`) is the development docker image. Compared with the running version, the development version provides the development environment of Go, which lets users compile the plugin that can be completely compatible with the officially published version of eKuiper. The compiling steps in docker are as follows:
+eKuiper provides different docker images for different purpose. The development docker image should be used for compiling plugins. Since 1.7.1, the development docker image tag format is `x.x.x-dev`(From 0.4.0 to 1.7.0, the tag format is x.x.x) . Compared with the running version, the development version provides the development environment of Go, which lets users compile the plugin that can be completely compatible with the officially published version of eKuiper. The compiling steps in docker are as follows:
 1. Run docker of the development version of eKuiper. Users need to mount the local plugin directory to the directory in docker, and then they can access and compile the plugin project in docker. The author's plugin project is located in the local `/var/git` directory. We map the local directory `/var/git` to the `/home` directory in docker by using the following commands.
     ```go
     docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/home lfedge/ekuiper:1.3.0
