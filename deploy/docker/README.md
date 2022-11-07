@@ -37,9 +37,7 @@ The `lfedge/ekuiper` images come in many flavors, each designed for a specific u
 
 ## `lfedge/ekuiper:<tag>`
 
-This is the development Docker image, which is based on Debian and it also includes a Golang build environment. If you are unsure about what your needs  are, you probably want to use this one. It is designed to be used both as a throw away container (mount your source code, compile plugins for eKuiper,  and start the  container to run your app), as well as the base to build other images. Please be aware of that this image is the biggest size, and it's usually used for development purpose.
-
-Notice: This image is the equivalent to development image between 0.3.x and 1.7.0 (inclusive). Since 1.7.1, this image is alias for `lfedge/ekuiper:<tag>-alpine`
+This is the defacto image. If you are unsure about what your needs are, you probably want to use this one. It is an alias of tag `lfedge/ekuiper:<tag>-alpine`(see below) since 1.7.1. Previously, it is equivalent to the `lfedge/ekuiper:<tag>-dev` image
 
 ## `lfedge/ekuiper:<tag>-alpine`
 
