@@ -78,7 +78,7 @@ real_pkg:
 docker:
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile . --load
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-slim -f deploy/docker/Dockerfile-slim . --load
-	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-alpine -f deploy/docker/Dockerfile-alpine . --load
+	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-dev -f deploy/docker/Dockerfile-dev . --load
 
 PLUGINS := sinks/file \
 	sinks/influx \

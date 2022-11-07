@@ -102,6 +102,7 @@ jobs:
             suffix:
             - ""
             - "-alpine"
+            - "-dev"
             - "-slim"
             - "-slim-python"
             golang:
