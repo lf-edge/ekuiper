@@ -202,8 +202,6 @@ jobs:
           - 1.18.5
         exclude:
           - os: [alpine,"alpine"]
-            plugin: functions/labelImage
-          - os: [alpine,"alpine"]
             plugin: sinks/tdengine
 
     steps:
