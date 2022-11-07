@@ -265,7 +265,7 @@ jobs:
         sudo ./get_helm.sh
         helm version
     - name: build kuiper for docker
-      run: sudo docker build --no-cache -t lfedge/ekuiper:$(git describe --tags --alway)-alpine -f deploy/docker/Dockerfile-alpine .
+      run: sudo docker build --no-cache -t lfedge/ekuiper:$(git describe --tags --alway) -f deploy/docker/Dockerfile .
     - name: run emqx on chart
       env:
         KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
@@ -287,7 +287,7 @@ jobs:
         version=$(git describe --tags --always)
         emqx_address=$(kubectl get svc --namespace default emqx -o jsonpath="{.spec.clusterIP}")
 
-        sudo docker save lfedge/ekuiper:$version-alpine -o kuier.tar.gz
+        sudo docker save lfedge/ekuiper:$version -o kuier.tar.gz
         sudo k3s ctr image import kuier.tar.gz
 
         sed -i -r "s/^appVersion: .*$/appVersion: \"${version}\"/g" deploy/chart/ekuiper/Chart.yaml

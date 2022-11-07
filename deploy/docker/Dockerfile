@@ -13,28 +13,45 @@
 # limitations under the License.
 
 ARG GO_VERSION=1.18.5
-FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-debian AS builder
+FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-alpine AS builder
 
 COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
-RUN apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN make build_with_edgex
 
-RUN make build_with_edgex \
-    && ln -s /go/kuiper/_build/kuiper-$(git describe --tags --always)-$(go env GOOS)-$(go env GOARCH) /kuiper
+FROM alpine:3.16
 
-RUN ln -s /go/kuiper/deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
+# Set environment vars
+ENV MAINTAINER="emqx.io" \
+    KUIPER_HOME="/kuiper" \
+    KUIPER__BASIC__CONSOLELOG=true
 
-EXPOSE 9081 20498
+# These vars are not persisted in the final image layer
+ARG KUIPER_USER="kuiper"
+ARG KUIPER_USER_ID="1001"
 
-ENV MAINTAINER="emqx.io"
-ENV KUIPER_HOME /kuiper
-ENV KUIPER__BASIC__CONSOLELOG true
+# (root) Add packages and "kuiper" user
+RUN apk add sed libzmq
 
 WORKDIR ${KUIPER_HOME}
+
+# Set appropriate ownership to allow binary full access to KUIPER_HOME dir
+RUN adduser -DH -s /sbin/nologin -u ${KUIPER_USER_ID} ${KUIPER_USER} && \
+    chown -Rh ${KUIPER_USER}:${KUIPER_USER} ${KUIPER_HOME} && \
+    mkdir -p /usr/local/taos && \
+    chown -Rh ${KUIPER_USER}:${KUIPER_USER} /usr/local/taos
+
+# Run the kuiper process under the kuiper user
+USER ${KUIPER_USER}
+
+COPY --chown=${KUIPER_USER}:${KUIPER_USER} ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
+COPY --chown=${KUIPER_USER}:${KUIPER_USER} --from=builder /go/kuiper/_build/kuiper-* /kuiper/
+
 VOLUME ["${KUIPER_HOME}/etc", "${KUIPER_HOME}/data", "${KUIPER_HOME}/plugins", "${KUIPER_HOME}/log"]
+EXPOSE 9081 20498
+
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
 CMD ["./bin/kuiperd"]

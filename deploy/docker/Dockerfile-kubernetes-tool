@@ -20,7 +20,7 @@ WORKDIR /go/kuiper/tools/kubernetes
 
 RUN go build -o kuiper-kubernetes-tool main.go
 
-FROM alpine:3.15
+FROM alpine:3.16
 
 WORKDIR /kuiper-kubernetes-tool
 
