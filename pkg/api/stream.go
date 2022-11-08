@@ -117,14 +117,23 @@ type Rewindable interface {
 }
 
 type RuleOption struct {
-	IsEventTime        bool  `json:"isEventTime" yaml:"isEventTime"`
-	LateTol            int64 `json:"lateTolerance" yaml:"lateTolerance"`
-	Concurrency        int   `json:"concurrency" yaml:"concurrency"`
-	BufferLength       int   `json:"bufferLength" yaml:"bufferLength"`
-	SendMetaToSink     bool  `json:"sendMetaToSink" yaml:"sendMetaToSink"`
-	SendError          bool  `json:"sendError" yaml:"sendError"`
-	Qos                Qos   `json:"qos" yaml:"qos"`
-	CheckpointInterval int   `json:"checkpointInterval" yaml:"checkpointInterval"`
+	IsEventTime        bool             `json:"isEventTime" yaml:"isEventTime"`
+	LateTol            int64            `json:"lateTolerance" yaml:"lateTolerance"`
+	Concurrency        int              `json:"concurrency" yaml:"concurrency"`
+	BufferLength       int              `json:"bufferLength" yaml:"bufferLength"`
+	SendMetaToSink     bool             `json:"sendMetaToSink" yaml:"sendMetaToSink"`
+	SendError          bool             `json:"sendError" yaml:"sendError"`
+	Qos                Qos              `json:"qos" yaml:"qos"`
+	CheckpointInterval int              `json:"checkpointInterval" yaml:"checkpointInterval"`
+	Restart            *RestartStrategy `json:"restartStrategy" yaml:"restartStrategy"`
+}
+
+type RestartStrategy struct {
+	Attempts     int     `json:"attempts" yaml:"attempts"`
+	Delay        int     `json:"delay" yaml:"delay"`
+	Multiplier   float64 `json:"multiplier" yaml:"multiplier"`
+	MaxDelay     int     `json:"maxDelay" yaml:"maxDelay"`
+	JitterFactor float64 `json:"jitter" yaml:"jitter"`
 }
 
 type PrintableTopo struct {

@@ -25,8 +25,11 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"math"
+	"math/rand"
 	"sort"
 	"sync"
+	"time"
 )
 
 var registry *RuleRegistry
@@ -101,7 +104,7 @@ func createRuleState(rule *api.Rule) (*RuleState, error) {
 }
 
 // Assume rs is started with topo instantiated
-func doStartRule(rs *RuleState) error {
+func doStartRule(rs *RuleState, option *api.RestartStrategy) error {
 	err := ruleProcessor.ExecReplaceRuleState(rs.RuleId, true)
 	if err != nil {
 		return err
@@ -109,19 +112,50 @@ func doStartRule(rs *RuleState) error {
 	go func() {
 		tp := rs.Topology
 		err := infra.SafeRun(func() error {
-			select {
-			case err := <-tp.Open():
-				return err
+			count := 0
+			d := option.Delay
+			var (
+				er error
+			)
+			for {
+				select {
+				case e := <-tp.Open():
+					er = e
+					if er != nil { // Only restart rule for errors
+						tp.GetContext().SetError(err)
+						logger.Errorf("closing rule %s for error: %v", rs.RuleId, err)
+						tp.Cancel()
+						rs.Triggered = false
+					} else {
+						return nil
+					}
+				}
+				if count <= option.Attempts {
+					if d > option.MaxDelay {
+						d = option.MaxDelay
+					}
+					if option.JitterFactor > 0 {
+						d = int(math.Round(float64(d) * ((rand.Float64()*2-1)*0.1 + 1)))
+						conf.Log.Infof("Rule %s will restart with jitterred delay %d", rs.RuleId, d)
+					} else {
+						conf.Log.Infof("Rule %s will restart with delay %d", rs.RuleId, d)
+					}
+					time.Sleep(time.Duration(d) * time.Millisecond)
+					count++
+					if option.Multiplier > 0 {
+						d = option.Delay * int(math.Pow(float64(option.Multiplier), float64(count)))
+					}
+				} else {
+					return er
+				}
 			}
 		})
-		if err != nil {
-			tp.GetContext().SetError(err)
-			logger.Errorf("closing rule %s for error: %v", rs.RuleId, err)
-			tp.Cancel()
-			rs.Triggered = false
-		} else {
+		// If the rule is stopped manually
+		if err == nil {
 			rs.Triggered = false
 			logger.Infof("closing rule %s", rs.RuleId)
+		} else {
+			logger.Infof("closing rule %s after %d retries with error: %v", rs.RuleId, option.Attempts, err)
 		}
 	}()
 	return nil
@@ -250,7 +284,7 @@ func startRule(name string) error {
 		if err != nil {
 			return err
 		}
-		err = doStartRule(rs)
+		err = doStartRule(rs, r.Options.Restart)
 		if err != nil {
 			return err
 		}
@@ -288,6 +322,7 @@ func deleteRule(name string) (result string) {
 
 func restartRule(name string) error {
 	stopRule(name)
+	time.Sleep(1 * time.Millisecond)
 	return startRule(name)
 }
 
