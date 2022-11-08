@@ -143,7 +143,7 @@ jobs:
       with:
         images: docker.io/lfedge/ekuiper
         flavor: |
-          latest=${{ github.event_name == 'release' && matrix.suffix == '-slim'  && !github.event.release.prerelease}}
+          latest=${{ github.event_name == 'release' && matrix.suffix == '-alpine'  && !github.event.release.prerelease}}
           suffix=${{ matrix.suffix }}
         tags: |
           type=ref,event=branch
