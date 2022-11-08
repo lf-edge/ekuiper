@@ -124,6 +124,13 @@ func (p *RuleProcessor) getDefaultRule(name, sql string) *api.Rule {
 			SendError:          true,
 			Qos:                api.AtMostOnce,
 			CheckpointInterval: 300000,
+			Restart: &api.RestartStrategy{
+				Attempts:     0,
+				Delay:        1000,
+				Multiplier:   2,
+				MaxDelay:     30000,
+				JitterFactor: 0.1,
+			},
 		},
 	}
 }
@@ -132,7 +139,7 @@ func (p *RuleProcessor) getRuleByJson(id, ruleJson string) (*api.Rule, error) {
 	opt := conf.Config.Rule
 	//set default rule options
 	rule := &api.Rule{
-		Options: &opt,
+		Options: clone(opt),
 	}
 	if err := json.Unmarshal([]byte(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)
@@ -166,20 +173,31 @@ func (p *RuleProcessor) getRuleByJson(id, ruleJson string) (*api.Rule, error) {
 	if rule.Options == nil {
 		rule.Options = &opt
 	}
-	//Setnx default options
-	if rule.Options.CheckpointInterval < 0 {
-		return nil, fmt.Errorf("rule option checkpointInterval %d is invalid, require a positive integer", rule.Options.CheckpointInterval)
-	}
-	if rule.Options.Concurrency < 0 {
-		return nil, fmt.Errorf("rule option concurrency %d is invalid, require a positive integer", rule.Options.Concurrency)
-	}
-	if rule.Options.BufferLength < 0 {
-		return nil, fmt.Errorf("rule option bufferLength %d is invalid, require a positive integer", rule.Options.BufferLength)
-	}
-	if rule.Options.LateTol < 0 {
-		return nil, fmt.Errorf("rule option lateTolerance %d is invalid, require a positive integer", rule.Options.LateTol)
+	err := conf.ValidateRuleOption(rule.Options)
+	if err != nil {
+		return nil, fmt.Errorf("Rule %s has invalid options: %s.", rule.Id, err)
 	}
 	return rule, nil
+}
+
+func clone(opt api.RuleOption) *api.RuleOption {
+	return &api.RuleOption{
+		IsEventTime:        opt.IsEventTime,
+		LateTol:            opt.LateTol,
+		Concurrency:        opt.Concurrency,
+		BufferLength:       opt.BufferLength,
+		SendMetaToSink:     opt.SendMetaToSink,
+		SendError:          opt.SendError,
+		Qos:                opt.Qos,
+		CheckpointInterval: opt.CheckpointInterval,
+		Restart: &api.RestartStrategy{
+			Attempts:     opt.Restart.Attempts,
+			Delay:        opt.Restart.Delay,
+			Multiplier:   opt.Restart.Multiplier,
+			MaxDelay:     opt.Restart.MaxDelay,
+			JitterFactor: opt.Restart.JitterFactor,
+		},
+	}
 }
 
 func (p *RuleProcessor) ExecDesc(name string) (string, error) {
