@@ -163,6 +163,13 @@ func InitConf() {
 			BufferLength:       1024,
 			CheckpointInterval: 300000, //5 minutes
 			SendError:          true,
+			Restart: &api.RestartStrategy{
+				Attempts:     0,
+				Delay:        1000,
+				Multiplier:   2,
+				MaxDelay:     30000,
+				JitterFactor: 0.1,
+			},
 		},
 	}
 
@@ -227,6 +234,60 @@ func InitConf() {
 		Config.Sink = &SinkConf{}
 	}
 	_ = Config.Sink.Validate()
+
+	_ = ValidateRuleOption(&Config.Rule)
+}
+
+func ValidateRuleOption(option *api.RuleOption) error {
+	e := make(errorx.MultiError)
+	if option.CheckpointInterval < 0 {
+		option.CheckpointInterval = 0
+		Log.Warnf("checkpointInterval is negative, set to 0")
+		e["invalidCheckpointInterval"] = fmt.Errorf("checkpointInterval must be greater than 0")
+	}
+	if option.Concurrency < 0 {
+		option.Concurrency = 1
+		Log.Warnf("concurrency is negative, set to 1")
+		e["invalidConcurrency"] = fmt.Errorf("concurrency must be greater than 0")
+	}
+	if option.BufferLength < 0 {
+		option.BufferLength = 1024
+		Log.Warnf("bufferLength is negative, set to 1024")
+		e["invalidBufferLength"] = fmt.Errorf("bufferLength must be greater than 0")
+	}
+	if option.LateTol < 0 {
+		option.LateTol = 1000
+		Log.Warnf("lateTol is negative, set to 1000")
+		e["invalidLateTol"] = fmt.Errorf("lateTol must be greater than 0")
+	}
+	if option.Restart != nil {
+		if option.Restart.Multiplier <= 0 {
+			option.Restart.Multiplier = 2
+			Log.Warnf("restart multiplier is negative, set to 2")
+			e["invalidRestartMultiplier"] = fmt.Errorf("restart multiplier must be greater than 0")
+		}
+		if option.Restart.Attempts < 0 {
+			option.Restart.Attempts = 0
+			Log.Warnf("restart attempts is negative, set to 0")
+			e["invalidRestartAttempts"] = fmt.Errorf("restart attempts must be greater than 0")
+		}
+		if option.Restart.Delay <= 0 {
+			option.Restart.Delay = 1000
+			Log.Warnf("restart delay is negative, set to 1000")
+			e["invalidRestartDelay"] = fmt.Errorf("restart delay must be greater than 0")
+		}
+		if option.Restart.MaxDelay <= 0 {
+			option.Restart.MaxDelay = option.Restart.Delay
+			Log.Warnf("restart maxDelay is negative, set to %d", option.Restart.Delay)
+			e["invalidRestartMaxDelay"] = fmt.Errorf("restart maxDelay must be greater than 0")
+		}
+		if option.Restart.JitterFactor <= 0 || option.Restart.JitterFactor >= 1 {
+			option.Restart.JitterFactor = 0.1
+			Log.Warnf("restart jitterFactor must between 0 and 1, set to 0.1")
+			e["invalidRestartJitterFactor"] = fmt.Errorf("restart jitterFactor must between [0, 1)")
+		}
+	}
+	return e.GetError()
 }
 
 func init() {

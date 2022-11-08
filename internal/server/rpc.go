@@ -154,7 +154,7 @@ func (t *Server) CreateRule(rule *model.RPCArgDesc, reply *string) error {
 	if err != nil {
 		return err
 	}
-	err = doStartRule(rs)
+	err = doStartRule(rs, r.Options.Restart)
 	if err != nil {
 		return err
 	}

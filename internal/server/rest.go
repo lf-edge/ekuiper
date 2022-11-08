@@ -411,7 +411,7 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					return err
 				} else {
-					err = doStartRule(rs)
+					err = doStartRule(rs, r.Options.Restart)
 					return err
 				}
 			})
