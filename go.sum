@@ -52,6 +52,8 @@ github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ3
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/deepch/vdk v0.0.19 h1:r6xYyBTtXEIEh+csO0XHT00sI7xLF+hQFkJE9/go5II=
+github.com/deepch/vdk v0.0.19/go.mod h1:7ydHfSkflMZxBXfWR79dMjrT54xzvLxnPaByOa9Jpzg=
 github.com/eclipse/paho.mqtt.golang v1.4.2-0.20220810043731-079a117b4614 h1:36h5MuaQ0gVNV1clhTE4lF3Vram4HNGX3JcDlD3u6UA=
 github.com/eclipse/paho.mqtt.golang v1.4.2-0.20220810043731-079a117b4614/go.mod h1:JGt0RsEwEX+Xa/agj90YJ9d9DH2b7upDZMK9HRbFvCA=
 github.com/edgexfoundry/go-mod-core-contracts/v2 v2.3.0 h1:8Svk1HTehXEgwxgyA4muVhSkP3D9n1q+oSHI3B1Ac90=
