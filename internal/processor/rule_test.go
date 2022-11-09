@@ -47,10 +47,15 @@ func TestRuleActionParse_Apply(t *testing.T) {
 						]
 					}
 				}
-			  ]
+			  ],
+              "options": {
+				"restartStrategy": {
+				  "attempts": 20
+				}
+			  }
 			}`,
 			result: &api.Rule{
-				Triggered: false,
+				Triggered: true,
 				Id:        "ruleTest",
 				Sql:       "SELECT * from demo",
 				Actions: []map[string]interface{}{
@@ -81,6 +86,13 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					Qos:                api.AtMostOnce,
 					CheckpointInterval: 300000,
 					SendError:          true,
+					Restart: &api.RestartStrategy{
+						Attempts:     20,
+						Delay:        1000,
+						Multiplier:   2,
+						MaxDelay:     30000,
+						JitterFactor: 0.1,
+					},
 				},
 			},
 		}, {
@@ -111,7 +123,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 				}
 			}`,
 			result: &api.Rule{
-				Triggered: false,
+				Triggered: true,
 				Id:        "ruleTest2",
 				Sql:       "SELECT * from demo",
 				Actions: []map[string]interface{}{
@@ -137,6 +149,13 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					Qos:                api.ExactlyOnce,
 					CheckpointInterval: 60000,
 					SendError:          true,
+					Restart: &api.RestartStrategy{
+						Attempts:     0,
+						Delay:        1000,
+						Multiplier:   2,
+						MaxDelay:     30000,
+						JitterFactor: 0.1,
+					},
 				},
 			},
 		},
@@ -144,7 +163,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 
 	p := NewRuleProcessor()
 	for i, tt := range tests {
-		r, err := p.getRuleByJson(tt.result.Id, tt.ruleStr)
+		r, err := p.GetRuleByJson(tt.result.Id, tt.ruleStr)
 		if err != nil {
 			t.Errorf("get rule error: %s", err)
 		}
@@ -169,7 +188,7 @@ func TestAllRules(t *testing.T) {
 	defer p.db.Clean()
 
 	for k, v := range expected {
-		_, err := p.ExecCreate(k, v)
+		_, err := p.ExecCreateWithValidation(k, v)
 		if err != nil {
 			t.Error(err)
 			return

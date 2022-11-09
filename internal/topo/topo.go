@@ -68,7 +68,9 @@ func (s *Topo) Cancel() {
 	defer s.mu.Unlock()
 	// completion signal
 	infra.DrainError(s.ctx, nil, s.drain)
-	s.cancel()
+	if s.cancel != nil {
+		s.cancel()
+	}
 	s.store = nil
 	s.coordinator = nil
 }
