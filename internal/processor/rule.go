@@ -41,8 +41,8 @@ func NewRuleProcessor() *RuleProcessor {
 	return processor
 }
 
-func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
-	rule, err := p.getRuleByJson(name, ruleJson)
+func (p *RuleProcessor) ExecCreateWithValidation(name, ruleJson string) (*api.Rule, error) {
+	rule, err := p.GetRuleByJson(name, ruleJson)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +56,20 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) (*api.Rule, error) {
 
 	return rule, nil
 }
+
+func (p *RuleProcessor) ExecCreate(name, ruleJson string) error {
+	err := p.db.Setnx(name, ruleJson)
+	if err != nil {
+		return err
+	} else {
+		log.Infof("Rule %s is created.", name)
+	}
+
+	return nil
+}
+
 func (p *RuleProcessor) ExecUpdate(name, ruleJson string) (*api.Rule, error) {
-	rule, err := p.getRuleByJson(name, ruleJson)
+	rule, err := p.GetRuleByJson(name, ruleJson)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +120,7 @@ func (p *RuleProcessor) GetRuleById(id string) (*api.Rule, error) {
 	if !f {
 		return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found.", id))
 	}
-	return p.getRuleByJson(id, s1)
+	return p.GetRuleByJson(id, s1)
 }
 
 func (p *RuleProcessor) getDefaultRule(name, sql string) *api.Rule {
@@ -135,11 +147,12 @@ func (p *RuleProcessor) getDefaultRule(name, sql string) *api.Rule {
 	}
 }
 
-func (p *RuleProcessor) getRuleByJson(id, ruleJson string) (*api.Rule, error) {
+func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 	opt := conf.Config.Rule
 	//set default rule options
 	rule := &api.Rule{
-		Options: clone(opt),
+		Triggered: true,
+		Options:   clone(opt),
 	}
 	if err := json.Unmarshal([]byte(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)

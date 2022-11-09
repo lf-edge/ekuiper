@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/internal/topo/sink"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 	"io"
@@ -90,7 +91,7 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 	if err != nil {
 		return err
 	} else {
-		rs := &RuleState{RuleId: QueryRuleId, Topology: tp, Triggered: true}
+		rs := &rule.RuleState{RuleId: QueryRuleId, Topology: tp}
 		registry.Store(QueryRuleId, rs)
 		msg := fmt.Sprintf("Query was submit successfully.")
 		logger.Println(msg)
@@ -143,20 +144,11 @@ func (t *Server) Stream(stream string, reply *string) error {
 }
 
 func (t *Server) CreateRule(rule *model.RPCArgDesc, reply *string) error {
-	r, err := ruleProcessor.ExecCreate(rule.Name, rule.Json)
+	id, err := createRule(rule.Name, rule.Json, true)
 	if err != nil {
-		return fmt.Errorf("Create rule error : %s.", err)
+		return fmt.Errorf("Create rule %s error : %s.", id, err)
 	} else {
 		*reply = fmt.Sprintf("Rule %s was created successfully, please use 'bin/kuiper getstatus rule %s' command to get rule status.", rule.Name, rule.Name)
-	}
-	//Start the rule
-	rs, err := createRuleState(r)
-	if err != nil {
-		return err
-	}
-	err = doStartRule(rs, r.Options.Restart)
-	if err != nil {
-		return err
 	}
 	return nil
 }
@@ -271,9 +263,14 @@ func (t *Server) Import(file string, reply *string) error {
 	}
 	infra.SafeRun(func() error {
 		for _, name := range rules {
-			err := startRule(name)
-			if err != nil {
-				logger.Error(err)
+			rul, ee := ruleProcessor.GetRuleById(name)
+			if ee != nil {
+				logger.Error(ee)
+				continue
+			}
+			reply := recoverRule(rul)
+			if reply != "" {
+				logger.Error(reply)
 			}
 		}
 		return nil

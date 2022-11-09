@@ -89,7 +89,7 @@ func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 	var rules []string
 	// restore rules
 	for k, v := range all.Rules {
-		_, e := rs.r.ExecCreate(k, v)
+		_, e := rs.r.ExecCreateWithValidation(k, v)
 		if e != nil {
 			conf.Log.Errorf("Fail to import rule %s(%s) with error: %v", k, v, e)
 		} else {

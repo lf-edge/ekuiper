@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
+	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"net/http"
 	"os"
 	"os/signal"
@@ -110,7 +111,7 @@ func StartUp(Version, LoadFileType string) {
 	}
 	meta.Bind()
 
-	registry = &RuleRegistry{internal: make(map[string]*RuleState)}
+	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
 	//Start lookup tables
 	streamProcessor.RecoverLookupTable()
 	//Start rules
