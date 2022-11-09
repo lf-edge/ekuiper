@@ -185,5 +185,5 @@ func compareMetrics(tp *topo.Topo, m map[string]interface{}) bool {
 func CreateRule(name, sql string) (*api.Rule, error) {
 	p := processor.NewRuleProcessor()
 	p.ExecDrop(name)
-	return p.ExecCreate(name, sql)
+	return p.ExecCreateWithValidation(name, sql)
 }

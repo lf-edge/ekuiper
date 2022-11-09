@@ -396,29 +396,12 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		r, err := ruleProcessor.ExecCreate("", string(body))
-		var result string
+		id, err := createRule("", string(body), true)
 		if err != nil {
-			handleError(w, err, "Create rule error", logger)
+			handleError(w, err, "", logger)
 			return
-		} else {
-			result = fmt.Sprintf("Rule %s was created successfully.", r.Id)
 		}
-		go func() {
-			panicOrError := infra.SafeRun(func() error {
-				//Start the rule
-				rs, err := createRuleState(r)
-				if err != nil {
-					return err
-				} else {
-					err = doStartRule(rs, r.Options.Restart)
-					return err
-				}
-			})
-			if panicOrError != nil {
-				logger.Errorf("Rule %s start failed: %s", r.Id, panicOrError)
-			}
-		}()
+		result := fmt.Sprintf("Rule %s was created successfully.", id)
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(result))
 	case http.MethodGet:
@@ -467,20 +450,19 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-
-		r, err := ruleProcessor.ExecUpdate(name, string(body))
-		var result string
-		if err != nil {
-			handleError(w, err, "Update rule error", logger)
-			return
-		} else {
-			result = fmt.Sprintf("Rule %s was updated successfully.", r.Id)
-		}
-
-		err = restartRule(name)
+		err = updateRule(name, string(body))
 		if err != nil {
 			handleError(w, err, "restart rule error", logger)
 			return
+		}
+		// Update to db after validation
+		_, err = ruleProcessor.ExecUpdate(name, string(body))
+		var result string
+		if err != nil {
+			handleError(w, err, "Update rule error, suggest to delete it and recreate", logger)
+			return
+		} else {
+			result = fmt.Sprintf("Rule %s was updated successfully.", name)
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(result))
@@ -601,9 +583,14 @@ func importHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	infra.SafeRun(func() error {
 		for _, name := range rules {
-			err := startRule(name)
-			if err != nil {
-				logger.Error(err)
+			rul, ee := ruleProcessor.GetRuleById(name)
+			if ee != nil {
+				logger.Error(ee)
+				continue
+			}
+			reply := recoverRule(rul)
+			if reply != "" {
+				logger.Error(reply)
 			}
 		}
 		return nil

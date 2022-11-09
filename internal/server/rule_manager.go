@@ -16,70 +16,50 @@ package server
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo"
-	"github.com/lf-edge/ekuiper/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"math"
-	"math/rand"
 	"sort"
 	"sync"
 	"time"
 )
 
+// Rule storage includes kv and in memory registry
+// Kv stores the rule text with *expected* status so that the rule can be restored after restart
+// Registry stores the current rule state in runtime
+// Here registry is the in memory registry
 var registry *RuleRegistry
-
-type RuleState struct {
-	RuleId    string
-	Topology  *topo.Topo
-	Triggered bool
-	// temporary storage for topo graph to make sure even rule close, the graph is still available
-	topoGraph *api.PrintableTopo
-}
-
-func (rs *RuleState) GetTopoGraph() *api.PrintableTopo {
-	if rs.topoGraph != nil {
-		return rs.topoGraph
-	} else if rs.Topology != nil {
-		return rs.Topology.GetTopo()
-	} else {
-		return nil
-	}
-}
-
-// Stop Assume rule has started and the topo has instantiated
-func (rs *RuleState) Stop() {
-	rs.Triggered = false
-	rs.Topology.Cancel()
-	rs.topoGraph = rs.Topology.GetTopo()
-	rs.Topology = nil
-}
 
 type RuleRegistry struct {
 	sync.RWMutex
-	internal map[string]*RuleState
+	internal map[string]*rule.RuleState
 }
 
-func (rr *RuleRegistry) Store(key string, value *RuleState) {
+// Store create the in memory entry for a rule. Run in:
+// 1. Restore the rules from KV at startup
+// 2. Restore the rules when importing
+// 3. Create a rule
+func (rr *RuleRegistry) Store(key string, value *rule.RuleState) {
 	rr.Lock()
 	rr.internal[key] = value
 	rr.Unlock()
 }
 
-func (rr *RuleRegistry) Load(key string) (value *RuleState, ok bool) {
+// Load the entry of a rule by id. It is used to get the current rule state
+// or send command to a running rule
+func (rr *RuleRegistry) Load(key string) (value *rule.RuleState, ok bool) {
 	rr.RLock()
 	result, ok := rr.internal[key]
 	rr.RUnlock()
 	return result, ok
 }
 
-// Delete Atomic get and delete
-func (rr *RuleRegistry) Delete(key string) (*RuleState, bool) {
+// Delete Atomic get and delete. Only run when deleting a rule in runtime.
+func (rr *RuleRegistry) Delete(key string) (*rule.RuleState, bool) {
 	rr.Lock()
 	result, ok := rr.internal[key]
 	if ok {
@@ -89,140 +69,133 @@ func (rr *RuleRegistry) Delete(key string) (*RuleState, bool) {
 	return result, ok
 }
 
-func createRuleState(rule *api.Rule) (*RuleState, error) {
-	rs := &RuleState{
-		RuleId: rule.Id,
-	}
-	registry.Store(rule.Id, rs)
-	if tp, err := planner.Plan(rule); err != nil {
-		return rs, err
-	} else {
-		rs.Topology = tp
-		rs.Triggered = true
-		return rs, nil
-	}
-}
-
-// Assume rs is started with topo instantiated
-func doStartRule(rs *RuleState, option *api.RestartStrategy) error {
-	err := ruleProcessor.ExecReplaceRuleState(rs.RuleId, true)
+func createRule(name, ruleJson string, shouldStart bool) (string, error) {
+	// Validate the rule json
+	r, err := ruleProcessor.GetRuleByJson(name, ruleJson)
 	if err != nil {
-		return err
+		return "", fmt.Errorf("Invalid rule json: %v", err)
 	}
+	if shouldStart {
+		r.Triggered = true
+	}
+	// Validate the topo
+	rs, err := createRuleState(r)
+	if err != nil {
+		return r.Id, fmt.Errorf("Create rule topo error: %v", err)
+	}
+	// Store to KV
+	err = ruleProcessor.ExecCreate(r.Id, ruleJson)
+	if err != nil {
+		// Do not store to KV so also delete the in memory shadow
+		deleteRule(r.Id)
+		return r.Id, fmt.Errorf("Store the rule error: %v", err)
+	}
+	// Start the rule asyncly
 	go func() {
-		tp := rs.Topology
-		err := infra.SafeRun(func() error {
-			count := 0
-			d := option.Delay
-			var (
-				er error
-			)
-			for {
-				select {
-				case e := <-tp.Open():
-					er = e
-					if er != nil { // Only restart rule for errors
-						tp.GetContext().SetError(err)
-						logger.Errorf("closing rule %s for error: %v", rs.RuleId, err)
-						tp.Cancel()
-						rs.Triggered = false
-					} else {
-						return nil
-					}
-				}
-				if count <= option.Attempts {
-					if d > option.MaxDelay {
-						d = option.MaxDelay
-					}
-					if option.JitterFactor > 0 {
-						d = int(math.Round(float64(d) * ((rand.Float64()*2-1)*0.1 + 1)))
-						conf.Log.Infof("Rule %s will restart with jitterred delay %d", rs.RuleId, d)
-					} else {
-						conf.Log.Infof("Rule %s will restart with delay %d", rs.RuleId, d)
-					}
-					time.Sleep(time.Duration(d) * time.Millisecond)
-					count++
-					if option.Multiplier > 0 {
-						d = option.Delay * int(math.Pow(float64(option.Multiplier), float64(count)))
-					}
-				} else {
-					return er
-				}
-			}
+		panicOrError := infra.SafeRun(func() error {
+			//Start the rule which runs async
+			rs.Start()
+			return nil
 		})
-		// If the rule is stopped manually
-		if err == nil {
-			rs.Triggered = false
-			logger.Infof("closing rule %s", rs.RuleId)
-		} else {
-			logger.Infof("closing rule %s after %d retries with error: %v", rs.RuleId, option.Attempts, err)
+		if panicOrError != nil {
+			logger.Errorf("Rule %s start failed: %s", r.Id, panicOrError)
 		}
 	}()
-	return nil
+	return r.Id, nil
 }
 
-func getAllRulesWithStatus() ([]map[string]interface{}, error) {
-	ruleIds, err := ruleProcessor.GetAllRules()
+// Create and initialize a rule state.
+// Errors are possible during plan the topo.
+// If error happens return immediately without add it to the registry
+func createRuleState(r *api.Rule) (*rule.RuleState, error) {
+	rs, err := rule.NewRuleState(r)
 	if err != nil {
 		return nil, err
 	}
-	sort.Strings(ruleIds)
-	result := make([]map[string]interface{}, len(ruleIds))
-	for i, id := range ruleIds {
-		ruleName := id
-		rule, _ := ruleProcessor.GetRuleById(id)
-		if rule != nil && rule.Name != "" {
-			ruleName = rule.Name
-		}
-		s, err := getRuleState(id)
-		if err != nil {
-			s = fmt.Sprintf("error: %s", err)
-		}
-		result[i] = map[string]interface{}{
-			"id":     id,
-			"name":   ruleName,
-			"status": s,
-		}
-	}
-	return result, nil
+	registry.Store(r.Id, rs)
+	return rs, nil
 }
 
-func getRuleState(name string) (string, error) {
+func recoverRule(r *api.Rule) string {
+	// Validate the topo
+	rs, err := createRuleState(r)
+	if err != nil {
+		return fmt.Sprintf("Create rule topo error: %v", err)
+	}
+	if !r.Triggered {
+		return fmt.Sprintf("Rule %s was stopped.", r.Id)
+	} else {
+		panicOrError := infra.SafeRun(func() error {
+			//Start the rule which runs async
+			return rs.Start()
+		})
+		if panicOrError != nil {
+			return fmt.Sprintf("Rule %s start failed: %s", r.Id, panicOrError)
+		}
+	}
+	return fmt.Sprintf("Rule %s was started.", r.Id)
+}
+
+func updateRule(ruleId, ruleJson string) error {
+	// Validate the rule json
+	r, err := ruleProcessor.GetRuleByJson(ruleId, ruleJson)
+	if err != nil {
+		return fmt.Errorf("Invalid rule json: %v", err)
+	}
+	if rs, ok := registry.Load(r.Id); ok {
+		rs.UpdateTopo(r)
+		return nil
+	} else {
+		return fmt.Errorf("Rule %s registry not found, try to delete it and recreate", r.Id)
+	}
+}
+
+func deleteRule(name string) (result string) {
+	if rs, ok := registry.Delete(name); ok {
+		rs.Close()
+		result = fmt.Sprintf("Rule %s was deleted.", name)
+	} else {
+		result = fmt.Sprintf("Rule %s was not found.", name)
+	}
+	return
+}
+
+func startRule(name string) error {
+	rs, ok := registry.Load(name)
+	if !ok {
+		return fmt.Errorf("Rule %s is not found in registry, please check if it is created", name)
+	} else {
+		rs.Start()
+	}
+	return nil
+}
+
+func stopRule(name string) (result string) {
 	if rs, ok := registry.Load(name); ok {
-		return doGetRuleState(rs)
+		err := rs.Stop()
+		if err != nil {
+			conf.Log.Warn(err)
+		}
+		err = ruleProcessor.ExecReplaceRuleState(name, false)
+		if err != nil {
+			conf.Log.Warnf("stop rule found error: %s", err.Error())
+		}
+		result = fmt.Sprintf("Rule %s was stopped.", name)
 	} else {
-		return "", fmt.Errorf("Rule %s is not found in registry", name)
+		result = fmt.Sprintf("Rule %s was not found.", name)
 	}
+	return
 }
 
-func doGetRuleState(rs *RuleState) (string, error) {
-	result := ""
-	if rs.Topology == nil {
-		result = "Stopped: canceled manually or by error."
-	} else {
-		c := (*rs.Topology).GetContext()
-		if c != nil {
-			err := c.Err()
-			switch err {
-			case nil:
-				result = "Running"
-			case context.Canceled:
-				result = "Stopped: canceled by error."
-			case context.DeadlineExceeded:
-				result = "Stopped: deadline exceed."
-			default:
-				result = fmt.Sprintf("Stopped: %v.", err)
-			}
-		} else {
-			result = "Stopped: no context found."
-		}
-	}
-	return result, nil
+func restartRule(name string) error {
+	stopRule(name)
+	time.Sleep(1 * time.Millisecond)
+	return startRule(name)
 }
 
 func getRuleStatus(name string) (string, error) {
 	if rs, ok := registry.Load(name); ok {
-		result, err := doGetRuleState(rs)
+		result, err := rs.GetState()
 		if err != nil {
 			return "", err
 		}
@@ -255,6 +228,40 @@ func getRuleStatus(name string) (string, error) {
 	}
 }
 
+func getAllRulesWithStatus() ([]map[string]interface{}, error) {
+	ruleIds, err := ruleProcessor.GetAllRules()
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(ruleIds)
+	result := make([]map[string]interface{}, len(ruleIds))
+	for i, id := range ruleIds {
+		ruleName := id
+		rule, _ := ruleProcessor.GetRuleById(id)
+		if rule != nil && rule.Name != "" {
+			ruleName = rule.Name
+		}
+		s, err := getRuleState(id)
+		if err != nil {
+			s = fmt.Sprintf("error: %s", err)
+		}
+		result[i] = map[string]interface{}{
+			"id":     id,
+			"name":   ruleName,
+			"status": s,
+		}
+	}
+	return result, nil
+}
+
+func getRuleState(name string) (string, error) {
+	if rs, ok := registry.Load(name); ok {
+		return rs.GetState()
+	} else {
+		return "", fmt.Errorf("Rule %s is not found in registry", name)
+	}
+}
+
 func getRuleTopo(name string) (string, error) {
 	if rs, ok := registry.Load(name); ok {
 		graph := rs.GetTopoGraph()
@@ -270,73 +277,4 @@ func getRuleTopo(name string) (string, error) {
 	} else {
 		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
 	}
-}
-
-func startRule(name string) error {
-	var rs *RuleState
-	rs, ok := registry.Load(name)
-	if !ok || (!rs.Triggered) {
-		r, err := ruleProcessor.GetRuleById(name)
-		if err != nil {
-			return err
-		}
-		rs, err = createRuleState(r)
-		if err != nil {
-			return err
-		}
-		err = doStartRule(rs, r.Options.Restart)
-		if err != nil {
-			return err
-		}
-	} else {
-		conf.Log.Warnf("Rule %s is already started", name)
-	}
-	return nil
-}
-
-func stopRule(name string) (result string) {
-	if rs, ok := registry.Load(name); ok && rs.Triggered {
-		rs.Stop()
-		err := ruleProcessor.ExecReplaceRuleState(name, false)
-		if err != nil {
-			conf.Log.Warnf("stop rule found error: %s", err.Error())
-		}
-		result = fmt.Sprintf("Rule %s was stopped.", name)
-	} else {
-		result = fmt.Sprintf("Rule %s was not found.", name)
-	}
-	return
-}
-
-func deleteRule(name string) (result string) {
-	if rs, ok := registry.Delete(name); ok {
-		if rs.Triggered {
-			(*rs.Topology).Cancel()
-		}
-		result = fmt.Sprintf("Rule %s was deleted.", name)
-	} else {
-		result = fmt.Sprintf("Rule %s was not found.", name)
-	}
-	return
-}
-
-func restartRule(name string) error {
-	stopRule(name)
-	time.Sleep(1 * time.Millisecond)
-	return startRule(name)
-}
-
-func recoverRule(rule *api.Rule) string {
-	if !rule.Triggered {
-		rs := &RuleState{
-			RuleId: rule.Id,
-		}
-		registry.Store(rule.Id, rs)
-		return fmt.Sprintf("Rule %s was stopped.", rule.Id)
-	}
-	err := startRule(rule.Id)
-	if err != nil {
-		return fmt.Sprintf("%v", err)
-	}
-	return fmt.Sprintf("Rule %s was started.", rule.Id)
 }
