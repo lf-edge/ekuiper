@@ -6,6 +6,7 @@ require (
 	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/alicebob/miniredis/v2 v2.15.1
 	github.com/benbjohnson/clock v1.0.0
+	github.com/deepch/vdk v0.0.19
 	github.com/eclipse/paho.mqtt.golang v1.4.2-0.20220810043731-079a117b4614
 	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.3.0
 	github.com/edgexfoundry/go-mod-messaging/v2 v2.3.0
