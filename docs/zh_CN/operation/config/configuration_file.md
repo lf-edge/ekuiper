@@ -115,6 +115,10 @@ GET http://localhost:9081/plugins/functions/prebuild
 
 **注意：只有官方发布的基于 debian 的 docker 镜像支持以上操作**
 
+## 规则配置
+
+配置规则选项的默认属性。所有的配置都可以在规则层面上被覆盖。查看[规则选项](../../rules/overview.md#选项)了解详情。
+
 ## Sink 配置
 
 配置 sink 的默认属性，目前主要用于配置[缓存策略](../../rules/sinks/overview.md#缓存)。在规则层有同样的配置选项，可以覆盖这些默认配置。
