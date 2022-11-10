@@ -49,7 +49,7 @@ rule:
     delay: 1000
     # The maximum interval in millisecond to retry
     maxDelay: 30000
-    # The strategy to increase the interval. The value must be an integer. The default value is 2.
+    # The exponential to increase the interval. It can be a float value.
     multiplier: 2
     # How large random value will be added or subtracted to the delay to prevent restarting multiple rules at the same time.
     jitterFactor: 0.1
