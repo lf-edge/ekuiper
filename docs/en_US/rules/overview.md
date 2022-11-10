@@ -258,7 +258,22 @@ The current options includes:
 | sendError          | bool: true           | Whether to send the error to sink. If true, any runtime error will be sent through the whole rule into sinks. Otherwise, the error will only be printed out in the log.                                                                                                                                                                           |
 | qos                | int:0                | Specify the qos of the stream. The options are 0: At most once; 1: At least once and 2: Exactly once. If qos is bigger than 0, the checkpoint mechanism will be activated to save states periodically so that the rule can be resumed from errors.                                                                                                |
 | checkpointInterval | int:300000           | Specify the time interval in milliseconds to trigger a checkpoint. This is only effective when qos is bigger than 0.                                                                                                                                                                                                                              |
+| restartStrategy    | struct               | Specify the strategy to automatic restarting rule after failures. This can help to get over recoverable failures without manual operations. Please check [Rule Restart Strategy](#rule-restart-strategy) for detail configuration items.                                                                                                          |
 
 For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](./state_and_fault_tolerance.md).
 
 The rule options can be defined globally in `etc/kuiper.yaml` under the `rules` section. The options defined in the rule json will override the global setting.
+
+### Rule Restart Strategy
+
+The restart strategy options include:
+
+| Option name  | Type & Default Value | Description                                                                                                                           |
+|--------------|----------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| attempts     | int: 0               | The maximum retry times. If set to 0, the rule will fail immediately without retrying.                                                |
+| delay        | int: 1000            | The default interval in millisecond to retry. If `multiplier` is not set, the retry interval will be fixed to this value.             |
+| maxDelay     | int: 30000           | The maximum interval in millisecond to retry. Only effective when `multiplier` is set so that the delay will increase for each retry. |
+| multiplier   | float: 2             | The exponential to increase the interval.                                                                                             |
+| jitterFactor | float: 0.1           | How large random value will be added or subtracted to the delay to prevent restarting multiple rules at the same time.                |
+
+The default values can be changed by editing the `etc/kuiper.yaml` file. 

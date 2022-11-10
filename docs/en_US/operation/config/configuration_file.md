@@ -114,6 +114,10 @@ After get the plugin info, users can try these plugins, [more info](../restapi/p
 
 **Note: only the official released debian based docker images support these operations**
 
+## Rule configurations
+
+Configure the default properties of the rule option. All the configuration can be overridden in rule level. Check [rule options](../../rules/overview.md#options) for detail.
+
 ## Sink configurations
 
 Configure the default properties of sink, currently mainly used to configure [cache policy](../../rules/sinks/overview.md#Caching). The same configuration options are available at the rules level to override these default configurations.
