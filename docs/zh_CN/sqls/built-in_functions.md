@@ -169,7 +169,7 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 
 分析函数可以使用 PARTITION BY 子句，语法如下：
 
-```text
+```
 AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>])
 ```
 

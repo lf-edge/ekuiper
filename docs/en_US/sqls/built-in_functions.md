@@ -168,7 +168,7 @@ Analytic function computations are performed over all the input events of the cu
 
 The syntax is like:
 
-```text
+```
 AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>])
 ```
 

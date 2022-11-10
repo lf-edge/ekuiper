@@ -105,7 +105,7 @@
 
 本场景将使用 MySQL 作为外部表数据存储位置。eKuiper 提供了预编译的 SQL source 插件，可访问 MySQL 数据并将其作为查询表。因此，在开始教程之前，我们需要先安装 SQL source 插件。使用 eKuiper manager 管理控制台，可直接在插件管理中，点击创建插件，如下图选择 SQL source 插件进行安装。
 
-![Install SQL source](install_sql_source.png)
+![Install SQL source](./install_sql_source.png)
 
 本场景将以 MySQL 为例，介绍如何与关系数据库进行连接。用户需要启动 MySQL 实例。在 MySQL 中创建表 `devices`, 其中包含 `id`, `name`, `deviceKind` 等字段并提前写入内容。
 
