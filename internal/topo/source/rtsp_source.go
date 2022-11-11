@@ -17,27 +17,21 @@ package source
 import (
 	"bytes"
 	"fmt"
-	"github.com/deepch/vdk/av"
-	"github.com/deepch/vdk/cgo/ffmpeg"
-	"github.com/deepch/vdk/format/rtspv2"
-	"image/jpeg"
-	"time"
-
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	ffmpeg "github.com/u2takey/ffmpeg-go"
+	"os"
+	"time"
 )
 
 const RTSP_DEFAULT_INTERVAL = 10000
 const RTSP_DEFAULT_TIMEOUT = 3
+const FRAMENUMBER = 5
 
 type RTSPPullSource struct {
-	url        string
-	interval   int
-	timeout    int
-	rtspClient *rtspv2.RTSPClient
-	vedioDe    *ffmpeg.VideoDecoder
-	videoIDX   int
+	url      string
+	interval int
+	timeout  int
 }
 
 func (rps *RTSPPullSource) Configure(_ string, props map[string]interface{}) error {
@@ -67,32 +61,6 @@ func (rps *RTSPPullSource) Configure(_ string, props map[string]interface{}) err
 		}
 	}
 
-	RTSPClient, err := rtspv2.Dial(rtspv2.RTSPClientOptions{URL: rps.url, DisableAudio: false, DialTimeout: time.Duration(rps.timeout) * time.Second, ReadWriteTimeout: time.Duration(rps.timeout) * time.Second, Debug: false})
-	if err != nil {
-		return err
-	}
-	var videoIDX int
-	AudioOnly := true
-	for i, codec := range RTSPClient.CodecData {
-		if codec.Type().IsVideo() {
-			AudioOnly = false
-		}
-		if codec.Type().IsVideo() {
-			videoIDX = i
-		}
-	}
-	if AudioOnly {
-		return fmt.Errorf("audo only rtsp stream, no vedio %#v", rps)
-	}
-
-	FrameDecoderSingle, err := ffmpeg.NewVideoDecoder(RTSPClient.CodecData[videoIDX].(av.VideoCodecData))
-	if err != nil {
-		return fmt.Errorf("ffmpeg get NewVideoDecoder error %v", err)
-	}
-	rps.videoIDX = videoIDX
-	rps.vedioDe = FrameDecoderSingle
-	rps.rtspClient = RTSPClient
-	conf.Log.Debugf("Initialized with configurations %#v.", rps)
 	return nil
 }
 
@@ -102,10 +70,8 @@ func (rps *RTSPPullSource) Open(ctx api.StreamContext, consumer chan<- api.Sourc
 
 func (rps *RTSPPullSource) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
-	logger.Infof("Closing HTTP pull source")
-	if rps.rtspClient != nil {
-		rps.rtspClient.Close()
-	}
+	logger.Infof("Closing rtsp pull source")
+
 	return nil
 }
 
@@ -116,31 +82,36 @@ func (rps *RTSPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 	for {
 		select {
 		case <-ticker.C:
-
-		case packetAV := <-rps.rtspClient.OutgoingPacketQueue:
-			if packetAV.IsKeyFrame && packetAV.Idx == int8(rps.videoIDX) {
-				if pic, err := rps.vedioDe.DecodeSingle(packetAV.Data); err == nil && pic != nil {
-					buf := new(bytes.Buffer)
-					if err = jpeg.Encode(buf, &pic.Image, nil); err == nil {
-						result, e := ctx.Decode(buf.Bytes())
-						meta := make(map[string]interface{})
-						if e != nil {
-							logger.Errorf("Invalid data format, cannot decode %s with error %s", string(buf.Bytes()), e)
-							break
-						}
-						logger.Infof("send data to device node %s\n", string(buf.Bytes()))
-
-						select {
-						case consumer <- api.NewDefaultSourceTuple(result, meta):
-							logger.Debugf("send data to device node")
-						case <-ctx.Done():
-							return
-						}
-					}
-				}
+			buf := rps.readFrameAsJpeg()
+			result, e := ctx.Decode(buf.Bytes())
+			meta := make(map[string]interface{})
+			if e != nil {
+				logger.Errorf("Invalid data format, cannot decode %s with error %s", string(buf.Bytes()), e)
+				return
 			}
+
+			select {
+			case consumer <- api.NewDefaultSourceTuple(result, meta):
+				logger.Debugf("send data to device node")
+			case <-ctx.Done():
+				return
+			}
+
 		case <-ctx.Done():
 			return
 		}
 	}
+}
+
+func (rps *RTSPPullSource) readFrameAsJpeg() *bytes.Buffer {
+	buf := bytes.NewBuffer(nil)
+	err := ffmpeg.Input(rps.url).
+		Filter("select", ffmpeg.Args{fmt.Sprintf("gte(n,%d)", FRAMENUMBER)}).
+		Output("pipe:", ffmpeg.KwArgs{"vframes": 1, "format": "image2", "vcodec": "mjpeg"}).
+		WithOutput(buf, os.Stdout).
+		Run()
+	if err != nil {
+		panic(err)
+	}
+	return buf
 }

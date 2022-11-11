@@ -1,6 +1,7 @@
 #Global httppull configurations
 default:
   # url of the request server address
+  # username password, can be this format
   url: http://localhost
   # post, get, put, delete
   # The interval between the requests, time unit is ms
