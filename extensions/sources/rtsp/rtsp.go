@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package source
+package main
 
 import (
 	"bytes"
@@ -25,13 +25,11 @@ import (
 )
 
 const RTSP_DEFAULT_INTERVAL = 10000
-const RTSP_DEFAULT_TIMEOUT = 3
 const FRAMENUMBER = 5
 
 type RTSPPullSource struct {
 	url      string
 	interval int
-	timeout  int
 }
 
 func (rps *RTSPPullSource) Configure(_ string, props map[string]interface{}) error {
@@ -49,15 +47,6 @@ func (rps *RTSPPullSource) Configure(_ string, props map[string]interface{}) err
 			return fmt.Errorf("not valid interval value %v", i1)
 		} else {
 			rps.interval = i1
-		}
-	}
-
-	rps.timeout = RTSP_DEFAULT_TIMEOUT
-	if i, ok := props["timeout"]; ok {
-		if i1, ok1 := i.(int); ok1 {
-			rps.timeout = i1
-		} else {
-			return fmt.Errorf("not valid timeout value %v", i1)
 		}
 	}
 
@@ -96,7 +85,6 @@ func (rps *RTSPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 			case <-ctx.Done():
 				return
 			}
-
 		case <-ctx.Done():
 			return
 		}
@@ -114,4 +102,8 @@ func (rps *RTSPPullSource) readFrameAsJpeg() *bytes.Buffer {
 		panic(err)
 	}
 	return buf
+}
+
+func Rtsp() api.Source {
+	return &RTSPPullSource{}
 }
