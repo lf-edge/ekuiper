@@ -90,6 +90,7 @@ PLUGINS := sinks/file \
 	sources/random \
 	sources/zmq \
 	sources/sql \
+	sources/rtsp \
 	sinks/tdengine \
 	functions/accumulateWordCount \
 	functions/countPlusOne \
