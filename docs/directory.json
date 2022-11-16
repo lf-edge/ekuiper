@@ -232,6 +232,10 @@
 								{
 									"title": "随机源",
 									"path": "rules/sources/plugin/random"
+								},
+								{
+									"title": "RTSP 视频源",
+									"path": "rules/sources/plugin/rtsp"
 								}
 							]
 						}
@@ -813,6 +817,10 @@
 								{
 									"title": "Random source",
 									"path": "rules/sources/plugin/random"
+								},
+								{
+									"title": "RTSP source",
+									"path": "rules/sources/plugin/rtsp"
 								}
 							]
 						}
