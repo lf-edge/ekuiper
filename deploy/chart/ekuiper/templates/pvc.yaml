@@ -1,0 +1,22 @@
+{{- if $.Values.persistence.enabled }}
+{{- $top := . -}}
+{{- range $mount := .Values.ekuiperMounts }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ printf "%s-%s" $.Release.Name (tpl $mount.name $) }}
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    kubesphere.io/creator: admin
+  finalizers:
+  - kubernetes.io/pvc-protection
+spec:
+  accessModes:
+    - {{ $.Values.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ $mount.capacity }}
+  storageClassName: {{ $.Values.persistence.storageClass }}
+{{- end }}
+{{- end }}

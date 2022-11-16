@@ -65,10 +65,10 @@ Create the name of the service account to use
 {{/*
 Get the TLS secret.
 */}}
-{{- define "neuron.tlsSecretName" -}}
+{{- define "ekuiper.tlsSecretName" -}}
     {{- if .Values.tls.existingSecret -}}
         {{- printf "%s" (tpl .Values.tls.existingSecret $) -}}
     {{- else -}}
-        {{- printf "%s-certs" (include "neuron.fullname" .) -}}
+        {{- printf "%s-certs" (include "ekuiper.fullname" .) -}}
     {{- end -}}
 {{- end -}}
