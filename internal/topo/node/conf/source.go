@@ -38,10 +38,18 @@ func GetSourceConf(sourceType string, options *ast.Options) map[string]interface
 		} else {
 			props = def
 		}
+		//config keys in etc folder will transform to lowercase
+		//while those in data will not
 		if c, ok := cfg[strings.ToLower(confkey)]; ok {
 			for k, v := range c {
 				props[k] = v
 			}
+		} else if c, ok := cfg[confkey]; ok {
+			for k, v := range c {
+				props[k] = v
+			}
+		} else {
+			conf.Log.Warnf("fail to find config key %s for source %s", confkey, sourceType)
 		}
 	}
 	f := options.FORMAT

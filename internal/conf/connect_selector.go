@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-const CONNECTION_CONF = "connections/connection.yaml"
-
 type ConSelector struct {
 	ConnSelectorStr string
 	Type            string // mqtt edgex
@@ -19,7 +17,7 @@ func (c *ConSelector) Init() error {
 		return fmt.Errorf("not a valid connection selector : %s", c.ConnSelectorStr)
 	}
 	c.Type = strings.ToLower(conTypeSel[0])
-	c.CfgKey = strings.ToLower(conTypeSel[1])
+	c.CfgKey = conTypeSel[1]
 	return nil
 }
 
@@ -34,7 +32,9 @@ func (c *ConSelector) ReadCfgFromYaml() (props map[string]interface{}, err error
 	if len(cfg) == 0 {
 		return nil, fmt.Errorf("fail to parse yaml for connection Type %s", c.Type)
 	} else {
-		if cons, found := cfg[c.CfgKey]; found {
+		if cons, found := cfg[strings.ToLower(c.CfgKey)]; found {
+			props = cons
+		} else if cons, found := cfg[c.CfgKey]; found {
 			props = cons
 		} else {
 			return nil, fmt.Errorf("not found connection Type and Selector:  %s.%s", c.Type, c.CfgKey)
