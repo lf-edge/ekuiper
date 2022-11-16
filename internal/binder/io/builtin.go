@@ -34,7 +34,6 @@ var (
 		"file":     func() api.Source { return &source.FileSource{} },
 		"memory":   func() api.Source { return memory.GetSource() },
 		"neuron":   func() api.Source { return neuron.GetSource() },
-		"rtsp":     func() api.Source { return &source.RTSPPullSource{} },
 	}
 	sinks = map[string]NewSinkFunc{
 		"log":         sink.NewLogSink,

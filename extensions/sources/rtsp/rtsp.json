@@ -1,0 +1,68 @@
+{
+	"libs": [],
+	"about": {
+		"trial": false,
+		"author": {
+			"name": "EMQ",
+			"email": "contact@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/builtin/http_pull.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/builtin/http_pull.md"
+		},
+		"description": {
+			"en_US": "eKuiper provides built-in support for pulling HTTP source stream, which can pull the message from HTTP server broker and feed into the eKuiper processing pipeline.",
+			"zh_CN": "eKuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 eKuiper 处理管道。"
+		}
+	},
+	"properties": {
+		"default": [{
+			"name": "url",
+			"default": "127.0.0.1:5536",
+			"optional": false,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The URL where to get the result.",
+				"zh_CN": "获取结果的 URL"
+			},
+			"label": {
+				"en_US": "URL",
+				"zh_CN": "路径"
+			}
+		}, {
+			"name": "interval",
+			"default": 1000,
+			"optional": true,
+			"control": "text",
+			"type": "int",
+			"hint": {
+				"en_US": "The interval between the requests, time unit is ms.",
+				"zh_CN": "请求之间的间隔时间，单位为 ms"
+			},
+			"label": {
+				"en_US": "Interval",
+				"zh_CN": "间隔时间"
+			}
+		}]
+	},
+	"outputs": [
+		{
+			"label": {
+				"en_US": "Output",
+				"zh_CN": "输出"
+			},
+			"value": "signal"
+		}
+	],
+	"node": {
+		"category": "source",
+		"icon": "iconPath",
+		"label": {
+			"en_US": "RTSP PULL",
+			"zh_CN": "RTSP PULL"
+		}
+	}
+}
