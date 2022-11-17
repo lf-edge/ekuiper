@@ -48,13 +48,19 @@ type neuronTemplate struct {
 func (s *sink) Configure(props map[string]interface{}) error {
 	s.url = NeuronUrl
 	cc := &c{
-		NodeName:  "unknown",
-		GroupName: "unknown",
-		Raw:       false,
+		Raw: false,
 	}
 	err := cast.MapToStruct(props, cc)
 	if err != nil {
 		return err
+	}
+	if !cc.Raw {
+		if cc.NodeName == "" {
+			return fmt.Errorf("node name is required if raw is not set")
+		}
+		if cc.GroupName == "" {
+			return fmt.Errorf("group name is required if raw is not set")
+		}
 	}
 	s.c = cc
 	return nil
