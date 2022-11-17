@@ -59,7 +59,7 @@ func (f *labelImage) Exec(args []interface{}, ctx api.FunctionContext) (interfac
 	}
 	var outerErr error
 	f.once.Do(func() {
-		ploc := path.Join(ctx.GetRootPath(), "etc", "functions")
+		ploc := path.Join(ctx.GetRootPath(), "data", "functions")
 		f.labels, err = loadLabels(path.Join(ploc, f.labelPath))
 		if err != nil {
 			outerErr = fmt.Errorf("fail to load labels: %s", err)

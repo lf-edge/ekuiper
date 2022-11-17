@@ -235,8 +235,10 @@ func UninstallSink(name string) {
 	if ui, ok := gSinkmetadata[name+".json"]; ok {
 		if nil != ui.About {
 			ui.About.Installed = false
+			delete(gSinkmetadata, name+".json")
 		}
 	}
+	delYamlConf(fmt.Sprintf(SinkCfgOperatorKeyTemplate, name))
 }
 func ReadSinkMetaFile(filePath string, installed bool) error {
 	finame := path.Base(filePath)

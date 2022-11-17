@@ -356,7 +356,9 @@ func (m *Manager) Delete(name string) error {
 		meta.UninstallSource(s)
 	}
 	for _, s := range pinfo.Sinks {
-		p := path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+".json")
+		p := path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+".yaml")
+		os.Remove(p)
+		p = path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+".json")
 		os.Remove(p)
 		meta.UninstallSink(s)
 	}

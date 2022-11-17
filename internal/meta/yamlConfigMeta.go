@@ -117,6 +117,17 @@ func DelConnectionConfKey(plgName, confKey, language string) error {
 	return delConfKey(configOperatorKey, confKey, language)
 }
 
+func delYamlConf(configOperatorKey string) {
+
+	ConfigManager.lock.Lock()
+	defer ConfigManager.lock.Unlock()
+
+	_, ok := ConfigManager.cfgOperators[configOperatorKey]
+	if ok {
+		delete(ConfigManager.cfgOperators, configOperatorKey)
+	}
+}
+
 func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 
 	ConfigManager.lock.RLock()
