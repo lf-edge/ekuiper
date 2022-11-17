@@ -188,7 +188,7 @@ func SinkOpen(sinkType string, config map[string]interface{}) error {
 }
 
 func SourceOpen(sourceType string, config map[string]interface{}) error {
-	dataSource := "testSource"
+	dataSource := "/$$TEST_CONNECTION$$"
 	if v, ok := config["DATASOURCE"]; ok {
 		dataSource = v.(string)
 	}

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -80,13 +80,15 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 			return fmt.Errorf("invalid path %s", cfg.Path)
 		}
 	}
-	fs.file = path.Join(cfg.Path, fileName)
+	if fileName != "/$$TEST_CONNECTION$$" {
+		fs.file = path.Join(cfg.Path, fileName)
 
-	if fi, err := os.Stat(fs.file); err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("file %s not exist", fs.file)
-		} else if !fi.Mode().IsRegular() {
-			return fmt.Errorf("file %s is not a regular file", fs.file)
+		if fi, err := os.Stat(fs.file); err != nil {
+			if os.IsNotExist(err) {
+				return fmt.Errorf("file %s not exist", fs.file)
+			} else if !fi.Mode().IsRegular() {
+				return fmt.Errorf("file %s is not a regular file", fs.file)
+			}
 		}
 	}
 	fs.config = cfg
