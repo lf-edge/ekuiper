@@ -1714,7 +1714,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
 			},
 			result: []map[string]interface{}{{
-				"sum":        123203,
+				"sum":        int64(123203),
 				"ws":         int64(1541152486013),
 				"window_end": int64(1541152487013),
 			}},
@@ -1735,7 +1735,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			},
 
 			result: []map[string]interface{}{{
-				"s": 123203,
+				"s": int64(123203),
 			}},
 		},
 		//8
@@ -1753,7 +1753,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			},
 			result: []map[string]interface{}{{
-				"sum": 123203,
+				"sum": int64(123203),
 			}},
 		},
 		//9
@@ -1773,10 +1773,10 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			result: []map[string]interface{}{{
 				"all": 3,
 				"c":   2,
-				"a":   40,
-				"s":   80,
-				"min": 27,
-				"max": 53,
+				"a":   int64(40),
+				"s":   int64(80),
+				"min": int64(27),
+				"max": int64(53),
 			}},
 		},
 		//10
@@ -2158,8 +2158,8 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			},
 			result: []map[string]interface{}{{
 				"var2": "moduleB topic",
-				"max2": 1,
-				"max3": 100,
+				"max2": int64(1),
+				"max3": int64(100),
 			}},
 		},
 	}
