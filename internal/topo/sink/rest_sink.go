@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -201,7 +200,7 @@ func (ms *RestSink) Open(ctx api.StreamContext) error {
 		Timeout:   time.Duration(ms.timeout) * time.Millisecond}
 	logger.Infof("open rest sink with configuration: {method: %s, url: %s, bodyType: %s, timeout: %d, header: %v, sendSingle: %v, tls cfg: %v", ms.method, ms.url, ms.bodyType, ms.timeout, ms.headers, ms.sendSingle, tlsOpts)
 
-	if _, err := url.Parse(ms.url); err != nil {
+	if err := httpx.IsHttpUrl(ms.url); err != nil {
 		return err
 	}
 	return nil

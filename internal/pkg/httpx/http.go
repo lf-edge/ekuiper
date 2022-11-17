@@ -220,3 +220,17 @@ func DownloadFile(filepath string, uri string) error {
 	_, err = io.Copy(out, src)
 	return err
 }
+
+func IsHttpUrl(str string) error {
+	url, err := url.ParseRequestURI(str)
+	if err != nil {
+		return err
+	}
+	if url.Scheme != "http" && url.Scheme != "https" {
+		return fmt.Errorf("Invalid scheme %s", url.Scheme)
+	}
+	if url.Host == "" {
+		return fmt.Errorf("Invalid url, host not found")
+	}
+	return nil
+}

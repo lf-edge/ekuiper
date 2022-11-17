@@ -21,7 +21,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -167,7 +166,7 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 		}
 	}
 
-	_, err := url.Parse(hps.url)
+	err := httpx.IsHttpUrl(hps.url)
 	if err != nil {
 		return err
 	}
