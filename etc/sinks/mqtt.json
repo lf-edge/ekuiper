@@ -82,7 +82,7 @@
     },
     {
       "name": "protocolVersion",
-      "default": "3.1",
+      "default": "3.1.1",
       "optional": true,
       "control": "select",
       "values": [

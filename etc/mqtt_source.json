@@ -80,17 +80,21 @@
 			}
 		}, {
 			"name": "protocolVersion",
-			"default": "3.1",
+			"default": "3.1.1",
 			"optional": true,
 			"connection_related": true,
-			"control": "text",
+			"control": "select",
+			"values": [
+				"3.1",
+				"3.1.1"
+			],
 			"type": "string",
 			"hint": {
 				"en_US": "MQTT protocol version. 3.1 (also refer as MQTT 3) or 3.1.1 (also refer as MQTT 4). If not specified, the default value is 3.1.",
 				"zh_CN": "MQTT 协议版本。3.1 (也被称为 MQTT 3) 或者 3.1.1 (也被称为 MQTT 4)。 如果未指定，缺省值为 3.1。 "
 			},
 			"label": {
-				"en_US": "protocolVersion",
+				"en_US": "MQTT Protocol Version",
 				"zh_CN": "MQTT 协议版本"
 			}
 		}, {
@@ -105,7 +109,7 @@
 				"zh_CN": "MQTT 连接的客户端 ID。 如果未指定，将使用一个 uuid。"
 			},
 			"label": {
-				"en_US": "clientid",
+				"en_US": "MQTT Client ID",
 				"zh_CN": "客户端 ID"
 			}
 		}, {

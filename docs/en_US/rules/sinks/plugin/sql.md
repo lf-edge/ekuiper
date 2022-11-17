@@ -33,6 +33,7 @@ for example, if he only wants mysql, then he can build with build tag `mysql`.
 | table          | false    | The table name of the result                                                                                                                                  |
 | fields         | true     | The fields to be inserted to. The result map and the database should both have these fields. If not specified, all fields in the result map will be inserted. |
 | tableDataField | true     | Write the nested values of the tableDataField into database.                                                                                                  |
+| rowkindField   | true     | Specify which field represents the action like insert or update. If not specified, all rows are default to insert.                                            |
 
 ## Sample usage
 

@@ -37,7 +37,7 @@
       "optional": true,
       "control": "select",
       "default": "GET",
-      "type": "list_string",
+      "type": "string",
       "values": [
         "GET",
         "POST",
@@ -59,7 +59,7 @@
       "optional": true,
       "control": "select",
       "default": "none",
-      "type": "list_string",
+      "type": "string",
       "values": [
         "none",
         "json",

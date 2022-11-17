@@ -22,7 +22,7 @@
 			"name": "method",
 			"default": "POST",
 			"optional": true,
-			"control": "text",
+			"control": "select",
 			"type": "string",
 			"values": ["POST","PUT"],
 			"hint": {
