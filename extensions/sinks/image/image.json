@@ -41,7 +41,7 @@
 			"jpeg",
 			"png"
 		],
-		"type": "list_string",
+		"type": "string",
 		"hint": {
 			"en_US": "File format, support jpeg and png.",
 			"zh_CN": "文件格式，支持 jpeg 和 png。"

@@ -31,7 +31,7 @@
 				"zh_CN": "Redis的地址, 例如: 10.122.48.17:6379"
 			},
 			"label": {
-				"en_US": "Addr",
+				"en_US": "Address",
 				"zh_CN": "地址"
 			}
 		},
@@ -68,7 +68,7 @@
 		{
 			"name": "key",
 			"default": "key",
-			"optional": false,
+			"optional": true,
 			"control": "text",
 			"type": "string",
 			"hint": {
@@ -91,8 +91,8 @@
 				"zh_CN": "json数据某一个属性，配置它作为redis数据的key值, 例如 deviceName,该字段必须存在且为string类型，否则以field字符作为key,注意:配置该值不要使用数据模板"
 			},
 			"label": {
-				"en_US": "field",
-				"zh_CN": "field"
+				"en_US": "Key Field",
+				"zh_CN": "Key 字段"
 			}
 		},
 		{
@@ -110,7 +110,7 @@
 				"zh_CN": "Redis 数据的类型, 默认是 string, 注意修改类型之后，需在redis中删除原有key，否则修改无效。"
 			},
 			"label": {
-				"en_US": "data type",
+				"en_US": "Data type",
 				"zh_CN": "数据类型"
 			}
 		},
@@ -125,9 +125,32 @@
 				"zh_CN": "Redis数据的超时时间，仅在string类型数据有效,单位是秒,默认是永久保存-1 "
 			},
 			"label": {
-				"en_US": "expiration",
+				"en_US": "Expiration",
 				"zh_CN": "超时时间"
 			}
+		},
+		{
+			"name": "rowkindField",
+			"default": "",
+			"optional": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "Specify which field represents the action like insert or update. If not specified, all rows are default to insert",
+				"zh_CN": "指定哪个字段表示操作，例如插入或更新。如果不指定，默认所有的数据都是插入操作"
+			},
+			"label": {
+				"en_US": "Rowkind Field",
+				"zh_CN": "动作字段"
+			}
 		}
-	]
+	],
+	"node": {
+		"category": "sink",
+		"icon": "iconPath",
+		"label": {
+			"en": "Redis",
+			"zh": "Redis"
+		}
+	}
 }
