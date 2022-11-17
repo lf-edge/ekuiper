@@ -114,7 +114,7 @@
 					"nats-jetstream",
 					"nats-core"
 				],
-				"type": "list_string",
+				"type": "string",
 				"hint": {
 					"en_US": "The EdgeX message bus type, currently two types of message buses are supported. If specified other values, then will use the default redis value.",
 					"zh_CN": "EdgeX 消息总线类型，目前支持两种消息总线。如果指定了错误的消息总线类型，那么会使用缺省 redis 类型。"
@@ -133,7 +133,7 @@
 					"event",
 					"request"
 				],
-				"type": "list_string",
+				"type": "string",
 				"hint": {
 					"en_US": "The EdgeX message model type. If connected to the topic of EdgeX application service, the message model is an event. Otherwise, if connected to the topic of EdgeX message bus directly to receive the message from device service or core data, the message is request.",
 					"zh_CN": "EdgeX 消息模型类型。如果连接到 EdgeX application service 的 topic, 则消息为 event 类型。否则，如果直接连接到消息总线的 topic，接收到 device service 或者 core data 发出的数据，则消息类型为 request。"

@@ -74,6 +74,21 @@
 			"en_US": "Table field",
 			"zh_CN": "表字段"
 		}
+	},
+	{
+		"name": "rowkindField",
+		"default": "",
+		"optional": true,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "Specify which field represents the action like insert or update. If not specified, all rows are default to insert",
+			"zh_CN": "指定哪个字段表示操作，例如插入或更新。如果不指定，默认所有的数据都是插入操作"
+		},
+		"label": {
+			"en_US": "Rowkind Field",
+			"zh_CN": "动作字段"
+		}
 	}
  ],
 	"node": {
