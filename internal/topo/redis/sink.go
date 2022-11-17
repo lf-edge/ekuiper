@@ -78,8 +78,8 @@ func (r *RedisSink) Open(ctx api.StreamContext) (err error) {
 		Password: r.c.Password,
 		DB:       r.c.Db, // use default DB
 	})
-
-	return nil
+	_, err = r.cli.Ping().Result()
+	return err
 }
 
 func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
