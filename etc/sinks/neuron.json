@@ -19,7 +19,7 @@
   "properties": [
     {
       "name": "nodeName",
-      "optional": false,
+      "optional": true,
       "control": "text",
       "default": "",
       "type": "string",
@@ -34,7 +34,7 @@
     },
     {
       "name": "groupName",
-      "optional": false,
+      "optional": true,
       "control": "text",
       "default": "",
       "type": "string",
@@ -50,7 +50,7 @@
     {
       "name": "tags",
       "default": [],
-      "optional": false,
+      "optional": true,
       "control": "list",
       "type": "list_string",
       "hint": {

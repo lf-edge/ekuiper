@@ -30,14 +30,14 @@
           "zh_CN": "数据库服务器的 URL"
         },
         "label": {
-          "en_US": "server address",
+          "en_US": "Server address",
           "zh_CN": "数据库地址"
         }
       },
       {
         "name": "interval",
         "default": 1000,
-        "optional": false,
+        "optional": true,
         "control": "text",
         "type": "int",
         "hint": {
@@ -63,7 +63,7 @@
               "zh_CN": "指定查询的数据库表名"
             },
             "label": {
-              "en_US": "tableName",
+              "en_US": "Table Name",
               "zh_CN": "表名"
             }
           },
@@ -78,7 +78,7 @@
               "zh_CN": "索引字段名"
             },
             "label": {
-              "en_US": "indexField",
+              "en_US": "Index Field",
               "zh_CN": "索引字段名"
             }
           },
@@ -93,7 +93,7 @@
               "zh_CN": "索引字段初始值"
             },
             "label": {
-              "en_US": "index init value",
+              "en_US": "Index init value",
               "zh_CN": "索引字段初始值"
             }
           },
@@ -118,14 +118,14 @@
             "optional": true,
             "control": "select",
             "type": "string",
-            "values": ["DATETIME"],
+            "values": ["DATETIME", "INT", "FLOAT", "STRING"],
             "hint": {
               "en_US": "is the index datetime type",
               "zh_CN": "是否为时间格式"
             },
             "label": {
-              "en_US": "indexFieldType",
-              "zh_CN": "indexFieldType"
+              "en_US": "Index Field Type",
+              "zh_CN": "索引字段格式"
             }
           },
           {
@@ -139,8 +139,8 @@
               "zh_CN": "dateTimeFormat"
             },
             "label": {
-              "en_US": "dateTimeFormat",
-              "zh_CN": "dateTimeFormat"
+              "en_US": "DateTime Format",
+              "zh_CN": "时间格式"
             }
           }
         ],
@@ -170,7 +170,7 @@
               "zh_CN": "查询语句模版"
             },
             "label": {
-              "en_US": "query template",
+              "en_US": "Query template",
               "zh_CN": "查询语句模版"
             }
           },
@@ -185,7 +185,7 @@
               "zh_CN": "索引字段名"
             },
             "label": {
-              "en_US": "indexField",
+              "en_US": "Index Field",
               "zh_CN": "索引字段名"
             }
           },
@@ -200,7 +200,7 @@
               "zh_CN": "索引字段初始值"
             },
             "label": {
-              "en_US": "index init value",
+              "en_US": "Index init value",
               "zh_CN": "索引字段初始值"
             }
           },
@@ -210,14 +210,14 @@
             "optional": true,
             "control": "select",
             "type": "string",
-            "values": ["DATETIME"],
+            "values": ["DATETIME", "INT", "FLOAT", "STRING"],
             "hint": {
               "en_US": "is the index datetime type",
               "zh_CN": "是否为时间格式"
             },
             "label": {
-              "en_US": "indexFieldType",
-              "zh_CN": "indexFieldType"
+              "en_US": "Index Field Type",
+              "zh_CN": "索引字段格式"
             }
           },
           {
@@ -231,8 +231,8 @@
               "zh_CN": "dateTimeFormat"
             },
             "label": {
-              "en_US": "dateTimeFormat",
-              "zh_CN": "dateTimeFormat"
+              "en_US": "DateTime Format",
+              "zh_CN": "时间格式"
             }
           }
         ],
@@ -260,7 +260,7 @@
     }
   ],
   "node": {
-    "category": ["Protocol","Protocol1"],
+    "category": "source",
     "icon": "iconPath",
     "label": {
       "en_US": "SQL",

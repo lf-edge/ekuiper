@@ -30,6 +30,7 @@
 | table          | false    | 结果的表名                                       |
 | fields         | true     | 要插入的字段。结果映射和数据库都应该有这些字段。如果未指定，将插入结果映射中的所有字段 |
 | tableDataField | true     | 将 tableDataField 的嵌套值写入数据库。                 |
+| rowkindField   | true     | 指定哪个字段表示操作，例如插入或更新。如果不指定，默认所有的数据都是插入操作      |
 
 ## 使用样例
 

@@ -43,7 +43,7 @@
         "tcp",
         "redis"
       ],
-      "type": "list_string",
+      "type": "string",
       "hint": {
         "en_US": "The protocol. If it's not specified, then use default value 'redis'.",
         "zh_CN": "协议，如未指定，使用缺省值 redis。"
@@ -128,7 +128,7 @@
         "nats-jetstream",
         "nats-core"
       ],
-      "type": "list_string",
+      "type": "string",
       "hint": {
         "en_US": "The message bus type, two types of message buses are supported,'redis', 'zero' or 'mqtt', and 'redis' is the default value.",
         "zh_CN": "消息总线类型，目前支持两种类型的消息总线，'redis', 'zero' 或者 'mqtt'，其中 'redis' 为缺省类型。"
@@ -147,7 +147,7 @@
         "event",
         "request"
       ],
-      "type": "list_string",
+      "type": "string",
       "hint": {
         "en_US": "The EdgeX message model type. To publish the message as an event like EdgeX application service, use `event`. Otherwise, to publish the message as an event request like EdgeX device service or core data service, use `request`. If not specified, then use the default value `event`.",
         "zh_CN": "EdgeX 消息模型类型。若要将消息发送为类似 apllication service 的 event 类型，则应设置为 `event`。否则，若要将消息发送为类似 device service 或者 core data service 的 event request 类型，则应设置为 `request`。如未指定，使用缺省值 `event` 。"

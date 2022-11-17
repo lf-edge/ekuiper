@@ -31,6 +31,36 @@
         "en_US": "Topic",
         "zh_CN": "主题"
       }
+    },
+    {
+      "name": "rowkindField",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Specify which field represents the action like insert or update. If not specified, all rows are default to insert",
+        "zh_CN": "指定哪个字段表示操作，例如插入或更新。如果不指定，默认所有的数据都是插入操作"
+      },
+      "label": {
+        "en_US": "Rowkind Field",
+        "zh_CN": "动作字段"
+      }
+    },
+    {
+      "name": "keyField",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Specify which field represents the key of the message. It is required when rowkindField is specified.",
+        "zh_CN": "指定哪个字段表示消息的key。当指定了动作字段时，该字段是必须的。"
+      },
+      "label": {
+        "en_US": "Key Field",
+        "zh_CN": "Key字段"
+      }
     }
   ],
   "node": {

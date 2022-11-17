@@ -26,9 +26,10 @@ Restart the eKuiper server to activate the plugin.
 | field         | true     | This field must exist and be of type string. Otherwise, use the field character as the key. Note: Do not use a data template to configure this value                                                 |
 | dataType      | false    | The default Redis data type is string. Note that the original key must be deleted after the Redis data type is changed. Otherwise, the modification is invalid. now only support "list" and "string" |
 | expiration    | false    | Timeout duration of Redis data. This parameter is valid only for string data in seconds. The default value is -1                                                                                     |
+| rowkindField  | true     | Specify which field represents the action like insert or update. If not specified, all rows are default to insert.                                                                                   |
 ## Sample usage
 
-Below is a sample for selecting temperature great than 50 degree, and some profiles only for your reference.
+Below is a sample for selecting temperature greater than 50 degree, and some profiles only for your reference.
 
 ### /tmp/redisRule.txt
 ```json
