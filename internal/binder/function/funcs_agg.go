@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 func registerAggFunc() {
@@ -33,7 +34,7 @@ func registerAggFunc() {
 					if r, err := sliceIntTotal(arg0); err != nil {
 						return err, false
 					} else {
-						return r / c, true
+						return r / int64(c), true
 					}
 				case float64:
 					if r, err := sliceFloatTotal(arg0); err != nil {
@@ -67,13 +68,13 @@ func registerAggFunc() {
 				v := getFirstValidArg(arg0)
 				switch t := v.(type) {
 				case int:
-					if r, err := sliceIntMax(arg0, t); err != nil {
+					if r, err := sliceIntMax(arg0, int64(t)); err != nil {
 						return err, false
 					} else {
 						return r, true
 					}
 				case int64:
-					if r, err := sliceIntMax(arg0, int(t)); err != nil {
+					if r, err := sliceIntMax(arg0, t); err != nil {
 						return err, false
 					} else {
 						return r, true
@@ -108,13 +109,13 @@ func registerAggFunc() {
 				v := getFirstValidArg(arg0)
 				switch t := v.(type) {
 				case int:
-					if r, err := sliceIntMin(arg0, t); err != nil {
+					if r, err := sliceIntMin(arg0, int64(t)); err != nil {
 						return err, false
 					} else {
 						return r, true
 					}
 				case int64:
-					if r, err := sliceIntMin(arg0, int(t)); err != nil {
+					if r, err := sliceIntMin(arg0, t); err != nil {
 						return err, false
 					} else {
 						return r, true
@@ -227,10 +228,11 @@ func getFirstValidArg(s []interface{}) interface{} {
 	return nil
 }
 
-func sliceIntTotal(s []interface{}) (int, error) {
-	var total int
+func sliceIntTotal(s []interface{}) (int64, error) {
+	var total int64
 	for _, v := range s {
-		if vi, ok := v.(int); ok {
+		vi, err := cast.ToInt64(v, cast.CONVERT_SAMEKIND)
+		if err == nil {
 			total += vi
 		} else if v != nil {
 			return 0, fmt.Errorf("requires int but found %[1]T(%[1]v)", v)
@@ -250,14 +252,15 @@ func sliceFloatTotal(s []interface{}) (float64, error) {
 	}
 	return total, nil
 }
-func sliceIntMax(s []interface{}, max int) (int, error) {
+func sliceIntMax(s []interface{}, max int64) (int64, error) {
 	for _, v := range s {
-		if vi, ok := v.(int); ok {
-			if max < vi {
+		vi, err := cast.ToInt64(v, cast.CONVERT_SAMEKIND)
+		if err == nil {
+			if vi > max {
 				max = vi
 			}
 		} else if v != nil {
-			return 0, fmt.Errorf("requires int but found %[1]T(%[1]v)", v)
+			return 0, fmt.Errorf("requires int64 but found %[1]T(%[1]v)", v)
 		}
 	}
 	return max, nil
@@ -287,14 +290,15 @@ func sliceStringMax(s []interface{}, max string) (string, error) {
 	}
 	return max, nil
 }
-func sliceIntMin(s []interface{}, min int) (int, error) {
+func sliceIntMin(s []interface{}, min int64) (int64, error) {
 	for _, v := range s {
-		if vi, ok := v.(int); ok {
-			if min > vi {
+		vi, err := cast.ToInt64(v, cast.CONVERT_SAMEKIND)
+		if err == nil {
+			if vi < min {
 				min = vi
 			}
 		} else if v != nil {
-			return 0, fmt.Errorf("requires int but found %[1]T(%[1]v)", v)
+			return 0, fmt.Errorf("requires int64 but found %[1]T(%[1]v)", v)
 		}
 	}
 	return min, nil
@@ -315,7 +319,7 @@ func sliceFloatMin(s []interface{}, min float64) (float64, error) {
 func sliceStringMin(s []interface{}, min string) (string, error) {
 	for _, v := range s {
 		if vs, ok := v.(string); ok {
-			if min < vs {
+			if vs < min {
 				min = vs
 			}
 		} else if v != nil {
