@@ -396,7 +396,7 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		id, err := createRule("", string(body), true)
+		id, err := createRule("", string(body))
 		if err != nil {
 			handleError(w, err, "", logger)
 			return

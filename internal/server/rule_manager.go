@@ -69,14 +69,11 @@ func (rr *RuleRegistry) Delete(key string) (*rule.RuleState, bool) {
 	return result, ok
 }
 
-func createRule(name, ruleJson string, shouldStart bool) (string, error) {
+func createRule(name, ruleJson string) (string, error) {
 	// Validate the rule json
 	r, err := ruleProcessor.GetRuleByJson(name, ruleJson)
 	if err != nil {
 		return "", fmt.Errorf("Invalid rule json: %v", err)
-	}
-	if shouldStart {
-		r.Triggered = true
 	}
 	// Validate the topo
 	rs, err := createRuleState(r)
@@ -91,16 +88,18 @@ func createRule(name, ruleJson string, shouldStart bool) (string, error) {
 		return r.Id, fmt.Errorf("Store the rule error: %v", err)
 	}
 	// Start the rule asyncly
-	go func() {
-		panicOrError := infra.SafeRun(func() error {
-			//Start the rule which runs async
-			rs.Start()
-			return nil
-		})
-		if panicOrError != nil {
-			logger.Errorf("Rule %s start failed: %s", r.Id, panicOrError)
-		}
-	}()
+	if r.Triggered {
+		go func() {
+			panicOrError := infra.SafeRun(func() error {
+				//Start the rule which runs async
+				rs.Start()
+				return nil
+			})
+			if panicOrError != nil {
+				logger.Errorf("Rule %s start failed: %s", r.Id, panicOrError)
+			}
+		}()
+	}
 	return r.Id, nil
 }
 
