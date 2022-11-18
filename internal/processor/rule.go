@@ -132,7 +132,8 @@ func (p *RuleProcessor) getRuleByJson(id, ruleJson string) (*api.Rule, error) {
 	opt := conf.Config.Rule
 	//set default rule options
 	rule := &api.Rule{
-		Options: &opt,
+		Options:   &opt,
+		Triggered: true,
 	}
 	if err := json.Unmarshal([]byte(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)

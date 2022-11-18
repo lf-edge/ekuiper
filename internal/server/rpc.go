@@ -150,13 +150,15 @@ func (t *Server) CreateRule(rule *model.RPCArgDesc, reply *string) error {
 		*reply = fmt.Sprintf("Rule %s was created successfully, please use 'bin/kuiper getstatus rule %s' command to get rule status.", rule.Name, rule.Name)
 	}
 	//Start the rule
-	rs, err := createRuleState(r)
-	if err != nil {
-		return err
-	}
-	err = doStartRule(rs)
-	if err != nil {
-		return err
+	if r.Triggered {
+		rs, err := createRuleState(r)
+		if err != nil {
+			return err
+		}
+		err = doStartRule(rs)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
