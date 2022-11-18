@@ -17,6 +17,17 @@
 		}
 	},
 	"libs": [],
+	"dataSource": {
+		"default": "topic1",
+		"hint": {
+			"en_US": "The MQTT topic to subscribe to, e.g. topic1",
+			"zh_CN": "将要订阅的 MQTT 主题， 例如 topic1"
+		},
+		"label": {
+			"en_US": "Data Source (MQTT Topic)",
+			"zh_CN": "数据源（MQTT 主题）"
+		}
+	},
 	"properties": {
 		"default": [{
 			"name": "connectionSelector",

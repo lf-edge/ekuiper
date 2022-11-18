@@ -17,6 +17,17 @@
     }
   },
   "libs": [],
+  "dataSource": {
+    "default": "topic1",
+    "hint": {
+      "en_US": "The memory topic to subscribe to, e.g. topic1. It is similar to MQTT topic.",
+      "zh_CN": "将要订阅的内存主题， 例如 topic1。类似 MQTT 主题"
+    },
+    "label": {
+      "en_US": "Data Source (Topic)",
+      "zh_CN": "数据源（主题）"
+    }
+  },
   "properties": {
   },
   "outputs": [

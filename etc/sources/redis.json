@@ -17,6 +17,17 @@
     }
   },
   "libs": [],
+  "dataSource": {
+    "default": "0",
+    "hint": {
+      "en_US": "The Redis database to connect to, e.g. 0",
+      "zh_CN": "将要连接的 Redis 数据库号，例如 0"
+    },
+    "label": {
+      "en_US": "Data Source (Database Number)",
+      "zh_CN": "数据源（数据库号）"
+    }
+  },
   "properties": {
     "default": [
       {
