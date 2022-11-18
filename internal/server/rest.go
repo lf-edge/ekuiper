@@ -404,21 +404,23 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			result = fmt.Sprintf("Rule %s was created successfully.", r.Id)
 		}
-		go func() {
-			panicOrError := infra.SafeRun(func() error {
-				//Start the rule
-				rs, err := createRuleState(r)
-				if err != nil {
-					return err
-				} else {
-					err = doStartRule(rs)
-					return err
+		if r.Triggered {
+			go func() {
+				panicOrError := infra.SafeRun(func() error {
+					//Start the rule
+					rs, err := createRuleState(r)
+					if err != nil {
+						return err
+					} else {
+						err = doStartRule(rs)
+						return err
+					}
+				})
+				if panicOrError != nil {
+					logger.Errorf("Rule %s start failed: %s", r.Id, panicOrError)
 				}
-			})
-			if panicOrError != nil {
-				logger.Errorf("Rule %s start failed: %s", r.Id, panicOrError)
-			}
-		}()
+			}()
+		}
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(result))
 	case http.MethodGet:

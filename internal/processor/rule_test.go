@@ -50,7 +50,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 			  ]
 			}`,
 			result: &api.Rule{
-				Triggered: false,
+				Triggered: true,
 				Id:        "ruleTest",
 				Sql:       "SELECT * from demo",
 				Actions: []map[string]interface{}{
@@ -111,7 +111,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 				}
 			}`,
 			result: &api.Rule{
-				Triggered: false,
+				Triggered: true,
 				Id:        "ruleTest2",
 				Sql:       "SELECT * from demo",
 				Actions: []map[string]interface{}{
