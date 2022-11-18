@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package meta
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"os"
 	"path"
 	"strings"
@@ -37,10 +38,12 @@ type (
 		Libs     []string           `json:"libs"`
 		ConfKeys map[string][]field `json:"properties"`
 		Node     interface{}        `json:"node"`
+		isScan   bool
+		isLookup bool
 	}
 )
 
-func newUiSource(fi *fileSource) (*uiSource, error) {
+func newUiSource(fi *fileSource, isScan bool, isLookup bool) (*uiSource, error) {
 	if nil == fi {
 		return nil, nil
 	}
@@ -55,6 +58,8 @@ func newUiSource(fi *fileSource) (*uiSource, error) {
 			return nil, err
 		}
 	}
+	ui.isScan = isScan
+	ui.isLookup = isLookup
 	return ui, nil
 }
 
@@ -72,7 +77,7 @@ func UninstallSource(name string) {
 	}
 }
 
-func ReadSourceMetaFile(filePath string, installed bool) error {
+func ReadSourceMetaFile(filePath string, isScan bool, isLookup bool) error {
 	fileName := path.Base(filePath)
 	if "mqtt_source.json" == fileName {
 		fileName = "mqtt.json"
@@ -82,10 +87,11 @@ func ReadSourceMetaFile(filePath string, installed bool) error {
 	if nil == ptrMeta.About {
 		return fmt.Errorf("not found about of %s", filePath)
 	} else {
-		ptrMeta.About.Installed = installed
+		// TODO currently, only show installed source in ui
+		ptrMeta.About.Installed = true
 	}
 
-	meta, err := newUiSource(ptrMeta)
+	meta, err := newUiSource(ptrMeta, isScan, isLookup)
 	if nil != err {
 		return err
 	}
@@ -99,7 +105,7 @@ func ReadSourceMetaFile(filePath string, installed bool) error {
 	return err
 }
 
-func ReadSourceMetaDir(checker InstallChecker) error {
+func ReadSourceMetaDir(scanChecker InstallChecker, lookupChecker InstallChecker) error {
 	//load etc/sources meta data
 	confDir, err := conf.GetConfLoc()
 	if nil != err {
@@ -112,7 +118,7 @@ func ReadSourceMetaDir(checker InstallChecker) error {
 		return err
 	}
 
-	if err = ReadSourceMetaFile(path.Join(confDir, "mqtt_source.json"), true); nil != err {
+	if err = ReadSourceMetaFile(path.Join(confDir, "mqtt_source.json"), true, false); nil != err {
 		return err
 	}
 	conf.Log.Infof("Loading metadata file for source : %s", "mqtt_source.json")
@@ -120,11 +126,18 @@ func ReadSourceMetaDir(checker InstallChecker) error {
 	for _, entry := range dirEntries {
 		fileName := entry.Name()
 		if strings.HasSuffix(fileName, ".json") {
-			filePath := path.Join(dir, fileName)
-			if err = ReadSourceMetaFile(filePath, checker(strings.TrimSuffix(fileName, ".json"))); nil != err {
-				return err
+			name := strings.TrimSuffix(fileName, ".json")
+			isScan := scanChecker(name)
+			isLookup := lookupChecker(name)
+			if isScan || isLookup {
+				filePath := path.Join(dir, fileName)
+				if err = ReadSourceMetaFile(filePath, isScan, isLookup); nil != err {
+					return err
+				}
+				conf.Log.Infof("Loading metadata file for source : %s", fileName)
+			} else {
+				conf.Log.Warnf("Find source metadata file but not installed : %s", fileName)
 			}
-			conf.Log.Infof("Loading metadata file for source : %s", fileName)
 		}
 	}
 
@@ -143,11 +156,18 @@ func ReadSourceMetaDir(checker InstallChecker) error {
 	for _, entry := range dirEntries {
 		fileName := entry.Name()
 		if strings.HasSuffix(fileName, ".json") {
-			filePath := path.Join(dir, fileName)
-			if err = ReadSourceMetaFile(filePath, checker(strings.TrimSuffix(fileName, ".json"))); nil != err {
-				return err
+			name := strings.TrimSuffix(fileName, ".json")
+			isScan := scanChecker(name)
+			isLookup := lookupChecker(name)
+			if isScan || isLookup {
+				filePath := path.Join(dir, fileName)
+				if err = ReadSourceMetaFile(filePath, isScan, isLookup); nil != err {
+					return err
+				}
+				conf.Log.Infof("Loading metadata file for source : %s", fileName)
+			} else {
+				conf.Log.Warnf("Find source metadata file but not installed : %s", fileName)
 			}
-			conf.Log.Infof("Loading metadata file for source : %s", fileName)
 		}
 	}
 
@@ -169,11 +189,16 @@ func GetSourceMeta(sourceName, language string) (ptrSourceProperty *uiSource, er
 	return ui, nil
 }
 
-func GetSourcesPlugins() (sources []*pluginfo) {
+func GetSourcesPlugins(kind string) (sources []*pluginfo) {
 	gSourcemetaLock.RLock()
 	defer gSourcemetaLock.RUnlock()
 
 	for fileName, v := range gSourcemetadata {
+		if kind == ast.StreamKindLookup && !v.isLookup {
+			continue
+		} else if kind == ast.StreamKindScan && !v.isScan {
+			continue
+		}
 		node := new(pluginfo)
 		node.Name = strings.TrimSuffix(fileName, `.json`)
 		if nil == v {

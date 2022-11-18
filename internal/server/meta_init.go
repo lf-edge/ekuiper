@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"io"
 	"net/http"
 	"strings"
@@ -109,7 +110,14 @@ func operatorsMetaHandler(w http.ResponseWriter, r *http.Request) {
 // list source plugin
 func sourcesMetaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	ret := meta.GetSourcesPlugins()
+	kind := r.URL.Query().Get("kind")
+	switch strings.ToLower(kind) {
+	case "lookup":
+		kind = ast.StreamKindLookup
+	default:
+		kind = ast.StreamKindScan
+	}
+	ret := meta.GetSourcesPlugins(kind)
 	if nil != ret {
 		jsonResponse(ret, w, logger)
 		return

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import (
 func Bind() {
 	if err := meta.ReadSourceMetaDir(func(name string) bool {
 		s, _ := io.Source(name)
+		return s != nil
+	}, func(name string) bool {
+		s, _ := io.LookupSource(name)
 		return s != nil
 	}); nil != err {
 		conf.Log.Errorf("readSourceMetaDir:%v", err)
