@@ -135,7 +135,7 @@ func getAllRulesWithStatus() ([]map[string]interface{}, error) {
 	sort.Strings(ruleIds)
 	result := make([]map[string]interface{}, len(ruleIds))
 	for i, id := range ruleIds {
-		ruleName := id
+		ruleName := ""
 		rule, _ := ruleProcessor.GetRuleById(id)
 		if rule != nil && rule.Name != "" {
 			ruleName = rule.Name
