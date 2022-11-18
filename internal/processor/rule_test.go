@@ -158,6 +158,42 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					},
 				},
 			},
+		}, {
+			ruleStr: `{
+			  "id": "ruleTest",
+			  "sql": "SELECT * from demo",
+			  "actions": [
+			  	{"log": {}}
+			  ],
+              "triggered": false
+			}`,
+			result: &api.Rule{
+				Triggered: false,
+				Id:        "ruleTest",
+				Sql:       "SELECT * from demo",
+				Actions: []map[string]interface{}{
+					{
+						"log": map[string]interface{}{},
+					},
+				},
+				Options: &api.RuleOption{
+					IsEventTime:        false,
+					LateTol:            1000,
+					Concurrency:        1,
+					BufferLength:       1024,
+					SendMetaToSink:     false,
+					Qos:                api.AtMostOnce,
+					CheckpointInterval: 300000,
+					SendError:          true,
+					Restart: &api.RestartStrategy{
+						Attempts:     0,
+						Delay:        1000,
+						Multiplier:   2,
+						MaxDelay:     30000,
+						JitterFactor: 0.1,
+					},
+				},
+			},
 		},
 	}
 

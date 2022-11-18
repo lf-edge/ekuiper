@@ -144,7 +144,7 @@ func (t *Server) Stream(stream string, reply *string) error {
 }
 
 func (t *Server) CreateRule(rule *model.RPCArgDesc, reply *string) error {
-	id, err := createRule(rule.Name, rule.Json, true)
+	id, err := createRule(rule.Name, rule.Json)
 	if err != nil {
 		return fmt.Errorf("Create rule %s error : %s.", id, err)
 	} else {
