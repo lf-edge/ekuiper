@@ -192,6 +192,7 @@ jobs:
           - functions/image
           - functions/geohash
           - functions/labelImage
+          - functions/tensorFlowGeneral
         arch:
           - linux/amd64
           - linux/arm64

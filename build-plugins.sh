@@ -44,14 +44,28 @@ build(){
             go build -trimpath -modfile extensions.mod --buildmode=plugin -tags plugins -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go
             ;;
         labelImage )
-            git clone -b v2.2.0-rc3 --depth 1 https://github.com/tensorflow/tensorflow.git /tmp/tensorflow;
+            if [ ! -d "/data/" ];then
+                git clone -b v2.2.0-rc3 --depth 1 https://github.com/tensorflow/tensorflow.git /tmp/tensorflow;
+            fi;
             if [ "$(uname -m)" = "x86_64" ]; then
-                mv $(pwd)/extensions/functions/labelImage/dependencies/amd64/*.so $(pwd)/extensions/functions/labelImage/lib
+                mv $(pwd)/extensions/functions/tensorflow/dependencies/amd64/*.so $(pwd)/extensions/functions/labelImage/lib
             fi;
             if [ "$(uname -m)" = "aarch64" ]; then
-                mv $(pwd)/extensions/functions/labelImage/dependencies/arm64/*.so $(pwd)/extensions/functions/labelImage/lib
+                mv $(pwd)/extensions/functions/tensorflow/dependencies/arm64/*.so $(pwd)/extensions/functions/labelImage/lib
             fi;
-            CGO_CFLAGS=-I/tmp/tensorflow CGO_LDFLAGS=-L$(pwd)/extensions/functions/labelImage/lib go build -trimpath -modfile extensions.mod --buildmode=plugin -o extensions/functions/labelImage/labelImage.so extensions/functions/labelImage/*.go
+            CGO_CFLAGS=-I/tmp/tensorflow CGO_LDFLAGS=-L$(pwd)/extensions/functions/labelImage/lib go build -trimpath -modfile extensions.mod --buildmode=plugin -o extensions/functions/labelImage/labelImage.so extensions/functions/tensorflow/labelImage/*.go
+            ;;
+        tensorFlowGeneral )
+            if [ ! -d "/data/" ];then
+                git clone -b v2.2.0-rc3 --depth 1 https://github.com/tensorflow/tensorflow.git /tmp/tensorflow;
+            fi;
+            if [ "$(uname -m)" = "x86_64" ]; then
+                mv $(pwd)/extensions/functions/tensorflow/dependencies/amd64/*.so $(pwd)/extensions/functions/tensorFlowGeneral/lib
+            fi;
+            if [ "$(uname -m)" = "aarch64" ]; then
+                mv $(pwd)/extensions/functions/labelImage/dependencies/arm64/*.so $(pwd)/extensions/functions/tensorFlowGeneral/lib
+            fi;
+                CGO_CFLAGS=-I/tmp/tensorflow CGO_LDFLAGS=-L$(pwd)/extensions/functions/tensorFlowGeneral/lib go build -trimpath -modfile extensions.mod --buildmode=plugin -o extensions/functions/tensorFlowGeneral/tensorFlowGeneral.so extensions/functions/tensorflow/tensorFlowGeneral/*.go
             ;;
         * )
             go build -trimpath -modfile extensions.mod --buildmode=plugin -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/*.go
