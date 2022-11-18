@@ -19,6 +19,17 @@
   "libs": [
     "github.com/pebbe/zmq4@v1.0.0"
   ],
+  "dataSource": {
+    "default": "topic1",
+    "hint": {
+      "en_US": "The topic to subscribe to, e.g. topic1",
+      "zh_CN": "将要订阅的主题， 例如 topic1"
+    },
+    "label": {
+      "en_US": "Data Source (Topic)",
+      "zh_CN": "数据源（主题）"
+    }
+  },
   "properties": {
     "default": [
       {

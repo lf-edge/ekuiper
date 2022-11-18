@@ -17,6 +17,16 @@
 			"zh_CN": "eKuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 eKuiper 处理管道。"
 		}
 	},
+	"dataSource": {
+		"hint": {
+			"en_US": "The URL endpoint to concatenate with the URL property to form the complete URL, e.g. /api/data",
+			"zh_CN": "URL 的路径部分，与 URL 属性拼接成最终 URL， 例如 /api/data"
+		},
+		"label": {
+			"en_US": "Data Source (URL Endpoint)",
+			"zh_CN": "数据源（URL拼接路径）"
+		}
+	},
 	"properties": {
 		"default": [{
 			"name": "url",
