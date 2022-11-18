@@ -16,6 +16,17 @@
       "zh_CN": "从数据库中读取消息"
     }
   },
+  "dataSource": {
+    "default": "table1",
+    "hint": {
+      "en_US": "The SQL database to connect to, e.g. table1",
+      "zh_CN": "将要连接的关系数据库表，例如 table1"
+    },
+    "label": {
+      "en_US": "Data Source (Table)",
+      "zh_CN": "数据源（表名）"
+    }
+  },
   "libs": [],
   "properties": {
     "default": [

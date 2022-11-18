@@ -28,18 +28,20 @@ import (
 
 type (
 	fileSource struct {
-		About    *fileAbout              `json:"about"`
-		Libs     []string                `json:"libs"`
-		ConfKeys map[string][]*fileField `json:"properties"`
-		Node     interface{}             `json:"node"`
+		About      *fileAbout              `json:"about"`
+		Libs       []string                `json:"libs"`
+		DataSource interface{}             `json:"dataSource,omitempty"`
+		ConfKeys   map[string][]*fileField `json:"properties"`
+		Node       interface{}             `json:"node"`
 	}
 	uiSource struct {
-		About    *about             `json:"about"`
-		Libs     []string           `json:"libs"`
-		ConfKeys map[string][]field `json:"properties"`
-		Node     interface{}        `json:"node"`
-		isScan   bool
-		isLookup bool
+		About      *about             `json:"about"`
+		Libs       []string           `json:"libs"`
+		DataSource interface{}        `json:"dataSource,omitempty"`
+		ConfKeys   map[string][]field `json:"properties"`
+		Node       interface{}        `json:"node"`
+		isScan     bool
+		isLookup   bool
 	}
 )
 
@@ -52,6 +54,9 @@ func newUiSource(fi *fileSource, isScan bool, isLookup bool) (*uiSource, error) 
 	ui.Libs = fi.Libs
 	ui.About = newAbout(fi.About)
 	ui.Node = fi.Node
+	if fi.DataSource != nil {
+		ui.DataSource = fi.DataSource
+	}
 	ui.ConfKeys = make(map[string][]field)
 	for k, fields := range fi.ConfKeys {
 		if ui.ConfKeys[k], err = newField(fields); nil != err {

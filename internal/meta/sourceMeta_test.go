@@ -37,6 +37,10 @@ func TestGetMqttSourceMeta(t *testing.T) {
 		t.Error(err)
 	}
 
+	if showMeta.DataSource == nil {
+		t.Errorf("mqtt source meta data source is null")
+	}
+
 	fields := showMeta.ConfKeys["default"]
 
 	if len(fields) == 0 {
