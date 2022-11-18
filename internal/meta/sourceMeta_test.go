@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ func TestGetMqttSourceMeta(t *testing.T) {
 		return
 	}
 
-	if err = ReadSourceMetaFile(path.Join(confDir, "mqtt_source.json"), true); nil != err {
+	if err = ReadSourceMetaFile(path.Join(confDir, "mqtt_source.json"), true, false); nil != err {
 		t.Error(err)
 		return
 	}
@@ -51,7 +51,7 @@ func TestGetSqlSourceMeta(t *testing.T) {
 		return
 	}
 
-	if err = ReadSourceMetaFile(path.Join(confDir, "sources", "httppull.json"), true); nil != err {
+	if err = ReadSourceMetaFile(path.Join(confDir, "sources", "httppull.json"), true, false); nil != err {
 		t.Error(err)
 		return
 	}
