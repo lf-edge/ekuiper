@@ -133,7 +133,7 @@ func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 
 	if !isInit {
 		for _, s := range pi.Sources {
-			if err := meta.ReadSourceMetaFile(path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+`.json`), true); nil != err {
+			if err := meta.ReadSourceMetaFile(path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+`.json`), true, false); nil != err {
 				conf.Log.Errorf("read source json file:%v", err)
 			}
 		}
