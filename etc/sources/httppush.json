@@ -17,6 +17,17 @@
 			"zh_CN": "eKuiper 提供了内置的 HTTP 服务支持，用于接收 HTTP 协议推送的流数据。"
 		}
 	},
+	"dataSource": {
+		"default": "/api/data",
+		"hint": {
+			"en_US": "The URL endpoint to append to the http server URL, e.g. /api/data",
+			"zh_CN": "URL 的路径部分，与配置的 HTTP 服务器地址拼接成最终 URL， 例如 /api/data"
+		},
+		"label": {
+			"en_US": "Data Source (URL Endpoint)",
+			"zh_CN": "数据源（URL拼接路径）"
+		}
+	},
 	"properties": {
 		"default": [{
 			"name": "method",

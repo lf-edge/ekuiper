@@ -17,6 +17,17 @@
     }
   },
   "libs": [],
+  "dataSource": {
+    "default": "test.json",
+    "hint": {
+      "en_US": "The file name without directory, e.g. test.json",
+      "zh_CN": "不含路径的文件名，例如 test.json"
+    },
+    "label": {
+      "en_US": "Data Source (File Name)",
+      "zh_CN": "数据源（文件名）"
+    }
+  },
   "properties": {
     "default": [
       {
