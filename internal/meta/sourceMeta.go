@@ -62,14 +62,16 @@ var gSourcemetaLock = sync.RWMutex{}
 var gSourcemetadata = make(map[string]*uiSource)
 
 func UninstallSource(name string) {
-	gSourcemetaLock.RLock()
-	defer gSourcemetaLock.RUnlock()
+	gSourcemetaLock.Lock()
+	defer gSourcemetaLock.Unlock()
 
 	if v, ok := gSourcemetadata[name+".json"]; ok {
 		if nil != v.About {
 			v.About.Installed = false
 		}
+		delete(gSourcemetadata, name+".json")
 	}
+	delYamlConf(fmt.Sprintf(SourceCfgOperatorKeyTemplate, name))
 }
 
 func ReadSourceMetaFile(filePath string, installed bool) error {
