@@ -44,7 +44,7 @@ build(){
             go build -trimpath -modfile extensions.mod --buildmode=plugin -tags plugins -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go
             ;;
         labelImage )
-            if [ ! -d "/data/" ];then
+            if [ ! -d "/tmp/tensorflow" ];then
                 git clone -b v2.2.0-rc3 --depth 1 https://github.com/tensorflow/tensorflow.git /tmp/tensorflow;
             fi;
             if [ "$(uname -m)" = "x86_64" ]; then
@@ -56,7 +56,7 @@ build(){
             CGO_CFLAGS=-I/tmp/tensorflow CGO_LDFLAGS=-L$(pwd)/extensions/functions/labelImage/lib go build -trimpath -modfile extensions.mod --buildmode=plugin -o extensions/functions/labelImage/labelImage.so extensions/functions/tensorflow/labelImage/*.go
             ;;
         tensorFlowGeneral )
-            if [ ! -d "/data/" ];then
+            if [ ! -d "/tmp/tensorflow" ];then
                 git clone -b v2.2.0-rc3 --depth 1 https://github.com/tensorflow/tensorflow.git /tmp/tensorflow;
             fi;
             if [ "$(uname -m)" = "x86_64" ]; then
