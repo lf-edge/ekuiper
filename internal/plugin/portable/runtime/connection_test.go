@@ -112,8 +112,8 @@ func TestControlCh(t *testing.T) {
 
 	// 5. no handshake
 	err = ch.SendCmd(okMsg)
-	if err == nil || err.Error() != "can't send message on control rep socket: incorrect protocol state" {
-		t.Errorf("5th process: send command should have error but got %v", err)
+	if err != nil {
+		t.Errorf("5th process: send command should auto handshake but got %v", err)
 	}
 	err = ch.Handshake()
 	if err != nil {

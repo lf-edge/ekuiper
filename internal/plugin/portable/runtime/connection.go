@@ -62,6 +62,15 @@ func (r *NanomsgReqChannel) SendCmd(arg []byte) error {
 	r.Lock()
 	defer r.Unlock()
 	if err := r.sock.Send(arg); err != nil {
+		if err == mangos.ErrProtoState {
+			_, err = r.sock.Recv()
+			if err == nil {
+				err = r.sock.Send(arg)
+				if err == nil {
+					return nil
+				}
+			}
+		}
 		return fmt.Errorf("can't send message on control rep socket: %s", err.Error())
 	}
 	if msg, err := r.sock.Recv(); err != nil {
@@ -85,7 +94,7 @@ func (r *NanomsgReqChannel) Handshake() error {
 		return err
 	}
 	_, err = r.sock.Recv()
-	if err != nil {
+	if err != nil && err != mangos.ErrProtoState {
 		return err
 	}
 	err = r.sock.SetOption(mangos.OptionRecvDeadline, t)
@@ -124,6 +133,15 @@ func (r *NanomsgReqRepChannel) Req(arg []byte) ([]byte, error) {
 	r.Lock()
 	defer r.Unlock()
 	if err := r.sock.Send(arg); err != nil {
+		if err == mangos.ErrProtoState { // resend if protocol state wrong, because of plugin restart or other problems
+			err = r.Handshake()
+			if err == nil {
+				err = r.sock.Send(arg)
+				if err == nil {
+					return r.sock.Recv()
+				}
+			}
+		}
 		return nil, fmt.Errorf("can't send message on function rep socket: %s", err.Error())
 	}
 	return r.sock.Recv()
@@ -132,7 +150,10 @@ func (r *NanomsgReqRepChannel) Req(arg []byte) ([]byte, error) {
 // Handshake should only be called once
 func (r *NanomsgReqRepChannel) Handshake() error {
 	_, err := r.sock.Recv()
-	return err
+	if err != nil && err != mangos.ErrProtoState {
+		return err
+	}
+	return nil
 }
 
 func CreateSourceChannel(ctx api.StreamContext) (DataInChannel, error) {

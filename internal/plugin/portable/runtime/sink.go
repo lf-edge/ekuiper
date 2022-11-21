@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ func (ps *PortableSink) Configure(props map[string]interface{}) error {
 func (ps *PortableSink) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Start running portable sink %s with conf %+v", ps.symbolName, ps.props)
 	pm := GetPluginInsManager()
-	ins, err := pm.getOrStartProcess(ps.reg, PortbleConf)
+	ins, err := pm.getOrStartProcess(ps.reg, PortbleConf, false)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (ps *PortableSink) Open(ctx api.StreamContext) error {
 
 	// Control: send message to plugin to ask starting symbol
 	c := &Control{
-		Meta: &Meta{
+		Meta: Meta{
 			RuleId:     ctx.GetRuleId(),
 			OpId:       ctx.GetOpId(),
 			InstanceId: ctx.GetInstanceId(),

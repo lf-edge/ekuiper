@@ -50,11 +50,7 @@ func TestPluginInstance(t *testing.T) {
 		t.Errorf("can't ack handshake: %s", err.Error())
 		return
 	}
-	ins := &PluginIns{
-		name:     "test",
-		process:  nil,
-		ctrlChan: ch,
-	}
+	ins := NewPluginIns("test", ch, nil)
 	var tests = []struct {
 		c  *Control
 		sj string
@@ -63,7 +59,7 @@ func TestPluginInstance(t *testing.T) {
 		{
 			c: &Control{
 				SymbolName: "symbol1",
-				Meta: &Meta{
+				Meta: Meta{
 					RuleId:     "rule1",
 					OpId:       "op1",
 					InstanceId: 0,
@@ -77,7 +73,7 @@ func TestPluginInstance(t *testing.T) {
 		}, {
 			c: &Control{
 				SymbolName: "symbol2",
-				Meta: &Meta{
+				Meta: Meta{
 					RuleId:     "rule1",
 					OpId:       "op2",
 					InstanceId: 0,
@@ -89,7 +85,7 @@ func TestPluginInstance(t *testing.T) {
 		}, {
 			c: &Control{
 				SymbolName: "symbol3",
-				Meta: &Meta{
+				Meta: Meta{
 					RuleId:     "rule1",
 					OpId:       "op3",
 					InstanceId: 0,
