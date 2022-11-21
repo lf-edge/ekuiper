@@ -36,7 +36,7 @@ func NewPortableFunc(symbolName string, reg *PluginMeta) (*PortableFunc, error) 
 	// Setup channel and route the data
 	conf.Log.Infof("Start running portable function meta %+v", reg)
 	pm := GetPluginInsManager()
-	ins, err := pm.getOrStartProcess(reg, PortbleConf)
+	ins, err := pm.getOrStartProcess(reg, PortbleConf, false)
 	if err != nil {
 		return nil, err
 	}

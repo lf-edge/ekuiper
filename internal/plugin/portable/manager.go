@@ -143,8 +143,8 @@ func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 			}
 		}
 	}
-
 	conf.Log.Infof("Installed portable plugin %s successfully", name)
+	runtime.GetPluginInsManager().CreateIns(&pi.PluginMeta)
 	return nil
 }
 
@@ -340,11 +340,6 @@ func (m *Manager) Delete(name string) error {
 	if !ok {
 		return fmt.Errorf("portable plugin %s is not found", name)
 	}
-	pm := runtime.GetPluginInsManager()
-	err := pm.Kill(name)
-	if err != nil {
-		conf.Log.Errorf("fail to kill portable plugin %s process, please try to kill it manually", name)
-	}
 	// unregister the plugin
 	m.reg.Delete(name)
 	// delete files and uninstall metas
@@ -367,5 +362,11 @@ func (m *Manager) Delete(name string) error {
 		os.Remove(p)
 	}
 	_ = os.RemoveAll(path.Join(m.pluginDir, name))
+	// Kill the process in the end, and return error if it cannot be deleted
+	pm := runtime.GetPluginInsManager()
+	err := pm.Kill(name)
+	if err != nil {
+		return fmt.Errorf("fail to kill portable plugin %s process, please try to kill it manually", name)
+	}
 	return nil
 }

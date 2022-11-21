@@ -44,7 +44,7 @@ func NewPortableSource(symbolName string, reg *PluginMeta) *PortableSource {
 func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	ctx.GetLogger().Infof("Start running portable source %s with datasource %s and conf %+v", ps.symbolName, ps.topic, ps.props)
 	pm := GetPluginInsManager()
-	ins, err := pm.getOrStartProcess(ps.reg, PortbleConf)
+	ins, err := pm.getOrStartProcess(ps.reg, PortbleConf, false)
 	if err != nil {
 		infra.DrainError(ctx, err, errCh)
 		return
@@ -60,7 +60,7 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 
 	// Control: send message to plugin to ask starting symbol
 	c := &Control{
-		Meta: &Meta{
+		Meta: Meta{
 			RuleId:     ctx.GetRuleId(),
 			OpId:       ctx.GetOpId(),
 			InstanceId: ctx.GetInstanceId(),
@@ -72,6 +72,7 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 	}
 	err = ins.StartSymbol(ctx, c)
 	if err != nil {
+		ctx.GetLogger().Error(err)
 		infra.DrainError(ctx, err, errCh)
 		_ = dataCh.Close()
 		return

@@ -102,7 +102,7 @@ func startPluginIns(info *portable.PluginInfo) (*runtime.PluginIns, error) {
 		return nil, fmt.Errorf("plugin %s control handshake error: %v", info.Name, err)
 	}
 	conf.Log.Println("plugin start running")
-	return runtime.NewPluginIns(info.Name, ctrlChan, nil), nil
+	return runtime.NewPluginInsForTest(info.Name, ctrlChan), nil
 }
 
 func createRestServer(ip string, port int) *http.Server {
