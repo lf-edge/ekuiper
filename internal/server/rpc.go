@@ -69,6 +69,7 @@ func (r rpcComp) serve() {
 			logger.Fatal("Error serving rpc service:", err)
 		}
 	}()
+	initQuery()
 }
 
 func (r rpcComp) close() {
@@ -313,7 +314,7 @@ func marshalDesc(m interface{}) (string, error) {
 	return dst.String(), nil
 }
 
-func init() {
+func initQuery() {
 	ticker := time.NewTicker(time.Second * 5)
 	go infra.SafeRun(func() error {
 		for {
