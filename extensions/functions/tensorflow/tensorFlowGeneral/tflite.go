@@ -98,6 +98,57 @@ func (f *Tffunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{},
 				if err != nil {
 					return nil, false
 				}
+			case tflite.Int64:
+				v, err := cast.ToInt64Slice(arg, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("invalid %d parameter, expect int64 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
+				}
+				err = input.SetInt64s(v)
+				if err != nil {
+					return nil, false
+				}
+			case tflite.Int32:
+				v, err := cast.ToTypedSlice(args, func(input interface{}, sn cast.Strictness) (interface{}, error) {
+					return cast.ToInt32(input, sn)
+				}, "int32", cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("invalid %d parameter, expect int32 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
+				}
+				err = input.SetInt32s(v.([]int32))
+				if err != nil {
+					return nil, false
+				}
+			case tflite.Int16:
+				v, err := cast.ToTypedSlice(args, func(input interface{}, sn cast.Strictness) (interface{}, error) {
+					return cast.ToInt16(input, sn)
+				}, "int16", cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("invalid %d parameter, expect int16 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
+				}
+				err = input.SetInt16s(v.([]int16))
+				if err != nil {
+					return nil, false
+				}
+			case tflite.Int8:
+				v, err := cast.ToTypedSlice(args, func(input interface{}, sn cast.Strictness) (interface{}, error) {
+					return cast.ToInt8(input, sn)
+				}, "int8", cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("invalid %d parameter, expect int8 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
+				}
+				err = input.SetInt8s(v.([]int8))
+				if err != nil {
+					return nil, false
+				}
+			case tflite.UInt8:
+				v, err := cast.ToBytes(args, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("invalid %d parameter, expect uint8 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
+				}
+				err = input.SetUint8s(v)
+				if err != nil {
+					return nil, false
+				}
 			default:
 				return fmt.Errorf("invalid %d parameter, unsupported type %v in the model", i, t), false
 			}
@@ -110,6 +161,57 @@ func (f *Tffunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{},
 					return fmt.Errorf("invalid %d parameter, expect float32 but got %[2]T(%[2]v)", i, args[i]), false
 				}
 				err = input.SetFloat32s(v)
+				if err != nil {
+					return nil, false
+				}
+			case tflite.Int64:
+				v, err := cast.ToInt64Slice(arg, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("invalid %d parameter, expect int64 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
+				}
+				err = input.SetInt64s(v)
+				if err != nil {
+					return nil, false
+				}
+			case tflite.Int32:
+				v, err := cast.ToTypedSlice(args, func(input interface{}, sn cast.Strictness) (interface{}, error) {
+					return cast.ToInt32(input, sn)
+				}, "int32", cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("invalid %d parameter, expect int32 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
+				}
+				err = input.SetInt32s(v.([]int32))
+				if err != nil {
+					return nil, false
+				}
+			case tflite.Int16:
+				v, err := cast.ToTypedSlice(args, func(input interface{}, sn cast.Strictness) (interface{}, error) {
+					return cast.ToInt16(input, sn)
+				}, "int16", cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("invalid %d parameter, expect int16 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
+				}
+				err = input.SetInt16s(v.([]int16))
+				if err != nil {
+					return nil, false
+				}
+			case tflite.Int8:
+				v, err := cast.ToTypedSlice(args, func(input interface{}, sn cast.Strictness) (interface{}, error) {
+					return cast.ToInt8(input, sn)
+				}, "int8", cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("invalid %d parameter, expect int8 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
+				}
+				err = input.SetInt8s(v.([]int8))
+				if err != nil {
+					return nil, false
+				}
+			case tflite.UInt8:
+				v, err := cast.ToBytes(args, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("invalid %d parameter, expect uint8 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
+				}
+				err = input.SetUint8s(v)
 				if err != nil {
 					return nil, false
 				}
@@ -137,6 +239,14 @@ func (f *Tffunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{},
 		switch t {
 		case tflite.Float32:
 			results[i] = output.Float32s()
+		case tflite.Int64:
+			results[i] = output.Int64s()
+		case tflite.Int32:
+			results[i] = output.Int32s()
+		case tflite.Int16:
+			results[i] = output.Int16s()
+		case tflite.Int8:
+			results[i] = output.Int8s()
 		case tflite.UInt8:
 			results[i] = output.UInt8s()
 		default:
