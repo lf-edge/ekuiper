@@ -352,8 +352,8 @@ func (t *Tuple) ToMap() map[string]interface{} {
 			m[k] = v
 		}
 		t.cachedMap = m
+		t.AffiliateRow.MergeMap(t.cachedMap)
 	}
-	t.AffiliateRow.MergeMap(t.cachedMap)
 	return t.cachedMap
 }
 
@@ -501,8 +501,8 @@ func (jt *JoinTuple) ToMap() map[string]interface{} {
 			}
 		}
 		jt.cachedMap = m
+		jt.AffiliateRow.MergeMap(jt.cachedMap)
 	}
-	jt.AffiliateRow.MergeMap(jt.cachedMap)
 	return jt.cachedMap
 }
 
@@ -558,8 +558,8 @@ func (s *GroupedTuples) ToMap() map[string]interface{} {
 			m[k] = v
 		}
 		s.cachedMap = m
+		s.AffiliateRow.MergeMap(s.cachedMap)
 	}
-	s.AffiliateRow.MergeMap(s.cachedMap)
 	return s.cachedMap
 }
 
