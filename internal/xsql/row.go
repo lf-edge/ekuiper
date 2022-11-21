@@ -398,7 +398,8 @@ func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[str
 			t.Message = pickedMap
 		} else {
 			t.Message = make(map[string]interface{})
-			t.cachedMap = make(map[string]interface{})
+			// invalidate cache, will calculate again
+			t.cachedMap = nil
 		}
 	}
 }
