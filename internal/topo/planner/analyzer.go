@@ -120,6 +120,31 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt,
 	// Collect all analytic function calls so that we can let them run firstly
 	ast.WalkFunc(s, func(n ast.Node) bool {
 		switch f := n.(type) {
+		case ast.Fields:
+			return false
+		case *ast.Call:
+			if function.IsAnalyticFunc(f.Name) {
+				f.CachedField = fmt.Sprintf("%s_%s_%d", function.AnalyticPrefix, f.Name, f.FuncId)
+				f.Cached = true
+				analyticFuncs = append(analyticFuncs, &ast.Call{
+					Name:        f.Name,
+					FuncId:      f.FuncId,
+					FuncType:    f.FuncType,
+					Args:        f.Args,
+					CachedField: f.CachedField,
+					Partition:   f.Partition,
+				})
+			}
+		}
+		return true
+	})
+	if walkErr != nil {
+		return nil, nil, walkErr
+	}
+	// walk sources at last to let them run firstly
+	// because other clause may depend on the alias defined here
+	ast.WalkFunc(s.Fields, func(n ast.Node) bool {
+		switch f := n.(type) {
 		case *ast.Call:
 			if function.IsAnalyticFunc(f.Name) {
 				f.CachedField = fmt.Sprintf("%s_%s_%d", function.AnalyticPrefix, f.Name, f.FuncId)
