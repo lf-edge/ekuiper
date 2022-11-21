@@ -41,7 +41,7 @@ spec:
 
       containers:
         - name: ekuiper
-          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}-slim-python"
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.ekuiperEnv.enabled }}
           env:
