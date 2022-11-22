@@ -71,7 +71,7 @@ func (rps *RTSPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 	for {
 		select {
 		case <-ticker.C:
-			buf := rps.readFrameAsJpeg()
+			buf := rps.readFrameAsJpeg(ctx)
 			result, e := ctx.Decode(buf.Bytes())
 			meta := make(map[string]interface{})
 			if e != nil {
@@ -91,7 +91,8 @@ func (rps *RTSPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 	}
 }
 
-func (rps *RTSPPullSource) readFrameAsJpeg() *bytes.Buffer {
+func (rps *RTSPPullSource) readFrameAsJpeg(ctx api.StreamContext) *bytes.Buffer {
+	logger := ctx.GetLogger()
 	buf := bytes.NewBuffer(nil)
 	err := ffmpeg.Input(rps.url).
 		Filter("select", ffmpeg.Args{fmt.Sprintf("gte(n,%d)", FRAMENUMBER)}).
@@ -99,7 +100,8 @@ func (rps *RTSPPullSource) readFrameAsJpeg() *bytes.Buffer {
 		WithOutput(buf, os.Stdout).
 		Run()
 	if err != nil {
-		panic(err)
+		logger.Errorf("ffmpeg exec error %v", err)
+		return buf
 	}
 	return buf
 }
