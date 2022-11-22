@@ -1,4 +1,4 @@
-#Global httppull configurations
+#Global RTSP configurations
 default:
   # url of the request server address
   # username password, can be this format: rtsp://xxxxxx:xxxxxx@192.168.0.64:554/h265/ch1/main/av_stream
