@@ -22,7 +22,7 @@ jobs:
     - uses: actions/setup-go@v3
       with:
         go-version: '1.18'
-    - uses: actions/setup-python@v3
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.x'
         architecture: 'x64'
@@ -58,7 +58,7 @@ jobs:
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
         go test --tags="edgex test" ./...
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v3
       if: failure()
       with:
         name: stream.log

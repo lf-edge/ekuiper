@@ -65,7 +65,7 @@ jobs:
     - name: create sha file
       run: |
         cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v3
       with:
         name: packages
         path: _packages/.
@@ -88,7 +88,7 @@ jobs:
       run: |
         make pkg
         cd _packages && for var in $(ls); do openssl dgst -sha256 $var | awk '{print $2}' > $var.sha256; done && cd -
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v3
       with:
         name: packages-mac
         path: _packages/.
