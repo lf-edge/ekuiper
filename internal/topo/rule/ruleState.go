@@ -61,14 +61,14 @@ type RuleState struct {
 // Errors are possible during plan the topo.
 // If error happens return immediately without add it to the registry
 func NewRuleState(rule *api.Rule) (*RuleState, error) {
+	rs := &RuleState{
+		RuleId:   rule.Id,
+		Rule:     rule,
+		ActionCh: make(chan ActionSignal),
+	}
 	if tp, err := planner.Plan(rule); err != nil {
-		return nil, err
+		return rs, err
 	} else {
-		rs := &RuleState{
-			RuleId:   rule.Id,
-			Rule:     rule,
-			ActionCh: make(chan ActionSignal),
-		}
 		rs.Topology = tp
 		rs.Run()
 		return rs, nil
