@@ -9,12 +9,12 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/builtin/http_pull.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/builtin/http_pull.md"
+			"en_US": "https://github.com/lf-edge/ekuiper/tree/master/docs/en_US/rules/sources/plugin/rtsp.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/tree/master/docs/zh_CN/rules/sources/plugin/rtsp.md"
 		},
 		"description": {
-			"en_US": "eKuiper provides built-in support for pulling HTTP source stream, which can pull the message from HTTP server broker and feed into the eKuiper processing pipeline.",
-			"zh_CN": "eKuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 eKuiper 处理管道。"
+			"en_US": "eKuiper provides plug in support for RTSP source stream, which can pull images from RTSP server",
+			"zh_CN": "eKuiper 为提取 RTSP 源中的图片流提供了插件支持，该支持可从 RTSP 服务器提取图片消息并输入 eKuiper 处理管道。"
 		}
 	},
 	"properties": {
