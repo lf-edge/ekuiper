@@ -120,7 +120,7 @@ func (p *RuleProcessor) GetRuleById(id string) (*api.Rule, error) {
 	if !f {
 		return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found.", id))
 	}
-	return p.GetRuleByJson(id, s1)
+	return p.GetRuleByJsonValidated(s1)
 }
 
 func (p *RuleProcessor) getDefaultRule(name, sql string) *api.Rule {
@@ -147,7 +147,8 @@ func (p *RuleProcessor) getDefaultRule(name, sql string) *api.Rule {
 	}
 }
 
-func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
+// GetRuleByJsonValidated called when the json is getting from trusted source like db
+func (p *RuleProcessor) GetRuleByJsonValidated(ruleJson string) (*api.Rule, error) {
 	opt := conf.Config.Rule
 	//set default rule options
 	rule := &api.Rule{
@@ -157,7 +158,17 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 	if err := json.Unmarshal([]byte(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)
 	}
+	if rule.Options == nil {
+		rule.Options = &opt
+	}
+	return rule, nil
+}
 
+func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
+	rule, err := p.GetRuleByJsonValidated(ruleJson)
+	if err != nil {
+		return rule, err
+	}
 	//validation
 	if rule.Id == "" && id == "" {
 		return nil, fmt.Errorf("Missing rule id.")
@@ -183,10 +194,7 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 			return nil, fmt.Errorf("Rule %s has neither sql nor graph.", rule.Id)
 		}
 	}
-	if rule.Options == nil {
-		rule.Options = &opt
-	}
-	err := conf.ValidateRuleOption(rule.Options)
+	err = conf.ValidateRuleOption(rule.Options)
 	if err != nil {
 		return nil, fmt.Errorf("Rule %s has invalid options: %s.", rule.Id, err)
 	}

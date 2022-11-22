@@ -92,8 +92,7 @@ func createRule(name, ruleJson string) (string, error) {
 		go func() {
 			panicOrError := infra.SafeRun(func() error {
 				//Start the rule which runs async
-				rs.Start()
-				return nil
+				return rs.Start()
 			})
 			if panicOrError != nil {
 				logger.Errorf("Rule %s start failed: %s", r.Id, panicOrError)
@@ -109,7 +108,7 @@ func createRule(name, ruleJson string) (string, error) {
 func createRuleState(r *api.Rule) (*rule.RuleState, error) {
 	rs, err := rule.NewRuleState(r)
 	if err != nil {
-		return nil, err
+		return rs, err
 	}
 	registry.Store(r.Id, rs)
 	return rs, nil
@@ -118,8 +117,10 @@ func createRuleState(r *api.Rule) (*rule.RuleState, error) {
 func recoverRule(r *api.Rule) string {
 	// Validate the topo
 	rs, err := createRuleState(r)
-	if err != nil {
-		return fmt.Sprintf("Create rule topo error: %v", err)
+	if err != nil { // when recovering rules, assume the rules are valid, so always add it to the registry
+		conf.Log.Errorf("Create rule topo error: %v", err)
+		r.Triggered = false
+		registry.Store(r.Id, rs)
 	}
 	if !r.Triggered {
 		return fmt.Sprintf("Rule %s was stopped.", r.Id)
@@ -164,9 +165,8 @@ func startRule(name string) error {
 	if !ok {
 		return fmt.Errorf("Rule %s is not found in registry, please check if it is created", name)
 	} else {
-		rs.Start()
+		return rs.Start()
 	}
-	return nil
 }
 
 func stopRule(name string) (result string) {
