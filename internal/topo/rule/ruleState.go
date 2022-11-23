@@ -169,7 +169,7 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 					return nil
 				}
 			}
-			if count <= option.Attempts {
+			if count < option.Attempts {
 				if d > option.MaxDelay {
 					d = option.MaxDelay
 				}
@@ -211,42 +211,35 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 func (rs *RuleState) Start() error {
 	rs.Lock()
 	defer rs.Unlock()
-	switch rs.triggered {
-	case 1:
-		return fmt.Errorf("Rule %s is already starting", rs.RuleId)
-	case -1:
-		return fmt.Errorf("Rule %s is already deleted", rs.RuleId)
-	default:
-		// Start from stop
-		if rs.Topology == nil {
-			if tp, err := planner.Plan(rs.Rule); err != nil {
-				return err
-			} else {
-				rs.Topology = tp
-			}
-		} // else start after create
-		rs.triggered = 1
-		rs.ActionCh <- ActionSignalStart
-		return nil
+	if rs.triggered == -1 {
+		return fmt.Errorf("rule %s is already deleted", rs.RuleId)
 	}
+	if rs.Topology == nil {
+		if tp, err := planner.Plan(rs.Rule); err != nil {
+			return err
+		} else {
+			rs.Topology = tp
+		}
+	} // else start after create
+	rs.triggered = 1
+	rs.ActionCh <- ActionSignalStart
+	return nil
 }
 
 // Stop remove the Topology
 func (rs *RuleState) Stop() error {
 	rs.Lock()
 	defer rs.Unlock()
-	switch rs.triggered {
-	case 0:
-		return fmt.Errorf("Rule %s is already stopping", rs.RuleId)
-	case -1:
-		return fmt.Errorf("Rule %s is already deleted", rs.RuleId)
-	default:
-		rs.triggered = 0
+	if rs.triggered == -1 {
+		return fmt.Errorf("rule %s is already deleted", rs.RuleId)
+	}
+	rs.triggered = 0
+	if rs.Topology != nil {
 		rs.Topology.Cancel()
 		rs.Topology = nil
-		rs.ActionCh <- ActionSignalStop
-		return nil
 	}
+	rs.ActionCh <- ActionSignalStop
+	return nil
 }
 
 func (rs *RuleState) Close() error {
