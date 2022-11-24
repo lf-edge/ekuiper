@@ -12,22 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package static
+package custom
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
 
-func init() {
+func TestCustomConverter(t *testing.T) {
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		t.Fatal(err)
+	}
+	etcDir := filepath.Join(dataDir, "schemas", "custom")
+	err = os.MkdirAll(etcDir, os.ModePerm)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err = os.RemoveAll(etcDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	// build the so file into data/test prior to running the test
+	//Copy the helloworld.so
+	bytesRead, err := os.ReadFile(filepath.Join(dataDir, "helloworld.so"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(filepath.Join(etcDir, "helloworld.so"), bytesRead, 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
 	schema.InitRegistry()
+	testEncode(t)
+	testDecode(t)
 }
 
-func TestEncode(t *testing.T) {
-	c, err := LoadConverter("static", "helloworld", "HelloReply")
+func testEncode(t *testing.T) {
+	c, err := LoadConverter("custom", "helloworld", "HelloReply")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,8 +89,8 @@ func TestEncode(t *testing.T) {
 	}
 }
 
-func TestDecode(t *testing.T) {
-	c, err := LoadConverter("static", "helloworld", "HelloRequest")
+func testDecode(t *testing.T) {
+	c, err := LoadConverter("custom", "helloworld", "HelloRequest")
 	if err != nil {
 		t.Fatal(err)
 	}

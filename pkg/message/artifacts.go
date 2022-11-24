@@ -18,7 +18,7 @@ const (
 	FormatBinary   = "binary"
 	FormatJson     = "json"
 	FormatProtobuf = "protobuf"
-	FormatStatic   = "static"
+	FormatCustom   = "custom"
 
 	DefaultField = "self"
 	MetaKey      = "__meta"
@@ -26,7 +26,7 @@ const (
 
 func IsFormatSupported(format string) bool {
 	switch format {
-	case FormatBinary, FormatJson, FormatProtobuf, FormatStatic:
+	case FormatBinary, FormatJson, FormatProtobuf, FormatCustom:
 		return true
 	default:
 		return false

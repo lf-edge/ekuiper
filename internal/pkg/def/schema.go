@@ -18,10 +18,10 @@ type SchemaType string
 
 const (
 	PROTOBUF SchemaType = "protobuf"
-	STATIC   SchemaType = "static"
+	CUSTOM   SchemaType = "custom"
 )
 
 var SchemaTypes = []SchemaType{
 	PROTOBUF,
-	STATIC,
+	CUSTOM,
 }

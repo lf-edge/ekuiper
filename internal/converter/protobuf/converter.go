@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
+	"github.com/lf-edge/ekuiper/internal/converter/static"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 type Converter struct {
@@ -28,25 +30,25 @@ type Converter struct {
 var protoParser *protoparse.Parser
 
 func init() {
-	//etcDir, err := conf.GetConfLoc()
-	//if err != nil {
-	//	panic(err)
-	//}
 	protoParser = &protoparse.Parser{}
 }
 
-func NewConverter(fileName string, messageName string) (*Converter, error) {
-	if fds, err := protoParser.ParseFiles(fileName); err != nil {
-		return nil, fmt.Errorf("parse schema file %s failed: %s", fileName, err)
+func NewConverter(schemaFile string, soFile string, messageName string) (message.Converter, error) {
+	if soFile != "" {
+		return static.LoadStaticConverter(soFile, messageName)
 	} else {
-		messageDescriptor := fds[0].FindMessage(messageName)
-		if messageDescriptor == nil {
-			return nil, fmt.Errorf("message type %s not found in schema file %s", messageName, fileName)
+		if fds, err := protoParser.ParseFiles(schemaFile); err != nil {
+			return nil, fmt.Errorf("parse schema file %s failed: %s", schemaFile, err)
+		} else {
+			messageDescriptor := fds[0].FindMessage(messageName)
+			if messageDescriptor == nil {
+				return nil, fmt.Errorf("message type %s not found in schema file %s", messageName, schemaFile)
+			}
+			return &Converter{
+				descriptor: messageDescriptor,
+				fc:         GetFieldConverter(),
+			}, nil
 		}
-		return &Converter{
-			descriptor: messageDescriptor,
-			fc:         GetFieldConverter(),
-		}, nil
 	}
 }
 

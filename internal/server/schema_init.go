@@ -64,8 +64,8 @@ func schemasHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body: Error decoding schema json", logger)
 			return
 		}
-		if sch.Content != "" && sch.FilePath != "" {
-			handleError(w, nil, "Invalid body: Cannot specify both content and file", logger)
+		if err = sch.Validate(); err != nil {
+			handleError(w, nil, "Invalid body", logger)
 			return
 		}
 		err = schema.Register(sch)
@@ -114,8 +114,8 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, nil, "Invalid body: Type or name does not match", logger)
 			return
 		}
-		if sch.Content != "" && sch.FilePath != "" {
-			handleError(w, nil, "Invalid body: Cannot specify both content and file", logger)
+		if err = sch.Validate(); err != nil {
+			handleError(w, nil, "Invalid body", logger)
 			return
 		}
 		err = schema.CreateOrUpdateSchema(sch)
