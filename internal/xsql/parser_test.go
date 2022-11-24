@@ -1958,12 +1958,12 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 		{
-			s:   `SELECT name WHEN (PARTITION BY device) FROM tbl`,
-			err: `found "WHEN", expected FROM.`,
+			s:   `SELECT name OVER (WHEN a > b) FROM tbl`,
+			err: `found "OVER", expected FROM.`,
 		},
 		{
-			s:   `SELECT avg(name) WHEN (PARTITION BY device) FROM tbl`,
-			err: `Found WHEN after non analytic function avg`,
+			s:   `SELECT avg(name) OVER (WHEN a > b) FROM tbl`,
+			err: `Found OVER after non analytic function avg`,
 		},
 		{
 			s: `SELECT *, name, lower(name) as ln FROM tbl`,
