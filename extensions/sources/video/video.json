@@ -9,12 +9,12 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/tree/master/docs/en_US/rules/sources/plugin/rtsp.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/tree/master/docs/zh_CN/rules/sources/plugin/rtsp.md"
+			"en_US": "https://github.com/lf-edge/ekuiper/tree/master/docs/en_US/rules/sources/plugin/video.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/tree/master/docs/zh_CN/rules/sources/plugin/video.md"
 		},
 		"description": {
-			"en_US": "eKuiper provides plug in support for RTSP source stream, which can pull images from RTSP server",
-			"zh_CN": "eKuiper 为提取 RTSP 源中的图片流提供了插件支持，该支持可从 RTSP 服务器提取图片消息并输入 eKuiper 处理管道。"
+			"en_US": "eKuiper provides plug in support for video stream, which can pull images from a video stream",
+			"zh_CN": "eKuiper 为提取视频源中的图片流提供了插件支持，该支持可从视频流提取图片消息并输入 eKuiper 处理管道。"
 		}
 	},
 	"properties": {
@@ -61,8 +61,8 @@
 		"category": "source",
 		"icon": "iconPath",
 		"label": {
-			"en_US": "RTSP PULL",
-			"zh_CN": "RTSP PULL"
+			"en_US": "Video",
+			"zh_CN": "视频"
 		}
 	}
 }

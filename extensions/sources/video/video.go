@@ -27,12 +27,12 @@ import (
 const RTSP_DEFAULT_INTERVAL = 10000
 const FRAMENUMBER = 5
 
-type RTSPPullSource struct {
+type VideoPullSource struct {
 	url      string
 	interval int
 }
 
-func (rps *RTSPPullSource) Configure(_ string, props map[string]interface{}) error {
+func (rps *VideoPullSource) Configure(_ string, props map[string]interface{}) error {
 
 	if u, ok := props["url"]; ok {
 		if p, ok := u.(string); ok {
@@ -53,18 +53,18 @@ func (rps *RTSPPullSource) Configure(_ string, props map[string]interface{}) err
 	return nil
 }
 
-func (rps *RTSPPullSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (rps *VideoPullSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	rps.initTimerPull(ctx, consumer, errCh)
 }
 
-func (rps *RTSPPullSource) Close(ctx api.StreamContext) error {
+func (rps *VideoPullSource) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
-	logger.Infof("Closing rtsp pull source")
+	logger.Infof("Closing video pull source")
 
 	return nil
 }
 
-func (rps *RTSPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
+func (rps *VideoPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
 	ticker := time.NewTicker(time.Millisecond * time.Duration(rps.interval))
 	logger := ctx.GetLogger()
 	defer ticker.Stop()
@@ -91,7 +91,7 @@ func (rps *RTSPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 	}
 }
 
-func (rps *RTSPPullSource) readFrameAsJpeg(ctx api.StreamContext) *bytes.Buffer {
+func (rps *VideoPullSource) readFrameAsJpeg(ctx api.StreamContext) *bytes.Buffer {
 	logger := ctx.GetLogger()
 	buf := bytes.NewBuffer(nil)
 	err := ffmpeg.Input(rps.url).
@@ -106,6 +106,6 @@ func (rps *RTSPPullSource) readFrameAsJpeg(ctx api.StreamContext) *bytes.Buffer 
 	return buf
 }
 
-func Rtsp() api.Source {
-	return &RTSPPullSource{}
+func Video() api.Source {
+	return &VideoPullSource{}
 }
