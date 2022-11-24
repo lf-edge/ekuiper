@@ -154,9 +154,9 @@ func (f *Tffunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{},
 			}
 		default:
 			// TODO support multiple dimensions. Here assume user passes a 1D array.
-			if input.Dim(1) != len(arg) {
-				return fmt.Errorf("tensorflow function input tensor %d must have %d elements but got %d", i-1, input.Dim(1), len(arg)), false
-			}
+			//if input.Dim(1)*input.Dim(2) != len(arg) {
+			//	return fmt.Errorf("tensorflow function input tensor %d must have %d elements but got %d", i-1, input.Dim(1), len(arg)), false
+			//}
 			switch t {
 			case tflite.Float32:
 				v, err := cast.ToFloat32Slice(args[i], cast.CONVERT_SAMEKIND)
