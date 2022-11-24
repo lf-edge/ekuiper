@@ -165,10 +165,10 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 
 分析函数会保持状态来做分析工作。在流式处理规则中，分析函数会首先被执行，这样它们就不会受到 WHERE 子句的影响而必不更新状态。
 
-分析函数完整使用格式为
+分析函数完整使用格式为, over 参数可选
 
 ```
-AnalyticFuncName(<arguments>...) <OVER ([PARTITION BY <partition key>])> <WHEN Expression>
+AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>] [WHEN <Expression>])
 ```
 
 分析函数的计算是在当前查询输入的所有输入事件上进行的，可以选择限制分析函数只考虑符合 PARTITION BY 子句的事件。
@@ -182,7 +182,7 @@ AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>])
 当为有效事件时，根据分析函数语意计算结果并更新状态。当为无效事件时，忽略事件值，复用保存的状态值。
 
 ```
-AnalyticFuncName(<arguments>...) WHEN Expression
+AnalyticFuncName(<arguments>...) OVER ([WHEN <Expression>])
 ```
 
 | Function    | Example                              | Description                                                                                        |
@@ -207,7 +207,7 @@ lag(temperature) OVER (PARTITION BY deviceId)
 示例3：ts为时间戳，获取设备状态 statusCode1 和 statusCode2 不相等持续时间
 
 ```text
-ts - lag(ts, 1, ts) WHEN statusCode1 != statusCode2
+ts - lag(ts, 1, ts) OVER (WHEN statusCode1 != statusCode2)
 ```
 
 ## 其它函数

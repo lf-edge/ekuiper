@@ -1520,20 +1520,36 @@ func (p *Parser) parseOverPartition(c *ast.Call) error {
 							break
 						}
 					}
-					if ttt, _ := p.scanIgnoreWhitespace(); ttt != ast.RPAREN {
-						return fmt.Errorf("found %q, expect right parentheses after PARTITION BY", ttt)
-					}
 					if len(pe.Exprs) == 0 {
 						return fmt.Errorf("PARTITION BY must have at least one expression.")
 					}
 					c.Partition = pe
-					return nil
 				} else {
 					return fmt.Errorf("found %q, expected by after partition.", l1)
 				}
 			} else {
-				return fmt.Errorf("Found %q after OVER (, expect partition by.", tok1)
+				p.unscan()
 			}
+
+			if t, _ := p.scanIgnoreWhitespace(); t == ast.WHEN {
+				if exp, err := p.ParseExpr(); err != nil {
+					return err
+				} else {
+					c.WhenExpr = exp
+				}
+			} else {
+				p.unscan()
+			}
+			if c.Partition != nil || c.WhenExpr != nil {
+				if ttt, _ := p.scanIgnoreWhitespace(); ttt != ast.RPAREN {
+					return fmt.Errorf("Found %q, expect right parentheses after OVER ", ttt)
+				}
+			}
+			if c.Partition == nil && c.WhenExpr == nil {
+				ttt, _ := p.scanIgnoreWhitespace()
+				return fmt.Errorf("Found %q after OVER (, expect partition by or when.", ttt)
+			}
+			return nil
 		} else {
 			return fmt.Errorf("Found %q after OVER, expect parentheses.", tok1)
 		}

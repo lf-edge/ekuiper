@@ -1879,7 +1879,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 		{
-			s: `SELECT lag(name) OVER (PARTITION BY device) WHEN abc > 12 as ll FROM tbl`,
+			s: `SELECT lag(name) OVER (PARTITION BY device WHEN abc > 12) as ll FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{
@@ -1907,7 +1907,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 		{
-			s: `SELECT lag(name) OVER (PARTITION BY device) WHEN had_changed(true, StatusCode) as ll FROM tbl`,
+			s: `SELECT lag(name) OVER (PARTITION BY device WHEN had_changed(true, StatusCode)) as ll FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{
@@ -1935,7 +1935,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 		{
-			s: `SELECT lag(name) WHEN had_changed(true, StatusCode) as ll FROM tbl`,
+			s: `SELECT lag(name) OVER (WHEN had_changed(true, StatusCode)) as ll FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{
