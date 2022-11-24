@@ -25,12 +25,12 @@ spec:
     {{- else if eq .Values.service.type "ClusterIP" }}
     nodePort: null
     {{- end }}
-  - name: {{ .Values.service.ports.ekuiper.name }}
-    port: {{ .Values.service.ports.ekuiper.port | default 20498 }}
+  - name: {{ .Values.service.ports.pushapi.name }}
+    port: {{ .Values.service.ports.pushapi.port | default 10081 }}
     protocol: TCP
-    targetPort: ekuiper
-    {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) (not (empty .Values.service.nodePorts.ekuiper)) }}
-    nodePort: {{ .Values.service.nodePorts.ekuiper }}
+    targetPort: pushapi
+    {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) (not (empty .Values.service.nodePorts.pushapi)) }}
+    nodePort: {{ .Values.service.nodePorts.pushapi }}
     {{- else if eq .Values.service.type "ClusterIP" }}
     nodePort: null
     {{- end }}
