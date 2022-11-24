@@ -28,10 +28,17 @@ func registerAnalyticFunc() {
 	builtins["changed_col"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0].(bool) && args[1] == nil {
+			ignoreNull, ok := args[0].(bool)
+			if !ok {
+				return fmt.Errorf("first arg is not a bool but got %v", args[0]), false
+			}
+			if ignoreNull && args[1] == nil {
 				return nil, true
 			}
-			validData := args[len(args)-2].(bool)
+			validData, ok := args[len(args)-2].(bool)
+			if !ok {
+				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
+			}
 			if !validData {
 				return nil, true
 			}
@@ -62,7 +69,14 @@ func registerAnalyticFunc() {
 	builtins["had_changed"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			validData := args[len(args)-2].(bool)
+			l := len(args) - 2
+			if l <= 1 {
+				return fmt.Errorf("expect more than one arg but got %d", len(args)), false
+			}
+			validData, ok := args[len(args)-2].(bool)
+			if !ok {
+				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
+			}
 			if !validData {
 				return false, true
 			}
@@ -107,13 +121,19 @@ func registerAnalyticFunc() {
 	builtins["lag"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			l := len(args) - 2
+			if l != 1 && l != 2 && l != 3 {
+				return fmt.Errorf("expect one two or three args but got %d", l), false
+			}
 			key := args[len(args)-1].(string)
 			v, err := ctx.GetState(key)
 			if err != nil {
 				return fmt.Errorf("error getting state for %s: %v", key, err), false
 			}
-			validData := args[len(args)-2].(bool)
-
+			validData, ok := args[len(args)-2].(bool)
+			if !ok {
+				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
+			}
 			paraLen := len(args) - 2
 			var rq *ringqueue = nil
 			var rtnVal interface{} = nil
@@ -178,9 +198,16 @@ func registerAnalyticFunc() {
 	builtins["latest"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			l := len(args) - 2
+			if l != 1 && l != 2 {
+				return fmt.Errorf("expect one or two args but got %d", l), false
+			}
 			paraLen := len(args) - 2
 			key := args[len(args)-1].(string)
-			validData := args[len(args)-2].(bool)
+			validData, ok := args[len(args)-2].(bool)
+			if !ok {
+				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
+			}
 
 			if args[0] == nil {
 				v, err := ctx.GetState(key)
