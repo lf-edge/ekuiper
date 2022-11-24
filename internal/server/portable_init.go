@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/lf-edge/ekuiper/internal/binder"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -47,7 +48,7 @@ func (p portableComp) register() {
 
 func (p portableComp) rest(r *mux.Router) {
 	r.HandleFunc("/plugins/portables", portablesHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/plugins/portables/{name}", portableHandler).Methods(http.MethodGet, http.MethodDelete)
+	r.HandleFunc("/plugins/portables/{name}", portableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 }
 
 func portablesHandler(w http.ResponseWriter, r *http.Request) {
@@ -95,5 +96,24 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		jsonResponse(j, w, logger)
+	case http.MethodPut:
+		sd := plugin.NewPluginByType(plugin.PORTABLE)
+		err := json.NewDecoder(r.Body).Decode(sd)
+		// Problems decoding
+		if err != nil {
+			handleError(w, err, "Invalid body: Error decoding the portable plugin json", logger)
+			return
+		}
+		err = portableManager.Delete(name)
+		if err != nil {
+			conf.Log.Errorf("delete portable plugin %s error: %v", name, err)
+		}
+		err = portableManager.Register(sd)
+		if err != nil {
+			handleError(w, err, "portable plugin update command error", logger)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fmt.Sprintf("portable plugin %s is updated", sd.GetName())))
 	}
 }
