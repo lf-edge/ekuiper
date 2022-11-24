@@ -20,7 +20,7 @@
 	"name": "image",
 	"functions": [{
 		"name": "resize",
-		"example": "resize(image,width, height)",
+		"example": "resize(image,width, height, isRaw)",
 		"hint": {
 			"en_US": "Creates a scaled image with new dimensions (width, height) .If either width or height is set to 0, it will be set to an aspect ratio preserving value.",
 			"zh_CN": "创建具有新尺寸（宽度，高度）的缩放图像。如果width或height设置为0，则将其设置为长宽比保留值。"
@@ -67,6 +67,20 @@
 				"label": {
 					"en_US": "Input height",
 					"zh_CN": "输入高度"
+				}
+			},{
+				"name": "isRaw",
+				"hidden": true,
+				"optional": true,
+				"control": "radio",
+				"type": "bool",
+				"hint": {
+					"en_US": "Whether to output raw data, set to true when using by most AI inference",
+					"zh_CN": "输出未编码原始数据，通常 AI 推断需要原始数据"
+				},
+				"label": {
+					"en_US": "Output Raw Data",
+					"zh_CN": "输出原始数据"
 				}
 			}
 		],

@@ -48,10 +48,10 @@ accumulateWordCount(avg,sep) 示例
 
 图像处理目前暂时只支持`png`和`jpeg`格式
 
-| 函数        | 示例                                 | 说明                                                      |
-|-----------|------------------------------------|---------------------------------------------------------|
-| resize    | resize(avg,width, height)          | 创建具有新尺寸（宽度，高度）的缩放图像。如果 width 或 height 设置为0，则将其设置为长宽比保留值 |
-| thumbnail | thumbnail(avg,maxWidth, maxHeight) | 将保留宽高比的图像缩小到最大尺寸( maxWidth，maxHeight)。                  |
+| 函数        | 示例                                  | 说明                                                                                                |
+|-----------|-------------------------------------|---------------------------------------------------------------------------------------------------|
+| resize    | resize(avg, width, height, [isRaw]) | 创建具有新尺寸（宽度，高度）的缩放图像。如果 width 或 height 设置为0，则将其设置为长宽比保留值。isRaw 为可选参数，用于指定是否输出原始未编码数据，常用于 AI 模型推理中。 |
+| thumbnail | thumbnail(avg,maxWidth, maxHeight)  | 将保留宽高比的图像缩小到最大尺寸( maxWidth，maxHeight)。                                                            |
 
 resize(avg,width, height)示例
 
