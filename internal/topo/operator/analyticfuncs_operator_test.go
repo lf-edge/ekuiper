@@ -31,7 +31,7 @@ func TestAnalyticFuncs(t *testing.T) {
 	var tests = []struct {
 		funcs  []*ast.Call
 		data   []interface{}
-		result [][]map[string]interface{}
+		result []map[string]interface{}
 	}{
 		{ // 0 Lag test
 			funcs: []*ast.Call{
@@ -85,17 +85,16 @@ func TestAnalyticFuncs(t *testing.T) {
 					},
 				},
 			},
-			result: [][]map[string]interface{}{{{
+			result: []map[string]interface{}{{
 				"$$a_lag_0": nil,
 				"$$a_lag_1": nil,
-				"a":         "a1", "b": "b1", "c": "c1",
-			}}, {{
-				"$$a_lag_0": "a1", "$$a_lag_1": "b1", "a": "a1", "b": "b2", "c": "c1",
-			}}, {{
-				"$$a_lag_0": "a1", "$$a_lag_1": "b2", "a": "a1", "c": "c1",
-			}}, {{
-				"$$a_lag_0": "a1", "$$a_lag_1": interface{}(nil), "a": "a1", "b": "b2", "c": "c2",
-			}}},
+			}, {
+				"$$a_lag_0": "a1", "$$a_lag_1": "b1",
+			}, {
+				"$$a_lag_0": "a1", "$$a_lag_1": "b2",
+			}, {
+				"$$a_lag_0": "a1", "$$a_lag_1": interface{}(nil),
+			}},
 		},
 		{ // 1 changed test
 			funcs: []*ast.Call{
@@ -157,16 +156,16 @@ func TestAnalyticFuncs(t *testing.T) {
 					},
 				},
 			},
-			result: [][]map[string]interface{}{
-				{{
-					"$$a_changed_col_0": "a1", "$$a_had_changed_0": false, "$$a_lag_1": nil, "a": "a1", "b": "b1",
-				}}, {{
-					"$$a_changed_col_0": nil, "$$a_had_changed_0": true, "$$a_lag_1": "b1", "a": "a1", "c": "c1",
-				}}, {{
-					"$$a_changed_col_0": nil, "$$a_had_changed_0": false, "$$a_lag_1": nil, "a": "a1", "c": "c1",
-				}}, {{
-					"$$a_changed_col_0": nil, "$$a_had_changed_0": true, "$$a_lag_1": nil, "a": "a1", "b": "b2", "c": "c2",
-				}},
+			result: []map[string]interface{}{
+				{
+					"$$a_changed_col_0": "a1", "$$a_had_changed_0": false, "$$a_lag_1": nil,
+				}, {
+					"$$a_changed_col_0": nil, "$$a_had_changed_0": true, "$$a_lag_1": "b1",
+				}, {
+					"$$a_changed_col_0": nil, "$$a_had_changed_0": false, "$$a_lag_1": nil,
+				}, {
+					"$$a_changed_col_0": nil, "$$a_had_changed_0": true, "$$a_lag_1": nil,
+				},
 			},
 		},
 	}
@@ -179,15 +178,10 @@ func TestAnalyticFuncs(t *testing.T) {
 
 		pp := &AnalyticFuncsOp{Funcs: tt.funcs}
 		fv, afv := xsql.NewFunctionValuersForOp(ctx)
-		r := make([][]map[string]interface{}, 0, len(tt.data))
+		r := make([]map[string]interface{}, 0, len(tt.data))
 		for _, d := range tt.data {
 			opResult := pp.Apply(ctx, d, fv, afv)
-			result, err := parseResult(opResult, false)
-			if err != nil {
-				t.Errorf("parse result error： %s", err)
-				continue
-			}
-			r = append(r, result)
+			r = append(r, opResult.(*xsql.Tuple).CalCols)
 		}
 
 		if !reflect.DeepEqual(tt.result, r) {

@@ -154,7 +154,10 @@ func (d *AffiliateRow) MergeMap(cachedMap map[string]interface{}) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	for k, v := range d.CalCols {
-		cachedMap[k] = v
+		// Do not write out the internal fields
+		if !strings.HasPrefix(k, "$$") {
+			cachedMap[k] = v
+		}
 	}
 	for k, v := range d.AliasMap {
 		cachedMap[k] = v
