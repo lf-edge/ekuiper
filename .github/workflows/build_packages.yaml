@@ -186,7 +186,7 @@ jobs:
           - sources/random
           - sources/zmq
           - sources/sql
-          - sources/rtsp
+          - sources/video
           - functions/accumulateWordCount
           - functions/countPlusOne
           - functions/echo

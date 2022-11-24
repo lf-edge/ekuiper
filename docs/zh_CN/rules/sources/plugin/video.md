@@ -1,25 +1,25 @@
-# RTSP 源
+# 视频源
 
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-RTSP 源会通过 `ffmpeg` 命令查询 RTSP 视频流获取图片
+视频源会通过 `ffmpeg` 命令查询视频流，例如 RTSP 视频流获取图片
 
 ## 编译和部署插件
 
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Rtsp.so extensions/sources/rtsp/rtsp.go
-# cp plugins/sources/Rtsp.so $eKuiper_install/plugins/sources
-# cp plugins/sources/rtsp.json $eKuiper_install/etc/sources
-# cp plugins/sources/rtsp.yaml $eKuiper_install/etc/sources
+# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Video.so extensions/sources/video/video.go
+# cp plugins/sources/Video.so $eKuiper_install/plugins/sources
+# cp plugins/sources/video.json $eKuiper_install/etc/sources
+# cp plugins/sources/video.yaml $eKuiper_install/etc/sources
 ```
 
 重新启动 eKuiper 服务器以激活插件。
 
 ## 配置
 
-该源的配置为 `$ekuiper/etc/sources/rtsp.yaml`。格式如下：
+该源的配置为 `$ekuiper/etc/sources/video.yaml`。格式如下：
 
 ```yaml
 default:
@@ -38,7 +38,7 @@ dedup:
 
 ### url
 
-RTSP 视频源地址
+视频源地址
 
 ### interval
 
@@ -54,7 +54,7 @@ RTSP 视频源地址
 ```
 demo (
 		...
-	) WITH (FORMAT="JSON", CONF_KEY="ext", TYPE="rtsp");
+	) WITH (FORMAT="JSON", CONF_KEY="ext", TYPE="video");
 ```
 
 配置键 "ext" 将被使用。
