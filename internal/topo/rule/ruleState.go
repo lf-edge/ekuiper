@@ -200,7 +200,9 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 		rs.Lock()
 		// The only change the state by error
 		rs.triggered = 0
-		rs.topoGraph = rs.Topology.GetTopo()
+		if rs.Topology != nil {
+			rs.topoGraph = rs.Topology.GetTopo()
+		}
 		rs.Topology = nil
 		rs.Unlock()
 	}
