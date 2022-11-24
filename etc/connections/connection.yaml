@@ -17,7 +17,14 @@ mqtt:
     #rootCaPath: /var/kuiper/xyz-rootca.pem
     #insecureSkipVerify: false
     #protocolVersion: 3
-
+  baetylBroker:
+    server: "mqtts://baetyl-broker.baetyl-edge-system:50010"
+    clientid: ekuiper
+    qos: 0
+    certificationPath: /var/lib/baetyl/system/certs/crt.pem
+    privateKeyPath: /var/lib/baetyl/system/certs/key.pem
+    rootCaPath: /var/lib/baetyl/system/certs/ca.pem
+    insecureSkipVerify: false
 
 edgex:
   redisMsgBus: #redis connection key
