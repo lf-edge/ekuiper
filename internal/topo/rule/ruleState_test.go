@@ -21,8 +21,8 @@ import (
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
+	"sync"
 	"testing"
-	"time"
 )
 
 var defaultOption = &api.RuleOption{
@@ -210,22 +210,26 @@ func TestMultipleAccess(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	var wg sync.WaitGroup
+	wg.Add(10)
 	for i := 0; i < 10; i++ {
 		if i%3 == 0 {
 			go func(i int) {
 				rs.Stop()
 				fmt.Printf("%d:%d\n", i, rs.triggered)
+				wg.Done()
 			}(i)
 		} else {
 			go func(i int) {
 				rs.Start()
 				fmt.Printf("%d:%d\n", i, rs.triggered)
+				wg.Done()
 			}(i)
 		}
 	}
-	time.Sleep(1 * time.Millisecond)
+	wg.Wait()
 	rs.Start()
-	time.Sleep(10 * time.Millisecond)
+	fmt.Printf("%d:%d\n", 10, rs.triggered)
 	if rs.triggered != 1 {
 		t.Errorf("triggered mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", 1, rs.triggered)
 	}
