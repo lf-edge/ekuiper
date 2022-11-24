@@ -1351,7 +1351,7 @@ func Test_createLogicalPlan(t *testing.T) {
 			}.Init(),
 		},
 		{ // 16 analytic function over partition when plan
-			sql: `SELECT latest(lag(name)) OVER (PARTITION BY temp) WHEN temp > 12, id1 FROM src1 WHERE lag(temp) > temp`,
+			sql: `SELECT latest(lag(name)) OVER (PARTITION BY temp WHEN temp > 12), id1 FROM src1 WHERE lag(temp) > temp`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
