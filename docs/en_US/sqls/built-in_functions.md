@@ -164,6 +164,12 @@ When casting to datetime type, the supported column type and casting rule are:
 
 Analytic functions always use state to do analytic jobs. In streaming processing, analytic functions are evaluated first so that they are not affected by predicates in WHERE clause.
 
+Analytic function call format is
+
+```
+AnalyticFuncName(<arguments>...) <OVER ([PARTITION BY <partition key>])> <WHEN Expression>
+```
+
 Analytic function computations are performed over all the input events of the current query input, optionally you can limit analytic function to only consider events that match the partition_by_clause.
 
 The syntax is like:
@@ -171,6 +177,15 @@ The syntax is like:
 ```
 AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>])
 ```
+
+The analysis function can use the WHEN clause to determine whether the current event is a valid event based on whether the condition is met.
+When it is a valid event, calculate the result and update the state according to the analysis function semantics. When it is an invalid event, ignore the event value and reuse the saved state value.
+
+```
+AnalyticFuncName(<arguments>...) WHEN Expression
+```
+
+
 
 | Function    | Example                              | Description                                                                                                                                                                                                                |
 |-------------|--------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -189,6 +204,12 @@ Example function call to get the previous temperature value with the same device
 
 ```text
 lag(temperature) OVER (PARTITION BY deviceId)
+```
+
+Example function call to calculate duration of events:  ts is timestamp, and statusCode1 and statusCode2 are device status in the same event
+
+```text
+ts - lag(ts, 1, ts) WHEN statusCode1 != statusCode2
 ```
 
 ## Other Functions
