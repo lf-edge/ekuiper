@@ -124,7 +124,7 @@ GET http://localhost:9081/plugins/portables/{name}
 
 ## 删除插件
 
-该 API 用于删除插件。 需要重启 eKuiper 服务器才能生效。
+该 API 用于删除插件。 需要注意的是，对于原生插件，删除操作需要重启 eKuiper 服务器才能生效。这意味着运行中的规则仍然会使用已删除的插件正常运行，直到重启。对于 portable 插件，删除操作立即生效。使用插件的规则仍然处于运行状态，但可能会收到错误。当有同名的 Portable 插件创建时，这些规则将自动使用新的插件运行。如果不希望规则保持运行，需要在删除插件之前，手动删除使用插件的规则。
 
 ```shell
 DELETE http://localhost:9081/plugins/sources/{name}
@@ -136,6 +136,14 @@ DELETE http://localhost:9081/plugins/portables/{name}
 
 ```shell
 DELETE http://localhost:9081/plugins/sources/{name}?stop=1
+```
+
+## 更新插件
+
+仅 portable 插件支持更新操作。正在使用插件的规则将自动热加载新的插件实现。
+
+```shell
+PUT http://localhost:9081/plugins/portables/{name}
 ```
 
 ## 用于导出多函数的函数插件的相关 API

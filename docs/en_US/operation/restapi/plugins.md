@@ -123,7 +123,7 @@ Response Sample:
 
 ## drop a plugin
 
-The API is used for drop the plugin. The eKuiper server needs to be restarted to take effect.
+The API is used for drop the plugin. Notice that, for native plugins, the eKuiper server needs to be restarted to take effect. The current rules will continue to run with the deleted native plugins successfully. For portable plugin, the deletion will take effect immediately. The current rules which are using that plugin may encounter errors but won't stop and can continue running if an updated plugin with the same name is created later. If this is not expected, manually stop or delete those rules before deleting a plugin.
 
 ```shell
 DELETE http://localhost:9081/plugins/sources/{name}
@@ -134,6 +134,14 @@ DELETE http://localhost:9081/plugins/portables/{name}
 The user can pass a query parameter to decide if eKuiper should be stopped after a delete in order to make the deletion take effect. The parameter is `stop` and only when the value is `1` will the eKuiper be stopped. The user has to manually restart it.
 ```shell
 DELETE http://localhost:9081/plugins/sources/{name}?stop=1
+```
+
+## update a plugin
+
+Only portable plugins allows to be updated. The rules will hot reload the new plugin automatically. 
+
+```shell
+PUT http://localhost:9081/plugins/portables/{name}
 ```
 
 ## APIs to handle function plugin with multiple functions
