@@ -68,7 +68,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: packages
-        path: _packages/.
+        path: _packages/
 
   build-on-mac:
     runs-on: macos-latest
@@ -91,7 +91,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: packages-mac
-        path: _packages/.
+        path: _packages/
 
   build-docker-images:
     runs-on: ubuntu-latest
@@ -274,7 +274,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: plugins
-        path: "_plugins/"
+        path: _plugins/
 
   build-kubernetes-tool:
     runs-on: ubuntu-latest
