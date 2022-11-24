@@ -59,11 +59,6 @@ func NewPortableFunc(symbolName string, reg *PluginMeta) (*PortableFunc, error) 
 		return nil, err
 	}
 
-	err = dataCh.Handshake()
-	if err != nil {
-		return nil, fmt.Errorf("function %s handshake error: %v", reg.Name, err)
-	}
-
 	return &PortableFunc{
 		symbolName: reg.Name,
 		reg:        reg,
@@ -109,8 +104,16 @@ func (f *PortableFunc) Exec(args []interface{}, ctx api.FunctionContext) (interf
 	}
 	fr := &FuncReply{}
 	err = json.Unmarshal(res, fr)
-	if err != nil {
-		return err, false
+	if err != nil { // retry if receive handshake after restart function process
+		ctx.GetLogger().Warnf("Failed to unmarshal function result %s", string(res))
+		res, err = f.dataCh.Req(jsonArg)
+		if err != nil {
+			return err, false
+		}
+		err = json.Unmarshal(res, fr)
+		if err != nil {
+			return err, false
+		}
 	}
 	if !fr.State {
 		if fr.Result != nil {
