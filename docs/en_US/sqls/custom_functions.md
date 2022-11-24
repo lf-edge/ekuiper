@@ -48,10 +48,10 @@ accumulateWordCount(avg,sep) example
 
 Image processing currently only supports the formats of `png` and `jpeg` 
 
-| Function  | Example                            | Description                                                                                                                                |
-|-----------|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| resize    | resize(avg,width, height)          | Create a scaled image with new dimensions (width, height). If width or height is set to 0, it is set to the reserved value of aspect ratio |
-| thumbnail | thumbnail(avg,maxWidth, maxHeight) | Reduce the image that retains the aspect ratio to the maximum size (maxWidth, maxHeight).                                                  |
+| Function  | Example                             | Description                                                                                                                                                                                                                                                                     |
+|-----------|-------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| resize    | resize(avg, width, height, [isRaw]) | Create a scaled image with new dimensions (width, height). If width or height is set to 0, it is set to the reserved value of aspect ratio. isRaw is optional, specifies whether to output raw data instead of encoded format like jpeg which is commonly used in AI inference. |
+| thumbnail | thumbnail(avg,maxWidth, maxHeight)  | Reduce the image that retains the aspect ratio to the maximum size (maxWidth, maxHeight).                                                                                                                                                                                       |
 
 resize(avg,width, height) example
 
