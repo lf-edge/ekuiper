@@ -29,13 +29,18 @@ import (
 // Initialize in the server startup
 var registry *Registry
 
+type Files struct {
+	SchemaFile string
+	SoFile     string
+}
+
 // Registry is a global registry for schemas
 // It stores the schema ids and the ref to its file content in memory
 // The schema definition is stored in the file system and will only be loaded once used
 type Registry struct {
 	sync.RWMutex
 	// The map of schema files for all types
-	schemas map[def.SchemaType]map[string]string
+	schemas map[def.SchemaType]map[string]*Files
 }
 
 // Registry provide the method to add, update, get and parse and delete schemas
@@ -43,7 +48,7 @@ type Registry struct {
 // InitRegistry initialize the registry, only called once by the server
 func InitRegistry() error {
 	registry = &Registry{
-		schemas: make(map[def.SchemaType]map[string]string, len(def.SchemaTypes)),
+		schemas: make(map[def.SchemaType]map[string]*Files, len(def.SchemaTypes)),
 	}
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
@@ -51,18 +56,29 @@ func InitRegistry() error {
 	}
 	for _, schemaType := range def.SchemaTypes {
 		schemaDir := filepath.Join(dataDir, "schemas", string(schemaType))
-		var newSchemas map[string]string
+		var newSchemas map[string]*Files
 		files, err := os.ReadDir(schemaDir)
 		if err != nil {
 			conf.Log.Warnf("cannot read schema directory: %s", err)
-			newSchemas = make(map[string]string)
+			newSchemas = make(map[string]*Files)
 		} else {
-			newSchemas = make(map[string]string, len(files))
+			newSchemas = make(map[string]*Files, len(files))
 			for _, file := range files {
 				fileName := filepath.Base(file.Name())
+				ext := filepath.Ext(fileName)
 				schemaId := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-				newSchemas[schemaId] = filepath.Join(schemaDir, file.Name())
-				conf.Log.Infof("schema %s.%s loaded", schemaType, schemaId)
+				ffs, ok := newSchemas[schemaId]
+				if !ok {
+					ffs = &Files{}
+					newSchemas[schemaId] = ffs
+				}
+				switch ext {
+				case ".so":
+					ffs.SoFile = filepath.Join(schemaDir, file.Name())
+				default:
+					ffs.SchemaFile = filepath.Join(schemaDir, file.Name())
+				}
+				conf.Log.Infof("schema file %s.%s loaded", schemaType, schemaId)
 			}
 		}
 		registry.schemas[schemaType] = newSchemas
@@ -102,27 +118,40 @@ func CreateOrUpdateSchema(info *Info) error {
 	if err := os.MkdirAll(etcDir, os.ModePerm); err != nil {
 		return err
 	}
-	schemaFile := filepath.Join(etcDir, info.Name+schemaExt[info.Type])
-	if _, err := os.Stat(schemaFile); os.IsNotExist(err) {
-		file, err := os.Create(schemaFile)
-		if err != nil {
-			return err
+	ffs := &Files{}
+	if info.Content != "" || info.FilePath != "" {
+		schemaFile := filepath.Join(etcDir, info.Name+schemaExt[info.Type])
+		if _, err := os.Stat(schemaFile); os.IsNotExist(err) {
+			file, err := os.Create(schemaFile)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
 		}
-		defer file.Close()
-	}
-	if info.Content != "" {
-		err := os.WriteFile(schemaFile, []byte(info.Content), 0666)
-		if err != nil {
-			return err
+		if info.Content != "" {
+			err := os.WriteFile(schemaFile, []byte(info.Content), 0666)
+			if err != nil {
+				return err
+			}
+		} else {
+			err := httpx.DownloadFile(schemaFile, info.FilePath)
+			if err != nil {
+				return err
+			}
 		}
-	} else {
-		err := httpx.DownloadFile(schemaFile, info.FilePath)
-		if err != nil {
-			return err
-		}
+		ffs.SchemaFile = schemaFile
 	}
 
-	registry.schemas[info.Type][info.Name] = schemaFile
+	if info.SoPath != "" {
+		soFile := filepath.Join(etcDir, info.Name+".so")
+		err := httpx.DownloadFile(soFile, info.SoPath)
+		if err != nil {
+			return err
+		}
+		ffs.SoFile = soFile
+	}
+
+	registry.schemas[info.Type][info.Name] = ffs
 	return nil
 }
 
@@ -131,26 +160,35 @@ func GetSchema(schemaType def.SchemaType, name string) (*Info, error) {
 	if err != nil {
 		return nil, err
 	}
-	content, err := os.ReadFile(schemaFile)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read schema file %s: %s", schemaFile, err)
+	if schemaFile.SchemaFile != "" {
+		content, err := os.ReadFile(schemaFile.SchemaFile)
+		if err != nil {
+			return nil, fmt.Errorf("cannot read schema file %s: %s", schemaFile, err)
+		}
+		return &Info{
+			Type:     schemaType,
+			Name:     name,
+			Content:  string(content),
+			FilePath: schemaFile.SchemaFile,
+		}, nil
+	} else {
+		return &Info{
+			Type:   schemaType,
+			Name:   name,
+			SoPath: schemaFile.SoFile,
+		}, nil
 	}
-	return &Info{
-		Type:     schemaType,
-		Name:     name,
-		Content:  string(content),
-		FilePath: schemaFile,
-	}, nil
+
 }
 
-func GetSchemaFile(schemaType def.SchemaType, name string) (string, error) {
+func GetSchemaFile(schemaType def.SchemaType, name string) (*Files, error) {
 	registry.RLock()
 	defer registry.RUnlock()
 	if _, ok := registry.schemas[schemaType]; !ok {
-		return "", fmt.Errorf("schema type %s not found", schemaType)
+		return nil, fmt.Errorf("schema type %s not found", schemaType)
 	}
 	if _, ok := registry.schemas[schemaType][name]; !ok {
-		return "", fmt.Errorf("schema type %s, file %s not found", schemaType, name)
+		return nil, fmt.Errorf("schema type %s, file %s not found", schemaType, name)
 	}
 	schemaFile := registry.schemas[schemaType][name]
 	return schemaFile, nil
@@ -166,9 +204,17 @@ func DeleteSchema(schemaType def.SchemaType, name string) error {
 		return fmt.Errorf("schema %s.%s not found", schemaType, name)
 	}
 	schemaFile := registry.schemas[schemaType][name]
-	err := os.Remove(schemaFile)
-	if err != nil {
-		conf.Log.Errorf("cannot delete schema file %s: %s", schemaFile, err)
+	if schemaFile.SchemaFile != "" {
+		err := os.Remove(schemaFile.SchemaFile)
+		if err != nil {
+			conf.Log.Errorf("cannot delete schema file %s: %s", schemaFile.SchemaFile, err)
+		}
+	}
+	if schemaFile.SoFile != "" {
+		err := os.Remove(schemaFile.SoFile)
+		if err != nil {
+			conf.Log.Errorf("cannot delete schema so file %s: %s", schemaFile.SoFile, err)
+		}
 	}
 	delete(registry.schemas[schemaType], name)
 	return nil

@@ -15,6 +15,7 @@
 package schema
 
 import (
+	"fmt"
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 )
 
@@ -23,6 +24,29 @@ type Info struct {
 	Name     string         `json:"name"`
 	Content  string         `json:"content"`
 	FilePath string         `json:"file"`
+	SoPath   string         `json:"soFile"`
+}
+
+func (i *Info) Validate() error {
+	if i.Name == "" {
+		return fmt.Errorf("name is required")
+	}
+	if i.Content != "" && i.FilePath != "" {
+		return fmt.Errorf("cannot specify both content and file")
+	}
+	switch i.Type {
+	case def.PROTOBUF:
+		if i.Content == "" && i.FilePath == "" {
+			return fmt.Errorf("must specify content or file")
+		}
+	case def.CUSTOM:
+		if i.SoPath == "" {
+			return fmt.Errorf("soFile is required")
+		}
+	default:
+		return fmt.Errorf("unsupported type: %s", i.Type)
+	}
+	return nil
 }
 
 var (

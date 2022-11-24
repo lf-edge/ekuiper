@@ -16,13 +16,17 @@ package protobuf
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
 
 func TestEncode(t *testing.T) {
-	c, err := NewConverter("../../schema/test/test1.proto", "Person")
+	c, err := NewConverter("../../schema/test/test1.proto", "", "Person")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +63,7 @@ func TestEncode(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	c, err := NewConverter("../../schema/test/test1.proto", "Person")
+	c, err := NewConverter("../../schema/test/test1.proto", "", "Person")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,6 +89,71 @@ func TestDecode(t *testing.T) {
 			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
 		} else if tt.e == "" && !reflect.DeepEqual(tt.m, a) {
 			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.m, a)
+		}
+	}
+}
+
+func TestStatic(t *testing.T) {
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		t.Fatal(err)
+	}
+	etcDir := filepath.Join(dataDir, "schemas", "custom")
+	err = os.MkdirAll(etcDir, os.ModePerm)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err = os.RemoveAll(etcDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	// build the so file into data/test prior to running the test
+	//Copy the helloworld.so
+	bytesRead, err := os.ReadFile(filepath.Join(dataDir, "helloworld.so"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(filepath.Join(etcDir, "helloworld.so"), bytesRead, 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema.InitRegistry()
+	c, err := NewConverter("../../schema/test/test1.proto", "../../../data/test/schemas/custom/helloworld.so", "HelloReply")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		m map[string]interface{}
+		r []byte
+		e string
+	}{
+		{
+			m: map[string]interface{}{
+				"message": "test",
+			},
+			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74},
+		}, {
+			m: map[string]interface{}{
+				"message": "another test 2",
+			},
+			r: []byte{0x0a, 0x0e, 0x61, 0x6e, 0x6f, 0x74, 0x68, 0x65, 0x72, 0x20, 0x74, 0x65, 0x73, 0x74, 0x20, 0x32},
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	for i, tt := range tests {
+		a, err := c.Encode(tt.m)
+		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
+			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
+		} else if tt.e == "" && !reflect.DeepEqual(tt.r, a) {
+			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%x\n\ngot=%x\n\n", i, tt.r, a)
+		}
+		m, err := c.Decode(tt.r)
+		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
+			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
+		} else if tt.e == "" && !reflect.DeepEqual(tt.m, m) {
+			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.m, m)
 		}
 	}
 }

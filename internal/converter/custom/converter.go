@@ -12,24 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build schema || !core
-// +build schema !core
-
-package converter
+package custom
 
 import (
-	"github.com/lf-edge/ekuiper/internal/converter/protobuf"
+	"fmt"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/converter/static"
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-func init() {
-	converters[message.FormatProtobuf] = func(t string, schemaFileName string, schemaMessageName string) (message.Converter, error) {
-		ffs, err := schema.GetSchemaFile(def.SchemaType(t), schemaFileName)
-		if err != nil {
-			return nil, err
-		}
-		return protobuf.NewConverter(ffs.SchemaFile, ffs.SoFile, schemaMessageName)
+type Converter struct {
+}
+
+var converter = &Converter{}
+
+func LoadConverter(t string, schemaFile string, messageName string) (message.Converter, error) {
+	conf.Log.Infof("Load custom converter from file %s, for symbol Get%s", schemaFile, messageName)
+	ffs, err := schema.GetSchemaFile(def.SchemaType(t), schemaFile)
+	if err != nil {
+		return nil, err
 	}
+	if ffs.SoFile == "" {
+		return nil, fmt.Errorf("no so file found for custom schema %s", messageName)
+	}
+	return static.LoadStaticConverter(ffs.SoFile, messageName)
 }
