@@ -115,7 +115,6 @@ type DataOutChannel interface {
 }
 
 type DataReqChannel interface {
-	Handshake() error
 	Req([]byte) ([]byte, error)
 	Closable
 }
@@ -134,26 +133,20 @@ func (r *NanomsgReqRepChannel) Req(arg []byte) ([]byte, error) {
 	defer r.Unlock()
 	if err := r.sock.Send(arg); err != nil {
 		if err == mangos.ErrProtoState { // resend if protocol state wrong, because of plugin restart or other problems
-			err = r.Handshake()
+			prev, err := r.sock.Recv()
 			if err == nil {
+				conf.Log.Warnf("discard previous response: %s", string(prev))
 				err = r.sock.Send(arg)
 				if err == nil {
 					return r.sock.Recv()
 				}
+			} else {
+				return nil, fmt.Errorf("can't send message on control rep socket: %s", err.Error())
 			}
 		}
 		return nil, fmt.Errorf("can't send message on function rep socket: %s", err.Error())
 	}
 	return r.sock.Recv()
-}
-
-// Handshake should only be called once
-func (r *NanomsgReqRepChannel) Handshake() error {
-	_, err := r.sock.Recv()
-	if err != nil && err != mangos.ErrProtoState {
-		return err
-	}
-	return nil
 }
 
 func CreateSourceChannel(ctx api.StreamContext) (DataInChannel, error) {
