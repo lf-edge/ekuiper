@@ -28,11 +28,11 @@ func registerAnalyticFunc() {
 	builtins["changed_col"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			ignoreNull, ok := args[0].(bool)
-			if !ok {
-				return fmt.Errorf("first arg is not a bool but got %v", args[0]), false
+			if args[0].(bool) && args[1] == nil {
+				return nil, true
 			}
-			if ignoreNull && args[1] == nil {
+			validData := args[len(args)-2].(bool)
+			if !validData {
 				return nil, true
 			}
 			key := args[len(args)-1].(string)
@@ -62,17 +62,18 @@ func registerAnalyticFunc() {
 	builtins["had_changed"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			l := len(args) - 1
-			if l <= 1 {
-				return fmt.Errorf("expect more than one arg but got %d", len(args)), false
+			validData := args[len(args)-2].(bool)
+			if !validData {
+				return false, true
 			}
 			ignoreNull, ok := args[0].(bool)
 			if !ok {
 				return fmt.Errorf("first arg is not a bool but got %v", args[0]), false
 			}
-			key := args[l].(string)
+			key := args[len(args)-1].(string)
+			paraLen := len(args) - 2
 			result := false
-			for i := 1; i < l; i++ {
+			for i := 1; i < paraLen; i++ {
 				v := args[i]
 				k := key + strconv.Itoa(i)
 				if ignoreNull && v == nil {
@@ -106,23 +107,25 @@ func registerAnalyticFunc() {
 	builtins["lag"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			l := len(args) - 1
-			key := args[l].(string)
-			if l != 1 && l != 2 && l != 3 {
-				return fmt.Errorf("expect one two or three args but got %d", l), false
-			}
+			key := args[len(args)-1].(string)
 			v, err := ctx.GetState(key)
 			if err != nil {
 				return fmt.Errorf("error getting state for %s: %v", key, err), false
 			}
+			validData := args[len(args)-2].(bool)
+
+			paraLen := len(args) - 2
+			var rq *ringqueue = nil
+			var rtnVal interface{} = nil
+
+			// first time call, need create state for lag
 			if v == nil {
 				size := 0
 				var dftVal interface{} = nil
-				if l == 3 {
+				if paraLen == 3 {
 					dftVal = args[2]
 				}
-				// first time call, need create state for lag
-				if l == 1 {
+				if paraLen == 1 {
 					size = 1
 				} else {
 					siz, ok := args[1].(int)
@@ -131,30 +134,27 @@ func registerAnalyticFunc() {
 					}
 					size = siz
 				}
-
-				rq := newRingqueue(size)
+				rq = newRingqueue(size)
 				rq.fill(dftVal)
-
-				rtnVal, _ := rq.fetch()
-				rq.append(args[0])
 				err := ctx.PutState(key, rq)
 				if err != nil {
 					return fmt.Errorf("error setting state for %s: %v", key, err), false
 				}
-				return rtnVal, true
 			} else {
-				rq, ok := v.(*ringqueue)
-				if !ok {
-					return fmt.Errorf("error getting state for %s: %v", key, err), false
-				}
-				rtnVal, _ := rq.fetch()
+				rq, _ = v.(*ringqueue)
+			}
+
+			if validData {
+				rtnVal, _ = rq.fetch()
 				rq.append(args[0])
 				err := ctx.PutState(key, rq)
 				if err != nil {
 					return fmt.Errorf("error setting state for %s: %v", key, err), false
 				}
-				return rtnVal, true
+			} else {
+				rtnVal, _ = rq.peek()
 			}
+			return rtnVal, true
 		},
 		val: func(_ api.FunctionContext, args []ast.Expr) error {
 			l := len(args)
@@ -178,18 +178,17 @@ func registerAnalyticFunc() {
 	builtins["latest"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			l := len(args) - 1
-			key := args[l].(string)
-			if l != 1 && l != 2 {
-				return fmt.Errorf("expect one or two args but got %d", l), false
-			}
+			paraLen := len(args) - 2
+			key := args[len(args)-1].(string)
+			validData := args[len(args)-2].(bool)
+
 			if args[0] == nil {
 				v, err := ctx.GetState(key)
 				if err != nil {
 					return fmt.Errorf("error getting state for %s: %v", key, err), false
 				}
 				if v == nil {
-					if l == 2 {
+					if paraLen == 2 {
 						return args[1], true
 					} else {
 						return nil, true
@@ -198,7 +197,9 @@ func registerAnalyticFunc() {
 					return v, true
 				}
 			} else {
-				ctx.PutState(key, args[0])
+				if validData {
+					ctx.PutState(key, args[0])
+				}
 				return args[0], true
 			}
 		},

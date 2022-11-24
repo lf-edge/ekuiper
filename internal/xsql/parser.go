@@ -861,6 +861,10 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 		c := &ast.Call{Name: name, Args: args, FuncId: p.fn, FuncType: ft}
 		p.fn += 1
 		e := p.parseOverPartition(c)
+		if e != nil {
+			return c, e
+		}
+		e = p.parseWhenForAnalyticFunc(c)
 		return c, e
 	} else {
 		if err != nil {
@@ -1535,5 +1539,21 @@ func (p *Parser) parseOverPartition(c *ast.Call) error {
 		}
 	} else {
 		return fmt.Errorf("Found OVER after non analytic function %s", c.Name)
+	}
+}
+
+func (p *Parser) parseWhenForAnalyticFunc(c *ast.Call) error {
+	if tok, _ := p.scanIgnoreWhitespace(); tok != ast.WHEN {
+		p.unscan()
+		return nil
+	} else if function.IsAnalyticFunc(c.Name) {
+		if exp, err := p.ParseExpr(); err != nil {
+			return err
+		} else {
+			c.WhenExpr = exp
+		}
+		return nil
+	} else {
+		return fmt.Errorf("Found WHEN after non analytic function %s", c.Name)
 	}
 }

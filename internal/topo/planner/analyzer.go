@@ -133,6 +133,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt,
 					Args:        f.Args,
 					CachedField: f.CachedField,
 					Partition:   f.Partition,
+					WhenExpr:    f.WhenExpr,
 				})
 			}
 		}
@@ -156,6 +157,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt,
 					Args:        f.Args,
 					CachedField: f.CachedField,
 					Partition:   f.Partition,
+					WhenExpr:    f.WhenExpr,
 				})
 			}
 		}

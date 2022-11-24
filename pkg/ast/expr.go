@@ -142,6 +142,7 @@ type Call struct {
 	CachedField string
 	Cached      bool
 	Partition   *PartitionExpr
+	WhenExpr    Expr
 }
 
 func (c *Call) expr()    {}
@@ -151,6 +152,9 @@ func (c *Call) node()    {}
 type PartitionExpr struct {
 	Exprs []Expr
 }
+
+func (pe *PartitionExpr) expr() {}
+func (pe *PartitionExpr) node() {}
 
 type BinaryExpr struct {
 	OP  Token

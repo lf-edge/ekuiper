@@ -347,7 +347,22 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 						return fmt.Errorf("unknown function type")
 					}
 				}
-				if function.IsAnalyticFunc(expr.Name) { // analytic func must put the partition key into the args
+				if function.IsAnalyticFunc(expr.Name) {
+					// this data should be recorded or not ? default answer is yes
+					if expr.WhenExpr != nil {
+						validData := true
+						temp := v.Eval(expr.WhenExpr)
+						whenExprVal, ok := temp.(bool)
+						if ok {
+							validData = whenExprVal
+						}
+
+						args = append(args, validData)
+					} else {
+						args = append(args, true)
+					}
+
+					// analytic func must put the partition key into the args
 					if expr.Partition != nil && len(expr.Partition.Exprs) > 0 {
 						pk := ""
 						for _, pe := range expr.Partition.Exprs {

@@ -569,7 +569,7 @@ func (p *ringqueue) append(item interface{}) bool {
 	return true
 }
 
-// fetch get the first item in the cache
+// fetch get the first item in the cache and remove
 func (p *ringqueue) fetch() (interface{}, bool) {
 	if p.l == 0 {
 		return nil, false
@@ -580,6 +580,15 @@ func (p *ringqueue) fetch() (interface{}, bool) {
 		p.h = 0
 	}
 	p.l--
+	return result, true
+}
+
+// peek get the first item in the cache but keep it
+func (p *ringqueue) peek() (interface{}, bool) {
+	if p.l == 0 {
+		return nil, false
+	}
+	result := p.data[p.h]
 	return result, true
 }
 

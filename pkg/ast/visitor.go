@@ -94,6 +94,16 @@ func Walk(v Visitor, node Node) {
 			Walk(v, expr)
 		}
 
+		if n.Partition != nil {
+			for _, expr := range n.Partition.Exprs {
+				Walk(v, expr)
+			}
+		}
+
+		if n.WhenExpr != nil {
+			Walk(v, n.WhenExpr)
+		}
+
 	case *ParenExpr:
 		Walk(v, n.Expr)
 

@@ -1879,6 +1879,93 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 		{
+			s: `SELECT lag(name) OVER (PARTITION BY device) WHEN abc > 12 as ll FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.Call{
+							Name:   "lag",
+							FuncId: 0,
+							Args: []ast.Expr{
+								&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+							},
+							Partition: &ast.PartitionExpr{
+								Exprs: []ast.Expr{
+									&ast.FieldRef{Name: "device", StreamName: ast.DefaultStream},
+								},
+							},
+							WhenExpr: &ast.BinaryExpr{
+								LHS: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream},
+								OP:  ast.GT,
+								RHS: &ast.IntegerLiteral{Val: 12},
+							},
+						},
+						Name:  "lag",
+						AName: "ll"},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT lag(name) OVER (PARTITION BY device) WHEN had_changed(true, StatusCode) as ll FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.Call{
+							Name:   "lag",
+							FuncId: 0,
+							Args: []ast.Expr{
+								&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+							},
+							Partition: &ast.PartitionExpr{
+								Exprs: []ast.Expr{
+									&ast.FieldRef{Name: "device", StreamName: ast.DefaultStream},
+								},
+							},
+							WhenExpr: &ast.Call{
+								Name:   "had_changed",
+								FuncId: 1,
+								Args:   []ast.Expr{&ast.BooleanLiteral{Val: true}, &ast.FieldRef{Name: "StatusCode", StreamName: ast.DefaultStream}},
+							},
+						},
+						Name:  "lag",
+						AName: "ll"},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT lag(name) WHEN had_changed(true, StatusCode) as ll FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.Call{
+							Name:   "lag",
+							FuncId: 0,
+							Args: []ast.Expr{
+								&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+							},
+							WhenExpr: &ast.Call{
+								Name:   "had_changed",
+								FuncId: 1,
+								Args:   []ast.Expr{&ast.BooleanLiteral{Val: true}, &ast.FieldRef{Name: "StatusCode", StreamName: ast.DefaultStream}},
+							},
+						},
+						Name:  "lag",
+						AName: "ll"},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s:   `SELECT name WHEN (PARTITION BY device) FROM tbl`,
+			err: `found "WHEN", expected FROM.`,
+		},
+		{
+			s:   `SELECT avg(name) WHEN (PARTITION BY device) FROM tbl`,
+			err: `Found WHEN after non analytic function avg`,
+		},
+		{
 			s: `SELECT *, name, lower(name) as ln FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
