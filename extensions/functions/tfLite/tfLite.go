@@ -259,4 +259,4 @@ func (f *Tffunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{},
 	return results, true
 }
 
-var Tflite Tffunc
+var TfLite Tffunc
