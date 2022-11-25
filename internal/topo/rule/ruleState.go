@@ -66,11 +66,11 @@ func NewRuleState(rule *api.Rule) (*RuleState, error) {
 		Rule:     rule,
 		ActionCh: make(chan ActionSignal),
 	}
+	rs.Run()
 	if tp, err := planner.Plan(rule); err != nil {
 		return rs, err
 	} else {
 		rs.Topology = tp
-		rs.Run()
 		return rs, nil
 	}
 }
@@ -203,7 +203,6 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 		if rs.Topology != nil {
 			rs.topoGraph = rs.Topology.GetTopo()
 		}
-		rs.Topology = nil
 		rs.Unlock()
 	}
 }
