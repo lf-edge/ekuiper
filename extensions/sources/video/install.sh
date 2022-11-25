@@ -44,13 +44,15 @@ Get_Dist_Name()
 }
 
 
+Get_Dist_Name
 
-case DISTRO in \
+case $DISTRO in \
     Debian|Ubuntu|Raspbian ) \
         apt install ffmpeg \
     ;; \
     Alpine ) \
         apk add ffmpeg \
+    ;; \
     *) \
         yum install ffmpeg \
     ;; \
