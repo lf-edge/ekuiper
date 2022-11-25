@@ -97,7 +97,8 @@ PLUGINS := sinks/file \
 	functions/image \
 	functions/geohash \
 	functions/echo \
-	functions/labelImage
+	functions/labelImage \
+	functions/tfLite
 
 .PHONY: plugins $(PLUGINS)
 plugins: $(PLUGINS)

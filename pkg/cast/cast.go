@@ -897,6 +897,22 @@ func ToFloat64Slice(input interface{}, sn Strictness) ([]float64, error) {
 	return result, nil
 }
 
+func ToFloat32Slice(input interface{}, sn Strictness) ([]float32, error) {
+	s := reflect.ValueOf(input)
+	if s.Kind() != reflect.Slice {
+		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to float slice)", input)
+	}
+	var result []float32
+	for i := 0; i < s.Len(); i++ {
+		ele, err := ToFloat32(s.Index(i).Interface(), sn)
+		if err != nil {
+			return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to float slice for the %d element: %v", input, i, err)
+		}
+		result = append(result, ele)
+	}
+	return result, nil
+}
+
 func ToBoolSlice(input interface{}, sn Strictness) ([]bool, error) {
 	s := reflect.ValueOf(input)
 	if s.Kind() != reflect.Slice {

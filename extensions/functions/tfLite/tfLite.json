@@ -1,0 +1,91 @@
+{
+	"about": {
+		"trial": false,
+		"author": {
+			"name": "EMQ",
+			"email": "contact@emqx.io",
+			"company": "EMQ Technologies Co., Ltd",
+			"website": "https://www.emqx.io"
+		},
+		"helpUrl": {
+			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/sqls/custom_functions.md",
+			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/custom_functions.md"
+		},
+		"description": {
+			"en_US": "",
+			"zh_CN": ""
+		}
+	},
+	"libs": [],
+	"name": "tfLite",
+	"functions": [{
+		"name": "tflite",
+		"example": "tflite(model,para1, para2,...)",
+		"hint": {
+			"en_US": "Creates a scaled image with new dimensions (width, height) .If either width or height is set to 0, it will be set to an aspect ratio preserving value.",
+			"zh_CN": "创建具有新尺寸（宽度，高度）的缩放图像。如果width或height设置为0，则将其设置为长宽比保留值。"
+		},
+		"args": [
+			{
+				"name": "model",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入模型"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入模型"
+				}
+			},{
+				"name": "para1",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据1"
+				},
+				"label": {
+					"en_US": "Input data",
+					"zh_CN": "输入数据1"
+				}
+			},{
+				"name": "para2",
+				"hidden": true,
+				"optional": false,
+				"control": "text",
+				"type": "int",
+				"hint": {
+					"en_US": "Input height",
+					"zh_CN": "输入数据2"
+				},
+				"label": {
+					"en_US": "Input height",
+					"zh_CN": "输入数据2"
+				}
+			}
+		],
+		"outputs": [
+			{
+				"label": {
+					"en_US": "Output",
+					"zh_CN": "输出"
+				},
+				"value": "tflite"
+			}
+		],
+		"node": {
+			"category": "abc",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "tflite",
+				"zh_CN": "tflite"
+			}
+		}
+	}]
+}

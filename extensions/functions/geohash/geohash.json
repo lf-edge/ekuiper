@@ -17,7 +17,7 @@
 		}
 	},
 	"libs": ["github.com/mmcloughlin/geohash@master"],
-  "name":"geohash",
+	"name":"geohash",
 	"functions": [{
 		"name": "geohashEncode",
 		"example": "geohashEncode(la,lo)",
