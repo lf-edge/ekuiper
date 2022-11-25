@@ -205,6 +205,8 @@ jobs:
         exclude:
           - os: [ alpine,"alpine" ]
             plugin: functions/labelImage
+          - os: [ alpine,"alpine" ]
+            plugin: functions/tfLite
           - os: [alpine,"alpine"]
             plugin: sinks/tdengine
 
