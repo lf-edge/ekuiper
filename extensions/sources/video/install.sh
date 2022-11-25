@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-set -e -x -u
+set +e -x -u
 
 DISTRO='unknow'
 
@@ -48,12 +48,16 @@ Get_Dist_Name
 
 case $DISTRO in \
     Debian|Ubuntu|Raspbian ) \
-        apt install ffmpeg \
+	apt update \
+	&& apt upgrade \
+        && apt install -y ffmpeg 2> /dev/null \
     ;; \
     Alpine ) \
-        apk add ffmpeg \
+        apk add ffmpeg 2> /dev/null \
     ;; \
     *) \
-        yum install ffmpeg \
+        yum install -y ffmpeg 2> /dev/null \
     ;; \
 esac
+    
+echo "install success";
