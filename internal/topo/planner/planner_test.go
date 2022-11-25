@@ -1254,6 +1254,203 @@ func Test_createLogicalPlan(t *testing.T) {
 				sendMeta:    false,
 			}.Init(),
 		},
+		{ // 15 analytic function over partition plan
+			sql: `SELECT latest(lag(name)) OVER (PARTITION BY temp), id1 FROM src1 WHERE lag(temp) > temp`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						FilterPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									AnalyticFuncsPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													name: "src1",
+													streamFields: []interface{}{
+														&ast.StreamField{
+															Name:      "id1",
+															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														},
+														&ast.StreamField{
+															Name:      "name",
+															FieldType: &ast.BasicType{Type: ast.STRINGS},
+														},
+														&ast.StreamField{
+															Name:      "temp",
+															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														},
+													},
+													streamStmt: streams["src1"],
+													metaFields: []string{},
+												}.Init(),
+											},
+										},
+										funcs: []*ast.Call{
+											{
+												Name:        "lag",
+												FuncId:      2,
+												CachedField: "$$a_lag_2",
+												Args: []ast.Expr{&ast.FieldRef{
+													Name:       "temp",
+													StreamName: "src1",
+												}},
+											},
+											{
+												Name: "latest", FuncId: 1, CachedField: "$$a_latest_1", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}}, Partition: &ast.PartitionExpr{Exprs: []ast.Expr{&ast.FieldRef{Name: "temp", StreamName: "src1"}}},
+											},
+											{
+												Name: "lag", FuncId: 0, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}},
+											},
+										},
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{
+									Name:   "lag",
+									FuncId: 2,
+									Args: []ast.Expr{&ast.FieldRef{
+										Name:       "temp",
+										StreamName: "src1",
+									}},
+									CachedField: "$$a_lag_2",
+									Cached:      true,
+								},
+								OP: ast.GT,
+								RHS: &ast.FieldRef{
+									Name:       "temp",
+									StreamName: "src1",
+								},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Expr: &ast.Call{
+							Name:        "latest",
+							FuncId:      1,
+							Args:        []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}},
+							CachedField: "$$a_latest_1",
+							Cached:      true,
+							Partition: &ast.PartitionExpr{
+								Exprs: []ast.Expr{
+									&ast.FieldRef{Name: "temp", StreamName: "src1"},
+								},
+							},
+						},
+						Name: "latest",
+					}, {
+						Expr: &ast.FieldRef{Name: "id1", StreamName: "src1"},
+						Name: "id1",
+					},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
+		},
+		{ // 16 analytic function over partition when plan
+			sql: `SELECT latest(lag(name)) OVER (PARTITION BY temp WHEN temp > 12), id1 FROM src1 WHERE lag(temp) > temp`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						FilterPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									AnalyticFuncsPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													name: "src1",
+													streamFields: []interface{}{
+														&ast.StreamField{
+															Name:      "id1",
+															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														},
+														&ast.StreamField{
+															Name:      "name",
+															FieldType: &ast.BasicType{Type: ast.STRINGS},
+														},
+														&ast.StreamField{
+															Name:      "temp",
+															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														},
+													},
+													streamStmt: streams["src1"],
+													metaFields: []string{},
+												}.Init(),
+											},
+										},
+										funcs: []*ast.Call{
+											{
+												Name:        "lag",
+												FuncId:      2,
+												CachedField: "$$a_lag_2",
+												Args: []ast.Expr{&ast.FieldRef{
+													Name:       "temp",
+													StreamName: "src1",
+												}},
+											},
+											{
+												Name: "latest", FuncId: 1, CachedField: "$$a_latest_1", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}}, Partition: &ast.PartitionExpr{Exprs: []ast.Expr{&ast.FieldRef{Name: "temp", StreamName: "src1"}}}, WhenExpr: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "temp", StreamName: "src1"}, OP: ast.GT, RHS: &ast.IntegerLiteral{Val: 12}},
+											},
+											{
+												Name: "lag", FuncId: 0, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}},
+											},
+										},
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{
+									Name:   "lag",
+									FuncId: 2,
+									Args: []ast.Expr{&ast.FieldRef{
+										Name:       "temp",
+										StreamName: "src1",
+									}},
+									CachedField: "$$a_lag_2",
+									Cached:      true,
+								},
+								OP: ast.GT,
+								RHS: &ast.FieldRef{
+									Name:       "temp",
+									StreamName: "src1",
+								},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Expr: &ast.Call{
+							Name:        "latest",
+							FuncId:      1,
+							Args:        []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}},
+							CachedField: "$$a_latest_1",
+							Cached:      true,
+							Partition: &ast.PartitionExpr{
+								Exprs: []ast.Expr{
+									&ast.FieldRef{Name: "temp", StreamName: "src1"},
+								},
+							},
+							WhenExpr: &ast.BinaryExpr{
+								LHS: &ast.FieldRef{Name: "temp", StreamName: "src1"},
+								OP:  ast.GT,
+								RHS: &ast.IntegerLiteral{Val: 12},
+							},
+						},
+						Name: "latest",
+					}, {
+						Expr: &ast.FieldRef{Name: "id1", StreamName: "src1"},
+						Name: "id1",
+					},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
+		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
