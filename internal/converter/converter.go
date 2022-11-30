@@ -18,25 +18,27 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/converter/binary"
 	"github.com/lf-edge/ekuiper/internal/converter/json"
+	"github.com/lf-edge/ekuiper/internal/converter/static"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-type Instantiator func(t string, schemaFile string, schemaId string) (message.Converter, error)
+type Instantiator func(t string, schemaFile string, schemaName string) (message.Converter, error)
 
 var ( // init once and read only
 	converters = map[string]Instantiator{
-		message.FormatJson: func(t string, schemaFile string, schemaId string) (message.Converter, error) {
+		message.FormatJson: func(t string, schemaFile string, schemaName string) (message.Converter, error) {
 			return json.GetConverter()
 		},
-		message.FormatBinary: func(t string, schemaFile string, schemaId string) (message.Converter, error) {
+		message.FormatBinary: func(t string, schemaFile string, schemaName string) (message.Converter, error) {
 			return binary.GetConverter()
 		},
+		message.FormatStatic: static.LoadConverter,
 	}
 )
 
-func GetOrCreateConverter(t string, schemaFile string, schemaId string) (message.Converter, error) {
+func GetOrCreateConverter(t string, schemaFile string, schemaName string) (message.Converter, error) {
 	if c, ok := converters[t]; ok {
-		return c(t, schemaFile, schemaId)
+		return c(t, schemaFile, schemaName)
 	}
 	return nil, fmt.Errorf("format type %s not supported", t)
 }
