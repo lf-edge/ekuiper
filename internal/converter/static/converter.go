@@ -29,7 +29,7 @@ type Converter struct {
 var converter = &Converter{}
 
 func LoadConverter(t string, schemaFile string, schemaId string) (message.Converter, error) {
-	conf.Log.Infof("Load static converter from file %s, for symbol %sIns", schemaFile, schemaId)
+	conf.Log.Infof("Load static converter from file %s, for symbol Get%s", schemaFile, schemaId)
 	fileName, err := schema.GetSchemaFile(def.SchemaType(t), schemaFile)
 	if err != nil {
 		return nil, err

@@ -12,24 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build schema || !core
-// +build schema !core
-
-package converter
+package main
 
 import (
-	"github.com/lf-edge/ekuiper/internal/converter/protobuf"
-	"github.com/lf-edge/ekuiper/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/internal/schema"
-	"github.com/lf-edge/ekuiper/pkg/message"
+	"fmt"
+	"testing"
 )
 
-func init() {
-	converters[message.FormatProtobuf] = func(t string, schemaFile string, schemaName string) (message.Converter, error) {
-		fileName, err := schema.GetSchemaFile(def.SchemaType(t), schemaFile)
-		if err != nil {
-			return nil, err
-		}
-		return protobuf.NewConverter(fileName, schemaName)
+func TestWrapper(t *testing.T) {
+	r := HelloReply{}
+	m := map[string]interface{}{"message": "hello"}
+	bytes, err := r.Encode(m)
+	if err != nil {
+		t.Errorf("encode error: %v", err)
 	}
+	fmt.Printf("bytes: %X\n", bytes)
+	mf, err := r.Decode(bytes)
+	if err != nil {
+		t.Errorf("decode error: %v", err)
+	}
+	fmt.Printf("mf: %v\n", mf)
 }

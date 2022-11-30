@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
-	"strings"
 )
 
 type Converter struct {
@@ -36,17 +35,13 @@ func init() {
 	protoParser = &protoparse.Parser{}
 }
 
-func NewConverter(schemaId string, fileName string) (*Converter, error) {
-	des := strings.Split(schemaId, ".")
-	if len(des) != 2 {
-		return nil, fmt.Errorf("invalid schema id %s for protobuf, the format must be protoName.mesageName", schemaId)
-	}
+func NewConverter(fileName string, messageName string) (*Converter, error) {
 	if fds, err := protoParser.ParseFiles(fileName); err != nil {
 		return nil, fmt.Errorf("parse schema file %s failed: %s", fileName, err)
 	} else {
-		messageDescriptor := fds[0].FindMessage(des[1])
+		messageDescriptor := fds[0].FindMessage(messageName)
 		if messageDescriptor == nil {
-			return nil, fmt.Errorf("message type %s not found in schema file %s", des[1], fileName)
+			return nil, fmt.Errorf("message type %s not found in schema file %s", messageName, fileName)
 		}
 		return &Converter{
 			descriptor: messageDescriptor,
