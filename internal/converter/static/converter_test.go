@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package protobuf
+package static
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"reflect"
 	"testing"
 )
 
+func init() {
+	schema.InitRegistry()
+}
+
 func TestEncode(t *testing.T) {
-	c, err := NewConverter("../../schema/test/test1.proto", "Person")
+	c, err := LoadConverter("static", "helloworld", "HelloReply")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,18 +38,14 @@ func TestEncode(t *testing.T) {
 	}{
 		{
 			m: map[string]interface{}{
-				"name": "test",
-				"id":   1,
-				"age":  1,
+				"message": "test",
 			},
-			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74, 0x10, 0x01, 0x1a, 0x00},
+			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74},
 		}, {
 			m: map[string]interface{}{
-				"name":  "test",
-				"id":    1,
-				"email": "Dddd",
+				"message": "another test 2",
 			},
-			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74, 0x10, 0x01, 0x1a, 0x04, 0x44, 0x64, 0x64, 0x64},
+			r: []byte{0x0a, 0x0e, 0x61, 0x6e, 0x6f, 0x74, 0x68, 0x65, 0x72, 0x20, 0x74, 0x65, 0x73, 0x74, 0x20, 0x32},
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -59,7 +60,7 @@ func TestEncode(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	c, err := NewConverter("../../schema/test/test1.proto", "Person")
+	c, err := LoadConverter("static", "helloworld", "HelloRequest")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,12 +71,9 @@ func TestDecode(t *testing.T) {
 	}{
 		{
 			m: map[string]interface{}{
-				"name":  "test",
-				"id":    int64(1),
-				"email": "Dddd",
-				"code":  []interface{}{},
+				"name": "test",
 			},
-			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74, 0x10, 0x01, 0x1a, 0x04, 0x44, 0x64, 0x64, 0x64},
+			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74},
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

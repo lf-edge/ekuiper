@@ -62,6 +62,7 @@ func InitRegistry() error {
 				fileName := filepath.Base(file.Name())
 				schemaId := strings.TrimSuffix(fileName, filepath.Ext(fileName))
 				newSchemas[schemaId] = filepath.Join(schemaDir, file.Name())
+				conf.Log.Infof("schema %s.%s loaded", schemaType, schemaId)
 			}
 		}
 		registry.schemas[schemaType] = newSchemas
@@ -149,7 +150,7 @@ func GetSchemaFile(schemaType def.SchemaType, name string) (string, error) {
 		return "", fmt.Errorf("schema type %s not found", schemaType)
 	}
 	if _, ok := registry.schemas[schemaType][name]; !ok {
-		return "", fmt.Errorf("schema %s.%s not found", schemaType, name)
+		return "", fmt.Errorf("schema type %s, file %s not found", schemaType, name)
 	}
 	schemaFile := registry.schemas[schemaType][name]
 	return schemaFile, nil
