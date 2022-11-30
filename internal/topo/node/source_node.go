@@ -97,17 +97,18 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			}
 			format := fmt.Sprintf("%v", props["format"])
 			schemaFile := ""
-			schemaId := m.options.SCHEMAID
-			if schemaId != "" {
-				r := strings.Split(schemaId, ".")
+			schemaName := m.options.SCHEMAID
+			if schemaName != "" {
+				r := strings.Split(schemaName, ".")
 				if len(r) != 2 {
-					return fmt.Errorf("invalid schemaId: %s", schemaId)
+					return fmt.Errorf("invalid schemaId: %s", schemaName)
 				}
 				schemaFile = r[0]
+				schemaName = r[1]
 			}
-			converter, err := converter.GetOrCreateConverter(format, schemaFile, schemaId)
+			converter, err := converter.GetOrCreateConverter(format, schemaFile, schemaName)
 			if err != nil {
-				msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", format, schemaId, err)
+				msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", format, m.options.SCHEMAID, err)
 				logger.Warnf(msg)
 				return fmt.Errorf(msg)
 			}

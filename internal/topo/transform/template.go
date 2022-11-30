@@ -34,12 +34,12 @@ func GenTransform(dt string, format string, schemaId string) (TransFunc, error) 
 		err error
 	)
 	switch format {
-	case message.FormatProtobuf:
+	case message.FormatProtobuf, message.FormatStatic:
 		r := strings.Split(schemaId, ".")
 		if len(r) != 2 {
 			return nil, fmt.Errorf("invalid schemaId: %s", schemaId)
 		}
-		c, err = converter.GetOrCreateConverter(message.FormatProtobuf, r[0], schemaId)
+		c, err = converter.GetOrCreateConverter(format, r[0], r[1])
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +73,7 @@ func GenTransform(dt string, format string, schemaId string) (TransFunc, error) 
 			}
 			j, err := json.Marshal(d)
 			return j, false, err
-		case message.FormatProtobuf:
+		case message.FormatProtobuf, message.FormatStatic:
 			if transformed {
 				m := make(map[string]interface{})
 				err := json.Unmarshal(bs, &m)
