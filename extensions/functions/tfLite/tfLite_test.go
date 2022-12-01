@@ -48,9 +48,34 @@ func TestTffunc_Exec(t *testing.T) {
 				},
 				ctx: fctx,
 			},
-			want:  nil,
+			want:  []interface{}{[]float32{0.9971661,4.145413e-05,0.0027840463,8.373417e-06}},
 			want1: true,
 		},
+		{
+			name: "sin",
+			args: args{
+				args: []interface{}{
+					"sin_model",
+					[]interface{}{1},
+				},
+				ctx: fctx,
+			},
+			want:  []interface{}{[]float32{0.86996967}},
+			want1: true,
+		},
+		{
+			name: "xor",
+			args: args{
+				args: []interface{}{
+					"xor_model",
+					[]interface{}{1,0},
+				},
+				ctx: fctx,
+			},
+			want:  []interface{}{[]float32{0.9586827}},
+			want1: true,
+		},
+
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
