@@ -199,10 +199,14 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 	if err != nil { // Exit after retries
 		rs.Lock()
 		// The only change the state by error
-		rs.triggered = 0
-		if rs.Topology != nil {
-			rs.topoGraph = rs.Topology.GetTopo()
+		if rs.triggered != -1 {
+			rs.triggered = 0
+			if rs.Topology != nil {
+				rs.topoGraph = rs.Topology.GetTopo()
+			}
+			rs.ActionCh <- ActionSignalStop
 		}
+
 		rs.Unlock()
 	}
 }
