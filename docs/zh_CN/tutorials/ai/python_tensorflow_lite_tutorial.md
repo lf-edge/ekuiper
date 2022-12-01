@@ -16,7 +16,7 @@
 
 开始教程之前，请准备以下产品或环境：
 1. 安装 Python 3.x 环境。
-2. 通过 `pip install nng ekuiper tflite_runtime` 安装 nng，ekuiper 和 tensorflow lite 包。
+2. 通过 `pip install pynng ekuiper tflite_runtime` 安装 pynng，ekuiper 和 tensorflow lite 包。
 
 默认情况下，eKuiper 的 portable 插件运行时会通过 `python` 命令来运行插件。如果您的环境不支持 `python` 命令，请通过[配置文件](../../operation/config/configuration_file.md#portable-插件配置)更换为可用的 Python 命令，如 `python3`。
 
@@ -216,7 +216,7 @@ Content-Type: application/json
 
 ### 输入数据
 
-在这里，我们创建了一个 go 程序，用于将图像数据发送到 tfdemo 主题以便由规则进行处理。
+在这里，我们创建了一个 go 程序，用于将图像数据发送到 tfdemo 主题以便由规则进行处理。模型接受 224x224 像素的图像输入。在插件中，我们对输入的图像进行了预处理，调整了图片大小，因此任意的图像输入都可以。一部分 MQTT 服务器默认配置限制了数据的大小，建议输入不大于 2 MB 的图像数据。
 
 ```go
 package main

@@ -19,7 +19,7 @@ To run the TensorFlow lite interpreter, we need a trained model. We won't cover 
 
 Before starting the tutorial, please prepare the following products or environments.
 1. Install the Python 3.x environment.
-2. Install the nng, ekuiper and tensorflow lite packages via `pip install nng ekuiper tflite_runtime`.
+2. Install the pynng, ekuiper and tensorflow lite packages via `pip install pynng ekuiper tflite_runtime`.
 
 By default, the portable plugin for eKuiper will run with the `python` command. If your environment does not support the `python` command, please use the [configuration file](../../operation/config/configuration_file.md#portable-plugin-config) to modify the Python command, such as `python3`.
 
@@ -222,7 +222,7 @@ Content-Type: application/json
 
 ### Feed the data
 
-Here we create a go program to send image data to the tfdemo topic to be processed by the rule.
+Here we create a go program to send image data to the tfdemo topic to be processed by the rule. The model accepts an input of 224x224 pixels image. In the plugin, we have preprocessed the input image to resize it, so here we can feed any size of data to it. Some MQTT broker has a size limit for the payload, thus it is better to feed smaller image less than 2MB.
 
 ```go
 package main
