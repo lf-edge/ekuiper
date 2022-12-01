@@ -48,7 +48,7 @@ func TestTffunc_Exec(t *testing.T) {
 				},
 				ctx: fctx,
 			},
-			want:  []interface{}{[]float32{0.9971661,4.145413e-05,0.0027840463,8.373417e-06}},
+			want:  []interface{}{[]float32{0.9971661, 4.145413e-05, 0.0027840463, 8.373417e-06}},
 			want1: true,
 		},
 		{
@@ -68,14 +68,13 @@ func TestTffunc_Exec(t *testing.T) {
 			args: args{
 				args: []interface{}{
 					"xor_model",
-					[]interface{}{1,0},
+					[]interface{}{1, 0},
 				},
 				ctx: fctx,
 			},
 			want:  []interface{}{[]float32{0.9586827}},
 			want1: true,
 		},
-
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
