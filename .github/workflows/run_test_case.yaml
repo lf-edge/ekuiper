@@ -42,6 +42,11 @@ jobs:
         mkdir -p plugins/wasm
         set -e -u -x
         mkdir -p data
+        mkdir -p data/test/uploads
+        cp extensions/functions/dependencies/tensorflow/models/*  data/test/uploads/
+        export CGO_CFLAGS=-I$(pwd)/extensions/functions/dependencies/tensorflow
+        export CGO_LDFLAGS=-L$(pwd)/extensions/functions/dependencies/tensorflow/amd64
+        export LD_LIBRARY_PATH=$(pwd)/extensions/functions/dependencies/tensorflow/amd64
         mkdir -p log
         sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
         go build -modfile extensions.mod --buildmode=plugin -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
