@@ -183,3 +183,13 @@ Assuming the input is the byte array of peacock.jpg, the output will be "peacock
 ```sql
 SELECT labelImage(self) FROM tfdemo
 ```
+
+### tfLite plugin
+
+This is a plugin to do the TensorFlow Lite inference. Users just need upload the `.tflite` model, call the `tfLite(model_name, input_data)` function in sql, then will receive results from the model inference.
+When uploading a model, please use the [uploads](../operation/restapi/uploads.md) interface to upload the model file.
+`model_name` should be the name for the model without `.tflite` suffix.  `input_data` should be the key field in message and value should be 1D array format
+
+```sql
+SELECT tfLite(model_name, input_data) FROM tfdemo
+```

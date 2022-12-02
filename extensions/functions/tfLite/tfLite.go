@@ -53,7 +53,7 @@ func (f *Tffunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{},
 		return fmt.Errorf("tensorflow function requires %d tensors but got %d", inputCount, len(args)-1), false
 	}
 
-	ctx.GetLogger().Infof("tensorflow function %s with %d tensors", model, inputCount)
+	ctx.GetLogger().Debugf("tensorflow function %s with %d tensors", model, inputCount)
 	// Set input tensors
 	for i := 1; i < len(args); i++ {
 		input := interpreter.GetInputTensor(i - 1)
@@ -62,7 +62,7 @@ func (f *Tffunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{},
 			dims += strconv.Itoa(input.Dim(j)) + ","
 		}
 		dims += ")"
-		ctx.GetLogger().Infof("tensorflow function %s input %d shape %s", model, i, dims)
+		ctx.GetLogger().Debugf("tensorflow function %s input %d shape %s", model, i, dims)
 		var arg []interface{}
 		switch v := args[i].(type) {
 		case []byte:
@@ -77,10 +77,6 @@ func (f *Tffunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{},
 			return fmt.Errorf("tensorflow function parameter %d must be a bytea or array of bytea, but got %[1]T(%[1]v)", i), false
 		}
 		t := input.Type()
-		ctx.GetLogger().Infof("tensor %d input dims %d type %s", i-1, input.NumDims(), t)
-		for j := 0; j < input.NumDims(); j++ {
-			ctx.GetLogger().Infof("tensor %d input dim %d %d", i-1, j, input.Dim(j))
-		}
 		switch input.NumDims() {
 		case 0, 1:
 			return fmt.Errorf("tensorflow function input tensor %d must have at least 2 dimensions but got 1", i-1), false
