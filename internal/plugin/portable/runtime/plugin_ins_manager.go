@@ -207,7 +207,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		p.instances[pluginMeta.Name] = ins
 	}
 	// ins process has not run yet
-	if !pluginCreation && len(ins.commands) != 0 {
+	if !pluginCreation && ins.ctrlChan != nil {
 		return ins, nil
 	}
 	// should only happen for first start, then the ctrl channel will keep running
