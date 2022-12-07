@@ -53,16 +53,16 @@ func (f *Tffunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{},
 		return fmt.Errorf("tensorflow function requires %d tensors but got %d", inputCount, len(args)-1), false
 	}
 
-	ctx.GetLogger().Warnf("tensorflow function %s with %d tensors", model, inputCount)
+	ctx.GetLogger().Debugf("tensorflow function %s with %d tensors", model, inputCount)
 	// Set input tensors
 	for i := 1; i < len(args); i++ {
 		input := interpreter.GetInputTensor(i - 1)
 		dims := "("
-		for j := 1; j < input.NumDims(); j++ {
+		for j := 0; j < input.NumDims(); j++ {
 			dims += strconv.Itoa(input.Dim(j)) + ","
 		}
 		dims += ")"
-		ctx.GetLogger().Warnf("tensorflow function %s input %d shape %s", model, i, dims)
+		ctx.GetLogger().Debugf("tensorflow function %s input %d shape %s", model, i, dims)
 		var arg []interface{}
 		switch v := args[i].(type) {
 		case []byte:
@@ -77,10 +77,6 @@ func (f *Tffunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{},
 			return fmt.Errorf("tensorflow function parameter %d must be a bytea or array of bytea, but got %[1]T(%[1]v)", i), false
 		}
 		t := input.Type()
-		ctx.GetLogger().Warnf("tensor %d input dims %d type %s", i-1, input.NumDims(), t)
-		for j := 0; j < input.NumDims(); j++ {
-			ctx.GetLogger().Warnf("tensor %d input dim %d %d", i-1, j, input.Dim(j))
-		}
 		switch input.NumDims() {
 		case 0, 1:
 			return fmt.Errorf("tensorflow function input tensor %d must have at least 2 dimensions but got 1", i-1), false
@@ -153,10 +149,14 @@ func (f *Tffunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{},
 				return fmt.Errorf("invalid %d parameter, unsupported type %v in the model", i, t), false
 			}
 		default:
-			// TODO support multiple dimensions. Here assume user passes a 1D array.
-			//if input.Dim(1)*input.Dim(2) != len(arg) {
-			//	return fmt.Errorf("tensorflow function input tensor %d must have %d elements but got %d", i-1, input.Dim(1), len(arg)), false
-			//}
+			// support multiple dimensions. Here assume user passes a 1D array.
+			var paraLen int = 1
+			for j := 1; j < input.NumDims(); j++ {
+				paraLen = paraLen * input.Dim(j)
+			}
+			if paraLen != len(arg) {
+				return fmt.Errorf("tensorflow function input tensor %d must have %d elements but got %d", i-1, paraLen, len(arg)), false
+			}
 			switch t {
 			case tflite.Float32:
 				v, err := cast.ToFloat32Slice(args[i], cast.CONVERT_SAMEKIND)

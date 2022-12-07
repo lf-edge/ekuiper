@@ -31,7 +31,7 @@ func init() {
 	}
 	ipManager = &interpreterManager{
 		registry: make(map[string]*tflite.Interpreter),
-		path:     filepath.Join(path, "etc"),
+		path:     filepath.Join(path, "uploads"),
 	}
 }
 
