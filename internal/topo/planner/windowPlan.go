@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@ func (p WindowPlan) Init() *WindowPlan {
 }
 
 func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
-	if p.wtype == ast.COUNT_WINDOW {
+	// not time window depends on the event, so should not filter any
+	if p.wtype == ast.COUNT_WINDOW || p.wtype == ast.SLIDING_WINDOW {
 		return condition, p
 	} else if p.isEventTime {
 		// TODO event time filter, need event window op support

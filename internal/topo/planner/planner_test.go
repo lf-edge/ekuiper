@@ -1450,6 +1450,81 @@ func Test_createLogicalPlan(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
+		}, { // 17. do not optimize sliding window
+			sql: `SELECT * FROM src1 WHERE temp > 20 GROUP BY SLIDINGWINDOW(ss, 10) HAVING COUNT(*) > 2`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						HavingPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									FilterPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												WindowPlan{
+													baseLogicalPlan: baseLogicalPlan{
+														children: []LogicalPlan{
+															DataSourcePlan{
+																name:       "src1",
+																isWildCard: true,
+																streamFields: []interface{}{
+																	&ast.StreamField{
+																		Name:      "id1",
+																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																	},
+																	&ast.StreamField{
+																		Name:      "temp",
+																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																	},
+																	&ast.StreamField{
+																		Name:      "name",
+																		FieldType: &ast.BasicType{Type: ast.STRINGS},
+																	},
+																	&ast.StreamField{
+																		Name:      "myarray",
+																		FieldType: &ast.ArrayType{Type: ast.STRINGS},
+																	},
+																},
+																streamStmt: streams["src1"],
+																metaFields: []string{},
+															}.Init(),
+														},
+													},
+													condition: nil,
+													wtype:     ast.SLIDING_WINDOW,
+													length:    10000,
+													interval:  0,
+													limit:     0,
+												}.Init(),
+											},
+										},
+										condition: &ast.BinaryExpr{
+											LHS: &ast.FieldRef{Name: "temp", StreamName: "src1"},
+											OP:  ast.GT,
+											RHS: &ast.IntegerLiteral{Val: 20},
+										},
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{Name: "count", FuncId: 0, Args: []ast.Expr{&ast.Wildcard{
+									Token: ast.ASTERISK,
+								}}, FuncType: ast.FuncTypeAgg},
+								OP:  ast.GT,
+								RHS: &ast.IntegerLiteral{Val: 2},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
+						Name:  "*",
+						AName: ""},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
