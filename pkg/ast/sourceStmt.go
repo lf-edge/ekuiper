@@ -50,6 +50,12 @@ type StreamField struct {
 	FieldType
 }
 
+type JsonStreamField struct {
+	Type       string                      `json:"type"`
+	Items      *JsonStreamField            `json:"items,omitempty"`
+	Properties map[string]*JsonStreamField `json:"properties,omitempty"`
+}
+
 func (u *StreamField) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		FieldType interface{}
@@ -58,6 +64,94 @@ func (u *StreamField) MarshalJSON() ([]byte, error) {
 		FieldType: printFieldTypeForJson(u.FieldType),
 		Name:      u.Name,
 	})
+}
+
+// UnmarshalJSON The json format follows json schema
+func (sf *StreamFields) UnmarshalJSON(data []byte) error {
+	temp := map[string]*JsonStreamField{}
+	err := json.Unmarshal(data, &temp)
+	if err != nil {
+		return err
+	}
+	return sf.UnmarshalFromMap(temp)
+}
+
+func (sf *StreamFields) UnmarshalFromMap(data map[string]*JsonStreamField) error {
+	t, err := fieldsTypeFromSchema(data)
+	if err != nil {
+		return err
+	}
+	*sf = t
+	return nil
+}
+
+func fieldsTypeFromSchema(mjsf map[string]*JsonStreamField) (StreamFields, error) {
+	sfs := make(StreamFields, 0, len(mjsf))
+	for k, v := range mjsf {
+		ft, err := fieldTypeFromSchema(v)
+		if err != nil {
+			return nil, err
+		}
+		sfs = append(sfs, StreamField{
+			Name:      k,
+			FieldType: ft,
+		})
+	}
+	return sfs, nil
+}
+
+func fieldTypeFromSchema(v *JsonStreamField) (FieldType, error) {
+	var ft FieldType
+	switch v.Type {
+	case "array":
+		if v.Items == nil {
+			return nil, fmt.Errorf("array field type should have items")
+		}
+		itemType, err := fieldTypeFromSchema(v.Items)
+		if err != nil {
+			return nil, fmt.Errorf("invalid array field type: %v", err)
+		}
+		switch t := itemType.(type) {
+		case *BasicType:
+			ft = &ArrayType{
+				Type: t.Type,
+			}
+		case *RecType:
+			ft = &ArrayType{
+				Type:      STRUCT,
+				FieldType: t,
+			}
+		case *ArrayType:
+			ft = &ArrayType{
+				Type:      ARRAY,
+				FieldType: t,
+			}
+		}
+	case "struct":
+		if v.Properties == nil {
+			return nil, fmt.Errorf("struct field type should have properties")
+		}
+		sfs, err := fieldsTypeFromSchema(v.Properties)
+		if err != nil {
+			return nil, fmt.Errorf("invalid struct field type: %v", err)
+		}
+		ft = &RecType{StreamFields: sfs}
+	case "bigint":
+		ft = &BasicType{Type: BIGINT}
+	case "float":
+		ft = &BasicType{Type: FLOAT}
+	case "string":
+		ft = &BasicType{Type: STRINGS}
+	case "bytea":
+		ft = &BasicType{Type: BYTEA}
+	case "datetime":
+		ft = &BasicType{Type: DATETIME}
+	case "boolean":
+		ft = &BasicType{Type: BOOLEAN}
+	default:
+		return nil, fmt.Errorf("unsupported type %s", v.Type)
+	}
+	return ft, nil
 }
 
 type StreamFields []StreamField
