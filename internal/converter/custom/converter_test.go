@@ -43,11 +43,11 @@ func TestCustomConverter(t *testing.T) {
 	}()
 	// build the so file into data/test prior to running the test
 	//Copy the helloworld.so
-	bytesRead, err := os.ReadFile(filepath.Join(dataDir, "helloworld.so"))
+	bytesRead, err := os.ReadFile(filepath.Join(dataDir, "myFormat.so"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(filepath.Join(etcDir, "helloworld.so"), bytesRead, 0755)
+	err = os.WriteFile(filepath.Join(etcDir, "myFormat.so"), bytesRead, 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestCustomConverter(t *testing.T) {
 }
 
 func testEncode(t *testing.T) {
-	c, err := LoadConverter("custom", "helloworld", "HelloReply")
+	c, err := LoadConverter("custom", "myFormat", "Sample")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,14 +68,25 @@ func testEncode(t *testing.T) {
 	}{
 		{
 			m: map[string]interface{}{
-				"message": "test",
+				"id":   12,
+				"name": "test",
 			},
-			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74},
+			r: []byte(`{"id":12,"name":"test"}`),
 		}, {
 			m: map[string]interface{}{
-				"message": "another test 2",
+				"id":   7,
+				"name": "John Doe",
+				"age":  22,
+				"hobbies": map[string]interface{}{
+					"indoor": []string{
+						"Chess",
+					},
+					"outdoor": []string{
+						"Basketball",
+					},
+				},
 			},
-			r: []byte{0x0a, 0x0e, 0x61, 0x6e, 0x6f, 0x74, 0x68, 0x65, 0x72, 0x20, 0x74, 0x65, 0x73, 0x74, 0x20, 0x32},
+			r: []byte(`{"age":22,"hobbies":{"indoor":["Chess"],"outdoor":["Basketball"]},"id":7,"name":"John Doe"}`),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -84,13 +95,13 @@ func testEncode(t *testing.T) {
 		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
 			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
 		} else if tt.e == "" && !reflect.DeepEqual(tt.r, a) {
-			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%x\n\ngot=%x\n\n", i, tt.r, a)
+			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.r, a)
 		}
 	}
 }
 
 func testDecode(t *testing.T) {
-	c, err := LoadConverter("custom", "helloworld", "HelloRequest")
+	c, err := LoadConverter("custom", "myFormat", "Sample")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +114,7 @@ func testDecode(t *testing.T) {
 			m: map[string]interface{}{
 				"name": "test",
 			},
-			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74},
+			r: []byte(`{"name":"test"}`),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

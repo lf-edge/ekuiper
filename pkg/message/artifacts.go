@@ -38,3 +38,7 @@ type Converter interface {
 	Encode(d interface{}) ([]byte, error)
 	Decode(b []byte) (interface{}, error)
 }
+
+type SchemaProvider interface {
+	GetSchemaJson() string
+}
