@@ -176,7 +176,7 @@
   &quot;actions&quot;:[&#xd;
     {&#xd;
       &quot;memory&quot;: {&#xd;
-        &quot;keyField&quot;: &quot;id&quot;,&#xd;
+        &quot;keyField&quot;: &quot;memKey&quot;,&#xd;
         &quot;rowkindField&quot;: &quot;action&quot;,&#xd;
         &quot;topic&quot;: &quot;alertVal&quot;,&#xd;
         &quot;sendSingle&quot;: true&#xd;
@@ -258,7 +258,7 @@
               <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                  <stringProp name="Argument.value">{&quot;sql&quot;:&quot;CREATE TABLE alertTable() WITH (DATASOURCE=\&quot;alertVal\&quot;, TYPE=\&quot;memory\&quot;, KIND=\&quot;lookup\&quot;, KEY=\&quot;id\&quot;)&quot;}</stringProp>
+                  <stringProp name="Argument.value">{&quot;sql&quot;:&quot;CREATE TABLE alertTable() WITH (DATASOURCE=\&quot;alertVal\&quot;, TYPE=\&quot;memory\&quot;, KIND=\&quot;lookup\&quot;, KEY=\&quot;memKey\&quot;)&quot;}</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
               </collectionProp>
@@ -297,7 +297,7 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;ruleAlert&quot;,&#xd;
-  &quot;sql&quot;:&quot;SELECT device, value FROM demoStream INNER JOIN alertTable ON demoStream.deviceKind = alertTable.id WHERE demoStream.value &gt; alertTable.alarm&quot;,&#xd;
+  &quot;sql&quot;:&quot;SELECT device, value FROM demoStream INNER JOIN alertTable ON demoStream.deviceKind = alertTable.memKey WHERE demoStream.value &gt; alertTable.alarm&quot;,&#xd;
   &quot;actions&quot;:[&#xd;
     {&#xd;
       &quot;mqtt&quot;: {&#xd;
@@ -381,7 +381,7 @@
               <boolProp name="recycle">true</boolProp>
               <stringProp name="shareMode">shareMode.thread</stringProp>
               <boolProp name="stopThread">false</boolProp>
-              <stringProp name="variableNames">action,id,alarm</stringProp>
+              <stringProp name="variableNames">action,memKey,alarm</stringProp>
             </CSVDataSet>
             <hashTree/>
             <net.xmeter.samplers.PubSampler guiclass="net.xmeter.gui.PubSamplerUI" testclass="net.xmeter.samplers.PubSampler" testname="MQTT Pub Sampler" enabled="true">
@@ -390,7 +390,7 @@
               <boolProp name="mqtt.add_timestamp">false</boolProp>
               <stringProp name="mqtt.message_type">String</stringProp>
               <stringProp name="mqtt.message_type_fixed_length">1024</stringProp>
-              <stringProp name="mqtt.message_to_sent">{&quot;id&quot;: ${id}, &quot;action&quot;: ${action}, &quot;alarm&quot; : ${alarm}}</stringProp>
+              <stringProp name="mqtt.message_to_sent">{&quot;memKey&quot;: ${memKey}, &quot;action&quot;: ${action}, &quot;alarm&quot; : ${alarm}}</stringProp>
               <boolProp name="mqtt.retained_message">false</boolProp>
             </net.xmeter.samplers.PubSampler>
             <hashTree/>
@@ -517,7 +517,7 @@
               <boolProp name="recycle">true</boolProp>
               <stringProp name="shareMode">shareMode.thread</stringProp>
               <boolProp name="stopThread">false</boolProp>
-              <stringProp name="variableNames">action,id,alarm</stringProp>
+              <stringProp name="variableNames">action,memKey,alarm</stringProp>
             </CSVDataSet>
             <hashTree/>
             <net.xmeter.samplers.PubSampler guiclass="net.xmeter.gui.PubSamplerUI" testclass="net.xmeter.samplers.PubSampler" testname="MQTT Pub Sampler" enabled="true">
@@ -526,7 +526,7 @@
               <boolProp name="mqtt.add_timestamp">false</boolProp>
               <stringProp name="mqtt.message_type">String</stringProp>
               <stringProp name="mqtt.message_type_fixed_length">1024</stringProp>
-              <stringProp name="mqtt.message_to_sent">{&quot;id&quot;: ${id}, &quot;action&quot;: ${action}, &quot;alarm&quot; : ${alarm}}</stringProp>
+              <stringProp name="mqtt.message_to_sent">{&quot;memKey&quot;: ${memKey}, &quot;action&quot;: ${action}, &quot;alarm&quot; : ${alarm}}</stringProp>
               <boolProp name="mqtt.retained_message">false</boolProp>
             </net.xmeter.samplers.PubSampler>
             <hashTree/>
