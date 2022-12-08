@@ -122,8 +122,10 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
+	r.HandleFunc("/streams/{name}/schema", streamSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/tables", tablesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
+	r.HandleFunc("/tables/{name}/schema", tableSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/rules/{name}", ruleHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
 	r.HandleFunc("/rules/{name}/status", getStatusRuleHandler).Methods(http.MethodGet)
@@ -384,6 +386,25 @@ func tablesHandler(w http.ResponseWriter, r *http.Request) {
 
 func tableHandler(w http.ResponseWriter, r *http.Request) {
 	sourceManageHandler(w, r, ast.TypeTable)
+}
+
+func streamSchemaHandler(w http.ResponseWriter, r *http.Request) {
+	sourceSchemaHandler(w, r, ast.TypeStream)
+}
+
+func tableSchemaHandler(w http.ResponseWriter, r *http.Request) {
+	sourceSchemaHandler(w, r, ast.TypeTable)
+}
+
+func sourceSchemaHandler(w http.ResponseWriter, r *http.Request, st ast.StreamType) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+	content, err := streamProcessor.GetInferredJsonSchema(name, st)
+	if err != nil {
+		handleError(w, err, fmt.Sprintf("get schema of %s error", ast.StreamTypeMap[st]), logger)
+		return
+	}
+	jsonResponse(content, w, logger)
 }
 
 // list or create rules

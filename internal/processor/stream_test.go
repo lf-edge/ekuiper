@@ -16,8 +16,15 @@ package processor
 
 import (
 	"fmt"
+	"github.com/gdexlab/go-render/render"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strconv"
 	"testing"
 )
 
@@ -266,4 +273,108 @@ func TestAll(t *testing.T) {
 	if !reflect.DeepEqual(all, expected) {
 		t.Errorf("Expect\t %v\nBut got\t%v", expected, all)
 	}
+}
+
+func TestInferredStream(t *testing.T) {
+	// init schema
+	// Prepare test schema file
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		t.Fatal(err)
+	}
+	etcDir := filepath.Join(dataDir, "schemas", "custom")
+	err = os.MkdirAll(etcDir, os.ModePerm)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err = os.RemoveAll(etcDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	// build the so file into data/test prior to running the test
+	bytesRead, err := os.ReadFile(filepath.Join(dataDir, "myFormat.so"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(filepath.Join(etcDir, "myFormat.so"), bytesRead, 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	petcDir := filepath.Join(dataDir, "schemas", "protobuf")
+	err = os.MkdirAll(petcDir, os.ModePerm)
+	if err != nil {
+		t.Fatal(err)
+	}
+	//Copy test2.proto
+	bytesRead, err = os.ReadFile("../schema/test/test2.proto")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(filepath.Join(petcDir, "test2.proto"), bytesRead, 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err = os.RemoveAll(petcDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	schema.InitRegistry()
+
+	var tests = []struct {
+		s   string
+		r   map[string]*ast.JsonStreamField
+		err string
+	}{
+		{
+			s: `CREATE STREAM demo0 (USERID bigint, NAME string) WITH (FORMAT="JSON", DATASOURCE="demo", SHARED="TRUE")`,
+			r: map[string]*ast.JsonStreamField{
+				"USERID": {Type: "bigint"},
+				"NAME":   {Type: "string"},
+			},
+		}, {
+			s: `CREATE STREAM demo1 (USERID bigint, NAME string) WITH (FORMAT="protobuf", DATASOURCE="demo", SCHEMAID="test2.Book")`,
+			r: map[string]*ast.JsonStreamField{
+				"name":   {Type: "string"},
+				"author": {Type: "string"},
+			},
+		}, {
+			s: `CREATE STREAM demo2 () WITH (FORMAT="custom", DATASOURCE="demo", SCHEMAID="myFormat.Sample")`,
+			r: map[string]*ast.JsonStreamField{
+				"id":   {Type: "bigint"},
+				"name": {Type: "string"},
+				"age":  {Type: "bigint"},
+				"hobbies": {
+					Type: "struct",
+					Properties: map[string]*ast.JsonStreamField{
+						"indoor":  {Type: "array", Items: &ast.JsonStreamField{Type: "string"}},
+						"outdoor": {Type: "array", Items: &ast.JsonStreamField{Type: "string"}},
+					},
+				},
+			},
+		},
+	}
+
+	p := NewStreamProcessor()
+	p.db.Clean()
+	defer p.db.Clean()
+	for i, tt := range tests {
+		_, err := p.ExecStmt(tt.s)
+		if err != nil {
+			t.Errorf("%d. ExecStmt(%q) error: %v", i, tt.s, err)
+			continue
+		}
+		sf, err := p.GetInferredJsonSchema("demo"+strconv.Itoa(i), ast.TypeStream)
+		if err != nil {
+			t.Errorf("GetInferredJsonSchema fails: %s", err)
+			continue
+		}
+		if !reflect.DeepEqual(sf, tt.r) {
+			t.Errorf("GetInferredJsonSchema mismatch:\nexp=%v\ngot=%v", render.AsCode(tt.r), render.AsCode(sf))
+		}
+	}
+
 }

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -333,6 +334,89 @@ func (p *StreamProcessor) DescStream(name string, st ast.StreamType) (ast.Statem
 		return nil, err
 	}
 	return stream, nil
+}
+
+func (p *StreamProcessor) GetInferredSchema(name string, st ast.StreamType) (ast.StreamFields, error) {
+	statement, err := p.getStream(name, st)
+	if err != nil {
+		return nil, fmt.Errorf("Describe %s fails, %s.", ast.StreamTypeMap[st], err)
+	}
+	parser := xsql.NewParser(strings.NewReader(statement))
+	stream, err := xsql.Language.Parse(parser)
+	if err != nil {
+		return nil, err
+	}
+	stmt, ok := stream.(*ast.StreamStmt)
+	if !ok {
+		return nil, fmt.Errorf("Describe %s fails, cannot parse the data \"%s\" to a stream statement", ast.StreamTypeMap[st], statement)
+	}
+	if stmt.Options.SCHEMAID != "" {
+		return schema.InferFromSchemaFile(stmt.Options.FORMAT, stmt.Options.SCHEMAID)
+	}
+	return nil, nil
+}
+
+// GetInferredJsonSchema return schema in json schema type
+func (p *StreamProcessor) GetInferredJsonSchema(name string, st ast.StreamType) (map[string]*ast.JsonStreamField, error) {
+	statement, err := p.getStream(name, st)
+	if err != nil {
+		return nil, fmt.Errorf("Describe %s fails, %s.", ast.StreamTypeMap[st], err)
+	}
+	parser := xsql.NewParser(strings.NewReader(statement))
+	stream, err := xsql.Language.Parse(parser)
+	if err != nil {
+		return nil, err
+	}
+	stmt, ok := stream.(*ast.StreamStmt)
+	if !ok {
+		return nil, fmt.Errorf("Describe %s fails, cannot parse the data \"%s\" to a stream statement", ast.StreamTypeMap[st], statement)
+	}
+	sfs := stmt.StreamFields
+	if stmt.Options.SCHEMAID != "" {
+		sfs, err = schema.InferFromSchemaFile(stmt.Options.FORMAT, stmt.Options.SCHEMAID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return convertSchema(sfs), nil
+}
+
+func convertSchema(sfs ast.StreamFields) map[string]*ast.JsonStreamField {
+	result := make(map[string]*ast.JsonStreamField, len(sfs))
+	for _, sf := range sfs {
+		result[sf.Name] = convertFieldType(sf.FieldType)
+	}
+	return result
+}
+
+func convertFieldType(sf ast.FieldType) *ast.JsonStreamField {
+	switch t := sf.(type) {
+	case *ast.BasicType:
+		return &ast.JsonStreamField{
+			Type: t.Type.String(),
+		}
+	case *ast.ArrayType:
+		var items *ast.JsonStreamField
+		switch t.Type {
+		case ast.ARRAY, ast.STRUCT:
+			items = convertFieldType(t.FieldType)
+		default:
+			items = &ast.JsonStreamField{
+				Type: t.Type.String(),
+			}
+		}
+		return &ast.JsonStreamField{
+			Type:  "array",
+			Items: items,
+		}
+	case *ast.RecType:
+		return &ast.JsonStreamField{
+			Type:       "struct",
+			Properties: convertSchema(t.StreamFields),
+		}
+	default: // should never happen
+		return nil
+	}
 }
 
 func (p *StreamProcessor) execExplain(stmt ast.NameNode, st ast.StreamType) (string, error) {
