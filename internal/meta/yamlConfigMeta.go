@@ -288,3 +288,13 @@ func GetResources(language string) (b []byte, err error) {
 		return b, err
 	}
 }
+
+func ResetConfigs() {
+	ConfigManager.lock.Lock()
+	defer ConfigManager.lock.Unlock()
+
+	for _, ops := range ConfigManager.cfgOperators {
+		ops.ClearConfKeys()
+		_ = ops.SaveCfgToFile()
+	}
+}

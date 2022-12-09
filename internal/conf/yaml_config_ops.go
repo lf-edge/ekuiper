@@ -38,6 +38,7 @@ type ConfKeysOperator interface {
 	DeleteConfKeyField(confKey string, reqField map[string]interface{}) error
 	AddConfKey(confKey string, reqField map[string]interface{}) error
 	AddConfKeyField(confKey string, reqField map[string]interface{}) error
+	ClearConfKeys()
 }
 
 //ConfigOperator define interface to query/add/update/delete the configs in disk
@@ -175,6 +176,13 @@ func (c *ConfigKeys) DeleteConfKey(confKey string) {
 	defer c.lock.Unlock()
 
 	delete(c.dataCfg, confKey)
+}
+
+func (c *ConfigKeys) ClearConfKeys() {
+	keys := c.GetUpdatableConfKeys()
+	for _, key := range keys {
+		c.DeleteConfKey(key)
+	}
 }
 
 func recursionDelMap(cf, fields map[string]interface{}) error {

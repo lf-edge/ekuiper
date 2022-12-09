@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"net/http"
 	"os"
 	"os/signal"
@@ -198,6 +199,44 @@ func initRuleset() error {
 		conf.Log.Infof("start to initialize ruleset")
 		_, counts, err := rulesetProcessor.Import(content)
 		conf.Log.Infof("initialzie %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
+	}
+	return nil
+}
+
+func resetAllRules() error {
+	rules, err := ruleProcessor.GetAllRules()
+	if err != nil {
+		return err
+	}
+	for _, name := range rules {
+		_ = deleteRule(name)
+		_, err := ruleProcessor.ExecDrop(name)
+		if err != nil {
+			return fmt.Errorf("delete rule: %s with error %v", name, err)
+		}
+	}
+	return nil
+}
+
+func resetAllStreams() error {
+	allStreams, err := streamProcessor.GetAll()
+	if err != nil {
+		return err
+	}
+	Streams := allStreams["streams"]
+	Tables := allStreams["tables"]
+
+	for _, name := range Streams {
+		_, err2 := streamProcessor.DropStream(name, ast.TypeStream)
+		if err2 != nil {
+			return err2
+		}
+	}
+	for _, name := range Tables {
+		_, err2 := streamProcessor.DropStream(name, ast.TypeTable)
+		if err2 != nil {
+			return err2
+		}
 	}
 	return nil
 }
