@@ -50,27 +50,27 @@ func TestTableProcessor_Apply(t *testing.T) {
 				Content: []xsql.TupleRow{
 					&xsql.Tuple{
 						Message: xsql.Message{
-							"a": []map[string]interface{}{
-								{"b": "hello1"},
-								{"b": "hello2"},
+							"a": []interface{}{
+								map[string]interface{}{"b": "hello1"},
+								map[string]interface{}{"b": "hello2"},
 							},
 						},
 						Emitter: "demo",
 					},
 					&xsql.Tuple{
 						Message: xsql.Message{
-							"a": []map[string]interface{}{
-								{"b": "hello2"},
-								{"b": "hello3"},
+							"a": []interface{}{
+								map[string]interface{}{"b": "hello2"},
+								map[string]interface{}{"b": "hello3"},
 							},
 						},
 						Emitter: "demo",
 					},
 					&xsql.Tuple{
 						Message: xsql.Message{
-							"a": []map[string]interface{}{
-								{"b": "hello3"},
-								{"b": "hello4"},
+							"a": []interface{}{
+								map[string]interface{}{"b": "hello3"},
+								map[string]interface{}{"b": "hello4"},
 							},
 						},
 						Emitter: "demo",
@@ -117,8 +117,8 @@ func TestTableProcessor_Apply(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "TestPreprocessor_Apply")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		pp := &TableProcessor{isBatchInput: true, emitterName: "demo"}
-		pp.streamFields = convertFields(tt.stmt.StreamFields)
+		pp := &TableProcessor{isBatchInput: true, emitterName: "demo", checkSchema: true}
+		pp.streamFields = tt.stmt.StreamFields.ToJsonSchema()
 		pp.output = &xsql.WindowTuples{
 			Content: make([]xsql.TupleRow, 0),
 		}

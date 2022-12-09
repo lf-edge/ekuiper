@@ -25,7 +25,7 @@ type TableProcessor struct {
 	//Pruned stream fields. Could be streamField(with data type info) or string
 	defaultFieldProcessor
 
-	isSchemaless bool
+	checkSchema  bool
 	isBatchInput bool // whether the inputs are batched, such as file which sends multiple messages at a batch. If batch input, only fires when EOF is received. This is mutual exclusive with retainSize.
 	retainSize   int  // how many(maximum) messages to be retained for each output
 	emitterName  string
@@ -34,11 +34,13 @@ type TableProcessor struct {
 	batchEmitted bool               // if batch input, this is the signal for whether the last batch has emitted. If true, reinitialize.
 }
 
-func NewTableProcessor(isSchemaless bool, name string, fields []interface{}, options *ast.Options) (*TableProcessor, error) {
-	p := &TableProcessor{emitterName: name, batchEmitted: true, retainSize: 1, isSchemaless: isSchemaless}
-	p.defaultFieldProcessor = defaultFieldProcessor{
-		streamFields: fields, isBinary: false, timestampFormat: options.TIMESTAMP_FORMAT,
-		strictValidation: options.STRICT_VALIDATION,
+func NewTableProcessor(isSchemaless bool, name string, fields map[string]*ast.JsonStreamField, options *ast.Options) (*TableProcessor, error) {
+	p := &TableProcessor{emitterName: name, batchEmitted: true, retainSize: 1}
+	if !isSchemaless && options.STRICT_VALIDATION {
+		p.defaultFieldProcessor = defaultFieldProcessor{
+			streamFields: fields, timestampFormat: options.TIMESTAMP_FORMAT,
+		}
+		p.checkSchema = true
 	}
 	if options.RETAIN_SIZE > 0 {
 		p.retainSize = options.RETAIN_SIZE
@@ -67,12 +69,11 @@ func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql
 		p.batchEmitted = false
 	}
 	if tuple.Message != nil {
-		if !p.isSchemaless && p.streamFields != nil {
-			result, err := p.processField(tuple, nil)
+		if p.checkSchema {
+			err := p.validateAndConvert(tuple)
 			if err != nil {
 				return fmt.Errorf("error in preprocessor: %s", err)
 			}
-			tuple.Message = result
 		}
 		var newTuples []xsql.TupleRow
 		_ = p.output.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {

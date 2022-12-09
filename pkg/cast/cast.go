@@ -15,6 +15,7 @@
 package cast
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"reflect"
@@ -800,6 +801,21 @@ func ToBytes(input interface{}, sn Strictness) ([]byte, error) {
 		if sn != STRICT {
 			return []byte(b), nil
 		}
+	}
+	return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to bytes", input)
+}
+
+// ToByteA converts to eKuiper internal byte array
+func ToByteA(input interface{}, _ Strictness) ([]byte, error) {
+	switch b := input.(type) {
+	case []byte:
+		return b, nil
+	case string:
+		r, err := base64.StdEncoding.DecodeString(b)
+		if err != nil {
+			return nil, fmt.Errorf("illegal string %s, must be base64 encoded string", b)
+		}
+		return r, nil
 	}
 	return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to bytes", input)
 }

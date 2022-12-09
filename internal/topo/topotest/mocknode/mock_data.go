@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ var TestData = map[string][]*xsql.Tuple{
 		{
 			Emitter: "demoError",
 			Message: map[string]interface{}{
-				"color": 3,
+				"color": "blue",
 				"size":  "red",
 				"ts":    1541152486013,
 			},
@@ -87,7 +87,7 @@ var TestData = map[string][]*xsql.Tuple{
 			Message: map[string]interface{}{
 				"color": "blue",
 				"size":  6,
-				"ts":    "1541152486822",
+				"ts":    1541152486822,
 			},
 			Timestamp: 1541152486822,
 		},
@@ -508,7 +508,7 @@ var TestData = map[string][]*xsql.Tuple{
 			Emitter: "demoErr",
 			Message: map[string]interface{}{
 				"color": 2,
-				"size":  "blue",
+				"size":  5,
 				"ts":    1541152487632,
 			},
 			Timestamp: 1541152487722,

@@ -153,7 +153,7 @@ func TestSingleSQL(t *testing.T) {
 			Sql:  `SELECT size as Int8, ts FROM demoError where size > 3`,
 			R: [][]map[string]interface{}{
 				{{
-					"error": "error in preprocessor: invalid data type for size, expect bigint but found string(red)",
+					"error": "error in preprocessor: field size type mismatch: cannot convert string(red) to int64",
 				}},
 				{{
 					"Int8": float64(6),
@@ -164,7 +164,7 @@ func TestSingleSQL(t *testing.T) {
 					"ts":   float64(1541152488442),
 				}},
 				{{
-					"error": "error in preprocessor: invalid data type for size, expect bigint but found string(blue)",
+					"error": "error in preprocessor: field size type mismatch: cannot convert string(blue) to int64",
 				}},
 			},
 			M: map[string]interface{}{
