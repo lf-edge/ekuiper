@@ -78,7 +78,7 @@ func InitRegistry() error {
 				default:
 					ffs.SchemaFile = filepath.Join(schemaDir, file.Name())
 				}
-				conf.Log.Infof("schema file %s.%s loaded", schemaType, schemaId)
+				conf.Log.Infof("schema file %s.%s loaded", schemaType, fileName)
 			}
 		}
 		registry.schemas[schemaType] = newSchemas
@@ -170,6 +170,7 @@ func GetSchema(schemaType def.SchemaType, name string) (*Info, error) {
 			Name:     name,
 			Content:  string(content),
 			FilePath: schemaFile.SchemaFile,
+			SoPath: schemaFile.SoFile,
 		}, nil
 	} else {
 		return &Info{
