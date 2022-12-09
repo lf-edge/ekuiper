@@ -104,14 +104,15 @@ func Test_createLogicalPlan(t *testing.T) {
 						DataSourcePlan{
 							baseLogicalPlan: baseLogicalPlan{},
 							name:            "src1",
-							streamFields: []interface{}{
-								&ast.StreamField{
-									Name:      "myarray",
-									FieldType: &ast.ArrayType{Type: ast.STRINGS},
+							streamFields: map[string]*ast.JsonStreamField{
+								"myarray": {
+									Type: "array",
+									Items: &ast.JsonStreamField{
+										Type: "string",
+									},
 								},
-								&ast.StreamField{
-									Name:      "temp",
-									FieldType: &ast.BasicType{Type: ast.BIGINT},
+								"temp": {
+									Type: "bigint",
 								},
 							},
 							streamStmt: streams["src1"],
@@ -152,14 +153,12 @@ func Test_createLogicalPlan(t *testing.T) {
 											children: []LogicalPlan{
 												DataSourcePlan{
 													name: "src1",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "name",
-															FieldType: &ast.BasicType{Type: ast.STRINGS},
+													streamFields: map[string]*ast.JsonStreamField{
+														"name": {
+															Type: "string",
 														},
-														&ast.StreamField{
-															Name:      "temp",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"temp": {
+															Type: "bigint",
 														},
 													},
 													streamStmt: streams["src1"],
@@ -205,14 +204,12 @@ func Test_createLogicalPlan(t *testing.T) {
 											children: []LogicalPlan{
 												DataSourcePlan{
 													name: "src1",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "id1",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"id1": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "temp",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"temp": {
+															Type: "bigint",
 														},
 													},
 													streamStmt: streams["src1"],
@@ -220,14 +217,12 @@ func Test_createLogicalPlan(t *testing.T) {
 												}.Init(),
 												DataSourcePlan{
 													name: "src2",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "hum",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "id2",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"id2": {
+															Type: "bigint",
 														},
 													},
 													streamStmt:      streams["src2"],
@@ -295,18 +290,15 @@ func Test_createLogicalPlan(t *testing.T) {
 											children: []LogicalPlan{
 												DataSourcePlan{
 													name: "src1",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "id1",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"id1": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "name",
-															FieldType: &ast.BasicType{Type: ast.STRINGS},
+														"name": {
+															Type: "string",
 														},
-														&ast.StreamField{
-															Name:      "temp",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"temp": {
+															Type: "bigint",
 														},
 													},
 													streamStmt: streams["src1"],
@@ -364,22 +356,21 @@ func Test_createLogicalPlan(t *testing.T) {
 															DataSourcePlan{
 																name:       "src1",
 																isWildCard: true,
-																streamFields: []interface{}{
-																	&ast.StreamField{
-																		Name:      "id1",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																streamFields: map[string]*ast.JsonStreamField{
+																	"id1": {
+																		Type: "bigint",
 																	},
-																	&ast.StreamField{
-																		Name:      "temp",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																	"temp": {
+																		Type: "bigint",
 																	},
-																	&ast.StreamField{
-																		Name:      "name",
-																		FieldType: &ast.BasicType{Type: ast.STRINGS},
+																	"name": {
+																		Type: "string",
 																	},
-																	&ast.StreamField{
-																		Name:      "myarray",
-																		FieldType: &ast.ArrayType{Type: ast.STRINGS},
+																	"myarray": {
+																		Type: "array",
+																		Items: &ast.JsonStreamField{
+																			Type: "string",
+																		},
 																	},
 																},
 																streamStmt: streams["src1"],
@@ -438,14 +429,12 @@ func Test_createLogicalPlan(t *testing.T) {
 														children: []LogicalPlan{
 															DataSourcePlan{
 																name: "src1",
-																streamFields: []interface{}{
-																	&ast.StreamField{
-																		Name:      "id1",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																streamFields: map[string]*ast.JsonStreamField{
+																	"id1": {
+																		Type: "bigint",
 																	},
-																	&ast.StreamField{
-																		Name:      "temp",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																	"temp": {
+																		Type: "bigint",
 																	},
 																},
 																streamStmt: streams["src1"],
@@ -472,14 +461,12 @@ func Test_createLogicalPlan(t *testing.T) {
 														children: []LogicalPlan{
 															DataSourcePlan{
 																name: "src2",
-																streamFields: []interface{}{
-																	&ast.StreamField{
-																		Name:      "hum",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																streamFields: map[string]*ast.JsonStreamField{
+																	"hum": {
+																		Type: "bigint",
 																	},
-																	&ast.StreamField{
-																		Name:      "id2",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																	"id2": {
+																		Type: "bigint",
 																	},
 																},
 																streamStmt:      streams["src2"],
@@ -547,14 +534,12 @@ func Test_createLogicalPlan(t *testing.T) {
 														children: []LogicalPlan{
 															DataSourcePlan{
 																name: "src1",
-																streamFields: []interface{}{
-																	&ast.StreamField{
-																		Name:      "id1",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																streamFields: map[string]*ast.JsonStreamField{
+																	"id1": {
+																		Type: "bigint",
 																	},
-																	&ast.StreamField{
-																		Name:      "temp",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																	"temp": {
+																		Type: "bigint",
 																	},
 																},
 																streamStmt: streams["src1"],
@@ -570,14 +555,12 @@ func Test_createLogicalPlan(t *testing.T) {
 												}.Init(),
 												DataSourcePlan{
 													name: "src2",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "hum",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "id2",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"id2": {
+															Type: "bigint",
 														},
 													},
 													streamStmt:      streams["src2"],
@@ -657,14 +640,12 @@ func Test_createLogicalPlan(t *testing.T) {
 														children: []LogicalPlan{
 															DataSourcePlan{
 																name: "src1",
-																streamFields: []interface{}{
-																	&ast.StreamField{
-																		Name:      "id1",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																streamFields: map[string]*ast.JsonStreamField{
+																	"id1": {
+																		Type: "bigint",
 																	},
-																	&ast.StreamField{
-																		Name:      "temp",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																	"temp": {
+																		Type: "bigint",
 																	},
 																},
 																streamStmt: streams["src1"],
@@ -688,14 +669,12 @@ func Test_createLogicalPlan(t *testing.T) {
 												}.Init(),
 												DataSourcePlan{
 													name: "tableInPlanner",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "hum",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "id",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"id": {
+															Type: "bigint",
 														},
 													},
 													streamStmt: streams["tableInPlanner"],
@@ -759,14 +738,12 @@ func Test_createLogicalPlan(t *testing.T) {
 
 															DataSourcePlan{
 																name: "src1",
-																streamFields: []interface{}{
-																	&ast.StreamField{
-																		Name:      "id1",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																streamFields: map[string]*ast.JsonStreamField{
+																	"id1": {
+																		Type: "bigint",
 																	},
-																	&ast.StreamField{
-																		Name:      "temp",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																	"temp": {
+																		Type: "bigint",
 																	},
 																},
 																streamStmt: streams["src1"],
@@ -782,14 +759,12 @@ func Test_createLogicalPlan(t *testing.T) {
 												}.Init(),
 												DataSourcePlan{
 													name: "tableInPlanner",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "hum",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "id",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"id": {
+															Type: "bigint",
 														},
 													},
 													streamStmt: streams["tableInPlanner"],
@@ -862,10 +837,9 @@ func Test_createLogicalPlan(t *testing.T) {
 								children: []LogicalPlan{
 									DataSourcePlan{
 										name: "src1",
-										streamFields: []interface{}{
-											&ast.StreamField{
-												Name:      "temp",
-												FieldType: &ast.BasicType{Type: ast.BIGINT},
+										streamFields: map[string]*ast.JsonStreamField{
+											"temp": {
+												Type: "bigint",
 											},
 										},
 										streamStmt: streams["src1"],
@@ -938,14 +912,12 @@ func Test_createLogicalPlan(t *testing.T) {
 											children: []LogicalPlan{
 												DataSourcePlan{
 													name: "src2",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "hum",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "id2",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"id2": {
+															Type: "bigint",
 														},
 													},
 													streamStmt:      streams["src2"],
@@ -954,14 +926,12 @@ func Test_createLogicalPlan(t *testing.T) {
 												}.Init(),
 												DataSourcePlan{
 													name: "tableInPlanner",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "hum",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "id",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"id": {
+															Type: "bigint",
 														},
 													},
 													streamStmt: streams["tableInPlanner"],
@@ -1051,10 +1021,9 @@ func Test_createLogicalPlan(t *testing.T) {
 								children: []LogicalPlan{
 									DataSourcePlan{
 										name: "src1",
-										streamFields: []interface{}{
-											&ast.StreamField{
-												Name:      "temp",
-												FieldType: &ast.BasicType{Type: ast.BIGINT},
+										streamFields: map[string]*ast.JsonStreamField{
+											"temp": {
+												Type: "bigint",
 											},
 										},
 										streamStmt: streams["src1"],
@@ -1114,18 +1083,15 @@ func Test_createLogicalPlan(t *testing.T) {
 											children: []LogicalPlan{
 												DataSourcePlan{
 													name: "src1",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "id1",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"id1": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "name",
-															FieldType: &ast.BasicType{Type: ast.STRINGS},
+														"name": {
+															Type: "string",
 														},
-														&ast.StreamField{
-															Name:      "temp",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"temp": {
+															Type: "bigint",
 														},
 													},
 													streamStmt: streams["src1"],
@@ -1200,22 +1166,21 @@ func Test_createLogicalPlan(t *testing.T) {
 						DataSourcePlan{
 							baseLogicalPlan: baseLogicalPlan{},
 							name:            "src1",
-							streamFields: []interface{}{
-								&ast.StreamField{
-									Name:      "id1",
-									FieldType: &ast.BasicType{Type: ast.BIGINT},
+							streamFields: map[string]*ast.JsonStreamField{
+								"id1": {
+									Type: "bigint",
 								},
-								&ast.StreamField{
-									Name:      "temp",
-									FieldType: &ast.BasicType{Type: ast.BIGINT},
+								"temp": {
+									Type: "bigint",
 								},
-								&ast.StreamField{
-									Name:      "name",
-									FieldType: &ast.BasicType{Type: ast.STRINGS},
+								"name": {
+									Type: "string",
 								},
-								&ast.StreamField{
-									Name:      "myarray",
-									FieldType: &ast.ArrayType{Type: ast.STRINGS},
+								"myarray": {
+									Type: "array",
+									Items: &ast.JsonStreamField{
+										Type: "string",
+									},
 								},
 							},
 							streamStmt: streams["src1"],
@@ -1267,18 +1232,15 @@ func Test_createLogicalPlan(t *testing.T) {
 											children: []LogicalPlan{
 												DataSourcePlan{
 													name: "src1",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "id1",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"id1": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "name",
-															FieldType: &ast.BasicType{Type: ast.STRINGS},
+														"name": {
+															Type: "string",
 														},
-														&ast.StreamField{
-															Name:      "temp",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"temp": {
+															Type: "bigint",
 														},
 													},
 													streamStmt: streams["src1"],
@@ -1363,18 +1325,15 @@ func Test_createLogicalPlan(t *testing.T) {
 											children: []LogicalPlan{
 												DataSourcePlan{
 													name: "src1",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "id1",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"id1": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "name",
-															FieldType: &ast.BasicType{Type: ast.STRINGS},
+														"name": {
+															Type: "string",
 														},
-														&ast.StreamField{
-															Name:      "temp",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"temp": {
+															Type: "bigint",
 														},
 													},
 													streamStmt: streams["src1"],
@@ -1467,22 +1426,21 @@ func Test_createLogicalPlan(t *testing.T) {
 															DataSourcePlan{
 																name:       "src1",
 																isWildCard: true,
-																streamFields: []interface{}{
-																	&ast.StreamField{
-																		Name:      "id1",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																streamFields: map[string]*ast.JsonStreamField{
+																	"id1": {
+																		Type: "bigint",
 																	},
-																	&ast.StreamField{
-																		Name:      "temp",
-																		FieldType: &ast.BasicType{Type: ast.BIGINT},
+																	"temp": {
+																		Type: "bigint",
 																	},
-																	&ast.StreamField{
-																		Name:      "name",
-																		FieldType: &ast.BasicType{Type: ast.STRINGS},
+																	"name": {
+																		Type: "string",
 																	},
-																	&ast.StreamField{
-																		Name:      "myarray",
-																		FieldType: &ast.ArrayType{Type: ast.STRINGS},
+																	"myarray": {
+																		Type: "array",
+																		Items: &ast.JsonStreamField{
+																			Type: "string",
+																		},
 																	},
 																},
 																streamStmt: streams["src1"],
@@ -1619,11 +1577,12 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 						DataSourcePlan{
 							baseLogicalPlan: baseLogicalPlan{},
 							name:            "src1",
-							streamFields: []interface{}{
-								"name",
+							streamFields: map[string]*ast.JsonStreamField{
+								"name": nil,
 							},
-							streamStmt: streams["src1"],
-							metaFields: []string{},
+							streamStmt:   streams["src1"],
+							isSchemaless: true,
+							metaFields:   []string{},
 						}.Init(),
 					},
 				},
@@ -1650,11 +1609,13 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 											children: []LogicalPlan{
 												DataSourcePlan{
 													name: "src1",
-													streamFields: []interface{}{
-														"name", "temp",
+													streamFields: map[string]*ast.JsonStreamField{
+														"name": nil,
+														"temp": nil,
 													},
-													streamStmt: streams["src1"],
-													metaFields: []string{},
+													streamStmt:   streams["src1"],
+													metaFields:   []string{},
+													isSchemaless: true,
 												}.Init(),
 											},
 										},
@@ -1696,19 +1657,24 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 											children: []LogicalPlan{
 												DataSourcePlan{
 													name: "src1",
-													streamFields: []interface{}{
-														"id1", "temp",
+													streamFields: map[string]*ast.JsonStreamField{
+														"id1":  nil,
+														"temp": nil,
 													},
-													streamStmt: streams["src1"],
-													metaFields: []string{},
+													streamStmt:   streams["src1"],
+													metaFields:   []string{},
+													isSchemaless: true,
 												}.Init(),
 												DataSourcePlan{
 													name: "src2",
-													streamFields: []interface{}{ // can't determine where is id1 belonged to
-														"hum", "id1", "id2",
+													streamFields: map[string]*ast.JsonStreamField{ // can't determine where is id1 belonged to
+														"hum": nil,
+														"id1": nil,
+														"id2": nil,
 													},
-													streamStmt: streams["src2"],
-													metaFields: []string{},
+													isSchemaless: true,
+													streamStmt:   streams["src2"],
+													metaFields:   []string{},
 												}.Init(),
 											},
 										},
@@ -1771,11 +1737,14 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 											children: []LogicalPlan{
 												DataSourcePlan{
 													name: "src1",
-													streamFields: []interface{}{
-														"id1", "name", "temp",
+													streamFields: map[string]*ast.JsonStreamField{
+														"id1":  nil,
+														"name": nil,
+														"temp": nil,
 													},
-													streamStmt: streams["src1"],
-													metaFields: []string{},
+													isSchemaless: true,
+													streamStmt:   streams["src1"],
+													metaFields:   []string{},
 												}.Init(),
 											},
 										},
@@ -1829,9 +1798,10 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 															DataSourcePlan{
 																name:         "src1",
 																isWildCard:   true,
-																streamFields: nil,
+																streamFields: map[string]*ast.JsonStreamField{},
 																streamStmt:   streams["src1"],
 																metaFields:   []string{},
+																isSchemaless: true,
 															}.Init(),
 														},
 													},
@@ -1886,11 +1856,13 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 														children: []LogicalPlan{
 															DataSourcePlan{
 																name: "src1",
-																streamFields: []interface{}{
-																	"id1", "temp",
+																streamFields: map[string]*ast.JsonStreamField{
+																	"id1":  nil,
+																	"temp": nil,
 																},
-																streamStmt: streams["src1"],
-																metaFields: []string{},
+																isSchemaless: true,
+																streamStmt:   streams["src1"],
+																metaFields:   []string{},
 															}.Init(),
 														},
 													},
@@ -1913,11 +1885,14 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 														children: []LogicalPlan{
 															DataSourcePlan{
 																name: "src2",
-																streamFields: []interface{}{
-																	"hum", "id1", "id2",
+																streamFields: map[string]*ast.JsonStreamField{
+																	"hum": nil,
+																	"id1": nil,
+																	"id2": nil,
 																},
-																streamStmt: streams["src2"],
-																metaFields: []string{},
+																isSchemaless: true,
+																streamStmt:   streams["src2"],
+																metaFields:   []string{},
 															}.Init(),
 														},
 													},
@@ -1980,11 +1955,13 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 														children: []LogicalPlan{
 															DataSourcePlan{
 																name: "src1",
-																streamFields: []interface{}{
-																	"id1", "temp",
+																streamFields: map[string]*ast.JsonStreamField{
+																	"id1":  nil,
+																	"temp": nil,
 																},
-																streamStmt: streams["src1"],
-																metaFields: []string{},
+																isSchemaless: true,
+																streamStmt:   streams["src1"],
+																metaFields:   []string{},
 															}.Init(),
 														},
 													},
@@ -1996,11 +1973,14 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 												}.Init(),
 												DataSourcePlan{
 													name: "src2",
-													streamFields: []interface{}{
-														"hum", "id1", "id2",
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": nil,
+														"id1": nil,
+														"id2": nil,
 													},
-													streamStmt: streams["src2"],
-													metaFields: []string{},
+													isSchemaless: true,
+													streamStmt:   streams["src2"],
+													metaFields:   []string{},
 												}.Init(),
 											},
 										},
@@ -2075,11 +2055,14 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 														children: []LogicalPlan{
 															DataSourcePlan{
 																name: "src1",
-																streamFields: []interface{}{
-																	"hum", "id1", "temp",
+																streamFields: map[string]*ast.JsonStreamField{
+																	"hum":  nil,
+																	"id1":  nil,
+																	"temp": nil,
 																},
-																streamStmt: streams["src1"],
-																metaFields: []string{},
+																isSchemaless: true,
+																streamStmt:   streams["src1"],
+																metaFields:   []string{},
 															}.Init(),
 														},
 													},
@@ -2099,14 +2082,12 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 												}.Init(),
 												DataSourcePlan{
 													name: "tableInPlanner",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "hum",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "id",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"id": {
+															Type: "bigint",
 														},
 													},
 													streamStmt: streams["tableInPlanner"],
@@ -2169,11 +2150,13 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 														children: []LogicalPlan{
 															DataSourcePlan{
 																name: "src1",
-																streamFields: []interface{}{
-																	"id1", "temp",
+																streamFields: map[string]*ast.JsonStreamField{
+																	"id1":  nil,
+																	"temp": nil,
 																},
-																streamStmt: streams["src1"],
-																metaFields: []string{},
+																isSchemaless: true,
+																streamStmt:   streams["src1"],
+																metaFields:   []string{},
 															}.Init(),
 														},
 													},
@@ -2185,14 +2168,12 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 												}.Init(),
 												DataSourcePlan{
 													name: "tableInPlanner",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "hum",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "id",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"id": {
+															Type: "bigint",
 														},
 													},
 													streamStmt: streams["tableInPlanner"],
@@ -2265,11 +2246,12 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 								children: []LogicalPlan{
 									DataSourcePlan{
 										name: "src1",
-										streamFields: []interface{}{
-											"temp",
+										streamFields: map[string]*ast.JsonStreamField{
+											"temp": nil,
 										},
-										streamStmt: streams["src1"],
-										metaFields: []string{"Humidity", "device", "id"},
+										isSchemaless: true,
+										streamStmt:   streams["src1"],
+										metaFields:   []string{"Humidity", "device", "id"},
 									}.Init(),
 								},
 							},
@@ -2338,22 +2320,23 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 											children: []LogicalPlan{
 												DataSourcePlan{
 													name: "src2",
-													streamFields: []interface{}{
-														"hum", "id", "id2",
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": nil,
+														"id":  nil,
+														"id2": nil,
 													},
-													streamStmt: streams["src2"],
-													metaFields: []string{},
+													isSchemaless: true,
+													streamStmt:   streams["src2"],
+													metaFields:   []string{},
 												}.Init(),
 												DataSourcePlan{
 													name: "tableInPlanner",
-													streamFields: []interface{}{
-														&ast.StreamField{
-															Name:      "hum",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": {
+															Type: "bigint",
 														},
-														&ast.StreamField{
-															Name:      "id",
-															FieldType: &ast.BasicType{Type: ast.BIGINT},
+														"id": {
+															Type: "bigint",
 														},
 													},
 													streamStmt: streams["tableInPlanner"],
@@ -2441,11 +2424,12 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 						DataSourcePlan{
 							baseLogicalPlan: baseLogicalPlan{},
 							name:            "src1",
-							streamFields: []interface{}{
-								"name",
+							streamFields: map[string]*ast.JsonStreamField{
+								"name": nil,
 							},
-							streamStmt: streams["src1"],
-							metaFields: []string{},
+							isSchemaless: true,
+							streamStmt:   streams["src1"],
+							metaFields:   []string{},
 						}.Init(),
 					},
 				},
@@ -2555,11 +2539,12 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 									DataSourcePlan{
 										baseLogicalPlan: baseLogicalPlan{},
 										name:            "src1",
-										streamFields: []interface{}{
-											"a",
+										streamFields: map[string]*ast.JsonStreamField{
+											"a": nil,
 										},
-										streamStmt: streams["src1"],
-										metaFields: []string{},
+										isSchemaless: true,
+										streamStmt:   streams["src1"],
+										metaFields:   []string{},
 									}.Init(),
 								},
 							},
@@ -2636,11 +2621,12 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 															DataSourcePlan{
 																baseLogicalPlan: baseLogicalPlan{},
 																name:            "src1",
-																streamFields: []interface{}{
-																	"a",
+																streamFields: map[string]*ast.JsonStreamField{
+																	"a": nil,
 																},
-																streamStmt: streams["src1"],
-																metaFields: []string{},
+																isSchemaless: true,
+																streamStmt:   streams["src1"],
+																metaFields:   []string{},
 															}.Init(),
 														},
 													},
@@ -2775,11 +2761,12 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 												DataSourcePlan{
 													baseLogicalPlan: baseLogicalPlan{},
 													name:            "src1",
-													streamFields: []interface{}{
-														"a",
+													streamFields: map[string]*ast.JsonStreamField{
+														"a": nil,
 													},
-													streamStmt: streams["src1"],
-													metaFields: []string{},
+													isSchemaless: true,
+													streamStmt:   streams["src1"],
+													metaFields:   []string{},
 												}.Init(),
 											},
 										},
@@ -2895,8 +2882,10 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 													baseLogicalPlan: baseLogicalPlan{},
 													name:            "src1",
 													streamStmt:      streams["src1"],
+													streamFields:    map[string]*ast.JsonStreamField{},
 													metaFields:      []string{},
 													isWildCard:      true,
+													isSchemaless:    true,
 												}.Init(),
 											},
 										},

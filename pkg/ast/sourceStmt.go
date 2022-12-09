@@ -84,6 +84,47 @@ func (sf *StreamFields) UnmarshalFromMap(data map[string]*JsonStreamField) error
 	*sf = t
 	return nil
 }
+func (sf *StreamFields) ToJsonSchema() map[string]*JsonStreamField {
+	return convertSchema(*sf)
+}
+
+func convertSchema(sfs StreamFields) map[string]*JsonStreamField {
+	result := make(map[string]*JsonStreamField, len(sfs))
+	for _, sf := range sfs {
+		result[sf.Name] = convertFieldType(sf.FieldType)
+	}
+	return result
+}
+
+func convertFieldType(sf FieldType) *JsonStreamField {
+	switch t := sf.(type) {
+	case *BasicType:
+		return &JsonStreamField{
+			Type: t.Type.String(),
+		}
+	case *ArrayType:
+		var items *JsonStreamField
+		switch t.Type {
+		case ARRAY, STRUCT:
+			items = convertFieldType(t.FieldType)
+		default:
+			items = &JsonStreamField{
+				Type: t.Type.String(),
+			}
+		}
+		return &JsonStreamField{
+			Type:  "array",
+			Items: items,
+		}
+	case *RecType:
+		return &JsonStreamField{
+			Type:       "struct",
+			Properties: convertSchema(t.StreamFields),
+		}
+	default: // should never happen
+		return nil
+	}
+}
 
 func fieldsTypeFromSchema(mjsf map[string]*JsonStreamField) (StreamFields, error) {
 	sfs := make(StreamFields, 0, len(mjsf))

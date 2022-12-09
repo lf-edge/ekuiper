@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package cast
 
 import (
+	"encoding/hex"
 	"fmt"
 	"reflect"
 	"testing"
@@ -394,5 +395,43 @@ func TestMapToStructTag(t *testing.T) {
 				t.Errorf("MapToStructure() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestToByteA(t *testing.T) {
+	bytea, _ := hex.DecodeString("736f6d6520646174612077697468200020616e6420efbbbf")
+	tests := []struct {
+		input  interface{}
+		output []byte
+		err    string
+	}{
+		{
+			input: "foo",
+			err:   "illegal string foo, must be base64 encoded string",
+		}, {
+			input:  []byte("foo"),
+			output: []byte("foo"),
+			err:    "",
+		}, {
+			input:  1,
+			output: nil,
+			err:    "cannot convert int(1) to bytes",
+		}, {
+			input:  "c29tZSBkYXRhIHdpdGggACBhbmQg77u/",
+			output: bytea,
+		},
+	}
+	for i, tt := range tests {
+		r, err := ToByteA(tt.input, CONVERT_SAMEKIND)
+		if err != nil {
+			if err.Error() != tt.err {
+				t.Errorf("%d, ToByteA() error = %v, wantErr %v", i, err, tt.err)
+				continue
+			}
+		} else {
+			if !reflect.DeepEqual(r, tt.output) {
+				t.Errorf("%d: ToByteA() = %x, want %x", i, r, tt.output)
+			}
+		}
 	}
 }

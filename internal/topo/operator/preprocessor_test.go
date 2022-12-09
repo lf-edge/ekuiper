@@ -43,7 +43,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 		result interface{}
 	}{
 		//Basic type
-		{
+		{ // 0
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -51,9 +51,9 @@ func TestPreprocessor_Apply(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"a": 6}`),
-			result: errors.New("error in preprocessor: invalid data map[a:%!s(float64=6)], field abc not found"),
+			result: errors.New("error in preprocessor: field abc is not found"),
 		},
-		{
+		{ // 1
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -61,9 +61,9 @@ func TestPreprocessor_Apply(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"abc": null}`),
-			result: errors.New("error in preprocessor: invalid data type for abc, expect bigint but found <nil>(<nil>)"),
+			result: errors.New("error in preprocessor: field abc type mismatch: cannot convert <nil>(<nil>) to int64"),
 		},
-		{
+		{ // 2
 			stmt: &ast.StreamStmt{
 				Name:         ast.StreamName("demo"),
 				StreamFields: nil,
@@ -74,7 +74,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			},
 		},
-		{
+		{ // 3
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -83,11 +83,11 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data: []byte(`{"abc": 6}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-				"abc": 6,
+				"abc": int64(6),
 			},
 			},
 		},
-		{
+		{ // 4
 			stmt: &ast.StreamStmt{
 				Name:         ast.StreamName("demo"),
 				StreamFields: nil,
@@ -98,7 +98,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			},
 		},
-		{
+		{ // 5
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -110,10 +110,12 @@ func TestPreprocessor_Apply(t *testing.T) {
 			result: &xsql.Tuple{Message: xsql.Message{
 				"abc": float64(34),
 				"dEf": "hello",
+				"def": "hello",
+				"ghi": float64(50),
 			},
 			},
 		},
-		{
+		{ // 6
 			stmt: &ast.StreamStmt{
 				Name:         ast.StreamName("demo"),
 				StreamFields: nil,
@@ -126,7 +128,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			},
 		},
-		{
+		{ // 7
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -134,14 +136,10 @@ func TestPreprocessor_Apply(t *testing.T) {
 					{Name: "def", FieldType: &ast.BasicType{Type: ast.STRINGS}},
 				},
 			},
-			data: []byte(`{"abc": "34", "def" : "hello", "ghi": "50"}`),
-			result: &xsql.Tuple{Message: xsql.Message{
-				"abc": float64(34),
-				"def": "hello",
-			},
-			},
+			data:   []byte(`{"abc": "34", "def" : "hello", "ghi": "50"}`),
+			result: errors.New("error in preprocessor: field abc type mismatch: cannot convert string(34) to float64"),
 		},
-		{
+		{ // 8
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -150,9 +148,9 @@ func TestPreprocessor_Apply(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"abc": 77, "def" : "hello"}`),
-			result: errors.New("error in preprocessor: invalid data type for def, expect boolean but found string(hello)"),
+			result: errors.New("error in preprocessor: field def type mismatch: cannot convert string(hello) to bool"),
 		},
-		{
+		{ // 9
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -161,9 +159,9 @@ func TestPreprocessor_Apply(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"a": {"b" : "hello"}}`),
-			result: errors.New("error in preprocessor: invalid data map[a:map[b:hello]], field abc not found"),
+			result: errors.New("error in preprocessor: field abc is not found"),
 		},
-		{
+		{ // 10
 			stmt: &ast.StreamStmt{
 				Name:         ast.StreamName("demo"),
 				StreamFields: nil,
@@ -177,7 +175,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 		},
 		//Rec type
-		{
+		{ // 11
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -196,7 +194,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			},
 		},
-		{
+		{ // 12
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -207,15 +205,10 @@ func TestPreprocessor_Apply(t *testing.T) {
 					}},
 				},
 			},
-			data: []byte(`{"a": "{\"b\" : \"32\"}"}`),
-			result: &xsql.Tuple{Message: xsql.Message{
-				"a": map[string]interface{}{
-					"b": float64(32),
-				},
-			},
-			},
+			data:   []byte(`{"a": "{\"b\" : \"32\"}"}`),
+			result: errors.New("error in preprocessor: field a type mismatch: field b type mismatch: cannot convert string(32) to float64"),
 		},
-		{
+		{ // 13
 			stmt: &ast.StreamStmt{
 				Name:         ast.StreamName("demo"),
 				StreamFields: nil,
@@ -229,7 +222,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 		},
 		//Array of complex type
-		{
+		{ // 14
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -245,14 +238,14 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data: []byte(`{"a": [{"b" : "hello1"}, {"b" : "hello2"}]}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-				"a": []map[string]interface{}{
-					{"b": "hello1"},
-					{"b": "hello2"},
+				"a": []interface{}{
+					map[string]interface{}{"b": "hello1"},
+					map[string]interface{}{"b": "hello2"},
 				},
 			},
 			},
 		},
-		{
+		{ // 15
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -268,11 +261,11 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data: []byte(`{"a": []}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-				"a": make([]map[string]interface{}, 0),
+				"a": make([]interface{}, 0),
 			},
 			},
 		},
-		{
+		{ // 16
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -288,11 +281,11 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data: []byte(`{"a": null}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-				"a": []map[string]interface{}(nil),
+				"a": []interface{}(nil),
 			},
 			},
 		},
-		{
+		{ // 17
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -308,14 +301,14 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data: []byte(`{"a": [null, {"b" : "hello2"}]}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-				"a": []map[string]interface{}{
-					nil,
-					{"b": "hello2"},
+				"a": []interface{}{
+					map[string]interface{}(nil),
+					map[string]interface{}{"b": "hello2"},
 				},
 			},
 			},
 		},
-		{
+		{ // 18
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -329,15 +322,15 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data: []byte(`{"a": [[50, 60, 70],[66], [77]]}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-				"a": [][]int{
-					{50, 60, 70},
-					{66},
-					{77},
+				"a": []interface{}{
+					[]interface{}{int64(50), int64(60), int64(70)},
+					[]interface{}{int64(66)},
+					[]interface{}{int64(77)},
 				},
 			},
 			},
 		},
-		{
+		{ // 19
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -351,15 +344,15 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			data: []byte(`{"a": [null, [66], [77]]}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-				"a": [][]int{
-					[]int(nil),
-					{66},
-					{77},
+				"a": []interface{}{
+					[]interface{}(nil),
+					[]interface{}{int64(66)},
+					[]interface{}{int64(77)},
 				},
 			},
 			},
 		},
-		{
+		{ // 20
 			stmt: &ast.StreamStmt{
 				Name:         ast.StreamName("demo"),
 				StreamFields: nil,
@@ -373,7 +366,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			},
 		},
-		{
+		{ // 21
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -382,16 +375,10 @@ func TestPreprocessor_Apply(t *testing.T) {
 					}},
 				},
 			},
-			data: []byte(`{"a": "[\"55\", \"77\"]"}`),
-			result: &xsql.Tuple{Message: xsql.Message{
-				"a": []float64{
-					55,
-					77,
-				},
-			},
-			},
+			data:   []byte(`{"a": "[\"55\", \"77\"]"}`),
+			result: errors.New("error in preprocessor: field a type mismatch: expect array but got [\"55\", \"77\"]"),
 		},
-		{
+		{ // 22
 			stmt: &ast.StreamStmt{
 				Name:         ast.StreamName("demo"),
 				StreamFields: nil,
@@ -406,7 +393,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 		},
 		//Rec of complex type
-		{
+		{ // 23
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -427,13 +414,13 @@ func TestPreprocessor_Apply(t *testing.T) {
 				"a": map[string]interface{}{
 					"b": "hello",
 					"c": map[string]interface{}{
-						"d": 35,
+						"d": int64(35),
 					},
 				},
 			},
 			},
 		},
-		{
+		{ // 24
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -455,7 +442,7 @@ func TestPreprocessor_Apply(t *testing.T) {
 			},
 			},
 		},
-		{
+		{ // 25
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -473,14 +460,14 @@ func TestPreprocessor_Apply(t *testing.T) {
 			result: &xsql.Tuple{Message: xsql.Message{
 				"a": map[string]interface{}{
 					"b": "hello",
-					"c": []float64{
+					"c": []interface{}{
 						35.2, 38.2,
 					},
 				},
 			},
 			},
 		},
-		{
+		{ // 26
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -498,12 +485,12 @@ func TestPreprocessor_Apply(t *testing.T) {
 			result: &xsql.Tuple{Message: xsql.Message{
 				"a": map[string]interface{}{
 					"b": "hello",
-					"c": []float64(nil),
+					"c": []interface{}(nil),
 				},
 			},
 			},
 		},
-		{
+		{ // 27
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -518,9 +505,9 @@ func TestPreprocessor_Apply(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"a": {"b" : "hello", "c": [null, 35.4]}}`),
-			result: errors.New("error in preprocessor: fail to parse field c: invalid data type for [0], expect float but found <nil>(<nil>)"),
+			result: errors.New("error in preprocessor: field a type mismatch: field c type mismatch: array element type mismatch: cannot convert <nil>(<nil>) to float64"),
 		},
-		{
+		{ // 28
 			stmt: &ast.StreamStmt{
 				Name:         ast.StreamName("demo"),
 				StreamFields: nil,
@@ -535,31 +522,6 @@ func TestPreprocessor_Apply(t *testing.T) {
 				},
 			},
 			},
-		}, {
-			stmt: &ast.StreamStmt{
-				Name: ast.StreamName("demo"),
-				StreamFields: []ast.StreamField{
-					{Name: "a", FieldType: &ast.RecType{
-						StreamFields: []ast.StreamField{
-							{Name: "b", FieldType: &ast.BasicType{Type: ast.STRINGS}},
-						},
-					}},
-					{Name: "b", FieldType: &ast.BasicType{Type: ast.FLOAT}},
-					{Name: "c", FieldType: &ast.ArrayType{Type: ast.BIGINT}},
-				},
-				Options: &ast.Options{
-					STRICT_VALIDATION: false,
-				},
-			},
-			data: []byte(`{"a": {"d" : "hello"}}`),
-			result: &xsql.Tuple{Message: xsql.Message{
-				"a": map[string]interface{}{
-					"b": "",
-				},
-				"b": 0.0,
-				"c": []int(nil),
-			},
-			},
 		},
 	}
 
@@ -569,13 +531,8 @@ func TestPreprocessor_Apply(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "TestPreprocessor_Apply")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		pp := &Preprocessor{}
-		if tt.stmt.Options != nil {
-			pp.strictValidation = tt.stmt.Options.STRICT_VALIDATION
-		} else {
-			pp.strictValidation = true
-		}
-		pp.streamFields = convertFields(tt.stmt.StreamFields)
+		pp := &Preprocessor{checkSchema: true}
+		pp.streamFields = tt.stmt.StreamFields.ToJsonSchema()
 
 		dm := make(map[string]interface{})
 		if e := json.Unmarshal(tt.data, &dm); e != nil {
@@ -599,7 +556,7 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 		data   []byte
 		result interface{}
 	}{
-		{
+		{ // 0
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -614,7 +571,7 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 			},
 			},
 		},
-		{
+		{ // 1
 			stmt: &ast.StreamStmt{
 				Name:         ast.StreamName("demo"),
 				StreamFields: nil,
@@ -626,7 +583,7 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 			},
 			},
 		},
-		{
+		{ // 2
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -635,9 +592,9 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"abc": "2019-09-19T00:55:1dd5Z", "def" : 111568854573431}`),
-			result: errors.New("error in preprocessor: invalid data type for abc, cannot convert to datetime: parsing time \"2019-09-19T00:55:1dd5Z\" as \"2006-01-02T15:04:05.000Z07:00\": cannot parse \"1dd5Z\" as \"05\""),
+			result: errors.New("error in preprocessor: field abc type mismatch: parsing time \"2019-09-19T00:55:1dd5Z\" as \"2006-01-02T15:04:05.000Z07:00\": cannot parse \"1dd5Z\" as \"05\""),
 		},
-		{
+		{ // 3
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -661,7 +618,7 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 			}},
 		},
 		//Array type
-		{
+		{ // 4
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -672,14 +629,14 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 			},
 			data: []byte(`{"a": [1568854515123, 1568854573431]}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-				"a": []time.Time{
+				"a": []interface{}{
 					cast.TimeFromUnixMilli(1568854515123),
 					cast.TimeFromUnixMilli(1568854573431),
 				},
 			},
 			},
 		},
-		{
+		{ // 5
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -708,8 +665,8 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "TestPreprocessorTime_Apply")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		pp := &Preprocessor{}
-		pp.streamFields = convertFields(tt.stmt.StreamFields)
+		pp := &Preprocessor{checkSchema: true}
+		pp.streamFields = tt.stmt.StreamFields.ToJsonSchema()
 		if tt.stmt.Options != nil {
 			pp.timestampFormat = tt.stmt.Options.TIMESTAMP_FORMAT
 		}
@@ -754,7 +711,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 		result interface{}
 	}{
 		//Basic type
-		{
+		{ // 0
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -772,11 +729,11 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			},
 			data: []byte(`{"abc": 1568854515000}`),
 			result: &xsql.Tuple{Message: xsql.Message{
-				"abc": 1568854515000,
+				"abc": int64(1568854515000),
 			}, Timestamp: 1568854515000,
 			},
 		},
-		{
+		{ // 1
 			stmt: &ast.StreamStmt{
 				Name:         ast.StreamName("demo"),
 				StreamFields: nil,
@@ -796,7 +753,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			}, Timestamp: 1568854515000,
 			},
 		},
-		{
+		{ // 2
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -810,7 +767,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			data:   []byte(`{"abc": true}`),
 			result: errors.New("cannot convert timestamp field abc to timestamp with error unsupported type to convert to timestamp true"),
 		},
-		{
+		{ // 3
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -826,10 +783,11 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			result: &xsql.Tuple{Message: xsql.Message{
 				"abc": float64(34),
 				"def": "2019-09-23T02:47:29.754Z",
+				"ghi": float64(50),
 			}, Timestamp: int64(1569206849754),
 			},
 		},
-		{
+		{ // 4
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -848,7 +806,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			}, Timestamp: int64(1568854515000),
 			},
 		},
-		{
+		{ // 5
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -865,10 +823,11 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			result: &xsql.Tuple{Message: xsql.Message{
 				"abc": float64(34),
 				"def": "2019-09-23AT02:47:29",
+				"ghi": float64(50),
 			}, Timestamp: int64(1569206849000),
 			},
 		},
-		{
+		{ // 6
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -894,9 +853,9 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 	for i, tt := range tests {
 
 		pp := &Preprocessor{
+			checkSchema: true,
 			defaultFieldProcessor: defaultFieldProcessor{
-				streamFields:    convertFields(tt.stmt.StreamFields),
-				isBinary:        false,
+				streamFields:    tt.stmt.StreamFields.ToJsonSchema(),
 				timestampFormat: tt.stmt.Options.TIMESTAMP_FORMAT,
 			},
 			isEventTime:    true,
@@ -939,7 +898,7 @@ func TestPreprocessorError(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"abc": "dafsad"}`),
-			result: errors.New("error in preprocessor: invalid data type for abc, expect bigint but found string(dafsad)"),
+			result: errors.New("error in preprocessor: field abc type mismatch: cannot convert string(dafsad) to int64"),
 		}, {
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
@@ -952,7 +911,7 @@ func TestPreprocessorError(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"a": {"d" : "hello"}}`),
-			result: errors.New("error in preprocessor: invalid data map[d:hello], field b not found"),
+			result: errors.New("error in preprocessor: field a type mismatch: field b is not found"),
 		}, {
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
@@ -970,7 +929,7 @@ func TestPreprocessorError(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"abc": "not a time"}`),
-			result: errors.New("error in preprocessor: invalid data type for abc, expect bigint but found string(not a time)"),
+			result: errors.New("error in preprocessor: field abc type mismatch: cannot convert string(not a time) to int64"),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -980,9 +939,8 @@ func TestPreprocessorError(t *testing.T) {
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
 
-		pp := &Preprocessor{}
-		pp.strictValidation = true
-		pp.streamFields = convertFields(tt.stmt.StreamFields)
+		pp := &Preprocessor{checkSchema: true}
+		pp.streamFields = tt.stmt.StreamFields.ToJsonSchema()
 		dm := make(map[string]interface{})
 		if e := json.Unmarshal(tt.data, &dm); e != nil {
 			log.Fatal(e)
@@ -1009,40 +967,12 @@ func TestPreprocessorForBinary(t *testing.T) {
 		t.Errorf("Cannot read image: %v", err)
 	}
 	b64img := base64.StdEncoding.EncodeToString(image)
-	//TODO test bytea type conversion to string or else
 	var tests = []struct {
-		stmt     *ast.StreamStmt
-		data     []byte
-		isBinary bool
-		result   interface{}
+		stmt   *ast.StreamStmt
+		data   []byte
+		result interface{}
 	}{
-		{
-			stmt: &ast.StreamStmt{
-				Name:         ast.StreamName("demo"),
-				StreamFields: nil,
-			},
-			data:     image,
-			isBinary: true,
-			result: &xsql.Tuple{Message: xsql.Message{
-				"self": image,
-			},
-			},
-		},
-		{
-			stmt: &ast.StreamStmt{
-				Name: ast.StreamName("demo"),
-				StreamFields: []ast.StreamField{
-					{Name: "img", FieldType: &ast.BasicType{Type: ast.BYTEA}},
-				},
-			},
-			data:     image,
-			isBinary: true,
-			result: &xsql.Tuple{Message: xsql.Message{
-				"img": image,
-			},
-			},
-		},
-		{
+		{ // 0
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -1061,7 +991,7 @@ func TestPreprocessorForBinary(t *testing.T) {
 			},
 			},
 		},
-		{
+		{ // 1
 			stmt: &ast.StreamStmt{
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
@@ -1072,7 +1002,7 @@ func TestPreprocessorForBinary(t *testing.T) {
 			},
 			data: []byte(fmt.Sprintf(`{"a": ["%s"]}`, b64img)),
 			result: &xsql.Tuple{Message: xsql.Message{
-				"a": [][]byte{
+				"a": []interface{}{
 					image,
 				},
 			},
@@ -1094,8 +1024,8 @@ func TestPreprocessorForBinary(t *testing.T) {
 			},
 			data: []byte(fmt.Sprintf(`{"a": [{"b":"%s"}]}`, b64img)),
 			result: &xsql.Tuple{Message: xsql.Message{
-				"a": []map[string]interface{}{
-					{"b": image},
+				"a": []interface{}{
+					map[string]interface{}{"b": image},
 				},
 			},
 			},
@@ -1108,15 +1038,11 @@ func TestPreprocessorForBinary(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "TestPreprocessorForBinary")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		pp := &Preprocessor{}
-		pp.streamFields = convertFields(tt.stmt.StreamFields)
-		pp.isBinary = tt.isBinary
+		pp := &Preprocessor{checkSchema: true}
+		pp.streamFields = tt.stmt.StreamFields.ToJsonSchema()
 		format := message.FormatJson
-		if tt.isBinary {
-			format = message.FormatBinary
-		}
-		converter, _ := converter.GetOrCreateConverter(format, "", "")
-		nCtx := context.WithValue(ctx, context.DecodeKey, converter)
+		ccc, _ := converter.GetOrCreateConverter(format, "", "")
+		nCtx := context.WithValue(ctx, context.DecodeKey, ccc)
 		if dm, e := nCtx.Decode(tt.data); e != nil {
 			log.Fatal(e)
 			return

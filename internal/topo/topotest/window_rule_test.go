@@ -419,7 +419,7 @@ func TestWindow(t *testing.T) {
 			Sql:  `SELECT * FROM demoError GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			R: [][]map[string]interface{}{
 				{{
-					"error": "error in preprocessor: invalid data type for color, expect string but found int(3)",
+					"error": "error in preprocessor: field size type mismatch: cannot convert string(red) to int64",
 				}},
 				{{
 					"color": "blue",
@@ -436,7 +436,7 @@ func TestWindow(t *testing.T) {
 					"ts":    float64(1541152487632),
 				}},
 				{{
-					"error": "error in preprocessor: invalid data type for color, expect string but found int(7)",
+					"error": "error in preprocessor: field color type mismatch: cannot convert int(7) to string",
 				}},
 				{{
 					"color": "blue",
@@ -444,7 +444,7 @@ func TestWindow(t *testing.T) {
 					"ts":    float64(1541152487632),
 				}},
 				{{
-					"error": "error in preprocessor: invalid data type for size, expect bigint but found string(blue)",
+					"error": "error in preprocessor: field size type mismatch: cannot convert string(blue) to int64",
 				}},
 				{},
 			},
@@ -1015,7 +1015,7 @@ func TestEventWindow(t *testing.T) {
 			Sql:  `SELECT * FROM demoErr GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			R: [][]map[string]interface{}{
 				{{
-					"error": "error in preprocessor: invalid data type for color, expect string but found int(2)",
+					"error": "error in preprocessor: field color type mismatch: cannot convert int(2) to string",
 				}},
 				{{
 					"color": "red",

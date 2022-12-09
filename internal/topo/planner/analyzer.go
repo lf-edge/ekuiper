@@ -17,40 +17,55 @@ package planner
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
+	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 	"strings"
 )
 
+type streamInfo struct {
+	stmt   *ast.StreamStmt
+	schema ast.StreamFields
+}
+
 // Analyze the select statement by decorating the info from stream statement.
 // Typically, set the correct stream name for fieldRefs
-func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*ast.StreamStmt, []*ast.Call, error) {
+func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]streamInfo, []*ast.Call, error) {
 	streamsFromStmt := xsql.GetStreams(s)
-	streamStmts := make([]*ast.StreamStmt, len(streamsFromStmt))
+	streamStmts := make([]streamInfo, len(streamsFromStmt))
 	isSchemaless := false
 	for i, s := range streamsFromStmt {
 		streamStmt, err := xsql.GetDataSource(store, s)
 		if err != nil {
 			return nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
 		}
-		streamStmts[i] = streamStmt
-		// TODO fine grain control of schemaless
-		if streamStmt.StreamFields == nil {
+		ss := streamStmt.StreamFields
+		if streamStmt.Options.SCHEMAID != "" {
+			ss, err = schema.InferFromSchemaFile(streamStmt.Options.FORMAT, streamStmt.Options.SCHEMAID)
+		}
+		if err != nil {
+			return nil, nil, err
+		}
+		streamStmts[i] = streamInfo{
+			stmt:   streamStmt,
+			schema: ss,
+		}
+		if ss == nil {
 			isSchemaless = true
 		}
 	}
 
 	dsn := ast.DefaultStream
 	if len(streamsFromStmt) == 1 {
-		dsn = streamStmts[0].Name
+		dsn = streamStmts[0].stmt.Name
 	}
 	// [fieldName][streamsName][*aliasRef] if alias, with special key alias/default. Each key has exactly one value
 	fieldsMap := newFieldsMap(isSchemaless, dsn)
 	if !isSchemaless {
 		for _, streamStmt := range streamStmts {
-			for _, field := range streamStmt.StreamFields {
-				fieldsMap.reserve(field.Name, streamStmt.Name)
+			for _, field := range streamStmt.schema {
+				fieldsMap.reserve(field.Name, streamStmt.stmt.Name)
 			}
 		}
 	}

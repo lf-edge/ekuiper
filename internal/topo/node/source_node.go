@@ -163,7 +163,12 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 								stats.IncTotalRecordsIn()
 								stats.ProcessTimeStart()
 								tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: conf.GetNowInMilli(), Metadata: data.Meta()}
-								processedData := m.preprocessOp.Apply(ctx, tuple, nil, nil)
+								var processedData interface{}
+								if m.preprocessOp != nil {
+									processedData = m.preprocessOp.Apply(ctx, tuple, nil, nil)
+								} else {
+									processedData = tuple
+								}
 								stats.ProcessTimeEnd()
 								//blocking
 								switch val := processedData.(type) {

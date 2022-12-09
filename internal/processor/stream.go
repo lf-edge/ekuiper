@@ -378,45 +378,7 @@ func (p *StreamProcessor) GetInferredJsonSchema(name string, st ast.StreamType) 
 			return nil, err
 		}
 	}
-	return convertSchema(sfs), nil
-}
-
-func convertSchema(sfs ast.StreamFields) map[string]*ast.JsonStreamField {
-	result := make(map[string]*ast.JsonStreamField, len(sfs))
-	for _, sf := range sfs {
-		result[sf.Name] = convertFieldType(sf.FieldType)
-	}
-	return result
-}
-
-func convertFieldType(sf ast.FieldType) *ast.JsonStreamField {
-	switch t := sf.(type) {
-	case *ast.BasicType:
-		return &ast.JsonStreamField{
-			Type: t.Type.String(),
-		}
-	case *ast.ArrayType:
-		var items *ast.JsonStreamField
-		switch t.Type {
-		case ast.ARRAY, ast.STRUCT:
-			items = convertFieldType(t.FieldType)
-		default:
-			items = &ast.JsonStreamField{
-				Type: t.Type.String(),
-			}
-		}
-		return &ast.JsonStreamField{
-			Type:  "array",
-			Items: items,
-		}
-	case *ast.RecType:
-		return &ast.JsonStreamField{
-			Type:       "struct",
-			Properties: convertSchema(t.StreamFields),
-		}
-	default: // should never happen
-		return nil
-	}
+	return sfs.ToJsonSchema(), nil
 }
 
 func (p *StreamProcessor) execExplain(stmt ast.NameNode, st ast.StreamType) (string, error) {

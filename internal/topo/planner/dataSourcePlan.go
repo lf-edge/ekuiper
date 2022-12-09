@@ -16,7 +16,6 @@ package planner
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
 	"sort"
@@ -28,9 +27,11 @@ type DataSourcePlan struct {
 	name ast.StreamName
 	// calculated properties
 	// initialized with stream definition, pruned with rule
-	streamFields []interface{}
-	metaFields   []string
-	// passon properties
+	metaFields []string
+	// pass-on and converted state. For schemaless, the value is always nil
+	streamFields map[string]*ast.JsonStreamField
+	// pass-on properties
+	isSchemaless    bool
 	streamStmt      *ast.StreamStmt
 	allMeta         bool
 	isBinary        bool
@@ -39,7 +40,7 @@ type DataSourcePlan struct {
 	timestampField  string
 	// intermediate status
 	isWildCard bool
-	fields     map[string]interface{}
+	fields     map[string]*ast.JsonStreamField
 	metaMap    map[string]string
 }
 
@@ -98,12 +99,20 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 	if err != nil {
 		return err
 	}
-	p.fields = make(map[string]interface{})
+	p.fields = make(map[string]*ast.JsonStreamField)
 	if !p.allMeta {
 		p.metaMap = make(map[string]string)
 	}
 	if p.timestampField != "" {
-		p.fields[p.timestampField] = p.timestampField
+		if !p.isSchemaless {
+			tsf, ok := p.streamFields[p.timestampField]
+			if !ok {
+				return fmt.Errorf("timestamp field %s not found", p.timestampField)
+			}
+			p.fields[p.timestampField] = tsf
+		} else {
+			p.fields[p.timestampField] = nil
+		}
 	}
 	for _, field := range fields {
 		switch f := field.(type) {
@@ -112,8 +121,11 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 		case *ast.FieldRef:
 			if !p.isWildCard && (f.StreamName == ast.DefaultStream || f.StreamName == p.name) {
 				if _, ok := p.fields[f.Name]; !ok {
-					sf := p.getField(f.Name)
-					if sf != nil {
+					sf, err := p.getField(f.Name, f.StreamName == p.name)
+					if err != nil {
+						return err
+					}
+					if p.isSchemaless || sf != nil {
 						p.fields[f.Name] = sf
 					}
 				}
@@ -132,8 +144,11 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 			}
 		case *ast.SortField:
 			if !p.isWildCard {
-				sf := p.getField(f.Name)
-				if sf != nil {
+				sf, err := p.getField(f.Name, f.StreamName == p.name)
+				if err != nil {
+					return err
+				}
+				if p.isSchemaless || sf != nil {
 					p.fields[f.Name] = sf
 				}
 			}
@@ -145,47 +160,26 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 	return nil
 }
 
-func (p *DataSourcePlan) getField(name string) interface{} {
-	if p.streamStmt.StreamFields != nil {
-		for _, f := range p.streamStmt.StreamFields { // The input can only be StreamFields
-			if f.Name == name {
-				return &f
+func (p *DataSourcePlan) getField(name string, strict bool) (*ast.JsonStreamField, error) {
+	if !p.isSchemaless {
+		r, ok := p.streamFields[name]
+		if !ok {
+			if strict {
+				return nil, fmt.Errorf("field %s not found in stream %s", name, p.name)
 			}
+		} else {
+			return r, nil
 		}
-	} else {
-		return name
 	}
-	return nil
+	// always return nil for schemaless
+	return nil, nil
 }
 
+// Do not prune fields now for preprocessor
+// TODO provide field information to the source for it to prune
 func (p *DataSourcePlan) getAllFields() {
-	// convert fields
-	p.streamFields = make([]interface{}, 0)
-	if p.isWildCard {
-		if p.streamStmt.StreamFields != nil {
-			for k := range p.streamStmt.StreamFields { // The input can only be StreamFields
-				p.streamFields = append(p.streamFields, &p.streamStmt.StreamFields[k])
-			}
-		} else {
-			p.streamFields = nil
-		}
-	} else {
-		sfs := make([]interface{}, 0, len(p.fields))
-		if conf.IsTesting {
-			var keys []string
-			for k := range p.fields {
-				keys = append(keys, k)
-			}
-			sort.Strings(keys)
-			for _, k := range keys {
-				sfs = append(sfs, p.fields[k])
-			}
-		} else {
-			for _, v := range p.fields {
-				sfs = append(sfs, v)
-			}
-		}
-		p.streamFields = sfs
+	if !p.isWildCard {
+		p.streamFields = p.fields
 	}
 	p.metaFields = make([]string, 0, len(p.metaMap))
 	for _, v := range p.metaMap {

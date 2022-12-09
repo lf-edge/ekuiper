@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,31 +18,40 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
+// Preprocessor only planned when
+// 1. eventTime, to convert the timestamp field
+// 2. schema validate and convert, when strict_validation is on and field type is not binary
+// Do not convert types
 type Preprocessor struct {
 	//Pruned stream fields. Could be streamField(with data type info) or string
 	defaultFieldProcessor
-	allMeta        bool
-	metaFields     []string //only needed if not allMeta
+	//allMeta        bool
+	//metaFields     []string //only needed if not allMeta
 	isEventTime    bool
-	isSchemaless   bool
 	timestampField string
+	checkSchema    bool
+	isBinary       bool
 }
 
-func NewPreprocessor(isSchemaless bool, fields []interface{}, allMeta bool, metaFields []string, iet bool, timestampField string, timestampFormat string, isBinary bool, strictValidation bool) (*Preprocessor, error) {
+func NewPreprocessor(isSchemaless bool, fields map[string]*ast.JsonStreamField, _ bool, _ []string, iet bool, timestampField string, timestampFormat string, isBinary bool, strictValidation bool) (*Preprocessor, error) {
 	p := &Preprocessor{
-		allMeta: allMeta, metaFields: metaFields, isEventTime: iet,
-		isSchemaless: isSchemaless, timestampField: timestampField}
-	p.defaultFieldProcessor = defaultFieldProcessor{
-		streamFields: fields, isBinary: isBinary, timestampFormat: timestampFormat, strictValidation: strictValidation,
+		isEventTime: iet, timestampField: timestampField, isBinary: isBinary}
+	if !isSchemaless && (strictValidation || isBinary) {
+		p.checkSchema = true
+		p.defaultFieldProcessor = defaultFieldProcessor{
+			streamFields: fields, timestampFormat: timestampFormat,
+		}
 	}
 	return p, nil
 }
 
-/*
- *	input: *xsql.Tuple
+// Apply the preprocessor to the tuple
+/*	input: *xsql.Tuple
  *	output: *xsql.Tuple
  */
 func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
@@ -53,29 +62,30 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, _ *xsql.Fu
 	}
 
 	log.Debugf("preprocessor receive %s", tuple.Message)
-	var (
-		result map[string]interface{}
-		err    error
-	)
-	if !p.isSchemaless && p.streamFields != nil {
-		result, err = p.processField(tuple, nil)
-		if err != nil {
-			return fmt.Errorf("error in preprocessor: %s", err)
+	if p.checkSchema {
+		if !p.isBinary {
+			err := p.validateAndConvert(tuple)
+			if err != nil {
+				return fmt.Errorf("error in preprocessor: %s", err)
+			}
+		} else {
+			for name := range p.streamFields {
+				tuple.Message[name] = tuple.Message[message.DefaultField]
+				delete(tuple.Message, message.DefaultField)
+				break
+			}
 		}
-		tuple.Message = result
-	} else {
-		result = tuple.Message
 	}
 	if p.isEventTime {
-		if t, ok := result[p.timestampField]; ok {
+		if t, ok := tuple.Message[p.timestampField]; ok {
 			if ts, err := cast.InterfaceToUnixMilli(t, p.timestampFormat); err != nil {
 				return fmt.Errorf("cannot convert timestamp field %s to timestamp with error %v", p.timestampField, err)
 			} else {
 				tuple.Timestamp = ts
-				log.Debugf("preprocessor calculate timstamp %d", tuple.Timestamp)
+				log.Debugf("preprocessor calculate timestamp %d", tuple.Timestamp)
 			}
 		} else {
-			return fmt.Errorf("cannot find timestamp field %s in tuple %v", p.timestampField, result)
+			return fmt.Errorf("cannot find timestamp field %s in tuple %v", p.timestampField, tuple.Message)
 		}
 	}
 	// No need to reconstruct meta as the memory has been allocated earlier

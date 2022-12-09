@@ -64,13 +64,13 @@ func TestSourceAndFunc(t *testing.T) {
 			Rule: `{"sql":"SELECT count as ee FROM ext","actions":[{"memory":{"topic":"cache"}}]}`,
 			R: [][]map[string]interface{}{
 				{{
-					"ee": 50,
+					"ee": int64(50),
 				}},
 				{{
-					"ee": 50,
+					"ee": int64(50),
 				}},
 				{{
-					"ee": 50,
+					"ee": int64(50),
 				}},
 			},
 			M: map[string]interface{}{

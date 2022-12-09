@@ -119,12 +119,18 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	)
 	switch t := lp.(type) {
 	case *DataSourcePlan:
-		isSchemaless := t.streamStmt.StreamFields == nil
+		isSchemaless := t.isSchemaless
 		switch t.streamStmt.StreamType {
 		case ast.TypeStream:
-			pp, err := operator.NewPreprocessor(isSchemaless, t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary, t.streamStmt.Options.STRICT_VALIDATION)
-			if err != nil {
-				return nil, 0, err
+			var (
+				pp  node.UnOperation
+				err error
+			)
+			if t.iet || (!isSchemaless && (t.streamStmt.Options.STRICT_VALIDATION || !t.isBinary)) {
+				pp, err = operator.NewPreprocessor(isSchemaless, t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary, t.streamStmt.Options.STRICT_VALIDATION)
+				if err != nil {
+					return nil, 0, err
+				}
 			}
 			var srcNode *node.SourceNode
 			if len(sources) == 0 {
@@ -229,24 +235,26 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		return nil, err
 	}
 
-	for _, streamStmt := range streamStmts {
-		if streamStmt.StreamType == ast.TypeTable && streamStmt.Options.KIND == ast.StreamKindLookup {
+	for _, sInfo := range streamStmts {
+		if sInfo.stmt.StreamType == ast.TypeTable && sInfo.stmt.Options.KIND == ast.StreamKindLookup {
 			if lookupTableChildren == nil {
 				lookupTableChildren = make(map[string]*ast.Options)
 			}
-			lookupTableChildren[string(streamStmt.Name)] = streamStmt.Options
+			lookupTableChildren[string(sInfo.stmt.Name)] = sInfo.stmt.Options
 		} else {
 			p = DataSourcePlan{
-				name:       streamStmt.Name,
-				streamStmt: streamStmt,
-				iet:        opt.IsEventTime,
-				allMeta:    opt.SendMetaToSink,
+				name:         sInfo.stmt.Name,
+				streamStmt:   sInfo.stmt,
+				streamFields: sInfo.schema.ToJsonSchema(),
+				isSchemaless: sInfo.schema == nil,
+				iet:          opt.IsEventTime,
+				allMeta:      opt.SendMetaToSink,
 			}.Init()
-			if streamStmt.StreamType == ast.TypeStream {
+			if sInfo.stmt.StreamType == ast.TypeStream {
 				children = append(children, p)
 			} else {
 				scanTableChildren = append(scanTableChildren, p)
-				scanTableEmitters = append(scanTableEmitters, string(streamStmt.Name))
+				scanTableEmitters = append(scanTableEmitters, string(sInfo.stmt.Name))
 			}
 		}
 	}
@@ -337,7 +345,6 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
-	// TODO handle aggregateAlias in optimization as it does not only happen in select fields
 	if dimensions != nil {
 		ds = dimensions.GetGroups()
 		if ds != nil && len(ds) > 0 {
