@@ -170,7 +170,7 @@ func GetSchema(schemaType def.SchemaType, name string) (*Info, error) {
 			Name:     name,
 			Content:  string(content),
 			FilePath: schemaFile.SchemaFile,
-			SoPath: schemaFile.SoFile,
+			SoPath:   schemaFile.SoFile,
 		}, nil
 	} else {
 		return &Info{
