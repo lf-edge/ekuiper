@@ -65,6 +65,47 @@ Response Sample:
 }
 ```
 
+## Get stream schema
+
+The API is used to get the stream schema. The schema is inferred from the physical and logical schema definitions.
+
+```shell
+GET http://localhost:9081/streams/{id}/schema
+```
+
+The format is like Json schema:
+
+```json
+{
+    "id": {
+        "type": "bigint"
+	},
+    "name": {
+        "type": "string"
+	},
+    "age": {
+        "type": "bigint"
+	},
+    "hobbies": {
+        "type": "struct",
+        "properties": {
+          "indoor": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "outdoor": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+    }
+}
+```
+
 ## update a stream
 
 The API is used for update the stream definition.

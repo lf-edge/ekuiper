@@ -65,6 +65,14 @@ GET http://localhost:9081/tables/{id}}
 }
 ```
 
+## 获取数据结构
+
+该 API 用于获取流的数据结构，该数据结构为合并物理 schema 和逻辑 schema后推断出的实际定义结构。
+
+```shell
+GET http://localhost:9081/tables/{id}/schema
+```
+
 ## 更新表
 
 该 API 用于更新表的定义。

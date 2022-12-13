@@ -16,7 +16,9 @@ Users can define the format to decode by setting `format` property. Currently, o
 
 ## Schema
 
-Users can define the data schema like a common SQL table. In eKuiper runtime, the data will be validated and transformed according to the schema. To avoid conversion overhead if the data is fixed and clean or to consume unknown schema data, users can define schemaless source.
+Users can define the schema of the data source like a relational database table. Some data formats come with their own schema, such as the `protobuf` format. When creating a source, you can define `schemaId` to point to the data structure definition in the Schema Registry.
+
+Where the definition in the schema registry is the physical schema and the data structure in the data source definition statement is the logical schema. If both are defined, the physical schema will override the logical schema. In this case, the validation and formatting of the data will be the responsibility of the defined format, e.g. `protobuf`. If only the logical schema is defined and `strictValidation` is set, the data will be validated and type converted according to the defined structure in the eKuiper runtime. If no validation is set, the logical schema is mainly used for SQL statement validation at compile and load time. If the input data is pre-processed clean data or if the data structure is unknown or variable, the user may not define the schema, thus also avoiding the overhead of data conversion.
 
 ## Stream & Table
 

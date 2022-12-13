@@ -71,6 +71,15 @@ Response Sample:
 }
 ```
 
+## Get table schema
+
+The API is used to get the table schema. The schema is inferred from the physical and logical schema definitions.
+
+```shell
+GET http://localhost:9081/tables/{id}/schema
+```
+
+
 ## update a table
 
 The API is used for update the table definition.

@@ -94,21 +94,21 @@ demo (
 	) WITH (DATASOURCE="test", FORMAT="JSON", KEY="USERID", SHARED="true");
 ```
 
+## 数据结构
+
+流的数据结构(schema) 包含两个部分。一个是在数据源定义中定义的数据结构，即逻辑数据结构；另一个是在使用强类型数据格式时指定的 SchemaId 即物理数据结构，例如 Protobuf 和 Custom 格式定义的数据结构。
+
+整体上，我们将支持3种递进的数据结构方式：
+
+1. Schemaless，用户无需定义任何形式的 schema，主要用于弱结构化数据流，或数据结构经常变化的情况。
+2. 仅逻辑结构，用户在 source 层定义 schema，多用于弱类型的编码方式，例如最常用的 JSON。适用于用户的数据有固定或大致固定的格式，同时不想使用强类型的数据编解码格式。使用这种方式的情况下，可以可通过 StrictValidation 参数配置是否进行数据验证和转换。
+3. 物理结构，用户使用 protobuf 或者 custom 格式，并定义 schemaId。此时，数据结构的验证将由格式来实现。
+
+逻辑结构和物理结构定义都用于规则创建的解析和载入阶段的 SQL 语法验证以及运行时优化等。推断后的数据流的数据结构可通过 [Schema API](../operation/restapi/streams.md#获取数据结构)获取。
+
 ### Strict Validation
 
-```
-StrictValidation 的值可以为 true 或 false。
-1）True：如果消息不符合流定义，则删除消息。
-2）False：保留消息，但用默认的空值填充缺少的字段。
-
-bigint: 0
-float: 0.0
-string: ""
-datetime: (NOT support yet)
-boolean: false
-array: zero length array
-struct: null value
-```
+仅用于逻辑结构的数据流。若设置 strict validation，则规则运行中将根据逻辑结构对字段存在与否以及字段类型进行校验。若数据格式完好，建议关闭验证。
 
 ### Schema-less 流
 
