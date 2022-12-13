@@ -92,22 +92,22 @@ demo (
 	) WITH (DATASOURCE="test", FORMAT="JSON", KEY="USERID", SHARED="true");
 ```
 
+## Schema
+
+The schema of a stream contains two parts. One is the data structure defined in the data source definition, i.e. the logical schema, and the other is the SchemaId specified when using strongly typed data formats, i.e. the physical schema, such as those defined in Protobuf and Custom formats.
+
+Overall, we will support 3 recursive ways of schema.
+
+1. Schemaless, where the user does not need to define any kind of schema, mainly used for weakly structured data flows, or where the data structure changes frequently.
+2. Logical schema only, where the user defines the schema at the source level, mostly used for weakly typed encoding, such as the JSON format, for users whose data has a fixed or roughly fixed format and do not want to use a strongly typed data codec format. In the case, the StrictValidation parameter can be used to configure whether to perform data validation and conversion. 
+3. Physical schema, the user uses protobuf or custom formats and defines the schemaId, where the validation of the data structure is done by the format implementation.
+
+Both the logical and physical schema definitions are used for SQL syntax validation in the parsing and loading phases of rule creation and for runtime optimization. The inferred schema of the stream can be obtained via [Schema API](../operation/restapi/streams.md#get-stream-schema).
+
+
 ### Strict Validation
 
-```
-The value of StrictValidation can be true or false.
-1) True: Drop the message if the message  is not satisfy with the stream definition.
-2) False: Keep the message, but fill the missing field with default empty value.
-
-bigint: 0
-float: 0.0
-string: ""
-datetime: the current time
-boolean: false
-bytea: nil
-array: zero length array
-struct: null value
-```
+Used only for logically schema streams. If strict validation is set, the rule will verify the existence of the field and validate the field type based on the schema. If the data is in good format, it is recommended to turn off validation.
 
 ### Schema-less stream
 If the data type of the stream is unknown or varying, we can define it without the fields. This is called schema-less. It is defined by leaving the fields empty.

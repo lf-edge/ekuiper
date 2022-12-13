@@ -26,12 +26,23 @@ POST http://localhost:9081/schemas/protobuf
 }
 ```
 
+模式包含静态插件示例：
+
+```json
+{
+  "name": "schema2",
+  "file": "file:///tmp/ekuiper/internal/schema/test/test2.proto",
+   "soFile": "file:///tmp/ekuiper/internal/schema/test/so.proto"
+}
+```
+
 ### 参数
 
 1. name：模式的唯一名称。
 2. 模式的内容，可选用 file 或 content 参数来指定。模式创建后，模式内容将写入 `data/schemas/$shcema_type/$schema_name` 文件中。
    - file：模式文件的 URL。URL 支持 http 和 https 以及 file 模式。当使用 file 模式时，该文件必须在 eKuiper 服务器所在的机器上。它必须是模式类型对应的格式。例如 protobuf 模式的文件扩展名应为 .proto。
    - content：模式文件的内容。
+3. soFile：静态插件 so。插件创建请看[自定义格式](../../rules/codecs.md#格式扩展)。
 
 ## 显示模式
 
