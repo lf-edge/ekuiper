@@ -72,7 +72,7 @@ func TestCreate(t *testing.T) {
 			r: &api.Rule{
 				Triggered: false,
 				Id:        "test",
-				Sql:       "SELECT timestamp FROM demo",
+				Sql:       "SELECT FROM demo",
 				Actions: []map[string]interface{}{
 					{
 						"log": map[string]interface{}{},
@@ -80,7 +80,7 @@ func TestCreate(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			e: errors.New("Parse SQL SELECT timestamp FROM demo error: found \"TIMESTAMP\", expected expression.."),
+			e: errors.New("Parse SQL SELECT FROM demo error: found \"FROM\", expected expression.."),
 		},
 		{
 			r: &api.Rule{
@@ -138,7 +138,7 @@ func TestUpdate(t *testing.T) {
 			r: &api.Rule{
 				Triggered: false,
 				Id:        "test",
-				Sql:       "SELECT timestamp FROM demo",
+				Sql:       "SELECT FROM demo",
 				Actions: []map[string]interface{}{
 					{
 						"log": map[string]interface{}{},
@@ -146,7 +146,7 @@ func TestUpdate(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			e: errors.New("Parse SQL SELECT timestamp FROM demo error: found \"TIMESTAMP\", expected expression.."),
+			e: errors.New("Parse SQL SELECT FROM demo error: found \"FROM\", expected expression.."),
 		},
 		{
 			r: &api.Rule{

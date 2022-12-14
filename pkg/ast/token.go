@@ -14,6 +14,8 @@
 
 package ast
 
+import "strings"
+
 type Token int
 
 const (
@@ -107,39 +109,6 @@ const (
 	TRUE
 	FALSE
 
-	CREATE
-	DROP
-	EXPLAIN
-	DESCRIBE
-	SHOW
-	STREAM
-	TABLE
-	STREAMS
-	TABLES
-	WITH
-
-	XBIGINT
-	XFLOAT
-	XSTRING
-	XBYTEA
-	XDATETIME
-	XBOOLEAN
-	XARRAY
-	XSTRUCT
-
-	DATASOURCE
-	KEY
-	FORMAT
-	CONF_KEY
-	TYPE
-	STRICT_VALIDATION
-	TIMESTAMP
-	TIMESTAMP_FORMAT
-	RETAIN_SIZE
-	SHARED
-	SCHEMAID
-	KIND
-
 	DD
 	HH
 	MI
@@ -212,37 +181,6 @@ var Tokens = []string{
 	OVER:      "OVER",
 	PARTITION: "PARTITION",
 
-	CREATE:   "CREATE",
-	DROP:     "RROP",
-	EXPLAIN:  "EXPLAIN",
-	DESCRIBE: "DESCRIBE",
-	SHOW:     "SHOW",
-	STREAM:   "STREAM",
-	TABLE:    "TABLE",
-	STREAMS:  "STREAMS",
-	TABLES:   "TABLES",
-	WITH:     "WITH",
-
-	XBIGINT:   "BIGINT",
-	XFLOAT:    "FLOAT",
-	XSTRING:   "STRING",
-	XBYTEA:    "BYTEA",
-	XDATETIME: "DATETIME",
-	XBOOLEAN:  "BOOLEAN",
-	XARRAY:    "ARRAY",
-	XSTRUCT:   "STRUCT",
-
-	DATASOURCE:        "DATASOURCE",
-	KEY:               "KEY",
-	FORMAT:            "FORMAT",
-	CONF_KEY:          "CONF_KEY",
-	TYPE:              "TYPE",
-	STRICT_VALIDATION: "STRICT_VALIDATION",
-	TIMESTAMP:         "TIMESTAMP",
-	TIMESTAMP_FORMAT:  "TIMESTAMP_FORMAT",
-	RETAIN_SIZE:       "RETAIN_SIZE",
-	SHARED:            "SHARED",
-
 	AND:        "AND",
 	OR:         "OR",
 	TRUE:       "TRUE",
@@ -258,6 +196,74 @@ var Tokens = []string{
 	MI: "MI",
 	SS: "SS",
 	MS: "MS",
+}
+
+const (
+	SELECT_LIT = "SELECT"
+	CREATE     = "CREATE"
+	DROP       = "DROP"
+	EXPLAIN    = "EXPLAIN"
+	DESCRIBE   = "DESCRIBE"
+	SHOW       = "SHOW"
+	STREAM     = "STREAM"
+	TABLE      = "TABLE"
+	STREAMS    = "STREAMS"
+	TABLES     = "TABLES"
+	WITH       = "WITH"
+
+	DATASOURCE        = "DATASOURCE"
+	KEY               = "KEY"
+	FORMAT            = "FORMAT"
+	CONF_KEY          = "CONF_KEY"
+	TYPE              = "TYPE"
+	STRICT_VALIDATION = "STRICT_VALIDATION"
+	TIMESTAMP         = "TIMESTAMP"
+	TIMESTAMP_FORMAT  = "TIMESTAMP_FORMAT"
+	RETAIN_SIZE       = "RETAIN_SIZE"
+	SHARED            = "SHARED"
+	SCHEMAID          = "SCHEMAID"
+	KIND              = "KIND"
+
+	XBIGINT   = "BIGINT"
+	XFLOAT    = "FLOAT"
+	XSTRING   = "STRING"
+	XBYTEA    = "BYTEA"
+	XDATETIME = "DATETIME"
+	XBOOLEAN  = "BOOLEAN"
+	XARRAY    = "ARRAY"
+	XSTRUCT   = "STRUCT"
+)
+
+var StreamTokens = map[string]struct{}{
+	DATASOURCE:        {},
+	KEY:               {},
+	FORMAT:            {},
+	CONF_KEY:          {},
+	TYPE:              {},
+	STRICT_VALIDATION: {},
+	TIMESTAMP:         {},
+	TIMESTAMP_FORMAT:  {},
+	RETAIN_SIZE:       {},
+	SHARED:            {},
+	SCHEMAID:          {},
+	KIND:              {},
+}
+
+var StreamDataTypes = map[string]DataType{
+	XBIGINT:   BIGINT,
+	XFLOAT:    FLOAT,
+	XSTRING:   STRINGS,
+	XBYTEA:    BYTEA,
+	XDATETIME: DATETIME,
+	XBOOLEAN:  BOOLEAN,
+	XARRAY:    ARRAY,
+	XSTRUCT:   STRUCT,
+}
+
+func IsStreamOptionKeyword(_ Token, lit string) bool {
+	// token is always IDENT
+	_, ok := StreamTokens[lit]
+	return ok
 }
 
 var COLUMN_SEPARATOR = Tokens[COLSEP]
@@ -334,24 +340,10 @@ func (d DataType) String() string {
 	return ""
 }
 
-func GetDataType(tok Token) DataType {
-	switch tok {
-	case XBIGINT:
-		return BIGINT
-	case XFLOAT:
-		return FLOAT
-	case XSTRING:
-		return STRINGS
-	case XBYTEA:
-		return BYTEA
-	case XDATETIME:
-		return DATETIME
-	case XBOOLEAN:
-		return BOOLEAN
-	case XARRAY:
-		return ARRAY
-	case XSTRUCT:
-		return STRUCT
+func GetDataType(lit string) DataType {
+	lit = strings.ToUpper(lit)
+	if dt, ok := StreamDataTypes[lit]; ok {
+		return dt
 	}
 	return UNKNOWN
 }

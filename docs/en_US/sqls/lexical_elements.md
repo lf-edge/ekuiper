@@ -40,12 +40,6 @@ The following is an example for using a stream named `from`, which is a reserved
 SELECT * FROM demo1 where `from`="device1"
 ```
 
-**Reserved keywords for streams management**: If you'd like to use the following keywords in stream management command, you will have to use backtick to enclose them.
-
-```
-CREATE, RROP, EXPLAIN, DESCRIBE, SHOW, STREAM, STREAMS, WITH, BIGINT, FLOAT, STRING, DATETIME, BOOLEAN, ARRAY, STRUCT, DATASOURCE, KEY, FORMAT,CONF_KEY, TYPE, KIND, SCHEMAID, STRICT_VALIDATION, TIMESTAMP, TIMESTAMP_FORMAT
-```
-
 The following is an example for how to use reserved keywords in stream creation statement.
 
 ```sql

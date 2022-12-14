@@ -225,70 +225,10 @@ func (s *Scanner) ScanIdent() (tok ast.Token, lit string) {
 		return ast.OVER, lit
 	case "PARTITION":
 		return ast.PARTITION, lit
-	case "CREATE":
-		return ast.CREATE, lit
-	case "DROP":
-		return ast.DROP, lit
-	case "EXPLAIN":
-		return ast.EXPLAIN, lit
-	case "DESCRIBE":
-		return ast.DESCRIBE, lit
-	case "SHOW":
-		return ast.SHOW, lit
-	case "STREAM":
-		return ast.STREAM, lit
-	case "STREAMS":
-		return ast.STREAMS, lit
-	case "TABLE":
-		return ast.TABLE, lit
-	case "TABLES":
-		return ast.TABLES, lit
-	case "WITH":
-		return ast.WITH, lit
-	case "BIGINT":
-		return ast.XBIGINT, lit
-	case "FLOAT":
-		return ast.XFLOAT, lit
-	case "DATETIME":
-		return ast.XDATETIME, lit
-	case "STRING":
-		return ast.XSTRING, lit
-	case "BYTEA":
-		return ast.XBYTEA, lit
-	case "BOOLEAN":
-		return ast.XBOOLEAN, lit
-	case "ARRAY":
-		return ast.XARRAY, lit
-	case "STRUCT":
-		return ast.XSTRUCT, lit
-	case "DATASOURCE":
-		return ast.DATASOURCE, lit
-	case "KEY":
-		return ast.KEY, lit
-	case "FORMAT":
-		return ast.FORMAT, lit
-	case "CONF_KEY":
-		return ast.CONF_KEY, lit
-	case "TYPE":
-		return ast.TYPE, lit
 	case "TRUE":
 		return ast.TRUE, lit
 	case "FALSE":
 		return ast.FALSE, lit
-	case "STRICT_VALIDATION":
-		return ast.STRICT_VALIDATION, lit
-	case "TIMESTAMP":
-		return ast.TIMESTAMP, lit
-	case "TIMESTAMP_FORMAT":
-		return ast.TIMESTAMP_FORMAT, lit
-	case "RETAIN_SIZE":
-		return ast.RETAIN_SIZE, lit
-	case "SHARED":
-		return ast.SHARED, lit
-	case "SCHEMAID":
-		return ast.SCHEMAID, lit
-	case "KIND":
-		return ast.KIND, lit
 	case "DD":
 		return ast.DD, lit
 	case "HH":
@@ -300,7 +240,6 @@ func (s *Scanner) ScanIdent() (tok ast.Token, lit string) {
 	case "MS":
 		return ast.MS, lit
 	}
-
 	return ast.IDENT, buf.String()
 }
 
