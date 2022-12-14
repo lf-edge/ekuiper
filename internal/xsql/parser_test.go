@@ -1504,7 +1504,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s:    `select timestamp() as tp from demo`,
 			stmt: nil,
-			err:  "found \"TIMESTAMP\", expected expression.",
+			err:  "function timestamp not found",
 		},
 
 		{

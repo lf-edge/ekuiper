@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package xsql
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"strings"
 )
 
 var (
@@ -25,39 +26,40 @@ var (
 )
 
 type ParseTree struct {
-	Handlers map[ast.Token]func(*Parser) (ast.Statement, error)
-	Tokens   map[ast.Token]*ParseTree
+	Handlers map[string]func(*Parser) (ast.Statement, error)
+	Tokens   map[string]*ParseTree
 	Keys     []string
 }
 
-func (t *ParseTree) Handle(tok ast.Token, fn func(*Parser) (ast.Statement, error)) {
+func (t *ParseTree) Handle(lit string, fn func(*Parser) (ast.Statement, error)) {
 	// Verify that there is no conflict for this token in this parse tree.
-	if _, conflict := t.Tokens[tok]; conflict {
-		panic(fmt.Sprintf("conflict for token %s", tok))
+	if _, conflict := t.Tokens[lit]; conflict {
+		panic(fmt.Sprintf("conflict for token %s", lit))
 	}
 
-	if _, conflict := t.Handlers[tok]; conflict {
-		panic(fmt.Sprintf("conflict for token %s", tok))
+	if _, conflict := t.Handlers[lit]; conflict {
+		panic(fmt.Sprintf("conflict for token %s", lit))
 	}
 
 	if t.Handlers == nil {
-		t.Handlers = make(map[ast.Token]func(*Parser) (ast.Statement, error))
+		t.Handlers = make(map[string]func(*Parser) (ast.Statement, error))
 	}
-	t.Handlers[tok] = fn
-	t.Keys = append(t.Keys, tok.String())
+	t.Handlers[lit] = fn
+	t.Keys = append(t.Keys, lit)
 }
 
 func (pt *ParseTree) Parse(p *Parser) (ast.Statement, error) {
-	tok, _ := p.scanIgnoreWhitespace()
+	_, lit := p.scanIgnoreWhitespace()
+	lit = strings.ToUpper(lit)
 	p.unscan()
-	if f, ok := pt.Handlers[tok]; ok {
+	if f, ok := pt.Handlers[lit]; ok {
 		return f(p)
 	}
 	return nil, nil
 }
 
 func init() {
-	Language.Handle(ast.SELECT, func(p *Parser) (ast.Statement, error) {
+	Language.Handle(ast.SELECT_LIT, func(p *Parser) (ast.Statement, error) {
 		return p.Parse()
 	})
 

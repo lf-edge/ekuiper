@@ -1045,10 +1045,13 @@ func (p *Parser) ConvertToWindows(wtype ast.WindowType, args []ast.Expr) (*ast.W
 }
 
 func (p *Parser) ParseCreateStmt() (ast.Statement, error) {
-	if tok, _ := p.scanIgnoreWhitespace(); tok == ast.CREATE {
-		tok1, lit1 := p.scanIgnoreWhitespace()
+	_, lit := p.scanIgnoreWhitespace()
+	lit = strings.ToUpper(lit)
+	if lit == ast.CREATE {
+		_, lit1 := p.scanIgnoreWhitespace()
 		stmt := &ast.StreamStmt{}
-		switch tok1 {
+		lit1 = strings.ToUpper(lit1)
+		switch lit1 {
 		case ast.STREAM:
 			stmt.StreamType = ast.TypeStream
 		case ast.TABLE:
@@ -1124,9 +1127,12 @@ func validateStream(stmt *ast.StreamStmt) error {
 }
 
 func (p *Parser) parseShowStmt() (ast.Statement, error) {
-	if tok, _ := p.scanIgnoreWhitespace(); tok == ast.SHOW {
-		tok1, lit1 := p.scanIgnoreWhitespace()
-		switch tok1 {
+	_, lit := p.scanIgnoreWhitespace()
+	lit = strings.ToUpper(lit)
+	if lit == ast.SHOW {
+		_, lit1 := p.scanIgnoreWhitespace()
+		lit1 = strings.ToUpper(lit1)
+		switch lit1 {
 		case ast.STREAMS:
 			ss := &ast.ShowStreamsStatement{}
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.EOF || tok2 == ast.SEMICOLON {
@@ -1151,9 +1157,12 @@ func (p *Parser) parseShowStmt() (ast.Statement, error) {
 }
 
 func (p *Parser) parseDescribeStmt() (ast.Statement, error) {
-	if tok, _ := p.scanIgnoreWhitespace(); tok == ast.DESCRIBE {
-		tok1, lit1 := p.scanIgnoreWhitespace()
-		switch tok1 {
+	_, lit := p.scanIgnoreWhitespace()
+	lit = strings.ToUpper(lit)
+	if lit == ast.DESCRIBE {
+		_, lit1 := p.scanIgnoreWhitespace()
+		lit1 = strings.ToUpper(lit1)
+		switch lit1 {
 		case ast.STREAM:
 			dss := &ast.DescribeStreamStatement{}
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.IDENT {
@@ -1180,9 +1189,12 @@ func (p *Parser) parseDescribeStmt() (ast.Statement, error) {
 }
 
 func (p *Parser) parseExplainStmt() (ast.Statement, error) {
-	if tok, _ := p.scanIgnoreWhitespace(); tok == ast.EXPLAIN {
-		tok1, lit1 := p.scanIgnoreWhitespace()
-		switch tok1 {
+	_, lit := p.scanIgnoreWhitespace()
+	lit = strings.ToUpper(lit)
+	if lit == ast.EXPLAIN {
+		_, lit1 := p.scanIgnoreWhitespace()
+		lit1 = strings.ToUpper(lit1)
+		switch lit1 {
 		case ast.STREAM:
 			ess := &ast.ExplainStreamStatement{}
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.IDENT {
@@ -1209,9 +1221,12 @@ func (p *Parser) parseExplainStmt() (ast.Statement, error) {
 }
 
 func (p *Parser) parseDropStmt() (ast.Statement, error) {
-	if tok, _ := p.scanIgnoreWhitespace(); tok == ast.DROP {
-		tok1, lit1 := p.scanIgnoreWhitespace()
-		switch tok1 {
+	_, lit := p.scanIgnoreWhitespace()
+	lit = strings.ToUpper(lit)
+	if lit == ast.DROP {
+		_, lit1 := p.scanIgnoreWhitespace()
+		lit1 = strings.ToUpper(lit1)
+		switch lit1 {
 		case ast.STREAM:
 			ess := &ast.DropStreamStatement{}
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.IDENT {
@@ -1247,7 +1262,7 @@ func (p *Parser) parseStreamFields() (ast.StreamFields, error) {
 			//create stream demo () WITH (FORMAT="JSON", DATASOURCE="demo" TYPE="edgex")
 			if tok1, _ := p.scanIgnoreWhitespace(); tok1 == ast.RPAREN {
 				lStack.Pop()
-				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 != ast.WITH {
+				if _, lit2 := p.scanIgnoreWhitespace(); strings.ToUpper(lit2) != ast.WITH {
 					return nil, fmt.Errorf("found %q, expected is with.", lit2)
 				}
 				return fields, nil
@@ -1262,7 +1277,9 @@ func (p *Parser) parseStreamFields() (ast.StreamFields, error) {
 
 			if tok1, _ := p.scanIgnoreWhitespace(); tok1 == ast.RPAREN {
 				lStack.Pop()
-				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.WITH {
+				tok2, lit2 := p.scanIgnoreWhitespace()
+				lit2 = strings.ToUpper(lit2)
+				if lit2 == ast.WITH {
 					//Check the stack for LPAREN; If the stack for LPAREN is not zero, then it's not correct.
 					if lStack.Len() > 0 {
 						return nil, fmt.Errorf("Parenthesis is not matched.")
@@ -1301,8 +1318,8 @@ func (p *Parser) parseStreamField() (*ast.StreamField, error) {
 	field := &ast.StreamField{}
 	if tok, lit := p.scanIgnoreWhitespace(); tok == ast.IDENT {
 		field.Name = lit
-		tok1, lit1 := p.scanIgnoreWhitespace()
-		if t := ast.GetDataType(tok1); t != ast.UNKNOWN && t.IsSimpleType() {
+		_, lit1 := p.scanIgnoreWhitespace()
+		if t := ast.GetDataType(lit1); t != ast.UNKNOWN && t.IsSimpleType() {
 			field.FieldType = &ast.BasicType{Type: t}
 		} else if t == ast.ARRAY {
 			if f, e := p.parseStreamArrayType(); e != nil {
@@ -1338,7 +1355,8 @@ func (p *Parser) parseStreamArrayType() (ast.FieldType, error) {
 	if tok, _ := p.scanIgnoreWhitespace(); tok == ast.LPAREN {
 		lStack.Push(ast.LPAREN)
 		tok1, lit1 := p.scanIgnoreWhitespace()
-		if t := ast.GetDataType(tok1); t != ast.UNKNOWN && t.IsSimpleType() {
+		t := ast.GetDataType(lit1)
+		if t != ast.UNKNOWN && t.IsSimpleType() {
 			if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.RPAREN {
 				lStack.Pop()
 				if lStack.Len() > 0 {
@@ -1348,7 +1366,7 @@ func (p *Parser) parseStreamArrayType() (ast.FieldType, error) {
 			} else {
 				return nil, fmt.Errorf("found %q, expect rparen in array type definition.", lit2)
 			}
-		} else if tok1 == ast.XSTRUCT {
+		} else if t == ast.STRUCT {
 			if f, err := p.parseStreamStructType(); err != nil {
 				return nil, err
 			} else {
@@ -1398,25 +1416,27 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok == ast.LPAREN {
 		lStack.Push(ast.LPAREN)
 		for {
-			if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == ast.DATASOURCE || tok1 == ast.FORMAT || tok1 == ast.KEY || tok1 == ast.CONF_KEY || tok1 == ast.STRICT_VALIDATION || tok1 == ast.TYPE || tok1 == ast.TIMESTAMP || tok1 == ast.TIMESTAMP_FORMAT || tok1 == ast.RETAIN_SIZE || tok1 == ast.SHARED || tok1 == ast.SCHEMAID || tok1 == ast.KIND {
+			tok1, lit1 := p.scanIgnoreWhitespace()
+			lit1 = strings.ToUpper(lit1)
+			if ast.IsStreamOptionKeyword(tok1, lit1) {
 				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.EQ {
 					if tok3, lit3 := p.scanIgnoreWhitespace(); tok3 == ast.STRING {
-						switch tok1 {
+						switch lit1 {
 						case ast.STRICT_VALIDATION:
 							if val := strings.ToUpper(lit3); (val != "TRUE") && (val != "FALSE") {
-								return nil, fmt.Errorf("found %q, expect TRUE/FALSE value in %s option.", lit3, tok1)
+								return nil, fmt.Errorf("found %q, expect TRUE/FALSE value in %s option.", lit3, lit1)
 							} else {
 								opts.STRICT_VALIDATION = val == "TRUE"
 							}
 						case ast.RETAIN_SIZE:
 							if val, err := strconv.Atoi(lit3); err != nil {
-								return nil, fmt.Errorf("found %q, expect number value in %s option.", lit3, tok1)
+								return nil, fmt.Errorf("found %q, expect number value in %s option.", lit3, lit1)
 							} else {
 								opts.RETAIN_SIZE = val
 							}
 						case ast.SHARED:
 							if val := strings.ToUpper(lit3); (val != "TRUE") && (val != "FALSE") {
-								return nil, fmt.Errorf("found %q, expect TRUE/FALSE value in %s option.", lit3, tok1)
+								return nil, fmt.Errorf("found %q, expect TRUE/FALSE value in %s option.", lit3, lit1)
 							} else {
 								opts.SHARED = val == "TRUE"
 							}

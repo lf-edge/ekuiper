@@ -150,7 +150,7 @@ func TestParser_ParseTree(t *testing.T) {
 		{
 			s:    `SHOW STREAMSf`,
 			stmt: nil,
-			err:  `found "STREAMSf", expected keyword streams or tables.`,
+			err:  `found "STREAMSF", expected keyword streams or tables.`,
 		},
 
 		{
