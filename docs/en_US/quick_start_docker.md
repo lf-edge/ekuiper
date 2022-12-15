@@ -26,10 +26,10 @@
    
    ```
 
-4. Publish sensor data to topic `devices/device_001/messages` of server `tcp://broker.emqx.io:1883` with any [MQTT client tools](https://medium.com/@emqtt/mqtt-client-tools-215ff7a17ad). Below sample uses `mosquitto_pub`. 
+4. Publish sensor data to topic `devices/device_001/messages` of server `tcp://broker.emqx.io:1883` with any MQTT client such as [MQTT X](https://mqttx.app/).
 
    ```shell
-   # mosquitto_pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages
+   # mqttx pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages
    ```
 
 5. If everything goes well,  you can see the message is print on docker `bin/kuiper query` window. Please try to publish another message with `temperature` less than 30, and it will be filtered by WHERE condition of the SQL. 
@@ -43,9 +43,9 @@
 
 6. To stop the test, just press `ctrl + c` in `bin/kuiper query` command console, or input `exit` and press enter.
 
-You can also refer to [eKuiper dashboard documentation](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/operation/manager-ui/overview.md) for better using experience.
+You can also refer to [eKuiper dashboard documentation](./operation/manager-ui/overview.md) for better using experience.
 
 Next for exploring more powerful features of eKuiper? Refer to below for how to apply LF Edge eKuiper in edge and integrate with AWS / Azure IoT cloud.
 
-   - [Lightweight edge computing eKuiper and Azure IoT Hub integration solution](https://www.emqx.io/blog/85) 
-   - [Lightweight edge computing eKuiper and AWS IoT Hub integration solution](https://www.emqx.io/blog/88)
+   - [Lightweight edge computing eKuiper and Azure IoT Hub integration solution](https://www.emqx.com/en/blog/lightweight-edge-computing-emqx-kuiper-and-azure-iot-hub-integration-solution) 
+   - [Lightweight edge computing eKuiper and AWS IoT Hub integration solution](https://www.emqx.com/en/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution)
