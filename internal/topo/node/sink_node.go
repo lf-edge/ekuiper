@@ -41,6 +41,7 @@ type SinkConf struct {
 	DataTemplate string `json:"dataTemplate"`
 	Format       string `json:"format"`
 	SchemaId     string `json:"schemaId"`
+	Delimiter    string `json:"delimiter"`
 	BufferLength int    `json:"bufferLength"`
 	conf.SinkConf
 }
@@ -108,7 +109,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				return err
 			}
 
-			tf, err := transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId)
+			tf, err := transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter)
 			if err != nil {
 				msg := fmt.Sprintf("property dataTemplate %v is invalid: %v", sconf.DataTemplate, err)
 				logger.Warnf(msg)

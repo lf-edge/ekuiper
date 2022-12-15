@@ -12,55 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package custom
+package delimited
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
-	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 )
 
-func TestCustomConverter(t *testing.T) {
-	dataDir, err := conf.GetDataLoc()
-	if err != nil {
-		t.Fatal(err)
-	}
-	etcDir := filepath.Join(dataDir, "schemas", "custom")
-	err = os.MkdirAll(etcDir, os.ModePerm)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err = os.RemoveAll(etcDir)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
-	// build the so file into data/test prior to running the test
-	//Copy the helloworld.so
-	bytesRead, err := os.ReadFile(filepath.Join(dataDir, "myFormat.so"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.WriteFile(filepath.Join(etcDir, "myFormat.so"), bytesRead, 0755)
-	if err != nil {
-		t.Fatal(err)
-	}
-	schema.InitRegistry()
-	testEncode(t)
-	testDecode(t)
-}
-
-func testEncode(t *testing.T) {
-	c, err := LoadConverter("myFormat", "Sample", "")
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestEncode(t *testing.T) {
 	tests := []struct {
 		m map[string]interface{}
 		r []byte
@@ -71,7 +32,7 @@ func testEncode(t *testing.T) {
 				"id":   12,
 				"name": "test",
 			},
-			r: []byte(`{"id":12,"name":"test"}`),
+			r: []byte(`12:test`),
 		}, {
 			m: map[string]interface{}{
 				"id":   7,
@@ -86,11 +47,15 @@ func testEncode(t *testing.T) {
 					},
 				},
 			},
-			r: []byte(`{"age":22,"hobbies":{"indoor":["Chess"],"outdoor":["Basketball"]},"id":7,"name":"John Doe"}`),
+			r: []byte(`22:map[indoor:[Chess] outdoor:[Basketball]]:7:John Doe`),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
+		c, err := NewConverter(":")
+		if err != nil {
+			t.Fatal(err)
+		}
 		a, err := c.Encode(tt.m)
 		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
 			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
@@ -100,21 +65,36 @@ func testEncode(t *testing.T) {
 	}
 }
 
-func testDecode(t *testing.T) {
-	c, err := LoadConverter("myFormat", "Sample", "")
+func TestDecode(t *testing.T) {
+	c, err := NewConverter("\t")
 	if err != nil {
 		t.Fatal(err)
 	}
+	ch, err := NewConverter("\t")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ch.(*Converter).SetColumns([]string{"@", "id", "ts", "value"})
 	tests := []struct {
-		m map[string]interface{}
-		r []byte
-		e string
+		m  map[string]interface{}
+		nm map[string]interface{}
+		r  []byte
+		e  string
 	}{
 		{
 			m: map[string]interface{}{
-				"name": "test",
+				"col0": "#",
+				"col1": "1",
+				"col2": "1670170500",
+				"col3": "161.927872",
 			},
-			r: []byte(`{"name":"test"}`),
+			nm: map[string]interface{}{
+				"@":     "#",
+				"id":    "1",
+				"ts":    "1670170500",
+				"value": "161.927872",
+			},
+			r: []byte(`#	1	1670170500	161.927872`),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -124,6 +104,12 @@ func testDecode(t *testing.T) {
 			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
 		} else if tt.e == "" && !reflect.DeepEqual(tt.m, a) {
 			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.m, a)
+		}
+		b, err := ch.Decode(tt.r)
+		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
+			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
+		} else if tt.e == "" && !reflect.DeepEqual(tt.nm, b) {
+			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.nm, b)
 		}
 	}
 }

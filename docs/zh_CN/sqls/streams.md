@@ -35,6 +35,7 @@ CREATE STREAM
 | DATASOURCE       | 否   | 取决于不同的源类型；如果是 MQTT 源，则为 MQTT 数据源主题名；其它源请参考相关的文档。                                                                                                                        |
 | FORMAT           | 是   | 传入的数据类型，支持 "JSON", "PROTOBUF" 和 "BINARY"，默认为 "JSON" 。关于 "BINARY" 类型的更多信息，请参阅 [Binary Stream](#二进制流)。该属性是否生效取决于源的类型，某些源自身解析的时固定私有格式的数据，则该配置不起作用。可支持该属性的源包括 MQTT 和 ZMQ 等。 |
 | SCHEMAID         | 是   | 解码时使用的模式，目前仅在格式为 PROTOBUF 的情况下使用。                                                                                                                                       |
+| DELIMITER        | 是   | 仅在使用 `delimited` 格式时生效，用于指定分隔符，默认为逗号。                                                                                                                                   |
 | KEY              | 是   | 保留配置，当前未使用该字段。 它将用于 GROUP BY 语句。                                                                                                                                        |
 | TYPE             | 是   | 源类型，如未指定，值为 "mqtt"。                                                                                                                                                     |
 | StrictValidation | 是   | 针对流模式控制消息字段的验证行为。 有关更多信息，请参见 [Strict Validation](#strict-validation)                                                                                                    |

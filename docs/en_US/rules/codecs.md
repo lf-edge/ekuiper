@@ -4,8 +4,10 @@ The eKuiper uses a map based data structure internally during computation, so so
 
 ## Format
 
-There are two types of formats for codecs: schema and schema-less formats. The formats currently supported by eKuiper are `json`, `binary`, `protobuf` and `custom`. Among them, `protobuf` is the schema format.
-The schema format requires registering the schema first, and then setting the referenced schema along with the format. For example, when using mqtt sink, the format and schema can be configured as follows
+There are two types of formats for codecs: schema and schema-less formats. The formats currently supported by eKuiper
+are `json`, `binary`, `delimiter`, `protobuf` and `custom`. Among them, `protobuf` is the schema format.
+The schema format requires registering the schema first, and then setting the referenced schema along with the format.
+For example, when using mqtt sink, the format and schema can be configured as follows
 
 ```json
 {
@@ -22,13 +24,13 @@ All formats provide the ability to codec and, optionally, the definition of sche
 
 All currently supported formats, their supported codec methods and modes are shown in the following table.
 
-
-| Format   | Codec        | Custom Codec           | Schema                 |
-|----------|--------------|------------------------|------------------------|
-| json     | Built-in     | Unsupported            | Unsupported            |
-| binary   | Built-in     | Unsupported            | Unsupported            |
-| protobuf | Built-in     | Supported              | Supported and required |
-| custom   | Not Built-in | Supported and required | Supported and optional |
+| Format    | Codec                               | Custom Codec           | Schema                 |
+|-----------|-------------------------------------|------------------------|------------------------|
+| json      | Built-in                            | Unsupported            | Unsupported            |
+| binary    | Built-in                            | Unsupported            | Unsupported            |
+| delimiter | Built-in, need to specify delimiter | Unsupported            | Unsupported            |
+| protobuf  | Built-in                            | Supported              | Supported and required |
+| custom    | Not Built-in                        | Supported and required | Supported and optional |
 
 ### Format Extension
 
@@ -69,7 +71,9 @@ The complete custom format can be found in [myFormat.go](https://github.com/lf-e
 
 ### Static Protobuf
 
-使用 Protobuf 格式时，我们支持动态解析和静态解析两种方式。使用动态解析时，用户仅需要在注册模式时指定 proto 文件。在解析性能要求更高的条件下，用户可采用静态解析的方式。静态解析需要开发解析插件，其步骤如下：
+When using the Protobuf format, we support both dynamic and static parsing. With dynamic parsing, the user only needs to
+specify the proto file during registration mode. For more demanding parsing performance, you can use static parsing.
+Static parsing requires the development of a parsing plug-in, which proceeds as follows.
 
 1. Assume we have a proto file helloworld.proto. Use official protoc tool to generate go code. Check [Protocol Buffer Doc](https://developers.google.com/protocol-buffers/docs/reference/go-generated) for detail.
    ```shell

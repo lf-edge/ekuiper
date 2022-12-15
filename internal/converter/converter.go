@@ -18,27 +18,49 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/converter/binary"
 	"github.com/lf-edge/ekuiper/internal/converter/custom"
+	"github.com/lf-edge/ekuiper/internal/converter/delimited"
 	"github.com/lf-edge/ekuiper/internal/converter/json"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
+	"strings"
 )
 
-type Instantiator func(t string, schemaFileName string, SchemaMessageName string) (message.Converter, error)
+// Instantiator The format, schema information are passed in by stream options
+// The columns information is defined in the source side, like file source
+type Instantiator func(schemaFileName string, SchemaMessageName string, delimiter string) (message.Converter, error)
 
 var ( // init once and read only
 	converters = map[string]Instantiator{
-		message.FormatJson: func(t string, schemaFileName string, SchemaMessageName string) (message.Converter, error) {
+		message.FormatJson: func(_ string, _ string, _ string) (message.Converter, error) {
 			return json.GetConverter()
 		},
-		message.FormatBinary: func(t string, schemaFileName string, SchemaMessageName string) (message.Converter, error) {
+		message.FormatBinary: func(_ string, _ string, _ string) (message.Converter, error) {
 			return binary.GetConverter()
+		},
+		message.FormatDelimited: func(_ string, _ string, delimiter string) (message.Converter, error) {
+			return delimited.NewConverter(delimiter)
 		},
 		message.FormatCustom: custom.LoadConverter,
 	}
 )
 
-func GetOrCreateConverter(t string, schemaFileName string, SchemaMessageName string) (message.Converter, error) {
+func GetOrCreateConverter(options *ast.Options) (message.Converter, error) {
+	t := strings.ToLower(options.FORMAT)
+	if t == "" {
+		t = message.FormatJson
+	}
+	schemaFile := ""
+	schemaName := options.SCHEMAID
+	if schemaName != "" {
+		r := strings.Split(schemaName, ".")
+		if len(r) != 2 {
+			return nil, fmt.Errorf("invalid schemaId: %s", schemaName)
+		}
+		schemaFile = r[0]
+		schemaName = r[1]
+	}
 	if c, ok := converters[t]; ok {
-		return c(t, schemaFileName, SchemaMessageName)
+		return c(schemaFile, schemaName, options.DELIMITER)
 	}
 	return nil, fmt.Errorf("format type %s not supported", t)
 }

@@ -186,7 +186,7 @@ func TestRestSink_Apply(t *testing.T) {
 		contextLogger.Debugf(string(body))
 		fmt.Fprintf(w, string(body))
 	}))
-	tf, _ := transform.GenTransform("", "json", "")
+	tf, _ := transform.GenTransform("", "json", "", "")
 	defer ts.Close()
 	for i, tt := range tests {
 		requests = nil

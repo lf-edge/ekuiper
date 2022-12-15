@@ -28,9 +28,9 @@ type Converter struct {
 
 var converter = &Converter{}
 
-func LoadConverter(t string, schemaFile string, messageName string) (message.Converter, error) {
+func LoadConverter(schemaFile string, messageName string, _ string) (message.Converter, error) {
 	conf.Log.Infof("Load custom converter from file %s, for symbol Get%s", schemaFile, messageName)
-	ffs, err := schema.GetSchemaFile(def.SchemaType(t), schemaFile)
+	ffs, err := schema.GetSchemaFile(def.CUSTOM, schemaFile)
 	if err != nil {
 		return nil, err
 	}

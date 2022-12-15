@@ -232,6 +232,8 @@ type Options struct {
 	RETAIN_SIZE int `json:"retainSize,omitempty"`
 	// for table only, to distinguish lookup & scan
 	KIND string `json:"kind,omitempty"`
+	// for delimited format only
+	DELIMITER string `json:"delimiter,omitempty"`
 }
 
 func (o Options) node() {}
