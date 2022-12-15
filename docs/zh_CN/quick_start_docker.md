@@ -26,10 +26,10 @@
    
    ```
 
-4. 您可以使用任何[ MQTT 客户端工具](https://www.emqx.com/zh/blog/mqtt-client-tools)来发布传感器数据到服务器 `tcp://broker.emqx.io:1883`的主题 `devices/device_001/messages` 。以下例子使用 `mosquitto_pub`。
+4. 您可以使用任何 MQTT 客户端工具，例如 [MQTT X](https://mqttx.app/) 来发布传感器数据到服务器 `tcp://broker.emqx.io:1883`的主题 `devices/device_001/messages` 。
 
    ```shell
-   # mosquitto_pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages
+   # mqttx pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages
    ```
 
 5. 如果一切顺利的话，您可以看到消息打印在容器的 `bin/kuiper query` 窗口里，请试着发布另外一条`温度`小于30的数据，该数据将会被 SQL 规则过滤掉。
@@ -43,9 +43,9 @@
 
 6. 如果想停止测试，在`bin/kuiper query`命令行窗口中敲 `ctrl + c ` ，或者输入 `exit` 后回车
 
-你可以参考 [eKuiper 管理控制台](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/operation/manager-ui/overview.md) 这篇文章来了解更好的产品使用体验。
+你可以参考 [eKuiper 管理控制台](./operation/manager-ui/overview.md)这篇文章来了解更好的产品使用体验。
 
 想了解更多 LF Edge eKuiper 的功能？请参考以下关于在边缘端使用 LF Edge eKuiper 与 AWS/Azure IoT 云集成的案例。
 
-   - [轻量级边缘计算 LF Edge eKuiper 与 AWS IoT 集成方案](https://www.emqx.cn/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution)
-   - [轻量级边缘计算 LF Edge eKuiper 与 Azure IoT Hub 集成方案](https://www.emqx.cn/blog/lightweight-edge-computing-emqx-kuiper-and-azure-iot-hub-integration-solution) 
+   - [轻量级边缘计算 LF Edge eKuiper 与 AWS IoT 集成方案](https://www.emqx.com/zh/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution)
+   - [轻量级边缘计算 LF Edge eKuiper 与 Azure IoT Hub 集成方案](https://www.emqx.com/zh/blog/lightweight-edge-computing-emqx-kuiper-and-azure-iot-hub-integration-solution) 
