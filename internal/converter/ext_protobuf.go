@@ -25,8 +25,8 @@ import (
 )
 
 func init() {
-	converters[message.FormatProtobuf] = func(t string, schemaFileName string, schemaMessageName string) (message.Converter, error) {
-		ffs, err := schema.GetSchemaFile(def.SchemaType(t), schemaFileName)
+	converters[message.FormatProtobuf] = func(schemaFileName string, schemaMessageName string, _ string) (message.Converter, error) {
+		ffs, err := schema.GetSchemaFile(def.PROTOBUF, schemaFileName)
 		if err != nil {
 			return nil, err
 		}

@@ -26,7 +26,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"strings"
 	"sync"
 )
 
@@ -95,20 +94,9 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			if m.options.RETAIN_SIZE > 0 && m.streamType == ast.TypeTable {
 				props["$retainSize"] = m.options.RETAIN_SIZE
 			}
-			format := fmt.Sprintf("%v", props["format"])
-			schemaFile := ""
-			schemaName := m.options.SCHEMAID
-			if schemaName != "" {
-				r := strings.Split(schemaName, ".")
-				if len(r) != 2 {
-					return fmt.Errorf("invalid schemaId: %s", schemaName)
-				}
-				schemaFile = r[0]
-				schemaName = r[1]
-			}
-			converter, err := converter.GetOrCreateConverter(format, schemaFile, schemaName)
+			converter, err := converter.GetOrCreateConverter(m.options)
 			if err != nil {
-				msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", format, m.options.SCHEMAID, err)
+				msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", m.options.FORMAT, m.options.SCHEMAID, err)
 				logger.Warnf(msg)
 				return fmt.Errorf(msg)
 			}

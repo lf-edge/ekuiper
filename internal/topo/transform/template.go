@@ -20,14 +20,14 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"strings"
 	"text/template"
 )
 
 type TransFunc func(interface{}) ([]byte, bool, error)
 
-func GenTransform(dt string, format string, schemaId string) (TransFunc, error) {
+func GenTransform(dt string, format string, schemaId string, delimiter string) (TransFunc, error) {
 	var (
 		tp  *template.Template = nil
 		c   message.Converter
@@ -35,11 +35,12 @@ func GenTransform(dt string, format string, schemaId string) (TransFunc, error) 
 	)
 	switch format {
 	case message.FormatProtobuf, message.FormatCustom:
-		r := strings.Split(schemaId, ".")
-		if len(r) != 2 {
-			return nil, fmt.Errorf("invalid schemaId: %s", schemaId)
+		c, err = converter.GetOrCreateConverter(&ast.Options{FORMAT: format, SCHEMAID: schemaId})
+		if err != nil {
+			return nil, err
 		}
-		c, err = converter.GetOrCreateConverter(format, r[0], r[1])
+	case message.FormatDelimited:
+		c, err = converter.GetOrCreateConverter(&ast.Options{FORMAT: format, DELIMITER: delimiter})
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +74,7 @@ func GenTransform(dt string, format string, schemaId string) (TransFunc, error) 
 			}
 			j, err := json.Marshal(d)
 			return j, false, err
-		case message.FormatProtobuf, message.FormatCustom:
+		case message.FormatProtobuf, message.FormatCustom, message.FormatDelimited:
 			if transformed {
 				m := make(map[string]interface{})
 				err := json.Unmarshal(bs, &m)

@@ -15,10 +15,11 @@
 package message
 
 const (
-	FormatBinary   = "binary"
-	FormatJson     = "json"
-	FormatProtobuf = "protobuf"
-	FormatCustom   = "custom"
+	FormatBinary    = "binary"
+	FormatJson      = "json"
+	FormatProtobuf  = "protobuf"
+	FormatDelimited = "delimited"
+	FormatCustom    = "custom"
 
 	DefaultField = "self"
 	MetaKey      = "__meta"
@@ -26,7 +27,7 @@ const (
 
 func IsFormatSupported(format string) bool {
 	switch format {
-	case FormatBinary, FormatJson, FormatProtobuf, FormatCustom:
+	case FormatBinary, FormatJson, FormatProtobuf, FormatCustom, FormatDelimited:
 		return true
 	default:
 		return false
@@ -37,6 +38,10 @@ func IsFormatSupported(format string) bool {
 type Converter interface {
 	Encode(d interface{}) ([]byte, error)
 	Decode(b []byte) (interface{}, error)
+}
+
+type ColumnSetter interface {
+	SetColumns([]string)
 }
 
 type SchemaProvider interface {

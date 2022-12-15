@@ -1041,7 +1041,7 @@ func TestPreprocessorForBinary(t *testing.T) {
 		pp := &Preprocessor{checkSchema: true}
 		pp.streamFields = tt.stmt.StreamFields.ToJsonSchema()
 		format := message.FormatJson
-		ccc, _ := converter.GetOrCreateConverter(format, "", "")
+		ccc, _ := converter.GetOrCreateConverter(&ast.Options{FORMAT: format})
 		nCtx := context.WithValue(ctx, context.DecodeKey, ccc)
 		if dm, e := nCtx.Decode(tt.data); e != nil {
 			log.Fatal(e)

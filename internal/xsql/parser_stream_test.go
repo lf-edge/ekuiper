@@ -422,6 +422,19 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					STRICT_VALIDATION: true,
 				},
 			},
+		}, {
+			s: `CREATE STREAM demo (
+				) WITH (DATASOURCE="users", FORMAT="DELIMITED", Delimiter=" ");`,
+			stmt: &ast.StreamStmt{
+				Name:         ast.StreamName("demo"),
+				StreamFields: nil,
+				Options: &ast.Options{
+					DATASOURCE:        "users",
+					FORMAT:            "DELIMITED",
+					DELIMITER:         " ",
+					STRICT_VALIDATION: true,
+				},
+			},
 		},
 	}
 

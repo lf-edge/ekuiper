@@ -223,6 +223,7 @@ const (
 	SHARED            = "SHARED"
 	SCHEMAID          = "SCHEMAID"
 	KIND              = "KIND"
+	DELIMITER         = "DELIMITER"
 
 	XBIGINT   = "BIGINT"
 	XFLOAT    = "FLOAT"
@@ -247,6 +248,7 @@ var StreamTokens = map[string]struct{}{
 	SHARED:            {},
 	SCHEMAID:          {},
 	KIND:              {},
+	DELIMITER:         {},
 }
 
 var StreamDataTypes = map[string]DataType{
