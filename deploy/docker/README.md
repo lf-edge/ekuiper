@@ -63,40 +63,62 @@ Notice: This image is the equivalent to development image of `x.x.x-dev` in 0.3.
 
 # What is eKuiper
 
-LF Edge eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of eKuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  eKuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
+LF Edge eKuiper is a lightweight IoT data analytics and stream processing engine running on resource-constraint edge
+devices. The major goal for eKuiper is to provide a streaming software framework (similar
+to [Apache Flink](https://flink.apache.org)) in edge side. eKuiper's  **rule engine** allows user to provide either SQL
+based or graph based (similar to Node-RED) rules to create IoT edge analytics applications within few minutes.
 
-![eKuiper architect](https://ekuiper.org/docs/docs-assets/img/arch.349f5fae.png)
+![eKuiper architect](https://assets.emqx.com/images/09afffa6fb040c9e9ba8ad40044bb05e.png)
 
 **User scenarios**
 
-It can be run at various IoT edge use scenarios, such as real-time processing of production line data in the IIoT; Gateway of Connected Vehicle analyze the data from data-bus in real time; Real-time analysis of urban facility data in smart city scenarios. eKuiper processing at the edge can reduce system response latency, save network bandwidth and storage costs, and improve system security.
+It can be run at various IoT edge user scenarios, such as,
+
+- Real-time processing of production line data in the IIoT
+- Gateway of connected vehicle analyze the data from CAN in IoV;
+- Real-time analysis of wind turbines and smart bulk energy storage data in smart energy.
+
+eKuiper processing at the edge can greatly reduce system response latency, save network bandwidth and storage costs and
+improve system security.
 
 **Features**
 
 - Lightweight
 
-  - Core server package is only about 3MB, initial memory usage is about 10MB
+  - Core server package is only about 4.5M, memory footprint is about 10MB
+
 - Cross-platform
-  - CPU Arch：X86 AMD * 32, X86 AMD * 64; ARM * 32, ARM * 64; PPC
-  - The popular Linux distributions, MacOS and Docker
+
+  - CPU Arch：X86 AMD * 32/64; ARM * 32/64; PPC
+  - Popular Linux distributions, OpenWrt Linux, MacOS and Docker
   - Industrial PC, Raspberry Pi, industrial gateway, home gateway, MEC edge cloud server
+
 - Data analysis support
-  - Support data extract, transform and filter through SQL 
-  - Data order, group, aggregation and join
+
+  - Support data ETL
+  - Data order, group, aggregation and join with different data sources (the data from databases and files)
   - 60+ functions, includes mathematical, string, aggregate and hash etc
-  - 4 time windows
+  - 4 time windows & count window
+
 - Highly extensibile
 
-  Plugin system is provided,  and it supports to extend at Source, SQL functions and Sink.
-  - Source: embedded support for MQTT, and provide extension points for sources
-  - Sink: embedded support for MQTT and HTTP, and provide extension points for sinks
-  - UDF functions: embedded support for 60+ functions, and provide extension points for SQL functions
+  It supports to extend at `Source`, `Functions` and `Sink` with Golang or Python.
+
+  - Source: allows users to add more data source for analytics.
+  - Sink: allows users to send analysis result to different customized systems.
+  - UDF functions: allow users to add customized functions for data analysis (for example, AI/ML function invocation)
+
 - Management
-  - [A web based management dashboard](https://hub.docker.com/r/emqx/ekuiper-manager) for nodes, plugins, streams & rules management
-  - Plugins, streams and rules management through CLI & REST API
-  - Easily be integrate with [KubeEdge](https://github.com/kubeedge/kubeedge), [K3s](https://github.com/rancher/k3s) and [Baetyl](https://github.com/baetyl/baetyl), which bases Kubernetes
-- Integration with EMQ X Nuron & Edge
-  Seamless integration with EMQ X Neuron & Edge, and provided an end to end solution from messaging to analytics. 
+
+  - [A free web based management dashboard](https://hub.docker.com/r/emqx/ekuiper-manager) for visualized management
+  - Plugins, streams and rules management through CLI, REST API and config maps(Kubernetes)
+  - Easily be integrate with Kubernetes
+    framworks [KubeEdge](https://github.com/kubeedge/kubeedge), [OpenYurt](https://openyurt.io/), [K3s](https://github.com/rancher/k3s) [Baetyl](https://github.com/baetyl/baetyl)
+
+- Integration with EMQX products
+
+  Seamless integration with [EMQX](https://www.emqx.io/), [Neuron](https://neugates.io/) & [NanoMQ](https://nanomq.io/),
+  and provided an end to end solution from IIoT, IoV
 
 
 # How to use this image
