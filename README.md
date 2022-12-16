@@ -11,50 +11,55 @@
 
 ## Overview
 
-LF Edge eKuiper is an edge lightweight IoT data analytics / streaming software implemented by Golang, and it can be run at all kinds of resource constrained edge devices. One goal of eKuiper is to migrate the cloud streaming software frameworks (such as [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) and [Apache Flink](https://flink.apache.org)) to edge side.  eKuiper references these cloud streaming frameworks, and also considered special requirement of edge analytics, and introduced **rule engine**, which is based on ``Source``, ``SQL (business logic)`` and ``Sink``, rule engine is used for developing streaming applications at edge side.
+LF Edge eKuiper is a lightweight IoT data analytics and stream processing engine running on resource-constraint edge devices. The major goal for eKuiper is to provide a streaming software framework (similar to [Apache Flink](https://flink.apache.org)) in edge side.  eKuiper's  **rule engine** allows user to provide either SQL based or graphic based (similar to Node-RED) rules to create IoT edge analytics applications within few minutes.
 
 ![arch](./docs/en_US/resources/arch.png)
 
 **User scenarios**
 
-It can be run at various IoT edge use scenarios, such as real-time processing of production line data in the IIoT; Gateway of Connected Vehicle analyze the data from data-bus in real time; Real-time analysis of urban facility data in smart city scenarios. eKuiper processing at the edge can reduce system response latency, save network bandwidth and storage costs, and improve system security.
+It can be run at various IoT edge user scenarios, such as,
+- Real-time processing of production line data in the IIoT 
+- Gateway of connected vehicle analyze the data from CAN in IoV; 
+- Real-time analysis of wind turbines and smart bulk energy storage data in smart energy. 
+
+eKuiper processing at the edge can greatly reduce system response latency, save network bandwidth and storage costs and improve system security.
 
 ## Features
 
 - Lightweight
 
-  - Core server package is only about 4.5M, initial memory footprint is about 10MB
+  - Core server package is only about 4.5M, memory footprint is about 10MB
 
 - Cross-platform
 
-  - CPU Arch：X86 AMD * 32, X86 AMD * 64; ARM * 32, ARM * 64; PPC
-  - The popular Linux distributions, OpenWrt Linux, MacOS and Docker
+  - CPU Arch：X86 AMD * 32/64; ARM * 32/64; PPC
+  - Popular Linux distributions, OpenWrt Linux, MacOS and Docker
   - Industrial PC, Raspberry Pi, industrial gateway, home gateway, MEC edge cloud server
 
 - Data analysis support
 
-  - Support data extract, transform and filter through SQL 
-  - Data order, group, aggregation and join
+  - Support data ETL
+  - Data order, group, aggregation and join with different data sources (the data from databases and files)
   - 60+ functions, includes mathematical, string, aggregate and hash etc
   - 4 time windows & count window
 
 - Highly extensibile 
 
-  Plugin system is provided,  and it supports to extend at ``Source``, ``SQL functions `` and ``Sink``.
+  It supports to extend at `Source`, `Functions` and `Sink` with Golang or Python.
 
-  - Source: embedded support for MQTT, and provide extension points for sources
-  - Sink: embedded support for MQTT and HTTP, and provide extension points for sinks
-  - UDF functions: embedded support for 60+ functions, and provide extension points for SQL functions
+  - Source: allows users to add more data source for analytics. 
+  - Sink: allows users to send analysis result to different customized systems.
+  - UDF functions: allow users to add customized functions for data analysis (for example, AI/ML function invocation) 
 
 - Management
 
-  - [A web based management dashboard](https://hub.docker.com/r/emqx/ekuiper-manager) for nodes, plugins, streams & rules management
-  - Plugins, streams and rules management through CLI & REST API
-  - Easily be integrate with [KubeEdge](https://github.com/kubeedge/kubeedge), [K3s](https://github.com/rancher/k3s) and [Baetyl](https://github.com/baetyl/baetyl), which bases Kubernetes
+  - [A free web based management dashboard](https://hub.docker.com/r/emqx/ekuiper-manager) for visualized management
+  - Plugins, streams and rules management through CLI, REST API and config maps(Kubernetes)
+  - Easily be integrate with Kubernetes framworks [KubeEdge](https://github.com/kubeedge/kubeedge), [OpenYurt](https://openyurt.io/), [K3s](https://github.com/rancher/k3s) [Baetyl](https://github.com/baetyl/baetyl)
 
-- Integration with EMQ X Edge
+- Integration with EMQX products
 
-  Seamless integration with EMQ X Neuron & EMQ X Edge, and provided an end to end solution from messaging to analytics. 
+  Seamless integration with [EMQX](https://www.emqx.io/), [Neuron](https://neugates.io/) & [NanoMQ](https://nanomq.io/), and provided an end to end solution from IIoT, IoV 
 
 ## Quick start
 
@@ -70,7 +75,7 @@ Join our [Slack](https://slack.lfedge.org/), and then join [ekuiper](https://lfe
 Subscribe to community events [calendar](https://lists.lfedge.org/g/ekuiper-tsc/calendar?calstart=2021-08-06).
 
 Weekly community meeting at Friday 10:30AM GMT+8:
-- [zoom link](https://zoom.us/j/95097577087?pwd=azZaOXpXWmFoOXpqK293RFp0N1pydz09 )
+- [Zoom meeting link](https://zoom.us/j/95097577087?pwd=azZaOXpXWmFoOXpqK293RFp0N1pydz09 )
 - [Meeting minutes](https://wiki.lfedge.org/display/EKUIPER/Weekly+Development+Meeting)
 
 ## Contributing
@@ -80,8 +85,8 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en
 
 ### MQTT throughput test
 
-- Using JMeter MQTT plugin to send simulation data to EMQ X Broker, such as: ``{"temperature": 10, "humidity" : 90}``, the value of temperature and humidity are random integer between 0 - 100.
-- eKuiper subscribe from EMQ X Broker, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50 `` 
+- Using JMeter MQTT plugin to send IoT data to [EMQX Broker](https://www.emqx.io/), such as: `{"temperature": 10, "humidity" : 90}`, the value of temperature and humidity are random integer between 0 - 100.
+- eKuiper subscribe from EMQX Broker, and analyze data with SQL: `SELECT * FROM demo WHERE temperature > 50 ` 
 - The analysis result are wrote to local file by using [file sink plugin](docs/en_US/rules/sinks/plugin/file.md).
 
 | Devices                                        | Message # per second | CPU usage     | Memory usage |
@@ -93,7 +98,7 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en
 
 - A [Go application](test/edgex/benchmark/pub.go) is wrote to send data to ZeroMQ message bus, the data is as following.
 
-  ```
+  ``` json
   {
     "Device": "demo", "Created": 000, …
     "readings": 
@@ -106,7 +111,7 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en
 
 - eKuiper subscribe from EdgeX ZeroMQ message bus, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50``. 90% of data will be filtered by the rule.
 
-- The analysis result are sent to [nop sink](docs/en_US/rules/sinks/builtin/nop.md), all of the result data will be ignored.
+- The analysis result are sent to [nop sink](docs/en_US/rules/sinks/builtin/nop.md), so all of the result data will be ignored.
 
 |                                                | Message # per second | CPU usage     | Memory usage |
 | ---------------------------------------------- | -------------------- | ------------- | ------------ |
@@ -124,13 +129,13 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en
   - 400KB - 500KB / rule
 - Rule
   - Source: MQTT
-  - SQL: SELECT temperature FROM source WHERE temperature > 20 (90% data are filtered) 
+  - SQL: `SELECT temperature FROM source WHERE temperature > 20` (90% data are filtered) 
   - Sink: Log
 
 ### Multiple rules with shared source instance
 
-- 300 rules with a shared mqtt stream instance.
-  - 500 messages/second in the mqtt source
+- 300 rules with a shared MQTT stream instance.
+  - 500 messages/second in the MQTT source
   - 150,000 message processing per second in total
 - Configurations:
   - 2 Core * 2GB memory in AWS
@@ -140,22 +145,14 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en
   - CPU: 50%
 - Rule
   - Source: MQTT
-  - SQL: SELECT temperature FROM source WHERE temperature > 20 (90% data are filtered)
+  - SQL: `SELECT temperature FROM source WHERE temperature > 20`, (90% data are filtered)
   - Sink: 90% nop and 10% MQTT
 
-To run this benchmark by yourself, please check [the instruction](./test/benchmark/multiple_rules/readme.md).
+To run the benchmark by yourself, please check [the instruction](./test/benchmark/multiple_rules/readme.md).
 
 ## Documents
 
-- [Getting started](docs/en_US/getting_started.md) 
-
-- [Reference guide](docs/en_US/README.md)
-  - [Install and operation](docs/en_US/operation/overview.md)
-  - [Command line interface tools - CLI](docs/en_US/operation/cli/overview.md)
-  - [eKuiper SQL reference](docs/en_US/sqls/overview.md)
-  - [Rules](docs/en_US/rules/overview.md)
-  - [Extend eKuiper](docs/en_US/extension/overview.md)
-  - [Plugins](docs/en_US/extension/native/develop/overview.md)
+Check out the [latest document](https://ekuiper.org/docs/en/latest/) in official website.
 
 ## Build from source
 
