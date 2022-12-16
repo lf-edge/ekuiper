@@ -90,10 +90,10 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				}
 			}
 			m.bufferLength = bl
-			// Set retain size for table type
-			if m.options.RETAIN_SIZE > 0 && m.streamType == ast.TypeTable {
-				props["$retainSize"] = m.options.RETAIN_SIZE
+			if m.streamType == ast.TypeTable {
+				props["isTable"] = true
 			}
+			props["delimiter"] = m.options.DELIMITER
 			converter, err := converter.GetOrCreateConverter(m.options)
 			if err != nil {
 				msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", m.options.FORMAT, m.options.SCHEMAID, err)

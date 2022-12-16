@@ -180,6 +180,8 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 	mockClock.Add(0)
 	// TODO assume multiple data source send the data in order and has the same length
 	for i := 0; i < dataLength; i++ {
+		// wait for table to load
+		time.Sleep(100 * time.Millisecond)
 		for _, d := range datas {
 			time.Sleep(time.Duration(wait) * time.Millisecond)
 			// Make sure time is going forward only

@@ -155,7 +155,6 @@ func TestPreprocessor_Apply(t *testing.T) {
 				Name: ast.StreamName("demo"),
 				StreamFields: []ast.StreamField{
 					{Name: "abc", FieldType: &ast.BasicType{Type: ast.FLOAT}},
-					{Name: "def", FieldType: &ast.BasicType{Type: ast.BOOLEAN}},
 				},
 			},
 			data:   []byte(`{"a": {"b" : "hello"}}`),
