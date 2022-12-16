@@ -59,8 +59,10 @@ type Manager struct {
 	// dirs
 	pluginDir     string
 	pluginConfDir string
-	// the access to db
-	db kv.KeyValue
+	// the access to func symbols db
+	funcSymbolsDb kv.KeyValue
+	// the access to plugin install script db
+	plgInstallDb kv.KeyValue
 }
 
 // InitManager must only be called once
@@ -73,11 +75,15 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot find data folder: %s", err)
 	}
-	err, db := store.GetKV("pluginFuncs")
+	err, func_db := store.GetKV("pluginFuncs")
 	if err != nil {
-		return nil, fmt.Errorf("error when opening db: %v", err)
+		return nil, fmt.Errorf("error when opening funcSymbolsdb: %v", err)
 	}
-	registry := &Manager{symbols: make(map[string]string), db: db, pluginDir: pluginDir, pluginConfDir: dataDir, runtime: make(map[string]*plugin.Plugin)}
+	err, plg_db := store.GetKV("native_plugin")
+	if err != nil {
+		return nil, fmt.Errorf("error when opening plg_install_db: %v", err)
+	}
+	registry := &Manager{symbols: make(map[string]string), funcSymbolsDb: func_db, plgInstallDb: plg_db, pluginDir: pluginDir, pluginConfDir: dataDir, runtime: make(map[string]*plugin.Plugin)}
 	manager = registry
 	plugins := make([]map[string]string, 3)
 	for i := range plugin2.PluginTypes {
@@ -91,7 +97,7 @@ func InitManager() (*Manager, error) {
 
 	for pf := range plugins[plugin2.FUNCTION] {
 		l := make([]string, 0)
-		if ok, err := db.Get(pf, &l); ok {
+		if ok, err := func_db.Get(pf, &l); ok {
 			registry.storeSymbols(pf, l)
 		} else if err != nil {
 			return nil, fmt.Errorf("error when querying kv: %s", err)
@@ -166,6 +172,18 @@ func (rr *Manager) removeSymbols(symbols []string) {
 	rr.Unlock()
 }
 
+func (rr *Manager) UninstallAllPlugins() {
+	keys, err := rr.plgInstallDb.Keys()
+	if err != nil {
+		return
+	}
+	for _, v := range keys {
+		plgType := plugin2.PluginTypeMap[strings.Split(v, "_")[0]]
+		plgName := strings.Split(v, "_")[1]
+		_ = rr.Delete(plgType, plgName, false)
+	}
+}
+
 // API for management
 
 func (rr *Manager) List(t plugin2.PluginType) []string {
@@ -220,6 +238,17 @@ func (rr *Manager) GetPluginBySymbol(t plugin2.PluginType, symbolName string) (s
 	}
 }
 
+func (rr *Manager) storePluginInstallScript(name string, t plugin2.PluginType, j plugin2.Plugin) {
+	key := plugin2.PluginTypes[t] + "_" + name
+	val := string(j.GetInstallScripts())
+	_ = rr.plgInstallDb.Set(key, val)
+}
+
+func (rr *Manager) removePluginInstallScript(name string, t plugin2.PluginType) {
+	key := plugin2.PluginTypes[t] + "_" + name
+	_ = rr.plgInstallDb.Delete(key)
+}
+
 func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	name, uri, shellParas := j.GetName(), j.GetFile(), j.GetShellParas()
 	//Validation
@@ -252,7 +281,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 
 	if t == plugin2.FUNCTION {
 		if len(j.GetSymbols()) > 0 {
-			err = rr.db.Set(name, j.GetSymbols())
+			err = rr.funcSymbolsDb.Set(name, j.GetSymbols())
 			if err != nil {
 				return err
 			}
@@ -268,7 +297,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	//unzip and copy to destination
 	version, err := rr.install(t, name, zipPath, shellParas)
 	if err == nil && len(j.GetSymbols()) > 0 {
-		err = rr.db.Set(name, j.GetSymbols())
+		err = rr.funcSymbolsDb.Set(name, j.GetSymbols())
 	}
 	if err != nil { //Revert for any errors
 		if len(j.GetSymbols()) > 0 {
@@ -279,6 +308,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 		return fmt.Errorf("fail to install plugin: %s", err)
 	}
 	rr.store(t, name, version)
+	rr.storePluginInstallScript(name, t, j)
 
 	switch t {
 	case plugin2.SINK:
@@ -309,14 +339,14 @@ func (rr *Manager) RegisterFuncs(name string, functions []string) error {
 		return fmt.Errorf("property 'functions' must not be empty")
 	}
 	old := make([]string, 0)
-	if ok, err := rr.db.Get(name, &old); err != nil {
+	if ok, err := rr.funcSymbolsDb.Get(name, &old); err != nil {
 		return err
 	} else if ok {
 		rr.removeSymbols(old)
 	} else if !ok {
 		rr.removeSymbols([]string{name})
 	}
-	err := rr.db.Set(name, functions)
+	err := rr.funcSymbolsDb.Set(name, functions)
 	if err != nil {
 		return err
 	}
@@ -360,11 +390,11 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 		funcJsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.FUNCTION], name+".json")
 		_ = os.Remove(funcJsonPath)
 		old := make([]string, 0)
-		if ok, err := rr.db.Get(name, &old); err != nil {
+		if ok, err := rr.funcSymbolsDb.Get(name, &old); err != nil {
 			return err
 		} else if ok {
 			rr.removeSymbols(old)
-			err := rr.db.Delete(name)
+			err := rr.funcSymbolsDb.Delete(name)
 			if err != nil {
 				return err
 			}
@@ -384,6 +414,7 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 			results = append(results, fmt.Sprintf("can't find %s", p))
 		}
 	}
+	rr.removePluginInstallScript(name, t)
 
 	if len(results) > 0 {
 		return fmt.Errorf(strings.Join(results, "\n"))
@@ -410,7 +441,7 @@ func (rr *Manager) GetPluginInfo(t plugin2.PluginType, name string) (map[string]
 		}
 		if t == plugin2.FUNCTION {
 			l := make([]string, 0)
-			if ok, _ := rr.db.Get(name, &l); ok {
+			if ok, _ := rr.funcSymbolsDb.Get(name, &l); ok {
 				r["functions"] = l
 			}
 			// ignore the error

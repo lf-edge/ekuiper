@@ -19,6 +19,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"io"
 	"os"
 	"os/exec"
@@ -41,6 +43,8 @@ type Manager struct {
 	pluginDir     string
 	pluginConfDir string
 	reg           *registry // can be replaced with kv
+	// the access to plugin install script db
+	plgInstallDb kv.KeyValue
 }
 
 // InitManager must only be called once
@@ -71,6 +75,11 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
+	err, plg_db := store.GetKV("portable_plugin")
+	if err != nil {
+		return nil, fmt.Errorf("error when opening plg_install_db: %v", err)
+	}
+	m.plgInstallDb = plg_db
 	manager = m
 	return m, nil
 }
@@ -164,6 +173,25 @@ func (m *Manager) parsePluginJson(name string) (*PluginInfo, error) {
 	return pi, nil
 }
 
+func (m *Manager) storePluginInstallScript(name string, j plugin.Plugin) {
+	val := string(j.GetInstallScripts())
+	_ = m.plgInstallDb.Set(name, val)
+}
+
+func (m *Manager) removePluginInstallScript(name string) {
+	_ = m.plgInstallDb.Delete(name)
+}
+
+func (m *Manager) UninstallAllPlugins() {
+	keys, err := m.plgInstallDb.Keys()
+	if err != nil {
+		return
+	}
+	for _, v := range keys {
+		_ = m.Delete(v)
+	}
+}
+
 func (m *Manager) Register(p plugin.Plugin) error {
 	name, uri, shellParas := p.GetName(), p.GetFile(), p.GetShellParas()
 	name = strings.Trim(name, " ")
@@ -191,6 +219,7 @@ func (m *Manager) Register(p plugin.Plugin) error {
 	if err != nil { //Revert for any errors
 		return fmt.Errorf("fail to install plugin: %s", err)
 	}
+	m.storePluginInstallScript(name, p)
 	return nil
 }
 
@@ -362,6 +391,7 @@ func (m *Manager) Delete(name string) error {
 		os.Remove(p)
 	}
 	_ = os.RemoveAll(path.Join(m.pluginDir, name))
+	m.removePluginInstallScript(name)
 	// Kill the process in the end, and return error if it cannot be deleted
 	pm := runtime.GetPluginInsManager()
 	err := pm.Kill(name)

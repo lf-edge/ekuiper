@@ -137,7 +137,8 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
-
+	r.HandleFunc("/rules/reset/rules", rulesResetHandler).Methods(http.MethodGet)
+	r.HandleFunc("/streams/reset/streams", streamsResetHandler).Methods(http.MethodGet)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
@@ -629,4 +630,16 @@ func exportHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Add("Content-Disposition", "Attachment")
 	http.ServeContent(w, r, name, time.Now(), exported)
+}
+
+func rulesResetHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	_ = resetAllRules()
+	w.WriteHeader(http.StatusOK)
+}
+
+func streamsResetHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	_ = resetAllStreams()
+	w.WriteHeader(http.StatusOK)
 }

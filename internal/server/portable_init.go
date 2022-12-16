@@ -49,6 +49,7 @@ func (p portableComp) register() {
 func (p portableComp) rest(r *mux.Router) {
 	r.HandleFunc("/plugins/portables", portablesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/portables/{name}", portableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
+	r.HandleFunc("/plugins/reset/portable", portablePluginsResetHandler).Methods(http.MethodGet)
 }
 
 func portablesHandler(w http.ResponseWriter, r *http.Request) {
@@ -116,4 +117,10 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(fmt.Sprintf("portable plugin %s is updated", sd.GetName())))
 	}
+}
+
+func portablePluginsResetHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	portableManager.UninstallAllPlugins()
+	w.WriteHeader(http.StatusCreated)
 }

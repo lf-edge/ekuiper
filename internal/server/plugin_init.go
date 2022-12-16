@@ -61,6 +61,7 @@ func (p pluginComp) rest(r *mux.Router) {
 	r.HandleFunc("/plugins/functions/{name}/register", functionRegisterHandler).Methods(http.MethodPost)
 	r.HandleFunc("/plugins/udfs", functionsListHandler).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/udfs/{name}", functionsGetHandler).Methods(http.MethodGet)
+	r.HandleFunc("/plugins/reset/native", pluginResetHandler).Methods(http.MethodGet)
 }
 
 func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) {
@@ -266,4 +267,10 @@ func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (err error, re
 		}
 	}
 	return
+}
+
+func pluginResetHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	nativeManager.UninstallAllPlugins()
+	w.WriteHeader(http.StatusCreated)
 }
