@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "name": "John Doe",
+    "height": 1.82
+  },
+  {
+    "id": 2,
+    "name": "Jane Doe",
+    "height": 1.65
+  }
+]
