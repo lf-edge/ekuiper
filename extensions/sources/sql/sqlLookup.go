@@ -81,7 +81,7 @@ func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 		}
 		switch v := values[i].(type) {
 		case string:
-			query += fmt.Sprintf("`%s` = \"%s\"", k, v)
+			query += fmt.Sprintf("`%s` = '%s'", k, v)
 		default:
 			query += fmt.Sprintf("`%s` = %v", k, v)
 		}
