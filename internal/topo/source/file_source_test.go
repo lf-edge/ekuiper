@@ -76,6 +76,8 @@ func TestJsonFolder(t *testing.T) {
 		return
 	}
 	mock.TestSourceOpen(r, exp, t)
+	// wait for the move to finish
+	time.Sleep(100 * time.Millisecond)
 	files, err := os.ReadDir(moveToFolder)
 	if err != nil {
 		t.Error(err)
@@ -188,6 +190,32 @@ func TestCSVFile(t *testing.T) {
 	}
 	r := &FileSource{}
 	err = r.Configure("a.csv", p)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	mock.TestSourceOpen(r, exp, t)
+}
+
+func TestJsonLines(t *testing.T) {
+	path, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	meta := map[string]interface{}{
+		"file": filepath.Join(path, "test", "test.lines"),
+	}
+	exp := []api.SourceTuple{
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Jane Doe"}, meta),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(3), "name": "John Smith"}, meta),
+	}
+	p := map[string]interface{}{
+		"path":     filepath.Join(path, "test"),
+		"fileType": "lines",
+	}
+	r := &FileSource{}
+	err = r.Configure("test.lines", p)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
