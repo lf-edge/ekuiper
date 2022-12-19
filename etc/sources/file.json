@@ -12,8 +12,8 @@
       "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/builtin/file.md"
     },
     "description": {
-      "en_US": "Reading file content into the eKuiper processing pipeline. The file source is usually used as a table and it is the default type for create table statement.",
-      "zh_CN": "读取文件内容，并且将数据放入 eKuiper 数据处理流水线中。通常用于表格，且为使用 create table 语句时，默认的源类型。"
+      "en_US": "Monitor file system and load the content into the eKuiper processing pipeline.",
+      "zh_CN": "监控文件系统，读取文件内容，并且将数据放入 eKuiper 数据处理流水线中。"
     }
   },
   "libs": [],
@@ -24,8 +24,8 @@
       "zh_CN": "不含路径的文件名，例如 test.json"
     },
     "label": {
-      "en_US": "Data Source (File Name)",
-      "zh_CN": "数据源（文件名）"
+      "en_US": "Data Source (File or directory relative path)",
+      "zh_CN": "数据源（文件或者目录的相对地址）"
     }
   },
   "properties": {
@@ -34,8 +34,13 @@
         "name": "fileType",
         "default": "json",
         "optional": true,
-        "control": "text",
+        "control": "select",
         "type": "string",
+        "values": [
+          "json",
+          "csv",
+          "lines"
+        ],
         "hint": {
           "en_US": "The file format type.",
           "zh_CN": "文件格式类型"
@@ -61,16 +66,119 @@
       },{
         "name": "interval",
         "default": 0,
-        "optional": false,
+        "optional": true,
         "control": "text",
         "type": "int",
         "hint": {
           "en_US": "The interval between reading the files, time unit is ms. If only read once, set it to 0",
-          "zh_CN": "读取文件的间隔时间。如果只需读取一次，设置为0。"
+          "zh_CN": "读取文件的间隔时间，单位为毫秒。如果只需读取一次，设置为0。"
         },
         "label": {
           "en_US": "Interval",
           "zh_CN": "间隔时间"
+        }
+      },{
+        "name": "sendInterval",
+        "default": 0,
+        "optional": true,
+        "control": "text",
+        "type": "int",
+        "hint": {
+          "en_US": "The sending interval between each event in millisecond.",
+          "zh_CN": "事件发送的间隔时间，单位为毫秒。"
+        },
+        "label": {
+          "en_US": "Send Interval",
+          "zh_CN": "发送间隔"
+        }
+      },{
+        "name": "actionAfterRead",
+        "default": 0,
+        "optional": true,
+        "control": "select",
+        "type": "int",
+        "values": [
+          0,
+          1,
+          2
+        ],
+        "hint": {
+          "en_US": "The action after read. 0 meas keep the file; 1 means delete the file; 2 means move the file to the path defined in the property 'moveTo'",
+          "zh_CN": "读取后的操作。0表示保留文件；1表示删除文件；2表示将文件移动到属性 'moveTo' 中定义的路径。"
+        },
+        "label": {
+          "en_US": "Action after read",
+          "zh_CN": "读取后动作"
+        }
+      },{
+        "name": "moveTo",
+        "default": "",
+        "optional": true,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The path to move the file to after read, only valid when the actionAfterRead is 1.",
+          "zh_CN": "移动文件的位置, 仅用于 actionAfterRead 为 2 的情况"
+        },
+        "label": {
+          "en_US": "Move to path",
+          "zh_CN": "移动位置"
+        }
+      },{
+        "name": "hasHeader",
+        "default": false,
+        "optional": true,
+        "control": "radio",
+        "type": "bool",
+        "hint": {
+          "en_US": "If the first line is header, usually used for csv file.",
+          "zh_CN": "是否包含文件头，多用于 csv。若为 true，则第一行解析为文件头。"
+        },
+        "label": {
+          "en_US": "Has header",
+          "zh_CN": "是否包含文件头"
+        }
+      },{
+        "name": "columns",
+        "default": [],
+        "optional": true,
+        "control": "list",
+        "type": "list_string",
+        "hint": {
+          "en_US": "Define the columns. If header is defined, this will be override.",
+          "zh_CN": "定义文件的列。如果定义了文件头，该选项将被覆盖。"
+        },
+        "label": {
+          "en_US": "Columns",
+          "zh_CN": "字段列表"
+        }
+      },{
+        "name": "ignoreStartLines",
+        "default": 0,
+        "optional": true,
+        "control": "text",
+        "type": "int",
+        "hint": {
+          "en_US": "How many lines to be ignored at the beginning. Notice that, empty line will be ignored and not be calculated.",
+          "zh_CN": "忽略开头多少行的内容。"
+        },
+        "label": {
+          "en_US": "Ignore start lines",
+          "zh_CN": "文件开头忽略的行数"
+        }
+      },{
+        "name": "ignoreEndLines",
+        "default": 0,
+        "optional": true,
+        "control": "text",
+        "type": "int",
+        "hint": {
+          "en_US": "How many lines to be ignored in the end. Notice that, empty line will be ignored and not be calculated.",
+          "zh_CN": "忽略结尾多少行的内容。最后的空行不计算在内。。"
+        },
+        "label": {
+          "en_US": "Ignore end lines",
+          "zh_CN": "文件结尾忽略的行数"
         }
       }]
   },

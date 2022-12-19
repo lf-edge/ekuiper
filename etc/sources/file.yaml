@@ -6,14 +6,14 @@ default:
   path: data
   # The interval between reading the files, time unit is ms. If only read once, set it to 0
   interval: 0
-  # When using as a stream, the sending interval between each event in millisecond
-  sendInterval: 10
+  # The sending interval between each event in millisecond
+  sendInterval: 0
   # After read
   # 0: keep the file
   # 1: delete the file
   # 2: move the file to moveTo
   actionAfterRead: 0
-  # The path to move the file to after read, only valid when the actionAfterRead is 1
+  # The path to move the file to after read, only valid when the actionAfterRead is 2
   moveTo: /tmp/kuiper/moved
   # If the first line is header
   hasHeader: false
