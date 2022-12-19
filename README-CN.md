@@ -87,7 +87,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如，
 - [Zoom 会议链接](https://zoom.us/j/95097577087?pwd=azZaOXpXWmFoOXpqK293RFp0N1pydz09 )
 - [会议纪要](https://wiki.lfedge.org/display/EKUIPER/Weekly+Development+Meeting)
 
-## 贡献
+### 贡献
 
 感谢您的贡献！请参阅 [CONTRIBUTING.md](./docs/zh_CN/CONTRIBUTING.md) 获取详细信息。
 
@@ -108,7 +108,7 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如，
 
 - 一个 [Go 应用](test/edgex/benchmark/pub.go) 用于向 ZeroMQ 消息总线发送数据，数据如下。
 
-  ```json
+  ```
   {
     "Device": "demo", "Created": 000, …
     "readings": 
