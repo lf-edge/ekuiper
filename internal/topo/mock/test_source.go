@@ -16,7 +16,10 @@ package mock
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/converter"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"reflect"
 	"sync/atomic"
 	"testing"
@@ -32,6 +35,8 @@ func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
 		c = 0
 	}
 	ctx, cancel := NewMockContext(fmt.Sprintf("rule%d", c), "op1").WithCancel()
+	cv, _ := converter.GetOrCreateConverter(&ast.Options{FORMAT: "json"})
+	ctx = context.WithValue(ctx.(*context.DefaultContext), context.DecodeKey, cv)
 	count.Store(c.(int) + 1)
 	consumer := make(chan api.SourceTuple)
 	errCh := make(chan error)
