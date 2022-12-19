@@ -19,8 +19,8 @@ LF Edge eKuiper is a lightweight IoT data analytics and stream processing engine
 
 It can be run at various IoT edge user scenarios, such as,
 - Real-time processing of production line data in the IIoT 
-- Gateway of connected vehicle analyze the data from CAN in IoV; 
-- Real-time analysis of wind turbines and smart bulk energy storage data in smart energy. 
+- Gateway of connected vehicle analyze the data from CAN in IoV
+- Real-time analysis of wind turbines and smart bulk energy storage data in smart energy
 
 eKuiper processing at the edge can greatly reduce system response latency, save network bandwidth and storage costs and improve system security.
 
@@ -78,7 +78,7 @@ Weekly community meeting at Friday 10:30AM GMT+8:
 - [Zoom meeting link](https://zoom.us/j/95097577087?pwd=azZaOXpXWmFoOXpqK293RFp0N1pydz09 )
 - [Meeting minutes](https://wiki.lfedge.org/display/EKUIPER/Weekly+Development+Meeting)
 
-## Contributing
+### Contributing
 Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en_US/CONTRIBUTING.md) for more information.
 
 ## Performance test result
@@ -98,7 +98,7 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en
 
 - A [Go application](test/edgex/benchmark/pub.go) is wrote to send data to ZeroMQ message bus, the data is as following.
 
-  ``` json
+  ```
   {
     "Device": "demo", "Created": 000, …
     "readings": 
@@ -153,6 +153,7 @@ To run the benchmark by yourself, please check [the instruction](./test/benchmar
 ## Documents
 
 Check out the [latest document](https://ekuiper.org/docs/en/latest/) in official website.
+
 
 ## Build from source
 
