@@ -86,7 +86,7 @@ func InitManager() (*Manager, error) {
 	registry := &Manager{symbols: make(map[string]string), funcSymbolsDb: func_db, plgInstallDb: plg_db, pluginDir: pluginDir, pluginConfDir: dataDir, runtime: make(map[string]*plugin.Plugin)}
 	manager = registry
 	plugins := make([]map[string]string, 3)
-	for i := range plugin2.PluginTypes {
+	for i := range plugins {
 		names, err := findAll(plugin2.PluginType(i), pluginDir)
 		if err != nil {
 			return nil, fmt.Errorf("fail to find existing plugins: %s", err)
@@ -170,18 +170,6 @@ func (rr *Manager) removeSymbols(symbols []string) {
 		delete(rr.symbols, s)
 	}
 	rr.Unlock()
-}
-
-func (rr *Manager) UninstallAllPlugins() {
-	keys, err := rr.plgInstallDb.Keys()
-	if err != nil {
-		return
-	}
-	for _, v := range keys {
-		plgType := plugin2.PluginTypeMap[strings.Split(v, "_")[0]]
-		plgName := strings.Split(v, "_")[1]
-		_ = rr.Delete(plgType, plgName, false)
-	}
 }
 
 // API for management
@@ -758,4 +746,24 @@ func lcFirst(str string) string {
 		return string(unicode.ToLower(v)) + str[i+1:]
 	}
 	return ""
+}
+
+func (rr *Manager) UninstallAllPlugins() {
+	keys, err := rr.plgInstallDb.Keys()
+	if err != nil {
+		return
+	}
+	for _, v := range keys {
+		plgType := plugin2.PluginTypeMap[strings.Split(v, "_")[0]]
+		plgName := strings.Split(v, "_")[1]
+		_ = rr.Delete(plgType, plgName, false)
+	}
+}
+
+func (rr *Manager) GetAllPlugins() map[string]string {
+	allPlgs, err := rr.plgInstallDb.All()
+	if err != nil {
+		return nil
+	}
+	return allPlgs
 }

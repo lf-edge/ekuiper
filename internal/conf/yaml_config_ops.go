@@ -31,6 +31,7 @@ type ConfKeysOperator interface {
 	CopyConfContent() map[string]map[string]interface{}
 	CopyReadOnlyConfContent() map[string]map[string]interface{}
 	CopyUpdatableConfContent() map[string]map[string]interface{}
+	LoadConfContent(cf map[string]map[string]interface{})
 	GetConfKeys() (keys []string)
 	GetReadOnlyConfKeys() (keys []string)
 	GetUpdatableConfKeys() (keys []string)
@@ -107,6 +108,19 @@ func (c *ConfigKeys) CopyConfContent() map[string]map[string]interface{} {
 	}
 
 	return cf
+}
+
+func (c *ConfigKeys) LoadConfContent(cf map[string]map[string]interface{}) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	for key, kvs := range cf {
+		aux := make(map[string]interface{})
+		for k, v := range kvs {
+			aux[k] = v
+		}
+		c.dataCfg[key] = aux
+	}
 }
 
 func (c *ConfigKeys) CopyReadOnlyConfContent() map[string]map[string]interface{} {

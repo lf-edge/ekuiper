@@ -182,16 +182,6 @@ func (m *Manager) removePluginInstallScript(name string) {
 	_ = m.plgInstallDb.Delete(name)
 }
 
-func (m *Manager) UninstallAllPlugins() {
-	keys, err := m.plgInstallDb.Keys()
-	if err != nil {
-		return
-	}
-	for _, v := range keys {
-		_ = m.Delete(v)
-	}
-}
-
 func (m *Manager) Register(p plugin.Plugin) error {
 	name, uri, shellParas := p.GetName(), p.GetFile(), p.GetShellParas()
 	name = strings.Trim(name, " ")
@@ -399,4 +389,22 @@ func (m *Manager) Delete(name string) error {
 		return fmt.Errorf("fail to kill portable plugin %s process, please try to kill it manually", name)
 	}
 	return nil
+}
+
+func (m *Manager) UninstallAllPlugins() {
+	keys, err := m.plgInstallDb.Keys()
+	if err != nil {
+		return
+	}
+	for _, v := range keys {
+		_ = m.Delete(v)
+	}
+}
+
+func (m *Manager) GetAllPlugins() map[string]string {
+	allPlgs, err := m.plgInstallDb.All()
+	if err != nil {
+		return nil
+	}
+	return allPlgs
 }

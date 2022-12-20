@@ -124,3 +124,22 @@ func portablePluginsResetHandler(w http.ResponseWriter, r *http.Request) {
 	portableManager.UninstallAllPlugins()
 	w.WriteHeader(http.StatusCreated)
 }
+
+func portablePluginExportHandler() map[string]string {
+	return portableManager.GetAllPlugins()
+}
+
+func portablePluginImportHandler(plugins map[string]string) error {
+	for _, v := range plugins {
+		sd := plugin.NewPluginByType(plugin.PORTABLE)
+		err := json.Unmarshal([]byte(v), &sd)
+		if err != nil {
+			return fmt.Errorf("portablePluginImportHandler json unmarshal error %v", err)
+		}
+		err = portableManager.Register(sd)
+		if err != nil {
+			return fmt.Errorf("portablePluginImportHandler native register error %v", err)
+		}
+	}
+	return nil
+}

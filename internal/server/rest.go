@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"io"
 	"net/http"
@@ -44,6 +45,7 @@ const (
 )
 
 var uploadDir string
+var globalRouter *mux.Router
 
 type statementDescriptor struct {
 	Sql string `json:"sql,omitempty"`
@@ -118,6 +120,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	uploadDir = filepath.Join(dataDir, "uploads")
 
 	r := mux.NewRouter()
+	globalRouter = r
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
@@ -139,6 +142,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/rules/reset/rules", rulesResetHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams/reset/streams", streamsResetHandler).Methods(http.MethodGet)
+	r.HandleFunc("/configuration/export", configurationExportHandler).Methods(http.MethodGet)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
@@ -642,4 +646,48 @@ func streamsResetHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	_ = resetAllStreams()
 	w.WriteHeader(http.StatusOK)
+}
+
+type Configuration struct {
+	Streams          map[string]string `json:"streams"`
+	Tables           map[string]string `json:"tables"`
+	Rules            map[string]string `json:"rules"`
+	NativePlugins    map[string]string `json:"nativePlugins"`
+	PortablePlugins  map[string]string `json:"portablePlugins"`
+	SourceConfig     map[string]string `json:"sourceConfig"`
+	SinkConfig       map[string]string `json:"sinkConfig"`
+	ConnectionConfig map[string]string `json:"connectionConfig"`
+}
+
+func configurationExportHandler(w http.ResponseWriter, r *http.Request) {
+	conf := &Configuration{
+		Streams:          make(map[string]string),
+		Tables:           make(map[string]string),
+		Rules:            make(map[string]string),
+		NativePlugins:    make(map[string]string),
+		PortablePlugins:  make(map[string]string),
+		SourceConfig:     make(map[string]string),
+		SinkConfig:       make(map[string]string),
+		ConnectionConfig: make(map[string]string),
+	}
+	ruleSet := rulesetProcessor.ExportRuleSet()
+	if ruleSet != nil {
+		conf.Streams = ruleSet.Streams
+		conf.Tables = ruleSet.Tables
+		conf.Rules = ruleSet.Rules
+	}
+
+	conf.NativePlugins = pluginExportHandler()
+	conf.PortablePlugins = portablePluginExportHandler()
+
+	yamlCfg := meta.GetConfigurations()
+	conf.SourceConfig = yamlCfg.Sources
+	conf.SinkConfig = yamlCfg.Sinks
+	conf.ConnectionConfig = yamlCfg.Connections
+
+	const name = "ekuiper_export.json"
+	jsonBytes, _ := json.Marshal(conf)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Add("Content-Disposition", "Attachment")
+	http.ServeContent(w, r, name, time.Now(), bytes.NewReader(jsonBytes))
 }

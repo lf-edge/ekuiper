@@ -27,7 +27,7 @@ type RulesetProcessor struct {
 	s *StreamProcessor
 }
 
-type ruleset struct {
+type Ruleset struct {
 	Streams map[string]string `json:"streams"`
 	Tables  map[string]string `json:"tables"`
 	Rules   map[string]string `json:"rules"`
@@ -41,7 +41,7 @@ func NewRulesetProcessor(r *RuleProcessor, s *StreamProcessor) *RulesetProcessor
 }
 
 func (rs *RulesetProcessor) Export() (io.ReadSeeker, []int, error) {
-	var all ruleset
+	var all Ruleset
 	allStreams, err := rs.s.GetAll()
 	if err != nil {
 		return nil, nil, fmt.Errorf("fail to get all streams: %v", err)
@@ -61,8 +61,26 @@ func (rs *RulesetProcessor) Export() (io.ReadSeeker, []int, error) {
 	return bytes.NewReader(jsonBytes), counts, nil
 }
 
+func (rs *RulesetProcessor) ExportRuleSet() *Ruleset {
+	all := &Ruleset{}
+	allStreams, err := rs.s.GetAll()
+	if err != nil {
+		conf.Log.Errorf("fail to get all streams: %v", err)
+		return nil
+	}
+	all.Streams = allStreams["streams"]
+	all.Tables = allStreams["tables"]
+	rules, err := rs.r.GetAllRulesJson()
+	if err != nil {
+		conf.Log.Errorf("fail to get all rules: %v", err)
+		return nil
+	}
+	all.Rules = rules
+	return all
+}
+
 func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
-	all := &ruleset{}
+	all := &Ruleset{}
 	err := json.Unmarshal(content, all)
 	if err != nil {
 		return nil, nil, fmt.Errorf("invalid import file: %v", err)
@@ -98,4 +116,37 @@ func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 		}
 	}
 	return rules, counts, nil
+}
+
+func (rs *RulesetProcessor) ImportRuleSet(all *Ruleset) {
+	counts := make([]int, 3)
+	// restore streams
+	for k, v := range all.Streams {
+		_, e := rs.s.ExecStreamSql(v)
+		if e != nil {
+			conf.Log.Errorf("Fail to import stream %s(%s) with error: %v", k, v, e)
+		} else {
+			counts[0]++
+		}
+	}
+	// restore tables
+	for k, v := range all.Tables {
+		_, e := rs.s.ExecStreamSql(v)
+		if e != nil {
+			conf.Log.Errorf("Fail to import table %s(%s) with error: %v", k, v, e)
+		} else {
+			counts[1]++
+		}
+	}
+	var rules []string
+	// restore rules
+	for k, v := range all.Rules {
+		_, e := rs.r.ExecCreateWithValidation(k, v)
+		if e != nil {
+			conf.Log.Errorf("Fail to import rule %s(%s) with error: %v", k, v, e)
+		} else {
+			rules = append(rules, k)
+			counts[2]++
+		}
+	}
 }

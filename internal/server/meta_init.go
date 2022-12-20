@@ -63,7 +63,6 @@ func (m metaComp) rest(r *mux.Router) {
 	r.HandleFunc("/metadata/resources", resourcesHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/connection/{name}", sourceConnectionHandler).Methods(http.MethodPost)
 	r.HandleFunc("/metadata/sinks/connection/{name}", sinkConnectionHandler).Methods(http.MethodPost)
-	r.HandleFunc("/metadata/reset/yaml", metaResetHandler).Methods(http.MethodGet)
 	for _, endpoint := range metaEndpoints {
 		endpoint(r)
 	}
@@ -358,11 +357,5 @@ func sourceConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-}
-
-func metaResetHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	meta.ResetConfigs()
 	w.WriteHeader(http.StatusOK)
 }

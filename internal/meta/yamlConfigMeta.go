@@ -146,6 +146,27 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 	}
 }
 
+func addSourceConfKeys(plgName string, configurations YamlConfigurations) (err error) {
+	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
+
+	var cfgOps conf.ConfigOperator
+	var found bool
+
+	cfgOps, found = ConfigManager.cfgOperators[configOperatorKey]
+	if !found {
+		cfgOps = conf.NewConfigOperatorForSource(plgName)
+		ConfigManager.cfgOperators[configOperatorKey] = cfgOps
+	}
+
+	cfgOps.LoadConfContent(configurations)
+
+	err = cfgOps.SaveCfgToFile()
+	if err != nil {
+		return fmt.Errorf(`%s.%v`, configOperatorKey, err)
+	}
+	return nil
+}
+
 func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
@@ -210,6 +231,30 @@ func AddSinkConfKey(plgName, confKey, language string, content []byte) error {
 	return nil
 }
 
+func addSinkConfKeys(plgName string, cf YamlConfigurations) error {
+	ConfigManager.lock.Lock()
+	defer ConfigManager.lock.Unlock()
+
+	configOperatorKey := fmt.Sprintf(SinkCfgOperatorKeyTemplate, plgName)
+
+	var cfgOps conf.ConfigOperator
+	var found bool
+
+	cfgOps, found = ConfigManager.cfgOperators[configOperatorKey]
+	if !found {
+		cfgOps = conf.NewConfigOperatorForSink(plgName)
+		ConfigManager.cfgOperators[configOperatorKey] = cfgOps
+	}
+
+	cfgOps.LoadConfContent(cf)
+
+	err := cfgOps.SaveCfgToFile()
+	if err != nil {
+		return fmt.Errorf(`%s.%v`, configOperatorKey, err)
+	}
+	return nil
+}
+
 func AddConnectionConfKey(plgName, confKey, language string, content []byte) error {
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
@@ -238,6 +283,30 @@ func AddConnectionConfKey(plgName, confKey, language string, content []byte) err
 	err = cfgOps.SaveCfgToFile()
 	if err != nil {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
+	}
+	return nil
+}
+
+func addConnectionConfKeys(plgName string, cf YamlConfigurations) error {
+	ConfigManager.lock.Lock()
+	defer ConfigManager.lock.Unlock()
+
+	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
+
+	var cfgOps conf.ConfigOperator
+	var found bool
+
+	cfgOps, found = ConfigManager.cfgOperators[configOperatorKey]
+	if !found {
+		cfgOps = conf.NewConfigOperatorForConnection(plgName)
+		ConfigManager.cfgOperators[configOperatorKey] = cfgOps
+	}
+
+	cfgOps.LoadConfContent(cf)
+
+	err := cfgOps.SaveCfgToFile()
+	if err != nil {
+		return fmt.Errorf(`%s.%v`, configOperatorKey, err)
 	}
 	return nil
 }
@@ -297,4 +366,98 @@ func ResetConfigs() {
 		ops.ClearConfKeys()
 		_ = ops.SaveCfgToFile()
 	}
+}
+
+type YamlConfigurations map[string]map[string]interface{}
+
+type YamlConfigurationSet struct {
+	Sources     map[string]string `json:"sources"`
+	Sinks       map[string]string `json:"sinks"`
+	Connections map[string]string `json:"connections"`
+}
+
+func GetConfigurations() YamlConfigurationSet {
+	ConfigManager.lock.RLock()
+	defer ConfigManager.lock.RUnlock()
+	result := YamlConfigurationSet{
+		Sources:     map[string]string{},
+		Sinks:       map[string]string{},
+		Connections: map[string]string{},
+	}
+	srcResources := map[string]string{}
+	sinkResources := map[string]string{}
+	connectionResources := map[string]string{}
+
+	for key, ops := range ConfigManager.cfgOperators {
+		if strings.HasPrefix(key, ConnectionCfgOperatorKeyPrefix) {
+			plugin := strings.TrimPrefix(key, ConnectionCfgOperatorKeyPrefix)
+			cfs := ops.CopyUpdatableConfContent()
+			if len(cfs) > 0 {
+				jsonByte, _ := json.Marshal(cfs)
+				connectionResources[plugin] = string(jsonByte)
+			}
+			continue
+		}
+		if strings.HasPrefix(key, SourceCfgOperatorKeyPrefix) {
+			plugin := strings.TrimPrefix(key, SourceCfgOperatorKeyPrefix)
+			cfs := ops.CopyUpdatableConfContent()
+			if len(cfs) > 0 {
+				jsonByte, _ := json.Marshal(cfs)
+				srcResources[plugin] = string(jsonByte)
+			}
+			continue
+		}
+		if strings.HasPrefix(key, SinkCfgOperatorKeyPrefix) {
+			plugin := strings.TrimPrefix(key, SinkCfgOperatorKeyPrefix)
+			cfs := ops.CopyUpdatableConfContent()
+			if len(cfs) > 0 {
+				jsonByte, _ := json.Marshal(cfs)
+				sinkResources[plugin] = string(jsonByte)
+			}
+			continue
+		}
+	}
+
+	result.Sources = srcResources
+	result.Sinks = sinkResources
+	result.Connections = connectionResources
+
+	return result
+}
+
+func LoadConfigurations(configSets YamlConfigurationSet) error {
+	ConfigManager.lock.RLock()
+	defer ConfigManager.lock.RUnlock()
+
+	var srcResources = configSets.Sources
+	var sinkResources = configSets.Sinks
+	var connectionResources = configSets.Connections
+
+	for key, val := range srcResources {
+		configs := YamlConfigurations{}
+		err := json.Unmarshal([]byte(val), &configs)
+		if err != nil {
+			return err
+		}
+		_ = addSourceConfKeys(key, configs)
+	}
+
+	for key, val := range sinkResources {
+		configs := YamlConfigurations{}
+		err := json.Unmarshal([]byte(val), &configs)
+		if err != nil {
+			return err
+		}
+		_ = addSinkConfKeys(key, configs)
+	}
+
+	for key, val := range connectionResources {
+		configs := YamlConfigurations{}
+		err := json.Unmarshal([]byte(val), &configs)
+		if err != nil {
+			return err
+		}
+		_ = addConnectionConfKeys(key, configs)
+	}
+	return nil
 }
