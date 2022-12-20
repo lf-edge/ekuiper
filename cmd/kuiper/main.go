@@ -966,7 +966,7 @@ func main() {
 		{
 			Name:    "import",
 			Aliases: []string{"import"},
-			Usage:   "import ruleset -f ruleset_file",
+			Usage:   "import ruleset | configuration -f file",
 			Subcommands: []cli.Command{
 				{
 					Name:  "ruleset",
@@ -994,6 +994,32 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "configuration",
+					Usage: "\"import configuration -f configuration_file",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:     "file, f",
+							Usage:    "the location of the configuration json file",
+							FilePath: "/home/ekuiper_configuration.json",
+						},
+					},
+					Action: func(c *cli.Context) error {
+						sfile := c.String("file")
+						if sfile == "" {
+							fmt.Print("Required configuration json file to import")
+							return nil
+						}
+						var reply string
+						err = client.Call("Server.ImportConfiguration", sfile, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 		{
@@ -1011,6 +1037,24 @@ func main() {
 						}
 						var reply string
 						err = client.Call("Server.Export", c.Args()[0], &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
+				{
+					Name:  "configuration",
+					Usage: "\"export configuration $configuration_file",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) < 1 {
+							fmt.Printf("Require exported file name.\n")
+							return nil
+						}
+						var reply string
+						err = client.Call("Server.ExportConfiguration", c.Args()[0], &reply)
 						if err != nil {
 							fmt.Println(err)
 						} else {

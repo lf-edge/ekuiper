@@ -118,7 +118,7 @@ func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 	return rules, counts, nil
 }
 
-func (rs *RulesetProcessor) ImportRuleSet(all *Ruleset) {
+func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) {
 	counts := make([]int, 3)
 	// restore streams
 	for k, v := range all.Streams {

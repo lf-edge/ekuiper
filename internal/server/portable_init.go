@@ -49,7 +49,6 @@ func (p portableComp) register() {
 func (p portableComp) rest(r *mux.Router) {
 	r.HandleFunc("/plugins/portables", portablesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/portables/{name}", portableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
-	r.HandleFunc("/plugins/reset/portable", portablePluginsResetHandler).Methods(http.MethodGet)
 }
 
 func portablesHandler(w http.ResponseWriter, r *http.Request) {
@@ -119,17 +118,15 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func portablePluginsResetHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+func portablePluginsReset() {
 	portableManager.UninstallAllPlugins()
-	w.WriteHeader(http.StatusCreated)
 }
 
-func portablePluginExportHandler() map[string]string {
+func portablePluginExport() map[string]string {
 	return portableManager.GetAllPlugins()
 }
 
-func portablePluginImportHandler(plugins map[string]string) error {
+func portablePluginImport(plugins map[string]string) error {
 	for _, v := range plugins {
 		sd := plugin.NewPluginByType(plugin.PORTABLE)
 		err := json.Unmarshal([]byte(v), &sd)

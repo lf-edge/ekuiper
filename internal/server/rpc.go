@@ -297,6 +297,42 @@ func (t *Server) Export(file string, reply *string) error {
 	return nil
 }
 
+func (t *Server) ImportConfiguration(file string, reply *string) error {
+	f, err := os.Open(file)
+	if err != nil {
+		return fmt.Errorf("fail to read file %s: %v", file, err)
+	}
+	defer f.Close()
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, f)
+	if err != nil {
+		return fmt.Errorf("fail to convert file %s: %v", file, err)
+	}
+	content := buf.Bytes()
+
+	configurationReset()
+	err = configurationImport(content)
+	if err != nil {
+		return fmt.Errorf("import configuration error: %v", err)
+	}
+	*reply = fmt.Sprintf("import configuration success")
+	return nil
+}
+
+func (t *Server) ExportConfiguration(file string, reply *string) error {
+	f, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	jsonBytes, err := configurationExport()
+	_, err = io.Copy(f, bytes.NewReader(jsonBytes))
+	if err != nil {
+		return fmt.Errorf("fail to save to file %s:%v", file, err)
+	}
+	*reply = fmt.Sprintf("export configuration success")
+	return nil
+}
+
 func marshalDesc(m interface{}) (string, error) {
 	s, err := json.Marshal(m)
 	if err != nil {
