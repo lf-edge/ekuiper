@@ -46,7 +46,6 @@ const (
 )
 
 var uploadDir string
-var globalRouter *mux.Router
 
 type statementDescriptor struct {
 	Sql string `json:"sql,omitempty"`
@@ -121,7 +120,6 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	uploadDir = filepath.Join(dataDir, "uploads")
 
 	r := mux.NewRouter()
-	globalRouter = r
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
@@ -141,8 +139,8 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
-	r.HandleFunc("/configuration/export", configurationExportHandler).Methods(http.MethodGet)
-	r.HandleFunc("/configuration/import", configurationImportHandler).Methods(http.MethodGet)
+	r.HandleFunc("/config/export", configurationExportHandler).Methods(http.MethodGet)
+	r.HandleFunc("/config/import", configurationImportHandler).Methods(http.MethodPost)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
@@ -677,7 +675,6 @@ func configurationExport() ([]byte, error) {
 }
 
 func configurationExportHandler(w http.ResponseWriter, r *http.Request) {
-
 	const name = "ekuiper_export.json"
 	jsonBytes, _ := configurationExport()
 	w.Header().Set("Content-Type", "application/octet-stream")
@@ -710,14 +707,6 @@ func configurationImport(data []byte) error {
 		return fmt.Errorf("configuration unmarshal with error %v", err)
 	}
 
-	ruleSet := processor.Ruleset{
-		Streams: conf.Streams,
-		Tables:  conf.Tables,
-		Rules:   conf.Rules,
-	}
-
-	rulesetProcessor.ImportRuleSet(ruleSet)
-
 	err = pluginImport(conf.NativePlugins)
 	if err != nil {
 		return fmt.Errorf("pluginImportHandler with error %v", err)
@@ -738,6 +727,14 @@ func configurationImport(data []byte) error {
 	if err != nil {
 		return fmt.Errorf("LoadConfigurations with error %v", err)
 	}
+	ruleSet := processor.Ruleset{
+		Streams: conf.Streams,
+		Tables:  conf.Tables,
+		Rules:   conf.Rules,
+	}
+
+	rulesetProcessor.ImportRuleSet(ruleSet)
+
 	return nil
 }
 
@@ -747,6 +744,8 @@ type configurationInfo struct {
 }
 
 func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
+	cb := r.URL.Query().Get("stop")
+	stop := cb == "1"
 	rsi := &configurationInfo{}
 	err := json.NewDecoder(r.Body).Decode(rsi)
 	if err != nil {
@@ -781,6 +780,12 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleError(w, err, "Import configuration error", logger)
 		return
+	}
+	if stop {
+		go func() {
+			time.Sleep(1 * time.Second)
+			os.Exit(100)
+		}()
 	}
 
 	w.WriteHeader(http.StatusOK)

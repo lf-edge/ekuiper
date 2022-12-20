@@ -519,13 +519,16 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		return version, err
 	} else if haveInstallFile {
 		//run install script if there is
+		var shell = make([]string, len(shellParas))
+		copy(shell, shellParas)
 		spath := path.Join(tempPath, "install.sh")
-		shellParas = append(shellParas, spath)
-		if 1 != len(shellParas) {
-			copy(shellParas[1:], shellParas[0:])
-			shellParas[0] = spath
+		shell = append(shell, spath)
+		if 1 != len(shell) {
+			copy(shell[1:], shell[0:])
+			shell[0] = spath
 		}
-		cmd := exec.Command("/bin/sh", shellParas...)
+		conf.Log.Infof("run install script %s", strings.Join(shell, " "))
+		cmd := exec.Command("/bin/sh", shell...)
 		var outb, errb bytes.Buffer
 		cmd.Stdout = &outb
 		cmd.Stderr = &errb

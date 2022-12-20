@@ -129,7 +129,6 @@ func delYamlConf(configOperatorKey string) {
 }
 
 func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
-
 	ConfigManager.lock.RLock()
 	defer ConfigManager.lock.RUnlock()
 
@@ -147,6 +146,9 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 }
 
 func addSourceConfKeys(plgName string, configurations YamlConfigurations) (err error) {
+	ConfigManager.lock.Lock()
+	defer ConfigManager.lock.Unlock()
+
 	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
 
 	var cfgOps conf.ConfigOperator
@@ -426,8 +428,6 @@ func GetConfigurations() YamlConfigurationSet {
 }
 
 func LoadConfigurations(configSets YamlConfigurationSet) error {
-	ConfigManager.lock.RLock()
-	defer ConfigManager.lock.RUnlock()
 
 	var srcResources = configSets.Sources
 	var sinkResources = configSets.Sinks

@@ -309,14 +309,16 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 
 	if needInstall {
 		//run install script if there is
+		var shell = make([]string, len(shellParas))
+		copy(shell, shellParas)
 		spath := path.Join(pluginTarget, "install.sh")
-		shellParas = append(shellParas, spath)
-		if 1 != len(shellParas) {
-			copy(shellParas[1:], shellParas[0:])
-			shellParas[0] = spath
+		shell = append(shell, spath)
+		if 1 != len(shell) {
+			copy(shell[1:], shell[0:])
+			shell[0] = spath
 		}
-		cmd := exec.Command("/bin/sh", shellParas...)
-		conf.Log.Infof("run install script %s", strings.Join(shellParas, " "))
+		cmd := exec.Command("/bin/sh", shell...)
+		conf.Log.Infof("run install script %s", strings.Join(shell, " "))
 		var outb, errb bytes.Buffer
 		cmd.Stdout = &outb
 		cmd.Stderr = &errb
