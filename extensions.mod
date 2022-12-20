@@ -16,7 +16,7 @@ require (
 	github.com/btnguyen2k/gocosmos v0.1.6
 	github.com/couchbase/go_n1ql v0.0.0-20220303011133-0ed4bf93e31d
 	github.com/denisenkom/go-mssqldb v0.12.2
-	github.com/eclipse/paho.mqtt.golang v1.4.2-0.20220810043731-079a117b4614
+	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.2.0
 	github.com/edgexfoundry/go-mod-messaging/v2 v2.2.0
 	github.com/gdexlab/go-render v1.0.1
