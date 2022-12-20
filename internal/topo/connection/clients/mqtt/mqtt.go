@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"strings"
+	"time"
 )
 
 type MQTTConnectionConfig struct {
@@ -121,7 +122,7 @@ func (ms *MQTTClient) Connect(connHandler MQTT.OnConnectHandler, lostHandler MQT
 	}
 
 	c := MQTT.NewClient(opts)
-	if token := c.Connect(); token.Wait() && token.Error() != nil {
+	if token := c.Connect(); token.WaitTimeout(5*time.Second) && token.Error() != nil {
 		conf.Log.Errorf("The connection to mqtt broker %s failed : %s ", ms.srv, token.Error())
 		return fmt.Errorf("found error when connecting for %s: %s", ms.srv, token.Error())
 	}
@@ -132,14 +133,14 @@ func (ms *MQTTClient) Connect(connHandler MQTT.OnConnectHandler, lostHandler MQT
 }
 
 func (ms *MQTTClient) Subscribe(topic string, qos byte, handler MQTT.MessageHandler) error {
-	if token := ms.conn.Subscribe(topic, qos, handler); token.Wait() && token.Error() != nil {
+	if token := ms.conn.Subscribe(topic, qos, handler); token.WaitTimeout(5*time.Second) && token.Error() != nil {
 		return fmt.Errorf("%s: %s", errorx.IOErr, token.Error())
 	}
 	return nil
 }
 
 func (ms *MQTTClient) Publish(topic string, qos byte, retained bool, message []byte) error {
-	if token := ms.conn.Publish(topic, qos, retained, message); token.Wait() && token.Error() != nil {
+	if token := ms.conn.Publish(topic, qos, retained, message); token.WaitTimeout(5*time.Second) && token.Error() != nil {
 		return fmt.Errorf("%s: %s", errorx.IOErr, token.Error())
 	}
 	return nil
