@@ -165,7 +165,12 @@ func startRule(name string) error {
 	if !ok {
 		return fmt.Errorf("Rule %s is not found in registry, please check if it is created", name)
 	} else {
-		return rs.Start()
+		err := rs.Start()
+		if err != nil {
+			return err
+		}
+		err = ruleProcessor.ExecReplaceRuleState(rs.RuleId, true)
+		return err
 	}
 }
 
