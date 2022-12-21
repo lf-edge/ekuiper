@@ -586,61 +586,440 @@
 	],
 	"en": [
 		{
-			"title": "Home",
+			"title": "Introduction",
 			"path": "./"
 		},
 		{
 			"title": "Getting Started",
 			"children": [
 				{
-					"title": "Run eKuiper locally",
-					"path": "getting_started"
+					"title": "Getting Started",
+					"path": "getting_started/getting_started"
 				},
 				{
-					"title": "Run eKuiper in Docker",
-					"path": "quick_start_docker"
-				},
-				{
-					"title": "Run eKuiper with EdgeX Foundry",
-					"path": "edgex/edgex_rule_engine_tutorial"
+					"title": "5 Minutes Quick Start",
+					"path": "getting_started/quick_start_docker"
 				}
 			]
 		},
 		{
-			"title": "Concepts",
+			"title": "Installation",
 			"children": [
 				{
-					"title": "Why eKuiper",
-					"path": "concepts/ekuiper"
+					"title": "Installation",
+					"path": "installation"
+				}
+			]
+		},
+		{
+			"title": "Configuration",
+			"children": [
+				{
+					"title": "Configuration",
+					"path": "configuration/configuration"
 				},
 				{
-					"title": "Rules",
-					"path": "concepts/rules"
-				},
+					"title": "Global Configurations",
+					"path": "configuration/global_configurations"
+				}
+			]
+		},
+		{
+			"title": "User Guide",
+			"children": [
 				{
-					"title": "Sources",
+					"title": "Stream: unbounded series of events",
 					"children": [
 						{
 							"title": "Overview",
-							"path": "concepts/sources/overview"
+							"path": "guide/streams/overview"
 						},
 						{
-							"title": "Stream",
-							"path": "concepts/sources/stream"
-						},
-						{
-							"title": "Table",
-							"path": "concepts/sources/table"
+							"title": "Format and schema",
+							"path": "guide/streams/codecs"
 						}
 					]
 				},
 				{
-					"title": "Sinks",
-					"path": "concepts/sinks"
+					"title": "Table: snapshot of events",
+					"children": [
+						{
+							"title": "Overview",
+							"path": "guide/tables/overview"
+						},
+						{
+							"title": "Lookup",
+							"path": "guide/tables/lookup"
+						}
+					]
 				},
 				{
-					"title": "SQL Queries",
-					"path": "concepts/sql"
+					"title": "Rule: query and action",
+					"children": [
+						{
+							"title": "Introduction",
+							"path": "guide/rules/overview"
+						},
+						{
+							"title": "Query by SQL",
+							"path": "guide/rules/query"
+						},
+						{
+							"title": "Query by Graph",
+							"path": "guide/rules/graph_rule"
+						},
+						{
+							"title": "Rule Options",
+							"path": "guide/rules/options"
+						},
+						{
+							"title": "Rule Pipeline",
+							"path": "guide/rules/rule_pipeline"
+						},
+						{
+							"title": "State and Fault Tolerance",
+							"path": "guide/rules/state_and_fault_tolerance"
+						}
+					]
+				},
+				{
+					"title": "Source Connectors",
+					"children": [
+						{
+							"title": "Overview",
+							"path": "guide/sources/overview"
+						},
+						{
+							"title": "Ingestion Modes: scan and lookup",
+							"path": "guide/sources/mode"
+						},
+						{
+							"title": "Built-in Sources",
+							"children": [
+								{
+									"title": "MQTT Source",
+									"path": "guide/sources/builtin/mqtt"
+								},
+								{
+									"title": "Neuron Source",
+									"path": "guide/sources/builtin/neuron"
+								},
+								{
+									"title": "EdgeX Source",
+									"path": "guide/sources/builtin/edgex"
+								},
+								{
+									"title": "HTTP Pull Source",
+									"path": "guide/sources/builtin/http_pull"
+								},
+								{
+									"title": "HTTP Push Source",
+									"path": "guide/sources/builtin/http_push"
+								},
+								{
+									"title": "Memory Source",
+									"path": "guide/sources/builtin/memory"
+								},
+								{
+									"title": "File Source",
+									"path": "guide/sources/builtin/file"
+								},
+								{
+									"title": "Redis Source",
+									"path": "guide/sources/builtin/redis"
+								}
+							]
+						},
+						{
+							"title": "Predefined Source Plugins",
+							"children": [
+								{
+									"title": "Zero MQ Source",
+									"path": "guide/sources/plugin/zmq"
+								},
+								{
+									"title": "SQL Source",
+									"path": "guide/sources/plugin/sql"
+								},
+								{
+									"title": "Random Source",
+									"path": "guide/sources/plugin/random"
+								},
+								{
+									"title": "Video Source",
+									"path": "guide/sources/plugin/video"
+								}
+							]
+						}
+					]
+				},
+				{
+					"title": "Sink Connectors",
+					"children": [
+						{
+							"title": "Overview",
+							"path": "guide/sinks/overview"
+						},
+						{
+							"title": "Data Template",
+							"path": "guide/sinks/data_template"
+						},
+						{
+							"title": "Built-in Sinks",
+							"children": [
+								{
+									"title": "MQTT Sink",
+									"path": "guide/sinks/builtin/mqtt"
+								},
+								{
+									"title": "Neuron Sink",
+									"path": "guide/sinks/builtin/neuron"
+								},
+								{
+									"title": "EdgeX Sink",
+									"path": "guide/sinks/builtin/edgex"
+								},
+								{
+									"title": "REST Sink",
+									"path": "guide/sinks/builtin/rest"
+								},
+								{
+									"title": "Memory Sink",
+									"path": "guide/sinks/builtin/memory"
+								},
+								{
+									"title": "Log Sink",
+									"path": "guide/sinks/builtin/log"
+								},
+								{
+									"title": "Nop Sink",
+									"path": "guide/sinks/builtin/nop"
+								},
+								{
+									"title": "Redis Sink",
+									"path": "guide/sinks/builtin/redis"
+								}
+							]
+						},
+						{
+							"title": "Predefined Sink Plugins",
+							"children": [
+								{
+									"title": "ZeroMQ Sink",
+									"path": "guide/sinks/plugin/zmq"
+								},
+								{
+									"title": "File Sink",
+									"path": "guide/sinks/plugin/file"
+								},
+								{
+									"title": "SQL Sink",
+									"path": "guide/sinks/plugin/sql"
+								},
+								{
+									"title": "InfluxDB Sink",
+									"path": "guide/sinks/plugin/influx"
+								},
+								{
+									"title": "InfluxDBV2 Sink",
+									"path": "guide/sinks/plugin/influx2"
+								},
+								{
+									"title": "TDengine Sink",
+									"path": "guide/sinks/plugin/tdengine"
+								},
+								{
+									"title": "Image Sink",
+									"path": "guide/sinks/plugin/image"
+								}
+							]
+						}
+					]
+				},
+				{
+					"title": "AI/ML",
+					"children": [
+						{
+							"title": "Running AI Algorithms with Native Plugin",
+							"path": "guide/ai/tensorflow_lite_tutorial"
+						},
+						{
+							"title": "Running AI Algorithms with Python Function Plugin",
+							"path": "guide/ai/python_tensorflow_lite_tutorial"
+						}
+					]
+				},
+				{
+					"title": "How-to Tutorial",
+					"children": [
+						{
+							"title": "Stream Batch Integrated Calculation",
+							"path": "guide/tutorials/lookup"
+						},
+						{
+							"title": "Protobuf Codec Tutorial",
+							"path": "guide/tutorials/protobuf_tutorial"
+						}
+					]
+				}
+			]
+		},
+		{
+			"title": "Admin Guide",
+			"children": [
+				{
+					"title": "Installation",
+					"path": "installation"
+				},
+				{
+					"title": "Configuration",
+					"children": [
+						{
+							"title": "Configuration",
+							"path": "configuration/configuration"
+						},
+						{
+							"title": "Global Configurations",
+							"path": "configuration/global_configurations"
+						}
+					]
+				},
+				{
+					"title": "Management Console",
+					"children": [
+						{
+							"title": "Introduction",
+							"path": "operation/manager-ui/overview"
+						},
+						{
+							"title": "Plugin Management",
+							"path": "operation/manager-ui/plugins_in_manager"
+						}
+					]
+				},
+				{
+					"title": "Compilation",
+					"children": [
+						{
+							"title": "Compile",
+							"path": "operation/compile/compile"
+						},
+						{
+							"title": "Cross Compile",
+							"path": "operation/compile/cross-compile"
+						},
+						{
+							"title": "Compile selected features only",
+							"path": "operation/compile/features"
+						}
+					]
+				},
+				{
+					"title": "Monitor",
+					"children": [
+						{
+							"title": "Monitor with Prometheus",
+							"path": "operation/usage/monitor_with_prometheus"
+						}
+					]
+				}
+			]
+		},
+		{
+			"title": "Use Cases",
+			"children": [
+				{
+					"title": "IIoT case",
+					"path": "usecases/iiot"
+				},
+				{
+					"title": "IoV case",
+					"path": "usecases/iov"
+				}
+			]
+		},
+		{
+			"title": "Integrations",
+			"children": [
+				{
+					"title": "Edge Cloud Collaboration",
+					"path": "integrations/emq_stack/overview"
+				},
+				{
+					"title": "Working with EdgeX Foundry",
+					"children": [
+						{
+							"title": "EdgeX Foundry Rule Engine Tutorial",
+							"path": "edgex/edgex_rule_engine_tutorial"
+						},
+						{
+							"title": "Meta Function for EdgeX Stream",
+							"path": "edgex/edgex_meta"
+						},
+						{
+							"title": "Command EdgeX Device",
+							"path": "edgex/edgex_rule_engine_command"
+						},
+						{
+							"title": "EdgeX Source Configurations",
+							"path": "edgex/edgex_source_tutorial"
+						}
+					]
+				},
+				{
+					"title": "Processing Data Collected by Neuron ",
+					"path": "integrations/neuron/neuron_integration_tutorial"
+				},
+				{
+					"title": "Deploy by OpenYurt",
+					"path": "integrations/deploy/openyurt_tutorial"
+				}
+			]
+		},
+		{
+			"title": "Architecture Design",
+			"children": [
+				{
+					"title": "Architecture",
+					"path": "concepts/ekuiper"
+				},
+				{
+					"title": "Key Concepts",
+					"children": [
+						{
+							"title": "Rules",
+							"path": "concepts/rules"
+						},
+						{
+							"title": "Sources",
+							"children": [
+								{
+									"title": "Overview",
+									"path": "concepts/sources/overview"
+								},
+								{
+									"title": "Stream",
+									"path": "concepts/sources/stream"
+								},
+								{
+									"title": "Table",
+									"path": "concepts/sources/table"
+								}
+							]
+						},
+						{
+							"title": "Sinks",
+							"path": "concepts/sinks"
+						},
+						{
+							"title": "SQL Queries",
+							"path": "concepts/sql"
+						},
+						{
+							"title": "Extensions",
+							"path": "concepts/extensions"
+						}
+					]
 				},
 				{
 					"title": "Stream Processing",
@@ -662,348 +1041,47 @@
 							"path": "concepts/streaming/join"
 						}
 					]
-				},
-				{
-					"title": "Extensions",
-					"path": "concepts/extensions"
 				}
 			]
 		},
 		{
-			"title": "Tutorials",
-			"children": [
-				{
-					"title": "AI",
-					"children": [
-						{
-							"title": "Label image by tensorflow lite model with eKuiper native plugin",
-							"path": "tutorials/ai/tensorflow_lite_tutorial"
-						},
-						{
-							"title": "Running AI Algorithms with Python Function Plugins",
-							"path": "tutorials/ai/python_tensorflow_lite_tutorial"
-						}
-					]
-				},
-				{
-					"title": "Working with EdgeX Foundry",
-					"children": [
-						{
-							"title": "EdgeX Foundry rule engine tutorial",
-							"path": "edgex/edgex_rule_engine_tutorial"
-						},
-						{
-							"title": "Meta function for EdgeX stream",
-							"path": "edgex/edgex_meta"
-						},
-						{
-							"title": "Command device with EdgeX eKuiper rules engine",
-							"path": "edgex/edgex_rule_engine_command"
-						},
-						{
-							"title": "EdgeX source configuration command",
-							"path": "edgex/edgex_source_tutorial"
-						}
-					]
-				},
-				{
-					"title": "Stream processing of data collected by Neuron using eKuiper",
-					"path": "tutorials/neuron/neuron_integration_tutorial"
-				},
-				{
-					"title": "Deploy by OpenYurt",
-					"path": "tutorials/deploy/openyurt_tutorial"
-				},
-				{
-					"title": "Usage Tutorial",
-					"children": [
-						{
-							"title": "Stream Batch Integrated Calculation",
-							"path": "tutorials/table/lookup"
-						},
-						{
-							"title": "Protobuf Codec Tutorial",
-							"path": "tutorials/usage/protobuf_tutorial"
-						},
-						{
-							"title": "Monitor rule status with Prometheus",
-							"path": "tutorials/usage/monitor_with_prometheus"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "References",
-			"children": [
-				{
-					"title": "Rules",
-					"children": [
-						{
-							"title": "Introduction",
-							"path": "rules/overview"
-						},
-						{
-							"title": "Rule Pipeline",
-							"path": "rules/rule_pipeline"
-						},
-						{
-							"title": "State and Fault Tolerance",
-							"path": "rules/state_and_fault_tolerance"
-						},{
-							"title": "Codecs",
-							"path": "rules/codecs"
-						},{
-							"title": "Graph Rule",
-							"path": "rules/graph_rule"
-						}
-					]
-				},
-				{
-					"title": "Sources",
-					"children": [
-						{
-							"title": "Overview",
-							"path": "rules/sources/overview"
-						},
-						{
-							"title": "Built-in sources",
-							"children": [
-								{
-									"title": "MQTT source",
-									"path": "rules/sources/builtin/mqtt"
-								},
-								{
-									"title": "Neuron source",
-									"path": "rules/sources/builtin/neuron"
-								},
-								{
-									"title": "EdgeX Source",
-									"path": "rules/sources/builtin/edgex"
-								},
-								{
-									"title": "HTTP pull source",
-									"path": "rules/sources/builtin/http_pull"
-								},
-								{
-									"title": "HTTP push source",
-									"path": "rules/sources/builtin/http_push"
-								},
-								{
-									"title": "Memory source",
-									"path": "rules/sources/builtin/memory"
-								},
-								{
-									"title": "File source",
-									"path": "rules/sources/builtin/file"
-								},
-								{
-									"title": "Redis source",
-									"path": "rules/sources/builtin/redis"
-								}
-							]
-						},
-						{
-							"title": "Predefined source plugins",
-							"children": [
-								{
-									"title": "Zero MQ source",
-									"path": "rules/sources/plugin/zmq"
-								},
-								{
-									"title": "SQL source",
-									"path": "rules/sources/plugin/sql"
-								},
-								{
-									"title": "Random source",
-									"path": "rules/sources/plugin/random"
-								},
-								{
-									"title": "Video source",
-									"path": "rules/sources/plugin/video"
-								}
-							]
-						}
-					]
-				},
-				{
-					"title": "Sinks",
-					"children": [
-						{
-							"title": "Overview",
-							"path": "rules/sinks/overview"
-						},
-						{
-							"title": "Data Template",
-							"path": "rules/data_template"
-						},
-						{
-							"title": "Built-in sinks",
-							"children": [
-								{
-									"title": "MQTT action",
-									"path": "rules/sinks/builtin/mqtt"
-								},
-								{
-									"title": "Neuron action",
-									"path": "rules/sinks/builtin/neuron"
-								},
-								{
-									"title": "EdgeX Message Bus action",
-									"path": "rules/sinks/builtin/edgex"
-								},
-								{
-									"title": "REST action",
-									"path": "rules/sinks/builtin/rest"
-								},
-								{
-									"title": "Memory action",
-									"path": "rules/sinks/builtin/memory"
-								},
-								{
-									"title": "Log action",
-									"path": "rules/sinks/builtin/log"
-								},
-								{
-									"title": "Nop action",
-									"path": "rules/sinks/builtin/nop"
-								},
-								{
-									"title": "Redis sink",
-									"path": "rules/sinks/builtin/redis"
-								}
-							]
-						},
-						{
-							"title": "Predefined sink plugins",
-							"children": [
-								{
-									"title": "Zero MQ sink",
-									"path": "rules/sinks/plugin/zmq"
-								},
-								{
-									"title": "File sink",
-									"path": "rules/sinks/plugin/file"
-								},
-								{
-									"title": "SQL sink",
-									"path": "rules/sinks/plugin/sql"
-								},
-								{
-									"title": "InfluxDB sink",
-									"path": "rules/sinks/plugin/influx"
-								},
-								{
-									"title": "InfluxDBV2 sink",
-									"path": "rules/sinks/plugin/influx2"
-								},
-								{
-									"title": "TDengine sink",
-									"path": "rules/sinks/plugin/tdengine"
-								},
-								{
-									"title": "Image sink",
-									"path": "rules/sinks/plugin/image"
-								}
-							]
-						}
-					]
-				},
-				{
-					"title": "SQL",
-					"children": [
-						{
-							"title": "Syntax",
-							"children": [
-								{
-									"title": "Introduction",
-									"path": "sqls/overview"
-								},
-								{
-									"title": "Lexical elements",
-									"path": "sqls/lexical_elements"
-								},
-								{
-									"title": "Data types",
-									"path": "sqls/data_types"
-								},
-								{
-									"title": "JSON Expressions",
-									"path": "sqls/json_expr"
-								},
-								{
-									"title": "Query language element",
-									"path": "sqls/query_language_elements"
-								}
-							]
-						},
-						{
-							"title": "Statements",
-							"children": [
-								{
-									"title": "Streams",
-									"path": "sqls/streams"
-								},
-								{
-									"title": "Tables",
-									"path": "sqls/tables"
-								}
-							]
-						},
-						{
-							"title": "Windows",
-							"path": "sqls/windows"
-						},
-						{
-							"title": "Built-in Functions",
-							"path": "sqls/built-in_functions"
-						},
-						{
-							"title": "Predefined function plugins",
-							"path": "sqls/custom_functions"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "Extension Programming",
+			"title": "Developer Guide",
 			"children": [
 				{
 					"title": "Introduction",
 					"path": "extension/overview"
 				},
 				{
-					"title": "Native plugin develop",
+					"title": "Native Plugin Develop",
 					"children": [
 						{
-							"title": "Native plugin develop overview",
+							"title": "Overview",
 							"path": "extension/native/overview"
 						},
 						{
-							"title": "Native plugins overview",
+							"title": "Develop",
 							"path": "extension/native/develop/overview"
 						},
 						{
-							"title": "Plugin develop tutorial",
+							"title": "Plugin Develop Tutorial",
 							"path": "extension/native/develop/plugins_tutorial"
 						},
 						{
-							"title": "Function plugin",
+							"title": "Function Plugin",
 							"path": "extension/native/develop/function"
 						},
 						{
-							"title": "Sink plugin",
+							"title": "Sink Plugin",
 							"path": "extension/native/develop/sink"
 						},
 						{
-							"title": "Source plugin",
+							"title": "Source Plugin",
 							"path": "extension/native/develop/source"
 						}
 					]
 				},
 				{
-					"title": "Portable plugin develop",
+					"title": "Portable Plugin Development",
 					"children": [
 						{
 							"title": "Portable Plugin",
@@ -1020,145 +1098,152 @@
 					]
 				},
 				{
-					"title": "External function",
+					"title": "External Function",
 					"path": "extension/external/external_func"
+				},
+				{
+					"title": "Wasm Function",
+					"path": "extension/wasm/overview"
 				}
 			]
 		},
 		{
-			"title": "Operations",
+			"title": "SQL Reference",
 			"children": [
 				{
-					"title": "Introduction",
-					"path": "operation/overview"
-				},
-				{
-					"title": "Install",
+					"title": "Statements",
 					"children": [
 						{
-							"title": "overview",
-							"path": "operation/install/overview"
+							"title": "Streams",
+							"path": "sqls/streams"
 						},
 						{
-							"title": "centos",
-							"path": "operation/install/cent-os"
+							"title": "Tables",
+							"path": "sqls/tables"
+						},
+						{
+							"title": "Query",
+							"path": "sqls/query_language_elements"
 						}
 					]
 				},
 				{
-					"title": "Configuration",
+					"title": "Syntax",
 					"children": [
 						{
-							"title": "Configuration File",
-							"path": "operation/config/configuration_file"
+							"title": "Introduction",
+							"path": "sqls/overview"
 						},
 						{
-							"title": "Authentication",
-							"path": "operation/config/authentication"
+							"title": "Lexical elements",
+							"path": "sqls/lexical_elements"
+						},
+						{
+							"title": "Data types",
+							"path": "sqls/data_types"
+						},
+						{
+							"title": "JSON Expressions",
+							"path": "sqls/json_expr"
 						}
 					]
 				},
+				{
+					"title": "Operators",
+					"path": "sqls/operators"
+				},
+				{
+					"title": "Built-in Functions",
+					"path": "sqls/built-in_functions"
+				},
+				{
+					"title": "Predefined function plugins",
+					"path": "sqls/custom_functions"
+				},
+				{
+					"title": "Windowing",
+					"path": "sqls/windows"
+				}
+			]
+		},
+		{
+			"title": "API Reference",
+			"children": [
 				{
 					"title": "Rest API",
 					"children": [
 						{
 							"title": "Introduction",
-							"path": "operation/restapi/overview"
+							"path": "api/restapi/overview"
+						},
+						{
+							"title": "Authentication",
+							"path": "api/restapi/authentication"
 						},
 						{
 							"title": "Streams",
-							"path": "operation/restapi/streams"
+							"path": "api/restapi/streams"
 						},
 						{
 							"title": "Tables",
-							"path": "operation/restapi/tables"
+							"path": "api/restapi/tables"
 						},
 						{
 							"title": "Rules",
-							"path": "operation/restapi/rules"
+							"path": "api/restapi/rules"
 						},
 						{
 							"title": "Plugins",
-							"path": "operation/restapi/plugins"
+							"path": "api/restapi/plugins"
 						},
 						{
 							"title": "External Services",
-							"path": "operation/restapi/services"
+							"path": "api/restapi/services"
 						},
 						{
 							"title": "Schemas",
-							"path": "operation/restapi/schemas"
+							"path": "api/restapi/schemas"
 						},
 						{
 							"title": "Upload files",
-							"path": "operation/restapi/uploads"
+							"path": "api/restapi/uploads"
 						},
 						{
 							"title": "Ruleset",
-							"path": "operation/restapi/ruleset"
+							"path": "api/restapi/ruleset"
 						}
 					]
 				},
 				{
-					"title": "Command line tool",
+					"title": "Command Line Tool",
 					"children": [
 						{
 							"title": "Introduction",
-							"path": "operation/cli/overview"
+							"path": "api/cli/overview"
 						},
 						{
 							"title": "Streams",
-							"path": "operation/cli/streams"
+							"path": "api/cli/streams"
 						},
 						{
 							"title": "Rules",
-							"path": "operation/cli/rules"
+							"path": "api/cli/rules"
 						},
 						{
 							"title": "Tables",
-							"path": "operation/cli/tables"
+							"path": "api/cli/tables"
 						},
 						{
 							"title": "Plugins",
-							"path": "operation/cli/plugins"
+							"path": "api/cli/plugins"
 						},
 						{
 							"title": "Schemas",
-							"path": "operation/cli/schemas"
+							"path": "api/cli/schemas"
 						},
 						{
 							"title": "Ruleset",
-							"path": "operation/cli/ruleset"
-						}
-					]
-				},
-				{
-					"title": "Management console",
-					"children": [
-						{
-							"title": "Introduction",
-							"path": "operation/manager-ui/overview"
-						},
-						{
-							"title": "How to display custom plugins in the installation list of the management console",
-							"path": "operation/manager-ui/plugins_in_manager"
-						}
-					]
-				},
-				{
-					"title": "Compile",
-					"children": [
-						{
-							"title": "Compile",
-							"path": "operation/compile/compile"
-						},
-						{
-							"title": "Cross Compile",
-							"path": "operation/compile/cross-compile"
-						},
-						{
-							"title": "Compile selected features only",
-							"path": "features"
+							"path": "api/cli/ruleset"
 						}
 					]
 				}

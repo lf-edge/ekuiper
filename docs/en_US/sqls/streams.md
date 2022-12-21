@@ -37,7 +37,7 @@ CREATE STREAM
 | KEY              | true     | Reserved key, currently the field is not used. It will be used for GROUP BY statements.                                                                                                                                            |
 | TYPE             | true     | The source type, if not specified, the value is "mqtt".                                                                                                                                                                            |
 | StrictValidation | true     | To control validation behavior of message field against stream schema. See [Strict Validation](#strict-validation) for more info.                                                                                                  |
-| CONF_KEY         | true     | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../rules/sources/builtin/mqtt.md) for more info.                                                               |
+| CONF_KEY         | true     | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../guide/sources/builtin/mqtt.md) for more info.                                                               |
 | SHARED           | true     | Whether the source instance will be shared across all rules using this stream                                                                                                                                                      |
 | TIMESTAMP        | true     | The field to represent the event's timestamp. If specified, the rule will run with event time. Otherwise, it will run with processing time. Please refer to [timestamp management](./windows.md#timestamp-management) for details. |
 | TIMESTAMP_FORMAT | true     | The default format to be used when converting string to or from datetime type.                                                                                                                                                     |
@@ -52,7 +52,7 @@ WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 
 The stream will subscribe to MQTT topic ``topic/temperature``, the server connection uses ``server`` key of ``default`` section in configuration file ``$ekuiper/etc/mqtt_source.yaml``. 
 
-- See [MQTT source](../rules/sources/builtin/mqtt.md) for more info.
+- See [MQTT source](../guide/sources/builtin/mqtt.md) for more info.
 
 **Example 2,**
 
@@ -75,11 +75,11 @@ The stream will subscribe to MQTT topic `test/`, the server connection uses sett
 demo () WITH (DATASOURCE="test/", FORMAT="protobuf", SCHEMAID="proto1.Book");
 ```
 
-The stream will subscribe to MQTT topic `test/` and using PROTOBUF format to decode the data. The decode schema is defined by `BOOK` message type in `$ekuiper/data/schemas/protobuf/schema1.proto` file. Regardng the management of schema, please refer to [schema registry](../rules/codecs.md#schema).
+The stream will subscribe to MQTT topic `test/` and using PROTOBUF format to decode the data. The decode schema is defined by `BOOK` message type in `$ekuiper/data/schemas/protobuf/schema1.proto` file. Regardng the management of schema, please refer to [schema registry](../guide/streams/codecs.md#schema).
 
-- See [MQTT source](../rules/sources/builtin/mqtt.md) for more info.
+- See [MQTT source](../guide/sources/builtin/mqtt.md) for more info.
 
-- See [rules and streams CLI docs](../operation/cli/overview.md) for more information of rules & streams management.
+- See [rules and streams CLI docs](../api/cli/overview.md) for more information of rules & streams management.
 
 ### Share source instance across rules
 
@@ -103,7 +103,7 @@ Overall, we will support 3 recursive ways of schema.
 2. Logical schema only, where the user defines the schema at the source level, mostly used for weakly typed encoding, such as the JSON format, for users whose data has a fixed or roughly fixed format and do not want to use a strongly typed data codec format. In the case, the StrictValidation parameter can be used to configure whether to perform data validation and conversion. 
 3. Physical schema, the user uses protobuf or custom formats and defines the schemaId, where the validation of the data structure is done by the format implementation.
 
-Both the logical and physical schema definitions are used for SQL syntax validation in the parsing and loading phases of rule creation and for runtime optimization. The inferred schema of the stream can be obtained via [Schema API](../operation/restapi/streams.md#get-stream-schema).
+Both the logical and physical schema definitions are used for SQL syntax validation in the parsing and loading phases of rule creation and for runtime optimization. The inferred schema of the stream can be obtained via [Schema API](../api/restapi/streams.md#get-stream-schema).
 
 
 ### Strict Validation

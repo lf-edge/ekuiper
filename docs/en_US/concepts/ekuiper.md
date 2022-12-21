@@ -40,7 +40,7 @@ Once a rule is defined, it will run continuously. It will keep fetching data fro
 
 ## How to submit a computing job
 
-The eKuiper is a long-running service with multiple computing jobs aka. rules running simultaneously. Users can submit and manage the rules through [REST API](../operation/restapi/overview.md), [CLI](../operation/cli/overview.md) and [management UI](../operation/manager-ui/overview.md).
+The eKuiper is a long-running service with multiple computing jobs aka. rules running simultaneously. Users can submit and manage the rules through [REST API](../api/restapi/overview.md), [CLI](../api/cli/overview.md) and [management UI](../operation/manager-ui/overview.md).
 
 ## Where to deploy
 

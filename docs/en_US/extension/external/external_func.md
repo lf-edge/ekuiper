@@ -190,7 +190,7 @@ Thus, the google api proto files must be in the imported path. eKuiper already s
 
 In the external service configuration, there are 1 json file and at least 1 schema file(.proto) to define the function mapping. This will define a 3 layer mappings.
 
-1. eKuiper external service layer: it is defined by the file name of the json. It will be used as a key for the external service in the [REST API](../../operation/restapi/services.md) for the describe, delete and update of the service as a whole.
+1. eKuiper external service layer: it is defined by the file name of the json. It will be used as a key for the external service in the [REST API](../../api/restapi/services.md) for the describe, delete and update of the service as a whole.
 2. Interface layer: it is defined in the `interfaces` section of the json file. This is a virtual layer to group functions with the same schemas so that the shared properties such as address, schema file can be specified only once.
 3. eKuiper function layer: it is defined in the proto file as `rpc`. Notice that, the proto rpcs must be defined under a service section in protobuf. There is no restriction for the name of proto service. The function name is the same as the rpc name in the proto by default. But the user can override the mapping name in the json files's interfaces -> functions section.
 
@@ -239,7 +239,7 @@ When eKuiper is started, it will read and register the external service configur
    ```
    Note: After eKuiper is started, it **cannot** automatically load the system by modifying the configuration file. If you need to update dynamically, please use the REST service.
 
-For dynamic registration and management of services, please refer to [External Service Management API](../../operation/restapi/services.md).
+For dynamic registration and management of services, please refer to [External Service Management API](../../api/restapi/services.md).
 
 ## Usage
 

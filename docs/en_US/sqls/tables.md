@@ -41,7 +41,7 @@ Currently, only `memory`, 'redis' and 'sql' source can be lookup table.
 | SCHEMAID      | true     | The schema to be used when decoding the events. Currently, only use when format is PROTOBUF.                                                                         |
 | KEY           | true     | The primary key of the table. For example, for SQL source key specifies the primary key in the SQL table. It is not obeyed by all source types.                      |
 | TYPE          | true     | The source type. Each source type may support one kind or both kind of tables. Please refer to related documents.                                                    |
-| CONF_KEY      | true     | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../rules/sources/builtin/mqtt.md) for more info. |
+| CONF_KEY      | true     | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../guide/sources/builtin/mqtt.md) for more info. |
 | KIND          | true     | The table kind, could be `scan` or `lookup`. If not specified, the default value is `scan`.                                                                          |
 
 

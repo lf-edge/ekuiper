@@ -64,8 +64,8 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functio
 
 eKuiper will load plugins in the plugin folders automatically. The auto loaded function plugin assumes there is a function named the same as the plugin name. If multiple functions are exported, users need to explicitly register them to make them available. There are two ways to register the functions.
 
-1. In development environment, we recommend to build plugin .so file directly into the plugin folder so that eKuiper can auto load it. Then call [CLI register functions command](../../../operation/cli/plugins.md#register-functions) or [REST register functions API](../../../operation/restapi/plugins.md#register-functions).
-2. In production environment, [package the plugin into zip file](plugins_tutorial.md#deployment), then call [CLI function plugin create command](../../../operation/cli/plugins.md#create-a-plugin) or [REST function plugin create API](../../../operation/restapi/plugins.md#create-a-plugin) with functions list specified.
+1. In development environment, we recommend to build plugin .so file directly into the plugin folder so that eKuiper can auto load it. Then call [CLI register functions command](../../../api/cli/plugins.md#register-functions) or [REST register functions API](../../../api/restapi/plugins.md#register-functions).
+2. In production environment, [package the plugin into zip file](plugins_tutorial.md#deployment), then call [CLI function plugin create command](../../../api/cli/plugins.md#create-a-plugin) or [REST function plugin create API](../../../api/restapi/plugins.md#create-a-plugin) with functions list specified.
 
 ## Usage
 
