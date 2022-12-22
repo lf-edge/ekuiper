@@ -85,6 +85,6 @@ This tutorial describes how to read and write Protobuf data in eKuiper. ProtoBuf
 
 ## Further Readings
 
-- [Codecs](../streams/codecs.md)
+- [Codecs](./serialization.md)
 - [Schema Management REST API](../../api/restapi/schemas.md)
 - [Schema Management CLI](../../api/cli/schemas.md)

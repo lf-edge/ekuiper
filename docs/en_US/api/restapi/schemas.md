@@ -43,7 +43,7 @@ Schema with static plugin：
 2. schema content, use `file` or `content` parameter to specify. After schema created, the schema content will be written into file `data/schemas/$shcema_type/$schema_name`.
    - file: the url of the schema file. The url can be `http` or `https` scheme or `file` scheme to refer to a local file path of the eKuiper server. The schema file must be the file type of the corresponding schema type. For example, protobuf schema file's extension name must be .proto.
    - content: the text content of the schema.
-3. soFile：The so file of the static plugin. Detail about the plugin creation, please check [customize format](../../guide/streams/codecs.md#format-extension).
+3. soFile：The so file of the static plugin. Detail about the plugin creation, please check [customize format](../../guide/serialization/serialization.md#format-extension).
 
 ## Show schemas
 

@@ -1,6 +1,15 @@
-# Available Sources
+# Source Connectors
 
 In the eKuiper source code, there are built-in sources and sources in extension.
+
+## Ingestion Mode
+
+The source connector provides the connection to an external system to load data in. Regarding data loading mechanism, there are two modes:
+
+- Scan: load the data events one by one like a stream which is driven by event. Such mode of source can be used in stream or scan table.
+- Lookup: refer to external content when needed, only used in lookup table.
+
+Each source will support one or both modes. In the source page, a badge will show if the mode is supported.
 
 ## Built-in Sources
 
@@ -28,4 +37,4 @@ The list of predefined source plugins:
 
 ## Use of sources
 
-The user uses sources by means of streams or tables. The type `TYPE` property needs to be set to the name of the desired source in the stream properties created. The user can also change the behavior of the source during stream creation by configuring various general source attributes, such as the decoding type (default is JSON), etc. For the general properties and creation syntax supported by creating streams, please refer to the [Stream Specification](../../sqls/streams.md).
+The user uses sources by means of streams or tables. The type `TYPE` property needs to be set to the name of the desired source in the stream properties created. The user can also change the behavior of the source during stream creation by configuring various general source attributes, such as the decoding type (default is JSON), etc. For the general properties and creation syntax supported by creating streams, please refer to the [Stream Specification](../streams/overview.md).

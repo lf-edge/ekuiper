@@ -20,13 +20,13 @@ For more information about docker installation, please refer to [running eKuiper
 
 ### Running in Kubernetes
 
-For Kubernetes, eKuiper offers helm chart. Please refer to [](../installation.md#install-via-helm--k8sk3s-) for detail.
+For Kubernetes, eKuiper offers helm chart. Please refer to [install via helm](../installation.md#install-via-helm--k8sk3s-) for detail.
 
 ### Running in a VM or on bare metal
 
 eKuiper can be deployed directly to bare metal servers or virtual machines.
 
-eKuiper has prebuilt packages downloadable for Linux such as CentOS, Debian and Ubuntu and macOS. You can [install from zip](../installation.md#install-from-zip) or [from packages](../installation.md#package-installation).
+eKuiper has prebuilt packages downloadable for Linux such as CentOS, Debian and Ubuntu and macOS. You can [install from zip](../installation.md#install-from-zip) or [from packages](../installation.md#install-from-package).
 
 For other platforms, you may [build the runnable from source code](../installation.md#compilation).
 
@@ -210,7 +210,7 @@ Refer to the following topics for guidance on using the eKuiper.
 - [Installation](../installation.md)
 - [Rules](../guide/rules/overview.md)
 - [SQL reference](../sqls/overview.md)
-- [Stream]()
-- [Actions]()
+- [Stream](../guide/streams/overview.md)
+- [Sink](../guide/sinks/overview.md)
 - [Command line interface tools - CLI](../api/cli/overview.md)
 - [Management Console](../guide/rules/overview.md)

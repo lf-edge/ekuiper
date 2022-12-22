@@ -1,4 +1,4 @@
-# Stream Batch Integrated Calculation
+# Lookup Table Scenarios
 
 Not all data will change often, even in real-time computing. In some cases, you may need to supplement the stream data with externally stored static data. For example, user metadata may be stored in a relational database, and the only data in the stream data is data that changes in real time, requiring a connection between the stream data and the batch data in the database to make up the complete data.
 
@@ -106,7 +106,7 @@ Streaming data changes frequently and has a large amount of data, and usually co
 
 This scenario will use MySQL as an external table data storage location. eKuiper provides a pre-compiled SQL source plugin to access MySQL data and use it as a lookup table. So, before starting the tutorial, we need to install the SQL source plugin. Using eKuiper manager administration console, you can directly click Create Plugin in extension management tab and select SQL source plugin to install as shown below.
 
-! [Install SQL source](./install_sql_source.png)
+![Install SQL source](./install_sql_source.png)
 
 This scenario will introduce how to connect to a relational database using MySQL as an example. The user needs to start a MySQL instance. Create table `devices` in MySQL, which contains fields `id`, `name`, `deviceKind` and write the content in advance.
 

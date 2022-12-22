@@ -1,4 +1,4 @@
-# Codecs
+# Serialization
 
 The eKuiper uses a map based data structure internally during computation, so source/sink connections to external systems usually require codecs to convert the format. In source/sink, you can specify the codec scheme to be used by configuring the parameters `format` and `schemaId`.
 

@@ -30,150 +30,35 @@ The parameters for the rules are:
 | actions        | required if graph is not defined | An array of sink actions                                                     |
 | graph          | required if sql is not defined   | The json presentation of the rule's DAG(directed acyclic graph)              |
 | options        | true                             | A map of options                                                             |
+
 ## Rule Logic
 
-There are two ways to define the business logic of a rule. Either using SQL/actions combination or using the newly added graph API.
+A rule represents a stream processing flow from data source that ingest data into the flow to various processing logic to actions that engest the data to external systems.
 
-### SQL rule
+There are two ways to define the flow aka. business logic of a rule. Either using SQL/actions combination or using the newly added graph API.
 
-By specifying the `sql` and `actions` property, we can define the business logic of a rule in a declarative way. Among these, `sql` defines the SQL query to run against a predefined stream which will transform the data. The output data can then route to multiple locations by `actions`. See [SQL](../../sqls/overview.md) for more info of eKuiper SQL. 
+### SQL Query
 
-#### Sources
+By specifying the `sql` and `actions` property, we can define the business logic of a rule in a declarative way. Among these, `sql` defines the SQL query to run against a predefined stream which will transform the data. The output data can then route to multiple locations by `actions`. 
 
-eKuiper provides the following built-in sources,
-  - MQTT source, see  [MQTT source stream](../sources/builtin/mqtt.md) for more detailed info.
-  - EdgeX source by default is shipped in [docker images](https://hub.docker.com/r/lfedge/ekuiper), but NOT included in single download binary files, you use `make pkg_with_edgex` command to build a binary package that supports EdgeX source. Please see [EdgeX source stream](../sources/builtin/edgex.md) for more detailed info.
-  - HTTP pull source, regularly pull the contents at user's specified interval time, see [here](../sources/builtin/http_pull.md) for more detailed info.
-- Sources can be customized, see [extension](../../extension/overview.md) for more detailed info.
+#### SQL
 
-#### Sinks/Actions
+THE simplest rule SQL is like `SELECT * FROM demo`. It has ANSI SQL like syntax and can leverage abundant operators and functions provided by eKuiper runtime. See [SQL](../../sqls/overview.md) for more info of eKuiper SQL.
 
-Currently, below kinds of sinks/actions are supported:
+Most of the SQL clause are defining the logic except the `FROM` clause, which is responsible to specify the stream. In this example, `demo` is the stream. It is possible to have multiple streams or streams/tables by using join clause. As a streaming engine, there must be at least one stream in a rule.
 
-- [log](../sinks/builtin/log.md): Send the result to log file.
-- [mqtt](../sinks/builtin/mqtt.md): Send the result to an MQTT broker.
-- [edgex](../sinks/builtin/edgex.md): Send the result to EdgeX message bus.
-- [rest](../sinks/builtin/rest.md): Send the result to a Rest HTTP server.
-- [nop](../sinks/builtin/nop.md): Send the result to a nop operation.
+Thus, the SQL query here actually defines two parts:
 
-Each action can define its own properties. There are several common properties:
+- The stream(s) or table(s) to be processed.
+- How to process.
 
-| property name        | Type & Default Value               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-|----------------------|------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| concurrency          | int: 1                             | Specify how many instances of the sink will be run. If the value is bigger than 1, the order of the messages may not be retained.                                                                                                                                                                                                                                                                                                                                           |
-| bufferLength         | int: 1024                          | Specify how many messages can be buffered in memory. If the buffered messages exceed the limit, the sink will block message receiving until the buffered messages have been sent out so that the buffered size is less than the limit.                                                                                                                                                                                                                                      |
-| runAsync             | bool:false                         | Whether the sink will run asynchronously for better performance. If it is true, the sink result order is not promised.                                                                                                                                                                                                                                                                                                                                                      |
-| omitIfEmpty          | bool: false                        | If the configuration item is set to true, when SELECT result is empty, then the result will not feed to sink operator.                                                                                                                                                                                                                                                                                                                                                      |
-| sendSingle           | bool: false                        | The output messages are received as an array. This is indicate whether to send the results one by one. If false, the output message will be `{"result":"${the string of received message}"}`. For example, `{"result":"[{\"count\":30},"\"count\":20}]"}`. Otherwise, the result message will be sent one by one with the actual field name. For the same example as above, it will send `{"count":30}`, then send `{"count":20}` to the RESTful endpoint.Default to false. |
-| dataTemplate         | string: ""                         | The [golang template](https://golang.org/pkg/html/template) format string to specify the output data format. The input of the template is the sink message which is always an array of map. If no data template is specified, the raw input will be the data.                                                                                                                                                                                                               |
-| format               | string: "json"                     | The encode format, could be "json" or "protobuf". For "protobuf" format, "schemaId" is required and the referred schema must be registered.                                                                                                                                                                                                                                                                                                                                 |
-| schemaId             | string: ""                         | The schema to be used to encode the result.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| delimiter            | string: ","                        | Only effective when using `delimited` format, specify the delimiter character, default is commas.                                                                                                                                                                                                                                                                                                                                                                           |
-| enableCache          | bool: default to global definition | whether to enable sink cache. cache storage configuration follows the configuration of the metadata store defined in `etc/kuiper.yaml`                                                                                                                                                                                                                                                                                                                                      |
-| memoryCacheThreshold | int: default to global definition  | the number of messages to be cached in memory. For performance reasons, the earliest cached messages are stored in memory so that they can be resent immediately upon failure recovery. Data here can be lost due to failures such as power outages.                                                                                                                                                                                                                        |
-| maxDiskCache         | int: default to global definition  | The maximum number of messages to be cached on disk. The disk cache is first-in, first-out. If the disk cache is full, the earliest page of information will be loaded into the memory cache, replacing the old memory cache.                                                                                                                                                                                                                                               |
-| bufferPageSize       | int: default to global definition  | buffer pages are units of bulk reads/writes to disk to prevent frequent IO. if the pages are not full and eKuiper crashes due to hardware or software errors, the last unwritten pages to disk will be lost.                                                                                                                                                                                                                                                                |
-| resendInterval       | int: default to global definition  | The time interval to resend information after failure recovery to prevent message storms.                                                                                                                                                                                                                                                                                                                                                                                   |
-| cleanCacheAtStop     | bool: default to global definition | whether to clean all caches when the rule is stopped, to prevent mass resending of expired messages when the rule is restarted. If not set to true, the in-memory cache will be stored to disk once the rule is stopped. Otherwise, the memory and disk rules will be cleared out.                                                                                                                                                                                          |
+Before using the SQL rule, the stream must define in prior. Please check [streams](../streams/overview.md) for detail.
 
+#### Actions
 
-##### Data Template
+The actions part defines the output action for a rule. Each rule can have multiple actions. An action is an instance of a sink connector. When define actions, the key is the sink connector type name, and the value is the properties.
 
-User can refer to [Use Golang template to customize analaysis result in eKuiper](../sinks/data_template.md) for more detailed scenarios.
-If sendSingle is true, the data template will execute against a record; Otherwise, it will execute against the whole array of records. Typical data templates are:
-
-For example, we have the sink input as
-
-```
-[]map[string]interface{}{{
-    "ab" : "hello1",
-},{
-    "ab" : "hello2",
-}}
-```
-
-In sendSingle=true mode:
-
-- Print out the whole record
-
-```
-"dataTemplate": "{\"content\":{{json .}}}",
-```
-
-- Print out the ab field
-
-```
-"dataTemplate": "{\"content\":{{.ab}}}",
-```
-
-if the ab field is a string, add the quotes
-```
-"dataTemplate": "{\"content\":\"{{.ab}}\"}",
-```
-
-In sendSingle=false mode:
-
-- Print out the whole record array
-
-```
-"dataTemplate": "{\"content\":{{json .}}}",
-```
-
-- Print out the first record
-
-```
-"dataTemplate": "{\"content\":{{json (index . 0)}}}",
-```
-
-- Print out the field ab of the first record
-
-```
-"dataTemplate": "{\"content\":{{index . 0 \"ab\"}}}",
-```
-
-- Print out field ab of each record in the array to html format
-
-```
-"dataTemplate": "<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>",
-```
-
-Actions could be customized to support different kinds of outputs, see [extension](../../extension/overview.md) for more detailed info.
-
-###### Functions supported in template
-
-With the help of template functions, users can do a lot of transformation including formation, simple mathematics, encoding etc. The supported functions in eKuiper template includes:
-
-1. Go built-in [template functions](https://golang.org/pkg/text/template/#hdr-Functions).
-2. An abundant extended function set from [sprig library](http://masterminds.github.io/sprig/).
-3. eKuiper extended functions.
-
-eKuiper extends several functions that can be used in data template.
-
-- (deprecated)`json para1`: The `json` function is used for convert the map content to a JSON string. Use`toJson` from sprig instead.
-- (deprecated)`base64 para1`: The `base64` function is used for encoding parameter value to a base64 string. Convert the pramater to string type and use `b64enc` from sprig instead.
-
-##### Dynamic properties
-
-In the sink, it is common to fetch a property value from the result data to achieve dynamic output. For example, to write data into a dynamic topic of mqtt. The dynamic properties will be parsed as a [data template](#data-template). In below example, the sink topic is gotten from the selected topic using data template.
-
-```json
-{
-  "id": "rule1",
-  "sql": "SELECT topic FROM demo",
-  "actions": [{
-    "mqtt": {
-      "sendSingle": true,
-      "topic": "prefix/{{.topic}}"
-    }
-  }]
-}
-```
-
-In the above example, `sendSingle` property is used, so the sink data is a map by default. If not using `sendSingle`, you can get the topic by index with data template <code v-pre>{{index . 0 "topic"}}</code>.
-
-#### Codecs
-
-When the source of the rule reads in the event, it needs to parse and decode the various types of data from different types of sources into map type data for internal processing. After the rules are computed, the sink needs to encode the internal map type data into a proprietary format for various types of external systems. There are two main types of source/sink we support, one is that the connected external system has a fixed private format, so the codec work is already included in the source/sink implementation, e.g. EdgeX, Neuron; the other is that the connected external system only specifies the protocol of the connection, and the transmitted data allows a custom format, e.g. MQTT and ZeroMQ. The latter type of sourcing/sink must specify `format` and `schemaId` parameters to implement flexible codecs. For the management of supported codec formats and schemas, please refer to [codecs](../streams/codecs.md).
+eKuiper has built in abundant sink connector type such as mqtt, rest and file. Users can also extend more sink type to be used in a rule action. Each sink type have its own property set. For more detail, please check [sink](../sinks/overview.md).
 
 ### Graph rule
 

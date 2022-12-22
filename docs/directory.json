@@ -599,6 +599,10 @@
 				{
 					"title": "5 Minutes Quick Start",
 					"path": "getting_started/quick_start_docker"
+				},
+				{
+					"title": "Run eKuiper with EdgeX Foundry",
+					"path": "edgex/edgex_rule_engine_tutorial"
 				}
 			]
 		},
@@ -633,10 +637,6 @@
 						{
 							"title": "Overview",
 							"path": "guide/streams/overview"
-						},
-						{
-							"title": "Format and schema",
-							"path": "guide/streams/codecs"
 						}
 					]
 				},
@@ -648,7 +648,11 @@
 							"path": "guide/tables/overview"
 						},
 						{
-							"title": "Lookup",
+							"title": "Scan Table",
+							"path": "guide/tables/scan"
+						},
+						{
+							"title": "Lookup Table",
 							"path": "guide/tables/lookup"
 						}
 					]
@@ -657,20 +661,12 @@
 					"title": "Rule: query and action",
 					"children": [
 						{
-							"title": "Introduction",
+							"title": "Rules",
 							"path": "guide/rules/overview"
 						},
 						{
-							"title": "Query by SQL",
-							"path": "guide/rules/query"
-						},
-						{
-							"title": "Query by Graph",
+							"title": "Graph Rule",
 							"path": "guide/rules/graph_rule"
-						},
-						{
-							"title": "Rule Options",
-							"path": "guide/rules/options"
 						},
 						{
 							"title": "Rule Pipeline",
@@ -688,10 +684,6 @@
 						{
 							"title": "Overview",
 							"path": "guide/sources/overview"
-						},
-						{
-							"title": "Ingestion Modes: scan and lookup",
-							"path": "guide/sources/mode"
 						},
 						{
 							"title": "Built-in Sources",
@@ -837,6 +829,20 @@
 					]
 				},
 				{
+					"title": "Serialization",
+
+					"children": [
+						{
+							"title": "Overview",
+							"path": "guide/serialization/serialization"
+						},
+						{
+							"title": "Protobuf Codec Tutorial",
+							"path": "guide/serialization/protobuf_tutorial"
+						}
+					]
+				},
+				{
 					"title": "AI/ML",
 					"children": [
 						{
@@ -846,19 +852,6 @@
 						{
 							"title": "Running AI Algorithms with Python Function Plugin",
 							"path": "guide/ai/python_tensorflow_lite_tutorial"
-						}
-					]
-				},
-				{
-					"title": "How-to Tutorial",
-					"children": [
-						{
-							"title": "Stream Batch Integrated Calculation",
-							"path": "guide/tutorials/lookup"
-						},
-						{
-							"title": "Protobuf Codec Tutorial",
-							"path": "guide/tutorials/protobuf_tutorial"
 						}
 					]
 				}
@@ -943,7 +936,7 @@
 			"children": [
 				{
 					"title": "Edge Cloud Collaboration",
-					"path": "integrations/emq_stack/overview"
+					"path": "integrations/edge_cloud/overview"
 				},
 				{
 					"title": "Working with EdgeX Foundry",
@@ -969,6 +962,10 @@
 				{
 					"title": "Processing Data Collected by Neuron ",
 					"path": "integrations/neuron/neuron_integration_tutorial"
+				},
+				{
+					"title": "Analytic Engine for KubeEdge",
+					"path": "integrations/kubeedge/overview"
 				},
 				{
 					"title": "Deploy by OpenYurt",
@@ -1147,10 +1144,6 @@
 							"path": "sqls/json_expr"
 						}
 					]
-				},
-				{
-					"title": "Operators",
-					"path": "sqls/operators"
 				},
 				{
 					"title": "Built-in Functions",
