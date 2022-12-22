@@ -147,6 +147,10 @@ func serviceExport() map[string]string {
 	return serviceManager.GetAllServices()
 }
 
-func serviceImport(services map[string]string) error {
-	return serviceManager.ImportServices(services)
+func serviceStatusExport() map[string]string {
+	return serviceManager.GetAllServicesStatus()
+}
+
+func serviceImport(services map[string]string) {
+	serviceManager.ImportServices(services)
 }

@@ -79,6 +79,33 @@ func (rs *RulesetProcessor) ExportRuleSet() *Ruleset {
 	return all
 }
 
+func (rs *RulesetProcessor) ExportRuleSetStatus() *Ruleset {
+	_ = rs.s.streamStatusDb.Clean()
+	_ = rs.s.tableStatusDb.Clean()
+	_ = rs.r.ruleStatusDb.Clean()
+
+	all := &Ruleset{}
+	allStreams, err := rs.s.streamStatusDb.All()
+	if err != nil {
+		conf.Log.Errorf("fail to get all stream status: %v", err)
+		return nil
+	}
+	allTables, err := rs.s.tableStatusDb.All()
+	if err != nil {
+		conf.Log.Errorf("fail to get all table status: %v", err)
+		return nil
+	}
+	all.Streams = allStreams
+	all.Tables = allTables
+	rules, err := rs.r.ruleStatusDb.All()
+	if err != nil {
+		conf.Log.Errorf("fail to get all rule status: %v", err)
+		return nil
+	}
+	all.Rules = rules
+	return all
+}
+
 func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 	all := &Ruleset{}
 	err := json.Unmarshal(content, all)
@@ -125,6 +152,7 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) {
 		_, e := rs.s.ExecStreamSql(v)
 		if e != nil {
 			conf.Log.Errorf("Fail to import stream %s(%s) with error: %v", k, v, e)
+			_ = rs.s.streamStatusDb.Set(k, e.Error())
 		} else {
 			counts[0]++
 		}
@@ -134,6 +162,7 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) {
 		_, e := rs.s.ExecStreamSql(v)
 		if e != nil {
 			conf.Log.Errorf("Fail to import table %s(%s) with error: %v", k, v, e)
+			_ = rs.s.tableStatusDb.Set(k, e.Error())
 		} else {
 			counts[1]++
 		}
@@ -144,6 +173,7 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) {
 		_, e := rs.r.ExecCreateWithValidation(k, v)
 		if e != nil {
 			conf.Log.Errorf("Fail to import rule %s(%s) with error: %v", k, v, e)
+			_ = rs.r.ruleStatusDb.Set(k, e.Error())
 		} else {
 			rules = append(rules, k)
 			counts[2]++

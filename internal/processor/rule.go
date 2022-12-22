@@ -27,7 +27,8 @@ import (
 )
 
 type RuleProcessor struct {
-	db kv.KeyValue
+	db           kv.KeyValue
+	ruleStatusDb kv.KeyValue
 }
 
 func NewRuleProcessor() *RuleProcessor {
@@ -35,8 +36,13 @@ func NewRuleProcessor() *RuleProcessor {
 	if err != nil {
 		panic(fmt.Sprintf("Can not initalize store for the rule processor at path 'rule': %v", err))
 	}
+	err, ruleStatusDb := store.GetKV("ruleStatus")
+	if err != nil {
+		panic(fmt.Sprintf("Can not initalize store for the rule processor at path 'rule': %v", err))
+	}
 	processor := &RuleProcessor{
-		db: db,
+		db:           db,
+		ruleStatusDb: ruleStatusDb,
 	}
 	return processor
 }

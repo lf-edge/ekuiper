@@ -45,6 +45,8 @@ type Manager struct {
 	reg           *registry // can be replaced with kv
 	// the access to plugin install script db
 	plgInstallDb kv.KeyValue
+	// the access to plugin install status db
+	plgStatusDb kv.KeyValue
 }
 
 // InitManager must only be called once
@@ -75,11 +77,16 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
-	err, plg_db := store.GetKV("portable_plugin")
+	err, plg_db := store.GetKV("portablePlugin")
 	if err != nil {
-		return nil, fmt.Errorf("error when opening plg_install_db: %v", err)
+		return nil, fmt.Errorf("error when opening portablePlugin: %v", err)
+	}
+	err, plg_status_db := store.GetKV("portablePluginStatus")
+	if err != nil {
+		return nil, fmt.Errorf("error when opening portablePluginStatus: %v", err)
 	}
 	m.plgInstallDb = plg_db
+	m.plgStatusDb = plg_status_db
 	manager = m
 	return m, nil
 }
@@ -409,4 +416,29 @@ func (m *Manager) GetAllPlugins() map[string]string {
 		return nil
 	}
 	return allPlgs
+}
+
+func (m *Manager) GetAllPluginsStatus() map[string]string {
+	allPlgs, err := m.plgInstallDb.All()
+	if err != nil {
+		return nil
+	}
+	return allPlgs
+}
+
+func (m *Manager) PluginImport(plugins map[string]string) {
+	_ = m.plgStatusDb.Clean()
+	for k, v := range plugins {
+		sd := plugin.NewPluginByType(plugin.PORTABLE)
+		err := json.Unmarshal([]byte(v), &sd)
+		if err != nil {
+			_ = m.plgStatusDb.Set(k, err.Error())
+			continue
+		}
+		err = m.Register(sd)
+		if err != nil {
+			_ = m.plgStatusDb.Set(k, err.Error())
+			continue
+		}
+	}
 }

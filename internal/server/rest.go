@@ -141,6 +141,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/config/export", configurationExportHandler).Methods(http.MethodGet)
 	r.HandleFunc("/config/import", configurationImportHandler).Methods(http.MethodPost)
+	r.HandleFunc("/config/import/status", configurationStatusHandler).Methods(http.MethodGet)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
@@ -728,15 +729,9 @@ func configurationImport(data []byte, reboot bool) error {
 		}
 	}
 
-	err = portablePluginImport(conf.PortablePlugins)
-	if err != nil {
-		return fmt.Errorf("portablePluginImportHandler with error %v", err)
-	}
+	portablePluginImport(conf.PortablePlugins)
 
-	err = serviceImport(conf.Service)
-	if err != nil {
-		return fmt.Errorf("serviceImport with error %v", err)
-	}
+	serviceImport(conf.Service)
 
 	yamlCfgSet := meta.YamlConfigurationSet{
 		Sources:     conf.SourceConfig,
@@ -744,10 +739,8 @@ func configurationImport(data []byte, reboot bool) error {
 		Connections: conf.ConnectionConfig,
 	}
 
-	err = meta.LoadConfigurations(yamlCfgSet)
-	if err != nil {
-		return fmt.Errorf("LoadConfigurations with error %v", err)
-	}
+	meta.LoadConfigurations(yamlCfgSet)
+
 	ruleSet := processor.Ruleset{
 		Streams: conf.Streams,
 		Tables:  conf.Tables,
@@ -810,4 +803,43 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func configurationStatusExport() Configuration {
+	conf := Configuration{
+		Streams:          make(map[string]string),
+		Tables:           make(map[string]string),
+		Rules:            make(map[string]string),
+		NativePlugins:    make(map[string]string),
+		PortablePlugins:  make(map[string]string),
+		SourceConfig:     make(map[string]string),
+		SinkConfig:       make(map[string]string),
+		ConnectionConfig: make(map[string]string),
+		Service:          make(map[string]string),
+		Schema:           make(map[string]string),
+	}
+	ruleSet := rulesetProcessor.ExportRuleSetStatus()
+	if ruleSet != nil {
+		conf.Streams = ruleSet.Streams
+		conf.Tables = ruleSet.Tables
+		conf.Rules = ruleSet.Rules
+	}
+
+	conf.NativePlugins = pluginStatusExport()
+	conf.PortablePlugins = portablePluginStatusExport()
+	conf.Service = serviceStatusExport()
+	conf.Schema = schemaStatusExport()
+
+	yamlCfgStatus := meta.GetConfigurationStatus()
+	conf.SourceConfig = yamlCfgStatus.Sources
+	conf.SinkConfig = yamlCfgStatus.Sinks
+	conf.ConnectionConfig = yamlCfgStatus.Connections
+
+	return conf
+}
+
+func configurationStatusHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	content := configurationStatusExport()
+	jsonResponse(content, w, logger)
 }

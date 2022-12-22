@@ -136,6 +136,10 @@ func schemaExport() map[string]string {
 	return schema.GetAllSchema()
 }
 
+func schemaStatusExport() map[string]string {
+	return schema.GetAllSchemaStatus()
+}
+
 func schemaImport(s map[string]string) error {
 	return schema.ImportSchema(s)
 }

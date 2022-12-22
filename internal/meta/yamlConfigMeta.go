@@ -18,21 +18,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"strings"
 	"sync"
 )
 
 type configManager struct {
-	lock         sync.RWMutex
-	cfgOperators map[string]conf.ConfigOperator
+	lock                     sync.RWMutex
+	cfgOperators             map[string]conf.ConfigOperator
+	sourceConfigStatusDb     kv.KeyValue
+	sinkConfigStatusDb       kv.KeyValue
+	connectionConfigStatusDb kv.KeyValue
 }
 
 //ConfigManager Hold the ConfigOperator for yaml configs defined in etc/sources/xxx.yaml and etc/connections/connection.yaml
 // for configs in etc/sources/xxx.yaml, the map key is sources.xxx format, xxx will be mqtt/httppull and so on
 // for configs in etc/connections/connection.yaml, the map key is connections.xxx format, xxx will be mqtt/edgex
-var ConfigManager = configManager{
-	lock:         sync.RWMutex{},
-	cfgOperators: make(map[string]conf.ConfigOperator),
+var ConfigManager *configManager
+
+func InitYamlConfigManager() {
+	ConfigManager = &configManager{
+		lock:         sync.RWMutex{},
+		cfgOperators: make(map[string]conf.ConfigOperator),
+	}
+	_, ConfigManager.sourceConfigStatusDb = store.GetKV("sourceConfigStatus")
+	_, ConfigManager.sinkConfigStatusDb = store.GetKV("sinkConfigStatus")
+	_, ConfigManager.connectionConfigStatusDb = store.GetKV("connectionConfigStatus")
 }
 
 const SourceCfgOperatorKeyTemplate = "sources.%s"
@@ -427,37 +439,80 @@ func GetConfigurations() YamlConfigurationSet {
 	return result
 }
 
-func LoadConfigurations(configSets YamlConfigurationSet) error {
+func GetConfigurationStatus() YamlConfigurationSet {
+	result := YamlConfigurationSet{
+		Sources:     map[string]string{},
+		Sinks:       map[string]string{},
+		Connections: map[string]string{},
+	}
+
+	all, err := ConfigManager.sourceConfigStatusDb.All()
+	if err == nil {
+		result.Sources = all
+	}
+
+	all, err = ConfigManager.sinkConfigStatusDb.All()
+	if err == nil {
+		result.Sinks = all
+	}
+
+	all, err = ConfigManager.connectionConfigStatusDb.All()
+	if err == nil {
+		result.Connections = all
+	}
+
+	return result
+}
+
+func LoadConfigurations(configSets YamlConfigurationSet) {
 
 	var srcResources = configSets.Sources
 	var sinkResources = configSets.Sinks
 	var connectionResources = configSets.Connections
 
+	_ = ConfigManager.sourceConfigStatusDb.Clean()
+	_ = ConfigManager.sinkConfigStatusDb.Clean()
+	_ = ConfigManager.connectionConfigStatusDb.Clean()
+
 	for key, val := range srcResources {
 		configs := YamlConfigurations{}
 		err := json.Unmarshal([]byte(val), &configs)
 		if err != nil {
-			return err
+			_ = ConfigManager.sourceConfigStatusDb.Set(key, err.Error())
+			continue
 		}
-		_ = addSourceConfKeys(key, configs)
+		err = addSourceConfKeys(key, configs)
+		if err != nil {
+			_ = ConfigManager.sourceConfigStatusDb.Set(key, err.Error())
+			continue
+		}
 	}
 
 	for key, val := range sinkResources {
 		configs := YamlConfigurations{}
 		err := json.Unmarshal([]byte(val), &configs)
 		if err != nil {
-			return err
+			_ = ConfigManager.sinkConfigStatusDb.Set(key, err.Error())
+			continue
 		}
-		_ = addSinkConfKeys(key, configs)
+		err = addSinkConfKeys(key, configs)
+		if err != nil {
+			_ = ConfigManager.sinkConfigStatusDb.Set(key, err.Error())
+			continue
+		}
 	}
 
 	for key, val := range connectionResources {
 		configs := YamlConfigurations{}
 		err := json.Unmarshal([]byte(val), &configs)
 		if err != nil {
-			return err
+			_ = ConfigManager.connectionConfigStatusDb.Set(key, err.Error())
+			continue
 		}
-		_ = addConnectionConfKeys(key, configs)
+		err = addConnectionConfKeys(key, configs)
+		if err != nil {
+			_ = ConfigManager.connectionConfigStatusDb.Set(key, err.Error())
+			continue
+		}
 	}
-	return nil
 }

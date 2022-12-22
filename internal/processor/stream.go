@@ -34,7 +34,9 @@ var (
 )
 
 type StreamProcessor struct {
-	db kv.KeyValue
+	db             kv.KeyValue
+	streamStatusDb kv.KeyValue
+	tableStatusDb  kv.KeyValue
 }
 
 func NewStreamProcessor() *StreamProcessor {
@@ -42,8 +44,18 @@ func NewStreamProcessor() *StreamProcessor {
 	if err != nil {
 		panic(fmt.Sprintf("Can not initalize store for the stream processor at path 'stream': %v", err))
 	}
+	err, streamDb := store.GetKV("streamStatus")
+	if err != nil {
+		panic(fmt.Sprintf("Can not initalize store for the stream processor at path 'stream': %v", err))
+	}
+	err, tableDb := store.GetKV("tableStatus")
+	if err != nil {
+		panic(fmt.Sprintf("Can not initalize store for the stream processor at path 'stream': %v", err))
+	}
 	processor := &StreamProcessor{
-		db: db,
+		db:             db,
+		streamStatusDb: streamDb,
+		tableStatusDb:  tableDb,
 	}
 	return processor
 }

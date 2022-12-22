@@ -64,6 +64,8 @@ type Manager struct {
 	funcSymbolsDb kv.KeyValue
 	// the access to plugin install script db
 	plgInstallDb kv.KeyValue
+	// the access to plugin install status db
+	plgStatusDb kv.KeyValue
 }
 
 // InitManager must only be called once
@@ -80,14 +82,19 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error when opening funcSymbolsdb: %v", err)
 	}
-	err, plg_db := store.GetKV("native_plugin")
+	err, plg_db := store.GetKV("nativePlugin")
 	if err != nil {
-		return nil, fmt.Errorf("error when opening plg_install_db: %v", err)
+		return nil, fmt.Errorf("error when opening nativePlugin: %v", err)
 	}
-	registry := &Manager{symbols: make(map[string]string), funcSymbolsDb: func_db, plgInstallDb: plg_db, pluginDir: pluginDir, pluginConfDir: dataDir, runtime: make(map[string]*plugin.Plugin)}
+	err, plg_status_db := store.GetKV("nativePluginStatus")
+	if err != nil {
+		return nil, fmt.Errorf("error when opening nativePluginStatus: %v", err)
+	}
+	registry := &Manager{symbols: make(map[string]string), funcSymbolsDb: func_db, plgInstallDb: plg_db, plgStatusDb: plg_status_db, pluginDir: pluginDir, pluginConfDir: dataDir, runtime: make(map[string]*plugin.Plugin)}
+	registry.plugins = make([]map[string]string, 3)
 	manager = registry
 	if manager.hasInstallFlag() {
-		_ = manager.pluginInstallWhenReboot()
+		manager.pluginInstallWhenReboot()
 		manager.clearInstallFlag()
 	} else {
 		plugins := make([]map[string]string, 3)
@@ -778,6 +785,14 @@ func (rr *Manager) GetAllPlugins() map[string]string {
 	return allPlgs
 }
 
+func (rr *Manager) GetAllPluginsStatus() map[string]string {
+	allPlgs, err := rr.plgStatusDb.All()
+	if err != nil {
+		return nil
+	}
+	return allPlgs
+}
+
 const BOOT_INSTALL = "$boot_install"
 
 func (rr *Manager) PluginImport(plugins map[string]string) error {
@@ -808,25 +823,27 @@ func (rr *Manager) clearInstallFlag() {
 	_ = rr.plgInstallDb.Delete(BOOT_INSTALL)
 }
 
-func (rr *Manager) pluginInstallWhenReboot() error {
+func (rr *Manager) pluginInstallWhenReboot() {
 	allPlgs, err := rr.plgInstallDb.All()
 	if err != nil {
-		return err
+		return
 	}
 
 	delete(allPlgs, BOOT_INSTALL)
+	_ = rr.plgStatusDb.Clean()
 
 	for k, v := range allPlgs {
 		plgType := plugin2.PluginTypeMap[strings.Split(k, "_")[0]]
 		sd := plugin2.NewPluginByType(plgType)
 		err := json.Unmarshal([]byte(v), &sd)
 		if err != nil {
-			return fmt.Errorf("pluginImportHandler json unmarshal error %v", err)
+			_ = rr.plgStatusDb.Set(k, err.Error())
+			continue
 		}
 		err = rr.Register(plgType, sd)
 		if err != nil {
-			return fmt.Errorf("pluginImportHandler native register error %v", err)
+			_ = rr.plgStatusDb.Set(k, err.Error())
+			continue
 		}
 	}
-	return nil
 }

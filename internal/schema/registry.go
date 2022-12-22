@@ -32,6 +32,7 @@ import (
 // Initialize in the server startup
 var registry *Registry
 var schemaDb kv.KeyValue
+var schemaStatusDb kv.KeyValue
 
 type Files struct {
 	SchemaFile string
@@ -62,8 +63,12 @@ func InitRegistry() error {
 	if err != nil {
 		return fmt.Errorf("cannot open schema db: %s", err)
 	}
+	err, schemaStatusDb = store.GetKV("schemaStatus")
+	if err != nil {
+		return fmt.Errorf("cannot open schemaStatus db: %s", err)
+	}
 	if hasInstallFlag() {
-		_ = schemaInstallWhenReboot()
+		schemaInstallWhenReboot()
 		clearInstallFlag()
 	} else {
 		for _, schemaType := range def.SchemaTypes {
@@ -245,6 +250,14 @@ func GetAllSchema() map[string]string {
 	return all
 }
 
+func GetAllSchemaStatus() map[string]string {
+	all, err := schemaStatusDb.All()
+	if err != nil {
+		return nil
+	}
+	return all
+}
+
 func UninstallAllSchema() {
 	schemaMaps, err := schemaDb.All()
 	if err != nil {
@@ -281,21 +294,26 @@ func ImportSchema(schema map[string]string) error {
 	return schemaDb.Set(BOOT_INSTALL, BOOT_INSTALL)
 }
 
-func schemaInstallWhenReboot() error {
+func schemaInstallWhenReboot() {
 	allPlgs, err := schemaDb.All()
 	if err != nil {
-		return err
+		return
 	}
 
 	delete(allPlgs, BOOT_INSTALL)
+	_ = schemaStatusDb.Clean()
 
-	for _, v := range allPlgs {
+	for k, v := range allPlgs {
 		info := &Info{}
-		_ = json.Unmarshal([]byte(v), info)
-		err := CreateOrUpdateSchema(info)
+		err := json.Unmarshal([]byte(v), info)
 		if err != nil {
-			return err
+			_ = schemaStatusDb.Set(k, err.Error())
+			continue
+		}
+		err = CreateOrUpdateSchema(info)
+		if err != nil {
+			_ = schemaStatusDb.Set(k, err.Error())
+			continue
 		}
 	}
-	return nil
 }

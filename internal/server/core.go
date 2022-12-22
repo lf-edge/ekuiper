@@ -24,6 +24,10 @@ func pluginExport() map[string]string {
 	return nil
 }
 
+func pluginStatusExport() map[string]string {
+	return nil
+}
+
 func pluginImport(plugins map[string]string) error {
 	return nil
 }
@@ -32,10 +36,14 @@ func portablePluginsReset() {
 }
 
 func portablePluginExport() map[string]string {
+	return nil
 }
 
-func portablePluginImport(plugins map[string]string) error {
+func portablePluginStatusExport() map[string]string {
 	return nil
+}
+
+func portablePluginImport(plugins map[string]string) {
 }
 
 func serviceReset() {
@@ -45,14 +53,21 @@ func serviceExport() map[string]string {
 	return nil
 }
 
-func serviceImport(services map[string]string) error {
+func serviceStatusExport() map[string]string {
 	return nil
+}
+
+func serviceImport(services map[string]string) {
 }
 
 func schemaReset() {
 }
 
 func schemaExport() map[string]string {
+	return nil
+}
+
+func schemaStatusExport() map[string]string {
 	return nil
 }
 

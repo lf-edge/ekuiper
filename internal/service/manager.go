@@ -44,10 +44,11 @@ type Manager struct {
 	serviceBuf   *sync.Map
 	functionBuf  *sync.Map
 
-	etcDir           string
-	serviceInstallKV kv.KeyValue
-	serviceKV        kv.KeyValue
-	functionKV       kv.KeyValue
+	etcDir                 string
+	serviceInstallKV       kv.KeyValue
+	serviceStatusInstallKV kv.KeyValue
+	serviceKV              kv.KeyValue
+	functionKV             kv.KeyValue
 }
 
 func InitManager() (*Manager, error) {
@@ -74,15 +75,20 @@ func InitManager() (*Manager, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot open service db: %s", err)
 		}
+		err, statusDb := store.GetKV("serviceInstallStatus")
+		if err != nil {
+			return nil, fmt.Errorf("cannot open service db: %s", err)
+		}
 		singleton = &Manager{
 			executorPool: &sync.Map{},
 			serviceBuf:   &sync.Map{},
 			functionBuf:  &sync.Map{},
 
-			etcDir:           etcDir,
-			serviceInstallKV: sInstallDb,
-			serviceKV:        sdb,
-			functionKV:       fdb,
+			etcDir:                 etcDir,
+			serviceStatusInstallKV: statusDb,
+			serviceInstallKV:       sInstallDb,
+			serviceKV:              sdb,
+			functionKV:             fdb,
 		}
 	}
 	if !singleton.loaded && !kconf.IsTesting { // To boost the testing perf
@@ -320,36 +326,6 @@ func (m *Manager) List() ([]string, error) {
 	return m.serviceKV.Keys()
 }
 
-func (m *Manager) GetAllServices() map[string]string {
-	all, err := m.serviceInstallKV.All()
-	if err != nil {
-		return nil
-	}
-	return all
-}
-
-func (m *Manager) UninstallAllServices() {
-	keys, err := m.serviceInstallKV.Keys()
-	if err != nil {
-		return
-	}
-	for _, v := range keys {
-		_ = m.Delete(v)
-	}
-}
-
-func (m *Manager) ImportServices(services map[string]string) error {
-	for _, v := range services {
-		req := &ServiceCreationRequest{}
-		_ = json.Unmarshal([]byte(v), req)
-		err := m.Create(req)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (m *Manager) Create(r *ServiceCreationRequest) error {
 	name, uri := r.Name, r.File
 	if ok, _ := m.serviceKV.Get(name, &serviceInfo{}); ok {
@@ -459,4 +435,47 @@ func (m *Manager) GetFunction(name string) (*functionContainer, error) {
 		return nil, fmt.Errorf("can't get the service function %s", name)
 	}
 	return r, nil
+}
+
+func (m *Manager) GetAllServices() map[string]string {
+	all, err := m.serviceInstallKV.All()
+	if err != nil {
+		return nil
+	}
+	return all
+}
+
+func (m *Manager) GetAllServicesStatus() map[string]string {
+	all, err := m.serviceStatusInstallKV.All()
+	if err != nil {
+		return nil
+	}
+	return all
+}
+
+func (m *Manager) UninstallAllServices() {
+	keys, err := m.serviceInstallKV.Keys()
+	if err != nil {
+		return
+	}
+	for _, v := range keys {
+		_ = m.Delete(v)
+	}
+}
+
+func (m *Manager) ImportServices(services map[string]string) {
+	_ = m.serviceStatusInstallKV.Clean()
+	for k, v := range services {
+		req := &ServiceCreationRequest{}
+		err := json.Unmarshal([]byte(v), req)
+		if err != nil {
+			m.serviceStatusInstallKV.Set(k, err.Error())
+			continue
+		}
+		err = m.Create(req)
+		if err != nil {
+			m.serviceStatusInstallKV.Set(k, err.Error())
+			continue
+		}
+	}
 }
