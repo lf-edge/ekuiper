@@ -311,7 +311,7 @@ func (t *Server) ImportConfiguration(file string, reply *string) error {
 	content := buf.Bytes()
 
 	configurationReset()
-	err = configurationImport(content)
+	err = configurationImport(content, false)
 	if err != nil {
 		return fmt.Errorf("import configuration error: %v", err)
 	}

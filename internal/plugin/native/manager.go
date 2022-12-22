@@ -19,6 +19,7 @@ package native
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -85,24 +86,29 @@ func InitManager() (*Manager, error) {
 	}
 	registry := &Manager{symbols: make(map[string]string), funcSymbolsDb: func_db, plgInstallDb: plg_db, pluginDir: pluginDir, pluginConfDir: dataDir, runtime: make(map[string]*plugin.Plugin)}
 	manager = registry
-	plugins := make([]map[string]string, 3)
-	for i := range plugins {
-		names, err := findAll(plugin2.PluginType(i), pluginDir)
-		if err != nil {
-			return nil, fmt.Errorf("fail to find existing plugins: %s", err)
+	if manager.hasInstallFlag() {
+		_ = manager.pluginInstallWhenReboot()
+		manager.clearInstallFlag()
+	} else {
+		plugins := make([]map[string]string, 3)
+		for i := range plugins {
+			names, err := findAll(plugin2.PluginType(i), pluginDir)
+			if err != nil {
+				return nil, fmt.Errorf("fail to find existing plugins: %s", err)
+			}
+			plugins[i] = names
 		}
-		plugins[i] = names
-	}
-	registry.plugins = plugins
+		registry.plugins = plugins
 
-	for pf := range plugins[plugin2.FUNCTION] {
-		l := make([]string, 0)
-		if ok, err := func_db.Get(pf, &l); ok {
-			registry.storeSymbols(pf, l)
-		} else if err != nil {
-			return nil, fmt.Errorf("error when querying kv: %s", err)
-		} else {
-			registry.storeSymbols(pf, []string{pf})
+		for pf := range plugins[plugin2.FUNCTION] {
+			l := make([]string, 0)
+			if ok, err := func_db.Get(pf, &l); ok {
+				registry.storeSymbols(pf, l)
+			} else if err != nil {
+				return nil, fmt.Errorf("error when querying kv: %s", err)
+			} else {
+				registry.storeSymbols(pf, []string{pf})
+			}
 		}
 	}
 	return registry, nil
@@ -768,5 +774,59 @@ func (rr *Manager) GetAllPlugins() map[string]string {
 	if err != nil {
 		return nil
 	}
+	delete(allPlgs, BOOT_INSTALL)
 	return allPlgs
+}
+
+const BOOT_INSTALL = "$boot_install"
+
+func (rr *Manager) PluginImport(plugins map[string]string) error {
+	if len(plugins) == 0 {
+		return nil
+	}
+	for k, v := range plugins {
+		err := rr.plgInstallDb.Set(k, v)
+		if err != nil {
+			return err
+		}
+	}
+	//set the flag to install the plugins when eKuiper reboot
+	err := rr.plgInstallDb.Set(BOOT_INSTALL, BOOT_INSTALL)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (rr *Manager) hasInstallFlag() bool {
+	var val = ""
+	found, _ := rr.plgInstallDb.Get(BOOT_INSTALL, &val)
+	return found
+}
+
+func (rr *Manager) clearInstallFlag() {
+	_ = rr.plgInstallDb.Delete(BOOT_INSTALL)
+}
+
+func (rr *Manager) pluginInstallWhenReboot() error {
+	allPlgs, err := rr.plgInstallDb.All()
+	if err != nil {
+		return err
+	}
+
+	delete(allPlgs, BOOT_INSTALL)
+
+	for k, v := range allPlgs {
+		plgType := plugin2.PluginTypeMap[strings.Split(k, "_")[0]]
+		sd := plugin2.NewPluginByType(plgType)
+		err := json.Unmarshal([]byte(v), &sd)
+		if err != nil {
+			return fmt.Errorf("pluginImportHandler json unmarshal error %v", err)
+		}
+		err = rr.Register(plgType, sd)
+		if err != nil {
+			return fmt.Errorf("pluginImportHandler native register error %v", err)
+		}
+	}
+	return nil
 }

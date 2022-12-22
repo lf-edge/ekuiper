@@ -698,7 +698,7 @@ func configurationReset() {
 	meta.ResetConfigs()
 }
 
-func configurationImport(data []byte) error {
+func configurationImport(data []byte, reboot bool) error {
 	conf := &Configuration{
 		Streams:          make(map[string]string),
 		Tables:           make(map[string]string),
@@ -717,9 +717,15 @@ func configurationImport(data []byte) error {
 		return fmt.Errorf("configuration unmarshal with error %v", err)
 	}
 
-	err = pluginImport(conf.NativePlugins)
-	if err != nil {
-		return fmt.Errorf("pluginImportHandler with error %v", err)
+	if reboot {
+		err = pluginImport(conf.NativePlugins)
+		if err != nil {
+			return fmt.Errorf("pluginImportHandler with error %v", err)
+		}
+		err = schemaImport(conf.Schema)
+		if err != nil {
+			return fmt.Errorf("schemaImport with error %v", err)
+		}
 	}
 
 	err = portablePluginImport(conf.PortablePlugins)
@@ -730,11 +736,6 @@ func configurationImport(data []byte) error {
 	err = serviceImport(conf.Service)
 	if err != nil {
 		return fmt.Errorf("serviceImport with error %v", err)
-	}
-
-	err = schemaImport(conf.Schema)
-	if err != nil {
-		return fmt.Errorf("schemaImport with error %v", err)
 	}
 
 	yamlCfgSet := meta.YamlConfigurationSet{
@@ -796,7 +797,7 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 		content = buf.Bytes()
 	}
 	configurationReset()
-	err = configurationImport(content)
+	err = configurationImport(content, stop)
 	if err != nil {
 		handleError(w, err, "Import configuration error", logger)
 		return

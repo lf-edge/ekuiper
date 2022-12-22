@@ -277,17 +277,6 @@ func pluginExport() map[string]string {
 }
 
 func pluginImport(plugins map[string]string) error {
-	for k, v := range plugins {
-		plgType := plugin.PluginTypeMap[strings.Split(k, "_")[0]]
-		sd := plugin.NewPluginByType(plgType)
-		err := json.Unmarshal([]byte(v), &sd)
-		if err != nil {
-			return fmt.Errorf("pluginImportHandler json unmarshal error %v", err)
-		}
-		err = nativeManager.Register(plgType, sd)
-		if err != nil {
-			return fmt.Errorf("pluginImportHandler native register error %v", err)
-		}
-	}
+	nativeManager.PluginImport(plugins)
 	return nil
 }
