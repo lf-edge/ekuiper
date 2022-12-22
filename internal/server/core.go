@@ -32,9 +32,30 @@ func portablePluginsReset() {
 }
 
 func portablePluginExport() map[string]string {
-	return nil
 }
 
 func portablePluginImport(plugins map[string]string) error {
+	return nil
+}
+
+func serviceReset() {
+}
+
+func serviceExport() map[string]string {
+	return nil
+}
+
+func serviceImport(services map[string]string) error {
+	return nil
+}
+
+func schemaReset() {
+}
+
+func schemaExport() map[string]string {
+	return nil
+}
+
+func schemaImport(s map[string]string) error {
 	return nil
 }

@@ -16,6 +16,7 @@ package service
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -43,9 +44,10 @@ type Manager struct {
 	serviceBuf   *sync.Map
 	functionBuf  *sync.Map
 
-	etcDir     string
-	serviceKV  kv.KeyValue
-	functionKV kv.KeyValue
+	etcDir           string
+	serviceInstallKV kv.KeyValue
+	serviceKV        kv.KeyValue
+	functionKV       kv.KeyValue
 }
 
 func InitManager() (*Manager, error) {
@@ -68,14 +70,19 @@ func InitManager() (*Manager, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot open function db: %s", err)
 		}
+		err, sInstallDb := store.GetKV("serviceInstall")
+		if err != nil {
+			return nil, fmt.Errorf("cannot open service db: %s", err)
+		}
 		singleton = &Manager{
 			executorPool: &sync.Map{},
 			serviceBuf:   &sync.Map{},
 			functionBuf:  &sync.Map{},
 
-			etcDir:     etcDir,
-			serviceKV:  sdb,
-			functionKV: fdb,
+			etcDir:           etcDir,
+			serviceInstallKV: sInstallDb,
+			serviceKV:        sdb,
+			functionKV:       fdb,
 		}
 	}
 	if !singleton.loaded && !kconf.IsTesting { // To boost the testing perf
@@ -301,8 +308,46 @@ type ServiceCreationRequest struct {
 	File string `json:"file"`
 }
 
+func (s *ServiceCreationRequest) InstallScript() string {
+	marshal, err := json.Marshal(s)
+	if err != nil {
+		return ""
+	}
+	return string(marshal)
+}
+
 func (m *Manager) List() ([]string, error) {
 	return m.serviceKV.Keys()
+}
+
+func (m *Manager) GetAllServices() map[string]string {
+	all, err := m.serviceInstallKV.All()
+	if err != nil {
+		return nil
+	}
+	return all
+}
+
+func (m *Manager) UninstallAllServices() {
+	keys, err := m.serviceInstallKV.Keys()
+	if err != nil {
+		return
+	}
+	for _, v := range keys {
+		_ = m.Delete(v)
+	}
+}
+
+func (m *Manager) ImportServices(services map[string]string) error {
+	for _, v := range services {
+		req := &ServiceCreationRequest{}
+		_ = json.Unmarshal([]byte(v), req)
+		err := m.Create(req)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *Manager) Create(r *ServiceCreationRequest) error {
@@ -326,6 +371,8 @@ func (m *Manager) Create(r *ServiceCreationRequest) error {
 	if err != nil {
 		return err
 	}
+	//save the install script
+	m.serviceInstallKV.Set(name, r.InstallScript())
 	// init file to serviceKV
 	return m.initFile(name + ".json")
 }
@@ -341,6 +388,7 @@ func (m *Manager) Delete(name string) error {
 	if err != nil {
 		return err
 	}
+	_ = m.serviceInstallKV.Delete(name)
 	path := path.Join(m.etcDir, name+".json")
 	err = os.Remove(path)
 	if err != nil {

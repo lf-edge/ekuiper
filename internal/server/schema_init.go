@@ -127,3 +127,15 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(fmt.Sprintf("%s schema %s is updated", sch.Type, sch.Name)))
 	}
 }
+
+func schemaReset() {
+	schema.UninstallAllSchema()
+}
+
+func schemaExport() map[string]string {
+	return schema.GetAllSchema()
+}
+
+func schemaImport(s map[string]string) error {
+	return schema.ImportSchema(s)
+}

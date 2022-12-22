@@ -643,6 +643,8 @@ type Configuration struct {
 	SourceConfig     map[string]string `json:"sourceConfig"`
 	SinkConfig       map[string]string `json:"sinkConfig"`
 	ConnectionConfig map[string]string `json:"connectionConfig"`
+	Service          map[string]string `json:"Service"`
+	Schema           map[string]string `json:"Schema"`
 }
 
 func configurationExport() ([]byte, error) {
@@ -655,6 +657,8 @@ func configurationExport() ([]byte, error) {
 		SourceConfig:     make(map[string]string),
 		SinkConfig:       make(map[string]string),
 		ConnectionConfig: make(map[string]string),
+		Service:          make(map[string]string),
+		Schema:           make(map[string]string),
 	}
 	ruleSet := rulesetProcessor.ExportRuleSet()
 	if ruleSet != nil {
@@ -665,6 +669,8 @@ func configurationExport() ([]byte, error) {
 
 	conf.NativePlugins = pluginExport()
 	conf.PortablePlugins = portablePluginExport()
+	conf.Service = serviceExport()
+	conf.Schema = schemaExport()
 
 	yamlCfg := meta.GetConfigurations()
 	conf.SourceConfig = yamlCfg.Sources
@@ -687,6 +693,8 @@ func configurationReset() {
 	_ = resetAllStreams()
 	pluginReset()
 	portablePluginsReset()
+	serviceReset()
+	schemaReset()
 	meta.ResetConfigs()
 }
 
@@ -700,6 +708,8 @@ func configurationImport(data []byte) error {
 		SourceConfig:     make(map[string]string),
 		SinkConfig:       make(map[string]string),
 		ConnectionConfig: make(map[string]string),
+		Service:          make(map[string]string),
+		Schema:           make(map[string]string),
 	}
 
 	err := json.Unmarshal(data, conf)
@@ -715,6 +725,16 @@ func configurationImport(data []byte) error {
 	err = portablePluginImport(conf.PortablePlugins)
 	if err != nil {
 		return fmt.Errorf("portablePluginImportHandler with error %v", err)
+	}
+
+	err = serviceImport(conf.Service)
+	if err != nil {
+		return fmt.Errorf("serviceImport with error %v", err)
+	}
+
+	err = schemaImport(conf.Schema)
+	if err != nil {
+		return fmt.Errorf("schemaImport with error %v", err)
 	}
 
 	yamlCfgSet := meta.YamlConfigurationSet{

@@ -138,3 +138,15 @@ func serviceFunctionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonResponse(j, w, logger)
 }
+
+func serviceReset() {
+	serviceManager.UninstallAllServices()
+}
+
+func serviceExport() map[string]string {
+	return serviceManager.GetAllServices()
+}
+
+func serviceImport(services map[string]string) error {
+	return serviceManager.ImportServices(services)
+}

@@ -15,7 +15,10 @@
 package schema
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,6 +31,7 @@ import (
 
 // Initialize in the server startup
 var registry *Registry
+var schemaDb kv.KeyValue
 
 type Files struct {
 	SchemaFile string
@@ -53,6 +57,10 @@ func InitRegistry() error {
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
 		return fmt.Errorf("cannot find etc folder: %s", err)
+	}
+	err, schemaDb = store.GetKV("schema")
+	if err != nil {
+		return fmt.Errorf("cannot open schema db: %s", err)
 	}
 	for _, schemaType := range def.SchemaTypes {
 		schemaDir := filepath.Join(dataDir, "schemas", string(schemaType))
@@ -82,6 +90,38 @@ func InitRegistry() error {
 			}
 		}
 		registry.schemas[schemaType] = newSchemas
+	}
+	return nil
+}
+
+func GetAllSchema() map[string]string {
+	all, err := schemaDb.All()
+	if err != nil {
+		return nil
+	}
+	return all
+}
+
+func UninstallAllSchema() {
+	schemaMaps, err := schemaDb.All()
+	if err != nil {
+		return
+	}
+	for key, value := range schemaMaps {
+		info := &Info{}
+		_ = json.Unmarshal([]byte(value), info)
+		_ = DeleteSchema(info.Type, key)
+	}
+}
+
+func ImportSchema(schema map[string]string) error {
+	for _, v := range schema {
+		info := &Info{}
+		_ = json.Unmarshal([]byte(v), info)
+		err := CreateOrUpdateSchema(info)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
