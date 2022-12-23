@@ -17,6 +17,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 )
 
 type Hobbies struct {
@@ -66,16 +67,48 @@ func (x *Sample) GetSchemaJson() string {
 func (x *Sample) Encode(d interface{}) ([]byte, error) {
 	switch r := d.(type) {
 	case map[string]interface{}:
-		return json.Marshal(r)
+		result := &Sample{}
+		err := MapToStructStrict(r, result)
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(result)
 	default:
 		return nil, fmt.Errorf("unsupported type %v, must be a map", d)
 	}
 }
 
 func (x *Sample) Decode(b []byte) (interface{}, error) {
-	result := make(map[string]interface{})
+	result := &Sample{}
+	// check error
 	err := json.Unmarshal(b, &result)
-	return result, err
+	if err != nil {
+		return nil, err
+	}
+	// convert struct to map
+	hobbyMap := make(map[string]interface{}, 2)
+	hobbyMap["indoor"] = result.Hobbies.Indoor
+	hobbyMap["outdoor"] = result.Hobbies.Outdoor
+	resultMap := make(map[string]interface{}, 4)
+	resultMap["id"] = result.Id
+	resultMap["name"] = result.Name
+	resultMap["age"] = result.Age
+	resultMap["hobbies"] = hobbyMap
+	return resultMap, err
+}
+
+func MapToStructStrict(input, output interface{}) error {
+	config := &mapstructure.DecoderConfig{
+		ErrorUnused: true,
+		TagName:     "json",
+		Result:      output,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(input)
 }
 
 func GetSample() interface{} {
