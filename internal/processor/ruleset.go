@@ -80,10 +80,6 @@ func (rs *RulesetProcessor) ExportRuleSet() *Ruleset {
 }
 
 func (rs *RulesetProcessor) ExportRuleSetStatus() *Ruleset {
-	_ = rs.s.streamStatusDb.Clean()
-	_ = rs.s.tableStatusDb.Clean()
-	_ = rs.r.ruleStatusDb.Clean()
-
 	all := &Ruleset{}
 	allStreams, err := rs.s.streamStatusDb.All()
 	if err != nil {
@@ -146,6 +142,10 @@ func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 }
 
 func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) {
+	_ = rs.s.streamStatusDb.Clean()
+	_ = rs.s.tableStatusDb.Clean()
+	_ = rs.r.ruleStatusDb.Clean()
+
 	counts := make([]int, 3)
 	// restore streams
 	for k, v := range all.Streams {
@@ -153,6 +153,7 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) {
 		if e != nil {
 			conf.Log.Errorf("Fail to import stream %s(%s) with error: %v", k, v, e)
 			_ = rs.s.streamStatusDb.Set(k, e.Error())
+			continue
 		} else {
 			counts[0]++
 		}
@@ -163,6 +164,7 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) {
 		if e != nil {
 			conf.Log.Errorf("Fail to import table %s(%s) with error: %v", k, v, e)
 			_ = rs.s.tableStatusDb.Set(k, e.Error())
+			continue
 		} else {
 			counts[1]++
 		}
@@ -174,6 +176,7 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) {
 		if e != nil {
 			conf.Log.Errorf("Fail to import rule %s(%s) with error: %v", k, v, e)
 			_ = rs.r.ruleStatusDb.Set(k, e.Error())
+			continue
 		} else {
 			rules = append(rules, k)
 			counts[2]++

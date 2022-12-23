@@ -214,7 +214,8 @@ func resetAllRules() error {
 		_ = deleteRule(name)
 		_, err := ruleProcessor.ExecDrop(name)
 		if err != nil {
-			return fmt.Errorf("delete rule: %s with error %v", name, err)
+			logger.Warnf("delete rule: %s with error %v", name, err)
+			continue
 		}
 	}
 	return nil
@@ -228,16 +229,18 @@ func resetAllStreams() error {
 	Streams := allStreams["streams"]
 	Tables := allStreams["tables"]
 
-	for _, name := range Streams {
+	for name, _ := range Streams {
 		_, err2 := streamProcessor.DropStream(name, ast.TypeStream)
 		if err2 != nil {
-			return err2
+			logger.Warnf("streamProcessor DropStream %s error: %v", name, err2)
+			continue
 		}
 	}
-	for _, name := range Tables {
+	for name, _ := range Tables {
 		_, err2 := streamProcessor.DropStream(name, ast.TypeTable)
 		if err2 != nil {
-			return err2
+			logger.Warnf("streamProcessor DropTable %s error: %v", name, err2)
+			continue
 		}
 	}
 	return nil
