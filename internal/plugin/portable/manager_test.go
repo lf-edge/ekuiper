@@ -17,6 +17,7 @@ package portable
 import (
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -34,6 +35,7 @@ import (
 func init() {
 	testx.InitEnv()
 	InitManager()
+	meta.InitYamlConfigManager()
 }
 
 func TestManager_Install(t *testing.T) {

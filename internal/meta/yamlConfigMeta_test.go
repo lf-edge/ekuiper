@@ -21,6 +21,10 @@ import (
 	"testing"
 )
 
+func init() {
+	InitYamlConfigManager()
+}
+
 func createPaths() {
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
