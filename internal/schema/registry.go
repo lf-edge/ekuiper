@@ -204,7 +204,7 @@ func GetSchemaFile(schemaType def.SchemaType, name string) (*Files, error) {
 	registry.RLock()
 	defer registry.RUnlock()
 	if _, ok := registry.schemas[schemaType]; !ok {
-		return nil, fmt.Errorf("schema type %s not found", schemaType)
+		return nil, fmt.Errorf("schema type %s not found in registry", schemaType)
 	}
 	if _, ok := registry.schemas[schemaType][name]; !ok {
 		return nil, fmt.Errorf("schema type %s, file %s not found", schemaType, name)
