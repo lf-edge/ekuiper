@@ -280,7 +280,7 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 					color STRING,
 					size BIGINT,
 					ts BIGINT
-				) WITH (DATASOURCE="demoError", TYPE="mock", FORMAT="json", KEY="ts");`
+				) WITH (DATASOURCE="demoError", TYPE="mock", FORMAT="json", KEY="ts",STRICT_VALIDATION="true");`
 			case "demo1":
 				sql = `CREATE STREAM demo1 (
 					temp FLOAT,
@@ -322,7 +322,7 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 					color STRING,
 					size BIGINT,
 					ts BIGINT
-				) WITH (DATASOURCE="demoErr", TYPE="mock", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
+				) WITH (DATASOURCE="demoErr", TYPE="mock", FORMAT="json", KEY="ts", TIMESTAMP="ts",STRICT_VALIDATION="true");`
 			case "ldemo":
 				sql = `CREATE STREAM ldemo (					
 				) WITH (DATASOURCE="ldemo", TYPE="mock", FORMAT="json");`
@@ -333,7 +333,7 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 				sql = `CREATE STREAM lsessionDemo (
 				) WITH (DATASOURCE="lsessionDemo", TYPE="mock", FORMAT="json");`
 			case "ext":
-				sql = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"ext\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"ext\")"
+				sql = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"ext\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"ext\",STRICT_VALIDATION=\"true\")"
 			case "ext2":
 				sql = "CREATE STREAM ext2 (count bigint) WITH (DATASOURCE=\"ext2\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"dedup\")"
 			case "extpy":

@@ -126,7 +126,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 				pp  node.UnOperation
 				err error
 			)
-			if t.iet || (!isSchemaless && (t.streamStmt.Options.STRICT_VALIDATION || !t.isBinary)) {
+			if t.iet || (!isSchemaless && (t.streamStmt.Options.STRICT_VALIDATION || t.isBinary)) {
 				pp, err = operator.NewPreprocessor(isSchemaless, t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary, t.streamStmt.Options.STRICT_VALIDATION)
 				if err != nil {
 					return nil, 0, err

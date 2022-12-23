@@ -84,7 +84,10 @@ func (p *defaultFieldProcessor) validateAndConvertField(sf *ast.JsonStreamField,
 		if t == nil {
 			return []interface{}(nil), nil
 		} else if jtype == reflect.Slice {
-			a := t.([]interface{})
+			a, ok := t.([]interface{})
+			if !ok {
+				return nil, fmt.Errorf("cannot convert %v to []interface{}", t)
+			}
 			for i, e := range a {
 				ne, err := p.validateAndConvertField(sf.Items, e)
 				if err != nil {
