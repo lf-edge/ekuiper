@@ -16,6 +16,7 @@ package operator
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -41,8 +42,10 @@ type Preprocessor struct {
 func NewPreprocessor(isSchemaless bool, fields map[string]*ast.JsonStreamField, _ bool, _ []string, iet bool, timestampField string, timestampFormat string, isBinary bool, strictValidation bool) (*Preprocessor, error) {
 	p := &Preprocessor{
 		isEventTime: iet, timestampField: timestampField, isBinary: isBinary}
+	conf.Log.Infof("preprocessor isSchemaless %v, strictValidation %v, isBinary %v", isSchemaless, strictValidation, strictValidation)
 	if !isSchemaless && (strictValidation || isBinary) {
 		p.checkSchema = true
+		conf.Log.Infof("preprocessor check schema")
 		p.defaultFieldProcessor = defaultFieldProcessor{
 			streamFields: fields, timestampFormat: timestampFormat,
 		}

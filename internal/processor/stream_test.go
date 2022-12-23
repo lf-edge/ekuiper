@@ -82,7 +82,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 			s: `DESCRIBE STREAM topic1;`,
 			r: []string{"Fields\n--------------------------------------------------------------------------------\nUSERID\tbigint\nFIRST_NAME\tstring\nLAST_NAME\tstring\nNICKNAMES\t" +
 				"array(string)\nGender\tboolean\nADDRESS\tstruct(STREET_NAME string, NUMBER bigint, BUILDING struct(NAME string, ROOM bigint))\n\n" +
-				"DATASOURCE: users\nFORMAT: JSON\nKEY: USERID\nSTRICT_VALIDATION: true\n"},
+				"DATASOURCE: users\nFORMAT: JSON\nKEY: USERID\n"},
 		},
 		{
 			s: `DROP STREAM topic1;`,
@@ -171,7 +171,7 @@ func TestTableProcessor(t *testing.T) {
 			s: `DESCRIBE TABLE topic1;`,
 			r: []string{"Fields\n--------------------------------------------------------------------------------\nUSERID\tbigint\nFIRST_NAME\tstring\nLAST_NAME\tstring\nNICKNAMES\t" +
 				"array(string)\nGender\tboolean\nADDRESS\tstruct(STREET_NAME string, NUMBER bigint)\n\n" +
-				"DATASOURCE: users\nFORMAT: JSON\nKEY: USERID\nSTRICT_VALIDATION: true\n"},
+				"DATASOURCE: users\nFORMAT: JSON\nKEY: USERID\n"},
 		},
 		{
 			s: `DROP TABLE topic1;`,
