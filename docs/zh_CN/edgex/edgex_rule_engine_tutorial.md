@@ -328,8 +328,8 @@ Connecting to 127.0.0.1:20498...
 
 - 从 eKuiper 0.9.1 版本开始，通过一个单独的 Docker 镜像提供了 [可视化 web 用户交互界面](../operation/manager-ui/overview.md)，您可以通过该 web 界面进行流、规则和插件等管理。
 - 阅读 [EdgeX 源](../rules/sources/builtin/edgex.md) 获取更多详细信息，以及类型转换等。
-- [如何使用 meta 函数抽取在 EdgeX 消息总线中发送的更多信息？](edgex_meta.md) 设备服务往总线上发送数据的时候，一些额外的信息也随之发送，比如时间创建时间，id 等。如果你想在 SQL 语句中使用这些信息，请参考这篇文章。
-- [eKuiper 中使用 Golang 模版 (template) 定制分析结果](../rules/data_template.md) 分析结果在发送给不同的 sink 之前，可以使用数据模版对结果进行二次处理，参考这片文章可以获取更多的关于数据模版的使用场景。
+- [如何使用 meta 函数抽取在 EdgeX 消息总线中发送的更多信息？](edgex_meta.md) 设备服务往总线上发送数据的时候，一些额外的信息也随之发送，比如事件创建时间，id 等。如果你想在 SQL 语句中使用这些信息，请参考这篇文章。
+- [eKuiper 中使用 Golang 模版 (template) 定制分析结果](../rules/data_template.md) 分析结果在发送给不同的 sink 之前，可以使用数据模版对结果进行二次处理，参考这篇文章可以获取更多的关于数据模版的使用场景。
 - [EdgeX 消息总线目标](../rules/sinks/builtin/edgex.md). 该文档描述了如何使用 EdgeX 消息总线目标。如果想把你的分析结果被别的 EdgeX 服务消费，你可以通过这个 sink 发送 EdgeX 格式的数据，别的 EdgeX 服务可以通过这个 eKuiper sink 暴露出来的新的消息总线进行订阅。
 - [eKuiper 插件开发教程](../extension/native/develop/plugins_tutorial.md): eKuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松散耦合的插件程序，在运行时动态加载和绑定，如果您对开发插件有兴趣，请参考该文章。
 
