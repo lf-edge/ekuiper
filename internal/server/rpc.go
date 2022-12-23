@@ -297,7 +297,8 @@ func (t *Server) Export(file string, reply *string) error {
 	return nil
 }
 
-func (t *Server) ImportConfiguration(file string, reply *string) error {
+func (t *Server) ImportConfiguration(arg *model.ImportDataDesc, reply *string) error {
+	file := arg.FileName
 	f, err := os.Open(file)
 	if err != nil {
 		return fmt.Errorf("fail to read file %s: %v", file, err)
@@ -311,11 +312,26 @@ func (t *Server) ImportConfiguration(file string, reply *string) error {
 	content := buf.Bytes()
 
 	configurationReset()
-	err = configurationImport(content, false)
+	err = configurationImport(content, arg.Stop)
 	if err != nil {
 		return fmt.Errorf("import configuration error: %v", err)
 	}
 	*reply = fmt.Sprintf("import configuration success")
+	return nil
+}
+
+func (t *Server) GetStatusImport(_ int, reply *string) error {
+	jsonRsp := configurationStatusExport()
+	result, err := json.Marshal(jsonRsp)
+	if err != nil {
+		return fmt.Errorf("Show rule error : %s.", err)
+	}
+	dst := &bytes.Buffer{}
+	if err := json.Indent(dst, result, "", "  "); err != nil {
+		return fmt.Errorf("Show rule error : %s.", err)
+	}
+	*reply = dst.String()
+
 	return nil
 }
 
