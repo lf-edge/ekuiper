@@ -18,21 +18,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"strings"
 	"sync"
 )
 
 type configManager struct {
-	lock         sync.RWMutex
-	cfgOperators map[string]conf.ConfigOperator
+	lock                     sync.RWMutex
+	cfgOperators             map[string]conf.ConfigOperator
+	sourceConfigStatusDb     kv.KeyValue
+	sinkConfigStatusDb       kv.KeyValue
+	connectionConfigStatusDb kv.KeyValue
 }
 
 //ConfigManager Hold the ConfigOperator for yaml configs defined in etc/sources/xxx.yaml and etc/connections/connection.yaml
 // for configs in etc/sources/xxx.yaml, the map key is sources.xxx format, xxx will be mqtt/httppull and so on
 // for configs in etc/connections/connection.yaml, the map key is connections.xxx format, xxx will be mqtt/edgex
-var ConfigManager = configManager{
-	lock:         sync.RWMutex{},
-	cfgOperators: make(map[string]conf.ConfigOperator),
+var ConfigManager *configManager
+
+func InitYamlConfigManager() {
+	ConfigManager = &configManager{
+		lock:         sync.RWMutex{},
+		cfgOperators: make(map[string]conf.ConfigOperator),
+	}
+	_, ConfigManager.sourceConfigStatusDb = store.GetKV("sourceConfigStatus")
+	_, ConfigManager.sinkConfigStatusDb = store.GetKV("sinkConfigStatus")
+	_, ConfigManager.connectionConfigStatusDb = store.GetKV("connectionConfigStatus")
 }
 
 const SourceCfgOperatorKeyTemplate = "sources.%s"
@@ -129,7 +141,6 @@ func delYamlConf(configOperatorKey string) {
 }
 
 func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
-
 	ConfigManager.lock.RLock()
 	defer ConfigManager.lock.RUnlock()
 
@@ -144,6 +155,30 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 	} else {
 		return b, err
 	}
+}
+
+func addSourceConfKeys(plgName string, configurations YamlConfigurations) (err error) {
+	ConfigManager.lock.Lock()
+	defer ConfigManager.lock.Unlock()
+
+	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
+
+	var cfgOps conf.ConfigOperator
+	var found bool
+
+	cfgOps, found = ConfigManager.cfgOperators[configOperatorKey]
+	if !found {
+		cfgOps = conf.NewConfigOperatorForSource(plgName)
+		ConfigManager.cfgOperators[configOperatorKey] = cfgOps
+	}
+
+	cfgOps.LoadConfContent(configurations)
+
+	err = cfgOps.SaveCfgToFile()
+	if err != nil {
+		return fmt.Errorf(`%s.%v`, configOperatorKey, err)
+	}
+	return nil
 }
 
 func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
@@ -210,6 +245,30 @@ func AddSinkConfKey(plgName, confKey, language string, content []byte) error {
 	return nil
 }
 
+func addSinkConfKeys(plgName string, cf YamlConfigurations) error {
+	ConfigManager.lock.Lock()
+	defer ConfigManager.lock.Unlock()
+
+	configOperatorKey := fmt.Sprintf(SinkCfgOperatorKeyTemplate, plgName)
+
+	var cfgOps conf.ConfigOperator
+	var found bool
+
+	cfgOps, found = ConfigManager.cfgOperators[configOperatorKey]
+	if !found {
+		cfgOps = conf.NewConfigOperatorForSink(plgName)
+		ConfigManager.cfgOperators[configOperatorKey] = cfgOps
+	}
+
+	cfgOps.LoadConfContent(cf)
+
+	err := cfgOps.SaveCfgToFile()
+	if err != nil {
+		return fmt.Errorf(`%s.%v`, configOperatorKey, err)
+	}
+	return nil
+}
+
 func AddConnectionConfKey(plgName, confKey, language string, content []byte) error {
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
@@ -238,6 +297,30 @@ func AddConnectionConfKey(plgName, confKey, language string, content []byte) err
 	err = cfgOps.SaveCfgToFile()
 	if err != nil {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
+	}
+	return nil
+}
+
+func addConnectionConfKeys(plgName string, cf YamlConfigurations) error {
+	ConfigManager.lock.Lock()
+	defer ConfigManager.lock.Unlock()
+
+	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
+
+	var cfgOps conf.ConfigOperator
+	var found bool
+
+	cfgOps, found = ConfigManager.cfgOperators[configOperatorKey]
+	if !found {
+		cfgOps = conf.NewConfigOperatorForConnection(plgName)
+		ConfigManager.cfgOperators[configOperatorKey] = cfgOps
+	}
+
+	cfgOps.LoadConfContent(cf)
+
+	err := cfgOps.SaveCfgToFile()
+	if err != nil {
+		return fmt.Errorf(`%s.%v`, configOperatorKey, err)
 	}
 	return nil
 }
@@ -286,5 +369,150 @@ func GetResources(language string) (b []byte, err error) {
 		return nil, fmt.Errorf(`%s%v`, getMsg(language, source, "json_marshal_fail"), result)
 	} else {
 		return b, err
+	}
+}
+
+func ResetConfigs() {
+	ConfigManager.lock.Lock()
+	defer ConfigManager.lock.Unlock()
+
+	for _, ops := range ConfigManager.cfgOperators {
+		ops.ClearConfKeys()
+		_ = ops.SaveCfgToFile()
+	}
+}
+
+type YamlConfigurations map[string]map[string]interface{}
+
+type YamlConfigurationSet struct {
+	Sources     map[string]string `json:"sources"`
+	Sinks       map[string]string `json:"sinks"`
+	Connections map[string]string `json:"connections"`
+}
+
+func GetConfigurations() YamlConfigurationSet {
+	ConfigManager.lock.RLock()
+	defer ConfigManager.lock.RUnlock()
+	result := YamlConfigurationSet{
+		Sources:     map[string]string{},
+		Sinks:       map[string]string{},
+		Connections: map[string]string{},
+	}
+	srcResources := map[string]string{}
+	sinkResources := map[string]string{}
+	connectionResources := map[string]string{}
+
+	for key, ops := range ConfigManager.cfgOperators {
+		if strings.HasPrefix(key, ConnectionCfgOperatorKeyPrefix) {
+			plugin := strings.TrimPrefix(key, ConnectionCfgOperatorKeyPrefix)
+			cfs := ops.CopyUpdatableConfContent()
+			if len(cfs) > 0 {
+				jsonByte, _ := json.Marshal(cfs)
+				connectionResources[plugin] = string(jsonByte)
+			}
+			continue
+		}
+		if strings.HasPrefix(key, SourceCfgOperatorKeyPrefix) {
+			plugin := strings.TrimPrefix(key, SourceCfgOperatorKeyPrefix)
+			cfs := ops.CopyUpdatableConfContent()
+			if len(cfs) > 0 {
+				jsonByte, _ := json.Marshal(cfs)
+				srcResources[plugin] = string(jsonByte)
+			}
+			continue
+		}
+		if strings.HasPrefix(key, SinkCfgOperatorKeyPrefix) {
+			plugin := strings.TrimPrefix(key, SinkCfgOperatorKeyPrefix)
+			cfs := ops.CopyUpdatableConfContent()
+			if len(cfs) > 0 {
+				jsonByte, _ := json.Marshal(cfs)
+				sinkResources[plugin] = string(jsonByte)
+			}
+			continue
+		}
+	}
+
+	result.Sources = srcResources
+	result.Sinks = sinkResources
+	result.Connections = connectionResources
+
+	return result
+}
+
+func GetConfigurationStatus() YamlConfigurationSet {
+	result := YamlConfigurationSet{
+		Sources:     map[string]string{},
+		Sinks:       map[string]string{},
+		Connections: map[string]string{},
+	}
+
+	all, err := ConfigManager.sourceConfigStatusDb.All()
+	if err == nil {
+		result.Sources = all
+	}
+
+	all, err = ConfigManager.sinkConfigStatusDb.All()
+	if err == nil {
+		result.Sinks = all
+	}
+
+	all, err = ConfigManager.connectionConfigStatusDb.All()
+	if err == nil {
+		result.Connections = all
+	}
+
+	return result
+}
+
+func LoadConfigurations(configSets YamlConfigurationSet) {
+
+	var srcResources = configSets.Sources
+	var sinkResources = configSets.Sinks
+	var connectionResources = configSets.Connections
+
+	_ = ConfigManager.sourceConfigStatusDb.Clean()
+	_ = ConfigManager.sinkConfigStatusDb.Clean()
+	_ = ConfigManager.connectionConfigStatusDb.Clean()
+
+	for key, val := range srcResources {
+		configs := YamlConfigurations{}
+		err := json.Unmarshal([]byte(val), &configs)
+		if err != nil {
+			_ = ConfigManager.sourceConfigStatusDb.Set(key, err.Error())
+			continue
+		}
+		err = addSourceConfKeys(key, configs)
+		if err != nil {
+			_ = ConfigManager.sourceConfigStatusDb.Set(key, err.Error())
+			continue
+		}
+	}
+
+	for key, val := range sinkResources {
+		configs := YamlConfigurations{}
+		err := json.Unmarshal([]byte(val), &configs)
+		if err != nil {
+			_ = ConfigManager.sinkConfigStatusDb.Set(key, err.Error())
+			continue
+		}
+		err = addSinkConfKeys(key, configs)
+		if err != nil {
+			_ = ConfigManager.sinkConfigStatusDb.Set(key, err.Error())
+			continue
+		}
+	}
+
+	for key, val := range connectionResources {
+		configs := YamlConfigurations{}
+		err := json.Unmarshal([]byte(val), &configs)
+		if err != nil {
+			_ = ConfigManager.connectionConfigStatusDb.Set(key, err.Error())
+			continue
+		}
+		err = addConnectionConfKeys(key, configs)
+		if err != nil {
+			_ = ConfigManager.connectionConfigStatusDb.Set(key, err.Error())
+			continue
+		}
 	}
 }

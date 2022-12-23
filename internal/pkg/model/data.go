@@ -27,3 +27,8 @@ type PluginDesc struct {
 	Type int
 	Stop bool
 }
+
+type ImportDataDesc struct {
+	FileName string
+	Stop     bool
+}

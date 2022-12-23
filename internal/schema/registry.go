@@ -15,7 +15,10 @@
 package schema
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,6 +31,8 @@ import (
 
 // Initialize in the server startup
 var registry *Registry
+var schemaDb kv.KeyValue
+var schemaStatusDb kv.KeyValue
 
 type Files struct {
 	SchemaFile string
@@ -54,34 +59,47 @@ func InitRegistry() error {
 	if err != nil {
 		return fmt.Errorf("cannot find etc folder: %s", err)
 	}
-	for _, schemaType := range def.SchemaTypes {
-		schemaDir := filepath.Join(dataDir, "schemas", string(schemaType))
-		var newSchemas map[string]*Files
-		files, err := os.ReadDir(schemaDir)
-		if err != nil {
-			conf.Log.Warnf("cannot read schema directory: %s", err)
-			newSchemas = make(map[string]*Files)
-		} else {
-			newSchemas = make(map[string]*Files, len(files))
-			for _, file := range files {
-				fileName := filepath.Base(file.Name())
-				ext := filepath.Ext(fileName)
-				schemaId := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-				ffs, ok := newSchemas[schemaId]
-				if !ok {
-					ffs = &Files{}
-					newSchemas[schemaId] = ffs
+	err, schemaDb = store.GetKV("schema")
+	if err != nil {
+		return fmt.Errorf("cannot open schema db: %s", err)
+	}
+	err, schemaStatusDb = store.GetKV("schemaStatus")
+	if err != nil {
+		return fmt.Errorf("cannot open schemaStatus db: %s", err)
+	}
+	if hasInstallFlag() {
+		schemaInstallWhenReboot()
+		clearInstallFlag()
+	} else {
+		for _, schemaType := range def.SchemaTypes {
+			schemaDir := filepath.Join(dataDir, "schemas", string(schemaType))
+			var newSchemas map[string]*Files
+			files, err := os.ReadDir(schemaDir)
+			if err != nil {
+				conf.Log.Warnf("cannot read schema directory: %s", err)
+				newSchemas = make(map[string]*Files)
+			} else {
+				newSchemas = make(map[string]*Files, len(files))
+				for _, file := range files {
+					fileName := filepath.Base(file.Name())
+					ext := filepath.Ext(fileName)
+					schemaId := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+					ffs, ok := newSchemas[schemaId]
+					if !ok {
+						ffs = &Files{}
+						newSchemas[schemaId] = ffs
+					}
+					switch ext {
+					case ".so":
+						ffs.SoFile = filepath.Join(schemaDir, file.Name())
+					default:
+						ffs.SchemaFile = filepath.Join(schemaDir, file.Name())
+					}
+					conf.Log.Infof("schema file %s.%s loaded", schemaType, schemaId)
 				}
-				switch ext {
-				case ".so":
-					ffs.SoFile = filepath.Join(schemaDir, file.Name())
-				default:
-					ffs.SchemaFile = filepath.Join(schemaDir, file.Name())
-				}
-				conf.Log.Infof("schema file %s.%s loaded", schemaType, fileName)
 			}
+			registry.schemas[schemaType] = newSchemas
 		}
-		registry.schemas[schemaType] = newSchemas
 	}
 	return nil
 }
@@ -186,7 +204,7 @@ func GetSchemaFile(schemaType def.SchemaType, name string) (*Files, error) {
 	registry.RLock()
 	defer registry.RUnlock()
 	if _, ok := registry.schemas[schemaType]; !ok {
-		return nil, fmt.Errorf("schema type %s not found", schemaType)
+		return nil, fmt.Errorf("schema type %s not found in registry", schemaType)
 	}
 	if _, ok := registry.schemas[schemaType][name]; !ok {
 		return nil, fmt.Errorf("schema type %s, file %s not found", schemaType, name)
@@ -219,4 +237,83 @@ func DeleteSchema(schemaType def.SchemaType, name string) error {
 	}
 	delete(registry.schemas[schemaType], name)
 	return nil
+}
+
+const BOOT_INSTALL = "$boot_install"
+
+func GetAllSchema() map[string]string {
+	all, err := schemaDb.All()
+	if err != nil {
+		return nil
+	}
+	delete(all, BOOT_INSTALL)
+	return all
+}
+
+func GetAllSchemaStatus() map[string]string {
+	all, err := schemaStatusDb.All()
+	if err != nil {
+		return nil
+	}
+	return all
+}
+
+func UninstallAllSchema() {
+	schemaMaps, err := schemaDb.All()
+	if err != nil {
+		return
+	}
+	for key, value := range schemaMaps {
+		info := &Info{}
+		_ = json.Unmarshal([]byte(value), info)
+		_ = DeleteSchema(info.Type, key)
+	}
+}
+
+func hasInstallFlag() bool {
+	var val = ""
+	found, _ := schemaDb.Get(BOOT_INSTALL, &val)
+	return found
+}
+
+func clearInstallFlag() {
+	_ = schemaDb.Delete(BOOT_INSTALL)
+}
+
+func ImportSchema(schema map[string]string) error {
+	if len(schema) == 0 {
+		return nil
+	}
+	for k, v := range schema {
+		err := schemaDb.Set(k, v)
+		if err != nil {
+			return err
+		}
+	}
+	//set the flag to install the plugins when eKuiper reboot
+	return schemaDb.Set(BOOT_INSTALL, BOOT_INSTALL)
+}
+
+func schemaInstallWhenReboot() {
+	allPlgs, err := schemaDb.All()
+	if err != nil {
+		return
+	}
+
+	delete(allPlgs, BOOT_INSTALL)
+	_ = schemaStatusDb.Clean()
+
+	for k, v := range allPlgs {
+		info := &Info{}
+		err := json.Unmarshal([]byte(v), info)
+		if err != nil {
+			_ = schemaStatusDb.Set(k, err.Error())
+			continue
+		}
+		err = CreateOrUpdateSchema(info)
+		if err != nil {
+			_ = schemaStatusDb.Set(k, err.Error())
+			continue
+		}
+	}
 }

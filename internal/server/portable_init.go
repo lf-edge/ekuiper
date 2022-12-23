@@ -117,3 +117,19 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(fmt.Sprintf("portable plugin %s is updated", sd.GetName())))
 	}
 }
+
+func portablePluginsReset() {
+	portableManager.UninstallAllPlugins()
+}
+
+func portablePluginExport() map[string]string {
+	return portableManager.GetAllPlugins()
+}
+
+func portablePluginStatusExport() map[string]string {
+	return portableManager.GetAllPlugins()
+}
+
+func portablePluginImport(plugins map[string]string) {
+	portableManager.PluginImport(plugins)
+}

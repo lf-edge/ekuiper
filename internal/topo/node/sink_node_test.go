@@ -20,6 +20,7 @@ package node
 import (
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/testx"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -33,6 +34,10 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 )
+
+func init() {
+	testx.InitEnv()
+}
 
 func TestSinkTemplate_Apply(t *testing.T) {
 	conf.InitConf()
@@ -254,7 +259,11 @@ func TestFormat_Apply(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
-	schema.InitRegistry()
+
+	err = schema.InitRegistry()
+	if err != nil {
+		t.Fatal(err)
+	}
 	transform.RegisterAdditionalFuncs()
 	var tests = []struct {
 		config map[string]interface{}

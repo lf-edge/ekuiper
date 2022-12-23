@@ -19,7 +19,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/internal/processor"
 	"io"
 	"net/http"
 	"os"
@@ -137,7 +139,9 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
-
+	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet)
+	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
+	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
@@ -629,4 +633,213 @@ func exportHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Add("Content-Disposition", "Attachment")
 	http.ServeContent(w, r, name, time.Now(), exported)
+}
+
+type Configuration struct {
+	Streams          map[string]string `json:"streams"`
+	Tables           map[string]string `json:"tables"`
+	Rules            map[string]string `json:"rules"`
+	NativePlugins    map[string]string `json:"nativePlugins"`
+	PortablePlugins  map[string]string `json:"portablePlugins"`
+	SourceConfig     map[string]string `json:"sourceConfig"`
+	SinkConfig       map[string]string `json:"sinkConfig"`
+	ConnectionConfig map[string]string `json:"connectionConfig"`
+	Service          map[string]string `json:"Service"`
+	Schema           map[string]string `json:"Schema"`
+}
+
+func configurationExport() ([]byte, error) {
+	conf := &Configuration{
+		Streams:          make(map[string]string),
+		Tables:           make(map[string]string),
+		Rules:            make(map[string]string),
+		NativePlugins:    make(map[string]string),
+		PortablePlugins:  make(map[string]string),
+		SourceConfig:     make(map[string]string),
+		SinkConfig:       make(map[string]string),
+		ConnectionConfig: make(map[string]string),
+		Service:          make(map[string]string),
+		Schema:           make(map[string]string),
+	}
+	ruleSet := rulesetProcessor.ExportRuleSet()
+	if ruleSet != nil {
+		conf.Streams = ruleSet.Streams
+		conf.Tables = ruleSet.Tables
+		conf.Rules = ruleSet.Rules
+	}
+
+	conf.NativePlugins = pluginExport()
+	conf.PortablePlugins = portablePluginExport()
+	conf.Service = serviceExport()
+	conf.Schema = schemaExport()
+
+	yamlCfg := meta.GetConfigurations()
+	conf.SourceConfig = yamlCfg.Sources
+	conf.SinkConfig = yamlCfg.Sinks
+	conf.ConnectionConfig = yamlCfg.Connections
+
+	return json.Marshal(conf)
+}
+
+func configurationExportHandler(w http.ResponseWriter, r *http.Request) {
+	const name = "ekuiper_export.json"
+	jsonBytes, _ := configurationExport()
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Add("Content-Disposition", "Attachment")
+	http.ServeContent(w, r, name, time.Now(), bytes.NewReader(jsonBytes))
+}
+
+func configurationReset() {
+	_ = resetAllRules()
+	_ = resetAllStreams()
+	pluginReset()
+	portablePluginsReset()
+	serviceReset()
+	schemaReset()
+	meta.ResetConfigs()
+}
+
+func configurationImport(data []byte, reboot bool) error {
+	conf := &Configuration{
+		Streams:          make(map[string]string),
+		Tables:           make(map[string]string),
+		Rules:            make(map[string]string),
+		NativePlugins:    make(map[string]string),
+		PortablePlugins:  make(map[string]string),
+		SourceConfig:     make(map[string]string),
+		SinkConfig:       make(map[string]string),
+		ConnectionConfig: make(map[string]string),
+		Service:          make(map[string]string),
+		Schema:           make(map[string]string),
+	}
+
+	err := json.Unmarshal(data, conf)
+	if err != nil {
+		return fmt.Errorf("configuration unmarshal with error %v", err)
+	}
+
+	if reboot {
+		err = pluginImport(conf.NativePlugins)
+		if err != nil {
+			return fmt.Errorf("pluginImportHandler with error %v", err)
+		}
+		err = schemaImport(conf.Schema)
+		if err != nil {
+			return fmt.Errorf("schemaImport with error %v", err)
+		}
+	}
+
+	portablePluginImport(conf.PortablePlugins)
+
+	serviceImport(conf.Service)
+
+	yamlCfgSet := meta.YamlConfigurationSet{
+		Sources:     conf.SourceConfig,
+		Sinks:       conf.SinkConfig,
+		Connections: conf.ConnectionConfig,
+	}
+
+	meta.LoadConfigurations(yamlCfgSet)
+
+	ruleSet := processor.Ruleset{
+		Streams: conf.Streams,
+		Tables:  conf.Tables,
+		Rules:   conf.Rules,
+	}
+
+	rulesetProcessor.ImportRuleSet(ruleSet)
+
+	return nil
+}
+
+type configurationInfo struct {
+	Content  string `json:"content"`
+	FilePath string `json:"file"`
+}
+
+func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
+	cb := r.URL.Query().Get("stop")
+	stop := cb == "1"
+	rsi := &configurationInfo{}
+	err := json.NewDecoder(r.Body).Decode(rsi)
+	if err != nil {
+		handleError(w, err, "Invalid body: Error decoding json", logger)
+		return
+	}
+	if rsi.Content != "" && rsi.FilePath != "" {
+		handleError(w, nil, "Invalid body: Cannot specify both content and file", logger)
+		return
+	} else if rsi.Content == "" && rsi.FilePath == "" {
+		handleError(w, nil, "Invalid body: must specify content or file", logger)
+		return
+	}
+	content := []byte(rsi.Content)
+	if rsi.FilePath != "" {
+		reader, err := httpx.ReadFile(rsi.FilePath)
+		if err != nil {
+			handleError(w, nil, "Fail to read file", logger)
+			return
+		}
+		defer reader.Close()
+		buf := new(bytes.Buffer)
+		_, err = io.Copy(buf, reader)
+		if err != nil {
+			handleError(w, err, "fail to convert file", logger)
+			return
+		}
+		content = buf.Bytes()
+	}
+	configurationReset()
+	err = configurationImport(content, stop)
+	if err != nil {
+		handleError(w, err, "Import configuration error", logger)
+		return
+	}
+	if stop {
+		go func() {
+			time.Sleep(1 * time.Second)
+			os.Exit(100)
+		}()
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func configurationStatusExport() Configuration {
+	conf := Configuration{
+		Streams:          make(map[string]string),
+		Tables:           make(map[string]string),
+		Rules:            make(map[string]string),
+		NativePlugins:    make(map[string]string),
+		PortablePlugins:  make(map[string]string),
+		SourceConfig:     make(map[string]string),
+		SinkConfig:       make(map[string]string),
+		ConnectionConfig: make(map[string]string),
+		Service:          make(map[string]string),
+		Schema:           make(map[string]string),
+	}
+	ruleSet := rulesetProcessor.ExportRuleSetStatus()
+	if ruleSet != nil {
+		conf.Streams = ruleSet.Streams
+		conf.Tables = ruleSet.Tables
+		conf.Rules = ruleSet.Rules
+	}
+
+	conf.NativePlugins = pluginStatusExport()
+	conf.PortablePlugins = portablePluginStatusExport()
+	conf.Service = serviceStatusExport()
+	conf.Schema = schemaStatusExport()
+
+	yamlCfgStatus := meta.GetConfigurationStatus()
+	conf.SourceConfig = yamlCfgStatus.Sources
+	conf.SinkConfig = yamlCfgStatus.Sinks
+	conf.ConnectionConfig = yamlCfgStatus.Connections
+
+	return conf
+}
+
+func configurationStatusHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	content := configurationStatusExport()
+	jsonResponse(content, w, logger)
 }

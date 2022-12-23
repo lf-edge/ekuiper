@@ -267,3 +267,20 @@ func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (err error, re
 	}
 	return
 }
+
+func pluginReset() {
+	nativeManager.UninstallAllPlugins()
+}
+
+func pluginExport() map[string]string {
+	return nativeManager.GetAllPlugins()
+}
+
+func pluginStatusExport() map[string]string {
+	return nativeManager.GetAllPluginsStatus()
+}
+
+func pluginImport(plugins map[string]string) error {
+	nativeManager.PluginImport(plugins)
+	return nil
+}

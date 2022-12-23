@@ -26,6 +26,10 @@ import (
 	"testing"
 )
 
+func init() {
+	testx.InitEnv()
+}
+
 func TestCustomConverter(t *testing.T) {
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {

@@ -17,8 +17,10 @@ package portable
 import (
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/internal/testx"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -31,7 +33,9 @@ import (
 // Test only install API. Install from file is tested in the integration test in test/portable_rule_test
 
 func init() {
+	testx.InitEnv()
 	InitManager()
+	meta.InitYamlConfigManager()
 }
 
 func TestManager_Install(t *testing.T) {

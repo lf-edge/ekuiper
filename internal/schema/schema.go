@@ -15,6 +15,7 @@
 package schema
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 )
@@ -25,6 +26,14 @@ type Info struct {
 	Content  string         `json:"content"`
 	FilePath string         `json:"file"`
 	SoPath   string         `json:"soFile"`
+}
+
+func (i *Info) InstallScript() string {
+	marshal, err := json.Marshal(i)
+	if err != nil {
+		return ""
+	}
+	return string(marshal)
 }
 
 func (i *Info) Validate() error {

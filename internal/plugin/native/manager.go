@@ -19,6 +19,7 @@ package native
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -59,8 +60,12 @@ type Manager struct {
 	// dirs
 	pluginDir     string
 	pluginConfDir string
-	// the access to db
-	db kv.KeyValue
+	// the access to func symbols db
+	funcSymbolsDb kv.KeyValue
+	// the access to plugin install script db
+	plgInstallDb kv.KeyValue
+	// the access to plugin install status db
+	plgStatusDb kv.KeyValue
 }
 
 // InitManager must only be called once
@@ -73,30 +78,47 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot find data folder: %s", err)
 	}
-	err, db := store.GetKV("pluginFuncs")
+	err, func_db := store.GetKV("pluginFuncs")
 	if err != nil {
-		return nil, fmt.Errorf("error when opening db: %v", err)
+		return nil, fmt.Errorf("error when opening funcSymbolsdb: %v", err)
 	}
-	registry := &Manager{symbols: make(map[string]string), db: db, pluginDir: pluginDir, pluginConfDir: dataDir, runtime: make(map[string]*plugin.Plugin)}
+	err, plg_db := store.GetKV("nativePlugin")
+	if err != nil {
+		return nil, fmt.Errorf("error when opening nativePlugin: %v", err)
+	}
+	err, plg_status_db := store.GetKV("nativePluginStatus")
+	if err != nil {
+		return nil, fmt.Errorf("error when opening nativePluginStatus: %v", err)
+	}
+	registry := &Manager{symbols: make(map[string]string), funcSymbolsDb: func_db, plgInstallDb: plg_db, plgStatusDb: plg_status_db, pluginDir: pluginDir, pluginConfDir: dataDir, runtime: make(map[string]*plugin.Plugin)}
 	manager = registry
-	plugins := make([]map[string]string, 3)
-	for i := range plugin2.PluginTypes {
-		names, err := findAll(plugin2.PluginType(i), pluginDir)
-		if err != nil {
-			return nil, fmt.Errorf("fail to find existing plugins: %s", err)
+	if manager.hasInstallFlag() {
+		manager.plugins = make([]map[string]string, 3)
+		for i := range manager.plugins {
+			manager.plugins[i] = make(map[string]string)
 		}
-		plugins[i] = names
-	}
-	registry.plugins = plugins
+		manager.pluginInstallWhenReboot()
+		manager.clearInstallFlag()
+	} else {
+		plugins := make([]map[string]string, 3)
+		for i := range plugins {
+			names, err := findAll(plugin2.PluginType(i), pluginDir)
+			if err != nil {
+				return nil, fmt.Errorf("fail to find existing plugins: %s", err)
+			}
+			plugins[i] = names
+		}
+		registry.plugins = plugins
 
-	for pf := range plugins[plugin2.FUNCTION] {
-		l := make([]string, 0)
-		if ok, err := db.Get(pf, &l); ok {
-			registry.storeSymbols(pf, l)
-		} else if err != nil {
-			return nil, fmt.Errorf("error when querying kv: %s", err)
-		} else {
-			registry.storeSymbols(pf, []string{pf})
+		for pf := range plugins[plugin2.FUNCTION] {
+			l := make([]string, 0)
+			if ok, err := func_db.Get(pf, &l); ok {
+				registry.storeSymbols(pf, l)
+			} else if err != nil {
+				return nil, fmt.Errorf("error when querying kv: %s", err)
+			} else {
+				registry.storeSymbols(pf, []string{pf})
+			}
 		}
 	}
 	return registry, nil
@@ -220,6 +242,17 @@ func (rr *Manager) GetPluginBySymbol(t plugin2.PluginType, symbolName string) (s
 	}
 }
 
+func (rr *Manager) storePluginInstallScript(name string, t plugin2.PluginType, j plugin2.Plugin) {
+	key := plugin2.PluginTypes[t] + "_" + name
+	val := string(j.GetInstallScripts())
+	_ = rr.plgInstallDb.Set(key, val)
+}
+
+func (rr *Manager) removePluginInstallScript(name string, t plugin2.PluginType) {
+	key := plugin2.PluginTypes[t] + "_" + name
+	_ = rr.plgInstallDb.Delete(key)
+}
+
 func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	name, uri, shellParas := j.GetName(), j.GetFile(), j.GetShellParas()
 	//Validation
@@ -252,7 +285,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 
 	if t == plugin2.FUNCTION {
 		if len(j.GetSymbols()) > 0 {
-			err = rr.db.Set(name, j.GetSymbols())
+			err = rr.funcSymbolsDb.Set(name, j.GetSymbols())
 			if err != nil {
 				return err
 			}
@@ -268,7 +301,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	//unzip and copy to destination
 	version, err := rr.install(t, name, zipPath, shellParas)
 	if err == nil && len(j.GetSymbols()) > 0 {
-		err = rr.db.Set(name, j.GetSymbols())
+		err = rr.funcSymbolsDb.Set(name, j.GetSymbols())
 	}
 	if err != nil { //Revert for any errors
 		if len(j.GetSymbols()) > 0 {
@@ -279,6 +312,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 		return fmt.Errorf("fail to install plugin: %s", err)
 	}
 	rr.store(t, name, version)
+	rr.storePluginInstallScript(name, t, j)
 
 	switch t {
 	case plugin2.SINK:
@@ -309,14 +343,14 @@ func (rr *Manager) RegisterFuncs(name string, functions []string) error {
 		return fmt.Errorf("property 'functions' must not be empty")
 	}
 	old := make([]string, 0)
-	if ok, err := rr.db.Get(name, &old); err != nil {
+	if ok, err := rr.funcSymbolsDb.Get(name, &old); err != nil {
 		return err
 	} else if ok {
 		rr.removeSymbols(old)
 	} else if !ok {
 		rr.removeSymbols([]string{name})
 	}
-	err := rr.db.Set(name, functions)
+	err := rr.funcSymbolsDb.Set(name, functions)
 	if err != nil {
 		return err
 	}
@@ -360,11 +394,11 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 		funcJsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.FUNCTION], name+".json")
 		_ = os.Remove(funcJsonPath)
 		old := make([]string, 0)
-		if ok, err := rr.db.Get(name, &old); err != nil {
+		if ok, err := rr.funcSymbolsDb.Get(name, &old); err != nil {
 			return err
 		} else if ok {
 			rr.removeSymbols(old)
-			err := rr.db.Delete(name)
+			err := rr.funcSymbolsDb.Delete(name)
 			if err != nil {
 				return err
 			}
@@ -384,6 +418,7 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 			results = append(results, fmt.Sprintf("can't find %s", p))
 		}
 	}
+	rr.removePluginInstallScript(name, t)
 
 	if len(results) > 0 {
 		return fmt.Errorf(strings.Join(results, "\n"))
@@ -410,7 +445,7 @@ func (rr *Manager) GetPluginInfo(t plugin2.PluginType, name string) (map[string]
 		}
 		if t == plugin2.FUNCTION {
 			l := make([]string, 0)
-			if ok, _ := rr.db.Get(name, &l); ok {
+			if ok, _ := rr.funcSymbolsDb.Get(name, &l); ok {
 				r["functions"] = l
 			}
 			// ignore the error
@@ -500,13 +535,16 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		return version, err
 	} else if haveInstallFile {
 		//run install script if there is
+		var shell = make([]string, len(shellParas))
+		copy(shell, shellParas)
 		spath := path.Join(tempPath, "install.sh")
-		shellParas = append(shellParas, spath)
-		if 1 != len(shellParas) {
-			copy(shellParas[1:], shellParas[0:])
-			shellParas[0] = spath
+		shell = append(shell, spath)
+		if 1 != len(shell) {
+			copy(shell[1:], shell[0:])
+			shell[0] = spath
 		}
-		cmd := exec.Command("/bin/sh", shellParas...)
+		conf.Log.Infof("run install script %s", strings.Join(shell, " "))
+		cmd := exec.Command("/bin/sh", shell...)
 		var outb, errb bytes.Buffer
 		cmd.Stdout = &outb
 		cmd.Stderr = &errb
@@ -727,4 +765,88 @@ func lcFirst(str string) string {
 		return string(unicode.ToLower(v)) + str[i+1:]
 	}
 	return ""
+}
+
+func (rr *Manager) UninstallAllPlugins() {
+	keys, err := rr.plgInstallDb.Keys()
+	if err != nil {
+		return
+	}
+	for _, v := range keys {
+		plgType := plugin2.PluginTypeMap[strings.Split(v, "_")[0]]
+		plgName := strings.Split(v, "_")[1]
+		_ = rr.Delete(plgType, plgName, false)
+	}
+}
+
+func (rr *Manager) GetAllPlugins() map[string]string {
+	allPlgs, err := rr.plgInstallDb.All()
+	if err != nil {
+		return nil
+	}
+	delete(allPlgs, BOOT_INSTALL)
+	return allPlgs
+}
+
+func (rr *Manager) GetAllPluginsStatus() map[string]string {
+	allPlgs, err := rr.plgStatusDb.All()
+	if err != nil {
+		return nil
+	}
+	return allPlgs
+}
+
+const BOOT_INSTALL = "$boot_install"
+
+func (rr *Manager) PluginImport(plugins map[string]string) error {
+	if len(plugins) == 0 {
+		return nil
+	}
+	for k, v := range plugins {
+		err := rr.plgInstallDb.Set(k, v)
+		if err != nil {
+			return err
+		}
+	}
+	//set the flag to install the plugins when eKuiper reboot
+	err := rr.plgInstallDb.Set(BOOT_INSTALL, BOOT_INSTALL)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (rr *Manager) hasInstallFlag() bool {
+	var val = ""
+	found, _ := rr.plgInstallDb.Get(BOOT_INSTALL, &val)
+	return found
+}
+
+func (rr *Manager) clearInstallFlag() {
+	_ = rr.plgInstallDb.Delete(BOOT_INSTALL)
+}
+
+func (rr *Manager) pluginInstallWhenReboot() {
+	allPlgs, err := rr.plgInstallDb.All()
+	if err != nil {
+		return
+	}
+
+	delete(allPlgs, BOOT_INSTALL)
+	_ = rr.plgStatusDb.Clean()
+
+	for k, v := range allPlgs {
+		plgType := plugin2.PluginTypeMap[strings.Split(k, "_")[0]]
+		sd := plugin2.NewPluginByType(plgType)
+		err := json.Unmarshal([]byte(v), &sd)
+		if err != nil {
+			_ = rr.plgStatusDb.Set(k, err.Error())
+			continue
+		}
+		err = rr.Register(plgType, sd)
+		if err != nil {
+			_ = rr.plgStatusDb.Set(k, err.Error())
+			continue
+		}
+	}
 }

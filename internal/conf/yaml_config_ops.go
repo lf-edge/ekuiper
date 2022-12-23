@@ -31,6 +31,7 @@ type ConfKeysOperator interface {
 	CopyConfContent() map[string]map[string]interface{}
 	CopyReadOnlyConfContent() map[string]map[string]interface{}
 	CopyUpdatableConfContent() map[string]map[string]interface{}
+	LoadConfContent(cf map[string]map[string]interface{})
 	GetConfKeys() (keys []string)
 	GetReadOnlyConfKeys() (keys []string)
 	GetUpdatableConfKeys() (keys []string)
@@ -38,6 +39,7 @@ type ConfKeysOperator interface {
 	DeleteConfKeyField(confKey string, reqField map[string]interface{}) error
 	AddConfKey(confKey string, reqField map[string]interface{}) error
 	AddConfKeyField(confKey string, reqField map[string]interface{}) error
+	ClearConfKeys()
 }
 
 //ConfigOperator define interface to query/add/update/delete the configs in disk
@@ -108,6 +110,19 @@ func (c *ConfigKeys) CopyConfContent() map[string]map[string]interface{} {
 	return cf
 }
 
+func (c *ConfigKeys) LoadConfContent(cf map[string]map[string]interface{}) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	for key, kvs := range cf {
+		aux := make(map[string]interface{})
+		for k, v := range kvs {
+			aux[k] = v
+		}
+		c.dataCfg[key] = aux
+	}
+}
+
 func (c *ConfigKeys) CopyReadOnlyConfContent() map[string]map[string]interface{} {
 	cf := make(map[string]map[string]interface{})
 	c.lock.RLock()
@@ -175,6 +190,13 @@ func (c *ConfigKeys) DeleteConfKey(confKey string) {
 	defer c.lock.Unlock()
 
 	delete(c.dataCfg, confKey)
+}
+
+func (c *ConfigKeys) ClearConfKeys() {
+	keys := c.GetUpdatableConfKeys()
+	for _, key := range keys {
+		c.DeleteConfKey(key)
+	}
 }
 
 func recursionDelMap(cf, fields map[string]interface{}) error {

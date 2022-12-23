@@ -14,6 +14,8 @@
 
 package plugin
 
+import "encoding/json"
+
 type PluginType int
 
 const (
@@ -24,7 +26,15 @@ const (
 	WASM
 )
 
-var PluginTypes = []string{"sources", "sinks", "functions"}
+var PluginTypes = []string{"sources", "sinks", "functions", "portable", "wasm"}
+
+var PluginTypeMap = map[string]PluginType{
+	"sources":   SOURCE,
+	"sinks":     SINK,
+	"functions": FUNCTION,
+	"portable":  PORTABLE,
+	"wasm":      WASM,
+}
 
 type Plugin interface {
 	GetName() string
@@ -32,6 +42,7 @@ type Plugin interface {
 	GetShellParas() []string
 	GetSymbols() []string
 	SetName(n string)
+	GetInstallScripts() []byte
 }
 
 // IOPlugin Unify model. Flat all properties for each kind.
@@ -59,6 +70,14 @@ func (p *IOPlugin) GetSymbols() []string {
 
 func (p *IOPlugin) SetName(n string) {
 	p.Name = n
+}
+
+func (p *IOPlugin) GetInstallScripts() []byte {
+	marshal, err := json.Marshal(p)
+	if err != nil {
+		return nil
+	}
+	return marshal
 }
 
 func NewPluginByType(t PluginType) Plugin {

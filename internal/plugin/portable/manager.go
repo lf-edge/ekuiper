@@ -19,6 +19,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"io"
 	"os"
 	"os/exec"
@@ -41,6 +43,10 @@ type Manager struct {
 	pluginDir     string
 	pluginConfDir string
 	reg           *registry // can be replaced with kv
+	// the access to plugin install script db
+	plgInstallDb kv.KeyValue
+	// the access to plugin install status db
+	plgStatusDb kv.KeyValue
 }
 
 // InitManager must only be called once
@@ -71,6 +77,16 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
+	err, plg_db := store.GetKV("portablePlugin")
+	if err != nil {
+		return nil, fmt.Errorf("error when opening portablePlugin: %v", err)
+	}
+	err, plg_status_db := store.GetKV("portablePluginStatus")
+	if err != nil {
+		return nil, fmt.Errorf("error when opening portablePluginStatus: %v", err)
+	}
+	m.plgInstallDb = plg_db
+	m.plgStatusDb = plg_status_db
 	manager = m
 	return m, nil
 }
@@ -164,6 +180,15 @@ func (m *Manager) parsePluginJson(name string) (*PluginInfo, error) {
 	return pi, nil
 }
 
+func (m *Manager) storePluginInstallScript(name string, j plugin.Plugin) {
+	val := string(j.GetInstallScripts())
+	_ = m.plgInstallDb.Set(name, val)
+}
+
+func (m *Manager) removePluginInstallScript(name string) {
+	_ = m.plgInstallDb.Delete(name)
+}
+
 func (m *Manager) Register(p plugin.Plugin) error {
 	name, uri, shellParas := p.GetName(), p.GetFile(), p.GetShellParas()
 	name = strings.Trim(name, " ")
@@ -191,6 +216,7 @@ func (m *Manager) Register(p plugin.Plugin) error {
 	if err != nil { //Revert for any errors
 		return fmt.Errorf("fail to install plugin: %s", err)
 	}
+	m.storePluginInstallScript(name, p)
 	return nil
 }
 
@@ -290,14 +316,16 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 
 	if needInstall {
 		//run install script if there is
+		var shell = make([]string, len(shellParas))
+		copy(shell, shellParas)
 		spath := path.Join(pluginTarget, "install.sh")
-		shellParas = append(shellParas, spath)
-		if 1 != len(shellParas) {
-			copy(shellParas[1:], shellParas[0:])
-			shellParas[0] = spath
+		shell = append(shell, spath)
+		if 1 != len(shell) {
+			copy(shell[1:], shell[0:])
+			shell[0] = spath
 		}
-		cmd := exec.Command("/bin/sh", shellParas...)
-		conf.Log.Infof("run install script %s", strings.Join(shellParas, " "))
+		cmd := exec.Command("/bin/sh", shell...)
+		conf.Log.Infof("run install script %s", strings.Join(shell, " "))
 		var outb, errb bytes.Buffer
 		cmd.Stdout = &outb
 		cmd.Stderr = &errb
@@ -362,6 +390,7 @@ func (m *Manager) Delete(name string) error {
 		os.Remove(p)
 	}
 	_ = os.RemoveAll(path.Join(m.pluginDir, name))
+	m.removePluginInstallScript(name)
 	// Kill the process in the end, and return error if it cannot be deleted
 	pm := runtime.GetPluginInsManager()
 	err := pm.Kill(name)
@@ -369,4 +398,47 @@ func (m *Manager) Delete(name string) error {
 		return fmt.Errorf("fail to kill portable plugin %s process, please try to kill it manually", name)
 	}
 	return nil
+}
+
+func (m *Manager) UninstallAllPlugins() {
+	keys, err := m.plgInstallDb.Keys()
+	if err != nil {
+		return
+	}
+	for _, v := range keys {
+		_ = m.Delete(v)
+	}
+}
+
+func (m *Manager) GetAllPlugins() map[string]string {
+	allPlgs, err := m.plgInstallDb.All()
+	if err != nil {
+		return nil
+	}
+	return allPlgs
+}
+
+func (m *Manager) GetAllPluginsStatus() map[string]string {
+	allPlgs, err := m.plgInstallDb.All()
+	if err != nil {
+		return nil
+	}
+	return allPlgs
+}
+
+func (m *Manager) PluginImport(plugins map[string]string) {
+	_ = m.plgStatusDb.Clean()
+	for k, v := range plugins {
+		sd := plugin.NewPluginByType(plugin.PORTABLE)
+		err := json.Unmarshal([]byte(v), &sd)
+		if err != nil {
+			_ = m.plgStatusDb.Set(k, err.Error())
+			continue
+		}
+		err = m.Register(sd)
+		if err != nil {
+			_ = m.plgStatusDb.Set(k, err.Error())
+			continue
+		}
+	}
 }
