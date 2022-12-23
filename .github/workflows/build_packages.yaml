@@ -119,7 +119,7 @@ jobs:
         platforms: all
     - name: Build single platform image
       if: endsWith( matrix.suffix, 'python') == false
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: .
         platforms: linux/amd64
@@ -138,7 +138,7 @@ jobs:
             docker logs ekuiper
             exit 1
         fi
-    - uses: docker/metadata-action@v3
+    - uses: docker/metadata-action@v4
       id: meta
       with:
         images: docker.io/lfedge/ekuiper
@@ -151,7 +151,7 @@ jobs:
           type=ref,event=tag
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
-    - uses: docker/login-action@v1
+    - uses: docker/login-action@v2
       if: github.event_name == 'release'
       with:
         username: ${{ secrets.DOCKER_HUB_USER }}
@@ -160,7 +160,7 @@ jobs:
       if: github.event_name == 'release'
       run: sed -i -r "s|([ \t]*version=).*|\1'${GITHUB_REF#refs/tags/}',|1" sdk/python/setup.py
     - name: Build multi platform image
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: .
         platforms: linux/amd64,linux/arm64,linux/arm/v7
@@ -228,7 +228,7 @@ jobs:
             ghcr.io/lf-edge/ekuiper/base:${{ matrix.golang }}-${{ matrix.os[0] }} \
             bash -euc "make ${{ matrix.plugin }}"
     - name: Build ekuiper image
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       if: matrix.arch == 'linux/amd64'
       with:
         context: .
@@ -292,7 +292,7 @@ jobs:
         image: tonistiigi/binfmt:latest
         platforms: all
     - name: Build single platform image
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: .
         platforms: linux/amd64
@@ -305,7 +305,7 @@ jobs:
         docker run -d --name kuiper-kubernetes-tool docker.io/lfedge/ekuiper-kubernetes-tool
         sleep 5
         if [[ "$(docker logs kuiper-kubernetes-tool)" != *"Kuiper kubernetes tool is started successfully!"*  ]]; then exit 1; fi
-    - uses: docker/metadata-action@v3
+    - uses: docker/metadata-action@v4
       id: meta
       with:
         images: docker.io/lfedge/ekuiper-kubernetes-tool
@@ -317,13 +317,13 @@ jobs:
           type=ref,event=tag
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
-    - uses: docker/login-action@v1
+    - uses: docker/login-action@v2
       if: github.event_name == 'release'
       with:
         username: ${{ secrets.DOCKER_HUB_USER }}
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
     - name: Build multi platform image
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: .
         platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
