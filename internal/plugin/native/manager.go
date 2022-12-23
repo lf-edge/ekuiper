@@ -91,9 +91,12 @@ func InitManager() (*Manager, error) {
 		return nil, fmt.Errorf("error when opening nativePluginStatus: %v", err)
 	}
 	registry := &Manager{symbols: make(map[string]string), funcSymbolsDb: func_db, plgInstallDb: plg_db, plgStatusDb: plg_status_db, pluginDir: pluginDir, pluginConfDir: dataDir, runtime: make(map[string]*plugin.Plugin)}
-	registry.plugins = make([]map[string]string, 3)
 	manager = registry
 	if manager.hasInstallFlag() {
+		manager.plugins = make([]map[string]string, 3)
+		for i := range manager.plugins {
+			manager.plugins[i] = make(map[string]string)
+		}
 		manager.pluginInstallWhenReboot()
 		manager.clearInstallFlag()
 	} else {

@@ -139,9 +139,9 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
-	r.HandleFunc("/config/export", configurationExportHandler).Methods(http.MethodGet)
-	r.HandleFunc("/config/import", configurationImportHandler).Methods(http.MethodPost)
-	r.HandleFunc("/config/import/status", configurationStatusHandler).Methods(http.MethodGet)
+	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet)
+	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
+	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)

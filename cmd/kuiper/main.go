@@ -966,7 +966,7 @@ func main() {
 		{
 			Name:    "import",
 			Aliases: []string{"import"},
-			Usage:   "import ruleset | configuration -f file",
+			Usage:   "import ruleset | data -f file",
 			Subcommands: []cli.Command{
 				{
 					Name:  "ruleset",
@@ -995,8 +995,8 @@ func main() {
 					},
 				},
 				{
-					Name:  "configuration",
-					Usage: "\"import configuration -f configuration_file",
+					Name:  "data",
+					Usage: "\"import data -f configuration_file",
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:     "file, f",
@@ -1025,7 +1025,7 @@ func main() {
 		{
 			Name:    "export",
 			Aliases: []string{"export"},
-			Usage:   "export ruleset $ruleset_file",
+			Usage:   "export ruleset | data $ruleset_file",
 			Subcommands: []cli.Command{
 				{
 					Name:  "ruleset",
@@ -1046,8 +1046,8 @@ func main() {
 					},
 				},
 				{
-					Name:  "configuration",
-					Usage: "\"export configuration $configuration_file",
+					Name:  "data",
+					Usage: "\"export data $configuration_file",
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) < 1 {
 							fmt.Printf("Require exported file name.\n")
