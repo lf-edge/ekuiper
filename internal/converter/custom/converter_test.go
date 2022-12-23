@@ -16,6 +16,7 @@ package custom
 
 import (
 	"fmt"
+	"github.com/gdexlab/go-render/render"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -71,7 +72,7 @@ func testEncode(t *testing.T) {
 				"id":   12,
 				"name": "test",
 			},
-			r: []byte(`{"id":12,"name":"test"}`),
+			r: []byte(`{"id":12,"name":"test","age":0,"hobbies":{"indoor":null,"outdoor":null}}`),
 		}, {
 			m: map[string]interface{}{
 				"id":   7,
@@ -86,7 +87,7 @@ func testEncode(t *testing.T) {
 					},
 				},
 			},
-			r: []byte(`{"age":22,"hobbies":{"indoor":["Chess"],"outdoor":["Basketball"]},"id":7,"name":"John Doe"}`),
+			r: []byte(`{"id":7,"name":"John Doe","age":22,"hobbies":{"indoor":["Chess"],"outdoor":["Basketball"]}}`),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
@@ -113,6 +114,12 @@ func testDecode(t *testing.T) {
 		{
 			m: map[string]interface{}{
 				"name": "test",
+				"age":  int64(0),
+				"id":   int64(0),
+				"hobbies": map[string]interface{}{
+					"indoor":  []string(nil),
+					"outdoor": []string(nil),
+				},
 			},
 			r: []byte(`{"name":"test"}`),
 		},
@@ -123,7 +130,7 @@ func testDecode(t *testing.T) {
 		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
 			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
 		} else if tt.e == "" && !reflect.DeepEqual(tt.m, a) {
-			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.m, a)
+			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, render.AsCode(tt.m), render.AsCode(a))
 		}
 	}
 }
