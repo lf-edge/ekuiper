@@ -10,4 +10,4 @@ The sink result is a string as always. It will be encoded into json string by de
 
 ## More Readings
 
-- [Sink Reference](../rules/sinks/overview.md)
+- [Sink Reference](../guide/sinks/overview.md)

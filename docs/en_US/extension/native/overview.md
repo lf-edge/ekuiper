@@ -2,8 +2,8 @@
 
 eKuiper allows user to customize the different kinds of extensions by the native golang plugin system. 
 
-- The source extension is used for extending different stream source, such as consuming data from other message brokers. eKuiper has built-in source support for [MQTT broker](../../rules/sources/builtin/mqtt.md).
-- Sink/Action extension is used for extending pub/push data to different targets, such as database, other message system, web interfaces or file systems. Built-in action is supported in eKuiper, see [MQTT](../../rules/sinks/builtin/mqtt.md) & [log files](../../rules/sinks/builtin/log.md).
+- The source extension is used for extending different stream source, such as consuming data from other message brokers. eKuiper has built-in source support for [MQTT broker](../../guide/sources/builtin/mqtt.md).
+- Sink/Action extension is used for extending pub/push data to different targets, such as database, other message system, web interfaces or file systems. Built-in action is supported in eKuiper, see [MQTT](../../guide/sinks/builtin/mqtt.md) & [log files](../../guide/sinks/builtin/log.md).
 - Functions extension allows user to extend different functions that used in SQL. Built-in functions is supported in eKuiper, see [functions](../../sqls/built-in_functions.md).
 
 Please read the following to learn how to implement different extensions.
@@ -77,7 +77,7 @@ func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionConte
 
 ## Runtime dependencies
 
-Some plugin may need to access dependencies in the file system. Those files is put under {{eKuiperPath}}/etc/{{pluginType}}/{{pluginName}} directory. When packaging the plugin, put those files in [etc directory](../../operation/restapi/plugins.md#plugin-file-format). After installation, they will be moved to the recommended place.
+Some plugin may need to access dependencies in the file system. Those files is put under {{eKuiperPath}}/etc/{{pluginType}}/{{pluginName}} directory. When packaging the plugin, put those files in [etc directory](../../api/restapi/plugins.md#plugin-file-format). After installation, they will be moved to the recommended place.
 
 In the plugin source code, developers can access the dependencies of file system by getting the eKuiper root path from the context:
 

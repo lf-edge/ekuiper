@@ -1,6 +1,6 @@
 # Source Extension
 
-Sources feed data into eKuiper from other systems. eKuiper has built-in source support for [MQTT broker](../../../rules/sources/builtin/mqtt.md). There are still needs to consume data from various external systems include messaging systems and data pipelines etc. Source extension is presented to meet this requirement.
+Sources feed data into eKuiper from other systems. eKuiper has built-in source support for [MQTT broker](../../../guide/sources/builtin/mqtt.md). There are still needs to consume data from various external systems include messaging systems and data pipelines etc. Source extension is presented to meet this requirement.
 
 ## Developing
 
@@ -86,7 +86,7 @@ function MySourceLookup() api.LookupSource{
 The [SQL Lookup Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/sources/sql/sqlLookup.go) is a good example.
 
 ### Rewindable source
-If the [rule checkpoint](../../../rules/state_and_fault_tolerance.md#source-consideration) is enabled, the source requires to be rewindable. That means the source need to implement both `api.Source` and `api.Rewindable` interface. 
+If the [rule checkpoint](../../../guide/rules/state_and_fault_tolerance.md#source-consideration) is enabled, the source requires to be rewindable. That means the source need to implement both `api.Source` and `api.Rewindable` interface. 
 
 A typical implementation is to save an `offset` as a field of the source. And update the offset value when reading in new value. Notice that, when implementing GetOffset() will be called by eKuiper system which means the offset value can be accessed by multiple go routines. So a lock is required when read or write the offset.
 
@@ -101,7 +101,7 @@ A configuration system is supported for eKuiper extension which will automatical
  To use configuration in your source, the following conventions must be followed.
  1. The name of your configuration file must be the same as the plugin name. For example, mySource.yaml.
  2. The yaml file must be located inside _etc/sources_
- 3. The format of the yaml file could be found [here](../../../rules/sources/builtin/mqtt.md)
+ 3. The format of the yaml file could be found [here](../../../guide/sources/builtin/mqtt.md)
  
 #### common configuration field
 
