@@ -84,10 +84,14 @@ func (t *taosConfig) buildSql(ctx api.StreamContext, mapData map[string]interfac
 
 	if t.ProvideTs {
 		if v, ok := mapData[t.TsFieldName]; !ok {
-			return "", fmt.Errorf("Timestamp field not found : %s.", t.TsFieldName)
+			return "", fmt.Errorf("timestamp field not found : %s", t.TsFieldName)
 		} else {
 			keys = append(keys, t.TsFieldName)
-			vals = append(vals, fmt.Sprintf(`"%v"`, v))
+			timeStamp, err := cast.ToInt64(v, cast.CONVERT_SAMEKIND)
+			if err != nil {
+				return "", fmt.Errorf("timestamp field can not convert to int64 : %v", v)
+			}
+			vals = append(vals, fmt.Sprintf(`%v`, timeStamp))
 		}
 	} else {
 		vals = append(vals, "now")
