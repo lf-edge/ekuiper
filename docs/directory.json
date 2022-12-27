@@ -511,6 +511,10 @@
 						{
 							"title": "规则集管理",
 							"path": "operation/restapi/ruleset"
+						},
+						{
+							"title": "数据导入导出",
+							"path": "operation/restapi/configuration"
 						}
 					]
 				},
@@ -544,6 +548,10 @@
 						{
 							"title": "规则集管理",
 							"path": "operation/cli/ruleset"
+						},
+						{
+							"title": "数据导入导出",
+							"path": "operation/cli/configuration"
 						}
 					]
 				},
@@ -1204,6 +1212,10 @@
 						{
 							"title": "Ruleset",
 							"path": "api/restapi/ruleset"
+						},
+						{
+							"title": "Data Export/Import",
+							"path": "api/restapi/configuration"
 						}
 					]
 				},
@@ -1237,6 +1249,10 @@
 						{
 							"title": "Ruleset",
 							"path": "api/cli/ruleset"
+						},
+						{
+							"title": "Data Export/Import",
+							"path": "api/cli/configuration"
 						}
 					]
 				}
