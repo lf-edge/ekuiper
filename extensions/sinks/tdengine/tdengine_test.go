@@ -157,7 +157,26 @@ func TestBuildSql(t *testing.T) {
 			data: map[string]interface{}{
 				"f1": "v1",
 			},
-			expected: `INSERT INTO t (ts,f1) values (now,"v1");`,
+			expected: `t (ts,f1) values (now,"v1")`,
+		},
+		{
+			conf: &taosConfig{
+				ProvideTs:   true,
+				Ip:          "e0d9d8089bef",
+				Host:        "e0d9d8089bef",
+				Port:        6030,
+				User:        "root1",
+				Password:    "taosdata1",
+				Database:    "db",
+				Table:       "t",
+				TsFieldName: "ts",
+				Fields:      nil,
+			},
+			data: map[string]interface{}{
+				"ts": 1.2345678e+06,
+				"f2": 65,
+			},
+			expected: `t (ts,f2) values (12345678,65)`,
 		},
 		{
 			conf: &taosConfig{
@@ -176,26 +195,7 @@ func TestBuildSql(t *testing.T) {
 				"ts": 12345678,
 				"f2": 65,
 			},
-			expected: `INSERT INTO t (ts,f2) values ("12345678",65);`,
-		},
-		{
-			conf: &taosConfig{
-				ProvideTs:   true,
-				Ip:          "e0d9d8089bef",
-				Host:        "e0d9d8089bef",
-				Port:        6030,
-				User:        "root1",
-				Password:    "taosdata1",
-				Database:    "db",
-				Table:       "t",
-				TsFieldName: "ts",
-				Fields:      nil,
-			},
-			data: map[string]interface{}{
-				"ts": 12345678,
-				"f2": 65,
-			},
-			expected: `INSERT INTO t (ts,f2) values ("12345678",65);`,
+			expected: `t (ts,f2) values (12345678,65)`,
 		},
 		{
 			conf: &taosConfig{
@@ -220,7 +220,7 @@ func TestBuildSql(t *testing.T) {
 				"a":     "a1",
 				"b":     2,
 			},
-			expected: `INSERT INTO t1 (tst,f1,f2) using s tags ("a1",2) values (now,12.3,65);`,
+			expected: `t1 (tst,f1,f2) using s tags ("a1",2) values (now,12.3,65)`,
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
