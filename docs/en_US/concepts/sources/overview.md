@@ -26,7 +26,7 @@ The source defines the external system connection. When using in a rule, users c
 
 ## More Readings
 
-- [Source Reference](../../rules/sources/overview.md)
+- [Source Reference](../../guide/sources/overview.md)
 
 
 
