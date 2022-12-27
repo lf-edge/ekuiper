@@ -16,4 +16,4 @@ Multiple rules can form a processing pipeline by specifying a joint point in sin
 
 ## More Readings
 
-- [Rule Reference](../rules/overview.md)
+- [Rule Reference](../guide/rules/overview.md)

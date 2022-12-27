@@ -12,8 +12,8 @@ Developers of eKuiper plugin can specify metadata files during the development p
 
 | Name                                              | Description                                                                 | Remarks                                                   |
 |---------------------------------------------------|-----------------------------------------------------------------------------|-----------------------------------------------------------|
-| [zmq](../../../rules/sources/plugin/zmq.md)       | The plugin listens to Zero Mq messages and sends them to the eKuiper stream | Sample of plugin, not available in production environment |
-| [random](../../../rules/sources/plugin/random.md) | The plugin generates messages according to the specified pattern            | Sample of plugin, not available in production environment |
+| [zmq](../../../guide/sources/plugin/zmq.md)       | The plugin listens to Zero Mq messages and sends them to the eKuiper stream | Sample of plugin, not available in production environment |
+| [random](../../../guide/sources/plugin/random.md) | The plugin generates messages according to the specified pattern            | Sample of plugin, not available in production environment |
 
 ### source metadata file format
 
@@ -159,10 +159,10 @@ The following is a sample of metadata file.
 
 | Name                                                | Description                                                      | Remarks                                                   |
 |-----------------------------------------------------|------------------------------------------------------------------|-----------------------------------------------------------|
-| [file](../../../rules/sinks/plugin/file.md)         | The plugin saves the analysis results to a specified file system | Sample of plugin, not available in production environment |
-| [zmq](../../../rules/sinks/plugin/zmq.md)           | The plugin sends the analysis results to the topic of Zero Mq    | Sample of plugin, not available in production environment |
-| [Influxdb](../../../rules/sinks/plugin/influx.md)   | The plugin sends the analysis results to InfluxDB                | Provided by [@smart33690](https://github.com/smart33690)  |
-| [TDengine](../../../rules/sinks/plugin/tdengine.md) | The plugin sends the analysis results to TDengine                |                                                           |
+| [file](../../../guide/sinks/plugin/file.md)         | The plugin saves the analysis results to a specified file system | Sample of plugin, not available in production environment |
+| [zmq](../../../guide/sinks/plugin/zmq.md)           | The plugin sends the analysis results to the topic of Zero Mq    | Sample of plugin, not available in production environment |
+| [Influxdb](../../../guide/sinks/plugin/influx.md)   | The plugin sends the analysis results to InfluxDB                | Provided by [@smart33690](https://github.com/smart33690)  |
+| [TDengine](../../../guide/sinks/plugin/tdengine.md) | The plugin sends the analysis results to TDengine                |                                                           |
 
 ### sink metadata file format
 

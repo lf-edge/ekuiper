@@ -43,7 +43,7 @@ eKuiper processing at the edge can greatly reduce system response latency, save 
   - 60+ functions, includes mathematical, string, aggregate and hash etc
   - 4 time windows & count window
 
-- Highly extensibile 
+- Highly extensible 
 
   It supports to extend at `Source`, `Functions` and `Sink` with Golang or Python.
 
@@ -55,11 +55,11 @@ eKuiper processing at the edge can greatly reduce system response latency, save 
 
   - [A free web based management dashboard](https://hub.docker.com/r/emqx/ekuiper-manager) for visualized management
   - Plugins, streams and rules management through CLI, REST API and config maps(Kubernetes)
-  - Easily be integrate with Kubernetes framworks [KubeEdge](https://github.com/kubeedge/kubeedge), [OpenYurt](https://openyurt.io/), [K3s](https://github.com/rancher/k3s) [Baetyl](https://github.com/baetyl/baetyl)
+  - Easily be integrated with Kubernetes framworks [KubeEdge](https://github.com/kubeedge/kubeedge), [OpenYurt](https://openyurt.io/), [K3s](https://github.com/rancher/k3s) [Baetyl](https://github.com/baetyl/baetyl)
 
 - Integration with EMQX products
 
-  Seamless integration with [EMQX](https://www.emqx.io/), [Neuron](https://neugates.io/) & [NanoMQ](https://nanomq.io/), and provided an end to end solution from IIoT, IoV 
+  Seamless integration with [EMQX](https://www.emqx.io/), [Neuron](https://neugates.io/) & [NanoMQ](https://nanomq.io/), and provided an end-to-end solution from IIoT, IoV 
 
 ## Quick start
 
