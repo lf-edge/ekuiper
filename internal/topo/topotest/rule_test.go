@@ -78,7 +78,7 @@ func TestSingleSQL(t *testing.T) {
 			},
 			T: &api.PrintableTopo{
 				Sources: []string{"source_demo"},
-				Edges: map[string][]string{
+				Edges: map[string][]interface{}{
 					"source_demo":  {"op_2_project"},
 					"op_2_project": {"sink_mockSink"},
 				},
@@ -373,7 +373,7 @@ func TestSingleSQL(t *testing.T) {
 			},
 			T: &api.PrintableTopo{
 				Sources: []string{"source_demo"},
-				Edges: map[string][]string{
+				Edges: map[string][]interface{}{
 					"source_demo":  {"op_2_project"},
 					"op_2_project": {"sink_mockSink"},
 				},

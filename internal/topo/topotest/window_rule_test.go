@@ -226,7 +226,7 @@ func TestWindow(t *testing.T) {
 			},
 			T: &api.PrintableTopo{
 				Sources: []string{"source_demo", "source_demo1"},
-				Edges: map[string][]string{
+				Edges: map[string][]interface{}{
 					"source_demo":  {"op_3_window"},
 					"source_demo1": {"op_3_window"},
 					"op_3_window":  {"op_4_join"},

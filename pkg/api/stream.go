@@ -137,8 +137,8 @@ type RestartStrategy struct {
 }
 
 type PrintableTopo struct {
-	Sources []string            `json:"sources"`
-	Edges   map[string][]string `json:"edges"`
+	Sources []string                 `json:"sources"`
+	Edges   map[string][]interface{} `json:"edges"`
 }
 
 type GraphNode struct {
