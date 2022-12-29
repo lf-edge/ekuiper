@@ -1,5 +1,5 @@
 {
-  "name": "filter",
+  "name": "switch",
   "about": {
     "trial": false,
     "author": {
@@ -13,23 +13,37 @@
       "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/query_language_elements.md"
     },
     "description": {
-      "en_US": "An operation to filter out rows based on a filter condition.",
-      "zh_CN": "用于过滤数据流的操作"
+      "en_US": "An operation to route events to different branches based on a case condition similar to switch statement in programming languages.",
+      "zh_CN": "用于根据条件分流数据的操作，类似编程语言中的 switch 语句。"
     }
   },
   "properties": [
     {
-      "name": "expr",
+      "name": "cases",
       "optional": false,
-      "control": "text",
+      "control": "list",
       "type": "string",
       "hint": {
-        "en_US": "filter condition expression",
-        "zh_CN": "过滤条件语句"
+        "en_US": "case condition expression",
+        "zh_CN": "分流条件语句"
       },
       "label": {
-        "en_US": "Condition",
+        "en_US": "Cases",
         "zh_CN": "条件"
+      }
+    },{
+      "name": "stopAtFirstMatch",
+      "default": false,
+      "optional": false,
+      "control": "checkbox",
+      "type": "boolean",
+      "hint": {
+        "en_US": "Stop at first match",
+        "zh_CN": "接受第一条匹配信息后停止"
+      },
+      "label": {
+        "en_US": "Stop at first match",
+        "zh_CN": "接受第一条匹配信息后停止"
       }
     }
   ],
@@ -47,8 +61,8 @@
     },
     "icon": "iconPath",
     "label": {
-      "en": "Filter",
-      "zh": "过滤"
+      "en": "Switch",
+      "zh": "Switch"
     }
   }
 }

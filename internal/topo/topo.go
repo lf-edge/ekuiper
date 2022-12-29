@@ -52,7 +52,7 @@ func NewWithNameAndQos(name string, qos api.Qos, checkpointInterval int) (*Topo,
 		checkpointInterval: checkpointInterval,
 		topo: &api.PrintableTopo{
 			Sources: make([]string, 0),
-			Edges:   make(map[string][]string),
+			Edges:   make(map[string][]interface{}),
 		},
 	}
 	return tp, nil
@@ -110,7 +110,7 @@ func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 	t := fmt.Sprintf("%s_%s", toType, to.GetName())
 	e, ok := s.topo.Edges[f]
 	if !ok {
-		e = make([]string, 0)
+		e = make([]interface{}, 0)
 	}
 	s.topo.Edges[f] = append(e, t)
 }

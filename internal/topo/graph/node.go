@@ -52,3 +52,8 @@ type Orderby struct {
 		Desc  bool   `json:"desc"`
 	}
 }
+
+type Switch struct {
+	Cases            []string `json:"cases"`
+	StopAtFirstMatch bool     `json:"stopAtFirstMatch"`
+}

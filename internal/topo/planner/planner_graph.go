@@ -154,6 +154,16 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 				}
 				op := Transform(oop, nodeName, rule.Options)
 				nodeMap[nodeName] = op
+			case "switch":
+				sconf, err := parseSwitch(gn.Props)
+				if err != nil {
+					return nil, fmt.Errorf("parse switch %s error: %v", nodeName, err)
+				}
+				op, err := node.NewSwitchNode(nodeName, sconf, rule.Options)
+				if err != nil {
+					return nil, fmt.Errorf("create switch %s error: %v", nodeName, err)
+				}
+				nodeMap[nodeName] = op
 			default: // TODO other node type
 				return nil, fmt.Errorf("unknown operator type %s", gn.NodeType)
 			}
@@ -169,19 +179,40 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 		}
 	}
 
-	// reverse edges
-	reversedEdges := make(map[string][]string)
+	// reverse edges, value is a 2-dim array. Only switch node will have the second dim
+	reversedEdges := make(map[string][][]string)
 	rclone := make(map[string][]string)
 	for fromNode, toNodes := range ruleGraph.Topo.Edges {
 		if _, ok := ruleGraph.Nodes[fromNode]; !ok {
 			return nil, fmt.Errorf("node %s is not defined", fromNode)
 		}
-		for _, toNode := range toNodes {
-			if _, ok := ruleGraph.Nodes[toNode]; !ok {
-				return nil, fmt.Errorf("node %s is not defined", toNode)
+		for i, toNode := range toNodes {
+			switch tn := toNode.(type) {
+			case string:
+				if _, ok := ruleGraph.Nodes[tn]; !ok {
+					return nil, fmt.Errorf("node %s is not defined", tn)
+				}
+				if _, ok := reversedEdges[tn]; !ok {
+					reversedEdges[tn] = make([][]string, 1)
+				}
+				reversedEdges[tn][0] = append(reversedEdges[tn][0], fromNode)
+				rclone[tn] = append(rclone[tn], fromNode)
+			case []interface{}:
+				for _, tni := range tn {
+					tnn, ok := tni.(string)
+					if !ok { // never happen
+						return nil, fmt.Errorf("invalid edge toNode %v", toNode)
+					}
+					if _, ok := ruleGraph.Nodes[tnn]; !ok {
+						return nil, fmt.Errorf("node %s is not defined", tnn)
+					}
+					for len(reversedEdges[tnn]) <= i {
+						reversedEdges[tnn] = append(reversedEdges[tnn], []string{})
+					}
+					reversedEdges[tnn][i] = append(reversedEdges[tnn][i], fromNode)
+					rclone[tnn] = append(rclone[tnn], fromNode)
+				}
 			}
-			reversedEdges[toNode] = append(reversedEdges[toNode], fromNode)
-			rclone[toNode] = append(rclone[toNode], fromNode)
 		}
 	}
 	// sort the nodes by topological order
@@ -212,7 +243,11 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 				return nil, fmt.Errorf("can't find the io definiton for node type %s", gn.NodeType)
 			}
 			dataInCondition := nodeIO[0]
-			innodes := reversedEdges[n]
+			indim := reversedEdges[n]
+			var innodes []string
+			for _, in := range indim {
+				innodes = append(innodes, in...)
+			}
 			if len(innodes) > 1 {
 				if dataInCondition.AllowMulti {
 					for _, innode := range innodes {
@@ -248,9 +283,24 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 	}
 	// add the linkages
 	for nodeName, fromNodes := range reversedEdges {
-		inputs := make([]api.Emitter, len(fromNodes))
+		totalLen := 0
+		for _, fromNode := range fromNodes {
+			totalLen += len(fromNode)
+		}
+		inputs := make([]api.Emitter, 0, totalLen)
 		for i, fromNode := range fromNodes {
-			inputs[i] = nodeMap[fromNode].(api.Emitter)
+			for _, from := range fromNode {
+				if i == 0 {
+					inputs = append(inputs, nodeMap[from].(api.Emitter))
+				} else {
+					switch sn := nodeMap[from].(type) {
+					case *node.SwitchNode:
+						inputs = append(inputs, sn.GetEmitter(i))
+					default:
+						return nil, fmt.Errorf("node %s is not a switch node but have multiple output", from)
+					}
+				}
+			}
 		}
 		n := nodeMap[nodeName]
 		if n == nil {
@@ -265,15 +315,26 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 	return tp, nil
 }
 
-func genNodesInOrder(toNodes []string, edges map[string][]string, reversedEdges map[string][]string, nodesInOrder []string, i int) int {
+func genNodesInOrder(toNodes []string, edges map[string][]interface{}, flatReversedEdges map[string][]string, nodesInOrder []string, i int) int {
 	for _, src := range toNodes {
-		if len(reversedEdges[src]) > 1 {
-			reversedEdges[src] = reversedEdges[src][1:]
+		if len(flatReversedEdges[src]) > 1 {
+			flatReversedEdges[src] = flatReversedEdges[src][1:]
 			continue
 		}
 		nodesInOrder[i] = src
 		i++
-		i = genNodesInOrder(edges[src], edges, reversedEdges, nodesInOrder, i)
+		tns := make([]string, 0, len(edges[src]))
+		for _, toNode := range edges[src] {
+			switch toNode.(type) {
+			case string:
+				tns = append(tns, toNode.(string))
+			case []interface{}:
+				for _, tni := range toNode.([]interface{}) {
+					tns = append(tns, tni.(string))
+				}
+			}
+		}
+		i = genNodesInOrder(tns, edges, flatReversedEdges, nodesInOrder, i)
 	}
 	return i
 }
@@ -502,4 +563,30 @@ func parseHaving(props map[string]interface{}) (*operator.HavingOp, error) {
 		}
 	}
 	return nil, fmt.Errorf("expr %v is not a condition", m)
+}
+
+func parseSwitch(props map[string]interface{}) (*node.SwitchConfig, error) {
+	n := &graph.Switch{}
+	err := cast.MapToStruct(props, n)
+	if err != nil {
+		return nil, err
+	}
+	if len(n.Cases) == 0 {
+		return nil, fmt.Errorf("switch node must have at least one case")
+	}
+	caseExprs := make([]ast.Expr, len(n.Cases))
+	for i, c := range n.Cases {
+		p := xsql.NewParser(strings.NewReader("where " + c))
+		if exp, err := p.ParseCondition(); err != nil {
+			return nil, fmt.Errorf("parse case %d error: %v", i, err)
+		} else {
+			if exp != nil {
+				caseExprs[i] = exp
+			}
+		}
+	}
+	return &node.SwitchConfig{
+		Cases:            caseExprs,
+		StopAtFirstMatch: n.StopAtFirstMatch,
+	}, nil
 }
