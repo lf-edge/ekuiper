@@ -44,5 +44,5 @@ func parseScript(props map[string]interface{}) (*operator.ScriptOp, error) {
 	if n.Script == "" {
 		return nil, fmt.Errorf("script node must have script")
 	}
-	return operator.NewScriptOp(n.Script)
+	return operator.NewScriptOp(n.Script, n.IsAgg)
 }

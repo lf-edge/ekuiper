@@ -26,9 +26,10 @@ import (
 type ScriptOp struct {
 	vm     *goja.Runtime
 	jsfunc goja.Callable
+	isAgg  bool
 }
 
-func NewScriptOp(script string) (*ScriptOp, error) {
+func NewScriptOp(script string, isAgg bool) (*ScriptOp, error) {
 	vm := goja.New()
 	_, err := vm.RunString(script)
 	if err != nil {
@@ -41,6 +42,7 @@ func NewScriptOp(script string) (*ScriptOp, error) {
 	n := &ScriptOp{
 		vm:     vm,
 		jsfunc: exec,
+		isAgg:  isAgg,
 	}
 	return n, nil
 }
@@ -62,8 +64,34 @@ func (p *ScriptOp) Apply(ctx api.StreamContext, data interface{}, _ *xsql.Functi
 				return &xsql.Tuple{Message: nm, Metadata: input.Metadata, Emitter: input.Emitter, Timestamp: input.Timestamp}
 			}
 		}
+	case xsql.Collection:
+		val, err := p.jsfunc(goja.Undefined(), p.vm.ToValue(input.ToMaps()))
+		if err != nil {
+			return fmt.Errorf("failed to execute script: %v", err)
+		} else {
+			switch nm := val.Export().(type) {
+			case map[string]interface{}:
+				if !p.isAgg {
+					return fmt.Errorf("script node is not aggregate but exec result is aggregated: %v", val.Export())
+
+				}
+				return &xsql.Tuple{Message: nm}
+			case []map[string]interface{}:
+				if p.isAgg {
+					return fmt.Errorf("script node is aggregate but exec result is not aggreagated: %v", val.Export())
+				}
+				w := &xsql.WindowTuples{}
+				for _, v := range nm {
+					if v != nil {
+						w.Content = append(w.Content, &xsql.Tuple{Message: v})
+					}
+				}
+				return w
+			default:
+				return fmt.Errorf("script exec result is not a map or array of map: %v", val.Export())
+			}
+		}
 	default:
 		return fmt.Errorf("run script op invalid input allow tuple only but got %[1]T(%[1]v)", input)
 	}
-	return data
 }
