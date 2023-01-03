@@ -60,4 +60,5 @@ type Switch struct {
 
 type Script struct {
 	Script string `json:"script"`
+	IsAgg  bool   `json:"isAgg"`
 }
