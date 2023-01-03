@@ -59,7 +59,7 @@ jobs:
         cd ../../../../
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
-        go test --tags="edgex test" ./...
+        go test --tags="edgex script test" ./...
     - name: run plugins test case
       run: |
         mkdir -p data/test/uploads
