@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -114,7 +114,6 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					case xsql.TupleRow:
 						ctx.GetLogger().Debugf("SwitchNode receive tuple input %s", d)
 						ve = &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
-
 					case xsql.SingleCollection:
 						ctx.GetLogger().Debugf("SwitchNode receive window input %s", d)
 						afv.SetData(d)
@@ -147,6 +146,9 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							n.statManager.IncTotalExceptions(m)
 						}
 					}
+					n.statManager.ProcessTimeEnd()
+					n.statManager.IncTotalRecordsOut()
+					n.statManager.SetBufferLength(int64(len(n.input)))
 				case <-ctx.Done():
 					ctx.GetLogger().Infoln("Cancelling switch node....")
 					return nil
@@ -157,4 +159,14 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			infra.DrainError(ctx, err, errCh)
 		}
 	}()
+}
+
+func (n *SwitchNode) GetMetrics() [][]interface{} {
+	if n.statManager != nil {
+		return [][]interface{}{
+			n.statManager.GetMetrics(),
+		}
+	} else {
+		return nil
+	}
 }

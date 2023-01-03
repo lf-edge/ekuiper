@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 	stats, err := metric.NewStatManager(ctx, "op")
 	if err != nil {
-		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
+		infra.DrainError(ctx, fmt.Errorf("fail to create stat manager"), errCh)
 		return
 	}
 	n.statManager = stats
