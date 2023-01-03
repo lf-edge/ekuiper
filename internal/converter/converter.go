@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package converter
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/converter/binary"
-	"github.com/lf-edge/ekuiper/internal/converter/custom"
 	"github.com/lf-edge/ekuiper/internal/converter/delimited"
 	"github.com/lf-edge/ekuiper/internal/converter/json"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -40,7 +39,6 @@ var ( // init once and read only
 		message.FormatDelimited: func(_ string, _ string, delimiter string) (message.Converter, error) {
 			return delimited.NewConverter(delimiter)
 		},
-		message.FormatCustom: custom.LoadConverter,
 	}
 )
 
