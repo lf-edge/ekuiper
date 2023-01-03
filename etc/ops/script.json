@@ -1,0 +1,53 @@
+{
+  "name": "function",
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/sqls/query_language_elements.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/query_language_elements.md"
+    },
+    "description": {
+      "en_US": "An operation to run script against the message",
+      "zh_CN": "用于针对数据运行脚本的操作"
+    }
+  },
+  "properties": [{
+    "name": "script",
+    "default": "",
+    "optional": false,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The script text, now supports JavaScript only. Must have a function named exec, whose parameter is the message and the return value must be the processed message.",
+      "zh_CN": "脚本函数的文本，支持javascript。必须包含一个函数，函数名为exec，参数为message，返回值为处理后的message"
+    },
+    "label": {
+      "en_US": "Script",
+      "zh_CN": "脚本"
+    }
+  }],
+  "node": {
+    "display": false,
+    "category": "operator",
+    "input": {
+      "type": "row",
+      "rowType": "any",
+      "collectionType": "any"
+    },
+    "output": {
+      "type": "same",
+      "strategy": "keep"
+    },
+    "icon": "iconPath",
+    "label": {
+      "en": "Script",
+      "zh": "脚本"
+    }
+  }
+}

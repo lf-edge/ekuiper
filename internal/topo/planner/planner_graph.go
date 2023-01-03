@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -163,6 +163,13 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 				if err != nil {
 					return nil, fmt.Errorf("create switch %s error: %v", nodeName, err)
 				}
+				nodeMap[nodeName] = op
+			case "script":
+				sop, err := parseScript(gn.Props)
+				if err != nil {
+					return nil, err
+				}
+				op := Transform(sop, nodeName, rule.Options)
 				nodeMap[nodeName] = op
 			default: // TODO other node type
 				return nil, fmt.Errorf("unknown operator type %s", gn.NodeType)
@@ -589,4 +596,16 @@ func parseSwitch(props map[string]interface{}) (*node.SwitchConfig, error) {
 		Cases:            caseExprs,
 		StopAtFirstMatch: n.StopAtFirstMatch,
 	}, nil
+}
+
+func parseScript(props map[string]interface{}) (*operator.ScriptOp, error) {
+	n := &graph.Script{}
+	err := cast.MapToStruct(props, n)
+	if err != nil {
+		return nil, err
+	}
+	if n.Script == "" {
+		return nil, fmt.Errorf("script node must have script")
+	}
+	return operator.NewScriptOp(n.Script)
 }

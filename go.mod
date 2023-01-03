@@ -6,6 +6,7 @@ require (
 	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/alicebob/miniredis/v2 v2.15.1
 	github.com/benbjohnson/clock v1.0.0
+	github.com/dop251/goja v0.0.0-20221229151140-b95230a9dbad
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.3.0
 	github.com/edgexfoundry/go-mod-messaging/v2 v2.3.0
@@ -46,10 +47,12 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
+	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.11.1 // indirect
+	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
