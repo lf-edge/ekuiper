@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,16 +17,13 @@ package schema
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/message"
 	"strings"
 )
 
 type inferer func(schemaFileName string, SchemaMessageName string) (ast.StreamFields, error)
 
 var ( // init once and read only
-	inferes = map[string]inferer{
-		message.FormatCustom: InferCustom,
-	}
+	inferes = map[string]inferer{}
 )
 
 func InferFromSchemaFile(schemaType string, schemaId string) (ast.StreamFields, error) {

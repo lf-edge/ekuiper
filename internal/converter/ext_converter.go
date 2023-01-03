@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,11 +13,11 @@
 // limitations under the License.
 
 //go:build schema || !core
-// +build schema !core
 
 package converter
 
 import (
+	"github.com/lf-edge/ekuiper/internal/converter/custom"
 	"github.com/lf-edge/ekuiper/internal/converter/protobuf"
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/internal/schema"
@@ -32,4 +32,5 @@ func init() {
 		}
 		return protobuf.NewConverter(ffs.SchemaFile, ffs.SoFile, schemaMessageName)
 	}
+	converters[message.FormatCustom] = custom.LoadConverter
 }

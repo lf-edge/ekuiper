@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build schema || !core
+
 package schema
 
 import (
@@ -23,6 +25,10 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/message"
 	"plugin"
 )
+
+func init() {
+	inferes[message.FormatCustom] = InferCustom
+}
 
 func InferCustom(schemaFile string, messageName string) (ast.StreamFields, error) {
 	conf.Log.Infof("Load custom schema from file %s, for symbol Get%s", schemaFile, messageName)
