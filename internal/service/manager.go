@@ -331,7 +331,7 @@ func (m *Manager) Create(r *ServiceCreationRequest) error {
 	if ok, _ := m.serviceKV.Get(name, &serviceInfo{}); ok {
 		return fmt.Errorf("service %s exist", name)
 	}
-	if !httpx.IsValidUrl(uri) || !strings.HasSuffix(uri, ".zip") {
+	if !httpx.IsValidUrl(uri) {
 		return fmt.Errorf("invalid file path %s", uri)
 	}
 	zipPath := path.Join(m.etcDir, name+".zip")
