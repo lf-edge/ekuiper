@@ -30,6 +30,10 @@ import (
 	"strings"
 )
 
+type genNodeFunc func(name string, props map[string]interface{}, options *api.RuleOption) (api.TopNode, error)
+
+var extNodes = map[string]genNodeFunc{}
+
 // PlanByGraph returns a topo.Topo object by a graph
 func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 	ruleGraph := rule.Graph
@@ -93,7 +97,8 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 			if _, ok := ruleGraph.Topo.Edges[nodeName]; !ok {
 				return nil, fmt.Errorf("no edge defined for operator node %s", nodeName)
 			}
-			switch strings.ToLower(gn.NodeType) {
+			nt := strings.ToLower(gn.NodeType)
+			switch nt {
 			case "function":
 				fop, err := parseFunc(gn.Props)
 				if err != nil {
@@ -164,15 +169,16 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 					return nil, fmt.Errorf("create switch %s error: %v", nodeName, err)
 				}
 				nodeMap[nodeName] = op
-			case "script":
-				sop, err := parseScript(gn.Props)
+			default:
+				gnf, ok := extNodes[nt]
+				if !ok {
+					return nil, fmt.Errorf("unknown operator type %s", gn.NodeType)
+				}
+				op, err := gnf(nodeName, gn.Props, rule.Options)
 				if err != nil {
 					return nil, err
 				}
-				op := Transform(sop, nodeName, rule.Options)
 				nodeMap[nodeName] = op
-			default: // TODO other node type
-				return nil, fmt.Errorf("unknown operator type %s", gn.NodeType)
 			}
 		default:
 			return nil, fmt.Errorf("unknown node type %s", gn.Type)
@@ -596,16 +602,4 @@ func parseSwitch(props map[string]interface{}) (*node.SwitchConfig, error) {
 		Cases:            caseExprs,
 		StopAtFirstMatch: n.StopAtFirstMatch,
 	}, nil
-}
-
-func parseScript(props map[string]interface{}) (*operator.ScriptOp, error) {
-	n := &graph.Script{}
-	err := cast.MapToStruct(props, n)
-	if err != nil {
-		return nil, err
-	}
-	if n.Script == "" {
-		return nil, fmt.Errorf("script node must have script")
-	}
-	return operator.NewScriptOp(n.Script)
 }

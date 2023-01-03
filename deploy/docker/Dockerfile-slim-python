@@ -19,7 +19,7 @@ COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
-RUN make build_with_edgex
+RUN make build_with_edgex_and_script
 
 FROM python:3.8.12-slim-bullseye
 
