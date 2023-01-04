@@ -1,19 +1,19 @@
 {
 	"cn": [
 		{
-			"title": "概要",
+			"title": "概览",
 			"path": "./"
 		},
 		{
 			"title": "快速开始",
 			"children": [
 				{
-					"title": "本地运行",
-					"path": "getting_started"
+					"title": "快速开始",
+					"path": "getting_started/getting_started"
 				},
 				{
-					"title": "Docker 容器运行",
-					"path": "quick_start_docker"
+					"title": "5分钟快速运行",
+					"path": "getting_started/quick_start_docker"
 				},
 				{
 					"title": "作为 EdgeX Foundry 规则引擎运行",
@@ -22,40 +22,415 @@
 			]
 		},
 		{
-			"title": "概念",
+			"title": "安装与部署",
 			"children": [
 				{
-					"title": "eKuiper 基本概念",
-					"path": "concepts/ekuiper"
+					"title": "安装与部署",
+					"path": "installation"
+				}
+			]
+		},
+		{
+			"title": "配置",
+			"children": [
+				{
+					"title": "配置",
+					"path": "configuration/configuration"
 				},
 				{
-					"title": "规则",
-					"path": "concepts/rules"
-				},
+					"title": "全局配置文件",
+					"path": "configuration/global_configurations"
+				}
+			]
+		},
+		{
+			"title": "用户指南",
+			"children": [
 				{
-					"title": "Sources 源",
+					"title": "流：无界的事件系列",
 					"children": [
 						{
-							"title": "概览",
-							"path": "concepts/sources/overview"
-						},
-						{
 							"title": "流",
-							"path": "concepts/sources/stream"
-						},
-						{
-							"title": "表",
-							"path": "concepts/sources/table"
+							"path": "guide/streams/overview"
 						}
 					]
 				},
 				{
-					"title": "Sinks 动作",
-					"path": "concepts/sinks"
+					"title": "表：事件序列的快照",
+					"children": [
+						{
+							"title": "表",
+							"path": "guide/tables/overview"
+						},
+						{
+							"title": "扫描表",
+							"path": "guide/tables/scan"
+						},
+						{
+							"title": "查询表",
+							"path": "guide/tables/lookup"
+						}
+					]
 				},
 				{
-					"title": "SQL 查询",
-					"path": "concepts/sql"
+					"title": "规则：查询和动作",
+					"children": [
+						{
+							"title": "规则",
+							"path": "guide/rules/overview"
+						},
+						{
+							"title": "图规则",
+							"path": "guide/rules/graph_rule"
+						},
+						{
+							"title": "规则流水线",
+							"path": "guide/rules/rule_pipeline"
+						},
+						{
+							"title": "状态和容错",
+							"path": "guide/rules/state_and_fault_tolerance"
+						}
+					]
+				},
+				{
+					"title": "数据源",
+					"children": [
+						{
+							"title": "数据源",
+							"path": "guide/sources/overview"
+						},
+						{
+							"title": "内置源",
+							"children": [
+								{
+									"title": "MQTT 源",
+									"path": "guide/sources/builtin/mqtt"
+								},
+								{
+									"title": "Neuron 源",
+									"path": "guide/sources/builtin/neuron"
+								},
+								{
+									"title": "EdgeX 源",
+									"path": "guide/sources/builtin/edgex"
+								},
+								{
+									"title": "HTTP 拉取源",
+									"path": "guide/sources/builtin/http_pull"
+								},
+								{
+									"title": "HTTP 推送源",
+									"path": "guide/sources/builtin/http_push"
+								},
+								{
+									"title": "内存源",
+									"path": "guide/sources/builtin/memory"
+								},
+								{
+									"title": "文件源",
+									"path": "guide/sources/builtin/file"
+								},
+								{
+									"title": "Redis 源",
+									"path": "guide/sources/builtin/redis"
+								}
+							]
+						},
+						{
+							"title": "预定义插件源",
+							"children": [
+								{
+									"title": "Zero MQ 源",
+									"path": "guide/sources/plugin/zmq"
+								},
+								{
+									"title": "SQL 源",
+									"path": "guide/sources/plugin/sql"
+								},
+								{
+									"title": "随机数据产生器源",
+									"path": "guide/sources/plugin/random"
+								},
+								{
+									"title": "视频源",
+									"path": "guide/sources/plugin/video"
+								}
+							]
+						}
+					]
+				},
+				{
+					"title": "数据汇（Sink）",
+					"children": [
+						{
+							"title": "概览",
+							"path": "guide/sinks/overview"
+						},
+						{
+							"title": "数据模板",
+							"path": "guide/sinks/data_template"
+						},
+						{
+							"title": "内置 Sink",
+							"children": [
+								{
+									"title": "MQTT Sink",
+									"path": "guide/sinks/builtin/mqtt"
+								},
+								{
+									"title": "Neuron Sink",
+									"path": "guide/sinks/builtin/neuron"
+								},
+								{
+									"title": "EdgeX Sink",
+									"path": "guide/sinks/builtin/edgex"
+								},
+								{
+									"title": "REST Sink",
+									"path": "guide/sinks/builtin/rest"
+								},
+								{
+									"title": "Memory Sink",
+									"path": "guide/sinks/builtin/memory"
+								},
+								{
+									"title": "Log Sink",
+									"path": "guide/sinks/builtin/log"
+								},
+								{
+									"title": "Nop Sink",
+									"path": "guide/sinks/builtin/nop"
+								},
+								{
+									"title": "Redis Sink",
+									"path": "guide/sinks/builtin/redis"
+								}
+							]
+						},
+						{
+							"title": "预定义插件 Sink",
+							"children": [
+								{
+									"title": "ZeroMQ Sink",
+									"path": "guide/sinks/plugin/zmq"
+								},
+								{
+									"title": "File Sink",
+									"path": "guide/sinks/plugin/file"
+								},
+								{
+									"title": "SQL Sink",
+									"path": "guide/sinks/plugin/sql"
+								},
+								{
+									"title": "InfluxDB Sink",
+									"path": "guide/sinks/plugin/influx"
+								},
+								{
+									"title": "InfluxDBV2 Sink",
+									"path": "guide/sinks/plugin/influx2"
+								},
+								{
+									"title": "TDengine Sink",
+									"path": "guide/sinks/plugin/tdengine"
+								},
+								{
+									"title": "Image Sink",
+									"path": "guide/sinks/plugin/image"
+								}
+							]
+						}
+					]
+				},
+				{
+					"title": "序列化",
+					"children": [
+						{
+							"title": "概览",
+							"path": "guide/serialization/serialization"
+						},
+						{
+							"title": "使用 Protobuf 编解码教程",
+							"path": "guide/serialization/protobuf_tutorial"
+						}
+					]
+				},
+				{
+					"title": "AI/ML",
+					"children": [
+						{
+							"title": "使用原生插件实现 AI 函数",
+							"path": "guide/ai/tensorflow_lite_tutorial"
+						},
+						{
+							"title": "使用 Python 插件实现 AI 函数",
+							"path": "guide/ai/python_tensorflow_lite_tutorial"
+						}
+					]
+				}
+			]
+		},
+		{
+			"title": "管理指南",
+			"children": [
+				{
+					"title": "安装与部署",
+					"path": "installation"
+				},
+				{
+					"title": "配置",
+					"children": [
+						{
+							"title": "配置",
+							"path": "configuration/configuration"
+						},
+						{
+							"title": "全局配置文件",
+							"path": "configuration/global_configurations"
+						}
+					]
+				},
+				{
+					"title": "管理控制台",
+					"children": [
+						{
+							"title": "使用教程",
+							"path": "operation/manager-ui/overview"
+						},
+						{
+							"title": "插件管理",
+							"path": "operation/manager-ui/plugins_in_manager"
+						}
+					]
+				},
+				{
+					"title": "编译",
+					"children": [
+						{
+							"title": "源码编译",
+							"path": "operation/compile/compile"
+						},
+						{
+							"title": "交叉编译",
+							"path": "operation/compile/cross-compile"
+						},
+						{
+							"title": "按需编译",
+							"path": "operation/compile/features"
+						}
+					]
+				},
+				{
+					"title": "监控",
+					"children": [
+						{
+							"title": "使用 Prometheus 监控规则运行状态",
+							"path": "operation/usage/monitor_with_prometheus"
+						}
+					]
+				}
+			]
+		},
+		{
+			"title": "应用场景",
+			"children": [
+				{
+					"title": "工业物联网",
+					"path": "usecases/iiot"
+				},
+				{
+					"title": "车联网",
+					"path": "usecases/iov"
+				}
+			]
+		},
+		{
+			"title": "集成",
+			"children": [
+				{
+					"title": "边云协同",
+					"path": "integrations/edge_cloud/overview"
+				},
+				{
+					"title": "EdgeX Foundry 的规则引擎",
+					"children": [
+						{
+							"title": "EdgeX Foundry 规则引擎教程",
+							"path": "edgex/edgex_rule_engine_tutorial"
+						},
+						{
+							"title": "使用 EdgeX 流的 meta 函数",
+							"path": "edgex/edgex_meta"
+						},
+						{
+							"title": "EdgeX 规则引擎使用 command 服务",
+							"path": "edgex/edgex_rule_engine_command"
+						},
+						{
+							"title": "EdgeX 源配置教程",
+							"path": "edgex/edgex_source_tutorial"
+						}
+					]
+				},
+				{
+					"title": "分析处理 Neuron 采集的数据",
+					"path": "integrations/neuron/neuron_integration_tutorial"
+				},
+				{
+					"title": "KubeEdge 的分析引擎",
+					"path": "integrations/kubeedge/overview"
+				},
+				{
+					"title": "使用 OpenYurt 部署",
+					"path": "integrations/deploy/openyurt_tutorial"
+				}
+			]
+		},
+		{
+			"title": "架构和设计",
+			"children": [
+				{
+					"title": "架构",
+					"path": "concepts/ekuiper"
+				},
+				{
+					"title": "关键概念",
+					"children": [
+						{
+							"title": "规则",
+							"path": "concepts/rules"
+						},
+						{
+							"title": "Sources 源",
+							"children": [
+								{
+									"title": "概览",
+									"path": "concepts/sources/overview"
+								},
+								{
+									"title": "流",
+									"path": "concepts/sources/stream"
+								},
+								{
+									"title": "表",
+									"path": "concepts/sources/table"
+								}
+							]
+						},
+						{
+							"title": "Sinks 动作",
+							"path": "concepts/sinks"
+						},
+						{
+							"title": "SQL 查询",
+							"path": "concepts/sql"
+						},
+						{
+							"title": "扩展",
+							"path": "concepts/extensions"
+						}
+					]
 				},
 				{
 					"title": "流式处理",
@@ -77,312 +452,11 @@
 							"path": "concepts/streaming/join"
 						}
 					]
-				},
-				{
-					"title": "扩展",
-					"path": "concepts/extensions"
 				}
 			]
 		},
 		{
-			"title": "教程",
-			"children": [
-				{
-					"title": "AI 教程",
-					"children": [
-						{
-							"title": "使用 eKuiper 原生插件实现图像标注",
-							"path": "tutorials/ai/tensorflow_lite_tutorial"
-						},
-						{
-							"title": "使用 Python 函数插件运行 AI 算法",
-							"path": "tutorials/ai/python_tensorflow_lite_tutorial"
-						}
-					]
-				},
-				{
-					"title": "EdgeX Foundry 相关教程",
-					"children": [
-						{
-							"title": "EdgeX Foundry 规则引擎教程",
-							"path": "edgex/edgex_rule_engine_tutorial"
-						},
-						{
-							"title": "使用 EdgeX 流的 meta 函数",
-							"path": "edgex/edgex_meta"
-						},
-						{
-							"title": "EdgeX 规则引擎使用 command 服务",
-							"path": "edgex/edgex_rule_engine_command"
-						},
-						{
-							"title": "EdgeX 源配置教程",
-							"path": "edgex/edgex_source_tutorial"
-						}
-					]
-				},
-				{
-					"title": "使用 eKuiper 对 Neuron 采集的数据进行流式处理",
-					"path": "tutorials/neuron/neuron_integration_tutorial"
-				},
-				{
-					"title": "通过 OpenYurt 部署教程",
-					"path": "tutorials/deploy/openyurt_tutorial"
-				},
-				{
-					"title": "功能使用教程",
-					"children": [
-						{
-							"title": "流批结合计算",
-							"path": "tutorials/table/lookup"
-						},
-						{
-							"title": "使用 Protobuf 编解码教程",
-							"path": "tutorials/usage/protobuf_tutorial"
-						},
-						{
-							"title": "使用 Prometheus 监控规则运行状态",
-							"path": "tutorials/usage/monitor_with_prometheus"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "参考",
-			"children": [
-				{
-					"title": "规则",
-					"children": [
-						{
-							"title": "概览",
-							"path": "rules/overview"
-						},
-						{
-							"title": "规则流水线",
-							"path": "rules/rule_pipeline"
-						},
-						{
-							"title": "状态和容错",
-							"path": "rules/state_and_fault_tolerance"
-						},{
-							"title": "编解码",
-							"path": "rules/codecs"
-						},{
-							"title": "图规则",
-							"path": "rules/graph_rule"
-						}
-					]
-				},
-				{
-					"title": "Sources 源",
-					"children": [
-						{
-							"title": "概览",
-							"path": "rules/sources/overview"
-						},
-						{
-							"title": "内置源",
-							"children": [
-								{
-									"title": "MQTT 源",
-									"path": "rules/sources/builtin/mqtt"
-								},
-								{
-									"title": "Neuron 源",
-									"path": "rules/sources/builtin/neuron"
-								},
-								{
-									"title": "EdgeX 源",
-									"path": "rules/sources/builtin/edgex"
-								},
-								{
-									"title": "HTTP 拉取源",
-									"path": "rules/sources/builtin/http_pull"
-								},
-								{
-									"title": "HTTP 推送源",
-									"path": "rules/sources/builtin/http_push"
-								},
-								{
-									"title": "内存源",
-									"path": "rules/sources/builtin/memory"
-								},
-								{
-									"title": "文件源",
-									"path": "rules/sources/builtin/file"
-								},
-								{
-									"title": "Redis 源",
-									"path": "rules/sources/builtin/redis"
-								}
-							]
-						},
-						{
-							"title": "预定义插件源",
-							"children": [
-								{
-									"title": "Zero MQ 源",
-									"path": "rules/sources/plugin/zmq"
-								},
-								{
-									"title": "SQL 源",
-									"path": "rules/sources/plugin/sql"
-								},
-								{
-									"title": "随机源",
-									"path": "rules/sources/plugin/random"
-								},
-								{
-									"title": "视频源",
-									"path": "rules/sources/plugin/video"
-								}
-							]
-						}
-					]
-				},
-				{
-					"title": "Sinks 动作",
-					"children": [
-						{
-							"title": "概览",
-							"path": "rules/sinks/overview"
-						},
-						{
-							"title": "数据模板",
-							"path": "rules/data_template"
-						},
-						{
-							"title": "内置 sinks",
-							"children": [
-								{
-									"title": "MQTT 动作",
-									"path": "rules/sinks/builtin/mqtt"
-								},
-								{
-									"title": "Neuron 动作",
-									"path": "rules/sinks/builtin/neuron"
-								},
-								{
-									"title": "EdgeX 动作",
-									"path": "rules/sinks/builtin/edgex"
-								},
-								{
-									"title": "REST 动作",
-									"path": "rules/sinks/builtin/rest"
-								},
-								{
-									"title": "内存动作",
-									"path": "rules/sinks/builtin/memory"
-								},
-								{
-									"title": "日志动作",
-									"path": "rules/sinks/builtin/log"
-								},
-								{
-									"title": "Nop 动作",
-									"path": "rules/sinks/builtin/nop"
-								},
-								{
-									"title": "Redis 动作",
-									"path": "rules/sinks/builtin/redis"
-								}
-							]
-						},
-						{
-							"title": "预定义 sink 插件",
-							"children": [
-								{
-									"title": "Zero MQ 动作",
-									"path": "rules/sinks/plugin/zmq"
-								},
-								{
-									"title": "文件动作",
-									"path": "rules/sinks/plugin/file"
-								},
-								{
-									"title": "SQL 动作",
-									"path": "rules/sinks/plugin/sql"
-								},
-								{
-									"title": "InfluxDB 动作",
-									"path": "rules/sinks/plugin/influx"
-								},
-								{
-									"title": "InfluxDBV2 动作",
-									"path": "rules/sinks/plugin/influx2"
-								},
-								{
-									"title": "TDengine 动作",
-									"path": "rules/sinks/plugin/tdengine"
-								},
-								{
-									"title": "图像动作",
-									"path": "rules/sinks/plugin/image"
-								}
-							]
-						}
-					]
-				},
-				{
-					"title": "SQL 参考",
-					"children": [
-						{
-							"title": "语法",
-							"children": [
-								{
-									"title": "概览",
-									"path": "sqls/overview"
-								},
-								{
-									"title": "词汇元素",
-									"path": "sqls/lexical_elements"
-								},
-								{
-									"title": "数据类型",
-									"path": "sqls/data_types"
-								},
-								{
-									"title": "JSON 表达式",
-									"path": "sqls/json_expr"
-								},
-								{
-									"title": "查询语言元素",
-									"path": "sqls/query_language_elements"
-								}
-							]
-						},
-						{
-							"title": "语句",
-							"children": [
-								{
-									"title": "流语句",
-									"path": "sqls/streams"
-								},
-								{
-									"title": "表语句",
-									"path": "sqls/tables"
-								}
-							]
-						},
-						{
-							"title": "窗口",
-							"path": "sqls/windows"
-						},
-						{
-							"title": "内置函数",
-							"path": "sqls/built-in_functions"
-						},
-						{
-							"title": "预定义函数插件",
-							"path": "sqls/custom_functions"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "扩展开发",
+			"title": "开发者指南",
 			"children": [
 				{
 					"title": "概览",
@@ -396,7 +470,7 @@
 							"path": "extension/native/overview"
 						},
 						{
-							"title": "原生插件总览",
+							"title": "原始插件开发",
 							"path": "extension/native/develop/overview"
 						},
 						{
@@ -408,7 +482,7 @@
 							"path": "extension/native/develop/function"
 						},
 						{
-							"title": "动作插件开发",
+							"title": "Sink 插件开发",
 							"path": "extension/native/develop/sink"
 						},
 						{
@@ -437,84 +511,113 @@
 				{
 					"title": "外部函数",
 					"path": "extension/external/external_func"
+				},
+				{
+					"title": "Wasm 函数 （beta）",
+					"path": "extension/wasm/overview"
 				}
 			]
 		},
 		{
-			"title": "使用指南",
+			"title": "SQL 参考",
 			"children": [
 				{
-					"title": "概览",
-					"path": "operation/overview"
-				},
-				{
-					"title": "安装",
+					"title": "语句",
 					"children": [
 						{
-							"title": "安装指南",
-							"path": "operation/install/overview"
+							"title": "流语句",
+							"path": "sqls/streams"
 						},
 						{
-							"title": "centos 安装",
-							"path": "operation/install/cent-os"
+							"title": "表语句",
+							"path": "sqls/tables"
+						},
+						{
+							"title": "查询语句",
+							"path": "sqls/query_language_elements"
 						}
 					]
 				},
 				{
-					"title": "配置",
+					"title": "语法",
 					"children": [
 						{
-							"title": "配置文件",
-							"path": "operation/config/configuration_file"
+							"title": "概览",
+							"path": "sqls/overview"
 						},
 						{
-							"title": "认证配置",
-							"path": "operation/config/authentication"
+							"title": "词汇元素",
+							"path": "sqls/lexical_elements"
+						},
+						{
+							"title": "数据类型",
+							"path": "sqls/data_types"
+						},
+						{
+							"title": "JSON 表达式",
+							"path": "sqls/json_expr"
 						}
 					]
 				},
+				{
+					"title": "内置函数",
+					"path": "sqls/built-in_functions"
+				},
+				{
+					"title": "预定义函数插件",
+					"path": "sqls/custom_functions"
+				},
+				{
+					"title": "窗口",
+					"path": "sqls/windows"
+				}
+			]
+		},
+		{
+			"title": "API 参考",
+			"children": [
 				{
 					"title": "Rest API 接口",
 					"children": [
 						{
 							"title": "接口介绍",
-							"path": "operation/restapi/overview"
+							"path": "api/restapi/overview"
 						},
 						{
 							"title": "流管理",
-							"path": "operation/restapi/streams"
+							"path": "api/restapi/streams"
 						},
 						{
 							"title": "表管理",
-							"path": "operation/restapi/tables"
+							"path": "api/restapi/tables"
 						},
 						{
 							"title": "规则管理",
-							"path": "operation/restapi/rules"
+							"path": "api/restapi/rules"
 						},
 						{
 							"title": "插件管理",
-							"path": "operation/restapi/plugins"
+							"path": "api/restapi/plugins"
 						},
 						{
 							"title": "外部函数管理",
-							"path": "operation/restapi/services"
+							"path": "api/restapi/services"
 						},
 						{
 							"title": "模式管理",
-							"path": "operation/restapi/schemas"
+							"path": "api/restapi/schemas"
 						},
 						{
 							"title": "上传文件管理",
-							"path": "operation/restapi/uploads"
+							"path": "api/restapi/uploads"
 						},
 						{
 							"title": "规则集管理",
-							"path": "operation/restapi/ruleset"
+							"path": "api/restapi/ruleset"
 						},
 						{
 							"title": "数据导入导出",
-							"path": "operation/restapi/configuration"
+							"path": "api/restapi/data"
 						}
 					]
 				},
@@ -523,65 +626,35 @@
 					"children": [
 						{
 							"title": "总览",
-							"path": "operation/cli/overview"
+							"path": "api/cli/overview"
 						},
 						{
 							"title": "流管理",
-							"path": "operation/cli/streams"
+							"path": "api/cli/streams"
 						},
 						{
 							"title": "表管理",
-							"path": "operation/cli/tables"
+							"path": "api/cli/tables"
 						},
 						{
 							"title": "规则管理",
-							"path": "operation/cli/rules"
+							"path": "api/cli/rules"
 						},
 						{
 							"title": "插件管理",
-							"path": "operation/cli/plugins"
+							"path": "api/cli/plugins"
 						},
 						{
 							"title": "模式管理",
-							"path": "operation/cli/schemas"
+							"path": "api/cli/schemas"
 						},
 						{
 							"title": "规则集管理",
-							"path": "operation/cli/ruleset"
+							"path": "api/cli/ruleset"
 						},
 						{
 							"title": "数据导入导出",
-							"path": "operation/cli/configuration"
-						}
-					]
-				},
-				{
-					"title": "管理控制台",
-					"children": [
-						{
-							"title": "控制台使用",
-							"path": "operation/manager-ui/overview"
-						},
-						{
-							"title": "插件管理",
-							"path": "operation/manager-ui/plugins_in_manager"
-						}
-					]
-				},
-				{
-					"title": "编译",
-					"children": [
-						{
-							"title": "编译指南",
-							"path": "operation/compile/compile"
-						},
-						{
-							"title": "交叉编译",
-							"path": "operation/compile/cross-compile"
-						},
-						{
-							"title": "按需编译",
-							"path": "features"
+							"path": "api/cli/configuration"
 						}
 					]
 				}
