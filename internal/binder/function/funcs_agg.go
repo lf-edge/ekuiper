@@ -19,6 +19,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/montanaflynn/stats"
 )
 
 func registerAggFunc() {
@@ -206,6 +207,136 @@ func registerAggFunc() {
 			}
 			return nil
 		},
+	}
+	builtins["stddev"] = builtinFunc{
+		fType: ast.FuncTypeAgg,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0 := args[0].([]interface{})
+			if len(arg0) > 0 {
+				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("requires float64 slice but found %[1]T(%[1]v)", arg0), false
+				}
+				deviation, err := stats.StandardDeviation(float64Slice)
+				if err != nil {
+					return fmt.Errorf("StandardDeviation exec with error: %v", err), false
+				}
+				return deviation, true
+			}
+			return fmt.Errorf("run stddev function error: empty data"), false
+		},
+		val: ValidateOneNumberArg,
+	}
+	builtins["stddevs"] = builtinFunc{
+		fType: ast.FuncTypeAgg,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0 := args[0].([]interface{})
+			if len(arg0) > 0 {
+				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("requires float64 slice but found %[1]T(%[1]v)", arg0), false
+				}
+				deviation, err := stats.StandardDeviationSample(float64Slice)
+				if err != nil {
+					return fmt.Errorf("StandardDeviationSample exec with error: %v", err), false
+				}
+				return deviation, true
+			}
+			return fmt.Errorf("run stddevs function error: empty data"), false
+		},
+		val: ValidateOneNumberArg,
+	}
+	builtins["var"] = builtinFunc{
+		fType: ast.FuncTypeAgg,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0 := args[0].([]interface{})
+			if len(arg0) > 0 {
+				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("requires float64 slice but found %[1]T(%[1]v)", arg0), false
+				}
+				deviation, err := stats.Variance(float64Slice)
+				if err != nil {
+					return fmt.Errorf("PopulationVariance exec with error: %v", err), false
+				}
+				return deviation, true
+			}
+			return fmt.Errorf("run var function error: empty data"), false
+		},
+		val: ValidateOneNumberArg,
+	}
+	builtins["vars"] = builtinFunc{
+		fType: ast.FuncTypeAgg,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0 := args[0].([]interface{})
+			if len(arg0) > 0 {
+				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("requires float64 slice but found %[1]T(%[1]v)", arg0), false
+				}
+				deviation, err := stats.SampleVariance(float64Slice)
+				if err != nil {
+					return fmt.Errorf("SampleVariance exec with error: %v", err), false
+				}
+				return deviation, true
+			}
+			return fmt.Errorf("run vars function error: empty data"), false
+		},
+		val: ValidateOneNumberArg,
+	}
+	builtins["percentile_cont"] = builtinFunc{
+		fType: ast.FuncTypeAgg,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if err := ValidateLen(2, len(args)); err != nil {
+				return err, false
+			}
+			arg0 := args[0].([]interface{})
+			arg1 := args[1]
+			arg1Float64, err := cast.ToFloat64(arg1, cast.CONVERT_SAMEKIND)
+			if err != nil {
+				return fmt.Errorf("the second parameter requires float64 but found %[1]T(%[1]v)", arg1), false
+			}
+			if len(arg0) > 0 {
+				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("requires float64 slice but found %[1]T(%[1]v)", arg0), false
+				}
+				deviation, err := stats.Percentile(float64Slice, arg1Float64*100)
+				if err != nil {
+					return fmt.Errorf("percentile exec with error: %v", err), false
+				}
+				return deviation, true
+			}
+			return fmt.Errorf("run percentile_cont function error: empty data"), false
+		},
+		val: ValidateTwoNumberArg,
+	}
+	builtins["percentile_disc"] = builtinFunc{
+		fType: ast.FuncTypeAgg,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if err := ValidateLen(2, len(args)); err != nil {
+				return err, false
+			}
+			arg0 := args[0].([]interface{})
+			arg1 := args[1]
+			arg1Float64, err := cast.ToFloat64(arg1, cast.CONVERT_SAMEKIND)
+			if err != nil {
+				return fmt.Errorf("the second parameter requires float64 but found %[1]T(%[1]v)", arg1), false
+			}
+			if len(arg0) > 0 {
+				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("requires float64 slice but found %[1]T(%[1]v)", arg0), false
+				}
+				deviation, err := stats.PercentileNearestRank(float64Slice, arg1Float64*100)
+				if err != nil {
+					return fmt.Errorf("PopulationVariance exec with error: %v", err), false
+				}
+				return deviation, true
+			}
+			return fmt.Errorf("run percentile_cont function error: empty data"), false
+		},
+		val: ValidateTwoNumberArg,
 	}
 }
 
