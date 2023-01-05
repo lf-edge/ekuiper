@@ -290,12 +290,18 @@ func registerAggFunc() {
 			if err := ValidateLen(2, len(args)); err != nil {
 				return err, false
 			}
+			var arg1Float64 float64 = 1
 			arg0 := args[0].([]interface{})
-			arg1 := args[1]
-			arg1Float64, err := cast.ToFloat64(arg1, cast.CONVERT_SAMEKIND)
-			if err != nil {
-				return fmt.Errorf("the second parameter requires float64 but found %[1]T(%[1]v)", arg1), false
+			arg1 := args[1].([]interface{})
+			if len(arg1) > 0 {
+				v1 := getFirstValidArg(arg1)
+				val, err := cast.ToFloat64(v1, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("the second parameter requires float64 but found %[1]T(%[1]v)", arg1), false
+				}
+				arg1Float64 = val
 			}
+
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
 				if err != nil {
@@ -317,11 +323,16 @@ func registerAggFunc() {
 			if err := ValidateLen(2, len(args)); err != nil {
 				return err, false
 			}
+			var arg1Float64 float64 = 1
 			arg0 := args[0].([]interface{})
-			arg1 := args[1]
-			arg1Float64, err := cast.ToFloat64(arg1, cast.CONVERT_SAMEKIND)
-			if err != nil {
-				return fmt.Errorf("the second parameter requires float64 but found %[1]T(%[1]v)", arg1), false
+			arg1 := args[1].([]interface{})
+			if len(arg1) > 0 {
+				v1 := getFirstValidArg(arg1)
+				val, err := cast.ToFloat64(v1, cast.CONVERT_SAMEKIND)
+				if err != nil {
+					return fmt.Errorf("the second parameter requires float64 but found %[1]T(%[1]v)", arg1), false
+				}
+				arg1Float64 = val
 			}
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
