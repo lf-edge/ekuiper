@@ -1,6 +1,6 @@
 # 源（ Source ）扩展 
 
-源将数据从其他系统反馈到 eKuiper。eKuiper 支持  [MQTT 消息服务器](../../../rules/sources/builtin/mqtt.md)的内置源。 然而，用户仍然需要从各种外部系统（包括消息传递系统和数据管道等）中获取数据。源扩展正是为了满足此要求。
+源将数据从其他系统反馈到 eKuiper。eKuiper 支持  [MQTT 消息服务器](../../../guide/sources/builtin/mqtt.md)的内置源。 然而，用户仍然需要从各种外部系统（包括消息传递系统和数据管道等）中获取数据。源扩展正是为了满足此要求。
 
 ## 开发
 
@@ -85,16 +85,23 @@ function MySourceLookup() api.LookupSource{
 
 [SQL Lookup Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/sources/sql/sqlLookup.go) 是一个很好的示例。。
 
+### 可回溯源
+
+如果[规则检查点](../../../guide/rules/state_and_fault_tolerance.md#源考虑)被启用，源需要可回退。这意味着源需要同时实现`api.Source`和`api.Rewindable`接口。
+
+一个典型的实现是将 "offset "作为源的一个字段来保存。当读入新的值时更新偏移值。注意，当实现GetOffset()时，将被eKuiper系统调用，这意味着偏移值可以被多个go routines访问。因此，在读或写偏移量时，需要一个锁。
+
+
 ### 处理配置
 
 eKuiper 配置的格式为 yaml，它提供了一个集中位置  _/etc_  来保存所有配置。 在其中，为源配置提供了一个子文件夹  _sources_，同时也适用于扩展源。
 
-eKuiper 扩展支持配置系统自动读取 yaml 文件中的配置，并将其输入到源的 _Configure_ 方法中。 如果在流中指定了 [CONF_KEY](../../../sqls/streams.md#语言定义)  属性，则将输入该键的配置。 否则，将使用默认配置。
+eKuiper 扩展支持配置系统自动读取 yaml 文件中的配置，并将其输入到源的 _Configure_ 方法中。 如果在流中指定了 [CONF_KEY](../../../guide/streams/overview.md#流属性)  属性，则将输入该键的配置。 否则，将使用默认配置。
 
 要在源中使用配置，必须遵循以下约定：
  1. 您的配置文件名称必须与插件名字相同，例如，mySource.yaml。
   2. yaml 文件必须位于 _etc/sources_ 内。
-  3. 可以在 [此处](../../../rules/sources/builtin/mqtt.md)找到 yaml 文件的格式。
+  3. 可以在 [此处](../../../guide/sources/builtin/mqtt.md)找到 yaml 文件的格式。
 
 #### 通用配置字段
 
@@ -112,7 +119,7 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources
 
 ### 使用
 
-在[流定义](../../../sqls/streams.md#语言定义)中指定自定义源， 相关属性为：
+在[流定义](../../../guide/streams/overview.md#流属性)中指定自定义源， 相关属性为：
 
 - TYPE：指定源名称，必须为驼峰式命名。
 - CONF_KEY：指定要使用的配置键。

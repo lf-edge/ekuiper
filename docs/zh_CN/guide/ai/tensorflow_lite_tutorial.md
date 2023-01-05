@@ -86,7 +86,7 @@ Content-Type: application/json
 
 1. 安装 [Python 3](https://www.tensorflow.org/install/pip#1.-install-the-python-development-environment-on-your-system).
 
-2. 将 [requirements.txt](requirements.txt) 复制到您指定位置。 安装所需的 python 库：`pip3 install -r requirements.txt`。 requirements 来自相应 TensorFlow 版本的 `tensorflow/tensorflow/tools/pip_package/setup.py`。
+2. 安装依赖。根据 `tensorflow/tensorflow/tools/pip_package/setup.py` 创建 requirements.txt 文件并复制到您指定位置。 安装所需的 python 库：`pip3 install -r requirements.txt`。
 
 3. 安装 TensorFlow 的构建工具 [Bazel](https://docs.bazel.build/versions/4.0.0/install-ubuntu.html)。
 

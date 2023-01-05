@@ -16,8 +16,8 @@ eKuiper 允许用户自定义扩展，以支持更多的功能。用户可编写
 
 eKuiper 允许用户自定义不同类型的扩展。 
 
-- 源扩展用于扩展不同的流源，例如使用来自其他消息服务器的数据。eKuiper 对 [MQTT 消息服务器](../../rules/sources/builtin/mqtt.md)的内置源提供支持。
-- Sink/Action 扩展用于将发布/推送数据扩展到不同的目标，例如数据库，其他消息系统，Web 界面或文件系统。eKuiper 中提供内置动作支持，请参阅  [MQTT](../../rules/sinks/builtin/mqtt.md)  & [日志文件](../../rules/sinks/builtin/log.md).。
+- 源扩展用于扩展不同的流源，例如使用来自其他消息服务器的数据。eKuiper 对 [MQTT 消息服务器](../../guide/sources/builtin/mqtt.md)的内置源提供支持。
+- Sink/Action 扩展用于将发布/推送数据扩展到不同的目标，例如数据库，其他消息系统，Web 界面或文件系统。eKuiper 中提供内置动作支持，请参阅  [MQTT](../../guide/sinks/builtin/mqtt.md)  & [日志文件](../../guide/sinks/builtin/log.md).。
 - 函数扩展允许用户扩展 SQL 中使用的不同函数。 eKuiper支持内置函数，请参见 [函数](../../sqls/built-in_functions.md)。
 
 请阅读以下内容，了解如何实现不同的扩展。
@@ -90,7 +90,7 @@ func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionConte
 
 ### 运行时依赖
 
-有些插件可能需要访问文件系统中的依赖文件。依赖文件建放置于 {{ekuiperPath}}/etc/{{pluginType}}/{{pluginName}} 目录。打包插件时，依赖文件应放置于 [etc 目录](../../operation/restapi/plugins.md#插件文件格式)。安装后，这些文件会自动移动到推荐的位置。
+有些插件可能需要访问文件系统中的依赖文件。依赖文件建放置于 {{ekuiperPath}}/etc/{{pluginType}}/{{pluginName}} 目录。打包插件时，依赖文件应放置于 [etc 目录](../../api/restapi/plugins.md#插件文件格式)。安装后，这些文件会自动移动到推荐的位置。
 
 在插件源代码中，开发者可通过 context 获取 eKuiper 根目录，以访问文件系统中的依赖：
 

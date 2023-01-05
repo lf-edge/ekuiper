@@ -10,7 +10,7 @@ Based on a large number of IoV user cases and experiences, EMQ has introduced a 
 
 As a light-weight stream processing engine, eKuiper has a 10 MB level footprint and 20 MB memory requirement for data collection. Thus, eKuiper is suitable to deploy to the edge side of a vehicle, such as TBOX, MPU and infotainment system. 
 
-In this solution, we use eKuiper, the stream processing at the IoT Edge to implement flexible data collect on in-vehicle terminals; and adopt [EMQX](https://www.emqx.com/en), the large-scale distributed IoT MQTT broker to realize the connection, movement and processing of the collected data as well as the control command interaction of the integrated vehicle-cloud. In previous articles on the IoV, we have introduced the architecture design of Internet of Vehicles messaging platform based on EMQX in detail. So, we will not repeat it in this article. Next, this article will use eKuiper to introduce how to achieve flexible data collection for IoV.
+In this solution, we use eKuiper, the stream processing at the IoT Edge to implement flexible data collect on in-vehicle terminals; and adopt [EMQX](https://www.emqx.com/en), the large-scale distributed IoT MQTT broker to realize the connection, movement and processing of the collected data as well as the control command interaction of the integrated vehicle-cloud. 
 
 ## Scenarios
 

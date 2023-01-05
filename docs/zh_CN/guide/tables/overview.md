@@ -1,16 +1,15 @@
-# Table
+# 表
 
-eKuiper streams is unbounded and immutable, any new data are appended in the current stream for processing.  **Table** is provided to represent the current state of the stream. It can be considered as a snapshot of the stream. Users can use table to retain a batch of data for processing.
+eKuiper 流是无界且不可变的，任何新数据都会附加到当前流中进行处理。 **Table** 用于表示流的当前状态。它可以被认为是流的快照。用户可以使用 table 来保留一批数据进行处理。
 
-There are two kinds of table:
+有两种类型的表。
 
-- Scan table: accumulates the data in memory. It is suitable for smaller dataset and the table content do NOT need to share between rules.
-- Lookup table: refer to external table content. It is suitable for bigger dataset and share table content across rules.
+- 扫描表（Scan Table）：在内存中积累数据。它适用于较小的数据集，表的内容不需要在规则之间共享。
+- 查询表（Lookup Table）：绑定外部表并按需查询。它适用于更大的数据集，并且在规则之间共享表的内容。
 
-## Syntax
+## 语法定义
 
-Table supports almost the same syntax as streams. To create a table, run the below SQL:
-
+表支持与流几乎相同的语法。要创建表，请运行以下 SQL：
 ```sql
 CREATE TABLE   
     table_name   
@@ -18,37 +17,35 @@ CREATE TABLE
     WITH ( property_name = expression [, ...] );
 ```
 
-Table supports the same [data types](../streams/overview.md#data-types) as stream.
+表支持与流相同的 [数据类型](../streams/overview.md#流定义中的模式)。
+表还支持所有[流的属性](../streams/overview.md#流属性)。因此，表中也支持所有源类型。许多源不是批处理的，它们在任何给定时间点都有一个事件，这意味着表将始终只有一个事件。一个附加属性 `RETAIN_SIZE` 来指定表快照的大小，以便表可以保存任意数量的历史数据。
 
-Table also supports all [the properties of the stream](../streams/overview.md#stream-properties). Thus, all the source type are also supported in table. Many sources are not batched which have one event at any given time point, which means the table will always have only one event. An additional property `RETAIN_SIZE` to specify the size of the table snapshot so that the table can hold an arbitrary amount of history data.
+### 查询表的语法
 
-### Lookup Table Syntax
-
-The syntax is the same as creating a normal scan table, just need to specify kind property to be `lookup`. Below is an example to create a lookup data, which binds to redis database 0.
+语法与创建普通扫描表相同，只需指定 `KIND` 的属性为 `lookup`。下面是一个创建查询表的例子，它会与 redis 的数据库 0 绑定。
 
 ```sql
 CREATE TABLE alertTable() WITH (DATASOURCE="0", TYPE="redis", KIND="lookup")
 ```
 
-Currently, only `memory`, `redis` and `sql` source can be lookup table.
+目前，只有 `memory`、`redis` 和 `sql` 源可以作为查找表。
 
-### Table properties
+### 表的属性
 
-| Property name | Optional | Description                                                                                                                                                    |
-|---------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| DATASOURCE    | false    | The value is determined by source type. The topic names list if it's a MQTT data source. Please refer to related document for other sources.                   |
-| FORMAT        | true     | The data format, currently the value can be "JSON", "PROTOBUF" and "BINARY". The default is "JSON". Check [Binary Stream](#binary-stream) for more detail.     |
-| SCHEMAID      | true     | The schema to be used when decoding the events. Currently, only use when format is PROTOBUF.                                                                   |
-| KEY           | true     | The primary key of the table. For example, for SQL source key specifies the primary key in the SQL table. It is not obeyed by all source types.                |
-| TYPE          | true     | The source type. Each source type may support one kind or both kind of tables. Please refer to related documents.                                              |
-| CONF_KEY      | true     | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../sources/builtin/mqtt.md) for more info. |
-| KIND          | true     | The table kind, could be `scan` or `lookup`. If not specified, the default value is `scan`.                                                                    |
+| 属性名称       | 可选   | 描述                                                                                                                                                                                            |
+|------------|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| DATASOURCE | 否    | 取决于不同的源类型；如果是 MQTT 源，则为 MQTT 数据源主题名；其它源请参考相关的文档。                                                                                                                                              |
+| FORMAT     | 是    | 传入的数据类型，支持 "JSON", "PROTOBUF" 和 "BINARY"，默认为 "JSON" 。关于 "BINARY" 类型的更多信息，请参阅 [Binary Stream](../streams/overview.md#二进制流)。该属性是否生效取决于源的类型，某些源自身解析的时固定私有格式的数据，则该配置不起作用。可支持该属性的源包括 MQTT 和 ZMQ 等。 |
+| SCHEMAID   | 是    | 解码时使用的模式，目前仅在格式为 PROTOBUF 的情况下使用。                                                                                                                                                             |
+| KEY        | true | 表的主键。例如，对于SQL源，用于指定SQL表中的主键。并非所有的源类型都支持该属性。                                                                                                                                                   |
+| TYPE       | true | 源类型。每个源类型可以支持一种或两种表。请参考相关文件。                                                                                                                                                                  |
+| CONF_KEY   | 是    | 如果需要配置其他配置项，请在此处指定 config 键。 有关更多信息，请参见 [MQTT stream](../sources/builtin/mqtt.md) 。                                                                                                           |
+| KIND       | true | 表的种类，可以是 `scan` 或 `lookup`。如果没有指定，默认值是`scan`。                                                                                                                                                 |
 
+## 使用场景
 
-## Usage scenarios
+表是保留较为大量的状态的方法。扫描表将状态保存在内存中，而查找表将它们保存在外部，并可能是持久化的。扫描表更容易设置，而查找表可以很容易地连接到存在的持久化的状态。这两种类型都适用于流式批量综合计算。
 
-Table is a way to keep a large bunch of state for both scan and lookup type. Scan table keeps state in memory while lookup table keeps them externally and possibly persisted. Scan table is easier to set up while lookup table can easily connect to existed persisted states. Both types are suitable for stream batch integrated calculation.
-
-Please check below links for some typical scenarios.
-- [Scan table scenarios](scan.md)
-- [Lookup table scenarios](lookup.md)
+请查看以下链接，了解一些典型场景。
+- [扫描表使用场景](scan.md)
+- [查找表使用场景](lookup.md)

@@ -251,7 +251,7 @@ Rule rule1 was created successfully, please use 'cli getstatus rule rule1' comma
 
 ------
 
-If you want to send analysis result to another sink, please refer to [other sinks](../guide/rules/overview.md#sinksactions)
+If you want to send analysis result to another sink, please refer to [other sinks](../guide/sinks/overview.md)
 that supported in eKuiper.
 
 Now you can also take a look at the log file under `log/stream.log`, or through command `docker logs edgex-kuiper `

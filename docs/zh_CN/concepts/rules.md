@@ -16,4 +16,4 @@
 
 ## 参考阅读
 
-- [规则参考](../rules/overview.md)
+- [规则参考](../guide/rules/overview.md)

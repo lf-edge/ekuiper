@@ -1,6 +1,4 @@
-# eKuiper 中使用 Golang 模版 (template) 定制分析结果
-
-## 简介
+# 数据模板
 
 用户通过 eKuiper 进行数据分析处理后，使用各种 sink 可以往不同的系统发送数据分析结果。针对同样的分析结果，不同的 sink 需要的格式可能未必一样。比如，在某物联网场景中，当发现某设备温度过高的时候，需要向云端某 rest 服务发送一个请求，同时在本地需要通过 MQTT 协议往设备发送一个控制命令，这两者需要的数据格式可能并不一样，因此，需要对来自于分析的结果进行「二次处理」后，才可以往不同的目标发送针对数据。本文将介绍如何利用 sink 中的数据模版（data  template ）来实现对分析结果的「二次处理」。
 
@@ -11,6 +9,82 @@ Golang  模版将一段逻辑应用到数据上，然后按照用户指定的逻
 > 模版是通过将其应用到一个数据结构上来执行的。模版中的注释 (Annotations) 指的是数据结构中的元素（典型的为结构体中的一个字段，或者 map 中的一个 key），注释用于控制执行、并获取用于显示的值。模版的执行会迭代数据结构并设置游标，通过符号「.」 来表示，称之为「dot」，在执行过程中指向数据结构中的当前位置。
 >
 > 模版的输入文本可以为 UTF-8 编码的任意文本。「`动作` (Actions)」 -- 数据求值或者控制结构  - 是通过  "{{" 和 "}}" 来界定的；所有在`动作`之外的文本会被保持原样到输出，除了 raw strings，`动作`不可跨行（注释除外）。
+
+## 基础模板语法
+
+如果 sendSingle 为 true，则数据模板将针对某一条记录执行操作； 否则，它将对整个记录数组执行操作。 典型的数据模板是：
+
+例如，我们的目标输入为
+
+```
+[]map[string]interface{}{{
+    "ab" : "hello1",
+},{
+    "ab" : "hello2",
+}}
+```
+
+在 sendSingle=true 模式下：
+
+- 打印整个记录
+
+```
+"dataTemplate": "{\"content\":{{json .}}}",
+```
+
+- 打印 ab 字段
+
+```
+"dataTemplate": "{\"content\":{{.ab}}}",
+```
+
+如果 ab 字段是字符串，请添加引号
+```
+"dataTemplate": "{\"content\":\"{{.ab}}\"}",
+```
+
+在 sendSingle=false 模式下：
+
+- 打印出整个记录数组
+
+```
+"dataTemplate": "{\"content\":{{json .}}}",
+```
+
+- 打印出第一条记录
+
+```
+"dataTemplate": "{\"content\":{{json (index . 0)}}}",
+```
+
+- 打印出第一个记录的字段 ab
+
+```
+"dataTemplate": "{\"content\":{{index . 0 \"ab\"}}}",
+```
+
+- 将数组中每个记录的字段 ab 打印为 html 格式
+
+```
+"dataTemplate": "<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>",
+```
+
+
+可以自定义动作以支持不同种类的输出，有关更多详细信息，请参见 [extension](../../extension/overview.md) 。
+
+## 模版中支持的函数
+
+用户可通过模板函数，对数据进行各种转换，包括但不限于格式转换，数学计算和编码等。eKuiper 中支持的模板函数包括以下几类：
+
+1. Go 语言内置[模板函数](https://golang.org/pkg/text/template/#hdr-Functions)。
+2. 来自 [sprig library](http://masterminds.github.io/sprig/) 的丰富的扩展函数集。
+3. eKuiper 扩展的函数。
+
+eKuiper 扩展了几个可以在模版中使用的函数。
+
+- (deprecated)`json para1`: `json` 函数用于将 map 内容转换为 JSON 字符串。本函数已弃用，建议使用 sprig 扩展的 `toJson` 函数。
+- (deprecated)`base64 para1`: `base64` 函数用于将参数值编码为 base64 字符串。本函数已弃用，建议将参数转换为 string 类型后，使用 sprig 扩展的 `b64enc` 函数。
+
 
 ### 动作 (Actions)
 
@@ -39,7 +113,7 @@ Golang 模版提供了一些[内置的动作](https://golang.org/pkg/text/templa
 - 如果满足了条件 pipeline，则输出 JSON 字符串 `{"field1": true}`
 - 否则输出 JSON 字符串 `{"field1": false}`
 
-### eKuiper sink 数据格式
+## eKuiper sink 数据格式
 
 Golang 的模版可以作用于各种数据结构，比如 map、切片 (slice)，通道等，而 eKuiper 的 sink 中的数据模版得到的数据类型是固定的，是一个包含了 Golang `map` 切片的数据类型，如下所示。
 
@@ -69,11 +143,11 @@ Golang 的模版可以作用于各种数据结构，比如 map、切片 (slice)�
 ```
 
 - 将 `sendSingle` 设置为 `true`后，eKuiper 把传递给 sink 的 `[]map[string]interface{}` 数据类型进行遍历处理，对于遍历过程中的每一条数据都会应用用户指定的数据模版
-- `toJson` 是 eKuiper 提供的函数（用户可以参考 [eKuiper 扩展模版函数](./overview.md#模版中支持的函数)来了解更多的 eKuiper 扩展），可以将传入的参数转化为 JSON 字符串输出，对于遍历到的每一条数据，将 map 中的内容转换为 JSON 字符串
+- `toJson` 是 eKuiper 提供的函数（用户可以参考 [eKuiper 扩展模版函数](#模版中支持的函数)来了解更多的 eKuiper 扩展），可以将传入的参数转化为 JSON 字符串输出，对于遍历到的每一条数据，将 map 中的内容转换为 JSON 字符串
 
 Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置提供的函数](https://golang.org/pkg/text/template/#hdr-Functions)来获取更多函数信息。
 
-### 数据内容转换
+## 数据内容转换
 
 还是针对上述例子，需要对返回的 `t_av`（平均温度）做一些转换，转换的基本要求就是根据不同的平均温度，加入不同的描述文字，用于目标 sink 中的处理。规则如下，
 
@@ -116,7 +190,7 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
 {"device_id": 2, "description": "Current temperature is 27, it's normal."}
 ```
 
-### 数据遍历
+## 数据遍历
 
 通过给 sink 的 `sendSingle` 属性设置为 `true` ，可以实现把传递给 sink 的切片数据进行遍历。在此处，我们将介绍一些更为复杂的例子，比如在 sink 的结果中，包含了嵌套的数组类型的数据，如何通过在数据模版中提供的遍历功能，自己来实现遍历。
 

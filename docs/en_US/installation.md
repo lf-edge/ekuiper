@@ -58,7 +58,7 @@ Please make sure docker compose has installed before running.
    ```shell
    $ docker-compose -p my_ekuiper up -d
    ```
-3. Check docker images running status, make sure two continers are started.
+3. Check docker images running status, make sure two containers are started.
    ```shell
    $ docker ps
    CONTAINER ID   IMAGE                         COMMAND                  CREATED              STATUS                  PORTS                                                NAMES
@@ -82,7 +82,7 @@ eKuiper binary packages are released on below operating systems with AMD64, ARM 
 - Ubuntu 20.04
 - macOS
 
-For other operating systems such as Windows, users can [compile from source code manually](#compilation).
+For other operating systems such as Windows, users can [compile from source code manually](#compile-from-source-code).
 
 1. Download eKuiper zip or tar for your CPU architecture from [ekuiper.org](https://ekuiper.org/downloads) or [Github](https://github.com/lf-edge/ekuiper/releases).
 2. Unzip the installation file:

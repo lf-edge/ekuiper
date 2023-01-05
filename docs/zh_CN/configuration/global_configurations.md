@@ -70,7 +70,7 @@ REST http 服务器监听端口
 TLS 证书 cert 文件和 key 文件位置。如果 restTls 选项未配置，则 REST 服务器将启动为 http 服务器，否则启动为 https 服务器。
 
 ## authentication 
-当 `authentication` 选项为 true 时，eKuiper 将为 rest api 请求检查 `Token` 。请检查此文件以获取 [更多信息](authentication.md)。
+当 `authentication` 选项为 true 时，eKuiper 将为 rest api 请求检查 `Token` 。请检查此文件以获取 [更多信息](../api/restapi/authentication.md)。
 
 ```yaml
 basic:
@@ -93,7 +93,7 @@ Prometheus 端口可设置为与 eKuiper 的 REST 服务端口相同。这样设
 
 ## Pluginhosts 配置
 
-默认在 `packages.emqx.net` 托管所有预构建 [native 插件](../../extension/native/overview.md)。
+默认在 `packages.emqx.net` 托管所有预构建 [native 插件](../extension/native/overview.md)。
 
 所有插件列表如下：
 
@@ -111,17 +111,17 @@ GET http://localhost:9081/plugins/sinks/prebuild
 GET http://localhost:9081/plugins/functions/prebuild
 ``` 
 
-获取插件信息后，用户可以尝试这些插件，[更多信息](../restapi/plugins.md)
+获取插件信息后，用户可以尝试这些插件，[更多信息](../api/restapi/plugins.md)
 
 **注意：只有官方发布的基于 debian 的 docker 镜像支持以上操作**
 
 ## 规则配置
 
-配置规则选项的默认属性。所有的配置都可以在规则层面上被覆盖。查看[规则选项](../../rules/overview.md#选项)了解详情。
+配置规则选项的默认属性。所有的配置都可以在规则层面上被覆盖。查看[规则选项](../guide/rules/overview.md#选项)了解详情。
 
 ## Sink 配置
 
-配置 sink 的默认属性，目前主要用于配置[缓存策略](../../rules/sinks/overview.md#缓存)。在规则层有同样的配置选项，可以覆盖这些默认配置。
+配置 sink 的默认属性，目前主要用于配置[缓存策略](../guide/sinks/overview.md#缓存)。在规则层有同样的配置选项，可以覆盖这些默认配置。
 
 ```yaml
   # 是否开启缓存
@@ -162,7 +162,7 @@ GET http://localhost:9081/plugins/functions/prebuild
 * connectionSelector - 重用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
     * 只适用于 edgex redis 的连接信息 
     * 连接信息中的 server， port 和 password 会覆盖以上定义的 host， port 和 password
-    * [具体信息可参考](../../rules/sources/builtin/edgex.md#connectionselector)
+    * [具体信息可参考](../guide/sources/builtin/edgex.md#connectionselector)
 
 
 ### 配置示例
@@ -195,4 +195,4 @@ GET http://localhost:9081/plugins/functions/prebuild
 
 ## 初始化规则集
 
-支持基于文件的流和规则的启动时配置。用户可以将名为 `init.json` 的[规则集](../restapi/ruleset.md#规则集格式)文件放入 `data` 目录，以初始化规则集。该规则集只在eKuiper 第一次启动时被导入。
+支持基于文件的流和规则的启动时配置。用户可以将名为 `init.json` 的[规则集](../api/restapi/ruleset.md#规则集格式)文件放入 `data` 目录，以初始化规则集。该规则集只在eKuiper 第一次启动时被导入。

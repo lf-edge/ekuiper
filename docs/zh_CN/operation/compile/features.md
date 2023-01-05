@@ -4,18 +4,18 @@
 
 ## 功能列表
 
-| 功能                                                                      | Build Tag  | 描述                                                           |
-|-------------------------------------------------------------------------|------------|--------------------------------------------------------------|
-| 核心                                                                      | core       | eKuiper 的核心运行时。 包括流/表/规则的处理器和 REST API ，配置管理，SQL 解析器，规则运行时等。 |
-| [CLI](./operation/cli/overview.md)                                      | rpc        | CLI 服务端                                                      |
-| [EdgeX Foundry 整合](./edgex/edgex_rule_engine_tutorial.md)               | edgex      | 内置的 edgeX source, sink 和共享连接支持                               |
-| [原生插件](./extension/native/overview.md)                                  | plugin     | 原生插件运行时，REST API和CLI API等                                    |
-| [Portable 插件](./extension/portable/overview.md)                         | plugin     | Portable 插件运行时，REST API和CLI API等                             |
-| [外部服务](./extension/external/external_func.md)                           | service    | 外部服务运行时，REST API和CLI API等                                    |
-| [UI 元数据API](./operation/manager-ui/overview.md)                         | ui         | 元数据的 REST API，通常由 UI 端消费                                     |
-| [Prometheus 指标](./operation/config/configuration_file.md#prometheus-配置) | prometheus | 支持发送指标到 prometheus 中                                         |
-| [扩展模板函数](./rules/overview.md#模版中支持的函数)                                  | template   | 支持除 go 语言默认的模板函数之外的扩展函数，主要来自 sprig                           |
-| [有模式编解码](./rules/codecs.md)                                             | schema     | 支持模式注册及有模式的编解码格式，例如 protobuf                                 |
+| 功能                                                                          | Build Tag  | 描述                                                           |
+|-----------------------------------------------------------------------------|------------|--------------------------------------------------------------|
+| 核心                                                                          | core       | eKuiper 的核心运行时。 包括流/表/规则的处理器和 REST API ，配置管理，SQL 解析器，规则运行时等。 |
+| [CLI](../../api/cli/overview.md)                                            | rpc        | CLI 服务端                                                      |
+| [EdgeX Foundry 整合](../../edgex/edgex_rule_engine_tutorial.md)               | edgex      | 内置的 edgeX source, sink 和共享连接支持                               |
+| [原生插件](../../extension/native/overview.md)                                  | plugin     | 原生插件运行时，REST API和CLI API等                                    |
+| [Portable 插件](../../extension/portable/overview.md)                         | plugin     | Portable 插件运行时，REST API和CLI API等                             |
+| [外部服务](../../extension/external/external_func.md)                           | service    | 外部服务运行时，REST API和CLI API等                                    |
+| [UI 元数据API](../../operation/manager-ui/overview.md)                         | ui         | 元数据的 REST API，通常由 UI 端消费                                     |
+| [Prometheus 指标](../../configuration/global_configurations.md#prometheus-配置) | prometheus | 支持发送指标到 prometheus 中                                         |
+| [扩展模板函数](../../guide/sinks/data_template.md#模版中支持的函数)                       | template   | 支持除 go 语言默认的模板函数之外的扩展函数，主要来自 sprig                           |
+| [有模式编解码](../../guide/serialization/serialization.md)                        | schema     | 支持模式注册及有模式的编解码格式，例如 protobuf                                 |
 
 ## Usage
 

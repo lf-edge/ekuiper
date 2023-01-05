@@ -28,7 +28,7 @@ eKuiper can be deployed directly to bare metal servers or virtual machines.
 
 eKuiper has prebuilt packages downloadable for Linux such as CentOS, Debian and Ubuntu and macOS. You can [install from zip](../installation.md#install-from-zip) or [from packages](../installation.md#install-from-package).
 
-For other platforms, you may [build the runnable from source code](../installation.md#compilation).
+For other platforms, you may [build the runnable from source code](../installation.md#compile-from-source-code).
 
 ## Create and manage the first rule
 

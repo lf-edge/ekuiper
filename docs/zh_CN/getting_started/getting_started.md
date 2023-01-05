@@ -1,106 +1,106 @@
-# Getting Started
+# 开始入门
 
-Starting from download and installation, this document will guide you to start eKuiper and run the first rule.
+本文将从下载和安装开始，指导您启动 eKuiper 并运行第一条规则。
 
-## Install eKuiper
+## 安装 eKuiper
 
-eKuiper provides docker image, binary package and helm chart to install. 
+eKuiper 提供了docker镜像、二进制包和 helm 等安装方式。
 
-In this tutorial, we provide both web UI and CLI to create and manage the rules. If you want to run the eKuiper manager which is the web management console for eKuiper, please refer to [running eKuiper with management console](../installation.md#running-ekuiper-with-management-console).
+在本教程中，我们同时分别使用了 Web UI 和 CLI 来创建和管理规则，您可以选择任意一种方式运行。如果你想运行 eKuiper Web UI，即eKuiper的网络管理控制台，请参考[使用管理控制台运行 eKuiper](../installation.md#使用管理控制台运行)。
 
-### Running in docker
+### 在 Docker 中运行
 
-Docker deployment is the fastest way to start experimenting with eKuiper. 
+Docker 部署是开始尝试 eKuiper 的最快方式。
 
 ```shell
-docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:$tag
+docker run -p 9081:9081 -d -name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:$tag
 ```
 
-For more information about docker installation, please refer to [running eKuiper in docker](../installation.md#running-ekuiper-in-docker).
+关于 Docker 安装的更多信息，请参考[在 Docker 中运行eKuiper](../installation.md#在-docker-中运行)。
 
-### Running in Kubernetes
+### 在 Kubernetes 中运行
 
-For Kubernetes, eKuiper offers helm chart. Please refer to [install via helm](../installation.md#install-via-helm--k8sk3s-) for detail.
+针对 Kubernetes 运行环境，eKuiper 提供了 helm chart。请参考[install via helm](../installation.md#通过-helm-安装k8sk3s)了解详情。
 
-### Running in a VM or on bare metal
+### 在虚拟机或裸机上运行
 
-eKuiper can be deployed directly to bare metal servers or virtual machines.
+eKuiper 可以直接部署在裸机服务器或虚拟机上。
 
-eKuiper has prebuilt packages downloadable for Linux such as CentOS, Debian and Ubuntu and macOS. You can [install from zip](../installation.md#install-from-zip) or [from packages](../installation.md#install-from-package).
+eKuiper 有预先构建的软件包，可供 Linux, 如CentOS、Debian 和 Ubuntu 以及 macOS 的安装包下载下载。你可以[从压缩包安装](../installation.md#通过-zip-包安装)或[从软件包安装](../installation.md#通过软件包安装)。
 
-For other platforms, you may [build the runnable from source code](../installation.md#compilation).
+对于其他平台，你可以[从源代码构建可运行程序](../installation.md#从源码编译)。
 
-## Create and manage the first rule
+## 创建和管理第一条规则
 
-As a rule engine, eKuiper allows the user to submit stream processing job aka. rules and manage rules through CLI, REST API or management console. In this tutorial, we will walk you through the rule creation and management by management console and CLI respectively.
+作为规则引擎，eKuiper允许用户通过 CLI、REST API 或管理控制台提交流处理作业即规则，并管理规则。在本教程中，我们将引导你分别通过管理控制台和 CLI 来创建和管理规则。
 
-eKuiper rule is composed by a SQL and multiple actions. eKuiper SQL is an easy to use SQL-like language to specify the logic of a rule. eKuiper has a lot of built-in functions and extensions available for complex analysis to be used in your SQL. You can find more information about the syntax and its functions from the [eKuiper SQL reference](../sqls/overview.md).
+eKuiper 规则由 SQL 和多个动作组成。eKuiper SQL 是一种易于使用的类 SQL 语言，用于指定规则的逻辑。你可以从[eKuiper SQL 参考](../sqls/overview.md)中找到更多关于语法和其功能的信息。
 
-### Prerequisite
+### 前提条件
 
-We assume there is already a MQTT broker as the data source of our eKuiper rule. If you don't have one, EMQX is recommended. Please follow the [EMQ Installation Guide](https://docs.emqx.io/en/broker/latest/getting-started/install.html) to set up a mqtt broker.
+我们假设已经有一个 MQTT 服务器作为我们 eKuiper 规则的数据源。如果你没有，建议使用 EMQX。请按照[EMQX 安装指南](https://docs.emqx.io/en/broker/latest/getting-started/install.html)来安装一个 MQTT 服务器。
 
-You can also use the public MQTT test server `tcp://broker.emqx.io:1883` hosted by [EMQ](https://www.emqx.io).
+你也可以使用 [EMQ](https://www.emqx.io) 托管的公共 MQTT 测试服务器`tcp://broker.emqx.io:1883`。
 
-Remember your broker address, we will use it in our MQTT configurations in this tutorial.
+记住你的服务器地址，我们将在本教程的 MQTT 配置中使用它。
 
-### Scenario
+### 场景
 
-Let's consider a sample scenario where we are receiving temperature and humidity event from a sensor through MQTT service, and we want to issue an alert when the average temperature is bigger than 30 degree Celsius in a time window. We can write an eKuiper rule for the above scenario using the following several steps.
+让我们考虑一个示例场景，我们通过 MQTT 服务接收来自传感器的温度和湿度事件，我们希望创建一个规则，当一个时间窗口内平均温度大于 30 摄氏度时发出警报。我们可以通过以下几个步骤为上述场景编写一个 eKuiper 规则。
 
-1. Create a stream to define the data source that we want to proceed. The stream needs to have a name and an optional schema defining the data structure that each incoming event should contain. For this scenario, we will use an MQTT source to consume temperature events.
-2. Create the rule to define how to proceed the stream and the actions after proceed.
-3. Get the rule status and manage it like start, stop and delete.
+1. 创建一个流来定义我们要处理的数据源。该流需要有一个名称和一个可选的 schema，定义每个传入事件应包含的数据结构。对于这个方案，我们将使用一个 MQTT 源来消费温度事件。
+2. 创建规则以定义如何处理流和处理后的行动。
+3. 获取规则状态并管理它，如开始、停止和删除。
 
-We will do these steps in management console and CLI respectively to create the same rule.
+我们将在管理控制台和 CLI 中分别进行这些步骤来创建相同的规则。
 
-### Management console
+## 管理控制台
 
-Please make sure eKuiper manager has installed and configured.
+请确保 eKuiper manager 已经安装并配置完成。
 
-### Defining the stream
+### 定义流
 
-1. In Source/Stream page, click `Create stream` button.
-2. Create a stream named `demo` which consumes MQTT `demo` topic as specified in the DATASOURCE property. The MQTT source will connect to MQTT broker at `tcp://localhost:1883`. If your MQTT broker is in another location, click `Add configuration key` to set up a new configuration and use.
-    ![create stream](../resources/create_stream.png)
-3. Click `Submit`. You should find the `demo` stream in the stream list.
+1. 在Source/Stream页面，点击 "创建流 "按钮。
+2. 创建一个名为 `demo` 的流，消费 DATASOURCE 属性中指定的 MQTT `demo` 主题。MQTT 源将连接到 MQTT 服务器，默认地址是 `tcp://localhost:1883`。如果你的 MQTT 服务器地址不同，点击 `添加配置键` 来设置一个新的配置并使用。
+  ![创建流](../resources/create_stream.png)
+3. 点击`提交`。你应该在流列表中找到 `demo` 流。
 
-### Compose the rule
+### 编写规则
 
-1. Go to Rules page, click `Create rule`.
-2. Write the rule id, name and SQL as below. Then click `Add` to add actions. The SQL is `SELECT count(*), avg(temperature) AS avg_temp, max(humidity) AS max_hum FROM demo GROUP BY TUMBLINGWINDOW(ss, 5) HAVING avg_temp > 30`.
-![create rule](../resources/create_rule.png)
-3. Add MQTT action and fill in the configurations as below. Select `mqtt` in the Sink type dropdown. Set the broker address to your broker and set the topic to `result/rule1`. ClientID is optional, if not set an uuid will assign to it. If set, please make sure the id is unique and only use in one rule. Set the other properties like username, password according to your MQTT broker setting.
-![add mqtt action](../resources/mqtt_action.png)
-4. Click `Submit`. You should find the `myRule` rule in the rule list and started.
+1. 进入规则页面，点击 "创建规则"。
+2. 写下规则的ID、名称和SQL，如下所示。然后点击 "添加" 来添加动作。SQL是`SELECT count(*), avg(temperature) AS avg_temp, max(hum) AS max_hum FROM demo GROUP BY TUMBLINGWINDOW(ss, 5) HAVING avg_temp > 30`。
+  ![创建规则](../resources/create_rule.png)
+3. 添加 MQTT 动作并填写配置，如下所示。在 Sink 类型下拉菜单中选择 `mqtt`。将服务器地址设为你的服务器，并将主题设为 `result/rule1`。ClientID 是可选的，如果没有设置，将自动分配一个 uuid。如果设置了，请确保该 ID 是唯一的，并且只在一条规则中使用。根据你的 MQTT 服务器的配置，设置其他属性，如用户名、密码。
+   ![add mqtt action](../resources/mqtt_action.png)
+4. 点击 "提交"。你应该在规则列表中找到`myRule`规则并开始使用。
 
-By now, we have created a rule by specifying SQL as the logic, and add one MQTT action. As you could see, the actions could be multiple, you can add more actions like log, REST and file to issue the alarm.
+现在，我们已经通过指定 SQL 作为业务逻辑创建了一条规则，并添加了一个 MQTT 动作。正如你所看到的，这些动作可以有很多个，你可以添加更多的动作，如日志、REST和文件来发出警报动作。
 
-### Manage the rule
+### 管理规则
 
-In the Rules page, we could find all the created rules and its status as below.
+在规则页面，我们可以找到所有创建的规则和它的状态，如下所示。
 
-![rule list](../resources/rule_list.png)
+![规则列表](../resources/rule_list.png)
 
-You can start or stop the rule by touching the switch button. In the Operations column, the second operation is status, which will show the running status and [metrics](../operation/usage/monitor_with_prometheus.md) of the rule. Once the data source has data in, you should find the metrics number rising.
+你可以通过点击开关按钮来启动或停止该规则。在操作栏中，第二个操作是状态，它将显示规则的运行状态和[指标](../operation/usage/monitor_with_prometheus.md)。一旦数据源有数据进入，你应该发现指标数在上升。
 
-![rule status](../resources/rule_status.png)
+![规则状态](../resources/rule_status.png)
 
-You can edit, duplicate and delete the rules by clicking the button in the Operations column.
+你可以通过点击操作栏中的按钮来编辑、复制和删除这些规则。
 
 ### CLI
 
-eKuiper provide CLI binary after installation. It is used to run locally without any external tools to manage the rule engine.
+eKuiper 提供 CLI 客户端，它用于本地运行，不需要任何外部工具来管理规则引擎。
 
-### Defining the stream
+### 定义输入流
 
-We create a stream named `demo` which consumes MQTT `demo` topic as specified in the DATASOURCE property.
+我们创建一个名为 `demo` 的流，该流使用 `DATASOURCE` 属性中指定的 MQTT `demo` 主题。
 
 ```sh
 $ bin/kuiper create stream demo '(temperature float, humidity bigint) WITH (FORMAT="JSON", DATASOURCE="demo")'
 ```
 
-The MQTT source will connect to MQTT broker at `tcp://localhost:1883`. If your MQTT broker is in another location, specify it in the `etc/mqtt_source.yaml`.  You can change the server configuration as in below.
+MQTT 源将通过 `tcp://localhost:1883` 连接到 MQTT 消息服务器，如果您的 MQTT 消息服务器位于别的位置，请在 `etc/mqtt_source.yaml` 中进行指定。 您可以通过修改如下配置文件来更改配置。
 
 ```yaml
 default:
@@ -109,18 +109,18 @@ default:
   server: "tcp://127.0.0.1:1883"
 ```
 
-You can use command `kuiper show streams` to see if the `demo` stream was created or not.
+您可以使用 `kuiper show streams` 命令来查看是否创建了 `demo` 流。
 
-### Testing the stream through query tool
+### 通过查询工具测试流
 
-Now the stream is created, it can be tested from `kuiper query` command. The `kuiper` prompt is displayed as below after typing `cli query`.
+现在已经创建了流，可以通过 `kuiper query` 命令对其进行测试。键入`kuiper query`后，显示 `kuiper`提示符。
 
 ```sh
 $ bin/kuiper query
 kuiper > 
 ```
 
-In the `kuiper` prompt, you can type SQL and validate the SQL against the stream.
+在 `kuiper`提示符下，您可以键入 SQL 并根据流验证 SQL。
 
 ```sh
 kuiper > select count(*), avg(humidity) as avg_hum, max(humidity) as max_hum from demo where temperature > 30 group by TUMBLINGWINDOW(ss, 5);
@@ -128,7 +128,7 @@ kuiper > select count(*), avg(humidity) as avg_hum, max(humidity) as max_hum fro
 query is submit successfully.
 ```
 
-Now if any data are published to the MQTT server available at `tcp://127.0.0.1:1883`, then it prints message as following.
+现在，如果有任何数据发布到位于`tcp://127.0.0.1:1883`的 MQTT 服务器，那么它打印如下消息。
 
 ```
 kuiper > [{"avg_hum":41,"count":4,"max_hum":91}]
@@ -142,7 +142,7 @@ kuiper > [{"avg_hum":41,"count":4,"max_hum":91}]
 ...
 ```
 
-You can press `ctrl + c` to break the query, and server will terminate streaming if detecting client disconnects from the query. Below is the log print at server.
+您可以按 `ctrl + c` 键中断查询，如果检测到客户端与查询断开连接，服务器将终止流传输。 以下是服务器上的日志打印。
 
 ```
 ...
@@ -151,21 +151,21 @@ time="2019-09-09T21:46:54+08:00" level=info msg="stop the query."
 ...
 ```
 
-### Writing the rule
+### 编写规则
 
-As part of the rule, we need to specify the following:
-* rule id: the id of the rule. It must be unique
-* rule name: the description of the rule
-* sql: the query to run for the rule
-* actions: the output actions for the rule
+作为规则的一部分，我们需要指定以下内容：
+* 规则名称：规则的 ID。 它必须是唯一的
+* sql：针对规则运行的查询
+* 动作：规则的输出动作
 
-We can run the `kuiper rule` command to create rule and specify the rule definition in a file
+我们可以运行 `kuiper rule` 命令来创建规则并在文件中指定规则定义
 
 ```sh
 $ bin/kuiper create rule myRule -f myRule
 ```
 
-The content of `myRule` file as below. It publishes the result to the mqtt topic `result/myRule` when the average temperature in a 5-second tumbling window is bigger than 30.
+`myRule`文件的内容。 对于在 5 秒中的固定时间窗口中的平均温度大于30的事件，它将打印到日志中。
+
 
 ```json
 {
@@ -179,38 +179,40 @@ The content of `myRule` file as below. It publishes the result to the mqtt topic
     }]
 }
 ```
-You should see a successful message `rule myRule created` in the stream log, and the rule is now set up and running.
 
-### Managing the rules
+您应该在流日志中看到一条成功的消息`rule myRule created`。 现在，规则已经建立并开始运行。
 
-You can use command line tool to stop the rule for a while and restart it and other management work. The rule name is the identifier of a rule. 
+
+### 管理规则
+
+您可以使用命令行暂停规则一段时间，然后重新启动规则和其他管理工作。 规则名称是规则的标识符。
 
 ```sh
 $ bin/kuiper stop rule myRule
 ```
 
-## Testing the rule
+### 测试规则
 
-Now the rule engine is ready to receive events from MQTT `demo`  topic. To test it, just use a MQTT client such as [MQTT X](https://mqttx.app/) to publish message to the `demo` topic. The message should be in json format like this:
+现在，规则引擎已准备就绪，可以接收来自 MQTT `demo` 主题的事件。 要对其进行测试，只需使用 MQTT 客户端将消息发布到 `demo` 主题即可。 该消息应为 json 格式，如下所示：
 
 ```json
 {"temperature":31.2, "humidity": 77}
 ```
 
-Since we publish the alarm to MQTT topic `result/myRule`, we can use a MQTT client to subscribe to the topic. We should receive message if the 5-second average temperature is bigger than 30.
+由于我们将警报发布到 MQTT 主题 `result/myRule`，我们可以使用 MQTT 客户端来订阅该主题。如果5秒钟的平均温度大于30，我们应该收到消息。
 
-Below is an example data and the output in MQTT X.
+下面是一个数据例子和 MQTT X 中的输出。
 
 ![result](../resources/result.png)
 
-## Further Reading
+## 进一步阅读
 
-Refer to the following topics for guidance on using the eKuiper.
+请参考以下主题，以获取有关使用 eKuiper 的指导。
 
-- [Installation](../installation.md)
-- [Rules](../guide/rules/overview.md)
-- [SQL reference](../sqls/overview.md)
-- [Stream](../guide/streams/overview.md)
+- [安装](../installation.md)
+- [规则](../guide/rules/overview.md)
+- [SQL 参考手册](../sqls/overview.md)
+- [流](../guide/streams/overview.md)
 - [Sink](../guide/sinks/overview.md)
-- [Command line interface tools - CLI](../api/cli/overview.md)
-- [Management Console](../guide/rules/overview.md)
+- [命令行界面 CLI](../api/cli/overview.md)
+- [管理控制台](../guide/rules/overview.md)

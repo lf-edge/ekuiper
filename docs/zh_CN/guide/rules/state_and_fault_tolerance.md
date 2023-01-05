@@ -4,7 +4,7 @@
 eKuiper 支持有状态的规则流。eKuiper 中有两种状态：
 
 1. 窗口操作和可回溯源的内部状态。
-2. 对流上下文扩展公开的用户状态，可参考 [状态存储](../extension/native/overview.md#状态存储)。
+2. 对流上下文扩展公开的用户状态，可参考 [状态存储](../../extension/native/overview.md#状态存储)。
 
 ## 容错
 

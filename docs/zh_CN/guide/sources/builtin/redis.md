@@ -8,7 +8,7 @@ eKuiper 提供了对 redis 中数据查询的内置支持。请注意，现在 r
 create table table1 () WITH (DATASOURCE="0", FORMAT="json", TYPE="redis", KIND="lookup");
 ```
 
-您可以使用 [cli](../../../operation/cli/tables.md) 或 [rest api](../../../operation/restapi/tables.md) 来管理表。
+您可以使用 [cli](../../../api/cli/tables.md) 或 [rest api](../../../api/restapi/tables.md) 来管理表。
 
 Redis 源的配置文件是 */etc/sources/redis.yaml* ，可以在其中指定 redis 的连接信息等属性。
 
