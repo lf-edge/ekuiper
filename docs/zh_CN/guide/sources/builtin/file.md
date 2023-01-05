@@ -14,7 +14,7 @@ CREATE TABLE table1 (
 ) WITH (DATASOURCE="lookup.json", FORMAT="json", TYPE="file");
 ```
 
-您可以使用 [cli](../../../operation/cli/tables.md) 或 [rest api](../../../operation/restapi/tables.md) 来管理表。
+您可以使用 [cli](../../../api/cli/tables.md) 或 [rest api](../../../api/restapi/tables.md) 来管理表。
 
 文件源的配置文件是 */etc/sources/file.yaml* ，可以在其中指定文件的路径。
 

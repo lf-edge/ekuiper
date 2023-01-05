@@ -1,11 +1,11 @@
-# Analytic Engine for KubeEdge
+# KubeEdge 的分析引擎
 
-[KubeEdge](https://kubeedge.io/) is an open-source system for extending native containerized application orchestration capabilities to hosts at Edge.
+[KubeEdge](https://kubeedge.io/) 是一个开源系统，用于将容器化应用程序编排功能扩展到Edge的主机。它基于kubernetes构建，并为网络应用程序提供基础架构支持。
 
 ![arch](./arch.png)
 
-As a kubernetes compliance system, KubeEdge enables the containerized deployment of the eKuiper instance. Please check [installation](../../installation.md#install-via-helm--k8sk3s-) for how to install eKuiper in k8s system.
+作为一个兼容 kubernetes 的系统，KubeEdge 能够实现 eKuiper 实例的容器化部署。请查看[installation](../../installation.md#通过-helm-安装k8sk3s)了解如何在类 k8s 系统中安装 eKuiper。
 
-The Edge part of KubeEdge uses MQTT for communication between deviceTwin and devices. To use KubeEdge in double mqtt or external mode, users can configure the MQTT broker to be NanoMQ in the edge node.
+KubeEdge 的边缘部分使用 MQTT 在 deviceTwin 和设备之间进行通信。为了在双 mqtt 或外部模式下使用KubeEdge，用户可以将 MQTT 消息服务器配置为边缘节点的 NanoMQ。
 
-Follow up, eKuiper can ingest device data from MQTT and provides versatile analytic capabilities for the KubeEdge components to achieve low latency calculation on edge.
+eKuiper 可以从 MQTT 订阅设备数据，并为 KubeEdge 组件提供多功能的分析能力，以实现边缘的低延迟计算。

@@ -244,10 +244,10 @@ curl -X POST --location http://127.0.0.1:9081/rules \
 
 本教程使用到了 Neuron source 和 sink 的一部分功能，以及一部分流式计算的场景。
 
-- 详细了解 Neuron 流入数据格式，请阅读[Neuron Source 参考](../../rules/sources/builtin/neuron.md)。
-- 详细了解 Neuron 反控的相关参数，请阅读[Neuron Sink 参考](../../rules/sinks/builtin/neuron.md)。
+- 详细了解 Neuron 流入数据格式，请阅读[Neuron Source 参考](../../guide/sources/builtin/neuron.md)。
+- 详细了解 Neuron 反控的相关参数，请阅读[Neuron Sink 参考](../../guide/sinks/builtin/neuron.md)。
 - 了解 eKuiper 的[概念和基本使用场景](../../concepts/ekuiper.md)。
-- 了解[规则的组成和参数](../../rules/overview.md)。
+- 了解[规则的组成和参数](../../guide/rules/overview.md)。
 - [eKuiper 管理控制台的使用](../../operation/manager-ui/overview.md#开始使用)。
 
 

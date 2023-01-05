@@ -54,7 +54,7 @@
 
 ### 节点类型
 
-对于源节点，nodeType是源的类型，如 `mqtt` 和 `edgex` 。请参考 [source](./sources/overview.md) 了解所有支持的类型。注意，所有源节点共享相同的属性，这与[定义流](../sqls/streams.md)时的属性相同。具体的配置是由 `CONF_KEY` 定义的。在下面的例子中，nodeType 指定了源节点是一个 mqtt 源。dataSource 和 format 属性与定义流时的含义相同。
+对于源节点，nodeType是源的类型，如 `mqtt` 和 `edgex` 。请参考 [source](../sources/overview.md) 了解所有支持的类型。注意，所有源节点共享相同的属性，这与[定义流](../../sqls/streams.md)时的属性相同。具体的配置是由 `CONF_KEY` 定义的。在下面的例子中，nodeType 指定了源节点是一个 mqtt 源。dataSource 和 format 属性与定义流时的含义相同。
 
 ```json
   "demo": {
@@ -67,7 +67,7 @@
   },
 ```
 
-对于 sink 节点，nodeType 是 sink 的类型，如 `mqtt` 和 `edgex` 。请参考 [sink](./sinks/overview.md) 了解所有支持的类型。对于所有的 sink 节点，它们共享一些共同的属性，但每种类型都会有一些自有的属性。
+对于 sink 节点，nodeType 是 sink 的类型，如 `mqtt` 和 `edgex` 。请参考 [sink](../sinks/overview.md) 了解所有支持的类型。对于所有的 sink 节点，它们共享一些共同的属性，但每种类型都会有一些自有的属性。
 
 对于 operator 节点，nodeType 是新定义的，而且每个 nodeType 有不同的属性。
 
@@ -148,10 +148,10 @@
 
 #### 窗口
 
-这个节点在工作流中定义了一个[窗口](../sqls/windows.md)。它可以接受多个输入，但每个输入必须是一个单行。它将产生一个行的集合。
+这个节点在工作流中定义了一个[窗口](../../sqls/windows.md)。它可以接受多个输入，但每个输入必须是一个单行。它将产生一个行的集合。
 
 - type：字符串类型，表示窗口类型，可用值为 "tumblingwindow"、"hoppingwindow"、"slidingwindow"、"sessionwindow "和 "countwindow"。
-- unit：要使用的时间单位。查看[时间单位](../sqls/windows.md#时间单位)的所有可用值。
+- unit：要使用的时间单位。查看[时间单位](../../sqls/windows.md#时间单位)的所有可用值。
 - size：int 类型，窗口的长度。
 - interval：int 类型，窗口的触发间隔。
 

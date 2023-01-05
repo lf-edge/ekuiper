@@ -1,4 +1,4 @@
-# Wasm 插件
+# Wasm 插件 (beta)
 
 作为对原生插件的补充  Wasm 插件旨在提供相同的功能，同时允许在更通用的环境中运行并由更多语言创建。
 
@@ -147,4 +147,4 @@ Messages : {“num” : 25}
 
 通过将内容（json、Wasm文件）放在`plugins/wasm/${pluginName}`中，可以在启动时自动加载可移植插件。
 
-要在运行时管理可移植插件，我们可以使用 [REST](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/operation/restapi/plugins.md) 或 [CLI](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/operation/cli/plugins.md) 命令。
+要在运行时管理可移植插件，我们可以使用 [REST](../../api/restapi/plugins.md) 或 [CLI](../../api/cli/plugins.md) 命令。

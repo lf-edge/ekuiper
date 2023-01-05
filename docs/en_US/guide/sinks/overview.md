@@ -85,7 +85,7 @@ Each action can define its own properties. There are several common properties:
 
 ### Dynamic properties
 
-In the sink, it is common to fetch a property value from the result data to achieve dynamic output. For example, to write data into a dynamic topic of mqtt. The dynamic properties will be parsed as a [data template](#data-template). In below example, the sink topic is gotten from the selected topic using data template.
+In the sink, it is common to fetch a property value from the result data to achieve dynamic output. For example, to write data into a dynamic topic of mqtt. The dynamic properties will be parsed as a [data template](./data_template.md). In below example, the sink topic is gotten from the selected topic using data template.
 
 ```json
 {

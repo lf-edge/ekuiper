@@ -1,12 +1,12 @@
-# Stream
+# 流
 
-A stream is the runtime form of a source connector in eKuiper. It must specify a source type to define how to connect to the external resource.
+流是 eKuiper 中数据源连接器的运行形式。它必须指定一个源类型来定义如何连接到外部资源。
 
-When using as a stream, the source must be unbounded. The stream acts like a trigger for the rule. Each event will trigger a calculation in the rule.
+当作为一个流使用时，源必须是无界的。流的作用就像规则的触发器。每个事件都会触发规则中的计算。
 
-Unlike relational database, eKuiper do not need a pre-built schema. This makes it adaptable to schemaless data which is common in the IoT and edge scenarios. When working with fixed type stream, the user can also define schema like in database to get more validation and SQL optimization in compile time. In most case, schemaless mode skip the data validation during data loading which may gain better performance.
+与关系型数据库不同，eKuiper 不需要一个预先建立的模式。这使得它可以适应无模式的数据，这在物联网和边缘场景中很常见。在处理固定类型的数据流时，用户也可以像数据库一样定义模式，以便在编译时获得更多验证和 SQL 优化。在大多数情况下，无模式跳过了数据加载过程中的数据验证，这可能获得更好的性能。
 
-## Stream Definition
+## 流定义
 
 ```sql
 CREATE STREAM   
@@ -15,47 +15,48 @@ CREATE STREAM
     WITH ( property_name = expression [, ...] );
 ```
 
-The stream definition is a SQL statement. It is composed by two parts:
+流定义是一个 SQL 语句。它由两部分组成。
 
-1. The schema definition of the stream. The syntax is the same as a SQL table definition. The schema here is optional. If it is empty, the stream is schemaless.
-2. The properties in the WITH clause which define the connector type and behaviors like serialization format.
+1. 流的模式定义。其语法与 SQL 表定义相同。这里的模式是可选的。如果它是空的，则流是无模式的。
+2. 在 WITH 子句中定义连接器类型和行为的属性，如序列化格式。
 
-### Schema in Stream Definition
+### 流定义中的模式
 
-Schema definition is optional. It is only needed when the ingested data is fixed type and need a strong validation.
+模式定义是可选的。只有当输入的数据是固定类型并且需要强大的验证时，才需要它。
 
-In eKuiper, each column or an expression has a related data type. A data type describes (and constrains) the set of values that a column of that type can hold or an expression of that type can produce.
+在 eKuiper 中，每个列或表达式都有一个相关的数据类型。 数据类型描述（约束）该类型的列可以容纳的一组值或该类型可以产生的表达式。
 
-Below is the list of data types supported.
+以下是支持的数据类型的列表。
 
-| #   | Data type | Description                                                                                                               |
-|-----|-----------|---------------------------------------------------------------------------------------------------------------------------|
-| 1   | bigint    |                                                                                                                           |
-| 2   | float     |                                                                                                                           |
-| 3   | string    |                                                                                                                           |
-| 4   | datetime  |                                                                                                                           |
-| 5   | boolean   |                                                                                                                           |
-| 6   | bytea     | A sequence of bytes to store binary data. If the stream format is "JSON", the bytea field must be a base64 encoded string |
-| 7   | array     | The array type, can be any simple types or array and type.                                                                |
-| 8   | struct    | The complex type.                                                                                                         |
+| #   | 数据类型     | 说明                                                             |
+|-----|----------|----------------------------------------------------------------|
+| 1   | bigint   |                                                                |
+| 2   | float    |                                                                |
+| 3   | string   |                                                                |
+| 4   | datetime |                                                                |
+| 5   | boolean  |                                                                |
+| 6   | bytea    | 用于存储二进制数据的字节数组。如果在格式为 "JSON" 的流中使用此类型，则传入的数据需要为 base64 编码的字符串。 |
+| 7   | array    | 数组类型可以是任何简单类型，数组类型或结构类型。                                       |
+| 8   | struct   | 复杂类型                                                           |
 
-### Stream Properties
+### 流属性
 
-| Property name    | Optional | Description                                                                                                                                                                                                                                 |
-|------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| DATASOURCE       | false    | The value is determined by source type. The topic names list if it's a MQTT data source. Please refer to related document for other sources.                                                                                                |
-| FORMAT           | true     | The data format, currently the value can be "JSON", "PROTOBUF" and "BINARY". The default is "JSON". Check [Binary Stream](#binary-stream) for more detail.                                                                                  |
-| SCHEMAID         | true     | The schema to be used when decoding the events. Currently, only use when format is PROTOBUF.                                                                                                                                                |
-| DELIMITER        | true     | Only effective when using `delimited` format, specify the delimiter character, default is commas.                                                                                                                                           |
-| KEY              | true     | Reserved key, currently the field is not used. It will be used for GROUP BY statements.                                                                                                                                                     |
-| TYPE             | true     | The source type, if not specified, the value is "mqtt".                                                                                                                                                                                     |
-| StrictValidation | true     | To control validation behavior of message field against stream schema. See [Strict Validation](#strict-validation) for more info.                                                                                                           |
-| CONF_KEY         | true     | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../sources/builtin/mqtt.md) for more info.                                                                              |
-| SHARED           | true     | Whether the source instance will be shared across all rules using this stream                                                                                                                                                               |
-| TIMESTAMP        | true     | The field to represent the event's timestamp. If specified, the rule will run with event time. Otherwise, it will run with processing time. Please refer to [timestamp management](../../sqls/windows.md#timestamp-management) for details. |
-| TIMESTAMP_FORMAT | true     | The default format to be used when converting string to or from datetime type.                                                                                                                                                              |
+| 属性名称             | 可选  | 说明                                                                                                                                                                      |
+|------------------|-----|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| DATASOURCE       | 否   | 取决于不同的源类型；如果是 MQTT 源，则为 MQTT 数据源主题名；其它源请参考相关的文档。                                                                                                                        |
+| FORMAT           | 是   | 传入的数据类型，支持 "JSON", "PROTOBUF" 和 "BINARY"，默认为 "JSON" 。关于 "BINARY" 类型的更多信息，请参阅 [Binary Stream](#二进制流)。该属性是否生效取决于源的类型，某些源自身解析的时固定私有格式的数据，则该配置不起作用。可支持该属性的源包括 MQTT 和 ZMQ 等。 |
+| SCHEMAID         | 是   | 解码时使用的模式，目前仅在格式为 PROTOBUF 的情况下使用。                                                                                                                                       |
+| DELIMITER        | 是   | 仅在使用 `delimited` 格式时生效，用于指定分隔符，默认为逗号。                                                                                                                                   |
+| KEY              | 是   | 保留配置，当前未使用该字段。 它将用于 GROUP BY 语句。                                                                                                                                        |
+| TYPE             | 是   | 源类型，如未指定，值为 "mqtt"。                                                                                                                                                     |
+| StrictValidation | 是   | 针对流模式控制消息字段的验证行为。 有关更多信息，请参见 [Strict Validation](#strict-validation)                                                                                                    |
+| CONF_KEY         | 是   | 如果需要配置其他配置项，请在此处指定 config 键。 有关更多信息，请参见 [MQTT stream](../sources/builtin/mqtt.md) 。                                                                                     |
+| SHARED           | 是   | 是否在使用该流的规则中共享源的实例                                                                                                                                                       |
+| TIMESTAMP        | 是   | 代表该事件时间戳的字段名。如果有设置，则使用此流的规则将采用事件时间；否则将采用处理时间。详情请看[时间戳管理](../../sqls/windows.md#时间戳管理)。                                                                                  |
+| TIMESTAMP_FORMAT | 是   | 字符串和时间格式转换时使用的默认格式。                                                                                                                                                     |
 
-**Example 1,**
+
+**示例1**
 
 ```sql
 my_stream 
@@ -63,11 +64,11 @@ my_stream
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```
 
-The stream will subscribe to MQTT topic ``topic/temperature``, the server connection uses ``server`` key of ``default`` section in configuration file ``$ekuiper/etc/mqtt_source.yaml``.
+该流将订阅 MQTT 主题`topic/temperature`，服务器连接使用配置文件`$ekuiper/etc/mqtt_source.yaml` 中默认部分的 server 键。
 
-- See [MQTT source](../sources/builtin/mqtt.md) for more info.
+- 有关更多信息，请参见 [MQTT source](../sources/builtin/mqtt.md)
 
-**Example 2,**
+**示例2**
 
 ```sql
 demo (
@@ -80,25 +81,25 @@ demo (
 	) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
 ```
 
-The stream will subscribe to MQTT topic `test/`, the server connection uses settings of `demo` section in configuration file `$ekuiper/etc/mqtt_source.yaml`.
+流将订阅 MQTT 主题 `test/`，服务器连接使用配置文件`$ekuiper/etc/mqtt_source.yaml` 中 demo 部分的设置。
 
-**Example 3**
+**示例3**
 
 ```sql
 demo () WITH (DATASOURCE="test/", FORMAT="protobuf", SCHEMAID="proto1.Book");
 ```
 
-The stream will subscribe to MQTT topic `test/` and using PROTOBUF format to decode the data. The decode schema is defined by `BOOK` message type in `$ekuiper/data/schemas/protobuf/schema1.proto` file. Regardng the management of schema, please refer to [schema registry](../serialization/serialization.md#schema).
+流将订阅 MQTT 主题 `test/`，使用 PROTOBUF 格式，根据在 `$ekuiper/data/schemas/protobuf/schema1.proto` 文件中的 `Book` 定义对流入的数据进行解码。其中，模式的管理详见[模式注册表](../serialization/serialization.md#模式)。
 
-- See [MQTT source](../sources/builtin/mqtt.md) for more info.
+- 有关更多信息，请参见 [MQTT source](../sources/builtin/mqtt.md)
 
-- See [rules and streams CLI docs](../../api/cli/overview.md) for more information of rules & streams management.
+- 有关规则和流管理的更多信息，请参见 [规则和流 CLI docs](../../api/cli/overview.md)
 
-### Share source instance across rules
+### 共享源实例
 
-By default, each rule will instantiate its own source instance. In some scenarios, users may need to manipulate the exact same data stream with different rules. For example, for the data of temperature from a sensor. They may want to trigger an alert when the average for a period of time is higher than 30 degree and trigger another alert when it is lower than 0. With default configuration, each rule creates a source instance and may receive data in different order due to network delay or other factors so that the average calculation may happen with different context. By sharing the instance, we can assure both rules are processing the same data. Additionally, it will have better performance by eliminating the overhead of instantiation.
+默认情况下，每个规则会创建自己的源实例。在某些场景中，用户需要不同的规则处理完全相同的数据流。例如，在处理传感器的温度数据时，用户可能需要一个规则，当一段时间的平均温度大于30度时触发警告；而另一个规则则是当一段时间的平均温度小于0度时触发警告。使用默认配置时，两个规则各自独立实例化源实例。由于网络延迟等原因，规则可能得到不同顺序，甚至各有缺失数据的数据流，从而在不同的数据维度中计算平均值。通过配置共享源实例，用户可以确保两个规则处理完全相同的数据。同时，由于节省了额外的源实例开销，规则的性能也能得到提升。
 
-To use the share instance mode, just set the `SHARED` option to true in the stream definition.
+使用共享源实例模式，只需要共享源实例的流时，将其 `SHARED` 属性设置为 true 。
 
 ```
 demo (
@@ -106,38 +107,39 @@ demo (
 	) WITH (DATASOURCE="test", FORMAT="JSON", KEY="USERID", SHARED="true");
 ```
 
-## Schema
+## 数据结构
 
-The schema of a stream contains two parts. One is the data structure defined in the data source definition, i.e. the logical schema, and the other is the SchemaId specified when using strongly typed data formats, i.e. the physical schema, such as those defined in Protobuf and Custom formats.
+流的数据结构(schema) 包含两个部分。一个是在数据源定义中定义的数据结构，即逻辑数据结构；另一个是在使用强类型数据格式时指定的 SchemaId 即物理数据结构，例如 Protobuf 和 Custom 格式定义的数据结构。
 
-Overall, we will support 3 recursive ways of schema.
+整体上，我们将支持3种递进的数据结构方式：
 
-1. Schemaless, where the user does not need to define any kind of schema, mainly used for weakly structured data flows, or where the data structure changes frequently.
-2. Logical schema only, where the user defines the schema at the source level, mostly used for weakly typed encoding, such as the JSON format, for users whose data has a fixed or roughly fixed format and do not want to use a strongly typed data codec format. In the case, the StrictValidation parameter can be used to configure whether to perform data validation and conversion.
-3. Physical schema, the user uses protobuf or custom formats and defines the schemaId, where the validation of the data structure is done by the format implementation.
+1. Schemaless，用户无需定义任何形式的 schema，主要用于弱结构化数据流，或数据结构经常变化的情况。
+2. 仅逻辑结构，用户在 source 层定义 schema，多用于弱类型的编码方式，例如最常用的 JSON。适用于用户的数据有固定或大致固定的格式，同时不想使用强类型的数据编解码格式。使用这种方式的情况下，可以可通过 StrictValidation 参数配置是否进行数据验证和转换。
+3. 物理结构，用户使用 protobuf 或者 custom 格式，并定义 schemaId。此时，数据结构的验证将由格式来实现。
 
-Both the logical and physical schema definitions are used for SQL syntax validation in the parsing and loading phases of rule creation and for runtime optimization. The inferred schema of the stream can be obtained via [Schema API](../../api/restapi/streams.md#get-stream-schema).
-
+逻辑结构和物理结构定义都用于规则创建的解析和载入阶段的 SQL 语法验证以及运行时优化等。推断后的数据流的数据结构可通过 [Schema API](../../api/restapi/streams.md#获取数据结构)获取。
 
 ### Strict Validation
 
-Used only for logically schema streams. If strict validation is set, the rule will verify the existence of the field and validate the field type based on the schema. If the data is in good format, it is recommended to turn off validation.
+仅用于逻辑结构的数据流。若设置 strict validation，则规则运行中将根据逻辑结构对字段存在与否以及字段类型进行校验。若数据格式完好，建议关闭验证。
 
-### Schema-less stream
-If the data type of the stream is unknown or varying, we can define it without the fields. This is called schema-less. It is defined by leaving the fields empty.
+### Schema-less 流
+
+如果流的数据类型未知或不同，我们可以不使用字段来定义它。 这称为 schema-less。 通过将字段设置为空来定义它。
+
 ```sql
 schemaless_stream 
   ()
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```
 
-Schema-less stream field data type will be determined at runtime. If the field is used in an incompatible clause, a runtime error will be thrown and send to the sink. For example, `where temperature > 30`. Once a temperature is not a number, an error will be sent to the sink.
+Schema-less 流字段数据类型将在运行时确定。 如果在不兼容子句中使用该字段，则会抛出运行时错误并将其发送到目标。 例如，`where temperature > 30`。 一旦温度不是数字，将错误发送到目标。
 
-See [Query languange element](../../sqls/query_language_elements.md) for more inforamtion of SQL language.
+有关 SQL 语言的更多信息，请参见 [查询语言元素](../../sqls/query_language_elements.md) 。
 
-### Binary Stream
+### 二进制流
 
-Specify "BINARY" format for streams of binary data such as image or video streams. The payload of such streams is a block of binary data without fields. So it is required to define the stream as only one field of `bytea`. In the below example, the payload will be parsed into `image` field of `demoBin` stream.
+对于二进制数据流，例如图像或者视频流，需要指定数据格式为 "BINARY" 。二进制流的数据为一个二进制数据块，不区分字段。所以，其流定义必须仅有一个 `bytea` 类型字段。如下流定义示例中，二进制流的数据将会解析为 `demoBin` 流中的 `image` 字段。
 
 ```sql
 demoBin (
@@ -145,4 +147,5 @@ demoBin (
 ) WITH (DATASOURCE="test/", FORMAT="BINARY");
 ```
 
-If "BINARY" format stream is defined as schemaless, a default field named `self` will be assigned for the binary payload.
+如果 "BINARY" 格式流定义为 schemaless，数据将会解析到默认的名为 `self` 的字段。
+

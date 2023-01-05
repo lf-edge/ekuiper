@@ -18,7 +18,7 @@ CREATE TABLE
     WITH ( property_name = expression [, ...] );
 ```
 
-Table supports the same [data types](../streams/overview.md#data-types) as stream.
+Table supports the same [data types](../streams/overview.md#schema-in-stream-definition) as stream.
 
 Table also supports all [the properties of the stream](../streams/overview.md#stream-properties). Thus, all the source type are also supported in table. Many sources are not batched which have one event at any given time point, which means the table will always have only one event. An additional property `RETAIN_SIZE` to specify the size of the table snapshot so that the table can hold an arbitrary amount of history data.
 
@@ -34,15 +34,15 @@ Currently, only `memory`, `redis` and `sql` source can be lookup table.
 
 ### Table properties
 
-| Property name | Optional | Description                                                                                                                                                    |
-|---------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| DATASOURCE    | false    | The value is determined by source type. The topic names list if it's a MQTT data source. Please refer to related document for other sources.                   |
-| FORMAT        | true     | The data format, currently the value can be "JSON", "PROTOBUF" and "BINARY". The default is "JSON". Check [Binary Stream](#binary-stream) for more detail.     |
-| SCHEMAID      | true     | The schema to be used when decoding the events. Currently, only use when format is PROTOBUF.                                                                   |
-| KEY           | true     | The primary key of the table. For example, for SQL source key specifies the primary key in the SQL table. It is not obeyed by all source types.                |
-| TYPE          | true     | The source type. Each source type may support one kind or both kind of tables. Please refer to related documents.                                              |
-| CONF_KEY      | true     | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../sources/builtin/mqtt.md) for more info. |
-| KIND          | true     | The table kind, could be `scan` or `lookup`. If not specified, the default value is `scan`.                                                                    |
+| Property name | Optional | Description                                                                                                                                                                      |
+|---------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| DATASOURCE    | false    | The value is determined by source type. The topic names list if it's a MQTT data source. Please refer to related document for other sources.                                     |
+| FORMAT        | true     | The data format, currently the value can be "JSON", "PROTOBUF" and "BINARY". The default is "JSON". Check [Binary Stream](../streams/overview.md#binary-stream) for more detail. |
+| SCHEMAID      | true     | The schema to be used when decoding the events. Currently, only use when format is PROTOBUF.                                                                                     |
+| KEY           | true     | The primary key of the table. For example, for SQL source key specifies the primary key in the SQL table. It is not obeyed by all source types.                                  |
+| TYPE          | true     | The source type. Each source type may support one kind or both kind of tables. Please refer to related documents.                                                                |
+| CONF_KEY      | true     | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../sources/builtin/mqtt.md) for more info.                   |
+| KIND          | true     | The table kind, could be `scan` or `lookup`. If not specified, the default value is `scan`.                                                                                      |
 
 
 ## Usage scenarios

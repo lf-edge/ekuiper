@@ -1,31 +1,31 @@
-# Installation
+# 安装
 
-eKuiper provides docker image, binary packages and helm chart to install.
+eKuiper 提供了 docker镜像、二进制包和 Helm Chart 等安装方式。
 
-## Running eKuiper in Docker
+## 在 Docker 中运行
 
-Please make sure docker has installed before running.
+运行前请确认 Docker 已经安装。
 
-1. Get docker image.
+1. 获取 Docker 镜像。
    ```shell
    docker pull lfedge/ekuiper:x.x.x
    ```
-2. Start docker container.
+2. 启动 Docker 容器。
    ```shell
    docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER=tcp://broker.emqx.io:1883 lfedge/ekuiper:xxx
    ```
 
-In this example, we specify the default MQTT broker via environment variable to `broker.emqx.io`, which is a public MQTT test server hosted by [EMQ](https://www.emqx.io).
+在这个例子中，我们通过环境变量指定默认的MQTT代理为`broker.emqx.io`，这是一个由[EMQ]（https://www.emqx.io）托管的公共MQTT测试服务器。
 
-For more configuration and docker image tags, please check [lfedge/ekuiper in docker hub](https://hub.docker.com/r/lfedge/ekuiper).
+更多 eKuiper 镜像配置和标签说明，请查看[docker hub](https://hub.docker.com/r/lfedge/ekuiper)。
 
-## Running eKuiper with management console
+## 使用管理控制台运行
 
-eKuiper manager is a free eKuiper management web console which is provided as a docker image. We can use docker compose to run both eKuiper and eKuiper manager at once to ease the usage.
+eKuiper manager 是一个免费的 eKuiper 管理控制台，以 Docker 镜像的形式提供。我们可以使用docker compose 来一键运行 eKuiper 和 eKuiper manager。
 
-Please make sure docker compose has installed before running.
+在运行之前，请确保docker compose已经安装。
 
-1. Create `docker-compose.yaml` file.
+1. 创建 `docker-compose.yaml` 文件.
    ```yaml
    version: '3.4'
 
@@ -54,11 +54,11 @@ Please make sure docker compose has installed before running.
         KUIPER__BASIC__CONSOLELOG: "true"
         KUIPER__BASIC__IGNORECASE: "false"
      ```
-2. Start docker-compose cluster.
+2. 启动 docker-compose 集群。
    ```shell
    $ docker-compose -p my_ekuiper up -d
    ```
-3. Check docker images running status, make sure two continers are started.
+3. 检查 Docker镜像的运行状态，确保两个容器正常启动。
    ```shell
    $ docker ps
    CONTAINER ID   IMAGE                         COMMAND                  CREATED              STATUS                  PORTS                                                NAMES
@@ -66,11 +66,11 @@ Please make sure docker compose has installed before running.
    fa7c33b3e114   emqx/ekuiper-manager:latest   "/usr/bin/docker-ent…"   About a minute ago   Up 59 seconds           0.0.0.0:9082->9082/tcp                               manager
    ```
 
-Please check [use of eKuiper management console](./operation/manager-ui/overview.md) to set up and configure the eKuiper manager.
+请查看[使用 eKuiper 管理控制台](./operation/manager-ui/overview.md)来设置和配置 eKuiper 管理控制台。
 
-## Install From Zip
+## 通过 Zip 包安装
 
-eKuiper binary packages are released on below operating systems with AMD64, ARM and ARM64 support:
+eKuiper 发布了以下操作系统的二进制包，支持 AMD64、ARM 和 ARM64 等 CPU 架构。
 
 - CentOS 7 (EL7)
 - CentOS 8 (EL8)
@@ -82,38 +82,38 @@ eKuiper binary packages are released on below operating systems with AMD64, ARM 
 - Ubuntu 20.04
 - macOS
 
-For other operating systems such as Windows, users can [compile from source code manually](#compilation).
+对于其他操作系统，如Windows，用户可以[从源代码手动编译](#从源码编译)。
 
-1. Download eKuiper zip or tar for your CPU architecture from [ekuiper.org](https://ekuiper.org/downloads) or [Github](https://github.com/lf-edge/ekuiper/releases).
-2. Unzip the installation file:
+1.  从 [ekuiper.org](https://ekuiper.org/downloads) 或 [Github](https://github.com/lf-edge/ekuiper/releases) 下载适合你 CPU 架构的 eKuiper zip 或 tar 包。
+2. 解压安装包:
     ```shell
     unzip kuiper-x.x.x-linux-amd64.zip
     ```
-3. Start eKuiper.
+3. 启动 eKuiper.
     ```shell
     $ bin/kuiperd
     ```
-4. Remove eKuiper. Simply delete the eKuiper directory.
+4. 卸载 eKuiper：删除 eKuiper 文件夹即可。
 
-After installation, all the files are inside the unzipped directory. Please check [installed directory structure](#installation-structure) for detail.
+安装后，所有的文件都在未压缩的目录内。请查看[安装的目录结构](#目录结构)了解详情。
     
 
-## Install from package
+## 通过软件包安装
 
-1. Download eKuiper package for your CPU architecture from [ekuiper.org](https://ekuiper.org/downloads) or [Github](https://github.com/lf-edge/ekuiper/releases).
-2. Install eKuiper.
-   - DEB package:
+1.  从 [ekuiper.org](https://ekuiper.org/downloads) 或 [Github](https://github.com/lf-edge/ekuiper/releases) 下载适合你 CPU 架构的 eKuiper 软件包。
+2. 安装 eKuiper.
+   - DEB 包:
      ```shell
      # for debian/ubuntu
      $ sudo apt install ./kuiper-x.x.x-linux-amd64.deb
      ```   
-   - RPM package:
+   - RPM 包:
      ```shell
      # for CentOS
      $ sudo rpm -ivh kuiper-x.x.x-linux-amd64.rpm
      ```   
-3. Start eKuiper.
-   - quick start
+3. 启动 eKuiper.
+   - 快速启动
      ```shell
      $ sudo kuiperd
      ```   
@@ -121,7 +121,7 @@ After installation, all the files are inside the unzipped directory. Please chec
      ```shell
      sudo systemctl start kuiper
      ```
-4. Remove eKuiper.
+4. 移除 eKuiper.
    - DEB:
      ```shell
      sudo apt remove --purge kuiper
@@ -130,8 +130,8 @@ After installation, all the files are inside the unzipped directory. Please chec
      ```shell
      sudo yum remove kuiper
      ```
-     
-When installing by package, the eKuiper folders are not in the same directory. The installation structure is as below:
+
+当按软件包安装时，eKuiper 的文件夹不在同一个目录中。安装后的目录结构如下。
 
 ```
 /usr/lib/kuiper/bin
@@ -147,14 +147,14 @@ When installing by package, the eKuiper folders are not in the same directory. T
    ...
 ```
 
-## Install via Helm (K8S、K3S)
+## 通过 Helm 安装（K8S、K3S）
 
-1. Add helm repository.
+1. 添加 helm 库。
    ```shell
     $ helm repo add emqx https://repos.emqx.io/charts
     $ helm repo update
    ```
-2. Query eKuiper.
+2. 查询 eKuiper
    ```shell
     $ helm search repo emqx
     NAME         CHART VERSION APP VERSION DESCRIPTION
@@ -162,38 +162,38 @@ When installing by package, the eKuiper folders are not in the same directory. T
     emqx/emqx-ee v4.0.0        v4.0.0      A Helm chart for EMQX
     emqx/ekuiper  0.1.1         0.1.1       A lightweight IoT edge analytic software
    ```
-3. Start eKuiper.
+3. 启动 eKuiper
    ```shell
     $ helm install my-ekuiper emqx/ekuiper
    ``` 
-4. View eKuiper status.
+4. 查看 eKuiper 状态
    ```shell
    $ kubectl get pods
    NAME         READY  STATUS    RESTARTS  AGE
    my-ekuiper-0 1/1    Running   0         56s
    ```
 
-## Compile from source code
+## 从源码编译
 
-1. Get the source code.
+1. 获取源代码
    ```shell
    $ git clone https://github.com/lf-edge/ekuiper.git
    ```
-2. Compile. 
+2. 编译 
    ```shell
    $ make
    ```
-3. Start eKuiper.
+3. 启动 eKuiper
    ```shell
    $ cd _build/kuiper-x.x.x-linux-amd64/
    $ bin/kuiperd
    ```
-   
-eKuiper allows to tailor the binary in compilation to get a customized feature set. As written by go, it also allows cross compilation. For detail, please check [compilation](./operation/compile/compile.md).
 
-## Installation structure
+eKuiper 允许在编译中对二进制文件进行定制，以获得定制的功能集。它也允许交叉编译，详情请查看 [compilation](./operation/compile/compile.md)。
 
-Below is the directory structure after installation.
+## 目录结构
+
+下面是安装后的目录结构。
 
 ```shell
 bin
@@ -211,20 +211,20 @@ log
 
 ### bin
 
-The `bin` directory includes all of executable files. Such as the kuiper server `kuiperd` and the cli client `kuiper`.
+`bin` 目录包括所有的可执行文件。例如，ekuiper 服务器 `kuiperd` 和 cli 客户端 `kuiper`。
 
 ### etc
 
-The `etc` directory contains the default configuration files of eKuiper. Such as the global configuration file `kuiper.yaml` and all the source configuration files such as `mqtt_source.yaml`.
+`etc` 目录包含 eKuiper 的默认配置文件。如全局配置文件 `kuiper.yaml` 和所有源配置文件，如`mqtt_source.yaml`。
 
 ### data
 
-This folder saves the persisted definitions of streams and rules. It also contains any user defined configurations.
+这个文件夹保存了流和规则的持久定义。它还包含任何用户定义的配置。
 
-### plugins
+### plugin
 
-eKuiper allows users to develop your own plugins, and put these plugins into this folder.  See [extension](./extension/overview.md) for more info for how to extend the eKuiper.
+eKuiper 允许用户开发你自己的插件，并将这些插件放入这个文件夹。关于如何扩展eKuiper，请参见[extension](./extension/overview.md)，了解更多信息。
 
 ### log
 
-All the log files are under this folder. The default log file name is `stream.log`.
+所有的日志文件都在这个文件夹下。默认的日志文件名是`stream.log`。

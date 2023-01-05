@@ -2,7 +2,7 @@
 
 LF Edge eKuiper 通过 source 和 sink 连接各种通信协议，例如 MQTT，HTTP 等协议的外部系统。eKuiper 支持配置 source/sink 的传输数据的编解码格式，目前可支持 JSON，ProtoBuf 和 Binary 格式。Protocol Buffers (Protobuf) 是一种语言中立、平台中立的可扩展机制，用于序列化结构化数据的二进制传输格式。Protobuf 相比常规数据传输格式（如JSON或XML）更加高效和快速并节省传输带宽，因此得到了广泛的应用。
 
-本教程以 Protobuf 格式为例，讲解如何在 eKuiper 中设置编解码格式，通过 source 读入并解析该格式的数据以及在sink中使用该格式编码写入。本教程采用 eKuiper Manager 进行规则的创建和管理，请参考[UI 教程](../../operation/manager-ui/overview.md)。您也可以采用[REST API](../../operation/restapi/overview.md)或者在 eKuiper 运行的边端运行[命令行工具](../../operation/cli/overview.md)来完成相同的规则管理操作。
+本教程以 Protobuf 格式为例，讲解如何在 eKuiper 中设置编解码格式，通过 source 读入并解析该格式的数据以及在sink中使用该格式编码写入。本教程采用 eKuiper Manager 进行规则的创建和管理，请参考[UI 教程](../../operation/manager-ui/overview.md)。您也可以采用[REST API](../../api/restapi/overview.md)或者在 eKuiper 运行的边端运行[命令行工具](../../api/cli/overview.md)来完成相同的规则管理操作。
 
 开始动手操作之前，需要准备以下环境：
 
@@ -85,7 +85,7 @@ message Book {
 
 ## 进一步阅读
 
-- [编解码](../../rules/codecs.md)
-- [Schema 管理 REST API](../../operation/restapi/schemas.md)
-- [Schema 管理命令行](../../operation/cli/schemas.md)
+- [编解码](./serialization.md)
+- [Schema 管理 REST API](../../api/restapi/schemas.md)
+- [Schema 管理命令行](../../api/cli/schemas.md)
 

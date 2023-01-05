@@ -584,6 +584,10 @@
 							"path": "api/restapi/overview"
 						},
 						{
+							"title": "认证配置",
+							"path": "api/restapi/authentication"
+						},
+						{
 							"title": "流管理",
 							"path": "api/restapi/streams"
 						},
@@ -654,7 +658,7 @@
 						},
 						{
 							"title": "数据导入导出",
-							"path": "api/cli/configuration"
+							"path": "api/cli/data"
 						}
 					]
 				}
@@ -1288,7 +1292,7 @@
 						},
 						{
 							"title": "Data Export/Import",
-							"path": "api/restapi/configuration"
+							"path": "api/restapi/data"
 						}
 					]
 				},
@@ -1325,7 +1329,7 @@
 						},
 						{
 							"title": "Data Export/Import",
-							"path": "api/cli/configuration"
+							"path": "api/cli/data"
 						}
 					]
 				}

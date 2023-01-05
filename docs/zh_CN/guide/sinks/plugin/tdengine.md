@@ -20,11 +20,11 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/T
 | user           | string   | 否 | 用户名，默认值为 `root` 。                                                                                     |
 | password       | string   | 否 | 密码，默认值为 `taosdata` 。                                                                                  |
 | database       | string   | 是 | 数据库名                                                                                                  |
-| table          | string   | 是 | 表名，可设置[动态属性](../../overview.md#动态属性)。                                                                 |
+| table          | string   | 是 | 表名，可设置[动态属性](../overview.md#动态属性)。                                                                 |
 | fields         | []string | 否 | 将要插入的表字段集合。sink 收到的数据和数据库表中均有该字段。若为设置，则所有结果字段写入数据库。                                                   |
 | provideTs      | Bool     | 否 | 用户是否提供时间戳字段，默认为否。                                                                                     |
 | tsFieldName    | String   | 是 | 时间戳字段名称                                                                                               |
-| sTable         | String   | 否 | 使用的超级表，可设置[动态属性](../../overview.md#动态属性)。                                                             |
+| sTable         | String   | 否 | 使用的超级表，可设置[动态属性](../overview.md#动态属性)。                                                             |
 | tagFields      | []String | 否 | 结果中作为标签的字段。若设置 sTable 属性，则该属性必填。                                                                      |
 | tableDataField | String   | 否 | 将 tableDataField 的嵌套值写入数据库。                                          |
 

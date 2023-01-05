@@ -10,7 +10,7 @@ To develop a sink for eKuiper is to implement [api.Sink](https://github.com/lf-e
 
 Before starting the development, you must [setup the environment for golang plugin](../overview.md#setup-the-plugin-developing-environment). 
 
-To develop a sink, the _Configure_ method must be implemented. This method will be called once the sink is initialized. In this method, a map that contains the configuration in the [rule actions definition](../../../guide/rules/overview.md#sinksactions) is passed in. Typically, there will be information such as host, port, user and password of the external system. You can use this map to initialize this sink.
+To develop a sink, the _Configure_ method must be implemented. This method will be called once the sink is initialized. In this method, a map that contains the configuration in the [rule actions definition](../../../guide/sinks/overview.md) is passed in. Typically, there will be information such as host, port, user and password of the external system. You can use this map to initialize this sink.
 
 ```go
 //Called during initialization. Configure the sink with the properties from action definition 
@@ -28,7 +28,7 @@ The main task for a Sink is to implement _collect_ method. The function will be 
 
 Most of the time, the map content will be the selective fields. But if `sendError` property is enabled and there are errors happen in the rule, the map content will be like `{"error":"error message here"}`.
 
-The developer can fetch the transformed result from the context method `ctx.TransformOutput(data)`. The return values are the transformed value of `[]byte` type. Currently, it will be transformed to the json byte array be default or formatted with the set [`dataTemlate` property](../../../guide/rules/overview.md#data-template). If the value is transformed by dataTemplate, the second return value will be true. 
+The developer can fetch the transformed result from the context method `ctx.TransformOutput(data)`. The return values are the transformed value of `[]byte` type. Currently, it will be transformed to the json byte array be default or formatted with the set [`dataTemlate` property](../../../guide/sinks/data_template.md). If the value is transformed by dataTemplate, the second return value will be true. 
 
 The developer can return any errors. However, to leverage the retry feature of eKuiper, the developer must return an error whose message starts with "io error".
 
@@ -61,7 +61,7 @@ So in the _Configure_ method, parse the `rowkindField` to know which field in th
 
 #### Parse dynamic properties
 
-For customized sink plugins, users may still want to support [dynamic properties](../../../guide/rules/overview.md#dynamic-properties) like the built-in ones.
+For customized sink plugins, users may still want to support [dynamic properties](../../../guide/sinks/overview.md#dynamic-properties) like the built-in ones.
 
 In the context object, a function `ParseTemplate` is provided to support the parsing of the dynamic property with the go template syntax. In the customized sink, developers can specify some properties to be dynamic according to the business logic. And in the plugin code, use this function to parse the user input in the collect function or elsewhere.
 
@@ -80,7 +80,7 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o extensions/sink
 
 ### Usage
 
-The customized sink is specified in a [actions definition](../../../guide/rules/overview.md#sinksactions). Its name is used as the key of the action. The configuration is the value.
+The customized sink is specified in [actions definition](../../../guide/sinks/overview.md). Its name is used as the key of the action. The configuration is the value.
 
 If you have developed a sink implementation MySink, you should have:
 1. In the plugin file, symbol MySink is exported.

@@ -89,7 +89,7 @@ There is a very simple [instruction](https://github.com/tensorflow/tensorflow/tr
 
 1. Install [Python 3](https://www.tensorflow.org/install/pip#1.-install-the-python-development-environment-on-your-system).
 
-2. Copy [requirements.txt](requirements.txt) to your location. Install required python lib: `pip3 install -r requirements.txt`. The requirements are from `tensorflow/tensorflow/tools/pip_package/setup.py` of the corresponding TensorFlow version.
+2. Create requirements.txt according to `tensorflow/tensorflow/tools/pip_package/setup.py` of the corresponding TensorFlow version and copy it to your location. Install required python lib: `pip3 install -r requirements.txt`.
 
 3. Install [Bazel](https://docs.bazel.build/versions/4.0.0/install-ubuntu.html) which is the build tool for TensorFlow.
 

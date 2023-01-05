@@ -1,10 +1,44 @@
-# LF Edge eKuiper - 超轻量物联网边缘数据分析软件
+# LF Edge eKuiper - 超轻量物联网边缘流处理软件
 
-LF Edge eKuiper 是 Golang 实现的轻量级物联网边缘分析、流式处理开源软件，可以运行在各类资源受限的边缘设备上。eKuiper 设计的一个主要目标就是将在云端运行的实时流式计算框架（比如 [Apache Spark](https://spark.apache.org)，[Apache Storm](https://storm.apache.org) 和 [Apache Flink](https://flink.apache.org) 等）迁移到边缘端。eKuiper 参考了上述云端流式处理项目的架构与实现，结合边缘流式数据处理的特点，采用了编写基于`源 (Source)`，`SQL (业务逻辑处理)`, `目标 (Sink)` 的规则引擎来实现边缘端的流式数据处理。
-
-eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物联网中对生产线数据进行实时处理；车联网中的车机对来自汽车总线数据的即时分析；智能城市场景中，对来自于各类城市设施数据的实时分析。通过 eKuiper 在边缘端的处理，可以提升系统响应速度，节省网络带宽费用和存储成本，以及提高系统安全性等。
+LF Edge eKuiper 是 Golang 实现的轻量级物联网边缘分析、流式处理开源软件，可以运行在各类资源受限的边缘设备上。eKuiper的主要目标是在边缘端提供一个流媒体软件框架（类似于[Apache Flink](https://flink.apache.org)）。eKuiper的**规则引擎**允许用户提供基于SQL或基于图形（类似于Node-RED）的规则，在几分钟内创建物联网边缘分析应用。
 
 ![arch](./resources/arch.png)
+
+## 功能
+
+- 超轻量
+
+  - 核心服务安装包约 4.5MB，首次运行内存使用约 10MB
+
+- 跨平台
+
+  - CPU 架构：X86 AMD * 32/64; ARM * 32/64; PPC
+  - 常见 Linux 发行版、OpenWrt 嵌入式系统、MacOS、Docker
+  - 工控机、树莓派、工业网关、家庭网关、MEC 边缘云等
+
+- 完整的数据分析
+
+  - 数据抽取、转换和过滤
+  - 数据排序、分组、聚合、连接
+  - 60+ 各类函数，覆盖数学运算、字符串处理、聚合运算和哈希运算等
+  - 4 类时间窗口，以及计数窗口
+
+- 高可扩展性
+
+  可支持通过 Golang 或者 Python 在``源 (Source)``，``SQL 函数 ``, ``目标 (Sink)`` 三个方面的扩展
+
+  - 源 (Source) ：允许用户接入更多的数据源用于数据分析
+  - 目标(Sink)：允许用户将分析结果发送到不同的扩展系统中
+  - SQL 函数：允许用户增加自定义函数用于数据分析（比如，AI/ML 的函数调用）
+
+- 管理能力
+  - [免费基于 Web 的管理控制台](https://hub.docker.com/r/emqx/ekuiper-manager)，用于可视化管理
+  - 通过命令行、REST API 和 config map 对流、规则和插件进行管理
+  - 与 [KubeEdge](https://github.com/kubeedge/kubeedge)、[OpenYurt](https://openyurt.io/)、[K3s](https://github.com/rancher/k3s)、[Baetyl](https://github.com/baetyl/baetyl) 等基于边缘 Kubernetes 框架的集成能力
+
+- 与 EMQX 产品集成
+
+  与 [EMQX](https://www.emqx.io/), [Neuron](https://neugates.io/) 和 [NanoMQ](https://nanomq.io/) 等产品无缝集成，为 IIoT 和 IoV 等提供端到端的解决方案
 
 ## 理解 eKuiper
 
@@ -24,21 +58,21 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 按照教程学习如何使用 eKuiper 。
 
-- [本地快速开始](./getting_started.md)
-- [使用 docker 快速开始](./quick_start_docker.md)
+- [本地快速开始](./getting_started/getting_started.md)
+- [使用 docker 快速开始](./getting_started/quick_start_docker.md)
 - [使用控制台界面](./operation/manager-ui/overview.md)
 - [作为 EdgeX Foundry 规则引擎运行](./edgex/edgex_rule_engine_tutorial.md)
-- [使用 OpenYurt 部署](./tutorials/deploy/openyurt_tutorial.md)
+- [使用 OpenYurt 部署](./integrations/deploy/openyurt_tutorial.md)
 
-[查看教程](./tutorials/ai/tensorflow_lite_tutorial.md)
+[查看教程](./guide/ai/tensorflow_lite_tutorial.md)
 
 ## 查阅参考信息
 
 浏览语法和属性。
 
-- [规则语法](./rules/overview.md)
-- [可用源](./rules/sources/overview.md)
-- [可用动作](./rules/sinks/overview.md)
+- [规则语法](./guide/rules/overview.md)
+- [可用源](./guide/sources/overview.md)
+- [可用动作](./guide/sinks/overview.md)
 - [可用函数](./sqls/built-in_functions.md)
 - [SQL 语法](./sqls/overview.md)
 
@@ -48,11 +82,9 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如工业物
 
 了解如何创建和管理规则以及修改配置等运营知识。
 
-- [配置](./operation/config/configuration_file.md)
-- [Rest API](./operation/restapi/overview.md)
-- [命令行](./operation/cli/overview.md)
-
-[查看使用指南](./operation/overview.md)
+- [配置](./configuration/configuration.md)
+- [Rest API](./api/restapi/overview.md)
+- [命令行](./api/cli/overview.md)
 
 ## 开发扩展
 

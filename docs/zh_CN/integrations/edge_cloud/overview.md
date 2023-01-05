@@ -1,17 +1,17 @@
-# Edge Cloud Collaboration
+# 边云协同
 
-Base on open source products, we can build an edge cloud collaboration solution to apply on IIoT(Industrial Internet of Things), IoV(Internet of Vehicles) and other IoT applications like smart city.
+基于开源产品，我们可以建立一个边云协作解决方案，应用于IIoT（工业物联网）、IoV（车联网）和其他物联网应用，如智慧城市等。
 
 ![Edge Cloud Collaboration](../resources/edge_cloud.png)
 
-In this solution, eKuiper is integrated with the below open source products:
+在这个解决方案中，eKuiper与以下开源产品集成。
 
-- [Neuron](https://neugates.io/): lightweight IIoT connectivity server
-- [NanoMQ](https://nanomq.io/): An ultra-lightweight and blazing-fast MQTT broker for IoT Edge
-- [EMQX](https://www.emqx.io/): The Most Scalable MQTT Broker for IoT
+- [Neuron](https://neugates.io/): 轻量级IIoT连接服务器
+- [NanoMQ](https://nanomq.io/)：用于物联网边缘的超轻量级 MQTT 消息服务器
+- [EMQX](https://www.emqx.io/)：大规模分布式物联网 MQTT 消息服务器
 
-The solution realizes the connection, movement, processing, storage and analysis of massive industrial equipment data.
+该解决方案实现了大量工业设备数据的连接、移动、处理、存储和分析。
 
-eKuiper is deployed on the edge side and acts in the middle of the overall architecture for stream processing, rule engine and message routing etc. It can consume data from Neuron, NanoMQ or general HTTP on the edge, process or analyze them and publish the result to EMQX in the cloud or save them to the local storage.
+eKuiper 部署在边缘侧，在整个架构的中间位置进行流处理、规则引擎和消息路由等。它可以从边缘的 Neuron、NanoMQ 或一般的 HTTP 服务中获取数据，对其进行处理或分析，并将结果发布到云端的EMQX或保存到本地存储。
 
-For detail about how to consume data collected by neuron, please check [neuron integration tutorial](../neuron/neuron_integration_tutorial.md).
+关于如何处理 Neuron 收集的数据的细节，请查看[ Neuron 集成教程](../neuron/neuron_integration_tutorial.md)。
