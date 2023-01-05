@@ -212,6 +212,268 @@
 			}
 		}
 	}, {
+		"name": "stddev",
+		"example": "stddev(col1)",
+		"aggregate": true,
+		"hint": {
+			"en_US": "The population standard deviation of all the values in a group. ",
+			"zh_CN": "组中所有值的总体标准偏差。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "number",
+				"hint": {
+					"en_US": "The field to calculate the population standard deviation.",
+					"zh_CN": "用于计算总体标准偏差的字段名"
+				},
+				"label": {
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
+			}
+		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "population standard deviation",
+				"zh_CN": "总体标准偏差"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "population standard deviation",
+				"zh_CN": "总体标准偏差"
+			}
+		}
+	}, {
+		"name": "stddevs",
+		"example": "stddevs(col1)",
+		"aggregate": true,
+		"hint": {
+			"en_US": "The sample standard deviation of all the values in a group. ",
+			"zh_CN": "组中所有值的样本标准偏差。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "number",
+				"hint": {
+					"en_US": "The field to calculate the sample standard deviation.",
+					"zh_CN": "用于计算样本标准偏差的字段名"
+				},
+				"label": {
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
+			}
+		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "sample standard deviation",
+				"zh_CN": "样本标准偏差"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "sample standard deviation",
+				"zh_CN": "样本标准偏差"
+			}
+		}
+	}, {
+		"name": "var",
+		"example": "var(col1)",
+		"aggregate": true,
+		"hint": {
+			"en_US": "The population variance of all the values in a group. ",
+			"zh_CN": "组中所有值的总体标准偏差的方差。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "number",
+				"hint": {
+					"en_US": "The field to calculate the population variance.",
+					"zh_CN": "用于计算总体标准偏差的方差"
+				},
+				"label": {
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
+			}
+		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "population variance",
+				"zh_CN": "总体标准偏差的方差"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "population variance",
+				"zh_CN": "总体标准偏差的方差"
+			}
+		}
+	},{
+		"name": "vars",
+		"example": "vars(col1)",
+		"aggregate": true,
+		"hint": {
+			"en_US": "The sample variance of all the values in a group. ",
+			"zh_CN": "组中所有值的样本标准偏差的方差。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "number",
+				"hint": {
+					"en_US": "The field to calculate the sample variance.",
+					"zh_CN": "用于计算样本标准偏差的方差"
+				},
+				"label": {
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
+			}
+		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "sample variance",
+				"zh_CN": "样本标准偏差的方差"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "sample variance",
+				"zh_CN": "样本标准偏差的方差"
+			}
+		}
+	}, {
+		"name": "percentile",
+		"example": "percentile(col1, 0.5)",
+		"aggregate": true,
+		"hint": {
+			"en_US": "The percentile value based on a continuous distribution of all the values in a group. ",
+			"zh_CN": "组中所有值的连续分布的百分位值。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "number",
+				"hint": {
+					"en_US": "The percentile value based on a continuous distribution of all the values in a group.",
+					"zh_CN": "组中所有值的连续分布的百分位值。"
+				},
+				"label": {
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
+			},
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "number",
+				"hint": {
+					"en_US": "The percentile of the value that you want to find. The percentile must be a constant between 0.0 and 1.0.",
+					"zh_CN": "要查找的值的百分位数。百分位数必须是介于 0.0 和 1.0 之间的常数。"
+				},
+				"label": {
+					"en_US": "percentile",
+					"zh_CN": "百分位数"
+				}
+			}
+		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "percentile value based on a continuous distribution",
+				"zh_CN": "连续分布的百分位值"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "percentile value based on a continuous distribution",
+				"zh_CN": "连续分布的百分位值"
+			}
+		}
+	}, {
+		"name": "percentile_disc",
+		"example": "percentile_disc(col1, 0.5)",
+		"aggregate": true,
+		"hint": {
+			"en_US": "The percentile value based on a discrete distribution of all the values in a group. ",
+			"zh_CN": "组中所有值的离散分布的百分位值。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "number",
+				"hint": {
+					"en_US": "The percentile value based on a discrete distribution of all the values in a group.",
+					"zh_CN": "组中所有值的离散分布的百分位值。"
+				},
+				"label": {
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
+			},
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "number",
+				"hint": {
+					"en_US": "The percentile of the value that you want to find. The percentile must be a constant between 0.0 and 1.0.",
+					"zh_CN": "要查找的值的百分位数。百分位数必须是介于 0.0 和 1.0 之间的常数。"
+				},
+				"label": {
+					"en_US": "percentile",
+					"zh_CN": "百分位数"
+				}
+			}
+		],
+		"return": {
+			"type": "number",
+			"hint": {
+				"en_US": "percentile value based on a discrete distribution",
+				"zh_CN": "离散分布的百分位值"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "percentile value based on a discrete distribution",
+				"zh_CN": "离散分布的百分位值"
+			}
+		}
+	}, {
 		"name": "collect",
 		"example": "collect(*), collect(col1)",
 		"aggregate": true,
