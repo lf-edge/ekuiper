@@ -96,7 +96,7 @@ A typical implementation is to save an `offset` as a field of the source. And up
 
 eKuiper configurations are formatted as yaml and it provides a centralize location _/etc_ to hold all the configurations. Inside it, a subfolder _sources_ is provided for the source configurations including the extended sources.
 
-A configuration system is supported for eKuiper extension which will automatically read the configuration in yaml file and feed into the _Configure_ method of the source. If the [CONF_KEY](../../../sqls/streams.md#language-definitions) property is specified in the stream, the configuration of that key will be fed. Otherwise, the default configuration is used.
+A configuration system is supported for eKuiper extension which will automatically read the configuration in yaml file and feed into the _Configure_ method of the source. If the [CONF_KEY](../../../guide/streams/overview.md#stream-properties) property is specified in the stream, the configuration of that key will be fed. Otherwise, the default configuration is used.
  
  To use configuration in your source, the following conventions must be followed.
  1. The name of your configuration file must be the same as the plugin name. For example, mySource.yaml.
@@ -119,7 +119,7 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources
 
 ### Usage
 
-The customized source is specified in a [stream definition](../../../sqls/streams.md#language-definitions). The related properties are:
+The customized source is specified in a [stream definition](../../../guide/streams/overview.md#stream-properties). The related properties are:
 
 - TYPE: specify the name of the source, must be camel case.
 - CONF_KEY: specify the key of the configuration to be used.

@@ -1,11 +1,10 @@
-# Scan Table Scenarios
+# 扫描表使用场景
 
-Typically, table will be joined with stream with or without a window. When joining with stream, table data won't affect the downstream data, it is treated like a static referenced data, although it may be updated internally.
+通常，表格将与带有或不带有窗口的流连接。与流连接时，表数据不会影响下游更新数据，它被视为静态引用数据，尽管它可能会在内部更新。
 
-## Enrich data
+## 数据补全
 
-A typical usage for table is as a lookup table. Sample SQL will be like:
-
+表的典型用法是作为查找表。示例 SQL 将类似于：
 ```sql
 CREATE TABLE table1 (
 		id BIGINT,
@@ -15,10 +14,9 @@ CREATE TABLE table1 (
 SELECT * FROM demo INNER JOIN table1 on demo.id = table1.id
 ```
 
-In this example, a table `table1` is created to read json data from file *lookup.json*. Then in the rule, `table1` is joined with the stream `demo` so that the stream can lookup the name from the id.
+在这个例子中，创建了一个表 `table1` 来从文件 *lookup.json* 中读取 json 数据。然后在规则中，将 `table1` 与流 `demo` 连接起来，以便流可以从 id 中查找名称。
 
-The content of *lookup.json* file should be an array of objects. Below is an example:
-
+*lookup.json* 文件的内容应该是一个对象数组。下面是一个例子：
 ```json
 [
   {
@@ -36,17 +34,15 @@ The content of *lookup.json* file should be an array of objects. Below is an exa
 ]
 ```
 
-## Filter by history state
+## 按历史状态过滤
 
-In some scenario, we may have an event stream for data and another event stream as the control information.
-
+在某些情况下，我们可能有一个用于数据的事件流和另一个作为控制信息的事件流。
 ```sql
 CREATE TABLE stateTable (
 		id BIGINT,
 		triggered bool
 	) WITH (DATASOURCE="myTopic", FORMAT="JSON", TYPE="mqtt");
 
-SELECT * FROM demo LEFT JOIN stateTable on demo.id = stateTable.id  WHERE triggered=true
+SELECT * FROM demo LEFT JOIN stateTable on demo.id = stateTable.id WHERE triggered=true
 ```
-
-In this example, a table `stateTable` is created to record the trigger state from mqtt topic *myTopic*. In the rule, the data of `demo` stream is filtered with the current trigger state.
+在此示例中，创建了一个表 `stateTable` 来记录来自 mqtt 主题 *myTopic* 的触发器状态。在规则中，会根据当前触发状态来过滤 `demo` 流的数据。

@@ -63,8 +63,8 @@ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functio
 
 eKuiper 启动时会自动载入插件目录里已编译好的插件。自动载入的函数插件假设插件里仅导出一个同名的函数。如果插件导出多个函数，则需要显示运行一次注册操作。有两种方法可以注册函数：
 
-1. 在开发环境中，建议直接构建插件 .so 文件到插件目录中以便 eKuiper 自动载入。构建完成后，运行 [CLI 注册函数命令](../../../operation/cli/plugins.md#注册函数) or [REST 注册函数 API](../../../operation/restapi/plugins.md#注册函数) 进行注册。
-2. 在生产环境中，[打包插件到 zip 压缩包](plugins_tutorial.md#部署)，然后运行 [CLI 创建函数插件命令](../../../operation/cli/plugins.md#创建插件) 或者 [REST 创建函数 API](../../../operation/restapi/plugins.md#创建插件) 并设置 functions 参数以指定导出函数名。
+1. 在开发环境中，建议直接构建插件 .so 文件到插件目录中以便 eKuiper 自动载入。构建完成后，运行 [CLI 注册函数命令](../../../api/cli/plugins.md#注册函数) or [REST 注册函数 API](../../../api/restapi/plugins.md#注册函数) 进行注册。
+2. 在生产环境中，[打包插件到 zip 压缩包](plugins_tutorial.md#部署)，然后运行 [CLI 创建函数插件命令](../../../api/cli/plugins.md#创建插件) 或者 [REST 创建函数 API](../../../api/restapi/plugins.md#创建插件) 并设置 functions 参数以指定导出函数名。
 
 ### 使用
 

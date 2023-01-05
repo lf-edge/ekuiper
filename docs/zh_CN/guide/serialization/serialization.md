@@ -1,4 +1,4 @@
-# 编解码
+# 序列化
 
 eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/sink 连接外部系统的过程中，通常需要进行编解码以转换格式。在 source/sink 中，都可以通过配置参数 `format` 和 `schemaId` 来指定使用的编解码方案。
 
@@ -115,5 +115,5 @@ eKuiper 启动时，将会扫描该配置文件夹并自动注册里面的模式
 
 用户可使用模式注册表 API 在运行时对模式进行增删改查。详情请参考：
 
-- [模式注册表 REST API](../operation/restapi/schemas.md)
-- [模式注册表 CLI](../operation/cli/schemas.md)
+- [模式注册表 REST API](../../api/restapi/schemas.md)
+- [模式注册表 CLI](../../api/cli/schemas.md)

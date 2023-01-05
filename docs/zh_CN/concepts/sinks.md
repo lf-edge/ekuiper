@@ -10,4 +10,4 @@
 
 ## 参考阅读
 
-- [动作参考](../rules/sinks/overview.md)
+- [动作参考](../guide/sinks/overview.md)

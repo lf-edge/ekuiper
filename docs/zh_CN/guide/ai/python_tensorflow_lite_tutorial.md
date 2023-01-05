@@ -18,7 +18,7 @@
 1. 安装 Python 3.x 环境。
 2. 通过 `pip install pynng ekuiper tflite_runtime` 安装 pynng，ekuiper 和 tensorflow lite 包。
 
-默认情况下，eKuiper 的 portable 插件运行时会通过 `python` 命令来运行插件。如果您的环境不支持 `python` 命令，请通过[配置文件](../../operation/config/configuration_file.md#portable-插件配置)更换为可用的 Python 命令，如 `python3`。
+默认情况下，eKuiper 的 portable 插件运行时会通过 `python` 命令来运行插件。如果您的环境不支持 `python` 命令，请通过[配置文件](../../configuration/global_configurations.md#portable-插件配置)更换为可用的 Python 命令，如 `python3`。
 
 若使用 Docker 进行开发，可使用 `lfedge/ekuiper:<tag>-slim-python` 版本。该版本包含 eKuiper 和 python 环境，无需再手动安装。
 

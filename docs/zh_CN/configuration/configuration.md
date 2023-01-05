@@ -1,29 +1,29 @@
-# Configuration
+# 配置
 
-eKuiper configuration is based on yaml file and allow to configure by updating the file, environment variable and REST API.
+eKuiper的配置是基于yaml文件，允许通过更新文件、环境变量和REST API进行配置。
 
-## Configuration Scope
+## 配置范围
 
-eKuiper configurations include
-1. `etc/kuiper.yaml`: global configuration file. Make change to it need to restart the eKuiper instance. Please refer to [basic configuration file](./global_configurations.md) for detail.
-2. `etc/sources/${source_name}.yaml`: the configuration file for each source to define the default properties (except MQTT source, whose configuration file is `etc/mqtt_source.yaml`). Please refer to the doc for each source for detail. For example, [MQTT source](../guide/sources/builtin/mqtt.md) and [Neuron source](../guide/sources/builtin/neuron.md) covers the configuration items.
-3. `etc/connections/connection.yaml`: shared connection configuration file.
+eKuiper的配置包括
+1. `etc/kuiper.yaml`：全局配置文件。对其进行修改需要重新启动eKuiper实例。请参考[基本配置文件](./global_configurations.md)了解详情。
+2. `etc/sources/${source_name}.yaml`：每个源的配置文件，用于定义默认属性（MQTT源除外，其配置文件为`etc/mqtt_source.yaml`）。详情请参考每个源的文档。例如，[MQTT 源](../guide/sources/builtin/mqtt.md)和[Neuron 源](../guide/sources/builtin/neuron.md)涵盖的配置项目。
+3. `etc/connections/connection.yaml`：共享连接配置文件。
 
-## Configuration Methods
+## 配置方法
 
-Users can set the configuration through 3 methods order by precedence.
+用户可以通过3种方法设置配置，按优先级排序。
 
-1. Management Console/REST API
-2. Environment variables
-3. Yaml files in etc folder.
+1. 管理控制台/REST API
+2. 环境变量
+3. etc文件夹中的Yaml文件
 
-The yaml files usually be used to set up the default configurations. It can be heavily use when deploy in bare metal and the user can access the file system easily.
+yaml 文件通常被用来设置默认配置。在裸机上部署时，用户可以很容易地访问文件系统，因此通常通过配置修改配置文件来更改配置。
 
-When deploying in docker or k8s, it is not easy enough to manipulate files, small amount of configurations can then be set or override by environment variables. And in runtime, end users will use management console to change the configurations dynamically. The `Configuration` page in the eKuiper manager can help users to modify the configurations visually.
+当在docker或k8s中部署时，操作文件就不容易了，少量的配置可以通过环境变量来设置或覆盖。而在运行时，终端用户将使用管理控制台来动态地改变配置。eKuiper 管理控制台中的"配置"页面可以帮助用户直观地修改配置。
 
-### Environment variable syntax
+### 环境变量的语法
 
-There is a mapping from environment variable to the configuration yaml file. When modifying configuration through environment variables, the environment variables need to be set according to the prescribed format, for example:
+从环境变量到配置 yaml 文件之间有一个映射。当通过环境变量修改配置时，环境变量需要按照规定的格式来设置，例如。
 
 ```
 KUIPER__BASIC__DEBUG => basic.debug in etc/kuiper.yaml
@@ -32,4 +32,4 @@ EDGEX__DEFAULT__PORT => default.port in etc/sources/edgex.yaml
 CONNECTION__EDGEX__REDISMSGBUS__PORT => edgex.redismsgbus.port int etc/connections/connection.yaml
 ```
 
-The environment variables are separated by "__", the content of the first part after the separation matches the file name of the configuration file, and the remaining content matches the different levels of the configuration items. The file name could be `KUIPER` and `MQTT_SOURCE` in the `etc` folder; or  `CONNECTION` in `etc/connection` folder. Otherwise, the file should in `etc/sources` folder.
+环境变量用`__`分隔，分隔后的第一部分内容与配置文件的文件名匹配，其余内容与不同级别的配置项匹配。文件名可以是 `etc` 文件夹中的 `KUIPER` 和 `MQTT_SOURCE` ；或 `etc/connection` 文件夹中的`CONNECTION`。其余情况，映射文件应在 `etc/sources` 文件夹下。

@@ -1,6 +1,6 @@
 # 配置从 EdgeX 到 eKuiper 的数据流
 
-源从其他系统（如 EdgeX foundry）将数据输入到 eKuiper，这些系统被定义为流。 [EdgeX 源](../rules/sources/builtin/edgex.md) 定义了如何将数据从 EdgeX 输入 eKuiper 的配置属性。 在本教程中，我们将演示从 EdgeX 到 eKuiper 的各种数据流以及如何针对不同类型的数据流配置源。
+源从其他系统（如 EdgeX foundry）将数据输入到 eKuiper，这些系统被定义为流。 [EdgeX 源](../guide/sources/builtin/edgex.md) 定义了如何将数据从 EdgeX 输入 eKuiper 的配置属性。 在本教程中，我们将演示从 EdgeX 到 eKuiper 的各种数据流以及如何针对不同类型的数据流配置源。
 
 ## 典型数据流模型
 
@@ -15,7 +15,7 @@
 
 默认情况下，使用第一种数据流，允许用户在发送到 eKuiper 规则引擎之前进行准备（转换、添加、过滤等）和修饰（格式化、压缩、加密等）。 如果用户不需要对数据进行转换，并希望在 eKuiper 中处理原始数据以减少开销，则可以直接连接到消息总线。
 
-EdgeX 源的完整属性列表可以在 [这里](../rules/sources/builtin/edgex.md#全局配置) 查看。 有两个定义连接模型的关键属性：`topic` 和 `messageType`。 本文将探索如何配置它们，以便可以采用连接模型。
+EdgeX 源的完整属性列表可以在 [这里](../guide/sources/builtin/edgex.md#全局配置) 查看。 有两个定义连接模型的关键属性：`topic` 和 `messageType`。 本文将探索如何配置它们，以便可以采用连接模型。
 
 ## 连接到应用服务
 

@@ -8,13 +8,13 @@ Go 语言支持交叉编译多种目标平台的二进制文件。eKuiper 项目
 例如，在 AMD64 架构的 ubuntu/debian 系统中，可使用下列步骤编译针对 ARM64 架构的 linux 系统的二进制包。
 
 1. 安装 ARM64 的 gcc 工具链。
-  ```shell
-  apt-get install gcc-aarch64-linux-gnu
-  ```
+      ```shell
+      apt-get install gcc-aarch64-linux-gnu
+      ```
 2. 更新 Makefile 里的编译相关参数如下:
-  ```shell
-  GO111MODULE=on CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiperd cmd/kuiperd/main.go
-  ```
+      ```shell
+      GO111MODULE=on CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiperd cmd/kuiperd/main.go
+      ```
 3. 运行 `make` 。
 
 

@@ -13,7 +13,7 @@ CREATE TABLE
 WITH ( property_name = expression [, ...] );
 ```
 
-For the detail stream spec, please check [table](../guide/tables/overview.md).
+For the detail table spec, please check [table](../guide/tables/overview.md).
 
 ## Describe Table
 

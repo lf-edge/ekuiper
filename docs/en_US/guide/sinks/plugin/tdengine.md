@@ -20,12 +20,12 @@ As the tdengine database requires a timestamp field in the table, the user must 
 | user           | string   | true     | Username, default to `root`.                                                                                                                                     |
 | password       | string   | true     | Password, default to `taosdata`.                                                                                                                                 |
 | database       | string   | false    | Database name.                                                                                                                                                   |
-| table          | string   | false    | Table Name, could be a [dynamic property](../../rules/overview.md#dynamic-properties).                                                                           |
+| table          | string   | false    | Table Name, could be a [dynamic property](../../sinks/overview.md#dynamic-properties).                                                                           |
 | fields         | []string | true     | The fields to be inserted to. The result map and the database should both have these fields. If not specified, all fields in the result map will be inserted.    |
 | provideTs      | Bool     | true     | Whether the user provides a timestamp field, default to false.                                                                                                   |
 | tsFieldName    | String   | false    | Timestamp field name                                                                                                                                             |
 | tagFields      | []String | true     | The result fields to be used as the tag values in order. If sTable is specified, this is required.                                                               |
-| sTable         | String   | true     | The super table to be use, could be a [dynamic property](../../rules/overview.md#dynamic-properties).                                                            |
+| sTable         | String   | true     | The super table to be use, could be a [dynamic property](../../sinks/overview.md#dynamic-properties).                                                            |
 | tableDataField | String   | true     | Write the nested values of the tableDataField into database.                                                                                                     |
 
 ## Operation example

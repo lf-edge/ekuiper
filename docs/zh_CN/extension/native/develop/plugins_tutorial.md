@@ -336,7 +336,7 @@ eKuiper 生产环境和开发环境如果不同，开发的插件需要重新编
 
 1. 插件打包并放到 http 服务器。将上一节编译好的插件 `.so` 文件及默认配置文件（只有 source 需要） `.yaml` 文件一起打包到一个 `.zip` 文件中，假设为 `mysqlSink.zip`。把该文件放置到生产环境也可访问的 http 服务器中。
    
-   - 某些插件可能依赖 eKuiper 环境未安装的库。用户可以选择自行到 eKuiper 服务器安装依赖或者在插件包中放入名为 install.sh 安装脚本和依赖。插件管理系统会运行插件包中的 install.sh 文件。详情请参考[ 插件文件格式](../../../operation/restapi/plugins.md#插件文件格式)。
+   - 某些插件可能依赖 eKuiper 环境未安装的库。用户可以选择自行到 eKuiper 服务器安装依赖或者在插件包中放入名为 install.sh 安装脚本和依赖。插件管理系统会运行插件包中的 install.sh 文件。详情请参考[ 插件文件格式](../../../api/restapi/plugins.md#插件文件格式)。
 2. 使用 REST API 创建插件：
    ```
    POST http://{$production_eKuiper_ip}:9081/plugins/sinks
