@@ -59,7 +59,28 @@ jobs:
         cd ../../../../
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
-        go test --tags="edgex script test" ./...
+        go test --tags="edgex script test" -cover ./... -coverprofile coverage.out -coverpkg ./...
+        go tool cover -func coverage.out -o coverage.out
+#        go test --tags="edgex script test" ./...
+    - name: Go Coverage Badge
+      uses: tj-actions/coverage-badge-go@v1
+      if: ${{ runner.os == 'Linux'}} # Runs this on only one of the ci builds.
+      with:
+        green: 80
+        filename: coverage.out
+#    - uses: stefanzweifel/git-auto-commit-action@v4
+#      id: auto-commit-action
+#      with:
+#        commit_message: Apply Code Coverage Badge
+#        skip_fetch: true
+#        skip_checkout: true
+#        file_pattern: ./README.md
+#    - name: Push Changes
+#        if: steps.auto-commit-action.outputs.changes_detected == 'true'
+#        uses: ad-m/github-push-action@master
+#        with:
+#          github_token: ${{ github.token }}
+#          branch: ${{ github.ref }}
     - name: run plugins test case
       run: |
         mkdir -p data/test/uploads
