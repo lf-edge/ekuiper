@@ -75,12 +75,12 @@ jobs:
         skip_fetch: true
         skip_checkout: true
         file_pattern: ./README.md
-#    - name: Push Changes
-#        if: steps.auto-commit-action.outputs.changes_detected == 'true'
-#        uses: ad-m/github-push-action@master
-#        with:
-#          github_token: ${{ github.token }}
-#          branch: ${{ github.ref }}
+    - name: Push Changes
+      if: steps.auto-commit-action.outputs.changes_detected == 'true'
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ github.token }}
+        branch: ${{ github.ref }}
     - name: run plugins test case
       run: |
         mkdir -p data/test/uploads
