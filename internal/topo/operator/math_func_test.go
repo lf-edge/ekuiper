@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,6 +40,18 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 			},
 			result: []map[string]interface{}{{
 				"a": 1,
+			}},
+		},
+		{
+			sql: "SELECT abs(a) AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": int64(-1),
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": int64(1),
 			}},
 		},
 

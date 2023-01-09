@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"math"
 	"math/rand"
 )
@@ -26,13 +27,20 @@ func registerMathFunc() {
 	builtins["abs"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, ok := args[0].(int); ok {
-				t := float64(v)
-				var ret = int(math.Abs(t))
-				return ret, true
-			} else if v, ok := args[0].(float64); ok {
+			switch v := args[0].(type) {
+			case int:
+				return int(math.Abs(float64(v))), true
+			case int64:
+				return int64(math.Abs(float64(v))), true
+			case float64:
 				return math.Abs(v), true
-			} else {
+			default:
+				if vi, err := cast.ToInt(v, cast.STRICT); err == nil {
+					return int(math.Abs(float64(vi))), true
+				}
+				if vf, err := cast.ToFloat64(v, cast.STRICT); err == nil {
+					return math.Abs(vf), true
+				}
 				return fmt.Errorf("only float64 & int type are supported"), false
 			}
 		},
@@ -41,7 +49,7 @@ func registerMathFunc() {
 	builtins["acos"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Acos(v), true
 			} else {
 				return e, false
@@ -52,7 +60,7 @@ func registerMathFunc() {
 	builtins["asin"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Asin(v), true
 			} else {
 				return e, false
@@ -63,7 +71,7 @@ func registerMathFunc() {
 	builtins["atan"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Atan(v), true
 			} else {
 				return e, false
@@ -74,8 +82,8 @@ func registerMathFunc() {
 	builtins["atan2"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v1, e := toF64(args[0]); e == nil {
-				if v2, e1 := toF64(args[1]); e1 == nil {
+			if v1, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
+				if v2, e1 := cast.ToFloat64(args[1], cast.CONVERT_SAMEKIND); e1 == nil {
 					return math.Atan2(v1, v2), true
 				} else {
 					return e1, false
@@ -89,51 +97,56 @@ func registerMathFunc() {
 	builtins["bitand"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			v1, ok1 := args[0].(int)
-			v2, ok2 := args[1].(int)
-			if ok1 && ok2 {
-				return v1 & v2, true
-			} else {
-				return fmt.Errorf("Expect int type for both operands."), false
+			v1, err := cast.ToInt(args[0], cast.STRICT)
+			if err != nil {
+				return fmt.Errorf("Expect int type for the first operand but got %v", args[0]), false
 			}
+			v2, err := cast.ToInt(args[0], cast.STRICT)
+			if err != nil {
+				return fmt.Errorf("Expect int type for the second operand but got %v", args[1]), false
+			}
+			return v1 & v2, true
 		},
 		val: ValidateTwoIntArg,
 	}
 	builtins["bitor"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			v1, ok1 := args[0].(int)
-			v2, ok2 := args[1].(int)
-			if ok1 && ok2 {
-				return v1 | v2, true
-			} else {
-				return fmt.Errorf("Expect int type for both operands."), false
+			v1, err := cast.ToInt(args[0], cast.STRICT)
+			if err != nil {
+				return fmt.Errorf("Expect int type for the first operand but got %v", args[0]), false
 			}
+			v2, err := cast.ToInt(args[0], cast.STRICT)
+			if err != nil {
+				return fmt.Errorf("Expect int type for the second operand but got %v", args[1]), false
+			}
+			return v1 | v2, true
 		},
 		val: ValidateTwoIntArg,
 	}
 	builtins["bitxor"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			v1, ok1 := args[0].(int)
-			v2, ok2 := args[1].(int)
-			if ok1 && ok2 {
-				return v1 ^ v2, true
-			} else {
-				return fmt.Errorf("Expect int type for both operands."), false
+			v1, err := cast.ToInt(args[0], cast.STRICT)
+			if err != nil {
+				return fmt.Errorf("Expect int type for the first operand but got %v", args[0]), false
 			}
+			v2, err := cast.ToInt(args[0], cast.STRICT)
+			if err != nil {
+				return fmt.Errorf("Expect int type for the second operand but got %v", args[1]), false
+			}
+			return v1 ^ v2, true
 		},
 		val: ValidateTwoIntArg,
 	}
 	builtins["bitnot"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			v1, ok1 := args[0].(int)
-			if ok1 {
-				return ^v1, true
-			} else {
-				return fmt.Errorf("Expect int type for operand."), false
+			v1, err := cast.ToInt(args[0], cast.STRICT)
+			if err != nil {
+				return fmt.Errorf("Expect int type for operand but got %v", args[0]), false
 			}
+			return ^v1, true
 		},
 		val: func(_ api.FunctionContext, args []ast.Expr) error {
 			if err := ValidateLen(1, len(args)); err != nil {
@@ -148,7 +161,7 @@ func registerMathFunc() {
 	builtins["ceil"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Ceil(v), true
 			} else {
 				return e, false
@@ -159,7 +172,7 @@ func registerMathFunc() {
 	builtins["cos"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Cos(v), true
 			} else {
 				return e, false
@@ -170,7 +183,7 @@ func registerMathFunc() {
 	builtins["cosh"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Cosh(v), true
 			} else {
 				return e, false
@@ -181,7 +194,7 @@ func registerMathFunc() {
 	builtins["exp"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Exp(v), true
 			} else {
 				return e, false
@@ -192,7 +205,7 @@ func registerMathFunc() {
 	builtins["ln"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Log2(v), true
 			} else {
 				return e, false
@@ -203,7 +216,7 @@ func registerMathFunc() {
 	builtins["log"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Log10(v), true
 			} else {
 				return e, false
@@ -214,8 +227,8 @@ func registerMathFunc() {
 	builtins["mod"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
-				if v1, e1 := toF64(args[1]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
+				if v1, e1 := cast.ToFloat64(args[1], cast.CONVERT_SAMEKIND); e == nil {
 					return math.Mod(v, v1), true
 				} else {
 					return e1, false
@@ -229,8 +242,8 @@ func registerMathFunc() {
 	builtins["power"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v1, e := toF64(args[0]); e == nil {
-				if v2, e2 := toF64(args[1]); e2 == nil {
+			if v1, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
+				if v2, e2 := cast.ToFloat64(args[1], cast.CONVERT_SAMEKIND); e2 == nil {
 					return math.Pow(v1, v2), true
 				} else {
 					return e2, false
@@ -251,7 +264,7 @@ func registerMathFunc() {
 	builtins["round"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Round(v), true
 			} else {
 				return e, false
@@ -262,7 +275,7 @@ func registerMathFunc() {
 	builtins["sign"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				if v > 0 {
 					return 1, true
 				} else if v < 0 {
@@ -279,7 +292,7 @@ func registerMathFunc() {
 	builtins["sin"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Sin(v), true
 			} else {
 				return e, false
@@ -290,7 +303,7 @@ func registerMathFunc() {
 	builtins["sinh"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Sinh(v), true
 			} else {
 				return e, false
@@ -301,7 +314,7 @@ func registerMathFunc() {
 	builtins["sqrt"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Sqrt(v), true
 			} else {
 				return e, false
@@ -312,7 +325,7 @@ func registerMathFunc() {
 	builtins["tan"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Tan(v), true
 			} else {
 				return e, false
@@ -323,7 +336,7 @@ func registerMathFunc() {
 	builtins["tanh"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := toF64(args[0]); e == nil {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Tanh(v), true
 			} else {
 				return e, false
@@ -331,13 +344,4 @@ func registerMathFunc() {
 		},
 		val: ValidateOneNumberArg,
 	}
-}
-
-func toF64(arg interface{}) (float64, error) {
-	if v, ok := arg.(float64); ok {
-		return v, nil
-	} else if v, ok := arg.(int); ok {
-		return float64(v), nil
-	}
-	return 0, fmt.Errorf("only float64 & int type are supported")
 }
