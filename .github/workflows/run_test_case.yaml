@@ -62,6 +62,10 @@ jobs:
         go test --tags="edgex script test" -cover ./... -coverprofile coverage.out -coverpkg ./...
         go tool cover -func coverage.out -o coverage.out
 #        go test --tags="edgex script test" ./...
+    - uses: actions/upload-artifact@v3
+        with:
+          name: coverage.out
+          path: coverage.out
     - name: Go Coverage Badge
       uses: tj-actions/coverage-badge-go@v1
       if: ${{ runner.os == 'Linux'}} # Runs this on only one of the ci builds.
