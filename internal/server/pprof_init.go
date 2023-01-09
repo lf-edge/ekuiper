@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build pprof
-// +build pprof
 
 package server
 
@@ -33,10 +32,12 @@ type pprofComp struct {
 }
 
 func (p pprofComp) serve() {
-	if err := http.ListenAndServe(":6060", nil); err != nil {
-		log.Fatal(err)
-	}
-	os.Exit(0)
+	go func() {
+		if err := http.ListenAndServe(":6060", nil); err != nil {
+			log.Fatal(err)
+		}
+		os.Exit(0)
+	}()
 }
 
 func (p pprofComp) close() {
