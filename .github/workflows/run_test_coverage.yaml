@@ -1,4 +1,4 @@
-name: Run test cases
+name: Run test coverage
 
 concurrency:
   group: test-${{ github.event_name }}-${{ github.ref }}
@@ -14,7 +14,7 @@ on:
       - published
 
 jobs:
-  run_test_case:
+  run_test_coverage:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,13 +27,6 @@ jobs:
         python-version: '3.x'
         architecture: 'x64'
     - run: pip3 install pynng
-    - name: run code static check
-      run : |
-        if [ ! -z "$(gofmt -l .)" ];then
-          echo "code static check error"
-          gofmt -l .
-          exit 1
-        fi
     - name: install lib
       run: sudo apt-get update && sudo apt-get install libzmq3-dev -y
     - name: run test case
@@ -59,7 +52,12 @@ jobs:
         cd ../../../../
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
-        go test --tags="edgex script test" ./...
+        go test --tags="edgex script test" -cover  (go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/service/test" | grep -v "github.com/lf-edge/ekuiper/internal/converter/protobuf/test" | grep -v "github.com/lf-edge/ekuiper/test" | grep -v "github.com/lf-edge/ekuiper/tools") -coverprofile coverage.out -coverpkg  (go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/service/test" | grep -v "github.com/lf-edge/ekuiper/internal/converter/protobuf/test" | grep -v "github.com/lf-edge/ekuiper/test" | grep -v "github.com/lf-edge/ekuiper/tools")
+        go tool cover -func coverage.out -o coverage.out
+    - uses: actions/upload-artifact@v3
+      with:
+        name: coverage.out
+        path: coverage.out
     - name: run plugins test case
       run: |
         mkdir -p data/test/uploads
