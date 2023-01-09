@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -2229,7 +2229,7 @@ func TestProjectPlanError(t *testing.T) {
 					"a": "common string",
 				},
 			},
-			result: errors.New("run Select error: call func round error: only float64 & int type are supported"),
+			result: errors.New("run Select error: call func round error: cannot convert string(common string) to float64"),
 		},
 		//4
 		{
@@ -2240,7 +2240,7 @@ func TestProjectPlanError(t *testing.T) {
 					"abc": "common string",
 				},
 			},
-			result: errors.New("run Select error: call func round error: only float64 & int type are supported"),
+			result: errors.New("run Select error: call func round error: cannot convert <nil>(<nil>) to float64"),
 		},
 		//5
 		{
