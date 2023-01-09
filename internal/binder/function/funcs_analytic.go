@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"reflect"
 	"strconv"
 )
@@ -125,11 +126,10 @@ func registerAnalyticFunc() {
 				if l == 1 {
 					size = 1
 				} else {
-					siz, ok := args[1].(int)
-					if !ok {
-						return fmt.Errorf("second arg is not a int but got %v", args[1]), false
+					size, err = cast.ToInt(args[1], cast.STRICT)
+					if err != nil {
+						return fmt.Errorf("error converting second arg %v to int: %v", args[1], err), false
 					}
-					size = siz
 				}
 
 				rq := newRingqueue(size)
