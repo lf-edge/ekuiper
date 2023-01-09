@@ -1,7 +1,7 @@
 name: Run test coverage
 
 concurrency:
-  group: test-${{ github.event_name }}-${{ github.ref }}
+  group: code-coverage-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 on:
@@ -29,7 +29,7 @@ jobs:
     - run: pip3 install pynng
     - name: install lib
       run: sudo apt-get update && sudo apt-get install libzmq3-dev -y
-    - name: run test case
+    - name: run test coverage
       run: |
         curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash > /dev/null && source $HOME/.wasmedge/env
         mkdir -p plugins/wasm
@@ -52,23 +52,23 @@ jobs:
         cd ../../../../
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
-        go test --tags="edgex script test" -cover  (go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/service/test" | grep -v "github.com/lf-edge/ekuiper/internal/converter/protobuf/test" | grep -v "github.com/lf-edge/ekuiper/test" | grep -v "github.com/lf-edge/ekuiper/tools") -coverprofile coverage.out -coverpkg  (go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/service/test" | grep -v "github.com/lf-edge/ekuiper/internal/converter/protobuf/test" | grep -v "github.com/lf-edge/ekuiper/test" | grep -v "github.com/lf-edge/ekuiper/tools")
+        go test --tags="edgex script test" -cover $(go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/service/test" | grep -v "github.com/lf-edge/ekuiper/internal/converter/protobuf/test" | grep -v "github.com/lf-edge/ekuiper/test" | grep -v "github.com/lf-edge/ekuiper/tools") -coverprofile coverage.out -coverpkg  ./...
         go tool cover -func coverage.out -o coverage.out
     - uses: actions/upload-artifact@v3
       with:
         name: coverage.out
         path: coverage.out
-    - name: run plugins test case
-      run: |
-        mkdir -p data/test/uploads
-        cp extensions/functions/dependencies/tensorflow/models/*  data/test/uploads/
-        export CGO_CFLAGS=-I$(pwd)/extensions/functions/dependencies/tensorflow
-        export CGO_LDFLAGS=-L$(pwd)/extensions/functions/dependencies/tensorflow/amd64
-        export LD_LIBRARY_PATH=$(pwd)/extensions/functions/dependencies/tensorflow/amd64:$LD_LIBRARY_PATH
-        cd extensions
-        go test ./functions/...
-    - uses: actions/upload-artifact@v3
-      if: failure()
-      with:
-        name: stream.log
-        path: log/stream.log
+#    - name: run plugins test case
+#      run: |
+#        mkdir -p data/test/uploads
+#        cp extensions/functions/dependencies/tensorflow/models/*  data/test/uploads/
+#        export CGO_CFLAGS=-I$(pwd)/extensions/functions/dependencies/tensorflow
+#        export CGO_LDFLAGS=-L$(pwd)/extensions/functions/dependencies/tensorflow/amd64
+#        export LD_LIBRARY_PATH=$(pwd)/extensions/functions/dependencies/tensorflow/amd64:$LD_LIBRARY_PATH
+#        cd extensions
+#        go test ./functions/...
+#    - uses: actions/upload-artifact@v3
+#      if: failure()
+#      with:
+#        name: stream.log
+#        path: log/stream.log
