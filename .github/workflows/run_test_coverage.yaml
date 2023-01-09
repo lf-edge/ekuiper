@@ -1,4 +1,4 @@
-name: Run test cases
+name: Run test coverage
 
 concurrency:
   group: test-${{ github.event_name }}-${{ github.ref }}
@@ -14,26 +14,19 @@ on:
       - published
 
 jobs:
-  run_test_case:
+  run_test_coverage:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-go@v3
       with:
-        go-version: '1.20'
+        go-version: '1.18'
     - uses: actions/setup-python@v4
       with:
         python-version: '3.x'
         architecture: 'x64'
     - run: pip3 install pynng
-    - name: run code static check
-      run : |
-        if [ ! -z "$(gofmt -l .)" ];then
-          echo "code static check error"
-          gofmt -l .
-          exit 1
-        fi
     - name: install lib
       run: sudo apt-get update && sudo apt-get install libzmq3-dev -y
     - name: run test case
@@ -43,13 +36,13 @@ jobs:
         set -e -u -x
         mkdir -p data
         mkdir -p log
-        mkdir -p plugins/sinks
         sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
-        go build --buildmode=plugin -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
+        go build -modfile extensions.mod --buildmode=plugin -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
         cp extensions/sources/random/random.yaml etc/sources/random.yaml
-        go build --buildmode=plugin -o plugins/functions/Echo.so extensions/functions/echo/echo.go
-        go build --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
-        go build --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
+        go build -modfile extensions.mod --buildmode=plugin -o plugins/sinks/File@v1.0.0.so extensions/sinks/file/file.go
+        go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/Echo.so extensions/functions/echo/echo.go
+        go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
+        go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
         go build --buildmode=plugin -o data/test/helloworld.so internal/converter/protobuf/test/*.go
         go build --buildmode=plugin -o data/test/myFormat.so internal/converter/custom/test/*.go
         mkdir -p plugins/portable/mirror
@@ -59,7 +52,12 @@ jobs:
         cd ../../../../
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
-        go test --tags="edgex script test" ./...
+        go test --tags="edgex script test" -cover  (go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/service/test" | grep -v "github.com/lf-edge/ekuiper/internal/converter/protobuf/test" | grep -v "github.com/lf-edge/ekuiper/test" | grep -v "github.com/lf-edge/ekuiper/tools") -coverprofile coverage.out -coverpkg  (go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/service/test" | grep -v "github.com/lf-edge/ekuiper/internal/converter/protobuf/test" | grep -v "github.com/lf-edge/ekuiper/test" | grep -v "github.com/lf-edge/ekuiper/tools")
+        go tool cover -func coverage.out -o coverage.out
+    - uses: actions/upload-artifact@v3
+      with:
+        name: coverage.out
+        path: coverage.out
     - name: run plugins test case
       run: |
         mkdir -p data/test/uploads
