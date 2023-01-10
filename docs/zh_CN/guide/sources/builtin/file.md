@@ -46,34 +46,25 @@ default:
   ignoreEndLines: 0
 ```
 
-### File Types
+### 文件源
 
-The file source supports monitoring files or folders. If the monitored location is a folder, all files in the folder are
-required to be of the same type. When monitoring a folder, it will read in files order by file name alphabetically.
+文件源支持监控文件或文件夹。如果被监控的位置是一个文件夹，那么该文件夹中的所有文件必须是同一类型。当监测一个文件夹时，它将按照文件名的字母顺序来读取文件。
 
-The supported file types are
+支持的文件类型有：
 
-- json: standard JSON array format files,
-  see [example](https://github.com/lf-edge/ekuiper/tree/master/internal/topo/source/test/test.json). If the file format
-  is a line-separated JSON string, it needs to be defined in lines format.
-- csv: comma-separated csv files are supported, as well as custom separators.
-- lines: line-separated file. The decoding method of each line can be defined by the format parameter in the stream
-  definition. For example, for a line-separated JSON string, the file type is set to lines and the format is set to
-  json.
+- json：标准的JSON数组格式文件。见[例子](https://github.com/lf-edge/ekuiper/tree/master/internal/topo/source/test/test.json)。如果文件格式是一个以行分隔的JSON字符串，它需要以 `lines` 格式定义。
+- csv：支持逗号分隔的 csv 文件，也支持自定义分隔符。
+- lines：以行分隔的文件。每行的解码方法可以通过流定义中的 `format` 参数来定义。例如，对于一个按行分隔的 JSON 字符串文件，文件类型应设置为 `lines`，格式应设置为 `json`，表示单行的格式为 json。
 
-Some files may have most of the data in standard format, but have some metadata in the opening and closing lines of the
-file. The user can use the `ignoreStartLines` and `ignoreEndLines` arguments to remove the non-standard parts of the
-beginning and end so that the above file types can be parsed.
+有些文件可能有大部分数据是标准格式，但在文件的开头和结尾行有一些元数据。用户可以使用`ignoreStartLines`和`ignoreEndLines`参数来删除非标准的开头和结尾的非标准部分，这样上述文件类型就可以被解析了。
 
-### Example
+### 示例
 
-File sources involve the parsing of file contents and intersect with format-related definitions in data streams. We
-describe with some examples how to combine file types and formats for parsing file sources.
+文件源涉及对文件内容的解析，同时解析格式与数据流中的格式定义相关。我们用一些例子来描述如何结合文件类型和格式设置来解析文件源。
 
-#### Read a csv with a custom separator
+#### 读取自定义分隔符的 CSV 文件
 
-The standard csv separator is a comma, but there are a large number of files that use the csv-like format with custom
-separators. Some csv-like files have column names defined in the first line instead of data.
+标准的 csv 文件，分隔符是一个逗号，但是有大量的文件使用类 csv 格式，但使用自定义的分隔符。另外，一些类 csv 的文件在第一行定义了列名，而不是数据，如下例所示。
 
 ```csv
 id name age
@@ -81,7 +72,7 @@ id name age
 2 Jane 34
 ```
 
-When the file is read, the configuration file is as follows, specifying that the file has a header.
+该文件第一行为文件头，定义了文件的列名。读取这样的文件时，配置文件如下，需要指定文件有一个头。
 
 ```yaml
 csv:
@@ -89,19 +80,16 @@ csv:
   hasHeader: true
 ```
 
-In the stream definition, set the stream data to ``DELIMITED`` format, specifying the separator with the ``DELIMITER``
-parameter.
+在流定义中，将流数据设置为 `DELIMITED` 格式，用 `DELIMITER` 参数指定分隔符为空格。
 
 ```SQL
 create
 stream cscFileDemo () WITH (FORMAT="DELIMITED", DATASOURCE="abc.csv", TYPE="file", DELIMITER=" ", CONF_KEY="csv"
 ```
 
-#### Read multi-line JSON data
+#### 读取多行 JSON 数据
 
-With a standard JSON file, the entire file should be a JSON object or an array. In practice, we often need to parse
-files that contain multiple JSON objects. These files are not actually JSON themselves, but are considered to be
-multiple lines of JSON data, assuming that each JSON object is a single line.
+对于一个标准的 JSON 文件，整个文件应该是一个 JSON 对象或一个数组。在实践中，我们经常需要解析包含多个 JSON 对象的文件。这些文件实际上本身不是合法的 JSON 格式，但每行都是合法的 JSON 格式，可认为是多行JSON数据。
 
 ```text
 {"id": 1, "name": "John Doe"}
@@ -109,19 +97,17 @@ multiple lines of JSON data, assuming that each JSON object is a single line.
 {"id": 3, "name": "John Smith"}
 ```
 
-When reading this file, the configuration file is as follows, specifying the file type as lines.
+读取这种格式的文件时，配置中的文件类型设置为 `lines`。
 
 ```yaml
 jsonlines:
   fileType: lines
 ```
 
-In the stream definition, set the stream data to be in ``JSON`` format.
+在流定义中，设置流数据为`JSON`格式。
 
 ```SQL
-create
-stream linesFileDemo () WITH (FORMAT="JSON", TYPE="file", CONF_KEY="jsonlines"
+create stream linesFileDemo () WITH (FORMAT="JSON", TYPE="file", CONF_KEY="jsonlines"
 ```
 
-Moreover, the lines file type can be combined with any format. For example, if you set the format to protobuf and
-configure the schema, it can be used to parse data that contains multiple Protobuf encoded lines.
+此外，lines 文件类型可以与任何格式相结合。例如，如果你将格式设置为 protobuf，并且配置模式，它可以用来解析包含多个 Protobuf 编码行的数据。
