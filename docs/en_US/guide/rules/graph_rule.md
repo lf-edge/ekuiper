@@ -57,14 +57,14 @@ Each node in the graph JSON has at least 3 fields:
 For source node, the nodeType is the type of the source like `mqtt` and `edgex`. Please refer to [source](../sources/overview.md) for all supported types. Notice that, all source node shared the same properties which is the same as the properties when [defining a stream](../../sqls/streams.md). The specific configuration are referred by `CONF_KEY`. In the below example, the nodeType specifies the source node is a mqtt source. The datasource and format property has the same meaning as defining a stream.
 
 ```json
-  "demo": {
+  {
     "type": "source",
     "nodeType": "mqtt",
     "props": {
       "datasource": "devices/+/messages",
       "format":"json"
     }
-  },
+  }
 ```
 
 For sink node, the nodeType is the type of the sink like `mqtt` and `edgex`. Please refer to [sink](../sinks/overview.md) for all supported types. For all sink nodes, they share some common properties but each type will have some owned properties.
@@ -85,7 +85,7 @@ This node defines a function call expression. The node return a new field with t
 Example:
 
 ```json
-  "logfunc": {
+  {
     "type": "operator",
     "nodeType": "function",
     "props": {
@@ -103,7 +103,7 @@ This node defines an aggregate function call expression. The input for the node 
 Example:
 
 ```json
-  "countop": {
+  {
     "type": "operator",
     "nodeType": "aggfunc",
     "props": {
@@ -121,7 +121,7 @@ This node filter the data stream with a condition expression. It has only one pr
 Example:
 
 ```json
-  "myfilter": {
+  {
     "type": "operator",
     "nodeType": "filter",
     "props": {
@@ -139,7 +139,7 @@ This node selects the fields to be presented in the following workflow. It is us
 Example:
 
 ```json
-  "pick": {
+  {
     "type": "operator",
     "nodeType": "pick",
     "props": {
@@ -160,7 +160,7 @@ This node defines a [window](../../sqls/windows.md) in the workflow. It can acce
 Example:
 
 ```json
-  "window": {
+  {
     "type": "operator",
     "nodeType": "window",
     "props": {
@@ -169,7 +169,7 @@ Example:
       "size": 10,
       "interval": 5
     }
-  },
+  }
 ```
 
 #### join
@@ -185,7 +185,7 @@ This node can merge data from different sources like a SQL join operation. The i
 Example:
 
 ```json
-  "joinop": {
+   {
     "type": "operator",
     "nodeType": "join",
     "props": {
@@ -210,13 +210,13 @@ This node defines the dimension to group by. The input must be a collection of r
 Example:
 
 ```json
-  "groupop": {
+  {
     "type": "operator",
     "nodeType": "groupby",
     "props": {
       "dimensions": ["device1.humidity"]
     }
-  },
+  }
 ```
 
 #### orderby
@@ -230,7 +230,7 @@ This node will sort the input collection. So the input must be a collection of r
 Example:
 
 ```json
-  "orderop": {
+  {
     "type": "operator",
     "nodeType": "orderby",
     "props": {
@@ -241,3 +241,59 @@ Example:
     }
   }
 ```
+
+#### switch
+
+This node allows message to be routed to different branches of flows which is similar to switch statement in programming languages. Currently, this is the only node which have multiple output paths.
+
+The switch node accepts multiple conditional expression as cases in order and evaluate events against the cases. The properties are:
+
+- cases: the condition expressions to be evaluated in order.
+- stopAtFirstMatch: whether to stop evaluate conditions when matching any condition, similarly to break in programming language.
+
+Example:
+
+```json
+    {
+      "type": "operator",
+      "nodeType": "switch",
+      "props": {
+        "cases": [
+          "temperature > 20",
+          "temperature <= 20"
+        ],
+        "stopAtFirstMatch": true
+      }
+    }
+```
+
+#### script
+
+This node allows JavaScript code to be run against the messages that are passed through it.
+
+- script: The inline javascript code to be run. 
+- isAgg: Whether the node is for aggregated data.
+
+There must be a function named `exec` defined in the script. If isAgg is false, the script node can accept a single message and must return a processed message. If isAgg is true, it will receive a message array (connected to window etc.) and must return an array.
+
+1. Example to deal with single message.
+   ```json
+   {
+     "type": "operator",
+      "nodeType": "script",
+      "props": {
+        "script": "function exec(msg, meta) {msg.temperature = 1.8 * msg.temperature + 32; return msg;}"
+      }
+   }
+   ```
+2. Example to deal with window aggregated messages.
+   ```json
+   {
+      "type": "operator",
+      "nodeType": "script",
+      "props": {
+        "script": "function exec(msgs) {agg = {value:0}\nfor (let i = 0; i < msgs.length; i++) {\nagg.value = agg.value + msgs[i].value;\n}\nreturn agg;\n}",
+        "isAgg": true
+      }
+   }
+   ```

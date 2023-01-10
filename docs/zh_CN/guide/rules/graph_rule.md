@@ -57,14 +57,14 @@
 对于源节点，nodeType是源的类型，如 `mqtt` 和 `edgex` 。请参考 [source](../sources/overview.md) 了解所有支持的类型。注意，所有源节点共享相同的属性，这与[定义流](../../sqls/streams.md)时的属性相同。具体的配置是由 `CONF_KEY` 定义的。在下面的例子中，nodeType 指定了源节点是一个 mqtt 源。dataSource 和 format 属性与定义流时的含义相同。
 
 ```json
-  "demo": {
+  {
     "type": "source",
     "nodeType": "mqtt",
     "props": {
       "datasource": "devices/+/messages",
       "format":"json"
     }
-  },
+  }
 ```
 
 对于 sink 节点，nodeType 是 sink 的类型，如 `mqtt` 和 `edgex` 。请参考 [sink](../sinks/overview.md) 了解所有支持的类型。对于所有的 sink 节点，它们共享一些共同的属性，但每种类型都会有一些自有的属性。
@@ -84,7 +84,7 @@
 示例：
 
 ```json
-  "logfunc": {
+  {
     "type": "operator",
     "nodeType": "function",
     "props": {
@@ -101,7 +101,7 @@
 示例：
 
 ```json
-  "countop": {
+  {
     "type": "operator",
     "nodeType": "aggfunc",
     "props": {
@@ -119,7 +119,7 @@
 示例：
 
 ```json
-  "myfilter": {
+  {
     "type": "operator",
     "nodeType": "filter",
     "props": {
@@ -137,7 +137,7 @@
 示例：
 
 ```json
-  "pick": {
+  {
     "type": "operator",
     "nodeType": "pick",
     "props": {
@@ -158,7 +158,7 @@
 示例：
 
 ```json
-  "window": {
+  {
     "type": "operator",
     "nodeType": "window",
     "props": {
@@ -167,7 +167,7 @@
       "size": 10,
       "interval": 5
     }
-  },
+  }
 ```
 
 #### join
@@ -183,7 +183,7 @@
 示例：
 
 ```json
-  "joinop": {
+  {
     "type": "operator",
     "nodeType": "join",
     "props": {
@@ -208,7 +208,7 @@
 示例：
 
 ```json
-  "groupop": {
+  {
     "type": "operator",
     "nodeType": "groupby",
     "props": {
@@ -228,7 +228,7 @@
 示例：
 
 ```json
-  "orderop": {
+  {
     "type": "operator",
     "nodeType": "orderby",
     "props": {
@@ -239,3 +239,57 @@
     }
   }
 ```
+
+#### switch
+
+该节点允许消息被路由到不同的流程分支，类似于编程语言中的 switch 语句。目前，这是唯一有多个输出路径的节点。节点接受多个条件表达式作为评估条件，并针对评估结果路由数据。其属性如下。
+
+- cases：要依次评估的条件表达式。
+- stopAtFirstMatch：是否在匹配任何条件时停止评估，类似于编程语言中的 break。
+
+示例:
+
+```json
+    {
+      "type": "operator",
+      "nodeType": "switch",
+      "props": {
+        "cases": [
+          "temperature > 20",
+          "temperature <= 20"
+        ],
+        "stopAtFirstMatch": true
+      }
+    }
+```
+
+#### script
+
+该节点允许针对传递的信息运行 JavaScript 代码。
+
+- script：要运行的内联JavaScript代码。
+- isAgg：该节点是否用于聚合数据。
+
+脚本中必须有一个名为 `exec` 的函数。如果 isAgg 为 false，脚本节点可以接受一个单一的消息，并且必须返回一个处理过的消息。如果 isAgg 为 true，它将接收一个消息数组（窗口输出等），并且必须返回一个数组。
+
+1. 处理单个消息的脚本节点示例
+   ```json
+   {
+     "type": "operator",
+      "nodeType": "script",
+      "props": {
+        "script": "function exec(msg, meta) {msg.temperature = 1.8 * msg.temperature + 32; return msg;}"
+      }
+   }
+   ```
+2. 处理聚合消息的脚本节点示例
+   ```json
+   {
+      "type": "operator",
+      "nodeType": "script",
+      "props": {
+        "script": "function exec(msgs) {agg = {value:0}\nfor (let i = 0; i < msgs.length; i++) {\nagg.value = agg.value + msgs[i].value;\n}\nreturn agg;\n}",
+        "isAgg": true
+      }
+   }
+   ```
