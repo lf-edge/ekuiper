@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -333,7 +333,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 		if err != nil {
 			return fmt.Errorf(`err:%v stdout:%s stderr:%s`, err, outb.String(), errb.String())
 		} else {
-			conf.Log.Infof(`install script ouput: %s`, outb.String())
+			conf.Log.Infof(`install script output: %s`, outb.String())
 		}
 	}
 	return m.doRegister(name, pi, false)

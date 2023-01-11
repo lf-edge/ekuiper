@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ func (m *MockSink) Collect(ctx api.StreamContext, item interface{}) error {
 		logger.Debugf("mock sink receive %s", item)
 		m.results = append(m.results, v)
 	} else {
-		logger.Info("mock sink tranform data error: %v", err)
+		logger.Info("mock sink transform data error: %v", err)
 	}
 	return nil
 }

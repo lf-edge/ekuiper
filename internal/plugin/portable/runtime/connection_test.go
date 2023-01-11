@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -248,7 +248,7 @@ func (r *mockControlClient) Run() error {
 			return fmt.Errorf("cannot receive on rep socket: %s", err.Error())
 		}
 		if !reflect.DeepEqual(msg, okMsg) {
-			return fmt.Errorf("control client recieve %s but expect %s", string(msg), string(okMsg))
+			return fmt.Errorf("control client receive %s but expect %s", string(msg), string(okMsg))
 		}
 		err = r.sock.Send(okMsg)
 		if err != nil {
