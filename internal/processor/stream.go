@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,15 +42,15 @@ type StreamProcessor struct {
 func NewStreamProcessor() *StreamProcessor {
 	err, db := store.GetKV("stream")
 	if err != nil {
-		panic(fmt.Sprintf("Can not initalize store for the stream processor at path 'stream': %v", err))
+		panic(fmt.Sprintf("Can not initialize store for the stream processor at path 'stream': %v", err))
 	}
 	err, streamDb := store.GetKV("streamStatus")
 	if err != nil {
-		panic(fmt.Sprintf("Can not initalize store for the stream processor at path 'stream': %v", err))
+		panic(fmt.Sprintf("Can not initialize store for the stream processor at path 'stream': %v", err))
 	}
 	err, tableDb := store.GetKV("tableStatus")
 	if err != nil {
-		panic(fmt.Sprintf("Can not initalize store for the stream processor at path 'stream': %v", err))
+		panic(fmt.Sprintf("Can not initialize store for the stream processor at path 'stream': %v", err))
 	}
 	processor := &StreamProcessor{
 		db:             db,
