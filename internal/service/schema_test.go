@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ func TestConvertParams(t *testing.T) {
 		params  []interface{}
 		iresult []interface{}
 		jresult []byte
+		tresult []byte
 		err     string
 	}{
 		{ //0
@@ -56,6 +57,7 @@ func TestConvertParams(t *testing.T) {
 				"world",
 			},
 			jresult: []byte(`{"name":"world"}`),
+			tresult: []byte(`name:"world"`),
 		},
 		{ //1
 			method: "SayHello",
@@ -68,6 +70,7 @@ func TestConvertParams(t *testing.T) {
 				"world",
 			},
 			jresult: []byte(`{"name":"world"}`),
+			tresult: []byte(`name:"world"`),
 		},
 		{ //2
 			method: "SayHello",
@@ -87,6 +90,7 @@ func TestConvertParams(t *testing.T) {
 				"rid", "uuid", "outlet", "path", []byte("data"), "extra",
 			},
 			jresult: []byte(`{"rid":"rid","uuid":"uuid","outlet":"outlet","path":"path","data":"ZGF0YQ==","extra":"extra"}`),
+			tresult: []byte(`rid:"rid" uuid:"uuid" outlet:"outlet" path:"path" data:"data" extra:"extra"`),
 		},
 		{ //4
 			method: "get_feature",
@@ -97,6 +101,7 @@ func TestConvertParams(t *testing.T) {
 				[]byte("golang"),
 			},
 			jresult: []byte(`"Z29sYW5n"`),
+			tresult: []byte(`value:"golang"`),
 		},
 		//{ //5
 		//	method: "get_similarity",
@@ -119,6 +124,7 @@ func TestConvertParams(t *testing.T) {
 				"{\"name\":\"encoded json\",\"size\":1}",
 			},
 			jresult: []byte("{\"name\":\"encoded json\",\"size\":1}"),
+			tresult: []byte(`value:"{\"name\":\"encoded json\",\"size\":1}"`),
 		},
 	}
 
@@ -135,6 +141,12 @@ func TestConvertParams(t *testing.T) {
 				t.Errorf("%d.%d : json error mismatch:\n  exp=%s\n  got=%s\n\n", i, j, tt.err, err)
 			} else if tt.err == "" && !reflect.DeepEqual(tt.jresult, rj) {
 				t.Errorf("%d.%d \n\njson result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, j, tt.jresult, rj)
+			}
+			tj, err := descriptor.(textDescriptor).ConvertParamsToText(tt.method, tt.params)
+			if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
+				t.Errorf("%d.%d : text error mismatch:\n  exp=%s\n  got=%s\n\n", i, j, tt.err, err)
+			} else if tt.err == "" && !reflect.DeepEqual(tt.tresult, tj) {
+				t.Errorf("%d.%d \n\ntext result mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, j, tt.tresult, tj)
 			}
 		}
 	}

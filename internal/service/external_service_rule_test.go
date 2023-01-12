@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import (
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/gorilla/mux"
 	kconf "github.com/lf-edge/ekuiper/internal/conf"
-	pb "github.com/lf-edge/ekuiper/internal/service/test/schemas/helloworld"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
@@ -36,11 +35,11 @@ import (
 	"testing"
 )
 
-type HelloRequest struct {
+type RestHelloRequest struct {
 	Name string `json:"name,omitempty"`
 }
 
-type HelloReply struct {
+type RestHelloReply struct {
 	Message string `json:"message,omitempty"`
 }
 
@@ -104,12 +103,12 @@ func TestRestService(t *testing.T) {
 	count := 0
 	router := mux.NewRouter()
 	router.HandleFunc("/SayHello", func(w http.ResponseWriter, r *http.Request) {
-		body := &HelloRequest{}
+		body := &RestHelloRequest{}
 		err := json.NewDecoder(r.Body).Decode(body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
-		out := &HelloReply{Message: body.Name}
+		out := &RestHelloReply{Message: body.Name}
 		jsonOut(w, err, out)
 	}).Methods(http.MethodPost)
 	router.HandleFunc("/object_detection", func(w http.ResponseWriter, r *http.Request) {
@@ -710,15 +709,15 @@ func TestMsgpackService(t *testing.T) {
 }
 
 type server struct {
-	pb.UnimplementedGreeterServer
+	UnimplementedGreeterServer
 }
 
-func (s *server) SayHello(_ context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	return &pb.HelloReply{Message: in.GetName()}, nil
+func (s *server) SayHello(_ context.Context, in *HelloRequest) (*HelloReply, error) {
+	return &HelloReply{Message: in.GetName()}, nil
 }
 
-func (s *server) ObjectDetection(_ context.Context, in *pb.ObjectDetectionRequest) (*pb.ObjectDetectionResponse, error) {
-	return &pb.ObjectDetectionResponse{
+func (s *server) ObjectDetection(_ context.Context, in *ObjectDetectionRequest) (*ObjectDetectionResponse, error) {
+	return &ObjectDetectionResponse{
 		Info:   in.Cmd,
 		Code:   200,
 		Image:  in.Base64Img,
@@ -727,13 +726,13 @@ func (s *server) ObjectDetection(_ context.Context, in *pb.ObjectDetectionReques
 	}, nil
 }
 
-func (s *server) GetFeature(_ context.Context, v *wrappers.BytesValue) (*pb.FeatureResponse, error) {
+func (s *server) GetFeature(_ context.Context, v *wrappers.BytesValue) (*FeatureResponse, error) {
 	l := len(string(v.Value))
-	return &pb.FeatureResponse{
-		Feature: []*pb.FeatureResult{
+	return &FeatureResponse{
+		Feature: []*FeatureResult{
 			{
 				Features: []float32{-1.444, 2.55452, 5.121},
-				Box: &pb.Box{
+				Box: &Box{
 					X: 153,
 					Y: 107,
 					W: 174,
@@ -742,7 +741,7 @@ func (s *server) GetFeature(_ context.Context, v *wrappers.BytesValue) (*pb.Feat
 			},
 			{
 				Features: []float32{1.444, -2.55452, -5.121},
-				Box: &pb.Box{
+				Box: &Box{
 					X: 257,
 					Y: 92,
 					W: 169,
@@ -763,7 +762,7 @@ func TestGrpcService(t *testing.T) {
 		kconf.Log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterGreeterServer(s, &server{})
+	RegisterGreeterServer(s, &server{})
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			kconf.Log.Fatalf("failed to serve: %v", err)
