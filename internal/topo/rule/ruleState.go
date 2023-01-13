@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -219,14 +219,18 @@ func (rs *RuleState) Start() error {
 	if rs.triggered == -1 {
 		return fmt.Errorf("rule %s is already deleted", rs.RuleId)
 	}
-	if rs.Topology == nil {
+	if rs.triggered != 1 {
+		// If the rule has been stopped due to error, the topology is not nil
+		if rs.Topology != nil {
+			rs.Topology.Cancel()
+		}
 		if tp, err := planner.Plan(rs.Rule); err != nil {
 			return err
 		} else {
 			rs.Topology = tp
 		}
-	} // else start after create
-	rs.triggered = 1
+		rs.triggered = 1
+	}
 	rs.ActionCh <- ActionSignalStart
 	return nil
 }
