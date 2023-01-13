@@ -748,6 +748,22 @@ func configurationImport(data []byte, reboot bool) error {
 	}
 
 	rulesetProcessor.ImportRuleSet(ruleSet)
+	if !reboot {
+		infra.SafeRun(func() error {
+			for name, _ := range ruleSet.Rules {
+				rul, ee := ruleProcessor.GetRuleById(name)
+				if ee != nil {
+					logger.Error(ee)
+					continue
+				}
+				reply := recoverRule(rul)
+				if reply != "" {
+					logger.Error(reply)
+				}
+			}
+			return nil
+		})
+	}
 
 	return nil
 }
