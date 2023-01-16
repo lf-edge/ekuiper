@@ -50,7 +50,7 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
 	    GetSchemaJson() string
     }
     ```
-3. 编译为插件 so 文件。通常格式的扩展无需依赖 eKuiper 的主项目。由于 Go 语言插件系统的限制，插件的编译仍然需要在与 eKuiper 主程序相同的编译环境中进行，包括操作相同，Go 语言版本等。若需要部署到官方 docker 中，则可使用对应的 docker 镜像进行编译。
+3. 编译为插件 so 文件。通常格式的扩展无需依赖 eKuiper 的主项目。由于 Go 语言插件系统的限制，插件的编译仍然需要在与 eKuiper 主程序相同的编译环境中进行，包括操作相同，Go 语言版本等。若需要部署到官方 docker 中，则可使用对应的 docker 镜像进行编译。详细步骤，请参考[格式插件编译](#使用-docker-编译格式插件).
     ```shell
     go build -trimpath --buildmode=plugin -o data/test/myFormat.so internal/converter/custom/test/*.go
     ```
@@ -68,6 +68,26 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
 5. 在 source 或者 sink 中，通过 `format` 和 `schemaId` 参数使用自定义格式。
 
 完整的自定义格式可参考 [myFormat.go](https://github.com/lf-edge/ekuiper/blob/master/internal/converter/custom/test/myformat.go)。该文件定义了一个简单的自定义格式，编解码实际上仅调用 JSON 进行序列化。它返回了一个数据结构，可用于 eKuiper source 的数据结构推断。
+
+#### 使用 Docker 编译格式插件
+
+由于go插件的限制，最好在与 eKuiper 构建环境相同的环境中构建格式插件。官方的 eKuiper docker 镜像和二进制文件都是在两个操作系统中构建的：debian 和 alpine。除了默认的 docker镜像如 `1.8.0` 和 `1.8.0-apline` 之外，其他镜像和二进制文件都使用 debian 系统构建。
+
+要在 debian 环境下构建，请使用相应的 dev 镜像来构建。例如，要构建 1.8.0 的格式插件，请使用`1.8.0-dev` 镜像。
+
+要在 alpine 环境下构建，我们可以使用 golang alpine 镜像作为基础环境。具体步骤如下:
+
+1. 在你的插件项目中，创建一个 Makefile，并确保该插件能被 `make` 命令构建。请查看[示例项目](https://github.com/lf-edge/ekuiper/tree/master/internal/converter/custom/test)以获得参考。
+2. 检查你的 eKuiper 的版本所使用的 golang 版本。检查相应 eKuiper 版本的[ docker 文件](https://github.com/lf-edge/ekuiper/blob/master/deploy/docker/Dockerfile)中的 `GO_VERSION` 参数。如果版本是 `1.18.5`，则使用 `golang:1.18.5-alpine` docker 镜像进行构建。
+3. 切换到你的项目位置，然后在你的项目位置启动 golang docker 容器，安装依赖项，然后执行`make`，确保构建成功。
+   ```shell
+   cd ${yourProjectLoc}
+   docker run --rm -it -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.18.5-alpine sh
+   ### inside docker container
+   /usr/src/myapp # apk add gcc make libc-dev
+   /usr/src/myapp # make
+   ```
+4. 你应该在你的项目中找到为你的插件建立的 *.so 文件（在这个例子中是 test.so）。用它来注册格式插件。
 
 ### 静态 Protobuf
 
