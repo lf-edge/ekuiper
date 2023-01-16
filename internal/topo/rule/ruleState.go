@@ -245,7 +245,6 @@ func (rs *RuleState) Stop() error {
 	rs.triggered = 0
 	if rs.Topology != nil {
 		rs.Topology.Cancel()
-		rs.Topology = nil
 	}
 	rs.ActionCh <- ActionSignalStop
 	return nil
@@ -254,6 +253,9 @@ func (rs *RuleState) Stop() error {
 func (rs *RuleState) Close() error {
 	rs.Lock()
 	defer rs.Unlock()
+	if rs.Topology != nil {
+		rs.Topology.RemoveMetrics()
+	}
 	if rs.triggered == 1 && rs.Topology != nil {
 		rs.Topology.Cancel()
 	}
@@ -276,7 +278,7 @@ func (rs *RuleState) GetState() (string, error) {
 			case nil:
 				result = "Running"
 			case context.Canceled:
-				result = "Stopped: canceled by error."
+				result = "Stopped: canceled manually."
 			case context.DeadlineExceeded:
 				result = "Stopped: deadline exceed."
 			default:

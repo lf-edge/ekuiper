@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -113,6 +113,14 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 							err    error
 						)
 
+						stats, err := metric.NewStatManager(ctx, "source")
+						if err != nil {
+							return err
+						}
+						m.mutex.Lock()
+						m.statManagers = append(m.statManagers, stats)
+						m.mutex.Unlock()
+
 						si, err = getSourceInstance(m, instance)
 						if err != nil {
 							return err
@@ -127,14 +135,6 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 							m.close()
 							buffer.Close()
 						}()
-
-						stats, err := metric.NewStatManager(ctx, "source")
-						if err != nil {
-							return err
-						}
-						m.mutex.Lock()
-						m.statManagers = append(m.statManagers, stats)
-						m.mutex.Unlock()
 						logger.Infof("Start source %s instance %d successfully", m.name, instance)
 						for {
 							select {
