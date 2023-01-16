@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,9 +39,11 @@ type StatManager interface {
 	ProcessTimeEnd()
 	SetBufferLength(l int64)
 	GetMetrics() []interface{}
+	// Clean remove all metrics history
+	Clean(ruleId string)
 }
 
-//The statManager is not thread safe. Make sure it is used in only one instance
+// DefaultStatManager The statManager is not thread safe. Make sure it is used in only one instance
 type DefaultStatManager struct {
 	//metrics
 	totalRecordsIn    int64
@@ -132,4 +134,8 @@ func (sm *DefaultStatManager) GetMetrics() []interface{} {
 		result[7] = sm.lastExceptionTime.Format("2006-01-02T15:04:05.999999")
 	}
 	return result
+}
+
+func (sm *DefaultStatManager) Clean(_ string) {
+	// do nothing
 }

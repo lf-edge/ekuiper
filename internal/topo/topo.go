@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -224,6 +224,18 @@ func (s *Topo) GetMetrics() (keys []string, values []interface{}) {
 		}
 	}
 	return
+}
+
+func (s *Topo) RemoveMetrics() {
+	for _, sn := range s.sources {
+		sn.RemoveMetrics(s.name)
+	}
+	for _, so := range s.ops {
+		so.RemoveMetrics(s.name)
+	}
+	for _, sn := range s.sinks {
+		sn.RemoveMetrics(s.name)
+	}
 }
 
 func (s *Topo) GetTopo() *api.PrintableTopo {
