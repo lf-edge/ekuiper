@@ -176,7 +176,7 @@ SELECT geohashNeighborsInt(hash) FROM test
 
 ### LabelImage plugin
 
-该插件为展示使用 TensorFlowLite 模型的示例插件。此函数接收一个以 bytea 类型表示的图像的输入，输出该图像的根据 tflite 模型计算的标示。
+该插件(只能用在有 slim 后缀的 docker image 中)为展示使用 TensorFlowLite 模型的示例插件。此函数接收一个以 bytea 类型表示的图像的输入，输出该图像的根据 tflite 模型计算的标示。
 
 如下 SQL 中，假设输入为 peacock.jpg 文件的二进制流，则输出为字符串 “peacock”。
 
@@ -186,7 +186,7 @@ SELECT labelImage(self) FROM tfdemo
 
 ### tfLite 插件
 
-该插件用于执行 TensorFlow Lite 推理。用户只需上传 `.tflite` 模型，在 sql 中调用 `tfLite(model_name, input_data)` 函数，即可收到模型推理的结果。
+该插件(只能用在有 slim 后缀的 docker image 中)用于执行 TensorFlow Lite 推理。用户只需上传 `.tflite` 模型，在 sql 中调用 `tfLite(model_name, input_data)` 函数，即可收到模型推理的结果。
 上传模型时请使用 [uploads](../api/restapi/uploads.md) 接口将模型文件上传即可。
 函数调用时 `model_name` 参数为不带 `.tflite` 后缀的模型名称。 `input_data` 应该是消息中的 key 字段，对应的值应该是一维数组格式
 
