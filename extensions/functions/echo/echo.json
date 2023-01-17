@@ -16,6 +16,7 @@
 			"zh_CN": ""
 		}
 	},
+	"name": "echo",
 	"functions": [{
 		"name": "echo",
 		"example": "echo(col1)",

@@ -16,6 +16,7 @@
 			"zh_CN": ""
 		}
 	},
+	"name": "accumulateWordCount",
 	"functions": [{
 		"name": "accumulateWordCount",
 		"example": "accumulateWordCount(col1)",

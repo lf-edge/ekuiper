@@ -19,8 +19,8 @@
 	"libs": [],
 	"name": "tfLite",
 	"functions": [{
-		"name": "tflite",
-		"example": "tflite(model,para1, para2,...)",
+		"name": "tfLite",
+		"example": "tfLite(model,para1, para2,...)",
 		"hint": {
 			"en_US": "Creates a scaled image with new dimensions (width, height) .If either width or height is set to 0, it will be set to an aspect ratio preserving value.",
 			"zh_CN": "创建具有新尺寸（宽度，高度）的缩放图像。如果width或height设置为0，则将其设置为长宽比保留值。"

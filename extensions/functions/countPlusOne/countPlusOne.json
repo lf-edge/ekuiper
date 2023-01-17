@@ -16,6 +16,7 @@
 			"zh_CN": ""
 		}
 	},
+	"name": "countPlusOne",
 	"functions": [{
 		"name": "countPlusOne",
 		"example": "countPlusOne(col1)",
