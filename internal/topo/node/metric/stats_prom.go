@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build prometheus || !core
-// +build prometheus !core
 
 package metric
 
@@ -88,4 +87,16 @@ func (sm *PrometheusStatManager) ProcessTimeEnd() {
 func (sm *PrometheusStatManager) SetBufferLength(l int64) {
 	sm.bufferLength = l
 	sm.pBufferLength.Set(float64(l))
+}
+
+func (sm *PrometheusStatManager) Clean(ruleId string) {
+	if conf.Config != nil && conf.Config.Basic.Prometheus {
+		mg := GetPrometheusMetrics().GetMetricsGroup(sm.opType)
+		strInId := strconv.Itoa(sm.instanceId)
+		mg.TotalRecordsIn.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
+		mg.TotalRecordsOut.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
+		mg.TotalExceptions.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
+		mg.ProcessLatency.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
+		mg.BufferLength.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
+	}
 }

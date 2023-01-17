@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ type OperatorNode interface {
 	AddInputCount()
 	SetQos(api.Qos)
 	SetBarrierHandler(checkpoint.BarrierHandler)
+	RemoveMetrics(name string)
 }
 
 type DataSourceNode interface {
@@ -40,6 +41,7 @@ type DataSourceNode interface {
 	Open(ctx api.StreamContext, errCh chan<- error)
 	GetName() string
 	GetMetrics() [][]interface{}
+	RemoveMetrics(ruleId string)
 	Broadcast(val interface{}) error
 	GetStreamContext() api.StreamContext
 	SetQos(api.Qos)
@@ -85,6 +87,12 @@ func (o *defaultNode) GetMetrics() (result [][]interface{}) {
 		result = append(result, stats.GetMetrics())
 	}
 	return result
+}
+
+func (o *defaultNode) RemoveMetrics(ruleId string) {
+	for _, stats := range o.statManagers {
+		stats.Clean(ruleId)
+	}
 }
 
 func (o *defaultNode) Broadcast(val interface{}) error {

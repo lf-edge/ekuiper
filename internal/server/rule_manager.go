@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,7 +54,6 @@ func (rs *RuleState) Stop() {
 	rs.Triggered = false
 	rs.Topology.Cancel()
 	rs.topoGraph = rs.Topology.GetTopo()
-	rs.Topology = nil
 }
 
 type RuleRegistry struct {
@@ -173,7 +172,7 @@ func doGetRuleState(rs *RuleState) (string, error) {
 			case nil:
 				result = "Running"
 			case context.Canceled:
-				result = "Stopped: canceled by error."
+				result = "Stopped: canceled manually."
 			case context.DeadlineExceeded:
 				result = "Stopped: deadline exceed."
 			default:
@@ -276,6 +275,9 @@ func stopRule(name string) (result string) {
 
 func deleteRule(name string) (result string) {
 	if rs, ok := registry.Delete(name); ok {
+		if rs.Topology != nil {
+			rs.Topology.RemoveMetrics()
+		}
 		if rs.Triggered {
 			(*rs.Topology).Cancel()
 		}
