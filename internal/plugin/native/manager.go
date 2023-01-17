@@ -92,34 +92,30 @@ func InitManager() (*Manager, error) {
 	}
 	registry := &Manager{symbols: make(map[string]string), funcSymbolsDb: func_db, plgInstallDb: plg_db, plgStatusDb: plg_status_db, pluginDir: pluginDir, pluginConfDir: dataDir, runtime: make(map[string]*plugin.Plugin)}
 	manager = registry
-	if manager.hasInstallFlag() {
-		manager.plugins = make([]map[string]string, 3)
-		for i := range manager.plugins {
-			manager.plugins[i] = make(map[string]string)
+
+	plugins := make([]map[string]string, 3)
+	for i := range plugins {
+		names, err := findAll(plugin2.PluginType(i), pluginDir)
+		if err != nil {
+			return nil, fmt.Errorf("fail to find existing plugins: %s", err)
 		}
+		plugins[i] = names
+	}
+	registry.plugins = plugins
+
+	for pf := range plugins[plugin2.FUNCTION] {
+		l := make([]string, 0)
+		if ok, err := func_db.Get(pf, &l); ok {
+			registry.storeSymbols(pf, l)
+		} else if err != nil {
+			return nil, fmt.Errorf("error when querying kv: %s", err)
+		} else {
+			registry.storeSymbols(pf, []string{pf})
+		}
+	}
+	if manager.hasInstallFlag() {
 		manager.pluginInstallWhenReboot()
 		manager.clearInstallFlag()
-	} else {
-		plugins := make([]map[string]string, 3)
-		for i := range plugins {
-			names, err := findAll(plugin2.PluginType(i), pluginDir)
-			if err != nil {
-				return nil, fmt.Errorf("fail to find existing plugins: %s", err)
-			}
-			plugins[i] = names
-		}
-		registry.plugins = plugins
-
-		for pf := range plugins[plugin2.FUNCTION] {
-			l := make([]string, 0)
-			if ok, err := func_db.Get(pf, &l); ok {
-				registry.storeSymbols(pf, l)
-			} else if err != nil {
-				return nil, fmt.Errorf("error when querying kv: %s", err)
-			} else {
-				registry.storeSymbols(pf, []string{pf})
-			}
-		}
 	}
 	return registry, nil
 }

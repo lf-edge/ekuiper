@@ -67,39 +67,38 @@ func InitRegistry() error {
 	if err != nil {
 		return fmt.Errorf("cannot open schemaStatus db: %s", err)
 	}
+	for _, schemaType := range def.SchemaTypes {
+		schemaDir := filepath.Join(dataDir, "schemas", string(schemaType))
+		var newSchemas map[string]*Files
+		files, err := os.ReadDir(schemaDir)
+		if err != nil {
+			conf.Log.Warnf("cannot read schema directory: %s", err)
+			newSchemas = make(map[string]*Files)
+		} else {
+			newSchemas = make(map[string]*Files, len(files))
+			for _, file := range files {
+				fileName := filepath.Base(file.Name())
+				ext := filepath.Ext(fileName)
+				schemaId := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+				ffs, ok := newSchemas[schemaId]
+				if !ok {
+					ffs = &Files{}
+					newSchemas[schemaId] = ffs
+				}
+				switch ext {
+				case ".so":
+					ffs.SoFile = filepath.Join(schemaDir, file.Name())
+				default:
+					ffs.SchemaFile = filepath.Join(schemaDir, file.Name())
+				}
+				conf.Log.Infof("schema file %s.%s loaded", schemaType, schemaId)
+			}
+		}
+		registry.schemas[schemaType] = newSchemas
+	}
 	if hasInstallFlag() {
 		schemaInstallWhenReboot()
 		clearInstallFlag()
-	} else {
-		for _, schemaType := range def.SchemaTypes {
-			schemaDir := filepath.Join(dataDir, "schemas", string(schemaType))
-			var newSchemas map[string]*Files
-			files, err := os.ReadDir(schemaDir)
-			if err != nil {
-				conf.Log.Warnf("cannot read schema directory: %s", err)
-				newSchemas = make(map[string]*Files)
-			} else {
-				newSchemas = make(map[string]*Files, len(files))
-				for _, file := range files {
-					fileName := filepath.Base(file.Name())
-					ext := filepath.Ext(fileName)
-					schemaId := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-					ffs, ok := newSchemas[schemaId]
-					if !ok {
-						ffs = &Files{}
-						newSchemas[schemaId] = ffs
-					}
-					switch ext {
-					case ".so":
-						ffs.SoFile = filepath.Join(schemaDir, file.Name())
-					default:
-						ffs.SchemaFile = filepath.Join(schemaDir, file.Name())
-					}
-					conf.Log.Infof("schema file %s.%s loaded", schemaType, schemaId)
-				}
-			}
-			registry.schemas[schemaType] = newSchemas
-		}
 	}
 	return nil
 }
