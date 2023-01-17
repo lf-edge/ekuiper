@@ -124,7 +124,12 @@ func Register(info *Info) error {
 	if _, ok := registry.schemas[info.Type][info.Name]; ok {
 		return fmt.Errorf("schema %s.%s already registered", info.Type, info.Name)
 	}
-	return CreateOrUpdateSchema(info)
+	err := CreateOrUpdateSchema(info)
+	if err != nil {
+		return err
+	}
+	storeSchemaInstallScript(info)
+	return nil
 }
 
 func CreateOrUpdateSchema(info *Info) error {
@@ -236,6 +241,7 @@ func DeleteSchema(schemaType def.SchemaType, name string) error {
 		}
 	}
 	delete(registry.schemas[schemaType], name)
+	removeSchemaInstallScript(schemaType, name)
 	return nil
 }
 
@@ -316,4 +322,15 @@ func schemaInstallWhenReboot() {
 			continue
 		}
 	}
+}
+
+func storeSchemaInstallScript(info *Info) {
+	key := string(info.Type) + "_" + info.Name
+	val := info.InstallScript()
+	_ = schemaDb.Set(key, val)
+}
+
+func removeSchemaInstallScript(schemaType def.SchemaType, name string) {
+	key := string(schemaType) + "_" + name
+	_ = schemaDb.Delete(key)
 }
