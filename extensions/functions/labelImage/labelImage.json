@@ -16,6 +16,8 @@
 			"zh_CN": ""
 		}
 	},
+	"libs": [],
+	"name": "labelImage",
 	"functions": [{
 		"name": "labelImage",
 		"example": "labelImage(col1)",
