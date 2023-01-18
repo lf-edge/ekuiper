@@ -217,7 +217,7 @@ func (s *server) watchFolders() {
 
 func Process() {
 	if len(os.Args) != 2 {
-		kconf.Log.Fatal("Missing configuration file")
+		fmt.Println("Missing configuration file")
 		return
 	}
 
