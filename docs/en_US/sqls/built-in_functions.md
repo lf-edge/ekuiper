@@ -221,7 +221,7 @@ lag(temperature) OVER (PARTITION BY deviceId)
 Example function call to calculate duration of events:  ts is timestamp, and statusCode1 and statusCode2 are device status in the same event
 
 ```text
-ts - lag(ts, 1, ts) OVER (WHEN statusCode1 != statusCode2)
+select lag(Status) as Status, ts - lag(ts, 1, ts) OVER (WHEN had_changed(true, statusCode)) as duration from demo
 ```
 
 ## Other Functions
