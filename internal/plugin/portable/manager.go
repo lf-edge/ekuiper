@@ -419,7 +419,7 @@ func (m *Manager) GetAllPlugins() map[string]string {
 }
 
 func (m *Manager) GetAllPluginsStatus() map[string]string {
-	allPlgs, err := m.plgInstallDb.All()
+	allPlgs, err := m.plgStatusDb.All()
 	if err != nil {
 		return nil
 	}
