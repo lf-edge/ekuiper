@@ -213,7 +213,7 @@ lag(temperature) OVER (PARTITION BY deviceId)
 示例3：ts为时间戳，获取设备状态 statusCode1 和 statusCode2 不相等持续时间
 
 ```text
-ts - lag(ts, 1, ts) OVER (WHEN statusCode1 != statusCode2)
+select lag(Status) as Status, ts - lag(ts, 1, ts) OVER (WHEN had_changed(true, statusCode)) as duration from demo
 ```
 
 ## 其它函数
