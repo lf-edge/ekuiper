@@ -122,12 +122,16 @@ func (ms *MQTTClient) Connect(connHandler MQTT.OnConnectHandler, lostHandler MQT
 	}
 
 	c := MQTT.NewClient(opts)
-	if token := c.Connect(); token.WaitTimeout(5*time.Second) && token.Error() != nil {
+	token := c.Connect()
+	// timeout
+	if !token.WaitTimeout(5 * time.Second) {
+		conf.Log.Errorf("The connection to mqtt broker %s failed: connection timeout", ms.srv)
+		return fmt.Errorf("found error when connecting for %s: timeout", ms.srv)
+	} else if token.Error() != nil {
 		conf.Log.Errorf("The connection to mqtt broker %s failed : %s ", ms.srv, token.Error())
 		return fmt.Errorf("found error when connecting for %s: %s", ms.srv, token.Error())
 	}
 	conf.Log.Infof("The connection to mqtt broker is established successfully for %s.", ms.srv)
-
 	ms.conn = c
 	return nil
 }
