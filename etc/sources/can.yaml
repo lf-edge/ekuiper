@@ -1,0 +1,5 @@
+default:
+  # The network type of the CAN bus, can be can or udp
+  network: can
+  # The address of the CAN bus
+  address: can0

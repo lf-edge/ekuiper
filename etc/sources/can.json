@@ -1,0 +1,75 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/builtin/can.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/builtin/can.md"
+    },
+    "description": {
+      "en_US": "Connect to can bus through socketCan and read data from it.",
+      "zh_CN": "通过socketCan连接can总线并读取数据。"
+    }
+  },
+  "libs": [],
+  "properties": {
+    "default": [
+      {
+        "name": "network",
+        "default": "can",
+        "optional": true,
+        "control": "select",
+        "type": "string",
+        "values": [
+          "can",
+          "udp"
+        ],
+        "hint": {
+          "en_US": "The network type of the can bus.",
+          "zh_CN": "CAN总线的网络类型。"
+        },
+        "label": {
+          "en_US": "Network",
+          "zh_CN": "网络类型"
+        }
+      },
+      {
+        "name": "address",
+        "default": "can0",
+        "optional": false,
+        "control": "text",
+        "type": "string",
+        "hint": {
+          "en_US": "The address of the CAN bus",
+          "zh_CN": "CAN总线的地址。"
+        },
+        "label": {
+          "en_US": "Address",
+          "zh_CN": "地址"
+        }
+      }
+    ]
+  },
+  "outputs": [
+    {
+      "label": {
+        "en_US": "Output",
+        "zh_CN": "输出"
+      },
+      "value": "signal"
+    }
+  ],
+  "node": {
+    "category": "source",
+    "icon": "iconPath",
+    "label": {
+      "en_US": "Can",
+      "zh_CN": "Can"
+    }
+  }
+}

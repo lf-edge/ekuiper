@@ -21,6 +21,7 @@ const (
 	FormatDelimited = "delimited"
 	FormatCustom    = "custom"
 	FormatCanJson   = "canjson"
+	FormatCan       = "can"
 
 	DefaultField = "self"
 	MetaKey      = "__meta"
@@ -28,7 +29,7 @@ const (
 
 func IsFormatSupported(format string) bool {
 	switch format {
-	case FormatBinary, FormatJson, FormatProtobuf, FormatCustom, FormatDelimited, FormatCanJson:
+	case FormatBinary, FormatJson, FormatProtobuf, FormatCustom, FormatDelimited, FormatCanJson, FormatCan:
 		return true
 	default:
 		return false

@@ -15,6 +15,7 @@
 package io
 
 import (
+	"github.com/lf-edge/ekuiper/internal/io/can"
 	"github.com/lf-edge/ekuiper/internal/io/file"
 	"github.com/lf-edge/ekuiper/internal/io/http"
 	"github.com/lf-edge/ekuiper/internal/io/memory"
@@ -39,6 +40,7 @@ var (
 		"file":     func() api.Source { return &file.FileSource{} },
 		"memory":   func() api.Source { return memory.GetSource() },
 		"neuron":   func() api.Source { return neuron.GetSource() },
+		"can":      func() api.Source { return can.GetSource() },
 	}
 	sinks = map[string]NewSinkFunc{
 		"log":         sink.NewLogSink,
