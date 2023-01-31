@@ -17,6 +17,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/meta"
@@ -579,17 +580,17 @@ func importHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if rsi.Content != "" && rsi.FilePath != "" {
-		handleError(w, nil, "Invalid body: Cannot specify both content and file", logger)
+		handleError(w, errors.New("bad request"), "Invalid body: Cannot specify both content and file", logger)
 		return
 	} else if rsi.Content == "" && rsi.FilePath == "" {
-		handleError(w, nil, "Invalid body: must specify content or file", logger)
+		handleError(w, errors.New("bad request"), "Invalid body: must specify content or file", logger)
 		return
 	}
 	content := []byte(rsi.Content)
 	if rsi.FilePath != "" {
 		reader, err := httpx.ReadFile(rsi.FilePath)
 		if err != nil {
-			handleError(w, nil, "Fail to read file", logger)
+			handleError(w, err, "Fail to read file", logger)
 			return
 		}
 		defer reader.Close()
@@ -783,17 +784,17 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if rsi.Content != "" && rsi.FilePath != "" {
-		handleError(w, nil, "Invalid body: Cannot specify both content and file", logger)
+		handleError(w, errors.New("bad request"), "Invalid body: Cannot specify both content and file", logger)
 		return
 	} else if rsi.Content == "" && rsi.FilePath == "" {
-		handleError(w, nil, "Invalid body: must specify content or file", logger)
+		handleError(w, errors.New("bad request"), "Invalid body: must specify content or file", logger)
 		return
 	}
 	content := []byte(rsi.Content)
 	if rsi.FilePath != "" {
 		reader, err := httpx.ReadFile(rsi.FilePath)
 		if err != nil {
-			handleError(w, nil, "Fail to read file", logger)
+			handleError(w, err, "Fail to read file", logger)
 			return
 		}
 		defer reader.Close()

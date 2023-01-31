@@ -94,7 +94,6 @@ func StartUp(Version, LoadFileType string) {
 	ruleProcessor = processor.NewRuleProcessor()
 	streamProcessor = processor.NewStreamProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
-	initRuleset()
 
 	// register all extensions
 	for k, v := range components {
@@ -113,6 +112,7 @@ func StartUp(Version, LoadFileType string) {
 		panic(err)
 	}
 	meta.Bind()
+	initRuleset()
 
 	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
 	//Start lookup tables
