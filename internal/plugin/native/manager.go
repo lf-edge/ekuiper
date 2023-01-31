@@ -841,6 +841,7 @@ func (rr *Manager) pluginInstallWhenReboot() {
 		}
 		err = rr.Register(plgType, sd)
 		if err != nil {
+			conf.Log.Errorf(`install native plugin %s error: %v`, k, err)
 			_ = rr.plgStatusDb.Set(k, err.Error())
 			continue
 		}

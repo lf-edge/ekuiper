@@ -438,6 +438,7 @@ func (m *Manager) PluginImport(plugins map[string]string) {
 		}
 		err = m.Register(sd)
 		if err != nil {
+			conf.Log.Errorf(`install portable plugin %s error: %v`, k, err)
 			_ = m.plgStatusDb.Set(k, err.Error())
 			continue
 		}
