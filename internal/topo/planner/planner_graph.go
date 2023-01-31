@@ -527,7 +527,7 @@ func parseFunc(props map[string]interface{}) (*operator.FuncOp, error) {
 	c, ok := f.Expr.(*ast.Call)
 	if !ok {
 		// never happen
-		return nil, fmt.Errorf("expr %v is not ast.Call", stmt.Fields[0].Expr)
+		return nil, fmt.Errorf("expr %s is not ast.Call", funcExpr)
 	}
 	var name string
 	if f.AName != "" {
