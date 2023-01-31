@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -146,7 +146,6 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) {
 	_ = rs.s.tableStatusDb.Clean()
 	_ = rs.r.ruleStatusDb.Clean()
 
-	counts := make([]int, 3)
 	// restore streams
 	for k, v := range all.Streams {
 		_, e := rs.s.ExecStreamSql(v)
@@ -154,8 +153,6 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) {
 			conf.Log.Errorf("Fail to import stream %s(%s) with error: %v", k, v, e)
 			_ = rs.s.streamStatusDb.Set(k, e.Error())
 			continue
-		} else {
-			counts[0]++
 		}
 	}
 	// restore tables
@@ -165,8 +162,6 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) {
 			conf.Log.Errorf("Fail to import table %s(%s) with error: %v", k, v, e)
 			_ = rs.s.tableStatusDb.Set(k, e.Error())
 			continue
-		} else {
-			counts[1]++
 		}
 	}
 	var rules []string
@@ -179,7 +174,6 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) {
 			continue
 		} else {
 			rules = append(rules, k)
-			counts[2]++
 		}
 	}
 }

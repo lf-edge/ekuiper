@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -80,4 +80,13 @@ func (m *Manager) Clean() {
 		_ = f.Close()
 		return true
 	})
+	funcInsMap = &sync.Map{}
+}
+
+func (m *Manager) DeleteFunc(funcName string) {
+	f, ok := funcInsMap.Load(funcName)
+	if ok {
+		_ = f.(*runtime.PortableFunc).Close()
+		funcInsMap.Delete(funcName)
+	}
 }
