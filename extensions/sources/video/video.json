@@ -9,8 +9,8 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/tree/master/docs/en_US/rules/sources/plugin/video.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/tree/master/docs/zh_CN/rules/sources/plugin/video.md"
+			"en_US": "https://ekuiper.org/docs/en/latest/guide/sources/plugin/video.html",
+			"zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sources/plugin/video.html"
 		},
 		"description": {
 			"en_US": "eKuiper provides plug in support for video stream, which can pull images from a video stream",

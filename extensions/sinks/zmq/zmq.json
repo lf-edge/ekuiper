@@ -8,9 +8,9 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/zmq.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/zmq.md"
-		},
+          "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/zmq.html",
+          "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/zmq.html"
+        },
 		"description": {
 			"en_US": "This a demo 0MQ sink plugin, it cannot be used in production env.",
 			"zh_CN": "本插件为演示 ZMQ 数据发送插件，不能使用在生产环境中"

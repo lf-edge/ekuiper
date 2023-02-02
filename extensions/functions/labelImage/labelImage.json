@@ -8,9 +8,9 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/sqls/custom_functions.md",
-      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/custom_functions.md"
-		},
+          "en_US": "https://ekuiper.org/docs/en/latest/sqls/custom_functions.html",
+          "zh_CN": "https://ekuiper.org/docs/zh/latest/sqls/custom_functions.html"
+        },
 		"description": {
 			"en_US": "",
 			"zh_CN": ""

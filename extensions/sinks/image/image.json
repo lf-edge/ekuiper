@@ -8,9 +8,9 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/file.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/file.md"
-		},
+          "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/file.html",
+          "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/file.html"
+        },
 		"description": {
 			"en_US": "This a sink plugin for file, it can be used for saving the analysis data into file system.",
 			"zh_CN": "本插件为文件持久化插件，可以用于将分析数据存入指定的文件中。"

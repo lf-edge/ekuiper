@@ -8,9 +8,9 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/sql.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/sql.md"
-		},
+          "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/sql.html",
+          "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/sql.html"
+        },
 		"description": {
 			"en_US": "This a sink plugin for Sql based Database, it can be used for saving the analysis data into Sql based database.",
 			"zh_CN": "本插件为 SQL Database 的持久化插件，可以用于将分析数据存入支持 SQL 语法的数据库中"

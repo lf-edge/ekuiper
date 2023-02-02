@@ -8,9 +8,9 @@
 			"website": ""
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/influxdb.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/influxdb.md"
-		},
+          "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/influxdb.html",
+          "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/influxdb.html"
+        },
 		"description": {
 			"en_US": "This a sink plugin for InfluxDB, it can be used for saving the analysis data into InfluxDB.",
 			"zh_CN": "本插件为 InfluxDB 的持久化插件，可以用于将分析数据存入 InfluxDB 中"

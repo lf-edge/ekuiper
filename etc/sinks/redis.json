@@ -8,9 +8,9 @@
 			"website": "https://github.com/feng-crazy"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/plugin/reids.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/plugin/reids.md"
-		},
+          "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/reids.html",
+          "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/reids.html"
+        },
 		"description": {
 			"en_US": "This a sink for Redis, it can be used for saving the analysis data into Redis.",
 			"zh_CN": "为 Redis 的持久化插件，可以用于将分析数据存入 Redis 中"
