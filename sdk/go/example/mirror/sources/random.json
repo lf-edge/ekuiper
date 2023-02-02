@@ -96,5 +96,13 @@
         }
       }
     ]
+  },
+  "node": {
+    "category": "source",
+    "icon": "iconPath",
+    "label": {
+      "en_US": "Random",
+      "zh_CN": "Random"
+    }
   }
 }

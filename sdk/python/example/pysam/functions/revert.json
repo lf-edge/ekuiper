@@ -18,6 +18,37 @@
 		"hint": {
 			"en_US": "Revert the input string",
 			"zh_CN": "输出反转参数值。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "string",
+				"hint": {
+					"en_US": "The field to revert.",
+					"zh_CN": "用于反转的字段名"
+				},
+				"label": {
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
+			}
+		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Reverted string",
+				"zh_CN": "反转值"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Revert",
+				"zh_CN": "反转"
+			}
 		}
 	}]
 }

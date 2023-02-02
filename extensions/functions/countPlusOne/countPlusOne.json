@@ -20,6 +20,7 @@
 	"functions": [{
 		"name": "countPlusOne",
 		"example": "countPlusOne(col1)",
+		"aggregate": true,
 		"hint": {
 			"en_US": "The value of the output parameter length plus one",
 			"zh_CN": "输出参数长度加一的值"
@@ -41,17 +42,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "countPlusOne"
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Count",
+				"zh_CN": "计数值"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "countPlusOne",

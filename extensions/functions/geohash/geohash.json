@@ -57,17 +57,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "geohashEncode"
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Encoded string",
+				"zh_CN": "编码字符"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "geohashEncode",
@@ -113,17 +111,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "geohashEncodeInt"
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Encoded value",
+				"zh_CN": "编码值"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "geohashEncodeInt",
@@ -154,17 +150,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "geohashDecode"
+		"return": {
+			"type": "struct",
+			"hint": {
+				"en_US": "Decoded Value",
+				"zh_CN": "解码值"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "geohashDecode",
@@ -195,17 +189,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "geohashDecodeInt"
+		"return": {
+			"type": "struct",
+			"hint": {
+				"en_US": "Decoded Value",
+				"zh_CN": "解码值"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "geohashDecodeInt",
@@ -236,17 +228,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "geohashBoundingBox"
+		"return": {
+			"type": "struct",
+			"hint": {
+				"en_US": "Box",
+				"zh_CN": "区域"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "geohashBoundingBox",
@@ -277,17 +267,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "geohashBoundingBoxInt"
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Bounding Box",
+				"zh_CN": "区域编码"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "geohashBoundingBoxInt",
@@ -333,17 +321,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "geohashNeighbor"
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Neighbor",
+				"zh_CN": "相邻位置"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "geohashNeighbor",
@@ -389,17 +375,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "geohashNeighborInt"
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Neighbor",
+				"zh_CN": "相邻位置编码"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "geohashNeighborInt",
@@ -430,17 +414,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "geohashNeighbors"
+		"return": {
+			"type": "array",
+			"hint": {
+				"en_US": "All Neighbor",
+				"zh_CN": "所有相邻位置"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "geohashNeighbors",
@@ -459,30 +441,31 @@
 				"hidden": true,
 				"optional": false,
 				"control": "text",
-				"type": "string",
-				"hint": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据"
-				},
-				"label": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据"
-				}
-			}],
-		"outputs": [{
-			"label": {
-				"en_US": "Output",
-				"zh_CN": "输出"
+			"type": "string",
+			"hint": {
+				"en_US": "Input data",
+				"zh_CN": "输入数据"
 			},
-			"value": "geohashNeighbors"
-		}],
-		"node": {
-				"category": "abc",
-				"icon": "iconPath",
-				"label": {
-					"en_US": "geohashNeighbors",
-					"zh_CN": "geohashNeighbors"
-				}
+			"label": {
+				"en_US": "Input data",
+				"zh_CN": "输入数据"
 			}
+		}
+		],
+		"return": {
+			"type": "array",
+			"hint": {
+				"en_US": "All Neighbor",
+				"zh_CN": "所有相邻位置编码"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "geohashNeighbors",
+				"zh_CN": "geohashNeighbors"
+			}
+		}
 	}]
 }
