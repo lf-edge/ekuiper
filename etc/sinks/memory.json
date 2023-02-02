@@ -8,8 +8,8 @@
       "website": "https://www.emqx.io"
     },
     "helpUrl": {
-      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/builtin/memory.md",
-      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/builtin/memory.md"
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/builtin/memory.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/builtin/memory.html"
     },
     "description": {
       "en_US": "The action is used to flush the result into an in-memory topic so that it can be consumed by the memory source.",

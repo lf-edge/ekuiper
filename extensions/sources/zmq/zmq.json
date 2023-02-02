@@ -8,8 +8,8 @@
       "website": "https://www.emqx.io"
     },
     "helpUrl": {
-      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/plugin/zmq.md",
-      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/plugin/zmq.md"
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sources/plugin/zmq.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sources/plugin/zmq.html"
     },
     "description": {
       "en_US": "The source will subscribe to a Zero Mq topic to import the messages into kuiper.",

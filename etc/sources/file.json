@@ -8,8 +8,8 @@
       "website": "https://www.emqx.io"
     },
     "helpUrl": {
-      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/builtin/file.md",
-      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/builtin/file.md"
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sources/builtin/file.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sources/builtin/file.html"
     },
     "description": {
       "en_US": "Monitor file system and load the content into the eKuiper processing pipeline.",

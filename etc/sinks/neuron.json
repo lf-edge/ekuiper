@@ -8,7 +8,7 @@
       "website": "https://www.emqx.io"
     },
     "helpUrl": {
-      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sinks/builtin/neuron.md",
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/builtin/neuron.html",
       "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sinks/builtin/"
     },
     "description": {

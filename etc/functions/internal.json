@@ -8,8 +8,8 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/sqls/built-in_functions.md",
-			"zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/built-in_functions.md"
+			"en_US": "https://ekuiper.org/docs/en/latest/sqls/built-in_functions.html",
+			"zh_CN": "https://ekuiper.org/docs/zh/latest/sqls/built-in_functions.html"
 		},
 		"description": {
 			"en_US": "eKuiper has many built-in functions for performing calculations on data.",

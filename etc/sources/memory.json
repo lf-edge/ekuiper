@@ -8,8 +8,8 @@
       "website": "https://www.emqx.io"
     },
     "helpUrl": {
-      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/rules/sources/builtin/memory.md",
-      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/rules/sources/builtin/memory.md"
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sources/builtin/memory.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sources/builtin/memory.html"
     },
     "description": {
       "en_US": "The source subscribes to topics to consume events from memory sink to form a rule pipeline.",
