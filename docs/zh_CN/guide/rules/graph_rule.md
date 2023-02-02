@@ -247,20 +247,73 @@
 - cases：要依次评估的条件表达式。
 - stopAtFirstMatch：是否在匹配任何条件时停止评估，类似于编程语言中的 break。
 
-示例:
+在 edges 定义中，该节点的输出为多条路径，表现为二维数组。在下面的示例中，switch 节点的 cases 属性中定义了两个条件。对应的，在
+edges -> switch 中，需要定义一个长度为2的二维数组分别指定满足对应条件之后的路径。
 
 ```json
-    {
-      "type": "operator",
-      "nodeType": "switch",
-      "props": {
-        "cases": [
-          "temperature > 20",
-          "temperature <= 20"
+{
+  "id": "ruleSwitch",
+  "name": "展示如何使用 switch 节点的规则",
+  "graph": {
+    "nodes": {
+      "abc": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "datasource": "demo",
+          "confKey": "syno"
+        }
+      },
+      "switch": {
+        "type": "operator",
+        "nodeType": "switch",
+        "props": {
+          "cases": [
+            "temperature > 20",
+            "temperature <= 20"
+          ],
+          "stopAtFirstMatch": true
+        }
+      },
+      "mqttpv": {
+        "type": "sink",
+        "nodeType": "mqtt",
+        "props": {
+          "server": "tcp://syno.home:1883",
+          "topic": "result/switch1",
+          "sendSingle": true
+        }
+      },
+      "mqttpv2": {
+        "type": "sink",
+        "nodeType": "mqtt",
+        "props": {
+          "server": "tcp://syno.home:1883",
+          "topic": "result/switch2",
+          "sendSingle": true
+        }
+      }
+    },
+    "topo": {
+      "sources": [
+        "abc"
+      ],
+      "edges": {
+        "abc": [
+          "switch"
         ],
-        "stopAtFirstMatch": true
+        "switch": [
+          [
+            "mqttpv"
+          ],
+          [
+            "mqttpv2"
+          ]
+        ]
       }
     }
+  }
+}
 ```
 
 #### script

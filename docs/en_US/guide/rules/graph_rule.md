@@ -251,20 +251,75 @@ The switch node accepts multiple conditional expression as cases in order and ev
 - cases: the condition expressions to be evaluated in order.
 - stopAtFirstMatch: whether to stop evaluate conditions when matching any condition, similarly to break in programming language.
 
-Example:
+In the edges definition, the output of the node has multiple paths, which is represented as a two-dimensional array. In
+the following example, the switch node has two conditions defined in its `cases` property. Correspondingly, in edges ->
+switch, you need to define a two-dimensional array of length 2 to specify the paths after the corresponding conditions
+are met.
 
 ```json
-    {
-      "type": "operator",
-      "nodeType": "switch",
-      "props": {
-        "cases": [
-          "temperature > 20",
-          "temperature <= 20"
+{
+  "id": "ruleSwitch",
+  "name": "Demonstrate how to use switch node",
+  "graph": {
+    "nodes": {
+      "abc": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "datasource": "demo",
+          "confKey": "syno"
+        }
+      },
+      "switch": {
+        "type": "operator",
+        "nodeType": "switch",
+        "props": {
+          "cases": [
+            "temperature > 20",
+            "temperature <= 20"
+          ],
+          "stopAtFirstMatch": true
+        }
+      },
+      "mqttpv": {
+        "type": "sink",
+        "nodeType": "mqtt",
+        "props": {
+          "server": "tcp://syno.home:1883",
+          "topic": "result/switch1",
+          "sendSingle": true
+        }
+      },
+      "mqttpv2": {
+        "type": "sink",
+        "nodeType": "mqtt",
+        "props": {
+          "server": "tcp://syno.home:1883",
+          "topic": "result/switch2",
+          "sendSingle": true
+        }
+      }
+    },
+    "topo": {
+      "sources": [
+        "abc"
+      ],
+      "edges": {
+        "abc": [
+          "switch"
         ],
-        "stopAtFirstMatch": true
+        "switch": [
+          [
+            "mqttpv"
+          ],
+          [
+            "mqttpv2"
+          ]
+        ]
       }
     }
+  }
+}
 ```
 
 #### script
