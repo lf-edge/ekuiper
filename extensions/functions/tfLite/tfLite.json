@@ -70,17 +70,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "tflite"
+		"return": {
+			"type": "array",
+			"hint": {
+				"en_US": "Inferred result",
+				"zh_CN": "推理结果"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "tflite",

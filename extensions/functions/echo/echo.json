@@ -26,36 +26,33 @@
 		},
 		"args": [
 			{
-				"name": "inputData",
-				"hidden": true,
+				"name": "field",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据"
+					"en_US": "The field to echo.",
+					"zh_CN": "字段名"
 				},
 				"label": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "echo"
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Echoed string",
+				"zh_CN": "回声值"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "countPlusOne",
-				"zh_CN": "countPlusOne"
+				"en_US": "Echo",
+				"zh_CN": "回声"
 			}
 		}
 	}]

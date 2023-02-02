@@ -84,17 +84,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "resize"
+		"return": {
+			"type": "bytea",
+			"hint": {
+				"en_US": "Resized image",
+				"zh_CN": "缩放后的图像"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "resize",
@@ -153,17 +151,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "thumbnail"
+		"return": {
+			"type": "bytea",
+			"hint": {
+				"en_US": "Thumbnail",
+				"zh_CN": "缩略图"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "thumbnail",

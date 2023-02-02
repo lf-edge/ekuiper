@@ -15,5 +15,13 @@
       "en_US": "The python source will send json data.",
       "zh_CN": "Python 源发送数据"
     }
+  },
+  "node": {
+    "category": "source",
+    "icon": "iconPath",
+    "label": {
+      "en_US": "Pyjson",
+      "zh_CN": "Pyjson"
+    }
   }
 }

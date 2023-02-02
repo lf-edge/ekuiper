@@ -43,17 +43,15 @@
 				"values": []
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "accumulateWordCount"
+		"return": {
+			"type": "int",
+			"hint": {
+				"en_US": "Count",
+				"zh_CN": "计数值"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "AccumulateWordCount",

@@ -36,15 +36,24 @@
 		"name": "interval",
 		"default": 1000,
 		"optional": true,
-		"control": "text",
-		"type": "int",
-		"hint": {
-			"en_US": "The time interval (ms) for writing the analysis result.",
-			"zh_CN": "写入分析结果的时间间隔（毫秒）。"
-		},
-		"label": {
-			"en_US": "Intervals",
-			"zh_CN": "间隔时间"
-		}
-	}]
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "The time interval (ms) for writing the analysis result.",
+        "zh_CN": "写入分析结果的时间间隔（毫秒）。"
+      },
+      "label": {
+        "en_US": "Intervals",
+        "zh_CN": "间隔时间"
+      }
+    }
+    ],
+  "node": {
+    "category": "Sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "File",
+      "zh": "文件"
+    }
+  }
 }

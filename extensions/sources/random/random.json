@@ -97,17 +97,8 @@
       }
     ]
   },
-  "outputs": [
-    {
-      "label": {
-        "en_US": "Output",
-        "zh_CN": "输出"
-      },
-      "value": "signal"
-    }
-  ],
   "node": {
-    "category": ["Protocol","Protocol1"],
+    "category": "source",
     "icon": "iconPath",
     "label": {
       "en_US": "Random",

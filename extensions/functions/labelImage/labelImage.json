@@ -42,17 +42,15 @@
 				}
 			}
 		],
-		"outputs": [
-			{
-				"label": {
-					"en_US": "Output",
-					"zh_CN": "输出"
-				},
-				"value": "labelImage"
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Image Label",
+				"zh_CN": "图像标注"
 			}
-		],
+		},
 		"node": {
-			"category": "abc",
+			"category": "function",
 			"icon": "iconPath",
 			"label": {
 				"en_US": "labelImage",
