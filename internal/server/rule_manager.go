@@ -73,20 +73,23 @@ func createRule(name, ruleJson string) (string, error) {
 	// Validate the rule json
 	r, err := ruleProcessor.GetRuleByJson(name, ruleJson)
 	if err != nil {
-		return "", fmt.Errorf("Invalid rule json: %v", err)
-	}
-	// Validate the topo
-	rs, err := createRuleState(r)
-	if err != nil {
-		return r.Id, fmt.Errorf("Create rule topo error: %v", err)
+		return "", fmt.Errorf("invalid rule json: %v", err)
 	}
 	// Store to KV
 	err = ruleProcessor.ExecCreate(r.Id, ruleJson)
 	if err != nil {
-		// Do not store to KV so also delete the in memory shadow
-		deleteRule(r.Id)
-		return r.Id, fmt.Errorf("Store the rule error: %v", err)
+		return r.Id, fmt.Errorf("store the rule error: %v", err)
 	}
+
+	// Validate the topo
+	rs, err := createRuleState(r)
+	if err != nil {
+		// Do not store to registry so also delete the KV
+		deleteRule(r.Id)
+		_, _ = ruleProcessor.ExecDrop(r.Id)
+		return r.Id, fmt.Errorf("create rule topo error: %v", err)
+	}
+
 	// Start the rule asyncly
 	if r.Triggered {
 		go func() {
@@ -144,7 +147,8 @@ func updateRule(ruleId, ruleJson string) error {
 	}
 	if rs, ok := registry.Load(r.Id); ok {
 		rs.UpdateTopo(r)
-		return nil
+		err = ruleProcessor.ExecReplaceRuleState(rs.RuleId, true)
+		return err
 	} else {
 		return fmt.Errorf("Rule %s registry not found, try to delete it and recreate", r.Id)
 	}
