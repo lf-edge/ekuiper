@@ -266,6 +266,10 @@
 						{
 							"title": "使用 Python 插件实现 AI 函数",
 							"path": "guide/ai/python_tensorflow_lite_tutorial"
+						},
+						{
+							"title": "使用 tensorflow_lite 原生插件调用 AI 模型",
+							"path": "guide/ai/tensorflow_lite"
 						}
 					]
 				}
@@ -937,6 +941,10 @@
 						{
 							"title": "Running AI Algorithms with Python Function Plugin",
 							"path": "guide/ai/python_tensorflow_lite_tutorial"
+						},
+						{
+							"title": "Running AI Model with TensorFlow Lite Function Plugin",
+							"path": "guide/ai/tensorflow_lite"
 						}
 					]
 				}
