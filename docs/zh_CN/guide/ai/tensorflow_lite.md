@@ -48,7 +48,7 @@ TensorFlow Lite 以预编译插件的形式提供，用户需自行下载安装�
 
 ### 验证结果
 
-结果如下图所示，当输入为 1.57 时，推倒结果约为 1。
+结果如下图所示，当输入为 1.57 时，推导结果约为 1。
 ![结果查询](../../resources/mqttx_sin.png)
 
 
@@ -87,6 +87,68 @@ video 源定期从直播源中拉取数据并从中抽取图片数据。直播�
 
 结果如下图所示，图片数据经过推理后，返回结果为字节数组(经过 base64 编码)。
 ![结果查询](../../resources/mqttx_mobilenet.png)
+
+以下为经过 base64 译码后得到的字节数组，共有 1001 个元素。需要结合所测试模型来解释其意义。 
+在本例中，测试模型为图像识别模型，此模型共支持 1001 种物品分类，因此推导结果中的 1001 个元素与 1001 种物品按照顺序一一对应。例如第一个数组元素匹配第一个物品，其中元素的值代表匹配程度，值越大匹配度越高。
+物品的列表可从[此处](https://github.com/lf-edge/ekuiper/blob/master/extensions/functions/labelImage/etc/labels.txt)获得。
+![结果解释](../../resources/tflite_image_result.png)
+
+用户可编写代码从中筛选出匹配度最高的物品标签,以下为示例代码
+
+```go
+package demo
+
+import (
+	"bufio"
+	"os"
+	"sort"
+)
+
+func loadLabels() ([]string, error) {
+	labels := []string{}
+	f, err := os.Open("./labels.txt")
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		labels = append(labels, scanner.Text())
+	}
+	return labels, nil
+}
+
+type result struct {
+	score float64
+	index int
+}
+
+func bestMatchLabel(keyValue map[string]interface{}) (string, bool) {
+	labels, _ := loadLabels()
+	resultArray := keyValue["tfLite"].([]interface{})
+	outputArray := resultArray[0].([]byte)
+	outputSize := len(outputArray)
+	
+	var results []result
+	for i := 0; i < outputSize; i++ {
+		score := float64(outputArray[i]) / 255.0
+		if score < 0.2 {
+			continue
+		}
+		results = append(results, result{score: score, index: i})
+	}
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].score > results[j].score
+	})
+	// output is the biggest score labelImage
+	if len(results) > 0 {
+		return labels[results[0].index], true
+	} else {
+		return "", true
+	}
+
+}
+```
 
 
 ## 结论
