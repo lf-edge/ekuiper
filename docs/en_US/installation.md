@@ -36,6 +36,9 @@ Please make sure docker compose has installed before running.
       ports:
       - "9082:9082"
       restart: unless-stopped
+      environment: 
+        # setting default eKuiper service, works since 1.8.0
+        DEFAULT_EKUIPER_ENDPOINT: "http://ekuiper:9081"
    ekuiper:
       image: lfedge/ekuiper:x.x.x
       ports:
