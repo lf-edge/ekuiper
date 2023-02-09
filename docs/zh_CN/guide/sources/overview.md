@@ -18,7 +18,8 @@
 - [Mqtt source](./builtin/mqtt.md)：从mqtt主题读取数据。
 - [Neuron source](./builtin/neuron.md): 从本地 Neuron 实例读取数据。
 - [EdgeX source](./builtin/edgex.md): 从 EdgeX foundry 读取数据。
-- [Http pull source](./builtin/http_pull.md)：从http服务器中拉取数据。
+- [Http pull source](./builtin/http_pull.md)：从 http 服务器中拉取数据。
+- [Http push source](./builtin/http_push.md)：通过 http 推送数据到 eKuiper。
 - [Memory source](./builtin/memory.md)：从 eKuiper 内存主题读取数据以形成规则管道。
 - [File source](./builtin/file.md)：从文件中读取数据，通常用作表格。
 - [Redis source](./builtin/redis.md): 从 Redis 中查询数据，用作查询表。
