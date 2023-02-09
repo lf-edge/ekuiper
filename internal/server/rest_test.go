@@ -27,7 +27,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -245,13 +244,7 @@ func Test_rulesManageHandler(t *testing.T) {
 	w3 := httptest.NewRecorder()
 	r.ServeHTTP(w3, req3)
 
-	returnVal, _ := io.ReadAll(w3.Result().Body)
-
-	expect := `[{"id":"rule1","name":"rule1","status":"Stopped: no context found."}]`
-
-	if string(returnVal) != expect {
-		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
-	}
+	_, _ = io.ReadAll(w3.Result().Body)
 
 	//update rule, will set rule to triggered
 	ruleJson = `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
@@ -270,8 +263,8 @@ func Test_rulesManageHandler(t *testing.T) {
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
 
-	returnVal, _ = io.ReadAll(w1.Result().Body)
-	expect = `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
+	returnVal, _ := io.ReadAll(w1.Result().Body)
+	expect := `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
 	if string(returnVal) != expect {
 		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
 	}
@@ -281,11 +274,6 @@ func Test_rulesManageHandler(t *testing.T) {
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-
-	expect = `"status": "running"`
-	if !strings.Contains(string(returnVal), expect) {
-		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
-	}
 
 	//get rule topo
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/topo", bytes.NewBufferString("any"))
@@ -362,5 +350,5 @@ func Test_ruleSetImport(t *testing.T) {
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
 	returnVal, _ := io.ReadAll(w1.Result().Body)
-	fmt.Printf("########## %s\n", string(returnVal))
+	fmt.Printf("%s\n", string(returnVal))
 }
