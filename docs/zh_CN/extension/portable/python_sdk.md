@@ -1,8 +1,7 @@
 # Portable 插件 Python SDK 
 用户可利用 Python SDK 来开发 portable 插件，这个 SDK 提供了类似原生插件的 API，另外它提供了启动函数，用户只需填充插件信息即可。
 
-为了运行 python 插件，有两个前置条件
-To run python plugin, there are two prerequisites in the runtime environment:
+运行 python 插件有两个前置条件
 1. 安装 Python 3.x 环境.
 2. 通过 `pip install nng ekuiper` 安装 nng 和 ekuiper 包.
 

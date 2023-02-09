@@ -19,6 +19,7 @@ Users can directly use the built-in sources in the standard eKuiper instance. Th
 - [Neuron source](./builtin/neuron.md): read data from the local neuron instance.
 - [EdgeX source](./builtin/edgex.md): read data from EdgeX foundry.
 - [Http pull source](./builtin/http_pull.md): source to pull data from http servers.
+- [Http push source](./builtin/http_push.md): push data to eKuiper through http.
 - [Memory source](./builtin/memory.md): source to read from eKuiper memory topic to form rule pipelines.
 - [File source](./builtin/file.md): source to read from file, usually used as tables.
 - [Redis source](./builtin/redis.md): source to lookup from redis as a lookup table.
