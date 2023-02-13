@@ -64,7 +64,7 @@ eKuiper processing at the edge can greatly reduce system response latency, save 
 
 ## Quick start
 
-- [eKuiper 5 minutes quick start](docs/en_US/quick_start_docker.md)
+- [eKuiper 5 minutes quick start](docs/en_US/getting_started/quick_start_docker.md)
 - [EdgeX rule engine tutorial](docs/en_US/edgex/edgex_rule_engine_tutorial.md)
 
 ## Community
