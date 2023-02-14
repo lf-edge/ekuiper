@@ -239,8 +239,18 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 			cmd = exec.Command(pluginMeta.Executable, string(jsonArg))
 
 		case "python":
-			conf.Log.Printf("starting python plugin executable %s with script %s\n", conf.Config.Portable.PythonBin, pluginMeta.Executable)
-			cmd = exec.Command(conf.Config.Portable.PythonBin, pluginMeta.Executable, string(jsonArg))
+			if pluginMeta.VirtualType != nil {
+				switch *pluginMeta.VirtualType {
+				case "conda":
+					cmd = exec.Command("conda", "run", "-n", *pluginMeta.Env, conf.Config.Portable.PythonBin, pluginMeta.Executable, string(jsonArg))
+				default:
+					return fmt.Errorf("unsupported virtual type: %s", *pluginMeta.VirtualType)
+				}
+			}
+			if cmd == nil {
+				cmd = exec.Command(conf.Config.Portable.PythonBin, pluginMeta.Executable, string(jsonArg))
+			}
+			conf.Log.Infof("starting python plugin: %s", cmd)
 		default:
 			return fmt.Errorf("unsupported language: %s", pluginMeta.Language)
 		}
@@ -329,8 +339,10 @@ func (p *pluginInsManager) KillAll() error {
 }
 
 type PluginMeta struct {
-	Name       string `json:"name"`
-	Version    string `json:"version"`
-	Language   string `json:"language"`
-	Executable string `json:"executable"`
+	Name        string  `json:"name"`
+	Version     string  `json:"version"`
+	Language    string  `json:"language"`
+	Executable  string  `json:"executable"`
+	VirtualType *string `json:"virtualEnvType,omitempty"`
+	Env         *string `json:"env,omitempty"`
 }
