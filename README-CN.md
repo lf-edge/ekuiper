@@ -62,7 +62,8 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如，
 
 ## 快速入门
 
-- [eKuiper 5分钟快速入门](docs/zh_CN/quick_start_docker.md)
+- [5分钟快速入门](docs/zh_CN/getting_started/quick_start_docker.md)
+- [快速开始](docs/zh_CN/getting_started/getting_started.md)
 - [EdgeX 规则引擎教程](docs/zh_CN/edgex/edgex_rule_engine_tutorial.md)
 
 ## 社区
@@ -97,13 +98,13 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如，
 ### MQTT 吞吐量测试支持
 
 - 使用 JMeter MQTT 插件来发送数据到 [EMQX](https://www.emqx.io/) 服务器，消息类似于 `{"temperature": 10, "humidity" : 90}`， 温度与湿度的值是介于 0 ～ 100 之间的随机整数值
-- eKuiper 从 EMQX 服务器订阅消息，并且通过 SQL 分析数据： `SELECT * FROM demo WHERE temperature > 50 ` 
-- 分析结果通过 [文件插件](docs/zh_CN/rules/sinks/plugin/file.md) 写到本地的文件系统里
+- eKuiper 从 EMQX 服务器订阅消息，并且通过 SQL 分析数据： `SELECT * FROM demo WHERE temperature > 50 `
+- 分析结果通过 [文件插件](docs/zh_CN/guide/sinks/plugin/file.md) 写到本地的文件系统里
 
-| 设备                                                 | 每秒发送消息数 | CPU 使用        | 内存 |
-| ---------------------------------------------------- | -------------- | --------------- | ---- |
-| 树莓派 3B+                                           | 12k            | sys + user: 70% | 20M  |
-| AWS t2.micro (x86: 1 Core * 1 GB) <br />Ubuntu 18.04 | 10k            | sys + user: 25% | 20M  |
+| 设备                                                   | 每秒发送消息数 | CPU 使用          | 内存  |
+|------------------------------------------------------|---------|-----------------|-----|
+| 树莓派 3B+                                              | 12k     | sys + user: 70% | 20M |
+| AWS t2.micro (x86: 1 Core * 1 GB) <br />Ubuntu 18.04 | 10k     | sys + user: 25% | 20M |
 
 ### EdgeX 吞吐量测试
 
@@ -120,13 +121,14 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如，
   }
   ```
 
-- eKuiper 从 EdgeX ZeroMQ 消息总线订阅数据，并且使用 `SELECT * FROM demo WHERE temperature > 50 ` 来分析数据，其中 90% 数据被规则所过滤。
+- eKuiper 从 EdgeX ZeroMQ 消息总线订阅数据，并且使用 `SELECT * FROM demo WHERE temperature > 50 ` 来分析数据，其中 90%
+  数据被规则所过滤。
 
-- 分析结果将被发送到 [nop sink](docs/zh_CN/rules/sinks/builtin/nop.md)，所有的数据都被忽略。
+- 分析结果将被发送到 [nop sink](docs/zh_CN/guide/sinks/builtin/nop.md)，所有的数据都被忽略。
 
-|                                                | 每秒发送消息数 | CPU 使用      | 内存 |
-| ---------------------------------------------- | -------------- | ------------- | ---- |
-| AWS t2.micro( 1 Core * 1 GB) <br />Ubuntu18.04 | 11.4 k         | sys+user: 75% | 32M  |
+|                                                | 每秒发送消息数 | CPU 使用        | 内存  |
+|------------------------------------------------|---------|---------------|-----|
+| AWS t2.micro( 1 Core * 1 GB) <br />Ubuntu18.04 | 11.4 k  | sys+user: 75% | 32M |
 
 ### 最大规则数支持
 
@@ -197,10 +199,10 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如，
 
   > Docker 镜像默认支持 EdgeX
 
-
 项目版本页面里提供了预编译的二进制文件。如果您的操作系统或架构没有预编译的文件，请使用交叉编译自行构建，请参考[此文档](docs/zh_CN/operation/compile/cross-compile.md)。
 
-编译时，用户可通过 go build tags 选择需要编译的功能编译出自定义的仅包含所需功能的二进制包从而减少可执行文件的大小。在资源受限的环境中，包的大小尤其重要。进一步的信息，请参考[功能](docs/zh_CN/features.md)。
+编译时，用户可通过 go build tags
+选择需要编译的功能编译出自定义的仅包含所需功能的二进制包从而减少可执行文件的大小。在资源受限的环境中，包的大小尤其重要。进一步的信息，请参考[功能](docs/zh_CN/operation/compile/features.md)。
 
 ## 开源版权
 

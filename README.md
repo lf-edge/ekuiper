@@ -56,7 +56,8 @@ eKuiper processing at the edge can greatly reduce system response latency, save 
 
   - [A free web based management dashboard](https://hub.docker.com/r/emqx/ekuiper-manager) for visualized management
   - Plugins, streams and rules management through CLI, REST API and config maps(Kubernetes)
-  - Easily be integrated with Kubernetes framworks [KubeEdge](https://github.com/kubeedge/kubeedge), [OpenYurt](https://openyurt.io/), [K3s](https://github.com/rancher/k3s) [Baetyl](https://github.com/baetyl/baetyl)
+  - Easily be integrated with Kubernetes
+    frameworks [KubeEdge](https://github.com/kubeedge/kubeedge), [OpenYurt](https://openyurt.io/), [K3s](https://github.com/rancher/k3s) [Baetyl](https://github.com/baetyl/baetyl)
 
 - Integration with EMQX products
 
@@ -64,7 +65,8 @@ eKuiper processing at the edge can greatly reduce system response latency, save 
 
 ## Quick start
 
-- [eKuiper 5 minutes quick start](docs/en_US/getting_started/quick_start_docker.md)
+- [5 minutes quick start](docs/en_US/getting_started/quick_start_docker.md)
+- [Getting started](docs/en_US/getting_started/getting_started.md)
 - [EdgeX rule engine tutorial](docs/en_US/edgex/edgex_rule_engine_tutorial.md)
 
 ## Community
@@ -87,17 +89,18 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en
 ### MQTT throughput test
 
 - Using JMeter MQTT plugin to send IoT data to [EMQX Broker](https://www.emqx.io/), such as: `{"temperature": 10, "humidity" : 90}`, the value of temperature and humidity are random integer between 0 - 100.
-- eKuiper subscribe from EMQX Broker, and analyze data with SQL: `SELECT * FROM demo WHERE temperature > 50 ` 
-- The analysis result are wrote to local file by using [file sink plugin](docs/en_US/rules/sinks/plugin/file.md).
+- eKuiper subscribe from EMQX Broker, and analyze data with SQL: `SELECT * FROM demo WHERE temperature > 50 `
+- The analysis result are wrote to local file by using [file sink plugin](docs/en_US/guide/sinks/plugin/file.md).
 
 | Devices                                        | Message # per second | CPU usage     | Memory usage |
-| ---------------------------------------------- | -------------------- | ------------- | ------------ |
+|------------------------------------------------|----------------------|---------------|--------------|
 | Raspberry Pi 3B+                               | 12k                  | sys+user: 70% | 20M          |
 | AWS t2.micro( 1 Core * 1 GB) <br />Ubuntu18.04 | 10k                  | sys+user: 25% | 20M          |
 
 ### EdgeX throughput test
 
-- A [Go application](test/edgex/benchmark/pub.go) is wrote to send data to ZeroMQ message bus, the data is as following.
+- A [Go application](test/edgex/benchmark/pub.go) is written to send data to ZeroMQ message bus, the data is as
+  following.
 
   ```
   {
@@ -110,12 +113,14 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en
   }
   ```
 
-- eKuiper subscribe from EdgeX ZeroMQ message bus, and analyze data with SQL: ``SELECT * FROM demo WHERE temperature > 50``. 90% of data will be filtered by the rule.
+- eKuiper subscribe from EdgeX ZeroMQ message bus, and analyze data with
+  SQL: ``SELECT * FROM demo WHERE temperature > 50``. 90% of data will be filtered by the rule.
 
-- The analysis result are sent to [nop sink](docs/en_US/rules/sinks/builtin/nop.md), so all of the result data will be ignored.
+- The analysis result are sent to [nop sink](docs/en_US/guide/sinks/builtin/nop.md), so all the result data will be
+  ignored.
 
 |                                                | Message # per second | CPU usage     | Memory usage |
-| ---------------------------------------------- | -------------------- | ------------- | ------------ |
+|------------------------------------------------|----------------------|---------------|--------------|
 | AWS t2.micro( 1 Core * 1 GB) <br />Ubuntu18.04 | 11.4 k               | sys+user: 75% | 32M          |
 
 ### Max number of rules support
@@ -176,15 +181,18 @@ Check out the [latest document](https://ekuiper.org/docs/en/latest/) in official
 
   - Packages: `$ make pkg`
 
-  - Packages files that support EdgeX: `$ make pkg_with_edgex`
+  - Package files that support EdgeX: `$ make pkg_with_edgex`
 
 + Docker images: `$ make docker`
 
   > Docker images support EdgeX by default
 
-Prebuilt binaries are provided in the release assets. If using os or arch which does not have prebuilt binaries, please use cross-compilation, refer to [this doc](docs/en_US/operation/compile/cross-compile.md).
+Prebuilt binaries are provided in the release assets. If using os or arch which does not have prebuilt binaries, please
+use cross-compilation, refer to [this doc](docs/en_US/operation/compile/cross-compile.md).
 
-During compilation, features can be selected through go build tags so that users can build a customized product with only the desired feature set to reduce binary size. This is critical when the target deployment environment has resource constraint. Please refer to [features](docs/en_US/features.md) for more detail.
+During compilation, features can be selected through go build tags so that users can build a customized product with
+only the desired feature set to reduce binary size. This is critical when the target deployment environment has resource
+constraint. Please refer to [features](docs/en_US/operation/compile/features.md) for more detail.
 
 ## Open source license
 
