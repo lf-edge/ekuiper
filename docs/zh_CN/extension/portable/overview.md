@@ -58,21 +58,33 @@
   "sources": [
     "random"
   ],
-  "sinks": [
-    "file"
-  ],
-  "functions": [
-    "echo"
-  ]
+   "sinks": [
+      "file"
+   ],
+   "functions": [
+      "echo"
+   ]
 }
 ```
-一个插件可以包含多个源、目标和函数，在 json 文件中的相应数组中定义它们。插件必须以单一语言实现，并在 *language* 字段中指定。此外，*executable* 字段需要指定插件主程序可执行文件。请参考[mirror.zip](https://github.com/lf-edge/ekuiper/blob/master/internal/plugin/testzips/portables/mirror.zip) 。
+
+一个插件可以包含多个源、目标和函数，在 json 文件中的相应数组中定义它们。插件必须以单一语言实现，并在 *language* 字段中指定。此外，
+*executable*
+字段需要指定插件主程序可执行文件。请参考[mirror.zip](https://github.com/lf-edge/ekuiper/blob/master/internal/plugin/testzips/portables/mirror.zip) 。
+
+使用Python插件时，用户可以通过指定以下属性为 Python 脚本指定一个虚拟环境。
+
+- virtualEnvType：虚拟环境类型，目前只支持`conda`。
+- env：要运行的虚拟环境名称。
+
+详情请查看[在虚拟环境运行](./python_sdk.md#虚拟环境)。
 
 ## 管理
 
-通过将内容（json、可执行文件和所有支持文件）放在`plugins/portables/${pluginName}`中，并将配置放在`etc`下的相应目录中，可以在启动时自动加载可移植插件。
+通过将内容（json、可执行文件和所有支持文件）放在`plugins/portables/${pluginName}`中，并将配置放在`etc`
+下的相应目录中，可以在启动时自动加载可移植插件。
 
 要在运行时管理可移植插件，我们可以使用 [REST](../../api/restapi/plugins.md) 或 [CLI](../../api/cli/plugins.md) 命令。
+
 ## 限制
 
 目前，与原生插件相比，有两个方面的区别：

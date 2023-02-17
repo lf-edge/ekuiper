@@ -89,12 +89,49 @@ if __name__ == '__main__':
     plugin.start(c)
 ```
 
-For the full example, please check the [python sdk example](https://github.com/lf-edge/ekuiper/tree/master/sdk/python/example/pysam).
+For the full example, please check
+the [python sdk example](https://github.com/lf-edge/ekuiper/tree/master/sdk/python/example/pysam).
 
 ## Package
 
-As python is an interpretive language, we don't need to build an executable for it. Just specify the main program python file in the plugin json file is ok. For detail, please check [packaing](./overview.md#package).
+As python is an interpretive language, we don't need to build an executable for it. Just specify the main program python
+file in the plugin json file is ok. For detail, please check [packaging](./overview.md#package).
 
 ## Deployment requirements
 
-Running python script requires the python environment. Make sure python 3.x are installed in the target environment. If using docker image, we recommend to use tags like `lfedge/ekuiper:<tag>-slim-python` which have both eKuiper and python environment.
+Running python script requires the python environment. Make sure python 3.x are installed in the target environment. If
+using docker image, we recommend to use tags like `lfedge/ekuiper:<tag>-slim-python` which have both eKuiper and python
+environment.
+
+### Virtual Environment
+
+Virtual environments are a common and effective technique used in Python development which is useful for python
+dependency management. Anaconda or Miniconda are one of the most popular environment manager for Python.
+The [conda](https://conda.io/projects/conda/en/latest/index.html) package and environment manager is included in all
+versions of Anaconda®, Miniconda, and Anaconda Repository. eKuiper supports to run the Python plugin with conda
+environment.
+
+To use conda environment, the common steps are:
+
+1. Create and set up the conda environment.
+2. When packaging the plugin, make sure `virtualEnvType` is set to `conda` and `env` is set to the created virtual
+   environment. Below is an example.
+    ```json
+    {
+      "version": "v1.0.0",
+      "language": "python",
+      "executable": "pysam.py",
+      "virtualEnvType": "conda",
+      "env": "myenv",
+      "sources": [
+        "pyjson"
+      ],
+      "sinks": [
+        "print"
+      ],
+      "functions": [
+        "revert"
+      ]
+    }
+    ```
+3. If the plugin has installation script, make sure the script install the dependencies to the correct environment.
