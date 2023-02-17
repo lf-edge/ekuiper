@@ -63,22 +63,37 @@ In the json file, we need to depict the metadata of this plugin. The information
   "sources": [
     "random"
   ],
-  "sinks": [
-    "file"
-  ],
-  "functions": [
-    "echo"
-  ]
+   "sinks": [
+      "file"
+   ],
+   "functions": [
+      "echo"
+   ]
 }
 ```
 
-A plugin can contain multiple sources, sinks and functions, define them in the corresponding arrays in the json file. A plugin must be implemented in a single language, and specify that in the *language* field. Additionally, the *executable* field is required to specify the plugin main program executable. Please refer to [mirror.zip](https://github.com/lf-edge/ekuiper/blob/master/internal/plugin/testzips/portables/mirror.zip) as an example.
+A plugin can contain multiple sources, sinks and functions, define them in the corresponding arrays in the json file. A
+plugin must be implemented in a single language, and specify that in the *language* field. Additionally, the
+*executable* field is required to specify the plugin main program executable. Please refer
+to [mirror.zip](https://github.com/lf-edge/ekuiper/blob/master/internal/plugin/testzips/portables/mirror.zip) as an
+example.
+
+If using Python plugin, users can specify a virtual environment for the python script by specifying the below
+properties:
+
+- virtualEnvType: the virtual environment type, currently only `conda` is supported.
+- env: the virtual environment name to be run.
+
+For detail, please check [run in virtual environment](./python_sdk.md#virtual-environment).
 
 ## Management
 
-The portable plugins can be automatically loaded in start up by putting the content(the json, the executable and all supportive files) inside `plugins/portables/${pluginName}` and the configurations to the corresponding directories under `etc`.
+The portable plugins can be automatically loaded in start up by putting the content(the json, the executable and all
+supportive files) inside `plugins/portables/${pluginName}` and the configurations to the corresponding directories
+under `etc`.
 
-To manage the portable plugins in runtime, we can use the [REST](../../api/restapi/plugins.md) or [CLI](../../api/cli/plugins.md) commands.
+To manage the portable plugins in runtime, we can use the [REST](../../api/restapi/plugins.md)
+or [CLI](../../api/cli/plugins.md) commands.
 
 ## Restrictions
 

@@ -91,8 +91,40 @@ if __name__ == '__main__':
 
 ## 打包发布
 
-由于 python 是解释性语言，不需要编译出可执行文件，需要确保 json 描述文件中可执行文件名字的准确性即可。详细信息，请[参考](./overview.md#打包发布)
+由于 python 是解释性语言，不需要编译出可执行文件，需要确保 json
+描述文件中可执行文件名字的准确性即可。详细信息，请[参考](./overview.md#打包发布)
 
 ## 部署要求
 
-运行 python 脚本需要有 python 环境。所以，目标系统必须安装 python 3.x 环境。如果使用 docker ，建议使用 `lfedge/ekuiper:<tag>-slim-python` 版本。该版本包含 eKuiper 和 python 环境，无需再手动安装。
+运行 python 脚本需要有 python 环境。所以，目标系统必须安装 python 3.x 环境。如果使用 docker
+，建议使用 `lfedge/ekuiper:<tag>-slim-python` 版本。该版本包含 eKuiper 和 python 环境，无需再手动安装。
+
+### 虚拟环境
+
+虚拟环境是Python开发中常用的技术，对 Python 的依赖性管理很有用。Anaconda 或 Miniconda 是最流行的 Python
+环境管理器之一。[conda](https://conda.io/projects/conda/en/latest/index.html) 软件包和环境管理器包含在所有版本的
+Anaconda®、Miniconda 和 Anaconda Repository 中。eKuiper 支持使用 conda 环境运行 Python 插件。
+
+使用 conda 虚拟环境通常包括如下步骤：
+
+1. 创建并配置虚拟环境。
+2. 在打包插件时，确保 `virtualEnvType` 设置为 `conda`，`env` 设置为创建的虚拟环境名，如下所示。
+    ```json
+    {
+      "version": "v1.0.0",
+      "language": "python",
+      "executable": "pysam.py",
+      "virtualEnvType": "conda",
+      "env": "myenv",
+      "sources": [
+        "pyjson"
+      ],
+      "sinks": [
+        "print"
+      ],
+      "functions": [
+        "revert"
+      ]
+    }
+    ```
+3. 如果该插件有安装脚本，确保该脚本将依赖安装到正确的虚拟环境中。
