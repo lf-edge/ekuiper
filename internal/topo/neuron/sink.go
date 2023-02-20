@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,9 +25,8 @@ import (
 )
 
 type sink struct {
-	url       string
-	c         *c
-	connected bool
+	c   *c
+	cli *conninfo
 }
 
 type c struct {
@@ -35,7 +34,8 @@ type c struct {
 	GroupName string   `json:"groupName"`
 	Tags      []string `json:"tags"`
 	// If sent with the raw converted string or let us range over the result map
-	Raw bool `json:"raw"`
+	Raw bool   `json:"raw"`
+	Url string `json:"url"`
 }
 
 type neuronTemplate struct {
@@ -46,9 +46,9 @@ type neuronTemplate struct {
 }
 
 func (s *sink) Configure(props map[string]interface{}) error {
-	s.url = NeuronUrl
 	cc := &c{
 		Raw: false,
+		Url: DefaultNeuronUrl,
 	}
 	err := cast.MapToStruct(props, cc)
 	if err != nil {
@@ -68,11 +68,11 @@ func (s *sink) Configure(props map[string]interface{}) error {
 
 func (s *sink) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("Opening neuron sink")
-	err := createOrGetConnection(ctx, s.url)
+	cli, err := createOrGetConnection(ctx, s.c.Url)
 	if err != nil {
 		return err
 	}
-	s.connected = true
+	s.cli = cli
 	return nil
 }
 
@@ -83,7 +83,7 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 		if err != nil {
 			return err
 		}
-		return publish(ctx, r)
+		return publish(ctx, r, s.cli)
 	} else {
 		switch d := data.(type) {
 		case []map[string]interface{}:
@@ -104,8 +104,8 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing neuron sink")
-	if s.connected {
-		return closeConnection(ctx, s.url)
+	if s.cli != nil {
+		return closeConnection(ctx, s.c.Url)
 	}
 	return nil
 }
@@ -136,7 +136,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, el map[string]interface{})
 			for _, k := range keys {
 				t.TagName = k
 				t.Value = el[k]
-				err := doPublish(ctx, t)
+				err := doPublish(ctx, t, s.cli)
 				if err != nil {
 					return err
 				}
@@ -145,7 +145,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, el map[string]interface{})
 			for k, v := range el {
 				t.TagName = k
 				t.Value = v
-				err := doPublish(ctx, t)
+				err := doPublish(ctx, t, s.cli)
 				if err != nil {
 					return err
 				}
@@ -164,7 +164,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, el map[string]interface{})
 				ctx.GetLogger().Errorf("Error get the value of tag %s: %v", t.TagName, err)
 				continue
 			}
-			err := doPublish(ctx, t)
+			err := doPublish(ctx, t, s.cli)
 			if err != nil {
 				return err
 			}
@@ -173,12 +173,12 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, el map[string]interface{})
 	return nil
 }
 
-func doPublish(ctx api.StreamContext, t *neuronTemplate) error {
+func doPublish(ctx api.StreamContext, t *neuronTemplate, cli *conninfo) error {
 	r, err := json.Marshal(t)
 	if err != nil {
 		return fmt.Errorf("Error marshall the tag payload %v: %v", t, err)
 	}
-	err = publish(ctx, r)
+	err = publish(ctx, r, cli)
 	if err != nil {
 		return fmt.Errorf("%s: Error publish the tag payload %s: %v", errorx.IOErr, t.TagName, err)
 	}

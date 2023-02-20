@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,31 +22,37 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
+type sc struct {
+	Url          string `json:"url,omitempty"`
+	BufferLength int    `json:"bufferLength,omitempty"`
+}
+
 type source struct {
-	url          string
-	bufferLength int
+	c *sc
 }
 
 func (s *source) Configure(_ string, props map[string]interface{}) error {
-	s.url = NeuronUrl
-	s.bufferLength = 1024
-	if c, ok := props["bufferLength"]; ok {
-		if bl, err := cast.ToInt(c, cast.STRICT); err != nil || bl > 0 {
-			s.bufferLength = bl
-		}
+	cc := &sc{
+		BufferLength: 1024,
+		Url:          DefaultNeuronUrl,
 	}
+	err := cast.MapToStruct(props, cc)
+	if err != nil {
+		return err
+	}
+	s.c = cc
 	return nil
 }
 
 func (s *source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
-	err := createOrGetConnection(ctx, s.url)
+	_, err := createOrGetConnection(ctx, s.c.Url)
 	if err != nil {
 		infra.DrainError(ctx, err, errCh)
 		return
 	}
-	defer closeConnection(ctx, s.url)
-	ch := pubsub.CreateSub(NeuronTopic, nil, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), s.bufferLength)
-	defer pubsub.CloseSourceConsumerChannel(NeuronTopic, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
+	defer closeConnection(ctx, s.c.Url)
+	ch := pubsub.CreateSub(TopicPrefix+s.c.Url, nil, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), s.c.BufferLength)
+	defer pubsub.CloseSourceConsumerChannel(TopicPrefix+s.c.Url, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
 	for {
 		select {
 		case v, opened := <-ch:
