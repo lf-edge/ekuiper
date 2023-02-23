@@ -18,6 +18,21 @@
   },
   "properties": [
     {
+      "name": "url",
+      "default": "tcp://127.0.0.1:7081",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The nng url to connect to neuron.",
+        "zh_CN": "连接 Neuron 的 nng url"
+      },
+      "label": {
+        "en_US": "URL",
+        "zh_CN": "路径"
+      }
+    },
+    {
       "name": "nodeName",
       "optional": true,
       "control": "text",
