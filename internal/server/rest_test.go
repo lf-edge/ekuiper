@@ -85,7 +85,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 	}
 
 	//create table
-	buf := bytes.NewBuffer([]byte(` {"sql":"CREATE TABLE alertTable() WITH (DATASOURCE=\"0\", TYPE=\"redis\", KIND=\"lookup\")"}`))
+	buf := bytes.NewBuffer([]byte(` {"sql":"CREATE TABLE alertTable() WITH (DATASOURCE=\"0\", TYPE=\"memory\", KEY=\"id\", KIND=\"lookup\")"}`))
 	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams?kind=lookup", buf)
 	w = httptest.NewRecorder()
 
@@ -132,7 +132,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	expect = []byte(`{"Name":"alertTable","Options":{"datasource":"0","type":"redis","kind":"lookup"},"Statement":null,"StreamFields":null,"StreamType":1}`)
+	expect = []byte(`{"Name":"alertTable","Options":{"datasource":"0","type":"memory", "key":"id","kind":"lookup"},"Statement":null,"StreamFields":null,"StreamType":1}`)
 	exp = map[string]interface{}{}
 	_ = json.NewDecoder(bytes.NewBuffer(expect)).Decode(&exp)
 

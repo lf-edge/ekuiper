@@ -201,19 +201,37 @@ func SourceOpen(sourceType string, config map[string]interface{}) error {
 	if v, ok := config["DATASOURCE"]; ok {
 		dataSource = v.(string)
 	}
-
 	ns, err := io.Source(sourceType)
 	if err != nil {
 		return err
 	}
-	err = ns.Configure(dataSource, config)
-	if err != nil {
-		return err
-	}
+	if ns == nil {
+		lns, err := io.LookupSource(sourceType)
+		if err != nil {
+			return err
+		}
+		if lns == nil {
+			// should not happen
+			return fmt.Errorf("source %s not found", sourceType)
+		}
+		err = lns.Configure(dataSource, config)
+		if err != nil {
+			return err
+		}
 
-	contextLogger := conf.Log.WithField("rule", "TestSourceOpen"+"_"+sourceType)
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	defer ns.Close(ctx)
+		contextLogger := conf.Log.WithField("rule", "TestSourceOpen"+"_"+sourceType)
+		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+		lns.Close(ctx)
+	} else {
+		err = ns.Configure(dataSource, config)
+		if err != nil {
+			return err
+		}
+
+		contextLogger := conf.Log.WithField("rule", "TestSourceOpen"+"_"+sourceType)
+		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+		ns.Close(ctx)
+	}
 
 	return nil
 
