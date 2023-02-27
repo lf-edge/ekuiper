@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,13 +41,17 @@ type lookupSource struct {
 }
 
 func (s *lookupSource) Configure(datasource string, props map[string]interface{}) error {
-	db, err := cast.ToInt(datasource, cast.CONVERT_ALL)
-	if err != nil {
-		return fmt.Errorf("invalid datasource, it must be an integer but got %s", datasource)
+	if datasource != "/$$TEST_CONNECTION$$" {
+		db, err := cast.ToInt(datasource, cast.CONVERT_ALL)
+		if err != nil {
+			return fmt.Errorf("invalid datasource, it must be an integer but got %s", datasource)
+		}
+		s.db = db
+	} else {
+		s.db = 0
 	}
-	s.db = db
 	cfg := &conf{}
-	err = cast.MapToStruct(props, cfg)
+	err := cast.MapToStruct(props, cfg)
 	if err != nil {
 		return err
 	}
@@ -58,17 +62,18 @@ func (s *lookupSource) Configure(datasource string, props map[string]interface{}
 		return errors.New("redis dataType must be string or list")
 	}
 	s.c = cfg
-	return nil
-}
-
-func (s *lookupSource) Open(ctx api.StreamContext) error {
-	ctx.GetLogger().Infof("Opening redis lookup source with conf %v", s.c)
 	s.cli = redis.NewClient(&redis.Options{
 		Addr:     s.c.Addr,
 		Username: s.c.Username,
 		Password: s.c.Password,
 		DB:       s.db,
 	})
+	_, err = s.cli.Ping().Result()
+	return err
+}
+
+func (s *lookupSource) Open(ctx api.StreamContext) error {
+	ctx.GetLogger().Infof("Opening redis lookup source with conf %v", s.c)
 	return nil
 }
 
