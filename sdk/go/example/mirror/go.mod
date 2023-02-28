@@ -1,7 +1,7 @@
 module github.com/lf-edge/ekuiper-plugin-mirror
 
 require (
-	github.com/lf-edge/ekuiper/sdk/go v0.0.0-20210916082120-031cd83a7fd8
+	github.com/lf-edge/ekuiper/sdk/go v0.0.0-20230228010431-a650d6d53ecb
 	github.com/mitchellh/mapstructure v1.4.1
 )
 
@@ -12,7 +12,5 @@ require (
 	go.nanomsg.org/mangos/v3 v3.2.1 // indirect
 	golang.org/x/sys v0.1.0 // indirect
 )
-
-replace github.com/lf-edge/ekuiper/sdk/go => ../../
 
 go 1.18

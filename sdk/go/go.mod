@@ -4,11 +4,11 @@ go 1.18
 
 require (
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
-	github.com/sirupsen/logrus v1.8.1
-	go.nanomsg.org/mangos/v3 v3.2.1
+	github.com/sirupsen/logrus v1.9.0
+	go.nanomsg.org/mangos/v3 v3.4.2
 )
 
 require (
-	github.com/Microsoft/go-winio v0.4.11 // indirect
-	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
+	github.com/Microsoft/go-winio v0.5.2 // indirect
+	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 )
