@@ -35,7 +35,7 @@ var data = [][]byte{
 }
 
 // mockNeuron start the nng pair server
-func mockNeuron(send bool, recv bool) (mangos.Socket, chan []byte) {
+func mockNeuron(send bool, recv bool, url string) (mangos.Socket, chan []byte) {
 	var (
 		sock mangos.Socket
 		err  error
@@ -44,7 +44,7 @@ func mockNeuron(send bool, recv bool) (mangos.Socket, chan []byte) {
 	if sock, err = pair.NewSocket(); err != nil {
 		log.Fatalf("can't get new pair socket: %s", err)
 	}
-	if err = sock.Listen("ipc:///tmp/neuron-ekuiper.ipc"); err != nil {
+	if err = sock.Listen(url); err != nil {
 		log.Fatalf("can't listen on pair socket: %s", err.Error())
 	} else {
 		log.Printf("listen on pair socket")
@@ -116,7 +116,7 @@ func TestMultiSourceSink(t *testing.T) {
 		wg.Done()
 	}()
 	// let the server start after the rule to test async dial behavior
-	server, ch := mockNeuron(true, true)
+	server, ch := mockNeuron(true, true, "ipc:///tmp/neuron-ekuiper.ipc")
 	data := []interface{}{
 		map[string]interface{}{
 			"temperature": 22,
