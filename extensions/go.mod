@@ -24,7 +24,7 @@ require (
 	github.com/lib/pq v1.10.7
 	github.com/mattn/go-adodb v0.0.1
 	github.com/mattn/go-sqlite3 v1.14.16
-	github.com/mattn/go-tflite v1.0.4
+	github.com/mattn/go-tflite v1.0.1
 	github.com/mmcloughlin/geohash v0.10.0
 	github.com/nakagami/firebirdsql v0.9.6
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
@@ -33,7 +33,7 @@ require (
 	github.com/prestodb/presto-go-client v0.0.0-20220921130148-c3f935ff1cf9
 	github.com/sijms/go-ora/v2 v2.5.33
 	github.com/snowflakedb/gosnowflake v1.6.18
-	github.com/taosdata/driver-go/v2 v2.0.6
+	github.com/taosdata/driver-go/v2 v2.0.4
 	github.com/thda/tds v0.1.7
 	github.com/trinodb/trino-go-client v0.309.0
 	github.com/u2takey/ffmpeg-go v0.4.1
