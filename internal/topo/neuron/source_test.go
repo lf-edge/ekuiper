@@ -37,7 +37,7 @@ func TestRun(t *testing.T) {
 		t.Errorf(err.Error())
 		return
 	}
-	server, _ := mockNeuron(true, false)
+	server, _ := mockNeuron(true, false, DefaultNeuronUrl)
 	defer server.Close()
 	mock.TestSourceOpen(s, exp, t)
 }
@@ -52,7 +52,7 @@ func connectFailTest(t *testing.T) {
 	ctx, cancel := mock.NewMockContext("ruleTestReconnect", "op1").WithCancel()
 	consumer := make(chan api.SourceTuple)
 	errCh := make(chan error)
-	server, _ := mockNeuron(false, false)
+	server, _ := mockNeuron(false, false, DefaultNeuronUrl)
 	go s.Open(ctx, consumer, errCh)
 	go func() {
 		select {
