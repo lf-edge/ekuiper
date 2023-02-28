@@ -6,7 +6,7 @@
 
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Image.so extensions/sinks/image/image.go
+# go build -trimpath --buildmode=plugin -o plugins/sinks/Image.so extensions/sinks/image/image.go
 # cp plugins/sinks/Image.so $eKuiper_install/plugins/sinks
 ```
 

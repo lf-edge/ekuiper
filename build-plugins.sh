@@ -1,4 +1,20 @@
 #!/bin/bash
+#
+# Copyright 2023 EMQ Technologies Co., Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 set -euo pipefail
 
 cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")"
@@ -30,7 +46,7 @@ post(){
 build(){
     case $PLUGIN_NAME in
         influx )
-            go build -trimpath -modfile extensions.mod --buildmode=plugin -tags plugins -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go
+            go build -trimpath --buildmode=plugin -tags plugins -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go
             ;;
         tdengine )
             if [ "$(uname -m)" = "x86_64" ]; then
@@ -41,7 +57,7 @@ build(){
             fi;
             tar -zxvf /tmp/TDengine-client-2.4.0.18.tar.gz
             cd TDengine-client-2.4.0.18 && ./install_client.sh && cd -
-            go build -trimpath -modfile extensions.mod --buildmode=plugin -tags plugins -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go
+            go build -trimpath --buildmode=plugin -tags plugins -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go
             ;;
         labelImage )
             if [ ! -d "/tmp/tensorflow" ];then
@@ -53,7 +69,7 @@ build(){
             if [ "$(uname -m)" = "aarch64" ]; then
                 cp $(pwd)/extensions/functions/dependencies/tensorflow/arm64/*.so $(pwd)/extensions/functions/labelImage/lib
             fi;
-            CGO_CFLAGS=-I/tmp/tensorflow CGO_LDFLAGS=-L$(pwd)/extensions/functions/labelImage/lib go build -trimpath -modfile extensions.mod --buildmode=plugin -o extensions/functions/labelImage/labelImage@$VERSION.so extensions/functions/labelImage/*.go
+            CGO_CFLAGS=-I/tmp/tensorflow CGO_LDFLAGS=-L$(pwd)/extensions/functions/labelImage/lib go build -trimpath --buildmode=plugin -o extensions/functions/labelImage/labelImage@$VERSION.so extensions/functions/labelImage/*.go
             ;;
         tfLite )
             if [ ! -d "/tmp/tensorflow" ];then
@@ -65,10 +81,10 @@ build(){
             if [ "$(uname -m)" = "aarch64" ]; then
                 cp $(pwd)/extensions/functions/dependencies/tensorflow/arm64/*.so $(pwd)/extensions/functions/tfLite/lib
             fi;
-                CGO_CFLAGS=-I/tmp/tensorflow CGO_LDFLAGS=-L$(pwd)/extensions/functions/tfLite/lib go build -trimpath -modfile extensions.mod --buildmode=plugin -o extensions/functions/tfLite/tfLite@$VERSION.so extensions/functions/tfLite/*.go
+                CGO_CFLAGS=-I/tmp/tensorflow CGO_LDFLAGS=-L$(pwd)/extensions/functions/tfLite/lib go build -trimpath --buildmode=plugin -o extensions/functions/tfLite/tfLite@$VERSION.so extensions/functions/tfLite/*.go
             ;;
         * )
-            go build -trimpath -modfile extensions.mod --buildmode=plugin -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/*.go
+            go build -trimpath --buildmode=plugin -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/*.go
           ;;
     esac
 }

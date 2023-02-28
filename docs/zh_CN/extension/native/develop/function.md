@@ -56,7 +56,7 @@ var(
 将实现的函数构建为 go 插件，并确保输出 so 文件位于 plugins/functions 文件夹中。
 
 ```bash
-go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functions/MyFunction.so extensions/functions/my_function.go
+go build -trimpath --buildmode=plugin -o plugins/functions/MyFunction.so extensions/functions/my_function.go
 ```
 
 ### 注册多个函数

@@ -114,7 +114,7 @@ eKuiper 扩展支持配置系统自动读取 yaml 文件中的配置，并将其
 将已实现的源构建为 go 插件，并确保输出的 so 文件位于 plugins/sources 文件夹中。
 
 ```bash
-go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/MySource.so extensions/sources/my_source.go
+go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so extensions/sources/my_source.go
 ```
 
 ### 使用

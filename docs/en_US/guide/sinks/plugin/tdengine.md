@@ -3,7 +3,7 @@
 In eKuiper source code root path, run the below command.
 
 ```shell
-go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Tdengine@v1.0.0.so extensions/sinks/tdengine/tdengine.go
+go build -trimpath --buildmode=plugin -o plugins/sinks/Tdengine@v1.0.0.so extensions/sinks/tdengine/tdengine.go
 ```
 ### Install plugin
 

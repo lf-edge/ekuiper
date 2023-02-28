@@ -9,7 +9,7 @@ The source will query video streams such as RTSP encoded stream by `ffmpeg` comm
 
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Video.so extensions/sources/video/video.go
+# go build -trimpath --buildmode=plugin -o plugins/sources/Video.so extensions/sources/video/video.go
 # cp plugins/sources/Video.so $eKuiper_install/plugins/sources
 # cp plugins/sources/video.json $eKuiper_install/etc/sources
 # cp plugins/sources/video.yaml $eKuiper_install/etc/sources

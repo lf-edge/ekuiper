@@ -119,7 +119,7 @@ Make sure the eKuiper github repo has cloned. The plugin source file is in *exte
 $ cd {{eKuiperRepoPath}}
 $ export CGO_CFLAGS=-I/root/tensorflow
 $ export CGO_LDFLAGS=-L/root/tensorflow/lib
-$ go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functions/LabelImage.so extensions/functions/labelImage/*.go
+$ go build -trimpath --buildmode=plugin -o plugins/functions/LabelImage.so extensions/functions/labelImage/*.go
 $ mkdir -p "plugins/functions"
 $ cp -r extensions/functions/labelImage plugins/functions
 ```

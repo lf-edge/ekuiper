@@ -181,7 +181,7 @@ require (
    go build -trimpath -o ./_build/$build/bin/kuiperd cmd/kuiperd/main.go
     
    # compile the plugin that using the extensions folder within eKuiper project
-   go build -trimpath -modfile extensions.mod --buildmode=plugin -o ./_build/$build/plugins/sinks/Mysql@v1.0.0.so extensions/sinks/mysql/mysql.go
+   go build -trimpath --buildmode=plugin -o ./_build/$build/plugins/sinks/Mysql@v1.0.0.so extensions/sinks/mysql/mysql.go
 
 ```
 

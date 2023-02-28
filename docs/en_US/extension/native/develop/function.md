@@ -57,7 +57,7 @@ It is a best practice to combine all related functions in a plugin to simplify t
 Build the implemented function as a go plugin and make sure the output so file resides in the plugins/functions folder.
 
 ```bash
-go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functions/MyFunction.so extensions/functions/my_function.go
+go build -trimpath --buildmode=plugin -o plugins/functions/MyFunction.so extensions/functions/my_function.go
 ```
 
 ### Register multiple functions

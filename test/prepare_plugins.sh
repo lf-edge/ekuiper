@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2021-2022 EMQ Technologies Co., Ltd.
+# Copyright 2021-2023 EMQ Technologies Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ if [ -f "$FILE" ]; then
     echo "$FILE exists, not requried to build plugin."
 else
     echo "$FILE does not exist, will build the plugin."
-    go build -trimpath -modfile ../extensions.mod --buildmode=plugin -o ../plugins/sources/Zmq.so ../extensions/sources/zmq/zmq.go
+    go build -trimpath --buildmode=plugin -o ../plugins/sources/Zmq.so ../extensions/sources/zmq/zmq.go
 fi
 
 mv ../plugins/sources/Zmq.so .
@@ -51,7 +51,7 @@ if [ -f "$FILE" ]; then
     echo "$FILE exists, not requried to build plugin."
 else
     echo "$FILE does not exist, will build the plugin."
-    go build -trimpath -modfile ../extensions.mod --buildmode=plugin -o ../plugins/functions/Image.so ../extensions/functions/image/*.go
+    go build -trimpath --buildmode=plugin -o ../plugins/functions/Image.so ../extensions/functions/image/*.go
 fi
 
 mv ../plugins/functions/Image.so .
@@ -65,7 +65,7 @@ if [ -f "$FILE" ]; then
     echo "$FILE exists, not requried to build plugin."
 else
     echo "$FILE does not exist, will build the plugin."
-    go build -trimpath -modfile ../extensions.mod --buildmode=plugin -o ../plugins/sinks/Tdengine.so ../extensions/sinks/tdengine/*.go
+    go build -trimpath --buildmode=plugin -o ../plugins/sinks/Tdengine.so ../extensions/sinks/tdengine/*.go
 fi
 
 mv ../plugins/sinks/Tdengine.so .
@@ -79,7 +79,7 @@ if [ -f "$FILE" ]; then
     echo "$FILE exists, not required to build plugin."
 else
     echo "$FILE does not exist, will build the plugin."
-    go build -trimpath -modfile ../extensions.mod --buildmode=plugin -o ../plugins/sinks/Sql.so ../extensions/sinks/sql/*.go
+    go build -trimpath --buildmode=plugin -o ../plugins/sinks/Sql.so ../extensions/sinks/sql/*.go
 fi
 
 mv ../plugins/sinks/Sql.so .
@@ -92,7 +92,7 @@ if [ -f "$FILE" ]; then
     echo "$FILE exists, not required to build plugin."
 else
     echo "$FILE does not exist, will build the plugin."
-    go build -trimpath -modfile ../extensions.mod --buildmode=plugin -o ../plugins/sources/Sql.so ../extensions/sources/sql/*.go
+    go build -trimpath --buildmode=plugin -o ../plugins/sources/Sql.so ../extensions/sources/sql/*.go
 fi
 
 mv ../plugins/sources/Sql.so .

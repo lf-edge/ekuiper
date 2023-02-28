@@ -18,7 +18,7 @@ for example, if he only wants sqlserver, then he can build with build tag `sqlse
 
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Sql.so extensions/sources/sql/*.go
+# go build -trimpath --buildmode=plugin -o plugins/sources/Sql.so extensions/sources/sql/*.go
 # cp plugins/sources/Sql.so $eKuiper_install/plugins/sources
 ```
 
@@ -26,7 +26,7 @@ for example, if he only wants sqlserver, then he can build with build tag `sqlse
 
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -tags sqlserver -o plugins/sources/Sql.so extensions/sources/sql/*.go
+# go build -trimpath --buildmode=plugin -tags sqlserver -o plugins/sources/Sql.so extensions/sources/sql/*.go
 # cp plugins/sources/Sql.so $eKuiper_install/plugins/sources
 ```
 

@@ -9,7 +9,7 @@
 
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Random.so extensions/sources/random/random.go
+# go build -trimpath --buildmode=plugin -o plugins/sources/Random.so extensions/sources/random/random.go
 # cp plugins/sources/Random.so $eKuiper_install/plugins/sources
 ```
 
