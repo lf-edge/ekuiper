@@ -11,7 +11,7 @@ Please make following update before compile the plugin,
 
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Influx.so extensions/sinks/influx/influx.go
+# go build -trimpath --buildmode=plugin -o plugins/sinks/Influx.so extensions/sinks/influx/influx.go
 # zip influx.zip plugins/sinks/Influx.so
 # cp influx.zip /root/tomcat_path/webapps/ROOT/
 # bin/kuiper create plugin sink influx -f /tmp/influxPlugin.txt

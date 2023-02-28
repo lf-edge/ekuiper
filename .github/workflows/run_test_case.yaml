@@ -44,12 +44,12 @@ jobs:
         mkdir -p data
         mkdir -p log
         sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
-        go build -modfile extensions.mod --buildmode=plugin -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
+        go build --buildmode=plugin -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
         cp extensions/sources/random/random.yaml etc/sources/random.yaml
-        go build -modfile extensions.mod --buildmode=plugin -o plugins/sinks/File@v1.0.0.so extensions/sinks/file/file.go
-        go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/Echo.so extensions/functions/echo/echo.go
-        go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
-        go build -modfile extensions.mod --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
+        go build --buildmode=plugin -o plugins/sinks/File@v1.0.0.so extensions/sinks/file/file.go
+        go build --buildmode=plugin -o plugins/functions/Echo.so extensions/functions/echo/echo.go
+        go build --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
+        go build --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
         go build --buildmode=plugin -o data/test/helloworld.so internal/converter/protobuf/test/*.go
         go build --buildmode=plugin -o data/test/myFormat.so internal/converter/custom/test/*.go
         mkdir -p plugins/portable/mirror

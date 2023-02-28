@@ -10,7 +10,7 @@
 ### 本地构建
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/influx2.so extensions/sinks/influx/influx2.go
+# go build -trimpath --buildmode=plugin -o plugins/sinks/influx2.so extensions/sinks/influx/influx2.go
 # zip influx2.zip plugins/sinks/influx2.so
 # cp influx.zip /root/tomcat_path/webapps/ROOT/
 # bin/kuiper create plugin sink influx2 -f /tmp/influxPlugin.txt

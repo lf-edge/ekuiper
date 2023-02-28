@@ -6,7 +6,7 @@ The sink will publish the result into redis.
 The plugin source code put in the extensions directory, but need build in the ekuiper root path
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Redis.so extensions/sinks/redis/redis.go
+# go build -trimpath --buildmode=plugin -o plugins/sinks/Redis.so extensions/sinks/redis/redis.go
 # zip redis.zip plugins/sinks/Redis.so
 # cp redis.zip /root/tomcat_path/webapps/ROOT/
 # bin/kuiper create plugin sink redis -f /tmp/redisPlugin.txt

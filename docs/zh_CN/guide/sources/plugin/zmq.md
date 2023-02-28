@@ -9,7 +9,7 @@
 
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Zmq.so extensions/sources/zmq/zmq.go
+# go build -trimpath --buildmode=plugin -o plugins/sources/Zmq.so extensions/sources/zmq/zmq.go
 # cp plugins/sources/Zmq.so $eKuiper_install/plugins/sources
 ```
 

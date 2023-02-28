@@ -6,7 +6,7 @@
 
 ```shell
 # cd $ekuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Zmq.so extensions/sinks/zmq/zmq.go
+# go build -trimpath --buildmode=plugin -o plugins/sinks/Zmq.so extensions/sinks/zmq/zmq.go
 # cp plugins/sinks/Zmq.so $ekuiper_install/plugins/sinks
 ```
 

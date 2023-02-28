@@ -6,7 +6,7 @@
 redis 源代码在 extensions 目录中，但是需要在 eKuiper 根目录编译
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Redis.so extensions/sinks/redis/redis.go
+# go build -trimpath --buildmode=plugin -o plugins/sinks/Redis.so extensions/sinks/redis/redis.go
 # zip redis.zip plugins/sinks/Redis.so
 # cp redis.zip /root/tomcat_path/webapps/ROOT/
 # bin/kuiper create plugin sink redis -f /tmp/redisPlugin.txt

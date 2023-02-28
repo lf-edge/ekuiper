@@ -85,8 +85,8 @@ jobs:
       run: |
         sudo apt update && sudo apt install pkg-config libczmq-dev -y
         make build_with_edgex
-        go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Zmq.so extensions/sources/zmq/zmq.go
-        go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functions/Image.so extensions/functions/image/*.go
+        go build -trimpath --buildmode=plugin -o plugins/sources/Zmq.so extensions/sources/zmq/zmq.go
+        go build -trimpath --buildmode=plugin -o plugins/functions/Image.so extensions/functions/image/*.go
         echo "KUIPER_LOG_PATH=_build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log" >> $GITHUB_ENV
     - name: run edgex && kuiper
       run: |
@@ -169,8 +169,8 @@ jobs:
         run: |
           sudo apt update && sudo apt install pkg-config libczmq-dev -y
           make build_with_edgex
-          go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sources/Zmq.so extensions/sources/zmq/zmq.go
-          go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/functions/Image.so extensions/functions/image/*.go
+          go build -trimpath --buildmode=plugin -o plugins/sources/Zmq.so extensions/sources/zmq/zmq.go
+          go build -trimpath --buildmode=plugin -o plugins/functions/Image.so extensions/functions/image/*.go
           echo "KUIPER_LOG_PATH=_build/kuiper-$(git describe --tags --always)-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log" >> $GITHUB_ENV
       - name: run edgex && kuiper
         env:

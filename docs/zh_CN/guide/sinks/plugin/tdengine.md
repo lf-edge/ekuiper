@@ -3,7 +3,7 @@
 在 eKuiper 项目主目录运行如下命令：
 
 ```shell
-go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Tdengine@v1.0.0.so extensions/sinks/tdengine/tdengine.go
+go build -trimpath --buildmode=plugin -o plugins/sinks/Tdengine@v1.0.0.so extensions/sinks/tdengine/tdengine.go
 ```
 ### 安装插件
 

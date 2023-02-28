@@ -6,7 +6,7 @@
 
 ```shell
 # cd $ekuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/File.so extensions/sinks/file/file.go
+# go build -trimpath --buildmode=plugin -o plugins/sinks/File.so extensions/sinks/file/file.go
 # cp plugins/sinks/File.so $ekuiper_install/plugins/sinks
 ```
 

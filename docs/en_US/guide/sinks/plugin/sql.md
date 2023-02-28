@@ -13,14 +13,14 @@ for example, if he only wants mysql, then he can build with build tag `mysql`.
 ### Default build command
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
+# go build -trimpath --buildmode=plugin -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
 # cp plugins/sinks/Sql.so $eKuiper_install/plugins/sinks
 ```
 
 ### MySql build command
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -tags mysql -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
+# go build -trimpath --buildmode=plugin -tags mysql -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
 # cp plugins/sinks/Sql.so $eKuiper_install/plugins/sinks
 ```
 

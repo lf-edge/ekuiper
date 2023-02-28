@@ -10,14 +10,14 @@
 ### 默认构建指令
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
+# go build -trimpath --buildmode=plugin -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
 # cp plugins/sinks/Sql.so $eKuiper_install/plugins/sinks
 ```
 
 ### MySql 构建指令 
 ```shell
 # cd $eKuiper_src
-# go build -trimpath -modfile extensions.mod --buildmode=plugin -tags mysql -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
+# go build -trimpath --buildmode=plugin -tags mysql -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
 # cp plugins/sinks/Sql.so $eKuiper_install/plugins/sinks
 ```
 
