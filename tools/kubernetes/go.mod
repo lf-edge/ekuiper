@@ -7,7 +7,7 @@ require (
 
 require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
-	golang.org/x/sys v0.0.0-20190422165155-953cdadca894 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
 
