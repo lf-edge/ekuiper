@@ -8,9 +8,9 @@ Neuron 支持同时为多个不同通讯协议设备、数十种工业协议进�
 
 ## Neuron 与 eKuiper 的集成
 
-Neuron 2.0 中，北向应用增加了 eKuiper 支持。当 Neuron 开启北向 eKuiper 应用之后，二者之间通过 NNG 协议的进程间通信方式进行连接，从而显著降低网络通信消耗，提高性能。
+Neuron 2.0 中，北向应用增加了 eKuiper 支持。当 Neuron 开启北向 eKuiper 应用之后，二者之间通过 NNG 协议进行连接，从而显著降低网络通信消耗，提高性能。
 
-![ekuiper to neuron](./eKuiper_to_neuron.png)
+![ekuiper to neuron](./ekuiper_to_neuron.png)
 
 eKuiper 与 Neuron 之间的集成是双向的，其实现主要包含两个部分:
 
@@ -18,6 +18,11 @@ eKuiper 与 Neuron 之间的集成是双向的，其实现主要包含两个部�
 - 提供了一个 Neuron sink, 支持通过 Neuron 控制设备。
 
 典型的工业物联网边缘数据处理场景中，Neuron 和 eKuiper 部署在同一台边缘机器上。这也是目前二者集成所支持的场景。若需要通过网络进行通信，则仍然可以通过之前 MQTT 的方式进行协同。
+
+Neuron 与 eKuiper 的连接经历了几个阶段：
+1. 早期版本，双方采用 MQTT 作为中转。
+2. Neuron 2.0 和 eKuiper 1.5 之后的版本，双方采用 IPC 协议一对一连接。
+3. Neuron 2.4 和 eKuiper 1.9 之后的版本，双方采用 TCP 协议连接，可支持多对多连接。
 
 ## 准备工作
 
@@ -40,37 +45,52 @@ Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方�
    version: '3.4'
 
    services:
-     manager:
-       image: emqx/ekuiper-manager:1.5.0
-       container_name: ekuiper-manager
-       ports:
-         - "9082:9082"
-     ekuiper:
-       image: lfedge/ekuiper:1.5-slim
-       ports:
-         - "9081:9081"
-         - "127.0.0.1:20498:20498"
-       container_name: manager-ekuiper
-       hostname: manager-ekuiper
-       environment:
-         MQTT_SOURCE__DEFAULT__SERVER: "tcp://cloud.host:1883"
-         KUIPER__BASIC__CONSOLELOG: "true"
-         KUIPER__BASIC__IGNORECASE: "false"
-       volumes:
-         - nng-ipc:/tmp
-     neuron:
-       image: neugates/neuron:2.0.1
-       ports:
-         - "127.0.0.1:7001:7001"
-         - "127.0.0.1:7000:7000"
-       container_name: manager-neuron
-       hostname: manager-neuron
-       volumes:
-         - nng-ipc:/tmp
+      manager:
+         image: emqx/ekuiper-manager:1.9
+         container_name: ekuiper-manager
+         ports:
+            - "9082:9082"
+      ekuiper:
+         image: lfedge/ekuiper:1.9
+         ports:
+            - "9081:9081"
+            - "127.0.0.1:20498:20498"
+         container_name: ekuiper
+         hostname: ekuiper
+         environment:
+            MQTT_SOURCE__DEFAULT__SERVER: "tcp://mybroker:1883"
+            KUIPER__BASIC__CONSOLELOG: "true"
+            KUIPER__BASIC__IGNORECASE: "false"
+            # The default neuron url. Change it if you want to use another port.
+            SOURCES__NEURON__DEFAULT__URL: "tcp://neuron:7081"
+         volumes:
+            - /tmp/data:/kuiper/data
+            - /tmp/log:/kuiper/log
+            # Enable the following line if you want to use the IPC mode to connect to earlier version of neuron
+            # - nng-ipc:/tmp
+      neuron:
+         image: neugates/neuron:2.4.0
+         ports:
+            - "7001:7001"
+            # The default port to communicate with eKuiper. Change it if you want to use another port.
+            - "7081:7081"
+         container_name: neuron
+         hostname: neuron
+         volumes:
+            - /tmp/neuron/data:/opt/neuron/persistence
+            # Enable the following line if you want to use the IPC mode to connect to earlier version of eKuiper
+            # - nng-ipc:/tmp
 
-   volumes:
-     nng-ipc:
+      # Enable the following lines if you want to use the IPC mode to connect to earlier version of eKuiper and neuron
+      # volumes:
+      #  nng-ipc:
    ```
+   用户可自定义配置连接端口，本例中为 7081。修改端口时，需要修改 Neuron 的 eKuiper 北向应用端口，同时修改本文件中用到该端口的部分，即 neuron 的端口暴露和 eKuiper 的环境变量默认连接 url 部分。
+
+   > 各版本使用注意事项
+   > 1. eKuiper 1.9 之后版本与 Neuron 2.4 之前版本对接只能通过 ipc，需要配置 `SOURCES__NEURON__DEFAULT__URL: "ipc:///tmp/neuron-ekuiper.ipc"`，并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
+   > 2. eKuiper 1.9 之前版本与 neuron 2.4 之前版本对接只能通过 ipc，需要去除 `SOURCES__NEURON__DEFAULT__URL` 环境变量配置并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
+   > 3. eKuiper 1.9 之前版本与 neuron 2.4 之后版本无法直接对接，可通过 MQTT 中转。
 2. 在该文件所在目录，运行:
    
    ```shell
