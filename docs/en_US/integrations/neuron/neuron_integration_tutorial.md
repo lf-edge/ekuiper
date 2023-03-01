@@ -8,16 +8,21 @@ In versions prior to eKuiper 1.5.0, MQTT was required as a transit between Neuro
 
 ## Integration of Neuron and eKuiper
 
-In Neuron 2.0, eKuiper support has been added to northbound applications. When Neuron opens a northbound eKuiper application, the two are connected by inter-process communication via the NNG protocol, which significantly reduces network communication consumption and improves performance.
+In Neuron 2.0, eKuiper support has been added to northbound applications. When Neuron opens a northbound eKuiper application, the two are connected via the NNG protocol, which significantly reduces network communication consumption and improves performance.
 
-![eKuiper to neuron](./eKuiper_to_neuron.png)
+![eKuiper to neuron](./ekuiper_to_neuron.png)
 
-The integration between eKuiper and Neuron is bi-directional and the implementation consists of two main parts:
+The integration between eKuiper and Neuron is bidirectional and the implementation consists of two main parts:
 
 - A Neuron source is provided to support data subscription from Neuron.
 - A Neuron sink is provided to support device control via Neuron.
 
 In a typical industrial IoT edge data processing scenario, Neuron and eKuiper are deployed on the same edge machine. This is the scenario currently supported by the integration of the two. If communication over the network is required, collaboration can still be performed in the same way as before with MQTT.
+
+The connection between Neuron and eKuiper has gone through several phases.
+1. Early versions, where both sides used MQTT as a relay.
+2. Neuron 2.0 and eKuiper 1.5 onwards, where the two sides use the IPC protocol for one-to-one connectivity.
+3. Neuron 2.4 and eKuiper 1.9 onwards, the two sides use TCP protocol to connect and can support many-to-many connections.
 
 ## Preparation
 
@@ -40,37 +45,53 @@ Both Neuron and eKuiper support binary installation packages and Docker containe
    version: '3.4'
 
    services:
-     manager:
-       image: emqx/ekuiper-manager:1.5.0
-       container_name: ekuiper-manager
-       ports:
-         - "9082:9082"
-     ekuiper:
-       image: lfedge/ekuiper:1.5-slim
-       ports:
-         - "9081:9081"
-         - "127.0.0.1:20498:20498"
-       container_name: manager-ekuiper
-       hostname: manager-ekuiper
-       environment:
-         MQTT_SOURCE__DEFAULT__SERVER: "tcp://cloud.host:1883"
-         KUIPER__BASIC__CONSOLELOG: "true"
-         KUIPER__BASIC__IGNORECASE: "false"
-       volumes:
-         - nng-ipc:/tmp
-     neuron:
-       image: neugates/neuron:2.0.1
-       ports:
-         - "127.0.0.1:7001:7001"
-         - "127.0.0.1:7000:7000"
-       container_name: manager-neuron
-       hostname: manager-neuron
-       volumes:
-         - nng-ipc:/tmp
+      manager:
+         image: emqx/ekuiper-manager:1.9
+         container_name: ekuiper-manager
+         ports:
+            - "9082:9082"
+      ekuiper:
+         image: lfedge/ekuiper:1.9
+         ports:
+            - "9081:9081"
+            - "127.0.0.1:20498:20498"
+         container_name: ekuiper
+         hostname: ekuiper
+         environment:
+            MQTT_SOURCE__DEFAULT__SERVER: "tcp://mybroker:1883"
+            KUIPER__BASIC__CONSOLELOG: "true"
+            KUIPER__BASIC__IGNORECASE: "false"
+            # The default neuron url. Change it if you want to use another port.
+            SOURCES__NEURON__DEFAULT__URL: "tcp://neuron:7081"
+         volumes:
+            - /tmp/data:/kuiper/data
+            - /tmp/log:/kuiper/log
+            # Enable the following line if you want to use the IPC mode to connect to earlier version of neuron
+            # - nng-ipc:/tmp
+      neuron:
+         image: neugates/neuron:2.4.0
+         ports:
+            - "7001:7001"
+            # The default port to communicate with eKuiper. Change it if you want to use another port.
+            - "7081:7081"
+         container_name: neuron
+         hostname: neuron
+         volumes:
+            - /tmp/neuron/data:/opt/neuron/persistence
+            # Enable the following line if you want to use the IPC mode to connect to earlier version of eKuiper
+            # - nng-ipc:/tmp
 
-   volumes:
-     nng-ipc:
+      # Enable the following lines if you want to use the IPC mode to connect to earlier version of eKuiper and neuron
+      # volumes:
+      #  nng-ipc:
    ```
+   To modify the port, you need to modify Neuron's eKuiper northbound application port, as well as the parts of this document that use the port, i.e., neuron's port exposure and eKuiper's environment variable default connection url section.
+   
+   > Notes for different version combinations
+   > 1. eKuiper 1.9 onwards can only interface with Neuron versions before 2.4 via ipc, you need to configure `SOURCES__NEURON__DEFAULT__URL: "ipc:///tmp/neuron-ekuiper.ipc"` and enable the configuration of volumes nng-ipc. Neuron does not need to expose port 7081.
+   > 2. eKuiper versions before 1.9 can only interface with neuron versions before 2.4 via ipc, you need to remove the `SOURCES__NEURON__DEFAULT__URL` environment variable configuration and enable the volumes nng-ipc configuration.
+   > 3. eKuiper versions before 1.9 and neuron versions after 2.4 cannot connect directly, but can be relayed through MQTT
+   
 2. In the directory where the file is located, run:
    
    ```shell
