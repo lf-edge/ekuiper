@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,152 +30,76 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
-const DEFAULT_INTERVAL = 10000
-const DEFAULT_TIMEOUT = 5000
+const DefaultInterval = 10000
+const DefaultTimeout = 5000
+
+type HTTPPullConf struct {
+	Url                string            `json:"url"`
+	Method             string            `json:"method"`
+	Interval           int               `json:"interval"`
+	Timeout            int               `json:"timeout"`
+	Incremental        bool              `json:"incremental"`
+	Body               string            `json:"body"`
+	BodyType           string            `json:"bodyType"`
+	Headers            map[string]string `json:"headers"`
+	InsecureSkipVerify bool              `json:"insecureSkipVerify"`
+	CertificationPath  string            `json:"certificationPath"`
+	PrivateKeyPath     string            `json:"privateKeyPath"`
+	RootCaPath         string            `json:"rootCaPath"`
+}
 
 type HTTPPullSource struct {
-	url                string
-	method             string
-	interval           int
-	timeout            int
-	incremental        bool
-	body               string
-	bodyType           string
-	headers            map[string]string
-	insecureSkipVerify bool
-	certificationPath  string
-	privateKeyPath     string
-	rootCaPath         string
-
+	config *HTTPPullConf
 	client *http.Client
 }
 
 var bodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
 
 func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}) error {
-	hps.url = "http://localhost" + device
-	if u, ok := props["url"]; ok {
-		if p, ok := u.(string); ok {
-			hps.url = p + device
-		}
+	conf.Log.Infof("Initialized Httppull source with configurations %#v.", props)
+	c := &HTTPPullConf{
+		Url:                "http://localhost",
+		Method:             http.MethodGet,
+		Interval:           DefaultInterval,
+		Timeout:            DefaultTimeout,
+		Body:               "json",
+		InsecureSkipVerify: true,
+		Headers:            map[string]string{},
 	}
-
-	hps.method = http.MethodGet
-	if m, ok := props["method"]; ok {
-		if m1, ok1 := m.(string); ok1 {
-			switch strings.ToUpper(m1) {
-			case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete:
-				hps.method = strings.ToUpper(m1)
-			default:
-				return fmt.Errorf("Not supported HTTP method %s.", m1)
-			}
-		}
+	if err := cast.MapToStruct(props, c); err != nil {
+		return fmt.Errorf("fail to parse the properties: %v", err)
 	}
-
-	hps.interval = DEFAULT_INTERVAL
-	if i, ok := props["interval"]; ok {
-		i1, err := cast.ToInt(i, cast.CONVERT_SAMEKIND)
-		if err != nil {
-			return fmt.Errorf("Not valid interval value %v.", i1)
-		} else {
-			hps.interval = i1
-		}
+	if c.Url == "" {
+		return fmt.Errorf("url is required")
 	}
-
-	hps.timeout = DEFAULT_TIMEOUT
-	if i, ok := props["timeout"]; ok {
-		if i1, ok1 := i.(int); ok1 {
-			hps.timeout = i1
-		} else {
-			return fmt.Errorf("Not valid timeout value %v.", i1)
-		}
+	c.Url = c.Url + device
+	switch strings.ToUpper(c.Method) {
+	case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete:
+		c.Method = strings.ToUpper(c.Method)
+	default:
+		return fmt.Errorf("Not supported HTTP method %s.", c.Method)
 	}
-
-	hps.incremental = false
-	if i, ok := props["incremental"]; ok {
-		if i1, ok1 := i.(bool); ok1 {
-			hps.incremental = i1
-		} else {
-			return fmt.Errorf("Not valid incremental value %v.", i1)
-		}
+	if c.Interval <= 0 {
+		return fmt.Errorf("interval must be greater than 0")
 	}
-
-	hps.bodyType = "json"
-	if c, ok := props["bodyType"]; ok {
-		if c1, ok1 := c.(string); ok1 {
-			if _, ok2 := bodyTypeMap[strings.ToLower(c1)]; ok2 {
-				hps.bodyType = strings.ToLower(c1)
-			} else {
-				return fmt.Errorf("Not valid body type value %v.", c)
-			}
-		} else {
-			return fmt.Errorf("Not valid body type value %v.", c)
-		}
+	if c.Timeout < 0 {
+		return fmt.Errorf("timeout must be greater than or equal to 0")
 	}
-
-	if b, ok := props["body"]; ok {
-		if b1, ok1 := b.(string); ok1 {
-			hps.body = b1
-		} else {
-			return fmt.Errorf("Not valid incremental value %v, expect string.", b1)
-		}
+	if _, ok2 := bodyTypeMap[strings.ToLower(c.BodyType)]; ok2 {
+		c.BodyType = strings.ToLower(c.BodyType)
+	} else {
+		return fmt.Errorf("Not valid body type value %v.", c.BodyType)
 	}
-
-	hps.insecureSkipVerify = true
-	if i, ok := props["insecureSkipVerify"]; ok {
-		if i1, ok1 := i.(bool); ok1 {
-			hps.insecureSkipVerify = i1
-		} else {
-			return fmt.Errorf("not valid insecureSkipVerify value %v", i1)
-		}
-	}
-
-	if certPath, ok := props["certificationPath"]; ok {
-		if certPath1, ok1 := certPath.(string); ok1 {
-			hps.certificationPath = certPath1
-		} else {
-			return fmt.Errorf("not valid certificationPath value %v", certPath)
-		}
-	}
-
-	if privPath, ok := props["privateKeyPath"]; ok {
-		if privPath1, ok1 := privPath.(string); ok1 {
-			hps.privateKeyPath = privPath1
-		} else {
-			return fmt.Errorf("not valid privateKeyPath value %v", privPath)
-		}
-	}
-
-	if rootPath, ok := props["rootCaPath"]; ok {
-		if rootPath1, ok1 := rootPath.(string); ok1 {
-			hps.rootCaPath = rootPath1
-		} else {
-			return fmt.Errorf("not valid rootCaPath value %v", rootPath)
-		}
-	}
-	hps.headers = make(map[string]string)
-	if h, ok := props["headers"]; ok {
-		if h1, ok1 := h.(map[string]interface{}); ok1 {
-			for k, v := range h1 {
-				if v1, err := cast.ToString(v, cast.CONVERT_ALL); err == nil {
-					hps.headers[k] = v1
-				}
-			}
-		} else {
-			return fmt.Errorf("not valid header value %v", h1)
-		}
-	}
-
-	err := httpx.IsHttpUrl(hps.url)
+	err := httpx.IsHttpUrl(c.Url)
 	if err != nil {
 		return err
 	}
 
 	tlsOpts := cert.TlsConfigurationOptions{
-		SkipCertVerify: hps.insecureSkipVerify,
-		CertFile:       hps.certificationPath,
-		KeyFile:        hps.privateKeyPath,
-		CaFile:         hps.rootCaPath,
+		SkipCertVerify: c.InsecureSkipVerify,
+		CertFile:       c.CertificationPath,
+		KeyFile:        c.PrivateKeyPath,
+		CaFile:         c.RootCaPath,
 	}
 
 	tlscfg, err := cert.GenerateTLSForClient(tlsOpts)
@@ -189,9 +113,9 @@ func (hps *HTTPPullSource) Configure(device string, props map[string]interface{}
 
 	hps.client = &http.Client{
 		Transport: tr,
-		Timeout:   time.Duration(hps.timeout) * time.Millisecond}
-
-	conf.Log.Debugf("Initialized with configurations %#v.", hps)
+		Timeout:   time.Duration(c.Timeout) * time.Millisecond,
+	}
+	hps.config = c
 	return nil
 }
 
@@ -206,14 +130,14 @@ func (hps *HTTPPullSource) Close(ctx api.StreamContext) error {
 }
 
 func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
-	ticker := time.NewTicker(time.Millisecond * time.Duration(hps.interval))
+	ticker := time.NewTicker(time.Millisecond * time.Duration(hps.config.Interval))
 	logger := ctx.GetLogger()
 	defer ticker.Stop()
 	var omd5 = ""
 	for {
 		select {
 		case <-ticker.C:
-			if resp, e := httpx.Send(logger, hps.client, hps.bodyType, hps.method, hps.url, hps.headers, true, []byte(hps.body)); e != nil {
+			if resp, e := httpx.Send(logger, hps.client, hps.config.BodyType, hps.config.Method, hps.config.Url, hps.config.Headers, true, []byte(hps.config.Body)); e != nil {
 				logger.Warnf("Found error %s when trying to reach %v ", e, hps)
 			} else {
 				logger.Debugf("rest sink got response %v", resp)
@@ -226,7 +150,7 @@ func (hps *HTTPPullSource) initTimerPull(ctx api.StreamContext, consumer chan<- 
 					logger.Warnf("Found error %s when trying to reach %v ", err, hps)
 				}
 				resp.Body.Close()
-				if hps.incremental {
+				if hps.config.Incremental {
 					nmd5 := getMD5Hash(c)
 					if omd5 == nmd5 {
 						logger.Debugf("Content has not changed since last fetch, so skip processing.")
