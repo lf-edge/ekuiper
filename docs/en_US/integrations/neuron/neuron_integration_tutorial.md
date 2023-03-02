@@ -85,12 +85,12 @@ Both Neuron and eKuiper support binary installation packages and Docker containe
       # volumes:
       #  nng-ipc:
    ```
-   To modify the port, you need to modify Neuron's eKuiper northbound application port, as well as the parts of this document that use the port, i.e., neuron's port exposure and eKuiper's environment variable default connection url section.
+   To modify the port, you need to modify Neuron's eKuiper northbound application port, as well as the parts of this document that use the port, i.e., Neuron's port exposure and eKuiper's environment variable default connection url section.
    
    > Notes for different version combinations
    > 1. eKuiper 1.9 onwards can only interface with Neuron versions before 2.4 via ipc, you need to configure `SOURCES__NEURON__DEFAULT__URL: "ipc:///tmp/neuron-ekuiper.ipc"` and enable the configuration of volumes nng-ipc. Neuron does not need to expose port 7081.
-   > 2. eKuiper versions before 1.9 can only interface with neuron versions before 2.4 via ipc, you need to remove the `SOURCES__NEURON__DEFAULT__URL` environment variable configuration and enable the volumes nng-ipc configuration.
-   > 3. eKuiper versions before 1.9 and neuron versions after 2.4 cannot connect directly, but can be relayed through MQTT
+   > 2. eKuiper versions before 1.9 can only interface with Neuron versions before 2.4 via ipc, you need to remove the `SOURCES__NEURON__DEFAULT__URL` environment variable configuration and enable the volumes nng-ipc configuration.
+   > 3. eKuiper versions before 1.9 and Neuron versions after 2.4 cannot connect directly, but can be relayed through MQTT
    
 2. In the directory where the file is located, run:
    
@@ -148,7 +148,7 @@ eKuiper administration can be done using the REST API, command line, and the man
 
 ## Create the stream
 
-Create a stream named `neuronStream` with the following command. The `type` attribute is set to `neuron`, which means that the stream will be connected to neuron. All the data collected in neuron will be sent, so that multiple rules in eKuiper will be processed for the same data, so the stream attribute `shared` is set to true.
+Create a stream named `neuronStream` with the following command. The `type` attribute is set to `neuron`, which means that the stream will be connected to Neuron. All the data collected in Neuron will be sent, so that multiple rules in eKuiper will be processed for the same data, so the stream attribute `shared` is set to true.
 
 ```shell
 curl -X POST --location http://127.0.0.1:9081/streams \
@@ -166,7 +166,7 @@ Assume that the two tags set in Neuron mean:
 - tag1: decimal temperature data, the actual temperature should be divided by 10
 - tag2: integer humidity data.
 
-This rule converts the collected neuron data to the correct precision and renames it to a meaningful name. The result is sent to the MQTT dynamic topic `${nodeName}/${groupName}` in the cloud. The REST command to create the rule is as follows. Where the rule is named `ruleNAll`, the SQL for the rule is calculated for the collected values and the metadata `node_name` and `group_name` are selected. In the action, the result of the rule is sent to the MQTT broker in the cloud and the topic is a dynamic name. According to the previous configuration, we collect node_name as `modbus-plus-tcp-1` and group_name as `group-1`. So, in MQTT X, subscribing to the `modbus-plus-tcp-1/group-1` topic will give us the calculated results.
+This rule converts the collected Neuron data to the correct precision and renames it to a meaningful name. The result is sent to the MQTT dynamic topic `${nodeName}/${groupName}` in the cloud. The REST command to create the rule is as follows. Where the rule is named `ruleNAll`, the SQL for the rule is calculated for the collected values and the metadata `node_name` and `group_name` are selected. In the action, the result of the rule is sent to the MQTT broker in the cloud and the topic is a dynamic name. According to the previous configuration, we collect node_name as `modbus-plus-tcp-1` and group_name as `group-1`. So, in MQTT X, subscribing to the `modbus-plus-tcp-1/group-1` topic will give us the calculated results.
 
 ```shell
 curl -X POST --location http://127.0.0.1:9081/rules \
@@ -214,7 +214,7 @@ Open MQTT X, connect to the cloud broker, subscribe to the `changed/modbus-plus-
 
 ## Control device via Neuron
 
-Thanks to the neuron sink component, eKuiper can control the device via neuron after data processing. In the following rules, eKuiper receives commands from MQTT to dynamically counter-control the neuron.
+Thanks to the neuron sink component, eKuiper can control the device via Neuron after data processing. In the following rules, eKuiper receives commands from MQTT to dynamically counter-control the Neuron.
 
 Suppose there is an application scenario where a user controls a device deployed at the edge by sending control commands to a topic on the MQTT server in the cloud, such as setting the desired temperature of the target device. First, we need to create an MQTT stream in eKuiper to receive commands from other applications to the `command` MQTT topic.
 
@@ -245,7 +245,7 @@ curl -X POST --location http://127.0.0.1:9081/rules \
 }'
 ```
 
-After the rule is run, open MQTT X and write a JSON string in the following format to the `command` topic. Note that you should make sure that the node and group are created in neuron. In the configuration of this tutorial, only modbus-plus-tcp-1 and group-1 have been created.
+After the rule is run, open MQTT X and write a JSON string in the following format to the `command` topic. Note that you should make sure that the node and group are created in Neuron. In the configuration of this tutorial, only modbus-plus-tcp-1 and group-1 have been created.
 
 ```json
 {
@@ -263,7 +263,7 @@ Also, the two rules created in the previous section should capture the new value
 
 ## Further reading
 
-This tutorial uses some of the features of Neuron source and sink, as well as some streaming scenarios. Read the following material for a more in-depth look at the features.
+This tutorial uses some features of Neuron source and sink, as well as some streaming scenarios. Read the following material for a more in-depth look at the features.
 
 - For more details on the Neuron streaming data format, please read the [Neuron Source Reference](../../guide/sources/builtin/neuron.md).
 - For more details about the Neuron back-control parameters, please read [Neuron Sink Reference](../../guide/sources/builtin/neuron.md). 

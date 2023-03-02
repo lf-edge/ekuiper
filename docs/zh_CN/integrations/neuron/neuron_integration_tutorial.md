@@ -39,7 +39,7 @@ Neuron 与 eKuiper 的连接经历了几个阶段：
 
 Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方案。本文以 Docker 方案为例，采用 [docker compose](https://docs.docker.com/compose/) 方式，一键完成边缘端两个组件的快速部署。
 
-1. 复制 [docker-compose.yml](./docker-compose.yml) 文件到部署的机器上。其内容如下，包含了 Neuron，eKuiper 以及 eKuiper 的管理界面 eKuiper manager（可选）。其中，eKuiper 和 neuron 共享了名为 nng-ipc 的 volume ，用于二者通信。如果要使用 eKuiper alpine 版本，需要在 compose 文件的 eKuiper 部分添加 `user: root:root` 赋予写入 ipc 文件的权限，否则连接将无法建立。
+1. 复制 [docker-compose.yml](./docker-compose.yml) 文件到部署的机器上。其内容如下，包含了 Neuron，eKuiper 以及 eKuiper 的管理界面 eKuiper manager（可选）。其中，eKuiper 和 Neuron 共享了名为 nng-ipc 的 volume ，用于二者通信。如果要使用 eKuiper alpine 版本，需要在 compose 文件的 eKuiper 部分添加 `user: root:root` 赋予写入 ipc 文件的权限，否则连接将无法建立。
 
    ```yaml
    version: '3.4'
@@ -85,12 +85,12 @@ Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方�
       # volumes:
       #  nng-ipc:
    ```
-   用户可自定义配置连接端口，本例中为 7081。修改端口时，需要修改 Neuron 的 eKuiper 北向应用端口，同时修改本文件中用到该端口的部分，即 neuron 的端口暴露和 eKuiper 的环境变量默认连接 url 部分。
+   用户可自定义配置连接端口，本例中为 7081。修改端口时，需要修改 Neuron 的 eKuiper 北向应用端口，同时修改本文件中用到该端口的部分，即 Neuron 的端口暴露和 eKuiper 的环境变量默认连接 url 部分。
 
    > 各版本使用注意事项
    > 1. eKuiper 1.9 之后版本与 Neuron 2.4 之前版本对接只能通过 ipc，需要配置 `SOURCES__NEURON__DEFAULT__URL: "ipc:///tmp/neuron-ekuiper.ipc"`，并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
-   > 2. eKuiper 1.9 之前版本与 neuron 2.4 之前版本对接只能通过 ipc，需要去除 `SOURCES__NEURON__DEFAULT__URL` 环境变量配置并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
-   > 3. eKuiper 1.9 之前版本与 neuron 2.4 之后版本无法直接对接，可通过 MQTT 中转。
+   > 2. eKuiper 1.9 之前版本与 Neuron 2.4 之前版本对接只能通过 ipc，需要去除 `SOURCES__NEURON__DEFAULT__URL` 环境变量配置并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
+   > 3. eKuiper 1.9 之前版本与 Neuron 2.4 之后版本无法直接对接，可通过 MQTT 中转。
 2. 在该文件所在目录，运行:
    
    ```shell
@@ -147,7 +147,7 @@ eKuiper 管理可使用 REST API，命令行以及管理控制台。以下教程
 
 ## 创建流
 
-使用如下命令创建名为 `neuronStream` 的流。其中，`type` 属性设置为`neuron`，表示该流会连接到 neuron 中。neuron 中采集到的数据会全部发送过来，从而在 eKuiper 中多条规则都会针对同一份数据进行处理，因此流属性`shared`设置为 true。
+使用如下命令创建名为 `neuronStream` 的流。其中，`type` 属性设置为`neuron`，表示该流会连接到 Neuron 中。Neuron 中采集到的数据会全部发送过来，从而在 eKuiper 中多条规则都会针对同一份数据进行处理，因此流属性`shared`设置为 true。
 
 ```shell
 curl -X POST --location http://127.0.0.1:9081/streams \
@@ -165,7 +165,7 @@ Neuron 流建立之后，我们可以在 eKuiper 里创建任意多条规则，�
 - tag1: decimal 表示的温度数据，实际温度应该除以10
 - tag2: 整型的湿度数据。
 
-本规则将采集的 neuron 数据换算为正确的精度，并重命名为有意义的名字。结果发送到云端的 MQTT 动态 topic `${nodeName}/${groupName}`中。 创建规则的 REST 命令如下。其中，规则名为 `ruleNAll`, 规则的 SQL 中对采集的值进行计算，并选取了`node_name` 和 `group_name` 这些元数据。在动作中，规则的结果发送到云端的 MQTT broker，而且 topic 为动态名字。根据前文配置，我们采集的 node_name 为 `modbus-plus-tcp-1`，group_name 为 `group-1`。因此，在 MQTT X 中，订阅 `modbus-plus-tcp-1/group-1` 主题即可得到计算的结果。
+本规则将采集的 Neuron 数据换算为正确的精度，并重命名为有意义的名字。结果发送到云端的 MQTT 动态 topic `${nodeName}/${groupName}`中。 创建规则的 REST 命令如下。其中，规则名为 `ruleNAll`, 规则的 SQL 中对采集的值进行计算，并选取了`node_name` 和 `group_name` 这些元数据。在动作中，规则的结果发送到云端的 MQTT broker，而且 topic 为动态名字。根据前文配置，我们采集的 node_name 为 `modbus-plus-tcp-1`，group_name 为 `group-1`。因此，在 MQTT X 中，订阅 `modbus-plus-tcp-1/group-1` 主题即可得到计算的结果。
 
 ```shell
 curl -X POST --location http://127.0.0.1:9081/rules \
@@ -213,7 +213,7 @@ curl -X POST --location http://127.0.0.1:9081/rules \
 
 ## 通过 Neuron 控制设备
 
-得益于 neuron sink 组件，eKuiper 可以在数据处理后通过 neuron 控制设备。在下面的规则中，eKuiper 接收 MQTT 的指令，对 neuron 进行动态的反控。
+得益于 neuron sink 组件，eKuiper 可以在数据处理后通过 Neuron 控制设备。在下面的规则中，eKuiper 接收 MQTT 的指令，对 Neuron 进行动态的反控。
 
 假设有个应用场景，用户通过往云端的 MQTT 服务器的某个主题发送控制指令来对部署在边缘端的设备进行控制操作，比如设定目标设备的期望的温度。首先，我们在 eKuiper 中需要创建一个 MQTT 流，用于接收从别的应用发到 `command` MQTT 主题的指令。
 
@@ -244,7 +244,7 @@ curl -X POST --location http://127.0.0.1:9081/rules \
 }'
 ```
 
-规则运行之后，打开 MQTT X，向 `command` 主题写入如下格式的JSON 串。需要注意的是，应当确保 node 和 group 在 neuron 中已创建。在本教程的配置中，只创建了 modbus-plus-tcp-1 和 group-1。
+规则运行之后，打开 MQTT X，向 `command` 主题写入如下格式的JSON 串。需要注意的是，应当确保 node 和 group 在 Neuron 中已创建。在本教程的配置中，只创建了 modbus-plus-tcp-1 和 group-1。
 
 ```json
 {
