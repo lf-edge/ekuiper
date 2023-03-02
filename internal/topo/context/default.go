@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ func WithValue(parent *DefaultContext, key, val interface{}) *DefaultContext {
 	return parent
 }
 
-//Implement context interface
+// Implement context interface
 func (c *DefaultContext) Deadline() (deadline time.Time, ok bool) {
 	return c.ctx.Deadline()
 }
@@ -111,31 +111,40 @@ func (c *DefaultContext) SetError(err error) {
 	c.err = err
 }
 
+// ParseTemplate parse template string against data
+// The templates are built only once and cached in the context by its raw string as the key
+// If the prop string is not a template, a nil template is cached to indicate it has been parsed, and it will return the original string
 func (c *DefaultContext) ParseTemplate(prop string, data interface{}) (string, error) {
-	re := regexp.MustCompile(`{{(.*?)}}`)
-	if re.Match([]byte(prop)) {
-		var (
-			tp  *template.Template
-			err error
-		)
-		if raw, ok := c.tpReg.Load(prop); ok {
+	var (
+		tp  *template.Template
+		err error
+	)
+	if raw, ok := c.tpReg.Load(prop); ok {
+		if raw != nil {
 			tp = raw.(*template.Template)
 		} else {
+			return prop, nil
+		}
+	} else { // not parsed before
+		re := regexp.MustCompile(`{{(.*?)}}`)
+		// check if it is a template
+		if re.Match([]byte(prop)) {
 			tp, err = transform.GenTp(prop)
 			if err != nil {
 				return fmt.Sprintf("%v", data), err
 			}
 			c.tpReg.Store(prop, tp)
+		} else {
+			c.tpReg.Store(prop, nil)
+			return prop, nil
 		}
-		var output bytes.Buffer
-		err = tp.Execute(&output, data)
-		if err != nil {
-			return fmt.Sprintf("%v", data), err
-		}
-		return output.String(), nil
-	} else {
-		return prop, nil
 	}
+	var output bytes.Buffer
+	err = tp.Execute(&output, data)
+	if err != nil {
+		return fmt.Sprintf("%v", data), err
+	}
+	return output.String(), nil
 }
 
 func (c *DefaultContext) ParseJsonPath(prop string, data interface{}) (interface{}, error) {
