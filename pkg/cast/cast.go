@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ const (
 
 /*********** Type Cast Utilities *****/
 
-//TODO datetime type
+// TODO datetime type
 func ToStringAlways(input interface{}) string {
 	if input == nil {
 		return ""
@@ -980,7 +980,7 @@ func ToBytesSlice(input interface{}, sn Strictness) ([][]byte, error) {
 //MapToStruct
 /*
 *   Convert a map into a struct. The output parameter must be a pointer to a struct
-*   The struct can have the json meta data
+*   The struct can have the json metadata
  */
 func MapToStruct(input, output interface{}) error {
 	config := &mapstructure.DecoderConfig{
