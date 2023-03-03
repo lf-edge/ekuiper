@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,11 +28,11 @@ func TestGetConf_Apply(t *testing.T) {
 		"method":             "post",
 		"interval":           10000,
 		"timeout":            5000,
-		"incremental":        false,
-		"body":               "{}",
 		"bodyType":           "json",
 		"key":                "",
 		"format":             "json",
+		"responseType":       "code",
+		"incremental":        false,
 		"insecureSkipVerify": true,
 		"headers": map[string]interface{}{
 			"Accept": "application/json",
@@ -54,11 +54,11 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 		"method":             "post",
 		"interval":           10000,
 		"timeout":            5000,
-		"incremental":        true,
-		"body":               "{}",
 		"bodyType":           "json",
 		"key":                "",
 		"format":             "json",
+		"responseType":       "code",
+		"incremental":        true,
 		"insecureSkipVerify": true,
 		"headers": map[string]interface{}{
 			"Accept": "application/json",
@@ -81,7 +81,6 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 		Interval:           10000,
 		Timeout:            5000,
 		Incremental:        true,
-		Body:               "{}",
 		BodyType:           "json",
 		InsecureSkipVerify: true,
 		Headers: map[string]interface{}{

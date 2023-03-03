@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ outerloop:
 		t.Errorf(err.Error())
 		return
 	}
+	cancel()
 	if !reflect.DeepEqual(exp, result) {
 		t.Errorf("result mismatch:\n  exp=%s\n  got=%s\n\n", exp, result)
 	}
