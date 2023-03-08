@@ -20,9 +20,10 @@ Users can directly use the built-in sources in the standard eKuiper instance. Th
 - [EdgeX source](./builtin/edgex.md): read data from EdgeX foundry.
 - [Http pull source](./builtin/http_pull.md): source to pull data from http servers.
 - [Http push source](./builtin/http_push.md): push data to eKuiper through http.
-- [Memory source](./builtin/memory.md): source to read from eKuiper memory topic to form rule pipelines.
-- [File source](./builtin/file.md): source to read from file, usually used as tables.
 - [Redis source](./builtin/redis.md): source to lookup from redis as a lookup table.
+- [File source](./builtin/file.md): source to read from file, usually used as tables.
+- [Memory source](./builtin/memory.md): source to read from eKuiper memory topic to form rule pipelines.
+
 
 ## Predefined Source Plugins
 
@@ -32,9 +33,9 @@ Additionally, these plugins have pre-built binaries for the mainstream cpu archi
 
 The list of predefined source plugins:
 
-- [Zero MQ source](./plugin/zmq.md): read data from zero mq.
-- [Random source](./plugin/random.md): a source to generate random data for testing.
 - [SQL source](./plugin/sql.md): a source to periodically fetch data from SQL DB.
+- [Random source](./plugin/random.md): a source to generate random data for testing.
+- [Zero MQ source](./plugin/zmq.md): read data from zero mq.
 
 ## Use of sources
 

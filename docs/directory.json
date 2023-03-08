@@ -124,12 +124,12 @@
 									"path": "guide/sources/builtin/http_push"
 								},
 								{
-									"title": "内存源",
-									"path": "guide/sources/builtin/memory"
-								},
-								{
 									"title": "文件源",
 									"path": "guide/sources/builtin/file"
+								},
+								{
+									"title": "内存源",
+									"path": "guide/sources/builtin/memory"
 								},
 								{
 									"title": "Redis 源",
@@ -141,20 +141,20 @@
 							"title": "预定义插件源",
 							"children": [
 								{
-									"title": "Zero MQ 源",
-									"path": "guide/sources/plugin/zmq"
-								},
-								{
 									"title": "SQL 源",
 									"path": "guide/sources/plugin/sql"
 								},
 								{
-									"title": "随机数据产生器源",
-									"path": "guide/sources/plugin/random"
-								},
-								{
 									"title": "视频源",
 									"path": "guide/sources/plugin/video"
+								},
+								{
+									"title": "Zero MQ 源",
+									"path": "guide/sources/plugin/zmq"
+								},
+								{
+									"title": "随机数据产生器源",
+									"path": "guide/sources/plugin/random"
 								}
 							]
 						}
@@ -191,6 +191,14 @@
 									"path": "guide/sinks/builtin/rest"
 								},
 								{
+									"title": "Redis Sink",
+									"path": "guide/sinks/builtin/redis"
+								},
+								{
+									"title": "File Sink",
+									"path": "guide/sinks/builtin/file"
+								},
+								{
 									"title": "Memory Sink",
 									"path": "guide/sinks/builtin/memory"
 								},
@@ -201,24 +209,12 @@
 								{
 									"title": "Nop Sink",
 									"path": "guide/sinks/builtin/nop"
-								},
-								{
-									"title": "Redis Sink",
-									"path": "guide/sinks/builtin/redis"
 								}
 							]
 						},
 						{
 							"title": "预定义插件 Sink",
 							"children": [
-								{
-									"title": "ZeroMQ Sink",
-									"path": "guide/sinks/plugin/zmq"
-								},
-								{
-									"title": "File Sink",
-									"path": "guide/sinks/plugin/file"
-								},
 								{
 									"title": "SQL Sink",
 									"path": "guide/sinks/plugin/sql"
@@ -238,6 +234,10 @@
 								{
 									"title": "Image Sink",
 									"path": "guide/sinks/plugin/image"
+								},
+								{
+									"title": "ZeroMQ Sink",
+									"path": "guide/sinks/plugin/zmq"
 								}
 							]
 						}
@@ -798,12 +798,12 @@
 									"path": "guide/sources/builtin/http_push"
 								},
 								{
-									"title": "Memory Source",
-									"path": "guide/sources/builtin/memory"
-								},
-								{
 									"title": "File Source",
 									"path": "guide/sources/builtin/file"
+								},
+								{
+									"title": "Memory Source",
+									"path": "guide/sources/builtin/memory"
 								},
 								{
 									"title": "Redis Source",
@@ -815,20 +815,20 @@
 							"title": "Predefined Source Plugins",
 							"children": [
 								{
-									"title": "Zero MQ Source",
-									"path": "guide/sources/plugin/zmq"
-								},
-								{
 									"title": "SQL Source",
 									"path": "guide/sources/plugin/sql"
+								},
+								{
+									"title": "Video Source",
+									"path": "guide/sources/plugin/video"
 								},
 								{
 									"title": "Random Source",
 									"path": "guide/sources/plugin/random"
 								},
 								{
-									"title": "Video Source",
-									"path": "guide/sources/plugin/video"
+									"title": "Zero MQ Source",
+									"path": "guide/sources/plugin/zmq"
 								}
 							]
 						}
@@ -865,6 +865,14 @@
 									"path": "guide/sinks/builtin/rest"
 								},
 								{
+									"title": "Redis Sink",
+									"path": "guide/sinks/builtin/redis"
+								},
+								{
+									"title": "File Sink",
+									"path": "guide/sinks/builtin/file"
+								},
+								{
 									"title": "Memory Sink",
 									"path": "guide/sinks/builtin/memory"
 								},
@@ -875,24 +883,12 @@
 								{
 									"title": "Nop Sink",
 									"path": "guide/sinks/builtin/nop"
-								},
-								{
-									"title": "Redis Sink",
-									"path": "guide/sinks/builtin/redis"
 								}
 							]
 						},
 						{
 							"title": "Predefined Sink Plugins",
 							"children": [
-								{
-									"title": "ZeroMQ Sink",
-									"path": "guide/sinks/plugin/zmq"
-								},
-								{
-									"title": "File Sink",
-									"path": "guide/sinks/plugin/file"
-								},
 								{
 									"title": "SQL Sink",
 									"path": "guide/sinks/plugin/sql"
@@ -912,6 +908,10 @@
 								{
 									"title": "Image Sink",
 									"path": "guide/sinks/plugin/image"
+								},
+								{
+									"title": "ZeroMQ Sink",
+									"path": "guide/sinks/plugin/zmq"
 								}
 							]
 						}

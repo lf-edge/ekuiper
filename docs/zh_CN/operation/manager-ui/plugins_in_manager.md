@@ -116,7 +116,7 @@ Function 元数据详细配置请参考 [sink 元数据配置](../../extension/n
 https://$host/$folder/$version/$os/$type/$plugin.zip
 ```
 
-例如： https://127.0.0.1:9090/kuiper-plugins/1.7.1/debian/sinks/file.zip
+例如： https://127.0.0.1:9090/kuiper-plugins/1.7.1/debian/sinks/sql.zip
 
 其中：
 

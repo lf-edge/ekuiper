@@ -43,10 +43,10 @@ jobs:
         set -e -u -x
         mkdir -p data
         mkdir -p log
+        mkdir -p plugins/sinks
         sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
         go build --buildmode=plugin -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
         cp extensions/sources/random/random.yaml etc/sources/random.yaml
-        go build --buildmode=plugin -o plugins/sinks/File@v1.0.0.so extensions/sinks/file/file.go
         go build --buildmode=plugin -o plugins/functions/Echo.so extensions/functions/echo/echo.go
         go build --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
         go build --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go

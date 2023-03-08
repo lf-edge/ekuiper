@@ -10,10 +10,11 @@ Users can directly use the built-in sinks in the standard eKuiper instance. The 
 - [Neuron sink](./builtin/neuron.md): sink to the local neuron instance.
 - [EdgeX sink](./builtin/edgex.md): sink to EdgeX Foundry. This sink only exist when enabling edgex build tag.
 - [Rest sink](./builtin/rest.md): sink to external http server.
+- [Redis sink](./builtin/redis.md): sink to redis.
+- [File sink](./builtin/file.md): sink to a file.
 - [Memory sink](./builtin/memory.md): sink to eKuiper memory topic to form rule pipelines.
 - [Log sink](./builtin/log.md): sink to log, usually for debug only.
 - [Nop sink](./builtin/nop.md): sink to nowhere. It is used for performance testing now.
-- [Redis sink](./builtin/redis.md): sink to redis.
 
 ## Predefined Sink Plugins
 
@@ -23,12 +24,11 @@ Additionally, these plugins have pre-built binaries for the mainstream cpu archi
 
 The list of predefined sink plugins:
 
-- [Zero MQ sink](./plugin/zmq.md): sink to zero mq.
-- [File sink](./plugin/file.md): sink to a file.
 - [InfluxDB sink](./plugin/influx.md): sink to influx db `v1.x`. 
 - [InfluxDBV2 sink](./plugin/influx2.md): sink to influx db `v2.x`.
 - [Tdengine sink](./plugin/tdengine.md): sink to tdengine.
 - [Image sink](./plugin/image.md): sink to an image file. Only used to handle binary result.
+- [Zero MQ sink](./plugin/zmq.md): sink to zero mq.
 
 ## Updatable Sink
 
