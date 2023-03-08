@@ -10,10 +10,11 @@
 - [Neuron sink](./builtin/neuron.md)：输出到本地的 Neuron 实例。
 - [EdgeX sink](./builtin/edgex.md)：输出到 EdgeX Foundry。此动作仅在启用 edgex 编译标签时存在。
 - [Rest sink](./builtin/rest.md)：输出到外部 http 服务器。
+- [Redis sink](./builtin/redis.md): 写入 Redis 。
+- [File sink](./builtin/file.md)： 写入文件。
 - [Memory sink](./builtin/memory.md)：输出到 eKuiper 内存主题以形成规则管道。
 - [Log sink](./builtin/log.md)：写入日志，通常只用于调试。
 - [Nop sink](./builtin/nop.md)：不输出，用于性能测试。
-- [Redis sink](./builtin/redis.md): 写入 Redis 。
 
 ## 预定义的动作插件
 
@@ -23,12 +24,11 @@
 
 预定义的动作插件列表。
 
-- [Zero MQ sink](./plugin/zmq.md)：输出到 Zero MQ 。
-- [File sink](./plugin/file.md)： 写入文件。
 - [InfluxDB sink](./plugin/influx.md)： 写入 Influx DB `v1.x`。
 - [InfluxDBV2 sink](./plugin/influx2.md)： 写入 Influx DB `v2.x`。
 - [Tdengine sink](./plugin/tdengine.md)： 写入 Tdengine 。
 - [Image sink](./plugin/image.md)： 写入一个图像文件。仅用于处理二进制结果。
+- [Zero MQ sink](./plugin/zmq.md)：输出到 Zero MQ 。
 
 ## 更新
 

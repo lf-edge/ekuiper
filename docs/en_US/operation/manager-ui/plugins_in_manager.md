@@ -116,7 +116,7 @@ In `etc/kuiper.yaml`, there is a `pluginHosts` configuration item, and users can
 https://$host/$folder/$version/$os/$type/$plugin.zip
 ```
 
-Example:  https://127.0.0.1:9090/kuiper-plugins/1.7.1/debian/sinks/file.zip
+Example:  https://127.0.0.1:9090/kuiper-plugins/1.7.1/debian/sinks/sql.zip
 
 Among them:
 

@@ -20,9 +20,9 @@
 - [EdgeX source](./builtin/edgex.md): 从 EdgeX foundry 读取数据。
 - [Http pull source](./builtin/http_pull.md)：从 http 服务器中拉取数据。
 - [Http push source](./builtin/http_push.md)：通过 http 推送数据到 eKuiper。
-- [Memory source](./builtin/memory.md)：从 eKuiper 内存主题读取数据以形成规则管道。
-- [File source](./builtin/file.md)：从文件中读取数据，通常用作表格。
 - [Redis source](./builtin/redis.md): 从 Redis 中查询数据，用作查询表。
+- [File source](./builtin/file.md)：从文件中读取数据，通常用作表格。
+- [Memory source](./builtin/memory.md)：从 eKuiper 内存主题读取数据以形成规则管道。
 
 ## 预定义的源插件
 
@@ -32,9 +32,9 @@
 
 预定义的源插件列表：
 
-- [Zero MQ source](./plugin/zmq.md)：从Zero MQ读取数据。
-- [Random source](./plugin/random.md): 一个生成随机数据的源，用于测试。
 - [SQL source](./plugin/sql.md): 定期从关系数据库中拉取数据。
+- [Random source](./plugin/random.md): 一个生成随机数据的源，用于测试。
+- [Zero MQ source](./plugin/zmq.md)：从Zero MQ读取数据。
 
 ## 源的使用
 

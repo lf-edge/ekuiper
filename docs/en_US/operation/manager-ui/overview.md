@@ -101,14 +101,6 @@ The example of creating a eKuiper service is shown in the figure below. If the p
 
 ![addNode](./resources/add_service.png)
 
-### Install the plugin
-
-In our scenario, the target plugin named file will be used. Select "Plugins" > "Install plugin", and the following dialog box will pop up: Select the target plugin named file in the drop-down list to download and install it, and the plugin will write data to the file specified by the user. As shown in the figure below, after the reader selects the plug-in with the corresponding name, the  input box of "File" will automatically be filled with the corresponding plug-in download address, Enter the extended parameter configuration of the installation plug-in script. After clicking the "Submit" button, eKuiper will automatically download the corresponding plugin from the relevant address on `https://www.emqx.io/downloads` and install it into the system automatically.
-
-![newPlugine](./resources/new_plugin.png)
-
-**Note: After the plug-in is installed and used through the rules, the plug-in has been loaded into the memory. Due to the limitations of the Golang language, when the plug-in is deleted, it cannot be uninstalled in practice. Therefore, if you want to reinstall the plug-in, you must restart eKuiper before it can take effect. Currently only the installation in the Docker environment of debian is supported, and other environments are not supported temporarily.**
-
 ### Create a stream
 
 Create a stream named `demoStream`, as shown below:
@@ -144,7 +136,7 @@ As shown in the figure below, a rule named demoRule is created to filter out the
 
 ![newRule](./resources/new_rule.png)
 
-Click the "Add" button and a dialog box will pop up as shown below. The file path of `/ekuiper/demoFile` where the input result is stored is input . More information about the file sink can be found in [Help File](../../guide/sinks/plugin/file.md). The target file is in the `Beta` state and cannot be used as an actual production environment.
+Click the "Add" button and a dialog box will pop up as shown below. The file path of `/ekuiper/demoFile` where the input result is stored is input . More information about the file sink can be found in [Help File](../../guide/sinks/builtin/file.md). The target file is in the `Beta` state and cannot be used as an actual production environment.
 
 ![sinkConf](./resources/sink_conf.png)
 

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,12 +18,11 @@
 package io
 
 import (
-	"github.com/lf-edge/ekuiper/internal/topo/sink"
-	"github.com/lf-edge/ekuiper/internal/topo/source"
+	"github.com/lf-edge/ekuiper/internal/io/edgex"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func init() {
-	sources["edgex"] = func() api.Source { return &source.EdgexSource{} }
-	sinks["edgex"] = func() api.Sink { return &sink.EdgexMsgBusSink{} }
+	sources["edgex"] = func() api.Source { return &edgex.EdgexSource{} }
+	sinks["edgex"] = func() api.Sink { return &edgex.EdgexMsgBusSink{} }
 }

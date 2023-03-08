@@ -89,8 +89,7 @@ docker:
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-slim -f deploy/docker/Dockerfile-slim . --load
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-dev -f deploy/docker/Dockerfile-dev . --load
 
-PLUGINS := sinks/file \
-	sinks/influx \
+PLUGINS := sinks/influx \
 	sinks/influx2 \
 	sinks/zmq \
 	sinks/image \

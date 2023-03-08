@@ -19,7 +19,6 @@ The file format for importing and exporting data is JSON, which can contain : `s
         "rule2": "{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"
     },
     "nativePlugins":{
-        "sinks_file":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sinks/file_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sinks/file_amd64.zip: no such file or directory",
         "sinks_tdengine":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: no such file or directory",
         "sources_random":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: no such file or directory"
     },
@@ -117,8 +116,7 @@ Content-Type: application/json
   "streams":{},
   "tables":{},
   "rules":{},
-  "nativePlugins":{
-    "sinks_file":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sinks/file_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sinks/file_amd64.zip: no such file or directory",
+  "nativePlugins":{    
     "sinks_tdengine":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: no such file or directory",
     "sources_random":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: no such file or directory"},
   "portablePlugins":{},

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ func TestManager_List(t *testing.T) {
 			r: []string{"random", "random2", "random3"},
 		}, {
 			t: plugin.SINK,
-			r: []string{"file", "file2"},
+			r: []string{"file2"},
 		}, {
 			t: plugin.FUNCTION,
 			r: []string{"accumulateWordCount", "comp", "countPlusOne", "echo", "echo2"},

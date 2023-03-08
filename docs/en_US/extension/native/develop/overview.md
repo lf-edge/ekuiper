@@ -159,7 +159,6 @@ The following is a sample of metadata file.
 
 | Name                                                | Description                                                      | Remarks                                                   |
 |-----------------------------------------------------|------------------------------------------------------------------|-----------------------------------------------------------|
-| [file](../../../guide/sinks/plugin/file.md)         | The plugin saves the analysis results to a specified file system | Sample of plugin, not available in production environment |
 | [zmq](../../../guide/sinks/plugin/zmq.md)           | The plugin sends the analysis results to the topic of Zero Mq    | Sample of plugin, not available in production environment |
 | [Influxdb](../../../guide/sinks/plugin/influx.md)   | The plugin sends the analysis results to InfluxDB                | Provided by [@smart33690](https://github.com/smart33690)  |
 | [TDengine](../../../guide/sinks/plugin/tdengine.md) | The plugin sends the analysis results to TDengine                |                                                           |
