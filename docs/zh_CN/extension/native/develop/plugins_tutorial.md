@@ -301,7 +301,7 @@ zip -o $PLUGIN_TARGET/sinks/mysql.zip $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so
 
 ### 调试运行插件
 
-在本地或 **开发** Docker 中启动 eKuiper，创建流和规则，规则的 action 设置为 mysql 即可对自定义的 mysql sink 插件进行测试。创建流和规则的步骤请参考[ eKuiper 文档](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/getting_started.md) 。以下提供一个使用了 mysql 插件的规则供参考。
+在本地或 **开发** Docker 中启动 eKuiper，创建流和规则，规则的 action 设置为 mysql 即可对自定义的 mysql sink 插件进行测试。创建流和规则的步骤请参考[ eKuiper 文档](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/getting_started/getting_started.md) 。以下提供一个使用了 mysql 插件的规则供参考。
 ```
 {
   "id": "ruleTest",
