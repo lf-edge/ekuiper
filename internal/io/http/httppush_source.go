@@ -26,19 +26,19 @@ import (
 	"strings"
 )
 
-type HTTPPushConf struct {
+type PushConf struct {
 	Method       string `json:"method"`
 	ContentType  string `json:"contentType"`
 	BufferLength int    `json:"bufferLength"`
 	Endpoint     string `json:"endpoint"`
 }
 
-type HTTPPushSource struct {
-	conf *HTTPPushConf
+type PushSource struct {
+	conf *PushConf
 }
 
-func (hps *HTTPPushSource) Configure(endpoint string, props map[string]interface{}) error {
-	cfg := &HTTPPushConf{
+func (hps *PushSource) Configure(endpoint string, props map[string]interface{}) error {
+	cfg := &PushConf{
 		Method:       http.MethodPost,
 		ContentType:  "application/json",
 		BufferLength: 1024,
@@ -63,7 +63,7 @@ func (hps *HTTPPushSource) Configure(endpoint string, props map[string]interface
 	return nil
 }
 
-func (hps *HTTPPushSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (hps *PushSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	t, done, err := httpserver.RegisterEndpoint(hps.conf.Endpoint, hps.conf.Method, hps.conf.ContentType)
 	if err != nil {
 		infra.DrainError(ctx, err, errCh)
@@ -88,7 +88,7 @@ func (hps *HTTPPushSource) Open(ctx api.StreamContext, consumer chan<- api.Sourc
 	}
 }
 
-func (hps *HTTPPushSource) Close(ctx api.StreamContext) error {
+func (hps *PushSource) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing HTTP push source")
 	return nil
