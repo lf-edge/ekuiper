@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,6 +47,8 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 		switch t := v.(type) {
 		case []byte:
 			body = bytes.NewBuffer(t)
+		case string:
+			body = bytes.NewBufferString(t)
 		default:
 			vj, err := json.Marshal(v)
 			if err != nil {
