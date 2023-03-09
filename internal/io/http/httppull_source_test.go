@@ -151,7 +151,7 @@ func TestConfigure(t *testing.T) {
 		name        string
 		props       map[string]interface{}
 		err         error
-		config      *HTTPPullConf
+		config      *RawConf
 		accessConf  *AccessTokenConf
 		refreshConf *RefreshTokenConf
 		tokens      map[string]interface{}
@@ -162,16 +162,15 @@ func TestConfigure(t *testing.T) {
 				"incremental": true,
 				"url":         "http://localhost:9090/",
 			},
-			config: &HTTPPullConf{
+			config: &RawConf{
 				Incremental:        true,
 				Url:                "http://localhost:9090/",
 				Method:             http.MethodGet,
 				Interval:           DefaultInterval,
 				Timeout:            DefaultTimeout,
-				BodyType:           "json",
+				BodyType:           "none",
 				ResponseType:       "code",
 				InsecureSkipVerify: true,
-				Headers:            map[string]string{},
 			},
 		},
 		// Test wrong properties
@@ -262,15 +261,18 @@ func TestConfigure(t *testing.T) {
 					},
 				},
 			},
-			config: &HTTPPullConf{
+			config: &RawConf{
 				Url:                "http://localhost:52345/",
 				Method:             http.MethodGet,
 				Interval:           DefaultInterval,
 				Timeout:            DefaultTimeout,
-				BodyType:           "json",
+				BodyType:           "none",
 				ResponseType:       "code",
 				InsecureSkipVerify: true,
-				Headers: map[string]string{
+				Headers: map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+				},
+				HeadersMap: map[string]string{
 					"Authorization": "Bearer {{.token}}",
 				},
 				OAuth: map[string]map[string]interface{}{
@@ -309,15 +311,18 @@ func TestConfigure(t *testing.T) {
 					},
 				},
 			},
-			config: &HTTPPullConf{
+			config: &RawConf{
 				Url:                "http://localhost:52345/",
 				Method:             http.MethodGet,
 				Interval:           DefaultInterval,
 				Timeout:            DefaultTimeout,
-				BodyType:           "json",
+				BodyType:           "none",
 				ResponseType:       "code",
 				InsecureSkipVerify: true,
-				Headers: map[string]string{
+				Headers: map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+				},
+				HeadersMap: map[string]string{
 					"Authorization": "Bearer {{.token}}",
 				},
 				OAuth: map[string]map[string]interface{}{
@@ -363,15 +368,18 @@ func TestConfigure(t *testing.T) {
 					},
 				},
 			},
-			config: &HTTPPullConf{
+			config: &RawConf{
 				Url:                "http://localhost:52345/",
 				Method:             http.MethodGet,
 				Interval:           DefaultInterval,
 				Timeout:            DefaultTimeout,
-				BodyType:           "json",
+				BodyType:           "none",
 				ResponseType:       "code",
 				InsecureSkipVerify: true,
-				Headers: map[string]string{
+				Headers: map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+				},
+				HeadersMap: map[string]string{
 					"Authorization": "Bearer {{.token}}",
 				},
 				OAuth: map[string]map[string]interface{}{
@@ -525,7 +533,7 @@ func TestConfigure(t *testing.T) {
 					},
 				},
 			},
-			config: &HTTPPullConf{
+			config: &RawConf{
 				Url:                "http://localhost:52345/",
 				Method:             http.MethodGet,
 				Interval:           DefaultInterval,
@@ -689,7 +697,7 @@ func TestConfigure(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("Test %d: %s", i, tt.name), func(t *testing.T) {
-			r := &HTTPPullSource{}
+			r := &PullSource{}
 			err := r.Configure("", tt.props)
 			if err != nil {
 				if tt.err == nil {
@@ -718,7 +726,7 @@ func TestConfigure(t *testing.T) {
 }
 
 func TestPullWithAuth(t *testing.T) {
-	r := &HTTPPullSource{}
+	r := &PullSource{}
 	server := mockAuthServer()
 	server.Start()
 	defer server.Close()
@@ -755,7 +763,7 @@ func TestPullWithAuth(t *testing.T) {
 }
 
 func TestPullIncremental(t *testing.T) {
-	r := &HTTPPullSource{}
+	r := &PullSource{}
 	server := mockAuthServer()
 	server.Start()
 	defer server.Close()

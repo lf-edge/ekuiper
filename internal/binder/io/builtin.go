@@ -31,8 +31,8 @@ type NewSinkFunc func() api.Sink
 var (
 	sources = map[string]NewSourceFunc{
 		"mqtt":     func() api.Source { return &mqtt.MQTTSource{} },
-		"httppull": func() api.Source { return &http.HTTPPullSource{} },
-		"httppush": func() api.Source { return &http.HTTPPushSource{} },
+		"httppull": func() api.Source { return &http.PullSource{} },
+		"httppush": func() api.Source { return &http.PushSource{} },
 		"file":     func() api.Source { return &file.FileSource{} },
 		"memory":   func() api.Source { return memory.GetSource() },
 		"neuron":   func() api.Source { return neuron.GetSource() },
