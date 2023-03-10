@@ -14,6 +14,7 @@ The action is used for publish output message into a RESTful API.
 | privateKeyPath     | true     | The private key path. It can be either absolute path, or relative path, which is similar to use of certificationPath.                                                                                                                                                                                                                                                       |
 | rootCaPath         | true     | The location of root ca path. It can be an absolute path, or a relative path, which is similar to use of certificationPath.                                                                                                                                                                                                                                                 |
 | insecureSkipVerify | true     | Control if to skip the certification verification. If it is set to `true`, then skip certification verification; Otherwise, verify the certification. The default value is `true`.                                                                                                                                                                                          |
+| oAuth              | true     | Define the authentication flow to follow the OAuth style. Other authentication method like apikey can directly set the key to header only, not need to set this configuration. Refer to [OAuth configuration](../../sources/builtin/http_pull.md#OAuth) in httppull source for more information.                                                                            |
 
 ::: v-pre
 REST service usually requires a specific data format. That can be imposed by the common sink property `dataTemplate`. Please check the [data template](../data_template.md). Below is a sample configuration for connecting to Edgex Foundry core command. The dataTemplate `{{.key}}` means it will print out the value of key, that is result[key]. So the template here is to select only field `key` in the result and change the field name to `newKey`. `sendSingle` is another common property. Set to true means that if the result is an array, each element will be sent individually.
@@ -28,6 +29,35 @@ REST service usually requires a specific data format. That can be imposed by the
         "sendSingle": true
       }
     }
+```
+
+Example to use oAuth style authentication:
+
+```json
+{
+  "id": "ruleFollowBack",
+  "sql": "SELECT follower FROM followStream",
+  "actions": [{
+    "rest": {
+      "url": "https://com.awebsite/follows",
+      "method": "POST",
+      "sendSingle": true,
+      "bodyType": "json",
+      "dataTemplate": "{\"data\":{\"relationships\":{\"follower\":{\"data\":{\"type\":\"users\",\"id\":\"1398589\"}},\"followed\":{\"data\":{\"type\":\"users\",\"id\":\"{{.follower}}\"}}},\"type\":\"follows\"}}",
+      "headers": {
+        "Content-Type": "application/vnd.api+json",
+        "Authorization": "Bearer {{.access_token}}"
+      },
+      "oAuth": {
+        "access": {
+          "url": "https://com.awebsite/oauth/token",
+          "body": "{\"grant_type\": \"password\",\"username\": \"user@gmail.com\",\"password\": \"mypass\"}",
+          "expire": "3600"
+        }
+      }
+    }
+  }]
+}
 ```
 
 ## Visualization mode
