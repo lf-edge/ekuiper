@@ -16,11 +16,15 @@ From eKuiper version 0.9.1, whenever a new version of eKuiper is released, the c
 
 * UI end: a visual interface, easy for users to operate
 * Kuiper-manager: Management console, which essentially is a reverse HTTP proxy service, providing the services of user management, permission verification. It can be deployed in the cloud or at the edge
-* eKuiper instance: managed eKuiper node instance, Kuiper-manager can manage multiple eKuiper nodes at the same time
+* eKuiper instance: managed eKuiper node instance, eKuiper-manager can manage multiple eKuiper nodes at the same time
 
 ![construct](./resources/arch.png)
 
 ## Install the management console
+
+In production, eKuiper is usually installed at the edge and eKuiper manager is installed at the gateway or cloud to manage one or more eKuiper instances at the edge. In this case, the two are deployed on different physical machines and need to be deployed separately. This chapter will use this approach for deployment.
+
+During test, it is more handy to use docker compose to install and deploy both products with one click. Please refer to [Run with Management Console](../../installation.md#running-ekuiper-with-management-console) for details.
 
 ### Install eKuiper
 
@@ -62,17 +66,18 @@ From eKuiper version 0.9.1, whenever a new version of eKuiper is released, the c
   docker pull emqx/ekuiper-manager:1.8
   ```
 
-- Run the Kuiper-manager container and expose port 9082.
+- Run the Kuiper-manager container and expose port 9082. Whereas DEFAULT_EKUIPER_ENDPOINT can be used to specify the default managed eKuiper address, which should be set to the actual ip of the machine where the eKuiper is located.
 
   ```shell
-  docker run --name kuiperManager -d -p 9082:9082 -e DEFAULT_EKUIPER_ENDPOINT="http://127.0.0.1:9081" emqx/ekuiper-manager:1.8
+  docker run --name kuiperManager -d -p 9082:9082 -e DEFAULT_EKUIPER_ENDPOINT="	
+http://$your_ekuiper_host:9081" emqx/ekuiper-manager:1.8
   ```
 
 ## Getting started
 
-### Login to kuiper-manager
+### Login to ekuiper-manager
 
-You need to provide the address, user name, and password of kuiper-manager when logging in, which is shown below:
+You need to provide the address, username, and password of kuiper-manager when logging in, which is shown below:
 
 * Address: `http://$yourhost:9082`
 
