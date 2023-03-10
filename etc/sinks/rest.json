@@ -185,6 +185,178 @@
         "en_US": "Print HTTP response",
         "zh_CN": "打印 HTTP 响应"
       }
+    },
+    {
+      "name": "responseType",
+      "default": "code",
+      "optional": true,
+      "control": "select",
+      "type": "string",
+      "values": [
+        "code",
+        "body"
+      ],
+      "hint": {
+        "en_US": "Response type, could be `code` or `body`. If it is `code`, then eKuiper will check the HTTP response code for response status. If it is `body`, then eKuiper will check the HTTP response body with JSON format and examine the value of the code field.",
+        "zh_CN": "响应类型,可以是 `code` 或者 `body`，如果是 `code`，那么 eKuiper 会检查 HTTP 响应码来判断响应状态。如果是 `body`，那么 eKuiper 会检查 HTTP 响应正文，要求其为 JSON 格式，并且检查 code 字段的值。"
+      },
+      "label": {
+        "en_US": "Response type",
+        "zh_CN": "响应类型"
+      }
+    },
+    {
+      "name": "oAuth",
+      "optional": true,
+      "control": "list",
+      "type": "list_object",
+      "hint": {
+        "en_US": "Configure the oAuth authentication flow.",
+        "zh_CN": "配置 OAuth 验证流程。"
+      },
+      "label": {
+        "en_US": "OAuth",
+        "zh_CN": "OAuth"
+      },
+      "default":[
+        {
+          "name": "access",
+          "optional": true,
+          "control": "list",
+          "type": "list_object",
+          "hint": {
+            "en_US": "Configure how to fetch the access token.",
+            "zh_CN": "配置如何获取访问令牌。"
+          },
+          "label": {
+            "en_US": "Access token request",
+            "zh_CN": "访问令牌请求"
+          },
+          "default": [
+            {
+              "name": "url",
+              "default": "http://127.0.0.1:5536/token",
+              "optional": false,
+              "control": "text",
+              "type": "string",
+              "hint": {
+                "en_US": "The URL where to get the access token.",
+                "zh_CN": "获取访问令牌的 URL"
+              },
+              "label": {
+                "en_US": "Access Token URL",
+                "zh_CN": "访问令牌 URL"
+              }
+            },
+            {
+              "name": "body",
+              "default": "",
+              "optional": true,
+              "control": "textarea",
+              "type": "string",
+              "hint": {
+                "en_US": "The body of access token request",
+                "zh_CN": "访问令牌请求的正文"
+              },
+              "label": {
+                "en_US": "Access Token Request Body",
+                "zh_CN": "访问令牌请求的正文"
+              }
+            },
+            {
+              "name": "expire",
+              "default": "3600",
+              "optional": true,
+              "control": "text",
+              "type": "string",
+              "hint": {
+                "en_US": "The expire time or expire time template",
+                "zh_CN": "过期时间"
+              },
+              "label": {
+                "en_US": "Expire Time",
+                "zh_CN": "过期时间"
+              }
+            },
+            {
+              "name": "body",
+              "default": "",
+              "optional": true,
+              "control": "textarea",
+              "type": "string",
+              "hint": {
+                "en_US": "The body of access token request",
+                "zh_CN": "访问令牌请求的正文"
+              },
+              "label": {
+                "en_US": "Access token request Body",
+                "zh_CN": "访问令牌请求的正文"
+              }
+            }
+          ]
+        },
+        {
+          "name": "refresh",
+          "optional": true,
+          "control": "list",
+          "type": "list_object",
+          "hint": {
+            "en_US": "Configure how to refresh token after expiration.",
+            "zh_CN": "配置令牌过期后如何更新令牌。"
+          },
+          "label": {
+            "en_US": "Refresh token request",
+            "zh_CN": "更新令牌请求"
+          },
+          "default": [
+            {
+              "name": "url",
+              "default": "http://127.0.0.1:5536/refresh",
+              "optional": false,
+              "control": "text",
+              "type": "string",
+              "hint": {
+                "en_US": "The URL where to get the refresh token.",
+                "zh_CN": "获取更新令牌的 URL"
+              },
+              "label": {
+                "en_US": "Refresh Token URL",
+                "zh_CN": "更新令牌 URL"
+              }
+            },
+            {
+              "name": "headers",
+              "default": [],
+              "optional": true,
+              "control": "list",
+              "type": "list_object",
+              "hint": {
+                "en_US": "The HTTP request headers that you want to send along with the HTTP refresh request.",
+                "zh_CN": "需要与刷新 Token HTTP 请求一起发送的 HTTP 请求标头。"
+              },
+              "label": {
+                "en_US": "Refresh token request headers",
+                "zh_CN": "刷新令牌请求标头"
+              }
+            },
+            {
+              "name": "body",
+              "default": "",
+              "optional": true,
+              "control": "textarea",
+              "type": "string",
+              "hint": {
+                "en_US": "The body of refresh token request",
+                "zh_CN": "刷新令牌请求的正文"
+              },
+              "label": {
+                "en_US": "Refresh token request body",
+                "zh_CN": "刷新令牌请求的正文"
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "node": {
