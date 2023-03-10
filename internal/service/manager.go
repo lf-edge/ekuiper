@@ -18,6 +18,7 @@ import (
 	"archive/zip"
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/plugin"
 	"os"
 	"path"
 	"path/filepath"
@@ -198,6 +199,13 @@ func (m *Manager) initFile(baseName string) error {
 
 func (m *Manager) HasFunctionSet(_ string) bool {
 	return false
+}
+
+func (m *Manager) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+	funcContainer, _ := m.getFunction(funcName)
+	var installScript = ""
+	m.serviceInstallKV.Get(funcContainer.ServiceName, &installScript)
+	return plugin.SERVICE_EXTENSION, funcContainer.ServiceName, installScript
 }
 
 func (m *Manager) Function(name string) (api.Function, error) {

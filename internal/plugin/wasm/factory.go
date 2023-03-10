@@ -39,6 +39,10 @@ func (m *Manager) HasFunctionSet(funcName string) bool {
 	return ok
 }
 
+func (m *Manager) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+	return plugin.WASM_EXTENSION, "", ""
+}
+
 func (m *Manager) ConvName(funcName string) (string, bool) {
 	_, ok := m.GetPluginMeta(plugin.FUNCTION, funcName)
 	return funcName, ok

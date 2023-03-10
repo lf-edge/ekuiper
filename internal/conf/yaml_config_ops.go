@@ -28,9 +28,15 @@ import (
 type ConfKeysOperator interface {
 	GetPluginName() string
 	GetConfContentByte() ([]byte, error)
+	// CopyConfContent get the configurations in etc and data folder
 	CopyConfContent() map[string]map[string]interface{}
+	// CopyReadOnlyConfContent get the configurations in etc folder
 	CopyReadOnlyConfContent() map[string]map[string]interface{}
+	// CopyUpdatableConfContent get the configurations in data folder
 	CopyUpdatableConfContent() map[string]map[string]interface{}
+	// CopyUpdatableConfContentFor get the configuration for the specific configKeys
+	CopyUpdatableConfContentFor(configKeys []string) map[string]map[string]interface{}
+	// LoadConfContent load the configurations into data configuration part
 	LoadConfContent(cf map[string]map[string]interface{})
 	GetConfKeys() (keys []string)
 	GetReadOnlyConfKeys() (keys []string)
@@ -152,6 +158,23 @@ func (c *ConfigKeys) CopyUpdatableConfContent() map[string]map[string]interface{
 		cf[key] = aux
 	}
 
+	return cf
+}
+
+func (c *ConfigKeys) CopyUpdatableConfContentFor(configKeys []string) map[string]map[string]interface{} {
+	cf := make(map[string]map[string]interface{})
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	for _, key := range configKeys {
+		aux := make(map[string]interface{})
+		if kvs, ok := c.dataCfg[key]; ok {
+			for k, v := range kvs {
+				aux[k] = v
+			}
+		}
+		cf[key] = aux
+	}
 	return cf
 }
 

@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/io/mqtt"
 	"github.com/lf-edge/ekuiper/internal/io/neuron"
 	"github.com/lf-edge/ekuiper/internal/io/sink"
+	plugin2 "github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -61,6 +62,10 @@ func (m *Manager) Source(name string) (api.Source, error) {
 	return nil, nil
 }
 
+func (m *Manager) GetSourcePlugin(_ string) (plugin2.EXTENSION_TYPE, string, string) {
+	return plugin2.INTERNAL, "", ""
+}
+
 func (m *Manager) LookupSource(name string) (api.LookupSource, error) {
 	if s, ok := lookupSources[name]; ok {
 		return s(), nil
@@ -73,6 +78,10 @@ func (m *Manager) Sink(name string) (api.Sink, error) {
 		return s(), nil
 	}
 	return nil, nil
+}
+
+func (m *Manager) GetSinkPlugin(_ string) (plugin2.EXTENSION_TYPE, string, string) {
+	return plugin2.INTERNAL, "", ""
 }
 
 var m = &Manager{}

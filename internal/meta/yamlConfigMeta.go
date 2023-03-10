@@ -439,6 +439,75 @@ func GetConfigurations() YamlConfigurationSet {
 	return result
 }
 
+type YamlConfigurationKeys struct {
+	sources     map[string][]string
+	sinks       map[string][]string
+	connections map[string][]string
+}
+
+func GetConfigurationsFor(yaml YamlConfigurationKeys) YamlConfigurationSet {
+	ConfigManager.lock.RLock()
+	defer ConfigManager.lock.RUnlock()
+
+	sourcesConfigKeys := yaml.sources
+	sinksConfigKeys := yaml.sinks
+	connectionsConfigKeys := yaml.connections
+
+	result := YamlConfigurationSet{
+		Sources:     map[string]string{},
+		Sinks:       map[string]string{},
+		Connections: map[string]string{},
+	}
+	srcResources := map[string]string{}
+	sinkResources := map[string]string{}
+	connectionResources := map[string]string{}
+
+	for key, ops := range ConfigManager.cfgOperators {
+		if strings.HasPrefix(key, ConnectionCfgOperatorKeyPrefix) {
+			plugin := strings.TrimPrefix(key, ConnectionCfgOperatorKeyPrefix)
+			keys, ok := connectionsConfigKeys[plugin]
+			if ok {
+				cfs := ops.CopyUpdatableConfContentFor(keys)
+				if len(cfs) > 0 {
+					jsonByte, _ := json.Marshal(cfs)
+					connectionResources[plugin] = string(jsonByte)
+				}
+			}
+			continue
+		}
+		if strings.HasPrefix(key, SourceCfgOperatorKeyPrefix) {
+			plugin := strings.TrimPrefix(key, SourceCfgOperatorKeyPrefix)
+			keys, ok := sourcesConfigKeys[plugin]
+			if ok {
+				cfs := ops.CopyUpdatableConfContentFor(keys)
+				if len(cfs) > 0 {
+					jsonByte, _ := json.Marshal(cfs)
+					connectionResources[plugin] = string(jsonByte)
+				}
+			}
+			continue
+		}
+		if strings.HasPrefix(key, SinkCfgOperatorKeyPrefix) {
+			plugin := strings.TrimPrefix(key, SinkCfgOperatorKeyPrefix)
+			keys, ok := sinksConfigKeys[plugin]
+			if ok {
+				cfs := ops.CopyUpdatableConfContentFor(keys)
+				if len(cfs) > 0 {
+					jsonByte, _ := json.Marshal(cfs)
+					connectionResources[plugin] = string(jsonByte)
+				}
+			}
+			continue
+		}
+	}
+
+	result.Sources = srcResources
+	result.Sinks = sinkResources
+	result.Connections = connectionResources
+
+	return result
+}
+
 func GetConfigurationStatus() YamlConfigurationSet {
 	result := YamlConfigurationSet{
 		Sources:     map[string]string{},

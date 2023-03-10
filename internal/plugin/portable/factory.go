@@ -30,6 +30,13 @@ func (m *Manager) Source(name string) (api.Source, error) {
 	return runtime.NewPortableSource(name, meta), nil
 }
 
+func (m *Manager) GetSourcePlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
+	pluginName, _ := m.reg.GetSymbol(plugin.SOURCE, name)
+	var installScript = ""
+	m.plgInstallDb.Get(pluginName, &installScript)
+	return plugin.PORTABLE_EXTENSION, pluginName, installScript
+}
+
 func (m *Manager) LookupSource(_ string) (api.LookupSource, error) {
 	// TODO add support
 	return nil, nil
@@ -41,6 +48,13 @@ func (m *Manager) Sink(name string) (api.Sink, error) {
 		return nil, nil
 	}
 	return runtime.NewPortableSink(name, meta), nil
+}
+
+func (m *Manager) GetSinkPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
+	pluginName, _ := m.reg.GetSymbol(plugin.SINK, name)
+	var installScript = ""
+	m.plgInstallDb.Get(pluginName, &installScript)
+	return plugin.PORTABLE_EXTENSION, pluginName, installScript
 }
 
 var funcInsMap = &sync.Map{}
@@ -66,6 +80,13 @@ func (m *Manager) Function(name string) (api.Function, error) {
 func (m *Manager) HasFunctionSet(funcName string) bool {
 	_, ok := m.reg.GetSymbol(plugin.FUNCTION, funcName)
 	return ok
+}
+
+func (m *Manager) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+	pluginName, _ := m.reg.GetSymbol(plugin.FUNCTION, funcName)
+	var installScript = ""
+	m.plgInstallDb.Get(pluginName, &installScript)
+	return plugin.PORTABLE_EXTENSION, pluginName, installScript
 }
 
 func (m *Manager) ConvName(funcName string) (string, bool) {

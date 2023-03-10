@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
@@ -125,6 +126,10 @@ func (m *Manager) Function(name string) (api.Function, error) {
 
 func (m *Manager) HasFunctionSet(name string) bool {
 	return name == "internal"
+}
+
+func (m *Manager) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+	return plugin.INTERNAL, "", ""
 }
 
 func (m *Manager) ConvName(n string) (string, bool) {
