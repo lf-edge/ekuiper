@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -105,6 +106,10 @@ type mockFac struct{}
 
 func (m *mockFac) Source(_ string) (api.Source, error) {
 	return nil, nil
+}
+
+func (m *mockFac) GetSourcePlugin(_ string) (plugin.EXTENSION_TYPE, string, string) {
+	return plugin.INTERNAL, "", ""
 }
 
 func (m *mockFac) LookupSource(name string) (api.LookupSource, error) {

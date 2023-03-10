@@ -98,3 +98,13 @@ type FuncPlugin struct {
 func (fp *FuncPlugin) GetSymbols() []string {
 	return fp.Functions
 }
+
+type EXTENSION_TYPE int
+
+const (
+	INTERNAL EXTENSION_TYPE = iota
+	NATIVE_EXTENSION
+	PORTABLE_EXTENSION
+	SERVICE_EXTENSION
+	WASM_EXTENSION
+)

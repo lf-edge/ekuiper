@@ -15,6 +15,7 @@
 package mock
 
 import (
+	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"strings"
@@ -35,6 +36,10 @@ func (f *MockFactory) Source(name string) (api.Source, error) {
 	}
 }
 
+func (f *MockFactory) GetSourcePlugin(_ string) (plugin.EXTENSION_TYPE, string, string) {
+	return plugin.INTERNAL, "", ""
+}
+
 func (f *MockFactory) LookupSource(name string) (api.LookupSource, error) {
 	return nil, nil
 }
@@ -45,6 +50,10 @@ func (f *MockFactory) Sink(name string) (api.Sink, error) {
 	} else {
 		return nil, errorx.NotFoundErr
 	}
+}
+
+func (f *MockFactory) GetSinkPlugin(_ string) (plugin.EXTENSION_TYPE, string, string) {
+	return plugin.INTERNAL, "", ""
 }
 
 func (f *MockFactory) Function(name string) (api.Function, error) {
@@ -65,6 +74,10 @@ func (f *MockFactory) HasFunctionSet(funcName string) bool {
 	} else {
 		return false
 	}
+}
+
+func (f *MockFactory) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+	return plugin.INTERNAL, "", ""
 }
 
 type mockFunc struct{}

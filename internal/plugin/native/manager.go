@@ -585,6 +585,14 @@ func (rr *Manager) Source(name string) (api.Source, error) {
 	}
 }
 
+func (rr *Manager) GetSourcePlugin(name string) (plugin2.EXTENSION_TYPE, string, string) {
+	pluginName, _ := rr.GetPluginBySymbol(plugin2.SOURCE, name)
+	var installScript = ""
+	pluginKey := plugin2.PluginTypes[plugin2.SOURCE] + "_" + pluginName
+	rr.plgInstallDb.Get(pluginKey, &installScript)
+	return plugin2.NATIVE_EXTENSION, pluginKey, installScript
+}
+
 func (rr *Manager) LookupSource(name string) (api.LookupSource, error) {
 	nf, err := rr.loadRuntime(plugin2.SOURCE, name, "", ucFirst(name)+"Lookup")
 	if err != nil {
@@ -623,6 +631,14 @@ func (rr *Manager) Sink(name string) (api.Sink, error) {
 	return s, nil
 }
 
+func (rr *Manager) GetSinkPlugin(name string) (plugin2.EXTENSION_TYPE, string, string) {
+	pluginName, _ := rr.GetPluginBySymbol(plugin2.SINK, name)
+	var installScript = ""
+	pluginKey := plugin2.PluginTypes[plugin2.SINK] + "_" + pluginName
+	rr.plgInstallDb.Get(pluginKey, &installScript)
+	return plugin2.NATIVE_EXTENSION, pluginKey, installScript
+}
+
 func (rr *Manager) Function(name string) (api.Function, error) {
 	nf, err := rr.loadRuntime(plugin2.FUNCTION, name, "", "")
 	if err != nil {
@@ -646,6 +662,14 @@ func (rr *Manager) Function(name string) (api.Function, error) {
 func (rr *Manager) HasFunctionSet(name string) bool {
 	_, ok := rr.get(plugin2.FUNCTION, name)
 	return ok
+}
+
+func (rr *Manager) GetFunctionPlugin(funcName string) (plugin2.EXTENSION_TYPE, string, string) {
+	pluginName, _ := rr.GetPluginBySymbol(plugin2.FUNCTION, funcName)
+	var installScript = ""
+	pluginKey := plugin2.PluginTypes[plugin2.FUNCTION] + "_" + pluginName
+	rr.plgInstallDb.Get(pluginKey, &installScript)
+	return plugin2.NATIVE_EXTENSION, pluginKey, installScript
 }
 
 func (rr *Manager) ConvName(name string) (string, bool) {
