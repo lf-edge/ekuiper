@@ -51,7 +51,6 @@ Please make sure docker compose has installed before running.
       volumes:
         - /tmp/data:/kuiper/data
         - /tmp/log:/kuiper/log
-        - /tmp/plugins:/kuiper/plugins
       environment:
         MQTT_SOURCE__DEFAULT__SERVER: "tcp://broker.emqx.io:1883"
         KUIPER__BASIC__CONSOLELOG: "true"

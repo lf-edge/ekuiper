@@ -51,7 +51,6 @@ eKuiper manager 是一个免费的 eKuiper 管理控制台，以 Docker 镜像�
       volumes:
         - /tmp/data:/kuiper/data
         - /tmp/log:/kuiper/log
-        - /tmp/plugins:/kuiper/plugins
       environment:
         MQTT_SOURCE__DEFAULT__SERVER: "tcp://broker.emqx.io:1883"
         KUIPER__BASIC__CONSOLELOG: "true"

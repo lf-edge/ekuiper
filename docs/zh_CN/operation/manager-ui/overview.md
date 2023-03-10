@@ -16,11 +16,14 @@
 
 * UI 端：可视化的界面，便于用户操作
 * Kuiper-manager：管理控制台，本质是一个反向 HTTP 代理服务，提供用户管理，权限验证等服务。既可以部署在云端，也可以部署在边缘端
-* eKuiper 实例，被管理的 eKuiper 节点实例，Kuiper-manager 可以同时管理多个 eKuiper 节点
+* eKuiper 实例，被管理的 eKuiper 节点实例，eKuiper-manager 可以同时管理多个 eKuiper 节点
 
 ![construct](./resources/arch.png)
 
 ## 安装管理控制台
+
+在实际场景中，eKuiper 通常安装在边缘端，而 eKuiper manager 安装在网关或云端，负责管理一个或多个边缘端的 eKuiper。这种情况下，两者部署在不同的物理机器上，需要分开部署。本章将采用此种方式进行部署。
+在测试场景种，用户可采用 docker compose 的方式一键安装部署，详情请参考[使用管理控制台运行](../../installation.md#使用管理控制台运行)。
 
 ### 安装 eKuiper
 
@@ -62,10 +65,10 @@
   docker pull emqx/ekuiper-manager:1.8
   ```
 
-- 运行 Kuiper-manager 容器并暴露 9082 端口。
+- 运行 eKuiper-manager 容器并暴露 9082 端口。其中，DEFAULT_EKUIPER_ENDPOINT 可用于指定默认管理的 eKuiper 地址，此处应设置成实际的 eKuiper 所在机器的 ip 。
 
   ```shell
-  docker run --name kuiperManager -d -p 9082:9082 -e DEFAULT_EKUIPER_ENDPOINT="http://127.0.0.1:9081" emqx/ekuiper-manager:1.8
+  docker run --name kuiperManager -d -p 9082:9082 -e DEFAULT_EKUIPER_ENDPOINT="http://$your_ekuiper_host:9081" emqx/ekuiper-manager:1.8
   ```
 
 ## 开始使用
