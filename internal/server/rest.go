@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -450,7 +450,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		rule, err := ruleProcessor.GetRuleJson(name)
 		if err != nil {
-			handleError(w, err, "describe rule error", logger)
+			handleError(w, err, "Describe rule error", logger)
 			return
 		}
 		w.Header().Add(ContentType, ContentTypeJSON)
@@ -459,7 +459,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		deleteRule(name)
 		content, err := ruleProcessor.ExecDrop(name)
 		if err != nil {
-			handleError(w, err, "delete rule error", logger)
+			handleError(w, err, "Delete rule error", logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -467,7 +467,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPut:
 		_, err := ruleProcessor.GetRuleById(name)
 		if err != nil {
-			handleError(w, err, "not found this rule", logger)
+			handleError(w, err, "Rule not found", logger)
 			return
 		}
 
@@ -478,7 +478,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		err = updateRule(name, string(body))
 		if err != nil {
-			handleError(w, err, "restart rule error", logger)
+			handleError(w, err, "Update rule error", logger)
 			return
 		}
 		// Update to db after validation
@@ -751,7 +751,7 @@ func configurationImport(data []byte, reboot bool) error {
 	rulesetProcessor.ImportRuleSet(ruleSet)
 	if !reboot {
 		infra.SafeRun(func() error {
-			for name, _ := range ruleSet.Rules {
+			for name := range ruleSet.Rules {
 				rul, ee := ruleProcessor.GetRuleById(name)
 				if ee != nil {
 					logger.Error(ee)
