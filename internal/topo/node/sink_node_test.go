@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -302,8 +302,15 @@ func TestFormat_Apply(t *testing.T) {
 		s := NewSinkNodeWithSink("mockSink", mockSink, tt.config)
 		s.Open(ctx, make(chan error))
 		s.input <- tt.data
-		time.Sleep(1 * time.Second)
-		results := mockSink.GetResults()
+		var results [][]byte
+		// try at most 5 seconds
+		for j := 0; j < 10; j++ {
+			time.Sleep(500 * time.Millisecond)
+			results = mockSink.GetResults()
+			if len(results) > 0 {
+				break
+			}
+		}
 		if !reflect.DeepEqual(tt.result, results) {
 			t.Errorf("%d \tresult mismatch:\n\nexp=%x\n\ngot=%x\n\n", i, tt.result, results)
 		}
