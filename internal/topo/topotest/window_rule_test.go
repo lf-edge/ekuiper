@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -757,22 +757,25 @@ func TestEventWindow(t *testing.T) {
 					"color":        "red",
 					"ts":           float64(1541152486013),
 				}},
+				{},
 				{{
 					"window_start": float64(1541152488000),
 					"window_end":   float64(1541152489000),
 					"color":        "yellow",
 					"ts":           float64(1541152488442),
 				}},
+				{},
+				{},
 			},
 			M: map[string]interface{}{
 				"op_4_project_0_exceptions_total":   int64(0),
 				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(2),
-				"op_4_project_0_records_out_total":  int64(2),
+				"op_4_project_0_records_in_total":   int64(5),
+				"op_4_project_0_records_out_total":  int64(5),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(2),
-				"sink_mockSink_0_records_out_total": int64(2),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -786,7 +789,7 @@ func TestEventWindow(t *testing.T) {
 				"op_3_filter_0_exceptions_total":   int64(0),
 				"op_3_filter_0_process_latency_us": int64(0),
 				"op_3_filter_0_records_in_total":   int64(5),
-				"op_3_filter_0_records_out_total":  int64(2),
+				"op_3_filter_0_records_out_total":  int64(5),
 			},
 		}, {
 			Name: `TestEventWindowRule3`,
