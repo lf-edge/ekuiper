@@ -258,6 +258,18 @@ func Test_rulesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", 200, w1.Result().StatusCode)
 	}
 
+	//update wron rule
+	ruleJson = `{"id": "rule1","sql": "select * from alert1","actions": [{"nop": {}}]}`
+
+	buf2 = bytes.NewBuffer([]byte(ruleJson))
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule1", buf2)
+	w1 = httptest.NewRecorder()
+	r.ServeHTTP(w1, req1)
+
+	if w1.Result().StatusCode != 400 {
+		t.Errorf("Expect\t%v\nBut got\t%v", 200, w1.Result().StatusCode)
+	}
+
 	//get rule
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()

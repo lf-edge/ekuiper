@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -146,7 +146,10 @@ func updateRule(ruleId, ruleJson string) error {
 		return fmt.Errorf("Invalid rule json: %v", err)
 	}
 	if rs, ok := registry.Load(r.Id); ok {
-		rs.UpdateTopo(r)
+		err := rs.UpdateTopo(r)
+		if err != nil {
+			return err
+		}
 		err = ruleProcessor.ExecReplaceRuleState(rs.RuleId, true)
 		return err
 	} else {
