@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,9 +74,6 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 			return err
 		}
 		r := input.Filter(sel)
-		if r.Len() == 0 {
-			return nil
-		}
 		return r
 	default:
 		return fmt.Errorf("run Where error: invalid input %[1]T(%[1]v)", input)

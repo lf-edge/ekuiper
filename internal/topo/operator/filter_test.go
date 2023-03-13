@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -374,7 +374,9 @@ func TestFilterPlan_Apply(t *testing.T) {
 					},
 				},
 			},
-			result: nil,
+			result: &xsql.WindowTuples{
+				Content: []xsql.TupleRow{},
+			},
 		},
 		{
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2 WHERE src1.f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
@@ -481,7 +483,9 @@ func TestFilterPlan_Apply(t *testing.T) {
 					},
 				},
 			},
-			result: nil,
+			result: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{},
+			},
 		},
 		{
 			sql: "SELECT abc FROM tbl WHERE meta(topic) = \"topic1\" ",
