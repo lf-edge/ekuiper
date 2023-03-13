@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022 EMQ Technologies Co., Ltd.
+  ~ Copyright 2023 EMQ Technologies Co., Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -179,7 +179,7 @@
         &quot;type&quot;: &quot;operator&quot;,&#xd;
         &quot;nodeType&quot;: &quot;filter&quot;,&#xd;
         &quot;props&quot;: {&#xd;
-          &quot;expr&quot;: &quot;humidity &gt; 30&quot;&#xd;
+          &quot;expr&quot;: &quot;humidity &gt; 20&quot;&#xd;
         }&#xd;
       },&#xd;
       &quot;aggfunc&quot;: {&#xd;
@@ -356,7 +356,7 @@
             <hashTree/>
             <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
               <stringProp name="JSON_PATH">$.sink_mqtt2_0_records_out_total</stringProp>
-              <stringProp name="EXPECTED_VALUE">4</stringProp>
+              <stringProp name="EXPECTED_VALUE">5</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
               <boolProp name="EXPECT_NULL">false</boolProp>
               <boolProp name="INVERT">false</boolProp>
@@ -521,7 +521,7 @@
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">4</stringProp>
+          <stringProp name="LoopController.loops">5</stringProp>
         </elementProp>
         <stringProp name="ThreadGroup.num_threads">1</stringProp>
         <stringProp name="ThreadGroup.ramp_time">1</stringProp>
