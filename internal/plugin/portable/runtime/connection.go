@@ -89,7 +89,7 @@ func (r *NanomsgReqChannel) Handshake() error {
 	if err != nil {
 		return err
 	}
-	err = r.sock.SetOption(mangos.OptionRecvDeadline, 5*time.Second)
+	err = r.sock.SetOption(mangos.OptionRecvDeadline, time.Duration(conf.Config.Portable.InitTimeout)*time.Millisecond)
 	if err != nil {
 		return err
 	}
