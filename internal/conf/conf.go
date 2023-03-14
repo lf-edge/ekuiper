@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -147,7 +147,8 @@ type KuiperConf struct {
 		}
 	}
 	Portable struct {
-		PythonBin string `yaml:"pythonBin"`
+		PythonBin   string `yaml:"pythonBin"`
+		InitTimeout int    `yaml:"initTimeout"`
 	}
 }
 
@@ -225,6 +226,9 @@ func InitConf() {
 
 	if Config.Portable.PythonBin == "" {
 		Config.Portable.PythonBin = "python"
+	}
+	if Config.Portable.InitTimeout <= 0 {
+		Config.Portable.InitTimeout = 5000
 	}
 	if Config.Source == nil {
 		Config.Source = &SourceConf{}

@@ -191,6 +191,8 @@ This section configures the portable plugin runtime.
       # The executable of python. Specify this if you have multiple python instances in your system
       # or other circumstance where the python executable cannot be successfully invoked through the default command.
       pythonBin: python
+      # control init timeout in ms. If the init time is longer than this value, the plugin will be terminated.
+      initTimeout: 5000
 ```
 
 ## Ruleset Provision
