@@ -191,6 +191,8 @@ GET http://localhost:9081/plugins/functions/prebuild
       # 配置 python 可执行文件的位置或命令。
       # 若系统中有多个 python 版本，可通过此配置指定具体的 python 地址。
       pythonBin: python
+      # 控制插件初始化超时时间，单位为毫秒。eKuiper portable 插件运行时会等待插件初始化以完成握手，若超时则终止插件进程
+      initTimeout: 5000
 ```
 
 ## 初始化规则集
