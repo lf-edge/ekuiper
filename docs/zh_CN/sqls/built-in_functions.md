@@ -197,6 +197,7 @@ AnalyticFuncName(<arguments>...) OVER ([WHEN <Expression>])
 | latest      | latest(expr, [default value])        | 返回表达式最新的非空值。如果没有找到，则返回默认值。否则，返回 nil 。                                                              |
 | changed_col | changed_col(true, col)               | 返回列的相比上次执行后的变化值。若未变化则返回 null 。                                                                     |
 | had_changed | had_changed(true, expr1, expr2, ...) | 返回是否上次运行后列的值有变化。 其参数可以为 * 以方便地监测所有列。                                                               |
+| coalesce    | coalesce(expr1, expr2, ...)          | 返回第一个非空参数，如果所有参数都是null，则返回null                                                               |
 
 示例1：获取之前温度值的函数
 

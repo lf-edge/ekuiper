@@ -16,10 +16,11 @@ package function
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"strings"
 )
 
 type funcExe func(ctx api.FunctionContext, args []interface{}) (interface{}, bool)
@@ -53,6 +54,7 @@ var analyticFuncs = map[string]struct{}{
 	"changed_col": {},
 	"had_changed": {},
 	"latest":      {},
+	"coalesce":    {},
 }
 
 const AnalyticPrefix = "$$a"

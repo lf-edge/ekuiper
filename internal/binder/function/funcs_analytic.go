@@ -16,11 +16,12 @@ package function
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"reflect"
-	"strconv"
 )
 
 // registerAnalyticFunc registers the analytic functions
@@ -234,6 +235,24 @@ func registerAnalyticFunc() {
 			l := len(args)
 			if l != 1 && l != 2 {
 				return fmt.Errorf("expect one or two args but got %d", l)
+			}
+			return nil
+		},
+	}
+
+	builtins["coalesce"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg != nil {
+					return arg, true
+				}
+			}
+			return nil, true
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if len(args) == 0 {
+				return fmt.Errorf("The arguments should be at least one.")
 			}
 			return nil
 		},

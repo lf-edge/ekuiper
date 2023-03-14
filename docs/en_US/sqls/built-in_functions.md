@@ -205,6 +205,7 @@ AnalyticFuncName(<arguments>...) OVER ([WHEN <Expression>])
 | latest      | latest(expr, [default value])        | Return the lastest non null value of the expression. If not found, return the default value specified , if default value not set, return nil.                                                                              |
 | changed_col | changed_col(true, col)               | Return the column value if it has changed from the last execution.                                                                                                                                                         |
 | had_changed | had_changed(true, expr1, expr2, ...) | Return if any of the columns had changed since the last run. The expression could be * to easily detect the change status of all columns.                                                                                  |
+| coalesce    | coalesce(expr1, expr2, ...)          | Return the first non null value. If all expr are null,return nil. | 
 
 Example function call to get the previous temperature value:
 
