@@ -71,3 +71,64 @@ func TestToMap(t *testing.T) {
 		}
 	}
 }
+func TestCoalesceExec(t *testing.T) {
+	f, ok := builtins["coalesce"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	var tests = []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 1
+			args: []interface{}{
+				"foo",
+				"bar",
+				"2",
+			},
+			result: "foo",
+		},
+		{ // 2
+			args: []interface{}{
+				nil,
+				"dd",
+				"1",
+			},
+			result: "dd",
+		},
+		{ // 3
+			args: []interface{}{
+				"bar",
+				nil,
+				"1",
+			},
+			result: "bar",
+		},
+		{ // 4
+			args: []interface{}{
+				nil,
+				nil,
+				"2",
+			},
+			result: "2",
+		},
+		{ // 4
+			args: []interface{}{
+				nil,
+				nil,
+				nil,
+			},
+			result: nil,
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}
