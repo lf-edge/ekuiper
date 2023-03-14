@@ -17,6 +17,7 @@ package runtime
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -28,6 +29,10 @@ import (
 	"testing"
 	"time"
 )
+
+func init() {
+	testx.InitEnv()
+}
 
 var okMsg = []byte("ok")
 
