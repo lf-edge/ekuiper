@@ -343,6 +343,23 @@ func registerMiscFunc() {
 		},
 		val: ValidateOneArg,
 	}
+	builtins["coalesce"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg != nil {
+					return arg, true
+				}
+			}
+			return nil, true
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if len(args) == 0 {
+				return fmt.Errorf("The arguments should be at least one.")
+			}
+			return nil
+		},
+	}
 	builtins["newuuid"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -508,6 +525,7 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
+
 }
 
 func round(num float64) int {
