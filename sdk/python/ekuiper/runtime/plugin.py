@@ -1,4 +1,4 @@
-#  Copyright 2021 EMQ Technologies Co., Ltd.
+#  Copyright 2021-2023 EMQ Technologies Co., Ltd.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import json
 import logging
 import sys
@@ -59,6 +60,7 @@ def start(c: PluginConfig):
     logging.info("starting plugin {}".format(c.name))
     ch = PairChannel(c.name, 0)
     ch.run(command_reply)
+    logging.info("started plugin {}".format(c.name))
 
 
 def init_vars(c: PluginConfig):
