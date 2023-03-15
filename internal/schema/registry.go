@@ -334,8 +334,7 @@ func removeSchemaInstallScript(schemaType def.SchemaType, name string) {
 	_ = schemaDb.Delete(key)
 }
 
-func GetSchemaInstallScript(schemaId string) (string, string) {
-	key := strings.ReplaceAll(schemaId, ".", "_")
+func GetSchemaInstallScript(key string) (string, string) {
 	var script string
 	schemaDb.Get(key, &script)
 	return key, script

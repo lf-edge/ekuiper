@@ -141,6 +141,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet)
+	r.HandleFunc("/data/partial/export", configurationPartialExportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
 	// Register extended routes
@@ -685,6 +686,18 @@ func configurationExport() ([]byte, error) {
 func configurationExportHandler(w http.ResponseWriter, r *http.Request) {
 	const name = "ekuiper_export.json"
 	jsonBytes, _ := configurationExport()
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Add("Content-Disposition", "Attachment")
+	http.ServeContent(w, r, name, time.Now(), bytes.NewReader(jsonBytes))
+}
+
+func configurationPartialExportHandler(w http.ResponseWriter, r *http.Request) {
+	const name = "ekuiper_export.json"
+
+	var rules []string
+	_ = json.NewDecoder(r.Body).Decode(&rules)
+
+	jsonBytes, _ := ruleMigrationProcessor.ConfigurationPartialExport(rules)
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Add("Content-Disposition", "Attachment")
 	http.ServeContent(w, r, name, time.Now(), bytes.NewReader(jsonBytes))

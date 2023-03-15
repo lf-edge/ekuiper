@@ -202,10 +202,14 @@ func (m *Manager) HasFunctionSet(_ string) bool {
 }
 
 func (m *Manager) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
-	funcContainer, _ := m.getFunction(funcName)
-	var installScript = ""
-	m.serviceInstallKV.Get(funcContainer.ServiceName, &installScript)
-	return plugin.SERVICE_EXTENSION, funcContainer.ServiceName, installScript
+	funcContainer, ok := m.getFunction(funcName)
+	if ok {
+		var installScript = ""
+		m.serviceInstallKV.Get(funcContainer.ServiceName, &installScript)
+		return plugin.SERVICE_EXTENSION, funcContainer.ServiceName, installScript
+	} else {
+		return plugin.NONE_EXTENSION, "", ""
+	}
 }
 
 func (m *Manager) Function(name string) (api.Function, error) {

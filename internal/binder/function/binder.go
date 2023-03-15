@@ -16,6 +16,7 @@ package function
 
 import (
 	"github.com/lf-edge/ekuiper/internal/binder"
+	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -61,6 +62,18 @@ func Function(name string) (api.Function, error) {
 		}
 	}
 	return nil, e.GetError()
+}
+
+func GetFunctionPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
+	for _, sf := range funcFactories {
+		t, s1, s2 := sf.GetFunctionPlugin(name)
+		if t == plugin.NONE_EXTENSION {
+			continue
+		} else {
+			return t, s1, s2
+		}
+	}
+	return plugin.NONE_EXTENSION, "", ""
 }
 
 func HasFunctionSet(name string) bool {

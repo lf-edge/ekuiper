@@ -586,11 +586,16 @@ func (rr *Manager) Source(name string) (api.Source, error) {
 }
 
 func (rr *Manager) GetSourcePlugin(name string) (plugin2.EXTENSION_TYPE, string, string) {
-	pluginName, _ := rr.GetPluginBySymbol(plugin2.SOURCE, name)
-	var installScript = ""
-	pluginKey := plugin2.PluginTypes[plugin2.SOURCE] + "_" + pluginName
-	rr.plgInstallDb.Get(pluginKey, &installScript)
-	return plugin2.NATIVE_EXTENSION, pluginKey, installScript
+	_, ok := rr.GetPluginVersionBySymbol(plugin2.SOURCE, name)
+	if ok {
+		pluginName, _ := rr.GetPluginBySymbol(plugin2.SOURCE, name)
+		var installScript = ""
+		pluginKey := plugin2.PluginTypes[plugin2.SOURCE] + "_" + pluginName
+		rr.plgInstallDb.Get(pluginKey, &installScript)
+		return plugin2.NATIVE_EXTENSION, pluginKey, installScript
+	} else {
+		return plugin2.NONE_EXTENSION, "", ""
+	}
 }
 
 func (rr *Manager) LookupSource(name string) (api.LookupSource, error) {
@@ -632,11 +637,16 @@ func (rr *Manager) Sink(name string) (api.Sink, error) {
 }
 
 func (rr *Manager) GetSinkPlugin(name string) (plugin2.EXTENSION_TYPE, string, string) {
-	pluginName, _ := rr.GetPluginBySymbol(plugin2.SINK, name)
-	var installScript = ""
-	pluginKey := plugin2.PluginTypes[plugin2.SINK] + "_" + pluginName
-	rr.plgInstallDb.Get(pluginKey, &installScript)
-	return plugin2.NATIVE_EXTENSION, pluginKey, installScript
+	_, ok := rr.GetPluginVersionBySymbol(plugin2.SINK, name)
+	if ok {
+		pluginName, _ := rr.GetPluginBySymbol(plugin2.SINK, name)
+		var installScript = ""
+		pluginKey := plugin2.PluginTypes[plugin2.SINK] + "_" + pluginName
+		rr.plgInstallDb.Get(pluginKey, &installScript)
+		return plugin2.NATIVE_EXTENSION, pluginKey, installScript
+	} else {
+		return plugin2.NONE_EXTENSION, "", ""
+	}
 }
 
 func (rr *Manager) Function(name string) (api.Function, error) {
@@ -665,11 +675,15 @@ func (rr *Manager) HasFunctionSet(name string) bool {
 }
 
 func (rr *Manager) GetFunctionPlugin(funcName string) (plugin2.EXTENSION_TYPE, string, string) {
-	pluginName, _ := rr.GetPluginBySymbol(plugin2.FUNCTION, funcName)
-	var installScript = ""
-	pluginKey := plugin2.PluginTypes[plugin2.FUNCTION] + "_" + pluginName
-	rr.plgInstallDb.Get(pluginKey, &installScript)
-	return plugin2.NATIVE_EXTENSION, pluginKey, installScript
+	pluginName, ok := rr.GetPluginBySymbol(plugin2.FUNCTION, funcName)
+	if ok {
+		var installScript = ""
+		pluginKey := plugin2.PluginTypes[plugin2.FUNCTION] + "_" + pluginName
+		rr.plgInstallDb.Get(pluginKey, &installScript)
+		return plugin2.NATIVE_EXTENSION, pluginKey, installScript
+	} else {
+		return plugin2.NONE_EXTENSION, "", ""
+	}
 }
 
 func (rr *Manager) ConvName(name string) (string, bool) {

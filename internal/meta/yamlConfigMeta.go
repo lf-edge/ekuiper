@@ -440,18 +440,16 @@ func GetConfigurations() YamlConfigurationSet {
 }
 
 type YamlConfigurationKeys struct {
-	sources     map[string][]string
-	sinks       map[string][]string
-	connections map[string][]string
+	Sources map[string][]string
+	Sinks   map[string][]string
 }
 
 func GetConfigurationsFor(yaml YamlConfigurationKeys) YamlConfigurationSet {
 	ConfigManager.lock.RLock()
 	defer ConfigManager.lock.RUnlock()
 
-	sourcesConfigKeys := yaml.sources
-	sinksConfigKeys := yaml.sinks
-	connectionsConfigKeys := yaml.connections
+	sourcesConfigKeys := yaml.Sources
+	sinksConfigKeys := yaml.Sinks
 
 	result := YamlConfigurationSet{
 		Sources:     map[string]string{},
@@ -465,13 +463,10 @@ func GetConfigurationsFor(yaml YamlConfigurationKeys) YamlConfigurationSet {
 	for key, ops := range ConfigManager.cfgOperators {
 		if strings.HasPrefix(key, ConnectionCfgOperatorKeyPrefix) {
 			plugin := strings.TrimPrefix(key, ConnectionCfgOperatorKeyPrefix)
-			keys, ok := connectionsConfigKeys[plugin]
-			if ok {
-				cfs := ops.CopyUpdatableConfContentFor(keys)
-				if len(cfs) > 0 {
-					jsonByte, _ := json.Marshal(cfs)
-					connectionResources[plugin] = string(jsonByte)
-				}
+			cfs := ops.CopyUpdatableConfContent()
+			if len(cfs) > 0 {
+				jsonByte, _ := json.Marshal(cfs)
+				connectionResources[plugin] = string(jsonByte)
 			}
 			continue
 		}
@@ -482,7 +477,7 @@ func GetConfigurationsFor(yaml YamlConfigurationKeys) YamlConfigurationSet {
 				cfs := ops.CopyUpdatableConfContentFor(keys)
 				if len(cfs) > 0 {
 					jsonByte, _ := json.Marshal(cfs)
-					connectionResources[plugin] = string(jsonByte)
+					srcResources[plugin] = string(jsonByte)
 				}
 			}
 			continue
@@ -494,7 +489,7 @@ func GetConfigurationsFor(yaml YamlConfigurationKeys) YamlConfigurationSet {
 				cfs := ops.CopyUpdatableConfContentFor(keys)
 				if len(cfs) > 0 {
 					jsonByte, _ := json.Marshal(cfs)
-					connectionResources[plugin] = string(jsonByte)
+					sinkResources[plugin] = string(jsonByte)
 				}
 			}
 			continue

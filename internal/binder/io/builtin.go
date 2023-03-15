@@ -62,8 +62,12 @@ func (m *Manager) Source(name string) (api.Source, error) {
 	return nil, nil
 }
 
-func (m *Manager) GetSourcePlugin(_ string) (plugin2.EXTENSION_TYPE, string, string) {
-	return plugin2.INTERNAL, "", ""
+func (m *Manager) GetSourcePlugin(name string) (plugin2.EXTENSION_TYPE, string, string) {
+	if _, ok := sources[name]; ok {
+		return plugin2.INTERNAL, "", ""
+	} else {
+		return plugin2.NONE_EXTENSION, "", ""
+	}
 }
 
 func (m *Manager) LookupSource(name string) (api.LookupSource, error) {
@@ -80,8 +84,12 @@ func (m *Manager) Sink(name string) (api.Sink, error) {
 	return nil, nil
 }
 
-func (m *Manager) GetSinkPlugin(_ string) (plugin2.EXTENSION_TYPE, string, string) {
-	return plugin2.INTERNAL, "", ""
+func (m *Manager) GetSinkPlugin(name string) (plugin2.EXTENSION_TYPE, string, string) {
+	if _, ok := sinks[name]; ok {
+		return plugin2.INTERNAL, "", ""
+	} else {
+		return plugin2.NONE_EXTENSION, "", ""
+	}
 }
 
 var m = &Manager{}
