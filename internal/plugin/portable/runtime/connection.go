@@ -132,28 +132,34 @@ func (r *NanomsgReqRepChannel) Req(arg []byte) ([]byte, error) {
 	r.Lock()
 	defer r.Unlock()
 	conf.Log.Debugf("send request: %s", string(arg))
-	err := r.sock.Send(arg)
-	// resend if protocol state wrong, because of plugin restart or other problems
-	if err == mangos.ErrProtoState {
-		conf.Log.Debugf("send request protestate error %s", err.Error())
-		var prev []byte
-		prev, err = r.sock.Recv()
-		if err == nil {
-			conf.Log.Warnf("discard previous response: %s", string(prev))
-			conf.Log.Debugf("resend request: %s", string(arg))
-			err = r.sock.Send(arg)
+	for {
+		err := r.sock.Send(arg)
+		// resend if protocol state wrong, because of plugin restart or other problems
+		if err == mangos.ErrProtoState {
+			conf.Log.Debugf("send request protestate error %s", err.Error())
+			var prev []byte
+			prev, err = r.sock.Recv()
+			if err == nil {
+				conf.Log.Warnf("discard previous response: %s", string(prev))
+				conf.Log.Debugf("resend request: %s", string(arg))
+				err = r.sock.Send(arg)
+			}
 		}
+		if err != nil {
+			return nil, fmt.Errorf("can't send message on function rep socket: %s", err.Error())
+		}
+		result, e := r.sock.Recv()
+		if e != nil {
+			conf.Log.Errorf("can't receive: %s", e.Error())
+		} else {
+			conf.Log.Debugf("receive response: %s", string(result))
+		}
+		if result[0] == 'h' {
+			conf.Log.Debugf("receive handshake response: %s", string(result))
+			continue
+		}
+		return result, e
 	}
-	if err != nil {
-		return nil, fmt.Errorf("can't send message on function rep socket: %s", err.Error())
-	}
-	result, e := r.sock.Recv()
-	if e != nil {
-		conf.Log.Errorf("can't receive: %s", e.Error())
-	} else {
-		conf.Log.Debugf("receive response: %s", string(result))
-	}
-	return result, e
 }
 
 func CreateSourceChannel(ctx api.StreamContext) (DataInChannel, error) {

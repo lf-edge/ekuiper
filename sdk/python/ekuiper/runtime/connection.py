@@ -1,4 +1,4 @@
-#  Copyright 2021 EMQ Technologies Co., Ltd.
+#  Copyright 2021-2023 EMQ Technologies Co., Ltd.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import logging
 import time
 from typing import Callable
@@ -27,10 +28,11 @@ class PairChannel:
             url = "ipc:///tmp/plugin_{}.ipc".format(name)
         else:
             url = "ipc:///tmp/func_{}.ipc".format(name)
+        logging.info("dialing {}".format(url))
         try:
             dial_with_retry(s, url)
         except Exception as e:
-            print(e)
+            logging.info("control/function channel {} cannot created {}".format(url, e))
             exit(0)
         self.sock = s
 
@@ -105,7 +107,8 @@ def dial_with_retry(sock, url: str):
         try:
             sock.dial(url, block=True)
             break
-        except Exception:
+        except Exception as e:
+            logging.debug("dial error {}".format(e))
             retry_count -= 1
             if retry_count < 0:
                 raise

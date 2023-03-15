@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -208,7 +208,6 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	}
 	// ins process has not run yet
 	if !pluginCreation && ins.ctrlChan != nil {
-		conf.Log.Warnf("plugin %s is not run yet", pluginMeta.Name)
 		return ins, nil
 	}
 	// should only happen for first start, then the ctrl channel will keep running
@@ -255,7 +254,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	conf.Log.Println("plugin starting")
 	err = cmd.Start()
 	if err != nil {
-		return nil, fmt.Errorf("plugin executable %s starts with error %v", pluginMeta.Executable, err)
+		return nil, fmt.Errorf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
 	}
 	process := cmd.Process
 	conf.Log.Printf("plugin started pid: %d\n", process.Pid)
