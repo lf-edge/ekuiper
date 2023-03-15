@@ -129,7 +129,12 @@ func (m *Manager) HasFunctionSet(name string) bool {
 }
 
 func (m *Manager) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
-	return plugin.INTERNAL, "", ""
+	_, ok := builtins[funcName]
+	if !ok {
+		return plugin.NONE_EXTENSION, "", ""
+	} else {
+		return plugin.INTERNAL, "", ""
+	}
 }
 
 func (m *Manager) ConvName(n string) (string, bool) {

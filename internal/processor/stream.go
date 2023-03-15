@@ -265,7 +265,7 @@ func (p *StreamProcessor) ShowTable(kind string) ([]string, error) {
 	return result, nil
 }
 
-func (p *StreamProcessor) getStream(name string, st ast.StreamType) (string, error) {
+func (p *StreamProcessor) GetStream(name string, st ast.StreamType) (string, error) {
 	vs, err := xsql.GetDataSourceStatement(p.db, name)
 	if vs != nil && vs.StreamType == st {
 		return vs.Statement, nil
@@ -336,7 +336,7 @@ func printOptions(opts *ast.Options, buff *bytes.Buffer) {
 }
 
 func (p *StreamProcessor) DescStream(name string, st ast.StreamType) (ast.Statement, error) {
-	statement, err := p.getStream(name, st)
+	statement, err := p.GetStream(name, st)
 	if err != nil {
 		return nil, fmt.Errorf("Describe %s fails, %s.", ast.StreamTypeMap[st], err)
 	}
@@ -349,7 +349,7 @@ func (p *StreamProcessor) DescStream(name string, st ast.StreamType) (ast.Statem
 }
 
 func (p *StreamProcessor) GetInferredSchema(name string, st ast.StreamType) (ast.StreamFields, error) {
-	statement, err := p.getStream(name, st)
+	statement, err := p.GetStream(name, st)
 	if err != nil {
 		return nil, fmt.Errorf("Describe %s fails, %s.", ast.StreamTypeMap[st], err)
 	}
@@ -370,7 +370,7 @@ func (p *StreamProcessor) GetInferredSchema(name string, st ast.StreamType) (ast
 
 // GetInferredJsonSchema return schema in json schema type
 func (p *StreamProcessor) GetInferredJsonSchema(name string, st ast.StreamType) (map[string]*ast.JsonStreamField, error) {
-	statement, err := p.getStream(name, st)
+	statement, err := p.GetStream(name, st)
 	if err != nil {
 		return nil, fmt.Errorf("Describe %s fails, %s.", ast.StreamTypeMap[st], err)
 	}
@@ -394,7 +394,7 @@ func (p *StreamProcessor) GetInferredJsonSchema(name string, st ast.StreamType) 
 }
 
 func (p *StreamProcessor) execExplain(stmt ast.NameNode, st ast.StreamType) (string, error) {
-	_, err := p.getStream(stmt.GetName(), st)
+	_, err := p.GetStream(stmt.GetName(), st)
 	if err != nil {
 		return "", fmt.Errorf("Explain %s fails, %s.", ast.StreamTypeMap[st], err)
 	}
@@ -416,7 +416,7 @@ func (p *StreamProcessor) DropStream(name string, st ast.StreamType) (string, er
 			return "", err
 		}
 	}
-	_, err := p.getStream(name, st)
+	_, err := p.GetStream(name, st)
 	if err != nil {
 		return "", err
 	}

@@ -38,12 +38,13 @@ import (
 )
 
 var (
-	logger           = conf.Log
-	startTimeStamp   int64
-	version          = ""
-	ruleProcessor    *processor.RuleProcessor
-	streamProcessor  *processor.StreamProcessor
-	rulesetProcessor *processor.RulesetProcessor
+	logger                 = conf.Log
+	startTimeStamp         int64
+	version                = ""
+	ruleProcessor          *processor.RuleProcessor
+	streamProcessor        *processor.StreamProcessor
+	rulesetProcessor       *processor.RulesetProcessor
+	ruleMigrationProcessor *processor.RuleMigrationProcessor
 )
 
 // Create path if mount an empty dir. For edgeX, all the folders must be created priorly
@@ -94,6 +95,7 @@ func StartUp(Version, LoadFileType string) {
 	ruleProcessor = processor.NewRuleProcessor()
 	streamProcessor = processor.NewStreamProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
+	ruleMigrationProcessor = processor.NewRuleMigrationProcessor(ruleProcessor, streamProcessor)
 
 	// register all extensions
 	for k, v := range components {

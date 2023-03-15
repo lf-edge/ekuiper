@@ -40,7 +40,7 @@ func (m *Manager) HasFunctionSet(funcName string) bool {
 }
 
 func (m *Manager) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
-	return plugin.WASM_EXTENSION, "", ""
+	return plugin.NONE_EXTENSION, "", ""
 }
 
 func (m *Manager) ConvName(funcName string) (string, bool) {

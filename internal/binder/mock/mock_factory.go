@@ -77,7 +77,7 @@ func (f *MockFactory) HasFunctionSet(funcName string) bool {
 }
 
 func (f *MockFactory) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
-	return plugin.INTERNAL, "", ""
+	return plugin.NONE_EXTENSION, "", ""
 }
 
 type mockFunc struct{}

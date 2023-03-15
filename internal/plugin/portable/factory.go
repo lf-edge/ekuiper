@@ -31,10 +31,14 @@ func (m *Manager) Source(name string) (api.Source, error) {
 }
 
 func (m *Manager) GetSourcePlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
-	pluginName, _ := m.reg.GetSymbol(plugin.SOURCE, name)
-	var installScript = ""
-	m.plgInstallDb.Get(pluginName, &installScript)
-	return plugin.PORTABLE_EXTENSION, pluginName, installScript
+	pluginName, ok := m.reg.GetSymbol(plugin.SOURCE, name)
+	if ok {
+		var installScript = ""
+		m.plgInstallDb.Get(pluginName, &installScript)
+		return plugin.PORTABLE_EXTENSION, pluginName, installScript
+	} else {
+		return plugin.NONE_EXTENSION, "", ""
+	}
 }
 
 func (m *Manager) LookupSource(_ string) (api.LookupSource, error) {
@@ -51,10 +55,14 @@ func (m *Manager) Sink(name string) (api.Sink, error) {
 }
 
 func (m *Manager) GetSinkPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
-	pluginName, _ := m.reg.GetSymbol(plugin.SINK, name)
-	var installScript = ""
-	m.plgInstallDb.Get(pluginName, &installScript)
-	return plugin.PORTABLE_EXTENSION, pluginName, installScript
+	pluginName, ok := m.reg.GetSymbol(plugin.SINK, name)
+	if ok {
+		var installScript = ""
+		m.plgInstallDb.Get(pluginName, &installScript)
+		return plugin.PORTABLE_EXTENSION, pluginName, installScript
+	} else {
+		return plugin.NONE_EXTENSION, "", ""
+	}
 }
 
 // The function instance are kept forever even after deletion
@@ -87,10 +95,14 @@ func (m *Manager) HasFunctionSet(funcName string) bool {
 }
 
 func (m *Manager) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
-	pluginName, _ := m.reg.GetSymbol(plugin.FUNCTION, funcName)
-	var installScript = ""
-	m.plgInstallDb.Get(pluginName, &installScript)
-	return plugin.PORTABLE_EXTENSION, pluginName, installScript
+	pluginName, ok := m.reg.GetSymbol(plugin.FUNCTION, funcName)
+	if ok {
+		var installScript = ""
+		m.plgInstallDb.Get(pluginName, &installScript)
+		return plugin.PORTABLE_EXTENSION, pluginName, installScript
+	} else {
+		return plugin.NONE_EXTENSION, "", ""
+	}
 }
 
 func (m *Manager) ConvName(funcName string) (string, bool) {

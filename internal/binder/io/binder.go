@@ -17,6 +17,7 @@ package io
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder"
+	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
@@ -68,6 +69,18 @@ func Source(name string) (api.Source, error) {
 	return nil, e.GetError()
 }
 
+func GetSourcePlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
+	for _, sf := range sourceFactories {
+		t, s1, s2 := sf.GetSourcePlugin(name)
+		if t == plugin.NONE_EXTENSION {
+			continue
+		} else {
+			return t, s1, s2
+		}
+	}
+	return plugin.NONE_EXTENSION, "", ""
+}
+
 func Sink(name string) (api.Sink, error) {
 	e := make(errorx.MultiError)
 	for i, sf := range sinkFactories {
@@ -80,6 +93,18 @@ func Sink(name string) (api.Sink, error) {
 		}
 	}
 	return nil, e.GetError()
+}
+
+func GetSinkPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
+	for _, sf := range sinkFactories {
+		t, s1, s2 := sf.GetSinkPlugin(name)
+		if t == plugin.NONE_EXTENSION {
+			continue
+		} else {
+			return t, s1, s2
+		}
+	}
+	return plugin.NONE_EXTENSION, "", ""
 }
 
 func LookupSource(name string) (api.LookupSource, error) {
