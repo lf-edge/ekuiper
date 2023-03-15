@@ -349,5 +349,5 @@ Current rule does not filter any data that are sent to eKuiper, so how to filter
  If you want to explore more features of eKuiper, please refer to below resources.
 
 - [eKuiper Github code repository](https://github.com/lf-edge/ekuiper/)
-- [eKuiper reference guide](https://github.com/lf-edge/ekuiper/blob/edgex/docs/en_US/reference.md)
+- [eKuiper reference guide](../guide/streams/overview.md)
 

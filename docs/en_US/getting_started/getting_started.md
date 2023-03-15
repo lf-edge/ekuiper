@@ -109,7 +109,7 @@ default:
   server: "tcp://127.0.0.1:1883"
 ```
 
-You can use command `kuiper show streams` to see if the `demo` stream was created or not.
+You can use command `bin/kuiper show streams` to see if the `demo` stream was created or not.
 
 ### Testing the stream through query tool
 
