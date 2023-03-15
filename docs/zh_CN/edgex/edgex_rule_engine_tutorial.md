@@ -336,5 +336,5 @@ Connecting to 127.0.0.1:20498...
 如想了解更多的 LF Edge eKuiper 的信息，请参考以下资源。
 
 - [eKuiper Github 代码库](https://github.com/lf-edge/ekuiper/)
-- [eKuiper 参考指南](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/reference.md)
+- [eKuiper 参考指南](../guide/streams/overview.md)
 

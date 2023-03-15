@@ -30,14 +30,14 @@ Below is the list of data types supported.
 
 | #   | Data type | Description                                                                                                               |
 |-----|-----------|---------------------------------------------------------------------------------------------------------------------------|
-| 1   | bigint    |                                                                                                                           |
-| 2   | float     |                                                                                                                           |
-| 3   | string    |                                                                                                                           |
-| 4   | datetime  |                                                                                                                           |
-| 5   | boolean   |                                                                                                                           |
-| 6   | bytea     | A sequence of bytes to store binary data. If the stream format is "JSON", the bytea field must be a base64 encoded string |
+| 1   | bigint    | The int type.                                     |
+| 2   | float     | The float type.                                   |
+| 3   | string    | Text values, comprised of Unicode characters.     |
+| 4   | datetime  | datetime type.                                    |
+| 5   | boolean   |The boolean type, the value could be `true` or `false`.|
+| 6   | bytea     | A sequence of bytes to store binary data. If the stream format is "JSON", the bytea field must be a base64 encoded string. |
 | 7   | array     | The array type, can be any simple types or array and type.                                                                |
-| 8   | struct    | The complex type.                                                                                                         |
+| 8   | struct    | The complex type.                                 |
 
 ### Stream Properties
 
