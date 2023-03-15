@@ -43,6 +43,10 @@ func (m *Manager) Sink(name string) (api.Sink, error) {
 	return runtime.NewPortableSink(name, meta), nil
 }
 
+// The function instance are kept forever even after deletion
+// The instance is actually a wrapper of the nng channel which is dependant from the plugin instance
+// Even updated plugin instance can reuse the channel if the function name is not changed
+// It is not used to check if the function is bound, use ConvName which checks the meta
 var funcInsMap = &sync.Map{}
 
 func (m *Manager) Function(name string) (api.Function, error) {
@@ -71,22 +75,4 @@ func (m *Manager) HasFunctionSet(funcName string) bool {
 func (m *Manager) ConvName(funcName string) (string, bool) {
 	_, ok := m.GetPluginMeta(plugin.FUNCTION, funcName)
 	return funcName, ok
-}
-
-// Clean up function map
-func (m *Manager) Clean() {
-	funcInsMap.Range(func(_, ins interface{}) bool {
-		f := ins.(*runtime.PortableFunc)
-		_ = f.Close()
-		return true
-	})
-	funcInsMap = &sync.Map{}
-}
-
-func (m *Manager) DeleteFunc(funcName string) {
-	f, ok := funcInsMap.Load(funcName)
-	if ok {
-		_ = f.(*runtime.PortableFunc).Close()
-		funcInsMap.Delete(funcName)
-	}
 }

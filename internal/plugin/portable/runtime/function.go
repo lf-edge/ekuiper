@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,11 +23,15 @@ import (
 )
 
 // PortableFunc each function symbol only has a singleton
-// Each singleton are long running go routine.
+// Each singleton are long-running go routine
+// Currently, it is cached and never ended once created
+// It is actually a wrapper of the data channel and can be fit to any plugin instance
+// Thus, it is possible to hot reload, which is simply attach a new nng client to the same channel
+// without changing the server(plugin runtime) side
 // TODO think about ending a portable func when needed.
 type PortableFunc struct {
 	symbolName string
-	reg        *PluginMeta
+	reg        *PluginMeta // initial plugin meta, only used for initialize the function instance
 	dataCh     DataReqChannel
 	isAgg      int // 0 - not calculate yet, 1 - no, 2 - yes
 }
@@ -40,9 +44,9 @@ func NewPortableFunc(symbolName string, reg *PluginMeta) (*PortableFunc, error) 
 	if err != nil {
 		return nil, err
 	}
-	conf.Log.Infof("Plugin started successfully")
 
 	// Create function channel
+	conf.Log.Infof("creating function channel for symbol %s", symbolName)
 	dataCh, err := CreateFunctionChannel(symbolName)
 	if err != nil {
 		return nil, err
@@ -54,6 +58,7 @@ func NewPortableFunc(symbolName string, reg *PluginMeta) (*PortableFunc, error) 
 		PluginType: TYPE_FUNC,
 	}
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, conf.Log)
+	conf.Log.Infof("starting symbol %s", symbolName)
 	err = ins.StartSymbol(ctx, c)
 	if err != nil {
 		return nil, err
@@ -104,16 +109,8 @@ func (f *PortableFunc) Exec(args []interface{}, ctx api.FunctionContext) (interf
 	}
 	fr := &FuncReply{}
 	err = json.Unmarshal(res, fr)
-	if err != nil { // retry if receive handshake after restart function process
-		ctx.GetLogger().Warnf("Failed to unmarshal function result %s", string(res))
-		res, err = f.dataCh.Req(jsonArg)
-		if err != nil {
-			return err, false
-		}
-		err = json.Unmarshal(res, fr)
-		if err != nil {
-			return err, false
-		}
+	if err != nil {
+		return fmt.Errorf("Failed to unmarshal function result %s", string(res)), false
 	}
 	if !fr.State {
 		if fr.Result != nil {
