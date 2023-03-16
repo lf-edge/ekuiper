@@ -143,3 +143,7 @@ func schemaStatusExport() map[string]string {
 func schemaImport(s map[string]string) error {
 	return schema.ImportSchema(s)
 }
+
+func schemaPartialImport(s map[string]string) map[string]string {
+	return schema.SchemaPartialImport(s)
+}

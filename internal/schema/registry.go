@@ -299,6 +299,37 @@ func ImportSchema(schema map[string]string) error {
 	return schemaDb.Set(BOOT_INSTALL, BOOT_INSTALL)
 }
 
+// SchemaPartialImport compare the schema to be installed and the one in database
+// if not exist in database, install;
+// if exist, ignore
+func SchemaPartialImport(schemas map[string]string) map[string]string {
+	errMap := map[string]string{}
+	for k, v := range schemas {
+		schemaScript := ""
+		found, _ := schemaDb.Get(k, &schemaScript)
+		if !found {
+			err := schemaRegisterForImport(k, v)
+			if err != nil {
+				errMap[k] = err.Error()
+			}
+		}
+	}
+	return errMap
+}
+
+func schemaRegisterForImport(k, v string) error {
+	info := &Info{}
+	err := json.Unmarshal([]byte(v), info)
+	if err != nil {
+		return err
+	}
+	err = CreateOrUpdateSchema(info)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func schemaInstallWhenReboot() {
 	allPlgs, err := schemaDb.All()
 	if err != nil {
@@ -309,16 +340,9 @@ func schemaInstallWhenReboot() {
 	_ = schemaStatusDb.Clean()
 
 	for k, v := range allPlgs {
-		info := &Info{}
-		err := json.Unmarshal([]byte(v), info)
+		err := schemaRegisterForImport(k, v)
 		if err != nil {
 			_ = schemaStatusDb.Set(k, err.Error())
-			continue
-		}
-		err = CreateOrUpdateSchema(info)
-		if err != nil {
-			_ = schemaStatusDb.Set(k, err.Error())
-			continue
 		}
 	}
 }

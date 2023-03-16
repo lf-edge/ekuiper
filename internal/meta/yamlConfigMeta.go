@@ -580,3 +580,58 @@ func LoadConfigurations(configSets YamlConfigurationSet) {
 		}
 	}
 }
+
+func LoadConfigurationsPartial(configSets YamlConfigurationSet) YamlConfigurationSet {
+	configResponse := YamlConfigurationSet{
+		Sources:     map[string]string{},
+		Sinks:       map[string]string{},
+		Connections: map[string]string{},
+	}
+
+	var srcResources = configSets.Sources
+	var sinkResources = configSets.Sinks
+	var connectionResources = configSets.Connections
+
+	for key, val := range srcResources {
+		configs := YamlConfigurations{}
+		err := json.Unmarshal([]byte(val), &configs)
+		if err != nil {
+			configResponse.Sources[key] = err.Error()
+			continue
+		}
+		err = addSourceConfKeys(key, configs)
+		if err != nil {
+			configResponse.Sources[key] = err.Error()
+			continue
+		}
+	}
+
+	for key, val := range sinkResources {
+		configs := YamlConfigurations{}
+		err := json.Unmarshal([]byte(val), &configs)
+		if err != nil {
+			configResponse.Sinks[key] = err.Error()
+			continue
+		}
+		err = addSinkConfKeys(key, configs)
+		if err != nil {
+			configResponse.Sinks[key] = err.Error()
+			continue
+		}
+	}
+
+	for key, val := range connectionResources {
+		configs := YamlConfigurations{}
+		err := json.Unmarshal([]byte(val), &configs)
+		if err != nil {
+			configResponse.Connections[key] = err.Error()
+			continue
+		}
+		err = addConnectionConfKeys(key, configs)
+		if err != nil {
+			configResponse.Connections[key] = err.Error()
+			continue
+		}
+	}
+	return configResponse
+}
