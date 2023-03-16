@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ func NewPortableSource(symbolName string, reg *PluginMeta) *PortableSource {
 func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	ctx.GetLogger().Infof("Start running portable source %s with datasource %s and conf %+v", ps.symbolName, ps.topic, ps.props)
 	pm := GetPluginInsManager()
-	ins, err := pm.getOrStartProcess(ps.reg, PortbleConf, false)
+	ins, err := pm.getOrStartProcess(ps.reg, PortbleConf)
 	if err != nil {
 		infra.DrainError(ctx, err, errCh)
 		return

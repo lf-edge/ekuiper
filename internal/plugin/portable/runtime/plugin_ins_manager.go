@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -72,6 +72,14 @@ func NewPluginInsForTest(name string, ctrlChan ControlChannel) *PluginIns {
 	}
 }
 
+func (i *PluginIns) sendCmd(jsonArg []byte) error {
+	err := i.ctrlChan.SendCmd(jsonArg)
+	if err != nil && i.process == nil {
+		return fmt.Errorf("plugin %s is not running sucessfully, please make sure it is valid", i.name)
+	}
+	return err
+}
+
 func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	arg, err := json.Marshal(ctrl)
 	if err != nil {
@@ -85,7 +93,7 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	if err != nil {
 		return err
 	}
-	err = i.ctrlChan.SendCmd(jsonArg)
+	err = i.sendCmd(jsonArg)
 	if err == nil {
 		i.Lock()
 		i.commands[ctrl.Meta] = jsonArg
@@ -108,7 +116,7 @@ func (i *PluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
 	if err != nil {
 		return err
 	}
-	err = i.ctrlChan.SendCmd(jsonArg)
+	err = i.sendCmd(jsonArg)
 	if err == nil {
 		referred := false
 		i.Lock()
@@ -181,7 +189,7 @@ func (p *pluginInsManager) CreateIns(pluginMeta *PluginMeta) {
 	defer p.Unlock()
 	if ins, ok := p.instances[pluginMeta.Name]; ok {
 		if len(ins.commands) != 0 {
-			go p.getOrStartProcess(pluginMeta, PortbleConf, true)
+			go p.getOrStartProcess(pluginMeta, PortbleConf)
 		}
 	}
 }
@@ -193,7 +201,7 @@ func (p *pluginInsManager) CreateIns(pluginMeta *PluginMeta) {
 // During plugin delete/update, if the commands is not empty, keep the ins for next creation and restore
 // 1. During creation, clean up those resources for any errors in defer immediately after the resource is created.
 // 2. During plugin running, when detecting plugin process exit, clean up those resources for the current ins.
-func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig, pluginCreation bool) (*PluginIns, error) {
+func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
 	p.Lock()
 	defer p.Unlock()
 	var (
@@ -207,7 +215,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		p.instances[pluginMeta.Name] = ins
 	}
 	// ins process has not run yet
-	if !pluginCreation && ins.ctrlChan != nil {
+	if ins.process != nil && ins.ctrlChan != nil {
 		return ins, nil
 	}
 	// should only happen for first start, then the ctrl channel will keep running
@@ -217,11 +225,6 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		if err != nil {
 			return nil, fmt.Errorf("can't create new control channel: %s", err.Error())
 		}
-		defer func() {
-			if err != nil {
-				_ = ctrlChan.Close()
-			}
-		}()
 		ins.ctrlChan = ctrlChan
 	}
 	// init or restart all need to run the process
@@ -269,7 +272,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	process := cmd.Process
 	conf.Log.Printf("plugin started pid: %d\n", process.Pid)
 	defer func() {
-		if err != nil {
+		if e != nil {
 			_ = process.Kill()
 		}
 	}()
@@ -305,7 +308,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	conf.Log.Info("restore plugin symbols")
 	for m, c := range ins.commands {
 		go func(key Meta, jsonArg []byte) {
-			e := ins.ctrlChan.SendCmd(jsonArg)
+			e := ins.sendCmd(jsonArg)
 			if e != nil {
 				conf.Log.Errorf("send command to %v error: %v", key, e)
 			}
