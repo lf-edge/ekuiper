@@ -154,7 +154,7 @@ func (r *NanomsgReqRepChannel) Req(arg []byte) ([]byte, error) {
 		} else {
 			conf.Log.Debugf("receive response: %s", string(result))
 		}
-		if result[0] == 'h' {
+		if len(result) > 0 && result[0] == 'h' {
 			conf.Log.Debugf("receive handshake response: %s", string(result))
 			continue
 		}
@@ -255,13 +255,13 @@ func setSockOptions(sock mangos.Socket, sockOptions map[string]interface{}) {
 
 func listenWithRetry(sock mangos.Socket, url string) error {
 	var (
-		retryCount    = 300
+		retryCount    = 5
 		retryInterval = 100
 	)
 	for {
 		err := sock.Listen(url)
 		if err == nil {
-			conf.Log.Infof("start to listen at %s after %d tries", url, 301-retryCount)
+			conf.Log.Infof("start to listen at %s after %d tries", url, 5-retryCount)
 			return err
 		}
 		retryCount--

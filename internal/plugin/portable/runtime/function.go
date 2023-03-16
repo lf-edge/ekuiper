@@ -36,11 +36,11 @@ type PortableFunc struct {
 	isAgg      int // 0 - not calculate yet, 1 - no, 2 - yes
 }
 
-func NewPortableFunc(symbolName string, reg *PluginMeta) (*PortableFunc, error) {
+func NewPortableFunc(symbolName string, reg *PluginMeta) (_ *PortableFunc, e error) {
 	// Setup channel and route the data
 	conf.Log.Infof("Start running portable function meta %+v", reg)
 	pm := GetPluginInsManager()
-	ins, err := pm.getOrStartProcess(reg, PortbleConf, false)
+	ins, err := pm.getOrStartProcess(reg, PortbleConf)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +51,11 @@ func NewPortableFunc(symbolName string, reg *PluginMeta) (*PortableFunc, error) 
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if e != nil {
+			dataCh.Close()
+		}
+	}()
 
 	// Start symbol
 	c := &Control{
