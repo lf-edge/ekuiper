@@ -26,8 +26,8 @@
 				"control": "field",
 				"type": "string",
 				"hint": {
-					"en_US": "The field to revert.",
-					"zh_CN": "用于反转的字段名"
+					"en_US": "The field to revert",
+					"zh_CN": "字段名"
 				},
 				"label": {
 					"en_US": "Field",
@@ -39,15 +39,15 @@
 			"type": "string",
 			"hint": {
 				"en_US": "Reverted string",
-				"zh_CN": "反转值"
+				"zh_CN": "反转后的字符串"
 			}
 		},
 		"node": {
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "Revert",
-				"zh_CN": "反转"
+				"en_US": "String Revert",
+				"zh_CN": "字符串反转"
 			}
 		}
 	}]

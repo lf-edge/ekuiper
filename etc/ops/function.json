@@ -13,8 +13,8 @@
       "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/query_language_elements.md"
     },
     "description": {
-      "en_US": "An operation to invoke a function",
-      "zh_CN": "用于调用函数的操作"
+      "en_US": "An operation to invoke a function or multiple functions",
+      "zh_CN": "用于调用或嵌套调用函数的操作"
     }
   },
   "properties": [{

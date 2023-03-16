@@ -201,11 +201,11 @@
     }
   ],
   "node": {
-    "category": "Sink",
+    "category": "sink",
     "icon": "iconPath",
     "label": {
-      "en": "Tdengine",
-      "zh": "Tdengine"
+      "en": "TDengine 2",
+      "zh": "TDengine 2"
     }
   }
 }

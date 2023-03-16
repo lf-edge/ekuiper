@@ -27,20 +27,18 @@
 		},
 		"args": [
 			{
-				"name": "inputData",
-				"hidden": true,
+				"name": "field",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据"
+					"en_US": "The field to calculate the word count.",
+					"zh_CN": "用于计算字数的字段名"
 				},
 				"label": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据"
-				},
-				"values": []
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
 			}
 		],
 		"return": {
@@ -54,8 +52,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "AccumulateWordCount",
-				"zh_CN": "AccumulateWordCount"
+				"en_US": "Accumulate Word Count",
+				"zh_CN": "累计字数"
 			}
 		}
 	}]
