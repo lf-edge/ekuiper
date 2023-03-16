@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021-2022 EMQ Technologies Co., Ltd.
+  ~ Copyright 2023 EMQ Technologies Co., Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -527,7 +527,7 @@ if (count&lt;=0)
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;ruleExtP&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT * FROM ext2&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT revert(name) FROM ext2&quot;,&#xd;
   &quot;actions&quot;: [{&#xd;
     &quot;print&quot;: {&#xd;
     }&#xd;
@@ -586,27 +586,23 @@ if (count&lt;=0)
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
           </HTTPSamplerProxy>
           <hashTree>
-            <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="JSON Extractor" enabled="true">
-              <stringProp name="JSONPostProcessor.referenceNames">fileout</stringProp>
-              <stringProp name="JSONPostProcessor.jsonPathExprs">$.sink_print_0_0_records_out_total</stringProp>
-              <stringProp name="JSONPostProcessor.match_numbers"></stringProp>
-            </JSONPostProcessor>
+            <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
+              <stringProp name="JSON_PATH">$.op_2_project_0_records_out_total</stringProp>
+              <stringProp name="EXPECTED_VALUE">0</stringProp>
+              <boolProp name="JSONVALIDATION">true</boolProp>
+              <boolProp name="EXPECT_NULL">false</boolProp>
+              <boolProp name="INVERT">true</boolProp>
+              <boolProp name="ISREGEX">true</boolProp>
+            </JSONPathAssertion>
             <hashTree/>
-            <JSR223Assertion guiclass="TestBeanGUI" testclass="JSR223Assertion" testname="JSR223 Assertion" enabled="true">
-              <stringProp name="cacheKey">true</stringProp>
-              <stringProp name="filename"></stringProp>
-              <stringProp name="parameters"></stringProp>
-              <stringProp name="script">String jsonString =  vars.get(&quot;fileout&quot;);
-int count = jsonString.toInteger()
-log.info (&quot;The file out metric &quot; + count); 
-
-if (count&lt;=0) 
-  {
-   AssertionResult.setFailureMessage(&quot;The sink output is 0&quot;);
-   AssertionResult.setFailure(true); 
-  }</stringProp>
-              <stringProp name="scriptLanguage">groovy</stringProp>
-            </JSR223Assertion>
+            <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
+              <stringProp name="JSON_PATH">$.op_2_project_0_exceptions_total</stringProp>
+              <stringProp name="EXPECTED_VALUE">0</stringProp>
+              <boolProp name="JSONVALIDATION">true</boolProp>
+              <boolProp name="EXPECT_NULL">false</boolProp>
+              <boolProp name="INVERT">false</boolProp>
+              <boolProp name="ISREGEX">true</boolProp>
+            </JSONPathAssertion>
             <hashTree/>
           </hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_UpdatePlugin" enabled="true">
@@ -672,27 +668,23 @@ if (count&lt;=0)
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
           </HTTPSamplerProxy>
           <hashTree>
-            <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="JSON Extractor" enabled="true">
-              <stringProp name="JSONPostProcessor.referenceNames">fileout</stringProp>
-              <stringProp name="JSONPostProcessor.jsonPathExprs">$.sink_print_0_0_records_out_total</stringProp>
-              <stringProp name="JSONPostProcessor.match_numbers"></stringProp>
-            </JSONPostProcessor>
+            <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
+              <stringProp name="JSON_PATH">$.op_2_project_0_records_out_total</stringProp>
+              <stringProp name="EXPECTED_VALUE">0</stringProp>
+              <boolProp name="JSONVALIDATION">true</boolProp>
+              <boolProp name="EXPECT_NULL">false</boolProp>
+              <boolProp name="INVERT">true</boolProp>
+              <boolProp name="ISREGEX">true</boolProp>
+            </JSONPathAssertion>
             <hashTree/>
-            <JSR223Assertion guiclass="TestBeanGUI" testclass="JSR223Assertion" testname="JSR223 Assertion" enabled="true">
-              <stringProp name="cacheKey">true</stringProp>
-              <stringProp name="filename"></stringProp>
-              <stringProp name="parameters"></stringProp>
-              <stringProp name="script">String jsonString =  vars.get(&quot;fileout&quot;);
-int count = jsonString.toInteger()
-log.info (&quot;The file out metric &quot; + count); 
-
-if (count&lt;=0) 
-  {
-   AssertionResult.setFailureMessage(&quot;The sink output is 0&quot;);
-   AssertionResult.setFailure(true); 
-  }</stringProp>
-              <stringProp name="scriptLanguage">groovy</stringProp>
-            </JSR223Assertion>
+            <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
+              <stringProp name="JSON_PATH">$.op_2_project_0_exceptions_total</stringProp>
+              <stringProp name="EXPECTED_VALUE">0</stringProp>
+              <boolProp name="JSONVALIDATION">true</boolProp>
+              <boolProp name="EXPECT_NULL">false</boolProp>
+              <boolProp name="INVERT">false</boolProp>
+              <boolProp name="ISREGEX">true</boolProp>
+            </JSONPathAssertion>
             <hashTree/>
           </hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_DropRule" enabled="true">
@@ -790,70 +782,6 @@ if (count&lt;=0)
           </ConstantTimer>
           <hashTree/>
         </hashTree>
-      </hashTree>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Result" enabled="false">
-        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
-        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
-          <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">1</stringProp>
-        </elementProp>
-        <stringProp name="ThreadGroup.num_threads">1</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">0</stringProp>
-        <boolProp name="ThreadGroup.scheduler">false</boolProp>
-        <stringProp name="ThreadGroup.duration"></stringProp>
-        <stringProp name="ThreadGroup.delay"></stringProp>
-        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
-      </ThreadGroup>
-      <hashTree>
-        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
-          <boolProp name="ResultCollector.error_logging">false</boolProp>
-          <objProp>
-            <name>saveConfig</name>
-            <value class="SampleSaveConfiguration">
-              <time>true</time>
-              <latency>true</latency>
-              <timestamp>true</timestamp>
-              <success>true</success>
-              <label>true</label>
-              <code>true</code>
-              <message>true</message>
-              <threadName>true</threadName>
-              <dataType>true</dataType>
-              <encoding>false</encoding>
-              <assertions>true</assertions>
-              <subresults>true</subresults>
-              <responseData>false</responseData>
-              <samplerData>false</samplerData>
-              <xml>false</xml>
-              <fieldNames>true</fieldNames>
-              <responseHeaders>false</responseHeaders>
-              <requestHeaders>false</requestHeaders>
-              <responseDataOnError>false</responseDataOnError>
-              <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
-              <assertionsResultsToSave>0</assertionsResultsToSave>
-              <bytes>true</bytes>
-              <sentBytes>true</sentBytes>
-              <threadCounts>true</threadCounts>
-              <idleTime>true</idleTime>
-              <connectTime>true</connectTime>
-            </value>
-          </objProp>
-          <stringProp name="filename"></stringProp>
-        </ResultCollector>
-        <hashTree/>
-        <SystemSampler guiclass="SystemSamplerGui" testclass="SystemSampler" testname="App_Service" enabled="true">
-          <boolProp name="SystemSampler.checkReturnCode">false</boolProp>
-          <stringProp name="SystemSampler.expectedReturnCode">0</stringProp>
-          <stringProp name="SystemSampler.command">./server</stringProp>
-          <elementProp name="SystemSampler.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
-            <collectionProp name="Arguments.arguments"/>
-          </elementProp>
-          <elementProp name="SystemSampler.environment" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
-            <collectionProp name="Arguments.arguments"/>
-          </elementProp>
-          <stringProp name="SystemSampler.directory">${__property(fvt,,)}/test/plugins/service/</stringProp>
-        </SystemSampler>
-        <hashTree/>
       </hashTree>
     </hashTree>
   </hashTree>
