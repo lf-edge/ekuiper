@@ -246,7 +246,7 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "population standard deviation",
+				"en_US": "Population Standard Deviation",
 				"zh_CN": "总体标准偏差"
 			}
 		}
@@ -285,7 +285,7 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "sample standard deviation",
+				"en_US": "Sample Standard Deviation",
 				"zh_CN": "样本标准偏差"
 			}
 		}
@@ -324,8 +324,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "population variance",
-				"zh_CN": "总体标准偏差的方差"
+				"en_US": "Population Variance",
+				"zh_CN": "总体方差"
 			}
 		}
 	},{
@@ -363,8 +363,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "sample variance",
-				"zh_CN": "样本标准偏差的方差"
+				"en_US": "Sample Variance",
+				"zh_CN": "样本方差"
 			}
 		}
 	}, {
@@ -391,7 +391,7 @@
 				}
 			},
 			{
-				"name": "field",
+				"name": "percentile",
 				"optional": false,
 				"control": "field",
 				"type": "number",
@@ -400,7 +400,7 @@
 					"zh_CN": "要查找的值的百分位数。百分位数必须是介于 0.0 和 1.0 之间的常数。"
 				},
 				"label": {
-					"en_US": "percentile",
+					"en_US": "Percentile",
 					"zh_CN": "百分位数"
 				}
 			}
@@ -408,7 +408,7 @@
 		"return": {
 			"type": "number",
 			"hint": {
-				"en_US": "percentile value based on a continuous distribution",
+				"en_US": "Percentile value based on a continuous distribution",
 				"zh_CN": "连续分布的百分位值"
 			}
 		},
@@ -416,7 +416,7 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "percentile value based on a continuous distribution",
+				"en_US": "Percentile Values of Continuous Distribution",
 				"zh_CN": "连续分布的百分位值"
 			}
 		}
@@ -444,7 +444,7 @@
 				}
 			},
 			{
-				"name": "field",
+				"name": "percentile",
 				"optional": false,
 				"control": "field",
 				"type": "number",
@@ -453,7 +453,7 @@
 					"zh_CN": "要查找的值的百分位数。百分位数必须是介于 0.0 和 1.0 之间的常数。"
 				},
 				"label": {
-					"en_US": "percentile",
+					"en_US": "Percentile",
 					"zh_CN": "百分位数"
 				}
 			}
@@ -461,7 +461,7 @@
 		"return": {
 			"type": "number",
 			"hint": {
-				"en_US": "percentile value based on a discrete distribution",
+				"en_US": "Percentile value based on a discrete distribution",
 				"zh_CN": "离散分布的百分位值"
 			}
 		},
@@ -469,7 +469,7 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "percentile value based on a discrete distribution",
+				"en_US": "Percentile Value of Discrete Distribution",
 				"zh_CN": "离散分布的百分位值"
 			}
 		}
@@ -561,7 +561,7 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "deduplicate",
+				"en_US": "Deduplicate",
 				"zh_CN": "去重"
 			}
 		}
@@ -2869,7 +2869,7 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "SHA 512 hashed value of the argument",
+				"en_US": "SHA 512",
 				"zh_CN": "参数的 SHA512 哈希值"
 			}
 		}
@@ -3111,44 +3111,6 @@
 			"label": {
 				"en_US": "Current Timestamp",
 				"zh_CN": "时间戳"
-			}
-		}
-	}, {
-		"name": "mqtt",
-		"example": "mqtt(topic)",
-		"hint": {
-			"en_US": "Returns the MQTT meta-data of specified key. The current supported keys - topic: return the topic of message. If there are multiple stream source, then specify the source name in parameter. Such as mqtt(src1.topic) - messageid: return the message id of message. If there are multiple stream source, then specify the source name in parameter. Such as mqtt(src2.messageid)",
-			"zh_CN": "返回指定键的 MQTT 元数据。 当前支持的键包括 -topic：返回消息的主题。 如果有多个流源，则在参数中指定源名称。 如 mqtt(src1.topic) - messageid：返回消息的消息ID。 如果有多个流源，则在参数中指定源名称。 如 mqtt(src2.messageid)"
-		},
-		"args": [
-			{
-				"name": "key",
-				"optional": false,
-				"control": "text",
-				"type": "any",
-				"hint": {
-					"en_US": "Returns the MQTT meta-data of specified key.",
-					"zh_CN": "返回指定键的 MQTT 元数据"
-				},
-				"label": {
-					"en_US": "Returns the MQTT meta-data of specified key.",
-					"zh_CN": "返回指定键的 MQTT 元数据"
-				}
-			}
-		],
-		"return": {
-			"type": "any",
-			"hint": {
-				"en_US": "MQTT Meta",
-				"zh_CN": "MQTT 元数据"
-			}
-		},
-		"node": {
-			"category": "function",
-			"icon": "iconPath",
-			"label": {
-				"en_US": "MQTT Meta",
-				"zh_CN": "MQTT 元数据"
 			}
 		}
 	}, {

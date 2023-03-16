@@ -12,23 +12,21 @@
 			"zh_CN": "https://ekuiper.org/docs/zh/latest/sqls/custom_functions.html"
 		},
 		"description": {
-			"en_US": "",
-			"zh_CN": ""
+			"en_US": "General Tensorflow lite plugin which can infer any tflite model dynamically",
+			"zh_CN": "通用的 TensorFlow Lite 插件，可以动态推断任何 tflite 模型。"
 		}
 	},
-	"libs": [],
-	"name": "tfLite",
 	"functions": [{
 		"name": "tfLite",
 		"example": "tfLite(model,para1, para2,...)",
 		"hint": {
-			"en_US": "Creates a scaled image with new dimensions (width, height) .If either width or height is set to 0, it will be set to an aspect ratio preserving value.",
-			"zh_CN": "创建具有新尺寸（宽度，高度）的缩放图像。如果width或height设置为0，则将其设置为长宽比保留值。"
+			"en_US": "Select AI model in runtime and infer the stream data",
+			"zh_CN": "动态选择模型进行推断"
 		},
 		"args": [
 			{
 				"name": "model",
-				"hidden": true,
+				"hidden": false,
 				"optional": false,
 				"control": "text",
 				"type": "string",
@@ -37,36 +35,22 @@
 					"zh_CN": "输入模型"
 				},
 				"label": {
-					"en_US": "Input data",
-					"zh_CN": "输入模型"
+					"en_US": "Model Name",
+					"zh_CN": "模型名称"
 				}
 			},{
-				"name": "para1",
-				"hidden": true,
+				"name": "fields",
+				"default": "",
 				"optional": false,
-				"control": "text",
-				"type": "int",
+				"control": "list",
+				"type": "list_string",
 				"hint": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据1"
+					"en_US": "select parameter fields",
+					"zh_CN": "选取参数字段"
 				},
 				"label": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据1"
-				}
-			},{
-				"name": "para2",
-				"hidden": true,
-				"optional": false,
-				"control": "text",
-				"type": "int",
-				"hint": {
-					"en_US": "Input height",
-					"zh_CN": "输入数据2"
-				},
-				"label": {
-					"en_US": "Input height",
-					"zh_CN": "输入数据2"
+					"en_US": "Parameter Fields",
+					"zh_CN": "参数字段"
 				}
 			}
 		],
@@ -81,8 +65,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "tflite",
-				"zh_CN": "tflite"
+				"en_US": "Tensorflow Lite",
+				"zh_CN": "Tensorflow Lite"
 			}
 		}
 	}]

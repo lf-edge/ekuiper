@@ -49,11 +49,11 @@
 		}
 	}],
 	"node": {
-		"category": "Sink",
+		"category": "sink",
 		"icon": "iconPath",
 		"label": {
-			"en": "ZMQ",
-			"zh": "ZMQ"
+			"en": "ZeroMQ",
+			"zh": "ZeroMQ"
 		}
 	}
 }
