@@ -8,12 +8,12 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-          "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/file.html",
-          "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/file.html"
+          "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/image.html",
+          "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/image.html"
         },
 		"description": {
-			"en_US": "This a sink plugin for file, it can be used for saving the analysis data into file system.",
-			"zh_CN": "本插件为文件持久化插件，可以用于将分析数据存入指定的文件中。"
+			"en_US": "This sink is used to save the picture to the specified folder.",
+			"zh_CN": "本插件用于将图片保存到指定文件夹。"
 		}
 	},
 	"libs": [
@@ -78,5 +78,13 @@
 			"en_US": "maxCount",
 			"zh_CN": "最大写入数量"
 		}
-	}]
+	}],
+	"node": {
+		"category": "sink",
+		"icon": "iconPath",
+		"label": {
+			"en": "Image",
+			"zh": "图像"
+		}
+	}
 }

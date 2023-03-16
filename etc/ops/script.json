@@ -21,7 +21,7 @@
     "name": "script",
     "default": "",
     "optional": false,
-    "control": "text",
+    "control": "textarea",
     "type": "string",
     "hint": {
       "en_US": "The script text, now supports JavaScript only. Must have a function named exec, whose parameter is the message and the return value must be the processed message.",

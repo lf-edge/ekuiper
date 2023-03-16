@@ -8,53 +8,52 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-			"en_US": "https://ekuiper.org/docs/en/latest/sqls/custom_functions.html",
-			"zh_CN": "https://ekuiper.org/docs/zh/latest/sqls/custom_functions.html"
-		},
+          "en_US": "https://ekuiper.org/docs/en/latest/sqls/custom_functions.html",
+          "zh_CN": "https://ekuiper.org/docs/zh/latest/sqls/custom_functions.html"
+        },
 		"description": {
 			"en_US": "",
 			"zh_CN": ""
 		}
 	},
 	"name": "echo",
-	"functions": [
-		{
-			"name": "echo",
-			"example": "echo(col1)",
-			"hint": {
-				"en_US": "The parameter value is output as it is.",
-				"zh_CN": "原样输出参数值。"
-			},
-			"args": [
-				{
-					"name": "field",
-					"optional": false,
-					"control": "field",
-					"type": "string",
-					"hint": {
-						"en_US": "The field to echo.",
-						"zh_CN": "字段名"
-					},
-					"label": {
-						"en_US": "Field",
-						"zh_CN": "字段"
-					}
-				}
-			],
-			"return": {
+	"functions": [{
+		"name": "echo",
+		"example": "echo(col1)",
+		"hint": {
+			"en_US": "The parameter value is output as it is.",
+			"zh_CN": "原样输出参数值。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
 				"type": "string",
 				"hint": {
-					"en_US": "Echoed string",
-					"zh_CN": "回声值"
-				}
-			},
-			"node": {
-				"category": "function",
-				"icon": "iconPath",
+					"en_US": "The field to echo.",
+					"zh_CN": "字段名"
+				},
 				"label": {
-					"en_US": "Echo",
-					"zh_CN": "回声"
+					"en_US": "Field",
+					"zh_CN": "字段"
 				}
 			}
-		}]
+		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "Echoed string",
+				"zh_CN": "回声值"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Echo",
+				"zh_CN": "回声"
+			}
+		}
+	}]
 }

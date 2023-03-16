@@ -28,21 +28,20 @@
 		"args": [
 			{
 				"name": "image",
-				"hidden": true,
+				"hidden": false,
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据"
+					"en_US": "Input image",
+					"zh_CN": "输入图像"
 				},
 				"label": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据"
+					"en_US": "Image",
+					"zh_CN": "图像"
 				}
 			},{
 				"name": "width",
-				"hidden": true,
 				"optional": false,
 				"control": "text",
 				"type": "int",
@@ -51,12 +50,11 @@
 					"zh_CN": "输入宽度"
 				},
 				"label": {
-					"en_US": "Input width",
-					"zh_CN": "输入宽度"
+					"en_US": "Width",
+					"zh_CN": "宽度"
 				}
 			},{
 				"name": "height",
-				"hidden": true,
 				"optional": false,
 				"control": "text",
 				"type": "int",
@@ -65,12 +63,11 @@
 					"zh_CN": "输入高度"
 				},
 				"label": {
-					"en_US": "Input height",
-					"zh_CN": "输入高度"
+					"en_US": "Height",
+					"zh_CN": "高度"
 				}
 			},{
 				"name": "isRaw",
-				"hidden": true,
 				"optional": true,
 				"control": "radio",
 				"type": "bool",
@@ -95,8 +92,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "resize",
-				"zh_CN": "resize"
+				"en_US": "Image Resize",
+				"zh_CN": "图像调整大小"
 			}
 		}
 	}, {
@@ -109,21 +106,20 @@
 		"args": [
 			{
 				"name": "image",
-				"hidden": true,
+				"hidden": false,
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据"
+					"en_US": "Input image",
+					"zh_CN": "输入图像"
 				},
 				"label": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据"
+					"en_US": "Image",
+					"zh_CN": "图像"
 				}
 			},{
 				"name": "maxWidth",
-				"hidden": true,
 				"optional": false,
 				"control": "text",
 				"type": "int",
@@ -132,12 +128,11 @@
 					"zh_CN": "输入最大宽度"
 				},
 				"label": {
-					"en_US": "Input maxWidth",
-					"zh_CN": "输入最大宽度"
+					"en_US": "Max Width",
+					"zh_CN": "最大宽度"
 				}
 			},{
 				"name": "maxHeight",
-				"hidden": true,
 				"optional": false,
 				"control": "text",
 				"type": "int",
@@ -146,8 +141,8 @@
 					"zh_CN": "输入最大高度"
 				},
 				"label": {
-					"en_US": "Input maxHeight",
-					"zh_CN": "输入最大高度"
+					"en_US": "MaxHeight",
+					"zh_CN": "最大高度"
 				}
 			}
 		],
@@ -162,8 +157,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "thumbnail",
-				"zh_CN": "thumbnail"
+				"en_US": "Thumbnail",
+				"zh_CN": "缩略图"
 			}
 		}
 	}]

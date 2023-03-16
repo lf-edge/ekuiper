@@ -355,8 +355,8 @@
 		"category": "source",
 		"icon": "iconPath",
 		"label": {
-			"en_US": "Edgex",
-			"zh_CN": "Edgex"
+			"en_US": "EdgeX Foundry",
+			"zh_CN": "EdgeX Foundry"
 		}
 	}
 }

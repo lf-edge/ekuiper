@@ -12,12 +12,10 @@
           "zh_CN": "https://ekuiper.org/docs/zh/latest/sqls/custom_functions.html"
         },
 		"description": {
-			"en_US": "",
-			"zh_CN": ""
+			"en_US": "Example plugin to demonstrate inferring Tensorflow lite model to label an image",
+			"zh_CN": "示例插件，演示如何使用Tensorflow lite模型对图像进行标记推断。"
 		}
 	},
-	"libs": [],
-	"name": "labelImage",
 	"functions": [{
 		"name": "labelImage",
 		"example": "labelImage(col1)",
@@ -27,18 +25,18 @@
 		},
 		"args": [
 			{
-				"name": "inputData",
-				"hidden": true,
+				"name": "image",
+				"hidden": false,
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据"
+					"en_US": "Input image",
+					"zh_CN": "输入图像"
 				},
 				"label": {
-					"en_US": "Input data",
-					"zh_CN": "输入数据"
+					"en_US": "Image",
+					"zh_CN": "图像"
 				}
 			}
 		],
@@ -53,8 +51,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "labelImage",
-				"zh_CN": "labelImage"
+				"en_US": "Label Image",
+				"zh_CN": "图像标注"
 			}
 		}
 	}]
