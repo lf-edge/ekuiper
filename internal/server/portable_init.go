@@ -133,3 +133,7 @@ func portablePluginStatusExport() map[string]string {
 func portablePluginImport(plugins map[string]string) {
 	portableManager.PluginImport(plugins)
 }
+
+func portablePluginPartialImport(plugins map[string]string) map[string]string {
+	return portableManager.PluginPartialImport(plugins)
+}

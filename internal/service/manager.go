@@ -476,19 +476,36 @@ func (m *Manager) UninstallAllServices() {
 	}
 }
 
+func (m *Manager) servicesRegisterForImport(_, v string) error {
+	req := &ServiceCreationRequest{}
+	err := json.Unmarshal([]byte(v), req)
+	if err != nil {
+		return err
+	}
+	err = m.Create(req)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (m *Manager) ImportServices(services map[string]string) {
 	_ = m.serviceStatusInstallKV.Clean()
 	for k, v := range services {
-		req := &ServiceCreationRequest{}
-		err := json.Unmarshal([]byte(v), req)
+		err := m.servicesRegisterForImport(k, v)
 		if err != nil {
-			m.serviceStatusInstallKV.Set(k, err.Error())
-			continue
-		}
-		err = m.Create(req)
-		if err != nil {
-			m.serviceStatusInstallKV.Set(k, err.Error())
-			continue
+			_ = m.serviceStatusInstallKV.Set(k, err.Error())
 		}
 	}
+}
+
+func (m *Manager) ImportPartialServices(services map[string]string) map[string]string {
+	errMap := map[string]string{}
+	for k, v := range services {
+		err := m.servicesRegisterForImport(k, v)
+		if err != nil {
+			errMap[k] = err.Error()
+		}
+	}
+	return errMap
 }

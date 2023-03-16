@@ -832,6 +832,7 @@ func (rr *Manager) GetAllPluginsStatus() map[string]string {
 
 const BOOT_INSTALL = "$boot_install"
 
+// PluginImport save the plugin install information and wait for restart
 func (rr *Manager) PluginImport(plugins map[string]string) error {
 	if len(plugins) == 0 {
 		return nil
@@ -850,6 +851,24 @@ func (rr *Manager) PluginImport(plugins map[string]string) error {
 	return nil
 }
 
+// PluginPartialImport compare the plugin to be installed and the one in database
+// if not exist in database, install;
+// if exist, ignore
+func (rr *Manager) PluginPartialImport(plugins map[string]string) map[string]string {
+	errMap := map[string]string{}
+	for k, v := range plugins {
+		plugInScript := ""
+		found, _ := rr.plgInstallDb.Get(k, &plugInScript)
+		if !found {
+			err := rr.pluginRegisterForImport(k, v)
+			if err != nil {
+				errMap[k] = err.Error()
+			}
+		}
+	}
+	return errMap
+}
+
 func (rr *Manager) hasInstallFlag() bool {
 	var val = ""
 	found, _ := rr.plgInstallDb.Get(BOOT_INSTALL, &val)
@@ -858,6 +877,21 @@ func (rr *Manager) hasInstallFlag() bool {
 
 func (rr *Manager) clearInstallFlag() {
 	_ = rr.plgInstallDb.Delete(BOOT_INSTALL)
+}
+
+func (rr *Manager) pluginRegisterForImport(key, script string) error {
+	plgType := plugin2.PluginTypeMap[strings.Split(key, "_")[0]]
+	sd := plugin2.NewPluginByType(plgType)
+	err := json.Unmarshal([]byte(script), &sd)
+	if err != nil {
+		return err
+	}
+	err = rr.Register(plgType, sd)
+	if err != nil {
+		conf.Log.Errorf(`install native plugin %s error: %v`, key, err)
+		return err
+	}
+	return nil
 }
 
 func (rr *Manager) pluginInstallWhenReboot() {
@@ -870,18 +904,7 @@ func (rr *Manager) pluginInstallWhenReboot() {
 	_ = rr.plgStatusDb.Clean()
 
 	for k, v := range allPlgs {
-		plgType := plugin2.PluginTypeMap[strings.Split(k, "_")[0]]
-		sd := plugin2.NewPluginByType(plgType)
-		err := json.Unmarshal([]byte(v), &sd)
-		if err != nil {
-			_ = rr.plgStatusDb.Set(k, err.Error())
-			continue
-		}
-		err = rr.Register(plgType, sd)
-		if err != nil {
-			conf.Log.Errorf(`install native plugin %s error: %v`, k, err)
-			_ = rr.plgStatusDb.Set(k, err.Error())
-			continue
-		}
+		err := rr.pluginRegisterForImport(k, v)
+		_ = rr.plgStatusDb.Set(k, err.Error())
 	}
 }

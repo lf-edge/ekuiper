@@ -74,3 +74,19 @@ func schemaStatusExport() map[string]string {
 func schemaImport(s map[string]string) error {
 	return nil
 }
+
+func pluginPartialImport(plugins map[string]string) map[string]string {
+	return nil
+}
+
+func schemaPartialImport(s map[string]string) map[string]string {
+	return nil
+}
+
+func portablePluginPartialImport(plugins map[string]string) map[string]string {
+	return nil
+}
+
+func servicePartialImport(services map[string]string) map[string]string {
+	return serviceManager.ImportPartialServices(services)
+}

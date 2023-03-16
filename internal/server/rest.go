@@ -142,6 +142,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet)
 	r.HandleFunc("/data/partial/export", configurationPartialExportHandler).Methods(http.MethodPost)
+	r.HandleFunc("/data/partial/import", configurationPartialImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
 	// Register extended routes
@@ -782,6 +783,69 @@ func configurationImport(data []byte, reboot bool) error {
 	return nil
 }
 
+func configurationPartialImport(data []byte) Configuration {
+	conf := &Configuration{
+		Streams:          make(map[string]string),
+		Tables:           make(map[string]string),
+		Rules:            make(map[string]string),
+		NativePlugins:    make(map[string]string),
+		PortablePlugins:  make(map[string]string),
+		SourceConfig:     make(map[string]string),
+		SinkConfig:       make(map[string]string),
+		ConnectionConfig: make(map[string]string),
+		Service:          make(map[string]string),
+		Schema:           make(map[string]string),
+	}
+
+	configResponse := Configuration{
+		Streams:          make(map[string]string),
+		Tables:           make(map[string]string),
+		Rules:            make(map[string]string),
+		NativePlugins:    make(map[string]string),
+		PortablePlugins:  make(map[string]string),
+		SourceConfig:     make(map[string]string),
+		SinkConfig:       make(map[string]string),
+		ConnectionConfig: make(map[string]string),
+		Service:          make(map[string]string),
+		Schema:           make(map[string]string),
+	}
+
+	err := json.Unmarshal(data, conf)
+	if err != nil {
+		configResponse.Rules["configuration"] = fmt.Errorf("configuration unmarshal with error %v", err).Error()
+		return configResponse
+	}
+
+	yamlCfgSet := meta.YamlConfigurationSet{
+		Sources:     conf.SourceConfig,
+		Sinks:       conf.SinkConfig,
+		Connections: conf.ConnectionConfig,
+	}
+
+	confRsp := meta.LoadConfigurationsPartial(yamlCfgSet)
+
+	configResponse.NativePlugins = pluginPartialImport(conf.NativePlugins)
+	configResponse.Schema = schemaPartialImport(conf.Schema)
+	configResponse.PortablePlugins = portablePluginPartialImport(conf.PortablePlugins)
+	configResponse.Service = servicePartialImport(conf.Service)
+	configResponse.SourceConfig = confRsp.Sources
+	configResponse.SinkConfig = confRsp.Sinks
+	configResponse.ConnectionConfig = confRsp.Connections
+
+	ruleSet := processor.Ruleset{
+		Streams: conf.Streams,
+		Tables:  conf.Tables,
+		Rules:   conf.Rules,
+	}
+
+	result := importRuleSetPartial(ruleSet)
+	configResponse.Streams = result.Streams
+	configResponse.Tables = result.Tables
+	configResponse.Rules = result.Rules
+
+	return configResponse
+}
+
 type configurationInfo struct {
 	Content  string `json:"content"`
 	FilePath string `json:"file"`
@@ -835,6 +899,41 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func configurationPartialImportHandler(w http.ResponseWriter, r *http.Request) {
+	rsi := &configurationInfo{}
+	err := json.NewDecoder(r.Body).Decode(rsi)
+	if err != nil {
+		handleError(w, err, "Invalid body: Error decoding json", logger)
+		return
+	}
+	if rsi.Content != "" && rsi.FilePath != "" {
+		handleError(w, errors.New("bad request"), "Invalid body: Cannot specify both content and file", logger)
+		return
+	} else if rsi.Content == "" && rsi.FilePath == "" {
+		handleError(w, errors.New("bad request"), "Invalid body: must specify content or file", logger)
+		return
+	}
+	content := []byte(rsi.Content)
+	if rsi.FilePath != "" {
+		reader, err := httpx.ReadFile(rsi.FilePath)
+		if err != nil {
+			handleError(w, err, "Fail to read file", logger)
+			return
+		}
+		defer reader.Close()
+		buf := new(bytes.Buffer)
+		_, err = io.Copy(buf, reader)
+		if err != nil {
+			handleError(w, err, "fail to convert file", logger)
+			return
+		}
+		content = buf.Bytes()
+	}
+	result := configurationPartialImport(content)
+
+	jsonResponse(result, w, logger)
+}
+
 func configurationStatusExport() Configuration {
 	conf := Configuration{
 		Streams:          make(map[string]string),
@@ -872,4 +971,56 @@ func configurationStatusHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	content := configurationStatusExport()
 	jsonResponse(content, w, logger)
+}
+
+func importRuleSetPartial(all processor.Ruleset) processor.Ruleset {
+	ruleSetRsp := processor.Ruleset{
+		Rules:   map[string]string{},
+		Streams: map[string]string{},
+		Tables:  map[string]string{},
+	}
+	//replace streams
+	for k, v := range all.Streams {
+		_, e := streamProcessor.ExecReplaceStream(k, v, ast.TypeStream)
+		if e != nil {
+			ruleSetRsp.Streams[k] = e.Error()
+			continue
+		}
+	}
+	// replace tables
+	for k, v := range all.Tables {
+		_, e := streamProcessor.ExecReplaceStream(k, v, ast.TypeTable)
+		if e != nil {
+			ruleSetRsp.Tables[k] = e.Error()
+			continue
+		}
+	}
+
+	for k, v := range all.Rules {
+		_, err := ruleProcessor.GetRuleJson(k)
+		if err == nil {
+			// the rule already exist, update
+			err = updateRule(k, v)
+			if err != nil {
+				ruleSetRsp.Rules[k] = err.Error()
+				continue
+			}
+			// Update to db after validation
+			_, err = ruleProcessor.ExecUpdate(k, v)
+
+			if err != nil {
+				ruleSetRsp.Rules[k] = err.Error()
+				continue
+			}
+		} else {
+			// not found, create
+			_, err2 := createRule(k, v)
+			if err2 != nil {
+				ruleSetRsp.Rules[k] = err2.Error()
+				continue
+			}
+		}
+	}
+
+	return ruleSetRsp
 }

@@ -426,20 +426,42 @@ func (m *Manager) GetAllPluginsStatus() map[string]string {
 	return allPlgs
 }
 
+func (m *Manager) pluginRegisterForImport(k, v string) error {
+	sd := plugin.NewPluginByType(plugin.PORTABLE)
+	err := json.Unmarshal([]byte(v), &sd)
+	if err != nil {
+		return err
+	}
+	err = m.Register(sd)
+	if err != nil {
+		conf.Log.Errorf(`install portable plugin %s error: %v`, k, err)
+		return err
+	}
+	return nil
+}
+
 func (m *Manager) PluginImport(plugins map[string]string) {
 	_ = m.plgStatusDb.Clean()
 	for k, v := range plugins {
-		sd := plugin.NewPluginByType(plugin.PORTABLE)
-		err := json.Unmarshal([]byte(v), &sd)
+		err := m.pluginRegisterForImport(k, v)
 		if err != nil {
-			_ = m.plgStatusDb.Set(k, err.Error())
-			continue
-		}
-		err = m.Register(sd)
-		if err != nil {
-			conf.Log.Errorf(`install portable plugin %s error: %v`, k, err)
 			_ = m.plgStatusDb.Set(k, err.Error())
 			continue
 		}
 	}
+}
+
+func (m *Manager) PluginPartialImport(plugins map[string]string) map[string]string {
+	errMap := map[string]string{}
+	for k, v := range plugins {
+		var installScript string
+		found, _ := m.plgInstallDb.Get(k, &installScript)
+		if !found {
+			err := m.pluginRegisterForImport(k, v)
+			if err != nil {
+				errMap[k] = err.Error()
+			}
+		}
+	}
+	return errMap
 }

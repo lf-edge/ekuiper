@@ -281,6 +281,9 @@ func pluginStatusExport() map[string]string {
 }
 
 func pluginImport(plugins map[string]string) error {
-	nativeManager.PluginImport(plugins)
-	return nil
+	return nativeManager.PluginImport(plugins)
+}
+
+func pluginPartialImport(plugins map[string]string) map[string]string {
+	return nativeManager.PluginPartialImport(plugins)
 }

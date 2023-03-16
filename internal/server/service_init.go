@@ -154,3 +154,7 @@ func serviceStatusExport() map[string]string {
 func serviceImport(services map[string]string) {
 	serviceManager.ImportServices(services)
 }
+
+func servicePartialImport(services map[string]string) map[string]string {
+	return serviceManager.ImportPartialServices(services)
+}
