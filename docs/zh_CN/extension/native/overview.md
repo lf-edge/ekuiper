@@ -34,34 +34,34 @@ eKuiper 允许用户自定义不同类型的扩展。
 
 ### 版本
 
-The user can **optionally** add a version string to the name of _.so_ to help identify the version of the plugin. The version can be then retrieved through describe CLI command or REST API. The naming convention is to add a version string to the name after _@_. The version can be any string. If the version string starts with "v", the "v" will be ignored in the return result. Below are some typical examples.
+用户可以**选择**将版本信息添加到 _.so_ 的名称中，以帮助识别插件的版本。然后可以通过 describe CLI 命令或 REST API 检索版本信息。命名约定是在 _@_ 之后的名称中添加一个版本字符串。版本可以是任何字符串。如果版本字符串以 "v" 开头，则返回结果中将忽略 "v" 。下面是一些典型的例子。
 
-- _MySource@v1.0.0.so_ : version is 1.0.0
-- _MySource@20200331.so_:  version is 20200331
+- _MySource@v1.0.0.so_ ：版本是 1.0.0
+- _MySource@20200331.so_ ：版本是 20200331
 
-If multiple versions of plugins with the same name in place, only the latest version(ordered by the version string) will be taken effect.
+如果有多个具有相同名称的插件版本，则只有最新版本(按版本的字符串排序)将生效。
 
 ## 插件开发环境设置
 
-It is required to build the plugin with exactly the same version of dependencies. And the plugin must implement interfaces exported by Kuiper, so the Kuiper project must be in the gopath.
+需要使用完全相同版本的依赖项来构建插件。并且插件必须实现 Kuiper 导出的接口，所以 Kuiper 项目必须在 gopath 中。
 
-A typical environment for developing plugins is to put the plugin and Kuiper in the same project. To set it up:
-1. Clone Kuiper project.
-2. Create the plugin implementation file inside plugins/sources or plugin/sinks or plugin/functions according to what extension type is developing.
-3. Build the file as plugin into the same folder. The build command is typically like:
+一个典型的开发插件的环境是将插件和 Kuiper 放在同一个项目中。设置环境：
+1. 克隆 Kuiper 项目。
+2. 根据插件扩展的类型，在 plugins/sources 或者 plugin/sinks 或者 plugin/functions 中创建插件实现的文件。
+3. 将文件作为插件构建到同一文件夹中。构建命令通常如下:
 ```bash
 go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so plugins/sources/my_source.go
 ```
 
-Notice that, the `-trimpath` build flag is required if using the prebuilte kuiper or kuiper docker image because the kuiperd is also built with the flag to improve build reproducibility.
+请注意，如果使用预编译的 kuiper 或 kuiper 的 docker 镜像，则需要 `-trimpath` 构建标志，因为 kuiperd 也是使用该标志构建的，这样可以提高构建的可重复性。
 
 ### 插件开发
 
-The development of plugins is to implement a specific interface according to the plugin type and export the implementation with a specific name. There are two types of exported symbol supported:
+插件的开发就是根据插件类型实现特定的接口，并导出具有特定名称的实现。支持两种类型的导出symbol:
 
-1. Export a constructor function: Kuiper will use the constructor function to create a new instance of the plugin implementation for each load. So each rule will have one instance of the plugin and each instance will be isolated from others. This is the recommended way.
+1. 导出一个构造函数：Kuiper 将使用构造函数为每次加载创建一个插件实现的新实例。因此，每条规则将有一个插件实例，并且每个实例都将与其他实例隔离。这是推荐的方式。
 
-2. Export an instance: Kuiper will use the instance as singleton for all plugin load. So all rules will share the same instance. For such implementation, the developer will need to handle the shared states to avoid any potential multi-thread problems. This mode is recommended where there are no shared states and the performance is critical. Especially, function extension is usually functional without internal state which is suitable for this mode.
+2. 导出一个实例：Kuiper 将使用该实例作为所有插件加载的单例。因此，所有规则将共享相同的实例。对于这种实现，开发人员需要处理共享状态，以避免任何潜在的多线程问题。在没有共享状态且性能至关重要的情况下，建议使用此模式。函数扩展通常是没有内部状态的函数，适合这种模式。
 
 ## 状态存储
 
