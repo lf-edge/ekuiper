@@ -74,7 +74,7 @@ func (m *Manager) Function(name string) (api.Function, error) {
 	}
 	f, err := runtime.NewPortableFunc(name, meta)
 	if err != nil {
-		conf.Log.Errorf("Error creating function %v", err)
+		conf.Log.Errorf("Error creating portable function %v", err)
 		return nil, err
 	}
 	funcInsMap.Store(name, f)
