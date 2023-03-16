@@ -3068,6 +3068,45 @@
 			}
 		}
 	}, {
+		"name": "coalesce",
+		"example": "coalesce(expr1, expr2...)",
+		"hint": {
+			"en_US": "Return the first non null value. If all expr are null,return nil.",
+			"zh_CN": "返回第一个非空值。如果所有表达式都为空，则返回 nil。"
+		},
+		"args": [
+			{
+				"name": "fields",
+				"default": "",
+				"optional": false,
+				"control": "list",
+				"type": "list_string",
+				"hint": {
+					"en_US": "The fields to check.",
+					"zh_CN": "需要检查的字段名"
+				},
+				"label": {
+					"en_US": "Fields",
+					"zh_CN": "字段"
+				}
+			}
+		],
+		"return": {
+			"type": "any",
+			"hint": {
+				"en_US": "First non-null value",
+				"zh_CN": "第一个非空值"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Coalesce",
+				"zh_CN": "合并空值"
+			}
+		}
+	}, {
 		"name": "newuuid",
 		"example": "newuuid()",
 		"hint": {
