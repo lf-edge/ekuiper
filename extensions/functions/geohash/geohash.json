@@ -27,32 +27,30 @@
 		},
 		"args": [
 			{
-				"name": "la",
-				"hidden": true,
+				"name": "latitude",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
-					"en_US": "Input la",
+					"en_US": "Input latitude",
 					"zh_CN": "输入经度"
 				},
 				"label": {
-					"en_US": "Input la",
-					"zh_CN": "输入经度"
+					"en_US": "Latitude",
+					"zh_CN": "经度"
 				}
 			},
 			{
-				"name": "lo",
-				"hidden": true,
+				"name": "longitude",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
-					"en_US": "Input lo",
+					"en_US": "Input longitude",
 					"zh_CN": "输入纬度"
 				},
 				"label": {
-					"en_US": "Input lo",
+					"en_US": "Longitude",
 					"zh_CN": "输入纬度"
 				}
 			}
@@ -68,8 +66,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "geohashEncode",
-				"zh_CN": "geohashEncode"
+				"en_US": "Geohash Encode",
+				"zh_CN": "Geohash 编码"
 			}
 		}
 	}, {
@@ -81,32 +79,30 @@
 		},
 		"args": [
 			{
-				"name": "la",
-				"hidden": true,
+				"name": "latitude",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
-					"en_US": "Input la",
+					"en_US": "Input latitude",
 					"zh_CN": "输入经度"
 				},
 				"label": {
-					"en_US": "Input la",
-					"zh_CN": "输入经度"
+					"en_US": "Latitude",
+					"zh_CN": "经度"
 				}
 			},
 			{
-				"name": "lo",
-				"hidden": true,
+				"name": "longitude",
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
-					"en_US": "Input lo",
+					"en_US": "Input longitude",
 					"zh_CN": "输入纬度"
 				},
 				"label": {
-					"en_US": "Input lo",
+					"en_US": "Longitude",
 					"zh_CN": "输入纬度"
 				}
 			}
@@ -122,8 +118,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "geohashEncodeInt",
-				"zh_CN": "geohashEncodeInt"
+				"en_US": "Geohash Encode to Integer",
+				"zh_CN": "Geohash 整数编码"
 			}
 		}
 	}, {
@@ -136,16 +132,16 @@
 		"args": [
 			{
 				"name": "data",
-				"hidden": true,
+				"hidden": false,
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
 					"en_US": "Input data",
 					"zh_CN": "输入数据"
 				},
 				"label": {
-					"en_US": "Input data",
+					"en_US": "Field",
 					"zh_CN": "输入数据"
 				}
 			}
@@ -161,8 +157,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "geohashDecode",
-				"zh_CN": "geohashDecode"
+				"en_US": "Geohash Decode",
+				"zh_CN": "Geohash 解码"
 			}
 		}
 	}, {
@@ -175,16 +171,16 @@
 		"args": [
 			{
 				"name": "data",
-				"hidden": true,
+				"hidden": false,
 				"optional": false,
-				"control": "text",
-				"type": "string",
+				"control": "field",
+				"type": "number",
 				"hint": {
 					"en_US": "Input data",
 					"zh_CN": "输入数据"
 				},
 				"label": {
-					"en_US": "Input data",
+					"en_US": "Data",
 					"zh_CN": "输入数据"
 				}
 			}
@@ -200,8 +196,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "geohashDecodeInt",
-				"zh_CN": "geohashDecodeInt"
+				"en_US": "Geohash Decode Integer",
+				"zh_CN": "Geohash 整数解码"
 			}
 		}
 	}, {
@@ -214,7 +210,7 @@
 		"args": [
 			{
 				"name": "data",
-				"hidden": true,
+				"hidden": false,
 				"optional": false,
 				"control": "text",
 				"type": "string",
@@ -223,7 +219,7 @@
 					"zh_CN": "输入数据"
 				},
 				"label": {
-					"en_US": "Input data",
+					"en_US": "Data",
 					"zh_CN": "输入数据"
 				}
 			}
@@ -239,8 +235,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "geohashBoundingBox",
-				"zh_CN": "geohashBoundingBox"
+				"en_US": "Geohash Bounding Box",
+				"zh_CN": "Geohash 边界框"
 			}
 		}
 	}, {
@@ -253,16 +249,16 @@
 		"args": [
 			{
 				"name": "data",
-				"hidden": true,
+				"hidden": false,
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
 					"en_US": "Input data",
 					"zh_CN": "输入数据"
 				},
 				"label": {
-					"en_US": "Input data",
+					"en_US": "Data",
 					"zh_CN": "输入数据"
 				}
 			}
@@ -278,8 +274,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "geohashBoundingBoxInt",
-				"zh_CN": "geohashBoundingBoxInt"
+				"en_US": "Geohash Integer Bounding Box",
+				"zh_CN": "Geohash 整数边界框"
 			}
 		}
 	}, {
@@ -292,32 +288,31 @@
 		"args": [
 			{
 				"name": "hash",
-				"hidden": true,
+				"hidden": false,
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
 					"en_US": "Input data",
 					"zh_CN": "输入数据"
 				},
 				"label": {
-					"en_US": "Input data",
+					"en_US": "Field",
 					"zh_CN": "输入数据"
 				}
 			},
 			{
 				"name": "direction",
-				"hidden": true,
 				"optional": false,
 				"control": "text",
 				"type": "string",
 				"hint": {
 					"en_US": "Input direction",
-					"zh_CN": "输入数据"
+					"zh_CN": "输入方向"
 				},
 				"label": {
-					"en_US": "Input direction",
-					"zh_CN": "输入数据"
+					"en_US": "Direction",
+					"zh_CN": "方向"
 				}
 			}
 		],
@@ -332,8 +327,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "geohashNeighbor",
-				"zh_CN": "geohashNeighbor"
+				"en_US": "Geohash Neighbor",
+				"zh_CN": "Geohash 相邻位置"
 			}
 		}
 	}, {
@@ -346,32 +341,31 @@
 		"args": [
 			{
 				"name": "hash",
-				"hidden": true,
+				"hidden": false,
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
 					"en_US": "Input data",
 					"zh_CN": "输入数据"
 				},
 				"label": {
-					"en_US": "Input data",
+					"en_US": "Data",
 					"zh_CN": "输入数据"
 				}
 			},
 			{
 				"name": "direction",
-				"hidden": true,
 				"optional": false,
 				"control": "text",
 				"type": "string",
 				"hint": {
 					"en_US": "Input direction",
-					"zh_CN": "输入数据"
+					"zh_CN": "输入方向"
 				},
 				"label": {
-					"en_US": "Input direction",
-					"zh_CN": "输入数据"
+					"en_US": "Direction",
+					"zh_CN": "方向"
 				}
 			}
 		],
@@ -386,8 +380,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "geohashNeighborInt",
-				"zh_CN": "geohashNeighborInt"
+				"en_US": "Geohash Neighbor Integer",
+				"zh_CN": "Geohash 相邻位置编码"
 			}
 		}
 	}, {
@@ -400,16 +394,16 @@
 		"args": [
 			{
 				"name": "hash",
-				"hidden": true,
+				"hidden": false,
 				"optional": false,
-				"control": "text",
+				"control": "field",
 				"type": "string",
 				"hint": {
 					"en_US": "Input data",
 					"zh_CN": "输入数据"
 				},
 				"label": {
-					"en_US": "Input data",
+					"en_US": "Field",
 					"zh_CN": "输入数据"
 				}
 			}
@@ -425,8 +419,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "geohashNeighbors",
-				"zh_CN": "geohashNeighbors"
+				"en_US": "Geohash All Neighbors",
+				"zh_CN": "Geohash 所有相邻位置"
 			}
 		}
 	}, {
@@ -438,7 +432,7 @@
 		},
 		"args": [{
 				"name": "hash",
-				"hidden": true,
+				"hidden": false,
 				"optional": false,
 				"control": "text",
 			"type": "string",
@@ -447,7 +441,7 @@
 				"zh_CN": "输入数据"
 			},
 			"label": {
-				"en_US": "Input data",
+				"en_US": "Field",
 				"zh_CN": "输入数据"
 			}
 		}
@@ -463,8 +457,8 @@
 			"category": "function",
 			"icon": "iconPath",
 			"label": {
-				"en_US": "geohashNeighbors",
-				"zh_CN": "geohashNeighbors"
+				"en_US": "Geohash All Neighbors Integer",
+				"zh_CN": "Geohash 所有相邻位置编码"
 			}
 		}
 	}]

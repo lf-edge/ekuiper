@@ -8,8 +8,8 @@
 			"website": ""
 		},
 		"helpUrl": {
-          "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/influxdb.html",
-          "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/influxdb.html"
+          "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/influx.html",
+          "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/influx.html"
         },
 		"description": {
 			"en_US": "This a sink plugin for InfluxDB, it can be used for saving the analysis data into InfluxDB.",
@@ -133,11 +133,11 @@
 		}
 	}],
 	"node": {
-		"category": "Sink",
+		"category": "sink",
 		"icon": "iconPath",
 		"label": {
-			"en": "Influx",
-			"zh": "Influx"
+			"en": "InfluxDB 1",
+			"zh": "InfluxDB 1"
 		}
 	}
 }

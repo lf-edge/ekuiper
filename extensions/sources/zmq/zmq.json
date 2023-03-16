@@ -74,11 +74,11 @@
     }
   ],
   "node": {
-    "category": ["Protocol","Protocol1"],
+    "category": "source",
     "icon": "iconPath",
     "label": {
-      "en_US": "ZMQ",
-      "zh_CN": "ZMQ"
+      "en_US": "ZeroMQ",
+      "zh_CN": "ZeroMQ"
     }
   }
 }

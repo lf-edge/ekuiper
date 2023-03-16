@@ -7,10 +7,6 @@
       "company": "EMQ Technologies Co., Ltd",
       "website": "https://www.emqx.io"
     },
-    "helpUrl": {
-      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/plugins/sources/random.md",
-      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/plugins/sources/random.md"
-    },
     "description": {
       "en_US": "The python source will send json data.",
       "zh_CN": "Python 源发送数据"
@@ -20,8 +16,8 @@
     "category": "source",
     "icon": "iconPath",
     "label": {
-      "en_US": "Pyjson",
-      "zh_CN": "Pyjson"
+      "en_US": "Python JSON Generator",
+      "zh_CN": "Python JSON 生成器"
     }
   }
 }
