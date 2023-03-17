@@ -31,4 +31,10 @@ type PluginDesc struct {
 type ImportDataDesc struct {
 	FileName string
 	Stop     bool
+	Partial  bool
+}
+
+type ExportDataDesc struct {
+	Rules    []string
+	FileName string
 }

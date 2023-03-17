@@ -16,6 +16,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"net/rpc"
 	"os"
@@ -981,7 +982,7 @@ func main() {
 		{
 			Name:    "import",
 			Aliases: []string{"import"},
-			Usage:   "import ruleset | data -f file",
+			Usage:   "import ruleset | data -f file -p partial -s stop",
 			Subcommands: []cli.Command{
 				{
 					Name:  "ruleset",
@@ -1011,7 +1012,7 @@ func main() {
 				},
 				{
 					Name:  "data",
-					Usage: "\"import data -f configuration_file -s stop",
+					Usage: "\"import data -f configuration_file -p partial -s stop",
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:     "file, f",
@@ -1021,6 +1022,10 @@ func main() {
 						cli.StringFlag{
 							Name:  "stop, s",
 							Usage: "stop kuiper after the action",
+						},
+						cli.StringFlag{
+							Name:  "partial, p",
+							Usage: "import partial configuration",
 						},
 					},
 					Action: func(c *cli.Context) error {
@@ -1034,9 +1039,15 @@ func main() {
 							fmt.Printf("Expect s flag to be a boolean value.\n")
 							return nil
 						}
+						p := c.String("partial")
+						if p != "true" && p != "false" {
+							fmt.Printf("Expect p flag to be a boolean value.\n")
+							return nil
+						}
 						args := &model.ImportDataDesc{
 							FileName: sfile,
 							Stop:     r == "true",
+							Partial:  p == "true",
 						}
 
 						var reply string
@@ -1054,7 +1065,7 @@ func main() {
 		{
 			Name:    "export",
 			Aliases: []string{"export"},
-			Usage:   "export ruleset | data $ruleset_file",
+			Usage:   "export ruleset | data $ruleset_file [ -r rules ]",
 			Subcommands: []cli.Command{
 				{
 					Name:  "ruleset",
@@ -1076,18 +1087,57 @@ func main() {
 				},
 				{
 					Name:  "data",
-					Usage: "\"export data $configuration_file",
+					Usage: "export data $configuration_file [ -r rules ]",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "rules, r",
+							Usage: "the rules id in json array format",
+						},
+					},
 					Action: func(c *cli.Context) error {
-						if len(c.Args()) < 1 {
-							fmt.Printf("Require exported file name.\n")
-							return nil
+						args := model.ExportDataDesc{
+							Rules:    []string{},
+							FileName: "",
 						}
-						var reply string
-						err = client.Call("Server.ExportConfiguration", c.Args()[0], &reply)
-						if err != nil {
-							fmt.Println(err)
+
+						rulesArray := c.String("rules")
+						if rulesArray != "" {
+							var rules []string
+							err := json.Unmarshal([]byte(rulesArray), &rules)
+							if err != nil {
+								fmt.Printf("rules %s unmarshal error %s", rules, err)
+								return nil
+							}
+							args.Rules = rules
+							if len(c.Args()) != 1 {
+								fmt.Printf("Expect configuration file.\n")
+								return nil
+							}
+							args.FileName = c.Args()[0]
+
+							var reply string
+
+							err = client.Call("Server.ExportConfiguration", args, &reply)
+							if err != nil {
+								fmt.Println(err)
+							} else {
+								fmt.Println(reply)
+							}
 						} else {
-							fmt.Println(reply)
+							if len(c.Args()) != 1 {
+								fmt.Printf("Expect configuration file.\n")
+								return nil
+							}
+							args.FileName = c.Args()[0]
+
+							var reply string
+
+							err = client.Call("Server.ExportConfiguration", args, &reply)
+							if err != nil {
+								fmt.Println(err)
+							} else {
+								fmt.Println(reply)
+							}
 						}
 						return nil
 					},
