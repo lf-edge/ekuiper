@@ -16,16 +16,20 @@ package processor
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/meta"
 	store2 "github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/schema"
+	"github.com/lf-edge/ekuiper/internal/topo/graph"
 	"github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"strings"
 )
 
@@ -143,6 +147,165 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 
 		//Rules
 		de.Rules = append(de.Rules, rule.Id)
+	}
+
+	ruleGraph := rule.Graph
+	if ruleGraph != nil {
+		for _, gn := range ruleGraph.Nodes {
+			switch gn.Type {
+			case "source":
+				sourceOption := &ast.Options{}
+				err := cast.MapToStruct(gn.Props, sourceOption)
+				if err != nil {
+					break
+				}
+				sourceOption.TYPE = gn.NodeType
+
+				de.Sources = append(de.Sources, sourceOption.TYPE)
+				//get config key
+				_, ok := de.SourceConfigKeys[sourceOption.TYPE]
+				if ok {
+					de.SourceConfigKeys[sourceOption.TYPE] = append(de.SourceConfigKeys[sourceOption.TYPE], sourceOption.CONF_KEY)
+				} else {
+					var confKeys []string
+					confKeys = append(confKeys, sourceOption.CONF_KEY)
+					de.SourceConfigKeys[sourceOption.TYPE] = confKeys
+				}
+				//get schema id
+				if sourceOption.SCHEMAID != "" {
+					r := strings.Split(sourceOption.SCHEMAID, ".")
+					de.Schemas = append(de.Schemas, sourceOption.FORMAT+"_"+r[0])
+				}
+			case "sink":
+				sinkType := gn.NodeType
+				props := gn.Props
+				de.Sinks = append(de.Sinks, sinkType)
+				resourceId, ok := props[conf.ResourceID].(string)
+				if ok {
+					_, ok := de.SinkConfigKeys[sinkType]
+					if ok {
+						de.SinkConfigKeys[sinkType] = append(de.SinkConfigKeys[sinkType], resourceId)
+					} else {
+						var confKeys []string
+						confKeys = append(confKeys, resourceId)
+						de.SinkConfigKeys[sinkType] = confKeys
+					}
+				}
+
+				format, ok := props["format"].(string)
+				if ok && format != "json" {
+					schemaId, ok := props["schemaId"].(string)
+					if ok {
+						r := strings.Split(schemaId, ".")
+						de.Schemas = append(de.Schemas, format+"_"+r[0])
+					}
+				}
+			case "operator":
+				nt := strings.ToLower(gn.NodeType)
+				switch nt {
+				case "function":
+					fop, err := parseFunc(gn.Props)
+					if err != nil {
+						break
+					}
+					ast.WalkFunc(fop, func(n ast.Node) bool {
+						switch f := n.(type) {
+						case *ast.Call:
+							de.Functions = append(de.Functions, f.Name)
+						}
+						return true
+					})
+				case "aggfunc":
+					fop, err := parseFunc(gn.Props)
+					if err != nil {
+						break
+					}
+					ast.WalkFunc(fop, func(n ast.Node) bool {
+						switch f := n.(type) {
+						case *ast.Call:
+							de.Functions = append(de.Functions, f.Name)
+						}
+						return true
+					})
+				case "filter":
+					fop, err := parseFilter(gn.Props)
+					if err != nil {
+						break
+					}
+					ast.WalkFunc(fop, func(n ast.Node) bool {
+						switch f := n.(type) {
+						case *ast.Call:
+							de.Functions = append(de.Functions, f.Name)
+						}
+						return true
+					})
+				case "pick":
+					pop, err := parsePick(gn.Props)
+					if err != nil {
+						break
+					}
+					ast.WalkFunc(pop, func(n ast.Node) bool {
+						switch f := n.(type) {
+						case *ast.Call:
+							de.Functions = append(de.Functions, f.Name)
+						}
+						return true
+					})
+				case "join":
+					jop, err := parseJoin(gn.Props)
+					if err != nil {
+						break
+					}
+					ast.WalkFunc(jop, func(n ast.Node) bool {
+						switch f := n.(type) {
+						case *ast.Call:
+							de.Functions = append(de.Functions, f.Name)
+						}
+						return true
+					})
+				case "groupby":
+					gop, err := parseGroupBy(gn.Props)
+					if err != nil {
+						break
+					}
+					ast.WalkFunc(gop, func(n ast.Node) bool {
+						switch f := n.(type) {
+						case *ast.Call:
+							de.Functions = append(de.Functions, f.Name)
+						}
+						return true
+					})
+				case "orderby":
+					oop, err := parseOrderBy(gn.Props)
+					if err != nil {
+						break
+					}
+					ast.WalkFunc(oop, func(n ast.Node) bool {
+						switch f := n.(type) {
+						case *ast.Call:
+							de.Functions = append(de.Functions, f.Name)
+						}
+						return true
+					})
+				case "switch":
+					opArray, err := parseSwitch(gn.Props)
+					if err != nil {
+						break
+					}
+					for _, op := range opArray {
+						ast.WalkFunc(op, func(n ast.Node) bool {
+							switch f := n.(type) {
+							case *ast.Call:
+								de.Functions = append(de.Functions, f.Name)
+							}
+							return true
+						})
+					}
+				}
+			default:
+				break
+			}
+		}
 	}
 }
 
@@ -269,5 +432,314 @@ func (p *RuleMigrationProcessor) exportSelected(de *Dependencies, config *Config
 	for _, v := range de.Schemas {
 		schName, schInfo := schema.GetSchemaInstallScript(v)
 		config.Schema[schName] = schInfo
+	}
+}
+
+func parsePick(props map[string]interface{}) (*ast.SelectStatement, error) {
+	n := &graph.Select{}
+	err := cast.MapToStruct(props, n)
+	if err != nil {
+		return nil, err
+	}
+	stmt, err := xsql.NewParser(strings.NewReader("select " + strings.Join(n.Fields, ",") + " from nonexist")).Parse()
+	if err != nil {
+		return nil, err
+	} else {
+		return stmt, nil
+	}
+}
+
+func parseFunc(props map[string]interface{}) (*ast.SelectStatement, error) {
+	m, ok := props["expr"]
+	if !ok {
+		return nil, errors.New("no expr")
+	}
+	funcExpr, ok := m.(string)
+	if !ok {
+		return nil, fmt.Errorf("expr %v is not string", m)
+	}
+	stmt, err := xsql.NewParser(strings.NewReader("select " + funcExpr + " from nonexist")).Parse()
+	if err != nil {
+		return nil, err
+	} else {
+		return stmt, nil
+	}
+}
+
+func parseFilter(props map[string]interface{}) (ast.Expr, error) {
+	m, ok := props["expr"]
+	if !ok {
+		return nil, errors.New("no expr")
+	}
+	conditionExpr, ok := m.(string)
+	if !ok {
+		return nil, fmt.Errorf("expr %v is not string", m)
+	}
+	p := xsql.NewParser(strings.NewReader(" where " + conditionExpr))
+	if exp, err := p.ParseCondition(); err != nil {
+		return nil, err
+	} else {
+		return exp, nil
+	}
+
+}
+
+func parseHaving(props map[string]interface{}) (ast.Expr, error) {
+	m, ok := props["expr"]
+	if !ok {
+		return nil, errors.New("no expr")
+	}
+	conditionExpr, ok := m.(string)
+	if !ok {
+		return nil, fmt.Errorf("expr %v is not string", m)
+	}
+	p := xsql.NewParser(strings.NewReader("where " + conditionExpr))
+	if exp, err := p.ParseCondition(); err != nil {
+		return nil, err
+	} else {
+		return exp, nil
+	}
+}
+
+func parseSwitch(props map[string]interface{}) ([]ast.Expr, error) {
+	n := &graph.Switch{}
+	err := cast.MapToStruct(props, n)
+	if err != nil {
+		return nil, err
+	}
+	if len(n.Cases) == 0 {
+		return nil, fmt.Errorf("switch node must have at least one case")
+	}
+	caseExprs := make([]ast.Expr, len(n.Cases))
+	for i, c := range n.Cases {
+		p := xsql.NewParser(strings.NewReader("where " + c))
+		if exp, err := p.ParseCondition(); err != nil {
+			return nil, fmt.Errorf("parse case %d error: %v", i, err)
+		} else {
+			if exp != nil {
+				caseExprs[i] = exp
+			}
+		}
+	}
+	return caseExprs, nil
+}
+
+func parseOrderBy(props map[string]interface{}) (*ast.SelectStatement, error) {
+	n := &graph.Orderby{}
+	err := cast.MapToStruct(props, n)
+	if err != nil {
+		return nil, err
+	}
+	stmt := "SELECT * FROM unknown ORDER BY"
+	for _, s := range n.Sorts {
+		stmt += " " + s.Field + " "
+		if s.Desc {
+			stmt += "DESC"
+		}
+	}
+	p, err := xsql.NewParser(strings.NewReader(stmt)).Parse()
+	if err != nil {
+		return nil, fmt.Errorf("invalid order by statement error: %v", err)
+	} else {
+		return p, nil
+	}
+}
+
+func parseGroupBy(props map[string]interface{}) (*ast.SelectStatement, error) {
+	n := &graph.Groupby{}
+	err := cast.MapToStruct(props, n)
+	if err != nil {
+		return nil, err
+	}
+	if len(n.Dimensions) == 0 {
+		return nil, fmt.Errorf("groupby must have at least one dimension")
+	}
+	stmt := "SELECT * FROM unknown Group By " + strings.Join(n.Dimensions, ",")
+	p, err := xsql.NewParser(strings.NewReader(stmt)).Parse()
+	if err != nil {
+		return nil, fmt.Errorf("invalid join statement error: %v", err)
+	} else {
+		return p, nil
+	}
+}
+
+func parseJoin(props map[string]interface{}) (*ast.SelectStatement, error) {
+	n := &graph.Join{}
+	err := cast.MapToStruct(props, n)
+	if err != nil {
+		return nil, err
+	}
+	stmt := "SELECT * FROM " + n.From
+	for _, join := range n.Joins {
+		stmt += " " + join.Type + " JOIN ON " + join.On
+	}
+	p, err := xsql.NewParser(strings.NewReader(stmt)).Parse()
+	if err != nil {
+		return nil, fmt.Errorf("invalid join statement error: %v", err)
+	} else {
+		return p, nil
+	}
+
+}
+
+// PlanByGraph returns a topo.Topo object by a graph
+func PlanByGraph(rule *api.Rule) {
+	var de *Dependencies = nil
+	ruleGraph := rule.Graph
+
+	for _, gn := range ruleGraph.Nodes {
+		switch gn.Type {
+		case "source":
+			sourceOption := &ast.Options{}
+			err := cast.MapToStruct(gn.Props, sourceOption)
+			if err != nil {
+				break
+			}
+			sourceOption.TYPE = gn.NodeType
+
+			de.Sources = append(de.Sources, sourceOption.TYPE)
+			//get config key
+			_, ok := de.SourceConfigKeys[sourceOption.TYPE]
+			if ok {
+				de.SourceConfigKeys[sourceOption.TYPE] = append(de.SourceConfigKeys[sourceOption.TYPE], sourceOption.CONF_KEY)
+			} else {
+				var confKeys []string
+				confKeys = append(confKeys, sourceOption.CONF_KEY)
+				de.SourceConfigKeys[sourceOption.TYPE] = confKeys
+			}
+			//get schema id
+			if sourceOption.SCHEMAID != "" {
+				r := strings.Split(sourceOption.SCHEMAID, ".")
+				de.Schemas = append(de.Schemas, sourceOption.FORMAT+"_"+r[0])
+			}
+		case "sink":
+			sinkType := gn.NodeType
+			props := gn.Props
+			de.Sinks = append(de.Sinks, sinkType)
+			resourceId, ok := props[conf.ResourceID].(string)
+			if ok {
+				_, ok := de.SinkConfigKeys[sinkType]
+				if ok {
+					de.SinkConfigKeys[sinkType] = append(de.SinkConfigKeys[sinkType], resourceId)
+				} else {
+					var confKeys []string
+					confKeys = append(confKeys, resourceId)
+					de.SinkConfigKeys[sinkType] = confKeys
+				}
+			}
+
+			format, ok := props["format"].(string)
+			if ok && format != "json" {
+				schemaId, ok := props["schemaId"].(string)
+				if ok {
+					r := strings.Split(schemaId, ".")
+					de.Schemas = append(de.Schemas, format+"_"+r[0])
+				}
+			}
+		case "operator":
+			nt := strings.ToLower(gn.NodeType)
+			switch nt {
+			case "function":
+				fop, err := parseFunc(gn.Props)
+				if err != nil {
+					break
+				}
+				ast.WalkFunc(fop, func(n ast.Node) bool {
+					switch f := n.(type) {
+					case *ast.Call:
+						de.Functions = append(de.Functions, f.Name)
+					}
+					return true
+				})
+			case "aggfunc":
+				fop, err := parseFunc(gn.Props)
+				if err != nil {
+					break
+				}
+				ast.WalkFunc(fop, func(n ast.Node) bool {
+					switch f := n.(type) {
+					case *ast.Call:
+						de.Functions = append(de.Functions, f.Name)
+					}
+					return true
+				})
+			case "filter":
+				fop, err := parseFilter(gn.Props)
+				if err != nil {
+					break
+				}
+				ast.WalkFunc(fop, func(n ast.Node) bool {
+					switch f := n.(type) {
+					case *ast.Call:
+						de.Functions = append(de.Functions, f.Name)
+					}
+					return true
+				})
+			case "pick":
+				pop, err := parsePick(gn.Props)
+				if err != nil {
+					break
+				}
+				ast.WalkFunc(pop, func(n ast.Node) bool {
+					switch f := n.(type) {
+					case *ast.Call:
+						de.Functions = append(de.Functions, f.Name)
+					}
+					return true
+				})
+			case "join":
+				jop, err := parseJoin(gn.Props)
+				if err != nil {
+					break
+				}
+				ast.WalkFunc(jop, func(n ast.Node) bool {
+					switch f := n.(type) {
+					case *ast.Call:
+						de.Functions = append(de.Functions, f.Name)
+					}
+					return true
+				})
+			case "groupby":
+				gop, err := parseGroupBy(gn.Props)
+				if err != nil {
+					break
+				}
+				ast.WalkFunc(gop, func(n ast.Node) bool {
+					switch f := n.(type) {
+					case *ast.Call:
+						de.Functions = append(de.Functions, f.Name)
+					}
+					return true
+				})
+			case "orderby":
+				oop, err := parseOrderBy(gn.Props)
+				if err != nil {
+					break
+				}
+				ast.WalkFunc(oop, func(n ast.Node) bool {
+					switch f := n.(type) {
+					case *ast.Call:
+						de.Functions = append(de.Functions, f.Name)
+					}
+					return true
+				})
+			case "switch":
+				opArray, err := parseSwitch(gn.Props)
+				if err != nil {
+					break
+				}
+				for _, op := range opArray {
+					ast.WalkFunc(op, func(n ast.Node) bool {
+						switch f := n.(type) {
+						case *ast.Call:
+							de.Functions = append(de.Functions, f.Name)
+						}
+						return true
+					})
+				}
+			}
+		default:
+			break
+		}
 	}
 }
