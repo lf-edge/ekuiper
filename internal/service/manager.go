@@ -489,14 +489,17 @@ func (m *Manager) servicesRegisterForImport(_, v string) error {
 	return nil
 }
 
-func (m *Manager) ImportServices(services map[string]string) {
+func (m *Manager) ImportServices(services map[string]string) map[string]string {
+	errMap := map[string]string{}
 	_ = m.serviceStatusInstallKV.Clean()
 	for k, v := range services {
 		err := m.servicesRegisterForImport(k, v)
 		if err != nil {
 			_ = m.serviceStatusInstallKV.Set(k, err.Error())
+			errMap[k] = err.Error()
 		}
 	}
+	return errMap
 }
 
 func (m *Manager) ImportPartialServices(services map[string]string) map[string]string {
