@@ -310,13 +310,23 @@ func (t *Server) ImportConfiguration(arg *model.ImportDataDesc, reply *string) e
 		return fmt.Errorf("fail to convert file %s: %v", file, err)
 	}
 	content := buf.Bytes()
+	partial := arg.Partial
 
-	configurationReset()
-	_ = configurationImport(content, arg.Stop)
-	//if err != nil {
-	//	return fmt.Errorf("import configuration error: %v", err)
-	//}
-	*reply = fmt.Sprintf("import configuration success")
+	var result Configuration
+	if !partial {
+		configurationReset()
+		result = configurationImport(content, arg.Stop)
+	} else {
+		result = configurationPartialImport(content)
+	}
+	marshal, _ := json.Marshal(result)
+
+	dst := &bytes.Buffer{}
+	if err := json.Indent(dst, marshal, "", "  "); err != nil {
+		return fmt.Errorf("import configuration error: %v", err)
+	}
+	*reply = dst.String()
+
 	return nil
 }
 
@@ -335,12 +345,21 @@ func (t *Server) GetStatusImport(_ int, reply *string) error {
 	return nil
 }
 
-func (t *Server) ExportConfiguration(file string, reply *string) error {
+func (t *Server) ExportConfiguration(arg *model.ExportDataDesc, reply *string) error {
+	rules := arg.Rules
+	file := arg.FileName
 	f, err := os.Create(file)
 	if err != nil {
 		return err
 	}
-	jsonBytes, err := configurationExport()
+	var jsonBytes []byte
+	//do not specify rules, export all
+	if len(rules) == 0 {
+		jsonBytes, err = configurationExport()
+	} else {
+		jsonBytes, err = ruleMigrationProcessor.ConfigurationPartialExport(rules)
+	}
+	jsonBytes, err = configurationExport()
 	_, err = io.Copy(f, bytes.NewReader(jsonBytes))
 	if err != nil {
 		return fmt.Errorf("fail to save to file %s:%v", file, err)
