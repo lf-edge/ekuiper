@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package processor
+package server
 
 import (
 	"encoding/json"
@@ -23,7 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/meta"
 	store2 "github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/internal/schema"
+	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/topo/graph"
 	"github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -34,38 +34,38 @@ import (
 )
 
 type RuleMigrationProcessor struct {
-	r *RuleProcessor
-	s *StreamProcessor
+	r *processor.RuleProcessor
+	s *processor.StreamProcessor
 }
 
-func NewRuleMigrationProcessor(r *RuleProcessor, s *StreamProcessor) *RuleMigrationProcessor {
+func NewRuleMigrationProcessor(r *processor.RuleProcessor, s *processor.StreamProcessor) *RuleMigrationProcessor {
 	return &RuleMigrationProcessor{
 		r: r,
 		s: s,
 	}
 }
 
-func NewDependencies() *Dependencies {
-	return &Dependencies{
-		SourceConfigKeys: map[string][]string{},
-		SinkConfigKeys:   map[string][]string{},
+func newDependencies() *dependencies {
+	return &dependencies{
+		sourceConfigKeys: map[string][]string{},
+		sinkConfigKeys:   map[string][]string{},
 	}
 }
 
-// Dependencies copy all connections related configs by hardcode
-type Dependencies struct {
-	Rules            []string
-	Streams          []string
-	Tables           []string
-	Sources          []string
-	Sinks            []string
-	SourceConfigKeys map[string][]string
-	SinkConfigKeys   map[string][]string
-	Functions        []string
-	Schemas          []string
+// dependencies copy all connections related configs by hardcode
+type dependencies struct {
+	rules            []string
+	streams          []string
+	tables           []string
+	sources          []string
+	sinks            []string
+	sourceConfigKeys map[string][]string
+	sinkConfigKeys   map[string][]string
+	functions        []string
+	schemas          []string
 }
 
-func ruleTraverse(rule *api.Rule, de *Dependencies) {
+func ruleTraverse(rule *api.Rule, de *dependencies) {
 	sql := rule.Sql
 	if sql != "" {
 		stmt, err := xsql.GetStatementFromSql(sql)
@@ -85,44 +85,44 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 			}
 			if streamStmt.StreamType == ast.TypeStream {
 				//get streams
-				de.Streams = append(de.Streams, string(streamStmt.Name))
+				de.streams = append(de.streams, string(streamStmt.Name))
 			} else if streamStmt.StreamType == ast.TypeTable {
 				//get tables
-				de.Tables = append(de.Tables, string(streamStmt.Name))
+				de.tables = append(de.tables, string(streamStmt.Name))
 			}
 
 			//get source type
-			de.Sources = append(de.Sources, streamStmt.Options.TYPE)
+			de.sources = append(de.sources, streamStmt.Options.TYPE)
 			//get config key
-			_, ok := de.SourceConfigKeys[streamStmt.Options.TYPE]
+			_, ok := de.sourceConfigKeys[streamStmt.Options.TYPE]
 			if ok {
-				de.SourceConfigKeys[streamStmt.Options.TYPE] = append(de.SourceConfigKeys[streamStmt.Options.TYPE], streamStmt.Options.CONF_KEY)
+				de.sourceConfigKeys[streamStmt.Options.TYPE] = append(de.sourceConfigKeys[streamStmt.Options.TYPE], streamStmt.Options.CONF_KEY)
 			} else {
 				var confKeys []string
 				confKeys = append(confKeys, streamStmt.Options.CONF_KEY)
-				de.SourceConfigKeys[streamStmt.Options.TYPE] = confKeys
+				de.sourceConfigKeys[streamStmt.Options.TYPE] = confKeys
 			}
 
 			//get schema id
 			if streamStmt.Options.SCHEMAID != "" {
 				r := strings.Split(streamStmt.Options.SCHEMAID, ".")
-				de.Schemas = append(de.Schemas, streamStmt.Options.FORMAT+"_"+r[0])
+				de.schemas = append(de.schemas, streamStmt.Options.FORMAT+"_"+r[0])
 			}
 		}
 		//actions
 		for _, m := range rule.Actions {
 			for name, action := range m {
 				props, _ := action.(map[string]interface{})
-				de.Sinks = append(de.Sinks, name)
+				de.sinks = append(de.sinks, name)
 				resourceId, ok := props[conf.ResourceID].(string)
 				if ok {
-					_, ok := de.SinkConfigKeys[name]
+					_, ok := de.sinkConfigKeys[name]
 					if ok {
-						de.SinkConfigKeys[name] = append(de.SinkConfigKeys[name], resourceId)
+						de.sinkConfigKeys[name] = append(de.sinkConfigKeys[name], resourceId)
 					} else {
 						var confKeys []string
 						confKeys = append(confKeys, resourceId)
-						de.SinkConfigKeys[name] = confKeys
+						de.sinkConfigKeys[name] = confKeys
 					}
 				}
 
@@ -131,7 +131,7 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 					schemaId, ok := props["schemaId"].(string)
 					if ok {
 						r := strings.Split(schemaId, ".")
-						de.Schemas = append(de.Schemas, format+"_"+r[0])
+						de.schemas = append(de.schemas, format+"_"+r[0])
 					}
 				}
 			}
@@ -140,13 +140,13 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 		ast.WalkFunc(stmt, func(n ast.Node) bool {
 			switch f := n.(type) {
 			case *ast.Call:
-				de.Functions = append(de.Functions, f.Name)
+				de.functions = append(de.functions, f.Name)
 			}
 			return true
 		})
 
 		//Rules
-		de.Rules = append(de.Rules, rule.Id)
+		de.rules = append(de.rules, rule.Id)
 	}
 
 	ruleGraph := rule.Graph
@@ -161,34 +161,34 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 				}
 				sourceOption.TYPE = gn.NodeType
 
-				de.Sources = append(de.Sources, sourceOption.TYPE)
+				de.sources = append(de.sources, sourceOption.TYPE)
 				//get config key
-				_, ok := de.SourceConfigKeys[sourceOption.TYPE]
+				_, ok := de.sourceConfigKeys[sourceOption.TYPE]
 				if ok {
-					de.SourceConfigKeys[sourceOption.TYPE] = append(de.SourceConfigKeys[sourceOption.TYPE], sourceOption.CONF_KEY)
+					de.sourceConfigKeys[sourceOption.TYPE] = append(de.sourceConfigKeys[sourceOption.TYPE], sourceOption.CONF_KEY)
 				} else {
 					var confKeys []string
 					confKeys = append(confKeys, sourceOption.CONF_KEY)
-					de.SourceConfigKeys[sourceOption.TYPE] = confKeys
+					de.sourceConfigKeys[sourceOption.TYPE] = confKeys
 				}
 				//get schema id
 				if sourceOption.SCHEMAID != "" {
 					r := strings.Split(sourceOption.SCHEMAID, ".")
-					de.Schemas = append(de.Schemas, sourceOption.FORMAT+"_"+r[0])
+					de.schemas = append(de.schemas, sourceOption.FORMAT+"_"+r[0])
 				}
 			case "sink":
 				sinkType := gn.NodeType
 				props := gn.Props
-				de.Sinks = append(de.Sinks, sinkType)
+				de.sinks = append(de.sinks, sinkType)
 				resourceId, ok := props[conf.ResourceID].(string)
 				if ok {
-					_, ok := de.SinkConfigKeys[sinkType]
+					_, ok := de.sinkConfigKeys[sinkType]
 					if ok {
-						de.SinkConfigKeys[sinkType] = append(de.SinkConfigKeys[sinkType], resourceId)
+						de.sinkConfigKeys[sinkType] = append(de.sinkConfigKeys[sinkType], resourceId)
 					} else {
 						var confKeys []string
 						confKeys = append(confKeys, resourceId)
-						de.SinkConfigKeys[sinkType] = confKeys
+						de.sinkConfigKeys[sinkType] = confKeys
 					}
 				}
 
@@ -197,7 +197,7 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 					schemaId, ok := props["schemaId"].(string)
 					if ok {
 						r := strings.Split(schemaId, ".")
-						de.Schemas = append(de.Schemas, format+"_"+r[0])
+						de.schemas = append(de.schemas, format+"_"+r[0])
 					}
 				}
 			case "operator":
@@ -211,7 +211,7 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 					ast.WalkFunc(fop, func(n ast.Node) bool {
 						switch f := n.(type) {
 						case *ast.Call:
-							de.Functions = append(de.Functions, f.Name)
+							de.functions = append(de.functions, f.Name)
 						}
 						return true
 					})
@@ -223,7 +223,7 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 					ast.WalkFunc(fop, func(n ast.Node) bool {
 						switch f := n.(type) {
 						case *ast.Call:
-							de.Functions = append(de.Functions, f.Name)
+							de.functions = append(de.functions, f.Name)
 						}
 						return true
 					})
@@ -235,7 +235,7 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 					ast.WalkFunc(fop, func(n ast.Node) bool {
 						switch f := n.(type) {
 						case *ast.Call:
-							de.Functions = append(de.Functions, f.Name)
+							de.functions = append(de.functions, f.Name)
 						}
 						return true
 					})
@@ -247,7 +247,7 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 					ast.WalkFunc(pop, func(n ast.Node) bool {
 						switch f := n.(type) {
 						case *ast.Call:
-							de.Functions = append(de.Functions, f.Name)
+							de.functions = append(de.functions, f.Name)
 						}
 						return true
 					})
@@ -259,7 +259,7 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 					ast.WalkFunc(jop, func(n ast.Node) bool {
 						switch f := n.(type) {
 						case *ast.Call:
-							de.Functions = append(de.Functions, f.Name)
+							de.functions = append(de.functions, f.Name)
 						}
 						return true
 					})
@@ -271,7 +271,7 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 					ast.WalkFunc(gop, func(n ast.Node) bool {
 						switch f := n.(type) {
 						case *ast.Call:
-							de.Functions = append(de.Functions, f.Name)
+							de.functions = append(de.functions, f.Name)
 						}
 						return true
 					})
@@ -283,7 +283,7 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 					ast.WalkFunc(oop, func(n ast.Node) bool {
 						switch f := n.(type) {
 						case *ast.Call:
-							de.Functions = append(de.Functions, f.Name)
+							de.functions = append(de.functions, f.Name)
 						}
 						return true
 					})
@@ -296,7 +296,7 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 						ast.WalkFunc(op, func(n ast.Node) bool {
 							switch f := n.(type) {
 							case *ast.Call:
-								de.Functions = append(de.Functions, f.Name)
+								de.functions = append(de.functions, f.Name)
 							}
 							return true
 						})
@@ -309,21 +309,8 @@ func ruleTraverse(rule *api.Rule, de *Dependencies) {
 	}
 }
 
-type Configuration struct {
-	Streams          map[string]string `json:"streams"`
-	Tables           map[string]string `json:"tables"`
-	Rules            map[string]string `json:"rules"`
-	NativePlugins    map[string]string `json:"nativePlugins"`
-	PortablePlugins  map[string]string `json:"portablePlugins"`
-	SourceConfig     map[string]string `json:"sourceConfig"`
-	SinkConfig       map[string]string `json:"sinkConfig"`
-	ConnectionConfig map[string]string `json:"connectionConfig"`
-	Service          map[string]string `json:"Service"`
-	Schema           map[string]string `json:"Schema"`
-}
-
 func (p *RuleMigrationProcessor) ConfigurationPartialExport(rules []string) ([]byte, error) {
-	conf := &Configuration{
+	config := &Configuration{
 		Streams:          make(map[string]string),
 		Tables:           make(map[string]string),
 		Rules:            make(map[string]string),
@@ -335,9 +322,9 @@ func (p *RuleMigrationProcessor) ConfigurationPartialExport(rules []string) ([]b
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
 	}
-	conf.Rules = p.exportRules(rules)
+	config.Rules = p.exportRules(rules)
 
-	de := NewDependencies()
+	de := newDependencies()
 	for _, v := range rules {
 		rule, _ := p.r.GetRuleById(v)
 		if rule != nil {
@@ -345,9 +332,9 @@ func (p *RuleMigrationProcessor) ConfigurationPartialExport(rules []string) ([]b
 		}
 	}
 
-	p.exportSelected(de, conf)
+	p.exportSelected(de, config)
 
-	return json.Marshal(conf)
+	return json.Marshal(config)
 }
 
 func (p *RuleMigrationProcessor) exportRules(rules []string) map[string]string {
@@ -380,12 +367,12 @@ func (p *RuleMigrationProcessor) exportTables(tables []string) map[string]string
 	return tableSet
 }
 
-func (p *RuleMigrationProcessor) exportSelected(de *Dependencies, config *Configuration) {
+func (p *RuleMigrationProcessor) exportSelected(de *dependencies, config *Configuration) {
 	//get the stream and table
-	config.Streams = p.exportStreams(de.Streams)
-	config.Tables = p.exportTables(de.Tables)
+	config.Streams = p.exportStreams(de.streams)
+	config.Tables = p.exportTables(de.tables)
 	//get the sources
-	for _, v := range de.Sources {
+	for _, v := range de.sources {
 		t, srcName, srcInfo := io.GetSourcePlugin(v)
 		if t == plugin.NATIVE_EXTENSION {
 			config.NativePlugins[srcName] = srcInfo
@@ -395,7 +382,7 @@ func (p *RuleMigrationProcessor) exportSelected(de *Dependencies, config *Config
 		}
 	}
 	// get sinks
-	for _, v := range de.Sinks {
+	for _, v := range de.sinks {
 		t, sinkName, sinkInfo := io.GetSinkPlugin(v)
 		if t == plugin.NATIVE_EXTENSION {
 			config.NativePlugins[sinkName] = sinkInfo
@@ -406,7 +393,7 @@ func (p *RuleMigrationProcessor) exportSelected(de *Dependencies, config *Config
 	}
 
 	// get functions
-	for _, v := range de.Functions {
+	for _, v := range de.functions {
 		t, svcName, svcInfo := function.GetFunctionPlugin(v)
 		if t == plugin.NATIVE_EXTENSION {
 			config.NativePlugins[svcName] = svcInfo
@@ -421,16 +408,16 @@ func (p *RuleMigrationProcessor) exportSelected(de *Dependencies, config *Config
 
 	// get sourceCfg/sinkCfg
 	configKeys := meta.YamlConfigurationKeys{}
-	configKeys.Sources = de.SourceConfigKeys
-	configKeys.Sinks = de.SinkConfigKeys
+	configKeys.Sources = de.sourceConfigKeys
+	configKeys.Sinks = de.sinkConfigKeys
 	configSet := meta.GetConfigurationsFor(configKeys)
 	config.SourceConfig = configSet.Sources
 	config.SinkConfig = configSet.Sinks
 	config.ConnectionConfig = configSet.Connections
 
 	//get schema
-	for _, v := range de.Schemas {
-		schName, schInfo := schema.GetSchemaInstallScript(v)
+	for _, v := range de.schemas {
+		schName, schInfo := getSchemaInstallScript(v)
 		config.Schema[schName] = schInfo
 	}
 }
@@ -580,166 +567,4 @@ func parseJoin(props map[string]interface{}) (*ast.SelectStatement, error) {
 		return p, nil
 	}
 
-}
-
-// PlanByGraph returns a topo.Topo object by a graph
-func PlanByGraph(rule *api.Rule) {
-	var de *Dependencies = nil
-	ruleGraph := rule.Graph
-
-	for _, gn := range ruleGraph.Nodes {
-		switch gn.Type {
-		case "source":
-			sourceOption := &ast.Options{}
-			err := cast.MapToStruct(gn.Props, sourceOption)
-			if err != nil {
-				break
-			}
-			sourceOption.TYPE = gn.NodeType
-
-			de.Sources = append(de.Sources, sourceOption.TYPE)
-			//get config key
-			_, ok := de.SourceConfigKeys[sourceOption.TYPE]
-			if ok {
-				de.SourceConfigKeys[sourceOption.TYPE] = append(de.SourceConfigKeys[sourceOption.TYPE], sourceOption.CONF_KEY)
-			} else {
-				var confKeys []string
-				confKeys = append(confKeys, sourceOption.CONF_KEY)
-				de.SourceConfigKeys[sourceOption.TYPE] = confKeys
-			}
-			//get schema id
-			if sourceOption.SCHEMAID != "" {
-				r := strings.Split(sourceOption.SCHEMAID, ".")
-				de.Schemas = append(de.Schemas, sourceOption.FORMAT+"_"+r[0])
-			}
-		case "sink":
-			sinkType := gn.NodeType
-			props := gn.Props
-			de.Sinks = append(de.Sinks, sinkType)
-			resourceId, ok := props[conf.ResourceID].(string)
-			if ok {
-				_, ok := de.SinkConfigKeys[sinkType]
-				if ok {
-					de.SinkConfigKeys[sinkType] = append(de.SinkConfigKeys[sinkType], resourceId)
-				} else {
-					var confKeys []string
-					confKeys = append(confKeys, resourceId)
-					de.SinkConfigKeys[sinkType] = confKeys
-				}
-			}
-
-			format, ok := props["format"].(string)
-			if ok && format != "json" {
-				schemaId, ok := props["schemaId"].(string)
-				if ok {
-					r := strings.Split(schemaId, ".")
-					de.Schemas = append(de.Schemas, format+"_"+r[0])
-				}
-			}
-		case "operator":
-			nt := strings.ToLower(gn.NodeType)
-			switch nt {
-			case "function":
-				fop, err := parseFunc(gn.Props)
-				if err != nil {
-					break
-				}
-				ast.WalkFunc(fop, func(n ast.Node) bool {
-					switch f := n.(type) {
-					case *ast.Call:
-						de.Functions = append(de.Functions, f.Name)
-					}
-					return true
-				})
-			case "aggfunc":
-				fop, err := parseFunc(gn.Props)
-				if err != nil {
-					break
-				}
-				ast.WalkFunc(fop, func(n ast.Node) bool {
-					switch f := n.(type) {
-					case *ast.Call:
-						de.Functions = append(de.Functions, f.Name)
-					}
-					return true
-				})
-			case "filter":
-				fop, err := parseFilter(gn.Props)
-				if err != nil {
-					break
-				}
-				ast.WalkFunc(fop, func(n ast.Node) bool {
-					switch f := n.(type) {
-					case *ast.Call:
-						de.Functions = append(de.Functions, f.Name)
-					}
-					return true
-				})
-			case "pick":
-				pop, err := parsePick(gn.Props)
-				if err != nil {
-					break
-				}
-				ast.WalkFunc(pop, func(n ast.Node) bool {
-					switch f := n.(type) {
-					case *ast.Call:
-						de.Functions = append(de.Functions, f.Name)
-					}
-					return true
-				})
-			case "join":
-				jop, err := parseJoin(gn.Props)
-				if err != nil {
-					break
-				}
-				ast.WalkFunc(jop, func(n ast.Node) bool {
-					switch f := n.(type) {
-					case *ast.Call:
-						de.Functions = append(de.Functions, f.Name)
-					}
-					return true
-				})
-			case "groupby":
-				gop, err := parseGroupBy(gn.Props)
-				if err != nil {
-					break
-				}
-				ast.WalkFunc(gop, func(n ast.Node) bool {
-					switch f := n.(type) {
-					case *ast.Call:
-						de.Functions = append(de.Functions, f.Name)
-					}
-					return true
-				})
-			case "orderby":
-				oop, err := parseOrderBy(gn.Props)
-				if err != nil {
-					break
-				}
-				ast.WalkFunc(oop, func(n ast.Node) bool {
-					switch f := n.(type) {
-					case *ast.Call:
-						de.Functions = append(de.Functions, f.Name)
-					}
-					return true
-				})
-			case "switch":
-				opArray, err := parseSwitch(gn.Props)
-				if err != nil {
-					break
-				}
-				for _, op := range opArray {
-					ast.WalkFunc(op, func(n ast.Node) bool {
-						switch f := n.(type) {
-						case *ast.Call:
-							de.Functions = append(de.Functions, f.Name)
-						}
-						return true
-					})
-				}
-			}
-		default:
-			break
-		}
-	}
 }

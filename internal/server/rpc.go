@@ -312,10 +312,10 @@ func (t *Server) ImportConfiguration(arg *model.ImportDataDesc, reply *string) e
 	content := buf.Bytes()
 
 	configurationReset()
-	err = configurationImport(content, arg.Stop)
-	if err != nil {
-		return fmt.Errorf("import configuration error: %v", err)
-	}
+	_ = configurationImport(content, arg.Stop)
+	//if err != nil {
+	//	return fmt.Errorf("import configuration error: %v", err)
+	//}
 	*reply = fmt.Sprintf("import configuration success")
 	return nil
 }

@@ -440,15 +440,18 @@ func (m *Manager) pluginRegisterForImport(k, v string) error {
 	return nil
 }
 
-func (m *Manager) PluginImport(plugins map[string]string) {
+func (m *Manager) PluginImport(plugins map[string]string) map[string]string {
+	errMap := map[string]string{}
 	_ = m.plgStatusDb.Clean()
 	for k, v := range plugins {
 		err := m.pluginRegisterForImport(k, v)
 		if err != nil {
 			_ = m.plgStatusDb.Set(k, err.Error())
+			errMap[k] = err.Error()
 			continue
 		}
 	}
+	return errMap
 }
 
 func (m *Manager) PluginPartialImport(plugins map[string]string) map[string]string {

@@ -528,7 +528,13 @@ func GetConfigurationStatus() YamlConfigurationSet {
 	return result
 }
 
-func LoadConfigurations(configSets YamlConfigurationSet) {
+func LoadConfigurations(configSets YamlConfigurationSet) YamlConfigurationSet {
+
+	configResponse := YamlConfigurationSet{
+		Sources:     map[string]string{},
+		Sinks:       map[string]string{},
+		Connections: map[string]string{},
+	}
 
 	var srcResources = configSets.Sources
 	var sinkResources = configSets.Sinks
@@ -543,11 +549,13 @@ func LoadConfigurations(configSets YamlConfigurationSet) {
 		err := json.Unmarshal([]byte(val), &configs)
 		if err != nil {
 			_ = ConfigManager.sourceConfigStatusDb.Set(key, err.Error())
+			configResponse.Sources[key] = err.Error()
 			continue
 		}
 		err = addSourceConfKeys(key, configs)
 		if err != nil {
 			_ = ConfigManager.sourceConfigStatusDb.Set(key, err.Error())
+			configResponse.Sources[key] = err.Error()
 			continue
 		}
 	}
@@ -557,11 +565,13 @@ func LoadConfigurations(configSets YamlConfigurationSet) {
 		err := json.Unmarshal([]byte(val), &configs)
 		if err != nil {
 			_ = ConfigManager.sinkConfigStatusDb.Set(key, err.Error())
+			configResponse.Sinks[key] = err.Error()
 			continue
 		}
 		err = addSinkConfKeys(key, configs)
 		if err != nil {
 			_ = ConfigManager.sinkConfigStatusDb.Set(key, err.Error())
+			configResponse.Sinks[key] = err.Error()
 			continue
 		}
 	}
@@ -571,14 +581,17 @@ func LoadConfigurations(configSets YamlConfigurationSet) {
 		err := json.Unmarshal([]byte(val), &configs)
 		if err != nil {
 			_ = ConfigManager.connectionConfigStatusDb.Set(key, err.Error())
+			configResponse.Connections[key] = err.Error()
 			continue
 		}
 		err = addConnectionConfKeys(key, configs)
 		if err != nil {
 			_ = ConfigManager.connectionConfigStatusDb.Set(key, err.Error())
+			configResponse.Connections[key] = err.Error()
 			continue
 		}
 	}
+	return configResponse
 }
 
 func LoadConfigurationsPartial(configSets YamlConfigurationSet) YamlConfigurationSet {

@@ -147,3 +147,7 @@ func schemaImport(s map[string]string) error {
 func schemaPartialImport(s map[string]string) map[string]string {
 	return schema.SchemaPartialImport(s)
 }
+
+func getSchemaInstallScript(s string) (string, string) {
+	return schema.GetSchemaInstallScript(s)
+}

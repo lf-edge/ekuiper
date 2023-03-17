@@ -90,3 +90,7 @@ func portablePluginPartialImport(plugins map[string]string) map[string]string {
 func servicePartialImport(services map[string]string) map[string]string {
 	return serviceManager.ImportPartialServices(services)
 }
+
+func getSchemaInstallScript(s string) (string, string) {
+	return "", ""
+}
