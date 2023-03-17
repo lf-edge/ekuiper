@@ -128,7 +128,7 @@ func (m *Manager) HasFunctionSet(name string) bool {
 	return name == "internal"
 }
 
-func (m *Manager) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
 	_, ok := builtins[funcName]
 	if !ok {
 		return plugin.NONE_EXTENSION, "", ""

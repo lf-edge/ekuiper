@@ -25,7 +25,7 @@ import (
 )
 
 func TestIO(t *testing.T) {
-	expected := `{"streams":{"demo":"CREATE STREAM demo () WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"},"tables":{},"Rules":{"rule1":"{\"id\":\"rule1\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{\"log\": {}}]}","rule2":"{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"}}`
+	expected := `{"streams":{"demo":"CREATE STREAM demo () WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"},"tables":{},"rules":{"rule1":"{\"id\":\"rule1\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{\"log\": {}}]}","rule2":"{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"}}`
 	expectedCounts := []int{1, 0, 2}
 	expectedStreams := []string{"demo"}
 	expectedRules := []string{"rule1", "rule2"}
@@ -42,7 +42,7 @@ func TestIO(t *testing.T) {
 	}
 	sort.Strings(names)
 	if !reflect.DeepEqual(names, expectedRules) {
-		t.Errorf("fail to return the imported Rules, expect %v but got %v", expectedRules, names)
+		t.Errorf("fail to return the imported rules, expect %v but got %v", expectedRules, names)
 	}
 	if !reflect.DeepEqual(counts, expectedCounts) {
 		t.Errorf("fail to return the correct counts, expect %v, but got %v", expectedCounts, counts)
@@ -60,12 +60,12 @@ func TestIO(t *testing.T) {
 
 	rules, err := rp.GetAllRules()
 	if err != nil {
-		t.Errorf("fail to get all Rules: %v", err)
+		t.Errorf("fail to get all rules: %v", err)
 		return
 	}
 	sort.Strings(rules)
 	if !reflect.DeepEqual(rules, expectedRules) {
-		t.Errorf("After import, expect Rules %v, but got %v", expectedRules, rules)
+		t.Errorf("After import, expect rules %v, but got %v", expectedRules, rules)
 		return
 	}
 
@@ -92,7 +92,7 @@ func TestIO(t *testing.T) {
 func TestImportError(t *testing.T) {
 	contents := []string{
 		"notjson",
-		`{INvalid"streams":{"demo":"CREATE STREAM demo () WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"},"tables":{},"Rules":{"rule1":"{\"id\":\"rule1\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{\"log\": {}}]}","rule2":"{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"}}`,
+		`{INvalid"streams":{"demo":"CREATE STREAM demo () WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"},"tables":{},"rules":{"rule1":"{\"id\":\"rule1\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{\"log\": {}}]}","rule2":"{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"}}`,
 	}
 	sp := NewStreamProcessor()
 	defer sp.db.Clean()

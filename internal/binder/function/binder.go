@@ -66,7 +66,7 @@ func Function(name string) (api.Function, error) {
 
 func GetFunctionPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
 	for _, sf := range funcFactories {
-		t, s1, s2 := sf.GetFunctionPlugin(name)
+		t, s1, s2 := sf.FunctionPluginInfo(name)
 		if t == plugin.NONE_EXTENSION {
 			continue
 		} else {

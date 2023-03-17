@@ -30,7 +30,7 @@ func (m *Manager) Source(name string) (api.Source, error) {
 	return runtime.NewPortableSource(name, meta), nil
 }
 
-func (m *Manager) GetSourcePlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
+func (m *Manager) SourcePluginInfo(name string) (plugin.EXTENSION_TYPE, string, string) {
 	pluginName, ok := m.reg.GetSymbol(plugin.SOURCE, name)
 	if ok {
 		var installScript = ""
@@ -54,7 +54,7 @@ func (m *Manager) Sink(name string) (api.Sink, error) {
 	return runtime.NewPortableSink(name, meta), nil
 }
 
-func (m *Manager) GetSinkPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
+func (m *Manager) SinkPluginInfo(name string) (plugin.EXTENSION_TYPE, string, string) {
 	pluginName, ok := m.reg.GetSymbol(plugin.SINK, name)
 	if ok {
 		var installScript = ""
@@ -94,7 +94,7 @@ func (m *Manager) HasFunctionSet(funcName string) bool {
 	return ok
 }
 
-func (m *Manager) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
 	pluginName, ok := m.reg.GetSymbol(plugin.FUNCTION, funcName)
 	if ok {
 		var installScript = ""

@@ -141,7 +141,6 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet, http.MethodPost)
-	//r.HandleFunc("/data/partial/import", configurationPartialImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
 	// Register extended routes
@@ -920,41 +919,6 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
-
-//func configurationPartialImportHandler(w http.ResponseWriter, r *http.Request) {
-//	rsi := &configurationInfo{}
-//	err := json.NewDecoder(r.Body).Decode(rsi)
-//	if err != nil {
-//		handleError(w, err, "Invalid body: Error decoding json", logger)
-//		return
-//	}
-//	if rsi.Content != "" && rsi.FilePath != "" {
-//		handleError(w, errors.New("bad request"), "Invalid body: Cannot specify both content and file", logger)
-//		return
-//	} else if rsi.Content == "" && rsi.FilePath == "" {
-//		handleError(w, errors.New("bad request"), "Invalid body: must specify content or file", logger)
-//		return
-//	}
-//	content := []byte(rsi.Content)
-//	if rsi.FilePath != "" {
-//		reader, err := httpx.ReadFile(rsi.FilePath)
-//		if err != nil {
-//			handleError(w, err, "Fail to read file", logger)
-//			return
-//		}
-//		defer reader.Close()
-//		buf := new(bytes.Buffer)
-//		_, err = io.Copy(buf, reader)
-//		if err != nil {
-//			handleError(w, err, "fail to convert file", logger)
-//			return
-//		}
-//		content = buf.Bytes()
-//	}
-//	result := configurationPartialImport(content)
-//
-//	jsonResponse(result, w, logger)
-//}
 
 func configurationStatusExport() Configuration {
 	conf := Configuration{

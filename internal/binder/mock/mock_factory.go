@@ -36,7 +36,7 @@ func (f *MockFactory) Source(name string) (api.Source, error) {
 	}
 }
 
-func (f *MockFactory) GetSourcePlugin(_ string) (plugin.EXTENSION_TYPE, string, string) {
+func (f *MockFactory) SourcePluginInfo(_ string) (plugin.EXTENSION_TYPE, string, string) {
 	return plugin.INTERNAL, "", ""
 }
 
@@ -52,7 +52,7 @@ func (f *MockFactory) Sink(name string) (api.Sink, error) {
 	}
 }
 
-func (f *MockFactory) GetSinkPlugin(_ string) (plugin.EXTENSION_TYPE, string, string) {
+func (f *MockFactory) SinkPluginInfo(_ string) (plugin.EXTENSION_TYPE, string, string) {
 	return plugin.INTERNAL, "", ""
 }
 
@@ -76,7 +76,7 @@ func (f *MockFactory) HasFunctionSet(funcName string) bool {
 	}
 }
 
-func (f *MockFactory) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+func (f *MockFactory) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
 	return plugin.NONE_EXTENSION, "", ""
 }
 

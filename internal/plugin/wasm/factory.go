@@ -39,7 +39,7 @@ func (m *Manager) HasFunctionSet(funcName string) bool {
 	return ok
 }
 
-func (m *Manager) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
 	return plugin.NONE_EXTENSION, "", ""
 }
 
