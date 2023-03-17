@@ -23,7 +23,7 @@ eKuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松�
 
 ## 插件开发
 
-插件开发一般在开发环境中进行。在开发环境调试运行通过后再部署到生产环境中。由于Go语言插件机制的严格限制，我们在这里提供两种行之有效的构建插件开发环境的办法：在eKuiper工程中创建插件开发环境与在eKuiper工程外创建插件开发环境。eKuiper 插件有三种类型：源，函数和目标，插件开发的详细方法请参看 [LF Edge eKuiper 扩展](../../overview.md) 。本文以目标（sink)为例，介绍插件的开发部署过程。我们将开发一个最基本的 MySql 目标，用于将流输出写入到 MySql 数据库中。涉及到的工作流程大致如下：
+插件开发一般在开发环境中进行。在开发环境调试运行通过后再部署到生产环境中。由于Go语言插件机制的严格限制，我们在这里提供两种行之有效的构建插件开发环境的办法：在eKuiper工程中创建插件开发环境与在eKuiper工程外创建插件开发环境。eKuiper 插件有三种类型：源，函数和目标，插件开发的详细方法请参看 [LF Edge eKuiper 扩展](../../overview.md) 。本文以目标(sink)为例，介绍插件的开发部署过程。我们将开发一个最基本的 MySql 目标，用于将流输出写入到 MySql 数据库中。涉及到的工作流程大致如下：
 
 - 新建名为 samplePlugin 的插件项目
 - 在 sinks 目录下，新建 mysql.go 文件
@@ -38,8 +38,9 @@ eKuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松�
 当用户以这种方式创建插件项目时，首先必须下载一份eKuiper源码并在项目根目录下执行`make`命令。在项目源码extensions目录中有一些插件事例。以此种方式开发插件项目的好处是官方现存的所有插件均以此种方式开发，新插件开发者可以快速上手而不用重新建立项目，用户可以直接把代码放到extensions目录下，代码结构如下：
 ```
 extensions
-  sinks           
-    mysink.go
+  sinks
+    myplugin           
+      mysql.go
   go.mod         
 ```
 extensions目录用Go module来管理依赖包，用户只需把他们的插件源码放入合适的目录，然后在go.mod中更新依赖即可。
@@ -100,7 +101,7 @@ func (m *mysqlSink) Open(ctx api.StreamContext) (err error) {
 // 该函数为数据处理简化函数。
 func (m *mysqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	v, _, err := ctx.TransformOutput(data)
+	v, _, err := ctx.TransformOutput(item)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -143,8 +144,7 @@ func Mysql() api.Sink {
 ```
 samplePlugin
   sinks           //source code directory of the plugin sink
-    mysql.go
-  target          //directory of compiling results   
+    mysql.go  
   go.mod          //file go module
 ```
 这里的mysql.go文件可以参考上一节的代码。 插件开发需要扩展 eKuiper 内的接口，因此必须依赖于 eKuiper 项目。最简单的 go.mod 也需要包含对 eKuiper 的依赖。典型的 go.mod 如下：
@@ -185,54 +185,49 @@ require (
 
 ```
 
-然后如果开发者选择了自己创建插件项目， 那么他需要以下步骤来编译插件：
+如果开发者选择了自己创建插件项目， 那么他需要以下步骤来编译插件：
 1. 下载 eKuiper 源代码 `git clone https://github.com/lf-edge/ekuiper.git`
 2. 编译 eKuiper：在 eKuiper 目录下，运行 `make`
-3. 设置eKuiper项目目录: 将第一步的下载目录设置为环境变量`eKuiperPath`，例如`export eKuiperPath=/go/ekuiper`   
-4. 编译环境设置：
-    1. 在插件项目下，运行 `go mod edit -replace github.com/lf-edge/ekuiper=$eKuiperPath`，使得 eKuiper 依赖指向本地 eKuiper，这里$eKuiperPath将被替换为步骤1下载目录，下同。这一步执行后的效果，这里有个例子:
-       ```go
-          module samplePlugin
-          go 1.18
-
-          require (
-            github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
-            github.com/go-sql-driver/mysql v1.5.0
-          )
-          replace github.com/lf-edge/ekuiper => /go/ekuiper # replace ekuiper with local ekuiper module
-       ```
-    2. 由于 Go 语言插件系统对依赖的路径有非常严格的要求，为了确保插件可以顺利运行，建议在 eKuiper 主项目里进行编译。在 eKuiper 项目里，添加如下名为 sample.mod 的文件并让它指向真正的插件项目，以便于插件编译。如果你的eKuiper与插件项目在同一目录，这里有个例子：
-       ```
-       module github.com/lf-edge/ekuiper
-       go 1.18
-       require samplePlugin v0.0.0
-       replace samplePlugin => ../samplePlugin   # replace samplePlugin with local samplePlugin module
-       ```
-    3. 经过这些配置，你的插件项目与eKuiper项目目录结构应该是这样
-       ``` 
+3. 编译环境设置
+    1. 用户可以把 eKuiper 和 插件放在同一目录下，项目目录类似于如下结构：
+      ```
+      workspace
         ekuiper
-          sample.mod         //new added sample.mod file in step2
-          go.mod             //existing ekuiper default mod file
-          extensions.mod     //existing extensions mod file for plugins
+          go.mod
         samplePlugin
-          go.mod             //new plugin project default mod file
-       `
+          go.mod
+      ```
+    2. 在1.9.0 里，我们使用了 go workspace 功能重构了子模块的go mod构建方式，所以我们可以使用 go workspace 解决依赖问题。进入 workspace 目录里，创建工作区：  
+      ```shell
+      go work init ./ekuiper ./samplePlugin
+      ```
+    3. 经过这些配置，你的插件项目与eKuiper项目目录结构应该是这样
+      ``` 
+        workspace
+          ekuiper
+            go.mod             
+          samplePlugin
+            go.mod
+          go.work
+      ```
        
-5. 在 eKuiper 目录下，编译插件和eKuiper
+4. 在 workspace 目录下，编译插件和eKuiper
    ```shell
     # compile the eKuiper
-    go build -trimpath -o $eKuiperPath/_build/$build/bin/kuiperd cmd/kuiperd/main.go
+    go build -trimpath -o ./_build/$build/bin/kuiperd cmd/kuiperd/main.go
 
+    cd $workspacePath
     # compile the plugin that using self-managed project within eKuiper project
-    go build -trimpath -modfile sample.mod --buildmode=plugin -o $eKuiperPath/_build/$build/plugins/sinks/Mysql@v1.0.0.so ../samplePlugin/sinks/mysql.go
+    go build -trimpath --buildmode=plugin -o ./ekuiper/_build/$build/plugins/sinks/Mysql@v1.0.0.so ./samplePlugin/sinks/mysql.go
    ```
+**注意**：插件命名有限制，详见[插件总览](../overview.md)。
 
 #### Docker编译
 
-eKuiper 提供了开发版本 docker 镜像。从 1.7.1 开始，开发镜像为 x.x.x-dev (0.4.0 到 1.7.0 之间版本的开发镜像为x.x.x，例如`lfedge/ekuiper:0.4.0`。)；与运行版本相比，开发版提供了 go 开发环境，使得用户可以在编译出在 eKuiper 正式发布版本中完全兼容的插件。Docker 中编译步骤如下：
-1. 运行 eKuiper 开发版本 docker。需要把本地插件目录 mount 到 docker 里的目录中，这样才能在 docker 中访问插件项目并编译。笔者的插件项目位于本地 `/var/git` 目录。下面的命令中，我们把本地的 `/var/git`目录映射到 docker 内的 `/home` 目录中。
+eKuiper 提供了开发版本 docker 镜像。从 1.7.1 开始，开发镜像为 x.x.x-dev (0.4.0 到 1.7.0 之间版本的开发镜像为x.x.x，例如`lfedge/ekuiper:0.4.0`。)；与运行版本相比，开发版提供了 go 开发环境，使得用户可以在编译出在 eKuiper 正式发布版本中完全兼容的插件。由于1.9.0版本之后才使用go workspace功能，所以后面的步骤只适用于1.9.0之后的版本。在 Docker 中编译步骤如下：
+1. 运行 eKuiper 开发版本 docker。需要把本地插件目录 mount 到 docker 里的目录中，这样才能在 docker 中访问插件项目并编译。笔者的插件项目位于本地 `/var/git` 目录。下面的命令中，我们把本地的 `/var/git`目录映射到 docker 内的 `/go/plugins` 目录中。
     ```go
-    docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/home lfedge/ekuiper:1.3.0
+    docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/go/plugins lfedge/ekuiper:1.9.0-alpha.0-dev
     ```
 2. 在 docker 环境中编译插件，其原理与本地编译一致。编译出的插件置于插件项目的 target 目录中
    1. 进入开发版本docker容器中
@@ -247,57 +242,26 @@ eKuiper 提供了开发版本 docker 镜像。从 1.7.1 开始，开发镜像为
     ```
    3. 参照本地编译环境设置方法，设置编译环境，目录结构如下
     ``` 
-      /go/kuiper
-        go.mod
-        sample.mod
-      /home/samplePlugin
-        sinks           
-          mysql.go     
-        go.mod
-    ```    
-    4. 进入eKuiper主目录，执行下面命令
+      /go
+        kuiper
+          go.mod
+        samplePlugin
+          sinks           
+            mysql.go     
+          go.mod
+      go.work
+    ```
+    可以使用如下命令
     ``` shell
     # In docker instance
-    # 在 eKuiper 项目中添加 sample.mod 然后运行如下命令进行编译
-    go build -trimpath --buildmode=plugin -o /home/samplePlugin/target/plugins/sinks/Mysql@v1.0.0.so /home/samplePlugin/sinks/mysql.go
+    cp -r /go/plugins/samplePlugin /go/samplePlugin
+    go work init ./kuiper ./samplePlugin
     ```
-
-在插件项目中可以使用如下 shell 脚本自动编译及打包插件。修改脚本开头的参数以满足不同环境下的开发调试需求。
-
-```shell script
-#!/bin/sh
-export EKUIPER_SOURCE=/go/kuiper
-export PLUGIN_SOURCE=/home/samplePlugin
-export PLUGIN_TARGET=$PLUGIN_SOURCE/plugins
-export VERSION=0.0.1
-
-
-mkdir -p $PLUGIN_TARGET/sinks
-
-# replace eKuiper dependency with local eKuiper
-go mod edit -replace github.com/lf-edge/ekuiper=$EKUIPER_SOURCE
-
-# go to eKuiper main path
-cd $EKUIPER_SOURCE
-
-cat <<EOF >$EKUIPER_SOURCE/sample.mod
-module github.com/lf-edge/ekuiper
-go 1.18
-require samplePlugin v0.0.0
-replace samplePlugin => $PLUGIN_SOURCE
-EOF
-
-go mod download -modfile sample.mod github.com/go-sql-driver/mysql
-go build -trimpath -modfile sample.mod  --buildmode=plugin -o $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so $PLUGIN_SOURCE/sinks/mysql.go
-
-cd $PLUGIN_SOURCE
-
-
-echo $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so
-
-## zip the output
-zip -o $PLUGIN_TARGET/sinks/mysql.zip $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so
-```
+    4. 进入 /go 目录，执行下面命令
+    ``` shell
+    # In docker instance
+    go build -trimpath --buildmode=plugin -o ./kuiper/_build/$build/plugins/sinks/Mysql@v1.0.0.so ./samplePlugin/sinks/mysql.go
+    ```
 
 ### 调试运行插件
 
@@ -310,15 +274,14 @@ zip -o $PLUGIN_TARGET/sinks/mysql.zip $PLUGIN_TARGET/sinks/Mysql@v$VERSION.so
     {
       "log": {},
       "mysql":{
-        "url": "user:test@tcp(localhost:3307)/user",
+        "url": "user:password@tcp(localhost:3306)/database",
         "table": "test"
       }
     }
   ]
 }
 ```
-
-开发调试中，也可以直接把插件 so 文件复制到相应 plugins 目录下，并重启 eKuiper 进行调试。开发环境的Docker 镜像，eKuiper默认在 `/usr/local/kuiper` 目录下。需要注意的是，插件重新编译后需要重启  eKuiper 才能载入新的版本。
+**注意**：mysql.go中实现的接口在表中插入数据时只能插入列名为name的数据。此外，开发调试中，也可以直接把插件 so 文件复制到相应 plugins 目录下，并重启 eKuiper 进行调试。开发环境的 Docker 镜像，eKuiper默认在 `/usr/local/kuiper` 目录下。需要注意的是，`插件重新编译后需要重启  eKuiper 才能载入新的版本`。
 
 ## 插件部署
 
