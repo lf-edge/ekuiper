@@ -30,7 +30,7 @@ type RulesetProcessor struct {
 type Ruleset struct {
 	Streams map[string]string `json:"streams"`
 	Tables  map[string]string `json:"tables"`
-	Rules   map[string]string `json:"Rules"`
+	Rules   map[string]string `json:"rules"`
 }
 
 func NewRulesetProcessor(r *RuleProcessor, s *StreamProcessor) *RulesetProcessor {
@@ -50,7 +50,7 @@ func (rs *RulesetProcessor) Export() (io.ReadSeeker, []int, error) {
 	all.Tables = allStreams["tables"]
 	rules, err := rs.r.GetAllRulesJson()
 	if err != nil {
-		return nil, nil, fmt.Errorf("fail to get all Rules: %v", err)
+		return nil, nil, fmt.Errorf("fail to get all rules: %v", err)
 	}
 	all.Rules = rules
 	jsonBytes, err := json.Marshal(all)
@@ -72,7 +72,7 @@ func (rs *RulesetProcessor) ExportRuleSet() *Ruleset {
 	all.Tables = allStreams["tables"]
 	rules, err := rs.r.GetAllRulesJson()
 	if err != nil {
-		conf.Log.Errorf("fail to get all Rules: %v", err)
+		conf.Log.Errorf("fail to get all rules: %v", err)
 		return nil
 	}
 	all.Rules = rules
@@ -128,7 +128,7 @@ func (rs *RulesetProcessor) Import(content []byte) ([]string, []int, error) {
 		}
 	}
 	var rules []string
-	// restore Rules
+	// restore rules
 	for k, v := range all.Rules {
 		_, e := rs.r.ExecCreateWithValidation(k, v)
 		if e != nil {
@@ -178,7 +178,7 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) Ruleset {
 		}
 	}
 	var rules []string
-	// restore Rules
+	// restore rules
 	for k, v := range all.Rules {
 		_, e := rs.r.ExecCreateWithValidation(k, v)
 		if e != nil {

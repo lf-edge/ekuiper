@@ -71,7 +71,7 @@ func Source(name string) (api.Source, error) {
 
 func GetSourcePlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
 	for _, sf := range sourceFactories {
-		t, s1, s2 := sf.GetSourcePlugin(name)
+		t, s1, s2 := sf.SourcePluginInfo(name)
 		if t == plugin.NONE_EXTENSION {
 			continue
 		} else {
@@ -97,7 +97,7 @@ func Sink(name string) (api.Sink, error) {
 
 func GetSinkPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
 	for _, sf := range sinkFactories {
-		t, s1, s2 := sf.GetSinkPlugin(name)
+		t, s1, s2 := sf.SinkPluginInfo(name)
 		if t == plugin.NONE_EXTENSION {
 			continue
 		} else {

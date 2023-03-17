@@ -201,7 +201,7 @@ func (m *Manager) HasFunctionSet(_ string) bool {
 	return false
 }
 
-func (m *Manager) GetFunctionPlugin(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
 	funcContainer, ok := m.getFunction(funcName)
 	if ok {
 		var installScript = ""

@@ -108,7 +108,7 @@ func (m *mockFac) Source(_ string) (api.Source, error) {
 	return nil, nil
 }
 
-func (m *mockFac) GetSourcePlugin(_ string) (plugin.EXTENSION_TYPE, string, string) {
+func (m *mockFac) SourcePluginInfo(_ string) (plugin.EXTENSION_TYPE, string, string) {
 	return plugin.INTERNAL, "", ""
 }
 

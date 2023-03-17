@@ -62,7 +62,7 @@ func (m *Manager) Source(name string) (api.Source, error) {
 	return nil, nil
 }
 
-func (m *Manager) GetSourcePlugin(name string) (plugin2.EXTENSION_TYPE, string, string) {
+func (m *Manager) SourcePluginInfo(name string) (plugin2.EXTENSION_TYPE, string, string) {
 	if _, ok := sources[name]; ok {
 		return plugin2.INTERNAL, "", ""
 	} else {
@@ -84,7 +84,7 @@ func (m *Manager) Sink(name string) (api.Sink, error) {
 	return nil, nil
 }
 
-func (m *Manager) GetSinkPlugin(name string) (plugin2.EXTENSION_TYPE, string, string) {
+func (m *Manager) SinkPluginInfo(name string) (plugin2.EXTENSION_TYPE, string, string) {
 	if _, ok := sinks[name]; ok {
 		return plugin2.INTERNAL, "", ""
 	} else {

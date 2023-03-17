@@ -585,7 +585,7 @@ func (rr *Manager) Source(name string) (api.Source, error) {
 	}
 }
 
-func (rr *Manager) GetSourcePlugin(name string) (plugin2.EXTENSION_TYPE, string, string) {
+func (rr *Manager) SourcePluginInfo(name string) (plugin2.EXTENSION_TYPE, string, string) {
 	_, ok := rr.GetPluginVersionBySymbol(plugin2.SOURCE, name)
 	if ok {
 		pluginName, _ := rr.GetPluginBySymbol(plugin2.SOURCE, name)
@@ -636,7 +636,7 @@ func (rr *Manager) Sink(name string) (api.Sink, error) {
 	return s, nil
 }
 
-func (rr *Manager) GetSinkPlugin(name string) (plugin2.EXTENSION_TYPE, string, string) {
+func (rr *Manager) SinkPluginInfo(name string) (plugin2.EXTENSION_TYPE, string, string) {
 	_, ok := rr.GetPluginVersionBySymbol(plugin2.SINK, name)
 	if ok {
 		pluginName, _ := rr.GetPluginBySymbol(plugin2.SINK, name)
@@ -674,7 +674,7 @@ func (rr *Manager) HasFunctionSet(name string) bool {
 	return ok
 }
 
-func (rr *Manager) GetFunctionPlugin(funcName string) (plugin2.EXTENSION_TYPE, string, string) {
+func (rr *Manager) FunctionPluginInfo(funcName string) (plugin2.EXTENSION_TYPE, string, string) {
 	pluginName, ok := rr.GetPluginBySymbol(plugin2.FUNCTION, funcName)
 	if ok {
 		var installScript = ""
