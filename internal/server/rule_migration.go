@@ -67,6 +67,7 @@ type dependencies struct {
 
 func ruleTraverse(rule *api.Rule, de *dependencies) {
 	sql := rule.Sql
+	ruleGraph := rule.Graph
 	if sql != "" {
 		stmt, err := xsql.GetStatementFromSql(sql)
 		if err != nil {
@@ -147,10 +148,8 @@ func ruleTraverse(rule *api.Rule, de *dependencies) {
 
 		//Rules
 		de.rules = append(de.rules, rule.Id)
-	}
+	} else {
 
-	ruleGraph := rule.Graph
-	if ruleGraph != nil {
 		for _, gn := range ruleGraph.Nodes {
 			switch gn.Type {
 			case "source":
