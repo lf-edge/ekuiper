@@ -22,8 +22,8 @@ import (
 	"sync"
 )
 
-//Manage the function plugin instances
-//Each operator has a single instance of this to hold the context
+// Manage the function plugin instances
+// Each operator has a single instance of this to hold the context
 type funcRuntime struct {
 	sync.Mutex
 	regs      []*funcReg
@@ -41,6 +41,8 @@ func NewFuncRuntime(ctx api.StreamContext) *funcRuntime {
 	}
 }
 
+// Get Each funcId returns a single instance of the function
+// The funcId is assigned in operator instance level, thus each operator will have a single instance of the function
 func (fp *funcRuntime) Get(name string, funcId int) (api.Function, api.FunctionContext, error) {
 	fp.Lock()
 	defer fp.Unlock()
