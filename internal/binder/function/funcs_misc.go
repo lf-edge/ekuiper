@@ -326,6 +326,10 @@ func registerMiscFunc() {
 		},
 		val: ValidateOneStrArg,
 	}
+	builtinStatfulFuncs["compress"] = func() api.Function {
+		conf.Log.Infof("initializing compress function")
+		return &compressFunc{}
+	}
 	builtins["isnull"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {

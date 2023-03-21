@@ -15,7 +15,6 @@
 package function
 
 import (
-	"fmt"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -31,10 +30,14 @@ type builtinFunc struct {
 	val   funcVal
 }
 
-var builtins map[string]builtinFunc
+var (
+	builtins            map[string]builtinFunc
+	builtinStatfulFuncs map[string]func() api.Function
+)
 
 func init() {
 	builtins = make(map[string]builtinFunc)
+	builtinStatfulFuncs = make(map[string]func() api.Function)
 	registerAggFunc()
 	registerMathFunc()
 	registerStrFunc()
@@ -62,66 +65,19 @@ func IsAnalyticFunc(name string) bool {
 	return ok
 }
 
-type funcExecutor struct{}
-
-func (f *funcExecutor) ValidateWithName(args []ast.Expr, name string) error {
-	fs, ok := builtins[name]
-	if !ok {
-		return fmt.Errorf("validate function %s error: unknown name", name)
-	}
-
-	var eargs []ast.Expr
-	for _, arg := range args {
-		if t, ok := arg.(ast.Expr); ok {
-			eargs = append(eargs, t)
-		} else {
-			// should never happen
-			return fmt.Errorf("receive invalid arg %v", arg)
-		}
-	}
-	// TODO pass in ctx
-	return fs.val(nil, eargs)
-}
-
-func (f *funcExecutor) Validate(_ []interface{}) error {
-	return fmt.Errorf("unknow name")
-}
-
-func (f *funcExecutor) Exec(_ []interface{}, _ api.FunctionContext) (interface{}, bool) {
-	return fmt.Errorf("unknow name"), false
-}
-
-func (f *funcExecutor) ExecWithName(args []interface{}, ctx api.FunctionContext, name string) (interface{}, bool) {
-	fs, ok := builtins[name]
-	if !ok {
-		return fmt.Errorf("unknow name"), false
-	}
-	return fs.exec(ctx, args)
-}
-
-func (f *funcExecutor) IsAggregate() bool {
-	return false
-}
-
-func (f *funcExecutor) GetFuncType(name string) ast.FuncType {
-	fs, ok := builtins[name]
-	if !ok {
-		return ast.FuncTypeUnknown
-	}
-	return fs.fType
-}
-
-var staticFuncExecutor = &funcExecutor{}
-
 type Manager struct{}
 
 // Function the name is converted to lowercase if needed during parsing
 func (m *Manager) Function(name string) (api.Function, error) {
 	_, ok := builtins[name]
-	if !ok {
-		return nil, nil
+	if ok {
+		return staticFuncExecutor, nil
 	}
-	return staticFuncExecutor, nil
+	ff, ok := builtinStatfulFuncs[name]
+	if ok {
+		return ff(), nil
+	}
+	return nil, nil
 }
 
 func (m *Manager) HasFunctionSet(name string) bool {
