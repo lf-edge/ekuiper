@@ -312,7 +312,7 @@ func (t *Server) ImportConfiguration(arg *model.ImportDataDesc, reply *string) e
 	content := buf.Bytes()
 	partial := arg.Partial
 
-	var result Configuration
+	var result ImportConfigurationStatus
 	if !partial {
 		configurationReset()
 		result = configurationImport(content, arg.Stop)
