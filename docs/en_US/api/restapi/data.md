@@ -1,6 +1,6 @@
 # Data Import/Export Management
 
-eKuiper REST api allows to import or export all data.
+eKuiper REST api allows to import or export data.
 
 ## Data Format
 
@@ -19,8 +19,8 @@ The file format for importing and exporting data is JSON, which can contain : `s
         "rule2": "{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"
     },
     "nativePlugins":{
-        "sinks_tdengine":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: no such file or directory",
-        "sources_random":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: no such file or directory"
+        "functions_image":"{\"name\":\"image\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/functions/image_amd64.zip\",\"shellParas\":[]}",
+        "sources_video":"{\"name\":\"video\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/sources/video_amd64.zip\",\"shellParas\":[]}"
     },
     "portablePlugins":{
     },
@@ -41,7 +41,8 @@ The file format for importing and exporting data is JSON, which can contain : `s
 
 ## Import Data
 
-The API resets all existing data and then imports the new data into the system. The API supports specifying data by means of text content or file URIs.
+The API resets all existing data and then imports the new data into the system by default. But user can specify ``partial=1`` parameter in HTTP URL to keep the existing data and apply the new data.
+The API supports specifying data by means of text content or file URIs.
 
 
 Example 1: Import by text content
@@ -78,6 +79,18 @@ Content-Type: application/json
 }
 ```
 
+
+Example 4: Keep the old data and import new data (overwrite the tables/streams/rules/source config/sink config. install plugins/schema if not exist, else ignore them)
+
+```shell
+POST http://{{host}}/data/import?partial=1
+Content-Type: application/json
+
+{
+  "file": "file:///tmp/a.json"
+}
+```
+
 ## Import data status
 
 
@@ -103,7 +116,9 @@ Content-Type: application/json
   "sinkConfig":{},
   "connectionConfig":{},
   "Service":{},
-  "Schema":{}}
+  "Schema":{}
+}
+
 ```
 
 Example 2: Failed to import plugin
@@ -131,6 +146,14 @@ Content-Type: application/json
 
 The export API returns a file to download.
 
+Example 1: export all data
+
 ```shell
 GET http://{{host}}/data/export
+```
+
+Example 2: export specific rules related data
+
+```shell
+POST -d '["rule1","rule2"]' http://{{host}}/data/export
 ```

@@ -1,6 +1,6 @@
 # Data Import/Export Management
 
-The eKuiper rule command line tools allows to import and export all the Data.
+The eKuiper rule command line tools allows to import and export the Data.
 
 ## Data Format
 
@@ -19,8 +19,8 @@ The file format for importing and exporting Data is JSON, which can contain : `s
     "rule2": "{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"
   },
   "nativePlugins":{
-    "sinks_tdengine":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: no such file or directory",
-    "sources_random":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: no such file or directory"
+    "functions_image":"{\"name\":\"image\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/functions/image_amd64.zip\",\"shellParas\":[]}",
+    "sources_video":"{\"name\":\"video\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/sources/video_amd64.zip\",\"shellParas\":[]}",
   },
   "portablePlugins":{
   },
@@ -39,12 +39,20 @@ The file format for importing and exporting Data is JSON, which can contain : `s
 }
 ```
 
-## Import Data
+## Reset And Import Data
 
 The API resets all existing data and then imports the new data into the system. 
 
 ```shell
 # bin/kuiper import data -f myrules.json -s false
+```
+
+## Import Data 
+
+The API imports the data into the system(overwrite the tables/streams/rules/source config/sink config. install plugins/schema if not exist, else ignore them).
+
+```shell
+# bin/kuiper import data -f myrules.json -p true
 ```
 
 ## Import Data Status
@@ -61,4 +69,10 @@ This command exports the Data to the specified file.
 
 ```shell
 # bin/kuiper export data myrules.json
+```
+
+This command exports the specific rules related Data to the specified file.
+
+```shell
+# bin/kuiper export data myrules.json -r '["rules1", "rules2"]'
 ```

@@ -1,6 +1,6 @@
 # 数据导入导出管理
 
-eKuiper 命令行工具允许您导入导出当前的所有数据。
+eKuiper 命令行工具允许您导入导出当前数据。
 
 ## 数据格式
 
@@ -19,8 +19,8 @@ eKuiper 命令行工具允许您导入导出当前的所有数据。
     "rule2": "{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"
   },
   "nativePlugins":{
-    "sinks_tdengine":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: no such file or directory",
-    "sources_random":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: no such file or directory"
+    "functions_image":"{\"name\":\"image\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/functions/image_amd64.zip\",\"shellParas\":[]}",
+    "sources_video":"{\"name\":\"video\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/sources/video_amd64.zip\",\"shellParas\":[]}",
   },
   "portablePlugins":{
   },
@@ -39,12 +39,20 @@ eKuiper 命令行工具允许您导入导出当前的所有数据。
 }
 ```
 
-## 导入数据
+## 清除旧数据并导入新数据
 
 该 API 接受数据并将其导入系统中。若已有历史遗留数据，则首先清除旧有数据，然后导入。
 
 ```shell
 # bin/kuiper import data -f myrules.json -s false
+```
+
+## 导入新数据
+
+该 API 接受数据并将其导入系统中(覆盖 tables/streams/rules/source config/sink 相关数据. 如果 plugins/schema 在系统中不存在， 那么安装，否则忽略相关配置)。
+
+```shell
+# bin/kuiper import data -f myrules.json -p true
 ```
 
 ## 导入数据状态查询
@@ -61,4 +69,10 @@ eKuiper 命令行工具允许您导入导出当前的所有数据。
 
 ```shell
 # bin/kuiper export data myrules.json
+```
+
+导出特定规则相关数据
+
+```shell
+# bin/kuiper export data myrules.json -r '["rules1", "rules2"]'
 ```
