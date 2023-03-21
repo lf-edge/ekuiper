@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
@@ -709,7 +710,12 @@ func configurationReset() {
 	meta.ResetConfigs()
 }
 
-func configurationImport(data []byte, reboot bool) Configuration {
+type ImportConfigurationStatus struct {
+	ErrorMsg       string
+	ConfigResponse Configuration
+}
+
+func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 	conf := &Configuration{
 		Streams:          make(map[string]string),
 		Tables:           make(map[string]string),
@@ -722,6 +728,8 @@ func configurationImport(data []byte, reboot bool) Configuration {
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
 	}
+
+	importStatus := ImportConfigurationStatus{}
 
 	configResponse := Configuration{
 		Streams:          make(map[string]string),
@@ -736,20 +744,35 @@ func configurationImport(data []byte, reboot bool) Configuration {
 		Schema:           make(map[string]string),
 	}
 
+	ResponseNil := Configuration{
+		Streams:          make(map[string]string),
+		Tables:           make(map[string]string),
+		Rules:            make(map[string]string),
+		NativePlugins:    make(map[string]string),
+		PortablePlugins:  make(map[string]string),
+		SourceConfig:     make(map[string]string),
+		SinkConfig:       make(map[string]string),
+		ConnectionConfig: make(map[string]string),
+		Service:          make(map[string]string),
+		Schema:           make(map[string]string),
+	}
+
 	err := json.Unmarshal(data, conf)
 	if err != nil {
-		configResponse.Rules["configuration"] = fmt.Errorf("configuration unmarshal with error %v", err).Error()
-		return configResponse
+		importStatus.ErrorMsg = fmt.Errorf("configuration unmarshal with error %v", err).Error()
+		return importStatus
 	}
 
 	if reboot {
 		err = pluginImport(conf.NativePlugins)
 		if err != nil {
-			return configResponse
+			importStatus.ErrorMsg = fmt.Errorf("pluginImport NativePlugins import error %v", err).Error()
+			return importStatus
 		}
 		err = schemaImport(conf.Schema)
 		if err != nil {
-			return configResponse
+			importStatus.ErrorMsg = fmt.Errorf("schemaImport Schema import error %v", err).Error()
+			return importStatus
 		}
 	}
 
@@ -796,10 +819,17 @@ func configurationImport(data []byte, reboot bool) Configuration {
 		})
 	}
 
-	return configResponse
+	if reflect.DeepEqual(ResponseNil, configResponse) {
+		importStatus.ConfigResponse = ResponseNil
+	} else {
+		importStatus.ErrorMsg = "process error"
+		importStatus.ConfigResponse = configResponse
+	}
+
+	return importStatus
 }
 
-func configurationPartialImport(data []byte) Configuration {
+func configurationPartialImport(data []byte) ImportConfigurationStatus {
 	conf := &Configuration{
 		Streams:          make(map[string]string),
 		Tables:           make(map[string]string),
@@ -812,6 +842,8 @@ func configurationPartialImport(data []byte) Configuration {
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
 	}
+
+	importStatus := ImportConfigurationStatus{}
 
 	configResponse := Configuration{
 		Streams:          make(map[string]string),
@@ -826,10 +858,23 @@ func configurationPartialImport(data []byte) Configuration {
 		Schema:           make(map[string]string),
 	}
 
+	ResponseNil := Configuration{
+		Streams:          make(map[string]string),
+		Tables:           make(map[string]string),
+		Rules:            make(map[string]string),
+		NativePlugins:    make(map[string]string),
+		PortablePlugins:  make(map[string]string),
+		SourceConfig:     make(map[string]string),
+		SinkConfig:       make(map[string]string),
+		ConnectionConfig: make(map[string]string),
+		Service:          make(map[string]string),
+		Schema:           make(map[string]string),
+	}
+
 	err := json.Unmarshal(data, conf)
 	if err != nil {
-		configResponse.Rules["configuration"] = fmt.Errorf("configuration unmarshal with error %v", err).Error()
-		return configResponse
+		importStatus.ErrorMsg = fmt.Errorf("configuration unmarshal with error %v", err).Error()
+		return importStatus
 	}
 
 	yamlCfgSet := meta.YamlConfigurationSet{
@@ -859,7 +904,14 @@ func configurationPartialImport(data []byte) Configuration {
 	configResponse.Tables = result.Tables
 	configResponse.Rules = result.Rules
 
-	return configResponse
+	if reflect.DeepEqual(ResponseNil, configResponse) {
+		importStatus.ConfigResponse = ResponseNil
+	} else {
+		importStatus.ErrorMsg = "process error"
+		importStatus.ConfigResponse = configResponse
+	}
+
+	return importStatus
 }
 
 type configurationInfo struct {
@@ -904,7 +956,13 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 	if !partial {
 		configurationReset()
 		result := configurationImport(content, stop)
-		jsonResponse(result, w, logger)
+		if result.ErrorMsg != "" {
+			w.WriteHeader(http.StatusBadRequest)
+			jsonResponse(result, w, logger)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			jsonResponse(result, w, logger)
+		}
 
 		if stop {
 			go func() {
@@ -914,10 +972,14 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		result := configurationPartialImport(content)
-		jsonResponse(result, w, logger)
+		if result.ErrorMsg != "" {
+			w.WriteHeader(http.StatusBadRequest)
+			jsonResponse(result, w, logger)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			jsonResponse(result, w, logger)
+		}
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func configurationStatusExport() Configuration {
