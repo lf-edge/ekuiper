@@ -1,0 +1,644 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Test Plan" enabled="true">
+      <stringProp name="TestPlan.comments"></stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+      <Arguments guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="srv" elementType="Argument">
+            <stringProp name="Argument.name">srv</stringProp>
+            <stringProp name="Argument.value">127.0.0.1</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="rest_port" elementType="Argument">
+            <stringProp name="Argument.name">rest_port</stringProp>
+            <stringProp name="Argument.value">9081</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </Arguments>
+      <hashTree/>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Rules" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>true</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+              <sentBytes>true</sentBytes>
+              <threadCounts>true</threadCounts>
+              <idleTime>true</idleTime>
+              <connectTime>true</connectTime>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="data full import" enabled="true">
+          <boolProp name="TransactionController.includeTimers">false</boolProp>
+          <boolProp name="TransactionController.parent">false</boolProp>
+        </TransactionController>
+        <hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="data_full_import" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">{&quot;content&quot;:&quot;{\n  \&quot;streams\&quot;: {\n    \&quot;demo\&quot;: \&quot;CREATE STREAM demo () WITH (DATASOURCE=\\\&quot;users\\\&quot;, CONF_KEY=\\\&quot;td\\\&quot;, FORMAT=\\\&quot;JSON\\\&quot;)\&quot;\n  },\n  \&quot;tables\&quot;: {\n    \&quot;T110\&quot;:\&quot;\\n CREATE TABLE T110\\n (\\n S1 string\\n )\\n WITH (DATASOURCE=\\\&quot;test.json\\\&quot;, FORMAT=\\\&quot;json\\\&quot;, TYPE=\\\&quot;file\\\&quot;, KIND=\\\&quot;scan\\\&quot;, );\\n \&quot;\n  },\n  \&quot;rules\&quot;: {\n    \&quot;rule1\&quot;: \&quot;{\\\&quot;id\\\&quot;: \\\&quot;rule1\\\&quot;,\\\&quot;sql\\\&quot;: \\\&quot;SELECT * FROM demo\\\&quot;,\\\&quot;actions\\\&quot;: [{\\\&quot;log\\\&quot;: {}}]}\&quot;,\n    \&quot;rule2\&quot;: \&quot;{\\\&quot;id\\\&quot;: \\\&quot;rule2\\\&quot;,\\\&quot;sql\\\&quot;: \\\&quot;SELECT revert(name) FROM demo\\\&quot;,\\\&quot;actions\\\&quot;: [{\\\&quot;mqtt\\\&quot;:{\\\&quot;sendSingle\\\&quot;:true,\\\&quot;resourceId\\\&quot;:\\\&quot;remote\\\&quot;,\\\&quot;server\\\&quot;:\\\&quot;tcp://emqx:1883\\\&quot;,\\\&quot;topic\\\&quot;:\\\&quot;demo1When_result\\\&quot;}}]}\&quot;\n  },\n  \&quot;nativePlugins\&quot;:{\n  },\n  \&quot;portablePlugins\&quot;:{\n    \&quot;pysam\&quot;:\&quot;{\\\&quot;name\\\&quot;:\\\&quot;pysam\\\&quot;,\\\&quot;file\\\&quot;:\\\&quot;http://127.0.0.1:9090/plugins/pysam.zip\\\&quot;,\\\&quot;shellParas\\\&quot;:[]}\&quot;\n  },\n  \&quot;sourceConfig\&quot;:{\n    \&quot;mqtt\&quot;:\&quot;{\\\&quot;td\\\&quot;:{\\\&quot;insecureSkipVerify\\\&quot;:false,\\\&quot;password\\\&quot;:\\\&quot;public\\\&quot;,\\\&quot;protocolVersion\\\&quot;:\\\&quot;3.1.1\\\&quot;,\\\&quot;qos\\\&quot;:1,\\\&quot;server\\\&quot;:\\\&quot;tcp://broker.emqx.io:1883\\\&quot;,\\\&quot;username\\\&quot;:\\\&quot;admin\\\&quot;},\\\&quot;test\\\&quot;:{\\\&quot;insecureSkipVerify\\\&quot;:false,\\\&quot;password\\\&quot;:\\\&quot;public\\\&quot;,\\\&quot;protocolVersion\\\&quot;:\\\&quot;3.1.1\\\&quot;,\\\&quot;qos\\\&quot;:1,\\\&quot;server\\\&quot;:\\\&quot;tcp://127.0.0.1:1883\\\&quot;,\\\&quot;username\\\&quot;:\\\&quot;admin\\\&quot;}}\&quot;\n  },\n  \&quot;sinkConfig\&quot;:{\n    \&quot;edgex\&quot;:\&quot;{\\\&quot;test\\\&quot;:{\\\&quot;bufferLength\\\&quot;:1024,\\\&quot;contentType\\\&quot;:\\\&quot;application/json\\\&quot;,\\\&quot;enableCache\\\&quot;:false,\\\&quot;format\\\&quot;:\\\&quot;json\\\&quot;,\\\&quot;messageType\\\&quot;:\\\&quot;event\\\&quot;,\\\&quot;omitIfEmpty\\\&quot;:false,\\\&quot;port\\\&quot;:6379,\\\&quot;protocol\\\&quot;:\\\&quot;redis\\\&quot;,\\\&quot;runAsync\\\&quot;:false,\\\&quot;sendSingle\\\&quot;:true,\\\&quot;server\\\&quot;:\\\&quot;localhost\\\&quot;,\\\&quot;topic\\\&quot;:\\\&quot;application\\\&quot;,\\\&quot;type\\\&quot;:\\\&quot;redis\\\&quot;}}\&quot;,\n    \&quot;mqtt\&quot;:\&quot;{\\\&quot;local\\\&quot;:{\\\&quot;bufferLength\\\&quot;:1024,\\\&quot;enableCache\\\&quot;:false,\\\&quot;format\\\&quot;:\\\&quot;json\\\&quot;,\\\&quot;insecureSkipVerify\\\&quot;:false,\\\&quot;omitIfEmpty\\\&quot;:false,\\\&quot;protocolVersion\\\&quot;:\\\&quot;3.1.1\\\&quot;,\\\&quot;qos\\\&quot;:0,\\\&quot;runAsync\\\&quot;:false,\\\&quot;sendSingle\\\&quot;:true,\\\&quot;server\\\&quot;:\\\&quot;tcp://122.9.166.75:1883\\\&quot;,\\\&quot;topic\\\&quot;:\\\&quot;demo_out\\\&quot;},\\\&quot;remote\\\&quot;:{\\\&quot;bufferLength\\\&quot;:1024,\\\&quot;enableCache\\\&quot;:false,\\\&quot;format\\\&quot;:\\\&quot;json\\\&quot;,\\\&quot;insecureSkipVerify\\\&quot;:false,\\\&quot;omitIfEmpty\\\&quot;:false,\\\&quot;protocolVersion\\\&quot;:\\\&quot;3.1.1\\\&quot;,\\\&quot;qos\\\&quot;:0,\\\&quot;runAsync\\\&quot;:false,\\\&quot;sendSingle\\\&quot;:true,\\\&quot;server\\\&quot;:\\\&quot;tcp://broker.emqx.io:1883\\\&quot;,\\\&quot;topic\\\&quot;:\\\&quot;result/ruleRevert\\\&quot;}}\&quot;\n  },\n  \&quot;connectionConfig\&quot;:{\n  },\n  \&quot;Service\&quot;:{\n  },\n  \&quot;Schema\&quot;:{\n  }\n}&quot;}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/data/import?stop=0</stringProp>
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="49586">200</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">true</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+            <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Constant Timer" enabled="true">
+              <stringProp name="ConstantTimer.delay">500</stringProp>
+            </ConstantTimer>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_GetStreams" enabled="true">
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+              <collectionProp name="Arguments.arguments"/>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/streams</stringProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="-1543116923">[&quot;demo&quot;]</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+              <boolProp name="Assertion.assume_success">true</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_GetTables" enabled="true">
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+              <collectionProp name="Arguments.arguments"/>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/tables</stringProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="-2051054434">[&quot;T110&quot;]</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+              <boolProp name="Assertion.assume_success">true</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_GeRule" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">{&quot;id&quot;: &quot;rule2&quot;,&quot;sql&quot;: &quot;SELECT revert(name) FROM demo&quot;,&quot;actions&quot;: [{&quot;mqtt&quot;:{&quot;sendSingle&quot;:true,&quot;resourceId&quot;:&quot;remote&quot;,&quot;server&quot;:&quot;tcp://emqx:1883&quot;,&quot;topic&quot;:&quot;demo1When_result&quot;}}]}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/rules/rule2</stringProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="-739690316">{&quot;id&quot;: &quot;rule2&quot;,&quot;sql&quot;: &quot;SELECT revert(name) FROM demo&quot;,&quot;actions&quot;: [{&quot;mqtt&quot;:{&quot;sendSingle&quot;:true,&quot;resourceId&quot;:&quot;remote&quot;,&quot;server&quot;:&quot;tcp://emqx:1883&quot;,&quot;topic&quot;:&quot;demo1When_result&quot;}}]}</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+              <boolProp name="Assertion.assume_success">true</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_SinkConfig" enabled="true">
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+              <collectionProp name="Arguments.arguments"/>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/metadata/sinks/yaml/mqtt</stringProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="1041721998">{&quot;local&quot;:{&quot;bufferLength&quot;:1024,&quot;enableCache&quot;:false,&quot;format&quot;:&quot;json&quot;,&quot;insecureSkipVerify&quot;:false,&quot;omitIfEmpty&quot;:false,&quot;protocolVersion&quot;:&quot;3.1.1&quot;,&quot;qos&quot;:0,&quot;runAsync&quot;:false,&quot;sendSingle&quot;:true,&quot;server&quot;:&quot;tcp://122.9.166.75:1883&quot;,&quot;topic&quot;:&quot;demo_out&quot;},&quot;remote&quot;:{&quot;bufferLength&quot;:1024,&quot;enableCache&quot;:false,&quot;format&quot;:&quot;json&quot;,&quot;insecureSkipVerify&quot;:false,&quot;omitIfEmpty&quot;:false,&quot;protocolVersion&quot;:&quot;3.1.1&quot;,&quot;qos&quot;:0,&quot;runAsync&quot;:false,&quot;sendSingle&quot;:true,&quot;server&quot;:&quot;tcp://broker.emqx.io:1883&quot;,&quot;topic&quot;:&quot;result/ruleRevert&quot;}}</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+              <boolProp name="Assertion.assume_success">true</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_full_export" enabled="true">
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+              <collectionProp name="Arguments.arguments"/>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/data/export</stringProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="829120172">{&quot;streams&quot;:{&quot;demo&quot;:&quot;CREATE STREAM demo () WITH (DATASOURCE=\&quot;users\&quot;, CONF_KEY=\&quot;td\&quot;, FORMAT=\&quot;JSON\&quot;)&quot;},&quot;tables&quot;:{},&quot;rules&quot;:{&quot;rule2&quot;:&quot;{\&quot;id\&quot;: \&quot;rule2\&quot;,\&quot;sql\&quot;: \&quot;SELECT revert(name) FROM demo\&quot;,\&quot;actions\&quot;: [{\&quot;mqtt\&quot;:{\&quot;sendSingle\&quot;:true,\&quot;resourceId\&quot;:\&quot;remote\&quot;,\&quot;server\&quot;:\&quot;tcp://emqx:1883\&quot;,\&quot;topic\&quot;:\&quot;demo1When_result\&quot;}}]}&quot;},&quot;nativePlugins&quot;:{},&quot;portablePlugins&quot;:{&quot;pysam&quot;:&quot;{\&quot;name\&quot;:\&quot;pysam\&quot;,\&quot;file\&quot;:\&quot;http://127.0.0.1:9090/plugins/pysam.zip\&quot;,\&quot;shellParas\&quot;:[]}&quot;},&quot;sourceConfig&quot;:{},&quot;sinkConfig&quot;:{&quot;mqtt&quot;:&quot;{\&quot;remote\&quot;:{\&quot;bufferLength\&quot;:1024,\&quot;enableCache\&quot;:false,\&quot;format\&quot;:\&quot;json\&quot;,\&quot;insecureSkipVerify\&quot;:false,\&quot;omitIfEmpty\&quot;:false,\&quot;protocolVersion\&quot;:\&quot;3.1.1\&quot;,\&quot;qos\&quot;:0,\&quot;runAsync\&quot;:false,\&quot;sendSingle\&quot;:true,\&quot;server\&quot;:\&quot;tcp://broker.emqx.io:1883\&quot;,\&quot;topic\&quot;:\&quot;result/ruleRevert\&quot;}}&quot;},&quot;connectionConfig&quot;:{},&quot;Service&quot;:{},&quot;Schema&quot;:{}}</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_Clean" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">{&quot;content&quot;: &quot;{\n  \&quot;streams\&quot;:{},\n  \&quot;tables\&quot;:{},\n  \&quot;rules\&quot;:{},\n  \&quot;nativePlugins\&quot;:{},\n  \&quot;portablePlugins\&quot;:{},\n  \&quot;sourceConfig\&quot;:{},\n  \&quot;sinkConfig\&quot;:{},\n  \&quot;connectionConfig\&quot;:{},\n  \&quot;Service\&quot;:{},\n  \&quot;Schema\&quot;:{}\n}\n&quot;}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/data/import?partial=0&amp;stop=0</stringProp>
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="49586">200</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Constant Timer" enabled="true">
+            <stringProp name="ConstantTimer.delay">500</stringProp>
+          </ConstantTimer>
+          <hashTree/>
+        </hashTree>
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="data partial import" enabled="true">
+          <boolProp name="TransactionController.includeTimers">false</boolProp>
+          <boolProp name="TransactionController.parent">false</boolProp>
+        </TransactionController>
+        <hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="data_partial_import" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">{&quot;content&quot;:&quot;{\n  \&quot;streams\&quot;: {\n    \&quot;demo\&quot;: \&quot;CREATE STREAM demo () WITH (DATASOURCE=\\\&quot;users\\\&quot;, CONF_KEY=\\\&quot;td\\\&quot;, FORMAT=\\\&quot;JSON\\\&quot;)\&quot;\n  },\n  \&quot;tables\&quot;: {\n    \&quot;T110\&quot;:\&quot;\\n CREATE TABLE T110\\n (\\n S1 string\\n )\\n WITH (DATASOURCE=\\\&quot;test.json\\\&quot;, FORMAT=\\\&quot;json\\\&quot;, TYPE=\\\&quot;file\\\&quot;, KIND=\\\&quot;scan\\\&quot;, );\\n \&quot;\n  },\n  \&quot;rules\&quot;: {\n    \&quot;rule1\&quot;: \&quot;{\\\&quot;id\\\&quot;: \\\&quot;rule1\\\&quot;,\\\&quot;sql\\\&quot;: \\\&quot;SELECT * FROM demo\\\&quot;,\\\&quot;actions\\\&quot;: [{\\\&quot;log\\\&quot;: {}}]}\&quot;,\n    \&quot;rule2\&quot;: \&quot;{\\\&quot;id\\\&quot;: \\\&quot;rule2\\\&quot;,\\\&quot;sql\\\&quot;: \\\&quot;SELECT revert(name) FROM demo\\\&quot;,\\\&quot;actions\\\&quot;: [{\\\&quot;mqtt\\\&quot;:{\\\&quot;sendSingle\\\&quot;:true,\\\&quot;resourceId\\\&quot;:\\\&quot;remote\\\&quot;,\\\&quot;server\\\&quot;:\\\&quot;tcp://emqx:1883\\\&quot;,\\\&quot;topic\\\&quot;:\\\&quot;demo1When_result\\\&quot;}}]}\&quot;\n  },\n  \&quot;nativePlugins\&quot;:{\n  },\n  \&quot;portablePlugins\&quot;:{\n    \&quot;pysam\&quot;:\&quot;{\\\&quot;name\\\&quot;:\\\&quot;pysam\\\&quot;,\\\&quot;file\\\&quot;:\\\&quot;http://127.0.0.1:9090/plugins/pysam.zip\\\&quot;,\\\&quot;shellParas\\\&quot;:[]}\&quot;\n  },\n  \&quot;sourceConfig\&quot;:{\n    \&quot;mqtt\&quot;:\&quot;{\\\&quot;td\\\&quot;:{\\\&quot;insecureSkipVerify\\\&quot;:false,\\\&quot;password\\\&quot;:\\\&quot;public\\\&quot;,\\\&quot;protocolVersion\\\&quot;:\\\&quot;3.1.1\\\&quot;,\\\&quot;qos\\\&quot;:1,\\\&quot;server\\\&quot;:\\\&quot;tcp://broker.emqx.io:1883\\\&quot;,\\\&quot;username\\\&quot;:\\\&quot;admin\\\&quot;},\\\&quot;test\\\&quot;:{\\\&quot;insecureSkipVerify\\\&quot;:false,\\\&quot;password\\\&quot;:\\\&quot;public\\\&quot;,\\\&quot;protocolVersion\\\&quot;:\\\&quot;3.1.1\\\&quot;,\\\&quot;qos\\\&quot;:1,\\\&quot;server\\\&quot;:\\\&quot;tcp://127.0.0.1:1883\\\&quot;,\\\&quot;username\\\&quot;:\\\&quot;admin\\\&quot;}}\&quot;\n  },\n  \&quot;sinkConfig\&quot;:{\n    \&quot;edgex\&quot;:\&quot;{\\\&quot;test\\\&quot;:{\\\&quot;bufferLength\\\&quot;:1024,\\\&quot;contentType\\\&quot;:\\\&quot;application/json\\\&quot;,\\\&quot;enableCache\\\&quot;:false,\\\&quot;format\\\&quot;:\\\&quot;json\\\&quot;,\\\&quot;messageType\\\&quot;:\\\&quot;event\\\&quot;,\\\&quot;omitIfEmpty\\\&quot;:false,\\\&quot;port\\\&quot;:6379,\\\&quot;protocol\\\&quot;:\\\&quot;redis\\\&quot;,\\\&quot;runAsync\\\&quot;:false,\\\&quot;sendSingle\\\&quot;:true,\\\&quot;server\\\&quot;:\\\&quot;localhost\\\&quot;,\\\&quot;topic\\\&quot;:\\\&quot;application\\\&quot;,\\\&quot;type\\\&quot;:\\\&quot;redis\\\&quot;}}\&quot;,\n    \&quot;mqtt\&quot;:\&quot;{\\\&quot;local\\\&quot;:{\\\&quot;bufferLength\\\&quot;:1024,\\\&quot;enableCache\\\&quot;:false,\\\&quot;format\\\&quot;:\\\&quot;json\\\&quot;,\\\&quot;insecureSkipVerify\\\&quot;:false,\\\&quot;omitIfEmpty\\\&quot;:false,\\\&quot;protocolVersion\\\&quot;:\\\&quot;3.1.1\\\&quot;,\\\&quot;qos\\\&quot;:0,\\\&quot;runAsync\\\&quot;:false,\\\&quot;sendSingle\\\&quot;:true,\\\&quot;server\\\&quot;:\\\&quot;tcp://122.9.166.75:1883\\\&quot;,\\\&quot;topic\\\&quot;:\\\&quot;demo_out\\\&quot;},\\\&quot;remote\\\&quot;:{\\\&quot;bufferLength\\\&quot;:1024,\\\&quot;enableCache\\\&quot;:false,\\\&quot;format\\\&quot;:\\\&quot;json\\\&quot;,\\\&quot;insecureSkipVerify\\\&quot;:false,\\\&quot;omitIfEmpty\\\&quot;:false,\\\&quot;protocolVersion\\\&quot;:\\\&quot;3.1.1\\\&quot;,\\\&quot;qos\\\&quot;:0,\\\&quot;runAsync\\\&quot;:false,\\\&quot;sendSingle\\\&quot;:true,\\\&quot;server\\\&quot;:\\\&quot;tcp://broker.emqx.io:1883\\\&quot;,\\\&quot;topic\\\&quot;:\\\&quot;result/ruleRevert\\\&quot;}}\&quot;\n  },\n  \&quot;connectionConfig\&quot;:{\n  },\n  \&quot;Service\&quot;:{\n  },\n  \&quot;Schema\&quot;:{\n  }\n}&quot;}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">122.9.166.75</stringProp>
+            <stringProp name="HTTPSampler.port">59720</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/data/import?stop=0&amp;partial=1</stringProp>
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="49586">200</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">true</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+            <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Constant Timer" enabled="true">
+              <stringProp name="ConstantTimer.delay">500</stringProp>
+            </ConstantTimer>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_GetStreams" enabled="true">
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+              <collectionProp name="Arguments.arguments"/>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/streams</stringProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="-1543116923">[&quot;demo&quot;]</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+              <boolProp name="Assertion.assume_success">true</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_GetTables" enabled="true">
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+              <collectionProp name="Arguments.arguments"/>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/tables</stringProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="-2051054434">[&quot;T110&quot;]</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+              <boolProp name="Assertion.assume_success">true</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_GeRule" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">{&quot;id&quot;: &quot;rule2&quot;,&quot;sql&quot;: &quot;SELECT revert(name) FROM demo&quot;,&quot;actions&quot;: [{&quot;mqtt&quot;:{&quot;sendSingle&quot;:true,&quot;resourceId&quot;:&quot;remote&quot;,&quot;server&quot;:&quot;tcp://emqx:1883&quot;,&quot;topic&quot;:&quot;demo1When_result&quot;}}]}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/rules/rule2</stringProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="-739690316">{&quot;id&quot;: &quot;rule2&quot;,&quot;sql&quot;: &quot;SELECT revert(name) FROM demo&quot;,&quot;actions&quot;: [{&quot;mqtt&quot;:{&quot;sendSingle&quot;:true,&quot;resourceId&quot;:&quot;remote&quot;,&quot;server&quot;:&quot;tcp://emqx:1883&quot;,&quot;topic&quot;:&quot;demo1When_result&quot;}}]}</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+              <boolProp name="Assertion.assume_success">true</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_SinkConfig" enabled="true">
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+              <collectionProp name="Arguments.arguments"/>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/metadata/sinks/yaml/mqtt</stringProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="1041721998">{&quot;local&quot;:{&quot;bufferLength&quot;:1024,&quot;enableCache&quot;:false,&quot;format&quot;:&quot;json&quot;,&quot;insecureSkipVerify&quot;:false,&quot;omitIfEmpty&quot;:false,&quot;protocolVersion&quot;:&quot;3.1.1&quot;,&quot;qos&quot;:0,&quot;runAsync&quot;:false,&quot;sendSingle&quot;:true,&quot;server&quot;:&quot;tcp://122.9.166.75:1883&quot;,&quot;topic&quot;:&quot;demo_out&quot;},&quot;remote&quot;:{&quot;bufferLength&quot;:1024,&quot;enableCache&quot;:false,&quot;format&quot;:&quot;json&quot;,&quot;insecureSkipVerify&quot;:false,&quot;omitIfEmpty&quot;:false,&quot;protocolVersion&quot;:&quot;3.1.1&quot;,&quot;qos&quot;:0,&quot;runAsync&quot;:false,&quot;sendSingle&quot;:true,&quot;server&quot;:&quot;tcp://broker.emqx.io:1883&quot;,&quot;topic&quot;:&quot;result/ruleRevert&quot;}}</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+              <boolProp name="Assertion.assume_success">true</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_partial_export" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">[&quot;rule2&quot;]</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/data/export</stringProp>
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="829120172">{&quot;streams&quot;:{&quot;demo&quot;:&quot;CREATE STREAM demo () WITH (DATASOURCE=\&quot;users\&quot;, CONF_KEY=\&quot;td\&quot;, FORMAT=\&quot;JSON\&quot;)&quot;},&quot;tables&quot;:{},&quot;rules&quot;:{&quot;rule2&quot;:&quot;{\&quot;id\&quot;: \&quot;rule2\&quot;,\&quot;sql\&quot;: \&quot;SELECT revert(name) FROM demo\&quot;,\&quot;actions\&quot;: [{\&quot;mqtt\&quot;:{\&quot;sendSingle\&quot;:true,\&quot;resourceId\&quot;:\&quot;remote\&quot;,\&quot;server\&quot;:\&quot;tcp://emqx:1883\&quot;,\&quot;topic\&quot;:\&quot;demo1When_result\&quot;}}]}&quot;},&quot;nativePlugins&quot;:{},&quot;portablePlugins&quot;:{&quot;pysam&quot;:&quot;{\&quot;name\&quot;:\&quot;pysam\&quot;,\&quot;file\&quot;:\&quot;http://127.0.0.1:9090/plugins/pysam.zip\&quot;,\&quot;shellParas\&quot;:[]}&quot;},&quot;sourceConfig&quot;:{},&quot;sinkConfig&quot;:{&quot;mqtt&quot;:&quot;{\&quot;remote\&quot;:{\&quot;bufferLength\&quot;:1024,\&quot;enableCache\&quot;:false,\&quot;format\&quot;:\&quot;json\&quot;,\&quot;insecureSkipVerify\&quot;:false,\&quot;omitIfEmpty\&quot;:false,\&quot;protocolVersion\&quot;:\&quot;3.1.1\&quot;,\&quot;qos\&quot;:0,\&quot;runAsync\&quot;:false,\&quot;sendSingle\&quot;:true,\&quot;server\&quot;:\&quot;tcp://broker.emqx.io:1883\&quot;,\&quot;topic\&quot;:\&quot;result/ruleRevert\&quot;}}&quot;},&quot;connectionConfig&quot;:{},&quot;Service&quot;:{},&quot;Schema&quot;:{}}</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="API_Clean" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">{&quot;content&quot;: &quot;{\n  \&quot;streams\&quot;:{},\n  \&quot;tables\&quot;:{},\n  \&quot;rules\&quot;:{},\n  \&quot;nativePlugins\&quot;:{},\n  \&quot;portablePlugins\&quot;:{},\n  \&quot;sourceConfig\&quot;:{},\n  \&quot;sinkConfig\&quot;:{},\n  \&quot;connectionConfig\&quot;:{},\n  \&quot;Service\&quot;:{},\n  \&quot;Schema\&quot;:{}\n}\n&quot;}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${srv}</stringProp>
+            <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/data/import?partial=0&amp;stop=0</stringProp>
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="49586">200</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message"></stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+              <intProp name="Assertion.test_type">16</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Constant Timer" enabled="true">
+            <stringProp name="ConstantTimer.delay">500</stringProp>
+          </ConstantTimer>
+          <hashTree/>
+        </hashTree>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Result" enabled="false">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">0</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>true</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+              <sentBytes>true</sentBytes>
+              <threadCounts>true</threadCounts>
+              <idleTime>true</idleTime>
+              <connectTime>true</connectTime>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+        <SystemSampler guiclass="SystemSamplerGui" testclass="SystemSampler" testname="App_Service" enabled="true">
+          <boolProp name="SystemSampler.checkReturnCode">false</boolProp>
+          <stringProp name="SystemSampler.expectedReturnCode">0</stringProp>
+          <stringProp name="SystemSampler.command">./server</stringProp>
+          <elementProp name="SystemSampler.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <elementProp name="SystemSampler.environment" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="SystemSampler.directory">${__property(fvt,,)}/test/plugins/service/</stringProp>
+        </SystemSampler>
+        <hashTree/>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>
