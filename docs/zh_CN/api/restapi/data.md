@@ -1,6 +1,6 @@
 # 数据导入导出管理
 
-eKuiper REST api 允许您导入导出当前的所有数据。
+eKuiper REST api 允许您导入导出数据。
 
 ## 数据格式
 
@@ -19,8 +19,8 @@ eKuiper REST api 允许您导入导出当前的所有数据。
         "rule2": "{\"id\": \"rule2\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}"
     },
     "nativePlugins":{
-        "sinks_tdengine":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: no such file or directory",
-        "sources_random":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: no such file or directory"
+        "functions_image":"{\"name\":\"image\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/functions/image_amd64.zip\",\"shellParas\":[]}",
+        "sources_video":"{\"name\":\"video\",\"file\":\"https://packages.emqx.net/kuiper-plugins/1.8.1/debian/sources/video_amd64.zip\",\"shellParas\":[]}",
     },
     "portablePlugins":{
     },
@@ -41,7 +41,8 @@ eKuiper REST api 允许您导入导出当前的所有数据。
 
 ## 导入数据
 
-该 API 接受数据并将其导入系统中。若已有历史遗留数据，则首先清除旧有数据，然后导入。 API 支持通过文本内容或者文件 URI 的方式指定数据。
+该 API 接受数据并将其导入系统中，支持通过文本内容或者文件 URI 的方式指定数据。
+默认情况下若已有历史遗留数据，则首先清除旧有数据然后导入，用户可通过在 HTTP URL 中指定 ``partial=1`` 参数，使其直接导入，不再清除旧有数据。 
 
 示例1：通过文本内容导入
 
@@ -71,11 +72,22 @@ Content-Type: application/json
 ```shell
 POST http://{{host}}/data/import?stop=1
 Content-Type: application/json
+{
+  "file": "file:///tmp/a.json"
+}
+```
+
+示例4: 导入新数据但是不清除旧有数据 (覆盖 tables/streams/rules/source config/sink 相关数据. 如果 plugins/schema 在系统中不存在， 那么安装，否则忽略相关配置)
+
+```shell
+POST http://{{host}}/data/import?partial=1
+Content-Type: application/json
 
 {
   "file": "file:///tmp/a.json"
 }
 ```
+
 
 ## 导入数据状态查询
 
@@ -129,6 +141,14 @@ Content-Type: application/json
 
 导出 API 返回二进制流，在浏览器使用时，可选择下载保存的文件路径。
 
+示例1：导出所有数据
+
 ```shell
 GET http://{{host}}/data/export
+```
+
+示例2：导出特定规则的数据
+
+```shell
+POST -d '["rule1","rule2"]' http://{{host}}/data/export
 ```
