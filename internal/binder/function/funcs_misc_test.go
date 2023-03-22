@@ -132,3 +132,100 @@ func TestCoalesceExec(t *testing.T) {
 		}
 	}
 }
+
+func TestToJson(t *testing.T) {
+	f, ok := builtins["to_json"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	var tests = []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				"foo",
+			},
+			result: `"foo"`,
+		}, { // 1
+			args: []interface{}{
+				nil,
+			},
+			result: "null",
+		}, { // 2
+			args: []interface{}{
+				map[string]interface{}{
+					"key1": "bar",
+					"key2": "foo",
+				},
+			},
+			result: `{"key1":"bar","key2":"foo"}`,
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}
+
+func TestFromJson(t *testing.T) {
+	f, ok := builtins["parse_json"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	var tests = []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				`"foo"`,
+			},
+			result: "foo",
+		}, { // 1
+			args: []interface{}{
+				"null",
+			},
+			result: nil,
+		}, { // 2
+			args: []interface{}{
+				`{"key1":"bar","key2":"foo"}`,
+			},
+			result: map[string]interface{}{
+				"key1": "bar",
+				"key2": "foo",
+			},
+		}, { // 3
+			args: []interface{}{
+				"key1",
+			},
+			result: fmt.Errorf("fail to parse json: invalid character 'k' looking for beginning of value"),
+		}, { // 4
+			args: []interface{}{
+				`[{"key1":"bar","key2":"foo"}]`,
+			},
+			result: []interface{}{
+				map[string]interface{}{
+					"key1": "bar",
+					"key2": "foo",
+				},
+			},
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}

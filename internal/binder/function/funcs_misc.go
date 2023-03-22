@@ -20,6 +20,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	b64 "encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -148,6 +149,39 @@ func registerMiscFunc() {
 			}
 			return nil
 		},
+	}
+	builtins["to_json"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return "null", true
+			}
+			rr, err := json.Marshal(args[0])
+			if err != nil {
+				return fmt.Errorf("fail to convert %v to json", args[0]), false
+			}
+			return string(rr), true
+		},
+		val: ValidateOneArg,
+	}
+	builtins["parse_json"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil || args[0] == "null" {
+				return nil, true
+			}
+			text, err := cast.ToString(args[0], cast.CONVERT_SAMEKIND)
+			if err != nil {
+				return fmt.Errorf("fail to convert %v to string", args[0]), false
+			}
+			var data interface{}
+			err = json.Unmarshal([]byte(text), &data)
+			if err != nil {
+				return fmt.Errorf("fail to parse json: %v", err), false
+			}
+			return data, true
+		},
+		val: ValidateOneStrArg,
 	}
 	builtins["chr"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
