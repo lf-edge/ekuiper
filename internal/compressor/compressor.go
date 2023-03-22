@@ -25,7 +25,9 @@ import (
 func GetCompressor(name string) (message.Compressor, error) {
 	switch name {
 	case "zlib":
-		return &zlibCompressor{}, nil
+		return &zlibCompressor{
+			writer: zlib.NewWriter(nil),
+		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported compressor: %s", name)
 	}
@@ -33,6 +35,7 @@ func GetCompressor(name string) (message.Compressor, error) {
 
 type zlibCompressor struct {
 	writer *zlib.Writer
+	buffer bytes.Buffer
 }
 
 func (z *zlibCompressor) Close(ctx api.StreamContext) error {
@@ -44,19 +47,15 @@ func (z *zlibCompressor) Close(ctx api.StreamContext) error {
 }
 
 func (z *zlibCompressor) Compress(data []byte) ([]byte, error) {
-	var b bytes.Buffer
-	if z.writer == nil {
-		z.writer = zlib.NewWriter(&b)
-	} else {
-		z.writer.Reset(&b)
-	}
+	z.buffer.Reset()
+	z.writer.Reset(&z.buffer)
 	_, err := z.writer.Write(data)
 	if err != nil {
 		return nil, err
 	}
-	err = z.writer.Flush()
+	err = z.writer.Close()
 	if err != nil {
 		return nil, err
 	}
-	return b.Bytes(), nil
+	return z.buffer.Bytes(), nil
 }
