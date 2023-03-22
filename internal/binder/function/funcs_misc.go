@@ -239,6 +239,47 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
+	builtins["decode"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if v, ok := args[1].(string); ok {
+				if strings.EqualFold(v, "base64") {
+					if v1, ok1 := args[0].(string); ok1 {
+						r, e := b64.StdEncoding.DecodeString(v1)
+						if e != nil {
+							return fmt.Errorf("fail to decode base64 string: %v", e), false
+						}
+						return r, true
+					} else {
+						return fmt.Errorf("Only string type can be decoded."), false
+					}
+				} else {
+					return fmt.Errorf("Only base64 decoding is supported."), false
+				}
+			}
+			return nil, false
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(2, len(args)); err != nil {
+				return err
+			}
+
+			if ast.IsNumericArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
+				return ProduceErrInfo(0, "string")
+			}
+
+			a := args[1]
+			if !ast.IsStringArg(a) {
+				return ProduceErrInfo(1, "string")
+			}
+			if av, ok := a.(*ast.StringLiteral); ok {
+				if av.Val != "base64" {
+					return fmt.Errorf("Only base64 is supported for the 2nd parameter.")
+				}
+			}
+			return nil
+		},
+	}
 	builtins["trunc"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
