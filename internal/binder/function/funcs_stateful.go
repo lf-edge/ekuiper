@@ -73,9 +73,52 @@ func (c *compressFunc) IsAggregate() bool {
 	return false
 }
 
-func (c *compressFunc) Close(ctx api.StreamContext) error {
-	if c.compressor != nil {
-		return c.compressor.Close(ctx)
+type decompressFunc struct {
+	compressType string
+	decompressor message.Decompressor
+}
+
+func (d *decompressFunc) Validate(args []interface{}) error {
+	var eargs []ast.Expr
+	for _, arg := range args {
+		if t, ok := arg.(ast.Expr); ok {
+			eargs = append(eargs, t)
+		} else {
+			// should never happen
+			return fmt.Errorf("receive invalid arg %v", arg)
+		}
 	}
-	return nil
+	return ValidateTwoStrArg(nil, eargs)
+}
+
+func (d *decompressFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
+	if args[0] == nil {
+		return nil, true
+	}
+	arg0, err := cast.ToBytes(args[0], cast.CONVERT_SAMEKIND)
+	if err != nil {
+		return fmt.Errorf("require string or bytea parameter, but got %v", args[0]), false
+	}
+	arg1 := cast.ToStringAlways(args[1])
+	if d.decompressor != nil {
+		if d.compressType != arg1 {
+			return fmt.Errorf("decompress type must be consistent, previous %s, now %s", d.compressType, arg1), false
+		}
+	} else {
+		ctx.GetLogger().Infof("creating decompressor %s", arg1)
+		d.decompressor, err = compressor.GetDecompressor(arg1)
+		if err != nil {
+			return err, false
+		}
+		d.compressType = arg1
+	}
+	r, e := d.decompressor.Decompress(arg0)
+	if e != nil {
+		return e, false
+	}
+	return r, true
+}
+
+func (d *decompressFunc) IsAggregate() bool {
+	return false
 }
