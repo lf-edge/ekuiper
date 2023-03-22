@@ -81,20 +81,11 @@ func registerMiscFunc() {
 						return fmt.Errorf("Not supported type conversion."), false
 					}
 				case "string":
-					if v1, ok1 := args[0].(int); ok1 {
-						return fmt.Sprintf("%d", v1), true
-					} else if v1, ok1 := args[0].(float64); ok1 {
-						return fmt.Sprintf("%g", v1), true
-					} else if v1, ok1 := args[0].(string); ok1 {
-						return v1, true
-					} else if v1, ok1 := args[0].(bool); ok1 {
-						if v1 {
-							return "true", true
-						} else {
-							return "false", true
-						}
+					r, e := cast.ToString(args[0], cast.CONVERT_ALL)
+					if e != nil {
+						return fmt.Errorf("Not supported type conversion, got error %v.", e), false
 					} else {
-						return fmt.Errorf("Not supported type conversion."), false
+						return r, true
 					}
 				case "boolean":
 					if v1, ok1 := args[0].(int); ok1 {
@@ -363,6 +354,10 @@ func registerMiscFunc() {
 	builtinStatfulFuncs["compress"] = func() api.Function {
 		conf.Log.Infof("initializing compress function")
 		return &compressFunc{}
+	}
+	builtinStatfulFuncs["decompress"] = func() api.Function {
+		conf.Log.Infof("initializing decompress function")
+		return &decompressFunc{}
 	}
 	builtins["isnull"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
