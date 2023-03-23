@@ -20,6 +20,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"os"
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -142,6 +143,8 @@ func TestConfigKeys_GetConfKeys(t *testing.T) {
 	if len(keys) != len(source) {
 		t.Errorf("Length not equal, got %v, want %v", len(keys), len(source))
 	}
+	sort.Strings(keys)
+	sort.Strings(source)
 	for i, key := range keys {
 		if key != source[i] {
 			t.Errorf("Not equal, got %v, want %v", key, source[i])
@@ -253,7 +256,7 @@ func TestSourceConfigKeysOps_SaveCfgToFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	os.RemoveAll("../data/test/sources")
+	os.RemoveAll("../data/test/sources/mqtt.yaml")
 }
 
 func TestSinkConfigKeysOps_SaveCfgToFile(t *testing.T) {
@@ -273,7 +276,7 @@ func TestSinkConfigKeysOps_SaveCfgToFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	os.RemoveAll("../data/test/sinks")
+	os.RemoveAll("../data/test/sinks/mqtt.yaml")
 }
 
 func TestNewConfigOperatorForSink(t *testing.T) {
