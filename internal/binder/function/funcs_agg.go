@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -49,7 +50,7 @@ func registerAggFunc() {
 					return fmt.Errorf("run avg function error: found invalid arg %[1]T(%[1]v)", v), false
 				}
 			}
-			return 0, true
+			return nil, true
 		},
 		val: ValidateOneNumberArg,
 	}
@@ -98,7 +99,7 @@ func registerAggFunc() {
 					return fmt.Errorf("run max function error: found invalid arg %[1]T(%[1]v)", v), false
 				}
 			}
-			return fmt.Errorf("run max function error: empty data"), false
+			return nil, true
 		},
 		val: ValidateOneNumberArg,
 	}
@@ -139,7 +140,7 @@ func registerAggFunc() {
 					return fmt.Errorf("run min function error: found invalid arg %[1]T(%[1]v)", v), false
 				}
 			}
-			return fmt.Errorf("run min function error: empty data"), false
+			return nil, true
 		},
 		val: ValidateOneNumberArg,
 	}
@@ -168,14 +169,17 @@ func registerAggFunc() {
 					return fmt.Errorf("run sum function error: found invalid arg %[1]T(%[1]v)", v), false
 				}
 			}
-			return 0, true
+			return nil, true
 		},
 		val: ValidateOneNumberArg,
 	}
 	builtins["collect"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			return args[0], true
+			if len(args) > 0 {
+				return args[0], true
+			}
+			return make([]interface{}, 0), true
 		},
 		val: ValidateOneArg,
 	}
@@ -219,11 +223,14 @@ func registerAggFunc() {
 				}
 				deviation, err := stats.StandardDeviation(float64Slice)
 				if err != nil {
+					if err == stats.EmptyInputErr {
+						return nil, true
+					}
 					return fmt.Errorf("StandardDeviation exec with error: %v", err), false
 				}
 				return deviation, true
 			}
-			return fmt.Errorf("run stddev function error: empty data"), false
+			return nil, true
 		},
 		val: ValidateOneNumberArg,
 	}
@@ -238,11 +245,14 @@ func registerAggFunc() {
 				}
 				deviation, err := stats.StandardDeviationSample(float64Slice)
 				if err != nil {
+					if err == stats.EmptyInputErr {
+						return nil, true
+					}
 					return fmt.Errorf("StandardDeviationSample exec with error: %v", err), false
 				}
 				return deviation, true
 			}
-			return fmt.Errorf("run stddevs function error: empty data"), false
+			return nil, true
 		},
 		val: ValidateOneNumberArg,
 	}
@@ -257,11 +267,14 @@ func registerAggFunc() {
 				}
 				deviation, err := stats.Variance(float64Slice)
 				if err != nil {
+					if err == stats.EmptyInputErr {
+						return nil, true
+					}
 					return fmt.Errorf("PopulationVariance exec with error: %v", err), false
 				}
 				return deviation, true
 			}
-			return fmt.Errorf("run var function error: empty data"), false
+			return nil, true
 		},
 		val: ValidateOneNumberArg,
 	}
@@ -276,11 +289,14 @@ func registerAggFunc() {
 				}
 				deviation, err := stats.SampleVariance(float64Slice)
 				if err != nil {
+					if err == stats.EmptyInputErr {
+						return nil, true
+					}
 					return fmt.Errorf("SampleVariance exec with error: %v", err), false
 				}
 				return deviation, true
 			}
-			return fmt.Errorf("run vars function error: empty data"), false
+			return nil, true
 		},
 		val: ValidateOneNumberArg,
 	}
@@ -309,11 +325,14 @@ func registerAggFunc() {
 				}
 				deviation, err := stats.Percentile(float64Slice, arg1Float64*100)
 				if err != nil {
+					if err == stats.EmptyInputErr {
+						return nil, true
+					}
 					return fmt.Errorf("percentile exec with error: %v", err), false
 				}
 				return deviation, true
 			}
-			return fmt.Errorf("run percentile_cont function error: empty data"), false
+			return nil, true
 		},
 		val: ValidateTwoNumberArg,
 	}
@@ -341,11 +360,14 @@ func registerAggFunc() {
 				}
 				deviation, err := stats.PercentileNearestRank(float64Slice, arg1Float64*100)
 				if err != nil {
+					if err == stats.EmptyInputErr {
+						return nil, true
+					}
 					return fmt.Errorf("PopulationVariance exec with error: %v", err), false
 				}
 				return deviation, true
 			}
-			return fmt.Errorf("run percentile_cont function error: empty data"), false
+			return nil, true
 		},
 		val: ValidateTwoNumberArg,
 	}
@@ -487,7 +509,7 @@ func dedup(r []interface{}, col []interface{}, all bool) (interface{}, error) {
 	}
 	if !all {
 		if len(result) == 0 {
-			return nil, nil
+			return result, nil
 		} else {
 			return result[0], nil
 		}
