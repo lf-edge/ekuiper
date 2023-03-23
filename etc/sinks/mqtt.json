@@ -215,6 +215,23 @@
         "en_US": "Skip Certification verification",
         "zh_CN": "跳过证书验证"
       }
+    },
+    {
+      "name": "compression",
+      "optional": true,
+      "control": "select",
+      "type": "string",
+      "values": [
+        "zlib"
+      ],
+      "hint": {
+        "en_US": "Compress the payload with the specified compression method.",
+        "zh_CN": "使用指定的压缩方法压缩 Payload。"
+      },
+      "label": {
+        "en_US": "Compression",
+        "zh_CN": "压缩"
+      }
     }
   ],
   "node": {

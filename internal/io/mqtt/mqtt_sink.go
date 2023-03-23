@@ -16,19 +16,27 @@ package mqtt
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-type MQTTSink struct {
-	tpc      string
-	qos      byte
-	retained bool
+// AdConf is the advanced configuration for the mqtt sink
+type AdConf struct {
+	Tpc         string `json:"topic"`
+	Qos         byte   `json:"qos"`
+	Retained    bool   `json:"retained"`
+	Compression string `json:"compression"`
+}
 
-	config map[string]interface{}
-	cli    api.MessageClient
+type MQTTSink struct {
+	adconf     *AdConf
+	config     map[string]interface{}
+	cli        api.MessageClient
+	compressor message.Compressor
 }
 
 func (ms *MQTTSink) hasKeys(str []string, ps map[string]interface{}) bool {
@@ -41,33 +49,24 @@ func (ms *MQTTSink) hasKeys(str []string, ps map[string]interface{}) bool {
 }
 
 func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
-	tpc, ok := ps["topic"]
-	if !ok {
+	adconf := &AdConf{}
+	cast.MapToStruct(ps, adconf)
+
+	if adconf.Tpc == "" {
 		return fmt.Errorf("mqtt sink is missing property topic")
 	}
-
-	var qos byte = 0
-	if qosRec, ok := ps["qos"]; ok {
-		if v, err := cast.ToInt(qosRec, cast.STRICT); err == nil {
-			qos = byte(v)
-		}
-		if qos != 0 && qos != 1 && qos != 2 {
-			return fmt.Errorf("not valid qos value %v, the value could be only int 0 or 1 or 2", qos)
+	if adconf.Qos != 0 && adconf.Qos != 1 && adconf.Qos != 2 {
+		return fmt.Errorf("invalid qos value %v, the value could be only int 0 or 1 or 2", adconf.Qos)
+	}
+	var err error
+	if adconf.Compression != "" {
+		ms.compressor, err = compressor.GetCompressor(adconf.Compression)
+		if err != nil {
+			return fmt.Errorf("invalid compression method %s", adconf.Compression)
 		}
 	}
-
-	retained := false
-	if pk, ok := ps["retained"]; ok {
-		if v, ok := pk.(bool); ok {
-			retained = v
-		}
-	}
-
 	ms.config = ps
-	ms.qos = qos
-	ms.tpc = tpc.(string)
-	ms.retained = retained
-
+	ms.adconf = adconf
 	return nil
 }
 
@@ -78,7 +77,6 @@ func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 		log.Errorf("found error when get mqtt client config %v, error %s", ms.config, err.Error())
 		return err
 	}
-
 	ms.cli = cli
 
 	return nil
@@ -90,16 +88,22 @@ func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
 	if err != nil {
 		return err
 	}
-
 	logger.Debugf("%s publish %s", ctx.GetOpId(), jsonBytes)
-	tpc, err := ctx.ParseTemplate(ms.tpc, item)
+	if ms.compressor != nil {
+		jsonBytes, err = ms.compressor.Compress(jsonBytes)
+		if err != nil {
+			return err
+		}
+	}
+
+	tpc, err := ctx.ParseTemplate(ms.adconf.Tpc, item)
 	if err != nil {
 		return err
 	}
 
 	para := map[string]interface{}{
-		"qos":      ms.qos,
-		"retained": ms.retained,
+		"qos":      ms.adconf.Qos,
+		"retained": ms.adconf.Retained,
 	}
 
 	if err := ms.cli.Publish(ctx, tpc, jsonBytes, para); err != nil {
