@@ -134,9 +134,10 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 
 | 函数               | 示例                               | 说明                                                                                      |
 |------------------|----------------------------------|-----------------------------------------------------------------------------------------|
-| cast             | cast(col,  "bigint")             | 将值从一种数据类型转换为另一种数据类型。 支持的类型包括：bigint，float，string，boolean 和 datetime。                    |
+| cast             | cast(col,  "bigint")             | 将值从一种数据类型转换为另一种数据类型。 支持的类型包括：bigint，float，string，boolean，bytea 和 datetime。              |
 | chr              | chr(col1)                        | 返回与给定 Int 参数对应的 ASCII 字符                                                                |
 | encode           | encode(col1, "base64")           | 使用 encode 函数根据编码方案将负载（可能是非 JSON 数据）编码为其字符串表示形式。目前，只支持"base64" 编码类型。                     |
+| decode           | decode(col1, "base64")           | 使解码输入字符串。目前，只支持"base64" 类型。                                                             |
 | trunc            | trunc(dec, int)                  | 将第一个参数截断为第二个参数指定的小数位数。 如果第二个参数小于零，则将其设置为零。 如果第二个参数大于34，则将其设置为34。从结果中去除尾随零。              |
 | object_construct | object_construct(key1, col, ...) | 返回由参数构建的 oject/map 。参数为一系列的键值对，因此必须为偶数个。键必须为 string 类型，值可以为任意类型。如果值为空，则该键值对不会出现在最终的对象中。 |
 
@@ -159,13 +160,24 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 | sha512 | sha512(col1) | 参数的哈希值 |
 
 ## JSON 函数
-| 函数                    | 示例                                    | 说明                                  |
-|-----------------------|---------------------------------------|-------------------------------------|
-| json_path_exists      | json_path_exists(col1, "$.name")      | 检查 JSON 路径是否返回指定JSON 值的任何项目。 返回布尔值。 |
-| json_path_query       | json_path_query(col1, "$.name")       | 获取 JSON 路径返回的指定 JSON值的所有项目。         |
-| json_path_query_first | json_path_query_first(col1, "$.name") | 获取 JSON 路径返回的指定 JSON值的第一项。          |
+| 函数                    | 示例                                    | 说明                                             |
+|-----------------------|---------------------------------------|------------------------------------------------|
+| to_json               | to_json(col1)                         | 将输入值转换为包含该值 JSON 表示的字符串。如果输入为 NULL，则结果也为 NULL。 |
+| parse_json            | parse_json(col1)                      | 将输入的 JSON 字符串转换为值。如果输入为 NULL，则结果也为 NULL。       |
+| json_path_exists      | json_path_exists(col1, "$.name")      | 检查 JSON 路径是否返回指定JSON 值的任何项目。 返回布尔值。            |
+| json_path_query       | json_path_query(col1, "$.name")       | 获取 JSON 路径返回的指定 JSON值的所有项目。                    |
+| json_path_query_first | json_path_query_first(col1, "$.name") | 获取 JSON 路径返回的指定 JSON值的第一项。                     |
 
 **请参阅 [json 路径函数](./json_expr.md#Json-路径函数) 了解如何编写json路径。**
+
+## 压缩/解压函数
+
+| 函数         | 示例                        | 说明              |
+|------------|---------------------------|-----------------|
+| compress   | compress(input, "zlib")   | 压缩输入的字符串或二进制值。  |
+| decompress | decompress(input, "zlib") | 解压缩输入的字符串或二进制值。 |
+
+目前只支持 'zlib' 压缩算法。
 
 ## 分析函数
 

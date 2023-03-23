@@ -2632,6 +2632,59 @@
 			}
 		}
 	}, {
+		"name": "decode",
+		"example": "decode(col1, \"base64\")",
+		"hint": {
+			"en_US": "Decode the input string with specified decoding method. Currently, only \"base64\" encoding type is supported.",
+			"zh_CN": "解码输入字符串。目前，只支持\"base64\" 类型。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "string",
+				"hint": {
+					"en_US": "The field to encode.",
+					"zh_CN": "需要解码的字段名"
+				},
+				"label": {
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
+			},
+			{
+				"name": "encodingType",
+				"optional": false,
+				"control": "select",
+				"type": "string",
+				"values": ["base64"],
+				"hint": {
+					"en_US": "The type of encoding",
+					"zh_CN": "编码方案"
+				},
+				"label": {
+					"en_US": "Encoding Type",
+					"zh_CN": "编码方案"
+				}
+			}
+		],
+		"return": {
+			"type": "bytea",
+			"hint": {
+				"en_US": "Decoded Value",
+				"zh_CN": "解码值"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Decode",
+				"zh_CN": "Decode"
+			}
+		}
+	}, {
 		"name": "trunc",
 		"example": "trunc(dec, int)",
 		"hint": {
@@ -2870,7 +2923,189 @@
 			"icon": "iconPath",
 			"label": {
 				"en_US": "SHA 512",
-				"zh_CN": "参数的 SHA512 哈希值"
+				"zh_CN": "SHA 512"
+			}
+		}
+	}, {
+		"name": "compress",
+		"example": "compress(input, \"zlib\")",
+		"hint": {
+			"en_US": "Compress the input string or binary value with a compression method",
+			"zh_CN": "压缩输入的字符串或二进制值。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "string",
+				"hint": {
+					"en_US": "The field to be compressed.",
+					"zh_CN": "需要压缩的字段名"
+				},
+				"label": {
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
+			},
+			{
+				"name": "method",
+				"optional": false,
+				"control": "select",
+				"type": "string",
+				"values": ["zlib"],
+				"hint": {
+					"en_US": "The type of compression",
+					"zh_CN": "压缩方法"
+				},
+				"label": {
+					"en_US": "Compression Method",
+					"zh_CN": "压缩方法"
+				}
+			}
+		],
+		"return": {
+			"type": "bytea",
+			"hint": {
+				"en_US": "Compressed Value",
+				"zh_CN": "压缩值"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Compress",
+				"zh_CN": "压缩"
+			}
+		}
+	}, {
+		"name": "decompress",
+		"example": "decompress(input, \"zlib\")",
+		"hint": {
+			"en_US": "Decompress the input string or binary value with a compression method",
+			"zh_CN": "解压缩输入的字符串或二进制值。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "string",
+				"hint": {
+					"en_US": "The field to be decompressed.",
+					"zh_CN": "需要解压缩的字段名"
+				},
+				"label": {
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
+			},
+			{
+				"name": "method",
+				"optional": false,
+				"control": "select",
+				"type": "string",
+				"values": ["zlib"],
+				"hint": {
+					"en_US": "The type of decompression",
+					"zh_CN": "解压缩方法"
+				},
+				"label": {
+					"en_US": "Decompression Method",
+					"zh_CN": "解压缩方法"
+				}
+			}
+		],
+		"return": {
+			"type": "bytea",
+			"hint": {
+				"en_US": "Decompressed Value",
+				"zh_CN": "解压缩值"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Decompress",
+				"zh_CN": "解压缩"
+			}
+		}
+	}, {
+		"name": "to_json",
+		"example": "to_json(input)",
+		"hint": {
+			"en_US": "Converts a value to a string containing the JSON representation of the value. If the input is NULL, the result is also NULL.",
+			"zh_CN": "将输入值转换为包含该值 JSON 表示的字符串。如果输入为 NULL，则结果也为 NULL。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "any",
+				"hint": {
+					"en_US": "The field to be converted to JSON string.",
+					"zh_CN": "需要转换成 JSON 字符串的输入字段"
+				},
+				"label": {
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
+			}
+		],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "the converted JSON string",
+				"zh_CN": "转换后的 JSON 字符串"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "To JSON",
+				"zh_CN": "转换为 JSON"
+			}
+		}
+	}, {
+		"name": "parse_json",
+		"example": "parse_json(input)",
+		"hint": {
+			"en_US": "Converts a JSON string to a value. If the input is NULL, the result is also NULL.",
+			"zh_CN": "将输入的 JSON 字符串转换为值。如果输入为 NULL，则结果也为 NULL。"
+		},
+		"args": [
+			{
+				"name": "field",
+				"optional": false,
+				"control": "field",
+				"type": "string",
+				"hint": {
+					"en_US": "The input JSON string.",
+					"zh_CN": "输入的 JSON 字符串"
+				},
+				"label": {
+					"en_US": "Field",
+					"zh_CN": "字段"
+				}
+			}
+		],
+		"return": {
+			"type": "any",
+			"hint": {
+				"en_US": "the unmarshalled value",
+				"zh_CN": "反序列 JSON 字符串的值"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Parse JSON",
+				"zh_CN": "JSON 解析"
 			}
 		}
 	}, {

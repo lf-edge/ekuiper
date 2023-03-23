@@ -161,3 +161,9 @@ echo -e "---------------------------------------------\n"
 
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/lookup_table_sql.jmx -Dfvt="$fvt_dir" -l jmeter_logs/lookup_table_sql.jtl -j jmeter_logs/lookup_table_sql.log
 echo -e "---------------------------------------------\n"
+
+echo -e "-------------------- ecp acceptance test ------------------------\n"
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/ecp_acceptance/ecp_data_import_export.jmx -Dfvt="$fvt_dir" -l jmeter_logs/ecp_data_import_export.jtl -j jmeter_logs/ecp_data_import_export.log
+echo -e "---------------------------------------------\n"
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/ecp_acceptance/ecp_rule_metrics.jmx -Dfvt="$fvt_dir" -l jmeter_logs/ecp_rule_metrics.jtl -j jmeter_logs/ecp_rule_metrics.log
+echo -e "---------------------------------------------\n"

@@ -85,7 +85,7 @@ func (m *Manager) HasFunctionSet(name string) bool {
 }
 
 func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
-	_, ok := builtins[funcName]
+	_, ok := m.ConvName(funcName)
 	if !ok {
 		return plugin.NONE_EXTENSION, "", ""
 	} else {
@@ -96,6 +96,10 @@ func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, st
 func (m *Manager) ConvName(n string) (string, bool) {
 	name := strings.ToLower(n)
 	_, ok := builtins[name]
+	if ok {
+		return name, true
+	}
+	_, ok = builtinStatfulFuncs[name]
 	return name, ok
 }
 

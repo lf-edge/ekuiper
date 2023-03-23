@@ -95,8 +95,8 @@ func TestGetSqlSinkMeta(t *testing.T) {
 
 	for _, value := range fields {
 		fmt.Printf("value %v", value)
-		if value.Default == nil {
-			t.Errorf("value %v default field is null", value)
+		if value.Type == "" {
+			t.Errorf("value %v type field shoud not be empty", value)
 		}
 	}
 }

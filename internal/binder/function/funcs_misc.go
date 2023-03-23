@@ -20,6 +20,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	b64 "encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -80,20 +81,11 @@ func registerMiscFunc() {
 						return fmt.Errorf("Not supported type conversion."), false
 					}
 				case "string":
-					if v1, ok1 := args[0].(int); ok1 {
-						return fmt.Sprintf("%d", v1), true
-					} else if v1, ok1 := args[0].(float64); ok1 {
-						return fmt.Sprintf("%g", v1), true
-					} else if v1, ok1 := args[0].(string); ok1 {
-						return v1, true
-					} else if v1, ok1 := args[0].(bool); ok1 {
-						if v1 {
-							return "true", true
-						} else {
-							return "false", true
-						}
+					r, e := cast.ToString(args[0], cast.CONVERT_ALL)
+					if e != nil {
+						return fmt.Errorf("Not supported type conversion, got error %v.", e), false
 					} else {
-						return fmt.Errorf("Not supported type conversion."), false
+						return r, true
 					}
 				case "boolean":
 					if v1, ok1 := args[0].(int); ok1 {
@@ -149,6 +141,39 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
+	builtins["to_json"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return "null", true
+			}
+			rr, err := json.Marshal(args[0])
+			if err != nil {
+				return fmt.Errorf("fail to convert %v to json", args[0]), false
+			}
+			return string(rr), true
+		},
+		val: ValidateOneArg,
+	}
+	builtins["parse_json"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil || args[0] == "null" {
+				return nil, true
+			}
+			text, err := cast.ToString(args[0], cast.CONVERT_SAMEKIND)
+			if err != nil {
+				return fmt.Errorf("fail to convert %v to string", args[0]), false
+			}
+			var data interface{}
+			err = json.Unmarshal([]byte(text), &data)
+			if err != nil {
+				return fmt.Errorf("fail to parse json: %v", err), false
+			}
+			return data, true
+		},
+		val: ValidateOneStrArg,
+	}
 	builtins["chr"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -189,6 +214,47 @@ func registerMiscFunc() {
 					}
 				} else {
 					return fmt.Errorf("Only base64 encoding is supported."), false
+				}
+			}
+			return nil, false
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(2, len(args)); err != nil {
+				return err
+			}
+
+			if ast.IsNumericArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
+				return ProduceErrInfo(0, "string")
+			}
+
+			a := args[1]
+			if !ast.IsStringArg(a) {
+				return ProduceErrInfo(1, "string")
+			}
+			if av, ok := a.(*ast.StringLiteral); ok {
+				if av.Val != "base64" {
+					return fmt.Errorf("Only base64 is supported for the 2nd parameter.")
+				}
+			}
+			return nil
+		},
+	}
+	builtins["decode"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if v, ok := args[1].(string); ok {
+				if strings.EqualFold(v, "base64") {
+					if v1, ok1 := args[0].(string); ok1 {
+						r, e := b64.StdEncoding.DecodeString(v1)
+						if e != nil {
+							return fmt.Errorf("fail to decode base64 string: %v", e), false
+						}
+						return r, true
+					} else {
+						return fmt.Errorf("Only string type can be decoded."), false
+					}
+				} else {
+					return fmt.Errorf("Only base64 decoding is supported."), false
 				}
 			}
 			return nil, false
@@ -329,6 +395,10 @@ func registerMiscFunc() {
 	builtinStatfulFuncs["compress"] = func() api.Function {
 		conf.Log.Infof("initializing compress function")
 		return &compressFunc{}
+	}
+	builtinStatfulFuncs["decompress"] = func() api.Function {
+		conf.Log.Infof("initializing decompress function")
+		return &decompressFunc{}
 	}
 	builtins["isnull"] = builtinFunc{
 		fType: ast.FuncTypeScalar,

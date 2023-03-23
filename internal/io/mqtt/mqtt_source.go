@@ -17,11 +17,13 @@ package mqtt
 import (
 	"fmt"
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"path"
 	"strconv"
 )
@@ -36,7 +38,8 @@ type MQTTSource struct {
 	model  modelVersion
 	schema map[string]interface{}
 
-	cli api.MessageClient
+	cli          api.MessageClient
+	decompressor message.Decompressor
 }
 
 type MQTTConfig struct {
@@ -45,6 +48,7 @@ type MQTTConfig struct {
 	BufferLen         int    `json:"bufferLength"`
 	KubeedgeModelFile string `json:"kubeedgeModelFile"`
 	KubeedgeVersion   string `json:"kubeedgeVersion"`
+	Decompression     string `json:"decompression"`
 }
 
 func (ms *MQTTSource) WithSchema(_ string) *MQTTSource {
@@ -67,6 +71,14 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 	ms.format = cfg.Format
 	ms.qos = cfg.Qos
 	ms.config = props
+
+	if cfg.Decompression != "" {
+		dc, err := compressor.GetDecompressor(cfg.Decompression)
+		if err != nil {
+			return fmt.Errorf("get decompressor %s fail with error: %v", cfg.Decompression, err)
+		}
+		ms.decompressor = dc
+	}
 
 	if 0 != len(cfg.KubeedgeModelFile) {
 		p := path.Join("sources", cfg.KubeedgeModelFile)
@@ -143,7 +155,17 @@ func getTuple(ctx api.StreamContext, ms *MQTTSource, env interface{}) api.Source
 			Error: fmt.Errorf("can not convert interface data to mqtt message %v.", env),
 		}
 	}
-	result, e := ctx.Decode(msg.Payload())
+	payload := msg.Payload()
+	var err error
+	if ms.decompressor != nil {
+		payload, err = ms.decompressor.Decompress(payload)
+		if err != nil {
+			return &xsql.ErrorSourceTuple{
+				Error: fmt.Errorf("can not decompress mqtt message %v.", err),
+			}
+		}
+	}
+	result, e := ctx.Decode(payload)
 	//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
 	if e != nil {
 		return &xsql.ErrorSourceTuple{

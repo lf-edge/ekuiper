@@ -18,44 +18,42 @@ import (
 	"bytes"
 	"compress/zlib"
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/message"
+	"io"
 )
 
-func GetCompressor(name string) (message.Compressor, error) {
+func GetDecompressor(name string) (message.Decompressor, error) {
 	switch name {
 	case "zlib":
-		return &zlibCompressor{
-			writer: zlib.NewWriter(nil),
-		}, nil
+		return &zlibDecompressor{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported compressor: %s", name)
 	}
 }
 
-type zlibCompressor struct {
-	writer *zlib.Writer
-	buffer bytes.Buffer
+type zlibDecompressor struct {
+	reader io.ReadCloser
 }
 
-func (z *zlibCompressor) Close(ctx api.StreamContext) error {
-	if z.writer != nil {
-		ctx.GetLogger().Infof("closing zlib compressor")
-		return z.writer.Close()
+func (z *zlibDecompressor) Decompress(data []byte) ([]byte, error) {
+	if z.reader == nil {
+		r, err := zlib.NewReader(bytes.NewReader(data))
+		if err != nil {
+			return nil, fmt.Errorf("failed to decompress: %v", err)
+		}
+		z.reader = r
+	} else {
+		err := z.reader.(zlib.Resetter).Reset(bytes.NewReader(data), nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decompress: %v", err)
+		}
 	}
-	return nil
-}
-
-func (z *zlibCompressor) Compress(data []byte) ([]byte, error) {
-	z.buffer.Reset()
-	z.writer.Reset(&z.buffer)
-	_, err := z.writer.Write(data)
-	if err != nil {
-		return nil, err
-	}
-	err = z.writer.Close()
-	if err != nil {
-		return nil, err
-	}
-	return z.buffer.Bytes(), nil
+	defer func() {
+		err := z.reader.Close()
+		if err != nil {
+			conf.Log.Warnf("failed to close zlib decompressor: %v", err)
+		}
+	}()
+	return io.ReadAll(z.reader)
 }

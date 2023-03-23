@@ -14,8 +14,6 @@
 
 package message
 
-import "github.com/lf-edge/ekuiper/pkg/api"
-
 const (
 	FormatBinary    = "binary"
 	FormatJson      = "json"
@@ -53,7 +51,6 @@ type SchemaProvider interface {
 // Compressor compresses and decompresses bytes
 type Compressor interface {
 	Compress([]byte) ([]byte, error)
-	api.Closable
 }
 
 type Decompressor interface {
