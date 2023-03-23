@@ -509,7 +509,7 @@ func dedup(r []interface{}, col []interface{}, all bool) (interface{}, error) {
 	}
 	if !all {
 		if len(result) == 0 {
-			return result, nil
+			return []interface{}{}, nil
 		} else {
 			return result[0], nil
 		}
