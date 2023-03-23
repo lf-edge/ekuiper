@@ -140,9 +140,10 @@ Examples:
 
 | Function         | Example                          | Description                                                                                                                                                                                                                                                                                       |
 |------------------|----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| cast             | cast(col,  "bigint")             | Converts a value from one data type to another. The supported types includes: bigint, float, string, boolean and datetime.                                                                                                                                                                        |
+| cast             | cast(col,  "bigint")             | Converts a value from one data type to another. The supported types includes: bigint, float, string, boolean, bytea and datetime.                                                                                                                                                                 |
 | chr              | chr(col1)                        | Returns the ASCII character that corresponds to the given Int argument                                                                                                                                                                                                                            |
 | encode           | encode(col1, "base64")           | Use the encode function to encode the payload, which potentially might be non-JSON data, into its string representation based on the encoding scheme. Currently, only "base64" encoding type is supported.                                                                                        |
+| decode           | decode(col1, "base64")           | Decode the input string with specified decoding method. Currently, only "base64" encoding type is supported.                                                                                                                                                                                      |
 | trunc            | trunc(dec, int)                  | Truncates the first argument to the number of Decimal places specified by the second argument. If the second argument is less than zero, it is set to zero. If the second argument is greater than 34, it is set to 34. Trailing zeroes are stripped from the result.                             |
 | object_construct | object_construct(key1, col, ...) | Return a struct type object/map constructed by the arguments. The arguments are series of key value pairs, thus the arguments count must be an odd number. The key must a string and the value can be of any type. If the value is null, the key/value pair will not present in the final object. |
 
@@ -163,14 +164,26 @@ When casting to datetime type, the supported column type and casting rule are:
 | sha256   | sha256(col1) | Hashed value of the argument |
 | sha384   | sha384(col1) | Hashed value of the argument |
 | sha512   | sha512(col1) | Hashed value of the argument |
+
 ## JSON Functions
-| Function              | Example                               | Description                                                                                |
-|-----------------------|---------------------------------------|--------------------------------------------------------------------------------------------|
-| json_path_exists      | json_path_exists(col1, "$.name")      | Checks whether JSON path returns any item for the specified JSON value. Return bool value. |
-| json_path_query       | json_path_query(col1, "$.name")       | Gets all items returned by JSON path for the specified JSON value.                         |
-| json_path_query_first | json_path_query_first(col1, "$.name") | Gets the first item returned by JSON path for the specified JSON value.                    |
+| Function              | Example                               | Description                                                                                                                  |
+|-----------------------|---------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| to_json               | to_json(col1)                         | Converts a value to a string containing the JSON representation of the value. If the input is NULL, the result is also NULL. |
+| parse_json            | parse_json(col1)                      | Converts a JSON string to a value. If the input is NULL, the result is also NULL.                                            |
+| json_path_exists      | json_path_exists(col1, "$.name")      | Checks whether JSON path returns any item for the specified JSON value. Return bool value.                                   |
+| json_path_query       | json_path_query(col1, "$.name")       | Gets all items returned by JSON path for the specified JSON value.                                                           |
+| json_path_query_first | json_path_query_first(col1, "$.name") | Gets the first item returned by JSON path for the specified JSON value.                                                      |
 
 **Please refer to [json path functions](./json_expr.md#json-path-functions) for how to compose a json path.**  
+
+## Compression/Decompression Functions
+
+| Function   | Example                   | Description                                                           |
+|------------|---------------------------|-----------------------------------------------------------------------|
+| compress   | compress(input, "zlib")   | Compress the input string or binary value with a compression method   |
+| decompress | decompress(input, "zlib") | Decompress the input string or binary value with a compression method |
+
+Currently, only 'zlib' method is supported.
 
 ## Analytic Functions
 
