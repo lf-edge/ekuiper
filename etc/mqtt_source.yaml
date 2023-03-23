@@ -2,6 +2,7 @@
 default:
   qos: 1
   server: "tcp://127.0.0.1:1883"
+  #decompression: zlib
   #username: user1
   #password: password
   #certificationPath: /var/kuiper/xyz-certificate.pem

@@ -226,6 +226,23 @@
 				"en_US": "KubeEdge model file",
 				"zh_CN": "KubeEdge 模型文件"
 			}
+		}, {
+			"name": "decompression",
+			"default": "",
+			"optional": true,
+			"control": "select",
+			"type": "string",
+			"values": [
+				"zlib"
+			],
+			"hint": {
+				"en_US": "Decompress the MQTT payload with the specified compression method.",
+				"zh_CN": "使用指定的压缩方法解压缩 MQTT Payload。"
+			},
+			"label": {
+				"en_US": "Decompression",
+				"zh_CN": "解压缩"
+			}
 		}]
 	},
 	"outputs": [
