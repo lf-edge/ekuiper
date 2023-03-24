@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"compress/zlib"
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
@@ -36,14 +35,6 @@ func GetCompressor(name string) (message.Compressor, error) {
 type zlibCompressor struct {
 	writer *zlib.Writer
 	buffer bytes.Buffer
-}
-
-func (z *zlibCompressor) Close(ctx api.StreamContext) error {
-	if z.writer != nil {
-		ctx.GetLogger().Infof("closing zlib compressor")
-		return z.writer.Close()
-	}
-	return nil
 }
 
 func (z *zlibCompressor) Compress(data []byte) ([]byte, error) {
