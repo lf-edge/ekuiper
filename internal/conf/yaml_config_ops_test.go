@@ -17,6 +17,10 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v3"
+	"os"
+	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -76,6 +80,220 @@ func TestConfigKeys_Ops(t *testing.T) {
 		t.Error(err)
 	}
 
+}
+
+func TestConfigKeys_GetPluginName(t *testing.T) {
+	pluginName := "mqtt"
+	mqttCfg, err := NewConfigOperatorFromSourceYaml(pluginName)
+	if err != nil {
+		t.Error(err)
+	}
+	if mqttCfg.GetPluginName() != pluginName {
+		t.Errorf("GetPluginName() gotName = %v, wantName = %v", mqttCfg.GetPluginName(), pluginName)
+	}
+}
+
+func TestConfigKeys_GetConfContentByte(t *testing.T) {
+	mqttCfg, err := NewConfigOperatorFromSourceYaml("mqtt")
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = mqttCfg.GetConfContentByte()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestConfigKeys_LoadConfContent(t *testing.T) {
+	mqttCfg := NewConfigOperatorForSource("mqtt")
+	cf := make(map[string]map[string]interface{})
+	source := `{"test": {"qos": 1, "server": "tcp://127.0.0.1:1883"}}`
+	_ = json.Unmarshal([]byte(source), &cf)
+	mqttCfg.LoadConfContent(cf)
+	if !reflect.DeepEqual(cf, mqttCfg.CopyUpdatableConfContent()) {
+		t.Errorf("LoadConfContent() fail")
+	}
+}
+
+func TestConfigKeys_CopyReadOnlyConfContent(t *testing.T) {
+	mqttCfg, err := NewConfigOperatorFromSourceYaml("mqtt")
+	if err != nil {
+		t.Error(err)
+	}
+	cf := make(map[string]map[string]interface{})
+	source := `{"default": {"qos": 1, "server": "tcp://127.0.0.1:1883"}, "demo_conf": {"qos": 0, "server": "tcp://10.211.55.6:1883"}}`
+	_ = yaml.Unmarshal([]byte(source), &cf)
+	if !reflect.DeepEqual(cf, mqttCfg.CopyReadOnlyConfContent()) {
+		t.Errorf("CopyReadOnlyConfContent() fail")
+	}
+}
+
+func TestConfigKeys_GetConfKeys(t *testing.T) {
+	mqttCfg, err := NewConfigOperatorFromSourceYaml("mqtt")
+
+	if err != nil {
+		t.Error(err)
+	}
+	keys := mqttCfg.GetConfKeys()
+	//currently only etcCfg, no dataCfg
+	source := []string{"default", "demo_conf"}
+	if keys == nil {
+		t.Errorf("Not Equal")
+	}
+	if len(keys) != len(source) {
+		t.Errorf("Length not equal, got %v, want %v", len(keys), len(source))
+	}
+	sort.Strings(keys)
+	sort.Strings(source)
+	for i, key := range keys {
+		if key != source[i] {
+			t.Errorf("Not equal, got %v, want %v", key, source[i])
+		}
+	}
+
+}
+
+func TestConfigKeys_GetReadOnlyConfKeys(t *testing.T) {
+	mqttCfg, err := NewConfigOperatorFromSourceYaml("mqtt")
+	if err != nil {
+		t.Error(err)
+	}
+	keys := mqttCfg.GetReadOnlyConfKeys()
+	source := []string{"default", "demo_conf"}
+	if keys == nil {
+		t.Errorf("Not Equal")
+	}
+	if len(keys) != len(source) {
+		t.Errorf("Length not equal, got %v, want %v", len(keys), len(source))
+	}
+	sort.Strings(keys)
+	sort.Strings(source)
+	for i, key := range keys {
+		if key != source[i] {
+			t.Errorf("Not equal, got %v, want %v", key, source[i])
+		}
+	}
+
+}
+
+func TestConfigKeys_GetUpdatableConfKeys(t *testing.T) {
+	mqttCfg := NewConfigOperatorForSource("mqtt")
+	cf := make(map[string]map[string]interface{})
+	source := `{"test": {"qos": 1, "server": "tcp://127.0.0.1:18883"}}`
+	_ = json.Unmarshal([]byte(source), &cf)
+	mqttCfg.LoadConfContent(cf)
+	keys := mqttCfg.GetUpdatableConfKeys()
+	srcKeys := []string{"test"}
+	if keys == nil {
+		t.Errorf("Not Equal")
+	}
+	if len(keys) != len(srcKeys) {
+		t.Errorf("Length not equal, got %v, want %v", len(keys), len(srcKeys))
+	}
+	sort.Strings(keys)
+	sort.Strings(srcKeys)
+	for i, key := range keys {
+		if key != srcKeys[i] {
+			t.Errorf("Not equal, got %v, want %v", key, source[i])
+		}
+	}
+}
+
+func TestConfigKeys_DeleteConfKey(t *testing.T) {
+	mqttCfg := NewConfigOperatorForSource("mqtt")
+	cf := make(map[string]map[string]interface{})
+	source := `{"test": {"qos": 1, "server": "tcp://127.0.0.1:18883"}}`
+	_ = json.Unmarshal([]byte(source), &cf)
+	mqttCfg.LoadConfContent(cf)
+	mqttCfg.DeleteConfKey("test")
+	err := isDelData(`{"qos": 1, "server": "tcp://127.0.0.1:18883"}`, mqttCfg.CopyUpdatableConfContent()["test"])
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestConfigKeys_ClearConfKeys(t *testing.T) {
+	mqttCfg := NewConfigOperatorForSource("mqtt")
+	cf := make(map[string]map[string]interface{})
+	source := `{"test": {"qos": 1, "server": "tcp://127.0.0.1:18883"}}`
+	_ = json.Unmarshal([]byte(source), &cf)
+	mqttCfg.LoadConfContent(cf)
+	mqttCfg.ClearConfKeys()
+	if len(mqttCfg.CopyUpdatableConfContent()) > 0 {
+		t.Errorf("ClearConfKeys() fail")
+	}
+}
+
+func TestConfigKeys_AddConfKeyField(t *testing.T) {
+	mqttCfg := NewConfigOperatorForSource("mqtt")
+	cf := make(map[string]map[string]interface{})
+	source := `{"test": {"qos": 1, "server": "tcp://127.0.0.1:1883"}}`
+	_ = json.Unmarshal([]byte(source), &cf)
+	mqttCfg.LoadConfContent(cf)
+	ck := make(map[string]interface{})
+	source = `{"username": "user"}`
+	_ = json.Unmarshal([]byte(source), &ck)
+	confKey := "test"
+	mqttCfg.AddConfKeyField(confKey, ck)
+	err := isAddData(source, mqttCfg.CopyUpdatableConfContent()[confKey])
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestSourceConfigKeysOps_SaveCfgToFile(t *testing.T) {
+	mqttCfg, err := NewConfigOperatorFromSourceYaml("mqtt")
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.MkdirAll("../../data/test/sources", os.ModePerm)
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = os.Create("../../data/test/sources/mqtt.yaml")
+	if err != nil {
+		t.Error(err)
+	}
+	err = mqttCfg.SaveCfgToFile()
+	if err != nil {
+		t.Error(err)
+	}
+	os.RemoveAll("../../data/test/sources/mqtt.yaml")
+}
+
+func TestSinkConfigKeysOps_SaveCfgToFile(t *testing.T) {
+	mqttCfg, err := NewConfigOperatorFromSinkYaml("mqtt")
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.MkdirAll("../../data/test/sinks", os.ModePerm)
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = os.Create("../../data/test/sinks/mqtt.yaml")
+	if err != nil {
+		t.Error(err)
+	}
+	err = mqttCfg.SaveCfgToFile()
+	if err != nil {
+		t.Error(err)
+	}
+	os.RemoveAll("../../data/test/sinks/mqtt.yaml")
+}
+
+func TestNewConfigOperatorForSink(t *testing.T) {
+	sink := NewConfigOperatorForSink("mqtt")
+	if sink.GetPluginName() != "mqtt" {
+		t.Errorf("NewConfigOperatorForSink() fail")
+	}
+}
+
+func TestNewConfigOperatorForConnection(t *testing.T) {
+	connection := NewConfigOperatorForConnection("mqtt")
+	if connection.GetPluginName() != "mqtt" {
+		t.Errorf("NewConfigOperatorForSink() fail")
+	}
 }
 
 func marshalUn(input, output interface{}) error {
