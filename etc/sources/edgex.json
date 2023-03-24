@@ -16,6 +16,7 @@
 			"zh_CN": "eKuiper 提供了内置的 EdgeX 源支持，它可以被用来订阅来自于EdgeX 消息总线的数据，并且将数据放入 eKuiper 数据处理流水线中。"
 		}
 	},
+	"dataSource": {},
 	"properties": {
 		"default": [
 			{

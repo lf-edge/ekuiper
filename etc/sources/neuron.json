@@ -17,6 +17,7 @@
     }
   },
   "libs": [],
+  "dataSource": {},
   "properties": {
     "default": [
       {
