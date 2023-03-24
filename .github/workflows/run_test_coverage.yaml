@@ -58,17 +58,25 @@ jobs:
       with:
         name: coverage.out
         path: coverage.out
-#    - name: run plugins test case
-#      run: |
-#        mkdir -p data/test/uploads
-#        cp extensions/functions/dependencies/tensorflow/models/*  data/test/uploads/
-#        export CGO_CFLAGS=-I$(pwd)/extensions/functions/dependencies/tensorflow
-#        export CGO_LDFLAGS=-L$(pwd)/extensions/functions/dependencies/tensorflow/amd64
-#        export LD_LIBRARY_PATH=$(pwd)/extensions/functions/dependencies/tensorflow/amd64:$LD_LIBRARY_PATH
-#        cd extensions
-#        go test ./functions/...
-#    - uses: actions/upload-artifact@v3
-#      if: failure()
-#      with:
-#        name: stream.log
-#        path: log/stream.log
+
+    - name: Go Coverage Badge
+      uses: tj-actions/coverage-badge-go@v1
+      if: ${{ runner.os == 'Linux'}} # Runs this on only one of the ci builds.
+      with:
+        green: 80
+        filename: coverage.out
+
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      id: auto-commit-action
+      with:
+        commit_message: Apply Code Coverage Badge
+        skip_fetch: true
+        skip_checkout: true
+        file_pattern: ./README.md
+
+    - name: Push Changes
+      if: steps.auto-commit-action.outputs.changes_detected == 'true'
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ github.token }}
+        branch: ${{ github.ref }}
