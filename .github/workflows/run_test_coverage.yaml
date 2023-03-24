@@ -69,14 +69,17 @@ jobs:
     - uses: stefanzweifel/git-auto-commit-action@v4
       id: auto-commit-action
       with:
-        commit_options: '--amend --no-edit'
+        commit_options: '--signoff --no-edit'
+        add_options: '-u'
         skip_fetch: true
         skip_checkout: true
-        file_pattern: ./README.md
+        file_pattern: README.md
+        push_options: '--force'
 
-    - name: Push Changes
-      if: steps.auto-commit-action.outputs.changes_detected == 'true'
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ github.token }}
-        branch: ${{ github.ref }}
+
+#    - name: Push Changes
+#      if: steps.auto-commit-action.outputs.changes_detected == 'true'
+#      uses: ad-m/github-push-action@master
+#      with:
+#        github_token: ${{ github.token }}
+#        branch: ${{ github.ref }}
