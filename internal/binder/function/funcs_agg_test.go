@@ -16,12 +16,13 @@ package function
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"reflect"
-	"testing"
 )
 
 func TestAggExec(t *testing.T) {
@@ -125,6 +126,17 @@ func TestAggExec(t *testing.T) {
 			stddevs: float64(50),
 			var1:    1666.6666666666667,
 			vars:    float64(2500),
+		}, { // 4
+			args: []interface{}{
+				[]interface{}{},
+			},
+			avg:     nil,
+			max:     nil,
+			min:     nil,
+			stddev:  nil,
+			stddevs: nil,
+			var1:    nil,
+			vars:    nil,
 		},
 	}
 	for i, tt := range tests {
@@ -229,6 +241,11 @@ func TestPercentileExec(t *testing.T) {
 			},
 			pCont: float64(125),
 			pDisc: float64(150),
+		}, { //5
+			args: []interface{}{[]interface{}{},
+				[]interface{}{}},
+			pCont: nil,
+			pDisc: nil,
 		},
 	}
 	for i, tt := range tests {
