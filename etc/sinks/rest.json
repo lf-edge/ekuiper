@@ -277,21 +277,6 @@
                 "en_US": "Expire Time",
                 "zh_CN": "过期时间"
               }
-            },
-            {
-              "name": "body",
-              "default": "",
-              "optional": true,
-              "control": "textarea",
-              "type": "string",
-              "hint": {
-                "en_US": "The body of access token request",
-                "zh_CN": "访问令牌请求的正文"
-              },
-              "label": {
-                "en_US": "Access token request Body",
-                "zh_CN": "访问令牌请求的正文"
-              }
             }
           ]
         },
