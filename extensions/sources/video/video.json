@@ -17,6 +17,7 @@
 			"zh_CN": "eKuiper 为提取视频源中的图片流提供了插件支持，该支持可从视频流提取图片消息并输入 eKuiper 处理管道。"
 		}
 	},
+	"dataSource": {},
 	"properties": {
 		"default": [{
 			"name": "url",

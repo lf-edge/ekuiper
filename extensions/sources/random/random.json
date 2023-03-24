@@ -16,7 +16,7 @@
       "zh_CN": "随机源将生成具有指定样式的随机输入。"
     }
   },
-  "libs": [],
+  "dataSource": {},
   "properties": {
     "default": [
       {

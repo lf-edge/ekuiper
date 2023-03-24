@@ -16,6 +16,7 @@
       "zh_CN": "源将订阅 Zero Mq 主题以将消息导入 eKuiper。"
     }
   },
+  "dataSource": {},
   "libs": [
     "github.com/pebbe/zmq4@v1.0.0"
   ],
