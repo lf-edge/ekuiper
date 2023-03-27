@@ -15,45 +15,19 @@
 package compressor
 
 import (
-	"bytes"
-	"compress/zlib"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"io"
 )
 
 func GetDecompressor(name string) (message.Decompressor, error) {
 	switch name {
-	case "zlib":
-		return &zlibDecompressor{}, nil
+	case ZLIB:
+		return newZlibDecompressor()
+	case GZIP:
+		return newGzipDecompressor()
+	case FLATE:
+		return newFlateDecompressor()
 	default:
-		return nil, fmt.Errorf("unsupported compressor: %s", name)
+		return nil, fmt.Errorf("unsupported decompressor: %s", name)
 	}
-}
-
-type zlibDecompressor struct {
-	reader io.ReadCloser
-}
-
-func (z *zlibDecompressor) Decompress(data []byte) ([]byte, error) {
-	if z.reader == nil {
-		r, err := zlib.NewReader(bytes.NewReader(data))
-		if err != nil {
-			return nil, fmt.Errorf("failed to decompress: %v", err)
-		}
-		z.reader = r
-	} else {
-		err := z.reader.(zlib.Resetter).Reset(bytes.NewReader(data), nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decompress: %v", err)
-		}
-	}
-	defer func() {
-		err := z.reader.Close()
-		if err != nil {
-			conf.Log.Warnf("failed to close zlib decompressor: %v", err)
-		}
-	}()
-	return io.ReadAll(z.reader)
 }

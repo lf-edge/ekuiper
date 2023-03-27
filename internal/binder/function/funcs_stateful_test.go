@@ -97,7 +97,7 @@ func TestDecompressExec(t *testing.T) {
 				"foo",
 				"bar",
 			},
-			result: fmt.Errorf("unsupported compressor: bar"),
+			result: fmt.Errorf("unsupported decompressor: bar"),
 		}, { // 1
 			args: []interface{}{
 				[]byte{120, 156, 202, 72, 205, 201, 201, 87, 40, 207, 47, 202, 73, 1, 4, 0, 0, 255, 255, 26, 11, 4, 93},
