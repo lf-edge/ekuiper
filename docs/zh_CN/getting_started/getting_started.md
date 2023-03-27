@@ -13,7 +13,7 @@ eKuiper 提供了docker镜像、二进制包和 helm 等安装方式。
 Docker 部署是开始尝试 eKuiper 的最快方式。
 
 ```shell
-docker run -p 9081:9081 -d -name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:$tag
+docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:$tag
 ```
 
 关于 Docker 安装的更多信息，请参考[在 Docker 中运行eKuiper](../installation.md#在-docker-中运行)。

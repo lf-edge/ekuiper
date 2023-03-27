@@ -30,31 +30,31 @@ eKuiper manager 是一个免费的 eKuiper 管理控制台，以 Docker 镜像�
    version: '3.4'
 
    services:
-   manager:
-      image: emqx/ekuiper-manager:x.x.x
-      container_name: ekuiper-manager
-      ports:
-      - "9082:9082"
-      restart: unless-stopped
-      environment: 
-        # setting default eKuiper service, works since 1.8.0
-        DEFAULT_EKUIPER_ENDPOINT: "http://ekuiper:9081"
-   ekuiper:
-      image: lfedge/ekuiper:x.x.x
-      ports:
-        - "9081:9081"
-        - "127.0.0.1:20498:20498"
-      container_name: ekuiper
-      hostname: ekuiper
-      restart: unless-stopped
-      user: root
-      volumes:
-        - /tmp/data:/kuiper/data
-        - /tmp/log:/kuiper/log
-      environment:
-        MQTT_SOURCE__DEFAULT__SERVER: "tcp://broker.emqx.io:1883"
-        KUIPER__BASIC__CONSOLELOG: "true"
-        KUIPER__BASIC__IGNORECASE: "false"
+       manager:
+          image: emqx/ekuiper-manager:x.x.x
+          container_name: ekuiper-manager
+          ports:
+          - "9082:9082"
+          restart: unless-stopped
+          environment: 
+            # setting default eKuiper service, works since 1.8.0
+            DEFAULT_EKUIPER_ENDPOINT: "http://ekuiper:9081"
+       ekuiper:
+          image: lfedge/ekuiper:x.x.x
+          ports:
+            - "9081:9081"
+            - "127.0.0.1:20498:20498"
+          container_name: ekuiper
+          hostname: ekuiper
+          restart: unless-stopped
+          user: root
+          volumes:
+            - /tmp/data:/kuiper/data
+            - /tmp/log:/kuiper/log
+          environment:
+            MQTT_SOURCE__DEFAULT__SERVER: "tcp://broker.emqx.io:1883"
+            KUIPER__BASIC__CONSOLELOG: "true"
+            KUIPER__BASIC__IGNORECASE: "false"
      ```
 2. 启动 docker-compose 集群。
    ```shell

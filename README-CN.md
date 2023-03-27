@@ -69,9 +69,9 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如，
 ## 社区
 
 你可通过以下途径与 EMQ 社区及开发者联系:
-- [Forum](https://askemq.com/c/kuiper/)
+- [Forum](https://askemq.com/c/ekuiper)
 - [Weibo](https://weibo.com/emqtt)
-- [Blog](https://www.emqx.cn/blog)
+- [Blog](https://www.emqx.com/zh/blog)
 - [Slack](https://slack.lfedge.org/): 
     - [ekuiper](https://lfedge.slack.com/archives/C024F4P7KCK) 
     - [ekuiper-user](https://lfedge.slack.com/archives/C024F4SMEMR)
