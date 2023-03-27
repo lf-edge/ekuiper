@@ -15,38 +15,25 @@
 package compressor
 
 import (
-	"bytes"
-	"compress/zlib"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
+const (
+	ZLIB  = "zlib"
+	GZIP  = "gzip"
+	FLATE = "flate"
+)
+
 func GetCompressor(name string) (message.Compressor, error) {
 	switch name {
-	case "zlib":
-		return &zlibCompressor{
-			writer: zlib.NewWriter(nil),
-		}, nil
+	case ZLIB:
+		return newZlibCompressor()
+	case GZIP:
+		return newGzipCompressor()
+	case FLATE:
+		return newFlateCompressor()
 	default:
 		return nil, fmt.Errorf("unsupported compressor: %s", name)
 	}
-}
-
-type zlibCompressor struct {
-	writer *zlib.Writer
-	buffer bytes.Buffer
-}
-
-func (z *zlibCompressor) Compress(data []byte) ([]byte, error) {
-	z.buffer.Reset()
-	z.writer.Reset(&z.buffer)
-	_, err := z.writer.Write(data)
-	if err != nil {
-		return nil, err
-	}
-	err = z.writer.Close()
-	if err != nil {
-		return nil, err
-	}
-	return z.buffer.Bytes(), nil
 }
