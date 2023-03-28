@@ -111,7 +111,7 @@ Both Neuron and eKuiper support binary installation packages and Docker containe
 
 After Neuron starts, we need to configure Neuron's southbound device and northbound eKuiper application channel, and then start the simulator for simulated data acquisition.
 
-For southbound device and simulator configuration, please refer to the [Neuron Quick Tutorial](https://neugates.io/docs/en/latest/getting-started/quick_start.html#operation-and-use), to complete to the "Operation And Use/3. South configuration" section. The north configuration section of that tutorial is for the mqtt application, but this tutorial requires the eKuiper to be used as the northbound application.
+For southbound device and simulator configuration, please refer to the [Neuron Quick Tutorial](https://neugates.io/docs/en/latest/quick-start/southdevices-connect.html), to complete to the "Operation And Use/3. South configuration" section. The north configuration section of that tutorial is for the mqtt application, but this tutorial requires the eKuiper to be used as the northbound application.
 
 ### Neuron northbound eKuiper application configuration
 
@@ -125,7 +125,7 @@ Step 1: Add a north application.
    ![select app](https://neugates.io/docs/docs-assets/img/south-devices-add.6034f3a7.png)
 4. After the application is created successfully, a card of the application just created will appear in the North application management interface, at this time, the application is in the initialization state and the connection state is in the disconnection state.
 ![neuron ekuiper app](./neuron_ekuiper_app.png)
-5. 
+
 Step 2: Subscribe to Group.
 
 Click any blank space in the application card ekuiper-1 in the first step to enter the Group list management screen, as shown in the figure below.

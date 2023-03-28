@@ -222,7 +222,9 @@
       "control": "select",
       "type": "string",
       "values": [
-        "zlib"
+        "zlib",
+        "gzip",
+        "flate"
       ],
       "hint": {
         "en_US": "Compress the payload with the specified compression method.",

@@ -32,7 +32,7 @@ Neuron 与 eKuiper 的连接经历了几个阶段：
 
 开始动手操作之前，需要准备以下环境：
 
-- 云端的 MQTT broker，例如[快速开始 EMQX](https://www.emqx.io/docs/zh/v4.4/getting-started/getting-started.html#%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B)。假设云端 MQTT broker 地址为 `tcp://cloud.host:1883`, 以下教程将以此地址为例。
+- 云端的 MQTT broker，例如[快速开始 EMQX](https://neugates.io/docs/zh/latest/quick-start/southdevices-connect.html)。假设云端 MQTT broker 地址为 `tcp://cloud.host:1883`, 以下教程将以此地址为例。
 - 为了方便观察运行结果，我们需要安装一个 MQTT 客户端，例如 [MQTT X](https://mqttx.app/) 。
 
 ## 快速部署
