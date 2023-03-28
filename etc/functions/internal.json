@@ -2953,7 +2953,7 @@
 				"optional": false,
 				"control": "select",
 				"type": "string",
-				"values": ["zlib"],
+				"values": ["zlib","gzip","flate"],
 				"hint": {
 					"en_US": "The type of compression",
 					"zh_CN": "压缩方法"
@@ -3006,7 +3006,7 @@
 				"optional": false,
 				"control": "select",
 				"type": "string",
-				"values": ["zlib"],
+				"values": ["zlib","gzip","flate"],
 				"hint": {
 					"en_US": "The type of decompression",
 					"zh_CN": "解压缩方法"

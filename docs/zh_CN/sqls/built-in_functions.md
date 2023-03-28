@@ -177,7 +177,7 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 | compress   | compress(input, "zlib")   | 压缩输入的字符串或二进制值。  |
 | decompress | decompress(input, "zlib") | 解压缩输入的字符串或二进制值。 |
 
-目前只支持 'zlib' 压缩算法。
+目前支持 'zlib', 'gzip' 和 'flate' 压缩算法。
 
 ## 分析函数
 
