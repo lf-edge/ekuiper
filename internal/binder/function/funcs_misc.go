@@ -479,7 +479,30 @@ func registerMiscFunc() {
 	builtins["meta"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			return args[0], true
+			var innerArgs []interface{}
+			var ok bool
+			if innerArgs, ok = args[0].([]interface{}); !ok {
+				return nil, false
+			}
+
+			var input string
+			if input, ok = innerArgs[0].(string); !ok {
+				return nil, false
+			}
+
+			switch input {
+			case "ruleid":
+				return ctx.GetRuleId(), true
+			case "*":
+				var m map[string]interface{}
+				if m, ok = innerArgs[1].(map[string]interface{}); !ok {
+					return nil, false
+				}
+				m["ruleid"] = ctx.GetRuleId()
+				return m, true
+			default:
+				return innerArgs[1], true
+			}
 		},
 		val: func(_ api.FunctionContext, args []ast.Expr) error {
 			if err := ValidateLen(1, len(args)); err != nil {

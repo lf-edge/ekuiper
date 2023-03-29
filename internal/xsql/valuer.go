@@ -413,14 +413,15 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		}
 		return nil
 	case *ast.MetaRef:
+		var val interface{}
 		if expr.StreamName == "" || expr.StreamName == ast.DefaultStream {
-			val, _ := v.Valuer.Meta(expr.Name, "")
-			return val
+			val, _ = v.Valuer.Meta(expr.Name, "")
 		} else {
 			//The field specified with stream source
-			val, _ := v.Valuer.Meta(expr.Name, string(expr.StreamName))
-			return val
+			val, _ = v.Valuer.Meta(expr.Name, string(expr.StreamName))
 		}
+
+		return []interface{}{expr.Name, val}
 	case *ast.JsonFieldRef:
 		val, ok := v.Valuer.Value(expr.Name, "")
 		if ok {
