@@ -1259,7 +1259,7 @@ func TestLatestExecWithWhen(t *testing.T) {
 				false,
 				"self",
 			},
-			result: "bar",
+			result: "foo",
 		},
 		{ // 4
 			args: []interface{}{

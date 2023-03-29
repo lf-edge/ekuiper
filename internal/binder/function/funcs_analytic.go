@@ -208,8 +208,11 @@ func registerAnalyticFunc() {
 			if !ok {
 				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
 			}
-
-			if args[0] == nil {
+			// notice nil is ignored in latest
+			if validData && args[0] != nil {
+				ctx.PutState(key, args[0])
+				return args[0], true
+			} else {
 				v, err := ctx.GetState(key)
 				if err != nil {
 					return fmt.Errorf("error getting state for %s: %v", key, err), false
@@ -223,11 +226,6 @@ func registerAnalyticFunc() {
 				} else {
 					return v, true
 				}
-			} else {
-				if validData {
-					ctx.PutState(key, args[0])
-				}
-				return args[0], true
 			}
 		},
 		val: func(_ api.FunctionContext, args []ast.Expr) error {
