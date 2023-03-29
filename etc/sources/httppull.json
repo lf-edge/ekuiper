@@ -235,7 +235,7 @@
 			}
 		},
 		{
-			"name": "oAuth",
+			"name": "oauth",
 			"optional": true,
 			"control": "list",
 			"type": "list_object",
