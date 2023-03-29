@@ -23,7 +23,7 @@ default:
   # how to check the response status, by status code or by body
   responseType: code
 #  # Get token
-#  oAuth:
+#  oauth:
 #    # Access token fetch method
 #    access:
 #      # Url to fetch access token, always use POST method
@@ -65,7 +65,7 @@ neuron:
   # how to check the response status
   responseType: code
   # Get token
-  oAuth:
+  oauth:
     # Access token fetch method
     access:
       # Url to fetch access token, always use POST method

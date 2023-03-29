@@ -206,12 +206,12 @@
       }
     },
     {
-      "name": "oAuth",
+      "name": "oauth",
       "optional": true,
       "control": "list",
       "type": "list_object",
       "hint": {
-        "en_US": "Configure the oAuth authentication flow.",
+        "en_US": "Configure the oauth authentication flow.",
         "zh_CN": "配置 OAuth 验证流程。"
       },
       "label": {
