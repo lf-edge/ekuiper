@@ -448,7 +448,21 @@ func TestConfigure(t *testing.T) {
 					},
 				},
 			},
-			err: errors.New("access token url is required"),
+			config: &RawConf{
+				Url:                "http://localhost:52345/",
+				Method:             http.MethodGet,
+				Interval:           DefaultInterval,
+				Timeout:            DefaultTimeout,
+				BodyType:           "none",
+				ResponseType:       "code",
+				InsecureSkipVerify: true,
+				Headers: map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+				},
+				HeadersMap: map[string]string{
+					"Authorization": "Bearer {{.token}}",
+				},
+			},
 		},
 		{
 			name: "oAuth miss access",
@@ -504,8 +518,27 @@ func TestConfigure(t *testing.T) {
 						"body":   "{\"username\": \"admin\",\"password\": \"0000\"}",
 						"expire": "3600",
 					},
-					"refresh": map[string]interface{}{
-						"url": "",
+				},
+			},
+			config: &RawConf{
+				Url:                "http://localhost:52345/",
+				Method:             http.MethodGet,
+				Interval:           DefaultInterval,
+				Timeout:            DefaultTimeout,
+				BodyType:           "none",
+				ResponseType:       "code",
+				InsecureSkipVerify: true,
+				Headers: map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+				},
+				HeadersMap: map[string]string{
+					"Authorization": "Bearer {{.token}}",
+				},
+				OAuth: map[string]map[string]interface{}{
+					"access": {
+						"url":    "http://localhost:52345/token",
+						"body":   "{\"username\": \"admin\",\"password\": \"0000\"}",
+						"expire": "3600",
 					},
 				},
 			},
@@ -515,7 +548,12 @@ func TestConfigure(t *testing.T) {
 				Expire:         "3600",
 				ExpireInSecond: 3600,
 			},
-			err: errors.New("refresh token url is required"),
+			tokens: map[string]interface{}{
+				"token":         DefaultToken,
+				"refresh_token": RefreshToken,
+				"client_id":     "test",
+				"expires":       float64(36000),
+			},
 		},
 		// oAuth authentication flow errors
 		{

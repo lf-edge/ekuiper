@@ -264,8 +264,8 @@
 					"default": [
 						{
 							"name": "url",
-							"default": "http://127.0.0.1:5536/token",
-							"optional": false,
+							"default": "",
+							"optional": true,
 							"control": "text",
 							"type": "string",
 							"hint": {
@@ -294,7 +294,7 @@
 						},
 						{
 							"name": "expire",
-							"default": "3600",
+							"default": "",
 							"optional": true,
 							"control": "text",
 							"type": "string",
@@ -325,8 +325,7 @@
 					"default": [
 						{
 							"name": "url",
-							"default": "http://127.0.0.1:5536/refresh",
-							"optional": false,
+							"optional": true,
 							"control": "text",
 							"type": "string",
 							"hint": {
@@ -340,7 +339,6 @@
 						},
 						{
 							"name": "headers",
-							"default": [],
 							"optional": true,
 							"control": "list",
 							"type": "list_object",
@@ -355,7 +353,6 @@
 						},
 						{
 							"name": "body",
-							"default": "",
 							"optional": true,
 							"control": "textarea",
 							"type": "string",
