@@ -3388,6 +3388,29 @@
 			}
 		}
 	}, {
+		"name": "rule_id",
+		"example": "rule_id()",
+		"hint": {
+			"en_US": "Returns the ID of the currently matched rule",
+			"zh_CN": "返回当前匹配到的规则的ID。"
+		},
+		"args": [],
+		"return": {
+			"type": "string",
+			"hint": {
+				"en_US": "ID of currently matched rule",
+				"zh_CN": "当前匹配到的规则的ID"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Rule ID",
+				"zh_CN": "规则 ID"
+			}
+		}
+	}, {
 		"name": "meta",
 		"example": "meta(topic)",
 		"hint": {

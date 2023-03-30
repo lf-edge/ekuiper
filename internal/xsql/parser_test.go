@@ -1523,7 +1523,22 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 			err: "",
 		},
-
+		{
+			s: `select rule_id() as rule_id from demo`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.Call{
+							Name: "rule_id",
+							Args: nil,
+						},
+						Name:  "rule_id",
+						AName: "rule_id"},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "demo"}},
+			},
+			err: "",
+		},
 		{
 			s:    "SELECT `half FROM tb",
 			stmt: nil,

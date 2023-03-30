@@ -245,11 +245,22 @@ func TestMiscFunc_Apply1(t *testing.T) {
 				"a": cast.TimeFromUnixMilli(1.62000273e+12),
 			}},
 		},
+		{
+			sql: "SELECT rule_id() AS rule_id FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{},
+			},
+			result: []map[string]interface{}{{
+				"rule_id": "rule0",
+			}},
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestMiscFunc_Apply1")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx = ctx.WithMeta("rule0", "op1", &state.MemoryStore{}).(*context.DefaultContext)
 	for i, tt := range tests {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil || stmt == nil {
@@ -257,7 +268,7 @@ func TestMiscFunc_Apply1(t *testing.T) {
 		}
 		pp := &ProjectOp{}
 		parseStmt(pp, stmt.Fields)
-		fv, afv := xsql.NewFunctionValuersForOp(nil)
+		fv, afv := xsql.NewFunctionValuersForOp(ctx)
 		opResult := pp.Apply(ctx, tt.data, fv, afv)
 		result, err := parseResult(opResult, pp.IsAggregate)
 		if err != nil {
