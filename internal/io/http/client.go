@@ -143,16 +143,27 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	if err != nil {
 		return err
 	}
-	switch h := c.Headers.(type) {
-	case map[string]interface{}:
-		c.HeadersMap = make(map[string]string, len(h))
-		for k, v := range h {
-			c.HeadersMap[k] = v.(string)
+	if c.Headers != nil {
+		switch h := c.Headers.(type) {
+		case map[string]interface{}:
+			c.HeadersMap = make(map[string]string, len(h))
+			for k, v := range h {
+				c.HeadersMap[k] = v.(string)
+			}
+		case string:
+			c.HeadersTemplate = h
+		// TODO remove later, adapt to the wrong format in manager
+		case []interface{}:
+			c.HeadersMap = make(map[string]string, len(h))
+			for _, v := range h {
+				if mv, ok := v.(map[string]interface{}); ok && len(mv) == 3 {
+					c.HeadersMap[mv["name"].(string)] = mv["default"].(string)
+				}
+			}
+		default:
+			return fmt.Errorf("headers must be a map or a string")
 		}
-	case string:
-		c.HeadersTemplate = h
 	}
-
 	tlsOpts := cert.TlsConfigurationOptions{
 		SkipCertVerify: c.InsecureSkipVerify,
 		CertFile:       c.CertificationPath,
@@ -164,7 +175,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	if err != nil {
 		return err
 	}
-	// validate oAuth
+	// validate oAuth. In order to adapt to manager, the validation is closed to allow empty value
 	if c.OAuth != nil {
 		// validate access token
 		if ap, ok := c.OAuth["access"]; ok {
@@ -173,10 +184,12 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 				return fmt.Errorf("fail to parse the access properties of oAuth: %v", err)
 			}
 			if accessConf.Url == "" {
-				return fmt.Errorf("access token url is required")
+				conf.Log.Warnf("access token url is not set, so ignored the oauth setting")
+				c.OAuth = nil
+			} else {
+				// expire time will update every time when access token is refreshed if expired is set
+				cc.accessConf = accessConf
 			}
-			// expire time will update every time when access token is refreshed if expired is set
-			cc.accessConf = accessConf
 		} else {
 			return fmt.Errorf("if setting oAuth, `access` property is required")
 		}
@@ -187,9 +200,11 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 				return fmt.Errorf("fail to parse the refresh token properties: %v", err)
 			}
 			if refreshConf.Url == "" {
-				return fmt.Errorf("refresh token url is required")
+				conf.Log.Warnf("refresh token url is not set, so ignored the refresh setting")
+				delete(c.OAuth, "refresh")
+			} else {
+				cc.refreshConf = refreshConf
 			}
-			cc.refreshConf = refreshConf
 		}
 	}
 
