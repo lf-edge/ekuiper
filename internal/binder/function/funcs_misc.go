@@ -476,6 +476,13 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
+	builtins["rule_id"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			return ctx.GetRuleId(), true
+		},
+		val: ValidateNoArg,
+	}
 	builtins["meta"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
