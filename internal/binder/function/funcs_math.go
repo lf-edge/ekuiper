@@ -50,7 +50,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Acos(v), true
+				r := math.Acos(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
@@ -61,7 +66,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Asin(v), true
+				r := math.Asin(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
@@ -72,7 +82,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Atan(v), true
+				r := math.Atan(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
@@ -84,7 +99,12 @@ func registerMathFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v1, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				if v2, e1 := cast.ToFloat64(args[1], cast.CONVERT_SAMEKIND); e1 == nil {
-					return math.Atan2(v1, v2), true
+					r := math.Atan2(v1, v2)
+					if math.IsNaN(r) {
+						return nil, true
+					} else {
+						return r, true
+					}
 				} else {
 					return e1, false
 				}
@@ -101,7 +121,7 @@ func registerMathFunc() {
 			if err != nil {
 				return fmt.Errorf("Expect int type for the first operand but got %v", args[0]), false
 			}
-			v2, err := cast.ToInt(args[0], cast.STRICT)
+			v2, err := cast.ToInt(args[1], cast.STRICT)
 			if err != nil {
 				return fmt.Errorf("Expect int type for the second operand but got %v", args[1]), false
 			}
@@ -116,7 +136,7 @@ func registerMathFunc() {
 			if err != nil {
 				return fmt.Errorf("Expect int type for the first operand but got %v", args[0]), false
 			}
-			v2, err := cast.ToInt(args[0], cast.STRICT)
+			v2, err := cast.ToInt(args[1], cast.STRICT)
 			if err != nil {
 				return fmt.Errorf("Expect int type for the second operand but got %v", args[1]), false
 			}
@@ -131,7 +151,7 @@ func registerMathFunc() {
 			if err != nil {
 				return fmt.Errorf("Expect int type for the first operand but got %v", args[0]), false
 			}
-			v2, err := cast.ToInt(args[0], cast.STRICT)
+			v2, err := cast.ToInt(args[1], cast.STRICT)
 			if err != nil {
 				return fmt.Errorf("Expect int type for the second operand but got %v", args[1]), false
 			}
@@ -173,7 +193,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Cos(v), true
+				r := math.Cos(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
@@ -184,7 +209,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Cosh(v), true
+				r := math.Cosh(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
@@ -195,7 +225,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Exp(v), true
+				r := math.Exp(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
@@ -206,7 +241,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Log2(v), true
+				r := math.Log2(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
@@ -217,7 +257,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Log10(v), true
+				r := math.Log10(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
@@ -293,7 +338,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Sin(v), true
+				r := math.Sin(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
@@ -304,7 +354,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Sinh(v), true
+				r := math.Sinh(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
@@ -315,7 +370,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Sqrt(v), true
+				r := math.Sqrt(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
@@ -326,7 +386,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Tan(v), true
+				r := math.Tan(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
@@ -337,7 +402,12 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				return math.Tanh(v), true
+				r := math.Tanh(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
 			} else {
 				return e, false
 			}
