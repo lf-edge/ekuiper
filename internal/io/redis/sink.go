@@ -20,13 +20,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"time"
-
-	"github.com/go-redis/redis/v7"
-
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/redis/go-redis/v9"
+	"time"
 )
 
 type config struct {
@@ -78,7 +76,7 @@ func (r *RedisSink) Open(ctx api.StreamContext) (err error) {
 		Password: r.c.Password,
 		DB:       r.c.Db, // use default DB
 	})
-	_, err = r.cli.Ping().Result()
+	_, err = r.cli.Ping(ctx).Result()
 	return err
 }
 
@@ -162,13 +160,13 @@ func (r *RedisSink) save(ctx api.StreamContext, data map[string]interface{}, val
 	switch rowkind {
 	case ast.RowkindInsert, ast.RowkindUpdate, ast.RowkindUpsert:
 		if r.c.DataType == "list" {
-			err = r.cli.LPush(key, val).Err()
+			err = r.cli.LPush(ctx, key, val).Err()
 			if err != nil {
 				return fmt.Errorf("lpush %s:%s error, %v", key, val, err)
 			}
 			logger.Debugf("push redis list success, key:%s data: %v", key, val)
 		} else {
-			err = r.cli.Set(key, val, r.c.Expiration*time.Second).Err()
+			err = r.cli.Set(ctx, key, val, r.c.Expiration*time.Second).Err()
 			if err != nil {
 				return fmt.Errorf("set %s:%s error, %v", key, val, err)
 			}
@@ -176,13 +174,13 @@ func (r *RedisSink) save(ctx api.StreamContext, data map[string]interface{}, val
 		}
 	case ast.RowkindDelete:
 		if r.c.DataType == "list" {
-			err = r.cli.LPop(key).Err()
+			err = r.cli.LPop(ctx, key).Err()
 			if err != nil {
 				return fmt.Errorf("lpop %s error, %v", key, err)
 			}
 			logger.Debugf("pop redis list success, key:%s data: %v", key, val)
 		} else {
-			err = r.cli.Del(key).Err()
+			err = r.cli.Del(ctx, key).Err()
 			if err != nil {
 				logger.Error(err)
 				return err

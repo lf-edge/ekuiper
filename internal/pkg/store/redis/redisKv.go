@@ -18,11 +18,12 @@ package redis
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"fmt"
-	"github.com/go-redis/redis/v7"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
+	"github.com/redis/go-redis/v9"
 	"strings"
 )
 
@@ -48,7 +49,7 @@ func (kv redisKvStore) Setnx(key string, value interface{}) error {
 	if nil != err {
 		return err
 	}
-	done, err := kv.database.SetNX(kv.tableKey(key), b, 0).Result()
+	done, err := kv.database.SetNX(context.Background(), kv.tableKey(key), b, 0).Result()
 	if err != nil {
 		return err
 	}
@@ -63,11 +64,11 @@ func (kv redisKvStore) Set(key string, value interface{}) error {
 	if nil != err {
 		return err
 	}
-	return kv.database.SetNX(kv.tableKey(key), b, 0).Err()
+	return kv.database.SetNX(context.Background(), kv.tableKey(key), b, 0).Err()
 }
 
 func (kv redisKvStore) Get(key string, value interface{}) (bool, error) {
-	val, err := kv.database.Get(kv.tableKey(key)).Result()
+	val, err := kv.database.Get(context.Background(), kv.tableKey(key)).Result()
 	if err != nil {
 		return false, err
 	}
@@ -79,7 +80,7 @@ func (kv redisKvStore) Get(key string, value interface{}) (bool, error) {
 }
 
 func (kv redisKvStore) Delete(key string) error {
-	return kv.database.Del(kv.tableKey(key)).Err()
+	return kv.database.Del(context.Background(), kv.tableKey(key)).Err()
 }
 
 func (kv redisKvStore) Keys() ([]string, error) {
@@ -117,7 +118,7 @@ func (kv redisKvStore) All() (map[string]string, error) {
 }
 
 func (kv redisKvStore) metaKeys() ([]string, error) {
-	return kv.database.Keys(fmt.Sprintf("%s:*", kv.keyPrefix)).Result()
+	return kv.database.Keys(context.Background(), fmt.Sprintf("%s:*", kv.keyPrefix)).Result()
 }
 
 func (kv redisKvStore) Clean() error {
@@ -129,7 +130,7 @@ func (kv redisKvStore) Clean() error {
 	for i, v := range keys {
 		keysToRemove[i] = v
 	}
-	return kv.database.Del(keysToRemove...).Err()
+	return kv.database.Del(context.Background(), keysToRemove...).Err()
 }
 
 func (kv redisKvStore) Drop() error {

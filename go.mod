@@ -12,7 +12,6 @@ require (
 	github.com/edgexfoundry/go-mod-messaging/v2 v2.3.0
 	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/gdexlab/go-render v1.0.1
-	github.com/go-redis/redis/v7 v7.4.1
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/protobuf v1.5.2
@@ -28,6 +27,7 @@ require (
 	github.com/msgpack-rpc/msgpack-rpc-go v0.0.0-20131026060856-c76397e1782b
 	github.com/pebbe/zmq4 v1.2.9
 	github.com/prometheus/client_golang v1.14.0
+	github.com/redis/go-redis/v9 v9.0.2
 	github.com/second-state/WasmEdge-go v0.11.2
 	github.com/sirupsen/logrus v1.9.0
 	github.com/ugorji/go/codec v1.2.10
@@ -49,6 +49,7 @@ require (
 	github.com/bufbuild/protocompile v0.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dlclark/regexp2 v1.8.1 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect

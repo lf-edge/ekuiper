@@ -19,10 +19,11 @@ package redis
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"fmt"
-	"github.com/go-redis/redis/v7"
 	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
+	"github.com/redis/go-redis/v9"
 	"strconv"
 )
 
@@ -69,7 +70,7 @@ func (t *ts) Set(key int64, value interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	length, err := t.db.ZAdd(t.key, &redis.Z{Score: float64(key), Member: b}).Result()
+	length, err := t.db.ZAdd(context.Background(), t.key, redis.Z{Score: float64(key), Member: b}).Result()
 	if err != nil {
 		return false, err
 	}
@@ -81,7 +82,7 @@ func (t *ts) Set(key int64, value interface{}) (bool, error) {
 }
 
 func (t *ts) Get(key int64, value interface{}) (bool, error) {
-	reply, err := t.db.ZRevRangeByScore(t.key, &redis.ZRangeBy{Min: strconv.FormatInt(key, 10), Max: strconv.FormatInt(key, 10)}).Result()
+	reply, err := t.db.ZRevRangeByScore(context.Background(), t.key, &redis.ZRangeBy{Min: strconv.FormatInt(key, 10), Max: strconv.FormatInt(key, 10)}).Result()
 	if len(reply) == 0 {
 		return false, fmt.Errorf("record under %s key and %d score not found", t.key, key)
 	}
@@ -98,11 +99,11 @@ func (t *ts) Last(value interface{}) (int64, error) {
 }
 
 func (t *ts) Delete(key int64) error {
-	return t.db.ZRemRangeByScore(t.key, strconv.FormatInt(key, 10), strconv.FormatInt(key, 10)).Err()
+	return t.db.ZRemRangeByScore(context.Background(), t.key, strconv.FormatInt(key, 10), strconv.FormatInt(key, 10)).Err()
 }
 
 func (t *ts) DeleteBefore(key int64) error {
-	return t.db.ZRemRangeByScore(t.key, "-inf", strconv.FormatInt(key, 10)).Err()
+	return t.db.ZRemRangeByScore(context.Background(), t.key, "-inf", strconv.FormatInt(key, 10)).Err()
 }
 
 func (t *ts) Close() error {
@@ -110,12 +111,12 @@ func (t *ts) Close() error {
 }
 
 func (t *ts) Drop() error {
-	return t.db.Del(t.key).Err()
+	return t.db.Del(context.Background(), t.key).Err()
 }
 
 func getLast(db *redis.Client, key string, value interface{}) (int64, error) {
 	var last int64 = 0
-	reply, err := db.ZRevRangeWithScores(key, 0, 0).Result()
+	reply, err := db.ZRevRangeWithScores(context.Background(), key, 0, 0).Result()
 	if len(reply) > 0 {
 		if value != nil {
 			v := reply[0].Member.(string)

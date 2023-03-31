@@ -19,8 +19,8 @@ package redis
 
 import (
 	"fmt"
-	"github.com/go-redis/redis/v7"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
+	"github.com/redis/go-redis/v9"
 	"time"
 )
 
