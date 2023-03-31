@@ -18,9 +18,9 @@ package redis
 
 import (
 	"github.com/alicebob/miniredis/v2"
-	"github.com/go-redis/redis/v7"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/redis/go-redis/v9"
 	"strconv"
 	"testing"
 )

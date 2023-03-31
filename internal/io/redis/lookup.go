@@ -17,12 +17,13 @@
 package redis
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v7"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/redis/go-redis/v9"
 )
 
 type conf struct {
@@ -68,7 +69,7 @@ func (s *lookupSource) Configure(datasource string, props map[string]interface{}
 		Password: s.c.Password,
 		DB:       s.db,
 	})
-	_, err = s.cli.Ping().Result()
+	_, err = s.cli.Ping(context.Background()).Result()
 	return err
 }
 
@@ -84,7 +85,7 @@ func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 	}
 	v := fmt.Sprintf("%v", values[0])
 	if s.c.DataType == "string" {
-		res, err := s.cli.Get(v).Result()
+		res, err := s.cli.Get(ctx, v).Result()
 		if err != nil {
 			if err == redis.Nil {
 				return []api.SourceTuple{}, nil
@@ -98,7 +99,7 @@ func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 		}
 		return []api.SourceTuple{api.NewDefaultSourceTuple(m, nil)}, nil
 	} else {
-		res, err := s.cli.LRange(v, 0, -1).Result()
+		res, err := s.cli.LRange(ctx, v, 0, -1).Result()
 		if err != nil {
 			if err == redis.Nil {
 				return []api.SourceTuple{}, nil

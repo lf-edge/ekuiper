@@ -18,8 +18,8 @@
 package redis
 
 import (
-	"github.com/go-redis/redis/v7"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/redis/go-redis/v9"
 )
 
 type StoreBuilder struct {
