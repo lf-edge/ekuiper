@@ -56,14 +56,32 @@ func (me MultiErrors) Error() string {
 func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	logger.Debugf("rest sink receive %s", item)
-	resp, err := ms.Send(ctx, item, logger)
+	decodedData, _, err := ctx.TransformOutput(item)
 	if err != nil {
-		return fmt.Errorf("rest sink fails to send out the data: %s", err)
+		logger.Warnf("rest sink decode data error: %v", err)
+		return fmt.Errorf("rest sink decode data error: %v", err)
+	}
+
+	resp, err := ms.Send(ctx, decodedData, item, logger)
+	if err != nil {
+		return fmt.Errorf(`rest sink fails to send out the data: %s | method=%s path="%s" request_body="%s"`,
+			err,
+			ms.config.Method,
+			ms.config.Url,
+			decodedData,
+		)
 	} else {
 		logger.Debugf("rest sink got response %v", resp)
 		_, b, err := ms.parseResponse(ctx, resp, ms.config.DebugResp, nil)
 		if err != nil {
-			return fmt.Errorf("%s: http error %s", errorx.IOErr, string(b))
+			return fmt.Errorf(`%s: http error. | method=%s path="%s" status=%d request_body="%s" response_body="%s"`,
+				errorx.IOErr,
+				ms.config.Method,
+				ms.config.Url,
+				resp.StatusCode,
+				decodedData,
+				b,
+			)
 		}
 		if ms.config.DebugResp {
 			logger.Infof("Response raw content: %s\n", string(b))
@@ -72,7 +90,7 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 	return nil
 }
 
-func (ms *RestSink) Send(ctx api.StreamContext, v interface{}, logger api.Logger) (*http.Response, error) {
+func (ms *RestSink) Send(ctx api.StreamContext, decodedData []byte, v interface{}, logger api.Logger) (*http.Response, error) {
 	// Allow to use tokens in headers
 	// TODO optimization: only do this if tokens are used in template
 	if ms.tokens != nil {
@@ -88,11 +106,6 @@ func (ms *RestSink) Send(ctx api.StreamContext, v interface{}, logger api.Logger
 				}
 			}
 		}
-	}
-	output, _, err := ctx.TransformOutput(v)
-	if err != nil {
-		logger.Warnf("rest sink decode data error: %v", err)
-		return nil, fmt.Errorf("rest sink decode data error: %v", err)
 	}
 	bodyType, err := ctx.ParseTemplate(ms.config.BodyType, v)
 	if err != nil {
@@ -110,7 +123,7 @@ func (ms *RestSink) Send(ctx api.StreamContext, v interface{}, logger api.Logger
 	if err != nil {
 		return nil, fmt.Errorf("rest sink headers template decode error: %v", err)
 	}
-	return httpx.Send(logger, ms.client, bodyType, method, u, headers, ms.config.SendSingle, output)
+	return httpx.Send(logger, ms.client, bodyType, method, u, headers, ms.config.SendSingle, decodedData)
 }
 
 func (ms *RestSink) Close(ctx api.StreamContext) error {
