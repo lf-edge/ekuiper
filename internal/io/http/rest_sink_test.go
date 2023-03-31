@@ -16,15 +16,17 @@ package http
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
-
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
+	"time"
 )
 
 type request struct {
@@ -364,4 +366,63 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 			t.Errorf("%d \tresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.result, requests)
 		}
 	}
+}
+
+func TestRestSinkErrorLog(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var result = `{"data":[],"extra":"Success","returncode":1,"returnmessage":""}`
+		time.Sleep(30 * time.Millisecond)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(result))
+	}))
+	defer ts.Close()
+
+	t.Run("Test rest sink timeout and return correct error info", func(t *testing.T) {
+		s := &RestSink{}
+		config := map[string]interface{}{
+			"url":     ts.URL,
+			"timeout": float64(10),
+		}
+		s.Configure(config)
+		s.Open(context.Background())
+
+		tf, _ := transform.GenTransform("", "json", "", "")
+		vCtx := context.WithValue(context.Background(), context.TransKey, tf)
+		reqBody := []map[string]interface{}{
+			{"ab": "hello1"},
+			{"ab": "hello2"},
+		}
+		err := s.Collect(vCtx, reqBody)
+
+		if !strings.Contains(err.Error(), "hello1") {
+			t.Errorf("should include request body, but got %s", err.Error())
+		}
+		fmt.Println(err.Error())
+		s.Close(context.Background())
+	})
+
+	t.Run("Test rest sink with io error prefix", func(t *testing.T) {
+		s := &RestSink{}
+		config := map[string]interface{}{
+			"url":          ts.URL,
+			"method":       "put",
+			"bodyType":     "text",
+			"responseType": "body",
+			"timeout":      float64(1000),
+		}
+		s.Configure(config)
+		s.Open(context.Background())
+		tf, _ := transform.GenTransform("", "json", "", "")
+		vCtx := context.WithValue(context.Background(), context.TransKey, tf)
+		err := s.Collect(vCtx, []map[string]interface{}{
+			{"ab": "hello1"},
+			{"ab": "hello2"},
+		})
+		fmt.Println(err.Error())
+		if !strings.HasPrefix(err.Error(), errorx.IOErr) {
+			t.Errorf("should start with io error, but got %s", err.Error())
+		}
+
+		s.Close(context.Background())
+	})
 }
