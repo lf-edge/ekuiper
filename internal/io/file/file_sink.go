@@ -16,101 +16,96 @@ package file
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
+	"io"
 	"os"
 	"sync"
 	"time"
 )
 
-type fileSink struct {
-	interval int
-	path     string
+type sinkConf struct {
+	Interval int    `json:"interval"`
+	Path     string `json:"path"`
+}
 
-	results [][]byte
-	file    *os.File
-	mux     sync.Mutex
-	cancel  context.CancelFunc
+type fileSink struct {
+	c *sinkConf
+
+	mux    sync.Mutex
+	file   *os.File
+	writer io.Writer
 }
 
 func (m *fileSink) Configure(props map[string]interface{}) error {
-	m.interval = 1000
-	m.path = "cache"
-	if i, ok := props["interval"]; ok {
-		if i, ok := i.(float64); ok {
-			m.interval = int(i)
-		}
+	c := &sinkConf{
+		Interval: 1000,
+		Path:     "cache",
 	}
-	if i, ok := props["path"]; ok {
-		if i, ok := i.(string); ok {
-			m.path = i
-		}
+	if err := cast.MapToStruct(props, c); err != nil {
+		return err
 	}
+	if c.Interval <= 0 {
+		return fmt.Errorf("interval must be positive")
+	}
+	if c.Path == "" {
+		return fmt.Errorf("path must be set")
+	}
+	m.c = c
 	return nil
 }
 
 func (m *fileSink) Open(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Debug("Opening file sink")
-	m.results = make([][]byte, 0)
-	var f *os.File
-	var err error
-	if _, err := os.Stat(m.path); os.IsNotExist(err) {
-		_, err = os.Create(m.path)
+	var (
+		f   *os.File
+		err error
+	)
+	if _, err = os.Stat(m.c.Path); os.IsNotExist(err) {
+		_, err = os.Create(m.c.Path)
 	}
-	f, err = os.OpenFile(m.path, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	f, err = os.OpenFile(m.c.Path, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
 		return fmt.Errorf("fail to open file sink for %v", err)
 	}
 	m.file = f
-	t := time.NewTicker(time.Duration(m.interval) * time.Millisecond)
-	exeCtx, cancel := ctx.WithCancel()
-	m.cancel = cancel
-	go func() {
-		defer t.Stop()
-		for {
-			select {
-			case <-t.C:
-				m.save(logger)
-			case <-exeCtx.Done():
-				logger.Info("file sink done")
-				return
+	if m.c.Interval > 0 {
+		m.writer = bufio.NewWriter(f)
+		t := time.NewTicker(time.Duration(m.c.Interval) * time.Millisecond)
+		go func() {
+			defer t.Stop()
+			for {
+				select {
+				case <-t.C:
+					m.mux.Lock()
+					err := m.writer.(*bufio.Writer).Flush()
+					if err != nil {
+						logger.Errorf("file sink fails to flush with error %s.", err)
+					}
+					m.mux.Unlock()
+				case <-ctx.Done():
+					logger.Info("file sink done")
+					return
+				}
 			}
-		}
-	}()
-	return nil
-}
+		}()
+	} else {
+		m.writer = f
+	}
 
-func (m *fileSink) save(logger api.Logger) {
-	if len(m.results) == 0 {
-		return
-	}
-	logger.Debugf("file sink is saving to file %s", m.path)
-	var strings []string
-	m.mux.Lock()
-	for _, b := range m.results {
-		strings = append(strings, string(b)+"\n")
-	}
-	m.results = make([][]byte, 0)
-	m.mux.Unlock()
-	w := bufio.NewWriter(m.file)
-	for _, s := range strings {
-		_, err := m.file.WriteString(s)
-		if err != nil {
-			logger.Errorf("file sink fails to write out result '%s' with error %s.", s, err)
-		}
-	}
-	w.Flush()
-	logger.Debugf("file sink has saved to file %s", m.path)
+	return nil
 }
 
 func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
+	logger.Debugf("file sink receive %s", item)
 	if v, _, err := ctx.TransformOutput(item); err == nil {
-		logger.Debugf("file sink receive %s", item)
+		logger.Debugf("file sink transform data %s", v)
 		m.mux.Lock()
-		m.results = append(m.results, v)
+		m.writer.Write(v)
+		m.writer.Write([]byte("\n"))
 		m.mux.Unlock()
 	} else {
 		return fmt.Errorf("file sink transform data error: %v", err)
@@ -119,11 +114,14 @@ func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
 }
 
 func (m *fileSink) Close(ctx api.StreamContext) error {
-	if m.cancel != nil {
-		m.cancel()
-	}
+	ctx.GetLogger().Infof("Closing file sink")
 	if m.file != nil {
-		m.save(ctx.GetLogger())
+		ctx.GetLogger().Infof("File sync before close")
+		if m.c.Interval > 0 {
+			ctx.GetLogger().Infof("flush at close")
+			m.writer.(*bufio.Writer).Flush()
+		}
+		m.file.Sync()
 		return m.file.Close()
 	}
 	return nil
