@@ -19,11 +19,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/filex"
-	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
-	"github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -31,6 +26,13 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/filex"
+	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
+	"github.com/second-state/WasmEdge-go/wasmedge"
 )
 
 var manager *Manager
@@ -76,6 +78,8 @@ func InitManager() (*Manager, error) {
 }
 
 func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
+	wasmedge.LoadPluginDefaultPaths()
+
 	registry := &registry{
 		RWMutex:   sync.RWMutex{},
 		plugins:   make(map[string]*PluginInfo),
