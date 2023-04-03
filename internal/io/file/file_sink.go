@@ -17,31 +17,42 @@ package file
 import (
 	"bufio"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
 
 type sinkConf struct {
-	Interval int    `json:"interval"`
-	Path     string `json:"path"`
+	Interval  int      `json:"interval"`
+	Path      string   `json:"path"`
+	FileType  FileType `json:"fileType"`
+	HasHeader bool     `json:"hasHeader"`
+	Delimiter string   `json:"delimiter"`
+	Format    string   `json:"format"` // only use for validation; transformation is done in sink_node
 }
 
 type fileSink struct {
 	c *sinkConf
-
-	mux    sync.Mutex
-	file   *os.File
-	writer io.Writer
+	// If firstLine is true, it means the file is newly created and the first line is not written yet.
+	// Do not write line feed for the first line.
+	firstLine bool
+	mux       sync.Mutex
+	file      *os.File
+	writer    io.Writer
+	hook      writerHooks
 }
 
 func (m *fileSink) Configure(props map[string]interface{}) error {
 	c := &sinkConf{
 		Interval: 1000,
 		Path:     "cache",
+		FileType: LINES_TYPE,
 	}
 	if err := cast.MapToStruct(props, c); err != nil {
 		return err
@@ -51,6 +62,18 @@ func (m *fileSink) Configure(props map[string]interface{}) error {
 	}
 	if c.Path == "" {
 		return fmt.Errorf("path must be set")
+	}
+	if c.FileType != JSON_TYPE && c.FileType != CSV_TYPE && c.FileType != LINES_TYPE {
+		return fmt.Errorf("fileType must be one of json, csv or lines")
+	}
+	if c.FileType == CSV_TYPE {
+		if c.Format != message.FormatDelimited {
+			return fmt.Errorf("format must be delimited when fileType is csv")
+		}
+		if c.Delimiter == "" {
+			conf.Log.Warnf("delimiter is not set, use default ','")
+			c.Delimiter = ","
+		}
 	}
 	m.c = c
 	return nil
@@ -71,6 +94,15 @@ func (m *fileSink) Open(ctx api.StreamContext) error {
 		return fmt.Errorf("fail to open file sink for %v", err)
 	}
 	m.file = f
+	m.firstLine = true
+	switch m.c.FileType {
+	case JSON_TYPE:
+		m.hook = &jsonWriterHooks{}
+	case CSV_TYPE:
+		m.hook = &csvWriterHooks{}
+	case LINES_TYPE:
+		m.hook = &linesWriterHooks{}
+	}
 	if m.c.Interval > 0 {
 		m.writer = bufio.NewWriter(f)
 		t := time.NewTicker(time.Duration(m.c.Interval) * time.Millisecond)
@@ -94,19 +126,57 @@ func (m *fileSink) Open(ctx api.StreamContext) error {
 	} else {
 		m.writer = f
 	}
-
 	return nil
 }
 
 func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	logger.Debugf("file sink receive %s", item)
+	// extract header for csv
+	if m.c.FileType == CSV_TYPE && m.c.HasHeader && m.hook.Header() == nil {
+		var header []string
+		switch v := item.(type) {
+		case map[string]interface{}:
+			header = make([]string, len(v))
+			for k := range item.(map[string]interface{}) {
+				header = append(header, k)
+			}
+		case []map[string]interface{}:
+			if len(v) > 0 {
+				header = make([]string, len(v[0]))
+				for k := range v[0] {
+					header = append(header, k)
+				}
+			}
+		}
+		m.hook.(*csvWriterHooks).SetHeader(strings.Join(header, m.c.Delimiter))
+	}
 	if v, _, err := ctx.TransformOutput(item); err == nil {
 		logger.Debugf("file sink transform data %s", v)
 		m.mux.Lock()
-		m.writer.Write(v)
-		m.writer.Write([]byte("\n"))
-		m.mux.Unlock()
+		defer m.mux.Unlock()
+		if !m.firstLine {
+			_, e := m.writer.Write(m.hook.Line())
+			if e != nil {
+				return err
+			}
+		} else {
+			n, err := m.writer.Write(m.hook.Header())
+			if err != nil {
+				return err
+			}
+			if n > 0 {
+				_, e := m.writer.Write(m.hook.Line())
+				if e != nil {
+					return err
+				}
+			}
+			m.firstLine = false
+		}
+		_, e := m.writer.Write(v)
+		if e != nil {
+			return err
+		}
 	} else {
 		return fmt.Errorf("file sink transform data error: %v", err)
 	}
@@ -117,6 +187,10 @@ func (m *fileSink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing file sink")
 	if m.file != nil {
 		ctx.GetLogger().Infof("File sync before close")
+		_, e := m.writer.Write(m.hook.Footer())
+		if e != nil {
+			ctx.GetLogger().Errorf("file sink fails to write footer with error %s.", e)
+		}
 		if m.c.Interval > 0 {
 			ctx.GetLogger().Infof("flush at close")
 			m.writer.(*bufio.Writer).Flush()
