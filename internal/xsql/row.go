@@ -514,11 +514,13 @@ func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters ma
 	cols = jt.AffiliateRow.Pick(cols)
 	if !allWildcard {
 		if len(cols) > 0 {
-			for _, tuple := range jt.Tuples {
+			for i, tuple := range jt.Tuples {
 				if _, ok := wildcardEmitters[tuple.GetEmitter()]; ok {
 					continue
 				}
-				tuple.Pick(allWildcard, cols, wildcardEmitters)
+				nt := tuple.Clone()
+				nt.Pick(allWildcard, cols, wildcardEmitters)
+				jt.Tuples[i] = nt
 			}
 		} else {
 			jt.Tuples = jt.Tuples[:0]
@@ -582,5 +584,7 @@ func (s *GroupedTuples) Clone() CollectionRow {
 
 func (s *GroupedTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
 	cols = s.AffiliateRow.Pick(cols)
-	s.Content[0].Pick(allWildcard, cols, wildcardEmitters)
+	sc := s.Content[0].Clone()
+	sc.Pick(allWildcard, cols, wildcardEmitters)
+	s.Content[0] = sc
 }
