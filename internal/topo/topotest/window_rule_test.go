@@ -659,6 +659,46 @@ func TestWindow(t *testing.T) {
 				"source_table1_0_records_in_total":  int64(4),
 				"source_table1_0_records_out_total": int64(1),
 			},
+		}, {
+			Name: `TestWindowRule12`,
+			Sql:  `SELECT collect(size) as allSize FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1), color ORDER BY color`,
+			R: [][]map[string]interface{}{
+				{{
+					"allSize": []interface{}{float64(6)},
+				}, {
+					"allSize": []interface{}{float64(3)},
+				}},
+				{{
+					"allSize": []interface{}{float64(6), float64(2)},
+				}, {
+
+					"allSize": []interface{}{float64(3)},
+				}},
+				{{
+					"allSize": []interface{}{float64(2)},
+				}, {
+					"allSize": []interface{}{float64(4)},
+				}},
+				{{
+					"allSize": []interface{}{float64(1)},
+				}, {
+					"allSize": []interface{}{float64(4)},
+				}},
+			},
+			M: map[string]interface{}{
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"op_2_window_0_exceptions_total":   int64(0),
+				"op_2_window_0_process_latency_us": int64(0),
+				"op_2_window_0_records_in_total":   int64(5),
+				"op_2_window_0_records_out_total":  int64(4),
+			},
 		},
 	}
 	HandleStream(true, streamList, t)
