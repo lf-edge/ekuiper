@@ -22,7 +22,7 @@ jobs:
           - centos
           - alpine
         golang:
-          - 1.18.5
+          - 1.20.2
 
     steps:
       - uses: actions/checkout@v3
