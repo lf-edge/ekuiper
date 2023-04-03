@@ -36,7 +36,7 @@ type randomSourceConfig struct {
 	Format      string `json:"format"`
 }
 
-//Emit data randomly with only a string field
+// Emit data randomly with only a string field
 type randomSource struct {
 	conf *randomSourceConfig
 	list [][]byte

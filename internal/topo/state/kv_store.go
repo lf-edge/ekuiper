@@ -33,8 +33,8 @@ func init() {
 // KVStore The manager for checkpoint storage.
 //
 // mapStore keys
-//  { "checkpoint1", "checkpoint2" ... "checkpointn" : The complete or incomplete snapshot
 //
+//	{ "checkpoint1", "checkpoint2" ... "checkpointn" : The complete or incomplete snapshot
 type KVStore struct {
 	db          ts2.Tskv
 	mapStore    *sync.Map //The current root store of a rule
@@ -43,11 +43,11 @@ type KVStore struct {
 	ruleId      string
 }
 
-//Store in path ./data/checkpoint/$ruleId
-//Store 2 things:
-//"checkpoints":A queue for completed checkpoint id
-//"$checkpointId":A map with key of checkpoint id and value of snapshot(gob serialized)
-//Assume each operator only has one instance
+// Store in path ./data/checkpoint/$ruleId
+// Store 2 things:
+// "checkpoints":A queue for completed checkpoint id
+// "$checkpointId":A map with key of checkpoint id and value of snapshot(gob serialized)
+// Assume each operator only has one instance
 func getKVStore(ruleId string) (*KVStore, error) {
 	err, db := ts.GetTS(ruleId)
 	if err != nil {

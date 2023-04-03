@@ -15,7 +15,7 @@
 //go:build benchmark
 // +build benchmark
 
-//Not necessary to build the file, until for the edgex benchmark test
+// Not necessary to build the file, until for the edgex benchmark test
 package main
 
 import (

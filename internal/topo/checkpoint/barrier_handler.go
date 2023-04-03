@@ -24,7 +24,7 @@ type BarrierHandler interface {
 	SetOutput(chan<- *BufferOrEvent)                         //It is using for block a channel
 }
 
-//For qos 1, simple track barriers
+// For qos 1, simple track barriers
 type BarrierTracker struct {
 	responder          Responder
 	inputCount         int
@@ -83,7 +83,7 @@ func (h *BarrierTracker) processBarrier(b *Barrier, ctx api.StreamContext) {
 	}
 }
 
-//For qos 2, block an input until all barriers are received
+// For qos 2, block an input until all barriers are received
 type BarrierAligner struct {
 	responder           Responder
 	inputCount          int

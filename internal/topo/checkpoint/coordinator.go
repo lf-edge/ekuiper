@@ -281,7 +281,7 @@ func (c *Coordinator) complete(checkpointId int64) {
 	}
 }
 
-//For testing
+// For testing
 func (c *Coordinator) GetCompleteCount() int {
 	return len(c.completedCheckpoints.checkpoints)
 }

@@ -321,7 +321,7 @@ func (s *streamFieldMap) add(k ast.StreamName) {
 	s.content[k] = nil
 }
 
-//bind for schema field, all keys must be created before running bind
+// bind for schema field, all keys must be created before running bind
 // can bind alias & col. For alias, the stream name must be empty; For col, the field must be a col
 func (s *streamFieldMap) ref(k ast.StreamName, v *ast.AliasRef) error {
 	if k == ast.AliasStream { // must not exist, save alias ref for alias
@@ -397,7 +397,7 @@ func (s *streamFieldMapSchemaless) add(k ast.StreamName) {
 	s.content[k] = nil
 }
 
-//bind for schemaless field, create column if not exist
+// bind for schemaless field, create column if not exist
 // can bind alias & col. For alias, the stream name must be empty; For col, the field must be a col
 func (s *streamFieldMapSchemaless) ref(k ast.StreamName, v *ast.AliasRef) error {
 	if k == ast.AliasStream { // must not exist

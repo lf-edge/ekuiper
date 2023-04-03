@@ -118,32 +118,32 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) 
 	}
 }
 
-//list or create source plugin
+// list or create source plugin
 func sourcesHandler(w http.ResponseWriter, r *http.Request) {
 	pluginsHandler(w, r, plugin.SOURCE)
 }
 
-//delete a source plugin
+// delete a source plugin
 func sourceHandler(w http.ResponseWriter, r *http.Request) {
 	pluginHandler(w, r, plugin.SOURCE)
 }
 
-//list or create sink plugin
+// list or create sink plugin
 func sinksHandler(w http.ResponseWriter, r *http.Request) {
 	pluginsHandler(w, r, plugin.SINK)
 }
 
-//delete a sink plugin
+// delete a sink plugin
 func sinkHandler(w http.ResponseWriter, r *http.Request) {
 	pluginHandler(w, r, plugin.SINK)
 }
 
-//list or create function plugin
+// list or create function plugin
 func functionsHandler(w http.ResponseWriter, r *http.Request) {
 	pluginsHandler(w, r, plugin.FUNCTION)
 }
 
-//list all user defined functions in all function plugins
+// list all user defined functions in all function plugins
 func functionsListHandler(w http.ResponseWriter, _ *http.Request) {
 	content := nativeManager.ListSymbols()
 	jsonResponse(content, w, logger)
@@ -160,7 +160,7 @@ func functionsGetHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(map[string]string{"name": name, "plugin": j}, w, logger)
 }
 
-//delete a function plugin
+// delete a function plugin
 func functionHandler(w http.ResponseWriter, r *http.Request) {
 	pluginHandler(w, r, plugin.FUNCTION)
 }

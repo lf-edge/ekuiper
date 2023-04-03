@@ -128,6 +128,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			}
 			stats.IncTotalRecordsIn()
 			stats.ProcessTimeStart()
+			//it := deepcopy.Copy(item)
 			result := o.op.Apply(exeCtx, item, fv, afv)
 
 			switch val := result.(type) {

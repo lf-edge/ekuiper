@@ -42,7 +42,7 @@ func GetLocalZone() int {
 
 }
 
-//Time related. For Mock
+// Time related. For Mock
 func GetTicker(duration int) *clock.Ticker {
 	return Clock.Ticker(time.Duration(duration) * time.Millisecond)
 }

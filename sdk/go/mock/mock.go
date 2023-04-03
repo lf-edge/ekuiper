@@ -28,7 +28,7 @@ type mockContext struct {
 	OpId   string
 }
 
-//Implement context interface
+// Implement context interface
 func (c *mockContext) Deadline() (deadline time.Time, ok bool) {
 	return c.Ctx.Deadline()
 }

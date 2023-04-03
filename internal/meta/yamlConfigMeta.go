@@ -32,7 +32,7 @@ type configManager struct {
 	connectionConfigStatusDb kv.KeyValue
 }
 
-//ConfigManager Hold the ConfigOperator for yaml configs defined in etc/sources/xxx.yaml and etc/connections/connection.yaml
+// ConfigManager Hold the ConfigOperator for yaml configs defined in etc/sources/xxx.yaml and etc/connections/connection.yaml
 // for configs in etc/sources/xxx.yaml, the map key is sources.xxx format, xxx will be mqtt/httppull and so on
 // for configs in etc/connections/connection.yaml, the map key is connections.xxx format, xxx will be mqtt/edgex
 var ConfigManager *configManager
