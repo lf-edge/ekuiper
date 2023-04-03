@@ -32,20 +32,6 @@ import (
 	"time"
 )
 
-type FileType string
-
-const (
-	JSON_TYPE  FileType = "json"
-	CSV_TYPE   FileType = "csv"
-	LINES_TYPE FileType = "lines"
-)
-
-var fileTypes = map[FileType]struct{}{
-	JSON_TYPE:  {},
-	CSV_TYPE:   {},
-	LINES_TYPE: {},
-}
-
 type FileSourceConfig struct {
 	FileType         FileType `json:"fileType"`
 	Path             string   `json:"path"`
