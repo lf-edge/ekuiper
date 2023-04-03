@@ -16,29 +16,31 @@ package wasm_test
 
 import (
 	"fmt"
+	"reflect"
+	"sync"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin/wasm"
 	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"reflect"
-	"sync"
-	"testing"
 )
 
 // EDIT HERE: Define the plugins that you want to test.
 var testingPlugin = &wasm.PluginInfo{
 	PluginMeta: runtime.PluginMeta{
-		Name:       "fibonacci",
+		Name:       "get_exchange_rate",
 		Version:    "v1",
 		WasmEngine: "wasmedge",
 	},
-	Functions: []string{"fib"},
+	Functions: []string{"get_exchange_rate"},
 }
 
 var FuncData = []interface{}{
-	25.0, // float
+	// int32(25),
+	"USD", "CNY",
 }
 
 var i int32 = 121393
