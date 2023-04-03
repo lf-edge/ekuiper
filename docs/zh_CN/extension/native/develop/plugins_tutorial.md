@@ -151,7 +151,7 @@ samplePlugin
 ```go
 module samplePlugin
 
-go 1.18
+go 1.20
 
 require (
 	github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
@@ -161,7 +161,7 @@ require (
  ```go
 module samplePlugin
 
-go 1.18
+go 1.20
 
 require (
 	github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b

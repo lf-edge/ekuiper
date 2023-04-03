@@ -539,8 +539,6 @@ github.com/mattn/go-sqlite3 v1.14.16 h1:yOQRA0RpS5PFz/oikGwBEqvAWhWg5ufRz4ETLjwp
 github.com/mattn/go-sqlite3 v1.14.16/go.mod h1:2eHXhiwb8IkHr+BDWZGa96P6+rkvnG63S2DGjv9HUNg=
 github.com/mattn/go-tflite v1.0.1 h1:bTfbF7HIF0n3vQsl2JdMUhsFT/KkQuQlCy0UlnF9D4M=
 github.com/mattn/go-tflite v1.0.1/go.mod h1:LME9BQINAkZIOGDVDJJcCa2v0NMuV2AKaf1U47NVS4w=
-github.com/mattn/go-tflite v1.0.4 h1:wpfNKjMr3IJz4xI+oUeHE70RU6Q5dZc0FK/X8vCWLAo=
-github.com/mattn/go-tflite v1.0.4/go.mod h1:j7bVlVHgKURK0p7AQOw3OqlGE2SVXqck7JsJo4wI+bc=
 github.com/mitchellh/copystructure v1.0.0/go.mod h1:SNtv71yrdKgLRyLFxmLdkAbkKEFWgYaq1OVrnRcwhnw=
 github.com/mitchellh/copystructure v1.2.0 h1:vpKXTN4ewci03Vljg/q9QvCGUDttBOGBIa15WveJJGw=
 github.com/mitchellh/copystructure v1.2.0/go.mod h1:qLl+cE2AmVv+CoeAwDPye/v+N2HKCj9FbZEVFJRxO9s=
@@ -675,8 +673,6 @@ github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/taosdata/driver-go/v2 v2.0.4 h1:MlqiUWaYR8VJJV8pCiNJpEK2zIbPjFoTVTrOMYZW+/M=
 github.com/taosdata/driver-go/v2 v2.0.4/go.mod h1:ZAb4yDucTytX1Gy69F3nTRV+lEXmjkyF4J6OiYCR9NI=
-github.com/taosdata/driver-go/v2 v2.0.6 h1:NPOLfLWGeezSs/KsY85wjN9a1es22UEr1wKM5+JQbRE=
-github.com/taosdata/driver-go/v2 v2.0.6/go.mod h1:ZAb4yDucTytX1Gy69F3nTRV+lEXmjkyF4J6OiYCR9NI=
 github.com/thda/tds v0.1.7 h1:s29kbnJK0agL3ps85A/sb9XS2uxgKF5UJ6AZjbyqXX4=
 github.com/thda/tds v0.1.7/go.mod h1:isLIF1oZdXfkqVMJM8RyNrsjlHPlTKnPlnsBs7ngZcM=
 github.com/trinodb/trino-go-client v0.309.0 h1:6TJDdUE69kcEmhv5dcY4IuJJ0MQDtjBrc/08T29SFbg=

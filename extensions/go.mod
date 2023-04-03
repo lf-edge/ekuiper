@@ -1,6 +1,6 @@
 module github.com/lf-edge/ekuiper/extensions
 
-go 1.18
+go 1.20
 
 require (
 	github.com/ClickHouse/clickhouse-go v1.5.4
