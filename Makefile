@@ -121,6 +121,10 @@ clean:
 	@rm -rf cross_build.tar linux_amd64 linux_arm64 linux_arm_v7 linux_386
 	@rm -rf _build _packages _plugins
 
+tidy:
+	@echo "go mod tidy"
+	go mod tidy && git diff go.mod go.sum
+
 lint:tools/check/bin/revive
 	@echo "linting"
 	@tools/check/bin/revive -formatter friendly -config tools/check/revive.toml ./...
