@@ -53,6 +53,7 @@ func NewTableProcessor(isSchemaless bool, name string, fields map[string]*ast.Js
 }
 
 // Apply
+//
 //	input: *xsql.Tuple or BatchCount
 //	output: WindowTuples
 func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {

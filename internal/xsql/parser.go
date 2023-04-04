@@ -204,7 +204,7 @@ func (p *Parser) parseSource() (ast.Sources, error) {
 	return sources, nil
 }
 
-//TODO Current func has problems when the source includes white space.
+// TODO Current func has problems when the source includes white space.
 func (p *Parser) parseSourceLiteral() (string, string, error) {
 	var sourceSeg []string
 	var alias string

@@ -708,7 +708,7 @@ func (v *ValuerEval) subset(result interface{}, expr ast.Expr) interface{} {
 	}
 }
 
-//lhs and rhs are non-nil
+// lhs and rhs are non-nil
 func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op ast.Token) interface{} {
 	if lhs == nil || rhs == nil {
 		switch op {

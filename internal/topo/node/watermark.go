@@ -119,7 +119,7 @@ func (w *WatermarkGenerator) computeWatermarkTs(_ context.Context) int64 {
 	return ts - w.lateTolerance
 }
 
-//If window end cannot be determined yet, return max int64 so that it can be recalculated for the next watermark
+// If window end cannot be determined yet, return max int64 so that it can be recalculated for the next watermark
 func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple, current int64, watermark int64) int64 {
 	switch w.window.Type {
 	case ast.TUMBLING_WINDOW, ast.HOPPING_WINDOW:

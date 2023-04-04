@@ -159,16 +159,16 @@ func newAbout(fi *fileAbout) *about {
 	return ui
 }
 
-//func newNode(fi *fileNode) *node {
-//	if nil == fi {
-//		return nil
+//	func newNode(fi *fileNode) *node {
+//		if nil == fi {
+//			return nil
+//		}
+//		ui := new(node)
+//		ui.Category = fi.Category
+//		ui.Icon = fi.Icon
+//		ui.Label = newLanguage(fi.Label)
+//		return ui
 //	}
-//	ui := new(node)
-//	ui.Category = fi.Category
-//	ui.Icon = fi.Icon
-//	ui.Label = newLanguage(fi.Label)
-//	return ui
-//}
 func newUiSink(fi *fileSink) (*uiSink, error) {
 	if nil == fi {
 		return nil, nil

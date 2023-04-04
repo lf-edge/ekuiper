@@ -44,7 +44,7 @@ func WithValue(parent *DefaultContext, key, val interface{}) *DefaultContext {
 	return parent
 }
 
-//Implement context interface
+// Implement context interface
 func (c *DefaultContext) Deadline() (deadline time.Time, ok bool) {
 	return c.ctx.Deadline()
 }

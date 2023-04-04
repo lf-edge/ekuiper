@@ -50,12 +50,12 @@ func init() {
 	}
 }
 
-//This cannot be run in Windows. And the plugins must be built to so before running this
-//For Windows, run it in wsl with go test -tags test internal/topo/topotest/plugin_rule_test.go internal/topo/topotest/mock_topo.go
+// This cannot be run in Windows. And the plugins must be built to so before running this
+// For Windows, run it in wsl with go test -tags test internal/topo/topotest/plugin_rule_test.go internal/topo/topotest/mock_topo.go
 var CACHE_FILE = "cache"
 
-//Test for source, sink, func and agg func extensions
-//The .so files must be in the plugins folder
+// Test for source, sink, func and agg func extensions
+// The .so files must be in the plugins folder
 func TestExtensions(t *testing.T) {
 	log := conf.Log
 	//Reset
