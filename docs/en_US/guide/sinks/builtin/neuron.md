@@ -9,6 +9,8 @@ The action is used to publish result to the local neuron instance. Notice that, 
 | tags          | true     | The field names to be sent to neuron as a tag. If not specified, all result fields will be sent.                                        |
 | raw           | true     | Default to false. Whether to convert the data to neuron format by this sink or just publish the json or data template converted result. |
 
+Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
+
 ## Examples
 
 Assume the sink receive result map like:

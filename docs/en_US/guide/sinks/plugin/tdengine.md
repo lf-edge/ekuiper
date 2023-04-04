@@ -28,6 +28,8 @@ As the tdengine database requires a timestamp field in the table, the user must 
 | sTable         | String   | true     | The super table to be use, could be a [dynamic property](../../sinks/overview.md#dynamic-properties).                                                            |
 | tableDataField | String   | true     | Write the nested values of the tableDataField into database.                                                                                                     |
 
+Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
+
 ## Operation example
 
 ### To create a database or table, refer to the following documents:

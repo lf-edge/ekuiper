@@ -19,6 +19,8 @@
 | server | false    | Zero Mq 服务器的 URL        |
 | topic  | true     | The topic to publish to |
 
+其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
+
 ## 使用示例
 
 下面是一个选择温度大于50度的示例，并将结果发布到 Zero Mq 主题 "temp"。

@@ -32,6 +32,8 @@
 | tableDataField | true     | 将 tableDataField 的嵌套值写入数据库。                 |
 | rowkindField   | true     | 指定哪个字段表示操作，例如插入或更新。如果不指定，默认所有的数据都是插入操作      |
 
+其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
+
 ## 使用样例
 
 下面是一个获取目标数据并写入 mysql 数据库的示例

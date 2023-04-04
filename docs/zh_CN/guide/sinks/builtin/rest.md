@@ -15,6 +15,7 @@
 | rootCaPath         | 是    | 根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径，相对路径的用法与 `certificationPath` 类似。                                                                                                                                                   |
 | insecureSkipVerify | 是    | 控制是否跳过证书认证。如果被设置为 `true`，那么跳过证书认证；否则进行证书验证。缺省为 `true`。                                                                                                                                                              |
 | oAuth              | true | 定义类 OAuth 的认证流程。其他的认证方式如 apikey 可以直接在 headers 设置密钥，不需要使用这个配置。 详情请见[OAuth 配置](../../sources/builtin/http_pull.md#OAuth)。                                                                                             |
+其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
 ::: v-pre
 REST 服务通常需要特定的数据格式。 这可以由公共目标属性 `dataTemplate` 强制使用。 请参考[数据模板](../data_template.md)。 以下是用于连接到 Edgex Foundry core 命令的示例配置。dataTemplate`{{.key}}` 表示将打印出键值，即 result [key]。 因此，这里的模板是在结果中仅选择字段 `key` ，并将字段名称更改为 `newKey`。 `sendSingle` 是另一个常见属性。 设置为 true 表示如果结果是数组，则每个元素将单独发送。

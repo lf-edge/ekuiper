@@ -39,9 +39,11 @@
   - KeyPEMBlock
   - SkipCertVerify
 
+其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
+
 ::: v-pre
 EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模板的结果必须为 JSON 字符串的 object 形式，例如 `"{\"key\":\"{{.key}}\"}"`。数组形式的 JSON 字符串或者非 JSON 字符串都不支持。
-:::
+::
 
 ## 发送到各种目标
 
