@@ -119,3 +119,7 @@ $(PLUGINS):
 clean:
 	@rm -rf cross_build.tar linux_amd64 linux_arm64 linux_arm_v7 linux_386
 	@rm -rf _build _packages _plugins
+
+tidy:
+	@echo "go mod tidy"
+	./tools/check/check-tidy.sh
