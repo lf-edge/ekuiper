@@ -122,4 +122,4 @@ clean:
 
 tidy:
 	@echo "go mod tidy"
-	./tools/check/check-tidy.sh
+	go mod tidy && git diff go.mod go.sum
