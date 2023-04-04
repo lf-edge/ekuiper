@@ -16,7 +16,7 @@ FROM centos:7
 
 RUN yum install -y make wget git which rpm-build gcc
 
-
+ARG GO_VERSION=${{ matrix.golang }}
 
 RUN case $(arch) in \
         x86_64) \
