@@ -27,6 +27,7 @@ redis 源代码在 extensions 目录中，但是需要在 eKuiper 根目录编�
 | dataType     | 是    | Redis 数据的类型, 默认是 string, 注意修改类型之后，需在redis中删除原有 key，否则修改无效。目前只支持 "list" 和 "string"                                                                                                                                                        |
 | expiration   | 是    | 超时时间                                                                                                                                                                                                                                     |
 | rowkindField | 是    | 指定哪个字段表示操作，例如插入或更新。如果不指定，默认所有的数据都是插入操作                                                                                                                                                                                                   |
+其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
 ## 示例用法
 

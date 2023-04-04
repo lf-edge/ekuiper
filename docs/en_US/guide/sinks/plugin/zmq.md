@@ -19,6 +19,8 @@ Restart the eKuiper server to activate the plugin.
 | server        | false    | The url of the Zero Mq server |
 | topic         | true     | The topic to publish to       |
 
+Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
+
 ## Sample usage
 
 Below is a sample for selecting temperature great than 50 degree, and publish the result into Zero Mq topic "temp".

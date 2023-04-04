@@ -35,6 +35,8 @@ for example, if he only wants mysql, then he can build with build tag `mysql`.
 | tableDataField | true     | Write the nested values of the tableDataField into database.                                                                                                  |
 | rowkindField   | true     | Specify which field represents the action like insert or update. If not specified, all rows are default to insert.                                            |
 
+Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
+
 ## Sample usage
 
 Below is a sample for using sql to get the target data and set to mysql database 

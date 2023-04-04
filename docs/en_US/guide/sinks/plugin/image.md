@@ -21,6 +21,8 @@ Restart the eKuiper server to activate the plugin.
 | maxAge         | True     | Maximum file storage time (hours). The default value is 72, which means that the picture can be stored for up to 3 days.                                                        |
 | maxCount       | True     | The maximum number of stored pictures. The default value is 1000. The earlier pictures will be deleted. The relationship with `maxAge` is OR.                                   |
 
+Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
+
 ## Usage example
 
 The following example demonstrates how to receive pictures and save them to the folder `/tmp`. When the number of pictures exceeds 1000, the earlier pictures will be deleted. When the pictures are saved for more than 72 hours, the timeout pictures will be deleted.
