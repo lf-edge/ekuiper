@@ -5,6 +5,7 @@ VERSION := $(shell git describe --tags --always)
 ARCH := $(shell go env GOARCH)
 OS := $(shell go env GOOS)
 PACKAGE_NAME := kuiper-$(VERSION)-$(OS)-$(ARCH)
+GO              := GO111MODULE=on go
 
 TARGET ?= lfedge/ekuiper
 
@@ -123,3 +124,10 @@ clean:
 tidy:
 	@echo "go mod tidy"
 	go mod tidy && git diff go.mod go.sum
+
+lint:tools/check/bin/revive
+	@echo "linting"
+	@tools/check/bin/revive -formatter friendly -config tools/check/revive.toml ./...
+
+tools/check/bin/revive:
+	GOBIN=$(shell pwd)/tools/check/bin $(GO) install github.com/mgechev/revive@v1.2.1
