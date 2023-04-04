@@ -62,7 +62,7 @@ Both Neuron and eKuiper support binary installation packages and Docker containe
             KUIPER__BASIC__CONSOLELOG: "true"
             KUIPER__BASIC__IGNORECASE: "false"
             # The default neuron url. Change it if you want to use another port.
-            SOURCES__NEURON__DEFAULT__URL: "tcp://neuron:7081"
+            NEURON__DEFAULT__URL: "tcp://neuron:7081"
          volumes:
             - /tmp/data:/kuiper/data
             - /tmp/log:/kuiper/log
@@ -88,8 +88,8 @@ Both Neuron and eKuiper support binary installation packages and Docker containe
    To modify the port, you need to modify Neuron's eKuiper northbound application port, as well as the parts of this document that use the port, i.e., Neuron's port exposure and eKuiper's environment variable default connection url section.
    
    > Notes for different version combinations
-   > 1. eKuiper 1.9 onwards can only interface with Neuron versions before 2.4 via ipc, you need to configure `SOURCES__NEURON__DEFAULT__URL: "ipc:///tmp/neuron-ekuiper.ipc"` and enable the configuration of volumes nng-ipc. Neuron does not need to expose port 7081.
-   > 2. eKuiper versions before 1.9 can only interface with Neuron versions before 2.4 via ipc, you need to remove the `SOURCES__NEURON__DEFAULT__URL` environment variable configuration and enable the volumes nng-ipc configuration.
+   > 1. eKuiper 1.9 onwards can only interface with Neuron versions before 2.4 via ipc, you need to configure `NEURON__DEFAULT__URL: "ipc:///tmp/neuron-ekuiper.ipc"` and enable the configuration of volumes nng-ipc. Neuron does not need to expose port 7081.
+   > 2. eKuiper versions before 1.9 can only interface with Neuron versions before 2.4 via ipc, you need to remove the `NEURON__DEFAULT__URL` environment variable configuration and enable the volumes nng-ipc configuration.
    > 3. eKuiper versions before 1.9 and Neuron versions after 2.4 cannot connect directly, but can be relayed through MQTT
    
 2. In the directory where the file is located, run:

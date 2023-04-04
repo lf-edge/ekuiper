@@ -62,7 +62,7 @@ Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方�
             KUIPER__BASIC__CONSOLELOG: "true"
             KUIPER__BASIC__IGNORECASE: "false"
             # The default neuron url. Change it if you want to use another port.
-            SOURCES__NEURON__DEFAULT__URL: "tcp://neuron:7081"
+            NEURON__DEFAULT__URL: "tcp://neuron:7081"
          volumes:
             - /tmp/data:/kuiper/data
             - /tmp/log:/kuiper/log
@@ -88,8 +88,8 @@ Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方�
    用户可自定义配置连接端口，本例中为 7081。修改端口时，需要修改 Neuron 的 eKuiper 北向应用端口，同时修改本文件中用到该端口的部分，即 Neuron 的端口暴露和 eKuiper 的环境变量默认连接 url 部分。
 
    > 各版本使用注意事项
-   > 1. eKuiper 1.9 之后版本与 Neuron 2.4 之前版本对接只能通过 ipc，需要配置 `SOURCES__NEURON__DEFAULT__URL: "ipc:///tmp/neuron-ekuiper.ipc"`，并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
-   > 2. eKuiper 1.9 之前版本与 Neuron 2.4 之前版本对接只能通过 ipc，需要去除 `SOURCES__NEURON__DEFAULT__URL` 环境变量配置并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
+   > 1. eKuiper 1.9 之后版本与 Neuron 2.4 之前版本对接只能通过 ipc，需要配置 `NEURON__DEFAULT__URL: "ipc:///tmp/neuron-ekuiper.ipc"`，并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
+   > 2. eKuiper 1.9 之前版本与 Neuron 2.4 之前版本对接只能通过 ipc，需要去除 `NEURON__DEFAULT__URL` 环境变量配置并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
    > 3. eKuiper 1.9 之前版本与 Neuron 2.4 之后版本无法直接对接，可通过 MQTT 中转。
 2. 在该文件所在目录，运行:
    
