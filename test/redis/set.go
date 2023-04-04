@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/go-redis/redis/v7"
+	"github.com/redis/go-redis/v9"
 	"os"
 )
 
 func getClient(host, key string) {
+	ctx := context.Background()
 	add := fmt.Sprintf("%s:6379", host)
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     add,
@@ -14,7 +16,7 @@ func getClient(host, key string) {
 		DB:       0,  // use default DB
 	})
 
-	val, err := rdb.Get(key).Result()
+	val, err := rdb.Get(ctx, key).Result()
 	if err != nil {
 		panic(err)
 	}
@@ -22,6 +24,7 @@ func getClient(host, key string) {
 }
 
 func setClient(host, key string) {
+	ctx := context.Background()
 	add := fmt.Sprintf("%s:6379", host)
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     add,
@@ -29,7 +32,7 @@ func setClient(host, key string) {
 		DB:       0,  // use default DB
 	})
 
-	err := rdb.Set(key, "value", 0).Err()
+	err := rdb.Set(ctx, key, "value", 0).Err()
 	if err != nil {
 		panic(err)
 	}
