@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG GO_VERSION=${{ matrix.golang }}
+ARG GO_VERSION
 FROM golang:$GO_VERSION-alpine AS builder
 
 RUN apk add gcc make git libc-dev zip curl jq bash binutils-gold pkgconfig zeromq-dev

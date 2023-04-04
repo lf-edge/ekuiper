@@ -14,7 +14,7 @@
 
 FROM debian:stretch
 
-ARG GO_VERSION=${{ matrix.golang }}
+ARG GO_VERSION
 
 RUN apt update \
     && apt install -y make wget git curl procps zip libucl-dev zlib1g-dev pkg-config libczmq-dev build-essential debhelper jq zip
