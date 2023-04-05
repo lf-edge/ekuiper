@@ -182,7 +182,7 @@ func (w *WindowTuples) AddTuple(tuple *Tuple) *WindowTuples {
 	return w
 }
 
-//Sort by tuple timestamp
+// Sort by tuple timestamp
 func (w *WindowTuples) Sort() {
 	w.cachedMap = nil
 	sort.SliceStable(w.Content, func(i, j int) bool {

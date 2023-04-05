@@ -40,7 +40,9 @@ type ProjectOp struct {
 }
 
 // Apply
-//  input: *xsql.Tuple| xsql.Collection
+//
+//	input: *xsql.Tuple| xsql.Collection
+//
 // output: []map[string]interface{}
 func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()

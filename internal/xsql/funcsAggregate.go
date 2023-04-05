@@ -29,7 +29,7 @@ func NewFunctionValuersForOp(ctx api.StreamContext) (*FunctionValuer, *Aggregate
 	return NewAggregateFunctionValuers(p)
 }
 
-//Should only be called by stream to make sure a single instance for an operation
+// Should only be called by stream to make sure a single instance for an operation
 func NewAggregateFunctionValuers(p *funcRuntime) (*FunctionValuer, *AggregateFunctionValuer) {
 	fv := NewFunctionValuer(p)
 	return fv, &AggregateFunctionValuer{

@@ -24,7 +24,7 @@ import (
 	"sync"
 )
 
-//ConfKeysOperator define interface to query/add/update/delete the configs in memory
+// ConfKeysOperator define interface to query/add/update/delete the configs in memory
 type ConfKeysOperator interface {
 	GetPluginName() string
 	GetConfContentByte() ([]byte, error)
@@ -48,7 +48,7 @@ type ConfKeysOperator interface {
 	ClearConfKeys()
 }
 
-//ConfigOperator define interface to query/add/update/delete the configs in disk
+// ConfigOperator define interface to query/add/update/delete the configs in disk
 type ConfigOperator interface {
 	ConfKeysOperator
 	SaveCfgToFile() error

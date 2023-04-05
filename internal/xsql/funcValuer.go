@@ -23,7 +23,7 @@ type FunctionValuer struct {
 	runtime *funcRuntime
 }
 
-//Should only be called by stream to make sure a single instance for an operation
+// Should only be called by stream to make sure a single instance for an operation
 func NewFunctionValuer(p *funcRuntime) *FunctionValuer {
 	fv := &FunctionValuer{
 		runtime: p,

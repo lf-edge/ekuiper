@@ -27,7 +27,8 @@ type CollectorFunc func(api.StreamContext, interface{}) error
 // FuncCollector is a colletor that uses a function
 // to collect data.  The specified function must be
 // of type:
-//   CollectorFunc
+//
+//	CollectorFunc
 type FuncCollector struct {
 	f CollectorFunc
 }

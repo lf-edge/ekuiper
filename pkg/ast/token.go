@@ -287,7 +287,7 @@ func (tok Token) AllowedSourceToken() bool {
 	return tok == IDENT || tok == DIV || tok == HASH || tok == ADD
 }
 
-//Allowed special field name token
+// Allowed special field name token
 func (tok Token) AllowedSFNToken() bool { return tok == DOT }
 
 func (tok Token) Precedence() int {
