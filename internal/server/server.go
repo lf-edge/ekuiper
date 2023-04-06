@@ -231,14 +231,14 @@ func resetAllStreams() error {
 	Streams := allStreams["streams"]
 	Tables := allStreams["tables"]
 
-	for name, _ := range Streams {
+	for name := range Streams {
 		_, err2 := streamProcessor.DropStream(name, ast.TypeStream)
 		if err2 != nil {
 			logger.Warnf("streamProcessor DropStream %s error: %v", name, err2)
 			continue
 		}
 	}
-	for name, _ := range Tables {
+	for name := range Tables {
 		_, err2 := streamProcessor.DropStream(name, ast.TypeTable)
 		if err2 != nil {
 			logger.Warnf("streamProcessor DropTable %s error: %v", name, err2)

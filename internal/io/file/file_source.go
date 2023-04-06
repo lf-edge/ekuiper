@@ -230,10 +230,7 @@ func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer cha
 			}
 		}
 	}()
-	if err := fs.publish(ctx, r, consumer, meta); err != nil {
-		return err
-	}
-	return nil
+	return fs.publish(ctx, r, consumer, meta)
 }
 
 func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer chan<- api.SourceTuple, meta map[string]interface{}) error {
