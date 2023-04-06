@@ -17,6 +17,10 @@ package neuron
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
@@ -25,11 +29,10 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pair"
+
+	// introduce ipc/tpc
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 const (

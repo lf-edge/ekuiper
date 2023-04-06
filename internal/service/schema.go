@@ -17,6 +17,8 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
+
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/dynamic"
@@ -24,8 +26,9 @@ import (
 	"github.com/lf-edge/ekuiper/internal/converter/protobuf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+
+	// introduce annotations
 	_ "google.golang.org/genproto/googleapis/api/annotations"
-	"sync"
 )
 
 type descriptor interface {
