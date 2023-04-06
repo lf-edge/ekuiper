@@ -130,7 +130,7 @@ var tests = []struct {
 }
 
 func Test_validation(t *testing.T) {
-	err, store := store.GetKV("stream")
+	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
 		return
@@ -192,7 +192,7 @@ func Test_validation(t *testing.T) {
 }
 
 func Test_validationSchemaless(t *testing.T) {
-	err, store := store.GetKV("stream")
+	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
 		return

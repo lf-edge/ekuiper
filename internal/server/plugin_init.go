@@ -224,7 +224,7 @@ func prebuildPluginsHandler(w http.ResponseWriter, _ *http.Request, t plugin.Plu
 		}
 
 		hosts := conf.Config.Basic.PluginHosts
-		if err, plugins := fetchPluginList(t, hosts, os, runtime.GOARCH); err != nil {
+		if plugins, err := fetchPluginList(t, hosts, os, runtime.GOARCH); err != nil {
 			handleError(w, err, "", logger)
 		} else {
 			jsonResponse(plugins, w, logger)
@@ -238,7 +238,7 @@ var NativeSourcePlugin = []string{"random", "zmq", "sql", "video"}
 var NativeSinkPlugin = []string{"image", "influx", "influx2", "tdengine", "zmq", "sql"}
 var NativeFunctionPlugin = []string{"accumulateWordCount", "countPlusOne", "echo", "geohash", "image", "labelImage", "tfLite"}
 
-func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (err error, result map[string]string) {
+func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (result map[string]string, err error) {
 	ptype := "sources"
 	plugins := NativeSourcePlugin
 	if t == plugin.SINK {
@@ -251,7 +251,7 @@ func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (err error, re
 
 	if hosts == "" || ptype == "" || os == "" {
 		logger.Errorf("Invalid parameter value: hosts %s, ptype %s or os: %s should not be empty.", hosts, ptype, os)
-		return fmt.Errorf("invalid configruation for plugin host in kuiper.yaml"), nil
+		return nil, fmt.Errorf("invalid configruation for plugin host in kuiper.yaml")
 	}
 	result = make(map[string]string)
 	hostsArr := strings.Split(hosts, ",")

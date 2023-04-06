@@ -20,13 +20,13 @@ import (
 	"time"
 )
 
-func Encode(value interface{}) (error, []byte) {
+func Encode(value interface{}) ([]byte, error) {
 	var buff bytes.Buffer
 	gob.Register(time.Time{})
 	gob.Register(value)
 	enc := gob.NewEncoder(&buff)
 	if err := enc.Encode(value); err != nil {
-		return err, nil
+		return nil, err
 	}
-	return nil, buff.Bytes()
+	return buff.Bytes(), nil
 }

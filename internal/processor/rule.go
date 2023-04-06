@@ -32,11 +32,11 @@ type RuleProcessor struct {
 }
 
 func NewRuleProcessor() *RuleProcessor {
-	err, db := store.GetKV("rule")
+	db, err := store.GetKV("rule")
 	if err != nil {
 		panic(fmt.Sprintf("Can not initialize store for the rule processor at path 'rule': %v", err))
 	}
-	err, ruleStatusDb := store.GetKV("ruleStatus")
+	ruleStatusDb, err := store.GetKV("ruleStatus")
 	if err != nil {
 		panic(fmt.Sprintf("Can not initialize store for the rule processor at path 'rule': %v", err))
 	}

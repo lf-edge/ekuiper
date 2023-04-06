@@ -350,7 +350,7 @@ func (c *SyncCache) initStore(ctx api.StreamContext) {
 		store.DropCacheKV(kvTable)
 	}
 	var err error
-	err, c.store = store.GetCacheKV(kvTable)
+	c.store, err = store.GetCacheKV(kvTable)
 	if err != nil {
 		infra.DrainError(ctx, err, c.errorCh)
 	}

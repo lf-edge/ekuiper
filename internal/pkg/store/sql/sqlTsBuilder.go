@@ -28,6 +28,6 @@ func NewTsBuilder(d Database) TsBuilder {
 	}
 }
 
-func (b TsBuilder) CreateTs(table string) (error, kv.Tskv) {
+func (b TsBuilder) CreateTs(table string) (kv.Tskv, error) {
 	return createSqlTs(b.database, table)
 }

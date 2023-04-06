@@ -7,7 +7,7 @@ warningCode = -1
 [rule.blank-imports]
 [rule.context-as-argument]
 [rule.dot-imports]
-#[rule.error-return]
+[rule.error-return]
 #[rule.error-strings]
 [rule.error-naming]
 #[rule.exported]

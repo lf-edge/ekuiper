@@ -49,7 +49,7 @@ type KVStore struct {
 // "$checkpointId":A map with key of checkpoint id and value of snapshot(gob serialized)
 // Assume each operator only has one instance
 func getKVStore(ruleId string) (*KVStore, error) {
-	err, db := ts.GetTS(ruleId)
+	db, err := ts.GetTS(ruleId)
 	if err != nil {
 		return nil, err
 	}

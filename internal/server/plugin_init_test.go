@@ -70,7 +70,7 @@ func Test_fetchPluginList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotErr, gotResult := fetchPluginList(tt.args.t, tt.args.hosts, tt.args.os, tt.args.arch)
+			gotResult, gotErr := fetchPluginList(tt.args.t, tt.args.hosts, tt.args.os, tt.args.arch)
 			if !reflect.DeepEqual(gotErr, tt.wantErr) {
 				t.Errorf("fetchPluginList() gotErr = %v, want %v", gotErr, tt.wantErr)
 			}

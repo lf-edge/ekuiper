@@ -62,18 +62,18 @@ func newStores(c definition.Config, name string) (*stores, error) {
 	}
 }
 
-func (s *stores) GetKV(table string) (error, kv.KeyValue) {
+func (s *stores) GetKV(table string) (kv.KeyValue, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if ks, contains := s.kv[table]; contains {
-		return nil, ks
+		return ks, nil
 	}
 	ks, err := s.kvBuilder.CreateStore(table)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	s.kv[table] = ks
-	return nil, ks
+	return ks, nil
 }
 
 func (s *stores) DropKV(table string) {
@@ -98,18 +98,18 @@ func (s *stores) DropRefKVs(tablePrefix string) {
 	}
 }
 
-func (s *stores) GetTS(table string) (error, kv.Tskv) {
+func (s *stores) GetTS(table string) (kv.Tskv, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if tts, contains := s.ts[table]; contains {
-		return nil, tts
+		return tts, nil
 	}
-	err, tts := s.tsBuilder.CreateTs(table)
+	tts, err := s.tsBuilder.CreateTs(table)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	s.ts[table] = tts
-	return nil, tts
+	return tts, nil
 }
 
 func (s *stores) DropTS(table string) {
@@ -122,16 +122,16 @@ func (s *stores) DropTS(table string) {
 	}
 }
 
-func GetKV(table string) (error, kv.KeyValue) {
+func GetKV(table string) (kv.KeyValue, error) {
 	if globalStores == nil {
-		return fmt.Errorf("global stores are not initialized"), nil
+		return nil, fmt.Errorf("global stores are not initialized")
 	}
 	return globalStores.GetKV(table)
 }
 
-func GetTS(table string) (error, kv.Tskv) {
+func GetTS(table string) (kv.Tskv, error) {
 	if globalStores == nil {
-		return fmt.Errorf("global stores are not initialized"), nil
+		return nil, fmt.Errorf("global stores are not initialized")
 	}
 	return globalStores.GetTS(table)
 }
@@ -152,9 +152,9 @@ func DropKV(table string) error {
 	return nil
 }
 
-func GetCacheKV(table string) (error, kv.KeyValue) {
+func GetCacheKV(table string) (kv.KeyValue, error) {
 	if cacheStores == nil {
-		return fmt.Errorf("cache stores are not initialized"), nil
+		return nil, fmt.Errorf("cache stores are not initialized")
 	}
 	return cacheStores.GetKV(table)
 }

@@ -45,7 +45,7 @@ func createRedisKvStore(redis *redis.Client, table string) (*redisKvStore, error
 }
 
 func (kv redisKvStore) Setnx(key string, value interface{}) error {
-	err, b := kvEncoding.Encode(value)
+	b, err := kvEncoding.Encode(value)
 	if nil != err {
 		return err
 	}
@@ -60,7 +60,7 @@ func (kv redisKvStore) Setnx(key string, value interface{}) error {
 }
 
 func (kv redisKvStore) Set(key string, value interface{}) error {
-	err, b := kvEncoding.Encode(value)
+	b, err := kvEncoding.Encode(value)
 	if nil != err {
 		return err
 	}

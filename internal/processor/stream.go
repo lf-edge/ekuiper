@@ -40,15 +40,15 @@ type StreamProcessor struct {
 }
 
 func NewStreamProcessor() *StreamProcessor {
-	err, db := store.GetKV("stream")
+	db, err := store.GetKV("stream")
 	if err != nil {
 		panic(fmt.Sprintf("Can not initialize store for the stream processor at path 'stream': %v", err))
 	}
-	err, streamDb := store.GetKV("streamStatus")
+	streamDb, err := store.GetKV("streamStatus")
 	if err != nil {
 		panic(fmt.Sprintf("Can not initialize store for the stream processor at path 'stream': %v", err))
 	}
-	err, tableDb := store.GetKV("tableStatus")
+	tableDb, err := store.GetKV("tableStatus")
 	if err != nil {
 		panic(fmt.Sprintf("Can not initialize store for the stream processor at path 'stream': %v", err))
 	}
