@@ -34,6 +34,8 @@ func (j *jsonWriterHooks) Footer() []byte {
 	return []byte("]")
 }
 
+var jsonHooks = &jsonWriterHooks{}
+
 type linesWriterHooks struct{}
 
 func (l *linesWriterHooks) Header() []byte {
@@ -47,6 +49,8 @@ func (l *linesWriterHooks) Line() []byte {
 func (l *linesWriterHooks) Footer() []byte {
 	return nil
 }
+
+var linesHooks = &linesWriterHooks{}
 
 type csvWriterHooks struct {
 	header []byte
