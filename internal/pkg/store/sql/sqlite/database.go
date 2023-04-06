@@ -17,11 +17,14 @@ package sqlite
 import (
 	"database/sql"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
-	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"path"
 	"sync"
+
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
+
+	// introduce sqlite
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Database struct {
