@@ -85,7 +85,7 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 	n.statManager = stats
 	n.ctx = ctx
-	for i, _ := range n.outputNodes {
+	for i := range n.outputNodes {
 		n.outputNodes[i].ctx = ctx
 	}
 	fv, afv := xsql.NewFunctionValuersForOp(ctx)
