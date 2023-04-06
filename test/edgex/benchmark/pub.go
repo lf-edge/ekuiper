@@ -22,24 +22,25 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
-	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"log"
 	"os"
 	"strconv"
 	"sync"
 	"time"
+
+	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
+	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 )
 
 var msgConfig1 = types.MessageBusConfig{
-	PublishHost: types.HostInfo{
+	Broker: types.HostInfo{
 		Host:     "172.31.1.144",
-		Port:     5563,
-		Protocol: "tcp",
+		Port:     6379,
+		Protocol: "redis",
 	},
-	Type: messaging.ZeroMQ,
+	Type: messaging.Redis,
 }
 
 type data struct {
@@ -60,7 +61,7 @@ var mockup = []data{
 	{temperature: 55, humidity: 60},
 }
 
-func pubEventClientZeroMq(count int, wg *sync.WaitGroup) {
+func pubEventClientRedis(count int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
 		log.Fatal(err)
@@ -122,7 +123,7 @@ func main() {
 	var wg sync.WaitGroup
 	for i := 0; i < 1; i++ {
 		wg.Add(1)
-		go pubEventClientZeroMq(count, &wg)
+		go pubEventClientRedis(count, &wg)
 	}
 	wg.Wait()
 	t := time.Now()

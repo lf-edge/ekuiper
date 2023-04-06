@@ -23,7 +23,7 @@ import (
 	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"math"
 	"reflect"
@@ -314,12 +314,12 @@ func TestWrongValue(t *testing.T) {
 }
 
 func TestPrintConf(t *testing.T) {
-	expMbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: "tcp", Host: "127.0.0.1", Port: 6625}, Type: "mbus", Optional: map[string]string{
+	expMbconf := types.MessageBusConfig{Broker: types.HostInfo{Protocol: "tcp", Host: "127.0.0.1", Port: 6625}, Type: "mbus", Optional: map[string]string{
 		"proa":     "proa",
 		"Password": "fafsadfsadf=",
 		"Prob":     "Prob",
 	}}
-	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: "tcp", Host: "127.0.0.1", Port: 6625}, Type: "mbus", Optional: map[string]string{
+	mbconf := types.MessageBusConfig{Broker: types.HostInfo{Protocol: "tcp", Host: "127.0.0.1", Port: 6625}, Type: "mbus", Optional: map[string]string{
 		"proa":     "proa",
 		"Password": "fafsadfsadf=",
 		"Prob":     "Prob",

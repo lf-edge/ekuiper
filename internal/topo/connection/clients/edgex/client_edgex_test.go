@@ -18,7 +18,7 @@
 package edgex
 
 import (
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"reflect"
 	"testing"
 )
@@ -46,12 +46,7 @@ func TestEdgex_CfgValidate(t *testing.T) {
 			},
 			wantErr: false,
 			expConf: types.MessageBusConfig{
-				PublishHost: types.HostInfo{
-					Host:     "127.0.0.1",
-					Port:     1883,
-					Protocol: "tcp",
-				},
-				SubscribeHost: types.HostInfo{
+				Broker: types.HostInfo{
 					Host:     "127.0.0.1",
 					Port:     1883,
 					Protocol: "tcp",
@@ -74,12 +69,7 @@ func TestEdgex_CfgValidate(t *testing.T) {
 			},
 			wantErr: false,
 			expConf: types.MessageBusConfig{
-				PublishHost: types.HostInfo{
-					Host:     "edgex-redis",
-					Port:     6379,
-					Protocol: "redis",
-				},
-				SubscribeHost: types.HostInfo{
+				Broker: types.HostInfo{
 					Host:     "edgex-redis",
 					Port:     6379,
 					Protocol: "redis",
@@ -100,12 +90,7 @@ func TestEdgex_CfgValidate(t *testing.T) {
 				},
 			},
 			expConf: types.MessageBusConfig{
-				PublishHost: types.HostInfo{
-					Host:     "127.0.0.1",
-					Port:     1883,
-					Protocol: "tcp",
-				},
-				SubscribeHost: types.HostInfo{
+				Broker: types.HostInfo{
 					Host:     "127.0.0.1",
 					Port:     1883,
 					Protocol: "tcp",
@@ -119,7 +104,7 @@ func TestEdgex_CfgValidate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "config type not in zero/mqtt/redis ",
+			name: "config type not in mqtt/redis ",
 			props: map[string]interface{}{
 				"protocol": "tcp",
 				"server":   "127.0.0.1",
@@ -141,12 +126,7 @@ func TestEdgex_CfgValidate(t *testing.T) {
 				},
 			},
 			expConf: types.MessageBusConfig{
-				PublishHost: types.HostInfo{
-					Host:     "localhost",
-					Port:     6379,
-					Protocol: "redis",
-				},
-				SubscribeHost: types.HostInfo{
+				Broker: types.HostInfo{
 					Host:     "localhost",
 					Port:     6379,
 					Protocol: "redis",
@@ -190,7 +170,7 @@ func TestEdgex_CfgValidate(t *testing.T) {
 		{
 			name: "wrong type value",
 			props: map[string]interface{}{
-				"type":     "zmq",
+				"type":     "mqt",
 				"protocol": "redis",
 				"host":     "edgex-redis",
 				"port":     6379,

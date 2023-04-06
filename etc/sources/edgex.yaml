@@ -26,20 +26,20 @@ default:
 #    SkipCertVerify: true/false
 
 #Override the global configurations
-zmq_conf: #Conf_key
-  protocol: tcp
-  server: localhost
-  port: 5563
-  topic: events
-  type: zero
-  messageType: event
+#zmq_conf: #Conf_key
+#  protocol: tcp
+#  server: localhost
+#  port: 5563
+#  topic: events
+#  type: zero
+#  messageType: event
 
 application_conf: #Conf_key
-  protocol: tcp
-  server: localhost
-  port: 5571
+  protocol: redis
+  server: edgex-redis
+  port: 6379
   topic: application
-  type: zero
+  type: redis
   messageType: request
 
 mqtt_conf: #Conf_key
