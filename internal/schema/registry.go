@@ -59,11 +59,11 @@ func InitRegistry() error {
 	if err != nil {
 		return fmt.Errorf("cannot find etc folder: %s", err)
 	}
-	err, schemaDb = store.GetKV("schema")
+	schemaDb, err = store.GetKV("schema")
 	if err != nil {
 		return fmt.Errorf("cannot open schema db: %s", err)
 	}
-	err, schemaStatusDb = store.GetKV("schemaStatus")
+	schemaStatusDb, err = store.GetKV("schemaStatus")
 	if err != nil {
 		return fmt.Errorf("cannot open schemaStatus db: %s", err)
 	}

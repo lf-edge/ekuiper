@@ -64,19 +64,19 @@ func InitManager() (*Manager, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot find etc/services folder: %s", err)
 		}
-		err, sdb := store.GetKV("services")
+		sdb, err := store.GetKV("services")
 		if err != nil {
 			return nil, fmt.Errorf("cannot open service db: %s", err)
 		}
-		err, fdb := store.GetKV("serviceFuncs")
+		fdb, err := store.GetKV("serviceFuncs")
 		if err != nil {
 			return nil, fmt.Errorf("cannot open function db: %s", err)
 		}
-		err, sInstallDb := store.GetKV("serviceInstall")
+		sInstallDb, err := store.GetKV("serviceInstall")
 		if err != nil {
 			return nil, fmt.Errorf("cannot open service db: %s", err)
 		}
-		err, statusDb := store.GetKV("serviceInstallStatus")
+		statusDb, err := store.GetKV("serviceInstallStatus")
 		if err != nil {
 			return nil, fmt.Errorf("cannot open service db: %s", err)
 		}

@@ -42,9 +42,9 @@ func InitYamlConfigManager() {
 		lock:         sync.RWMutex{},
 		cfgOperators: make(map[string]conf.ConfigOperator),
 	}
-	_, ConfigManager.sourceConfigStatusDb = store.GetKV("sourceConfigStatus")
-	_, ConfigManager.sinkConfigStatusDb = store.GetKV("sinkConfigStatus")
-	_, ConfigManager.connectionConfigStatusDb = store.GetKV("connectionConfigStatus")
+	ConfigManager.sourceConfigStatusDb, _ = store.GetKV("sourceConfigStatus")
+	ConfigManager.sinkConfigStatusDb, _ = store.GetKV("sinkConfigStatus")
+	ConfigManager.connectionConfigStatusDb, _ = store.GetKV("connectionConfigStatus")
 }
 
 const SourceCfgOperatorKeyTemplate = "sources.%s"

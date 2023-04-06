@@ -33,7 +33,7 @@ func init() {
 }
 
 func Test_createLogicalPlan(t *testing.T) {
-	err, store := store.GetKV("stream")
+	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
 		return
@@ -1512,7 +1512,7 @@ func Test_createLogicalPlan(t *testing.T) {
 }
 
 func Test_createLogicalPlanSchemaless(t *testing.T) {
-	err, store := store.GetKV("stream")
+	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
 		return
@@ -2484,7 +2484,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 }
 
 func Test_createLogicalPlan4Lookup(t *testing.T) {
-	err, store := store.GetKV("stream")
+	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
 		return

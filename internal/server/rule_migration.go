@@ -73,7 +73,7 @@ func ruleTraverse(rule *api.Rule, de *dependencies) {
 		if err != nil {
 			return
 		}
-		err, store := store2.GetKV("stream")
+		store, err := store2.GetKV("stream")
 		if err != nil {
 			return
 		}

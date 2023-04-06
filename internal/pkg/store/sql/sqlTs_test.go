@@ -100,7 +100,7 @@ func setupTSqlKv() (ts2.Tskv, definition.Database, string) {
 		panic(err)
 	}
 	var store ts2.Tskv
-	err, store = builder.CreateTs(TTable)
+	store, err = builder.CreateTs(TTable)
 	if err != nil {
 		panic(err)
 	}

@@ -23,5 +23,5 @@ type StoreBuilder interface {
 }
 
 type TsBuilder interface {
-	CreateTs(table string) (error, kv.Tskv)
+	CreateTs(table string) (kv.Tskv, error)
 }

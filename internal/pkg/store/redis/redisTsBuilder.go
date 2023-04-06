@@ -32,6 +32,6 @@ func NewTsBuilder(d *redis.Client) TsBuilder {
 	}
 }
 
-func (b TsBuilder) CreateTs(table string) (error, st.Tskv) {
+func (b TsBuilder) CreateTs(table string) (st.Tskv, error) {
 	return createRedisTs(b.redis, table)
 }

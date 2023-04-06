@@ -70,7 +70,7 @@ func setupTRedisKv() (ts2.Tskv, *redis.Client, *miniredis.Miniredis) {
 
 	builder := NewTsBuilder(redisDB)
 	var ks ts2.Tskv
-	err, ks = builder.CreateTs("test")
+	ks, err = builder.CreateTs("test")
 	if err != nil {
 		panic(err)
 	}

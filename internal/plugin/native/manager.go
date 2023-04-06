@@ -78,15 +78,15 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot find data folder: %s", err)
 	}
-	err, func_db := store.GetKV("pluginFuncs")
+	func_db, err := store.GetKV("pluginFuncs")
 	if err != nil {
 		return nil, fmt.Errorf("error when opening funcSymbolsdb: %v", err)
 	}
-	err, plg_db := store.GetKV("nativePlugin")
+	plg_db, err := store.GetKV("nativePlugin")
 	if err != nil {
 		return nil, fmt.Errorf("error when opening nativePlugin: %v", err)
 	}
-	err, plg_status_db := store.GetKV("nativePluginStatus")
+	plg_status_db, err := store.GetKV("nativePluginStatus")
 	if err != nil {
 		return nil, fmt.Errorf("error when opening nativePluginStatus: %v", err)
 	}

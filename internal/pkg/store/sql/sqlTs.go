@@ -32,7 +32,7 @@ func init() {
 	gob.Register(make(map[string]interface{}))
 }
 
-func createSqlTs(database Database, table string) (error, *ts) {
+func createSqlTs(database Database, table string) (*ts, error) {
 	store := &ts{
 		database: database,
 		table:    table,
@@ -44,16 +44,16 @@ func createSqlTs(database Database, table string) (error, *ts) {
 		return err
 	})
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
-	return nil, store
+	return store, nil
 }
 
 func (t *ts) Set(key int64, value interface{}) (bool, error) {
 	if key <= t.last {
 		return false, nil
 	}
-	err, b := kvEncoding.Encode(value)
+	b, err := kvEncoding.Encode(value)
 	if err != nil {
 		return false, err
 	}

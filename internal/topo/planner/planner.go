@@ -53,7 +53,7 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, sources []*node.SourceNode, sink
 	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil) {
 		return nil, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
 	}
-	err, store := store2.GetKV("stream")
+	store, err := store2.GetKV("stream")
 	if err != nil {
 		return nil, err
 	}

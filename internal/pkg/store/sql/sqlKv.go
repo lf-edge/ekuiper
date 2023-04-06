@@ -47,7 +47,7 @@ func createSqlKvStore(database Database, table string) (*sqlKvStore, error) {
 
 func (kv *sqlKvStore) Setnx(key string, value interface{}) error {
 	return kv.database.Apply(func(db *sql.DB) error {
-		err, b := kvEncoding.Encode(value)
+		b, err := kvEncoding.Encode(value)
 		if nil != err {
 			return err
 		}
@@ -65,7 +65,7 @@ func (kv *sqlKvStore) Setnx(key string, value interface{}) error {
 }
 
 func (kv *sqlKvStore) Set(key string, value interface{}) error {
-	err, b := kvEncoding.Encode(value)
+	b, err := kvEncoding.Encode(value)
 	if nil != err {
 		return err
 	}

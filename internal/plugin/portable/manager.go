@@ -77,11 +77,11 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
-	err, plg_db := store.GetKV("portablePlugin")
+	plg_db, err := store.GetKV("portablePlugin")
 	if err != nil {
 		return nil, fmt.Errorf("error when opening portablePlugin: %v", err)
 	}
-	err, plg_status_db := store.GetKV("portablePluginStatus")
+	plg_status_db, err := store.GetKV("portablePluginStatus")
 	if err != nil {
 		return nil, fmt.Errorf("error when opening portablePluginStatus: %v", err)
 	}
