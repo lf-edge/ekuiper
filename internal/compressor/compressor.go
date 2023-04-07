@@ -23,6 +23,7 @@ const (
 	ZLIB  = "zlib"
 	GZIP  = "gzip"
 	FLATE = "flate"
+	ZSTD  = "zstd"
 )
 
 func GetCompressor(name string) (message.Compressor, error) {
@@ -33,6 +34,8 @@ func GetCompressor(name string) (message.Compressor, error) {
 		return newGzipCompressor()
 	case FLATE:
 		return newFlateCompressor()
+	case ZSTD:
+		return newZstdCompressor()
 	default:
 		return nil, fmt.Errorf("unsupported compressor: %s", name)
 	}
