@@ -1,6 +1,6 @@
 {
 	"about": {
-		"trial": true,
+		"trial": false,
 		"author": {
 			"name": "EMQ",
 			"email": "contact@emqx.io",
@@ -18,34 +18,129 @@
 	},
 	"libs": [
 	],
-	"properties": [{
-		"name": "path",
-		"default": "",
-		"optional": false,
-		"control": "text",
-		"type": "string",
-		"hint": {
-			"en_US": "The file path for saving the result",
-			"zh_CN": "保存结果的文件路径"
-		},
-		"label": {
-			"en_US": "Path of file",
-			"zh_CN": "文件路径"
-		}
-	}, {
-		"name": "interval",
-		"default": 1000,
-		"optional": true,
-		"control": "text",
-		"type": "int",
-		"hint": {
-			"en_US": "The time interval (ms) for writing the analysis result.",
-			"zh_CN": "写入分析结果的时间间隔（毫秒）。"
-		},
-		"label": {
-			"en_US": "Intervals",
-			"zh_CN": "间隔时间"
-		}
+	"properties": [
+		{
+			"name": "path",
+			"default": "",
+			"optional": false,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The file path for saving the result, could be dynamic like {{.field}}.txt",
+				"zh_CN": "保存结果的文件路径，可为动态路径，例如 {{.field}}.txt"
+			},
+			"label": {
+				"en_US": "Path of file",
+				"zh_CN": "文件路径"
+			}
+		}, {
+			"name": "fileType",
+			"default": "lines",
+			"optional": true,
+			"control": "select",
+			"type": "string",
+			"values": [
+				"lines",
+				"json",
+				"csv"
+			],
+			"hint": {
+				"en_US": "The file format type.",
+				"zh_CN": "文件格式类型"
+			},
+			"label": {
+				"en_US": "File type",
+				"zh_CN": "文件类型"
+			}
+		}, {
+			"name": "hasHeader",
+			"default": false,
+			"optional": true,
+			"control": "radio",
+			"type": "bool",
+			"hint": {
+				"en_US": "Whether to produce header, usually used for csv file.",
+				"zh_CN": "是否写入文件头，多用于 csv 文件"
+			},
+			"label": {
+				"en_US": "Has header",
+				"zh_CN": "是否包含文件头"
+			}
+		}, {
+			"name": "rollingInterval",
+			"default": "",
+			"optional": true,
+			"control": "text",
+			"type": "int",
+			"hint": {
+				"en_US": "The interval in millisecond for checking time based rolling policies. This controls the frequency to check whether a part file should rollover.",
+				"zh_CN": "滚动到新文件的最小时间间隔（以毫秒为单位）。检查频率由checkInterval 控制。"
+			},
+			"label": {
+				"en_US": "Rolling Interval",
+				"zh_CN": "Rolling 间隔"
+			}
+		}, {
+			"name": "checkInterval",
+			"default": "",
+			"optional": true,
+			"control": "text",
+			"type": "int",
+			"hint": {
+				"en_US": "The minimum time interval in milliseconde to roll to a new file. The frequency at which this is checked is controlled by the checkInterval. ",
+				"zh_CN": "检查基于时间的滚动策略的间隔（以毫秒为单位），用于控制检查文件是否应该翻转的频率。"
+			},
+			"label": {
+				"en_US": "Check Interval",
+				"zh_CN": "检查间隔"
+			}
+		}, {
+			"name": "rollingCount",
+			"default": "10000",
+			"optional": true,
+			"control": "text",
+			"type": "int",
+			"hint": {
+				"en_US": "The maximum message counts in a file before rollover.",
+				"zh_CN": "文件翻转前的最大消息计数。"
+			},
+			"label": {
+				"en_US": "Rolling Count",
+				"zh_CN": "Rolling 计数"
+			}
+		}, {
+			"name": "rollingNamePattern",
+			"default": "",
+			"optional": true,
+			"control": "select",
+			"type": "string",
+			"values": [
+				"prefix",
+				"suffix",
+				"none"
+			],
+			"hint": {
+				"en_US": "Define how to named the rolling files by specifying where to put the timestamp during file creation. The value could be \"prefix\", \"suffix\" or \"none\".",
+				"zh_CN": "指定滚动文件创建时如何放置时间戳。时间戳可为“前缀”，“后缀”或“无”。"
+			},
+			"label": {
+				"en_US": "Rolling Name Pattern",
+				"zh_CN": "Rolling 文件名模式"
+			}
+		}, {
+			"name": "interval (deprecated)",
+			"default": 1000,
+			"optional": true,
+			"control": "text",
+			"type": "int",
+			"hint": {
+				"en_US": "The time interval (ms) for writing the analysis result.",
+				"zh_CN": "写入分析结果的时间间隔（毫秒）。"
+			},
+			"label": {
+				"en_US": "Intervals",
+				"zh_CN": "间隔时间"
+			}
 	}],
 	"node": {
 		"category": "sink",
