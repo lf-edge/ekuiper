@@ -161,9 +161,8 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) Ruleset {
 			_ = rs.s.streamStatusDb.Set(k, e.Error())
 			ruleSetRsp.Streams[k] = e.Error()
 			continue
-		} else {
-			counts[0]++
 		}
+		counts[0]++
 	}
 	// restore tables
 	for k, v := range all.Tables {
@@ -173,9 +172,8 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) Ruleset {
 			_ = rs.s.tableStatusDb.Set(k, e.Error())
 			ruleSetRsp.Tables[k] = e.Error()
 			continue
-		} else {
-			counts[1]++
 		}
+		counts[1]++
 	}
 	var rules []string
 	// restore rules
@@ -186,10 +184,9 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) Ruleset {
 			_ = rs.r.ruleStatusDb.Set(k, e.Error())
 			ruleSetRsp.Rules[k] = e.Error()
 			continue
-		} else {
-			rules = append(rules, k)
-			counts[2]++
 		}
+		rules = append(rules, k)
+		counts[2]++
 	}
 	return ruleSetRsp
 }

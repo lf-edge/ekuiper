@@ -324,9 +324,8 @@ func (s *Scanner) ScanBackquoteIdent() (tok ast.Token, lit string) {
 		ch := s.read()
 		if isBackquote(ch) || ch == eof {
 			break
-		} else {
-			buf.WriteRune(ch)
 		}
+		buf.WriteRune(ch)
 	}
 	return ast.IDENT, buf.String()
 }

@@ -69,9 +69,8 @@ func GetFunctionPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
 		t, s1, s2 := sf.FunctionPluginInfo(name)
 		if t == plugin.NONE_EXTENSION {
 			continue
-		} else {
-			return t, s1, s2
 		}
+		return t, s1, s2
 	}
 	return plugin.NONE_EXTENSION, "", ""
 }
