@@ -418,7 +418,7 @@
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
           <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="humidity value Assertion" enabled="true">
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="Humidity value Assertion" enabled="true">
             <stringProp name="JSON_PATH">$.readings[0].value</stringProp>
             <stringProp name="EXPECTED_VALUE">81</stringProp>
             <boolProp name="JSONVALIDATION">false</boolProp>
@@ -436,9 +436,9 @@
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
           <hashTree/>
-          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="temperature name assertion" enabled="true">
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Humidity name assertion" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="321701236">temperature</stringProp>
+              <stringProp name="612671699">Humidity</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message"></stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
@@ -446,9 +446,9 @@
             <intProp name="Assertion.test_type">2</intProp>
           </ResponseAssertion>
           <hashTree/>
-          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="humidity name assertion" enabled="true">
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="temperature name assertion" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="612671699">Humidity</stringProp>
+              <stringProp name="321701236">temperature</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message"></stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
