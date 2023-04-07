@@ -42,25 +42,25 @@ type modelVersion interface {
 func modelFactory(_ string) modelVersion {
 	return new(deviceModel)
 }
-func (this *property) getName() string {
-	return this.Name
+func (p *property) getName() string {
+	return p.Name
 }
-func (this *property) getDataType() string {
-	return this.DataType
+func (p *property) getDataType() string {
+	return p.DataType
 }
-func (this *device) getName() string {
-	return this.Name
+func (d *device) getName() string {
+	return d.Name
 }
-func (this *device) findDataType(name string) string {
-	for _, v := range this.Properties {
+func (d *device) findDataType(name string) string {
+	for _, v := range d.Properties {
 		if strings.EqualFold(v.getName(), name) {
 			return v.getDataType()
 		}
 	}
 	return ""
 }
-func (this *deviceModel) findDataType(deviceId, dataName string) string {
-	for _, v := range this.Devices {
+func (dm *deviceModel) findDataType(deviceId, dataName string) string {
+	for _, v := range dm.Devices {
 		if strings.EqualFold(v.getName(), deviceId) {
 			return v.findDataType(dataName)
 		}
@@ -152,7 +152,7 @@ func topicToDeviceid(topic string) string {
 	}
 	return sliStr[3]
 }
-func (this *deviceModel) checkType(m map[string]interface{}, topic string) []string {
+func (dm *deviceModel) checkType(m map[string]interface{}, topic string) []string {
 	var sliErr []string
 	strErr := ""
 	for k, v := range m {
@@ -161,7 +161,7 @@ func (this *deviceModel) checkType(m map[string]interface{}, topic string) []str
 			sliErr = append(sliErr, fmt.Sprintf("not find deviceid : %s", topic))
 			continue
 		}
-		modelType := this.findDataType(deviceid, k)
+		modelType := dm.findDataType(deviceid, k)
 		if 0 == len(modelType) {
 			continue
 		}
