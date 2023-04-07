@@ -157,12 +157,11 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							for {
 								select {
 								case data := <-m.input:
-									var temp interface{}
-									var processed bool
-									if temp, processed = m.preprocess(data); processed {
+									if temp, processed := m.preprocess(data); !processed {
+										data = temp
+									} else {
 										break
 									}
-									data = temp
 									stats.SetBufferLength(int64(len(m.input)))
 									stats.IncTotalRecordsIn()
 									if sconf.RunAsync {
@@ -203,12 +202,11 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 								for {
 									select {
 									case data := <-m.input:
-										var temp interface{}
-										var processed bool
-										if temp, processed = m.preprocess(data); processed {
+										if temp, processed := m.preprocess(data); !processed {
+											data = temp
+										} else {
 											break
 										}
-										data = temp
 										stats.IncTotalRecordsIn()
 										outs := itemToMap(data)
 										if sconf.Omitempty && (data == nil || len(outs) == 0) {
