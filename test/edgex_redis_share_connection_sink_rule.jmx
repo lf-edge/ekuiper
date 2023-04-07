@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.3">
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.5">
   <hashTree>
     <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Test Plan" enabled="true">
       <stringProp name="TestPlan.comments"></stringProp>
@@ -139,7 +139,7 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT meta(*) AS edgex_meta, temperature, humidity, humidity*2 as h1 FROM demo WHERE temperature = 20&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT temperature, Humidity, meta(*) AS edgex_meta FROM demo WHERE temperature = 72&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
       &quot;edgex&quot;: {&#xd;
@@ -219,18 +219,7 @@
             <stringProp name="SystemSampler.expectedReturnCode">0</stringProp>
             <stringProp name="SystemSampler.command">test/edgex/pub</stringProp>
             <elementProp name="SystemSampler.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
-              <collectionProp name="Arguments.arguments">
-                <elementProp name="" elementType="Argument">
-                  <stringProp name="Argument.name"></stringProp>
-                  <stringProp name="Argument.value">redis</stringProp>
-                  <stringProp name="Argument.metadata">=</stringProp>
-                </elementProp>
-                <elementProp name="" elementType="Argument">
-                  <stringProp name="Argument.name"></stringProp>
-                  <stringProp name="Argument.value">${redis_srv}</stringProp>
-                  <stringProp name="Argument.metadata">=</stringProp>
-                </elementProp>
-              </collectionProp>
+              <collectionProp name="Arguments.arguments"/>
             </elementProp>
             <elementProp name="SystemSampler.environment" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments"/>
@@ -421,35 +410,26 @@
         </SystemSampler>
         <hashTree>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="device Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.event.deviceName</stringProp>
-            <stringProp name="EXPECTED_VALUE">demo1</stringProp>
+            <stringProp name="JSON_PATH">$.deviceName</stringProp>
+            <stringProp name="EXPECTED_VALUE">demo</stringProp>
             <boolProp name="JSONVALIDATION">true</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
           <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="reading_0 Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.event.readings[0].value</stringProp>
-            <stringProp name="EXPECTED_VALUE">30</stringProp>
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="humidity value Assertion" enabled="true">
+            <stringProp name="JSON_PATH">$.readings[0].value</stringProp>
+            <stringProp name="EXPECTED_VALUE">81</stringProp>
             <boolProp name="JSONVALIDATION">false</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>
             <boolProp name="ISREGEX">false</boolProp>
           </JSONPathAssertion>
           <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="reading_1 Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.event.readings[1].value</stringProp>
-            <stringProp name="EXPECTED_VALUE">20</stringProp>
-            <boolProp name="JSONVALIDATION">false</boolProp>
-            <boolProp name="EXPECT_NULL">false</boolProp>
-            <boolProp name="INVERT">false</boolProp>
-            <boolProp name="ISREGEX">false</boolProp>
-          </JSONPathAssertion>
-          <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="reading_2 Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.event.readings[2].value</stringProp>
-            <stringProp name="EXPECTED_VALUE">20</stringProp>
+          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="temperature value Assertion" enabled="true">
+            <stringProp name="JSON_PATH">$.readings[1].value</stringProp>
+            <stringProp name="EXPECTED_VALUE">72</stringProp>
             <boolProp name="JSONVALIDATION">false</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
             <boolProp name="INVERT">false</boolProp>
@@ -468,7 +448,7 @@
           <hashTree/>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="humidity name assertion" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="548027571">humidity</stringProp>
+              <stringProp name="612671699">Humidity</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message"></stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
