@@ -235,7 +235,8 @@
 			"values": [
 				"zlib",
 				"gzip",
-				"flate"
+				"flate",
+				"zstd"
 			],
 			"hint": {
 				"en_US": "Decompress the MQTT payload with the specified compression method.",

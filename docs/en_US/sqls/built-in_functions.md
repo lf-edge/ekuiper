@@ -177,7 +177,7 @@ When casting to datetime type, the supported column type and casting rule are:
 | compress   | compress(input, "zlib")   | Compress the input string or binary value with a compression method   |
 | decompress | decompress(input, "zlib") | Decompress the input string or binary value with a compression method |
 
-Currently, 'zlib', 'gzip' and 'flate' method are supported.
+Currently, 'zlib', 'gzip', 'flate' and 'zstd' method are supported.
 
 ## Analytic Functions
 

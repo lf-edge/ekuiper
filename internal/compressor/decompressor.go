@@ -27,6 +27,8 @@ func GetDecompressor(name string) (message.Decompressor, error) {
 		return newGzipDecompressor()
 	case FLATE:
 		return newFlateDecompressor()
+	case ZSTD:
+		return newzstdDecompressor()
 	default:
 		return nil, fmt.Errorf("unsupported decompressor: %s", name)
 	}
