@@ -112,10 +112,9 @@ func relativePath(subdir string) (dir string, err error) {
 			if _, err := os.Stat(confDir); os.IsNotExist(err) {
 				lastdir = dir
 				continue
-			} else {
-				//Log.Printf("Trying to load file from %s", confDir)
-				return confDir, nil
 			}
+			//Log.Printf("Trying to load file from %s", confDir)
+			return confDir, nil
 		}
 	} else {
 		//Log.Printf("Trying to load file from %s", confDir)

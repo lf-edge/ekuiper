@@ -303,9 +303,8 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 					log.Debugf(fmt.Sprintf("msgCount: %d", o.msgCount))
 					if o.msgCount%o.window.Interval != 0 {
 						continue
-					} else {
-						o.msgCount = 0
 					}
+					o.msgCount = 0
 
 					if tl, er := NewTupleList(inputs, o.window.Length); er != nil {
 						log.Error(fmt.Sprintf("Found error when trying to "))

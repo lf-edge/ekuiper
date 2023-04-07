@@ -17,7 +17,7 @@ warningCode = -1
 [rule.range]
 [rule.receiver-naming]
 #[rule.indent-error-flow]
-#[rule.superfluous-else]
+[rule.superfluous-else]
 [rule.modifies-parameter]
 
 # This can be checked by other tools like megacheck

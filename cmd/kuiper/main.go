@@ -122,28 +122,27 @@ func main() {
 						if err != nil {
 							fmt.Println(err)
 							continue
-						} else {
-							fmt.Println(reply)
-							go func() {
-								err := infra.SafeRun(func() error {
-									for {
-										<-ticker.C
-										var result string
-										e := client.Call("Server.GetQueryResult", "", &result)
-										if e != nil {
-											return e
-										}
-										if result != "" {
-											fmt.Println(result)
-										}
-									}
-								})
-								if err != nil {
-									fmt.Println(err)
-									fmt.Print("kuiper > ")
-								}
-							}()
 						}
+						fmt.Println(reply)
+						go func() {
+							err := infra.SafeRun(func() error {
+								for {
+									<-ticker.C
+									var result string
+									e := client.Call("Server.GetQueryResult", "", &result)
+									if e != nil {
+										return e
+									}
+									if result != "" {
+										fmt.Println(result)
+									}
+								}
+							})
+							if err != nil {
+								fmt.Println(err)
+								fmt.Print("kuiper > ")
+							}
+						}()
 					}
 				}
 				return nil

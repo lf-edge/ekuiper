@@ -74,9 +74,8 @@ func GetSourcePlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
 		t, s1, s2 := sf.SourcePluginInfo(name)
 		if t == plugin.NONE_EXTENSION {
 			continue
-		} else {
-			return t, s1, s2
 		}
+		return t, s1, s2
 	}
 	return plugin.NONE_EXTENSION, "", ""
 }
@@ -100,9 +99,8 @@ func GetSinkPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
 		t, s1, s2 := sf.SinkPluginInfo(name)
 		if t == plugin.NONE_EXTENSION {
 			continue
-		} else {
-			return t, s1, s2
 		}
+		return t, s1, s2
 	}
 	return plugin.NONE_EXTENSION, "", ""
 }

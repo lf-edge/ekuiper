@@ -327,10 +327,9 @@ func (p *Parser) parseDimensions() (ast.Dimensions, error) {
 				}
 				if tok, _ := p.scanIgnoreWhitespace(); tok == ast.COMMA {
 					continue
-				} else {
-					p.unscan()
-					break
 				}
+				p.unscan()
+				break
 			}
 		} else {
 			return nil, fmt.Errorf("found %q, expected BY statement.", l1)
@@ -828,9 +827,8 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 	for {
 		if tok, _ := p.scanIgnoreWhitespace(); tok == ast.RPAREN {
 			break
-		} else {
-			p.unscan()
 		}
+		p.unscan()
 
 		if exp, err := p.ParseExpr(); err != nil {
 			return nil, err
@@ -935,9 +933,8 @@ loop:
 		case ast.END:
 			if c.WhenClauses != nil {
 				break loop
-			} else {
-				return nil, fmt.Errorf("invalid CASE expression, WHEN expected before END")
 			}
+			return nil, fmt.Errorf("invalid CASE expression, WHEN expected before END")
 		default:
 			return nil, fmt.Errorf("invalid CASE expression, END expected")
 		}
@@ -1463,9 +1460,8 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 			} else if tok1 == ast.RPAREN {
 				if lStack.Pop(); lStack.Len() == 0 {
 					break
-				} else {
-					return nil, fmt.Errorf("Parenthesis is not matched in options definition.")
 				}
+				return nil, fmt.Errorf("Parenthesis is not matched in options definition.")
 			} else {
 				return nil, fmt.Errorf("found %q, unknown option keys(DATASOURCE|FORMAT|KEY|CONF_KEY|SHARED|STRICT_VALIDATION|TYPE|TIMESTAMP|TIMESTAMP_FORMAT|RETAIN_SIZE|SCHEMAID).", lit1)
 			}
@@ -1531,10 +1527,9 @@ func (p *Parser) parseOver(c *ast.Call) error {
 						}
 						if tok, _ := p.scanIgnoreWhitespace(); tok == ast.COMMA {
 							continue
-						} else {
-							p.unscan()
-							break
 						}
+						p.unscan()
+						break
 					}
 					if len(pe.Exprs) == 0 {
 						return fmt.Errorf("PARTITION BY must have at least one expression.")

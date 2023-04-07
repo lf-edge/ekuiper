@@ -63,9 +63,8 @@ func CompareMetrics(tp *topo.Topo, m map[string]interface{}) (err error) {
 					if values[index].(int64) >= v.(int64) {
 						matched = true
 						continue
-					} else {
-						break
 					}
+					break
 				}
 				if values[index] == v {
 					matched = true
@@ -209,11 +208,11 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 	time.Sleep(10 * time.Millisecond)
 	var retry int
 	for retry = 4; retry > 0; retry-- {
-		if err := CompareMetrics(tp, metrics); err == nil {
+		var err error
+		if err = CompareMetrics(tp, metrics); err == nil {
 			break
-		} else {
-			conf.Log.Errorf("check metrics error at %d: %s", retry, err)
 		}
+		conf.Log.Errorf("check metrics error at %d: %s", retry, err)
 		time.Sleep(1000 * time.Millisecond)
 	}
 	if retry == 0 {
@@ -420,9 +419,8 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, j int, opt *
 			actual := tp.GetCoordinator().GetCompleteCount()
 			if tt.Cc == actual {
 				break
-			} else {
-				conf.Log.Debugf("check checkpointCount error at %d: %d\n", retry, actual)
 			}
+			conf.Log.Debugf("check checkpointCount error at %d: %d\n", retry, actual)
 			time.Sleep(200 * time.Millisecond)
 		}
 		cc := tp.GetCoordinator().GetCompleteCount()
