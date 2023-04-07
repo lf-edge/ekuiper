@@ -162,7 +162,7 @@ type BinaryExpr struct {
 	RHS Expr
 }
 
-func (fe *BinaryExpr) expr() {}
+func (be *BinaryExpr) expr() {}
 func (be *BinaryExpr) node() {}
 
 type WhenClause struct {

@@ -529,8 +529,8 @@ func jsonOut(w http.ResponseWriter, err error, out interface{}) {
 
 type Resolver map[string]reflect.Value
 
-func (self Resolver) Resolve(name string, _ []reflect.Value) (reflect.Value, error) {
-	return self[name], nil
+func (r Resolver) Resolve(name string, _ []reflect.Value) (reflect.Value, error) {
+	return r[name], nil
 }
 
 func SayHello(name string) map[string]interface{} {

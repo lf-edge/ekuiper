@@ -31,21 +31,21 @@ type ParseTree struct {
 	Keys     []string
 }
 
-func (t *ParseTree) Handle(lit string, fn func(*Parser) (ast.Statement, error)) {
+func (pt *ParseTree) Handle(lit string, fn func(*Parser) (ast.Statement, error)) {
 	// Verify that there is no conflict for this token in this parse tree.
-	if _, conflict := t.Tokens[lit]; conflict {
+	if _, conflict := pt.Tokens[lit]; conflict {
 		panic(fmt.Sprintf("conflict for token %s", lit))
 	}
 
-	if _, conflict := t.Handlers[lit]; conflict {
+	if _, conflict := pt.Handlers[lit]; conflict {
 		panic(fmt.Sprintf("conflict for token %s", lit))
 	}
 
-	if t.Handlers == nil {
-		t.Handlers = make(map[string]func(*Parser) (ast.Statement, error))
+	if pt.Handlers == nil {
+		pt.Handlers = make(map[string]func(*Parser) (ast.Statement, error))
 	}
-	t.Handlers[lit] = fn
-	t.Keys = append(t.Keys, lit)
+	pt.Handlers[lit] = fn
+	pt.Keys = append(pt.Keys, lit)
 }
 
 func (pt *ParseTree) Parse(p *Parser) (ast.Statement, error) {
