@@ -1,4 +1,4 @@
-// Copyright 2022-2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,10 +21,11 @@ import (
 	"path"
 	"sync"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 
 	// introduce sqlite
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 type Database struct {
@@ -34,10 +35,11 @@ type Database struct {
 }
 
 func NewSqliteDatabase(c definition.Config, name string) (definition.Database, error) {
-	conf := c.Sqlite
-	dir := conf.Path
-	if conf.Name != "" {
-		name = conf.Name
+	conf.Log.Infof("use cgo disabled sqlite as store %v", name)
+	sqliteConf := c.Sqlite
+	dir := sqliteConf.Path
+	if sqliteConf.Name != "" {
+		name = sqliteConf.Name
 	}
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		os.MkdirAll(dir, os.ModePerm)
@@ -51,7 +53,7 @@ func NewSqliteDatabase(c definition.Config, name string) (definition.Database, e
 }
 
 func (d *Database) Connect() error {
-	db, err := sql.Open("sqlite3", connectionString(d.Path))
+	db, err := sql.Open("sqlite", connectionString(d.Path))
 	if err != nil {
 		return err
 	}
