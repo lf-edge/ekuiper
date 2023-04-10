@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -268,6 +268,8 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 		var sql string
 		if createOrDrop {
 			switch name {
+			case "demoArr":
+				sql = `CREATE STREAM demoArr () WITH (DATASOURCE="demoArr", TYPE="mock", FORMAT="json", KEY="ts");`
 			case "demo":
 				sql = `CREATE STREAM demo (
 					color STRING,

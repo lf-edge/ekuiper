@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -998,6 +998,17 @@ var TestData = map[string][]*xsql.Tuple{
 			Message: map[string]interface{}{
 				"message_id": "1541152487013",
 				"text":       "message3",
+			},
+			Timestamp: 1541152487501,
+		},
+	},
+	"demoArr": {
+		{
+			Emitter: "demoArr",
+			Message: map[string]interface{}{
+				"arr": []int{1, 2, 3, 4, 5},
+				"x":   1,
+				"y":   2,
 			},
 			Timestamp: 1541152487501,
 		},

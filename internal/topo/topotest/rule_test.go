@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,17 +16,29 @@ package topotest
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"testing"
 )
 
 func TestSingleSQL(t *testing.T) {
 	//Reset
-	streamList := []string{"demo", "demoError", "demo1", "table1", "demoTable"}
+	streamList := []string{"demo", "demoError", "demo1", "table1", "demoTable", "demoArr"}
 	HandleStream(false, streamList, t)
 	//Data setup
 	var tests = []RuleTest{
+		{
+			Name: `TestSingleSQLRule0`,
+			Sql:  `SELECT arr[x:y+1] as col1 FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{{
+					"col1": []interface{}{
+						float64(2), float64(3),
+					},
+				}},
+			},
+		},
 		{
 			Name: `TestSingleSQLRule1`,
 			Sql:  `SELECT *, upper(color) FROM demo`,
