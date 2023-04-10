@@ -20,6 +20,7 @@ type KeyValue interface {
 	// Set key to hold the string value. If key already holds a value, it is overwritten
 	Set(key string, value interface{}) error
 	Get(key string, val interface{}) (bool, error)
+	GetKeyedState(key string) (interface{}, error)
 	//Must return *common.Error with NOT_FOUND error
 	Delete(key string) error
 	Keys() (keys []string, err error)

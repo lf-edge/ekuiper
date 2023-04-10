@@ -79,6 +79,14 @@ func (kv redisKvStore) Get(key string, value interface{}) (bool, error) {
 	return true, nil
 }
 
+func (kv redisKvStore) GetKeyedState(key string) (interface{}, error) {
+	val, err := kv.database.Get(context.Background(), kv.tableKey(key)).Result()
+	if err != nil {
+		return false, err
+	}
+	return val, nil
+}
+
 func (kv redisKvStore) Delete(key string) error {
 	return kv.database.Del(context.Background(), kv.tableKey(key)).Err()
 }

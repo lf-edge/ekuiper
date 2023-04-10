@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/keyedstate"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"reflect"
@@ -57,6 +58,17 @@ func registerColsFunc() {
 			return nil
 		},
 	}
+	builtins["get_keyed_state"] = builtinFunc{
+		fType: ast.FuncTypeCols,
+		exec:  wrapColFunc(keyedstateFunc),
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if len(args) <= 1 {
+				return fmt.Errorf("expect more than one arg but got %d", len(args))
+			}
+			return nil
+		},
+	}
+
 }
 
 func changedFunc(ctx api.FunctionContext, args []interface{}, keys []string) (ResultCols, error) {
@@ -98,5 +110,25 @@ func changedFunc(ctx api.FunctionContext, args []interface{}, keys []string) (Re
 			}
 		}
 	}
+	return r, nil
+}
+
+func keyedstateFunc(_ api.FunctionContext, args []interface{}, keys []string) (ResultCols, error) {
+	// validation
+	if len(args) < 1 {
+		return nil, fmt.Errorf("expect group name but found %v", args)
+	}
+	groupName, ok := args[0].(string)
+	if !ok {
+		return nil, fmt.Errorf("first arg is not a string but got %v", args[0])
+	}
+	if len(keys) <= 1 {
+		return nil, fmt.Errorf("expect keys name but found %v", keys)
+	}
+	//exclude group name in keys array
+	keys = keys[1:]
+
+	r := make(ResultCols)
+	r = keyedstate.GetKeyedState(groupName, keys)
 	return r, nil
 }

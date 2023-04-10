@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/binder/meta"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/keyedstate"
 	meta2 "github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/processor"
@@ -90,6 +91,7 @@ func StartUp(Version, LoadFileType string) {
 	if err != nil {
 		panic(err)
 	}
+	keyedstate.InitManager(conf.Config.State.Keyprefix, conf.Config.State.Keyseperator)
 
 	meta2.InitYamlConfigManager()
 	ruleProcessor = processor.NewRuleProcessor()
