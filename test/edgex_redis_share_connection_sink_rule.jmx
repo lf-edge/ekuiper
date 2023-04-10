@@ -248,7 +248,7 @@
           <hashTree>
             <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
               <stringProp name="JSON_PATH">$.source_demo_0_records_in_total</stringProp>
-              <stringProp name="EXPECTED_VALUE">1</stringProp>
+              <stringProp name="EXPECTED_VALUE">10</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
               <boolProp name="EXPECT_NULL">false</boolProp>
               <boolProp name="INVERT">false</boolProp>
@@ -410,7 +410,7 @@
         </SystemSampler>
         <hashTree>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="device Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.deviceName</stringProp>
+            <stringProp name="JSON_PATH">$.event.deviceName</stringProp>
             <stringProp name="EXPECTED_VALUE">demo</stringProp>
             <boolProp name="JSONVALIDATION">true</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
@@ -419,7 +419,7 @@
           </JSONPathAssertion>
           <hashTree/>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="Humidity value Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.readings[0].value</stringProp>
+            <stringProp name="JSON_PATH">$.event.readings[1].value</stringProp>
             <stringProp name="EXPECTED_VALUE">81</stringProp>
             <boolProp name="JSONVALIDATION">false</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
@@ -428,7 +428,7 @@
           </JSONPathAssertion>
           <hashTree/>
           <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="temperature value Assertion" enabled="true">
-            <stringProp name="JSON_PATH">$.readings[1].value</stringProp>
+            <stringProp name="JSON_PATH">$.event.readings[0].value</stringProp>
             <stringProp name="EXPECTED_VALUE">72</stringProp>
             <boolProp name="JSONVALIDATION">false</boolProp>
             <boolProp name="EXPECT_NULL">false</boolProp>
