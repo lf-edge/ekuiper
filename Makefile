@@ -93,6 +93,7 @@ docker:
 PLUGINS := sinks/influx \
 	sinks/influx2 \
 	sinks/zmq \
+	sinks/kafka \
 	sinks/image \
 	sinks/sql   \
 	sources/random \

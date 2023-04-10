@@ -29,6 +29,7 @@ The list of predefined sink plugins:
 - [Tdengine sink](./plugin/tdengine.md): sink to tdengine.
 - [Image sink](./plugin/image.md): sink to an image file. Only used to handle binary result.
 - [Zero MQ sink](./plugin/zmq.md): sink to zero mq.
+- [Kafka sink](./plugin/kafka.md): sink to kafka.
 
 ## Updatable Sink
 

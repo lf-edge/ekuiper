@@ -238,6 +238,10 @@
 								{
 									"title": "ZeroMQ Sink",
 									"path": "guide/sinks/plugin/zmq"
+								},
+								{
+									"title": "Kafka Sink",
+									"path": "guide/sinks/plugin/kafka"
 								}
 							]
 						}
@@ -912,6 +916,10 @@
 								{
 									"title": "ZeroMQ Sink",
 									"path": "guide/sinks/plugin/zmq"
+								},
+								{
+									"title": "Kafka Sink",
+									"path": "guide/sinks/plugin/kafka"
 								}
 							]
 						}
