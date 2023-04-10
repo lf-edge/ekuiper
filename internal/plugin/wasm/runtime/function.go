@@ -113,10 +113,9 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 		res, err = vm.Execute(funcname)
 		if err != nil {
 			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-		} else {
-			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
-			fmt.Println(res[0].(int32))
 		}
+		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
+		fmt.Println(res[0].(int32))
 		exitcode := wasi.WasiGetExitCode()
 		if exitcode != 0 {
 			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
@@ -126,10 +125,9 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 		res, err = vm.Execute(funcname, uint32(Args[0]))
 		if err != nil {
 			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-		} else {
-			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
-			fmt.Println(res[0].(int32))
 		}
+		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
+		fmt.Println(res[0].(int32))
 		exitcode := wasi.WasiGetExitCode()
 		if exitcode != 0 {
 			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
@@ -139,10 +137,9 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 		res, err = vm.Execute(funcname, uint32(Args[0]), uint32(Args[1]))
 		if err != nil {
 			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-		} else {
-			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
-			fmt.Println(res[0].(int32))
 		}
+		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
+		fmt.Println(res[0].(int32))
 		exitcode := wasi.WasiGetExitCode()
 		if exitcode != 0 {
 			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
@@ -152,10 +149,9 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 		res, err = vm.Execute(funcname, uint32(Args[0]), uint32(Args[1]), uint32(Args[2]))
 		if err != nil {
 			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-		} else {
-			fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
-			fmt.Println(res[0].(int32))
 		}
+		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
+		fmt.Println(res[0].(int32))
 		exitcode := wasi.WasiGetExitCode()
 		if exitcode != 0 {
 			fmt.Println("Go: Running wasm failed, exit code:", exitcode)

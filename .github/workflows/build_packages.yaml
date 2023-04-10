@@ -179,6 +179,7 @@ jobs:
         plugin:
           - sinks/image
           - sinks/influx
+          - sinks/influx2
           - sinks/tdengine
           - sinks/zmq
           - sinks/sql

@@ -224,7 +224,8 @@
       "values": [
         "zlib",
         "gzip",
-        "flate"
+        "flate",
+        "zstd"
       ],
       "hint": {
         "en_US": "Compress the payload with the specified compression method.",

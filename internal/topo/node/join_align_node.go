@@ -127,10 +127,9 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 								n.Broadcast(e)
 								n.statManager.IncTotalExceptions(e.Error())
 								break
-							} else {
-								n.batch[emitter] = d.Content
-								ctx.PutState(BatchKey, n.batch)
 							}
+							n.batch[emitter] = d.Content
+							ctx.PutState(BatchKey, n.batch)
 						}
 					default:
 						e := fmt.Errorf("run JoinAlignNode error: invalid input type but got %[1]T(%[1]v)", d)

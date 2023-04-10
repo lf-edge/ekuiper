@@ -46,9 +46,8 @@ func mockNeuron(send bool, recv bool, url string) (mangos.Socket, chan []byte) {
 	}
 	if err = sock.Listen(url); err != nil {
 		log.Fatalf("can't listen on pair socket: %s", err.Error())
-	} else {
-		log.Printf("listen on pair socket")
 	}
+	log.Printf("listen on pair socket")
 	if recv {
 		ch = make(chan []byte)
 		go func() {

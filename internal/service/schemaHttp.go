@@ -159,9 +159,8 @@ func (d *wrappedProtoDescriptor) ConvertHttpMapping(method string, params []inte
 				if v.prefix != "" {
 					if strings.HasPrefix(args[i].(string), v.prefix) {
 						continue
-					} else {
-						return nil, fmt.Errorf("invalid field %s(%s) as http option, must have prefix %s", v.name, args[i], v.prefix)
 					}
+					return nil, fmt.Errorf("invalid field %s(%s) as http option, must have prefix %s", v.name, args[i], v.prefix)
 				}
 			}
 			hcm.Uri = fmt.Sprintf(ho.UriTemplate.Template, args...)
