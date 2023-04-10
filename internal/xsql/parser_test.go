@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,6 +35,41 @@ func TestParser_ParseStatement(t *testing.T) {
 		stmt *ast.SelectStatement
 		err  string
 	}{
+		{
+			s: "SELECT arr[x+1:y] FROM tbl",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							OP: ast.SUBSET,
+							LHS: &ast.FieldRef{
+								Name:       "arr",
+								StreamName: ast.DefaultStream,
+							},
+							RHS: &ast.ColonExpr{
+								Start: &ast.BinaryExpr{
+									OP: ast.ADD,
+									LHS: &ast.FieldRef{
+										StreamName: ast.DefaultStream,
+										Name:       "x",
+									},
+									RHS: &ast.IntegerLiteral{
+										Val: 1,
+									},
+								},
+								End: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "y",
+								},
+							},
+						},
+						Name:  "kuiper_field_0",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
 		{
 			s: `SELECT name FROM tbl`,
 			stmt: &ast.SelectStatement{
