@@ -1,0 +1,131 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "carlclone",
+      "email": "carlclone@gmail.com",
+      "company": "personal",
+      "website": "https://www.github.com/carlclone"
+    },
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/kafka.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/kafka.html"
+    },
+    "description": {
+      "en_US": "This a sink for Kafka, it can be used for saving the analysis data into Redis.",
+      "zh_CN": "为 Kafka 的持久化插件，可以用于将分析数据存入 Kafka 中"
+    }
+  },
+  "libs": [
+    "github.com/segmentio/kafka-go@v0.4.39"
+  ],
+  "properties": [
+    {
+      "name": "brokers",
+      "default": "127.0.0.1:9092,127.0.0.2:9092",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The url of the Kafka broker list",
+        "zh_CN": "Kafka brokers的 URL 列表"
+      },
+      "label": {
+        "en_US": "broker list",
+        "zh_CN": "Broker url 列表"
+      }
+    },
+    {
+      "name": "topic",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The topic to publish to.",
+        "zh_CN": "订阅主题"
+      },
+      "label": {
+        "en_US": "Topic",
+        "zh_CN": "主题"
+      }
+    },
+    {
+      "name": "deliveryGuarantee",
+      "default": "AT_LEAST_ONCE",
+      "optional": false,
+      "control": "select",
+      "values": [
+        "AT_MOST_ONCE",
+        "AT_LEAST_ONCE"
+      ],
+      "type": "string",
+      "hint": {
+        "en_US": "delivery guarantee of Kafka",
+        "zh_CN": "Kafka 的消息交付可靠性保障"
+      },
+      "label": {
+        "en_US": "delivery guarantee",
+        "zh_CN": "消息交付"
+      }
+    },
+    {
+      "name": "saslAuthType",
+      "default": "none",
+      "optional": false,
+      "control": "select",
+      "values": [
+        "none",
+        "plain",
+        "scram"
+      ],
+      "type": "string",
+      "hint": {
+        "en_US": "Sasl auth type of Kafka",
+        "zh_CN": "Kafka 的 Sasl 认证类型"
+      },
+      "label": {
+        "en_US": "Sasl auth type",
+        "zh_CN": "Sasl 认证类型"
+      }
+    },
+    {
+      "name": "saslUserName",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Sasl username for authentication",
+        "zh_CN": "Sasl 认证使用的用户名"
+      },
+      "label": {
+        "en_US": "Sasl username",
+        "zh_CN": "Sasl 用户名"
+      }
+    },
+    {
+      "name": "saslPassword",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Sasl password for authentication",
+        "zh_CN": "Sasl 认证使用的密码"
+      },
+      "label": {
+        "en_US": "Sasl password",
+        "zh_CN": "Sasl 密码"
+      }
+    }
+  ],
+  "node": {
+    "category": "sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "Kafka",
+      "zh": "Kafka"
+    }
+  }
+}
