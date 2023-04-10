@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,15 +18,16 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	econf "github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"os"
 	"reflect"
 	"testing"
+
+	econf "github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 )
 
 func TestSingle(t *testing.T) {
-	db, err := sql.Open("sqlite3", "file:test.db")
+	db, err := sql.Open("sqlite", "file:test.db")
 	if err != nil {
 		t.Error(err)
 		return
@@ -90,7 +91,7 @@ func TestSingle(t *testing.T) {
 }
 
 func TestBatch(t *testing.T) {
-	db, err := sql.Open("sqlite3", "file:test.db")
+	db, err := sql.Open("sqlite", "file:test.db")
 	if err != nil {
 		t.Error(err)
 		return
@@ -153,7 +154,7 @@ func TestBatch(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	db, err := sql.Open("sqlite3", "file:test.db")
+	db, err := sql.Open("sqlite", "file:test.db")
 	if err != nil {
 		t.Error(err)
 		return
