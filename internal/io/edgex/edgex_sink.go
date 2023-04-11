@@ -1,3 +1,6 @@
+//go:build edgex
+// +build edgex
+
 /*
  * Copyright 2023 EMQ Technologies Co., Ltd.
  *
@@ -13,9 +16,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-//go:build edgex
-// +build edgex
 
 package edgex
 
